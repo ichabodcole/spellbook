@@ -21,11 +21,11 @@
 // The fake answers `/state` so the CLI's own start-up handshake is satisfied
 // and no real daemon is ever spawned.
 import { afterEach, expect, test } from "bun:test";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { RECOGNIZED_FLAGS, ROOT_TOKENS, VERBS } from "./cli.ts";
+import { cli } from "./cli.ts";
 
 const CLI = join(dirname(fileURLToPath(import.meta.url)), "cli.ts");
 
@@ -233,41 +233,203 @@ test("join's printed re-arm is the verb and its arguments, with spell, and no la
 
 // ── register A1 · the declaration is bound to the behaviour ──────────────────
 //
-// ⛔ `VERBS` IS WHAT EVERY `choices` ON AN UNKNOWN VERB IS BUILT FROM, and
-// it is a DECLARATION while the `switch (verb)` is the BEHAVIOUR. Nothing in
-// the type system ties them, so a verb added to one and not the other makes
-// astrolabe either advertise a verb it cannot run or run one it will not name —
-// and `choices` is only worth emitting because a caller can trust it.
-//
-// magpie's cell, ported rather than re-derived (`src/magpie/backend/cli.test.ts`,
-// "VERB_SPEC is the dispatch switch"). The source is parsed rather than the
-// module inspected, because a case label is not a value.
-//
-// ⚠ CALIBRATED BOTH WAYS at the close: a verb added to the declaration with no
-// case reds, and a case added with no declaration reds.
-test("VERBS is the dispatch switch — neither may grow a verb alone (A1)", () => {
-  const src = readFileSync(CLI, "utf8");
-  const dispatch = src.slice(src.indexOf("switch (verb) {"));
-  const cases = new Set(
-    [...dispatch.matchAll(/^\s{4}case "([a-z-]+)":/gm)].map((m) => m[1] as string),
+// The dispatcher, help, `choices` and `schema` are all the kit registry's walk
+// of ONE table (`cli` in `./cli.ts`), so the old "VERBS is the dispatch switch"
+// source-parse has nothing left to bind. What remains worth pinning: the roster
+// is the table, `schema` declares every verb, and each verb's set is its own.
+test("the roster is the registry's table, and schema declares every verb (A1)", () => {
+  expect([...cli.verbs].sort()).toEqual(
+    [
+      "add",
+      "attention",
+      "close",
+      "help",
+      "info",
+      "join",
+      "list",
+      "open",
+      "poke",
+      "remove",
+      "schema",
+      "state",
+      "status",
+      "tail",
+      "version",
+    ].sort(),
   );
-  expect([...cases].sort()).toEqual([...VERBS].sort());
+  const declared = cli
+    .declaration()
+    .commands.map((c) => c.path.join(" "))
+    .filter((p) => p !== "");
+  expect(declared.sort()).toEqual([...cli.verbs].sort());
 });
 
-// The pre-switch interceptors are the other half: `help` and `version` are in
-// `choices` and are NOT `VERB_SPEC` keys, so if one stops being answered at the
-// root the roster starts advertising a token nothing handles.
-test("every ROOT_TOKEN is answered before the switch (A1)", () => {
-  const src = readFileSync(CLI, "utf8");
-  const root = src.slice(src.indexOf("async function dispatch("), src.indexOf("switch (verb) {"));
-  for (const token of ROOT_TOKENS) expect(root).toContain(`verb === "${token}"`);
+// Per-verb sets: `--as`/`--from` ride every verb that writes an event or holds
+// a watch, and none that only reads.
+test("each verb's accepted flags are its own row's (per-verb sets)", () => {
+  expect(cli.flagsFor("open")).toEqual(["--no-open", "--timeout"]);
+  expect(cli.flagsFor("add")).toEqual([
+    "--as",
+    "--avatar",
+    "--description",
+    "--from",
+    "--id",
+    "--path",
+    "--stdin",
+  ]);
+  expect(cli.flagsFor("status")).toEqual(["--as", "--from", "--phase", "--stdin"]);
+  expect(cli.flagsFor("attention")).toEqual(["--as", "--clear", "--from", "--question"]);
+  expect(cli.flagsFor("join")).toEqual(["--as", "--from", "--since"]);
+  expect(cli.flagsFor("tail")).toEqual(["--as", "--from", "--since"]);
+  for (const v of ["remove", "poke", "close"]) expect(cli.flagsFor(v)).toEqual(["--as", "--from"]);
+  for (const v of ["state", "list", "info"]) expect(cli.flagsFor(v)).toEqual([]);
 });
 
-// `RECOGNIZED_FLAGS` is derived from `CLI_OPTIONS`, so the only way it can lie
-// is if the parser stops reading that object. Assert the invocation does.
-test("the root parser reads CLI_OPTIONS, the same object choices is built from (A1)", () => {
-  const src = readFileSync(CLI, "utf8");
-  expect(src).toContain("options: CLI_OPTIONS,");
-  expect(RECOGNIZED_FLAGS).toContain("--path");
-  expect(RECOGNIZED_FLAGS.every((f) => f.startsWith("--"))).toBe(true);
+// ⚠ THE DEFAULTED FLAGS. `clear`, `stdin` and `no-open` declare `default:
+// false`; a row that does not list them must not be refused over a default it
+// never saw, and a refusal must name only the row's own set. Every call below
+// throws in the parse stage, before a row runs, so no daemon is contacted.
+test("a defaulted flag never trips a row that does not list it", async () => {
+  await expect(cli.dispatch(["poke", "p1", "--clear"])).rejects.toMatchObject({
+    kind: "usage",
+    extra: { choices: ["--as", "--from"] },
+  });
+  // No flag given: the arity check is the only refusal, not a stray default.
+  await expect(cli.dispatch(["remove"])).rejects.toMatchObject({
+    message: "remove: missing required <id>",
+  });
+  await expect(cli.dispatch(["remove", "a", "b"])).rejects.toMatchObject({ kind: "usage" });
 });
+
+// ⚠ FLAG-DEPENDENT ARITY: status's summary is positional OR --stdin.
+test("status: <summary> is declared optional (the check carries the rest)", async () => {
+  const row = cli.declaration().commands.find((c) => c.path.join(" ") === "status");
+  expect(row?.positionals).toEqual([
+    { name: "id", required: true },
+    { name: "summary", required: false, variadic: true },
+  ]);
+  await expect(cli.dispatch(["status", "p1"])).rejects.toMatchObject({ kind: "usage" });
+});
+
+// acc A6: a value after `--` is a positional, never an option.
+test("a token after -- is a positional, never an option (A6)", async () => {
+  await expect(cli.dispatch(["--", "--bogus"])).rejects.toMatchObject({ kind: "usage" });
+  await expect(cli.dispatch(["remove", "--", "--clear", "extra"])).rejects.toMatchObject({
+    message: expect.stringContaining("unexpected argument"),
+  });
+});
+
+// ── s5-8 · `close` with nothing to close is a benign no-op ───────────────────
+//
+// It printed `{ok:true, applied:false, error:"no daemon running"}` at exit 0 —
+// a rejection's shape at a success's exit, the two faults cancelling. And a
+// live close returned on the ACK, before the daemon was down, so `close; close`
+// answered applied:true twice: a check written that way passed vacuously (the
+// item's fixture trap). The daemon-down precondition is therefore ASSERTED
+// below as its own step, not assumed.
+
+async function runClose(home: string) {
+  const proc = Bun.spawn(["bun", "run", CLI, "close"], {
+    env: { ...process.env, ASTROLABE_HOME: home },
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const [out, err, code] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+  return { out: out.trim(), err: err.trim(), code };
+}
+
+/** A fake daemon that acks `close` and then goes down `downAfterMs` later
+ *  (removing its port file, as the real one does) — or never, when null. */
+function closingDaemon(home: string, downAfterMs: number | null) {
+  const portFile = join(home, "daemon.port");
+  const server = Bun.serve({
+    port: 0,
+    hostname: "127.0.0.1",
+    async fetch(req) {
+      const url = new URL(req.url);
+      if (url.pathname === "/state") return Response.json({ state: { projects: [] } });
+      if (url.pathname === "/cmd" && req.method === "POST") {
+        const body = (await req.json()) as { type?: string };
+        if (body.type === "close" && downAfterMs !== null)
+          setTimeout(() => {
+            server.stop(true);
+            rmSync(portFile, { force: true });
+          }, downAfterMs);
+        return Response.json({ ok: true, applied: true });
+      }
+      return new Response("nope", { status: 404 });
+    },
+  });
+  cleanup.push(() => server.stop(true));
+  writeFileSync(portFile, String(server.port));
+  return server;
+}
+
+async function answers(port: number | undefined): Promise<boolean> {
+  try {
+    return (await fetch(`http://127.0.0.1:${port}/state`)).ok;
+  } catch {
+    return false;
+  }
+}
+
+function expectAlreadyClosed(r: { out: string; err: string; code: number }) {
+  expect(r.code).toBe(0);
+  expect(r.err).toBe("");
+  const env = JSON.parse(r.out) as Record<string, unknown>;
+  expect(env).toEqual({ ok: true, applied: false, outcome: "already-closed" });
+  // Presence, not value: a no-op carries NO `error` key at all.
+  expect("error" in env).toBe(false);
+}
+
+test("close with no daemon is a no-op: exit 0, a noun, no error (s5-8)", async () => {
+  const home = mkdtempSync(join(tmpdir(), "astrolabe-close-none-"));
+  cleanup.push(() => rmSync(home, { recursive: true, force: true }));
+  expectAlreadyClosed(await runClose(home));
+});
+
+test("close with a stale port file (daemon killed, file left) is the same no-op", async () => {
+  const home = mkdtempSync(join(tmpdir(), "astrolabe-close-stale-"));
+  cleanup.push(() => rmSync(home, { recursive: true, force: true }));
+  // Bind, record, and kill — the port file now names a port nothing answers on.
+  const dead = Bun.serve({ port: 0, hostname: "127.0.0.1", fetch: () => new Response("x") });
+  writeFileSync(join(home, "daemon.port"), String(dead.port));
+  dead.stop(true);
+  expect(await answers(dead.port)).toBe(false); // precondition: nothing answers
+  expectAlreadyClosed(await runClose(home));
+});
+
+test("close waits until the daemon is down, so close; close is applied then the no-op", async () => {
+  const home = mkdtempSync(join(tmpdir(), "astrolabe-close-twice-"));
+  cleanup.push(() => rmSync(home, { recursive: true, force: true }));
+  // Teardown takes 500 ms after the ack — longer than the old CLI waited (0).
+  const d = closingDaemon(home, 500);
+  expect(await answers(d.port)).toBe(true);
+
+  const first = await runClose(home);
+  expect(first.code).toBe(0);
+  expect(JSON.parse(first.out)).toEqual({ ok: true, applied: true });
+
+  // ⛔ THE PRECONDITION, ASSERTED: the first close returned only once the
+  // daemon was down. Against the old CLI this fails — it returned on the ack.
+  expect(await answers(d.port)).toBe(false);
+
+  expectAlreadyClosed(await runClose(home));
+}, 15000);
+
+test("close reports a daemon still answering at the bound as a failure, not success", async () => {
+  const home = mkdtempSync(join(tmpdir(), "astrolabe-close-wedged-"));
+  cleanup.push(() => rmSync(home, { recursive: true, force: true }));
+  closingDaemon(home, null); // acks close, never goes down
+  const r = await runClose(home);
+  expect(r.code).toBe(1);
+  expect(r.out).toBe("");
+  const env = JSON.parse(r.err) as { ok: boolean; error: { kind: string; message: string } };
+  expect(env.ok).toBe(false);
+  expect(env.error.kind).toBe("internal");
+  expect(env.error.message).toContain("still answering");
+}, 15000);

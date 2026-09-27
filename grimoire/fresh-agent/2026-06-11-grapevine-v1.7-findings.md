@@ -14,9 +14,9 @@ task:
 # Fresh-Agent Findings — grapevine V1.7 (2026-06-11)
 
 The cold agent-facing complement to the live human+agent soak (see
-`docs/projects/grapevine-v1.7/soak-findings.md`). The soak proved the human
-side; this proves an installed agent can operate V1.7 from the updated SKILL
-alone, marketplace-isolated to the skill folder.
+`docs/features/_archive/grapevine-v1.7/soak-findings.md`). The soak proved the
+human side; this proves an installed agent can operate V1.7 from the updated
+SKILL alone, marketplace-isolated to the skill folder.
 
 ## Headline
 

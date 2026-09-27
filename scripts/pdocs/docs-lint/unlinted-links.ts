@@ -12,7 +12,11 @@
 // EXCEPTION: `ALREADY_LINTED`, `GENERATED`, and the module comment
 // that describes them are this repo's layout rather than the source's. The code
 // below them is the source, plus an `export` on `trackedMarkdown` so the entry
-// point can filter the corpus without a second policy living in here.
+// point can filter the corpus without a second policy living in here, and an
+// optional `env` on it so the entry point can hand git an environment with the
+// repository-naming variables a commit hook exports taken out — omitted, the
+// spawn inherits as the source's does. Which variables is this repo's policy
+// (`gitEnv` in `scripts/pdocs/lint/rules.ts`), so the list does not live here.
 
 // Link and anchor resolution for the authored Markdown no other lint reads.
 //
@@ -76,8 +80,11 @@ const GENERATED = new Set(["CHANGELOG.md"]);
  * second spelling of "what is not ours" to keep in step with `version-literals.ts`, and a new
  * document joins the gate at `git add` — before the commit that would publish it.
  */
-export function trackedMarkdown(repoRoot: string): string[] {
-  const out = Bun.spawnSync(["git", "ls-files", "-z", "--", "*.md"], { cwd: repoRoot });
+export function trackedMarkdown(
+  repoRoot: string,
+  env?: Record<string, string | undefined>,
+): string[] {
+  const out = Bun.spawnSync(["git", "ls-files", "-z", "--", "*.md"], { cwd: repoRoot, env });
   if (!out.success) return [];
   return new TextDecoder()
     .decode(out.stdout)

@@ -23,25 +23,25 @@ route it to Cole through the lead.
 
 **Project:** `spell-hardening`
 
-- [Proposal](docs/projects/spell-hardening/proposal.md) — scope, the harm
+- [Proposal](docs/features/spell-hardening/feature.md) — scope, the harm
   ordering, and the **two rulings** you build to (D1 snapshot semantics, D2
   heartbeat card model), each with the reasoning that produced it
-- [Roadmap](docs/projects/spell-hardening/roadmap.md) — four phases with owners,
+- [Roadmap](docs/features/spell-hardening/roadmap.md) — four phases with owners,
   verified file refs, and a cold gate per phase
 
 **The triage these came from** (read the ones for your phase — they carry the
 reproduction and the measured evidence, and are more detailed than the plan):
 
 - `docs/backlog/2026-08-05-cli-stdout-truncation-on-pipe.md` — **P0**
-- `docs/backlog/2026-08-05-bounty-snapshot-clobber-data-loss.md` +
-  `docs/backlog/2026-07-16-bounty-daemon-idle-death.md` +
-  `docs/backlog/2026-06-15-bounty-daemon-robustness-nits.md` — **P1**
-- `docs/backlog/2026-08-05-grapevine-bounded-tail.md` +
-  `docs/backlog/2026-06-15-bounty-tail-drain.md` — **P2**
-- `docs/backlog/2026-08-05-bounty-list-lists-boards-not-tasks.md` +
-  `docs/backlog/2026-08-05-bounty-heartbeat-session-length-cards.md` +
-  `docs/backlog/2026-06-22-bounty-heartbeat-skip-blocked.md` +
-  `docs/backlog/2026-07-16-bounty-board-ui-polish.md` — **P3**
+- `docs/items/bounty-snapshot-clobber-data-loss.md` +
+  `docs/items/2026-07-16-bounty-daemon-idle-death.md` +
+  `docs/items/bounty-daemon-robustness-nits.md` — **P1**
+- `docs/items/grapevine-bounded-tail.md` + `docs/items/bounty-tail-drain.md` —
+  **P2**
+- `docs/items/bounty-list-lists-boards-not-tasks.md` +
+  `docs/items/bounty-heartbeat-session-length-cards.md` +
+  `docs/items/bounty-heartbeat-skip-blocked.md` +
+  `docs/items/bounty-board-ui-polish.md` — **P3**
 
 **Background:** `AGENTS.md`, `grimoire/house-style.md`,
 `docs/PROJECT_MANIFESTO.md`, `.anthill/README.md` (the SOP),

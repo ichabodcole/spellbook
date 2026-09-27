@@ -21,7 +21,8 @@
 //   bun cli.ts message <text...> [--stdin]                  # toast
 //   bun cli.ts init [--title ..] [--stdin-tasks]            # seed the board (each task needs id+title+status)
 //   bun cli.ts list                                        # running boards (live)
-//   bun cli.ts close | info | sessions | help              # sessions = saved snapshots
+//   bun cli.ts close | info | sessions                     # sessions = saved snapshots
+//   bun cli.ts version | schema | help                     # the kit registry's rows
 //
 // Identity: --as <name> (or $BOUNTY_AS) stamps the event `by`, drives self-echo
 // suppression + claim/--mine. Ownership: --owner assigns; tail --owner/--mine
@@ -54,15 +55,12 @@ import {
 import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { parseArgs as nodeParseArgs } from "node:util";
 import {
-  CliError,
-  die,
-  type ErrExtra,
-  type ErrKind,
-  reportCliError,
-  setCurrentCommand,
-} from "../../kit/wire/errors.ts";
+  type TaskStatus,
+  VALID_STATUS,
+} from "../../../plugins/spellbook/skills/bounty/shared/types";
+import { type CommandSpec, defineCli, type Invocation } from "../../kit/cli/registry.ts";
+import { CliError, die, type ErrKind, reportCliError } from "../../kit/wire/errors.ts";
 import {
   commandLine,
   readSince,
@@ -105,9 +103,6 @@ function daemonCwd(): string {
   return existsSync(join(DIST_DIR, "index.html")) ? SKILL_ROOT : SURFACE_CWD;
 }
 const SNAPSHOTS_DIR = join(process.env.BOUNTY_HOME ?? join(homedir(), ".bounty"), "snapshots");
-
-type TaskStatus = "todo" | "doing" | "review" | "done";
-const VALID_STATUS: TaskStatus[] = ["todo", "doing", "review", "done"];
 
 type Session = {
   url: string;
@@ -255,21 +250,70 @@ function resolveSession(
   },
   exists: (path: string) => boolean = existsSync,
 ): string | undefined {
-  if (typeof flags["session-key"] === "string")
-    return sessionKeyToId(flags["session-key"], startDir, exists);
-  if (typeof flags.session === "string") return flags.session;
-  if (env.BOUNTY_SESSION_KEY) return sessionKeyToId(env.BOUNTY_SESSION_KEY, startDir, exists);
-  if (env.BOUNTY_SESSION) return env.BOUNTY_SESSION;
+  return resolveSessionSource(flags, env, startDir, readFile, exists).id;
+}
+
+/** Where a resolved session id came from, and whether the caller NAMED it (#98).
+ *
+ *  `from` is prose for the one place a reader needs it: a tail that cannot find
+ *  its board must say WHICH id it looked for and WHY that id — above all that a
+ *  key's id is DERIVED from the cwd, so the same key from another directory is
+ *  another board (the 40-minute puzzle in #98). `named` is true only for an id
+ *  typed on the command line (`--session-key`, `--session`): an id from the
+ *  environment or a `.bounty-session` file is every anthill seat's FIRST arm,
+ *  which must wait for its board (B1), so it is not a named target. */
+export type SessionSource = { id?: string; from: string; named: boolean; key?: string };
+
+function derivedFrom(label: string, key: string, startDir: string, exists: (p: string) => boolean) {
+  const root = findScopeRoot(startDir, exists);
+  const scope = root === startDir ? "" : `, scope root ${root}`;
+  return `derived from ${label} '${key}' + cwd ${startDir}${scope}`;
+}
+
+/** `resolveSession`'s precedence, ONCE, with its provenance. `resolveSession`
+ *  is this function's `.id`, so the two cannot disagree. */
+export function resolveSessionSource(
+  flags: Record<string, string | boolean>,
+  env: Record<string, string | undefined> = process.env,
+  startDir: string = process.cwd(),
+  readFile: (path: string) => string | null = (p) => {
+    try {
+      return readFileSync(p, "utf8");
+    } catch {
+      return null;
+    }
+  },
+  exists: (path: string) => boolean = existsSync,
+): SessionSource {
+  const flagKey = flags["session-key"];
+  if (typeof flagKey === "string")
+    return {
+      id: sessionKeyToId(flagKey, startDir, exists),
+      from: derivedFrom("--session-key", flagKey, startDir, exists),
+      named: true,
+      key: flagKey,
+    };
+  if (typeof flags.session === "string")
+    return { id: flags.session, from: "from --session", named: true };
+  if (env.BOUNTY_SESSION_KEY)
+    return {
+      id: sessionKeyToId(env.BOUNTY_SESSION_KEY, startDir, exists),
+      from: derivedFrom("$BOUNTY_SESSION_KEY", env.BOUNTY_SESSION_KEY, startDir, exists),
+      named: false,
+      key: env.BOUNTY_SESSION_KEY,
+    };
+  if (env.BOUNTY_SESSION)
+    return { id: env.BOUNTY_SESSION, from: "from $BOUNTY_SESSION", named: false };
   let dir = startDir;
   while (true) {
-    const contents = readFile(join(dir, ".bounty-session"));
-    const id = contents?.trim();
-    if (id) return id;
+    const marker = join(dir, ".bounty-session");
+    const id = readFile(marker)?.trim();
+    if (id) return { id, from: `from ${marker}`, named: false };
     const parent = dirname(dir);
     if (parent === dir) break; // reached the filesystem root
     dir = parent;
   }
-  return undefined;
+  return { from: `looked for the latest-board pointer ${sessionFilePath()}`, named: false };
 }
 
 /** ⛔ NULL MEANS "NO SESSION", AND NOTHING ELSE.
@@ -285,7 +329,7 @@ function resolveSession(
  *  contract cell failed once under the full gate with the not_found exit where
  *  the contract said usage, and passed alone and on re-run. Fixed there
  *  2026-09-07; found still standing here 2026-09-08 by the backend duplication
- *  recon (docs/investigations/2026-09-08-backend-duplication-recon.md).
+ *  recon (docs/items/backend-duplication-recon/write-up.md).
  *
  *  ENOENT is the only honest absence. Everything else says what it was.
  *
@@ -463,7 +507,7 @@ async function api(
   return { status: res.status, data };
 }
 
-// Split argv into positionals + flags. `--flag value` or boolean `--flag`.
+// The options table the kit registry parses (`defineCli`, below).
 // #81 / D4 — THE RECOGNIZED SET, AT PARSER ALTITUDE.
 //
 // The hand-rolled parser this replaces had three defects and every one of them
@@ -487,7 +531,7 @@ async function api(
 //   a "boolean" that should be string breaks `--owner alice` (alice becomes a
 //   positional)
 // Both are silent enough to ship. This set is thoth's audited artifact
-// (`docs/projects/spell-hardening/artifacts/p0c-recognized-flag-sets.md`):
+// (`docs/features/spell-hardening/artifacts/p0c-recognized-flag-sets.md`):
 // 22 flags, 15 string / 7 boolean, each settled by unambiguous evidence at
 // EVERY consumption site. `expect` and `size` are string because they type off
 // parseExpect/parseSize, not off the bare truthiness at the call site.
@@ -515,52 +559,12 @@ const CLI_OPTIONS = {
   pin: { type: "boolean" },
   stdin: { type: "boolean" },
   "stdin-tasks": { type: "boolean" },
+  // s5-5: `update`'s explicit clear. An empty `--notes` is refused, because a
+  // deliberate `--notes ""` and a command substitution that produced nothing
+  // are the same string by the time they arrive; this flag is the one way to
+  // say "clear" on purpose.
+  "clear-notes": { type: "boolean" },
 } as const;
-
-/**
- * ── THE ACCEPTED SETS, DECLARED ONCE (register A1) ──────────────────────────
- *
- * `choices` is *what WOULD have been accepted*, so it is only worth emitting
- * while it is the ACTUAL set. Both sets below are read by the code that does
- * the accepting: `RECOGNIZED_FLAGS` off `CLI_OPTIONS`, which `parseArgs`
- * passes to `node:util`; `VERBS` bound to the dispatch switch by
- * `cli.test.ts`, because a case label is not a value and nothing in the type
- * system ties a declaration to a switch.
- */
-export const RECOGNIZED_FLAGS: readonly string[] = Object.keys(CLI_OPTIONS)
-  .map((k) => `--${k}`)
-  .sort();
-
-/** The dispatched verbs, in the switch's own order. */
-export const VERBS: readonly string[] = [
-  "open",
-  "tail",
-  "state",
-  "add",
-  "update",
-  "claim",
-  "block",
-  "unblock",
-  "remove",
-  "message",
-  "init",
-  "close",
-  "info",
-  "sessions",
-  "list",
-  "help",
-];
-
-/**
- * The flag-shaped spellings of `help`, which the switch also answers. They are
- * in `choices` for mind-mapper's reason: a roster built from the verbs alone
- * understates the accepted set by exactly the aliases, and acc compares
- * advertised against recorded.
- */
-export const VERB_ALIASES: readonly string[] = ["--help", "-h"];
-
-/** What the root actually accepts as a first token. */
-export const VERB_CHOICES: readonly string[] = [...VERBS, ...VERB_ALIASES];
 
 /**
  * The flags that CONTRIBUTE to an `update` patch — the set whose emptiness is
@@ -577,58 +581,8 @@ export const UPDATE_PATCH_FLAGS: readonly string[] = [
   "--size",
   "--expect",
   "--stdin",
+  "--clear-notes",
 ];
-
-// A usage failure is THROWN rather than exiting, so `main` can return 2 and let
-// the runtime drain stdout — `die()` is process.exit, which is the defect this
-// sprint's sibling lanes exist to remove. Same reason the #80.1 refusal does
-// not route through die() either.
-class UsageError extends Error {
-  // ⛔ REGISTER A1 — THE ROSTER RIDES `choices`, NOT THE SENTENCE. This class
-  // used to carry the recognized-flag set inside its MESSAGE, which meant the
-  // one set an agent needs to route on was reachable only by parsing prose.
-  // Carrying `ErrExtra` lets `dispatch` hand it to `die` unchanged.
-  readonly extra?: ErrExtra;
-  constructor(message: string, extra?: ErrExtra) {
-    super(message);
-    this.extra = extra;
-  }
-}
-
-function parseArgs(args: string[]): {
-  pos: string[];
-  flags: Record<string, string | boolean>;
-} {
-  try {
-    const { values, positionals } = nodeParseArgs({
-      args,
-      options: CLI_OPTIONS,
-      strict: true,
-      allowPositionals: true,
-    });
-    return {
-      pos: positionals,
-      flags: values as Record<string, string | boolean>,
-    };
-  } catch (e) {
-    // node:util names the offending token; keep that and add the escape hatch,
-    // because the most likely victim is free prose containing a dash-dash word
-    // (`add write the --draft section`), which TODAY truncates silently.
-    const detail = e instanceof Error ? e.message : String(e);
-    // ⛔ THE SET MOVED, IT WAS NOT COPIED. `choices` is now the ONLY place the
-    // recognized flags appear on a rejection — emitting them twice, once as
-    // data and once inside the message, is how one copy rots (A1's rule).
-    // ⚠ `choices` ONLY FOR AN UNKNOWN OPTION: node's other parse rejections
-    // (a recognised flag given a bad value) are not a closed-set failure, and
-    // answering one with the flag roster names the thing that was right.
-    const code =
-      e && typeof e === "object" && "code" in e ? String((e as { code: unknown }).code) : "";
-    throw new UsageError(
-      `${detail}\n` + `  for free text containing dashes, use --stdin, or put it after a bare --`,
-      code === "ERR_PARSE_ARGS_UNKNOWN_OPTION" ? { choices: [...RECOGNIZED_FLAGS] } : undefined,
-    );
-  }
-}
 
 type CmdResult = {
   ok?: boolean;
@@ -1032,6 +986,28 @@ async function cmdState(
   printJson({ ...(data as Record<string, unknown>), readMode: "full" });
 }
 
+/** How long a tail keeps retrying a NAMED target (`--session`, `--session-key`)
+ *  that does not resolve before it exits `not_found` (#98). "A few seconds",
+ *  the reporter's ask: long enough for a board `open`ed alongside the tail to
+ *  write its pointer, short enough that a supervisor sees a dead end. The check
+ *  runs at each retry, so with the kit's backoff (250 ms doubling to 5 s) the
+ *  exit lands at the first retry past the grace — about 7.75 s. Deliberately
+ *  NOT a flag (ruled 2026-09-27: no caller asked for one). */
+const NAMED_TARGET_GRACE_MS = 5000;
+
+/** ⚠ INTERNAL, UNDOCUMENTED: `BOUNTY_TAIL_GRACE_MS` overrides the grace so the
+ *  test suite does not sleep 5 s a cell. Not an agent's act, not in any help. */
+function namedTargetGraceMs(raw = process.env.BOUNTY_TAIL_GRACE_MS): number {
+  const n = raw === undefined ? Number.NaN : Number(raw);
+  return Number.isFinite(n) && n >= 0 ? n : NAMED_TARGET_GRACE_MS;
+}
+
+/** A board that existed here and closed leaves its snapshot: the daemon writes
+ *  `$BOUNTY_HOME/snapshots/<id>.json` on close and keeps it (server.ts). */
+function hasSnapshot(id: string): boolean {
+  return existsSync(join(SNAPSHOTS_DIR, `${id}.json`));
+}
+
 /** `--since` through the kit's one reader (`kit/wire/tailHandoff.ts`,
  *  `readSince`): a form this tail does not accept — an epoch bookmark from
  *  another spell's or version's handoff line — is refused with the accepted
@@ -1086,6 +1062,8 @@ async function cmdTail(
     sessionFlag?: boolean;
     /** The session key in play (`--session-key` or `$BOUNTY_SESSION_KEY`). */
     key?: string;
+    /** Where `session` came from, and whether the caller named it (#98). */
+    source?: SessionSource;
   } = {},
 ): Promise<number> {
   const owner = scope.owner;
@@ -1108,6 +1086,38 @@ async function cmdTail(
   // has — and a seat's FIRST arm must still wait for its board to appear.
   const reArm = arm.sessionFlag === true || arm.sinceGiven === true;
   let announcedPin = false;
+
+  // #98: what this tail looks for, and whether the caller NAMED it. A named
+  // target that never resolves is a dead end, not a wait — the same wrong id
+  // is re-read on every iteration — so it gets a grace and then `not_found`.
+  const source: SessionSource = arm.source ?? {
+    ...(session !== undefined ? { id: session } : {}),
+    from:
+      session !== undefined
+        ? "resolved"
+        : `looked for the latest-board pointer ${sessionFilePath()}`,
+    named: false,
+  };
+  const named = source.named && source.id !== undefined;
+  const graceMs = namedTargetGraceMs();
+  const startedAt = Date.now();
+  const lookedFor = () =>
+    source.id !== undefined
+      ? `for ${source.id} (${source.from})`
+      : pinned !== undefined
+        ? `for ${pinned} (pinned off the latest-board pointer)`
+        : `(${source.from})`;
+  // ⛔ A KEYED BOARD COMES BACK BY ITS KEY. `open --restore <k-id>` run
+  // as printed spawns an UNKEYED stray board; `open --session-key K`
+  // derives the same id and restores it by default (#69).
+  const keyedComeBack = () =>
+    arm.key !== undefined && pinned !== undefined && sessionKeyToId(arm.key) === pinned;
+  const comeBackCmd = () =>
+    commandLine(
+      keyedComeBack() && arm.key !== undefined
+        ? ["open", "--session-key", arm.key, "--no-open"]
+        : ["open", "--restore", pinned ?? "<id>", "--no-open"],
+    );
 
   // The re-arm keeps this tail's pin and scope, so the next watch is this one.
   const again = () => [
@@ -1140,12 +1150,39 @@ async function cmdTail(
         }
         return `http://127.0.0.1:${resolved.session.port}`;
       },
-      onUnresolved: () => {
+      onUnresolved: ({ everResolved }) => {
+        const existed = everResolved || (pinned !== undefined && hasSnapshot(pinned));
         // D1: a tail given --session or a bookmark is re-arming an EXISTING
         // board, so not finding it means it closed — `tail.closed`, never a
         // silent retry-forever. Only a bare first arm waits for a board.
-        if (reArm) return "stop";
-        process.stderr.write("# no session yet, retrying…\n");
+        // ⛔ #98: "existing" is now CHECKED for a named target, not assumed.
+        // A `--session` naming a board this host never had used to end here
+        // too, saying "the session closed" and offering `open --restore <id>`,
+        // which spawns an unrelated fresh board. The evidence is the snapshot:
+        // the daemon writes `$BOUNTY_HOME/snapshots/<id>.json` on every close
+        // and keeps it, and a daemon killed before that write leaves its
+        // pointer behind (so the tail resolves it and ends `tail.lost`, not
+        // here). No pointer and no snapshot therefore means never opened here
+        // — or its snapshot was deleted, which is why the words below say
+        // "not found" rather than "never existed".
+        if (reArm && (!named || existed)) return "stop";
+        // A named target the tail once reached, whose pointer is now gone:
+        // it closed (a `closed` frame normally ends the tail before this).
+        if (named && everResolved) return "stop";
+        if (named && Date.now() - startedAt >= graceMs) {
+          const hint =
+            pinned !== undefined && hasSnapshot(pinned)
+              ? `board ${pinned} existed here and has closed; bring it back: ${comeBackCmd()}`
+              : keyedComeBack()
+                ? `no board was opened under this key from this directory; the id is project-scoped (it hashes the repo root), so check the key and the cwd, or open it: ${comeBackCmd()}`
+                : "no board with this id is running here and none left a snapshot; check the id (`sessions` lists the boards this host can restore)";
+          die(
+            `no session ${pinned} found (${source.from}) — a named target; gave up after ${graceMs}ms`,
+            "not_found",
+            { hint },
+          );
+        }
+        process.stderr.write(`# no session yet ${lookedFor()} — retrying…\n`);
         return "retry";
       },
       path: "/events",
@@ -1178,12 +1215,7 @@ async function cmdTail(
         // ⛔ A KEYED BOARD COMES BACK BY ITS KEY. `open --restore <k-id>` run
         // as printed spawns an UNKEYED stray board; `open --session-key K`
         // derives the same id and restores it by default (#69).
-        comeBack: () =>
-          commandLine(
-            arm.key !== undefined && pinned !== undefined && sessionKeyToId(arm.key) === pinned
-              ? ["open", "--session-key", arm.key, "--no-open"]
-              : ["open", "--restore", pinned ?? "<id>", "--no-open"],
-          ),
+        comeBack: comeBackCmd,
       },
     },
   );
@@ -1339,27 +1371,586 @@ async function readStdin(): Promise<string> {
   return (await Bun.stdin.text()).replace(/\n$/, "");
 }
 
-const HELP = `bounty — an agent-driven task board.
+// ── THE COMMAND TABLE — dispatch, help, `schema` and every `choices` walk it ──
+//
+// Through the house's one registry (`src/kit/cli/registry.ts`, 2026-09-26).
+// bounty's own `switch (verb)`, its `VERBS` list (bound to the switch by a
+// source-parsing test, because a case label is not a value), its hand-written
+// HELP and its root parser were deleted when it moved onto the module. `help`,
+// `version` and `schema` are the module's rows: declared and strict.
+//
+// ⚠ WHAT THE MOVE CHANGED FOR A CALLER (acc L0; named for the release note):
+//   - a bare `bounty` is a usage error (one envelope on stderr, exit 2) where it
+//     printed help to stdout at exit 0;
+//   - `--version` / `-V` / `version` answer `{name, version}` (it had none);
+//   - each verb accepts only the flags on its row, so a flag that belongs to
+//     another verb (`list --status x`) is refused where it was ignored;
+//   - at the root, `bounty -- --x` is `unknown command "--x"` (acc A6).
+// After a `--` INSIDE a verb every token is a positional, as it already was:
+// `add -- text --session-key K` titles the card "text --session-key K" (c1).
 
-  open   [--title ..] [--timeout S] [--no-open] [--restore <id>] [--pin] [--session-key <key> [--fresh]]   spawn a board daemon (--pin binds it to cwd; --session-key binds it to a caller-owned key, idempotently)
-  state  [--mine | --owner <name>] [--as <name>]   read-back: { state, cursor, readMode }
-           (--full is accepted but redundant: the read is full by default — b6)
-  tail   [--since N] [--once] [--owner <name> | --mine] [--as <name>]   SSE events → JSONL (Monitor)
-         ${WINDOW_HELP}
-  add    <title...> [--status ..] [--notes ..] [--owner ..] [--tag a,b] [--size S|M|L] [--expect <min>] [--id ..] [--stdin]   add a task
-  update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag a,b] [--size S|M|L] [--expect <min>] [--stdin]      patch a task (--tag "" clears)
-  --size S|M|L → heartbeat estimate (5/10/20 min); --expect <min> overrides. A doing task that overruns pokes its owner.
-  claim  <id> [--as <name>]          self-claim an UNOWNED task (rejected if owned by another)
-  block  <id> --on <id>[,<id>...]    mark <id> blocked on other task(s) (rejected on a cycle)
-  unblock <id> --on <id>[,<id>...]   remove blocker edge(s)
-  remove <id>                        delete a task
-  message <text...> [--stdin]        show a toast on the board
-  init   [--title ..] [--stdin-tasks]   seed the board (tasks = JSON array on stdin; each
-           task REQUIRES id + title + status. init does NOT mint ids, unlike add. Any
-           dropped task is reported per-entry in tasksDropped)
-  list                               list currently-RUNNING boards (id/tasks/url/title)
-  sessions                           list saved SNAPSHOTS (incl. closed boards)
-  close | info | help
+type Flag = keyof typeof CLI_OPTIONS;
+type Flags = Record<string, string | boolean>;
+/** A row as bounty writes it: the handler takes `(pos, flags, session, as)`,
+ *  and `on` adapts it to the kit's `run(inv)`. A number returned is the exit
+ *  code (`open`'s #80.1 refusal, `tail`); anything else is 0. */
+type Row = Omit<CommandSpec<Flag>, "run" | "rejectHint"> & {
+  run: (
+    pos: string[],
+    flags: Flags,
+    session: string | undefined,
+    as: string | undefined,
+  ) => unknown;
+};
+
+/** bounty declares no `multiple` flag, so every value is a string or a boolean.
+ *  Session and identity resolve here, once, exactly as the switch did. */
+const on =
+  (h: Row["run"]) =>
+  (inv: Invocation<Flag>): unknown => {
+    const flags = inv.flags as Flags;
+    return h(inv.pos, flags, resolveSession(flags), resolveAs(flags));
+  };
+
+/** Every flag rejection's hint: the repair for prose in which a word happens to
+ *  start with `--` (`add write the --draft section`). */
+const DASH_HINT = "for free text containing dashes, use --stdin, or put it after a bare --";
+
+/** Board targeting — on every verb that talks to a board. */
+const BOARD = ["session", "session-key"] as const satisfies readonly Flag[];
+/** Board targeting plus the caller's identity, stamped on the event `by`. */
+const WRITE = [...BOARD, "as"] as const satisfies readonly Flag[];
+
+async function cmdAdd(
+  pos: string[],
+  flags: Flags,
+  session: string | undefined,
+  as: string | undefined,
+) {
+  const title = flags.stdin === true ? await readStdin() : pos.join(" ");
+  if (!title) die("usage: add <title...> [--status ..] [--notes ..] [--stdin]");
+  // A `--status` outside the set was refused by the row's `check`; it used to
+  // fall back to "todo" here without a word.
+  const status = typeof flags.status === "string" ? (flags.status as TaskStatus) : "todo";
+  const task: Record<string, unknown> = {
+    id: typeof flags.id === "string" ? flags.id : newTaskId(),
+    title,
+    status,
+  };
+  if (typeof flags.notes === "string") task.notes = flags.notes;
+  if (typeof flags.owner === "string") task.owner = flags.owner;
+  if (typeof flags.tag === "string") task.tags = parseTags(flags.tag);
+  const addSize = parseSize(flags.size);
+  if (addSize) task.size = addSize;
+  const addExpect = parseExpect(flags.expect);
+  if (addExpect !== undefined) task.expect = addExpect;
+  const addIgnored = ignoredValues(flags);
+  warnIgnored(addIgnored);
+  // #83 — `add` was the ONLY write verb that discarded the daemon's verdict:
+  // update/claim/block/unblock/remove all read it. So this is an oversight
+  // corrected to match its four siblings, not a new convention.
+  //
+  // No no-op branch here, unlike `update`. `update` has a legitimate
+  // applied:false (the task already held the value); `add` does not — a
+  // refusal means the shape was invalid or the id was taken, and both are
+  // real failures. The daemon names which.
+  const res = await postCmd(session, { type: "task.add", task }, { as, quiet: true });
+  // A duplicate `--id` is a `conflict` (6) and an invalid shape is a `usage`
+  // (2); the daemon says which. Neither is `internal`, which is what the
+  // old `return 1` claimed.
+  if (!res.applied) refuseFromDaemon(res, `task ${task.id} was not added`);
+  // Present-and-null, never absent (the restoreSkipped lesson, D1.2): a
+  // field that appears only when it has something to say cannot be told
+  // apart from a build that does not emit it at all.
+  printJson({ ok: true, added: task.id, valuesIgnored: addIgnored.length ? addIgnored : null });
+}
+
+async function cmdUpdate(
+  pos: string[],
+  flags: Flags,
+  session: string | undefined,
+  as: string | undefined,
+) {
+  const id = pos[0] as string; // arity: the row declares <id> required
+  const patch: Record<string, unknown> = {};
+  // The combinations (`--stdin` with `--title`, `--clear-notes` with `--notes`)
+  // and the empty flag values are refused by the row's `check`, before this
+  // runs. An empty STDIN can only be seen here, after the read, and it is
+  // refused the way `add` refuses an empty title (s5-9): an empty pipe is far
+  // more often a failed producer than a wish to blank the title.
+  if (flags.stdin === true) {
+    const title = await readStdin();
+    if (!title)
+      die(
+        "update: --stdin read an empty title, and a title is never cleared; pipe the new title, or use --notes <text> / --clear-notes for the notes",
+      );
+    patch.title = title;
+  } else if (typeof flags.title === "string") patch.title = flags.title;
+  if (typeof flags.status === "string") patch.status = flags.status;
+  if (typeof flags.notes === "string") patch.notes = flags.notes;
+  else if (flags["clear-notes"] === true) patch.notes = "";
+  if (typeof flags.owner === "string") patch.owner = flags.owner; // lead reassignment
+  if (typeof flags.tag === "string") patch.tags = parseTags(flags.tag); // SET; "" clears
+  const upSize = parseSize(flags.size);
+  if (upSize) patch.size = upSize;
+  const upExpect = parseExpect(flags.expect);
+  if (upExpect !== undefined) patch.expect = upExpect;
+  const upIgnored = ignoredValues(flags);
+  warnIgnored(upIgnored);
+  if (Object.keys(patch).length === 0) {
+    // ⛔ THE ENVELOPE NEVER PRINTS ON THIS PATH, so the ignored-flag report
+    // has to ride the refusal itself — and this is the case where the caller
+    // most needs it. `update <id> --size bogus` with no other flag lands
+    // HERE: the size was dropped, which left the patch empty, which is why
+    // it refuses. Measured, and the refusal used to blame an empty patch
+    // while saying nothing about the flag the caller actually passed.
+    //
+    // `--size`/`--expect` are also ADDED to the flag list: the old message
+    // omitted them, and that omission was read (by the sprint scaffold, and
+    // by me at first) as a symptom of the drop. It is a second, real defect
+    // — a VALID `--size` does populate the patch, so it always belonged in
+    // the list of flags that would have made this succeed.
+    const why = upIgnored.length
+      ? ` — ${upIgnored.map((i) => `--${i.flag} ${JSON.stringify(i.value)} was ignored (${i.reason})`).join("; ")}`
+      : "";
+    // ⛔ THE FLAG LIST IS `choices` NOW, NOT PROSE INSIDE THE MESSAGE.
+    // This is the site the rule was written for: the old sentence carried
+    // the set as text, and the FIRST version of that text was measured
+    // WRONG (it omitted `--size`/`--expect`, both of which do populate a
+    // patch). A set typed into a sentence has no reader that can check it.
+    // `why` stays in the message — it is the per-flag reason a value was
+    // dropped, which is prose about THIS invocation, not the accepted set.
+    die(`update: nothing to change${why}`, "usage", {
+      hint: `give one of ${UPDATE_PATCH_FLAGS.join(" ")}`,
+      choices: [...UPDATE_PATCH_FLAGS],
+    });
+  }
+  // Surface the daemon's outcome (like claim/block), distinguishing the two
+  // kinds of applied:false: WITH an error = not-found / rejected (e.g. the
+  // verb mis-routed to a stranger board) → a visible, nonzero failure, never
+  // a silent {ok:true} (#62). WITHOUT an error = a legitimate no-op (the task
+  // already held this value, e.g. doing→doing) → benign success, since the
+  // task exists and the board is right.
+  const res = await postCmd(session, { type: "task.update", id, patch }, { as, quiet: true });
+  // `fields` names what this call wrote (s5-9): the patch's keys, as task
+  // fields (`--tag` writes `tags`; `--stdin` writes `title`; `--clear-notes`
+  // writes `notes`). A caller can check it against what it meant to change —
+  // the check that would have caught `--stdin` landing in the title.
+  // ⚠ It is only true because nothing in this patch can be dropped by the
+  // daemon's guards: `--status` outside the set is refused in `check`, and
+  // `--size`/`--expect` enter the patch only when valid. A new patch key the
+  // daemon may drop needs the same treatment, or `fields` names a lost write.
+  const fields = Object.keys(patch);
+  if (res.applied) {
+    printJson({
+      ok: true,
+      updated: id,
+      fields,
+      valuesIgnored: upIgnored.length ? upIgnored : null,
+    });
+  } else if (res.error) {
+    // A not-found / mis-routed update — `not_found` (5) from the daemon.
+    refuseFromDaemon(res, `no such task ${id}`);
+  } else {
+    // The no-op branch carries it too. Leaving it off here would mean the
+    // field's presence depended on whether the daemon happened to change
+    // anything — so a caller could not tell "no ignored flags" from "this
+    // build does not report them", which is the exact absence the
+    // present-and-null rule exists to prevent.
+    // Nothing changed, so nothing was written: `fields` is empty, not absent.
+    printJson({
+      ok: true,
+      updated: id,
+      noop: true,
+      fields: [],
+      valuesIgnored: upIgnored.length ? upIgnored : null,
+    });
+  }
+}
+
+async function cmdClaim(id: string, session: string | undefined, as: string | undefined) {
+  // Cooperative self-claim: take ownership of an UNOWNED task. Rejected (and
+  // surfaced) if someone else already owns it — never a silent steal.
+  if (!as) die("claim needs an identity — pass --as <name> or set BOUNTY_AS");
+  const res = await postCmd(
+    session,
+    { type: "task.update", id, patch: { owner: as }, claim: true },
+    { as, quiet: true },
+  );
+  if (res.applied) {
+    printJson({ ok: true, claimed: id, owner: as });
+  } else {
+    // Visible rejection — an agent must not mistake a rejected claim for
+    // ownership. `conflict` (6): the task exists and someone else holds it.
+    refuseFromDaemon(res, `could not claim ${id}`);
+  }
+}
+
+async function cmdBlock(
+  verb: "block" | "unblock",
+  id: string,
+  flags: Flags,
+  session: string | undefined,
+  as: string | undefined,
+) {
+  if (typeof flags.on !== "string") die(`usage: ${verb} <id> --on <id>[,<id>...]`);
+  const on = flags.on
+    .split(",")
+    .map((x) => x.trim())
+    .filter(Boolean);
+  if (!on.length) die(`${verb}: --on needs at least one task id`);
+  const res = await postCmd(
+    session,
+    { type: verb === "block" ? "task.block" : "task.unblock", id, on },
+    { as, quiet: true },
+  );
+  if (res.applied) {
+    printJson({ ok: true, [verb === "block" ? "blocked" : "unblocked"]: id, on });
+  } else {
+    // A cycle is `conflict` (6); an unknown subject or blocker is
+    // `not_found` (5) — one verb, two kinds, and only the daemon knows.
+    refuseFromDaemon(res, `could not ${verb} ${id}`);
+  }
+}
+
+async function cmdRemove(id: string, session: string | undefined, as: string | undefined) {
+  // Same applied-check as update (#62): a not-found remove (mis-routed to
+  // another board) must fail visibly, not print a silent success.
+  const res = await postCmd(session, { type: "task.remove", id }, { as, quiet: true });
+  if (res.applied) {
+    printJson({ ok: true, removed: id });
+  } else {
+    refuseFromDaemon(res, `no such task ${id} (wrong board? pass --session)`);
+  }
+}
+
+async function cmdMessage(
+  pos: string[],
+  flags: Flags,
+  session: string | undefined,
+  as: string | undefined,
+): Promise<number> {
+  const text = flags.stdin === true ? await readStdin() : pos.join(" ");
+  if (!text) die("usage: message <text...> [--stdin]");
+  // DECIDED EXPLICITLY (plan step 2), and recorded because "we checked it"
+  // and "it cannot fail" are different claims: the daemon answers `message`
+  // with applied:true unconditionally today, so routing it through the
+  // funnel changes NOTHING now. It is a regression guard — if `message`ever
+  // grows a refusal (a closed board, a rejected payload), the CLI reports it
+  // without anyone remembering to come back here.
+  return ackOrFail(
+    "message",
+    await postCmd(session, { type: "message", text }, { as, quiet: true }),
+  );
+}
+
+async function cmdInit(
+  flags: Flags,
+  session: string | undefined,
+  as: string | undefined,
+): Promise<number> {
+  const msg: Record<string, unknown> = { type: "init" };
+  if (typeof flags.title === "string") msg.title = flags.title;
+  if (flags["stdin-tasks"] === true) {
+    const raw = await readStdin();
+    try {
+      const tasks = JSON.parse(raw);
+      if (!Array.isArray(tasks)) die("init --stdin-tasks: stdin must be a JSON array of tasks");
+      msg.tasks = tasks;
+    } catch (e) {
+      // ⛔ THIS IS THE ONE SWALLOW B9's AUDIT FOUND, AND ADOPTING `errors.ts`
+      // IS WHAT MADE IT REACHABLE. The `die` three lines up sits INSIDE this
+      // `try`. While `die` was `process.exit(2)` the catch could never see
+      // it; now it THROWS, so without a ward the "stdin must be a JSON
+      // array" failure would be caught here and RE-RAISED as "invalid JSON
+      // on stdin" — the same exit code with the wrong diagnosis, which is
+      // the worst kind of wrong because a caller cannot tell it happened.
+      //
+      // ⚠ AND THE GUARD THAT WAS ALREADY HERE IS NOT THE FIX. It matched on
+      // `e.message.includes("JSON array")` over an untyped error — glamour's
+      // `postCmd`/ECONNRESET shape exactly (D34's CONDITIONAL): correct only
+      // for as long as nobody rewords the message above it. Rewording a
+      // human-facing string is not the kind of edit anyone expects to change
+      // an error contract. Matching the TYPE cannot rot that way.
+      if (e instanceof CliError) throw e;
+      die("init --stdin-tasks: invalid JSON on stdin", "usage");
+    }
+  }
+  // The generic path — and the one with a REAL behaviour change today. The
+  // daemon's command dispatch ends in `return {ok:true, applied:false}` for
+  // any type it does not recognise, so an unrecognised command has always
+  // been answered with a success-shaped envelope. Routing through the funnel
+  // is what turns that into a visible failure.
+  return ackOrFail(msg.type, await postCmd(session, msg, { as, quiet: true }));
+}
+
+async function cmdClose(session: string | undefined, as: string | undefined): Promise<number> {
+  // Same explicit decision as `message`: applied:true unconditionally today,
+  // so this is a regression guard rather than a fix. It earns its place
+  // because `close` is the verb that WRITES THE SNAPSHOT — a close that
+  // silently failed to apply, reported as success, is how a caller concludes
+  // its data was persisted when it was not.
+  const closeRes = await postCmd(session, { type: "close" }, { as, quiet: true });
+  // b14 — WAIT FOR IT TO ACTUALLY BE DOWN. `close` used to return as soon as
+  // the daemon ACKED the command, and the daemon acks before it finishes
+  // tearing down. Measured: `state` on the same session STILL ANSWERS with
+  // the full board immediately after a successful close, and only stops
+  // after a settle. So a caller that closed and reopened attached to the
+  // dying board instead of respawning — success reported an ACT, not its
+  // COMPLETION.
+  //
+  // The wait is not new machinery: `open --fresh` already polls
+  // `boardIfLive` for up to 3s after its own teardown POST. This applies the
+  // discipline that already existed one function away, which is also why the
+  // bound and the interval match it rather than being invented here.
+  //
+  // `down` is REPORTED rather than enforced: if the daemon outlives the
+  // bound, that is a real fact a caller may need (a wedged teardown), and
+  // exiting non-zero would turn a slow close into a failed one. Present on
+  // every close, never absent — a readable blank beats an absence.
+  const resolved = requireSession(session);
+  const deadline = Date.now() + 3000;
+  let down = false;
+  while (Date.now() < deadline) {
+    if (!(await boardIfLive(resolved.session_id))) {
+      down = true;
+      break;
+    }
+    await sleep(80);
+  }
+  if (!closeRes.applied) return ackOrFail("close", closeRes);
+  printJson({ ok: true, sent: "close", down });
+  if (!down)
+    process.stderr.write(
+      "bounty: close acked but the daemon was still answering after 3s — a reopen may attach to it\n",
+    );
+  return 0;
+}
+
+/** `--mine` scopes to the caller's own cards, so it needs to know who that is. */
+function scopeOf(flags: Flags, as: string | undefined) {
+  const mine = flags.mine === true;
+  if (mine && !as) die("--mine needs an identity — pass --as <name> or set BOUNTY_AS");
+  return { owner: typeof flags.owner === "string" ? flags.owner : undefined, mine, as };
+}
+
+/**
+ * `--status` ranges over a closed set, so a value outside it is refused as
+ * usage with the set as `choices` (acc A3). The daemon DROPS an invalid status
+ * from a patch without saying so, which is how `update --status bogus --title z`
+ * printed `fields:["title","status"]` at exit 0 over a status it never wrote,
+ * and how `add --status bogus` became a "todo" card. Raised here rather than
+ * returned, because a returned string reaches the caller without `choices`.
+ */
+function checkStatus(verb: "add" | "update", f: Flags): void {
+  if (typeof f.status === "string" && !VALID_STATUS.includes(f.status as TaskStatus))
+    die(`${verb}: --status ${JSON.stringify(f.status)} is not a status`, "usage", {
+      choices: [...VALID_STATUS],
+    });
+}
+
+/** `add`'s rules: only the status set; the title's absence is `cmdAdd`'s (after `--stdin`). */
+function checkAdd(inv: Invocation<Flag>): string | undefined {
+  checkStatus("add", inv.flags as Flags);
+  return undefined;
+}
+
+/**
+ * `update`'s combination and empty-value rules (s5-9, s5-5), refused as usage
+ * before anything is sent. Each message names the recovery. An empty value is
+ * refused because it cannot be told apart from a command substitution that
+ * produced nothing, and it would destroy the field at `ok:true`.
+ */
+function checkUpdate(inv: Invocation<Flag>): string | undefined {
+  const f = inv.flags as Flags;
+  checkStatus("update", f);
+  if (f.stdin === true && typeof f.title === "string")
+    return "--stdin and --title both set the title; pass one of them (for the notes, use --notes <text>)";
+  if (f["clear-notes"] === true && typeof f.notes === "string")
+    return "--clear-notes and --notes both set the notes; pass --notes <text> to replace them, or --clear-notes alone to clear them";
+  if (f.title === "")
+    return "--title is empty, and a title is never cleared (add refuses one too); pass the new title text";
+  if (f.notes === "")
+    return "--notes is empty, which would erase the notes; to clear notes on purpose, pass --clear-notes";
+  return undefined;
+}
+
+const ROWS: Row[] = [
+  {
+    name: "open",
+    flags: ["title", "timeout", "no-open", "restore", "pin", "session-key", "fresh"],
+    positionals: [],
+    describe:
+      "spawn a board daemon; prints {url, port, session_id, restoreSkipped}. --pin binds it to cwd; --session-key <key> binds it to a caller-owned key, idempotently (--fresh forces a clean board)",
+    // Propagates cmdOpen's code so the #80.1 refusal actually reaches the shell.
+    run: (_pos, flags) => cmdOpen(flags),
+  },
+  {
+    name: "state",
+    flags: [...WRITE, "owner", "mine", "full"],
+    positionals: [],
+    describe:
+      "read-back: {state, cursor, readMode}; --mine | --owner <name> scope it (--full is accepted but redundant: the read is full by default — b6)",
+    run: (_pos, flags, session, as) => cmdState(session, scopeOf(flags, as)),
+  },
+  {
+    name: "tail",
+    flags: [...WRITE, "since", "once", "owner", "mine"],
+    positionals: [],
+    describe: `board events as JSON lines — wrap with Monitor; it ${WINDOW_HELP}`,
+    // ⛔ RETURNED, NOT AWAITED-AND-DROPPED. `tailEvents` hands back an exit
+    // code instead of ending the process from inside its own loops (the P0f
+    // scar).
+    run: (_pos, flags, session, as) =>
+      cmdTail(
+        session,
+        typeof flags.since === "string" ? sinceOrDie(flags.since) : -1,
+        scopeOf(flags, as),
+        flags.once === true,
+        {
+          sinceGiven: typeof flags.since === "string",
+          sessionFlag: typeof flags.session === "string",
+          // #98: the same precedence `session` came from, with its provenance.
+          source: resolveSessionSource(flags),
+          // The key in play, if any; `cmdTail` checks it derives THIS board's
+          // id before naming it (a re-arm carries `--session <k-id>`, which
+          // outranks the key in `resolveSession` but is the same board).
+          ...(typeof flags["session-key"] === "string"
+            ? { key: flags["session-key"] }
+            : process.env.BOUNTY_SESSION_KEY
+              ? { key: process.env.BOUNTY_SESSION_KEY }
+              : {}),
+        },
+      ),
+  },
+  {
+    name: "add",
+    flags: [...WRITE, "status", "notes", "owner", "tag", "size", "expect", "id", "stdin"],
+    positionals: [{ name: "title", required: false, variadic: true }],
+    describe:
+      "add a task (the title, or --stdin); --size S|M|L is a heartbeat estimate (5/10/20 min), --expect <min> overrides it",
+    check: checkAdd,
+    run: cmdAdd,
+  },
+  {
+    name: "update",
+    flags: [
+      ...WRITE,
+      "status",
+      "title",
+      "notes",
+      "clear-notes",
+      "owner",
+      "tag",
+      "size",
+      "expect",
+      "stdin",
+    ],
+    positionals: [{ name: "id", required: true }],
+    describe:
+      'patch a task; --stdin reads the new TITLE; --clear-notes clears the notes (an empty --notes is refused); --tag "" clears the tags',
+    check: checkUpdate,
+    run: cmdUpdate,
+  },
+  {
+    name: "claim",
+    flags: WRITE,
+    positionals: [{ name: "id", required: true }],
+    describe: "self-claim an UNOWNED task as --as <name> (rejected if another owns it)",
+    run: (pos, _flags, session, as) => cmdClaim(pos[0] as string, session, as),
+  },
+  {
+    name: "block",
+    flags: [...WRITE, "on"],
+    positionals: [{ name: "id", required: true }],
+    describe: "mark <id> blocked on --on <id>[,<id>...] (rejected on a cycle)",
+    run: (pos, flags, session, as) => cmdBlock("block", pos[0] as string, flags, session, as),
+  },
+  {
+    name: "unblock",
+    flags: [...WRITE, "on"],
+    positionals: [{ name: "id", required: true }],
+    describe: "remove blocker edge(s) --on <id>[,<id>...]",
+    run: (pos, flags, session, as) => cmdBlock("unblock", pos[0] as string, flags, session, as),
+  },
+  {
+    name: "remove",
+    flags: WRITE,
+    positionals: [{ name: "id", required: true }],
+    describe: "delete a task",
+    run: (pos, _flags, session, as) => cmdRemove(pos[0] as string, session, as),
+  },
+  {
+    name: "message",
+    flags: [...WRITE, "stdin"],
+    positionals: [{ name: "text", required: false, variadic: true }],
+    describe: "show a toast on the board (the text, or --stdin)",
+    run: cmdMessage,
+  },
+  {
+    name: "init",
+    flags: [...WRITE, "title", "stdin-tasks"],
+    positionals: [],
+    describe:
+      "seed the board (tasks = JSON array on stdin; each task REQUIRES id + title + status — init does NOT mint ids, unlike add; any dropped task is reported per-entry in tasksDropped)",
+    run: (_pos, flags, session, as) => cmdInit(flags, session, as),
+  },
+  {
+    name: "close",
+    flags: WRITE,
+    positionals: [],
+    describe: "end the board (writes its snapshot); prints {ok, sent, down}",
+    run: (_pos, _flags, session, as) => cmdClose(session, as),
+  },
+  {
+    name: "info",
+    flags: BOARD,
+    positionals: [],
+    describe: "the resolved board's {url, port, session_id, title}",
+    run: (_pos, _flags, session) => cmdInfo(session),
+  },
+  {
+    name: "list",
+    flags: [],
+    positionals: [],
+    describe: "list currently-RUNNING boards (id/tasks/url/title) — prose, see below",
+    run: () => cmdList(),
+  },
+  {
+    name: "sessions",
+    flags: [],
+    positionals: [],
+    describe: "list saved SNAPSHOTS, incl. closed boards (id/tasks/title) — prose, see below",
+    run: () => cmdSessions(),
+  },
+];
+
+/** `{name, version}` from the plugin manifest the skill ships in. */
+function versionInfo(): { name: string; version: string } {
+  try {
+    const raw = readFileSync(join(SKILL_ROOT, "..", "..", ".claude-plugin", "plugin.json"), "utf8");
+    const pkg = JSON.parse(raw) as { version?: unknown };
+    if (typeof pkg.version === "string") return { name: "bounty", version: pkg.version };
+  } catch {
+    /* fall through */
+  }
+  return { name: "bounty", version: "unknown" };
+}
+
+// ⛔ BUILDING THE TABLE HAS NO SIDE EFFECTS: `defineCli` only validates and
+// indexes, so a ward or a test can import this module and read the table.
+export const cli = defineCli({
+  name: "bounty",
+  summary: "an agent-driven task board.",
+  options: CLI_OPTIONS,
+  commands: ROWS.map((r) => ({ ...r, run: on(r.run), rejectHint: DASH_HINT })),
+  // The verb is `argv[0]`, as it always was; a flag before it is refused.
+  grammar: "verb-first",
+  usageHides: ["session", "session-key", "as"],
+  version: versionInfo,
+  helpFooter: `  Every verb that talks to a board takes --session <id> and --session-key <key>;
+  those that act on it also take --as <name>. Each verb accepts only the flags
+  on its row.
 
   --as <name> (or $BOUNTY_AS) is your identity — stamped on events (for scoped
   tail + self-echo suppression) and used by claim/--mine. --owner assigns a task.
@@ -1371,369 +1962,18 @@ const HELP = `bounty — an agent-driven task board.
   idempotent (attaches to a live board for K, respawns a dead one; --fresh
   forces a clean one), and every verb re-derives the same id — deterministic
   board binding with no stored/latest pointer. Or use open --pin to write
-  cwd/.bounty-session and bind a board to this directory.`;
+  cwd/.bounty-session and bind a board to this directory.
 
-/**
- * The verb table.
- *
- * ⛔ IT NO LONGER ENDS THE PROCESS ON A FAILURE — `main` DOES, via the funnel
- * in `run()`. Every `die` in this file THROWS a `CliError` now, so a failure
- * three frames down cannot truncate its own stdout on the way out (D8), and the
- * exit code comes from the taxonomy rather than from whichever `process.exit`
- * literal was nearest.
- */
-async function dispatch(argv: string[]): Promise<number> {
-  const [verb, ...rest] = argv;
-  // Named on the envelope's `meta.command`, so a caller reading a failure knows
-  // which verb produced it without correlating against its own invocation.
-  setCurrentCommand(typeof verb === "string" ? verb : null);
-  let pos: string[];
-  let flags: Record<string, string | boolean>;
-  try {
-    ({ pos, flags } = parseArgs(rest));
-  } catch (e) {
-    // ⛔ CONVERTED, NOT RE-SPELLED. `UsageError` is this file's own parser
-    // failure and used to print prose and return 2 from here; routing it
-    // through `die` puts it in the same envelope as every other usage failure
-    // at the same exit code. This catch PROPAGATES (B9): it rethrows anything
-    // that is not a `UsageError`, and raises for the one that is.
-    if (!(e instanceof UsageError)) throw e;
-    die(e.message, "usage", e.extra);
-  }
-  const session = resolveSession(flags);
-  const as = resolveAs(flags);
+  Output: JSON on stdout, one document per answer — except tail (one JSON line
+  per event), and list, sessions and help (prose lines). Failures: one JSON
+  envelope on stderr, exit 2 = usage, 1 = internal, 5 = not found, 6 =
+  conflict. schema prints the machine-readable interface.`,
+});
 
-  switch (verb) {
-    case "open":
-      // Propagates cmdOpen's code so the #80.1 refusal actually reaches the
-      // shell — `break` here would swallow it into main's trailing `return 0`.
-      return await cmdOpen(flags);
-    case "tail": {
-      const mine = flags.mine === true;
-      if (mine && !as) die("--mine needs an identity — pass --as <name> or set BOUNTY_AS");
-      // ⛔ RETURNED, NOT AWAITED-AND-DROPPED. `tailEvents` hands back an exit
-      // code instead of ending the process from inside its own loops (the P0f
-      // scar), so `break` here would swallow it into main's trailing `return 0`
-      // — the same mistake `open` has a comment about two cases up.
-      return await cmdTail(
-        session,
-        typeof flags.since === "string" ? sinceOrDie(flags.since) : -1,
-        {
-          owner: typeof flags.owner === "string" ? flags.owner : undefined,
-          mine,
-          as,
-        },
-        flags.once === true,
-        {
-          sinceGiven: typeof flags.since === "string",
-          sessionFlag: typeof flags.session === "string",
-          // The key in play, if any; `cmdTail` checks it derives THIS board's
-          // id before naming it (a re-arm carries `--session <k-id>`, which
-          // outranks the key in `resolveSession` but is the same board).
-          ...(typeof flags["session-key"] === "string"
-            ? { key: flags["session-key"] }
-            : process.env.BOUNTY_SESSION_KEY
-              ? { key: process.env.BOUNTY_SESSION_KEY }
-              : {}),
-        },
-      );
-    }
-    case "state": {
-      const mine = flags.mine === true;
-      if (mine && !as) die("--mine needs an identity — pass --as <name> or set BOUNTY_AS");
-      await cmdState(session, {
-        owner: typeof flags.owner === "string" ? flags.owner : undefined,
-        mine,
-        as,
-      });
-      break;
-    }
-    case "add": {
-      const title = flags.stdin === true ? await readStdin() : pos.join(" ");
-      if (!title) die("usage: add <title...> [--status ..] [--notes ..] [--stdin]");
-      const status =
-        typeof flags.status === "string" && VALID_STATUS.includes(flags.status as TaskStatus)
-          ? (flags.status as TaskStatus)
-          : "todo";
-      const task: Record<string, unknown> = {
-        id: typeof flags.id === "string" ? flags.id : newTaskId(),
-        title,
-        status,
-      };
-      if (typeof flags.notes === "string") task.notes = flags.notes;
-      if (typeof flags.owner === "string") task.owner = flags.owner;
-      if (typeof flags.tag === "string") task.tags = parseTags(flags.tag);
-      const addSize = parseSize(flags.size);
-      if (addSize) task.size = addSize;
-      const addExpect = parseExpect(flags.expect);
-      if (addExpect !== undefined) task.expect = addExpect;
-      const addIgnored = ignoredValues(flags);
-      warnIgnored(addIgnored);
-      // #83 — `add` was the ONLY write verb that discarded the daemon's verdict:
-      // update/claim/block/unblock/remove all read it. So this is an oversight
-      // corrected to match its four siblings, not a new convention.
-      //
-      // No no-op branch here, unlike `update`. `update` has a legitimate
-      // applied:false (the task already held the value); `add` does not — a
-      // refusal means the shape was invalid or the id was taken, and both are
-      // real failures. The daemon names which.
-      const res = await postCmd(session, { type: "task.add", task }, { as, quiet: true });
-      // A duplicate `--id` is a `conflict` (6) and an invalid shape is a `usage`
-      // (2); the daemon says which. Neither is `internal`, which is what the
-      // old `return 1` claimed.
-      if (!res.applied) refuseFromDaemon(res, `task ${task.id} was not added`);
-      // Present-and-null, never absent (the restoreSkipped lesson, D1.2): a
-      // field that appears only when it has something to say cannot be told
-      // apart from a build that does not emit it at all.
-      printJson({ ok: true, added: task.id, valuesIgnored: addIgnored.length ? addIgnored : null });
-      break;
-    }
-    case "update": {
-      const id = pos[0];
-      if (!id)
-        die(
-          "usage: update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag a,b] [--stdin]",
-        );
-      const patch: Record<string, unknown> = {};
-      if (flags.stdin === true) patch.title = await readStdin();
-      else if (typeof flags.title === "string") patch.title = flags.title;
-      if (typeof flags.status === "string") patch.status = flags.status;
-      if (typeof flags.notes === "string") patch.notes = flags.notes;
-      if (typeof flags.owner === "string") patch.owner = flags.owner; // lead reassignment
-      if (typeof flags.tag === "string") patch.tags = parseTags(flags.tag); // SET; "" clears
-      const upSize = parseSize(flags.size);
-      if (upSize) patch.size = upSize;
-      const upExpect = parseExpect(flags.expect);
-      if (upExpect !== undefined) patch.expect = upExpect;
-      const upIgnored = ignoredValues(flags);
-      warnIgnored(upIgnored);
-      if (Object.keys(patch).length === 0) {
-        // ⛔ THE ENVELOPE NEVER PRINTS ON THIS PATH, so the ignored-flag report
-        // has to ride the refusal itself — and this is the case where the caller
-        // most needs it. `update <id> --size bogus` with no other flag lands
-        // HERE: the size was dropped, which left the patch empty, which is why
-        // it refuses. Measured, and the refusal used to blame an empty patch
-        // while saying nothing about the flag the caller actually passed.
-        //
-        // `--size`/`--expect` are also ADDED to the flag list: the old message
-        // omitted them, and that omission was read (by the sprint scaffold, and
-        // by me at first) as a symptom of the drop. It is a second, real defect
-        // — a VALID `--size` does populate the patch, so it always belonged in
-        // the list of flags that would have made this succeed.
-        const why = upIgnored.length
-          ? ` — ${upIgnored.map((i) => `--${i.flag} ${JSON.stringify(i.value)} was ignored (${i.reason})`).join("; ")}`
-          : "";
-        // ⛔ THE FLAG LIST IS `choices` NOW, NOT PROSE INSIDE THE MESSAGE.
-        // This is the site the rule was written for: the old sentence carried
-        // the set as text, and the FIRST version of that text was measured
-        // WRONG (it omitted `--size`/`--expect`, both of which do populate a
-        // patch). A set typed into a sentence has no reader that can check it.
-        // `why` stays in the message — it is the per-flag reason a value was
-        // dropped, which is prose about THIS invocation, not the accepted set.
-        die(`update: nothing to change${why}`, "usage", {
-          hint: `give one of ${UPDATE_PATCH_FLAGS.join(" ")}`,
-          choices: [...UPDATE_PATCH_FLAGS],
-        });
-      }
-      // Surface the daemon's outcome (like claim/block), distinguishing the two
-      // kinds of applied:false: WITH an error = not-found / rejected (e.g. the
-      // verb mis-routed to a stranger board) → a visible, nonzero failure, never
-      // a silent {ok:true} (#62). WITHOUT an error = a legitimate no-op (the task
-      // already held this value, e.g. doing→doing) → benign success, since the
-      // task exists and the board is right.
-      const res = await postCmd(session, { type: "task.update", id, patch }, { as, quiet: true });
-      if (res.applied) {
-        printJson({ ok: true, updated: id, valuesIgnored: upIgnored.length ? upIgnored : null });
-      } else if (res.error) {
-        // A not-found / mis-routed update — `not_found` (5) from the daemon.
-        refuseFromDaemon(res, `no such task ${id}`);
-      } else {
-        // The no-op branch carries it too. Leaving it off here would mean the
-        // field's presence depended on whether the daemon happened to change
-        // anything — so a caller could not tell "no ignored flags" from "this
-        // build does not report them", which is the exact absence the
-        // present-and-null rule exists to prevent.
-        printJson({
-          ok: true,
-          updated: id,
-          noop: true,
-          valuesIgnored: upIgnored.length ? upIgnored : null,
-        });
-      }
-      break;
-    }
-    case "claim": {
-      // Cooperative self-claim: take ownership of an UNOWNED task. Rejected (and
-      // surfaced) if someone else already owns it — never a silent steal.
-      const id = pos[0];
-      if (!id) die("usage: claim <id> [--as <name>]");
-      if (!as) die("claim needs an identity — pass --as <name> or set BOUNTY_AS");
-      const res = await postCmd(
-        session,
-        { type: "task.update", id, patch: { owner: as }, claim: true },
-        { as, quiet: true },
-      );
-      if (res.applied) {
-        printJson({ ok: true, claimed: id, owner: as });
-      } else {
-        // Visible rejection — an agent must not mistake a rejected claim for
-        // ownership. `conflict` (6): the task exists and someone else holds it.
-        refuseFromDaemon(res, `could not claim ${id}`);
-      }
-      break;
-    }
-    case "block":
-    case "unblock": {
-      const id = pos[0];
-      if (!id || typeof flags.on !== "string") {
-        die(`usage: ${verb} <id> --on <id>[,<id>...]`);
-      }
-      const on = flags.on
-        .split(",")
-        .map((x) => x.trim())
-        .filter(Boolean);
-      if (!on.length) die(`${verb}: --on needs at least one task id`);
-      const res = await postCmd(
-        session,
-        { type: verb === "block" ? "task.block" : "task.unblock", id, on },
-        { as, quiet: true },
-      );
-      if (res.applied) {
-        printJson({ ok: true, [verb === "block" ? "blocked" : "unblocked"]: id, on });
-      } else {
-        // A cycle is `conflict` (6); an unknown subject or blocker is
-        // `not_found` (5) — one verb, two kinds, and only the daemon knows.
-        refuseFromDaemon(res, `could not ${verb} ${id}`);
-      }
-      break;
-    }
-    case "remove": {
-      const id = pos[0];
-      if (!id) die("usage: remove <id>");
-      // Same applied-check as update (#62): a not-found remove (mis-routed to
-      // another board) must fail visibly, not print a silent success.
-      const res = await postCmd(session, { type: "task.remove", id }, { as, quiet: true });
-      if (res.applied) {
-        printJson({ ok: true, removed: id });
-      } else {
-        refuseFromDaemon(res, `no such task ${id} (wrong board? pass --session)`);
-      }
-      break;
-    }
-    case "message": {
-      const text = flags.stdin === true ? await readStdin() : pos.join(" ");
-      if (!text) die("usage: message <text...> [--stdin]");
-      // DECIDED EXPLICITLY (plan step 2), and recorded because "we checked it"
-      // and "it cannot fail" are different claims: the daemon answers `message`
-      // with applied:true unconditionally today, so routing it through the
-      // funnel changes NOTHING now. It is a regression guard — if `message`ever
-      // grows a refusal (a closed board, a rejected payload), the CLI reports it
-      // without anyone remembering to come back here.
-      return ackOrFail(
-        "message",
-        await postCmd(session, { type: "message", text }, { as, quiet: true }),
-      );
-    }
-    case "init": {
-      const msg: Record<string, unknown> = { type: "init" };
-      if (typeof flags.title === "string") msg.title = flags.title;
-      if (flags["stdin-tasks"] === true) {
-        const raw = await readStdin();
-        try {
-          const tasks = JSON.parse(raw);
-          if (!Array.isArray(tasks)) die("init --stdin-tasks: stdin must be a JSON array of tasks");
-          msg.tasks = tasks;
-        } catch (e) {
-          // ⛔ THIS IS THE ONE SWALLOW B9's AUDIT FOUND, AND ADOPTING `errors.ts`
-          // IS WHAT MADE IT REACHABLE. The `die` three lines up sits INSIDE this
-          // `try`. While `die` was `process.exit(2)` the catch could never see
-          // it; now it THROWS, so without a ward the "stdin must be a JSON
-          // array" failure would be caught here and RE-RAISED as "invalid JSON
-          // on stdin" — the same exit code with the wrong diagnosis, which is
-          // the worst kind of wrong because a caller cannot tell it happened.
-          //
-          // ⚠ AND THE GUARD THAT WAS ALREADY HERE IS NOT THE FIX. It matched on
-          // `e.message.includes("JSON array")` over an untyped error — glamour's
-          // `postCmd`/ECONNRESET shape exactly (D34's CONDITIONAL): correct only
-          // for as long as nobody rewords the message above it. Rewording a
-          // human-facing string is not the kind of edit anyone expects to change
-          // an error contract. Matching the TYPE cannot rot that way.
-          if (e instanceof CliError) throw e;
-          die("init --stdin-tasks: invalid JSON on stdin", "usage");
-        }
-      }
-      // The generic path — and the one with a REAL behaviour change today. The
-      // daemon's command dispatch ends in `return {ok:true, applied:false}` for
-      // any type it does not recognise, so an unrecognised command has always
-      // been answered with a success-shaped envelope. Routing through the funnel
-      // is what turns that into a visible failure.
-      return ackOrFail(msg.type, await postCmd(session, msg, { as, quiet: true }));
-    }
-    case "close": {
-      // Same explicit decision as `message`: applied:true unconditionally today,
-      // so this is a regression guard rather than a fix. It earns its place
-      // because `close` is the verb that WRITES THE SNAPSHOT — a close that
-      // silently failed to apply, reported as success, is how a caller concludes
-      // its data was persisted when it was not.
-      const closeRes = await postCmd(session, { type: "close" }, { as, quiet: true });
-      // b14 — WAIT FOR IT TO ACTUALLY BE DOWN. `close` used to return as soon as
-      // the daemon ACKED the command, and the daemon acks before it finishes
-      // tearing down. Measured: `state` on the same session STILL ANSWERS with
-      // the full board immediately after a successful close, and only stops
-      // after a settle. So a caller that closed and reopened attached to the
-      // dying board instead of respawning — success reported an ACT, not its
-      // COMPLETION.
-      //
-      // The wait is not new machinery: `open --fresh` already polls
-      // `boardIfLive` for up to 3s after its own teardown POST. This applies the
-      // discipline that already existed one function away, which is also why the
-      // bound and the interval match it rather than being invented here.
-      //
-      // `down` is REPORTED rather than enforced: if the daemon outlives the
-      // bound, that is a real fact a caller may need (a wedged teardown), and
-      // exiting non-zero would turn a slow close into a failed one. Present on
-      // every close, never absent — a readable blank beats an absence.
-      const resolved = requireSession(session);
-      const deadline = Date.now() + 3000;
-      let down = false;
-      while (Date.now() < deadline) {
-        if (!(await boardIfLive(resolved.session_id))) {
-          down = true;
-          break;
-        }
-        await sleep(80);
-      }
-      if (!closeRes.applied) return ackOrFail("close", closeRes);
-      printJson({ ok: true, sent: "close", down });
-      if (!down)
-        process.stderr.write(
-          "bounty: close acked but the daemon was still answering after 3s — a reopen may attach to it\n",
-        );
-      return 0;
-    }
-    case "info":
-      cmdInfo(session);
-      break;
-    case "sessions":
-      cmdSessions();
-      break;
-    case "list":
-      await cmdList();
-      break;
-    case "help":
-    case "--help":
-    case "-h":
-    case undefined:
-      process.stdout.write(`${HELP}\n`);
-      break;
-    default:
-      die(`unknown verb "${verb}"`, "usage", {
-        hint: "run: cli.ts help",
-        choices: [...VERB_CHOICES],
-      });
-  }
-  return 0;
-}
+/** The dispatched first tokens, off the table. */
+export const VERBS: readonly string[] = cli.verbs;
+/** Every flag the options table declares, as `--x`, sorted. */
+export const RECOGNIZED_FLAGS: readonly string[] = [...cli.recognizedFlags].sort();
 
 /**
  * The process entry, called by the LAUNCHER at
@@ -1777,7 +2017,7 @@ export async function run(): Promise<number> {
  */
 async function main(argv: string[]): Promise<number> {
   try {
-    return await dispatch(argv);
+    return await cli.dispatch(argv);
   } catch (e) {
     const code = reportCliError(e);
     if (code === null) throw e;

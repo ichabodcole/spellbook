@@ -1,3 +1,5 @@
+// enforces: none in house-style — s5-P (spell-hardening sprint 05): the gate states what it cannot see
+//
 // GATE HONESTY WARD — s5-P. `bun run check` prints "Checked N files" and says
 // NOTHING about the shipped, hand-authored files it structurally cannot read.
 // That is not coverage; it is a gate that cannot state what it cannot see. A hard
@@ -296,6 +298,13 @@ import { join } from "node:path";
 // lines of code the gate parses. That is the largest single reduction in this
 // ward's history, and it closes the population: every spell in the roster now
 // builds, and no hand-written HTML surface remains anywhere in the tree.
+//
+// ⛔ RE-DECLARED 2026-09-26 — 29/2,342 -> 29/2,354, from the object's own sum.
+// MEMBERSHIP DID NOT MOVE; one entry grew:
+//     +12  src/kit/theme/base.css   113 -> 125
+// an `@source not "../cli"` line and the note that has to sit with it: the kit
+// CLI registry's prose was being scanned for class candidates, and one of its
+// words became a utility in three spells' shipped stylesheets.
 const DECLARED_BLIND: Record<string, number> = {
   "src/digestify/surface/styles.css": 515,
   "src/digestify/surface/index.html": 26,
@@ -307,7 +316,7 @@ const DECLARED_BLIND: Record<string, number> = {
   "src/magpie/surface/styles.css": 186,
   "src/imago/surface/styles.css": 167,
   "plugins/spellbook/skills/magpie/scripts/remove.py": 145,
-  "src/kit/theme/base.css": 113,
+  "src/kit/theme/base.css": 125,
   "src/astrolabe/surface/styles.css": 104,
   "src/astrolabe/surface/index.html": 35,
   "src/mind-mapper/surface/index.html": 52,

@@ -6,25 +6,33 @@
 // by a command that owns its own output envelope.
 //
 // Two tiers, keyed to folders rather than to location — see docs/SCHEMA.md.
-// The LIBRARY (architecture, specifications, interaction-design, playbooks,
-// lessons-learned, memories, and the three root pages) is checked by the ported
-// core, which additionally enforces catalog reachability, `related` resolution
-// and the graph. The WORKBENCH (backlog, briefs, investigations, projects,
-// reports, fragments, cycles) is checked by `thinTier` below: presence and
-// vocabulary, and links, and nothing about reachability — those documents are
-// written once, they close, and nobody returns to them.
+// The LIBRARY (architecture, specifications, interaction-design, playbooks, any
+// folder a project declares there, and the three root pages) is checked by the
+// ported core, which additionally enforces catalog reachability, `related`
+// resolution and the graph. The WORKBENCH (features, items, cycles) is checked
+// by `thinTier` below: presence and vocabulary, and links, and nothing about
+// reachability — work is found by its state and its fields, not by a catalog.
 //
 // Everything project-specific lives in this file and in `registry.ts`, which
 // holds the type system as data and which every check below reads rather than
 // carrying its own copy. `scripts/pdocs/docs-lint/` is a copy of a portable
 // core and stays that way.
 
-import { existsSync, readFileSync } from "node:fs";
-import { basename, dirname, isAbsolute, join, relative } from "node:path";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
+import {
+  basename,
+  dirname,
+  isAbsolute,
+  join,
+  relative,
+  resolve,
+  sep,
+} from "node:path";
 import { type ProjectDocsConfig, loadConfig } from "../docs-lint/config.ts";
 import {
   type DocsLintReport,
   type LintPage,
+  OUTSIDE_REPOSITORY,
   checkLinks,
   collectDocsLint,
   parseFrontmatter,
@@ -34,16 +42,23 @@ import {
 } from "../docs-lint/index.ts";
 import {
   DURABLE_TYPE,
-  PROJECT_FILE_TYPE,
-  PROJECT_SPEC,
+  ENTITY_FILE,
+  FEATURES_FOLDER,
+  ITEMS_FOLDER,
+  KINDS,
+  OWNED_FILE_TYPE,
+  PRIORITIES,
+  OWNER_SUBFOLDER,
   type RegistryRow,
   ROOT_PAGE_TYPE,
   SPEC,
+  STATE_GROUP,
   buildRegistry,
   defaultRegistryIndex,
   registryIndex,
 } from "./registry.ts";
-import { isSeeded, loadManifest } from "../seed.ts";
+import { SEEDED_PAGES, isSeeded, loadManifest } from "../seed.ts";
+import { UUID_RE } from "../uuid.ts";
 
 /**
  * Where to lint, and by what rules.
@@ -57,11 +72,93 @@ export interface Ctx {
   repoRoot: string;
   docsRoot: string;
   config: ProjectDocsConfig;
+  /**
+   * The git ref "no silent deletion" compares the working tree against.
+   * `HEAD` when unset; `pdocs check --against <ref>` sets it, which is how CI
+   * (where the working tree IS `HEAD`) names the base.
+   */
+  against?: string;
 }
 
 export function context(repoRoot: string): Ctx {
   const config = loadConfig(repoRoot);
   return { repoRoot, docsRoot: join(repoRoot, config.docsRoot), config };
+}
+
+/**
+ * `git rev-parse --local-env-vars`: the variables that tell git which ONE
+ * repository it is in. Written out rather than asked for, because asking is a
+ * spawn that would itself need this list.
+ */
+export const GIT_LOCAL_ENV = [
+  "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+  "GIT_COMMON_DIR",
+  "GIT_CONFIG",
+  "GIT_CONFIG_COUNT",
+  "GIT_CONFIG_PARAMETERS",
+  "GIT_DIR",
+  "GIT_GRAFT_FILE",
+  "GIT_IMPLICIT_WORK_TREE",
+  "GIT_INDEX_FILE",
+  "GIT_NO_REPLACE_OBJECTS",
+  "GIT_OBJECT_DIRECTORY",
+  "GIT_PREFIX",
+  "GIT_REPLACE_REF_BASE",
+  "GIT_SHALLOW_FILE",
+  "GIT_WORK_TREE",
+] as const;
+
+/**
+ * The environment every git spawn in the lint is given: this process's, minus
+ * `GIT_LOCAL_ENV`, so git finds the repository from the `cwd` it is handed.
+ *
+ * A commit hook inherits `GIT_DIR` — from a linked worktree, always — and a git
+ * told its directory but not its work tree takes the working directory as the
+ * top level. From `packages/app/` in a monorepo, `ls-files` then answers with
+ * paths relative to the wrong root and the lint reads files that do not exist.
+ * Passed explicitly because a Bun spawn with no `env` inherits the environment
+ * the process STARTED with, whatever has since been deleted from `process.env`.
+ */
+export function gitEnv(): Record<string, string | undefined> {
+  const env: Record<string, string | undefined> = { ...process.env };
+  for (const name of GIT_LOCAL_ENV) delete env[name];
+  return env;
+}
+
+const boundaries = new Map<string, string>();
+
+/**
+ * The directory a link may not leave: the GIT repository, not `ctx.repoRoot`.
+ *
+ * `ctx.repoRoot` is where `.project-docs.json` sits, and in a monorepo that is
+ * `packages/app/` — a link from there to the monorepo's `CONTRIBUTING.md`
+ * resolves in every checkout and is not the machine-specific link this rule
+ * exists to catch. So: git's top level, when it contains `ctx.repoRoot`;
+ * otherwise `ctx.repoRoot` itself (no git, or an environment naming some other
+ * repository). Returned in `ctx.repoRoot`'s own spelling — git answers with the
+ * real path, and `/tmp` is a symlink on macOS.
+ */
+export function linkBoundary(ctx: Ctx): string {
+  const cached = boundaries.get(ctx.repoRoot);
+  if (cached !== undefined) return cached;
+  let boundary = ctx.repoRoot;
+  const out = Bun.spawnSync(["git", "rev-parse", "--show-toplevel"], {
+    cwd: ctx.repoRoot,
+    env: gitEnv(),
+  });
+  const top = out.success ? new TextDecoder().decode(out.stdout).trim() : "";
+  if (top && existsSync(top)) {
+    const rel = relative(realpathSync(top), realpathSync(ctx.repoRoot));
+    const nested =
+      rel !== "" &&
+      rel !== ".." &&
+      !rel.startsWith(`..${sep}`) &&
+      !isAbsolute(rel);
+    if (nested)
+      boundary = resolve(ctx.repoRoot, ...rel.split(sep).map(() => ".."));
+  }
+  boundaries.set(ctx.repoRoot, boundary);
+  return boundary;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -74,14 +171,16 @@ export function context(repoRoot: string): Ctx {
  * with a dead pointer misroutes the next document written.
  *
  * Exported because `pages.ts` has to skip exactly these, and a second list of
- * meta-document names would drift from this one the first time a fifth is
- * added.
+ * meta-document names would drift from this one the first time another is
+ * added. `STYLE.md` is here as the prose contract beside `SCHEMA.md`'s
+ * structural one; it is also a seeded page (`SEEDED_PAGES` in `seed.ts`).
  */
 export const CONTRACT_BASENAMES = new Set([
   "README.md",
   "AGENTS.md",
   "CLAUDE.md",
   "SCHEMA.md",
+  "STYLE.md",
 ]);
 
 /**
@@ -118,6 +217,9 @@ export function templateTest(ctx: Ctx): (path: string) => boolean {
     const abs = isAbsolute(path) ? path : join(ctx.repoRoot, path);
     const rel = relative(ctx.docsRoot, abs);
     if (rel === "" || rel.startsWith("..") || isAbsolute(rel)) return false;
+    // A seeded PAGE is recorded like a template and read like a document: its
+    // links are checked. Skipping it here would switch that off.
+    if (SEEDED_PAGES.has(rel.split(sep).join("/"))) return false;
     return seeded.has(rel);
   };
 }
@@ -134,7 +236,10 @@ export function templatePaths(ctx: Ctx): string[] {
   const isTpl = templateTest(ctx);
   const excluded = excluder(ctx);
   const out: string[] = [];
-  for (const path of walkMarkdown(ctx.docsRoot, new Set(ctx.config.lint.skip))) {
+  for (const path of walkMarkdown(
+    ctx.docsRoot,
+    new Set(ctx.config.lint.skip)
+  )) {
     const rel = relative(ctx.repoRoot, path);
     if (isTpl(path) && !excluded(rel)) out.push(rel);
   }
@@ -156,21 +261,10 @@ export function excluder(ctx: Ctx): (repoRelative: string) => boolean {
 
 /**
  * The type system's source tables, and the registry that unifies them, live in
- * `registry.ts`.
- *
- * They are re-exported here because this is the path that imports them: the
- * v2.6-to-v2.7 codemod's test reads all five from `rules.ts` to prove its own
- * copies are equal, and a moved export would have broken a test whose whole
- * purpose is to notice drift. See `registry.ts` for why the dependency runs the
- * way it does rather than the other way.
+ * `registry.ts`; re-exported here for the readers that reach them through the
+ * lint. See `registry.ts` for why the dependency runs that way.
  */
-export {
-  DURABLE_TYPE,
-  PROJECT_FILE_TYPE,
-  PROJECT_SPEC,
-  ROOT_PAGE_TYPE,
-  SPEC,
-};
+export { DURABLE_TYPE, ROOT_PAGE_TYPE, SPEC };
 
 /** Library types carry no lifecycle: a living page is current or it is not, and `status` says which. */
 export const DURABLE_TYPES = [
@@ -193,44 +287,148 @@ const REQUIRED = ["type", "title", "description", "status", "generated"];
 const OPTIONAL = new Set(["tags", "related", "supersedes"]);
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+/** A UUID, lowercase — the one form `pdocs` writes and compares. Declared
+ *  beside the generator in `uuid.ts`, so the writer and the lint share it. */
+export { UUID_RE };
 const TAG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 // ---------------------------------------------------------------------------------------
 // The workbench: presence and vocabulary
 // ---------------------------------------------------------------------------------------
 
-/** Every workbench file, paired with the `type` its position says it must carry. */
-export function workbenchFiles(ctx: Ctx): Array<{
+/** A workbench file: where it is, and the `type` its position says it must carry. */
+export interface WorkbenchFile {
   path: string;
   rel: string;
   type: string;
-}> {
+  /** Set when an entity file (`feature.md`, `item.md`) sits where its entity
+   *  cannot: the reason, for the `MISPLACED ENTITY` row. */
+  misplaced?: string;
+  /** Set when the file sits where no document can (loose in `features/`): the
+   *  reason, for the `NOT AN ENTITY POSITION` row. No other field rule runs. */
+  notEntity?: string;
+}
+
+/** The folders whose documents are typed by `ownedType` rather than by folder. */
+const OWNER_FOLDERS = new Set([FEATURES_FOLDER, ITEMS_FOLDER]);
+
+/** Every workbench file, paired with the `type` its position says it must carry. */
+export function workbenchFiles(ctx: Ctx): WorkbenchFile[] {
   const skip = new Set([...ctx.config.lint.skip, "TEMPLATES"]);
   const excluded = excluder(ctx);
-  const out: Array<{ path: string; rel: string; type: string }> = [];
+  const out: WorkbenchFile[] = [];
+
+  // `features/_archive/` and `items/_archive/` are read whatever `lint.skip`
+  // says: the work rules are ABOUT the archive (only finished work may sit
+  // there, and an archived item still holds its id against the deletion
+  // check), so skipping it would switch those rules off rather than quiet
+  // them.
+  const ownerSkip = new Set([...skip].filter((name) => name !== "_archive"));
 
   for (const folder of ctx.config.lint.workbench) {
     const dir = join(ctx.docsRoot, folder);
     if (!existsSync(dir)) continue;
-    for (const path of walkMarkdown(dir, skip)) {
+    const walkSkip =
+      folder === FEATURES_FOLDER || folder === ITEMS_FOLDER ? ownerSkip : skip;
+    for (const path of walkMarkdown(dir, walkSkip)) {
       const rel = relative(ctx.repoRoot, path);
       if (excluded(rel)) continue;
+      if (OWNER_FOLDERS.has(folder)) {
+        const within = relative(dir, path).split(sep).join("/");
+        const { type, misplaced, notEntity } = ownedPosition(folder, within);
+        out.push({
+          path,
+          rel,
+          type,
+          ...(misplaced ? { misplaced } : {}),
+          ...(notEntity ? { notEntity } : {}),
+        });
+        continue;
+      }
       out.push({
         path,
         rel,
-        type:
-          folder === "projects"
-            ? projectType(path)
-            : (SPEC[folder]?.type ?? ctx.config.lint.types[folder] ?? ""),
+        type: SPEC[folder]?.type ?? ctx.config.lint.types[folder] ?? "",
       });
     }
   }
   return out;
 }
 
-function projectType(path: string): string {
-  if (path.includes("/sessions/")) return "session";
-  return PROJECT_FILE_TYPE[basename(path)] ?? "artifact";
+/** `sessions` → `session`, and so on: `OWNER_SUBFOLDER` read backwards. */
+const SUBFOLDER_TYPE: Record<string, string> = Object.fromEntries(
+  Object.entries(OWNER_SUBFOLDER).map(([type, folder]) => [folder, type])
+);
+
+/** `feature.md` → `feature`, `item.md` → `item`: the owners' entity files. */
+const ENTITY_FILE_TYPE: Record<string, string> = {
+  [ENTITY_FILE[FEATURES_FOLDER]!.name]: ENTITY_FILE[FEATURES_FOLDER]!.type,
+  [ENTITY_FILE[ITEMS_FOLDER]!.name]: ENTITY_FILE[ITEMS_FOLDER]!.type,
+};
+
+/**
+ * The type a document's position inside an owner folder gives it.
+ *
+ * `owner` is the owner folder's name (`features` or `items`); `within` is the
+ * path relative to it, `/`-separated. A leading `_archive/` is stripped first, so an
+ * archived entity is typed exactly like a live one; an `_archive/` anywhere
+ * deeper is just a folder of artifacts.
+ */
+export function ownedType(owner: string, within: string): string {
+  return ownedPosition(owner, within).type;
+}
+
+function ownedPosition(
+  owner: string,
+  within: string
+): { type: string; misplaced: string | null; notEntity?: string } {
+  let segs = within.split("/");
+  if (segs[0] === "_archive" && segs.length > 1)
+    segs = segs.slice(1);
+
+  const expected = ENTITY_FILE[owner];
+  const misplace = (type: string) =>
+    `a ${type} belongs at ${type === "item" ? `${ITEMS_FOLDER}/<slug>.md or ` : ""}` +
+    `${type === "feature" ? FEATURES_FOLDER : ITEMS_FOLDER}/<slug>/${
+      ENTITY_FILE[type === "feature" ? FEATURES_FOLDER : ITEMS_FOLDER]!.name
+    }`;
+
+  // Loose in the owner folder itself.
+  if (segs.length === 1) {
+    const name = segs[0] as string;
+    // Under `items/` a loose file IS an item — `items/<slug>.md` — unless it
+    // is a feature's entry file, which is in the wrong owner.
+    if (owner === ITEMS_FOLDER)
+      return name === ENTITY_FILE[FEATURES_FOLDER]!.name
+        ? { type: "feature", misplaced: misplace("feature") }
+        : { type: "item", misplaced: null };
+    const entity = ENTITY_FILE_TYPE[name];
+    if (entity) return { type: entity, misplaced: misplace(entity) };
+    // A file loose in `features/` has no type a position can give it: every
+    // feature is a folder. One finding says so; typing it `""` produced a
+    // WRONG TYPE and a frozen-record row that named no type.
+    return {
+      type: "",
+      misplaced: null,
+      notEntity: `a file directly in ${FEATURES_FOLDER}/ must be a feature folder — move it to ${FEATURES_FOLDER}/<slug>/feature.md, or into a feature's artifacts/`,
+    };
+  }
+
+  const rest = segs.slice(1);
+  const name = rest[rest.length - 1] as string;
+  const entity = ENTITY_FILE_TYPE[name];
+
+  if (rest.length === 1) {
+    if (entity)
+      return {
+        type: entity,
+        misplaced: expected?.type === entity ? null : misplace(entity),
+      };
+    return { type: OWNED_FILE_TYPE[name] ?? "artifact", misplaced: null };
+  }
+
+  if (entity) return { type: entity, misplaced: misplace(entity) };
+  return { type: SUBFOLDER_TYPE[rest[0] as string] ?? "artifact", misplaced: null };
 }
 
 /**
@@ -290,10 +488,9 @@ export function libraryFiles(ctx: Ctx): Array<{
  * about the corpus and cannot be decided one file at a time.
  *
  * `lifecycle` and `extra` come from the REGISTRY, one lookup for every type.
- * They used to come from two places that could not answer for the same set:
- * `vocabularyFor` read `PROJECT_SPEC` then `SPEC`, while `extra` was read from
- * `SPEC` alone — so an extra field was structurally unavailable to all eight
- * project-scoped types, and nothing in the code said so. The registry is passed
+ * They used to come from two tables that could not answer for the same set, so
+ * an extra field was structurally unavailable to the owned types, and nothing in
+ * the code said so. The registry is passed
  * in rather than rebuilt per document; the default is exact, because neither
  * field depends on configuration.
  */
@@ -303,20 +500,28 @@ export function documentProblems(
   docsRoot: string,
   requireTags: boolean,
   registry: ReadonlyMap<string, RegistryRow> = defaultRegistryIndex()
-): { problems: string[]; activeCycle: boolean } {
+): { problems: string[]; activeCycle: boolean; missing: string[] } {
   const { rel, type } = file;
   const problems: string[] = [];
+  // The fields `pdocs report` lists, as data. The rows say the same thing for a
+  // person; a record recovered from a row by pattern is only as whole as the
+  // pattern, and a file name can look like any part of a row.
+  const missing: string[] = [];
 
   const m = /^---\n([\s\S]*?)\n---/.exec(raw);
   if (!m) {
     problems.push(`NO FRONTMATTER ${rel}  (see ${docsRoot}/SCHEMA.md)`);
-    return { problems, activeCycle: false };
+    return { problems, activeCycle: false, missing: ["frontmatter"] };
   }
 
   const fields = parseFrontmatter(m[1] as string);
   const row = registry.get(type);
   const lifecycle = row?.lifecycle ?? null;
-  const required = requireTags ? [...REQUIRED, "tags"] : REQUIRED;
+  const required = [
+    ...REQUIRED,
+    ...(requireTags ? ["tags"] : []),
+    ...(row?.required ?? []),
+  ];
   const allowed = new Set([
     ...REQUIRED,
     ...OPTIONAL,
@@ -324,12 +529,21 @@ export function documentProblems(
     ...(row?.extra ?? []),
   ]);
 
-  for (const key of required)
-    if (!fields.get(key)) problems.push(`MISSING ${key}   ${rel}`);
-  if (lifecycle && !fields.get("lifecycle"))
-    problems.push(`MISSING lifecycle   ${rel}`);
+  for (const key of required) if (!fields.get(key)) missing.push(key);
+  if (lifecycle && !fields.get("lifecycle")) missing.push("lifecycle");
+  for (const key of missing) problems.push(`MISSING ${key}   ${rel}`);
+  // The key set is closed, so a file that is somebody else's format — a draft
+  // of a Claude Code `SKILL.md`, with `name:` — cannot be made to pass by
+  // adding fields: the key that makes it what it is stays unknown. The way out
+  // is `lint.exclude`, and the row says so. ONLY when `type` is absent too: on
+  // a document that declares a type, a stray key is a key to remove, and a gate
+  // that offers exclusion beside every finding is teaching its own bypass.
+  const foreign = fields.get("type")
+    ? ""
+    : "  (not a project-docs document? add it to `lint.exclude` in .project-docs.json)";
   for (const key of fields.keys())
-    if (!allowed.has(key)) problems.push(`UNKNOWN FIELD  ${rel}: "${key}"`);
+    if (!allowed.has(key))
+      problems.push(`UNKNOWN FIELD  ${rel}: "${key}"${foreign}`);
 
   const declared = fields.get("type");
   if (declared && declared !== type)
@@ -359,6 +573,25 @@ export function documentProblems(
 
   problems.push(...generatedProblems(rel, fields.get("generated")));
 
+  // The work-item fields with a closed shape, checked only where the row
+  // declares them: on any other type the key is already an UNKNOWN FIELD.
+  const declares = (key: string) => row?.extra.includes(key) === true;
+  const id = fields.get("id");
+  if (id && declares("id")) {
+    if (UUID_RE.test(id.toLowerCase()) && id !== id.toLowerCase())
+      problems.push(`BAD ID         ${rel}: "${id}"  (lowercase)`);
+    else if (!UUID_RE.test(id))
+      problems.push(`BAD ID         ${rel}: "${id}"  (expected a UUID)`);
+  }
+  const kind = fields.get("kind");
+  if (kind && declares("kind") && !KINDS.includes(kind))
+    problems.push(`BAD KIND       ${rel}: "${kind}"  (${KINDS.join(" | ")})`);
+  const priority = fields.get("priority");
+  if (priority && declares("priority") && !PRIORITIES.includes(priority))
+    problems.push(
+      `BAD PRIORITY   ${rel}: "${priority}"  (${PRIORITIES.join(" | ")})`
+    );
+
   // Superseded by `generated.at` in OKF 0.2, and rejected rather than ignored
   // so a document cannot carry two disagreeing dates.
   for (const legacy of ["date", "timestamp", "updated"])
@@ -371,7 +604,7 @@ export function documentProblems(
     if (!TAG_RE.test(tag))
       problems.push(`BAD TAG        ${rel}: "${tag}"  (kebab-case)`);
 
-  return { problems, activeCycle };
+  return { problems, activeCycle, missing };
 }
 
 /**
@@ -385,29 +618,79 @@ export function documentProblems(
  * cold-read agent found it by trying the thing the contract forbids.
  */
 export function libraryFieldChecks(ctx: Ctx): string[] {
+  return libraryFindings(ctx).problems;
+}
+
+/** A document's missing fields, as `documentProblems` found them. */
+type MissingRecord = { rel: string; missing: string[] };
+
+function libraryFindings(ctx: Ctx): {
+  problems: string[];
+  missing: MissingRecord[];
+} {
   const registry = registryIndex(ctx.config);
   const isTpl = templateTest(ctx);
   const problems: string[] = [];
+  const missing: MissingRecord[] = [];
   for (const file of libraryFiles(ctx)) {
     if (CONTRACT_BASENAMES.has(basename(file.path)) || isTpl(file.path))
       continue;
-    problems.push(
-      ...documentProblems(
-        file,
-        readFileSync(file.path, "utf8"),
-        ctx.config.docsRoot,
-        true,
-        registry
-      ).problems
+    const r = documentProblems(
+      file,
+      readFileSync(file.path, "utf8"),
+      ctx.config.docsRoot,
+      true,
+      registry
     );
+    problems.push(...r.problems);
+    missing.push({ rel: file.rel, missing: r.missing });
   }
-  return problems;
+  return { problems, missing };
 }
 
 export function thinTier(ctx: Ctx): string[] {
+  return thinFindings(ctx).problems;
+}
+
+/**
+ * A workbench document as the thin pass read it: its position, its type, and
+ * its frontmatter. The corpus rules (`work.ts`) take these rather than walking
+ * the tree a second time.
+ */
+export interface WorkbenchDocument {
+  /** Repo-relative. */
+  rel: string;
+  type: string;
+  /** Parsed frontmatter; empty when the document has none. */
+  fields: ReadonlyMap<string, string>;
+  /** True when its position is wrong for its entity (`MISPLACED ENTITY`). */
+  misplaced: boolean;
+}
+
+/** Every non-template, non-contract workbench document, read once. */
+export function workbenchDocuments(ctx: Ctx): WorkbenchDocument[] {
+  return thinFindings(ctx).documents;
+}
+
+/** The thin tier's problems and the documents it read, from one walk. */
+export function thinReport(ctx: Ctx): {
+  problems: string[];
+  documents: WorkbenchDocument[];
+} {
+  const { problems, documents } = thinFindings(ctx);
+  return { problems, documents };
+}
+
+function thinFindings(ctx: Ctx): {
+  problems: string[];
+  missing: MissingRecord[];
+  documents: WorkbenchDocument[];
+} {
   const registry = registryIndex(ctx.config);
   const isTpl = templateTest(ctx);
   const problems: string[] = [];
+  const missing: MissingRecord[] = [];
+  const documents: WorkbenchDocument[] = [];
   const activeCycles: string[] = [];
 
   for (const file of workbenchFiles(ctx)) {
@@ -419,10 +702,11 @@ export function thinTier(ctx: Ctx): string[] {
     // the contracts and cross-link each other constantly. Templates are the one
     // exception: their links are placeholders.
     if (!isTpl(path)) {
-      for (const bad of checkLinks(path, raw).problems) {
+      for (const bad of checkLinks(path, raw, { repoRoot: linkBoundary(ctx) })
+        .problems) {
         problems.push(
           bad.kind === "MISSING FILE"
-            ? `MISSING FILE   ${rel}: ${bad.target}`
+            ? `MISSING FILE   ${rel}: ${bad.target}${bad.outside ? OUTSIDE_REPOSITORY : ""}`
             : `MISSING ANCHOR ${rel}: ${bad.target}  (#${bad.anchor} not a heading)`
         );
       }
@@ -430,8 +714,23 @@ export function thinTier(ctx: Ctx): string[] {
 
     if (CONTRACT_BASENAMES.has(name) || isTpl(path)) continue;
 
+    if (file.notEntity) {
+      problems.push(`NOT AN ENTITY POSITION  ${rel}: ${file.notEntity}`);
+      continue;
+    }
+    if (file.misplaced)
+      problems.push(`MISPLACED ENTITY  ${rel}  (${file.misplaced})`);
+
     const r = documentProblems(file, raw, ctx.config.docsRoot, false, registry);
     problems.push(...r.problems);
+    missing.push({ rel, missing: r.missing });
+    const m = /^---\n([\s\S]*?)\n---/.exec(raw);
+    documents.push({
+      rel,
+      type: file.type,
+      fields: m ? parseFrontmatter(m[1] as string) : new Map(),
+      misplaced: file.misplaced !== undefined,
+    });
     if (r.activeCycle) activeCycles.push(rel);
   }
 
@@ -442,7 +741,7 @@ export function thinTier(ctx: Ctx): string[] {
       `TWO ACTIVE CYCLES  ${activeCycles.join(", ")}  (at most one cycle is \`lifecycle: active\`)`
     );
 
-  return problems;
+  return { problems, missing, documents };
 }
 
 function generatedProblems(
@@ -601,6 +900,8 @@ export function graphTier(ctx: Ctx): DocsLintReport {
   const isTpl = templateTest(ctx);
   return collectDocsLint({
     root: ctx.docsRoot,
+    // A library page may link out of the docs root, not out of the repository.
+    repoRoot: linkBoundary(ctx),
     // A type this project declared is a known type. Passing only the built-in
     // list here made a declared durable folder report `BAD type` even though
     // the registry and both position resolvers had accepted it — the third
@@ -614,7 +915,8 @@ export function graphTier(ctx: Ctx): DocsLintReport {
     dateField: "generated",
     allowDateOnly: true,
     skipFiles: (rel) =>
-      isTpl(join(ctx.docsRoot, rel)) || excluded(join(ctx.config.docsRoot, rel)),
+      isTpl(join(ctx.docsRoot, rel)) ||
+      excluded(join(ctx.config.docsRoot, rel)),
     isContractPage: (rel) => CONTRACT_BASENAMES.has(basename(rel)),
     extraChecks: hookChecks,
   });
@@ -662,11 +964,65 @@ export function schemaLifecycles(schema: string): Map<string, string[] | null> {
   return out;
 }
 
+/**
+ * SCHEMA.md's "State groups" table, parsed: state → group.
+ *
+ * Columns are Group · State · Means, one row per state. Same parsing rules as
+ * `schemaLifecycles`: rows only after the alignment row, cells trimmed, and a
+ * backticked name in each of the first two cells.
+ */
+export function schemaStateGroups(schema: string): Map<string, string> {
+  const out = new Map<string, string>();
+  const section = /\n## State groups\n([\s\S]*?)(?:\n## |$)/.exec(schema);
+  if (!section) return out;
+  let inBody = false;
+  for (const line of (section[1] as string).split("\n")) {
+    if (/^\|\s*:?-+:?\s*\|/.test(line)) {
+      inBody = true;
+      continue;
+    }
+    if (!inBody) continue;
+    const m = /^\|\s*`([a-z-]+)`\s*\|\s*`([a-z-]+)`\s*\|/.exec(line);
+    if (m) out.set(m[2] as string, m[1] as string);
+  }
+  return out;
+}
+
+/** The state-groups table against `STATE_GROUP`, the way the lifecycle table
+ *  is checked against the registry. */
+function stateGroupChecks(schema: string): string[] {
+  const stated = schemaStateGroups(schema);
+  if (stated.size === 0)
+    return [
+      'NO STATE GROUPS TABLE  SCHEMA.md: no parsable "## State groups" section',
+    ];
+  const problems: string[] = [];
+  for (const [state, group] of Object.entries(STATE_GROUP)) {
+    const want = stated.get(state);
+    if (want === undefined)
+      problems.push(
+        `SCHEMA MISSING STATE  SCHEMA.md: the lint groups \`${state}\` as \`${group}\`, the State groups table omits it`
+      );
+    else if (want !== group)
+      problems.push(
+        `SCHEMA DISAGREES  state \`${state}\`: SCHEMA.md groups it "${want}", the lint enforces "${group}"`
+      );
+  }
+  for (const state of stated.keys())
+    if (!(state in STATE_GROUP))
+      problems.push(
+        `SCHEMA EXTRA STATE  SCHEMA.md groups \`${state}\`, which the lint knows nothing about`
+      );
+  return problems;
+}
+
 export function schemaTableChecks(schema: string): string[] {
+  const groups = stateGroupChecks(schema);
   const stated = schemaLifecycles(schema);
   if (stated.size === 0)
     return [
       'NO SCHEMA TABLE  SCHEMA.md: no parsable "## Lifecycle by type" section',
+      ...groups,
     ];
 
   // One source, not three unioned inline. That union was the assembly the
@@ -699,7 +1055,7 @@ export function schemaTableChecks(schema: string): string[] {
         `SCHEMA EXTRA TYPE  SCHEMA.md documents \`${type}\`, which the lint knows nothing about`
       );
 
-  return problems;
+  return [...problems, ...groups];
 }
 
 /**
@@ -758,30 +1114,44 @@ export function looksLikeSlideDeck(
   return !fields.get("type") && RENDERER_KEYS.some((k) => fields.has(k));
 }
 
-/**
- * What is missing, grouped by field and then by folder — and never a failure.
- *
- * A gate answers "may this land"; this answers "what is left", which is a
- * different question asked at a different moment. Merging them gives a list
- * ordered by directory walk, which is the least useful order for working
- * through it.
- */
-export function reportLines(ctx: Ctx): string[] {
-  const missing = new Map<string, string[]>();
-  const note = (field: string, rel: string) =>
-    missing.set(field, [...(missing.get(field) ?? []), rel]);
+/** Which pass found a document: the same two words `pdocs check` uses. */
+export type ReportTier = "library" | "workbench";
 
-  for (const problem of [...thinTier(ctx), ...libraryFieldChecks(ctx)]) {
-    // `MISSING FILE` and `MISSING ANCHOR` share the prefix and are not fields: a
-    // broken link is a defect to fix, not a blank to fill, and listing it here
-    // would put it in the one report that never fails.
-    const m = /^(?:MISSING|NO) (?!FILE|ANCHOR)(\S+)\s+(\S+)/.exec(problem);
-    if (m)
-      note(
-        m[1] === "FRONTMATTER" ? "frontmatter" : (m[1] as string),
-        m[2] as string
-      );
-  }
+/**
+ * One document with something to backfill, as data: `path` is repo-relative,
+ * `missing` is the required fields it lacks — or the single word `frontmatter`
+ * when it has no block at all, exactly as the text report groups it.
+ */
+export interface ReportDocument {
+  path: string;
+  tier: ReportTier;
+  missing: string[];
+}
+
+/** Every missing field, by field, with the slide decks already taken out. */
+function missingFields(ctx: Ctx): {
+  missing: Map<string, string[]>;
+  tiers: Map<string, ReportTier>;
+  decks: string[];
+} {
+  const missing = new Map<string, string[]>();
+  const tiers = new Map<string, ReportTier>();
+  const note = (field: string, rel: string, tier: ReportTier) => {
+    missing.set(field, [...(missing.get(field) ?? []), rel]);
+    tiers.set(rel, tier);
+  };
+
+  // From the findings, never from the rows: a row is for a person, and a path
+  // recovered from one by pattern is truncated by any name that looks like the
+  // row's own punctuation. A broken link is not here at all — it is a defect
+  // to fix, not a blank to fill, and this is the one report that never fails.
+  const found: Array<[ReportTier, MissingRecord[]]> = [
+    ["workbench", thinFindings(ctx).missing],
+    ["library", libraryFindings(ctx).missing],
+  ];
+  for (const [tier, records] of found)
+    for (const { rel, missing: fields } of records)
+      for (const field of fields) note(field, rel, tier);
 
   // A slide deck reached this list as a bare `type` row, indistinguishable from
   // a document that wants a `type` written — and an agent working the list
@@ -794,13 +1164,94 @@ export function reportLines(ctx: Ctx): string[] {
     const m = /^---\n([\s\S]*?)\n---/.exec(
       readFileSync(join(ctx.repoRoot, rel), "utf8")
     );
-    if (m && looksLikeSlideDeck(parseFrontmatter(m[1] as string))) decks.push(rel);
+    if (m && looksLikeSlideDeck(parseFrontmatter(m[1] as string)))
+      decks.push(rel);
   }
   for (const [field, rels] of [...missing]) {
     const kept = rels.filter((r) => !decks.includes(r));
     if (kept.length) missing.set(field, kept);
     else missing.delete(field);
   }
+  return { missing, tiers, decks };
+}
+
+/**
+ * The worklist's one order: fields by how many documents lack them, then
+ * folders by the same, then paths by name. `reportLines` prints it and
+ * `reportDocuments` walks it, so the records arrive in the order the text
+ * names them and neither can be re-sorted without the other.
+ */
+function worklistOrder(
+  missing: ReadonlyMap<string, string[]>
+): Array<{ field: string; count: number; folders: Array<[string, string[]]> }> {
+  return [...missing]
+    .sort((a, b) => b[1].length - a[1].length)
+    .map(([field, rels]) => {
+      const byFolder = new Map<string, string[]>();
+      for (const rel of [...rels].sort()) {
+        const folder = dirname(rel);
+        byFolder.set(folder, [...(byFolder.get(folder) ?? []), rel]);
+      }
+      return {
+        field,
+        count: rels.length,
+        folders: [...byFolder].sort((a, b) => b[1].length - a[1].length),
+      };
+    });
+}
+
+/**
+ * The report as records: one per document with anything missing, none for a
+ * document that is complete or a file that looks like a slide deck.
+ *
+ * The text report rolls a folder up and names ten of its files, which is the
+ * right shape for a person and the wrong one for a backfill split across
+ * workers — that needs every path, with its fields, without parsing a line.
+ * Same findings, same order (a document sits where the text first names it,
+ * its fields in the order the text groups them); nothing here is re-derived.
+ */
+function documentsOf(
+  missing: ReadonlyMap<string, string[]>,
+  tiers: ReadonlyMap<string, ReportTier>
+): ReportDocument[] {
+  const byPath = new Map<string, ReportDocument>();
+  for (const { field, folders } of worklistOrder(missing))
+    for (const [, paths] of folders)
+      for (const path of paths) {
+        const doc = byPath.get(path) ?? {
+          path,
+          tier: tiers.get(path) ?? "workbench",
+          missing: [],
+        };
+        doc.missing.push(field);
+        byPath.set(path, doc);
+      }
+  return [...byPath.values()];
+}
+
+/**
+ * What is missing, grouped by field and then by folder — and never a failure.
+ *
+ * A gate answers "may this land"; this answers "what is left", which is a
+ * different question asked at a different moment. Merging them gives a list
+ * ordered by directory walk, which is the least useful order for working
+ * through it.
+ */
+export function reportLines(ctx: Ctx): string[] {
+  return reportWorklist(ctx).lines;
+}
+
+/** The records alone — see `documentsOf`. */
+export function reportDocuments(ctx: Ctx): ReportDocument[] {
+  return reportWorklist(ctx).documents;
+}
+
+/** Both renderings of one walk: the text `pdocs report` prints, and the records. */
+export function reportWorklist(ctx: Ctx): {
+  lines: string[];
+  documents: ReportDocument[];
+} {
+  const { missing, tiers, decks } = missingFields(ctx);
 
   const lines: string[] = [];
   const total = [...missing.values()].reduce((n, v) => n + v.length, 0);
@@ -823,18 +1274,9 @@ export function reportLines(ctx: Ctx): string[] {
   // had to re-implement the check to find the file. Ten per folder is enough to
   // start; the count still tells you how much is behind them.
   const SHOWN = 10;
-  for (const [field, rels] of [...missing].sort(
-    (a, b) => b[1].length - a[1].length
-  )) {
-    lines.push(`${field}  (${rels.length})`);
-    const byFolder = new Map<string, string[]>();
-    for (const rel of rels.sort()) {
-      const folder = dirname(rel);
-      byFolder.set(folder, [...(byFolder.get(folder) ?? []), rel]);
-    }
-    for (const [folder, paths] of [...byFolder].sort(
-      (a, b) => b[1].length - a[1].length
-    )) {
+  for (const { field, count, folders } of worklistOrder(missing)) {
+    lines.push(`${field}  (${count})`);
+    for (const [folder, paths] of folders) {
       lines.push(`    ${String(paths.length).padStart(4)}  ${folder}/`);
       for (const rel of paths.slice(0, SHOWN))
         lines.push(`          ${basename(rel)}`);
@@ -854,5 +1296,5 @@ export function reportLines(ctx: Ctx): string[] {
     );
     lines.push("");
   }
-  return lines;
+  return { lines, documents: documentsOf(missing, tiers) };
 }

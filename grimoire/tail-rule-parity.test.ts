@@ -1,3 +1,5 @@
+// enforces: none in house-style — the launcher-free ruling of 2026-09-24 (one shared tail rule text)
+//
 // The tail's shared rule ("Keep watching past Monitor's 30-minute cap") is
 // word-for-word the same in every skill whose spell has a tail, and in
 // mind-mapper's CLI help, which stands in for the skill it does not ship.

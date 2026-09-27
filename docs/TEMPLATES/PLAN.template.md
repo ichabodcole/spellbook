@@ -1,0 +1,153 @@
+---
+type: plan # REQUIRED (OKF §3). Do not change it — the folder decides it.
+title: "[Feature Name] Implementation Plan"
+description: "[One sentence: the route from here to the proposed state.]"
+tags: [area, feature] # 2-4 kebab-case keywords
+status: draft # OKF §5.4: draft | stable | deprecated. Nothing else.
+lifecycle: draft # where the work has got to; see docs/SCHEMA.md
+generated: { by: your-name-or-model, at: YYYY-MM-DD }
+---
+
+<!--
+OWNERSHIP (of this template file — not of documents created from it): it is
+yours to edit. The scaffold records its hash, so a migration updates it only
+while you have not touched it. Frontmatter is the contract the lint enforces;
+below it is yours. See docs/SCHEMA.md → "Who owns which file".
+
+USAGE: `bun scripts/pdocs/cli.ts new plan --owner feature/<slug>` (or
+`item/<slug>`) writes this as `plan.md` in the owner's folder and links the
+owner.
+
+This template helps you create a development roadmap - showing the route from current codebase to completed feature.
+Focus on pivotal points: complex areas, significant changes, migration concerns, key validation gates.
+
+Think "gas stations on a road trip" - highlight important stops and transitions, but don't give turn-by-turn directions.
+The developer drives; you're providing the map and calling out where things get tricky.
+
+Adapt sections freely. Not every plan needs all sections (e.g., many won't need Rollback Plans or Observability).
+Ground your plan in the actual codebase - reference files, analyze current patterns, show the path forward.
+
+For more guidance, see the owner folder's README: ../README.md
+-->
+
+# [Feature Name] Implementation Plan
+
+**Owner:** `./feature.md` or `./item.md` — `pdocs new --owner` links it under
+Related Documents
+
+---
+
+## Overview
+
+[1-2 paragraph summary connecting back to the owner and outlining what this plan
+covers. Reference current codebase state and the path to implementation.]
+
+## Outcome & Success Criteria
+
+**Definition of Done:** What must be true to call this complete?
+
+- [ ] [Acceptance criterion 1]
+- [ ] [Acceptance criterion 2]
+- [ ] [Acceptance criterion 3]
+
+**Non-Goals:** What are we explicitly NOT doing in this plan?
+
+- [Non-goal 1]
+- [Non-goal 2]
+
+## Approach Summary
+
+High-level implementation strategy. What's the overall approach? What major
+architectural or design decisions guide this plan?
+
+[Describe the path from current state to proposed state. Reference key files or
+patterns in current codebase that will change.]
+
+## Phases
+
+Break work into major, verifiable chunks focused on pivotal points (complex
+areas, migrations, significant transitions).
+
+### Phase 1: [Phase Name]
+
+**Goal:** [What this phase achieves]
+
+**Key Changes:**
+
+- [What files/components are being modified or created?]
+- [What patterns or architecture are changing?]
+- [What's complex or risky in this phase?]
+
+**Validation:** How do we know this phase is complete?
+
+- [ ] [Test or check that must pass]
+- [ ] [Expected behavior or state]
+
+**Dependencies:** [What must exist before starting this phase, if any]
+
+---
+
+### Phase 2: [Phase Name]
+
+**Goal:** [What this phase achieves]
+
+**Key Changes:**
+
+- [What files/components are being modified or created?]
+- [What's being integrated or connected?]
+- [What's complex or risky in this phase?]
+
+**Validation:** How do we know this phase is complete?
+
+- [ ] [Test or check that must pass]
+- [ ] [Expected behavior or state]
+
+**Dependencies:** [Phase 1 complete, plus any other dependencies]
+
+## Key Risks & Mitigations (Optional)
+
+What could get complex or go wrong? How will we handle it?
+
+- **[Risk 1]:** [What could go wrong] → [How we'll mitigate or work around it]
+- **[Risk 2]:** [What could go wrong] → [How we'll mitigate or work around it]
+
+## Testing & Validation Strategy
+
+How will we validate this works?
+
+[Describe overall testing approach - what needs unit tests, what workflows need
+integration testing, what should be manually verified, what edge cases to cover]
+
+## Assumptions & Constraints (Optional)
+
+**Assumptions:** What are we assuming?
+
+**Constraints:** What are our limitations?
+
+## Rollback Plan (Optional)
+
+[Only needed for risky changes, data migrations, or production deployments. Most
+feature work won't need this.]
+
+## Observability (Optional)
+
+[Only needed if this requires monitoring, metrics, or alerts in production. Most
+feature work won't need this.]
+
+## Open Questions (Optional)
+
+[What needs to be resolved during implementation?]
+
+---
+
+**Related Documents:**
+
+- `[Architecture docs](../../architecture/doc-name.md)`
+- `[Sessions](./sessions/)` (created during implementation)
+
+---
+
+## Implementation Notes
+
+[Optional section for implementation-specific context, decisions made during
+development, or what the next plan should do differently]

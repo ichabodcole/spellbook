@@ -108,7 +108,8 @@ Two kinds: a **cantrip** casts and resolves (no standing state); a
 > while "correcting" the roster count from six to eight — astrolabe was a real
 > correction, **mind-mapper was a claim I minted**, and for a day this file was
 > the only document in the repo asserting it was a spell. Removed on the ruling.
-> _See [the sweep report](./reports/2026-08-10-project-status-sweep.md)._
+> _See
+> [the sweep report](https://github.com/ichabodcole/spellbook/blob/5078f934068a076f2bd0bb8e903699f27b8ad7b0/docs/reports/2026-08-10-project-status-sweep.md)._
 
 > **New since last summary:** `magpie` graduated from a CLI-only **cantrip**
 > into a full **conjuration** — a multi-phase daemon (`cli.ts` + `server.ts` +
@@ -163,7 +164,8 @@ The formal `docs/architecture/` and `docs/specifications/` trees exist but hold
 **Active Projects** (`docs/projects/`):
 
 _Five, as of the 2026-08-10 sweep
-([report](./reports/2026-08-10-project-status-sweep.md)) — down from ten._
+([report](https://github.com/ichabodcole/spellbook/blob/5078f934068a076f2bd0bb8e903699f27b8ad7b0/docs/reports/2026-08-10-project-status-sweep.md))
+— down from ten._
 
 - `spell-hardening` — **in progress.** Sprints 01–04 shipped; part 1 of its
   two-part end condition (drain the defect population) is met. **Sprint 05, "the

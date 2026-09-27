@@ -1,0 +1,1782 @@
+{
+  "spell": "bounty",
+  "launcher": "scripts/cli.ts",
+  "verbCount": 18,
+  "verbs": [
+    "open",
+    "state",
+    "tail",
+    "add",
+    "update",
+    "claim",
+    "block",
+    "unblock",
+    "remove",
+    "message",
+    "init",
+    "close",
+    "info",
+    "list",
+    "sessions",
+    "version",
+    "schema",
+    "help"
+  ],
+  "excluded": {
+    "open": "starts a daemon (and may open a browser)",
+    "tail": "a long-running stream (tail); never ends on its own within the run"
+  },
+  "excludedInvocations": [
+    {
+      "argv": ["open", "--title", "hello", "--timeout", "5"],
+      "doc": "SKILL.md:138",
+      "reason": "starts a daemon (and may open a browser)"
+    },
+    {
+      "argv": ["open", "--pin"],
+      "doc": "SKILL.md:156",
+      "reason": "starts a daemon (and may open a browser)"
+    },
+    {
+      "argv": ["open", "--session-key", "k", "--fresh"],
+      "doc": "SKILL.md:170",
+      "reason": "starts a daemon (and may open a browser)"
+    },
+    {
+      "argv": ["open", "--pin", "--session-key", "k"],
+      "doc": "SKILL.md:178",
+      "reason": "starts a daemon (and may open a browser)"
+    },
+    {
+      "argv": ["open", "--session-key", "k"],
+      "doc": "SKILL.md:197",
+      "reason": "starts a daemon (and may open a browser)"
+    },
+    {
+      "argv": ["open", "--title", "hello", "--timeout", "5", "--no-open"],
+      "doc": "SKILL.md:224",
+      "reason": "starts a daemon (and may open a browser)"
+    },
+    {
+      "argv": ["tail", "--since", "5", "--once", "--owner", "golden-agent", "--as", "golden-agent"],
+      "doc": "SKILL.md:226",
+      "reason": "a long-running stream (tail); never ends on its own within the run"
+    },
+    {
+      "argv": ["tail", "--since", "5", "--once", "--mine", "--as", "golden-agent"],
+      "doc": "SKILL.md:226",
+      "reason": "a long-running stream (tail); never ends on its own within the run"
+    },
+    {
+      "argv": ["tail", "--session", "s1"],
+      "doc": "SKILL.md:343",
+      "reason": "a long-running stream (tail); never ends on its own within the run"
+    },
+    {
+      "argv": ["tail", "--since", "12"],
+      "doc": "SKILL.md:364",
+      "reason": "a long-running stream (tail); never ends on its own within the run"
+    },
+    {
+      "argv": ["open", "--port", "5", "--host", "127.0.0.1", "--id", "s1"],
+      "doc": "SKILL.md:466",
+      "reason": "starts a daemon (and may open a browser)"
+    },
+    {
+      "argv": ["open", "--restore", "s1"],
+      "doc": "SKILL.md:488",
+      "reason": "starts a daemon (and may open a browser)"
+    },
+    {
+      "argv": ["open", "--restore", "s1.pre-123.bak"],
+      "doc": "SKILL.md:515",
+      "reason": "starts a daemon (and may open a browser)"
+    }
+  ],
+  "invocationCount": 97,
+  "invocations": [
+    {
+      "argv": [],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "open",
+        "state",
+        "tail",
+        "add",
+        "update",
+        "claim",
+        "block",
+        "unblock",
+        "remove",
+        "message",
+        "init",
+        "close",
+        "info",
+        "list",
+        "sessions",
+        "version",
+        "schema",
+        "help"
+      ]
+    },
+    {
+      "argv": ["--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "bounty — an agent-driven task board.",
+        "",
+        "  open [--title ..] [--timeout ..] [--no-open] [--restore ..] [--pin] [--fresh]",
+        "                                                spawn a board daemon; prints {url, port, session_id, restoreSkipped}. --pin binds it to cwd; --session-key <key> binds it to a caller-owned key, idempotently (--fresh forces a clean board)",
+        "  state [--owner ..] [--mine] [--full]          read-back: {state, cursor, readMode}; --mine | --owner <name> scope it (--full is accepted but redundant: the read is full by default — b6)",
+        "  tail [--since ..] [--once] [--owner ..] [--mine]",
+        "                                                board events as JSON lines — wrap with Monitor; it ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
+        "  add [title...] [--status ..] [--notes ..] [--owner ..] [--tag ..] [--size ..] [--expect ..] [--id ..] [--stdin]",
+        "                                                add a task (the title, or --stdin); --size S|M|L is a heartbeat estimate (5/10/20 min), --expect <min> overrides it",
+        "  update <id> [--status ..] [--title ..] [--notes ..] [--clear-notes] [--owner ..] [--tag ..] [--size ..] [--expect ..] [--stdin]",
+        "                                                patch a task; --stdin reads the new TITLE; --clear-notes clears the notes (an empty --notes is refused); --tag \"\" clears the tags",
+        "  claim <id>                                    self-claim an UNOWNED task as --as <name> (rejected if another owns it)",
+        "  block <id> [--on ..]                          mark <id> blocked on --on <id>[,<id>...] (rejected on a cycle)",
+        "  unblock <id> [--on ..]                        remove blocker edge(s) --on <id>[,<id>...]",
+        "  remove <id>                                   delete a task",
+        "  message [text...] [--stdin]                   show a toast on the board (the text, or --stdin)",
+        "  init [--title ..] [--stdin-tasks]             seed the board (tasks = JSON array on stdin; each task REQUIRES id + title + status — init does NOT mint ids, unlike add; any dropped task is reported per-entry in tasksDropped)",
+        "  close                                         end the board (writes its snapshot); prints {ok, sent, down}",
+        "  info                                          the resolved board's {url, port, session_id, title}",
+        "  list                                          list currently-RUNNING boards (id/tasks/url/title) — prose, see below",
+        "  sessions                                      list saved SNAPSHOTS, incl. closed boards (id/tasks/title) — prose, see below",
+        "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
+        "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
+        "  help                                          show this message (alias: --help, -h)",
+        "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
+        "",
+        "  Every verb that talks to a board takes --session <id> and --session-key <key>;",
+        "  those that act on it also take --as <name>. Each verb accepts only the flags",
+        "  on its row.",
+        "",
+        "  --as <name> (or $BOUNTY_AS) is your identity — stamped on events (for scoped",
+        "  tail + self-echo suppression) and used by claim/--mine. --owner assigns a task.",
+        "  --stdin reads the title from stdin (verbatim — survives apostrophes, quotes,",
+        "  &, <, >). Session targeting resolves --session-key <key> > --session <id> >",
+        "  $BOUNTY_SESSION_KEY > $BOUNTY_SESSION > nearest .bounty-session (walking up",
+        "  from cwd) > most-recent board. A --session-key is a caller-owned handle: it",
+        "  derives a stable, project-scoped board id, so open --session-key K is",
+        "  idempotent (attaches to a live board for K, respawns a dead one; --fresh",
+        "  forces a clean one), and every verb re-derives the same id — deterministic",
+        "  board binding with no stored/latest pointer. Or use open --pin to write",
+        "  cwd/.bounty-session and bind a board to this directory.",
+        "",
+        "  Output: JSON on stdout, one document per answer — except tail (one JSON line",
+        "  per event), and list, sessions and help (prose lines). Failures: one JSON",
+        "  envelope on stderr, exit 2 = usage, 1 = internal, 5 = not found, 6 =",
+        "  conflict. schema prints the machine-readable interface."
+      ]
+    },
+    {
+      "argv": ["-h"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "bounty — an agent-driven task board.",
+        "",
+        "  open [--title ..] [--timeout ..] [--no-open] [--restore ..] [--pin] [--fresh]",
+        "                                                spawn a board daemon; prints {url, port, session_id, restoreSkipped}. --pin binds it to cwd; --session-key <key> binds it to a caller-owned key, idempotently (--fresh forces a clean board)",
+        "  state [--owner ..] [--mine] [--full]          read-back: {state, cursor, readMode}; --mine | --owner <name> scope it (--full is accepted but redundant: the read is full by default — b6)",
+        "  tail [--since ..] [--once] [--owner ..] [--mine]",
+        "                                                board events as JSON lines — wrap with Monitor; it ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
+        "  add [title...] [--status ..] [--notes ..] [--owner ..] [--tag ..] [--size ..] [--expect ..] [--id ..] [--stdin]",
+        "                                                add a task (the title, or --stdin); --size S|M|L is a heartbeat estimate (5/10/20 min), --expect <min> overrides it",
+        "  update <id> [--status ..] [--title ..] [--notes ..] [--clear-notes] [--owner ..] [--tag ..] [--size ..] [--expect ..] [--stdin]",
+        "                                                patch a task; --stdin reads the new TITLE; --clear-notes clears the notes (an empty --notes is refused); --tag \"\" clears the tags",
+        "  claim <id>                                    self-claim an UNOWNED task as --as <name> (rejected if another owns it)",
+        "  block <id> [--on ..]                          mark <id> blocked on --on <id>[,<id>...] (rejected on a cycle)",
+        "  unblock <id> [--on ..]                        remove blocker edge(s) --on <id>[,<id>...]",
+        "  remove <id>                                   delete a task",
+        "  message [text...] [--stdin]                   show a toast on the board (the text, or --stdin)",
+        "  init [--title ..] [--stdin-tasks]             seed the board (tasks = JSON array on stdin; each task REQUIRES id + title + status — init does NOT mint ids, unlike add; any dropped task is reported per-entry in tasksDropped)",
+        "  close                                         end the board (writes its snapshot); prints {ok, sent, down}",
+        "  info                                          the resolved board's {url, port, session_id, title}",
+        "  list                                          list currently-RUNNING boards (id/tasks/url/title) — prose, see below",
+        "  sessions                                      list saved SNAPSHOTS, incl. closed boards (id/tasks/title) — prose, see below",
+        "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
+        "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
+        "  help                                          show this message (alias: --help, -h)",
+        "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
+        "",
+        "  Every verb that talks to a board takes --session <id> and --session-key <key>;",
+        "  those that act on it also take --as <name>. Each verb accepts only the flags",
+        "  on its row.",
+        "",
+        "  --as <name> (or $BOUNTY_AS) is your identity — stamped on events (for scoped",
+        "  tail + self-echo suppression) and used by claim/--mine. --owner assigns a task.",
+        "  --stdin reads the title from stdin (verbatim — survives apostrophes, quotes,",
+        "  &, <, >). Session targeting resolves --session-key <key> > --session <id> >",
+        "  $BOUNTY_SESSION_KEY > $BOUNTY_SESSION > nearest .bounty-session (walking up",
+        "  from cwd) > most-recent board. A --session-key is a caller-owned handle: it",
+        "  derives a stable, project-scoped board id, so open --session-key K is",
+        "  idempotent (attaches to a live board for K, respawns a dead one; --fresh",
+        "  forces a clean one), and every verb re-derives the same id — deterministic",
+        "  board binding with no stored/latest pointer. Or use open --pin to write",
+        "  cwd/.bounty-session and bind a board to this directory.",
+        "",
+        "  Output: JSON on stdout, one document per answer — except tail (one JSON line",
+        "  per event), and list, sessions and help (prose lines). Failures: one JSON",
+        "  envelope on stderr, exit 2 = usage, 1 = internal, 5 = not found, 6 =",
+        "  conflict. schema prints the machine-readable interface."
+      ]
+    },
+    {
+      "argv": ["help"],
+      "doc": "SKILL.md:235",
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "bounty — an agent-driven task board.",
+        "",
+        "  open [--title ..] [--timeout ..] [--no-open] [--restore ..] [--pin] [--fresh]",
+        "                                                spawn a board daemon; prints {url, port, session_id, restoreSkipped}. --pin binds it to cwd; --session-key <key> binds it to a caller-owned key, idempotently (--fresh forces a clean board)",
+        "  state [--owner ..] [--mine] [--full]          read-back: {state, cursor, readMode}; --mine | --owner <name> scope it (--full is accepted but redundant: the read is full by default — b6)",
+        "  tail [--since ..] [--once] [--owner ..] [--mine]",
+        "                                                board events as JSON lines — wrap with Monitor; it ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
+        "  add [title...] [--status ..] [--notes ..] [--owner ..] [--tag ..] [--size ..] [--expect ..] [--id ..] [--stdin]",
+        "                                                add a task (the title, or --stdin); --size S|M|L is a heartbeat estimate (5/10/20 min), --expect <min> overrides it",
+        "  update <id> [--status ..] [--title ..] [--notes ..] [--clear-notes] [--owner ..] [--tag ..] [--size ..] [--expect ..] [--stdin]",
+        "                                                patch a task; --stdin reads the new TITLE; --clear-notes clears the notes (an empty --notes is refused); --tag \"\" clears the tags",
+        "  claim <id>                                    self-claim an UNOWNED task as --as <name> (rejected if another owns it)",
+        "  block <id> [--on ..]                          mark <id> blocked on --on <id>[,<id>...] (rejected on a cycle)",
+        "  unblock <id> [--on ..]                        remove blocker edge(s) --on <id>[,<id>...]",
+        "  remove <id>                                   delete a task",
+        "  message [text...] [--stdin]                   show a toast on the board (the text, or --stdin)",
+        "  init [--title ..] [--stdin-tasks]             seed the board (tasks = JSON array on stdin; each task REQUIRES id + title + status — init does NOT mint ids, unlike add; any dropped task is reported per-entry in tasksDropped)",
+        "  close                                         end the board (writes its snapshot); prints {ok, sent, down}",
+        "  info                                          the resolved board's {url, port, session_id, title}",
+        "  list                                          list currently-RUNNING boards (id/tasks/url/title) — prose, see below",
+        "  sessions                                      list saved SNAPSHOTS, incl. closed boards (id/tasks/title) — prose, see below",
+        "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
+        "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
+        "  help                                          show this message (alias: --help, -h)",
+        "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
+        "",
+        "  Every verb that talks to a board takes --session <id> and --session-key <key>;",
+        "  those that act on it also take --as <name>. Each verb accepts only the flags",
+        "  on its row.",
+        "",
+        "  --as <name> (or $BOUNTY_AS) is your identity — stamped on events (for scoped",
+        "  tail + self-echo suppression) and used by claim/--mine. --owner assigns a task.",
+        "  --stdin reads the title from stdin (verbatim — survives apostrophes, quotes,",
+        "  &, <, >). Session targeting resolves --session-key <key> > --session <id> >",
+        "  $BOUNTY_SESSION_KEY > $BOUNTY_SESSION > nearest .bounty-session (walking up",
+        "  from cwd) > most-recent board. A --session-key is a caller-owned handle: it",
+        "  derives a stable, project-scoped board id, so open --session-key K is",
+        "  idempotent (attaches to a live board for K, respawns a dead one; --fresh",
+        "  forces a clean one), and every verb re-derives the same id — deterministic",
+        "  board binding with no stored/latest pointer. Or use open --pin to write",
+        "  cwd/.bounty-session and bind a board to this directory.",
+        "",
+        "  Output: JSON on stdout, one document per answer — except tail (one JSON line",
+        "  per event), and list, sessions and help (prose lines). Failures: one JSON",
+        "  envelope on stderr, exit 2 = usage, 1 = internal, 5 = not found, 6 =",
+        "  conflict. schema prints the machine-readable interface."
+      ]
+    },
+    {
+      "argv": ["--version"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "name": "bounty",
+        "version": "<VERSION>"
+      }
+    },
+    {
+      "argv": ["-V"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "name": "bounty",
+        "version": "<VERSION>"
+      }
+    },
+    {
+      "argv": ["version"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "name": "bounty",
+        "version": "<VERSION>"
+      }
+    },
+    {
+      "argv": ["schema"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "formatVersion": "0",
+        "provenance": "emitted",
+        "selfDescription": {
+          "args": ["schema"]
+        },
+        "commands": [
+          {
+            "path": [],
+            "args": [
+              {
+                "name": "--help",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "-h",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--version",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "-V",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "command",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["open"],
+            "args": [
+              {
+                "name": "--restore",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session-key",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--timeout",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--title",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--fresh",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--no-open",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--pin",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["state"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--owner",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session-key",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--full",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--mine",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["tail"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--owner",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session-key",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--since",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--once",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--mine",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["add"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--expect",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--id",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--notes",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--owner",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session-key",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--size",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--status",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--tag",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "title",
+                "required": false,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["update"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--expect",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--notes",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--owner",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session-key",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--size",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--status",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--tag",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--title",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--clear-notes",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["claim"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session-key",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["block"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--on",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session-key",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["unblock"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--on",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session-key",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["remove"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session-key",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["message"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session-key",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "text",
+                "required": false,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["init"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session-key",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--title",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin-tasks",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["close"],
+            "args": [
+              {
+                "name": "--as",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session-key",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["info"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session-key",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["list"],
+            "args": [],
+            "positionals": []
+          },
+          {
+            "path": ["sessions"],
+            "args": [],
+            "positionals": []
+          },
+          {
+            "path": ["version"],
+            "args": [],
+            "positionals": []
+          },
+          {
+            "path": ["schema"],
+            "args": [],
+            "positionals": []
+          },
+          {
+            "path": ["help"],
+            "args": [],
+            "positionals": []
+          }
+        ]
+      }
+    },
+    {
+      "argv": ["--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--help", "--version", "-h", "-V"]
+    },
+    {
+      "argv": ["zz-bogus-verb"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "open",
+        "state",
+        "tail",
+        "add",
+        "update",
+        "claim",
+        "block",
+        "unblock",
+        "remove",
+        "message",
+        "init",
+        "close",
+        "info",
+        "list",
+        "sessions",
+        "version",
+        "schema",
+        "help"
+      ]
+    },
+    {
+      "argv": ["--", "--x"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "open",
+        "state",
+        "tail",
+        "add",
+        "update",
+        "claim",
+        "block",
+        "unblock",
+        "remove",
+        "message",
+        "init",
+        "close",
+        "info",
+        "list",
+        "sessions",
+        "version",
+        "schema",
+        "help"
+      ]
+    },
+    {
+      "argv": ["version", "--bogus"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["open", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "--fresh",
+        "--no-open",
+        "--pin",
+        "--restore",
+        "--session-key",
+        "--timeout",
+        "--title"
+      ]
+    },
+    {
+      "argv": ["open", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "--fresh",
+        "--no-open",
+        "--pin",
+        "--restore",
+        "--session-key",
+        "--timeout",
+        "--title"
+      ]
+    },
+    {
+      "argv": ["state", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--full", "--mine", "--owner", "--session", "--session-key"]
+    },
+    {
+      "argv": ["state", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--full", "--mine", "--owner", "--session", "--session-key"]
+    },
+    {
+      "argv": ["tail", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--mine", "--once", "--owner", "--session", "--session-key", "--since"]
+    },
+    {
+      "argv": ["tail", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--mine", "--once", "--owner", "--session", "--session-key", "--since"]
+    },
+    {
+      "argv": ["add", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "--as",
+        "--expect",
+        "--id",
+        "--notes",
+        "--owner",
+        "--session",
+        "--session-key",
+        "--size",
+        "--status",
+        "--stdin",
+        "--tag"
+      ]
+    },
+    {
+      "argv": ["add", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "--as",
+        "--expect",
+        "--id",
+        "--notes",
+        "--owner",
+        "--session",
+        "--session-key",
+        "--size",
+        "--status",
+        "--stdin",
+        "--tag"
+      ]
+    },
+    {
+      "argv": ["update", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "--as",
+        "--clear-notes",
+        "--expect",
+        "--notes",
+        "--owner",
+        "--session",
+        "--session-key",
+        "--size",
+        "--status",
+        "--stdin",
+        "--tag",
+        "--title"
+      ]
+    },
+    {
+      "argv": ["update", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "--as",
+        "--clear-notes",
+        "--expect",
+        "--notes",
+        "--owner",
+        "--session",
+        "--session-key",
+        "--size",
+        "--status",
+        "--stdin",
+        "--tag",
+        "--title"
+      ]
+    },
+    {
+      "argv": ["claim", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--session", "--session-key"]
+    },
+    {
+      "argv": ["claim", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--session", "--session-key"]
+    },
+    {
+      "argv": ["block", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--on", "--session", "--session-key"]
+    },
+    {
+      "argv": ["block", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--on", "--session", "--session-key"]
+    },
+    {
+      "argv": ["unblock", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--on", "--session", "--session-key"]
+    },
+    {
+      "argv": ["unblock", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--on", "--session", "--session-key"]
+    },
+    {
+      "argv": ["remove", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--session", "--session-key"]
+    },
+    {
+      "argv": ["remove", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--session", "--session-key"]
+    },
+    {
+      "argv": ["message", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--session", "--session-key", "--stdin"]
+    },
+    {
+      "argv": ["message", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--session", "--session-key", "--stdin"]
+    },
+    {
+      "argv": ["init", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--session", "--session-key", "--stdin-tasks", "--title"]
+    },
+    {
+      "argv": ["init", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--session", "--session-key", "--stdin-tasks", "--title"]
+    },
+    {
+      "argv": ["close", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--session", "--session-key"]
+    },
+    {
+      "argv": ["close", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--as", "--session", "--session-key"]
+    },
+    {
+      "argv": ["info", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session", "--session-key"]
+    },
+    {
+      "argv": ["info", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session", "--session-key"]
+    },
+    {
+      "argv": ["list", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["list", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["sessions", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["sessions", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["version", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["version", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["schema", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["schema", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["help", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["help", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["state"],
+      "doc": "SKILL.md:140",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["state", "--full"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["state", "--mine", "--as", "golden-agent"],
+      "doc": "SKILL.md:225",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["add", "hello", "--status", "todo", "--size", "S"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["add", "hello", "--status=doing"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["add", "hello", "--tag", "a", "--tag", "b"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["add", "hello", "world", "--expect", "5", "--id", "t1"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["update", "t1", "--status", "doing", "--tag", ""],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["update", "t1", "--notes", ""],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["update", "t1", "--title", ""],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["update", "t1", "--clear-notes"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["update", "t1", "--clear-notes", "--notes", "x"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["update", "t1", "--stdin", "--title", "x"],
+      "stdin": "from stdin\n",
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["claim", "t1"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["block", "t1", "--on", "t2,t3"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["unblock", "t1", "--on", "t2"],
+      "doc": "SKILL.md:230",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["remove", "t1"],
+      "doc": "SKILL.md:231",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["message", "hello", "world"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["init", "--stdin-tasks"],
+      "stdin": "[{\"id\":\"t1\",\"title\":\"hello\",\"status\":\"todo\"}]",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["init"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["list"],
+      "doc": "SKILL.md:234",
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout"
+    },
+    {
+      "argv": ["sessions"],
+      "doc": "SKILL.md:235",
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout"
+    },
+    {
+      "argv": ["close"],
+      "doc": "SKILL.md:141",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["info"],
+      "doc": "SKILL.md:235",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["--session", "s1", "add", "hello"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--help", "--version", "-h", "-V"]
+    },
+    {
+      "argv": ["--as", "golden-agent", "claim", "t1"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--help", "--version", "-h", "-V"]
+    },
+    {
+      "argv": ["add", "--session", "s1", "hello"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["add", "hello", "--session-key", "k"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["add", "--", "text", "--session-key", "k"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "warned": true,
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["update", "t1", "--status", "doing", "--", "--session-key", "k"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["message", "--", "--x"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["add", "--", "text", "--session-key=k"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "warned": true,
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["message", "--", "hi", "--session-key", "k"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "warned": true,
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["add", "--", "text", "--nope"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["add", "hello", "--status", "doing"],
+      "doc": "SKILL.md:139",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["add", "--session-key", "k", "--", "hello"],
+      "doc": "SKILL.md:219",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["add", "--", "--session-key", "k", "hello"],
+      "doc": "SKILL.md:220",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "warned": true,
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["state", "--owner", "golden-agent"],
+      "doc": "SKILL.md:225",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": [
+        "add",
+        "hello",
+        "--status",
+        "todo",
+        "--notes",
+        "hello",
+        "--owner",
+        "golden-agent",
+        "--tag",
+        "a,b",
+        "--size",
+        "S",
+        "--expect",
+        "5",
+        "--id",
+        "t1"
+      ],
+      "doc": "SKILL.md:227",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": [
+        "update",
+        "t1",
+        "--status",
+        "doing",
+        "--title",
+        "hello",
+        "--notes",
+        "hello",
+        "--owner",
+        "golden-agent",
+        "--tag",
+        "a,b",
+        "--size",
+        "S",
+        "--expect",
+        "5"
+      ],
+      "doc": "SKILL.md:228",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["claim", "t1", "--as", "golden-agent"],
+      "doc": "SKILL.md:229",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["block", "t1", "--on", "t2"],
+      "doc": "SKILL.md:230",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["message", "hello"],
+      "doc": "SKILL.md:232",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["message", "--stdin"],
+      "stdin": "hello",
+      "doc": "SKILL.md:232",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["init", "--title", "hello"],
+      "doc": "SKILL.md:233",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["add", "--stdin", "--status", "doing"],
+      "stdin": "hello",
+      "doc": "SKILL.md:242",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["update", "t1", "--stdin"],
+      "stdin": "hello",
+      "doc": "SKILL.md:254",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["update", "t1", "--notes", "hello"],
+      "doc": "SKILL.md:255",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["init", "--title", "hello", "--stdin-tasks"],
+      "stdin": "[{\"id\":\"t1\",\"title\":\"hello\",\"status\":\"todo\"}]",
+      "doc": "SKILL.md:278",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    }
+  ]
+}

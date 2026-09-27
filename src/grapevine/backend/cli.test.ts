@@ -2103,7 +2103,10 @@ describe("declared surface (schema / root routing / per-verb flags)", () => {
     // verb names itself in `meta.command` and in the message.
     const e = errorOf(stderr);
     expect(e.kind).toBe("usage");
-    expect(e.message).toStartWith("send:");
+    // --timeout is a grapevine flag, so since the move onto the kit registry it
+    // is refused as MISPLACED (`--timeout is not accepted by \`send\``), not
+    // as node's `Unknown option`; the verb still names itself.
+    expect(e.message).toContain("is not accepted by `send`");
     const enumeration = e.choices;
     expect(enumeration).toBeDefined();
     expect(enumeration).toContain("--in-reply-to");

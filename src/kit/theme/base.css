@@ -84,6 +84,18 @@
    both halves of that now — see its amendment. */
 @source "../";
 
+/* ⛔ BUT NOT src/kit/cli/, WHICH IS A CLI MODULE WITH NO MARKUP IN IT. The scan
+   above reads every word of every scanned file as a candidate class, so
+   registry.ts's prose and identifiers became utilities: one word in it, the
+   name of the HTML element for tabular data, is also a display utility, and
+   Tailwind emitted that rule into the shipped stylesheet of every spell that
+   imports this file (bounty, grapevine, imago) the day the registry landed —
+   green build, no error, a new selector in three bundles. Measured by grepping
+   each rebuilt stylesheet for the rule before and after this line. Tailwind
+   v4's `@source not` removes a path from the scan above, resolved relative to
+   this file like it. Nothing under src/kit/cli/ may ever need a class. */
+@source not "../cli";
+
 @theme {
   --color-bg: #020617;
   --color-surface: #0f172a;

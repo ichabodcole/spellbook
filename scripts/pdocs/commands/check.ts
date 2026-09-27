@@ -6,13 +6,16 @@
 // the whole of stdout against transcripts recorded before this file existed, so
 // a change here that reads as a harmless tidy-up fails the guard rather than
 // quietly rewording the gate every project in the scaffold's fleet reads.
+// One line is this file's own and not inherited: the count of tracked pages
+// outside the docs root, under the workbench summary.
 //
 // The JSON rendering is NEW output and covered by tests of its own.
 
 import type { Command, Invocation } from "../cli.ts";
 import { docsLintSummary } from "../docs-lint/index.ts";
-import { ExitCode, Outcome, printEnvelope } from "../envelope.ts";
+import { ExitCode, Outcome, UsageError, printEnvelope } from "../envelope.ts";
 import { type LintReport, collect } from "../lint/collect.ts";
+import { refExists } from "../lint/work.ts";
 
 /** One problem, and which tier found it. */
 export interface CheckProblem {
@@ -30,6 +33,10 @@ export interface CheckData {
   adopting: boolean;
   total: number;
   problems: CheckProblem[];
+  /** Tracked markdown pages outside the docs root, read for their LINKS ONLY —
+   *  no frontmatter, no tier. A `workbench` problem naming a path that is not
+   *  under the docs root came from one of these; `lint.exclude` takes one out. */
+  outside: number;
   /** What the lint decided NOT to look at: every file under the docs root it
    *  skipped as a template, repo-relative. A skip that wrongly catches a real
    *  page leaves no other trace, so the list is the only way to see it. */
@@ -56,17 +63,18 @@ export function checkData(report: LintReport): CheckData {
     adopting: report.adopting,
     total: report.total,
     problems,
+    outside: report.outside,
     templates: report.templates,
   };
 }
 
 /**
- * What `bun docs/lint.ts` printed, verbatim.
+ * What `bun docs/lint.ts` printed, verbatim, plus the outside-corpus line.
  *
  * Do not reflow, retitle or re-punctuate anything below without re-recording
  * the goldens and reading the diff.
  */
-function renderText(report: LintReport): void {
+function renderText(report: LintReport, docsRoot: string): void {
   console.log(`── library (graph tier) ────────────────────────────────`);
   for (const p of report.library.fieldProblems) console.log(p);
   for (const p of report.library.graph.problems) console.log(p);
@@ -82,6 +90,13 @@ function renderText(report: LintReport): void {
     report.workbench.length
       ? `\n${report.workbench.length} problem(s).`
       : "OK — no problems."
+  );
+  // The one line `docs/lint.ts` never printed. It read this corpus without
+  // saying so, and a problem row naming `DEV_KICKOFF.md` at the repository root
+  // then reads as a docs-root path that does not exist. Problems found there
+  // are already listed above; this says where they came from.
+  console.log(
+    `${report.outside} tracked page(s) outside ${docsRoot}/, links only  (\`lint.exclude\` takes one out)`
   );
 
   if (report.total === 0) {
@@ -105,14 +120,33 @@ function renderText(report: LintReport): void {
 export const check: Command = {
   name: "check",
   summary: "Lint the documentation tree. Exit 9 if it is dirty.",
-  usage: "pdocs check [--root <path>] [--format text|json]",
-  options: [],
+  usage: "pdocs check [--root <path>] [--format text|json] [--against <ref>]",
+  options: [
+    {
+      flag: "--against",
+      metavar: "<ref>",
+      summary:
+        "The git ref an item may not silently leave (default HEAD). In CI, name the base.",
+    },
+  ],
 
-  run({ ctx, format }: Invocation): number {
-    const report = collect(ctx);
+  run({ ctx, format, flags }: Invocation): number {
+    const against = flags["--against"];
+    if (against === true) throw new UsageError("--against needs a ref.");
+    if (against !== undefined) {
+      const exists = refExists(ctx, against);
+      if (exists !== true)
+        throw new UsageError(
+          exists === null
+            ? `--against ${against}: ${ctx.repoRoot} is not a git repository.`
+            : `--against: \`${against}\` does not name a commit.`,
+          { token: against }
+        );
+    }
+    const report = collect(against === undefined ? ctx : { ...ctx, against });
 
     if (format === "json") printEnvelope("check", checkData(report));
-    else renderText(report);
+    else renderText(report, ctx.config.docsRoot);
 
     // Clean, or dirty in a project that has declared itself mid-adoption.
     if (report.total === 0 || report.adopting) return ExitCode.Success;

@@ -9,7 +9,7 @@
 
 import type { Command, Invocation } from "../cli.ts";
 import { ExitCode, printEnvelope } from "../envelope.ts";
-import { reportLines } from "../lint/rules.ts";
+import { reportWorklist } from "../lint/rules.ts";
 
 export const report: Command = {
   name: "report",
@@ -18,12 +18,15 @@ export const report: Command = {
   options: [],
 
   run({ ctx, format }: Invocation): number {
-    const lines = reportLines(ctx);
+    const { lines, documents } = reportWorklist(ctx);
 
     // `lines` is a rendering, and the envelope says so by naming the field
     // `lines` rather than dressing it up as structure it does not have.
-    // `pdocs find` (Phase 5) is where a queryable version of this belongs.
-    if (format === "json") printEnvelope("report", { lines });
+    // `documents` is the structure: one `{ path, tier, missing }` per document
+    // with anything missing, every one of them rather than ten per folder, in
+    // the order `lines` names them — what a backfill split across workers
+    // shards by, without a regex over the text.
+    if (format === "json") printEnvelope("report", { lines, documents });
     else for (const line of lines) console.log(line);
 
     return ExitCode.Success;

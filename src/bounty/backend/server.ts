@@ -83,7 +83,7 @@ import type {
   TaskSize,
   TaskStatus,
 } from "../../../plugins/spellbook/skills/bounty/shared/types";
-import { SIZE_MINUTES } from "../../../plugins/spellbook/skills/bounty/shared/types";
+import { SIZE_MINUTES, VALID_STATUS } from "../../../plugins/spellbook/skills/bounty/shared/types";
 import { unlinkIfMatches, writeFileAtomic } from "../../kit/wire/discovery.ts";
 import { createEventLog } from "../../kit/wire/eventLog.ts";
 import { drainAndStop, shouldIdleClose, startHousekeeping } from "../../kit/wire/housekeeping.ts";
@@ -328,7 +328,6 @@ type BrowserMsg =
   | { type: "close" }; // the human dismisses the board ("Close board")
 
 const PORT_SUFFIX_RE = /-p(\d{2,5})$/;
-const VALID_STATUS: TaskStatus[] = ["todo", "doing", "review", "done"];
 
 function parsePortFromSessionId(sid: string): number | null {
   const m = sid?.match(PORT_SUFFIX_RE);

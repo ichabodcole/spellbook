@@ -7,9 +7,9 @@
  *
  * Built on `feat/tail-quiet-handoff` to Cole's ruling of 2026-09-23 (the
  * "Ruling" section of
- * `docs/backlog/2026-09-22-scriptorium-tail-monitor-expiry-wakes-the-agent-for-nothing.md`)
+ * `docs/items/scriptorium-tail-monitor-expiry-wakes-the-agent-for-nothing.md`)
  * and the four adjustments of its feasibility spike
- * (`docs/investigations/2026-09-22-monitor-expiry-and-the-tail.md`).
+ * (`docs/items/monitor-expiry-and-the-tail/write-up.md`).
  *
  * ── THE PROBLEM, ONE PARAGRAPH ──────────────────────────────────────────────
  *
@@ -182,8 +182,10 @@
  *   re-arm pinned to the derived id with an empty bookmark
  *   (`--session k-… --since=-1 --once`). That re-arm is a re-arm by D1's rule,
  *   so if the board is still not up — the lead more than one window (29 min)
- *   late — the seat gets `tail.closed` instead of waiting. Minor: the
- *   come-back it names (`open --session-key K`) is the right next step anyway.
+ *   late — the seat does not wait. Minor: the next step it names
+ *   (`open --session-key K`) is the right one anyway. Since #98 (2026-09-27)
+ *   it no longer says `tail.closed` about a board that never opened: a named
+ *   `--session` with no snapshot on disk exits `not_found` after a grace.
  *
  * ── THE COMMAND NAMES NO PATH (Cole's ruling, 2026-09-24) ──────────────────
  *
@@ -193,7 +195,7 @@
  * to be runnable as printed, headed by `bun <argv[1]>` — and for an installed
  * plugin `argv[1]` is inside a VERSIONED cache directory. An upgrade marks the
  * old directory orphaned and deletes it later (measured in
- * `docs/backlog/2026-09-24-tail-rearm-command-names-a-versioned-plugin-path.md`),
+ * `docs/items/tail-rearm-command-names-a-versioned-plugin-path.md`),
  * so a line printed before an upgrade first ran STALE code against a newer
  * daemon, then failed with "module not found" once the directory was gone. No
  * stable path exists to print instead: the cache, `$CLAUDE_PLUGIN_ROOT` and the

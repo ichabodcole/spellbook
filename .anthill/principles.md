@@ -115,7 +115,8 @@ thought they had found a quirk of one tool:**
   (`ReferenceError: add is not defined`). Recorded as a template-literal gotcha.
 - **A JS template literal inside a single-quoted `bun -e` destroyed 4,082 characters** of a
   board card at `ok:true` — `cat` on a file the dead script never wrote produced an empty
-  string, and `--notes ""` is indistinguishable from a deliberate clear.
+  string, and `--notes ""` was indistinguishable from a deliberate clear (bounty now refuses
+  it; a deliberate clear is `--clear-notes`).
 - **The `'"'"'` idiom re-enters shell context**, so _"single quotes are total"_ is false exactly
   when the payload is human prose — i.e. whenever it contains an apostrophe.
 - **Prettier reflowing a hard-wrapped seat doc mangles a continuation line into a stray list

@@ -78,8 +78,10 @@ act.
 
 > **`--` ends flag parsing — and every flag must come BEFORE it.** Use it when
 > free text would otherwise be read as a flag. **Anything after `--` is a
-> positional, including something that looks like a flag** — it is consumed
-> silently, at exit 0, with no warning. Put every flag to the LEFT of `--`.
+> positional, including something that looks like a flag** — it is taken as
+> text, not refused. If it spells a flag that verb accepts, stderr carries one
+> `# warning:` line naming it and the fix; stdout and the exit code do not
+> change. Put every flag to the LEFT of `--`.
 >
 > **⚠ If the eaten flag is `--session`, magpie does not fail — it retargets.**
 > It falls back to the machine-global `magpie-latest.json` pointer, so the
@@ -95,7 +97,7 @@ first; pass `--session <id>` **after the verb** to target a specific session
 > distinguishes the two cases: an unrecognized token ("Unknown option") from a
 > real magpie flag used in the wrong place ("`--bbox` is not accepted by
 > `say`"). `--session` is accepted by every verb that acts on a session — not by
-> `open`, `sessions` or `help`, which have none to target.
+> `open`, `sessions`, `help`, `version` or `schema` (none to target).
 
 > **A bare invocation is a usage error, not a help path.** `cli.ts` with no verb
 > exits `2` with empty stdout and the usage on stderr. magpie is agent-driven,
@@ -117,22 +119,22 @@ first; pass `--session <id>` **after the verb** to target a specific session
 > pointer (system temp dir, separate from the daemon) was lost. Recover with
 > `--session <id>` (id is in the `open` output).
 
-| Verb                                                                                                | What it does                                                                                                        |
-| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `open [--title ..] [--intent ..] [--no-open] [--timeout S] [--restore <id\|path>]`                  | Spawn the daemon (opens the browser); prints `{port, session_id, files_dir}`                                        |
-| `sessions`                                                                                          | List saved (resumable) sessions                                                                                     |
-| `tail [--since N] [--once]`                                                                         | Stream user events as JSONL — run via Monitor (see Operating rule)                                                  |
-| `state [--full]`                                                                                    | State snapshot — lean by default; `--full` for raw                                                                  |
-| `say <text…> [--stdin]`                                                                             | Post agent dialogue into the conversation (`--stdin` for piped NL text)                                             |
-| `ask <text…> [--options "a\|b"]`                                                                    | Ask the user a question in-thread                                                                                   |
-| `status on [text…] \| status off`                                                                   | Toggle the "magpie working" spinner                                                                                 |
-| `source <imagePath>`                                                                                | Register the composite under review (computes sha + size)                                                           |
-| `discover`                                                                                          | Run discovery on the current source → post the breakdown (needs `OPENROUTER_API_KEY`)                               |
-| `extract [--ids a,b] [--remove] [--alpha auto\|all\|none] [--pad N] [--model <m>] [--label <name>]` | Cut slices — crop-only by default; `--remove` adds rembg; `--model` picks a removal model                           |
-| `export [--ids a,b]`                                                                                | Build the downloadable bundle → `magpie-bundle.zip`, served for download                                            |
-| `element-add --bbox "x1,y1,x2,y2" [--name ..] [--type ..]` · `element-remove <id>`                  | Box / un-box a region (source px)                                                                                   |
-| `cmd [--stdin]`                                                                                     | POST a raw AgentCommand JSON body (the escape hatch — e.g. `elements.set`, `phase.set`, a `say` with an inline CTA) |
-| `close` · `info` · `help`                                                                           | Shut the session (writes snapshot) · session JSON · full verb list                                                  |
+| Verb                                                                                                | What it does                                                                                                                        |
+| --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `open [--title ..] [--intent ..] [--no-open] [--timeout S] [--restore <id\|path>]`                  | Spawn the daemon (opens the browser); prints `{port, session_id, files_dir}`                                                        |
+| `sessions`                                                                                          | List saved (resumable) sessions                                                                                                     |
+| `tail [--since N] [--once]`                                                                         | Stream user events as JSONL — run via Monitor (see Operating rule)                                                                  |
+| `state [--full]`                                                                                    | State snapshot — lean by default; `--full` for raw                                                                                  |
+| `say <text…> [--stdin]`                                                                             | Post agent dialogue into the conversation (`--stdin` for piped NL text)                                                             |
+| `ask <text…> [--options "a\|b"]`                                                                    | Ask the user a question in-thread                                                                                                   |
+| `status on [text…] \| status off`                                                                   | Toggle the "magpie working" spinner                                                                                                 |
+| `source <imagePath>`                                                                                | Register the composite under review (computes sha + size)                                                                           |
+| `discover`                                                                                          | Run discovery on the current source → post the breakdown (needs `OPENROUTER_API_KEY`)                                               |
+| `extract [--ids a,b] [--remove] [--alpha auto\|all\|none] [--pad N] [--model <m>] [--label <name>]` | Cut slices — crop-only by default; `--remove` adds rembg; `--model` picks a removal model                                           |
+| `export [--ids a,b]`                                                                                | Build the downloadable bundle → `magpie-bundle.zip`, served for download                                                            |
+| `element-add --bbox "x1,y1,x2,y2" [--name ..] [--type ..]` · `element-remove <id>`                  | Box / un-box a region (source px)                                                                                                   |
+| `cmd --stdin` (pipe the JSON body)                                                                  | POST a raw AgentCommand JSON body read from stdin (the escape hatch — e.g. `elements.set`, `phase.set`, a `say` with an inline CTA) |
+| `close` · `info` · `help` · `version` · `schema`                                                    | Shut the session (writes snapshot) · session JSON · full verb list · `{name, version}` · the acc declaration (JSON)                 |
 
 ## Operating rule: Monitor the tail (imperatives-only)
 

@@ -1,3 +1,5 @@
+// enforces: honor-exit-code-contract, carry-frame-just-value.reference-names-what-refers
+//
 // Every tail refuses a `--since` form it does not accept, the same way.
 //
 // The handoff line's command names no launcher (Cole's ruling, 2026-09-24;

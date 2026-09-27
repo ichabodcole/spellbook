@@ -1,21 +1,14 @@
 {
   "docsRoot": "docs",
   "lint": {
-    "workbench": [
-      "backlog",
-      "fragments",
-      "briefs",
-      "investigations",
-      "cycles",
-      "reports",
-      "projects",
-      "releases"
-    ],
+    "workbench": ["cycles", "releases", "features", "items"],
     "types": {
-      "releases": "release"
+      "releases": "release",
+      "memories": "memory",
+      "lessons-learned": "lesson"
     },
     "adopting": false,
-    "exclude": ["docs/projects/scriptorium/SKILL.draft.md"],
+    "exclude": ["docs/items/scriptorium/SKILL.draft.md"],
     "durable": [
       "architecture",
       "specifications",
@@ -24,7 +17,8 @@
       "lessons-learned",
       "memories"
     ],
-    "skip": ["_archive", "superpowers"]
+    "skip": ["superpowers"],
+    "scopes": []
   },
-  "version": "8.1.0"
+  "version": "9.0.0"
 }

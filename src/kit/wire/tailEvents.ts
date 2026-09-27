@@ -7,7 +7,7 @@
  * bundle. It reaches for nothing, not even the sibling error contract.
  *
  * Designed against all seven of the house's hand-written tails (the convergence
- * design, `docs/investigations/2026-09-08-tail-reader-convergence.md`) and
+ * design, `docs/items/tail-reader-convergence/write-up.md`) and
  * adopted first by astrolabe and magpie.
  *
  * ── THE TWO DECISIONS THAT MAKE ONE CLIENT POSSIBLE ─────────────────────────

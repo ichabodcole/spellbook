@@ -73,7 +73,7 @@
 // ⚠ AND THE GUARD BELOW HAS A KNOWN HOLE, pinned rather than fixed. A coalesced
 // human scroll can be swallowed in two sub-frame windows — see `createPlace`,
 // the `PINNED` cells in `place.test.ts`, and
-// `docs/backlog/2026-09-22-scriptorium-a-coalesced-scroll-is-lost-in-one-ordering.md`.
+// `docs/items/scriptorium-a-coalesced-scroll-is-lost-in-one-ordering.md`.
 //
 // DOM-free on purpose: the node walking and the rects are `renderedRange.ts`'s,
 // the same split E51 already draws.

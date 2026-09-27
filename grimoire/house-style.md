@@ -19,6 +19,7 @@ criterion is Chesterton's fence with the builder's note nailed to it.
 ### Architect for the reader's context, not your own.
 
 <!-- rule-id: architect-reader-s-context -->
+<!-- enforced-by: none — intent: reachability from the agent's trajectory is a reader's judgment made per artifact; no text property marks a line as on or off the route -->
 
 The agent that did the work sediments its own hot context into the artifact. The
 reader (a fresh agent, a future you) shares none of it. Write for them.
@@ -39,6 +40,7 @@ reader (a fresh agent, a future you) shares none of it. Write for them.
 ### Reference, don't inline.
 
 <!-- rule-id: reference-don-t-inline -->
+<!-- enforced-by: none — intent: whether a copy is small and off the route, and so earns its place, is judged per copy; duplication alone is not the violation -->
 
 Inlining a tool's docs duplicates a source of truth and rots when it drifts.
 
@@ -50,6 +52,7 @@ Inlining a tool's docs duplicates a source of truth and rots when it drifts.
 ### Context is an attention budget — exclusions must earn their place.
 
 <!-- rule-id: context-attention-budget-exclusions -->
+<!-- enforced-by: none — intent: whether the affirmative text already points at X is a reading of the whole document, not a pattern in it -->
 
 What you leave out is load-bearing. Spelling out the unwanted raises its
 salience and can backfire ("don't take a shower" plants the idea). An exclusion
@@ -67,6 +70,7 @@ that introduces it.
 ### Ask what a number is for before you write it down.
 
 <!-- rule-id: ask-what-number-is-for -->
+<!-- enforced-by: none — intent: "who acts on this number?" is asked of a reader, not of the text; no scan can tell an earned number from a tally -->
 
 > What is the purpose of adding this number? Who is it for? What are they
 > actually going to do with it? Is it actionable, or is it just information? —
@@ -93,11 +97,12 @@ that failed re-measurement: an accuracy bar from a probe that flattered it, a
 headline population that disagreed with its own detail figures, and a count
 nobody could verify. Every blocking item from the reviewer was a claim like
 these, not code.
-([Session](../docs/projects/scriptorium/sessions/2026-09-22-keeping-your-place-and-the-guard-that-guesses.md#the-rule-that-came-out-of-it-and-it-is-not-scriptoriums))_
+([Session](../docs/items/scriptorium/sessions/2026-09-22-keeping-your-place-and-the-guard-that-guesses.md#the-rule-that-came-out-of-it-and-it-is-not-scriptoriums))_
 
 ### Start minimal; subtract before you test.
 
 <!-- rule-id: start-minimal-subtract-before -->
+<!-- enforced-by: none — intent: a process step (a subtraction pass before the fresh-agent test) that leaves no trace in the artifact it shaped -->
 
 An agent authoring a skill **over-specifies by default** — it just did the work,
 so its hot context leaks onto the page as detail that feels essential but isn't.
@@ -120,6 +125,7 @@ lens applied _after_ writing, not a constraint while writing.
 ### The name is the canonical handle — and you name at coalescence, not at genesis.
 
 <!-- rule-id: name-canonical-handle-name -->
+<!-- enforced-by: grimoire/roster-drift.test.ts -->
 
 To name a thing is to be able to summon it; a clumsy name is a fumbled cast. But
 be precise about what the name _is_ and _isn't_:
@@ -128,8 +134,8 @@ be precise about what the name _is_ and _isn't_:
   name, the registry key, and what every invocation phrasing resolves to.
   Precision matters because an identifier can't be fuzzy. (It will also be the
   exact argument the planned **wand** CLI takes — a mage-facing tool, see
-  `docs/fragments/2026-05-29-the-wand-mage-cli.md` — which is _why_ a clash with
-  a common word matters, but the identifier role is the primary reason.)
+  `docs/items/the-wand-mage-cli.md` — which is _why_ a clash with a common word
+  matters, but the identifier role is the primary reason.)
 - **Invocation** — how the skill is actually triggered in conversation — is
   deliberately _plural_: many phrasings ("cast / start / join a grapevine") and
   distinct lenses (creating vs. joining are different intents routing to the
@@ -157,6 +163,7 @@ the shape before you've found it.
 ### Match the kind to the interaction: cantrip for cast-and-resolve, conjuration for duration.
 
 <!-- rule-id: match-kind-interaction-cantrip -->
+<!-- enforced-by: none — checkable, unchecked: a check would assert a spell listed as a cantrip ships no daemon and one listed as a conjuration does; roster-drift reads the listings' names, never the kind column -->
 
 A cantrip resolves in one round (cast → act → submit → exit). A conjuration
 stands until dismissed (a daemon, a board you live in) and keeps a state
@@ -170,6 +177,7 @@ snapshot so late joiners are grounded.
 ### Surface-fit: match the interaction to the place that fits it.
 
 <!-- rule-id: surface-fit-match-interaction -->
+<!-- enforced-by: none — intent: which place fits an interaction is a design judgment made per interaction -->
 
 Chat is one channel — good for negotiation and clarification. Drawing, dropping
 images, moving cards deserve their own surface. Don't force everything through
@@ -182,6 +190,7 @@ one pane.
 ### A spell is a shared workspace — design for co-presence, not a form to submit.
 
 <!-- rule-id: spell-shared-workspace-design -->
+<!-- enforced-by: none — intent: co-presence is tested per affordance by asking whether both seats can see and act on the work-object; the facts half is the parity clause, also unchecked -->
 
 A spell is a surface human and agent both work through: each **perceives** the
 shared work-object via its own channel (the human a rendered UI; the agent
@@ -207,6 +216,7 @@ keep working something together.
 ### A shared fact gets one state; everything that shows it reads that state.
 
 <!-- rule-id: shared-fact-one-state -->
+<!-- enforced-by: none — intent: whether a local flag is a second state is decided by asking whether it could ever say something the one state does not, per candidate -->
 
 A fact both parties act on (the selection, a column's width, a draft) is held in
 exactly one place: the daemon's copy, when the agent reads it. Every view of it
@@ -228,16 +238,17 @@ dismissal, every later selection stayed hidden, and the daemon, whose held
 selection `say` attaches, was never told the passage had gone. Fixed on
 `fix/scriptorium-selection-context`: clearing the chip clears the selection, in
 both panes and in the daemon. The rule stands.
-([Session](../docs/projects/scriptorium/sessions/2026-09-22-the-chip-and-the-lines-it-pointed-at.md#the-ruling),
+([Session](../docs/items/scriptorium/sessions/2026-09-22-the-chip-and-the-lines-it-pointed-at.md#the-ruling),
 [memory](../docs/memories/2026-09-22-scriptorium-selection-and-the-chip.md);
 applied on purpose in
-[branch 3](../docs/projects/scriptorium/sessions/2026-09-22-room-to-read-and-the-width-the-anchors-forgot.md#what-was-built)
+[branch 3](../docs/items/scriptorium/sessions/2026-09-22-room-to-read-and-the-width-the-anchors-forgot.md#what-was-built)
 and
-[the chip-across-documents fix](../docs/projects/scriptorium/sessions/2026-09-22-a-selection-that-outlived-its-document.md#the-fix).)_
+[the chip-across-documents fix](../docs/items/scriptorium/sessions/2026-09-22-a-selection-that-outlived-its-document.md#the-fix).)_
 
 ### Keep the client thin — MCP at the auth layer.
 
 <!-- rule-id: keep-client-thin-mcp -->
+<!-- enforced-by: none — intent: "a membrane, not an app" is judged per surface; the one mechanical edge stated (localStorage for drafts) is a permission, not a prohibition -->
 
 The surface is a membrane, not an app. No database, no conventional server.
 Authentication and API access live at the MCP layer; the agent is the runtime
@@ -250,6 +261,7 @@ underneath.
 ### Drive a conjuration through a daemon + thin CLI: command in, state read-back, events out.
 
 <!-- rule-id: drive-conjuration-through-daemon -->
+<!-- enforced-by: grimoire/daemon-lifecycle-ward.test.ts -->
 
 For a conjuration the agent drives across a session, hold canonical state in one
 persistent daemon and give the agent a stateless `cli.ts` — one HTTP round-trip
@@ -289,6 +301,7 @@ is the _agent's_ interface.)
 ### Every spell ships a feedback touchpoint.
 
 <!-- rule-id: every-spell-ships-feedback -->
+<!-- enforced-by: none — checkable, unchecked: a check would assert every shipped SKILL.md carries a feedback touchpoint section; no ward reads SKILL.md for one -->
 
 Agents don't volunteer friction — they work around it silently, and the signal
 is lost; humans are the same unless given a place to speak. So every spell's
@@ -308,6 +321,7 @@ where the signal originates.
 ### Carry the frame, not just the value.
 
 <!-- rule-id: carry-frame-just-value -->
+<!-- enforced-by: none — intent: the family container; its boundary check is constructing a counterexample before claiming one clause subsumes another, which is reasoning, not a property of code -->
 
 Four rules with one family resemblance and **four different mechanisms**. The
 family name is how you recognise a fourth one; it is **not** a derivation, and
@@ -332,6 +346,7 @@ none of these follows from the others.
 #### A response states the conditions it was produced under.
 
 <!-- rule-id: carry-frame-just-value.response-states-conditions-was -->
+<!-- enforced-by: none — checkable, unchecked: a check would assert a windowed or filtered reply echoes the window/filter/mode it answered; which conditions count is ruled per response, and no ward reads replies for them -->
 
 An answer that cannot say what question it answered can be misread as the answer
 to a different question — and no amount of validating the response fixes it,
@@ -356,6 +371,7 @@ returned 0 and then 1 four minutes later with nothing to say which it had done._
 #### A noun carries the class it belongs to.
 
 <!-- rule-id: carry-frame-just-value.noun-carries-class-belongs -->
+<!-- enforced-by: none — checkable, unchecked: a check would assert every growable outcome noun on the wire travels with its coarse class (the shapes in outcome-contract.md); no ward reads them -->
 
 An enumerated outcome tells a caller **which** state occurred; a caller that has
 never seen that particular noun still has to route. Carry the coarse class
@@ -376,6 +392,7 @@ is **not restated here**.
 #### The other party's channel carries the fact at all.
 
 <!-- rule-id: carry-frame-just-value.other-party-s-channel -->
+<!-- enforced-by: none — intent: naming the fact a party acts on and asking whether the other party's channel carries it is a per-view reading, in both directions -->
 
 > A view may be asymmetric in **FORM**. It may not be asymmetric in **FACTS**.
 > The test: name the fact the party is acting on. Ask whether the other party
@@ -421,6 +438,7 @@ unchanged**, which is why the scar stays._
 #### A reference names what it refers into.
 
 <!-- rule-id: carry-frame-just-value.reference-names-what-refers -->
+<!-- enforced-by: grimoire/tail-since-refusal.test.ts -->
 
 A value that names a place in something (an offset, a range, a line, a cursor
 into a log) carries **which** thing it names, and which version. Resolve it
@@ -441,10 +459,10 @@ that `say` attaches. The kit's tail bookmark `--since N` was a cursor with no
 log, so after a daemon restart it skipped the new log's start. Both are fixed
 (E66, and `--since N@<epoch>` on `feat/tail-quiet-handoff`). The rule stands,
 and the spells whose daemon stamps no epoch still carry the gap.
-([Session](../docs/projects/scriptorium/sessions/2026-09-22-a-selection-that-outlived-its-document.md),
+([Session](../docs/items/scriptorium/sessions/2026-09-22-a-selection-that-outlived-its-document.md),
 [memory](../docs/memories/2026-09-22-a-place-in-a-document-names-its-document.md);
 the tail:
-[session](../docs/projects/scriptorium/sessions/2026-09-23-the-tail-hands-off-before-the-cap.md#review).)_
+[session](../docs/items/scriptorium/sessions/2026-09-23-the-tail-hands-off-before-the-cap.md#review).)_
 
 ---
 
@@ -453,6 +471,7 @@ the tail:
 ### Spells port to the build. The rest are queued, at two different distances.
 
 <!-- rule-id: spells-are-porting-to-the-build -->
+<!-- enforced-by: grimoire/dist-roster-ward.test.ts, grimoire/kit-adoption-ward.test.ts, grimoire/spell-css-scope-ward.test.ts -->
 
 `bun run build` (`src/build.ts`) bundles a spell's surface from
 `src/<spell>/surface/` into `plugins/spellbook/skills/<spell>/dist/`, which is
@@ -477,10 +496,10 @@ build; the open question is order, not whether.**
 > 2026-09-05: Spellbook scope is enough for now. The rule this page states is
 > spell-scoped; do not promote the quote into a house-wide standard on the
 > strength of appearing here. See
-> `docs/backlog/2026-09-05-a-ratified-manifesto-correction-never-reached-the-manifesto.md`.
-> A new spell may start without one while it is genuinely small, and Contract
-> 3's criterion ends that exemption automatically — it is a staging concession,
-> not a category.
+> `docs/items/a-ratified-manifesto-correction-never-reached-the-manifesto.md`. A
+> new spell may start without one while it is genuinely small, and Contract 3's
+> criterion ends that exemption automatically — it is a staging concession, not
+> a category.
 
 **Direction is still not permission**, though — the queue below governed _when_
 a spell ported. **The queue is now EMPTY, and this section is a record rather
@@ -491,8 +510,8 @@ than a schedule.**
 | _(none)_ | —             | —        |
 
 **Every spell in the roster builds.** digestify left the queue on 2026-09-07
-(`docs/projects/digestify-conversion/`), the third and last rewrite: 1,505 lines
-of hand-written HTML with three CDN runtime dependencies became a React surface
+(`docs/items/digestify-conversion/`), the third and last rewrite: 1,505 lines of
+hand-written HTML with three CDN runtime dependencies became a React surface
 with its primitives from the shadcn registry, taken INSIDE the rewrite rather
 than vendored first. bounty went on 2026-09-06 and grapevine — the pathfinder —
 on 2026-09-05. **A spell with no `surface/` is not yet a port subject**; the
@@ -553,6 +572,7 @@ authoritative:
 ### A spell's primitives come from the shadcn registry; a variant extends the recipe, never fights it.
 
 <!-- rule-id: registry-primitives-variant-extends-recipe -->
+<!-- enforced-by: none — checkable, unchecked: a check would assert `shadcn info` lists every file under each spell's `surface/ui/` as installed and that the L1 alias block in `styles.css` holds only `var()` values -->
 
 A spell with a React surface takes its primitives from the shadcn registry
 through the CLI (`bunx --bun shadcn@latest add …` from the spell's
@@ -582,6 +602,7 @@ the palette stays the spell's.
 ### The surface dep cap: `@base-ui/react`, `lucide-react`, `cn`, `class-variance-authority` — and nothing else without a ruling.
 
 <!-- rule-id: surface-dep-cap -->
+<!-- enforced-by: none — checkable, unchecked: a check would assert each `src/<spell>/package.json` declares nothing outside the four plus that spell's ruled exceptions -->
 
 Four runtime dependencies are open to a spell's surface: the two the adoption
 card allowed (`@base-ui/react`, `lucide-react`), which stay declared **at the
@@ -635,9 +656,22 @@ registry uses the registry's `cn` throughout, one semantics per spell.
 ### Honor the exit-code contract.
 
 <!-- rule-id: honor-exit-code-contract -->
+<!-- enforced-by: grimoire/error-choices-census.test.ts, grimoire/tail-since-refusal.test.ts -->
 
-`0` submitted · `2` bad input · `124` idle timeout · `130` user cancelled
-(closed tab after interacting). Cantrip and conjuration alike.
+`0` success. **Failures** take their code from the kit's taxonomy, `EXIT_FOR` in
+`src/kit/wire/errors.ts`: `2` usage · `1` internal · `5` not_found · `6`
+conflict, each with one JSON envelope on stderr. **Session endings** are
+outcomes, not failures, and stay outside the taxonomy
+([D52](../docs/features/_archive/backend-convergence/decision-log.md)): `124`
+idle timeout where a spell has one (astrolabe, bounty, digestify, glamour,
+imago, magpie, scriptorium) · `130` user cancelled where a spell has a discard
+path (digestify's closed tab after interacting; imago's and magpie's cancel).
+Conjurations have no cancel, so no `130` (bounty's daemon exits 130 only when
+killed by SIGINT).
+
+⚠ **Known residue:** `bounty join` idles out at `0` and ends on a socket error
+at `2`, the same number as `usage`; the channel tells them apart (an ending
+writes a `disconnected` frame to stdout and no envelope), not the code.
 
 - **Boundary check — a process whose exit IS the signal must exit on every
   path.** A background task or a one-shot wait wakes its caller only by ending,
@@ -654,12 +688,13 @@ _Scar: the kit's `tail --once` hung three ways before it shipped: an open stream
 after its event, a dead daemon retried forever, and a session closed in the gap.
 None printed anything wrong. All three are fixed on `feat/tail-quiet-handoff`,
 and the rule stands for every other wait.
-([Session](../docs/projects/scriptorium/sessions/2026-09-23-the-tail-hands-off-before-the-cap.md),
+([Session](../docs/items/scriptorium/sessions/2026-09-23-the-tail-hands-off-before-the-cap.md),
 [memory](../docs/memories/2026-09-23-a-wait-that-wakes-by-ending-must-end.md))_
 
 ### Enumerate the roster by behaviour, never by a fixed path or a name.
 
 <!-- rule-id: enumerate-roster-behaviour-never -->
+<!-- enforced-by: grimoire/flag-invariant.test.ts -->
 
 Spells do not agree on where things live, and a glob written from the spell in
 front of you is a silent filter: it returns a confident, well-formed answer
@@ -744,6 +779,7 @@ is exactly why it now lives in the tree instead._
 ### Carry the Bun gotchas forward.
 
 <!-- rule-id: carry-bun-gotchas-forward -->
+<!-- enforced-by: none — checkable, unchecked: a check would pin the Bun version each gotcha was verified on and red when the runtime moves; nothing records that version -->
 
 `FileSink` not `WritableStream` on piped stdin; race `server.stop(true)` against
 a timer; grant a submit-path teardown grace; swallow `EPIPE`; `*.test.ts` only.
@@ -764,6 +800,7 @@ reachable summary.
 ### A mature principle is an imperative plus its own boundary checks.
 
 <!-- rule-id: mature-principle-imperative-plus -->
+<!-- enforced-by: none — checkable, unchecked: a check would assert every rule block in this file carries a `Repeal when:` line; rule-id reads headings and ids only -->
 
 Every rule above has a _spatial_ boundary ("avoid X, unless on the route") and,
 where it ages, a _temporal_ one ("omit the discoverable, unless verified

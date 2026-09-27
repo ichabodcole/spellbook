@@ -63,15 +63,13 @@ export interface BacklinksData {
  * The target, as a path or as a `type/slug` key.
  *
  * A path is tried first and matched exactly, because a path is unambiguous and
- * a key is not: every project folder holds a `proposal.md`, so the key
- * `proposal/proposal` names a dozen documents. That case is a USAGE error, not
- * a not-found — the request is answerable, the caller just has to say which one
+ * a key is not: every feature folder holds a `feature.md`, so the key
+ * `feature/feature` names every feature. That case is a USAGE error, not a
+ * not-found — the request is answerable, the caller just has to say which one
  * — and the diagnostic lists the candidates so they can.
  *
- * `project/<name>` is the third form, and it is what a caller reaching for
- * `proposal/<name>` actually wants. See `pageAliasKeys` for why `type/slug`
- * cannot name a project, and the note at its use below for why the
- * `proposal/<name>` spelling is not also accepted.
+ * `feature/<slug>` and `item/<slug-or-id>` are the third form: an entity's own
+ * address. See `pageAliasKeys` for why `type/slug` cannot name one.
  *
  * A PATH MAY NAME A FILE THAT IS NOT A `Page`, and that is on purpose.
  * `collectPages` skips contract pages (`SCHEMA.md`, the folder `README`s) and
@@ -82,6 +80,16 @@ export interface BacklinksData {
  * Such a target has no `type/slug` key, so it reports no `related` edges — and
  * correctly: nothing can write a `related:` edge to a contract page.
  */
+/**
+ * The key a target is REPORTED by: a work entity's own address
+ * (`feature/<slug>`, `item/<slug>`), which this command accepts back, rather
+ * than `pageKey`'s `feature/feature` that names every feature at once.
+ */
+function addressOf(page: Page): string | null {
+  const own = pageAliasKeys(page).find((k) => !/^item\/[0-9a-f]{8}-/.test(k));
+  return own ?? pageKey(page);
+}
+
 export function resolveTarget(
   repoRoot: string,
   pages: Page[],
@@ -94,7 +102,7 @@ export function resolveTarget(
     return {
       path: byPath.path,
       type: byPath.type,
-      key: pageKey(byPath),
+      key: addressOf(byPath),
       title: byPath.title,
     };
 
@@ -103,24 +111,17 @@ export function resolveTarget(
     const type = wanted.slice(0, slash);
     const slug = wanted.slice(slash + 1);
 
-    // `project/<name>` FIRST, because it is the more specific of the two and
-    // the only one that can name a project at all. It is the same form
-    // `pdocs new cycle --scope` takes and the same form the cycle template
-    // writes — accepting it in one place and not the other would leave a caller
-    // converting between two spellings this command already understands.
-    //
-    // `proposal/<name>` is deliberately NOT accepted. `pages.ts` never emits
-    // it, nothing in the tree writes it, and inventing it would be a third
-    // spelling of the thing `project/<name>` already says. The ambiguity
-    // diagnostic below is what a caller who tries `proposal/proposal` gets, and
-    // it points at the paths.
+    // An entity's address FIRST — `feature/<slug>`, `item/<slug-or-id>` —
+    // because it is the more specific form and the only one that names an
+    // entity whose files all carry a fixed name. It is the same form
+    // `--owner`, `--parent` and `pdocs set` take.
     const byAlias = pages.filter((p) => pageAliasKeys(p).includes(wanted));
     if (byAlias.length === 1) {
       const page = byAlias[0] as Page;
       return {
         path: page.path,
         type: page.type,
-        key: pageKey(page),
+        key: addressOf(page),
         title: page.title,
       };
     }
@@ -133,12 +134,12 @@ export function resolveTarget(
       return {
         path: page.path,
         type: page.type,
-        key: pageKey(page),
+        key: addressOf(page),
         title: page.title,
       };
     }
     if (byKey.length > 1) {
-      // Named, but bounded: `proposal/proposal` matches every project in the
+      // Named, but bounded: `feature/feature` matches every feature in the
       // tree, and a diagnostic that pastes forty paths into stderr is one
       // nobody reads.
       const shown = byKey.slice(0, 5).map((p) => p.path);
@@ -167,7 +168,7 @@ export function resolveTarget(
   throw new NotFoundError(
     `no document \`${target}\` — expected a repo-relative path ` +
       `(docs/playbooks/foo-playbook.md), a \`type/slug\` key ` +
-      `(playbook/foo-playbook), or \`project/<name>\` for a project.`
+      `(playbook/foo-playbook), or \`feature/<slug>\` or \`item/<slug>\` for a work entity.`
   );
 }
 
@@ -227,7 +228,7 @@ export const backlinks: Command = {
     if (target === undefined)
       throw new UsageError(
         "backlinks needs a target — `pdocs backlinks docs/playbooks/foo-playbook.md`, " +
-          "`pdocs backlinks playbook/foo-playbook` or `pdocs backlinks project/oauth-upgrade`."
+          "`pdocs backlinks playbook/foo-playbook` or `pdocs backlinks feature/oauth-upgrade`."
       );
 
     const pages = collectPages(ctx);

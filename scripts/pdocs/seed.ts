@@ -66,6 +66,19 @@ export function isSeeded(path: string): boolean {
   );
 }
 
+/**
+ * Seeded PAGES: docs-root-relative paths the scaffold installs once and
+ * reconciles by hash like a template, but which are documents a reader follows
+ * rather than forms to copy. `STYLE.md` is the one today.
+ *
+ * Named by path, and matched by none of `isSeeded`'s shapes on purpose:
+ * `templateTest` in `lint/rules.ts` skips every template and every manifest
+ * path, and a seeded page must still have its links checked. The cookiecutter
+ * hook's `SEEDED_PAGES` records the same paths; `scripts/post-gen-hook.test.ts`
+ * holds the two equal.
+ */
+export const SEEDED_PAGES: ReadonlySet<string> = new Set(["STYLE.md"]);
+
 export interface SeedManifest {
   /** The scaffold version that wrote these hashes. `null` when there is no manifest. */
   version: string | null;
@@ -197,6 +210,26 @@ export function verdictFor(
   if (recorded === undefined) return current === null ? "install" : "keep-unknown";
   if (current === null) return "keep-deleted";
   return current === recorded ? "update" : "keep-modified";
+}
+
+/**
+ * The manifest with the record for `from` carried to `to` — for a template the
+ * scaffold MOVED between releases (9.0.0: `projects/TEMPLATES/*` to
+ * `TEMPLATES/`, `PROPOSAL.template.md` to `FEATURE.template.md`). The hash is
+ * what was installed at the old path, so after the file moves with it the
+ * verdict at the new path is the one the file deserves: `update` if untouched,
+ * `keep-modified` if edited. Without it an untouched template at its new path
+ * reads as `keep-unknown`, and is never updated again.
+ *
+ * Pure: returns a new manifest. An unrecorded `from` changes nothing. A `to`
+ * already recorded keeps its own hash, and the stale `from` record is dropped.
+ */
+export function renameRecord(m: SeedManifest, from: string, to: string): SeedManifest {
+  if (m.files[from] === undefined) return { version: m.version, files: { ...m.files } };
+  const files: Record<string, string> = {};
+  for (const [k, v] of Object.entries(m.files)) if (k !== from) files[k] = v;
+  if (files[to] === undefined) files[to] = m.files[from] as string;
+  return { version: m.version, files };
 }
 
 /** True when the scaffold is allowed to write this file. */

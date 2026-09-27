@@ -82,8 +82,10 @@ auto-spawns it (detached, it outlives the CLI) and finds it via
 
 > **`--` ends flag parsing — and every flag must come BEFORE it.** Use it when
 > free text would otherwise be read as a flag. **Anything after `--` is a
-> positional, including something that looks like a flag** — it is consumed
-> silently, at exit 0, with no warning. Put every flag to the LEFT of `--`.
+> positional, including something that looks like a flag** — it is taken as
+> text, not refused. If it spells a flag that verb accepts, stderr carries one
+> `# warning:` line naming it and the fix; stdout and the exit code do not
+> change. Put every flag to the LEFT of `--`.
 
 | Verb                                                                                | What it does                                                                                                                                                                                                                                                                                 |
 | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -100,8 +102,14 @@ auto-spawns it (detached, it outlives the CLI) and finds it via
 | `cli.ts close` / `info` / `help`                                                    | Dismiss the observatory · daemon status · usage.                                                                                                                                                                                                                                             |
 
 Identity (`--as` / `--from`, or `$ASTROLABE_AS`) stamps the actor on events and
-suppresses self-echo. `--stdin` reads a description/summary from stdin so
-shell-special characters land verbatim. `cli.ts help` prints the full list.
+suppresses self-echo; it rides the verbs that write an event or hold a watch
+(`add`, `remove`, `status`, `attention`, `poke`, `close`, `join`, `tail`).
+`--stdin` reads a description/summary from stdin so shell-special characters
+land verbatim. Flags go after the verb, and each verb accepts only its own: a
+flag from another verb is refused (exit 2) with the verb's own set in the
+envelope's `choices`. Text that starts with dashes goes after a bare `--`.
+`cli.ts help` prints the full list; `cli.ts schema` prints the machine-readable
+interface (acc declaration v0).
 
 ### Read back, don't infer
 
@@ -112,9 +120,14 @@ id) prints the reason to **stderr** and exits non-zero, so a failed write is
 never silent. (`state` also carries a `cursor` — the event resume point for a
 `tail`/`join --since`; ignorable for one-shot reads.)
 
-The one exception to read-back: right after `cli.ts close`, `info`/`state` can
-briefly still report the daemon up while it flushes and tears down (~half a
-second). Don't treat a single post-close read as authoritative — it settles.
+`cli.ts close` returns only once the daemon is actually down (it waits up to
+3s), so a read right after it is authoritative: `{ok:true, applied:true}` means
+it is gone. Closing when nothing is running — no daemon, or a stale port file
+left by a killed one — is a benign no-op, not an error:
+`{ok:true, applied:false, outcome:"already-closed"}` at exit `0`, no `error`
+key. If the daemon is still answering at the 3s bound, `close` fails
+(`internal`, exit `1`) rather than reporting a close that has not completed;
+check with `info` and re-run.
 
 ### Tend a project — `join`, wrapped with Monitor
 
@@ -182,11 +195,12 @@ opens the registration form.
 
 `0` clean dismiss (the human closes the board, or an agent `cli.ts close`) · `2`
 bad arguments, a bare invocation, or a rejected command (dedupe / unknown id) ·
-`1` internal fault (the daemon failed to start) · `124` idle timeout (only if a
-positive `--timeout` was set — the observatory stands indefinitely by default).
-A conjuration has no "cancel"/`130` discard path. Failures leave stdout empty
-and put one JSON error envelope (`{ok:false, error:{kind, message}}`) on stderr;
-`cli.ts --version` answers `{name, version}` at exit 0.
+`1` internal fault (the daemon failed to start, or did not go down within 3s of
+`close`) · `124` idle timeout (only if a positive `--timeout` was set — the
+observatory stands indefinitely by default). A conjuration has no "cancel"/`130`
+discard path. Failures leave stdout empty and put one JSON error envelope
+(`{ok:false, error:{kind, message}}`) on stderr; `cli.ts --version` answers
+`{name, version}` at exit 0.
 
 ## Limits
 

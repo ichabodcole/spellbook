@@ -38,7 +38,7 @@ apps — the structure of the source directory, how the elements relate, and the
 caveats we found in different apps."
 
 The rulings and the defects were already recorded: the archived convergence's
-[decision log](../projects/_archive/backend-convergence/decision-log.md)
+[decision log](../features/_archive/backend-convergence/decision-log.md)
 (D1–D98), its phase journals, playbook Phase B, and three census investigations.
 **What none of them capture is shape that is not a defect.** Digestify has one
 entry and it is not called `cli`. Bounty's `join.ts` is a second participant,
@@ -504,7 +504,7 @@ grimoire ward. **Run the gate unpiped** and read its exit code from a file:
 `bun run gate | tail` reports `tail`'s exit code, which is always 0. **Type
 errors block the gate** (Cole, 2026-09-10, once the repo reached zero —
 type-debt T37), through `type-check-ward` rather than a bare `tsc`: see below
-and [the type-debt project](../projects/_archive/type-debt/proposal.md).
+and [the type-debt project](../features/_archive/type-debt/feature.md).
 
 | guards                   | instrument                                                                                | what it holds                                                                                                                                                  |
 | ------------------------ | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |

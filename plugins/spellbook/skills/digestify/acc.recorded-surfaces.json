@@ -1,0 +1,48 @@
+{
+  "formatVersion": "0",
+  "records": [
+    {
+      "path": ["version"],
+      "argv": ["version", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"version: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"version takes no flags\",\"choices\":[]},\"meta\":{\"command\":\"version\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build 576638e8, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:47:01Z"
+    },
+    {
+      "path": ["schema"],
+      "argv": ["schema", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"schema: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"schema takes no flags\",\"choices\":[]},\"meta\":{\"command\":\"schema\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build 576638e8, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:47:01Z"
+    },
+    {
+      "path": ["help"],
+      "argv": ["help", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"help: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"help takes no flags\",\"choices\":[]},\"meta\":{\"command\":\"help\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build 576638e8, paths derived from the declaration",
+      "recordedAt": "2026-09-27T01:47:01Z"
+    }
+  ],
+  "identity": {
+    "argv": ["--version"],
+    "exitCode": 0,
+    "streams": "separated",
+    "stdout": "{\"name\":\"digestify\",\"version\":\"3.1.0\"}\n",
+    "stderr": "",
+    "completeness": "complete",
+    "recordedBy": "colereed via acc probe-plan harness, build 576638e8, paths derived from the declaration",
+    "recordedAt": "2026-09-27T01:47:01Z"
+  }
+}

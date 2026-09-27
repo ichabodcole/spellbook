@@ -1,0 +1,274 @@
+[
+  {
+    "line": 215,
+    "argv": ["open", "golden-ch", "--topic", "hello", "--fresh"]
+  },
+  {
+    "line": 215,
+    "argv": ["open", "golden-ch"]
+  },
+  {
+    "line": 216,
+    "argv": ["list"]
+  },
+  {
+    "line": 217,
+    "argv": [
+      "send",
+      "golden-ch",
+      "--as",
+      "golden-agent",
+      "--quiet",
+      "--verbose",
+      "--body-file",
+      "golden.md",
+      "--force",
+      "--in-reply-to",
+      "1",
+      "hello"
+    ]
+  },
+  {
+    "line": 218,
+    "argv": [
+      "tail",
+      "golden-ch",
+      "--as",
+      "golden-agent",
+      "--since",
+      "1",
+      "--from-start",
+      "--last",
+      "5",
+      "--human",
+      "--lurk",
+      "--max",
+      "5"
+    ]
+  },
+  {
+    "line": 219,
+    "argv": ["wait", "golden-ch", "--as", "golden-agent", "--since", "1", "--timeout", "5"]
+  },
+  {
+    "line": 220,
+    "argv": ["pull", "golden-ch", "--since", "1", "--status", "open"]
+  },
+  {
+    "line": 222,
+    "argv": ["mark", "golden-ch", "1", "incorporated", "--as", "golden-agent", "--note", "hello"]
+  },
+  {
+    "line": 223,
+    "argv": ["reopen", "golden-ch", "1", "--as", "golden-agent"]
+  },
+  {
+    "line": 224,
+    "argv": ["read", "golden-ch", "1", "--text"]
+  },
+  {
+    "line": 224,
+    "argv": ["read", "golden-ch", "1"]
+  },
+  {
+    "line": 225,
+    "argv": ["who", "golden-ch"]
+  },
+  {
+    "line": 225,
+    "argv": ["who", "--all"]
+  },
+  {
+    "line": 226,
+    "argv": ["alias"]
+  },
+  {
+    "line": 226,
+    "argv": ["alias", "golden-agent"]
+  },
+  {
+    "line": 227,
+    "argv": ["grep", "golden-ch", "hello"]
+  },
+  {
+    "line": 227,
+    "argv": ["grep", "golden-ch", "hello", "--literal", "--from", "golden-agent"]
+  },
+  {
+    "line": 228,
+    "argv": ["topic", "golden-ch"]
+  },
+  {
+    "line": 228,
+    "argv": ["topic", "golden-ch", "hello"]
+  },
+  {
+    "line": 229,
+    "argv": ["watch"]
+  },
+  {
+    "line": 229,
+    "argv": ["watch", "golden-ch"]
+  },
+  {
+    "line": 230,
+    "argv": ["reset", "golden-ch", "--force"]
+  },
+  {
+    "line": 231,
+    "argv": ["archive", "golden-ch"]
+  },
+  {
+    "line": 231,
+    "argv": ["unarchive", "golden-ch"]
+  },
+  {
+    "line": 232,
+    "argv": ["close", "golden-ch"]
+  },
+  {
+    "line": 233,
+    "argv": [
+      "announce",
+      "--from",
+      "golden-agent",
+      "--channels",
+      "golden-ch",
+      "--body-file",
+      "golden.md",
+      "--quiet",
+      "hello"
+    ]
+  },
+  {
+    "line": 233,
+    "argv": ["announce", "--from", "golden-agent", "--channels", "golden-ch", "--stdin", "--quiet"],
+    "stdin": "hello"
+  },
+  {
+    "line": 234,
+    "argv": ["start"]
+  },
+  {
+    "line": 234,
+    "argv": ["up"]
+  },
+  {
+    "line": 235,
+    "argv": ["restart", "--force"]
+  },
+  {
+    "line": 235,
+    "argv": ["restart", "--yes"]
+  },
+  {
+    "line": 236,
+    "argv": ["stop", "--hold", "5"]
+  },
+  {
+    "line": 236,
+    "argv": ["stop"]
+  },
+  {
+    "line": 237,
+    "argv": ["info"]
+  },
+  {
+    "line": 237,
+    "argv": ["help"]
+  },
+  {
+    "line": 238,
+    "argv": ["doctor"]
+  },
+  {
+    "line": 239,
+    "argv": ["--version"]
+  },
+  {
+    "line": 239,
+    "argv": ["-V"]
+  },
+  {
+    "line": 239,
+    "argv": ["version"]
+  },
+  {
+    "line": 240,
+    "argv": ["schema"]
+  },
+  {
+    "line": 373,
+    "argv": ["reset", "golden-ch"]
+  },
+  {
+    "line": 383,
+    "argv": ["open", "golden-ch", "--fresh"]
+  },
+  {
+    "line": 428,
+    "argv": ["triage", "golden-ch"]
+  },
+  {
+    "line": 429,
+    "argv": ["triage", "golden-ch", "--human"]
+  },
+  {
+    "line": 494,
+    "argv": ["reap", "--force", "--dry-run"]
+  },
+  {
+    "line": 494,
+    "argv": ["prune"]
+  },
+  {
+    "line": 508,
+    "argv": ["roll", "--force"]
+  },
+  {
+    "line": 508,
+    "argv": ["roll"]
+  },
+  {
+    "line": 616,
+    "argv": ["tail", "golden-ch", "--as", "golden-agent"]
+  },
+  {
+    "line": 622,
+    "argv": ["send", "golden-ch", "--as", "golden-agent", "hello"]
+  },
+  {
+    "line": 677,
+    "argv": ["open", "golden-ch", "--as", "golden-agent", "--topic", "hello"]
+  },
+  {
+    "line": 678,
+    "argv": ["tail", "golden-ch", "--as", "golden-agent"]
+  },
+  {
+    "line": 679,
+    "argv": ["send", "golden-ch", "--as", "golden-agent", "hello"]
+  },
+  {
+    "line": 699,
+    "argv": ["tail", "golden-ch", "--from-start"]
+  },
+  {
+    "line": 729,
+    "argv": ["send", "golden-ch", "--from", "golden-agent"],
+    "stdin": "hello"
+  },
+  {
+    "line": 732,
+    "argv": ["send", "golden-ch", "--from", "golden-agent", "--stdin"],
+    "stdin": "hello"
+  },
+  {
+    "line": 735,
+    "argv": ["send", "golden-ch", "--from", "golden-agent", "--body-file", "golden.md"]
+  },
+  {
+    "line": 757,
+    "argv": ["pull", "golden-ch", "--since", "1"]
+  }
+]

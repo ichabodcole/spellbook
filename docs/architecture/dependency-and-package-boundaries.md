@@ -248,7 +248,7 @@ designed for.
   builds** — the enumeration became a criterion on 2026-09-04), **Contract 4**
   (source-free by construction), **Contract 17** (`src/<spell>/` is ungoverned),
   **Contract 18** (verified by reproduction)
-- [Cross-harness spell distribution](../investigations/2026-08-30-cross-harness-spell-distribution.md)
+- [Cross-harness spell distribution](../items/cross-harness-spell-distribution/write-up.md)
   — where triggers 2 and 3 come from
 - [Porting a spell](../playbooks/porting-a-spell-playbook.md)
 

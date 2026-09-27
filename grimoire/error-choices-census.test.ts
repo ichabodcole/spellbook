@@ -1,3 +1,4 @@
+// enforces: honor-exit-code-contract
 /**
  * THE `choices` CENSUS — register A1's instrument.
  *
@@ -19,8 +20,8 @@
  * take, and deliberately NOT otherwise** — 260 raises against 47 hints is why:
  * a hint on every failure would add ~200 strings of the form "run help", which
  * is noise wearing conformance's clothes. An absent `hint` is a DECISION here
- * (digestify's flag rejection carries none, on purpose: digestify answers no
- * `help` at all, so there is nothing to tell the caller to run).
+ * (the kit registry's unknown-flag rejection carries none where `choices` is
+ * non-empty, on purpose: "pass one of these" is the whole next act).
  *
  * ⛔ **AND `choices` MUST BE THE ACTUAL SET.** A hand-typed list that drifts
  * from the dispatch table is worse than no list, because a caller can check
@@ -115,18 +116,54 @@ const EXPECTED: Record<
   // `tail --since` refuses a form it does not accept with the forms named
   // (`kit/wire/tailHandoff.ts`, `readSince`), where it used to misparse it. No
   // `choices`: an id is not a closed set; the message names the shapes.
-  astrolabe: { sites: 16, choices: 4, verbRoster: true, flagMap: true },
-  bounty: { sites: 33, choices: 2, verbRoster: true, flagMap: true },
-  digestify: { sites: 8, choices: 2, verbRoster: false, flagMap: true },
+  // 16/4 -> 12/1 (2026-09-26): astrolabe moved onto the kit registry, as
+  // glamour did — its bare-invocation, parse, unknown-verb and root-flag raises
+  // left for the kit. `join`'s unknown-project rejection (the board's ids) stays.
+  // 12/1 -> 14/1 (2026-09-27, s5-8): `close` gained `cmd()`'s rejection raise
+  // (applied:false WITH an error) and an `internal` raise for a daemon still
+  // answering after the 3s teardown wait. Neither ranges over a closed set.
+  astrolabe: { sites: 14, choices: 1, verbRoster: true, flagMap: true },
+  // 33/2 -> 27/1 (2026-09-26): bounty moved onto the kit registry, as
+  // glamour did — its parse, unknown-verb and missing-id raises left for the kit.
+  // 27 -> 28 (2026-09-27): `update --stdin` refuses an empty stdin (s5-9).
+  // 28 -> 29 (2026-09-27, #98): `tail` on a NAMED target (`--session`,
+  // `--session-key`) that never resolves exits `not_found` after a grace. No
+  // `choices`: a session id is not a closed set; the hint names the fix.
+  // 29/1 -> 30/2 (2026-09-27, verifier on s5-9): `add`/`update` refuse a
+  // `--status` outside the set with `choices` (one shared raise, `checkStatus`)
+  // where the daemon used to drop it silently under `fields:["status"]`.
+  bounty: { sites: 30, choices: 2, verbRoster: true, flagMap: true },
+  // 8/2 -> 7/1 (2026-09-26): digestify's flag rejection moved onto the kit
+  // registry, as glamour's did. `--theme`'s `choices` is the one left here.
+  digestify: { sites: 7, choices: 1, verbRoster: false, flagMap: true },
   // 25 -> 26 on 2026-09-10, type-debt Phase 3c: `positional()` in cli.ts, a
   // named usage throw for a builder called without the positional arity
   // dispatch guarantees. No `choices` by A1's ruling — an id positional is not
   // an enumerated set — so `choices` stays 9. Impossible through the CLI.
-  glamour: { sites: 27, choices: 9, verbRoster: true, flagMap: true },
-  grapevine: { sites: 59, choices: 5, verbRoster: true, flagMap: true },
-  imago: { sites: 25, choices: 3, verbRoster: true, flagMap: true },
-  magpie: { sites: 33, choices: 4, verbRoster: true, flagMap: true },
-  "mind-mapper": { sites: 67, choices: 14, verbRoster: true, flagMap: true },
+  // ⚠ MOVED, NOT LOST (2026-09-26, the kit CLI registry): glamour, grapevine
+  // and scriptorium dispatch through `src/kit/cli/registry.ts` now, so their
+  // parse, root, unknown-verb, misplaced-flag and arity raises (7 sites each;
+  // 6, 4 and 6 of them with `choices`) left their CLIs for the kit, which this
+  // census does not walk. The rejections still carry `choices`: arm 2 drives
+  // them through each spell's process, and the registry's own tests pin them.
+  // glamour 27/9 -> 20/3, grapevine 59/5 -> 52/1: that move.
+  glamour: { sites: 20, choices: 3, verbRoster: true, flagMap: true },
+  grapevine: { sites: 52, choices: 1, verbRoster: true, flagMap: true },
+  // imago 25/3 -> 14/2 (2026-09-26): the move onto the kit registry, as
+  // glamour's — its parse, unknown-verb and per-verb arity raises left for the
+  // kit. The enumerated `context <kind>` and `--link` rejections stay here.
+  imago: { sites: 14, choices: 2, verbRoster: true, flagMap: true },
+  // magpie 33/4 -> 26/1 (2026-09-26): the move onto the kit registry, as
+  // imago's — its bare-invocation, unknown-verb and flag-scope raises (and the
+  // arity `die`s the table now declares) left for the kit. The enumerated
+  // `--alpha` rejection is the one `choices` left here.
+  magpie: { sites: 26, choices: 1, verbRoster: true, flagMap: true },
+  // mind-mapper 67/14 -> 34/2 (2026-09-26): the move onto the kit registry,
+  // as glamour's. Its parse, root, unknown-verb, sub-command, misplaced-flag
+  // and no-positional raises left for the kit, and so did the per-verb
+  // `if (!id)` arity raises the declared positionals now enforce. The two left
+  // are `activity <state>` and `open --project`'s known-project set.
+  "mind-mapper": { sites: 34, choices: 2, verbRoster: true, flagMap: true },
   // scriptorium (2026-09-11) — the first spell SCAFFOLDED onto the build, so its
   // row is a design, not an archaeology: every enumerable usage rejection
   // carries `choices` from day one (A1 inherited, not converted into).
@@ -150,16 +187,18 @@ const EXPECTED: Record<
   // text, so there is no closed set to name. (The daemon's own refusals —
   // a quote the active version does not contain, an empty body, a range
   // outside the text — are SessionErrors, which this census does not count.)
-  scriptorium: { sites: 34, choices: 10, verbRoster: true, flagMap: true },
+  // 34/10 -> 27/4 (2026-09-26): the move onto the kit registry, as glamour's.
+  scriptorium: { sites: 27, choices: 4, verbRoster: true, flagMap: true },
 };
 
 /**
- * ⚠ TWO SPELLS' ROOT FLAG REJECTION IS BELOW THEIR `choices` COUNT ON PURPOSE.
- * bounty and imago attach the flag roster to a private `UsageError`'s `extra`
- * and hand it to `die` one frame later, so the literal `choices:` sits at the
- * PARSER and the site arm 3 counts is `die(e.message, "usage", e.extra)` —
- * which has no literal. Arm 2 is what proves those two work, and this note is
- * why arm 3's number is not the whole story for them.
+ * ⚠ ONE SPELL'S ROOT FLAG REJECTION IS BELOW ITS `choices` COUNT ON PURPOSE.
+ * imago attaches the flag roster to a private `UsageError`'s `extra` and hands
+ * it to `die` one frame later, so the literal `choices:` sits at the PARSER and
+ * the site arm 3 counts is `die(e.message, "usage", e.extra)` — which has no
+ * literal. Arm 2 is what proves it works, and this note is why arm 3's number
+ * is not the whole story for it. (bounty had the same shape until it moved
+ * onto the kit registry, 2026-09-26.)
  */
 
 /** How the shipped launcher is addressed, and the env that keeps its state in a temp home. */
@@ -348,31 +387,28 @@ test.each(withFlags)("arm 2 · %s answers an unknown flag with the flag set", (s
  * type, and one added to the type does not compile.
  */
 const PER_VERB_DRIVES: Array<[spell: string, argv: string[], choices: string[]]> = [
-  // astrolabe — the flag roster, off `CLI_OPTIONS`, only for an UNKNOWN OPTION.
+  // astrolabe — a verb's own flag set, from the kit registry's row (2026-09-26:
+  // per-verb sets; `state` takes no flags, so the drive moved to a verb that does).
   [
     "astrolabe",
-    ["state", "--acc-not-a-flag"],
-    [
-      "--as",
-      "--avatar",
-      "--clear",
-      "--description",
-      "--from",
-      "--id",
-      "--no-open",
-      "--path",
-      "--phase",
-      "--question",
-      "--since",
-      "--stdin",
-      "--timeout",
-    ],
+    ["attention", "p1", "--acc-not-a-flag"],
+    ["--as", "--clear", "--from", "--question"],
   ],
   // bounty — the patch-contributing flags, the set whose emptiness IS the refusal.
   [
     "bounty",
     ["update", "acc-no-such-task"],
-    ["--status", "--title", "--notes", "--owner", "--tag", "--size", "--expect", "--stdin"],
+    [
+      "--status",
+      "--title",
+      "--notes",
+      "--owner",
+      "--tag",
+      "--size",
+      "--expect",
+      "--stdin",
+      "--clear-notes",
+    ],
   ],
   // glamour — a CONJUNCTION, filtered: `choices` names what is actually missing.
   ["glamour", ["gen", "--url", "http://example.invalid"], ["--prompt", "--model", "--round"]],

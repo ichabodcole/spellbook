@@ -1,0 +1,58 @@
+[
+  {
+    "line": 90,
+    "argv": ["open"]
+  },
+  {
+    "line": 91,
+    "argv": ["add", "golden", "--path", "golden.md"]
+  },
+  {
+    "line": 92,
+    "argv": ["join", "p1"]
+  },
+  {
+    "line": 93,
+    "argv": ["status", "p1", "hello"]
+  },
+  {
+    "line": 94,
+    "argv": ["attention", "p1"]
+  },
+  {
+    "line": 95,
+    "argv": ["poke", "p1"]
+  },
+  {
+    "line": 96,
+    "argv": ["state"]
+  },
+  {
+    "line": 97,
+    "argv": ["list"]
+  },
+  {
+    "line": 98,
+    "argv": ["remove", "p1"]
+  },
+  {
+    "line": 99,
+    "argv": ["tail"]
+  },
+  {
+    "line": 100,
+    "argv": ["close"]
+  },
+  {
+    "line": 100,
+    "argv": ["info"]
+  },
+  {
+    "line": 100,
+    "argv": ["help"]
+  },
+  {
+    "line": 140,
+    "argv": ["tail", "--since", "12"]
+  }
+]

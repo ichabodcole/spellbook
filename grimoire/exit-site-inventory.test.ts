@@ -1,3 +1,5 @@
+// enforces: none in house-style — P0f, the exit-site inventory (named in sprint 01, docs/features/spell-hardening/feature.md:152; its family classification is sprint 03's card t-a0c6c34a)
+//
 // P0f — the exit-site inventory ward.
 //
 // WHAT THIS PINS, AND WHAT IT CANNOT SEE (read this before trusting a green):

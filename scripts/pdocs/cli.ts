@@ -7,7 +7,11 @@
 //   bun scripts/pdocs/cli.ts find      query by type, lifecycle, status, tag, date
 //   bun scripts/pdocs/cli.ts backlinks what cites a document
 //   bun scripts/pdocs/cli.ts orphans   library pages the catalog cannot reach
+//   bun scripts/pdocs/cli.ts view      derived views: backlog, board, ready, …
 //   bun scripts/pdocs/cli.ts new       create a document of a declared type
+//   bun scripts/pdocs/cli.ts set       change a work entity's fields
+//   bun scripts/pdocs/cli.ts promote   turn a single-file item into a folder
+//   bun scripts/pdocs/cli.ts archive   move a finished feature or item to _archive/
 //   bun scripts/pdocs/cli.ts schema    this CLI's own surface, as a declaration
 //
 // Hand-rolled dispatch, and ZERO DEPENDENCIES on purpose. The recipe for this
@@ -38,12 +42,16 @@ import {
   printEnvelope,
   resolveFormat,
 } from "./envelope.ts";
+import { archive } from "./commands/archive.ts";
 import { backlinks } from "./commands/backlinks.ts";
 import { check } from "./commands/check.ts";
 import { find } from "./commands/find.ts";
 import { graph } from "./commands/graph.ts";
 import { newCommand } from "./commands/new.ts";
 import { orphans } from "./commands/orphans.ts";
+import { promote } from "./commands/promote.ts";
+import { set } from "./commands/set.ts";
+import { view } from "./commands/view.ts";
 import { report } from "./commands/report.ts";
 
 /** One flag, as help and as the parser's rule for it. A `metavar` means the
@@ -65,7 +73,7 @@ export interface Option {
 /** One positional a verb takes. `required` is here rather than inferred from a
  *  `<name>` / `[name]` spelling, because the spelling is prose and the fact is
  *  a fact: `pdocs new <type>` is always required and its `<name>` is not (a
- *  `proposal` takes its filename from the registry, not from the caller). */
+ *  `plan` takes its filename from the registry, not from the caller). */
 export interface Positional {
   name: string;
   required: boolean;
@@ -109,6 +117,12 @@ export interface Verb {
   /** The positionals this verb takes, for the manifest, for arity and for the
    *  declaration. */
   positionals?: Positional[];
+  /**
+   * Flags this verb USED to take, and what replaced each. Not accepted, not
+   * listed, not declared — the parser only uses this to refuse one with a
+   * message that names its replacement instead of "unknown flag".
+   */
+  retiredFlags?: Record<string, string>;
 }
 
 export interface Command extends Verb {
@@ -122,7 +136,11 @@ const COMMANDS: Command[] = [
   find,
   backlinks,
   orphans,
+  view,
   newCommand,
+  set,
+  promote,
+  archive,
 ];
 
 const GLOBAL_OPTIONS: Option[] = [
@@ -376,6 +394,13 @@ export function parseArgs(
     const name = eq === -1 ? token : token.slice(0, eq);
     const attached = eq === -1 ? undefined : token.slice(eq + 1);
 
+    const retired = verb.retiredFlags?.[name];
+    if (retired !== undefined)
+      throw new UsageError(retired, {
+        token,
+        hint: `\`pdocs ${verb.name} --help\` describes each flag it takes.`,
+      });
+
     if (!takesValue.has(name)) {
       const valid = commandFlagNames(verb);
       throw new UsageError(
@@ -440,7 +465,7 @@ export function parseArgs(
  * release-please rewrites the literal below via the marker comment, the same
  * way anthill's CLI carries its own.
  */
-const VERSION = "8.1.0"; // x-release-please-version
+const VERSION = "9.0.0"; // x-release-please-version
 
 export function version(): string {
   return VERSION;

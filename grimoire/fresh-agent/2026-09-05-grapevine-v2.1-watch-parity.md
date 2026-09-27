@@ -52,7 +52,7 @@ visible to an agent through the same daemon state a CLI action produces.
     as the CLI), and a CLI `pull <deleted>` silently re-creates the channel
     empty, so an agent polling a channel the human deleted resurrects it. →
     backend, out of scope by ruling; filed as
-    `docs/backlog/2026-09-06-grapevine-lifecycle-route-gaps.md`.
+    `docs/items/grapevine-lifecycle-route-gaps.md`.
 
 **Drive record:** created and deleted `cold-read-test`; archived / unarchived
 `archived-one`, `fresh-one`, `other` from the surface and the CLI; set a topic

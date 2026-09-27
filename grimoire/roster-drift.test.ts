@@ -1,3 +1,5 @@
+// enforces: name-canonical-handle-name
+//
 // ROSTER DRIFT WARD — mechanises `ward`'s "quick drift check", which existed only
 // as a human-invoked checklist and therefore never ran. A spell shipped in v2.2.0
 // declared in NONE of the four listings; the check that would have caught it was
@@ -48,7 +50,7 @@ import { dirname, join } from "node:path";
 // longer exists. (This comment previously cited board card `s5-9`, which was
 // later minted for an unrelated bounty defect — a wrong id carrying the authority
 // of a green cell.)
-//   docs/backlog/2026-08-10-mind-mapper-is-undeclared-and-shipped.md
+//   docs/items/mind-mapper-is-undeclared-and-shipped.md
 //
 // Left OPEN by that ruling, and NOT this ward's business: whether the built
 // artifact belongs in the published package while the spell is WIP.

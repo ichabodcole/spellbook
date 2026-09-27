@@ -4,6 +4,14 @@ import { basename, join } from "node:path";
 import { Glob } from "bun";
 import { must } from "./lib/must.ts";
 
+// enforces: drive-conjuration-through-daemon
+//
+// PARTIAL: event-stream liveness (idleTimeout on a daemon holding an SSE or
+// WebSocket connection) and the discovery pointer
+// (atomic write, readSession ENOENT) only. It does not check POST /cmd,
+// GET /state, the SSE tail's resume cursor, `--stdin`, or the stdout/stderr
+// split — those halves of the rule are unwarded.
+//
 // ── THE SIXTH EDIT WARD ──────────────────────────────────────────────────────
 //
 // The spells' daemon spine is ONE DESIGN IMPLEMENTED SIX TIMES. Nobody chose
@@ -16,7 +24,7 @@ import { must } from "./lib/must.ts";
 // ⛔ THE COST IS NOT THE DUPLICATED LINES. IT IS THAT A FIX COSTS SIX EDITS AND
 //    RELIABLY GETS ONE TO FOUR OF THEM.
 //
-// Measured, 2026-09-08 (docs/investigations/2026-09-08-backend-duplication-recon.md):
+// Measured, 2026-09-08 (docs/items/backend-duplication-recon/write-up.md):
 // four spells had hit the missing-idleTimeout wall and fixed it, three had not.
 // Two more defects were roster-wide until 2026-09-07, when a branch scoped to a
 // flaky glamour test fixed glamour's copy alone — turning two shared defects

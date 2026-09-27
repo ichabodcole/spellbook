@@ -17,7 +17,7 @@ matched the parser's actual behavior on spot-check.
 1. _confusing_ — `wait` returns raw `kind:"status"` frames as messages; the
    folding rules cover `tail`/`pull`/`read` but the documented poll-consumer
    recipe gets disposition metadata as chat bubbles. → backlog
-   (`docs/backlog/2026-08-24-grapevine-status-frame-leaks.md`).
+   (`docs/items/grapevine-status-frame-leaks.md`).
 2. _confusing_ — SKILL.md's send row bracketed identity as optional; it is
    required (exit 2). → fixed in-branch.
 3. _papercut_ — `prune` (reap alias) enumerated by the CLI, absent from

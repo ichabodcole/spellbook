@@ -30,10 +30,10 @@ seen.
 
 **What a template tree here would still have to generate**, and the condition
 for writing it, are ruled in
-[`docs/projects/scaffolding-a-spell/decision-log.md`](../docs/projects/scaffolding-a-spell/decision-log.md)
+[`docs/items/scaffolding-a-spell/decision-log.md`](../docs/items/scaffolding-a-spell/decision-log.md)
 (**S3**): not yet — the condition is one real spell walking the playbook and
 reporting which steps were mechanical.
 
-See `docs/projects/spellbook-extraction/proposal.md` for the sequencing, and
-`docs/fragments/2026-05-29-publishable-spell-creator.md` for where a shippable
-scaffold could eventually go.
+See `docs/features/_archive/spellbook-extraction/feature.md` for the sequencing,
+and `docs/items/publishable-spell-creator.md` for where a shippable scaffold
+could eventually go.

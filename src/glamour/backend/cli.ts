@@ -33,14 +33,8 @@ import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { parseArgs as nodeParseArgs } from "node:util";
-import {
-  CliError,
-  die,
-  type ErrKind,
-  reportCliError,
-  setCurrentCommand,
-} from "../../kit/wire/errors";
+import { type CommandSpec, defineCli, type Invocation } from "../../kit/cli/registry";
+import { CliError, die, type ErrKind, reportCliError } from "../../kit/wire/errors";
 import {
   commandLine,
   readSince,
@@ -128,10 +122,9 @@ type Session = {
 // call inside them. The one to watch is flagged at `postCmd`.
 
 /** `UsageError` is the name the tests and the older call sites know; a usage
- *  failure is a `CliError` of kind "usage". Kept as a subclass rather than
- *  inlined because `dispatch` branches on it to distinguish a PARSE rejection
- *  (which it reshapes with a path-scoped `choices`) from anything else, and
- *  `instanceof` is the only honest way to ask that. */
+ *  failure is a `CliError` of kind "usage". Kept as a subclass for the builders'
+ *  impossible-absence refusal and `main`'s ENOENT triage; the parse rejections
+ *  it used to carry are raised by the kit registry now. */
 export class UsageError extends CliError {
   constructor(message: string, extra?: { hint?: string; choices?: string[] }) {
     super("usage", message, extra);
@@ -229,13 +222,16 @@ async function api(
   return { status: res.status, data };
 }
 
-// Split argv into positionals + flags. `--flag value` or boolean `--flag`.
+// The flag registry — the options table the kit's parser reads
+// (`src/kit/cli/registry.ts`, via `defineCli` below). Exported so a test can
+// build the same parse the CLI does.
 // #81 / D4 — THE RECOGNIZED SET, AT PARSER ALTITUDE.
 //
-// This parser already split on the first `=`. What it lacked was a REGISTRY:
-// an unknown flag was accepted at exit 0 and the verb ran anyway, and free
-// prose containing a `--word` was silently truncated at that word. `node:util`
-// strict supplies rejection and the `--` terminator alongside the `=` handling.
+// The old hand parser already split on the first `=`. What it lacked was a
+// REGISTRY: an unknown flag was accepted at exit 0 and the verb ran anyway, and
+// free prose containing a `--word` was silently truncated at that word.
+// `node:util` strict supplies rejection and the `--` terminator alongside the
+// `=` handling.
 //
 // ⚠ `--restore` HAD NO CORRECT TYPE and this is the sprint's one genuine design
 // blocker, RULED BY COLE. It was BOOLEAN in `style-archive` (`archived:
@@ -252,7 +248,7 @@ async function api(
 // better anyway. It also kills a live bug BY CONSTRUCTION: `flags.restore !==
 // true` meant `style-archive <id> --restore foo` ARCHIVED instead of restoring,
 // at exit 0, with no signal.
-const CLI_OPTIONS = {
+export const CLI_OPTIONS = {
   colors: { type: "string" },
   content: { type: "string" },
   cost: { type: "string" },
@@ -281,31 +277,6 @@ const CLI_OPTIONS = {
   "no-open": { type: "boolean" },
   unarchive: { type: "boolean" },
 } as const;
-
-export const RECOGNIZED_FLAGS = Object.keys(CLI_OPTIONS).map((k) => `--${k}`);
-
-export function parseArgs(args: string[]): {
-  pos: string[];
-  flags: Record<string, string | boolean>;
-} {
-  try {
-    const { values, positionals } = nodeParseArgs({
-      args,
-      options: CLI_OPTIONS,
-      strict: true,
-      allowPositionals: true,
-    });
-    return { pos: positionals, flags: values as Record<string, string | boolean> };
-  } catch (e) {
-    const detail = e instanceof Error ? e.message : String(e);
-    // The rejection NAMES its valid set (acc A3's SHOULD): `choices` is the
-    // recognized flag registry, so an agent self-corrects without a lookup.
-    throw new UsageError(detail, {
-      hint: "for free text containing dashes, put it after a bare --",
-      choices: RECOGNIZED_FLAGS,
-    });
-  }
-}
 
 /**
  * Positional `i` of a verb whose ARITY DISPATCH HAS ALREADY ENFORCED — so this
@@ -798,48 +769,53 @@ function versionInfo(): { name: string; version: string } {
   return { name: "glamour", version: "unknown" };
 }
 
-// ── THE COMMAND TABLE, AS A STRUCTURE ────────────────────────────────
+// ── THE COMMAND TABLE, ON THE KIT REGISTRY ───────────────────────────
 //
 // The dispatcher, the stage-2 flag check, the rejections' `choices`, the
-// help text and the `schema` declaration all walk THIS. It replaced a bare
-// `switch`, which only the dispatcher could walk — help and the switch had
-// already drifted once (the `open` row lost --start-timeout) — and a schema
-// emitted from anything other than the structure that routes the behaviour
-// is a document that lies as soon as anyone edits the other side.
+// help text and the `schema` declaration all walk THIS, through the house's
+// one registry (`src/kit/cli/registry.ts`). glamour's own dispatcher, help
+// renderer and declaration emitter were the template that module was
+// generalised from, and were deleted when glamour moved onto it. Before that it
+// replaced a bare `switch`, which only the dispatcher could walk — help and the
+// switch had already drifted once (the `open` row lost --start-timeout) — and a
+// schema emitted from anything other than the structure that routes the
+// behaviour is a document that lies as soon as anyone edits the other side.
 //
 // `flags` is the verb's OWN accepted set, typed against the registry, so a
 // verb cannot name a flag the parser does not define. `session` is listed
 // per verb rather than merged as a global: `open` spawns a session instead of
-// targeting one, and `help` takes nothing.
+// targeting one, and `help` takes nothing. It is left off every usage line
+// (`usageHides`) and said once in the help footer instead.
+//
+// `help`, `version` and `schema` are the module's rows: declared and strict,
+// so `version --bogus` is refused like any other stray flag (it exited 0 while
+// `version` was answered before the table).
 type Flag = keyof typeof CLI_OPTIONS;
 type Flags = Record<string, string | boolean>;
 type PositionalSpec = { name: string; required: boolean; variadic?: boolean };
-type CommandSpec = {
-  name: string;
-  flags: readonly Flag[];
-  positionals: PositionalSpec[];
-  // The one-line description help prints beside the usage.
-  describe: string;
-  // ⛔ A VERB MAY RETURN AN EXIT CODE, and exactly one does. `tail` is a WATCH:
-  // it ends when the daemon says `closed`, when its pinned session goes away, or
-  // when a signal arrives, and the shared client (`kit/wire/tailEvents.ts`)
-  // RETURNS that code rather than calling `process.exit` from inside its own
-  // loop — which is the whole of the P0f drain scar. `void` therefore has to mean
-  // "0", not "no opinion": dispatch coerces below, so every other row is
-  // unchanged and only the verb that has a code has to say so.
-  run: (
-    pos: string[],
-    flags: Flags,
-    session: string | undefined,
-  ) => Promise<number> | Promise<void> | number | void;
-  // ⚠ `void`, not `undefined`, and that is the contract above rather than a
-  // loosening: every handler that returns `postCmd(...)` returns `Promise<void>`,
-  // and `undefined` refused all seventeen of them (type-debt Phase 3c). Dispatch
-  // maps any non-number to 0, so `void` is exactly the set it accepts — and a
-  // handler returning a string or an object is still a type error. Spelled as
-  // two `Promise`s because biome's noConfusingVoidType refuses `void` inside a
-  // union type argument; the accepted set is the same.
-};
+
+// ⛔ A VERB MAY RETURN AN EXIT CODE, and exactly one does. `tail` is a WATCH:
+// it ends when the daemon says `closed`, when its pinned session goes away, or
+// when a signal arrives, and the shared client (`kit/wire/tailEvents.ts`)
+// RETURNS that code rather than calling `process.exit` from inside its own
+// loop — which is the whole of the P0f drain scar. The registry maps any
+// non-number to 0, so every other row is unchanged and only the verb that has
+// a code has to say so.
+type Handler = (pos: string[], flags: Flags, session: string | undefined) => unknown;
+
+/** Adapts a handler written against `(pos, flags, session)` to the kit's
+ *  `run(inv)`. glamour declares no `multiple` flag, so every value is a
+ *  string or a boolean, which is the `Flags` the builders take. */
+const on =
+  (h: Handler) =>
+  (inv: Invocation<Flag>): unknown => {
+    const flags = inv.flags as Flags;
+    return h(inv.pos, flags, typeof flags.session === "string" ? flags.session : undefined);
+  };
+
+/** The hint every flag rejection carries: the one repair for prose in which a
+ *  word happens to start with `--`. */
+const DASH_HINT = "for free text containing dashes, put it after a bare --";
 
 const SESSION = ["session"] as const satisfies readonly Flag[];
 const P = {
@@ -853,62 +829,63 @@ const P = {
   none: [] as PositionalSpec[],
 } satisfies Record<string, PositionalSpec[]>;
 
-const COMMANDS: CommandSpec[] = [
+const ROWS: Omit<CommandSpec<Flag>, "rejectHint">[] = [
   {
     name: "open",
     flags: ["title", "intent", "no-open", "timeout", "start-timeout", "restore"],
     positionals: P.none,
     describe: "spawn a session (opens the browser); prints {url, port, session_id}",
-    run: (_pos, flags) => cmdOpen(flags),
+    run: on((_pos, flags) => cmdOpen(flags)),
   },
   {
     name: "tail",
     flags: [...SESSION, "since", "once"],
     positionals: P.none,
     describe: `SSE user events → JSONL (wrap with Monitor; waits for a session, never exits 5); ${WINDOW_HELP}`,
-    run: (_pos, flags, session) =>
+    run: on((_pos, flags, session) =>
       cmdTail(session, typeof flags.since === "string" ? sinceOrDie(flags.since) : -1, {
         once: flags.once === true,
         sinceGiven: typeof flags.since === "string",
       }),
+    ),
   },
   {
     name: "state",
     flags: [...SESSION, "full"],
     positionals: P.none,
     describe: "lean state snapshot (--full for raw incl. base64)",
-    run: (_pos, flags, session) => cmdState(session, flags.full === true),
+    run: on((_pos, flags, session) => cmdState(session, flags.full === true)),
   },
   {
     name: "intent",
     flags: SESSION,
     positionals: P.text,
     describe: "update the session intent",
-    run: (pos, _flags, session) => postCmd(session, { type: "intent", text: pos.join(" ") }),
+    run: on((pos, _flags, session) => postCmd(session, { type: "intent", text: pos.join(" ") })),
   },
   {
     name: "annotate",
     flags: SESSION,
     positionals: P.idText,
     describe: "write agent annotation onto a library item",
-    run: (pos, _flags, session) => {
+    run: on((pos, _flags, session) => {
       const [id, ...words] = pos;
       return postCmd(session, { type: "item.annotate", id, agent: words.join(" ") });
-    },
+    }),
   },
   {
     name: "say",
     flags: [...SESSION, "kind"],
     positionals: P.text,
     describe: "post agent dialogue into the conversation (--kind info|working|result|error)",
-    run: (pos, flags, session) => postCmd(session, buildSayCmd(pos, flags)),
+    run: on((pos, flags, session) => postCmd(session, buildSayCmd(pos, flags))),
   },
   {
     name: "section",
     flags: [...SESSION, "status", "content", "prompts", "colors"],
     positionals: [{ name: "key", required: true }],
     describe: 'shape a style-guide section (--prompts a||b; --colors "#hex:Name||#hex:Name")',
-    run: (pos, flags, session) => postCmd(session, buildSectionCmd(pos, flags)),
+    run: on((pos, flags, session) => postCmd(session, buildSectionCmd(pos, flags))),
   },
   {
     name: "status",
@@ -918,11 +895,11 @@ const COMMANDS: CommandSpec[] = [
       { name: "text", required: false, variadic: true },
     ],
     describe: "show/hide the working spinner",
-    run: (pos, _flags, session) => {
-      const on = pos[0] === "on";
+    run: on((pos, _flags, session) => {
+      const busy = pos[0] === "on";
       const text = pos.slice(1).join(" ") || undefined;
-      return postCmd(session, { type: "status", busy: on, ...(text ? { text } : {}) });
-    },
+      return postCmd(session, { type: "status", busy, ...(text ? { text } : {}) });
+    }),
   },
   {
     name: "gen",
@@ -942,199 +919,115 @@ const COMMANDS: CommandSpec[] = [
     positionals: P.none,
     describe:
       "post a generated image (one of --url|--file|--src, and --prompt --model --round required)",
-    run: async (_pos, flags, session) => {
+    run: on(async (_pos, flags, session) => {
       // ⛔ `choices` NAMES WHAT IS MISSING, FILTERED FROM THE REQUIRED SET —
       // so the set the message asserts and the set the check enforces cannot
       // be two lists. `gen --prompt p --model m` answers `["--round"]`, which
       // is one repair rather than three to re-read.
       const missingGen = GEN_REQUIRED_FLAGS.filter((k) => !flags[k]).map((k) => `--${k}`);
       if (missingGen.length > 0)
-        die(`usage: ${usageOf(findCommand("gen") as CommandSpec)}`, "usage", {
+        die(`usage: ${cli.usageOf("gen")}`, "usage", {
           hint: `missing required ${missingGen.join(" ")}`,
           choices: missingGen,
         });
       const src = await resolveGenSrc(flags);
       await postCmd(session, buildGenCmd(src, flags));
-    },
+    }),
   },
   {
     name: "gen-cost",
     flags: [...SESSION, "cost"],
     positionals: P.id,
     describe: "backfill a generated image's cost (--cost <n> required)",
-    run: (pos, flags, session) => {
+    run: on((pos, flags, session) => {
       const cost = typeof flags.cost === "string" ? Number.parseFloat(flags.cost) : Number.NaN;
       if (!Number.isFinite(cost))
-        die(`usage: ${usageOf(findCommand("gen-cost") as CommandSpec)} — --cost must be a number`);
+        die(`usage: ${cli.usageOf("gen-cost")} — --cost must be a number`);
       return postCmd(session, buildGenCostCmd(pos, flags));
-    },
+    }),
   },
   {
     name: "gen-meta",
     flags: [...SESSION, "prompt", "custom"],
     positionals: P.id,
     describe: "backfill the real prompt / refs onto a gen (--prompt and/or --custom)",
-    run: (pos, flags, session) => {
+    run: on((pos, flags, session) => {
       // A DISJUNCTION, so `choices` is the whole set rather than the missing
       // half: either one satisfies this, and the caller picks.
       if (!GEN_META_FLAGS.some((k) => flags[k] !== undefined))
-        die(`usage: ${usageOf(findCommand("gen-meta") as CommandSpec)}`, "usage", {
+        die(`usage: ${cli.usageOf("gen-meta")}`, "usage", {
           hint: `give one of ${GEN_META_FLAGS.map((k) => `--${k}`).join(" ")}`,
           choices: GEN_META_FLAGS.map((k) => `--${k}`),
         });
       return postCmd(session, buildGenMetaCmd(pos, flags));
-    },
+    }),
   },
   {
     name: "focus",
     flags: [...SESSION, "note"],
     positionals: P.ids,
     describe: "scope the focus lens to these items (+ --note to ask)",
-    run: (pos, flags, session) => postCmd(session, buildFocusCmd(pos, flags)),
+    run: on((pos, flags, session) => postCmd(session, buildFocusCmd(pos, flags))),
   },
   {
     name: "style-save",
     flags: SESSION,
     positionals: [{ name: "label", required: true, variadic: true }],
     describe: "codify the current style → project tray",
-    run: (pos, _flags, session) => postCmd(session, buildStyleSaveCmd(pos)),
+    run: on((pos, _flags, session) => postCmd(session, buildStyleSaveCmd(pos))),
   },
   {
     name: "style-archive",
     flags: [...SESSION, "unarchive"],
     positionals: P.id,
     describe: "archive (or --unarchive) a saved style",
-    run: (pos, flags, session) => postCmd(session, buildStyleArchiveCmd(pos, flags)),
+    run: on((pos, flags, session) => postCmd(session, buildStyleArchiveCmd(pos, flags))),
   },
   {
     name: "tray",
     flags: SESSION,
     positionals: P.none,
     describe: "list the project's saved styles",
-    run: async (_pos, _flags, session) => {
+    run: on(async (_pos, _flags, session) => {
       const s = requireSession(session);
       const { status, data } = await api(s.port, "GET", "/state?lean=1");
       if (status !== 200) daemonRefused("tray", status, data);
       printJson((data as { state?: { tray?: unknown[] } })?.state?.tray ?? []);
-    },
+    }),
   },
   {
     name: "close",
     flags: SESSION,
     positionals: P.none,
     describe: "shut down the session",
-    run: (_pos, _flags, session) => postCmd(session, { type: "close" }),
+    run: on((_pos, _flags, session) => postCmd(session, { type: "close" })),
   },
   {
     name: "info",
     flags: SESSION,
     positionals: P.none,
     describe: "print the resolved discovery JSON",
-    run: (_pos, _flags, session) => cmdInfo(session),
-  },
-  {
-    name: "schema",
-    flags: [],
-    positionals: P.none,
-    describe: "emit this CLI's acc declaration (walked from the command table)",
-    run: () => {
-      process.stdout.write(`${JSON.stringify(buildDeclaration(), null, 2)}\n`);
-    },
-  },
-  {
-    name: "help",
-    flags: [],
-    positionals: P.none,
-    describe: "show this message",
-    run: () => {
-      process.stdout.write(`${renderHelp()}\n`);
-    },
+    run: on((_pos, _flags, session) => cmdInfo(session)),
   },
 ];
 
-// Root interceptors — tokens the ROOT answers itself, before any verb. Not
-// commands and not registry flags, so they are declared explicitly at
-// path [] rather than walked past.
-const ROOT_INTERCEPTORS = [
-  { name: "--help", runs: "help" },
-  { name: "-h", runs: "help" },
-  { name: "--version", runs: "version" },
-  { name: "-V", runs: "version" },
-] as const;
-
-const findCommand = (token: string): CommandSpec | undefined =>
-  COMMANDS.find((c) => c.name === token);
-
-// The verb token in a raw argv, found the way the parser will find it: a
-// string flag CONSUMES the next token (`--session abc say` → "say", not
-// "abc"), `--key=value` consumes nothing, a bare `--` ends flag parsing, and
-// the first token left standing is the verb. Used only to name the verb on a
-// rejection raised BEFORE the parse succeeds (a stray flag) — the parse's own
-// positionals are the truth afterwards. A naive "first non-dash token" was
-// the review's finding: it named a flag's value as the verb.
-export function verbToken(argv: string[]): string | null {
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i] as string;
-    if (a === "--") return argv[i + 1] ?? null;
-    if (a.startsWith("--")) {
-      if (a.includes("=")) continue;
-      const key = a.slice(2) as keyof typeof CLI_OPTIONS;
-      if (key in CLI_OPTIONS && CLI_OPTIONS[key].type === "string") i++;
-      continue;
-    }
-    if (a.startsWith("-")) continue;
-    return a;
-  }
-  return null;
-}
-
-// The derived views the tests and the rejections read. VERBS is the roster;
-// VERB_SPEC is each verb's accepted flags; flagsFor renders one row as the
-// `choices` a rejection carries.
-export const VERBS: readonly string[] = COMMANDS.map((c) => c.name);
-export const VERB_SPEC: Record<string, readonly Flag[]> = Object.fromEntries(
-  COMMANDS.map((c) => [c.name, c.flags]),
-);
-export const flagsFor = (verb: string): string[] =>
-  [...(findCommand(verb)?.flags ?? [])].map((k) => `--${k}`).sort();
-
-// ── help and the declaration, both walked from COMMANDS ─────────────
-
-const renderFlag = (k: Flag): string =>
-  CLI_OPTIONS[k].type === "boolean" ? `[--${k}]` : `[--${k} ..]`;
-
-const renderPositional = (p: PositionalSpec): string => {
-  const inner = p.variadic ? `${p.name}...` : p.name;
-  return p.required ? `<${inner}>` : `[${inner}]`;
-};
-
-// The usage line: verb, positionals, then the verb's own flags (session is
-// rendered once in the footer, not on every row).
-export function usageOf(spec: CommandSpec): string {
-  const parts = [
-    spec.name,
-    ...spec.positionals.map(renderPositional),
-    ...spec.flags.filter((k) => k !== "session").map(renderFlag),
-  ];
-  return parts.join(" ");
-}
-
-export function renderHelp(): string {
-  const rows = COMMANDS.map((c) => [usageOf(c), c.describe] as const);
-  const width = Math.min(Math.max(...rows.map(([u]) => u.length)), 44);
-  const body = rows
-    .map(([usage, describe]) =>
-      usage.length <= width
-        ? `  ${usage.padEnd(width)}  ${describe}`
-        : `  ${usage}\n  ${"".padEnd(width)}  ${describe}`,
-    )
-    .join("\n");
-  return `glamour — a grounded visual conversation surface.
-
-${body}
-  ${ROOT_INTERCEPTORS.map((i) => i.name).join(" | ")}  root tokens: help, or {name, version} as JSON
-
-  Add --session <id> to any verb that talks to a session (default: most recent).
+// ⛔ BUILDING THE TABLE HAS NO SIDE EFFECTS. `defineCli` only validates and
+// indexes; nothing is parsed, printed or read until `main` runs. So a grimoire
+// ward, or a test, can import this module and read `cli.recognizedFlags`,
+// `cli.flagsFor` and `cli.declaration()` without running the CLI.
+export const cli = defineCli({
+  name: "glamour",
+  summary: "a grounded visual conversation surface.",
+  options: CLI_OPTIONS,
+  commands: ROWS.map((r) => ({ ...r, rejectHint: DASH_HINT })),
+  // `glamour --session x info` runs `info`: the verb is the first token that is
+  // neither a flag nor a string flag's value, and a bare `--` makes the next
+  // token the verb (acc A6).
+  grammar: "flags-anywhere",
+  verbPositional: "verb",
+  usageHides: ["session"],
+  version: versionInfo,
+  helpFooter: `  Add --session <id> to any verb that talks to a session (default: most recent).
   Each verb accepts only the flags on its row; a recognized flag on the wrong
   verb is refused, and the rejection lists the verb's own flags.
 
@@ -1143,53 +1036,27 @@ ${body}
   prose. Failures are one JSON envelope on stderr and exit non-zero (2 = usage,
   1 = internal, 5 = not found, 6 = conflict) — except tail, which waits for a
   session instead of failing and writes its retry/keepalive notes to stderr as
-  '#'-prefixed prose.`;
-}
+  '#'-prefixed prose.`,
+});
 
-// acc declaration format v0, generated by WALKING COMMANDS and CLI_OPTIONS —
-// the same structures the parser and dispatcher consume — at answer time, so
-// `provenance: "emitted"` is true rather than claimed. Pipes straight into
-// `acc check <cli.ts> --declaration <(cli.ts schema)`.
-export function buildDeclaration() {
-  // Every registry flag is accepted today; a refusal list would add
-  // status: "refused" entries here the day a verb recognises-and-declines one.
-  const arg = (k: Flag) => ({ name: `--${k}`, type: CLI_OPTIONS[k].type, status: "valid" });
-  const commands: {
-    path: string[];
-    args: { name: string; type: "string" | "boolean"; status: string }[];
-    positionals: PositionalSpec[];
-  }[] = [
-    {
-      // path [] IS the root: one required token selecting a verb, or an
-      // interceptor the root answers itself.
-      path: [],
-      args: ROOT_INTERCEPTORS.map((i) => ({
-        name: i.name,
-        type: "boolean" as const,
-        status: "valid",
-      })),
-      positionals: [{ name: "verb", required: true }],
-    },
-    ...COMMANDS.map((c) => ({
-      path: [c.name],
-      args: [...c.flags].map(arg),
-      positionals: c.positionals,
-    })),
-  ];
-  return {
-    formatVersion: "0",
-    provenance: "emitted",
-    selfDescription: { args: ["schema"] },
-    commands,
-  };
-}
+// The derived views the tests read. VERBS is the roster (the module's own
+// `version`, `schema` and `help` rows included); VERB_SPEC is each verb's
+// accepted flags; flagsFor renders one row as the `choices` a rejection carries.
+export const VERBS: readonly string[] = cli.verbs;
+export const VERB_SPEC: Record<string, readonly string[]> = Object.fromEntries(
+  cli.rows.map((r) => [r.name, r.accepted]),
+);
+export const flagsFor = (verb: string): string[] => cli.flagsFor(verb);
+export const RECOGNIZED_FLAGS: readonly string[] = cli.recognizedFlags;
 
 // Every failure funnels through here and RETURNS its code, so the runtime
 // drains stdout. Uncaught, a failure would surface as a raw stack trace at exit
-// 1, which is not a usage error to anyone reading it.
+// 1, which is not a usage error to anyone reading it. `dispatch`, not the
+// registry's `main`, because glamour triages one throw the registry cannot know
+// about: a missing `--file` is the caller's, not glamour's.
 async function main(argv: string[]): Promise<number> {
   try {
-    return await dispatch(argv);
+    return await cli.dispatch(argv);
   } catch (e) {
     // The house funnel: `reportCliError` writes the envelope and hands back the
     // taxonomy exit code, or `null` when the throw was not a CliError.
@@ -1204,99 +1071,6 @@ async function main(argv: string[]): Promise<number> {
     // stack trace — the process contract is JSON on stderr for EVERY failure.
     return reportCliError(new CliError("internal", msg)) ?? 1;
   }
-}
-
-async function dispatch(argv: string[]): Promise<number> {
-  // ROOT INTERCEPTORS FIRST, before any flag parsing (magpie/astrolabe
-  // pattern). They are not commands and not registry flags — `state --version`
-  // stays refused — which is why they are declared explicitly at path [] and
-  // why a generator walking "the commands" would walk past them.
-  const interceptor = ROOT_INTERCEPTORS.find((i) => i.name === argv[0]);
-  if (interceptor !== undefined || argv[0] === "version") {
-    const runs = interceptor?.runs ?? "version";
-    if (runs === "help") process.stdout.write(`${renderHelp()}\n`);
-    else process.stdout.write(`${JSON.stringify(versionInfo())}\n`);
-    return 0;
-  }
-
-  // The WHOLE argv is parsed, verb included, so a bare `--` is honoured at
-  // the root (acc A6): `-- --x` yields the positional "--x", which is then an
-  // unknown verb — not an unknown option.
-  // Name the verb BEFORE parsing, so a parser rejection's envelope still says
-  // what was being run.
-  // The verb, named BEFORE parsing, so a parser rejection's envelope still says
-  // what was being run. It lives in the kit now — one module owns the envelope,
-  // so it owns the field the envelope prints.
-  let currentCommand = verbToken(argv);
-  setCurrentCommand(currentCommand);
-  let parsed: ReturnType<typeof parseArgs>;
-  try {
-    parsed = parseArgs(argv);
-  } catch (e) {
-    if (!(e instanceof UsageError)) throw e;
-    // An unknown flag's rejection names the set AT THIS PATH, not the whole
-    // registry: the verb's own flags when the verb is one of ours, the verb
-    // roster when there is no verb yet (the root accepts no flags of its own).
-    // This is what a recorded-surface census reads, path by path.
-    const spec = currentCommand === null ? undefined : findCommand(currentCommand);
-    if (spec !== undefined) {
-      throw new UsageError(e.message, { hint: e.extra?.hint, choices: flagsFor(spec.name) });
-    }
-    // At the root the flags the tool accepts are the interceptors, and that is
-    // the set named — the same array `schema` declares at path [], so the
-    // root is diffable. The verb roster rides the hint: the next act is a verb.
-    throw new UsageError(e.message, {
-      hint: `no verb given — verbs: ${VERBS.join(" ")} (run: cli.ts help)`,
-      choices: ROOT_INTERCEPTORS.map((i) => i.name),
-    });
-  }
-  const [verb, ...pos] = parsed.pos;
-  const flags = parsed.flags;
-  currentCommand = verb ?? null;
-  setCurrentCommand(currentCommand);
-
-  if (verb === undefined) {
-    // Bare invocation is a usage error (acc D2), and the rejection names
-    // the roster so the caller's next command can be right.
-    throw new UsageError("no verb given", { hint: "run: cli.ts help", choices: [...VERBS] });
-  }
-  const spec = findCommand(verb);
-  if (spec === undefined) {
-    throw new UsageError(`unknown verb "${verb}"`, {
-      hint: "run: cli.ts help",
-      choices: [...VERBS],
-    });
-  }
-
-  // Stage 2: a recognized flag this verb does not take — MISPLACED, not
-  // unknown. An agent told a real flag is unknown goes hunting a typo it did
-  // not make. The verb is resolved first because which flags are legal is a
-  // question about the verb.
-  const allowed = new Set<string>(spec.flags);
-  const stray = Object.keys(flags).find((k) => !allowed.has(k));
-  if (stray !== undefined) {
-    const accepted = flagsFor(spec.name);
-    throw new UsageError(
-      `--${stray} is not accepted by \`${spec.name}\` (it is a recognized glamour flag, just not this verb's)`,
-      accepted.length > 0 ? { choices: accepted } : { hint: `${spec.name} takes no flags` },
-    );
-  }
-
-  // Arity, enforced FROM THE DECLARED SHAPE: the table's positional spec is
-  // what `schema` publishes and what help prints, so enforcing it here keeps
-  // both true by construction. A verb's own finer checks (a numeric --cost,
-  // a required flag) live in its handler and name the same usage line.
-  const required = spec.positionals.filter((p) => p.required).length;
-  const variadic = spec.positionals.some((p) => p.variadic);
-  if (pos.length < required || (!variadic && pos.length > spec.positionals.length)) {
-    throw new UsageError(`usage: ${usageOf(spec)}`, { hint: spec.describe });
-  }
-
-  const session = typeof flags.session === "string" ? flags.session : undefined;
-  // `void` means 0 — a verb that completed and had nothing to say about the exit.
-  // A number means the verb OWNS its code, which today is `tail` and only `tail`.
-  const code = await spec.run(pos, flags, session);
-  return typeof code === "number" ? code : 0;
 }
 
 /**

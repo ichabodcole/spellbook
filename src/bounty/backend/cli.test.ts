@@ -2,62 +2,71 @@
  * bounty's CLI unit cells — the DECLARATIONS its `choices` are built from,
  * bound to the behaviour they claim to describe (register A1).
  *
- * ⛔ WHY THIS FILE DID NOT EXIST BEFORE. bounty's backend had `server.test.ts`
- * and `release-serve.test.ts` and nothing for `cli.ts` — register **A5**, _"no
- * test guards the new failure contract on the spells that adopted it without an
- * acc grade"_, names bounty and imago by name. This file is not A5's close (the
- * envelope drives live in `grimoire/error-choices-census.test.ts`, where the
- * whole roster is driven at once); it is the minimum A1 needs, which is the
- * three sets its rejections publish, bound to the code that accepts them.
- *
- * The split is deliberate: a SOURCE-PARSED binding belongs beside the source it
- * parses, and a PROCESS drive belongs where every spell's is, so the eight
- * cannot drift apart one suite at a time.
+ * Since 2026-09-26 bounty dispatches through the kit's one registry
+ * (`src/kit/cli/registry.ts`): the verb list, each verb's accepted flags, help
+ * and `schema` are all read off ONE table, so the old cell binding a hand-kept
+ * `VERBS` list to a `switch (verb)` has nothing left to bind. What stays is the
+ * per-verb shape a caller relies on, and the one set bounty still declares by
+ * hand (`UPDATE_PATCH_FLAGS`). The envelope drives live in
+ * `grimoire/error-choices-census.test.ts`.
  */
 
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
-import { RECOGNIZED_FLAGS, UPDATE_PATCH_FLAGS, VERB_ALIASES, VERBS } from "./cli.ts";
+import { cli, RECOGNIZED_FLAGS, UPDATE_PATCH_FLAGS, VERBS } from "./cli.ts";
 
 const SRC = readFileSync(new URL("./cli.ts", import.meta.url), "utf8");
 
-/**
- * ⛔ `VERBS` IS WHAT `choices` ON AN UNKNOWN VERB IS BUILT FROM, and it is a
- * DECLARATION while the `switch (verb)` is the BEHAVIOUR. Nothing in the type
- * system ties them, so a verb added to one and not the other makes bounty
- * either advertise a verb it cannot run or run one it will not name — and
- * `choices` is only worth emitting because a caller can trust it.
- *
- * magpie's cell, ported rather than re-derived (`src/magpie/backend/cli.test.ts`,
- * "VERB_SPEC is the dispatch switch"). The SOURCE is parsed rather than the
- * module inspected, because a case label is not a value.
- *
- * ⚠ THE ALIASES ARE IN THE SAME ASSERTION, not excluded from it. `--help` and
- * `-h` are switch cases too, and they ARE accepted — mind-mapper's finding, that
- * a roster built from the verbs alone understates the accepted set by exactly
- * the aliases. `case undefined:` is the one label with no token, so it is the
- * one the regex cannot see and the one this cell says nothing about.
- */
-test("VERBS + VERB_ALIASES are the dispatch switch — neither may grow a verb alone (A1)", () => {
-  const dispatch = SRC.slice(SRC.indexOf("switch (verb) {"));
-  const cases = new Set(
-    [...dispatch.matchAll(/^\s{4}case "(-{0,2}[a-z-]+)":/gm)].map((m) => m[1] as string),
+test("the verbs are the table's, plus the registry's version/schema/help rows", () => {
+  expect([...VERBS].sort()).toEqual(
+    [
+      "add",
+      "block",
+      "claim",
+      "close",
+      "help",
+      "info",
+      "init",
+      "list",
+      "message",
+      "open",
+      "remove",
+      "schema",
+      "sessions",
+      "state",
+      "tail",
+      "unblock",
+      "update",
+      "version",
+    ].sort(),
   );
-  expect([...cases].sort()).toEqual([...VERBS, ...VERB_ALIASES].sort());
+});
+
+test("the options table is the one the registry parses (A1)", () => {
+  expect(SRC).toContain("options: CLI_OPTIONS,");
+  expect(RECOGNIZED_FLAGS.every((f) => f.startsWith("--"))).toBe(true);
+  // 24 flags: thoth's audited 22 plus `--once` (tail's background one-shot,
+  // feat/tail-quiet-handoff) and `--clear-notes` (update's explicit clear, s5-5).
+  expect(RECOGNIZED_FLAGS.length).toBe(24);
 });
 
 /**
- * `RECOGNIZED_FLAGS` is derived from `CLI_OPTIONS` — the object `parseArgs`
- * hands `node:util` — so the only way it can lie is if the parser stops reading
- * that object.
+ * Board targeting rides every verb that talks to a board, and nothing else:
+ * `list` and `sessions` read the machine, not a board, so a `--session` there
+ * would be a flag that silently does nothing.
  */
-test("the parser reads CLI_OPTIONS, the same object choices is built from (A1)", () => {
-  expect(SRC).toContain("options: CLI_OPTIONS,");
-  expect(RECOGNIZED_FLAGS.every((f) => f.startsWith("--"))).toBe(true);
-  // 23 flags: thoth's audited 22 plus `--once` (tail's background one-shot,
-  // feat/tail-quiet-handoff). A count, not a list: the list is the pin in
-  // `error-choices-census.test.ts`'s arm 2b, which drives it out of the process.
-  expect(RECOGNIZED_FLAGS.length).toBe(23);
+test("per-verb flag sets: board targeting where a board is read, none elsewhere", () => {
+  const board = ["tail", "state", "add", "update", "claim", "block", "unblock", "remove"];
+  for (const v of [...board, "message", "init", "close", "info"]) {
+    expect(cli.flagsFor(v)).toEqual(expect.arrayContaining(["--session", "--session-key"]));
+  }
+  for (const v of ["list", "sessions", "version", "schema", "help"]) {
+    expect(cli.flagsFor(v)).toEqual([]);
+  }
+  // `open` takes a key (idempotent attach) but never a raw id: it MAKES boards.
+  expect(cli.flagsFor("open")).toEqual(
+    ["--fresh", "--no-open", "--pin", "--restore", "--session-key", "--timeout", "--title"].sort(),
+  );
 });
 
 /**
@@ -67,19 +76,16 @@ test("the parser reads CLI_OPTIONS, the same object choices is built from (A1)",
  * `--expect` — both of which do populate a patch. That is the whole argument for
  * `choices`: a set typed into prose has no reader that can check it.
  *
- * This cell is the check, and it asserts SET EQUALITY against the arm's own
- * flag reads — not membership. Every member must also be a flag the parser
- * recognises, else the refusal names a token bounty would itself reject.
+ * This cell is the check, and it asserts SET EQUALITY against the handler's own
+ * flag reads — not membership. Every member must also be a flag `update`
+ * accepts, else the refusal names a token bounty would itself reject.
  */
 test("UPDATE_PATCH_FLAGS are EXACTLY the flags `update` reads (A1)", () => {
-  for (const flag of UPDATE_PATCH_FLAGS) expect(RECOGNIZED_FLAGS).toContain(flag);
-  const update = SRC.slice(SRC.indexOf('case "update": {'), SRC.indexOf('case "claim": {'));
-  // ⛔ SET EQUALITY, IN BOTH DIRECTIONS, AND THE OMISSION DIRECTION IS THE ONE
-  // THAT ACTUALLY HAPPENED. A cell that only checked "every declared flag is
-  // read" would have passed the shipped defect — the sentence was missing
-  // `--size`/`--expect`, and a missing member reads as nothing at all. So the
-  // arm's OWN reads are the source of truth and the declaration is compared
-  // against them.
+  for (const flag of UPDATE_PATCH_FLAGS) expect(cli.flagsFor("update")).toContain(flag);
+  const update = SRC.slice(
+    SRC.indexOf("async function cmdUpdate("),
+    SRC.indexOf("async function cmdClaim("),
+  );
   const read = new Set(
     [...update.matchAll(/flags\.([A-Za-z_$][\w$]*)|flags\["([^"]+)"\]/g)].map(
       (m) => `--${m[1] ?? m[2]}`,

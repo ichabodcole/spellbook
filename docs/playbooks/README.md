@@ -1,159 +1,99 @@
-# Implementation Playbooks
+# Playbooks
 
-This directory contains implementation playbooks: reusable guides for recurring
-types of work. A playbook captures a proven approach, including phases,
-pitfalls, and validation steps, so that future efforts can follow an established
-path instead of starting from scratch.
+A playbook is the guide for one kind of work: what doing it right produces, the
+steps, and the checks that prove each step was done. It is read by an agent at
+the moment that kind of work starts, so it is written as instructions, not as a
+story.
 
-## Purpose
+## When to write one
 
-The main purpose of a playbook is to **codify a repeatable pattern** for
-implementation. Where proposals focus on one-off ideas, plans map a specific
-path for a proposal, and sessions document what actually happened, playbooks
-distill _how we typically execute_ a class of work.
+- **Write one** when the same kind of work has come up more than once and the
+  second time needed something the first time taught — a step that was missed,
+  an order that mattered, a check that caught a mistake.
+- **Append to one** instead when a playbook for that kind of work already
+  exists. This is the usual case: a branch that taught something adds a step and
+  its verification to the playbook it belongs to. See
+  [Adding a check to a playbook](#adding-a-check-to-a-playbook).
+- **Do not write one** for a single task (that is an item's plan), for what
+  happened on a branch (that is a session), or for how a system works (that is
+  an architecture page).
 
-Think of playbooks as **reusable dev plans** for augmenting existing systems.
-When you have a system in place (like AI workflows, database entities, or UI
-components) and need to add to it consistently, a playbook captures the proven
-approach.
+Before creating a new playbook, look for an existing one:
 
-### Why Document Playbooks?
+```bash
+bun scripts/pdocs/cli.ts find --type playbook
+```
 
-- **Consistency** - Ensure new additions to existing systems follow established
-  patterns
-- **Efficiency** - Don't reinvent the wheel; follow the proven path for
-  recurring tasks
-- **Onboarding** - Help new developers (human and AI) understand how to work
-  with established systems
-- **Quality** - Capture best practices, common pitfalls, and validation steps
-- **Evolution** - Update playbooks as better patterns emerge, keeping the team
-  aligned
+## The shape
 
-### Common Use Cases
+Three sections, in this order — see [TEMPLATE.md](./TEMPLATE.md):
 
-- **Adding to existing systems** - New AI workflow, new database entity, new
-  component variant
-- **Recurring technical tasks** - Database migrations, API integrations, feature
-  flag rollouts
-- **Established patterns** - Testing strategies, refactoring approaches,
-  deployment procedures
+- **Goal** — what doing this kind of work correctly produces, and when this
+  playbook applies. One or two sentences.
+- **Steps** — numbered imperatives. A step that applies only in some cases names
+  the case first: _"If the entity is synced, add it to the sync rules."_
+- **Verification** — checks that fail when a step was skipped or done wrong: a
+  command and what it should print, or something a reviewer can see. Every step
+  that can go wrong has a check here.
 
-Playbooks make it easier for developers and AI agents to pick up and apply
-established practices without starting from scratch.
+Write every line as an instruction
+([STYLE.md](../STYLE.md#guidance-is-imperative)). "We hit X when Y" is a record
+and belongs in a session; the playbook line is "Before Y, check X".
 
-## When to Create a Playbook
+## The index is the description
 
-Create a playbook when:
+Playbooks are indexed by kind of work, and the index is each playbook's
+frontmatter `description`. It is the line an agent reads when deciding whether a
+playbook applies, and the line in [index.md](../index.md), verbatim. Write it as
+the kind of work plus what the playbook gets done:
 
-- **Pattern has emerged** - You've successfully done something 2-3 times and see
-  a repeatable pattern
-- **System needs augmentation** - There's an established system that will need
-  new additions over time
-- **Consistency matters** - New additions should follow the same approach for
-  quality/maintainability
-- **Complexity justifies documentation** - The task is non-trivial enough that
-  guidance adds value
+```yaml
+description:
+  Adding a database entity end to end — schema, migration, sync rules and API.
+```
 
-## When NOT to Create a Playbook
+A description that names a system ("The database") or a feeling ("Database
+tips") matches nothing an agent is about to do.
 
-- **One-off tasks** - If this is a unique implementation, create a plan instead
-- **Before the pattern emerges** - Wait until you've validated something works
-  2-3 times
-- **Trivial tasks** - If the task is simple enough to not need guidance, skip
-  the playbook
-- **Project-specific details** - Keep playbooks generic and reusable, not tied
-  to specific features
-- **Documenting "what happened"** - Use sessions for historical records, not
-  playbooks
+## Adding a check to a playbook
 
-**Rule of thumb:** If you can't imagine using this guide for at least 2-3 future
-tasks, it's probably not a playbook yet—it's a plan or session.
+When work shows a playbook was missing something:
 
-**Scope note:** Playbooks tend to be larger in scope than lessons learned - they
-cover multi-step processes and touch multiple files/systems, while lessons
-learned capture specific problems or patterns.
+1. Add the step to **Steps**, where it happens in the work — not at the end.
+2. Add the check that would have caught it to **Verification**.
+3. If the new step changes what the playbook covers, update `description` and
+   its line in [index.md](../index.md) to match.
 
-## Content and Format
+Do not add a changelog or the story of the branch that taught it. The commit
+records when it changed; the session records why.
 
-Playbooks should be clear, structured, and designed for reuse. They are not
-rigid templates but should provide enough detail for consistent execution. A
-good playbook usually includes:
+## Overriding a lifecycle skill
 
-- **Context:** When to apply this playbook (use cases, triggers, prerequisites).
-- **Approach:** The general strategy and guiding principles.
-- **Steps / Phases:** A coarse sequence of actions that can be adapted as
-  needed.
-- **Risks & Gotchas:** Common pitfalls to avoid, with mitigation advice.
-- **Validation & Acceptance:** How to confirm the playbook has been successfully
-  applied.
-- **References:** Links to prior plans or sessions where this playbook was used.
+A few project-docs skills own a lifecycle event and carry a working default for
+it. A playbook at one of these paths takes precedence over that default. A skill
+that honours an override reads the file when it exists, follows it instead of
+its own steps, and says that it did.
 
-## File Naming
+| Event                             | Playbook                                           |
+| --------------------------------- | -------------------------------------------------- |
+| Opening a branch                  | `docs/playbooks/branch-initialization-playbook.md` |
+| Finishing and landing a branch    | `docs/playbooks/branch-finalization-playbook.md`   |
+| Starting implementation (kickoff) | `docs/playbooks/dev-kickoff-playbook.md`           |
+| Cutting a release                 | `docs/playbooks/release-playbook.md`               |
+| Handing built work over to deploy | `docs/playbooks/handoff-playbook.md`               |
 
-- `short-topic-playbook.md`
-- Examples:
-  - `feature-flag-rollout-playbook.md`
-  - `db-migration-playbook.md`
-  - `api-integration-playbook.md`
-  - `adding-and-consuming-a-new-db-entity.md`
+Write one when your project does the event differently — a different merge
+strategy, a release checklist the default does not know. It is an ordinary
+playbook: same shape, same frontmatter, same catalog line.
 
-## Template
+## File naming
 
-A ready-to-use template is available: **[TEMPLATE.md](./TEMPLATE.md)**
+`<kind-of-work>-playbook.md`, for example `db-entity-playbook.md` or
+`api-integration-playbook.md`. The `-playbook` suffix is part of every name in
+this folder. `pdocs new playbook <slug>` adds it, and writes the catalog line.
 
-Copy this template when creating a new playbook after you've validated a pattern
-through 2-3 implementations.
+## Status
 
-### Key Sections
-
-The template includes:
-
-- **Metadata** (Created, Last Updated, Status) - Track evolution
-- **Context** - What problem this playbook solves
-- **Applicability** - When to use (and when NOT to use)
-- **Prerequisites** - What needs to exist first
-- **Approach Summary** - Strategy and guiding principles
-- **Steps/Phases** - Coarse sequence with validation gates
-- **Risks & Gotchas** - Common pitfalls and mitigations
-- **Validation & Acceptance** - How to confirm success
-- **Examples** - Concrete uses with references
-- **Version History** - Track updates over time
-
-Keep playbooks generic and adaptable - they should guide, not prescribe exact
-steps.
-
-## Tips
-
-### Creating Playbooks
-
-- **Wait for the pattern** - Don't create a playbook until you've done something
-  successfully 2-3 times
-- **Keep generic but actionable** - Adaptable to different contexts, not tied to
-  one specific feature
-- **Capture the why, not just the what** - Explain principles and gotchas, not
-  just steps
-- **Include examples** - Reference real project plans/sessions where this
-  playbook was used
-
-### Extracting Playbooks
-
-- **From project sessions** - When you hit the same multi-step pattern
-  repeatedly, extract to playbook
-- **From project plans** - When a plan reveals an approach worth reusing,
-  generalize it into a playbook
-- **From lessons learned** - When a lesson grows into a multi-step process, it
-  might become a playbook
-
-### Maintaining Playbooks
-
-- **Update as practices evolve** - Playbooks should reflect current best
-  practices
-- **Link from plans** - Reference applicable playbooks in implementation plans
-- **Deprecate when obsolete** - Mark playbooks as deprecated when systems or
-  patterns change
-- **Version history** - Track meaningful updates so people know what changed
-
-## Finding Playbooks
-
-When in doubt, scan the directory - playbooks are designed to be self-describing
-through their titles and content.
+`status: stable` means the steps are current and can be followed as written. A
+playbook for a system that no longer exists is `status: deprecated`, kept so
+links to it still resolve.

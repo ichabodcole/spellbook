@@ -1,3 +1,5 @@
+// enforces: none in house-style — conformance register D7's React development-build defect (fixed 2026-09-16)
+//
 // SURFACE BUILD MODE WARD — a shipped surface must be React's PRODUCTION build.
 //
 // Why this exists: v3.0.0 shipped all nine surfaces built against React's
@@ -13,7 +15,7 @@
 // `Should not already be working`.
 //
 // ⚠ IT WAS FOUND BY A CONSUMER, AND THE EVIDENCE WAS ALREADY IN THE REPO.
-// `docs/projects/_archive/backend-convergence/phase-1b-journal.md:194` and
+// `docs/features/_archive/backend-convergence/phase-1b-journal.md:194` and
 // `phase-2-journal.md:340` both recorded "the unminified DEV React graph" in
 // September 2026. The dev build was observed TWICE and written down as a SIZE
 // fact; no instrument read it as a correctness defect, because no instrument

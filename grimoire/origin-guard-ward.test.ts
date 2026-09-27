@@ -1,3 +1,5 @@
+// enforces: none in house-style — the 2026-09-11 foreign-origin finding (Scriptorium), closed roster-wide in c010f80e
+//
 // EVERY DAEMON REFUSES A FOREIGN ORIGIN — the ninth-copy ward.
 //
 // ⛔ WHY A WARD AND NOT JUST NINE EDITS. The backend convergence's premise,

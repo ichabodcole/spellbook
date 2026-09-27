@@ -210,29 +210,51 @@ session by default; pass `--session <id>` to target a specific one.
 > **`--` ends flag parsing — and every flag must come BEFORE it.** Use it when
 > free text would otherwise be read as a flag:
 > `add -- "fix the --stdin handler later"`. **Anything after `--` is a
-> positional, including something that looks like a flag** — it is consumed
-> silently, at exit 0, with no warning.
+> positional, including something that looks like a flag.** On `add` and
+> `message` it becomes part of the text, at exit 0, and when it spells a flag
+> that verb accepts stderr carries one `# warning:` line naming it and the fix
+> (stdout and the exit code do not change); on a verb whose positionals are
+> already full (`update t1 -- --session-key K`) it is refused, exit 2, naming
+> the token.
 >
-> **⚠ For this spell that is worse than silent: a `--session-key` placed after
-> `--` is eaten, and the write lands on whatever board the ambient environment
-> resolves to.** The invocation looks isolated and is not. **Correct:
+> **⚠ For this spell that matters: a `--session-key` placed after `--` on `add`
+> is TEXT — it lands in the card's title, and the write lands on whatever board
+> the ambient environment resolves to.** The only sign is the `# warning:` line
+> on stderr. The invocation looks isolated and is not. **Correct:
 > `bounty add --session-key K -- "text"`. Never
 > `bounty add -- --session-key K "text"`.**
+>
+> **Each verb accepts only the flags in its row below** (plus `--session <id>`
+> and `--session-key <key>` on every verb that talks to a board, and
+> `--as <name>` on those that act on it). A flag from another verb is refused,
+> exit 2, with the verb's accepted set in `error.choices`. A flag before the
+> verb is refused too: the verb comes first.
 
-| Verb                                                                                                                   | Does                                                                                                                                                                                           |
-| ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `open [--title T] [--timeout S] [--no-open] [--restore <id>] [--pin] [--session-key <key> [--fresh]]`                  | spawn the daemon (or resume a saved session); print session JSON. `--session-key` binds it to a caller-owned key, idempotently (#69)                                                           |
-| `state [--owner <name> \| --mine] [--as <name>]`                                                                       | read-back `{ state, cursor, snapshotBackedUp, readMode }` — confirm a command applied; scope like `tail`. The read is FULL; `--full` is accepted for compatibility and is now the default (b6) |
-| `tail [--since N] [--once] [--owner <name> \| --mine] [--as <name>]`                                                   | stream board events as JSONL (wrap with Monitor); scope to an owner; resumes `--since`                                                                                                         |
-| `add <title…> [--status S] [--notes N] [--owner N] [--tag a,b] [--size S\|M\|L] [--expect <min>] [--id ID] [--stdin]`  | add a task (optionally assigned / labelled / sized)                                                                                                                                            |
-| `update <id> [--status S] [--title T] [--notes N] [--owner N] [--tag a,b] [--size S\|M\|L] [--expect <min>] [--stdin]` | patch a task (`--owner` assigns/reassigns; `--tag` sets labels, `--size`/`--expect` set the heartbeat threshold)                                                                               |
-| `claim <id> [--as <name>]`                                                                                             | self-claim an **unowned** task (rejected if owned by another)                                                                                                                                  |
-| `block <id> --on <id>[,…]` / `unblock <id> --on <id>[,…]`                                                              | add / remove blocker edges (block is cycle-guarded; rejection is visible)                                                                                                                      |
-| `remove <id>`                                                                                                          | delete a task                                                                                                                                                                                  |
-| `message <text…> [--stdin]`                                                                                            | transient toast on the board                                                                                                                                                                   |
-| `init [--title T] [--stdin-tasks]`                                                                                     | seed the board (tasks = JSON array on stdin)                                                                                                                                                   |
-| `list`                                                                                                                 | list currently-**running** boards (id · tasks · url · title) — distinct from `sessions` (saved snapshots)                                                                                      |
-| `close` / `info` / `sessions` / `help`                                                                                 | end session / show session / list snapshots / usage                                                                                                                                            |
+| Verb                                                                                                                                    | Does                                                                                                                                                                                                                            |
+| --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `open [--title T] [--timeout S] [--no-open] [--restore <id>] [--pin] [--session-key <key> [--fresh]]`                                   | spawn the daemon (or resume a saved session); print session JSON. `--session-key` binds it to a caller-owned key, idempotently (#69)                                                                                            |
+| `state [--owner <name> \| --mine] [--as <name>]`                                                                                        | read-back `{ state, cursor, snapshotBackedUp, readMode }` — confirm a command applied; scope like `tail`. The read is FULL; `--full` is accepted for compatibility and is now the default (b6)                                  |
+| `tail [--since N] [--once] [--owner <name> \| --mine] [--as <name>]`                                                                    | stream board events as JSONL (wrap with Monitor); scope to an owner; resumes `--since`                                                                                                                                          |
+| `add <title…> [--status S] [--notes N] [--owner N] [--tag a,b] [--size S\|M\|L] [--expect <min>] [--id ID] [--stdin]`                   | add a task (optionally assigned / labelled / sized)                                                                                                                                                                             |
+| `update <id> [--status S] [--title T] [--notes N \| --clear-notes] [--owner N] [--tag a,b] [--size S\|M\|L] [--expect <min>] [--stdin]` | patch a task (`--owner` assigns/reassigns; `--tag` sets labels, `--size`/`--expect` set the heartbeat threshold; `--clear-notes` clears the notes). Prints `{ok, updated, fields, valuesIgnored}`; `fields` names what it wrote |
+| `claim <id> [--as <name>]`                                                                                                              | self-claim an **unowned** task (rejected if owned by another)                                                                                                                                                                   |
+| `block <id> --on <id>[,…]` / `unblock <id> --on <id>[,…]`                                                                               | add / remove blocker edges (block is cycle-guarded; rejection is visible)                                                                                                                                                       |
+| `remove <id>`                                                                                                                           | delete a task                                                                                                                                                                                                                   |
+| `message <text…> [--stdin]`                                                                                                             | transient toast on the board                                                                                                                                                                                                    |
+| `init [--title T] [--stdin-tasks]`                                                                                                      | seed the board (tasks = JSON array on stdin)                                                                                                                                                                                    |
+| `list`                                                                                                                                  | list currently-**running** boards (id · tasks · url · title) — distinct from `sessions` (saved snapshots)                                                                                                                       |
+| `close` / `info` / `sessions` / `help`                                                                                                  | end session / show session / list snapshots / usage                                                                                                                                                                             |
+| `version` / `schema`                                                                                                                    | `{name, version}` as JSON (also `--version`, `-V`) / the machine-readable interface (acc declaration v0)                                                                                                                        |
+
+A bare `bounty` with no verb is a usage error — one JSON envelope on stderr,
+exit 2, the verbs in `error.choices` — not help. `list` and `sessions` print
+prose lines; every other verb prints one JSON document (`tail`: one per event).
+
+`--status` on `add` and `update` takes only `todo`, `doing`, `review` or `done`.
+Any other value is refused before anything is written — exit 2, the valid
+statuses in `error.choices` — so `update`'s `fields` never names a status it did
+not write. (A bad `--size`/`--expect` is different: it is ignored and reported
+in `valuesIgnored`.)
 
 **`--stdin` defeats shell quoting.** For any free text with apostrophes, quotes,
 `&`, `<`, `>`, or `$`, pipe it through `--stdin` instead of putting it on the
@@ -246,30 +268,29 @@ printf "it's a \"quoted\" & <urgent> task" | bun $CLI add --stdin --status doing
 "body" flag — it stands in for whatever that verb takes on the command line.
 `add <title…>` → the **title**. `message <text…>` → the **text**.
 
-> ⛔ **AND ON `update` THAT MEANS THE TITLE, WHICH IS ALMOST NEVER WHAT A CALLER
-> WANTS.** `update`'s only positional is `<id>`, so `--stdin` has no natural
-> referent and resolves to `--title`:
->
-> ```bash
-> bun $CLI update t-abc --stdin < notes.md   # ⛔ OVERWRITES THE TITLE with the file
-> bun $CLI update t-abc --notes "$(cat notes.md)"   # ✅ what you meant
-> ```
->
-> **The previous title is gone, the envelope says `{"ok":true}`, and
-> `valuesIgnored` reports `null` — nothing was ignored, by its own reckoning,
-> because the bytes were faithfully written to a field you never named.** Found
-> by destroying a live card's title with it (`s5-9`); the card was recoverable
-> only because a snapshot existed.
->
-> **`--stdin` also silently BEATS an explicit `--title`** — pass both and you
-> get stdin's, unwarned.
->
-> **There is no way to send notes through `--stdin` today.** Use `--notes`, and
-> if the prose has metacharacters, build it in a variable or a quoted heredoc
-> rather than reaching for `--stdin`. _(Tracked as a defect; the repair will
-> either refuse `--stdin` on `update` outright or require it to name its
-> destination field explicitly. Neither is built — do not write either spelling
-> yet.)_
+**On `update`, whose only positional is `<id>`, `--stdin` reads the new TITLE**
+(as on `add`), never the notes. For notes, use `--notes`; if the prose has
+metacharacters, build it in a variable or a quoted heredoc. `update` never
+blanks a field you did not ask it to (`s5-9`, `s5-5`); each of these is refused
+at exit 2 (`usage`), writes nothing, and names the recovery in its message:
+
+| Refused                           | Why, and what to do instead                                                   |
+| --------------------------------- | ----------------------------------------------------------------------------- |
+| `--stdin` together with `--title` | both set the title; pass one                                                  |
+| `--stdin` with empty stdin        | a title is never cleared; pipe the new title                                  |
+| `--title ""`                      | as `add` refuses an empty title                                               |
+| `--notes ""` (or `--notes=`)      | cannot be told from a substitution that produced nothing; use `--clear-notes` |
+| `--clear-notes` with `--notes`    | pass one: `--notes <text>` replaces, `--clear-notes` alone clears             |
+
+The success envelope names what it wrote, so check it against what you meant:
+
+```bash
+bun $CLI update t-abc --notes "$(cat notes.md)"   # {"ok":true,"updated":"t-abc","fields":["notes"],"valuesIgnored":null}
+bun $CLI update t-abc --clear-notes               # clears the notes on purpose
+```
+
+A no-op (the task already held those values) answers `noop: true` with
+`fields: []`.
 
 `init --stdin-tasks` seeds a whole board the same way — pipe a JSON array of
 tasks on stdin (no shell-escaping, no inline-script seed dance):
@@ -389,6 +410,25 @@ pointer again, so a board opened later can't silently hijack the stream. (Before
 this guard, an unpinned long-lived tail re-resolved `latest` on every reconnect
 and could hop to another project's board mid-session.) Pinning explicitly is
 still clearer, and it also survives the no-board-yet startup window.
+
+**While the board is not up, the tail says what it is looking for.** Each retry
+line on stderr names the session id and where that id came from, for example
+`# no session yet for k-team-1a2b3c4d (derived from --session-key 'team' + cwd /path/to/repo) — retrying…`.
+A key's id is derived from the repo you run in, so the same key from another
+directory looks for another board; that line is how you spot it. What happens
+next depends on whether you named the board:
+
+- **Unnamed** (no `--session` or `--session-key` on the command line, including
+  a key from `$BOUNTY_SESSION_KEY` or a `.bounty-session` file): the tail keeps
+  waiting for the board to come up.
+- **Named** (`--session <id>` or `--session-key <key>`): after a few seconds
+  (about 8) the tail gives up with exit **5** (`not_found`) and an error
+  envelope on stderr. The envelope repeats what it looked for, and its `hint`
+  names the fix: check the key and the directory you ran from, or the id, or
+  bring back a board that closed. Nothing is printed on stdout. Start the tail
+  once the board is up, or check its id with `list`.
+- **Named, and the board existed here and has closed** (its snapshot is on
+  disk): a `--session` tail ends at once with `tail.closed` (exit 0), as above.
 
 ### Event frames
 
@@ -698,13 +738,13 @@ the tail. That family is the table above and the taxonomy does not govern it.
 **`cli.ts`'s own exits are the house taxonomy**, and every one of them prints
 ONE JSON envelope on **stderr** with stdout left empty:
 
-| Code | `kind`      | What it means                  | Typical cause                                                                    |
-| ---- | ----------- | ------------------------------ | -------------------------------------------------------------------------------- |
-| 0    | —           | The verb succeeded             | `tail` also exits 0 on the `closed` frame                                        |
-| 2    | `usage`     | Fix it by changing the command | A bad flag, a missing verb, a missing required argument, an empty `update` patch |
-| 5    | `not_found` | The named thing does not exist | No running session; a stale session pointer; a task id that is not on this board |
-| 6    | `conflict`  | A precondition failed          | A duplicate `--id`; `claim` on an other-owned task; a `block` that forms a cycle |
-| 1    | `internal`  | The spell broke                | The daemon answered a command with a non-200                                     |
+| Code | `kind`      | What it means                  | Typical cause                                                                                                                                  |
+| ---- | ----------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | —           | The verb succeeded             | `tail` also exits 0 on the `closed` frame                                                                                                      |
+| 2    | `usage`     | Fix it by changing the command | A bad flag, a missing verb, a missing required argument, an empty `update` patch                                                               |
+| 5    | `not_found` | The named thing does not exist | No running session; a stale session pointer; a task id that is not on this board; a `tail --session`/`--session-key` whose board never came up |
+| 6    | `conflict`  | A precondition failed          | A duplicate `--id`; `claim` on an other-owned task; a `block` that forms a cycle                                                               |
+| 1    | `internal`  | The spell broke                | The daemon answered a command with a non-200                                                                                                   |
 
 ⚠ **This changed in 2026-09, twice, and a script may be pinned to either old
 shape.** Before the port every failure was prose at exit **2**. The port then

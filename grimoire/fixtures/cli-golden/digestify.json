@@ -1,0 +1,458 @@
+{
+  "spell": "digestify",
+  "launcher": "scripts/review.ts",
+  "verbCount": 13,
+  "verbs": [
+    "--file",
+    "--help",
+    "--host",
+    "--id",
+    "--no-open",
+    "--port",
+    "--reference",
+    "--theme",
+    "--timeout",
+    "--title",
+    "--version",
+    "-h",
+    "-V"
+  ],
+  "excluded": {},
+  "excludedInvocations": [
+    {
+      "argv": ["--title", "Proposal Review", "--timeout", "1800"],
+      "doc": "SKILL.md:179",
+      "reason": "reads markdown from stdin and so serves a page and opens a browser"
+    }
+  ],
+  "invocationCount": 27,
+  "invocations": [
+    {
+      "argv": [],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "digestify — a one-shot browser review; prints the human's answers as JSON.",
+        "",
+        "  digestify [--file ..] [--reference ..] [--title ..] [--theme ..] [--timeout ..] [--no-open] [--port ..] [--host ..] [--id ..]",
+        "                                                review the markdown on stdin (or --file / --reference) in the browser",
+        "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
+        "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
+        "  help                                          show this message (alias: --help, -h)",
+        "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
+        "",
+        "  Reads the document on stdin unless --file is given; --reference prepends a",
+        "  file's body. Serves a local page, waits for the human to submit, then prints",
+        "  ONE JSON document on stdout: {answers, comments, submitted_at}.",
+        "",
+        "  Flags: --file PATH, --reference PATH, --title TEXT (default \"Document Review\"),",
+        "  --theme <digestify|cthulhu|classic>, --timeout SECONDS (idle; default 1800,",
+        "  0 = never), --no-open, --port N (default: a free port), --host HOST",
+        "  (default: loopback), --id SLUG (a session id to recover).",
+        "",
+        "  Exit codes: 0 submitted, 124 idle timeout, 130 tab closed after typing",
+        "  (session outcomes, one JSON line on stdout). Failures are one JSON envelope on",
+        "  stderr: 2 usage, 5 not found, 6 the server could not start. 1 is an",
+        "  unclassified throw, with its stack and no envelope."
+      ]
+    },
+    {
+      "argv": ["-h"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "digestify — a one-shot browser review; prints the human's answers as JSON.",
+        "",
+        "  digestify [--file ..] [--reference ..] [--title ..] [--theme ..] [--timeout ..] [--no-open] [--port ..] [--host ..] [--id ..]",
+        "                                                review the markdown on stdin (or --file / --reference) in the browser",
+        "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
+        "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
+        "  help                                          show this message (alias: --help, -h)",
+        "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
+        "",
+        "  Reads the document on stdin unless --file is given; --reference prepends a",
+        "  file's body. Serves a local page, waits for the human to submit, then prints",
+        "  ONE JSON document on stdout: {answers, comments, submitted_at}.",
+        "",
+        "  Flags: --file PATH, --reference PATH, --title TEXT (default \"Document Review\"),",
+        "  --theme <digestify|cthulhu|classic>, --timeout SECONDS (idle; default 1800,",
+        "  0 = never), --no-open, --port N (default: a free port), --host HOST",
+        "  (default: loopback), --id SLUG (a session id to recover).",
+        "",
+        "  Exit codes: 0 submitted, 124 idle timeout, 130 tab closed after typing",
+        "  (session outcomes, one JSON line on stdout). Failures are one JSON envelope on",
+        "  stderr: 2 usage, 5 not found, 6 the server could not start. 1 is an",
+        "  unclassified throw, with its stack and no envelope."
+      ]
+    },
+    {
+      "argv": ["help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "digestify — a one-shot browser review; prints the human's answers as JSON.",
+        "",
+        "  digestify [--file ..] [--reference ..] [--title ..] [--theme ..] [--timeout ..] [--no-open] [--port ..] [--host ..] [--id ..]",
+        "                                                review the markdown on stdin (or --file / --reference) in the browser",
+        "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
+        "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
+        "  help                                          show this message (alias: --help, -h)",
+        "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
+        "",
+        "  Reads the document on stdin unless --file is given; --reference prepends a",
+        "  file's body. Serves a local page, waits for the human to submit, then prints",
+        "  ONE JSON document on stdout: {answers, comments, submitted_at}.",
+        "",
+        "  Flags: --file PATH, --reference PATH, --title TEXT (default \"Document Review\"),",
+        "  --theme <digestify|cthulhu|classic>, --timeout SECONDS (idle; default 1800,",
+        "  0 = never), --no-open, --port N (default: a free port), --host HOST",
+        "  (default: loopback), --id SLUG (a session id to recover).",
+        "",
+        "  Exit codes: 0 submitted, 124 idle timeout, 130 tab closed after typing",
+        "  (session outcomes, one JSON line on stdout). Failures are one JSON envelope on",
+        "  stderr: 2 usage, 5 not found, 6 the server could not start. 1 is an",
+        "  unclassified throw, with its stack and no envelope."
+      ]
+    },
+    {
+      "argv": ["--version"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "name": "digestify",
+        "version": "<VERSION>"
+      }
+    },
+    {
+      "argv": ["-V"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "name": "digestify",
+        "version": "<VERSION>"
+      }
+    },
+    {
+      "argv": ["version"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "name": "digestify",
+        "version": "<VERSION>"
+      }
+    },
+    {
+      "argv": ["schema"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "formatVersion": "0",
+        "provenance": "emitted",
+        "selfDescription": {
+          "args": ["schema"]
+        },
+        "commands": [
+          {
+            "path": [],
+            "args": [
+              {
+                "name": "--help",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "-h",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--version",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "-V",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--file",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--reference",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--title",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--theme",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--timeout",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--no-open",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--port",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--host",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--id",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["version"],
+            "args": [],
+            "positionals": []
+          },
+          {
+            "path": ["schema"],
+            "args": [],
+            "positionals": []
+          },
+          {
+            "path": ["help"],
+            "args": [],
+            "positionals": []
+          }
+        ]
+      }
+    },
+    {
+      "argv": ["--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "--file",
+        "--help",
+        "--host",
+        "--id",
+        "--no-open",
+        "--port",
+        "--reference",
+        "--theme",
+        "--timeout",
+        "--title",
+        "--version",
+        "-h",
+        "-V"
+      ]
+    },
+    {
+      "argv": ["zz-bogus-verb"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["--", "--x"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["version", "--bogus"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["--file", "missing.md"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["--file=missing.md"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["--reference", "missing.md"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["--file", "a-missing.md", "--file", "missing.md"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": [
+        "--file",
+        "missing.md",
+        "--title",
+        "hello",
+        "--theme",
+        "classic",
+        "--id",
+        "d1",
+        "--no-open",
+        "--timeout",
+        "5",
+        "--port",
+        "0",
+        "--host",
+        "127.0.0.1"
+      ],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["--file", "missing.md", "--theme", "dark"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["digestify", "cthulhu", "classic"]
+    },
+    {
+      "argv": ["--title", "hello"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["--no-open"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["--timeout", "5", "--file", "missing.md"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["--", "--file", "missing.md"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["--file", "missing.md", "--", "--x"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["--file"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": [
+        "--file",
+        "golden.md",
+        "--title",
+        "Proposal Review",
+        "--theme",
+        "digestify",
+        "--timeout",
+        "1800"
+      ],
+      "doc": "SKILL.md:199",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["--reference", "golden.md", "--title", "Read this proposal"],
+      "doc": "SKILL.md:216",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["--reference", "golden.md", "--title", "Proposal review"],
+      "stdin": "## My Questions\n\n::: question id=concerns\nAny concerns about Section 3?\n:::\n",
+      "doc": "SKILL.md:224",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    }
+  ]
+}

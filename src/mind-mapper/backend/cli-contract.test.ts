@@ -3,39 +3,27 @@
 // its rationale intact).
 //
 // Two instruments:
-//   1. a DRIFT WARD binding the dispatch if-chain to VERB_SPEC (the ward that
-//      would have caught changes/delete-batch/message shipping dispatched but
-//      unadvertised — the defect this whole branch exists to close), plus a
-//      behavioural twin asserting the help surface advertises every verb;
+//   1. a DRIFT WARD binding the registry's views (paths, flag rows, the
+//      `schema` declaration) to each other — the old if-chain-vs-VERB_SPEC gap
+//      let changes/delete-batch/message ship dispatched but unadvertised —
+//      plus a behavioural twin asserting the help surface advertises every verb;
 //   2. a SUBPROCESS failure table: stdout empty on failure, exactly one JSON
 //      document on stderr, envelope exit_code === the actual process exit
 //      code, --version as a data path. The failure contract lives in what the
 //      PROCESS writes and exits with, so these spawn it.
 
 import { expect, test } from "bun:test";
-import { mkdtempSync, readFileSync } from "node:fs";
+import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { VERB_ALIASES, VERB_SPEC, VERBS } from "./cli.ts";
-import { CLI_LAUNCHER, CLI_SOURCE } from "./paths.ts";
+import { cli, RECOGNIZED_FLAGS, VERB_SPEC, VERBS } from "./cli.ts";
+import { CLI_LAUNCHER } from "./paths.ts";
 
-// ⛔ ONE CONSTANT USED TO DO BOTH JOBS, AND THE PORT IS WHAT MAKES THEM DIFFERENT
-// FILES (playbook B6.1, bounty's scar). `const CLI = new URL("./cli.ts",
-// import.meta.url).pathname` was the SPAWN target and the `readFileSync` target
-// at once — a spelling neither a `SCRIPT_DIR` grep nor a `join(` grep finds.
-// After the relocation the two addresses diverge:
-//
-//   the SPAWN wants the LAUNCHER  — what a caller runs is `scripts/cli.ts`,
-//                                   which imports the built `dist/cli.js`.
-//   the SCANS want the SOURCE     — they regex the dispatch if-chain out of the
-//                                   file's text (`src.indexOf("async function
-//                                   dispatch")`). Pointed at the 40-line
-//                                   launcher, `indexOf` answers -1, `slice(-1)`
-//                                   returns the last character, the compared set
-//                                   is EMPTY, and the cell fails as a broken
-//                                   regex rather than as a wrong file.
+// The SPAWN wants the LAUNCHER: what a caller runs is `scripts/cli.ts`, which
+// imports the built `dist/cli.js` (playbook B6.1, bounty's scar). The source
+// scans that once needed `CLI_SOURCE` are gone: the registry is one table, and
+// the drift ward below reads it directly.
 const CLI = CLI_LAUNCHER;
-const CLI_SRC = CLI_SOURCE;
 
 // A HOME with no daemon discovery files, so requireDaemon answers not_found —
 // and no test here ever touches a real ~/.mind-mapper store.
@@ -57,39 +45,26 @@ function run(args: string[]): { code: number; stdout: string; stderr: string } {
 
 // ── 1. the drift ward ───────────────────────────────────────────────
 
-test("the dispatch if-chain and VERB_SPEC name the same verbs — neither may grow one alone", () => {
-  // THE BINDING THIS TABLE EXISTS TO BE. VERB_SPEC drives the roster, the
-  // rejections' choices and every per-path parse; the if-chain drives what
-  // runs. Nothing in the type system ties them together — changes,
-  // delete-batch and message each shipped dispatched-but-unadvertised through
-  // exactly this gap.
-  const src = readFileSync(CLI_SRC, "utf8");
-  const dispatchSrc = src.slice(src.indexOf("async function dispatch"));
-  const compared = new Set(
-    [...dispatchSrc.matchAll(/verb === "([a-zA-Z-]+)"/g)].map((m) => m[1] as string),
-  );
-  // Root tokens are dispatched by literal comparison but are deliberately not
-  // verbs: --help/-h/--version/-V/version resolve before the verb machinery.
-  const ROOT_TOKENS = new Set(["--help", "-h", "--version", "-V", "version"]);
-  const dispatched = [...compared].filter((t) => !ROOT_TOKENS.has(t)).sort();
-  const specced = [...VERBS, ...Object.keys(VERB_ALIASES)].sort();
-  expect(dispatched).toEqual(specced);
-});
-
-test("every VERB_SPEC path's flags exist in the registry by construction, and every path's top verb is dispatched", () => {
-  // The `satisfies` clause pins flags→registry at compile time; this cell pins
-  // the runtime half — a path like "job claim" is reachable only through its
-  // top verb, so a spec row whose top verb the chain never compares is dead
-  // advertised surface.
-  const src = readFileSync(CLI_SRC, "utf8");
-  const dispatchSrc = src.slice(src.indexOf("async function dispatch"));
-  const compared = new Set(
-    [...dispatchSrc.matchAll(/verb === "([a-zA-Z-]+)"/g)].map((m) => m[1] as string),
-  );
-  const undispatched = Object.keys(VERB_SPEC)
-    .map((p) => p.split(" ")[0] as string)
-    .filter((top) => !compared.has(top));
-  expect(undispatched).toEqual([]);
+test("one table drives dispatch: every path the registry dispatches has a flag row, and nothing else does", () => {
+  // THE BINDING THE HAND-BUILT DISPATCH NEEDED A SOURCE SCAN FOR. The kit
+  // registry (`src/kit/cli/registry.ts`) dispatches, checks flags and publishes
+  // `schema` from ONE table, so the old if-chain-vs-VERB_SPEC drift cannot
+  // recur by construction; this cell pins that the views agree. Aliases
+  // (`message`) dispatch without a row of their own.
+  const aliases = cli.rows.flatMap((r) => r.aliases);
+  expect(aliases).toEqual(["message"]);
+  const rowPaths = cli.paths.filter((p) => !aliases.includes(p)).sort();
+  expect(Object.keys(VERB_SPEC).sort()).toEqual(rowPaths);
+  // Every flag in the options table belongs to some path.
+  const owned = new Set(Object.values(VERB_SPEC).flatMap((row) => [...row]));
+  expect(RECOGNIZED_FLAGS.filter((f) => !owned.has(f.slice(2)))).toEqual([]);
+  // The declaration publishes every dispatchable path, aliases included.
+  const declared = cli
+    .declaration()
+    .commands.map((c) => c.path.join(" "))
+    .filter((p) => p !== "")
+    .sort();
+  expect(declared).toEqual([...cli.paths].sort());
 });
 
 test("the help surface advertises every verb in the roster (behavioural twin of the ward)", () => {
@@ -103,7 +78,11 @@ test("the help surface advertises every verb in the roster (behavioural twin of 
   // "doc", "zone create" prose satisfied "zone", --doc-edit satisfied "doc" —
   // cassandra's M3 calibration removed doc's entire entry and the cell stayed
   // green). A verb is ADVERTISED only if it opens its own help line.
-  const missing = VERBS.filter((v) => !new RegExp(`^\\s*${v}\\b`, "m").test(r.stdout));
+  // Aliases are advertised on their target's line instead (below).
+  const aliases = new Set(cli.rows.flatMap((row) => row.aliases));
+  const missing = VERBS.filter(
+    (v) => !aliases.has(v) && !new RegExp(`^\\s*${v}\\b`, "m").test(r.stdout),
+  );
   expect(missing).toEqual([]);
   // The alias is advertised on its target's line, per the #1097 ruling.
   expect(r.stdout).toContain("alias: message");
@@ -151,16 +130,14 @@ test("a stray real flag's rejection names the verb and lists ITS flags — never
 
 test("the unknown-verb rejection's choices name every ACCEPTED spelling — aliases included", () => {
   // acc's advertised-verbs comparison found `message` recorded-but-never-
-  // advertised: VERB_ALIASES makes the parser ACCEPT it, but choices = VERBS
+  // advertised: the alias made the parser ACCEPT it, but choices = verbs
   // alone understated the accepted set by exactly the aliases. Pin the whole
   // accepted roster into the rejection so a future alias cannot go silently
   // missing (grapevine's one-row-per-alias registry precedent).
   const r = run(["frobnicate"]);
   expect(r.code).toBe(2);
   const doc = JSON.parse(r.stderr) as { error: { choices: string[] } };
-  const missing = [...VERBS, ...Object.keys(VERB_ALIASES)].filter(
-    (v) => !doc.error.choices.includes(v),
-  );
+  const missing = [...VERBS].filter((v) => !doc.error.choices.includes(v));
   expect(missing).toEqual([]);
 });
 
@@ -169,4 +146,56 @@ test("failure contract: --version is a data path, not a failure", () => {
   expect(r.code).toBe(0);
   expect(r.stderr).toBe("");
   expect(JSON.parse(r.stdout)).toEqual({ name: "mind-mapper", version: expect.any(String) });
+});
+
+// ── 3. nesting, on the registry ─────────────────────────────────────
+
+type Envelope = { error: { kind: string; choices?: string[] }; meta: { command: string | null } };
+
+test.each([
+  // `doc` finds its sub-verb at the FIRST POSITIONAL, so flags may come first.
+  [
+    "doc --project P delete D1 --force",
+    ["doc", "--project", "P", "delete", "D1", "--force"],
+    "doc delete",
+  ],
+  ["doc delete D1 --force", ["doc", "delete", "D1", "--force"], "doc delete"],
+  ["doc --project P kind D1 note", ["doc", "--project", "P", "kind", "D1", "note"], "doc kind"],
+  ["doc D1", ["doc", "D1"], "doc"],
+  // The scan stops at a bare `--`: a doc literally named "delete" is readable.
+  ["doc -- delete", ["doc", "--", "delete"], "doc"],
+  ["node edit N1 --title t", ["node", "edit", "N1", "--title", "t"], "node edit"],
+])("%s resolves to `%s` (no daemon: not_found, exit 5)", (_label, args, path) => {
+  const r = run(args);
+  expect(r.code).toBe(5);
+  expect((JSON.parse(r.stderr) as Envelope).meta.command).toBe(path);
+});
+
+test.each([
+  ["doc D1 --force (a doc delete flag on doc)", ["doc", "D1", "--force"], ["--project"]],
+  ["doc (missing <docId>)", ["doc"], undefined],
+  ["node anchor N1 (neither --to nor --clear)", ["node", "anchor", "N1"], undefined],
+  ["node anchor N1 --to P --clear", ["node", "anchor", "N1", "--to", "P", "--clear"], undefined],
+  ["doc kind D1 (no kind, no --clear)", ["doc", "kind", "D1"], undefined],
+  ["doc kind D1 note --clear", ["doc", "kind", "D1", "note", "--clear"], undefined],
+  ["tags T1 --set [] --clear", ["tags", "T1", "--set", "[]", "--clear"], undefined],
+  ["read m1 m2 (an extra positional)", ["read", "m1", "m2"], undefined],
+  ["version --bogus", ["version", "--bogus"], []],
+])("usage, exit 2: %s", (_label, args, choices) => {
+  const r = run(args);
+  expect(r.stdout).toBe("");
+  expect(r.code).toBe(2);
+  const doc = JSON.parse(r.stderr) as Envelope;
+  expect(doc.error.kind).toBe("usage");
+  if (choices !== undefined) expect(doc.error.choices).toEqual(choices);
+});
+
+test("schema publishes the declaration, doc's sub-paths and all", () => {
+  const r = run(["schema"]);
+  expect(r.code).toBe(0);
+  const decl = JSON.parse(r.stdout) as { commands: { path: string[] }[] };
+  const paths = decl.commands.map((c) => c.path.join(" "));
+  for (const p of ["", "doc", "doc delete", "doc kind", "node edit", "read", "message"]) {
+    expect(paths).toContain(p);
+  }
 });

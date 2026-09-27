@@ -15,7 +15,7 @@
 //   bun cli.ts status on [text...] | status off        # the working spinner
 //   bun cli.ts source <imagePath>                      # set the composite under review (computes sha + size)
 //   bun cli.ts cmd [--stdin]                            # POST a raw AgentCommand JSON body (from stdin)
-//   bun cli.ts close | info | sessions | help
+//   bun cli.ts close | info | sessions | help | version | schema
 //
 // `--stdin` reads the body from stdin so natural-language text is never inlined
 // into a shell-parsed arg. Payload on stdout, liveness/echo on stderr.
@@ -36,11 +36,11 @@ import {
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { parseArgs as nodeParseArgs } from "node:util";
 import type { Element } from "../../../plugins/spellbook/skills/magpie/shared/types";
 import { chosenVersion } from "../../../plugins/spellbook/skills/magpie/shared/versions";
+import { type CommandSpec, defineCli, type Invocation } from "../../kit/cli/registry";
 import { printJson } from "../../kit/lib/printJson";
-import { die, errorEnvelope, reportCliError, setCurrentCommand } from "../../kit/wire/errors";
+import { die, reportCliError } from "../../kit/wire/errors";
 import {
   commandLine,
   readSince,
@@ -168,7 +168,7 @@ function sessionFilePath(session?: string): string {
  *  contract cell failed once under the full gate with the not_found exit where
  *  the contract said usage, and passed alone and on re-run. Fixed there
  *  2026-09-07; found still standing here 2026-09-08 by the backend duplication
- *  recon (docs/investigations/2026-09-08-backend-duplication-recon.md).
+ *  recon (docs/items/backend-duplication-recon/write-up.md).
  *
  *  ENOENT is the only honest absence. Everything else says what it was.
  *
@@ -215,18 +215,29 @@ async function api(
   return { status: res.status, data };
 }
 
-// Split argv into positionals + flags. `--flag value`, `--flag=value`, or boolean.
-// #81 / D4 — THE RECOGNIZED SET, AT PARSER ALTITUDE.
+// THE RECOGNIZED SET, AT PARSER ALTITUDE (#81 / D4).
 //
 // The hand-rolled parser had no registry, so an unknown flag was accepted at
 // exit 0 and the verb ran anyway, and free prose containing a `--word` was
-// silently truncated at that word. `node:util` strict supplies rejection, the
-// `=` form and the `--` terminator from the standard library.
+// silently truncated at that word. The kit registry (`src/kit/cli/registry.ts`)
+// parses strict against this whole table, then refuses a flag the row below
+// does not take as MISPLACED rather than unknown.
 //
 // Types are thoth's audited artifact (15 string · 4 boolean), each settled by
 // unambiguous evidence at every consumption site. Getting one wrong is not a
 // no-op: a "string" that should be boolean SWALLOWS THE NEXT POSITIONAL, and a
 // "boolean" that should be string breaks the space form.
+//
+// ⛔ THIS OBJECT IS HANDED TO `defineCli` BY NAME, AND THAT IS LOAD-BEARING.
+// The first per-verb shape handed `node:util` a subset computed at the call
+// site, and the grimoire's flag-invariant ward — which resolves
+// `options: <identifier>` back to a literal declaration — could no longer read
+// magpie's registry at all. It reads `defineCli({ options: IDENT` the same way,
+// so the literal stays here and the call below names it.
+//
+// ⚠ EXPORTED BY NAME AT THE FOOT OF THE FILE, NOT HERE (imago's twin note: an
+// `export const … = {` beside a quoted key reads to the import scanner as a
+// re-export).
 const CLI_OPTIONS = {
   alpha: { type: "string" },
   bbox: { type: "string" },
@@ -250,102 +261,8 @@ const CLI_OPTIONS = {
   stdin: { type: "boolean" },
 } as const;
 
-// WHICH FLAGS EACH VERB ACCEPTS — and the only source of the verb set.
-//
-// The parser used to enforce ONE GLOBAL registry: every verb accepted every
-// flag, so `close --alpha auto` and `say --bbox 1,2,3,4` parsed clean and did
-// nothing. A recorded-surface census counted 289 such flag/path pairs — 289
-// invocations magpie accepted at exit 0 and could not act on. That is the
-// failure this whole kit is named for: the tool does the wrong thing and reports
-// success. An unknown-flag check at the root cannot see it, because none of the
-// flags are unknown — they are just not known HERE.
-//
-// So the recognized set is per verb, and this table is it. `VERBS` is derived
-// from its keys and each verb parses against its own options, which means the
-// help text, the rejection's `choices` and the parser can no longer disagree:
-// there is one object, and adding a flag to a verb is one edit.
-export const VERB_SPEC = {
-  open: ["title", "intent", "timeout", "restore", "no-open"],
-  sessions: [],
-  tail: ["session", "since", "once"],
-  state: ["session", "full"],
-  say: ["session", "stdin"],
-  ask: ["session", "options"],
-  status: ["session"],
-  source: ["session"],
-  discover: ["session"],
-  extract: ["session", "ids", "remove", "alpha", "pad", "model", "label"],
-  export: ["session", "ids"],
-  "element-add": ["session", "bbox", "name", "type"],
-  "element-remove": ["session"],
-  cmd: ["session", "stdin"],
-  close: ["session"],
-  info: ["session"],
-  help: [],
-} as const satisfies Record<string, readonly (keyof typeof CLI_OPTIONS)[]>;
-
-type Verb = keyof typeof VERB_SPEC;
-
-const VERBS = Object.keys(VERB_SPEC) as Verb[];
-
-const isVerb = (v: string): v is Verb => Object.hasOwn(VERB_SPEC, v);
-
-// The flags one verb accepts, as the caller spells them.
-const flagsFor = (verb: Verb): string[] => VERB_SPEC[verb].map((k) => `--${k}`).sort();
-
-class UsageError extends Error {}
-
-export function parseArgs(
-  args: string[],
-  verb?: Verb,
-): {
-  pos: string[];
-  flags: Record<string, string | boolean>;
-} {
-  // TWO STAGES, AND THE ORDER IS THE POINT.
-  //
-  // Stage 1 parses against the WHOLE registry, so a token magpie has never
-  // heard of is refused by `node:util` with its own message. Stage 2 then asks
-  // the question the parser cannot: is this flag accepted AT THIS VERB.
-  //
-  // Doing it the other way — handing parseArgs a per-verb subset — was the first
-  // shape, and it answered `say --bbox` with "Unknown option '--bbox'", which is
-  // false. `--bbox` is a perfectly good flag; it just is not `say`'s. An agent
-  // told a real flag is unknown goes looking for a typo it did not make.
-  //
-  // It also cost the grimoire's flag-invariant ward its footing: that check
-  // resolves `options: <identifier>` back to a literal declaration, and a subset
-  // computed at the call site is not one. The ward could no longer read magpie's
-  // registry at all and reported the entry point unresolved — the instrument
-  // saying "I cannot see this", exactly as designed. Keeping `CLI_OPTIONS` at
-  // the call site keeps the registry legible to it.
-  let parsed: { values: Record<string, unknown>; positionals: string[] };
-  try {
-    parsed = nodeParseArgs({
-      args,
-      options: CLI_OPTIONS,
-      strict: true,
-      allowPositionals: true,
-    });
-  } catch (e) {
-    throw new UsageError(e instanceof Error ? e.message : String(e));
-  }
-
-  if (verb) {
-    const allowed = new Set<string>(VERB_SPEC[verb]);
-    const stray = Object.keys(parsed.values).find((k) => !allowed.has(k));
-    if (stray) {
-      throw new UsageError(
-        `--${stray} is not accepted by \`${verb}\` (it is a recognized magpie flag, just not this verb's)`,
-      );
-    }
-  }
-
-  return {
-    pos: parsed.positionals,
-    flags: parsed.values as Record<string, string | boolean>,
-  };
-}
+type Flag = keyof typeof CLI_OPTIONS;
+type Flags = Record<string, string | boolean>;
 
 // Read all of stdin as text (Bun.stdin). Used by `--stdin` so NL text isn't a
 // shell-parsed arg.
@@ -985,138 +902,106 @@ async function cmdExport(session: string | undefined, flags: Record<string, stri
   printJson({ ok: true, bundle: zipName, count: result.count });
 }
 
-const HELP = `magpie — a standing review surface for extracting assets from a composite image.
+// ── the command table ───────────────────────────────────────────────
+//
+// WHICH FLAGS EACH VERB ACCEPTS — and the only source of the verb set.
+//
+// The parser used to enforce ONE GLOBAL registry: every verb accepted every
+// flag, so `close --alpha auto` and `say --bbox 1,2,3,4` parsed clean and did
+// nothing. A recorded-surface census counted 289 such flag/path pairs — 289
+// invocations magpie accepted at exit 0 and could not act on. An unknown-flag
+// check at the root cannot see that, because none of the flags are unknown —
+// they are just not known HERE.
+//
+// So the recognized set is per verb, and this table is it. It now runs through
+// the kit registry, which derives the dispatcher, help, every rejection's
+// `choices`, `version` and the `schema` declaration from the same rows: adding
+// a flag to a verb is one edit, and there is no second list to forget.
 
-  open   [--title ..] [--intent ..] [--no-open] [--timeout S] [--restore <id|path>]
-  sessions                            list saved (resumable) sessions
-  tail   [--since N] [--once]         SSE user events → JSONL (wrap with Monitor)
-                                     ${WINDOW_HELP}
-  state  [--full]                     lean state snapshot (add --full for raw)
-  say    [text...] [--stdin]          post agent dialogue (text args OR piped stdin)
-  ask    <text...> [--options "a|b|c"]   ask the user a question (in-thread)
-  status on [text...] | status off    show/hide the "magpie working" spinner
-  source <imagePath>                  register the composite under review (computes sha + size)
-  discover                            run discover on the current source → post the breakdown (needs OPENROUTER_API_KEY)
-  extract [--ids a,b] [--remove] [--alpha auto|all|none] [--pad N] [--model <m>] [--label <name>]
-          cut slices (crop-only; --remove adds rembg). --model = a rembg model name (isnet-general-use,
-          birefnet-general, …) OR a media-forge bg-remove model id (a provider path like
-          fal-ai/bria/background/remove — DISCOVER via \`media-forge models list\`, never hardcode);
-          --label sets the version's friendly strip label (defaults sensibly)
-  export [--ids a,b]                  build magpie-bundle.zip — assets/ (chosen finals) + crops/ (raw crops) + manifest.json + gallery.html (backdrop toggle + type filters)
-  element-add --bbox "x1,y1,x2,y2" [--name ..] [--type ..]   box a region (source px)
-  element-remove <id>                 retract a boxed region
-  cmd    [--stdin]                    POST a raw AgentCommand JSON body from stdin
-  close | info | help
-  --version                           print magpie's version as JSON
+type PositionalSpec = { name: string; required: boolean; variadic?: boolean };
 
-  Add --session <id> to target a specific session (default: most recent). It is
-  accepted by every verb that acts on a session — not by open, sessions or help,
-  which do not have one to target.
+/** A handler written against `(pos, flags, session)`. A returned number is the
+ *  exit code (only `tail` has one: the signal that ended the watch). */
+type Handler = (pos: string[], flags: Flags, session: string | undefined) => unknown;
 
-  Flags are scoped to their verb: extract's --pad is not accepted by say. A
-  rejection lists what the verb it names does accept.
+/** Adapts a handler to the kit's `run(inv)`. magpie declares no `multiple`
+ *  flag, so every value is a string or a boolean. */
+const on =
+  (h: Handler) =>
+  (inv: Invocation<Flag>): unknown => {
+    const flags = inv.flags as Flags;
+    return h(inv.pos, flags, typeof flags.session === "string" ? flags.session : undefined);
+  };
 
-  Output: magpie prints JSON by default on stdout. Every verb writes ONE JSON
-  document there — except \`tail\`, which is a stream and writes one per line
-  (JSONL). Prose, liveness and diagnostics go to stderr. \`--full\`
-  widens the state payload; it does not switch formats.`;
+/** The hint every flag rejection carries: flags are per verb, and the one
+ *  repair for prose in which a word happens to start with `--`. */
+const REJECT_HINT =
+  "flags are scoped to the verb — choices lists what this verb accepts; for free text containing dashes use --stdin, or put it after a bare --";
 
-/**
- * The failure funnel. `die` THROWS a CliError now (the house's one error
- * contract, `src/kit/wire/errors.ts`) instead of exiting from wherever it was
- * called, so this is the ONE place a failure becomes an exit code — and the
- * process still ends the one way the house sanctions, `process.exitCode` plus a
- * natural return, which is what drains stdout on a pipe.
- *
- * ⛔ A NON-CliError IS RETHROWN, NEVER ENVELOPED. Reporting an unknown throw as
- * a tidy taxonomy failure would lose the stack that says what actually broke.
- * (`UsageError` is answered inside `dispatch`, where its choices list is.)
- */
-async function main(argv: string[]): Promise<number> {
-  try {
-    return await dispatch(argv);
-  } catch (e) {
-    const code = reportCliError(e);
-    if (code === null) throw e;
-    return code;
-  }
-}
+const SESSION = ["session"] as const satisfies readonly Flag[];
+const NONE: PositionalSpec[] = [];
 
-async function dispatch(argv: string[]): Promise<number> {
-  const [verb, ...rest] = argv;
-  setCurrentCommand(verb ?? null);
+/** `say` and `cmd` take their body as arguments OR from stdin; one is needed. */
+const bodyOrStdin = (what: string) => (inv: Invocation<Flag>) =>
+  inv.pos.length === 0 && inv.flags.stdin !== true
+    ? `give the ${what} as arguments, or pipe it with --stdin`
+    : undefined;
 
-  // ROOT TOKENS FIRST, before any flag parsing. These are not verbs and they
-  // carry no flags, so resolving them here keeps them out of every verb's set.
-  if (verb === "--help" || verb === "-h") {
-    process.stdout.write(`${HELP}\n`);
-    return 0;
-  }
-  if (verb === "--version" || verb === "-V") {
-    printJson({ name: "magpie", version: PLUGIN_VERSION });
-    return 0;
-  }
-  if (verb === undefined) {
-    // A bare invocation is a usage error, not a help path — magpie is driven by
-    // an agent, and an empty argv is an agent that failed to name what it
-    // wanted. stdout stays empty; it carries data and this has none.
-    process.stderr.write(
-      errorEnvelope("usage", "no verb given", { hint: "run: cli.ts help", choices: VERBS }),
-    );
-    return 2;
-  }
-  // THE VERB IS REJECTED BEFORE ITS FLAGS ARE READ. It has to be: which flags
-  // are legal is a question about the verb, so there is no set to check against
-  // until we know it is a real one.
-  if (!isVerb(verb)) {
-    process.stderr.write(
-      errorEnvelope("usage", `unknown verb "${verb}"`, {
-        hint: "run: cli.ts help",
-        choices: VERBS,
+const ROWS: CommandSpec<Flag>[] = [
+  {
+    name: "open",
+    flags: ["title", "intent", "timeout", "restore", "no-open"],
+    positionals: NONE,
+    describe:
+      "spawn a session (opens the browser; --restore <id|path> resumes one, --timeout S); prints {port, session_id, files_dir}",
+    run: on((_pos, flags) => cmdOpen(flags)),
+  },
+  {
+    name: "sessions",
+    flags: [],
+    positionals: NONE,
+    describe: "list saved (resumable) sessions",
+    run: on(() => cmdSessions()),
+  },
+  {
+    name: "tail",
+    flags: [...SESSION, "since", "once"],
+    positionals: NONE,
+    describe: `SSE user events → JSONL (wrap with Monitor); ${WINDOW_HELP}`,
+    // The tail RETURNS its exit code (0 on `closed`, on a signal, or when the
+    // pinned session goes away) instead of exiting from inside its own loop.
+    run: on((_pos, flags, session) =>
+      cmdTail(session, typeof flags.since === "string" ? sinceOrDie(flags.since) : -1, {
+        once: flags.once === true,
+        sinceGiven: typeof flags.since === "string",
       }),
-    );
-    return 2;
-  }
-
-  let pos: string[];
-  let flags: Record<string, string | boolean>;
-  try {
-    ({ pos, flags } = parseArgs(rest, verb));
-  } catch (e) {
-    if (!(e instanceof UsageError)) throw e;
-    process.stderr.write(
-      errorEnvelope("usage", e.message, {
-        hint: `flags are scoped to the verb — choices lists what \`${verb}\` accepts; for free text containing dashes use --stdin, or put it after a bare --`,
-        choices: flagsFor(verb),
-      }),
-    );
-    return 2;
-  }
-  const session = typeof flags.session === "string" ? flags.session : undefined;
-
-  switch (verb) {
-    case "open":
-      await cmdOpen(flags);
-      break;
-    case "tail":
-      // The tail RETURNS its exit code (0 on `closed`, on a signal, or when the
-      // pinned session goes away) instead of exiting from inside its own loop.
-      return await cmdTail(
-        session,
-        typeof flags.since === "string" ? sinceOrDie(flags.since) : -1,
-        { once: flags.once === true, sinceGiven: typeof flags.since === "string" },
-      );
-    case "state":
-      await cmdState(session, flags.full === true);
-      break;
-    case "say": {
+    ),
+  },
+  {
+    name: "state",
+    flags: [...SESSION, "full"],
+    positionals: NONE,
+    describe: "lean state snapshot (--full for raw)",
+    run: on((_pos, flags, session) => cmdState(session, flags.full === true)),
+  },
+  {
+    name: "say",
+    flags: [...SESSION, "stdin"],
+    positionals: [{ name: "text", required: false, variadic: true }],
+    describe: "post agent dialogue (text args OR piped stdin with --stdin)",
+    check: bodyOrStdin("text"),
+    run: on(async (pos, flags, session) => {
       const text = flags.stdin === true ? await readStdin() : pos.join(" ");
       if (!text) die("usage: say <text...> | say --stdin");
       await postCmd(session, { type: "say", text });
-      break;
-    }
-    case "ask": {
-      if (!pos.length) die('usage: ask <text...> [--options "a|b|c"]');
+    }),
+  },
+  {
+    name: "ask",
+    flags: [...SESSION, "options"],
+    positionals: [{ name: "text", required: true, variadic: true }],
+    describe: 'ask the user a question in-thread (--options "a|b|c")',
+    run: on((pos, flags, session) => {
       const msg: Record<string, unknown> = { type: "ask", text: pos.join(" ") };
       if (typeof flags.options === "string") {
         msg.options = flags.options
@@ -1124,44 +1009,75 @@ async function dispatch(argv: string[]): Promise<number> {
           .map((s) => s.trim())
           .filter(Boolean);
       }
-      await postCmd(session, msg);
-      break;
-    }
-    case "status":
-      await postCmd(session, {
-        type: "status",
-        busy: pos[0] === "on",
-        text: pos.slice(1).join(" "),
-      });
-      break;
-    case "source": {
-      // Guard the value it reads, not the array's length: `die` narrows only
-      // what the condition names. Same refusal set as before (an empty
-      // positional still passes through to cmdSource, as it always did).
-      const imagePath = pos[0];
-      if (imagePath === undefined) die("usage: source <imagePath>");
-      await cmdSource(session, imagePath);
-      break;
-    }
-    case "discover":
-      await cmdDiscover(session);
-      break;
-    case "extract":
-      await cmdExtract(session, flags);
-      break;
-    case "export":
-      await cmdExport(session, flags);
-      break;
-    case "element-add":
-      await cmdElementAdd(session, flags);
-      break;
-    case "element-remove":
-      if (!pos.length) die("usage: element-remove <id>");
-      await postCmd(session, { type: "element.remove", id: pos[0] });
-      break;
-    case "cmd": {
-      // POST a raw AgentCommand JSON body (from stdin) — the escape hatch for
-      // commands carrying NL text or rich payloads (e.g. elements.set).
+      return postCmd(session, msg);
+    }),
+  },
+  {
+    // `status on [text...]` shows the spinner; anything else (`off`, or
+    // nothing) hides it — the lenient reading magpie has always had.
+    name: "status",
+    flags: SESSION,
+    positionals: [
+      { name: "on|off", required: false },
+      { name: "text", required: false, variadic: true },
+    ],
+    describe: 'show/hide the "magpie working" spinner: status on [text...] | status off',
+    run: on((pos, _flags, session) =>
+      postCmd(session, { type: "status", busy: pos[0] === "on", text: pos.slice(1).join(" ") }),
+    ),
+  },
+  {
+    name: "source",
+    flags: SESSION,
+    positionals: [{ name: "imagePath", required: true }],
+    describe: "register the composite under review (computes sha + size)",
+    run: on((pos, _flags, session) => cmdSource(session, pos[0] as string)),
+  },
+  {
+    name: "discover",
+    flags: SESSION,
+    positionals: NONE,
+    describe: "run discover on the current source → post the breakdown (needs OPENROUTER_API_KEY)",
+    run: on((_pos, _flags, session) => cmdDiscover(session)),
+  },
+  {
+    name: "extract",
+    flags: [...SESSION, "ids", "remove", "alpha", "pad", "model", "label"],
+    positionals: NONE,
+    describe: `cut slices (crop-only; --remove adds rembg; --alpha ${ALPHA_POLICIES.join("|")}; --pad N)`,
+    run: on((_pos, flags, session) => cmdExtract(session, flags)),
+  },
+  {
+    name: "export",
+    flags: [...SESSION, "ids"],
+    positionals: NONE,
+    describe: "build magpie-bundle.zip (assets/, crops/, manifest.json, gallery.html)",
+    run: on((_pos, flags, session) => cmdExport(session, flags)),
+  },
+  {
+    name: "element-add",
+    flags: [...SESSION, "bbox", "name", "type"],
+    positionals: NONE,
+    describe: 'box a region in source px: --bbox "x1,y1,x2,y2"',
+    run: on((_pos, flags, session) => cmdElementAdd(session, flags)),
+  },
+  {
+    name: "element-remove",
+    flags: SESSION,
+    positionals: [{ name: "id", required: true }],
+    describe: "retract a boxed region",
+    run: on((pos, _flags, session) => postCmd(session, { type: "element.remove", id: pos[0] })),
+  },
+  {
+    // POST a raw AgentCommand JSON body — the escape hatch for commands
+    // carrying NL text or rich payloads (e.g. elements.set). `--stdin` is the
+    // documented form: a body never goes through the shell's parser.
+    name: "cmd",
+    flags: [...SESSION, "stdin"],
+    positionals: [{ name: "json", required: false, variadic: true }],
+    describe: "POST a raw AgentCommand JSON body (pipe it with --stdin)",
+    check: bodyOrStdin("JSON body"),
+    run: on(async (pos, flags, session) => {
       const raw = flags.stdin === true ? await readStdin() : pos.join(" ");
       if (!raw) die("usage: cmd --stdin  (pipe a JSON AgentCommand body)");
       let body: Record<string, unknown>;
@@ -1171,30 +1087,83 @@ async function dispatch(argv: string[]): Promise<number> {
         die("cmd: body is not valid JSON");
       }
       await postCmd(session, body);
-      break;
-    }
-    case "close":
-      await postCmd(session, { type: "close" });
-      break;
-    case "info":
-      cmdInfo(session);
-      break;
-    case "sessions":
-      cmdSessions();
-      break;
-    case "help":
-      process.stdout.write(`${HELP}\n`);
-      break;
-    default:
-      // UNREACHABLE BY CONSTRUCTION — `verb` is narrowed to Verb above, and a
-      // test binds VERB_SPEC's keys to this switch's case labels. Kept anyway:
-      // if that binding ever breaks, the alternative is falling through to
-      // `return 0` with empty stdout, which reports success for work never done.
-      // That is the failure this branch exists to remove, and it would be silent.
-      die(`no handler for verb "${verb}"`, "internal");
-  }
+    }),
+  },
+  {
+    name: "close",
+    flags: SESSION,
+    positionals: NONE,
+    describe: "shut the session (writes its snapshot)",
+    run: on((_pos, _flags, session) => postCmd(session, { type: "close" })),
+  },
+  {
+    name: "info",
+    flags: SESSION,
+    positionals: NONE,
+    describe: "the session pointer as JSON",
+    run: on((_pos, _flags, session) => cmdInfo(session)),
+  },
+];
 
-  return 0;
+// ⛔ BUILDING THE TABLE HAS NO SIDE EFFECTS. `defineCli` only validates and
+// indexes; nothing is parsed, printed or read until `main` runs. So a grimoire
+// ward, or a test, can import this module and read `cli.recognizedFlags`,
+// `cli.flagsFor` and `cli.declaration()` without running the CLI.
+export const cli = defineCli({
+  name: "magpie",
+  summary: "a standing review surface for extracting assets from a composite image.",
+  options: CLI_OPTIONS,
+  commands: ROWS.map((r) => ({ ...r, rejectHint: REJECT_HINT })),
+  // The verb is the first argument: `magpie --session x state` is refused as an
+  // unknown root flag. A bare `--` makes the next token the verb (acc A6).
+  grammar: "verb-first",
+  usageHides: ["session"],
+  version: () => ({ name: "magpie", version: PLUGIN_VERSION }),
+  helpFooter: `  extract --model = a rembg model name (isnet-general-use, birefnet-general, …)
+  OR a media-forge bg-remove model id (a provider path like
+  fal-ai/bria/background/remove — DISCOVER via \`media-forge models list\`, never
+  hardcode); --label sets the version's friendly strip label.
+
+  Add --session <id> after the verb to target a specific session (default: most
+  recent). It is accepted by every verb that acts on a session — not by open,
+  sessions, help, version or schema, which do not have one to target.
+
+  Flags are scoped to their verb: extract's --pad is not accepted by say. A
+  rejection lists what the verb it names does accept.
+
+  Output: magpie prints JSON by default on stdout. Every verb writes ONE JSON
+  document there — except \`tail\`, which is a stream and writes one per line
+  (JSONL), and help, which is prose. Liveness and diagnostics go to stderr.
+  Failures are one JSON envelope on stderr and exit non-zero (2 = usage,
+  1 = internal, 5 = not found, 6 = conflict). \`--full\` widens the state
+  payload; it does not switch formats.`,
+});
+
+// The derived views the tests read. VERBS is the roster (the module's own
+// `version`, `schema` and `help` rows included).
+export const VERBS: readonly string[] = cli.verbs;
+
+/**
+ * The failure funnel. `die` THROWS a CliError (the house's one error contract,
+ * `src/kit/wire/errors.ts`) instead of exiting from wherever it was called, so
+ * this is the ONE place a failure becomes an exit code — and the process still
+ * ends the one way the house sanctions, `process.exitCode` plus a natural
+ * return, which is what drains stdout on a pipe.
+ *
+ * `cli.dispatch`, not the registry's `main`: the registry's `main` envelopes an
+ * unknown throw as `internal`, and magpie keeps its older rule below.
+ *
+ * ⛔ A NON-CliError IS RETHROWN, NEVER ENVELOPED. Reporting an unknown throw as
+ * a tidy taxonomy failure would lose the stack that says what actually broke.
+ */
+async function main(argv: string[]): Promise<number> {
+  try {
+    return await cli.dispatch(argv);
+  } catch (e) {
+    const code = reportCliError(e);
+    if (code === null) throw e;
+    return code;
+  }
 }
 
 if (import.meta.main) {
@@ -1208,7 +1177,7 @@ if (import.meta.main) {
   process.exitCode = await main(process.argv.slice(2));
 }
 
-export { main };
+export { CLI_OPTIONS, main };
 
 /**
  * The SHIPPED ENTRY POINT, called by `plugins/spellbook/skills/magpie/scripts/cli.ts`

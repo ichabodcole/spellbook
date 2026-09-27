@@ -1,3 +1,5 @@
+// enforces: none in house-style — Cole's ruling, 2026-09-24 (the handoff line names no launcher and carries `spell`)
+//
 // The handoff line's `command` names no launcher and no path, and the line
 // carries `spell` (Cole's ruling, 2026-09-24; `src/kit/wire/tailHandoff.ts`).
 //

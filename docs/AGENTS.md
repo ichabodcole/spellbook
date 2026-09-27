@@ -11,48 +11,73 @@ For a complete overview of the documentation structure and how to use it, see
 
 ## Quick Onboarding
 
-- **memories/** - Summaries of recent work. Read this folder at the start of a
-  new session to understand what's been happening lately.
+- `bun scripts/pdocs/cli.ts view board` - every live work item, by state group.
+  Run it at the start of a session to see what is in flight and what is waiting.
+- `bun scripts/pdocs/cli.ts view ready` - the items an agent can start now.
 
 ## Documentation Structure
 
-This project organizes documentation by purpose and lifecycle:
-
-### Permanent Reference (type-based)
+### The library (kept current)
 
 - **architecture/** - System design and how things work
 - **specifications/** - Technology-agnostic description of application behavior,
   organized by domain
 - **interaction-design/** - User experience flow documentation
-- **playbooks/** - Reusable patterns for recurring tasks
-- **lessons-learned/** - Specific problems and their solutions
-- **fragments/** - Incomplete observations for later synthesis
+- **playbooks/** - One guide per kind of recurring work: Goal · Steps ·
+  Verification. Read the matching one before starting that kind of work
 
-### Discovery & Assessment (type-based)
+### The workbench (work, and what it produces)
 
-- **reports/** - Structured assessments of current state (code reviews, security
-  audits, doc status)
-- **investigations/** - Research exploring whether action is needed
+- **features/** - One folder per feature: `feature.md` (the argument and its
+  state) plus its plan, design resolution, test plan, sessions, reports and
+  artifacts
+- **items/** - Work items: tasks, bugs, chores and research questions. A single
+  file, or a folder once it owns documents
+- **cycles/** - What is in play right now; items join a cycle through their
+  `cycle:` field
+- **features/\_archive/**, **items/\_archive/** - done or dropped work, moved
+  there by `pdocs archive`
 
-### Work Tracking (domain-based)
-
-- **projects/** - Co-located pipeline documents (proposal, plan, sessions,
-  artifacts) for defined bodies of work
-- **backlog/** - Small, self-contained tasks that don't need a project folder
-- **projects/\_archive/** - Completed project folders
-
-### The Documentation Cycle
+### How work moves
 
 ```
-Brief → Investigation → Project (proposal → [design-resolution] → plan → [test-plan] → sessions) → Report → ...
+Item:    triage → backlog → ready → active → review → done   (or dropped)
+Feature: feature.md → [design-resolution] → plan → [test-plan] → items → sessions → [sweep → archive]
 ```
 
-Reports and investigations are the connective tissue between projects:
+- Items you file start in `triage`. Leave them there: the user moves them out at
+  a triage step they have seen.
+- A research item asks a question; its `write-up.md` answers it, and the answer
+  becomes items or a feature.
+- A step a future agent must follow goes into a playbook, with its check.
 
-- Reports assess current state and identify findings
-- Findings can spawn investigations or new projects
-- Investigations determine whether a project is warranted
-- Projects contain the full pipeline (proposal → [design-resolution] → plan →
-  [test-plan] → sessions → artifacts)
-- Completed projects may trigger new reports to assess outcomes
-- Small tasks that don't need the full pipeline go in the backlog
+## Creating and Querying Documents
+
+Documents are created with the `pdocs` CLI rather than written by hand:
+
+```bash
+bun scripts/pdocs/cli.ts new <type> <name> --title "…" --description "…"
+bun scripts/pdocs/cli.ts new item <slug> --kind bug          # a work item
+bun scripts/pdocs/cli.ts new session <topic> --owner item/<slug>
+```
+
+The type decides the folder, the filename shape and the template, and the CLI
+fills the frontmatter. For a library page (architecture, specification,
+interaction, playbook) it also writes the line in [index.md](./index.md) that
+keeps the page out of the orphan list.
+
+The same CLI reads and changes the tree:
+
+- **check** - the gate: frontmatter, links, anchors, catalog coverage, and the
+  work rules
+- **find** - query by type, lifecycle, status, tag, date, kind, parent, cycle,
+  scope or id
+- **view** - derived views: backlog, board, ready, a feature, a cycle, a scope
+- **set** - change a feature's, an item's or a cycle's fields
+- **archive** - move a done or dropped feature or item into `_archive/`
+- **backlinks** - what cites a document, `related:` edges and body links apart
+- **orphans** - library pages the catalog cannot reach
+
+`bun scripts/pdocs/cli.ts help` lists every command, flag and exit code.
+[SCHEMA.md](./SCHEMA.md) is the frontmatter contract the gate enforces, and
+[STYLE.md](./STYLE.md) says how the prose is written.

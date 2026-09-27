@@ -25,7 +25,7 @@
 // once, as inline code, in a diff a reader can see: it fixes the same defect
 // for someone copying a template BY HAND, which is still the majority path,
 // and it keeps this command out of the business of editing prose. The links
-// that a real workflow makes resolve — a plan's `./proposal.md` — are left as
+// that a real workflow makes resolve — the owner link `--owner` writes — are left as
 // live links, and `new` neither adds nor removes one.
 
 import {
@@ -54,14 +54,31 @@ import {
 } from "../envelope.ts";
 import { OKF_STATUS, type Ctx } from "../lint/rules.ts";
 import {
+  ENTITY_FILE,
   type ExistingDocument,
-  PROJECTS_FOLDER,
+  FEATURES_FOLDER,
+  FIELD_VALUES,
+  ITEMS_FOLDER,
+  KINDS,
   type RegistryRow,
-  TYPE_ALIAS,
   defaultRegistryIndex,
   registryIndex,
+  retiredWordReason,
 } from "../lint/registry.ts";
 import { collectPages, pageKeys } from "../pages.ts";
+import { uuidv7 } from "../uuid.ts";
+import {
+  type WorkEntity,
+  type WorkModel,
+  collectWork,
+  entitiesBySlug,
+  refFor,
+  resolveRef,
+  modelIds,
+  shortId,
+} from "../work.ts";
+import { promoteItem } from "./promote.ts";
+import { movedTo } from "../links-rewrite.ts";
 
 /** `data` in the envelope. */
 export interface NewData {
@@ -71,6 +88,12 @@ export interface NewData {
   type: string;
   /** Every file written or modified, document first. */
   created: string[];
+  /** The item's new entry file, when `--owner` promoted a single-file item
+   *  to a folder to write into it; `null` otherwise. */
+  promoted: string | null;
+  /** A new work item's full id; `null` for every other type (D25: JSON
+   *  always carries the full id, text prints its shortest unique prefix, 12+ characters — D25). */
+  id: string | null;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -93,8 +116,8 @@ export function today(now = new Date()): string {
  *
  * `.` survives the character filter because real names carry it —
  * `OAuth 2.0 / upgrade` is `oauth-2.0-upgrade` — and that is exactly what made
- * `pdocs new project ".."` write `docs/proposal.md`, outside the project tree,
- * and report `ok: true`. A dot is legal INSIDE a slug and never at either end,
+ * the pre-9.0.0 `pdocs new project ".."` write `docs/proposal.md`, outside any
+ * owner folder, and report `ok: true`. A dot is legal INSIDE a slug and never at either end,
  * so `..` and `...` have nothing left once the ends are trimmed, and the
  * emptiness check that was already here refuses them.
  *
@@ -104,7 +127,7 @@ export function today(now = new Date()): string {
  * `"!!!"` and false of `"..."`. Now it is true of both.
  *
  * This is the first of two guards. Escaping a slug is not the only way to leave
- * the tree — `--project ../../etc` never goes through here — so `assertInside`
+ * the tree — an `--owner` reference is resolved, not slugged — so `assertInside`
  * checks the RESOLVED path as well. A sanitizer and a containment check are
  * different claims and the writer/checker contract needs both.
  */
@@ -126,9 +149,9 @@ export function slugify(name: string): string {
 /**
  * Refuse to write outside the tree, whatever produced the path.
  *
- * `existsSync(projectDir)` is not this check and never was: it asks whether a
- * directory is there, and `docs/..` is very much there. `pdocs new project ".."`
- * resolved to the repository root, wrote `docs/proposal.md` — the docs root's
+ * `existsSync(ownerDir)` is not this check and never was: it asks whether a
+ * directory is there, and `docs/..` is very much there. The pre-9.0.0
+ * `pdocs new project ".."` resolved to the repository root, wrote `docs/proposal.md` — the docs root's
  * own parent, where no type is declared — and reported success with exit 0.
  * The document it wrote was `BAD type` and `ORPHAN` on the very next
  * `pdocs check`: the writer and the checker, which read one registry precisely
@@ -200,7 +223,7 @@ export interface ResolvedType {
 }
 
 /**
- * The type argument, through the alias table and then to a row.
+ * The type argument, resolved to its registry row.
  *
  * A row that is not creatable is refused with the reason the REGISTRY gives,
  * quoted verbatim. That is deliberate rather than a null-template accident:
@@ -209,22 +232,24 @@ export interface ResolvedType {
  * instead of about the decision.
  */
 export function resolveType(ctx: Ctx, typeArg: string): ResolvedType {
-  const alias = TYPE_ALIAS[typeArg];
-  const wanted = alias?.type ?? typeArg;
   const registry = registryIndex(ctx.config);
-  const row = registry.get(wanted);
+  const row = registry.get(typeArg);
   // The closed set, read off the registry rather than written beside it — the
   // same list `check` enforces and `new` writes from. It is enumerated in prose
   // AND as `choices`, and both refusals below hand it over: a caller who named
   // a type pdocs will not create needs the set exactly as much as one who named
   // a type that does not exist.
   const creatable = (): string[] =>
-    [
-      ...[...registry.values()].filter((r) => r.creatable).map((r) => r.type),
-      ...Object.keys(TYPE_ALIAS),
-    ].sort();
+    [...registry.values()].filter((r) => r.creatable).map((r) => r.type).sort();
 
   if (!row) {
+    const retired = retiredWordReason(typeArg, ctx.config);
+    if (retired !== null)
+      throw new UsageError(`${retired}.`, {
+        token: typeArg,
+        choices: creatable(),
+        hint: `Creatable: ${creatable().join(", ")}.`,
+      });
     const choices = creatable();
     throw new UsageError(
       `unknown type \`${typeArg}\`. Creatable: ${choices.join(", ")}.`,
@@ -242,38 +267,113 @@ export function resolveType(ctx: Ctx, typeArg: string): ResolvedType {
       }
     );
 
-  return { row, namesScope: alias?.namesScope === true };
+  return { row, namesScope: row.namesScope === true };
 }
 
 // ---------------------------------------------------------------------------------------
 // Resolving the path
 // ---------------------------------------------------------------------------------------
 
-/** The directory a row's documents live in, and the project it belongs to. */
+/** Where a document goes, and — for an owned document — what owns it. */
+export interface Placement {
+  /** The directory the document is written into. */
+  dir: string;
+  /** The owner's folder, for an owned document or an entity that opens one. */
+  ownerDir: string | null;
+  /** The owner's entry file (`feature.md` or `item.md`) as it will be once written — after any promotion. `new`
+   *  links it from the document (D17). `null` when there is nothing to link. */
+  entry: string | null;
+  ownerTitle: string | null;
+  /** A single-file item to promote to a folder before writing into it. */
+  promote: WorkEntity | null;
+}
+
+/** The owner folder whose entry file is this row's type: `features` for `feature`. */
+function ownerFolderOf(row: RegistryRow): string {
+  const found = Object.entries(ENTITY_FILE).find(([, e]) => e.type === row.type);
+  if (!found)
+    throw new CliError(
+      `the \`${row.type}\` row names its scope but no owner folder has it as its entry file.`,
+      ErrorKind.Internal,
+      ExitCode.Internal
+    );
+  return found[0];
+}
+
+const OWNER_FORMS = "`--owner feature/<slug>` or `--owner item/<slug-or-id>`";
+
+/**
+ * The directory a row's documents live in.
+ *
+ * - A `docs` or `root` row: its folder under the docs root. `--owner` is refused.
+ * - A row that names its scope (`feature`): the positional is the folder it
+ *   opens, `features/<slug>/`.
+ * - An owned row (plan, session, …): `--owner` names a feature or an item,
+ *   resolved like every other reference (`resolveRef`). A single-file item is
+ *   promoted to a folder first — by the caller, just before writing, so a
+ *   refusal leaves the tree alone.
+ */
 export function resolveDirectory(
   ctx: Ctx,
   row: RegistryRow,
-  project: string | undefined
-): { dir: string; projectDir: string | null } {
-  if (row.scope !== "project")
+  name: string | undefined,
+  owner: string | undefined,
+  model: () => WorkModel
+): Placement {
+  const none = { entry: null, ownerTitle: null, promote: null };
+  if (row.scope !== "owner") {
+    if (owner !== undefined)
+      throw new UsageError(
+        `a \`${row.type}\` does not live inside a feature or an item — drop --owner.`
+      );
     return {
       dir: row.folder ? join(ctx.docsRoot, row.folder) : ctx.docsRoot,
-      projectDir: null,
+      ownerDir: null,
+      ...none,
     };
+  }
 
-  if (project === undefined)
+  if (row.namesScope) {
+    if (owner !== undefined)
+      throw new UsageError(
+        `a \`${row.type}\` is not owned by anything — \`pdocs new ${row.type} <slug>\` opens its own folder; drop --owner.`
+      );
+    if (name === undefined)
+      throw new UsageError(
+        `\`${row.type}\` needs a name — the folder to open, e.g. \`pdocs new ${row.type} oauth-upgrade\`.`
+      );
+    const ownerDir = assertInside(
+      ctx.docsRoot,
+      join(ctx.docsRoot, ownerFolderOf(row), slugify(name))
+    );
+    return { dir: ownerDir, ownerDir, ...none };
+  }
+
+  if (owner === undefined)
     throw new UsageError(
-      `a \`${row.type}\` lives inside a project — pass \`--project <slug>\`.`
+      `a \`${row.type}\` lives inside a feature or an item — pass ${OWNER_FORMS}.`
     );
 
-  const projectDir = assertInside(
-    ctx.docsRoot,
-    join(ctx.docsRoot, PROJECTS_FOLDER, project)
-  );
+  const e = resolveRef(model(), owner, ["feature", "item"]);
+  const entryNow = join(ctx.repoRoot, e.path);
+  const promote = e.entity === "item" && e.folder === null ? e : null;
+  const ownerDir = promote ? entryNow.slice(0, -".md".length) : dirname(entryNow);
+  const entry = promote ? join(ownerDir, ENTITY_FILE[ITEMS_FOLDER]!.name) : entryNow;
   return {
-    dir: row.folder ? join(projectDir, row.folder) : projectDir,
-    projectDir,
+    dir: row.folder ? join(ownerDir, row.folder) : ownerDir,
+    ownerDir,
+    entry,
+    ownerTitle: e.title ?? e.slug,
+    promote,
   };
+}
+
+/** A document's `title`, or its file name. */
+function titleOf(abs: string): string {
+  const fields = parseFrontmatter(
+    /^---\n([\s\S]*?)\n---/.exec(readFileSync(abs, "utf8"))?.[1] ?? ""
+  );
+  return fields.get("title") ?? basename(abs, ".md");
 }
 
 /** The next `NN` for a numbered folder: the highest already there, plus one. */
@@ -628,7 +728,14 @@ const COMMON_FLAGS: Array<[flag: string, key: string]> = [
  *  that grows a field grows its flag with it. */
 const EXTRA_FLAGS = [
   ...new Set([...defaultRegistryIndex().values()].flatMap((r) => r.extra)),
-].sort();
+]
+  // `from:` is an item field, and `--from` is already the flag that names the
+  // source document; one flag serves both. `id:` is minted, never typed.
+  .filter((key) => key !== "from" && key !== "id")
+  .sort();
+
+/** A field's flag: `blocked_by` is `--blocked-by`. */
+export const flagFor = (key: string): string => `--${key.replace(/_/g, "-")}`;
 
 function flagValue(
   flags: Record<string, string | true>,
@@ -639,21 +746,8 @@ function flagValue(
   return v;
 }
 
-/**
- * The alias that OPENS a scope — the one whose positional names the folder the
- * other project-scoped types then need.
- *
- * Looked up rather than written into the diagnostic, so the hint a caller is
- * given stays true if the alias is ever renamed, and so the one place this file
- * would otherwise have to say the word is the registry instead.
- */
-function scopeOpener(): string | null {
-  const found = Object.entries(TYPE_ALIAS).find(([, a]) => a.namesScope);
-  return found ? found[0] : null;
-}
-
 /** The addresses, `type` and `lifecycle` of everything already written. */
-function existingDocuments(ctx: Ctx): ExistingDocument[] {
+export function existingDocuments(ctx: Ctx): ExistingDocument[] {
   return collectPages(ctx).map((page) => ({
     path: page.path,
     keys: pageKeys(page),
@@ -662,14 +756,37 @@ function existingDocuments(ctx: Ctx): ExistingDocument[] {
   }));
 }
 
-/** `--from`, as a path that resolves, tried repo-relative and then
- *  docs-relative — an agent holding a `find` result has the first, and a person
- *  reading a folder README has the second. */
-function resolveFrom(ctx: Ctx, from: string): string {
+/**
+ * `--from`, as a file that resolves, tried repo-relative and then docs-relative
+ * — an agent holding a `find` result has the first, and a person reading a
+ * folder README has the second.
+ *
+ * On a type that declares a `from:` field (`model` is passed), the field's
+ * value comes back too, in the form D6 stores: a document's docs-root-relative
+ * path, or — when `--from` is a reference rather than a path — the entity's
+ * full form (an item's id, `feature/<slug>`, `cycle/<slug>`), linked through
+ * its entity file.
+ */
+function resolveFrom(
+  ctx: Ctx,
+  from: string,
+  model: (() => WorkModel) | null
+): { abs: string; field?: string } {
   const cleaned = from.replace(/^\.\//, "");
   for (const base of [ctx.repoRoot, ctx.docsRoot]) {
     const abs = resolve(base, cleaned);
-    if (existsSync(abs) && statSync(abs).isFile()) return abs;
+    if (!existsSync(abs) || !statSync(abs).isFile()) continue;
+    if (model === null) return { abs };
+    const within = relative(ctx.docsRoot, abs);
+    if (within.startsWith("..") || within === "")
+      throw new UsageError(
+        `--from: \`${from}\` is outside the docs root — \`from:\` names a document under it.`
+      );
+    return { abs, field: within.split(sep).join("/") };
+  }
+  if (model !== null && /^(feature|item|cycle)\/|^[0-9a-f-]{8,}$/i.test(cleaned)) {
+    const e = resolveRef(model(), cleaned);
+    return { abs: join(ctx.repoRoot, e.path), field: refFor(e) };
   }
   throw new NotFoundError(
     `--from: no file at \`${from}\` (tried it against the repository root and the docs root).`
@@ -680,10 +797,14 @@ export const newCommand: Command = {
   name: "new",
   summary: "Create a document: the type decides folder, filename and template.",
   usage:
-    "pdocs new <type> <name> [--title <t>] [--description <d>] [--project <slug>] " +
-    "[--variant <v>] [--from <path>]",
-  // `name` is NOT required and the two are not the same kind of optional: a
-  // type whose filename the registry fixes — `proposal.md`, `plan.md` — takes
+    "pdocs new <type> <name> [--title <t>] [--description <d>] [--owner <feature/…|item/…>] " +
+    "[--variant <v>] [--from <path-or-ref>]",
+  // `--project` was the owner flag before 9.0.0; skills written against it still pass it.
+  retiredFlags: {
+    "--project": "`--project` was replaced by `--owner feature/<slug>` (or `item/<slug>`).",
+  },
+    // `name` is NOT required and the two are not the same kind of optional: a
+  // type whose filename the registry fixes — `plan.md`, `write-up.md` — takes
   // none, and a type that names a scope demands one. The parser enforces the
   // maximum; which of the two applies is `resolveType`'s answer, so `required`
   // here is the honest floor rather than a guess at the common case.
@@ -708,9 +829,11 @@ export const newCommand: Command = {
     },
     { flag: "--by", metavar: "<actor>", summary: "`generated.by`. Defaults to `pdocs`." },
     {
-      flag: "--project",
-      metavar: "<slug>",
-      summary: "The project folder, for a type that lives inside one.",
+      flag: "--owner",
+      metavar: "<ref>",
+      summary:
+        "What an owned document (plan, session, …) belongs to: feature/<slug> or item/<slug-or-id>. " +
+        "A single-file item is promoted to a folder first.",
     },
     {
       flag: "--variant",
@@ -719,13 +842,17 @@ export const newCommand: Command = {
     },
     {
       flag: "--from",
-      metavar: "<path>",
-      summary: "The document this one came out of; linked from its Related section.",
+      metavar: "<path-or-ref>",
+      summary:
+        "What this came out of, linked from its Related section: a document's path, or — on an " +
+        "item — a reference (an item id, item/<slug>, feature/<slug>, cycle/<slug>), also written to `from:`.",
     },
     ...EXTRA_FLAGS.map((key) => ({
-      flag: `--${key}`,
+      flag: flagFor(key),
       metavar: "<value>",
-      summary: `\`${key}:\` — only on a type that declares it.`,
+      summary:
+        `\`${key}:\` — only on a type that declares it.` +
+        (key === "kind" ? ` Required for an \`item\`: ${KINDS.join(" | ")}.` : ""),
     })),
   ],
 
@@ -733,37 +860,18 @@ export const newCommand: Command = {
     const [typeArg, nameArg] = positionals;
     if (typeArg === undefined)
       throw new UsageError(
-        "new needs a type — `pdocs new playbook rollback` or `pdocs new plan --project oauth-upgrade`."
+        "new needs a type — `pdocs new playbook rollback` or `pdocs new plan --owner feature/oauth-upgrade`."
       );
 
     const { row, namesScope } = resolveType(ctx, typeArg);
 
-    // The alias case: the positional names the project folder, and the document
-    // inside it is the row's fixed one.
-    if (namesScope && nameArg === undefined)
-      throw new UsageError(
-        `\`${typeArg}\` needs a name — the folder to open, e.g. \`pdocs new ${typeArg} oauth-upgrade\`.`
-      );
-    // BOTH paths slugify. They used not to: `pdocs new project "My Big Project"`
-    // created `my-big-project/`, and `pdocs new plan --project "My Big Project"`
-    // then exited 5 saying no such project — and offered, as the fix, the
-    // command that had just worked. One flag was being read as a folder name
-    // and the other as a name to make a folder name out of. `--project` names
-    // the same thing `new project` was given, so it is read the same way.
-    const project = namesScope
-      ? slugify(nameArg as string)
-      : (() => {
-          const value = flagValue(flags, "--project");
-          return value === undefined ? undefined : slugify(value);
-        })();
+    let work: WorkModel | null = null;
+    const model = (): WorkModel => (work ??= collectWork(ctx));
+    const placement = resolveDirectory(ctx, row, nameArg, flagValue(flags, "--owner"), model);
+    const { dir } = placement;
+    // A row that names its scope takes its name as the folder, not the slug.
     const slug = namesScope ? undefined : nameArg;
-
-    const { dir, projectDir } = resolveDirectory(ctx, row, project);
-    if (projectDir !== null && !namesScope && !existsSync(projectDir))
-      throw new NotFoundError(
-        `no \`${project}\` at ${relative(ctx.repoRoot, projectDir)}` +
-          (scopeOpener() ? ` — \`pdocs new ${scopeOpener()} ${project}\` opens one.` : ".")
-      );
+    const scopeName = namesScope ? slugify(nameArg as string) : undefined;
 
     const date = today();
     // The second half of the containment guarantee: `resolveDirectory` proved
@@ -777,6 +885,19 @@ export const newCommand: Command = {
     const rel = relative(ctx.repoRoot, target);
     if (existsSync(target))
       throw new ConflictError(`${rel} already exists — pdocs will not overwrite it.`);
+
+    // An entity's slug names it (`item/<slug>`, `feature/<slug>`), live or
+    // archived, file or folder — so a slug already held anywhere is taken,
+    // even where the exact target path is free (review 3).
+    if ([FEATURES_FOLDER, ITEMS_FOLDER].some((o) => ENTITY_FILE[o]!.type === row.type)) {
+      const wanted = scopeName ?? basename(target, ".md");
+      const holders = entitiesBySlug(model(), row.type as "feature" | "item").get(wanted) ?? [];
+      if (holders.length)
+        throw new ConflictError(
+          `\`${row.type}/${wanted}\` is taken by ${holders.map((h) => h.path).join(", ")} — ` +
+            `a slug names one ${row.type}, archived or not. Choose another name.`
+        );
+    }
 
     // ---- the template, and the frontmatter it gets -------------------------------------
     const templatePath = join(ctx.repoRoot, resolveTemplate(row, flagValue(flags, "--variant")));
@@ -818,17 +939,42 @@ export const newCommand: Command = {
       fills.set(key, asWritten(key, value));
     }
 
+    const rowFlags = row.extra.filter((e) => EXTRA_FLAGS.includes(e)).map(flagFor);
     for (const key of EXTRA_FLAGS) {
-      const value = flagValue(flags, `--${key}`);
+      const flag = flagFor(key);
+      const value = flagValue(flags, flag);
       if (value === undefined) continue;
       if (!row.extra.includes(key))
         throw new UsageError(
-          `--${key} is not a field of \`${row.type}\`${
-            row.extra.length ? ` — it takes ${row.extra.map((e) => `--${e}`).join(", ")}` : ""
+          `${flag} is not a field of \`${row.type}\`${
+            rowFlags.length ? ` — it takes ${rowFlags.join(", ")}` : ""
           }.`,
-          { token: `--${key}`, choices: row.extra.map((e) => `--${e}`) }
+          { token: flag, choices: rowFlags }
+        );
+      const closed = FIELD_VALUES[key];
+      if (closed && !closed.includes(value))
+        throw new UsageError(
+          `${flag}: \`${value}\` is not a ${key} — ${closed.join(" | ")}.`,
+          { token: value, choices: [...closed] }
         );
       fills.set(key, asWritten(key, value));
+    }
+
+    // The keys this row REQUIRES beyond the universal ones. An `id` is minted
+    // here and never typed (a UUIDv7, so ids sort by filing time). Any other
+    // must be passed: the template's value is an example, and a default would
+    // file every bug as a task.
+    for (const key of row.required) {
+      if (key === "id") {
+        fills.set("id", uuidv7());
+        continue;
+      }
+      if (fills.has(key)) continue;
+      const closed = FIELD_VALUES[key];
+      throw new UsageError(
+        `a \`${row.type}\` needs ${flagFor(key)}${closed ? ` — ${closed.join(" | ")}` : ""}.`,
+        closed ? { token: flagFor(key), choices: [...closed] } : { token: flagFor(key) }
+      );
     }
 
     // A LIST THE CALLER DID NOT FILL keeps whatever the template put there, and
@@ -853,32 +999,75 @@ export const newCommand: Command = {
     if (!fills.has("title"))
       fills.set(
         "title",
-        scalar(titleFromSlug(row, slug ? slugify(slug) : (project as string)))
+        // A fixed-name document (`plan.md`) is named for what it belongs to.
+        scalar(
+          titleFromSlug(
+            row,
+            slug
+              ? slugify(slug)
+              : (scopeName ?? basename(placement.ownerDir ?? ctx.docsRoot))
+          )
+        )
       );
     fills.set("generated", `{ by: ${flagValue(flags, "--by") ?? "pdocs"}, at: ${date} }`);
 
+    // ---- --from: the source document, and on a type that declares it, `from:` ----------
+    const from = flagValue(flags, "--from");
+    const source =
+      from === undefined ? null : resolveFrom(ctx, from, row.extra.includes("from") ? model : null);
+    if (source?.field !== undefined) fills.set("from", scalar(source.field));
+
     // ---- validate, before anything is written ------------------------------------------
-    const frontmatter = rewriteFrontmatter(block, fills);
-    const resolved = parseFrontmatter(frontmatter);
+    let frontmatter = rewriteFrontmatter(block, fills);
+    let resolved = parseFrontmatter(frontmatter);
+    const canonical = new Map<string, string>();
     for (const problem of row.validate?.({
       type: row.type,
       fields: resolved,
       documents: existingDocuments(ctx),
+      resolve: (ref, kinds) => resolveRef(model(), ref, kinds),
+      scopes: ctx.config.lint.scopes,
+      set: (key, value) => canonical.set(key, value),
     }) ?? [])
       throw problem.kind === "conflict"
         ? new ConflictError(problem.message)
         : new UsageError(problem.message);
+    if (canonical.size) {
+      for (const [key, value] of canonical) fills.set(key, value);
+      frontmatter = rewriteFrontmatter(block, fills);
+      resolved = parseFrontmatter(frontmatter);
+    }
 
     // ---- the body ----------------------------------------------------------------------
     let out = body;
-    const from = flagValue(flags, "--from");
-    if (from !== undefined) {
-      const abs = resolveFrom(ctx, from);
-      const href = relative(dir, abs).replace(/^(?!\.)/, "./");
-      const fields = parseFrontmatter(
-        /^---\n([\s\S]*?)\n---/.exec(readFileSync(abs, "utf8"))?.[1] ?? ""
-      );
-      out = appendRelated(out, `- [${fields.get("title") ?? basename(abs, ".md")}](${href})`);
+    // The owner's entry file, linked from the document it owns (D17). The
+    // templates cannot carry it: a feature's is `feature.md` and an item's is
+    // `item.md`, and one template serves both.
+    if (placement.entry !== null) {
+      const href = relative(dir, placement.entry).replace(/^(?!\.)/, "./");
+      out = appendRelated(out, `- [${placement.ownerTitle}](${href})`);
+    }
+    if (source !== null) {
+      // Where the source will be once any promotion has run: `--from` may be
+      // the very item being promoted to hold this document (review 2).
+      const abs =
+        placement.promote === null || placement.entry === null
+          ? source.abs
+          : movedTo(
+              source.abs,
+              new Map([[join(ctx.repoRoot, placement.promote.path), placement.entry]])
+            );
+      // The owner's entry file is already linked above; once is enough.
+      if (abs !== placement.entry) {
+        const href = relative(dir, abs).replace(/^(?!\.)/, "./");
+        const fields = parseFrontmatter(
+          /^---\n([\s\S]*?)\n---/.exec(readFileSync(source.abs, "utf8"))?.[1] ?? ""
+        );
+        out = appendRelated(
+          out,
+          `- [${fields.get("title") ?? basename(source.abs, ".md")}](${href})`
+        );
+      }
     }
     // ---- the catalog line, computed before either file is touched -----------------------
     const description = (resolved.get("description") ?? "").replace(/\s+/g, " ").trim();
@@ -906,6 +1095,10 @@ export const newCommand: Command = {
       : null;
 
     // ---- write -------------------------------------------------------------------------
+    // Promotion is the first write, and the last thing that can refuse has
+    // already run: an item is only turned into a folder that is then written to.
+    const promotion = placement.promote === null ? null : promoteItem(ctx, placement.promote);
+    const promoted = promotion?.to ?? null;
     mkdirSync(dirname(target), { recursive: true });
     writeFileSync(target, `---\n${frontmatter}\n---\n${out}`);
     const created = [rel];
@@ -913,12 +1106,24 @@ export const newCommand: Command = {
       writeFileSync(indexPath, catalog);
       created.push(relative(ctx.repoRoot, indexPath));
     }
+    // An automatic promotion moved the item and rewrote links to it; those
+    // files were modified by this command too (review 11).
+    if (promotion !== null)
+      for (const p of [promotion.to, ...promotion.rewritten])
+        if (!created.includes(p)) created.push(p);
 
-    const data: NewData = { path: rel, type: row.type, created };
+    const id = fills.get("id") ?? null;
+    const data: NewData = { path: rel, type: row.type, created, promoted, id };
     if (format === "json") printEnvelope("new", data);
     else {
       console.log(rel);
-      for (const other of created.slice(1)) console.log(`  + catalog line in ${other}`);
+      if (id !== null) console.log(`  id ${shortId(id, [...modelIds(model()), id])}`);
+      if (catalog !== null) console.log(`  + catalog line in ${relative(ctx.repoRoot, indexPath)}`);
+      if (promotion !== null) {
+        console.log(`  promoted its owner to ${promotion.to}`);
+        for (const p of promotion.rewritten)
+          if (p !== promotion.to) console.log(`  rewrote links in ${p}`);
+      }
     }
     return ExitCode.Success;
   },

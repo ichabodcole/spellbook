@@ -12,8 +12,8 @@ spell, and reserving it here is not a claim that invocation = this one word.
 - **The name** (`grapevine`) is the canonical handle. It's what gets reserved
   here, and it's the exact argument the planned **wand** CLI takes
   (`wand grapevine watch`) — a mage-facing tool, see
-  `docs/fragments/2026-05-29-the-wand-mage-cli.md`. A CLI namespace can't be
-  fuzzy, so that's the one place a precise, set-apart token genuinely matters.
+  `docs/items/the-wand-mage-cli.md`. A CLI namespace can't be fuzzy, so that's
+  the one place a precise, set-apart token genuinely matters.
 - **Invocation** is how an agent or human actually triggers the skill in
   conversation — and that's deliberately **plural**: "cast grapevine," "start a
   grapevine channel," "join the vine." It often carries distinct **lenses**, too

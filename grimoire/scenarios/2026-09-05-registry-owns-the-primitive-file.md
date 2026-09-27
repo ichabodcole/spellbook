@@ -14,8 +14,8 @@ It used five hand-written look-alikes: shadcn's class vocabulary and file names,
 variants as a plain lookup, a dependency-free `cn()` that does not
 conflict-resolve, and a provenance header per file citing a page that no longer
 existed. Cole's direction had been _shadcn components instead of our own custom
-ones_. The setup branch (`docs/projects/grapevine-shadcn/`) made the surface a
-real CLI-managed project — and the CLI's own project model, measured rather than
+ones_. The setup branch (`docs/items/grapevine-shadcn/`) made the surface a real
+CLI-managed project — and the CLI's own project model, measured rather than
 read, differed from the brief in three places: `add` refuses a directory with no
 `package.json`; the 4.21 registry imports `cn` from shadcn's own npm package and
 writes no `lib/utils.ts`; `add` installs `cn` but not

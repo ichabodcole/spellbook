@@ -15,13 +15,6 @@ appetite:
   keeps your place, the side columns can get out of the way, a note shows that
   it is being worked on, and the 30-minute wake-up has an explanation and a
   ruling. Anything that needs more real use to decide waits for the next cycle."
-scope:
-  - backlog/2026-09-22-scriptorium-chat-context-does-not-mirror-the-selection
-  - backlog/2026-09-22-scriptorium-rendered-selection-maps-to-wrong-lines
-  - backlog/2026-09-22-scriptorium-view-switches-lose-scroll-position
-  - backlog/2026-09-22-scriptorium-reader-mode-and-collapsible-sidebars
-  - backlog/2026-09-22-scriptorium-a-note-is-acted-on-and-nothing-shows-it
-  - backlog/2026-09-22-scriptorium-tail-monitor-expiry-wakes-the-agent-for-nothing
 after: []
 generated: { by: claude-opus-5, at: 2026-09-22 }
 ---
@@ -75,7 +68,7 @@ every spell.
      so answered messages come back looking live. The shared tail client in the
      kit (`src/kit/wire/tailEvents.ts`) and the seven skills that wrap a tail in
      Monitor all carry it. See
-     [the investigation](../investigations/2026-09-22-monitor-expiry-and-the-tail.md).
+     [the investigation](../items/monitor-expiry-and-the-tail/write-up.md).
 6. **`feat/tail-quiet-handoff`** (added by Cole's ruling, 2026-09-23)
    - **The scope widens past Scriptorium on purpose.** The replay is a
      correctness bug in every spell with a tail, and Cole ruled that the fix
@@ -115,36 +108,36 @@ fix it had not planned: the house-wide tail handoff, which its own spike found.
 
 - **"The context chip always matches the selection."** Met for every case Cole
   reported and for the worst edge the reviews found, but not yet _always_.
-  [Branch 1](../projects/scriptorium/sessions/2026-09-22-the-chip-and-the-lines-it-pointed-at.md)
+  [Branch 1](../items/scriptorium/sessions/2026-09-22-the-chip-and-the-lines-it-pointed-at.md)
   fixed the four causes of rendered-mode drift, and Cole ruled that clearing the
   chip clears the selection, in the daemon too.
-  [The chip-across-documents fix](../projects/scriptorium/sessions/2026-09-22-a-selection-that-outlived-its-document.md)
+  [The chip-across-documents fix](../items/scriptorium/sessions/2026-09-22-a-selection-that-outlived-its-document.md)
   stopped a selection surviving a document switch under the new document's name.
   Three edges in
-  [the selection-edges item](../backlog/2026-09-22-scriptorium-selection-edges-the-review-found.md)
+  [the selection-edges item](../items/scriptorium-selection-edges-the-review-found.md)
   can still put the wrong passage on a message, or none: an unplaceable
   selection keeps the previous passage (edge 1), a note added from the Notes
   panel leaves its passage on the chip (edge 4), and a second tab wipes the
   daemon's selection while the first tab's chip still shows it (edge 5).
 - **"Switching views keeps your place."** Met.
-  [Branch 2](../projects/scriptorium/sessions/2026-09-22-keeping-your-place-and-the-guard-that-guesses.md):
+  [Branch 2](../items/scriptorium/sessions/2026-09-22-keeping-your-place-and-the-guard-that-guesses.md):
   raw, rendered and split keep the top-visible source line, all through one
   primitive. Two sub-frame holes are pinned and filed. A resize still does not
   re-place a pane; Cole deferred that until his own use says it matters.
 - **"The side columns can get out of the way."** Met.
-  [Branch 3](../projects/scriptorium/sessions/2026-09-22-room-to-read-and-the-width-the-anchors-forgot.md):
+  [Branch 3](../items/scriptorium/sessions/2026-09-22-room-to-read-and-the-width-the-anchors-forgot.md):
   either column collapses and the choice persists. The composer floats while the
   conversation is shut, and reader mode fell out as a derived preset.
 - **"A note shows that it is being worked on."** Met.
-  [Branch 4](../projects/scriptorium/sessions/2026-09-22-a-note-that-says-it-is-with-the-agent.md):
+  [Branch 4](../items/scriptorium/sessions/2026-09-22-a-note-that-says-it-is-with-the-agent.md):
   a note shows it is with the agent and goes to a static "may be stuck" the way
   E53's messages do. Resolving it is the close. On Cole's ruling, three
   trade-offs are left to be learned in use.
 - **"The 30-minute wake-up has an explanation and a ruling."** Exceeded.
-  [The spike](../investigations/2026-09-22-monitor-expiry-and-the-tail.md)
-  explained it: the wake was Monitor's cap, not Scriptorium, and every bare
-  re-arm replayed the session. Cole ruled, and
-  [`feat/tail-quiet-handoff`](../projects/scriptorium/sessions/2026-09-23-the-tail-hands-off-before-the-cap.md)
+  [The spike](../items/monitor-expiry-and-the-tail/write-up.md) explained it:
+  the wake was Monitor's cap, not Scriptorium, and every bare re-arm replayed
+  the session. Cole ruled, and
+  [`feat/tail-quiet-handoff`](../items/scriptorium/sessions/2026-09-23-the-tail-hands-off-before-the-cap.md)
   shipped the fix to the kit and every spell with a tail.
 - **"Anything that needs more real use waits."** Held. Eager vs. lazy
   versioning, the note trade-offs, the resize re-place, a collapse shortcut, and
@@ -199,10 +192,10 @@ itself before landing.
 
 The memories carry the detail. Four generalise past their incident and are
 proposed for `grimoire/house-style.md` in
-[the house-style rules item](../backlog/2026-09-24-house-style-rules-from-scriptorium-real-use.md):
+[the house-style rules item](../items/house-style-rules-from-scriptorium-real-use.md):
 
 - [one state, one meaning](../memories/2026-09-22-scriptorium-selection-and-the-chip.md)
-- [ask what a number is for](../projects/scriptorium/sessions/2026-09-22-keeping-your-place-and-the-guard-that-guesses.md#the-rule-that-came-out-of-it-and-it-is-not-scriptoriums)
+- [ask what a number is for](../items/scriptorium/sessions/2026-09-22-keeping-your-place-and-the-guard-that-guesses.md#the-rule-that-came-out-of-it-and-it-is-not-scriptoriums)
   before writing it into a document
 - [a place in a document names its document](../memories/2026-09-22-a-place-in-a-document-names-its-document.md)
 - [a wait that wakes by ending must end](../memories/2026-09-23-a-wait-that-wakes-by-ending-must-end.md)
@@ -218,35 +211,35 @@ and
 
 Open backlog items this cycle filed or touched:
 
-- [Selection edges](../backlog/2026-09-22-scriptorium-selection-edges-the-review-found.md):
+- [Selection edges](../items/scriptorium-selection-edges-the-review-found.md):
   edges 1–7 (edge 0 is fixed). Edges 1, 4 and 5 are the ones that can send the
   wrong passage; 3 and 6 are cosmetic, 2 is off-macOS only, and 7 is the context
   tree.
-- [Selection hygiene](../backlog/2026-09-22-scriptorium-selection-hygiene-duplication-and-cost.md):
+- [Selection hygiene](../items/scriptorium-selection-hygiene-duplication-and-cost.md):
   the duplicated edge-detect, and a full re-walk on every `selectionchange`.
-- [A coalesced scroll is lost](../backlog/2026-09-22-scriptorium-a-coalesced-scroll-is-lost-in-one-ordering.md):
+- [A coalesced scroll is lost](../items/scriptorium-a-coalesced-scroll-is-lost-in-one-ordering.md):
   the two pinned sub-frame holes.
-- [Eager or lazy versioning](../backlog/2026-09-22-scriptorium-eager-or-lazy-versioning.md):
+- [Eager or lazy versioning](../items/scriptorium-eager-or-lazy-versioning.md):
   waiting on Cole's use.
-- [Anthill's seat filter drops the handoff line](../backlog/2026-09-23-anthill-seat-tail-filter-drops-the-handoff-line.md):
+- [Anthill's seat filter drops the handoff line](../items/anthill-seat-tail-filter-drops-the-handoff-line.md):
   the change is anthill's. Until it lands, a seat's bounty watch dies silently
   at the cap. Filed as
   [ichabodcole/anthill#113](https://github.com/ichabodcole/anthill/issues/113).
-- [House-style rules from this cycle](../backlog/2026-09-24-house-style-rules-from-scriptorium-real-use.md):
+- [House-style rules from this cycle](../items/house-style-rules-from-scriptorium-real-use.md):
   Cole's to rule. _(Note added 2026-09-24: approved and integrated into
   `grimoire/house-style.md`.)_
 
 The residuals the sessions recorded under "Known and not built" are filed as two
 items:
 
-- [The tail's re-arm command names a versioned plugin path](../backlog/2026-09-24-tail-rearm-command-names-a-versioned-plugin-path.md):
+- [The tail's re-arm command names a versioned plugin path](../items/tail-rearm-command-names-a-versioned-plugin-path.md):
   across an upgrade, a printed command first runs stale code, then fails once
   the old directory is deleted. It is its own item because it should be resolved
   before the release that first ships the handoff. _(Note added 2026-09-24,
   after the close: resolved on `fix/tail-rearm-without-plugin-path`. The printed
   command names no path.)_
-- [Residuals from this cycle](../backlog/2026-09-24-scriptorium-real-use-residuals.md):
-  the no-epoch spells' fallback gap, the keyed late-lead edge, a resize not
+- [Residuals from this cycle](../items/scriptorium-real-use-residuals.md): the
+  no-epoch spells' fallback gap, the keyed late-lead edge, a resize not
   re-placing a pane, triple-click giving no chip, and batched note review.
 
 Waiting on Cole:

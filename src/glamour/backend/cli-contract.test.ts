@@ -17,7 +17,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { flagsFor, RECOGNIZED_FLAGS, VERB_SPEC, VERBS, verbToken } from "./cli";
+import { flagsFor, RECOGNIZED_FLAGS, VERB_SPEC, VERBS } from "./cli";
 
 // ⛔ EVERY PATH HERE IS DERIVED FROM AN EXPLICIT SKILL ROOT, NEVER BY COUNTING
 // `..` FROM THE TEST FILE. Before the relocation `../scripts/cli.ts` and `..`
@@ -44,7 +44,9 @@ const CLI = join(SKILL_ROOT, "scripts", "cli.ts");
 const EMPTY_TMP = mkdtempSync(join(tmpdir(), "glamour-contract-"));
 
 function run(args: string[]): { code: number; stdout: string; stderr: string } {
-  const p = Bun.spawnSync(["bun", CLI, ...args], {
+  // Bun strips a bare `--` placed right after the script path; the added `--`
+  // is the one it consumes, so the CLI receives exactly `args`.
+  const p = Bun.spawnSync(["bun", CLI, "--", ...args], {
     stdout: "pipe",
     stderr: "pipe",
     stdin: new Uint8Array(0), // never inherit the runner's never-EOF stdin
@@ -161,8 +163,9 @@ test("the unknown-flag rejection names the set AT THAT PATH: the verb's flags, o
   // At the root the accepted flags are the interceptors — the same array the
   // declaration publishes at path [] — and the verb roster rides the hint.
   const atRoot = JSON.parse(run(["--acc-not-a-flag"]).stderr) as Envelope;
-  expect(atRoot.error.choices).toEqual(["--help", "-h", "--version", "-V"]);
-  expect(atRoot.error.hint).toContain("verbs: open tail");
+  // Long spellings first (the kit registry's order, decision log #12).
+  expect(atRoot.error.choices).toEqual(["--help", "--version", "-h", "-V"]);
+  expect(atRoot.error.hint).toContain("commands: open tail");
   expect(atRoot.meta.command).toBeNull();
   // The registry is still the parser's truth, and every flag in it is owned
   // (the ownership cell above); this only pins that the registry is non-trivial.
@@ -170,13 +173,10 @@ test("the unknown-flag rejection names the set AT THAT PATH: the verb's flags, o
 });
 
 test("`--` at the root ends flag parsing: what follows is a verb, not an option", () => {
-  // bun strips one bare `--` placed right after the script path (measured on
-  // bun 1.4), so TWO are sent for the script to receive one — the same
-  // compensation acc's runner applies for A6.
-  const r = run(["--", "--", "--acc-probe-value"]);
+  const r = run(["--", "--acc-probe-value"]);
   expect(r.code).toBe(2);
   const doc = JSON.parse(r.stderr) as Envelope;
-  expect(doc.error.message).toContain('unknown verb "--acc-probe-value"');
+  expect(doc.error.message).toContain('unknown command "--acc-probe-value"');
   expect(doc.error.message).not.toMatch(/unknown option/i);
 });
 
@@ -228,15 +228,18 @@ test.each([
   expect(doc.meta.command).toBe(verb);
 });
 
-test("help takes no flags, and says so rather than listing an empty set", () => {
+test("help takes no flags, and says so beside the empty set it states", () => {
   const doc = JSON.parse(run(["help", "--session", "abc"]).stderr) as Envelope;
   expect(doc.error.hint).toBe("help takes no flags");
-  expect(doc.error.choices).toBeUndefined();
+  // The kit registry states the empty set rather than omitting it — what the
+  // census reads as "stated an empty set", the same answer an unknown flag on
+  // `help` gets.
+  expect(doc.error.choices).toEqual([]);
 });
 
 test("an unknown verb outranks a misplaced flag", () => {
   const doc = JSON.parse(run(["frobnicate", "--seed", "3"]).stderr) as Envelope;
-  expect(doc.error.message).toContain("unknown verb");
+  expect(doc.error.message).toContain("unknown command");
 });
 
 // ── 4. the round trip: the declaration against the running parser ───
@@ -308,12 +311,8 @@ test("the in-process census: every verb's unknown-flag rejection names exactly w
 test("a string flag before the verb does not get its VALUE mistaken for the verb on a parse failure", () => {
   // Review finding: `--session abc say --bogus` named "abc" as the verb, so
   // the rejection said "no verb given" with the root's choices. The verb is
-  // found the way the parser consumes tokens.
-  expect(verbToken(["--session", "abc", "say", "--bogus"])).toBe("say");
-  expect(verbToken(["--session=abc", "say"])).toBe("say");
-  expect(verbToken(["--full", "state"])).toBe("state");
-  expect(verbToken(["--", "--x"])).toBe("--x");
-  expect(verbToken(["--session", "abc"])).toBeNull();
+  // found the way the parser consumes tokens (the kit registry's
+  // flags-anywhere scan; its unit tests pin the token walk itself).
   const doc = JSON.parse(run(["--session", "abc", "say", "hi", "--bogus"]).stderr) as Envelope;
   expect(doc.meta.command).toBe("say");
   expect(doc.error.choices).toEqual(flagsFor("say"));
