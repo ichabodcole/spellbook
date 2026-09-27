@@ -6,7 +6,7 @@ description:
   parsing, help, rejections and the schema verb, instead of six spells
   hand-copying grapevine's pattern.
 status: draft
-lifecycle: ready
+lifecycle: done
 id: 01a0e03d-fc41-75f2-8096-9a86bd1ff0c8
 kind: research
 generated: { by: claude-opus-5-5, at: 2026-09-26 }
@@ -43,5 +43,5 @@ on a kit module or copies the grapevine pattern.
 
 - [x] A write-up in this item's folder answers the four points above, with
       file:line evidence from the three registries.
-- [ ] Its recommendation is recorded on the feature, and the per-spell items'
+- [x] Its recommendation is recorded on the feature, and the per-spell items'
       step 6 points at it.

@@ -93,6 +93,13 @@ CLI beyond what the guidance requires; acc itself (friction goes upstream, step
 - **The reference implementations** are glamour and grapevine (registry-derived
   surface, `schema` verb, census) and scriptorium.
   `docs/features/glamour-acc-l0/` records how glamour got there.
+- **Step 6 runs on a shared kit module** (decided 2026-09-26 from
+  [the research](../../items/shared-cli-registry-in-the-kit/write-up.md) and
+  [its cold read](../../items/shared-cli-registry-in-the-kit/artifacts/cold-read.md)):
+  `src/kit/cli/registry.ts`, built first in
+  [item/build-kit-cli-registry](../../items/build-kit-cli-registry.md) behind a
+  golden snapshot of all nine CLIs, and proven on glamour, scriptorium and
+  grapevine. The other six items are blocked on it.
 - **Execution:** subagents do the work, one per item; the lead briefs, reviews
   and lands. Run the gate item early enough that later items land against it.
 
