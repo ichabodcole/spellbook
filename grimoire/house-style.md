@@ -636,8 +636,20 @@ registry uses the registry's `cn` throughout, one semantics per spell.
 
 <!-- rule-id: honor-exit-code-contract -->
 
-`0` submitted · `2` bad input · `124` idle timeout · `130` user cancelled
-(closed tab after interacting). Cantrip and conjuration alike.
+`0` success. **Failures** take their code from the kit's taxonomy, `EXIT_FOR` in
+`src/kit/wire/errors.ts`: `2` usage · `1` internal · `5` not_found · `6`
+conflict, each with one JSON envelope on stderr. **Session endings** are
+outcomes, not failures, and stay outside the taxonomy
+([D52](../docs/features/_archive/backend-convergence/decision-log.md)): `124`
+idle timeout where a spell has one (astrolabe, bounty, digestify, glamour,
+imago, magpie, scriptorium) · `130` user cancelled where a spell has a discard
+path (digestify's closed tab after interacting; imago's and magpie's cancel).
+Conjurations have no cancel, so no `130` (bounty's daemon exits 130 only when
+killed by SIGINT).
+
+⚠ **Known residue:** `bounty join` idles out at `0` and ends on a socket error
+at `2`, the same number as `usage`; the channel tells them apart (an ending
+writes a `disconnected` frame to stdout and no envelope), not the code.
 
 - **Boundary check — a process whose exit IS the signal must exit on every
   path.** A background task or a one-shot wait wakes its caller only by ending,

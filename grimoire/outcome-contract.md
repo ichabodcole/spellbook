@@ -196,8 +196,8 @@ domain"** — and it is read as **"nothing happened."**
 
   **Why the precision is not pedantry: the repo's LINTER REQUIRES the erasing
   form, at error severity.** `biome`'s `useOptionalChain` fires on
-  `o.f && o.f.x` — a value position — and `biome.json` is bare
-  `"rules": {"recommended": true}` with no override, so **writing the
+  `o.f && o.f.x` — a value position — and `biome.json` runs
+  `"recommended": true` with no `useOptionalChain` override, so **writing the
   canon-compliant idiom FAILS `bun run check`.**
 
   ⛔ **So this file and the gate disagree, and only one of them can stop a
@@ -207,15 +207,25 @@ domain"** — and it is read as **"nothing happened."**
   pedantry** — which is why the flat ban had to go rather than be reinforced.
 
   ⚠ **Do NOT read this as "widen the gate's coverage."** Measured the same
-  night: `bounty/scripts/template.html:951` carries the canon-compliant `&&`
-  form on this very field class, and it survives **only because the file is
+  night: `bounty/scripts/template.html:951` carried the canon-compliant `&&`
+  form on this very field class, and it survived **only because the file was
   outside the gate's reach entirely.** Widening coverage of a rule set that
   disagrees with this canon propagates the disagreement faster than it finds
-  anything.
+  anything. _(That file is gone: bounty's surface is now `.tsx` under
+  `src/bounty/surface/`, inside biome, so the survivor no longer exists.)_
 
-  **Whether shipped code already carries a gate-manufactured erasure is
-  UNVERIFIED** — the exemption is deliberately not written until that is
-  measured, because an exemption must name the harm it was written for.
+  **Whether shipped code already carries a gate-manufactured erasure was
+  measured, and the answer is zero** (sprint 05's D4, measured 2026-09-27 on
+  `6128a9b6` for
+  [sprint 06 phase 2](../docs/features/spell-hardening/sprints/06-filed-is-not-fixed/phase-2-scope.md)):
+  571 `?.` sites across the 380 non-test `.ts`/`.tsx` files under `src/`; 12 of
+  them read, in a value position, a name that can be null; read by hand, **0
+  erase a present-and-null wire field**. ⚠ **The limit is the population: it is
+  name-based.** A nullable field reached through a renamed binding or a
+  destructure is not in the 12, so this is zero over what the names reach, not a
+  proof. **So no `useOptionalChain` exemption is written (D3):** an exemption
+  must name the harm it was written for, and the measurement found none to name.
+  The precision above stands as the rule; the linter stays as it is.
 
   ⭐ **The observation that outranks the allow-list: `JSON.stringify` PRESERVES
   the distinction** (`{"f":null}` vs `{}`). **Every seat who caught this caught
@@ -290,9 +300,13 @@ than read off a commit message.)_
   biconditional would answer it silently.
 - **Boundary check — RATIFYING A SPELLING IS NOT ADOPTING IT.** No emitted
   envelope changes because this section landed. Where a shipped spell spells it
-  otherwise — `digestify`'s timeout/cancel envelope carries `reason`, not
-  `error` — that is a **recorded divergence to be carded, never a silent
-  conversion.** The wire belongs to whoever owns the spell.
+  otherwise is a **recorded divergence, never a silent conversion.** The wire
+  belongs to whoever owns the spell. `digestify`'s timeout/cancel envelope
+  carries `reason`, not `error`, and that is **not** a divergence: its 124 and
+  130 are session outcomes, outside the failure taxonomy, by
+  [D52](../docs/features/_archive/backend-convergence/decision-log.md)
+  (2026-09-09, ruled for bounty's `join.ts` and applied to digestify in
+  `src/digestify/backend/review.ts`).
 - **Repeal when:** the failure channel is itself enumerated by something that
   fails when a new shape appears — at which point the spelling is enforced
   rather than agreed, and this section is redundant.
@@ -339,10 +353,22 @@ than discover it.** `anthill feedback` takes one free-form argument.
 `bounty add` takes a title positional **and** fifteen string flags, so the same
 rule would swallow real flags.
 
-**Their fix (2) is the portable one, and it is `valuesIgnored`'s own shape:**
-report what was absorbed, per entry, with its own reason — and per Boundary 3,
-**derive it from the argv actually received, not from the known-flag table**, or
-it cannot see the very tokens the terminator ate.
+**Their fix (2) is the portable one:** report what was absorbed — and per
+Boundary 3, **derive it from the argv actually received, not from the known-flag
+table**, or it cannot see the very tokens the terminator ate.
+
+**What ships is a stderr line, not an envelope entry** (team ruling 2026-09-27,
+[sprint 06 decision log](../docs/features/spell-hardening/sprints/06-filed-is-not-fixed/plan.md)).
+The kit registry (`src/kit/cli/registry.ts`, `dccd2cb7`) writes one `# warning:`
+line on stderr when a token after `--` spells a flag that verb accepts, naming
+the recovery: move it before `--`. Exit code and stdout are unchanged. This
+amends the earlier prescription of a `valuesIgnored`-shaped envelope entry: the
+registry owns argv but not the envelopes, and one warning there covers every
+verb the registry parses, where an envelope entry would be nine wire changes. So
+the envelope's `valuesIgnored` still reads `null` for
+`add -- hello --session-key K1` (measured in the phase-2 scope read); **the
+report for a flag demoted by `--` is the stderr line**, and Boundary 3 is met
+because the line is derived from the received argv.
 
 ---
 
