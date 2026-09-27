@@ -34,3 +34,8 @@ parse: switching bounty alone would disable that guard with no error.
       `"defaultOutput": "json"` and B5 reads checked.
 - [ ] The golden snapshot's diff is exactly the output change, named in the
       commit.
+
+## Scheduling (2026-09-27)
+
+Cole: coordinate with the anthill team over grapevine to schedule it; the switch
+lands only together with anthill's parser change.

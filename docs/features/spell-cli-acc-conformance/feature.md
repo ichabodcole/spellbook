@@ -8,7 +8,7 @@ description:
   it."
 tags: [acc, cli, conformance]
 status: draft
-lifecycle: review
+lifecycle: done
 generated: { by: claude-opus-5-5, at: 2026-09-26 }
 ---
 
