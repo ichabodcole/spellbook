@@ -10,7 +10,7 @@ lifecycle: backlog
 id: 01a0dea2-8c12-7351-b60a-057892e894b3
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-09-26 }
-cycle: 2026-09-acc-conformance
+cycle: 2026-09-filed-is-not-fixed
 parent: feature/spell-hardening
 from: features/spell-hardening/sprints/05-the-gate/carries.md
 ---
@@ -32,6 +32,23 @@ The denominator is already measured: **16 entry points across 8 spells** set
 `strict:`/`allowPositionals:` (re-measured at sprint 05's finalize; the card
 first recorded 15). Reuse `grimoire/flag-invariant.test.ts`'s by-behaviour
 enumeration and `grimoire/lib/entry-points.ts`. Do not re-derive the population.
+
+## After the acc cycle (2026-09-26)
+
+Moved back to spell-hardening from the acc-conformance cycle. What acc fixed,
+and what it cannot:
+
+- **Fixed:** on all nine spells a flag after `--` is now always a positional,
+  never parsed as a flag (acc A6, the POSIX meaning of `--`). The root-level
+  hazard is gone.
+- **Not fixed, and not a CLI-contract defect:**
+  `bounty add -- text --session-key K` still writes a card titled with the flag,
+  on the ambient board, at exit 0. The caller asked for positionals and got
+  them. This item's definition of done ("never silently a positional")
+  contradicts `--` itself.
+- **Proposal** (decision log #21 in the acc feature): keep A6, and add a
+  `warning` to the envelope when a post-`--` positional spells a flag the verb
+  accepts. That is product behaviour, for the spell-hardening pass.
 
 ## Definition of done
 
