@@ -6,7 +6,7 @@ title:
 status: stable
 description:
   Fix astrolabe close to return non-zero exit code when returning error envelope
-lifecycle: review
+lifecycle: done
 id: 019feeaa-e8f0-724d-96f4-6765e4ebd9a1
 kind: task
 generated: { by: unknown, at: 2026-08-10 }

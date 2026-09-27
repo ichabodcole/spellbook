@@ -6,7 +6,7 @@ status: stable
 description:
   Fix bounty tail infinite retry loop when target board or list becomes
   unresolvable
-lifecycle: review
+lifecycle: done
 id: 019feeaa-e8f2-7b85-9125-2ff933299875
 kind: task
 generated: { by: unknown, at: 2026-08-10 }

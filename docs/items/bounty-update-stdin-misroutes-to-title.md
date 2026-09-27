@@ -6,7 +6,7 @@ title:
 status: stable
 description:
   Fix bounty update command to correctly route stdin to body not title field
-lifecycle: review
+lifecycle: done
 id: 019fef02-3880-7ca3-b563-d1e9ed17f5ed
 kind: task
 generated: { by: unknown, at: 2026-08-10 }
