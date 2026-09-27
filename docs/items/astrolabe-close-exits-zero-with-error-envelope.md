@@ -103,3 +103,14 @@ done deliberately, hours after measuring that it had not happened on its own.
 
 The dependency may have lapsed by the time anyone reads this. **Check before you
 cut**, and if it has lapsed, say so rather than assuming.
+
+## Note from the acc-conformance migration (2026-09-26)
+
+astrolabe's CLI moved onto the kit registry
+([item](acc-conformance-astrolabe.md)). `close` is now a registry row, but its
+handler (`cmdClose` in `src/astrolabe/backend/cli.ts`) is unchanged: with no
+daemon it still prints `{ok:true, applied:false, error:"no daemon running"}` at
+exit 0. The migration did not route it through `die` on purpose — which of the
+two shapes is right (a rejection, or a benign no-op with an `outcome` noun) is
+the product question this item asks, and Cole ruled product behaviour comes
+after acc. The fix is one line in `cmdClose` either way.
