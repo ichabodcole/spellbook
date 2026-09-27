@@ -118,7 +118,10 @@ const EXPECTED: Record<
   // 16/4 -> 12/1 (2026-09-26): astrolabe moved onto the kit registry, as
   // glamour did — its bare-invocation, parse, unknown-verb and root-flag raises
   // left for the kit. `join`'s unknown-project rejection (the board's ids) stays.
-  astrolabe: { sites: 12, choices: 1, verbRoster: true, flagMap: true },
+  // 12/1 -> 14/1 (2026-09-27, s5-8): `close` gained `cmd()`'s rejection raise
+  // (applied:false WITH an error) and an `internal` raise for a daemon still
+  // answering after the 3s teardown wait. Neither ranges over a closed set.
+  astrolabe: { sites: 14, choices: 1, verbRoster: true, flagMap: true },
   // 33/2 -> 27/1 (2026-09-26): bounty moved onto the kit registry, as
   // glamour did — its parse, unknown-verb and missing-id raises left for the kit.
   bounty: { sites: 27, choices: 1, verbRoster: true, flagMap: true },

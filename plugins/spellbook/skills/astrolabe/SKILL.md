@@ -120,9 +120,14 @@ id) prints the reason to **stderr** and exits non-zero, so a failed write is
 never silent. (`state` also carries a `cursor` — the event resume point for a
 `tail`/`join --since`; ignorable for one-shot reads.)
 
-The one exception to read-back: right after `cli.ts close`, `info`/`state` can
-briefly still report the daemon up while it flushes and tears down (~half a
-second). Don't treat a single post-close read as authoritative — it settles.
+`cli.ts close` returns only once the daemon is actually down (it waits up to
+3s), so a read right after it is authoritative: `{ok:true, applied:true}` means
+it is gone. Closing when nothing is running — no daemon, or a stale port file
+left by a killed one — is a benign no-op, not an error:
+`{ok:true, applied:false, outcome:"already-closed"}` at exit `0`, no `error`
+key. If the daemon is still answering at the 3s bound, `close` fails
+(`internal`, exit `1`) rather than reporting a close that has not completed;
+check with `info` and re-run.
 
 ### Tend a project — `join`, wrapped with Monitor
 
@@ -190,11 +195,12 @@ opens the registration form.
 
 `0` clean dismiss (the human closes the board, or an agent `cli.ts close`) · `2`
 bad arguments, a bare invocation, or a rejected command (dedupe / unknown id) ·
-`1` internal fault (the daemon failed to start) · `124` idle timeout (only if a
-positive `--timeout` was set — the observatory stands indefinitely by default).
-A conjuration has no "cancel"/`130` discard path. Failures leave stdout empty
-and put one JSON error envelope (`{ok:false, error:{kind, message}}`) on stderr;
-`cli.ts --version` answers `{name, version}` at exit 0.
+`1` internal fault (the daemon failed to start, or did not go down within 3s of
+`close`) · `124` idle timeout (only if a positive `--timeout` was set — the
+observatory stands indefinitely by default). A conjuration has no "cancel"/`130`
+discard path. Failures leave stdout empty and put one JSON error envelope
+(`{ok:false, error:{kind, message}}`) on stderr; `cli.ts --version` answers
+`{name, version}` at exit 0.
 
 ## Limits
 

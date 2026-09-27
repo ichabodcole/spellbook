@@ -6,7 +6,7 @@ title:
 status: stable
 description:
   Fix astrolabe close to return non-zero exit code when returning error envelope
-lifecycle: active
+lifecycle: review
 id: 019feeaa-e8f0-724d-96f4-6765e4ebd9a1
 kind: task
 generated: { by: unknown, at: 2026-08-10 }
@@ -114,3 +114,49 @@ exit 0. The migration did not route it through `die` on purpose — which of the
 two shapes is right (a rejection, or a benign no-op with an `outcome` noun) is
 the product question this item asks, and Cole ruled product behaviour comes
 after acc. The fix is one line in `cmdClose` either way.
+
+## Fixed (2026-09-27)
+
+Branch `fix/astrolabe-close-noop`, cycle `2026-09-filed-is-not-fixed`.
+
+**The sequencing constraint has lapsed, checked rather than assumed.** A grep of
+`grimoire/`, `scripts/` and `tests/` for the site (`cmdClose`,
+`"no daemon running"`, `s5-8`) finds no ward or check that reads it; the only
+grimoire mention of `astrolabe close` is `grimoire/tail-since-refusal.test.ts`'s
+`afterAll`, which runs it as cleanup and ignores its output. The
+[re-measure](../features/spell-hardening/sprints/06-filed-is-not-fixed/remeasure.md)
+reached the same verdict.
+
+**Which shape:** the benign no-op (the lead's 2026-09-27 ruling). `cmdClose` in
+`src/astrolabe/backend/cli.ts` now:
+
+- **No daemon, or a stale port file** (nothing answers on it) →
+  `{"ok":true,"applied":false,"outcome":"already-closed"}`, exit 0, **no `error`
+  key**. The noun follows astrolabe's own `already-<state>` family
+  (`already-connected`/`-disconnected`, `already-raised`/`-cleared`) and the
+  contract's own examples (`already-running`, `already-current`); the contract
+  names no close-specific noun, so this is the nearest spelling rather than a
+  new one. It names the state (closed) that made the work unnecessary, and a
+  caller can pick its next act from it alone (open, if it wants a board).
+- **A live daemon** → the close goes through `cmd()`'s discipline (applied:false
+  with an error dies), then **waits up to 3s (80 ms polls, bounty `b14`'s bound)
+  until the daemon stops answering** before printing
+  `{"ok":true,"applied":true}`. So `close; close` is applied, then the no-op —
+  the fixture trap is gone.
+- **Still answering at the bound** → a failure, not a success: `internal`, exit
+  1, stdout empty, message "close was acknowledged but the daemon was still
+  answering after 3s". Chosen over bounty's `ok:true, down:false` because an
+  `applied:true` that has not completed is exactly the act-not-completion lie
+  this item is about; a wedged teardown is the spell's fault, hence `internal`.
+
+Tests in `src/astrolabe/backend/cli.test.ts` (all four failed on `8eccceb6`,
+pass now): no daemon; stale port file; close-then-close with the daemon-down
+precondition **asserted as its own step** against a fake daemon that tears down
+500 ms after the ack; and a daemon that never goes down (exit 1, `internal`).
+Driven by hand through the shipped launcher against a real daemon: `close`
+(none) → no-op exit 0; `open; close` → applied:true, `info` → `running:false`
+immediately; `close` → no-op; SIGTERM the daemon (port file left) → `close` →
+no-op exit 0.
+
+Not in scope, unchanged: the other `die(` sites and the stderr-prose question
+(C′'s unratified clause).
