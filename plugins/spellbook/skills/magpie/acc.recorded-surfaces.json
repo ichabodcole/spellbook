@@ -1,0 +1,224 @@
+{
+  "formatVersion": "0",
+  "records": [
+    {
+      "path": ["open"],
+      "argv": ["open", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"open: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"flags are scoped to the verb — choices lists what this verb accepts; for free text containing dashes use --stdin, or put it after a bare --\",\"choices\":[\"--intent\",\"--no-open\",\"--restore\",\"--timeout\",\"--title\"]},\"meta\":{\"command\":\"open\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "Cole Reed (agent), build 9f5e49a6, paths supplied by the caller",
+      "recordedAt": "2026-09-27T02:15:12Z"
+    },
+    {
+      "path": ["sessions"],
+      "argv": ["sessions", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"sessions: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"flags are scoped to the verb — choices lists what this verb accepts; for free text containing dashes use --stdin, or put it after a bare --; sessions takes no flags\",\"choices\":[]},\"meta\":{\"command\":\"sessions\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "Cole Reed (agent), build 9f5e49a6, paths supplied by the caller",
+      "recordedAt": "2026-09-27T02:15:12Z"
+    },
+    {
+      "path": ["tail"],
+      "argv": ["tail", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"tail: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"flags are scoped to the verb — choices lists what this verb accepts; for free text containing dashes use --stdin, or put it after a bare --\",\"choices\":[\"--once\",\"--session\",\"--since\"]},\"meta\":{\"command\":\"tail\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "Cole Reed (agent), build 9f5e49a6, paths supplied by the caller",
+      "recordedAt": "2026-09-27T02:15:12Z"
+    },
+    {
+      "path": ["state"],
+      "argv": ["state", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"state: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"flags are scoped to the verb — choices lists what this verb accepts; for free text containing dashes use --stdin, or put it after a bare --\",\"choices\":[\"--full\",\"--session\"]},\"meta\":{\"command\":\"state\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "Cole Reed (agent), build 9f5e49a6, paths supplied by the caller",
+      "recordedAt": "2026-09-27T02:15:12Z"
+    },
+    {
+      "path": ["say"],
+      "argv": ["say", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"say: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"flags are scoped to the verb — choices lists what this verb accepts; for free text containing dashes use --stdin, or put it after a bare --\",\"choices\":[\"--session\",\"--stdin\"]},\"meta\":{\"command\":\"say\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "Cole Reed (agent), build 9f5e49a6, paths supplied by the caller",
+      "recordedAt": "2026-09-27T02:15:12Z"
+    },
+    {
+      "path": ["ask"],
+      "argv": ["ask", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"ask: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"flags are scoped to the verb — choices lists what this verb accepts; for free text containing dashes use --stdin, or put it after a bare --\",\"choices\":[\"--options\",\"--session\"]},\"meta\":{\"command\":\"ask\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "Cole Reed (agent), build 9f5e49a6, paths supplied by the caller",
+      "recordedAt": "2026-09-27T02:15:12Z"
+    },
+    {
+      "path": ["status"],
+      "argv": ["status", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"status: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"flags are scoped to the verb — choices lists what this verb accepts; for free text containing dashes use --stdin, or put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"status\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "Cole Reed (agent), build 9f5e49a6, paths supplied by the caller",
+      "recordedAt": "2026-09-27T02:15:12Z"
+    },
+    {
+      "path": ["source"],
+      "argv": ["source", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"source: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"flags are scoped to the verb — choices lists what this verb accepts; for free text containing dashes use --stdin, or put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"source\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "Cole Reed (agent), build 9f5e49a6, paths supplied by the caller",
+      "recordedAt": "2026-09-27T02:15:12Z"
+    },
+    {
+      "path": ["discover"],
+      "argv": ["discover", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"discover: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"flags are scoped to the verb — choices lists what this verb accepts; for free text containing dashes use --stdin, or put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"discover\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "Cole Reed (agent), build 9f5e49a6, paths supplied by the caller",
+      "recordedAt": "2026-09-27T02:15:12Z"
+    },
+    {
+      "path": ["extract"],
+      "argv": ["extract", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"extract: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"flags are scoped to the verb — choices lists what this verb accepts; for free text containing dashes use --stdin, or put it after a bare --\",\"choices\":[\"--alpha\",\"--ids\",\"--label\",\"--model\",\"--pad\",\"--remove\",\"--session\"]},\"meta\":{\"command\":\"extract\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "Cole Reed (agent), build 9f5e49a6, paths supplied by the caller",
+      "recordedAt": "2026-09-27T02:15:12Z"
+    },
+    {
+      "path": ["export"],
+      "argv": ["export", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"export: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"flags are scoped to the verb — choices lists what this verb accepts; for free text containing dashes use --stdin, or put it after a bare --\",\"choices\":[\"--ids\",\"--session\"]},\"meta\":{\"command\":\"export\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "Cole Reed (agent), build 9f5e49a6, paths supplied by the caller",
+      "recordedAt": "2026-09-27T02:15:12Z"
+    },
+    {
+      "path": ["element-add"],
+      "argv": ["element-add", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"element-add: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"flags are scoped to the verb — choices lists what this verb accepts; for free text containing dashes use --stdin, or put it after a bare --\",\"choices\":[\"--bbox\",\"--name\",\"--session\",\"--type\"]},\"meta\":{\"command\":\"element-add\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "Cole Reed (agent), build 9f5e49a6, paths supplied by the caller",
+      "recordedAt": "2026-09-27T02:15:12Z"
+    },
+    {
+      "path": ["element-remove"],
+      "argv": ["element-remove", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"element-remove: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"flags are scoped to the verb — choices lists what this verb accepts; for free text containing dashes use --stdin, or put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"element-remove\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "Cole Reed (agent), build 9f5e49a6, paths supplied by the caller",
+      "recordedAt": "2026-09-27T02:15:12Z"
+    },
+    {
+      "path": ["cmd"],
+      "argv": ["cmd", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"cmd: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"flags are scoped to the verb — choices lists what this verb accepts; for free text containing dashes use --stdin, or put it after a bare --\",\"choices\":[\"--session\",\"--stdin\"]},\"meta\":{\"command\":\"cmd\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "Cole Reed (agent), build 9f5e49a6, paths supplied by the caller",
+      "recordedAt": "2026-09-27T02:15:12Z"
+    },
+    {
+      "path": ["close"],
+      "argv": ["close", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"close: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"flags are scoped to the verb — choices lists what this verb accepts; for free text containing dashes use --stdin, or put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"close\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "Cole Reed (agent), build 9f5e49a6, paths supplied by the caller",
+      "recordedAt": "2026-09-27T02:15:12Z"
+    },
+    {
+      "path": ["info"],
+      "argv": ["info", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"info: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"flags are scoped to the verb — choices lists what this verb accepts; for free text containing dashes use --stdin, or put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"info\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "Cole Reed (agent), build 9f5e49a6, paths supplied by the caller",
+      "recordedAt": "2026-09-27T02:15:12Z"
+    },
+    {
+      "path": ["version"],
+      "argv": ["version", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"version: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"version takes no flags\",\"choices\":[]},\"meta\":{\"command\":\"version\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "Cole Reed (agent), build 9f5e49a6, paths supplied by the caller",
+      "recordedAt": "2026-09-27T02:15:12Z"
+    },
+    {
+      "path": ["schema"],
+      "argv": ["schema", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"schema: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"schema takes no flags\",\"choices\":[]},\"meta\":{\"command\":\"schema\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "Cole Reed (agent), build 9f5e49a6, paths supplied by the caller",
+      "recordedAt": "2026-09-27T02:15:12Z"
+    },
+    {
+      "path": ["help"],
+      "argv": ["help", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"help: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"help takes no flags\",\"choices\":[]},\"meta\":{\"command\":\"help\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "Cole Reed (agent), build 9f5e49a6, paths supplied by the caller",
+      "recordedAt": "2026-09-27T02:15:13Z"
+    }
+  ],
+  "identity": {
+    "argv": ["--version"],
+    "exitCode": 0,
+    "streams": "separated",
+    "stdout": "{\"name\":\"magpie\",\"version\":\"3.1.0\"}\n",
+    "stderr": "",
+    "completeness": "complete",
+    "recordedBy": "Cole Reed (agent), build 9f5e49a6, paths supplied by the caller",
+    "recordedAt": "2026-09-27T02:15:13Z"
+  }
+}
