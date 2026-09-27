@@ -6,7 +6,7 @@ description:
   D5, amend house-style's exit-code rule to the codes spells emit, and amend
   outcome-contract's Boundary 3 to the registry's stderr warning."
 status: draft # OKF §5.4: draft | stable | deprecated. Nothing else.
-lifecycle: review
+lifecycle: done
 id: 01a0e213-3b98-772c-a21a-87282db40347
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-09-27 }

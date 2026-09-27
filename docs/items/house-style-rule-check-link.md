@@ -6,7 +6,7 @@ description:
   with a reason; each grimoire ward names the rule it enforces or its outside
   authority; a ward gates the link both ways."
 status: draft # OKF §5.4: draft | stable | deprecated. Nothing else.
-lifecycle: review
+lifecycle: done
 id: 01a0e213-3ab9-728b-a12b-c35b511fc19c
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-09-27 }

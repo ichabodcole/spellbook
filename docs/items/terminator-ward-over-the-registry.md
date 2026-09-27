@@ -9,7 +9,7 @@ description:
   Rewrite it over the registry's adopters, then second-seat calibrate
   roster-drift, gate-honesty, terminator-invariant and strict-parse-invariant.
 status: draft # OKF §5.4: draft | stable | deprecated. Nothing else.
-lifecycle: review
+lifecycle: done
 id: 01a0e213-3b28-7512-8ca2-9f119e11aad1
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-09-27 }
