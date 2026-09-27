@@ -11,7 +11,7 @@ kind: task
 generated: { by: claude-opus-5-5, at: 2026-09-26 }
 parent: feature/spell-cli-acc-conformance
 cycle: 2026-09-acc-conformance
-blocked_by: [01a0e04b-f53e-722b-85c5-2be0123c9035]
+blocked_by: []
 ---
 
 # Take magpie's CLI through the full acc guidance
