@@ -1,7 +1,7 @@
 {
   "spell": "mind-mapper",
   "launcher": "scripts/cli.ts",
-  "verbCount": 30,
+  "verbCount": 32,
   "verbs": [
     "open",
     "state",
@@ -16,6 +16,7 @@
     "delete-batch",
     "node",
     "read",
+    "message",
     "zone",
     "promote",
     "proposal",
@@ -31,15 +32,16 @@
     "job",
     "activity",
     "send",
-    "help",
-    "message"
+    "version",
+    "schema",
+    "help"
   ],
   "excluded": {
     "open": "starts a daemon (and may open a browser)",
     "tail": "a long-running stream (tail); never ends on its own within the run"
   },
   "excludedInvocations": [],
-  "invocationCount": 132,
+  "invocationCount": 136,
   "invocations": [
     {
       "argv": [],
@@ -62,6 +64,7 @@
         "delete-batch",
         "node",
         "read",
+        "message",
         "zone",
         "promote",
         "proposal",
@@ -77,8 +80,9 @@
         "job",
         "activity",
         "send",
-        "help",
-        "message"
+        "version",
+        "schema",
+        "help"
       ]
     },
     {
@@ -106,6 +110,7 @@
         "  proposal zone <id> (--to <z> | --clear) | proposal delete <id>",
         "  node   anchor <id> (--to <p> | --clear) | edit <id> [--title/--synopsis/--stdin] | delete <id> [--force]",
         "  doc    <id> | delete <id> [--force] | kind <docId> (<kind> [--author a] | --clear)",
+        "         flags may precede the sub-verb (doc --project P delete <id>); doc -- <id> reads a doc named \"delete\" or \"kind\"",
         "  mark   <docId> --status <s> [--note <t>]           append a doc status mark",
         "  actions <targetId> (--set <json> | --stdin | --clear)   action slots on a node/pending proposal",
         "  tags   <targetId> (--set <json> | --stdin | --clear)    freeform tags, same targets",
@@ -117,12 +122,17 @@
         "  read   <messageId>                                 one full message row (alias: message <id>)",
         "  send   <text...> | --body-file <p> | --stdin       post a message ([--role] [--kind] [--ground])",
         "  activity <received|thinking|idle> [--message <id>] the casting-loop liveness signal",
-        "  help | --version",
+        "  version                                            {name, version} as JSON (alias: --version, -V)",
+        "  schema                                             the machine-readable interface (acc declaration v0)",
+        "  help                                               this message (alias: --help, -h)",
         "",
-        "  --project <id> is accepted by every verb except open's spawn-time flags; omit for the default project.",
+        "  --project <id> goes after the verb; every verb that reads a map accepts it (projects, help,",
+        "  version and schema do not). Omit it for the default project. Each verb accepts only the flags on its line: a flag on the wrong verb is",
+        "  refused, and the rejection lists that verb's own flags.",
         "",
         "  Output: every verb prints JSON on stdout by default, one document per answer —",
-        "  except tail, a stream that prints one JSON line per event. Prose, warnings and",
+        "  except tail, a stream that prints one JSON line per event, and help, which is",
+        "  prose. Prose, warnings and",
         "  diagnostics go to stderr; failures exit non-zero (2 = usage).",
         "",
         "  Keep watching past Monitor's 30-minute cap. Arm the tail with Monitor at",
@@ -178,6 +188,7 @@
         "  proposal zone <id> (--to <z> | --clear) | proposal delete <id>",
         "  node   anchor <id> (--to <p> | --clear) | edit <id> [--title/--synopsis/--stdin] | delete <id> [--force]",
         "  doc    <id> | delete <id> [--force] | kind <docId> (<kind> [--author a] | --clear)",
+        "         flags may precede the sub-verb (doc --project P delete <id>); doc -- <id> reads a doc named \"delete\" or \"kind\"",
         "  mark   <docId> --status <s> [--note <t>]           append a doc status mark",
         "  actions <targetId> (--set <json> | --stdin | --clear)   action slots on a node/pending proposal",
         "  tags   <targetId> (--set <json> | --stdin | --clear)    freeform tags, same targets",
@@ -189,12 +200,17 @@
         "  read   <messageId>                                 one full message row (alias: message <id>)",
         "  send   <text...> | --body-file <p> | --stdin       post a message ([--role] [--kind] [--ground])",
         "  activity <received|thinking|idle> [--message <id>] the casting-loop liveness signal",
-        "  help | --version",
+        "  version                                            {name, version} as JSON (alias: --version, -V)",
+        "  schema                                             the machine-readable interface (acc declaration v0)",
+        "  help                                               this message (alias: --help, -h)",
         "",
-        "  --project <id> is accepted by every verb except open's spawn-time flags; omit for the default project.",
+        "  --project <id> goes after the verb; every verb that reads a map accepts it (projects, help,",
+        "  version and schema do not). Omit it for the default project. Each verb accepts only the flags on its line: a flag on the wrong verb is",
+        "  refused, and the rejection lists that verb's own flags.",
         "",
         "  Output: every verb prints JSON on stdout by default, one document per answer —",
-        "  except tail, a stream that prints one JSON line per event. Prose, warnings and",
+        "  except tail, a stream that prints one JSON line per event, and help, which is",
+        "  prose. Prose, warnings and",
         "  diagnostics go to stderr; failures exit non-zero (2 = usage).",
         "",
         "  Keep watching past Monitor's 30-minute cap. Arm the tail with Monitor at",
@@ -250,6 +266,7 @@
         "  proposal zone <id> (--to <z> | --clear) | proposal delete <id>",
         "  node   anchor <id> (--to <p> | --clear) | edit <id> [--title/--synopsis/--stdin] | delete <id> [--force]",
         "  doc    <id> | delete <id> [--force] | kind <docId> (<kind> [--author a] | --clear)",
+        "         flags may precede the sub-verb (doc --project P delete <id>); doc -- <id> reads a doc named \"delete\" or \"kind\"",
         "  mark   <docId> --status <s> [--note <t>]           append a doc status mark",
         "  actions <targetId> (--set <json> | --stdin | --clear)   action slots on a node/pending proposal",
         "  tags   <targetId> (--set <json> | --stdin | --clear)    freeform tags, same targets",
@@ -261,12 +278,17 @@
         "  read   <messageId>                                 one full message row (alias: message <id>)",
         "  send   <text...> | --body-file <p> | --stdin       post a message ([--role] [--kind] [--ground])",
         "  activity <received|thinking|idle> [--message <id>] the casting-loop liveness signal",
-        "  help | --version",
+        "  version                                            {name, version} as JSON (alias: --version, -V)",
+        "  schema                                             the machine-readable interface (acc declaration v0)",
+        "  help                                               this message (alias: --help, -h)",
         "",
-        "  --project <id> is accepted by every verb except open's spawn-time flags; omit for the default project.",
+        "  --project <id> goes after the verb; every verb that reads a map accepts it (projects, help,",
+        "  version and schema do not). Omit it for the default project. Each verb accepts only the flags on its line: a flag on the wrong verb is",
+        "  refused, and the rejection lists that verb's own flags.",
         "",
         "  Output: every verb prints JSON on stdout by default, one document per answer —",
-        "  except tail, a stream that prints one JSON line per event. Prose, warnings and",
+        "  except tail, a stream that prints one JSON line per event, and help, which is",
+        "  prose. Prose, warnings and",
         "  diagnostics go to stderr; failures exit non-zero (2 = usage).",
         "",
         "  Keep watching past Monitor's 30-minute cap. Arm the tail with Monitor at",
@@ -329,43 +351,1040 @@
     },
     {
       "argv": ["schema"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "open",
-        "state",
-        "changes",
-        "tail",
-        "projects",
-        "ingest",
-        "propose-node",
-        "propose-edge",
-        "propose-batch",
-        "ratify-batch",
-        "delete-batch",
-        "node",
-        "read",
-        "zone",
-        "promote",
-        "proposal",
-        "doc",
-        "mark",
-        "search",
-        "neighbors",
-        "ratify",
-        "lens",
-        "look-here",
-        "actions",
-        "tags",
-        "job",
-        "activity",
-        "send",
-        "help",
-        "message"
-      ]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "json": {
+        "formatVersion": "0",
+        "provenance": "emitted",
+        "selfDescription": {
+          "args": ["schema"]
+        },
+        "commands": [
+          {
+            "path": [],
+            "args": [
+              {
+                "name": "--help",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "-h",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--version",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "-V",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "command",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["open"],
+            "args": [
+              {
+                "name": "--no-open",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--port",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["state"],
+            "args": [
+              {
+                "name": "--batch",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--skeleton",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["changes"],
+            "args": [
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--since",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["tail"],
+            "args": [
+              {
+                "name": "--inbound",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--once",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--since",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["projects"],
+            "args": [
+              {
+                "name": "--create",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["ingest"],
+            "args": [
+              {
+                "name": "--file",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--title",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["propose-node"],
+            "args": [
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--zone",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["propose-edge"],
+            "args": [
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--zone",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["propose-batch"],
+            "args": [
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["ratify-batch"],
+            "args": [
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["delete-batch"],
+            "args": [
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["node", "anchor"],
+            "args": [
+              {
+                "name": "--clear",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--to",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "nodeId",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["node", "edit"],
+            "args": [
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--synopsis",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--title",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "nodeId",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["node", "delete"],
+            "args": [
+              {
+                "name": "--force",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "nodeId",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["read"],
+            "args": [
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "messageId",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["message"],
+            "args": [
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "messageId",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["zone", "create"],
+            "args": [
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "name",
+                "required": true,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["zone", "list"],
+            "args": [
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["zone", "delete"],
+            "args": [
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--yes",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "zoneId",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["promote"],
+            "args": [
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "proposalId",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["proposal", "zone"],
+            "args": [
+              {
+                "name": "--clear",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--to",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "proposalId",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["proposal", "delete"],
+            "args": [
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "proposalId",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["doc"],
+            "args": [
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "docId",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["doc", "delete"],
+            "args": [
+              {
+                "name": "--force",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "docId",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["doc", "kind"],
+            "args": [
+              {
+                "name": "--author",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--clear",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "docId",
+                "required": true
+              },
+              {
+                "name": "kind",
+                "required": false,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["mark"],
+            "args": [
+              {
+                "name": "--author",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--note",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--status",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "docId",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["search"],
+            "args": [
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "query",
+                "required": true,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["neighbors"],
+            "args": [
+              {
+                "name": "--depth",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "nodeId",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["ratify"],
+            "args": [
+              {
+                "name": "--anchor",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--doc",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--doc-edit",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--ruling",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--span",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "proposalId",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["lens", "set"],
+            "args": [
+              {
+                "name": "--depth",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--doc",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--node",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--owner",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["lens", "clear"],
+            "args": [
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["look-here"],
+            "args": [
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "nodeId",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["actions"],
+            "args": [
+              {
+                "name": "--clear",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--set",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "targetId",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["tags"],
+            "args": [
+              {
+                "name": "--clear",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--set",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "targetId",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["job", "create"],
+            "args": [
+              {
+                "name": "--body-file",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--deliverable",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--detail",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--status",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--title",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["job", "update"],
+            "args": [
+              {
+                "name": "--body-file",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--deliverable",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--detail",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--status",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--title",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "jobId",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["job", "claim"],
+            "args": [
+              {
+                "name": "--owner",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "jobId",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["job", "release"],
+            "args": [
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "jobId",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["job", "subtask"],
+            "args": [
+              {
+                "name": "--add",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--check",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--uncheck",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "jobId",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["job", "list"],
+            "args": [
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["job", "delete"],
+            "args": [
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "jobId",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["activity"],
+            "args": [
+              {
+                "name": "--message",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "state",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["send"],
+            "args": [
+              {
+                "name": "--body-file",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--force",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--ground",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--kind",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--project",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--role",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "text",
+                "required": false,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["version"],
+            "args": [],
+            "positionals": []
+          },
+          {
+            "path": ["schema"],
+            "args": [],
+            "positionals": []
+          },
+          {
+            "path": ["help"],
+            "args": [],
+            "positionals": []
+          }
+        ]
+      }
     },
     {
       "argv": ["--acc-bogus-flag"],
@@ -374,38 +1393,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "open",
-        "state",
-        "changes",
-        "tail",
-        "projects",
-        "ingest",
-        "propose-node",
-        "propose-edge",
-        "propose-batch",
-        "ratify-batch",
-        "delete-batch",
-        "node",
-        "read",
-        "zone",
-        "promote",
-        "proposal",
-        "doc",
-        "mark",
-        "search",
-        "neighbors",
-        "ratify",
-        "lens",
-        "look-here",
-        "actions",
-        "tags",
-        "job",
-        "activity",
-        "send",
-        "help",
-        "message"
-      ]
+      "choices": ["--help", "--version", "-h", "-V"]
     },
     {
       "argv": ["zz-bogus-verb"],
@@ -428,6 +1416,7 @@
         "delete-batch",
         "node",
         "read",
+        "message",
         "zone",
         "promote",
         "proposal",
@@ -443,8 +1432,9 @@
         "job",
         "activity",
         "send",
-        "help",
-        "message"
+        "version",
+        "schema",
+        "help"
       ]
     },
     {
@@ -454,44 +1444,16 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "open",
-        "state",
-        "changes",
-        "tail",
-        "projects",
-        "ingest",
-        "propose-node",
-        "propose-edge",
-        "propose-batch",
-        "ratify-batch",
-        "delete-batch",
-        "node",
-        "read",
-        "zone",
-        "promote",
-        "proposal",
-        "doc",
-        "mark",
-        "search",
-        "neighbors",
-        "ratify",
-        "lens",
-        "look-here",
-        "actions",
-        "tags",
-        "job",
-        "activity",
-        "send",
-        "help",
-        "message"
-      ]
+      "choices": ["--help", "--version", "-h", "-V"]
     },
     {
       "argv": ["version", "--bogus"],
-      "exit": 0,
-      "verdict": "accepted",
-      "stream": "stdout"
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
     },
     {
       "argv": ["open", "--acc-bogus-flag"],
@@ -720,6 +1682,24 @@
     },
     {
       "argv": ["read", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--project"]
+    },
+    {
+      "argv": ["message", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--project"]
+    },
+    {
+      "argv": ["message", "--help"],
       "exit": 2,
       "verdict": "rejected",
       "stream": "stderr",
@@ -998,6 +1978,42 @@
       "choices": ["--body-file", "--force", "--ground", "--kind", "--project", "--role", "--stdin"]
     },
     {
+      "argv": ["version", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["version", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["schema", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
+      "argv": ["schema", "--help"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": []
+    },
+    {
       "argv": ["help", "--acc-bogus-flag"],
       "exit": 2,
       "verdict": "rejected",
@@ -1014,24 +2030,6 @@
       "ok": false,
       "kind": "usage",
       "choices": []
-    },
-    {
-      "argv": ["message", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--project"]
-    },
-    {
-      "argv": ["message", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--project"]
     },
     {
       "argv": ["state"],
@@ -1502,38 +2500,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": [
-        "open",
-        "state",
-        "changes",
-        "tail",
-        "projects",
-        "ingest",
-        "propose-node",
-        "propose-edge",
-        "propose-batch",
-        "ratify-batch",
-        "delete-batch",
-        "node",
-        "read",
-        "zone",
-        "promote",
-        "proposal",
-        "doc",
-        "mark",
-        "search",
-        "neighbors",
-        "ratify",
-        "lens",
-        "look-here",
-        "actions",
-        "tags",
-        "job",
-        "activity",
-        "send",
-        "help",
-        "message"
-      ]
+      "choices": ["--help", "--version", "-h", "-V"]
     },
     {
       "argv": ["state", "--project=p1"],

@@ -147,7 +147,12 @@ const EXPECTED: Record<
   // arity `die`s the table now declares) left for the kit. The enumerated
   // `--alpha` rejection is the one `choices` left here.
   magpie: { sites: 26, choices: 1, verbRoster: true, flagMap: true },
-  "mind-mapper": { sites: 67, choices: 14, verbRoster: true, flagMap: true },
+  // mind-mapper 67/14 -> 34/2 (2026-09-26): the move onto the kit registry,
+  // as glamour's. Its parse, root, unknown-verb, sub-command, misplaced-flag
+  // and no-positional raises left for the kit, and so did the per-verb
+  // `if (!id)` arity raises the declared positionals now enforce. The two left
+  // are `activity <state>` and `open --project`'s known-project set.
+  "mind-mapper": { sites: 34, choices: 2, verbRoster: true, flagMap: true },
   // scriptorium (2026-09-11) — the first spell SCAFFOLDED onto the build, so its
   // row is a design, not an archaeology: every enumerable usage rejection
   // carries `choices` from day one (A1 inherited, not converted into).
