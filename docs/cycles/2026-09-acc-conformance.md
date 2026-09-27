@@ -6,7 +6,7 @@ description:
   it.
 tags: [acc, conformance]
 status: draft
-lifecycle: active
+lifecycle: closed
 started: 2026-09-26
 appetite:
   Stop when all nine CLIs are L0 conformant with steps 4-6 done and the gate
@@ -14,6 +14,7 @@ appetite:
   with its debt recorded, rather than stretched.
 after: []
 generated: { by: claude-opus-5-5, at: 2026-09-26 }
+closed: 2026-09-26
 ---
 
 # Spell CLI acc conformance
@@ -57,6 +58,32 @@ product behaviour, not the CLI contract.
 
 ## Outcome
 
-_Written at close, not before._
+**Shipped.** All nine spell CLIs are L0 conformant on acc v0.1.15 with no
+`knownFailures` debt, their root rejections enumerate their flag set, every verb
+path is recorded and read by the census with 0 disagreements, and every CLI has
+a `schema` verb generated from the one table its parser walks: the new kit
+module `src/kit/cli/registry.ts`, which all nine now run on. Two wards hold it:
+the acc gate (`grimoire/acc-conformance.test.ts`, which also fails on stale
+debt) and a golden snapshot of every CLI's accepted and rejected invocations
+(`grimoire/cli-golden.test.ts`). Verified by the lead independently of the
+implementers: `acc check` on all nine, and the full gate (green, 2956+ tests).
+
+**Cut, with reasons.** bounty's step 4a (JSON by default) was declined because
+anthill silently parses `bounty sessions` prose; it is filed to switch in
+lockstep. Required flags in the registry, and `<verb> --help`, were left out;
+the first is filed. `c1` went back to spell-hardening: acc fixed its root-level
+half, and the rest is product behaviour. The step-7 upstream report is drafted
+and waits for Cole to file it.
+
+**Learned.** A no-stake cold read before ratifying the registry found every gap
+that would otherwise have failed an adopter mid-wave. Parallel adopters in
+worktrees are fast but collide on shared ward pins; the lead reconciling them by
+hand, with the full gate after each wave, kept that tractable. Bun strips a
+leading `--` after the script path, and Tailwind scans prose in `src/kit/`: both
+were silent until a run looked closely. Decisions and the options not taken are
+in the feature's
+[decision log](../features/spell-cli-acc-conformance/decision-log.md).
 
 ## Sessions
+
+- feature/acc-conformance (landed 2026-09-26)

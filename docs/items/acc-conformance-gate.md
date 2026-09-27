@@ -5,7 +5,7 @@ description:
   Run acc check (with recorded surfaces) over all nine spell CLIs in the repo
   gate, so a conformance regression fails the build.
 status: draft
-lifecycle: ready
+lifecycle: done
 id: 01a0e03d-fbd1-718e-a658-38394032b42a
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-09-26 }

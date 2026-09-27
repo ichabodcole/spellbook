@@ -5,7 +5,7 @@ description:
   "Bring the glamour CLI to L0 conformance and through acc steps 4–6: declared
   default, named rejections, recorded surfaces, one registry."
 status: draft
-lifecycle: ready
+lifecycle: done
 id: 01a0e03d-f917-7544-84c7-012cf357f242
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-09-26 }

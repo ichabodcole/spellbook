@@ -6,7 +6,7 @@ description:
   rejections, --version and the acc schema), behind a golden snapshot of all
   nine CLIs, and move glamour, scriptorium and grapevine onto it.
 status: draft
-lifecycle: review
+lifecycle: done
 id: 01a0e04b-f53e-722b-85c5-2be0123c9035
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-09-26 }

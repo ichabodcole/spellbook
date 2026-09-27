@@ -5,7 +5,7 @@ description:
   "Bring the grapevine CLI to L0 conformance and through acc steps 4–6: declared
   default, named rejections, recorded surfaces, one registry."
 status: draft
-lifecycle: ready
+lifecycle: done
 id: 01a0e03d-f991-7508-bc57-39af03b6cbbd
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-09-26 }
