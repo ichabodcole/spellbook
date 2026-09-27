@@ -92,7 +92,7 @@ empty-versus-failed ambiguity at the read path rather than the write path.
 
 ## Fixed (2026-09-27)
 
-Commit `97909819` on `fix/bounty-update-empty-and-stdin`, fixed together with
+Commit `4a459fd6` on `fix/bounty-update-empty-and-stdin`, fixed together with
 `s5-9`, per the cycle's ruling (refuse, not warn):
 
 - `update --notes ""` (and `--notes=`, and a dead `$(…)`) is **refused** at exit

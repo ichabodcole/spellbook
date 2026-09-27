@@ -148,7 +148,7 @@ that survives into a card and then into a repair.
 
 ## Fixed (2026-09-27)
 
-Commit `97909819` on `fix/bounty-update-empty-and-stdin`, fixed together with
+Commit `4a459fd6` on `fix/bounty-update-empty-and-stdin`, fixed together with
 `s5-5` (same four lines, one envelope), per the cycle's ruling:
 
 - `update --stdin` **keeps meaning the title**, as on `add`. It is **refused
