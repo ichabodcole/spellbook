@@ -501,7 +501,9 @@ describe("a flag demoted by `--` is warned about, never refused (c1)", () => {
     const w = oneWarning(r);
     expect(w).toContain("demo say");
     expect(w).toContain("--tag");
-    expect(w).toContain("before `--`");
+    expect(w).toContain(
+      "was read as text, not as a flag; to use it as a flag, move it before `--`",
+    );
   });
 
   test("the `--flag=value` form warns, naming the token as written", async () => {
@@ -525,6 +527,10 @@ describe("a flag demoted by `--` is warned about, never refused (c1)", () => {
     const w = oneWarning(r);
     expect(w).toContain("--force");
     expect(w).toContain("--as=x");
+    // Plural agrees: several tokens "were read as text, not as flags".
+    expect(w).toContain(
+      "were read as text, not as flags; to use them as flags, move them before `--`",
+    );
   });
 
   test("a leading root `--` is the same terminator, and warns the same", async () => {

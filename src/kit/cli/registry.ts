@@ -573,9 +573,12 @@ export function defineCli<const O extends OptionsTable>(spec: CliSpec<O>): Cli {
     }
     if (demoted.length === 0) return;
     const which = demoted.join(", ");
-    const it = demoted.length === 1 ? "it" : "them";
+    const one = demoted.length === 1;
+    const it = one ? "it" : "them";
+    const was = one ? "was" : "were";
+    const asFlag = one ? "as a flag" : "as flags";
     process.stderr.write(
-      `# warning: ${cliName}${row.name === "" ? "" : ` ${row.name}`}: ${which} after \`--\` was read as text, not as a flag; to use ${it} as a flag, move ${it} before \`--\`\n`,
+      `# warning: ${cliName}${row.name === "" ? "" : ` ${row.name}`}: ${which} after \`--\` ${was} read as text, not ${asFlag}; to use ${it} ${asFlag}, move ${it} before \`--\`\n`,
     );
   };
 
