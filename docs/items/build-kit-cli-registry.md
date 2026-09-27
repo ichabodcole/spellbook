@@ -58,13 +58,13 @@ which are dispatch bugs) builds on this module, so it lands first.
 - [ ] Unit tests for the module itself, including A6 (`--` terminator), C2/D2
       (bare invocation: usage on stderr, exit 2), D1 (`--version`), A3
       (rejections carry `choices` and name the offending token) and defaults.
-- [ ] glamour, scriptorium and grapevine run on it. Their golden snapshots are
+- [x] glamour, scriptorium and grapevine run on it. Their golden snapshots are
       unchanged except for deliberate, listed changes (the `version --bogus` fix
       at least). Their `cli-contract.test.ts` suites and grapevine's census pass
       after a build.
-- [ ] The grimoire wards that read a spell's `parseArgs` call from source
+- [x] The grimoire wards that read a spell's `parseArgs` call from source
       (`grimoire/lib/entry-points.ts` and flag-invariant, strict-parse,
       terminator) read a spell on the registry correctly.
-- [ ] The write-up is corrected per the cold read's change 6.
+- [x] The write-up is corrected per the cold read's change 6.
 - [ ] `bun run gate` is green, unpiped, and the acc ward still passes for all
       nine.

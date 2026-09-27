@@ -14,6 +14,15 @@ generated: { by: claude-opus-5-5, at: 2026-09-26 }
 
 **Outcome:** Work Items Filed (recommended; the lead files them)
 
+> **Corrected 2026-09-26** per
+> [the cold read's change 6](artifacts/cold-read.md#the-six-changes): the ward
+> list (exit-site-inventory does not depend on the flag scan), the "leaf" claim
+> (the module also imports `printJson` from `kit/lib`), which spells carry the
+> loose `version` (astrolabe and mind-mapper too), and the flags the per-verb
+> sets deliberately refuse. The rest of the cold read's changes are requirements
+> on [item/build-kit-cli-registry](../build-kit-cli-registry.md), not
+> corrections to this text.
+
 ---
 
 ## Question
@@ -79,9 +88,12 @@ in dispatch. The table and the emitter are the same in all three.
 
 ### Two defects the copies carry
 
-- **`version` is undeclared and loose in glamour and scriptorium** (row 4). This
-  is the guide's trap, "the same walk misses the verbs the root answers itself".
-  The census does not report it, because no declared row covers it.
+- **`version` is undeclared and loose in glamour and scriptorium** (row 4), and,
+  outside the three, **in astrolabe and mind-mapper too**: `version --bogus`
+  exits 0 in all four (the cold read ran it). grapevine's is a declared row and
+  exits 2. This is the guide's trap, "the same walk misses the verbs the root
+  answers itself". The census does not report it, because no declared row covers
+  it.
 - **grapevine passes A6 at the root by accident.** `grapevine -- -- --zz-value`
   (one `--` for bun) answers `unknown flag at the root: --`. That rejection
   names `--`, not the sentinel, so the check passes, but the terminator was
@@ -124,13 +136,13 @@ This is the cost the item did not ask about.
 spell's recognised flags by scanning `src/<spell>/backend/*.ts` for an
 `options:` beside `strict:` or `allowPositionals:` (`recognizedFlags`, `:244`),
 and it resolves an identifier back to its literal declaration. `flag-invariant`,
-`strict-parse-invariant`, `terminator-invariant` and `exit-site-inventory` all
-depend on that scan. If the `parseArgs` call moves into `src/kit/`, the scan
-finds a spell's `CLI_OPTIONS` with no call beside it. `recognizedFlags` then
-returns `null`, and flag-invariant reports the spell as unreadable. magpie
-`:311–321` records the same failure the one time a spell computed its options at
-the call site, and `entry-points.ts` grew Requirement 4b to read grapevine's
-subset.
+`strict-parse-invariant` and `terminator-invariant` depend on that scan. (This
+said `exit-site-inventory` too; it does not read the flag scan, and the cold
+read checked.) If the `parseArgs` call moves into `src/kit/`, the scan finds a
+spell's `CLI_OPTIONS` with no call beside it. `recognizedFlags` then returns
+`null`, and flag-invariant reports the spell as unreadable. magpie `:311–321`
+records the same failure the one time a spell computed its options at the call
+site, and `entry-points.ts` grew Requirement 4b to read grapevine's subset.
 
 ## Findings
 
@@ -156,8 +168,24 @@ rejection of another verb's flag changes wording (`Unknown option` becomes
 `not accepted by`; `choices` stays the same). glamour stops attaching `choices`
 to parse errors that are not unknown flags (scriptorium's rule, which is right:
 a missing value is not a choice from a set). glamour and scriptorium's `version`
-becomes strict. No exit code changes except the `version` fix, and no accepted
-invocation is refused.
+becomes strict.
+
+**Exit codes do change, in two places, and both are fixes stated rather than
+hidden** (this paragraph said "no exit code changes except the `version` fix,
+and no accepted invocation is refused", which was too narrow):
+
+- **Interceptors pass the remaining arguments to their row** (decision log #11).
+  grapevine needs it (`grapevine --version --human` and `-V --as me` work
+  today), and it makes `glamour --version --anything` and the same in
+  scriptorium go from exit 0 to 2: an unknown flag on `version`, which is the
+  contract.
+- **Per-verb flag sets refuse flags the six accept today.** bounty, imago and
+  astrolabe parse one global map before choosing the verb, so every flag is
+  accepted on every verb, and a flag the verb ignores is dropped silently. On
+  the registry a flag a verb does not list is refused, exit 2, with that verb's
+  set as `choices`. That is deliberate: accepted-and-ignored is the defect the
+  per-verb table cures. Each spell's step 6 decides its rows from its
+  dispatcher, so the refusals it adds are named in that spell's commit.
 
 ### What moving the three costs, and what leaving them costs
 
@@ -224,7 +252,11 @@ why if it does.
 
 ### The proposed API: `src/kit/cli/registry.ts`
 
-The module is a leaf: it imports only `node:util` and `src/kit/wire/errors.ts`.
+The module is a leaf of the kit, not of the repo: it imports `node:util` and two
+kit modules, `src/kit/wire/errors.ts` and `src/kit/lib/printJson.ts` (the
+`version` row prints through it). It imports nothing from any spell. (This said
+"only `node:util` and `src/kit/wire/errors.ts`"; the cold read found the
+`printJson` import in the proposed `version` row.)
 
 ```ts
 import type { ErrExtra } from "../wire/errors.ts";
