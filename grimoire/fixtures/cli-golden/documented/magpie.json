@@ -57,7 +57,8 @@
   },
   {
     "line": 134,
-    "argv": ["cmd"]
+    "argv": ["cmd", "--stdin"],
+    "stdin": "{\"type\":\"phase.advance\"}"
   },
   {
     "line": 135,
@@ -70,6 +71,14 @@
   {
     "line": 135,
     "argv": ["help"]
+  },
+  {
+    "line": 135,
+    "argv": ["version"]
+  },
+  {
+    "line": 135,
+    "argv": ["schema"]
   },
   {
     "line": 190,

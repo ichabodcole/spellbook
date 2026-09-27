@@ -249,6 +249,7 @@
     },
     {
       "argv": ["version"],
+      "doc": "SKILL.md:135",
       "exit": 0,
       "verdict": "accepted",
       "stream": "stdout",
@@ -259,6 +260,7 @@
     },
     {
       "argv": ["schema"],
+      "doc": "SKILL.md:135",
       "exit": 0,
       "verdict": "accepted",
       "stream": "stdout",
@@ -1284,13 +1286,14 @@
       "kind": "not_found"
     },
     {
-      "argv": ["cmd"],
+      "argv": ["cmd", "--stdin"],
+      "stdin": "{\"type\":\"phase.advance\"}",
       "doc": "SKILL.md:134",
-      "exit": 2,
-      "verdict": "rejected",
+      "exit": 5,
+      "verdict": "accepted",
       "stream": "stderr",
       "ok": false,
-      "kind": "usage"
+      "kind": "not_found"
     },
     {
       "argv": ["extract", "--ids", "item1"],
