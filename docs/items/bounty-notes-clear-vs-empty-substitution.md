@@ -6,7 +6,7 @@ title:
 status: stable
 description:
   Clarify and fix semantics of clear versus empty substitution in bounty notes
-lifecycle: active
+lifecycle: review
 id: 019feeaa-e8f1-7900-b3f9-8be01f026ccf
 kind: task
 generated: { by: unknown, at: 2026-08-10 }
@@ -89,3 +89,33 @@ reader of the card does not mistake the quoting sub-thread for the defect.
 
 `docs/backlog/2026-08-08-cli-empty-vs-failed-read.md` — the same
 empty-versus-failed ambiguity at the read path rather than the write path.
+
+## Fixed (2026-09-27)
+
+Commit `97909819` on `fix/bounty-update-empty-and-stdin`, fixed together with
+`s5-9`, per the cycle's ruling (refuse, not warn):
+
+- `update --notes ""` (and `--notes=`, and a dead `$(…)`) is **refused** at exit
+  2 (`usage`), with the recovery in the message: _"to clear notes on purpose,
+  pass --clear-notes"_. The notes are untouched.
+- New boolean **`--clear-notes`** clears the notes; `--clear-notes` together
+  with `--notes` is refused.
+- `update --title ""` is refused too (the re-measure's "wider than filed"), as
+  `add` refuses an empty title.
+- The success envelope names the fields it wrote (`fields`), so a clear reads
+  back as `"fields":["notes"]`.
+
+**Pinned by** `src/bounty/backend/server.test.ts`, "update refuses empty values
+and --stdin with --title; --clear-notes clears; fields named (s5-9, s5-5)", and
+by golden cases for each refusal.
+
+**What's left:**
+
+- The board surface still clears notes with an empty string, on purpose: the
+  detail dialog sends `task.edit` with `notes: ""` over the WebSocket
+  (`useBoard.ts` `editNotes`; `server.ts` allows it). That is a human's explicit
+  edit, not a CLI flag, and is unaffected. No test or caller sends empty notes
+  through the CLI (`server.test.ts` only sends non-empty `--notes`).
+- Reporting prior values (`notesReplaced`) stays deferred, as ruled. The
+  board-level warning this file asked to match is a warning; this repair refuses
+  instead, so the two still differ in kind.
