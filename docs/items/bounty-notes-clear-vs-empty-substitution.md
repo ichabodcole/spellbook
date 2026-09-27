@@ -6,7 +6,7 @@ title:
 status: stable
 description:
   Clarify and fix semantics of clear versus empty substitution in bounty notes
-lifecycle: backlog
+lifecycle: active
 id: 019feeaa-e8f1-7900-b3f9-8be01f026ccf
 kind: task
 generated: { by: unknown, at: 2026-08-10 }
