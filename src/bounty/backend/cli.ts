@@ -1214,16 +1214,21 @@ async function cmdTail(
         // — or its snapshot was deleted, which is why the words below say
         // "not found" rather than "never existed".
         if (reArm && (!named || existed)) return "stop";
-        // A named target the tail once reached, whose pointer is now gone:
-        // it closed (a `closed` frame normally ends the tail before this).
-        if (named && everResolved) return "stop";
+        // A NAMED target that existed here and is gone has closed, however it
+        // was named: one it once reached (a `closed` frame normally ends the
+        // tail before this), or one whose snapshot is on disk. ⛔ ONE ACT, ONE
+        // ANSWER: the snapshot half used to cover `--session` only (through
+        // `reArm` above), so `--session-key K` for the same closed board waited
+        // out the grace and exited 5 while `--session <id>` stopped at once. A
+        // key from the ENVIRONMENT is not named, so a seat's first arm (B1)
+        // still waits for its board.
+        if (named && existed) return "stop";
         if (named && Date.now() - startedAt >= graceMs) {
-          const hint =
-            pinned !== undefined && hasSnapshot(pinned)
-              ? `board ${pinned} existed here and has closed; bring it back: ${comeBackCmd()}`
-              : keyedComeBack()
-                ? `no board was opened under this key from this directory; the id is project-scoped (it hashes the repo root), so check the key and the cwd, or open it: ${comeBackCmd()}`
-                : "no board with this id is running here and none left a snapshot; check the id (`sessions` lists the boards this host can restore)";
+          // A board with a snapshot stopped above as closed, so this target
+          // never left one here.
+          const hint = keyedComeBack()
+            ? `no board was opened under this key from this directory; the id is project-scoped (it hashes the repo root), so check the key and the cwd, or open it: ${comeBackCmd()}`
+            : "no board with this id is running here and none left a snapshot; check the id (`sessions` lists the boards this host can restore)";
           die(
             `no session ${pinned} found (${source.from}) — a named target; gave up after ${graceMs}ms`,
             "not_found",
