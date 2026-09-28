@@ -16,3 +16,7 @@ generated: { by: migrate-v2.10-to-v3.0, at: 2026-09-25 }
 
 The question this research asked, and where it got to. The answer is in
 [the write-up](./write-up.md).
+
+**2026-09-28 requirement for the chat component (Cole):** messages render as
+markdown, rendered-only by default, with no raw toggle until real use asks for
+one. See [item/chat-renders-markdown](../chat-renders-markdown.md).
