@@ -5712,6 +5712,79 @@ describe("(a) one daemon per id", () => {
   }, 60000);
 });
 
+describe("(b) --fresh --restore <own id> on a live board restores the SNAPSHOT", () => {
+  test("cell 6 — live 0 over snapshot 2: the board comes back with 2, and the copy is named", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `fr6-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["x", "y"], env);
+    try {
+      await runCli(["open", "--session-key", key, "--fresh", "--no-open", "--timeout", "30"], {
+        env,
+      });
+      const snap = join(home, "snapshots", `${id}.json`);
+      // PRECONDITION, its own cell: live 0, snapshot 2.
+      expect(await liveTitles(id, env)).toEqual([]);
+      expect(titlesAt(snap)).toEqual(["x", "y"]);
+
+      const r = await runCli(
+        ["open", "--session-key", key, "--fresh", "--restore", id, "--no-open", "--timeout", "30"],
+        { env },
+      );
+      expect(r.code).toBe(0);
+      expect(await liveTitles(id, env)).toEqual(["x", "y"]);
+      const hs = JSON.parse(r.stdout) as { snapshotBackups: Backup[] };
+      const pre = hs.snapshotBackups.find((b) => b.kind === "pre-fresh");
+      expect(pre).toBeDefined();
+      expect(pre?.taskCount).toBe(2);
+      expect(pre?.path).toContain(`${id}.pre-fresh-`);
+      expect(titlesAt(pre?.path as string)).toEqual(["x", "y"]);
+      expect(pre?.restore).toContain("--fresh --restore");
+      await runCli(["close", "--session", id], { env });
+      expect(titlesAt(snap)).toEqual(["x", "y"]);
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("cell 7a — a live board that DIFFERS at equal counts: the snapshot's board comes back, not the live one", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `fr7-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["old0", "old1"], env);
+    try {
+      await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], { env });
+      await runCli(["add", "live-extra", "--session", id], { env });
+      const first = (
+        JSON.parse((await runCli(["state", "--session", id], { env })).stdout) as {
+          state: { tasks: { id: string }[] };
+        }
+      ).state.tasks[0]?.id as string;
+      await runCli(["remove", first, "--session", id], { env });
+      const snap = join(home, "snapshots", `${id}.json`);
+      // PRECONDITION: they differ, at equal counts (acted inside the debounce).
+      expect(await liveTitles(id, env)).toEqual(["old1", "live-extra"]);
+      expect(titlesAt(snap)).toEqual(["old0", "old1"]);
+
+      const r = await runCli(
+        ["open", "--session-key", key, "--fresh", "--restore", id, "--no-open", "--timeout", "30"],
+        { env },
+      );
+      expect(r.code).toBe(0);
+      expect(await liveTitles(id, env)).toEqual(["old0", "old1"]);
+      // The restored board reaches its own snapshot on the debounce, not at its
+      // first mutation: a SIGKILL now must not leave the torn-down board there.
+      const flushed = Date.now() + 5000;
+      while (Date.now() < flushed && titlesAt(snap).join() !== "old0,old1") await Bun.sleep(100);
+      expect(titlesAt(snap)).toEqual(["old0", "old1"]);
+      await runCli(["close", "--session", id], { env });
+      expect(titlesAt(snap)).toEqual(["old0", "old1"]);
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+});
+
 /** A backup named on the `open`/`close` envelope (`snapshotBackups`). */
 type Backup = {
   kind: string;

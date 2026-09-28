@@ -44,6 +44,7 @@
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
+  copyFileSync,
   existsSync,
   mkdirSync,
   openSync,
@@ -616,9 +617,10 @@ type CmdResult = {
 // type would break its readers. This one is a list, PRESENT and `[]` when
 // nothing was backed up, on every `open` and `close` success.
 
-/** A copy of a snapshot made before it was written over (server.ts). */
+/** A copy of a snapshot made before it was written over (server.ts), or by
+ *  `open` itself before a `--fresh --restore` teardown (`pre-fresh`). */
 type BackupRecord = {
-  kind: "shrink" | "unreadable";
+  kind: "shrink" | "unreadable" | "pre-fresh";
   path: string;
   taskCount: number | null;
   reason: string;
@@ -862,6 +864,38 @@ function refuseMissingRestore(flags: Record<string, string | boolean>): void {
   );
 }
 
+/**
+ * (b) If `--restore` resolves to board `id`'s OWN snapshot (the file the
+ * teardown's `close` is about to write), copy it to
+ * `<id>.pre-fresh-<ts>.bak.json` and return the record; otherwise null. The
+ * source is resolved in the daemon's own order (`restoreCandidates`), so a
+ * `--restore` spelled as a path to that file counts too. Restoring from a
+ * DIFFERENT snapshot is untouched: the teardown does not write it.
+ */
+function copyAsideBeforeTeardown(
+  flags: Record<string, string | boolean>,
+  id: string,
+): BackupRecord | null {
+  if (typeof flags.restore !== "string") return null;
+  const own = join(SNAPSHOTS_DIR, `${id}.json`);
+  const source = restoreCandidates(flags.restore).find((p) => existsSync(p));
+  if (!source || resolve(source) !== resolve(own)) return null;
+  const path = join(SNAPSHOTS_DIR, `${id}.pre-fresh-${Date.now()}.bak.json`);
+  copyFileSync(own, path);
+  let taskCount: number | null = null;
+  try {
+    const tasks = (JSON.parse(readFileSync(path, "utf8")) as { tasks?: unknown }).tasks;
+    taskCount = Array.isArray(tasks) ? tasks.length : null;
+  } catch {}
+  return {
+    kind: "pre-fresh",
+    path,
+    taskCount,
+    reason:
+      "copied before --fresh tore the live board down, whose close writes over this snapshot; the new board was restored from this copy",
+  };
+}
+
 async function cmdOpen(flags: Record<string, string | boolean>): Promise<number> {
   // #69: a caller-owned key derives a deterministic, project-scoped board id, and
   // `open` becomes IDEMPOTENT against it — a live board for the key is ATTACHED
@@ -875,6 +909,8 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
       : (process.env.BOUNTY_SESSION_KEY ?? undefined);
   const forcedId = key ? sessionKeyToId(key) : undefined;
   let teardownBackups: BackupRecord[] = [];
+  let preFresh: BackupRecord | null = null;
+  let restoreArg = typeof flags.restore === "string" ? flags.restore : undefined;
 
   if (forcedId) {
     const live = await boardIfLive(forcedId);
@@ -892,14 +928,19 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
         // in the act of printing the field that fixes this one).
         //
         // ⛔ The refusal NAMES NO CORRECTIVE VERB. Ruled by Cole 2026-08-06 and
-        // not reopenable here. The obvious helpful suggestion — "--fresh
-        // --restore" — is MEASURED to destroy the user's only copy of their
-        // data: --fresh tears the board down by POSTing {type:"close"}, close
-        // unconditionally writes the snapshot (server.ts:1286), so an EMPTY live
-        // board flushes empty over a populated snapshot, and --restore then
-        // faithfully restores from the corpse the teardown just made. A user in
-        // exactly the situation this message is written for would follow the
-        // advice and lose everything. Say what is true; offer no fix.
+        // not reopenable here. The ruling's reason was that the obvious
+        // suggestion — "--fresh --restore" — was MEASURED to destroy the user's
+        // only copy of their data: --fresh tore the board down by POSTing
+        // {type:"close"}, close wrote the snapshot, so an EMPTY live board
+        // flushed empty over a populated snapshot, and --restore then restored
+        // the corpse the teardown had just made.
+        //
+        // ⚠ THAT MECHANISM IS FIXED (2026-09-28, data-loss cycle): `--fresh
+        // --restore <own id>` now copies the snapshot aside before the teardown
+        // and restores from the copy (`copyAsideBeforeTeardown`). So the verb is
+        // safe to name now. Naming it is the "revisit D3's refusal" criterion of
+        // item/bounty-fresh-restore-destroys-snapshot, and it is Cole's to rule,
+        // so the message is unchanged here.
         printJson({
           ...live,
           restoreSkipped: {
@@ -932,6 +973,15 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
     // Before the teardown below: a missing snapshot must not cost a live board.
     refuseMissingRestore(flags);
     if (live && flags.fresh) {
+      // (b) `--fresh --restore <this board's own id>`: the teardown's `close`
+      // writes the live board over the very snapshot the new daemon is about to
+      // restore, so it restored the teardown's own write (cells 6 and 7a; at
+      // equal counts no shrink backup fired and nothing survived). Copy the
+      // snapshot aside BEFORE the close and restore from the copy: the caller
+      // asked for the board as it was in the snapshot, and gets it. The copy is
+      // kept, since it doubles as a backup, and named on the envelope.
+      preFresh = copyAsideBeforeTeardown(flags, forcedId);
+      if (preFresh) restoreArg = basename(preFresh.path).replace(/\.json$/, "");
       // Replace it: close the live board over its own protocol, then wait for it
       // to actually go down (its exit unlinks bounty-<forcedId>.json) so the new
       // daemon's file write can't be clobbered by the departing one's cleanup.
@@ -981,7 +1031,7 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
   ) {
     args.push("--restore", forcedId);
   }
-  if (flags.restore) args.push("--restore", String(flags.restore));
+  if (restoreArg) args.push("--restore", restoreArg);
   if (flags["no-open"]) args.push("--no-open");
   if (forcedId) args.push("--id", forcedId); // force the daemon's id to the derived key id
 
@@ -1043,7 +1093,7 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
           // board), then the new daemon's boot backups off its discovery file.
           const boot = (s as Session & { snapshotBackups?: BackupRecord[] }).snapshotBackups;
           const snapshotBackups = nameBackups(
-            [...teardownBackups, ...(boot ?? [])],
+            [...(preFresh ? [preFresh] : []), ...teardownBackups, ...(boot ?? [])],
             s.session_id,
             key,
           );

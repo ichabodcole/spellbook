@@ -63,7 +63,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import type { ServerWebSocket } from "bun";
@@ -816,6 +816,13 @@ async function main(argv: string[]): Promise<number> {
   // b15 — present-and-null on every boot: null means "no restore failed", never
   // "this daemon does not report restore failures".
   let restoreFailed: { path: string; reason: string } | null = null;
+  // (b) A board restored from a file OTHER than its own snapshot (a
+  // `.pre-fresh-` copy, a `.bak`, another board's) is flushed to its own
+  // snapshot on the first debounce tick, not at its first mutation. Until then
+  // its own snapshot holds whatever was there before: after `--fresh
+  // --restore`, the torn-down board, which a SIGKILL would leave for the next
+  // keyed respawn to restore instead of the board the caller asked for.
+  let restoredFromElsewhere = false;
   if (v.restore) {
     const restoreArg = v.restore as string;
     const restorePath = existsSync(restoreArg)
@@ -828,6 +835,8 @@ async function main(argv: string[]): Promise<number> {
       state.tasks = Array.isArray(merged.tasks)
         ? merged.tasks.map(validateTask).filter((t): t is Task => t !== null)
         : [];
+      restoredFromElsewhere =
+        !sessionId || resolve(restorePath) !== resolve(SNAPSHOTS_DIR, `${sessionId}.json`);
     } catch (e) {
       // b15 — A RESTORE THAT WAS ATTEMPTED AND FAILED USED TO BE INVISIBLE.
       // This branch wrote to the DAEMON'S stderr, and cli.ts spawns the daemon
@@ -893,7 +902,7 @@ async function main(argv: string[]): Promise<number> {
   // Debounced persistence: a board mutation marks the snapshot dirty; a ~1s
   // timer flushes it, and a final write lands on close. The snapshot is keyed by
   // session id and KEPT on close (it's the resume point for --restore).
-  let snapDirty = false;
+  let snapDirty = restoredFromElsewhere;
   // #73/#74 — ONCE PER DAEMON SESSION. Lives here, in the daemon's closure, so
   // "session" means exactly "this process": a restart re-arms it, which is the
   // point (the state worth keeping is whatever existed before THIS daemon
