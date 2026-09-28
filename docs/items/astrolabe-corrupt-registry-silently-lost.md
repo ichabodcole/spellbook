@@ -89,3 +89,9 @@ Run red first: 6 failed, and the valid-registry case passed.
 The error-choices census pin for astrolabe moved 16/2 → 17/2. The new site is
 the cold `conflict` refusal, which has no closed set in hand. The golden
 snapshot didn't change.
+
+**Follow-up, same day:** the warm path no longer recognises the daemon's
+"unknown project" refusal by its text. The daemon's reply carries
+`reason: "unknown-project"` and `project: "<id>"`, and the CLI reads those
+(`refusalWords` in `src/astrolabe/backend/cli.ts`, tested with a reworded
+message).
