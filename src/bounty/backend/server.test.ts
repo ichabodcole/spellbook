@@ -5413,6 +5413,20 @@ describe("one act, one answer — open --restore of a snapshot that does not exi
     expect(list.stdout).toStartWith("0 running boards");
   }, 30000);
 
+  // An empty id used to read as "no restore": exit 0, a fresh empty board,
+  // `restoreFailed: null`. An empty `--restore` names nothing to restore.
+  test('open --restore "" is a usage error (2) and starts no board', async () => {
+    const tmp = mkdtempSync(join(TEST_TMPDIR, "restore-empty-"));
+    const env = { BOUNTY_HOME: uniqHome(), TMPDIR: `${tmp}/` };
+    const r = await runCli(["open", "--restore", "", "--no-open"], { env });
+    const err = refusal(r, "usage", 2);
+    expect(err.message).toContain("--restore");
+    await Bun.sleep(600);
+    expect(readdirSync(tmp).filter((f) => f.startsWith("bounty-"))).toEqual([]);
+    const list = await runCli(["list"], { env });
+    expect(list.stdout).toStartWith("0 running boards");
+  }, 30000);
+
   test("--fresh --restore <missing> on a live keyed board refuses BEFORE the teardown", async () => {
     const env = { BOUNTY_HOME: uniqHome() };
     const key = `restore-fresh-${crypto.randomUUID().slice(0, 8)}`;

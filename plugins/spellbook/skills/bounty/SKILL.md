@@ -196,7 +196,9 @@ session by default; pass `--session <id>` to target a specific one.
 >   exits **5** (`not_found`) with an envelope on stderr, and no board or daemon
 >   is spawned. `sessions` lists what can be restored. (It used to exit 0 with
 >   `restoreFailed: ENOENT…` and leave an unrelated empty board running.)
->   `restoreFailed` is now for a snapshot that exists and could not be read.
+>   `restoreFailed` is now for a snapshot that exists and could not be read. An
+>   **empty** `--restore ""` is a usage error (exit 2) and starts nothing
+>   either; drop the flag for a fresh board.
 >
 > A team coordinator (e.g. anthill) can therefore run
 > `open --session-key <team-channel>` at start and pass

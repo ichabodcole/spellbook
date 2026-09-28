@@ -1845,6 +1845,17 @@ function checkUpdate(inv: Invocation<Flag>): string | undefined {
   return undefined;
 }
 
+/** An empty `--restore` names nothing to restore. It used to read as "no
+ *  restore" and start a fresh empty board at exit 0 (`restoreFailed: null`);
+ *  the missing-snapshot check let it through too, because "" resolves to the
+ *  cwd. Refused before anything is spawned or attached. */
+function checkOpen(inv: Invocation<Flag>): string | undefined {
+  const f = inv.flags as Flags;
+  if (f.restore === "")
+    return "--restore is empty, so it names no snapshot; pass the id to restore (`sessions` lists them), or drop --restore for a fresh board";
+  return undefined;
+}
+
 /** `message`'s one source for the text, in exactly `checkAdd`'s shape. A text
  *  and `--stdin` together used to toast stdin and silently discard the
  *  positional, at exit 0 (one act, one answer). */
@@ -1871,6 +1882,7 @@ const ROWS: Row[] = [
     positionals: [],
     describe:
       "spawn a board daemon; prints {url, port, session_id, restoreSkipped}. --pin binds it to cwd; --session-key <key> binds it to a caller-owned key, idempotently (--fresh forces a clean board)",
+    check: checkOpen,
     // Propagates cmdOpen's code so the #80.1 refusal actually reaches the shell.
     run: (_pos, flags) => cmdOpen(flags),
   },

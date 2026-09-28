@@ -59,3 +59,10 @@ snapshot that does not exist". The cell "open --restore <missing> is not_found
 keyed board refuses BEFORE the teardown" pins the ordering. "GUARD — open
 --restore <id> of a closed board's snapshot still restores it" pins the
 come-back.
+
+An empty id slipped past this: `open --restore ""` exited 0 and started a fresh
+empty board with `restoreFailed: null`, because the empty id read as "no
+restore" (and `""` resolves to the cwd, which exists). `open`'s `check` hook
+(`checkOpen`) now refuses it as usage, exit 2, before anything is attached or
+spawned. Pinned by 'open --restore "" is a usage error (2) and starts no board',
+in the same `describe`.
