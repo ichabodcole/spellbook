@@ -48,7 +48,7 @@ confirms "Now editing v…".
 - [ ] Update the scriptorium SKILL.md: the agent no longer needs to announce a
       new version in chat. It can still say why it made one.
 
-House rules that apply:
-[a warning needs an action](../../grimoire/house-style.md) (the toast's action
-is Activate), and conversation-primary surfaces (the button is a shortcut; the
-human can still ask the agent to activate).
+Conventions that apply (team practice, not written house-style rules): a notice
+should carry the act that answers it, which here is Activate; and the surface is
+conversation-primary, so the button is a shortcut and the human can still ask
+the agent to activate.
