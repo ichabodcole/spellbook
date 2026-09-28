@@ -32,19 +32,18 @@
 // line); liveness, echoes and keepalives on stderr; failures put ONE JSON error
 // envelope on stderr with stdout left empty — never merge streams. Exit 2 on
 // bad args, a bare invocation, OR a rejected command (dedupe / unknown id);
-// 0 on success; 1 on internal faults (daemon failed to start); a tail exits 0
+// 0 on success; 1 on internal faults (daemon failed to start); 6 (`conflict`)
+// when, with no daemon up, registry.json cannot be read; a tail exits 0
 // on the daemon's `closed` frame.
 
 import { spawn } from "node:child_process";
-import { existsSync } from "node:fs";
-import { homedir } from "node:os";
+import { closeSync, existsSync, openSync, readFileSync, unlinkSync } from "node:fs";
+import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   applyProjectAdd,
-  emptyState,
   type ObservatoryState,
-  restoreRegistry,
 } from "../../../plugins/spellbook/skills/astrolabe/scripts/state.ts";
 import {
   type CommandSpec,
@@ -62,6 +61,7 @@ import {
   WINDOW_HELP,
 } from "../../kit/wire/tailHandoff";
 import { TAIL_IDLE_MS } from "./heartbeat.ts";
+import { listSetAside, readRegistry, recoverAct, repairAct } from "./registryFile.ts";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 // ⛔ "..", "scripts" — NOT a sibling lookup. This file is AUTHORED here and
@@ -163,27 +163,124 @@ async function ensureDaemon(): Promise<{ base: string; port: number }> {
   if (existing && (await isUp(existing))) {
     return { base: `http://127.0.0.1:${existing}`, port: existing };
   }
+  const bootLog = openBootLog();
   const proc = spawn(process.execPath, ["run", SERVER_SCRIPT, "--no-open"], {
     detached: true,
-    stdio: ["ignore", "ignore", "ignore"],
+    stdio: ["ignore", "ignore", bootLog ? bootLog.fd : "ignore"],
     env: process.env,
     // Contract 5 — see daemonCwd(). A wrong cwd skips bunfig.toml's Tailwind
     // plugin; on glamour that fails the page outright (500). Assert the invariant,
     // not the status: the utility never reaches the browser when cwd is wrong.
     cwd: daemonCwd(),
   });
+  if (bootLog) closeSync(bootLog.fd); // the daemon holds its own copy
+  const ended: { how: string | null } = { how: null };
+  proc.on("exit", (code, signal) => {
+    ended.how = code !== null ? `exit ${code}` : `signal ${signal}`;
+  });
+  proc.on("error", (e) => {
+    ended.how = `spawn error: ${e.message}`;
+  });
   proc.unref();
   // The daemon BINDS fast and answers /state as soon as it's listening (the
   // cold Tailwind+React bundle is lazy, on the first GET "/"), so this handshake
   // usually returns quickly. The wide deadline covers a cold machine where
   // module load + first serve runs slow (glamour uses the same ~45s budget).
+  // A daemon that EXITS before answering ends the wait at once: it isn't coming.
   const deadline = Date.now() + 45000;
+  let up: number | null = null;
   while (Date.now() < deadline) {
     await sleep(80);
     const p = await readPort();
-    if (p && (await isUp(p))) return { base: `http://127.0.0.1:${p}`, port: p };
+    if (p && (await isUp(p))) {
+      up = p;
+      break;
+    }
+    if (ended.how) {
+      // One more look: a concurrent `open`'s daemon may be the one that is up.
+      const q = await readPort();
+      if (q && (await isUp(q))) up = q;
+      break;
+    }
   }
-  die("astrolabe daemon failed to start within 45s", "internal");
+  const said = bootLog ? takeBootLog(bootLog.path) : "";
+  if (up) return { base: `http://127.0.0.1:${up}`, port: up };
+  const f = startFailure(ended.how, said);
+  die(f.message, "internal", f.extra);
+}
+
+// ── WHY THE DAEMON DID NOT START (data-you-cant-get-back, verifier) ──────────
+//
+// The spawn used to ignore the daemon's stderr, so a daemon that refused to
+// boot — an unreadable registry it could not rename aside, a port it could not
+// bind — exited at once while this CLI waited out all 45 s and then said only
+// "failed to start". Now the daemon's stderr goes to a per-spawn file in the
+// OS temp dir for the length of the handshake, and an early exit is reported
+// at once in the daemon's own words.
+//
+// ⚠ A FILE, NOT A PIPE. A piped stderr outlives this CLI inside the detached
+// daemon: any later daemon write hits a closed pipe (EPIPE), and a caller that
+// reads `open`'s stderr to EOF waits for the whole session (scriptorium
+// measured that hang). A file holds no pipe. ⚠ AND IN THE TEMP DIR, NOT
+// `$ASTROLABE_HOME`: a home the daemon cannot write to is one of the failures
+// being reported, and a log that can't be created there would lose the reason
+// in exactly that case. The file is unlinked once read; the daemon keeps
+// writing to its (now nameless) descriptor, which is all "ignore" gave before.
+function openBootLog(): { fd: number; path: string } | null {
+  const path = join(tmpdir(), `astrolabe-boot-${process.pid}-${Date.now()}.log`);
+  try {
+    return { fd: openSync(path, "wx", 0o600), path };
+  } catch {
+    return null; // never block `open` on the log: the reason is lost, as before
+  }
+}
+
+function takeBootLog(path: string): string {
+  let text = "";
+  try {
+    text = readFileSync(path, "utf8");
+  } catch {
+    /* nothing written */
+  }
+  try {
+    unlinkSync(path);
+  } catch {
+    /* already gone */
+  }
+  return text;
+}
+
+/**
+ * The failure's words. A daemon that refuses to boot writes one JSON line with
+ * a `message` (and maybe a `hint`); that line is relayed, and carried verbatim
+ * under `server`. Anything else it said (a crash's stack) is quoted as a tail.
+ */
+export function startFailure(
+  ended: string | null,
+  said: string,
+): { message: string; extra?: { hint?: string; server?: unknown } } {
+  const lines = said.trim().split("\n").reverse();
+  for (const line of lines) {
+    try {
+      const obj = JSON.parse(line) as Record<string, unknown>;
+      if (obj && typeof obj.message === "string")
+        return {
+          message: obj.message,
+          extra: { ...(typeof obj.hint === "string" ? { hint: obj.hint } : {}), server: obj },
+        };
+    } catch {
+      /* not a structured line */
+    }
+  }
+  const tail = said.trim().slice(-800);
+  if (ended)
+    return {
+      message: `astrolabe daemon stopped (${ended}) before it started${tail ? `: ${tail}` : ", and gave no reason"}`,
+    };
+  return {
+    message: "astrolabe daemon failed to start within 45s",
+    ...(tail ? { extra: { hint: `the daemon said: ${tail}` } } : {}),
+  };
 }
 
 // ── A REFUSED INVOCATION STARTS NOTHING (one-act-one-answer) ───────────
@@ -197,26 +294,111 @@ async function ensureDaemon(): Promise<{ base: string; port: number }> {
 //   - a daemon is up  → `null`: the daemon's live state decides, as before
 //     (the file is a debounced snapshot and may trail it);
 //   - no daemon is up → the board the daemon WOULD boot with, via the same
-//     `restoreRegistry` it uses. No file, or an unreadable one, is the empty
-//     board — which is also what the daemon boots with in both cases.
+//     `readRegistry` it uses. No file is the empty board.
 //
 // A cold refusal is therefore the same answer, kind and exit as a warm one;
 // only the side effect is gone. "No daemon" is not itself `not_found`: the
 // question is whether the project is registered, and the disk answers it.
+//
+// ⛔ AN UNREADABLE FILE IS NOT THE EMPTY BOARD (data-you-cant-get-back). It
+// used to be read as one, so `status beta` on a corrupt registry answered
+// "unknown project 'beta'", `choices: []` — a confident answer to a question
+// the disk could not answer. Now it is refused as `conflict` (a precondition
+// failed; exit 6), with NO side effect: the bytes stay exactly where they are,
+// and the hint names the two acts that move forward — fix the file, or `open`,
+// whose daemon boot sets it aside (a rename, never a delete) and starts empty.
+// The CLI does not move the file itself: a refused invocation starts nothing
+// and touches nothing, and `open` is the one place the move happens.
 async function coldBoard(): Promise<ObservatoryState | null> {
   const port = await readPort();
   if (port && (await isUp(port))) return null;
-  try {
-    return restoreRegistry(JSON.parse(await Bun.file(REGISTRY_FILE).text()));
-  } catch {
-    return emptyState();
+  const read = readRegistry(REGISTRY_FILE);
+  if (!read.ok)
+    die(
+      `${REGISTRY_FILE} could not be read (${read.reason}), so which projects are registered is unknown`,
+      "conflict",
+      {
+        hint: `${repairAct(REGISTRY_FILE, read.cause)}, and retry; or run \`cli.ts open --no-open\` to set it aside (renamed to registry.json.unreadable-<time>, never deleted) and start an empty board`,
+      },
+    );
+  return read.state;
+}
+
+// ── A SET-ASIDE REGISTRY IS REPORTED FOR AS LONG AS IT EXISTS ──────────────
+//
+// When the daemon's boot moved an unreadable registry aside, projects the human
+// registered may be in that file and not on the board. That is STATE, not an
+// event: it is re-read from the directory on every call (`listSetAside`), and
+// it stops being reported when the human deals with the file — moves it back,
+// or deletes it. No "already told" flag: a second record of the same fact is
+// the defect (one-state-one-meaning).
+//
+//   - a success on a verb that touches the board → one `# warning:` on stderr
+//     (stdout and the exit are unchanged);
+//   - an unknown project, cold or warm → the refusal's message says the
+//     registry was set aside and where, and its hint is the recovery;
+//   - `info` / `state` / `list` → a `registry_set_aside` field, absent when
+//     there is nothing to report (so a healthy answer is byte-identical).
+function setAsideClause(asides: string[]): string {
+  return `registry.json could not be read and was set aside at ${asides.join(", ")}`;
+}
+function recoverHint(asides: string[]): string {
+  return asides.map((a) => recoverAct(a, REGISTRY_FILE)).join("; ");
+}
+
+function warnSetAside(): void {
+  const asides = listSetAside(REGISTRY_FILE);
+  if (asides.length === 0) return;
+  process.stderr.write(
+    `# warning: astrolabe: ${setAsideClause(asides)}; projects registered in it are not on the board. To recover: ${recoverHint(asides)}\n`,
+  );
+}
+
+function setAsideField(): { registry_set_aside?: Array<{ path: string; recover: string }> } {
+  const asides = listSetAside(REGISTRY_FILE);
+  if (asides.length === 0) return {};
+  return {
+    registry_set_aside: asides.map((path) => ({ path, recover: recoverAct(path, REGISTRY_FILE) })),
+  };
+}
+
+/** The unknown-project refusal's words — naming the set-aside copy when one exists. */
+function unknownProject(id: string): { message: string; hint: string } {
+  return unknownProjectWords(id, listSetAside(REGISTRY_FILE));
+}
+function unknownProjectWords(id: string, asides: string[]): { message: string; hint: string } {
+  const add = "run: cli.ts add <name> --path <p> to register it";
+  if (asides.length === 0) return { message: `unknown project '${id}'`, hint: add };
+  return {
+    message: `unknown project '${id}' — but ${setAsideClause(asides)}, so '${id}' may be registered there`,
+    hint: `to recover it: ${recoverHint(asides)}. Or ${add}`,
+  };
+}
+
+/** A daemon `/cmd` rejection, as the CLI reads it (`reason`/`project`: state.ts `RejectReason`). */
+export type DaemonRefusal = { error: string; reason?: string; project?: string };
+
+/**
+ * The words the CLI relays for a daemon rejection: the daemon's own message,
+ * or — for an unknown project — the refusal that names any set-aside registry.
+ * Recognised by the daemon's structured `reason`, never by its message: the
+ * message is presentation and may be reworded. Pure: `asides` is passed in, so
+ * it is driven without a daemon or a disk.
+ */
+export function refusalWords(
+  r: DaemonRefusal,
+  asides: string[],
+): { message: string; hint?: string } {
+  if (r.reason === "unknown-project" && typeof r.project === "string") {
+    return unknownProjectWords(r.project, asides);
   }
+  return { message: r.error };
 }
 
 /** `ensureDaemon()` for a verb naming project `id` — refused first, cold, if the id is unregistered. */
 async function ensureDaemonFor(id: string): Promise<{ base: string; port: number }> {
   const board = await coldBoard();
-  if (board && !board.projects.some((p) => p.id === id))
+  if (board && !board.projects.some((p) => p.id === id)) {
     // The registry is in hand, so `choices` names it (as `join`'s warm check
     // does). An EMPTY board answers `choices: []` — "nothing would have been
     // accepted" — which is a true answer and not the same as no field.
@@ -224,10 +406,12 @@ async function ensureDaemonFor(id: string): Promise<{ base: string; port: number
     // ⚠ Inline, not a `: never` helper shared with `join`: the census
     // enumerator (`grimoire/lib/error-sites.ts`) counts every call to a raiser
     // as a site, and reads `choices` off the call's own argument text.
-    die(`unknown project '${id}'`, "usage", {
-      hint: "run: cli.ts add <name> --path <p> to register it",
+    const u = unknownProject(id);
+    die(u.message, "usage", {
+      hint: u.hint,
       choices: board.projects.map((p) => p.id),
     });
+  }
   return await ensureDaemon();
 }
 
@@ -244,7 +428,14 @@ async function postCmd(base: string, body: Record<string, unknown>) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  return (await res.json()) as { ok: boolean; applied: boolean; error?: string; outcome?: string };
+  return (await res.json()) as {
+    ok: boolean;
+    applied: boolean;
+    error?: string;
+    outcome?: string;
+    reason?: string;
+    project?: string;
+  };
 }
 
 // Apply a /cmd, surface a rejection on stderr + non-zero exit (exit-code
@@ -263,8 +454,15 @@ async function cmd(base: string, body: Record<string, unknown>) {
   // re-derived. It reports the daemon's `outcome` noun instead of bounty's
   // `noop: true` boolean, per the outcome contract's "enumerated, never a
   // boolean" — the noun says WHICH state made the work unnecessary.
-  if (!r.applied && r.error) die(r.error);
+  if (!r.applied && r.error) {
+    // The daemon's unknown-project rejection carries the set-aside notice too
+    // (still the one relayed raise site it always was). `refusalWords` finds it
+    // by the rejection's `reason`, not by matching the daemon's message.
+    const w = refusalWords({ ...r, error: r.error }, listSetAside(REGISTRY_FILE));
+    die(w.message, "usage", w.hint ? { hint: w.hint } : undefined);
+  }
   printJson(r);
+  warnSetAside();
 }
 
 function openBrowser(url: string): void {
@@ -364,6 +562,9 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
   const { port } = await ensureDaemon();
   if (!flags["no-open"]) openBrowser(`http://127.0.0.1:${port}`);
   printJson({ ok: true, url: `http://127.0.0.1:${port}`, port });
+  // `open` is where an unreadable registry gets set aside (the daemon's boot),
+  // so this is where the human first hears of it.
+  warnSetAside();
 }
 
 async function cmdAdd(pos: string[], flags: Record<string, string | boolean>) {
@@ -433,12 +634,17 @@ async function cmdPoke(pos: string[], flags: Record<string, string | boolean>) {
 async function cmdState() {
   const base = await runningBase();
   if (!base || !(await isUp(Number.parseInt(base.split(":").pop() as string, 10)))) {
-    printJson({ ok: true, running: false, state: { title: "Observatory", projects: [] } });
+    printJson({
+      ok: true,
+      running: false,
+      state: { title: "Observatory", projects: [] },
+      ...setAsideField(),
+    });
     return;
   }
   const res = await fetch(`${base}/state`);
   if (!res.ok) die(`state failed (HTTP ${res.status})`);
-  printJson(await res.json());
+  printJson({ ...((await res.json()) as Record<string, unknown>), ...setAsideField() });
 }
 
 async function cmdList() {
@@ -447,7 +653,7 @@ async function cmdList() {
   // from a crashed daemon would otherwise throw ECONNREFUSED here instead of the
   // clean running:false path.
   if (!base || !(await isUp(Number.parseInt(base.split(":").pop() as string, 10)))) {
-    printJson({ ok: true, running: false, projects: [] });
+    printJson({ ok: true, running: false, projects: [], ...setAsideField() });
     return;
   }
   const { state } = (await (await fetch(`${base}/state`)).json()) as {
@@ -462,6 +668,7 @@ async function cmdList() {
       zone: p.zone,
       connected: p.connected,
     })),
+    ...setAsideField(),
   });
 }
 
@@ -532,9 +739,15 @@ async function cmdClose(flags: Record<string, string | boolean>) {
 async function cmdInfo() {
   const port = await readPort();
   if (port && (await isUp(port))) {
-    printJson({ ok: true, running: true, url: `http://127.0.0.1:${port}`, port });
+    printJson({
+      ok: true,
+      running: true,
+      url: `http://127.0.0.1:${port}`,
+      port,
+      ...setAsideField(),
+    });
   } else {
-    printJson({ ok: true, running: false });
+    printJson({ ok: true, running: false, ...setAsideField() });
   }
 }
 
@@ -607,17 +820,20 @@ async function cmdJoin(pos: string[], flags: Flags): Promise<number> {
   const { state } = (await (await fetch(`${base}/state`)).json()) as {
     state: { projects: Array<{ id: string }> };
   };
-  if (!state.projects.some((p) => p.id === id))
+  if (!state.projects.some((p) => p.id === id)) {
     // ⭐ THE SET IS ALREADY IN HAND, WHICH IS WHY THIS SITE QUALIFIES AND
     // the same rejection relayed from the daemon (`cmd()`) does not: the
     // snapshot was fetched one line above to make this very check, so
     // naming the registered ids costs nothing and needs no second call.
     // An EMPTY board answers `choices: []` — a true answer, not a missing one.
-    die(`unknown project '${id}'`, "usage", {
-      hint: "run: cli.ts add <name> --path <p> to register it",
+    const u = unknownProject(id);
+    die(u.message, "usage", {
+      hint: u.hint,
       choices: state.projects.map((p) => p.id),
     });
+  }
   const self = resolveAs(flags);
+  warnSetAside();
   return await streamEvents({
     since,
     sinceEpoch,
@@ -634,6 +850,7 @@ async function cmdTail(flags: Flags): Promise<number> {
   // daemon on every reconnect (see streamEvents), so `base` is not carried.
   await ensureDaemon();
   const self = resolveAs(flags);
+  warnSetAside();
   return await streamEvents({
     since,
     sinceEpoch,

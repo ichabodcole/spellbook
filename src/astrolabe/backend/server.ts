@@ -48,12 +48,13 @@
 //   {id, type:"poke",         projectId, by}                          // the project's listening agent reacts
 //   {id, type:"closed",       reason, by:"system"}                    // reason: user|timeout|close
 //
-// Exit codes: 0 on any clean dismiss, 2 bad args, 124 idle timeout. The
+// Exit codes: 0 on any clean dismiss, 2 bad args, 124 idle timeout, 1 when an
+// unreadable registry.json could not be moved aside (never booted over). The
 // observatory is a conjuration — there's no "cancel"/130 discard path.
 
-import { existsSync, mkdirSync, unlinkSync } from "node:fs";
+import { mkdirSync, unlinkSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { parseArgs } from "node:util";
 import type { ServerWebSocket } from "bun";
 import {
@@ -66,7 +67,9 @@ import {
   type ObservatoryState,
   type ObservatoryView,
   type ProjectCard,
-  restoreRegistry,
+  type ReducerResult,
+  type RejectReason,
+  unknownProject,
   validateProject,
 } from "../../../plugins/spellbook/skills/astrolabe/scripts/state.ts";
 import { unlinkIfMatches, writeFileAtomic } from "../../kit/wire/discovery.ts";
@@ -76,6 +79,7 @@ import { refuseForeignOrigin } from "../../kit/wire/origin.ts";
 import { resolveMode, serveFromDist } from "../../kit/wire/serveDist.ts";
 import { type SseClients, sseResponse } from "../../kit/wire/sse.ts";
 import { IDLE_TIMEOUT_SEC, SSE_HEARTBEAT_MS } from "./heartbeat.ts";
+import { readRegistry, setAside } from "./registryFile.ts";
 
 export type {
   ObservatoryState,
@@ -146,7 +150,22 @@ type ApplyResult = {
   error?: string;
   id?: string;
   outcome?: string;
+  // A rejection's cause as data, beside `error` (see `RejectReason` in state.ts).
+  reason?: RejectReason;
+  project?: string;
 };
+
+/** A reducer's `applied:false` on the wire — its error, no-op noun and reason, unchanged. */
+function notApplied(r: ReducerResult): ApplyResult {
+  return {
+    ok: true,
+    applied: false,
+    error: r.error,
+    outcome: r.outcome,
+    reason: r.reason,
+    project: r.project,
+  };
+}
 
 // ── pure helpers ─────────────────────────────────────────────────────
 
@@ -188,16 +207,41 @@ async function main(argv: string[]): Promise<number> {
   const port = Number.parseInt(v.port as string, 10);
   const host = v.host as string;
 
-  // Initial state — the durable registry restored (`restoreRegistry`, shared
-  // with cli.ts's cold refusal). Presence and status start EMPTY.
+  // Initial state — the durable registry restored (`readRegistry`, shared with
+  // cli.ts's cold refusal). Presence and status start EMPTY.
+  //
+  // ⛔ AN UNREADABLE REGISTRY IS MOVED ASIDE BEFORE ANYTHING CAN SAVE OVER IT.
+  // This used to log "restore failed" to a stderr nobody reads (the spawn is
+  // detached, stdio ignored), boot empty, and let the next debounced save — or
+  // the unconditional one on `close` — overwrite the file: every registered
+  // project lost without a word. Now the file (or directory) is RENAMED to
+  // `registry.json.unreadable-<ts>` first, and the CLI reports it for as long
+  // as it exists. If the move itself fails the daemon does not boot: an empty
+  // board saved over bytes it could not read is the one outcome ruled out.
   let state: ObservatoryState = emptyState(v.title as string);
-  if (existsSync(REGISTRY_FILE)) {
+  const read = readRegistry(REGISTRY_FILE, v.title as string);
+  if (read.ok) state = read.state;
+  else {
     try {
-      state = restoreRegistry(JSON.parse(await Bun.file(REGISTRY_FILE).text()), v.title as string);
-    } catch (e) {
+      const aside = setAside(REGISTRY_FILE);
       process.stderr.write(
-        `astrolabe: registry restore failed: ${e instanceof Error ? e.message : String(e)}\n`,
+        `astrolabe: registry.json could not be read (${read.reason}); set aside at ${aside}\n`,
       );
+    } catch (e) {
+      // `message`/`hint` are the words `cli.ts` relays when its spawn exits
+      // before the handshake (it reads this line from the daemon's stderr).
+      const why = e instanceof Error ? e.message : String(e);
+      process.stderr.write(
+        `${JSON.stringify({
+          event: "registry_unreadable",
+          path: REGISTRY_FILE,
+          reason: read.reason,
+          error: `could not set it aside: ${why}`,
+          message: `astrolabe did not start: ${REGISTRY_FILE} could not be read (${read.reason}) and could not be set aside (${why}), so its bytes were left in place, untouched — an empty board would have saved over them`,
+          hint: `make the rename possible (the directory ${dirname(REGISTRY_FILE)} must be writable, and the file must not be locked or immutable) and run \`cli.ts open\` again; or repair the file in place and retry`,
+        })}\n`,
+      );
+      return 1;
     }
   }
 
@@ -377,7 +421,7 @@ async function main(argv: string[]): Promise<number> {
       const project = validateProject(msg.project);
       if (!project) return { ok: true, applied: false, error: "invalid project" };
       const r = applyProjectAdd(state, project);
-      if (!r.applied) return { ok: true, applied: false, error: r.error, outcome: r.outcome };
+      if (!r.applied) return notApplied(r);
       state = r.state;
       // emit the REGISTERED project (with the derived id + avatar), not the raw input
       const registered = state.projects.find((p) => p.id === r.id);
@@ -389,7 +433,7 @@ async function main(argv: string[]): Promise<number> {
     if (type === "project.remove") {
       const id = String(msg.id ?? "");
       const r = applyProjectRemove(state, id);
-      if (!r.applied) return { ok: true, applied: false, error: r.error, outcome: r.outcome };
+      if (!r.applied) return notApplied(r);
       state = r.state;
       projectConns.delete(id);
       const pendingIdle = idleTimers.get(id);
@@ -407,7 +451,7 @@ async function main(argv: string[]): Promise<number> {
       const summary = typeof msg.summary === "string" ? msg.summary : "";
       const phase = typeof msg.phase === "string" ? msg.phase : undefined;
       const r = applyStatus(state, id, { summary, phase }, Date.now());
-      if (!r.applied) return { ok: true, applied: false, error: r.error, outcome: r.outcome };
+      if (!r.applied) return notApplied(r);
       state = r.state;
       emitEvent({ type: "status", projectId: id, summary, phase, by });
       broadcastState();
@@ -419,7 +463,7 @@ async function main(argv: string[]): Promise<number> {
       const raised = msg.raised !== false; // default to raising
       const question = typeof msg.question === "string" ? msg.question : undefined;
       const r = applyAttention(state, id, raised, question, Date.now());
-      if (!r.applied) return { ok: true, applied: false, error: r.error, outcome: r.outcome };
+      if (!r.applied) return notApplied(r);
       state = r.state;
       emitEvent({ type: "attention", projectId: id, raised, question, by });
       broadcastState();
@@ -429,7 +473,7 @@ async function main(argv: string[]): Promise<number> {
     if (type === "poke") {
       const id = String(msg.id ?? "");
       if (!state.projects.some((p) => p.id === id)) {
-        return { ok: true, applied: false, error: `unknown project '${id}'` };
+        return notApplied(unknownProject(state, id));
       }
       // A poke mutates no state — it's a signal to the project's listening agent
       // to post a fresh status. Emit the event only (no broadcast, no snapshot).
@@ -575,12 +619,14 @@ async function main(argv: string[]): Promise<number> {
       },
     });
   } catch (e) {
+    const error = e instanceof Error ? e.message : String(e);
     process.stderr.write(
       `${JSON.stringify({
         event: "bind_error",
         host,
         port,
-        error: e instanceof Error ? e.message : String(e),
+        error,
+        message: `astrolabe did not start: it could not listen on ${host}:${port} (${error})`,
       })}\n`,
     );
     return 2;

@@ -55,3 +55,29 @@ paths answer the same act differently.
   `k-my-key-…`.
 - **The not_found hint says "it hashes the repo root"** even when the cwd is not
   in a repo.
+
+**From the data-loss cycle's verifier (2026-09-28, on `516d0042`):**
+
+- **bounty:** a plain `open` racing `--fresh` or `close` can exit 0 as
+  "attached" to a board that is torn down a moment later. It never makes two
+  daemons.
+- **astrolabe:** `close` is a success but shows no `# warning:` while a registry
+  is set aside. Cold `list`/`state` return `projects: []` without reading the
+  disk registry (older than the cycle).
+- **bounty:** only `open` and `close` bound their requests to the daemon (2 s,
+  `DAEMON_ANSWER_TIMEOUT_MS`). `add`, `update`, `claim`, `block`/`unblock`,
+  `remove`, `message`, `init` and `state` still wait forever on a stopped
+  daemon, and `join.ts`'s WebSocket connect is unchecked.
+
+**From the data-loss cycle's second verifier (2026-09-28, on `af561632`):**
+
+- **bounty `open --fresh`,** when nothing is writable, attaches to the old board
+  and exits 0, so the caller doesn't get a fresh board.
+- **bounty `open` on a stopped daemon** says "failed to start within 5s" after
+  about 8 s.
+- **A daemon that can't write its discovery file is left running** (bounty with
+  no `TMPDIR` folder; astrolabe with a read-only home and a readable registry,
+  one orphan per attempt).
+- **astrolabe directory wording:** "move its contents out and retry" still fails
+  with EISDIR while the empty directory remains. An emptied set-aside directory
+  keeps the notice until it's deleted.

@@ -17,11 +17,13 @@
 
 import { describe, expect, test } from "bun:test";
 import {
+  chmodSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
   readdirSync,
   readFileSync,
+  rmSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -5308,7 +5310,7 @@ describe("P1f — a signal death runs the teardown AND still ends the process", 
 
 type Envelope = {
   ok: false;
-  error: { kind: string; exit_code: number; message: string; hint?: string };
+  error: { kind: string; exit_code: number; message: string; hint?: string; server?: unknown };
 };
 function refusal(r: CliResult, kind: string, code: number): Envelope["error"] {
   expect(r.code).toBe(code);
@@ -5517,5 +5519,1195 @@ describe("one act, one answer — add with a title AND --stdin", () => {
     } finally {
       await runCli(["close", ...s], { env });
     }
+  }, 30000);
+});
+
+// ── Data you can't get back (cycle 2026-09-data-you-cant-get-back) ──────────
+// The re-measure (decision-log row 3) found four paths where an ordinary act
+// still destroys state with no backup. Each is pinned here by a cell that was
+// run RED against the pre-fix build first.
+
+/** Every daemon process running board `id`, by the `--id <id>` its argv
+ *  carries. `pgrep` excludes itself, and no CLI argv carries `--id`. */
+function daemonPids(id: string): number[] {
+  const r = Bun.spawnSync(["pgrep", "-f", "--", `--id ${id}`]);
+  return new TextDecoder().decode(r.stdout).trim().split("\n").filter(Boolean).map(Number);
+}
+
+/** The teardown of last resort: a lock bug leaves orphans, and an orphan
+ *  outlives the suite. SIGKILL every daemon still running `id`. */
+function killBoard(id: string): void {
+  for (const pid of daemonPids(id)) {
+    try {
+      process.kill(pid, "SIGKILL");
+    } catch {}
+  }
+}
+
+async function liveTitles(id: string, env: Record<string, string>): Promise<string[]> {
+  const st = await runCli(["state", "--session", id], { env });
+  return (JSON.parse(st.stdout) as { state: { tasks: { title: string }[] } }).state.tasks.map(
+    (t) => t.title,
+  );
+}
+
+/** Open keyed board `key`, add `titles`, close it: a dead board whose snapshot
+ *  holds exactly those tasks. Returns the derived id. */
+async function seedClosed(key: string, titles: string[], env: Record<string, string>) {
+  const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], { env });
+  const id = (JSON.parse(o.stdout) as { session_id: string }).session_id;
+  for (const t of titles) await runCli(["add", t, "--session", id], { env });
+  await runCli(["close", "--session", id], { env });
+  return id;
+}
+
+describe("(a) one daemon per id", () => {
+  test("N parallel keyed opens start exactly ONE daemon, and every open reports the same board", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `lock-${crypto.randomUUID().slice(0, 8)}`;
+    const id = sessionKeyToId(key);
+    try {
+      const N = 5;
+      const opens = await Promise.all(
+        Array.from({ length: N }, () =>
+          runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], { env }),
+        ),
+      );
+      for (const o of opens) expect(o.code).toBe(0);
+      const boards = opens.map((o) => JSON.parse(o.stdout) as { port: number; session_id: string });
+      expect(new Set(boards.map((b) => b.session_id))).toEqual(new Set([id]));
+      expect(new Set(boards.map((b) => b.port)).size).toBe(1);
+      // Let any loser daemon finish booting (or dying) before counting.
+      await Bun.sleep(1500);
+      expect(daemonPids(id).length).toBe(1);
+      const st = await fetch(`http://127.0.0.1:${boards[0]?.port}/state`);
+      expect(st.ok).toBe(true);
+      expect((await runCli(["close", "--session", id], { env })).code).toBe(0);
+      await Bun.sleep(300);
+      expect(daemonPids(id)).toEqual([]);
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("a second daemon for a live id exits before touching the snapshot", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `lock2-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["keep-a", "keep-b"], env);
+    try {
+      const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      expect(o.code).toBe(0);
+      const snap = join(home, "snapshots", `${id}.json`);
+      const before = readFileSync(snap, "utf8");
+      // A second daemon for the same id, spawned the way `open` spawns one but
+      // with no --restore: an EMPTY board, the orphan's shape.
+      const second = Bun.spawn({
+        cmd: ["bun", "run", SERVER, "--no-open", "--id", id, "--timeout", "30"],
+        stdin: "ignore",
+        stdout: "ignore",
+        stderr: "pipe",
+        env: { ...hermeticEnv(), BOUNTY_HOME: home },
+      });
+      const exited = await Promise.race([
+        second.exited,
+        Bun.sleep(5000).then(() => "RUNNING" as const),
+      ]);
+      if (exited === "RUNNING") second.kill("SIGKILL");
+      expect(exited).not.toBe("RUNNING");
+      expect(exited).not.toBe(0);
+      expect(await new Response(second.stderr).text()).toContain("already running");
+      expect(readFileSync(snap, "utf8")).toBe(before);
+      expect(await liveTitles(id, env)).toEqual(["keep-a", "keep-b"]);
+      expect(daemonPids(id).length).toBe(1);
+      await runCli(["close", "--session", id], { env });
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("a STALE lock (its pid is dead) is taken over, and a clean exit releases it", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `lock3-${crypto.randomUUID().slice(0, 8)}`;
+    const id = sessionKeyToId(key);
+    // A pid that is certainly dead: a process that has already exited.
+    const gone = Bun.spawnSync(["true"]).pid;
+    mkdirSync(join(home, "locks"), { recursive: true });
+    writeFileSync(join(home, "locks", `${id}.lock`), JSON.stringify({ pid: gone, port: 1 }));
+    try {
+      const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      expect(o.code).toBe(0);
+      const lock = JSON.parse(readFileSync(join(home, "locks", `${id}.lock`), "utf8")) as {
+        pid: number;
+        port: number;
+      };
+      expect(daemonPids(id)).toEqual([lock.pid]);
+      expect(lock.port).toBe((JSON.parse(o.stdout) as { port: number }).port);
+      await runCli(["close", "--session", id], { env });
+      await Bun.sleep(300);
+      expect(existsSync(join(home, "locks", `${id}.lock`))).toBe(false);
+    } finally {
+      killBoard(id);
+    }
+  }, 30000);
+
+  test("a lock naming a LIVE pid that is not this board's daemon (a reused pid) is taken over", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `lock4-${crypto.randomUUID().slice(0, 8)}`;
+    const id = sessionKeyToId(key);
+    mkdirSync(join(home, "locks"), { recursive: true });
+    // This test process is alive and is not a bounty daemon for `id`.
+    writeFileSync(join(home, "locks", `${id}.lock`), JSON.stringify({ pid: process.pid }));
+    try {
+      const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      expect(o.code).toBe(0);
+      expect(daemonPids(id).length).toBe(1);
+      await runCli(["close", "--session", id], { env });
+    } finally {
+      killBoard(id);
+    }
+  }, 30000);
+
+  test("close, reopen and --fresh in quick succession: a dying daemon's lock never refuses its successor", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `lock5-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["one"], env);
+    try {
+      for (let i = 0; i < 3; i++) {
+        const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+          env,
+        });
+        expect(o.code).toBe(0);
+        expect(await liveTitles(id, env)).toEqual(["one"]);
+        const f = await runCli(
+          [
+            "open",
+            "--session-key",
+            key,
+            "--fresh",
+            "--restore",
+            id,
+            "--no-open",
+            "--timeout",
+            "30",
+          ],
+          { env },
+        );
+        expect(f.code).toBe(0);
+        expect(await liveTitles(id, env)).toEqual(["one"]);
+        expect((await runCli(["close", "--session", id], { env })).code).toBe(0);
+      }
+      expect(daemonPids(id)).toEqual([]);
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+});
+
+describe("(b) --fresh --restore <own id> on a live board restores the SNAPSHOT", () => {
+  test("cell 6 — live 0 over snapshot 2: the board comes back with 2, and the copy is named", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `fr6-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["x", "y"], env);
+    try {
+      await runCli(["open", "--session-key", key, "--fresh", "--no-open", "--timeout", "30"], {
+        env,
+      });
+      const snap = join(home, "snapshots", `${id}.json`);
+      // PRECONDITION, its own cell: live 0, snapshot 2.
+      expect(await liveTitles(id, env)).toEqual([]);
+      expect(titlesAt(snap)).toEqual(["x", "y"]);
+
+      const r = await runCli(
+        ["open", "--session-key", key, "--fresh", "--restore", id, "--no-open", "--timeout", "30"],
+        { env },
+      );
+      expect(r.code).toBe(0);
+      expect(await liveTitles(id, env)).toEqual(["x", "y"]);
+      const hs = JSON.parse(r.stdout) as { snapshotBackups: Backup[] };
+      const pre = hs.snapshotBackups.find((b) => b.kind === "pre-fresh");
+      expect(pre).toBeDefined();
+      expect(pre?.taskCount).toBe(2);
+      expect(pre?.path).toContain(`${id}.pre-fresh-`);
+      expect(titlesAt(pre?.path as string)).toEqual(["x", "y"]);
+      expect(pre?.restore).toContain("--fresh --restore");
+      await runCli(["close", "--session", id], { env });
+      expect(titlesAt(snap)).toEqual(["x", "y"]);
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("cell 7a — a live board that DIFFERS at equal counts: the snapshot's board comes back, not the live one", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `fr7-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["old0", "old1"], env);
+    try {
+      await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], { env });
+      await runCli(["add", "live-extra", "--session", id], { env });
+      const first = (
+        JSON.parse((await runCli(["state", "--session", id], { env })).stdout) as {
+          state: { tasks: { id: string }[] };
+        }
+      ).state.tasks[0]?.id as string;
+      await runCli(["remove", first, "--session", id], { env });
+      const snap = join(home, "snapshots", `${id}.json`);
+      // PRECONDITION: they differ, at equal counts (acted inside the debounce).
+      expect(await liveTitles(id, env)).toEqual(["old1", "live-extra"]);
+      expect(titlesAt(snap)).toEqual(["old0", "old1"]);
+
+      const r = await runCli(
+        ["open", "--session-key", key, "--fresh", "--restore", id, "--no-open", "--timeout", "30"],
+        { env },
+      );
+      expect(r.code).toBe(0);
+      expect(await liveTitles(id, env)).toEqual(["old0", "old1"]);
+      // The restored board reaches its own snapshot on the debounce, not at its
+      // first mutation: a SIGKILL now must not leave the torn-down board there.
+      const flushed = Date.now() + 5000;
+      while (Date.now() < flushed && titlesAt(snap).join() !== "old0,old1") await Bun.sleep(100);
+      expect(titlesAt(snap)).toEqual(["old0", "old1"]);
+      await runCli(["close", "--session", id], { env });
+      expect(titlesAt(snap)).toEqual(["old0", "old1"]);
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+});
+
+describe("(c) an unreadable snapshot is copied aside, never written over", () => {
+  test("3d — a TRUNCATED snapshot: restoreFailed, the bytes copied aside, and the copy named on open", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `c3d-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["t0", "t1", "t2"], env);
+    const snap = join(home, "snapshots", `${id}.json`);
+    const corrupt = readFileSync(snap, "utf8").slice(0, 60);
+    writeFileSync(snap, corrupt);
+    try {
+      const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      expect(o.code).toBe(0);
+      const hs = JSON.parse(o.stdout) as {
+        restoreFailed: { path: string } | null;
+        snapshotBackups: Backup[];
+      };
+      expect(hs.restoreFailed?.path).toBe(snap);
+      const copy = hs.snapshotBackups.find((b) => b.kind === "unreadable");
+      expect(copy).toBeDefined();
+      expect(copy?.taskCount).toBeNull();
+      expect(copy?.path).toContain(`${id}.unreadable-`);
+      expect(readFileSync(copy?.path as string, "utf8")).toBe(corrupt);
+      await runCli(["add", "new", "--session", id], { env });
+      await runCli(["close", "--session", id], { env });
+      expect(readFileSync(copy?.path as string, "utf8")).toBe(corrupt);
+      const all = readdirSync(join(home, "snapshots")).filter((f) =>
+        f.startsWith(`${id}.unreadable-`),
+      );
+      expect(all.length).toBe(1); // copied ONCE, not once per write
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("3e — valid JSON whose `tasks` is not an array is restoreFailed (not silently []), and is copied aside", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `c3e-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["t0", "t1", "t2"], env);
+    const snap = join(home, "snapshots", `${id}.json`);
+    const s = JSON.parse(readFileSync(snap, "utf8")) as { tasks: unknown };
+    s.tasks = { legacy: s.tasks };
+    const odd = JSON.stringify(s);
+    writeFileSync(snap, odd);
+    try {
+      const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      expect(o.code).toBe(0);
+      const hs = JSON.parse(o.stdout) as {
+        restoreFailed: { path: string; reason: string } | null;
+      };
+      expect(hs.restoreFailed).not.toBeNull();
+      expect(hs.restoreFailed?.path).toBe(snap);
+      expect(hs.restoreFailed?.reason).toContain("tasks");
+      await runCli(["close", "--session", id], { env });
+      const copies = readdirSync(join(home, "snapshots")).filter((f) =>
+        f.startsWith(`${id}.unreadable-`),
+      );
+      expect(copies.length).toBe(1);
+      expect(readFileSync(join(home, "snapshots", copies[0] as string), "utf8")).toBe(odd);
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("a board that never tried to restore still copies an unreadable file aside before its first write", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `c3x-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["t0"], env);
+    const snap = join(home, "snapshots", `${id}.json`);
+    writeFileSync(snap, "{not json");
+    try {
+      // --fresh: no restore is attempted, so only saveSnapshot can protect it.
+      await runCli(["open", "--session-key", key, "--fresh", "--no-open", "--timeout", "30"], {
+        env,
+      });
+      await runCli(["add", "new", "--session", id], { env });
+      const c = await runCli(["close", "--session", id], { env });
+      const copies = readdirSync(join(home, "snapshots")).filter((f) =>
+        f.startsWith(`${id}.unreadable-`),
+      );
+      expect(copies.length).toBe(1);
+      expect(readFileSync(join(home, "snapshots", copies[0] as string), "utf8")).toBe("{not json");
+      const closed = JSON.parse(c.stdout) as { snapshotBackups: Backup[] };
+      expect(closed.snapshotBackups.map((b) => b.kind)).toEqual(["unreadable"]);
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+});
+
+/** A backup named on the `open`/`close` envelope (`snapshotBackups`). */
+type Backup = {
+  kind: string;
+  path: string;
+  taskCount: number | null;
+  reason: string;
+  restore: string;
+};
+
+function titlesAt(path: string): string[] {
+  return (JSON.parse(readFileSync(path, "utf8")) as { tasks: { title: string }[] }).tasks.map(
+    (t) => t.title,
+  );
+}
+
+describe("(d) a backup this act made is named to the caller", () => {
+  test("close names the shrink backup, with its task count and the act that recovers it", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `d1-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["a", "b", "c"], env);
+    try {
+      await runCli(["open", "--session-key", key, "--fresh", "--no-open", "--timeout", "30"], {
+        env,
+      });
+      await runCli(["add", "only", "--session", id], { env });
+      const c = await runCli(["close", "--session-key", key], { env });
+      expect(c.code).toBe(0);
+      const e = JSON.parse(c.stdout) as { ok: boolean; snapshotBackups: Backup[] };
+      expect(e.ok).toBe(true);
+      expect(e.snapshotBackups.length).toBe(1);
+      const b = e.snapshotBackups[0] as Backup;
+      expect(b.kind).toBe("shrink");
+      expect(b.taskCount).toBe(3);
+      expect(titlesAt(b.path)).toEqual(["a", "b", "c"]);
+      const bakId = (b.path.split("/").pop() as string).replace(/\.json$/, "");
+      expect(b.restore).toBe(`open --session-key ${key} --fresh --restore ${bakId} --no-open`);
+      // and the act works as printed
+      const back = await runCli([...b.restore.split(" "), "--timeout", "30"], { env });
+      expect(back.code).toBe(0);
+      expect(await liveTitles(id, env)).toEqual(["a", "b", "c"]);
+      await runCli(["close", "--session", id], { env });
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  // Found checking route 1's other kinds (2026-09-28): a shrink backup's
+  // restore, run after newer work reached the snapshot, wrote the backup over
+  // it with no copy (no count shrank), so the newer work was in no file.
+  test("restoring a backup over a newer snapshot keeps the newer one first, and names it", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `d3-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["a", "b", "c"], env);
+    const snap = join(home, "snapshots", `${id}.json`);
+    try {
+      await runCli(["open", "--session-key", key, "--fresh", "--no-open", "--timeout", "30"], {
+        env,
+      });
+      await runCli(["add", "newer", "--session", id], { env });
+      const c = await runCli(["close", "--session-key", key], { env });
+      const shrink = (JSON.parse(c.stdout) as { snapshotBackups: Backup[] }).snapshotBackups[0];
+      expect(titlesAt(snap)).toEqual(["newer"]);
+      const back = await runCli([...(shrink as Backup).restore.split(" "), "--timeout", "30"], {
+        env,
+      });
+      expect(back.code).toBe(0);
+      expect(await liveTitles(id, env)).toEqual(["a", "b", "c"]);
+      const named = (JSON.parse(back.stdout) as { snapshotBackups: Backup[] }).snapshotBackups;
+      const kept = named.find((b) => titlesAt(b.path).includes("newer"));
+      expect(kept).toBeDefined();
+      expect(kept?.restore).toContain("--restore");
+      await runCli(["close", "--session", id], { env });
+      expect(titlesAt(snap)).toEqual(["a", "b", "c"]);
+      expect(titlesAt(kept?.path as string)).toEqual(["newer"]);
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("a close that backed nothing up says so: snapshotBackups is PRESENT and empty", async () => {
+    const env = { BOUNTY_HOME: uniqHome() };
+    const o = await runCli(["open", "--no-open", "--timeout", "30"], { env });
+    const hs = JSON.parse(o.stdout) as { session_id: string; snapshotBackups: Backup[] };
+    try {
+      expect(hs.snapshotBackups).toEqual([]);
+      await runCli(["add", "x", "--session", hs.session_id], { env });
+      const c = await runCli(["close", "--session", hs.session_id], { env });
+      expect(JSON.parse(c.stdout)).toEqual({
+        ok: true,
+        sent: "close",
+        down: true,
+        snapshotBackups: [],
+      });
+    } finally {
+      // Unkeyed: its argv has no --id, so killBoard cannot see it. Close it.
+      await runCli(["close", "--session", hs.session_id], { env });
+    }
+  }, 30000);
+});
+
+describe("pinned, not changed — the re-measure found these already fixed", () => {
+  test("SIGTERM saves: a mutation inside the debounce window reaches the snapshot", async () => {
+    const home = uniqHome();
+    const id = `sigterm-${crypto.randomUUID().slice(0, 8)}`;
+    const proc = Bun.spawn({
+      cmd: ["bun", "run", SERVER, "--no-open", "--port", "0", "--id", id],
+      stdin: "ignore",
+      stdout: "ignore",
+      stderr: "ignore",
+      env: { ...hermeticEnv(), BOUNTY_HOME: home },
+    });
+    try {
+      const disc = join(TEST_TMPDIR, `bounty-${id}.json`);
+      let port = 0;
+      const deadline = Date.now() + 5000;
+      while (Date.now() < deadline && !port) {
+        try {
+          port = (JSON.parse(readFileSync(disc, "utf8")) as { port: number }).port;
+        } catch {
+          await Bun.sleep(80);
+        }
+      }
+      expect(port).toBeGreaterThan(0);
+      await fetch(`http://127.0.0.1:${port}/cmd`, {
+        method: "POST",
+        body: JSON.stringify({
+          type: "task.add",
+          task: { id: "s1", title: "saved by SIGTERM", status: "todo" },
+        }),
+      });
+      proc.kill("SIGTERM"); // well inside the ~1s debounce
+      expect(await proc.exited).toBe(143);
+      expect(titlesAt(join(home, "snapshots", `${id}.json`))).toEqual(["saved by SIGTERM"]);
+    } finally {
+      killBoard(id);
+    }
+  }, 30000);
+});
+
+// ── Follow-ups from the data-loss cycle's no-stake verifier ──────────────
+// Each cell was run RED against the pre-fix build first.
+
+/** Run the CLI by bun's absolute path, so a test can hand it a PATH that has
+ *  no `ps` (or a broken one) and still start, bounded so a hang is a finding
+ *  rather than a suite timeout. `runCli` resolves `bun` on PATH. */
+async function runCliAbs(
+  args: string[],
+  env: Record<string, string>,
+  boundMs = 30000,
+): Promise<CliResult | "HUNG"> {
+  const proc = Bun.spawn({
+    cmd: [process.execPath, "run", CLI, ...args],
+    stdin: "ignore",
+    stdout: "pipe",
+    stderr: "pipe",
+    env: { ...hermeticEnv(), ...env },
+  });
+  const out = Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+  const r = await Promise.race([out, Bun.sleep(boundMs).then(() => "HUNG" as const)]);
+  if (r === "HUNG") {
+    proc.kill("SIGKILL");
+    return "HUNG";
+  }
+  const [stdout, stderr, code] = r;
+  return { stdout, stderr, code };
+}
+
+/** stderr is exactly ONE JSON envelope, with no prose beside it. */
+function onlyEnvelope(stderr: string): Envelope {
+  const lines = stderr.trim().split("\n");
+  expect(lines.length).toBe(1);
+  return JSON.parse(lines[0] as string) as Envelope;
+}
+
+/** A PATH holding a `ps` that runs and fails. */
+function brokenPsDir(): string {
+  const dir = mkdtempSync(join(TEST_TMPDIR, "brokenps-"));
+  writeFileSync(join(dir, "ps"), "#!/bin/sh\necho 'ps: simulated failure' >&2\nexit 1\n");
+  chmodSync(join(dir, "ps"), 0o755);
+  return dir;
+}
+
+describe("liveness that cannot be checked is a clean refusal", () => {
+  for (const variant of ["no ps on PATH", "a ps that runs and fails"] as const) {
+    test(`${variant}: open refuses with one envelope naming the lock, the pid and why`, async () => {
+      const home = uniqHome();
+      const key = `nops-${crypto.randomUUID().slice(0, 8)}`;
+      const id = sessionKeyToId(key);
+      const lock = join(home, "locks", `${id}.lock`);
+      mkdirSync(join(home, "locks"), { recursive: true });
+      // A live pid that is not this board's daemon: without `ps`, nothing can tell.
+      writeFileSync(lock, JSON.stringify({ pid: process.pid, port: 1 }));
+      const PATH = variant === "no ps on PATH" ? "/nonexistent" : brokenPsDir();
+      try {
+        const r = await runCliAbs(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+          BOUNTY_HOME: home,
+          PATH,
+        });
+        expect(r).not.toBe("HUNG");
+        const res = r as CliResult;
+        expect(res.stdout).toBe("");
+        const env = onlyEnvelope(res.stderr);
+        expect(env.error.kind).toBe("conflict");
+        expect(res.code).toBe(6);
+        expect(env.error.message).toContain(lock);
+        expect(env.error.message).toContain(`pid ${process.pid}`);
+        expect(env.error.message).toContain("ps");
+        expect(env.error.hint ?? "").toContain(lock);
+        expect(daemonPids(id)).toEqual([]);
+        // Refusing never takes over a holder it cannot judge.
+        expect(JSON.parse(readFileSync(lock, "utf8"))).toEqual({ pid: process.pid, port: 1 });
+      } finally {
+        killBoard(id);
+      }
+    }, 30000);
+  }
+
+  test("the daemon itself exits before touching anything, with a line in daemon.log", async () => {
+    const home = uniqHome();
+    const id = `nopsd-${crypto.randomUUID().slice(0, 8)}`;
+    mkdirSync(join(home, "locks"), { recursive: true });
+    mkdirSync(join(home, "snapshots"), { recursive: true });
+    const snap = join(home, "snapshots", `${id}.json`);
+    writeFileSync(snap, JSON.stringify({ title: "t", tasks: [] }));
+    const before = readFileSync(snap, "utf8");
+    writeFileSync(join(home, "locks", `${id}.lock`), JSON.stringify({ pid: process.pid }));
+    const proc = Bun.spawn({
+      cmd: [process.execPath, "run", SERVER, "--no-open", "--id", id, "--restore", id],
+      stdin: "ignore",
+      stdout: "ignore",
+      stderr: "pipe",
+      env: { ...hermeticEnv(), BOUNTY_HOME: home, PATH: "/nonexistent" },
+    });
+    try {
+      const exited = await Promise.race([
+        proc.exited,
+        Bun.sleep(8000).then(() => "RUNNING" as const),
+      ]);
+      expect(exited).toBe(6);
+      expect(await new Response(proc.stderr).text()).toContain("cannot tell");
+      const log = readFileSync(join(home, "daemon.log"), "utf8");
+      expect(log).toContain('"reason":"lockLivenessUnknown"');
+      expect(log).not.toContain("uncaughtException");
+      expect(readFileSync(snap, "utf8")).toBe(before);
+      expect(existsSync(join(TEST_TMPDIR, `bounty-${id}.json`))).toBe(false);
+    } finally {
+      proc.kill("SIGKILL");
+      killBoard(id);
+    }
+  }, 30000);
+});
+
+type SaveFailed = {
+  path: string;
+  error: string;
+  unsaved: string | null;
+  taskCount: number;
+} | null;
+
+/** The command a failed close's hint says to run once the path is fixed. */
+function restoreFromHint(hint: string | undefined): string[] {
+  const cmd = (hint ?? "").split("then run: ")[1] ?? "";
+  expect(cmd).toContain("--restore");
+  return cmd.trim().split(" ");
+}
+
+describe("a snapshot write that fails is reported, and the board is kept", () => {
+  test("snapshot path is a DIRECTORY: state says so mid-session, close fails, and the printed restore brings the work back", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `sdir-${crypto.randomUUID().slice(0, 8)}`;
+    const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], { env });
+    const id = (JSON.parse(o.stdout) as { session_id: string }).session_id;
+    const snap = join(home, "snapshots", `${id}.json`);
+    try {
+      mkdirSync(snap, { recursive: true });
+      await runCli(["add", "new1", "--session", id], { env });
+      await Bun.sleep(1600); // past the ~1s debounce
+      // Mid-session: the failed debounced write is readable on `state`.
+      const st = JSON.parse((await runCli(["state", "--session", id], { env })).stdout) as {
+        snapshotSaveFailed: SaveFailed;
+      };
+      expect(st.snapshotSaveFailed?.path).toBe(snap);
+      const mid = st.snapshotSaveFailed?.unsaved as string;
+      expect(mid).not.toBe(snap);
+      expect(titlesAt(mid)).toEqual(["new1"]);
+
+      const c = await runCli(["close", "--session-key", key], { env });
+      expect(c.stdout).toBe("");
+      const e = onlyEnvelope(c.stderr);
+      expect(e.error.kind).toBe("conflict");
+      expect(c.code).toBe(6);
+      expect(e.error.message).toContain(snap);
+      // The real cause, not the copy error from setting the old file aside.
+      const why = (e.error.server as { snapshotSaveFailed: SaveFailed }).snapshotSaveFailed?.error;
+      expect(why).not.toContain("copyfile");
+      expect(why).toContain("EISDIR");
+      expect(e.error.hint ?? "").toContain(`remove the directory ${snap}`);
+      const server = e.error.server as { snapshotSaveFailed: SaveFailed };
+      const unsaved = server.snapshotSaveFailed?.unsaved as string;
+      expect(e.error.message).toContain(unsaved);
+      expect(titlesAt(unsaved)).toEqual(["new1"]);
+      expect(daemonPids(id)).toEqual([]);
+
+      rmSync(snap, { recursive: true });
+      const back = await runCli([...restoreFromHint(e.error.hint), "--timeout", "30"], { env });
+      expect(back.code).toBe(0);
+      expect(await liveTitles(id, env)).toEqual(["new1"]);
+      expect((await runCli(["close", "--session", id], { env })).code).toBe(0);
+      expect(titlesAt(snap)).toEqual(["new1"]);
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("snapshot NOT WRITABLE (mode 000): close fails and names the dump; the old snapshot is untouched", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `sperm-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["s1", "s2", "s3"], env);
+    const snap = join(home, "snapshots", `${id}.json`);
+    const before = readFileSync(snap, "utf8");
+    chmodSync(snap, 0o000);
+    try {
+      await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], { env });
+      await runCli(["add", "new1", "--session", id], { env });
+      const c = await runCli(["close", "--session-key", key], { env });
+      expect(c.stdout).toBe("");
+      const e = onlyEnvelope(c.stderr);
+      expect(e.error.kind).toBe("conflict");
+      expect(c.code).toBe(6);
+      const unsaved = (e.error.server as { snapshotSaveFailed: SaveFailed }).snapshotSaveFailed
+        ?.unsaved as string;
+      expect(titlesAt(unsaved)).toEqual(["new1"]);
+      expect(e.error.hint ?? "").toContain("--restore");
+      // The real cause, not the copy error from setting the old file aside.
+      const why = (e.error.server as { snapshotSaveFailed: SaveFailed }).snapshotSaveFailed?.error;
+      expect(why).not.toContain("copyfile");
+      expect(why).toContain("EACCES");
+      expect(e.error.hint ?? "").toContain(`make ${snap} readable and writable`);
+      chmodSync(snap, 0o644);
+      expect(readFileSync(snap, "utf8")).toBe(before);
+    } finally {
+      try {
+        chmodSync(snap, 0o644);
+      } catch {}
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("snapshots/ itself unusable: the dump lands in $BOUNTY_HOME; with nowhere to write, close refuses and the board stays up", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `shome-${crypto.randomUUID().slice(0, 8)}`;
+    const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], { env });
+    const id = (JSON.parse(o.stdout) as { session_id: string }).session_id;
+    try {
+      writeFileSync(join(home, "snapshots"), "not a directory");
+      await runCli(["add", "new1", "--session", id], { env });
+      // Nowhere at all to write: the close is refused and the board kept.
+      chmodSync(home, 0o555);
+      const refused = await runCli(["close", "--session-key", key], { env });
+      chmodSync(home, 0o755);
+      expect(refused.stdout).toBe("");
+      expect(onlyEnvelope(refused.stderr).error.kind).toBe("conflict");
+      // The act rides a hint, as every other refusal's does.
+      const rHint = onlyEnvelope(refused.stderr).error.hint ?? "";
+      expect(rHint).toContain(home);
+      expect(rHint).toContain(`then run: close --session ${id}`);
+      expect(refused.code).toBe(6);
+      expect(await liveTitles(id, env)).toEqual(["new1"]);
+
+      // $BOUNTY_HOME writable again: the dump lands there, outside snapshots/.
+      const c = await runCli(["close", "--session-key", key], { env });
+      const e = onlyEnvelope(c.stderr);
+      expect(c.code).toBe(6);
+      const unsaved = (e.error.server as { snapshotSaveFailed: SaveFailed }).snapshotSaveFailed
+        ?.unsaved as string;
+      expect(dirname(unsaved)).toBe(home);
+      // The path that is actually wrong is snapshots/ itself, not the file in it.
+      expect(e.error.hint ?? "").toContain(`${join(home, "snapshots")} is a file`);
+      expect(e.error.hint ?? "").not.toContain(join(home, "snapshots", `${id}.json`));
+      expect(titlesAt(unsaved)).toEqual(["new1"]);
+      rmSync(join(home, "snapshots"));
+      const back = await runCli([...restoreFromHint(e.error.hint), "--timeout", "30"], { env });
+      expect(back.code).toBe(0);
+      expect(await liveTitles(id, env)).toEqual(["new1"]);
+      await runCli(["close", "--session", id], { env });
+    } finally {
+      try {
+        chmodSync(home, 0o755);
+      } catch {}
+      killBoard(id);
+    }
+  }, 60000);
+
+  // Verifier, 2026-09-28 (route 1): the save failed, the path healed, a task was
+  // added, and `close` exited 0 with the full snapshot while still offering the
+  // older `unsaved` dump's restore. Running it rolled the board back.
+  test("a later successful save supersedes the unsaved dump: kept on disk, never offered as a restore", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `ssup-${crypto.randomUUID().slice(0, 8)}`;
+    const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], { env });
+    const id = (JSON.parse(o.stdout) as { session_id: string }).session_id;
+    const snap = join(home, "snapshots", `${id}.json`);
+    try {
+      await runCli(["add", "a", "--session", id], { env });
+      await Bun.sleep(1600);
+      chmodSync(snap, 0o000);
+      await runCli(["add", "b", "--session", id], { env });
+      await Bun.sleep(1600); // the failed write dumps [a, b]
+      chmodSync(snap, 0o644);
+      await runCli(["add", "c", "--session", id], { env });
+      await Bun.sleep(1600); // this write succeeds: [a, b, c]
+      const c = await runCli(["close", "--session-key", key], { env });
+      expect(c.code).toBe(0);
+      expect(titlesAt(snap)).toEqual(["a", "b", "c"]);
+      const out = JSON.parse(c.stdout) as {
+        snapshotBackups: {
+          kind: string;
+          path: string;
+          restore: string | null;
+          superseded?: string;
+        }[];
+      };
+      const dump = out.snapshotBackups.find((b) => b.kind === "unsaved");
+      expect(dump).toBeDefined();
+      // Not an act: no restore, and a note saying why.
+      expect(dump?.restore).toBeNull();
+      expect(dump?.superseded ?? "").toContain(snap);
+      expect(c.stderr).not.toContain("recover with: open --session-key");
+      // Kept: deleting it is the caller's call.
+      expect(titlesAt(dump?.path as string)).toEqual(["a", "b"]);
+    } finally {
+      try {
+        chmodSync(snap, 0o644);
+      } catch {}
+      killBoard(id);
+    }
+  }, 60000);
+});
+
+// Verifier, 2026-09-28 (route 2): with nothing writable only `close` was
+// guarded, so the idle timeout ended the daemon and the unsaved tasks with it.
+describe("with nothing writable, no request to end the board drops its tasks", () => {
+  /** Open a keyed board, save [a], then make nothing writable and add b. */
+  async function unwritableBoard(prefix: string, timeout: string) {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
+    const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", timeout], {
+      env,
+    });
+    const ready = JSON.parse(o.stdout) as { session_id: string; url: string };
+    const id = ready.session_id;
+    await runCli(["add", "a", "--session", id], { env });
+    await Bun.sleep(1600);
+    chmodSync(join(home, "snapshots"), 0o555);
+    chmodSync(home, 0o555);
+    await runCli(["add", "b", "--session", id], { env });
+    const heal = () => {
+      chmodSync(home, 0o755);
+      chmodSync(join(home, "snapshots"), 0o755);
+    };
+    return { home, env, key, id, url: ready.url, heal };
+  }
+
+  test("the idle timeout is held (logged, and on state) until a save works, then it ends the board", async () => {
+    const b = await unwritableBoard("idleh", "2");
+    const snap = join(b.home, "snapshots", `${b.id}.json`);
+    try {
+      await Bun.sleep(4500); // well past the 2 s timeout
+      expect(daemonPids(b.id).length).toBe(1);
+      const st = JSON.parse(
+        (await runCli(["state", "--session", b.id], { env: b.env })).stdout,
+      ) as {
+        snapshotSaveFailed: (SaveFailed & { held?: string | null }) | null;
+      };
+      expect(st.snapshotSaveFailed?.unsaved).toBeNull();
+      expect(st.snapshotSaveFailed?.held ?? "").toContain("idle timeout");
+      expect(readFileSync(join(b.home, "daemon.log"), "utf8")).toContain(
+        '"reason":"idleCloseHeld"',
+      );
+      b.heal();
+      // The next idle check saves, and the board ends as a timeout.
+      const deadline = Date.now() + 10000;
+      while (Date.now() < deadline && daemonPids(b.id).length) await Bun.sleep(200);
+      expect(daemonPids(b.id)).toEqual([]);
+      expect(titlesAt(snap)).toEqual(["a", "b"]);
+    } finally {
+      try {
+        b.heal();
+      } catch {}
+      killBoard(b.id);
+    }
+  }, 60000);
+
+  test("the browser's Close board is refused the same way, and says so to the board", async () => {
+    const b = await unwritableBoard("wsh", "60");
+    const snap = join(b.home, "snapshots", `${b.id}.json`);
+    try {
+      const ws = new WebSocket(`${b.url.replace(/^http/, "ws")}/ws`);
+      await new Promise((r) => ws.addEventListener("open", r, { once: true }));
+      const said: string[] = [];
+      ws.addEventListener("message", (m) => {
+        const msg = JSON.parse(String(m.data)) as { type: string; text?: string };
+        if (msg.type === "message" && msg.text) said.push(msg.text);
+      });
+      ws.send(JSON.stringify({ type: "close" }));
+      await Bun.sleep(1500);
+      expect(daemonPids(b.id).length).toBe(1);
+      expect(said.join("\n")).toContain("not closed");
+      ws.close();
+      b.heal();
+      expect((await runCli(["close", "--session", b.id], { env: b.env })).code).toBe(0);
+      expect(titlesAt(snap)).toEqual(["a", "b"]);
+    } finally {
+      try {
+        b.heal();
+      } catch {}
+      killBoard(b.id);
+    }
+  }, 60000);
+});
+
+describe("an unresponsive daemon is bounded, never waited on forever", () => {
+  test("open and close against a SIGSTOPped daemon each end with an envelope naming the pid", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `stop-${crypto.randomUUID().slice(0, 8)}`;
+    const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "60"], { env });
+    const id = (JSON.parse(o.stdout) as { session_id: string }).session_id;
+    const pid = (
+      JSON.parse(readFileSync(join(home, "locks", `${id}.lock`), "utf8")) as {
+        pid: number;
+      }
+    ).pid;
+    process.kill(pid, "SIGSTOP");
+    try {
+      const r = await runCliAbs(["open", "--session-key", key, "--no-open"], env, 25000);
+      expect(r).not.toBe("HUNG");
+      const res = r as CliResult;
+      expect(res.stdout).toBe("");
+      const e = onlyEnvelope(res.stderr);
+      expect(e.error.message).toContain("not answering");
+      expect(e.error.message).toContain(`pid ${pid}`);
+      expect(res.code).toBe(e.error.exit_code);
+
+      const c = await runCliAbs(["close", "--session-key", key], env, 25000);
+      expect(c).not.toBe("HUNG");
+      const cres = c as CliResult;
+      expect(cres.stdout).toBe("");
+      const ce = onlyEnvelope(cres.stderr);
+      expect(ce.error.message).toContain(`pid ${pid}`);
+      expect(cres.code).toBe(ce.error.exit_code);
+      expect(cres.code).not.toBe(0);
+      // Never two daemons for the board, stopped or not.
+      expect(daemonPids(id)).toEqual([pid]);
+    } finally {
+      try {
+        process.kill(pid, "SIGCONT");
+      } catch {}
+      killBoard(id);
+    }
+  }, 70000);
+});
+
+// Verifier, 2026-09-28 (third round), and decision-log row 13: every round
+// found a narrower edge of one cause, a daemon writing over a snapshot it never
+// read or kept a copy of. The rule: a daemon writes over its own snapshot only
+// if it read that file at boot, or wrote it itself since, or has just copied it
+// aside. Otherwise the copy comes first, and if the copy fails the board goes
+// to the `unsaved` dump instead.
+type NamedBackupT = Omit<Backup, "restore"> & { restore: string | null; superseded?: string };
+
+/** The one backup (named on an envelope) whose file holds `title`. */
+function backupHolding(list: NamedBackupT[], title: string): NamedBackupT | undefined {
+  return list.find((b) => {
+    try {
+      return titlesAt(b.path).includes(title);
+    } catch {
+      return false;
+    }
+  });
+}
+
+describe("a daemon never writes over a snapshot it has not read or kept", () => {
+  test("route A: --fresh --restore <other> with snapshots/ read-only, then a heal: the old board is kept, with its restore", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const keyP = `ra-p-${crypto.randomUUID().slice(0, 8)}`;
+    const keyQ = `ra-q-${crypto.randomUUID().slice(0, 8)}`;
+    const pid = await seedClosed(keyP, ["p1-precious", "p2-precious"], env);
+    const qid = await seedClosed(keyQ, ["q1"], env);
+    const sn = join(home, "snapshots");
+    const snap = join(sn, `${pid}.json`);
+    try {
+      chmodSync(sn, 0o555);
+      const o = await runCli(
+        [
+          "open",
+          "--session-key",
+          keyP,
+          "--fresh",
+          "--restore",
+          qid,
+          "--no-open",
+          "--timeout",
+          "30",
+        ],
+        { env },
+      );
+      expect(o.code).toBe(0);
+      await Bun.sleep(1600); // the debounced write of the restored board
+      const st = JSON.parse((await runCli(["state", "--session", pid], { env })).stdout) as {
+        snapshotSaveFailed: (SaveFailed & { fix: string }) | null;
+      };
+      // The write did not happen: the old board was never copied aside.
+      expect(st.snapshotSaveFailed?.path).toBe(snap);
+      expect(st.snapshotSaveFailed?.error ?? "").toContain("could not be copied aside");
+      expect(st.snapshotSaveFailed?.fix ?? "").toContain(`make the folder ${sn} writable`);
+      expect(titlesAt(snap)).toEqual(["p1-precious", "p2-precious"]);
+
+      chmodSync(sn, 0o755);
+      await runCli(["add", "q2", "--session", pid], { env });
+      await Bun.sleep(1600);
+      const c = await runCli(["close", "--session-key", keyP], { env });
+      expect(c.code).toBe(0);
+      expect(titlesAt(snap)).toEqual(["q1", "q2"]);
+      const named = (JSON.parse(c.stdout) as { snapshotBackups: NamedBackupT[] }).snapshotBackups;
+      const kept = backupHolding(named, "p1-precious");
+      expect(kept).toBeDefined();
+      expect(kept?.kind).toBe("unread");
+      expect(kept?.taskCount).toBe(2);
+      expect(kept?.restore ?? "").toContain("--restore");
+      expect(titlesAt(kept?.path as string)).toEqual(["p1-precious", "p2-precious"]);
+    } finally {
+      try {
+        chmodSync(sn, 0o755);
+      } catch {}
+      killBoard(pid);
+    }
+  }, 60000);
+
+  test("route B: a restore while the board's own snapshot is mode 000, then a heal: the old board is kept", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const keyP = `rb-p-${crypto.randomUUID().slice(0, 8)}`;
+    const keyQ = `rb-q-${crypto.randomUUID().slice(0, 8)}`;
+    const pid = await seedClosed(keyP, ["p1-precious", "p2-precious"], env);
+    const qid = await seedClosed(keyQ, ["q1", "q2"], env);
+    const snap = join(home, "snapshots", `${pid}.json`);
+    try {
+      chmodSync(snap, 0o000);
+      const o = await runCli(
+        [
+          "open",
+          "--session-key",
+          keyP,
+          "--fresh",
+          "--restore",
+          qid,
+          "--no-open",
+          "--timeout",
+          "30",
+        ],
+        { env },
+      );
+      expect(o.code).toBe(0);
+      await Bun.sleep(1600);
+      chmodSync(snap, 0o644);
+      await Bun.sleep(1600);
+      const c = await runCli(["close", "--session-key", keyP], { env });
+      expect(c.code).toBe(0);
+      expect(titlesAt(snap)).toEqual(["q1", "q2"]);
+      const named = (JSON.parse(c.stdout) as { snapshotBackups: NamedBackupT[] }).snapshotBackups;
+      const kept = backupHolding(named, "p1-precious");
+      expect(kept?.kind).toBe("unread");
+      expect(kept?.restore ?? "").toContain("--restore");
+    } finally {
+      try {
+        chmodSync(snap, 0o644);
+      } catch {}
+      killBoard(pid);
+    }
+  }, 60000);
+
+  test("respawn route: a keyed respawn over a mode-000 snapshot, work added, then a heal: the old board is kept", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `rr-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["p1-precious", "p2-precious"], env);
+    const snap = join(home, "snapshots", `${id}.json`);
+    try {
+      chmodSync(snap, 0o000);
+      const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      expect(o.code).toBe(0);
+      await runCli(["add", "n1", "--session", id], { env });
+      await runCli(["add", "n2", "--session", id], { env });
+      await Bun.sleep(1600);
+      chmodSync(snap, 0o644);
+      await Bun.sleep(1600);
+      const c = await runCli(["close", "--session-key", key], { env });
+      expect(c.code).toBe(0);
+      expect(titlesAt(snap)).toEqual(["n1", "n2"]);
+      const named = (JSON.parse(c.stdout) as { snapshotBackups: NamedBackupT[] }).snapshotBackups;
+      const kept = backupHolding(named, "p1-precious");
+      expect(kept?.kind).toBe("unread");
+      expect(kept?.restore ?? "").toContain("--restore");
+      // "superseded, nothing to do" is said only beside the kept copy's act.
+      if (c.stderr.includes("superseded")) expect(c.stderr).toContain("recover with:");
+    } finally {
+      try {
+        chmodSync(snap, 0o644);
+      } catch {}
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("a restore whose board differs from the snapshot only in its title keeps the snapshot first", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `rt-${crypto.randomUUID().slice(0, 8)}`;
+    const o = await runCli(
+      ["open", "--session-key", key, "--title", "Alpha", "--no-open", "--timeout", "30"],
+      { env },
+    );
+    const id = (JSON.parse(o.stdout) as { session_id: string }).session_id;
+    try {
+      await runCli(["add", "t1", "--session", id], { env });
+      await runCli(["close", "--session", id], { env });
+      const snap = join(home, "snapshots", `${id}.json`);
+      const board = JSON.parse(readFileSync(snap, "utf8")) as { title: string };
+      expect(board.title).toBe("Alpha");
+      const other = join(home, "beta.json");
+      writeFileSync(other, JSON.stringify({ ...board, title: "Beta" }));
+      const r = await runCli(
+        ["open", "--session-key", key, "--restore", other, "--no-open", "--timeout", "30"],
+        { env },
+      );
+      expect(r.code).toBe(0);
+      const c = await runCli(["close", "--session", id], { env });
+      expect((JSON.parse(readFileSync(snap, "utf8")) as { title: string }).title).toBe("Beta");
+      const all = [
+        ...(JSON.parse(r.stdout) as { snapshotBackups: NamedBackupT[] }).snapshotBackups,
+        ...(JSON.parse(c.stdout) as { snapshotBackups: NamedBackupT[] }).snapshotBackups,
+      ];
+      const kept = all.find(
+        (b) => (JSON.parse(readFileSync(b.path, "utf8")) as { title: string }).title === "Alpha",
+      );
+      expect(kept).toBeDefined();
+      expect(kept?.restore ?? "").toContain("--restore");
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("--fresh over a snapshot, then a board that GROWS past it: the old board is kept once", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `rf-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["old"], env);
+    try {
+      await runCli(["open", "--session-key", key, "--fresh", "--no-open", "--timeout", "30"], {
+        env,
+      });
+      await runCli(["add", "x", "--session", id], { env });
+      await runCli(["add", "y", "--session", id], { env });
+      const c = await runCli(["close", "--session", id], { env });
+      const named = (JSON.parse(c.stdout) as { snapshotBackups: NamedBackupT[] }).snapshotBackups;
+      expect(named.map((b) => b.kind)).toEqual(["unread"]);
+      expect(titlesAt(named[0]?.path as string)).toEqual(["old"]);
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  // The cost check: the rule fires only when the daemon did not read the file.
+  test("no cost on the common paths: open/add/close and a keyed respawn/add/close back nothing up and leave no new file", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `rc-${crypto.randomUUID().slice(0, 8)}`;
+    const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], { env });
+    const id = (JSON.parse(o.stdout) as { session_id: string }).session_id;
+    try {
+      expect((JSON.parse(o.stdout) as { snapshotBackups: Backup[] }).snapshotBackups).toEqual([]);
+      await runCli(["add", "a", "--session", id], { env });
+      await Bun.sleep(1600); // a debounced write, then the close's
+      const c1 = await runCli(["close", "--session", id], { env });
+      expect((JSON.parse(c1.stdout) as { snapshotBackups: Backup[] }).snapshotBackups).toEqual([]);
+      expect(readdirSync(join(home, "snapshots"))).toEqual([`${id}.json`]);
+
+      const r = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      expect((JSON.parse(r.stdout) as { snapshotBackups: Backup[] }).snapshotBackups).toEqual([]);
+      await runCli(["add", "b", "--session", id], { env });
+      await Bun.sleep(1600);
+      const c2 = await runCli(["close", "--session", id], { env });
+      expect(c2.code).toBe(0);
+      expect((JSON.parse(c2.stdout) as { snapshotBackups: Backup[] }).snapshotBackups).toEqual([]);
+      expect(readdirSync(join(home, "snapshots"))).toEqual([`${id}.json`]);
+      expect(titlesAt(join(home, "snapshots", `${id}.json`))).toEqual(["a", "b"]);
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("no cost unkeyed: open/add/close backs nothing up and leaves one file", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const o = await runCli(["open", "--no-open", "--timeout", "30"], { env });
+    const id = (JSON.parse(o.stdout) as { session_id: string }).session_id;
+    await runCli(["add", "a", "--session", id], { env });
+    await Bun.sleep(1600);
+    const c = await runCli(["close", "--session", id], { env });
+    expect((JSON.parse(c.stdout) as { snapshotBackups: Backup[] }).snapshotBackups).toEqual([]);
+    expect(readdirSync(join(home, "snapshots"))).toEqual([`${id}.json`]);
   }, 30000);
 });

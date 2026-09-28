@@ -20,12 +20,12 @@
 // scenario needs a daemon that dies and comes back on a DIFFERENT port on cue.
 // The fake answers `/state` so the CLI's own start-up handshake is satisfied
 // and no real daemon is ever spawned.
-import { afterEach, expect, test } from "bun:test";
+import { afterEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { cli } from "./cli.ts";
+import { cli, refusalWords, startFailure } from "./cli.ts";
 
 const CLI = join(dirname(fileURLToPath(import.meta.url)), "cli.ts");
 
@@ -433,3 +433,59 @@ test("close reports a daemon still answering at the bound as a failure, not succ
   expect(env.error.kind).toBe("internal");
   expect(env.error.message).toContain("still answering");
 }, 15000);
+
+// The warm path's unknown-project refusal is recognised by the daemon's
+// structured marker (`reason: "unknown-project"`, `project`), never by its
+// message, which is presentation and may be reworded. Driven on the pure
+// function the CLI relays through, with a daemon body whose words differ.
+describe("refusalWords: the daemon's unknown-project refusal is read by its marker", () => {
+  const ASIDE = "/tmp/astro/registry.json.unreadable-2026-09-28T00-00-00Z";
+
+  test("a reworded message with the marker still gets the set-aside notice", () => {
+    const w = refusalWords(
+      { error: "no project called alpha", reason: "unknown-project", project: "alpha" },
+      [ASIDE],
+    );
+    expect(w.message).toContain("unknown project 'alpha'");
+    expect(w.message).toContain(ASIDE);
+    expect(w.hint).toContain("to recover it");
+  });
+
+  test("the old message text without the marker is relayed as the daemon worded it", () => {
+    expect(refusalWords({ error: "unknown project 'alpha'" }, [ASIDE])).toEqual({
+      message: "unknown project 'alpha'",
+    });
+  });
+
+  test("any other rejection is relayed as the daemon worded it", () => {
+    expect(refusalWords({ error: "id 'alpha' already registered" }, [ASIDE])).toEqual({
+      message: "id 'alpha' already registered",
+    });
+  });
+});
+
+// A daemon that exits before its handshake: the CLI relays what it said. A
+// structured refusal line is relayed by its `message`; anything else (a crash)
+// is quoted; silence is said to be silence rather than dressed as a timeout.
+describe("startFailure: an early daemon exit is reported in the daemon's words", () => {
+  test("the last structured line's message and hint are relayed, the line kept under server", () => {
+    const line = { event: "bind_error", message: "could not listen", hint: "free the port" };
+    const f = startFailure("exit 2", `noise\n${JSON.stringify(line)}\n`);
+    expect(f.message).toBe("could not listen");
+    expect(f.extra).toEqual({ hint: "free the port", server: line });
+  });
+
+  test("an unstructured exit quotes the tail and names how it ended", () => {
+    const f = startFailure("exit 1", "TypeError: boom\n    at main\n");
+    expect(f.message).toContain("exit 1");
+    expect(f.message).toContain("TypeError: boom");
+  });
+
+  test("an exit with no words says so", () => {
+    expect(startFailure("signal SIGKILL", "").message).toContain("gave no reason");
+  });
+
+  test("no exit is the timeout, as before", () => {
+    expect(startFailure(null, "").message).toBe("astrolabe daemon failed to start within 45s");
+  });
+});

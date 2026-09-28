@@ -126,7 +126,11 @@ const EXPECTED: Record<
   // refused from the on-disk registry when no daemon is up, instead of starting
   // one to ask. The unknown-project raise carries the registry's ids (in hand);
   // `add`'s cold duplicate raise (the reducer's own message) has no closed set.
-  astrolabe: { sites: 16, choices: 2, verbRoster: true, flagMap: true },
+  // 16/2 -> 17/2 (2026-09-28, data-you-cant-get-back): an unreadable
+  // registry.json is refused cold as `conflict` instead of read as the empty
+  // board. No `choices`: no set is in hand — that is the whole refusal; the
+  // hint names the two acts (fix it, or `open` to set it aside).
+  astrolabe: { sites: 17, choices: 2, verbRoster: true, flagMap: true },
   // 33/2 -> 27/1 (2026-09-26): bounty moved onto the kit registry, as
   // glamour did — its parse, unknown-verb and missing-id raises left for the kit.
   // 27 -> 28 (2026-09-27): `update --stdin` refuses an empty stdin (s5-9).
@@ -144,7 +148,21 @@ const EXPECTED: Record<
   // that does not exist is `not_found` before any daemon is spawned, where it
   // used to start an unrelated empty board at exit 0. No `choices`: the
   // snapshots are the host's, and the hint names `sessions` to list them.
-  bounty: { sites: 32, choices: 2, verbRoster: true, flagMap: true },
+  // 32 -> 33 (2026-09-28, data-you-cant-get-back follow-ups): `open` refuses as
+  // `conflict` when the board's lock holder is a live pid whose liveness `ps`
+  // cannot check. No `choices`: the hint names the two acts (fix `ps`, or
+  // remove a lock whose pid is not this board's daemon).
+  // 33 -> 34 (same follow-ups): `close` whose final snapshot write failed is a
+  // `conflict` (the board was dumped to an `unsaved` file; the hint names the
+  // restore). No `choices`.
+  // 34 -> 35 (same follow-ups): a `close` (or any bounded `postCmd`) whose
+  // daemon does not answer within the timeout is `internal`, naming the pid,
+  // where it used to hang. No `choices`: the hint names resume or end the pid.
+  // 35 -> 36 (second verifier's follow-ups): the nothing-writable `close`
+  // refusal is raised by the CLI with a hint (what to make writable, then the
+  // `close` to run again), where it used to reach the generic daemon-refusal
+  // funnel with its act only in the message. No `choices`.
+  bounty: { sites: 36, choices: 2, verbRoster: true, flagMap: true },
   // 8/2 -> 7/1 (2026-09-26): digestify's flag rejection moved onto the kit
   // registry, as glamour's did. `--theme`'s `choices` is the one left here.
   digestify: { sites: 7, choices: 1, verbRoster: false, flagMap: true },
