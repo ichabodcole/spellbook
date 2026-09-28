@@ -55,3 +55,12 @@ paths answer the same act differently.
   `k-my-key-…`.
 - **The not_found hint says "it hashes the repo root"** even when the cwd is not
   in a repo.
+
+**From the data-loss cycle's verifier (2026-09-28, on `516d0042`):**
+
+- **bounty:** a plain `open` racing `--fresh` or `close` can exit 0 as
+  "attached" to a board that is torn down a moment later. It never makes two
+  daemons.
+- **astrolabe:** `close` is a success but shows no `# warning:` while a registry
+  is set aside. Cold `list`/`state` return `projects: []` without reading the
+  disk registry (older than the cycle).
