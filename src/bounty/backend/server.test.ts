@@ -5519,3 +5519,195 @@ describe("one act, one answer — add with a title AND --stdin", () => {
     }
   }, 30000);
 });
+
+// ── Data you can't get back (cycle 2026-09-data-you-cant-get-back) ──────────
+// The re-measure (decision-log row 3) found four paths where an ordinary act
+// still destroys state with no backup. Each is pinned here by a cell that was
+// run RED against the pre-fix build first.
+
+/** Every daemon process running board `id`, by the `--id <id>` its argv
+ *  carries. `pgrep` excludes itself, and no CLI argv carries `--id`. */
+function daemonPids(id: string): number[] {
+  const r = Bun.spawnSync(["pgrep", "-f", "--", `--id ${id}`]);
+  return new TextDecoder().decode(r.stdout).trim().split("\n").filter(Boolean).map(Number);
+}
+
+/** The teardown of last resort: a lock bug leaves orphans, and an orphan
+ *  outlives the suite. SIGKILL every daemon still running `id`. */
+function killBoard(id: string): void {
+  for (const pid of daemonPids(id)) {
+    try {
+      process.kill(pid, "SIGKILL");
+    } catch {}
+  }
+}
+
+async function liveTitles(id: string, env: Record<string, string>): Promise<string[]> {
+  const st = await runCli(["state", "--session", id], { env });
+  return (JSON.parse(st.stdout) as { state: { tasks: { title: string }[] } }).state.tasks.map(
+    (t) => t.title,
+  );
+}
+
+/** Open keyed board `key`, add `titles`, close it: a dead board whose snapshot
+ *  holds exactly those tasks. Returns the derived id. */
+async function seedClosed(key: string, titles: string[], env: Record<string, string>) {
+  const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], { env });
+  const id = (JSON.parse(o.stdout) as { session_id: string }).session_id;
+  for (const t of titles) await runCli(["add", t, "--session", id], { env });
+  await runCli(["close", "--session", id], { env });
+  return id;
+}
+
+describe("(a) one daemon per id", () => {
+  test("N parallel keyed opens start exactly ONE daemon, and every open reports the same board", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `lock-${crypto.randomUUID().slice(0, 8)}`;
+    const id = sessionKeyToId(key);
+    try {
+      const N = 5;
+      const opens = await Promise.all(
+        Array.from({ length: N }, () =>
+          runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], { env }),
+        ),
+      );
+      for (const o of opens) expect(o.code).toBe(0);
+      const boards = opens.map((o) => JSON.parse(o.stdout) as { port: number; session_id: string });
+      expect(new Set(boards.map((b) => b.session_id))).toEqual(new Set([id]));
+      expect(new Set(boards.map((b) => b.port)).size).toBe(1);
+      // Let any loser daemon finish booting (or dying) before counting.
+      await Bun.sleep(1500);
+      expect(daemonPids(id).length).toBe(1);
+      const st = await fetch(`http://127.0.0.1:${boards[0]?.port}/state`);
+      expect(st.ok).toBe(true);
+      expect((await runCli(["close", "--session", id], { env })).code).toBe(0);
+      await Bun.sleep(300);
+      expect(daemonPids(id)).toEqual([]);
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("a second daemon for a live id exits before touching the snapshot", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `lock2-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["keep-a", "keep-b"], env);
+    try {
+      const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      expect(o.code).toBe(0);
+      const snap = join(home, "snapshots", `${id}.json`);
+      const before = readFileSync(snap, "utf8");
+      // A second daemon for the same id, spawned the way `open` spawns one but
+      // with no --restore: an EMPTY board, the orphan's shape.
+      const second = Bun.spawn({
+        cmd: ["bun", "run", SERVER, "--no-open", "--id", id, "--timeout", "30"],
+        stdin: "ignore",
+        stdout: "ignore",
+        stderr: "pipe",
+        env: { ...hermeticEnv(), BOUNTY_HOME: home },
+      });
+      const exited = await Promise.race([
+        second.exited,
+        Bun.sleep(5000).then(() => "RUNNING" as const),
+      ]);
+      if (exited === "RUNNING") second.kill("SIGKILL");
+      expect(exited).not.toBe("RUNNING");
+      expect(exited).not.toBe(0);
+      expect(await new Response(second.stderr).text()).toContain("already running");
+      expect(readFileSync(snap, "utf8")).toBe(before);
+      expect(await liveTitles(id, env)).toEqual(["keep-a", "keep-b"]);
+      expect(daemonPids(id).length).toBe(1);
+      await runCli(["close", "--session", id], { env });
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("a STALE lock (its pid is dead) is taken over, and a clean exit releases it", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `lock3-${crypto.randomUUID().slice(0, 8)}`;
+    const id = sessionKeyToId(key);
+    // A pid that is certainly dead: a process that has already exited.
+    const gone = Bun.spawnSync(["true"]).pid;
+    mkdirSync(join(home, "locks"), { recursive: true });
+    writeFileSync(join(home, "locks", `${id}.lock`), JSON.stringify({ pid: gone, port: 1 }));
+    try {
+      const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      expect(o.code).toBe(0);
+      const lock = JSON.parse(readFileSync(join(home, "locks", `${id}.lock`), "utf8")) as {
+        pid: number;
+        port: number;
+      };
+      expect(daemonPids(id)).toEqual([lock.pid]);
+      expect(lock.port).toBe((JSON.parse(o.stdout) as { port: number }).port);
+      await runCli(["close", "--session", id], { env });
+      await Bun.sleep(300);
+      expect(existsSync(join(home, "locks", `${id}.lock`))).toBe(false);
+    } finally {
+      killBoard(id);
+    }
+  }, 30000);
+
+  test("a lock naming a LIVE pid that is not this board's daemon (a reused pid) is taken over", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `lock4-${crypto.randomUUID().slice(0, 8)}`;
+    const id = sessionKeyToId(key);
+    mkdirSync(join(home, "locks"), { recursive: true });
+    // This test process is alive and is not a bounty daemon for `id`.
+    writeFileSync(join(home, "locks", `${id}.lock`), JSON.stringify({ pid: process.pid }));
+    try {
+      const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      expect(o.code).toBe(0);
+      expect(daemonPids(id).length).toBe(1);
+      await runCli(["close", "--session", id], { env });
+    } finally {
+      killBoard(id);
+    }
+  }, 30000);
+
+  test("close, reopen and --fresh in quick succession: a dying daemon's lock never refuses its successor", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `lock5-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["one"], env);
+    try {
+      for (let i = 0; i < 3; i++) {
+        const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+          env,
+        });
+        expect(o.code).toBe(0);
+        expect(await liveTitles(id, env)).toEqual(["one"]);
+        const f = await runCli(
+          [
+            "open",
+            "--session-key",
+            key,
+            "--fresh",
+            "--restore",
+            id,
+            "--no-open",
+            "--timeout",
+            "30",
+          ],
+          { env },
+        );
+        expect(f.code).toBe(0);
+        expect(await liveTitles(id, env)).toEqual(["one"]);
+        expect((await runCli(["close", "--session", id], { env })).code).toBe(0);
+      }
+      expect(daemonPids(id)).toEqual([]);
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+});

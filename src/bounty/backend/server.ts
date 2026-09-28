@@ -91,6 +91,7 @@ import { refuseForeignOrigin } from "../../kit/wire/origin.ts";
 import { resolveMode as resolveModeIn, serveFromDist } from "../../kit/wire/serveDist.ts";
 import { sseResponse as kitSseResponse, type SseClients } from "../../kit/wire/sse.ts";
 import { IDLE_TIMEOUT_SEC, SSE_HEARTBEAT_MS } from "./heartbeat.ts";
+import { acquireLock, lockPath, releaseLock, updateLock } from "./lock.ts";
 
 // The board's HTML used to be `scripts/template.html`, read at boot and string
 // substituted before every response. It is now a React surface at
@@ -730,6 +731,28 @@ async function main(argv: string[]): Promise<number> {
   });
   process.on("SIGTERM", onFatal("SIGTERM", 143));
   process.on("SIGINT", onFatal("SIGINT", 130));
+
+  // ⛔ ONE DAEMON PER ID, TAKEN HERE: BEFORE ANY SNAPSHOT WRITE (see lock.ts).
+  // A forced id (`--id`, what every keyed open passes) is the only kind two
+  // daemons can share; a minted id is random and needs no lock. A daemon that
+  // finds a live owner exits NOW, having read and written nothing, and the
+  // `open` that spawned it attaches to the owner's discovery file. Exit 6 is
+  // the house `conflict`; nobody reads it (the daemon is detached), so the
+  // stderr line below, which lands in daemon.log, is the record.
+  const lockFile = sessionId ? lockPath(BOUNTY_HOME, sessionId) : null;
+  if (lockFile) {
+    const got = await acquireLock(lockFile, sessionId, {
+      closingWaitMs: SHUTDOWN_WATCHDOG_MS + 1000,
+    });
+    if (!got.ok) {
+      const h = got.holder;
+      logDaemon("lockHeld", { holder: h });
+      process.stderr.write(
+        `bounty: board ${sessionId} is already running${h ? ` (pid ${h.pid}${h.port ? `, port ${h.port}` : ""})` : ""}; this daemon exits without touching it\n`,
+      );
+      return 6;
+    }
+  }
 
   // Resolved BEFORE any filesystem write. A forced-dev boot at a surface-free
   // destination must die HERE, at the import, having written nothing: no
@@ -1730,6 +1753,7 @@ async function main(argv: string[]): Promise<number> {
   //     the frame that carries boot facts — the same argument b16 made for
   //     putting restoreFailed there.
   const url = `http://${host}:${boundPort}`;
+  if (lockFile) updateLock(lockFile, { pid: process.pid, port: boundPort });
   // First frame on the event log (id 1) — bookends the stream with `closed`.
   // `mode` rides BOTH transports bounty has. It prints no stdout handshake and
   // no stderr boot line, so the ready event and the discovery JSON are the
@@ -1865,6 +1889,9 @@ async function main(argv: string[]): Promise<number> {
   }, 30_000);
 
   const { code, reason } = await done;
+  // A successor spawned during this teardown waits for the release below
+  // instead of losing to a daemon that is on its way out (lock.ts).
+  if (lockFile) updateLock(lockFile, { pid: process.pid, port: boundPort, closing: true });
   // Known-exit diagnostics (#64). `subscribers` at an idle-timeout exit is the
   // key signal: if it idle-closes with subscribers > 0 the idle logic is the
   // culprit; if 0, no tail was actually connected. Captured BEFORE teardown
@@ -1896,6 +1923,9 @@ async function main(argv: string[]): Promise<number> {
   // a funnel that already does the job is how two registries drift apart.
   await drainAndStop({ server, clients: sseClients, sockets });
   cleanupDiscovery();
+  // AFTER the discovery cleanup: a successor writes its discovery file only
+  // once it holds the lock, so this daemon's cleanup can never unlink it.
+  if (lockFile) releaseLock(lockFile);
   // ⛔ THE WATCHDOG IS CLEARED **HERE**, AT THE END OF THE TEARDOWN — WHICH IS
   // WHERE ITS OWN COMMENT ALWAYS SAID IT WAS, AND WHERE IT WAS NOT.
   //

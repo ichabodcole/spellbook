@@ -69,6 +69,7 @@ import {
   WINDOW_HELP,
 } from "../../kit/wire/tailHandoff.ts";
 import { TAIL_IDLE_MS } from "./heartbeat.ts";
+import { holderIsLive, lockPath, readLock } from "./lock.ts";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 // ⛔ UP AND BACK DOWN, NOT `join(SCRIPT_DIR, "server.ts")` — THE DEFECT THIS
@@ -102,7 +103,8 @@ function daemonCwd(): string {
   if (process.env.SPELLBOOK_SURFACE_MODE === "dev") return SURFACE_CWD;
   return existsSync(join(DIST_DIR, "index.html")) ? SKILL_ROOT : SURFACE_CWD;
 }
-const SNAPSHOTS_DIR = join(process.env.BOUNTY_HOME ?? join(homedir(), ".bounty"), "snapshots");
+const BOUNTY_HOME = process.env.BOUNTY_HOME ?? join(homedir(), ".bounty");
+const SNAPSHOTS_DIR = join(BOUNTY_HOME, "snapshots");
 
 type Session = {
   url: string;
@@ -968,6 +970,14 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
           // emit it at all, so `"restoreSkipped" in envelope` is the assertion
           // that has teeth and `=== null` alone is the one that passes vacuously.
           printJson({ ...s, restoreSkipped: null });
+          // (a) A concurrent keyed open can win the race to the board's lock.
+          // The daemon this open spawned then exited untouched (lock.ts), and
+          // this open reports the WINNER's board, which is the same board.
+          const holder = forcedId ? readLock(lockPath(BOUNTY_HOME, forcedId)) : null;
+          if (holder && holder.pid !== proc.pid)
+            process.stderr.write(
+              `# another open started board ${forcedId} first; attached to it (key "${key}")\n`,
+            );
           if (flags.pin) writePin(s.session_id);
           return 0;
         }
@@ -976,7 +986,16 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
       }
     }
   }
-  return die("bounty daemon failed to start within 5s", "internal");
+  // A live daemon holding this board's lock while answering nothing is the one
+  // case the lock can cost: say which process it is, so it can be killed.
+  const holder = forcedId ? readLock(lockPath(BOUNTY_HOME, forcedId)) : null;
+  const wedged = holder && forcedId && holderIsLive(holder, forcedId) ? holder : null;
+  return die(
+    wedged
+      ? `bounty daemon failed to start within 5s: board ${forcedId} is held by a running daemon (pid ${wedged.pid}) that is not answering`
+      : "bounty daemon failed to start within 5s",
+    "internal",
+  );
 }
 
 // b6 — `full` is no longer a parameter. The read is always full, so there is
