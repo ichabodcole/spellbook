@@ -658,12 +658,14 @@ type CmdResult = {
 // type would break its readers. This one is a list, PRESENT and `[]` when
 // nothing was backed up, on every `open` and `close` success.
 
-/** A copy of a snapshot made before it was written over (server.ts), or by
+/** A copy of a snapshot made before it was written over (server.ts: `unread`
+ *  is the daemon's own snapshot, which it never read, kept before its first
+ *  write over it), or by
  *  `open` itself before a `--fresh --restore` teardown (`pre-fresh`), or the
  *  board dumped to a file of its own when its snapshot could not be written
  *  (`unsaved`). */
 type BackupRecord = {
-  kind: "shrink" | "unreadable" | "pre-fresh" | "pre-restore" | "unsaved";
+  kind: "shrink" | "unreadable" | "pre-fresh" | "pre-restore" | "unread" | "unsaved";
   path: string;
   taskCount: number | null;
   reason: string;

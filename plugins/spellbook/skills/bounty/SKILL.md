@@ -591,6 +591,19 @@ from any file other than its own snapshot writes its own snapshot on the first
 debounce tick, not at its first change. A snapshot is written atomically (temp
 file, then rename), so a death mid-write leaves the previous one.
 
+**A daemon writes over its own snapshot only if it owns it:** it read that file
+at boot (a keyed respawn restores from it), or it wrote the file itself since,
+or it has just copied it aside. A board with no snapshot yet owns it. Any other
+board (started `--fresh`, restored from another file, or one whose read or copy
+failed at boot, say a mode-000 file or a read-only `snapshots/`) first copies
+the file to `<id>.unread-<ts>.bak.json` before its first write. If that copy
+fails, nothing is written over the file: the board goes to the `unsaved` dump
+below, and `snapshotSaveFailed.error` says the file could not be copied aside.
+The next write tries again, so once the disk heals the old board is kept and the
+write goes ahead. A normal open, add and close, or a keyed respawn and close,
+makes no copy. A copy made at boot (`unreadable`, `pre-restore`) or by the
+shrink rotation counts, so the file is never copied twice.
+
 - **A snapshot that exists but cannot be read** (truncated JSON, not an object,
   `tasks` missing or not an array) makes a restore fail with
   `restoreFailed: {path, reason}`. The board comes up empty. The file is never
@@ -652,19 +665,22 @@ Every `open` and `close` success carries `snapshotBackups`: a list, **present
 and `[]`** when nothing was backed up. Each entry is
 `{ kind, path, taskCount, reason, restore }`:
 
-| `kind`        | Made by                                                                                                                                                         | `taskCount` | `restore`                 |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ------------------------- |
-| `shrink`      | the daemon, before its first shrinking write (the rotation above)                                                                                               | the copy's  | the act                   |
-| `unreadable`  | the daemon, before writing over a file it cannot read                                                                                                           | `null`      | `null` (repair)           |
-| `pre-fresh`   | `open`, before a `--fresh --restore <own id>` teardown writes the snapshot                                                                                      | the copy's  | the act                   |
-| `pre-restore` | the daemon, at boot, when a board restored from ANOTHER file would be written over its own snapshot, and that snapshot holds a task the restored board does not | the copy's  | the act                   |
-| `unsaved`     | the daemon, when the snapshot could not be written (the board, dumped)                                                                                          | the board's | the act, until superseded |
+| `kind`        | Made by                                                                                                                                                                    | `taskCount` | `restore`                 |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ------------------------- |
+| `shrink`      | the daemon, before its first shrinking write (the rotation above)                                                                                                          | the copy's  | the act                   |
+| `unreadable`  | the daemon, before writing over a file it cannot read                                                                                                                      | `null`      | `null` (repair)           |
+| `pre-fresh`   | `open`, before a `--fresh --restore <own id>` teardown writes the snapshot                                                                                                 | the copy's  | the act                   |
+| `pre-restore` | the daemon, at boot, when a board restored from ANOTHER file would be written over its own snapshot, and that snapshot holds a task or a title the restored board does not | the copy's  | the act                   |
+| `unread`      | the daemon, before its first write over its own snapshot, when it never read that file and no copy above kept it (the ownership rule above)                                | the copy's  | the act                   |
+| `unsaved`     | the daemon, when the snapshot could not be written (the board, dumped)                                                                                                     | the board's | the act, until superseded |
 
 **A superseded `unsaved` dump is not an act.** Once a snapshot write succeeds
 after the dump, the snapshot holds the newer board, and restoring the dump would
 roll the board back. The entry stays in the list (the file is kept on disk;
 deleting it is your call), with `restore: null` and a `superseded` note saying
-why. There is nothing to do about it.
+why. There is nothing to do about it. Only a write the ownership rule allowed
+can supersede a dump, so if that write replaced a snapshot this daemon never
+read, the old board is in an `unread` copy listed beside it, with its restore.
 
 `restore` is the command that brings the copy back:
 `open --session-key K --fresh --restore <id>.pre-….bak --no-open` for a keyed

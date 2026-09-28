@@ -191,3 +191,39 @@ The unscoped `pkill` footgun above is untouched.
   that is actually wrong (`snapshots/` in that case), and the hints use it. The
   nothing-writable close refusal carried its act only in its message; it now has
   a `hint`, ending in the `close` to run again.
+
+**Follow-ups from the third verifier**, fixed in this cycle by one rule rather
+than a fourth case guard (decision-log row 13):
+
+- **`pre-restore` skipped silently when it could not read or copy.** Restoring
+  another board with `snapshots/` read-only (route A), or with the board's own
+  snapshot mode 000 (route B), skipped the copy. Once the disk healed, a
+  same-count write erased the old tasks, and `close` called the `unsaved` dump
+  "superseded, nothing to do". A keyed respawn over a mode-000 snapshot lost
+  tasks the same way. The cause was the same each time: a daemon wrote over a
+  snapshot it had never read or kept a copy of.
+- **The rule.** A daemon writes over its own snapshot only if it read that file
+  at boot, wrote it itself since, or has just copied it aside. A board with no
+  snapshot yet owns it. Otherwise, before its first write it copies the file to
+  `<id>.unread-<ts>.bak.json`, a new `unread` backup with a restore act. If the
+  copy fails, the file is not written: the board goes to the `unsaved` dump, and
+  `snapshotSaveFailed.error` says the file could not be copied aside. The next
+  write tries again, so once the disk heals the old board is kept before it is
+  written over. A copy made at boot (`unreadable`, `pre-restore`) or by the
+  shrink rotation also gives ownership, so the file is never copied twice. A
+  plain open, add and close, or a keyed respawn and close, makes no copy and
+  leaves no new file; a cell pins both.
+- **Guards kept.** The boot `unreadable` and `pre-restore` copies stay: they
+  happen at boot, so `open` can name them, and when they fail the rule catches
+  the write. `pre-restore` now compares the whole board, not only `tasks`, so a
+  restore that differs from the snapshot only in its title is kept first. The
+  shrink rotation stays: on a board the daemon read at boot, the rule does
+  nothing, and a drain still needs its copy. It no longer copies bytes that were
+  just copied by another guard. The per-write `unreadable` check stays too: it
+  covers a file damaged under a daemon that already owns it.
+- **"superseded" is said only after a write the rule allowed.** If that write
+  replaced a snapshot the daemon never read, the `unread` copy is listed beside
+  the dump, with its restore.
+- **Changed as a result:** `--fresh` over an existing snapshot now keeps it once
+  (as `shrink` if the fresh board is smaller, else `unread`). Before, a fresh
+  board that grew past the old one wrote over it with no copy.
