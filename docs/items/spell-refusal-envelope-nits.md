@@ -64,3 +64,7 @@ paths answer the same act differently.
 - **astrolabe:** `close` is a success but shows no `# warning:` while a registry
   is set aside. Cold `list`/`state` return `projects: []` without reading the
   disk registry (older than the cycle).
+- **bounty:** only `open` and `close` bound their requests to the daemon (2 s,
+  `DAEMON_ANSWER_TIMEOUT_MS`). `add`, `update`, `claim`, `block`/`unblock`,
+  `remove`, `message`, `init` and `state` still wait forever on a stopped
+  daemon, and `join.ts`'s WebSocket connect is unchecked.
