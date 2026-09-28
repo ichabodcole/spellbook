@@ -140,7 +140,11 @@ const EXPECTED: Record<
   // board that has tasks is the daemon's `conflict`, raised with a hint that
   // names `--replace` (a CLI flag, so the CLI's raise). No `choices`: the fix
   // is one flag, not a set to pick from.
-  bounty: { sites: 31, choices: 2, verbRoster: true, flagMap: true },
+  // 31 -> 32 (2026-09-28, one act one answer): `open --restore` of a snapshot
+  // that does not exist is `not_found` before any daemon is spawned, where it
+  // used to start an unrelated empty board at exit 0. No `choices`: the
+  // snapshots are the host's, and the hint names `sessions` to list them.
+  bounty: { sites: 32, choices: 2, verbRoster: true, flagMap: true },
   // 8/2 -> 7/1 (2026-09-26): digestify's flag rejection moved onto the kit
   // registry, as glamour's did. `--theme`'s `choices` is the one left here.
   digestify: { sites: 7, choices: 1, verbRoster: false, flagMap: true },

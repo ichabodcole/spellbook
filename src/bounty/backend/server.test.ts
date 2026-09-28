@@ -5395,3 +5395,66 @@ describe("one act, one answer — init over a board that has tasks", () => {
     }
   }, 30000);
 });
+
+describe("one act, one answer — open --restore of a snapshot that does not exist", () => {
+  // item/bounty-open-restore-missing-exits-zero. Before: exit 0, an envelope
+  // carrying `restoreFailed: ENOENT…`, and a NEW EMPTY board left running.
+  test("open --restore <missing> is not_found (5) and starts no board", async () => {
+    const tmp = mkdtempSync(join(TEST_TMPDIR, "restore-missing-"));
+    const env = { BOUNTY_HOME: uniqHome(), TMPDIR: `${tmp}/` };
+    const r = await runCli(["open", "--restore", "k-nope-123", "--no-open"], { env });
+    const err = refusal(r, "not_found", 5);
+    expect(err.message).toContain("k-nope-123");
+    expect(err.hint).toContain("sessions");
+    // Nothing was spawned: no discovery file now, nor after a spawn could land.
+    await Bun.sleep(600);
+    expect(readdirSync(tmp).filter((f) => f.startsWith("bounty-"))).toEqual([]);
+    const list = await runCli(["list"], { env });
+    expect(list.stdout).toStartWith("0 running boards");
+  }, 30000);
+
+  test("--fresh --restore <missing> on a live keyed board refuses BEFORE the teardown", async () => {
+    const env = { BOUNTY_HOME: uniqHome() };
+    const key = `restore-fresh-${crypto.randomUUID().slice(0, 8)}`;
+    const open = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "10"], {
+      env,
+    });
+    const id = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    try {
+      await runCli(["add", "live", "--id", "l1", "--session", id], { env });
+      const r = await runCli(
+        ["open", "--session-key", key, "--fresh", "--restore", "k-nope-123", "--no-open"],
+        { env },
+      );
+      refusal(r, "not_found", 5);
+      const s = JSON.parse((await runCli(["state", "--session", id], { env })).stdout) as {
+        state: BoardState;
+      };
+      expect(s.state.tasks.map((t) => t.id)).toEqual(["l1"]);
+    } finally {
+      await runCli(["close", "--session", id], { env });
+    }
+  }, 30000);
+
+  // The come-back `tail` prints for a closed board (#98) is `open --restore
+  // <id> --no-open`. Still true: a snapshot that DOES exist restores, exit 0.
+  test("GUARD — open --restore <id> of a closed board's snapshot still restores it", async () => {
+    const env = { BOUNTY_HOME: uniqHome() };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const id = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    await runCli(["add", "kept", "--id", "k1", "--session", id], { env });
+    expect((await runCli(["close", "--session", id], { env })).code).toBe(0);
+    const back = await runCli(["open", "--restore", id, "--no-open", "--timeout", "10"], { env });
+    expect(back.code).toBe(0);
+    const hs = JSON.parse(back.stdout) as { session_id: string; restoreFailed: unknown };
+    try {
+      expect(hs.restoreFailed).toBeNull();
+      const s = JSON.parse(
+        (await runCli(["state", "--session", hs.session_id], { env })).stdout,
+      ) as { state: BoardState };
+      expect(s.state.tasks.map((t) => t.id)).toEqual(["k1"]);
+    } finally {
+      await runCli(["close", "--session", hs.session_id], { env });
+    }
+  }, 30000);
+});

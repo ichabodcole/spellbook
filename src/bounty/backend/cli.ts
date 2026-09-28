@@ -53,7 +53,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   type TaskStatus,
@@ -764,6 +764,38 @@ function writePin(sessionId: string) {
 // effect" cannot drift apart.
 const ATTACH_LOST_FLAGS = ["title", "timeout", "restore"] as const;
 
+/** Where the daemon will look for a `--restore <arg>`, in its order: the arg as
+ *  a path (resolved against the DAEMON's cwd, which is what its `existsSync`
+ *  sees), else `<arg>.json` in the snapshots directory (`server.ts`). */
+function restoreCandidates(arg: string): string[] {
+  return [resolve(daemonCwd(), arg), join(SNAPSHOTS_DIR, `${arg}.json`)];
+}
+
+/**
+ * ⛔ ONE ACT, ONE ANSWER: A RESTORE OF NOTHING STARTS NOTHING. An explicit
+ * `--restore` naming a snapshot that does not exist used to spawn a daemon
+ * anyway: the daemon's read failed, it set `restoreFailed: ENOENT…` and came up
+ * EMPTY, and `open` exited 0 with a fresh, unrelated board running. The
+ * envelope said the restore failed; the exit code said it worked.
+ *
+ * Called AFTER the keyed attach (which spawns nothing, and whose #80.1 refusal
+ * already answers a `--restore` against a live board) and BEFORE `--fresh`'s
+ * teardown, so a restore that cannot happen never closes a live board on its
+ * way to refusing. A snapshot that EXISTS but is damaged still reaches the
+ * daemon and still reports `restoreFailed`: that restore was attempted.
+ */
+function refuseMissingRestore(flags: Record<string, string | boolean>): void {
+  if (typeof flags.restore !== "string") return;
+  if (restoreCandidates(flags.restore).some((p) => existsSync(p))) return;
+  die(
+    `no snapshot ${JSON.stringify(flags.restore)} to restore; no board was started`,
+    "not_found",
+    {
+      hint: "`sessions` lists the snapshots this host can restore; a keyed board comes back with open --session-key <key>",
+    },
+  );
+}
+
 async function cmdOpen(flags: Record<string, string | boolean>): Promise<number> {
   // #69: a caller-owned key derives a deterministic, project-scoped board id, and
   // `open` becomes IDEMPOTENT against it — a live board for the key is ATTACHED
@@ -827,6 +859,8 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
       if (flags.pin) writePin(forcedId);
       return 0;
     }
+    // Before the teardown below: a missing snapshot must not cost a live board.
+    refuseMissingRestore(flags);
     if (live && flags.fresh) {
       // Replace it: close the live board over its own protocol, then wait for it
       // to actually go down (its exit unlinks bounty-<forcedId>.json) so the new
@@ -841,6 +875,8 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
     }
   }
 
+  // An unkeyed open reaches here without the keyed branch's check.
+  if (!forcedId) refuseMissingRestore(flags);
   const args = ["run", SERVER_SCRIPT];
   if (flags.title) args.push("--title", String(flags.title));
   if (flags.timeout) args.push("--timeout", String(flags.timeout));

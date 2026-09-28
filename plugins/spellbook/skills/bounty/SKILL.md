@@ -192,6 +192,11 @@ session by default; pass `--session <id>` to target a specific one.
 >   comes up **empty** and your snapshot is the damaged thing. A restore that
 >   fails is not a restore that was skipped, and a caller that treats them alike
 >   will "fix" a healthy command line and leave a corrupt snapshot in place.
+> - **A `--restore` naming a snapshot that does not exist starts nothing.** It
+>   exits **5** (`not_found`) with an envelope on stderr, and no board or daemon
+>   is spawned. `sessions` lists what can be restored. (It used to exit 0 with
+>   `restoreFailed: ENOENT…` and leave an unrelated empty board running.)
+>   `restoreFailed` is now for a snapshot that exists and could not be read.
 >
 > A team coordinator (e.g. anthill) can therefore run
 > `open --session-key <team-channel>` at start and pass
@@ -537,7 +542,8 @@ just watching survives long stretches and a restart.
 - `cli.ts open --restore <id>` brings a saved board back. The snapshot is merged
   over defaults (old snapshots gain new fields cleanly) and its tasks are run
   through the same `validateTask` boundary, so a malformed or legacy entry is
-  dropped rather than fatal — the rest of the board restores.
+  dropped rather than fatal — the rest of the board restores. An `<id>` with no
+  snapshot is refused, exit 5 (`not_found`), and starts no board.
 
 The restored daemon gets a **new** session id (and writes its own snapshot on
 close); the snapshot you restored from is left intact.
@@ -747,13 +753,13 @@ the tail. That family is the table above and the taxonomy does not govern it.
 **`cli.ts`'s own exits are the house taxonomy**, and every one of them prints
 ONE JSON envelope on **stderr** with stdout left empty:
 
-| Code | `kind`      | What it means                  | Typical cause                                                                                                                                           |
-| ---- | ----------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0    | —           | The verb succeeded             | `tail` also exits 0 on the `closed` frame                                                                                                               |
-| 2    | `usage`     | Fix it by changing the command | A bad flag, a missing verb, a missing required argument, an empty `update` patch                                                                        |
-| 5    | `not_found` | The named thing does not exist | No running session; a stale session pointer; a task id that is not on this board; a `tail --session`/`--session-key` whose board never came up          |
-| 6    | `conflict`  | A precondition failed          | A duplicate `--id`; `claim` on an other-owned task; a `block` that forms a cycle; `init --stdin-tasks` over a board that has tasks, without `--replace` |
-| 1    | `internal`  | The spell broke                | The daemon answered a command with a non-200                                                                                                            |
+| Code | `kind`      | What it means                  | Typical cause                                                                                                                                                                                      |
+| ---- | ----------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | —           | The verb succeeded             | `tail` also exits 0 on the `closed` frame                                                                                                                                                          |
+| 2    | `usage`     | Fix it by changing the command | A bad flag, a missing verb, a missing required argument, an empty `update` patch                                                                                                                   |
+| 5    | `not_found` | The named thing does not exist | No running session; a stale session pointer; a task id that is not on this board; a `tail --session`/`--session-key` whose board never came up; `open --restore` of a snapshot that does not exist |
+| 6    | `conflict`  | A precondition failed          | A duplicate `--id`; `claim` on an other-owned task; a `block` that forms a cycle; `init --stdin-tasks` over a board that has tasks, without `--replace`                                            |
+| 1    | `internal`  | The spell broke                | The daemon answered a command with a non-200                                                                                                                                                       |
 
 ⚠ **This changed in 2026-09, twice, and a script may be pinned to either old
 shape.** Before the port every failure was prose at exit **2**. The port then
