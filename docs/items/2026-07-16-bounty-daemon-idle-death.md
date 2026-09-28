@@ -5,7 +5,7 @@ status: stable
 description:
   Implement graceful daemon termination after idle timeout to prevent resource
   leaks
-lifecycle: backlog
+lifecycle: done
 id: 019f6d0b-7fd1-77bd-b59f-b6cf434b71a8
 kind: task
 generated: { by: unknown, at: 2026-07-16 }
@@ -47,7 +47,7 @@ incomplete. Enumerate before cutting:
       `2026-06-15-bounty-daemon-robustness-nits.md`).
 - [ ] Death reason is logged to a discoverable place (the session file or a
       daemon log).
-- [ ] Close #64.
+- [x] Close #64. (2026-09-28, on anthill's 2026-08-09 measurement.)
 
 ## Related
 
@@ -59,3 +59,14 @@ incomplete. Enumerate before cutting:
   lifecycle robustness that want one pass — though each is independently worth
   fixing, since an unguarded clobbering `close` is a footgun even on a daemon
   that never dies.
+
+## Closed on evidence (2026-09-28)
+
+`#64` was closed on anthill's 2026-08-09 measurement on the issue. On v2.1.0 an
+idle board with a tail attached outlived its 7200 s idle timeout (8112 s and
+counting), and the untailed control died at 7200 s. The fix was `idleTimeout`
+raised above the SSE keepalive (`82dc3632`) and signal-death teardown
+(`2cc513d4`), both in v2.1.0. A dead board is now loud (`tail.lost`, and `#98`'s
+`not_found` in v4.0.0). The unchecked boxes above were not needed: the
+measurement settled it without the logging reproduction. This is n=1; reopen if
+a tailed board dies on ≥2.1.0.

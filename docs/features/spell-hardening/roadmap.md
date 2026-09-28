@@ -522,7 +522,10 @@ only by being scaffolded into a sprint.
 
 - **`#64`** is not scheduled because it is **not ours to close** — anthill runs
   the pre-registered measurement at their next convene and reports either way,
-  including _not tested_.
+  including _not tested_. **Update 2026-09-28:** anthill reported on the issue
+  (2026-08-09): on v2.1.0 a tailed idle board outlived its 7200 s timeout and
+  the untailed control died on schedule (n=1). `#64` was closed on that
+  evidence, with "reopen if it recurs on ≥2.1.0".
 - **The two principle candidates** from the 2026-08-08 wire (ambiguous absence;
   reason-rot) are **anthill's to ratify**, not sprint lanes.
 - **Anything from a future investigation.** The project has filed **more issues
