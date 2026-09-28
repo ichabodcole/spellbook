@@ -1808,9 +1808,15 @@ function checkStatus(verb: "add" | "update", f: Flags): void {
     });
 }
 
-/** `add`'s rules: only the status set; the title's absence is `cmdAdd`'s (after `--stdin`). */
+/** `add`'s rules: the status set, and one source for the title (as `update`'s
+ *  `--stdin` + `--title` refusal, s5-9). The title's absence is `cmdAdd`'s,
+ *  after `--stdin` is read. A title and `--stdin` together used to take stdin
+ *  and silently discard the positional, at exit 0 (one act, one answer). */
 function checkAdd(inv: Invocation<Flag>): string | undefined {
-  checkStatus("add", inv.flags as Flags);
+  const f = inv.flags as Flags;
+  checkStatus("add", f);
+  if (f.stdin === true && inv.pos.length > 0)
+    return "a title and --stdin both set the title; pass one of them (for the notes, use --notes <text>)";
   return undefined;
 }
 

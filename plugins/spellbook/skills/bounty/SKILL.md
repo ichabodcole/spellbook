@@ -271,7 +271,9 @@ printf "it's a \"quoted\" & <urgent> task" | bun $CLI add --stdin --status doing
 
 **The rule: `--stdin` REPLACES THE VERB'S POSITIONAL ARGUMENT.** It is not a
 "body" flag — it stands in for whatever that verb takes on the command line.
-`add <title…>` → the **title**. `message <text…>` → the **text**.
+`add <title…>` → the **title**. `message <text…>` → the **text**. So `add` takes
+a title **or** `--stdin`, never both: `add x --stdin` is refused at exit 2
+(`usage`) and adds nothing. It used to keep stdin and silently drop `x`.
 
 **On `update`, whose only positional is `<id>`, `--stdin` reads the new TITLE**
 (as on `add`), never the notes. For notes, use `--notes`; if the prose has

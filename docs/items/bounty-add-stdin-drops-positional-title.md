@@ -26,3 +26,20 @@ $ printf 'from stdin\n' | bounty add x --stdin
 Same on the build before sprint 06. Sprint 06 made `update --stdin --title` a
 usage error ([its item](bounty-update-stdin-misroutes-to-title.md)); `add` now
 disagrees with it. The likely fix is the same refusal in `add`'s `check` hook.
+
+## Fixed (2026-09-28)
+
+Re-measured red first: `printf 'from stdin\n' | bounty add x --stdin` exited 0
+and added a card titled "from stdin". The `x` was gone.
+
+What changed: `add`'s `check` hook (`checkAdd`) now refuses a positional title
+given together with `--stdin`. This is the same refusal `checkUpdate` makes for
+`update --stdin --title`. It is a usage error: exit 2, stdout empty, one
+envelope on stderr
+(`add: a title and --stdin both set the title; pass one of them …`). Because it
+is raised before any board is contacted, nothing is added. `add <title>` alone
+and `add --stdin` alone behave as before.
+
+Pinned by `server.test.ts`, "one act, one answer — add with a title AND --stdin"
+› "add <title> --stdin is a usage error (2) and adds nothing; either one alone
+still adds".

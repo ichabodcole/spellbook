@@ -5458,3 +5458,31 @@ describe("one act, one answer — open --restore of a snapshot that does not exi
     }
   }, 30000);
 });
+
+describe("one act, one answer — add with a title AND --stdin", () => {
+  // item/bounty-add-stdin-drops-positional-title. Before: the stdin text became
+  // the title and the positional was discarded, at exit 0. Sprint 06 made
+  // `update --stdin --title` a usage error (s5-9); `add` now agrees with it.
+  test("add <title> --stdin is a usage error (2) and adds nothing; either one alone still adds", async () => {
+    const env = { BOUNTY_HOME: uniqHome() };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    const s = ["--session", session];
+    const titles = async () =>
+      (
+        JSON.parse((await runCli(["state", ...s], { env })).stdout) as { state: BoardState }
+      ).state.tasks.map((t) => t.title);
+    try {
+      const r = await runCli(["add", "x", "--stdin", ...s], { env, stdin: "from stdin\n" });
+      const err = refusal(r, "usage", 2);
+      expect(err.message).toContain("--stdin");
+      expect(await titles()).toEqual([]);
+
+      expect((await runCli(["add", "positional", ...s], { env })).code).toBe(0);
+      expect((await runCli(["add", "--stdin", ...s], { env, stdin: "piped\n" })).code).toBe(0);
+      expect(await titles()).toEqual(["positional", "piped"]);
+    } finally {
+      await runCli(["close", ...s], { env });
+    }
+  }, 30000);
+});
