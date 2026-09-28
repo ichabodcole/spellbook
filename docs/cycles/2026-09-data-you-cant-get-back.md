@@ -6,7 +6,7 @@ description:
   restore: astrolabe's corrupt registry and bounty's snapshot clobbers."
 tags: [spell-hardening, data-loss]
 status: draft
-lifecycle: planned
+lifecycle: active
 started: 2026-09-28
 appetite:
   Stop when every data-loss path below is re-measured and either fixed, pinned
