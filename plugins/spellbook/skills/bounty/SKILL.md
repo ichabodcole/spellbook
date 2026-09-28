@@ -444,9 +444,11 @@ next depends on whether you named the board:
 - **Named** (`--session <id>` or `--session-key <key>`): after a few seconds
   (about 8) the tail gives up with exit **5** (`not_found`) and an error
   envelope on stderr. The envelope repeats what it looked for, and its `hint`
-  names the fix: check the key and the directory you ran from, or the id, or
-  bring back a board that closed. Nothing is printed on stdout. Start the tail
-  once the board is up, or check its id with `list`.
+  says only what the CLI knows (no board is running for it and none left a close
+  snapshot, not that it was never opened here) and names the fix: check the key
+  and the directory you ran from, or the id, or open it
+  (`open --session-key <key> --no-open`). Nothing is printed on stdout. Start
+  the tail once the board is up, or check its id with `list`.
 - **Named, and the board existed here and has closed** (its snapshot is on
   disk): a `--session` or `--session-key` tail ends at once with `tail.closed`
   (exit 0), as above. A keyed board's `tail.closed` names

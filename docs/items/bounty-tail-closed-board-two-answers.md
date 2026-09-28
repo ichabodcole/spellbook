@@ -64,3 +64,11 @@ Pinned by `tail-handoff.integration.test.ts` › "a --session-key whose board ha
 closed stops tail.closed at once, like --session". The no-snapshot path stays
 pinned by "#98: a --session-key that never resolves exits not_found after the
 grace, naming what it looked for".
+
+Removing that branch made the keyed hint false in one case. A key whose board
+was opened and closed here, and whose snapshot was then deleted, reaches the
+`not_found` path, and its hint said "no board was opened under this key from
+this directory". The hint now says only what the CLI knows: no board is running
+under this key and none left a close snapshot. It still names
+`open --session-key <key> --no-open`. Pinned by "a --session-key whose closed
+board lost its snapshot: the not_found hint claims only what is known".

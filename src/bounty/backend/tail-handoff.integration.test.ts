@@ -207,6 +207,28 @@ describe("bounty's tail handoff", () => {
     expect(byId.lines().map((l) => l.type)).toEqual(["tail.closed"]);
   }, 30_000);
 
+  // A key whose board WAS opened here and closed, but whose snapshot has since
+  // been deleted, reaches the not_found path. Its hint used to say "no board
+  // was opened under this key from this directory", which is untrue here. The
+  // CLI only knows there is no live board and no close snapshot for the key.
+  test("a --session-key whose closed board lost its snapshot: the not_found hint claims only what is known", async () => {
+    const env = { ...baseEnv, BOUNTY_TAIL_GRACE_MS: "300" };
+    const id = await openBoard(env, "--session-key", "gone-key");
+    expect((await cli(env, "close", "--session", id)).code).toBe(0);
+    await Bun.sleep(500);
+    rmSync(join(root, "home", "snapshots", `${id}.json`));
+    const t = spawnTail(env, ["--session-key", "gone-key"], 60_000);
+    expect(await t.exit(10_000)).toBe(5);
+    const envelope = JSON.parse(t.stderr().trim().split("\n").at(-1) ?? "") as {
+      error: { kind: string; hint: string };
+    };
+    expect(envelope.error.kind).toBe("not_found");
+    expect(envelope.error.hint).not.toContain("no board was opened");
+    expect(envelope.error.hint).toContain("no board is running under this key");
+    expect(envelope.error.hint).toContain("none left a close snapshot");
+    expect(envelope.error.hint).toContain("open --session-key gone-key --no-open");
+  }, 30_000);
+
   test("--once sleeps until a board event, prints it, names Monitor and exits", async () => {
     const id = await openBoard(baseEnv, "--title", "once");
     const state = JSON.parse((await cli(baseEnv, "state", "--session", id)).out) as {

@@ -1224,10 +1224,12 @@ async function cmdTail(
         // still waits for its board.
         if (named && existed) return "stop";
         if (named && Date.now() - startedAt >= graceMs) {
-          // A board with a snapshot stopped above as closed, so this target
-          // never left one here.
+          // A board with a snapshot stopped above as closed, so all this path
+          // KNOWS is: no live board and no close snapshot for the target. ⛔ NOT
+          // "never opened here": a board opened and closed here whose snapshot
+          // was since deleted lands here too, so the hint claims no history.
           const hint = keyedComeBack()
-            ? `no board was opened under this key from this directory; the id is project-scoped (it hashes the repo root), so check the key and the cwd, or open it: ${comeBackCmd()}`
+            ? `no board is running under this key and none left a close snapshot; the id is project-scoped (it hashes the repo root), so check the key and the cwd, or open it: ${comeBackCmd()}`
             : "no board with this id is running here and none left a snapshot; check the id (`sessions` lists the boards this host can restore)";
           die(
             `no session ${pinned} found (${source.from}) — a named target; gave up after ${graceMs}ms`,
