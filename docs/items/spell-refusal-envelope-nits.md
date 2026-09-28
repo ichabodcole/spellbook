@@ -38,3 +38,19 @@ paths answer the same act differently.
   documented B1 behaviour, but the board has a close snapshot and will not come
   back on its own. It's worth deciding whether B1 should read the snapshot as
   the named path now does.
+
+**From the second verifier (follow-ups, on `d3edb3ef`):**
+
+- **A come-back command for a dash-leading key does not run.** For
+  `tail --session-key=--weird`, the hint and the come-back name
+  `open --session-key --weird --no-open`, which exits 2 as ambiguous; the
+  runnable form is `--session-key=--weird`. `comeBackCmd()` quotes spaces and
+  `'` correctly, but not a leading dash. This is a response that names an act it
+  cannot perform, so it's the most worth fixing on this list.
+- **The retry comments still say `# no session yet for …`** for a board that
+  existed and closed. That is the same unproven "never existed" claim this cycle
+  removed from the hint.
+- **Two keys can derive one board id:** `"my key"` and `my-key` both become
+  `k-my-key-…`.
+- **The not_found hint says "it hashes the repo root"** even when the cwd is not
+  in a repo.

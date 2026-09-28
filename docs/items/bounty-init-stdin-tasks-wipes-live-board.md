@@ -5,7 +5,7 @@ description:
   init --stdin-tasks over a populated board replaces its tasks with
   tasksDropped:null and no warning.
 status: draft # OKF §5.4: draft | stable | deprecated. Nothing else.
-lifecycle: ready
+lifecycle: done
 id: 01a0e1bd-3ff6-72f5-81dc-fb3122e92bbd
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-09-27 }

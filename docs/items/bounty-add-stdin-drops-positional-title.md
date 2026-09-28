@@ -5,7 +5,7 @@ description:
   add with both a positional title and --stdin takes stdin and discards the
   positional at exit 0 — the misroute sprint 06 refused on update.
 status: draft # OKF §5.4: draft | stable | deprecated. Nothing else.
-lifecycle: ready
+lifecycle: done
 id: 01a0e1dc-1ea5-7486-b77e-e386168c4245
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-09-27 }
