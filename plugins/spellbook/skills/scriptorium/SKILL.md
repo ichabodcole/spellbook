@@ -65,11 +65,13 @@ press Save. You never write their file directly — not with Edit, not with Writ
 
 **2 · ⛔ NEVER WRITE THE ACTIVE VERSION.** The active version is the one they
 are typing in — `docs[].active` in `state`. To propose a change: `version-new`
-(it prints a path), then edit _that_ path with your own tools. The surface shows
-it immediately and they choose whether to make it active. Writing the active
-version is detected, kept as a version of its own, and announced to both of you
-as a mistake — nothing is lost, but they are told, and their cursor was in
-there.
+(it prints a path), then edit _that_ path with your own tools. The surface
+raises a toast the moment the version exists, naming it and you as its author,
+with **Activate** and **Show diff**; they choose whether to make it active.
+**You do not need to announce a new version in chat.** Say _why_ you made it if
+that helps them decide. Writing the active version is detected, kept as a
+version of its own, and announced to both of you as a mistake — nothing is lost,
+but they are told, and their cursor was in there.
 
 **3 · Save and Revert are theirs.** There is no verb for either, deliberately.
 Your work exists as versions until they accept it.

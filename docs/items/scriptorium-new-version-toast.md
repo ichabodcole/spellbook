@@ -57,3 +57,41 @@ Conventions that apply (team practice, not written house-style rules): a notice
 should carry the act that answers it, which here is Activate; and the surface is
 conversation-primary, so the button is a shortcut and the human can still ask
 the agent to activate.
+
+## Done (2026-09-28)
+
+A version that appears on the open document without becoming active raises a
+toast: "New version: v3 · label", naming the document, the author (every version
+records `author`, agent or human, so it is shown as known) and the version the
+human is still editing. It carries two actions, per Cole's ruling:
+
+- **Activate** sends the menu's `activate` and nothing else. The existing "Now
+  editing" toast then confirms it, and the new-version toast withdraws.
+- **Show diff** does not activate. It puts the pane in compare mode (or keeps it
+  there) with the new version as the side compared against, so the view is
+  active vs new. If the agent writes the version after the toast appears, the
+  open comparison refreshes as the file changes.
+
+Detection is pure and tested (`surface/state/newVersions.ts`): the versions seen
+per document, the first sight of a document is a baseline, the first snapshot
+after a reconnect is a baseline, and a version that is already active is left to
+"Now editing", so a version created with activation raises one toast. A toast
+withdraws when its version becomes active, is deleted, or its document stops
+being the open one.
+
+Decisions made in the build:
+
+- **Duration.** `Toasts` gained action buttons. A toast with actions stays 15 s
+  instead of 6 s, and any toast holds while the pointer is over it or focus is
+  inside it, restarting its full time on release.
+- **Other documents.** Only the open document raises the toast. A version made
+  on another document is already said in the chat by the daemon, and is
+  announced when the human next opens that document, since they have not seen
+  it. This avoids an "open, then compare" sequence racing the compare view's
+  guard.
+
+Driven in a real browser against a live session: the agent's `version-new`
+raised the toast, Show diff entered compare mode against the new version while
+staying on v1, Activate moved to the new version with only the "Now editing"
+toast showing, a hovered toast outlived its 15 s, and a reload announced
+nothing.

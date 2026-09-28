@@ -36,6 +36,7 @@ import { ContextSidebar } from "./components/context/ContextSidebar";
 import { joinPath, shortPath } from "./components/context/model";
 import { DocumentPane, VIEW_MODES, type ViewMode } from "./components/DocumentPane";
 import { HistoryArrows } from "./components/HistoryArrows";
+import { NewVersionToast } from "./components/NewVersionToast";
 import { NotesPanel } from "./components/NotesPanel";
 import { SearchBar } from "./components/SearchBar";
 import { Spinner, TasksPanel } from "./components/TasksPanel";
@@ -402,7 +403,7 @@ function Workspace({
   // version you wanted to look at last session says nothing about this one,
   // and the original is the side that always exists.
   const [against, setAgainst] = useState<DiffSide>("original");
-  const { toasts, announce, dismiss } = useToasts();
+  const { toasts, announce, dismiss, hold } = useToasts();
   // The editor's selection, kept here because the NOTES PANEL is the thing that
   // acts on it and it lives in the other pane (E45).
   // The chat's chip mirrors it, and the daemon is told of every change (below).
@@ -633,7 +634,16 @@ function Workspace({
     <>
       <ActiveVersionToast doc={open} announce={announce} />
       <TaskToasts tasks={state.tasks} announce={announce} />
-      <Toasts toasts={toasts} onDismiss={dismiss} />
+      <NewVersionToast
+        doc={open}
+        connected={connection === "open"}
+        announce={announce}
+        dismiss={dismiss}
+        send={send}
+        setMode={setMode}
+        setAgainst={setAgainst}
+      />
+      <Toasts toasts={toasts} onDismiss={dismiss} onHold={hold} />
       <ResizablePanelGroup
         orientation="horizontal"
         className="min-h-0 flex-1"
