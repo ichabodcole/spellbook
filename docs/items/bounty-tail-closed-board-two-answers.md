@@ -5,11 +5,12 @@ description:
   tail --session <id> on a closed board stops with tail.closed at exit 0; tail
   --session-key <k> for the same board exits 5 not_found after the grace.
 status: draft # OKF §5.4: draft | stable | deprecated. Nothing else.
-lifecycle: triage # triage | backlog | ready | active | review | done | dropped
+lifecycle: ready
 id: 01a0e1dc-1f1a-752c-8893-0a4dbe674ffc
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-09-27 }
 parent: feature/spell-hardening
+cycle: 2026-09-one-act-one-answer
 ---
 
 # A closed bounty board answers `tail` differently by how it is named
