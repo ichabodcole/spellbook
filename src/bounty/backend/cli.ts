@@ -70,7 +70,7 @@ import {
   WINDOW_HELP,
 } from "../../kit/wire/tailHandoff.ts";
 import { TAIL_IDLE_MS } from "./heartbeat.ts";
-import { holderIsLive, lockPath, readLock } from "./lock.ts";
+import { holderIsLive, holderLiveness, lockPath, readLock, unknownHolderRefusal } from "./lock.ts";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 // ⛔ UP AND BACK DOWN, NOT `join(SCRIPT_DIR, "server.ts")` — THE DEFECT THIS
@@ -896,6 +896,26 @@ function copyAsideBeforeTeardown(
   };
 }
 
+/**
+ * ⛔ LIVENESS THAT CANNOT BE CHECKED IS A REFUSAL, NOT A STACK. With no `ps`
+ * on PATH, `open` used to die in `holderIsLive` with a raw Bun stack and no
+ * envelope (verifier, 2026-09-28). `conflict` (6), not `internal` (1): nothing
+ * in bounty broke and the command was right; a precondition of starting a
+ * daemon (being able to tell whether the lock's holder is one) failed, and the
+ * operator can restore it: fix `ps`, or remove a lock held by a pid they have
+ * checked is not this board's daemon. Astrolabe's registry refusal made the
+ * same call (the disk cannot say, so `conflict`).
+ */
+function refuseUnknownHolder(id: string): void {
+  const path = lockPath(BOUNTY_HOME, id);
+  const holder = readLock(path);
+  if (!holder) return;
+  const live = holderLiveness(holder, id);
+  if (live.state !== "unknown") return;
+  const r = unknownHolderRefusal(path, id, holder.pid, live.why);
+  die(r.message, "conflict", { hint: r.hint });
+}
+
 async function cmdOpen(flags: Record<string, string | boolean>): Promise<number> {
   // #69: a caller-owned key derives a deterministic, project-scoped board id, and
   // `open` becomes IDEMPOTENT against it — a live board for the key is ATTACHED
@@ -970,6 +990,10 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
       if (flags.pin) writePin(forcedId);
       return 0;
     }
+    // No board answered, but a lock held by a pid bounty cannot judge would
+    // make the daemon refuse (lock.ts): refuse here, now, with the reason,
+    // instead of spawning it and waiting out the start timeout.
+    if (!live) refuseUnknownHolder(forcedId);
     // Before the teardown below: a missing snapshot must not cost a live board.
     refuseMissingRestore(flags);
     if (live && flags.fresh) {
@@ -1117,6 +1141,7 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
   }
   // A live daemon holding this board's lock while answering nothing is the one
   // case the lock can cost: say which process it is, so it can be killed.
+  if (forcedId) refuseUnknownHolder(forcedId);
   const holder = forcedId ? readLock(lockPath(BOUNTY_HOME, forcedId)) : null;
   const wedged = holder && forcedId && holderIsLive(holder, forcedId) ? holder : null;
   return die(

@@ -90,7 +90,7 @@ import { refuseForeignOrigin } from "../../kit/wire/origin.ts";
 import { resolveMode as resolveModeIn, serveFromDist } from "../../kit/wire/serveDist.ts";
 import { sseResponse as kitSseResponse, type SseClients } from "../../kit/wire/sse.ts";
 import { IDLE_TIMEOUT_SEC, SSE_HEARTBEAT_MS } from "./heartbeat.ts";
-import { acquireLock, lockPath, releaseLock, updateLock } from "./lock.ts";
+import { acquireLock, lockPath, releaseLock, unknownHolderRefusal, updateLock } from "./lock.ts";
 
 // The board's HTML used to be `scripts/template.html`, read at boot and string
 // substituted before every response. It is now a React surface at
@@ -782,6 +782,15 @@ async function main(argv: string[]): Promise<number> {
     });
     if (!got.ok) {
       const h = got.holder;
+      // Liveness unknown (no `ps`, or a `ps` that fails): the same exit before
+      // anything is read or written, but the record says it is a refusal and
+      // why, since "already running" would not be known either.
+      if (got.unknown !== undefined && h) {
+        const r = unknownHolderRefusal(lockFile, sessionId, h.pid, got.unknown);
+        logDaemon("lockLivenessUnknown", { holder: h, lock: lockFile, why: got.unknown });
+        process.stderr.write(`bounty: ${r.message}\n  hint: ${r.hint}\n`);
+        return 6;
+      }
       logDaemon("lockHeld", { holder: h });
       process.stderr.write(
         `bounty: board ${sessionId} is already running${h ? ` (pid ${h.pid}${h.port ? `, port ${h.port}` : ""})` : ""}; this daemon exits without touching it\n`,

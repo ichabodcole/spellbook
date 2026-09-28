@@ -17,6 +17,7 @@
 
 import { describe, expect, test } from "bun:test";
 import {
+  chmodSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -5308,7 +5309,7 @@ describe("P1f — a signal death runs the teardown AND still ends the process", 
 
 type Envelope = {
   ok: false;
-  error: { kind: string; exit_code: number; message: string; hint?: string };
+  error: { kind: string; exit_code: number; message: string; hint?: string; server?: unknown };
 };
 function refusal(r: CliResult, kind: string, code: number): Envelope["error"] {
   expect(r.code).toBe(code);
@@ -5982,6 +5983,123 @@ describe("pinned, not changed — the re-measure found these already fixed", () 
       expect(await proc.exited).toBe(143);
       expect(titlesAt(join(home, "snapshots", `${id}.json`))).toEqual(["saved by SIGTERM"]);
     } finally {
+      killBoard(id);
+    }
+  }, 30000);
+});
+
+// ── Follow-ups from the data-loss cycle's no-stake verifier ──────────────
+// Each cell was run RED against the pre-fix build first.
+
+/** Run the CLI by bun's absolute path, so a test can hand it a PATH that has
+ *  no `ps` (or a broken one) and still start, bounded so a hang is a finding
+ *  rather than a suite timeout. `runCli` resolves `bun` on PATH. */
+async function runCliAbs(
+  args: string[],
+  env: Record<string, string>,
+  boundMs = 30000,
+): Promise<CliResult | "HUNG"> {
+  const proc = Bun.spawn({
+    cmd: [process.execPath, "run", CLI, ...args],
+    stdin: "ignore",
+    stdout: "pipe",
+    stderr: "pipe",
+    env: { ...hermeticEnv(), ...env },
+  });
+  const out = Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+  const r = await Promise.race([out, Bun.sleep(boundMs).then(() => "HUNG" as const)]);
+  if (r === "HUNG") {
+    proc.kill("SIGKILL");
+    return "HUNG";
+  }
+  const [stdout, stderr, code] = r;
+  return { stdout, stderr, code };
+}
+
+/** stderr is exactly ONE JSON envelope, with no prose beside it. */
+function onlyEnvelope(stderr: string): Envelope {
+  const lines = stderr.trim().split("\n");
+  expect(lines.length).toBe(1);
+  return JSON.parse(lines[0] as string) as Envelope;
+}
+
+/** A PATH holding a `ps` that runs and fails. */
+function brokenPsDir(): string {
+  const dir = mkdtempSync(join(TEST_TMPDIR, "brokenps-"));
+  writeFileSync(join(dir, "ps"), "#!/bin/sh\necho 'ps: simulated failure' >&2\nexit 1\n");
+  chmodSync(join(dir, "ps"), 0o755);
+  return dir;
+}
+
+describe("liveness that cannot be checked is a clean refusal", () => {
+  for (const variant of ["no ps on PATH", "a ps that runs and fails"] as const) {
+    test(`${variant}: open refuses with one envelope naming the lock, the pid and why`, async () => {
+      const home = uniqHome();
+      const key = `nops-${crypto.randomUUID().slice(0, 8)}`;
+      const id = sessionKeyToId(key);
+      const lock = join(home, "locks", `${id}.lock`);
+      mkdirSync(join(home, "locks"), { recursive: true });
+      // A live pid that is not this board's daemon: without `ps`, nothing can tell.
+      writeFileSync(lock, JSON.stringify({ pid: process.pid, port: 1 }));
+      const PATH = variant === "no ps on PATH" ? "/nonexistent" : brokenPsDir();
+      try {
+        const r = await runCliAbs(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+          BOUNTY_HOME: home,
+          PATH,
+        });
+        expect(r).not.toBe("HUNG");
+        const res = r as CliResult;
+        expect(res.stdout).toBe("");
+        const env = onlyEnvelope(res.stderr);
+        expect(env.error.kind).toBe("conflict");
+        expect(res.code).toBe(6);
+        expect(env.error.message).toContain(lock);
+        expect(env.error.message).toContain(`pid ${process.pid}`);
+        expect(env.error.message).toContain("ps");
+        expect(env.error.hint ?? "").toContain(lock);
+        expect(daemonPids(id)).toEqual([]);
+        // Refusing never takes over a holder it cannot judge.
+        expect(JSON.parse(readFileSync(lock, "utf8"))).toEqual({ pid: process.pid, port: 1 });
+      } finally {
+        killBoard(id);
+      }
+    }, 30000);
+  }
+
+  test("the daemon itself exits before touching anything, with a line in daemon.log", async () => {
+    const home = uniqHome();
+    const id = `nopsd-${crypto.randomUUID().slice(0, 8)}`;
+    mkdirSync(join(home, "locks"), { recursive: true });
+    mkdirSync(join(home, "snapshots"), { recursive: true });
+    const snap = join(home, "snapshots", `${id}.json`);
+    writeFileSync(snap, JSON.stringify({ title: "t", tasks: [] }));
+    const before = readFileSync(snap, "utf8");
+    writeFileSync(join(home, "locks", `${id}.lock`), JSON.stringify({ pid: process.pid }));
+    const proc = Bun.spawn({
+      cmd: [process.execPath, "run", SERVER, "--no-open", "--id", id, "--restore", id],
+      stdin: "ignore",
+      stdout: "ignore",
+      stderr: "pipe",
+      env: { ...hermeticEnv(), BOUNTY_HOME: home, PATH: "/nonexistent" },
+    });
+    try {
+      const exited = await Promise.race([
+        proc.exited,
+        Bun.sleep(8000).then(() => "RUNNING" as const),
+      ]);
+      expect(exited).toBe(6);
+      expect(await new Response(proc.stderr).text()).toContain("cannot tell");
+      const log = readFileSync(join(home, "daemon.log"), "utf8");
+      expect(log).toContain('"reason":"lockLivenessUnknown"');
+      expect(log).not.toContain("uncaughtException");
+      expect(readFileSync(snap, "utf8")).toBe(before);
+      expect(existsSync(join(TEST_TMPDIR, `bounty-${id}.json`))).toBe(false);
+    } finally {
+      proc.kill("SIGKILL");
       killBoard(id);
     }
   }, 30000);

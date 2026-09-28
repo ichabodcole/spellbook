@@ -16,8 +16,10 @@
 //   - The holder is LIVE when its pid is alive AND that pid's argv carries
 //     `--id <id>`. A dead pid is stale; so is a live pid running something
 //     else (a pid the OS reused after a SIGKILL left the lock behind). If
-//     `ps` cannot answer, the holder counts as live: refusing to start is
+//     `ps` cannot answer (missing from PATH, or it runs and fails), liveness
+//     is UNKNOWN and the taker refuses, saying why: refusing to start is
 //     recoverable, and a second daemon is the defect this file exists for.
+//     An unknown holder is never taken over.
 //   - A STALE lock is renamed aside under the taker's own name, then checked:
 //     if what was moved is a live holder's fresh lock (another taker won in
 //     between), it is linked back and the taker loses.
@@ -52,20 +54,51 @@ function pidAlive(pid: number): boolean {
   }
 }
 
-/** Is `holder` a running bounty daemon for board `id`? */
-export function holderIsLive(holder: LockHolder, id: string): boolean {
-  if (!Number.isInteger(holder.pid) || holder.pid <= 0) return false;
+/**
+ * Is `holder` a running bounty daemon for board `id`? Three answers, because
+ * "cannot tell" is not "live": `unknown` carries why `ps` could not answer, so
+ * the refusal it causes can say so (and name the act that recovers it).
+ *
+ * ⛔ `unknown` WAS A RAW STACK. `Bun.spawnSync` THROWS when the executable is
+ * not on PATH, so with no `ps` both the daemon (an `uncaughtException`, exit 1)
+ * and `open` (a Bun stack, no envelope) died here (verifier, 2026-09-28). A
+ * `ps` that ran and failed while the pid was alive counted as live and reported
+ * "already running", which was not known either.
+ */
+export type Liveness = { state: "live" } | { state: "stale" } | { state: "unknown"; why: string };
+
+export function holderLiveness(holder: LockHolder, id: string): Liveness {
+  if (!Number.isInteger(holder.pid) || holder.pid <= 0) return { state: "stale" };
   // Our own pid, left by a SIGKILLed daemon the OS gave this pid to before us.
-  if (holder.pid === process.pid) return false;
-  if (!pidAlive(holder.pid)) return false;
-  const ps = Bun.spawnSync(["ps", "-o", "command=", "-p", String(holder.pid)]);
-  if (ps.exitCode !== 0 && ps.stdout.length === 0) {
-    // `ps -p` exits 1 when the pid is gone; it raced us to dead.
-    return pidAlive(holder.pid);
+  if (holder.pid === process.pid) return { state: "stale" };
+  if (!pidAlive(holder.pid)) return { state: "stale" };
+  let ps: ReturnType<typeof Bun.spawnSync>;
+  try {
+    ps = Bun.spawnSync(["ps", "-o", "command=", "-p", String(holder.pid)]);
+  } catch (e) {
+    return {
+      state: "unknown",
+      why: `\`ps\` could not be run (${e instanceof Error ? e.message : String(e)})`,
+    };
   }
-  const argv = new TextDecoder().decode(ps.stdout);
-  if (!argv.trim()) return true; // cannot tell: count it live (see header)
-  return argv.includes(`--id ${id}`);
+  const argv = new TextDecoder().decode(ps.stdout ?? new Uint8Array());
+  if (ps.exitCode !== 0) {
+    // `ps -p` exits 1 when the pid is gone: it raced us to dead.
+    if (!pidAlive(holder.pid)) return { state: "stale" };
+    const err = new TextDecoder().decode(ps.stderr ?? new Uint8Array()).trim();
+    return {
+      state: "unknown",
+      why: `\`ps\` exited ${ps.exitCode}${err ? ` (${err.split("\n")[0]})` : ""} for a pid that is alive`,
+    };
+  }
+  if (!argv.trim()) return { state: "unknown", why: "`ps` answered with no command line" };
+  return argv.includes(`--id ${id}`) ? { state: "live" } : { state: "stale" };
+}
+
+/** `holderLiveness`, with `unknown` counted live (see the header): the
+ *  callers that only need "may I take this lock?". */
+export function holderIsLive(holder: LockHolder, id: string): boolean {
+  return holderLiveness(holder, id).state !== "stale";
 }
 
 function unlinkQuiet(path: string): void {
@@ -74,7 +107,26 @@ function unlinkQuiet(path: string): void {
   } catch {}
 }
 
-export type Acquired = { ok: true } | { ok: false; holder: LockHolder | null };
+/** `unknown` is set when the holder's liveness could not be checked, with why. */
+export type Acquired = { ok: true } | { ok: false; holder: LockHolder | null; unknown?: string };
+
+/**
+ * The refusal for a holder whose liveness cannot be checked, worded once for
+ * the daemon's log line and `open`'s envelope. The recovery is the operator's
+ * judgment, so the hint names both halves of it: fix `ps`, or, having checked
+ * the pid is not this board's daemon, remove the lock.
+ */
+export function unknownHolderRefusal(
+  path: string,
+  id: string,
+  pid: number,
+  why: string,
+): { message: string; hint: string } {
+  return {
+    message: `board ${id} cannot start: its lock ${path} is held by pid ${pid}, which is alive, and bounty cannot tell whether it is this board's daemon because ${why}; refusing rather than risk two daemons for one board`,
+    hint: `put a working \`ps\` on PATH and run open again; or, if pid ${pid} is not a bounty daemon for ${id} (check: ps -o command= -p ${pid}), remove the lock (rm ${path}) and run open again`,
+  };
+}
 
 /**
  * Take the lock for board `id`, or report the live holder. Waits up to
@@ -98,12 +150,15 @@ export async function acquireLock(
         if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e;
       }
       const holder = readLock(path);
-      if (holder && holderIsLive(holder, id)) {
+      const live = holder ? holderLiveness(holder, id) : null;
+      if (holder && live && live.state !== "stale") {
         if (holder.closing && Date.now() < waitUntil) {
           await Bun.sleep(50);
           continue;
         }
-        return { ok: false, holder };
+        return live.state === "unknown"
+          ? { ok: false, holder, unknown: live.why }
+          : { ok: false, holder };
       }
       // Stale (dead pid, reused pid, or unreadable). Move it aside under our
       // own name so no other taker can unlink a lock that is not the one we
@@ -115,13 +170,17 @@ export async function acquireLock(
         continue; // someone else moved it first; look again
       }
       const moved = readLock(aside);
-      if (moved && holderIsLive(moved, id)) {
-        // We moved a live holder's fresh lock. Put it back, and lose.
+      const movedLive = moved ? holderLiveness(moved, id) : null;
+      if (moved && movedLive && movedLive.state !== "stale") {
+        // We moved a live holder's fresh lock (or one we cannot judge). Put it
+        // back, and lose.
         try {
           linkSync(aside, path);
         } catch {}
         unlinkQuiet(aside);
-        return { ok: false, holder: moved };
+        return movedLive.state === "unknown"
+          ? { ok: false, holder: moved, unknown: movedLive.why }
+          : { ok: false, holder: moved };
       }
       unlinkQuiet(aside);
     }

@@ -180,6 +180,13 @@ session by default; pass `--session <id>` to target a specific one.
 >   `closing`, so an `open` right after `close` waits for it instead of failing.
 >   If `open` ever reports that a board is held by a daemon that is not
 >   answering, kill that pid (`open` names it) and open again.
+> - **If liveness cannot be checked, `open` refuses.** Telling a live holder
+>   from a reused pid needs `ps`. With no `ps` on PATH, or a `ps` that fails,
+>   `open` exits **6** (`conflict`) with one envelope on stderr naming the lock
+>   file, the holder pid and why, and starts nothing. The daemon refuses the
+>   same way if it gets that far, and writes a `lockLivenessUnknown` line to
+>   `daemon.log`. To recover, put a working `ps` on PATH, or check that pid is
+>   not this board's daemon and remove the lock (the hint gives both).
 > - **`open --session-key K --fresh --restore <K's own id>`** resets a live
 >   board to its snapshot. `open` copies the snapshot to
 >   `<id>.pre-fresh-<ts>.bak.json` **before** the teardown's `close` writes the

@@ -117,3 +117,16 @@ and one gap in reporting it.
 with a retention limit, to
 [item/bounty-snapshot-rotation-by-content-and-retention](./bounty-snapshot-rotation-by-content-and-retention.md).
 The unscoped `pkill` footgun above is untouched.
+
+**Follow-ups from the no-stake verifier**, fixed in this cycle:
+
+- **No `ps` on PATH crashed instead of refusing.** The lock's liveness check ran
+  `ps`, and a missing `ps` threw: `open` printed a raw Bun stack with no
+  envelope, and the daemon died on `uncaughtException`. A `ps` that ran and
+  failed counted the holder as live and reported "already running". Both are now
+  "liveness unknown", and a lock held by a pid bounty cannot judge is never
+  taken over. `open` refuses before spawning, exit 6 (`conflict`), with one
+  envelope naming the lock file, the pid and why; its hint gives the recovery
+  (fix `ps`, or remove a lock whose pid is not this board's daemon). A daemon
+  that gets that far exits 6 before reading or writing anything, and logs
+  `lockLivenessUnknown` to `daemon.log`.

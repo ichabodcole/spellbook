@@ -148,7 +148,11 @@ const EXPECTED: Record<
   // that does not exist is `not_found` before any daemon is spawned, where it
   // used to start an unrelated empty board at exit 0. No `choices`: the
   // snapshots are the host's, and the hint names `sessions` to list them.
-  bounty: { sites: 32, choices: 2, verbRoster: true, flagMap: true },
+  // 32 -> 33 (2026-09-28, data-you-cant-get-back follow-ups): `open` refuses as
+  // `conflict` when the board's lock holder is a live pid whose liveness `ps`
+  // cannot check. No `choices`: the hint names the two acts (fix `ps`, or
+  // remove a lock whose pid is not this board's daemon).
+  bounty: { sites: 33, choices: 2, verbRoster: true, flagMap: true },
   // 8/2 -> 7/1 (2026-09-26): digestify's flag rejection moved onto the kit
   // registry, as glamour's did. `--theme`'s `choices` is the one left here.
   digestify: { sites: 7, choices: 1, verbRoster: false, flagMap: true },
