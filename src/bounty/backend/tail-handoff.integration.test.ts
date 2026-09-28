@@ -188,6 +188,26 @@ describe("bounty's tail handoff", () => {
     ]);
   }, 30_000);
 
+  // Pinned for the data-loss cycle (2026-09-28): the re-measure found a dying
+  // daemon is HEARD. A SIGKILLed board ends a live tail with `tail.lost` and
+  // the keyed come-back, instead of leaving the tail to die silently with it.
+  test("a SIGKILLed daemon ends a live tail with tail.lost and the keyed come-back", async () => {
+    const r = await cli(baseEnv, "open", "--no-open", "--session-key", "lost-key");
+    expect(r.code).toBe(0);
+    const { session_id: id, port } = JSON.parse(r.out) as { session_id: string; port: number };
+    opened.push({ id, env: baseEnv });
+    const t = spawnTail(baseEnv, ["--session-key", "lost-key"], 60_000);
+    await Bun.sleep(800);
+    const lsof = Bun.spawnSync(["lsof", "-nP", `-iTCP:${port}`, "-sTCP:LISTEN", "-t"]);
+    const pids = new TextDecoder().decode(lsof.stdout).trim().split("\n").filter(Boolean);
+    expect(pids.length).toBeGreaterThan(0);
+    for (const pid of pids) process.kill(Number(pid), "SIGKILL");
+    expect(await t.exit(20_000)).toBe(0);
+    const last = t.lines().at(-1);
+    expect(last?.type).toBe("tail.lost");
+    expect(last?.command).toBe(cmd("open", "--session-key", "lost-key", "--no-open"));
+  }, 40_000);
+
   // item/bounty-tail-closed-board-two-answers (one act, one answer). Before:
   // `--session <id>` on a closed board stopped `tail.closed` at once, while
   // `--session-key K` for the SAME board waited out the grace and exited 5.

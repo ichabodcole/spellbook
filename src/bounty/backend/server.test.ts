@@ -5947,3 +5947,42 @@ describe("(d) a backup this act made is named to the caller", () => {
     }
   }, 30000);
 });
+
+describe("pinned, not changed — the re-measure found these already fixed", () => {
+  test("SIGTERM saves: a mutation inside the debounce window reaches the snapshot", async () => {
+    const home = uniqHome();
+    const id = `sigterm-${crypto.randomUUID().slice(0, 8)}`;
+    const proc = Bun.spawn({
+      cmd: ["bun", "run", SERVER, "--no-open", "--port", "0", "--id", id],
+      stdin: "ignore",
+      stdout: "ignore",
+      stderr: "ignore",
+      env: { ...hermeticEnv(), BOUNTY_HOME: home },
+    });
+    try {
+      const disc = join(TEST_TMPDIR, `bounty-${id}.json`);
+      let port = 0;
+      const deadline = Date.now() + 5000;
+      while (Date.now() < deadline && !port) {
+        try {
+          port = (JSON.parse(readFileSync(disc, "utf8")) as { port: number }).port;
+        } catch {
+          await Bun.sleep(80);
+        }
+      }
+      expect(port).toBeGreaterThan(0);
+      await fetch(`http://127.0.0.1:${port}/cmd`, {
+        method: "POST",
+        body: JSON.stringify({
+          type: "task.add",
+          task: { id: "s1", title: "saved by SIGTERM", status: "todo" },
+        }),
+      });
+      proc.kill("SIGTERM"); // well inside the ~1s debounce
+      expect(await proc.exited).toBe(143);
+      expect(titlesAt(join(home, "snapshots", `${id}.json`))).toEqual(["saved by SIGTERM"]);
+    } finally {
+      killBoard(id);
+    }
+  }, 30000);
+});
