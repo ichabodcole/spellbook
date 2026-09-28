@@ -602,6 +602,14 @@ type CmdResult = {
   kind?: ErrKind;
   // `close`'s report of the backups the board wrote (server.ts BackupRecord).
   snapshotBackups?: BackupRecord[];
+  // `close`'s report of a final write that failed, and where the board went
+  // instead (server.ts SnapshotSaveFailed). Null when the write succeeded.
+  snapshotSaveFailed?: {
+    path: string;
+    error: string;
+    unsaved: string | null;
+    taskCount: number;
+  } | null;
 };
 
 // ── (d) naming a backup to the caller ───────────────────────────────
@@ -618,9 +626,11 @@ type CmdResult = {
 // nothing was backed up, on every `open` and `close` success.
 
 /** A copy of a snapshot made before it was written over (server.ts), or by
- *  `open` itself before a `--fresh --restore` teardown (`pre-fresh`). */
+ *  `open` itself before a `--fresh --restore` teardown (`pre-fresh`), or the
+ *  board dumped to a file of its own when its snapshot could not be written
+ *  (`unsaved`). */
 type BackupRecord = {
-  kind: "shrink" | "unreadable" | "pre-fresh";
+  kind: "shrink" | "unreadable" | "pre-fresh" | "unsaved";
   path: string;
   taskCount: number | null;
   reason: string;
@@ -649,7 +659,13 @@ function nameBackups(
 ): NamedBackup[] {
   const keyed = key !== undefined && sessionKeyToId(key) === sessionId;
   return (records ?? []).map((b) => {
-    const bak = basename(b.path).replace(/\.json$/, "");
+    // A file in snapshots/ is restored by name; anything else (an `unsaved`
+    // dump that fell back to $BOUNTY_HOME) by its full path, which restore
+    // also accepts.
+    const bak =
+      resolve(dirname(b.path)) === resolve(SNAPSHOTS_DIR)
+        ? basename(b.path).replace(/\.json$/, "")
+        : b.path;
     const argv =
       keyed && key !== undefined
         ? ["open", "--session-key", key, "--fresh", "--restore", bak, "--no-open"]
@@ -1934,6 +1950,9 @@ async function cmdClose(
   // silently failed to apply, reported as success, is how a caller concludes
   // its data was persisted when it was not.
   const closeRes = await postCmd(session, { type: "close" }, { as, quiet: true });
+  // Checked BEFORE the wait below: a refused close (the daemon found nowhere
+  // to save the board and kept it up) is not going down, so waiting is moot.
+  if (!closeRes.applied) return ackOrFail("close", closeRes);
   // b14 — WAIT FOR IT TO ACTUALLY BE DOWN. `close` used to return as soon as
   // the daemon ACKED the command, and the daemon acks before it finishes
   // tearing down. Measured: `state` on the same session STILL ANSWERS with
@@ -1961,12 +1980,35 @@ async function cmdClose(
     }
     await sleep(80);
   }
-  if (!closeRes.applied) return ackOrFail("close", closeRes);
   const snapshotBackups = nameBackups(
     closeRes.snapshotBackups,
     resolved.session_id,
     keyFromFlags(flags),
   );
+  // ⛔ THE SAVE `close` OWED DID NOT HAPPEN, SO IT IS NOT A SUCCESS. It used to
+  // answer `{"ok":true,"down":true,"snapshotBackups":[]}` over a board saved
+  // nowhere (verifier, 2026-09-28). The daemon now dumps the board to an
+  // `unsaved` file and says so; this turns that into a refusal.
+  //
+  // `conflict` (6), not a success with a notice: `close` is "save, then shut
+  // down", and a `set -e` wrapper or an agent routing on the exit must see that
+  // the save half failed. Not `internal` (1): nothing in bounty broke, a
+  // precondition on disk did (the snapshot path is a directory, not writable,
+  // or the disk is full), and the caller can fix it and restore. So the house
+  // failure shape: stdout empty, one envelope on stderr; the daemon's reply
+  // rides `error.server` verbatim, backups and all.
+  const failed = closeRes.snapshotSaveFailed;
+  if (failed) {
+    const dump = snapshotBackups.find((b) => b.kind === "unsaved" && b.path === failed.unsaved);
+    die(
+      `board ${resolved.session_id} is closed, but its final save failed: the snapshot ${failed.path} could not be written (${failed.error}); its ${failed.taskCount} task(s) were saved to ${failed.unsaved} instead`,
+      "conflict",
+      {
+        hint: `fix ${failed.path} (remove it if it is a directory, or make it and its folder writable), then run: ${dump?.restore ?? `open --restore ${failed.unsaved} --no-open`}`,
+        server: closeRes,
+      },
+    );
+  }
   printJson({ ok: true, sent: "close", down, snapshotBackups });
   announceBackups(snapshotBackups);
   if (!down)

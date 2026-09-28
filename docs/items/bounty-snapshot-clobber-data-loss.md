@@ -130,3 +130,14 @@ The unscoped `pkill` footgun above is untouched.
   (fix `ps`, or remove a lock whose pid is not this board's daemon). A daemon
   that gets that far exits 6 before reading or writing anything, and logs
   `lockLivenessUnknown` to `daemon.log`.
+- **A snapshot that could not be written silently dropped new work.** With the
+  snapshot path a directory, or not writable, every write failed inside a
+  "best-effort" catch, and `close` answered
+  `{"ok":true,"down":true,"snapshotBackups":[]}` over a board saved nowhere. A
+  failed write now dumps the board to `<id>.unsaved-<ts>.json` (in `snapshots/`,
+  or in `$BOUNTY_HOME` when `snapshots/` is the problem), named as an `unsaved`
+  backup. Mid-session it shows on `state.snapshotSaveFailed` and as a
+  `snapshotSaveFailed` event. `close` exits 6 (`conflict`, stdout empty) naming
+  the snapshot path and the dump, with the restore command in its hint: the save
+  it owed did not happen, and the fix is on disk. If nothing at all can be
+  written, `close` refuses and leaves the board running.

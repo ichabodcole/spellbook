@@ -23,6 +23,7 @@ import {
   mkdtempSync,
   readdirSync,
   readFileSync,
+  rmSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -6103,4 +6104,132 @@ describe("liveness that cannot be checked is a clean refusal", () => {
       killBoard(id);
     }
   }, 30000);
+});
+
+type SaveFailed = {
+  path: string;
+  error: string;
+  unsaved: string | null;
+  taskCount: number;
+} | null;
+
+/** The command a failed close's hint says to run once the path is fixed. */
+function restoreFromHint(hint: string | undefined): string[] {
+  const cmd = (hint ?? "").split("then run: ")[1] ?? "";
+  expect(cmd).toContain("--restore");
+  return cmd.trim().split(" ");
+}
+
+describe("a snapshot write that fails is reported, and the board is kept", () => {
+  test("snapshot path is a DIRECTORY: state says so mid-session, close fails, and the printed restore brings the work back", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `sdir-${crypto.randomUUID().slice(0, 8)}`;
+    const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], { env });
+    const id = (JSON.parse(o.stdout) as { session_id: string }).session_id;
+    const snap = join(home, "snapshots", `${id}.json`);
+    try {
+      mkdirSync(snap, { recursive: true });
+      await runCli(["add", "new1", "--session", id], { env });
+      await Bun.sleep(1600); // past the ~1s debounce
+      // Mid-session: the failed debounced write is readable on `state`.
+      const st = JSON.parse((await runCli(["state", "--session", id], { env })).stdout) as {
+        snapshotSaveFailed: SaveFailed;
+      };
+      expect(st.snapshotSaveFailed?.path).toBe(snap);
+      const mid = st.snapshotSaveFailed?.unsaved as string;
+      expect(mid).not.toBe(snap);
+      expect(titlesAt(mid)).toEqual(["new1"]);
+
+      const c = await runCli(["close", "--session-key", key], { env });
+      expect(c.stdout).toBe("");
+      const e = onlyEnvelope(c.stderr);
+      expect(e.error.kind).toBe("conflict");
+      expect(c.code).toBe(6);
+      expect(e.error.message).toContain(snap);
+      const server = e.error.server as { snapshotSaveFailed: SaveFailed };
+      const unsaved = server.snapshotSaveFailed?.unsaved as string;
+      expect(e.error.message).toContain(unsaved);
+      expect(titlesAt(unsaved)).toEqual(["new1"]);
+      expect(daemonPids(id)).toEqual([]);
+
+      rmSync(snap, { recursive: true });
+      const back = await runCli([...restoreFromHint(e.error.hint), "--timeout", "30"], { env });
+      expect(back.code).toBe(0);
+      expect(await liveTitles(id, env)).toEqual(["new1"]);
+      expect((await runCli(["close", "--session", id], { env })).code).toBe(0);
+      expect(titlesAt(snap)).toEqual(["new1"]);
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("snapshot NOT WRITABLE (mode 000): close fails and names the dump; the old snapshot is untouched", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `sperm-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["s1", "s2", "s3"], env);
+    const snap = join(home, "snapshots", `${id}.json`);
+    const before = readFileSync(snap, "utf8");
+    chmodSync(snap, 0o000);
+    try {
+      await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], { env });
+      await runCli(["add", "new1", "--session", id], { env });
+      const c = await runCli(["close", "--session-key", key], { env });
+      expect(c.stdout).toBe("");
+      const e = onlyEnvelope(c.stderr);
+      expect(e.error.kind).toBe("conflict");
+      expect(c.code).toBe(6);
+      const unsaved = (e.error.server as { snapshotSaveFailed: SaveFailed }).snapshotSaveFailed
+        ?.unsaved as string;
+      expect(titlesAt(unsaved)).toEqual(["new1"]);
+      expect(e.error.hint ?? "").toContain("--restore");
+      chmodSync(snap, 0o644);
+      expect(readFileSync(snap, "utf8")).toBe(before);
+    } finally {
+      try {
+        chmodSync(snap, 0o644);
+      } catch {}
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("snapshots/ itself unusable: the dump lands in $BOUNTY_HOME; with nowhere to write, close refuses and the board stays up", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `shome-${crypto.randomUUID().slice(0, 8)}`;
+    const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], { env });
+    const id = (JSON.parse(o.stdout) as { session_id: string }).session_id;
+    try {
+      writeFileSync(join(home, "snapshots"), "not a directory");
+      await runCli(["add", "new1", "--session", id], { env });
+      // Nowhere at all to write: the close is refused and the board kept.
+      chmodSync(home, 0o555);
+      const refused = await runCli(["close", "--session-key", key], { env });
+      chmodSync(home, 0o755);
+      expect(refused.stdout).toBe("");
+      expect(onlyEnvelope(refused.stderr).error.kind).toBe("conflict");
+      expect(refused.code).toBe(6);
+      expect(await liveTitles(id, env)).toEqual(["new1"]);
+
+      // $BOUNTY_HOME writable again: the dump lands there, outside snapshots/.
+      const c = await runCli(["close", "--session-key", key], { env });
+      const e = onlyEnvelope(c.stderr);
+      expect(c.code).toBe(6);
+      const unsaved = (e.error.server as { snapshotSaveFailed: SaveFailed }).snapshotSaveFailed
+        ?.unsaved as string;
+      expect(dirname(unsaved)).toBe(home);
+      expect(titlesAt(unsaved)).toEqual(["new1"]);
+      rmSync(join(home, "snapshots"));
+      const back = await runCli([...restoreFromHint(e.error.hint), "--timeout", "30"], { env });
+      expect(back.code).toBe(0);
+      expect(await liveTitles(id, env)).toEqual(["new1"]);
+      await runCli(["close", "--session", id], { env });
+    } finally {
+      try {
+        chmodSync(home, 0o755);
+      } catch {}
+      killBoard(id);
+    }
+  }, 60000);
 });

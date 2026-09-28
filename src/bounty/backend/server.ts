@@ -347,19 +347,33 @@ type ApplyResult = {
   // `close`'s report of every snapshot backup this daemon wrote: the act that
   // ends the daemon is the last response that can carry it (see BackupRecord).
   snapshotBackups?: BackupRecord[];
+  // `close`'s report of a final write that failed (see SnapshotSaveFailed).
+  snapshotSaveFailed?: SnapshotSaveFailed;
 };
 
 // A copy this daemon made of a snapshot before writing over it. `kind` says
 // why: `shrink` (the first shrinking write of this daemon's life, #73/#74) or
 // `unreadable` (a file that could not be read as a snapshot, so no count could
 // judge it). `taskCount` is the copy's own count, null when it is unreadable.
+// `unsaved` is not a copy of the snapshot: it is the BOARD, dumped to a file of
+// its own because the snapshot could not be written (see SnapshotSaveFailed).
 // The CLI adds the act that recovers it, since only the CLI knows the key.
 type BackupRecord = {
-  kind: "shrink" | "unreadable";
+  kind: "shrink" | "unreadable" | "unsaved";
   path: string;
   taskCount: number | null;
   reason: string;
 };
+
+// The LATEST snapshot write failed: where it was going, why, and where the
+// board went instead (`unsaved`, null when no fallback could be written
+// either). Null once a write succeeds: one state, one meaning.
+type SnapshotSaveFailed = {
+  path: string;
+  error: string;
+  unsaved: string | null;
+  taskCount: number;
+} | null;
 
 type BrowserMsg =
   | { type: "task.toggle"; id: string; status: TaskStatus }
@@ -987,10 +1001,62 @@ async function main(argv: string[]): Promise<number> {
     if (announce) emitEvent({ type: "snapshotBackedUp", kind: "unreadable", backup, by: "system" });
     process.stderr.write(`bounty: ${reason} — copied to ${backup}\n`);
   };
-  const saveSnapshot = () => {
+  // ⛔ A SNAPSHOT WRITE THAT FAILS USED TO BE SILENT, AND THE WORK WAS LOST.
+  // The catch below said "persistence is best-effort": with the snapshot path a
+  // directory, or not writable, every write failed, `close` answered
+  // `{"ok":true,"down":true,"snapshotBackups":[]}`, and the board's new work was
+  // saved nowhere (verifier, 2026-09-28). Now a failed write DUMPS THE BOARD to
+  // a file of its own, `<id>.unsaved-<ts>.json`, in snapshots/ or, if that is
+  // the problem, in $BOUNTY_HOME; it can never be the snapshot path. One file
+  // per daemon life, rewritten on each failed write. The failure is readable on
+  // `/state` (`snapshotSaveFailed`), sent once per failure run as an event, and
+  // carried on `close`'s reply, which the CLI turns into a refusal.
+  let snapshotSaveFailed: SnapshotSaveFailed = null;
+  let unsavedRecord: BackupRecord | null = null;
+  const dumpUnsaved = (): string | null => {
+    const name = `${sessionId}.unsaved-${Date.now()}.json`;
+    const candidates = [
+      ...(unsavedRecord ? [unsavedRecord.path] : []),
+      join(SNAPSHOTS_DIR, name),
+      join(BOUNTY_HOME, name),
+    ];
+    for (const p of candidates) {
+      try {
+        mkdirSync(dirname(p), { recursive: true });
+        writeFileAtomic(p, JSON.stringify(state));
+        return p;
+      } catch {}
+    }
+    return null;
+  };
+  const snapshotWriteFailed = (path: string, e: unknown) => {
+    const error = e instanceof Error ? e.message : String(e);
+    const unsaved = dumpUnsaved();
+    const first = snapshotSaveFailed === null;
+    snapshotSaveFailed = { path, error, unsaved, taskCount: state.tasks.length };
+    if (unsaved) {
+      const reason = `the snapshot ${path} could not be written (${error}); the board was saved here instead`;
+      if (!unsavedRecord) {
+        unsavedRecord = { kind: "unsaved", path: unsaved, taskCount: 0, reason };
+        backupsThisSession.push(unsavedRecord);
+      }
+      unsavedRecord.path = unsaved;
+      unsavedRecord.taskCount = state.tasks.length;
+      unsavedRecord.reason = reason;
+    }
+    logDaemon("snapshotSaveFailed", { path, error, unsaved, tasks: state.tasks.length });
+    if (first) {
+      emitEvent({ type: "snapshotSaveFailed", path, error, unsaved, by: "system" });
+      process.stderr.write(
+        `bounty: could not write the snapshot ${path} (${error}); ${unsaved ? `the board was saved to ${unsaved}` : "no fallback file could be written either"}\n`,
+      );
+    }
+  };
+  /** Write the board's snapshot. False when the write failed (see above). */
+  const saveSnapshot = (): boolean => {
+    const path = join(SNAPSHOTS_DIR, `${sessionId}.json`);
     try {
       mkdirSync(SNAPSHOTS_DIR, { recursive: true });
-      const path = join(SNAPSHOTS_DIR, `${sessionId}.json`);
       if (!unreadableKept && existsSync(path)) {
         const why = unreadableReason(path);
         if (why) keepUnreadable(path, why, true);
@@ -1047,8 +1113,11 @@ async function main(argv: string[]): Promise<number> {
       // snapshot becomes unreadable in the first place.
       writeFileAtomic(path, JSON.stringify(state));
       unreadableKept = false;
-    } catch {
-      /* persistence is best-effort */
+      snapshotSaveFailed = null;
+      return true;
+    } catch (e) {
+      snapshotWriteFailed(path, e);
+      return false;
     }
   };
   // (c) At boot, for a forced id: a board whose own snapshot is unreadable
@@ -1556,10 +1625,28 @@ async function main(argv: string[]): Promise<number> {
       // every backup of this daemon's life, not only this write's: a debounced
       // flush that rotated earlier has no response of its own to carry it, and
       // this reply is the last one the daemon sends.
-      saveSnapshot();
+      const saved = saveSnapshot();
       snapDirty = false;
+      // Nowhere at all took the board (not the snapshot, not a fallback file):
+      // closing now would end the only copy, so the board stays up and the
+      // close is refused. `conflict`: a precondition (somewhere writable)
+      // failed, and fixing it then closing again is the recovery.
+      if (!saved && !snapshotSaveFailed?.unsaved) {
+        return {
+          ok: true,
+          applied: false,
+          kind: "conflict",
+          error: `board not closed: its snapshot ${snapshotSaveFailed?.path} could not be written (${snapshotSaveFailed?.error}), and no fallback file could be written in ${SNAPSHOTS_DIR} or ${BOUNTY_HOME} either; the board is left running so its ${state.tasks.length} task(s) are not lost. Make one of those writable, then close again`,
+          snapshotSaveFailed,
+        };
+      }
       resolveDone({ code: 0, reason: "close" });
-      return { ok: true, applied: true, snapshotBackups: backupsThisSession };
+      return {
+        ok: true,
+        applied: true,
+        snapshotBackups: backupsThisSession,
+        snapshotSaveFailed,
+      };
     }
     // An unrecognised command type. `usage`, not `conflict`: nothing about the
     // board's state refused it — the caller named a verb this daemon does not
@@ -1643,6 +1730,9 @@ async function main(argv: string[]): Promise<number> {
               // b15 — also readable here: a boot line is missable and this fact
               // outlives it.
               restoreFailed,
+              // The latest snapshot write failed, and where the board went
+              // instead. Present-and-null when the last write succeeded.
+              snapshotSaveFailed,
             }),
             { headers: { "Content-Type": "application/json" } },
           );
@@ -1974,7 +2064,11 @@ async function main(argv: string[]): Promise<number> {
       clear: () => {
         snapDirty = false;
       },
-      write: saveSnapshot,
+      // A failed write reports itself (snapshotWriteFailed); the tick has
+      // nothing to do with the result.
+      write: () => {
+        saveSnapshot();
+      },
     },
   });
 

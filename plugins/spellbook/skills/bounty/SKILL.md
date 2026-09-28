@@ -354,6 +354,8 @@ the resume point you hand to `tail --since <cursor>`.
 PRESENT-AND-NULL, never absent.** `null` means this daemon has not rotated
 anything; a non-null value means it copied the on-disk snapshot aside before a
 shrinking write, and names the file. See **Durability** for when that fires.
+`state` also carries `snapshotSaveFailed`, present-and-null unless the latest
+snapshot write failed (see **Durability**).
 
 > **Why it lives here and not only on the event stream.** An event is _absent_
 > when nothing happened, so "no rotation" and "a daemon too old to report one"
@@ -591,6 +593,20 @@ file, then rename), so a death mid-write leaves the previous one.
   written over: it is copied byte-for-byte to `<id>.unreadable-<ts>.bak.json`
   first, at boot for a keyed board, and otherwise before the first write. The
   copy is kept for repair; it cannot be restored as it stands.
+- **A snapshot that cannot be written** (the path is a directory, the file or
+  its folder is not writable, the disk is full) never loses the board. Each
+  failed write dumps the board to `<id>.unsaved-<ts>.json` in `snapshots/`, or
+  in `$BOUNTY_HOME` if `snapshots/` is the problem (one file per daemon,
+  rewritten on each failure). Mid-session, `state.snapshotSaveFailed` is
+  `{ path, error, unsaved, taskCount }` (present-and-null once a write
+  succeeds), a `snapshotSaveFailed` event reaches a live tail, and `daemon.log`
+  gets a line. **`close` exits 6 (`conflict`)**, stdout empty: the board is
+  down, but the save `close` owed did not happen. Its envelope names the
+  snapshot path and the dump, its hint says to fix the path and then run the
+  printed `open … --restore <dump>`, and `error.server` carries the daemon's
+  reply (`snapshotSaveFailed`, `snapshotBackups`). If nothing at all can be
+  written, `close` refuses (exit 6) and **leaves the board running**, since it
+  holds the only copy.
 
 #### Snapshot rotation — the guard against writing a smaller board over a bigger one
 
@@ -624,6 +640,7 @@ and `[]`** when nothing was backed up. Each entry is
 | `shrink`     | the daemon, before its first shrinking write (the rotation above)          | the copy's  | the act         |
 | `unreadable` | the daemon, before writing over a file it cannot read                      | `null`      | `null` (repair) |
 | `pre-fresh`  | `open`, before a `--fresh --restore <own id>` teardown writes the snapshot | the copy's  | the act         |
+| `unsaved`    | the daemon, when the snapshot could not be written (the board, dumped)     | the board's | the act         |
 
 `restore` is the command that brings the copy back:
 `open --session-key K --fresh --restore <id>.pre-….bak --no-open` for a keyed
