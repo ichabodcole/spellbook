@@ -43,3 +43,11 @@ and `add --stdin` alone behave as before.
 Pinned by `server.test.ts`, "one act, one answer — add with a title AND --stdin"
 › "add <title> --stdin is a usage error (2) and adds nothing; either one alone
 still adds".
+
+`message` had the same shape: `message x --stdin` exited 0, toasted the stdin
+text and dropped `x`. Its `check` hook (`checkMessage`) now refuses it the same
+way, exit 2 and nothing sent. The other verbs that take `--stdin` were checked:
+`update`'s only positional is the task id, which `--stdin` does not replace (its
+`--stdin --title` clash was already refused), and `init --stdin-tasks` takes no
+positional. Pinned by "message <text> --stdin is a usage error (2); either one
+alone still sends", in the same `describe`.

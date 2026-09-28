@@ -274,6 +274,8 @@ printf "it's a \"quoted\" & <urgent> task" | bun $CLI add --stdin --status doing
 `add <title…>` → the **title**. `message <text…>` → the **text**. So `add` takes
 a title **or** `--stdin`, never both: `add x --stdin` is refused at exit 2
 (`usage`) and adds nothing. It used to keep stdin and silently drop `x`.
+`message` is the same: `message x --stdin` is refused at exit 2 and sends
+nothing.
 
 **On `update`, whose only positional is `<id>`, `--stdin` reads the new TITLE**
 (as on `add`), never the notes. For notes, use `--notes`; if the prose has

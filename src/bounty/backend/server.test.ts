@@ -5485,4 +5485,23 @@ describe("one act, one answer — add with a title AND --stdin", () => {
       await runCli(["close", ...s], { env });
     }
   }, 30000);
+
+  // The same class on `message`: `message x --stdin` toasted the stdin text and
+  // dropped `x`, at exit 0. Refused in the same shape as `add`.
+  test("message <text> --stdin is a usage error (2); either one alone still sends", async () => {
+    const env = { BOUNTY_HOME: uniqHome() };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    const s = ["--session", session];
+    try {
+      const r = await runCli(["message", "x", "--stdin", ...s], { env, stdin: "from stdin\n" });
+      const err = refusal(r, "usage", 2);
+      expect(err.message).toContain("--stdin");
+
+      expect((await runCli(["message", "positional", ...s], { env })).code).toBe(0);
+      expect((await runCli(["message", "--stdin", ...s], { env, stdin: "piped\n" })).code).toBe(0);
+    } finally {
+      await runCli(["close", ...s], { env });
+    }
+  }, 30000);
 });

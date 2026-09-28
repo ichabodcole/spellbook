@@ -1845,6 +1845,16 @@ function checkUpdate(inv: Invocation<Flag>): string | undefined {
   return undefined;
 }
 
+/** `message`'s one source for the text, in exactly `checkAdd`'s shape. A text
+ *  and `--stdin` together used to toast stdin and silently discard the
+ *  positional, at exit 0 (one act, one answer). */
+function checkMessage(inv: Invocation<Flag>): string | undefined {
+  const f = inv.flags as Flags;
+  if (f.stdin === true && inv.pos.length > 0)
+    return "a text and --stdin both set the message; pass one of them";
+  return undefined;
+}
+
 /** `init --replace` replaces the board's tasks with the seed; with no seed it
  *  would do nothing, and a flag that silently does nothing is refused. */
 function checkInit(inv: Invocation<Flag>): string | undefined {
@@ -1964,6 +1974,7 @@ const ROWS: Row[] = [
     flags: [...WRITE, "stdin"],
     positionals: [{ name: "text", required: false, variadic: true }],
     describe: "show a toast on the board (the text, or --stdin)",
+    check: checkMessage,
     run: cmdMessage,
   },
   {
