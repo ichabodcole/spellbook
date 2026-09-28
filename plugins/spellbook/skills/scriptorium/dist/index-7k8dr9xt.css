@@ -427,6 +427,10 @@
     position: relative;
   }
 
+  .static {
+    position: static;
+  }
+
   .inset-0 {
     inset: calc(var(--spacing) * 0);
   }
@@ -2277,6 +2281,12 @@
   }
 
   @media (hover: hover) {
+    .hover\:bg-surface:hover {
+      background-color: var(--color-surface);
+    }
+  }
+
+  @media (hover: hover) {
     .hover\:bg-surface-raised:hover {
       background-color: var(--color-surface-raised);
     }
@@ -3242,6 +3252,87 @@
 
   .md-prose del {
     color: var(--color-ink-dim);
+  }
+
+  .md-prose.md-chat {
+    color: inherit;
+    font-size: inherit;
+    overflow-wrap: anywhere;
+    min-width: 0;
+    line-height: 1.55;
+  }
+
+  .md-prose.md-chat h1, .md-prose.md-chat h2, .md-prose.md-chat h3, .md-prose.md-chat h4, .md-prose.md-chat h5, .md-prose.md-chat h6 {
+    margin: .7em 0 .3em;
+    font-size: 1.1em;
+    line-height: 1.35;
+  }
+
+  .md-prose.md-chat h1 {
+    font-size: 1.2em;
+  }
+
+  .md-prose.md-chat p, .md-prose.md-chat ul, .md-prose.md-chat ol, .md-prose.md-chat blockquote, .md-prose.md-chat pre, .md-prose.md-chat table {
+    margin: .4em 0;
+  }
+
+  .md-prose.md-chat > :first-child {
+    margin-top: 0;
+  }
+
+  .md-prose.md-chat > :last-child {
+    margin-bottom: 0;
+  }
+
+  .md-prose.md-chat ul, .md-prose.md-chat ol {
+    padding-left: 1.25em;
+  }
+
+  .md-prose.md-chat li {
+    margin: .1em 0;
+  }
+
+  .md-prose.md-chat li > p {
+    margin: 0;
+  }
+
+  .md-prose.md-chat pre {
+    overflow-wrap: normal;
+    border-radius: 6px;
+    max-width: 100%;
+    padding: .5em .65em;
+  }
+
+  .md-prose.md-chat pre code {
+    white-space: pre;
+    font-size: .95em;
+  }
+
+  .md-prose.md-chat table {
+    overflow-wrap: normal;
+    max-width: 100%;
+    font-size: 1em;
+  }
+
+  .md-prose.md-chat th, .md-prose.md-chat td {
+    padding: .25em .5em;
+  }
+
+  .md-prose.md-chat code, .md-prose.md-chat pre, .md-prose.md-chat th {
+    background: var(--color-bg);
+  }
+
+  .md-prose.md-chat pre code {
+    background: none;
+  }
+
+  .md-prose.md-chat hr {
+    margin: .8em 0;
+  }
+
+  .md-prose.md-chat blockquote {
+    border-left-width: 2px;
+    padding-left: .7em;
   }
 }
 
