@@ -80,3 +80,40 @@ fix.
   vine); operator team session (9-task board, session key `operator`)
 - The anthill-side half is filed upstream as `ichabodcole/anthill#43` (convene
   should warn on snapshot-vs-live mismatch)
+
+## Fixed (2026-09-28)
+
+Worked in cycle
+[Data you can't get back](../cycles/2026-09-data-you-cant-get-back.md). A
+no-stake re-measure ran the sequence above first, and it no longer happens in
+its August form.
+
+**Already done before this cycle:**
+
+- **Respawn restores by default.** `open --session-key K` over a dead board
+  restores K's snapshot (b7, #97). Pinned by the existing b7 cell.
+- **Guarded write**, in the form of backup-then-write rather than refusal. The
+  first shrinking write of a daemon's life copies the old snapshot to
+  `<id>.pre-<ts>.bak.json`.
+- **Tail-death visibility.** A signal death runs the teardown and sends the
+  `closed` frame, and a SIGKILLed daemon ends a live tail with `tail.lost`. The
+  `tail.lost` half had no bounty cell; one now pins it, and another pins SIGTERM
+  saving a mutation made inside the debounce window.
+
+**Fixed in this cycle:** the re-measure found three new paths to the same loss,
+and one gap in reporting it.
+
+- **Two daemons for one key.** Concurrent keyed opens started two daemons under
+  one id, and the one no verb could reach later wrote its stale board over newer
+  work. A per-id lock taken at boot now allows one daemon per id, and a losing
+  `open` reports the winner's board.
+- **An unreadable snapshot was written over.** It is now copied aside
+  byte-for-byte first, and a snapshot whose `tasks` is not an array is a
+  `restoreFailed` instead of an empty board.
+- **The backup was never named to the caller.** `close` and `open` now carry
+  `snapshotBackups`, with each backup's path, task count and restore command.
+
+**Not done here:** **Rotation** as asked (versioned snapshots, keep N) is cut,
+with a retention limit, to
+[item/bounty-snapshot-rotation-by-content-and-retention](./bounty-snapshot-rotation-by-content-and-retention.md).
+The unscoped `pkill` footgun above is untouched.

@@ -169,6 +169,23 @@ session by default; pass `--session <id>` to target a specific one.
 >   same id. Re-running it, or reusing K after a crash, converges on one board.
 >   `open --session-key K --fresh` tears down any live board for K and starts
 >   clean (for reusing a key across sessions).
+> - **One daemon per key, even under a race.** Each board id has a lock,
+>   `$BOUNTY_HOME/locks/<id>.lock` (`{pid, port}`), which the daemon takes at
+>   boot before it writes anything. Several `open --session-key K` at once all
+>   exit 0 and all report the same board. Every daemon but the first exits
+>   without touching the snapshot. (Before, two could run under one id, and the
+>   one no verb could reach later wrote its stale board over newer work.) A lock
+>   whose pid is dead, or is running something other than this board's daemon,
+>   is stale and is taken over. A daemon that is shutting down marks its lock
+>   `closing`, so an `open` right after `close` waits for it instead of failing.
+>   If `open` ever reports that a board is held by a daemon that is not
+>   answering, kill that pid (`open` names it) and open again.
+> - **`open --session-key K --fresh --restore <K's own id>`** resets a live
+>   board to its snapshot. `open` copies the snapshot to
+>   `<id>.pre-fresh-<ts>.bak.json` **before** the teardown's `close` writes the
+>   live board over it, then restores from the copy. The copy is kept and named
+>   in `snapshotBackups`. (It used to restore the teardown's own write, so the
+>   snapshot's board was lost.)
 > - The id is **project-scoped** (hashed with the repo root): the same key in
 >   two different repos is two independent boards; the same key in the _same_
 >   repo (even from a subdirectory) is the _same_ board — an intended share,
@@ -555,8 +572,18 @@ just watching survives long stretches and a restart.
   dropped rather than fatal — the rest of the board restores. An `<id>` with no
   snapshot is refused, exit 5 (`not_found`), and starts no board.
 
-The restored daemon gets a **new** session id (and writes its own snapshot on
-close); the snapshot you restored from is left intact.
+An unkeyed restore gets a **new** session id; a keyed one keeps the key's id.
+Either way the snapshot you restored from is left intact, and a board restored
+from any file other than its own snapshot writes its own snapshot on the first
+debounce tick, not at its first change. A snapshot is written atomically (temp
+file, then rename), so a death mid-write leaves the previous one.
+
+- **A snapshot that exists but cannot be read** (truncated JSON, not an object,
+  `tasks` missing or not an array) makes a restore fail with
+  `restoreFailed: {path, reason}`. The board comes up empty. The file is never
+  written over: it is copied byte-for-byte to `<id>.unreadable-<ts>.bak.json`
+  first, at boot for a keyed board, and otherwise before the first write. The
+  copy is kept for repair; it cannot be restored as it stands.
 
 #### Snapshot rotation — the guard against writing a smaller board over a bigger one
 
@@ -578,6 +605,28 @@ snapshot is copied to `<session_id>.pre-<ts>.bak.json`.
   `state.snapshotBackedUp` is readable at any time.
 - **Recovery needs no new verb** — the `.bak.json` suffix is chosen so
   `sessions` lists it and `open --restore <id>.pre-<ts>.bak` resolves it.
+
+#### `snapshotBackups` — the backup is named on the act that made it
+
+Every `open` and `close` success carries `snapshotBackups`: a list, **present
+and `[]`** when nothing was backed up. Each entry is
+`{ kind, path, taskCount, reason, restore }`:
+
+| `kind`       | Made by                                                                    | `taskCount` | `restore`       |
+| ------------ | -------------------------------------------------------------------------- | ----------- | --------------- |
+| `shrink`     | the daemon, before its first shrinking write (the rotation above)          | the copy's  | the act         |
+| `unreadable` | the daemon, before writing over a file it cannot read                      | `null`      | `null` (repair) |
+| `pre-fresh`  | `open`, before a `--fresh --restore <own id>` teardown writes the snapshot | the copy's  | the act         |
+
+`restore` is the command that brings the copy back:
+`open --session-key K --fresh --restore <id>.pre-….bak --no-open` for a keyed
+board (it works whether the board is live or not), and
+`open --restore <bak> --no-open` otherwise. Run it with your launcher, as with
+every printed command. `close` lists every backup its daemon made in its
+lifetime, because a debounced flush that rotated earlier has no reply of its
+own. `open` lists the pre-fresh copy, the torn-down board's backups, and the new
+daemon's boot copy. The exit stays 0: it is a success with a notice. Each backup
+is also written as one line on stderr.
 
 > **⚠ RECOVER FROM THE BACKUP WITH THE HIGHEST `taskCount`, NOT THE NEWEST
 > TIMESTAMP.** There is deliberately no retention policy (bounding it re-creates

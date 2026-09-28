@@ -83,3 +83,32 @@ Related:
 [`2026-08-06-bounty-session-key-hijack-and-identity`](./bounty-session-key-hijack-and-identity.md),
 `spell-hardening` Phase 0b and Phase 1 (#73's backup-then-write guard, which
 would have made this survivable).
+
+## Fixed (2026-09-28)
+
+Worked in cycle
+[Data you can't get back](../cycles/2026-09-data-you-cant-get-back.md).
+
+**Already done before this cycle:** a `--restore` naming a snapshot that does
+not exist is refused before `--fresh` tears anything down. `--restore` on a live
+keyed board without `--fresh` refuses with exit 2 (#80.1). But the measurement
+above still reproduced on a live board: with live 0 over snapshot 2, and with a
+live board that differed at equal counts (re-measure cells 6 and 7a), nothing of
+the snapshot survived. At equal counts no shrink backup fires.
+
+**Fixed in this cycle:**
+
+- [x] **`--fresh --restore` restores the snapshot's contents.** When the restore
+      source is the board's own snapshot and a live board will be torn down,
+      `open` copies the snapshot to `<id>.pre-fresh-<ts>.bak.json` before the
+      teardown's `close`, and restores from the copy. The copy is kept and named
+      on the envelope (`snapshotBackups`). The restored board also reaches its
+      own snapshot on the first debounce tick.
+- [x] **A regression test pinning it**, with the precondition (live 0 over
+      snapshot 2, and the equal-count case) asserted as its own cell.
+
+**Not done here:** revisiting D3's refusal. The verb is safe to name now, but
+naming it is Cole's to rule (his 2026-08-06 ruling). The refusal is unchanged,
+and the comment above it now says the mechanism behind the ruling is fixed.
+Restoring a **different** snapshot under `--fresh` is cut to
+[item/bounty-snapshot-rotation-by-content-and-retention](./bounty-snapshot-rotation-by-content-and-retention.md).
