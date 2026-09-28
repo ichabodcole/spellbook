@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import {
+  chmodSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -389,17 +390,29 @@ describe("an unreadable registry is set aside, never lost", () => {
   const BYTES_SHAPE = '{"projects":"x"}';
   const INNER = '{"id":"alpha","name":"Alpha","path":"/tmp/alpha"}';
 
-  type Fixture = { name: string; make: (reg: string) => void; survived: (at: string) => void };
+  const BYTES_VALID = `{"title":"Observatory","projects":[${INNER}]}`;
+
+  // `fix` / `notFix`: the recovery is worded by CAUSE. "Fix the JSON" is the
+  // wrong act for a valid registry nobody can read, or for a directory.
+  type Fixture = {
+    name: string;
+    make: (reg: string) => void;
+    survived: (at: string) => void;
+    fix: RegExp;
+    notFix?: RegExp;
+  };
   const FIXTURES: Fixture[] = [
     {
       name: "invalid JSON",
       make: (reg) => writeFileSync(reg, BYTES_INVALID),
       survived: (at) => expect(readFileSync(at, "utf8")).toBe(BYTES_INVALID),
+      fix: /fix the JSON/,
     },
     {
       name: "the wrong shape",
       make: (reg) => writeFileSync(reg, BYTES_SHAPE),
       survived: (at) => expect(readFileSync(at, "utf8")).toBe(BYTES_SHAPE),
+      fix: /fix the JSON/,
     },
     {
       name: "a directory",
@@ -411,6 +424,23 @@ describe("an unreadable registry is set aside, never lost", () => {
         expect(statSync(at).isDirectory()).toBe(true);
         expect(readFileSync(join(at, "inner.json"), "utf8")).toBe(INNER);
       },
+      fix: /directory.*move .*out.*delete/,
+      notFix: /fix the JSON/,
+    },
+    {
+      // A VALID registry the user cannot read (mode 000): the bytes are fine.
+      name: "an unreadable mode",
+      make: (reg) => {
+        writeFileSync(reg, BYTES_VALID);
+        chmodSync(reg, 0o000);
+      },
+      survived: (at) => {
+        chmodSync(at, 0o600);
+        expect(readFileSync(at, "utf8")).toBe(BYTES_VALID);
+        chmodSync(at, 0o000);
+      },
+      fix: /permissions.*chmod/,
+      notFix: /fix the JSON/,
     },
   ];
 
@@ -446,6 +476,8 @@ describe("an unreadable registry is set aside, never lost", () => {
         expect(env.error.message).toContain(reg);
         // The notice names the act: `open` sets it aside.
         expect(env.error.hint).toContain("open");
+        expect(env.error.hint).toMatch(f.fix);
+        if (f.notFix) expect(env.error.hint).not.toMatch(f.notFix);
         expect(existsSync(join(home, "daemon.port"))).toBe(false);
         // A refusal has no side effect: the bytes are exactly where they were.
         f.survived(reg);
@@ -481,8 +513,13 @@ describe("an unreadable registry is set aside, never lost", () => {
       for (const verb of ["info", "state", "list"]) {
         const r = await runCli(home, [verb]);
         expect(r.code).toBe(0);
-        const body = JSON.parse(r.out) as { registry_set_aside?: Array<{ path: string }> };
+        const body = JSON.parse(r.out) as {
+          registry_set_aside?: Array<{ path: string; recover: string }>;
+        };
         expect(body.registry_set_aside?.map((a) => a.path)).toEqual([aside]);
+        const recover = body.registry_set_aside?.[0]?.recover ?? "";
+        expect(recover).toMatch(f.fix);
+        if (f.notFix) expect(recover).not.toMatch(f.notFix);
       }
 
       expect((await runCli(home, ["close"])).code).toBe(0);
@@ -504,6 +541,38 @@ describe("an unreadable registry is set aside, never lost", () => {
       expect(JSON.parse(quiet.out).registry_set_aside).toBeUndefined();
     }, 90000);
   }
+
+  // ⛔ A RENAME THAT FAILS IS REPORTED AT ONCE, WITH ITS REASON. The daemon
+  // refuses to boot (exit 1) rather than start an empty board over bytes it
+  // could not read or move. The CLI used to wait out its whole 45 s handshake
+  // and then say only "failed to start": the daemon's stderr was ignored.
+  test("a rename that fails: open fails at once with the daemon's reason, bytes left in place", async () => {
+    const home = mkdtempSync(join(tmpdir(), "astrolabe-norename-"));
+    homes.push(home);
+    const reg = join(home, "registry.json");
+    writeFileSync(reg, BYTES_INVALID);
+    chmodSync(home, 0o555); // the rename needs a writable directory
+    try {
+      const t0 = Date.now();
+      const r = await runCli(home, ["open", "--no-open"]);
+      const took = Date.now() - t0;
+      expect(r.out).toBe("");
+      expect(r.code).toBe(1);
+      const env = JSON.parse(r.err) as Env;
+      expect(env.error.kind).toBe("internal");
+      expect(env.error.message).toContain(reg);
+      expect(env.error.message).toContain("left in place");
+      // WHY the rename failed, in the OS's own words.
+      expect(env.error.message).toMatch(/EACCES|permission denied/i);
+      expect(env.error.message).not.toContain("within 45s");
+      expect(took).toBeLessThan(15000);
+    } finally {
+      chmodSync(home, 0o755);
+    }
+    expect(readFileSync(reg, "utf8")).toBe(BYTES_INVALID);
+    expect(asides(home)).toEqual([]);
+    expect(existsSync(join(home, "daemon.port"))).toBe(false);
+  }, 60000);
 
   test("a valid registry behaves exactly as before: nothing moved, nothing warned", async () => {
     const home = mkdtempSync(join(tmpdir(), "astrolabe-valid-"));

@@ -37,8 +37,8 @@
 // on the daemon's `closed` frame.
 
 import { spawn } from "node:child_process";
-import { existsSync } from "node:fs";
-import { homedir } from "node:os";
+import { closeSync, existsSync, openSync, readFileSync, unlinkSync } from "node:fs";
+import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -61,7 +61,7 @@ import {
   WINDOW_HELP,
 } from "../../kit/wire/tailHandoff";
 import { TAIL_IDLE_MS } from "./heartbeat.ts";
-import { listSetAside, readRegistry, recoverAct } from "./registryFile.ts";
+import { listSetAside, readRegistry, recoverAct, repairAct } from "./registryFile.ts";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 // ⛔ "..", "scripts" — NOT a sibling lookup. This file is AUTHORED here and
@@ -163,27 +163,124 @@ async function ensureDaemon(): Promise<{ base: string; port: number }> {
   if (existing && (await isUp(existing))) {
     return { base: `http://127.0.0.1:${existing}`, port: existing };
   }
+  const bootLog = openBootLog();
   const proc = spawn(process.execPath, ["run", SERVER_SCRIPT, "--no-open"], {
     detached: true,
-    stdio: ["ignore", "ignore", "ignore"],
+    stdio: ["ignore", "ignore", bootLog ? bootLog.fd : "ignore"],
     env: process.env,
     // Contract 5 — see daemonCwd(). A wrong cwd skips bunfig.toml's Tailwind
     // plugin; on glamour that fails the page outright (500). Assert the invariant,
     // not the status: the utility never reaches the browser when cwd is wrong.
     cwd: daemonCwd(),
   });
+  if (bootLog) closeSync(bootLog.fd); // the daemon holds its own copy
+  const ended: { how: string | null } = { how: null };
+  proc.on("exit", (code, signal) => {
+    ended.how = code !== null ? `exit ${code}` : `signal ${signal}`;
+  });
+  proc.on("error", (e) => {
+    ended.how = `spawn error: ${e.message}`;
+  });
   proc.unref();
   // The daemon BINDS fast and answers /state as soon as it's listening (the
   // cold Tailwind+React bundle is lazy, on the first GET "/"), so this handshake
   // usually returns quickly. The wide deadline covers a cold machine where
   // module load + first serve runs slow (glamour uses the same ~45s budget).
+  // A daemon that EXITS before answering ends the wait at once: it isn't coming.
   const deadline = Date.now() + 45000;
+  let up: number | null = null;
   while (Date.now() < deadline) {
     await sleep(80);
     const p = await readPort();
-    if (p && (await isUp(p))) return { base: `http://127.0.0.1:${p}`, port: p };
+    if (p && (await isUp(p))) {
+      up = p;
+      break;
+    }
+    if (ended.how) {
+      // One more look: a concurrent `open`'s daemon may be the one that is up.
+      const q = await readPort();
+      if (q && (await isUp(q))) up = q;
+      break;
+    }
   }
-  die("astrolabe daemon failed to start within 45s", "internal");
+  const said = bootLog ? takeBootLog(bootLog.path) : "";
+  if (up) return { base: `http://127.0.0.1:${up}`, port: up };
+  const f = startFailure(ended.how, said);
+  die(f.message, "internal", f.extra);
+}
+
+// ── WHY THE DAEMON DID NOT START (data-you-cant-get-back, verifier) ──────────
+//
+// The spawn used to ignore the daemon's stderr, so a daemon that refused to
+// boot — an unreadable registry it could not rename aside, a port it could not
+// bind — exited at once while this CLI waited out all 45 s and then said only
+// "failed to start". Now the daemon's stderr goes to a per-spawn file in the
+// OS temp dir for the length of the handshake, and an early exit is reported
+// at once in the daemon's own words.
+//
+// ⚠ A FILE, NOT A PIPE. A piped stderr outlives this CLI inside the detached
+// daemon: any later daemon write hits a closed pipe (EPIPE), and a caller that
+// reads `open`'s stderr to EOF waits for the whole session (scriptorium
+// measured that hang). A file holds no pipe. ⚠ AND IN THE TEMP DIR, NOT
+// `$ASTROLABE_HOME`: a home the daemon cannot write to is one of the failures
+// being reported, and a log that can't be created there would lose the reason
+// in exactly that case. The file is unlinked once read; the daemon keeps
+// writing to its (now nameless) descriptor, which is all "ignore" gave before.
+function openBootLog(): { fd: number; path: string } | null {
+  const path = join(tmpdir(), `astrolabe-boot-${process.pid}-${Date.now()}.log`);
+  try {
+    return { fd: openSync(path, "wx", 0o600), path };
+  } catch {
+    return null; // never block `open` on the log: the reason is lost, as before
+  }
+}
+
+function takeBootLog(path: string): string {
+  let text = "";
+  try {
+    text = readFileSync(path, "utf8");
+  } catch {
+    /* nothing written */
+  }
+  try {
+    unlinkSync(path);
+  } catch {
+    /* already gone */
+  }
+  return text;
+}
+
+/**
+ * The failure's words. A daemon that refuses to boot writes one JSON line with
+ * a `message` (and maybe a `hint`); that line is relayed, and carried verbatim
+ * under `server`. Anything else it said (a crash's stack) is quoted as a tail.
+ */
+export function startFailure(
+  ended: string | null,
+  said: string,
+): { message: string; extra?: { hint?: string; server?: unknown } } {
+  const lines = said.trim().split("\n").reverse();
+  for (const line of lines) {
+    try {
+      const obj = JSON.parse(line) as Record<string, unknown>;
+      if (obj && typeof obj.message === "string")
+        return {
+          message: obj.message,
+          extra: { ...(typeof obj.hint === "string" ? { hint: obj.hint } : {}), server: obj },
+        };
+    } catch {
+      /* not a structured line */
+    }
+  }
+  const tail = said.trim().slice(-800);
+  if (ended)
+    return {
+      message: `astrolabe daemon stopped (${ended}) before it started${tail ? `: ${tail}` : ", and gave no reason"}`,
+    };
+  return {
+    message: "astrolabe daemon failed to start within 45s",
+    ...(tail ? { extra: { hint: `the daemon said: ${tail}` } } : {}),
+  };
 }
 
 // ── A REFUSED INVOCATION STARTS NOTHING (one-act-one-answer) ───────────
@@ -221,7 +318,7 @@ async function coldBoard(): Promise<ObservatoryState | null> {
       `${REGISTRY_FILE} could not be read (${read.reason}), so which projects are registered is unknown`,
       "conflict",
       {
-        hint: "fix the JSON in that file and retry; or run `cli.ts open --no-open` to set it aside (renamed to registry.json.unreadable-<time>, never deleted) and start an empty board",
+        hint: `${repairAct(REGISTRY_FILE, read.cause)}, and retry; or run \`cli.ts open --no-open\` to set it aside (renamed to registry.json.unreadable-<time>, never deleted) and start an empty board`,
       },
     );
   return read.state;

@@ -25,7 +25,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { cli, refusalWords } from "./cli.ts";
+import { cli, refusalWords, startFailure } from "./cli.ts";
 
 const CLI = join(dirname(fileURLToPath(import.meta.url)), "cli.ts");
 
@@ -461,5 +461,31 @@ describe("refusalWords: the daemon's unknown-project refusal is read by its mark
     expect(refusalWords({ error: "id 'alpha' already registered" }, [ASIDE])).toEqual({
       message: "id 'alpha' already registered",
     });
+  });
+});
+
+// A daemon that exits before its handshake: the CLI relays what it said. A
+// structured refusal line is relayed by its `message`; anything else (a crash)
+// is quoted; silence is said to be silence rather than dressed as a timeout.
+describe("startFailure: an early daemon exit is reported in the daemon's words", () => {
+  test("the last structured line's message and hint are relayed, the line kept under server", () => {
+    const line = { event: "bind_error", message: "could not listen", hint: "free the port" };
+    const f = startFailure("exit 2", `noise\n${JSON.stringify(line)}\n`);
+    expect(f.message).toBe("could not listen");
+    expect(f.extra).toEqual({ hint: "free the port", server: line });
+  });
+
+  test("an unstructured exit quotes the tail and names how it ended", () => {
+    const f = startFailure("exit 1", "TypeError: boom\n    at main\n");
+    expect(f.message).toContain("exit 1");
+    expect(f.message).toContain("TypeError: boom");
+  });
+
+  test("an exit with no words says so", () => {
+    expect(startFailure("signal SIGKILL", "").message).toContain("gave no reason");
+  });
+
+  test("no exit is the timeout, as before", () => {
+    expect(startFailure(null, "").message).toBe("astrolabe daemon failed to start within 45s");
   });
 });

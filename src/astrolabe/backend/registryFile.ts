@@ -34,9 +34,26 @@ import {
   restoreRegistry,
 } from "../../../plugins/spellbook/skills/astrolabe/scripts/state.ts";
 
-export type RegistryRead = { ok: true; state: ObservatoryState } | { ok: false; reason: string };
+/**
+ * WHY a registry could not be read — which decides the act that repairs it.
+ * "Fix the JSON" is the wrong advice for a valid file nobody may read, and for
+ * a directory (verifier, data-you-cant-get-back): `json` covers invalid JSON,
+ * the wrong shape, and any read error that is neither of the other two.
+ */
+export type UnreadableCause = "json" | "permissions" | "directory";
+
+export type RegistryRead =
+  | { ok: true; state: ObservatoryState }
+  | { ok: false; reason: string; cause: UnreadableCause };
 
 const errMessage = (e: unknown): string => (e instanceof Error ? e.message : String(e));
+
+function causeOfReadError(e: unknown): UnreadableCause {
+  const code = (e as NodeJS.ErrnoException).code;
+  if (code === "EISDIR") return "directory";
+  if (code === "EACCES" || code === "EPERM") return "permissions";
+  return "json";
+}
 
 /**
  * The board `file` holds. No file is the empty board — nothing was ever
@@ -50,17 +67,33 @@ export function readRegistry(file: string, title?: string): RegistryRead {
   } catch (e) {
     if ((e as NodeJS.ErrnoException).code === "ENOENT")
       return { ok: true, state: emptyState(title) };
-    return { ok: false, reason: errMessage(e) };
+    return { ok: false, reason: errMessage(e), cause: causeOfReadError(e) };
   }
   let parsed: unknown;
   try {
     parsed = JSON.parse(text);
   } catch (e) {
-    return { ok: false, reason: `invalid JSON: ${errMessage(e)}` };
+    return { ok: false, reason: `invalid JSON: ${errMessage(e)}`, cause: "json" };
   }
   const shape = registryShapeError(parsed);
-  if (shape) return { ok: false, reason: shape };
+  if (shape) return { ok: false, reason: shape, cause: "json" };
   return { ok: true, state: restoreRegistry(parsed, title) };
+}
+
+/**
+ * The repair for an unreadable `path`, as an imperative clause, worded by its
+ * cause. Used for the file still in place (the cold refusal) and for a
+ * set-aside copy (`recoverAct`), so the two can't advise different acts.
+ */
+export function repairAct(path: string, cause: UnreadableCause): string {
+  switch (cause) {
+    case "permissions":
+      return `fix the permissions on ${path} so you can read it (e.g. \`chmod u+rw ${path}\`)`;
+    case "directory":
+      return `${path} is a directory, not a file: move its contents out (a registry file inside it can be put back in its place) or delete it`;
+    case "json":
+      return `fix the JSON in ${path}`;
+  }
 }
 
 const MARK = ".unreadable-";
@@ -95,7 +128,17 @@ export function listSetAside(file: string): string[] {
  * The act that recovers a set-aside registry, in words. The daemon saves over
  * `registry.json` on `close`, so it must be closed BEFORE the file is moved
  * back, and moving it back replaces whatever was registered since.
+ *
+ * The repair step is worded by why `aside` can't be read, found by reading it
+ * NOW — the copy on disk is the state, so a copy the human has already made
+ * readable gets no repair step, and nothing remembers the boot's verdict.
  */
 export function recoverAct(aside: string, file: string): string {
-  return `run \`cli.ts close\`, fix the JSON in ${aside}, then move it back to ${file} (this replaces anything registered since) and run \`cli.ts open\`; or, to keep the current board, delete ${aside}`;
+  const read = readRegistry(aside);
+  const keep = `or, to keep the current board, delete ${aside}`;
+  const back = `(this replaces anything registered since) and run \`cli.ts open\``;
+  if (!read.ok && read.cause === "directory")
+    return `run \`cli.ts close\`; ${aside} is a directory, not a file: move its contents out (a registry file inside it can be moved to ${file} ${back}); ${keep}`;
+  const repair = read.ok ? "" : `${repairAct(aside, read.cause)}, `;
+  return `run \`cli.ts close\`, ${repair}then move it back to ${file} ${back}; ${keep}`;
 }

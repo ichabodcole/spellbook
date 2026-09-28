@@ -95,3 +95,41 @@ snapshot didn't change.
 `reason: "unknown-project"` and `project: "<id>"`, and the CLI reads those
 (`refusalWords` in `src/astrolabe/backend/cli.ts`, tested with a reworded
 message).
+
+**Follow-ups from the no-stake verifier, same day:**
+
+- **A rename that fails is reported at once, with its reason.** When the daemon
+  couldn't set the file aside (a read-only directory, or `chflags uchg` on the
+  file), it exited 1 as designed, but `open` waited the full 45 s and then said
+  only "astrolabe daemon failed to start within 45s": the spawn ignored the
+  daemon's stderr. Now the spawn points the daemon's stderr at a per-spawn file
+  in the OS temp dir, watches for the process exiting, and stops waiting the
+  moment it does. `open` then fails as `internal`, exit 1, with the daemon's own
+  words: the file couldn't be read (why), couldn't be set aside (the OS error),
+  and its bytes were left in place. The hint says what makes the rename
+  possible. The daemon's JSON line rides along verbatim under `error.server`.
+  It's a file, not a pipe, because a pipe outlives the CLI inside the detached
+  daemon. It's in the temp dir, not `$ASTROLABE_HOME`, because an unwritable
+  home is one of the failures being reported. The file is deleted once read. Any
+  other early exit gets the same treatment: a bind error carries its own
+  `message`, and a crash is quoted from its stderr tail (`startFailure` in
+  `src/astrolabe/backend/cli.ts`). A daemon that stays up but can't write its
+  port file (a read-only home with a readable registry) still waits out the 45
+  s. That case doesn't exit, and it's out of this item's scope.
+- **The recovery is worded by cause.** It used to say "fix the JSON" for a valid
+  registry at mode 000 and for a directory. `readRegistry` now returns a `cause`
+  (`json`, `permissions`, `directory`), and `repairAct` words the fix: fix the
+  JSON, fix the permissions (`chmod u+rw`), or move the directory's contents out
+  or delete it. The cold refusal's hint uses it. So does every `recover`, which
+  re-reads the set-aside copy each time, so a copy the human has already made
+  readable gets no repair step.
+
+Tests: a fourth fixture, a valid registry at mode 000, runs through both
+set-aside tests, and every fixture now checks its cold hint and its `recover`
+text against its cause.
+`a rename that fails: open fails at once with the daemon's reason, bytes left in place`
+covers the first follow-up, and `startFailure` has unit tests in
+`src/astrolabe/backend/cli.test.ts`. Run red first: the rename test failed after
+45 s on "failed to start within 45s", and the directory and mode-000 fixtures
+failed on "fix the JSON" (5 failed, 5 passed). The census pin stays 17/2, and
+the golden snapshot didn't change.

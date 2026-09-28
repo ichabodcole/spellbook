@@ -54,7 +54,7 @@
 
 import { mkdirSync, unlinkSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { parseArgs } from "node:util";
 import type { ServerWebSocket } from "bun";
 import {
@@ -228,12 +228,17 @@ async function main(argv: string[]): Promise<number> {
         `astrolabe: registry.json could not be read (${read.reason}); set aside at ${aside}\n`,
       );
     } catch (e) {
+      // `message`/`hint` are the words `cli.ts` relays when its spawn exits
+      // before the handshake (it reads this line from the daemon's stderr).
+      const why = e instanceof Error ? e.message : String(e);
       process.stderr.write(
         `${JSON.stringify({
           event: "registry_unreadable",
           path: REGISTRY_FILE,
           reason: read.reason,
-          error: `could not set it aside: ${e instanceof Error ? e.message : String(e)}`,
+          error: `could not set it aside: ${why}`,
+          message: `astrolabe did not start: ${REGISTRY_FILE} could not be read (${read.reason}) and could not be set aside (${why}), so its bytes were left in place, untouched — an empty board would have saved over them`,
+          hint: `make the rename possible (the directory ${dirname(REGISTRY_FILE)} must be writable, and the file must not be locked or immutable) and run \`cli.ts open\` again; or repair the file in place and retry`,
         })}\n`,
       );
       return 1;
@@ -614,12 +619,14 @@ async function main(argv: string[]): Promise<number> {
       },
     });
   } catch (e) {
+    const error = e instanceof Error ? e.message : String(e);
     process.stderr.write(
       `${JSON.stringify({
         event: "bind_error",
         host,
         port,
-        error: e instanceof Error ? e.message : String(e),
+        error,
+        message: `astrolabe did not start: it could not listen on ${host}:${port} (${error})`,
       })}\n`,
     );
     return 2;
