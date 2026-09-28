@@ -5929,6 +5929,40 @@ describe("(d) a backup this act made is named to the caller", () => {
     }
   }, 60000);
 
+  // Found checking route 1's other kinds (2026-09-28): a shrink backup's
+  // restore, run after newer work reached the snapshot, wrote the backup over
+  // it with no copy (no count shrank), so the newer work was in no file.
+  test("restoring a backup over a newer snapshot keeps the newer one first, and names it", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `d3-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["a", "b", "c"], env);
+    const snap = join(home, "snapshots", `${id}.json`);
+    try {
+      await runCli(["open", "--session-key", key, "--fresh", "--no-open", "--timeout", "30"], {
+        env,
+      });
+      await runCli(["add", "newer", "--session", id], { env });
+      const c = await runCli(["close", "--session-key", key], { env });
+      const shrink = (JSON.parse(c.stdout) as { snapshotBackups: Backup[] }).snapshotBackups[0];
+      expect(titlesAt(snap)).toEqual(["newer"]);
+      const back = await runCli([...(shrink as Backup).restore.split(" "), "--timeout", "30"], {
+        env,
+      });
+      expect(back.code).toBe(0);
+      expect(await liveTitles(id, env)).toEqual(["a", "b", "c"]);
+      const named = (JSON.parse(back.stdout) as { snapshotBackups: Backup[] }).snapshotBackups;
+      const kept = named.find((b) => titlesAt(b.path).includes("newer"));
+      expect(kept).toBeDefined();
+      expect(kept?.restore).toContain("--restore");
+      await runCli(["close", "--session", id], { env });
+      expect(titlesAt(snap)).toEqual(["a", "b", "c"]);
+      expect(titlesAt(kept?.path as string)).toEqual(["newer"]);
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
   test("a close that backed nothing up says so: snapshotBackups is PRESENT and empty", async () => {
     const env = { BOUNTY_HOME: uniqHome() };
     const o = await runCli(["open", "--no-open", "--timeout", "30"], { env });
@@ -6228,6 +6262,52 @@ describe("a snapshot write that fails is reported, and the board is kept", () =>
     } finally {
       try {
         chmodSync(home, 0o755);
+      } catch {}
+      killBoard(id);
+    }
+  }, 60000);
+
+  // Verifier, 2026-09-28 (route 1): the save failed, the path healed, a task was
+  // added, and `close` exited 0 with the full snapshot while still offering the
+  // older `unsaved` dump's restore. Running it rolled the board back.
+  test("a later successful save supersedes the unsaved dump: kept on disk, never offered as a restore", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `ssup-${crypto.randomUUID().slice(0, 8)}`;
+    const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], { env });
+    const id = (JSON.parse(o.stdout) as { session_id: string }).session_id;
+    const snap = join(home, "snapshots", `${id}.json`);
+    try {
+      await runCli(["add", "a", "--session", id], { env });
+      await Bun.sleep(1600);
+      chmodSync(snap, 0o000);
+      await runCli(["add", "b", "--session", id], { env });
+      await Bun.sleep(1600); // the failed write dumps [a, b]
+      chmodSync(snap, 0o644);
+      await runCli(["add", "c", "--session", id], { env });
+      await Bun.sleep(1600); // this write succeeds: [a, b, c]
+      const c = await runCli(["close", "--session-key", key], { env });
+      expect(c.code).toBe(0);
+      expect(titlesAt(snap)).toEqual(["a", "b", "c"]);
+      const out = JSON.parse(c.stdout) as {
+        snapshotBackups: {
+          kind: string;
+          path: string;
+          restore: string | null;
+          superseded?: string;
+        }[];
+      };
+      const dump = out.snapshotBackups.find((b) => b.kind === "unsaved");
+      expect(dump).toBeDefined();
+      // Not an act: no restore, and a note saying why.
+      expect(dump?.restore).toBeNull();
+      expect(dump?.superseded ?? "").toContain(snap);
+      expect(c.stderr).not.toContain("recover with: open --session-key");
+      // Kept: deleting it is the caller's call.
+      expect(titlesAt(dump?.path as string)).toEqual(["a", "b"]);
+    } finally {
+      try {
+        chmodSync(snap, 0o644);
       } catch {}
       killBoard(id);
     }

@@ -352,17 +352,25 @@ type ApplyResult = {
 };
 
 // A copy this daemon made of a snapshot before writing over it. `kind` says
-// why: `shrink` (the first shrinking write of this daemon's life, #73/#74) or
+// why: `shrink` (the first shrinking write of this daemon's life, #73/#74),
 // `unreadable` (a file that could not be read as a snapshot, so no count could
-// judge it). `taskCount` is the copy's own count, null when it is unreadable.
+// judge it) or `pre-restore` (the board's own snapshot, before a board restored
+// from another file is written over it). `taskCount` is the copy's own count, null when it is unreadable.
 // `unsaved` is not a copy of the snapshot: it is the BOARD, dumped to a file of
 // its own because the snapshot could not be written (see SnapshotSaveFailed).
 // The CLI adds the act that recovers it, since only the CLI knows the key.
+//
+// `superseded` is set on an `unsaved` dump once a snapshot write SUCCEEDS after
+// it: the snapshot then holds the newer board, and restoring the dump would roll
+// the board back (verifier, 2026-09-28: a later same-count close then left a
+// task in no file). It says why, and the CLI offers no restore for it. Absent
+// on every other record, and on a dump that is still the newest copy.
 type BackupRecord = {
-  kind: "shrink" | "unreadable" | "unsaved";
+  kind: "shrink" | "unreadable" | "pre-restore" | "unsaved";
   path: string;
   taskCount: number | null;
   reason: string;
+  superseded?: string;
 };
 
 // The LATEST snapshot write failed: where it was going, why, and where the
@@ -1043,6 +1051,8 @@ async function main(argv: string[]): Promise<number> {
       unsavedRecord.path = unsaved;
       unsavedRecord.taskCount = state.tasks.length;
       unsavedRecord.reason = reason;
+      // The dump now holds the newest board again, so it is an act again.
+      delete unsavedRecord.superseded;
     }
     logDaemon("snapshotSaveFailed", { path, error, unsaved, tasks: state.tasks.length });
     if (first) {
@@ -1114,6 +1124,20 @@ async function main(argv: string[]): Promise<number> {
       writeFileAtomic(path, JSON.stringify(state));
       unreadableKept = false;
       snapshotSaveFailed = null;
+      // ⛔ AN `unsaved` DUMP OLDER THAN THIS WRITE IS SUPERSEDED. The snapshot
+      // now holds the board as it stands, and the dump holds it as it stood
+      // when a write failed. Offering the dump's restore after this point
+      // offered a rollback as a recovery (verifier, 2026-09-28).
+      //
+      // ⚠ THE FILE IS KEPT, NOT DELETED. Deleting is irreversible and this
+      // write is not proof the board never needed the dump: a task removed
+      // between the dump and this write is in the dump alone. Retention is the
+      // caller's call (and the rotation item's), so the record says what the
+      // file is and the CLI stops offering it as an act.
+      if (unsavedRecord && !unsavedRecord.superseded) {
+        unsavedRecord.superseded = `the snapshot ${path} was written after this dump, with ${state.tasks.length} task(s): it is the newer board, and restoring this file would roll the board back. Kept; deleting it is your call`;
+        logDaemon("unsavedSuperseded", { unsaved: unsavedRecord.path, snapshot: path });
+      }
       return true;
     } catch (e) {
       snapshotWriteFailed(path, e);
@@ -1132,6 +1156,42 @@ async function main(argv: string[]): Promise<number> {
       } catch {
         /* saveSnapshot retries the copy before its first write */
       }
+    }
+  }
+  // ⛔ A RESTORE FROM ANOTHER FILE KEEPS THE BOARD'S OWN SNAPSHOT FIRST, when it
+  // holds anything the restored board does not. The restored board is written
+  // over that snapshot on the first debounce tick, and the shrink guard only
+  // fires when the count drops: restoring a 3-task backup over a 1-task
+  // snapshot that held newer work left that work in no file (found checking
+  // the other backup kinds after route 1, 2026-09-28). The copy is
+  // `<id>.pre-restore-<ts>.bak.json`, named on `open`'s envelope with its
+  // restore, like every backup.
+  if (sessionId && restoredFromElsewhere && !restoreFailed) {
+    const own = join(SNAPSHOTS_DIR, `${sessionId}.json`);
+    try {
+      const ownTasks = (JSON.parse(readFileSync(own, "utf8")) as { tasks?: unknown }).tasks;
+      if (Array.isArray(ownTasks)) {
+        const restored = new Map(state.tasks.map((t) => [t.id, JSON.stringify(t)]));
+        const lost = ownTasks.filter(
+          (t) => restored.get((t as { id?: string })?.id ?? "") !== JSON.stringify(t),
+        ).length;
+        if (lost > 0) {
+          const backup = join(SNAPSHOTS_DIR, `${sessionId}.pre-restore-${Date.now()}.bak.json`);
+          copyFileSync(own, backup);
+          const reason = `this board was restored from another file, and its own snapshot held ${lost} task(s) the restored board does not; kept before the restored board is written over it`;
+          backupsThisSession.push({
+            kind: "pre-restore",
+            path: backup,
+            taskCount: ownTasks.length,
+            reason,
+          });
+          logDaemon("snapshotBackedUp", { kind: "pre-restore", backup, lost });
+          process.stderr.write(`bounty: ${reason} — copied to ${backup}\n`);
+        }
+      }
+    } catch {
+      // No own snapshot (or one that cannot be read, which the unreadable copy
+      // above and saveSnapshot's own check already cover): nothing to keep.
     }
   }
   // Event types that mutate board state — used to set snapDirty centrally (every

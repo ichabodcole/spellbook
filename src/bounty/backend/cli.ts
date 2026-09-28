@@ -660,10 +660,13 @@ type CmdResult = {
  *  board dumped to a file of its own when its snapshot could not be written
  *  (`unsaved`). */
 type BackupRecord = {
-  kind: "shrink" | "unreadable" | "pre-fresh" | "unsaved";
+  kind: "shrink" | "unreadable" | "pre-fresh" | "pre-restore" | "unsaved";
   path: string;
   taskCount: number | null;
   reason: string;
+  // Set on an `unsaved` dump that a later successful snapshot write made
+  // stale (server.ts BackupRecord): it has no restore act.
+  superseded?: string;
 };
 
 type NamedBackup = BackupRecord & { restore: string | null };
@@ -680,7 +683,9 @@ function keyFromFlags(flags: Record<string, string | boolean>): string | undefin
  * the board is live), never as an unkeyed stray under a new id; the key is
  * used only when it derives to this very board. An unreadable copy has no
  * restore act (`restore: null`): it is kept byte-for-byte for repair, and a
- * restore of it as it stands would fail.
+ * restore of it as it stands would fail. Nor has a superseded `unsaved` dump:
+ * a later snapshot write holds the newer board, and restoring the dump would
+ * roll it back.
  */
 function nameBackups(
   records: readonly BackupRecord[] | undefined,
@@ -700,12 +705,21 @@ function nameBackups(
       keyed && key !== undefined
         ? ["open", "--session-key", key, "--fresh", "--restore", bak, "--no-open"]
         : ["open", "--restore", bak, "--no-open"];
-    return { ...b, restore: b.taskCount === null ? null : commandLine(argv) };
+    return {
+      ...b,
+      restore: b.taskCount === null || b.superseded ? null : commandLine(argv),
+    };
   });
 }
 
 function announceBackups(named: readonly NamedBackup[]): void {
   for (const b of named) {
+    if (b.superseded) {
+      process.stderr.write(
+        `bounty: ${b.path} (an unsaved dump of ${b.taskCount} task(s)) is superseded, nothing to do: ${b.superseded}\n`,
+      );
+      continue;
+    }
     const held = b.taskCount === null ? "an unreadable snapshot" : `${b.taskCount} task(s)`;
     process.stderr.write(
       `bounty: backed up ${held} to ${b.path} (${b.reason})${b.restore ? `; recover with: ${b.restore}` : "; kept for repair, it cannot be restored as it stands"}\n`,

@@ -149,3 +149,22 @@ The unscoped `pkill` footgun above is untouched.
   `close` exits 1 naming the pid; both hints say to resume or end that pid. The
   requests behind `add`, `update`, `claim`, `block`, `unblock`, `remove`,
   `message`, `init` and `state` are still unbounded.
+
+**Follow-ups from the second verifier**, fixed in this cycle:
+
+- **A stale `unsaved` dump was still offered as a restore.** A save failed and
+  dumped a 2-task board; the path healed, a third task was saved, and `close`
+  exited 0 while still listing the dump with its restore command. Running it
+  rolled the board back, and a later same-count close left the third task in no
+  file. Once a snapshot write succeeds, an older `unsaved` dump is now
+  **superseded**: it stays in `snapshotBackups` with `restore: null` and a
+  `superseded` note, and stderr says there is nothing to do. The file is kept,
+  not deleted: a task removed between the dump and the save exists only in the
+  dump, and deleting is the caller's call.
+- **Checking the other backup kinds found one more route.** `shrink` and
+  `pre-fresh` copies are meant to roll back, but restoring any of them over a
+  snapshot that had newer work wrote over that snapshot with no copy, unless the
+  task count dropped. A board restored from another file now copies its own
+  snapshot to `<id>.pre-restore-<ts>.bak.json` first, when that snapshot holds a
+  task the restored board does not, and names it on `open`'s envelope with its
+  restore. `unreadable` copies never had a restore act.

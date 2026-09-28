@@ -639,12 +639,19 @@ Every `open` and `close` success carries `snapshotBackups`: a list, **present
 and `[]`** when nothing was backed up. Each entry is
 `{ kind, path, taskCount, reason, restore }`:
 
-| `kind`       | Made by                                                                    | `taskCount` | `restore`       |
-| ------------ | -------------------------------------------------------------------------- | ----------- | --------------- |
-| `shrink`     | the daemon, before its first shrinking write (the rotation above)          | the copy's  | the act         |
-| `unreadable` | the daemon, before writing over a file it cannot read                      | `null`      | `null` (repair) |
-| `pre-fresh`  | `open`, before a `--fresh --restore <own id>` teardown writes the snapshot | the copy's  | the act         |
-| `unsaved`    | the daemon, when the snapshot could not be written (the board, dumped)     | the board's | the act         |
+| `kind`        | Made by                                                                                                                                                         | `taskCount` | `restore`                 |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ------------------------- |
+| `shrink`      | the daemon, before its first shrinking write (the rotation above)                                                                                               | the copy's  | the act                   |
+| `unreadable`  | the daemon, before writing over a file it cannot read                                                                                                           | `null`      | `null` (repair)           |
+| `pre-fresh`   | `open`, before a `--fresh --restore <own id>` teardown writes the snapshot                                                                                      | the copy's  | the act                   |
+| `pre-restore` | the daemon, at boot, when a board restored from ANOTHER file would be written over its own snapshot, and that snapshot holds a task the restored board does not | the copy's  | the act                   |
+| `unsaved`     | the daemon, when the snapshot could not be written (the board, dumped)                                                                                          | the board's | the act, until superseded |
+
+**A superseded `unsaved` dump is not an act.** Once a snapshot write succeeds
+after the dump, the snapshot holds the newer board, and restoring the dump would
+roll the board back. The entry stays in the list (the file is kept on disk;
+deleting it is your call), with `restore: null` and a `superseded` note saying
+why. There is nothing to do about it.
 
 `restore` is the command that brings the copy back:
 `open --session-key K --fresh --restore <id>.pre-….bak --no-open` for a keyed
