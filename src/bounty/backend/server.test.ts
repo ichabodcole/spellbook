@@ -5711,3 +5711,71 @@ describe("(a) one daemon per id", () => {
     }
   }, 60000);
 });
+
+/** A backup named on the `open`/`close` envelope (`snapshotBackups`). */
+type Backup = {
+  kind: string;
+  path: string;
+  taskCount: number | null;
+  reason: string;
+  restore: string;
+};
+
+function titlesAt(path: string): string[] {
+  return (JSON.parse(readFileSync(path, "utf8")) as { tasks: { title: string }[] }).tasks.map(
+    (t) => t.title,
+  );
+}
+
+describe("(d) a backup this act made is named to the caller", () => {
+  test("close names the shrink backup, with its task count and the act that recovers it", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `d1-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["a", "b", "c"], env);
+    try {
+      await runCli(["open", "--session-key", key, "--fresh", "--no-open", "--timeout", "30"], {
+        env,
+      });
+      await runCli(["add", "only", "--session", id], { env });
+      const c = await runCli(["close", "--session-key", key], { env });
+      expect(c.code).toBe(0);
+      const e = JSON.parse(c.stdout) as { ok: boolean; snapshotBackups: Backup[] };
+      expect(e.ok).toBe(true);
+      expect(e.snapshotBackups.length).toBe(1);
+      const b = e.snapshotBackups[0] as Backup;
+      expect(b.kind).toBe("shrink");
+      expect(b.taskCount).toBe(3);
+      expect(titlesAt(b.path)).toEqual(["a", "b", "c"]);
+      const bakId = (b.path.split("/").pop() as string).replace(/\.json$/, "");
+      expect(b.restore).toBe(`open --session-key ${key} --fresh --restore ${bakId} --no-open`);
+      // and the act works as printed
+      const back = await runCli([...b.restore.split(" "), "--timeout", "30"], { env });
+      expect(back.code).toBe(0);
+      expect(await liveTitles(id, env)).toEqual(["a", "b", "c"]);
+      await runCli(["close", "--session", id], { env });
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("a close that backed nothing up says so: snapshotBackups is PRESENT and empty", async () => {
+    const env = { BOUNTY_HOME: uniqHome() };
+    const o = await runCli(["open", "--no-open", "--timeout", "30"], { env });
+    const hs = JSON.parse(o.stdout) as { session_id: string; snapshotBackups: Backup[] };
+    try {
+      expect(hs.snapshotBackups).toEqual([]);
+      await runCli(["add", "x", "--session", hs.session_id], { env });
+      const c = await runCli(["close", "--session", hs.session_id], { env });
+      expect(JSON.parse(c.stdout)).toEqual({
+        ok: true,
+        sent: "close",
+        down: true,
+        snapshotBackups: [],
+      });
+    } finally {
+      // Unkeyed: its argv has no --id, so killBoard cannot see it. Close it.
+      await runCli(["close", "--session", hs.session_id], { env });
+    }
+  }, 30000);
+});

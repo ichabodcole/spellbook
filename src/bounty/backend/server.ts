@@ -323,6 +323,21 @@ type ApplyResult = {
   // field: one key, one meaning. Present only on a replace, and always a number
   // there (0 on an empty board).
   tasksReplaced?: number;
+  // `close`'s report of every snapshot backup this daemon wrote: the act that
+  // ends the daemon is the last response that can carry it (see BackupRecord).
+  snapshotBackups?: BackupRecord[];
+};
+
+// A copy this daemon made of a snapshot before writing over it. `kind` says
+// why: `shrink` (the first shrinking write of this daemon's life, #73/#74) or
+// `unreadable` (a file that could not be read as a snapshot, so no count could
+// judge it). `taskCount` is the copy's own count, null when it is unreadable.
+// The CLI adds the act that recovers it, since only the CLI knows the key.
+type BackupRecord = {
+  kind: "shrink" | "unreadable";
+  path: string;
+  taskCount: number | null;
+  reason: string;
 };
 
 type BrowserMsg =
@@ -903,6 +918,11 @@ async function main(argv: string[]): Promise<number> {
   // alongside its event; event-only is fine only for signals that are
   // self-evidently transient.
   let snapshotBackedUp: { path: string; taskCount: number; reason: string } | null = null;
+  // (d) Every backup this daemon wrote, in order. `snapshotBackedUp` above is
+  // the shrink rotation alone and keeps its shape; this list is what `close`
+  // hands back to the caller, and what the discovery file (so `open`) carries
+  // for a backup made at boot.
+  const backupsThisSession: BackupRecord[] = [];
   const saveSnapshot = () => {
     try {
       mkdirSync(SNAPSHOTS_DIR, { recursive: true });
@@ -931,6 +951,7 @@ async function main(argv: string[]): Promise<number> {
           taskCount: prior,
           reason: `about to write ${state.tasks.length} tasks over ${prior}`,
         };
+        backupsThisSession.push({ kind: "shrink", ...snapshotBackedUp });
         // ⛔ AND IT SAYS SO. A silent rotation is a success-shaped lie, which is
         // the defect family this whole project is named after — the user would
         // be protected and never know they had needed protecting. Three
@@ -1442,8 +1463,17 @@ async function main(argv: string[]): Promise<number> {
       broadcast({ type: "message", text: msg.text });
       return { ok: true, applied: true };
     } else if (msg.type === "close") {
+      // (d) The final write happens HERE, before the reply, so any backup it
+      // makes is on the reply. The teardown still writes again (it is the
+      // write every other ending relies on); by then the state is unchanged and
+      // the once-per-daemon rotation has fired, so it adds nothing. The list is
+      // every backup of this daemon's life, not only this write's: a debounced
+      // flush that rotated earlier has no response of its own to carry it, and
+      // this reply is the last one the daemon sends.
+      saveSnapshot();
+      snapDirty = false;
       resolveDone({ code: 0, reason: "close" });
-      return { ok: true, applied: true };
+      return { ok: true, applied: true, snapshotBackups: backupsThisSession };
     }
     // An unrecognised command type. `usage`, not `conflict`: nothing about the
     // board's state refused it — the caller named a verb this daemon does not
@@ -1783,6 +1813,9 @@ async function main(argv: string[]): Promise<number> {
     // later /state would mean the caller learns of it, if at all, on a different
     // command than the one that broke.
     restoreFailed,
+    // (d) Any backup made at BOOT, before this file was written, for the same
+    // reason: `open` prints this payload, and `open` is the act that made it.
+    snapshotBackups: backupsThisSession,
   });
   // ⚠ ATOMIC, because readSession now treats unparseable content as corruption
   // rather than absence. A bare writeFileSync is not atomic: a CLI reading while

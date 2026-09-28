@@ -53,7 +53,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   type TaskStatus,
@@ -599,7 +599,71 @@ type CmdResult = {
   // sentence, and only the daemon knows which is which; classifying by the
   // sentence is the shape D34 filed at glamour.
   kind?: ErrKind;
+  // `close`'s report of the backups the board wrote (server.ts BackupRecord).
+  snapshotBackups?: BackupRecord[];
 };
+
+// ── (d) naming a backup to the caller ───────────────────────────────
+//
+// A backup used to be announced only where the caller does not look: the
+// daemon's log, a tail event, and the dying daemon's `state`. `close` answered
+// `{"ok":true,"sent":"close","down":true}` with a `.bak` just written. Now
+// every backup an act made rides that act's envelope, with the act that brings
+// it back. It is a success with a notice, so the exit stays 0.
+//
+// `snapshotBackups` and not a widened `snapshotBackedUp`: that field is
+// `{...} | null` on `state` (one shrink rotation per daemon), and changing its
+// type would break its readers. This one is a list, PRESENT and `[]` when
+// nothing was backed up, on every `open` and `close` success.
+
+/** A copy of a snapshot made before it was written over (server.ts). */
+type BackupRecord = {
+  kind: "shrink" | "unreadable";
+  path: string;
+  taskCount: number | null;
+  reason: string;
+};
+
+type NamedBackup = BackupRecord & { restore: string | null };
+
+function keyFromFlags(flags: Record<string, string | boolean>): string | undefined {
+  return typeof flags["session-key"] === "string"
+    ? flags["session-key"]
+    : (process.env.BOUNTY_SESSION_KEY ?? undefined);
+}
+
+/**
+ * Add the act that recovers each backup. A keyed board comes back BY ITS KEY
+ * (`open --session-key K --fresh --restore <bak>`, which works whether or not
+ * the board is live), never as an unkeyed stray under a new id; the key is
+ * used only when it derives to this very board. An unreadable copy has no
+ * restore act (`restore: null`): it is kept byte-for-byte for repair, and a
+ * restore of it as it stands would fail.
+ */
+function nameBackups(
+  records: readonly BackupRecord[] | undefined,
+  sessionId: string,
+  key: string | undefined,
+): NamedBackup[] {
+  const keyed = key !== undefined && sessionKeyToId(key) === sessionId;
+  return (records ?? []).map((b) => {
+    const bak = basename(b.path).replace(/\.json$/, "");
+    const argv =
+      keyed && key !== undefined
+        ? ["open", "--session-key", key, "--fresh", "--restore", bak, "--no-open"]
+        : ["open", "--restore", bak, "--no-open"];
+    return { ...b, restore: b.taskCount === null ? null : commandLine(argv) };
+  });
+}
+
+function announceBackups(named: readonly NamedBackup[]): void {
+  for (const b of named) {
+    const held = b.taskCount === null ? "an unreadable snapshot" : `${b.taskCount} task(s)`;
+    process.stderr.write(
+      `bounty: backed up ${held} to ${b.path} (${b.reason})${b.restore ? `; recover with: ${b.restore}` : "; kept for repair, it cannot be restored as it stands"}\n`,
+    );
+  }
+}
 
 // ⛔ A COOPERATIVE REFUSAL IS A `conflict` OR A `not_found`, NEVER AN
 // `internal`. Until D51 every one of these paths wrote prose to stderr, put a
@@ -810,6 +874,7 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
       ? flags["session-key"]
       : (process.env.BOUNTY_SESSION_KEY ?? undefined);
   const forcedId = key ? sessionKeyToId(key) : undefined;
+  let teardownBackups: BackupRecord[] = [];
 
   if (forcedId) {
     const live = await boardIfLive(forcedId);
@@ -841,6 +906,7 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
             requested,
             reason: `a live board already exists for this key, so open attached to it instead of spawning a daemon; ${named} configure a daemon at spawn time and the running board was left unchanged`,
           },
+          snapshotBackups: [],
         });
         process.stderr.write(
           `bounty: refusing to attach — ${named} cannot take effect on a board that is already running (key "${key}", board ${forcedId})\n`,
@@ -856,7 +922,9 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
         if (flags.pin) writePin(forcedId);
         return 2;
       }
-      printJson({ ...live, restoreSkipped: null });
+      // An attach backs nothing up. The discovery file's own list is the
+      // running daemon's boot backups, made by an earlier act and reported then.
+      printJson({ ...live, restoreSkipped: null, snapshotBackups: [] });
       process.stderr.write(`# attached to existing board ${forcedId} (key "${key}")\n`);
       if (flags.pin) writePin(forcedId);
       return 0;
@@ -868,7 +936,9 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
       // to actually go down (its exit unlinks bounty-<forcedId>.json) so the new
       // daemon's file write can't be clobbered by the departing one's cleanup.
       try {
-        await api(live.port, "POST", "/cmd", { type: "close" });
+        const res = await api(live.port, "POST", "/cmd", { type: "close" });
+        // (d) The teardown's final write can rotate a backup; it is this act's.
+        teardownBackups = (res.data as CmdResult | null)?.snapshotBackups ?? [];
       } catch {
         /* already gone */
       }
@@ -969,7 +1039,16 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
           // something to say cannot be told apart from a build that does not
           // emit it at all, so `"restoreSkipped" in envelope` is the assertion
           // that has teeth and `=== null` alone is the one that passes vacuously.
-          printJson({ ...s, restoreSkipped: null });
+          // (d) This act's backups: the teardown's (a `--fresh` over a live
+          // board), then the new daemon's boot backups off its discovery file.
+          const boot = (s as Session & { snapshotBackups?: BackupRecord[] }).snapshotBackups;
+          const snapshotBackups = nameBackups(
+            [...teardownBackups, ...(boot ?? [])],
+            s.session_id,
+            key,
+          );
+          printJson({ ...s, restoreSkipped: null, snapshotBackups });
+          announceBackups(snapshotBackups);
           // (a) A concurrent keyed open can win the race to the board's lock.
           // The daemon this open spawned then exited untouched (lock.ts), and
           // this open reports the WINNER's board, which is the same board.
@@ -1769,7 +1848,11 @@ async function cmdInit(
   return ackOrFail(msg.type, res);
 }
 
-async function cmdClose(session: string | undefined, as: string | undefined): Promise<number> {
+async function cmdClose(
+  session: string | undefined,
+  as: string | undefined,
+  flags: Record<string, string | boolean> = {},
+): Promise<number> {
   // Same explicit decision as `message`: applied:true unconditionally today,
   // so this is a regression guard rather than a fix. It earns its place
   // because `close` is the verb that WRITES THE SNAPSHOT — a close that
@@ -1804,7 +1887,13 @@ async function cmdClose(session: string | undefined, as: string | undefined): Pr
     await sleep(80);
   }
   if (!closeRes.applied) return ackOrFail("close", closeRes);
-  printJson({ ok: true, sent: "close", down });
+  const snapshotBackups = nameBackups(
+    closeRes.snapshotBackups,
+    resolved.session_id,
+    keyFromFlags(flags),
+  );
+  printJson({ ok: true, sent: "close", down, snapshotBackups });
+  announceBackups(snapshotBackups);
   if (!down)
     process.stderr.write(
       "bounty: close acked but the daemon was still answering after 3s — a reopen may attach to it\n",
@@ -1902,7 +1991,7 @@ const ROWS: Row[] = [
     flags: ["title", "timeout", "no-open", "restore", "pin", "session-key", "fresh"],
     positionals: [],
     describe:
-      "spawn a board daemon; prints {url, port, session_id, restoreSkipped}. --pin binds it to cwd; --session-key <key> binds it to a caller-owned key, idempotently (--fresh forces a clean board)",
+      "spawn a board daemon; prints {url, port, session_id, restoreSkipped, snapshotBackups}. --pin binds it to cwd; --session-key <key> binds it to a caller-owned key, idempotently (--fresh forces a clean board)",
     check: checkOpen,
     // Propagates cmdOpen's code so the #80.1 refusal actually reaches the shell.
     run: (_pos, flags) => cmdOpen(flags),
@@ -2023,8 +2112,9 @@ const ROWS: Row[] = [
     name: "close",
     flags: WRITE,
     positionals: [],
-    describe: "end the board (writes its snapshot); prints {ok, sent, down}",
-    run: (_pos, _flags, session, as) => cmdClose(session, as),
+    describe:
+      "end the board (writes its snapshot); prints {ok, sent, down, snapshotBackups} — any backup the board wrote, and the act that recovers it",
+    run: (_pos, flags, session, as) => cmdClose(session, as, flags),
   },
   {
     name: "info",
