@@ -6,7 +6,7 @@ status: stable
 description:
   Fix potential data loss when snapshot updates clobber concurrent session
   modifications
-lifecycle: backlog
+lifecycle: done
 id: 019fd324-3bba-7856-8146-5d7f9f8f06e2
 kind: task
 generated: { by: unknown, at: 2026-08-05 }

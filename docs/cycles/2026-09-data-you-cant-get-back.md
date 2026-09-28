@@ -6,7 +6,7 @@ description:
   restore: astrolabe's corrupt registry and bounty's snapshot clobbers."
 tags: [spell-hardening, data-loss]
 status: draft
-lifecycle: active
+lifecycle: closed
 started: 2026-09-28
 appetite:
   Stop when every data-loss path below is re-measured and either fixed, pinned
@@ -68,9 +68,77 @@ Decisions as they are made, with the options not taken.
 | 12  | 2026-09-28 | Filed to the nits item, not fixed: `--fresh` with nothing writable attaches to the old board and exits 0; `open` says "within 5s" after 8 s; a daemon that can't write its discovery file is left running (both spells); astrolabe's directory wording taken literally still fails until the directory is deleted.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | —                                                                                                                                                                                                                                                                                                                              |
 | 13  | 2026-09-28 | Third verifier: four claims **held**, but `pre-restore` is **broken**: when the old snapshot can't be read or copied at boot (a read-only `snapshots/`, a mode-000 file), the guard skips silently, and once the disk heals a same-count write erases the old tasks, with `close` calling the dump "superseded". An older route has the same mechanism (a keyed respawn over a mode-000 snapshot). Every round has found a narrower edge of one root cause: **a daemon writes over a snapshot it never read or kept a copy of**. So the last fix is that rule, not another case. A daemon may write over its own snapshot file only if it read that file at boot, or wrote it itself since, or has just copied it aside. If none of those holds and the copy fails, the write goes to the `unsaved` dump instead. The rule fires only after a failed read or copy, so it adds no per-boot `.bak` and needs no retention design. "superseded" is not said while an un-kept snapshot exists. | Patch routes A, B and the respawn one by one (the fourth round of the same pattern); cut it to the rotation item and ship (it is a working loss route through an ordinary heal).                                                                                                                                               |
 | 14  | 2026-09-28 | Row 13's rule shipped: `ownsSnapshot` is set at boot (restored from its own file, no file, or the board already holds the file) and by any copy or successful write. An unowned first write copies the file to `<id>.unread-<ts>.bak.json` first; if that copy fails, the write goes to the `unsaved` dump. No guard was removed; `pre-restore` now compares the whole board, title included. **Accepted:** `--fresh` over an existing snapshot now keeps the old board once (as `shrink` or `unread`); before, a fresh board that grew past the old one wrote over it with no copy. Plain and respawn sessions still make no backup. Gate 3059/0.                                                                                                                                                                                                                                                                                                                                         | Exempt `--fresh` from the rule (the old board would be lost as soon as the fresh one grows past it).                                                                                                                                                                                                                           |
+| 15  | 2026-09-28 | Final verifier: every permission-flip-then-heal route **kept every task**, and cost matched (plain and respawn sessions make no backup; `--fresh` makes one). It lost tasks by three routes outside the rule's reach. **(L1)** a restore that silently drops a task this build can't validate still counts as reading the file. **(L2)** `init --replace` with a same-size seed (an explicit replace). **(L3)** another tool writing the live board's file. It also found a raw crash in `--fresh --restore` on a read-only `snapshots/`. **Closed here by the appetite:** L1, the crash, and two silent-notice gaps are cut to [bounty-snapshot-edges-after-the-ownership-rule](../items/bounty-snapshot-edges-after-the-ownership-rule.md) (triage, L1 first); L2 and L3 are accepted.                                                                                                                                                                                                   | A sixth round (each round has found a narrower edge; L1 needs a snapshot from another bounty version or tool, which is not an ordinary act on one install).                                                                                                                                                                    |
 
 ## Outcome
 
-_Written at close._
+Closed 2026-09-28. All three items shipped. The bounty re-measure found another
+four loss paths, the verifiers found more, and all were fixed. Each round was
+checked by a no-stake verifier on the committed launchers under a scratch
+`HOME`, **five verifier passes in all**. The gate was green at every
+integration, ending at 3059 pass, 0 fail.
+
+**Shipped.**
+
+- **astrolabe:**
+  - An unreadable `registry.json` is renamed to
+    `registry.json.unreadable-<time>` by the daemon at boot, never overwritten.
+    If the rename fails, `open` fails at once with the reason.
+  - The cold CLI refuses a named project with `conflict` (6) and touches
+    nothing.
+  - While the file exists, callers are told on every path: a `# warning:` on
+    successes, the refusal envelope, and `registry_set_aside` on
+    `info`/`state`/`list`. The recovery is worded by cause.
+  - The warm path reads the daemon's `reason: "unknown-project"`, not its
+    message text.
+- **bounty:**
+  - One daemon per id: a lock at boot, and a losing `open` attaches. Unknown
+    liveness is refused cleanly.
+  - `--fresh --restore <own id>` restores the snapshot, not the teardown's
+    write.
+  - An unreadable snapshot is copied aside. A failed write dumps the board to
+    `<id>.unsaved-<ts>.json`, and `close` exits 6. If nothing is writable,
+    `close` is refused and the idle timeout holds.
+  - Every backup is named on `open`/`close` (`snapshotBackups`) with a restore
+    command that works as printed.
+  - `open`/`close` requests are bounded (2 s).
+  - The rule that ended the pattern (row 13): **a daemon never writes over a
+    snapshot it has not read or kept a copy of.**
+  - Snapshot writes are atomic.
+
+**What the re-measure changed.** Both bounty items were already fixed in their
+August form (`fb209f1a`, `2cc513d4`, `bbeaad53`). The losses that remained were
+new paths no item described: two daemons for one id, the teardown-then-restore
+order, and unreadable files. Re-measuring first is why the cycle fixed the right
+bugs.
+
+**What was learned.** The verifiers found a narrower edge every round, and each
+edge had the same cause. After the fourth round the fix was the rule rather than
+the fifth case, and the final pass found no permission-and-heal route that lost
+work. Fixing by rule instead of by case is worth doing sooner next time, after
+the second same-shaped finding rather than the fourth.
+
+**For the next release note:**
+
+| Command                                     | Change                                                      |
+| ------------------------------------------- | ----------------------------------------------------------- |
+| astrolabe commands naming a project         | exit 6 `conflict` on an unreadable registry (was 2 `usage`) |
+| astrolabe `open`                            | sets an unreadable registry aside; exit 1 if it cannot      |
+| bounty `close`                              | exit 6 when its save fails (was 0)                          |
+| bounty `open` / `close` on a stopped daemon | exit 1 after a bound (was a hang)                           |
+| bounty `open` with lock liveness unknown    | exit 6 `conflict`                                           |
+
+New fields: `snapshotBackups` on bounty `open`/`close`,
+`state.snapshotSaveFailed`, and astrolabe `registry_set_aside`.
+
+**Carried over**, filed and not scheduled:
+
+- [bounty-snapshot-edges-after-the-ownership-rule](../items/bounty-snapshot-edges-after-the-ownership-rule.md),
+  whose first entry still loses a task.
+- [bounty-snapshot-rotation-by-content-and-retention](../items/bounty-snapshot-rotation-by-content-and-retention.md).
+- [bounty-snapshot-small-gaps](../items/bounty-snapshot-small-gaps.md).
+- New entries in
+  [spell-refusal-envelope-nits](../items/spell-refusal-envelope-nits.md),
+  including bounty's unbounded requests on other verbs.
 
 ## Sessions

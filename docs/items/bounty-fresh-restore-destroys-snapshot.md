@@ -5,7 +5,7 @@ title:
 status: stable
 description:
   Fix bug where fresh restore in bounty overwrites snapshot with incomplete data
-lifecycle: backlog
+lifecycle: done
 id: 019fd5fa-fa98-72bc-ac24-21204b43e08e
 kind: task
 generated: { by: unknown, at: 2026-08-06 }
