@@ -1,5 +1,14 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -342,5 +351,179 @@ describe("a refused invocation starts no daemon", () => {
     expect(r.code).toBe(0);
     expect(JSON.parse(r.out)).toMatchObject({ ok: true, applied: true });
     expect(existsSync(join(home, "daemon.port"))).toBe(true);
+  }, 60000);
+});
+
+// ── AN UNREADABLE REGISTRY IS SET ASIDE, NEVER LOST (data-you-cant-get-back) ──
+//
+// `registry.json` that cannot be read (invalid JSON, the wrong shape, a
+// directory) used to be read as an EMPTY registry by both halves: the daemon
+// booted empty and its next save overwrote the file, so every registered
+// project was gone without a word; the CLI's cold path refused "unknown
+// project" with `choices: []`, as if the registry were fine and empty.
+//
+// Now: the daemon's boot MOVES the unreadable thing aside
+// (`registry.json.unreadable-<ts>`) before anything can write over it; the
+// cold CLI refuses (`conflict`, exit 6) rather than guess, naming `open` as the
+// act that sets it aside; and while a set-aside file exists every answer says
+// so — a `# warning:` on success, the refusal's own message and hint on an
+// unknown project, and a `registry_set_aside` field on `info`/`state`/`list`.
+//
+// ⚠ RUN RED FIRST: against the unfixed build the cold refusals exited 2
+// ("unknown project", `choices: []`) and the boot left no set-aside file.
+describe("an unreadable registry is set aside, never lost", () => {
+  const homes: string[] = [];
+  afterAll(() => {
+    for (const home of homes) {
+      try {
+        const pid = Number.parseInt(readFileSync(join(home, "daemon.pid"), "utf8").trim(), 10);
+        if (pid > 0) process.kill(pid, "SIGTERM");
+      } catch {
+        /* no daemon */
+      }
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  const BYTES_INVALID = '{"title":"Observatory","projects":[{"id":"alpha","name":"Alpha"';
+  const BYTES_SHAPE = '{"projects":"x"}';
+  const INNER = '{"id":"alpha","name":"Alpha","path":"/tmp/alpha"}';
+
+  type Fixture = { name: string; make: (reg: string) => void; survived: (at: string) => void };
+  const FIXTURES: Fixture[] = [
+    {
+      name: "invalid JSON",
+      make: (reg) => writeFileSync(reg, BYTES_INVALID),
+      survived: (at) => expect(readFileSync(at, "utf8")).toBe(BYTES_INVALID),
+    },
+    {
+      name: "the wrong shape",
+      make: (reg) => writeFileSync(reg, BYTES_SHAPE),
+      survived: (at) => expect(readFileSync(at, "utf8")).toBe(BYTES_SHAPE),
+    },
+    {
+      name: "a directory",
+      make: (reg) => {
+        mkdirSync(reg);
+        writeFileSync(join(reg, "inner.json"), INNER);
+      },
+      survived: (at) => {
+        expect(statSync(at).isDirectory()).toBe(true);
+        expect(readFileSync(join(at, "inner.json"), "utf8")).toBe(INNER);
+      },
+    },
+  ];
+
+  function scratch(f: Fixture): { home: string; reg: string } {
+    const home = mkdtempSync(join(tmpdir(), "astrolabe-unreadable-"));
+    homes.push(home);
+    const reg = join(home, "registry.json");
+    f.make(reg);
+    return { home, reg };
+  }
+  const asides = (home: string): string[] =>
+    readdirSync(home)
+      .filter((n) => n.startsWith("registry.json.unreadable-"))
+      .map((n) => join(home, n));
+  type Env = {
+    ok: boolean;
+    error: { kind: string; message: string; hint?: string; choices?: string[] };
+  };
+
+  for (const f of FIXTURES) {
+    test(`${f.name}: the cold CLI refuses (conflict, exit 6), starts nothing and moves nothing`, async () => {
+      const { home, reg } = scratch(f);
+      for (const argv of [
+        ["status", "alpha", "hi"],
+        ["add", "Beta", "--path", "/tmp/beta"],
+      ]) {
+        const r = await runCli(home, argv);
+        expect(r.code).toBe(6);
+        expect(r.out).toBe("");
+        const env = JSON.parse(r.err) as Env;
+        expect(env.error.kind).toBe("conflict");
+        expect(env.error.message).not.toContain("unknown project");
+        expect(env.error.message).toContain(reg);
+        // The notice names the act: `open` sets it aside.
+        expect(env.error.hint).toContain("open");
+        expect(existsSync(join(home, "daemon.port"))).toBe(false);
+        // A refusal has no side effect: the bytes are exactly where they were.
+        f.survived(reg);
+        expect(asides(home)).toEqual([]);
+      }
+    }, 60000);
+
+    test(`${f.name}: the daemon's boot sets it aside, and the bytes survive a later save`, async () => {
+      const { home, reg } = scratch(f);
+      const opened = await runCli(home, ["open", "--no-open"]);
+      expect(opened.code).toBe(0);
+      const moved = asides(home);
+      expect(moved.length).toBe(1);
+      const aside = moved[0] as string;
+      f.survived(aside);
+      // Told on the way in, with the path and the recovery.
+      expect(opened.err).toContain("# warning:");
+      expect(opened.err).toContain(aside);
+
+      // A write dirties the registry; `close` forces the final save.
+      const added = await runCli(home, ["add", "Beta", "--path", "/tmp/beta"]);
+      expect(added.code).toBe(0);
+      expect(added.err).toContain(aside);
+
+      // Warm: an unknown project is never told without the set-aside.
+      const ghost = await runCli(home, ["status", "alpha", "hi"]);
+      expect(ghost.code).toBe(2);
+      const genv = JSON.parse(ghost.err) as Env;
+      expect(genv.error.message).toContain("unknown project 'alpha'");
+      expect(genv.error.message).toContain(aside);
+      expect(genv.error.hint).toContain(reg);
+
+      for (const verb of ["info", "state", "list"]) {
+        const r = await runCli(home, [verb]);
+        expect(r.code).toBe(0);
+        const body = JSON.parse(r.out) as { registry_set_aside?: Array<{ path: string }> };
+        expect(body.registry_set_aside?.map((a) => a.path)).toEqual([aside]);
+      }
+
+      expect((await runCli(home, ["close"])).code).toBe(0);
+      f.survived(aside);
+      const saved = JSON.parse(readFileSync(reg, "utf8")) as { projects: Array<{ id: string }> };
+      expect(saved.projects.map((p) => p.id)).toEqual(["beta"]);
+
+      // Cold again, now over a readable registry: still reported while the file exists.
+      const cold = await runCli(home, ["status", "alpha", "hi"]);
+      expect(cold.code).toBe(2);
+      const cenv = JSON.parse(cold.err) as Env;
+      expect(cenv.error.message).toContain(aside);
+      expect(cenv.error.choices).toEqual(["beta"]);
+      expect(existsSync(join(home, "daemon.port"))).toBe(false);
+
+      // Dealt with (here: deleted by the human) → the notice is gone.
+      rmSync(aside, { recursive: true, force: true });
+      const quiet = await runCli(home, ["info"]);
+      expect(JSON.parse(quiet.out).registry_set_aside).toBeUndefined();
+    }, 90000);
+  }
+
+  test("a valid registry behaves exactly as before: nothing moved, nothing warned", async () => {
+    const home = mkdtempSync(join(tmpdir(), "astrolabe-valid-"));
+    homes.push(home);
+    const reg = join(home, "registry.json");
+    const bytes = JSON.stringify({
+      title: "Observatory",
+      projects: [{ id: "known", name: "Known", path: "/tmp/known", avatar: "🔭" }],
+    });
+    writeFileSync(reg, bytes);
+    const cold = await runCli(home, ["status", "ghost", "hi"]);
+    expect(cold.code).toBe(2);
+    expect((JSON.parse(cold.err) as Env).error.message).toBe("unknown project 'ghost'");
+    const r = await runCli(home, ["status", "known", "hi"]);
+    expect(r.code).toBe(0);
+    expect(r.err).toBe("");
+    const info = JSON.parse((await runCli(home, ["info"])).out) as Record<string, unknown>;
+    expect(Object.keys(info).sort()).toEqual(["ok", "port", "running", "url"]);
+    expect(asides(home)).toEqual([]);
+    expect(readFileSync(reg, "utf8")).toBe(bytes);
+    await runCli(home, ["close"]);
   }, 60000);
 });

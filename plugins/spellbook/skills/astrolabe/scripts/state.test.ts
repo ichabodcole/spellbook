@@ -10,6 +10,7 @@ import {
   findDuplicate,
   type ObservatoryState,
   type Project,
+  registryShapeError,
   slugify,
 } from "./state.ts";
 
@@ -42,6 +43,17 @@ function seeded(): ObservatoryState {
   expect(r.applied).toBe(true);
   return r.state;
 }
+
+describe("registryShapeError", () => {
+  test("a registry the daemon wrote has no error, even with a bad entry in it", () => {
+    expect(registryShapeError({ title: "O", projects: [] })).toBeNull();
+    expect(registryShapeError({ projects: [{ nope: 1 }] })).toBeNull();
+  });
+  test("anything else is not a registry, and is never read as an empty one", () => {
+    for (const snap of [null, 3, "x", [], {}, { projects: "x" }, { projects: {} }])
+      expect(registryShapeError(snap)).not.toBeNull();
+  });
+});
 
 describe("emptyState", () => {
   test("is empty across all three layers", () => {

@@ -48,10 +48,11 @@
 //   {id, type:"poke",         projectId, by}                          // the project's listening agent reacts
 //   {id, type:"closed",       reason, by:"system"}                    // reason: user|timeout|close
 //
-// Exit codes: 0 on any clean dismiss, 2 bad args, 124 idle timeout. The
+// Exit codes: 0 on any clean dismiss, 2 bad args, 124 idle timeout, 1 when an
+// unreadable registry.json could not be moved aside (never booted over). The
 // observatory is a conjuration — there's no "cancel"/130 discard path.
 
-import { existsSync, mkdirSync, unlinkSync } from "node:fs";
+import { mkdirSync, unlinkSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
@@ -66,7 +67,6 @@ import {
   type ObservatoryState,
   type ObservatoryView,
   type ProjectCard,
-  restoreRegistry,
   validateProject,
 } from "../../../plugins/spellbook/skills/astrolabe/scripts/state.ts";
 import { unlinkIfMatches, writeFileAtomic } from "../../kit/wire/discovery.ts";
@@ -76,6 +76,7 @@ import { refuseForeignOrigin } from "../../kit/wire/origin.ts";
 import { resolveMode, serveFromDist } from "../../kit/wire/serveDist.ts";
 import { type SseClients, sseResponse } from "../../kit/wire/sse.ts";
 import { IDLE_TIMEOUT_SEC, SSE_HEARTBEAT_MS } from "./heartbeat.ts";
+import { readRegistry, setAside } from "./registryFile.ts";
 
 export type {
   ObservatoryState,
@@ -188,16 +189,36 @@ async function main(argv: string[]): Promise<number> {
   const port = Number.parseInt(v.port as string, 10);
   const host = v.host as string;
 
-  // Initial state — the durable registry restored (`restoreRegistry`, shared
-  // with cli.ts's cold refusal). Presence and status start EMPTY.
+  // Initial state — the durable registry restored (`readRegistry`, shared with
+  // cli.ts's cold refusal). Presence and status start EMPTY.
+  //
+  // ⛔ AN UNREADABLE REGISTRY IS MOVED ASIDE BEFORE ANYTHING CAN SAVE OVER IT.
+  // This used to log "restore failed" to a stderr nobody reads (the spawn is
+  // detached, stdio ignored), boot empty, and let the next debounced save — or
+  // the unconditional one on `close` — overwrite the file: every registered
+  // project lost without a word. Now the file (or directory) is RENAMED to
+  // `registry.json.unreadable-<ts>` first, and the CLI reports it for as long
+  // as it exists. If the move itself fails the daemon does not boot: an empty
+  // board saved over bytes it could not read is the one outcome ruled out.
   let state: ObservatoryState = emptyState(v.title as string);
-  if (existsSync(REGISTRY_FILE)) {
+  const read = readRegistry(REGISTRY_FILE, v.title as string);
+  if (read.ok) state = read.state;
+  else {
     try {
-      state = restoreRegistry(JSON.parse(await Bun.file(REGISTRY_FILE).text()), v.title as string);
+      const aside = setAside(REGISTRY_FILE);
+      process.stderr.write(
+        `astrolabe: registry.json could not be read (${read.reason}); set aside at ${aside}\n`,
+      );
     } catch (e) {
       process.stderr.write(
-        `astrolabe: registry restore failed: ${e instanceof Error ? e.message : String(e)}\n`,
+        `${JSON.stringify({
+          event: "registry_unreadable",
+          path: REGISTRY_FILE,
+          reason: read.reason,
+          error: `could not set it aside: ${e instanceof Error ? e.message : String(e)}`,
+        })}\n`,
       );
+      return 1;
     }
   }
 

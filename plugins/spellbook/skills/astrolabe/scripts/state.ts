@@ -161,6 +161,19 @@ export function validateProject(p: unknown): Project | null {
   return out;
 }
 
+// Why a parsed `registry.json` is NOT a registry, or `null` when it is one. The
+// daemon has only ever written `{title, projects: [...]}`, so anything else is a
+// file this code did not write and cannot read — to be set aside, never
+// restored as empty. One malformed ENTRY inside a valid registry is not this:
+// `restoreRegistry` drops it, as it always has.
+export function registryShapeError(snapshot: unknown): string | null {
+  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot))
+    return "not a JSON object";
+  if (!Array.isArray((snapshot as { projects?: unknown }).projects))
+    return "`projects` is not an array";
+  return null;
+}
+
 // The board a daemon BOOTS with, from a parsed `registry.json` snapshot
 // (merge-over-defaults so an older snapshot gains new fields without crashing;
 // each project runs through validateProject so a malformed entry is dropped,
@@ -171,6 +184,12 @@ export function validateProject(p: unknown): Project | null {
 // a refusal from it when no daemon is up (a refused invocation must start
 // nothing), so the cold answer is the one the daemon would have given — not a
 // second reading of the file that could drift from the first.
+//
+// ⚠ IT FORGIVES A BAD ENTRY, NOT A BAD FILE. Call `registryShapeError` first:
+// a snapshot that is not a registry at all (not an object, `projects` not an
+// array) would restore as the EMPTY board, and a daemon that booted from that
+// would overwrite the file on its next save. That is how a corrupt registry
+// used to be lost without a word (data-you-cant-get-back).
 export function restoreRegistry(snapshot: unknown, title = "Observatory"): ObservatoryState {
   let state = emptyState(title);
   if (!snapshot || typeof snapshot !== "object") return state;
