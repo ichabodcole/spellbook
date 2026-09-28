@@ -6233,3 +6233,45 @@ describe("a snapshot write that fails is reported, and the board is kept", () =>
     }
   }, 60000);
 });
+
+describe("an unresponsive daemon is bounded, never waited on forever", () => {
+  test("open and close against a SIGSTOPped daemon each end with an envelope naming the pid", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `stop-${crypto.randomUUID().slice(0, 8)}`;
+    const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "60"], { env });
+    const id = (JSON.parse(o.stdout) as { session_id: string }).session_id;
+    const pid = (
+      JSON.parse(readFileSync(join(home, "locks", `${id}.lock`), "utf8")) as {
+        pid: number;
+      }
+    ).pid;
+    process.kill(pid, "SIGSTOP");
+    try {
+      const r = await runCliAbs(["open", "--session-key", key, "--no-open"], env, 25000);
+      expect(r).not.toBe("HUNG");
+      const res = r as CliResult;
+      expect(res.stdout).toBe("");
+      const e = onlyEnvelope(res.stderr);
+      expect(e.error.message).toContain("not answering");
+      expect(e.error.message).toContain(`pid ${pid}`);
+      expect(res.code).toBe(e.error.exit_code);
+
+      const c = await runCliAbs(["close", "--session-key", key], env, 25000);
+      expect(c).not.toBe("HUNG");
+      const cres = c as CliResult;
+      expect(cres.stdout).toBe("");
+      const ce = onlyEnvelope(cres.stderr);
+      expect(ce.error.message).toContain(`pid ${pid}`);
+      expect(cres.code).toBe(ce.error.exit_code);
+      expect(cres.code).not.toBe(0);
+      // Never two daemons for the board, stopped or not.
+      expect(daemonPids(id)).toEqual([pid]);
+    } finally {
+      try {
+        process.kill(pid, "SIGCONT");
+      } catch {}
+      killBoard(id);
+    }
+  }, 70000);
+});

@@ -155,7 +155,10 @@ const EXPECTED: Record<
   // 33 -> 34 (same follow-ups): `close` whose final snapshot write failed is a
   // `conflict` (the board was dumped to an `unsaved` file; the hint names the
   // restore). No `choices`.
-  bounty: { sites: 34, choices: 2, verbRoster: true, flagMap: true },
+  // 34 -> 35 (same follow-ups): a `close` (or any bounded `postCmd`) whose
+  // daemon does not answer within the timeout is `internal`, naming the pid,
+  // where it used to hang. No `choices`: the hint names resume or end the pid.
+  bounty: { sites: 35, choices: 2, verbRoster: true, flagMap: true },
   // 8/2 -> 7/1 (2026-09-26): digestify's flag rejection moved onto the kit
   // registry, as glamour's did. `--theme`'s `choices` is the one left here.
   digestify: { sites: 7, choices: 1, verbRoster: false, flagMap: true },

@@ -112,3 +112,11 @@ naming it is Cole's to rule (his 2026-08-06 ruling). The refusal is unchanged,
 and the comment above it now says the mechanism behind the ruling is fixed.
 Restoring a **different** snapshot under `--fresh` is cut to
 [item/bounty-snapshot-rotation-by-content-and-retention](./bounty-snapshot-rotation-by-content-and-retention.md).
+
+**Follow-ups from the no-stake verifier**, fixed in this cycle: `--fresh`'s
+teardown talks to the live board (a liveness probe, then `close`), and neither
+request had a timeout, so a daemon that had stopped answering hung `open`
+forever. Both now give up after 2 s, and `open` reports the board as held by a
+daemon that is not answering, naming its pid. If the teardown's `close` writes a
+snapshot that fails, the board is dumped to an `unsaved` file and listed in
+`open`'s `snapshotBackups` with its restore command.

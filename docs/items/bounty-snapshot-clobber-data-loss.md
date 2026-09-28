@@ -141,3 +141,11 @@ The unscoped `pkill` footgun above is untouched.
   the snapshot path and the dump, with the restore command in its hint: the save
   it owed did not happen, and the fix is on disk. If nothing at all can be
   written, `close` refuses and leaves the board running.
+- **`open` hung forever on a daemon that was not answering.** Its liveness probe
+  fetched with no timeout, so a SIGSTOPped daemon parked `open` for good and the
+  "held by a running daemon (pid N) that is not answering" refusal above was
+  unreachable. Every CLI-to-daemon request on the `open` and `close` paths now
+  gives up after 2 s: `open` reaches that refusal (exit 1, `internal`), and
+  `close` exits 1 naming the pid; both hints say to resume or end that pid. The
+  requests behind `add`, `update`, `claim`, `block`, `unblock`, `remove`,
+  `message`, `init` and `state` are still unbounded.

@@ -114,6 +114,34 @@ type Session = {
   title: string;
 };
 
+/**
+ * How long a CLI→daemon request on the open/close path waits for an answer.
+ * The daemon is local and answers in milliseconds; a daemon that says nothing
+ * for this long is wedged (SIGSTOPped, or stuck), not slow.
+ *
+ * ⛔ THERE WAS NO BOUND, AND `open` HUNG FOREVER. `boardIfLive` fetched with no
+ * timeout, so a stopped daemon's accepted-but-unanswered connection parked
+ * `open` for good, and the "held by a running daemon (pid N) that is not
+ * answering" refusal written for exactly this case was unreachable (verifier,
+ * 2026-09-28). `src/kit/wire/` has no shared constant for this: `probeBoard`
+ * below uses 600 ms and grapevine 500–800 ms, each inline. This is longer,
+ * because `close`'s reply waits on the final snapshot write (and any backup
+ * copy) of a large board.
+ */
+const DAEMON_ANSWER_TIMEOUT_MS = 2000;
+
+/** The pid holding a keyed board's lock, when there is one to name. */
+function lockHolderPid(id: string): number | null {
+  return readLock(lockPath(BOUNTY_HOME, id))?.pid ?? null;
+}
+
+/** The act that recovers a daemon that is not answering, worded once. */
+function notAnsweringHint(pid: number | null): string {
+  return pid
+    ? `if pid ${pid} was stopped, resume it (kill -CONT ${pid}) and retry; otherwise end it (kill -9 ${pid}; its last saved snapshot is kept) and run open again`
+    : "find the board's daemon (ps aux | grep bounty), end it, and run open again";
+}
+
 // ⛔ `die` IS `src/kit/wire/errors.ts`'s NOW, AND FOR BOUNTY THAT IS A
 // CALLER-VISIBLE CHANGE — NOT A DE-DUPLICATION. The local one wrote
 // `bounty: <msg>` as PROSE on stderr and exited 2 for EVERY failure: a bad
@@ -497,11 +525,13 @@ async function api(
   method: string,
   path: string,
   body?: unknown,
+  timeoutMs?: number,
 ): Promise<{ status: number; data: unknown }> {
   const res = await fetch(`http://127.0.0.1:${port}${path}`, {
     method,
     headers: body !== undefined ? { "content-type": "application/json" } : undefined,
     body: body !== undefined ? JSON.stringify(body) : undefined,
+    signal: timeoutMs !== undefined ? AbortSignal.timeout(timeoutMs) : undefined,
   });
   let data: unknown = null;
   try {
@@ -719,11 +749,24 @@ function resolveAs(flags: Record<string, string | boolean>): string | undefined 
 async function postCmd(
   session: string | undefined,
   msg: Record<string, unknown>,
-  opts: { as?: string; quiet?: boolean } = {},
+  opts: { as?: string; quiet?: boolean; timeoutMs?: number } = {},
 ): Promise<CmdResult> {
   const s = requireSession(session);
   const body = opts.as ? { ...msg, as: opts.as } : msg;
-  const { status, data } = await api(s.port, "POST", "/cmd", body);
+  let reply: { status: number; data: unknown };
+  try {
+    reply = await api(s.port, "POST", "/cmd", body, opts.timeoutMs);
+  } catch (e) {
+    // Only the bound is ours to explain; anything else propagates as before.
+    if (!(e instanceof Error && e.name === "TimeoutError")) throw e;
+    const pid = lockHolderPid(s.session_id);
+    die(
+      `board ${s.session_id}'s daemon${pid ? ` (pid ${pid})` : ""} on port ${s.port} is not answering: no reply to ${String(msg.type)} within ${opts.timeoutMs} ms (a stopped daemon still runs it if it is resumed)`,
+      "internal",
+      { hint: notAnsweringHint(pid) },
+    );
+  }
+  const { status, data } = reply;
   if (status !== 200)
     die(`cmd failed (HTTP ${status}) — is the session still alive?`, "internal", { server: body });
   if (!opts.quiet) printJson({ ok: true, sent: msg.type });
@@ -796,7 +839,9 @@ async function boardIfLive(session: string): Promise<Session | null> {
   const s = readSession(session);
   if (!s) return null;
   try {
-    const r = await fetch(`http://127.0.0.1:${s.port}/state`);
+    const r = await fetch(`http://127.0.0.1:${s.port}/state`, {
+      signal: AbortSignal.timeout(DAEMON_ANSWER_TIMEOUT_MS),
+    });
     return r.ok ? s : null;
   } catch {
     return null;
@@ -1026,7 +1071,13 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
       // to actually go down (its exit unlinks bounty-<forcedId>.json) so the new
       // daemon's file write can't be clobbered by the departing one's cleanup.
       try {
-        const res = await api(live.port, "POST", "/cmd", { type: "close" });
+        const res = await api(
+          live.port,
+          "POST",
+          "/cmd",
+          { type: "close" },
+          DAEMON_ANSWER_TIMEOUT_MS,
+        );
         // (d) The teardown's final write can rotate a backup; it is this act's.
         teardownBackups = (res.data as CmdResult | null)?.snapshotBackups ?? [];
       } catch {
@@ -1122,7 +1173,9 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
     const isUp = forcedId ? !!s : !!(s && s.session_id !== prevId);
     if (s && isUp) {
       try {
-        const r = await fetch(`http://127.0.0.1:${s.port}/state`);
+        const r = await fetch(`http://127.0.0.1:${s.port}/state`, {
+          signal: AbortSignal.timeout(DAEMON_ANSWER_TIMEOUT_MS),
+        });
         if (r.ok) {
           // `restoreSkipped` is PRESENT AND NULL on every success path, never
           // absent (#80.1 / D1.2). A field that appears only when it has
@@ -1165,6 +1218,7 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
       ? `bounty daemon failed to start within 5s: board ${forcedId} is held by a running daemon (pid ${wedged.pid}) that is not answering`
       : "bounty daemon failed to start within 5s",
     "internal",
+    wedged ? { hint: notAnsweringHint(wedged.pid) } : undefined,
   );
 }
 
@@ -1949,7 +2003,11 @@ async function cmdClose(
   // because `close` is the verb that WRITES THE SNAPSHOT — a close that
   // silently failed to apply, reported as success, is how a caller concludes
   // its data was persisted when it was not.
-  const closeRes = await postCmd(session, { type: "close" }, { as, quiet: true });
+  const closeRes = await postCmd(
+    session,
+    { type: "close" },
+    { as, quiet: true, timeoutMs: DAEMON_ANSWER_TIMEOUT_MS },
+  );
   // Checked BEFORE the wait below: a refused close (the daemon found nowhere
   // to save the board and kept it up) is not going down, so waiting is moot.
   if (!closeRes.applied) return ackOrFail("close", closeRes);

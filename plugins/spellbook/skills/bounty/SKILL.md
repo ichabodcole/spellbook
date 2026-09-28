@@ -179,7 +179,11 @@ session by default; pass `--session <id>` to target a specific one.
 >   is stale and is taken over. A daemon that is shutting down marks its lock
 >   `closing`, so an `open` right after `close` waits for it instead of failing.
 >   If `open` ever reports that a board is held by a daemon that is not
->   answering, kill that pid (`open` names it) and open again.
+>   answering, resume that pid if it was stopped (`kill -CONT`), or kill it
+>   (`open` names it, and its hint gives both) and open again. `open` and
+>   `close` wait at most 2 s for any one answer from a daemon, so a stopped
+>   daemon gets that refusal (exit 1) instead of a hang; `close` against one
+>   exits 1 naming the pid.
 > - **If liveness cannot be checked, `open` refuses.** Telling a live holder
 >   from a reused pid needs `ps`. With no `ps` on PATH, or a `ps` that fails,
 >   `open` exits **6** (`conflict`) with one envelope on stderr naming the lock
@@ -836,13 +840,13 @@ the tail. That family is the table above and the taxonomy does not govern it.
 **`cli.ts`'s own exits are the house taxonomy**, and every one of them prints
 ONE JSON envelope on **stderr** with stdout left empty:
 
-| Code | `kind`      | What it means                  | Typical cause                                                                                                                                                                                      |
-| ---- | ----------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0    | —           | The verb succeeded             | `tail` also exits 0 on the `closed` frame                                                                                                                                                          |
-| 2    | `usage`     | Fix it by changing the command | A bad flag, a missing verb, a missing required argument, an empty `update` patch                                                                                                                   |
-| 5    | `not_found` | The named thing does not exist | No running session; a stale session pointer; a task id that is not on this board; a `tail --session`/`--session-key` whose board never came up; `open --restore` of a snapshot that does not exist |
-| 6    | `conflict`  | A precondition failed          | A duplicate `--id`; `claim` on an other-owned task; a `block` that forms a cycle; `init --stdin-tasks` over a board that has tasks, without `--replace`                                            |
-| 1    | `internal`  | The spell broke                | The daemon answered a command with a non-200                                                                                                                                                       |
+| Code | `kind`      | What it means                  | Typical cause                                                                                                                                                                                                                                                                                                           |
+| ---- | ----------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | —           | The verb succeeded             | `tail` also exits 0 on the `closed` frame                                                                                                                                                                                                                                                                               |
+| 2    | `usage`     | Fix it by changing the command | A bad flag, a missing verb, a missing required argument, an empty `update` patch                                                                                                                                                                                                                                        |
+| 5    | `not_found` | The named thing does not exist | No running session; a stale session pointer; a task id that is not on this board; a `tail --session`/`--session-key` whose board never came up; `open --restore` of a snapshot that does not exist                                                                                                                      |
+| 6    | `conflict`  | A precondition failed          | A duplicate `--id`; `claim` on an other-owned task; a `block` that forms a cycle; `init --stdin-tasks` over a board that has tasks, without `--replace`; `open` when the board's lock holder cannot be checked (no working `ps`); `close` whose final snapshot write failed (the board was dumped to an `unsaved` file) |
+| 1    | `internal`  | The spell broke                | The daemon answered a command with a non-200; a daemon that is not answering (`open`, `close`)                                                                                                                                                                                                                          |
 
 ⚠ **This changed in 2026-09, twice, and a script may be pinned to either old
 shape.** Before the port every failure was prose at exit **2**. The port then
