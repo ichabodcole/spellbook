@@ -80,6 +80,13 @@ Your work exists as versions until they accept it.
 quoted heredoc, never as shell arguments — an unquoted heredoc eats backticks
 before the CLI sees them. Same for `task`, and `note --quote '<exact text>'`.
 
+**Write `say` in markdown; it renders.** The conversation shows your message
+rendered (headings, lists, code blocks, tables, links), not as raw `**` and
+backticks, in a narrow side panel. Keep headings small and tables narrow. An
+`http`, `https` or `mailto` link opens in a new tab; a relative link is read
+against the document they have open. Raw HTML shows as text, and any other link
+scheme is struck through and does nothing.
+
 ## The loop
 
 ```bash

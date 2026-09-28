@@ -30,9 +30,7 @@ import { lineAt, project } from "../state/projection";
 import { align, lineAnchors, paintRange, resolveRange } from "../state/renderedRange";
 import { contextPressAfter, renderedSelectionAct } from "../state/selection";
 import { MetaHeader } from "./MetaHeader";
-
-/** http(s) and mailto open outward; everything else is inert for now. */
-const OPENS_OUTWARD = /^(https?:|mailto:)/i;
+import { onRenderedLinkClick } from "./renderedLink";
 
 /** The highlight registry's names — one for notes, one for the focused note. */
 const NOTE_HL = "scriptorium-note";
@@ -370,20 +368,9 @@ export function MarkdownView({
       <div
         ref={body}
         className="md-prose mx-auto max-w-[76ch] px-8 pb-16"
-        onClick={(e) => {
-          const anchor = (e.target as HTMLElement).closest("a");
-          if (!anchor) return;
-          e.preventDefault();
-          const href = anchor.getAttribute("href");
-          if (!href || anchor.hasAttribute("data-blocked-link")) return;
-          if (OPENS_OUTWARD.test(href)) {
-            window.open(href, "_blank", "noopener,noreferrer");
-            return;
-          }
-          // E33: an internal link is a document reference. The DAEMON resolves
-          // it — only it knows the bundle, and only it may open a file.
-          onFollowLink?.(href);
-        }}
+        // E33, shared with the chat log (`renderedLink.ts`): external links open
+        // in a new tab, internal ones go to the daemon, refused ones do nothing.
+        onClick={(e) => onRenderedLinkClick(e, onFollowLink)}
         onPointerDown={(e) => {
           // A right button, or macOS's ctrl-click, is a context-menu press.
           const isContext = e.button === 2 || (e.button === 0 && e.ctrlKey);
