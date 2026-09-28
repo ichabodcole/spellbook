@@ -9,6 +9,7 @@ lifecycle: backlog
 id: 01a0e964-ccf2-771d-9fdc-5bbd6f3c16a2
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-09-28 }
+cycle: 2026-09-scriptorium-from-real-use-2
 ---
 
 # Scriptorium tells the human when a new version appears

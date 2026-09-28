@@ -10,6 +10,7 @@ lifecycle: backlog
 id: 01a0e970-39ea-716f-88fb-e918d5088288
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-09-28 }
+cycle: 2026-09-scriptorium-from-real-use-2
 ---
 
 # Chat messages render as markdown

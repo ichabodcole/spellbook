@@ -11,6 +11,7 @@ id: 01a0e73e-84ae-7600-95c9-3bc26f0a1c0d
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-09-28 }
 parent: feature/spell-hardening
+cycle: 2026-09-reply-shape-leftovers
 ---
 
 # Spell replies still using the old spellings the outcome contract replaced

@@ -11,6 +11,7 @@ id: 01a0e711-ee2e-76c4-a20b-9017891d4e5e
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-09-28 }
 parent: feature/spell-hardening
+cycle: 2026-09-data-you-cant-get-back
 ---
 
 # A corrupt astrolabe registry is read as empty and then overwritten

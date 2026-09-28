@@ -11,6 +11,7 @@ id: 01a0e711-f00a-77cf-b43b-5b2e10d34c46
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-09-28 }
 parent: feature/spell-hardening
+cycle: 2026-09-reply-shape-leftovers
 ---
 
 # Small inconsistencies in the bounty and astrolabe refusal envelopes

@@ -10,6 +10,7 @@ lifecycle: backlog
 id: 019fd324-3bba-7856-8146-5d7f9f8f06e2
 kind: task
 generated: { by: unknown, at: 2026-08-05 }
+cycle: 2026-09-data-you-cant-get-back
 ---
 
 # Bounty: respawn-empty + close clobbers the snapshot (data loss, no rotation)

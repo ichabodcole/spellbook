@@ -9,6 +9,7 @@ lifecycle: backlog
 id: 019fd5fa-fa98-72bc-ac24-21204b43e08e
 kind: task
 generated: { by: unknown, at: 2026-08-06 }
+cycle: 2026-09-data-you-cant-get-back
 ---
 
 # Bounty: `--fresh --restore` destroys the snapshot it is meant to restore from

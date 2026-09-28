@@ -10,6 +10,7 @@ lifecycle: backlog
 id: 01a0e95a-e614-763c-85d4-2aeecc8f817e
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-09-28 }
+cycle: 2026-09-project-docs-next-release
 ---
 
 # Upgrade project-docs to the release after scaffold 9.1.0
