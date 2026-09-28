@@ -376,11 +376,17 @@ type BackupRecord = {
 // The LATEST snapshot write failed: where it was going, why, and where the
 // board went instead (`unsaved`, null when no fallback could be written
 // either). Null once a write succeeds: one state, one meaning.
+//
+// `held` says why a request to end the daemon was NOT honoured: set when the
+// board is in no file (`unsaved` null) and the idle timeout or the browser's
+// Close board asked it to end. Null otherwise. It goes with the failure: the
+// first write that works clears the whole record.
 type SnapshotSaveFailed = {
   path: string;
   error: string;
   unsaved: string | null;
   taskCount: number;
+  held: string | null;
 } | null;
 
 type BrowserMsg =
@@ -1041,7 +1047,14 @@ async function main(argv: string[]): Promise<number> {
     const error = e instanceof Error ? e.message : String(e);
     const unsaved = dumpUnsaved();
     const first = snapshotSaveFailed === null;
-    snapshotSaveFailed = { path, error, unsaved, taskCount: state.tasks.length };
+    snapshotSaveFailed = {
+      path,
+      error,
+      unsaved,
+      taskCount: state.tasks.length,
+      // A hold stands while the board is still in no file; a dump ends it.
+      held: unsaved ? null : (snapshotSaveFailed?.held ?? null),
+    };
     if (unsaved) {
       const reason = `the snapshot ${path} could not be written (${error}); the board was saved here instead`;
       if (!unsavedRecord) {
@@ -1144,6 +1157,30 @@ async function main(argv: string[]): Promise<number> {
       return false;
     }
   };
+  // ⛔ A BOARD THAT IS IN NO FILE IS NOT ENDED BY A REQUEST. Save first; if
+  // neither the snapshot nor a fallback dump took the board, ending the daemon
+  // ends the only copy. `close` (over /cmd), the browser's Close board and the
+  // idle timeout all ask through here and are refused. A SIGTERM/SIGINT does
+  // NOT: a signal is an order to stop, and the teardown's own save is all it
+  // gets (SKILL.md, Durability). True when the board must stay up.
+  const boardInNoFile = (): boolean => {
+    const saved = saveSnapshot();
+    snapDirty = false;
+    return !saved && !snapshotSaveFailed?.unsaved;
+  };
+  /** Record (on `state`) and log why a request to end the board was refused. */
+  const holdEnding = (event: string, held: string) => {
+    if (!snapshotSaveFailed) return;
+    const first = snapshotSaveFailed.held !== held;
+    snapshotSaveFailed.held = held;
+    if (first) {
+      logDaemon(event, { path: snapshotSaveFailed.path, tasks: state.tasks.length });
+      process.stderr.write(`bounty: ${held}\n`);
+    }
+  };
+  const nowhereToWrite = () =>
+    `the board is in no file (its snapshot ${snapshotSaveFailed?.path} and every fallback in ${SNAPSHOTS_DIR} and ${BOUNTY_HOME} could not be written), so ending the daemon would lose its ${state.tasks.length} task(s)`;
+
   // (c) At boot, for a forced id: a board whose own snapshot is unreadable
   // (its keyed respawn's restore just failed on it, or `--fresh` never read
   // it) keeps a copy NOW, before any write, so `open` can name it.
@@ -1685,13 +1722,11 @@ async function main(argv: string[]): Promise<number> {
       // every backup of this daemon's life, not only this write's: a debounced
       // flush that rotated earlier has no response of its own to carry it, and
       // this reply is the last one the daemon sends.
-      const saved = saveSnapshot();
-      snapDirty = false;
       // Nowhere at all took the board (not the snapshot, not a fallback file):
       // closing now would end the only copy, so the board stays up and the
       // close is refused. `conflict`: a precondition (somewhere writable)
       // failed, and fixing it then closing again is the recovery.
-      if (!saved && !snapshotSaveFailed?.unsaved) {
+      if (boardInNoFile()) {
         return {
           ok: true,
           applied: false,
@@ -1981,7 +2016,14 @@ async function main(argv: string[]): Promise<number> {
             // change was live to all consumers, so dismissing loses nothing. The
             // teardown's "session ended" broadcast + socket close is the uniform
             // end signal every client (browser + joiners) receives.
-            resolveDone({ code: 0, reason: "user" });
+            //
+            // ⛔ UNLESS THE BOARD IS IN NO FILE: then dismissing loses every
+            // task, so it is refused like `close`, and the board says why.
+            if (boardInNoFile()) {
+              const held = `Close board was refused: ${nowhereToWrite()}. Make one of those writable, then close again`;
+              holdEnding("closeRefused", held);
+              broadcast({ type: "message", text: `board not closed: ${held}` });
+            } else resolveDone({ code: 0, reason: "user" });
           }
           // A browser action (e.g. dragging a blocker to Done) can unblock
           // dependents — fire `unblocked` for any transition.
@@ -2118,7 +2160,21 @@ async function main(argv: string[]): Promise<number> {
     idleMs: () => performance.now() - lastActivity,
     touch,
     timeoutMs: timeout * 1000,
-    onIdleClose: () => resolveDone({ code: 124, reason: "timeout" }),
+    // ⛔ HELD, NOT ENDED, WHILE THE BOARD IS IN NO FILE (verifier, 2026-09-28:
+    // only `close` was guarded, and an idle exit dropped the unsaved tasks).
+    // `touch()` restarts the countdown, so each full timeout retries the save
+    // and the first one that works ends the board as a normal timeout.
+    onIdleClose: () => {
+      if (boardInNoFile()) {
+        holdEnding(
+          "idleCloseHeld",
+          `the idle timeout is held: ${nowhereToWrite()}. Make one of those writable; the save is retried each time the timeout comes round, and the first that works ends the board`,
+        );
+        touch();
+        return;
+      }
+      resolveDone({ code: 124, reason: "timeout" });
+    },
     snapshot: {
       dirty: () => snapDirty,
       clear: () => {

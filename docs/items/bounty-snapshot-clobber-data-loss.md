@@ -168,3 +168,17 @@ The unscoped `pkill` footgun above is untouched.
   snapshot to `<id>.pre-restore-<ts>.bak.json` first, when that snapshot holds a
   task the restored board does not, and names it on `open`'s envelope with its
   restore. `unreadable` copies never had a restore act.
+- **With nothing writable, only `close` was guarded.** The idle timeout ended
+  the daemon and dropped the tasks that were in no file. Now, while the board is
+  in no file, no request ends it: the idle timeout is held (logged as
+  `idleCloseHeld`, and shown on `state` as `snapshotSaveFailed.held`) and
+  retries the save each time it comes round, ending the board as a normal
+  timeout once a save works; the browser's Close board is refused the same way,
+  with a message on the board. Both share `close`'s guard. SIGTERM and SIGINT
+  are deliberately not guarded (a signal is an order to stop), and `SKILL.md`
+  says so. The other ways out need no guard: the heartbeat sweep never ends the
+  daemon, and the housekeeping stop and the drain run only after one of the
+  guarded requests (or a signal) has already ended it. An uncaught exception
+  still exits without saving, as before. Not changed: `open --fresh` over such a
+  board has its teardown `close` refused, so it attaches to the old board, with
+  nothing lost but no fresh board either.

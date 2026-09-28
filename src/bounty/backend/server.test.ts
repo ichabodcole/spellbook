@@ -6314,6 +6314,89 @@ describe("a snapshot write that fails is reported, and the board is kept", () =>
   }, 60000);
 });
 
+// Verifier, 2026-09-28 (route 2): with nothing writable only `close` was
+// guarded, so the idle timeout ended the daemon and the unsaved tasks with it.
+describe("with nothing writable, no request to end the board drops its tasks", () => {
+  /** Open a keyed board, save [a], then make nothing writable and add b. */
+  async function unwritableBoard(prefix: string, timeout: string) {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
+    const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", timeout], {
+      env,
+    });
+    const ready = JSON.parse(o.stdout) as { session_id: string; url: string };
+    const id = ready.session_id;
+    await runCli(["add", "a", "--session", id], { env });
+    await Bun.sleep(1600);
+    chmodSync(join(home, "snapshots"), 0o555);
+    chmodSync(home, 0o555);
+    await runCli(["add", "b", "--session", id], { env });
+    const heal = () => {
+      chmodSync(home, 0o755);
+      chmodSync(join(home, "snapshots"), 0o755);
+    };
+    return { home, env, key, id, url: ready.url, heal };
+  }
+
+  test("the idle timeout is held (logged, and on state) until a save works, then it ends the board", async () => {
+    const b = await unwritableBoard("idleh", "2");
+    const snap = join(b.home, "snapshots", `${b.id}.json`);
+    try {
+      await Bun.sleep(4500); // well past the 2 s timeout
+      expect(daemonPids(b.id).length).toBe(1);
+      const st = JSON.parse(
+        (await runCli(["state", "--session", b.id], { env: b.env })).stdout,
+      ) as {
+        snapshotSaveFailed: (SaveFailed & { held?: string | null }) | null;
+      };
+      expect(st.snapshotSaveFailed?.unsaved).toBeNull();
+      expect(st.snapshotSaveFailed?.held ?? "").toContain("idle timeout");
+      expect(readFileSync(join(b.home, "daemon.log"), "utf8")).toContain(
+        '"reason":"idleCloseHeld"',
+      );
+      b.heal();
+      // The next idle check saves, and the board ends as a timeout.
+      const deadline = Date.now() + 10000;
+      while (Date.now() < deadline && daemonPids(b.id).length) await Bun.sleep(200);
+      expect(daemonPids(b.id)).toEqual([]);
+      expect(titlesAt(snap)).toEqual(["a", "b"]);
+    } finally {
+      try {
+        b.heal();
+      } catch {}
+      killBoard(b.id);
+    }
+  }, 60000);
+
+  test("the browser's Close board is refused the same way, and says so to the board", async () => {
+    const b = await unwritableBoard("wsh", "60");
+    const snap = join(b.home, "snapshots", `${b.id}.json`);
+    try {
+      const ws = new WebSocket(`${b.url.replace(/^http/, "ws")}/ws`);
+      await new Promise((r) => ws.addEventListener("open", r, { once: true }));
+      const said: string[] = [];
+      ws.addEventListener("message", (m) => {
+        const msg = JSON.parse(String(m.data)) as { type: string; text?: string };
+        if (msg.type === "message" && msg.text) said.push(msg.text);
+      });
+      ws.send(JSON.stringify({ type: "close" }));
+      await Bun.sleep(1500);
+      expect(daemonPids(b.id).length).toBe(1);
+      expect(said.join("\n")).toContain("not closed");
+      ws.close();
+      b.heal();
+      expect((await runCli(["close", "--session", b.id], { env: b.env })).code).toBe(0);
+      expect(titlesAt(snap)).toEqual(["a", "b"]);
+    } finally {
+      try {
+        b.heal();
+      } catch {}
+      killBoard(b.id);
+    }
+  }, 60000);
+});
+
 describe("an unresponsive daemon is bounded, never waited on forever", () => {
   test("open and close against a SIGSTOPped daemon each end with an envelope naming the pid", async () => {
     const home = uniqHome();

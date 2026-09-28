@@ -639,6 +639,7 @@ type CmdResult = {
     error: string;
     unsaved: string | null;
     taskCount: number;
+    held?: string | null;
   } | null;
 };
 

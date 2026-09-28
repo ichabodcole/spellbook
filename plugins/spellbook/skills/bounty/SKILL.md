@@ -602,15 +602,26 @@ file, then rename), so a death mid-write leaves the previous one.
   failed write dumps the board to `<id>.unsaved-<ts>.json` in `snapshots/`, or
   in `$BOUNTY_HOME` if `snapshots/` is the problem (one file per daemon,
   rewritten on each failure). Mid-session, `state.snapshotSaveFailed` is
-  `{ path, error, unsaved, taskCount }` (present-and-null once a write
+  `{ path, error, unsaved, taskCount, held }` (present-and-null once a write
   succeeds), a `snapshotSaveFailed` event reaches a live tail, and `daemon.log`
   gets a line. **`close` exits 6 (`conflict`)**, stdout empty: the board is
   down, but the save `close` owed did not happen. Its envelope names the
   snapshot path and the dump, its hint says to fix the path and then run the
   printed `open … --restore <dump>`, and `error.server` carries the daemon's
   reply (`snapshotSaveFailed`, `snapshotBackups`). If nothing at all can be
-  written, `close` refuses (exit 6) and **leaves the board running**, since it
-  holds the only copy.
+  written, the board holds the only copy, so **no request ends it**: `close`
+  refuses (exit 6), the human's **Close board** is refused with a message on the
+  board, and the **idle timeout is held**. A held timeout is logged
+  (`idleCloseHeld` in `daemon.log`) and shown on `state` as
+  `snapshotSaveFailed.held`; each time the timeout comes round the save is
+  retried, and the first one that works ends the board as a normal timeout
+  (124).
+- **A signal is not guarded.** SIGTERM or SIGINT is an order to stop: the daemon
+  runs its teardown, whose final save is its last attempt, and exits whether or
+  not that save found somewhere to write. With nothing writable in
+  `$BOUNTY_HOME`, a signal loses what is not on disk. That is accepted: a daemon
+  that ignored a stop order would be killed harder, and a SIGKILL saves nothing
+  at all. Fix the disk and `close` instead, when you can.
 
 #### Snapshot rotation — the guard against writing a smaller board over a bigger one
 
