@@ -5300,3 +5300,98 @@ describe("P1f — a signal death runs the teardown AND still ends the process", 
     expect(exited).toBe(0);
   }, 30000);
 });
+
+// ── One act, one answer (docs/cycles/2026-09-one-act-one-answer.md) ─────────
+// Each cell is a command whose exit code, envelope or side effect disagreed with
+// what it did. Every refusal here leaves stdout empty and puts ONE envelope on
+// stderr (the house taxonomy, `src/kit/wire/errors.ts`).
+
+type Envelope = {
+  ok: false;
+  error: { kind: string; exit_code: number; message: string; hint?: string };
+};
+function refusal(r: CliResult, kind: string, code: number): Envelope["error"] {
+  expect(r.code).toBe(code);
+  expect(r.stdout).toBe("");
+  const lines = r.stderr.trim().split("\n");
+  const env = JSON.parse(lines.at(-1) ?? "") as Envelope;
+  expect(env.ok).toBe(false);
+  expect(env.error.kind).toBe(kind);
+  expect(env.error.exit_code).toBe(code);
+  return env.error;
+}
+
+describe("one act, one answer — init over a board that has tasks", () => {
+  // item/bounty-init-stdin-tasks-wipes-live-board. Before: `init --stdin-tasks`
+  // over a populated board replaced every task at {"ok":true,…,"tasksDropped":null}
+  // and exit 0. `tasksDropped` is b8's report of INPUT entries the daemon
+  // rejected, so its null said nothing about the board's own tasks.
+  test("init --stdin-tasks over a populated board is a conflict (6); --replace opts in and counts what it replaced", async () => {
+    const env = { BOUNTY_HOME: uniqHome() };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    const s = ["--session", session];
+    const ids = async () =>
+      (
+        JSON.parse((await runCli(["state", ...s], { env })).stdout) as { state: BoardState }
+      ).state.tasks.map((t) => t.id);
+    try {
+      await runCli(["add", "one", "--id", "t1", ...s], { env });
+      await runCli(["add", "two", "--id", "t2", ...s], { env });
+      const seed = JSON.stringify([{ id: "n1", title: "new", status: "todo" }]);
+
+      const refused = await runCli(["init", "--stdin-tasks", ...s], { env, stdin: seed });
+      const err = refusal(refused, "conflict", 6);
+      expect(err.message).toContain("2 tasks");
+      expect(err.hint).toContain("--replace");
+      // An empty array would wipe the board just the same, and is refused the same.
+      refusal(await runCli(["init", "--stdin-tasks", ...s], { env, stdin: "[]" }), "conflict", 6);
+      expect(await ids()).toEqual(["t1", "t2"]);
+
+      // --replace means it, and the count it replaced is a number, never null.
+      const replaced = await runCli(["init", "--stdin-tasks", "--replace", ...s], {
+        env,
+        stdin: seed,
+      });
+      expect(replaced.code).toBe(0);
+      expect(JSON.parse(replaced.stdout)).toEqual({
+        ok: true,
+        sent: "init",
+        tasksDropped: null,
+        tasksReplaced: 2,
+      });
+      expect(await ids()).toEqual(["n1"]);
+
+      // --replace with no tasks to seed would do nothing, so it is refused.
+      refusal(await runCli(["init", "--replace", ...s], { env }), "usage", 2);
+    } finally {
+      await runCli(["close", ...s], { env });
+    }
+  }, 30000);
+
+  test("seeding an EMPTY board answers exactly as before, and --replace there reports 0", async () => {
+    const env = { BOUNTY_HOME: uniqHome() };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    const s = ["--session", session];
+    try {
+      const seed = JSON.stringify([{ id: "a", title: "A", status: "todo" }]);
+      const first = await runCli(["init", "--stdin-tasks", ...s], { env, stdin: seed });
+      expect(first.code).toBe(0);
+      expect(first.stdout).toBe(
+        `${JSON.stringify({ ok: true, sent: "init", tasksDropped: null })}\n`,
+      );
+      // A title-only init touches no tasks, so it is never a conflict.
+      expect((await runCli(["init", "--title", "Renamed", ...s], { env })).code).toBe(0);
+      await runCli(["remove", "a", ...s], { env });
+      const again = await runCli(["init", "--stdin-tasks", "--replace", ...s], {
+        env,
+        stdin: seed,
+      });
+      expect(again.code).toBe(0);
+      expect(JSON.parse(again.stdout)).toMatchObject({ tasksReplaced: 0 });
+    } finally {
+      await runCli(["close", ...s], { env });
+    }
+  }, 30000);
+});

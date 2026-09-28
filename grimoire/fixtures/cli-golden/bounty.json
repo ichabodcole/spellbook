@@ -145,7 +145,8 @@
         "  unblock <id> [--on ..]                        remove blocker edge(s) --on <id>[,<id>...]",
         "  remove <id>                                   delete a task",
         "  message [text...] [--stdin]                   show a toast on the board (the text, or --stdin)",
-        "  init [--title ..] [--stdin-tasks]             seed the board (tasks = JSON array on stdin; each task REQUIRES id + title + status — init does NOT mint ids, unlike add; any dropped task is reported per-entry in tasksDropped)",
+        "  init [--title ..] [--stdin-tasks] [--replace]",
+        "                                                seed the board (tasks = JSON array on stdin; each task REQUIRES id + title + status — init does NOT mint ids, unlike add; any dropped task is reported per-entry in tasksDropped). Over a board that has tasks it is refused (exit 6) unless --replace, which reports tasksReplaced",
         "  close                                         end the board (writes its snapshot); prints {ok, sent, down}",
         "  info                                          the resolved board's {url, port, session_id, title}",
         "  list                                          list currently-RUNNING boards (id/tasks/url/title) — prose, see below",
@@ -199,7 +200,8 @@
         "  unblock <id> [--on ..]                        remove blocker edge(s) --on <id>[,<id>...]",
         "  remove <id>                                   delete a task",
         "  message [text...] [--stdin]                   show a toast on the board (the text, or --stdin)",
-        "  init [--title ..] [--stdin-tasks]             seed the board (tasks = JSON array on stdin; each task REQUIRES id + title + status — init does NOT mint ids, unlike add; any dropped task is reported per-entry in tasksDropped)",
+        "  init [--title ..] [--stdin-tasks] [--replace]",
+        "                                                seed the board (tasks = JSON array on stdin; each task REQUIRES id + title + status — init does NOT mint ids, unlike add; any dropped task is reported per-entry in tasksDropped). Over a board that has tasks it is refused (exit 6) unless --replace, which reports tasksReplaced",
         "  close                                         end the board (writes its snapshot); prints {ok, sent, down}",
         "  info                                          the resolved board's {url, port, session_id, title}",
         "  list                                          list currently-RUNNING boards (id/tasks/url/title) — prose, see below",
@@ -254,7 +256,8 @@
         "  unblock <id> [--on ..]                        remove blocker edge(s) --on <id>[,<id>...]",
         "  remove <id>                                   delete a task",
         "  message [text...] [--stdin]                   show a toast on the board (the text, or --stdin)",
-        "  init [--title ..] [--stdin-tasks]             seed the board (tasks = JSON array on stdin; each task REQUIRES id + title + status — init does NOT mint ids, unlike add; any dropped task is reported per-entry in tasksDropped)",
+        "  init [--title ..] [--stdin-tasks] [--replace]",
+        "                                                seed the board (tasks = JSON array on stdin; each task REQUIRES id + title + status — init does NOT mint ids, unlike add; any dropped task is reported per-entry in tasksDropped). Over a board that has tasks it is refused (exit 6) unless --replace, which reports tasksReplaced",
         "  close                                         end the board (writes its snapshot); prints {ok, sent, down}",
         "  info                                          the resolved board's {url, port, session_id, title}",
         "  list                                          list currently-RUNNING boards (id/tasks/url/title) — prose, see below",
@@ -788,6 +791,11 @@
                 "name": "--stdin-tasks",
                 "type": "boolean",
                 "status": "valid"
+              },
+              {
+                "name": "--replace",
+                "type": "boolean",
+                "status": "valid"
               }
             ],
             "positionals": []
@@ -1184,7 +1192,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--as", "--session", "--session-key", "--stdin-tasks", "--title"]
+      "choices": ["--as", "--replace", "--session", "--session-key", "--stdin-tasks", "--title"]
     },
     {
       "argv": ["init", "--help"],
@@ -1193,7 +1201,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--as", "--session", "--session-key", "--stdin-tasks", "--title"]
+      "choices": ["--as", "--replace", "--session", "--session-key", "--stdin-tasks", "--title"]
     },
     {
       "argv": ["close", "--acc-bogus-flag"],

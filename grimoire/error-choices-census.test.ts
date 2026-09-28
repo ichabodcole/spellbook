@@ -136,7 +136,11 @@ const EXPECTED: Record<
   // 29/1 -> 30/2 (2026-09-27, verifier on s5-9): `add`/`update` refuse a
   // `--status` outside the set with `choices` (one shared raise, `checkStatus`)
   // where the daemon used to drop it silently under `fields:["status"]`.
-  bounty: { sites: 30, choices: 2, verbRoster: true, flagMap: true },
+  // 30 -> 31 (2026-09-28, one act one answer): `init --stdin-tasks` over a
+  // board that has tasks is the daemon's `conflict`, raised with a hint that
+  // names `--replace` (a CLI flag, so the CLI's raise). No `choices`: the fix
+  // is one flag, not a set to pick from.
+  bounty: { sites: 31, choices: 2, verbRoster: true, flagMap: true },
   // 8/2 -> 7/1 (2026-09-26): digestify's flag rejection moved onto the kit
   // registry, as glamour's did. `--theme`'s `choices` is the one left here.
   digestify: { sites: 7, choices: 1, verbRoster: false, flagMap: true },

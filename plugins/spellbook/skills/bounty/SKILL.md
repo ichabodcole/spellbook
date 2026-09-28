@@ -241,7 +241,7 @@ session by default; pass `--session <id>` to target a specific one.
 | `block <id> --on <id>[,…]` / `unblock <id> --on <id>[,…]`                                                                               | add / remove blocker edges (block is cycle-guarded; rejection is visible)                                                                                                                                                       |
 | `remove <id>`                                                                                                                           | delete a task                                                                                                                                                                                                                   |
 | `message <text…> [--stdin]`                                                                                                             | transient toast on the board                                                                                                                                                                                                    |
-| `init [--title T] [--stdin-tasks]`                                                                                                      | seed the board (tasks = JSON array on stdin)                                                                                                                                                                                    |
+| `init [--title T] [--stdin-tasks [--replace]]`                                                                                          | seed the board (tasks = JSON array on stdin); over a board that already has tasks it is refused (exit 6) unless `--replace`                                                                                                     |
 | `list`                                                                                                                                  | list currently-**running** boards (id · tasks · url · title) — distinct from `sessions` (saved snapshots)                                                                                                                       |
 | `close` / `info` / `sessions` / `help`                                                                                                  | end session / show session / list snapshots / usage                                                                                                                                                                             |
 | `version` / `schema`                                                                                                                    | `{name, version}` as JSON (also `--version`, `-V`) / the machine-readable interface (acc declaration v0)                                                                                                                        |
@@ -298,6 +298,15 @@ tasks on stdin (no shell-escaping, no inline-script seed dance):
 ```bash
 echo '[{"id":"t1","title":"first","status":"todo"}]' | bun $CLI init --title Sprint --stdin-tasks
 ```
+
+Seeding **replaces** the board's tasks, so over a board that already has tasks
+`init --stdin-tasks` is refused: exit **6** (`conflict`), the board unchanged,
+and the envelope's `hint` names the opt-in. To replace them on purpose, add
+`--replace`; the reply then counts the tasks it discarded as
+`tasksReplaced: <n>` (a number, `0` on an empty board). That is a different fact
+from `tasksDropped`, which reports the entries of **your input** the daemon
+rejected (`{requested, dropped:[{index, reason}]}`, or `null` when it seeded
+them all). To put tasks on a board without replacing it, use `add`.
 
 ### Read-back, not inference
 
@@ -738,13 +747,13 @@ the tail. That family is the table above and the taxonomy does not govern it.
 **`cli.ts`'s own exits are the house taxonomy**, and every one of them prints
 ONE JSON envelope on **stderr** with stdout left empty:
 
-| Code | `kind`      | What it means                  | Typical cause                                                                                                                                  |
-| ---- | ----------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0    | —           | The verb succeeded             | `tail` also exits 0 on the `closed` frame                                                                                                      |
-| 2    | `usage`     | Fix it by changing the command | A bad flag, a missing verb, a missing required argument, an empty `update` patch                                                               |
-| 5    | `not_found` | The named thing does not exist | No running session; a stale session pointer; a task id that is not on this board; a `tail --session`/`--session-key` whose board never came up |
-| 6    | `conflict`  | A precondition failed          | A duplicate `--id`; `claim` on an other-owned task; a `block` that forms a cycle                                                               |
-| 1    | `internal`  | The spell broke                | The daemon answered a command with a non-200                                                                                                   |
+| Code | `kind`      | What it means                  | Typical cause                                                                                                                                           |
+| ---- | ----------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | —           | The verb succeeded             | `tail` also exits 0 on the `closed` frame                                                                                                               |
+| 2    | `usage`     | Fix it by changing the command | A bad flag, a missing verb, a missing required argument, an empty `update` patch                                                                        |
+| 5    | `not_found` | The named thing does not exist | No running session; a stale session pointer; a task id that is not on this board; a `tail --session`/`--session-key` whose board never came up          |
+| 6    | `conflict`  | A precondition failed          | A duplicate `--id`; `claim` on an other-owned task; a `block` that forms a cycle; `init --stdin-tasks` over a board that has tasks, without `--replace` |
+| 1    | `internal`  | The spell broke                | The daemon answered a command with a non-200                                                                                                            |
 
 ⚠ **This changed in 2026-09, twice, and a script may be pinned to either old
 shape.** Before the port every failure was prose at exit **2**. The port then

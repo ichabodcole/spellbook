@@ -19,7 +19,7 @@
 //   bun cli.ts unblock <id> --on <id>[,<id>...]             # remove blocker edges
 //   bun cli.ts remove <id>
 //   bun cli.ts message <text...> [--stdin]                  # toast
-//   bun cli.ts init [--title ..] [--stdin-tasks]            # seed the board (each task needs id+title+status)
+//   bun cli.ts init [--title ..] [--stdin-tasks [--replace]] # seed the board (each task needs id+title+status; --replace over a board that has tasks)
 //   bun cli.ts list                                        # running boards (live)
 //   bun cli.ts close | info | sessions                     # sessions = saved snapshots
 //   bun cli.ts version | schema | help                     # the kit registry's rows
@@ -564,6 +564,10 @@ const CLI_OPTIONS = {
   // are the same string by the time they arrive; this flag is the one way to
   // say "clear" on purpose.
   "clear-notes": { type: "boolean" },
+  // `init --stdin-tasks`'s explicit opt-in to replace a board that already has
+  // tasks (one act, one answer). Without it, that seed is refused as a
+  // `conflict`: it used to wipe the board at `ok:true`.
+  replace: { type: "boolean" },
 } as const;
 
 /**
@@ -672,8 +676,16 @@ function ackOrFail(type: unknown, res: CmdResult): number {
   // the daemon sends null on an init that dropped nothing (present-and-null
   // where it is meaningful, absent where it is not applicable).
   const dropped = (res as { tasksDropped?: unknown }).tasksDropped;
+  // `init --replace`'s count of the board's own tasks it discarded: a number,
+  // present only when the caller asked to replace (one act, one answer).
+  const replaced = (res as { tasksReplaced?: unknown }).tasksReplaced;
   if (dropped !== undefined) {
-    printJson({ ok: true, sent: type, tasksDropped: dropped });
+    printJson({
+      ok: true,
+      sent: type,
+      tasksDropped: dropped,
+      ...(replaced !== undefined ? { tasksReplaced: replaced } : {}),
+    });
     if (dropped && typeof dropped === "object") {
       const d = dropped as { requested: number; dropped: { index: number; reason: string }[] };
       process.stderr.write(
@@ -1676,12 +1688,23 @@ async function cmdInit(
       die("init --stdin-tasks: invalid JSON on stdin", "usage");
     }
   }
+  if (flags.replace === true) msg.replace = true;
+  const res = await postCmd(session, msg, { as, quiet: true });
+  // One act, one answer: a seed over a board that has tasks is the daemon's
+  // `conflict` (it sees the board and the write in one step). The daemon's
+  // sentence says what is on the board; the hint names the opt-in, which is a
+  // CLI flag and so belongs to the CLI.
+  if (res.applied === false && res.kind === "conflict")
+    die(res.error ?? "init: the board already has tasks", "conflict", {
+      hint: "to replace them, pass --replace (the reply counts them in tasksReplaced); to add to the board, use add",
+      server: res,
+    });
   // The generic path — and the one with a REAL behaviour change today. The
   // daemon's command dispatch ends in `return {ok:true, applied:false}` for
   // any type it does not recognise, so an unrecognised command has always
   // been answered with a success-shaped envelope. Routing through the funnel
   // is what turns that into a visible failure.
-  return ackOrFail(msg.type, await postCmd(session, msg, { as, quiet: true }));
+  return ackOrFail(msg.type, res);
 }
 
 async function cmdClose(session: string | undefined, as: string | undefined): Promise<number> {
@@ -1772,6 +1795,15 @@ function checkUpdate(inv: Invocation<Flag>): string | undefined {
     return "--title is empty, and a title is never cleared (add refuses one too); pass the new title text";
   if (f.notes === "")
     return "--notes is empty, which would erase the notes; to clear notes on purpose, pass --clear-notes";
+  return undefined;
+}
+
+/** `init --replace` replaces the board's tasks with the seed; with no seed it
+ *  would do nothing, and a flag that silently does nothing is refused. */
+function checkInit(inv: Invocation<Flag>): string | undefined {
+  const f = inv.flags as Flags;
+  if (f.replace === true && f["stdin-tasks"] !== true)
+    return "--replace replaces the board's tasks with the ones on stdin, so it needs --stdin-tasks";
   return undefined;
 }
 
@@ -1889,10 +1921,11 @@ const ROWS: Row[] = [
   },
   {
     name: "init",
-    flags: [...WRITE, "title", "stdin-tasks"],
+    flags: [...WRITE, "title", "stdin-tasks", "replace"],
     positionals: [],
     describe:
-      "seed the board (tasks = JSON array on stdin; each task REQUIRES id + title + status — init does NOT mint ids, unlike add; any dropped task is reported per-entry in tasksDropped)",
+      "seed the board (tasks = JSON array on stdin; each task REQUIRES id + title + status — init does NOT mint ids, unlike add; any dropped task is reported per-entry in tasksDropped). Over a board that has tasks it is refused (exit 6) unless --replace, which reports tasksReplaced",
+    check: checkInit,
     run: (_pos, flags, session, as) => cmdInit(flags, session, as),
   },
   {
