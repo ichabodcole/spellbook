@@ -68,3 +68,16 @@ paths answer the same act differently.
   `DAEMON_ANSWER_TIMEOUT_MS`). `add`, `update`, `claim`, `block`/`unblock`,
   `remove`, `message`, `init` and `state` still wait forever on a stopped
   daemon, and `join.ts`'s WebSocket connect is unchecked.
+
+**From the data-loss cycle's second verifier (2026-09-28, on `af561632`):**
+
+- **bounty `open --fresh`,** when nothing is writable, attaches to the old board
+  and exits 0, so the caller doesn't get a fresh board.
+- **bounty `open` on a stopped daemon** says "failed to start within 5s" after
+  about 8 s.
+- **A daemon that can't write its discovery file is left running** (bounty with
+  no `TMPDIR` folder; astrolabe with a read-only home and a readable registry,
+  one orphan per attempt).
+- **astrolabe directory wording:** "move its contents out and retry" still fails
+  with EISDIR while the empty directory remains. An emptied set-aside directory
+  keeps the notice until it's deleted.
