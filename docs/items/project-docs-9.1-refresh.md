@@ -47,7 +47,7 @@ the scaffold owns, not a structural migration.
       scaffold's own text, reported upstream; `pdocs check` is clean.
 - [x] `bun run gate` is green (the golden and acc wards do not read docs, but
       the gate includes `pdocs check`).
-- [ ] Friction with the migration is reported to the scaffold repo (issues are
+- [x] Friction with the migration is reported to the scaffold repo (issues are
       how that team hears; 9.0.1 already fixed what we hit last time).
 
 ## Done (2026-09-27)
@@ -71,16 +71,16 @@ Landed in `67198fd4`.
 - **Placeholder lint:** one real finding, fixed: the acc cycle's session record
   still carried the template's `tags: [area, feature]`.
 - **Step 6:** docs pointer and Branch Landing Policy present. **The
-  Documentation CLI pointer is missing** from root `AGENTS.md` (it never
-  mentions `pdocs`); recommended to Cole rather than applied, per the skill.
+  Documentation CLI pointer was missing** from root `AGENTS.md` (it never
+  mentioned `pdocs`); recommended to Cole per the skill, and added on his
+  go-ahead as `## Documentation CLI`.
 - **Step 7:** CLI answers `9.1.0`, `pdocs check` clean, no shipped tests, no
   tsconfig reach, biome and prettier leave `scripts/pdocs/` alone. Gate: 2993
   pass, 0 fail.
 
-**Friction to report upstream** (not yet filed; outward-facing, waiting on
-Cole): the Plan phase said `docs/SCHEMA.md` "differs from every release of the
-scaffold, so it holds edits of yours", but ours is byte-identical to scaffold
-9.0.0's (raw, and after prettier). The script does not appear to recognise the
-9.0.0 release it itself installed, so a clean tree is told its owned file holds
-the user's edits. And there is no row for "refresh a v3.0 tree to a newer
-patch": the path works, but the skill's table does not say so.
+**Friction reported upstream** on Cole's go-ahead, 2026-09-27, as
+[ichabodcole/project-docs-scaffold-template#182](https://github.com/ichabodcole/project-docs-scaffold-template/issues/182):
+the Plan phase called `docs/SCHEMA.md` "edits of yours" though it is
+byte-identical to scaffold 9.0.0's; there is no row for refreshing a v3.0 tree
+to a newer patch; and nothing but the optional Step 6 row prompts a project to
+point its root agent file at the CLI (Cole's addition).
