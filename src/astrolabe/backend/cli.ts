@@ -41,6 +41,12 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  applyProjectAdd,
+  emptyState,
+  type ObservatoryState,
+  restoreRegistry,
+} from "../../../plugins/spellbook/skills/astrolabe/scripts/state.ts";
+import {
   type CommandSpec,
   defineCli,
   type Invocation,
@@ -85,6 +91,7 @@ function daemonCwd(): string {
 }
 const ASTROLABE_HOME = process.env.ASTROLABE_HOME ?? join(homedir(), ".astrolabe");
 const PORT_FILE = join(ASTROLABE_HOME, "daemon.port");
+const REGISTRY_FILE = join(ASTROLABE_HOME, "registry.json");
 
 // ── the tail watchdog, DERIVED FROM THE DAEMON'S OWN HEARTBEAT ──────────────
 //
@@ -177,6 +184,51 @@ async function ensureDaemon(): Promise<{ base: string; port: number }> {
     if (p && (await isUp(p))) return { base: `http://127.0.0.1:${p}`, port: p };
   }
   die("astrolabe daemon failed to start within 45s", "internal");
+}
+
+// ── A REFUSED INVOCATION STARTS NOTHING (one-act-one-answer) ───────────
+//
+// Every verb that names a project used to call `ensureDaemon()` and let the
+// daemon decide — so `status <unknown> hi` on a cold machine SPAWNED a daemon
+// to answer "unknown project", exit 2, and left it running. The registry is
+// not only in the daemon: it is `$ASTROLABE_HOME/registry.json`, the snapshot
+// the daemon restores on boot. So:
+//
+//   - a daemon is up  → `null`: the daemon's live state decides, as before
+//     (the file is a debounced snapshot and may trail it);
+//   - no daemon is up → the board the daemon WOULD boot with, via the same
+//     `restoreRegistry` it uses. No file, or an unreadable one, is the empty
+//     board — which is also what the daemon boots with in both cases.
+//
+// A cold refusal is therefore the same answer, kind and exit as a warm one;
+// only the side effect is gone. "No daemon" is not itself `not_found`: the
+// question is whether the project is registered, and the disk answers it.
+async function coldBoard(): Promise<ObservatoryState | null> {
+  const port = await readPort();
+  if (port && (await isUp(port))) return null;
+  try {
+    return restoreRegistry(JSON.parse(await Bun.file(REGISTRY_FILE).text()));
+  } catch {
+    return emptyState();
+  }
+}
+
+/** `ensureDaemon()` for a verb naming project `id` — refused first, cold, if the id is unregistered. */
+async function ensureDaemonFor(id: string): Promise<{ base: string; port: number }> {
+  const board = await coldBoard();
+  if (board && !board.projects.some((p) => p.id === id))
+    // The registry is in hand, so `choices` names it (as `join`'s warm check
+    // does). An EMPTY board answers `choices: []` — "nothing would have been
+    // accepted" — which is a true answer and not the same as no field.
+    //
+    // ⚠ Inline, not a `: never` helper shared with `join`: the census
+    // enumerator (`grimoire/lib/error-sites.ts`) counts every call to a raiser
+    // as a site, and reads `choices` off the call's own argument text.
+    die(`unknown project '${id}'`, "usage", {
+      hint: "run: cli.ts add <name> --path <p> to register it",
+      choices: board.projects.map((p) => p.id),
+    });
+  return await ensureDaemon();
 }
 
 // A read-only verb requires a live daemon but must not spawn one (nothing to
@@ -327,6 +379,13 @@ async function cmdAdd(pos: string[], flags: Record<string, string | boolean>) {
   // id + avatar are optional — the daemon derives both from the name when omitted.
   const avatar = typeof flags.avatar === "string" ? flags.avatar : undefined;
   const id = typeof flags.id === "string" && flags.id.trim() ? flags.id.trim() : undefined;
+  // A duplicate is refused cold by the daemon's own reducer over the board it
+  // would boot with — the same message and exit as the warm rejection below.
+  const board = await coldBoard();
+  if (board) {
+    const dry = applyProjectAdd(board, { id: id ?? "", name, path, description, avatar });
+    if (!dry.applied && dry.error) die(dry.error);
+  }
   const { base } = await ensureDaemon();
   await cmd(base, {
     type: "project.add",
@@ -338,7 +397,7 @@ async function cmdAdd(pos: string[], flags: Record<string, string | boolean>) {
 async function cmdRemove(pos: string[], flags: Record<string, string | boolean>) {
   const id = pos[0];
   if (!id) die("usage: remove <id>");
-  const { base } = await ensureDaemon();
+  const { base } = await ensureDaemonFor(id);
   await cmd(base, { type: "project.remove", id, as: resolveAs(flags) });
 }
 
@@ -348,7 +407,7 @@ async function cmdStatus(pos: string[], flags: Record<string, string | boolean>)
   const summary = flags.stdin ? await readStdin() : pos.slice(1).join(" ").trim();
   if (!summary) die("status requires a summary (positional or --stdin)");
   const phase = typeof flags.phase === "string" ? flags.phase : undefined;
-  const { base } = await ensureDaemon();
+  const { base } = await ensureDaemonFor(id);
   await cmd(base, { type: "status", id, summary, phase, as: resolveAs(flags) });
 }
 
@@ -360,14 +419,14 @@ async function cmdAttention(pos: string[], flags: Record<string, string | boolea
     typeof flags.question === "string"
       ? flags.question
       : pos.slice(1).join(" ").trim() || undefined;
-  const { base } = await ensureDaemon();
+  const { base } = await ensureDaemonFor(id);
   await cmd(base, { type: "attention", id, raised, question, as: resolveAs(flags) });
 }
 
 async function cmdPoke(pos: string[], flags: Record<string, string | boolean>) {
   const id = pos[0];
   if (!id) die("usage: poke <id>");
-  const { base } = await ensureDaemon();
+  const { base } = await ensureDaemonFor(id);
   await cmd(base, { type: "poke", id, as: resolveAs(flags) });
 }
 
@@ -541,9 +600,10 @@ function sinceOf(flags: Flags): { since: number; sinceEpoch?: string } {
 async function cmdJoin(pos: string[], flags: Flags): Promise<number> {
   const id = pos[0] as string;
   const { since, sinceEpoch } = sinceOf(flags);
-  const { base } = await ensureDaemon();
+  const { base } = await ensureDaemonFor(id);
   // Confirm the project exists before holding the watch (a typo'd id would
-  // otherwise bind no presence and silently stream nothing useful).
+  // otherwise bind no presence and silently stream nothing useful). Cold, that
+  // was answered from disk above; warm, the live board answers it here.
   const { state } = (await (await fetch(`${base}/state`)).json()) as {
     state: { projects: Array<{ id: string }> };
   };
@@ -552,8 +612,7 @@ async function cmdJoin(pos: string[], flags: Flags): Promise<number> {
     // the same rejection relayed from the daemon (`cmd()`) does not: the
     // snapshot was fetched one line above to make this very check, so
     // naming the registered ids costs nothing and needs no second call.
-    // An EMPTY board answers `choices: []` — "nothing would have been
-    // accepted" — which is a true answer and not the same as no field.
+    // An EMPTY board answers `choices: []` — a true answer, not a missing one.
     die(`unknown project '${id}'`, "usage", {
       hint: "run: cli.ts add <name> --path <p> to register it",
       choices: state.projects.map((p) => p.id),

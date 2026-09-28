@@ -122,7 +122,11 @@ const EXPECTED: Record<
   // 12/1 -> 14/1 (2026-09-27, s5-8): `close` gained `cmd()`'s rejection raise
   // (applied:false WITH an error) and an `internal` raise for a daemon still
   // answering after the 3s teardown wait. Neither ranges over a closed set.
-  astrolabe: { sites: 14, choices: 1, verbRoster: true, flagMap: true },
+  // 14/1 -> 16/2 (2026-09-28, one-act-one-answer): a verb naming a project is
+  // refused from the on-disk registry when no daemon is up, instead of starting
+  // one to ask. The unknown-project raise carries the registry's ids (in hand);
+  // `add`'s cold duplicate raise (the reducer's own message) has no closed set.
+  astrolabe: { sites: 16, choices: 2, verbRoster: true, flagMap: true },
   // 33/2 -> 27/1 (2026-09-26): bounty moved onto the kit registry, as
   // glamour did — its parse, unknown-verb and missing-id raises left for the kit.
   // 27 -> 28 (2026-09-27): `update --stdin` refuses an empty stdin (s5-9).

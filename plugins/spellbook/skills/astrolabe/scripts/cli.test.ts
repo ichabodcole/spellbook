@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -239,5 +239,108 @@ describe("P0f — tail drains before exiting", () => {
     } finally {
       rmSync(p0fHome, { recursive: true, force: true });
     }
+  }, 60000);
+});
+
+// ── A REFUSED INVOCATION HAS NO SIDE EFFECT (one-act-one-answer) ────────────
+//
+// `status <unknown> <text>` exited 2 ("unknown project") but had already
+// spawned a daemon to ask it: the daemon was the only thing consulted, so a
+// refusal on a cold machine left a process and a `daemon.port` behind. The
+// registry is on disk (`$ASTROLABE_HOME/registry.json`, the snapshot the daemon
+// restores on boot), so with no daemon up the CLI answers from that file and
+// starts nothing to refuse. Driven through the SHIPPED launcher: the source
+// CLI cannot spawn a daemon at all (its `../scripts/server.ts` is only right
+// from `dist/`), so a source-level drive times out at 45s instead of
+// reproducing.
+//
+// ⚠ RUN RED FIRST: against the unfixed build every refusal below failed on the
+// `daemon.port` assertion — the refused call had started a daemon.
+describe("a refused invocation starts no daemon", () => {
+  const homes: string[] = [];
+  afterAll(() => {
+    for (const home of homes) {
+      try {
+        const pid = Number.parseInt(readFileSync(join(home, "daemon.pid"), "utf8").trim(), 10);
+        if (pid > 0) process.kill(pid, "SIGTERM");
+      } catch {
+        /* no daemon — the expected case */
+      }
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  function scratchHome(projects?: Array<{ id: string; name: string; path: string }>): string {
+    const home = mkdtempSync(join(tmpdir(), "astrolabe-refused-"));
+    homes.push(home);
+    if (projects)
+      writeFileSync(
+        join(home, "registry.json"),
+        JSON.stringify({ title: "Observatory", projects }),
+      );
+    return home;
+  }
+  const KNOWN = [{ id: "known", name: "Known", path: "/tmp/known" }];
+
+  function expectRefusedColdly(
+    home: string,
+    r: { out: string; err: string; code: number },
+    message: string,
+  ) {
+    expect(r.code).toBe(2);
+    expect(r.out).toBe("");
+    const env = JSON.parse(r.err) as { ok: boolean; error: { kind: string; message: string } };
+    expect(env.ok).toBe(false);
+    expect(env.error.kind).toBe("usage");
+    expect(env.error.message).toContain(message);
+    // ⛔ THE POINT: nothing was started to refuse the call.
+    expect(existsSync(join(home, "daemon.port"))).toBe(false);
+    expect(existsSync(join(home, "daemon.pid"))).toBe(false);
+  }
+
+  test("status on an unknown project with no daemon exits 2 and starts nothing", async () => {
+    const home = scratchHome();
+    expectRefusedColdly(home, await runCli(home, ["status", "x", "hi"]), "unknown project 'x'");
+  }, 60000);
+
+  test("every id verb refuses an unknown project from the disk registry, with its ids as choices", async () => {
+    for (const argv of [
+      ["status", "x", "hi"],
+      ["attention", "x"],
+      ["poke", "x"],
+      ["remove", "x"],
+      ["join", "x"],
+    ]) {
+      const home = scratchHome(KNOWN);
+      const r = await runCli(home, argv);
+      expectRefusedColdly(home, r, "unknown project 'x'");
+      // The registry is in hand, so the envelope names what WOULD have been accepted.
+      expect((JSON.parse(r.err) as { error: { choices?: string[] } }).error.choices).toEqual([
+        "known",
+      ]);
+    }
+  }, 120000);
+
+  test("a duplicate add with no daemon exits 2 and starts nothing", async () => {
+    const byId = scratchHome(KNOWN);
+    expectRefusedColdly(
+      byId,
+      await runCli(byId, ["add", "Known", "--path", "/tmp/elsewhere"]),
+      "id 'known' already registered",
+    );
+    const byPath = scratchHome(KNOWN);
+    expectRefusedColdly(
+      byPath,
+      await runCli(byPath, ["add", "Other", "--path", "/tmp/known/"]),
+      "duplicate of 'known'",
+    );
+  }, 120000);
+
+  test("a project on the disk registry still starts the daemon and applies", async () => {
+    const home = scratchHome(KNOWN);
+    const r = await runCli(home, ["status", "known", "hi"]);
+    expect(r.code).toBe(0);
+    expect(JSON.parse(r.out)).toMatchObject({ ok: true, applied: true });
+    expect(existsSync(join(home, "daemon.port"))).toBe(true);
   }, 60000);
 });

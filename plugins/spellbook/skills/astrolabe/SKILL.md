@@ -76,7 +76,10 @@ The agent never talks to the daemon directly — it drives through `cli.ts`, a
 thin, stateless wrapper. The daemon is a **singleton per machine**
 (`$ASTROLABE_HOME`, default `~/.astrolabe`); the first verb that needs it
 auto-spawns it (detached, it outlives the CLI) and finds it via
-`$ASTROLABE_HOME/daemon.port`.
+`$ASTROLABE_HOME/daemon.port`. A command it would refuse starts nothing: with no
+daemon up, an unknown `<id>` and a duplicate `add` are refused (exit 2) from the
+registry on disk without spawning one, and an unknown `<id>`'s envelope names
+the registered ids in `choices`.
 
 ### Verbs
 
