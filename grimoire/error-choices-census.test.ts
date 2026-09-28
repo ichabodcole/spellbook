@@ -158,7 +158,11 @@ const EXPECTED: Record<
   // 34 -> 35 (same follow-ups): a `close` (or any bounded `postCmd`) whose
   // daemon does not answer within the timeout is `internal`, naming the pid,
   // where it used to hang. No `choices`: the hint names resume or end the pid.
-  bounty: { sites: 35, choices: 2, verbRoster: true, flagMap: true },
+  // 35 -> 36 (second verifier's follow-ups): the nothing-writable `close`
+  // refusal is raised by the CLI with a hint (what to make writable, then the
+  // `close` to run again), where it used to reach the generic daemon-refusal
+  // funnel with its act only in the message. No `choices`.
+  bounty: { sites: 36, choices: 2, verbRoster: true, flagMap: true },
   // 8/2 -> 7/1 (2026-09-26): digestify's flag rejection moved onto the kit
   // registry, as glamour's did. `--theme`'s `choices` is the one left here.
   digestify: { sites: 7, choices: 1, verbRoster: false, flagMap: true },

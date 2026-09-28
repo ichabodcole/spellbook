@@ -602,20 +602,22 @@ file, then rename), so a death mid-write leaves the previous one.
   failed write dumps the board to `<id>.unsaved-<ts>.json` in `snapshots/`, or
   in `$BOUNTY_HOME` if `snapshots/` is the problem (one file per daemon,
   rewritten on each failure). Mid-session, `state.snapshotSaveFailed` is
-  `{ path, error, unsaved, taskCount, held }` (present-and-null once a write
-  succeeds), a `snapshotSaveFailed` event reaches a live tail, and `daemon.log`
-  gets a line. **`close` exits 6 (`conflict`)**, stdout empty: the board is
-  down, but the save `close` owed did not happen. Its envelope names the
-  snapshot path and the dump, its hint says to fix the path and then run the
+  `{ path, error, unsaved, taskCount, held, fix }` (present-and-null once a
+  write succeeds), a `snapshotSaveFailed` event reaches a live tail, and
+  `daemon.log` gets a line. `error` is the real cause (`EISDIR`, `EACCES`, …),
+  and `fix` names the path that is actually wrong: the snapshot, or `snapshots/`
+  itself when that is a file. **`close` exits 6 (`conflict`)**, stdout empty:
+  the board is down, but the save `close` owed did not happen. Its envelope
+  names the snapshot path and the dump, its hint gives `fix` and then the
   printed `open … --restore <dump>`, and `error.server` carries the daemon's
   reply (`snapshotSaveFailed`, `snapshotBackups`). If nothing at all can be
   written, the board holds the only copy, so **no request ends it**: `close`
-  refuses (exit 6), the human's **Close board** is refused with a message on the
-  board, and the **idle timeout is held**. A held timeout is logged
-  (`idleCloseHeld` in `daemon.log`) and shown on `state` as
-  `snapshotSaveFailed.held`; each time the timeout comes round the save is
-  retried, and the first one that works ends the board as a normal timeout
-  (124).
+  refuses (exit 6, its hint saying what to make writable and the `close` to run
+  again), the human's **Close board** is refused with a message on the board,
+  and the **idle timeout is held**. A held timeout is logged (`idleCloseHeld` in
+  `daemon.log`) and shown on `state` as `snapshotSaveFailed.held`; each time the
+  timeout comes round the save is retried, and the first one that works ends the
+  board as a normal timeout (124).
 - **A signal is not guarded.** SIGTERM or SIGINT is an order to stop: the daemon
   runs its teardown, whose final save is its last attempt, and exits whether or
   not that save found somewhere to write. With nothing writable in

@@ -6181,6 +6181,11 @@ describe("a snapshot write that fails is reported, and the board is kept", () =>
       expect(e.error.kind).toBe("conflict");
       expect(c.code).toBe(6);
       expect(e.error.message).toContain(snap);
+      // The real cause, not the copy error from setting the old file aside.
+      const why = (e.error.server as { snapshotSaveFailed: SaveFailed }).snapshotSaveFailed?.error;
+      expect(why).not.toContain("copyfile");
+      expect(why).toContain("EISDIR");
+      expect(e.error.hint ?? "").toContain(`remove the directory ${snap}`);
       const server = e.error.server as { snapshotSaveFailed: SaveFailed };
       const unsaved = server.snapshotSaveFailed?.unsaved as string;
       expect(e.error.message).toContain(unsaved);
@@ -6218,6 +6223,11 @@ describe("a snapshot write that fails is reported, and the board is kept", () =>
         ?.unsaved as string;
       expect(titlesAt(unsaved)).toEqual(["new1"]);
       expect(e.error.hint ?? "").toContain("--restore");
+      // The real cause, not the copy error from setting the old file aside.
+      const why = (e.error.server as { snapshotSaveFailed: SaveFailed }).snapshotSaveFailed?.error;
+      expect(why).not.toContain("copyfile");
+      expect(why).toContain("EACCES");
+      expect(e.error.hint ?? "").toContain(`make ${snap} readable and writable`);
       chmodSync(snap, 0o644);
       expect(readFileSync(snap, "utf8")).toBe(before);
     } finally {
@@ -6243,6 +6253,10 @@ describe("a snapshot write that fails is reported, and the board is kept", () =>
       chmodSync(home, 0o755);
       expect(refused.stdout).toBe("");
       expect(onlyEnvelope(refused.stderr).error.kind).toBe("conflict");
+      // The act rides a hint, as every other refusal's does.
+      const rHint = onlyEnvelope(refused.stderr).error.hint ?? "";
+      expect(rHint).toContain(home);
+      expect(rHint).toContain(`then run: close --session ${id}`);
       expect(refused.code).toBe(6);
       expect(await liveTitles(id, env)).toEqual(["new1"]);
 
@@ -6253,6 +6267,9 @@ describe("a snapshot write that fails is reported, and the board is kept", () =>
       const unsaved = (e.error.server as { snapshotSaveFailed: SaveFailed }).snapshotSaveFailed
         ?.unsaved as string;
       expect(dirname(unsaved)).toBe(home);
+      // The path that is actually wrong is snapshots/ itself, not the file in it.
+      expect(e.error.hint ?? "").toContain(`${join(home, "snapshots")} is a file`);
+      expect(e.error.hint ?? "").not.toContain(join(home, "snapshots", `${id}.json`));
       expect(titlesAt(unsaved)).toEqual(["new1"]);
       rmSync(join(home, "snapshots"));
       const back = await runCli([...restoreFromHint(e.error.hint), "--timeout", "30"], { env });

@@ -640,6 +640,8 @@ type CmdResult = {
     unsaved: string | null;
     taskCount: number;
     held?: string | null;
+    // What to do about it, naming the path that is actually wrong (server.ts).
+    fix?: string;
   } | null;
 };
 
@@ -2025,6 +2027,19 @@ async function cmdClose(
   );
   // Checked BEFORE the wait below: a refused close (the daemon found nowhere
   // to save the board and kept it up) is not going down, so waiting is moot.
+  //
+  // That refusal carries its act in a `hint`, as every other refusal does: it
+  // used to ride only in the daemon's sentence (verifier, 2026-09-28). The
+  // act is to make somewhere writable and close again, and the close is ours
+  // to spell, so the hint is built here.
+  if (!closeRes.applied && closeRes.kind === "conflict" && closeRes.snapshotSaveFailed) {
+    const failed = closeRes.snapshotSaveFailed;
+    const resolved = requireSession(session);
+    die(closeRes.error ?? "board not closed: nowhere could take its snapshot", "conflict", {
+      hint: `the board is still running and holds the only copy of its ${failed.taskCount} task(s). ${failed.fix ?? `Make ${failed.path} writable`}, or make ${BOUNTY_HOME} writable so the board can be dumped there, then run: ${commandLine(["close", "--session", resolved.session_id])}`,
+      server: closeRes,
+    });
+  }
   if (!closeRes.applied) return ackOrFail("close", closeRes);
   // b14 — WAIT FOR IT TO ACTUALLY BE DOWN. `close` used to return as soon as
   // the daemon ACKED the command, and the daemon acks before it finishes
@@ -2077,7 +2092,9 @@ async function cmdClose(
       `board ${resolved.session_id} is closed, but its final save failed: the snapshot ${failed.path} could not be written (${failed.error}); its ${failed.taskCount} task(s) were saved to ${failed.unsaved} instead`,
       "conflict",
       {
-        hint: `fix ${failed.path} (remove it if it is a directory, or make it and its folder writable), then run: ${dump?.restore ?? `open --restore ${failed.unsaved} --no-open`}`,
+        // `fix` names the path that is actually wrong (the daemon checks);
+        // the fallback is for a daemon build that predates it.
+        hint: `${failed.fix ?? `fix ${failed.path} (remove it if it is a directory, or make it and its folder writable)`}, then run: ${dump?.restore ?? `open --restore ${failed.unsaved} --no-open`}`,
         server: closeRes,
       },
     );

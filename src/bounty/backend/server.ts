@@ -54,11 +54,14 @@
 // board is a conjuration — there's no "cancel"/130 discard path.
 
 import {
+  accessSync,
   appendFileSync,
   copyFileSync,
   existsSync,
+  constants as fsConstants,
   mkdirSync,
   readFileSync,
+  statSync,
   unlinkSync,
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
@@ -244,12 +247,49 @@ function snapshotProblem(parsed: unknown): string | null {
 
 // (c) Why the file at `path` cannot be read as a snapshot (for the copy's
 // `reason`), or null when it can.
+//
+// ⛔ A FILE THAT CANNOT BE READ AT ALL IS THROWN, NOT REASONED ABOUT. A
+// directory or a mode-000 file used to come back as "not valid JSON", so the
+// caller tried to copy it aside and reported THAT copy's error (`ENOTSUP …
+// copyfile … .unreadable-….bak.json`) in place of the real cause (verifier,
+// 2026-09-28). Only the read is outside the catch: the caller's own catch now
+// gets `EISDIR` or `EACCES`, and still writes nothing over a file it could
+// not read.
 function unreadableReason(path: string): string | null {
+  const raw = readFileSync(path, "utf8");
   try {
-    return snapshotProblem(JSON.parse(readFileSync(path, "utf8")));
+    return snapshotProblem(JSON.parse(raw));
   } catch (e) {
     return `it is not valid JSON (${e instanceof Error ? e.message : String(e)})`;
   }
+}
+
+// What to do about a snapshot write that failed, naming the path that is
+// actually wrong. That is not always the snapshot: when `snapshots/` is itself
+// a file, the snapshot path was never the problem, and a hint that said "fix
+// snapshots/<id>.json" sent the caller to a file that does not exist.
+function snapshotFix(path: string): string {
+  const dir = dirname(path);
+  try {
+    if (!statSync(dir).isDirectory())
+      return `${dir} is a file where bounty keeps its snapshots folder: move it aside`;
+  } catch {}
+  try {
+    if (statSync(path).isDirectory()) return `remove the directory ${path} (a snapshot is a file)`;
+  } catch {}
+  if (existsSync(path)) {
+    try {
+      accessSync(path, fsConstants.R_OK | fsConstants.W_OK);
+    } catch {
+      return `make ${path} readable and writable`;
+    }
+  }
+  try {
+    accessSync(dir, fsConstants.W_OK);
+  } catch {
+    return `make the folder ${dir} writable`;
+  }
+  return `make ${path} and its folder writable, or free some disk space`;
 }
 
 // #73/#74 — should this snapshot write copy the existing file aside first?
@@ -375,7 +415,8 @@ type BackupRecord = {
 
 // The LATEST snapshot write failed: where it was going, why, and where the
 // board went instead (`unsaved`, null when no fallback could be written
-// either). Null once a write succeeds: one state, one meaning.
+// either). Null once a write succeeds: one state, one meaning. `fix` is what
+// to do about it, naming the path that is actually wrong (see snapshotFix).
 //
 // `held` says why a request to end the daemon was NOT honoured: set when the
 // board is in no file (`unsaved` null) and the idle timeout or the browser's
@@ -387,6 +428,7 @@ type SnapshotSaveFailed = {
   unsaved: string | null;
   taskCount: number;
   held: string | null;
+  fix: string;
 } | null;
 
 type BrowserMsg =
@@ -1054,6 +1096,7 @@ async function main(argv: string[]): Promise<number> {
       taskCount: state.tasks.length,
       // A hold stands while the board is still in no file; a dump ends it.
       held: unsaved ? null : (snapshotSaveFailed?.held ?? null),
+      fix: snapshotFix(path),
     };
     if (unsaved) {
       const reason = `the snapshot ${path} could not be written (${error}); the board was saved here instead`;
@@ -1186,7 +1229,12 @@ async function main(argv: string[]): Promise<number> {
   // it) keeps a copy NOW, before any write, so `open` can name it.
   if (sessionId) {
     const own = join(SNAPSHOTS_DIR, `${sessionId}.json`);
-    const why = existsSync(own) ? unreadableReason(own) : null;
+    let why: string | null = null;
+    try {
+      why = existsSync(own) ? unreadableReason(own) : null;
+    } catch {
+      /* not readable at all: saveSnapshot reports the real cause */
+    }
     if (why) {
       try {
         keepUnreadable(own, why, false);

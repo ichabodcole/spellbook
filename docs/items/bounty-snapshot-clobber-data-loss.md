@@ -182,3 +182,12 @@ The unscoped `pkill` footgun above is untouched.
   still exits without saving, as before. Not changed: `open --fresh` over such a
   board has its teardown `close` refused, so it attaches to the old board, with
   nothing lost but no fresh board either.
+- **Two misleading texts.** With the snapshot path a directory or mode 000, the
+  reported error was the copy error from setting the old file aside
+  (`ENOTSUP … copyfile … .unreadable-….bak.json`); it is now the real cause
+  (`EISDIR`, `EACCES`), and the file is still never written over. With
+  `snapshots/` itself a file, the hint said to fix `snapshots/<id>.json`, a file
+  that does not exist. `snapshotSaveFailed` now carries a `fix` naming the path
+  that is actually wrong (`snapshots/` in that case), and the hints use it. The
+  nothing-writable close refusal carried its act only in its message; it now has
+  a `hint`, ending in the `close` to run again.
