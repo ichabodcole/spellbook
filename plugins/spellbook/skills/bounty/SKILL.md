@@ -192,6 +192,13 @@ session by default; pass `--session <id>` to target a specific one.
 >   comes up **empty** and your snapshot is the damaged thing. A restore that
 >   fails is not a restore that was skipped, and a caller that treats them alike
 >   will "fix" a healthy command line and leave a corrupt snapshot in place.
+> - **A `--restore` naming a snapshot that does not exist starts nothing.** It
+>   exits **5** (`not_found`) with an envelope on stderr, and no board or daemon
+>   is spawned. `sessions` lists what can be restored. (It used to exit 0 with
+>   `restoreFailed: ENOENT…` and leave an unrelated empty board running.)
+>   `restoreFailed` is now for a snapshot that exists and could not be read. An
+>   **empty** `--restore ""` is a usage error (exit 2) and starts nothing
+>   either; drop the flag for a fresh board.
 >
 > A team coordinator (e.g. anthill) can therefore run
 > `open --session-key <team-channel>` at start and pass
@@ -241,7 +248,7 @@ session by default; pass `--session <id>` to target a specific one.
 | `block <id> --on <id>[,…]` / `unblock <id> --on <id>[,…]`                                                                               | add / remove blocker edges (block is cycle-guarded; rejection is visible)                                                                                                                                                       |
 | `remove <id>`                                                                                                                           | delete a task                                                                                                                                                                                                                   |
 | `message <text…> [--stdin]`                                                                                                             | transient toast on the board                                                                                                                                                                                                    |
-| `init [--title T] [--stdin-tasks]`                                                                                                      | seed the board (tasks = JSON array on stdin)                                                                                                                                                                                    |
+| `init [--title T] [--stdin-tasks [--replace]]`                                                                                          | seed the board (tasks = JSON array on stdin); over a board that already has tasks it is refused (exit 6) unless `--replace`                                                                                                     |
 | `list`                                                                                                                                  | list currently-**running** boards (id · tasks · url · title) — distinct from `sessions` (saved snapshots)                                                                                                                       |
 | `close` / `info` / `sessions` / `help`                                                                                                  | end session / show session / list snapshots / usage                                                                                                                                                                             |
 | `version` / `schema`                                                                                                                    | `{name, version}` as JSON (also `--version`, `-V`) / the machine-readable interface (acc declaration v0)                                                                                                                        |
@@ -266,7 +273,11 @@ printf "it's a \"quoted\" & <urgent> task" | bun $CLI add --stdin --status doing
 
 **The rule: `--stdin` REPLACES THE VERB'S POSITIONAL ARGUMENT.** It is not a
 "body" flag — it stands in for whatever that verb takes on the command line.
-`add <title…>` → the **title**. `message <text…>` → the **text**.
+`add <title…>` → the **title**. `message <text…>` → the **text**. So `add` takes
+a title **or** `--stdin`, never both: `add x --stdin` is refused at exit 2
+(`usage`) and adds nothing. It used to keep stdin and silently drop `x`.
+`message` is the same: `message x --stdin` is refused at exit 2 and sends
+nothing.
 
 **On `update`, whose only positional is `<id>`, `--stdin` reads the new TITLE**
 (as on `add`), never the notes. For notes, use `--notes`; if the prose has
@@ -298,6 +309,15 @@ tasks on stdin (no shell-escaping, no inline-script seed dance):
 ```bash
 echo '[{"id":"t1","title":"first","status":"todo"}]' | bun $CLI init --title Sprint --stdin-tasks
 ```
+
+Seeding **replaces** the board's tasks, so over a board that already has tasks
+`init --stdin-tasks` is refused: exit **6** (`conflict`), the board unchanged,
+and the envelope's `hint` names the opt-in. To replace them on purpose, add
+`--replace`; the reply then counts the tasks it discarded as
+`tasksReplaced: <n>` (a number, `0` on an empty board). That is a different fact
+from `tasksDropped`, which reports the entries of **your input** the daemon
+rejected (`{requested, dropped:[{index, reason}]}`, or `null` when it seeded
+them all). To put tasks on a board without replacing it, use `add`.
 
 ### Read-back, not inference
 
@@ -424,11 +444,15 @@ next depends on whether you named the board:
 - **Named** (`--session <id>` or `--session-key <key>`): after a few seconds
   (about 8) the tail gives up with exit **5** (`not_found`) and an error
   envelope on stderr. The envelope repeats what it looked for, and its `hint`
-  names the fix: check the key and the directory you ran from, or the id, or
-  bring back a board that closed. Nothing is printed on stdout. Start the tail
-  once the board is up, or check its id with `list`.
+  says only what the CLI knows (no board is running for it and none left a close
+  snapshot, not that it was never opened here) and names the fix: check the key
+  and the directory you ran from, or the id, or open it
+  (`open --session-key <key> --no-open`). Nothing is printed on stdout. Start
+  the tail once the board is up, or check its id with `list`.
 - **Named, and the board existed here and has closed** (its snapshot is on
-  disk): a `--session` tail ends at once with `tail.closed` (exit 0), as above.
+  disk): a `--session` or `--session-key` tail ends at once with `tail.closed`
+  (exit 0), as above. A keyed board's `tail.closed` names
+  `open --session-key <key> --no-open` as the way back.
 
 ### Event frames
 
@@ -528,7 +552,8 @@ just watching survives long stretches and a restart.
 - `cli.ts open --restore <id>` brings a saved board back. The snapshot is merged
   over defaults (old snapshots gain new fields cleanly) and its tasks are run
   through the same `validateTask` boundary, so a malformed or legacy entry is
-  dropped rather than fatal — the rest of the board restores.
+  dropped rather than fatal — the rest of the board restores. An `<id>` with no
+  snapshot is refused, exit 5 (`not_found`), and starts no board.
 
 The restored daemon gets a **new** session id (and writes its own snapshot on
 close); the snapshot you restored from is left intact.
@@ -738,13 +763,13 @@ the tail. That family is the table above and the taxonomy does not govern it.
 **`cli.ts`'s own exits are the house taxonomy**, and every one of them prints
 ONE JSON envelope on **stderr** with stdout left empty:
 
-| Code | `kind`      | What it means                  | Typical cause                                                                                                                                  |
-| ---- | ----------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0    | —           | The verb succeeded             | `tail` also exits 0 on the `closed` frame                                                                                                      |
-| 2    | `usage`     | Fix it by changing the command | A bad flag, a missing verb, a missing required argument, an empty `update` patch                                                               |
-| 5    | `not_found` | The named thing does not exist | No running session; a stale session pointer; a task id that is not on this board; a `tail --session`/`--session-key` whose board never came up |
-| 6    | `conflict`  | A precondition failed          | A duplicate `--id`; `claim` on an other-owned task; a `block` that forms a cycle                                                               |
-| 1    | `internal`  | The spell broke                | The daemon answered a command with a non-200                                                                                                   |
+| Code | `kind`      | What it means                  | Typical cause                                                                                                                                                                                      |
+| ---- | ----------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | —           | The verb succeeded             | `tail` also exits 0 on the `closed` frame                                                                                                                                                          |
+| 2    | `usage`     | Fix it by changing the command | A bad flag, a missing verb, a missing required argument, an empty `update` patch                                                                                                                   |
+| 5    | `not_found` | The named thing does not exist | No running session; a stale session pointer; a task id that is not on this board; a `tail --session`/`--session-key` whose board never came up; `open --restore` of a snapshot that does not exist |
+| 6    | `conflict`  | A precondition failed          | A duplicate `--id`; `claim` on an other-owned task; a `block` that forms a cycle; `init --stdin-tasks` over a board that has tasks, without `--replace`                                            |
+| 1    | `internal`  | The spell broke                | The daemon answered a command with a non-200                                                                                                                                                       |
 
 ⚠ **This changed in 2026-09, twice, and a script may be pinned to either old
 shape.** Before the port every failure was prose at exit **2**. The port then

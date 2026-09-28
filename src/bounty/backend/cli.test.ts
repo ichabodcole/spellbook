@@ -45,9 +45,11 @@ test("the verbs are the table's, plus the registry's version/schema/help rows", 
 test("the options table is the one the registry parses (A1)", () => {
   expect(SRC).toContain("options: CLI_OPTIONS,");
   expect(RECOGNIZED_FLAGS.every((f) => f.startsWith("--"))).toBe(true);
-  // 24 flags: thoth's audited 22 plus `--once` (tail's background one-shot,
-  // feat/tail-quiet-handoff) and `--clear-notes` (update's explicit clear, s5-5).
-  expect(RECOGNIZED_FLAGS.length).toBe(24);
+  // 25 flags: thoth's audited 22 plus `--once` (tail's background one-shot,
+  // feat/tail-quiet-handoff), `--clear-notes` (update's explicit clear, s5-5)
+  // and `--replace` (init's opt-in over a board that has tasks, one act one
+  // answer).
+  expect(RECOGNIZED_FLAGS.length).toBe(25);
 });
 
 /**

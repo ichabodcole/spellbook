@@ -65,8 +65,9 @@ import {
   emptyState,
   type ObservatoryState,
   type ObservatoryView,
-  type Project,
   type ProjectCard,
+  restoreRegistry,
+  validateProject,
 } from "../../../plugins/spellbook/skills/astrolabe/scripts/state.ts";
 import { unlinkIfMatches, writeFileAtomic } from "../../kit/wire/discovery.ts";
 import { createEventLog } from "../../kit/wire/eventLog.ts";
@@ -149,20 +150,9 @@ type ApplyResult = {
 
 // ── pure helpers ─────────────────────────────────────────────────────
 
-// The single project-shape trust boundary — the agent /cmd path and a restored
-// registry both pass untrusted objects through here (filter-and-keep-valid).
-function validateProject(p: unknown): Project | null {
-  if (!p || typeof p !== "object") return null;
-  const o = p as Record<string, unknown>;
-  if (typeof o.name !== "string" || o.name.trim() === "") return null;
-  if (typeof o.path !== "string" || o.path.trim() === "") return null;
-  // id is optional on the way in — applyProjectAdd derives it from the name when
-  // absent (a restored registry entry already carries one).
-  const out: Project = { id: typeof o.id === "string" ? o.id : "", name: o.name, path: o.path };
-  if (typeof o.description === "string") out.description = o.description;
-  if (typeof o.avatar === "string") out.avatar = o.avatar;
-  return out;
-}
+// `validateProject` — the project-shape trust boundary — now lives in the pure
+// layer (`state.ts`) beside `restoreRegistry`, because cli.ts reads the same
+// registry to refuse a command without starting a daemon. Re-exported below.
 
 function openBrowser(url: string): void {
   const cmd =
@@ -198,21 +188,12 @@ async function main(argv: string[]): Promise<number> {
   const port = Number.parseInt(v.port as string, 10);
   const host = v.host as string;
 
-  // Initial state — the durable registry restored (merge-over-defaults so an
-  // older snapshot gains new fields without crashing; each project runs through
-  // validateProject so a malformed entry is dropped, not fatal). Presence and
-  // status start EMPTY (live layers — never persisted).
+  // Initial state — the durable registry restored (`restoreRegistry`, shared
+  // with cli.ts's cold refusal). Presence and status start EMPTY.
   let state: ObservatoryState = emptyState(v.title as string);
   if (existsSync(REGISTRY_FILE)) {
     try {
-      const snap = JSON.parse(await Bun.file(REGISTRY_FILE).text()) as Partial<ObservatoryState>;
-      if (typeof snap.title === "string") state.title = snap.title;
-      if (Array.isArray(snap.projects)) {
-        for (const raw of snap.projects) {
-          const p = validateProject(raw);
-          if (p) state = applyProjectAdd(state, p).state; // dedupe-guarded on the way in
-        }
-      }
+      state = restoreRegistry(JSON.parse(await Bun.file(REGISTRY_FILE).text()), v.title as string);
     } catch (e) {
       process.stderr.write(
         `astrolabe: registry restore failed: ${e instanceof Error ? e.message : String(e)}\n`,

@@ -18,7 +18,7 @@
 //
 // AgentCommand — POST /cmd body (one of). All carry an optional `as` (caller
 // identity → event `by`); /cmd returns {ok, applied?, error?}:
-//   {"type":"init",        "title": "...", "tasks": Task[]}
+//   {"type":"init",        "title": "...", "tasks": Task[], "replace"?: bool}  // tasks over a populated board need replace
 //   {"type":"task.add",    "task": Task}              // append
 //   {"type":"task.update", "id": "...", "patch": Partial<Task>, "claim"?: bool}
 //   {"type":"task.remove", "id": "..."}
@@ -281,7 +281,7 @@ type DoneResult = { code: number; reason: CloseReason };
 // attribution, never an auth boundary. `claim` marks a cooperative self-claim
 // (task.update) that must not steal an already-owned task.
 type AgentMsg =
-  | { type: "init"; title?: string; tasks?: Task[]; as?: string }
+  | { type: "init"; title?: string; tasks?: Task[]; replace?: boolean; as?: string }
   | { type: "task.add"; task: Task; as?: string }
   | { type: "task.update"; id: string; patch: Partial<Task>; as?: string; claim?: boolean }
   | { type: "task.remove"; id: string; as?: string }
@@ -317,6 +317,11 @@ type ApplyResult = {
     requested: number;
     dropped: { index: number; reason: string }[];
   } | null;
+  // `init`'s count of the BOARD's own tasks a `replace` discarded. A different
+  // fact from `tasksDropped`, which is about the caller's INPUT, so a different
+  // field: one key, one meaning. Present only on a replace, and always a number
+  // there (0 on an empty board).
+  tasksReplaced?: number;
 };
 
 type BrowserMsg =
@@ -1205,6 +1210,23 @@ async function main(argv: string[]): Promise<number> {
   function handleAgentMsg(msg: AgentMsg): ApplyResult {
     const by = typeof msg.as === "string" ? msg.as : "agent";
     if (msg.type === "init") {
+      // ⛔ ONE ACT, ONE ANSWER. Seeding tasks over a board that HAS tasks
+      // replaces every one of them, and it used to do that at applied:true with
+      // `tasksDropped:null`, which reads as "nothing dropped". It is refused as
+      // a `conflict` unless the caller opts in with `replace`. Decided HERE, not
+      // in the CLI, because only the daemon sees the board and the write in one
+      // step. Checked before the title is touched, so a refusal changes nothing.
+      // A title-only init (no `tasks`) never conflicts.
+      if (Array.isArray(msg.tasks) && state.tasks.length > 0 && msg.replace !== true) {
+        const n = state.tasks.length;
+        return {
+          ok: true,
+          applied: false,
+          kind: "conflict",
+          error: `init: the board already has ${n} task${n === 1 ? "" : "s"} and seeding would replace ${n === 1 ? "it" : "all of them"}; the board is unchanged`,
+        };
+      }
+      const replaced = msg.replace === true ? state.tasks.length : undefined;
       if (typeof msg.title === "string") state.title = msg.title;
       // Filter-and-keep-valid: drop malformed tasks, keep the well-formed ones
       // (the /cmd body is untrusted — `body as AgentMsg` is a cast, not a check).
@@ -1231,6 +1253,7 @@ async function main(argv: string[]): Promise<number> {
         tasksDropped: dropped.length
           ? { requested: Array.isArray(msg.tasks) ? msg.tasks.length : 0, dropped }
           : null,
+        ...(replaced !== undefined ? { tasksReplaced: replaced } : {}),
       };
     } else if (msg.type === "task.add") {
       // #83 — `applied:false` alone conflated TWO causes and named neither, so

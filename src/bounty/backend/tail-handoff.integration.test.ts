@@ -11,7 +11,10 @@
 //   · #98 — every retry line names the id it looked for and where that id came
 //     from; a NAMED target (`--session`, `--session-key`) that never resolves
 //     exits `not_found` (5) after a grace, and a `--session` this host never
-//     had is never called "closed" nor offered `open --restore`.
+//     had is never called "closed" nor offered `open --restore`;
+//   · one act, one answer — a closed board (its snapshot on disk) stops
+//     `tail.closed` at once whether it is named by `--session` or
+//     `--session-key`.
 //
 // The window is injected (`SPELLBOOK_TAIL_WINDOW_MS`), so no cell waits minutes,
 // and so is the named-target grace (`BOUNTY_TAIL_GRACE_MS`, internal).
@@ -183,6 +186,47 @@ describe("bounty's tail handoff", () => {
     expect(t.lines().map((l) => [l.type, l.command])).toEqual([
       ["tail.closed", cmd("open", "--restore", id, "--no-open")],
     ]);
+  }, 30_000);
+
+  // item/bounty-tail-closed-board-two-answers (one act, one answer). Before:
+  // `--session <id>` on a closed board stopped `tail.closed` at once, while
+  // `--session-key K` for the SAME board waited out the grace and exited 5.
+  // The grace is set long here, so only a prompt stop can pass.
+  test("a --session-key whose board has closed stops tail.closed at once, like --session", async () => {
+    const env = { ...baseEnv, BOUNTY_TAIL_GRACE_MS: "60000" };
+    const id = await openBoard(env, "--session-key", "closed-key");
+    expect((await cli(env, "close", "--session", id)).code).toBe(0);
+    await Bun.sleep(500);
+    const byId = spawnTail(env, ["--session", id], 60_000);
+    expect(await byId.exit(5000)).toBe(0);
+    const byKey = spawnTail(env, ["--session-key", "closed-key"], 60_000);
+    expect(await byKey.exit(5000)).toBe(0);
+    expect(byKey.lines().map((l) => [l.type, l.command])).toEqual([
+      ["tail.closed", cmd("open", "--session-key", "closed-key", "--no-open")],
+    ]);
+    expect(byId.lines().map((l) => l.type)).toEqual(["tail.closed"]);
+  }, 30_000);
+
+  // A key whose board WAS opened here and closed, but whose snapshot has since
+  // been deleted, reaches the not_found path. Its hint used to say "no board
+  // was opened under this key from this directory", which is untrue here. The
+  // CLI only knows there is no live board and no close snapshot for the key.
+  test("a --session-key whose closed board lost its snapshot: the not_found hint claims only what is known", async () => {
+    const env = { ...baseEnv, BOUNTY_TAIL_GRACE_MS: "300" };
+    const id = await openBoard(env, "--session-key", "gone-key");
+    expect((await cli(env, "close", "--session", id)).code).toBe(0);
+    await Bun.sleep(500);
+    rmSync(join(root, "home", "snapshots", `${id}.json`));
+    const t = spawnTail(env, ["--session-key", "gone-key"], 60_000);
+    expect(await t.exit(10_000)).toBe(5);
+    const envelope = JSON.parse(t.stderr().trim().split("\n").at(-1) ?? "") as {
+      error: { kind: string; hint: string };
+    };
+    expect(envelope.error.kind).toBe("not_found");
+    expect(envelope.error.hint).not.toContain("no board was opened");
+    expect(envelope.error.hint).toContain("no board is running under this key");
+    expect(envelope.error.hint).toContain("none left a close snapshot");
+    expect(envelope.error.hint).toContain("open --session-key gone-key --no-open");
   }, 30_000);
 
   test("--once sleeps until a board event, prints it, names Monitor and exits", async () => {

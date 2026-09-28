@@ -146,6 +146,45 @@ const hasProject = (state: ObservatoryState, id: string): boolean =>
 
 // ── Registry (durable) ───────────────────────────────────────────────
 
+// The single project-shape trust boundary — the agent /cmd path and a restored
+// registry both pass untrusted objects through here (filter-and-keep-valid).
+export function validateProject(p: unknown): Project | null {
+  if (!p || typeof p !== "object") return null;
+  const o = p as Record<string, unknown>;
+  if (typeof o.name !== "string" || o.name.trim() === "") return null;
+  if (typeof o.path !== "string" || o.path.trim() === "") return null;
+  // id is optional on the way in — applyProjectAdd derives it from the name when
+  // absent (a restored registry entry already carries one).
+  const out: Project = { id: typeof o.id === "string" ? o.id : "", name: o.name, path: o.path };
+  if (typeof o.description === "string") out.description = o.description;
+  if (typeof o.avatar === "string") out.avatar = o.avatar;
+  return out;
+}
+
+// The board a daemon BOOTS with, from a parsed `registry.json` snapshot
+// (merge-over-defaults so an older snapshot gains new fields without crashing;
+// each project runs through validateProject so a malformed entry is dropped,
+// not fatal, and through applyProjectAdd so it is dedupe-guarded on the way in).
+// Presence and status start EMPTY (live layers — never persisted).
+//
+// ⛔ ONE FUNCTION, TWO READERS. The daemon restores with it, and cli.ts answers
+// a refusal from it when no daemon is up (a refused invocation must start
+// nothing), so the cold answer is the one the daemon would have given — not a
+// second reading of the file that could drift from the first.
+export function restoreRegistry(snapshot: unknown, title = "Observatory"): ObservatoryState {
+  let state = emptyState(title);
+  if (!snapshot || typeof snapshot !== "object") return state;
+  const snap = snapshot as Partial<ObservatoryState>;
+  if (typeof snap.title === "string") state = { ...state, title: snap.title };
+  if (Array.isArray(snap.projects)) {
+    for (const raw of snap.projects) {
+      const p = validateProject(raw);
+      if (p) state = applyProjectAdd(state, p).state;
+    }
+  }
+  return state;
+}
+
 export function applyProjectAdd(state: ObservatoryState, project: Project): ReducerResult {
   const name = project.name?.trim();
   const path = project.path?.trim();

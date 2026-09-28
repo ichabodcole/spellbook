@@ -19,7 +19,7 @@
 //   bun cli.ts unblock <id> --on <id>[,<id>...]             # remove blocker edges
 //   bun cli.ts remove <id>
 //   bun cli.ts message <text...> [--stdin]                  # toast
-//   bun cli.ts init [--title ..] [--stdin-tasks]            # seed the board (each task needs id+title+status)
+//   bun cli.ts init [--title ..] [--stdin-tasks [--replace]] # seed the board (each task needs id+title+status; --replace over a board that has tasks)
 //   bun cli.ts list                                        # running boards (live)
 //   bun cli.ts close | info | sessions                     # sessions = saved snapshots
 //   bun cli.ts version | schema | help                     # the kit registry's rows
@@ -53,7 +53,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   type TaskStatus,
@@ -564,6 +564,10 @@ const CLI_OPTIONS = {
   // are the same string by the time they arrive; this flag is the one way to
   // say "clear" on purpose.
   "clear-notes": { type: "boolean" },
+  // `init --stdin-tasks`'s explicit opt-in to replace a board that already has
+  // tasks (one act, one answer). Without it, that seed is refused as a
+  // `conflict`: it used to wipe the board at `ok:true`.
+  replace: { type: "boolean" },
 } as const;
 
 /**
@@ -672,8 +676,16 @@ function ackOrFail(type: unknown, res: CmdResult): number {
   // the daemon sends null on an init that dropped nothing (present-and-null
   // where it is meaningful, absent where it is not applicable).
   const dropped = (res as { tasksDropped?: unknown }).tasksDropped;
+  // `init --replace`'s count of the board's own tasks it discarded: a number,
+  // present only when the caller asked to replace (one act, one answer).
+  const replaced = (res as { tasksReplaced?: unknown }).tasksReplaced;
   if (dropped !== undefined) {
-    printJson({ ok: true, sent: type, tasksDropped: dropped });
+    printJson({
+      ok: true,
+      sent: type,
+      tasksDropped: dropped,
+      ...(replaced !== undefined ? { tasksReplaced: replaced } : {}),
+    });
     if (dropped && typeof dropped === "object") {
       const d = dropped as { requested: number; dropped: { index: number; reason: string }[] };
       process.stderr.write(
@@ -752,6 +764,38 @@ function writePin(sessionId: string) {
 // effect" cannot drift apart.
 const ATTACH_LOST_FLAGS = ["title", "timeout", "restore"] as const;
 
+/** Where the daemon will look for a `--restore <arg>`, in its order: the arg as
+ *  a path (resolved against the DAEMON's cwd, which is what its `existsSync`
+ *  sees), else `<arg>.json` in the snapshots directory (`server.ts`). */
+function restoreCandidates(arg: string): string[] {
+  return [resolve(daemonCwd(), arg), join(SNAPSHOTS_DIR, `${arg}.json`)];
+}
+
+/**
+ * ⛔ ONE ACT, ONE ANSWER: A RESTORE OF NOTHING STARTS NOTHING. An explicit
+ * `--restore` naming a snapshot that does not exist used to spawn a daemon
+ * anyway: the daemon's read failed, it set `restoreFailed: ENOENT…` and came up
+ * EMPTY, and `open` exited 0 with a fresh, unrelated board running. The
+ * envelope said the restore failed; the exit code said it worked.
+ *
+ * Called AFTER the keyed attach (which spawns nothing, and whose #80.1 refusal
+ * already answers a `--restore` against a live board) and BEFORE `--fresh`'s
+ * teardown, so a restore that cannot happen never closes a live board on its
+ * way to refusing. A snapshot that EXISTS but is damaged still reaches the
+ * daemon and still reports `restoreFailed`: that restore was attempted.
+ */
+function refuseMissingRestore(flags: Record<string, string | boolean>): void {
+  if (typeof flags.restore !== "string") return;
+  if (restoreCandidates(flags.restore).some((p) => existsSync(p))) return;
+  die(
+    `no snapshot ${JSON.stringify(flags.restore)} to restore; no board was started`,
+    "not_found",
+    {
+      hint: "`sessions` lists the snapshots this host can restore; a keyed board comes back with open --session-key <key>",
+    },
+  );
+}
+
 async function cmdOpen(flags: Record<string, string | boolean>): Promise<number> {
   // #69: a caller-owned key derives a deterministic, project-scoped board id, and
   // `open` becomes IDEMPOTENT against it — a live board for the key is ATTACHED
@@ -815,6 +859,8 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
       if (flags.pin) writePin(forcedId);
       return 0;
     }
+    // Before the teardown below: a missing snapshot must not cost a live board.
+    refuseMissingRestore(flags);
     if (live && flags.fresh) {
       // Replace it: close the live board over its own protocol, then wait for it
       // to actually go down (its exit unlinks bounty-<forcedId>.json) so the new
@@ -829,6 +875,8 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
     }
   }
 
+  // An unkeyed open reaches here without the keyed branch's check.
+  if (!forcedId) refuseMissingRestore(flags);
   const args = ["run", SERVER_SCRIPT];
   if (flags.title) args.push("--title", String(flags.title));
   if (flags.timeout) args.push("--timeout", String(flags.timeout));
@@ -1166,16 +1214,23 @@ async function cmdTail(
         // — or its snapshot was deleted, which is why the words below say
         // "not found" rather than "never existed".
         if (reArm && (!named || existed)) return "stop";
-        // A named target the tail once reached, whose pointer is now gone:
-        // it closed (a `closed` frame normally ends the tail before this).
-        if (named && everResolved) return "stop";
+        // A NAMED target that existed here and is gone has closed, however it
+        // was named: one it once reached (a `closed` frame normally ends the
+        // tail before this), or one whose snapshot is on disk. ⛔ ONE ACT, ONE
+        // ANSWER: the snapshot half used to cover `--session` only (through
+        // `reArm` above), so `--session-key K` for the same closed board waited
+        // out the grace and exited 5 while `--session <id>` stopped at once. A
+        // key from the ENVIRONMENT is not named, so a seat's first arm (B1)
+        // still waits for its board.
+        if (named && existed) return "stop";
         if (named && Date.now() - startedAt >= graceMs) {
-          const hint =
-            pinned !== undefined && hasSnapshot(pinned)
-              ? `board ${pinned} existed here and has closed; bring it back: ${comeBackCmd()}`
-              : keyedComeBack()
-                ? `no board was opened under this key from this directory; the id is project-scoped (it hashes the repo root), so check the key and the cwd, or open it: ${comeBackCmd()}`
-                : "no board with this id is running here and none left a snapshot; check the id (`sessions` lists the boards this host can restore)";
+          // A board with a snapshot stopped above as closed, so all this path
+          // KNOWS is: no live board and no close snapshot for the target. ⛔ NOT
+          // "never opened here": a board opened and closed here whose snapshot
+          // was since deleted lands here too, so the hint claims no history.
+          const hint = keyedComeBack()
+            ? `no board is running under this key and none left a close snapshot; the id is project-scoped (it hashes the repo root), so check the key and the cwd, or open it: ${comeBackCmd()}`
+            : "no board with this id is running here and none left a snapshot; check the id (`sessions` lists the boards this host can restore)";
           die(
             `no session ${pinned} found (${source.from}) — a named target; gave up after ${graceMs}ms`,
             "not_found",
@@ -1676,12 +1731,23 @@ async function cmdInit(
       die("init --stdin-tasks: invalid JSON on stdin", "usage");
     }
   }
+  if (flags.replace === true) msg.replace = true;
+  const res = await postCmd(session, msg, { as, quiet: true });
+  // One act, one answer: a seed over a board that has tasks is the daemon's
+  // `conflict` (it sees the board and the write in one step). The daemon's
+  // sentence says what is on the board; the hint names the opt-in, which is a
+  // CLI flag and so belongs to the CLI.
+  if (res.applied === false && res.kind === "conflict")
+    die(res.error ?? "init: the board already has tasks", "conflict", {
+      hint: "to replace them, pass --replace (the reply counts them in tasksReplaced); to add to the board, use add",
+      server: res,
+    });
   // The generic path — and the one with a REAL behaviour change today. The
   // daemon's command dispatch ends in `return {ok:true, applied:false}` for
   // any type it does not recognise, so an unrecognised command has always
   // been answered with a success-shaped envelope. Routing through the funnel
   // is what turns that into a visible failure.
-  return ackOrFail(msg.type, await postCmd(session, msg, { as, quiet: true }));
+  return ackOrFail(msg.type, res);
 }
 
 async function cmdClose(session: string | undefined, as: string | undefined): Promise<number> {
@@ -1749,9 +1815,15 @@ function checkStatus(verb: "add" | "update", f: Flags): void {
     });
 }
 
-/** `add`'s rules: only the status set; the title's absence is `cmdAdd`'s (after `--stdin`). */
+/** `add`'s rules: the status set, and one source for the title (as `update`'s
+ *  `--stdin` + `--title` refusal, s5-9). The title's absence is `cmdAdd`'s,
+ *  after `--stdin` is read. A title and `--stdin` together used to take stdin
+ *  and silently discard the positional, at exit 0 (one act, one answer). */
 function checkAdd(inv: Invocation<Flag>): string | undefined {
-  checkStatus("add", inv.flags as Flags);
+  const f = inv.flags as Flags;
+  checkStatus("add", f);
+  if (f.stdin === true && inv.pos.length > 0)
+    return "a title and --stdin both set the title; pass one of them (for the notes, use --notes <text>)";
   return undefined;
 }
 
@@ -1775,6 +1847,36 @@ function checkUpdate(inv: Invocation<Flag>): string | undefined {
   return undefined;
 }
 
+/** An empty `--restore` names nothing to restore. It used to read as "no
+ *  restore" and start a fresh empty board at exit 0 (`restoreFailed: null`);
+ *  the missing-snapshot check let it through too, because "" resolves to the
+ *  cwd. Refused before anything is spawned or attached. */
+function checkOpen(inv: Invocation<Flag>): string | undefined {
+  const f = inv.flags as Flags;
+  if (f.restore === "")
+    return "--restore is empty, so it names no snapshot; pass the id to restore (`sessions` lists them), or drop --restore for a fresh board";
+  return undefined;
+}
+
+/** `message`'s one source for the text, in exactly `checkAdd`'s shape. A text
+ *  and `--stdin` together used to toast stdin and silently discard the
+ *  positional, at exit 0 (one act, one answer). */
+function checkMessage(inv: Invocation<Flag>): string | undefined {
+  const f = inv.flags as Flags;
+  if (f.stdin === true && inv.pos.length > 0)
+    return "a text and --stdin both set the message; pass one of them";
+  return undefined;
+}
+
+/** `init --replace` replaces the board's tasks with the seed; with no seed it
+ *  would do nothing, and a flag that silently does nothing is refused. */
+function checkInit(inv: Invocation<Flag>): string | undefined {
+  const f = inv.flags as Flags;
+  if (f.replace === true && f["stdin-tasks"] !== true)
+    return "--replace replaces the board's tasks with the ones on stdin, so it needs --stdin-tasks";
+  return undefined;
+}
+
 const ROWS: Row[] = [
   {
     name: "open",
@@ -1782,6 +1884,7 @@ const ROWS: Row[] = [
     positionals: [],
     describe:
       "spawn a board daemon; prints {url, port, session_id, restoreSkipped}. --pin binds it to cwd; --session-key <key> binds it to a caller-owned key, idempotently (--fresh forces a clean board)",
+    check: checkOpen,
     // Propagates cmdOpen's code so the #80.1 refusal actually reaches the shell.
     run: (_pos, flags) => cmdOpen(flags),
   },
@@ -1885,14 +1988,16 @@ const ROWS: Row[] = [
     flags: [...WRITE, "stdin"],
     positionals: [{ name: "text", required: false, variadic: true }],
     describe: "show a toast on the board (the text, or --stdin)",
+    check: checkMessage,
     run: cmdMessage,
   },
   {
     name: "init",
-    flags: [...WRITE, "title", "stdin-tasks"],
+    flags: [...WRITE, "title", "stdin-tasks", "replace"],
     positionals: [],
     describe:
-      "seed the board (tasks = JSON array on stdin; each task REQUIRES id + title + status — init does NOT mint ids, unlike add; any dropped task is reported per-entry in tasksDropped)",
+      "seed the board (tasks = JSON array on stdin; each task REQUIRES id + title + status — init does NOT mint ids, unlike add; any dropped task is reported per-entry in tasksDropped). Over a board that has tasks it is refused (exit 6) unless --replace, which reports tasksReplaced",
+    check: checkInit,
     run: (_pos, flags, session, as) => cmdInit(flags, session, as),
   },
   {
