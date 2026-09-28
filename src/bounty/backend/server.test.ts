@@ -5785,6 +5785,101 @@ describe("(b) --fresh --restore <own id> on a live board restores the SNAPSHOT",
   }, 60000);
 });
 
+describe("(c) an unreadable snapshot is copied aside, never written over", () => {
+  test("3d — a TRUNCATED snapshot: restoreFailed, the bytes copied aside, and the copy named on open", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `c3d-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["t0", "t1", "t2"], env);
+    const snap = join(home, "snapshots", `${id}.json`);
+    const corrupt = readFileSync(snap, "utf8").slice(0, 60);
+    writeFileSync(snap, corrupt);
+    try {
+      const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      expect(o.code).toBe(0);
+      const hs = JSON.parse(o.stdout) as {
+        restoreFailed: { path: string } | null;
+        snapshotBackups: Backup[];
+      };
+      expect(hs.restoreFailed?.path).toBe(snap);
+      const copy = hs.snapshotBackups.find((b) => b.kind === "unreadable");
+      expect(copy).toBeDefined();
+      expect(copy?.taskCount).toBeNull();
+      expect(copy?.path).toContain(`${id}.unreadable-`);
+      expect(readFileSync(copy?.path as string, "utf8")).toBe(corrupt);
+      await runCli(["add", "new", "--session", id], { env });
+      await runCli(["close", "--session", id], { env });
+      expect(readFileSync(copy?.path as string, "utf8")).toBe(corrupt);
+      const all = readdirSync(join(home, "snapshots")).filter((f) =>
+        f.startsWith(`${id}.unreadable-`),
+      );
+      expect(all.length).toBe(1); // copied ONCE, not once per write
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("3e — valid JSON whose `tasks` is not an array is restoreFailed (not silently []), and is copied aside", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `c3e-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["t0", "t1", "t2"], env);
+    const snap = join(home, "snapshots", `${id}.json`);
+    const s = JSON.parse(readFileSync(snap, "utf8")) as { tasks: unknown };
+    s.tasks = { legacy: s.tasks };
+    const odd = JSON.stringify(s);
+    writeFileSync(snap, odd);
+    try {
+      const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      expect(o.code).toBe(0);
+      const hs = JSON.parse(o.stdout) as {
+        restoreFailed: { path: string; reason: string } | null;
+      };
+      expect(hs.restoreFailed).not.toBeNull();
+      expect(hs.restoreFailed?.path).toBe(snap);
+      expect(hs.restoreFailed?.reason).toContain("tasks");
+      await runCli(["close", "--session", id], { env });
+      const copies = readdirSync(join(home, "snapshots")).filter((f) =>
+        f.startsWith(`${id}.unreadable-`),
+      );
+      expect(copies.length).toBe(1);
+      expect(readFileSync(join(home, "snapshots", copies[0] as string), "utf8")).toBe(odd);
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("a board that never tried to restore still copies an unreadable file aside before its first write", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `c3x-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["t0"], env);
+    const snap = join(home, "snapshots", `${id}.json`);
+    writeFileSync(snap, "{not json");
+    try {
+      // --fresh: no restore is attempted, so only saveSnapshot can protect it.
+      await runCli(["open", "--session-key", key, "--fresh", "--no-open", "--timeout", "30"], {
+        env,
+      });
+      await runCli(["add", "new", "--session", id], { env });
+      const c = await runCli(["close", "--session", id], { env });
+      const copies = readdirSync(join(home, "snapshots")).filter((f) =>
+        f.startsWith(`${id}.unreadable-`),
+      );
+      expect(copies.length).toBe(1);
+      expect(readFileSync(join(home, "snapshots", copies[0] as string), "utf8")).toBe("{not json");
+      const closed = JSON.parse(c.stdout) as { snapshotBackups: Backup[] };
+      expect(closed.snapshotBackups.map((b) => b.kind)).toEqual(["unreadable"]);
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+});
+
 /** A backup named on the `open`/`close` envelope (`snapshotBackups`). */
 type Backup = {
   kind: string;

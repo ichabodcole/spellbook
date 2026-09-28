@@ -60,7 +60,6 @@ import {
   mkdirSync,
   readFileSync,
   unlinkSync,
-  writeFileSync,
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -228,6 +227,28 @@ function snapshotTaskCount(path: string): number | null {
     return Array.isArray(parsed.tasks) ? parsed.tasks.length : null;
   } catch {
     return null;
+  }
+}
+
+// (c) Why a parsed value is not a board snapshot, or null when it is one. The
+// restore path and the unreadable-copy reason share it, so "cannot be read as
+// a snapshot" means one thing in both.
+function snapshotProblem(parsed: unknown): string | null {
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed))
+    return "the snapshot is not a JSON object";
+  const tasks = (parsed as { tasks?: unknown }).tasks;
+  if (!Array.isArray(tasks))
+    return `the snapshot's \`tasks\` is ${tasks === undefined ? "missing" : `not an array (${tasks === null ? "null" : typeof tasks})`}`;
+  return null;
+}
+
+// (c) Why the file at `path` cannot be read as a snapshot (for the copy's
+// `reason`), or null when it can.
+function unreadableReason(path: string): string | null {
+  try {
+    return snapshotProblem(JSON.parse(readFileSync(path, "utf8")));
+  } catch (e) {
+    return `it is not valid JSON (${e instanceof Error ? e.message : String(e)})`;
   }
 }
 
@@ -830,11 +851,15 @@ async function main(argv: string[]): Promise<number> {
       : join(SNAPSHOTS_DIR, `${restoreArg}.json`);
     try {
       const snap = JSON.parse(readFileSync(restorePath, "utf8")) as Partial<BoardState>;
+      // (c) A snapshot whose `tasks` is not an array USED TO RESTORE AS [] with
+      // `restoreFailed: null`: an empty board reported as a healthy restore,
+      // whose first write then replaced the file (re-measure cell 3e). It is a
+      // failed restore, named as one, the same as truncated JSON.
+      const problem = snapshotProblem(snap);
+      if (problem) throw new Error(problem);
       const merged: BoardState = { title: state.title, tasks: [], ...snap };
       if (typeof merged.title === "string") state.title = merged.title;
-      state.tasks = Array.isArray(merged.tasks)
-        ? merged.tasks.map(validateTask).filter((t): t is Task => t !== null)
-        : [];
+      state.tasks = merged.tasks.map(validateTask).filter((t): t is Task => t !== null);
       restoredFromElsewhere =
         !sessionId || resolve(restorePath) !== resolve(SNAPSHOTS_DIR, `${sessionId}.json`);
     } catch (e) {
@@ -932,10 +957,35 @@ async function main(argv: string[]): Promise<number> {
   // hands back to the caller, and what the discovery file (so `open`) carries
   // for a backup made at boot.
   const backupsThisSession: BackupRecord[] = [];
+  // (c) AN UNREADABLE SNAPSHOT IS COPIED ASIDE, NEVER WRITTEN OVER. The shrink
+  // guard below cannot protect a file it cannot count (`prior` is null, and
+  // null declines to rotate), so a truncated or malformed snapshot was simply
+  // replaced by the next write, with no backup (re-measure cells 3d, 3e). It is
+  // copied byte-for-byte to `<id>.unreadable-<ts>.bak.json` first. If the copy
+  // fails, the write does not happen: the throw lands in saveSnapshot's catch.
+  // `unreadableKept` makes it once per unreadable file: set by the copy,
+  // cleared by our own next write (after which the file is ours, and readable).
+  let unreadableKept = false;
+  const keepUnreadable = (path: string, why: string, announce: boolean) => {
+    const backup = join(SNAPSHOTS_DIR, `${sessionId}.unreadable-${Date.now()}.bak.json`);
+    copyFileSync(path, backup);
+    unreadableKept = true;
+    const reason = `the snapshot could not be read as a board: ${why}; it is kept byte-for-byte before anything is written over it`;
+    backupsThisSession.push({ kind: "unreadable", path: backup, taskCount: null, reason });
+    logDaemon("snapshotBackedUp", { kind: "unreadable", backup, why });
+    // Not at boot: the event log's first frame is `ready`, and the boot copy
+    // reaches the caller on `open`'s envelope through the discovery file.
+    if (announce) emitEvent({ type: "snapshotBackedUp", kind: "unreadable", backup, by: "system" });
+    process.stderr.write(`bounty: ${reason} — copied to ${backup}\n`);
+  };
   const saveSnapshot = () => {
     try {
       mkdirSync(SNAPSHOTS_DIR, { recursive: true });
       const path = join(SNAPSHOTS_DIR, `${sessionId}.json`);
+      if (!unreadableKept && existsSync(path)) {
+        const why = unreadableReason(path);
+        if (why) keepUnreadable(path, why, true);
+      }
       // Copy the existing snapshot aside BEFORE the first shrinking write of
       // this daemon's life. See shouldRotateSnapshot for why the predicate is
       // shrinkage rather than emptiness, and why it fires once per boot.
@@ -983,11 +1033,29 @@ async function main(argv: string[]): Promise<number> {
           `bounty: snapshot was about to shrink ${prior} → ${state.tasks.length} tasks; copied the old one to ${backup}\n`,
         );
       }
-      writeFileSync(path, JSON.stringify(state));
+      // Atomic (tmp + rename), so a death mid-write leaves the previous
+      // snapshot rather than a truncated one: a bare writeFileSync is how a
+      // snapshot becomes unreadable in the first place.
+      writeFileAtomic(path, JSON.stringify(state));
+      unreadableKept = false;
     } catch {
       /* persistence is best-effort */
     }
   };
+  // (c) At boot, for a forced id: a board whose own snapshot is unreadable
+  // (its keyed respawn's restore just failed on it, or `--fresh` never read
+  // it) keeps a copy NOW, before any write, so `open` can name it.
+  if (sessionId) {
+    const own = join(SNAPSHOTS_DIR, `${sessionId}.json`);
+    const why = existsSync(own) ? unreadableReason(own) : null;
+    if (why) {
+      try {
+        keepUnreadable(own, why, false);
+      } catch {
+        /* saveSnapshot retries the copy before its first write */
+      }
+    }
+  }
   // Event types that mutate board state — used to set snapDirty centrally (every
   // mutation already emits one of these). Lifecycle frames don't dirty the snap.
   const DIRTYING = new Set([
