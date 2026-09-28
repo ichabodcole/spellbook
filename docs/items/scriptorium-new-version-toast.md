@@ -5,7 +5,7 @@ description:
   A version created without activation (usually the agent's version-new) appears
   silently in the version menu; toast it, with an Activate button.
 status: draft
-lifecycle: backlog
+lifecycle: ready
 id: 01a0e964-ccf2-771d-9fdc-5bbd6f3c16a2
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-09-28 }
@@ -36,9 +36,13 @@ confirms "Now editing v…".
 
 - [ ] A version created without activation raises a toast naming the document,
       the version (with its label, by the menu's rule) and who created it.
-- [ ] The toast has an **Activate** action that sends the same `activate` the
-      menu does. Decide whether it also offers **Diff** against the active
-      version; that is the other thing Cole said he skips.
+- [ ] The toast carries **two separate actions** (Cole, 2026-09-28):
+      **Activate** makes the new version the active one (the same `activate` the
+      menu sends), and nothing else. **Show diff** does not activate: it
+      switches the document pane to compare mode (or stays in it) and compares
+      the active version against the new one. They are two different use cases:
+      "just activate it" versus "compare it with the one I'm on". There is no
+      combined activate-and-diff action.
 - [ ] Opening a document, reconnecting, or loading a snapshot is never announced
       as new, just as `ActiveVersionToast` tracks the versions it has seen per
       document.
