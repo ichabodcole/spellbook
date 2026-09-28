@@ -267,13 +267,35 @@ function setAsideField(): { registry_set_aside?: Array<{ path: string; recover: 
 
 /** The unknown-project refusal's words — naming the set-aside copy when one exists. */
 function unknownProject(id: string): { message: string; hint: string } {
+  return unknownProjectWords(id, listSetAside(REGISTRY_FILE));
+}
+function unknownProjectWords(id: string, asides: string[]): { message: string; hint: string } {
   const add = "run: cli.ts add <name> --path <p> to register it";
-  const asides = listSetAside(REGISTRY_FILE);
   if (asides.length === 0) return { message: `unknown project '${id}'`, hint: add };
   return {
     message: `unknown project '${id}' — but ${setAsideClause(asides)}, so '${id}' may be registered there`,
     hint: `to recover it: ${recoverHint(asides)}. Or ${add}`,
   };
+}
+
+/** A daemon `/cmd` rejection, as the CLI reads it (`reason`/`project`: state.ts `RejectReason`). */
+export type DaemonRefusal = { error: string; reason?: string; project?: string };
+
+/**
+ * The words the CLI relays for a daemon rejection: the daemon's own message,
+ * or — for an unknown project — the refusal that names any set-aside registry.
+ * Recognised by the daemon's structured `reason`, never by its message: the
+ * message is presentation and may be reworded. Pure: `asides` is passed in, so
+ * it is driven without a daemon or a disk.
+ */
+export function refusalWords(
+  r: DaemonRefusal,
+  asides: string[],
+): { message: string; hint?: string } {
+  if (r.reason === "unknown-project" && typeof r.project === "string") {
+    return unknownProjectWords(r.project, asides);
+  }
+  return { message: r.error };
 }
 
 /** `ensureDaemon()` for a verb naming project `id` — refused first, cold, if the id is unregistered. */
@@ -309,7 +331,14 @@ async function postCmd(base: string, body: Record<string, unknown>) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  return (await res.json()) as { ok: boolean; applied: boolean; error?: string; outcome?: string };
+  return (await res.json()) as {
+    ok: boolean;
+    applied: boolean;
+    error?: string;
+    outcome?: string;
+    reason?: string;
+    project?: string;
+  };
 }
 
 // Apply a /cmd, surface a rejection on stderr + non-zero exit (exit-code
@@ -330,10 +359,10 @@ async function cmd(base: string, body: Record<string, unknown>) {
   // boolean" — the noun says WHICH state made the work unnecessary.
   if (!r.applied && r.error) {
     // The daemon's unknown-project rejection carries the set-aside notice too
-    // (still the one relayed raise site it always was).
-    const unknown = /^unknown project '(.*)'$/.exec(r.error);
-    const u = unknown ? unknownProject(unknown[1] as string) : null;
-    die(u ? u.message : r.error, "usage", u ? { hint: u.hint } : undefined);
+    // (still the one relayed raise site it always was). `refusalWords` finds it
+    // by the rejection's `reason`, not by matching the daemon's message.
+    const w = refusalWords({ ...r, error: r.error }, listSetAside(REGISTRY_FILE));
+    die(w.message, "usage", w.hint ? { hint: w.hint } : undefined);
   }
   printJson(r);
   warnSetAside();

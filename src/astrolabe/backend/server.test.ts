@@ -211,6 +211,20 @@ describe("daemon — commands + projection", () => {
     expect((await post(base, { type: "poke", id: "ghost" })).applied).toBe(false);
   });
 
+  test("an unknown-project rejection carries a structured marker beside its message", async () => {
+    const cmds = [
+      { type: "status", id: "ghost", summary: "x" },
+      { type: "attention", id: "ghost", raised: true },
+      { type: "poke", id: "ghost" },
+      { type: "project.remove", id: "ghost" },
+    ];
+    for (const c of cmds) {
+      const r = await post(base, c);
+      expect(r).toMatchObject({ applied: false, reason: "unknown-project", project: "ghost" });
+      expect(typeof r.error).toBe("string");
+    }
+  });
+
   test("poke is applied as an event without mutating state", async () => {
     expect((await post(base, { type: "poke", id: "imago" })).applied).toBe(true);
   });

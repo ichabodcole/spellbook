@@ -20,12 +20,12 @@
 // scenario needs a daemon that dies and comes back on a DIFFERENT port on cue.
 // The fake answers `/state` so the CLI's own start-up handshake is satisfied
 // and no real daemon is ever spawned.
-import { afterEach, expect, test } from "bun:test";
+import { afterEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { cli } from "./cli.ts";
+import { cli, refusalWords } from "./cli.ts";
 
 const CLI = join(dirname(fileURLToPath(import.meta.url)), "cli.ts");
 
@@ -433,3 +433,33 @@ test("close reports a daemon still answering at the bound as a failure, not succ
   expect(env.error.kind).toBe("internal");
   expect(env.error.message).toContain("still answering");
 }, 15000);
+
+// The warm path's unknown-project refusal is recognised by the daemon's
+// structured marker (`reason: "unknown-project"`, `project`), never by its
+// message, which is presentation and may be reworded. Driven on the pure
+// function the CLI relays through, with a daemon body whose words differ.
+describe("refusalWords: the daemon's unknown-project refusal is read by its marker", () => {
+  const ASIDE = "/tmp/astro/registry.json.unreadable-2026-09-28T00-00-00Z";
+
+  test("a reworded message with the marker still gets the set-aside notice", () => {
+    const w = refusalWords(
+      { error: "no project called alpha", reason: "unknown-project", project: "alpha" },
+      [ASIDE],
+    );
+    expect(w.message).toContain("unknown project 'alpha'");
+    expect(w.message).toContain(ASIDE);
+    expect(w.hint).toContain("to recover it");
+  });
+
+  test("the old message text without the marker is relayed as the daemon worded it", () => {
+    expect(refusalWords({ error: "unknown project 'alpha'" }, [ASIDE])).toEqual({
+      message: "unknown project 'alpha'",
+    });
+  });
+
+  test("any other rejection is relayed as the daemon worded it", () => {
+    expect(refusalWords({ error: "id 'alpha' already registered" }, [ASIDE])).toEqual({
+      message: "id 'alpha' already registered",
+    });
+  });
+});
