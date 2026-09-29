@@ -5569,9 +5569,19 @@ describe("(a) one daemon per id", () => {
     const id = sessionKeyToId(key);
     try {
       const N = 5;
+      // ⚠ NO `--timeout` (nor --title / --restore) ON THESE OPENS. A board
+      // answers ~100 ms after spawn, so an open whose own process starts that
+      // much late (a loaded CI runner starting five `bun`s at once) finds the
+      // board LIVE at its entry check, takes the plain attach path, and #80.1
+      // refuses there, exit 2, because `--timeout` cannot take effect on a
+      // running board. That refusal is the ruled contract, not a lock bug: the
+      // same open run a second later exits 2 the same way. With the flag, 60 ms
+      // of start skew failed 95/100 races; without it, 0/200 at 300 ms. This
+      // cell is about the LOCK, so it passes only the flags the attach honours;
+      // `killBoard` below bounds the daemon instead.
       const opens = await Promise.all(
         Array.from({ length: N }, () =>
-          runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], { env }),
+          runCli(["open", "--session-key", key, "--no-open"], { env }),
         ),
       );
       for (const o of opens) expect(o.code).toBe(0);

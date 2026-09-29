@@ -81,3 +81,17 @@ paths answer the same act differently.
 - **astrolabe directory wording:** "move its contents out and retry" still fails
   with EISDIR while the empty directory remains. An emptied set-aside directory
   keeps the notice until it's deleted.
+
+**From the 5.0.0 CI flake diagnosis (2026-09-29):** parallel
+`open --session-key K --timeout T` calls get different exit codes depending on
+timing. One that arrives after the board is live refuses with exit 2, as #80.1
+intends. One that arrives early spawns its own daemon, loses the lock, and
+attaches with exit 0, silently dropping its own `--timeout`, `--title` or
+`--restore`: the attach-and-discard #80.1 forbids. There are two ways to fix it,
+and either changes a ruled contract:
+
+- the lock loser refuses the same way;
+- refuse only when the requested value differs from the running board's, which
+  needs the daemon to report its timeout.
+
+The CI test was fixed to stop passing `--timeout` (a test artefact).

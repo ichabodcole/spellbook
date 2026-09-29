@@ -22169,20 +22169,35 @@ function safeHref(raw) {
   return SAFE_SCHEME.test(bare) ? raw : null;
 }
 var HREF = /<a href="([^"]*)"/g;
-function renderMarkdown(text4) {
-  const html = micromark(text4, {
+var FOOTNOTE_LABEL = /(id|aria-describedby)="footnote-label"/g;
+function renderMarkdown(text4, options2 = {}) {
+  const scope = options2.idPrefix?.replace(/[^\w-]/g, "") ?? "";
+  let html = micromark(text4, {
     extensions: [gfm()],
-    htmlExtensions: [gfmHtml()]
+    htmlExtensions: [gfmHtml(scope ? { clobberPrefix: `user-content-${scope}-` } : {})]
   });
+  if (scope)
+    html = html.replace(FOOTNOTE_LABEL, `$1="user-content-${scope}-footnote-label"`);
   return html.replace(HREF, (whole, href) => href === "" || safeHref(href) === null ? "<a data-blocked-link" : whole);
 }
 
 // src/scriptorium/surface/components/renderedLink.ts
 var OPENS_OUTWARD = /^(https?:|mailto:)/i;
+function fragmentId(raw) {
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+}
 function linkAct(anchor) {
   const { href, blocked } = anchor;
   if (blocked || !href)
     return { kind: "none" };
+  if (href.startsWith("#")) {
+    const id = fragmentId(href.slice(1));
+    return id ? { kind: "jump", id } : { kind: "none" };
+  }
   return OPENS_OUTWARD.test(href) ? { kind: "outward", href } : { kind: "follow", href };
 }
 function onRenderedLinkClick(e, onFollowLink) {
@@ -22198,6 +22213,13 @@ function onRenderedLinkClick(e, onFollowLink) {
     window.open(act.href, "_blank", "noopener,noreferrer");
   else if (act.kind === "follow")
     onFollowLink?.(act.href);
+  else if (act.kind === "jump") {
+    for (const el of e.currentTarget.querySelectorAll("[id]"))
+      if (el.id === act.id) {
+        el.scrollIntoView({ block: "nearest" });
+        return;
+      }
+  }
 }
 
 // src/scriptorium/surface/components/WaitingBadge.tsx
@@ -22274,6 +22296,7 @@ function ChatMessageView({
             children: m.who === "agent" ? "Agent" : "You"
           }),
           /* @__PURE__ */ jsx_runtime6.jsx(ChatMarkdown, {
+            id: m.id,
             text: m.text,
             onFollowLink
           })
@@ -22304,10 +22327,11 @@ function ChatMessageView({
   });
 }
 function ChatMarkdown({
+  id,
   text: text4,
   onFollowLink
 }) {
-  const html = import_react7.useMemo(() => renderMarkdown(text4), [text4]);
+  const html = import_react7.useMemo(() => renderMarkdown(text4, { idPrefix: id }), [text4, id]);
   const htmlProp = import_react7.useMemo(() => ({ __html: html }), [html]);
   return /* @__PURE__ */ jsx_runtime6.jsx("div", {
     className: "md-prose md-chat",
