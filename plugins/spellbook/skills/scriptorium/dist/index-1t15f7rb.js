@@ -15985,6 +15985,17 @@ function spotNewVersions(seen, doc) {
   const fresh = doc.versions.filter((v) => !seen.has(v.n) && v.n !== doc.active);
   return { fresh, seen: now2 };
 }
+function createVersionWatch() {
+  const seen = new Map;
+  return {
+    disconnected: () => {},
+    snapshot: (doc) => {
+      const spotted = spotNewVersions(seen.get(doc.slug), doc);
+      seen.set(doc.slug, spotted.seen);
+      return spotted.fresh;
+    }
+  };
+}
 function newVersionToast(doc, version3) {
   const who = version3.author === "agent" ? "the agent" : "you";
   return {
@@ -41404,8 +41415,8 @@ var BLOCKS = new Set([
   "definition",
   "footnoteDefinition"
 ]);
-function project(text4) {
-  const body = splitFrontmatter(text4).body;
+function project(text4, opts = {}) {
+  const body = opts.frontmatter === false ? text4 : splitFrontmatter(text4).body;
   const base = text4.length - body.length;
   const tree = fromMarkdown(body, {
     extensions: [gfm()],
@@ -41524,6 +41535,9 @@ function project(text4) {
   for (const child of tree.children ?? [])
     walk(child);
   return { plain, segments };
+}
+function oneLine(text4) {
+  return project(text4, { frontmatter: false }).plain.replace(/\s+/gu, " ").trim();
 }
 function segmentAt(p, at2) {
   for (const seg of p.segments)
@@ -60087,6 +60101,7 @@ function DocumentPane({
   docPercent = 100,
   headingStart,
   headingEnd,
+  toasts,
   dock,
   quiet = false
 }) {
@@ -60389,6 +60404,10 @@ function DocumentPane({
           })
         ]
       }),
+      toasts && /* @__PURE__ */ jsx_runtime26.jsx("div", {
+        className: "relative h-0 shrink-0",
+        children: toasts
+      }),
       dock && /* @__PURE__ */ jsx_runtime26.jsx("div", {
         className: "shrink-0 px-3 py-2",
         children: dock
@@ -60497,14 +60516,13 @@ function NewVersionToast({
   setMode,
   setAgainst
 }) {
-  const seen = import_react26.useRef(new Map);
-  const rebase = import_react26.useRef(true);
+  const watch = import_react26.useRef(createVersionWatch());
   const raised = import_react26.useRef([]);
   const wiring = import_react26.useRef({ send, setMode, setAgainst });
   wiring.current = { send, setMode, setAgainst };
   import_react26.useEffect(() => {
     if (!connected)
-      rebase.current = true;
+      watch.current.disconnected();
   }, [connected]);
   import_react26.useEffect(() => {
     raised.current = raised.current.filter((r2) => {
@@ -60515,12 +60533,7 @@ function NewVersionToast({
     });
     if (!doc2)
       return;
-    if (rebase.current) {
-      seen.current.clear();
-      rebase.current = false;
-    }
-    const spotted = spotNewVersions(seen.current.get(doc2.slug), doc2);
-    seen.current.set(doc2.slug, spotted.seen);
+    const fresh = watch.current.snapshot(doc2);
     const apply = (acts) => {
       const w = wiring.current;
       for (const act of acts) {
@@ -60532,7 +60545,7 @@ function NewVersionToast({
           w.setAgainst(act.against);
       }
     };
-    for (const version3 of spotted.fresh) {
+    for (const version3 of fresh) {
       const target = { doc: doc2.slug, n: version3.n };
       const name2 = versionName(doc2, version3.n);
       const { title, description } = newVersionToast(doc2, version3);
@@ -61336,7 +61349,7 @@ function Toasts({
   return /* @__PURE__ */ jsx_runtime31.jsx("div", {
     role: "status",
     "aria-live": "polite",
-    className: "pointer-events-none fixed right-4 bottom-4 z-50 flex w-80 flex-col gap-2",
+    className: "pointer-events-none absolute right-3 bottom-3 z-50 flex w-80 max-w-[calc(100%-1.5rem)] flex-col gap-2",
     children: toasts.map((t2) => /* @__PURE__ */ jsx_runtime31.jsx(ToastCard, {
       toast: t2,
       onDismiss,
@@ -62023,11 +62036,6 @@ function Workspace({
         setMode,
         setAgainst
       }),
-      /* @__PURE__ */ jsx_runtime32.jsx(Toasts, {
-        toasts,
-        onDismiss: dismiss,
-        onHold: hold
-      }),
       /* @__PURE__ */ jsx_runtime32.jsxs(ResizablePanelGroup, {
         orientation: "horizontal",
         className: "min-h-0 flex-1",
@@ -62136,6 +62144,11 @@ function Workspace({
                     })
                   })
                 ]
+              }),
+              toasts: /* @__PURE__ */ jsx_runtime32.jsx(Toasts, {
+                toasts,
+                onDismiss: dismiss,
+                onHold: hold
               }),
               dock: collapsed.chat && /* @__PURE__ */ jsx_runtime32.jsx(FloatingComposer, {
                 chat: state.chat,
@@ -62385,6 +62398,7 @@ function FloatingComposer({
   children
 }) {
   const last2 = chat.findLast((m2) => m2.who !== "system");
+  const lastLine = import_react32.useMemo(() => last2 ? oneLine(last2.text) : "", [last2]);
   const first = notesWaiting.find((n) => !n.askedIn) ?? notesWaiting[0];
   const firstDoc = first ? docs.find((d) => d.slug === first.doc) : undefined;
   const firstNote = firstDoc?.notes.find((n) => n.id === first?.noteId);
@@ -62435,13 +62449,13 @@ function FloatingComposer({
         children: [
           /* @__PURE__ */ jsx_runtime32.jsxs("span", {
             className: "min-w-0 flex-1 truncate",
-            title: last2.text,
+            title: lastLine,
             children: [
               /* @__PURE__ */ jsx_runtime32.jsx("span", {
                 className: "mr-1.5 font-medium text-ink-faint",
                 children: last2.who === "agent" ? "Agent" : "You"
               }),
-              last2.text
+              lastLine
             ]
           }),
           waiting?.messageId === last2.id && /* @__PURE__ */ jsx_runtime32.jsx(WaitingBadge, {
