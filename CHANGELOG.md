@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.0.1](https://github.com/ichabodcole/spellbook/compare/spellbook-v5.0.0...spellbook-v5.0.1) (2026-09-29)
+
+
+### Bug Fixes
+
+* **scriptorium:** footnote links jump in place instead of asking the daemon ([562fd14](https://github.com/ichabodcole/spellbook/commit/562fd14d53d28599287453d6a3f05ac477ae4e8c))
+
 ## [5.0.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v4.0.0...spellbook-v5.0.0) (2026-09-29)
 
 
