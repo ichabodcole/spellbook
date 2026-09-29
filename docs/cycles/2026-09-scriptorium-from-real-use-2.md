@@ -52,8 +52,10 @@ Decisions as they are made, with the options not taken.
 
 ## Outcome
 
-Closed 2026-09-28, pending Cole's first real session on the release (the
-appetite's last clause). Anything that session turns up goes to a new item.
+Closed 2026-09-28. The appetite's last clause was met on 2026-09-29: Cole used
+5.0.0 in a real session. The new-version toast worked (Show diff, then
+Activate), a markdown test card rendered ("looks great"), and a relative chat
+link opened its document.
 
 **Shipped.**
 
