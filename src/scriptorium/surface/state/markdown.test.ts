@@ -92,8 +92,8 @@ describe("the ordinary shapes a document is made of", () => {
  * The chat log renders through this same function (item chat-renders-markdown),
  * so it must fit a short FRAGMENT as well as a document: no frontmatter split
  * inside it (that is MarkdownView's step, not the renderer's), and no heading
- * anchors that would collide between messages. ⚠ GFM footnotes are the one
- * exception — they mint fixed ids — left alone until a real reply uses one.
+ * anchors that would collide between messages. GFM footnotes are the one
+ * thing that mints ids, and the caller scopes those (`idPrefix`, below).
  */
 describe("a short fragment, as the chat sends it", () => {
   test("one line is one paragraph and nothing else", () => {
@@ -106,5 +106,46 @@ describe("a short fragment, as the chat sends it", () => {
     const out = renderMarkdown("---\na: b\n---\nbody");
     expect(out).toContain("<p>body</p>");
     expect(out).toContain("<hr />");
+  });
+});
+
+// GFM footnotes mint ids (`user-content-fn-1`, `footnote-label`) and fragment
+// links to them. One rendered document has one set, but the chat log renders
+// every message into the SAME page, so two messages with a `[^1]` each made two
+// elements with one id. `idPrefix` scopes a render's ids to its caller's key.
+describe("footnote ids, scoped by the caller", () => {
+  const FN = "Text[^1].\n\n[^1]: a note\n";
+  const ids = (html: string) => [...html.matchAll(/\bid="([^"]*)"/g)].map((m) => m[1]);
+  const fragments = (html: string) => [...html.matchAll(/href="#([^"]*)"/g)].map((m) => m[1]);
+
+  test("with no prefix, the renderer's own ids are unchanged", () => {
+    const html = renderMarkdown(FN);
+    expect(html).toContain('id="user-content-fnref-1"');
+    expect(html).toContain('href="#user-content-fn-1"');
+  });
+  test("every id carries the prefix, and every fragment link points at one of them", () => {
+    const html = renderMarkdown(FN, { idPrefix: "m-ab12" });
+    const all = ids(html);
+    expect(all.length).toBe(3); // the ref, the footnote, the label
+    for (const id of all) expect(id).toContain("m-ab12");
+    const frags = fragments(html);
+    expect(frags.length).toBe(2); // ref → footnote, back-ref → ref
+    for (const f of frags) expect(all).toContain(f);
+  });
+  test("the label the ref is described by moves with its id", () => {
+    const html = renderMarkdown(FN, { idPrefix: "m-ab12" });
+    const described = /aria-describedby="([^"]*)"/.exec(html)?.[1];
+    expect(described).toBeDefined();
+    expect(ids(html)).toContain(described);
+  });
+  test("two renders with different prefixes share no id", () => {
+    const a = ids(renderMarkdown(FN, { idPrefix: "m-a1b2" }));
+    const b = ids(renderMarkdown(FN, { idPrefix: "m-c3d4" }));
+    for (const id of a) expect(b).not.toContain(id);
+  });
+  test("a prefix cannot break out of the attribute it is written into", () => {
+    const html = renderMarkdown(FN, { idPrefix: 'x" onmouseover="alert(1)' });
+    expect(html).not.toContain("onmouseover=");
+    expect(html).not.toContain('x"');
   });
 });

@@ -52,7 +52,7 @@ export function ChatMessageView({
           <span className="block font-medium text-[11px] text-ink-faint">
             {m.who === "agent" ? "Agent" : "You"}
           </span>
-          <ChatMarkdown text={m.text} onFollowLink={onFollowLink} />
+          <ChatMarkdown id={m.id} text={m.text} onFollowLink={onFollowLink} />
         </>
       )}
       {/* ⛔ THE RECORD SHOWS WHAT WAS SENT (E48). The passage travelled with
@@ -78,13 +78,19 @@ export function ChatMessageView({
 
 /** A message body, rendered. `.md-chat` is the narrow-panel variant of `.md-prose`. */
 function ChatMarkdown({
+  id,
   text,
   onFollowLink,
 }: {
+  /** The message's id: it scopes the ids a footnote mints to this message. */
+  id: string;
   text: string;
   onFollowLink?: (target: string) => void;
 }) {
-  const html = useMemo(() => renderMarkdown(text), [text]);
+  // Every message renders into the same page, so a `[^1]` in two replies would
+  // mint one id twice; `idPrefix` makes them this message's own. A click on a
+  // footnote then jumps within this body (`renderedLink.ts`).
+  const html = useMemo(() => renderMarkdown(text, { idPrefix: id }), [text, id]);
   // Hoisted and memoised for the same reason as MarkdownView's (React 19
   // compares the prop OBJECT): a fresh literal would rewrite the message's DOM
   // on every render of the log, and drop any text the human had selected in it.

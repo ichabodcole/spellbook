@@ -66,16 +66,37 @@ export function safeHref(raw: string): string | null {
 /** `href="…"` in micromark's own output — it is the only thing that writes one. */
 const HREF = /<a href="([^"]*)"/g;
 
+/** GFM's footnote heading id, which micromark writes bare whatever the prefix. */
+const FOOTNOTE_LABEL = /(id|aria-describedby)="footnote-label"/g;
+
+export type RenderOptions = {
+  /**
+   * Scopes the ids the renderer mints — GFM footnotes are the only thing that
+   * mints any — to one caller's key. The chat log passes each message's id:
+   * every message renders into the same page, so two replies with a `[^1]`
+   * each would otherwise put two elements under one id. Reduced to
+   * `[A-Za-z0-9_-]` before use, because it is written into attributes.
+   */
+  idPrefix?: string;
+};
+
 /**
  * Markdown → HTML, with every link target checked. A refused target keeps its
  * text and loses its link, rather than vanishing: a reader must still see what
  * the document said.
  */
-export function renderMarkdown(text: string): string {
-  const html = micromark(text, {
+export function renderMarkdown(text: string, options: RenderOptions = {}): string {
+  const scope = options.idPrefix?.replace(/[^\w-]/g, "") ?? "";
+  let html = micromark(text, {
     extensions: [gfm()],
-    htmlExtensions: [gfmHtml()],
+    // `clobberPrefix` is micromark's own knob for the footnote ids and the
+    // fragment links to them; the default is `user-content-`.
+    htmlExtensions: [gfmHtml(scope ? { clobberPrefix: `user-content-${scope}-` } : {})],
   });
+  // The one id `clobberPrefix` does not reach. Every `"` in the output was
+  // written by micromark (raw HTML in the source is encoded), so this matches
+  // the renderer's attribute and never a document's text.
+  if (scope) html = html.replace(FOOTNOTE_LABEL, `$1="user-content-${scope}-footnote-label"`);
   // An EMPTY target counts as refused, and that is not a detail: micromark
   // empties the href of a scheme it will not allow, so without this the reader
   // sees an ordinary-looking link that silently does nothing. Struck through

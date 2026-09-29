@@ -168,7 +168,12 @@ describe("the surface's HTML sinks", () => {
   test("the chat body's sink is fed by renderMarkdown of the message, and nothing else", () => {
     const chat = code(readFileSync(join(SURFACE, "components", "ChatMessageView.tsx"), "utf8"));
     expect(chat).toMatch(/htmlProp[\s\S]{0,120}__html:\s*html\s*\}/);
-    expect(chat).toMatch(/html\s*=\s*useMemo\(\s*\(\)\s*=>\s*renderMarkdown\(\s*text\s*\)/);
+    // The message's footnotes are scoped by its id (`{ idPrefix: id }`) — an
+    // OPTION to the renderer, allowed here as an object literal and nothing
+    // else; what reaches the sink is still `text`, through `renderMarkdown`.
+    expect(chat).toMatch(
+      /html\s*=\s*useMemo\(\s*\(\)\s*=>\s*renderMarkdown\(\s*text\s*(?:,\s*\{[^}]*\}\s*)?\)/,
+    );
     expect(chat).not.toContain("__html: text");
     expect(chat).not.toContain("__html: message");
   });

@@ -104,3 +104,24 @@ describe("the passage a message carried (E48)", () => {
     expect(out).toContain("the passage itself");
   });
 });
+
+// Every message is rendered into the same page, so a footnote's ids have to be
+// the MESSAGE's, or two replies with a `[^1]` each put two elements under one
+// id and a jump from the second can land in the first.
+describe("footnotes in chat", () => {
+  const FN = "Text[^1].\n\n[^1]: a note\n";
+  const ids = (out: string) => [...out.matchAll(/\bid="([^"]*)"/g)].map((m) => m[1]);
+  test("two messages with footnotes share no id", () => {
+    const a = ids(html(msg(FN, { id: "m-a1b2" })));
+    const b = ids(html(msg(FN, { id: "m-c3d4" })));
+    expect(a.length).toBeGreaterThan(0);
+    for (const id of a) expect(b).not.toContain(id);
+  });
+  test("each message's fragment links point inside that message", () => {
+    const out = html(msg(FN, { id: "m-c3d4" }));
+    const own = ids(out);
+    const frags = [...out.matchAll(/href="#([^"]*)"/g)].map((m) => m[1]);
+    expect(frags.length).toBe(2);
+    for (const f of frags) expect(own).toContain(f);
+  });
+});
