@@ -118,7 +118,12 @@ the fifth case, and the final pass found no permission-and-heal route that lost
 work. Fixing by rule instead of by case is worth doing sooner next time, after
 the second same-shaped finding rather than the fourth.
 
-**For the next release note:**
+**For the next release note:** ⚠ ERRATUM 2026-09-28: this table was checked
+against the 4.0.0 build for the release and is partly wrong. The astrolabe
+refusals hold only with no daemon up, and astrolabe `add` was exit **0**, not 2.
+The stopped-daemon `open` takes about 9 s, not 2. Several breaks are missing.
+Use [5.0.0-breaking-changes](../releases/5.0.0-breaking-changes.md). The
+original table:
 
 | Command                                     | Change                                                      |
 | ------------------------------------------- | ----------------------------------------------------------- |
