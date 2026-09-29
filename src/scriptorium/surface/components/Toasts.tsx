@@ -133,10 +133,17 @@ export function Toasts({
   return (
     // `pointer-events-none` on the stack so an announcement never swallows a
     // click meant for the document underneath; each toast takes its own back.
+    //
+    // ⛔ POSITIONED BY ITS CONTAINER, NOT THE WINDOW (Cole, 2026-09-28). Pinned
+    // bottom-right of the window, the stack sat on the conversation column and
+    // its cards blocked clicks on the composer and Send. The document pane
+    // draws it (`DocumentPane`'s `toasts` slot) at its own bottom-right, above
+    // the floating composer, and the pane is resizable, so only the pane knows
+    // where that is. It narrows with a narrow pane rather than spilling out.
     <div
       role="status"
       aria-live="polite"
-      className="pointer-events-none fixed right-4 bottom-4 z-50 flex w-80 flex-col gap-2"
+      className="pointer-events-none absolute right-3 bottom-3 z-50 flex w-80 max-w-[calc(100%-1.5rem)] flex-col gap-2"
     >
       {toasts.map((t) => (
         <ToastCard key={t.id} toast={t} onDismiss={onDismiss} onHold={onHold} />

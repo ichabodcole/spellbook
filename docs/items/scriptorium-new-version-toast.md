@@ -95,3 +95,13 @@ raised the toast, Show diff entered compare mode against the new version while
 staying on v1, Activate moved to the new version with only the "Now editing"
 toast showing, a hovered toast outlived its 15 s, and a reload announced
 nothing.
+
+**Toasts moved to the document pane** (Cole's ruling after the no-stake
+verifier). Pinned bottom-right of the window, three stacked toasts covered the
+conversation composer and blocked clicks on it and on Send. Every toast ("Now
+editing", task, new version) now sits at the bottom-right of the document pane:
+`DocumentPane` draws the stack through a `toasts` slot, anchored between the
+document and the floating composer, so it follows a resize, narrows with a
+narrow pane, and stays above the composer when the chat column is collapsed.
+Checked in a real browser with three toasts up: the composer and Send took
+clicks in both themes, at 820 px wide, and with the chat collapsed.

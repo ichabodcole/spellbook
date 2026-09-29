@@ -644,7 +644,6 @@ function Workspace({
         setMode={setMode}
         setAgainst={setAgainst}
       />
-      <Toasts toasts={toasts} onDismiss={dismiss} onHold={hold} />
       <ResizablePanelGroup
         orientation="horizontal"
         className="min-h-0 flex-1"
@@ -777,6 +776,9 @@ function Workspace({
                 )}
               </>
             }
+            // Every toast, in one place: the document pane's bottom-right
+            // (Cole, 2026-09-28), clear of the composer wherever it is drawn.
+            toasts={<Toasts toasts={toasts} onDismiss={dismiss} onHold={hold} />}
             // ⛔ TALKING TO THE AGENT NEVER NEEDS THE COLUMN (E64, Cole —
             // conversation-primary). With the conversation collapsed, the SAME
             // composer floats under the document: same draft, same chip.

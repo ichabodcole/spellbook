@@ -126,6 +126,7 @@ export function DocumentPane({
   docPercent = 100,
   headingStart,
   headingEnd,
+  toasts,
   dock,
   quiet = false,
 }: {
@@ -176,6 +177,11 @@ export function DocumentPane({
   /** E64: controls at either end of the heading — reopening a collapsed column. */
   headingStart?: React.ReactNode;
   headingEnd?: React.ReactNode;
+  /**
+   * The toast stack, drawn at the bottom-right of THIS pane (Cole's ruling,
+   * 2026-09-28): off the conversation column, whose composer it used to cover.
+   */
+  toasts?: React.ReactNode;
   /** E64: the floating composer, docked under the document. */
   dock?: React.ReactNode;
   /** E64: reader mode — the chrome steps back until it is reached for. */
@@ -540,6 +546,11 @@ export function DocumentPane({
       {/* The float sits IN the flow rather than over the text: it never covers
           the last lines of the document, and the scrollers — which keeping your
           place (E63) measures — need no padding to make room for it. */}
+      {/* The toasts' anchor: a zero-height line between the document and
+          everything under it, so the stack grows UP over the document's
+          bottom-right corner and never over the floating composer or the
+          status strip. Positioned against the pane, so it follows a resize. */}
+      {toasts && <div className="relative h-0 shrink-0">{toasts}</div>}
       {dock && <div className="shrink-0 px-3 py-2">{dock}</div>}
       {doc && (
         <div className={cn("shrink-0", quiet && "group/chrome")}>
