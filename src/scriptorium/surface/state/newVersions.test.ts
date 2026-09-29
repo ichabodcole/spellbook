@@ -1,11 +1,13 @@
 // The new-version toast's logic: WHICH versions are news, WHEN a toast stops
 // being true, and WHAT each of its two buttons does. Each is a place the
 // surface can lie: announcing a version the human has already seen (opening a
-// document, a reconnect), announcing twice when "Now editing" already said it,
+// document, a reload), staying silent about one they have not (a reconnect),
+// announcing twice when "Now editing" already said it,
 // or a Show diff that quietly activates.
 import { describe, expect, test } from "bun:test";
 import type { DocView, Version } from "../../backend/protocol";
 import {
+  createVersionWatch,
   newVersionActs,
   newVersionToast,
   spotNewVersions,
@@ -38,7 +40,7 @@ const doc = (versions: Version[], active: number, extra: Partial<DocView> = {}):
 
 describe("spotNewVersions", () => {
   test("the first sight of a document is a baseline, never news", () => {
-    // Opening a document, or a reconnect handing over a fresh snapshot, is
+    // Opening a document, or reloading the page, is
     // the surface meeting versions that already existed.
     const r = spotNewVersions(undefined, doc([v(1), v(2), v(3)], 1));
     expect(r.fresh).toEqual([]);
@@ -80,6 +82,68 @@ describe("spotNewVersions", () => {
     const seen = new Set([1]);
     spotNewVersions(seen, doc([v(1), v(2)], 1));
     expect([...seen]).toEqual([1]);
+  });
+});
+
+describe("createVersionWatch: one page's memory across a reconnect", () => {
+  // Cole's ruling (2026-09-28): a version made while the browser was
+  // disconnected is the same silent stall he first reported, so a reconnect in
+  // the same page announces what this page has not seen. A RELOAD stays quiet,
+  // and it does so for free: a reload is a new page, so a new, empty watch.
+  const n = (vs: Version[]) => vs.map((x) => x.n);
+
+  test("a version made while disconnected is news on the first snapshot back", () => {
+    const w = createVersionWatch();
+    expect(w.snapshot(doc([v(1)], 1))).toEqual([]);
+    w.disconnected();
+    expect(n(w.snapshot(doc([v(1), v(2)], 1)))).toEqual([2]);
+  });
+
+  test("a reconnect with nothing new announces nothing", () => {
+    const w = createVersionWatch();
+    w.snapshot(doc([v(1), v(2)], 1));
+    w.disconnected();
+    expect(w.snapshot(doc([v(1), v(2)], 1))).toEqual([]);
+  });
+
+  test("a version made AND activated during the gap gives way to 'Now editing'", () => {
+    const w = createVersionWatch();
+    w.snapshot(doc([v(1)], 1));
+    w.disconnected();
+    expect(w.snapshot(doc([v(1), v(2)], 2))).toEqual([]);
+  });
+
+  test("several drops in a row still announce each unseen version once", () => {
+    const w = createVersionWatch();
+    w.snapshot(doc([v(1)], 1));
+    w.disconnected();
+    w.disconnected();
+    expect(n(w.snapshot(doc([v(1), v(2), v(3)], 1)))).toEqual([2, 3]);
+    w.disconnected();
+    expect(w.snapshot(doc([v(1), v(2), v(3)], 1))).toEqual([]);
+  });
+
+  test("another document this page saw keeps its memory across the gap", () => {
+    // Announced when the human next opens it, as without a reconnect.
+    const w = createVersionWatch();
+    w.snapshot(doc([v(1)], 1, { slug: "other" }));
+    w.snapshot(doc([v(1)], 1));
+    w.disconnected();
+    w.snapshot(doc([v(1)], 1));
+    expect(n(w.snapshot(doc([v(1), v(2)], 1, { slug: "other" })))).toEqual([2]);
+  });
+
+  test("a document first seen after a reconnect is still a baseline", () => {
+    const w = createVersionWatch();
+    w.disconnected();
+    expect(w.snapshot(doc([v(1), v(2)], 1))).toEqual([]);
+  });
+
+  test("a reload is a new watch: opening the document says nothing", () => {
+    const before = createVersionWatch();
+    before.snapshot(doc([v(1)], 1));
+    const reloaded = createVersionWatch();
+    expect(reloaded.snapshot(doc([v(1), v(2)], 1))).toEqual([]);
   });
 });
 

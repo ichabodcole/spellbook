@@ -67,7 +67,8 @@ press Save. You never write their file directly — not with Edit, not with Writ
 are typing in — `docs[].active` in `state`. To propose a change: `version-new`
 (it prints a path), then edit _that_ path with your own tools. The surface
 raises a toast the moment the version exists, naming it and you as its author,
-with **Activate** and **Show diff**; they choose whether to make it active.
+with **Activate** and **Show diff**; they choose whether to make it active. A
+version made while their browser was disconnected is toasted when it reconnects.
 **You do not need to announce a new version in chat.** Say _why_ you made it if
 that helps them decide. Writing the active version is detected, kept as a
 version of its own, and announced to both of you as a mistake — nothing is lost,

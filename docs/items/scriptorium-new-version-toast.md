@@ -105,3 +105,16 @@ document and the floating composer, so it follows a resize, narrows with a
 narrow pane, and stays above the composer when the chat column is collapsed.
 Checked in a real browser with three toasts up: the composer and Send took
 clicks in both themes, at 820 px wide, and with the chat collapsed.
+
+**A version made while disconnected is announced on reconnect** (Cole's ruling:
+it is the same silent stall he first reported). This replaces the rule above
+that the first snapshot after a reconnect is a baseline. The page's per-document
+memory of seen versions now lives in `createVersionWatch`
+(`surface/state/newVersions.ts`, with cells), and a dropped connection keeps it
+instead of resetting it, so the first snapshot back announces every version this
+page has not seen. A reload is a new page and a new, empty memory, so opening a
+document and reloading stay quiet. A version made and activated during the gap
+still gives way to "Now editing". Driven in a real browser the way the verifier
+did it (the page's `WebSocket` wrapped, the reconnect blocked, a version made,
+then unblocked): the gap's version is now toasted, where before it was not; a
+reload replayed nothing.

@@ -17,9 +17,9 @@ import { useEffect, useRef } from "react";
 
 import type { ClientMsg, DiffSide, DocView } from "../../backend/protocol";
 import {
+  createVersionWatch,
   newVersionActs,
   newVersionToast,
-  spotNewVersions,
   type VersionAct,
   type VersionTarget,
   versionName,
@@ -44,11 +44,10 @@ export function NewVersionToast({
   setMode: (mode: "compare") => void;
   setAgainst: (side: DiffSide) => void;
 }) {
-  // The versions SEEN per document. A document's first sight is a baseline.
-  const seen = useRef(new Map<string, Set<number>>());
-  // Set while disconnected: the first snapshot after a reconnect is a baseline
-  // too, so versions made during the gap are not replayed as news.
-  const rebase = useRef(true);
+  // The versions SEEN per document, for this page's life (`createVersionWatch`).
+  // A reconnect keeps it, so a version made while disconnected is announced on
+  // the way back (Cole, 2026-09-28); a reload starts a new one, and stays quiet.
+  const watch = useRef(createVersionWatch());
   // The toasts this raised, so each can withdraw once it stops being true.
   const raised = useRef<{ id: number; target: VersionTarget }[]>([]);
   // The latest wiring, read at click time rather than at announce time.
@@ -56,7 +55,7 @@ export function NewVersionToast({
   wiring.current = { send, setMode, setAgainst };
 
   useEffect(() => {
-    if (!connected) rebase.current = true;
+    if (!connected) watch.current.disconnected();
   }, [connected]);
 
   useEffect(() => {
@@ -66,12 +65,7 @@ export function NewVersionToast({
       return false;
     });
     if (!doc) return;
-    if (rebase.current) {
-      seen.current.clear();
-      rebase.current = false;
-    }
-    const spotted = spotNewVersions(seen.current.get(doc.slug), doc);
-    seen.current.set(doc.slug, spotted.seen);
+    const fresh = watch.current.snapshot(doc);
 
     const apply = (acts: VersionAct[]) => {
       const w = wiring.current;
@@ -81,7 +75,7 @@ export function NewVersionToast({
         else w.setAgainst(act.against);
       }
     };
-    for (const version of spotted.fresh) {
+    for (const version of fresh) {
       const target = { doc: doc.slug, n: version.n };
       const name = versionName(doc, version.n);
       const { title, description } = newVersionToast(doc, version);
