@@ -20,8 +20,9 @@ Found by the browser verifier of
 
 - **A chat link to nowhere gives no feedback.** A relative link to a missing doc
   (`nope.md`) or a protocol-relative one (`//evil.example/x`) goes to the daemon
-  and nothing happens: no log line and no toast. With no document open, a
-  relative link is dropped silently (`if (open)` in `App.tsx`).
+  and, with a document open, the board shows an error bar ("… which is not in
+  this set"), which is feedback, if blunt; checked 2026-09-29. With no document
+  open, a relative link is dropped silently (`if (open)` in `App.tsx`).
 - ~~**Footnote ids repeat.**~~ **Fixed.** Each chat message with a GFM footnote
   added its own `footnote-label` / `user-content-fn-1` ids, and the
   `#user-content-fn-1` ref link went to the daemon as a document link. Cole hit
