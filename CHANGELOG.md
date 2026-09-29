@@ -1,5 +1,47 @@
 # Changelog
 
+## [5.0.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v4.0.0...spellbook-v5.0.0) (2026-09-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* **release:** bounty and astrolabe exit codes and refusals change on fifteen paths; see docs/releases/5.0.0-breaking-changes.md.
+
+### Features
+
+* **scriptorium:** render chat messages as markdown ([d58b551](https://github.com/ichabodcole/spellbook/commit/d58b551dcbc1dee99f8d981f5253b3a8aaed6269))
+* **scriptorium:** toast a new version, with Activate and Show diff ([2be6cd1](https://github.com/ichabodcole/spellbook/commit/2be6cd1503f0219b6bb4014bd2eb31fb4fc879ba))
+
+
+### Bug Fixes
+
+* **astrolabe:** a refused command starts no daemon ([8c9912e](https://github.com/ichabodcole/spellbook/commit/8c9912ec96541906a2c709f3d99068ff0db36be1))
+* **astrolabe:** report a failed set-aside at once, and word recovery by cause ([87bad55](https://github.com/ichabodcole/spellbook/commit/87bad55744a228f663d13fb33cc5e2c89cb43002))
+* **astrolabe:** route the unknown-project refusal on a reason, not its message ([a9d0384](https://github.com/ichabodcole/spellbook/commit/a9d03845b31dd1cd4a26bb333b990135f2b2061c))
+* **astrolabe:** set an unreadable registry aside instead of reading it as empty ([b1f4ba6](https://github.com/ichabodcole/spellbook/commit/b1f4ba692842ba423951fd3f93a6d7e860053726))
+* **bounty:** --fresh --restore &lt;own id&gt; restores the snapshot, not the teardown's write ([9373e17](https://github.com/ichabodcole/spellbook/commit/9373e1714c25a8957712842b18a60aab7987a0a9))
+* **bounty:** a board in no file is not ended by the idle timeout ([39be6cd](https://github.com/ichabodcole/spellbook/commit/39be6cd8734bf2483bae9c86e0667554c07d4880))
+* **bounty:** a daemon never writes over a snapshot it has not read or kept ([064c171](https://github.com/ichabodcole/spellbook/commit/064c17190284ca8b5fcc3996de08876188ef3521))
+* **bounty:** a failed save names its real cause and the path to fix ([be1f876](https://github.com/ichabodcole/spellbook/commit/be1f876650b4ef9dd493ed7299c8279cd0d38656))
+* **bounty:** a snapshot write that fails keeps the board and says so ([3ff43fb](https://github.com/ichabodcole/spellbook/commit/3ff43fb179fc06dc4b6d5904771ca3aff283ab5f))
+* **bounty:** a superseded unsaved dump is never offered as a restore ([8996e1d](https://github.com/ichabodcole/spellbook/commit/8996e1da6dfaffcc8c6a74e041d60c6d5e0b6377))
+* **bounty:** add &lt;title&gt; --stdin is a usage error ([de90e97](https://github.com/ichabodcole/spellbook/commit/de90e97df8df4ad7eaac1007c93de88eea574de5))
+* **bounty:** bound open and close's requests to the daemon ([8779dea](https://github.com/ichabodcole/spellbook/commit/8779deabb163e3958d234715ccc83c73a47a3cda))
+* **bounty:** copy an unreadable snapshot aside instead of writing over it ([0cc8c0e](https://github.com/ichabodcole/spellbook/commit/0cc8c0e789463284d254427575da8eaca2d39d3b))
+* **bounty:** init --stdin-tasks over a board with tasks is a conflict ([57f9641](https://github.com/ichabodcole/spellbook/commit/57f9641393029c9f8854e51c0ea641f0660dcc1b))
+* **bounty:** message &lt;text&gt; --stdin is a usage error ([c479e6a](https://github.com/ichabodcole/spellbook/commit/c479e6a9e8cd5792455ce106e4d0cbce4bf60f5a))
+* **bounty:** name every snapshot backup on the close and open envelopes ([5152fb5](https://github.com/ichabodcole/spellbook/commit/5152fb589bd7aa80bd1e6c9b2334b9dd963206b8))
+* **bounty:** one daemon per board id ([10d830e](https://github.com/ichabodcole/spellbook/commit/10d830eea1c1cffdd365eb035bfa2a1f124fe378))
+* **bounty:** open --restore "" is a usage error, starts nothing ([de008aa](https://github.com/ichabodcole/spellbook/commit/de008aa8cb7246c88cdc87f9a4775d6bff5ce38a))
+* **bounty:** open --restore of a missing snapshot is not_found, starts nothing ([1bc9b43](https://github.com/ichabodcole/spellbook/commit/1bc9b43db72adabbef08c0937581a82801473897))
+* **bounty:** refuse cleanly when lock liveness cannot be checked ([f7f8087](https://github.com/ichabodcole/spellbook/commit/f7f80871709b081e74351c8101b12479f9508c1d))
+* **bounty:** tail --session-key not_found hint claims only what it knows ([0506e51](https://github.com/ichabodcole/spellbook/commit/0506e515dc0ec1e42e288d2155e96e40f0403908))
+* **bounty:** tail --session-key on a closed board stops as tail.closed ([da08944](https://github.com/ichabodcole/spellbook/commit/da08944e7b5a1354fbcac60717f2460733442aa0))
+* **release:** declare 5.0.0's breaking changes ([cbe7ed7](https://github.com/ichabodcole/spellbook/commit/cbe7ed763ea794db25cb596de3fa1be72ce45292))
+* **scriptorium:** announce a version made while disconnected ([c81c10a](https://github.com/ichabodcole/spellbook/commit/c81c10a87e911204f225f8f37757de900ac68c07))
+* **scriptorium:** draw toasts at the bottom of the document pane ([18e5fe6](https://github.com/ichabodcole/spellbook/commit/18e5fe6cdd5e8a1d060e6365f63b57abc09b4dec))
+* **scriptorium:** show the collapsed chat's preview as plain text ([da97209](https://github.com/ichabodcole/spellbook/commit/da972093bab157523c08e759ce238f6c3ba674b1))
+
 ## [4.0.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v3.1.0...spellbook-v4.0.0) (2026-09-27)
 
 
