@@ -169,6 +169,34 @@ session by default; pass `--session <id>` to target a specific one.
 >   same id. Re-running it, or reusing K after a crash, converges on one board.
 >   `open --session-key K --fresh` tears down any live board for K and starts
 >   clean (for reusing a key across sessions).
+> - **One daemon per key, even under a race.** Each board id has a lock,
+>   `$BOUNTY_HOME/locks/<id>.lock` (`{pid, port}`), which the daemon takes at
+>   boot before it writes anything. Several `open --session-key K` at once all
+>   exit 0 and all report the same board. Every daemon but the first exits
+>   without touching the snapshot. (Before, two could run under one id, and the
+>   one no verb could reach later wrote its stale board over newer work.) A lock
+>   whose pid is dead, or is running something other than this board's daemon,
+>   is stale and is taken over. A daemon that is shutting down marks its lock
+>   `closing`, so an `open` right after `close` waits for it instead of failing.
+>   If `open` ever reports that a board is held by a daemon that is not
+>   answering, resume that pid if it was stopped (`kill -CONT`), or kill it
+>   (`open` names it, and its hint gives both) and open again. `open` and
+>   `close` wait at most 2 s for any one answer from a daemon, so a stopped
+>   daemon gets that refusal (exit 1) instead of a hang; `close` against one
+>   exits 1 naming the pid.
+> - **If liveness cannot be checked, `open` refuses.** Telling a live holder
+>   from a reused pid needs `ps`. With no `ps` on PATH, or a `ps` that fails,
+>   `open` exits **6** (`conflict`) with one envelope on stderr naming the lock
+>   file, the holder pid and why, and starts nothing. The daemon refuses the
+>   same way if it gets that far, and writes a `lockLivenessUnknown` line to
+>   `daemon.log`. To recover, put a working `ps` on PATH, or check that pid is
+>   not this board's daemon and remove the lock (the hint gives both).
+> - **`open --session-key K --fresh --restore <K's own id>`** resets a live
+>   board to its snapshot. `open` copies the snapshot to
+>   `<id>.pre-fresh-<ts>.bak.json` **before** the teardown's `close` writes the
+>   live board over it, then restores from the copy. The copy is kept and named
+>   in `snapshotBackups`. (It used to restore the teardown's own write, so the
+>   snapshot's board was lost.)
 > - The id is **project-scoped** (hashed with the repo root): the same key in
 >   two different repos is two independent boards; the same key in the _same_
 >   repo (even from a subdirectory) is the _same_ board — an intended share,
@@ -192,6 +220,13 @@ session by default; pass `--session <id>` to target a specific one.
 >   comes up **empty** and your snapshot is the damaged thing. A restore that
 >   fails is not a restore that was skipped, and a caller that treats them alike
 >   will "fix" a healthy command line and leave a corrupt snapshot in place.
+> - **A `--restore` naming a snapshot that does not exist starts nothing.** It
+>   exits **5** (`not_found`) with an envelope on stderr, and no board or daemon
+>   is spawned. `sessions` lists what can be restored. (It used to exit 0 with
+>   `restoreFailed: ENOENT…` and leave an unrelated empty board running.)
+>   `restoreFailed` is now for a snapshot that exists and could not be read. An
+>   **empty** `--restore ""` is a usage error (exit 2) and starts nothing
+>   either; drop the flag for a fresh board.
 >
 > A team coordinator (e.g. anthill) can therefore run
 > `open --session-key <team-channel>` at start and pass
@@ -241,7 +276,7 @@ session by default; pass `--session <id>` to target a specific one.
 | `block <id> --on <id>[,…]` / `unblock <id> --on <id>[,…]`                                                                               | add / remove blocker edges (block is cycle-guarded; rejection is visible)                                                                                                                                                       |
 | `remove <id>`                                                                                                                           | delete a task                                                                                                                                                                                                                   |
 | `message <text…> [--stdin]`                                                                                                             | transient toast on the board                                                                                                                                                                                                    |
-| `init [--title T] [--stdin-tasks]`                                                                                                      | seed the board (tasks = JSON array on stdin)                                                                                                                                                                                    |
+| `init [--title T] [--stdin-tasks [--replace]]`                                                                                          | seed the board (tasks = JSON array on stdin); over a board that already has tasks it is refused (exit 6) unless `--replace`                                                                                                     |
 | `list`                                                                                                                                  | list currently-**running** boards (id · tasks · url · title) — distinct from `sessions` (saved snapshots)                                                                                                                       |
 | `close` / `info` / `sessions` / `help`                                                                                                  | end session / show session / list snapshots / usage                                                                                                                                                                             |
 | `version` / `schema`                                                                                                                    | `{name, version}` as JSON (also `--version`, `-V`) / the machine-readable interface (acc declaration v0)                                                                                                                        |
@@ -266,7 +301,11 @@ printf "it's a \"quoted\" & <urgent> task" | bun $CLI add --stdin --status doing
 
 **The rule: `--stdin` REPLACES THE VERB'S POSITIONAL ARGUMENT.** It is not a
 "body" flag — it stands in for whatever that verb takes on the command line.
-`add <title…>` → the **title**. `message <text…>` → the **text**.
+`add <title…>` → the **title**. `message <text…>` → the **text**. So `add` takes
+a title **or** `--stdin`, never both: `add x --stdin` is refused at exit 2
+(`usage`) and adds nothing. It used to keep stdin and silently drop `x`.
+`message` is the same: `message x --stdin` is refused at exit 2 and sends
+nothing.
 
 **On `update`, whose only positional is `<id>`, `--stdin` reads the new TITLE**
 (as on `add`), never the notes. For notes, use `--notes`; if the prose has
@@ -299,6 +338,15 @@ tasks on stdin (no shell-escaping, no inline-script seed dance):
 echo '[{"id":"t1","title":"first","status":"todo"}]' | bun $CLI init --title Sprint --stdin-tasks
 ```
 
+Seeding **replaces** the board's tasks, so over a board that already has tasks
+`init --stdin-tasks` is refused: exit **6** (`conflict`), the board unchanged,
+and the envelope's `hint` names the opt-in. To replace them on purpose, add
+`--replace`; the reply then counts the tasks it discarded as
+`tasksReplaced: <n>` (a number, `0` on an empty board). That is a different fact
+from `tasksDropped`, which reports the entries of **your input** the daemon
+rejected (`{requested, dropped:[{index, reason}]}`, or `null` when it seeded
+them all). To put tasks on a board without replacing it, use `add`.
+
 ### Read-back, not inference
 
 `cli.ts state` returns `{ state, cursor, snapshotBackedUp }` — the canonical
@@ -310,6 +358,8 @@ the resume point you hand to `tail --since <cursor>`.
 PRESENT-AND-NULL, never absent.** `null` means this daemon has not rotated
 anything; a non-null value means it copied the on-disk snapshot aside before a
 shrinking write, and names the file. See **Durability** for when that fires.
+`state` also carries `snapshotSaveFailed`, present-and-null unless the latest
+snapshot write failed (see **Durability**).
 
 > **Why it lives here and not only on the event stream.** An event is _absent_
 > when nothing happened, so "no rotation" and "a daemon too old to report one"
@@ -424,11 +474,15 @@ next depends on whether you named the board:
 - **Named** (`--session <id>` or `--session-key <key>`): after a few seconds
   (about 8) the tail gives up with exit **5** (`not_found`) and an error
   envelope on stderr. The envelope repeats what it looked for, and its `hint`
-  names the fix: check the key and the directory you ran from, or the id, or
-  bring back a board that closed. Nothing is printed on stdout. Start the tail
-  once the board is up, or check its id with `list`.
+  says only what the CLI knows (no board is running for it and none left a close
+  snapshot, not that it was never opened here) and names the fix: check the key
+  and the directory you ran from, or the id, or open it
+  (`open --session-key <key> --no-open`). Nothing is printed on stdout. Start
+  the tail once the board is up, or check its id with `list`.
 - **Named, and the board existed here and has closed** (its snapshot is on
-  disk): a `--session` tail ends at once with `tail.closed` (exit 0), as above.
+  disk): a `--session` or `--session-key` tail ends at once with `tail.closed`
+  (exit 0), as above. A keyed board's `tail.closed` names
+  `open --session-key <key> --no-open` as the way back.
 
 ### Event frames
 
@@ -528,10 +582,61 @@ just watching survives long stretches and a restart.
 - `cli.ts open --restore <id>` brings a saved board back. The snapshot is merged
   over defaults (old snapshots gain new fields cleanly) and its tasks are run
   through the same `validateTask` boundary, so a malformed or legacy entry is
-  dropped rather than fatal — the rest of the board restores.
+  dropped rather than fatal — the rest of the board restores. An `<id>` with no
+  snapshot is refused, exit 5 (`not_found`), and starts no board.
 
-The restored daemon gets a **new** session id (and writes its own snapshot on
-close); the snapshot you restored from is left intact.
+An unkeyed restore gets a **new** session id; a keyed one keeps the key's id.
+Either way the snapshot you restored from is left intact, and a board restored
+from any file other than its own snapshot writes its own snapshot on the first
+debounce tick, not at its first change. A snapshot is written atomically (temp
+file, then rename), so a death mid-write leaves the previous one.
+
+**A daemon writes over its own snapshot only if it owns it:** it read that file
+at boot (a keyed respawn restores from it), or it wrote the file itself since,
+or it has just copied it aside. A board with no snapshot yet owns it. Any other
+board (started `--fresh`, restored from another file, or one whose read or copy
+failed at boot, say a mode-000 file or a read-only `snapshots/`) first copies
+the file to `<id>.unread-<ts>.bak.json` before its first write. If that copy
+fails, nothing is written over the file: the board goes to the `unsaved` dump
+below, and `snapshotSaveFailed.error` says the file could not be copied aside.
+The next write tries again, so once the disk heals the old board is kept and the
+write goes ahead. A normal open, add and close, or a keyed respawn and close,
+makes no copy. A copy made at boot (`unreadable`, `pre-restore`) or by the
+shrink rotation counts, so the file is never copied twice.
+
+- **A snapshot that exists but cannot be read** (truncated JSON, not an object,
+  `tasks` missing or not an array) makes a restore fail with
+  `restoreFailed: {path, reason}`. The board comes up empty. The file is never
+  written over: it is copied byte-for-byte to `<id>.unreadable-<ts>.bak.json`
+  first, at boot for a keyed board, and otherwise before the first write. The
+  copy is kept for repair; it cannot be restored as it stands.
+- **A snapshot that cannot be written** (the path is a directory, the file or
+  its folder is not writable, the disk is full) never loses the board. Each
+  failed write dumps the board to `<id>.unsaved-<ts>.json` in `snapshots/`, or
+  in `$BOUNTY_HOME` if `snapshots/` is the problem (one file per daemon,
+  rewritten on each failure). Mid-session, `state.snapshotSaveFailed` is
+  `{ path, error, unsaved, taskCount, held, fix }` (present-and-null once a
+  write succeeds), a `snapshotSaveFailed` event reaches a live tail, and
+  `daemon.log` gets a line. `error` is the real cause (`EISDIR`, `EACCES`, …),
+  and `fix` names the path that is actually wrong: the snapshot, or `snapshots/`
+  itself when that is a file. **`close` exits 6 (`conflict`)**, stdout empty:
+  the board is down, but the save `close` owed did not happen. Its envelope
+  names the snapshot path and the dump, its hint gives `fix` and then the
+  printed `open … --restore <dump>`, and `error.server` carries the daemon's
+  reply (`snapshotSaveFailed`, `snapshotBackups`). If nothing at all can be
+  written, the board holds the only copy, so **no request ends it**: `close`
+  refuses (exit 6, its hint saying what to make writable and the `close` to run
+  again), the human's **Close board** is refused with a message on the board,
+  and the **idle timeout is held**. A held timeout is logged (`idleCloseHeld` in
+  `daemon.log`) and shown on `state` as `snapshotSaveFailed.held`; each time the
+  timeout comes round the save is retried, and the first one that works ends the
+  board as a normal timeout (124).
+- **A signal is not guarded.** SIGTERM or SIGINT is an order to stop: the daemon
+  runs its teardown, whose final save is its last attempt, and exits whether or
+  not that save found somewhere to write. With nothing writable in
+  `$BOUNTY_HOME`, a signal loses what is not on disk. That is accepted: a daemon
+  that ignored a stop order would be killed harder, and a SIGKILL saves nothing
+  at all. Fix the disk and `close` instead, when you can.
 
 #### Snapshot rotation — the guard against writing a smaller board over a bigger one
 
@@ -553,6 +658,39 @@ snapshot is copied to `<session_id>.pre-<ts>.bak.json`.
   `state.snapshotBackedUp` is readable at any time.
 - **Recovery needs no new verb** — the `.bak.json` suffix is chosen so
   `sessions` lists it and `open --restore <id>.pre-<ts>.bak` resolves it.
+
+#### `snapshotBackups` — the backup is named on the act that made it
+
+Every `open` and `close` success carries `snapshotBackups`: a list, **present
+and `[]`** when nothing was backed up. Each entry is
+`{ kind, path, taskCount, reason, restore }`:
+
+| `kind`        | Made by                                                                                                                                                                    | `taskCount` | `restore`                 |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ------------------------- |
+| `shrink`      | the daemon, before its first shrinking write (the rotation above)                                                                                                          | the copy's  | the act                   |
+| `unreadable`  | the daemon, before writing over a file it cannot read                                                                                                                      | `null`      | `null` (repair)           |
+| `pre-fresh`   | `open`, before a `--fresh --restore <own id>` teardown writes the snapshot                                                                                                 | the copy's  | the act                   |
+| `pre-restore` | the daemon, at boot, when a board restored from ANOTHER file would be written over its own snapshot, and that snapshot holds a task or a title the restored board does not | the copy's  | the act                   |
+| `unread`      | the daemon, before its first write over its own snapshot, when it never read that file and no copy above kept it (the ownership rule above)                                | the copy's  | the act                   |
+| `unsaved`     | the daemon, when the snapshot could not be written (the board, dumped)                                                                                                     | the board's | the act, until superseded |
+
+**A superseded `unsaved` dump is not an act.** Once a snapshot write succeeds
+after the dump, the snapshot holds the newer board, and restoring the dump would
+roll the board back. The entry stays in the list (the file is kept on disk;
+deleting it is your call), with `restore: null` and a `superseded` note saying
+why. There is nothing to do about it. Only a write the ownership rule allowed
+can supersede a dump, so if that write replaced a snapshot this daemon never
+read, the old board is in an `unread` copy listed beside it, with its restore.
+
+`restore` is the command that brings the copy back:
+`open --session-key K --fresh --restore <id>.pre-….bak --no-open` for a keyed
+board (it works whether the board is live or not), and
+`open --restore <bak> --no-open` otherwise. Run it with your launcher, as with
+every printed command. `close` lists every backup its daemon made in its
+lifetime, because a debounced flush that rotated earlier has no reply of its
+own. `open` lists the pre-fresh copy, the torn-down board's backups, and the new
+daemon's boot copy. The exit stays 0: it is a success with a notice. Each backup
+is also written as one line on stderr.
 
 > **⚠ RECOVER FROM THE BACKUP WITH THE HIGHEST `taskCount`, NOT THE NEWEST
 > TIMESTAMP.** There is deliberately no retention policy (bounding it re-creates
@@ -738,13 +876,13 @@ the tail. That family is the table above and the taxonomy does not govern it.
 **`cli.ts`'s own exits are the house taxonomy**, and every one of them prints
 ONE JSON envelope on **stderr** with stdout left empty:
 
-| Code | `kind`      | What it means                  | Typical cause                                                                                                                                  |
-| ---- | ----------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0    | —           | The verb succeeded             | `tail` also exits 0 on the `closed` frame                                                                                                      |
-| 2    | `usage`     | Fix it by changing the command | A bad flag, a missing verb, a missing required argument, an empty `update` patch                                                               |
-| 5    | `not_found` | The named thing does not exist | No running session; a stale session pointer; a task id that is not on this board; a `tail --session`/`--session-key` whose board never came up |
-| 6    | `conflict`  | A precondition failed          | A duplicate `--id`; `claim` on an other-owned task; a `block` that forms a cycle                                                               |
-| 1    | `internal`  | The spell broke                | The daemon answered a command with a non-200                                                                                                   |
+| Code | `kind`      | What it means                  | Typical cause                                                                                                                                                                                                                                                                                                           |
+| ---- | ----------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | —           | The verb succeeded             | `tail` also exits 0 on the `closed` frame                                                                                                                                                                                                                                                                               |
+| 2    | `usage`     | Fix it by changing the command | A bad flag, a missing verb, a missing required argument, an empty `update` patch                                                                                                                                                                                                                                        |
+| 5    | `not_found` | The named thing does not exist | No running session; a stale session pointer; a task id that is not on this board; a `tail --session`/`--session-key` whose board never came up; `open --restore` of a snapshot that does not exist                                                                                                                      |
+| 6    | `conflict`  | A precondition failed          | A duplicate `--id`; `claim` on an other-owned task; a `block` that forms a cycle; `init --stdin-tasks` over a board that has tasks, without `--replace`; `open` when the board's lock holder cannot be checked (no working `ps`); `close` whose final snapshot write failed (the board was dumped to an `unsaved` file) |
+| 1    | `internal`  | The spell broke                | The daemon answered a command with a non-200; a daemon that is not answering (`open`, `close`)                                                                                                                                                                                                                          |
 
 ⚠ **This changed in 2026-09, twice, and a script may be pinned to either old
 shape.** Before the port every failure was prose at exit **2**. The port then

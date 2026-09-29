@@ -17,7 +17,7 @@
 
 import type { Command, Invocation } from "../cli.ts";
 import { ExitCode, UsageError, printEnvelope } from "../envelope.ts";
-import { type Page, collectPages } from "../pages.ts";
+import { type Page, collectPages, pageSlug } from "../pages.ts";
 import { KINDS, buildRegistry, retiredWordReason } from "../lint/registry.ts";
 import { DEFAULT_CONFIG } from "../docs-lint/config.ts";
 
@@ -26,6 +26,9 @@ import { DEFAULT_CONFIG } from "../docs-lint/config.ts";
  *  what". */
 export interface FindMatch {
   path: string;
+  /** What a reference to it is built from: `item/<slug>`, `feature/<slug>`,
+   *  `cycle/<slug>`. See `pageSlug`. */
+  slug: string;
   tier: "library" | "workbench";
   type: string;
   title: string | null;
@@ -158,6 +161,7 @@ export function findData(pages: Page[], f: FindFilters): FindData {
     .map(
       (page): FindMatch => ({
         path: page.path,
+        slug: pageSlug(page),
         tier: page.tier,
         type: page.type,
         title: page.title,

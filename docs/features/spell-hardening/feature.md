@@ -5,7 +5,7 @@ title:
 description:
   Proposal for fixing shipped spell defects across bounty and grapevine, then
   releasing a hardened version
-lifecycle: review
+lifecycle: done
 status: stable
 generated: { by: unknown, at: 2026-08-05 }
 ---

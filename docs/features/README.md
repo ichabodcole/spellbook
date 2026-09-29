@@ -112,10 +112,11 @@ A work item can own the same documents, created the same way with
 - **`write-up.md`** — a finding written up. Usually a research item's job, but a
   feature may record one of its own:
   `pdocs new write-up --owner feature/<slug>`.
-- **`reports/`** — dated evidence gathered for the work: an audit, a benchmark,
-  a survey of options.
+- **`reports/`** — dated evidence gathered for the work, in Markdown: an audit,
+  a benchmark, a survey of options.
 - **`artifacts/`** — freeform working material: codebase exploration, dependency
-  analysis, sketches. No template.
+  analysis, sketches. No template. Evidence that is not Markdown — a CSV, a
+  screenshot, a recording — goes here too, linked from the report that cites it.
 - **`handoff.md`** — the steps shipping requires beyond merging: migrations,
   redeploys, configuration, manual coordination. Written at finalization, and
   only when those steps exist.

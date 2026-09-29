@@ -210,6 +210,11 @@ real defect, unratified.
 > range chosen to be derivable stops being derivable the moment another team
 > files.
 >
+> **2026-09-28:** 4 open: `#11` `#72` `#75` `#76`. `#98` closed 2026-09-27
+> (v4.0.0); `#64` and `#82` closed 2026-09-28 on an audit of `ad758f10` (`#64`
+> on anthill's measurement; `#82` as ruled, with its leftovers in
+> [item/outcome-nouns-left-to-migrate](../../items/outcome-nouns-left-to-migrate.md)).
+>
 > **Not repaired in this sweep, deliberately.** Re-deriving the closed column
 > means walking eleven issues and attributing each, and this ledger has been
 > wrong twice from being rewritten in a hurry at the end of a session. It needs

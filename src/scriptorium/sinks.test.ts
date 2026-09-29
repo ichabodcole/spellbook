@@ -92,6 +92,11 @@ const ALLOWED = [
     expr: "htmlProp",
     why: "the rendered view — `htmlProp` is `{ __html: html }` and `html` is `renderMarkdown(text)` and nothing else (E51 hoisted it; see the scanner's note)",
   },
+  {
+    file: "components/ChatMessageView.tsx",
+    expr: "htmlProp",
+    why: "a chat message's body (item chat-renders-markdown) — the SAME renderer, `renderMarkdown(message.text)`, so the same refusals; a second sink, not a second path. Argued for rather than folded into MarkdownView because that component's sink carries E51's selection and E63's scroll machinery, which a chat line must not inherit",
+  },
 ] as const;
 
 /** The complete, DECLARED set of `__html` writers. */
@@ -100,6 +105,11 @@ const ALLOWED_KEYS = [
     file: "components/MarkdownView.tsx",
     expr: "html",
     why: "the memoised prop object the one sink is fed from",
+  },
+  {
+    file: "components/ChatMessageView.tsx",
+    expr: "html",
+    why: "the chat body's memoised prop object, built the same way",
   },
 ] as const;
 
@@ -147,6 +157,20 @@ describe("the surface's HTML sinks", () => {
     expect(view).toMatch(/renderMarkdown\(\s*splitFrontmatter\(text\)\.body\s*\)/);
     // The failure this catches: someone "simplifying" to the raw document text.
     expect(view).not.toContain("__html: text");
+  });
+
+  /**
+   * The chat's sink (item chat-renders-markdown). Chat text is written by the
+   * agent, which is exactly the input the renderer's refusals exist for — so
+   * what is asserted is that the message text reaches the sink THROUGH
+   * `renderMarkdown` and by no other road.
+   */
+  test("the chat body's sink is fed by renderMarkdown of the message, and nothing else", () => {
+    const chat = code(readFileSync(join(SURFACE, "components", "ChatMessageView.tsx"), "utf8"));
+    expect(chat).toMatch(/htmlProp[\s\S]{0,120}__html:\s*html\s*\}/);
+    expect(chat).toMatch(/html\s*=\s*useMemo\(\s*\(\)\s*=>\s*renderMarkdown\(\s*text\s*\)/);
+    expect(chat).not.toContain("__html: text");
+    expect(chat).not.toContain("__html: message");
   });
 
   test("the renderer never turns on raw HTML, and checks every link target", () => {

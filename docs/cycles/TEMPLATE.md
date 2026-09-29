@@ -54,11 +54,13 @@ expect to be included, and why they are not.]
 
 ## Outcome
 
-_Written at close, not before._
+_Written at close, not before — and for an `abandoned` cycle too._
 
-[What shipped. What was cut, and why. What was learned that will change how the
-next cycle is scoped. Two paragraphs is usually enough; the point is that a
-reader six months from now can tell what happened without reading every
+[What shipped. What was cut, and why. What carried over to the next cycle: each
+item still open, and the cycle it joined. What was learned that will change how
+the next cycle is scoped. For an `abandoned` cycle, what was falsified: the
+assumption that stopped it. Two paragraphs is usually enough; the point is that
+a reader six months from now can tell what happened without reading every
 session.]
 
 ## Sessions

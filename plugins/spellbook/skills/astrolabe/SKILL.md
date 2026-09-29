@@ -76,7 +76,40 @@ The agent never talks to the daemon directly — it drives through `cli.ts`, a
 thin, stateless wrapper. The daemon is a **singleton per machine**
 (`$ASTROLABE_HOME`, default `~/.astrolabe`); the first verb that needs it
 auto-spawns it (detached, it outlives the CLI) and finds it via
-`$ASTROLABE_HOME/daemon.port`.
+`$ASTROLABE_HOME/daemon.port`. A command it would refuse starts nothing: with no
+daemon up, an unknown `<id>` and a duplicate `add` are refused (exit 2) from the
+registry on disk without spawning one, and an unknown `<id>`'s envelope names
+the registered ids in `choices`.
+
+### When the registry can't be read
+
+The registry is `$ASTROLABE_HOME/registry.json`. If it can't be read (invalid
+JSON, not the shape the daemon writes, permissions you can't read through, a
+directory), it is **never treated as empty and never written over**:
+
+- **With no daemon up**, a verb that needs the registry (`add`, and every verb
+  naming an `<id>`) is refused as `conflict`, **exit 6**, and starts nothing and
+  moves nothing. The hint names the two ways forward: repair the file and retry
+  (worded by the cause: fix the JSON, fix the permissions, or move a directory's
+  contents out), or run `cli.ts open`.
+- **The daemon's boot sets it aside**: it renames the file (or directory) to
+  `registry.json.unreadable-<time>`, leaves its bytes untouched, and starts an
+  empty board. If the rename itself fails (a read-only directory, an immutable
+  file), the daemon doesn't start, and `open` fails at once as `internal`,
+  **exit 1**, saying the bytes were left in place and why the rename failed.
+- **While a set-aside file exists, every answer says so**: a success prints one
+  `# warning:` line on stderr naming the file and the recovery; an unknown
+  `<id>` refusal says the registry was set aside and where; and `info`, `state`
+  and `list` carry `registry_set_aside: [{path, recover}]`. The notice stops
+  when the file is dealt with.
+- **To recover it**, run `cli.ts close` first (the daemon saves over
+  `registry.json` on close), repair the set-aside file (the `recover` text says
+  how for its cause), move it back to `registry.json`, and run `cli.ts open`.
+  That replaces anything registered since the file was set aside. To keep the
+  current board instead, delete the set-aside file.
+
+One malformed project entry inside a registry that is otherwise readable is
+dropped and the rest are kept, as before.
 
 ### Verbs
 
@@ -195,10 +228,13 @@ opens the registration form.
 
 `0` clean dismiss (the human closes the board, or an agent `cli.ts close`) · `2`
 bad arguments, a bare invocation, or a rejected command (dedupe / unknown id) ·
-`1` internal fault (the daemon failed to start, or did not go down within 3s of
-`close`) · `124` idle timeout (only if a positive `--timeout` was set — the
-observatory stands indefinitely by default). A conjuration has no "cancel"/`130`
-discard path. Failures leave stdout empty and put one JSON error envelope
+`1` internal fault (the daemon failed to start — reported at once, in the
+daemon's own words, if it exits before answering — or did not go down within 3s
+of `close`) · `6` conflict (with no daemon up, `registry.json` can't be read;
+see [When the registry can't be read](#when-the-registry-cant-be-read)) · `124`
+idle timeout (only if a positive `--timeout` was set — the observatory stands
+indefinitely by default). A conjuration has no "cancel"/`130` discard path.
+Failures leave stdout empty and put one JSON error envelope
 (`{ok:false, error:{kind, message}}`) on stderr; `cli.ts --version` answers
 `{name, version}` at exit 0.
 

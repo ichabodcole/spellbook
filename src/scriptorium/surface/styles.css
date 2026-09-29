@@ -268,6 +268,96 @@
   .md-prose del {
     color: var(--color-ink-dim);
   }
+
+  /* ─── A chat message's body (item chat-renders-markdown) ─────────────────────
+     The same element rules, compacted for a narrow side panel: the message's
+     own size and colour (inherited from the bubble, not the reading pane's
+     15px), headings barely above body text, tight block spacing. Anything that
+     can be wider than the panel scrolls INSIDE itself — code blocks and tables
+     — so the log never grows a horizontal scrollbar; a long URL or unbroken
+     word wraps instead. Tokens only, so both themes follow. */
+  .md-prose.md-chat {
+    color: inherit;
+    font-size: inherit;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+    min-width: 0;
+  }
+  .md-prose.md-chat h1,
+  .md-prose.md-chat h2,
+  .md-prose.md-chat h3,
+  .md-prose.md-chat h4,
+  .md-prose.md-chat h5,
+  .md-prose.md-chat h6 {
+    font-size: 1.1em;
+    line-height: 1.35;
+    margin: 0.7em 0 0.3em;
+  }
+  .md-prose.md-chat h1 {
+    font-size: 1.2em;
+  }
+  .md-prose.md-chat p,
+  .md-prose.md-chat ul,
+  .md-prose.md-chat ol,
+  .md-prose.md-chat blockquote,
+  .md-prose.md-chat pre,
+  .md-prose.md-chat table {
+    margin: 0.4em 0;
+  }
+  .md-prose.md-chat > :first-child {
+    margin-top: 0;
+  }
+  .md-prose.md-chat > :last-child {
+    margin-bottom: 0;
+  }
+  .md-prose.md-chat ul,
+  .md-prose.md-chat ol {
+    padding-left: 1.25em;
+  }
+  .md-prose.md-chat li {
+    margin: 0.1em 0;
+  }
+  .md-prose.md-chat li > p {
+    margin: 0;
+  }
+  .md-prose.md-chat pre {
+    padding: 0.5em 0.65em;
+    border-radius: 6px;
+    max-width: 100%;
+    /* Code keeps its lines: it scrolls sideways rather than wrapping. */
+    overflow-wrap: normal;
+  }
+  .md-prose.md-chat pre code {
+    font-size: 0.95em;
+    white-space: pre;
+  }
+  .md-prose.md-chat table {
+    max-width: 100%;
+    font-size: 1em;
+    overflow-wrap: normal;
+  }
+  .md-prose.md-chat th,
+  .md-prose.md-chat td {
+    padding: 0.25em 0.5em;
+  }
+  /* ⚠ The agent's bubble IS `surface-raised`, the colour the document uses to
+     set code and header cells apart — so in chat they sink to the page colour
+     instead, or they would vanish into the bubble. */
+  .md-prose.md-chat code,
+  .md-prose.md-chat pre,
+  .md-prose.md-chat th {
+    background: var(--color-bg);
+  }
+  .md-prose.md-chat pre code {
+    background: none;
+  }
+  .md-prose.md-chat hr {
+    margin: 0.8em 0;
+  }
+  .md-prose.md-chat blockquote {
+    padding-left: 0.7em;
+    border-left-width: 2px;
+  }
 }
 
 /* ─── Scrollbars, in the spell's own colours ──────────────────────────────────

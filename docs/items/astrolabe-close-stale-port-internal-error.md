@@ -5,7 +5,7 @@ description:
   When the daemon was killed and left its port file, close exits 1 internal
   'Unable to connect', a third shape for the same user act.
 status: draft # OKF §5.4: draft | stable | deprecated. Nothing else.
-lifecycle: triage # triage | backlog | ready | active | review | done | dropped
+lifecycle: done
 id: 01a0e1bd-413b-7160-be58-7efbcb633363
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-09-27 }

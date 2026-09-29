@@ -63,7 +63,27 @@ export type ReducerResult = {
   error?: string;
   id?: string;
   outcome?: string;
+  /** A rejection's machine-readable cause, beside `error` (which is presentation). */
+  reason?: RejectReason;
+  /** With `reason: "unknown-project"`: the id that is not registered. */
+  project?: string;
 };
+
+// A REJECTION CARRIES ITS CAUSE AS DATA. `error` is the human's sentence and
+// may be reworded; a caller that must act on WHICH rejection it got (the CLI
+// adds the set-aside-registry notice to an unknown project) routes on `reason`.
+// Only the causes a caller routes on get a noun — the rest stay `error` alone.
+export type RejectReason = "unknown-project";
+
+export function unknownProject(state: ObservatoryState, id: string): ReducerResult {
+  return {
+    state,
+    applied: false,
+    error: `unknown project '${id}'`,
+    reason: "unknown-project",
+    project: id,
+  };
+}
 
 // ── Surface projection / wire contract ───────────────────────────────
 // The daemon projects the three internal layers into per-project CARDS for the
@@ -146,6 +166,64 @@ const hasProject = (state: ObservatoryState, id: string): boolean =>
 
 // ── Registry (durable) ───────────────────────────────────────────────
 
+// The single project-shape trust boundary — the agent /cmd path and a restored
+// registry both pass untrusted objects through here (filter-and-keep-valid).
+export function validateProject(p: unknown): Project | null {
+  if (!p || typeof p !== "object") return null;
+  const o = p as Record<string, unknown>;
+  if (typeof o.name !== "string" || o.name.trim() === "") return null;
+  if (typeof o.path !== "string" || o.path.trim() === "") return null;
+  // id is optional on the way in — applyProjectAdd derives it from the name when
+  // absent (a restored registry entry already carries one).
+  const out: Project = { id: typeof o.id === "string" ? o.id : "", name: o.name, path: o.path };
+  if (typeof o.description === "string") out.description = o.description;
+  if (typeof o.avatar === "string") out.avatar = o.avatar;
+  return out;
+}
+
+// Why a parsed `registry.json` is NOT a registry, or `null` when it is one. The
+// daemon has only ever written `{title, projects: [...]}`, so anything else is a
+// file this code did not write and cannot read — to be set aside, never
+// restored as empty. One malformed ENTRY inside a valid registry is not this:
+// `restoreRegistry` drops it, as it always has.
+export function registryShapeError(snapshot: unknown): string | null {
+  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot))
+    return "not a JSON object";
+  if (!Array.isArray((snapshot as { projects?: unknown }).projects))
+    return "`projects` is not an array";
+  return null;
+}
+
+// The board a daemon BOOTS with, from a parsed `registry.json` snapshot
+// (merge-over-defaults so an older snapshot gains new fields without crashing;
+// each project runs through validateProject so a malformed entry is dropped,
+// not fatal, and through applyProjectAdd so it is dedupe-guarded on the way in).
+// Presence and status start EMPTY (live layers — never persisted).
+//
+// ⛔ ONE FUNCTION, TWO READERS. The daemon restores with it, and cli.ts answers
+// a refusal from it when no daemon is up (a refused invocation must start
+// nothing), so the cold answer is the one the daemon would have given — not a
+// second reading of the file that could drift from the first.
+//
+// ⚠ IT FORGIVES A BAD ENTRY, NOT A BAD FILE. Call `registryShapeError` first:
+// a snapshot that is not a registry at all (not an object, `projects` not an
+// array) would restore as the EMPTY board, and a daemon that booted from that
+// would overwrite the file on its next save. That is how a corrupt registry
+// used to be lost without a word (data-you-cant-get-back).
+export function restoreRegistry(snapshot: unknown, title = "Observatory"): ObservatoryState {
+  let state = emptyState(title);
+  if (!snapshot || typeof snapshot !== "object") return state;
+  const snap = snapshot as Partial<ObservatoryState>;
+  if (typeof snap.title === "string") state = { ...state, title: snap.title };
+  if (Array.isArray(snap.projects)) {
+    for (const raw of snap.projects) {
+      const p = validateProject(raw);
+      if (p) state = applyProjectAdd(state, p).state;
+    }
+  }
+  return state;
+}
+
 export function applyProjectAdd(state: ObservatoryState, project: Project): ReducerResult {
   const name = project.name?.trim();
   const path = project.path?.trim();
@@ -182,7 +260,7 @@ export function applyProjectAdd(state: ObservatoryState, project: Project): Redu
 
 export function applyProjectRemove(state: ObservatoryState, id: string): ReducerResult {
   if (!hasProject(state, id)) {
-    return { state, applied: false, error: `unknown project '${id}'` };
+    return unknownProject(state, id);
   }
   const { [id]: _p, ...presence } = state.presence;
   const { [id]: _s, ...status } = state.status;
@@ -200,7 +278,7 @@ export function applySetPresence(
   connected: boolean,
 ): ReducerResult {
   if (!hasProject(state, id)) {
-    return { state, applied: false, error: `unknown project '${id}'` };
+    return unknownProject(state, id);
   }
   if ((state.presence[id]?.connected ?? false) === connected) {
     // Benign no-op: presence is already what was asked for. Names the state, not
@@ -228,7 +306,7 @@ export function applyStatus(
   now: number,
 ): ReducerResult {
   if (!hasProject(state, id)) {
-    return { state, applied: false, error: `unknown project '${id}'` };
+    return unknownProject(state, id);
   }
   const prev = state.status[id];
   const next: Status = {
@@ -251,7 +329,7 @@ export function applyAttention(
   now: number,
 ): ReducerResult {
   if (!hasProject(state, id)) {
-    return { state, applied: false, error: `unknown project '${id}'` };
+    return unknownProject(state, id);
   }
   const prev = state.status[id];
   const nextQuestion = raised ? question : undefined;

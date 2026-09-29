@@ -18,7 +18,7 @@
 //
 // AgentCommand — POST /cmd body (one of). All carry an optional `as` (caller
 // identity → event `by`); /cmd returns {ok, applied?, error?}:
-//   {"type":"init",        "title": "...", "tasks": Task[]}
+//   {"type":"init",        "title": "...", "tasks": Task[], "replace"?: bool}  // tasks over a populated board need replace
 //   {"type":"task.add",    "task": Task}              // append
 //   {"type":"task.update", "id": "...", "patch": Partial<Task>, "claim"?: bool}
 //   {"type":"task.remove", "id": "..."}
@@ -54,16 +54,19 @@
 // board is a conjuration — there's no "cancel"/130 discard path.
 
 import {
+  accessSync,
   appendFileSync,
   copyFileSync,
   existsSync,
+  constants as fsConstants,
+  lstatSync,
   mkdirSync,
   readFileSync,
+  statSync,
   unlinkSync,
-  writeFileSync,
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import type { ServerWebSocket } from "bun";
@@ -91,6 +94,7 @@ import { refuseForeignOrigin } from "../../kit/wire/origin.ts";
 import { resolveMode as resolveModeIn, serveFromDist } from "../../kit/wire/serveDist.ts";
 import { sseResponse as kitSseResponse, type SseClients } from "../../kit/wire/sse.ts";
 import { IDLE_TIMEOUT_SEC, SSE_HEARTBEAT_MS } from "./heartbeat.ts";
+import { acquireLock, lockPath, releaseLock, unknownHolderRefusal, updateLock } from "./lock.ts";
 
 // The board's HTML used to be `scripts/template.html`, read at boot and string
 // substituted before every response. It is now a React surface at
@@ -230,6 +234,97 @@ function snapshotTaskCount(path: string): number | null {
   }
 }
 
+// (c) Why a parsed value is not a board snapshot, or null when it is one. The
+// restore path and the unreadable-copy reason share it, so "cannot be read as
+// a snapshot" means one thing in both.
+function snapshotProblem(parsed: unknown): string | null {
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed))
+    return "the snapshot is not a JSON object";
+  const tasks = (parsed as { tasks?: unknown }).tasks;
+  if (!Array.isArray(tasks))
+    return `the snapshot's \`tasks\` is ${tasks === undefined ? "missing" : `not an array (${tasks === null ? "null" : typeof tasks})`}`;
+  return null;
+}
+
+// (c) Why the file at `path` cannot be read as a snapshot (for the copy's
+// `reason`), or null when it can.
+//
+// ⛔ A FILE THAT CANNOT BE READ AT ALL IS THROWN, NOT REASONED ABOUT. A
+// directory or a mode-000 file used to come back as "not valid JSON", so the
+// caller tried to copy it aside and reported THAT copy's error (`ENOTSUP …
+// copyfile … .unreadable-….bak.json`) in place of the real cause (verifier,
+// 2026-09-28). Only the read is outside the catch: the caller's own catch now
+// gets `EISDIR` or `EACCES`, and still writes nothing over a file it could
+// not read.
+function unreadableReason(path: string): string | null {
+  const raw = readFileSync(path, "utf8");
+  try {
+    return snapshotProblem(JSON.parse(raw));
+  } catch (e) {
+    return `it is not valid JSON (${e instanceof Error ? e.message : String(e)})`;
+  }
+}
+
+// Whether a file is at `path`. False ONLY for "no such file": a snapshot that
+// never existed needs no copy before it is written. Any other failure to look
+// (a folder that cannot be searched) throws, because "cannot tell" is not
+// "absent", and treating it as absent is how a file gets written over unkept.
+function snapshotPresent(path: string): boolean {
+  try {
+    lstatSync(path);
+    return true;
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === "ENOENT") return false;
+    throw e;
+  }
+}
+
+// Does `board` already hold everything the snapshot `parsed` holds? Every
+// top-level field but `tasks` must be equal (the title is the one a board has
+// today), and every snapshot task must be in the board unchanged. When it
+// does, writing the board over the snapshot loses nothing, so no copy is due.
+// ⚠ NOT TASKS ALONE: the pre-restore guard used to compare only `tasks`, so a
+// restore that differed in its title wrote over the old title with no copy
+// (third verifier, 2026-09-28).
+function boardHoldsSnapshot(board: BoardState, parsed: unknown): boolean {
+  if (snapshotProblem(parsed)) return false;
+  const snap = parsed as Record<string, unknown> & { tasks: unknown[] };
+  const b = board as unknown as Record<string, unknown>;
+  for (const [k, val] of Object.entries(snap)) {
+    if (k !== "tasks" && JSON.stringify(val) !== JSON.stringify(b[k])) return false;
+  }
+  const have = new Map(board.tasks.map((t) => [t.id, JSON.stringify(t)]));
+  return snap.tasks.every((t) => have.get((t as { id?: string })?.id ?? "") === JSON.stringify(t));
+}
+
+// What to do about a snapshot write that failed, naming the path that is
+// actually wrong. That is not always the snapshot: when `snapshots/` is itself
+// a file, the snapshot path was never the problem, and a hint that said "fix
+// snapshots/<id>.json" sent the caller to a file that does not exist.
+function snapshotFix(path: string): string {
+  const dir = dirname(path);
+  try {
+    if (!statSync(dir).isDirectory())
+      return `${dir} is a file where bounty keeps its snapshots folder: move it aside`;
+  } catch {}
+  try {
+    if (statSync(path).isDirectory()) return `remove the directory ${path} (a snapshot is a file)`;
+  } catch {}
+  if (existsSync(path)) {
+    try {
+      accessSync(path, fsConstants.R_OK | fsConstants.W_OK);
+    } catch {
+      return `make ${path} readable and writable`;
+    }
+  }
+  try {
+    accessSync(dir, fsConstants.W_OK);
+  } catch {
+    return `make the folder ${dir} writable`;
+  }
+  return `make ${path} and its folder writable, or free some disk space`;
+}
+
 // #73/#74 — should this snapshot write copy the existing file aside first?
 // Clock-free and fs-free so it is testable without a daemon (the shouldIdleClose
 // shape).
@@ -281,7 +376,7 @@ type DoneResult = { code: number; reason: CloseReason };
 // attribution, never an auth boundary. `claim` marks a cooperative self-claim
 // (task.update) that must not steal an already-owned task.
 type AgentMsg =
-  | { type: "init"; title?: string; tasks?: Task[]; as?: string }
+  | { type: "init"; title?: string; tasks?: Task[]; replace?: boolean; as?: string }
   | { type: "task.add"; task: Task; as?: string }
   | { type: "task.update"; id: string; patch: Partial<Task>; as?: string; claim?: boolean }
   | { type: "task.remove"; id: string; as?: string }
@@ -317,7 +412,59 @@ type ApplyResult = {
     requested: number;
     dropped: { index: number; reason: string }[];
   } | null;
+  // `init`'s count of the BOARD's own tasks a `replace` discarded. A different
+  // fact from `tasksDropped`, which is about the caller's INPUT, so a different
+  // field: one key, one meaning. Present only on a replace, and always a number
+  // there (0 on an empty board).
+  tasksReplaced?: number;
+  // `close`'s report of every snapshot backup this daemon wrote: the act that
+  // ends the daemon is the last response that can carry it (see BackupRecord).
+  snapshotBackups?: BackupRecord[];
+  // `close`'s report of a final write that failed (see SnapshotSaveFailed).
+  snapshotSaveFailed?: SnapshotSaveFailed;
 };
+
+// A copy this daemon made of a snapshot before writing over it. `kind` says
+// why: `shrink` (the first shrinking write of this daemon's life, #73/#74),
+// `unreadable` (a file that could not be read as a snapshot, so no count could
+// judge it), `pre-restore` (the board's own snapshot, before a board restored
+// from another file is written over it) or `unread` (the board's own snapshot,
+// which this daemon never read, kept before its first write over it: the rule
+// at `ownsSnapshot`). `taskCount` is the copy's own count, null when it is unreadable.
+// `unsaved` is not a copy of the snapshot: it is the BOARD, dumped to a file of
+// its own because the snapshot could not be written (see SnapshotSaveFailed).
+// The CLI adds the act that recovers it, since only the CLI knows the key.
+//
+// `superseded` is set on an `unsaved` dump once a snapshot write SUCCEEDS after
+// it: the snapshot then holds the newer board, and restoring the dump would roll
+// the board back (verifier, 2026-09-28: a later same-count close then left a
+// task in no file). It says why, and the CLI offers no restore for it. Absent
+// on every other record, and on a dump that is still the newest copy.
+type BackupRecord = {
+  kind: "shrink" | "unreadable" | "pre-restore" | "unread" | "unsaved";
+  path: string;
+  taskCount: number | null;
+  reason: string;
+  superseded?: string;
+};
+
+// The LATEST snapshot write failed: where it was going, why, and where the
+// board went instead (`unsaved`, null when no fallback could be written
+// either). Null once a write succeeds: one state, one meaning. `fix` is what
+// to do about it, naming the path that is actually wrong (see snapshotFix).
+//
+// `held` says why a request to end the daemon was NOT honoured: set when the
+// board is in no file (`unsaved` null) and the idle timeout or the browser's
+// Close board asked it to end. Null otherwise. It goes with the failure: the
+// first write that works clears the whole record.
+type SnapshotSaveFailed = {
+  path: string;
+  error: string;
+  unsaved: string | null;
+  taskCount: number;
+  held: string | null;
+  fix: string;
+} | null;
 
 type BrowserMsg =
   | { type: "task.toggle"; id: string; status: TaskStatus }
@@ -726,6 +873,37 @@ async function main(argv: string[]): Promise<number> {
   process.on("SIGTERM", onFatal("SIGTERM", 143));
   process.on("SIGINT", onFatal("SIGINT", 130));
 
+  // ⛔ ONE DAEMON PER ID, TAKEN HERE: BEFORE ANY SNAPSHOT WRITE (see lock.ts).
+  // A forced id (`--id`, what every keyed open passes) is the only kind two
+  // daemons can share; a minted id is random and needs no lock. A daemon that
+  // finds a live owner exits NOW, having read and written nothing, and the
+  // `open` that spawned it attaches to the owner's discovery file. Exit 6 is
+  // the house `conflict`; nobody reads it (the daemon is detached), so the
+  // stderr line below, which lands in daemon.log, is the record.
+  const lockFile = sessionId ? lockPath(BOUNTY_HOME, sessionId) : null;
+  if (lockFile) {
+    const got = await acquireLock(lockFile, sessionId, {
+      closingWaitMs: SHUTDOWN_WATCHDOG_MS + 1000,
+    });
+    if (!got.ok) {
+      const h = got.holder;
+      // Liveness unknown (no `ps`, or a `ps` that fails): the same exit before
+      // anything is read or written, but the record says it is a refusal and
+      // why, since "already running" would not be known either.
+      if (got.unknown !== undefined && h) {
+        const r = unknownHolderRefusal(lockFile, sessionId, h.pid, got.unknown);
+        logDaemon("lockLivenessUnknown", { holder: h, lock: lockFile, why: got.unknown });
+        process.stderr.write(`bounty: ${r.message}\n  hint: ${r.hint}\n`);
+        return 6;
+      }
+      logDaemon("lockHeld", { holder: h });
+      process.stderr.write(
+        `bounty: board ${sessionId} is already running${h ? ` (pid ${h.pid}${h.port ? `, port ${h.port}` : ""})` : ""}; this daemon exits without touching it\n`,
+      );
+      return 6;
+    }
+  }
+
   // Resolved BEFORE any filesystem write. A forced-dev boot at a surface-free
   // destination must die HERE, at the import, having written nothing: no
   // snapshot, no discovery file — so a CLI polling for the session file sees a
@@ -773,6 +951,13 @@ async function main(argv: string[]): Promise<number> {
   // b15 — present-and-null on every boot: null means "no restore failed", never
   // "this daemon does not report restore failures".
   let restoreFailed: { path: string; reason: string } | null = null;
+  // (b) A board restored from a file OTHER than its own snapshot (a
+  // `.pre-fresh-` copy, a `.bak`, another board's) is flushed to its own
+  // snapshot on the first debounce tick, not at its first mutation. Until then
+  // its own snapshot holds whatever was there before: after `--fresh
+  // --restore`, the torn-down board, which a SIGKILL would leave for the next
+  // keyed respawn to restore instead of the board the caller asked for.
+  let restoredFromElsewhere = false;
   if (v.restore) {
     const restoreArg = v.restore as string;
     const restorePath = existsSync(restoreArg)
@@ -780,11 +965,17 @@ async function main(argv: string[]): Promise<number> {
       : join(SNAPSHOTS_DIR, `${restoreArg}.json`);
     try {
       const snap = JSON.parse(readFileSync(restorePath, "utf8")) as Partial<BoardState>;
+      // (c) A snapshot whose `tasks` is not an array USED TO RESTORE AS [] with
+      // `restoreFailed: null`: an empty board reported as a healthy restore,
+      // whose first write then replaced the file (re-measure cell 3e). It is a
+      // failed restore, named as one, the same as truncated JSON.
+      const problem = snapshotProblem(snap);
+      if (problem) throw new Error(problem);
       const merged: BoardState = { title: state.title, tasks: [], ...snap };
       if (typeof merged.title === "string") state.title = merged.title;
-      state.tasks = Array.isArray(merged.tasks)
-        ? merged.tasks.map(validateTask).filter((t): t is Task => t !== null)
-        : [];
+      state.tasks = merged.tasks.map(validateTask).filter((t): t is Task => t !== null);
+      restoredFromElsewhere =
+        !sessionId || resolve(restorePath) !== resolve(SNAPSHOTS_DIR, `${sessionId}.json`);
     } catch (e) {
       // b15 — A RESTORE THAT WAS ATTEMPTED AND FAILED USED TO BE INVISIBLE.
       // This branch wrote to the DAEMON'S stderr, and cli.ts spawns the daemon
@@ -850,7 +1041,7 @@ async function main(argv: string[]): Promise<number> {
   // Debounced persistence: a board mutation marks the snapshot dirty; a ~1s
   // timer flushes it, and a final write lands on close. The snapshot is keyed by
   // session id and KEPT on close (it's the resume point for --restore).
-  let snapDirty = false;
+  let snapDirty = restoredFromElsewhere;
   // #73/#74 — ONCE PER DAEMON SESSION. Lives here, in the daemon's closure, so
   // "session" means exactly "this process": a restart re-arms it, which is the
   // point (the state worth keeping is whatever existed before THIS daemon
@@ -875,10 +1066,150 @@ async function main(argv: string[]): Promise<number> {
   // alongside its event; event-only is fine only for signals that are
   // self-evidently transient.
   let snapshotBackedUp: { path: string; taskCount: number; reason: string } | null = null;
-  const saveSnapshot = () => {
+  // (d) Every backup this daemon wrote, in order. `snapshotBackedUp` above is
+  // the shrink rotation alone and keeps its shape; this list is what `close`
+  // hands back to the caller, and what the discovery file (so `open`) carries
+  // for a backup made at boot.
+  const backupsThisSession: BackupRecord[] = [];
+  // ⛔ A DAEMON WRITES OVER ITS OWN SNAPSHOT ONLY IF IT OWNS IT: it read that
+  // file at boot (restored from it), or wrote it itself since, or has just
+  // copied it aside. Three verifier rounds each found a narrower edge of one
+  // cause, a daemon writing over a snapshot it never read or kept (a restore
+  // over a read-only snapshots/, over a mode-000 file, a keyed respawn over a
+  // mode-000 file, each healed before the next write): the case guards
+  // (`pre-restore`, the boot `unreadable` copy) skipped silently when their
+  // read or copy failed, and the next same-count write erased the old board
+  // (decision-log row 13). So before the first write of a daemon that does NOT
+  // own the file, saveSnapshot copies it aside (`<id>.unread-<ts>.bak.json`),
+  // and if that copy fails the write does not happen: the board goes to the
+  // `unsaved` dump instead, and `snapshotSaveFailed` says why. A file that is
+  // not there needs no copy. Set true at boot (below) when the daemon read the
+  // file, when there is no file, or when the board already holds all of it;
+  // set true by every copy of the file (`unreadable`, `pre-restore`, `shrink`,
+  // `unread`) and by every write. Never set back: once owned, a later write
+  // proceeds normally. Costs nothing on a normal boot (a keyed respawn read
+  // its file; a new board has none): it fires only after a failed read or
+  // copy, or a boot that never read the file (`--fresh`, a restore from
+  // elsewhere), and then once.
+  let ownsSnapshot = false;
+  // Why this daemon does not own its snapshot, for the copy's `reason`.
+  let unownedWhy = "this board did not read it at boot";
+  // True from a copy of the file until the next write: the bytes on disk are
+  // already kept, so the shrink rotation does not copy them a second time.
+  let keptSinceWrite = false;
+  // (c) AN UNREADABLE SNAPSHOT IS COPIED ASIDE, NEVER WRITTEN OVER. The shrink
+  // guard below cannot protect a file it cannot count (`prior` is null, and
+  // null declines to rotate), so a truncated or malformed snapshot was simply
+  // replaced by the next write, with no backup (re-measure cells 3d, 3e). It is
+  // copied byte-for-byte to `<id>.unreadable-<ts>.bak.json` first. If the copy
+  // fails, the write does not happen: the throw lands in saveSnapshot's catch.
+  // `unreadableKept` makes it once per unreadable file: set by the copy,
+  // cleared by our own next write (after which the file is ours, and readable).
+  let unreadableKept = false;
+  const keepUnreadable = (path: string, why: string, announce: boolean) => {
+    const backup = join(SNAPSHOTS_DIR, `${sessionId}.unreadable-${Date.now()}.bak.json`);
+    copyFileSync(path, backup);
+    unreadableKept = true;
+    ownsSnapshot = true;
+    keptSinceWrite = true;
+    const reason = `the snapshot could not be read as a board: ${why}; it is kept byte-for-byte before anything is written over it`;
+    backupsThisSession.push({ kind: "unreadable", path: backup, taskCount: null, reason });
+    logDaemon("snapshotBackedUp", { kind: "unreadable", backup, why });
+    // Not at boot: the event log's first frame is `ready`, and the boot copy
+    // reaches the caller on `open`'s envelope through the discovery file.
+    if (announce) emitEvent({ type: "snapshotBackedUp", kind: "unreadable", backup, by: "system" });
+    process.stderr.write(`bounty: ${reason} — copied to ${backup}\n`);
+  };
+  // The rule's own copy: a readable snapshot this daemon does not own, kept
+  // before the first write over it. A failed copy is rethrown with what it
+  // means, so `snapshotSaveFailed.error` says why the write did not happen.
+  const keepUnowned = (path: string, taskCount: number | null) => {
+    const backup = join(SNAPSHOTS_DIR, `${sessionId}.unread-${Date.now()}.bak.json`);
+    try {
+      copyFileSync(path, backup);
+    } catch (e) {
+      throw new Error(
+        `${path} could not be copied aside (${e instanceof Error ? e.message : String(e)}), and ${unownedWhy}, so it was not written over`,
+      );
+    }
+    ownsSnapshot = true;
+    keptSinceWrite = true;
+    const reason = `${unownedWhy}; kept before the board was first written over it`;
+    backupsThisSession.push({ kind: "unread", path: backup, taskCount, reason });
+    logDaemon("snapshotBackedUp", { kind: "unread", backup, why: unownedWhy });
+    emitEvent({ type: "snapshotBackedUp", kind: "unread", backup, by: "system" });
+    process.stderr.write(`bounty: ${reason} — copied to ${backup}\n`);
+  };
+  // ⛔ A SNAPSHOT WRITE THAT FAILS USED TO BE SILENT, AND THE WORK WAS LOST.
+  // The catch below said "persistence is best-effort": with the snapshot path a
+  // directory, or not writable, every write failed, `close` answered
+  // `{"ok":true,"down":true,"snapshotBackups":[]}`, and the board's new work was
+  // saved nowhere (verifier, 2026-09-28). Now a failed write DUMPS THE BOARD to
+  // a file of its own, `<id>.unsaved-<ts>.json`, in snapshots/ or, if that is
+  // the problem, in $BOUNTY_HOME; it can never be the snapshot path. One file
+  // per daemon life, rewritten on each failed write. The failure is readable on
+  // `/state` (`snapshotSaveFailed`), sent once per failure run as an event, and
+  // carried on `close`'s reply, which the CLI turns into a refusal.
+  let snapshotSaveFailed: SnapshotSaveFailed = null;
+  let unsavedRecord: BackupRecord | null = null;
+  const dumpUnsaved = (): string | null => {
+    const name = `${sessionId}.unsaved-${Date.now()}.json`;
+    const candidates = [
+      ...(unsavedRecord ? [unsavedRecord.path] : []),
+      join(SNAPSHOTS_DIR, name),
+      join(BOUNTY_HOME, name),
+    ];
+    for (const p of candidates) {
+      try {
+        mkdirSync(dirname(p), { recursive: true });
+        writeFileAtomic(p, JSON.stringify(state));
+        return p;
+      } catch {}
+    }
+    return null;
+  };
+  const snapshotWriteFailed = (path: string, e: unknown) => {
+    const error = e instanceof Error ? e.message : String(e);
+    const unsaved = dumpUnsaved();
+    const first = snapshotSaveFailed === null;
+    snapshotSaveFailed = {
+      path,
+      error,
+      unsaved,
+      taskCount: state.tasks.length,
+      // A hold stands while the board is still in no file; a dump ends it.
+      held: unsaved ? null : (snapshotSaveFailed?.held ?? null),
+      fix: snapshotFix(path),
+    };
+    if (unsaved) {
+      const reason = `the snapshot ${path} could not be written (${error}); the board was saved here instead`;
+      if (!unsavedRecord) {
+        unsavedRecord = { kind: "unsaved", path: unsaved, taskCount: 0, reason };
+        backupsThisSession.push(unsavedRecord);
+      }
+      unsavedRecord.path = unsaved;
+      unsavedRecord.taskCount = state.tasks.length;
+      unsavedRecord.reason = reason;
+      // The dump now holds the newest board again, so it is an act again.
+      delete unsavedRecord.superseded;
+    }
+    logDaemon("snapshotSaveFailed", { path, error, unsaved, tasks: state.tasks.length });
+    if (first) {
+      emitEvent({ type: "snapshotSaveFailed", path, error, unsaved, by: "system" });
+      process.stderr.write(
+        `bounty: could not write the snapshot ${path} (${error}); ${unsaved ? `the board was saved to ${unsaved}` : "no fallback file could be written either"}\n`,
+      );
+    }
+  };
+  /** Write the board's snapshot. False when the write failed (see above). */
+  const saveSnapshot = (): boolean => {
+    const path = join(SNAPSHOTS_DIR, `${sessionId}.json`);
     try {
       mkdirSync(SNAPSHOTS_DIR, { recursive: true });
-      const path = join(SNAPSHOTS_DIR, `${sessionId}.json`);
+      if (!unreadableKept && existsSync(path)) {
+        const why = unreadableReason(path);
+        if (why) keepUnreadable(path, why, true);
+      }
       // Copy the existing snapshot aside BEFORE the first shrinking write of
       // this daemon's life. See shouldRotateSnapshot for why the predicate is
       // shrinkage rather than emptiness, and why it fires once per boot.
@@ -889,20 +1220,38 @@ async function main(argv: string[]): Promise<number> {
       // tsc reports TS2322 and `bun test` stays green, which is the standing
       // bun-green-is-not-tsc-clean trap. Keeping the predicate total anyway is
       // deliberate: it stays correct for any caller, not just this one.
-      if (prior !== null && shouldRotateSnapshot(prior, state.tasks.length, rotatedThisSession)) {
+      // `keptSinceWrite`: the bytes on disk were just copied (at boot, or by the
+      // unreadable copy above), so a second copy of them keeps nothing new.
+      const owned = ownsSnapshot;
+      if (
+        !keptSinceWrite &&
+        prior !== null &&
+        shouldRotateSnapshot(prior, state.tasks.length, rotatedThisSession)
+      ) {
         // `.bak.json` and not `.bak`: the suffix is what makes this recoverable
         // through the verbs that already exist. `sessions` lists *.json and
         // strips the extension, so the backup appears there by name; and
         // `open --restore <id>.pre-<ts>.bak` resolves it, because restore joins
         // SNAPSHOTS_DIR with the arg plus ".json". Zero new recovery surface.
         const backup = join(SNAPSHOTS_DIR, `${sessionId}.pre-${Date.now()}.bak.json`);
-        copyFileSync(path, backup);
+        try {
+          copyFileSync(path, backup);
+        } catch (e) {
+          // Unowned, a failed copy means the rule's refusal: say so.
+          if (owned) throw e;
+          throw new Error(
+            `${path} could not be copied aside (${e instanceof Error ? e.message : String(e)}), and ${unownedWhy}, so it was not written over`,
+          );
+        }
         rotatedThisSession = true;
+        ownsSnapshot = true;
+        keptSinceWrite = true;
         snapshotBackedUp = {
           path: backup,
           taskCount: prior,
           reason: `about to write ${state.tasks.length} tasks over ${prior}`,
         };
+        backupsThisSession.push({ kind: "shrink", ...snapshotBackedUp });
         // ⛔ AND IT SAYS SO. A silent rotation is a success-shaped lie, which is
         // the defect family this whole project is named after — the user would
         // be protected and never know they had needed protecting. Three
@@ -925,11 +1274,160 @@ async function main(argv: string[]): Promise<number> {
           `bounty: snapshot was about to shrink ${prior} → ${state.tasks.length} tasks; copied the old one to ${backup}\n`,
         );
       }
-      writeFileSync(path, JSON.stringify(state));
-    } catch {
-      /* persistence is best-effort */
+      // The rule (see `ownsSnapshot`): a file this daemon neither read nor
+      // wrote nor copied is copied now, or not written over at all. Absent,
+      // there is nothing to keep; a folder that cannot be searched throws.
+      if (!ownsSnapshot) {
+        if (snapshotPresent(path)) keepUnowned(path, prior);
+        else ownsSnapshot = true;
+      }
+      // Atomic (tmp + rename), so a death mid-write leaves the previous
+      // snapshot rather than a truncated one: a bare writeFileSync is how a
+      // snapshot becomes unreadable in the first place.
+      writeFileAtomic(path, JSON.stringify(state));
+      ownsSnapshot = true;
+      keptSinceWrite = false;
+      unreadableKept = false;
+      snapshotSaveFailed = null;
+      // ⛔ AN `unsaved` DUMP OLDER THAN THIS WRITE IS SUPERSEDED. The snapshot
+      // now holds the board as it stands, and the dump holds it as it stood
+      // when a write failed. Offering the dump's restore after this point
+      // offered a rollback as a recovery (verifier, 2026-09-28).
+      //
+      // ⚠ THE FILE IS KEPT, NOT DELETED. Deleting is irreversible and this
+      // write is not proof the board never needed the dump: a task removed
+      // between the dump and this write is in the dump alone. Retention is the
+      // caller's call (and the rotation item's), so the record says what the
+      // file is and the CLI stops offering it as an act.
+      //
+      // ⛔ AND IT IS SAID ONLY HERE, after a write the rule allowed: the file
+      // written over was read, written or copied by this daemon, so no
+      // snapshot it never kept has been written over. The third verifier saw
+      // "superseded, nothing to do" printed over an old board in no file.
+      if (unsavedRecord && !unsavedRecord.superseded) {
+        unsavedRecord.superseded = `the snapshot ${path} was written after this dump, with ${state.tasks.length} task(s): it is the newer board, and restoring this file would roll the board back. Kept; deleting it is your call`;
+        logDaemon("unsavedSuperseded", { unsaved: unsavedRecord.path, snapshot: path });
+      }
+      return true;
+    } catch (e) {
+      snapshotWriteFailed(path, e);
+      return false;
     }
   };
+  // ⛔ A BOARD THAT IS IN NO FILE IS NOT ENDED BY A REQUEST. Save first; if
+  // neither the snapshot nor a fallback dump took the board, ending the daemon
+  // ends the only copy. `close` (over /cmd), the browser's Close board and the
+  // idle timeout all ask through here and are refused. A SIGTERM/SIGINT does
+  // NOT: a signal is an order to stop, and the teardown's own save is all it
+  // gets (SKILL.md, Durability). True when the board must stay up.
+  const boardInNoFile = (): boolean => {
+    const saved = saveSnapshot();
+    snapDirty = false;
+    return !saved && !snapshotSaveFailed?.unsaved;
+  };
+  /** Record (on `state`) and log why a request to end the board was refused. */
+  const holdEnding = (event: string, held: string) => {
+    if (!snapshotSaveFailed) return;
+    const first = snapshotSaveFailed.held !== held;
+    snapshotSaveFailed.held = held;
+    if (first) {
+      logDaemon(event, { path: snapshotSaveFailed.path, tasks: state.tasks.length });
+      process.stderr.write(`bounty: ${held}\n`);
+    }
+  };
+  const nowhereToWrite = () =>
+    `the board is in no file (its snapshot ${snapshotSaveFailed?.path} and every fallback in ${SNAPSHOTS_DIR} and ${BOUNTY_HOME} could not be written), so ending the daemon would lose its ${state.tasks.length} task(s)`;
+
+  // ── Who owns the snapshot at boot (the rule at `ownsSnapshot`) ──────────
+  // An unkeyed board has no id yet (it is minted at listen): its first write
+  // decides, and a new id has no file. A keyed board owns its file when it
+  // restored from it, when there is none, or when the board already holds all
+  // of it; otherwise the copies below try to keep it now, so `open` can name
+  // them, and saveSnapshot keeps it before the first write if they could not.
+  if (sessionId) {
+    const own = join(SNAPSHOTS_DIR, `${sessionId}.json`);
+    const readOwn = Boolean(v.restore) && !restoreFailed && !restoredFromElsewhere;
+    let present = true;
+    try {
+      present = snapshotPresent(own);
+    } catch {
+      /* cannot tell: not owned, and saveSnapshot reports the real cause */
+    }
+    let parsed: unknown;
+    let readable = false;
+    try {
+      parsed = JSON.parse(readFileSync(own, "utf8"));
+      readable = true;
+    } catch {
+      /* unreadable or not JSON: the copies below, or saveSnapshot, decide */
+    }
+    if (readOwn || !present || (readable && boardHoldsSnapshot(state, parsed))) {
+      ownsSnapshot = true;
+    } else {
+      unownedWhy = restoreFailed
+        ? `this board's restore failed (${restoreFailed.reason}), so it never read its own snapshot`
+        : restoredFromElsewhere
+          ? "this board was restored from another file and never read its own snapshot"
+          : "this board started without reading its own snapshot (open --fresh)";
+
+      // (c) A board whose own snapshot is unreadable (its keyed respawn's
+      // restore just failed on it, or `--fresh` never read it) keeps a copy
+      // NOW, before any write, so `open` can name it.
+      let why: string | null = null;
+      try {
+        why = present ? unreadableReason(own) : null;
+      } catch {
+        /* not readable at all: saveSnapshot reports the real cause */
+      }
+      if (why) {
+        try {
+          keepUnreadable(own, why, false);
+        } catch {
+          /* saveSnapshot retries the copy before its first write */
+        }
+      }
+
+      // ⛔ A RESTORE FROM ANOTHER FILE KEEPS THE BOARD'S OWN SNAPSHOT FIRST,
+      // when it holds anything the restored board does not (a task, or the
+      // title: not `tasks` alone, see boardHoldsSnapshot). The restored board
+      // is written over that snapshot on the first debounce tick, and the
+      // shrink guard only fires when the count drops: restoring a 3-task
+      // backup over a 1-task snapshot that held newer work left that work in
+      // no file (found checking the other backup kinds after route 1,
+      // 2026-09-28). The copy is `<id>.pre-restore-<ts>.bak.json`, named on
+      // `open`'s envelope with its restore, like every backup. If the copy
+      // fails (a read-only snapshots/), the daemon still does not own the
+      // file, and saveSnapshot's rule copy is tried before the first write.
+      const ownTasks = readable ? (parsed as { tasks?: unknown }).tasks : undefined;
+      if (restoredFromElsewhere && !restoreFailed && Array.isArray(ownTasks)) {
+        const restored = new Map(state.tasks.map((t) => [t.id, JSON.stringify(t)]));
+        const lost = ownTasks.filter(
+          (t) => restored.get((t as { id?: string })?.id ?? "") !== JSON.stringify(t),
+        ).length;
+        const backup = join(SNAPSHOTS_DIR, `${sessionId}.pre-restore-${Date.now()}.bak.json`);
+        try {
+          copyFileSync(own, backup);
+          ownsSnapshot = true;
+          keptSinceWrite = true;
+          const held =
+            lost > 0
+              ? `${lost} task(s) the restored board does not`
+              : "a title (or another board field) the restored board does not";
+          const reason = `this board was restored from another file, and its own snapshot held ${held}; kept before the restored board is written over it`;
+          backupsThisSession.push({
+            kind: "pre-restore",
+            path: backup,
+            taskCount: ownTasks.length,
+            reason,
+          });
+          logDaemon("snapshotBackedUp", { kind: "pre-restore", backup, lost });
+          process.stderr.write(`bounty: ${reason} — copied to ${backup}\n`);
+        } catch {
+          /* not kept: saveSnapshot copies it before the first write, or dumps */
+        }
+      }
+    }
+  }
   // Event types that mutate board state — used to set snapDirty centrally (every
   // mutation already emits one of these). Lifecycle frames don't dirty the snap.
   const DIRTYING = new Set([
@@ -1205,6 +1703,23 @@ async function main(argv: string[]): Promise<number> {
   function handleAgentMsg(msg: AgentMsg): ApplyResult {
     const by = typeof msg.as === "string" ? msg.as : "agent";
     if (msg.type === "init") {
+      // ⛔ ONE ACT, ONE ANSWER. Seeding tasks over a board that HAS tasks
+      // replaces every one of them, and it used to do that at applied:true with
+      // `tasksDropped:null`, which reads as "nothing dropped". It is refused as
+      // a `conflict` unless the caller opts in with `replace`. Decided HERE, not
+      // in the CLI, because only the daemon sees the board and the write in one
+      // step. Checked before the title is touched, so a refusal changes nothing.
+      // A title-only init (no `tasks`) never conflicts.
+      if (Array.isArray(msg.tasks) && state.tasks.length > 0 && msg.replace !== true) {
+        const n = state.tasks.length;
+        return {
+          ok: true,
+          applied: false,
+          kind: "conflict",
+          error: `init: the board already has ${n} task${n === 1 ? "" : "s"} and seeding would replace ${n === 1 ? "it" : "all of them"}; the board is unchanged`,
+        };
+      }
+      const replaced = msg.replace === true ? state.tasks.length : undefined;
       if (typeof msg.title === "string") state.title = msg.title;
       // Filter-and-keep-valid: drop malformed tasks, keep the well-formed ones
       // (the /cmd body is untrusted — `body as AgentMsg` is a cast, not a check).
@@ -1231,6 +1746,7 @@ async function main(argv: string[]): Promise<number> {
         tasksDropped: dropped.length
           ? { requested: Array.isArray(msg.tasks) ? msg.tasks.length : 0, dropped }
           : null,
+        ...(replaced !== undefined ? { tasksReplaced: replaced } : {}),
       };
     } else if (msg.type === "task.add") {
       // #83 — `applied:false` alone conflated TWO causes and named neither, so
@@ -1396,8 +1912,33 @@ async function main(argv: string[]): Promise<number> {
       broadcast({ type: "message", text: msg.text });
       return { ok: true, applied: true };
     } else if (msg.type === "close") {
+      // (d) The final write happens HERE, before the reply, so any backup it
+      // makes is on the reply. The teardown still writes again (it is the
+      // write every other ending relies on); by then the state is unchanged and
+      // the once-per-daemon rotation has fired, so it adds nothing. The list is
+      // every backup of this daemon's life, not only this write's: a debounced
+      // flush that rotated earlier has no response of its own to carry it, and
+      // this reply is the last one the daemon sends.
+      // Nowhere at all took the board (not the snapshot, not a fallback file):
+      // closing now would end the only copy, so the board stays up and the
+      // close is refused. `conflict`: a precondition (somewhere writable)
+      // failed, and fixing it then closing again is the recovery.
+      if (boardInNoFile()) {
+        return {
+          ok: true,
+          applied: false,
+          kind: "conflict",
+          error: `board not closed: its snapshot ${snapshotSaveFailed?.path} could not be written (${snapshotSaveFailed?.error}), and no fallback file could be written in ${SNAPSHOTS_DIR} or ${BOUNTY_HOME} either; the board is left running so its ${state.tasks.length} task(s) are not lost. Make one of those writable, then close again`,
+          snapshotSaveFailed,
+        };
+      }
       resolveDone({ code: 0, reason: "close" });
-      return { ok: true, applied: true };
+      return {
+        ok: true,
+        applied: true,
+        snapshotBackups: backupsThisSession,
+        snapshotSaveFailed,
+      };
     }
     // An unrecognised command type. `usage`, not `conflict`: nothing about the
     // board's state refused it — the caller named a verb this daemon does not
@@ -1481,6 +2022,9 @@ async function main(argv: string[]): Promise<number> {
               // b15 — also readable here: a boot line is missable and this fact
               // outlives it.
               restoreFailed,
+              // The latest snapshot write failed, and where the board went
+              // instead. Present-and-null when the last write succeeded.
+              snapshotSaveFailed,
             }),
             { headers: { "Content-Type": "application/json" } },
           );
@@ -1669,7 +2213,14 @@ async function main(argv: string[]): Promise<number> {
             // change was live to all consumers, so dismissing loses nothing. The
             // teardown's "session ended" broadcast + socket close is the uniform
             // end signal every client (browser + joiners) receives.
-            resolveDone({ code: 0, reason: "user" });
+            //
+            // ⛔ UNLESS THE BOARD IS IN NO FILE: then dismissing loses every
+            // task, so it is refused like `close`, and the board says why.
+            if (boardInNoFile()) {
+              const held = `Close board was refused: ${nowhereToWrite()}. Make one of those writable, then close again`;
+              holdEnding("closeRefused", held);
+              broadcast({ type: "message", text: `board not closed: ${held}` });
+            } else resolveDone({ code: 0, reason: "user" });
           }
           // A browser action (e.g. dragging a blocker to Done) can unblock
           // dependents — fire `unblocked` for any transition.
@@ -1707,6 +2258,7 @@ async function main(argv: string[]): Promise<number> {
   //     the frame that carries boot facts — the same argument b16 made for
   //     putting restoreFailed there.
   const url = `http://${host}:${boundPort}`;
+  if (lockFile) updateLock(lockFile, { pid: process.pid, port: boundPort });
   // First frame on the event log (id 1) — bookends the stream with `closed`.
   // `mode` rides BOTH transports bounty has. It prints no stdout handshake and
   // no stderr boot line, so the ready event and the discovery JSON are the
@@ -1736,6 +2288,9 @@ async function main(argv: string[]): Promise<number> {
     // later /state would mean the caller learns of it, if at all, on a different
     // command than the one that broke.
     restoreFailed,
+    // (d) Any backup made at BOOT, before this file was written, for the same
+    // reason: `open` prints this payload, and `open` is the act that made it.
+    snapshotBackups: backupsThisSession,
   });
   // ⚠ ATOMIC, because readSession now treats unparseable content as corruption
   // rather than absence. A bare writeFileSync is not atomic: a CLI reading while
@@ -1802,13 +2357,31 @@ async function main(argv: string[]): Promise<number> {
     idleMs: () => performance.now() - lastActivity,
     touch,
     timeoutMs: timeout * 1000,
-    onIdleClose: () => resolveDone({ code: 124, reason: "timeout" }),
+    // ⛔ HELD, NOT ENDED, WHILE THE BOARD IS IN NO FILE (verifier, 2026-09-28:
+    // only `close` was guarded, and an idle exit dropped the unsaved tasks).
+    // `touch()` restarts the countdown, so each full timeout retries the save
+    // and the first one that works ends the board as a normal timeout.
+    onIdleClose: () => {
+      if (boardInNoFile()) {
+        holdEnding(
+          "idleCloseHeld",
+          `the idle timeout is held: ${nowhereToWrite()}. Make one of those writable; the save is retried each time the timeout comes round, and the first that works ends the board`,
+        );
+        touch();
+        return;
+      }
+      resolveDone({ code: 124, reason: "timeout" });
+    },
     snapshot: {
       dirty: () => snapDirty,
       clear: () => {
         snapDirty = false;
       },
-      write: saveSnapshot,
+      // A failed write reports itself (snapshotWriteFailed); the tick has
+      // nothing to do with the result.
+      write: () => {
+        saveSnapshot();
+      },
     },
   });
 
@@ -1842,6 +2415,9 @@ async function main(argv: string[]): Promise<number> {
   }, 30_000);
 
   const { code, reason } = await done;
+  // A successor spawned during this teardown waits for the release below
+  // instead of losing to a daemon that is on its way out (lock.ts).
+  if (lockFile) updateLock(lockFile, { pid: process.pid, port: boundPort, closing: true });
   // Known-exit diagnostics (#64). `subscribers` at an idle-timeout exit is the
   // key signal: if it idle-closes with subscribers > 0 the idle logic is the
   // culprit; if 0, no tail was actually connected. Captured BEFORE teardown
@@ -1873,6 +2449,9 @@ async function main(argv: string[]): Promise<number> {
   // a funnel that already does the job is how two registries drift apart.
   await drainAndStop({ server, clients: sseClients, sockets });
   cleanupDiscovery();
+  // AFTER the discovery cleanup: a successor writes its discovery file only
+  // once it holds the lock, so this daemon's cleanup can never unlink it.
+  if (lockFile) releaseLock(lockFile);
   // ⛔ THE WATCHDOG IS CLEARED **HERE**, AT THE END OF THE TEARDOWN — WHICH IS
   // WHERE ITS OWN COMMENT ALWAYS SAID IT WAS, AND WHERE IT WAS NOT.
   //

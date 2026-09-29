@@ -87,3 +87,24 @@ describe("the ordinary shapes a document is made of", () => {
     expect(renderMarkdown("").trim()).toBe("");
   });
 });
+
+/**
+ * The chat log renders through this same function (item chat-renders-markdown),
+ * so it must fit a short FRAGMENT as well as a document: no frontmatter split
+ * inside it (that is MarkdownView's step, not the renderer's), and no heading
+ * anchors that would collide between messages. ⚠ GFM footnotes are the one
+ * exception — they mint fixed ids — left alone until a real reply uses one.
+ */
+describe("a short fragment, as the chat sends it", () => {
+  test("one line is one paragraph and nothing else", () => {
+    expect(renderMarkdown("ok")).toBe("<p>ok</p>");
+  });
+  test("headings carry no ids to collide between messages", () => {
+    expect(renderMarkdown("## Plan")).toBe("<h2>Plan</h2>");
+  });
+  test("the renderer does not split frontmatter itself", () => {
+    const out = renderMarkdown("---\na: b\n---\nbody");
+    expect(out).toContain("<p>body</p>");
+    expect(out).toContain("<hr />");
+  });
+});

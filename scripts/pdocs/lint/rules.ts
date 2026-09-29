@@ -292,6 +292,129 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 export { UUID_RE };
 const TAG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
+/** The first H1 of a body, outside HTML comments and code fences: its index
+ *  in `body.split("\n")`, or -1. */
+export function firstHeading(body: string): number {
+  const lines = body.split("\n");
+  let comment = false;
+  let fence = false;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i] as string;
+    if (!comment && /^\s*(```|~~~)/.test(line)) fence = !fence;
+    if (fence) continue;
+    if (comment) {
+      if (line.includes("-->")) comment = false;
+      continue;
+    }
+    if (/^\s*<!--/.test(line) && !line.includes("-->")) {
+      comment = true;
+      continue;
+    }
+    if (/^#\s/.test(line)) return i;
+  }
+  return -1;
+}
+
+/**
+ * What a type's template leaves for the writer to replace, read off the
+ * template the registry names — the project's own copy, so a project that
+ * rewrote its template is held to its own placeholders.
+ *
+ * DELIBERATELY NARROW. Only the exact strings the template itself holds are
+ * placeholders: a string field whose template value carries a bracketed prompt
+ * (`description: "[One sentence: …]"`, a cycle's `appetite`; never `id`, which
+ * `pdocs new` mints and BAD ID covers), any field left as `YYYY-MM-DD`, and
+ * the first H1. A pattern such as "any bracketed text" would fire on real
+ * documents — a `[WIP]` heading, a `- [ ]` checklist, a link — and a gate that
+ * reports prose it cannot judge gets bypassed. The cost is that a document
+ * written from an OLDER copy of a template is not caught once that template
+ * changes; `pdocs new` writes from the current one.
+ *
+ * `tags` is judged by word, not against the template: see `PLACEHOLDER_TAGS`.
+ */
+export interface TemplatePlaceholders {
+  /** Frontmatter key -> the template's placeholder value, unquoted. */
+  fields: Map<string, string>;
+  /** The template's first H1, whole line. */
+  h1: string | null;
+}
+
+export function templatePlaceholders(
+  ctx: Ctx,
+  registry: ReadonlyMap<string, RegistryRow>
+): Map<string, TemplatePlaceholders[]> {
+  const out = new Map<string, TemplatePlaceholders[]>();
+  for (const row of new Set(registry.values())) {
+    if (row.template === null || row.externalTemplate) continue;
+    const found: TemplatePlaceholders[] = [];
+    for (const rel of [row.template].flat()) {
+      const abs = join(ctx.repoRoot, rel);
+      if (!existsSync(abs)) continue;
+      const raw = readFileSync(abs, "utf8");
+      const m = /^---\n([\s\S]*?)\n---\n?/.exec(raw);
+      if (!m) continue;
+      const tpl = parseFrontmatter(m[1] as string);
+      const fields = new Map<string, string>();
+      for (const line of (m[1] as string).split("\n")) {
+        const kv = /^([A-Za-z_][\w-]*):\s*(.*)$/.exec(line);
+        if (!kv) continue;
+        const key = kv[1] as string;
+        const value = tpl.get(key) ?? "";
+        // Read off the RAW text: unquoted, `"[One sentence…]"` and the list
+        // `[area, area]` look alike.
+        const rawValue = stripInlineComment(kv[2] as string).trim();
+        if (value === "YYYY-MM-DD") fields.set(key, value);
+        else if (
+          key !== "id" &&
+          rawValue !== "" &&
+          !rawValue.startsWith("[") &&
+          /\[[^\]]+\]/.test(value)
+        )
+          fields.set(key, value);
+      }
+      const body = raw.slice(m[0].length);
+      const at = firstHeading(body);
+      found.push({
+        fields,
+        h1: at === -1 ? null : ((body.split("\n")[at] as string).trim()),
+      });
+    }
+    if (found.length) out.set(row.type, found);
+  }
+  return out;
+}
+
+/**
+ * The words the templates use as tag PROMPTS — `[area, area]`,
+ * `[area, feature]`. A template's other example tags (`[overview, product]`,
+ * `[surface, flow]`) are real words a document may choose on purpose, so
+ * `tags` is reported only when every tag is one of these.
+ */
+const PLACEHOLDER_TAGS = new Set(["area", "feature"]);
+
+/** The PLACEHOLDER rows for one document. */
+function placeholderProblems(
+  rel: string,
+  fields: ReadonlyMap<string, string>,
+  body: string,
+  placeholders: readonly TemplatePlaceholders[]
+): string[] {
+  const out = new Set<string>();
+  const at = firstHeading(body);
+  const h1 = at === -1 ? null : (body.split("\n")[at] as string).trim();
+  const tags = yamlList(fields.get("tags"));
+  if (placeholders.length && tags.length && tags.every((t) => PLACEHOLDER_TAGS.has(t)))
+    out.add(`PLACEHOLDER    ${rel}: \`tags\` is still the template's prompt [${tags.join(", ")}]`);
+  for (const p of placeholders) {
+    for (const [key, value] of p.fields)
+      if (fields.get(key) === value)
+        out.add(`PLACEHOLDER    ${rel}: \`${key}\` is still the template's "${value}"`);
+    if (h1 !== null && h1 === p.h1)
+      out.add(`PLACEHOLDER    ${rel}: the H1 is still the template's "${h1}"`);
+  }
+  return [...out];
+}
+
 // ---------------------------------------------------------------------------------------
 // The workbench: presence and vocabulary
 // ---------------------------------------------------------------------------------------
@@ -499,7 +622,8 @@ export function documentProblems(
   raw: string,
   docsRoot: string,
   requireTags: boolean,
-  registry: ReadonlyMap<string, RegistryRow> = defaultRegistryIndex()
+  registry: ReadonlyMap<string, RegistryRow> = defaultRegistryIndex(),
+  placeholders: readonly TemplatePlaceholders[] = []
 ): { problems: string[]; activeCycle: boolean; missing: string[] } {
   const { rel, type } = file;
   const problems: string[] = [];
@@ -600,9 +724,23 @@ export function documentProblems(
         `LEGACY FIELD   ${rel}: \`${legacy}\` is superseded by \`generated.at\` (OKF 0.2 §13.1)`
       );
 
-  for (const tag of yamlList(fields.get("tags")))
+  // A list, flow or block. `tags: a,b` is a string to every YAML reader, and
+  // `yamlList` would have split it and passed it.
+  const rawTags = fields.get("tags");
+  // Read quoted-ness off the raw line: the parser unquotes, so `"[a, b]"` — a
+  // string — comes back looking like the list `[a, b]`.
+  const quotedTags = /^tags:\s*["']/m.test(m[1] as string);
+  if (rawTags && (quotedTags || (!/^\[/.test(rawTags) && !/^-\s/.test(rawTags))))
+    problems.push(
+      `BAD TAGS       ${rel}: "${rawTags}"  (a list: [${yamlList(rawTags).join(", ")}])`
+    );
+  for (const tag of yamlList(rawTags))
     if (!TAG_RE.test(tag))
       problems.push(`BAD TAG        ${rel}: "${tag}"  (kebab-case)`);
+
+  problems.push(
+    ...placeholderProblems(rel, fields, raw.slice(m[0].length), placeholders)
+  );
 
   return { problems, activeCycle, missing };
 }
@@ -629,6 +767,7 @@ function libraryFindings(ctx: Ctx): {
   missing: MissingRecord[];
 } {
   const registry = registryIndex(ctx.config);
+  const placeholders = templatePlaceholders(ctx, registry);
   const isTpl = templateTest(ctx);
   const problems: string[] = [];
   const missing: MissingRecord[] = [];
@@ -640,7 +779,8 @@ function libraryFindings(ctx: Ctx): {
       readFileSync(file.path, "utf8"),
       ctx.config.docsRoot,
       true,
-      registry
+      registry,
+      placeholders.get(file.type)
     );
     problems.push(...r.problems);
     missing.push({ rel: file.rel, missing: r.missing });
@@ -687,6 +827,7 @@ function thinFindings(ctx: Ctx): {
   documents: WorkbenchDocument[];
 } {
   const registry = registryIndex(ctx.config);
+  const placeholders = templatePlaceholders(ctx, registry);
   const isTpl = templateTest(ctx);
   const problems: string[] = [];
   const missing: MissingRecord[] = [];
@@ -721,7 +862,14 @@ function thinFindings(ctx: Ctx): {
     if (file.misplaced)
       problems.push(`MISPLACED ENTITY  ${rel}  (${file.misplaced})`);
 
-    const r = documentProblems(file, raw, ctx.config.docsRoot, false, registry);
+    const r = documentProblems(
+      file,
+      raw,
+      ctx.config.docsRoot,
+      false,
+      registry,
+      placeholders.get(file.type)
+    );
     problems.push(...r.problems);
     missing.push({ rel, missing: r.missing });
     const m = /^---\n([\s\S]*?)\n---/.exec(raw);

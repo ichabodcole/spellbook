@@ -5,7 +5,7 @@ description:
   Nine spell CLIs taken through all seven acc steps on a new shared kit
   registry, behind a golden snapshot and an acc gate; lead-orchestrated
   subagents while Cole was away.
-tags: [area, feature]
+tags: [acc, cli, conformance]
 status: stable # A session is frozen the moment it is written; it is never a draft.
 generated: { by: claude-opus-5-5, at: 2026-09-26 }
 ---

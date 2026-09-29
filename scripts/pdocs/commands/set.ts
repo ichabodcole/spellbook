@@ -16,7 +16,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Command, Invocation, Option } from "../cli.ts";
-import { parseFrontmatter } from "../docs-lint/index.ts";
+import { parseFrontmatter, yamlList } from "../docs-lint/index.ts";
 import { ConflictError, ExitCode, UsageError, printEnvelope } from "../envelope.ts";
 import {
   FIELD_VALUES,
@@ -33,6 +33,9 @@ export interface SetChange {
   key: string;
   before: string | null;
   after: string | null;
+  /** False when the key already held the value: it is reported as already
+   *  set, and its line in the file is left exactly as it was. */
+  changed: boolean;
 }
 
 export interface SetData {
@@ -196,6 +199,21 @@ export const set: Command = {
         : new UsageError(problem.message);
     for (const [k, v] of canonical) fills.set(k, v);
 
+    // A key that already holds the value is not a change. It is reported as
+    // already set and its line is not rewritten — not even to drop a comment —
+    // so a `set` that changes nothing leaves the file byte-identical.
+    const same = (key: string, next: string): boolean => {
+      const now = before.get(key);
+      if (now === undefined) return false;
+      const written = parseFrontmatter(`${key}: ${next}`).get(key) ?? "";
+      return LIST_KEYS.has(key)
+        ? yamlList(now).join("\n") === yamlList(written).join("\n")
+        : now === written;
+    };
+    const unchanged = new Set([...fills].filter(([k, v]) => same(k, v)).map(([k]) => k));
+    for (const key of unchanged) fills.delete(key);
+    const absent = new Set(unset.filter((k) => !before.has(k)));
+
     const newBlock = removeFrontmatterKeys(rewriteFrontmatter(block, fills), new Set(unset));
     const newRaw = `---\n${newBlock}\n---${raw.slice(m[0].length)}`;
 
@@ -216,7 +234,7 @@ export const set: Command = {
         `refusing: the change would make \`pdocs check\` report ${introduced.length === 1 ? "this" : "these"}:\n  ${introduced.join("\n  ")}`
       );
 
-    writeFileSync(abs, newRaw);
+    if (newRaw !== raw) writeFileSync(abs, newRaw);
 
     const after = parseFrontmatter(newBlock);
     const value = (map: ReadonlyMap<string, string>, k: string) =>
@@ -227,6 +245,7 @@ export const set: Command = {
         key,
         before: value(before, key),
         after: value(after, key),
+        changed: !unchanged.has(key) && !absent.has(key),
       })),
     };
 
@@ -235,7 +254,12 @@ export const set: Command = {
       console.log(data.path);
       for (const c of data.changes)
         console.log(
-          shortenIds(`  ${c.key}: ${c.before ?? "(none)"} -> ${c.after ?? "(none)"}`, modelIds(model))
+          shortenIds(
+            c.changed
+              ? `  ${c.key}: ${c.before ?? "(none)"} -> ${c.after ?? "(none)"}`
+              : `  ${c.key}: ${c.after ?? "(none)"} (already ${c.after === null ? "unset" : "set"})`,
+            modelIds(model)
+          )
         );
     }
     return ExitCode.Success;

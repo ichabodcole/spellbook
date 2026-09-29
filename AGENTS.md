@@ -184,6 +184,19 @@ and triggers release-please — that is the release, and the release is Cole's.
 gh pr merge --merge --subject "<subject>" --body-file <file>
 ```
 
+## Documentation CLI
+
+Documents under `docs/` are created with the `pdocs` CLI, not by hand:
+
+```bash
+bun scripts/pdocs/cli.ts new <type> <name> --title "…" --description "…"
+```
+
+The same CLI reads the tree (`check`, `find`, `view`, `backlinks`) and changes
+work in place (`set`, `promote`, `archive`); `bun scripts/pdocs/cli.ts help`
+lists everything. `docs/SCHEMA.md` is the frontmatter contract the gate
+enforces.
+
 ## Where the canon lives
 
 - **The documentation structure** — [`docs/README.md`](./docs/README.md), with

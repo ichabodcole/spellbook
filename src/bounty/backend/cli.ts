@@ -19,7 +19,7 @@
 //   bun cli.ts unblock <id> --on <id>[,<id>...]             # remove blocker edges
 //   bun cli.ts remove <id>
 //   bun cli.ts message <text...> [--stdin]                  # toast
-//   bun cli.ts init [--title ..] [--stdin-tasks]            # seed the board (each task needs id+title+status)
+//   bun cli.ts init [--title ..] [--stdin-tasks [--replace]] # seed the board (each task needs id+title+status; --replace over a board that has tasks)
 //   bun cli.ts list                                        # running boards (live)
 //   bun cli.ts close | info | sessions                     # sessions = saved snapshots
 //   bun cli.ts version | schema | help                     # the kit registry's rows
@@ -44,6 +44,7 @@
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
+  copyFileSync,
   existsSync,
   mkdirSync,
   openSync,
@@ -53,7 +54,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   type TaskStatus,
@@ -69,6 +70,7 @@ import {
   WINDOW_HELP,
 } from "../../kit/wire/tailHandoff.ts";
 import { TAIL_IDLE_MS } from "./heartbeat.ts";
+import { holderIsLive, holderLiveness, lockPath, readLock, unknownHolderRefusal } from "./lock.ts";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 // ⛔ UP AND BACK DOWN, NOT `join(SCRIPT_DIR, "server.ts")` — THE DEFECT THIS
@@ -102,7 +104,8 @@ function daemonCwd(): string {
   if (process.env.SPELLBOOK_SURFACE_MODE === "dev") return SURFACE_CWD;
   return existsSync(join(DIST_DIR, "index.html")) ? SKILL_ROOT : SURFACE_CWD;
 }
-const SNAPSHOTS_DIR = join(process.env.BOUNTY_HOME ?? join(homedir(), ".bounty"), "snapshots");
+const BOUNTY_HOME = process.env.BOUNTY_HOME ?? join(homedir(), ".bounty");
+const SNAPSHOTS_DIR = join(BOUNTY_HOME, "snapshots");
 
 type Session = {
   url: string;
@@ -110,6 +113,34 @@ type Session = {
   session_id: string;
   title: string;
 };
+
+/**
+ * How long a CLI→daemon request on the open/close path waits for an answer.
+ * The daemon is local and answers in milliseconds; a daemon that says nothing
+ * for this long is wedged (SIGSTOPped, or stuck), not slow.
+ *
+ * ⛔ THERE WAS NO BOUND, AND `open` HUNG FOREVER. `boardIfLive` fetched with no
+ * timeout, so a stopped daemon's accepted-but-unanswered connection parked
+ * `open` for good, and the "held by a running daemon (pid N) that is not
+ * answering" refusal written for exactly this case was unreachable (verifier,
+ * 2026-09-28). `src/kit/wire/` has no shared constant for this: `probeBoard`
+ * below uses 600 ms and grapevine 500–800 ms, each inline. This is longer,
+ * because `close`'s reply waits on the final snapshot write (and any backup
+ * copy) of a large board.
+ */
+const DAEMON_ANSWER_TIMEOUT_MS = 2000;
+
+/** The pid holding a keyed board's lock, when there is one to name. */
+function lockHolderPid(id: string): number | null {
+  return readLock(lockPath(BOUNTY_HOME, id))?.pid ?? null;
+}
+
+/** The act that recovers a daemon that is not answering, worded once. */
+function notAnsweringHint(pid: number | null): string {
+  return pid
+    ? `if pid ${pid} was stopped, resume it (kill -CONT ${pid}) and retry; otherwise end it (kill -9 ${pid}; its last saved snapshot is kept) and run open again`
+    : "find the board's daemon (ps aux | grep bounty), end it, and run open again";
+}
 
 // ⛔ `die` IS `src/kit/wire/errors.ts`'s NOW, AND FOR BOUNTY THAT IS A
 // CALLER-VISIBLE CHANGE — NOT A DE-DUPLICATION. The local one wrote
@@ -494,11 +525,13 @@ async function api(
   method: string,
   path: string,
   body?: unknown,
+  timeoutMs?: number,
 ): Promise<{ status: number; data: unknown }> {
   const res = await fetch(`http://127.0.0.1:${port}${path}`, {
     method,
     headers: body !== undefined ? { "content-type": "application/json" } : undefined,
     body: body !== undefined ? JSON.stringify(body) : undefined,
+    signal: timeoutMs !== undefined ? AbortSignal.timeout(timeoutMs) : undefined,
   });
   let data: unknown = null;
   try {
@@ -564,6 +597,10 @@ const CLI_OPTIONS = {
   // are the same string by the time they arrive; this flag is the one way to
   // say "clear" on purpose.
   "clear-notes": { type: "boolean" },
+  // `init --stdin-tasks`'s explicit opt-in to replace a board that already has
+  // tasks (one act, one answer). Without it, that seed is refused as a
+  // `conflict`: it used to wipe the board at `ok:true`.
+  replace: { type: "boolean" },
 } as const;
 
 /**
@@ -593,7 +630,107 @@ type CmdResult = {
   // sentence, and only the daemon knows which is which; classifying by the
   // sentence is the shape D34 filed at glamour.
   kind?: ErrKind;
+  // `close`'s report of the backups the board wrote (server.ts BackupRecord).
+  snapshotBackups?: BackupRecord[];
+  // `close`'s report of a final write that failed, and where the board went
+  // instead (server.ts SnapshotSaveFailed). Null when the write succeeded.
+  snapshotSaveFailed?: {
+    path: string;
+    error: string;
+    unsaved: string | null;
+    taskCount: number;
+    held?: string | null;
+    // What to do about it, naming the path that is actually wrong (server.ts).
+    fix?: string;
+  } | null;
 };
+
+// ── (d) naming a backup to the caller ───────────────────────────────
+//
+// A backup used to be announced only where the caller does not look: the
+// daemon's log, a tail event, and the dying daemon's `state`. `close` answered
+// `{"ok":true,"sent":"close","down":true}` with a `.bak` just written. Now
+// every backup an act made rides that act's envelope, with the act that brings
+// it back. It is a success with a notice, so the exit stays 0.
+//
+// `snapshotBackups` and not a widened `snapshotBackedUp`: that field is
+// `{...} | null` on `state` (one shrink rotation per daemon), and changing its
+// type would break its readers. This one is a list, PRESENT and `[]` when
+// nothing was backed up, on every `open` and `close` success.
+
+/** A copy of a snapshot made before it was written over (server.ts: `unread`
+ *  is the daemon's own snapshot, which it never read, kept before its first
+ *  write over it), or by
+ *  `open` itself before a `--fresh --restore` teardown (`pre-fresh`), or the
+ *  board dumped to a file of its own when its snapshot could not be written
+ *  (`unsaved`). */
+type BackupRecord = {
+  kind: "shrink" | "unreadable" | "pre-fresh" | "pre-restore" | "unread" | "unsaved";
+  path: string;
+  taskCount: number | null;
+  reason: string;
+  // Set on an `unsaved` dump that a later successful snapshot write made
+  // stale (server.ts BackupRecord): it has no restore act.
+  superseded?: string;
+};
+
+type NamedBackup = BackupRecord & { restore: string | null };
+
+function keyFromFlags(flags: Record<string, string | boolean>): string | undefined {
+  return typeof flags["session-key"] === "string"
+    ? flags["session-key"]
+    : (process.env.BOUNTY_SESSION_KEY ?? undefined);
+}
+
+/**
+ * Add the act that recovers each backup. A keyed board comes back BY ITS KEY
+ * (`open --session-key K --fresh --restore <bak>`, which works whether or not
+ * the board is live), never as an unkeyed stray under a new id; the key is
+ * used only when it derives to this very board. An unreadable copy has no
+ * restore act (`restore: null`): it is kept byte-for-byte for repair, and a
+ * restore of it as it stands would fail. Nor has a superseded `unsaved` dump:
+ * a later snapshot write holds the newer board, and restoring the dump would
+ * roll it back.
+ */
+function nameBackups(
+  records: readonly BackupRecord[] | undefined,
+  sessionId: string,
+  key: string | undefined,
+): NamedBackup[] {
+  const keyed = key !== undefined && sessionKeyToId(key) === sessionId;
+  return (records ?? []).map((b) => {
+    // A file in snapshots/ is restored by name; anything else (an `unsaved`
+    // dump that fell back to $BOUNTY_HOME) by its full path, which restore
+    // also accepts.
+    const bak =
+      resolve(dirname(b.path)) === resolve(SNAPSHOTS_DIR)
+        ? basename(b.path).replace(/\.json$/, "")
+        : b.path;
+    const argv =
+      keyed && key !== undefined
+        ? ["open", "--session-key", key, "--fresh", "--restore", bak, "--no-open"]
+        : ["open", "--restore", bak, "--no-open"];
+    return {
+      ...b,
+      restore: b.taskCount === null || b.superseded ? null : commandLine(argv),
+    };
+  });
+}
+
+function announceBackups(named: readonly NamedBackup[]): void {
+  for (const b of named) {
+    if (b.superseded) {
+      process.stderr.write(
+        `bounty: ${b.path} (an unsaved dump of ${b.taskCount} task(s)) is superseded, nothing to do: ${b.superseded}\n`,
+      );
+      continue;
+    }
+    const held = b.taskCount === null ? "an unreadable snapshot" : `${b.taskCount} task(s)`;
+    process.stderr.write(
+      `bounty: backed up ${held} to ${b.path} (${b.reason})${b.restore ? `; recover with: ${b.restore}` : "; kept for repair, it cannot be restored as it stands"}\n`,
+    );
+  }
+}
 
 // ⛔ A COOPERATIVE REFUSAL IS A `conflict` OR A `not_found`, NEVER AN
 // `internal`. Until D51 every one of these paths wrote prose to stderr, put a
@@ -631,11 +768,24 @@ function resolveAs(flags: Record<string, string | boolean>): string | undefined 
 async function postCmd(
   session: string | undefined,
   msg: Record<string, unknown>,
-  opts: { as?: string; quiet?: boolean } = {},
+  opts: { as?: string; quiet?: boolean; timeoutMs?: number } = {},
 ): Promise<CmdResult> {
   const s = requireSession(session);
   const body = opts.as ? { ...msg, as: opts.as } : msg;
-  const { status, data } = await api(s.port, "POST", "/cmd", body);
+  let reply: { status: number; data: unknown };
+  try {
+    reply = await api(s.port, "POST", "/cmd", body, opts.timeoutMs);
+  } catch (e) {
+    // Only the bound is ours to explain; anything else propagates as before.
+    if (!(e instanceof Error && e.name === "TimeoutError")) throw e;
+    const pid = lockHolderPid(s.session_id);
+    die(
+      `board ${s.session_id}'s daemon${pid ? ` (pid ${pid})` : ""} on port ${s.port} is not answering: no reply to ${String(msg.type)} within ${opts.timeoutMs} ms (a stopped daemon still runs it if it is resumed)`,
+      "internal",
+      { hint: notAnsweringHint(pid) },
+    );
+  }
+  const { status, data } = reply;
   if (status !== 200)
     die(`cmd failed (HTTP ${status}) — is the session still alive?`, "internal", { server: body });
   if (!opts.quiet) printJson({ ok: true, sent: msg.type });
@@ -672,8 +822,16 @@ function ackOrFail(type: unknown, res: CmdResult): number {
   // the daemon sends null on an init that dropped nothing (present-and-null
   // where it is meaningful, absent where it is not applicable).
   const dropped = (res as { tasksDropped?: unknown }).tasksDropped;
+  // `init --replace`'s count of the board's own tasks it discarded: a number,
+  // present only when the caller asked to replace (one act, one answer).
+  const replaced = (res as { tasksReplaced?: unknown }).tasksReplaced;
   if (dropped !== undefined) {
-    printJson({ ok: true, sent: type, tasksDropped: dropped });
+    printJson({
+      ok: true,
+      sent: type,
+      tasksDropped: dropped,
+      ...(replaced !== undefined ? { tasksReplaced: replaced } : {}),
+    });
     if (dropped && typeof dropped === "object") {
       const d = dropped as { requested: number; dropped: { index: number; reason: string }[] };
       process.stderr.write(
@@ -700,7 +858,9 @@ async function boardIfLive(session: string): Promise<Session | null> {
   const s = readSession(session);
   if (!s) return null;
   try {
-    const r = await fetch(`http://127.0.0.1:${s.port}/state`);
+    const r = await fetch(`http://127.0.0.1:${s.port}/state`, {
+      signal: AbortSignal.timeout(DAEMON_ANSWER_TIMEOUT_MS),
+    });
     return r.ok ? s : null;
   } catch {
     return null;
@@ -752,6 +912,90 @@ function writePin(sessionId: string) {
 // effect" cannot drift apart.
 const ATTACH_LOST_FLAGS = ["title", "timeout", "restore"] as const;
 
+/** Where the daemon will look for a `--restore <arg>`, in its order: the arg as
+ *  a path (resolved against the DAEMON's cwd, which is what its `existsSync`
+ *  sees), else `<arg>.json` in the snapshots directory (`server.ts`). */
+function restoreCandidates(arg: string): string[] {
+  return [resolve(daemonCwd(), arg), join(SNAPSHOTS_DIR, `${arg}.json`)];
+}
+
+/**
+ * ⛔ ONE ACT, ONE ANSWER: A RESTORE OF NOTHING STARTS NOTHING. An explicit
+ * `--restore` naming a snapshot that does not exist used to spawn a daemon
+ * anyway: the daemon's read failed, it set `restoreFailed: ENOENT…` and came up
+ * EMPTY, and `open` exited 0 with a fresh, unrelated board running. The
+ * envelope said the restore failed; the exit code said it worked.
+ *
+ * Called AFTER the keyed attach (which spawns nothing, and whose #80.1 refusal
+ * already answers a `--restore` against a live board) and BEFORE `--fresh`'s
+ * teardown, so a restore that cannot happen never closes a live board on its
+ * way to refusing. A snapshot that EXISTS but is damaged still reaches the
+ * daemon and still reports `restoreFailed`: that restore was attempted.
+ */
+function refuseMissingRestore(flags: Record<string, string | boolean>): void {
+  if (typeof flags.restore !== "string") return;
+  if (restoreCandidates(flags.restore).some((p) => existsSync(p))) return;
+  die(
+    `no snapshot ${JSON.stringify(flags.restore)} to restore; no board was started`,
+    "not_found",
+    {
+      hint: "`sessions` lists the snapshots this host can restore; a keyed board comes back with open --session-key <key>",
+    },
+  );
+}
+
+/**
+ * (b) If `--restore` resolves to board `id`'s OWN snapshot (the file the
+ * teardown's `close` is about to write), copy it to
+ * `<id>.pre-fresh-<ts>.bak.json` and return the record; otherwise null. The
+ * source is resolved in the daemon's own order (`restoreCandidates`), so a
+ * `--restore` spelled as a path to that file counts too. Restoring from a
+ * DIFFERENT snapshot is untouched: the teardown does not write it.
+ */
+function copyAsideBeforeTeardown(
+  flags: Record<string, string | boolean>,
+  id: string,
+): BackupRecord | null {
+  if (typeof flags.restore !== "string") return null;
+  const own = join(SNAPSHOTS_DIR, `${id}.json`);
+  const source = restoreCandidates(flags.restore).find((p) => existsSync(p));
+  if (!source || resolve(source) !== resolve(own)) return null;
+  const path = join(SNAPSHOTS_DIR, `${id}.pre-fresh-${Date.now()}.bak.json`);
+  copyFileSync(own, path);
+  let taskCount: number | null = null;
+  try {
+    const tasks = (JSON.parse(readFileSync(path, "utf8")) as { tasks?: unknown }).tasks;
+    taskCount = Array.isArray(tasks) ? tasks.length : null;
+  } catch {}
+  return {
+    kind: "pre-fresh",
+    path,
+    taskCount,
+    reason:
+      "copied before --fresh tore the live board down, whose close writes over this snapshot; the new board was restored from this copy",
+  };
+}
+
+/**
+ * ⛔ LIVENESS THAT CANNOT BE CHECKED IS A REFUSAL, NOT A STACK. With no `ps`
+ * on PATH, `open` used to die in `holderIsLive` with a raw Bun stack and no
+ * envelope (verifier, 2026-09-28). `conflict` (6), not `internal` (1): nothing
+ * in bounty broke and the command was right; a precondition of starting a
+ * daemon (being able to tell whether the lock's holder is one) failed, and the
+ * operator can restore it: fix `ps`, or remove a lock held by a pid they have
+ * checked is not this board's daemon. Astrolabe's registry refusal made the
+ * same call (the disk cannot say, so `conflict`).
+ */
+function refuseUnknownHolder(id: string): void {
+  const path = lockPath(BOUNTY_HOME, id);
+  const holder = readLock(path);
+  if (!holder) return;
+  const live = holderLiveness(holder, id);
+  if (live.state !== "unknown") return;
+  const r = unknownHolderRefusal(path, id, holder.pid, live.why);
+  die(r.message, "conflict", { hint: r.hint });
+}
+
 async function cmdOpen(flags: Record<string, string | boolean>): Promise<number> {
   // #69: a caller-owned key derives a deterministic, project-scoped board id, and
   // `open` becomes IDEMPOTENT against it — a live board for the key is ATTACHED
@@ -764,6 +1008,9 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
       ? flags["session-key"]
       : (process.env.BOUNTY_SESSION_KEY ?? undefined);
   const forcedId = key ? sessionKeyToId(key) : undefined;
+  let teardownBackups: BackupRecord[] = [];
+  let preFresh: BackupRecord | null = null;
+  let restoreArg = typeof flags.restore === "string" ? flags.restore : undefined;
 
   if (forcedId) {
     const live = await boardIfLive(forcedId);
@@ -781,20 +1028,26 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
         // in the act of printing the field that fixes this one).
         //
         // ⛔ The refusal NAMES NO CORRECTIVE VERB. Ruled by Cole 2026-08-06 and
-        // not reopenable here. The obvious helpful suggestion — "--fresh
-        // --restore" — is MEASURED to destroy the user's only copy of their
-        // data: --fresh tears the board down by POSTing {type:"close"}, close
-        // unconditionally writes the snapshot (server.ts:1286), so an EMPTY live
-        // board flushes empty over a populated snapshot, and --restore then
-        // faithfully restores from the corpse the teardown just made. A user in
-        // exactly the situation this message is written for would follow the
-        // advice and lose everything. Say what is true; offer no fix.
+        // not reopenable here. The ruling's reason was that the obvious
+        // suggestion — "--fresh --restore" — was MEASURED to destroy the user's
+        // only copy of their data: --fresh tore the board down by POSTing
+        // {type:"close"}, close wrote the snapshot, so an EMPTY live board
+        // flushed empty over a populated snapshot, and --restore then restored
+        // the corpse the teardown had just made.
+        //
+        // ⚠ THAT MECHANISM IS FIXED (2026-09-28, data-loss cycle): `--fresh
+        // --restore <own id>` now copies the snapshot aside before the teardown
+        // and restores from the copy (`copyAsideBeforeTeardown`). So the verb is
+        // safe to name now. Naming it is the "revisit D3's refusal" criterion of
+        // item/bounty-fresh-restore-destroys-snapshot, and it is Cole's to rule,
+        // so the message is unchanged here.
         printJson({
           ...live,
           restoreSkipped: {
             requested,
             reason: `a live board already exists for this key, so open attached to it instead of spawning a daemon; ${named} configure a daemon at spawn time and the running board was left unchanged`,
           },
+          snapshotBackups: [],
         });
         process.stderr.write(
           `bounty: refusing to attach — ${named} cannot take effect on a board that is already running (key "${key}", board ${forcedId})\n`,
@@ -810,17 +1063,42 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
         if (flags.pin) writePin(forcedId);
         return 2;
       }
-      printJson({ ...live, restoreSkipped: null });
+      // An attach backs nothing up. The discovery file's own list is the
+      // running daemon's boot backups, made by an earlier act and reported then.
+      printJson({ ...live, restoreSkipped: null, snapshotBackups: [] });
       process.stderr.write(`# attached to existing board ${forcedId} (key "${key}")\n`);
       if (flags.pin) writePin(forcedId);
       return 0;
     }
+    // No board answered, but a lock held by a pid bounty cannot judge would
+    // make the daemon refuse (lock.ts): refuse here, now, with the reason,
+    // instead of spawning it and waiting out the start timeout.
+    if (!live) refuseUnknownHolder(forcedId);
+    // Before the teardown below: a missing snapshot must not cost a live board.
+    refuseMissingRestore(flags);
     if (live && flags.fresh) {
+      // (b) `--fresh --restore <this board's own id>`: the teardown's `close`
+      // writes the live board over the very snapshot the new daemon is about to
+      // restore, so it restored the teardown's own write (cells 6 and 7a; at
+      // equal counts no shrink backup fired and nothing survived). Copy the
+      // snapshot aside BEFORE the close and restore from the copy: the caller
+      // asked for the board as it was in the snapshot, and gets it. The copy is
+      // kept, since it doubles as a backup, and named on the envelope.
+      preFresh = copyAsideBeforeTeardown(flags, forcedId);
+      if (preFresh) restoreArg = basename(preFresh.path).replace(/\.json$/, "");
       // Replace it: close the live board over its own protocol, then wait for it
       // to actually go down (its exit unlinks bounty-<forcedId>.json) so the new
       // daemon's file write can't be clobbered by the departing one's cleanup.
       try {
-        await api(live.port, "POST", "/cmd", { type: "close" });
+        const res = await api(
+          live.port,
+          "POST",
+          "/cmd",
+          { type: "close" },
+          DAEMON_ANSWER_TIMEOUT_MS,
+        );
+        // (d) The teardown's final write can rotate a backup; it is this act's.
+        teardownBackups = (res.data as CmdResult | null)?.snapshotBackups ?? [];
       } catch {
         /* already gone */
       }
@@ -829,6 +1107,8 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
     }
   }
 
+  // An unkeyed open reaches here without the keyed branch's check.
+  if (!forcedId) refuseMissingRestore(flags);
   const args = ["run", SERVER_SCRIPT];
   if (flags.title) args.push("--title", String(flags.title));
   if (flags.timeout) args.push("--timeout", String(flags.timeout));
@@ -861,7 +1141,7 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
   ) {
     args.push("--restore", forcedId);
   }
-  if (flags.restore) args.push("--restore", String(flags.restore));
+  if (restoreArg) args.push("--restore", restoreArg);
   if (flags["no-open"]) args.push("--no-open");
   if (forcedId) args.push("--id", forcedId); // force the daemon's id to the derived key id
 
@@ -912,14 +1192,33 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
     const isUp = forcedId ? !!s : !!(s && s.session_id !== prevId);
     if (s && isUp) {
       try {
-        const r = await fetch(`http://127.0.0.1:${s.port}/state`);
+        const r = await fetch(`http://127.0.0.1:${s.port}/state`, {
+          signal: AbortSignal.timeout(DAEMON_ANSWER_TIMEOUT_MS),
+        });
         if (r.ok) {
           // `restoreSkipped` is PRESENT AND NULL on every success path, never
           // absent (#80.1 / D1.2). A field that appears only when it has
           // something to say cannot be told apart from a build that does not
           // emit it at all, so `"restoreSkipped" in envelope` is the assertion
           // that has teeth and `=== null` alone is the one that passes vacuously.
-          printJson({ ...s, restoreSkipped: null });
+          // (d) This act's backups: the teardown's (a `--fresh` over a live
+          // board), then the new daemon's boot backups off its discovery file.
+          const boot = (s as Session & { snapshotBackups?: BackupRecord[] }).snapshotBackups;
+          const snapshotBackups = nameBackups(
+            [...(preFresh ? [preFresh] : []), ...teardownBackups, ...(boot ?? [])],
+            s.session_id,
+            key,
+          );
+          printJson({ ...s, restoreSkipped: null, snapshotBackups });
+          announceBackups(snapshotBackups);
+          // (a) A concurrent keyed open can win the race to the board's lock.
+          // The daemon this open spawned then exited untouched (lock.ts), and
+          // this open reports the WINNER's board, which is the same board.
+          const holder = forcedId ? readLock(lockPath(BOUNTY_HOME, forcedId)) : null;
+          if (holder && holder.pid !== proc.pid)
+            process.stderr.write(
+              `# another open started board ${forcedId} first; attached to it (key "${key}")\n`,
+            );
           if (flags.pin) writePin(s.session_id);
           return 0;
         }
@@ -928,7 +1227,18 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
       }
     }
   }
-  return die("bounty daemon failed to start within 5s", "internal");
+  // A live daemon holding this board's lock while answering nothing is the one
+  // case the lock can cost: say which process it is, so it can be killed.
+  if (forcedId) refuseUnknownHolder(forcedId);
+  const holder = forcedId ? readLock(lockPath(BOUNTY_HOME, forcedId)) : null;
+  const wedged = holder && forcedId && holderIsLive(holder, forcedId) ? holder : null;
+  return die(
+    wedged
+      ? `bounty daemon failed to start within 5s: board ${forcedId} is held by a running daemon (pid ${wedged.pid}) that is not answering`
+      : "bounty daemon failed to start within 5s",
+    "internal",
+    wedged ? { hint: notAnsweringHint(wedged.pid) } : undefined,
+  );
 }
 
 // b6 — `full` is no longer a parameter. The read is always full, so there is
@@ -1166,16 +1476,23 @@ async function cmdTail(
         // — or its snapshot was deleted, which is why the words below say
         // "not found" rather than "never existed".
         if (reArm && (!named || existed)) return "stop";
-        // A named target the tail once reached, whose pointer is now gone:
-        // it closed (a `closed` frame normally ends the tail before this).
-        if (named && everResolved) return "stop";
+        // A NAMED target that existed here and is gone has closed, however it
+        // was named: one it once reached (a `closed` frame normally ends the
+        // tail before this), or one whose snapshot is on disk. ⛔ ONE ACT, ONE
+        // ANSWER: the snapshot half used to cover `--session` only (through
+        // `reArm` above), so `--session-key K` for the same closed board waited
+        // out the grace and exited 5 while `--session <id>` stopped at once. A
+        // key from the ENVIRONMENT is not named, so a seat's first arm (B1)
+        // still waits for its board.
+        if (named && existed) return "stop";
         if (named && Date.now() - startedAt >= graceMs) {
-          const hint =
-            pinned !== undefined && hasSnapshot(pinned)
-              ? `board ${pinned} existed here and has closed; bring it back: ${comeBackCmd()}`
-              : keyedComeBack()
-                ? `no board was opened under this key from this directory; the id is project-scoped (it hashes the repo root), so check the key and the cwd, or open it: ${comeBackCmd()}`
-                : "no board with this id is running here and none left a snapshot; check the id (`sessions` lists the boards this host can restore)";
+          // A board with a snapshot stopped above as closed, so all this path
+          // KNOWS is: no live board and no close snapshot for the target. ⛔ NOT
+          // "never opened here": a board opened and closed here whose snapshot
+          // was since deleted lands here too, so the hint claims no history.
+          const hint = keyedComeBack()
+            ? `no board is running under this key and none left a close snapshot; the id is project-scoped (it hashes the repo root), so check the key and the cwd, or open it: ${comeBackCmd()}`
+            : "no board with this id is running here and none left a snapshot; check the id (`sessions` lists the boards this host can restore)";
           die(
             `no session ${pinned} found (${source.from}) — a named target; gave up after ${graceMs}ms`,
             "not_found",
@@ -1676,21 +1993,56 @@ async function cmdInit(
       die("init --stdin-tasks: invalid JSON on stdin", "usage");
     }
   }
+  if (flags.replace === true) msg.replace = true;
+  const res = await postCmd(session, msg, { as, quiet: true });
+  // One act, one answer: a seed over a board that has tasks is the daemon's
+  // `conflict` (it sees the board and the write in one step). The daemon's
+  // sentence says what is on the board; the hint names the opt-in, which is a
+  // CLI flag and so belongs to the CLI.
+  if (res.applied === false && res.kind === "conflict")
+    die(res.error ?? "init: the board already has tasks", "conflict", {
+      hint: "to replace them, pass --replace (the reply counts them in tasksReplaced); to add to the board, use add",
+      server: res,
+    });
   // The generic path — and the one with a REAL behaviour change today. The
   // daemon's command dispatch ends in `return {ok:true, applied:false}` for
   // any type it does not recognise, so an unrecognised command has always
   // been answered with a success-shaped envelope. Routing through the funnel
   // is what turns that into a visible failure.
-  return ackOrFail(msg.type, await postCmd(session, msg, { as, quiet: true }));
+  return ackOrFail(msg.type, res);
 }
 
-async function cmdClose(session: string | undefined, as: string | undefined): Promise<number> {
+async function cmdClose(
+  session: string | undefined,
+  as: string | undefined,
+  flags: Record<string, string | boolean> = {},
+): Promise<number> {
   // Same explicit decision as `message`: applied:true unconditionally today,
   // so this is a regression guard rather than a fix. It earns its place
   // because `close` is the verb that WRITES THE SNAPSHOT — a close that
   // silently failed to apply, reported as success, is how a caller concludes
   // its data was persisted when it was not.
-  const closeRes = await postCmd(session, { type: "close" }, { as, quiet: true });
+  const closeRes = await postCmd(
+    session,
+    { type: "close" },
+    { as, quiet: true, timeoutMs: DAEMON_ANSWER_TIMEOUT_MS },
+  );
+  // Checked BEFORE the wait below: a refused close (the daemon found nowhere
+  // to save the board and kept it up) is not going down, so waiting is moot.
+  //
+  // That refusal carries its act in a `hint`, as every other refusal does: it
+  // used to ride only in the daemon's sentence (verifier, 2026-09-28). The
+  // act is to make somewhere writable and close again, and the close is ours
+  // to spell, so the hint is built here.
+  if (!closeRes.applied && closeRes.kind === "conflict" && closeRes.snapshotSaveFailed) {
+    const failed = closeRes.snapshotSaveFailed;
+    const resolved = requireSession(session);
+    die(closeRes.error ?? "board not closed: nowhere could take its snapshot", "conflict", {
+      hint: `the board is still running and holds the only copy of its ${failed.taskCount} task(s). ${failed.fix ?? `Make ${failed.path} writable`}, or make ${BOUNTY_HOME} writable so the board can be dumped there, then run: ${commandLine(["close", "--session", resolved.session_id])}`,
+      server: closeRes,
+    });
+  }
+  if (!closeRes.applied) return ackOrFail("close", closeRes);
   // b14 — WAIT FOR IT TO ACTUALLY BE DOWN. `close` used to return as soon as
   // the daemon ACKED the command, and the daemon acks before it finishes
   // tearing down. Measured: `state` on the same session STILL ANSWERS with
@@ -1718,8 +2070,39 @@ async function cmdClose(session: string | undefined, as: string | undefined): Pr
     }
     await sleep(80);
   }
-  if (!closeRes.applied) return ackOrFail("close", closeRes);
-  printJson({ ok: true, sent: "close", down });
+  const snapshotBackups = nameBackups(
+    closeRes.snapshotBackups,
+    resolved.session_id,
+    keyFromFlags(flags),
+  );
+  // ⛔ THE SAVE `close` OWED DID NOT HAPPEN, SO IT IS NOT A SUCCESS. It used to
+  // answer `{"ok":true,"down":true,"snapshotBackups":[]}` over a board saved
+  // nowhere (verifier, 2026-09-28). The daemon now dumps the board to an
+  // `unsaved` file and says so; this turns that into a refusal.
+  //
+  // `conflict` (6), not a success with a notice: `close` is "save, then shut
+  // down", and a `set -e` wrapper or an agent routing on the exit must see that
+  // the save half failed. Not `internal` (1): nothing in bounty broke, a
+  // precondition on disk did (the snapshot path is a directory, not writable,
+  // or the disk is full), and the caller can fix it and restore. So the house
+  // failure shape: stdout empty, one envelope on stderr; the daemon's reply
+  // rides `error.server` verbatim, backups and all.
+  const failed = closeRes.snapshotSaveFailed;
+  if (failed) {
+    const dump = snapshotBackups.find((b) => b.kind === "unsaved" && b.path === failed.unsaved);
+    die(
+      `board ${resolved.session_id} is closed, but its final save failed: the snapshot ${failed.path} could not be written (${failed.error}); its ${failed.taskCount} task(s) were saved to ${failed.unsaved} instead`,
+      "conflict",
+      {
+        // `fix` names the path that is actually wrong (the daemon checks);
+        // the fallback is for a daemon build that predates it.
+        hint: `${failed.fix ?? `fix ${failed.path} (remove it if it is a directory, or make it and its folder writable)`}, then run: ${dump?.restore ?? `open --restore ${failed.unsaved} --no-open`}`,
+        server: closeRes,
+      },
+    );
+  }
+  printJson({ ok: true, sent: "close", down, snapshotBackups });
+  announceBackups(snapshotBackups);
   if (!down)
     process.stderr.write(
       "bounty: close acked but the daemon was still answering after 3s — a reopen may attach to it\n",
@@ -1749,9 +2132,15 @@ function checkStatus(verb: "add" | "update", f: Flags): void {
     });
 }
 
-/** `add`'s rules: only the status set; the title's absence is `cmdAdd`'s (after `--stdin`). */
+/** `add`'s rules: the status set, and one source for the title (as `update`'s
+ *  `--stdin` + `--title` refusal, s5-9). The title's absence is `cmdAdd`'s,
+ *  after `--stdin` is read. A title and `--stdin` together used to take stdin
+ *  and silently discard the positional, at exit 0 (one act, one answer). */
 function checkAdd(inv: Invocation<Flag>): string | undefined {
-  checkStatus("add", inv.flags as Flags);
+  const f = inv.flags as Flags;
+  checkStatus("add", f);
+  if (f.stdin === true && inv.pos.length > 0)
+    return "a title and --stdin both set the title; pass one of them (for the notes, use --notes <text>)";
   return undefined;
 }
 
@@ -1775,13 +2164,44 @@ function checkUpdate(inv: Invocation<Flag>): string | undefined {
   return undefined;
 }
 
+/** An empty `--restore` names nothing to restore. It used to read as "no
+ *  restore" and start a fresh empty board at exit 0 (`restoreFailed: null`);
+ *  the missing-snapshot check let it through too, because "" resolves to the
+ *  cwd. Refused before anything is spawned or attached. */
+function checkOpen(inv: Invocation<Flag>): string | undefined {
+  const f = inv.flags as Flags;
+  if (f.restore === "")
+    return "--restore is empty, so it names no snapshot; pass the id to restore (`sessions` lists them), or drop --restore for a fresh board";
+  return undefined;
+}
+
+/** `message`'s one source for the text, in exactly `checkAdd`'s shape. A text
+ *  and `--stdin` together used to toast stdin and silently discard the
+ *  positional, at exit 0 (one act, one answer). */
+function checkMessage(inv: Invocation<Flag>): string | undefined {
+  const f = inv.flags as Flags;
+  if (f.stdin === true && inv.pos.length > 0)
+    return "a text and --stdin both set the message; pass one of them";
+  return undefined;
+}
+
+/** `init --replace` replaces the board's tasks with the seed; with no seed it
+ *  would do nothing, and a flag that silently does nothing is refused. */
+function checkInit(inv: Invocation<Flag>): string | undefined {
+  const f = inv.flags as Flags;
+  if (f.replace === true && f["stdin-tasks"] !== true)
+    return "--replace replaces the board's tasks with the ones on stdin, so it needs --stdin-tasks";
+  return undefined;
+}
+
 const ROWS: Row[] = [
   {
     name: "open",
     flags: ["title", "timeout", "no-open", "restore", "pin", "session-key", "fresh"],
     positionals: [],
     describe:
-      "spawn a board daemon; prints {url, port, session_id, restoreSkipped}. --pin binds it to cwd; --session-key <key> binds it to a caller-owned key, idempotently (--fresh forces a clean board)",
+      "spawn a board daemon; prints {url, port, session_id, restoreSkipped, snapshotBackups}. --pin binds it to cwd; --session-key <key> binds it to a caller-owned key, idempotently (--fresh forces a clean board)",
+    check: checkOpen,
     // Propagates cmdOpen's code so the #80.1 refusal actually reaches the shell.
     run: (_pos, flags) => cmdOpen(flags),
   },
@@ -1885,22 +2305,25 @@ const ROWS: Row[] = [
     flags: [...WRITE, "stdin"],
     positionals: [{ name: "text", required: false, variadic: true }],
     describe: "show a toast on the board (the text, or --stdin)",
+    check: checkMessage,
     run: cmdMessage,
   },
   {
     name: "init",
-    flags: [...WRITE, "title", "stdin-tasks"],
+    flags: [...WRITE, "title", "stdin-tasks", "replace"],
     positionals: [],
     describe:
-      "seed the board (tasks = JSON array on stdin; each task REQUIRES id + title + status — init does NOT mint ids, unlike add; any dropped task is reported per-entry in tasksDropped)",
+      "seed the board (tasks = JSON array on stdin; each task REQUIRES id + title + status — init does NOT mint ids, unlike add; any dropped task is reported per-entry in tasksDropped). Over a board that has tasks it is refused (exit 6) unless --replace, which reports tasksReplaced",
+    check: checkInit,
     run: (_pos, flags, session, as) => cmdInit(flags, session, as),
   },
   {
     name: "close",
     flags: WRITE,
     positionals: [],
-    describe: "end the board (writes its snapshot); prints {ok, sent, down}",
-    run: (_pos, _flags, session, as) => cmdClose(session, as),
+    describe:
+      "end the board (writes its snapshot); prints {ok, sent, down, snapshotBackups} — any backup the board wrote, and the act that recovers it",
+    run: (_pos, flags, session, as) => cmdClose(session, as, flags),
   },
   {
     name: "info",
