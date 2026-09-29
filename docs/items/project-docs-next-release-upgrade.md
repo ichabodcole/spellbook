@@ -44,3 +44,8 @@ cycle of its own. Scope it once the release notes are out.
   release being adopted. We set the three version strings by hand.
 - The new placeholder lint found one real finding in our docs.
 - Land by fast-forward or a named merge; the item cites shas.
+
+**Also to report upstream (2026-09-28):** `pdocs check` passes a frontmatter
+with a duplicate key. `started:` appeared twice in
+`docs/cycles/2026-09-scriptorium-from-real-use-2.md`, and a fresh agent reading
+the tree caught it where the lint did not.

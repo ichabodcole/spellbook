@@ -8,7 +8,6 @@ tags: [scriptorium, surfaces]
 status: draft
 lifecycle: closed
 started: 2026-09-28
-started: 2026-09-28
 appetite:
   Stop when both ship and Cole has used them in a real session; the shared kit
   chat component is not built here unless it is the cheaper path.
