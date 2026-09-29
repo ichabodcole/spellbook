@@ -58,6 +58,7 @@ import {
   type Side,
 } from "./state/columns";
 import { askAboutNote, badgesOn, elsewhere, loudest, owedLabel, waitingOf } from "./state/notes";
+import { oneLine } from "./state/projection";
 import {
   applySelectionEvent,
   type HeldSelection,
@@ -1085,6 +1086,7 @@ function FloatingComposer({
   children: React.ReactNode;
 }) {
   const last = chat.findLast((m) => m.who !== "system");
+  const lastLine = useMemo(() => (last ? oneLine(last.text) : ""), [last]);
   // The note the line is ABOUT: the oldest one the human can still act on
   // (not yet asked about), else the oldest. Its own badge, and a count of the
   // rest kept OUT of the truncated text so it never clips (verifier D2).
@@ -1119,11 +1121,13 @@ function FloatingComposer({
       )}
       {last && (
         <div className="flex items-center gap-2 px-1 text-[11px] text-ink-dim">
-          <span className="min-w-0 flex-1 truncate" title={last.text}>
+          {/* Plain text, as the log reads once rendered: `oneLine` drops the
+              markdown syntax, and a string makes no HTML sink. */}
+          <span className="min-w-0 flex-1 truncate" title={lastLine}>
             <span className="mr-1.5 font-medium text-ink-faint">
               {last.who === "agent" ? "Agent" : "You"}
             </span>
-            {last.text}
+            {lastLine}
           </span>
           {waiting?.messageId === last.id && <WaitingBadge badge={waiting.badge} />}
           <button

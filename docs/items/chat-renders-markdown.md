@@ -78,3 +78,12 @@ before this item, do it there and adopt it in Scriptorium.
   component is built.
 - Left open: GFM footnotes mint fixed ids (`footnote-label`), which would repeat
   across messages. Not fixed until a real reply uses one.
+
+**The collapsed chat's one-line preview reads as plain text** (found by the
+no-stake verifier). With the conversation collapsed, the line above the floating
+composer printed the latest message raw, `##` and `**` included. It now shows
+`oneLine(text)` (`surface/state/projection.ts`, with cells): the same parser's
+text the rendered view is built from, with every block boundary and line break a
+single space, and no frontmatter split, since a chat message is not a document.
+It is a plain string, so no new HTML sink; the hover title shows the same text,
+and truncation is unchanged. Checked in a real browser in both themes.
