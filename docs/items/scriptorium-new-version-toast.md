@@ -5,7 +5,7 @@ description:
   A version created without activation (usually the agent's version-new) appears
   silently in the version menu; toast it, with an Activate button.
 status: draft
-lifecycle: ready
+lifecycle: done
 id: 01a0e964-ccf2-771d-9fdc-5bbd6f3c16a2
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-09-28 }

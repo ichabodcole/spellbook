@@ -6,7 +6,7 @@ description:
   rendered-only by Cole's default, and carry it into the shared kit chat
   component.
 status: draft
-lifecycle: ready
+lifecycle: done
 id: 01a0e970-39ea-716f-88fb-e918d5088288
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-09-28 }
