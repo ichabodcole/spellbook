@@ -12,12 +12,7 @@
 import { useEffect, useRef } from "react";
 
 import type { DocView } from "../../backend/protocol";
-
-/** The label if it has one, else the number — the menu's rule (E37). */
-function name(doc: DocView, n: number): string {
-  const label = doc.versions.find((v) => v.n === n)?.label?.trim();
-  return label ? `v${n} · ${label}` : `v${n}`;
-}
+import { versionName as name } from "../state/newVersions";
 
 export function ActiveVersionToast({
   doc,

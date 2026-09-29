@@ -32,10 +32,12 @@ import type {
 import { selectionOnScreen } from "../backend/selection";
 import { ActiveVersionToast } from "./components/ActiveVersionToast";
 import { ChatComposer } from "./components/ChatComposer";
+import { ChatMessageView } from "./components/ChatMessageView";
 import { ContextSidebar } from "./components/context/ContextSidebar";
 import { joinPath, shortPath } from "./components/context/model";
 import { DocumentPane, VIEW_MODES, type ViewMode } from "./components/DocumentPane";
 import { HistoryArrows } from "./components/HistoryArrows";
+import { NewVersionToast } from "./components/NewVersionToast";
 import { NotesPanel } from "./components/NotesPanel";
 import { SearchBar } from "./components/SearchBar";
 import { Spinner, TasksPanel } from "./components/TasksPanel";
@@ -56,6 +58,7 @@ import {
   type Side,
 } from "./state/columns";
 import { askAboutNote, badgesOn, elsewhere, loudest, owedLabel, waitingOf } from "./state/notes";
+import { oneLine } from "./state/projection";
 import {
   applySelectionEvent,
   type HeldSelection,
@@ -402,7 +405,7 @@ function Workspace({
   // version you wanted to look at last session says nothing about this one,
   // and the original is the side that always exists.
   const [against, setAgainst] = useState<DiffSide>("original");
-  const { toasts, announce, dismiss } = useToasts();
+  const { toasts, announce, dismiss, hold } = useToasts();
   // The editor's selection, kept here because the NOTES PANEL is the thing that
   // acts on it and it lives in the other pane (E45).
   // The chat's chip mirrors it, and the daemon is told of every change (below).
@@ -633,7 +636,15 @@ function Workspace({
     <>
       <ActiveVersionToast doc={open} announce={announce} />
       <TaskToasts tasks={state.tasks} announce={announce} />
-      <Toasts toasts={toasts} onDismiss={dismiss} />
+      <NewVersionToast
+        doc={open}
+        connected={connection === "open"}
+        announce={announce}
+        dismiss={dismiss}
+        send={send}
+        setMode={setMode}
+        setAgainst={setAgainst}
+      />
       <ResizablePanelGroup
         orientation="horizontal"
         className="min-h-0 flex-1"
@@ -766,6 +777,9 @@ function Workspace({
                 )}
               </>
             }
+            // Every toast, in one place: the document pane's bottom-right
+            // (Cole, 2026-09-28), clear of the composer wherever it is drawn.
+            toasts={<Toasts toasts={toasts} onDismiss={dismiss} onHold={hold} />}
             // ⛔ TALKING TO THE AGENT NEVER NEEDS THE COLUMN (E64, Cole —
             // conversation-primary). With the conversation collapsed, the SAME
             // composer floats under the document: same draft, same chip.
@@ -1021,7 +1035,15 @@ function Workspace({
                   </EmptyHeader>
                 </Empty>
               ) : (
-                <ActivityLog chat={state.chat} waiting={state.waiting} />
+                <ActivityLog
+                  chat={state.chat}
+                  waiting={state.waiting}
+                  // A relative link in a message is read against the open
+                  // document, the same way the document's own links are (E33).
+                  onFollowLink={(target) => {
+                    if (open) send({ type: "link.open", from: open.original, target });
+                  }}
+                />
               )}
               {/* ⛔ DRAWN IN ONE PLACE AT A TIME: here while the column is
                   open, floating under the document while it is collapsed. */}
@@ -1064,6 +1086,7 @@ function FloatingComposer({
   children: React.ReactNode;
 }) {
   const last = chat.findLast((m) => m.who !== "system");
+  const lastLine = useMemo(() => (last ? oneLine(last.text) : ""), [last]);
   // The note the line is ABOUT: the oldest one the human can still act on
   // (not yet asked about), else the oldest. Its own badge, and a count of the
   // rest kept OUT of the truncated text so it never clips (verifier D2).
@@ -1098,11 +1121,13 @@ function FloatingComposer({
       )}
       {last && (
         <div className="flex items-center gap-2 px-1 text-[11px] text-ink-dim">
-          <span className="min-w-0 flex-1 truncate" title={last.text}>
+          {/* Plain text, as the log reads once rendered: `oneLine` drops the
+              markdown syntax, and a string makes no HTML sink. */}
+          <span className="min-w-0 flex-1 truncate" title={lastLine}>
             <span className="mr-1.5 font-medium text-ink-faint">
               {last.who === "agent" ? "Agent" : "You"}
             </span>
-            {last.text}
+            {lastLine}
           </span>
           {waiting?.messageId === last.id && <WaitingBadge badge={waiting.badge} />}
           <button
@@ -1127,10 +1152,13 @@ function FloatingComposer({
 function ActivityLog({
   chat,
   waiting,
+  onFollowLink,
 }: {
   chat: readonly ChatMessage[];
   /** E53: which message nobody has answered, and how that reads. */
   waiting: Waiting | null;
+  /** An internal link in a message: the daemon resolves it (E33). */
+  onFollowLink: (target: string) => void;
 }) {
   const end = useRef<HTMLDivElement>(null);
   const last = chat.at(-1)?.id;
@@ -1146,34 +1174,15 @@ function ActivityLog({
       aria-label="Activity"
       className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-auto p-3"
     >
+      {/* Each line renders its markdown (item chat-renders-markdown), and
+          still shows the passage it carried (E48): see ChatMessageView. */}
       {chat.slice(-200).map((m) => (
-        <div
+        <ChatMessageView
           key={m.id}
-          data-who={m.who}
-          className="rounded-md px-2 py-1 text-xs leading-relaxed text-ink-dim data-[who=agent]:bg-surface-raised data-[who=agent]:text-ink data-[who=human]:bg-rubric/10 data-[who=human]:text-ink"
-        >
-          <span className="mr-1.5 font-medium text-ink-faint">
-            {m.who === "system" ? "·" : m.who === "agent" ? "Agent" : "You"}
-          </span>
-          {m.text}
-          {/* ⛔ THE RECORD SHOWS WHAT WAS SENT (E48). The passage travelled with
-              the message, so the log has to show it — otherwise the human reads
-              "can you answer this one?" a week later with no idea what "this"
-              was, while the agent had it all along. */}
-          {m.selection && (
-            <p className="mt-1 border-l-2 border-edge pl-2 font-mono text-[11px] text-ink-dim">
-              <span className="text-ink-faint">
-                {m.selection.doc} · v{m.selection.version} ·{" "}
-                {m.selection.fromLine === m.selection.toLine
-                  ? `line ${m.selection.fromLine}`
-                  : `lines ${m.selection.fromLine}–${m.selection.toLine}`}
-              </span>
-              <br />
-              {m.selection.text.replace(/\s+/gu, " ").trim()}
-            </p>
-          )}
-          {waiting?.messageId === m.id && <WaitingBadge badge={waiting.badge} />}
-        </div>
+          message={m}
+          badge={waiting?.messageId === m.id ? waiting.badge : null}
+          onFollowLink={onFollowLink}
+        />
       ))}
       <div ref={end} />
     </div>

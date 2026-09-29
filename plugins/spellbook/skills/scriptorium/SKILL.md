@@ -65,11 +65,14 @@ press Save. You never write their file directly — not with Edit, not with Writ
 
 **2 · ⛔ NEVER WRITE THE ACTIVE VERSION.** The active version is the one they
 are typing in — `docs[].active` in `state`. To propose a change: `version-new`
-(it prints a path), then edit _that_ path with your own tools. The surface shows
-it immediately and they choose whether to make it active. Writing the active
-version is detected, kept as a version of its own, and announced to both of you
-as a mistake — nothing is lost, but they are told, and their cursor was in
-there.
+(it prints a path), then edit _that_ path with your own tools. The surface
+raises a toast the moment the version exists, naming it and you as its author,
+with **Activate** and **Show diff**; they choose whether to make it active. A
+version made while their browser was disconnected is toasted when it reconnects.
+**You do not need to announce a new version in chat.** Say _why_ you made it if
+that helps them decide. Writing the active version is detected, kept as a
+version of its own, and announced to both of you as a mistake — nothing is lost,
+but they are told, and their cursor was in there.
 
 **3 · Save and Revert are theirs.** There is no verb for either, deliberately.
 Your work exists as versions until they accept it.
@@ -77,6 +80,13 @@ Your work exists as versions until they accept it.
 **4 · Prose goes through a file.** `say --body-file <path>` or `--stdin` from a
 quoted heredoc, never as shell arguments — an unquoted heredoc eats backticks
 before the CLI sees them. Same for `task`, and `note --quote '<exact text>'`.
+
+**Write `say` in markdown; it renders.** The conversation shows your message
+rendered (headings, lists, code blocks, tables, links), not as raw `**` and
+backticks, in a narrow side panel. Keep headings small and tables narrow. An
+`http`, `https` or `mailto` link opens in a new tab; a relative link is read
+against the document they have open. Raw HTML shows as text, and any other link
+scheme is struck through and does nothing.
 
 ## The loop
 

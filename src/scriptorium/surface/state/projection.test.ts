@@ -1,7 +1,7 @@
 // E51: the rendered text of a document, and the round trip back to source.
 import { describe, expect, test } from "bun:test";
 import { renderMarkdown } from "./markdown";
-import { alignRuns, lineAt, project, runOffset, toPlain, toSource } from "./projection";
+import { alignRuns, lineAt, oneLine, project, runOffset, toPlain, toSource } from "./projection";
 
 /**
  * The text nodes a browser would build from `renderMarkdown`'s output, in
@@ -439,5 +439,32 @@ describe("lineAt", () => {
   test("clamps rather than throwing", () => {
     expect(lineAt("a", -5)).toBe(1);
     expect(lineAt("a\nb", 999)).toBe(2);
+  });
+});
+
+describe("oneLine: a chat message as the collapsed chat's one-line preview", () => {
+  // The collapsed conversation shows the latest message on one line. The log
+  // renders markdown, so the preview shows what the log shows, as plain text,
+  // not the syntax (verifier, 2026-09-28: it printed the raw markdown).
+  test("emphasis, code and links keep their words and lose their syntax", () => {
+    expect(oneLine("This is **bold**, `code` and [a link](https://x.dev).")).toBe(
+      "This is bold, code and a link.",
+    );
+  });
+  test("blocks run together on one line, a space apart", () => {
+    expect(oneLine("## Plan\n\nFirst para.\n\n- one\n- two\n\n```ts\nconst a = 1;\n```")).toBe(
+      "Plan First para. one two const a = 1;",
+    );
+  });
+  test("ordinary prose is left as typed", () => {
+    expect(oneLine("snake_case and 2 * 3 * 4")).toBe("snake_case and 2 * 3 * 4");
+  });
+  test("raw HTML stays text, as the log shows it", () => {
+    expect(oneLine("a <b>tag</b>")).toBe("a <b>tag</b>");
+  });
+  test("a message is not a document: a leading --- block is not frontmatter", () => {
+    // renderMarkdown never splits frontmatter off a chat message, so neither
+    // does its preview, and the words stay.
+    expect(oneLine("---\ntitle: x\n---\nbody")).toContain("title: x");
   });
 });

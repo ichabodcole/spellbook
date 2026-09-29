@@ -101,9 +101,12 @@ type Node = {
  * and block), a hard break, and raw HTML — which micromark encodes rather than
  * emits, so it reaches the human as the text it is. An image contributes
  * nothing, because its alt text is an attribute and cannot be selected.
+ *
+ * `frontmatter: false` is for text that is not a document (a chat message):
+ * `renderMarkdown` never splits a block off that, so neither does this.
  */
-export function project(text: string): Projection {
-  const body = splitFrontmatter(text).body;
+export function project(text: string, opts: { frontmatter?: boolean } = {}): Projection {
+  const body = opts.frontmatter === false ? text : splitFrontmatter(text).body;
   // The body starts after the frontmatter block; `splitFrontmatter` returns the
   // block's CONTENT, so the base is what the whole text lost, not what it kept.
   const base = text.length - body.length;
@@ -237,6 +240,18 @@ export function project(text: string): Projection {
 
   for (const child of tree.children ?? []) walk(child);
   return { plain, segments };
+}
+
+/**
+ * A chat message as ONE line of plain text: the collapsed chat's preview.
+ *
+ * The log renders the message as markdown, so the preview must read as the
+ * log does, not print `**` and `##` (verifier, 2026-09-28). It is the same
+ * parser's text, with every block boundary and line break a single space. No
+ * HTML is made, so there is no sink: the caller renders a plain string.
+ */
+export function oneLine(text: string): string {
+  return project(text, { frontmatter: false }).plain.replace(/\s+/gu, " ").trim();
 }
 
 /** The segment a `plain` offset falls in, or null when there is none. */
