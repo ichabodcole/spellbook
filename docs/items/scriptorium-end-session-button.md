@@ -10,6 +10,7 @@ lifecycle: triage
 id: 01a0f97b-8ac4-7769-8210-b071edb8a5e5
 kind: task
 generated: { by: pdocs, at: 2026-10-01 }
+cycle: 2026-10-scriptorium-from-real-use-3
 ---
 
 # Scriptorium: an End session button for the human
@@ -27,23 +28,26 @@ daemon, so the agent hears it as an act rather than guessing from silence.
 shortcuts, never the only path). Typing "we're done" in chat must still work,
 and the button is the faster way to say it.
 
-**The question for convene:** what does the press do?
+**Cole's ruling, 2026-10-01:**
 
-- **The daemon closes the session itself.** The agent's `tail` already receives
-  `closed` and exits 0 (scriptorium `SKILL.md`), so the agent learns at once and
-  stops monitoring with no new wire. The event would need to say the human ended
-  it, so the agent does not read it as a crash.
-- **It sends the agent an intent ("the human is done"), and the agent closes.**
-  The agent can wrap up first (save, summarise, answer a last message), but a
-  session whose agent is gone never closes.
+- **The daemon ends the session itself.** The agent's `tail` already receives
+  `closed` and exits 0, so the agent learns at once. The event says the human
+  ended it, so the agent does not read it as a crash; the agent is still in the
+  terminal to wrap up afterwards, and the button works when no agent is there.
+- **A confirmation modal in the browser, and no round trip through the agent.**
+  The modal only guards against a stray click. Asking the agent to confirm would
+  make the shortcut slower than typing. The worst case of a mistaken end is
+  asking the agent to reopen: no data is lost.
 
-Also to settle: whether it asks for confirmation (it ends the session for both
-parties), and what the page shows afterwards.
+Options not taken: the button asks the agent to close (a session whose agent is
+gone never closes); no confirmation at all (a stray click ends the session).
+
+Still to settle at build: what the page shows after the session ends.
 
 ## Definition of done
 
-- [ ] The top bar has an End session control, reachable by keyboard, that ends
-      the session through the daemon.
+- [ ] The top bar has an End session control, reachable by keyboard. It asks for
+      confirmation in a modal, then ends the session through the daemon.
 - [ ] The agent's `tail` learns that the human ended the session, and can tell
       it apart from a crash or an agent-run `close`.
 - [ ] Closing the tab alone still ends nothing.
