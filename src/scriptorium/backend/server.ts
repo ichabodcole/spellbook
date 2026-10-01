@@ -242,9 +242,18 @@ export async function startDaemon(opts: StartOpts) {
   };
   const broadcastState = () => send({ type: "state", state: viewState() });
 
-  /** A system line in the chat — and, because the agent must know it too, on the tail. */
-  const announce = (text: string, fact: Record<string, unknown> = {}) => {
-    const m = session.addMessage("system", text);
+  /**
+   * A system line in the chat — and, because the agent must know it too, on the tail.
+   *
+   * `forHuman`, when given, is the chat's line and `text` stays the agent's
+   * (the tail event). For a fact whose agent text is instructions ("Do NOT
+   * create another version…") or carries a long path: the human was shown
+   * the agent's orders, and the path overflowed the chat column (verifier,
+   * 2026-10-01). The same split `save` already makes — a short chat line, a
+   * structured event.
+   */
+  const announce = (text: string, fact: Record<string, unknown> = {}, forHuman?: string) => {
+    const m = session.addMessage("system", forHuman ?? text);
     log.emit({ type: "system", text, ts: m.ts, ...fact });
     broadcastState();
   };
@@ -392,6 +401,11 @@ export async function startDaemon(opts: StartOpts) {
         preservedPath,
         activatedBeforeWritten,
       },
+      // The human's own line: what happened to their version, no path, no
+      // instructions meant for the agent.
+      activatedBeforeWritten
+        ? `You activated v${version} before the agent had written it; the agent's text is v${preservedAs}.`
+        : `v${version} was written from outside the editor; that text is kept as v${preservedAs}, and v${version} keeps yours.`,
     );
 
   // --- shared acts (surface and agent reach the same code) ---------------------

@@ -383,8 +383,14 @@ describe("a session, end to end through the launchers", () => {
     expect(readFileSync(String(line.preservedPath), "utf8")).toBe("the agent broke the rule\n");
     // The active version keeps the human's text.
     expect(readFileSync(activePath, "utf8")).toBe(before);
+    // The HUMAN's line is their own: what happened to their version, not the
+    // agent's instructions (the tail line above carries those).
     const s2 = JSON.parse((await cli("state", "--full")).out) as PublicState;
-    expect(s2.chat.some((m) => m.who === "system" && m.text.includes("ACTIVE version"))).toBe(true);
+    const mine = s2.chat.filter((m) => m.who === "system").at(-1);
+    expect(mine?.text).toBe(
+      "v2 was written from outside the editor; that text is kept as v3, and v2 keeps yours.",
+    );
+    expect(String(line.text)).toContain("Agent edits belong in a new version");
   });
 
   test("E24 — the agent's verbs and the surface's messages are one path: same change, announced to both", async () => {
@@ -703,6 +709,13 @@ describe("a version and the human's Activate: the race, and the one-step form th
       `activated v${v.version} of race before you had written it`,
     );
     expect(String(line.text)).toContain("Do NOT create another version");
+    // The human is not shown the agent's instructions, nor the long path: a
+    // short line of their own (verifier, 2026-10-01).
+    const st = JSON.parse((await s("state", "--full")).out) as PublicState;
+    const human = st.chat.filter((m) => m.who === "system").at(-1);
+    expect(human?.text).toBe(
+      `You activated v${v.version} before the agent had written it; the agent's text is v${line.preservedAs}.`,
+    );
     expect(readFileSync(String(line.preservedPath), "utf8")).toBe(
       "the agent's draft, a moment late\n",
     );

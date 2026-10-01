@@ -37,10 +37,12 @@ export function ChatMessageView({
   /** An internal link: the daemon resolves it (E33). */
   onFollowLink?: (target: string) => void;
 }) {
+  // `wrap-anywhere`: a system line is plain text, outside `.md-chat`'s wrap, and
+  // a long path in one overflowed the column (verifier, 2026-10-01).
   return (
     <div
       data-who={m.who}
-      className="rounded-md px-2 py-1 text-xs leading-relaxed text-ink-dim data-[who=agent]:bg-surface-raised data-[who=agent]:text-ink data-[who=human]:bg-rubric/10 data-[who=human]:text-ink"
+      className="min-w-0 wrap-anywhere rounded-md px-2 py-1 text-xs leading-relaxed text-ink-dim data-[who=agent]:bg-surface-raised data-[who=agent]:text-ink data-[who=human]:bg-rubric/10 data-[who=human]:text-ink"
     >
       {m.who === "system" ? (
         <>
