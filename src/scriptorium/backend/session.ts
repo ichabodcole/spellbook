@@ -249,6 +249,14 @@ export class Session {
    * #117 — path → hash of an agent `version-new` COPY as the daemon made it,
    * while nobody has written it yet. Not persisted: it only has to outlive the
    * seconds between `version-new` and the agent's write.
+   *
+   * ⛔ ACTIVATION DOES NOT CLEAR IT. The fact is "this version still holds the
+   * copy it was made from and nobody has written it" — true across any number
+   * of activations. Clearing it on activate lost it on a human flip-flop
+   * (activate v4, pick v1, pick v4 again; verifier, 2026-10-01), and the agent's
+   * write then got the old "belongs in a new version" message that invites the
+   * duplicate #117 set out to stop. It goes when the content changes (an
+   * outside write, a human edit) or the version is deleted.
    */
   private unwrittenCopies = new Map<string, string>();
   /** #117 — slug → the version the HUMAN activated while it was still an
@@ -414,8 +422,15 @@ export class Session {
     this.lastActiveText.set(d.slug, text);
   }
 
+  /** The version at `path` now holds `text`: an unwritten copy it no longer is. */
+  private contentChanged(path: string, text: string): void {
+    if (this.unwrittenCopies.get(path) !== contentHash(text)) this.unwrittenCopies.delete(path);
+  }
+
   /** Keep an outside write to the active version as a NEW agent version. */
   private preserveOutside(d: DocRecord, text: string): PreservedVersion {
+    // Someone wrote the active version: whatever it holds next, it has been written.
+    this.unwrittenCopies.delete(this.versionPath(d, d.active));
     // Said once: the first outside write after the race is the agent filling
     // the copy in; any later one is the ordinary case.
     const activatedBeforeWritten = this.activatedUnwritten.get(d.slug) === d.active;
@@ -720,6 +735,7 @@ export class Session {
       preserved = this.preserveOutside(d, onDisk);
     this.owned.set(path, contentHash(text));
     renameSync(staged, path);
+    this.contentChanged(path, text);
     this.activeHash.set(d.slug, contentHash(text));
     this.lastActiveText.set(d.slug, text);
     return { dirtyChanged: before !== this.isDirty(d), preserved };
@@ -832,7 +848,6 @@ export class Session {
     // is still the copy `version-new` made). The agent's write is coming and
     // will land on the active version; remember why, so the safeguard can say so.
     const unwritten = this.unwrittenCopies.get(path);
-    this.unwrittenCopies.delete(path);
     if (opts.by === "human" && unwritten === contentHash(text))
       this.activatedUnwritten.set(d.slug, d.active);
     else this.activatedUnwritten.delete(d.slug);
@@ -1144,6 +1159,7 @@ export class Session {
         };
       }
       this.owned.set(abs, contentHash(text));
+      this.unwrittenCopies.delete(abs);
       return { kind: "version.changed", doc: d.slug, version: n, text, active: false };
     }
 

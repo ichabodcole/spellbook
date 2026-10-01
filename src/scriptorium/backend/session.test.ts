@@ -321,6 +321,35 @@ describe("a version born holding its text — and the race it removes (#117)", (
     });
   });
 
+  test("THE FLIP-FLOP: activated, away, and back before the agent writes — still the race", () => {
+    // The verifier's sequence: version-new → v2; the human activates v2 from
+    // the toast, picks v1 in the menu, picks v2 again; THEN the agent writes.
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    const { version } = s.newVersion({ doc: slug, author: "agent" });
+    s.activate({ doc: slug, version: version.n, by: "human" });
+    s.activate({ doc: slug, version: 1, by: "human" });
+    s.activate({ doc: slug, version: version.n, by: "human" });
+    writeFileSync(version.path, "the agent's draft\n");
+    expect(s.onFileEvent(version.path)).toMatchObject({
+      kind: "active.outside",
+      activatedBeforeWritten: true,
+    });
+  });
+
+  test("once the copy's content changes it is no longer an unwritten copy, wherever it is activated", () => {
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    const { version } = s.newVersion({ doc: slug, author: "agent" });
+    s.activate({ doc: slug, version: version.n, by: "human" });
+    // The human types into it: it is theirs now, not the agent's pending copy.
+    s.edit(slug, version.n, "# Solo, the human's\n");
+    s.activate({ doc: slug, version: 1, by: "human" });
+    s.activate({ doc: slug, version: version.n, by: "human" });
+    writeFileSync(version.path, "outside\n");
+    expect(s.onFileEvent(version.path)).toMatchObject({ activatedBeforeWritten: false });
+  });
+
   test("the race through check-before-write (the human types before the watcher fires) carries it too", () => {
     const s = inContext();
     const { slug } = s.openPath(join(docs, "solo.md"));
