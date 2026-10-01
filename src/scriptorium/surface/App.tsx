@@ -304,7 +304,10 @@ function Workspace({
     lastError,
     clearError,
     done,
+    endedBy,
   } = daemon;
+  /** The session was ended on purpose — one fact, read by every control below. */
+  const ended = endedBy !== null;
   const prefsRef = useRef(state.prefs);
   prefsRef.current = state.prefs;
   const storage = useMemo(
@@ -421,13 +424,18 @@ function Workspace({
     storage,
   });
 
-  const saved = state.prefs[VIEW_PREF];
+  // ⚠ AFTER AN END THE MODE IS HELD HERE: it lives in the home's prefs, which
+  // nobody can write any more, and switching raw/rendered is reading — it must
+  // keep working on what is loaded rather than become a dead button.
+  const [modeAfterEnd, setModeAfterEnd] = useState<ViewMode | null>(null);
+  const saved = modeAfterEnd ?? state.prefs[VIEW_PREF];
   const mode: ViewMode = (VIEW_MODES as readonly string[]).includes(saved ?? "")
     ? (saved as ViewMode)
     : "rendered";
   const setMode = useCallback(
-    (next: ViewMode) => send({ type: "prefs.set", key: VIEW_PREF, value: next }),
-    [send],
+    (next: ViewMode) =>
+      ended ? setModeAfterEnd(next) : send({ type: "prefs.set", key: VIEW_PREF, value: next }),
+    [send, ended],
   );
   /** E64: rendered with both columns shut — derived, never stored (`isReader`). */
   const reader = isReader(mode, collapsed);
@@ -649,6 +657,7 @@ function Workspace({
   /** The one composer's props, whichever place it is drawn in (E64). */
   const composer = {
     connected: connection === "open",
+    ended,
     attachable:
       open && shown
         ? {
@@ -776,6 +785,7 @@ function Workspace({
             onMode={setMode}
             docPercent={layoutNow?.document ?? 100}
             quiet={reader}
+            ended={ended}
             // ⛔ A COLLAPSED COLUMN IS REOPENED FROM THE EDGE IT WENT TO (E64).
             // The button sits at that end of the document's heading, where the
             // column was, so the way back is where the eye goes looking for it.

@@ -18,7 +18,7 @@ import type {
   ServerMsg,
   StructureOpType,
 } from "../../backend/protocol";
-import { afterSocketClose } from "./ending";
+import { afterSocketClose, ENDED_NOTICE, sentAfterEnd } from "./ending";
 
 /** `ended`: the daemon said it was ending on purpose — nothing to retry (End session). */
 export type Connection = "connecting" | "open" | "closed" | "ended";
@@ -69,6 +69,8 @@ export function useDaemon(): {
   /** E59's last answer. The caller drops it when the query has moved on. */
   const [search, setSearch] = useState<SearchReport | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  /** Mirrors `endedBy` for `send`, which must not change identity. */
+  const endedRef = useRef<ClosedBy | null>(null);
   // One pending listing per path; a later ask for the same path shares the answer.
   const pending = useRef(new Map<string, ((l: Listing) => void)[]>());
   // One pending move plan per from→into pair (E26's confirmation).
@@ -103,6 +105,7 @@ export function useDaemon(): {
         if (msg.type === "state") setState(msg.state);
         else if (msg.type === "closed") {
           ended = msg.by;
+          endedRef.current = msg.by;
           setEndedBy(msg.by);
         } else if (msg.type === "error") setLastError(msg.message);
         else if (msg.type === "version.text") {
@@ -178,6 +181,13 @@ export function useDaemon(): {
   }, []);
 
   const send = useCallback((msg: ClientMsg) => {
+    // After a deliberate end nothing is listening: say so to the human's own
+    // acts, and drop what the page sends by itself (`sentAfterEnd`).
+    if (endedRef.current) {
+      if (sentAfterEnd(msg as { type: string; query?: string }) === "notice")
+        setLastError(ENDED_NOTICE);
+      return;
+    }
     const ws = wsRef.current;
     if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
   }, []);

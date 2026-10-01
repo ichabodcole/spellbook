@@ -19,6 +19,33 @@ export function afterSocketClose(endedBy: ClosedBy | null): {
   return endedBy ? { connection: "ended", retry: false } : { connection: "closed", retry: true };
 }
 
+/** The tooltip on a control the end has disabled (Save, Revert, the composer…). */
+export const SESSION_ENDED = "The session has ended";
+
+/** What a click that could no longer reach the daemon is answered with. */
+export const ENDED_NOTICE =
+  "The session has ended, so that did nothing. To keep working, ask the agent to reopen it.";
+
+/**
+ * Traffic the page sends ON ITS OWN — a resize persisting the layout, a
+ * selection report, a version or comparison loading, the editor's buffer —
+ * which after an end is simply dropped: no one asked for it.
+ */
+const AMBIENT = new Set<string>(["prefs.set", "select", "read", "diff", "edit"]);
+
+/**
+ * What becomes of a message sent after a deliberate end. ⛔ A HUMAN'S ACT IS
+ * NEVER SWALLOWED: a control that does nothing on click is the defect, so the
+ * controls that only write are disabled outright, and whatever still reaches
+ * here (opening a document, switching a version, a note, a task) is answered
+ * with `ENDED_NOTICE` rather than silence.
+ */
+export function sentAfterEnd(msg: { type: string; query?: string }): "drop" | "notice" {
+  if (AMBIENT.has(msg.type)) return "drop";
+  if (msg.type === "search" && !msg.query) return "drop";
+  return "notice";
+}
+
 /** Who ended it, for the "Session ended" label's tooltip. */
 export function endedTitle(by: ClosedBy): string {
   switch (by) {

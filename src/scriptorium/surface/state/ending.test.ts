@@ -1,5 +1,37 @@
 import { describe, expect, test } from "bun:test";
-import { afterSocketClose, endedTitle, unsavedWarning } from "./ending";
+import {
+  afterSocketClose,
+  ENDED_NOTICE,
+  endedTitle,
+  SESSION_ENDED,
+  sentAfterEnd,
+  unsavedWarning,
+} from "./ending";
+
+describe("sentAfterEnd — a click that can no longer reach the daemon says so", () => {
+  test("the human's acts are answered with the notice, never swallowed", () => {
+    for (const type of ["open", "activate", "note.add", "task.done", "history.undo", "move"])
+      expect(sentAfterEnd({ type })).toBe("notice");
+  });
+
+  test("ambient traffic (layout, selection, loads) is dropped quietly", () => {
+    // These fire on their own — a resize, a selection, a pane mounting — and a
+    // notice for each would be noise about something the human did not do.
+    for (const type of ["prefs.set", "select", "read", "diff", "edit"])
+      expect(sentAfterEnd({ type })).toBe("drop");
+  });
+
+  test("clearing the search box is not an act worth a notice", () => {
+    expect(sentAfterEnd({ type: "search", query: "" })).toBe("drop");
+    expect(sentAfterEnd({ type: "search", query: "draft" })).toBe("notice");
+  });
+
+  test("the words: the session has ended, and the way back", () => {
+    expect(SESSION_ENDED).toBe("The session has ended");
+    expect(ENDED_NOTICE).toContain("The session has ended");
+    expect(ENDED_NOTICE).toContain("ask the agent to reopen it");
+  });
+});
 
 const doc = (slug: string, name: string, active: number, dirty: boolean) => ({
   slug,
