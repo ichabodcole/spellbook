@@ -220,8 +220,8 @@ const EXPECTED: Record<
   // 34/10 -> 27/4 (2026-09-26): the move onto the kit registry, as glamour's.
   // 27/4 -> 28/4 (#117): the one prose reader (`readProse`, now shared by
   // `say`/`task`/`note` and `version-new --body-file`) refuses a `--body-file`
-  // that is not there as not_found, before reading it. No `choices`: a path
-  // is not a closed set.
+  // that is not there before reading it — usage for the older verbs, as
+  // before, not_found for `version-new`. No `choices`: a path is not a closed set.
   scriptorium: { sites: 28, choices: 4, verbRoster: true, flagMap: true },
 };
 

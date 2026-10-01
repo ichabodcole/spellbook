@@ -546,14 +546,19 @@ async function cmdState(session: string | undefined, full: boolean) {
  * The ONE prose reader: arguments, `--stdin` or `--body-file`, exactly one of
  * them. `say`/`task`/`note` need a message and trim it; `version-new` (#117)
  * may have none (then it copies) and keeps its body byte for byte, because a
- * version's text is a document, not a chat line. A body file that is not there
- * is `not_found` (5), like any other path the caller names.
+ * version's text is a document, not a chat line.
+ *
+ * A body file that is not there is `usage` (2) by default — what `say`/`task`/
+ * `note`/`note-edit` have always answered — and `not_found` (5) where the
+ * caller asks (`version-new`, new in #117). ⚠ Aligning the older verbs on 5 is
+ * a caller-visible exit-code change, held for a release that can carry a
+ * breaking-changes note; cli-contract pins their 2 until then.
  */
 async function readProse(
   verb: string,
   pos: string[],
   flags: Record<string, string | boolean>,
-  o: { optional?: boolean } = {},
+  o: { optional?: boolean; missingFile?: "usage" | "not_found" } = {},
 ): Promise<string | undefined> {
   const sources = [
     pos.length > 0,
@@ -580,7 +585,7 @@ async function readProse(
   if (flags.stdin === true) text = await new Response(Bun.stdin.stream()).text();
   else if (typeof flags["body-file"] === "string") {
     const path = flags["body-file"];
-    if (!existsSync(path)) die(`${verb}: --body-file not found: ${path}`, "not_found");
+    if (!existsSync(path)) die(`${verb}: --body-file not found: ${path}`, o.missingFile ?? "usage");
     text = readFileSync(path, "utf8");
   } else text = pos.join(" ");
   if (!text.trim())
@@ -595,7 +600,7 @@ async function readProse(
 async function readSayBody(
   pos: string[],
   flags: Record<string, string | boolean>,
-  verb = "say",
+  verb: string,
 ): Promise<string> {
   return ((await readProse(verb, pos, flags)) ?? "").trim();
 }
@@ -824,7 +829,10 @@ const ROWS: Row[] = [
       "propose a new version holding your text (--body-file <path> or --stdin); without one, copies a version (default: the active one) and prints its path to edit",
     run: async (_pos, flags, session) => {
       const from = typeof flags.from === "string" ? parseVersion(flags.from, "--from") : undefined;
-      const text = await readProse("version-new", [], flags, { optional: true });
+      const text = await readProse("version-new", [], flags, {
+        optional: true,
+        missingFile: "not_found",
+      });
       printJson(
         await postCmd(session, {
           type: "version.new",
@@ -842,7 +850,9 @@ const ROWS: Row[] = [
     positionals: [{ name: "text", required: false, variadic: true }],
     describe: "post a chat message from the agent (prose: --body-file <path> or --stdin)",
     run: async (pos, flags, session) => {
-      printJson(await postCmd(session, { type: "say", text: await readSayBody(pos, flags) }));
+      printJson(
+        await postCmd(session, { type: "say", text: await readSayBody(pos, flags, "say") }),
+      );
     },
   },
   {
@@ -867,7 +877,7 @@ const ROWS: Row[] = [
     describe: "say you have started something; prints the id to finish it with",
     run: async (pos, flags, session) => {
       printJson(
-        await postCmd(session, { type: "task.start", text: await readSayBody(pos, flags) }),
+        await postCmd(session, { type: "task.start", text: await readSayBody(pos, flags, "task") }),
       );
     },
   },
@@ -957,7 +967,7 @@ const ROWS: Row[] = [
         await postCmd(session, {
           type: "note.add",
           quote: flags.quote,
-          body: await readSayBody(pos, flags),
+          body: await readSayBody(pos, flags, "note"),
           ...(typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}),
         }),
       );
@@ -991,7 +1001,7 @@ const ROWS: Row[] = [
         await postCmd(session, {
           type: "note.edit",
           id: pos[0] as string,
-          body: await readSayBody(pos.slice(1), flags),
+          body: await readSayBody(pos.slice(1), flags, "note-edit"),
           ...(typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}),
         }),
       );

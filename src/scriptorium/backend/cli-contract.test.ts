@@ -253,10 +253,29 @@ test("version-new's body (#117): one source, a file that exists, not empty — e
   expect(noSession.error.message).not.toContain("--body-file");
 });
 
-test("say's missing --body-file is not_found too — the one prose reader", () => {
-  const r = run(["say", "--body-file", "/definitely/not/here.txt"]);
-  expect(r.code).toBe(5);
-  expect((JSON.parse(r.stderr) as Envelope).error.message).toContain("--body-file not found");
+// ⚠ PINNED, NOT AN OVERSIGHT: the older prose verbs answer a missing
+// --body-file with usage (2), as they always have; `version-new` alone, new in
+// #117, answers not_found (5). Moving these to 5 is a caller-visible exit-code
+// change held for a release that carries a breaking-changes note.
+test.each([
+  ["say", ["say"]],
+  ["task", ["task"]],
+  ["note", ["note", "--quote", "x"]],
+  ["note-edit", ["note-edit", "n-1"]],
+])("%s's missing --body-file stays usage (2), naming its own verb", (verb, args) => {
+  const r = run([...args, "--body-file", "/definitely/not/here.txt"]);
+  expect(r.code).toBe(2);
+  const doc = JSON.parse(r.stderr) as Envelope;
+  expect(doc.error.kind).toBe("usage");
+  expect(doc.error.message).toBe(`${verb}: --body-file not found: /definitely/not/here.txt`);
+});
+
+test("a prose refusal names the verb that was run, not `say`", () => {
+  for (const verb of ["task", "note-edit"]) {
+    const args = verb === "note-edit" ? [verb, "n-1"] : [verb];
+    const doc = JSON.parse(run(args).stderr) as Envelope;
+    expect(doc.error.message).toBe(`${verb} needs a message`);
+  }
 });
 
 test("restoring an unknown session names the saved sessions as choices — empty, and said", () => {
