@@ -155,14 +155,15 @@ any of them. A document becomes open — copied in as `v1`, with versions you ca
 write — the first time someone reaches for it: the human by clicking it, you by
 naming its **path** to `version-new`.
 
-So for a document the human has not opened:
+So for a document the human has not opened, write your text to a file and:
 
 ```bash
-bun $S/scripts/cli.ts version-new --doc /abs/path/from/the/context.md
+bun $S/scripts/cli.ts version-new --doc /abs/path/from/the/context.md --body-file <path> --label "…"
 ```
 
-That opens it and gives you a v2, without moving their view (add `--body-file`
-to have v2 hold your text from the start).
+That opens it and gives you a v2 that holds your text from the start, without
+moving their view (Rule 2). Leaving out `--body-file` makes v2 a copy for you to
+edit, which is the racy two-step form.
 
 **⚠ `--doc` accepts a slug or a unique filename only for a document that is
 ALREADY open.** For anything else it must be an absolute path — a filename gets
