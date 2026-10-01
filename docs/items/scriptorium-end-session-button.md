@@ -42,14 +42,31 @@ and the button is the faster way to say it.
 Options not taken: the button asks the agent to close (a session whose agent is
 gone never closes); no confirmation at all (a stray click ends the session).
 
-Still to settle at build: what the page shows after the session ends.
+**After the end (Cole, 2026-10-01, in session 12e4c09d):** no lock-out and no
+new page; the human can still look around what is loaded. Two small changes
+only:
+
+- Ending stops the daemon, so today the status would read "daemon unreachable —
+  retrying" and retry forever (`App.tsx`). After a deliberate end it reads
+  **"Session ended"** and stops retrying.
+- If the open document has **unsaved edits**, the confirmation modal says so.
+  The session's versions survive (`open --restore`), but the file on disk will
+  not have them.
+
+**The agent must know the end was intentional** (Cole), so it never treats the
+disconnect as something to repair. The `closed` event, and the line `tail` ends
+on, say both what happened and the next act: _the human ended this session on
+purpose; do not reopen it unless they ask._ The skill says the same.
 
 ## Definition of done
 
 - [ ] The top bar has an End session control, reachable by keyboard. It asks for
       confirmation in a modal, then ends the session through the daemon.
-- [ ] The agent's `tail` learns that the human ended the session, and can tell
-      it apart from a crash or an agent-run `close`.
+- [ ] The agent's `tail` learns that the human ended the session, can tell it
+      apart from a crash or an agent-run `close`, and is told not to reopen it
+      unless asked.
+- [ ] After a deliberate end the page reads "Session ended" and stops retrying;
+      the modal warns about unsaved edits.
 - [ ] Closing the tab alone still ends nothing.
 - [ ] Saying it in chat remains a path; the skill tells the agent what to do in
       either case.
