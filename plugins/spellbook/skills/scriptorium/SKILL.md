@@ -197,9 +197,17 @@ Facts, not chatter. The ones worth acting on:
 - **`saved`, `activated`, `system`** — they changed what is where. `system`
   announcements carry a `fact` and, for structure changes, who did it.
 - **`closed`** — the session ended. The tail follows it with `tail.closed` and
-  exits 0. A daemon that dies without `closed` (a crash, a `kill -9`) ends the
-  tail with `tail.lost` instead, on stdout, so you hear it. Both name
-  `open --restore <id>` as the way back.
+  exits 0. The event and the line carry `by`: `human` (their End session
+  button), `agent` (your `close`), or `timeout` (the idle close). A daemon that
+  dies without `closed` (a crash, a `kill -9`) ends the tail with `tail.lost`
+  instead, on stdout, so you hear it. Both name `open --restore <id>` as the way
+  back.
+- **`by: "human"` means they ended it on purpose.** It is not a crash to repair.
+  Stop watching, and do not reopen it unless they ask; wrap up in the terminal
+  if there is anything to say. Route on `by`, not on the hint's wording.
+
+**When they say they are done in the chat** ("we're done", "that's all"), run
+`close` yourself. The button is a shortcut for saying it; saying it still works.
 
 ## When you go quiet
 

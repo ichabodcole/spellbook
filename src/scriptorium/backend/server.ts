@@ -71,6 +71,7 @@ import { type PickKind, parsePickerOutput, pickerCommand, wasCancelled } from ".
 import type {
   AgentCmd,
   ClientMsg,
+  ClosedBy,
   PublicState,
   Selection,
   ServerMsg,
@@ -971,6 +972,12 @@ export async function startDaemon(opts: StartOpts) {
         broadcastState();
         return;
       }
+      case "session.end":
+        // ⛔ THE DAEMON ENDS IT, NOT THE AGENT (Cole, 2026-10-01): the page
+        // already asked the human to confirm, and a session whose agent has
+        // gone must still be able to close. Same teardown as `close`.
+        resolveDone({ code: 0, reason: "close", by: "human" });
+        return;
       case "prefs.set": {
         if (
           !PREF_KEY.test(msg.key) ||
@@ -1154,8 +1161,8 @@ export async function startDaemon(opts: StartOpts) {
   };
 
   // --- agent commands (POST /cmd) ----------------------------------------------
-  let resolveDone!: (v: { code: number; reason: string }) => void;
-  const done = new Promise<{ code: number; reason: string }>((r) => {
+  let resolveDone!: (v: { code: number; reason: string; by: ClosedBy }) => void;
+  const done = new Promise<{ code: number; reason: string; by: ClosedBy }>((r) => {
     resolveDone = r;
   });
 
@@ -1417,7 +1424,7 @@ export async function startDaemon(opts: StartOpts) {
       case "activate":
         return activate(cmd.doc, cmd.version, "agent");
       case "close":
-        resolveDone({ code: 0, reason: "close" });
+        resolveDone({ code: 0, reason: "close", by: "agent" });
         return {};
       default:
         throw new SessionError(
@@ -1682,7 +1689,7 @@ export async function startDaemon(opts: StartOpts) {
     idleMs: () => performance.now() - lastActivity,
     touch,
     timeoutMs: (opts.timeoutS ?? 1800) * 1000,
-    onIdleClose: () => resolveDone({ code: 124, reason: "timeout" }),
+    onIdleClose: () => resolveDone({ code: 124, reason: "timeout", by: "timeout" }),
   });
 
   let closed = false;
@@ -1708,7 +1715,7 @@ export async function startDaemon(opts: StartOpts) {
   };
 
   // The order is the header's, and the header says why.
-  const close = () => {
+  const close = (by?: ClosedBy) => {
     if (closed) return;
     closed = true;
     stopHousekeeping();
@@ -1722,10 +1729,15 @@ export async function startDaemon(opts: StartOpts) {
       /* best-effort */
     }
     cleanupDiscovery();
-    log.emit({ type: "closed" });
+    // WHO ended it rides the event, so the agent's tail can tell the human's
+    // deliberate end from its own `close` or the idle timeout — and the
+    // surface gets the same fact before its socket goes, so it can say
+    // "Session ended" instead of retrying a daemon that is not coming back.
+    log.emit({ type: "closed", ...(by ? { by } : {}) });
+    if (by) send({ type: "closed", by });
     void drainAndStop({ server, clients: sseClients, sockets }).then(resolveShutdown);
   };
-  done.then(() => close());
+  done.then((r) => close(r.by));
 
   return { port: boundPort, sessionId, mode, dir: session.dir, close, done, shutdown };
 }

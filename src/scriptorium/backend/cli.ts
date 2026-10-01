@@ -628,7 +628,7 @@ async function cmdTail(
   const reArm = session !== undefined || o.sinceGiven;
   let grounded = o.sinceGiven;
   const pin = () => (boundId !== undefined ? ["--session", boundId] : []);
-  return await tailWithHandoff<{ id?: number; epoch?: string; type?: string }>(
+  return await tailWithHandoff<{ id?: number; epoch?: string; type?: string; by?: string }>(
     {
       resolve: () => {
         const s = readSession(boundId);
@@ -694,6 +694,9 @@ async function cmdTail(
       spell: "scriptorium",
       mode: o.once ? "once" : "watch",
       presence: false,
+      // The `closed` event says who ended it; `tail.closed` carries it as
+      // `by`, and a human end tells the agent to stop and not reopen.
+      closedBy: (ev) => (typeof ev.by === "string" ? ev.by : undefined),
       commands: {
         tail: ({ since: at, once, epoch }) => tailCommand(["tail", ...pin()], at, once, epoch),
         comeBack: () => commandLine(["open", "--restore", boundId ?? "<id>", "--no-open"]),

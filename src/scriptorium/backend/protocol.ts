@@ -580,7 +580,20 @@ export type ClientMsg =
    * it gets a real PATH — which a browser picker never gives (E23's note).
    */
   | { type: "pick"; want: "context-file" | "context-folder" | "workspace" }
+  /**
+   * The human's End session button: the DAEMON ends the session itself, with
+   * no round trip through the agent (Cole, 2026-10-01) — a session whose agent
+   * is gone must still close. The tail hears `closed` with `by: "human"`.
+   */
+  | { type: "session.end" }
   | StructureOp;
+
+/**
+ * Who ended a session — carried on the `closed` event and frame. `human` is
+ * the surface's End session, `agent` the CLI's `close`, `timeout` the idle
+ * close. A crash or a kill emits nothing at all.
+ */
+export type ClosedBy = "human" | "agent" | "timeout";
 
 /** Daemon → surface, over the WebSocket. */
 export type ServerMsg =
@@ -618,6 +631,12 @@ export type ServerMsg =
     }
   /** To the sender only: a structure op landed, at `path` — so the surface can open or rename it. */
   | { type: "structure.done"; op: StructureOpType; path: string }
+  /**
+   * The session is ending on purpose, sent before the sockets close: the page
+   * reads "Session ended" and stops retrying. A daemon that just vanishes
+   * sends nothing, and the page keeps retrying, as before.
+   */
+  | { type: "closed"; by: ClosedBy }
   | { type: "error"; message: string };
 
 /** Agent → daemon, over `POST /cmd` (the CLI's verbs). */

@@ -232,10 +232,48 @@ describe("the wait ends on a closed or a lost session, naming how to come back",
     expect(await t.exit(5000)).toBe(0);
     const lines = t.lines();
     expect(lines.map((l) => l.type)).toEqual(["closed", "tail.closed"]);
+    expect(lines[0]).toMatchObject({ by: "agent" });
     expect(lines[1]).toMatchObject({
+      by: "agent",
       next: "stop",
       command: cmd("open", "--restore", id, "--no-open"),
     });
+  }, 30_000);
+
+  test("ended by the HUMAN (the page's End session): the page hears it, and the tail says stop, don't reopen", async () => {
+    const r = await cli("open", "--no-open", doc);
+    const { session_id: id, port } = JSON.parse(r.out) as { session_id: string; port: number };
+    opened.push(id);
+    const since = await lastId(id);
+    const t = spawnTail(["--session", id, "--since", String(since)], 60_000);
+    await Bun.sleep(800);
+    // The page, played the way it does it: one `session.end` over the socket,
+    // after its own confirmation. No agent is involved.
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+    const frames: Line[] = [];
+    ws.onmessage = (ev) => frames.push(JSON.parse(String(ev.data)) as Line);
+    await new Promise((res) => {
+      ws.onopen = res;
+    });
+    const gone = new Promise((res) => {
+      ws.onclose = res;
+    });
+    ws.send(JSON.stringify({ type: "session.end" }));
+    await Promise.race([gone, Bun.sleep(5000)]);
+    // The page is told BEFORE its socket closes, so it can stop retrying.
+    expect(frames.filter((f) => f.type === "closed")).toEqual([{ type: "closed", by: "human" }]);
+    expect(await t.exit(5000)).toBe(0);
+    const lines = t.lines();
+    expect(lines.map((l) => l.type)).toEqual(["closed", "tail.closed"]);
+    expect(lines[0]).toMatchObject({ by: "human" });
+    expect(lines[1]).toMatchObject({
+      by: "human",
+      next: "stop",
+      command: cmd("open", "--restore", id, "--no-open"),
+    });
+    expect(String(lines[1]?.hint)).toContain("do not reopen it unless they ask");
+    // The session's pointer is gone, as after an agent's close.
+    expect(existsSync(join(root, "tmp", `scriptorium-${id}.json`))).toBe(false);
   }, 30_000);
 
   test("D1: re-armed at a session that closed in the gap → tail.closed at once, in both modes", async () => {
