@@ -2489,6 +2489,12 @@
     }
   }
 
+  @media (hover: hover) {
+    .disabled\:hover\:no-underline:disabled:hover {
+      text-decoration-line: none;
+    }
+  }
+
   :where([data-slot="button-group"]) .in-data-\[slot\=button-group\]\:rounded-lg {
     border-radius: var(--radius-lg);
   }

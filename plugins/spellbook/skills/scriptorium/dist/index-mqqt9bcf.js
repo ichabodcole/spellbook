@@ -10984,23 +10984,23 @@ var require_jsx_runtime = __commonJS(function(exports, module) {
 
 // node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.production.js
 var require_use_sync_external_store_shim_production = __commonJS(function(exports) {
-  var React43 = __toESM(require_react());
+  var React23 = __toESM(require_react());
   function is2(x, y) {
     return x === y && (x !== 0 || 1 / x === 1 / y) || x !== x && y !== y;
   }
   var objectIs2 = typeof Object.is === "function" ? Object.is : is2;
-  var useState9 = React43.useState;
-  var useEffect10 = React43.useEffect;
-  var useLayoutEffect3 = React43.useLayoutEffect;
-  var useDebugValue = React43.useDebugValue;
+  var useState5 = React23.useState;
+  var useEffect7 = React23.useEffect;
+  var useLayoutEffect3 = React23.useLayoutEffect;
+  var useDebugValue = React23.useDebugValue;
   function useSyncExternalStore$2(subscribe, getSnapshot) {
-    var value = getSnapshot(), _useState = useState9({ inst: { value, getSnapshot } }), inst = _useState[0].inst, forceUpdate = _useState[1];
+    var value = getSnapshot(), _useState = useState5({ inst: { value, getSnapshot } }), inst = _useState[0].inst, forceUpdate = _useState[1];
     useLayoutEffect3(function() {
       inst.value = value;
       inst.getSnapshot = getSnapshot;
       checkIfSnapshotChanged2(inst) && forceUpdate({ inst });
     }, [subscribe, value, getSnapshot]);
-    useEffect10(function() {
+    useEffect7(function() {
       checkIfSnapshotChanged2(inst) && forceUpdate({ inst });
       return subscribe(function() {
         checkIfSnapshotChanged2(inst) && forceUpdate({ inst });
@@ -11023,7 +11023,7 @@ var require_use_sync_external_store_shim_production = __commonJS(function(export
     return getSnapshot();
   }
   var shim = typeof window === "undefined" || typeof window.document === "undefined" || typeof window.document.createElement === "undefined" ? useSyncExternalStore$1 : useSyncExternalStore$2;
-  exports.useSyncExternalStore = React43.useSyncExternalStore !== undefined ? React43.useSyncExternalStore : shim;
+  exports.useSyncExternalStore = React23.useSyncExternalStore !== undefined ? React23.useSyncExternalStore : shim;
 });
 
 // node_modules/use-sync-external-store/shim/index.js
@@ -11035,25 +11035,25 @@ var require_shim = __commonJS(function(exports, module) {
 
 // node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.production.js
 var require_with_selector_production = __commonJS(function(exports) {
-  var React43 = __toESM(require_react());
+  var React23 = __toESM(require_react());
   var shim = require_shim();
   function is2(x, y) {
     return x === y && (x !== 0 || 1 / x === 1 / y) || x !== x && y !== y;
   }
   var objectIs2 = typeof Object.is === "function" ? Object.is : is2;
   var useSyncExternalStore = shim.useSyncExternalStore;
-  var useRef15 = React43.useRef;
-  var useEffect10 = React43.useEffect;
-  var useMemo12 = React43.useMemo;
-  var useDebugValue = React43.useDebugValue;
+  var useRef9 = React23.useRef;
+  var useEffect7 = React23.useEffect;
+  var useMemo8 = React23.useMemo;
+  var useDebugValue = React23.useDebugValue;
   exports.useSyncExternalStoreWithSelector = function(subscribe, getSnapshot, getServerSnapshot, selector, isEqual) {
-    var instRef = useRef15(null);
+    var instRef = useRef9(null);
     if (instRef.current === null) {
       var inst = { hasValue: false, value: null };
       instRef.current = inst;
     } else
       inst = instRef.current;
-    instRef = useMemo12(function() {
+    instRef = useMemo8(function() {
       function memoizedSelector(nextSnapshot) {
         if (!hasMemo) {
           hasMemo = true;
@@ -11086,7 +11086,7 @@ var require_with_selector_production = __commonJS(function(exports) {
       ];
     }, [getSnapshot, getServerSnapshot, selector, isEqual]);
     var value = useSyncExternalStore(subscribe, instRef[0], instRef[1]);
-    useEffect10(function() {
+    useEffect7(function() {
       inst.hasValue = true;
       inst.value = value;
     }, [value]);
@@ -12831,14 +12831,20 @@ var __iconNode38 = [
   ["path", { d: "m15 5 4 4", key: "1mk7zo" }]
 ];
 var Pencil = createLucideIcon("pencil", __iconNode38);
-// node_modules/lucide-react/dist/esm/icons/redo-2.mjs
+// node_modules/lucide-react/dist/esm/icons/power.mjs
 var __iconNode39 = [
+  ["path", { d: "M12 2v10", key: "mnfbl" }],
+  ["path", { d: "M18.4 6.6a9 9 0 1 1-12.77.04", key: "obofu9" }]
+];
+var Power = createLucideIcon("power", __iconNode39);
+// node_modules/lucide-react/dist/esm/icons/redo-2.mjs
+var __iconNode40 = [
   ["path", { d: "m15 14 5-5-5-5", key: "12vg1m" }],
   ["path", { d: "M20 9H9.5A5.5 5.5 0 0 0 4 14.5A5.5 5.5 0 0 0 9.5 20H13", key: "6uklza" }]
 ];
-var Redo2 = createLucideIcon("redo-2", __iconNode39);
+var Redo2 = createLucideIcon("redo-2", __iconNode40);
 // node_modules/lucide-react/dist/esm/icons/save.mjs
-var __iconNode40 = [
+var __iconNode41 = [
   [
     "path",
     {
@@ -12849,15 +12855,15 @@ var __iconNode40 = [
   ["path", { d: "M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7", key: "1ydtos" }],
   ["path", { d: "M7 3v4a1 1 0 0 0 1 1h7", key: "t51u73" }]
 ];
-var Save = createLucideIcon("save", __iconNode40);
+var Save = createLucideIcon("save", __iconNode41);
 // node_modules/lucide-react/dist/esm/icons/search.mjs
-var __iconNode41 = [
+var __iconNode42 = [
   ["path", { d: "m21 21-4.34-4.34", key: "14j7rj" }],
   ["circle", { cx: "11", cy: "11", r: "8", key: "4ej97u" }]
 ];
-var Search = createLucideIcon("search", __iconNode41);
+var Search = createLucideIcon("search", __iconNode42);
 // node_modules/lucide-react/dist/esm/icons/sun.mjs
-var __iconNode42 = [
+var __iconNode43 = [
   ["circle", { cx: "12", cy: "12", r: "4", key: "4exip2" }],
   ["path", { d: "M12 2v2", key: "tus03m" }],
   ["path", { d: "M12 20v2", key: "1lh1kg" }],
@@ -12868,48 +12874,48 @@ var __iconNode42 = [
   ["path", { d: "m6.34 17.66-1.41 1.41", key: "1m8zz5" }],
   ["path", { d: "m19.07 4.93-1.41 1.41", key: "1shlcs" }]
 ];
-var Sun = createLucideIcon("sun", __iconNode42);
+var Sun = createLucideIcon("sun", __iconNode43);
 // node_modules/lucide-react/dist/esm/icons/trash-2.mjs
-var __iconNode43 = [
+var __iconNode44 = [
   ["path", { d: "M10 11v6", key: "nco0om" }],
   ["path", { d: "M14 11v6", key: "outv1u" }],
   ["path", { d: "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6", key: "miytrc" }],
   ["path", { d: "M3 6h18", key: "d0wm0j" }],
   ["path", { d: "M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2", key: "e791ji" }]
 ];
-var Trash2 = createLucideIcon("trash-2", __iconNode43);
+var Trash2 = createLucideIcon("trash-2", __iconNode44);
 // node_modules/lucide-react/dist/esm/icons/undo-2.mjs
-var __iconNode44 = [
+var __iconNode45 = [
   ["path", { d: "M9 14 4 9l5-5", key: "102s5s" }],
   ["path", { d: "M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11", key: "f3b9sd" }]
 ];
-var Undo2 = createLucideIcon("undo-2", __iconNode44);
+var Undo2 = createLucideIcon("undo-2", __iconNode45);
 // node_modules/lucide-react/dist/esm/icons/undo-dot.mjs
-var __iconNode45 = [
+var __iconNode46 = [
   ["path", { d: "M21 17a9 9 0 0 0-15-6.7L3 13", key: "8mp6z9" }],
   ["path", { d: "M3 7v6h6", key: "1v2h90" }],
   ["circle", { cx: "12", cy: "17", r: "1", key: "1ixnty" }]
 ];
-var UndoDot = createLucideIcon("undo-dot", __iconNode45);
+var UndoDot = createLucideIcon("undo-dot", __iconNode46);
 // node_modules/lucide-react/dist/esm/icons/user-check.mjs
-var __iconNode46 = [
+var __iconNode47 = [
   ["path", { d: "m16 11 2 2 4-4", key: "9rsbq5" }],
   ["path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", key: "1yyitq" }],
   ["circle", { cx: "9", cy: "7", r: "4", key: "nufk8" }]
 ];
-var UserCheck = createLucideIcon("user-check", __iconNode46);
+var UserCheck = createLucideIcon("user-check", __iconNode47);
 // node_modules/lucide-react/dist/esm/icons/user.mjs
-var __iconNode47 = [
+var __iconNode48 = [
   ["path", { d: "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2", key: "975kel" }],
   ["circle", { cx: "12", cy: "7", r: "4", key: "17ys0d" }]
 ];
-var User = createLucideIcon("user", __iconNode47);
+var User = createLucideIcon("user", __iconNode48);
 // node_modules/lucide-react/dist/esm/icons/x.mjs
-var __iconNode48 = [
+var __iconNode49 = [
   ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
   ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
 ];
-var X = createLucideIcon("x", __iconNode48);
+var X = createLucideIcon("x", __iconNode49);
 // src/scriptorium/surface/App.tsx
 var import_react32 = __toESM(require_react(), 1);
 
@@ -15963,6799 +15969,46 @@ function ResizableHandle({
   });
 }
 
-// src/scriptorium/backend/selection.ts
-function selectionOnScreen(sel, screen) {
-  if (!sel || !screen)
-    return null;
-  return sel.doc === screen.doc && sel.version === screen.version ? sel : null;
-}
-
-// src/scriptorium/surface/components/ActiveVersionToast.tsx
-var import_react6 = __toESM(require_react(), 1);
-
-// src/scriptorium/surface/state/newVersions.ts
-function versionName(doc, n) {
-  const label = doc.versions.find((v) => v.n === n)?.label?.trim();
-  return label ? `v${n} · ${label}` : `v${n}`;
-}
-function spotNewVersions(seen, doc) {
-  const now2 = new Set(doc.versions.map((v) => v.n));
-  if (seen === undefined)
-    return { fresh: [], seen: now2 };
-  const fresh = doc.versions.filter((v) => !seen.has(v.n) && v.n !== doc.active);
-  return { fresh, seen: now2 };
-}
-function createVersionWatch() {
-  const seen = new Map;
-  return {
-    disconnected: () => {},
-    snapshot: (doc) => {
-      const spotted = spotNewVersions(seen.get(doc.slug), doc);
-      seen.set(doc.slug, spotted.seen);
-      return spotted.fresh;
-    }
-  };
-}
-function newVersionToast(doc, version3) {
-  const who = version3.author === "agent" ? "the agent" : "you";
-  return {
-    title: `New version: ${versionName(doc, version3.n)}`,
-    description: `Made by ${who} in ${doc.name}. You're still editing v${doc.active}.`
-  };
-}
-function withdrawn(target, open) {
-  if (!open || open.slug !== target.doc)
-    return true;
-  if (open.active === target.n)
-    return true;
-  return !open.versions.some((v) => v.n === target.n);
-}
-function newVersionActs(kind, target) {
-  if (kind === "activate")
-    return [{ send: { type: "activate", doc: target.doc, version: target.n } }];
-  return [{ mode: "compare" }, { against: target.n }];
-}
-
-// src/scriptorium/surface/components/ActiveVersionToast.tsx
-function ActiveVersionToast({
-  doc,
-  announce
-}) {
-  const seen = import_react6.useRef(new Map);
-  import_react6.useEffect(() => {
-    if (!doc)
-      return;
-    const was = seen.current.get(doc.slug);
-    seen.current.set(doc.slug, doc.active);
-    if (was === undefined || was === doc.active)
-      return;
-    announce(`Now editing ${versionName(doc, doc.active)}`, `Your edits and Save go to this version. Was v${was}.`);
-  }, [doc, announce]);
-  return null;
-}
-
-// src/scriptorium/surface/components/ChatComposer.tsx
-var jsx_runtime4 = __toESM(require_jsx_runtime(), 1);
-function linesLabel(a) {
-  return a.fromLine === a.toLine ? `line ${a.fromLine}` : `lines ${a.fromLine}–${a.toLine}`;
-}
-function ChatComposer({
-  attachable,
-  connected,
-  draft,
-  onDraft,
-  onDrop,
-  onSend,
-  floating = false
-}) {
-  const text = draft;
-  const submit = (e) => {
-    e.preventDefault();
-    if (!text.trim() || !connected)
-      return;
-    onSend(text, attachable !== null);
-    onDraft("");
-  };
-  return /* @__PURE__ */ jsx_runtime4.jsxs("form", {
-    onSubmit: submit,
-    "aria-label": floating ? "Message the agent" : undefined,
-    className: cn("shrink-0", floating ? "mx-auto w-full max-w-2xl rounded-lg border border-edge bg-surface p-2 shadow-lg" : "border-t border-edge p-2"),
-    children: [
-      attachable && /* @__PURE__ */ jsx_runtime4.jsxs("div", {
-        className: "mb-1.5 flex items-start gap-1.5 rounded-md border border-edge bg-bg px-2 py-1",
-        children: [
-          /* @__PURE__ */ jsx_runtime4.jsxs("div", {
-            className: "min-w-0 flex-1",
-            children: [
-              /* @__PURE__ */ jsx_runtime4.jsxs("p", {
-                className: "text-[10px] text-ink-faint",
-                children: [
-                  attachable.name,
-                  " · v",
-                  attachable.version,
-                  " · ",
-                  linesLabel(attachable)
-                ]
-              }),
-              /* @__PURE__ */ jsx_runtime4.jsx("p", {
-                className: "truncate font-mono text-[11px] text-ink-dim",
-                children: attachable.text.replace(/\s+/gu, " ").trim()
-              })
-            ]
-          }),
-          /* @__PURE__ */ jsx_runtime4.jsx("button", {
-            type: "button",
-            onClick: onDrop,
-            "aria-label": "Clear the selection",
-            title: "Clear the selection — it stops riding along, and stops being highlighted",
-            className: "shrink-0 rounded-sm p-0.5 text-ink-faint hover:text-ink",
-            children: /* @__PURE__ */ jsx_runtime4.jsx(X, {
-              "aria-hidden": true,
-              className: "size-3"
-            })
-          })
-        ]
-      }),
-      /* @__PURE__ */ jsx_runtime4.jsx("textarea", {
-        value: text,
-        onChange: (e) => onDraft(e.target.value),
-        rows: floating ? 2 : 3,
-        disabled: !connected,
-        placeholder: connected ? "Ask the agent…" : "Waiting for the daemon…",
-        className: cn("w-full resize-none rounded-md border border-edge bg-bg px-2 py-1.5 text-xs text-ink", "placeholder:text-ink-faint focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none", "disabled:cursor-not-allowed disabled:opacity-60"),
-        onKeyDown: (e) => {
-          if (e.key === "Enter" && (e.metaKey || e.ctrlKey))
-            submit(e);
-        }
-      }),
-      /* @__PURE__ */ jsx_runtime4.jsxs("div", {
-        className: "mt-1 flex items-center gap-2",
-        children: [
-          /* @__PURE__ */ jsx_runtime4.jsx("span", {
-            className: "text-[10px] text-ink-faint",
-            children: "⌘↩ to send"
-          }),
-          /* @__PURE__ */ jsx_runtime4.jsxs(Button3, {
-            type: "submit",
-            size: "sm",
-            disabled: !text.trim() || !connected,
-            className: "ml-auto h-6 px-2 text-xs",
-            children: [
-              /* @__PURE__ */ jsx_runtime4.jsx(CornerDownLeft, {
-                "aria-hidden": true,
-                className: "size-3"
-              }),
-              "Send"
-            ]
-          })
-        ]
-      })
-    ]
-  });
-}
-
-// src/scriptorium/surface/components/ChatMessageView.tsx
-var import_react7 = __toESM(require_react(), 1);
-
-// node_modules/decode-named-character-reference/index.dom.js
-var element = document.createElement("i");
-function decodeNamedCharacterReference(value) {
-  const characterReference = "&" + value + ";";
-  element.innerHTML = characterReference;
-  const character = element.textContent;
-  if (character.charCodeAt(character.length - 1) === 59 && value !== "semi") {
-    return false;
-  }
-  return character === characterReference ? false : character;
-}
-
-// node_modules/micromark-util-chunked/index.js
-function splice(list, start, remove, items) {
-  const end = list.length;
-  let chunkStart = 0;
-  let parameters;
-  if (start < 0) {
-    start = -start > end ? 0 : end + start;
-  } else {
-    start = start > end ? end : start;
-  }
-  remove = remove > 0 ? remove : 0;
-  if (items.length < 1e4) {
-    parameters = Array.from(items);
-    parameters.unshift(start, remove);
-    list.splice(...parameters);
-  } else {
-    if (remove)
-      list.splice(start, remove);
-    while (chunkStart < items.length) {
-      parameters = items.slice(chunkStart, chunkStart + 1e4);
-      parameters.unshift(start, 0);
-      list.splice(...parameters);
-      chunkStart += 1e4;
-      start += 1e4;
-    }
-  }
-}
-function push3(list, items) {
-  if (list.length > 0) {
-    splice(list, list.length, 0, items);
-    return list;
-  }
-  return items;
-}
-
-// node_modules/micromark-util-combine-extensions/index.js
-var hasOwnProperty3 = {}.hasOwnProperty;
-function combineExtensions(extensions) {
-  const all = {};
-  let index3 = -1;
-  while (++index3 < extensions.length) {
-    syntaxExtension(all, extensions[index3]);
-  }
-  return all;
-}
-function syntaxExtension(all, extension) {
-  let hook;
-  for (hook in extension) {
-    const maybe = hasOwnProperty3.call(all, hook) ? all[hook] : undefined;
-    const left = maybe || (all[hook] = {});
-    const right = extension[hook];
-    let code;
-    if (right) {
-      for (code in right) {
-        if (!hasOwnProperty3.call(left, code))
-          left[code] = [];
-        const value = right[code];
-        constructs(left[code], Array.isArray(value) ? value : value ? [value] : []);
-      }
-    }
-  }
-}
-function constructs(existing, list) {
-  let index3 = -1;
-  const before = [];
-  while (++index3 < list.length) {
-    (list[index3].add === "after" ? existing : before).push(list[index3]);
-  }
-  splice(existing, 0, 0, before);
-}
-function combineHtmlExtensions(htmlExtensions) {
-  const handlers = {};
-  let index3 = -1;
-  while (++index3 < htmlExtensions.length) {
-    htmlExtension(handlers, htmlExtensions[index3]);
-  }
-  return handlers;
-}
-function htmlExtension(all, extension) {
-  let hook;
-  for (hook in extension) {
-    const maybe = hasOwnProperty3.call(all, hook) ? all[hook] : undefined;
-    const left = maybe || (all[hook] = {});
-    const right = extension[hook];
-    let type;
-    if (right) {
-      for (type in right) {
-        left[type] = right[type];
-      }
-    }
-  }
-}
-
-// node_modules/micromark-util-decode-numeric-character-reference/index.js
-function decodeNumericCharacterReference(value, base) {
-  const code = Number.parseInt(value, base);
-  if (code < 9 || code === 11 || code > 13 && code < 32 || code > 126 && code < 160 || code > 55295 && code < 57344 || code > 64975 && code < 65008 || (code & 65535) === 65535 || (code & 65535) === 65534 || code > 1114111) {
-    return "�";
-  }
-  return String.fromCodePoint(code);
-}
-
-// node_modules/micromark-util-encode/index.js
-var characterReferences = { '"': "quot", "&": "amp", "<": "lt", ">": "gt" };
-function encode(value) {
-  return value.replace(/["&<>]/g, replace);
-  function replace(value2) {
-    return "&" + characterReferences[value2] + ";";
-  }
-}
-
-// node_modules/micromark-util-normalize-identifier/index.js
-function normalizeIdentifier(value) {
-  return value.replace(/[\t\n\r ]+/g, " ").replace(/^ | $/g, "").toLowerCase().toUpperCase();
-}
-
-// node_modules/micromark-util-character/index.js
-var asciiAlpha = regexCheck(/[A-Za-z]/);
-var asciiAlphanumeric = regexCheck(/[\dA-Za-z]/);
-var asciiAtext = regexCheck(/[#-'*+\--9=?A-Z^-~]/);
-function asciiControl(code) {
-  return code !== null && (code < 32 || code === 127);
-}
-var asciiDigit = regexCheck(/\d/);
-var asciiHexDigit = regexCheck(/[\dA-Fa-f]/);
-var asciiPunctuation = regexCheck(/[!-/:-@[-`{-~]/);
-function markdownLineEnding(code) {
-  return code !== null && code < -2;
-}
-function markdownLineEndingOrSpace(code) {
-  return code !== null && (code < 0 || code === 32);
-}
-function markdownSpace(code) {
-  return code === -2 || code === -1 || code === 32;
-}
-var unicodePunctuation = regexCheck(/\p{P}|\p{S}/u);
-var unicodeWhitespace = regexCheck(/\s/);
-function regexCheck(regex) {
-  return check;
-  function check(code) {
-    return code !== null && code > -1 && regex.test(String.fromCharCode(code));
-  }
-}
-
-// node_modules/micromark-util-sanitize-uri/index.js
-function sanitizeUri(url, protocol) {
-  const value = encode(normalizeUri(url || ""));
-  if (!protocol) {
-    return value;
-  }
-  const colon = value.indexOf(":");
-  const questionMark = value.indexOf("?");
-  const numberSign = value.indexOf("#");
-  const slash = value.indexOf("/");
-  if (colon < 0 || slash > -1 && colon > slash || questionMark > -1 && colon > questionMark || numberSign > -1 && colon > numberSign || protocol.test(value.slice(0, colon))) {
-    return value;
-  }
-  return "";
-}
-function normalizeUri(value) {
-  const result = [];
-  let index3 = -1;
-  let start = 0;
-  let skip = 0;
-  while (++index3 < value.length) {
-    const code = value.charCodeAt(index3);
-    let replace = "";
-    if (code === 37 && asciiAlphanumeric(value.charCodeAt(index3 + 1)) && asciiAlphanumeric(value.charCodeAt(index3 + 2))) {
-      skip = 2;
-    } else if (code < 128) {
-      if (!/[!#$&-;=?-Z_a-z~]/.test(String.fromCharCode(code))) {
-        replace = String.fromCharCode(code);
-      }
-    } else if (code > 55295 && code < 57344) {
-      const next = value.charCodeAt(index3 + 1);
-      if (code < 56320 && next > 56319 && next < 57344) {
-        replace = String.fromCharCode(code, next);
-        skip = 1;
-      } else {
-        replace = "�";
-      }
-    } else {
-      replace = String.fromCharCode(code);
-    }
-    if (replace) {
-      result.push(value.slice(start, index3), encodeURIComponent(replace));
-      start = index3 + skip + 1;
-      replace = "";
-    }
-    if (skip) {
-      index3 += skip;
-      skip = 0;
-    }
-  }
-  return result.join("") + value.slice(start);
-}
-
-// node_modules/micromark/lib/compile.js
-var hasOwnProperty4 = {}.hasOwnProperty;
-var protocolHref = /^(https?|ircs?|mailto|xmpp)$/i;
-var protocolSource = /^https?$/i;
-function compile(options2) {
-  const settings = options2 || {};
-  let tags = true;
-  const definitions = {};
-  const buffers = [[]];
-  const mediaStack = [];
-  const tightStack = [];
-  const defaultHandlers = {
-    enter: {
-      blockQuote: onenterblockquote,
-      codeFenced: onentercodefenced,
-      codeFencedFenceInfo: buffer,
-      codeFencedFenceMeta: buffer,
-      codeIndented: onentercodeindented,
-      codeText: onentercodetext,
-      content: onentercontent,
-      definition: onenterdefinition,
-      definitionDestinationString: onenterdefinitiondestinationstring,
-      definitionLabelString: buffer,
-      definitionTitleString: buffer,
-      emphasis: onenteremphasis,
-      htmlFlow: onenterhtmlflow,
-      htmlText: onenterhtml,
-      image: onenterimage,
-      label: buffer,
-      link: onenterlink,
-      listItemMarker: onenterlistitemmarker,
-      listItemValue: onenterlistitemvalue,
-      listOrdered: onenterlistordered,
-      listUnordered: onenterlistunordered,
-      paragraph: onenterparagraph,
-      reference: buffer,
-      resource: onenterresource,
-      resourceDestinationString: onenterresourcedestinationstring,
-      resourceTitleString: buffer,
-      setextHeading: onentersetextheading,
-      strong: onenterstrong
-    },
-    exit: {
-      atxHeading: onexitatxheading,
-      atxHeadingSequence: onexitatxheadingsequence,
-      autolinkEmail: onexitautolinkemail,
-      autolinkProtocol: onexitautolinkprotocol,
-      blockQuote: onexitblockquote,
-      characterEscapeValue: onexitdata,
-      characterReferenceMarkerHexadecimal: onexitcharacterreferencemarker,
-      characterReferenceMarkerNumeric: onexitcharacterreferencemarker,
-      characterReferenceValue: onexitcharacterreferencevalue,
-      codeFenced: onexitflowcode,
-      codeFencedFence: onexitcodefencedfence,
-      codeFencedFenceInfo: onexitcodefencedfenceinfo,
-      codeFencedFenceMeta: onresumedrop,
-      codeFlowValue: onexitcodeflowvalue,
-      codeIndented: onexitflowcode,
-      codeText: onexitcodetext,
-      codeTextData: onexitdata,
-      data: onexitdata,
-      definition: onexitdefinition,
-      definitionDestinationString: onexitdefinitiondestinationstring,
-      definitionLabelString: onexitdefinitionlabelstring,
-      definitionTitleString: onexitdefinitiontitlestring,
-      emphasis: onexitemphasis,
-      hardBreakEscape: onexithardbreak,
-      hardBreakTrailing: onexithardbreak,
-      htmlFlow: onexithtml,
-      htmlFlowData: onexitdata,
-      htmlText: onexithtml,
-      htmlTextData: onexitdata,
-      image: onexitmedia,
-      label: onexitlabel,
-      labelText: onexitlabeltext,
-      lineEnding: onexitlineending,
-      link: onexitmedia,
-      listOrdered: onexitlistordered,
-      listUnordered: onexitlistunordered,
-      paragraph: onexitparagraph,
-      reference: onresumedrop,
-      referenceString: onexitreferencestring,
-      resource: onresumedrop,
-      resourceDestinationString: onexitresourcedestinationstring,
-      resourceTitleString: onexitresourcetitlestring,
-      setextHeading: onexitsetextheading,
-      setextHeadingLineSequence: onexitsetextheadinglinesequence,
-      setextHeadingText: onexitsetextheadingtext,
-      strong: onexitstrong,
-      thematicBreak: onexitthematicbreak
-    }
-  };
-  const handlers = combineHtmlExtensions([defaultHandlers, ...settings.htmlExtensions || []]);
-  const data = {
-    definitions,
-    tightStack
-  };
-  const context = {
-    buffer,
-    encode: encode2,
-    getData: getData2,
-    lineEndingIfNeeded,
-    options: settings,
-    raw,
-    resume,
-    setData,
-    tag
-  };
-  let lineEndingStyle = settings.defaultLineEnding;
-  return compile2;
-  function compile2(events) {
-    let index3 = -1;
-    let start = 0;
-    const listStack = [];
-    let head = [];
-    let body = [];
-    while (++index3 < events.length) {
-      if (!lineEndingStyle && (events[index3][1].type === "lineEnding" || events[index3][1].type === "lineEndingBlank")) {
-        lineEndingStyle = events[index3][2].sliceSerialize(events[index3][1]);
-      }
-      if (events[index3][1].type === "listOrdered" || events[index3][1].type === "listUnordered") {
-        if (events[index3][0] === "enter") {
-          listStack.push(index3);
-        } else {
-          prepareList(events.slice(listStack.pop(), index3));
-        }
-      }
-      if (events[index3][1].type === "definition") {
-        if (events[index3][0] === "enter") {
-          body = push3(body, events.slice(start, index3));
-          start = index3;
-        } else {
-          head = push3(head, events.slice(start, index3 + 1));
-          start = index3 + 1;
-        }
-      }
-    }
-    head = push3(head, body);
-    head = push3(head, events.slice(start));
-    index3 = -1;
-    const result = head;
-    if (handlers.enter.null) {
-      handlers.enter.null.call(context);
-    }
-    while (++index3 < events.length) {
-      const handles = handlers[result[index3][0]];
-      const kind = result[index3][1].type;
-      const handle = handles[kind];
-      if (hasOwnProperty4.call(handles, kind) && handle) {
-        handle.call({
-          sliceSerialize: result[index3][2].sliceSerialize,
-          ...context
-        }, result[index3][1]);
-      }
-    }
-    if (handlers.exit.null) {
-      handlers.exit.null.call(context);
-    }
-    return buffers[0].join("");
-  }
-  function prepareList(slice) {
-    const length = slice.length;
-    let index3 = 0;
-    let containerBalance = 0;
-    let loose = false;
-    let atMarker;
-    while (++index3 < length) {
-      const event = slice[index3];
-      if (event[1]._container) {
-        atMarker = undefined;
-        if (event[0] === "enter") {
-          containerBalance++;
-        } else {
-          containerBalance--;
-        }
-      } else
-        switch (event[1].type) {
-          case "listItemPrefix": {
-            if (event[0] === "exit") {
-              atMarker = true;
-            }
-            break;
-          }
-          case "linePrefix": {
-            break;
-          }
-          case "lineEndingBlank": {
-            if (event[0] === "enter" && !containerBalance) {
-              if (atMarker) {
-                atMarker = undefined;
-              } else {
-                loose = true;
-              }
-            }
-            break;
-          }
-          default: {
-            atMarker = undefined;
-          }
-        }
-    }
-    slice[0][1]._loose = loose;
-  }
-  function setData(key, value) {
-    data[key] = value;
-  }
-  function getData2(key) {
-    return data[key];
-  }
-  function buffer() {
-    buffers.push([]);
-  }
-  function resume() {
-    const buf = buffers.pop();
-    return buf.join("");
-  }
-  function tag(value) {
-    if (!tags)
-      return;
-    setData("lastWasTag", true);
-    buffers[buffers.length - 1].push(value);
-  }
-  function raw(value) {
-    setData("lastWasTag");
-    buffers[buffers.length - 1].push(value);
-  }
-  function lineEnding() {
-    raw(lineEndingStyle || `
-`);
-  }
-  function lineEndingIfNeeded() {
-    const buffer2 = buffers[buffers.length - 1];
-    const slice = buffer2[buffer2.length - 1];
-    const previous = slice ? slice.charCodeAt(slice.length - 1) : null;
-    if (previous === 10 || previous === 13 || previous === null) {
-      return;
-    }
-    lineEnding();
-  }
-  function encode2(value) {
-    return getData2("ignoreEncode") ? value : encode(value);
-  }
-  function onresumedrop() {
-    resume();
-  }
-  function onenterlistordered(token) {
-    tightStack.push(!token._loose);
-    lineEndingIfNeeded();
-    tag("<ol");
-    setData("expectFirstItem", true);
-  }
-  function onenterlistunordered(token) {
-    tightStack.push(!token._loose);
-    lineEndingIfNeeded();
-    tag("<ul");
-    setData("expectFirstItem", true);
-  }
-  function onenterlistitemvalue(token) {
-    if (getData2("expectFirstItem")) {
-      const value = Number.parseInt(this.sliceSerialize(token), 10);
-      if (value !== 1) {
-        tag(' start="' + encode2(String(value)) + '"');
-      }
-    }
-  }
-  function onenterlistitemmarker() {
-    if (getData2("expectFirstItem")) {
-      tag(">");
-    } else {
-      onexitlistitem();
-    }
-    lineEndingIfNeeded();
-    tag("<li>");
-    setData("expectFirstItem");
-    setData("lastWasTag");
-  }
-  function onexitlistordered() {
-    onexitlistitem();
-    tightStack.pop();
-    lineEnding();
-    tag("</ol>");
-  }
-  function onexitlistunordered() {
-    onexitlistitem();
-    tightStack.pop();
-    lineEnding();
-    tag("</ul>");
-  }
-  function onexitlistitem() {
-    if (getData2("lastWasTag") && !getData2("slurpAllLineEndings")) {
-      lineEndingIfNeeded();
-    }
-    tag("</li>");
-    setData("slurpAllLineEndings");
-  }
-  function onenterblockquote() {
-    tightStack.push(false);
-    lineEndingIfNeeded();
-    tag("<blockquote>");
-  }
-  function onexitblockquote() {
-    tightStack.pop();
-    lineEndingIfNeeded();
-    tag("</blockquote>");
-    setData("slurpAllLineEndings");
-  }
-  function onenterparagraph() {
-    if (!tightStack[tightStack.length - 1]) {
-      lineEndingIfNeeded();
-      tag("<p>");
-    }
-    setData("slurpAllLineEndings");
-  }
-  function onexitparagraph() {
-    if (tightStack[tightStack.length - 1]) {
-      setData("slurpAllLineEndings", true);
-    } else {
-      tag("</p>");
-    }
-  }
-  function onentercodefenced() {
-    lineEndingIfNeeded();
-    tag("<pre><code");
-    setData("fencesCount", 0);
-  }
-  function onexitcodefencedfenceinfo() {
-    const value = resume();
-    tag(' class="language-' + value + '"');
-  }
-  function onexitcodefencedfence() {
-    const count = getData2("fencesCount") || 0;
-    if (!count) {
-      tag(">");
-      setData("slurpOneLineEnding", true);
-    }
-    setData("fencesCount", count + 1);
-  }
-  function onentercodeindented() {
-    lineEndingIfNeeded();
-    tag("<pre><code>");
-  }
-  function onexitflowcode() {
-    const count = getData2("fencesCount");
-    if (count !== undefined && count < 2 && data.tightStack.length > 0 && !getData2("lastWasTag")) {
-      lineEnding();
-    }
-    if (getData2("flowCodeSeenData")) {
-      lineEndingIfNeeded();
-    }
-    tag("</code></pre>");
-    if (count !== undefined && count < 2)
-      lineEndingIfNeeded();
-    setData("flowCodeSeenData");
-    setData("fencesCount");
-    setData("slurpOneLineEnding");
-  }
-  function onenterimage() {
-    mediaStack.push({
-      image: true
-    });
-    tags = undefined;
-  }
-  function onenterlink() {
-    mediaStack.push({});
-  }
-  function onexitlabeltext(token) {
-    mediaStack[mediaStack.length - 1].labelId = this.sliceSerialize(token);
-  }
-  function onexitlabel() {
-    mediaStack[mediaStack.length - 1].label = resume();
-  }
-  function onexitreferencestring(token) {
-    mediaStack[mediaStack.length - 1].referenceId = this.sliceSerialize(token);
-  }
-  function onenterresource() {
-    buffer();
-    mediaStack[mediaStack.length - 1].destination = "";
-  }
-  function onenterresourcedestinationstring() {
-    buffer();
-    setData("ignoreEncode", true);
-  }
-  function onexitresourcedestinationstring() {
-    mediaStack[mediaStack.length - 1].destination = resume();
-    setData("ignoreEncode");
-  }
-  function onexitresourcetitlestring() {
-    mediaStack[mediaStack.length - 1].title = resume();
-  }
-  function onexitmedia() {
-    let index3 = mediaStack.length - 1;
-    const media = mediaStack[index3];
-    const id = media.referenceId || media.labelId;
-    const context2 = media.destination === undefined ? definitions[normalizeIdentifier(id)] : media;
-    tags = true;
-    while (index3--) {
-      if (mediaStack[index3].image) {
-        tags = undefined;
-        break;
-      }
-    }
-    if (media.image) {
-      tag('<img src="' + sanitizeUri(context2.destination, settings.allowDangerousProtocol ? undefined : protocolSource) + '" alt="');
-      raw(media.label);
-      tag('"');
-    } else {
-      tag('<a href="' + sanitizeUri(context2.destination, settings.allowDangerousProtocol ? undefined : protocolHref) + '"');
-    }
-    tag(context2.title ? ' title="' + context2.title + '"' : "");
-    if (media.image) {
-      tag(" />");
-    } else {
-      tag(">");
-      raw(media.label);
-      tag("</a>");
-    }
-    mediaStack.pop();
-  }
-  function onenterdefinition() {
-    buffer();
-    mediaStack.push({});
-  }
-  function onexitdefinitionlabelstring(token) {
-    resume();
-    mediaStack[mediaStack.length - 1].labelId = this.sliceSerialize(token);
-  }
-  function onenterdefinitiondestinationstring() {
-    buffer();
-    setData("ignoreEncode", true);
-  }
-  function onexitdefinitiondestinationstring() {
-    mediaStack[mediaStack.length - 1].destination = resume();
-    setData("ignoreEncode");
-  }
-  function onexitdefinitiontitlestring() {
-    mediaStack[mediaStack.length - 1].title = resume();
-  }
-  function onexitdefinition() {
-    const media = mediaStack[mediaStack.length - 1];
-    const id = normalizeIdentifier(media.labelId);
-    resume();
-    if (!hasOwnProperty4.call(definitions, id)) {
-      definitions[id] = mediaStack[mediaStack.length - 1];
-    }
-    mediaStack.pop();
-  }
-  function onentercontent() {
-    setData("slurpAllLineEndings", true);
-  }
-  function onexitatxheadingsequence(token) {
-    if (getData2("headingRank"))
-      return;
-    setData("headingRank", this.sliceSerialize(token).length);
-    lineEndingIfNeeded();
-    tag("<h" + getData2("headingRank") + ">");
-  }
-  function onentersetextheading() {
-    buffer();
-    setData("slurpAllLineEndings");
-  }
-  function onexitsetextheadingtext() {
-    setData("slurpAllLineEndings", true);
-  }
-  function onexitatxheading() {
-    tag("</h" + getData2("headingRank") + ">");
-    setData("headingRank");
-  }
-  function onexitsetextheadinglinesequence(token) {
-    setData("headingRank", this.sliceSerialize(token).charCodeAt(0) === 61 ? 1 : 2);
-  }
-  function onexitsetextheading() {
-    const value = resume();
-    lineEndingIfNeeded();
-    tag("<h" + getData2("headingRank") + ">");
-    raw(value);
-    tag("</h" + getData2("headingRank") + ">");
-    setData("slurpAllLineEndings");
-    setData("headingRank");
-  }
-  function onexitdata(token) {
-    raw(encode2(this.sliceSerialize(token)));
-  }
-  function onexitlineending(token) {
-    if (getData2("slurpAllLineEndings")) {
-      return;
-    }
-    if (getData2("slurpOneLineEnding")) {
-      setData("slurpOneLineEnding");
-      return;
-    }
-    if (getData2("inCodeText")) {
-      raw(" ");
-      return;
-    }
-    raw(encode2(this.sliceSerialize(token)));
-  }
-  function onexitcodeflowvalue(token) {
-    raw(encode2(this.sliceSerialize(token)));
-    setData("flowCodeSeenData", true);
-  }
-  function onexithardbreak() {
-    tag("<br />");
-  }
-  function onenterhtmlflow() {
-    lineEndingIfNeeded();
-    onenterhtml();
-  }
-  function onexithtml() {
-    setData("ignoreEncode");
-  }
-  function onenterhtml() {
-    if (settings.allowDangerousHtml) {
-      setData("ignoreEncode", true);
-    }
-  }
-  function onenteremphasis() {
-    tag("<em>");
-  }
-  function onenterstrong() {
-    tag("<strong>");
-  }
-  function onentercodetext() {
-    setData("inCodeText", true);
-    tag("<code>");
-  }
-  function onexitcodetext() {
-    setData("inCodeText");
-    tag("</code>");
-  }
-  function onexitemphasis() {
-    tag("</em>");
-  }
-  function onexitstrong() {
-    tag("</strong>");
-  }
-  function onexitthematicbreak() {
-    lineEndingIfNeeded();
-    tag("<hr />");
-  }
-  function onexitcharacterreferencemarker(token) {
-    setData("characterReferenceType", token.type);
-  }
-  function onexitcharacterreferencevalue(token) {
-    const value = this.sliceSerialize(token);
-    const decoded = getData2("characterReferenceType") ? decodeNumericCharacterReference(value, getData2("characterReferenceType") === "characterReferenceMarkerNumeric" ? 10 : 16) : decodeNamedCharacterReference(value);
-    raw(encode2(decoded));
-    setData("characterReferenceType");
-  }
-  function onexitautolinkprotocol(token) {
-    const uri = this.sliceSerialize(token);
-    tag('<a href="' + sanitizeUri(uri, settings.allowDangerousProtocol ? undefined : protocolHref) + '">');
-    raw(encode2(uri));
-    tag("</a>");
-  }
-  function onexitautolinkemail(token) {
-    const uri = this.sliceSerialize(token);
-    tag('<a href="' + sanitizeUri("mailto:" + uri) + '">');
-    raw(encode2(uri));
-    tag("</a>");
-  }
-}
-
-// node_modules/micromark-factory-space/index.js
-function factorySpace(effects, ok, type, max) {
-  const limit = max ? max - 1 : Number.POSITIVE_INFINITY;
-  let size = 0;
-  return start;
-  function start(code) {
-    if (markdownSpace(code)) {
-      effects.enter(type);
-      return prefix2(code);
-    }
-    return ok(code);
-  }
-  function prefix2(code) {
-    if (markdownSpace(code) && size++ < limit) {
-      effects.consume(code);
-      return prefix2;
-    }
-    effects.exit(type);
-    return ok(code);
-  }
-}
-
-// node_modules/micromark/lib/initialize/content.js
-var content = {
-  tokenize: initializeContent
-};
-function initializeContent(effects) {
-  const contentStart = effects.attempt(this.parser.constructs.contentInitial, afterContentStartConstruct, paragraphInitial);
-  let previous;
-  return contentStart;
-  function afterContentStartConstruct(code) {
-    if (code === null) {
-      effects.consume(code);
-      return;
-    }
-    effects.enter("lineEnding");
-    effects.consume(code);
-    effects.exit("lineEnding");
-    return factorySpace(effects, contentStart, "linePrefix");
-  }
-  function paragraphInitial(code) {
-    effects.enter("paragraph");
-    return lineStart(code);
-  }
-  function lineStart(code) {
-    const token = effects.enter("chunkText", {
-      contentType: "text",
-      previous
-    });
-    if (previous) {
-      previous.next = token;
-    }
-    previous = token;
-    return data(code);
-  }
-  function data(code) {
-    if (code === null) {
-      effects.exit("chunkText");
-      effects.exit("paragraph");
-      effects.consume(code);
-      return;
-    }
-    if (markdownLineEnding(code)) {
-      effects.consume(code);
-      effects.exit("chunkText");
-      return lineStart;
-    }
-    effects.consume(code);
-    return data;
-  }
-}
-
-// node_modules/micromark/lib/initialize/document.js
-var document2 = {
-  tokenize: initializeDocument
-};
-var containerConstruct = {
-  tokenize: tokenizeContainer
-};
-function initializeDocument(effects) {
-  const self = this;
-  const stack = [];
-  let continued = 0;
-  let childFlow;
-  let childToken;
-  let lineStartOffset;
-  return start;
-  function start(code) {
-    if (continued < stack.length) {
-      const item = stack[continued];
-      self.containerState = item[1];
-      return effects.attempt(item[0].continuation, documentContinue, checkNewContainers)(code);
-    }
-    return checkNewContainers(code);
-  }
-  function documentContinue(code) {
-    continued++;
-    if (self.containerState._closeFlow) {
-      self.containerState._closeFlow = undefined;
-      if (childFlow) {
-        closeFlow();
-      }
-      const indexBeforeExits = self.events.length;
-      let indexBeforeFlow = indexBeforeExits;
-      let point;
-      while (indexBeforeFlow--) {
-        if (self.events[indexBeforeFlow][0] === "exit" && self.events[indexBeforeFlow][1].type === "chunkFlow") {
-          point = self.events[indexBeforeFlow][1].end;
-          break;
-        }
-      }
-      exitContainers(continued);
-      let index3 = indexBeforeExits;
-      while (index3 < self.events.length) {
-        self.events[index3][1].end = {
-          ...point
-        };
-        index3++;
-      }
-      splice(self.events, indexBeforeFlow + 1, 0, self.events.slice(indexBeforeExits));
-      self.events.length = index3;
-      return checkNewContainers(code);
-    }
-    return start(code);
-  }
-  function checkNewContainers(code) {
-    if (continued === stack.length) {
-      if (!childFlow) {
-        return documentContinued(code);
-      }
-      if (childFlow.currentConstruct && childFlow.currentConstruct.concrete) {
-        return flowStart(code);
-      }
-      self.interrupt = Boolean(childFlow.currentConstruct && !childFlow._gfmTableDynamicInterruptHack);
-    }
-    self.containerState = {};
-    return effects.check(containerConstruct, thereIsANewContainer, thereIsNoNewContainer)(code);
-  }
-  function thereIsANewContainer(code) {
-    if (childFlow)
-      closeFlow();
-    exitContainers(continued);
-    return documentContinued(code);
-  }
-  function thereIsNoNewContainer(code) {
-    self.parser.lazy[self.now().line] = continued !== stack.length;
-    lineStartOffset = self.now().offset;
-    return flowStart(code);
-  }
-  function documentContinued(code) {
-    self.containerState = {};
-    return effects.attempt(containerConstruct, containerContinue, flowStart)(code);
-  }
-  function containerContinue(code) {
-    continued++;
-    stack.push([self.currentConstruct, self.containerState]);
-    return documentContinued(code);
-  }
-  function flowStart(code) {
-    if (code === null) {
-      if (childFlow)
-        closeFlow();
-      exitContainers(0);
-      effects.consume(code);
-      return;
-    }
-    childFlow = childFlow || self.parser.flow(self.now());
-    effects.enter("chunkFlow", {
-      _tokenizer: childFlow,
-      contentType: "flow",
-      previous: childToken
-    });
-    return flowContinue(code);
-  }
-  function flowContinue(code) {
-    if (code === null) {
-      writeToChild(effects.exit("chunkFlow"), true);
-      exitContainers(0);
-      effects.consume(code);
-      return;
-    }
-    if (markdownLineEnding(code)) {
-      effects.consume(code);
-      writeToChild(effects.exit("chunkFlow"));
-      continued = 0;
-      self.interrupt = undefined;
-      return start;
-    }
-    effects.consume(code);
-    return flowContinue;
-  }
-  function writeToChild(token, endOfFile) {
-    const stream = self.sliceStream(token);
-    if (endOfFile)
-      stream.push(null);
-    token.previous = childToken;
-    if (childToken)
-      childToken.next = token;
-    childToken = token;
-    childFlow.defineSkip(token.start);
-    childFlow.write(stream);
-    if (self.parser.lazy[token.start.line]) {
-      let index3 = childFlow.events.length;
-      while (index3--) {
-        if (childFlow.events[index3][1].start.offset < lineStartOffset && (!childFlow.events[index3][1].end || childFlow.events[index3][1].end.offset > lineStartOffset)) {
-          return;
-        }
-      }
-      const indexBeforeExits = self.events.length;
-      let indexBeforeFlow = indexBeforeExits;
-      let seen;
-      let point;
-      while (indexBeforeFlow--) {
-        if (self.events[indexBeforeFlow][0] === "exit" && self.events[indexBeforeFlow][1].type === "chunkFlow") {
-          if (seen) {
-            point = self.events[indexBeforeFlow][1].end;
-            break;
-          }
-          seen = true;
-        }
-      }
-      exitContainers(continued);
-      index3 = indexBeforeExits;
-      while (index3 < self.events.length) {
-        self.events[index3][1].end = {
-          ...point
-        };
-        index3++;
-      }
-      splice(self.events, indexBeforeFlow + 1, 0, self.events.slice(indexBeforeExits));
-      self.events.length = index3;
-    }
-  }
-  function exitContainers(size) {
-    let index3 = stack.length;
-    while (index3-- > size) {
-      const entry = stack[index3];
-      self.containerState = entry[1];
-      entry[0].exit.call(self, effects);
-    }
-    stack.length = size;
-  }
-  function closeFlow() {
-    childFlow.write([null]);
-    childToken = undefined;
-    childFlow = undefined;
-    self.containerState._closeFlow = undefined;
-  }
-}
-function tokenizeContainer(effects, ok, nok) {
-  return factorySpace(effects, effects.attempt(this.parser.constructs.document, ok, nok), "linePrefix", this.parser.constructs.disable.null.includes("codeIndented") ? undefined : 4);
-}
-
-// node_modules/micromark-util-classify-character/index.js
-function classifyCharacter(code) {
-  if (code === null || markdownLineEndingOrSpace(code) || unicodeWhitespace(code)) {
-    return 1;
-  }
-  if (unicodePunctuation(code)) {
-    return 2;
-  }
-}
-
-// node_modules/micromark-util-resolve-all/index.js
-function resolveAll(constructs2, events, context) {
-  const called = [];
-  let index3 = -1;
-  while (++index3 < constructs2.length) {
-    const resolve = constructs2[index3].resolveAll;
-    if (resolve && !called.includes(resolve)) {
-      events = resolve(events, context);
-      called.push(resolve);
-    }
-  }
-  return events;
-}
-
-// node_modules/micromark-core-commonmark/lib/attention.js
-var attention = {
-  name: "attention",
-  resolveAll: resolveAllAttention,
-  tokenize: tokenizeAttention
-};
-function resolveAllAttention(events, context) {
-  let index3 = -1;
-  let open;
-  let group;
-  let text;
-  let openingSequence;
-  let closingSequence;
-  let use2;
-  let nextEvents;
-  let offset;
-  while (++index3 < events.length) {
-    if (events[index3][0] === "enter" && events[index3][1].type === "attentionSequence" && events[index3][1]._close) {
-      open = index3;
-      while (open--) {
-        if (events[open][0] === "exit" && events[open][1].type === "attentionSequence" && events[open][1]._open && context.sliceSerialize(events[open][1]).charCodeAt(0) === context.sliceSerialize(events[index3][1]).charCodeAt(0)) {
-          if ((events[open][1]._close || events[index3][1]._open) && (events[index3][1].end.offset - events[index3][1].start.offset) % 3 && !((events[open][1].end.offset - events[open][1].start.offset + events[index3][1].end.offset - events[index3][1].start.offset) % 3)) {
-            continue;
-          }
-          use2 = events[open][1].end.offset - events[open][1].start.offset > 1 && events[index3][1].end.offset - events[index3][1].start.offset > 1 ? 2 : 1;
-          const start = {
-            ...events[open][1].end
-          };
-          const end = {
-            ...events[index3][1].start
-          };
-          movePoint(start, -use2);
-          movePoint(end, use2);
-          openingSequence = {
-            type: use2 > 1 ? "strongSequence" : "emphasisSequence",
-            start,
-            end: {
-              ...events[open][1].end
-            }
-          };
-          closingSequence = {
-            type: use2 > 1 ? "strongSequence" : "emphasisSequence",
-            start: {
-              ...events[index3][1].start
-            },
-            end
-          };
-          text = {
-            type: use2 > 1 ? "strongText" : "emphasisText",
-            start: {
-              ...events[open][1].end
-            },
-            end: {
-              ...events[index3][1].start
-            }
-          };
-          group = {
-            type: use2 > 1 ? "strong" : "emphasis",
-            start: {
-              ...openingSequence.start
-            },
-            end: {
-              ...closingSequence.end
-            }
-          };
-          events[open][1].end = {
-            ...openingSequence.start
-          };
-          events[index3][1].start = {
-            ...closingSequence.end
-          };
-          nextEvents = [];
-          if (events[open][1].end.offset - events[open][1].start.offset) {
-            nextEvents = push3(nextEvents, [["enter", events[open][1], context], ["exit", events[open][1], context]]);
-          }
-          nextEvents = push3(nextEvents, [["enter", group, context], ["enter", openingSequence, context], ["exit", openingSequence, context], ["enter", text, context]]);
-          nextEvents = push3(nextEvents, resolveAll(context.parser.constructs.insideSpan.null, events.slice(open + 1, index3), context));
-          nextEvents = push3(nextEvents, [["exit", text, context], ["enter", closingSequence, context], ["exit", closingSequence, context], ["exit", group, context]]);
-          if (events[index3][1].end.offset - events[index3][1].start.offset) {
-            offset = 2;
-            nextEvents = push3(nextEvents, [["enter", events[index3][1], context], ["exit", events[index3][1], context]]);
-          } else {
-            offset = 0;
-          }
-          splice(events, open - 1, index3 - open + 3, nextEvents);
-          index3 = open + nextEvents.length - offset - 2;
-          break;
-        }
-      }
-    }
-  }
-  index3 = -1;
-  while (++index3 < events.length) {
-    if (events[index3][1].type === "attentionSequence") {
-      events[index3][1].type = "data";
-    }
-  }
-  return events;
-}
-function tokenizeAttention(effects, ok) {
-  const attentionMarkers = this.parser.constructs.attentionMarkers.null;
-  const previous = this.previous;
-  const before = classifyCharacter(previous);
-  let marker;
-  return start;
-  function start(code) {
-    marker = code;
-    effects.enter("attentionSequence");
-    return inside(code);
-  }
-  function inside(code) {
-    if (code === marker) {
-      effects.consume(code);
-      return inside;
-    }
-    const token = effects.exit("attentionSequence");
-    const after = classifyCharacter(code);
-    const open = !after || after === 2 && before || attentionMarkers.includes(code);
-    const close = !before || before === 2 && after || attentionMarkers.includes(previous);
-    token._open = Boolean(marker === 42 ? open : open && (before || !close));
-    token._close = Boolean(marker === 42 ? close : close && (after || !open));
-    return ok(code);
-  }
-}
-function movePoint(point, offset) {
-  point.column += offset;
-  point.offset += offset;
-  point._bufferIndex += offset;
-}
-// node_modules/micromark-core-commonmark/lib/autolink.js
-var autolink = {
-  name: "autolink",
-  tokenize: tokenizeAutolink
-};
-function tokenizeAutolink(effects, ok, nok) {
-  let size = 0;
-  return start;
-  function start(code) {
-    effects.enter("autolink");
-    effects.enter("autolinkMarker");
-    effects.consume(code);
-    effects.exit("autolinkMarker");
-    effects.enter("autolinkProtocol");
-    return open;
-  }
-  function open(code) {
-    if (asciiAlpha(code)) {
-      effects.consume(code);
-      return schemeOrEmailAtext;
-    }
-    if (code === 64) {
-      return nok(code);
-    }
-    return emailAtext(code);
-  }
-  function schemeOrEmailAtext(code) {
-    if (code === 43 || code === 45 || code === 46 || asciiAlphanumeric(code)) {
-      size = 1;
-      return schemeInsideOrEmailAtext(code);
-    }
-    return emailAtext(code);
-  }
-  function schemeInsideOrEmailAtext(code) {
-    if (code === 58) {
-      effects.consume(code);
-      size = 0;
-      return urlInside;
-    }
-    if ((code === 43 || code === 45 || code === 46 || asciiAlphanumeric(code)) && size++ < 32) {
-      effects.consume(code);
-      return schemeInsideOrEmailAtext;
-    }
-    size = 0;
-    return emailAtext(code);
-  }
-  function urlInside(code) {
-    if (code === 62) {
-      effects.exit("autolinkProtocol");
-      effects.enter("autolinkMarker");
-      effects.consume(code);
-      effects.exit("autolinkMarker");
-      effects.exit("autolink");
-      return ok;
-    }
-    if (code === null || code === 32 || code === 60 || asciiControl(code)) {
-      return nok(code);
-    }
-    effects.consume(code);
-    return urlInside;
-  }
-  function emailAtext(code) {
-    if (code === 64) {
-      effects.consume(code);
-      return emailAtSignOrDot;
-    }
-    if (asciiAtext(code)) {
-      effects.consume(code);
-      return emailAtext;
-    }
-    return nok(code);
-  }
-  function emailAtSignOrDot(code) {
-    return asciiAlphanumeric(code) ? emailLabel(code) : nok(code);
-  }
-  function emailLabel(code) {
-    if (code === 46) {
-      effects.consume(code);
-      size = 0;
-      return emailAtSignOrDot;
-    }
-    if (code === 62) {
-      effects.exit("autolinkProtocol").type = "autolinkEmail";
-      effects.enter("autolinkMarker");
-      effects.consume(code);
-      effects.exit("autolinkMarker");
-      effects.exit("autolink");
-      return ok;
-    }
-    return emailValue(code);
-  }
-  function emailValue(code) {
-    if ((code === 45 || asciiAlphanumeric(code)) && size++ < 63) {
-      const next = code === 45 ? emailValue : emailLabel;
-      effects.consume(code);
-      return next;
-    }
-    return nok(code);
-  }
-}
-// node_modules/micromark-core-commonmark/lib/blank-line.js
-var blankLine = {
-  partial: true,
-  tokenize: tokenizeBlankLine
-};
-function tokenizeBlankLine(effects, ok, nok) {
-  return start;
-  function start(code) {
-    return markdownSpace(code) ? factorySpace(effects, after, "linePrefix")(code) : after(code);
-  }
-  function after(code) {
-    return code === null || markdownLineEnding(code) ? ok(code) : nok(code);
-  }
-}
-// node_modules/micromark-core-commonmark/lib/block-quote.js
-var blockQuote = {
-  continuation: {
-    tokenize: tokenizeBlockQuoteContinuation
-  },
-  exit,
-  name: "blockQuote",
-  tokenize: tokenizeBlockQuoteStart
-};
-function tokenizeBlockQuoteStart(effects, ok, nok) {
-  const self = this;
-  return start;
-  function start(code) {
-    if (code === 62) {
-      const state = self.containerState;
-      if (!state.open) {
-        effects.enter("blockQuote", {
-          _container: true
-        });
-        state.open = true;
-      }
-      effects.enter("blockQuotePrefix");
-      effects.enter("blockQuoteMarker");
-      effects.consume(code);
-      effects.exit("blockQuoteMarker");
-      return after;
-    }
-    return nok(code);
-  }
-  function after(code) {
-    if (markdownSpace(code)) {
-      effects.enter("blockQuotePrefixWhitespace");
-      effects.consume(code);
-      effects.exit("blockQuotePrefixWhitespace");
-      effects.exit("blockQuotePrefix");
-      return ok;
-    }
-    effects.exit("blockQuotePrefix");
-    return ok(code);
-  }
-}
-function tokenizeBlockQuoteContinuation(effects, ok, nok) {
-  const self = this;
-  return contStart;
-  function contStart(code) {
-    if (markdownSpace(code)) {
-      return factorySpace(effects, contBefore, "linePrefix", self.parser.constructs.disable.null.includes("codeIndented") ? undefined : 4)(code);
-    }
-    return contBefore(code);
-  }
-  function contBefore(code) {
-    return effects.attempt(blockQuote, ok, nok)(code);
-  }
-}
-function exit(effects) {
-  effects.exit("blockQuote");
-}
-// node_modules/micromark-core-commonmark/lib/character-escape.js
-var characterEscape = {
-  name: "characterEscape",
-  tokenize: tokenizeCharacterEscape
-};
-function tokenizeCharacterEscape(effects, ok, nok) {
-  return start;
-  function start(code) {
-    effects.enter("characterEscape");
-    effects.enter("escapeMarker");
-    effects.consume(code);
-    effects.exit("escapeMarker");
-    return inside;
-  }
-  function inside(code) {
-    if (asciiPunctuation(code)) {
-      effects.enter("characterEscapeValue");
-      effects.consume(code);
-      effects.exit("characterEscapeValue");
-      effects.exit("characterEscape");
-      return ok;
-    }
-    return nok(code);
-  }
-}
-// node_modules/micromark-core-commonmark/lib/character-reference.js
-var characterReference = {
-  name: "characterReference",
-  tokenize: tokenizeCharacterReference
-};
-function tokenizeCharacterReference(effects, ok, nok) {
-  const self = this;
-  let size = 0;
-  let max;
-  let test;
-  return start;
-  function start(code) {
-    effects.enter("characterReference");
-    effects.enter("characterReferenceMarker");
-    effects.consume(code);
-    effects.exit("characterReferenceMarker");
-    return open;
-  }
-  function open(code) {
-    if (code === 35) {
-      effects.enter("characterReferenceMarkerNumeric");
-      effects.consume(code);
-      effects.exit("characterReferenceMarkerNumeric");
-      return numeric;
-    }
-    effects.enter("characterReferenceValue");
-    max = 31;
-    test = asciiAlphanumeric;
-    return value(code);
-  }
-  function numeric(code) {
-    if (code === 88 || code === 120) {
-      effects.enter("characterReferenceMarkerHexadecimal");
-      effects.consume(code);
-      effects.exit("characterReferenceMarkerHexadecimal");
-      effects.enter("characterReferenceValue");
-      max = 6;
-      test = asciiHexDigit;
-      return value;
-    }
-    effects.enter("characterReferenceValue");
-    max = 7;
-    test = asciiDigit;
-    return value(code);
-  }
-  function value(code) {
-    if (code === 59 && size) {
-      const token = effects.exit("characterReferenceValue");
-      if (test === asciiAlphanumeric && !decodeNamedCharacterReference(self.sliceSerialize(token))) {
-        return nok(code);
-      }
-      effects.enter("characterReferenceMarker");
-      effects.consume(code);
-      effects.exit("characterReferenceMarker");
-      effects.exit("characterReference");
-      return ok;
-    }
-    if (test(code) && size++ < max) {
-      effects.consume(code);
-      return value;
-    }
-    return nok(code);
-  }
-}
-// node_modules/micromark-core-commonmark/lib/code-fenced.js
-var nonLazyContinuation = {
-  partial: true,
-  tokenize: tokenizeNonLazyContinuation
-};
-var codeFenced = {
-  concrete: true,
-  name: "codeFenced",
-  tokenize: tokenizeCodeFenced
-};
-function tokenizeCodeFenced(effects, ok, nok) {
-  const self = this;
-  const closeStart = {
-    partial: true,
-    tokenize: tokenizeCloseStart
-  };
-  let initialPrefix = 0;
-  let sizeOpen = 0;
-  let marker;
-  return start;
-  function start(code) {
-    return beforeSequenceOpen(code);
-  }
-  function beforeSequenceOpen(code) {
-    const tail = self.events[self.events.length - 1];
-    initialPrefix = tail && tail[1].type === "linePrefix" ? tail[2].sliceSerialize(tail[1], true).length : 0;
-    marker = code;
-    effects.enter("codeFenced");
-    effects.enter("codeFencedFence");
-    effects.enter("codeFencedFenceSequence");
-    return sequenceOpen(code);
-  }
-  function sequenceOpen(code) {
-    if (code === marker) {
-      sizeOpen++;
-      effects.consume(code);
-      return sequenceOpen;
-    }
-    if (sizeOpen < 3) {
-      return nok(code);
-    }
-    effects.exit("codeFencedFenceSequence");
-    return markdownSpace(code) ? factorySpace(effects, infoBefore, "whitespace")(code) : infoBefore(code);
-  }
-  function infoBefore(code) {
-    if (code === null || markdownLineEnding(code)) {
-      effects.exit("codeFencedFence");
-      return self.interrupt ? ok(code) : effects.check(nonLazyContinuation, atNonLazyBreak, after)(code);
-    }
-    effects.enter("codeFencedFenceInfo");
-    effects.enter("chunkString", {
-      contentType: "string"
-    });
-    return info(code);
-  }
-  function info(code) {
-    if (code === null || markdownLineEnding(code)) {
-      effects.exit("chunkString");
-      effects.exit("codeFencedFenceInfo");
-      return infoBefore(code);
-    }
-    if (markdownSpace(code)) {
-      effects.exit("chunkString");
-      effects.exit("codeFencedFenceInfo");
-      return factorySpace(effects, metaBefore, "whitespace")(code);
-    }
-    if (code === 96 && code === marker) {
-      return nok(code);
-    }
-    effects.consume(code);
-    return info;
-  }
-  function metaBefore(code) {
-    if (code === null || markdownLineEnding(code)) {
-      return infoBefore(code);
-    }
-    effects.enter("codeFencedFenceMeta");
-    effects.enter("chunkString", {
-      contentType: "string"
-    });
-    return meta(code);
-  }
-  function meta(code) {
-    if (code === null || markdownLineEnding(code)) {
-      effects.exit("chunkString");
-      effects.exit("codeFencedFenceMeta");
-      return infoBefore(code);
-    }
-    if (code === 96 && code === marker) {
-      return nok(code);
-    }
-    effects.consume(code);
-    return meta;
-  }
-  function atNonLazyBreak(code) {
-    return effects.attempt(closeStart, after, contentBefore)(code);
-  }
-  function contentBefore(code) {
-    effects.enter("lineEnding");
-    effects.consume(code);
-    effects.exit("lineEnding");
-    return contentStart;
-  }
-  function contentStart(code) {
-    return initialPrefix > 0 && markdownSpace(code) ? factorySpace(effects, beforeContentChunk, "linePrefix", initialPrefix + 1)(code) : beforeContentChunk(code);
-  }
-  function beforeContentChunk(code) {
-    if (code === null || markdownLineEnding(code)) {
-      return effects.check(nonLazyContinuation, atNonLazyBreak, after)(code);
-    }
-    effects.enter("codeFlowValue");
-    return contentChunk(code);
-  }
-  function contentChunk(code) {
-    if (code === null || markdownLineEnding(code)) {
-      effects.exit("codeFlowValue");
-      return beforeContentChunk(code);
-    }
-    effects.consume(code);
-    return contentChunk;
-  }
-  function after(code) {
-    effects.exit("codeFenced");
-    return ok(code);
-  }
-  function tokenizeCloseStart(effects2, ok2, nok2) {
-    let size = 0;
-    return startBefore;
-    function startBefore(code) {
-      effects2.enter("lineEnding");
-      effects2.consume(code);
-      effects2.exit("lineEnding");
-      return start2;
-    }
-    function start2(code) {
-      effects2.enter("codeFencedFence");
-      return markdownSpace(code) ? factorySpace(effects2, beforeSequenceClose, "linePrefix", self.parser.constructs.disable.null.includes("codeIndented") ? undefined : 4)(code) : beforeSequenceClose(code);
-    }
-    function beforeSequenceClose(code) {
-      if (code === marker) {
-        effects2.enter("codeFencedFenceSequence");
-        return sequenceClose(code);
-      }
-      return nok2(code);
-    }
-    function sequenceClose(code) {
-      if (code === marker) {
-        size++;
-        effects2.consume(code);
-        return sequenceClose;
-      }
-      if (size >= sizeOpen) {
-        effects2.exit("codeFencedFenceSequence");
-        return markdownSpace(code) ? factorySpace(effects2, sequenceCloseAfter, "whitespace")(code) : sequenceCloseAfter(code);
-      }
-      return nok2(code);
-    }
-    function sequenceCloseAfter(code) {
-      if (code === null || markdownLineEnding(code)) {
-        effects2.exit("codeFencedFence");
-        return ok2(code);
-      }
-      return nok2(code);
-    }
-  }
-}
-function tokenizeNonLazyContinuation(effects, ok, nok) {
-  const self = this;
-  return start;
-  function start(code) {
-    if (code === null) {
-      return nok(code);
-    }
-    effects.enter("lineEnding");
-    effects.consume(code);
-    effects.exit("lineEnding");
-    return lineStart;
-  }
-  function lineStart(code) {
-    return self.parser.lazy[self.now().line] ? nok(code) : ok(code);
-  }
-}
-// node_modules/micromark-core-commonmark/lib/code-indented.js
-var codeIndented = {
-  name: "codeIndented",
-  tokenize: tokenizeCodeIndented
-};
-var furtherStart = {
-  partial: true,
-  tokenize: tokenizeFurtherStart
-};
-function tokenizeCodeIndented(effects, ok, nok) {
-  const self = this;
-  return start;
-  function start(code) {
-    effects.enter("codeIndented");
-    return factorySpace(effects, afterPrefix, "linePrefix", 4 + 1)(code);
-  }
-  function afterPrefix(code) {
-    const tail = self.events[self.events.length - 1];
-    return tail && tail[1].type === "linePrefix" && tail[2].sliceSerialize(tail[1], true).length >= 4 ? atBreak(code) : nok(code);
-  }
-  function atBreak(code) {
-    if (code === null) {
-      return after(code);
-    }
-    if (markdownLineEnding(code)) {
-      return effects.attempt(furtherStart, atBreak, after)(code);
-    }
-    effects.enter("codeFlowValue");
-    return inside(code);
-  }
-  function inside(code) {
-    if (code === null || markdownLineEnding(code)) {
-      effects.exit("codeFlowValue");
-      return atBreak(code);
-    }
-    effects.consume(code);
-    return inside;
-  }
-  function after(code) {
-    effects.exit("codeIndented");
-    return ok(code);
-  }
-}
-function tokenizeFurtherStart(effects, ok, nok) {
-  const self = this;
-  return furtherStart2;
-  function furtherStart2(code) {
-    if (self.parser.lazy[self.now().line]) {
-      return nok(code);
-    }
-    if (markdownLineEnding(code)) {
-      effects.enter("lineEnding");
-      effects.consume(code);
-      effects.exit("lineEnding");
-      return furtherStart2;
-    }
-    return factorySpace(effects, afterPrefix, "linePrefix", 4 + 1)(code);
-  }
-  function afterPrefix(code) {
-    const tail = self.events[self.events.length - 1];
-    return tail && tail[1].type === "linePrefix" && tail[2].sliceSerialize(tail[1], true).length >= 4 ? ok(code) : markdownLineEnding(code) ? furtherStart2(code) : nok(code);
-  }
-}
-// node_modules/micromark-core-commonmark/lib/code-text.js
-var codeText = {
-  name: "codeText",
-  previous,
-  resolve: resolveCodeText,
-  tokenize: tokenizeCodeText
-};
-function resolveCodeText(events) {
-  let tailExitIndex = events.length - 4;
-  let headEnterIndex = 3;
-  let index3;
-  let enter;
-  if ((events[headEnterIndex][1].type === "lineEnding" || events[headEnterIndex][1].type === "space") && (events[tailExitIndex][1].type === "lineEnding" || events[tailExitIndex][1].type === "space")) {
-    index3 = headEnterIndex;
-    while (++index3 < tailExitIndex) {
-      if (events[index3][1].type === "codeTextData") {
-        events[headEnterIndex][1].type = "codeTextPadding";
-        events[tailExitIndex][1].type = "codeTextPadding";
-        headEnterIndex += 2;
-        tailExitIndex -= 2;
-        break;
-      }
-    }
-  }
-  index3 = headEnterIndex - 1;
-  tailExitIndex++;
-  while (++index3 <= tailExitIndex) {
-    if (enter === undefined) {
-      if (index3 !== tailExitIndex && events[index3][1].type !== "lineEnding") {
-        enter = index3;
-      }
-    } else if (index3 === tailExitIndex || events[index3][1].type === "lineEnding") {
-      events[enter][1].type = "codeTextData";
-      if (index3 !== enter + 2) {
-        events[enter][1].end = events[index3 - 1][1].end;
-        events.splice(enter + 2, index3 - enter - 2);
-        tailExitIndex -= index3 - enter - 2;
-        index3 = enter + 2;
-      }
-      enter = undefined;
-    }
-  }
-  return events;
-}
-function previous(code) {
-  return code !== 96 || this.events[this.events.length - 1][1].type === "characterEscape";
-}
-function tokenizeCodeText(effects, ok, nok) {
-  const self = this;
-  let sizeOpen = 0;
-  let size;
-  let token;
-  return start;
-  function start(code) {
-    effects.enter("codeText");
-    effects.enter("codeTextSequence");
-    return sequenceOpen(code);
-  }
-  function sequenceOpen(code) {
-    if (code === 96) {
-      effects.consume(code);
-      sizeOpen++;
-      return sequenceOpen;
-    }
-    effects.exit("codeTextSequence");
-    return between(code);
-  }
-  function between(code) {
-    if (code === null) {
-      return nok(code);
-    }
-    if (code === 32) {
-      effects.enter("space");
-      effects.consume(code);
-      effects.exit("space");
-      return between;
-    }
-    if (code === 96) {
-      token = effects.enter("codeTextSequence");
-      size = 0;
-      return sequenceClose(code);
-    }
-    if (markdownLineEnding(code)) {
-      effects.enter("lineEnding");
-      effects.consume(code);
-      effects.exit("lineEnding");
-      return between;
-    }
-    effects.enter("codeTextData");
-    return data(code);
-  }
-  function data(code) {
-    if (code === null || code === 32 || code === 96 || markdownLineEnding(code)) {
-      effects.exit("codeTextData");
-      return between(code);
-    }
-    effects.consume(code);
-    return data;
-  }
-  function sequenceClose(code) {
-    if (code === 96) {
-      effects.consume(code);
-      size++;
-      return sequenceClose;
-    }
-    if (size === sizeOpen) {
-      effects.exit("codeTextSequence");
-      effects.exit("codeText");
-      return ok(code);
-    }
-    token.type = "codeTextData";
-    return data(code);
-  }
-}
-// node_modules/micromark-util-subtokenize/lib/splice-buffer.js
-class SpliceBuffer {
-  constructor(initial) {
-    this.left = initial ? [...initial] : [];
-    this.right = [];
-  }
-  get(index3) {
-    if (index3 < 0 || index3 >= this.left.length + this.right.length) {
-      throw new RangeError("Cannot access index `" + index3 + "` in a splice buffer of size `" + (this.left.length + this.right.length) + "`");
-    }
-    if (index3 < this.left.length)
-      return this.left[index3];
-    return this.right[this.right.length - index3 + this.left.length - 1];
-  }
-  get length() {
-    return this.left.length + this.right.length;
-  }
-  shift() {
-    this.setCursor(0);
-    return this.right.pop();
-  }
-  slice(start, end) {
-    const stop = end === null || end === undefined ? Number.POSITIVE_INFINITY : end;
-    if (stop < this.left.length) {
-      return this.left.slice(start, stop);
-    }
-    if (start > this.left.length) {
-      return this.right.slice(this.right.length - stop + this.left.length, this.right.length - start + this.left.length).reverse();
-    }
-    return this.left.slice(start).concat(this.right.slice(this.right.length - stop + this.left.length).reverse());
-  }
-  splice(start, deleteCount, items) {
-    const count = deleteCount || 0;
-    this.setCursor(Math.trunc(start));
-    const removed = this.right.splice(this.right.length - count, Number.POSITIVE_INFINITY);
-    if (items)
-      chunkedPush(this.left, items);
-    return removed.reverse();
-  }
-  pop() {
-    this.setCursor(Number.POSITIVE_INFINITY);
-    return this.left.pop();
-  }
-  push(item) {
-    this.setCursor(Number.POSITIVE_INFINITY);
-    this.left.push(item);
-  }
-  pushMany(items) {
-    this.setCursor(Number.POSITIVE_INFINITY);
-    chunkedPush(this.left, items);
-  }
-  unshift(item) {
-    this.setCursor(0);
-    this.right.push(item);
-  }
-  unshiftMany(items) {
-    this.setCursor(0);
-    chunkedPush(this.right, items.reverse());
-  }
-  setCursor(n) {
-    if (n === this.left.length || n > this.left.length && this.right.length === 0 || n < 0 && this.left.length === 0)
-      return;
-    if (n < this.left.length) {
-      const removed = this.left.splice(n, Number.POSITIVE_INFINITY);
-      chunkedPush(this.right, removed.reverse());
-    } else {
-      const removed = this.right.splice(this.left.length + this.right.length - n, Number.POSITIVE_INFINITY);
-      chunkedPush(this.left, removed.reverse());
-    }
-  }
-}
-function chunkedPush(list, right) {
-  let chunkStart = 0;
-  if (right.length < 1e4) {
-    list.push(...right);
-  } else {
-    while (chunkStart < right.length) {
-      list.push(...right.slice(chunkStart, chunkStart + 1e4));
-      chunkStart += 1e4;
-    }
-  }
-}
-
-// node_modules/micromark-util-subtokenize/index.js
-function subtokenize(eventsArray) {
-  const jumps = {};
-  let index3 = -1;
-  let event;
-  let lineIndex;
-  let otherIndex;
-  let otherEvent;
-  let parameters;
-  let subevents;
-  let more;
-  const events = new SpliceBuffer(eventsArray);
-  while (++index3 < events.length) {
-    while (index3 in jumps) {
-      index3 = jumps[index3];
-    }
-    event = events.get(index3);
-    if (index3 && event[1].type === "chunkFlow" && events.get(index3 - 1)[1].type === "listItemPrefix") {
-      subevents = event[1]._tokenizer.events;
-      otherIndex = 0;
-      if (otherIndex < subevents.length && subevents[otherIndex][1].type === "lineEndingBlank") {
-        otherIndex += 2;
-      }
-      if (otherIndex < subevents.length && subevents[otherIndex][1].type === "content") {
-        while (++otherIndex < subevents.length) {
-          if (subevents[otherIndex][1].type === "content") {
-            break;
-          }
-          if (subevents[otherIndex][1].type === "chunkText") {
-            subevents[otherIndex][1]._isInFirstContentOfListItem = true;
-            otherIndex++;
-          }
-        }
-      }
-    }
-    if (event[0] === "enter") {
-      if (event[1].contentType) {
-        Object.assign(jumps, subcontent(events, index3));
-        index3 = jumps[index3];
-        more = true;
-      }
-    } else if (event[1]._container) {
-      otherIndex = index3;
-      lineIndex = undefined;
-      while (otherIndex--) {
-        otherEvent = events.get(otherIndex);
-        if (otherEvent[1].type === "lineEnding" || otherEvent[1].type === "lineEndingBlank") {
-          if (otherEvent[0] === "enter") {
-            if (lineIndex) {
-              events.get(lineIndex)[1].type = "lineEndingBlank";
-            }
-            otherEvent[1].type = "lineEnding";
-            lineIndex = otherIndex;
-          }
-        } else if (otherEvent[1].type === "linePrefix" || otherEvent[1].type === "listItemIndent") {} else {
-          break;
-        }
-      }
-      if (lineIndex) {
-        event[1].end = {
-          ...events.get(lineIndex)[1].start
-        };
-        parameters = events.slice(lineIndex, index3);
-        parameters.unshift(event);
-        events.splice(lineIndex, index3 - lineIndex + 1, parameters);
-      }
-    }
-  }
-  splice(eventsArray, 0, Number.POSITIVE_INFINITY, events.slice(0));
-  return !more;
-}
-function subcontent(events, eventIndex) {
-  const token = events.get(eventIndex)[1];
-  const context = events.get(eventIndex)[2];
-  let startPosition = eventIndex - 1;
-  const startPositions = [];
-  let tokenizer = token._tokenizer;
-  if (!tokenizer) {
-    tokenizer = context.parser[token.contentType](token.start);
-    if (token._contentTypeTextTrailing) {
-      tokenizer._contentTypeTextTrailing = true;
-    }
-  }
-  const childEvents = tokenizer.events;
-  const jumps = [];
-  const gaps = {};
-  let stream;
-  let previous2;
-  let index3 = -1;
-  let current = token;
-  let adjust = 0;
-  let start = 0;
-  const breaks = [start];
-  while (current) {
-    while (events.get(++startPosition)[1] !== current) {}
-    startPositions.push(startPosition);
-    if (!current._tokenizer) {
-      stream = context.sliceStream(current);
-      if (!current.next) {
-        stream.push(null);
-      }
-      if (previous2) {
-        tokenizer.defineSkip(current.start);
-      }
-      if (current._isInFirstContentOfListItem) {
-        tokenizer._gfmTasklistFirstContentOfListItem = true;
-      }
-      tokenizer.write(stream);
-      if (current._isInFirstContentOfListItem) {
-        tokenizer._gfmTasklistFirstContentOfListItem = undefined;
-      }
-    }
-    previous2 = current;
-    current = current.next;
-  }
-  current = token;
-  while (++index3 < childEvents.length) {
-    if (childEvents[index3][0] === "exit" && childEvents[index3 - 1][0] === "enter" && childEvents[index3][1].type === childEvents[index3 - 1][1].type && childEvents[index3][1].start.line !== childEvents[index3][1].end.line) {
-      start = index3 + 1;
-      breaks.push(start);
-      current._tokenizer = undefined;
-      current.previous = undefined;
-      current = current.next;
-    }
-  }
-  tokenizer.events = [];
-  if (current) {
-    current._tokenizer = undefined;
-    current.previous = undefined;
-  } else {
-    breaks.pop();
-  }
-  index3 = breaks.length;
-  while (index3--) {
-    const slice = childEvents.slice(breaks[index3], breaks[index3 + 1]);
-    const start2 = startPositions.pop();
-    jumps.push([start2, start2 + slice.length - 1]);
-    events.splice(start2, 2, slice);
-  }
-  jumps.reverse();
-  index3 = -1;
-  while (++index3 < jumps.length) {
-    gaps[adjust + jumps[index3][0]] = adjust + jumps[index3][1];
-    adjust += jumps[index3][1] - jumps[index3][0] - 1;
-  }
-  return gaps;
-}
-
-// node_modules/micromark-core-commonmark/lib/content.js
-var content2 = {
-  resolve: resolveContent,
-  tokenize: tokenizeContent
-};
-var continuationConstruct = {
-  partial: true,
-  tokenize: tokenizeContinuation
-};
-function resolveContent(events) {
-  subtokenize(events);
-  return events;
-}
-function tokenizeContent(effects, ok) {
-  let previous2;
-  return chunkStart;
-  function chunkStart(code) {
-    effects.enter("content");
-    previous2 = effects.enter("chunkContent", {
-      contentType: "content"
-    });
-    return chunkInside(code);
-  }
-  function chunkInside(code) {
-    if (code === null) {
-      return contentEnd(code);
-    }
-    if (markdownLineEnding(code)) {
-      return effects.check(continuationConstruct, contentContinue, contentEnd)(code);
-    }
-    effects.consume(code);
-    return chunkInside;
-  }
-  function contentEnd(code) {
-    effects.exit("chunkContent");
-    effects.exit("content");
-    return ok(code);
-  }
-  function contentContinue(code) {
-    effects.consume(code);
-    effects.exit("chunkContent");
-    previous2.next = effects.enter("chunkContent", {
-      contentType: "content",
-      previous: previous2
-    });
-    previous2 = previous2.next;
-    return chunkInside;
-  }
-}
-function tokenizeContinuation(effects, ok, nok) {
-  const self = this;
-  return startLookahead;
-  function startLookahead(code) {
-    effects.exit("chunkContent");
-    effects.enter("lineEnding");
-    effects.consume(code);
-    effects.exit("lineEnding");
-    return factorySpace(effects, prefixed, "linePrefix");
-  }
-  function prefixed(code) {
-    if (code === null || markdownLineEnding(code)) {
-      return nok(code);
-    }
-    const tail = self.events[self.events.length - 1];
-    if (!self.parser.constructs.disable.null.includes("codeIndented") && tail && tail[1].type === "linePrefix" && tail[2].sliceSerialize(tail[1], true).length >= 4) {
-      return ok(code);
-    }
-    return effects.interrupt(self.parser.constructs.flow, nok, ok)(code);
-  }
-}
-// node_modules/micromark-factory-destination/index.js
-function factoryDestination(effects, ok, nok, type, literalType, literalMarkerType, rawType, stringType, max) {
-  const limit = max || Number.POSITIVE_INFINITY;
-  let balance = 0;
-  return start;
-  function start(code) {
-    if (code === 60) {
-      effects.enter(type);
-      effects.enter(literalType);
-      effects.enter(literalMarkerType);
-      effects.consume(code);
-      effects.exit(literalMarkerType);
-      return enclosedBefore;
-    }
-    if (code === null || code === 32 || code === 41 || asciiControl(code)) {
-      return nok(code);
-    }
-    effects.enter(type);
-    effects.enter(rawType);
-    effects.enter(stringType);
-    effects.enter("chunkString", {
-      contentType: "string"
-    });
-    return raw(code);
-  }
-  function enclosedBefore(code) {
-    if (code === 62) {
-      effects.enter(literalMarkerType);
-      effects.consume(code);
-      effects.exit(literalMarkerType);
-      effects.exit(literalType);
-      effects.exit(type);
-      return ok;
-    }
-    effects.enter(stringType);
-    effects.enter("chunkString", {
-      contentType: "string"
-    });
-    return enclosed(code);
-  }
-  function enclosed(code) {
-    if (code === 62) {
-      effects.exit("chunkString");
-      effects.exit(stringType);
-      return enclosedBefore(code);
-    }
-    if (code === null || code === 60 || markdownLineEnding(code)) {
-      return nok(code);
-    }
-    effects.consume(code);
-    return code === 92 ? enclosedEscape : enclosed;
-  }
-  function enclosedEscape(code) {
-    if (code === 60 || code === 62 || code === 92) {
-      effects.consume(code);
-      return enclosed;
-    }
-    return enclosed(code);
-  }
-  function raw(code) {
-    if (!balance && (code === null || code === 41 || markdownLineEndingOrSpace(code))) {
-      effects.exit("chunkString");
-      effects.exit(stringType);
-      effects.exit(rawType);
-      effects.exit(type);
-      return ok(code);
-    }
-    if (balance < limit && code === 40) {
-      effects.consume(code);
-      balance++;
-      return raw;
-    }
-    if (code === 41) {
-      effects.consume(code);
-      balance--;
-      return raw;
-    }
-    if (code === null || code === 32 || code === 40 || asciiControl(code)) {
-      return nok(code);
-    }
-    effects.consume(code);
-    return code === 92 ? rawEscape : raw;
-  }
-  function rawEscape(code) {
-    if (code === 40 || code === 41 || code === 92) {
-      effects.consume(code);
-      return raw;
-    }
-    return raw(code);
-  }
-}
-
-// node_modules/micromark-factory-label/index.js
-function factoryLabel(effects, ok, nok, type, markerType, stringType) {
-  const self = this;
-  let size = 0;
-  let seen;
-  return start;
-  function start(code) {
-    effects.enter(type);
-    effects.enter(markerType);
-    effects.consume(code);
-    effects.exit(markerType);
-    effects.enter(stringType);
-    return atBreak;
-  }
-  function atBreak(code) {
-    if (size > 999 || code === null || code === 91 || code === 93 && !seen || code === 94 && !size && "_hiddenFootnoteSupport" in self.parser.constructs) {
-      return nok(code);
-    }
-    if (code === 93) {
-      effects.exit(stringType);
-      effects.enter(markerType);
-      effects.consume(code);
-      effects.exit(markerType);
-      effects.exit(type);
-      return ok;
-    }
-    if (markdownLineEnding(code)) {
-      effects.enter("lineEnding");
-      effects.consume(code);
-      effects.exit("lineEnding");
-      return atBreak;
-    }
-    effects.enter("chunkString", {
-      contentType: "string"
-    });
-    return labelInside(code);
-  }
-  function labelInside(code) {
-    if (code === null || code === 91 || code === 93 || markdownLineEnding(code) || size++ > 999) {
-      effects.exit("chunkString");
-      return atBreak(code);
-    }
-    effects.consume(code);
-    if (!seen)
-      seen = !markdownSpace(code);
-    return code === 92 ? labelEscape : labelInside;
-  }
-  function labelEscape(code) {
-    if (code === 91 || code === 92 || code === 93) {
-      effects.consume(code);
-      size++;
-      return labelInside;
-    }
-    return labelInside(code);
-  }
-}
-
-// node_modules/micromark-factory-title/index.js
-function factoryTitle(effects, ok, nok, type, markerType, stringType) {
-  let marker;
-  return start;
-  function start(code) {
-    if (code === 34 || code === 39 || code === 40) {
-      effects.enter(type);
-      effects.enter(markerType);
-      effects.consume(code);
-      effects.exit(markerType);
-      marker = code === 40 ? 41 : code;
-      return begin;
-    }
-    return nok(code);
-  }
-  function begin(code) {
-    if (code === marker) {
-      effects.enter(markerType);
-      effects.consume(code);
-      effects.exit(markerType);
-      effects.exit(type);
-      return ok;
-    }
-    effects.enter(stringType);
-    return atBreak(code);
-  }
-  function atBreak(code) {
-    if (code === marker) {
-      effects.exit(stringType);
-      return begin(marker);
-    }
-    if (code === null) {
-      return nok(code);
-    }
-    if (markdownLineEnding(code)) {
-      effects.enter("lineEnding");
-      effects.consume(code);
-      effects.exit("lineEnding");
-      return factorySpace(effects, atBreak, "linePrefix");
-    }
-    effects.enter("chunkString", {
-      contentType: "string"
-    });
-    return inside(code);
-  }
-  function inside(code) {
-    if (code === marker || code === null || markdownLineEnding(code)) {
-      effects.exit("chunkString");
-      return atBreak(code);
-    }
-    effects.consume(code);
-    return code === 92 ? escape2 : inside;
-  }
-  function escape2(code) {
-    if (code === marker || code === 92) {
-      effects.consume(code);
-      return inside;
-    }
-    return inside(code);
-  }
-}
-
-// node_modules/micromark-factory-whitespace/index.js
-function factoryWhitespace(effects, ok) {
-  let seen;
-  return start;
-  function start(code) {
-    if (markdownLineEnding(code)) {
-      effects.enter("lineEnding");
-      effects.consume(code);
-      effects.exit("lineEnding");
-      seen = true;
-      return start;
-    }
-    if (markdownSpace(code)) {
-      return factorySpace(effects, start, seen ? "linePrefix" : "lineSuffix")(code);
-    }
-    return ok(code);
-  }
-}
-
-// node_modules/micromark-core-commonmark/lib/definition.js
-var definition = {
-  name: "definition",
-  tokenize: tokenizeDefinition
-};
-var titleBefore = {
-  partial: true,
-  tokenize: tokenizeTitleBefore
-};
-function tokenizeDefinition(effects, ok, nok) {
-  const self = this;
-  let identifier;
-  return start;
-  function start(code) {
-    effects.enter("definition");
-    return before(code);
-  }
-  function before(code) {
-    return factoryLabel.call(self, effects, labelAfter, nok, "definitionLabel", "definitionLabelMarker", "definitionLabelString")(code);
-  }
-  function labelAfter(code) {
-    identifier = normalizeIdentifier(self.sliceSerialize(self.events[self.events.length - 1][1]).slice(1, -1));
-    if (code === 58) {
-      effects.enter("definitionMarker");
-      effects.consume(code);
-      effects.exit("definitionMarker");
-      return markerAfter;
-    }
-    return nok(code);
-  }
-  function markerAfter(code) {
-    return markdownLineEndingOrSpace(code) ? factoryWhitespace(effects, destinationBefore)(code) : destinationBefore(code);
-  }
-  function destinationBefore(code) {
-    return factoryDestination(effects, destinationAfter, nok, "definitionDestination", "definitionDestinationLiteral", "definitionDestinationLiteralMarker", "definitionDestinationRaw", "definitionDestinationString")(code);
-  }
-  function destinationAfter(code) {
-    return effects.attempt(titleBefore, after, after)(code);
-  }
-  function after(code) {
-    return markdownSpace(code) ? factorySpace(effects, afterWhitespace, "whitespace")(code) : afterWhitespace(code);
-  }
-  function afterWhitespace(code) {
-    if (code === null || markdownLineEnding(code)) {
-      effects.exit("definition");
-      self.parser.defined.push(identifier);
-      return ok(code);
-    }
-    return nok(code);
-  }
-}
-function tokenizeTitleBefore(effects, ok, nok) {
-  return titleBefore2;
-  function titleBefore2(code) {
-    return markdownLineEndingOrSpace(code) ? factoryWhitespace(effects, beforeMarker)(code) : nok(code);
-  }
-  function beforeMarker(code) {
-    return factoryTitle(effects, titleAfter, nok, "definitionTitle", "definitionTitleMarker", "definitionTitleString")(code);
-  }
-  function titleAfter(code) {
-    return markdownSpace(code) ? factorySpace(effects, titleAfterOptionalWhitespace, "whitespace")(code) : titleAfterOptionalWhitespace(code);
-  }
-  function titleAfterOptionalWhitespace(code) {
-    return code === null || markdownLineEnding(code) ? ok(code) : nok(code);
-  }
-}
-// node_modules/micromark-core-commonmark/lib/hard-break-escape.js
-var hardBreakEscape = {
-  name: "hardBreakEscape",
-  tokenize: tokenizeHardBreakEscape
-};
-function tokenizeHardBreakEscape(effects, ok, nok) {
-  return start;
-  function start(code) {
-    effects.enter("hardBreakEscape");
-    effects.consume(code);
-    return after;
-  }
-  function after(code) {
-    if (markdownLineEnding(code)) {
-      effects.exit("hardBreakEscape");
-      return ok(code);
-    }
-    return nok(code);
-  }
-}
-// node_modules/micromark-core-commonmark/lib/heading-atx.js
-var headingAtx = {
-  name: "headingAtx",
-  resolve: resolveHeadingAtx,
-  tokenize: tokenizeHeadingAtx
-};
-function resolveHeadingAtx(events, context) {
-  let contentEnd = events.length - 2;
-  let contentStart = 3;
-  let content3;
-  let text;
-  if (events[contentStart][1].type === "whitespace") {
-    contentStart += 2;
-  }
-  if (contentEnd - 2 > contentStart && events[contentEnd][1].type === "whitespace") {
-    contentEnd -= 2;
-  }
-  if (events[contentEnd][1].type === "atxHeadingSequence" && (contentStart === contentEnd - 1 || contentEnd - 4 > contentStart && events[contentEnd - 2][1].type === "whitespace")) {
-    contentEnd -= contentStart + 1 === contentEnd ? 2 : 4;
-  }
-  if (contentEnd > contentStart) {
-    content3 = {
-      type: "atxHeadingText",
-      start: events[contentStart][1].start,
-      end: events[contentEnd][1].end
-    };
-    text = {
-      type: "chunkText",
-      start: events[contentStart][1].start,
-      end: events[contentEnd][1].end,
-      contentType: "text"
-    };
-    splice(events, contentStart, contentEnd - contentStart + 1, [["enter", content3, context], ["enter", text, context], ["exit", text, context], ["exit", content3, context]]);
-  }
-  return events;
-}
-function tokenizeHeadingAtx(effects, ok, nok) {
-  let size = 0;
-  return start;
-  function start(code) {
-    effects.enter("atxHeading");
-    return before(code);
-  }
-  function before(code) {
-    effects.enter("atxHeadingSequence");
-    return sequenceOpen(code);
-  }
-  function sequenceOpen(code) {
-    if (code === 35 && size++ < 6) {
-      effects.consume(code);
-      return sequenceOpen;
-    }
-    if (code === null || markdownLineEndingOrSpace(code)) {
-      effects.exit("atxHeadingSequence");
-      return atBreak(code);
-    }
-    return nok(code);
-  }
-  function atBreak(code) {
-    if (code === 35) {
-      effects.enter("atxHeadingSequence");
-      return sequenceFurther(code);
-    }
-    if (code === null || markdownLineEnding(code)) {
-      effects.exit("atxHeading");
-      return ok(code);
-    }
-    if (markdownSpace(code)) {
-      return factorySpace(effects, atBreak, "whitespace")(code);
-    }
-    effects.enter("atxHeadingText");
-    return data(code);
-  }
-  function sequenceFurther(code) {
-    if (code === 35) {
-      effects.consume(code);
-      return sequenceFurther;
-    }
-    effects.exit("atxHeadingSequence");
-    return atBreak(code);
-  }
-  function data(code) {
-    if (code === null || code === 35 || markdownLineEndingOrSpace(code)) {
-      effects.exit("atxHeadingText");
-      return atBreak(code);
-    }
-    effects.consume(code);
-    return data;
-  }
-}
-// node_modules/micromark-util-html-tag-name/index.js
-var htmlBlockNames = [
-  "address",
-  "article",
-  "aside",
-  "base",
-  "basefont",
-  "blockquote",
-  "body",
-  "caption",
-  "center",
-  "col",
-  "colgroup",
-  "dd",
-  "details",
-  "dialog",
-  "dir",
-  "div",
-  "dl",
-  "dt",
-  "fieldset",
-  "figcaption",
-  "figure",
-  "footer",
-  "form",
-  "frame",
-  "frameset",
-  "h1",
-  "h2",
-  "h3",
-  "h4",
-  "h5",
-  "h6",
-  "head",
-  "header",
-  "hr",
-  "html",
-  "iframe",
-  "legend",
-  "li",
-  "link",
-  "main",
-  "menu",
-  "menuitem",
-  "nav",
-  "noframes",
-  "ol",
-  "optgroup",
-  "option",
-  "p",
-  "param",
-  "search",
-  "section",
-  "summary",
-  "table",
-  "tbody",
-  "td",
-  "tfoot",
-  "th",
-  "thead",
-  "title",
-  "tr",
-  "track",
-  "ul"
-];
-var htmlRawNames = ["pre", "script", "style", "textarea"];
-
-// node_modules/micromark-core-commonmark/lib/html-flow.js
-var htmlFlow = {
-  concrete: true,
-  name: "htmlFlow",
-  resolveTo: resolveToHtmlFlow,
-  tokenize: tokenizeHtmlFlow
-};
-var blankLineBefore = {
-  partial: true,
-  tokenize: tokenizeBlankLineBefore
-};
-var nonLazyContinuationStart = {
-  partial: true,
-  tokenize: tokenizeNonLazyContinuationStart
-};
-function resolveToHtmlFlow(events) {
-  let index3 = events.length;
-  while (index3--) {
-    if (events[index3][0] === "enter" && events[index3][1].type === "htmlFlow") {
-      break;
-    }
-  }
-  if (index3 > 1 && events[index3 - 2][1].type === "linePrefix") {
-    events[index3][1].start = events[index3 - 2][1].start;
-    events[index3 + 1][1].start = events[index3 - 2][1].start;
-    events.splice(index3 - 2, 2);
-  }
-  return events;
-}
-function tokenizeHtmlFlow(effects, ok, nok) {
-  const self = this;
-  let marker;
-  let closingTag;
-  let buffer;
-  let index3;
-  let markerB;
-  return start;
-  function start(code) {
-    return before(code);
-  }
-  function before(code) {
-    effects.enter("htmlFlow");
-    effects.enter("htmlFlowData");
-    effects.consume(code);
-    return open;
-  }
-  function open(code) {
-    if (code === 33) {
-      effects.consume(code);
-      return declarationOpen;
-    }
-    if (code === 47) {
-      effects.consume(code);
-      closingTag = true;
-      return tagCloseStart;
-    }
-    if (code === 63) {
-      effects.consume(code);
-      marker = 3;
-      return self.interrupt ? ok : continuationDeclarationInside;
-    }
-    if (asciiAlpha(code)) {
-      effects.consume(code);
-      buffer = String.fromCharCode(code);
-      return tagName;
-    }
-    return nok(code);
-  }
-  function declarationOpen(code) {
-    if (code === 45) {
-      effects.consume(code);
-      marker = 2;
-      return commentOpenInside;
-    }
-    if (code === 91) {
-      effects.consume(code);
-      marker = 5;
-      index3 = 0;
-      return cdataOpenInside;
-    }
-    if (asciiAlpha(code)) {
-      effects.consume(code);
-      marker = 4;
-      return self.interrupt ? ok : continuationDeclarationInside;
-    }
-    return nok(code);
-  }
-  function commentOpenInside(code) {
-    if (code === 45) {
-      effects.consume(code);
-      return self.interrupt ? ok : continuationDeclarationInside;
-    }
-    return nok(code);
-  }
-  function cdataOpenInside(code) {
-    const value = "CDATA[";
-    if (code === value.charCodeAt(index3++)) {
-      effects.consume(code);
-      if (index3 === value.length) {
-        return self.interrupt ? ok : continuation;
-      }
-      return cdataOpenInside;
-    }
-    return nok(code);
-  }
-  function tagCloseStart(code) {
-    if (asciiAlpha(code)) {
-      effects.consume(code);
-      buffer = String.fromCharCode(code);
-      return tagName;
-    }
-    return nok(code);
-  }
-  function tagName(code) {
-    if (code === null || code === 47 || code === 62 || markdownLineEndingOrSpace(code)) {
-      const slash = code === 47;
-      const name = buffer.toLowerCase();
-      if (!slash && !closingTag && htmlRawNames.includes(name)) {
-        marker = 1;
-        return self.interrupt ? ok(code) : continuation(code);
-      }
-      if (htmlBlockNames.includes(buffer.toLowerCase())) {
-        marker = 6;
-        if (slash) {
-          effects.consume(code);
-          return basicSelfClosing;
-        }
-        return self.interrupt ? ok(code) : continuation(code);
-      }
-      marker = 7;
-      return self.interrupt && !self.parser.lazy[self.now().line] ? nok(code) : closingTag ? completeClosingTagAfter(code) : completeAttributeNameBefore(code);
-    }
-    if (code === 45 || asciiAlphanumeric(code)) {
-      effects.consume(code);
-      buffer += String.fromCharCode(code);
-      return tagName;
-    }
-    return nok(code);
-  }
-  function basicSelfClosing(code) {
-    if (code === 62) {
-      effects.consume(code);
-      return self.interrupt ? ok : continuation;
-    }
-    return nok(code);
-  }
-  function completeClosingTagAfter(code) {
-    if (markdownSpace(code)) {
-      effects.consume(code);
-      return completeClosingTagAfter;
-    }
-    return completeEnd(code);
-  }
-  function completeAttributeNameBefore(code) {
-    if (code === 47) {
-      effects.consume(code);
-      return completeEnd;
-    }
-    if (code === 58 || code === 95 || asciiAlpha(code)) {
-      effects.consume(code);
-      return completeAttributeName;
-    }
-    if (markdownSpace(code)) {
-      effects.consume(code);
-      return completeAttributeNameBefore;
-    }
-    return completeEnd(code);
-  }
-  function completeAttributeName(code) {
-    if (code === 45 || code === 46 || code === 58 || code === 95 || asciiAlphanumeric(code)) {
-      effects.consume(code);
-      return completeAttributeName;
-    }
-    return completeAttributeNameAfter(code);
-  }
-  function completeAttributeNameAfter(code) {
-    if (code === 61) {
-      effects.consume(code);
-      return completeAttributeValueBefore;
-    }
-    if (markdownSpace(code)) {
-      effects.consume(code);
-      return completeAttributeNameAfter;
-    }
-    return completeAttributeNameBefore(code);
-  }
-  function completeAttributeValueBefore(code) {
-    if (code === null || code === 60 || code === 61 || code === 62 || code === 96) {
-      return nok(code);
-    }
-    if (code === 34 || code === 39) {
-      effects.consume(code);
-      markerB = code;
-      return completeAttributeValueQuoted;
-    }
-    if (markdownSpace(code)) {
-      effects.consume(code);
-      return completeAttributeValueBefore;
-    }
-    return completeAttributeValueUnquoted(code);
-  }
-  function completeAttributeValueQuoted(code) {
-    if (code === markerB) {
-      effects.consume(code);
-      markerB = null;
-      return completeAttributeValueQuotedAfter;
-    }
-    if (code === null || markdownLineEnding(code)) {
-      return nok(code);
-    }
-    effects.consume(code);
-    return completeAttributeValueQuoted;
-  }
-  function completeAttributeValueUnquoted(code) {
-    if (code === null || code === 34 || code === 39 || code === 47 || code === 60 || code === 61 || code === 62 || code === 96 || markdownLineEndingOrSpace(code)) {
-      return completeAttributeNameAfter(code);
-    }
-    effects.consume(code);
-    return completeAttributeValueUnquoted;
-  }
-  function completeAttributeValueQuotedAfter(code) {
-    if (code === 47 || code === 62 || markdownSpace(code)) {
-      return completeAttributeNameBefore(code);
-    }
-    return nok(code);
-  }
-  function completeEnd(code) {
-    if (code === 62) {
-      effects.consume(code);
-      return completeAfter;
-    }
-    return nok(code);
-  }
-  function completeAfter(code) {
-    if (code === null || markdownLineEnding(code)) {
-      return continuation(code);
-    }
-    if (markdownSpace(code)) {
-      effects.consume(code);
-      return completeAfter;
-    }
-    return nok(code);
-  }
-  function continuation(code) {
-    if (code === 45 && marker === 2) {
-      effects.consume(code);
-      return continuationCommentInside;
-    }
-    if (code === 60 && marker === 1) {
-      effects.consume(code);
-      return continuationRawTagOpen;
-    }
-    if (code === 62 && marker === 4) {
-      effects.consume(code);
-      return continuationClose;
-    }
-    if (code === 63 && marker === 3) {
-      effects.consume(code);
-      return continuationDeclarationInside;
-    }
-    if (code === 93 && marker === 5) {
-      effects.consume(code);
-      return continuationCdataInside;
-    }
-    if (markdownLineEnding(code) && (marker === 6 || marker === 7)) {
-      effects.exit("htmlFlowData");
-      return effects.check(blankLineBefore, continuationAfter, continuationStart)(code);
-    }
-    if (code === null || markdownLineEnding(code)) {
-      effects.exit("htmlFlowData");
-      return continuationStart(code);
-    }
-    effects.consume(code);
-    return continuation;
-  }
-  function continuationStart(code) {
-    return effects.check(nonLazyContinuationStart, continuationStartNonLazy, continuationAfter)(code);
-  }
-  function continuationStartNonLazy(code) {
-    effects.enter("lineEnding");
-    effects.consume(code);
-    effects.exit("lineEnding");
-    return continuationBefore;
-  }
-  function continuationBefore(code) {
-    if (code === null || markdownLineEnding(code)) {
-      return continuationStart(code);
-    }
-    effects.enter("htmlFlowData");
-    return continuation(code);
-  }
-  function continuationCommentInside(code) {
-    if (code === 45) {
-      effects.consume(code);
-      return continuationDeclarationInside;
-    }
-    return continuation(code);
-  }
-  function continuationRawTagOpen(code) {
-    if (code === 47) {
-      effects.consume(code);
-      buffer = "";
-      return continuationRawEndTag;
-    }
-    return continuation(code);
-  }
-  function continuationRawEndTag(code) {
-    if (code === 62) {
-      const name = buffer.toLowerCase();
-      if (htmlRawNames.includes(name)) {
-        effects.consume(code);
-        return continuationClose;
-      }
-      return continuation(code);
-    }
-    if (asciiAlpha(code) && buffer.length < 8) {
-      effects.consume(code);
-      buffer += String.fromCharCode(code);
-      return continuationRawEndTag;
-    }
-    return continuation(code);
-  }
-  function continuationCdataInside(code) {
-    if (code === 93) {
-      effects.consume(code);
-      return continuationDeclarationInside;
-    }
-    return continuation(code);
-  }
-  function continuationDeclarationInside(code) {
-    if (code === 62) {
-      effects.consume(code);
-      return continuationClose;
-    }
-    if (code === 45 && marker === 2) {
-      effects.consume(code);
-      return continuationDeclarationInside;
-    }
-    return continuation(code);
-  }
-  function continuationClose(code) {
-    if (code === null || markdownLineEnding(code)) {
-      effects.exit("htmlFlowData");
-      return continuationAfter(code);
-    }
-    effects.consume(code);
-    return continuationClose;
-  }
-  function continuationAfter(code) {
-    effects.exit("htmlFlow");
-    return ok(code);
-  }
-}
-function tokenizeNonLazyContinuationStart(effects, ok, nok) {
-  const self = this;
-  return start;
-  function start(code) {
-    if (markdownLineEnding(code)) {
-      effects.enter("lineEnding");
-      effects.consume(code);
-      effects.exit("lineEnding");
-      return after;
-    }
-    return nok(code);
-  }
-  function after(code) {
-    return self.parser.lazy[self.now().line] ? nok(code) : ok(code);
-  }
-}
-function tokenizeBlankLineBefore(effects, ok, nok) {
-  return start;
-  function start(code) {
-    effects.enter("lineEnding");
-    effects.consume(code);
-    effects.exit("lineEnding");
-    return effects.attempt(blankLine, ok, nok);
-  }
-}
-// node_modules/micromark-core-commonmark/lib/html-text.js
-var htmlText = {
-  name: "htmlText",
-  tokenize: tokenizeHtmlText
-};
-function tokenizeHtmlText(effects, ok, nok) {
-  const self = this;
-  let marker;
-  let index3;
-  let returnState;
-  return start;
-  function start(code) {
-    effects.enter("htmlText");
-    effects.enter("htmlTextData");
-    effects.consume(code);
-    return open;
-  }
-  function open(code) {
-    if (code === 33) {
-      effects.consume(code);
-      return declarationOpen;
-    }
-    if (code === 47) {
-      effects.consume(code);
-      return tagCloseStart;
-    }
-    if (code === 63) {
-      effects.consume(code);
-      return instruction;
-    }
-    if (asciiAlpha(code)) {
-      effects.consume(code);
-      return tagOpen;
-    }
-    return nok(code);
-  }
-  function declarationOpen(code) {
-    if (code === 45) {
-      effects.consume(code);
-      return commentOpenInside;
-    }
-    if (code === 91) {
-      effects.consume(code);
-      index3 = 0;
-      return cdataOpenInside;
-    }
-    if (asciiAlpha(code)) {
-      effects.consume(code);
-      return declaration;
-    }
-    return nok(code);
-  }
-  function commentOpenInside(code) {
-    if (code === 45) {
-      effects.consume(code);
-      return commentEnd;
-    }
-    return nok(code);
-  }
-  function comment(code) {
-    if (code === null) {
-      return nok(code);
-    }
-    if (code === 45) {
-      effects.consume(code);
-      return commentClose;
-    }
-    if (markdownLineEnding(code)) {
-      returnState = comment;
-      return lineEndingBefore(code);
-    }
-    effects.consume(code);
-    return comment;
-  }
-  function commentClose(code) {
-    if (code === 45) {
-      effects.consume(code);
-      return commentEnd;
-    }
-    return comment(code);
-  }
-  function commentEnd(code) {
-    return code === 62 ? end(code) : code === 45 ? commentClose(code) : comment(code);
-  }
-  function cdataOpenInside(code) {
-    const value = "CDATA[";
-    if (code === value.charCodeAt(index3++)) {
-      effects.consume(code);
-      return index3 === value.length ? cdata : cdataOpenInside;
-    }
-    return nok(code);
-  }
-  function cdata(code) {
-    if (code === null) {
-      return nok(code);
-    }
-    if (code === 93) {
-      effects.consume(code);
-      return cdataClose;
-    }
-    if (markdownLineEnding(code)) {
-      returnState = cdata;
-      return lineEndingBefore(code);
-    }
-    effects.consume(code);
-    return cdata;
-  }
-  function cdataClose(code) {
-    if (code === 93) {
-      effects.consume(code);
-      return cdataEnd;
-    }
-    return cdata(code);
-  }
-  function cdataEnd(code) {
-    if (code === 62) {
-      return end(code);
-    }
-    if (code === 93) {
-      effects.consume(code);
-      return cdataEnd;
-    }
-    return cdata(code);
-  }
-  function declaration(code) {
-    if (code === null || code === 62) {
-      return end(code);
-    }
-    if (markdownLineEnding(code)) {
-      returnState = declaration;
-      return lineEndingBefore(code);
-    }
-    effects.consume(code);
-    return declaration;
-  }
-  function instruction(code) {
-    if (code === null) {
-      return nok(code);
-    }
-    if (code === 63) {
-      effects.consume(code);
-      return instructionClose;
-    }
-    if (markdownLineEnding(code)) {
-      returnState = instruction;
-      return lineEndingBefore(code);
-    }
-    effects.consume(code);
-    return instruction;
-  }
-  function instructionClose(code) {
-    return code === 62 ? end(code) : instruction(code);
-  }
-  function tagCloseStart(code) {
-    if (asciiAlpha(code)) {
-      effects.consume(code);
-      return tagClose;
-    }
-    return nok(code);
-  }
-  function tagClose(code) {
-    if (code === 45 || asciiAlphanumeric(code)) {
-      effects.consume(code);
-      return tagClose;
-    }
-    return tagCloseBetween(code);
-  }
-  function tagCloseBetween(code) {
-    if (markdownLineEnding(code)) {
-      returnState = tagCloseBetween;
-      return lineEndingBefore(code);
-    }
-    if (markdownSpace(code)) {
-      effects.consume(code);
-      return tagCloseBetween;
-    }
-    return end(code);
-  }
-  function tagOpen(code) {
-    if (code === 45 || asciiAlphanumeric(code)) {
-      effects.consume(code);
-      return tagOpen;
-    }
-    if (code === 47 || code === 62 || markdownLineEndingOrSpace(code)) {
-      return tagOpenBetween(code);
-    }
-    return nok(code);
-  }
-  function tagOpenBetween(code) {
-    if (code === 47) {
-      effects.consume(code);
-      return end;
-    }
-    if (code === 58 || code === 95 || asciiAlpha(code)) {
-      effects.consume(code);
-      return tagOpenAttributeName;
-    }
-    if (markdownLineEnding(code)) {
-      returnState = tagOpenBetween;
-      return lineEndingBefore(code);
-    }
-    if (markdownSpace(code)) {
-      effects.consume(code);
-      return tagOpenBetween;
-    }
-    return end(code);
-  }
-  function tagOpenAttributeName(code) {
-    if (code === 45 || code === 46 || code === 58 || code === 95 || asciiAlphanumeric(code)) {
-      effects.consume(code);
-      return tagOpenAttributeName;
-    }
-    return tagOpenAttributeNameAfter(code);
-  }
-  function tagOpenAttributeNameAfter(code) {
-    if (code === 61) {
-      effects.consume(code);
-      return tagOpenAttributeValueBefore;
-    }
-    if (markdownLineEnding(code)) {
-      returnState = tagOpenAttributeNameAfter;
-      return lineEndingBefore(code);
-    }
-    if (markdownSpace(code)) {
-      effects.consume(code);
-      return tagOpenAttributeNameAfter;
-    }
-    return tagOpenBetween(code);
-  }
-  function tagOpenAttributeValueBefore(code) {
-    if (code === null || code === 60 || code === 61 || code === 62 || code === 96) {
-      return nok(code);
-    }
-    if (code === 34 || code === 39) {
-      effects.consume(code);
-      marker = code;
-      return tagOpenAttributeValueQuoted;
-    }
-    if (markdownLineEnding(code)) {
-      returnState = tagOpenAttributeValueBefore;
-      return lineEndingBefore(code);
-    }
-    if (markdownSpace(code)) {
-      effects.consume(code);
-      return tagOpenAttributeValueBefore;
-    }
-    effects.consume(code);
-    return tagOpenAttributeValueUnquoted;
-  }
-  function tagOpenAttributeValueQuoted(code) {
-    if (code === marker) {
-      effects.consume(code);
-      marker = undefined;
-      return tagOpenAttributeValueQuotedAfter;
-    }
-    if (code === null) {
-      return nok(code);
-    }
-    if (markdownLineEnding(code)) {
-      returnState = tagOpenAttributeValueQuoted;
-      return lineEndingBefore(code);
-    }
-    effects.consume(code);
-    return tagOpenAttributeValueQuoted;
-  }
-  function tagOpenAttributeValueUnquoted(code) {
-    if (code === null || code === 34 || code === 39 || code === 60 || code === 61 || code === 96) {
-      return nok(code);
-    }
-    if (code === 47 || code === 62 || markdownLineEndingOrSpace(code)) {
-      return tagOpenBetween(code);
-    }
-    effects.consume(code);
-    return tagOpenAttributeValueUnquoted;
-  }
-  function tagOpenAttributeValueQuotedAfter(code) {
-    if (code === 47 || code === 62 || markdownLineEndingOrSpace(code)) {
-      return tagOpenBetween(code);
-    }
-    return nok(code);
-  }
-  function end(code) {
-    if (code === 62) {
-      effects.consume(code);
-      effects.exit("htmlTextData");
-      effects.exit("htmlText");
-      return ok;
-    }
-    return nok(code);
-  }
-  function lineEndingBefore(code) {
-    effects.exit("htmlTextData");
-    effects.enter("lineEnding");
-    effects.consume(code);
-    effects.exit("lineEnding");
-    return lineEndingAfter;
-  }
-  function lineEndingAfter(code) {
-    return markdownSpace(code) ? factorySpace(effects, lineEndingAfterPrefix, "linePrefix", self.parser.constructs.disable.null.includes("codeIndented") ? undefined : 4)(code) : lineEndingAfterPrefix(code);
-  }
-  function lineEndingAfterPrefix(code) {
-    effects.enter("htmlTextData");
-    return returnState(code);
-  }
-}
-// node_modules/micromark-core-commonmark/lib/label-end.js
-var labelEnd = {
-  name: "labelEnd",
-  resolveAll: resolveAllLabelEnd,
-  resolveTo: resolveToLabelEnd,
-  tokenize: tokenizeLabelEnd
-};
-var resourceConstruct = {
-  tokenize: tokenizeResource
-};
-var referenceFullConstruct = {
-  tokenize: tokenizeReferenceFull
-};
-var referenceCollapsedConstruct = {
-  tokenize: tokenizeReferenceCollapsed
-};
-function resolveAllLabelEnd(events) {
-  let index3 = -1;
-  const newEvents = [];
-  while (++index3 < events.length) {
-    const token = events[index3][1];
-    newEvents.push(events[index3]);
-    if (token.type === "labelImage" || token.type === "labelLink" || token.type === "labelEnd") {
-      const offset = token.type === "labelImage" ? 4 : 2;
-      token.type = "data";
-      index3 += offset;
-    }
-  }
-  if (events.length !== newEvents.length) {
-    splice(events, 0, events.length, newEvents);
-  }
-  return events;
-}
-function resolveToLabelEnd(events, context) {
-  let index3 = events.length;
-  let offset = 0;
-  let token;
-  let open;
-  let close;
-  let media;
-  while (index3--) {
-    token = events[index3][1];
-    if (open) {
-      if (token.type === "link" || token.type === "labelLink" && token._inactive) {
-        break;
-      }
-      if (events[index3][0] === "enter" && token.type === "labelLink") {
-        token._inactive = true;
-      }
-    } else if (close) {
-      if (events[index3][0] === "enter" && (token.type === "labelImage" || token.type === "labelLink") && !token._balanced) {
-        open = index3;
-        if (token.type !== "labelLink") {
-          offset = 2;
-          break;
-        }
-      }
-    } else if (token.type === "labelEnd") {
-      close = index3;
-    }
-  }
-  const group = {
-    type: events[open][1].type === "labelLink" ? "link" : "image",
-    start: {
-      ...events[open][1].start
-    },
-    end: {
-      ...events[events.length - 1][1].end
-    }
-  };
-  const label = {
-    type: "label",
-    start: {
-      ...events[open][1].start
-    },
-    end: {
-      ...events[close][1].end
-    }
-  };
-  const text = {
-    type: "labelText",
-    start: {
-      ...events[open + offset + 2][1].end
-    },
-    end: {
-      ...events[close - 2][1].start
-    }
-  };
-  media = [["enter", group, context], ["enter", label, context]];
-  media = push3(media, events.slice(open + 1, open + offset + 3));
-  media = push3(media, [["enter", text, context]]);
-  media = push3(media, resolveAll(context.parser.constructs.insideSpan.null, events.slice(open + offset + 4, close - 3), context));
-  media = push3(media, [["exit", text, context], events[close - 2], events[close - 1], ["exit", label, context]]);
-  media = push3(media, events.slice(close + 1));
-  media = push3(media, [["exit", group, context]]);
-  splice(events, open, events.length, media);
-  return events;
-}
-function tokenizeLabelEnd(effects, ok, nok) {
-  const self = this;
-  let index3 = self.events.length;
-  let labelStart2;
-  let defined;
-  while (index3--) {
-    if ((self.events[index3][1].type === "labelImage" || self.events[index3][1].type === "labelLink") && !self.events[index3][1]._balanced) {
-      labelStart2 = self.events[index3][1];
-      break;
-    }
-  }
-  return start;
-  function start(code) {
-    if (!labelStart2) {
-      return nok(code);
-    }
-    if (labelStart2._inactive) {
-      return labelEndNok(code);
-    }
-    defined = self.parser.defined.includes(normalizeIdentifier(self.sliceSerialize({
-      start: labelStart2.end,
-      end: self.now()
-    })));
-    effects.enter("labelEnd");
-    effects.enter("labelMarker");
-    effects.consume(code);
-    effects.exit("labelMarker");
-    effects.exit("labelEnd");
-    return after;
-  }
-  function after(code) {
-    if (code === 40) {
-      return effects.attempt(resourceConstruct, labelEndOk, defined ? labelEndOk : labelEndNok)(code);
-    }
-    if (code === 91) {
-      return effects.attempt(referenceFullConstruct, labelEndOk, defined ? referenceNotFull : labelEndNok)(code);
-    }
-    return defined ? labelEndOk(code) : labelEndNok(code);
-  }
-  function referenceNotFull(code) {
-    return effects.attempt(referenceCollapsedConstruct, labelEndOk, labelEndNok)(code);
-  }
-  function labelEndOk(code) {
-    return ok(code);
-  }
-  function labelEndNok(code) {
-    labelStart2._balanced = true;
-    return nok(code);
-  }
-}
-function tokenizeResource(effects, ok, nok) {
-  return resourceStart;
-  function resourceStart(code) {
-    effects.enter("resource");
-    effects.enter("resourceMarker");
-    effects.consume(code);
-    effects.exit("resourceMarker");
-    return resourceBefore;
-  }
-  function resourceBefore(code) {
-    return markdownLineEndingOrSpace(code) ? factoryWhitespace(effects, resourceOpen)(code) : resourceOpen(code);
-  }
-  function resourceOpen(code) {
-    if (code === 41) {
-      return resourceEnd(code);
-    }
-    return factoryDestination(effects, resourceDestinationAfter, resourceDestinationMissing, "resourceDestination", "resourceDestinationLiteral", "resourceDestinationLiteralMarker", "resourceDestinationRaw", "resourceDestinationString", 32)(code);
-  }
-  function resourceDestinationAfter(code) {
-    return markdownLineEndingOrSpace(code) ? factoryWhitespace(effects, resourceBetween)(code) : resourceEnd(code);
-  }
-  function resourceDestinationMissing(code) {
-    return nok(code);
-  }
-  function resourceBetween(code) {
-    if (code === 34 || code === 39 || code === 40) {
-      return factoryTitle(effects, resourceTitleAfter, nok, "resourceTitle", "resourceTitleMarker", "resourceTitleString")(code);
-    }
-    return resourceEnd(code);
-  }
-  function resourceTitleAfter(code) {
-    return markdownLineEndingOrSpace(code) ? factoryWhitespace(effects, resourceEnd)(code) : resourceEnd(code);
-  }
-  function resourceEnd(code) {
-    if (code === 41) {
-      effects.enter("resourceMarker");
-      effects.consume(code);
-      effects.exit("resourceMarker");
-      effects.exit("resource");
-      return ok;
-    }
-    return nok(code);
-  }
-}
-function tokenizeReferenceFull(effects, ok, nok) {
-  const self = this;
-  return referenceFull;
-  function referenceFull(code) {
-    return factoryLabel.call(self, effects, referenceFullAfter, referenceFullMissing, "reference", "referenceMarker", "referenceString")(code);
-  }
-  function referenceFullAfter(code) {
-    return self.parser.defined.includes(normalizeIdentifier(self.sliceSerialize(self.events[self.events.length - 1][1]).slice(1, -1))) ? ok(code) : nok(code);
-  }
-  function referenceFullMissing(code) {
-    return nok(code);
-  }
-}
-function tokenizeReferenceCollapsed(effects, ok, nok) {
-  return referenceCollapsedStart;
-  function referenceCollapsedStart(code) {
-    effects.enter("reference");
-    effects.enter("referenceMarker");
-    effects.consume(code);
-    effects.exit("referenceMarker");
-    return referenceCollapsedOpen;
-  }
-  function referenceCollapsedOpen(code) {
-    if (code === 93) {
-      effects.enter("referenceMarker");
-      effects.consume(code);
-      effects.exit("referenceMarker");
-      effects.exit("reference");
-      return ok;
-    }
-    return nok(code);
-  }
-}
-// node_modules/micromark-core-commonmark/lib/label-start-image.js
-var labelStartImage = {
-  name: "labelStartImage",
-  resolveAll: labelEnd.resolveAll,
-  tokenize: tokenizeLabelStartImage
-};
-function tokenizeLabelStartImage(effects, ok, nok) {
-  const self = this;
-  return start;
-  function start(code) {
-    effects.enter("labelImage");
-    effects.enter("labelImageMarker");
-    effects.consume(code);
-    effects.exit("labelImageMarker");
-    return open;
-  }
-  function open(code) {
-    if (code === 91) {
-      effects.enter("labelMarker");
-      effects.consume(code);
-      effects.exit("labelMarker");
-      effects.exit("labelImage");
-      return after;
-    }
-    return nok(code);
-  }
-  function after(code) {
-    return code === 94 && "_hiddenFootnoteSupport" in self.parser.constructs ? nok(code) : ok(code);
-  }
-}
-// node_modules/micromark-core-commonmark/lib/label-start-link.js
-var labelStartLink = {
-  name: "labelStartLink",
-  resolveAll: labelEnd.resolveAll,
-  tokenize: tokenizeLabelStartLink
-};
-function tokenizeLabelStartLink(effects, ok, nok) {
-  const self = this;
-  return start;
-  function start(code) {
-    effects.enter("labelLink");
-    effects.enter("labelMarker");
-    effects.consume(code);
-    effects.exit("labelMarker");
-    effects.exit("labelLink");
-    return after;
-  }
-  function after(code) {
-    return code === 94 && "_hiddenFootnoteSupport" in self.parser.constructs ? nok(code) : ok(code);
-  }
-}
-// node_modules/micromark-core-commonmark/lib/line-ending.js
-var lineEnding = {
-  name: "lineEnding",
-  tokenize: tokenizeLineEnding
-};
-function tokenizeLineEnding(effects, ok) {
-  return start;
-  function start(code) {
-    effects.enter("lineEnding");
-    effects.consume(code);
-    effects.exit("lineEnding");
-    return factorySpace(effects, ok, "linePrefix");
-  }
-}
-// node_modules/micromark-core-commonmark/lib/thematic-break.js
-var thematicBreak = {
-  name: "thematicBreak",
-  tokenize: tokenizeThematicBreak
-};
-function tokenizeThematicBreak(effects, ok, nok) {
-  let size = 0;
-  let marker;
-  return start;
-  function start(code) {
-    effects.enter("thematicBreak");
-    return before(code);
-  }
-  function before(code) {
-    marker = code;
-    return atBreak(code);
-  }
-  function atBreak(code) {
-    if (code === marker) {
-      effects.enter("thematicBreakSequence");
-      return sequence(code);
-    }
-    if (size >= 3 && (code === null || markdownLineEnding(code))) {
-      effects.exit("thematicBreak");
-      return ok(code);
-    }
-    return nok(code);
-  }
-  function sequence(code) {
-    if (code === marker) {
-      effects.consume(code);
-      size++;
-      return sequence;
-    }
-    effects.exit("thematicBreakSequence");
-    return markdownSpace(code) ? factorySpace(effects, atBreak, "whitespace")(code) : atBreak(code);
-  }
-}
-
-// node_modules/micromark-core-commonmark/lib/list.js
-var list = {
-  continuation: {
-    tokenize: tokenizeListContinuation
-  },
-  exit: tokenizeListEnd,
-  name: "list",
-  tokenize: tokenizeListStart
-};
-var listItemPrefixWhitespaceConstruct = {
-  partial: true,
-  tokenize: tokenizeListItemPrefixWhitespace
-};
-var indentConstruct = {
-  partial: true,
-  tokenize: tokenizeIndent
-};
-function tokenizeListStart(effects, ok, nok) {
-  const self = this;
-  const tail = self.events[self.events.length - 1];
-  let initialSize = tail && tail[1].type === "linePrefix" ? tail[2].sliceSerialize(tail[1], true).length : 0;
-  let size = 0;
-  return start;
-  function start(code) {
-    const kind = self.containerState.type || (code === 42 || code === 43 || code === 45 ? "listUnordered" : "listOrdered");
-    if (kind === "listUnordered" ? !self.containerState.marker || code === self.containerState.marker : asciiDigit(code)) {
-      if (!self.containerState.type) {
-        self.containerState.type = kind;
-        effects.enter(kind, {
-          _container: true
-        });
-      }
-      if (kind === "listUnordered") {
-        effects.enter("listItemPrefix");
-        return code === 42 || code === 45 ? effects.check(thematicBreak, nok, atMarker)(code) : atMarker(code);
-      }
-      if (!self.interrupt || code === 49) {
-        effects.enter("listItemPrefix");
-        effects.enter("listItemValue");
-        return inside(code);
-      }
-    }
-    return nok(code);
-  }
-  function inside(code) {
-    if (asciiDigit(code) && ++size < 10) {
-      effects.consume(code);
-      return inside;
-    }
-    if ((!self.interrupt || size < 2) && (self.containerState.marker ? code === self.containerState.marker : code === 41 || code === 46)) {
-      effects.exit("listItemValue");
-      return atMarker(code);
-    }
-    return nok(code);
-  }
-  function atMarker(code) {
-    effects.enter("listItemMarker");
-    effects.consume(code);
-    effects.exit("listItemMarker");
-    self.containerState.marker = self.containerState.marker || code;
-    return effects.check(blankLine, self.interrupt ? nok : onBlank, effects.attempt(listItemPrefixWhitespaceConstruct, endOfPrefix, otherPrefix));
-  }
-  function onBlank(code) {
-    self.containerState.initialBlankLine = true;
-    initialSize++;
-    return endOfPrefix(code);
-  }
-  function otherPrefix(code) {
-    if (markdownSpace(code)) {
-      effects.enter("listItemPrefixWhitespace");
-      effects.consume(code);
-      effects.exit("listItemPrefixWhitespace");
-      return endOfPrefix;
-    }
-    return nok(code);
-  }
-  function endOfPrefix(code) {
-    self.containerState.size = initialSize + self.sliceSerialize(effects.exit("listItemPrefix"), true).length;
-    return ok(code);
-  }
-}
-function tokenizeListContinuation(effects, ok, nok) {
-  const self = this;
-  self.containerState._closeFlow = undefined;
-  return effects.check(blankLine, onBlank, notBlank);
-  function onBlank(code) {
-    self.containerState.furtherBlankLines = self.containerState.furtherBlankLines || self.containerState.initialBlankLine;
-    return factorySpace(effects, ok, "listItemIndent", self.containerState.size + 1)(code);
-  }
-  function notBlank(code) {
-    if (self.containerState.furtherBlankLines || !markdownSpace(code)) {
-      self.containerState.furtherBlankLines = undefined;
-      self.containerState.initialBlankLine = undefined;
-      return notInCurrentItem(code);
-    }
-    self.containerState.furtherBlankLines = undefined;
-    self.containerState.initialBlankLine = undefined;
-    return effects.attempt(indentConstruct, ok, notInCurrentItem)(code);
-  }
-  function notInCurrentItem(code) {
-    self.containerState._closeFlow = true;
-    self.interrupt = undefined;
-    return factorySpace(effects, effects.attempt(list, ok, nok), "linePrefix", self.parser.constructs.disable.null.includes("codeIndented") ? undefined : 4)(code);
-  }
-}
-function tokenizeIndent(effects, ok, nok) {
-  const self = this;
-  return factorySpace(effects, afterPrefix, "listItemIndent", self.containerState.size + 1);
-  function afterPrefix(code) {
-    const tail = self.events[self.events.length - 1];
-    return tail && tail[1].type === "listItemIndent" && tail[2].sliceSerialize(tail[1], true).length === self.containerState.size ? ok(code) : nok(code);
-  }
-}
-function tokenizeListEnd(effects) {
-  effects.exit(this.containerState.type);
-}
-function tokenizeListItemPrefixWhitespace(effects, ok, nok) {
-  const self = this;
-  return factorySpace(effects, afterPrefix, "listItemPrefixWhitespace", self.parser.constructs.disable.null.includes("codeIndented") ? undefined : 4 + 1);
-  function afterPrefix(code) {
-    const tail = self.events[self.events.length - 1];
-    return !markdownSpace(code) && tail && tail[1].type === "listItemPrefixWhitespace" ? ok(code) : nok(code);
-  }
-}
-// node_modules/micromark-core-commonmark/lib/setext-underline.js
-var setextUnderline = {
-  name: "setextUnderline",
-  resolveTo: resolveToSetextUnderline,
-  tokenize: tokenizeSetextUnderline
-};
-function resolveToSetextUnderline(events, context) {
-  let index3 = events.length;
-  let content3;
-  let text;
-  let definition2;
-  while (index3--) {
-    if (events[index3][0] === "enter") {
-      if (events[index3][1].type === "content") {
-        content3 = index3;
-        break;
-      }
-      if (events[index3][1].type === "paragraph") {
-        text = index3;
-      }
-    } else {
-      if (events[index3][1].type === "content") {
-        events.splice(index3, 1);
-      }
-      if (!definition2 && events[index3][1].type === "definition") {
-        definition2 = index3;
-      }
-    }
-  }
-  const heading = {
-    type: "setextHeading",
-    start: {
-      ...events[content3][1].start
-    },
-    end: {
-      ...events[events.length - 1][1].end
-    }
-  };
-  events[text][1].type = "setextHeadingText";
-  if (definition2) {
-    events.splice(text, 0, ["enter", heading, context]);
-    events.splice(definition2 + 1, 0, ["exit", events[content3][1], context]);
-    events[content3][1].end = {
-      ...events[definition2][1].end
-    };
-  } else {
-    events[content3][1] = heading;
-  }
-  events.push(["exit", heading, context]);
-  return events;
-}
-function tokenizeSetextUnderline(effects, ok, nok) {
-  const self = this;
-  let marker;
-  return start;
-  function start(code) {
-    let index3 = self.events.length;
-    let paragraph;
-    while (index3--) {
-      if (self.events[index3][1].type !== "lineEnding" && self.events[index3][1].type !== "linePrefix" && self.events[index3][1].type !== "content") {
-        paragraph = self.events[index3][1].type === "paragraph";
-        break;
-      }
-    }
-    if (!self.parser.lazy[self.now().line] && (self.interrupt || paragraph)) {
-      effects.enter("setextHeadingLine");
-      marker = code;
-      return before(code);
-    }
-    return nok(code);
-  }
-  function before(code) {
-    effects.enter("setextHeadingLineSequence");
-    return inside(code);
-  }
-  function inside(code) {
-    if (code === marker) {
-      effects.consume(code);
-      return inside;
-    }
-    effects.exit("setextHeadingLineSequence");
-    return markdownSpace(code) ? factorySpace(effects, after, "lineSuffix")(code) : after(code);
-  }
-  function after(code) {
-    if (code === null || markdownLineEnding(code)) {
-      effects.exit("setextHeadingLine");
-      return ok(code);
-    }
-    return nok(code);
-  }
-}
-// node_modules/micromark/lib/initialize/flow.js
-var flow = {
-  tokenize: initializeFlow
-};
-function initializeFlow(effects) {
-  const self = this;
-  const initial = effects.attempt(blankLine, atBlankEnding, effects.attempt(this.parser.constructs.flowInitial, afterConstruct, factorySpace(effects, effects.attempt(this.parser.constructs.flow, afterConstruct, effects.attempt(content2, afterConstruct)), "linePrefix")));
-  return initial;
-  function atBlankEnding(code) {
-    if (code === null) {
-      effects.consume(code);
-      return;
-    }
-    effects.enter("lineEndingBlank");
-    effects.consume(code);
-    effects.exit("lineEndingBlank");
-    self.currentConstruct = undefined;
-    return initial;
-  }
-  function afterConstruct(code) {
-    if (code === null) {
-      effects.consume(code);
-      return;
-    }
-    effects.enter("lineEnding");
-    effects.consume(code);
-    effects.exit("lineEnding");
-    self.currentConstruct = undefined;
-    return initial;
-  }
-}
-
-// node_modules/micromark/lib/initialize/text.js
-var resolver = {
-  resolveAll: createResolver()
-};
-var string = initializeFactory("string");
-var text = initializeFactory("text");
-function initializeFactory(field) {
-  return {
-    resolveAll: createResolver(field === "text" ? resolveAllLineSuffixes : undefined),
-    tokenize: initializeText
-  };
-  function initializeText(effects) {
-    const self = this;
-    const constructs2 = this.parser.constructs[field];
-    const text2 = effects.attempt(constructs2, start, notText);
-    return start;
-    function start(code) {
-      return atBreak(code) ? text2(code) : notText(code);
-    }
-    function notText(code) {
-      if (code === null) {
-        effects.consume(code);
-        return;
-      }
-      effects.enter("data");
-      effects.consume(code);
-      return data;
-    }
-    function data(code) {
-      if (atBreak(code)) {
-        effects.exit("data");
-        return text2(code);
-      }
-      effects.consume(code);
-      return data;
-    }
-    function atBreak(code) {
-      if (code === null) {
-        return true;
-      }
-      const list2 = constructs2[code];
-      let index3 = -1;
-      if (list2) {
-        while (++index3 < list2.length) {
-          const item = list2[index3];
-          if (!item.previous || item.previous.call(self, self.previous)) {
-            return true;
-          }
-        }
-      }
-      return false;
-    }
-  }
-}
-function createResolver(extraResolver) {
-  return resolveAllText;
-  function resolveAllText(events, context) {
-    let index3 = -1;
-    let enter;
-    while (++index3 <= events.length) {
-      if (enter === undefined) {
-        if (events[index3] && events[index3][1].type === "data") {
-          enter = index3;
-          index3++;
-        }
-      } else if (!events[index3] || events[index3][1].type !== "data") {
-        if (index3 !== enter + 2) {
-          events[enter][1].end = events[index3 - 1][1].end;
-          events.splice(enter + 2, index3 - enter - 2);
-          index3 = enter + 2;
-        }
-        enter = undefined;
-      }
-    }
-    return extraResolver ? extraResolver(events, context) : events;
-  }
-}
-function resolveAllLineSuffixes(events, context) {
-  let eventIndex = 0;
-  while (++eventIndex <= events.length) {
-    if ((eventIndex === events.length || events[eventIndex][1].type === "lineEnding") && events[eventIndex - 1][1].type === "data") {
-      const data = events[eventIndex - 1][1];
-      const chunks = context.sliceStream(data);
-      let index3 = chunks.length;
-      let bufferIndex = -1;
-      let size = 0;
-      let tabs;
-      while (index3--) {
-        const chunk = chunks[index3];
-        if (typeof chunk === "string") {
-          bufferIndex = chunk.length;
-          while (chunk.charCodeAt(bufferIndex - 1) === 32) {
-            size++;
-            bufferIndex--;
-          }
-          if (bufferIndex)
-            break;
-          bufferIndex = -1;
-        } else if (chunk === -2) {
-          tabs = true;
-          size++;
-        } else if (chunk === -1) {} else {
-          index3++;
-          break;
-        }
-      }
-      if (context._contentTypeTextTrailing && eventIndex === events.length) {
-        size = 0;
-      }
-      if (size) {
-        const token = {
-          type: eventIndex === events.length || tabs || size < 2 ? "lineSuffix" : "hardBreakTrailing",
-          start: {
-            _bufferIndex: index3 ? bufferIndex : data.start._bufferIndex + bufferIndex,
-            _index: data.start._index + index3,
-            line: data.end.line,
-            column: data.end.column - size,
-            offset: data.end.offset - size
-          },
-          end: {
-            ...data.end
-          }
-        };
-        data.end = {
-          ...token.start
-        };
-        if (data.start.offset === data.end.offset) {
-          Object.assign(data, token);
-        } else {
-          events.splice(eventIndex, 0, ["enter", token, context], ["exit", token, context]);
-          eventIndex += 2;
-        }
-      }
-      eventIndex++;
-    }
-  }
-  return events;
-}
-
-// node_modules/micromark/lib/constructs.js
-var exports_constructs = {};
-__export(exports_constructs, {
-  attentionMarkers: () => attentionMarkers,
-  contentInitial: () => contentInitial,
-  disable: () => disable,
-  document: () => document3,
-  flow: () => flow2,
-  flowInitial: () => flowInitial,
-  insideSpan: () => insideSpan,
-  string: () => string2,
-  text: () => text2
-});
-var document3 = {
-  [42]: list,
-  [43]: list,
-  [45]: list,
-  [48]: list,
-  [49]: list,
-  [50]: list,
-  [51]: list,
-  [52]: list,
-  [53]: list,
-  [54]: list,
-  [55]: list,
-  [56]: list,
-  [57]: list,
-  [62]: blockQuote
-};
-var contentInitial = {
-  [91]: definition
-};
-var flowInitial = {
-  [-2]: codeIndented,
-  [-1]: codeIndented,
-  [32]: codeIndented
-};
-var flow2 = {
-  [35]: headingAtx,
-  [42]: thematicBreak,
-  [45]: [setextUnderline, thematicBreak],
-  [60]: htmlFlow,
-  [61]: setextUnderline,
-  [95]: thematicBreak,
-  [96]: codeFenced,
-  [126]: codeFenced
-};
-var string2 = {
-  [38]: characterReference,
-  [92]: characterEscape
-};
-var text2 = {
-  [-5]: lineEnding,
-  [-4]: lineEnding,
-  [-3]: lineEnding,
-  [33]: labelStartImage,
-  [38]: characterReference,
-  [42]: attention,
-  [60]: [autolink, htmlText],
-  [91]: labelStartLink,
-  [92]: [hardBreakEscape, characterEscape],
-  [93]: labelEnd,
-  [95]: attention,
-  [96]: codeText
-};
-var insideSpan = {
-  null: [attention, resolver]
-};
-var attentionMarkers = {
-  null: [42, 95]
-};
-var disable = {
-  null: []
-};
-
-// node_modules/micromark/lib/create-tokenizer.js
-function createTokenizer(parser, initialize, from) {
-  let point = {
-    _bufferIndex: -1,
-    _index: 0,
-    line: from && from.line || 1,
-    column: from && from.column || 1,
-    offset: from && from.offset || 0
-  };
-  const columnStart = {};
-  const resolveAllConstructs = [];
-  let chunks = [];
-  let stack = [];
-  let consumed = true;
-  const effects = {
-    attempt: constructFactory(onsuccessfulconstruct),
-    check: constructFactory(onsuccessfulcheck),
-    consume,
-    enter,
-    exit: exit2,
-    interrupt: constructFactory(onsuccessfulcheck, {
-      interrupt: true
-    })
-  };
-  const context = {
-    code: null,
-    containerState: {},
-    defineSkip,
-    events: [],
-    now: now2,
-    parser,
-    previous: null,
-    sliceSerialize,
-    sliceStream,
-    write
-  };
-  let state = initialize.tokenize.call(context, effects);
-  let expectedCode;
-  if (initialize.resolveAll) {
-    resolveAllConstructs.push(initialize);
-  }
-  return context;
-  function write(slice) {
-    chunks = push3(chunks, slice);
-    main();
-    if (chunks[chunks.length - 1] !== null) {
-      return [];
-    }
-    addResult(initialize, 0);
-    context.events = resolveAll(resolveAllConstructs, context.events, context);
-    return context.events;
-  }
-  function sliceSerialize(token, expandTabs) {
-    return serializeChunks(sliceStream(token), expandTabs);
-  }
-  function sliceStream(token) {
-    return sliceChunks(chunks, token);
-  }
-  function now2() {
-    const {
-      _bufferIndex,
-      _index,
-      line,
-      column,
-      offset
-    } = point;
-    return {
-      _bufferIndex,
-      _index,
-      line,
-      column,
-      offset
-    };
-  }
-  function defineSkip(value) {
-    columnStart[value.line] = value.column;
-    accountForPotentialSkip();
-  }
-  function main() {
-    let chunkIndex;
-    while (point._index < chunks.length) {
-      const chunk = chunks[point._index];
-      if (typeof chunk === "string") {
-        chunkIndex = point._index;
-        if (point._bufferIndex < 0) {
-          point._bufferIndex = 0;
-        }
-        while (point._index === chunkIndex && point._bufferIndex < chunk.length) {
-          go(chunk.charCodeAt(point._bufferIndex));
-        }
-      } else {
-        go(chunk);
-      }
-    }
-  }
-  function go(code) {
-    consumed = undefined;
-    expectedCode = code;
-    state = state(code);
-  }
-  function consume(code) {
-    if (markdownLineEnding(code)) {
-      point.line++;
-      point.column = 1;
-      point.offset += code === -3 ? 2 : 1;
-      accountForPotentialSkip();
-    } else if (code !== -1) {
-      point.column++;
-      point.offset++;
-    }
-    if (point._bufferIndex < 0) {
-      point._index++;
-    } else {
-      point._bufferIndex++;
-      if (point._bufferIndex === chunks[point._index].length) {
-        point._bufferIndex = -1;
-        point._index++;
-      }
-    }
-    context.previous = code;
-    consumed = true;
-  }
-  function enter(type, fields) {
-    const token = fields || {};
-    token.type = type;
-    token.start = now2();
-    context.events.push(["enter", token, context]);
-    stack.push(token);
-    return token;
-  }
-  function exit2(type) {
-    const token = stack.pop();
-    token.end = now2();
-    context.events.push(["exit", token, context]);
-    return token;
-  }
-  function onsuccessfulconstruct(construct, info) {
-    addResult(construct, info.from);
-  }
-  function onsuccessfulcheck(_, info) {
-    info.restore();
-  }
-  function constructFactory(onreturn, fields) {
-    return hook;
-    function hook(constructs2, returnState, bogusState) {
-      let listOfConstructs;
-      let constructIndex;
-      let currentConstruct;
-      let info;
-      return Array.isArray(constructs2) ? handleListOfConstructs(constructs2) : ("tokenize" in constructs2) ? handleListOfConstructs([constructs2]) : handleMapOfConstructs(constructs2);
-      function handleMapOfConstructs(map) {
-        return start;
-        function start(code) {
-          const left = code !== null && map[code];
-          const all = code !== null && map.null;
-          const list2 = [
-            ...Array.isArray(left) ? left : left ? [left] : [],
-            ...Array.isArray(all) ? all : all ? [all] : []
-          ];
-          return handleListOfConstructs(list2)(code);
-        }
-      }
-      function handleListOfConstructs(list2) {
-        listOfConstructs = list2;
-        constructIndex = 0;
-        if (list2.length === 0) {
-          return bogusState;
-        }
-        return handleConstruct(list2[constructIndex]);
-      }
-      function handleConstruct(construct) {
-        return start;
-        function start(code) {
-          info = store();
-          currentConstruct = construct;
-          if (!construct.partial) {
-            context.currentConstruct = construct;
-          }
-          if (construct.name && context.parser.constructs.disable.null.includes(construct.name)) {
-            return nok(code);
-          }
-          return construct.tokenize.call(fields ? Object.assign(Object.create(context), fields) : context, effects, ok, nok)(code);
-        }
-      }
-      function ok(code) {
-        consumed = true;
-        onreturn(currentConstruct, info);
-        return returnState;
-      }
-      function nok(code) {
-        consumed = true;
-        info.restore();
-        if (++constructIndex < listOfConstructs.length) {
-          return handleConstruct(listOfConstructs[constructIndex]);
-        }
-        return bogusState;
-      }
-    }
-  }
-  function addResult(construct, from2) {
-    if (construct.resolveAll && !resolveAllConstructs.includes(construct)) {
-      resolveAllConstructs.push(construct);
-    }
-    if (construct.resolve) {
-      splice(context.events, from2, context.events.length - from2, construct.resolve(context.events.slice(from2), context));
-    }
-    if (construct.resolveTo) {
-      context.events = construct.resolveTo(context.events, context);
-    }
-  }
-  function store() {
-    const startPoint = now2();
-    const startPrevious = context.previous;
-    const startCurrentConstruct = context.currentConstruct;
-    const startEventsIndex = context.events.length;
-    const startStack = Array.from(stack);
-    return {
-      from: startEventsIndex,
-      restore
-    };
-    function restore() {
-      point = startPoint;
-      context.previous = startPrevious;
-      context.currentConstruct = startCurrentConstruct;
-      context.events.length = startEventsIndex;
-      stack = startStack;
-      accountForPotentialSkip();
-    }
-  }
-  function accountForPotentialSkip() {
-    if (point.line in columnStart && point.column < 2) {
-      point.column = columnStart[point.line];
-      point.offset += columnStart[point.line] - 1;
-    }
-  }
-}
-function sliceChunks(chunks, token) {
-  const startIndex = token.start._index;
-  const startBufferIndex = token.start._bufferIndex;
-  const endIndex = token.end._index;
-  const endBufferIndex = token.end._bufferIndex;
-  let view;
-  if (startIndex === endIndex) {
-    view = [chunks[startIndex].slice(startBufferIndex, endBufferIndex)];
-  } else {
-    view = chunks.slice(startIndex, endIndex);
-    if (startBufferIndex > -1) {
-      const head = view[0];
-      if (typeof head === "string") {
-        view[0] = head.slice(startBufferIndex);
-      } else {
-        view.shift();
-      }
-    }
-    if (endBufferIndex > 0) {
-      view.push(chunks[endIndex].slice(0, endBufferIndex));
-    }
-  }
-  return view;
-}
-function serializeChunks(chunks, expandTabs) {
-  let index3 = -1;
-  const result = [];
-  let atTab;
-  while (++index3 < chunks.length) {
-    const chunk = chunks[index3];
-    let value;
-    if (typeof chunk === "string") {
-      value = chunk;
-    } else
-      switch (chunk) {
-        case -5: {
-          value = "\r";
-          break;
-        }
-        case -4: {
-          value = `
-`;
-          break;
-        }
-        case -3: {
-          value = "\r" + `
-`;
-          break;
-        }
-        case -2: {
-          value = expandTabs ? " " : "\t";
-          break;
-        }
-        case -1: {
-          if (!expandTabs && atTab)
-            continue;
-          value = " ";
-          break;
-        }
-        default: {
-          value = String.fromCharCode(chunk);
-        }
-      }
-    atTab = chunk === -2;
-    result.push(value);
-  }
-  return result.join("");
-}
-
-// node_modules/micromark/lib/parse.js
-function parse(options2) {
-  const settings = options2 || {};
-  const constructs2 = combineExtensions([exports_constructs, ...settings.extensions || []]);
-  const parser = {
-    constructs: constructs2,
-    content: create(content),
-    defined: [],
-    document: create(document2),
-    flow: create(flow),
-    lazy: {},
-    string: create(string),
-    text: create(text)
-  };
-  return parser;
-  function create(initial) {
-    return creator;
-    function creator(from) {
-      return createTokenizer(parser, initial, from);
-    }
-  }
-}
-
-// node_modules/micromark/lib/postprocess.js
-function postprocess(events) {
-  while (!subtokenize(events)) {}
-  return events;
-}
-
-// node_modules/micromark/lib/preprocess.js
-var search = /[\0\t\n\r]/g;
-function preprocess() {
-  let column = 1;
-  let buffer = "";
-  let start = true;
-  let atCarriageReturn;
-  return preprocessor;
-  function preprocessor(value, encoding, end) {
-    const chunks = [];
-    let match;
-    let next;
-    let startPosition;
-    let endPosition;
-    let code;
-    value = buffer + (typeof value === "string" ? value.toString() : new TextDecoder(encoding || undefined).decode(value));
-    startPosition = 0;
-    buffer = "";
-    if (start) {
-      if (value.charCodeAt(0) === 65279) {
-        startPosition++;
-      }
-      start = undefined;
-    }
-    while (startPosition < value.length) {
-      search.lastIndex = startPosition;
-      match = search.exec(value);
-      endPosition = match && match.index !== undefined ? match.index : value.length;
-      code = value.charCodeAt(endPosition);
-      if (!match) {
-        buffer = value.slice(startPosition);
-        break;
-      }
-      if (code === 10 && startPosition === endPosition && atCarriageReturn) {
-        chunks.push(-3);
-        atCarriageReturn = undefined;
-      } else {
-        if (atCarriageReturn) {
-          chunks.push(-5);
-          atCarriageReturn = undefined;
-        }
-        if (startPosition < endPosition) {
-          chunks.push(value.slice(startPosition, endPosition));
-          column += endPosition - startPosition;
-        }
-        switch (code) {
-          case 0: {
-            chunks.push(65533);
-            column++;
-            break;
-          }
-          case 9: {
-            next = Math.ceil(column / 4) * 4;
-            chunks.push(-2);
-            while (column++ < next)
-              chunks.push(-1);
-            break;
-          }
-          case 10: {
-            chunks.push(-4);
-            column = 1;
-            break;
-          }
-          default: {
-            atCarriageReturn = true;
-            column = 1;
-          }
-        }
-      }
-      startPosition = endPosition + 1;
-    }
-    if (end) {
-      if (atCarriageReturn)
-        chunks.push(-5);
-      if (buffer)
-        chunks.push(buffer);
-      chunks.push(null);
-    }
-    return chunks;
-  }
-}
-
-// node_modules/micromark/index.js
-function micromark(value, encoding, options2) {
-  if (typeof encoding !== "string") {
-    options2 = encoding;
-    encoding = undefined;
-  }
-  return compile(options2)(postprocess(parse(options2).document().write(preprocess()(value, encoding, true))));
-}
-
-// node_modules/micromark-extension-gfm-autolink-literal/lib/syntax.js
-var wwwPrefix = {
-  tokenize: tokenizeWwwPrefix,
-  partial: true
-};
-var domain = {
-  tokenize: tokenizeDomain,
-  partial: true
-};
-var path = {
-  tokenize: tokenizePath,
-  partial: true
-};
-var trail = {
-  tokenize: tokenizeTrail,
-  partial: true
-};
-var emailDomainDotTrail = {
-  tokenize: tokenizeEmailDomainDotTrail,
-  partial: true
-};
-var wwwAutolink = {
-  name: "wwwAutolink",
-  tokenize: tokenizeWwwAutolink,
-  previous: previousWww
-};
-var protocolAutolink = {
-  name: "protocolAutolink",
-  tokenize: tokenizeProtocolAutolink,
-  previous: previousProtocol
-};
-var emailAutolink = {
-  name: "emailAutolink",
-  tokenize: tokenizeEmailAutolink,
-  previous: previousEmail
-};
-var text3 = {};
-function gfmAutolinkLiteral() {
-  return {
-    text: text3
-  };
-}
-var code = 48;
-while (code < 123) {
-  text3[code] = emailAutolink;
-  code++;
-  if (code === 58)
-    code = 65;
-  else if (code === 91)
-    code = 97;
-}
-text3[43] = emailAutolink;
-text3[45] = emailAutolink;
-text3[46] = emailAutolink;
-text3[95] = emailAutolink;
-text3[72] = [emailAutolink, protocolAutolink];
-text3[104] = [emailAutolink, protocolAutolink];
-text3[87] = [emailAutolink, wwwAutolink];
-text3[119] = [emailAutolink, wwwAutolink];
-function tokenizeEmailAutolink(effects, ok, nok) {
-  const self = this;
-  let dot;
-  let data;
-  return start;
-  function start(code2) {
-    if (!gfmAtext(code2) || !previousEmail.call(self, self.previous) || previousUnbalanced(self.events)) {
-      return nok(code2);
-    }
-    effects.enter("literalAutolink");
-    effects.enter("literalAutolinkEmail");
-    return atext(code2);
-  }
-  function atext(code2) {
-    if (gfmAtext(code2)) {
-      effects.consume(code2);
-      return atext;
-    }
-    if (code2 === 64) {
-      effects.consume(code2);
-      return emailDomain;
-    }
-    return nok(code2);
-  }
-  function emailDomain(code2) {
-    if (code2 === 46) {
-      return effects.check(emailDomainDotTrail, emailDomainAfter, emailDomainDot)(code2);
-    }
-    if (code2 === 45 || code2 === 95 || asciiAlphanumeric(code2)) {
-      data = true;
-      effects.consume(code2);
-      return emailDomain;
-    }
-    return emailDomainAfter(code2);
-  }
-  function emailDomainDot(code2) {
-    effects.consume(code2);
-    dot = true;
-    return emailDomain;
-  }
-  function emailDomainAfter(code2) {
-    if (data && dot && asciiAlpha(self.previous)) {
-      effects.exit("literalAutolinkEmail");
-      effects.exit("literalAutolink");
-      return ok(code2);
-    }
-    return nok(code2);
-  }
-}
-function tokenizeWwwAutolink(effects, ok, nok) {
-  const self = this;
-  return wwwStart;
-  function wwwStart(code2) {
-    if (code2 !== 87 && code2 !== 119 || !previousWww.call(self, self.previous) || previousUnbalanced(self.events)) {
-      return nok(code2);
-    }
-    effects.enter("literalAutolink");
-    effects.enter("literalAutolinkWww");
-    return effects.check(wwwPrefix, effects.attempt(domain, effects.attempt(path, wwwAfter), nok), nok)(code2);
-  }
-  function wwwAfter(code2) {
-    effects.exit("literalAutolinkWww");
-    effects.exit("literalAutolink");
-    return ok(code2);
-  }
-}
-function tokenizeProtocolAutolink(effects, ok, nok) {
-  const self = this;
-  let buffer = "";
-  let seen = false;
-  return protocolStart;
-  function protocolStart(code2) {
-    if ((code2 === 72 || code2 === 104) && previousProtocol.call(self, self.previous) && !previousUnbalanced(self.events)) {
-      effects.enter("literalAutolink");
-      effects.enter("literalAutolinkHttp");
-      buffer += String.fromCodePoint(code2);
-      effects.consume(code2);
-      return protocolPrefixInside;
-    }
-    return nok(code2);
-  }
-  function protocolPrefixInside(code2) {
-    if (asciiAlpha(code2) && buffer.length < 5) {
-      buffer += String.fromCodePoint(code2);
-      effects.consume(code2);
-      return protocolPrefixInside;
-    }
-    if (code2 === 58) {
-      const protocol = buffer.toLowerCase();
-      if (protocol === "http" || protocol === "https") {
-        effects.consume(code2);
-        return protocolSlashesInside;
-      }
-    }
-    return nok(code2);
-  }
-  function protocolSlashesInside(code2) {
-    if (code2 === 47) {
-      effects.consume(code2);
-      if (seen) {
-        return afterProtocol;
-      }
-      seen = true;
-      return protocolSlashesInside;
-    }
-    return nok(code2);
-  }
-  function afterProtocol(code2) {
-    return code2 === null || asciiControl(code2) || markdownLineEndingOrSpace(code2) || unicodeWhitespace(code2) || unicodePunctuation(code2) ? nok(code2) : effects.attempt(domain, effects.attempt(path, protocolAfter), nok)(code2);
-  }
-  function protocolAfter(code2) {
-    effects.exit("literalAutolinkHttp");
-    effects.exit("literalAutolink");
-    return ok(code2);
-  }
-}
-function tokenizeWwwPrefix(effects, ok, nok) {
-  let size = 0;
-  return wwwPrefixInside;
-  function wwwPrefixInside(code2) {
-    if ((code2 === 87 || code2 === 119) && size < 3) {
-      size++;
-      effects.consume(code2);
-      return wwwPrefixInside;
-    }
-    if (code2 === 46 && size === 3) {
-      effects.consume(code2);
-      return wwwPrefixAfter;
-    }
-    return nok(code2);
-  }
-  function wwwPrefixAfter(code2) {
-    return code2 === null ? nok(code2) : ok(code2);
-  }
-}
-function tokenizeDomain(effects, ok, nok) {
-  let underscoreInLastSegment;
-  let underscoreInLastLastSegment;
-  let seen;
-  return domainInside;
-  function domainInside(code2) {
-    if (code2 === 46 || code2 === 95) {
-      return effects.check(trail, domainAfter, domainAtPunctuation)(code2);
-    }
-    if (code2 === null || markdownLineEndingOrSpace(code2) || unicodeWhitespace(code2) || code2 !== 45 && unicodePunctuation(code2)) {
-      return domainAfter(code2);
-    }
-    seen = true;
-    effects.consume(code2);
-    return domainInside;
-  }
-  function domainAtPunctuation(code2) {
-    if (code2 === 95) {
-      underscoreInLastSegment = true;
-    } else {
-      underscoreInLastLastSegment = underscoreInLastSegment;
-      underscoreInLastSegment = undefined;
-    }
-    effects.consume(code2);
-    return domainInside;
-  }
-  function domainAfter(code2) {
-    if (underscoreInLastLastSegment || underscoreInLastSegment || !seen) {
-      return nok(code2);
-    }
-    return ok(code2);
-  }
-}
-function tokenizePath(effects, ok) {
-  let sizeOpen = 0;
-  let sizeClose = 0;
-  return pathInside;
-  function pathInside(code2) {
-    if (code2 === 40) {
-      sizeOpen++;
-      effects.consume(code2);
-      return pathInside;
-    }
-    if (code2 === 41 && sizeClose < sizeOpen) {
-      return pathAtPunctuation(code2);
-    }
-    if (code2 === 33 || code2 === 34 || code2 === 38 || code2 === 39 || code2 === 41 || code2 === 42 || code2 === 44 || code2 === 46 || code2 === 58 || code2 === 59 || code2 === 60 || code2 === 63 || code2 === 93 || code2 === 95 || code2 === 126) {
-      return effects.check(trail, ok, pathAtPunctuation)(code2);
-    }
-    if (code2 === null || markdownLineEndingOrSpace(code2) || unicodeWhitespace(code2)) {
-      return ok(code2);
-    }
-    effects.consume(code2);
-    return pathInside;
-  }
-  function pathAtPunctuation(code2) {
-    if (code2 === 41) {
-      sizeClose++;
-    }
-    effects.consume(code2);
-    return pathInside;
-  }
-}
-function tokenizeTrail(effects, ok, nok) {
-  return trail2;
-  function trail2(code2) {
-    if (code2 === 33 || code2 === 34 || code2 === 39 || code2 === 41 || code2 === 42 || code2 === 44 || code2 === 46 || code2 === 58 || code2 === 59 || code2 === 63 || code2 === 95 || code2 === 126) {
-      effects.consume(code2);
-      return trail2;
-    }
-    if (code2 === 38) {
-      effects.consume(code2);
-      return trailCharacterReferenceStart;
-    }
-    if (code2 === 93) {
-      effects.consume(code2);
-      return trailBracketAfter;
-    }
-    if (code2 === 60 || code2 === null || markdownLineEndingOrSpace(code2) || unicodeWhitespace(code2)) {
-      return ok(code2);
-    }
-    return nok(code2);
-  }
-  function trailBracketAfter(code2) {
-    if (code2 === null || code2 === 40 || code2 === 91 || markdownLineEndingOrSpace(code2) || unicodeWhitespace(code2)) {
-      return ok(code2);
-    }
-    return trail2(code2);
-  }
-  function trailCharacterReferenceStart(code2) {
-    return asciiAlpha(code2) ? trailCharacterReferenceInside(code2) : nok(code2);
-  }
-  function trailCharacterReferenceInside(code2) {
-    if (code2 === 59) {
-      effects.consume(code2);
-      return trail2;
-    }
-    if (asciiAlpha(code2)) {
-      effects.consume(code2);
-      return trailCharacterReferenceInside;
-    }
-    return nok(code2);
-  }
-}
-function tokenizeEmailDomainDotTrail(effects, ok, nok) {
-  return start;
-  function start(code2) {
-    effects.consume(code2);
-    return after;
-  }
-  function after(code2) {
-    return asciiAlphanumeric(code2) ? nok(code2) : ok(code2);
-  }
-}
-function previousWww(code2) {
-  return code2 === null || code2 === 40 || code2 === 42 || code2 === 95 || code2 === 91 || code2 === 93 || code2 === 126 || markdownLineEndingOrSpace(code2);
-}
-function previousProtocol(code2) {
-  return !asciiAlpha(code2);
-}
-function previousEmail(code2) {
-  return !(code2 === 47 || gfmAtext(code2));
-}
-function gfmAtext(code2) {
-  return code2 === 43 || code2 === 45 || code2 === 46 || code2 === 95 || asciiAlphanumeric(code2);
-}
-function previousUnbalanced(events) {
-  let index3 = events.length;
-  let result = false;
-  while (index3--) {
-    const token = events[index3][1];
-    if ((token.type === "labelLink" || token.type === "labelImage") && !token._balanced) {
-      result = true;
-      break;
-    }
-    if (token._gfmAutolinkLiteralWalkedInto) {
-      result = false;
-      break;
-    }
-  }
-  if (events.length > 0 && !result) {
-    events[events.length - 1][1]._gfmAutolinkLiteralWalkedInto = true;
-  }
-  return result;
-}
-// node_modules/micromark-extension-gfm-autolink-literal/lib/html.js
-function gfmAutolinkLiteralHtml() {
-  return {
-    exit: {
-      literalAutolinkEmail,
-      literalAutolinkHttp,
-      literalAutolinkWww
-    }
-  };
-}
-function literalAutolinkWww(token) {
-  anchorFromToken.call(this, token, "http://");
-}
-function literalAutolinkEmail(token) {
-  anchorFromToken.call(this, token, "mailto:");
-}
-function literalAutolinkHttp(token) {
-  anchorFromToken.call(this, token);
-}
-function anchorFromToken(token, protocol) {
-  const url = this.sliceSerialize(token);
-  this.tag('<a href="' + sanitizeUri((protocol || "") + url) + '">');
-  this.raw(this.encode(url));
-  this.tag("</a>");
-}
-// node_modules/micromark-extension-gfm-footnote/lib/syntax.js
-var indent = {
-  tokenize: tokenizeIndent2,
-  partial: true
-};
-function gfmFootnote() {
-  return {
-    document: {
-      [91]: {
-        name: "gfmFootnoteDefinition",
-        tokenize: tokenizeDefinitionStart,
-        continuation: {
-          tokenize: tokenizeDefinitionContinuation
-        },
-        exit: gfmFootnoteDefinitionEnd
-      }
-    },
-    text: {
-      [91]: {
-        name: "gfmFootnoteCall",
-        tokenize: tokenizeGfmFootnoteCall
-      },
-      [93]: {
-        name: "gfmPotentialFootnoteCall",
-        add: "after",
-        tokenize: tokenizePotentialGfmFootnoteCall,
-        resolveTo: resolveToPotentialGfmFootnoteCall
-      }
-    }
-  };
-}
-function tokenizePotentialGfmFootnoteCall(effects, ok, nok) {
-  const self = this;
-  let index3 = self.events.length;
-  const defined = self.parser.gfmFootnotes || (self.parser.gfmFootnotes = []);
-  let labelStart2;
-  while (index3--) {
-    const token = self.events[index3][1];
-    if (token.type === "labelImage") {
-      labelStart2 = token;
-      break;
-    }
-    if (token.type === "gfmFootnoteCall" || token.type === "labelLink" || token.type === "label" || token.type === "image" || token.type === "link") {
-      break;
-    }
-  }
-  return start;
-  function start(code2) {
-    if (!labelStart2 || !labelStart2._balanced) {
-      return nok(code2);
-    }
-    const id = normalizeIdentifier(self.sliceSerialize({
-      start: labelStart2.end,
-      end: self.now()
-    }));
-    if (id.codePointAt(0) !== 94 || !defined.includes(id.slice(1))) {
-      return nok(code2);
-    }
-    effects.enter("gfmFootnoteCallLabelMarker");
-    effects.consume(code2);
-    effects.exit("gfmFootnoteCallLabelMarker");
-    return ok(code2);
-  }
-}
-function resolveToPotentialGfmFootnoteCall(events, context) {
-  let index3 = events.length;
-  let labelStart2;
-  while (index3--) {
-    if (events[index3][1].type === "labelImage" && events[index3][0] === "enter") {
-      labelStart2 = events[index3][1];
-      break;
-    }
-  }
-  events[index3 + 1][1].type = "data";
-  events[index3 + 3][1].type = "gfmFootnoteCallLabelMarker";
-  const call = {
-    type: "gfmFootnoteCall",
-    start: Object.assign({}, events[index3 + 3][1].start),
-    end: Object.assign({}, events[events.length - 1][1].end)
-  };
-  const marker = {
-    type: "gfmFootnoteCallMarker",
-    start: Object.assign({}, events[index3 + 3][1].end),
-    end: Object.assign({}, events[index3 + 3][1].end)
-  };
-  marker.end.column++;
-  marker.end.offset++;
-  marker.end._bufferIndex++;
-  const string3 = {
-    type: "gfmFootnoteCallString",
-    start: Object.assign({}, marker.end),
-    end: Object.assign({}, events[events.length - 1][1].start)
-  };
-  const chunk = {
-    type: "chunkString",
-    contentType: "string",
-    start: Object.assign({}, string3.start),
-    end: Object.assign({}, string3.end)
-  };
-  const replacement = [
-    events[index3 + 1],
-    events[index3 + 2],
-    ["enter", call, context],
-    events[index3 + 3],
-    events[index3 + 4],
-    ["enter", marker, context],
-    ["exit", marker, context],
-    ["enter", string3, context],
-    ["enter", chunk, context],
-    ["exit", chunk, context],
-    ["exit", string3, context],
-    events[events.length - 2],
-    events[events.length - 1],
-    ["exit", call, context]
-  ];
-  events.splice(index3, events.length - index3 + 1, ...replacement);
-  return events;
-}
-function tokenizeGfmFootnoteCall(effects, ok, nok) {
-  const self = this;
-  const defined = self.parser.gfmFootnotes || (self.parser.gfmFootnotes = []);
-  let size = 0;
-  let data;
-  return start;
-  function start(code2) {
-    effects.enter("gfmFootnoteCall");
-    effects.enter("gfmFootnoteCallLabelMarker");
-    effects.consume(code2);
-    effects.exit("gfmFootnoteCallLabelMarker");
-    return callStart;
-  }
-  function callStart(code2) {
-    if (code2 !== 94)
-      return nok(code2);
-    effects.enter("gfmFootnoteCallMarker");
-    effects.consume(code2);
-    effects.exit("gfmFootnoteCallMarker");
-    effects.enter("gfmFootnoteCallString");
-    effects.enter("chunkString").contentType = "string";
-    return callData;
-  }
-  function callData(code2) {
-    if (size > 999 || code2 === 93 && !data || code2 === null || code2 === 91 || markdownLineEndingOrSpace(code2)) {
-      return nok(code2);
-    }
-    if (code2 === 93) {
-      effects.exit("chunkString");
-      const token = effects.exit("gfmFootnoteCallString");
-      if (!defined.includes(normalizeIdentifier(self.sliceSerialize(token)))) {
-        return nok(code2);
-      }
-      effects.enter("gfmFootnoteCallLabelMarker");
-      effects.consume(code2);
-      effects.exit("gfmFootnoteCallLabelMarker");
-      effects.exit("gfmFootnoteCall");
-      return ok;
-    }
-    if (!markdownLineEndingOrSpace(code2)) {
-      data = true;
-    }
-    size++;
-    effects.consume(code2);
-    return code2 === 92 ? callEscape : callData;
-  }
-  function callEscape(code2) {
-    if (code2 === 91 || code2 === 92 || code2 === 93) {
-      effects.consume(code2);
-      size++;
-      return callData;
-    }
-    return callData(code2);
-  }
-}
-function tokenizeDefinitionStart(effects, ok, nok) {
-  const self = this;
-  const defined = self.parser.gfmFootnotes || (self.parser.gfmFootnotes = []);
-  let identifier;
-  let size = 0;
-  let data;
-  return start;
-  function start(code2) {
-    effects.enter("gfmFootnoteDefinition")._container = true;
-    effects.enter("gfmFootnoteDefinitionLabel");
-    effects.enter("gfmFootnoteDefinitionLabelMarker");
-    effects.consume(code2);
-    effects.exit("gfmFootnoteDefinitionLabelMarker");
-    return labelAtMarker;
-  }
-  function labelAtMarker(code2) {
-    if (code2 === 94) {
-      effects.enter("gfmFootnoteDefinitionMarker");
-      effects.consume(code2);
-      effects.exit("gfmFootnoteDefinitionMarker");
-      effects.enter("gfmFootnoteDefinitionLabelString");
-      effects.enter("chunkString").contentType = "string";
-      return labelInside;
-    }
-    return nok(code2);
-  }
-  function labelInside(code2) {
-    if (size > 999 || code2 === 93 && !data || code2 === null || code2 === 91 || markdownLineEndingOrSpace(code2)) {
-      return nok(code2);
-    }
-    if (code2 === 93) {
-      effects.exit("chunkString");
-      const token = effects.exit("gfmFootnoteDefinitionLabelString");
-      identifier = normalizeIdentifier(self.sliceSerialize(token));
-      effects.enter("gfmFootnoteDefinitionLabelMarker");
-      effects.consume(code2);
-      effects.exit("gfmFootnoteDefinitionLabelMarker");
-      effects.exit("gfmFootnoteDefinitionLabel");
-      return labelAfter;
-    }
-    if (!markdownLineEndingOrSpace(code2)) {
-      data = true;
-    }
-    size++;
-    effects.consume(code2);
-    return code2 === 92 ? labelEscape : labelInside;
-  }
-  function labelEscape(code2) {
-    if (code2 === 91 || code2 === 92 || code2 === 93) {
-      effects.consume(code2);
-      size++;
-      return labelInside;
-    }
-    return labelInside(code2);
-  }
-  function labelAfter(code2) {
-    if (code2 === 58) {
-      effects.enter("definitionMarker");
-      effects.consume(code2);
-      effects.exit("definitionMarker");
-      if (!defined.includes(identifier)) {
-        defined.push(identifier);
-      }
-      return factorySpace(effects, whitespaceAfter, "gfmFootnoteDefinitionWhitespace");
-    }
-    return nok(code2);
-  }
-  function whitespaceAfter(code2) {
-    return ok(code2);
-  }
-}
-function tokenizeDefinitionContinuation(effects, ok, nok) {
-  return effects.check(blankLine, ok, effects.attempt(indent, ok, nok));
-}
-function gfmFootnoteDefinitionEnd(effects) {
-  effects.exit("gfmFootnoteDefinition");
-}
-function tokenizeIndent2(effects, ok, nok) {
-  const self = this;
-  return factorySpace(effects, afterPrefix, "gfmFootnoteDefinitionIndent", 4 + 1);
-  function afterPrefix(code2) {
-    const tail = self.events[self.events.length - 1];
-    return tail && tail[1].type === "gfmFootnoteDefinitionIndent" && tail[2].sliceSerialize(tail[1], true).length === 4 ? ok(code2) : nok(code2);
-  }
-}
-// node_modules/micromark-extension-gfm-footnote/lib/html.js
-var own = {}.hasOwnProperty;
-var emptyOptions = {};
-function defaultBackLabel(referenceIndex, rereferenceIndex) {
-  return "Back to reference " + (referenceIndex + 1) + (rereferenceIndex > 1 ? "-" + rereferenceIndex : "");
-}
-function gfmFootnoteHtml(options2) {
-  const config = options2 || emptyOptions;
-  const label = config.label || "Footnotes";
-  const labelTagName = config.labelTagName || "h2";
-  const labelAttributes = config.labelAttributes === null || config.labelAttributes === undefined ? 'class="sr-only"' : config.labelAttributes;
-  const backLabel = config.backLabel || defaultBackLabel;
-  const clobberPrefix = config.clobberPrefix === null || config.clobberPrefix === undefined ? "user-content-" : config.clobberPrefix;
-  return {
-    enter: {
-      gfmFootnoteDefinition() {
-        const stack = this.getData("tightStack");
-        stack.push(false);
-      },
-      gfmFootnoteDefinitionLabelString() {
-        this.buffer();
-      },
-      gfmFootnoteCallString() {
-        this.buffer();
-      }
-    },
-    exit: {
-      gfmFootnoteDefinition() {
-        let definitions = this.getData("gfmFootnoteDefinitions");
-        const footnoteStack = this.getData("gfmFootnoteDefinitionStack");
-        const tightStack = this.getData("tightStack");
-        const current = footnoteStack.pop();
-        const value = this.resume();
-        if (!definitions) {
-          this.setData("gfmFootnoteDefinitions", definitions = {});
-        }
-        if (!own.call(definitions, current))
-          definitions[current] = value;
-        tightStack.pop();
-        this.setData("slurpOneLineEnding", true);
-        this.setData("lastWasTag");
-      },
-      gfmFootnoteDefinitionLabelString(token) {
-        let footnoteStack = this.getData("gfmFootnoteDefinitionStack");
-        if (!footnoteStack) {
-          this.setData("gfmFootnoteDefinitionStack", footnoteStack = []);
-        }
-        footnoteStack.push(normalizeIdentifier(this.sliceSerialize(token)));
-        this.resume();
-        this.buffer();
-      },
-      gfmFootnoteCallString(token) {
-        let calls = this.getData("gfmFootnoteCallOrder");
-        let counts = this.getData("gfmFootnoteCallCounts");
-        const id = normalizeIdentifier(this.sliceSerialize(token));
-        let counter;
-        this.resume();
-        if (!calls)
-          this.setData("gfmFootnoteCallOrder", calls = []);
-        if (!counts)
-          this.setData("gfmFootnoteCallCounts", counts = {});
-        const index3 = calls.indexOf(id);
-        const safeId = sanitizeUri(id.toLowerCase());
-        if (index3 === -1) {
-          calls.push(id);
-          counts[id] = 1;
-          counter = calls.length;
-        } else {
-          counts[id]++;
-          counter = index3 + 1;
-        }
-        const reuseCounter = counts[id];
-        this.tag('<sup><a href="#' + clobberPrefix + "fn-" + safeId + '" id="' + clobberPrefix + "fnref-" + safeId + (reuseCounter > 1 ? "-" + reuseCounter : "") + '" data-footnote-ref="" aria-describedby="footnote-label">' + String(counter) + "</a></sup>");
-      },
-      null() {
-        const calls = this.getData("gfmFootnoteCallOrder") || [];
-        const counts = this.getData("gfmFootnoteCallCounts") || {};
-        const definitions = this.getData("gfmFootnoteDefinitions") || {};
-        let index3 = -1;
-        if (calls.length > 0) {
-          this.lineEndingIfNeeded();
-          this.tag('<section data-footnotes="" class="footnotes"><' + labelTagName + ' id="footnote-label"' + (labelAttributes ? " " + labelAttributes : "") + ">");
-          this.raw(this.encode(label));
-          this.tag("</" + labelTagName + ">");
-          this.lineEndingIfNeeded();
-          this.tag("<ol>");
-        }
-        while (++index3 < calls.length) {
-          const id = calls[index3];
-          const safeId = sanitizeUri(id.toLowerCase());
-          let referenceIndex = 0;
-          const references = [];
-          while (++referenceIndex <= counts[id]) {
-            references.push('<a href="#' + clobberPrefix + "fnref-" + safeId + (referenceIndex > 1 ? "-" + referenceIndex : "") + '" data-footnote-backref="" aria-label="' + this.encode(typeof backLabel === "string" ? backLabel : backLabel(index3, referenceIndex)) + '" class="data-footnote-backref">↩' + (referenceIndex > 1 ? "<sup>" + referenceIndex + "</sup>" : "") + "</a>");
-          }
-          const reference = references.join(" ");
-          let injected = false;
-          this.lineEndingIfNeeded();
-          this.tag('<li id="' + clobberPrefix + "fn-" + safeId + '">');
-          this.lineEndingIfNeeded();
-          this.tag(definitions[id].replace(/<\/p>(?:\r?\n|\r)?$/, function($0) {
-            injected = true;
-            return " " + reference + $0;
-          }));
-          if (!injected) {
-            this.lineEndingIfNeeded();
-            this.tag(reference);
-          }
-          this.lineEndingIfNeeded();
-          this.tag("</li>");
-        }
-        if (calls.length > 0) {
-          this.lineEndingIfNeeded();
-          this.tag("</ol>");
-          this.lineEndingIfNeeded();
-          this.tag("</section>");
-        }
-      }
-    }
-  };
-}
-// node_modules/micromark-extension-gfm-strikethrough/lib/html.js
-function gfmStrikethroughHtml() {
-  return {
-    enter: {
-      strikethrough() {
-        this.tag("<del>");
-      }
-    },
-    exit: {
-      strikethrough() {
-        this.tag("</del>");
-      }
-    }
-  };
-}
-// node_modules/micromark-extension-gfm-strikethrough/lib/syntax.js
-function gfmStrikethrough(options2) {
-  const options_ = options2 || {};
-  let single = options_.singleTilde;
-  const tokenizer = {
-    name: "strikethrough",
-    tokenize: tokenizeStrikethrough,
-    resolveAll: resolveAllStrikethrough
-  };
-  if (single === null || single === undefined) {
-    single = true;
-  }
-  return {
-    text: {
-      [126]: tokenizer
-    },
-    insideSpan: {
-      null: [tokenizer]
-    },
-    attentionMarkers: {
-      null: [126]
-    }
-  };
-  function resolveAllStrikethrough(events, context) {
-    let index3 = -1;
-    while (++index3 < events.length) {
-      if (events[index3][0] === "enter" && events[index3][1].type === "strikethroughSequenceTemporary" && events[index3][1]._close) {
-        let open = index3;
-        while (open--) {
-          if (events[open][0] === "exit" && events[open][1].type === "strikethroughSequenceTemporary" && events[open][1]._open && events[index3][1].end.offset - events[index3][1].start.offset === events[open][1].end.offset - events[open][1].start.offset) {
-            events[index3][1].type = "strikethroughSequence";
-            events[open][1].type = "strikethroughSequence";
-            const strikethrough = {
-              type: "strikethrough",
-              start: Object.assign({}, events[open][1].start),
-              end: Object.assign({}, events[index3][1].end)
-            };
-            const text4 = {
-              type: "strikethroughText",
-              start: Object.assign({}, events[open][1].end),
-              end: Object.assign({}, events[index3][1].start)
-            };
-            const nextEvents = [["enter", strikethrough, context], ["enter", events[open][1], context], ["exit", events[open][1], context], ["enter", text4, context]];
-            const insideSpan2 = context.parser.constructs.insideSpan.null;
-            if (insideSpan2) {
-              splice(nextEvents, nextEvents.length, 0, resolveAll(insideSpan2, events.slice(open + 1, index3), context));
-            }
-            splice(nextEvents, nextEvents.length, 0, [["exit", text4, context], ["enter", events[index3][1], context], ["exit", events[index3][1], context], ["exit", strikethrough, context]]);
-            splice(events, open - 1, index3 - open + 3, nextEvents);
-            index3 = open + nextEvents.length - 2;
-            break;
-          }
-        }
-      }
-    }
-    index3 = -1;
-    while (++index3 < events.length) {
-      if (events[index3][1].type === "strikethroughSequenceTemporary") {
-        events[index3][1].type = "data";
-      }
-    }
-    return events;
-  }
-  function tokenizeStrikethrough(effects, ok, nok) {
-    const previous2 = this.previous;
-    const events = this.events;
-    let size = 0;
-    return start;
-    function start(code2) {
-      if (previous2 === 126 && events[events.length - 1][1].type !== "characterEscape") {
-        return nok(code2);
-      }
-      effects.enter("strikethroughSequenceTemporary");
-      return more(code2);
-    }
-    function more(code2) {
-      const before = classifyCharacter(previous2);
-      if (code2 === 126) {
-        if (size > 1)
-          return nok(code2);
-        effects.consume(code2);
-        size++;
-        return more;
-      }
-      if (size < 2 && !single)
-        return nok(code2);
-      const token = effects.exit("strikethroughSequenceTemporary");
-      const after = classifyCharacter(code2);
-      token._open = !after || after === 2 && Boolean(before);
-      token._close = !before || before === 2 && Boolean(after);
-      return ok(code2);
-    }
-  }
-}
-// node_modules/micromark-extension-gfm-table/lib/html.js
-var alignment = {
-  none: "",
-  left: ' align="left"',
-  right: ' align="right"',
-  center: ' align="center"'
-};
-function gfmTableHtml() {
-  return {
-    enter: {
-      table(token) {
-        const tableAlign = token._align;
-        this.lineEndingIfNeeded();
-        this.tag("<table>");
-        this.setData("tableAlign", tableAlign);
-      },
-      tableBody() {
-        this.tag("<tbody>");
-      },
-      tableData() {
-        const tableAlign = this.getData("tableAlign");
-        const tableColumn = this.getData("tableColumn");
-        const align = alignment[tableAlign[tableColumn]];
-        if (align === undefined) {
-          this.buffer();
-        } else {
-          this.lineEndingIfNeeded();
-          this.tag("<td" + align + ">");
-        }
-      },
-      tableHead() {
-        this.lineEndingIfNeeded();
-        this.tag("<thead>");
-      },
-      tableHeader() {
-        const tableAlign = this.getData("tableAlign");
-        const tableColumn = this.getData("tableColumn");
-        const align = alignment[tableAlign[tableColumn]];
-        this.lineEndingIfNeeded();
-        this.tag("<th" + align + ">");
-      },
-      tableRow() {
-        this.setData("tableColumn", 0);
-        this.lineEndingIfNeeded();
-        this.tag("<tr>");
-      }
-    },
-    exit: {
-      codeTextData(token) {
-        let value = this.sliceSerialize(token);
-        if (this.getData("tableAlign")) {
-          value = value.replace(/\\([\\|])/g, replace);
-        }
-        this.raw(this.encode(value));
-      },
-      table() {
-        this.setData("tableAlign");
-        this.setData("slurpAllLineEndings");
-        this.lineEndingIfNeeded();
-        this.tag("</table>");
-      },
-      tableBody() {
-        this.lineEndingIfNeeded();
-        this.tag("</tbody>");
-      },
-      tableData() {
-        const tableAlign = this.getData("tableAlign");
-        const tableColumn = this.getData("tableColumn");
-        if (tableColumn in tableAlign) {
-          this.tag("</td>");
-          this.setData("tableColumn", tableColumn + 1);
-        } else {
-          this.resume();
-        }
-      },
-      tableHead() {
-        this.lineEndingIfNeeded();
-        this.tag("</thead>");
-      },
-      tableHeader() {
-        const tableColumn = this.getData("tableColumn");
-        this.tag("</th>");
-        this.setData("tableColumn", tableColumn + 1);
-      },
-      tableRow() {
-        const tableAlign = this.getData("tableAlign");
-        let tableColumn = this.getData("tableColumn");
-        while (tableColumn < tableAlign.length) {
-          this.lineEndingIfNeeded();
-          this.tag("<td" + alignment[tableAlign[tableColumn]] + "></td>");
-          tableColumn++;
-        }
-        this.setData("tableColumn", tableColumn);
-        this.lineEndingIfNeeded();
-        this.tag("</tr>");
-      }
-    }
-  };
-}
-function replace($0, $1) {
-  return $1 === "|" ? $1 : $0;
-}
-// node_modules/micromark-extension-gfm-table/lib/edit-map.js
-class EditMap {
-  constructor() {
-    this.map = [];
-    this.index = new Map;
-  }
-  add(index3, remove, add) {
-    addImplementation(this, index3, remove, add);
-  }
-  consume(events) {
-    this.map.sort(function(a, b) {
-      return a[0] - b[0];
-    });
-    if (this.map.length === 0) {
-      return;
-    }
-    let index3 = this.map.length;
-    const vecs = [];
-    while (index3 > 0) {
-      index3 -= 1;
-      vecs.push(events.slice(this.map[index3][0] + this.map[index3][1]), this.map[index3][2]);
-      events.length = this.map[index3][0];
-    }
-    vecs.push(events.slice());
-    events.length = 0;
-    let slice = vecs.pop();
-    while (slice) {
-      for (const element2 of slice) {
-        events.push(element2);
-      }
-      slice = vecs.pop();
-    }
-    this.map.length = 0;
-    this.index.clear();
-  }
-}
-function addImplementation(editMap, at2, remove, add) {
-  if (remove === 0 && add.length === 0) {
-    return;
-  }
-  const existing = editMap.index.get(at2);
-  if (existing) {
-    existing[1] += remove;
-    existing[2].push(...add);
-    return;
-  }
-  const change = [at2, remove, add];
-  editMap.map.push(change);
-  editMap.index.set(at2, change);
-}
-
-// node_modules/micromark-extension-gfm-table/lib/infer.js
-function gfmTableAlign(events, index3) {
-  let inDelimiterRow = false;
-  const align = [];
-  while (index3 < events.length) {
-    const event = events[index3];
-    if (inDelimiterRow) {
-      if (event[0] === "enter") {
-        if (event[1].type === "tableContent") {
-          align.push(events[index3 + 1][1].type === "tableDelimiterMarker" ? "left" : "none");
-        }
-      } else if (event[1].type === "tableContent") {
-        if (events[index3 - 1][1].type === "tableDelimiterMarker") {
-          const alignIndex = align.length - 1;
-          align[alignIndex] = align[alignIndex] === "left" ? "center" : "right";
-        }
-      } else if (event[1].type === "tableDelimiterRow") {
-        break;
-      }
-    } else if (event[0] === "enter" && event[1].type === "tableDelimiterRow") {
-      inDelimiterRow = true;
-    }
-    index3 += 1;
-  }
-  return align;
-}
-
-// node_modules/micromark-extension-gfm-table/lib/syntax.js
-function gfmTable() {
-  return {
-    flow: {
-      null: {
-        name: "table",
-        tokenize: tokenizeTable,
-        resolveAll: resolveTable
-      }
-    }
-  };
-}
-function tokenizeTable(effects, ok, nok) {
-  const self = this;
-  let size = 0;
-  let sizeB = 0;
-  let seen;
-  return start;
-  function start(code2) {
-    let index3 = self.events.length - 1;
-    while (index3 > -1) {
-      const {
-        type
-      } = self.events[index3][1];
-      if (type === "lineEnding" || type === "linePrefix") {
-        index3--;
-      } else {
-        break;
-      }
-    }
-    const tail = index3 > -1 ? self.events[index3][1].type : null;
-    const next = tail === "tableHead" || tail === "tableRow" ? bodyRowStart : headRowBefore;
-    if (next === bodyRowStart && self.parser.lazy[self.now().line]) {
-      return nok(code2);
-    }
-    return next(code2);
-  }
-  function headRowBefore(code2) {
-    effects.enter("tableHead");
-    effects.enter("tableRow");
-    return headRowStart(code2);
-  }
-  function headRowStart(code2) {
-    if (code2 === 124) {
-      return headRowBreak(code2);
-    }
-    seen = true;
-    sizeB += 1;
-    return headRowBreak(code2);
-  }
-  function headRowBreak(code2) {
-    if (code2 === null) {
-      return nok(code2);
-    }
-    if (markdownLineEnding(code2)) {
-      if (sizeB > 1) {
-        sizeB = 0;
-        self.interrupt = true;
-        effects.exit("tableRow");
-        effects.enter("lineEnding");
-        effects.consume(code2);
-        effects.exit("lineEnding");
-        return headDelimiterStart;
-      }
-      return nok(code2);
-    }
-    if (markdownSpace(code2)) {
-      return factorySpace(effects, headRowBreak, "whitespace")(code2);
-    }
-    sizeB += 1;
-    if (seen) {
-      seen = false;
-      size += 1;
-    }
-    if (code2 === 124) {
-      effects.enter("tableCellDivider");
-      effects.consume(code2);
-      effects.exit("tableCellDivider");
-      seen = true;
-      return headRowBreak;
-    }
-    effects.enter("data");
-    return headRowData(code2);
-  }
-  function headRowData(code2) {
-    if (code2 === null || code2 === 124 || markdownLineEndingOrSpace(code2)) {
-      effects.exit("data");
-      return headRowBreak(code2);
-    }
-    effects.consume(code2);
-    return code2 === 92 ? headRowEscape : headRowData;
-  }
-  function headRowEscape(code2) {
-    if (code2 === 92 || code2 === 124) {
-      effects.consume(code2);
-      return headRowData;
-    }
-    return headRowData(code2);
-  }
-  function headDelimiterStart(code2) {
-    self.interrupt = false;
-    if (self.parser.lazy[self.now().line]) {
-      return nok(code2);
-    }
-    effects.enter("tableDelimiterRow");
-    seen = false;
-    if (markdownSpace(code2)) {
-      return factorySpace(effects, headDelimiterBefore, "linePrefix", self.parser.constructs.disable.null.includes("codeIndented") ? undefined : 4)(code2);
-    }
-    return headDelimiterBefore(code2);
-  }
-  function headDelimiterBefore(code2) {
-    if (code2 === 45 || code2 === 58) {
-      return headDelimiterValueBefore(code2);
-    }
-    if (code2 === 124) {
-      seen = true;
-      effects.enter("tableCellDivider");
-      effects.consume(code2);
-      effects.exit("tableCellDivider");
-      return headDelimiterCellBefore;
-    }
-    return headDelimiterNok(code2);
-  }
-  function headDelimiterCellBefore(code2) {
-    if (markdownSpace(code2)) {
-      return factorySpace(effects, headDelimiterValueBefore, "whitespace")(code2);
-    }
-    return headDelimiterValueBefore(code2);
-  }
-  function headDelimiterValueBefore(code2) {
-    if (code2 === 58) {
-      sizeB += 1;
-      seen = true;
-      effects.enter("tableDelimiterMarker");
-      effects.consume(code2);
-      effects.exit("tableDelimiterMarker");
-      return headDelimiterLeftAlignmentAfter;
-    }
-    if (code2 === 45) {
-      sizeB += 1;
-      return headDelimiterLeftAlignmentAfter(code2);
-    }
-    if (code2 === null || markdownLineEnding(code2)) {
-      return headDelimiterCellAfter(code2);
-    }
-    return headDelimiterNok(code2);
-  }
-  function headDelimiterLeftAlignmentAfter(code2) {
-    if (code2 === 45) {
-      effects.enter("tableDelimiterFiller");
-      return headDelimiterFiller(code2);
-    }
-    return headDelimiterNok(code2);
-  }
-  function headDelimiterFiller(code2) {
-    if (code2 === 45) {
-      effects.consume(code2);
-      return headDelimiterFiller;
-    }
-    if (code2 === 58) {
-      seen = true;
-      effects.exit("tableDelimiterFiller");
-      effects.enter("tableDelimiterMarker");
-      effects.consume(code2);
-      effects.exit("tableDelimiterMarker");
-      return headDelimiterRightAlignmentAfter;
-    }
-    effects.exit("tableDelimiterFiller");
-    return headDelimiterRightAlignmentAfter(code2);
-  }
-  function headDelimiterRightAlignmentAfter(code2) {
-    if (markdownSpace(code2)) {
-      return factorySpace(effects, headDelimiterCellAfter, "whitespace")(code2);
-    }
-    return headDelimiterCellAfter(code2);
-  }
-  function headDelimiterCellAfter(code2) {
-    if (code2 === 124) {
-      return headDelimiterBefore(code2);
-    }
-    if (code2 === null || markdownLineEnding(code2)) {
-      if (!seen || size !== sizeB) {
-        return headDelimiterNok(code2);
-      }
-      effects.exit("tableDelimiterRow");
-      effects.exit("tableHead");
-      return ok(code2);
-    }
-    return headDelimiterNok(code2);
-  }
-  function headDelimiterNok(code2) {
-    return nok(code2);
-  }
-  function bodyRowStart(code2) {
-    effects.enter("tableRow");
-    return bodyRowBreak(code2);
-  }
-  function bodyRowBreak(code2) {
-    if (code2 === 124) {
-      effects.enter("tableCellDivider");
-      effects.consume(code2);
-      effects.exit("tableCellDivider");
-      return bodyRowBreak;
-    }
-    if (code2 === null || markdownLineEnding(code2)) {
-      effects.exit("tableRow");
-      return ok(code2);
-    }
-    if (markdownSpace(code2)) {
-      return factorySpace(effects, bodyRowBreak, "whitespace")(code2);
-    }
-    effects.enter("data");
-    return bodyRowData(code2);
-  }
-  function bodyRowData(code2) {
-    if (code2 === null || code2 === 124 || markdownLineEndingOrSpace(code2)) {
-      effects.exit("data");
-      return bodyRowBreak(code2);
-    }
-    effects.consume(code2);
-    return code2 === 92 ? bodyRowEscape : bodyRowData;
-  }
-  function bodyRowEscape(code2) {
-    if (code2 === 92 || code2 === 124) {
-      effects.consume(code2);
-      return bodyRowData;
-    }
-    return bodyRowData(code2);
-  }
-}
-function resolveTable(events, context) {
-  let index3 = -1;
-  let inFirstCellAwaitingPipe = true;
-  let rowKind = 0;
-  let lastCell = [0, 0, 0, 0];
-  let cell = [0, 0, 0, 0];
-  let afterHeadAwaitingFirstBodyRow = false;
-  let lastTableEnd = 0;
-  let currentTable;
-  let currentBody;
-  let currentCell;
-  const map = new EditMap;
-  while (++index3 < events.length) {
-    const event = events[index3];
-    const token = event[1];
-    if (event[0] === "enter") {
-      if (token.type === "tableHead") {
-        afterHeadAwaitingFirstBodyRow = false;
-        if (lastTableEnd !== 0) {
-          flushTableEnd(map, context, lastTableEnd, currentTable, currentBody);
-          currentBody = undefined;
-          lastTableEnd = 0;
-        }
-        currentTable = {
-          type: "table",
-          start: Object.assign({}, token.start),
-          end: Object.assign({}, token.end)
-        };
-        map.add(index3, 0, [["enter", currentTable, context]]);
-      } else if (token.type === "tableRow" || token.type === "tableDelimiterRow") {
-        inFirstCellAwaitingPipe = true;
-        currentCell = undefined;
-        lastCell = [0, 0, 0, 0];
-        cell = [0, index3 + 1, 0, 0];
-        if (afterHeadAwaitingFirstBodyRow) {
-          afterHeadAwaitingFirstBodyRow = false;
-          currentBody = {
-            type: "tableBody",
-            start: Object.assign({}, token.start),
-            end: Object.assign({}, token.end)
-          };
-          map.add(index3, 0, [["enter", currentBody, context]]);
-        }
-        rowKind = token.type === "tableDelimiterRow" ? 2 : currentBody ? 3 : 1;
-      } else if (rowKind && (token.type === "data" || token.type === "tableDelimiterMarker" || token.type === "tableDelimiterFiller")) {
-        inFirstCellAwaitingPipe = false;
-        if (cell[2] === 0) {
-          if (lastCell[1] !== 0) {
-            cell[0] = cell[1];
-            currentCell = flushCell(map, context, lastCell, rowKind, undefined, currentCell);
-            lastCell = [0, 0, 0, 0];
-          }
-          cell[2] = index3;
-        }
-      } else if (token.type === "tableCellDivider") {
-        if (inFirstCellAwaitingPipe) {
-          inFirstCellAwaitingPipe = false;
-        } else {
-          if (lastCell[1] !== 0) {
-            cell[0] = cell[1];
-            currentCell = flushCell(map, context, lastCell, rowKind, undefined, currentCell);
-          }
-          lastCell = cell;
-          cell = [lastCell[1], index3, 0, 0];
-        }
-      }
-    } else if (token.type === "tableHead") {
-      afterHeadAwaitingFirstBodyRow = true;
-      lastTableEnd = index3;
-    } else if (token.type === "tableRow" || token.type === "tableDelimiterRow") {
-      lastTableEnd = index3;
-      if (lastCell[1] !== 0) {
-        cell[0] = cell[1];
-        currentCell = flushCell(map, context, lastCell, rowKind, index3, currentCell);
-      } else if (cell[1] !== 0) {
-        currentCell = flushCell(map, context, cell, rowKind, index3, currentCell);
-      }
-      rowKind = 0;
-    } else if (rowKind && (token.type === "data" || token.type === "tableDelimiterMarker" || token.type === "tableDelimiterFiller")) {
-      cell[3] = index3;
-    }
-  }
-  if (lastTableEnd !== 0) {
-    flushTableEnd(map, context, lastTableEnd, currentTable, currentBody);
-  }
-  map.consume(context.events);
-  index3 = -1;
-  while (++index3 < context.events.length) {
-    const event = context.events[index3];
-    if (event[0] === "enter" && event[1].type === "table") {
-      event[1]._align = gfmTableAlign(context.events, index3);
-    }
-  }
-  return events;
-}
-function flushCell(map, context, range, rowKind, rowEnd, previousCell) {
-  const groupName = rowKind === 1 ? "tableHeader" : rowKind === 2 ? "tableDelimiter" : "tableData";
-  const valueName = "tableContent";
-  if (range[0] !== 0) {
-    previousCell.end = Object.assign({}, getPoint(context.events, range[0]));
-    map.add(range[0], 0, [["exit", previousCell, context]]);
-  }
-  const now2 = getPoint(context.events, range[1]);
-  previousCell = {
-    type: groupName,
-    start: Object.assign({}, now2),
-    end: Object.assign({}, now2)
-  };
-  map.add(range[1], 0, [["enter", previousCell, context]]);
-  if (range[2] !== 0) {
-    const relatedStart = getPoint(context.events, range[2]);
-    const relatedEnd = getPoint(context.events, range[3]);
-    const valueToken = {
-      type: valueName,
-      start: Object.assign({}, relatedStart),
-      end: Object.assign({}, relatedEnd)
-    };
-    map.add(range[2], 0, [["enter", valueToken, context]]);
-    if (rowKind !== 2) {
-      const start = context.events[range[2]];
-      const end = context.events[range[3]];
-      start[1].end = Object.assign({}, end[1].end);
-      start[1].type = "chunkText";
-      start[1].contentType = "text";
-      if (range[3] > range[2] + 1) {
-        const a = range[2] + 1;
-        const b = range[3] - range[2] - 1;
-        map.add(a, b, []);
-      }
-    }
-    map.add(range[3] + 1, 0, [["exit", valueToken, context]]);
-  }
-  if (rowEnd !== undefined) {
-    previousCell.end = Object.assign({}, getPoint(context.events, rowEnd));
-    map.add(rowEnd, 0, [["exit", previousCell, context]]);
-    previousCell = undefined;
-  }
-  return previousCell;
-}
-function flushTableEnd(map, context, index3, table, tableBody) {
-  const exits = [];
-  const related = getPoint(context.events, index3);
-  if (tableBody) {
-    tableBody.end = Object.assign({}, related);
-    exits.push(["exit", tableBody, context]);
-  }
-  table.end = Object.assign({}, related);
-  exits.push(["exit", table, context]);
-  map.add(index3 + 1, 0, exits);
-}
-function getPoint(events, index3) {
-  const event = events[index3];
-  const side = event[0] === "enter" ? "start" : "end";
-  return event[1][side];
-}
-// node_modules/micromark-extension-gfm-tagfilter/lib/index.js
-var reFlow = /<(\/?)(iframe|noembed|noframes|plaintext|script|style|title|textarea|xmp)(?=[\t\n\f\r />])/gi;
-var reText = new RegExp("^" + reFlow.source, "i");
-function gfmTagfilterHtml() {
-  return {
-    exit: {
-      htmlFlowData(token) {
-        exitHtmlData.call(this, token, reFlow);
-      },
-      htmlTextData(token) {
-        exitHtmlData.call(this, token, reText);
-      }
-    }
-  };
-}
-function exitHtmlData(token, filter) {
-  let value = this.sliceSerialize(token);
-  if (this.options.allowDangerousHtml) {
-    value = value.replace(filter, "&lt;$1$2");
-  }
-  this.raw(this.encode(value));
-}
-// node_modules/micromark-extension-gfm-task-list-item/lib/html.js
-function gfmTaskListItemHtml() {
-  return {
-    enter: {
-      taskListCheck() {
-        this.tag('<input type="checkbox" disabled="" ');
-      }
-    },
-    exit: {
-      taskListCheck() {
-        this.tag("/>");
-      },
-      taskListCheckValueChecked() {
-        this.tag('checked="" ');
-      }
-    }
-  };
-}
-// node_modules/micromark-extension-gfm-task-list-item/lib/syntax.js
-var tasklistCheck = {
-  name: "tasklistCheck",
-  tokenize: tokenizeTasklistCheck
-};
-function gfmTaskListItem() {
-  return {
-    text: {
-      [91]: tasklistCheck
-    }
-  };
-}
-function tokenizeTasklistCheck(effects, ok, nok) {
-  const self = this;
-  return open;
-  function open(code2) {
-    if (self.previous !== null || !self._gfmTasklistFirstContentOfListItem) {
-      return nok(code2);
-    }
-    effects.enter("taskListCheck");
-    effects.enter("taskListCheckMarker");
-    effects.consume(code2);
-    effects.exit("taskListCheckMarker");
-    return inside;
-  }
-  function inside(code2) {
-    if (markdownLineEndingOrSpace(code2)) {
-      effects.enter("taskListCheckValueUnchecked");
-      effects.consume(code2);
-      effects.exit("taskListCheckValueUnchecked");
-      return close;
-    }
-    if (code2 === 88 || code2 === 120) {
-      effects.enter("taskListCheckValueChecked");
-      effects.consume(code2);
-      effects.exit("taskListCheckValueChecked");
-      return close;
-    }
-    return nok(code2);
-  }
-  function close(code2) {
-    if (code2 === 93) {
-      effects.enter("taskListCheckMarker");
-      effects.consume(code2);
-      effects.exit("taskListCheckMarker");
-      effects.exit("taskListCheck");
-      return after;
-    }
-    return nok(code2);
-  }
-  function after(code2) {
-    if (markdownLineEnding(code2)) {
-      return ok(code2);
-    }
-    if (markdownSpace(code2)) {
-      return effects.check({
-        tokenize: spaceThenNonSpace
-      }, ok, nok)(code2);
-    }
-    return nok(code2);
-  }
-}
-function spaceThenNonSpace(effects, ok, nok) {
-  return factorySpace(effects, after, "whitespace");
-  function after(code2) {
-    return code2 === null ? nok(code2) : ok(code2);
-  }
-}
-// node_modules/micromark-extension-gfm/index.js
-function gfm(options2) {
-  return combineExtensions([
-    gfmAutolinkLiteral(),
-    gfmFootnote(),
-    gfmStrikethrough(options2),
-    gfmTable(),
-    gfmTaskListItem()
-  ]);
-}
-function gfmHtml(options2) {
-  return combineHtmlExtensions([
-    gfmAutolinkLiteralHtml(),
-    gfmFootnoteHtml(options2),
-    gfmStrikethroughHtml(),
-    gfmTableHtml(),
-    gfmTagfilterHtml(),
-    gfmTaskListItemHtml()
-  ]);
-}
-
-// src/scriptorium/surface/state/markdown.ts
-var FRONTMATTER_BLOCK = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
-function splitFrontmatter(text4) {
-  const m = FRONTMATTER_BLOCK.exec(text4);
-  if (!m)
-    return { raw: null, body: text4 };
-  return { raw: m[1] ?? "", body: text4.slice(m[0].length) };
-}
-var SAFE_SCHEME = /^(https?:|mailto:)/i;
-var HAS_SCHEME = /^[a-z][a-z0-9+.-]*:/i;
-function safeHref(raw) {
-  const bare = raw.replace(/&#(\d+);?/g, (_, d) => String.fromCharCode(Number(d))).replace(/&#x([0-9a-f]+);?/gi, (_, h) => String.fromCharCode(Number.parseInt(h, 16))).replace(/[\u0000-\u0020]/g, "");
-  if (!HAS_SCHEME.test(bare))
-    return raw;
-  return SAFE_SCHEME.test(bare) ? raw : null;
-}
-var HREF = /<a href="([^"]*)"/g;
-var FOOTNOTE_LABEL = /(id|aria-describedby)="footnote-label"/g;
-function renderMarkdown(text4, options2 = {}) {
-  const scope = options2.idPrefix?.replace(/[^\w-]/g, "") ?? "";
-  let html = micromark(text4, {
-    extensions: [gfm()],
-    htmlExtensions: [gfmHtml(scope ? { clobberPrefix: `user-content-${scope}-` } : {})]
-  });
-  if (scope)
-    html = html.replace(FOOTNOTE_LABEL, `$1="user-content-${scope}-footnote-label"`);
-  return html.replace(HREF, (whole, href) => href === "" || safeHref(href) === null ? "<a data-blocked-link" : whole);
-}
-
-// src/scriptorium/surface/components/renderedLink.ts
-var OPENS_OUTWARD = /^(https?:|mailto:)/i;
-function fragmentId(raw) {
-  try {
-    return decodeURIComponent(raw);
-  } catch {
-    return raw;
-  }
-}
-function linkAct(anchor) {
-  const { href, blocked } = anchor;
-  if (blocked || !href)
-    return { kind: "none" };
-  if (href.startsWith("#")) {
-    const id = fragmentId(href.slice(1));
-    return id ? { kind: "jump", id } : { kind: "none" };
-  }
-  return OPENS_OUTWARD.test(href) ? { kind: "outward", href } : { kind: "follow", href };
-}
-function onRenderedLinkClick(e, onFollowLink) {
-  const anchor = e.target.closest("a");
-  if (!anchor)
-    return;
-  e.preventDefault();
-  const act = linkAct({
-    href: anchor.getAttribute("href"),
-    blocked: anchor.hasAttribute("data-blocked-link")
-  });
-  if (act.kind === "outward")
-    window.open(act.href, "_blank", "noopener,noreferrer");
-  else if (act.kind === "follow")
-    onFollowLink?.(act.href);
-  else if (act.kind === "jump") {
-    for (const el of e.currentTarget.querySelectorAll("[id]"))
-      if (el.id === act.id) {
-        el.scrollIntoView({ block: "nearest" });
-        return;
-      }
-  }
-}
-
-// src/scriptorium/surface/components/WaitingBadge.tsx
-var jsx_runtime5 = __toESM(require_jsx_runtime(), 1);
-var LABEL = {
-  message: {
-    working: "working on this…",
-    stalled: "took this in, then went quiet — may be stuck"
-  },
-  note: {
-    working: "with the agent…",
-    stalled: "no word from the agent — may be stuck"
-  },
-  asked: {
-    working: "asked in the conversation…",
-    stalled: "asked, and still no word — may be stuck"
-  }
-};
-function WaitingBadge({
-  badge,
-  of = "message",
-  className
-}) {
-  const working = badge === "working";
-  return /* @__PURE__ */ jsx_runtime5.jsxs("p", {
-    "aria-live": "polite",
-    className: cn("mt-1 flex items-center gap-1.5 text-[11px]", working ? "text-ink-dim" : "text-attention", className),
-    children: [
-      /* @__PURE__ */ jsx_runtime5.jsx("span", {
-        "aria-hidden": true,
-        className: cn("inline-block size-1.5 shrink-0 rounded-full", working ? "animate-pulse bg-rubric" : "bg-attention")
-      }),
-      LABEL[of][badge]
-    ]
-  });
-}
-function WaitingDot({
-  badge,
-  of,
-  label
-}) {
-  const working = badge === "working";
-  return /* @__PURE__ */ jsx_runtime5.jsx("span", {
-    role: "img",
-    "aria-label": label ?? LABEL[of][badge],
-    title: label ?? LABEL[of][badge],
-    className: cn("inline-block size-1.5 shrink-0 rounded-full", working ? "animate-pulse bg-rubric" : "bg-attention")
-  });
-}
-
-// src/scriptorium/surface/components/ChatMessageView.tsx
-var jsx_runtime6 = __toESM(require_jsx_runtime(), 1);
-function ChatMessageView({
-  message: m,
-  badge,
-  onFollowLink
-}) {
-  return /* @__PURE__ */ jsx_runtime6.jsxs("div", {
-    "data-who": m.who,
-    className: "rounded-md px-2 py-1 text-xs leading-relaxed text-ink-dim data-[who=agent]:bg-surface-raised data-[who=agent]:text-ink data-[who=human]:bg-rubric/10 data-[who=human]:text-ink",
-    children: [
-      m.who === "system" ? /* @__PURE__ */ jsx_runtime6.jsxs(jsx_runtime6.Fragment, {
-        children: [
-          /* @__PURE__ */ jsx_runtime6.jsx("span", {
-            className: "mr-1.5 font-medium text-ink-faint",
-            children: "·"
-          }),
-          m.text
-        ]
-      }) : /* @__PURE__ */ jsx_runtime6.jsxs(jsx_runtime6.Fragment, {
-        children: [
-          /* @__PURE__ */ jsx_runtime6.jsx("span", {
-            className: "block font-medium text-[11px] text-ink-faint",
-            children: m.who === "agent" ? "Agent" : "You"
-          }),
-          /* @__PURE__ */ jsx_runtime6.jsx(ChatMarkdown, {
-            id: m.id,
-            text: m.text,
-            onFollowLink
-          })
-        ]
-      }),
-      m.selection && /* @__PURE__ */ jsx_runtime6.jsxs("p", {
-        className: "mt-1 border-l-2 border-edge pl-2 font-mono text-[11px] text-ink-dim",
-        children: [
-          /* @__PURE__ */ jsx_runtime6.jsxs("span", {
-            className: "text-ink-faint",
-            children: [
-              m.selection.doc,
-              " · v",
-              m.selection.version,
-              " ·",
-              " ",
-              m.selection.fromLine === m.selection.toLine ? `line ${m.selection.fromLine}` : `lines ${m.selection.fromLine}–${m.selection.toLine}`
-            ]
-          }),
-          /* @__PURE__ */ jsx_runtime6.jsx("br", {}),
-          m.selection.text.replace(/\s+/gu, " ").trim()
-        ]
-      }),
-      badge && /* @__PURE__ */ jsx_runtime6.jsx(WaitingBadge, {
-        badge
-      })
-    ]
-  });
-}
-function ChatMarkdown({
-  id,
-  text: text4,
-  onFollowLink
-}) {
-  const html = import_react7.useMemo(() => renderMarkdown(text4, { idPrefix: id }), [text4, id]);
-  const htmlProp = import_react7.useMemo(() => ({ __html: html }), [html]);
-  return /* @__PURE__ */ jsx_runtime6.jsx("div", {
-    className: "md-prose md-chat",
-    onClick: (e) => onRenderedLinkClick(e, onFollowLink),
-    dangerouslySetInnerHTML: htmlProp
-  });
-}
-
-// src/scriptorium/surface/components/context/ContextSidebar.tsx
-var import_react17 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/context-menu/index.parts.mjs
-var exports_index_parts2 = {};
-__export(exports_index_parts2, {
-  Arrow: () => MenuArrow,
-  Backdrop: () => MenuBackdrop,
-  CheckboxItem: () => MenuCheckboxItem,
-  CheckboxItemIndicator: () => MenuCheckboxItemIndicator,
-  Group: () => MenuGroup,
-  GroupLabel: () => MenuGroupLabel,
-  Item: () => MenuItem,
-  LinkItem: () => MenuLinkItem,
-  Popup: () => MenuPopup,
-  Portal: () => MenuPortal,
-  Positioner: () => MenuPositioner,
-  RadioGroup: () => MenuRadioGroup,
-  RadioItem: () => MenuRadioItem,
-  RadioItemIndicator: () => MenuRadioItemIndicator,
-  Root: () => ContextMenuRoot,
-  Separator: () => Separator,
-  SubmenuRoot: () => MenuSubmenuRoot,
-  SubmenuTrigger: () => MenuSubmenuTrigger,
-  Trigger: () => ContextMenuTrigger
-});
-
-// node_modules/@base-ui/react/context-menu/root/ContextMenuRoot.mjs
-var React87 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/utils/useId.mjs
-var React13 = __toESM(require_react(), 1);
-"use client";
-var globalId = 0;
-function useGlobalId(idOverride, prefix2 = "mui") {
-  const [defaultId, setDefaultId] = React13.useState(idOverride);
-  const id = idOverride || defaultId;
-  React13.useEffect(() => {
-    if (defaultId == null) {
-      globalId += 1;
-      setDefaultId(`${prefix2}-${globalId}`);
-    }
-  }, [defaultId, prefix2]);
-  return id;
-}
-var maybeReactUseId = SafeReact.useId;
-function useId(idOverride, prefix2) {
-  if (maybeReactUseId !== undefined) {
-    const reactId = maybeReactUseId();
-    return idOverride ?? (prefix2 ? `${prefix2}-${reactId}` : reactId);
-  }
-  return useGlobalId(idOverride, prefix2);
-}
-
-// node_modules/@base-ui/react/context-menu/root/ContextMenuRootContext.mjs
-var React14 = __toESM(require_react(), 1);
-"use client";
-var ContextMenuRootContext = /* @__PURE__ */ React14.createContext(undefined);
-if (false)
-  ;
-function useContextMenuRootContext(optional = true) {
-  const context = React14.useContext(ContextMenuRootContext);
-  if (context === undefined && !optional) {
-    throw new Error(formatErrorMessage_default(25));
-  }
-  return context;
-}
-
-// node_modules/@base-ui/react/menu/index.parts.mjs
+// node_modules/@base-ui/react/alert-dialog/index.parts.mjs
 var exports_index_parts = {};
 __export(exports_index_parts, {
-  Arrow: () => MenuArrow,
-  Backdrop: () => MenuBackdrop,
-  CheckboxItem: () => MenuCheckboxItem,
-  CheckboxItemIndicator: () => MenuCheckboxItemIndicator,
-  Group: () => MenuGroup,
-  GroupLabel: () => MenuGroupLabel,
-  Handle: () => MenuHandle,
-  Item: () => MenuItem,
-  LinkItem: () => MenuLinkItem,
-  Popup: () => MenuPopup,
-  Portal: () => MenuPortal,
-  Positioner: () => MenuPositioner,
-  RadioGroup: () => MenuRadioGroup,
-  RadioItem: () => MenuRadioItem,
-  RadioItemIndicator: () => MenuRadioItemIndicator,
-  Root: () => MenuRoot,
-  Separator: () => Separator,
-  SubmenuRoot: () => MenuSubmenuRoot,
-  SubmenuTrigger: () => MenuSubmenuTrigger,
-  Trigger: () => MenuTrigger,
-  Viewport: () => MenuViewport,
-  createHandle: () => createMenuHandle
+  Backdrop: () => DialogBackdrop,
+  Close: () => DialogClose,
+  Description: () => DialogDescription,
+  Handle: () => AlertDialogHandle,
+  Popup: () => DialogPopup,
+  Portal: () => DialogPortal,
+  Root: () => AlertDialogRoot,
+  Title: () => DialogTitle,
+  Trigger: () => AlertDialogTrigger,
+  Viewport: () => DialogViewport,
+  createHandle: () => createAlertDialogHandle
 });
 
-// node_modules/@base-ui/react/menu/arrow/MenuArrow.mjs
-var React17 = __toESM(require_react(), 1);
+// node_modules/@base-ui/react/dialog/root/useRenderDialogRoot.mjs
+var React39 = __toESM(require_react(), 1);
 
-// node_modules/@base-ui/react/menu/positioner/MenuPositionerContext.mjs
-var React15 = __toESM(require_react(), 1);
+// node_modules/@base-ui/utils/useOnFirstRender.mjs
+var React13 = __toESM(require_react(), 1);
 "use client";
-var MenuPositionerContext = /* @__PURE__ */ React15.createContext(undefined);
-if (false)
-  ;
-function useMenuPositionerContext(optional) {
-  const context = React15.useContext(MenuPositionerContext);
-  if (context === undefined && !optional) {
-    throw new Error(formatErrorMessage_default(33));
+function useOnFirstRender(fn2) {
+  const ref = React13.useRef(true);
+  if (ref.current) {
+    ref.current = false;
+    fn2();
   }
-  return context;
 }
 
-// node_modules/@base-ui/react/menu/root/MenuRootContext.mjs
-var React16 = __toESM(require_react(), 1);
-"use client";
-var MenuRootContext = /* @__PURE__ */ React16.createContext(undefined);
-if (false)
-  ;
-function useMenuRootContext(optional) {
-  const context = React16.useContext(MenuRootContext);
-  if (context === undefined && !optional) {
-    throw new Error(formatErrorMessage_default(36));
-  }
-  return context;
-}
+// node_modules/@base-ui/react/dialog/root/useDialogRoot.mjs
+var React36 = __toESM(require_react(), 1);
 
-// node_modules/@base-ui/react/internals/stateAttributesMapping.mjs
-var TransitionStatusDataAttributes = /* @__PURE__ */ function(TransitionStatusDataAttributes2) {
-  TransitionStatusDataAttributes2["startingStyle"] = "data-starting-style";
-  TransitionStatusDataAttributes2["endingStyle"] = "data-ending-style";
-  return TransitionStatusDataAttributes2;
-}({});
-var STARTING_HOOK = {
-  [TransitionStatusDataAttributes.startingStyle]: ""
-};
-var ENDING_HOOK = {
-  [TransitionStatusDataAttributes.endingStyle]: ""
-};
-var transitionStatusMapping = {
-  transitionStatus(value) {
-    if (value === "starting") {
-      return STARTING_HOOK;
-    }
-    if (value === "ending") {
-      return ENDING_HOOK;
-    }
-    return null;
-  }
-};
-
-// node_modules/@base-ui/react/utils/popupStateMapping.mjs
-var CommonPopupDataAttributes = function(CommonPopupDataAttributes2) {
-  CommonPopupDataAttributes2["open"] = "data-open";
-  CommonPopupDataAttributes2["closed"] = "data-closed";
-  CommonPopupDataAttributes2[CommonPopupDataAttributes2["startingStyle"] = TransitionStatusDataAttributes.startingStyle] = "startingStyle";
-  CommonPopupDataAttributes2[CommonPopupDataAttributes2["endingStyle"] = TransitionStatusDataAttributes.endingStyle] = "endingStyle";
-  CommonPopupDataAttributes2["anchorHidden"] = "data-anchor-hidden";
-  CommonPopupDataAttributes2["side"] = "data-side";
-  CommonPopupDataAttributes2["align"] = "data-align";
-  return CommonPopupDataAttributes2;
-}({});
-var CommonTriggerDataAttributes = /* @__PURE__ */ function(CommonTriggerDataAttributes2) {
-  CommonTriggerDataAttributes2["popupOpen"] = "data-popup-open";
-  CommonTriggerDataAttributes2["pressed"] = "data-pressed";
-  return CommonTriggerDataAttributes2;
-}({});
-var TRIGGER_HOOK = {
-  [CommonTriggerDataAttributes.popupOpen]: ""
-};
-var PRESSABLE_TRIGGER_HOOK = {
-  [CommonTriggerDataAttributes.popupOpen]: "",
-  [CommonTriggerDataAttributes.pressed]: ""
-};
-var POPUP_OPEN_HOOK = {
-  [CommonPopupDataAttributes.open]: ""
-};
-var POPUP_CLOSED_HOOK = {
-  [CommonPopupDataAttributes.closed]: ""
-};
-var ANCHOR_HIDDEN_HOOK = {
-  [CommonPopupDataAttributes.anchorHidden]: ""
-};
-var triggerOpenStateMapping = {
-  open(value) {
-    if (value) {
-      return TRIGGER_HOOK;
-    }
-    return null;
-  }
-};
-var pressableTriggerOpenStateMapping = {
-  open(value) {
-    if (value) {
-      return PRESSABLE_TRIGGER_HOOK;
-    }
-    return null;
-  }
-};
-var popupStateMapping = {
-  open(value) {
-    if (value) {
-      return POPUP_OPEN_HOOK;
-    }
-    return POPUP_CLOSED_HOOK;
-  },
-  anchorHidden(value) {
-    if (value) {
-      return ANCHOR_HIDDEN_HOOK;
-    }
-    return null;
-  }
-};
-
-// node_modules/@base-ui/react/menu/arrow/MenuArrow.mjs
-"use client";
-var MenuArrow = /* @__PURE__ */ React17.forwardRef(function MenuArrow2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    ...elementProps
-  } = componentProps;
-  const {
-    store
-  } = useMenuRootContext();
-  const {
-    arrowRef,
-    side,
-    align,
-    arrowUncentered,
-    arrowStyles
-  } = useMenuPositionerContext();
-  const open = store.useState("open");
-  const state = {
-    open,
-    side,
-    align,
-    uncentered: arrowUncentered
+// node_modules/@base-ui/utils/addEventListener.mjs
+function addEventListener(target, type, listener, options2) {
+  target.addEventListener(type, listener, options2);
+  return () => {
+    target.removeEventListener(type, listener, options2);
   };
-  return useRenderElement("div", componentProps, {
-    ref: [arrowRef, forwardedRef],
-    stateAttributesMapping: popupStateMapping,
-    state,
-    props: {
-      style: arrowStyles,
-      "aria-hidden": true,
-      ...elementProps
-    }
-  });
-});
-if (false)
-  ;
-// node_modules/@base-ui/react/menu/backdrop/MenuBackdrop.mjs
-var React18 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/internals/reason-parts.mjs
-var exports_reason_parts = {};
-__export(exports_reason_parts, {
-  cancelOpen: () => cancelOpen,
-  chipRemovePress: () => chipRemovePress,
-  clearPress: () => clearPress,
-  closePress: () => closePress,
-  closeWatcher: () => closeWatcher,
-  decrementPress: () => decrementPress,
-  disabled: () => disabled,
-  drag: () => drag,
-  escapeKey: () => escapeKey,
-  focusOut: () => focusOut,
-  imperativeAction: () => imperativeAction,
-  incrementPress: () => incrementPress,
-  initial: () => initial,
-  inputBlur: () => inputBlur,
-  inputChange: () => inputChange,
-  inputClear: () => inputClear,
-  inputPaste: () => inputPaste,
-  inputPress: () => inputPress,
-  itemPress: () => itemPress,
-  keyboard: () => keyboard,
-  linkPress: () => linkPress,
-  listNavigation: () => listNavigation,
-  missing: () => missing,
-  none: () => none,
-  outsidePress: () => outsidePress,
-  pointer: () => pointer,
-  scrub: () => scrub,
-  siblingOpen: () => siblingOpen,
-  swipe: () => swipe,
-  trackPress: () => trackPress,
-  triggerFocus: () => triggerFocus,
-  triggerHover: () => triggerHover,
-  triggerPress: () => triggerPress,
-  wheel: () => wheel,
-  windowResize: () => windowResize
-});
-var none = "none";
-var triggerPress = "trigger-press";
-var triggerHover = "trigger-hover";
-var triggerFocus = "trigger-focus";
-var outsidePress = "outside-press";
-var itemPress = "item-press";
-var closePress = "close-press";
-var linkPress = "link-press";
-var clearPress = "clear-press";
-var chipRemovePress = "chip-remove-press";
-var trackPress = "track-press";
-var incrementPress = "increment-press";
-var decrementPress = "decrement-press";
-var inputChange = "input-change";
-var inputClear = "input-clear";
-var inputBlur = "input-blur";
-var inputPaste = "input-paste";
-var inputPress = "input-press";
-var focusOut = "focus-out";
-var escapeKey = "escape-key";
-var closeWatcher = "close-watcher";
-var listNavigation = "list-navigation";
-var keyboard = "keyboard";
-var pointer = "pointer";
-var drag = "drag";
-var wheel = "wheel";
-var scrub = "scrub";
-var cancelOpen = "cancel-open";
-var siblingOpen = "sibling-open";
-var disabled = "disabled";
-var missing = "missing";
-var initial = "initial";
-var imperativeAction = "imperative-action";
-var swipe = "swipe";
-var windowResize = "window-resize";
-
-// node_modules/@base-ui/react/menu/backdrop/MenuBackdrop.mjs
-"use client";
-var stateAttributesMapping = {
-  ...popupStateMapping,
-  ...transitionStatusMapping
-};
-var MenuBackdrop = /* @__PURE__ */ React18.forwardRef(function MenuBackdrop2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    ...elementProps
-  } = componentProps;
-  const {
-    store
-  } = useMenuRootContext();
-  const open = store.useState("open");
-  const mounted = store.useState("mounted");
-  const transitionStatus = store.useState("transitionStatus");
-  const lastOpenChangeReason = store.useState("lastOpenChangeReason");
-  const contextMenuContext = useContextMenuRootContext();
-  const state = {
-    open,
-    transitionStatus
-  };
-  return useRenderElement("div", componentProps, {
-    ref: contextMenuContext?.backdropRef ? [forwardedRef, contextMenuContext.backdropRef] : forwardedRef,
-    state,
-    stateAttributesMapping,
-    props: [{
-      role: "presentation",
-      hidden: !mounted,
-      style: {
-        pointerEvents: lastOpenChangeReason === exports_reason_parts.triggerHover ? "none" : undefined,
-        userSelect: "none",
-        WebkitUserSelect: "none"
-      }
-    }, elementProps]
-  });
-});
-if (false)
-  ;
-// node_modules/@base-ui/react/menu/checkbox-item/MenuCheckboxItem.mjs
-var React25 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/utils/useControlled.mjs
-var React19 = __toESM(require_react(), 1);
-"use client";
-function useControlled({
-  controlled,
-  default: defaultProp,
-  name,
-  state = "value"
-}) {
-  const {
-    current: isControlled
-  } = React19.useRef(controlled !== undefined);
-  const [valueState, setValue] = React19.useState(defaultProp);
-  const value = isControlled ? controlled : valueState;
-  if (false) {}
-  const setValueIfUncontrolled = React19.useCallback((newValue) => {
-    if (!isControlled) {
-      setValue(newValue);
-    }
-  }, []);
-  return [value, setValueIfUncontrolled];
 }
-
-// node_modules/@base-ui/react/menu/checkbox-item/MenuCheckboxItemContext.mjs
-var React20 = __toESM(require_react(), 1);
-"use client";
-var MenuCheckboxItemContext = /* @__PURE__ */ React20.createContext(undefined);
-if (false)
-  ;
-function useMenuCheckboxItemContext() {
-  const context = React20.useContext(MenuCheckboxItemContext);
-  if (context === undefined) {
-    throw new Error(formatErrorMessage_default(30));
-  }
-  return context;
-}
-
-// node_modules/@base-ui/react/menu/item/useMenuItem.mjs
-var React22 = __toESM(require_react(), 1);
-// node_modules/@base-ui/react/menu/item/useMenuItemCommonProps.mjs
-var React21 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/utils/platform/parts.mjs
 var exports_parts = {};
@@ -22831,377 +16084,57 @@ __export(exports_env, {
   jsdom: () => jsdom
 });
 var jsdom = /jsdom|happydom/.test(lowerUserAgent);
-// node_modules/@base-ui/react/menu/item/useMenuItemCommonProps.mjs
-"use client";
-function useMenuItemCommonProps(params) {
-  const {
-    closeOnClick,
-    highlighted,
-    id,
-    nodeId,
-    store,
-    typingRef,
-    itemRef,
-    itemMetadata
-  } = params;
-  const {
-    events: menuEvents
-  } = store.useState("floatingTreeRoot");
-  const open = store.useState("open");
-  const contextMenuContext = useContextMenuRootContext(true);
-  const isContextMenu = contextMenuContext !== undefined;
-  return React21.useMemo(() => ({
-    id,
-    role: "menuitem",
-    tabIndex: open && highlighted ? 0 : -1,
-    onKeyDown(event) {
-      if (event.key === " " && typingRef?.current) {
-        event.preventDefault();
-      }
-    },
-    onMouseMove(event) {
-      if (!nodeId) {
-        return;
-      }
-      menuEvents.emit("itemhover", {
-        nodeId,
-        target: event.currentTarget
-      });
-    },
-    onClick(event) {
-      if (closeOnClick) {
-        menuEvents.emit("close", {
-          domEvent: event,
-          reason: exports_reason_parts.itemPress
-        });
-      }
-    },
-    onMouseUp(event) {
-      if (contextMenuContext) {
-        const initialCursorPoint = contextMenuContext.initialCursorPointRef.current;
-        contextMenuContext.initialCursorPointRef.current = null;
-        if (isContextMenu && initialCursorPoint && Math.abs(event.clientX - initialCursorPoint.x) <= 1 && Math.abs(event.clientY - initialCursorPoint.y) <= 1) {
-          return;
-        }
-        if (isContextMenu && !exports_parts.os.mac && event.button === 2) {
-          return;
-        }
-      }
-      if (itemRef.current && store.context.allowMouseUpTriggerRef.current && (!isContextMenu || event.button === 2)) {
-        if (!itemMetadata || itemMetadata.type === "regular-item") {
-          itemRef.current.click();
-        }
-      }
-    }
-  }), [closeOnClick, highlighted, id, menuEvents, nodeId, open, store, typingRef, itemRef, contextMenuContext, isContextMenu, itemMetadata]);
+// node_modules/@base-ui/utils/owner.mjs
+function ownerDocument(node) {
+  return node?.ownerDocument || document;
 }
-
-// node_modules/@base-ui/react/menu/item/useMenuItem.mjs
-"use client";
-var REGULAR_ITEM = {
-  type: "regular-item"
-};
-function useMenuItem(params) {
-  const {
-    closeOnClick,
-    disabled: disabledProp = false,
-    highlighted,
-    id,
-    store,
-    typingRef = store.context.typingRef,
-    nativeButton,
-    itemMetadata,
-    nodeId
-  } = params;
-  const rootDisabled = store.useState("disabled");
-  const disabled2 = disabledProp || rootDisabled;
-  const itemRef = React22.useRef(null);
-  const {
-    getButtonProps,
-    buttonRef
-  } = useButton({
-    disabled: disabled2,
-    focusableWhenDisabled: true,
-    native: nativeButton,
-    composite: true
-  });
-  const commonProps = useMenuItemCommonProps({
-    closeOnClick,
-    highlighted,
-    id,
-    nodeId,
-    store,
-    typingRef,
-    itemRef,
-    itemMetadata
-  });
-  const getItemProps = React22.useCallback((externalProps) => {
-    return mergeProps(commonProps, {
-      onMouseEnter() {
-        if (itemMetadata.type !== "submenu-trigger") {
-          return;
-        }
-        itemMetadata.setActive();
-      }
-    }, externalProps, getButtonProps);
-  }, [commonProps, getButtonProps, itemMetadata]);
-  const mergedRef = useMergedRefs(itemRef, buttonRef);
-  return React22.useMemo(() => ({
-    getItemProps,
-    itemRef: mergedRef
-  }), [getItemProps, mergedRef]);
-}
-
-// node_modules/@base-ui/react/internals/composite/list/useCompositeListItem.mjs
-var React24 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/internals/composite/list/CompositeListContext.mjs
-var React23 = __toESM(require_react(), 1);
-"use client";
-var CompositeListContext = /* @__PURE__ */ React23.createContext({
-  register: () => {},
-  unregister: () => {},
-  subscribeMapChange: () => {
-    return () => {};
-  },
-  elementsRef: {
-    current: []
-  },
-  nextIndexRef: {
-    current: 0
-  }
-});
-if (false)
-  ;
-function useCompositeListContext() {
-  return React23.useContext(CompositeListContext);
-}
-
-// node_modules/@base-ui/react/internals/composite/list/useCompositeListItem.mjs
-"use client";
-var IndexGuessBehavior = /* @__PURE__ */ function(IndexGuessBehavior2) {
-  IndexGuessBehavior2[IndexGuessBehavior2["None"] = 0] = "None";
-  IndexGuessBehavior2[IndexGuessBehavior2["GuessFromOrder"] = 1] = "GuessFromOrder";
-  return IndexGuessBehavior2;
-}({});
-function useCompositeListItem(params = {}) {
-  const {
-    label,
-    metadata,
-    textRef,
-    indexGuessBehavior,
-    index: externalIndex
-  } = params;
-  const {
-    register,
-    unregister,
-    subscribeMapChange,
-    elementsRef,
-    labelsRef,
-    nextIndexRef
-  } = useCompositeListContext();
-  const indexRef = React24.useRef(-1);
-  const [index3, setIndex] = React24.useState(externalIndex ?? (indexGuessBehavior === IndexGuessBehavior.GuessFromOrder ? () => {
-    if (indexRef.current === -1) {
-      const newIndex = nextIndexRef.current;
-      nextIndexRef.current += 1;
-      indexRef.current = newIndex;
-    }
-    return indexRef.current;
-  } : -1));
-  const componentRef = React24.useRef(null);
-  const ref = React24.useCallback((node) => {
-    componentRef.current = node;
-    if (index3 !== -1 && node !== null) {
-      elementsRef.current[index3] = node;
-      if (labelsRef) {
-        const isLabelDefined = label !== undefined;
-        labelsRef.current[index3] = isLabelDefined ? label : textRef?.current?.textContent ?? node.textContent;
-      }
-    }
-  }, [index3, elementsRef, labelsRef, label, textRef]);
-  useIsoLayoutEffect(() => {
-    if (externalIndex != null) {
-      return;
-    }
-    const node = componentRef.current;
-    if (node) {
-      register(node, metadata);
-      return () => {
-        unregister(node);
-      };
-    }
-    return;
-  }, [externalIndex, register, unregister, metadata]);
-  useIsoLayoutEffect(() => {
-    if (externalIndex != null) {
-      return;
-    }
-    return subscribeMapChange((map) => {
-      const i = componentRef.current ? map.get(componentRef.current)?.index : null;
-      if (i != null) {
-        setIndex(i);
-      }
-    });
-  }, [externalIndex, subscribeMapChange, setIndex]);
-  return {
-    ref,
-    index: index3
-  };
-}
-
-// node_modules/@base-ui/react/internals/useBaseUiId.mjs
-"use client";
-function useBaseUiId(idOverride) {
-  return useId(idOverride, "base-ui");
-}
-
-// node_modules/@base-ui/react/menu/checkbox-item/MenuCheckboxItemDataAttributes.mjs
-var MenuCheckboxItemDataAttributes = /* @__PURE__ */ function(MenuCheckboxItemDataAttributes2) {
-  MenuCheckboxItemDataAttributes2["checked"] = "data-checked";
-  MenuCheckboxItemDataAttributes2["unchecked"] = "data-unchecked";
-  MenuCheckboxItemDataAttributes2["disabled"] = "data-disabled";
-  MenuCheckboxItemDataAttributes2["highlighted"] = "data-highlighted";
-  return MenuCheckboxItemDataAttributes2;
-}({});
-
-// node_modules/@base-ui/react/menu/utils/stateAttributesMapping.mjs
-var itemMapping = {
-  checked(value) {
-    if (value) {
-      return {
-        [MenuCheckboxItemDataAttributes.checked]: ""
-      };
-    }
-    return {
-      [MenuCheckboxItemDataAttributes.unchecked]: ""
-    };
-  },
-  ...transitionStatusMapping
-};
-
-// node_modules/@base-ui/react/internals/createBaseUIEventDetails.mjs
-function createChangeEventDetails(reason, event, trigger, customProperties) {
-  let canceled = false;
-  let allowPropagation = false;
-  const custom = customProperties ?? EMPTY_OBJECT;
-  const details = {
-    reason,
-    event: event ?? new Event("base-ui"),
-    cancel() {
-      canceled = true;
-    },
-    allowPropagation() {
-      allowPropagation = true;
-    },
-    get isCanceled() {
-      return canceled;
-    },
-    get isPropagationAllowed() {
-      return allowPropagation;
-    },
-    trigger,
-    ...custom
-  };
-  return details;
-}
-
-// node_modules/@base-ui/react/menu/checkbox-item/MenuCheckboxItem.mjs
-var import_jsx_runtime2 = __toESM(require_jsx_runtime(), 1);
-"use client";
-var MenuCheckboxItem = /* @__PURE__ */ React25.forwardRef(function MenuCheckboxItem2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    id: idProp,
-    label,
-    nativeButton = false,
-    disabled: disabled2 = false,
-    closeOnClick = false,
-    checked: checkedProp,
-    defaultChecked,
-    onCheckedChange,
-    style: style2,
-    ...elementProps
-  } = componentProps;
-  const listItem = useCompositeListItem({
-    label
-  });
-  const menuPositionerContext = useMenuPositionerContext(true);
-  const id = useBaseUiId(idProp);
-  const {
-    store
-  } = useMenuRootContext();
-  const highlighted = store.useState("isActive", listItem.index);
-  const itemProps = store.useState("itemProps");
-  const [checked, setChecked] = useControlled({
-    controlled: checkedProp,
-    default: defaultChecked ?? false,
-    name: "MenuCheckboxItem",
-    state: "checked"
-  });
-  const {
-    getItemProps,
-    itemRef
-  } = useMenuItem({
-    closeOnClick,
-    disabled: disabled2,
-    highlighted,
-    id,
-    store,
-    nativeButton,
-    nodeId: menuPositionerContext?.context.nodeId,
-    itemMetadata: REGULAR_ITEM
-  });
-  const state = React25.useMemo(() => ({
-    disabled: disabled2,
-    highlighted,
-    checked
-  }), [disabled2, highlighted, checked]);
-  function handleClick(event) {
-    const details = createChangeEventDetails(exports_reason_parts.itemPress, event.nativeEvent, undefined, {
-      preventUnmountOnClose() {}
-    });
-    onCheckedChange?.(!checked, details);
-    if (details.isCanceled) {
-      return;
-    }
-    setChecked((currentlyChecked) => !currentlyChecked);
-  }
-  const element2 = useRenderElement("div", componentProps, {
-    state,
-    stateAttributesMapping: itemMapping,
-    props: [itemProps, {
-      role: "menuitemcheckbox",
-      "aria-checked": checked,
-      onClick: handleClick
-    }, elementProps, getItemProps],
-    ref: [itemRef, forwardedRef, listItem.ref]
-  });
-  return /* @__PURE__ */ import_jsx_runtime2.jsx(MenuCheckboxItemContext.Provider, {
-    value: state,
-    children: element2
-  });
-});
-if (false)
-  ;
-// node_modules/@base-ui/react/menu/checkbox-item-indicator/MenuCheckboxItemIndicator.mjs
-var React29 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/internals/useTransitionStatus.mjs
-var React27 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/utils/useOnMount.mjs
-var React26 = __toESM(require_react(), 1);
+var React14 = __toESM(require_react(), 1);
 "use client";
 var EMPTY = [];
 function useOnMount(fn2) {
-  React26.useEffect(fn2, EMPTY);
+  React14.useEffect(fn2, EMPTY);
+}
+
+// node_modules/@base-ui/utils/useTimeout.mjs
+"use client";
+var EMPTY2 = 0;
+
+class Timeout {
+  static create() {
+    return new Timeout;
+  }
+  currentId = EMPTY2;
+  start(delay, fn2) {
+    this.clear();
+    this.currentId = setTimeout(() => {
+      this.currentId = EMPTY2;
+      fn2();
+    }, delay);
+  }
+  isStarted() {
+    return this.currentId !== EMPTY2;
+  }
+  clear = () => {
+    if (this.currentId !== EMPTY2) {
+      clearTimeout(this.currentId);
+      this.currentId = EMPTY2;
+    }
+  };
+  disposeEffect = () => {
+    return this.clear;
+  };
+}
+function useTimeout() {
+  const timeout = useRefWithInit(Timeout.create).current;
+  useOnMount(timeout.disposeEffect);
+  return timeout;
 }
 
 // node_modules/@base-ui/utils/useAnimationFrame.mjs
 "use client";
-var EMPTY2 = null;
+var EMPTY3 = null;
 var LAST_RAF = globalThis.requestAnimationFrame;
 
 class Scheduler2 {
@@ -23256,18 +16189,18 @@ class AnimationFrame {
   static cancel(id) {
     return scheduler.cancel(id);
   }
-  currentId = EMPTY2;
+  currentId = EMPTY3;
   request(fn2) {
     this.cancel();
     this.currentId = scheduler.request(() => {
-      this.currentId = EMPTY2;
+      this.currentId = EMPTY3;
       fn2();
     });
   }
   cancel = () => {
-    if (this.currentId !== EMPTY2) {
+    if (this.currentId !== EMPTY3) {
       scheduler.cancel(this.currentId);
-      this.currentId = EMPTY2;
+      this.currentId = EMPTY3;
     }
   };
   disposeEffect = () => {
@@ -23280,398 +16213,206 @@ function useAnimationFrame() {
   return timeout;
 }
 
-// node_modules/@base-ui/react/internals/useTransitionStatus.mjs
+// node_modules/@base-ui/utils/useScrollLock.mjs
 "use client";
-function useTransitionStatus(open, enableIdleState = false, deferEndingState = false) {
-  const [transitionStatus, setTransitionStatus] = React27.useState(open && enableIdleState ? "idle" : undefined);
-  const [mounted, setMounted] = React27.useState(open);
-  if (open && !mounted) {
-    setMounted(true);
-    setTransitionStatus("starting");
+var originalHtmlStyles = {};
+var originalBodyStyles = {};
+var originalHtmlScrollBehavior = "";
+function hasInsetScrollbars(referenceElement) {
+  if (typeof document === "undefined") {
+    return false;
   }
-  if (!open && mounted && transitionStatus !== "ending" && !deferEndingState) {
-    setTransitionStatus("ending");
+  const doc = ownerDocument(referenceElement);
+  const win = getWindow(doc);
+  return win.innerWidth - doc.documentElement.clientWidth > 0;
+}
+function supportsStableScrollbarGutter(referenceElement) {
+  const supported = typeof CSS !== "undefined" && CSS.supports && CSS.supports("scrollbar-gutter", "stable");
+  if (!supported || typeof document === "undefined") {
+    return false;
   }
-  if (!open && !mounted && transitionStatus === "ending") {
-    setTransitionStatus(undefined);
+  const doc = ownerDocument(referenceElement);
+  const html = doc.documentElement;
+  const body = doc.body;
+  const scrollContainer = isOverflowElement(html) ? html : body;
+  const originalScrollContainerOverflowY = scrollContainer.style.overflowY;
+  const originalHtmlStyleGutter = html.style.scrollbarGutter;
+  html.style.scrollbarGutter = "stable";
+  scrollContainer.style.overflowY = "scroll";
+  const before = scrollContainer.offsetWidth;
+  scrollContainer.style.overflowY = "hidden";
+  const after = scrollContainer.offsetWidth;
+  scrollContainer.style.overflowY = originalScrollContainerOverflowY;
+  html.style.scrollbarGutter = originalHtmlStyleGutter;
+  return before === after;
+}
+function preventScrollOverlayScrollbars(referenceElement) {
+  const doc = ownerDocument(referenceElement);
+  const html = doc.documentElement;
+  const body = doc.body;
+  const elementToLock = isOverflowElement(html) ? html : body;
+  const originalElementToLockStyles = {
+    overflowY: elementToLock.style.overflowY,
+    overflowX: elementToLock.style.overflowX
+  };
+  Object.assign(elementToLock.style, {
+    overflowY: "hidden",
+    overflowX: "hidden"
+  });
+  return () => {
+    Object.assign(elementToLock.style, originalElementToLockStyles);
+  };
+}
+function preventScrollInsetScrollbars(referenceElement) {
+  const doc = ownerDocument(referenceElement);
+  const html = doc.documentElement;
+  const body = doc.body;
+  const win = getWindow(html);
+  let scrollTop = 0;
+  let scrollLeft = 0;
+  let updateGutterOnly = false;
+  const resizeFrame = AnimationFrame.create();
+  if (exports_parts.engine.webkit && (win.visualViewport?.scale ?? 1) !== 1) {
+    return () => {};
   }
-  useIsoLayoutEffect(() => {
-    if (!open && mounted && transitionStatus !== "ending" && deferEndingState) {
-      const frame = AnimationFrame.request(() => {
-        setTransitionStatus("ending");
-      });
-      return () => {
-        AnimationFrame.cancel(frame);
-      };
-    }
-    return;
-  }, [open, mounted, transitionStatus, deferEndingState]);
-  useIsoLayoutEffect(() => {
-    if (!open || enableIdleState) {
+  function lockScroll() {
+    const htmlStyles = win.getComputedStyle(html);
+    const bodyStyles = win.getComputedStyle(body);
+    const htmlScrollbarGutterValue = htmlStyles.scrollbarGutter || "";
+    const hasBothEdges = htmlScrollbarGutterValue.includes("both-edges");
+    const scrollbarGutterValue = hasBothEdges ? "stable both-edges" : "stable";
+    scrollTop = html.scrollTop;
+    scrollLeft = html.scrollLeft;
+    originalHtmlStyles = {
+      scrollbarGutter: html.style.scrollbarGutter,
+      overflowY: html.style.overflowY,
+      overflowX: html.style.overflowX
+    };
+    originalHtmlScrollBehavior = html.style.scrollBehavior;
+    originalBodyStyles = {
+      position: body.style.position,
+      height: body.style.height,
+      width: body.style.width,
+      boxSizing: body.style.boxSizing,
+      overflowY: body.style.overflowY,
+      overflowX: body.style.overflowX,
+      scrollBehavior: body.style.scrollBehavior
+    };
+    const isScrollableY = html.scrollHeight > html.clientHeight;
+    const isScrollableX = html.scrollWidth > html.clientWidth;
+    const hasConstantOverflowY = htmlStyles.overflowY === "scroll" || bodyStyles.overflowY === "scroll";
+    const hasConstantOverflowX = htmlStyles.overflowX === "scroll" || bodyStyles.overflowX === "scroll";
+    const scrollbarWidth = Math.max(0, win.innerWidth - body.clientWidth);
+    const scrollbarHeight = Math.max(0, win.innerHeight - body.clientHeight);
+    const marginY = parseFloat(bodyStyles.marginTop) + parseFloat(bodyStyles.marginBottom);
+    const marginX = parseFloat(bodyStyles.marginLeft) + parseFloat(bodyStyles.marginRight);
+    const elementToLock = isOverflowElement(html) ? html : body;
+    updateGutterOnly = supportsStableScrollbarGutter(referenceElement);
+    if (updateGutterOnly) {
+      html.style.scrollbarGutter = scrollbarGutterValue;
+      elementToLock.style.overflowY = "hidden";
+      elementToLock.style.overflowX = "hidden";
       return;
     }
-    const frame = AnimationFrame.request(() => {
-      setTransitionStatus(undefined);
+    Object.assign(html.style, {
+      scrollbarGutter: scrollbarGutterValue,
+      overflowY: "hidden",
+      overflowX: "hidden"
     });
-    return () => {
-      AnimationFrame.cancel(frame);
-    };
-  }, [enableIdleState, open]);
-  useIsoLayoutEffect(() => {
-    if (!open || !enableIdleState) {
-      return;
+    if (isScrollableY || hasConstantOverflowY) {
+      html.style.overflowY = "scroll";
     }
-    if (open && mounted && transitionStatus !== "idle") {
-      setTransitionStatus("starting");
+    if (isScrollableX || hasConstantOverflowX) {
+      html.style.overflowX = "scroll";
     }
-    const frame = AnimationFrame.request(() => {
-      setTransitionStatus("idle");
+    Object.assign(body.style, {
+      position: "relative",
+      height: marginY || scrollbarHeight ? `calc(100dvh - ${marginY + scrollbarHeight}px)` : "100dvh",
+      width: marginX || scrollbarWidth ? `calc(100vw - ${marginX + scrollbarWidth}px)` : "100vw",
+      boxSizing: "border-box",
+      overflow: "hidden",
+      scrollBehavior: "unset"
     });
-    return () => {
-      AnimationFrame.cancel(frame);
-    };
-  }, [enableIdleState, open, mounted, transitionStatus]);
-  return {
-    mounted,
-    setMounted,
-    transitionStatus
+    body.scrollTop = scrollTop;
+    body.scrollLeft = scrollLeft;
+    html.setAttribute("data-base-ui-scroll-locked", "");
+    html.style.scrollBehavior = "unset";
+  }
+  function cleanup() {
+    Object.assign(html.style, originalHtmlStyles);
+    Object.assign(body.style, originalBodyStyles);
+    if (!updateGutterOnly) {
+      html.scrollTop = scrollTop;
+      html.scrollLeft = scrollLeft;
+      html.removeAttribute("data-base-ui-scroll-locked");
+      html.style.scrollBehavior = originalHtmlScrollBehavior;
+    }
+  }
+  function handleResize() {
+    cleanup();
+    resizeFrame.request(lockScroll);
+  }
+  lockScroll();
+  const unsubscribeResize = addEventListener(win, "resize", handleResize);
+  return () => {
+    resizeFrame.cancel();
+    cleanup();
+    if (typeof win.removeEventListener === "function") {
+      unsubscribeResize();
+    }
   };
 }
 
-// node_modules/@base-ui/react/internals/useOpenChangeComplete.mjs
-var React28 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/internals/useAnimationsFinished.mjs
-var ReactDOM2 = __toESM(require_react_dom(), 1);
-
-// node_modules/@base-ui/react/utils/resolveRef.mjs
-function resolveRef(maybeRef) {
-  if (maybeRef == null) {
-    return maybeRef;
+class ScrollLocker {
+  lockCount = 0;
+  restore = null;
+  timeoutLock = Timeout.create();
+  timeoutUnlock = Timeout.create();
+  acquire(referenceElement) {
+    this.lockCount += 1;
+    if (this.lockCount === 1 && this.restore === null) {
+      this.timeoutLock.start(0, () => this.lock(referenceElement));
+    }
+    return this.release;
   }
-  return "current" in maybeRef ? maybeRef.current : maybeRef;
+  release = () => {
+    this.lockCount -= 1;
+    if (this.lockCount === 0 && this.restore) {
+      this.timeoutUnlock.start(0, this.unlock);
+    }
+  };
+  unlock = () => {
+    if (this.lockCount === 0 && this.restore) {
+      this.restore?.();
+      this.restore = null;
+    }
+  };
+  lock(referenceElement) {
+    if (this.lockCount === 0 || this.restore !== null) {
+      return;
+    }
+    const doc = ownerDocument(referenceElement);
+    const html = doc.documentElement;
+    const htmlOverflowY = getWindow(html).getComputedStyle(html).overflowY;
+    if (htmlOverflowY === "hidden" || htmlOverflowY === "clip") {
+      this.restore = NOOP;
+      return;
+    }
+    const hasOverlayScrollbars = exports_parts.os.ios || !hasInsetScrollbars(referenceElement);
+    this.restore = hasOverlayScrollbars ? preventScrollOverlayScrollbars(referenceElement) : preventScrollInsetScrollbars(referenceElement);
+  }
 }
-
-// node_modules/@base-ui/react/internals/useAnimationsFinished.mjs
-"use client";
-function useAnimationsFinished(elementOrRef, waitForStartingStyleRemoved = false, treatAbortedAsFinished = true) {
-  const frame = useAnimationFrame();
-  return useStableCallback((fnToExecute, signal = null) => {
-    frame.cancel();
-    const element2 = resolveRef(elementOrRef);
-    if (element2 == null) {
-      return;
-    }
-    const resolvedElement = element2;
-    const done = () => {
-      ReactDOM2.flushSync(fnToExecute);
-    };
-    if (typeof resolvedElement.getAnimations !== "function" || globalThis.BASE_UI_ANIMATIONS_DISABLED) {
-      fnToExecute();
-      return;
-    }
-    function exec() {
-      Promise.all(resolvedElement.getAnimations().map((animation) => animation.finished)).then(() => {
-        if (!signal?.aborted) {
-          done();
-        }
-      }).catch(() => {
-        if (treatAbortedAsFinished) {
-          if (!signal?.aborted) {
-            done();
-          }
-          return;
-        }
-        const currentAnimations = resolvedElement.getAnimations();
-        if (!signal?.aborted && currentAnimations.length > 0 && currentAnimations.some((animation) => animation.pending || animation.playState !== "finished")) {
-          exec();
-        }
-      });
-    }
-    if (waitForStartingStyleRemoved) {
-      const startingStyleAttribute = TransitionStatusDataAttributes.startingStyle;
-      if (!resolvedElement.hasAttribute(startingStyleAttribute)) {
-        frame.request(exec);
-        return;
-      }
-      const attributeObserver = new MutationObserver(() => {
-        if (!resolvedElement.hasAttribute(startingStyleAttribute)) {
-          attributeObserver.disconnect();
-          exec();
-        }
-      });
-      attributeObserver.observe(resolvedElement, {
-        attributes: true,
-        attributeFilter: [startingStyleAttribute]
-      });
-      signal?.addEventListener("abort", () => attributeObserver.disconnect(), {
-        once: true
-      });
-      return;
-    }
-    frame.request(exec);
-  });
-}
-
-// node_modules/@base-ui/react/internals/useOpenChangeComplete.mjs
-"use client";
-function useOpenChangeComplete(parameters) {
-  const {
-    enabled = true,
-    open,
-    ref,
-    onComplete: onCompleteParam
-  } = parameters;
-  const onComplete = useStableCallback(onCompleteParam);
-  const runOnceAnimationsFinish = useAnimationsFinished(ref, open, false);
-  React28.useEffect(() => {
+var SCROLL_LOCKER = new ScrollLocker;
+function useScrollLock(enabled = true, referenceElement = null) {
+  useIsoLayoutEffect(() => {
     if (!enabled) {
       return;
     }
-    const abortController = new AbortController;
-    runOnceAnimationsFinish(onComplete, abortController.signal);
-    return () => {
-      abortController.abort();
-    };
-  }, [enabled, open, onComplete, runOnceAnimationsFinish]);
+    return SCROLL_LOCKER.acquire(referenceElement);
+  }, [enabled, referenceElement]);
 }
-
-// node_modules/@base-ui/react/menu/checkbox-item-indicator/MenuCheckboxItemIndicator.mjs
-"use client";
-var MenuCheckboxItemIndicator = /* @__PURE__ */ React29.forwardRef(function MenuCheckboxItemIndicator2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    keepMounted = false,
-    ...elementProps
-  } = componentProps;
-  const item = useMenuCheckboxItemContext();
-  const indicatorRef = React29.useRef(null);
-  const {
-    transitionStatus,
-    setMounted
-  } = useTransitionStatus(item.checked);
-  useOpenChangeComplete({
-    open: item.checked,
-    ref: indicatorRef,
-    onComplete() {
-      if (!item.checked) {
-        setMounted(false);
-      }
-    }
-  });
-  const state = {
-    checked: item.checked,
-    disabled: item.disabled,
-    highlighted: item.highlighted,
-    transitionStatus
-  };
-  const element2 = useRenderElement("span", componentProps, {
-    state,
-    ref: [forwardedRef, indicatorRef],
-    stateAttributesMapping: itemMapping,
-    props: {
-      "aria-hidden": true,
-      ...elementProps
-    },
-    enabled: keepMounted || item.checked
-  });
-  return element2;
-});
-if (false)
-  ;
-// node_modules/@base-ui/react/menu/group/MenuGroup.mjs
-var React31 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/menu/group/MenuGroupContext.mjs
-var React30 = __toESM(require_react(), 1);
-"use client";
-var MenuGroupContext = /* @__PURE__ */ React30.createContext(undefined);
-if (false)
-  ;
-function useMenuGroupRootContext() {
-  const context = React30.useContext(MenuGroupContext);
-  if (context === undefined) {
-    throw new Error(formatErrorMessage_default(31));
-  }
-  return context;
-}
-
-// node_modules/@base-ui/react/menu/group/MenuGroup.mjs
-var import_jsx_runtime3 = __toESM(require_jsx_runtime(), 1);
-"use client";
-var MenuGroup = /* @__PURE__ */ React31.forwardRef(function MenuGroup2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    ...elementProps
-  } = componentProps;
-  const [labelId, setLabelId] = React31.useState(undefined);
-  const element2 = useRenderElement("div", componentProps, {
-    ref: forwardedRef,
-    props: {
-      role: "group",
-      "aria-labelledby": labelId,
-      ...elementProps
-    }
-  });
-  return /* @__PURE__ */ import_jsx_runtime3.jsx(MenuGroupContext.Provider, {
-    value: setLabelId,
-    children: element2
-  });
-});
-if (false)
-  ;
-// node_modules/@base-ui/react/menu/group-label/MenuGroupLabel.mjs
-var React32 = __toESM(require_react(), 1);
-"use client";
-var MenuGroupLabel = /* @__PURE__ */ React32.forwardRef(function MenuGroupLabel2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    id: idProp,
-    ...elementProps
-  } = componentProps;
-  const id = useBaseUiId(idProp);
-  const setLabelId = useMenuGroupRootContext();
-  useIsoLayoutEffect(() => {
-    setLabelId(id);
-    return () => {
-      setLabelId(undefined);
-    };
-  }, [setLabelId, id]);
-  return useRenderElement("div", componentProps, {
-    ref: forwardedRef,
-    props: {
-      id,
-      role: "presentation",
-      ...elementProps
-    }
-  });
-});
-if (false)
-  ;
-// node_modules/@base-ui/react/menu/item/MenuItem.mjs
-var React33 = __toESM(require_react(), 1);
-"use client";
-var MenuItem = /* @__PURE__ */ React33.forwardRef(function MenuItem2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    id: idProp,
-    label,
-    nativeButton = false,
-    disabled: disabled2 = false,
-    closeOnClick = true,
-    style: style2,
-    ...elementProps
-  } = componentProps;
-  const listItem = useCompositeListItem({
-    label
-  });
-  const menuPositionerContext = useMenuPositionerContext(true);
-  const id = useBaseUiId(idProp);
-  const {
-    store
-  } = useMenuRootContext();
-  const highlighted = store.useState("isActive", listItem.index);
-  const itemProps = store.useState("itemProps");
-  const {
-    getItemProps,
-    itemRef
-  } = useMenuItem({
-    closeOnClick,
-    disabled: disabled2,
-    highlighted,
-    id,
-    store,
-    nativeButton,
-    nodeId: menuPositionerContext?.context.nodeId,
-    itemMetadata: REGULAR_ITEM
-  });
-  const state = {
-    disabled: disabled2,
-    highlighted
-  };
-  return useRenderElement("div", componentProps, {
-    state,
-    props: [itemProps, elementProps, getItemProps],
-    ref: [itemRef, forwardedRef, listItem.ref]
-  });
-});
-if (false)
-  ;
-// node_modules/@base-ui/react/menu/link-item/MenuLinkItem.mjs
-var React34 = __toESM(require_react(), 1);
-"use client";
-var MenuLinkItem = /* @__PURE__ */ React34.forwardRef(function MenuLinkItem2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    id: idProp,
-    label,
-    closeOnClick = false,
-    style: style2,
-    ...elementProps
-  } = componentProps;
-  const linkRef = React34.useRef(null);
-  const listItem = useCompositeListItem({
-    label
-  });
-  const menuPositionerContext = useMenuPositionerContext(true);
-  const nodeId = menuPositionerContext?.context.nodeId;
-  const id = useBaseUiId(idProp);
-  const {
-    store
-  } = useMenuRootContext();
-  const highlighted = store.useState("isActive", listItem.index);
-  const itemProps = store.useState("itemProps");
-  const typingRef = store.context.typingRef;
-  const {
-    getButtonProps,
-    buttonRef
-  } = useButton({
-    native: false,
-    composite: true
-  });
-  const commonProps = useMenuItemCommonProps({
-    closeOnClick,
-    highlighted,
-    id,
-    nodeId,
-    store,
-    typingRef,
-    itemRef: linkRef
-  });
-  function getItemProps(externalProps) {
-    return mergeProps(commonProps, externalProps, getButtonProps);
-  }
-  const state = {
-    highlighted
-  };
-  return useRenderElement("a", componentProps, {
-    state,
-    props: [itemProps, elementProps, getItemProps],
-    ref: [linkRef, buttonRef, forwardedRef, listItem.ref]
-  });
-});
-if (false)
-  ;
-// node_modules/@base-ui/react/menu/popup/MenuPopup.mjs
-var React55 = __toESM(require_react(), 1);
 // node_modules/@base-ui/react/floating-ui-react/components/FloatingFocusManager.mjs
-var React38 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/utils/addEventListener.mjs
-function addEventListener(target, type, listener, options2) {
-  target.addEventListener(type, listener, options2);
-  return () => {
-    target.removeEventListener(type, listener, options2);
-  };
-}
+var React19 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/utils/mergeCleanups.mjs
 function mergeCleanups(...cleanups) {
@@ -23704,48 +16445,8 @@ function createLatestRef(value) {
   return latest;
 }
 
-// node_modules/@base-ui/utils/useTimeout.mjs
-"use client";
-var EMPTY3 = 0;
-
-class Timeout {
-  static create() {
-    return new Timeout;
-  }
-  currentId = EMPTY3;
-  start(delay, fn2) {
-    this.clear();
-    this.currentId = setTimeout(() => {
-      this.currentId = EMPTY3;
-      fn2();
-    }, delay);
-  }
-  isStarted() {
-    return this.currentId !== EMPTY3;
-  }
-  clear = () => {
-    if (this.currentId !== EMPTY3) {
-      clearTimeout(this.currentId);
-      this.currentId = EMPTY3;
-    }
-  };
-  disposeEffect = () => {
-    return this.clear;
-  };
-}
-function useTimeout() {
-  const timeout = useRefWithInit(Timeout.create).current;
-  useOnMount(timeout.disposeEffect);
-  return timeout;
-}
-
-// node_modules/@base-ui/utils/owner.mjs
-function ownerDocument(node) {
-  return node?.ownerDocument || document;
-}
-
 // node_modules/@base-ui/react/utils/FocusGuard.mjs
-var React35 = __toESM(require_react(), 1);
+var React15 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/utils/visuallyHidden.mjs
 var visuallyHiddenBase = {
@@ -23770,10 +16471,10 @@ var visuallyHiddenInput = {
 };
 
 // node_modules/@base-ui/react/utils/FocusGuard.mjs
-var import_jsx_runtime4 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime2 = __toESM(require_jsx_runtime(), 1);
 "use client";
-var FocusGuard = /* @__PURE__ */ React35.forwardRef(function FocusGuard2(props, ref) {
-  const [role, setRole] = React35.useState();
+var FocusGuard = /* @__PURE__ */ React15.forwardRef(function FocusGuard2(props, ref) {
+  const [role, setRole] = React15.useState();
   useIsoLayoutEffect(() => {
     if (exports_parts.screenReader.voiceOver && exports_parts.engine.webkit) {
       setRole("button");
@@ -23783,7 +16484,7 @@ var FocusGuard = /* @__PURE__ */ React35.forwardRef(function FocusGuard2(props, 
     tabIndex: 0,
     role
   };
-  return /* @__PURE__ */ import_jsx_runtime4.jsx("span", {
+  return /* @__PURE__ */ import_jsx_runtime2.jsx("span", {
     ...props,
     ref,
     style: visuallyHidden,
@@ -23805,11 +16506,11 @@ var ARROW_DOWN = "ArrowDown";
 
 // node_modules/@base-ui/react/internals/shadowDom.mjs
 function activeElement2(doc) {
-  let element2 = doc.activeElement;
-  while (element2?.shadowRoot?.activeElement != null) {
-    element2 = element2.shadowRoot.activeElement;
+  let element = doc.activeElement;
+  while (element?.shadowRoot?.activeElement != null) {
+    element = element.shadowRoot.activeElement;
   }
-  return element2;
+  return element;
 }
 function contains(parent, child) {
   if (!parent || !child) {
@@ -23863,27 +16564,27 @@ function isEventTargetWithin(event, node) {
   const eventAgain = event;
   return eventAgain.target != null && node.contains(eventAgain.target);
 }
-function isRootElement(element2) {
-  return element2.matches("html,body");
+function isRootElement(element) {
+  return element.matches("html,body");
 }
-function isTypeableElement(element2) {
-  return isHTMLElement(element2) && element2.matches(TYPEABLE_SELECTOR);
+function isTypeableElement(element) {
+  return isHTMLElement(element) && element.matches(TYPEABLE_SELECTOR);
 }
-function isInteractiveElement(element2) {
-  return element2?.closest(`button,a[href],[role="button"],select,[tabindex]:not([tabindex="-1"]),${TYPEABLE_SELECTOR}`) != null;
+function isInteractiveElement(element) {
+  return element?.closest(`button,a[href],[role="button"],select,[tabindex]:not([tabindex="-1"]),${TYPEABLE_SELECTOR}`) != null;
 }
-function isTypeableCombobox(element2) {
-  if (!element2) {
+function isTypeableCombobox(element) {
+  if (!element) {
     return false;
   }
-  return element2.getAttribute("role") === "combobox" && isTypeableElement(element2);
+  return element.getAttribute("role") === "combobox" && isTypeableElement(element);
 }
-function matchesFocusVisible(element2) {
-  if (!element2 || exports_parts.env.jsdom) {
+function matchesFocusVisible(element) {
+  if (!element || exports_parts.env.jsdom) {
     return true;
   }
   try {
-    return element2.matches(":focus-visible");
+    return element.matches(":focus-visible");
   } catch (_e2) {
     return true;
   }
@@ -23975,10 +16676,10 @@ function getAlignmentSides(placement, rects, rtl) {
   if (rtl === undefined) {
     rtl = false;
   }
-  const alignment2 = getAlignment(placement);
+  const alignment = getAlignment(placement);
   const alignmentAxis = getAlignmentAxis(placement);
   const length = getAxisLength(alignmentAxis);
-  let mainAlignmentSide = alignmentAxis === "x" ? alignment2 === (rtl ? "end" : "start") ? "right" : "left" : alignment2 === "start" ? "bottom" : "top";
+  let mainAlignmentSide = alignmentAxis === "x" ? alignment === (rtl ? "end" : "start") ? "right" : "left" : alignment === "start" ? "bottom" : "top";
   if (rects.reference[length] > rects.floating[length]) {
     mainAlignmentSide = getOppositePlacement(mainAlignmentSide);
   }
@@ -24010,15 +16711,15 @@ function getSideList(side, isStart, rtl) {
   }
 }
 function getOppositeAxisPlacements(placement, flipAlignment, direction, rtl) {
-  const alignment2 = getAlignment(placement);
-  let list2 = getSideList(getSide(placement), direction === "start", rtl);
-  if (alignment2) {
-    list2 = list2.map((side) => side + "-" + alignment2);
+  const alignment = getAlignment(placement);
+  let list = getSideList(getSide(placement), direction === "start", rtl);
+  if (alignment) {
+    list = list.map((side) => side + "-" + alignment);
     if (flipAlignment) {
-      list2 = list2.concat(list2.map(getOppositeAlignmentPlacement));
+      list = list.concat(list.map(getOppositeAlignmentPlacement));
     }
   }
-  return list2;
+  return list;
 }
 function getOppositePlacement(placement) {
   const side = getSide(placement);
@@ -24061,8 +16762,8 @@ function rectToClientRect(rect) {
 }
 
 // node_modules/@base-ui/react/floating-ui-react/utils/composite.mjs
-function isIndexOutOfListBounds(list2, index3) {
-  return index3 < 0 || index3 >= list2.length;
+function isIndexOutOfListBounds(list, index3) {
+  return index3 < 0 || index3 >= list.length;
 }
 function getMinListIndex(listRef, disabledIndices) {
   return findNonDisabledListIndex(listRef.current, {
@@ -24076,7 +16777,7 @@ function getMaxListIndex(listRef, disabledIndices) {
     disabledIndices
   });
 }
-function findNonDisabledListIndex(list2, {
+function findNonDisabledListIndex(list, {
   startingIndex = -1,
   decrement = false,
   disabledIndices,
@@ -24085,47 +16786,47 @@ function findNonDisabledListIndex(list2, {
   let index3 = startingIndex;
   do {
     index3 += decrement ? -amount : amount;
-  } while (index3 >= 0 && index3 <= list2.length - 1 && isListIndexDisabled(list2, index3, disabledIndices));
+  } while (index3 >= 0 && index3 <= list.length - 1 && isListIndexDisabled(list, index3, disabledIndices));
   return index3;
 }
-function isListIndexDisabled(list2, index3, disabledIndices) {
+function isListIndexDisabled(list, index3, disabledIndices) {
   const isExplicitlyDisabled = typeof disabledIndices === "function" ? disabledIndices(index3) : disabledIndices?.includes(index3) ?? false;
   if (isExplicitlyDisabled) {
     return true;
   }
-  const element2 = list2[index3];
-  if (!element2) {
+  const element = list[index3];
+  if (!element) {
     return false;
   }
-  if (!isElementVisible(element2)) {
+  if (!isElementVisible(element)) {
     return true;
   }
-  return !disabledIndices && (element2.hasAttribute("disabled") || element2.getAttribute("aria-disabled") === "true");
+  return !disabledIndices && (element.hasAttribute("disabled") || element.getAttribute("aria-disabled") === "true");
 }
 function isHiddenByStyles(styles) {
   return styles.visibility === "hidden" || styles.visibility === "collapse";
 }
-function isElementVisible(element2, styles = element2 ? getComputedStyle2(element2) : null) {
-  if (!element2 || !element2.isConnected || !styles || isHiddenByStyles(styles)) {
+function isElementVisible(element, styles = element ? getComputedStyle2(element) : null) {
+  if (!element || !element.isConnected || !styles || isHiddenByStyles(styles)) {
     return false;
   }
-  if (typeof element2.checkVisibility === "function") {
-    return element2.checkVisibility();
+  if (typeof element.checkVisibility === "function") {
+    return element.checkVisibility();
   }
   return styles.display !== "none" && styles.display !== "contents";
 }
 
 // node_modules/@base-ui/react/floating-ui-react/utils/tabbable.mjs
 var CANDIDATE_SELECTOR = 'a[href],button,input,select,textarea,summary,details,iframe,object,embed,[tabindex],[contenteditable]:not([contenteditable="false"]),audio[controls],video[controls]';
-function getParentElement(element2) {
-  const assignedSlot = element2.assignedSlot;
+function getParentElement(element) {
+  const assignedSlot = element.assignedSlot;
   if (assignedSlot) {
     return assignedSlot;
   }
-  if (element2.parentElement) {
-    return element2.parentElement;
+  if (element.parentElement) {
+    return element.parentElement;
   }
-  const rootNode = element2.getRootNode();
+  const rootNode = element.getRootNode();
   return isShadowRoot(rootNode) ? rootNode.host : null;
 }
 function getDetailsSummary(details) {
@@ -24136,56 +16837,56 @@ function getDetailsSummary(details) {
   }
   return null;
 }
-function isWithinOpenDetailsSummary(element2, details) {
+function isWithinOpenDetailsSummary(element, details) {
   const summary = getDetailsSummary(details);
-  return !!summary && (element2 === summary || contains(summary, element2));
+  return !!summary && (element === summary || contains(summary, element));
 }
-function isFocusableCandidate(element2) {
-  const nodeName = element2 ? getNodeName(element2) : "";
-  return element2 != null && element2.matches(CANDIDATE_SELECTOR) && (nodeName !== "summary" || element2.parentElement != null && getNodeName(element2.parentElement) === "details" && getDetailsSummary(element2.parentElement) === element2) && (nodeName !== "details" || getDetailsSummary(element2) == null) && (nodeName !== "input" || element2.type !== "hidden");
+function isFocusableCandidate(element) {
+  const nodeName = element ? getNodeName(element) : "";
+  return element != null && element.matches(CANDIDATE_SELECTOR) && (nodeName !== "summary" || element.parentElement != null && getNodeName(element.parentElement) === "details" && getDetailsSummary(element.parentElement) === element) && (nodeName !== "details" || getDetailsSummary(element) == null) && (nodeName !== "input" || element.type !== "hidden");
 }
-function isFocusableElement(element2) {
-  if (!isFocusableCandidate(element2) || !element2.isConnected || element2.matches(":disabled")) {
+function isFocusableElement(element) {
+  if (!isFocusableCandidate(element) || !element.isConnected || element.matches(":disabled")) {
     return false;
   }
-  for (let current = element2;current; current = getParentElement(current)) {
-    const isAncestor = current !== element2;
+  for (let current = element;current; current = getParentElement(current)) {
+    const isAncestor = current !== element;
     const isSlot = getNodeName(current) === "slot";
     if (current.hasAttribute("inert")) {
       return false;
     }
-    if (isAncestor && getNodeName(current) === "details" && !current.open && !isWithinOpenDetailsSummary(element2, current) || current.hasAttribute("hidden") || !isSlot && !isVisibleInTabbableTree(current, isAncestor)) {
+    if (isAncestor && getNodeName(current) === "details" && !current.open && !isWithinOpenDetailsSummary(element, current) || current.hasAttribute("hidden") || !isSlot && !isVisibleInTabbableTree(current, isAncestor)) {
       return false;
     }
   }
   return true;
 }
-function isVisibleInTabbableTree(element2, isAncestor) {
-  const styles = getComputedStyle2(element2);
+function isVisibleInTabbableTree(element, isAncestor) {
+  const styles = getComputedStyle2(element);
   if (!isAncestor) {
-    return isElementVisible(element2, styles);
+    return isElementVisible(element, styles);
   }
   return styles.display !== "none";
 }
-function getTabIndex(element2) {
-  const tabIndex = element2.tabIndex;
+function getTabIndex(element) {
+  const tabIndex = element.tabIndex;
   if (tabIndex < 0) {
-    const nodeName = getNodeName(element2);
-    if (nodeName === "details" || nodeName === "audio" || nodeName === "video" || isHTMLElement(element2) && element2.isContentEditable) {
+    const nodeName = getNodeName(element);
+    if (nodeName === "details" || nodeName === "audio" || nodeName === "video" || isHTMLElement(element) && element.isContentEditable) {
       return 0;
     }
   }
   return tabIndex;
 }
-function getNamedRadioInput(element2) {
-  if (getNodeName(element2) !== "input") {
+function getNamedRadioInput(element) {
+  if (getNodeName(element) !== "input") {
     return null;
   }
-  const input = element2;
+  const input = element;
   return input.type === "radio" && input.name !== "" ? input : null;
 }
-function isTabbableRadio(element2, candidates) {
-  const input = getNamedRadioInput(element2);
+function isTabbableRadio(element, candidates) {
+  const input = getNamedRadioInput(element);
   if (!input) {
     return true;
   }
@@ -24215,24 +16916,24 @@ function getComposedChildren(container) {
   }
   return Array.from(container.children);
 }
-function appendCandidates(container, list2) {
+function appendCandidates(container, list) {
   getComposedChildren(container).forEach((child) => {
     if (isFocusableCandidate(child)) {
-      list2.push(child);
+      list.push(child);
     }
-    appendCandidates(child, list2);
+    appendCandidates(child, list);
   });
 }
-function appendMatchingElements(container, selector, list2) {
+function appendMatchingElements(container, selector, list) {
   getComposedChildren(container).forEach((child) => {
     if (isHTMLElement(child) && child.matches(selector)) {
-      list2.push(child);
+      list.push(child);
     }
-    appendMatchingElements(child, selector, list2);
+    appendMatchingElements(child, selector, list);
   });
 }
-function isTabbable(element2) {
-  return isFocusableElement(element2) && getTabIndex(element2) >= 0;
+function isTabbable(element) {
+  return isFocusableElement(element) && getTabIndex(element) >= 0;
 }
 function focusable(container) {
   const candidates = [];
@@ -24241,18 +16942,18 @@ function focusable(container) {
 }
 function tabbable(container) {
   const candidates = focusable(container);
-  return candidates.filter((element2) => getTabIndex(element2) >= 0 && isTabbableRadio(element2, candidates));
+  return candidates.filter((element) => getTabIndex(element) >= 0 && isTabbableRadio(element, candidates));
 }
 function getTabbableIn(container, dir) {
-  const list2 = tabbable(container);
-  const len = list2.length;
+  const list = tabbable(container);
+  const len = list.length;
   if (len === 0) {
     return;
   }
   const active = activeElement2(ownerDocument(container));
-  const index3 = list2.indexOf(active);
+  const index3 = list.indexOf(active);
   const nextIndex = index3 === -1 ? dir === 1 ? 0 : len - 1 : index3 + dir;
-  return list2[nextIndex];
+  return list[nextIndex];
 }
 function getNextTabbable(referenceElement) {
   return getTabbableIn(ownerDocument(referenceElement).body, 1) || referenceElement;
@@ -24264,17 +16965,17 @@ function getTabbableNearElement(referenceElement, dir) {
   if (!referenceElement) {
     return null;
   }
-  const list2 = tabbable(ownerDocument(referenceElement).body);
-  const elementCount = list2.length;
+  const list = tabbable(ownerDocument(referenceElement).body);
+  const elementCount = list.length;
   if (elementCount === 0) {
     return null;
   }
-  const index3 = list2.indexOf(referenceElement);
+  const index3 = list.indexOf(referenceElement);
   if (index3 === -1) {
     return null;
   }
   const nextIndex = (index3 + dir + elementCount) % elementCount;
-  return list2[nextIndex];
+  return list[nextIndex];
 }
 function getTabbableAfterElement(referenceElement) {
   return getTabbableNearElement(referenceElement, 1);
@@ -24289,21 +16990,21 @@ function isOutsideEvent(event, container) {
 }
 function disableFocusInside(container) {
   const tabbableElements = tabbable(container);
-  tabbableElements.forEach((element2) => {
-    element2.dataset.tabindex = element2.getAttribute("tabindex") || "";
-    element2.setAttribute("tabindex", "-1");
+  tabbableElements.forEach((element) => {
+    element.dataset.tabindex = element.getAttribute("tabindex") || "";
+    element.setAttribute("tabindex", "-1");
   });
 }
 function enableFocusInside(container) {
   const elements = [];
   appendMatchingElements(container, "[data-tabindex]", elements);
-  elements.forEach((element2) => {
-    const tabindex = element2.dataset.tabindex;
-    delete element2.dataset.tabindex;
+  elements.forEach((element) => {
+    const tabindex = element.dataset.tabindex;
+    delete element.dataset.tabindex;
     if (tabindex) {
-      element2.setAttribute("tabindex", tabindex);
+      element.setAttribute("tabindex", tabindex);
     } else {
-      element2.removeAttribute("tabindex");
+      element.removeAttribute("tabindex");
     }
   });
 }
@@ -24324,6 +17025,107 @@ function getNodeAncestors(nodes, id) {
     }
   }
   return allAncestors;
+}
+
+// node_modules/@base-ui/react/internals/reason-parts.mjs
+var exports_reason_parts = {};
+__export(exports_reason_parts, {
+  cancelOpen: () => cancelOpen,
+  chipRemovePress: () => chipRemovePress,
+  clearPress: () => clearPress,
+  closePress: () => closePress,
+  closeWatcher: () => closeWatcher,
+  decrementPress: () => decrementPress,
+  disabled: () => disabled,
+  drag: () => drag,
+  escapeKey: () => escapeKey,
+  focusOut: () => focusOut,
+  imperativeAction: () => imperativeAction,
+  incrementPress: () => incrementPress,
+  initial: () => initial,
+  inputBlur: () => inputBlur,
+  inputChange: () => inputChange,
+  inputClear: () => inputClear,
+  inputPaste: () => inputPaste,
+  inputPress: () => inputPress,
+  itemPress: () => itemPress,
+  keyboard: () => keyboard,
+  linkPress: () => linkPress,
+  listNavigation: () => listNavigation,
+  missing: () => missing,
+  none: () => none,
+  outsidePress: () => outsidePress,
+  pointer: () => pointer,
+  scrub: () => scrub,
+  siblingOpen: () => siblingOpen,
+  swipe: () => swipe,
+  trackPress: () => trackPress,
+  triggerFocus: () => triggerFocus,
+  triggerHover: () => triggerHover,
+  triggerPress: () => triggerPress,
+  wheel: () => wheel,
+  windowResize: () => windowResize
+});
+var none = "none";
+var triggerPress = "trigger-press";
+var triggerHover = "trigger-hover";
+var triggerFocus = "trigger-focus";
+var outsidePress = "outside-press";
+var itemPress = "item-press";
+var closePress = "close-press";
+var linkPress = "link-press";
+var clearPress = "clear-press";
+var chipRemovePress = "chip-remove-press";
+var trackPress = "track-press";
+var incrementPress = "increment-press";
+var decrementPress = "decrement-press";
+var inputChange = "input-change";
+var inputClear = "input-clear";
+var inputBlur = "input-blur";
+var inputPaste = "input-paste";
+var inputPress = "input-press";
+var focusOut = "focus-out";
+var escapeKey = "escape-key";
+var closeWatcher = "close-watcher";
+var listNavigation = "list-navigation";
+var keyboard = "keyboard";
+var pointer = "pointer";
+var drag = "drag";
+var wheel = "wheel";
+var scrub = "scrub";
+var cancelOpen = "cancel-open";
+var siblingOpen = "sibling-open";
+var disabled = "disabled";
+var missing = "missing";
+var initial = "initial";
+var imperativeAction = "imperative-action";
+var swipe = "swipe";
+var windowResize = "window-resize";
+
+// node_modules/@base-ui/react/internals/createBaseUIEventDetails.mjs
+function createChangeEventDetails(reason, event, trigger, customProperties) {
+  let canceled = false;
+  let allowPropagation = false;
+  const custom = customProperties ?? EMPTY_OBJECT;
+  const details = {
+    reason,
+    event: event ?? new Event("base-ui"),
+    cancel() {
+      canceled = true;
+    },
+    allowPropagation() {
+      allowPropagation = true;
+    },
+    get isCanceled() {
+      return canceled;
+    },
+    get isPropagationAllowed() {
+      return allowPropagation;
+    },
+    trigger,
+    ...custom
+  };
+  return details;
 }
 
 // node_modules/@base-ui/react/floating-ui-react/utils/createAttribute.mjs
@@ -24474,24 +17276,24 @@ function applyAttributeToOthers(uncorrectedAvoidElements, body, ariaHidden, iner
   lockCount += 1;
   return () => {
     if (counterMap) {
-      hiddenElements.forEach((element2) => {
-        const currentCounterValue = counterMap.get(element2) || 0;
+      hiddenElements.forEach((element) => {
+        const currentCounterValue = counterMap.get(element) || 0;
         const counterValue = currentCounterValue - 1;
-        counterMap.set(element2, counterValue);
+        counterMap.set(element, counterValue);
         if (!counterValue) {
-          if (!uncontrolledElementsSet?.has(element2) && controlAttribute) {
-            element2.removeAttribute(controlAttribute);
+          if (!uncontrolledElementsSet?.has(element) && controlAttribute) {
+            element.removeAttribute(controlAttribute);
           }
-          uncontrolledElementsSet?.delete(element2);
+          uncontrolledElementsSet?.delete(element);
         }
       });
     }
     if (mark) {
-      markedElements.forEach((element2) => {
-        const markerValue = (markerCounterMap.get(element2) || 0) - 1;
-        markerCounterMap.set(element2, markerValue);
+      markedElements.forEach((element) => {
+        const markerValue = (markerCounterMap.get(element) || 0) - 1;
+        markerCounterMap.set(element, markerValue);
         if (!markerValue) {
-          element2.removeAttribute(markerName);
+          element.removeAttribute(markerName);
         }
       });
     }
@@ -24518,8 +17320,32 @@ function markOthers(avoidElements, options2 = {}) {
 }
 
 // node_modules/@base-ui/react/floating-ui-react/components/FloatingPortal.mjs
-var React36 = __toESM(require_react(), 1);
-var ReactDOM3 = __toESM(require_react_dom(), 1);
+var React17 = __toESM(require_react(), 1);
+var ReactDOM2 = __toESM(require_react_dom(), 1);
+
+// node_modules/@base-ui/utils/useId.mjs
+var React16 = __toESM(require_react(), 1);
+"use client";
+var globalId = 0;
+function useGlobalId(idOverride, prefix2 = "mui") {
+  const [defaultId, setDefaultId] = React16.useState(idOverride);
+  const id = idOverride || defaultId;
+  React16.useEffect(() => {
+    if (defaultId == null) {
+      globalId += 1;
+      setDefaultId(`${prefix2}-${globalId}`);
+    }
+  }, [defaultId, prefix2]);
+  return id;
+}
+var maybeReactUseId = SafeReact.useId;
+function useId(idOverride, prefix2) {
+  if (maybeReactUseId !== undefined) {
+    const reactId = maybeReactUseId();
+    return idOverride ?? (prefix2 ? `${prefix2}-${reactId}` : reactId);
+  }
+  return useGlobalId(idOverride, prefix2);
+}
 
 // node_modules/@base-ui/react/internals/constants.mjs
 var TYPEAHEAD_RESET_MS = 500;
@@ -24548,12 +17374,12 @@ var ownerVisuallyHidden = {
 };
 
 // node_modules/@base-ui/react/floating-ui-react/components/FloatingPortal.mjs
-var import_jsx_runtime5 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime3 = __toESM(require_jsx_runtime(), 1);
 "use client";
-var PortalContext = /* @__PURE__ */ React36.createContext(null);
+var PortalContext = /* @__PURE__ */ React17.createContext(null);
 if (false)
   ;
-var usePortalContext = () => React36.useContext(PortalContext);
+var usePortalContext = () => React17.useContext(PortalContext);
 var attr = createAttribute("portal");
 function useFloatingPortalNode(props = {}) {
   const {
@@ -24565,14 +17391,14 @@ function useFloatingPortalNode(props = {}) {
   const uniqueId = useId();
   const portalContext = usePortalContext();
   const parentPortalNode = portalContext?.portalNode;
-  const [containerElement, setContainerElement] = React36.useState(null);
-  const [portalNode, setPortalNode] = React36.useState(null);
+  const [containerElement, setContainerElement] = React17.useState(null);
+  const [portalNode, setPortalNode] = React17.useState(null);
   const setPortalNodeRef = useStableCallback((node) => {
     if (node !== null) {
       setPortalNode(node);
     }
   });
-  const containerRef = React36.useRef(null);
+  const containerRef = React17.useRef(null);
   useIsoLayoutEffect(() => {
     if (containerProp === null) {
       if (containerRef.current) {
@@ -24607,13 +17433,13 @@ function useFloatingPortalNode(props = {}) {
       [attr]: ""
     }, elementProps]
   });
-  const portalSubtree = containerElement && portalElement ? /* @__PURE__ */ ReactDOM3.createPortal(portalElement, containerElement) : null;
+  const portalSubtree = containerElement && portalElement ? /* @__PURE__ */ ReactDOM2.createPortal(portalElement, containerElement) : null;
   return {
     portalNode,
     portalSubtree
   };
 }
-var FloatingPortal = /* @__PURE__ */ React36.forwardRef(function FloatingPortal2(componentProps, forwardedRef) {
+var FloatingPortal = /* @__PURE__ */ React17.forwardRef(function FloatingPortal2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -24632,16 +17458,16 @@ var FloatingPortal = /* @__PURE__ */ React36.forwardRef(function FloatingPortal2
     componentProps,
     elementProps
   });
-  const beforeOutsideRef = React36.useRef(null);
-  const afterOutsideRef = React36.useRef(null);
-  const beforeInsideRef = React36.useRef(null);
-  const afterInsideRef = React36.useRef(null);
-  const [focusManagerState, setFocusManagerState] = React36.useState(null);
-  const focusInsideDisabledRef = React36.useRef(false);
+  const beforeOutsideRef = React17.useRef(null);
+  const afterOutsideRef = React17.useRef(null);
+  const beforeInsideRef = React17.useRef(null);
+  const afterInsideRef = React17.useRef(null);
+  const [focusManagerState, setFocusManagerState] = React17.useState(null);
+  const focusInsideDisabledRef = React17.useRef(false);
   const modal = focusManagerState?.modal;
   const open = focusManagerState?.open;
   const shouldRenderGuards = typeof renderGuards === "boolean" ? renderGuards : !!focusManagerState && !focusManagerState.modal && focusManagerState.open && !!portalNode;
-  React36.useEffect(() => {
+  React17.useEffect(() => {
     if (!portalNode || modal) {
       return;
     }
@@ -24667,7 +17493,7 @@ var FloatingPortal = /* @__PURE__ */ React36.forwardRef(function FloatingPortal2
     enableFocusInside(portalNode);
     focusInsideDisabledRef.current = false;
   }, [open, portalNode]);
-  const portalContextValue = React36.useMemo(() => ({
+  const portalContextValue = React17.useMemo(() => ({
     beforeOutsideRef,
     afterOutsideRef,
     beforeInsideRef,
@@ -24675,10 +17501,10 @@ var FloatingPortal = /* @__PURE__ */ React36.forwardRef(function FloatingPortal2
     portalNode,
     setFocusManagerState
   }), [portalNode]);
-  return /* @__PURE__ */ import_jsx_runtime5.jsxs(React36.Fragment, {
-    children: [portalSubtree, /* @__PURE__ */ import_jsx_runtime5.jsxs(PortalContext.Provider, {
+  return /* @__PURE__ */ import_jsx_runtime3.jsxs(React17.Fragment, {
+    children: [portalSubtree, /* @__PURE__ */ import_jsx_runtime3.jsxs(PortalContext.Provider, {
       value: portalContextValue,
-      children: [shouldRenderGuards && portalNode && /* @__PURE__ */ import_jsx_runtime5.jsx(FocusGuard, {
+      children: [shouldRenderGuards && portalNode && /* @__PURE__ */ import_jsx_runtime3.jsx(FocusGuard, {
         "data-type": "outside",
         ref: beforeOutsideRef,
         onFocus: (event) => {
@@ -24690,10 +17516,10 @@ var FloatingPortal = /* @__PURE__ */ React36.forwardRef(function FloatingPortal2
             prevTabbable?.focus();
           }
         }
-      }), shouldRenderGuards && portalNode && /* @__PURE__ */ import_jsx_runtime5.jsx("span", {
+      }), shouldRenderGuards && portalNode && /* @__PURE__ */ import_jsx_runtime3.jsx("span", {
         "aria-owns": portalNode.id,
         style: ownerVisuallyHidden
-      }), portalNode && /* @__PURE__ */ ReactDOM3.createPortal(children, portalNode), shouldRenderGuards && portalNode && /* @__PURE__ */ import_jsx_runtime5.jsx(FocusGuard, {
+      }), portalNode && /* @__PURE__ */ ReactDOM2.createPortal(children, portalNode), shouldRenderGuards && portalNode && /* @__PURE__ */ import_jsx_runtime3.jsx(FocusGuard, {
         "data-type": "outside",
         ref: afterOutsideRef,
         onFocus: (event) => {
@@ -24716,7 +17542,7 @@ if (false)
   ;
 
 // node_modules/@base-ui/react/floating-ui-react/components/FloatingTree.mjs
-var React37 = __toESM(require_react(), 1);
+var React18 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/floating-ui-react/utils/createEventEmitter.mjs
 function createEventEmitter() {
@@ -24755,17 +17581,17 @@ class FloatingTreeStore {
 }
 
 // node_modules/@base-ui/react/floating-ui-react/components/FloatingTree.mjs
-var import_jsx_runtime6 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime4 = __toESM(require_jsx_runtime(), 1);
 "use client";
-var FloatingNodeContext = /* @__PURE__ */ React37.createContext(null);
+var FloatingNodeContext = /* @__PURE__ */ React18.createContext(null);
 if (false)
   ;
-var FloatingTreeContext = /* @__PURE__ */ React37.createContext(null);
+var FloatingTreeContext = /* @__PURE__ */ React18.createContext(null);
 if (false)
   ;
-var useFloatingParentNodeId = () => React37.useContext(FloatingNodeContext)?.id || null;
+var useFloatingParentNodeId = () => React18.useContext(FloatingNodeContext)?.id || null;
 var useFloatingTree = (externalTree) => {
-  const contextTree = React37.useContext(FloatingTreeContext);
+  const contextTree = React18.useContext(FloatingTreeContext);
   return externalTree ?? contextTree;
 };
 function useFloatingNodeId(externalTree) {
@@ -24793,8 +17619,8 @@ function FloatingNode(props) {
     id
   } = props;
   const parentId = useFloatingParentNodeId();
-  return /* @__PURE__ */ import_jsx_runtime6.jsx(FloatingNodeContext.Provider, {
-    value: React37.useMemo(() => ({
+  return /* @__PURE__ */ import_jsx_runtime4.jsx(FloatingNodeContext.Provider, {
+    value: React18.useMemo(() => ({
       id,
       parentId
     }), [id, parentId]),
@@ -24807,14 +17633,22 @@ function FloatingTree(props) {
     externalTree
   } = props;
   const tree = useRefWithInit(() => externalTree ?? new FloatingTreeStore).current;
-  return /* @__PURE__ */ import_jsx_runtime6.jsx(FloatingTreeContext.Provider, {
+  return /* @__PURE__ */ import_jsx_runtime4.jsx(FloatingTreeContext.Provider, {
     value: tree,
     children
   });
 }
 
+// node_modules/@base-ui/react/utils/resolveRef.mjs
+function resolveRef(maybeRef) {
+  if (maybeRef == null) {
+    return maybeRef;
+  }
+  return "current" in maybeRef ? maybeRef.current : maybeRef;
+}
+
 // node_modules/@base-ui/react/floating-ui-react/components/FloatingFocusManager.mjs
-var import_jsx_runtime7 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime5 = __toESM(require_jsx_runtime(), 1);
 "use client";
 function getEventType(event, lastInteractionType) {
   const win = getWindow(getTarget(event));
@@ -24842,10 +17676,10 @@ function clearDisconnectedPreviouslyFocusedElements() {
     return entry.deref()?.isConnected;
   });
 }
-function addPreviouslyFocusedElement(element2) {
+function addPreviouslyFocusedElement(element) {
   clearDisconnectedPreviouslyFocusedElements();
-  if (element2 && getNodeName(element2) !== "body") {
-    previouslyFocusedElements.push(new WeakRef(element2));
+  if (element && getNodeName(element) !== "body") {
+    previouslyFocusedElements.push(new WeakRef(element));
     if (previouslyFocusedElements.length > LIST_LIMIT) {
       previouslyFocusedElements = previouslyFocusedElements.slice(-LIST_LIMIT);
     }
@@ -24872,9 +17706,9 @@ function handleTabIndex(floatingFocusElement) {
     return;
   }
   const focusableElements = focusable(floatingFocusElement);
-  const tabbableContent = focusableElements.filter((element2) => {
-    const dataTabIndex = element2.getAttribute("data-tabindex") || "";
-    return isTabbable(element2) || element2.hasAttribute("data-tabindex") && !dataTabIndex.startsWith("-");
+  const tabbableContent = focusableElements.filter((element) => {
+    const dataTabIndex = element.getAttribute("data-tabindex") || "";
+    return isTabbable(element) || element.hasAttribute("data-tabindex") && !dataTabIndex.startsWith("-");
   });
   const tabIndex = floatingFocusElement.getAttribute("tabindex");
   if (tabbableContent.length === 0) {
@@ -24921,14 +17755,14 @@ function FloatingFocusManager(props) {
   const openRef = useValueAsRef(open);
   const tree = useFloatingTree(externalTree);
   const portalContext = usePortalContext();
-  const preventReturnFocusRef = React38.useRef(false);
-  const isPointerDownRef = React38.useRef(false);
-  const pointerDownOutsideRef = React38.useRef(false);
-  const lastFocusedTabbableRef = React38.useRef(null);
-  const closeTypeRef = React38.useRef("");
-  const lastInteractionTypeRef = React38.useRef("");
-  const beforeGuardRef = React38.useRef(null);
-  const afterGuardRef = React38.useRef(null);
+  const preventReturnFocusRef = React19.useRef(false);
+  const isPointerDownRef = React19.useRef(false);
+  const pointerDownOutsideRef = React19.useRef(false);
+  const lastFocusedTabbableRef = React19.useRef(null);
+  const closeTypeRef = React19.useRef("");
+  const lastInteractionTypeRef = React19.useRef("");
+  const beforeGuardRef = React19.useRef(null);
+  const afterGuardRef = React19.useRef(null);
   const mergedBeforeGuardRef = useMergedRefs(beforeGuardRef, beforeContentFocusGuardRef, portalContext?.beforeInsideRef);
   const mergedAfterGuardRef = useMergedRefs(afterGuardRef, portalContext?.afterInsideRef);
   const blurTimeout = useTimeout();
@@ -24939,8 +17773,8 @@ function FloatingFocusManager(props) {
   const getTabbableContent = useStableCallback((container = floatingFocusElement) => {
     return container ? tabbable(container) : [];
   });
-  const getResolvedInsideElements = useStableCallback(() => getInsideElements?.().filter((element2) => element2 != null) ?? []);
-  React38.useEffect(() => {
+  const getResolvedInsideElements = useStableCallback(() => getInsideElements?.().filter((element) => element != null) ?? []);
+  React19.useEffect(() => {
     if (disabled2 || !modal) {
       return;
     }
@@ -24954,7 +17788,7 @@ function FloatingFocusManager(props) {
     const doc = ownerDocument(floatingFocusElement);
     return addEventListener(doc, "keydown", onKeyDown);
   }, [disabled2, floatingFocusElement, modal, isUntrappedTypeableCombobox, getTabbableContent]);
-  React38.useEffect(() => {
+  React19.useEffect(() => {
     if (disabled2 || !open) {
       return;
     }
@@ -24965,7 +17799,7 @@ function FloatingFocusManager(props) {
     function onPointerDown(event) {
       const target = getTarget(event);
       const insideElements = getResolvedInsideElements();
-      const pointerTargetInside = contains(floating, target) || contains(domReference, target) || contains(portalContext?.portalNode, target) || insideElements.some((element2) => element2 === target || contains(element2, target));
+      const pointerTargetInside = contains(floating, target) || contains(domReference, target) || contains(portalContext?.portalNode, target) || insideElements.some((element) => element === target || contains(element, target));
       pointerDownOutsideRef.current = !pointerTargetInside;
       lastInteractionTypeRef.current = event.pointerType || "keyboard";
       if (target?.closest(`[${CLICK_TRIGGER_IDENTIFIER}]`)) {
@@ -24980,7 +17814,7 @@ function FloatingFocusManager(props) {
     }
     return mergeCleanups(addEventListener(doc, "pointerdown", onPointerDown, true), addEventListener(doc, "pointerup", clearPointerDownOutside, true), addEventListener(doc, "pointercancel", clearPointerDownOutside, true), addEventListener(doc, "keydown", onKeyDown, true), clearPointerDownOutside);
   }, [disabled2, floating, domReference, floatingFocusElement, open, portalContext, pointerDownTimeout, getResolvedInsideElements]);
-  React38.useEffect(() => {
+  React19.useEffect(() => {
     if (disabled2 || !closeOnFocusOut) {
       return;
     }
@@ -25009,7 +17843,7 @@ function FloatingFocusManager(props) {
         const triggers = store.context.triggerElements;
         const insideElements = getResolvedInsideElements();
         const isRelatedFocusGuard = relatedTarget?.hasAttribute(createAttribute("focus-guard")) && [beforeGuardRef.current, afterGuardRef.current, portalContext?.beforeInsideRef.current, portalContext?.afterInsideRef.current, portalContext?.beforeOutsideRef.current, portalContext?.afterOutsideRef.current, resolveRef(previousFocusableElement), resolveRef(nextFocusableElement)].includes(relatedTarget);
-        const movedToUnrelatedNode = !(contains(domReference, relatedTarget) || contains(floating, relatedTarget) || contains(relatedTarget, floating) || contains(portalContext?.portalNode, relatedTarget) || insideElements.some((element2) => element2 === relatedTarget || contains(element2, relatedTarget)) || relatedTarget != null && triggers.hasElement(relatedTarget) || triggers.hasMatchingElement((trigger) => contains(trigger, relatedTarget)) || isRelatedFocusGuard || tree && (getNodeChildren(tree.nodesRef.current, nodeId).find((node) => contains(node.context?.elements.floating, relatedTarget) || contains(node.context?.elements.domReference, relatedTarget)) || getNodeAncestors(tree.nodesRef.current, nodeId).find((node) => [node.context?.elements.floating, getFloatingFocusElement(node.context?.elements.floating)].includes(relatedTarget) || node.context?.elements.domReference === relatedTarget)));
+        const movedToUnrelatedNode = !(contains(domReference, relatedTarget) || contains(floating, relatedTarget) || contains(relatedTarget, floating) || contains(portalContext?.portalNode, relatedTarget) || insideElements.some((element) => element === relatedTarget || contains(element, relatedTarget)) || relatedTarget != null && triggers.hasElement(relatedTarget) || triggers.hasMatchingElement((trigger) => contains(trigger, relatedTarget)) || isRelatedFocusGuard || tree && (getNodeChildren(tree.nodesRef.current, nodeId).find((node) => contains(node.context?.elements.floating, relatedTarget) || contains(node.context?.elements.domReference, relatedTarget)) || getNodeAncestors(tree.nodesRef.current, nodeId).find((node) => [node.context?.elements.floating, getFloatingFocusElement(node.context?.elements.floating)].includes(relatedTarget) || node.context?.elements.domReference === relatedTarget)));
         if (currentTarget === domReference && floatingFocusElement) {
           handleTabIndex(floatingFocusElement);
         }
@@ -25055,7 +17889,7 @@ function FloatingFocusManager(props) {
     }
     return mergeCleanups(domReferenceElement && addEventListener(domReferenceElement, "focusout", handleFocusOutside), domReferenceElement && addEventListener(domReferenceElement, "pointerdown", handlePointerDown), floating && addEventListener(floating, "focusin", handleFocusIn), floating && addEventListener(floating, "focusout", handleFocusOutside), floating && portalContext && addEventListener(floating, "focusout", markInsideReactTree, true));
   }, [disabled2, domReference, floating, floatingFocusElement, modal, tree, portalContext, store, closeOnFocusOut, restoreFocus, getTabbableContent, isUntrappedTypeableCombobox, getNodeId, dataRef, blurTimeout, pointerDownTimeout, restoreFocusFrame, nextFocusableElement, previousFocusableElement, getResolvedInsideElements]);
-  React38.useEffect(() => {
+  React19.useEffect(() => {
     if (disabled2 || !floating || !open) {
       return;
     }
@@ -25184,7 +18018,7 @@ function FloatingFocusManager(props) {
       events.off("openchange", onOpenChangeLocal);
       const activeEl = activeElement2(doc);
       const insideElements = getResolvedInsideElements();
-      const isFocusInsideFloatingTree = contains(floating, activeEl) || insideElements.some((element2) => element2 === activeEl || contains(element2, activeEl)) || tree && getNodeChildren(tree.nodesRef.current, getNodeId(), false).some((node) => contains(node.context?.elements.floating, activeEl));
+      const isFocusInsideFloatingTree = contains(floating, activeEl) || insideElements.some((element) => element === activeEl || contains(element, activeEl)) || tree && getNodeChildren(tree.nodesRef.current, getNodeId(), false).some((node) => contains(node.context?.elements.floating, activeEl));
       const returnFocusValueOrFn = returnFocusRef.current;
       const returnElement = getReturnElement();
       queueMicrotask(() => {
@@ -25236,8 +18070,8 @@ function FloatingFocusManager(props) {
     };
   }, [disabled2, floatingFocusElement]);
   const shouldRenderGuards = !disabled2 && (modal ? !isUntrappedTypeableCombobox : true) && (isInsidePortal || modal);
-  return /* @__PURE__ */ import_jsx_runtime7.jsxs(React38.Fragment, {
-    children: [shouldRenderGuards && /* @__PURE__ */ import_jsx_runtime7.jsx(FocusGuard, {
+  return /* @__PURE__ */ import_jsx_runtime5.jsxs(React19.Fragment, {
+    children: [shouldRenderGuards && /* @__PURE__ */ import_jsx_runtime5.jsx(FocusGuard, {
       "data-type": "inside",
       ref: mergedBeforeGuardRef,
       onFocus: (event) => {
@@ -25254,7 +18088,7 @@ function FloatingFocusManager(props) {
           }
         }
       }
-    }), children, shouldRenderGuards && /* @__PURE__ */ import_jsx_runtime7.jsx(FocusGuard, {
+    }), children, shouldRenderGuards && /* @__PURE__ */ import_jsx_runtime5.jsx(FocusGuard, {
       "data-type": "inside",
       ref: mergedAfterGuardRef,
       onFocus: (event) => {
@@ -25276,7 +18110,7 @@ function FloatingFocusManager(props) {
   });
 }
 // node_modules/@base-ui/react/floating-ui-react/hooks/useClick.mjs
-var React39 = __toESM(require_react(), 1);
+var React20 = __toESM(require_react(), 1);
 "use client";
 function useClick(context, props = {}) {
   const {
@@ -25290,10 +18124,10 @@ function useClick(context, props = {}) {
   } = props;
   const store = "rootStore" in context ? context.rootStore : context;
   const dataRef = store.context.dataRef;
-  const pointerTypeRef = React39.useRef(undefined);
+  const pointerTypeRef = React20.useRef(undefined);
   const frame = useAnimationFrame();
   const touchOpenTimeout = useTimeout();
-  const reference = React39.useMemo(() => {
+  const reference = React20.useMemo(() => {
     function setOpenWithTouchDelay(nextOpen, nativeEvent, target, pointerType) {
       const details = createChangeEventDetails(reason, nativeEvent, target);
       if (nextOpen && pointerType === "touch" && touchOpenDelay > 0) {
@@ -25364,12 +18198,12 @@ function useClick(context, props = {}) {
       }
     };
   }, [dataRef, eventOption, ignoreMouse, reason, store, stickIfOpen, toggle, frame, touchOpenTimeout, touchOpenDelay]);
-  return React39.useMemo(() => enabled ? {
+  return React20.useMemo(() => enabled ? {
     reference
   } : EMPTY_OBJECT, [enabled, reference]);
 }
 // node_modules/@base-ui/react/floating-ui-react/hooks/useDismiss.mjs
-var React40 = __toESM(require_react(), 1);
+var React21 = __toESM(require_react(), 1);
 "use client";
 function alwaysFalse() {
   return false;
@@ -25405,12 +18239,12 @@ function useDismiss(context, props = {}) {
     escapeKey: escapeKeyBubbles,
     outsidePress: outsidePressBubbles
   } = normalizeProp(bubbles);
-  const pressStartedInsideRef = React40.useRef(false);
-  const pressStartPreventedRef = React40.useRef(false);
-  const suppressNextOutsideClickRef = React40.useRef(false);
-  const isComposingRef = React40.useRef(false);
-  const currentPointerTypeRef = React40.useRef("");
-  const touchStateRef = React40.useRef(null);
+  const pressStartedInsideRef = React21.useRef(false);
+  const pressStartPreventedRef = React21.useRef(false);
+  const suppressNextOutsideClickRef = React21.useRef(false);
+  const isComposingRef = React21.useRef(false);
+  const currentPointerTypeRef = React21.useRef("");
+  const touchStateRef = React21.useRef(null);
   const cancelDismissOnEndTimeout = useTimeout();
   const clearInsideReactTreeTimeout = useTimeout();
   const clearInsideReactTree = useStableCallback(() => {
@@ -25479,7 +18313,7 @@ function useDismiss(context, props = {}) {
       pressStartPreventedRef.current = true;
     }
   });
-  React40.useEffect(() => {
+  React21.useEffect(() => {
     if (!open || !enabled) {
       return;
     }
@@ -25721,13 +18555,13 @@ function useDismiss(context, props = {}) {
       suppressNextOutsideClickRef.current = false;
     };
   }, [dataRef, floatingElement, escapeKey2, outsidePressEnabled, outsidePress2, open, enabled, escapeKeyBubbles, outsidePressBubbles, closeOnEscapeKeyDown, clearInsideReactTree, getOutsidePressEventProp, hasBlockingChild, isEventWithinOwnElements, tree, store, cancelDismissOnEndTimeout]);
-  React40.useEffect(clearInsideReactTree, [outsidePress2, clearInsideReactTree]);
-  const reference = React40.useMemo(() => ({
+  React21.useEffect(clearInsideReactTree, [outsidePress2, clearInsideReactTree]);
+  const reference = React21.useMemo(() => ({
     onKeyDown: closeOnEscapeKeyDown,
     onPointerDown: closeOnReferencePress,
     onClick: closeOnReferencePress
   }), [closeOnEscapeKeyDown, closeOnReferencePress]);
-  const floating = React40.useMemo(() => ({
+  const floating = React21.useMemo(() => ({
     onKeyDown: closeOnEscapeKeyDown,
     onPointerDown: markInsidePressStartPrevented,
     onMouseDown: markInsidePressStartPrevented,
@@ -25744,14 +18578,14 @@ function useDismiss(context, props = {}) {
     onTouchEndCapture: markInsideReactTree,
     onTouchMoveCapture: markInsideReactTree
   }), [closeOnEscapeKeyDown, markInsideReactTree, markPressStartedInsideReactTree, markInsidePressStartPrevented]);
-  return React40.useMemo(() => enabled ? {
+  return React21.useMemo(() => enabled ? {
     reference,
     floating,
     trigger: reference
   } : {}, [enabled, reference, floating]);
 }
 // node_modules/@base-ui/react/floating-ui-react/hooks/useFloating.mjs
-var React48 = __toESM(require_react(), 1);
+var React30 = __toESM(require_react(), 1);
 
 // node_modules/@floating-ui/core/dist/floating-ui.core.mjs
 function computeCoordsFromPlacement(_ref, placement, rtl) {
@@ -25799,9 +18633,9 @@ function computeCoordsFromPlacement(_ref, placement, rtl) {
         y: reference.y
       };
   }
-  const alignment2 = getAlignment(placement);
-  if (alignment2) {
-    coords[alignmentAxis] += commonAlign * (alignment2 === "end" ? 1 : -1) * (rtl && isVertical ? -1 : 1);
+  const alignment = getAlignment(placement);
+  if (alignment) {
+    coords[alignmentAxis] += commonAlign * (alignment === "end" ? 1 : -1) * (rtl && isVertical ? -1 : 1);
   }
   return coords;
 }
@@ -25827,9 +18661,9 @@ async function detectOverflow(state, options2) {
   } = evaluate(options2, state);
   const paddingObject = getPaddingObject(padding);
   const altContext = elementContext === "floating" ? "reference" : "floating";
-  const element2 = elements[altBoundary ? altContext : elementContext];
+  const element = elements[altBoundary ? altContext : elementContext];
   const clippingClientRect = rectToClientRect(await platform2.getClippingRect({
-    element: ((_await$platform$isEle = await (platform2.isElement == null ? undefined : platform2.isElement(element2))) != null ? _await$platform$isEle : true) ? element2 : element2.contextElement || await (platform2.getDocumentElement == null ? undefined : platform2.getDocumentElement(elements.floating)),
+    element: ((_await$platform$isEle = await (platform2.isElement == null ? undefined : platform2.isElement(element))) != null ? _await$platform$isEle : true) ? element : element.contextElement || await (platform2.getDocumentElement == null ? undefined : platform2.getDocumentElement(elements.floating)),
     boundary,
     rootBoundary,
     strategy
@@ -26121,7 +18955,7 @@ async function convertValueToCoords(state, options2) {
   } = state;
   const rtl = await (platform2.isRTL == null ? undefined : platform2.isRTL(elements.floating));
   const side = getSide(placement);
-  const alignment2 = getAlignment(placement);
+  const alignment = getAlignment(placement);
   const isVertical = getSideAxis(placement) === "y";
   const mainAxisMulti = originSides.has(side) ? -1 : 1;
   const crossAxisMulti = rtl && isVertical ? -1 : 1;
@@ -26139,8 +18973,8 @@ async function convertValueToCoords(state, options2) {
     crossAxis: rawValue.crossAxis || 0,
     alignmentAxis: rawValue.alignmentAxis
   };
-  if (alignment2 && typeof alignmentAxis === "number") {
-    crossAxis = alignment2 === "end" ? alignmentAxis * -1 : alignmentAxis;
+  if (alignment && typeof alignmentAxis === "number") {
+    crossAxis = alignment === "end" ? alignmentAxis * -1 : alignmentAxis;
   }
   return isVertical ? {
     x: crossAxis * crossAxisMulti,
@@ -26331,7 +19165,7 @@ var size = function(options2) {
       } = evaluate(options2, state);
       const overflow = await platform2.detectOverflow(state, detectOverflowOptions);
       const side = getSide(placement);
-      const alignment2 = getAlignment(placement);
+      const alignment = getAlignment(placement);
       const isYAxis = getSideAxis(placement) === "y";
       const {
         width,
@@ -26341,10 +19175,10 @@ var size = function(options2) {
       let widthSide;
       if (side === "top" || side === "bottom") {
         heightSide = side;
-        widthSide = alignment2 === (await (platform2.isRTL == null ? undefined : platform2.isRTL(elements.floating)) ? "start" : "end") ? "left" : "right";
+        widthSide = alignment === (await (platform2.isRTL == null ? undefined : platform2.isRTL(elements.floating)) ? "start" : "end") ? "left" : "right";
       } else {
         widthSide = side;
-        heightSide = alignment2 === "end" ? "top" : "bottom";
+        heightSide = alignment === "end" ? "top" : "bottom";
       }
       const maximumClippingHeight = height - overflow.top - overflow.bottom;
       const maximumClippingWidth = width - overflow.left - overflow.right;
@@ -26360,7 +19194,7 @@ var size = function(options2) {
       if (shiftData != null && shiftData.enabled.y) {
         availableHeight = maximumClippingHeight;
       }
-      if (noShift && !alignment2) {
+      if (noShift && !alignment) {
         if (isYAxis) {
           availableWidth = width - 2 * max(overflow.left, overflow.right);
         } else {
@@ -26386,13 +19220,13 @@ var size = function(options2) {
 };
 
 // node_modules/@floating-ui/dom/dist/floating-ui.dom.mjs
-function getCssDimensions(element2) {
-  const css = getComputedStyle2(element2);
+function getCssDimensions(element) {
+  const css = getComputedStyle2(element);
   let width = parseFloat(css.width) || 0;
   let height = parseFloat(css.height) || 0;
-  const hasOffset = isHTMLElement(element2);
-  const offsetWidth = hasOffset ? element2.offsetWidth : width;
-  const offsetHeight = hasOffset ? element2.offsetHeight : height;
+  const hasOffset = isHTMLElement(element);
+  const offsetWidth = hasOffset ? element.offsetWidth : width;
+  const offsetHeight = hasOffset ? element.offsetHeight : height;
   const shouldFallback = round(width) !== offsetWidth || round(height) !== offsetHeight;
   if (shouldFallback) {
     width = offsetWidth;
@@ -26404,11 +19238,11 @@ function getCssDimensions(element2) {
     $: shouldFallback
   };
 }
-function unwrapElement(element2) {
-  return !isElement(element2) ? element2.contextElement : element2;
+function unwrapElement(element) {
+  return !isElement(element) ? element.contextElement : element;
 }
-function getScale(element2) {
-  const domElement = unwrapElement(element2);
+function getScale(element) {
+  const domElement = unwrapElement(element);
   if (!isHTMLElement(domElement)) {
     return createCoords(1);
   }
@@ -26432,8 +19266,8 @@ function getScale(element2) {
   };
 }
 var noOffsets = /* @__PURE__ */ createCoords(0);
-function getVisualOffsets(element2) {
-  const win = getWindow(element2);
+function getVisualOffsets(element) {
+  const win = getWindow(element);
   if (!isWebKit() || !win.visualViewport) {
     return noOffsets;
   }
@@ -26442,21 +19276,21 @@ function getVisualOffsets(element2) {
     y: win.visualViewport.offsetTop
   };
 }
-function shouldAddVisualOffsets(element2, isFixed, floatingOffsetParent) {
+function shouldAddVisualOffsets(element, isFixed, floatingOffsetParent) {
   if (isFixed === undefined) {
     isFixed = false;
   }
-  return !!floatingOffsetParent && isFixed && floatingOffsetParent === getWindow(element2);
+  return !!floatingOffsetParent && isFixed && floatingOffsetParent === getWindow(element);
 }
-function getBoundingClientRect(element2, includeScale, isFixedStrategy, offsetParent) {
+function getBoundingClientRect(element, includeScale, isFixedStrategy, offsetParent) {
   if (includeScale === undefined) {
     includeScale = false;
   }
   if (isFixedStrategy === undefined) {
     isFixedStrategy = false;
   }
-  const clientRect = element2.getBoundingClientRect();
-  const domElement = unwrapElement(element2);
+  const clientRect = element.getBoundingClientRect();
+  const domElement = unwrapElement(element);
   let scale = createCoords(1);
   if (includeScale) {
     if (offsetParent) {
@@ -26464,7 +19298,7 @@ function getBoundingClientRect(element2, includeScale, isFixedStrategy, offsetPa
         scale = getScale(offsetParent);
       }
     } else {
-      scale = getScale(element2);
+      scale = getScale(element);
     }
   }
   const visualOffsets = shouldAddVisualOffsets(domElement, isFixedStrategy, offsetParent) ? getVisualOffsets(domElement) : createCoords(0);
@@ -26500,10 +19334,10 @@ function getBoundingClientRect(element2, includeScale, isFixedStrategy, offsetPa
     y
   });
 }
-function getWindowScrollBarX(element2, rect) {
-  const leftScroll = getNodeScroll(element2).scrollLeft;
+function getWindowScrollBarX(element, rect) {
+  const leftScroll = getNodeScroll(element).scrollLeft;
   if (!rect) {
-    return getBoundingClientRect(getDocumentElement(element2)).left + leftScroll;
+    return getBoundingClientRect(getDocumentElement(element)).left + leftScroll;
   }
   return rect.left + leftScroll;
 }
@@ -26555,8 +19389,8 @@ function convertOffsetParentRelativeRectToViewportRelativeRect(_ref) {
     y: rect.y * scale.y - scroll.scrollTop * scale.y + offsets.y + htmlOffset.y
   };
 }
-function getClientRects(element2) {
-  return element2.getClientRects ? Array.from(element2.getClientRects()) : [];
+function getClientRects(element) {
+  return element.getClientRects ? Array.from(element.getClientRects()) : [];
 }
 function getDocumentRect(html) {
   const scroll = getNodeScroll(html);
@@ -26576,13 +19410,13 @@ function getDocumentRect(html) {
   };
 }
 var SCROLLBAR_MAX = 25;
-function getViewportRect(element2, strategy, rootBoundary) {
+function getViewportRect(element, strategy, rootBoundary) {
   if (rootBoundary === undefined) {
     rootBoundary = "viewport";
   }
   const isLayoutViewport = rootBoundary === "layoutViewport";
-  const win = getWindow(element2);
-  const html = getDocumentElement(element2);
+  const win = getWindow(element);
+  const html = getDocumentElement(element);
   const visualViewport = win.visualViewport;
   let width = html.clientWidth;
   let height = html.clientHeight;
@@ -26623,13 +19457,13 @@ function getViewportRect(element2, strategy, rootBoundary) {
     y
   };
 }
-function getInnerBoundingClientRect(element2, strategy) {
-  const clientRect = getBoundingClientRect(element2, true, strategy === "fixed");
-  const top = clientRect.top + element2.clientTop;
-  const left = clientRect.left + element2.clientLeft;
-  const scale = getScale(element2);
-  const width = element2.clientWidth * scale.x;
-  const height = element2.clientHeight * scale.y;
+function getInnerBoundingClientRect(element, strategy) {
+  const clientRect = getBoundingClientRect(element, true, strategy === "fixed");
+  const top = clientRect.top + element.clientTop;
+  const left = clientRect.left + element.clientLeft;
+  const scale = getScale(element);
+  const width = element.clientWidth * scale.x;
+  const height = element.clientHeight * scale.y;
   const x = left * scale.x;
   const y = top * scale.y;
   return {
@@ -26639,16 +19473,16 @@ function getInnerBoundingClientRect(element2, strategy) {
     y
   };
 }
-function getClientRectFromClippingAncestor(element2, clippingAncestor, strategy) {
+function getClientRectFromClippingAncestor(element, clippingAncestor, strategy) {
   let rect;
   if (clippingAncestor === "viewport" || clippingAncestor === "layoutViewport") {
-    rect = getViewportRect(element2, strategy, clippingAncestor);
+    rect = getViewportRect(element, strategy, clippingAncestor);
   } else if (clippingAncestor === "document") {
-    rect = getDocumentRect(getDocumentElement(element2));
+    rect = getDocumentRect(getDocumentElement(element));
   } else if (isElement(clippingAncestor)) {
     rect = getInnerBoundingClientRect(clippingAncestor, strategy);
   } else {
-    const visualOffsets = getVisualOffsets(element2);
+    const visualOffsets = getVisualOffsets(element);
     rect = {
       x: clippingAncestor.x - visualOffsets.x,
       y: clippingAncestor.y - visualOffsets.y,
@@ -26658,15 +19492,15 @@ function getClientRectFromClippingAncestor(element2, clippingAncestor, strategy)
   }
   return rectToClientRect(rect);
 }
-function getClippingElementAncestors(element2, cache) {
-  const cachedResult = cache.get(element2);
+function getClippingElementAncestors(element, cache) {
+  const cachedResult = cache.get(element);
   if (cachedResult) {
     return cachedResult;
   }
-  let result = getOverflowAncestors(element2, [], false).filter((el) => isElement(el) && getNodeName(el) !== "body");
+  let result = getOverflowAncestors(element, [], false).filter((el) => isElement(el) && getNodeName(el) !== "body");
   let lastKeptComputedStyle = null;
-  const elementIsFixed = getComputedStyle2(element2).position === "fixed";
-  let currentNode = elementIsFixed ? getParentNode(element2) : element2;
+  const elementIsFixed = getComputedStyle2(element).position === "fixed";
+  let currentNode = elementIsFixed ? getParentNode(element) : element;
   while (isElement(currentNode) && !isLastTraversableNode(currentNode)) {
     const computedStyle = getComputedStyle2(currentNode);
     const currentNodeIsContaining = isContainingBlock(currentNode);
@@ -26679,25 +19513,25 @@ function getClippingElementAncestors(element2, cache) {
     }
     currentNode = getParentNode(currentNode);
   }
-  cache.set(element2, result);
+  cache.set(element, result);
   return result;
 }
 function getClippingRect(_ref) {
   let {
-    element: element2,
+    element,
     boundary,
     rootBoundary,
     strategy
   } = _ref;
-  const elementClippingAncestors = boundary === "clippingAncestors" ? isTopLayer(element2) ? [] : getClippingElementAncestors(element2, this._c) : [].concat(boundary);
+  const elementClippingAncestors = boundary === "clippingAncestors" ? isTopLayer(element) ? [] : getClippingElementAncestors(element, this._c) : [].concat(boundary);
   const clippingAncestors = [...elementClippingAncestors, rootBoundary];
-  const firstRect = getClientRectFromClippingAncestor(element2, clippingAncestors[0], strategy);
+  const firstRect = getClientRectFromClippingAncestor(element, clippingAncestors[0], strategy);
   let top = firstRect.top;
   let right = firstRect.right;
   let bottom = firstRect.bottom;
   let left = firstRect.left;
   for (let i = 1;i < clippingAncestors.length; i++) {
-    const rect = getClientRectFromClippingAncestor(element2, clippingAncestors[i], strategy);
+    const rect = getClientRectFromClippingAncestor(element, clippingAncestors[i], strategy);
     top = max(rect.top, top);
     right = min(rect.right, right);
     bottom = min(rect.bottom, bottom);
@@ -26710,21 +19544,21 @@ function getClippingRect(_ref) {
     y: top
   };
 }
-function getDimensions(element2) {
+function getDimensions(element) {
   const {
     width,
     height
-  } = getCssDimensions(element2);
+  } = getCssDimensions(element);
   return {
     width,
     height
   };
 }
-function getRectRelativeToOffsetParent(element2, offsetParent, strategy) {
+function getRectRelativeToOffsetParent(element, offsetParent, strategy) {
   const isOffsetParentAnElement = isHTMLElement(offsetParent);
   const documentElement = getDocumentElement(offsetParent);
   const isFixed = strategy === "fixed";
-  const rect = getBoundingClientRect(element2, true, isFixed, offsetParent);
+  const rect = getBoundingClientRect(element, true, isFixed, offsetParent);
   let scroll = {
     scrollLeft: 0,
     scrollTop: 0
@@ -26753,29 +19587,29 @@ function getRectRelativeToOffsetParent(element2, offsetParent, strategy) {
     height: rect.height
   };
 }
-function isStaticPositioned(element2) {
-  return getComputedStyle2(element2).position === "static";
+function isStaticPositioned(element) {
+  return getComputedStyle2(element).position === "static";
 }
-function getTrueOffsetParent(element2, polyfill) {
-  if (!isHTMLElement(element2) || getComputedStyle2(element2).position === "fixed") {
+function getTrueOffsetParent(element, polyfill) {
+  if (!isHTMLElement(element) || getComputedStyle2(element).position === "fixed") {
     return null;
   }
   if (polyfill) {
-    return polyfill(element2);
+    return polyfill(element);
   }
-  let rawOffsetParent = element2.offsetParent;
-  if (getDocumentElement(element2) === rawOffsetParent) {
+  let rawOffsetParent = element.offsetParent;
+  if (getDocumentElement(element) === rawOffsetParent) {
     rawOffsetParent = rawOffsetParent.ownerDocument.body;
   }
   return rawOffsetParent;
 }
-function getOffsetParent(element2, polyfill) {
-  const win = getWindow(element2);
-  if (isTopLayer(element2)) {
+function getOffsetParent(element, polyfill) {
+  const win = getWindow(element);
+  if (isTopLayer(element)) {
     return win;
   }
-  if (!isHTMLElement(element2)) {
-    let svgOffsetParent = getParentNode(element2);
+  if (!isHTMLElement(element)) {
+    let svgOffsetParent = getParentNode(element);
     while (svgOffsetParent && !isLastTraversableNode(svgOffsetParent)) {
       if (isElement(svgOffsetParent) && !isStaticPositioned(svgOffsetParent)) {
         return svgOffsetParent;
@@ -26784,14 +19618,14 @@ function getOffsetParent(element2, polyfill) {
     }
     return win;
   }
-  let offsetParent = getTrueOffsetParent(element2, polyfill);
+  let offsetParent = getTrueOffsetParent(element, polyfill);
   while (offsetParent && isTableElement(offsetParent) && isStaticPositioned(offsetParent)) {
     offsetParent = getTrueOffsetParent(offsetParent, polyfill);
   }
   if (offsetParent && isLastTraversableNode(offsetParent) && isStaticPositioned(offsetParent) && !isContainingBlock(offsetParent)) {
     return win;
   }
-  return offsetParent || getContainingBlock(element2) || win;
+  return offsetParent || getContainingBlock(element) || win;
 }
 var getElementRects = async function(data) {
   const getOffsetParentFn = this.getOffsetParent || getOffsetParent;
@@ -26807,8 +19641,8 @@ var getElementRects = async function(data) {
     }
   };
 };
-function isRTL(element2) {
-  return getComputedStyle2(element2).direction === "rtl";
+function isRTL(element) {
+  return getComputedStyle2(element).direction === "rtl";
 }
 var platform2 = {
   convertOffsetParentRelativeRectToViewportRelativeRect,
@@ -26825,10 +19659,10 @@ var platform2 = {
 function rectsAreEqual(a, b) {
   return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 }
-function observeMove(element2, onMove, ancestorResize) {
+function observeMove(element, onMove, ancestorResize) {
   let io = null;
   let timeoutId;
-  const root2 = getDocumentElement(element2);
+  const root2 = getDocumentElement(element);
   function cleanup() {
     var _io;
     clearTimeout(timeoutId);
@@ -26843,7 +19677,7 @@ function observeMove(element2, onMove, ancestorResize) {
       threshold = 1;
     }
     cleanup();
-    const elementRectForRootMargin = element2.getBoundingClientRect();
+    const elementRectForRootMargin = element.getBoundingClientRect();
     const {
       left,
       top,
@@ -26868,7 +19702,7 @@ function observeMove(element2, onMove, ancestorResize) {
     let isFirstUpdate = true;
     function handleObserve(entries) {
       const ratio = entries[0].intersectionRatio;
-      if (!rectsAreEqual(elementRectForRootMargin, element2.getBoundingClientRect())) {
+      if (!rectsAreEqual(elementRectForRootMargin, element.getBoundingClientRect())) {
         return refresh();
       }
       if (ratio !== threshold) {
@@ -26893,9 +19727,9 @@ function observeMove(element2, onMove, ancestorResize) {
     } catch (_e2) {
       io = new IntersectionObserver(handleObserve, options2);
     }
-    io.observe(element2);
+    io.observe(element);
   }
-  const win = getWindow(element2);
+  const win = getWindow(element);
   const handleResize = () => refresh(ancestorResize);
   win.addEventListener("resize", handleResize);
   refresh(true);
@@ -26993,12 +19827,12 @@ var computePosition2 = (reference, floating, options2) => {
 };
 
 // node_modules/@floating-ui/react-dom/dist/floating-ui.react-dom.mjs
-var React41 = __toESM(require_react(), 1);
-var import_react8 = __toESM(require_react(), 1);
-var ReactDOM4 = __toESM(require_react_dom(), 1);
+var React22 = __toESM(require_react(), 1);
+var import_react6 = __toESM(require_react(), 1);
+var ReactDOM3 = __toESM(require_react_dom(), 1);
 var isClient = typeof document !== "undefined";
 var noop5 = function noop6() {};
-var index3 = isClient ? import_react8.useLayoutEffect : noop5;
+var index3 = isClient ? import_react6.useLayoutEffect : noop5;
 function deepEqual(a, b) {
   if (a === b) {
     return true;
@@ -27047,19 +19881,19 @@ function deepEqual(a, b) {
   }
   return a !== a && b !== b;
 }
-function getDPR(element2) {
+function getDPR(element) {
   if (typeof window === "undefined") {
     return 1;
   }
-  const win = element2.ownerDocument.defaultView || window;
+  const win = element.ownerDocument.defaultView || window;
   return win.devicePixelRatio || 1;
 }
-function roundByDPR(element2, value) {
-  const dpr = getDPR(element2);
+function roundByDPR(element, value) {
+  const dpr = getDPR(element);
   return Math.round(value * dpr) / dpr;
 }
 function useLatestRef(value) {
-  const ref = React41.useRef(value);
+  const ref = React22.useRef(value);
   index3(() => {
     ref.current = value;
   });
@@ -27082,7 +19916,7 @@ function useFloating(options2) {
     whileElementsMounted,
     open
   } = options2;
-  const [data, setData] = React41.useState({
+  const [data, setData] = React22.useState({
     x: 0,
     y: 0,
     strategy,
@@ -27090,19 +19924,19 @@ function useFloating(options2) {
     middlewareData: {},
     isPositioned: false
   });
-  const [latestMiddleware, setLatestMiddleware] = React41.useState(middleware);
+  const [latestMiddleware, setLatestMiddleware] = React22.useState(middleware);
   if (!deepEqual(latestMiddleware, middleware)) {
     setLatestMiddleware(middleware);
   }
-  const [_reference, _setReference] = React41.useState(null);
-  const [_floating, _setFloating] = React41.useState(null);
-  const setReference = React41.useCallback((node) => {
+  const [_reference, _setReference] = React22.useState(null);
+  const [_floating, _setFloating] = React22.useState(null);
+  const setReference = React22.useCallback((node) => {
     if (node !== referenceRef.current) {
       referenceRef.current = node;
       _setReference(node);
     }
   }, []);
-  const setFloating = React41.useCallback((node) => {
+  const setFloating = React22.useCallback((node) => {
     if (node !== floatingRef.current) {
       floatingRef.current = node;
       _setFloating(node);
@@ -27110,14 +19944,14 @@ function useFloating(options2) {
   }, []);
   const referenceEl = externalReference || _reference;
   const floatingEl = externalFloating || _floating;
-  const referenceRef = React41.useRef(null);
-  const floatingRef = React41.useRef(null);
-  const dataRef = React41.useRef(data);
+  const referenceRef = React22.useRef(null);
+  const floatingRef = React22.useRef(null);
+  const dataRef = React22.useRef(data);
   const hasWhileElementsMounted = whileElementsMounted != null;
   const whileElementsMountedRef = useLatestRef(whileElementsMounted);
   const platformRef = useLatestRef(platform3);
   const openRef = useLatestRef(open);
-  const update2 = React41.useCallback(() => {
+  const update2 = React22.useCallback(() => {
     if (!referenceRef.current || !floatingRef.current) {
       return;
     }
@@ -27136,7 +19970,7 @@ function useFloating(options2) {
       };
       if (isMountedRef.current && !deepEqual(dataRef.current, fullData)) {
         dataRef.current = fullData;
-        ReactDOM4.flushSync(() => {
+        ReactDOM3.flushSync(() => {
           setData(fullData);
         });
       }
@@ -27151,7 +19985,7 @@ function useFloating(options2) {
       }));
     }
   }, [open]);
-  const isMountedRef = React41.useRef(false);
+  const isMountedRef = React22.useRef(false);
   index3(() => {
     isMountedRef.current = true;
     return () => {
@@ -27170,17 +20004,17 @@ function useFloating(options2) {
       update2();
     }
   }, [referenceEl, floatingEl, update2, whileElementsMountedRef, hasWhileElementsMounted]);
-  const refs = React41.useMemo(() => ({
+  const refs = React22.useMemo(() => ({
     reference: referenceRef,
     floating: floatingRef,
     setReference,
     setFloating
   }), [setReference, setFloating]);
-  const elements = React41.useMemo(() => ({
+  const elements = React22.useMemo(() => ({
     reference: referenceEl,
     floating: floatingEl
   }), [referenceEl, floatingEl]);
-  const floatingStyles = React41.useMemo(() => {
+  const floatingStyles = React22.useMemo(() => {
     const initialStyles = {
       position: strategy,
       left: 0,
@@ -27206,7 +20040,7 @@ function useFloating(options2) {
       top: y
     };
   }, [strategy, transform, elements.floating, data.x, data.y]);
-  return React41.useMemo(() => ({
+  return React22.useMemo(() => ({
     ...data,
     update: update2,
     refs,
@@ -27263,22 +20097,11 @@ var hide3 = (options2, deps) => {
 };
 
 // node_modules/@base-ui/react/utils/popups/popupStoreUtils.mjs
-var React47 = __toESM(require_react(), 1);
+var React29 = __toESM(require_react(), 1);
 var ReactDOM5 = __toESM(require_react_dom(), 1);
 
-// node_modules/@base-ui/utils/useOnFirstRender.mjs
-var React42 = __toESM(require_react(), 1);
-"use client";
-function useOnFirstRender(fn2) {
-  const ref = React42.useRef(true);
-  if (ref.current) {
-    ref.current = false;
-    fn2();
-  }
-}
-
 // node_modules/@base-ui/react/floating-ui-react/hooks/useSyncedFloatingRootContext.mjs
-var React46 = __toESM(require_react(), 1);
+var React26 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/utils/store/createSelector.mjs
 var createSelector = (a, b, c, d, e, f, ...other) => {
@@ -27330,12 +20153,12 @@ var createSelector = (a, b, c, d, e, f, ...other) => {
 };
 
 // node_modules/@base-ui/utils/store/useStore.mjs
-var React44 = __toESM(require_react(), 1);
+var React24 = __toESM(require_react(), 1);
 var import_shim = __toESM(require_shim(), 1);
 var import_with_selector = __toESM(require_with_selector(), 1);
 
 // node_modules/@base-ui/utils/fastHooks.mjs
-var React43 = __toESM(require_react(), 1);
+var React23 = __toESM(require_react(), 1);
 var hooks = [];
 var currentInstance = undefined;
 function getInstance() {
@@ -27367,7 +20190,7 @@ function fastComponent(fn2) {
   return FastComponent;
 }
 function fastComponentRef(fn2) {
-  return /* @__PURE__ */ React43.forwardRef(fastComponent(fn2));
+  return /* @__PURE__ */ React23.forwardRef(fastComponent(fn2));
 }
 function createInstance() {
   return {
@@ -27382,7 +20205,7 @@ function useStore(store, selector, a1, a2, a3) {
   return useStoreImplementation(store, selector, a1, a2, a3);
 }
 function useStoreR19(store, selector, a1, a2, a3) {
-  const getSelection = React44.useCallback(() => selector(store.getSnapshot(), a1, a2, a3), [store, selector, a1, a2, a3]);
+  const getSelection = React24.useCallback(() => selector(store.getSnapshot(), a1, a2, a3), [store, selector, a1, a2, a3]);
   return import_shim.useSyncExternalStore(store.subscribe, getSelection, getSelection);
 }
 register({
@@ -27532,7 +20355,7 @@ class Store {
 }
 
 // node_modules/@base-ui/utils/store/ReactStore.mjs
-var React45 = __toESM(require_react(), 1);
+var React25 = __toESM(require_react(), 1);
 "use client";
 
 class ReactStore extends Store {
@@ -27542,7 +20365,7 @@ class ReactStore extends Store {
     this.selectors = selectors;
   }
   useSyncedValue(key, value) {
-    React45.useDebugValue(key);
+    React25.useDebugValue(key);
     const store = this;
     useIsoLayoutEffect(() => {
       if (store.state[key] !== value) {
@@ -27570,7 +20393,7 @@ class ReactStore extends Store {
     }, [store, ...dependencies]);
   }
   useControlledProp(key, controlled) {
-    React45.useDebugValue(key);
+    React25.useDebugValue(key);
     const store = this;
     const isControlled = controlled !== undefined;
     useIsoLayoutEffect(() => {
@@ -27588,16 +20411,16 @@ class ReactStore extends Store {
     return selector(this.state, a1, a2, a3);
   }
   useState(key, a1, a2, a3) {
-    React45.useDebugValue(key);
+    React25.useDebugValue(key);
     return useStore(this, this.selectors[key], a1, a2, a3);
   }
   useContextCallback(key, fn2) {
-    React45.useDebugValue(key);
+    React25.useDebugValue(key);
     const stableFunction = useStableCallback(fn2 ?? NOOP);
     this.context[key] = stableFunction;
   }
   useStateSetter(key) {
-    const ref = React45.useRef(undefined);
+    const ref = React25.useRef(undefined);
     if (ref.current === undefined) {
       ref.current = (value) => {
         this.set(key, value);
@@ -27701,7 +20524,7 @@ function useSyncedFloatingRootContext(options2) {
   const floatingElement = popupStore.useState(treatPopupAsFloatingElement ? "popupElement" : "positionerElement");
   const triggerElements = popupStore.context.triggerElements;
   const handleOpenChange = onOpenChange;
-  const internalStoreRef = React46.useRef(null);
+  const internalStoreRef = React26.useRef(null);
   if (floatingRootContextProp === undefined && internalStoreRef.current === null) {
     internalStoreRef.current = new FloatingRootStore({
       open,
@@ -27737,6 +20560,179 @@ function useSyncedFloatingRootContext(options2) {
   return store;
 }
 
+// node_modules/@base-ui/react/internals/useTransitionStatus.mjs
+var React27 = __toESM(require_react(), 1);
+"use client";
+function useTransitionStatus(open, enableIdleState = false, deferEndingState = false) {
+  const [transitionStatus, setTransitionStatus] = React27.useState(open && enableIdleState ? "idle" : undefined);
+  const [mounted, setMounted] = React27.useState(open);
+  if (open && !mounted) {
+    setMounted(true);
+    setTransitionStatus("starting");
+  }
+  if (!open && mounted && transitionStatus !== "ending" && !deferEndingState) {
+    setTransitionStatus("ending");
+  }
+  if (!open && !mounted && transitionStatus === "ending") {
+    setTransitionStatus(undefined);
+  }
+  useIsoLayoutEffect(() => {
+    if (!open && mounted && transitionStatus !== "ending" && deferEndingState) {
+      const frame = AnimationFrame.request(() => {
+        setTransitionStatus("ending");
+      });
+      return () => {
+        AnimationFrame.cancel(frame);
+      };
+    }
+    return;
+  }, [open, mounted, transitionStatus, deferEndingState]);
+  useIsoLayoutEffect(() => {
+    if (!open || enableIdleState) {
+      return;
+    }
+    const frame = AnimationFrame.request(() => {
+      setTransitionStatus(undefined);
+    });
+    return () => {
+      AnimationFrame.cancel(frame);
+    };
+  }, [enableIdleState, open]);
+  useIsoLayoutEffect(() => {
+    if (!open || !enableIdleState) {
+      return;
+    }
+    if (open && mounted && transitionStatus !== "idle") {
+      setTransitionStatus("starting");
+    }
+    const frame = AnimationFrame.request(() => {
+      setTransitionStatus("idle");
+    });
+    return () => {
+      AnimationFrame.cancel(frame);
+    };
+  }, [enableIdleState, open, mounted, transitionStatus]);
+  return {
+    mounted,
+    setMounted,
+    transitionStatus
+  };
+}
+
+// node_modules/@base-ui/react/internals/useOpenChangeComplete.mjs
+var React28 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/internals/useAnimationsFinished.mjs
+var ReactDOM4 = __toESM(require_react_dom(), 1);
+
+// node_modules/@base-ui/react/internals/stateAttributesMapping.mjs
+var TransitionStatusDataAttributes = /* @__PURE__ */ function(TransitionStatusDataAttributes2) {
+  TransitionStatusDataAttributes2["startingStyle"] = "data-starting-style";
+  TransitionStatusDataAttributes2["endingStyle"] = "data-ending-style";
+  return TransitionStatusDataAttributes2;
+}({});
+var STARTING_HOOK = {
+  [TransitionStatusDataAttributes.startingStyle]: ""
+};
+var ENDING_HOOK = {
+  [TransitionStatusDataAttributes.endingStyle]: ""
+};
+var transitionStatusMapping = {
+  transitionStatus(value) {
+    if (value === "starting") {
+      return STARTING_HOOK;
+    }
+    if (value === "ending") {
+      return ENDING_HOOK;
+    }
+    return null;
+  }
+};
+
+// node_modules/@base-ui/react/internals/useAnimationsFinished.mjs
+"use client";
+function useAnimationsFinished(elementOrRef, waitForStartingStyleRemoved = false, treatAbortedAsFinished = true) {
+  const frame = useAnimationFrame();
+  return useStableCallback((fnToExecute, signal = null) => {
+    frame.cancel();
+    const element = resolveRef(elementOrRef);
+    if (element == null) {
+      return;
+    }
+    const resolvedElement = element;
+    const done = () => {
+      ReactDOM4.flushSync(fnToExecute);
+    };
+    if (typeof resolvedElement.getAnimations !== "function" || globalThis.BASE_UI_ANIMATIONS_DISABLED) {
+      fnToExecute();
+      return;
+    }
+    function exec() {
+      Promise.all(resolvedElement.getAnimations().map((animation) => animation.finished)).then(() => {
+        if (!signal?.aborted) {
+          done();
+        }
+      }).catch(() => {
+        if (treatAbortedAsFinished) {
+          if (!signal?.aborted) {
+            done();
+          }
+          return;
+        }
+        const currentAnimations = resolvedElement.getAnimations();
+        if (!signal?.aborted && currentAnimations.length > 0 && currentAnimations.some((animation) => animation.pending || animation.playState !== "finished")) {
+          exec();
+        }
+      });
+    }
+    if (waitForStartingStyleRemoved) {
+      const startingStyleAttribute = TransitionStatusDataAttributes.startingStyle;
+      if (!resolvedElement.hasAttribute(startingStyleAttribute)) {
+        frame.request(exec);
+        return;
+      }
+      const attributeObserver = new MutationObserver(() => {
+        if (!resolvedElement.hasAttribute(startingStyleAttribute)) {
+          attributeObserver.disconnect();
+          exec();
+        }
+      });
+      attributeObserver.observe(resolvedElement, {
+        attributes: true,
+        attributeFilter: [startingStyleAttribute]
+      });
+      signal?.addEventListener("abort", () => attributeObserver.disconnect(), {
+        once: true
+      });
+      return;
+    }
+    frame.request(exec);
+  });
+}
+
+// node_modules/@base-ui/react/internals/useOpenChangeComplete.mjs
+"use client";
+function useOpenChangeComplete(parameters) {
+  const {
+    enabled = true,
+    open,
+    ref,
+    onComplete: onCompleteParam
+  } = parameters;
+  const onComplete = useStableCallback(onCompleteParam);
+  const runOnceAnimationsFinish = useAnimationsFinished(ref, open, false);
+  React28.useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    const abortController = new AbortController;
+    runOnceAnimationsFinish(onComplete, abortController.signal);
+    return () => {
+      abortController.abort();
+    };
+  }, [enabled, open, onComplete, runOnceAnimationsFinish]);
+}
+
 // node_modules/@base-ui/react/utils/popups/popupStoreUtils.mjs
 "use client";
 var FOCUSABLE_POPUP_PROPS = {
@@ -27749,7 +20745,7 @@ function createDefaultInitialFocus(popupRef) {
 function usePopupStore(externalStore, createStore, treatPopupAsFloatingElement = false) {
   const floatingId = useId();
   const nested = useFloatingParentNodeId() != null;
-  const internalStoreRef = React47.useRef(null);
+  const internalStoreRef = React29.useRef(null);
   if (externalStore === undefined && internalStoreRef.current === null) {
     internalStoreRef.current = createStore(floatingId, nested);
   }
@@ -27768,9 +20764,9 @@ function usePopupStore(externalStore, createStore, treatPopupAsFloatingElement =
   };
 }
 function useTriggerRegistration(id, store) {
-  const registeredElementIdRef = React47.useRef(null);
-  const registeredElementRef = React47.useRef(null);
-  return React47.useCallback((element2) => {
+  const registeredElementIdRef = React29.useRef(null);
+  const registeredElementRef = React29.useRef(null);
+  return React29.useCallback((element) => {
     if (id === undefined) {
       return;
     }
@@ -27786,10 +20782,10 @@ function useTriggerRegistration(id, store) {
       registeredElementIdRef.current = null;
       registeredElementRef.current = null;
     }
-    if (element2 !== null) {
+    if (element !== null) {
       registeredElementIdRef.current = id;
-      registeredElementRef.current = element2;
-      store.context.triggerElements.add(id, element2);
+      registeredElementRef.current = element;
+      store.context.triggerElements.add(id, element);
       shouldSyncTriggerCount = true;
     }
     if (shouldSyncTriggerCount) {
@@ -27834,16 +20830,16 @@ function useInitialOpenSync(store, openProp, defaultOpen, defaultTriggerId) {
 function useTriggerDataForwarding(triggerId, triggerElementRef, store, stateUpdates) {
   const isMountedByThisTrigger = store.useState("isMountedByTrigger", triggerId);
   const baseRegisterTrigger = useTriggerRegistration(triggerId, store);
-  const registerTrigger = useStableCallback((element2) => {
-    baseRegisterTrigger(element2);
-    if (!element2) {
+  const registerTrigger = useStableCallback((element) => {
+    baseRegisterTrigger(element);
+    if (!element) {
       return;
     }
     const open = store.select("open");
     const activeTriggerId = store.select("activeTriggerId");
     if (activeTriggerId === triggerId) {
       store.update({
-        activeTriggerElement: element2,
+        activeTriggerElement: element,
         ...open ? stateUpdates : null
       });
       return;
@@ -27851,7 +20847,7 @@ function useTriggerDataForwarding(triggerId, triggerElementRef, store, stateUpda
     if (activeTriggerId == null && open) {
       store.update({
         activeTriggerId: triggerId,
-        activeTriggerElement: element2,
+        activeTriggerElement: element,
         ...stateUpdates
       });
     }
@@ -27994,31 +20990,31 @@ class PopupTriggerMap {
     this.elementsSet = new Set;
     this.idMap = new Map;
   }
-  add(id, element2) {
+  add(id, element) {
     const existingElement = this.idMap.get(id);
-    if (existingElement === element2) {
+    if (existingElement === element) {
       return;
     }
     if (existingElement !== undefined) {
       this.elementsSet.delete(existingElement);
     }
-    this.elementsSet.add(element2);
-    this.idMap.set(id, element2);
+    this.elementsSet.add(element);
+    this.idMap.set(id, element);
     if (false) {}
   }
   delete(id) {
-    const element2 = this.idMap.get(id);
-    if (element2) {
-      this.elementsSet.delete(element2);
+    const element = this.idMap.get(id);
+    if (element) {
+      this.elementsSet.delete(element);
       this.idMap.delete(id);
     }
   }
-  hasElement(element2) {
-    return this.elementsSet.has(element2);
+  hasElement(element) {
+    return this.elementsSet.has(element);
   }
   hasMatchingElement(predicate) {
-    for (const element2 of this.elementsSet) {
-      if (predicate(element2)) {
+    for (const element of this.elementsSet) {
+      if (predicate(element)) {
         return true;
       }
     }
@@ -28179,12 +21175,12 @@ function useFloating2(options2 = {}) {
   const domReferenceElement = store.useState("domReferenceElement");
   const open = store.useState("open");
   const floatingId = store.useState("floatingId");
-  const [positionReference, setPositionReferenceRaw] = React48.useState(null);
-  const [localDomReference, setLocalDomReference] = React48.useState(undefined);
-  const [localFloatingElement, setLocalFloatingElement] = React48.useState(undefined);
-  const domReferenceRef = React48.useRef(null);
+  const [positionReference, setPositionReferenceRaw] = React30.useState(null);
+  const [localDomReference, setLocalDomReference] = React30.useState(undefined);
+  const [localFloatingElement, setLocalFloatingElement] = React30.useState(undefined);
+  const domReferenceRef = React30.useRef(null);
   const tree = useFloatingTree(externalTree);
-  const storeElements = React48.useMemo(() => ({
+  const storeElements = React30.useMemo(() => ({
     reference: referenceElement,
     floating: floatingElement,
     domReference: domReferenceElement
@@ -28203,7 +21199,7 @@ function useFloating2(options2 = {}) {
   store.useSyncedValue("referenceElement", localDomReference ?? null);
   store.useSyncedValue("domReferenceElement", localDomReference === undefined ? domReferenceElement : localDomReferenceElement);
   store.useSyncedValue("floatingElement", syncedFloatingElement);
-  const setPositionReference = React48.useCallback((node) => {
+  const setPositionReference = React30.useCallback((node) => {
     const computedPositionReference = isElement(node) ? {
       getBoundingClientRect: () => node.getBoundingClientRect(),
       getClientRects: () => node.getClientRects(),
@@ -28212,7 +21208,7 @@ function useFloating2(options2 = {}) {
     setPositionReferenceRaw(computedPositionReference);
     position.refs.setReference(computedPositionReference);
   }, [position.refs]);
-  const setReference = React48.useCallback((node) => {
+  const setReference = React30.useCallback((node) => {
     if (isElement(node) || node === null) {
       domReferenceRef.current = node;
       setLocalDomReference(node);
@@ -28221,22 +21217,22 @@ function useFloating2(options2 = {}) {
       position.refs.setReference(node);
     }
   }, [position.refs, setLocalDomReference]);
-  const setFloating = React48.useCallback((node) => {
+  const setFloating = React30.useCallback((node) => {
     setLocalFloatingElement(node);
     position.refs.setFloating(node);
   }, [position.refs]);
-  const refs = React48.useMemo(() => ({
+  const refs = React30.useMemo(() => ({
     ...position.refs,
     setReference,
     setFloating,
     setPositionReference,
     domReference: domReferenceRef
   }), [position.refs, setReference, setFloating, setPositionReference]);
-  const elements = React48.useMemo(() => ({
+  const elements = React30.useMemo(() => ({
     ...position.elements,
     domReference: domReferenceElement
   }), [position.elements, domReferenceElement]);
-  const context = React48.useMemo(() => ({
+  const context = React30.useMemo(() => ({
     ...position,
     dataRef: store.context.dataRef,
     open,
@@ -28260,7 +21256,7 @@ function useFloating2(options2 = {}) {
       node.context = context;
     }
   });
-  return React48.useMemo(() => ({
+  return React30.useMemo(() => ({
     ...position,
     context,
     refs,
@@ -28269,7 +21265,7 @@ function useFloating2(options2 = {}) {
   }), [position, refs, elements, context, store]);
 }
 // node_modules/@base-ui/react/floating-ui-react/hooks/useFocus.mjs
-var React49 = __toESM(require_react(), 1);
+var React31 = __toESM(require_react(), 1);
 "use client";
 var isMacSafari = exports_parts.os.mac && exports_parts.engine.webkit;
 function useFocus(context, props = {}) {
@@ -28282,11 +21278,11 @@ function useFocus(context, props = {}) {
     events,
     dataRef
   } = store.context;
-  const blockFocusRef = React49.useRef(false);
-  const blockedReferenceRef = React49.useRef(null);
-  const keyboardModalityRef = React49.useRef(true);
+  const blockFocusRef = React31.useRef(false);
+  const blockedReferenceRef = React31.useRef(null);
+  const keyboardModalityRef = React31.useRef(true);
   const timeout = useTimeout();
-  React49.useEffect(() => {
+  React31.useEffect(() => {
     const domReference = store.select("domReferenceElement");
     if (!enabled) {
       return;
@@ -28306,7 +21302,7 @@ function useFocus(context, props = {}) {
     }
     return mergeCleanups(addEventListener(win, "blur", onBlur), isMacSafari && addEventListener(win, "keydown", onKeyDown, true), isMacSafari && addEventListener(win, "pointerdown", onPointerDown, true));
   }, [store, enabled]);
-  React49.useEffect(() => {
+  React31.useEffect(() => {
     if (!enabled) {
       return;
     }
@@ -28324,7 +21320,7 @@ function useFocus(context, props = {}) {
       events.off("openchange", onOpenChangeLocal);
     };
   }, [events, enabled, store]);
-  const reference = React49.useMemo(() => {
+  const reference = React31.useMemo(() => {
     function resetBlockedFocus() {
       blockFocusRef.current = false;
       blockedReferenceRef.current = null;
@@ -28391,13 +21387,13 @@ function useFocus(context, props = {}) {
       }
     };
   }, [dataRef, delay, store, timeout]);
-  return React49.useMemo(() => enabled ? {
+  return React31.useMemo(() => enabled ? {
     reference,
     trigger: reference
   } : {}, [enabled, reference]);
 }
 // node_modules/@base-ui/react/floating-ui-react/hooks/useHoverFloatingInteraction.mjs
-var React50 = __toESM(require_react(), 1);
+var React32 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/floating-ui-react/hooks/useHoverInteractionSharedState.mjs
 "use client";
@@ -28540,7 +21536,7 @@ function useHoverFloatingInteraction(context, parameters = {}) {
       clearPointerEvents();
     }
   }, [open, instance2, clearPointerEvents]);
-  React50.useEffect(() => {
+  React32.useEffect(() => {
     return clearPointerEvents;
   }, [clearPointerEvents]);
   useIsoLayoutEffect(() => {
@@ -28569,7 +21565,7 @@ function useHoverFloatingInteraction(context, parameters = {}) {
     }
     return;
   }, [enabled, open, domReferenceElement, floatingElement, instance2, isHoverOpen, tree, parentId, clearPointerEvents]);
-  React50.useEffect(() => {
+  React32.useEffect(() => {
     if (!enabled) {
       return;
     }
@@ -28643,7 +21639,7 @@ function useHoverFloatingInteraction(context, parameters = {}) {
   }, [enabled, floatingElement, store, dataRef, closeDelayProp, nodeIdProp, isHoverOpen, isClickLikeOpenEvent2, clearPointerEvents, instance2, tree, parentId, childClosedTimeout]);
 }
 // node_modules/@base-ui/react/floating-ui-react/hooks/useHoverReferenceInteraction.mjs
-var React51 = __toESM(require_react(), 1);
+var React33 = __toESM(require_react(), 1);
 var ReactDOM6 = __toESM(require_react_dom(), 1);
 "use client";
 var EMPTY_REF = {
@@ -28671,7 +21667,7 @@ function useHoverReferenceInteraction(context, props = {}) {
   } = store.context;
   const tree = useFloatingTree(externalTree);
   const instance2 = useHoverInteractionSharedState(store);
-  const isHoverCloseActiveRef = React51.useRef(false);
+  const isHoverCloseActiveRef = React33.useRef(false);
   const handleCloseRef = useValueAsRef(handleClose);
   const delayRef = useValueAsRef(delay);
   const restMsRef = useValueAsRef(restMs);
@@ -28709,8 +21705,8 @@ function useHoverReferenceInteraction(context, props = {}) {
   if (isActiveTrigger) {
     instance2.handleCloseOptions = handleCloseRef.current?.__options;
   }
-  React51.useEffect(() => cleanupMouseMoveHandler, [cleanupMouseMoveHandler]);
-  React51.useEffect(() => {
+  React33.useEffect(() => cleanupMouseMoveHandler, [cleanupMouseMoveHandler]);
+  React33.useEffect(() => {
     if (!enabled) {
       return;
     }
@@ -28731,7 +21727,7 @@ function useHoverReferenceInteraction(context, props = {}) {
       events.off("openchange", onOpenChangeLocal);
     };
   }, [enabled, events, instance2, cleanupMouseMoveHandler]);
-  React51.useEffect(() => {
+  React33.useEffect(() => {
     if (!enabled) {
       return;
     }
@@ -28852,7 +21848,7 @@ function useHoverReferenceInteraction(context, props = {}) {
     }
     return mergeCleanups(addEventListener(trigger, "mouseenter", onMouseEnter), addEventListener(trigger, "mouseleave", onMouseLeave));
   }, [cleanupMouseMoveHandler, clearPointerEvents, dataRef, delayRef, store, enabled, handleCloseRef, instance2, isActiveTrigger, isOverInactiveTrigger, isClickLikeOpenEvent2, mouseOnly, move, restMsRef, triggerElementRef, tree, enabledRef, getHandleCloseContext, isClosingRef, checkShouldOpen]);
-  return React51.useMemo(() => {
+  return React33.useMemo(() => {
     if (!enabled) {
       return;
     }
@@ -28917,7 +21913,7 @@ function useHoverReferenceInteraction(context, props = {}) {
   }, [enabled, instance2, isClickLikeOpenEvent2, isOverInactiveTrigger, mouseOnly, store, restMsRef, checkShouldOpen]);
 }
 // node_modules/@base-ui/react/floating-ui-react/hooks/useListNavigation.mjs
-var React52 = __toESM(require_react(), 1);
+var React34 = __toESM(require_react(), 1);
 "use client";
 var ESCAPE = "Escape";
 function doSwitch(orientation, vertical, horizontal) {
@@ -28988,18 +21984,18 @@ function useListNavigation(context, props) {
   const floatingFocusElementRef = useValueAsRef(floatingFocusElement);
   const parentId = useFloatingParentNodeId();
   const tree = useFloatingTree(externalTree);
-  const focusItemOnOpenRef = React52.useRef(focusItemOnOpen);
-  const indexRef = React52.useRef(selectedIndex ?? -1);
-  const keyRef = React52.useRef(null);
-  const isPointerModalityRef = React52.useRef(true);
+  const focusItemOnOpenRef = React34.useRef(focusItemOnOpen);
+  const indexRef = React34.useRef(selectedIndex ?? -1);
+  const keyRef = React34.useRef(null);
+  const isPointerModalityRef = React34.useRef(true);
   const onNavigate = useStableCallback((event) => {
     onNavigateProp(indexRef.current === -1 ? null : indexRef.current, event);
   });
-  const previousMountedRef = React52.useRef(!!floatingElement);
-  const previousOpenRef = React52.useRef(open);
-  const forceSyncFocusRef = React52.useRef(false);
-  const forceScrollIntoViewRef = React52.useRef(false);
-  const cancelQueuedFocusRef = React52.useRef(null);
+  const previousMountedRef = React34.useRef(!!floatingElement);
+  const previousOpenRef = React34.useRef(open);
+  const forceSyncFocusRef = React34.useRef(false);
+  const forceScrollIntoViewRef = React34.useRef(false);
+  const cancelQueuedFocusRef = React34.useRef(null);
   const disabledIndicesRef = useValueAsRef(disabledIndices);
   const latestOpenRef = useValueAsRef(open);
   const selectedIndexRef = useValueAsRef(selectedIndex);
@@ -29246,7 +22242,7 @@ function useListNavigation(context, props) {
       onNavigate(event);
     }
   });
-  const item = React52.useMemo(() => {
+  const item = React34.useMemo(() => {
     const itemProps = {
       onFocus(event) {
         forceSyncFocusRef.current = true;
@@ -29293,12 +22289,12 @@ function useListNavigation(context, props) {
     };
     return itemProps;
   }, [syncCurrentTarget, latestOpenRef, floatingFocusElementRef, focusItemOnHover, listRef, onNavigate, resetOnPointerLeaveRef, virtual]);
-  const ariaActiveDescendantProp = React52.useMemo(() => {
+  const ariaActiveDescendantProp = React34.useMemo(() => {
     return virtual && open && hasActiveIndex && {
       "aria-activedescendant": `${id}-${activeIndex}`
     };
   }, [virtual, open, hasActiveIndex, id, activeIndex]);
-  const floating = React52.useMemo(() => {
+  const floating = React34.useMemo(() => {
     return {
       "aria-orientation": orientation === "both" ? undefined : orientation,
       ...!typeableComboboxReference ? ariaActiveDescendantProp : {},
@@ -29322,7 +22318,7 @@ function useListNavigation(context, props) {
       }
     };
   }, [ariaActiveDescendantProp, commonOnKeyDown, floatingFocusElementRef, orientation, typeableComboboxReference, store, open, virtual, domReferenceElement]);
-  const trigger = React52.useMemo(() => {
+  const trigger = React34.useMemo(() => {
     function openOnNavigationKeyDown(event) {
       store.setOpen(true, createChangeEventDetails(exports_reason_parts.listNavigation, event.nativeEvent, event.currentTarget));
     }
@@ -29395,13 +22391,13 @@ function useListNavigation(context, props) {
       onClick: checkVirtualMouse
     };
   }, [commonOnKeyDown, focusItemOnOpen, getMinEnabledIndex, nested, onNavigate, store, openOnArrowKeyDown, orientation, getParentOrientation, rtl, selectedIndexRef, virtual]);
-  const reference = React52.useMemo(() => {
+  const reference = React34.useMemo(() => {
     return {
       ...ariaActiveDescendantProp,
       ...trigger
     };
   }, [ariaActiveDescendantProp, trigger]);
-  return React52.useMemo(() => enabled ? {
+  return React34.useMemo(() => enabled ? {
     reference,
     floating,
     item,
@@ -29409,7 +22405,7 @@ function useListNavigation(context, props) {
   } : {}, [enabled, reference, floating, trigger, item]);
 }
 // node_modules/@base-ui/react/floating-ui-react/hooks/useTypeahead.mjs
-var React53 = __toESM(require_react(), 1);
+var React35 = __toESM(require_react(), 1);
 "use client";
 function useTypeahead(context, props) {
   const {
@@ -29426,13 +22422,13 @@ function useTypeahead(context, props) {
   const store = "rootStore" in context ? context.rootStore : context;
   const open = store.useState("open");
   const timeout = useTimeout();
-  const stringRef = React53.useRef("");
-  const prevIndexRef = React53.useRef(selectedIndex ?? activeIndex ?? -1);
-  const matchIndexRef = React53.useRef(null);
+  const stringRef = React35.useRef("");
+  const prevIndexRef = React35.useRef(selectedIndex ?? activeIndex ?? -1);
+  const matchIndexRef = React35.useRef(null);
   const onKeyDown = useStableCallback((event) => {
     function isVisible(index5) {
-      const element2 = elementsRef?.current[index5];
-      return !element2 || isElementVisible(element2);
+      const element = elementsRef?.current[index5];
+      return !element || isElementVisible(element);
     }
     function isItemAvailable(index5) {
       if (!isVisible(index5)) {
@@ -29440,16 +22436,16 @@ function useTypeahead(context, props) {
       }
       return disabledIndices == null || !isListIndexDisabled(EMPTY_ARRAY, index5, disabledIndices);
     }
-    function getMatchingIndex(list2, string3, startIndex2 = 0) {
-      if (list2.length === 0) {
+    function getMatchingIndex(list, string, startIndex2 = 0) {
+      if (list.length === 0) {
         return -1;
       }
-      const normalizedStartIndex = (startIndex2 % list2.length + list2.length) % list2.length;
-      const lowerString = string3.toLowerCase();
-      for (let offset4 = 0;offset4 < list2.length; offset4 += 1) {
-        const index5 = (normalizedStartIndex + offset4) % list2.length;
-        const text4 = list2[index5];
-        if (!text4?.toLowerCase().startsWith(lowerString) || !isItemAvailable(index5)) {
+      const normalizedStartIndex = (startIndex2 % list.length + list.length) % list.length;
+      const lowerString = string.toLowerCase();
+      for (let offset4 = 0;offset4 < list.length; offset4 += 1) {
+        const index5 = (normalizedStartIndex + offset4) % list.length;
+        const text = list[index5];
+        if (!text?.toLowerCase().startsWith(lowerString) || !isItemAvailable(index5)) {
           continue;
         }
         return index5;
@@ -29477,7 +22473,7 @@ function useTypeahead(context, props) {
     if (isNewSession) {
       prevIndexRef.current = selectedIndex ?? activeIndex ?? -1;
     }
-    const allowRapidSuccessionOfFirstLetter = listContent.every((text4, index5) => text4 && isItemAvailable(index5) ? text4[0]?.toLowerCase() !== text4[1]?.toLowerCase() : true);
+    const allowRapidSuccessionOfFirstLetter = listContent.every((text, index5) => text && isItemAvailable(index5) ? text[0]?.toLowerCase() !== text[1]?.toLowerCase() : true);
     if (allowRapidSuccessionOfFirstLetter && stringRef.current === event.key) {
       stringRef.current = "";
       prevIndexRef.current = matchIndexRef.current;
@@ -29527,11 +22523,11 @@ function useTypeahead(context, props) {
       prevIndexRef.current = selectedIndex ?? activeIndex ?? -1;
     }
   }, [open, selectedIndex, activeIndex]);
-  const sharedProps = React53.useMemo(() => ({
+  const sharedProps = React35.useMemo(() => ({
     onKeyDown,
     onBlur
   }), [onKeyDown, onBlur]);
-  return React53.useMemo(() => enabled ? {
+  return React35.useMemo(() => enabled ? {
     reference: sharedProps,
     floating: sharedProps
   } : {}, [enabled, sharedProps]);
@@ -29751,18 +22747,498 @@ function safePolygon(options2 = {}) {
   };
   return fn2;
 }
-// node_modules/@base-ui/react/toolbar/root/ToolbarRootContext.mjs
-var React54 = __toESM(require_react(), 1);
+// node_modules/@base-ui/react/dialog/root/useDialogRoot.mjs
 "use client";
-var ToolbarRootContext = /* @__PURE__ */ React54.createContext(undefined);
+function useDialogRoot(params) {
+  const {
+    store,
+    actionsRef
+  } = params;
+  const open = store.useState("open");
+  usePopupRootSync(store, open);
+  useImplicitActiveTrigger(store);
+  const {
+    forceUnmount
+  } = useOpenStateTransitions(open, store);
+  const handleImperativeClose = React36.useCallback(() => {
+    store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction));
+  }, [store]);
+  React36.useImperativeHandle(actionsRef, () => ({
+    unmount: forceUnmount,
+    close: handleImperativeClose
+  }), [forceUnmount, handleImperativeClose]);
+}
+function DialogInteractions({
+  store,
+  parentContext,
+  isDrawer
+}) {
+  const open = store.useState("open");
+  const disablePointerDismissal = store.useState("disablePointerDismissal");
+  const modal = store.useState("modal");
+  const popupElement = store.useState("popupElement");
+  const floatingRootContext = store.useState("floatingRootContext");
+  const [ownNestedOpenDialogs, setOwnNestedOpenDialogs] = React36.useState(0);
+  const [ownNestedOpenDrawers, setOwnNestedOpenDrawers] = React36.useState(0);
+  const isTopmost = ownNestedOpenDialogs === 0;
+  const dismiss = useDismiss(floatingRootContext, {
+    outsidePressEvent() {
+      if (store.context.internalBackdropRef.current || store.context.backdropRef.current) {
+        return "intentional";
+      }
+      return {
+        mouse: modal === "trap-focus" ? "sloppy" : "intentional",
+        touch: "sloppy"
+      };
+    },
+    outsidePress(event) {
+      if (!store.context.outsidePressEnabledRef.current) {
+        return false;
+      }
+      if ("button" in event && event.button !== 0) {
+        return false;
+      }
+      if ("touches" in event && event.touches.length !== 1) {
+        return false;
+      }
+      const target = getTarget(event);
+      if (isTopmost && !disablePointerDismissal) {
+        if (modal) {
+          return store.context.internalBackdropRef.current || store.context.backdropRef.current ? store.context.internalBackdropRef.current === target || store.context.backdropRef.current === target || contains(target, popupElement) && !target?.hasAttribute("data-base-ui-portal") : true;
+        }
+        return true;
+      }
+      return false;
+    },
+    escapeKey: isTopmost
+  });
+  useScrollLock(open && modal === true, popupElement);
+  store.useContextCallback("onNestedDialogOpen", (dialogCount, drawerCount) => {
+    setOwnNestedOpenDialogs(dialogCount);
+    setOwnNestedOpenDrawers(drawerCount);
+  });
+  store.useContextCallback("onNestedDialogClose", () => {
+    setOwnNestedOpenDialogs(0);
+    setOwnNestedOpenDrawers(0);
+  });
+  React36.useEffect(() => {
+    if (parentContext?.onNestedDialogOpen && open) {
+      parentContext.onNestedDialogOpen(ownNestedOpenDialogs + 1, ownNestedOpenDrawers + (isDrawer ? 1 : 0));
+    }
+    if (parentContext?.onNestedDialogClose && !open) {
+      parentContext.onNestedDialogClose();
+    }
+    return () => {
+      if (parentContext?.onNestedDialogClose && open) {
+        parentContext.onNestedDialogClose();
+      }
+    };
+  }, [isDrawer, open, ownNestedOpenDialogs, ownNestedOpenDrawers, parentContext]);
+  const activeTriggerProps = dismiss.reference ?? EMPTY_OBJECT;
+  const inactiveTriggerProps = dismiss.trigger ?? EMPTY_OBJECT;
+  const popupProps = dismiss.floating ?? EMPTY_OBJECT;
+  usePopupInteractionProps(store, {
+    activeTriggerProps,
+    inactiveTriggerProps,
+    popupProps,
+    nestedOpenDialogCount: ownNestedOpenDialogs,
+    nestedOpenDrawerCount: ownNestedOpenDrawers
+  });
+  return null;
+}
+
+// node_modules/@base-ui/react/dialog/root/DialogRootContext.mjs
+var React37 = __toESM(require_react(), 1);
+"use client";
+var IsDrawerContext = /* @__PURE__ */ React37.createContext(false);
 if (false)
   ;
-function useToolbarRootContext(optional) {
-  const context = React54.useContext(ToolbarRootContext);
-  if (context === undefined && !optional) {
-    throw new Error(formatErrorMessage_default(69));
+var DialogRootContext = /* @__PURE__ */ React37.createContext(undefined);
+if (false)
+  ;
+function useDialogRootContext(optional) {
+  const dialogRootContext = React37.useContext(DialogRootContext);
+  if (optional === false && dialogRootContext === undefined) {
+    throw new Error(formatErrorMessage_default(27));
   }
-  return context;
+  return dialogRootContext;
+}
+
+// node_modules/@base-ui/react/dialog/store/DialogStore.mjs
+var React38 = __toESM(require_react(), 1);
+var selectors2 = {
+  ...popupStoreSelectors,
+  modal: createSelector((state) => state.modal),
+  nested: createSelector((state) => state.nested),
+  nestedOpenDialogCount: createSelector((state) => state.nestedOpenDialogCount),
+  nestedOpenDrawerCount: createSelector((state) => state.nestedOpenDrawerCount),
+  disablePointerDismissal: createSelector((state) => state.disablePointerDismissal),
+  openMethod: createSelector((state) => state.openMethod),
+  descriptionElementId: createSelector((state) => state.descriptionElementId),
+  titleElementId: createSelector((state) => state.titleElementId),
+  viewportElement: createSelector((state) => state.viewportElement),
+  role: createSelector((state) => state.role)
+};
+
+class DialogStore extends ReactStore {
+  constructor(initialState, floatingId, nested = false) {
+    const triggerElements = new PopupTriggerMap;
+    const state = createInitialState(initialState);
+    state.floatingRootContext = createPopupFloatingRootContext(triggerElements, floatingId, nested);
+    super(state, {
+      popupRef: /* @__PURE__ */ React38.createRef(),
+      backdropRef: /* @__PURE__ */ React38.createRef(),
+      internalBackdropRef: /* @__PURE__ */ React38.createRef(),
+      outsidePressEnabledRef: {
+        current: true
+      },
+      triggerElements,
+      onOpenChange: undefined,
+      onOpenChangeComplete: undefined
+    }, selectors2);
+  }
+  setOpen = (nextOpen, eventDetails) => {
+    eventDetails.preventUnmountOnClose = () => {
+      this.set("preventUnmountingOnClose", true);
+    };
+    if (!nextOpen && eventDetails.trigger == null && this.state.activeTriggerId != null) {
+      eventDetails.trigger = this.state.activeTriggerElement ?? undefined;
+    }
+    this.context.onOpenChange?.(nextOpen, eventDetails);
+    if (eventDetails.isCanceled) {
+      return;
+    }
+    this.state.floatingRootContext.dispatchOpenChange(nextOpen, eventDetails);
+    const updatedState = {
+      open: nextOpen
+    };
+    setPopupOpenState(updatedState, nextOpen, eventDetails.trigger);
+    this.update(updatedState);
+  };
+  static useStore(externalStore, initialState) {
+    const store = usePopupStore(externalStore, (floatingId, nested) => new DialogStore(initialState, floatingId, nested), true).store;
+    return store;
+  }
+}
+function createInitialState(initialState = {}) {
+  return {
+    ...createInitialPopupStoreState(),
+    modal: true,
+    disablePointerDismissal: false,
+    popupElement: null,
+    viewportElement: null,
+    descriptionElementId: undefined,
+    titleElementId: undefined,
+    openMethod: null,
+    nested: false,
+    nestedOpenDialogCount: 0,
+    nestedOpenDrawerCount: 0,
+    role: "dialog",
+    ...initialState
+  };
+}
+
+// node_modules/@base-ui/react/dialog/root/useRenderDialogRoot.mjs
+var import_jsx_runtime6 = __toESM(require_jsx_runtime(), 1);
+"use client";
+function useRenderDialogRoot(props, mode = "dialog") {
+  const {
+    children,
+    open: openProp,
+    defaultOpen = false,
+    onOpenChange,
+    onOpenChangeComplete,
+    disablePointerDismissal: disablePointerDismissalProp = false,
+    modal: modalProp = true,
+    actionsRef,
+    handle,
+    triggerId: triggerIdProp,
+    defaultTriggerId: defaultTriggerIdProp = null
+  } = props;
+  const isDrawer = mode === "drawer";
+  const isAlertDialog = mode === "alert-dialog";
+  const modal = isAlertDialog ? true : modalProp;
+  const disablePointerDismissal = isAlertDialog || disablePointerDismissalProp;
+  const role = isAlertDialog ? "alertdialog" : "dialog";
+  const parentDialogRootContext = useDialogRootContext(true);
+  const nested = Boolean(parentDialogRootContext);
+  const rootState = {
+    modal,
+    disablePointerDismissal,
+    nested,
+    role
+  };
+  const store = DialogStore.useStore(handle?.store, {
+    open: defaultOpen,
+    openProp,
+    activeTriggerId: defaultTriggerIdProp,
+    triggerIdProp,
+    ...rootState
+  });
+  useOnFirstRender(() => {
+    const nextState = openProp === undefined && store.state.open === false && defaultOpen === true ? {
+      open: true,
+      activeTriggerId: defaultTriggerIdProp
+    } : null;
+    if (isAlertDialog) {
+      store.update(nextState ? {
+        ...rootState,
+        ...nextState
+      } : rootState);
+    } else if (nextState) {
+      store.update(nextState);
+    }
+  });
+  store.useControlledProp("openProp", openProp);
+  store.useControlledProp("triggerIdProp", triggerIdProp);
+  store.useSyncedValues(rootState);
+  store.useContextCallback("onOpenChange", onOpenChange);
+  store.useContextCallback("onOpenChangeComplete", onOpenChangeComplete);
+  const open = store.useState("open");
+  const mounted = store.useState("mounted");
+  const payload = store.useState("payload");
+  useDialogRoot({
+    store,
+    actionsRef
+  });
+  const shouldRenderInteractions = open || mounted;
+  const contextValue = React39.useMemo(() => ({
+    store
+  }), [store]);
+  return /* @__PURE__ */ import_jsx_runtime6.jsx(IsDrawerContext.Provider, {
+    value: false,
+    children: /* @__PURE__ */ import_jsx_runtime6.jsxs(DialogRootContext.Provider, {
+      value: contextValue,
+      children: [shouldRenderInteractions && /* @__PURE__ */ import_jsx_runtime6.jsx(DialogInteractions, {
+        store,
+        parentContext: parentDialogRootContext?.store.context,
+        isDrawer
+      }), typeof children === "function" ? children({
+        payload
+      }) : children]
+    })
+  });
+}
+
+// node_modules/@base-ui/react/alert-dialog/root/AlertDialogRoot.mjs
+"use client";
+function AlertDialogRoot(props) {
+  return useRenderDialogRoot(props, "alert-dialog");
+}
+// node_modules/@base-ui/react/dialog/backdrop/DialogBackdrop.mjs
+var React40 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/utils/popupStateMapping.mjs
+var CommonPopupDataAttributes = function(CommonPopupDataAttributes2) {
+  CommonPopupDataAttributes2["open"] = "data-open";
+  CommonPopupDataAttributes2["closed"] = "data-closed";
+  CommonPopupDataAttributes2[CommonPopupDataAttributes2["startingStyle"] = TransitionStatusDataAttributes.startingStyle] = "startingStyle";
+  CommonPopupDataAttributes2[CommonPopupDataAttributes2["endingStyle"] = TransitionStatusDataAttributes.endingStyle] = "endingStyle";
+  CommonPopupDataAttributes2["anchorHidden"] = "data-anchor-hidden";
+  CommonPopupDataAttributes2["side"] = "data-side";
+  CommonPopupDataAttributes2["align"] = "data-align";
+  return CommonPopupDataAttributes2;
+}({});
+var CommonTriggerDataAttributes = /* @__PURE__ */ function(CommonTriggerDataAttributes2) {
+  CommonTriggerDataAttributes2["popupOpen"] = "data-popup-open";
+  CommonTriggerDataAttributes2["pressed"] = "data-pressed";
+  return CommonTriggerDataAttributes2;
+}({});
+var TRIGGER_HOOK = {
+  [CommonTriggerDataAttributes.popupOpen]: ""
+};
+var PRESSABLE_TRIGGER_HOOK = {
+  [CommonTriggerDataAttributes.popupOpen]: "",
+  [CommonTriggerDataAttributes.pressed]: ""
+};
+var POPUP_OPEN_HOOK = {
+  [CommonPopupDataAttributes.open]: ""
+};
+var POPUP_CLOSED_HOOK = {
+  [CommonPopupDataAttributes.closed]: ""
+};
+var ANCHOR_HIDDEN_HOOK = {
+  [CommonPopupDataAttributes.anchorHidden]: ""
+};
+var triggerOpenStateMapping = {
+  open(value) {
+    if (value) {
+      return TRIGGER_HOOK;
+    }
+    return null;
+  }
+};
+var pressableTriggerOpenStateMapping = {
+  open(value) {
+    if (value) {
+      return PRESSABLE_TRIGGER_HOOK;
+    }
+    return null;
+  }
+};
+var popupStateMapping = {
+  open(value) {
+    if (value) {
+      return POPUP_OPEN_HOOK;
+    }
+    return POPUP_CLOSED_HOOK;
+  },
+  anchorHidden(value) {
+    if (value) {
+      return ANCHOR_HIDDEN_HOOK;
+    }
+    return null;
+  }
+};
+
+// node_modules/@base-ui/react/dialog/backdrop/DialogBackdrop.mjs
+"use client";
+var stateAttributesMapping = {
+  ...popupStateMapping,
+  ...transitionStatusMapping
+};
+var DialogBackdrop = /* @__PURE__ */ React40.forwardRef(function DialogBackdrop2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    forceRender = false,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useDialogRootContext();
+  const open = store.useState("open");
+  const nested = store.useState("nested");
+  const mounted = store.useState("mounted");
+  const transitionStatus = store.useState("transitionStatus");
+  const state = {
+    open,
+    transitionStatus
+  };
+  return useRenderElement("div", componentProps, {
+    state,
+    ref: [store.context.backdropRef, forwardedRef],
+    stateAttributesMapping,
+    props: [{
+      role: "presentation",
+      hidden: !mounted,
+      style: {
+        userSelect: "none",
+        WebkitUserSelect: "none"
+      }
+    }, elementProps],
+    enabled: forceRender || !nested
+  });
+});
+if (false)
+  ;
+// node_modules/@base-ui/react/dialog/close/DialogClose.mjs
+var React41 = __toESM(require_react(), 1);
+"use client";
+var DialogClose = /* @__PURE__ */ React41.forwardRef(function DialogClose2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    disabled: disabled2 = false,
+    nativeButton = true,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useDialogRootContext();
+  const open = store.useState("open");
+  const {
+    getButtonProps,
+    buttonRef
+  } = useButton({
+    disabled: disabled2,
+    native: nativeButton
+  });
+  const state = {
+    disabled: disabled2
+  };
+  function handleClick(event) {
+    if (open) {
+      store.setOpen(false, createChangeEventDetails(exports_reason_parts.closePress, event.nativeEvent));
+    }
+  }
+  return useRenderElement("button", componentProps, {
+    state,
+    ref: [forwardedRef, buttonRef],
+    props: [{
+      onClick: handleClick
+    }, elementProps, getButtonProps]
+  });
+});
+if (false)
+  ;
+// node_modules/@base-ui/react/dialog/description/DialogDescription.mjs
+var React42 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/internals/useBaseUiId.mjs
+"use client";
+function useBaseUiId(idOverride) {
+  return useId(idOverride, "base-ui");
+}
+
+// node_modules/@base-ui/react/dialog/description/DialogDescription.mjs
+"use client";
+var DialogDescription = /* @__PURE__ */ React42.forwardRef(function DialogDescription2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    id: idProp,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useDialogRootContext();
+  const id = useBaseUiId(idProp);
+  store.useSyncedValueWithCleanup("descriptionElementId", id);
+  return useRenderElement("p", componentProps, {
+    ref: forwardedRef,
+    props: [{
+      id
+    }, elementProps]
+  });
+});
+if (false)
+  ;
+// node_modules/@base-ui/react/dialog/popup/DialogPopup.mjs
+var React44 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/dialog/popup/DialogPopupCssVars.mjs
+var DialogPopupCssVars = /* @__PURE__ */ function(DialogPopupCssVars2) {
+  DialogPopupCssVars2["nestedDialogs"] = "--nested-dialogs";
+  return DialogPopupCssVars2;
+}({});
+
+// node_modules/@base-ui/react/dialog/popup/DialogPopupDataAttributes.mjs
+var DialogPopupDataAttributes = function(DialogPopupDataAttributes2) {
+  DialogPopupDataAttributes2[DialogPopupDataAttributes2["open"] = CommonPopupDataAttributes.open] = "open";
+  DialogPopupDataAttributes2[DialogPopupDataAttributes2["closed"] = CommonPopupDataAttributes.closed] = "closed";
+  DialogPopupDataAttributes2[DialogPopupDataAttributes2["startingStyle"] = CommonPopupDataAttributes.startingStyle] = "startingStyle";
+  DialogPopupDataAttributes2[DialogPopupDataAttributes2["endingStyle"] = CommonPopupDataAttributes.endingStyle] = "endingStyle";
+  DialogPopupDataAttributes2["nested"] = "data-nested";
+  DialogPopupDataAttributes2["nestedDialogOpen"] = "data-nested-dialog-open";
+  return DialogPopupDataAttributes2;
+}({});
+
+// node_modules/@base-ui/react/dialog/portal/DialogPortalContext.mjs
+var React43 = __toESM(require_react(), 1);
+"use client";
+var DialogPortalContext = /* @__PURE__ */ React43.createContext(undefined);
+if (false)
+  ;
+function useDialogPortalContext() {
+  const value = React43.useContext(DialogPortalContext);
+  if (value === undefined) {
+    throw new Error(formatErrorMessage_default(26));
+  }
+  return value;
 }
 
 // node_modules/@base-ui/react/internals/composite/composite.mjs
@@ -29784,19 +23260,7784 @@ var ALT = "Alt";
 var META = "Meta";
 var MODIFIER_KEYS = new Set([SHIFT, CONTROL, ALT, META]);
 
+// node_modules/@base-ui/react/dialog/popup/DialogPopup.mjs
+var import_jsx_runtime7 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var stateAttributesMapping2 = {
+  ...popupStateMapping,
+  ...transitionStatusMapping,
+  nestedDialogOpen(value) {
+    return value ? {
+      [DialogPopupDataAttributes.nestedDialogOpen]: ""
+    } : null;
+  }
+};
+var DialogPopup = /* @__PURE__ */ React44.forwardRef(function DialogPopup2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    finalFocus,
+    initialFocus,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useDialogRootContext();
+  const descriptionElementId = store.useState("descriptionElementId");
+  const disablePointerDismissal = store.useState("disablePointerDismissal");
+  const floatingRootContext = store.useState("floatingRootContext");
+  const rootPopupProps = store.useState("popupProps");
+  const modal = store.useState("modal");
+  const mounted = store.useState("mounted");
+  const nested = store.useState("nested");
+  const nestedOpenDialogCount = store.useState("nestedOpenDialogCount");
+  const open = store.useState("open");
+  const openMethod = store.useState("openMethod");
+  const titleElementId = store.useState("titleElementId");
+  const transitionStatus = store.useState("transitionStatus");
+  const role = store.useState("role");
+  const floatingId = floatingRootContext.useState("floatingId");
+  const popupId = elementProps.id ?? floatingId;
+  useDialogPortalContext();
+  useOpenChangeComplete({
+    open,
+    ref: store.context.popupRef,
+    onComplete() {
+      if (open) {
+        store.context.onOpenChangeComplete?.(true);
+      }
+    }
+  });
+  const resolvedInitialFocus = initialFocus === undefined ? createDefaultInitialFocus(store.context.popupRef) : initialFocus;
+  const nestedDialogOpen = nestedOpenDialogCount > 0;
+  const setPopupElement = store.useStateSetter("popupElement");
+  const state = {
+    open,
+    nested,
+    transitionStatus,
+    nestedDialogOpen
+  };
+  const element = useRenderElement("div", componentProps, {
+    state,
+    props: [rootPopupProps, {
+      id: popupId,
+      "aria-labelledby": titleElementId ?? undefined,
+      "aria-describedby": descriptionElementId ?? undefined,
+      role,
+      ...FOCUSABLE_POPUP_PROPS,
+      hidden: !mounted,
+      onKeyDown(event) {
+        if (COMPOSITE_KEYS.has(event.key)) {
+          event.stopPropagation();
+        }
+      },
+      style: {
+        [DialogPopupCssVars.nestedDialogs]: nestedOpenDialogCount
+      }
+    }, elementProps],
+    ref: [forwardedRef, store.context.popupRef, setPopupElement],
+    stateAttributesMapping: stateAttributesMapping2
+  });
+  return /* @__PURE__ */ import_jsx_runtime7.jsx(FloatingFocusManager, {
+    context: floatingRootContext,
+    openInteractionType: openMethod,
+    disabled: !mounted,
+    closeOnFocusOut: !disablePointerDismissal,
+    initialFocus: resolvedInitialFocus,
+    returnFocus: finalFocus,
+    modal: modal !== false,
+    restoreFocus: "popup",
+    children: element
+  });
+});
+if (false)
+  ;
+// node_modules/@base-ui/react/dialog/portal/DialogPortal.mjs
+var React46 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/inertValue.mjs
+function inertValue(value) {
+  if (isReactVersionAtLeast(19)) {
+    return value;
+  }
+  return value ? "true" : undefined;
+}
+
+// node_modules/@base-ui/react/utils/InternalBackdrop.mjs
+var React45 = __toESM(require_react(), 1);
+var import_jsx_runtime8 = __toESM(require_jsx_runtime(), 1);
+var InternalBackdrop = /* @__PURE__ */ React45.forwardRef(function InternalBackdrop2(props, ref) {
+  const {
+    cutout,
+    ...otherProps
+  } = props;
+  let clipPath;
+  if (cutout) {
+    const rect = cutout.getBoundingClientRect();
+    clipPath = `polygon(0% 0%,100% 0%,100% 100%,0% 100%,0% 0%,${rect.left}px ${rect.top}px,${rect.left}px ${rect.bottom}px,${rect.right}px ${rect.bottom}px,${rect.right}px ${rect.top}px,${rect.left}px ${rect.top}px)`;
+  }
+  return /* @__PURE__ */ import_jsx_runtime8.jsx("div", {
+    ref,
+    role: "presentation",
+    "data-base-ui-inert": "",
+    ...otherProps,
+    style: {
+      position: "fixed",
+      inset: 0,
+      userSelect: "none",
+      WebkitUserSelect: "none",
+      clipPath
+    }
+  });
+});
+if (false)
+  ;
+
+// node_modules/@base-ui/react/dialog/portal/DialogPortal.mjs
+var import_jsx_runtime9 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var DialogPortal = /* @__PURE__ */ React46.forwardRef(function DialogPortal2(props, forwardedRef) {
+  const {
+    keepMounted = false,
+    ...portalProps
+  } = props;
+  const {
+    store
+  } = useDialogRootContext();
+  const mounted = store.useState("mounted");
+  const modal = store.useState("modal");
+  const open = store.useState("open");
+  const shouldRender = mounted || keepMounted;
+  if (!shouldRender) {
+    return null;
+  }
+  return /* @__PURE__ */ import_jsx_runtime9.jsx(DialogPortalContext.Provider, {
+    value: keepMounted,
+    children: /* @__PURE__ */ import_jsx_runtime9.jsxs(FloatingPortal, {
+      ref: forwardedRef,
+      ...portalProps,
+      children: [mounted && modal === true && /* @__PURE__ */ import_jsx_runtime9.jsx(InternalBackdrop, {
+        ref: store.context.internalBackdropRef,
+        inert: inertValue(!open)
+      }), props.children]
+    })
+  });
+});
+if (false)
+  ;
+// node_modules/@base-ui/react/dialog/title/DialogTitle.mjs
+var React47 = __toESM(require_react(), 1);
+"use client";
+var DialogTitle = /* @__PURE__ */ React47.forwardRef(function DialogTitle2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    id: idProp,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useDialogRootContext();
+  const id = useBaseUiId(idProp);
+  store.useSyncedValueWithCleanup("titleElementId", id);
+  return useRenderElement("h2", componentProps, {
+    ref: forwardedRef,
+    props: [{
+      id
+    }, elementProps]
+  });
+});
+if (false)
+  ;
+// node_modules/@base-ui/react/dialog/trigger/DialogTrigger.mjs
+var React51 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/utils/useOpenInteractionType.mjs
+var React50 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/useEnhancedClickHandler.mjs
+var React48 = __toESM(require_react(), 1);
+"use client";
+function useEnhancedClickHandler(handler) {
+  const lastClickInteractionTypeRef = React48.useRef("");
+  const handlePointerDown = React48.useCallback((event) => {
+    if (event.defaultPrevented) {
+      return;
+    }
+    lastClickInteractionTypeRef.current = event.pointerType;
+    handler(event, event.pointerType);
+  }, [handler]);
+  const handleClick = React48.useCallback((event) => {
+    if (event.detail === 0) {
+      handler(event, "keyboard");
+      return;
+    }
+    if ("pointerType" in event) {
+      handler(event, event.pointerType);
+    } else {
+      handler(event, lastClickInteractionTypeRef.current);
+    }
+    lastClickInteractionTypeRef.current = "";
+  }, [handler]);
+  return {
+    onClick: handleClick,
+    onPointerDown: handlePointerDown
+  };
+}
+
+// node_modules/@base-ui/react/internals/useValueChanged.mjs
+var React49 = __toESM(require_react(), 1);
+"use client";
+function useValueChanged(value, onChange) {
+  const valueRef = React49.useRef(value);
+  const onChangeCallback = useStableCallback(onChange);
+  useIsoLayoutEffect(() => {
+    if (valueRef.current === value) {
+      return;
+    }
+    onChangeCallback(valueRef.current);
+  }, [value, onChangeCallback]);
+  useIsoLayoutEffect(() => {
+    valueRef.current = value;
+  }, [value]);
+}
+
+// node_modules/@base-ui/react/utils/useOpenInteractionType.mjs
+"use client";
+function useOpenMethodTriggerProps(open, setOpenMethod) {
+  const handleTriggerClick = useStableCallback((_, interactionType) => {
+    const isOpen = typeof open === "function" ? open() : open;
+    if (!isOpen) {
+      setOpenMethod(interactionType || (exports_parts.os.ios ? "touch" : ""));
+    }
+  });
+  const {
+    onClick,
+    onPointerDown
+  } = useEnhancedClickHandler(handleTriggerClick);
+  return React50.useMemo(() => ({
+    onClick,
+    onPointerDown
+  }), [onClick, onPointerDown]);
+}
+function useOpenInteractionType(open) {
+  const [openMethod, setOpenMethod] = React50.useState(null);
+  const triggerProps = useOpenMethodTriggerProps(open, setOpenMethod);
+  useValueChanged(open, (previousOpen) => {
+    if (previousOpen && !open) {
+      setOpenMethod(null);
+    }
+  });
+  return React50.useMemo(() => ({
+    openMethod,
+    triggerProps
+  }), [openMethod, triggerProps]);
+}
+
+// node_modules/@base-ui/react/dialog/trigger/DialogTrigger.mjs
+"use client";
+var DialogTrigger = /* @__PURE__ */ React51.forwardRef(function DialogTrigger2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    disabled: disabled2 = false,
+    nativeButton = true,
+    id: idProp,
+    payload,
+    handle,
+    ...elementProps
+  } = componentProps;
+  const dialogRootContext = useDialogRootContext(true);
+  const store = handle?.store ?? dialogRootContext?.store;
+  if (!store) {
+    throw new Error(formatErrorMessage_default(79));
+  }
+  const thisTriggerId = useBaseUiId(idProp);
+  const floatingContext = store.useState("floatingRootContext");
+  const isOpenedByThisTrigger = store.useState("isOpenedByTrigger", thisTriggerId);
+  const popupId = store.useState("triggerPopupId", thisTriggerId);
+  const triggerElementRef = React51.useRef(null);
+  const {
+    registerTrigger,
+    isMountedByThisTrigger
+  } = useTriggerDataForwarding(thisTriggerId, triggerElementRef, store, {
+    payload
+  });
+  const {
+    getButtonProps,
+    buttonRef
+  } = useButton({
+    disabled: disabled2,
+    native: nativeButton
+  });
+  const click = useClick(floatingContext, {
+    enabled: floatingContext != null
+  });
+  const interactionTypeProps = useOpenMethodTriggerProps(() => store.select("open"), (interactionType) => {
+    store.set("openMethod", interactionType);
+  });
+  const state = {
+    disabled: disabled2,
+    open: isOpenedByThisTrigger
+  };
+  const rootTriggerProps = store.useState("triggerProps", isMountedByThisTrigger);
+  return useRenderElement("button", componentProps, {
+    state,
+    ref: [buttonRef, forwardedRef, registerTrigger, triggerElementRef],
+    props: [click.reference, rootTriggerProps, interactionTypeProps, {
+      [CLICK_TRIGGER_IDENTIFIER]: "",
+      id: thisTriggerId,
+      "aria-haspopup": "dialog",
+      "aria-expanded": isOpenedByThisTrigger,
+      "aria-controls": popupId
+    }, elementProps, getButtonProps],
+    stateAttributesMapping: triggerOpenStateMapping
+  });
+});
+if (false)
+  ;
+
+// node_modules/@base-ui/react/alert-dialog/trigger/AlertDialogTrigger.mjs
+"use client";
+var AlertDialogTrigger = DialogTrigger;
+// node_modules/@base-ui/react/dialog/viewport/DialogViewport.mjs
+var React52 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/dialog/viewport/DialogViewportDataAttributes.mjs
+var DialogViewportDataAttributes = function(DialogViewportDataAttributes2) {
+  DialogViewportDataAttributes2[DialogViewportDataAttributes2["open"] = CommonPopupDataAttributes.open] = "open";
+  DialogViewportDataAttributes2[DialogViewportDataAttributes2["closed"] = CommonPopupDataAttributes.closed] = "closed";
+  DialogViewportDataAttributes2[DialogViewportDataAttributes2["startingStyle"] = CommonPopupDataAttributes.startingStyle] = "startingStyle";
+  DialogViewportDataAttributes2[DialogViewportDataAttributes2["endingStyle"] = CommonPopupDataAttributes.endingStyle] = "endingStyle";
+  DialogViewportDataAttributes2["nested"] = "data-nested";
+  DialogViewportDataAttributes2["nestedDialogOpen"] = "data-nested-dialog-open";
+  return DialogViewportDataAttributes2;
+}({});
+
+// node_modules/@base-ui/react/dialog/viewport/DialogViewport.mjs
+"use client";
+var stateAttributesMapping3 = {
+  ...popupStateMapping,
+  ...transitionStatusMapping,
+  nested(value) {
+    return value ? {
+      [DialogViewportDataAttributes.nested]: ""
+    } : null;
+  },
+  nestedDialogOpen(value) {
+    return value ? {
+      [DialogViewportDataAttributes.nestedDialogOpen]: ""
+    } : null;
+  }
+};
+var DialogViewport = /* @__PURE__ */ React52.forwardRef(function DialogViewport2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    children,
+    ...elementProps
+  } = componentProps;
+  const keepMounted = useDialogPortalContext();
+  const {
+    store
+  } = useDialogRootContext();
+  const open = store.useState("open");
+  const nested = store.useState("nested");
+  const transitionStatus = store.useState("transitionStatus");
+  const nestedOpenDialogCount = store.useState("nestedOpenDialogCount");
+  const mounted = store.useState("mounted");
+  const setViewportElement = store.useStateSetter("viewportElement");
+  const nestedDialogOpen = nestedOpenDialogCount > 0;
+  const state = {
+    open,
+    nested,
+    transitionStatus,
+    nestedDialogOpen
+  };
+  const shouldRender = keepMounted || mounted;
+  return useRenderElement("div", componentProps, {
+    enabled: shouldRender,
+    state,
+    ref: [forwardedRef, setViewportElement],
+    stateAttributesMapping: stateAttributesMapping3,
+    props: [{
+      role: "presentation",
+      hidden: !mounted,
+      style: {
+        pointerEvents: !open ? "none" : undefined
+      },
+      children
+    }, elementProps]
+  });
+});
+if (false)
+  ;
+// node_modules/@base-ui/react/dialog/store/DialogHandle.mjs
+class DialogHandle {
+  constructor(store) {
+    this.store = store ?? new DialogStore;
+  }
+  open(triggerId) {
+    const triggerElement = triggerId ? this.store.context.triggerElements.getById(triggerId) : undefined;
+    if (false) {}
+    this.store.setOpen(true, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, triggerElement));
+  }
+  openWithPayload(payload) {
+    this.store.set("payload", payload);
+    this.store.setOpen(true, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, undefined));
+  }
+  close() {
+    this.store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, undefined));
+  }
+  get isOpen() {
+    return this.store.select("open");
+  }
+}
+function createDialogHandle() {
+  return new DialogHandle;
+}
+
+// node_modules/@base-ui/react/alert-dialog/handle.mjs
+var alertDialogState = {
+  modal: true,
+  disablePointerDismissal: true,
+  role: "alertdialog"
+};
+
+class AlertDialogHandle extends DialogHandle {
+  constructor(store) {
+    const alertDialogStore = store ?? new DialogStore(alertDialogState);
+    super(alertDialogStore);
+    if (store) {
+      this.store.update(alertDialogState);
+    }
+  }
+}
+function createAlertDialogHandle() {
+  return new AlertDialogHandle;
+}
+// src/kit/ui/ConfirmDialog.tsx
+var import_react7 = __toESM(require_react(), 1);
+
+// src/kit/lib/cn.ts
+function cn2(...inputs) {
+  return inputs.filter(Boolean).join(" ");
+}
+
+// src/kit/ui/ConfirmDialog.tsx
+var jsx_runtime4 = __toESM(require_jsx_runtime(), 1);
+var BUTTON = "inline-flex h-8 items-center justify-center rounded-md px-3 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ink-faint disabled:opacity-50";
+function ConfirmDialog({
+  open,
+  onOpenChange,
+  title,
+  message,
+  warning,
+  confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
+  confirmClassName,
+  onConfirm,
+  onCancel
+}) {
+  return /* @__PURE__ */ jsx_runtime4.jsx(exports_index_parts.Root, {
+    open,
+    onOpenChange: (next) => {
+      onOpenChange(next);
+      if (!next)
+        onCancel?.();
+    },
+    children: /* @__PURE__ */ jsx_runtime4.jsxs(exports_index_parts.Portal, {
+      children: [
+        /* @__PURE__ */ jsx_runtime4.jsx(exports_index_parts.Backdrop, {
+          className: "fixed inset-0 isolate z-50 bg-black/30 duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0"
+        }),
+        /* @__PURE__ */ jsx_runtime4.jsxs(exports_index_parts.Popup, {
+          "data-slot": "confirm-dialog",
+          className: "fixed top-1/2 left-1/2 z-50 grid w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 gap-3 rounded-xl border border-edge bg-surface p-4 text-ink shadow-lg duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          children: [
+            /* @__PURE__ */ jsx_runtime4.jsx(exports_index_parts.Title, {
+              className: "text-sm font-semibold text-ink",
+              children: title
+            }),
+            message && /* @__PURE__ */ jsx_runtime4.jsx(exports_index_parts.Description, {
+              className: "text-sm leading-relaxed text-ink-faint",
+              children: message
+            }),
+            warning && /* @__PURE__ */ jsx_runtime4.jsx("p", {
+              className: "rounded-md border border-edge bg-bg px-2.5 py-2 text-xs leading-relaxed text-ink",
+              children: warning
+            }),
+            /* @__PURE__ */ jsx_runtime4.jsxs("div", {
+              className: "mt-1 flex justify-end gap-2",
+              children: [
+                /* @__PURE__ */ jsx_runtime4.jsx(exports_index_parts.Close, {
+                  className: cn2(BUTTON, "border border-edge bg-surface text-ink hover:bg-bg"),
+                  children: cancelLabel
+                }),
+                /* @__PURE__ */ jsx_runtime4.jsx("button", {
+                  type: "button",
+                  onClick: onConfirm,
+                  className: cn2(BUTTON, confirmClassName ?? "border border-edge bg-ink text-bg hover:opacity-90"),
+                  children: confirmLabel
+                })
+              ]
+            })
+          ]
+        })
+      ]
+    })
+  });
+}
+function useConfirm() {
+  const [pending, setPending] = import_react7.useState(null);
+  const answer = import_react7.useRef(null);
+  const settle = import_react7.useCallback((ok) => {
+    const reply = answer.current;
+    answer.current = null;
+    setPending(null);
+    reply?.(ok);
+  }, []);
+  const confirm = import_react7.useCallback((request) => new Promise((resolve) => {
+    answer.current?.(false);
+    answer.current = resolve;
+    setPending(request);
+  }), []);
+  const dialog = pending ? /* @__PURE__ */ jsx_runtime4.jsx(ConfirmDialog, {
+    ...pending,
+    open: true,
+    onOpenChange: (next) => {
+      if (!next)
+        settle(false);
+    },
+    onConfirm: () => settle(true)
+  }) : null;
+  return { confirm, dialog };
+}
+
+// src/scriptorium/backend/selection.ts
+function selectionOnScreen(sel, screen) {
+  if (!sel || !screen)
+    return null;
+  return sel.doc === screen.doc && sel.version === screen.version ? sel : null;
+}
+
+// src/scriptorium/surface/components/ActiveVersionToast.tsx
+var import_react8 = __toESM(require_react(), 1);
+
+// src/scriptorium/surface/state/newVersions.ts
+function versionName(doc, n) {
+  const label = doc.versions.find((v) => v.n === n)?.label?.trim();
+  return label ? `v${n} · ${label}` : `v${n}`;
+}
+function spotNewVersions(seen, doc) {
+  const now2 = new Set(doc.versions.map((v) => v.n));
+  if (seen === undefined)
+    return { fresh: [], seen: now2 };
+  const fresh = doc.versions.filter((v) => !seen.has(v.n) && v.n !== doc.active);
+  return { fresh, seen: now2 };
+}
+function createVersionWatch() {
+  const seen = new Map;
+  return {
+    disconnected: () => {},
+    snapshot: (doc) => {
+      const spotted = spotNewVersions(seen.get(doc.slug), doc);
+      seen.set(doc.slug, spotted.seen);
+      return spotted.fresh;
+    }
+  };
+}
+function newVersionToast(doc, version3) {
+  const who = version3.author === "agent" ? "the agent" : "you";
+  return {
+    title: `New version: ${versionName(doc, version3.n)}`,
+    description: `Made by ${who} in ${doc.name}. You're still editing v${doc.active}.`
+  };
+}
+function withdrawn(target, open) {
+  if (!open || open.slug !== target.doc)
+    return true;
+  if (open.active === target.n)
+    return true;
+  return !open.versions.some((v) => v.n === target.n);
+}
+function newVersionActs(kind, target) {
+  if (kind === "activate")
+    return [{ send: { type: "activate", doc: target.doc, version: target.n } }];
+  return [{ mode: "compare" }, { against: target.n }];
+}
+
+// src/scriptorium/surface/components/ActiveVersionToast.tsx
+function ActiveVersionToast({
+  doc,
+  announce
+}) {
+  const seen = import_react8.useRef(new Map);
+  import_react8.useEffect(() => {
+    if (!doc)
+      return;
+    const was = seen.current.get(doc.slug);
+    seen.current.set(doc.slug, doc.active);
+    if (was === undefined || was === doc.active)
+      return;
+    announce(`Now editing ${versionName(doc, doc.active)}`, `Your edits and Save go to this version. Was v${was}.`);
+  }, [doc, announce]);
+  return null;
+}
+
+// src/scriptorium/surface/state/ending.ts
+function afterSocketClose(endedBy) {
+  return endedBy ? { connection: "ended", retry: false } : { connection: "closed", retry: true };
+}
+var SESSION_ENDED = "The session has ended";
+var ENDED_NOTICE = "The session has ended, so that did nothing. To keep working, ask the agent to reopen it.";
+var AMBIENT = new Set(["prefs.set", "select", "read", "diff", "edit"]);
+function sentAfterEnd(msg) {
+  if (AMBIENT.has(msg.type))
+    return "drop";
+  if (msg.type === "search" && !msg.query)
+    return "drop";
+  return "notice";
+}
+function endedTitle(by) {
+  switch (by) {
+    case "human":
+      return "You ended this session";
+    case "agent":
+      return "The agent ended this session";
+    case "timeout":
+      return "This session closed after it sat idle";
+  }
+}
+function unsavedWarning(docs, openDoc) {
+  const dirty = docs.filter((d) => d.dirty).sort((a, b) => Number(b.slug === openDoc) - Number(a.slug === openDoc));
+  const first = dirty[0];
+  if (!first)
+    return null;
+  const kept = "They stay in this session (the agent can bring it back with open --restore), but they won't be in your";
+  if (dirty.length === 1)
+    return `v${first.active} of ${first.name} has unsaved changes. ${kept} file.`;
+  return `${dirty.length} documents have unsaved changes (${dirty.map((d) => d.name).join(", ")}). ${kept} files.`;
+}
+
+// src/scriptorium/surface/components/ChatComposer.tsx
+var jsx_runtime5 = __toESM(require_jsx_runtime(), 1);
+function linesLabel(a) {
+  return a.fromLine === a.toLine ? `line ${a.fromLine}` : `lines ${a.fromLine}–${a.toLine}`;
+}
+function ChatComposer({
+  attachable,
+  connected,
+  draft,
+  onDraft,
+  onDrop,
+  onSend,
+  floating = false,
+  ended = false
+}) {
+  const text = draft;
+  const submit = (e) => {
+    e.preventDefault();
+    if (!text.trim() || !connected)
+      return;
+    onSend(text, attachable !== null);
+    onDraft("");
+  };
+  return /* @__PURE__ */ jsx_runtime5.jsxs("form", {
+    onSubmit: submit,
+    "aria-label": floating ? "Message the agent" : undefined,
+    className: cn("shrink-0", floating ? "mx-auto w-full max-w-2xl rounded-lg border border-edge bg-surface p-2 shadow-lg" : "border-t border-edge p-2"),
+    children: [
+      attachable && /* @__PURE__ */ jsx_runtime5.jsxs("div", {
+        className: "mb-1.5 flex items-start gap-1.5 rounded-md border border-edge bg-bg px-2 py-1",
+        children: [
+          /* @__PURE__ */ jsx_runtime5.jsxs("div", {
+            className: "min-w-0 flex-1",
+            children: [
+              /* @__PURE__ */ jsx_runtime5.jsxs("p", {
+                className: "text-[10px] text-ink-faint",
+                children: [
+                  attachable.name,
+                  " · v",
+                  attachable.version,
+                  " · ",
+                  linesLabel(attachable)
+                ]
+              }),
+              /* @__PURE__ */ jsx_runtime5.jsx("p", {
+                className: "truncate font-mono text-[11px] text-ink-dim",
+                children: attachable.text.replace(/\s+/gu, " ").trim()
+              })
+            ]
+          }),
+          /* @__PURE__ */ jsx_runtime5.jsx("button", {
+            type: "button",
+            onClick: onDrop,
+            "aria-label": "Clear the selection",
+            title: "Clear the selection — it stops riding along, and stops being highlighted",
+            className: "shrink-0 rounded-sm p-0.5 text-ink-faint hover:text-ink",
+            children: /* @__PURE__ */ jsx_runtime5.jsx(X, {
+              "aria-hidden": true,
+              className: "size-3"
+            })
+          })
+        ]
+      }),
+      /* @__PURE__ */ jsx_runtime5.jsx("textarea", {
+        value: text,
+        onChange: (e) => onDraft(e.target.value),
+        rows: floating ? 2 : 3,
+        disabled: !connected,
+        placeholder: ended ? `${SESSION_ENDED} — nothing reaches the agent now` : connected ? "Ask the agent…" : "Waiting for the daemon…",
+        title: ended ? SESSION_ENDED : undefined,
+        className: cn("w-full resize-none rounded-md border border-edge bg-bg px-2 py-1.5 text-xs text-ink", "placeholder:text-ink-faint focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none", "disabled:cursor-not-allowed disabled:opacity-60"),
+        onKeyDown: (e) => {
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey))
+            submit(e);
+        }
+      }),
+      /* @__PURE__ */ jsx_runtime5.jsxs("div", {
+        className: "mt-1 flex items-center gap-2",
+        children: [
+          /* @__PURE__ */ jsx_runtime5.jsx("span", {
+            className: "text-[10px] text-ink-faint",
+            children: "⌘↩ to send"
+          }),
+          /* @__PURE__ */ jsx_runtime5.jsxs(Button3, {
+            type: "submit",
+            size: "sm",
+            disabled: !text.trim() || !connected || ended,
+            title: ended ? SESSION_ENDED : undefined,
+            className: "ml-auto h-6 px-2 text-xs",
+            children: [
+              /* @__PURE__ */ jsx_runtime5.jsx(CornerDownLeft, {
+                "aria-hidden": true,
+                className: "size-3"
+              }),
+              "Send"
+            ]
+          })
+        ]
+      })
+    ]
+  });
+}
+
+// src/scriptorium/surface/components/ChatMessageView.tsx
+var import_react9 = __toESM(require_react(), 1);
+
+// node_modules/decode-named-character-reference/index.dom.js
+var element = document.createElement("i");
+function decodeNamedCharacterReference(value) {
+  const characterReference = "&" + value + ";";
+  element.innerHTML = characterReference;
+  const character = element.textContent;
+  if (character.charCodeAt(character.length - 1) === 59 && value !== "semi") {
+    return false;
+  }
+  return character === characterReference ? false : character;
+}
+
+// node_modules/micromark-util-chunked/index.js
+function splice(list, start, remove, items) {
+  const end = list.length;
+  let chunkStart = 0;
+  let parameters;
+  if (start < 0) {
+    start = -start > end ? 0 : end + start;
+  } else {
+    start = start > end ? end : start;
+  }
+  remove = remove > 0 ? remove : 0;
+  if (items.length < 1e4) {
+    parameters = Array.from(items);
+    parameters.unshift(start, remove);
+    list.splice(...parameters);
+  } else {
+    if (remove)
+      list.splice(start, remove);
+    while (chunkStart < items.length) {
+      parameters = items.slice(chunkStart, chunkStart + 1e4);
+      parameters.unshift(start, 0);
+      list.splice(...parameters);
+      chunkStart += 1e4;
+      start += 1e4;
+    }
+  }
+}
+function push3(list, items) {
+  if (list.length > 0) {
+    splice(list, list.length, 0, items);
+    return list;
+  }
+  return items;
+}
+
+// node_modules/micromark-util-combine-extensions/index.js
+var hasOwnProperty3 = {}.hasOwnProperty;
+function combineExtensions(extensions) {
+  const all = {};
+  let index4 = -1;
+  while (++index4 < extensions.length) {
+    syntaxExtension(all, extensions[index4]);
+  }
+  return all;
+}
+function syntaxExtension(all, extension) {
+  let hook;
+  for (hook in extension) {
+    const maybe = hasOwnProperty3.call(all, hook) ? all[hook] : undefined;
+    const left = maybe || (all[hook] = {});
+    const right = extension[hook];
+    let code;
+    if (right) {
+      for (code in right) {
+        if (!hasOwnProperty3.call(left, code))
+          left[code] = [];
+        const value = right[code];
+        constructs(left[code], Array.isArray(value) ? value : value ? [value] : []);
+      }
+    }
+  }
+}
+function constructs(existing, list) {
+  let index4 = -1;
+  const before = [];
+  while (++index4 < list.length) {
+    (list[index4].add === "after" ? existing : before).push(list[index4]);
+  }
+  splice(existing, 0, 0, before);
+}
+function combineHtmlExtensions(htmlExtensions) {
+  const handlers = {};
+  let index4 = -1;
+  while (++index4 < htmlExtensions.length) {
+    htmlExtension(handlers, htmlExtensions[index4]);
+  }
+  return handlers;
+}
+function htmlExtension(all, extension) {
+  let hook;
+  for (hook in extension) {
+    const maybe = hasOwnProperty3.call(all, hook) ? all[hook] : undefined;
+    const left = maybe || (all[hook] = {});
+    const right = extension[hook];
+    let type;
+    if (right) {
+      for (type in right) {
+        left[type] = right[type];
+      }
+    }
+  }
+}
+
+// node_modules/micromark-util-decode-numeric-character-reference/index.js
+function decodeNumericCharacterReference(value, base) {
+  const code = Number.parseInt(value, base);
+  if (code < 9 || code === 11 || code > 13 && code < 32 || code > 126 && code < 160 || code > 55295 && code < 57344 || code > 64975 && code < 65008 || (code & 65535) === 65535 || (code & 65535) === 65534 || code > 1114111) {
+    return "�";
+  }
+  return String.fromCodePoint(code);
+}
+
+// node_modules/micromark-util-encode/index.js
+var characterReferences = { '"': "quot", "&": "amp", "<": "lt", ">": "gt" };
+function encode(value) {
+  return value.replace(/["&<>]/g, replace);
+  function replace(value2) {
+    return "&" + characterReferences[value2] + ";";
+  }
+}
+
+// node_modules/micromark-util-normalize-identifier/index.js
+function normalizeIdentifier(value) {
+  return value.replace(/[\t\n\r ]+/g, " ").replace(/^ | $/g, "").toLowerCase().toUpperCase();
+}
+
+// node_modules/micromark-util-character/index.js
+var asciiAlpha = regexCheck(/[A-Za-z]/);
+var asciiAlphanumeric = regexCheck(/[\dA-Za-z]/);
+var asciiAtext = regexCheck(/[#-'*+\--9=?A-Z^-~]/);
+function asciiControl(code) {
+  return code !== null && (code < 32 || code === 127);
+}
+var asciiDigit = regexCheck(/\d/);
+var asciiHexDigit = regexCheck(/[\dA-Fa-f]/);
+var asciiPunctuation = regexCheck(/[!-/:-@[-`{-~]/);
+function markdownLineEnding(code) {
+  return code !== null && code < -2;
+}
+function markdownLineEndingOrSpace(code) {
+  return code !== null && (code < 0 || code === 32);
+}
+function markdownSpace(code) {
+  return code === -2 || code === -1 || code === 32;
+}
+var unicodePunctuation = regexCheck(/\p{P}|\p{S}/u);
+var unicodeWhitespace = regexCheck(/\s/);
+function regexCheck(regex) {
+  return check;
+  function check(code) {
+    return code !== null && code > -1 && regex.test(String.fromCharCode(code));
+  }
+}
+
+// node_modules/micromark-util-sanitize-uri/index.js
+function sanitizeUri(url, protocol) {
+  const value = encode(normalizeUri(url || ""));
+  if (!protocol) {
+    return value;
+  }
+  const colon = value.indexOf(":");
+  const questionMark = value.indexOf("?");
+  const numberSign = value.indexOf("#");
+  const slash = value.indexOf("/");
+  if (colon < 0 || slash > -1 && colon > slash || questionMark > -1 && colon > questionMark || numberSign > -1 && colon > numberSign || protocol.test(value.slice(0, colon))) {
+    return value;
+  }
+  return "";
+}
+function normalizeUri(value) {
+  const result = [];
+  let index4 = -1;
+  let start = 0;
+  let skip = 0;
+  while (++index4 < value.length) {
+    const code = value.charCodeAt(index4);
+    let replace = "";
+    if (code === 37 && asciiAlphanumeric(value.charCodeAt(index4 + 1)) && asciiAlphanumeric(value.charCodeAt(index4 + 2))) {
+      skip = 2;
+    } else if (code < 128) {
+      if (!/[!#$&-;=?-Z_a-z~]/.test(String.fromCharCode(code))) {
+        replace = String.fromCharCode(code);
+      }
+    } else if (code > 55295 && code < 57344) {
+      const next = value.charCodeAt(index4 + 1);
+      if (code < 56320 && next > 56319 && next < 57344) {
+        replace = String.fromCharCode(code, next);
+        skip = 1;
+      } else {
+        replace = "�";
+      }
+    } else {
+      replace = String.fromCharCode(code);
+    }
+    if (replace) {
+      result.push(value.slice(start, index4), encodeURIComponent(replace));
+      start = index4 + skip + 1;
+      replace = "";
+    }
+    if (skip) {
+      index4 += skip;
+      skip = 0;
+    }
+  }
+  return result.join("") + value.slice(start);
+}
+
+// node_modules/micromark/lib/compile.js
+var hasOwnProperty4 = {}.hasOwnProperty;
+var protocolHref = /^(https?|ircs?|mailto|xmpp)$/i;
+var protocolSource = /^https?$/i;
+function compile(options2) {
+  const settings = options2 || {};
+  let tags = true;
+  const definitions = {};
+  const buffers = [[]];
+  const mediaStack = [];
+  const tightStack = [];
+  const defaultHandlers = {
+    enter: {
+      blockQuote: onenterblockquote,
+      codeFenced: onentercodefenced,
+      codeFencedFenceInfo: buffer,
+      codeFencedFenceMeta: buffer,
+      codeIndented: onentercodeindented,
+      codeText: onentercodetext,
+      content: onentercontent,
+      definition: onenterdefinition,
+      definitionDestinationString: onenterdefinitiondestinationstring,
+      definitionLabelString: buffer,
+      definitionTitleString: buffer,
+      emphasis: onenteremphasis,
+      htmlFlow: onenterhtmlflow,
+      htmlText: onenterhtml,
+      image: onenterimage,
+      label: buffer,
+      link: onenterlink,
+      listItemMarker: onenterlistitemmarker,
+      listItemValue: onenterlistitemvalue,
+      listOrdered: onenterlistordered,
+      listUnordered: onenterlistunordered,
+      paragraph: onenterparagraph,
+      reference: buffer,
+      resource: onenterresource,
+      resourceDestinationString: onenterresourcedestinationstring,
+      resourceTitleString: buffer,
+      setextHeading: onentersetextheading,
+      strong: onenterstrong
+    },
+    exit: {
+      atxHeading: onexitatxheading,
+      atxHeadingSequence: onexitatxheadingsequence,
+      autolinkEmail: onexitautolinkemail,
+      autolinkProtocol: onexitautolinkprotocol,
+      blockQuote: onexitblockquote,
+      characterEscapeValue: onexitdata,
+      characterReferenceMarkerHexadecimal: onexitcharacterreferencemarker,
+      characterReferenceMarkerNumeric: onexitcharacterreferencemarker,
+      characterReferenceValue: onexitcharacterreferencevalue,
+      codeFenced: onexitflowcode,
+      codeFencedFence: onexitcodefencedfence,
+      codeFencedFenceInfo: onexitcodefencedfenceinfo,
+      codeFencedFenceMeta: onresumedrop,
+      codeFlowValue: onexitcodeflowvalue,
+      codeIndented: onexitflowcode,
+      codeText: onexitcodetext,
+      codeTextData: onexitdata,
+      data: onexitdata,
+      definition: onexitdefinition,
+      definitionDestinationString: onexitdefinitiondestinationstring,
+      definitionLabelString: onexitdefinitionlabelstring,
+      definitionTitleString: onexitdefinitiontitlestring,
+      emphasis: onexitemphasis,
+      hardBreakEscape: onexithardbreak,
+      hardBreakTrailing: onexithardbreak,
+      htmlFlow: onexithtml,
+      htmlFlowData: onexitdata,
+      htmlText: onexithtml,
+      htmlTextData: onexitdata,
+      image: onexitmedia,
+      label: onexitlabel,
+      labelText: onexitlabeltext,
+      lineEnding: onexitlineending,
+      link: onexitmedia,
+      listOrdered: onexitlistordered,
+      listUnordered: onexitlistunordered,
+      paragraph: onexitparagraph,
+      reference: onresumedrop,
+      referenceString: onexitreferencestring,
+      resource: onresumedrop,
+      resourceDestinationString: onexitresourcedestinationstring,
+      resourceTitleString: onexitresourcetitlestring,
+      setextHeading: onexitsetextheading,
+      setextHeadingLineSequence: onexitsetextheadinglinesequence,
+      setextHeadingText: onexitsetextheadingtext,
+      strong: onexitstrong,
+      thematicBreak: onexitthematicbreak
+    }
+  };
+  const handlers = combineHtmlExtensions([defaultHandlers, ...settings.htmlExtensions || []]);
+  const data = {
+    definitions,
+    tightStack
+  };
+  const context = {
+    buffer,
+    encode: encode2,
+    getData: getData2,
+    lineEndingIfNeeded,
+    options: settings,
+    raw,
+    resume,
+    setData,
+    tag
+  };
+  let lineEndingStyle = settings.defaultLineEnding;
+  return compile2;
+  function compile2(events) {
+    let index4 = -1;
+    let start = 0;
+    const listStack = [];
+    let head = [];
+    let body = [];
+    while (++index4 < events.length) {
+      if (!lineEndingStyle && (events[index4][1].type === "lineEnding" || events[index4][1].type === "lineEndingBlank")) {
+        lineEndingStyle = events[index4][2].sliceSerialize(events[index4][1]);
+      }
+      if (events[index4][1].type === "listOrdered" || events[index4][1].type === "listUnordered") {
+        if (events[index4][0] === "enter") {
+          listStack.push(index4);
+        } else {
+          prepareList(events.slice(listStack.pop(), index4));
+        }
+      }
+      if (events[index4][1].type === "definition") {
+        if (events[index4][0] === "enter") {
+          body = push3(body, events.slice(start, index4));
+          start = index4;
+        } else {
+          head = push3(head, events.slice(start, index4 + 1));
+          start = index4 + 1;
+        }
+      }
+    }
+    head = push3(head, body);
+    head = push3(head, events.slice(start));
+    index4 = -1;
+    const result = head;
+    if (handlers.enter.null) {
+      handlers.enter.null.call(context);
+    }
+    while (++index4 < events.length) {
+      const handles = handlers[result[index4][0]];
+      const kind = result[index4][1].type;
+      const handle = handles[kind];
+      if (hasOwnProperty4.call(handles, kind) && handle) {
+        handle.call({
+          sliceSerialize: result[index4][2].sliceSerialize,
+          ...context
+        }, result[index4][1]);
+      }
+    }
+    if (handlers.exit.null) {
+      handlers.exit.null.call(context);
+    }
+    return buffers[0].join("");
+  }
+  function prepareList(slice) {
+    const length = slice.length;
+    let index4 = 0;
+    let containerBalance = 0;
+    let loose = false;
+    let atMarker;
+    while (++index4 < length) {
+      const event = slice[index4];
+      if (event[1]._container) {
+        atMarker = undefined;
+        if (event[0] === "enter") {
+          containerBalance++;
+        } else {
+          containerBalance--;
+        }
+      } else
+        switch (event[1].type) {
+          case "listItemPrefix": {
+            if (event[0] === "exit") {
+              atMarker = true;
+            }
+            break;
+          }
+          case "linePrefix": {
+            break;
+          }
+          case "lineEndingBlank": {
+            if (event[0] === "enter" && !containerBalance) {
+              if (atMarker) {
+                atMarker = undefined;
+              } else {
+                loose = true;
+              }
+            }
+            break;
+          }
+          default: {
+            atMarker = undefined;
+          }
+        }
+    }
+    slice[0][1]._loose = loose;
+  }
+  function setData(key, value) {
+    data[key] = value;
+  }
+  function getData2(key) {
+    return data[key];
+  }
+  function buffer() {
+    buffers.push([]);
+  }
+  function resume() {
+    const buf = buffers.pop();
+    return buf.join("");
+  }
+  function tag(value) {
+    if (!tags)
+      return;
+    setData("lastWasTag", true);
+    buffers[buffers.length - 1].push(value);
+  }
+  function raw(value) {
+    setData("lastWasTag");
+    buffers[buffers.length - 1].push(value);
+  }
+  function lineEnding() {
+    raw(lineEndingStyle || `
+`);
+  }
+  function lineEndingIfNeeded() {
+    const buffer2 = buffers[buffers.length - 1];
+    const slice = buffer2[buffer2.length - 1];
+    const previous = slice ? slice.charCodeAt(slice.length - 1) : null;
+    if (previous === 10 || previous === 13 || previous === null) {
+      return;
+    }
+    lineEnding();
+  }
+  function encode2(value) {
+    return getData2("ignoreEncode") ? value : encode(value);
+  }
+  function onresumedrop() {
+    resume();
+  }
+  function onenterlistordered(token) {
+    tightStack.push(!token._loose);
+    lineEndingIfNeeded();
+    tag("<ol");
+    setData("expectFirstItem", true);
+  }
+  function onenterlistunordered(token) {
+    tightStack.push(!token._loose);
+    lineEndingIfNeeded();
+    tag("<ul");
+    setData("expectFirstItem", true);
+  }
+  function onenterlistitemvalue(token) {
+    if (getData2("expectFirstItem")) {
+      const value = Number.parseInt(this.sliceSerialize(token), 10);
+      if (value !== 1) {
+        tag(' start="' + encode2(String(value)) + '"');
+      }
+    }
+  }
+  function onenterlistitemmarker() {
+    if (getData2("expectFirstItem")) {
+      tag(">");
+    } else {
+      onexitlistitem();
+    }
+    lineEndingIfNeeded();
+    tag("<li>");
+    setData("expectFirstItem");
+    setData("lastWasTag");
+  }
+  function onexitlistordered() {
+    onexitlistitem();
+    tightStack.pop();
+    lineEnding();
+    tag("</ol>");
+  }
+  function onexitlistunordered() {
+    onexitlistitem();
+    tightStack.pop();
+    lineEnding();
+    tag("</ul>");
+  }
+  function onexitlistitem() {
+    if (getData2("lastWasTag") && !getData2("slurpAllLineEndings")) {
+      lineEndingIfNeeded();
+    }
+    tag("</li>");
+    setData("slurpAllLineEndings");
+  }
+  function onenterblockquote() {
+    tightStack.push(false);
+    lineEndingIfNeeded();
+    tag("<blockquote>");
+  }
+  function onexitblockquote() {
+    tightStack.pop();
+    lineEndingIfNeeded();
+    tag("</blockquote>");
+    setData("slurpAllLineEndings");
+  }
+  function onenterparagraph() {
+    if (!tightStack[tightStack.length - 1]) {
+      lineEndingIfNeeded();
+      tag("<p>");
+    }
+    setData("slurpAllLineEndings");
+  }
+  function onexitparagraph() {
+    if (tightStack[tightStack.length - 1]) {
+      setData("slurpAllLineEndings", true);
+    } else {
+      tag("</p>");
+    }
+  }
+  function onentercodefenced() {
+    lineEndingIfNeeded();
+    tag("<pre><code");
+    setData("fencesCount", 0);
+  }
+  function onexitcodefencedfenceinfo() {
+    const value = resume();
+    tag(' class="language-' + value + '"');
+  }
+  function onexitcodefencedfence() {
+    const count = getData2("fencesCount") || 0;
+    if (!count) {
+      tag(">");
+      setData("slurpOneLineEnding", true);
+    }
+    setData("fencesCount", count + 1);
+  }
+  function onentercodeindented() {
+    lineEndingIfNeeded();
+    tag("<pre><code>");
+  }
+  function onexitflowcode() {
+    const count = getData2("fencesCount");
+    if (count !== undefined && count < 2 && data.tightStack.length > 0 && !getData2("lastWasTag")) {
+      lineEnding();
+    }
+    if (getData2("flowCodeSeenData")) {
+      lineEndingIfNeeded();
+    }
+    tag("</code></pre>");
+    if (count !== undefined && count < 2)
+      lineEndingIfNeeded();
+    setData("flowCodeSeenData");
+    setData("fencesCount");
+    setData("slurpOneLineEnding");
+  }
+  function onenterimage() {
+    mediaStack.push({
+      image: true
+    });
+    tags = undefined;
+  }
+  function onenterlink() {
+    mediaStack.push({});
+  }
+  function onexitlabeltext(token) {
+    mediaStack[mediaStack.length - 1].labelId = this.sliceSerialize(token);
+  }
+  function onexitlabel() {
+    mediaStack[mediaStack.length - 1].label = resume();
+  }
+  function onexitreferencestring(token) {
+    mediaStack[mediaStack.length - 1].referenceId = this.sliceSerialize(token);
+  }
+  function onenterresource() {
+    buffer();
+    mediaStack[mediaStack.length - 1].destination = "";
+  }
+  function onenterresourcedestinationstring() {
+    buffer();
+    setData("ignoreEncode", true);
+  }
+  function onexitresourcedestinationstring() {
+    mediaStack[mediaStack.length - 1].destination = resume();
+    setData("ignoreEncode");
+  }
+  function onexitresourcetitlestring() {
+    mediaStack[mediaStack.length - 1].title = resume();
+  }
+  function onexitmedia() {
+    let index4 = mediaStack.length - 1;
+    const media = mediaStack[index4];
+    const id = media.referenceId || media.labelId;
+    const context2 = media.destination === undefined ? definitions[normalizeIdentifier(id)] : media;
+    tags = true;
+    while (index4--) {
+      if (mediaStack[index4].image) {
+        tags = undefined;
+        break;
+      }
+    }
+    if (media.image) {
+      tag('<img src="' + sanitizeUri(context2.destination, settings.allowDangerousProtocol ? undefined : protocolSource) + '" alt="');
+      raw(media.label);
+      tag('"');
+    } else {
+      tag('<a href="' + sanitizeUri(context2.destination, settings.allowDangerousProtocol ? undefined : protocolHref) + '"');
+    }
+    tag(context2.title ? ' title="' + context2.title + '"' : "");
+    if (media.image) {
+      tag(" />");
+    } else {
+      tag(">");
+      raw(media.label);
+      tag("</a>");
+    }
+    mediaStack.pop();
+  }
+  function onenterdefinition() {
+    buffer();
+    mediaStack.push({});
+  }
+  function onexitdefinitionlabelstring(token) {
+    resume();
+    mediaStack[mediaStack.length - 1].labelId = this.sliceSerialize(token);
+  }
+  function onenterdefinitiondestinationstring() {
+    buffer();
+    setData("ignoreEncode", true);
+  }
+  function onexitdefinitiondestinationstring() {
+    mediaStack[mediaStack.length - 1].destination = resume();
+    setData("ignoreEncode");
+  }
+  function onexitdefinitiontitlestring() {
+    mediaStack[mediaStack.length - 1].title = resume();
+  }
+  function onexitdefinition() {
+    const media = mediaStack[mediaStack.length - 1];
+    const id = normalizeIdentifier(media.labelId);
+    resume();
+    if (!hasOwnProperty4.call(definitions, id)) {
+      definitions[id] = mediaStack[mediaStack.length - 1];
+    }
+    mediaStack.pop();
+  }
+  function onentercontent() {
+    setData("slurpAllLineEndings", true);
+  }
+  function onexitatxheadingsequence(token) {
+    if (getData2("headingRank"))
+      return;
+    setData("headingRank", this.sliceSerialize(token).length);
+    lineEndingIfNeeded();
+    tag("<h" + getData2("headingRank") + ">");
+  }
+  function onentersetextheading() {
+    buffer();
+    setData("slurpAllLineEndings");
+  }
+  function onexitsetextheadingtext() {
+    setData("slurpAllLineEndings", true);
+  }
+  function onexitatxheading() {
+    tag("</h" + getData2("headingRank") + ">");
+    setData("headingRank");
+  }
+  function onexitsetextheadinglinesequence(token) {
+    setData("headingRank", this.sliceSerialize(token).charCodeAt(0) === 61 ? 1 : 2);
+  }
+  function onexitsetextheading() {
+    const value = resume();
+    lineEndingIfNeeded();
+    tag("<h" + getData2("headingRank") + ">");
+    raw(value);
+    tag("</h" + getData2("headingRank") + ">");
+    setData("slurpAllLineEndings");
+    setData("headingRank");
+  }
+  function onexitdata(token) {
+    raw(encode2(this.sliceSerialize(token)));
+  }
+  function onexitlineending(token) {
+    if (getData2("slurpAllLineEndings")) {
+      return;
+    }
+    if (getData2("slurpOneLineEnding")) {
+      setData("slurpOneLineEnding");
+      return;
+    }
+    if (getData2("inCodeText")) {
+      raw(" ");
+      return;
+    }
+    raw(encode2(this.sliceSerialize(token)));
+  }
+  function onexitcodeflowvalue(token) {
+    raw(encode2(this.sliceSerialize(token)));
+    setData("flowCodeSeenData", true);
+  }
+  function onexithardbreak() {
+    tag("<br />");
+  }
+  function onenterhtmlflow() {
+    lineEndingIfNeeded();
+    onenterhtml();
+  }
+  function onexithtml() {
+    setData("ignoreEncode");
+  }
+  function onenterhtml() {
+    if (settings.allowDangerousHtml) {
+      setData("ignoreEncode", true);
+    }
+  }
+  function onenteremphasis() {
+    tag("<em>");
+  }
+  function onenterstrong() {
+    tag("<strong>");
+  }
+  function onentercodetext() {
+    setData("inCodeText", true);
+    tag("<code>");
+  }
+  function onexitcodetext() {
+    setData("inCodeText");
+    tag("</code>");
+  }
+  function onexitemphasis() {
+    tag("</em>");
+  }
+  function onexitstrong() {
+    tag("</strong>");
+  }
+  function onexitthematicbreak() {
+    lineEndingIfNeeded();
+    tag("<hr />");
+  }
+  function onexitcharacterreferencemarker(token) {
+    setData("characterReferenceType", token.type);
+  }
+  function onexitcharacterreferencevalue(token) {
+    const value = this.sliceSerialize(token);
+    const decoded = getData2("characterReferenceType") ? decodeNumericCharacterReference(value, getData2("characterReferenceType") === "characterReferenceMarkerNumeric" ? 10 : 16) : decodeNamedCharacterReference(value);
+    raw(encode2(decoded));
+    setData("characterReferenceType");
+  }
+  function onexitautolinkprotocol(token) {
+    const uri = this.sliceSerialize(token);
+    tag('<a href="' + sanitizeUri(uri, settings.allowDangerousProtocol ? undefined : protocolHref) + '">');
+    raw(encode2(uri));
+    tag("</a>");
+  }
+  function onexitautolinkemail(token) {
+    const uri = this.sliceSerialize(token);
+    tag('<a href="' + sanitizeUri("mailto:" + uri) + '">');
+    raw(encode2(uri));
+    tag("</a>");
+  }
+}
+
+// node_modules/micromark-factory-space/index.js
+function factorySpace(effects, ok, type, max2) {
+  const limit = max2 ? max2 - 1 : Number.POSITIVE_INFINITY;
+  let size4 = 0;
+  return start;
+  function start(code) {
+    if (markdownSpace(code)) {
+      effects.enter(type);
+      return prefix2(code);
+    }
+    return ok(code);
+  }
+  function prefix2(code) {
+    if (markdownSpace(code) && size4++ < limit) {
+      effects.consume(code);
+      return prefix2;
+    }
+    effects.exit(type);
+    return ok(code);
+  }
+}
+
+// node_modules/micromark/lib/initialize/content.js
+var content = {
+  tokenize: initializeContent
+};
+function initializeContent(effects) {
+  const contentStart = effects.attempt(this.parser.constructs.contentInitial, afterContentStartConstruct, paragraphInitial);
+  let previous;
+  return contentStart;
+  function afterContentStartConstruct(code) {
+    if (code === null) {
+      effects.consume(code);
+      return;
+    }
+    effects.enter("lineEnding");
+    effects.consume(code);
+    effects.exit("lineEnding");
+    return factorySpace(effects, contentStart, "linePrefix");
+  }
+  function paragraphInitial(code) {
+    effects.enter("paragraph");
+    return lineStart(code);
+  }
+  function lineStart(code) {
+    const token = effects.enter("chunkText", {
+      contentType: "text",
+      previous
+    });
+    if (previous) {
+      previous.next = token;
+    }
+    previous = token;
+    return data(code);
+  }
+  function data(code) {
+    if (code === null) {
+      effects.exit("chunkText");
+      effects.exit("paragraph");
+      effects.consume(code);
+      return;
+    }
+    if (markdownLineEnding(code)) {
+      effects.consume(code);
+      effects.exit("chunkText");
+      return lineStart;
+    }
+    effects.consume(code);
+    return data;
+  }
+}
+
+// node_modules/micromark/lib/initialize/document.js
+var document2 = {
+  tokenize: initializeDocument
+};
+var containerConstruct = {
+  tokenize: tokenizeContainer
+};
+function initializeDocument(effects) {
+  const self = this;
+  const stack = [];
+  let continued = 0;
+  let childFlow;
+  let childToken;
+  let lineStartOffset;
+  return start;
+  function start(code) {
+    if (continued < stack.length) {
+      const item = stack[continued];
+      self.containerState = item[1];
+      return effects.attempt(item[0].continuation, documentContinue, checkNewContainers)(code);
+    }
+    return checkNewContainers(code);
+  }
+  function documentContinue(code) {
+    continued++;
+    if (self.containerState._closeFlow) {
+      self.containerState._closeFlow = undefined;
+      if (childFlow) {
+        closeFlow();
+      }
+      const indexBeforeExits = self.events.length;
+      let indexBeforeFlow = indexBeforeExits;
+      let point;
+      while (indexBeforeFlow--) {
+        if (self.events[indexBeforeFlow][0] === "exit" && self.events[indexBeforeFlow][1].type === "chunkFlow") {
+          point = self.events[indexBeforeFlow][1].end;
+          break;
+        }
+      }
+      exitContainers(continued);
+      let index4 = indexBeforeExits;
+      while (index4 < self.events.length) {
+        self.events[index4][1].end = {
+          ...point
+        };
+        index4++;
+      }
+      splice(self.events, indexBeforeFlow + 1, 0, self.events.slice(indexBeforeExits));
+      self.events.length = index4;
+      return checkNewContainers(code);
+    }
+    return start(code);
+  }
+  function checkNewContainers(code) {
+    if (continued === stack.length) {
+      if (!childFlow) {
+        return documentContinued(code);
+      }
+      if (childFlow.currentConstruct && childFlow.currentConstruct.concrete) {
+        return flowStart(code);
+      }
+      self.interrupt = Boolean(childFlow.currentConstruct && !childFlow._gfmTableDynamicInterruptHack);
+    }
+    self.containerState = {};
+    return effects.check(containerConstruct, thereIsANewContainer, thereIsNoNewContainer)(code);
+  }
+  function thereIsANewContainer(code) {
+    if (childFlow)
+      closeFlow();
+    exitContainers(continued);
+    return documentContinued(code);
+  }
+  function thereIsNoNewContainer(code) {
+    self.parser.lazy[self.now().line] = continued !== stack.length;
+    lineStartOffset = self.now().offset;
+    return flowStart(code);
+  }
+  function documentContinued(code) {
+    self.containerState = {};
+    return effects.attempt(containerConstruct, containerContinue, flowStart)(code);
+  }
+  function containerContinue(code) {
+    continued++;
+    stack.push([self.currentConstruct, self.containerState]);
+    return documentContinued(code);
+  }
+  function flowStart(code) {
+    if (code === null) {
+      if (childFlow)
+        closeFlow();
+      exitContainers(0);
+      effects.consume(code);
+      return;
+    }
+    childFlow = childFlow || self.parser.flow(self.now());
+    effects.enter("chunkFlow", {
+      _tokenizer: childFlow,
+      contentType: "flow",
+      previous: childToken
+    });
+    return flowContinue(code);
+  }
+  function flowContinue(code) {
+    if (code === null) {
+      writeToChild(effects.exit("chunkFlow"), true);
+      exitContainers(0);
+      effects.consume(code);
+      return;
+    }
+    if (markdownLineEnding(code)) {
+      effects.consume(code);
+      writeToChild(effects.exit("chunkFlow"));
+      continued = 0;
+      self.interrupt = undefined;
+      return start;
+    }
+    effects.consume(code);
+    return flowContinue;
+  }
+  function writeToChild(token, endOfFile) {
+    const stream = self.sliceStream(token);
+    if (endOfFile)
+      stream.push(null);
+    token.previous = childToken;
+    if (childToken)
+      childToken.next = token;
+    childToken = token;
+    childFlow.defineSkip(token.start);
+    childFlow.write(stream);
+    if (self.parser.lazy[token.start.line]) {
+      let index4 = childFlow.events.length;
+      while (index4--) {
+        if (childFlow.events[index4][1].start.offset < lineStartOffset && (!childFlow.events[index4][1].end || childFlow.events[index4][1].end.offset > lineStartOffset)) {
+          return;
+        }
+      }
+      const indexBeforeExits = self.events.length;
+      let indexBeforeFlow = indexBeforeExits;
+      let seen;
+      let point;
+      while (indexBeforeFlow--) {
+        if (self.events[indexBeforeFlow][0] === "exit" && self.events[indexBeforeFlow][1].type === "chunkFlow") {
+          if (seen) {
+            point = self.events[indexBeforeFlow][1].end;
+            break;
+          }
+          seen = true;
+        }
+      }
+      exitContainers(continued);
+      index4 = indexBeforeExits;
+      while (index4 < self.events.length) {
+        self.events[index4][1].end = {
+          ...point
+        };
+        index4++;
+      }
+      splice(self.events, indexBeforeFlow + 1, 0, self.events.slice(indexBeforeExits));
+      self.events.length = index4;
+    }
+  }
+  function exitContainers(size4) {
+    let index4 = stack.length;
+    while (index4-- > size4) {
+      const entry = stack[index4];
+      self.containerState = entry[1];
+      entry[0].exit.call(self, effects);
+    }
+    stack.length = size4;
+  }
+  function closeFlow() {
+    childFlow.write([null]);
+    childToken = undefined;
+    childFlow = undefined;
+    self.containerState._closeFlow = undefined;
+  }
+}
+function tokenizeContainer(effects, ok, nok) {
+  return factorySpace(effects, effects.attempt(this.parser.constructs.document, ok, nok), "linePrefix", this.parser.constructs.disable.null.includes("codeIndented") ? undefined : 4);
+}
+
+// node_modules/micromark-util-classify-character/index.js
+function classifyCharacter(code) {
+  if (code === null || markdownLineEndingOrSpace(code) || unicodeWhitespace(code)) {
+    return 1;
+  }
+  if (unicodePunctuation(code)) {
+    return 2;
+  }
+}
+
+// node_modules/micromark-util-resolve-all/index.js
+function resolveAll(constructs2, events, context) {
+  const called = [];
+  let index4 = -1;
+  while (++index4 < constructs2.length) {
+    const resolve = constructs2[index4].resolveAll;
+    if (resolve && !called.includes(resolve)) {
+      events = resolve(events, context);
+      called.push(resolve);
+    }
+  }
+  return events;
+}
+
+// node_modules/micromark-core-commonmark/lib/attention.js
+var attention = {
+  name: "attention",
+  resolveAll: resolveAllAttention,
+  tokenize: tokenizeAttention
+};
+function resolveAllAttention(events, context) {
+  let index4 = -1;
+  let open;
+  let group;
+  let text;
+  let openingSequence;
+  let closingSequence;
+  let use2;
+  let nextEvents;
+  let offset4;
+  while (++index4 < events.length) {
+    if (events[index4][0] === "enter" && events[index4][1].type === "attentionSequence" && events[index4][1]._close) {
+      open = index4;
+      while (open--) {
+        if (events[open][0] === "exit" && events[open][1].type === "attentionSequence" && events[open][1]._open && context.sliceSerialize(events[open][1]).charCodeAt(0) === context.sliceSerialize(events[index4][1]).charCodeAt(0)) {
+          if ((events[open][1]._close || events[index4][1]._open) && (events[index4][1].end.offset - events[index4][1].start.offset) % 3 && !((events[open][1].end.offset - events[open][1].start.offset + events[index4][1].end.offset - events[index4][1].start.offset) % 3)) {
+            continue;
+          }
+          use2 = events[open][1].end.offset - events[open][1].start.offset > 1 && events[index4][1].end.offset - events[index4][1].start.offset > 1 ? 2 : 1;
+          const start = {
+            ...events[open][1].end
+          };
+          const end = {
+            ...events[index4][1].start
+          };
+          movePoint(start, -use2);
+          movePoint(end, use2);
+          openingSequence = {
+            type: use2 > 1 ? "strongSequence" : "emphasisSequence",
+            start,
+            end: {
+              ...events[open][1].end
+            }
+          };
+          closingSequence = {
+            type: use2 > 1 ? "strongSequence" : "emphasisSequence",
+            start: {
+              ...events[index4][1].start
+            },
+            end
+          };
+          text = {
+            type: use2 > 1 ? "strongText" : "emphasisText",
+            start: {
+              ...events[open][1].end
+            },
+            end: {
+              ...events[index4][1].start
+            }
+          };
+          group = {
+            type: use2 > 1 ? "strong" : "emphasis",
+            start: {
+              ...openingSequence.start
+            },
+            end: {
+              ...closingSequence.end
+            }
+          };
+          events[open][1].end = {
+            ...openingSequence.start
+          };
+          events[index4][1].start = {
+            ...closingSequence.end
+          };
+          nextEvents = [];
+          if (events[open][1].end.offset - events[open][1].start.offset) {
+            nextEvents = push3(nextEvents, [["enter", events[open][1], context], ["exit", events[open][1], context]]);
+          }
+          nextEvents = push3(nextEvents, [["enter", group, context], ["enter", openingSequence, context], ["exit", openingSequence, context], ["enter", text, context]]);
+          nextEvents = push3(nextEvents, resolveAll(context.parser.constructs.insideSpan.null, events.slice(open + 1, index4), context));
+          nextEvents = push3(nextEvents, [["exit", text, context], ["enter", closingSequence, context], ["exit", closingSequence, context], ["exit", group, context]]);
+          if (events[index4][1].end.offset - events[index4][1].start.offset) {
+            offset4 = 2;
+            nextEvents = push3(nextEvents, [["enter", events[index4][1], context], ["exit", events[index4][1], context]]);
+          } else {
+            offset4 = 0;
+          }
+          splice(events, open - 1, index4 - open + 3, nextEvents);
+          index4 = open + nextEvents.length - offset4 - 2;
+          break;
+        }
+      }
+    }
+  }
+  index4 = -1;
+  while (++index4 < events.length) {
+    if (events[index4][1].type === "attentionSequence") {
+      events[index4][1].type = "data";
+    }
+  }
+  return events;
+}
+function tokenizeAttention(effects, ok) {
+  const attentionMarkers = this.parser.constructs.attentionMarkers.null;
+  const previous = this.previous;
+  const before = classifyCharacter(previous);
+  let marker;
+  return start;
+  function start(code) {
+    marker = code;
+    effects.enter("attentionSequence");
+    return inside(code);
+  }
+  function inside(code) {
+    if (code === marker) {
+      effects.consume(code);
+      return inside;
+    }
+    const token = effects.exit("attentionSequence");
+    const after = classifyCharacter(code);
+    const open = !after || after === 2 && before || attentionMarkers.includes(code);
+    const close = !before || before === 2 && after || attentionMarkers.includes(previous);
+    token._open = Boolean(marker === 42 ? open : open && (before || !close));
+    token._close = Boolean(marker === 42 ? close : close && (after || !open));
+    return ok(code);
+  }
+}
+function movePoint(point, offset4) {
+  point.column += offset4;
+  point.offset += offset4;
+  point._bufferIndex += offset4;
+}
+// node_modules/micromark-core-commonmark/lib/autolink.js
+var autolink = {
+  name: "autolink",
+  tokenize: tokenizeAutolink
+};
+function tokenizeAutolink(effects, ok, nok) {
+  let size4 = 0;
+  return start;
+  function start(code) {
+    effects.enter("autolink");
+    effects.enter("autolinkMarker");
+    effects.consume(code);
+    effects.exit("autolinkMarker");
+    effects.enter("autolinkProtocol");
+    return open;
+  }
+  function open(code) {
+    if (asciiAlpha(code)) {
+      effects.consume(code);
+      return schemeOrEmailAtext;
+    }
+    if (code === 64) {
+      return nok(code);
+    }
+    return emailAtext(code);
+  }
+  function schemeOrEmailAtext(code) {
+    if (code === 43 || code === 45 || code === 46 || asciiAlphanumeric(code)) {
+      size4 = 1;
+      return schemeInsideOrEmailAtext(code);
+    }
+    return emailAtext(code);
+  }
+  function schemeInsideOrEmailAtext(code) {
+    if (code === 58) {
+      effects.consume(code);
+      size4 = 0;
+      return urlInside;
+    }
+    if ((code === 43 || code === 45 || code === 46 || asciiAlphanumeric(code)) && size4++ < 32) {
+      effects.consume(code);
+      return schemeInsideOrEmailAtext;
+    }
+    size4 = 0;
+    return emailAtext(code);
+  }
+  function urlInside(code) {
+    if (code === 62) {
+      effects.exit("autolinkProtocol");
+      effects.enter("autolinkMarker");
+      effects.consume(code);
+      effects.exit("autolinkMarker");
+      effects.exit("autolink");
+      return ok;
+    }
+    if (code === null || code === 32 || code === 60 || asciiControl(code)) {
+      return nok(code);
+    }
+    effects.consume(code);
+    return urlInside;
+  }
+  function emailAtext(code) {
+    if (code === 64) {
+      effects.consume(code);
+      return emailAtSignOrDot;
+    }
+    if (asciiAtext(code)) {
+      effects.consume(code);
+      return emailAtext;
+    }
+    return nok(code);
+  }
+  function emailAtSignOrDot(code) {
+    return asciiAlphanumeric(code) ? emailLabel(code) : nok(code);
+  }
+  function emailLabel(code) {
+    if (code === 46) {
+      effects.consume(code);
+      size4 = 0;
+      return emailAtSignOrDot;
+    }
+    if (code === 62) {
+      effects.exit("autolinkProtocol").type = "autolinkEmail";
+      effects.enter("autolinkMarker");
+      effects.consume(code);
+      effects.exit("autolinkMarker");
+      effects.exit("autolink");
+      return ok;
+    }
+    return emailValue(code);
+  }
+  function emailValue(code) {
+    if ((code === 45 || asciiAlphanumeric(code)) && size4++ < 63) {
+      const next = code === 45 ? emailValue : emailLabel;
+      effects.consume(code);
+      return next;
+    }
+    return nok(code);
+  }
+}
+// node_modules/micromark-core-commonmark/lib/blank-line.js
+var blankLine = {
+  partial: true,
+  tokenize: tokenizeBlankLine
+};
+function tokenizeBlankLine(effects, ok, nok) {
+  return start;
+  function start(code) {
+    return markdownSpace(code) ? factorySpace(effects, after, "linePrefix")(code) : after(code);
+  }
+  function after(code) {
+    return code === null || markdownLineEnding(code) ? ok(code) : nok(code);
+  }
+}
+// node_modules/micromark-core-commonmark/lib/block-quote.js
+var blockQuote = {
+  continuation: {
+    tokenize: tokenizeBlockQuoteContinuation
+  },
+  exit,
+  name: "blockQuote",
+  tokenize: tokenizeBlockQuoteStart
+};
+function tokenizeBlockQuoteStart(effects, ok, nok) {
+  const self = this;
+  return start;
+  function start(code) {
+    if (code === 62) {
+      const state = self.containerState;
+      if (!state.open) {
+        effects.enter("blockQuote", {
+          _container: true
+        });
+        state.open = true;
+      }
+      effects.enter("blockQuotePrefix");
+      effects.enter("blockQuoteMarker");
+      effects.consume(code);
+      effects.exit("blockQuoteMarker");
+      return after;
+    }
+    return nok(code);
+  }
+  function after(code) {
+    if (markdownSpace(code)) {
+      effects.enter("blockQuotePrefixWhitespace");
+      effects.consume(code);
+      effects.exit("blockQuotePrefixWhitespace");
+      effects.exit("blockQuotePrefix");
+      return ok;
+    }
+    effects.exit("blockQuotePrefix");
+    return ok(code);
+  }
+}
+function tokenizeBlockQuoteContinuation(effects, ok, nok) {
+  const self = this;
+  return contStart;
+  function contStart(code) {
+    if (markdownSpace(code)) {
+      return factorySpace(effects, contBefore, "linePrefix", self.parser.constructs.disable.null.includes("codeIndented") ? undefined : 4)(code);
+    }
+    return contBefore(code);
+  }
+  function contBefore(code) {
+    return effects.attempt(blockQuote, ok, nok)(code);
+  }
+}
+function exit(effects) {
+  effects.exit("blockQuote");
+}
+// node_modules/micromark-core-commonmark/lib/character-escape.js
+var characterEscape = {
+  name: "characterEscape",
+  tokenize: tokenizeCharacterEscape
+};
+function tokenizeCharacterEscape(effects, ok, nok) {
+  return start;
+  function start(code) {
+    effects.enter("characterEscape");
+    effects.enter("escapeMarker");
+    effects.consume(code);
+    effects.exit("escapeMarker");
+    return inside;
+  }
+  function inside(code) {
+    if (asciiPunctuation(code)) {
+      effects.enter("characterEscapeValue");
+      effects.consume(code);
+      effects.exit("characterEscapeValue");
+      effects.exit("characterEscape");
+      return ok;
+    }
+    return nok(code);
+  }
+}
+// node_modules/micromark-core-commonmark/lib/character-reference.js
+var characterReference = {
+  name: "characterReference",
+  tokenize: tokenizeCharacterReference
+};
+function tokenizeCharacterReference(effects, ok, nok) {
+  const self = this;
+  let size4 = 0;
+  let max2;
+  let test;
+  return start;
+  function start(code) {
+    effects.enter("characterReference");
+    effects.enter("characterReferenceMarker");
+    effects.consume(code);
+    effects.exit("characterReferenceMarker");
+    return open;
+  }
+  function open(code) {
+    if (code === 35) {
+      effects.enter("characterReferenceMarkerNumeric");
+      effects.consume(code);
+      effects.exit("characterReferenceMarkerNumeric");
+      return numeric;
+    }
+    effects.enter("characterReferenceValue");
+    max2 = 31;
+    test = asciiAlphanumeric;
+    return value(code);
+  }
+  function numeric(code) {
+    if (code === 88 || code === 120) {
+      effects.enter("characterReferenceMarkerHexadecimal");
+      effects.consume(code);
+      effects.exit("characterReferenceMarkerHexadecimal");
+      effects.enter("characterReferenceValue");
+      max2 = 6;
+      test = asciiHexDigit;
+      return value;
+    }
+    effects.enter("characterReferenceValue");
+    max2 = 7;
+    test = asciiDigit;
+    return value(code);
+  }
+  function value(code) {
+    if (code === 59 && size4) {
+      const token = effects.exit("characterReferenceValue");
+      if (test === asciiAlphanumeric && !decodeNamedCharacterReference(self.sliceSerialize(token))) {
+        return nok(code);
+      }
+      effects.enter("characterReferenceMarker");
+      effects.consume(code);
+      effects.exit("characterReferenceMarker");
+      effects.exit("characterReference");
+      return ok;
+    }
+    if (test(code) && size4++ < max2) {
+      effects.consume(code);
+      return value;
+    }
+    return nok(code);
+  }
+}
+// node_modules/micromark-core-commonmark/lib/code-fenced.js
+var nonLazyContinuation = {
+  partial: true,
+  tokenize: tokenizeNonLazyContinuation
+};
+var codeFenced = {
+  concrete: true,
+  name: "codeFenced",
+  tokenize: tokenizeCodeFenced
+};
+function tokenizeCodeFenced(effects, ok, nok) {
+  const self = this;
+  const closeStart = {
+    partial: true,
+    tokenize: tokenizeCloseStart
+  };
+  let initialPrefix = 0;
+  let sizeOpen = 0;
+  let marker;
+  return start;
+  function start(code) {
+    return beforeSequenceOpen(code);
+  }
+  function beforeSequenceOpen(code) {
+    const tail = self.events[self.events.length - 1];
+    initialPrefix = tail && tail[1].type === "linePrefix" ? tail[2].sliceSerialize(tail[1], true).length : 0;
+    marker = code;
+    effects.enter("codeFenced");
+    effects.enter("codeFencedFence");
+    effects.enter("codeFencedFenceSequence");
+    return sequenceOpen(code);
+  }
+  function sequenceOpen(code) {
+    if (code === marker) {
+      sizeOpen++;
+      effects.consume(code);
+      return sequenceOpen;
+    }
+    if (sizeOpen < 3) {
+      return nok(code);
+    }
+    effects.exit("codeFencedFenceSequence");
+    return markdownSpace(code) ? factorySpace(effects, infoBefore, "whitespace")(code) : infoBefore(code);
+  }
+  function infoBefore(code) {
+    if (code === null || markdownLineEnding(code)) {
+      effects.exit("codeFencedFence");
+      return self.interrupt ? ok(code) : effects.check(nonLazyContinuation, atNonLazyBreak, after)(code);
+    }
+    effects.enter("codeFencedFenceInfo");
+    effects.enter("chunkString", {
+      contentType: "string"
+    });
+    return info(code);
+  }
+  function info(code) {
+    if (code === null || markdownLineEnding(code)) {
+      effects.exit("chunkString");
+      effects.exit("codeFencedFenceInfo");
+      return infoBefore(code);
+    }
+    if (markdownSpace(code)) {
+      effects.exit("chunkString");
+      effects.exit("codeFencedFenceInfo");
+      return factorySpace(effects, metaBefore, "whitespace")(code);
+    }
+    if (code === 96 && code === marker) {
+      return nok(code);
+    }
+    effects.consume(code);
+    return info;
+  }
+  function metaBefore(code) {
+    if (code === null || markdownLineEnding(code)) {
+      return infoBefore(code);
+    }
+    effects.enter("codeFencedFenceMeta");
+    effects.enter("chunkString", {
+      contentType: "string"
+    });
+    return meta(code);
+  }
+  function meta(code) {
+    if (code === null || markdownLineEnding(code)) {
+      effects.exit("chunkString");
+      effects.exit("codeFencedFenceMeta");
+      return infoBefore(code);
+    }
+    if (code === 96 && code === marker) {
+      return nok(code);
+    }
+    effects.consume(code);
+    return meta;
+  }
+  function atNonLazyBreak(code) {
+    return effects.attempt(closeStart, after, contentBefore)(code);
+  }
+  function contentBefore(code) {
+    effects.enter("lineEnding");
+    effects.consume(code);
+    effects.exit("lineEnding");
+    return contentStart;
+  }
+  function contentStart(code) {
+    return initialPrefix > 0 && markdownSpace(code) ? factorySpace(effects, beforeContentChunk, "linePrefix", initialPrefix + 1)(code) : beforeContentChunk(code);
+  }
+  function beforeContentChunk(code) {
+    if (code === null || markdownLineEnding(code)) {
+      return effects.check(nonLazyContinuation, atNonLazyBreak, after)(code);
+    }
+    effects.enter("codeFlowValue");
+    return contentChunk(code);
+  }
+  function contentChunk(code) {
+    if (code === null || markdownLineEnding(code)) {
+      effects.exit("codeFlowValue");
+      return beforeContentChunk(code);
+    }
+    effects.consume(code);
+    return contentChunk;
+  }
+  function after(code) {
+    effects.exit("codeFenced");
+    return ok(code);
+  }
+  function tokenizeCloseStart(effects2, ok2, nok2) {
+    let size4 = 0;
+    return startBefore;
+    function startBefore(code) {
+      effects2.enter("lineEnding");
+      effects2.consume(code);
+      effects2.exit("lineEnding");
+      return start2;
+    }
+    function start2(code) {
+      effects2.enter("codeFencedFence");
+      return markdownSpace(code) ? factorySpace(effects2, beforeSequenceClose, "linePrefix", self.parser.constructs.disable.null.includes("codeIndented") ? undefined : 4)(code) : beforeSequenceClose(code);
+    }
+    function beforeSequenceClose(code) {
+      if (code === marker) {
+        effects2.enter("codeFencedFenceSequence");
+        return sequenceClose(code);
+      }
+      return nok2(code);
+    }
+    function sequenceClose(code) {
+      if (code === marker) {
+        size4++;
+        effects2.consume(code);
+        return sequenceClose;
+      }
+      if (size4 >= sizeOpen) {
+        effects2.exit("codeFencedFenceSequence");
+        return markdownSpace(code) ? factorySpace(effects2, sequenceCloseAfter, "whitespace")(code) : sequenceCloseAfter(code);
+      }
+      return nok2(code);
+    }
+    function sequenceCloseAfter(code) {
+      if (code === null || markdownLineEnding(code)) {
+        effects2.exit("codeFencedFence");
+        return ok2(code);
+      }
+      return nok2(code);
+    }
+  }
+}
+function tokenizeNonLazyContinuation(effects, ok, nok) {
+  const self = this;
+  return start;
+  function start(code) {
+    if (code === null) {
+      return nok(code);
+    }
+    effects.enter("lineEnding");
+    effects.consume(code);
+    effects.exit("lineEnding");
+    return lineStart;
+  }
+  function lineStart(code) {
+    return self.parser.lazy[self.now().line] ? nok(code) : ok(code);
+  }
+}
+// node_modules/micromark-core-commonmark/lib/code-indented.js
+var codeIndented = {
+  name: "codeIndented",
+  tokenize: tokenizeCodeIndented
+};
+var furtherStart = {
+  partial: true,
+  tokenize: tokenizeFurtherStart
+};
+function tokenizeCodeIndented(effects, ok, nok) {
+  const self = this;
+  return start;
+  function start(code) {
+    effects.enter("codeIndented");
+    return factorySpace(effects, afterPrefix, "linePrefix", 4 + 1)(code);
+  }
+  function afterPrefix(code) {
+    const tail = self.events[self.events.length - 1];
+    return tail && tail[1].type === "linePrefix" && tail[2].sliceSerialize(tail[1], true).length >= 4 ? atBreak(code) : nok(code);
+  }
+  function atBreak(code) {
+    if (code === null) {
+      return after(code);
+    }
+    if (markdownLineEnding(code)) {
+      return effects.attempt(furtherStart, atBreak, after)(code);
+    }
+    effects.enter("codeFlowValue");
+    return inside(code);
+  }
+  function inside(code) {
+    if (code === null || markdownLineEnding(code)) {
+      effects.exit("codeFlowValue");
+      return atBreak(code);
+    }
+    effects.consume(code);
+    return inside;
+  }
+  function after(code) {
+    effects.exit("codeIndented");
+    return ok(code);
+  }
+}
+function tokenizeFurtherStart(effects, ok, nok) {
+  const self = this;
+  return furtherStart2;
+  function furtherStart2(code) {
+    if (self.parser.lazy[self.now().line]) {
+      return nok(code);
+    }
+    if (markdownLineEnding(code)) {
+      effects.enter("lineEnding");
+      effects.consume(code);
+      effects.exit("lineEnding");
+      return furtherStart2;
+    }
+    return factorySpace(effects, afterPrefix, "linePrefix", 4 + 1)(code);
+  }
+  function afterPrefix(code) {
+    const tail = self.events[self.events.length - 1];
+    return tail && tail[1].type === "linePrefix" && tail[2].sliceSerialize(tail[1], true).length >= 4 ? ok(code) : markdownLineEnding(code) ? furtherStart2(code) : nok(code);
+  }
+}
+// node_modules/micromark-core-commonmark/lib/code-text.js
+var codeText = {
+  name: "codeText",
+  previous,
+  resolve: resolveCodeText,
+  tokenize: tokenizeCodeText
+};
+function resolveCodeText(events) {
+  let tailExitIndex = events.length - 4;
+  let headEnterIndex = 3;
+  let index4;
+  let enter;
+  if ((events[headEnterIndex][1].type === "lineEnding" || events[headEnterIndex][1].type === "space") && (events[tailExitIndex][1].type === "lineEnding" || events[tailExitIndex][1].type === "space")) {
+    index4 = headEnterIndex;
+    while (++index4 < tailExitIndex) {
+      if (events[index4][1].type === "codeTextData") {
+        events[headEnterIndex][1].type = "codeTextPadding";
+        events[tailExitIndex][1].type = "codeTextPadding";
+        headEnterIndex += 2;
+        tailExitIndex -= 2;
+        break;
+      }
+    }
+  }
+  index4 = headEnterIndex - 1;
+  tailExitIndex++;
+  while (++index4 <= tailExitIndex) {
+    if (enter === undefined) {
+      if (index4 !== tailExitIndex && events[index4][1].type !== "lineEnding") {
+        enter = index4;
+      }
+    } else if (index4 === tailExitIndex || events[index4][1].type === "lineEnding") {
+      events[enter][1].type = "codeTextData";
+      if (index4 !== enter + 2) {
+        events[enter][1].end = events[index4 - 1][1].end;
+        events.splice(enter + 2, index4 - enter - 2);
+        tailExitIndex -= index4 - enter - 2;
+        index4 = enter + 2;
+      }
+      enter = undefined;
+    }
+  }
+  return events;
+}
+function previous(code) {
+  return code !== 96 || this.events[this.events.length - 1][1].type === "characterEscape";
+}
+function tokenizeCodeText(effects, ok, nok) {
+  const self = this;
+  let sizeOpen = 0;
+  let size4;
+  let token;
+  return start;
+  function start(code) {
+    effects.enter("codeText");
+    effects.enter("codeTextSequence");
+    return sequenceOpen(code);
+  }
+  function sequenceOpen(code) {
+    if (code === 96) {
+      effects.consume(code);
+      sizeOpen++;
+      return sequenceOpen;
+    }
+    effects.exit("codeTextSequence");
+    return between(code);
+  }
+  function between(code) {
+    if (code === null) {
+      return nok(code);
+    }
+    if (code === 32) {
+      effects.enter("space");
+      effects.consume(code);
+      effects.exit("space");
+      return between;
+    }
+    if (code === 96) {
+      token = effects.enter("codeTextSequence");
+      size4 = 0;
+      return sequenceClose(code);
+    }
+    if (markdownLineEnding(code)) {
+      effects.enter("lineEnding");
+      effects.consume(code);
+      effects.exit("lineEnding");
+      return between;
+    }
+    effects.enter("codeTextData");
+    return data(code);
+  }
+  function data(code) {
+    if (code === null || code === 32 || code === 96 || markdownLineEnding(code)) {
+      effects.exit("codeTextData");
+      return between(code);
+    }
+    effects.consume(code);
+    return data;
+  }
+  function sequenceClose(code) {
+    if (code === 96) {
+      effects.consume(code);
+      size4++;
+      return sequenceClose;
+    }
+    if (size4 === sizeOpen) {
+      effects.exit("codeTextSequence");
+      effects.exit("codeText");
+      return ok(code);
+    }
+    token.type = "codeTextData";
+    return data(code);
+  }
+}
+// node_modules/micromark-util-subtokenize/lib/splice-buffer.js
+class SpliceBuffer {
+  constructor(initial2) {
+    this.left = initial2 ? [...initial2] : [];
+    this.right = [];
+  }
+  get(index4) {
+    if (index4 < 0 || index4 >= this.left.length + this.right.length) {
+      throw new RangeError("Cannot access index `" + index4 + "` in a splice buffer of size `" + (this.left.length + this.right.length) + "`");
+    }
+    if (index4 < this.left.length)
+      return this.left[index4];
+    return this.right[this.right.length - index4 + this.left.length - 1];
+  }
+  get length() {
+    return this.left.length + this.right.length;
+  }
+  shift() {
+    this.setCursor(0);
+    return this.right.pop();
+  }
+  slice(start, end) {
+    const stop = end === null || end === undefined ? Number.POSITIVE_INFINITY : end;
+    if (stop < this.left.length) {
+      return this.left.slice(start, stop);
+    }
+    if (start > this.left.length) {
+      return this.right.slice(this.right.length - stop + this.left.length, this.right.length - start + this.left.length).reverse();
+    }
+    return this.left.slice(start).concat(this.right.slice(this.right.length - stop + this.left.length).reverse());
+  }
+  splice(start, deleteCount, items) {
+    const count = deleteCount || 0;
+    this.setCursor(Math.trunc(start));
+    const removed = this.right.splice(this.right.length - count, Number.POSITIVE_INFINITY);
+    if (items)
+      chunkedPush(this.left, items);
+    return removed.reverse();
+  }
+  pop() {
+    this.setCursor(Number.POSITIVE_INFINITY);
+    return this.left.pop();
+  }
+  push(item) {
+    this.setCursor(Number.POSITIVE_INFINITY);
+    this.left.push(item);
+  }
+  pushMany(items) {
+    this.setCursor(Number.POSITIVE_INFINITY);
+    chunkedPush(this.left, items);
+  }
+  unshift(item) {
+    this.setCursor(0);
+    this.right.push(item);
+  }
+  unshiftMany(items) {
+    this.setCursor(0);
+    chunkedPush(this.right, items.reverse());
+  }
+  setCursor(n) {
+    if (n === this.left.length || n > this.left.length && this.right.length === 0 || n < 0 && this.left.length === 0)
+      return;
+    if (n < this.left.length) {
+      const removed = this.left.splice(n, Number.POSITIVE_INFINITY);
+      chunkedPush(this.right, removed.reverse());
+    } else {
+      const removed = this.right.splice(this.left.length + this.right.length - n, Number.POSITIVE_INFINITY);
+      chunkedPush(this.left, removed.reverse());
+    }
+  }
+}
+function chunkedPush(list, right) {
+  let chunkStart = 0;
+  if (right.length < 1e4) {
+    list.push(...right);
+  } else {
+    while (chunkStart < right.length) {
+      list.push(...right.slice(chunkStart, chunkStart + 1e4));
+      chunkStart += 1e4;
+    }
+  }
+}
+
+// node_modules/micromark-util-subtokenize/index.js
+function subtokenize(eventsArray) {
+  const jumps = {};
+  let index4 = -1;
+  let event;
+  let lineIndex;
+  let otherIndex;
+  let otherEvent;
+  let parameters;
+  let subevents;
+  let more;
+  const events = new SpliceBuffer(eventsArray);
+  while (++index4 < events.length) {
+    while (index4 in jumps) {
+      index4 = jumps[index4];
+    }
+    event = events.get(index4);
+    if (index4 && event[1].type === "chunkFlow" && events.get(index4 - 1)[1].type === "listItemPrefix") {
+      subevents = event[1]._tokenizer.events;
+      otherIndex = 0;
+      if (otherIndex < subevents.length && subevents[otherIndex][1].type === "lineEndingBlank") {
+        otherIndex += 2;
+      }
+      if (otherIndex < subevents.length && subevents[otherIndex][1].type === "content") {
+        while (++otherIndex < subevents.length) {
+          if (subevents[otherIndex][1].type === "content") {
+            break;
+          }
+          if (subevents[otherIndex][1].type === "chunkText") {
+            subevents[otherIndex][1]._isInFirstContentOfListItem = true;
+            otherIndex++;
+          }
+        }
+      }
+    }
+    if (event[0] === "enter") {
+      if (event[1].contentType) {
+        Object.assign(jumps, subcontent(events, index4));
+        index4 = jumps[index4];
+        more = true;
+      }
+    } else if (event[1]._container) {
+      otherIndex = index4;
+      lineIndex = undefined;
+      while (otherIndex--) {
+        otherEvent = events.get(otherIndex);
+        if (otherEvent[1].type === "lineEnding" || otherEvent[1].type === "lineEndingBlank") {
+          if (otherEvent[0] === "enter") {
+            if (lineIndex) {
+              events.get(lineIndex)[1].type = "lineEndingBlank";
+            }
+            otherEvent[1].type = "lineEnding";
+            lineIndex = otherIndex;
+          }
+        } else if (otherEvent[1].type === "linePrefix" || otherEvent[1].type === "listItemIndent") {} else {
+          break;
+        }
+      }
+      if (lineIndex) {
+        event[1].end = {
+          ...events.get(lineIndex)[1].start
+        };
+        parameters = events.slice(lineIndex, index4);
+        parameters.unshift(event);
+        events.splice(lineIndex, index4 - lineIndex + 1, parameters);
+      }
+    }
+  }
+  splice(eventsArray, 0, Number.POSITIVE_INFINITY, events.slice(0));
+  return !more;
+}
+function subcontent(events, eventIndex) {
+  const token = events.get(eventIndex)[1];
+  const context = events.get(eventIndex)[2];
+  let startPosition = eventIndex - 1;
+  const startPositions = [];
+  let tokenizer = token._tokenizer;
+  if (!tokenizer) {
+    tokenizer = context.parser[token.contentType](token.start);
+    if (token._contentTypeTextTrailing) {
+      tokenizer._contentTypeTextTrailing = true;
+    }
+  }
+  const childEvents = tokenizer.events;
+  const jumps = [];
+  const gaps = {};
+  let stream;
+  let previous2;
+  let index4 = -1;
+  let current = token;
+  let adjust = 0;
+  let start = 0;
+  const breaks = [start];
+  while (current) {
+    while (events.get(++startPosition)[1] !== current) {}
+    startPositions.push(startPosition);
+    if (!current._tokenizer) {
+      stream = context.sliceStream(current);
+      if (!current.next) {
+        stream.push(null);
+      }
+      if (previous2) {
+        tokenizer.defineSkip(current.start);
+      }
+      if (current._isInFirstContentOfListItem) {
+        tokenizer._gfmTasklistFirstContentOfListItem = true;
+      }
+      tokenizer.write(stream);
+      if (current._isInFirstContentOfListItem) {
+        tokenizer._gfmTasklistFirstContentOfListItem = undefined;
+      }
+    }
+    previous2 = current;
+    current = current.next;
+  }
+  current = token;
+  while (++index4 < childEvents.length) {
+    if (childEvents[index4][0] === "exit" && childEvents[index4 - 1][0] === "enter" && childEvents[index4][1].type === childEvents[index4 - 1][1].type && childEvents[index4][1].start.line !== childEvents[index4][1].end.line) {
+      start = index4 + 1;
+      breaks.push(start);
+      current._tokenizer = undefined;
+      current.previous = undefined;
+      current = current.next;
+    }
+  }
+  tokenizer.events = [];
+  if (current) {
+    current._tokenizer = undefined;
+    current.previous = undefined;
+  } else {
+    breaks.pop();
+  }
+  index4 = breaks.length;
+  while (index4--) {
+    const slice = childEvents.slice(breaks[index4], breaks[index4 + 1]);
+    const start2 = startPositions.pop();
+    jumps.push([start2, start2 + slice.length - 1]);
+    events.splice(start2, 2, slice);
+  }
+  jumps.reverse();
+  index4 = -1;
+  while (++index4 < jumps.length) {
+    gaps[adjust + jumps[index4][0]] = adjust + jumps[index4][1];
+    adjust += jumps[index4][1] - jumps[index4][0] - 1;
+  }
+  return gaps;
+}
+
+// node_modules/micromark-core-commonmark/lib/content.js
+var content2 = {
+  resolve: resolveContent,
+  tokenize: tokenizeContent
+};
+var continuationConstruct = {
+  partial: true,
+  tokenize: tokenizeContinuation
+};
+function resolveContent(events) {
+  subtokenize(events);
+  return events;
+}
+function tokenizeContent(effects, ok) {
+  let previous2;
+  return chunkStart;
+  function chunkStart(code) {
+    effects.enter("content");
+    previous2 = effects.enter("chunkContent", {
+      contentType: "content"
+    });
+    return chunkInside(code);
+  }
+  function chunkInside(code) {
+    if (code === null) {
+      return contentEnd(code);
+    }
+    if (markdownLineEnding(code)) {
+      return effects.check(continuationConstruct, contentContinue, contentEnd)(code);
+    }
+    effects.consume(code);
+    return chunkInside;
+  }
+  function contentEnd(code) {
+    effects.exit("chunkContent");
+    effects.exit("content");
+    return ok(code);
+  }
+  function contentContinue(code) {
+    effects.consume(code);
+    effects.exit("chunkContent");
+    previous2.next = effects.enter("chunkContent", {
+      contentType: "content",
+      previous: previous2
+    });
+    previous2 = previous2.next;
+    return chunkInside;
+  }
+}
+function tokenizeContinuation(effects, ok, nok) {
+  const self = this;
+  return startLookahead;
+  function startLookahead(code) {
+    effects.exit("chunkContent");
+    effects.enter("lineEnding");
+    effects.consume(code);
+    effects.exit("lineEnding");
+    return factorySpace(effects, prefixed, "linePrefix");
+  }
+  function prefixed(code) {
+    if (code === null || markdownLineEnding(code)) {
+      return nok(code);
+    }
+    const tail = self.events[self.events.length - 1];
+    if (!self.parser.constructs.disable.null.includes("codeIndented") && tail && tail[1].type === "linePrefix" && tail[2].sliceSerialize(tail[1], true).length >= 4) {
+      return ok(code);
+    }
+    return effects.interrupt(self.parser.constructs.flow, nok, ok)(code);
+  }
+}
+// node_modules/micromark-factory-destination/index.js
+function factoryDestination(effects, ok, nok, type, literalType, literalMarkerType, rawType, stringType, max2) {
+  const limit = max2 || Number.POSITIVE_INFINITY;
+  let balance = 0;
+  return start;
+  function start(code) {
+    if (code === 60) {
+      effects.enter(type);
+      effects.enter(literalType);
+      effects.enter(literalMarkerType);
+      effects.consume(code);
+      effects.exit(literalMarkerType);
+      return enclosedBefore;
+    }
+    if (code === null || code === 32 || code === 41 || asciiControl(code)) {
+      return nok(code);
+    }
+    effects.enter(type);
+    effects.enter(rawType);
+    effects.enter(stringType);
+    effects.enter("chunkString", {
+      contentType: "string"
+    });
+    return raw(code);
+  }
+  function enclosedBefore(code) {
+    if (code === 62) {
+      effects.enter(literalMarkerType);
+      effects.consume(code);
+      effects.exit(literalMarkerType);
+      effects.exit(literalType);
+      effects.exit(type);
+      return ok;
+    }
+    effects.enter(stringType);
+    effects.enter("chunkString", {
+      contentType: "string"
+    });
+    return enclosed(code);
+  }
+  function enclosed(code) {
+    if (code === 62) {
+      effects.exit("chunkString");
+      effects.exit(stringType);
+      return enclosedBefore(code);
+    }
+    if (code === null || code === 60 || markdownLineEnding(code)) {
+      return nok(code);
+    }
+    effects.consume(code);
+    return code === 92 ? enclosedEscape : enclosed;
+  }
+  function enclosedEscape(code) {
+    if (code === 60 || code === 62 || code === 92) {
+      effects.consume(code);
+      return enclosed;
+    }
+    return enclosed(code);
+  }
+  function raw(code) {
+    if (!balance && (code === null || code === 41 || markdownLineEndingOrSpace(code))) {
+      effects.exit("chunkString");
+      effects.exit(stringType);
+      effects.exit(rawType);
+      effects.exit(type);
+      return ok(code);
+    }
+    if (balance < limit && code === 40) {
+      effects.consume(code);
+      balance++;
+      return raw;
+    }
+    if (code === 41) {
+      effects.consume(code);
+      balance--;
+      return raw;
+    }
+    if (code === null || code === 32 || code === 40 || asciiControl(code)) {
+      return nok(code);
+    }
+    effects.consume(code);
+    return code === 92 ? rawEscape : raw;
+  }
+  function rawEscape(code) {
+    if (code === 40 || code === 41 || code === 92) {
+      effects.consume(code);
+      return raw;
+    }
+    return raw(code);
+  }
+}
+
+// node_modules/micromark-factory-label/index.js
+function factoryLabel(effects, ok, nok, type, markerType, stringType) {
+  const self = this;
+  let size4 = 0;
+  let seen;
+  return start;
+  function start(code) {
+    effects.enter(type);
+    effects.enter(markerType);
+    effects.consume(code);
+    effects.exit(markerType);
+    effects.enter(stringType);
+    return atBreak;
+  }
+  function atBreak(code) {
+    if (size4 > 999 || code === null || code === 91 || code === 93 && !seen || code === 94 && !size4 && "_hiddenFootnoteSupport" in self.parser.constructs) {
+      return nok(code);
+    }
+    if (code === 93) {
+      effects.exit(stringType);
+      effects.enter(markerType);
+      effects.consume(code);
+      effects.exit(markerType);
+      effects.exit(type);
+      return ok;
+    }
+    if (markdownLineEnding(code)) {
+      effects.enter("lineEnding");
+      effects.consume(code);
+      effects.exit("lineEnding");
+      return atBreak;
+    }
+    effects.enter("chunkString", {
+      contentType: "string"
+    });
+    return labelInside(code);
+  }
+  function labelInside(code) {
+    if (code === null || code === 91 || code === 93 || markdownLineEnding(code) || size4++ > 999) {
+      effects.exit("chunkString");
+      return atBreak(code);
+    }
+    effects.consume(code);
+    if (!seen)
+      seen = !markdownSpace(code);
+    return code === 92 ? labelEscape : labelInside;
+  }
+  function labelEscape(code) {
+    if (code === 91 || code === 92 || code === 93) {
+      effects.consume(code);
+      size4++;
+      return labelInside;
+    }
+    return labelInside(code);
+  }
+}
+
+// node_modules/micromark-factory-title/index.js
+function factoryTitle(effects, ok, nok, type, markerType, stringType) {
+  let marker;
+  return start;
+  function start(code) {
+    if (code === 34 || code === 39 || code === 40) {
+      effects.enter(type);
+      effects.enter(markerType);
+      effects.consume(code);
+      effects.exit(markerType);
+      marker = code === 40 ? 41 : code;
+      return begin;
+    }
+    return nok(code);
+  }
+  function begin(code) {
+    if (code === marker) {
+      effects.enter(markerType);
+      effects.consume(code);
+      effects.exit(markerType);
+      effects.exit(type);
+      return ok;
+    }
+    effects.enter(stringType);
+    return atBreak(code);
+  }
+  function atBreak(code) {
+    if (code === marker) {
+      effects.exit(stringType);
+      return begin(marker);
+    }
+    if (code === null) {
+      return nok(code);
+    }
+    if (markdownLineEnding(code)) {
+      effects.enter("lineEnding");
+      effects.consume(code);
+      effects.exit("lineEnding");
+      return factorySpace(effects, atBreak, "linePrefix");
+    }
+    effects.enter("chunkString", {
+      contentType: "string"
+    });
+    return inside(code);
+  }
+  function inside(code) {
+    if (code === marker || code === null || markdownLineEnding(code)) {
+      effects.exit("chunkString");
+      return atBreak(code);
+    }
+    effects.consume(code);
+    return code === 92 ? escape2 : inside;
+  }
+  function escape2(code) {
+    if (code === marker || code === 92) {
+      effects.consume(code);
+      return inside;
+    }
+    return inside(code);
+  }
+}
+
+// node_modules/micromark-factory-whitespace/index.js
+function factoryWhitespace(effects, ok) {
+  let seen;
+  return start;
+  function start(code) {
+    if (markdownLineEnding(code)) {
+      effects.enter("lineEnding");
+      effects.consume(code);
+      effects.exit("lineEnding");
+      seen = true;
+      return start;
+    }
+    if (markdownSpace(code)) {
+      return factorySpace(effects, start, seen ? "linePrefix" : "lineSuffix")(code);
+    }
+    return ok(code);
+  }
+}
+
+// node_modules/micromark-core-commonmark/lib/definition.js
+var definition = {
+  name: "definition",
+  tokenize: tokenizeDefinition
+};
+var titleBefore = {
+  partial: true,
+  tokenize: tokenizeTitleBefore
+};
+function tokenizeDefinition(effects, ok, nok) {
+  const self = this;
+  let identifier;
+  return start;
+  function start(code) {
+    effects.enter("definition");
+    return before(code);
+  }
+  function before(code) {
+    return factoryLabel.call(self, effects, labelAfter, nok, "definitionLabel", "definitionLabelMarker", "definitionLabelString")(code);
+  }
+  function labelAfter(code) {
+    identifier = normalizeIdentifier(self.sliceSerialize(self.events[self.events.length - 1][1]).slice(1, -1));
+    if (code === 58) {
+      effects.enter("definitionMarker");
+      effects.consume(code);
+      effects.exit("definitionMarker");
+      return markerAfter;
+    }
+    return nok(code);
+  }
+  function markerAfter(code) {
+    return markdownLineEndingOrSpace(code) ? factoryWhitespace(effects, destinationBefore)(code) : destinationBefore(code);
+  }
+  function destinationBefore(code) {
+    return factoryDestination(effects, destinationAfter, nok, "definitionDestination", "definitionDestinationLiteral", "definitionDestinationLiteralMarker", "definitionDestinationRaw", "definitionDestinationString")(code);
+  }
+  function destinationAfter(code) {
+    return effects.attempt(titleBefore, after, after)(code);
+  }
+  function after(code) {
+    return markdownSpace(code) ? factorySpace(effects, afterWhitespace, "whitespace")(code) : afterWhitespace(code);
+  }
+  function afterWhitespace(code) {
+    if (code === null || markdownLineEnding(code)) {
+      effects.exit("definition");
+      self.parser.defined.push(identifier);
+      return ok(code);
+    }
+    return nok(code);
+  }
+}
+function tokenizeTitleBefore(effects, ok, nok) {
+  return titleBefore2;
+  function titleBefore2(code) {
+    return markdownLineEndingOrSpace(code) ? factoryWhitespace(effects, beforeMarker)(code) : nok(code);
+  }
+  function beforeMarker(code) {
+    return factoryTitle(effects, titleAfter, nok, "definitionTitle", "definitionTitleMarker", "definitionTitleString")(code);
+  }
+  function titleAfter(code) {
+    return markdownSpace(code) ? factorySpace(effects, titleAfterOptionalWhitespace, "whitespace")(code) : titleAfterOptionalWhitespace(code);
+  }
+  function titleAfterOptionalWhitespace(code) {
+    return code === null || markdownLineEnding(code) ? ok(code) : nok(code);
+  }
+}
+// node_modules/micromark-core-commonmark/lib/hard-break-escape.js
+var hardBreakEscape = {
+  name: "hardBreakEscape",
+  tokenize: tokenizeHardBreakEscape
+};
+function tokenizeHardBreakEscape(effects, ok, nok) {
+  return start;
+  function start(code) {
+    effects.enter("hardBreakEscape");
+    effects.consume(code);
+    return after;
+  }
+  function after(code) {
+    if (markdownLineEnding(code)) {
+      effects.exit("hardBreakEscape");
+      return ok(code);
+    }
+    return nok(code);
+  }
+}
+// node_modules/micromark-core-commonmark/lib/heading-atx.js
+var headingAtx = {
+  name: "headingAtx",
+  resolve: resolveHeadingAtx,
+  tokenize: tokenizeHeadingAtx
+};
+function resolveHeadingAtx(events, context) {
+  let contentEnd = events.length - 2;
+  let contentStart = 3;
+  let content3;
+  let text;
+  if (events[contentStart][1].type === "whitespace") {
+    contentStart += 2;
+  }
+  if (contentEnd - 2 > contentStart && events[contentEnd][1].type === "whitespace") {
+    contentEnd -= 2;
+  }
+  if (events[contentEnd][1].type === "atxHeadingSequence" && (contentStart === contentEnd - 1 || contentEnd - 4 > contentStart && events[contentEnd - 2][1].type === "whitespace")) {
+    contentEnd -= contentStart + 1 === contentEnd ? 2 : 4;
+  }
+  if (contentEnd > contentStart) {
+    content3 = {
+      type: "atxHeadingText",
+      start: events[contentStart][1].start,
+      end: events[contentEnd][1].end
+    };
+    text = {
+      type: "chunkText",
+      start: events[contentStart][1].start,
+      end: events[contentEnd][1].end,
+      contentType: "text"
+    };
+    splice(events, contentStart, contentEnd - contentStart + 1, [["enter", content3, context], ["enter", text, context], ["exit", text, context], ["exit", content3, context]]);
+  }
+  return events;
+}
+function tokenizeHeadingAtx(effects, ok, nok) {
+  let size4 = 0;
+  return start;
+  function start(code) {
+    effects.enter("atxHeading");
+    return before(code);
+  }
+  function before(code) {
+    effects.enter("atxHeadingSequence");
+    return sequenceOpen(code);
+  }
+  function sequenceOpen(code) {
+    if (code === 35 && size4++ < 6) {
+      effects.consume(code);
+      return sequenceOpen;
+    }
+    if (code === null || markdownLineEndingOrSpace(code)) {
+      effects.exit("atxHeadingSequence");
+      return atBreak(code);
+    }
+    return nok(code);
+  }
+  function atBreak(code) {
+    if (code === 35) {
+      effects.enter("atxHeadingSequence");
+      return sequenceFurther(code);
+    }
+    if (code === null || markdownLineEnding(code)) {
+      effects.exit("atxHeading");
+      return ok(code);
+    }
+    if (markdownSpace(code)) {
+      return factorySpace(effects, atBreak, "whitespace")(code);
+    }
+    effects.enter("atxHeadingText");
+    return data(code);
+  }
+  function sequenceFurther(code) {
+    if (code === 35) {
+      effects.consume(code);
+      return sequenceFurther;
+    }
+    effects.exit("atxHeadingSequence");
+    return atBreak(code);
+  }
+  function data(code) {
+    if (code === null || code === 35 || markdownLineEndingOrSpace(code)) {
+      effects.exit("atxHeadingText");
+      return atBreak(code);
+    }
+    effects.consume(code);
+    return data;
+  }
+}
+// node_modules/micromark-util-html-tag-name/index.js
+var htmlBlockNames = [
+  "address",
+  "article",
+  "aside",
+  "base",
+  "basefont",
+  "blockquote",
+  "body",
+  "caption",
+  "center",
+  "col",
+  "colgroup",
+  "dd",
+  "details",
+  "dialog",
+  "dir",
+  "div",
+  "dl",
+  "dt",
+  "fieldset",
+  "figcaption",
+  "figure",
+  "footer",
+  "form",
+  "frame",
+  "frameset",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "head",
+  "header",
+  "hr",
+  "html",
+  "iframe",
+  "legend",
+  "li",
+  "link",
+  "main",
+  "menu",
+  "menuitem",
+  "nav",
+  "noframes",
+  "ol",
+  "optgroup",
+  "option",
+  "p",
+  "param",
+  "search",
+  "section",
+  "summary",
+  "table",
+  "tbody",
+  "td",
+  "tfoot",
+  "th",
+  "thead",
+  "title",
+  "tr",
+  "track",
+  "ul"
+];
+var htmlRawNames = ["pre", "script", "style", "textarea"];
+
+// node_modules/micromark-core-commonmark/lib/html-flow.js
+var htmlFlow = {
+  concrete: true,
+  name: "htmlFlow",
+  resolveTo: resolveToHtmlFlow,
+  tokenize: tokenizeHtmlFlow
+};
+var blankLineBefore = {
+  partial: true,
+  tokenize: tokenizeBlankLineBefore
+};
+var nonLazyContinuationStart = {
+  partial: true,
+  tokenize: tokenizeNonLazyContinuationStart
+};
+function resolveToHtmlFlow(events) {
+  let index4 = events.length;
+  while (index4--) {
+    if (events[index4][0] === "enter" && events[index4][1].type === "htmlFlow") {
+      break;
+    }
+  }
+  if (index4 > 1 && events[index4 - 2][1].type === "linePrefix") {
+    events[index4][1].start = events[index4 - 2][1].start;
+    events[index4 + 1][1].start = events[index4 - 2][1].start;
+    events.splice(index4 - 2, 2);
+  }
+  return events;
+}
+function tokenizeHtmlFlow(effects, ok, nok) {
+  const self = this;
+  let marker;
+  let closingTag;
+  let buffer;
+  let index4;
+  let markerB;
+  return start;
+  function start(code) {
+    return before(code);
+  }
+  function before(code) {
+    effects.enter("htmlFlow");
+    effects.enter("htmlFlowData");
+    effects.consume(code);
+    return open;
+  }
+  function open(code) {
+    if (code === 33) {
+      effects.consume(code);
+      return declarationOpen;
+    }
+    if (code === 47) {
+      effects.consume(code);
+      closingTag = true;
+      return tagCloseStart;
+    }
+    if (code === 63) {
+      effects.consume(code);
+      marker = 3;
+      return self.interrupt ? ok : continuationDeclarationInside;
+    }
+    if (asciiAlpha(code)) {
+      effects.consume(code);
+      buffer = String.fromCharCode(code);
+      return tagName;
+    }
+    return nok(code);
+  }
+  function declarationOpen(code) {
+    if (code === 45) {
+      effects.consume(code);
+      marker = 2;
+      return commentOpenInside;
+    }
+    if (code === 91) {
+      effects.consume(code);
+      marker = 5;
+      index4 = 0;
+      return cdataOpenInside;
+    }
+    if (asciiAlpha(code)) {
+      effects.consume(code);
+      marker = 4;
+      return self.interrupt ? ok : continuationDeclarationInside;
+    }
+    return nok(code);
+  }
+  function commentOpenInside(code) {
+    if (code === 45) {
+      effects.consume(code);
+      return self.interrupt ? ok : continuationDeclarationInside;
+    }
+    return nok(code);
+  }
+  function cdataOpenInside(code) {
+    const value = "CDATA[";
+    if (code === value.charCodeAt(index4++)) {
+      effects.consume(code);
+      if (index4 === value.length) {
+        return self.interrupt ? ok : continuation;
+      }
+      return cdataOpenInside;
+    }
+    return nok(code);
+  }
+  function tagCloseStart(code) {
+    if (asciiAlpha(code)) {
+      effects.consume(code);
+      buffer = String.fromCharCode(code);
+      return tagName;
+    }
+    return nok(code);
+  }
+  function tagName(code) {
+    if (code === null || code === 47 || code === 62 || markdownLineEndingOrSpace(code)) {
+      const slash = code === 47;
+      const name = buffer.toLowerCase();
+      if (!slash && !closingTag && htmlRawNames.includes(name)) {
+        marker = 1;
+        return self.interrupt ? ok(code) : continuation(code);
+      }
+      if (htmlBlockNames.includes(buffer.toLowerCase())) {
+        marker = 6;
+        if (slash) {
+          effects.consume(code);
+          return basicSelfClosing;
+        }
+        return self.interrupt ? ok(code) : continuation(code);
+      }
+      marker = 7;
+      return self.interrupt && !self.parser.lazy[self.now().line] ? nok(code) : closingTag ? completeClosingTagAfter(code) : completeAttributeNameBefore(code);
+    }
+    if (code === 45 || asciiAlphanumeric(code)) {
+      effects.consume(code);
+      buffer += String.fromCharCode(code);
+      return tagName;
+    }
+    return nok(code);
+  }
+  function basicSelfClosing(code) {
+    if (code === 62) {
+      effects.consume(code);
+      return self.interrupt ? ok : continuation;
+    }
+    return nok(code);
+  }
+  function completeClosingTagAfter(code) {
+    if (markdownSpace(code)) {
+      effects.consume(code);
+      return completeClosingTagAfter;
+    }
+    return completeEnd(code);
+  }
+  function completeAttributeNameBefore(code) {
+    if (code === 47) {
+      effects.consume(code);
+      return completeEnd;
+    }
+    if (code === 58 || code === 95 || asciiAlpha(code)) {
+      effects.consume(code);
+      return completeAttributeName;
+    }
+    if (markdownSpace(code)) {
+      effects.consume(code);
+      return completeAttributeNameBefore;
+    }
+    return completeEnd(code);
+  }
+  function completeAttributeName(code) {
+    if (code === 45 || code === 46 || code === 58 || code === 95 || asciiAlphanumeric(code)) {
+      effects.consume(code);
+      return completeAttributeName;
+    }
+    return completeAttributeNameAfter(code);
+  }
+  function completeAttributeNameAfter(code) {
+    if (code === 61) {
+      effects.consume(code);
+      return completeAttributeValueBefore;
+    }
+    if (markdownSpace(code)) {
+      effects.consume(code);
+      return completeAttributeNameAfter;
+    }
+    return completeAttributeNameBefore(code);
+  }
+  function completeAttributeValueBefore(code) {
+    if (code === null || code === 60 || code === 61 || code === 62 || code === 96) {
+      return nok(code);
+    }
+    if (code === 34 || code === 39) {
+      effects.consume(code);
+      markerB = code;
+      return completeAttributeValueQuoted;
+    }
+    if (markdownSpace(code)) {
+      effects.consume(code);
+      return completeAttributeValueBefore;
+    }
+    return completeAttributeValueUnquoted(code);
+  }
+  function completeAttributeValueQuoted(code) {
+    if (code === markerB) {
+      effects.consume(code);
+      markerB = null;
+      return completeAttributeValueQuotedAfter;
+    }
+    if (code === null || markdownLineEnding(code)) {
+      return nok(code);
+    }
+    effects.consume(code);
+    return completeAttributeValueQuoted;
+  }
+  function completeAttributeValueUnquoted(code) {
+    if (code === null || code === 34 || code === 39 || code === 47 || code === 60 || code === 61 || code === 62 || code === 96 || markdownLineEndingOrSpace(code)) {
+      return completeAttributeNameAfter(code);
+    }
+    effects.consume(code);
+    return completeAttributeValueUnquoted;
+  }
+  function completeAttributeValueQuotedAfter(code) {
+    if (code === 47 || code === 62 || markdownSpace(code)) {
+      return completeAttributeNameBefore(code);
+    }
+    return nok(code);
+  }
+  function completeEnd(code) {
+    if (code === 62) {
+      effects.consume(code);
+      return completeAfter;
+    }
+    return nok(code);
+  }
+  function completeAfter(code) {
+    if (code === null || markdownLineEnding(code)) {
+      return continuation(code);
+    }
+    if (markdownSpace(code)) {
+      effects.consume(code);
+      return completeAfter;
+    }
+    return nok(code);
+  }
+  function continuation(code) {
+    if (code === 45 && marker === 2) {
+      effects.consume(code);
+      return continuationCommentInside;
+    }
+    if (code === 60 && marker === 1) {
+      effects.consume(code);
+      return continuationRawTagOpen;
+    }
+    if (code === 62 && marker === 4) {
+      effects.consume(code);
+      return continuationClose;
+    }
+    if (code === 63 && marker === 3) {
+      effects.consume(code);
+      return continuationDeclarationInside;
+    }
+    if (code === 93 && marker === 5) {
+      effects.consume(code);
+      return continuationCdataInside;
+    }
+    if (markdownLineEnding(code) && (marker === 6 || marker === 7)) {
+      effects.exit("htmlFlowData");
+      return effects.check(blankLineBefore, continuationAfter, continuationStart)(code);
+    }
+    if (code === null || markdownLineEnding(code)) {
+      effects.exit("htmlFlowData");
+      return continuationStart(code);
+    }
+    effects.consume(code);
+    return continuation;
+  }
+  function continuationStart(code) {
+    return effects.check(nonLazyContinuationStart, continuationStartNonLazy, continuationAfter)(code);
+  }
+  function continuationStartNonLazy(code) {
+    effects.enter("lineEnding");
+    effects.consume(code);
+    effects.exit("lineEnding");
+    return continuationBefore;
+  }
+  function continuationBefore(code) {
+    if (code === null || markdownLineEnding(code)) {
+      return continuationStart(code);
+    }
+    effects.enter("htmlFlowData");
+    return continuation(code);
+  }
+  function continuationCommentInside(code) {
+    if (code === 45) {
+      effects.consume(code);
+      return continuationDeclarationInside;
+    }
+    return continuation(code);
+  }
+  function continuationRawTagOpen(code) {
+    if (code === 47) {
+      effects.consume(code);
+      buffer = "";
+      return continuationRawEndTag;
+    }
+    return continuation(code);
+  }
+  function continuationRawEndTag(code) {
+    if (code === 62) {
+      const name = buffer.toLowerCase();
+      if (htmlRawNames.includes(name)) {
+        effects.consume(code);
+        return continuationClose;
+      }
+      return continuation(code);
+    }
+    if (asciiAlpha(code) && buffer.length < 8) {
+      effects.consume(code);
+      buffer += String.fromCharCode(code);
+      return continuationRawEndTag;
+    }
+    return continuation(code);
+  }
+  function continuationCdataInside(code) {
+    if (code === 93) {
+      effects.consume(code);
+      return continuationDeclarationInside;
+    }
+    return continuation(code);
+  }
+  function continuationDeclarationInside(code) {
+    if (code === 62) {
+      effects.consume(code);
+      return continuationClose;
+    }
+    if (code === 45 && marker === 2) {
+      effects.consume(code);
+      return continuationDeclarationInside;
+    }
+    return continuation(code);
+  }
+  function continuationClose(code) {
+    if (code === null || markdownLineEnding(code)) {
+      effects.exit("htmlFlowData");
+      return continuationAfter(code);
+    }
+    effects.consume(code);
+    return continuationClose;
+  }
+  function continuationAfter(code) {
+    effects.exit("htmlFlow");
+    return ok(code);
+  }
+}
+function tokenizeNonLazyContinuationStart(effects, ok, nok) {
+  const self = this;
+  return start;
+  function start(code) {
+    if (markdownLineEnding(code)) {
+      effects.enter("lineEnding");
+      effects.consume(code);
+      effects.exit("lineEnding");
+      return after;
+    }
+    return nok(code);
+  }
+  function after(code) {
+    return self.parser.lazy[self.now().line] ? nok(code) : ok(code);
+  }
+}
+function tokenizeBlankLineBefore(effects, ok, nok) {
+  return start;
+  function start(code) {
+    effects.enter("lineEnding");
+    effects.consume(code);
+    effects.exit("lineEnding");
+    return effects.attempt(blankLine, ok, nok);
+  }
+}
+// node_modules/micromark-core-commonmark/lib/html-text.js
+var htmlText = {
+  name: "htmlText",
+  tokenize: tokenizeHtmlText
+};
+function tokenizeHtmlText(effects, ok, nok) {
+  const self = this;
+  let marker;
+  let index4;
+  let returnState;
+  return start;
+  function start(code) {
+    effects.enter("htmlText");
+    effects.enter("htmlTextData");
+    effects.consume(code);
+    return open;
+  }
+  function open(code) {
+    if (code === 33) {
+      effects.consume(code);
+      return declarationOpen;
+    }
+    if (code === 47) {
+      effects.consume(code);
+      return tagCloseStart;
+    }
+    if (code === 63) {
+      effects.consume(code);
+      return instruction;
+    }
+    if (asciiAlpha(code)) {
+      effects.consume(code);
+      return tagOpen;
+    }
+    return nok(code);
+  }
+  function declarationOpen(code) {
+    if (code === 45) {
+      effects.consume(code);
+      return commentOpenInside;
+    }
+    if (code === 91) {
+      effects.consume(code);
+      index4 = 0;
+      return cdataOpenInside;
+    }
+    if (asciiAlpha(code)) {
+      effects.consume(code);
+      return declaration;
+    }
+    return nok(code);
+  }
+  function commentOpenInside(code) {
+    if (code === 45) {
+      effects.consume(code);
+      return commentEnd;
+    }
+    return nok(code);
+  }
+  function comment(code) {
+    if (code === null) {
+      return nok(code);
+    }
+    if (code === 45) {
+      effects.consume(code);
+      return commentClose;
+    }
+    if (markdownLineEnding(code)) {
+      returnState = comment;
+      return lineEndingBefore(code);
+    }
+    effects.consume(code);
+    return comment;
+  }
+  function commentClose(code) {
+    if (code === 45) {
+      effects.consume(code);
+      return commentEnd;
+    }
+    return comment(code);
+  }
+  function commentEnd(code) {
+    return code === 62 ? end(code) : code === 45 ? commentClose(code) : comment(code);
+  }
+  function cdataOpenInside(code) {
+    const value = "CDATA[";
+    if (code === value.charCodeAt(index4++)) {
+      effects.consume(code);
+      return index4 === value.length ? cdata : cdataOpenInside;
+    }
+    return nok(code);
+  }
+  function cdata(code) {
+    if (code === null) {
+      return nok(code);
+    }
+    if (code === 93) {
+      effects.consume(code);
+      return cdataClose;
+    }
+    if (markdownLineEnding(code)) {
+      returnState = cdata;
+      return lineEndingBefore(code);
+    }
+    effects.consume(code);
+    return cdata;
+  }
+  function cdataClose(code) {
+    if (code === 93) {
+      effects.consume(code);
+      return cdataEnd;
+    }
+    return cdata(code);
+  }
+  function cdataEnd(code) {
+    if (code === 62) {
+      return end(code);
+    }
+    if (code === 93) {
+      effects.consume(code);
+      return cdataEnd;
+    }
+    return cdata(code);
+  }
+  function declaration(code) {
+    if (code === null || code === 62) {
+      return end(code);
+    }
+    if (markdownLineEnding(code)) {
+      returnState = declaration;
+      return lineEndingBefore(code);
+    }
+    effects.consume(code);
+    return declaration;
+  }
+  function instruction(code) {
+    if (code === null) {
+      return nok(code);
+    }
+    if (code === 63) {
+      effects.consume(code);
+      return instructionClose;
+    }
+    if (markdownLineEnding(code)) {
+      returnState = instruction;
+      return lineEndingBefore(code);
+    }
+    effects.consume(code);
+    return instruction;
+  }
+  function instructionClose(code) {
+    return code === 62 ? end(code) : instruction(code);
+  }
+  function tagCloseStart(code) {
+    if (asciiAlpha(code)) {
+      effects.consume(code);
+      return tagClose;
+    }
+    return nok(code);
+  }
+  function tagClose(code) {
+    if (code === 45 || asciiAlphanumeric(code)) {
+      effects.consume(code);
+      return tagClose;
+    }
+    return tagCloseBetween(code);
+  }
+  function tagCloseBetween(code) {
+    if (markdownLineEnding(code)) {
+      returnState = tagCloseBetween;
+      return lineEndingBefore(code);
+    }
+    if (markdownSpace(code)) {
+      effects.consume(code);
+      return tagCloseBetween;
+    }
+    return end(code);
+  }
+  function tagOpen(code) {
+    if (code === 45 || asciiAlphanumeric(code)) {
+      effects.consume(code);
+      return tagOpen;
+    }
+    if (code === 47 || code === 62 || markdownLineEndingOrSpace(code)) {
+      return tagOpenBetween(code);
+    }
+    return nok(code);
+  }
+  function tagOpenBetween(code) {
+    if (code === 47) {
+      effects.consume(code);
+      return end;
+    }
+    if (code === 58 || code === 95 || asciiAlpha(code)) {
+      effects.consume(code);
+      return tagOpenAttributeName;
+    }
+    if (markdownLineEnding(code)) {
+      returnState = tagOpenBetween;
+      return lineEndingBefore(code);
+    }
+    if (markdownSpace(code)) {
+      effects.consume(code);
+      return tagOpenBetween;
+    }
+    return end(code);
+  }
+  function tagOpenAttributeName(code) {
+    if (code === 45 || code === 46 || code === 58 || code === 95 || asciiAlphanumeric(code)) {
+      effects.consume(code);
+      return tagOpenAttributeName;
+    }
+    return tagOpenAttributeNameAfter(code);
+  }
+  function tagOpenAttributeNameAfter(code) {
+    if (code === 61) {
+      effects.consume(code);
+      return tagOpenAttributeValueBefore;
+    }
+    if (markdownLineEnding(code)) {
+      returnState = tagOpenAttributeNameAfter;
+      return lineEndingBefore(code);
+    }
+    if (markdownSpace(code)) {
+      effects.consume(code);
+      return tagOpenAttributeNameAfter;
+    }
+    return tagOpenBetween(code);
+  }
+  function tagOpenAttributeValueBefore(code) {
+    if (code === null || code === 60 || code === 61 || code === 62 || code === 96) {
+      return nok(code);
+    }
+    if (code === 34 || code === 39) {
+      effects.consume(code);
+      marker = code;
+      return tagOpenAttributeValueQuoted;
+    }
+    if (markdownLineEnding(code)) {
+      returnState = tagOpenAttributeValueBefore;
+      return lineEndingBefore(code);
+    }
+    if (markdownSpace(code)) {
+      effects.consume(code);
+      return tagOpenAttributeValueBefore;
+    }
+    effects.consume(code);
+    return tagOpenAttributeValueUnquoted;
+  }
+  function tagOpenAttributeValueQuoted(code) {
+    if (code === marker) {
+      effects.consume(code);
+      marker = undefined;
+      return tagOpenAttributeValueQuotedAfter;
+    }
+    if (code === null) {
+      return nok(code);
+    }
+    if (markdownLineEnding(code)) {
+      returnState = tagOpenAttributeValueQuoted;
+      return lineEndingBefore(code);
+    }
+    effects.consume(code);
+    return tagOpenAttributeValueQuoted;
+  }
+  function tagOpenAttributeValueUnquoted(code) {
+    if (code === null || code === 34 || code === 39 || code === 60 || code === 61 || code === 96) {
+      return nok(code);
+    }
+    if (code === 47 || code === 62 || markdownLineEndingOrSpace(code)) {
+      return tagOpenBetween(code);
+    }
+    effects.consume(code);
+    return tagOpenAttributeValueUnquoted;
+  }
+  function tagOpenAttributeValueQuotedAfter(code) {
+    if (code === 47 || code === 62 || markdownLineEndingOrSpace(code)) {
+      return tagOpenBetween(code);
+    }
+    return nok(code);
+  }
+  function end(code) {
+    if (code === 62) {
+      effects.consume(code);
+      effects.exit("htmlTextData");
+      effects.exit("htmlText");
+      return ok;
+    }
+    return nok(code);
+  }
+  function lineEndingBefore(code) {
+    effects.exit("htmlTextData");
+    effects.enter("lineEnding");
+    effects.consume(code);
+    effects.exit("lineEnding");
+    return lineEndingAfter;
+  }
+  function lineEndingAfter(code) {
+    return markdownSpace(code) ? factorySpace(effects, lineEndingAfterPrefix, "linePrefix", self.parser.constructs.disable.null.includes("codeIndented") ? undefined : 4)(code) : lineEndingAfterPrefix(code);
+  }
+  function lineEndingAfterPrefix(code) {
+    effects.enter("htmlTextData");
+    return returnState(code);
+  }
+}
+// node_modules/micromark-core-commonmark/lib/label-end.js
+var labelEnd = {
+  name: "labelEnd",
+  resolveAll: resolveAllLabelEnd,
+  resolveTo: resolveToLabelEnd,
+  tokenize: tokenizeLabelEnd
+};
+var resourceConstruct = {
+  tokenize: tokenizeResource
+};
+var referenceFullConstruct = {
+  tokenize: tokenizeReferenceFull
+};
+var referenceCollapsedConstruct = {
+  tokenize: tokenizeReferenceCollapsed
+};
+function resolveAllLabelEnd(events) {
+  let index4 = -1;
+  const newEvents = [];
+  while (++index4 < events.length) {
+    const token = events[index4][1];
+    newEvents.push(events[index4]);
+    if (token.type === "labelImage" || token.type === "labelLink" || token.type === "labelEnd") {
+      const offset4 = token.type === "labelImage" ? 4 : 2;
+      token.type = "data";
+      index4 += offset4;
+    }
+  }
+  if (events.length !== newEvents.length) {
+    splice(events, 0, events.length, newEvents);
+  }
+  return events;
+}
+function resolveToLabelEnd(events, context) {
+  let index4 = events.length;
+  let offset4 = 0;
+  let token;
+  let open;
+  let close;
+  let media;
+  while (index4--) {
+    token = events[index4][1];
+    if (open) {
+      if (token.type === "link" || token.type === "labelLink" && token._inactive) {
+        break;
+      }
+      if (events[index4][0] === "enter" && token.type === "labelLink") {
+        token._inactive = true;
+      }
+    } else if (close) {
+      if (events[index4][0] === "enter" && (token.type === "labelImage" || token.type === "labelLink") && !token._balanced) {
+        open = index4;
+        if (token.type !== "labelLink") {
+          offset4 = 2;
+          break;
+        }
+      }
+    } else if (token.type === "labelEnd") {
+      close = index4;
+    }
+  }
+  const group = {
+    type: events[open][1].type === "labelLink" ? "link" : "image",
+    start: {
+      ...events[open][1].start
+    },
+    end: {
+      ...events[events.length - 1][1].end
+    }
+  };
+  const label = {
+    type: "label",
+    start: {
+      ...events[open][1].start
+    },
+    end: {
+      ...events[close][1].end
+    }
+  };
+  const text = {
+    type: "labelText",
+    start: {
+      ...events[open + offset4 + 2][1].end
+    },
+    end: {
+      ...events[close - 2][1].start
+    }
+  };
+  media = [["enter", group, context], ["enter", label, context]];
+  media = push3(media, events.slice(open + 1, open + offset4 + 3));
+  media = push3(media, [["enter", text, context]]);
+  media = push3(media, resolveAll(context.parser.constructs.insideSpan.null, events.slice(open + offset4 + 4, close - 3), context));
+  media = push3(media, [["exit", text, context], events[close - 2], events[close - 1], ["exit", label, context]]);
+  media = push3(media, events.slice(close + 1));
+  media = push3(media, [["exit", group, context]]);
+  splice(events, open, events.length, media);
+  return events;
+}
+function tokenizeLabelEnd(effects, ok, nok) {
+  const self = this;
+  let index4 = self.events.length;
+  let labelStart2;
+  let defined;
+  while (index4--) {
+    if ((self.events[index4][1].type === "labelImage" || self.events[index4][1].type === "labelLink") && !self.events[index4][1]._balanced) {
+      labelStart2 = self.events[index4][1];
+      break;
+    }
+  }
+  return start;
+  function start(code) {
+    if (!labelStart2) {
+      return nok(code);
+    }
+    if (labelStart2._inactive) {
+      return labelEndNok(code);
+    }
+    defined = self.parser.defined.includes(normalizeIdentifier(self.sliceSerialize({
+      start: labelStart2.end,
+      end: self.now()
+    })));
+    effects.enter("labelEnd");
+    effects.enter("labelMarker");
+    effects.consume(code);
+    effects.exit("labelMarker");
+    effects.exit("labelEnd");
+    return after;
+  }
+  function after(code) {
+    if (code === 40) {
+      return effects.attempt(resourceConstruct, labelEndOk, defined ? labelEndOk : labelEndNok)(code);
+    }
+    if (code === 91) {
+      return effects.attempt(referenceFullConstruct, labelEndOk, defined ? referenceNotFull : labelEndNok)(code);
+    }
+    return defined ? labelEndOk(code) : labelEndNok(code);
+  }
+  function referenceNotFull(code) {
+    return effects.attempt(referenceCollapsedConstruct, labelEndOk, labelEndNok)(code);
+  }
+  function labelEndOk(code) {
+    return ok(code);
+  }
+  function labelEndNok(code) {
+    labelStart2._balanced = true;
+    return nok(code);
+  }
+}
+function tokenizeResource(effects, ok, nok) {
+  return resourceStart;
+  function resourceStart(code) {
+    effects.enter("resource");
+    effects.enter("resourceMarker");
+    effects.consume(code);
+    effects.exit("resourceMarker");
+    return resourceBefore;
+  }
+  function resourceBefore(code) {
+    return markdownLineEndingOrSpace(code) ? factoryWhitespace(effects, resourceOpen)(code) : resourceOpen(code);
+  }
+  function resourceOpen(code) {
+    if (code === 41) {
+      return resourceEnd(code);
+    }
+    return factoryDestination(effects, resourceDestinationAfter, resourceDestinationMissing, "resourceDestination", "resourceDestinationLiteral", "resourceDestinationLiteralMarker", "resourceDestinationRaw", "resourceDestinationString", 32)(code);
+  }
+  function resourceDestinationAfter(code) {
+    return markdownLineEndingOrSpace(code) ? factoryWhitespace(effects, resourceBetween)(code) : resourceEnd(code);
+  }
+  function resourceDestinationMissing(code) {
+    return nok(code);
+  }
+  function resourceBetween(code) {
+    if (code === 34 || code === 39 || code === 40) {
+      return factoryTitle(effects, resourceTitleAfter, nok, "resourceTitle", "resourceTitleMarker", "resourceTitleString")(code);
+    }
+    return resourceEnd(code);
+  }
+  function resourceTitleAfter(code) {
+    return markdownLineEndingOrSpace(code) ? factoryWhitespace(effects, resourceEnd)(code) : resourceEnd(code);
+  }
+  function resourceEnd(code) {
+    if (code === 41) {
+      effects.enter("resourceMarker");
+      effects.consume(code);
+      effects.exit("resourceMarker");
+      effects.exit("resource");
+      return ok;
+    }
+    return nok(code);
+  }
+}
+function tokenizeReferenceFull(effects, ok, nok) {
+  const self = this;
+  return referenceFull;
+  function referenceFull(code) {
+    return factoryLabel.call(self, effects, referenceFullAfter, referenceFullMissing, "reference", "referenceMarker", "referenceString")(code);
+  }
+  function referenceFullAfter(code) {
+    return self.parser.defined.includes(normalizeIdentifier(self.sliceSerialize(self.events[self.events.length - 1][1]).slice(1, -1))) ? ok(code) : nok(code);
+  }
+  function referenceFullMissing(code) {
+    return nok(code);
+  }
+}
+function tokenizeReferenceCollapsed(effects, ok, nok) {
+  return referenceCollapsedStart;
+  function referenceCollapsedStart(code) {
+    effects.enter("reference");
+    effects.enter("referenceMarker");
+    effects.consume(code);
+    effects.exit("referenceMarker");
+    return referenceCollapsedOpen;
+  }
+  function referenceCollapsedOpen(code) {
+    if (code === 93) {
+      effects.enter("referenceMarker");
+      effects.consume(code);
+      effects.exit("referenceMarker");
+      effects.exit("reference");
+      return ok;
+    }
+    return nok(code);
+  }
+}
+// node_modules/micromark-core-commonmark/lib/label-start-image.js
+var labelStartImage = {
+  name: "labelStartImage",
+  resolveAll: labelEnd.resolveAll,
+  tokenize: tokenizeLabelStartImage
+};
+function tokenizeLabelStartImage(effects, ok, nok) {
+  const self = this;
+  return start;
+  function start(code) {
+    effects.enter("labelImage");
+    effects.enter("labelImageMarker");
+    effects.consume(code);
+    effects.exit("labelImageMarker");
+    return open;
+  }
+  function open(code) {
+    if (code === 91) {
+      effects.enter("labelMarker");
+      effects.consume(code);
+      effects.exit("labelMarker");
+      effects.exit("labelImage");
+      return after;
+    }
+    return nok(code);
+  }
+  function after(code) {
+    return code === 94 && "_hiddenFootnoteSupport" in self.parser.constructs ? nok(code) : ok(code);
+  }
+}
+// node_modules/micromark-core-commonmark/lib/label-start-link.js
+var labelStartLink = {
+  name: "labelStartLink",
+  resolveAll: labelEnd.resolveAll,
+  tokenize: tokenizeLabelStartLink
+};
+function tokenizeLabelStartLink(effects, ok, nok) {
+  const self = this;
+  return start;
+  function start(code) {
+    effects.enter("labelLink");
+    effects.enter("labelMarker");
+    effects.consume(code);
+    effects.exit("labelMarker");
+    effects.exit("labelLink");
+    return after;
+  }
+  function after(code) {
+    return code === 94 && "_hiddenFootnoteSupport" in self.parser.constructs ? nok(code) : ok(code);
+  }
+}
+// node_modules/micromark-core-commonmark/lib/line-ending.js
+var lineEnding = {
+  name: "lineEnding",
+  tokenize: tokenizeLineEnding
+};
+function tokenizeLineEnding(effects, ok) {
+  return start;
+  function start(code) {
+    effects.enter("lineEnding");
+    effects.consume(code);
+    effects.exit("lineEnding");
+    return factorySpace(effects, ok, "linePrefix");
+  }
+}
+// node_modules/micromark-core-commonmark/lib/thematic-break.js
+var thematicBreak = {
+  name: "thematicBreak",
+  tokenize: tokenizeThematicBreak
+};
+function tokenizeThematicBreak(effects, ok, nok) {
+  let size4 = 0;
+  let marker;
+  return start;
+  function start(code) {
+    effects.enter("thematicBreak");
+    return before(code);
+  }
+  function before(code) {
+    marker = code;
+    return atBreak(code);
+  }
+  function atBreak(code) {
+    if (code === marker) {
+      effects.enter("thematicBreakSequence");
+      return sequence(code);
+    }
+    if (size4 >= 3 && (code === null || markdownLineEnding(code))) {
+      effects.exit("thematicBreak");
+      return ok(code);
+    }
+    return nok(code);
+  }
+  function sequence(code) {
+    if (code === marker) {
+      effects.consume(code);
+      size4++;
+      return sequence;
+    }
+    effects.exit("thematicBreakSequence");
+    return markdownSpace(code) ? factorySpace(effects, atBreak, "whitespace")(code) : atBreak(code);
+  }
+}
+
+// node_modules/micromark-core-commonmark/lib/list.js
+var list = {
+  continuation: {
+    tokenize: tokenizeListContinuation
+  },
+  exit: tokenizeListEnd,
+  name: "list",
+  tokenize: tokenizeListStart
+};
+var listItemPrefixWhitespaceConstruct = {
+  partial: true,
+  tokenize: tokenizeListItemPrefixWhitespace
+};
+var indentConstruct = {
+  partial: true,
+  tokenize: tokenizeIndent
+};
+function tokenizeListStart(effects, ok, nok) {
+  const self = this;
+  const tail = self.events[self.events.length - 1];
+  let initialSize = tail && tail[1].type === "linePrefix" ? tail[2].sliceSerialize(tail[1], true).length : 0;
+  let size4 = 0;
+  return start;
+  function start(code) {
+    const kind = self.containerState.type || (code === 42 || code === 43 || code === 45 ? "listUnordered" : "listOrdered");
+    if (kind === "listUnordered" ? !self.containerState.marker || code === self.containerState.marker : asciiDigit(code)) {
+      if (!self.containerState.type) {
+        self.containerState.type = kind;
+        effects.enter(kind, {
+          _container: true
+        });
+      }
+      if (kind === "listUnordered") {
+        effects.enter("listItemPrefix");
+        return code === 42 || code === 45 ? effects.check(thematicBreak, nok, atMarker)(code) : atMarker(code);
+      }
+      if (!self.interrupt || code === 49) {
+        effects.enter("listItemPrefix");
+        effects.enter("listItemValue");
+        return inside(code);
+      }
+    }
+    return nok(code);
+  }
+  function inside(code) {
+    if (asciiDigit(code) && ++size4 < 10) {
+      effects.consume(code);
+      return inside;
+    }
+    if ((!self.interrupt || size4 < 2) && (self.containerState.marker ? code === self.containerState.marker : code === 41 || code === 46)) {
+      effects.exit("listItemValue");
+      return atMarker(code);
+    }
+    return nok(code);
+  }
+  function atMarker(code) {
+    effects.enter("listItemMarker");
+    effects.consume(code);
+    effects.exit("listItemMarker");
+    self.containerState.marker = self.containerState.marker || code;
+    return effects.check(blankLine, self.interrupt ? nok : onBlank, effects.attempt(listItemPrefixWhitespaceConstruct, endOfPrefix, otherPrefix));
+  }
+  function onBlank(code) {
+    self.containerState.initialBlankLine = true;
+    initialSize++;
+    return endOfPrefix(code);
+  }
+  function otherPrefix(code) {
+    if (markdownSpace(code)) {
+      effects.enter("listItemPrefixWhitespace");
+      effects.consume(code);
+      effects.exit("listItemPrefixWhitespace");
+      return endOfPrefix;
+    }
+    return nok(code);
+  }
+  function endOfPrefix(code) {
+    self.containerState.size = initialSize + self.sliceSerialize(effects.exit("listItemPrefix"), true).length;
+    return ok(code);
+  }
+}
+function tokenizeListContinuation(effects, ok, nok) {
+  const self = this;
+  self.containerState._closeFlow = undefined;
+  return effects.check(blankLine, onBlank, notBlank);
+  function onBlank(code) {
+    self.containerState.furtherBlankLines = self.containerState.furtherBlankLines || self.containerState.initialBlankLine;
+    return factorySpace(effects, ok, "listItemIndent", self.containerState.size + 1)(code);
+  }
+  function notBlank(code) {
+    if (self.containerState.furtherBlankLines || !markdownSpace(code)) {
+      self.containerState.furtherBlankLines = undefined;
+      self.containerState.initialBlankLine = undefined;
+      return notInCurrentItem(code);
+    }
+    self.containerState.furtherBlankLines = undefined;
+    self.containerState.initialBlankLine = undefined;
+    return effects.attempt(indentConstruct, ok, notInCurrentItem)(code);
+  }
+  function notInCurrentItem(code) {
+    self.containerState._closeFlow = true;
+    self.interrupt = undefined;
+    return factorySpace(effects, effects.attempt(list, ok, nok), "linePrefix", self.parser.constructs.disable.null.includes("codeIndented") ? undefined : 4)(code);
+  }
+}
+function tokenizeIndent(effects, ok, nok) {
+  const self = this;
+  return factorySpace(effects, afterPrefix, "listItemIndent", self.containerState.size + 1);
+  function afterPrefix(code) {
+    const tail = self.events[self.events.length - 1];
+    return tail && tail[1].type === "listItemIndent" && tail[2].sliceSerialize(tail[1], true).length === self.containerState.size ? ok(code) : nok(code);
+  }
+}
+function tokenizeListEnd(effects) {
+  effects.exit(this.containerState.type);
+}
+function tokenizeListItemPrefixWhitespace(effects, ok, nok) {
+  const self = this;
+  return factorySpace(effects, afterPrefix, "listItemPrefixWhitespace", self.parser.constructs.disable.null.includes("codeIndented") ? undefined : 4 + 1);
+  function afterPrefix(code) {
+    const tail = self.events[self.events.length - 1];
+    return !markdownSpace(code) && tail && tail[1].type === "listItemPrefixWhitespace" ? ok(code) : nok(code);
+  }
+}
+// node_modules/micromark-core-commonmark/lib/setext-underline.js
+var setextUnderline = {
+  name: "setextUnderline",
+  resolveTo: resolveToSetextUnderline,
+  tokenize: tokenizeSetextUnderline
+};
+function resolveToSetextUnderline(events, context) {
+  let index4 = events.length;
+  let content3;
+  let text;
+  let definition2;
+  while (index4--) {
+    if (events[index4][0] === "enter") {
+      if (events[index4][1].type === "content") {
+        content3 = index4;
+        break;
+      }
+      if (events[index4][1].type === "paragraph") {
+        text = index4;
+      }
+    } else {
+      if (events[index4][1].type === "content") {
+        events.splice(index4, 1);
+      }
+      if (!definition2 && events[index4][1].type === "definition") {
+        definition2 = index4;
+      }
+    }
+  }
+  const heading = {
+    type: "setextHeading",
+    start: {
+      ...events[content3][1].start
+    },
+    end: {
+      ...events[events.length - 1][1].end
+    }
+  };
+  events[text][1].type = "setextHeadingText";
+  if (definition2) {
+    events.splice(text, 0, ["enter", heading, context]);
+    events.splice(definition2 + 1, 0, ["exit", events[content3][1], context]);
+    events[content3][1].end = {
+      ...events[definition2][1].end
+    };
+  } else {
+    events[content3][1] = heading;
+  }
+  events.push(["exit", heading, context]);
+  return events;
+}
+function tokenizeSetextUnderline(effects, ok, nok) {
+  const self = this;
+  let marker;
+  return start;
+  function start(code) {
+    let index4 = self.events.length;
+    let paragraph;
+    while (index4--) {
+      if (self.events[index4][1].type !== "lineEnding" && self.events[index4][1].type !== "linePrefix" && self.events[index4][1].type !== "content") {
+        paragraph = self.events[index4][1].type === "paragraph";
+        break;
+      }
+    }
+    if (!self.parser.lazy[self.now().line] && (self.interrupt || paragraph)) {
+      effects.enter("setextHeadingLine");
+      marker = code;
+      return before(code);
+    }
+    return nok(code);
+  }
+  function before(code) {
+    effects.enter("setextHeadingLineSequence");
+    return inside(code);
+  }
+  function inside(code) {
+    if (code === marker) {
+      effects.consume(code);
+      return inside;
+    }
+    effects.exit("setextHeadingLineSequence");
+    return markdownSpace(code) ? factorySpace(effects, after, "lineSuffix")(code) : after(code);
+  }
+  function after(code) {
+    if (code === null || markdownLineEnding(code)) {
+      effects.exit("setextHeadingLine");
+      return ok(code);
+    }
+    return nok(code);
+  }
+}
+// node_modules/micromark/lib/initialize/flow.js
+var flow = {
+  tokenize: initializeFlow
+};
+function initializeFlow(effects) {
+  const self = this;
+  const initial2 = effects.attempt(blankLine, atBlankEnding, effects.attempt(this.parser.constructs.flowInitial, afterConstruct, factorySpace(effects, effects.attempt(this.parser.constructs.flow, afterConstruct, effects.attempt(content2, afterConstruct)), "linePrefix")));
+  return initial2;
+  function atBlankEnding(code) {
+    if (code === null) {
+      effects.consume(code);
+      return;
+    }
+    effects.enter("lineEndingBlank");
+    effects.consume(code);
+    effects.exit("lineEndingBlank");
+    self.currentConstruct = undefined;
+    return initial2;
+  }
+  function afterConstruct(code) {
+    if (code === null) {
+      effects.consume(code);
+      return;
+    }
+    effects.enter("lineEnding");
+    effects.consume(code);
+    effects.exit("lineEnding");
+    self.currentConstruct = undefined;
+    return initial2;
+  }
+}
+
+// node_modules/micromark/lib/initialize/text.js
+var resolver = {
+  resolveAll: createResolver()
+};
+var string = initializeFactory("string");
+var text = initializeFactory("text");
+function initializeFactory(field) {
+  return {
+    resolveAll: createResolver(field === "text" ? resolveAllLineSuffixes : undefined),
+    tokenize: initializeText
+  };
+  function initializeText(effects) {
+    const self = this;
+    const constructs2 = this.parser.constructs[field];
+    const text2 = effects.attempt(constructs2, start, notText);
+    return start;
+    function start(code) {
+      return atBreak(code) ? text2(code) : notText(code);
+    }
+    function notText(code) {
+      if (code === null) {
+        effects.consume(code);
+        return;
+      }
+      effects.enter("data");
+      effects.consume(code);
+      return data;
+    }
+    function data(code) {
+      if (atBreak(code)) {
+        effects.exit("data");
+        return text2(code);
+      }
+      effects.consume(code);
+      return data;
+    }
+    function atBreak(code) {
+      if (code === null) {
+        return true;
+      }
+      const list2 = constructs2[code];
+      let index4 = -1;
+      if (list2) {
+        while (++index4 < list2.length) {
+          const item = list2[index4];
+          if (!item.previous || item.previous.call(self, self.previous)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+  }
+}
+function createResolver(extraResolver) {
+  return resolveAllText;
+  function resolveAllText(events, context) {
+    let index4 = -1;
+    let enter;
+    while (++index4 <= events.length) {
+      if (enter === undefined) {
+        if (events[index4] && events[index4][1].type === "data") {
+          enter = index4;
+          index4++;
+        }
+      } else if (!events[index4] || events[index4][1].type !== "data") {
+        if (index4 !== enter + 2) {
+          events[enter][1].end = events[index4 - 1][1].end;
+          events.splice(enter + 2, index4 - enter - 2);
+          index4 = enter + 2;
+        }
+        enter = undefined;
+      }
+    }
+    return extraResolver ? extraResolver(events, context) : events;
+  }
+}
+function resolveAllLineSuffixes(events, context) {
+  let eventIndex = 0;
+  while (++eventIndex <= events.length) {
+    if ((eventIndex === events.length || events[eventIndex][1].type === "lineEnding") && events[eventIndex - 1][1].type === "data") {
+      const data = events[eventIndex - 1][1];
+      const chunks = context.sliceStream(data);
+      let index4 = chunks.length;
+      let bufferIndex = -1;
+      let size4 = 0;
+      let tabs;
+      while (index4--) {
+        const chunk = chunks[index4];
+        if (typeof chunk === "string") {
+          bufferIndex = chunk.length;
+          while (chunk.charCodeAt(bufferIndex - 1) === 32) {
+            size4++;
+            bufferIndex--;
+          }
+          if (bufferIndex)
+            break;
+          bufferIndex = -1;
+        } else if (chunk === -2) {
+          tabs = true;
+          size4++;
+        } else if (chunk === -1) {} else {
+          index4++;
+          break;
+        }
+      }
+      if (context._contentTypeTextTrailing && eventIndex === events.length) {
+        size4 = 0;
+      }
+      if (size4) {
+        const token = {
+          type: eventIndex === events.length || tabs || size4 < 2 ? "lineSuffix" : "hardBreakTrailing",
+          start: {
+            _bufferIndex: index4 ? bufferIndex : data.start._bufferIndex + bufferIndex,
+            _index: data.start._index + index4,
+            line: data.end.line,
+            column: data.end.column - size4,
+            offset: data.end.offset - size4
+          },
+          end: {
+            ...data.end
+          }
+        };
+        data.end = {
+          ...token.start
+        };
+        if (data.start.offset === data.end.offset) {
+          Object.assign(data, token);
+        } else {
+          events.splice(eventIndex, 0, ["enter", token, context], ["exit", token, context]);
+          eventIndex += 2;
+        }
+      }
+      eventIndex++;
+    }
+  }
+  return events;
+}
+
+// node_modules/micromark/lib/constructs.js
+var exports_constructs = {};
+__export(exports_constructs, {
+  attentionMarkers: () => attentionMarkers,
+  contentInitial: () => contentInitial,
+  disable: () => disable,
+  document: () => document3,
+  flow: () => flow2,
+  flowInitial: () => flowInitial,
+  insideSpan: () => insideSpan,
+  string: () => string2,
+  text: () => text2
+});
+var document3 = {
+  [42]: list,
+  [43]: list,
+  [45]: list,
+  [48]: list,
+  [49]: list,
+  [50]: list,
+  [51]: list,
+  [52]: list,
+  [53]: list,
+  [54]: list,
+  [55]: list,
+  [56]: list,
+  [57]: list,
+  [62]: blockQuote
+};
+var contentInitial = {
+  [91]: definition
+};
+var flowInitial = {
+  [-2]: codeIndented,
+  [-1]: codeIndented,
+  [32]: codeIndented
+};
+var flow2 = {
+  [35]: headingAtx,
+  [42]: thematicBreak,
+  [45]: [setextUnderline, thematicBreak],
+  [60]: htmlFlow,
+  [61]: setextUnderline,
+  [95]: thematicBreak,
+  [96]: codeFenced,
+  [126]: codeFenced
+};
+var string2 = {
+  [38]: characterReference,
+  [92]: characterEscape
+};
+var text2 = {
+  [-5]: lineEnding,
+  [-4]: lineEnding,
+  [-3]: lineEnding,
+  [33]: labelStartImage,
+  [38]: characterReference,
+  [42]: attention,
+  [60]: [autolink, htmlText],
+  [91]: labelStartLink,
+  [92]: [hardBreakEscape, characterEscape],
+  [93]: labelEnd,
+  [95]: attention,
+  [96]: codeText
+};
+var insideSpan = {
+  null: [attention, resolver]
+};
+var attentionMarkers = {
+  null: [42, 95]
+};
+var disable = {
+  null: []
+};
+
+// node_modules/micromark/lib/create-tokenizer.js
+function createTokenizer(parser, initialize, from) {
+  let point = {
+    _bufferIndex: -1,
+    _index: 0,
+    line: from && from.line || 1,
+    column: from && from.column || 1,
+    offset: from && from.offset || 0
+  };
+  const columnStart = {};
+  const resolveAllConstructs = [];
+  let chunks = [];
+  let stack = [];
+  let consumed = true;
+  const effects = {
+    attempt: constructFactory(onsuccessfulconstruct),
+    check: constructFactory(onsuccessfulcheck),
+    consume,
+    enter,
+    exit: exit2,
+    interrupt: constructFactory(onsuccessfulcheck, {
+      interrupt: true
+    })
+  };
+  const context = {
+    code: null,
+    containerState: {},
+    defineSkip,
+    events: [],
+    now: now2,
+    parser,
+    previous: null,
+    sliceSerialize,
+    sliceStream,
+    write
+  };
+  let state = initialize.tokenize.call(context, effects);
+  let expectedCode;
+  if (initialize.resolveAll) {
+    resolveAllConstructs.push(initialize);
+  }
+  return context;
+  function write(slice) {
+    chunks = push3(chunks, slice);
+    main();
+    if (chunks[chunks.length - 1] !== null) {
+      return [];
+    }
+    addResult(initialize, 0);
+    context.events = resolveAll(resolveAllConstructs, context.events, context);
+    return context.events;
+  }
+  function sliceSerialize(token, expandTabs) {
+    return serializeChunks(sliceStream(token), expandTabs);
+  }
+  function sliceStream(token) {
+    return sliceChunks(chunks, token);
+  }
+  function now2() {
+    const {
+      _bufferIndex,
+      _index,
+      line,
+      column,
+      offset: offset4
+    } = point;
+    return {
+      _bufferIndex,
+      _index,
+      line,
+      column,
+      offset: offset4
+    };
+  }
+  function defineSkip(value) {
+    columnStart[value.line] = value.column;
+    accountForPotentialSkip();
+  }
+  function main() {
+    let chunkIndex;
+    while (point._index < chunks.length) {
+      const chunk = chunks[point._index];
+      if (typeof chunk === "string") {
+        chunkIndex = point._index;
+        if (point._bufferIndex < 0) {
+          point._bufferIndex = 0;
+        }
+        while (point._index === chunkIndex && point._bufferIndex < chunk.length) {
+          go(chunk.charCodeAt(point._bufferIndex));
+        }
+      } else {
+        go(chunk);
+      }
+    }
+  }
+  function go(code) {
+    consumed = undefined;
+    expectedCode = code;
+    state = state(code);
+  }
+  function consume(code) {
+    if (markdownLineEnding(code)) {
+      point.line++;
+      point.column = 1;
+      point.offset += code === -3 ? 2 : 1;
+      accountForPotentialSkip();
+    } else if (code !== -1) {
+      point.column++;
+      point.offset++;
+    }
+    if (point._bufferIndex < 0) {
+      point._index++;
+    } else {
+      point._bufferIndex++;
+      if (point._bufferIndex === chunks[point._index].length) {
+        point._bufferIndex = -1;
+        point._index++;
+      }
+    }
+    context.previous = code;
+    consumed = true;
+  }
+  function enter(type, fields) {
+    const token = fields || {};
+    token.type = type;
+    token.start = now2();
+    context.events.push(["enter", token, context]);
+    stack.push(token);
+    return token;
+  }
+  function exit2(type) {
+    const token = stack.pop();
+    token.end = now2();
+    context.events.push(["exit", token, context]);
+    return token;
+  }
+  function onsuccessfulconstruct(construct, info) {
+    addResult(construct, info.from);
+  }
+  function onsuccessfulcheck(_, info) {
+    info.restore();
+  }
+  function constructFactory(onreturn, fields) {
+    return hook;
+    function hook(constructs2, returnState, bogusState) {
+      let listOfConstructs;
+      let constructIndex;
+      let currentConstruct;
+      let info;
+      return Array.isArray(constructs2) ? handleListOfConstructs(constructs2) : ("tokenize" in constructs2) ? handleListOfConstructs([constructs2]) : handleMapOfConstructs(constructs2);
+      function handleMapOfConstructs(map) {
+        return start;
+        function start(code) {
+          const left = code !== null && map[code];
+          const all = code !== null && map.null;
+          const list2 = [
+            ...Array.isArray(left) ? left : left ? [left] : [],
+            ...Array.isArray(all) ? all : all ? [all] : []
+          ];
+          return handleListOfConstructs(list2)(code);
+        }
+      }
+      function handleListOfConstructs(list2) {
+        listOfConstructs = list2;
+        constructIndex = 0;
+        if (list2.length === 0) {
+          return bogusState;
+        }
+        return handleConstruct(list2[constructIndex]);
+      }
+      function handleConstruct(construct) {
+        return start;
+        function start(code) {
+          info = store();
+          currentConstruct = construct;
+          if (!construct.partial) {
+            context.currentConstruct = construct;
+          }
+          if (construct.name && context.parser.constructs.disable.null.includes(construct.name)) {
+            return nok(code);
+          }
+          return construct.tokenize.call(fields ? Object.assign(Object.create(context), fields) : context, effects, ok, nok)(code);
+        }
+      }
+      function ok(code) {
+        consumed = true;
+        onreturn(currentConstruct, info);
+        return returnState;
+      }
+      function nok(code) {
+        consumed = true;
+        info.restore();
+        if (++constructIndex < listOfConstructs.length) {
+          return handleConstruct(listOfConstructs[constructIndex]);
+        }
+        return bogusState;
+      }
+    }
+  }
+  function addResult(construct, from2) {
+    if (construct.resolveAll && !resolveAllConstructs.includes(construct)) {
+      resolveAllConstructs.push(construct);
+    }
+    if (construct.resolve) {
+      splice(context.events, from2, context.events.length - from2, construct.resolve(context.events.slice(from2), context));
+    }
+    if (construct.resolveTo) {
+      context.events = construct.resolveTo(context.events, context);
+    }
+  }
+  function store() {
+    const startPoint = now2();
+    const startPrevious = context.previous;
+    const startCurrentConstruct = context.currentConstruct;
+    const startEventsIndex = context.events.length;
+    const startStack = Array.from(stack);
+    return {
+      from: startEventsIndex,
+      restore
+    };
+    function restore() {
+      point = startPoint;
+      context.previous = startPrevious;
+      context.currentConstruct = startCurrentConstruct;
+      context.events.length = startEventsIndex;
+      stack = startStack;
+      accountForPotentialSkip();
+    }
+  }
+  function accountForPotentialSkip() {
+    if (point.line in columnStart && point.column < 2) {
+      point.column = columnStart[point.line];
+      point.offset += columnStart[point.line] - 1;
+    }
+  }
+}
+function sliceChunks(chunks, token) {
+  const startIndex = token.start._index;
+  const startBufferIndex = token.start._bufferIndex;
+  const endIndex = token.end._index;
+  const endBufferIndex = token.end._bufferIndex;
+  let view;
+  if (startIndex === endIndex) {
+    view = [chunks[startIndex].slice(startBufferIndex, endBufferIndex)];
+  } else {
+    view = chunks.slice(startIndex, endIndex);
+    if (startBufferIndex > -1) {
+      const head = view[0];
+      if (typeof head === "string") {
+        view[0] = head.slice(startBufferIndex);
+      } else {
+        view.shift();
+      }
+    }
+    if (endBufferIndex > 0) {
+      view.push(chunks[endIndex].slice(0, endBufferIndex));
+    }
+  }
+  return view;
+}
+function serializeChunks(chunks, expandTabs) {
+  let index4 = -1;
+  const result = [];
+  let atTab;
+  while (++index4 < chunks.length) {
+    const chunk = chunks[index4];
+    let value;
+    if (typeof chunk === "string") {
+      value = chunk;
+    } else
+      switch (chunk) {
+        case -5: {
+          value = "\r";
+          break;
+        }
+        case -4: {
+          value = `
+`;
+          break;
+        }
+        case -3: {
+          value = "\r" + `
+`;
+          break;
+        }
+        case -2: {
+          value = expandTabs ? " " : "\t";
+          break;
+        }
+        case -1: {
+          if (!expandTabs && atTab)
+            continue;
+          value = " ";
+          break;
+        }
+        default: {
+          value = String.fromCharCode(chunk);
+        }
+      }
+    atTab = chunk === -2;
+    result.push(value);
+  }
+  return result.join("");
+}
+
+// node_modules/micromark/lib/parse.js
+function parse(options2) {
+  const settings = options2 || {};
+  const constructs2 = combineExtensions([exports_constructs, ...settings.extensions || []]);
+  const parser = {
+    constructs: constructs2,
+    content: create(content),
+    defined: [],
+    document: create(document2),
+    flow: create(flow),
+    lazy: {},
+    string: create(string),
+    text: create(text)
+  };
+  return parser;
+  function create(initial2) {
+    return creator;
+    function creator(from) {
+      return createTokenizer(parser, initial2, from);
+    }
+  }
+}
+
+// node_modules/micromark/lib/postprocess.js
+function postprocess(events) {
+  while (!subtokenize(events)) {}
+  return events;
+}
+
+// node_modules/micromark/lib/preprocess.js
+var search = /[\0\t\n\r]/g;
+function preprocess() {
+  let column = 1;
+  let buffer = "";
+  let start = true;
+  let atCarriageReturn;
+  return preprocessor;
+  function preprocessor(value, encoding, end) {
+    const chunks = [];
+    let match;
+    let next;
+    let startPosition;
+    let endPosition;
+    let code;
+    value = buffer + (typeof value === "string" ? value.toString() : new TextDecoder(encoding || undefined).decode(value));
+    startPosition = 0;
+    buffer = "";
+    if (start) {
+      if (value.charCodeAt(0) === 65279) {
+        startPosition++;
+      }
+      start = undefined;
+    }
+    while (startPosition < value.length) {
+      search.lastIndex = startPosition;
+      match = search.exec(value);
+      endPosition = match && match.index !== undefined ? match.index : value.length;
+      code = value.charCodeAt(endPosition);
+      if (!match) {
+        buffer = value.slice(startPosition);
+        break;
+      }
+      if (code === 10 && startPosition === endPosition && atCarriageReturn) {
+        chunks.push(-3);
+        atCarriageReturn = undefined;
+      } else {
+        if (atCarriageReturn) {
+          chunks.push(-5);
+          atCarriageReturn = undefined;
+        }
+        if (startPosition < endPosition) {
+          chunks.push(value.slice(startPosition, endPosition));
+          column += endPosition - startPosition;
+        }
+        switch (code) {
+          case 0: {
+            chunks.push(65533);
+            column++;
+            break;
+          }
+          case 9: {
+            next = Math.ceil(column / 4) * 4;
+            chunks.push(-2);
+            while (column++ < next)
+              chunks.push(-1);
+            break;
+          }
+          case 10: {
+            chunks.push(-4);
+            column = 1;
+            break;
+          }
+          default: {
+            atCarriageReturn = true;
+            column = 1;
+          }
+        }
+      }
+      startPosition = endPosition + 1;
+    }
+    if (end) {
+      if (atCarriageReturn)
+        chunks.push(-5);
+      if (buffer)
+        chunks.push(buffer);
+      chunks.push(null);
+    }
+    return chunks;
+  }
+}
+
+// node_modules/micromark/index.js
+function micromark(value, encoding, options2) {
+  if (typeof encoding !== "string") {
+    options2 = encoding;
+    encoding = undefined;
+  }
+  return compile(options2)(postprocess(parse(options2).document().write(preprocess()(value, encoding, true))));
+}
+
+// node_modules/micromark-extension-gfm-autolink-literal/lib/syntax.js
+var wwwPrefix = {
+  tokenize: tokenizeWwwPrefix,
+  partial: true
+};
+var domain = {
+  tokenize: tokenizeDomain,
+  partial: true
+};
+var path = {
+  tokenize: tokenizePath,
+  partial: true
+};
+var trail = {
+  tokenize: tokenizeTrail,
+  partial: true
+};
+var emailDomainDotTrail = {
+  tokenize: tokenizeEmailDomainDotTrail,
+  partial: true
+};
+var wwwAutolink = {
+  name: "wwwAutolink",
+  tokenize: tokenizeWwwAutolink,
+  previous: previousWww
+};
+var protocolAutolink = {
+  name: "protocolAutolink",
+  tokenize: tokenizeProtocolAutolink,
+  previous: previousProtocol
+};
+var emailAutolink = {
+  name: "emailAutolink",
+  tokenize: tokenizeEmailAutolink,
+  previous: previousEmail
+};
+var text3 = {};
+function gfmAutolinkLiteral() {
+  return {
+    text: text3
+  };
+}
+var code = 48;
+while (code < 123) {
+  text3[code] = emailAutolink;
+  code++;
+  if (code === 58)
+    code = 65;
+  else if (code === 91)
+    code = 97;
+}
+text3[43] = emailAutolink;
+text3[45] = emailAutolink;
+text3[46] = emailAutolink;
+text3[95] = emailAutolink;
+text3[72] = [emailAutolink, protocolAutolink];
+text3[104] = [emailAutolink, protocolAutolink];
+text3[87] = [emailAutolink, wwwAutolink];
+text3[119] = [emailAutolink, wwwAutolink];
+function tokenizeEmailAutolink(effects, ok, nok) {
+  const self = this;
+  let dot;
+  let data;
+  return start;
+  function start(code2) {
+    if (!gfmAtext(code2) || !previousEmail.call(self, self.previous) || previousUnbalanced(self.events)) {
+      return nok(code2);
+    }
+    effects.enter("literalAutolink");
+    effects.enter("literalAutolinkEmail");
+    return atext(code2);
+  }
+  function atext(code2) {
+    if (gfmAtext(code2)) {
+      effects.consume(code2);
+      return atext;
+    }
+    if (code2 === 64) {
+      effects.consume(code2);
+      return emailDomain;
+    }
+    return nok(code2);
+  }
+  function emailDomain(code2) {
+    if (code2 === 46) {
+      return effects.check(emailDomainDotTrail, emailDomainAfter, emailDomainDot)(code2);
+    }
+    if (code2 === 45 || code2 === 95 || asciiAlphanumeric(code2)) {
+      data = true;
+      effects.consume(code2);
+      return emailDomain;
+    }
+    return emailDomainAfter(code2);
+  }
+  function emailDomainDot(code2) {
+    effects.consume(code2);
+    dot = true;
+    return emailDomain;
+  }
+  function emailDomainAfter(code2) {
+    if (data && dot && asciiAlpha(self.previous)) {
+      effects.exit("literalAutolinkEmail");
+      effects.exit("literalAutolink");
+      return ok(code2);
+    }
+    return nok(code2);
+  }
+}
+function tokenizeWwwAutolink(effects, ok, nok) {
+  const self = this;
+  return wwwStart;
+  function wwwStart(code2) {
+    if (code2 !== 87 && code2 !== 119 || !previousWww.call(self, self.previous) || previousUnbalanced(self.events)) {
+      return nok(code2);
+    }
+    effects.enter("literalAutolink");
+    effects.enter("literalAutolinkWww");
+    return effects.check(wwwPrefix, effects.attempt(domain, effects.attempt(path, wwwAfter), nok), nok)(code2);
+  }
+  function wwwAfter(code2) {
+    effects.exit("literalAutolinkWww");
+    effects.exit("literalAutolink");
+    return ok(code2);
+  }
+}
+function tokenizeProtocolAutolink(effects, ok, nok) {
+  const self = this;
+  let buffer = "";
+  let seen = false;
+  return protocolStart;
+  function protocolStart(code2) {
+    if ((code2 === 72 || code2 === 104) && previousProtocol.call(self, self.previous) && !previousUnbalanced(self.events)) {
+      effects.enter("literalAutolink");
+      effects.enter("literalAutolinkHttp");
+      buffer += String.fromCodePoint(code2);
+      effects.consume(code2);
+      return protocolPrefixInside;
+    }
+    return nok(code2);
+  }
+  function protocolPrefixInside(code2) {
+    if (asciiAlpha(code2) && buffer.length < 5) {
+      buffer += String.fromCodePoint(code2);
+      effects.consume(code2);
+      return protocolPrefixInside;
+    }
+    if (code2 === 58) {
+      const protocol = buffer.toLowerCase();
+      if (protocol === "http" || protocol === "https") {
+        effects.consume(code2);
+        return protocolSlashesInside;
+      }
+    }
+    return nok(code2);
+  }
+  function protocolSlashesInside(code2) {
+    if (code2 === 47) {
+      effects.consume(code2);
+      if (seen) {
+        return afterProtocol;
+      }
+      seen = true;
+      return protocolSlashesInside;
+    }
+    return nok(code2);
+  }
+  function afterProtocol(code2) {
+    return code2 === null || asciiControl(code2) || markdownLineEndingOrSpace(code2) || unicodeWhitespace(code2) || unicodePunctuation(code2) ? nok(code2) : effects.attempt(domain, effects.attempt(path, protocolAfter), nok)(code2);
+  }
+  function protocolAfter(code2) {
+    effects.exit("literalAutolinkHttp");
+    effects.exit("literalAutolink");
+    return ok(code2);
+  }
+}
+function tokenizeWwwPrefix(effects, ok, nok) {
+  let size4 = 0;
+  return wwwPrefixInside;
+  function wwwPrefixInside(code2) {
+    if ((code2 === 87 || code2 === 119) && size4 < 3) {
+      size4++;
+      effects.consume(code2);
+      return wwwPrefixInside;
+    }
+    if (code2 === 46 && size4 === 3) {
+      effects.consume(code2);
+      return wwwPrefixAfter;
+    }
+    return nok(code2);
+  }
+  function wwwPrefixAfter(code2) {
+    return code2 === null ? nok(code2) : ok(code2);
+  }
+}
+function tokenizeDomain(effects, ok, nok) {
+  let underscoreInLastSegment;
+  let underscoreInLastLastSegment;
+  let seen;
+  return domainInside;
+  function domainInside(code2) {
+    if (code2 === 46 || code2 === 95) {
+      return effects.check(trail, domainAfter, domainAtPunctuation)(code2);
+    }
+    if (code2 === null || markdownLineEndingOrSpace(code2) || unicodeWhitespace(code2) || code2 !== 45 && unicodePunctuation(code2)) {
+      return domainAfter(code2);
+    }
+    seen = true;
+    effects.consume(code2);
+    return domainInside;
+  }
+  function domainAtPunctuation(code2) {
+    if (code2 === 95) {
+      underscoreInLastSegment = true;
+    } else {
+      underscoreInLastLastSegment = underscoreInLastSegment;
+      underscoreInLastSegment = undefined;
+    }
+    effects.consume(code2);
+    return domainInside;
+  }
+  function domainAfter(code2) {
+    if (underscoreInLastLastSegment || underscoreInLastSegment || !seen) {
+      return nok(code2);
+    }
+    return ok(code2);
+  }
+}
+function tokenizePath(effects, ok) {
+  let sizeOpen = 0;
+  let sizeClose = 0;
+  return pathInside;
+  function pathInside(code2) {
+    if (code2 === 40) {
+      sizeOpen++;
+      effects.consume(code2);
+      return pathInside;
+    }
+    if (code2 === 41 && sizeClose < sizeOpen) {
+      return pathAtPunctuation(code2);
+    }
+    if (code2 === 33 || code2 === 34 || code2 === 38 || code2 === 39 || code2 === 41 || code2 === 42 || code2 === 44 || code2 === 46 || code2 === 58 || code2 === 59 || code2 === 60 || code2 === 63 || code2 === 93 || code2 === 95 || code2 === 126) {
+      return effects.check(trail, ok, pathAtPunctuation)(code2);
+    }
+    if (code2 === null || markdownLineEndingOrSpace(code2) || unicodeWhitespace(code2)) {
+      return ok(code2);
+    }
+    effects.consume(code2);
+    return pathInside;
+  }
+  function pathAtPunctuation(code2) {
+    if (code2 === 41) {
+      sizeClose++;
+    }
+    effects.consume(code2);
+    return pathInside;
+  }
+}
+function tokenizeTrail(effects, ok, nok) {
+  return trail2;
+  function trail2(code2) {
+    if (code2 === 33 || code2 === 34 || code2 === 39 || code2 === 41 || code2 === 42 || code2 === 44 || code2 === 46 || code2 === 58 || code2 === 59 || code2 === 63 || code2 === 95 || code2 === 126) {
+      effects.consume(code2);
+      return trail2;
+    }
+    if (code2 === 38) {
+      effects.consume(code2);
+      return trailCharacterReferenceStart;
+    }
+    if (code2 === 93) {
+      effects.consume(code2);
+      return trailBracketAfter;
+    }
+    if (code2 === 60 || code2 === null || markdownLineEndingOrSpace(code2) || unicodeWhitespace(code2)) {
+      return ok(code2);
+    }
+    return nok(code2);
+  }
+  function trailBracketAfter(code2) {
+    if (code2 === null || code2 === 40 || code2 === 91 || markdownLineEndingOrSpace(code2) || unicodeWhitespace(code2)) {
+      return ok(code2);
+    }
+    return trail2(code2);
+  }
+  function trailCharacterReferenceStart(code2) {
+    return asciiAlpha(code2) ? trailCharacterReferenceInside(code2) : nok(code2);
+  }
+  function trailCharacterReferenceInside(code2) {
+    if (code2 === 59) {
+      effects.consume(code2);
+      return trail2;
+    }
+    if (asciiAlpha(code2)) {
+      effects.consume(code2);
+      return trailCharacterReferenceInside;
+    }
+    return nok(code2);
+  }
+}
+function tokenizeEmailDomainDotTrail(effects, ok, nok) {
+  return start;
+  function start(code2) {
+    effects.consume(code2);
+    return after;
+  }
+  function after(code2) {
+    return asciiAlphanumeric(code2) ? nok(code2) : ok(code2);
+  }
+}
+function previousWww(code2) {
+  return code2 === null || code2 === 40 || code2 === 42 || code2 === 95 || code2 === 91 || code2 === 93 || code2 === 126 || markdownLineEndingOrSpace(code2);
+}
+function previousProtocol(code2) {
+  return !asciiAlpha(code2);
+}
+function previousEmail(code2) {
+  return !(code2 === 47 || gfmAtext(code2));
+}
+function gfmAtext(code2) {
+  return code2 === 43 || code2 === 45 || code2 === 46 || code2 === 95 || asciiAlphanumeric(code2);
+}
+function previousUnbalanced(events) {
+  let index4 = events.length;
+  let result = false;
+  while (index4--) {
+    const token = events[index4][1];
+    if ((token.type === "labelLink" || token.type === "labelImage") && !token._balanced) {
+      result = true;
+      break;
+    }
+    if (token._gfmAutolinkLiteralWalkedInto) {
+      result = false;
+      break;
+    }
+  }
+  if (events.length > 0 && !result) {
+    events[events.length - 1][1]._gfmAutolinkLiteralWalkedInto = true;
+  }
+  return result;
+}
+// node_modules/micromark-extension-gfm-autolink-literal/lib/html.js
+function gfmAutolinkLiteralHtml() {
+  return {
+    exit: {
+      literalAutolinkEmail,
+      literalAutolinkHttp,
+      literalAutolinkWww
+    }
+  };
+}
+function literalAutolinkWww(token) {
+  anchorFromToken.call(this, token, "http://");
+}
+function literalAutolinkEmail(token) {
+  anchorFromToken.call(this, token, "mailto:");
+}
+function literalAutolinkHttp(token) {
+  anchorFromToken.call(this, token);
+}
+function anchorFromToken(token, protocol) {
+  const url = this.sliceSerialize(token);
+  this.tag('<a href="' + sanitizeUri((protocol || "") + url) + '">');
+  this.raw(this.encode(url));
+  this.tag("</a>");
+}
+// node_modules/micromark-extension-gfm-footnote/lib/syntax.js
+var indent = {
+  tokenize: tokenizeIndent2,
+  partial: true
+};
+function gfmFootnote() {
+  return {
+    document: {
+      [91]: {
+        name: "gfmFootnoteDefinition",
+        tokenize: tokenizeDefinitionStart,
+        continuation: {
+          tokenize: tokenizeDefinitionContinuation
+        },
+        exit: gfmFootnoteDefinitionEnd
+      }
+    },
+    text: {
+      [91]: {
+        name: "gfmFootnoteCall",
+        tokenize: tokenizeGfmFootnoteCall
+      },
+      [93]: {
+        name: "gfmPotentialFootnoteCall",
+        add: "after",
+        tokenize: tokenizePotentialGfmFootnoteCall,
+        resolveTo: resolveToPotentialGfmFootnoteCall
+      }
+    }
+  };
+}
+function tokenizePotentialGfmFootnoteCall(effects, ok, nok) {
+  const self = this;
+  let index4 = self.events.length;
+  const defined = self.parser.gfmFootnotes || (self.parser.gfmFootnotes = []);
+  let labelStart2;
+  while (index4--) {
+    const token = self.events[index4][1];
+    if (token.type === "labelImage") {
+      labelStart2 = token;
+      break;
+    }
+    if (token.type === "gfmFootnoteCall" || token.type === "labelLink" || token.type === "label" || token.type === "image" || token.type === "link") {
+      break;
+    }
+  }
+  return start;
+  function start(code2) {
+    if (!labelStart2 || !labelStart2._balanced) {
+      return nok(code2);
+    }
+    const id = normalizeIdentifier(self.sliceSerialize({
+      start: labelStart2.end,
+      end: self.now()
+    }));
+    if (id.codePointAt(0) !== 94 || !defined.includes(id.slice(1))) {
+      return nok(code2);
+    }
+    effects.enter("gfmFootnoteCallLabelMarker");
+    effects.consume(code2);
+    effects.exit("gfmFootnoteCallLabelMarker");
+    return ok(code2);
+  }
+}
+function resolveToPotentialGfmFootnoteCall(events, context) {
+  let index4 = events.length;
+  let labelStart2;
+  while (index4--) {
+    if (events[index4][1].type === "labelImage" && events[index4][0] === "enter") {
+      labelStart2 = events[index4][1];
+      break;
+    }
+  }
+  events[index4 + 1][1].type = "data";
+  events[index4 + 3][1].type = "gfmFootnoteCallLabelMarker";
+  const call = {
+    type: "gfmFootnoteCall",
+    start: Object.assign({}, events[index4 + 3][1].start),
+    end: Object.assign({}, events[events.length - 1][1].end)
+  };
+  const marker = {
+    type: "gfmFootnoteCallMarker",
+    start: Object.assign({}, events[index4 + 3][1].end),
+    end: Object.assign({}, events[index4 + 3][1].end)
+  };
+  marker.end.column++;
+  marker.end.offset++;
+  marker.end._bufferIndex++;
+  const string3 = {
+    type: "gfmFootnoteCallString",
+    start: Object.assign({}, marker.end),
+    end: Object.assign({}, events[events.length - 1][1].start)
+  };
+  const chunk = {
+    type: "chunkString",
+    contentType: "string",
+    start: Object.assign({}, string3.start),
+    end: Object.assign({}, string3.end)
+  };
+  const replacement = [
+    events[index4 + 1],
+    events[index4 + 2],
+    ["enter", call, context],
+    events[index4 + 3],
+    events[index4 + 4],
+    ["enter", marker, context],
+    ["exit", marker, context],
+    ["enter", string3, context],
+    ["enter", chunk, context],
+    ["exit", chunk, context],
+    ["exit", string3, context],
+    events[events.length - 2],
+    events[events.length - 1],
+    ["exit", call, context]
+  ];
+  events.splice(index4, events.length - index4 + 1, ...replacement);
+  return events;
+}
+function tokenizeGfmFootnoteCall(effects, ok, nok) {
+  const self = this;
+  const defined = self.parser.gfmFootnotes || (self.parser.gfmFootnotes = []);
+  let size4 = 0;
+  let data;
+  return start;
+  function start(code2) {
+    effects.enter("gfmFootnoteCall");
+    effects.enter("gfmFootnoteCallLabelMarker");
+    effects.consume(code2);
+    effects.exit("gfmFootnoteCallLabelMarker");
+    return callStart;
+  }
+  function callStart(code2) {
+    if (code2 !== 94)
+      return nok(code2);
+    effects.enter("gfmFootnoteCallMarker");
+    effects.consume(code2);
+    effects.exit("gfmFootnoteCallMarker");
+    effects.enter("gfmFootnoteCallString");
+    effects.enter("chunkString").contentType = "string";
+    return callData;
+  }
+  function callData(code2) {
+    if (size4 > 999 || code2 === 93 && !data || code2 === null || code2 === 91 || markdownLineEndingOrSpace(code2)) {
+      return nok(code2);
+    }
+    if (code2 === 93) {
+      effects.exit("chunkString");
+      const token = effects.exit("gfmFootnoteCallString");
+      if (!defined.includes(normalizeIdentifier(self.sliceSerialize(token)))) {
+        return nok(code2);
+      }
+      effects.enter("gfmFootnoteCallLabelMarker");
+      effects.consume(code2);
+      effects.exit("gfmFootnoteCallLabelMarker");
+      effects.exit("gfmFootnoteCall");
+      return ok;
+    }
+    if (!markdownLineEndingOrSpace(code2)) {
+      data = true;
+    }
+    size4++;
+    effects.consume(code2);
+    return code2 === 92 ? callEscape : callData;
+  }
+  function callEscape(code2) {
+    if (code2 === 91 || code2 === 92 || code2 === 93) {
+      effects.consume(code2);
+      size4++;
+      return callData;
+    }
+    return callData(code2);
+  }
+}
+function tokenizeDefinitionStart(effects, ok, nok) {
+  const self = this;
+  const defined = self.parser.gfmFootnotes || (self.parser.gfmFootnotes = []);
+  let identifier;
+  let size4 = 0;
+  let data;
+  return start;
+  function start(code2) {
+    effects.enter("gfmFootnoteDefinition")._container = true;
+    effects.enter("gfmFootnoteDefinitionLabel");
+    effects.enter("gfmFootnoteDefinitionLabelMarker");
+    effects.consume(code2);
+    effects.exit("gfmFootnoteDefinitionLabelMarker");
+    return labelAtMarker;
+  }
+  function labelAtMarker(code2) {
+    if (code2 === 94) {
+      effects.enter("gfmFootnoteDefinitionMarker");
+      effects.consume(code2);
+      effects.exit("gfmFootnoteDefinitionMarker");
+      effects.enter("gfmFootnoteDefinitionLabelString");
+      effects.enter("chunkString").contentType = "string";
+      return labelInside;
+    }
+    return nok(code2);
+  }
+  function labelInside(code2) {
+    if (size4 > 999 || code2 === 93 && !data || code2 === null || code2 === 91 || markdownLineEndingOrSpace(code2)) {
+      return nok(code2);
+    }
+    if (code2 === 93) {
+      effects.exit("chunkString");
+      const token = effects.exit("gfmFootnoteDefinitionLabelString");
+      identifier = normalizeIdentifier(self.sliceSerialize(token));
+      effects.enter("gfmFootnoteDefinitionLabelMarker");
+      effects.consume(code2);
+      effects.exit("gfmFootnoteDefinitionLabelMarker");
+      effects.exit("gfmFootnoteDefinitionLabel");
+      return labelAfter;
+    }
+    if (!markdownLineEndingOrSpace(code2)) {
+      data = true;
+    }
+    size4++;
+    effects.consume(code2);
+    return code2 === 92 ? labelEscape : labelInside;
+  }
+  function labelEscape(code2) {
+    if (code2 === 91 || code2 === 92 || code2 === 93) {
+      effects.consume(code2);
+      size4++;
+      return labelInside;
+    }
+    return labelInside(code2);
+  }
+  function labelAfter(code2) {
+    if (code2 === 58) {
+      effects.enter("definitionMarker");
+      effects.consume(code2);
+      effects.exit("definitionMarker");
+      if (!defined.includes(identifier)) {
+        defined.push(identifier);
+      }
+      return factorySpace(effects, whitespaceAfter, "gfmFootnoteDefinitionWhitespace");
+    }
+    return nok(code2);
+  }
+  function whitespaceAfter(code2) {
+    return ok(code2);
+  }
+}
+function tokenizeDefinitionContinuation(effects, ok, nok) {
+  return effects.check(blankLine, ok, effects.attempt(indent, ok, nok));
+}
+function gfmFootnoteDefinitionEnd(effects) {
+  effects.exit("gfmFootnoteDefinition");
+}
+function tokenizeIndent2(effects, ok, nok) {
+  const self = this;
+  return factorySpace(effects, afterPrefix, "gfmFootnoteDefinitionIndent", 4 + 1);
+  function afterPrefix(code2) {
+    const tail = self.events[self.events.length - 1];
+    return tail && tail[1].type === "gfmFootnoteDefinitionIndent" && tail[2].sliceSerialize(tail[1], true).length === 4 ? ok(code2) : nok(code2);
+  }
+}
+// node_modules/micromark-extension-gfm-footnote/lib/html.js
+var own = {}.hasOwnProperty;
+var emptyOptions = {};
+function defaultBackLabel(referenceIndex, rereferenceIndex) {
+  return "Back to reference " + (referenceIndex + 1) + (rereferenceIndex > 1 ? "-" + rereferenceIndex : "");
+}
+function gfmFootnoteHtml(options2) {
+  const config = options2 || emptyOptions;
+  const label = config.label || "Footnotes";
+  const labelTagName = config.labelTagName || "h2";
+  const labelAttributes = config.labelAttributes === null || config.labelAttributes === undefined ? 'class="sr-only"' : config.labelAttributes;
+  const backLabel = config.backLabel || defaultBackLabel;
+  const clobberPrefix = config.clobberPrefix === null || config.clobberPrefix === undefined ? "user-content-" : config.clobberPrefix;
+  return {
+    enter: {
+      gfmFootnoteDefinition() {
+        const stack = this.getData("tightStack");
+        stack.push(false);
+      },
+      gfmFootnoteDefinitionLabelString() {
+        this.buffer();
+      },
+      gfmFootnoteCallString() {
+        this.buffer();
+      }
+    },
+    exit: {
+      gfmFootnoteDefinition() {
+        let definitions = this.getData("gfmFootnoteDefinitions");
+        const footnoteStack = this.getData("gfmFootnoteDefinitionStack");
+        const tightStack = this.getData("tightStack");
+        const current = footnoteStack.pop();
+        const value = this.resume();
+        if (!definitions) {
+          this.setData("gfmFootnoteDefinitions", definitions = {});
+        }
+        if (!own.call(definitions, current))
+          definitions[current] = value;
+        tightStack.pop();
+        this.setData("slurpOneLineEnding", true);
+        this.setData("lastWasTag");
+      },
+      gfmFootnoteDefinitionLabelString(token) {
+        let footnoteStack = this.getData("gfmFootnoteDefinitionStack");
+        if (!footnoteStack) {
+          this.setData("gfmFootnoteDefinitionStack", footnoteStack = []);
+        }
+        footnoteStack.push(normalizeIdentifier(this.sliceSerialize(token)));
+        this.resume();
+        this.buffer();
+      },
+      gfmFootnoteCallString(token) {
+        let calls = this.getData("gfmFootnoteCallOrder");
+        let counts = this.getData("gfmFootnoteCallCounts");
+        const id = normalizeIdentifier(this.sliceSerialize(token));
+        let counter;
+        this.resume();
+        if (!calls)
+          this.setData("gfmFootnoteCallOrder", calls = []);
+        if (!counts)
+          this.setData("gfmFootnoteCallCounts", counts = {});
+        const index4 = calls.indexOf(id);
+        const safeId = sanitizeUri(id.toLowerCase());
+        if (index4 === -1) {
+          calls.push(id);
+          counts[id] = 1;
+          counter = calls.length;
+        } else {
+          counts[id]++;
+          counter = index4 + 1;
+        }
+        const reuseCounter = counts[id];
+        this.tag('<sup><a href="#' + clobberPrefix + "fn-" + safeId + '" id="' + clobberPrefix + "fnref-" + safeId + (reuseCounter > 1 ? "-" + reuseCounter : "") + '" data-footnote-ref="" aria-describedby="footnote-label">' + String(counter) + "</a></sup>");
+      },
+      null() {
+        const calls = this.getData("gfmFootnoteCallOrder") || [];
+        const counts = this.getData("gfmFootnoteCallCounts") || {};
+        const definitions = this.getData("gfmFootnoteDefinitions") || {};
+        let index4 = -1;
+        if (calls.length > 0) {
+          this.lineEndingIfNeeded();
+          this.tag('<section data-footnotes="" class="footnotes"><' + labelTagName + ' id="footnote-label"' + (labelAttributes ? " " + labelAttributes : "") + ">");
+          this.raw(this.encode(label));
+          this.tag("</" + labelTagName + ">");
+          this.lineEndingIfNeeded();
+          this.tag("<ol>");
+        }
+        while (++index4 < calls.length) {
+          const id = calls[index4];
+          const safeId = sanitizeUri(id.toLowerCase());
+          let referenceIndex = 0;
+          const references = [];
+          while (++referenceIndex <= counts[id]) {
+            references.push('<a href="#' + clobberPrefix + "fnref-" + safeId + (referenceIndex > 1 ? "-" + referenceIndex : "") + '" data-footnote-backref="" aria-label="' + this.encode(typeof backLabel === "string" ? backLabel : backLabel(index4, referenceIndex)) + '" class="data-footnote-backref">↩' + (referenceIndex > 1 ? "<sup>" + referenceIndex + "</sup>" : "") + "</a>");
+          }
+          const reference = references.join(" ");
+          let injected = false;
+          this.lineEndingIfNeeded();
+          this.tag('<li id="' + clobberPrefix + "fn-" + safeId + '">');
+          this.lineEndingIfNeeded();
+          this.tag(definitions[id].replace(/<\/p>(?:\r?\n|\r)?$/, function($0) {
+            injected = true;
+            return " " + reference + $0;
+          }));
+          if (!injected) {
+            this.lineEndingIfNeeded();
+            this.tag(reference);
+          }
+          this.lineEndingIfNeeded();
+          this.tag("</li>");
+        }
+        if (calls.length > 0) {
+          this.lineEndingIfNeeded();
+          this.tag("</ol>");
+          this.lineEndingIfNeeded();
+          this.tag("</section>");
+        }
+      }
+    }
+  };
+}
+// node_modules/micromark-extension-gfm-strikethrough/lib/html.js
+function gfmStrikethroughHtml() {
+  return {
+    enter: {
+      strikethrough() {
+        this.tag("<del>");
+      }
+    },
+    exit: {
+      strikethrough() {
+        this.tag("</del>");
+      }
+    }
+  };
+}
+// node_modules/micromark-extension-gfm-strikethrough/lib/syntax.js
+function gfmStrikethrough(options2) {
+  const options_ = options2 || {};
+  let single = options_.singleTilde;
+  const tokenizer = {
+    name: "strikethrough",
+    tokenize: tokenizeStrikethrough,
+    resolveAll: resolveAllStrikethrough
+  };
+  if (single === null || single === undefined) {
+    single = true;
+  }
+  return {
+    text: {
+      [126]: tokenizer
+    },
+    insideSpan: {
+      null: [tokenizer]
+    },
+    attentionMarkers: {
+      null: [126]
+    }
+  };
+  function resolveAllStrikethrough(events, context) {
+    let index4 = -1;
+    while (++index4 < events.length) {
+      if (events[index4][0] === "enter" && events[index4][1].type === "strikethroughSequenceTemporary" && events[index4][1]._close) {
+        let open = index4;
+        while (open--) {
+          if (events[open][0] === "exit" && events[open][1].type === "strikethroughSequenceTemporary" && events[open][1]._open && events[index4][1].end.offset - events[index4][1].start.offset === events[open][1].end.offset - events[open][1].start.offset) {
+            events[index4][1].type = "strikethroughSequence";
+            events[open][1].type = "strikethroughSequence";
+            const strikethrough = {
+              type: "strikethrough",
+              start: Object.assign({}, events[open][1].start),
+              end: Object.assign({}, events[index4][1].end)
+            };
+            const text4 = {
+              type: "strikethroughText",
+              start: Object.assign({}, events[open][1].end),
+              end: Object.assign({}, events[index4][1].start)
+            };
+            const nextEvents = [["enter", strikethrough, context], ["enter", events[open][1], context], ["exit", events[open][1], context], ["enter", text4, context]];
+            const insideSpan2 = context.parser.constructs.insideSpan.null;
+            if (insideSpan2) {
+              splice(nextEvents, nextEvents.length, 0, resolveAll(insideSpan2, events.slice(open + 1, index4), context));
+            }
+            splice(nextEvents, nextEvents.length, 0, [["exit", text4, context], ["enter", events[index4][1], context], ["exit", events[index4][1], context], ["exit", strikethrough, context]]);
+            splice(events, open - 1, index4 - open + 3, nextEvents);
+            index4 = open + nextEvents.length - 2;
+            break;
+          }
+        }
+      }
+    }
+    index4 = -1;
+    while (++index4 < events.length) {
+      if (events[index4][1].type === "strikethroughSequenceTemporary") {
+        events[index4][1].type = "data";
+      }
+    }
+    return events;
+  }
+  function tokenizeStrikethrough(effects, ok, nok) {
+    const previous2 = this.previous;
+    const events = this.events;
+    let size4 = 0;
+    return start;
+    function start(code2) {
+      if (previous2 === 126 && events[events.length - 1][1].type !== "characterEscape") {
+        return nok(code2);
+      }
+      effects.enter("strikethroughSequenceTemporary");
+      return more(code2);
+    }
+    function more(code2) {
+      const before = classifyCharacter(previous2);
+      if (code2 === 126) {
+        if (size4 > 1)
+          return nok(code2);
+        effects.consume(code2);
+        size4++;
+        return more;
+      }
+      if (size4 < 2 && !single)
+        return nok(code2);
+      const token = effects.exit("strikethroughSequenceTemporary");
+      const after = classifyCharacter(code2);
+      token._open = !after || after === 2 && Boolean(before);
+      token._close = !before || before === 2 && Boolean(after);
+      return ok(code2);
+    }
+  }
+}
+// node_modules/micromark-extension-gfm-table/lib/html.js
+var alignment = {
+  none: "",
+  left: ' align="left"',
+  right: ' align="right"',
+  center: ' align="center"'
+};
+function gfmTableHtml() {
+  return {
+    enter: {
+      table(token) {
+        const tableAlign = token._align;
+        this.lineEndingIfNeeded();
+        this.tag("<table>");
+        this.setData("tableAlign", tableAlign);
+      },
+      tableBody() {
+        this.tag("<tbody>");
+      },
+      tableData() {
+        const tableAlign = this.getData("tableAlign");
+        const tableColumn = this.getData("tableColumn");
+        const align = alignment[tableAlign[tableColumn]];
+        if (align === undefined) {
+          this.buffer();
+        } else {
+          this.lineEndingIfNeeded();
+          this.tag("<td" + align + ">");
+        }
+      },
+      tableHead() {
+        this.lineEndingIfNeeded();
+        this.tag("<thead>");
+      },
+      tableHeader() {
+        const tableAlign = this.getData("tableAlign");
+        const tableColumn = this.getData("tableColumn");
+        const align = alignment[tableAlign[tableColumn]];
+        this.lineEndingIfNeeded();
+        this.tag("<th" + align + ">");
+      },
+      tableRow() {
+        this.setData("tableColumn", 0);
+        this.lineEndingIfNeeded();
+        this.tag("<tr>");
+      }
+    },
+    exit: {
+      codeTextData(token) {
+        let value = this.sliceSerialize(token);
+        if (this.getData("tableAlign")) {
+          value = value.replace(/\\([\\|])/g, replace);
+        }
+        this.raw(this.encode(value));
+      },
+      table() {
+        this.setData("tableAlign");
+        this.setData("slurpAllLineEndings");
+        this.lineEndingIfNeeded();
+        this.tag("</table>");
+      },
+      tableBody() {
+        this.lineEndingIfNeeded();
+        this.tag("</tbody>");
+      },
+      tableData() {
+        const tableAlign = this.getData("tableAlign");
+        const tableColumn = this.getData("tableColumn");
+        if (tableColumn in tableAlign) {
+          this.tag("</td>");
+          this.setData("tableColumn", tableColumn + 1);
+        } else {
+          this.resume();
+        }
+      },
+      tableHead() {
+        this.lineEndingIfNeeded();
+        this.tag("</thead>");
+      },
+      tableHeader() {
+        const tableColumn = this.getData("tableColumn");
+        this.tag("</th>");
+        this.setData("tableColumn", tableColumn + 1);
+      },
+      tableRow() {
+        const tableAlign = this.getData("tableAlign");
+        let tableColumn = this.getData("tableColumn");
+        while (tableColumn < tableAlign.length) {
+          this.lineEndingIfNeeded();
+          this.tag("<td" + alignment[tableAlign[tableColumn]] + "></td>");
+          tableColumn++;
+        }
+        this.setData("tableColumn", tableColumn);
+        this.lineEndingIfNeeded();
+        this.tag("</tr>");
+      }
+    }
+  };
+}
+function replace($0, $1) {
+  return $1 === "|" ? $1 : $0;
+}
+// node_modules/micromark-extension-gfm-table/lib/edit-map.js
+class EditMap {
+  constructor() {
+    this.map = [];
+    this.index = new Map;
+  }
+  add(index4, remove, add) {
+    addImplementation(this, index4, remove, add);
+  }
+  consume(events) {
+    this.map.sort(function(a, b) {
+      return a[0] - b[0];
+    });
+    if (this.map.length === 0) {
+      return;
+    }
+    let index4 = this.map.length;
+    const vecs = [];
+    while (index4 > 0) {
+      index4 -= 1;
+      vecs.push(events.slice(this.map[index4][0] + this.map[index4][1]), this.map[index4][2]);
+      events.length = this.map[index4][0];
+    }
+    vecs.push(events.slice());
+    events.length = 0;
+    let slice = vecs.pop();
+    while (slice) {
+      for (const element2 of slice) {
+        events.push(element2);
+      }
+      slice = vecs.pop();
+    }
+    this.map.length = 0;
+    this.index.clear();
+  }
+}
+function addImplementation(editMap, at2, remove, add) {
+  if (remove === 0 && add.length === 0) {
+    return;
+  }
+  const existing = editMap.index.get(at2);
+  if (existing) {
+    existing[1] += remove;
+    existing[2].push(...add);
+    return;
+  }
+  const change = [at2, remove, add];
+  editMap.map.push(change);
+  editMap.index.set(at2, change);
+}
+
+// node_modules/micromark-extension-gfm-table/lib/infer.js
+function gfmTableAlign(events, index4) {
+  let inDelimiterRow = false;
+  const align = [];
+  while (index4 < events.length) {
+    const event = events[index4];
+    if (inDelimiterRow) {
+      if (event[0] === "enter") {
+        if (event[1].type === "tableContent") {
+          align.push(events[index4 + 1][1].type === "tableDelimiterMarker" ? "left" : "none");
+        }
+      } else if (event[1].type === "tableContent") {
+        if (events[index4 - 1][1].type === "tableDelimiterMarker") {
+          const alignIndex = align.length - 1;
+          align[alignIndex] = align[alignIndex] === "left" ? "center" : "right";
+        }
+      } else if (event[1].type === "tableDelimiterRow") {
+        break;
+      }
+    } else if (event[0] === "enter" && event[1].type === "tableDelimiterRow") {
+      inDelimiterRow = true;
+    }
+    index4 += 1;
+  }
+  return align;
+}
+
+// node_modules/micromark-extension-gfm-table/lib/syntax.js
+function gfmTable() {
+  return {
+    flow: {
+      null: {
+        name: "table",
+        tokenize: tokenizeTable,
+        resolveAll: resolveTable
+      }
+    }
+  };
+}
+function tokenizeTable(effects, ok, nok) {
+  const self = this;
+  let size4 = 0;
+  let sizeB = 0;
+  let seen;
+  return start;
+  function start(code2) {
+    let index4 = self.events.length - 1;
+    while (index4 > -1) {
+      const {
+        type
+      } = self.events[index4][1];
+      if (type === "lineEnding" || type === "linePrefix") {
+        index4--;
+      } else {
+        break;
+      }
+    }
+    const tail = index4 > -1 ? self.events[index4][1].type : null;
+    const next = tail === "tableHead" || tail === "tableRow" ? bodyRowStart : headRowBefore;
+    if (next === bodyRowStart && self.parser.lazy[self.now().line]) {
+      return nok(code2);
+    }
+    return next(code2);
+  }
+  function headRowBefore(code2) {
+    effects.enter("tableHead");
+    effects.enter("tableRow");
+    return headRowStart(code2);
+  }
+  function headRowStart(code2) {
+    if (code2 === 124) {
+      return headRowBreak(code2);
+    }
+    seen = true;
+    sizeB += 1;
+    return headRowBreak(code2);
+  }
+  function headRowBreak(code2) {
+    if (code2 === null) {
+      return nok(code2);
+    }
+    if (markdownLineEnding(code2)) {
+      if (sizeB > 1) {
+        sizeB = 0;
+        self.interrupt = true;
+        effects.exit("tableRow");
+        effects.enter("lineEnding");
+        effects.consume(code2);
+        effects.exit("lineEnding");
+        return headDelimiterStart;
+      }
+      return nok(code2);
+    }
+    if (markdownSpace(code2)) {
+      return factorySpace(effects, headRowBreak, "whitespace")(code2);
+    }
+    sizeB += 1;
+    if (seen) {
+      seen = false;
+      size4 += 1;
+    }
+    if (code2 === 124) {
+      effects.enter("tableCellDivider");
+      effects.consume(code2);
+      effects.exit("tableCellDivider");
+      seen = true;
+      return headRowBreak;
+    }
+    effects.enter("data");
+    return headRowData(code2);
+  }
+  function headRowData(code2) {
+    if (code2 === null || code2 === 124 || markdownLineEndingOrSpace(code2)) {
+      effects.exit("data");
+      return headRowBreak(code2);
+    }
+    effects.consume(code2);
+    return code2 === 92 ? headRowEscape : headRowData;
+  }
+  function headRowEscape(code2) {
+    if (code2 === 92 || code2 === 124) {
+      effects.consume(code2);
+      return headRowData;
+    }
+    return headRowData(code2);
+  }
+  function headDelimiterStart(code2) {
+    self.interrupt = false;
+    if (self.parser.lazy[self.now().line]) {
+      return nok(code2);
+    }
+    effects.enter("tableDelimiterRow");
+    seen = false;
+    if (markdownSpace(code2)) {
+      return factorySpace(effects, headDelimiterBefore, "linePrefix", self.parser.constructs.disable.null.includes("codeIndented") ? undefined : 4)(code2);
+    }
+    return headDelimiterBefore(code2);
+  }
+  function headDelimiterBefore(code2) {
+    if (code2 === 45 || code2 === 58) {
+      return headDelimiterValueBefore(code2);
+    }
+    if (code2 === 124) {
+      seen = true;
+      effects.enter("tableCellDivider");
+      effects.consume(code2);
+      effects.exit("tableCellDivider");
+      return headDelimiterCellBefore;
+    }
+    return headDelimiterNok(code2);
+  }
+  function headDelimiterCellBefore(code2) {
+    if (markdownSpace(code2)) {
+      return factorySpace(effects, headDelimiterValueBefore, "whitespace")(code2);
+    }
+    return headDelimiterValueBefore(code2);
+  }
+  function headDelimiterValueBefore(code2) {
+    if (code2 === 58) {
+      sizeB += 1;
+      seen = true;
+      effects.enter("tableDelimiterMarker");
+      effects.consume(code2);
+      effects.exit("tableDelimiterMarker");
+      return headDelimiterLeftAlignmentAfter;
+    }
+    if (code2 === 45) {
+      sizeB += 1;
+      return headDelimiterLeftAlignmentAfter(code2);
+    }
+    if (code2 === null || markdownLineEnding(code2)) {
+      return headDelimiterCellAfter(code2);
+    }
+    return headDelimiterNok(code2);
+  }
+  function headDelimiterLeftAlignmentAfter(code2) {
+    if (code2 === 45) {
+      effects.enter("tableDelimiterFiller");
+      return headDelimiterFiller(code2);
+    }
+    return headDelimiterNok(code2);
+  }
+  function headDelimiterFiller(code2) {
+    if (code2 === 45) {
+      effects.consume(code2);
+      return headDelimiterFiller;
+    }
+    if (code2 === 58) {
+      seen = true;
+      effects.exit("tableDelimiterFiller");
+      effects.enter("tableDelimiterMarker");
+      effects.consume(code2);
+      effects.exit("tableDelimiterMarker");
+      return headDelimiterRightAlignmentAfter;
+    }
+    effects.exit("tableDelimiterFiller");
+    return headDelimiterRightAlignmentAfter(code2);
+  }
+  function headDelimiterRightAlignmentAfter(code2) {
+    if (markdownSpace(code2)) {
+      return factorySpace(effects, headDelimiterCellAfter, "whitespace")(code2);
+    }
+    return headDelimiterCellAfter(code2);
+  }
+  function headDelimiterCellAfter(code2) {
+    if (code2 === 124) {
+      return headDelimiterBefore(code2);
+    }
+    if (code2 === null || markdownLineEnding(code2)) {
+      if (!seen || size4 !== sizeB) {
+        return headDelimiterNok(code2);
+      }
+      effects.exit("tableDelimiterRow");
+      effects.exit("tableHead");
+      return ok(code2);
+    }
+    return headDelimiterNok(code2);
+  }
+  function headDelimiterNok(code2) {
+    return nok(code2);
+  }
+  function bodyRowStart(code2) {
+    effects.enter("tableRow");
+    return bodyRowBreak(code2);
+  }
+  function bodyRowBreak(code2) {
+    if (code2 === 124) {
+      effects.enter("tableCellDivider");
+      effects.consume(code2);
+      effects.exit("tableCellDivider");
+      return bodyRowBreak;
+    }
+    if (code2 === null || markdownLineEnding(code2)) {
+      effects.exit("tableRow");
+      return ok(code2);
+    }
+    if (markdownSpace(code2)) {
+      return factorySpace(effects, bodyRowBreak, "whitespace")(code2);
+    }
+    effects.enter("data");
+    return bodyRowData(code2);
+  }
+  function bodyRowData(code2) {
+    if (code2 === null || code2 === 124 || markdownLineEndingOrSpace(code2)) {
+      effects.exit("data");
+      return bodyRowBreak(code2);
+    }
+    effects.consume(code2);
+    return code2 === 92 ? bodyRowEscape : bodyRowData;
+  }
+  function bodyRowEscape(code2) {
+    if (code2 === 92 || code2 === 124) {
+      effects.consume(code2);
+      return bodyRowData;
+    }
+    return bodyRowData(code2);
+  }
+}
+function resolveTable(events, context) {
+  let index4 = -1;
+  let inFirstCellAwaitingPipe = true;
+  let rowKind = 0;
+  let lastCell = [0, 0, 0, 0];
+  let cell = [0, 0, 0, 0];
+  let afterHeadAwaitingFirstBodyRow = false;
+  let lastTableEnd = 0;
+  let currentTable;
+  let currentBody;
+  let currentCell;
+  const map = new EditMap;
+  while (++index4 < events.length) {
+    const event = events[index4];
+    const token = event[1];
+    if (event[0] === "enter") {
+      if (token.type === "tableHead") {
+        afterHeadAwaitingFirstBodyRow = false;
+        if (lastTableEnd !== 0) {
+          flushTableEnd(map, context, lastTableEnd, currentTable, currentBody);
+          currentBody = undefined;
+          lastTableEnd = 0;
+        }
+        currentTable = {
+          type: "table",
+          start: Object.assign({}, token.start),
+          end: Object.assign({}, token.end)
+        };
+        map.add(index4, 0, [["enter", currentTable, context]]);
+      } else if (token.type === "tableRow" || token.type === "tableDelimiterRow") {
+        inFirstCellAwaitingPipe = true;
+        currentCell = undefined;
+        lastCell = [0, 0, 0, 0];
+        cell = [0, index4 + 1, 0, 0];
+        if (afterHeadAwaitingFirstBodyRow) {
+          afterHeadAwaitingFirstBodyRow = false;
+          currentBody = {
+            type: "tableBody",
+            start: Object.assign({}, token.start),
+            end: Object.assign({}, token.end)
+          };
+          map.add(index4, 0, [["enter", currentBody, context]]);
+        }
+        rowKind = token.type === "tableDelimiterRow" ? 2 : currentBody ? 3 : 1;
+      } else if (rowKind && (token.type === "data" || token.type === "tableDelimiterMarker" || token.type === "tableDelimiterFiller")) {
+        inFirstCellAwaitingPipe = false;
+        if (cell[2] === 0) {
+          if (lastCell[1] !== 0) {
+            cell[0] = cell[1];
+            currentCell = flushCell(map, context, lastCell, rowKind, undefined, currentCell);
+            lastCell = [0, 0, 0, 0];
+          }
+          cell[2] = index4;
+        }
+      } else if (token.type === "tableCellDivider") {
+        if (inFirstCellAwaitingPipe) {
+          inFirstCellAwaitingPipe = false;
+        } else {
+          if (lastCell[1] !== 0) {
+            cell[0] = cell[1];
+            currentCell = flushCell(map, context, lastCell, rowKind, undefined, currentCell);
+          }
+          lastCell = cell;
+          cell = [lastCell[1], index4, 0, 0];
+        }
+      }
+    } else if (token.type === "tableHead") {
+      afterHeadAwaitingFirstBodyRow = true;
+      lastTableEnd = index4;
+    } else if (token.type === "tableRow" || token.type === "tableDelimiterRow") {
+      lastTableEnd = index4;
+      if (lastCell[1] !== 0) {
+        cell[0] = cell[1];
+        currentCell = flushCell(map, context, lastCell, rowKind, index4, currentCell);
+      } else if (cell[1] !== 0) {
+        currentCell = flushCell(map, context, cell, rowKind, index4, currentCell);
+      }
+      rowKind = 0;
+    } else if (rowKind && (token.type === "data" || token.type === "tableDelimiterMarker" || token.type === "tableDelimiterFiller")) {
+      cell[3] = index4;
+    }
+  }
+  if (lastTableEnd !== 0) {
+    flushTableEnd(map, context, lastTableEnd, currentTable, currentBody);
+  }
+  map.consume(context.events);
+  index4 = -1;
+  while (++index4 < context.events.length) {
+    const event = context.events[index4];
+    if (event[0] === "enter" && event[1].type === "table") {
+      event[1]._align = gfmTableAlign(context.events, index4);
+    }
+  }
+  return events;
+}
+function flushCell(map, context, range, rowKind, rowEnd, previousCell) {
+  const groupName = rowKind === 1 ? "tableHeader" : rowKind === 2 ? "tableDelimiter" : "tableData";
+  const valueName = "tableContent";
+  if (range[0] !== 0) {
+    previousCell.end = Object.assign({}, getPoint(context.events, range[0]));
+    map.add(range[0], 0, [["exit", previousCell, context]]);
+  }
+  const now2 = getPoint(context.events, range[1]);
+  previousCell = {
+    type: groupName,
+    start: Object.assign({}, now2),
+    end: Object.assign({}, now2)
+  };
+  map.add(range[1], 0, [["enter", previousCell, context]]);
+  if (range[2] !== 0) {
+    const relatedStart = getPoint(context.events, range[2]);
+    const relatedEnd = getPoint(context.events, range[3]);
+    const valueToken = {
+      type: valueName,
+      start: Object.assign({}, relatedStart),
+      end: Object.assign({}, relatedEnd)
+    };
+    map.add(range[2], 0, [["enter", valueToken, context]]);
+    if (rowKind !== 2) {
+      const start = context.events[range[2]];
+      const end = context.events[range[3]];
+      start[1].end = Object.assign({}, end[1].end);
+      start[1].type = "chunkText";
+      start[1].contentType = "text";
+      if (range[3] > range[2] + 1) {
+        const a = range[2] + 1;
+        const b = range[3] - range[2] - 1;
+        map.add(a, b, []);
+      }
+    }
+    map.add(range[3] + 1, 0, [["exit", valueToken, context]]);
+  }
+  if (rowEnd !== undefined) {
+    previousCell.end = Object.assign({}, getPoint(context.events, rowEnd));
+    map.add(rowEnd, 0, [["exit", previousCell, context]]);
+    previousCell = undefined;
+  }
+  return previousCell;
+}
+function flushTableEnd(map, context, index4, table, tableBody) {
+  const exits = [];
+  const related = getPoint(context.events, index4);
+  if (tableBody) {
+    tableBody.end = Object.assign({}, related);
+    exits.push(["exit", tableBody, context]);
+  }
+  table.end = Object.assign({}, related);
+  exits.push(["exit", table, context]);
+  map.add(index4 + 1, 0, exits);
+}
+function getPoint(events, index4) {
+  const event = events[index4];
+  const side = event[0] === "enter" ? "start" : "end";
+  return event[1][side];
+}
+// node_modules/micromark-extension-gfm-tagfilter/lib/index.js
+var reFlow = /<(\/?)(iframe|noembed|noframes|plaintext|script|style|title|textarea|xmp)(?=[\t\n\f\r />])/gi;
+var reText = new RegExp("^" + reFlow.source, "i");
+function gfmTagfilterHtml() {
+  return {
+    exit: {
+      htmlFlowData(token) {
+        exitHtmlData.call(this, token, reFlow);
+      },
+      htmlTextData(token) {
+        exitHtmlData.call(this, token, reText);
+      }
+    }
+  };
+}
+function exitHtmlData(token, filter) {
+  let value = this.sliceSerialize(token);
+  if (this.options.allowDangerousHtml) {
+    value = value.replace(filter, "&lt;$1$2");
+  }
+  this.raw(this.encode(value));
+}
+// node_modules/micromark-extension-gfm-task-list-item/lib/html.js
+function gfmTaskListItemHtml() {
+  return {
+    enter: {
+      taskListCheck() {
+        this.tag('<input type="checkbox" disabled="" ');
+      }
+    },
+    exit: {
+      taskListCheck() {
+        this.tag("/>");
+      },
+      taskListCheckValueChecked() {
+        this.tag('checked="" ');
+      }
+    }
+  };
+}
+// node_modules/micromark-extension-gfm-task-list-item/lib/syntax.js
+var tasklistCheck = {
+  name: "tasklistCheck",
+  tokenize: tokenizeTasklistCheck
+};
+function gfmTaskListItem() {
+  return {
+    text: {
+      [91]: tasklistCheck
+    }
+  };
+}
+function tokenizeTasklistCheck(effects, ok, nok) {
+  const self = this;
+  return open;
+  function open(code2) {
+    if (self.previous !== null || !self._gfmTasklistFirstContentOfListItem) {
+      return nok(code2);
+    }
+    effects.enter("taskListCheck");
+    effects.enter("taskListCheckMarker");
+    effects.consume(code2);
+    effects.exit("taskListCheckMarker");
+    return inside;
+  }
+  function inside(code2) {
+    if (markdownLineEndingOrSpace(code2)) {
+      effects.enter("taskListCheckValueUnchecked");
+      effects.consume(code2);
+      effects.exit("taskListCheckValueUnchecked");
+      return close;
+    }
+    if (code2 === 88 || code2 === 120) {
+      effects.enter("taskListCheckValueChecked");
+      effects.consume(code2);
+      effects.exit("taskListCheckValueChecked");
+      return close;
+    }
+    return nok(code2);
+  }
+  function close(code2) {
+    if (code2 === 93) {
+      effects.enter("taskListCheckMarker");
+      effects.consume(code2);
+      effects.exit("taskListCheckMarker");
+      effects.exit("taskListCheck");
+      return after;
+    }
+    return nok(code2);
+  }
+  function after(code2) {
+    if (markdownLineEnding(code2)) {
+      return ok(code2);
+    }
+    if (markdownSpace(code2)) {
+      return effects.check({
+        tokenize: spaceThenNonSpace
+      }, ok, nok)(code2);
+    }
+    return nok(code2);
+  }
+}
+function spaceThenNonSpace(effects, ok, nok) {
+  return factorySpace(effects, after, "whitespace");
+  function after(code2) {
+    return code2 === null ? nok(code2) : ok(code2);
+  }
+}
+// node_modules/micromark-extension-gfm/index.js
+function gfm(options2) {
+  return combineExtensions([
+    gfmAutolinkLiteral(),
+    gfmFootnote(),
+    gfmStrikethrough(options2),
+    gfmTable(),
+    gfmTaskListItem()
+  ]);
+}
+function gfmHtml(options2) {
+  return combineHtmlExtensions([
+    gfmAutolinkLiteralHtml(),
+    gfmFootnoteHtml(options2),
+    gfmStrikethroughHtml(),
+    gfmTableHtml(),
+    gfmTagfilterHtml(),
+    gfmTaskListItemHtml()
+  ]);
+}
+
+// src/scriptorium/surface/state/markdown.ts
+var FRONTMATTER_BLOCK = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
+function splitFrontmatter(text4) {
+  const m = FRONTMATTER_BLOCK.exec(text4);
+  if (!m)
+    return { raw: null, body: text4 };
+  return { raw: m[1] ?? "", body: text4.slice(m[0].length) };
+}
+var SAFE_SCHEME = /^(https?:|mailto:)/i;
+var HAS_SCHEME = /^[a-z][a-z0-9+.-]*:/i;
+function safeHref(raw) {
+  const bare = raw.replace(/&#(\d+);?/g, (_, d) => String.fromCharCode(Number(d))).replace(/&#x([0-9a-f]+);?/gi, (_, h) => String.fromCharCode(Number.parseInt(h, 16))).replace(/[\u0000-\u0020]/g, "");
+  if (!HAS_SCHEME.test(bare))
+    return raw;
+  return SAFE_SCHEME.test(bare) ? raw : null;
+}
+var HREF = /<a href="([^"]*)"/g;
+var FOOTNOTE_LABEL = /(id|aria-describedby)="footnote-label"/g;
+function renderMarkdown(text4, options2 = {}) {
+  const scope = options2.idPrefix?.replace(/[^\w-]/g, "") ?? "";
+  let html = micromark(text4, {
+    extensions: [gfm()],
+    htmlExtensions: [gfmHtml(scope ? { clobberPrefix: `user-content-${scope}-` } : {})]
+  });
+  if (scope)
+    html = html.replace(FOOTNOTE_LABEL, `$1="user-content-${scope}-footnote-label"`);
+  return html.replace(HREF, (whole, href) => href === "" || safeHref(href) === null ? "<a data-blocked-link" : whole);
+}
+
+// src/scriptorium/surface/components/renderedLink.ts
+var OPENS_OUTWARD = /^(https?:|mailto:)/i;
+function fragmentId(raw) {
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+}
+function linkAct(anchor) {
+  const { href, blocked } = anchor;
+  if (blocked || !href)
+    return { kind: "none" };
+  if (href.startsWith("#")) {
+    const id = fragmentId(href.slice(1));
+    return id ? { kind: "jump", id } : { kind: "none" };
+  }
+  return OPENS_OUTWARD.test(href) ? { kind: "outward", href } : { kind: "follow", href };
+}
+function onRenderedLinkClick(e, onFollowLink) {
+  const anchor = e.target.closest("a");
+  if (!anchor)
+    return;
+  e.preventDefault();
+  const act = linkAct({
+    href: anchor.getAttribute("href"),
+    blocked: anchor.hasAttribute("data-blocked-link")
+  });
+  if (act.kind === "outward")
+    window.open(act.href, "_blank", "noopener,noreferrer");
+  else if (act.kind === "follow")
+    onFollowLink?.(act.href);
+  else if (act.kind === "jump") {
+    for (const el of e.currentTarget.querySelectorAll("[id]"))
+      if (el.id === act.id) {
+        el.scrollIntoView({ block: "nearest" });
+        return;
+      }
+  }
+}
+
+// src/scriptorium/surface/components/WaitingBadge.tsx
+var jsx_runtime6 = __toESM(require_jsx_runtime(), 1);
+var LABEL = {
+  message: {
+    working: "working on this…",
+    stalled: "took this in, then went quiet — may be stuck"
+  },
+  note: {
+    working: "with the agent…",
+    stalled: "no word from the agent — may be stuck"
+  },
+  asked: {
+    working: "asked in the conversation…",
+    stalled: "asked, and still no word — may be stuck"
+  }
+};
+function WaitingBadge({
+  badge,
+  of = "message",
+  className
+}) {
+  const working = badge === "working";
+  return /* @__PURE__ */ jsx_runtime6.jsxs("p", {
+    "aria-live": "polite",
+    className: cn("mt-1 flex items-center gap-1.5 text-[11px]", working ? "text-ink-dim" : "text-attention", className),
+    children: [
+      /* @__PURE__ */ jsx_runtime6.jsx("span", {
+        "aria-hidden": true,
+        className: cn("inline-block size-1.5 shrink-0 rounded-full", working ? "animate-pulse bg-rubric" : "bg-attention")
+      }),
+      LABEL[of][badge]
+    ]
+  });
+}
+function WaitingDot({
+  badge,
+  of,
+  label
+}) {
+  const working = badge === "working";
+  return /* @__PURE__ */ jsx_runtime6.jsx("span", {
+    role: "img",
+    "aria-label": label ?? LABEL[of][badge],
+    title: label ?? LABEL[of][badge],
+    className: cn("inline-block size-1.5 shrink-0 rounded-full", working ? "animate-pulse bg-rubric" : "bg-attention")
+  });
+}
+
+// src/scriptorium/surface/components/ChatMessageView.tsx
+var jsx_runtime7 = __toESM(require_jsx_runtime(), 1);
+function ChatMessageView({
+  message: m,
+  badge,
+  onFollowLink
+}) {
+  return /* @__PURE__ */ jsx_runtime7.jsxs("div", {
+    "data-who": m.who,
+    className: "rounded-md px-2 py-1 text-xs leading-relaxed text-ink-dim data-[who=agent]:bg-surface-raised data-[who=agent]:text-ink data-[who=human]:bg-rubric/10 data-[who=human]:text-ink",
+    children: [
+      m.who === "system" ? /* @__PURE__ */ jsx_runtime7.jsxs(jsx_runtime7.Fragment, {
+        children: [
+          /* @__PURE__ */ jsx_runtime7.jsx("span", {
+            className: "mr-1.5 font-medium text-ink-faint",
+            children: "·"
+          }),
+          m.text
+        ]
+      }) : /* @__PURE__ */ jsx_runtime7.jsxs(jsx_runtime7.Fragment, {
+        children: [
+          /* @__PURE__ */ jsx_runtime7.jsx("span", {
+            className: "block font-medium text-[11px] text-ink-faint",
+            children: m.who === "agent" ? "Agent" : "You"
+          }),
+          /* @__PURE__ */ jsx_runtime7.jsx(ChatMarkdown, {
+            id: m.id,
+            text: m.text,
+            onFollowLink
+          })
+        ]
+      }),
+      m.selection && /* @__PURE__ */ jsx_runtime7.jsxs("p", {
+        className: "mt-1 border-l-2 border-edge pl-2 font-mono text-[11px] text-ink-dim",
+        children: [
+          /* @__PURE__ */ jsx_runtime7.jsxs("span", {
+            className: "text-ink-faint",
+            children: [
+              m.selection.doc,
+              " · v",
+              m.selection.version,
+              " ·",
+              " ",
+              m.selection.fromLine === m.selection.toLine ? `line ${m.selection.fromLine}` : `lines ${m.selection.fromLine}–${m.selection.toLine}`
+            ]
+          }),
+          /* @__PURE__ */ jsx_runtime7.jsx("br", {}),
+          m.selection.text.replace(/\s+/gu, " ").trim()
+        ]
+      }),
+      badge && /* @__PURE__ */ jsx_runtime7.jsx(WaitingBadge, {
+        badge
+      })
+    ]
+  });
+}
+function ChatMarkdown({
+  id,
+  text: text4,
+  onFollowLink
+}) {
+  const html = import_react9.useMemo(() => renderMarkdown(text4, { idPrefix: id }), [text4, id]);
+  const htmlProp = import_react9.useMemo(() => ({ __html: html }), [html]);
+  return /* @__PURE__ */ jsx_runtime7.jsx("div", {
+    className: "md-prose md-chat",
+    onClick: (e) => onRenderedLinkClick(e, onFollowLink),
+    dangerouslySetInnerHTML: htmlProp
+  });
+}
+
+// src/scriptorium/surface/components/context/ContextSidebar.tsx
+var import_react17 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/context-menu/index.parts.mjs
+var exports_index_parts3 = {};
+__export(exports_index_parts3, {
+  Arrow: () => MenuArrow,
+  Backdrop: () => MenuBackdrop,
+  CheckboxItem: () => MenuCheckboxItem,
+  CheckboxItemIndicator: () => MenuCheckboxItemIndicator,
+  Group: () => MenuGroup,
+  GroupLabel: () => MenuGroupLabel,
+  Item: () => MenuItem,
+  LinkItem: () => MenuLinkItem,
+  Popup: () => MenuPopup,
+  Portal: () => MenuPortal,
+  Positioner: () => MenuPositioner,
+  RadioGroup: () => MenuRadioGroup,
+  RadioItem: () => MenuRadioItem,
+  RadioItemIndicator: () => MenuRadioItemIndicator,
+  Root: () => ContextMenuRoot,
+  Separator: () => Separator,
+  SubmenuRoot: () => MenuSubmenuRoot,
+  SubmenuTrigger: () => MenuSubmenuTrigger,
+  Trigger: () => ContextMenuTrigger
+});
+
+// node_modules/@base-ui/react/context-menu/root/ContextMenuRoot.mjs
+var React100 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/context-menu/root/ContextMenuRootContext.mjs
+var React53 = __toESM(require_react(), 1);
+"use client";
+var ContextMenuRootContext = /* @__PURE__ */ React53.createContext(undefined);
+if (false)
+  ;
+function useContextMenuRootContext(optional = true) {
+  const context = React53.useContext(ContextMenuRootContext);
+  if (context === undefined && !optional) {
+    throw new Error(formatErrorMessage_default(25));
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/menu/index.parts.mjs
+var exports_index_parts2 = {};
+__export(exports_index_parts2, {
+  Arrow: () => MenuArrow,
+  Backdrop: () => MenuBackdrop,
+  CheckboxItem: () => MenuCheckboxItem,
+  CheckboxItemIndicator: () => MenuCheckboxItemIndicator,
+  Group: () => MenuGroup,
+  GroupLabel: () => MenuGroupLabel,
+  Handle: () => MenuHandle,
+  Item: () => MenuItem,
+  LinkItem: () => MenuLinkItem,
+  Popup: () => MenuPopup,
+  Portal: () => MenuPortal,
+  Positioner: () => MenuPositioner,
+  RadioGroup: () => MenuRadioGroup,
+  RadioItem: () => MenuRadioItem,
+  RadioItemIndicator: () => MenuRadioItemIndicator,
+  Root: () => MenuRoot,
+  Separator: () => Separator,
+  SubmenuRoot: () => MenuSubmenuRoot,
+  SubmenuTrigger: () => MenuSubmenuTrigger,
+  Trigger: () => MenuTrigger,
+  Viewport: () => MenuViewport,
+  createHandle: () => createMenuHandle
+});
+
+// node_modules/@base-ui/react/menu/arrow/MenuArrow.mjs
+var React56 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/menu/positioner/MenuPositionerContext.mjs
+var React54 = __toESM(require_react(), 1);
+"use client";
+var MenuPositionerContext = /* @__PURE__ */ React54.createContext(undefined);
+if (false)
+  ;
+function useMenuPositionerContext(optional) {
+  const context = React54.useContext(MenuPositionerContext);
+  if (context === undefined && !optional) {
+    throw new Error(formatErrorMessage_default(33));
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/menu/root/MenuRootContext.mjs
+var React55 = __toESM(require_react(), 1);
+"use client";
+var MenuRootContext = /* @__PURE__ */ React55.createContext(undefined);
+if (false)
+  ;
+function useMenuRootContext(optional) {
+  const context = React55.useContext(MenuRootContext);
+  if (context === undefined && !optional) {
+    throw new Error(formatErrorMessage_default(36));
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/menu/arrow/MenuArrow.mjs
+"use client";
+var MenuArrow = /* @__PURE__ */ React56.forwardRef(function MenuArrow2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useMenuRootContext();
+  const {
+    arrowRef,
+    side,
+    align,
+    arrowUncentered,
+    arrowStyles
+  } = useMenuPositionerContext();
+  const open = store.useState("open");
+  const state = {
+    open,
+    side,
+    align,
+    uncentered: arrowUncentered
+  };
+  return useRenderElement("div", componentProps, {
+    ref: [arrowRef, forwardedRef],
+    stateAttributesMapping: popupStateMapping,
+    state,
+    props: {
+      style: arrowStyles,
+      "aria-hidden": true,
+      ...elementProps
+    }
+  });
+});
+if (false)
+  ;
+// node_modules/@base-ui/react/menu/backdrop/MenuBackdrop.mjs
+var React57 = __toESM(require_react(), 1);
+"use client";
+var stateAttributesMapping4 = {
+  ...popupStateMapping,
+  ...transitionStatusMapping
+};
+var MenuBackdrop = /* @__PURE__ */ React57.forwardRef(function MenuBackdrop2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useMenuRootContext();
+  const open = store.useState("open");
+  const mounted = store.useState("mounted");
+  const transitionStatus = store.useState("transitionStatus");
+  const lastOpenChangeReason = store.useState("lastOpenChangeReason");
+  const contextMenuContext = useContextMenuRootContext();
+  const state = {
+    open,
+    transitionStatus
+  };
+  return useRenderElement("div", componentProps, {
+    ref: contextMenuContext?.backdropRef ? [forwardedRef, contextMenuContext.backdropRef] : forwardedRef,
+    state,
+    stateAttributesMapping: stateAttributesMapping4,
+    props: [{
+      role: "presentation",
+      hidden: !mounted,
+      style: {
+        pointerEvents: lastOpenChangeReason === exports_reason_parts.triggerHover ? "none" : undefined,
+        userSelect: "none",
+        WebkitUserSelect: "none"
+      }
+    }, elementProps]
+  });
+});
+if (false)
+  ;
+// node_modules/@base-ui/react/menu/checkbox-item/MenuCheckboxItem.mjs
+var React64 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/useControlled.mjs
+var React58 = __toESM(require_react(), 1);
+"use client";
+function useControlled({
+  controlled,
+  default: defaultProp,
+  name,
+  state = "value"
+}) {
+  const {
+    current: isControlled
+  } = React58.useRef(controlled !== undefined);
+  const [valueState, setValue] = React58.useState(defaultProp);
+  const value = isControlled ? controlled : valueState;
+  if (false) {}
+  const setValueIfUncontrolled = React58.useCallback((newValue) => {
+    if (!isControlled) {
+      setValue(newValue);
+    }
+  }, []);
+  return [value, setValueIfUncontrolled];
+}
+
+// node_modules/@base-ui/react/menu/checkbox-item/MenuCheckboxItemContext.mjs
+var React59 = __toESM(require_react(), 1);
+"use client";
+var MenuCheckboxItemContext = /* @__PURE__ */ React59.createContext(undefined);
+if (false)
+  ;
+function useMenuCheckboxItemContext() {
+  const context = React59.useContext(MenuCheckboxItemContext);
+  if (context === undefined) {
+    throw new Error(formatErrorMessage_default(30));
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/menu/item/useMenuItem.mjs
+var React61 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/menu/item/useMenuItemCommonProps.mjs
+var React60 = __toESM(require_react(), 1);
+"use client";
+function useMenuItemCommonProps(params) {
+  const {
+    closeOnClick,
+    highlighted,
+    id,
+    nodeId,
+    store,
+    typingRef,
+    itemRef,
+    itemMetadata
+  } = params;
+  const {
+    events: menuEvents
+  } = store.useState("floatingTreeRoot");
+  const open = store.useState("open");
+  const contextMenuContext = useContextMenuRootContext(true);
+  const isContextMenu = contextMenuContext !== undefined;
+  return React60.useMemo(() => ({
+    id,
+    role: "menuitem",
+    tabIndex: open && highlighted ? 0 : -1,
+    onKeyDown(event) {
+      if (event.key === " " && typingRef?.current) {
+        event.preventDefault();
+      }
+    },
+    onMouseMove(event) {
+      if (!nodeId) {
+        return;
+      }
+      menuEvents.emit("itemhover", {
+        nodeId,
+        target: event.currentTarget
+      });
+    },
+    onClick(event) {
+      if (closeOnClick) {
+        menuEvents.emit("close", {
+          domEvent: event,
+          reason: exports_reason_parts.itemPress
+        });
+      }
+    },
+    onMouseUp(event) {
+      if (contextMenuContext) {
+        const initialCursorPoint = contextMenuContext.initialCursorPointRef.current;
+        contextMenuContext.initialCursorPointRef.current = null;
+        if (isContextMenu && initialCursorPoint && Math.abs(event.clientX - initialCursorPoint.x) <= 1 && Math.abs(event.clientY - initialCursorPoint.y) <= 1) {
+          return;
+        }
+        if (isContextMenu && !exports_parts.os.mac && event.button === 2) {
+          return;
+        }
+      }
+      if (itemRef.current && store.context.allowMouseUpTriggerRef.current && (!isContextMenu || event.button === 2)) {
+        if (!itemMetadata || itemMetadata.type === "regular-item") {
+          itemRef.current.click();
+        }
+      }
+    }
+  }), [closeOnClick, highlighted, id, menuEvents, nodeId, open, store, typingRef, itemRef, contextMenuContext, isContextMenu, itemMetadata]);
+}
+
+// node_modules/@base-ui/react/menu/item/useMenuItem.mjs
+"use client";
+var REGULAR_ITEM = {
+  type: "regular-item"
+};
+function useMenuItem(params) {
+  const {
+    closeOnClick,
+    disabled: disabledProp = false,
+    highlighted,
+    id,
+    store,
+    typingRef = store.context.typingRef,
+    nativeButton,
+    itemMetadata,
+    nodeId
+  } = params;
+  const rootDisabled = store.useState("disabled");
+  const disabled2 = disabledProp || rootDisabled;
+  const itemRef = React61.useRef(null);
+  const {
+    getButtonProps,
+    buttonRef
+  } = useButton({
+    disabled: disabled2,
+    focusableWhenDisabled: true,
+    native: nativeButton,
+    composite: true
+  });
+  const commonProps = useMenuItemCommonProps({
+    closeOnClick,
+    highlighted,
+    id,
+    nodeId,
+    store,
+    typingRef,
+    itemRef,
+    itemMetadata
+  });
+  const getItemProps = React61.useCallback((externalProps) => {
+    return mergeProps(commonProps, {
+      onMouseEnter() {
+        if (itemMetadata.type !== "submenu-trigger") {
+          return;
+        }
+        itemMetadata.setActive();
+      }
+    }, externalProps, getButtonProps);
+  }, [commonProps, getButtonProps, itemMetadata]);
+  const mergedRef = useMergedRefs(itemRef, buttonRef);
+  return React61.useMemo(() => ({
+    getItemProps,
+    itemRef: mergedRef
+  }), [getItemProps, mergedRef]);
+}
+
+// node_modules/@base-ui/react/internals/composite/list/useCompositeListItem.mjs
+var React63 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/internals/composite/list/CompositeListContext.mjs
+var React62 = __toESM(require_react(), 1);
+"use client";
+var CompositeListContext = /* @__PURE__ */ React62.createContext({
+  register: () => {},
+  unregister: () => {},
+  subscribeMapChange: () => {
+    return () => {};
+  },
+  elementsRef: {
+    current: []
+  },
+  nextIndexRef: {
+    current: 0
+  }
+});
+if (false)
+  ;
+function useCompositeListContext() {
+  return React62.useContext(CompositeListContext);
+}
+
+// node_modules/@base-ui/react/internals/composite/list/useCompositeListItem.mjs
+"use client";
+var IndexGuessBehavior = /* @__PURE__ */ function(IndexGuessBehavior2) {
+  IndexGuessBehavior2[IndexGuessBehavior2["None"] = 0] = "None";
+  IndexGuessBehavior2[IndexGuessBehavior2["GuessFromOrder"] = 1] = "GuessFromOrder";
+  return IndexGuessBehavior2;
+}({});
+function useCompositeListItem(params = {}) {
+  const {
+    label,
+    metadata,
+    textRef,
+    indexGuessBehavior,
+    index: externalIndex
+  } = params;
+  const {
+    register: register2,
+    unregister,
+    subscribeMapChange,
+    elementsRef,
+    labelsRef,
+    nextIndexRef
+  } = useCompositeListContext();
+  const indexRef = React63.useRef(-1);
+  const [index4, setIndex] = React63.useState(externalIndex ?? (indexGuessBehavior === IndexGuessBehavior.GuessFromOrder ? () => {
+    if (indexRef.current === -1) {
+      const newIndex = nextIndexRef.current;
+      nextIndexRef.current += 1;
+      indexRef.current = newIndex;
+    }
+    return indexRef.current;
+  } : -1));
+  const componentRef = React63.useRef(null);
+  const ref = React63.useCallback((node) => {
+    componentRef.current = node;
+    if (index4 !== -1 && node !== null) {
+      elementsRef.current[index4] = node;
+      if (labelsRef) {
+        const isLabelDefined = label !== undefined;
+        labelsRef.current[index4] = isLabelDefined ? label : textRef?.current?.textContent ?? node.textContent;
+      }
+    }
+  }, [index4, elementsRef, labelsRef, label, textRef]);
+  useIsoLayoutEffect(() => {
+    if (externalIndex != null) {
+      return;
+    }
+    const node = componentRef.current;
+    if (node) {
+      register2(node, metadata);
+      return () => {
+        unregister(node);
+      };
+    }
+    return;
+  }, [externalIndex, register2, unregister, metadata]);
+  useIsoLayoutEffect(() => {
+    if (externalIndex != null) {
+      return;
+    }
+    return subscribeMapChange((map) => {
+      const i = componentRef.current ? map.get(componentRef.current)?.index : null;
+      if (i != null) {
+        setIndex(i);
+      }
+    });
+  }, [externalIndex, subscribeMapChange, setIndex]);
+  return {
+    ref,
+    index: index4
+  };
+}
+
+// node_modules/@base-ui/react/menu/checkbox-item/MenuCheckboxItemDataAttributes.mjs
+var MenuCheckboxItemDataAttributes = /* @__PURE__ */ function(MenuCheckboxItemDataAttributes2) {
+  MenuCheckboxItemDataAttributes2["checked"] = "data-checked";
+  MenuCheckboxItemDataAttributes2["unchecked"] = "data-unchecked";
+  MenuCheckboxItemDataAttributes2["disabled"] = "data-disabled";
+  MenuCheckboxItemDataAttributes2["highlighted"] = "data-highlighted";
+  return MenuCheckboxItemDataAttributes2;
+}({});
+
+// node_modules/@base-ui/react/menu/utils/stateAttributesMapping.mjs
+var itemMapping = {
+  checked(value) {
+    if (value) {
+      return {
+        [MenuCheckboxItemDataAttributes.checked]: ""
+      };
+    }
+    return {
+      [MenuCheckboxItemDataAttributes.unchecked]: ""
+    };
+  },
+  ...transitionStatusMapping
+};
+
+// node_modules/@base-ui/react/menu/checkbox-item/MenuCheckboxItem.mjs
+var import_jsx_runtime10 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var MenuCheckboxItem = /* @__PURE__ */ React64.forwardRef(function MenuCheckboxItem2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    id: idProp,
+    label,
+    nativeButton = false,
+    disabled: disabled2 = false,
+    closeOnClick = false,
+    checked: checkedProp,
+    defaultChecked,
+    onCheckedChange,
+    style: style2,
+    ...elementProps
+  } = componentProps;
+  const listItem = useCompositeListItem({
+    label
+  });
+  const menuPositionerContext = useMenuPositionerContext(true);
+  const id = useBaseUiId(idProp);
+  const {
+    store
+  } = useMenuRootContext();
+  const highlighted = store.useState("isActive", listItem.index);
+  const itemProps = store.useState("itemProps");
+  const [checked, setChecked] = useControlled({
+    controlled: checkedProp,
+    default: defaultChecked ?? false,
+    name: "MenuCheckboxItem",
+    state: "checked"
+  });
+  const {
+    getItemProps,
+    itemRef
+  } = useMenuItem({
+    closeOnClick,
+    disabled: disabled2,
+    highlighted,
+    id,
+    store,
+    nativeButton,
+    nodeId: menuPositionerContext?.context.nodeId,
+    itemMetadata: REGULAR_ITEM
+  });
+  const state = React64.useMemo(() => ({
+    disabled: disabled2,
+    highlighted,
+    checked
+  }), [disabled2, highlighted, checked]);
+  function handleClick(event) {
+    const details = createChangeEventDetails(exports_reason_parts.itemPress, event.nativeEvent, undefined, {
+      preventUnmountOnClose() {}
+    });
+    onCheckedChange?.(!checked, details);
+    if (details.isCanceled) {
+      return;
+    }
+    setChecked((currentlyChecked) => !currentlyChecked);
+  }
+  const element2 = useRenderElement("div", componentProps, {
+    state,
+    stateAttributesMapping: itemMapping,
+    props: [itemProps, {
+      role: "menuitemcheckbox",
+      "aria-checked": checked,
+      onClick: handleClick
+    }, elementProps, getItemProps],
+    ref: [itemRef, forwardedRef, listItem.ref]
+  });
+  return /* @__PURE__ */ import_jsx_runtime10.jsx(MenuCheckboxItemContext.Provider, {
+    value: state,
+    children: element2
+  });
+});
+if (false)
+  ;
+// node_modules/@base-ui/react/menu/checkbox-item-indicator/MenuCheckboxItemIndicator.mjs
+var React65 = __toESM(require_react(), 1);
+"use client";
+var MenuCheckboxItemIndicator = /* @__PURE__ */ React65.forwardRef(function MenuCheckboxItemIndicator2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    keepMounted = false,
+    ...elementProps
+  } = componentProps;
+  const item = useMenuCheckboxItemContext();
+  const indicatorRef = React65.useRef(null);
+  const {
+    transitionStatus,
+    setMounted
+  } = useTransitionStatus(item.checked);
+  useOpenChangeComplete({
+    open: item.checked,
+    ref: indicatorRef,
+    onComplete() {
+      if (!item.checked) {
+        setMounted(false);
+      }
+    }
+  });
+  const state = {
+    checked: item.checked,
+    disabled: item.disabled,
+    highlighted: item.highlighted,
+    transitionStatus
+  };
+  const element2 = useRenderElement("span", componentProps, {
+    state,
+    ref: [forwardedRef, indicatorRef],
+    stateAttributesMapping: itemMapping,
+    props: {
+      "aria-hidden": true,
+      ...elementProps
+    },
+    enabled: keepMounted || item.checked
+  });
+  return element2;
+});
+if (false)
+  ;
+// node_modules/@base-ui/react/menu/group/MenuGroup.mjs
+var React67 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/menu/group/MenuGroupContext.mjs
+var React66 = __toESM(require_react(), 1);
+"use client";
+var MenuGroupContext = /* @__PURE__ */ React66.createContext(undefined);
+if (false)
+  ;
+function useMenuGroupRootContext() {
+  const context = React66.useContext(MenuGroupContext);
+  if (context === undefined) {
+    throw new Error(formatErrorMessage_default(31));
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/menu/group/MenuGroup.mjs
+var import_jsx_runtime11 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var MenuGroup = /* @__PURE__ */ React67.forwardRef(function MenuGroup2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    ...elementProps
+  } = componentProps;
+  const [labelId, setLabelId] = React67.useState(undefined);
+  const element2 = useRenderElement("div", componentProps, {
+    ref: forwardedRef,
+    props: {
+      role: "group",
+      "aria-labelledby": labelId,
+      ...elementProps
+    }
+  });
+  return /* @__PURE__ */ import_jsx_runtime11.jsx(MenuGroupContext.Provider, {
+    value: setLabelId,
+    children: element2
+  });
+});
+if (false)
+  ;
+// node_modules/@base-ui/react/menu/group-label/MenuGroupLabel.mjs
+var React68 = __toESM(require_react(), 1);
+"use client";
+var MenuGroupLabel = /* @__PURE__ */ React68.forwardRef(function MenuGroupLabel2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    id: idProp,
+    ...elementProps
+  } = componentProps;
+  const id = useBaseUiId(idProp);
+  const setLabelId = useMenuGroupRootContext();
+  useIsoLayoutEffect(() => {
+    setLabelId(id);
+    return () => {
+      setLabelId(undefined);
+    };
+  }, [setLabelId, id]);
+  return useRenderElement("div", componentProps, {
+    ref: forwardedRef,
+    props: {
+      id,
+      role: "presentation",
+      ...elementProps
+    }
+  });
+});
+if (false)
+  ;
+// node_modules/@base-ui/react/menu/item/MenuItem.mjs
+var React69 = __toESM(require_react(), 1);
+"use client";
+var MenuItem = /* @__PURE__ */ React69.forwardRef(function MenuItem2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    id: idProp,
+    label,
+    nativeButton = false,
+    disabled: disabled2 = false,
+    closeOnClick = true,
+    style: style2,
+    ...elementProps
+  } = componentProps;
+  const listItem = useCompositeListItem({
+    label
+  });
+  const menuPositionerContext = useMenuPositionerContext(true);
+  const id = useBaseUiId(idProp);
+  const {
+    store
+  } = useMenuRootContext();
+  const highlighted = store.useState("isActive", listItem.index);
+  const itemProps = store.useState("itemProps");
+  const {
+    getItemProps,
+    itemRef
+  } = useMenuItem({
+    closeOnClick,
+    disabled: disabled2,
+    highlighted,
+    id,
+    store,
+    nativeButton,
+    nodeId: menuPositionerContext?.context.nodeId,
+    itemMetadata: REGULAR_ITEM
+  });
+  const state = {
+    disabled: disabled2,
+    highlighted
+  };
+  return useRenderElement("div", componentProps, {
+    state,
+    props: [itemProps, elementProps, getItemProps],
+    ref: [itemRef, forwardedRef, listItem.ref]
+  });
+});
+if (false)
+  ;
+// node_modules/@base-ui/react/menu/link-item/MenuLinkItem.mjs
+var React70 = __toESM(require_react(), 1);
+"use client";
+var MenuLinkItem = /* @__PURE__ */ React70.forwardRef(function MenuLinkItem2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    id: idProp,
+    label,
+    closeOnClick = false,
+    style: style2,
+    ...elementProps
+  } = componentProps;
+  const linkRef = React70.useRef(null);
+  const listItem = useCompositeListItem({
+    label
+  });
+  const menuPositionerContext = useMenuPositionerContext(true);
+  const nodeId = menuPositionerContext?.context.nodeId;
+  const id = useBaseUiId(idProp);
+  const {
+    store
+  } = useMenuRootContext();
+  const highlighted = store.useState("isActive", listItem.index);
+  const itemProps = store.useState("itemProps");
+  const typingRef = store.context.typingRef;
+  const {
+    getButtonProps,
+    buttonRef
+  } = useButton({
+    native: false,
+    composite: true
+  });
+  const commonProps = useMenuItemCommonProps({
+    closeOnClick,
+    highlighted,
+    id,
+    nodeId,
+    store,
+    typingRef,
+    itemRef: linkRef
+  });
+  function getItemProps(externalProps) {
+    return mergeProps(commonProps, externalProps, getButtonProps);
+  }
+  const state = {
+    highlighted
+  };
+  return useRenderElement("a", componentProps, {
+    state,
+    props: [itemProps, elementProps, getItemProps],
+    ref: [linkRef, buttonRef, forwardedRef, listItem.ref]
+  });
+});
+if (false)
+  ;
+// node_modules/@base-ui/react/menu/popup/MenuPopup.mjs
+var React72 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/toolbar/root/ToolbarRootContext.mjs
+var React71 = __toESM(require_react(), 1);
+"use client";
+var ToolbarRootContext = /* @__PURE__ */ React71.createContext(undefined);
+if (false)
+  ;
+function useToolbarRootContext(optional) {
+  const context = React71.useContext(ToolbarRootContext);
+  if (context === undefined && !optional) {
+    throw new Error(formatErrorMessage_default(69));
+  }
+  return context;
+}
+
 // node_modules/@base-ui/react/utils/getDisabledMountTransitionStyles.mjs
 function getDisabledMountTransitionStyles(transitionStatus) {
   return transitionStatus === "starting" ? DISABLED_TRANSITIONS_STYLE : EMPTY_OBJECT;
 }
 
 // node_modules/@base-ui/react/menu/popup/MenuPopup.mjs
-var import_jsx_runtime8 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime12 = __toESM(require_jsx_runtime(), 1);
 "use client";
-var stateAttributesMapping2 = {
+var stateAttributesMapping5 = {
   ...popupStateMapping,
   ...transitionStatusMapping
 };
-var MenuPopup = /* @__PURE__ */ React55.forwardRef(function MenuPopup2(componentProps, forwardedRef) {
+var MenuPopup = /* @__PURE__ */ React72.forwardRef(function MenuPopup2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -29838,7 +31079,7 @@ var MenuPopup = /* @__PURE__ */ React55.forwardRef(function MenuPopup2(component
       }
     }
   });
-  React55.useEffect(() => {
+  React72.useEffect(() => {
     function handleClose(event) {
       store.setOpen(false, createChangeEventDetails(event.reason, event.domEvent));
     }
@@ -29851,7 +31092,7 @@ var MenuPopup = /* @__PURE__ */ React55.forwardRef(function MenuPopup2(component
     enabled: hoverEnabled && !disabled2 && !isContextMenu && parent.type !== "menubar",
     closeDelay
   });
-  const setPopupElement = React55.useCallback((element3) => {
+  const setPopupElement = React72.useCallback((element3) => {
     store.set("popupElement", element3);
   }, [store]);
   const state = {
@@ -29865,7 +31106,7 @@ var MenuPopup = /* @__PURE__ */ React55.forwardRef(function MenuPopup2(component
   const element2 = useRenderElement("div", componentProps, {
     state,
     ref: [forwardedRef, store.context.popupRef, setPopupElement],
-    stateAttributesMapping: stateAttributesMapping2,
+    stateAttributesMapping: stateAttributesMapping5,
     props: [popupProps, {
       onKeyDown(event) {
         if (insideToolbar && COMPOSITE_KEYS.has(event.key)) {
@@ -29880,7 +31121,7 @@ var MenuPopup = /* @__PURE__ */ React55.forwardRef(function MenuPopup2(component
   if (triggerElement || parent.type === "menubar" && lastOpenChangeReason !== exports_reason_parts.outsidePress) {
     returnFocus = true;
   }
-  return /* @__PURE__ */ import_jsx_runtime8.jsx(FloatingFocusManager, {
+  return /* @__PURE__ */ import_jsx_runtime12.jsx(FloatingFocusManager, {
     context: floatingContext,
     openInteractionType: openMethod,
     modal: isContextMenu,
@@ -29898,16 +31139,16 @@ var MenuPopup = /* @__PURE__ */ React55.forwardRef(function MenuPopup2(component
 if (false)
   ;
 // node_modules/@base-ui/react/menu/portal/MenuPortal.mjs
-var React57 = __toESM(require_react(), 1);
+var React74 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/menu/portal/MenuPortalContext.mjs
-var React56 = __toESM(require_react(), 1);
+var React73 = __toESM(require_react(), 1);
 "use client";
-var MenuPortalContext = /* @__PURE__ */ React56.createContext(undefined);
+var MenuPortalContext = /* @__PURE__ */ React73.createContext(undefined);
 if (false)
   ;
 function useMenuPortalContext() {
-  const value = React56.useContext(MenuPortalContext);
+  const value = React73.useContext(MenuPortalContext);
   if (value === undefined) {
     throw new Error(formatErrorMessage_default(32));
   }
@@ -29915,9 +31156,9 @@ function useMenuPortalContext() {
 }
 
 // node_modules/@base-ui/react/menu/portal/MenuPortal.mjs
-var import_jsx_runtime9 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime13 = __toESM(require_jsx_runtime(), 1);
 "use client";
-var MenuPortal = /* @__PURE__ */ React57.forwardRef(function MenuPortal2(props, forwardedRef) {
+var MenuPortal = /* @__PURE__ */ React74.forwardRef(function MenuPortal2(props, forwardedRef) {
   const {
     keepMounted = false,
     ...portalProps
@@ -29930,9 +31171,9 @@ var MenuPortal = /* @__PURE__ */ React57.forwardRef(function MenuPortal2(props, 
   if (!shouldRender) {
     return null;
   }
-  return /* @__PURE__ */ import_jsx_runtime9.jsx(MenuPortalContext.Provider, {
+  return /* @__PURE__ */ import_jsx_runtime13.jsx(MenuPortalContext.Provider, {
     value: keepMounted,
-    children: /* @__PURE__ */ import_jsx_runtime9.jsx(FloatingPortal, {
+    children: /* @__PURE__ */ import_jsx_runtime13.jsx(FloatingPortal, {
       ref: forwardedRef,
       ...portalProps
     })
@@ -29941,27 +31182,19 @@ var MenuPortal = /* @__PURE__ */ React57.forwardRef(function MenuPortal2(props, 
 if (false)
   ;
 // node_modules/@base-ui/react/menu/positioner/MenuPositioner.mjs
-var React63 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/utils/inertValue.mjs
-function inertValue(value) {
-  if (isReactVersionAtLeast(19)) {
-    return value;
-  }
-  return value ? "true" : undefined;
-}
+var React79 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/utils/useAnchorPositioning.mjs
-var React59 = __toESM(require_react(), 1);
+var React76 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/internals/direction-context/DirectionContext.mjs
-var React58 = __toESM(require_react(), 1);
+var React75 = __toESM(require_react(), 1);
 "use client";
-var DirectionContext = /* @__PURE__ */ React58.createContext(undefined);
+var DirectionContext = /* @__PURE__ */ React75.createContext(undefined);
 if (false)
   ;
 function useDirection() {
-  const context = React58.useContext(DirectionContext);
+  const context = React75.useContext(DirectionContext);
   return context?.direction ?? "ltr";
 }
 
@@ -30183,7 +31416,7 @@ function useAnchorPositioning(params) {
     lazyFlip = false,
     externalTree
   } = params;
-  const [mountSide, setMountSide] = React59.useState(null);
+  const [mountSide, setMountSide] = React76.useState(null);
   if (!mounted && mountSide !== null) {
     setMountSide(null);
   }
@@ -30231,7 +31464,7 @@ function useAnchorPositioning(params) {
     boundary: collisionBoundary === "clipping-ancestors" ? "clippingAncestors" : collisionBoundary,
     padding: collisionPadding
   };
-  const arrowRef = React59.useRef(null);
+  const arrowRef = React76.useRef(null);
   const sideOffsetRef = useValueAsRef(sideOffset);
   const alignOffsetRef = useValueAsRef(alignOffset);
   const sideOffsetDep = typeof sideOffset !== "function" ? sideOffset : 0;
@@ -30374,7 +31607,7 @@ function useAnchorPositioning(params) {
       });
     }
   }, [mounted, floatingRootContext]);
-  const autoUpdateOptions = React59.useMemo(() => ({
+  const autoUpdateOptions = React76.useMemo(() => ({
     elementResize: !disableAnchorTracking && typeof ResizeObserver !== "undefined",
     layoutShift: !disableAnchorTracking && typeof IntersectionObserver !== "undefined"
   }), [disableAnchorTracking]);
@@ -30404,7 +31637,7 @@ function useAnchorPositioning(params) {
     sideY
   } = middlewareData.adaptiveOrigin || DEFAULT_SIDES;
   const resolvedPosition = isPositioned ? positionMethod : "fixed";
-  const floatingStyles = React59.useMemo(() => {
+  const floatingStyles = React76.useMemo(() => {
     const base = adaptiveOrigin2 ? {
       position: resolvedPosition,
       [sideX]: x,
@@ -30418,7 +31651,7 @@ function useAnchorPositioning(params) {
     }
     return base;
   }, [adaptiveOrigin2, resolvedPosition, sideX, x, sideY, y, originalFloatingStyles, isPositioned]);
-  const registeredPositionReferenceRef = React59.useRef(null);
+  const registeredPositionReferenceRef = React76.useRef(null);
   useIsoLayoutEffect(() => {
     if (!mounted) {
       return;
@@ -30432,7 +31665,7 @@ function useAnchorPositioning(params) {
       registeredPositionReferenceRef.current = finalAnchor;
     }
   }, [mounted, refs, anchorDep, anchorValueRef]);
-  React59.useEffect(() => {
+  React76.useEffect(() => {
     if (!mounted) {
       return;
     }
@@ -30445,7 +31678,7 @@ function useAnchorPositioning(params) {
       registeredPositionReferenceRef.current = anchorValue.current;
     }
   }, [mounted, refs, anchorDep, anchorValueRef]);
-  React59.useEffect(() => {
+  React76.useEffect(() => {
     if (keepMounted && mounted && elements.reference && elements.floating) {
       return autoUpdate(elements.reference, elements.floating, update2, autoUpdateOptions);
     }
@@ -30460,13 +31693,13 @@ function useAnchorPositioning(params) {
       setMountSide(renderedSide);
     }
   }, [lazyFlip, mounted, isPositioned, renderedSide]);
-  const arrowStyles = React59.useMemo(() => ({
+  const arrowStyles = React76.useMemo(() => ({
     position: "absolute",
     top: middlewareData.arrow?.y,
     left: middlewareData.arrow?.x
   }), [middlewareData.arrow]);
   const arrowUncentered = middlewareData.arrow?.centerOffset !== 0;
-  return React59.useMemo(() => ({
+  return React76.useMemo(() => ({
     positionerStyles: floatingStyles,
     arrowStyles,
     arrowRef,
@@ -30486,8 +31719,8 @@ function isRef(param) {
 }
 
 // node_modules/@base-ui/react/internals/composite/list/CompositeList.mjs
-var React60 = __toESM(require_react(), 1);
-var import_jsx_runtime10 = __toESM(require_jsx_runtime(), 1);
+var React77 = __toESM(require_react(), 1);
+var import_jsx_runtime14 = __toESM(require_jsx_runtime(), 1);
 "use client";
 function CompositeList(props) {
   const {
@@ -30497,11 +31730,11 @@ function CompositeList(props) {
     onMapChange: onMapChangeProp
   } = props;
   const onMapChange = useStableCallback(onMapChangeProp);
-  const nextIndexRef = React60.useRef(0);
+  const nextIndexRef = React77.useRef(0);
   const listeners = useRefWithInit(createListeners).current;
   const map = useRefWithInit(createMap).current;
-  const [mapTick, setMapTick] = React60.useState(0);
-  const lastTickRef = React60.useRef(mapTick);
+  const [mapTick, setMapTick] = React77.useState(0);
+  const lastTickRef = React77.useRef(mapTick);
   const register2 = useStableCallback((node, metadata) => {
     map.set(node, metadata ?? null);
     lastTickRef.current += 1;
@@ -30512,7 +31745,7 @@ function CompositeList(props) {
     lastTickRef.current += 1;
     setMapTick(lastTickRef.current);
   });
-  const sortedMap = React60.useMemo(() => {
+  const sortedMap = React77.useMemo(() => {
     disableEslintWarning(mapTick);
     const newMap = new Map;
     const sortedNodes = Array.from(map.keys()).filter((node) => node.isConnected).sort(sortByDocumentPosition);
@@ -30586,7 +31819,7 @@ function CompositeList(props) {
   useIsoLayoutEffect(() => {
     listeners.forEach((l) => l(sortedMap));
   }, [listeners, sortedMap]);
-  const contextValue = React60.useMemo(() => ({
+  const contextValue = React77.useMemo(() => ({
     register: register2,
     unregister,
     subscribeMapChange,
@@ -30594,7 +31827,7 @@ function CompositeList(props) {
     labelsRef,
     nextIndexRef
   }), [register2, unregister, subscribeMapChange, elementsRef, labelsRef, nextIndexRef]);
-  return /* @__PURE__ */ import_jsx_runtime10.jsx(CompositeListContext.Provider, {
+  return /* @__PURE__ */ import_jsx_runtime14.jsx(CompositeListContext.Provider, {
     value: contextValue,
     children
   });
@@ -30616,36 +31849,6 @@ function sortByDocumentPosition(a, b) {
   return 0;
 }
 function disableEslintWarning(_) {}
-
-// node_modules/@base-ui/react/utils/InternalBackdrop.mjs
-var React61 = __toESM(require_react(), 1);
-var import_jsx_runtime11 = __toESM(require_jsx_runtime(), 1);
-var InternalBackdrop = /* @__PURE__ */ React61.forwardRef(function InternalBackdrop2(props, ref) {
-  const {
-    cutout,
-    ...otherProps
-  } = props;
-  let clipPath;
-  if (cutout) {
-    const rect = cutout.getBoundingClientRect();
-    clipPath = `polygon(0% 0%,100% 0%,100% 100%,0% 100%,0% 0%,${rect.left}px ${rect.top}px,${rect.left}px ${rect.bottom}px,${rect.right}px ${rect.bottom}px,${rect.right}px ${rect.top}px,${rect.left}px ${rect.top}px)`;
-  }
-  return /* @__PURE__ */ import_jsx_runtime11.jsx("div", {
-    ref,
-    role: "presentation",
-    "data-base-ui-inert": "",
-    ...otherProps,
-    style: {
-      position: "fixed",
-      inset: 0,
-      userSelect: "none",
-      WebkitUserSelect: "none",
-      clipPath
-    }
-  });
-});
-if (false)
-  ;
 
 // node_modules/@base-ui/react/utils/usePositioner.mjs
 "use client";
@@ -30676,212 +31879,11 @@ function usePositioner(componentProps, state, {
 }
 
 // node_modules/@base-ui/react/utils/useAnchoredPopupScrollLock.mjs
-var React62 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/utils/useScrollLock.mjs
-"use client";
-var originalHtmlStyles = {};
-var originalBodyStyles = {};
-var originalHtmlScrollBehavior = "";
-function hasInsetScrollbars(referenceElement) {
-  if (typeof document === "undefined") {
-    return false;
-  }
-  const doc = ownerDocument(referenceElement);
-  const win = getWindow(doc);
-  return win.innerWidth - doc.documentElement.clientWidth > 0;
-}
-function supportsStableScrollbarGutter(referenceElement) {
-  const supported = typeof CSS !== "undefined" && CSS.supports && CSS.supports("scrollbar-gutter", "stable");
-  if (!supported || typeof document === "undefined") {
-    return false;
-  }
-  const doc = ownerDocument(referenceElement);
-  const html = doc.documentElement;
-  const body = doc.body;
-  const scrollContainer = isOverflowElement(html) ? html : body;
-  const originalScrollContainerOverflowY = scrollContainer.style.overflowY;
-  const originalHtmlStyleGutter = html.style.scrollbarGutter;
-  html.style.scrollbarGutter = "stable";
-  scrollContainer.style.overflowY = "scroll";
-  const before = scrollContainer.offsetWidth;
-  scrollContainer.style.overflowY = "hidden";
-  const after = scrollContainer.offsetWidth;
-  scrollContainer.style.overflowY = originalScrollContainerOverflowY;
-  html.style.scrollbarGutter = originalHtmlStyleGutter;
-  return before === after;
-}
-function preventScrollOverlayScrollbars(referenceElement) {
-  const doc = ownerDocument(referenceElement);
-  const html = doc.documentElement;
-  const body = doc.body;
-  const elementToLock = isOverflowElement(html) ? html : body;
-  const originalElementToLockStyles = {
-    overflowY: elementToLock.style.overflowY,
-    overflowX: elementToLock.style.overflowX
-  };
-  Object.assign(elementToLock.style, {
-    overflowY: "hidden",
-    overflowX: "hidden"
-  });
-  return () => {
-    Object.assign(elementToLock.style, originalElementToLockStyles);
-  };
-}
-function preventScrollInsetScrollbars(referenceElement) {
-  const doc = ownerDocument(referenceElement);
-  const html = doc.documentElement;
-  const body = doc.body;
-  const win = getWindow(html);
-  let scrollTop = 0;
-  let scrollLeft = 0;
-  let updateGutterOnly = false;
-  const resizeFrame = AnimationFrame.create();
-  if (exports_parts.engine.webkit && (win.visualViewport?.scale ?? 1) !== 1) {
-    return () => {};
-  }
-  function lockScroll() {
-    const htmlStyles = win.getComputedStyle(html);
-    const bodyStyles = win.getComputedStyle(body);
-    const htmlScrollbarGutterValue = htmlStyles.scrollbarGutter || "";
-    const hasBothEdges = htmlScrollbarGutterValue.includes("both-edges");
-    const scrollbarGutterValue = hasBothEdges ? "stable both-edges" : "stable";
-    scrollTop = html.scrollTop;
-    scrollLeft = html.scrollLeft;
-    originalHtmlStyles = {
-      scrollbarGutter: html.style.scrollbarGutter,
-      overflowY: html.style.overflowY,
-      overflowX: html.style.overflowX
-    };
-    originalHtmlScrollBehavior = html.style.scrollBehavior;
-    originalBodyStyles = {
-      position: body.style.position,
-      height: body.style.height,
-      width: body.style.width,
-      boxSizing: body.style.boxSizing,
-      overflowY: body.style.overflowY,
-      overflowX: body.style.overflowX,
-      scrollBehavior: body.style.scrollBehavior
-    };
-    const isScrollableY = html.scrollHeight > html.clientHeight;
-    const isScrollableX = html.scrollWidth > html.clientWidth;
-    const hasConstantOverflowY = htmlStyles.overflowY === "scroll" || bodyStyles.overflowY === "scroll";
-    const hasConstantOverflowX = htmlStyles.overflowX === "scroll" || bodyStyles.overflowX === "scroll";
-    const scrollbarWidth = Math.max(0, win.innerWidth - body.clientWidth);
-    const scrollbarHeight = Math.max(0, win.innerHeight - body.clientHeight);
-    const marginY = parseFloat(bodyStyles.marginTop) + parseFloat(bodyStyles.marginBottom);
-    const marginX = parseFloat(bodyStyles.marginLeft) + parseFloat(bodyStyles.marginRight);
-    const elementToLock = isOverflowElement(html) ? html : body;
-    updateGutterOnly = supportsStableScrollbarGutter(referenceElement);
-    if (updateGutterOnly) {
-      html.style.scrollbarGutter = scrollbarGutterValue;
-      elementToLock.style.overflowY = "hidden";
-      elementToLock.style.overflowX = "hidden";
-      return;
-    }
-    Object.assign(html.style, {
-      scrollbarGutter: scrollbarGutterValue,
-      overflowY: "hidden",
-      overflowX: "hidden"
-    });
-    if (isScrollableY || hasConstantOverflowY) {
-      html.style.overflowY = "scroll";
-    }
-    if (isScrollableX || hasConstantOverflowX) {
-      html.style.overflowX = "scroll";
-    }
-    Object.assign(body.style, {
-      position: "relative",
-      height: marginY || scrollbarHeight ? `calc(100dvh - ${marginY + scrollbarHeight}px)` : "100dvh",
-      width: marginX || scrollbarWidth ? `calc(100vw - ${marginX + scrollbarWidth}px)` : "100vw",
-      boxSizing: "border-box",
-      overflow: "hidden",
-      scrollBehavior: "unset"
-    });
-    body.scrollTop = scrollTop;
-    body.scrollLeft = scrollLeft;
-    html.setAttribute("data-base-ui-scroll-locked", "");
-    html.style.scrollBehavior = "unset";
-  }
-  function cleanup() {
-    Object.assign(html.style, originalHtmlStyles);
-    Object.assign(body.style, originalBodyStyles);
-    if (!updateGutterOnly) {
-      html.scrollTop = scrollTop;
-      html.scrollLeft = scrollLeft;
-      html.removeAttribute("data-base-ui-scroll-locked");
-      html.style.scrollBehavior = originalHtmlScrollBehavior;
-    }
-  }
-  function handleResize() {
-    cleanup();
-    resizeFrame.request(lockScroll);
-  }
-  lockScroll();
-  const unsubscribeResize = addEventListener(win, "resize", handleResize);
-  return () => {
-    resizeFrame.cancel();
-    cleanup();
-    if (typeof win.removeEventListener === "function") {
-      unsubscribeResize();
-    }
-  };
-}
-
-class ScrollLocker {
-  lockCount = 0;
-  restore = null;
-  timeoutLock = Timeout.create();
-  timeoutUnlock = Timeout.create();
-  acquire(referenceElement) {
-    this.lockCount += 1;
-    if (this.lockCount === 1 && this.restore === null) {
-      this.timeoutLock.start(0, () => this.lock(referenceElement));
-    }
-    return this.release;
-  }
-  release = () => {
-    this.lockCount -= 1;
-    if (this.lockCount === 0 && this.restore) {
-      this.timeoutUnlock.start(0, this.unlock);
-    }
-  };
-  unlock = () => {
-    if (this.lockCount === 0 && this.restore) {
-      this.restore?.();
-      this.restore = null;
-    }
-  };
-  lock(referenceElement) {
-    if (this.lockCount === 0 || this.restore !== null) {
-      return;
-    }
-    const doc = ownerDocument(referenceElement);
-    const html = doc.documentElement;
-    const htmlOverflowY = getWindow(html).getComputedStyle(html).overflowY;
-    if (htmlOverflowY === "hidden" || htmlOverflowY === "clip") {
-      this.restore = NOOP;
-      return;
-    }
-    const hasOverlayScrollbars = exports_parts.os.ios || !hasInsetScrollbars(referenceElement);
-    this.restore = hasOverlayScrollbars ? preventScrollOverlayScrollbars(referenceElement) : preventScrollInsetScrollbars(referenceElement);
-  }
-}
-var SCROLL_LOCKER = new ScrollLocker;
-function useScrollLock(enabled = true, referenceElement = null) {
-  useIsoLayoutEffect(() => {
-    if (!enabled) {
-      return;
-    }
-    return SCROLL_LOCKER.acquire(referenceElement);
-  }, [enabled, referenceElement]);
-}
-
-// node_modules/@base-ui/react/utils/useAnchoredPopupScrollLock.mjs
+var React78 = __toESM(require_react(), 1);
 "use client";
 var VIEWPORT_WIDTH_TOLERANCE_PX = 20;
 function useAnchoredPopupScrollLock(enabled, touchOpen, positionerElement, referenceElement) {
-  const [touchOpenShouldLockScroll, setTouchOpenShouldLockScroll] = React62.useState(false);
+  const [touchOpenShouldLockScroll, setTouchOpenShouldLockScroll] = React78.useState(false);
   useIsoLayoutEffect(() => {
     if (!enabled || !touchOpen || positionerElement == null) {
       setTouchOpenShouldLockScroll(false);
@@ -30895,9 +31897,9 @@ function useAnchoredPopupScrollLock(enabled, touchOpen, positionerElement, refer
 }
 
 // node_modules/@base-ui/react/menu/positioner/MenuPositioner.mjs
-var import_jsx_runtime12 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime15 = __toESM(require_jsx_runtime(), 1);
 "use client";
-var MenuPositioner = /* @__PURE__ */ React63.forwardRef(function MenuPositioner2(componentProps, forwardedRef) {
+var MenuPositioner = /* @__PURE__ */ React79.forwardRef(function MenuPositioner2(componentProps, forwardedRef) {
   const {
     anchor: anchorProp,
     positionMethod: positionMethodProp = "absolute",
@@ -30937,7 +31939,7 @@ var MenuPositioner = /* @__PURE__ */ React63.forwardRef(function MenuPositioner2
   const floatingNodeId = store.useState("floatingNodeId");
   const floatingParentNodeId = store.useState("floatingParentNodeId");
   const domReference = floatingRootContext.useState("domReferenceElement");
-  const previousTriggerRef = React63.useRef(null);
+  const previousTriggerRef = React79.useRef(null);
   const runOnceAnimationsFinish = useAnimationsFinished(positionerElement, false, false);
   let anchor = anchorProp;
   let sideOffset = sideOffsetProp;
@@ -30984,7 +31986,7 @@ var MenuPositioner = /* @__PURE__ */ React63.forwardRef(function MenuPositioner2
     externalTree: floatingTreeRoot,
     adaptiveOrigin: hasViewport ? adaptiveOrigin : undefined
   });
-  React63.useEffect(() => {
+  React79.useEffect(() => {
     function onMenuOpenChange(details) {
       if (details.open) {
         if (details.parentNodeId === floatingNodeId) {
@@ -31000,7 +32002,7 @@ var MenuPositioner = /* @__PURE__ */ React63.forwardRef(function MenuPositioner2
       floatingTreeRoot.events.off("menuopenchange", onMenuOpenChange);
     };
   }, [store, floatingTreeRoot.events, floatingNodeId]);
-  React63.useEffect(() => {
+  React79.useEffect(() => {
     if (store.select("floatingParentNodeId") == null) {
       return;
     }
@@ -31017,12 +32019,12 @@ var MenuPositioner = /* @__PURE__ */ React63.forwardRef(function MenuPositioner2
     };
   }, [floatingTreeRoot.events, store]);
   const closeTimeout = useTimeout();
-  React63.useEffect(() => {
+  React79.useEffect(() => {
     if (!open) {
       closeTimeout.clear();
     }
   }, [open, closeTimeout]);
-  React63.useEffect(() => {
+  React79.useEffect(() => {
     function onItemHover(event) {
       if (!open || event.nodeId !== store.select("floatingParentNodeId")) {
         return;
@@ -31047,7 +32049,7 @@ var MenuPositioner = /* @__PURE__ */ React63.forwardRef(function MenuPositioner2
       floatingTreeRoot.events.off("itemhover", onItemHover);
     };
   }, [floatingTreeRoot.events, open, triggerElement, store, closeTimeout]);
-  React63.useEffect(() => {
+  React79.useEffect(() => {
     const eventDetails = {
       open,
       nodeId: floatingNodeId,
@@ -31100,15 +32102,15 @@ var MenuPositioner = /* @__PURE__ */ React63.forwardRef(function MenuPositioner2
   } else if (parent.type === undefined) {
     backdropCutout = triggerElement;
   }
-  return /* @__PURE__ */ import_jsx_runtime12.jsxs(MenuPositionerContext.Provider, {
+  return /* @__PURE__ */ import_jsx_runtime15.jsxs(MenuPositionerContext.Provider, {
     value: positioner,
-    children: [shouldRenderBackdrop && /* @__PURE__ */ import_jsx_runtime12.jsx(InternalBackdrop, {
+    children: [shouldRenderBackdrop && /* @__PURE__ */ import_jsx_runtime15.jsx(InternalBackdrop, {
       ref: parent.type === "context-menu" || parent.type === "nested-context-menu" ? parent.context.internalBackdropRef : null,
       inert: inertValue(!open),
       cutout: backdropCutout
-    }), /* @__PURE__ */ import_jsx_runtime12.jsx(FloatingNode, {
+    }), /* @__PURE__ */ import_jsx_runtime15.jsx(FloatingNode, {
       id: floatingNodeId,
-      children: /* @__PURE__ */ import_jsx_runtime12.jsx(CompositeList, {
+      children: /* @__PURE__ */ import_jsx_runtime15.jsx(CompositeList, {
         elementsRef: store.context.itemDomElements,
         labelsRef: store.context.itemLabels,
         children: element2
@@ -31119,16 +32121,16 @@ var MenuPositioner = /* @__PURE__ */ React63.forwardRef(function MenuPositioner2
 if (false)
   ;
 // node_modules/@base-ui/react/menu/radio-group/MenuRadioGroup.mjs
-var React65 = __toESM(require_react(), 1);
+var React81 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/menu/radio-group/MenuRadioGroupContext.mjs
-var React64 = __toESM(require_react(), 1);
+var React80 = __toESM(require_react(), 1);
 "use client";
-var MenuRadioGroupContext = /* @__PURE__ */ React64.createContext(undefined);
+var MenuRadioGroupContext = /* @__PURE__ */ React80.createContext(undefined);
 if (false)
   ;
 function useMenuRadioGroupContext() {
-  const context = React64.useContext(MenuRadioGroupContext);
+  const context = React80.useContext(MenuRadioGroupContext);
   if (context === undefined) {
     throw new Error(formatErrorMessage_default(34));
   }
@@ -31136,9 +32138,9 @@ function useMenuRadioGroupContext() {
 }
 
 // node_modules/@base-ui/react/menu/radio-group/MenuRadioGroup.mjs
-var import_jsx_runtime13 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime16 = __toESM(require_jsx_runtime(), 1);
 "use client";
-var MenuRadioGroup = /* @__PURE__ */ React65.memo(/* @__PURE__ */ React65.forwardRef(function MenuRadioGroup2(componentProps, forwardedRef) {
+var MenuRadioGroup = /* @__PURE__ */ React81.memo(/* @__PURE__ */ React81.forwardRef(function MenuRadioGroup2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -31150,7 +32152,7 @@ var MenuRadioGroup = /* @__PURE__ */ React65.memo(/* @__PURE__ */ React65.forwar
     "aria-labelledby": ariaLabelledByProp,
     ...elementProps
   } = componentProps;
-  const [labelId, setLabelId] = React65.useState(undefined);
+  const [labelId, setLabelId] = React81.useState(undefined);
   const [value, setValueUnwrapped] = useControlled({
     controlled: valueProp,
     default: defaultValue,
@@ -31176,14 +32178,14 @@ var MenuRadioGroup = /* @__PURE__ */ React65.memo(/* @__PURE__ */ React65.forwar
       ...elementProps
     }
   });
-  const context = React65.useMemo(() => ({
+  const context = React81.useMemo(() => ({
     value,
     setValue,
     disabled: disabled2
   }), [value, setValue, disabled2]);
-  return /* @__PURE__ */ import_jsx_runtime13.jsx(MenuGroupContext.Provider, {
+  return /* @__PURE__ */ import_jsx_runtime16.jsx(MenuGroupContext.Provider, {
     value: setLabelId,
-    children: /* @__PURE__ */ import_jsx_runtime13.jsx(MenuRadioGroupContext.Provider, {
+    children: /* @__PURE__ */ import_jsx_runtime16.jsx(MenuRadioGroupContext.Provider, {
       value: context,
       children: element2
     })
@@ -31192,16 +32194,16 @@ var MenuRadioGroup = /* @__PURE__ */ React65.memo(/* @__PURE__ */ React65.forwar
 if (false)
   ;
 // node_modules/@base-ui/react/menu/radio-item/MenuRadioItem.mjs
-var React67 = __toESM(require_react(), 1);
+var React83 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/menu/radio-item/MenuRadioItemContext.mjs
-var React66 = __toESM(require_react(), 1);
+var React82 = __toESM(require_react(), 1);
 "use client";
-var MenuRadioItemContext = /* @__PURE__ */ React66.createContext(undefined);
+var MenuRadioItemContext = /* @__PURE__ */ React82.createContext(undefined);
 if (false)
   ;
 function useMenuRadioItemContext() {
-  const context = React66.useContext(MenuRadioItemContext);
+  const context = React82.useContext(MenuRadioItemContext);
   if (context === undefined) {
     throw new Error(formatErrorMessage_default(35));
   }
@@ -31209,9 +32211,9 @@ function useMenuRadioItemContext() {
 }
 
 // node_modules/@base-ui/react/menu/radio-item/MenuRadioItem.mjs
-var import_jsx_runtime14 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime17 = __toESM(require_jsx_runtime(), 1);
 "use client";
-var MenuRadioItem = /* @__PURE__ */ React67.forwardRef(function MenuRadioItem2(componentProps, forwardedRef) {
+var MenuRadioItem = /* @__PURE__ */ React83.forwardRef(function MenuRadioItem2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -31254,7 +32256,7 @@ var MenuRadioItem = /* @__PURE__ */ React67.forwardRef(function MenuRadioItem2(c
     nodeId: menuPositionerContext?.context.nodeId,
     itemMetadata: REGULAR_ITEM
   });
-  const state = React67.useMemo(() => ({
+  const state = React83.useMemo(() => ({
     disabled: disabled2,
     highlighted,
     checked
@@ -31275,7 +32277,7 @@ var MenuRadioItem = /* @__PURE__ */ React67.forwardRef(function MenuRadioItem2(c
     }, elementProps, getItemProps],
     ref: [itemRef, forwardedRef, listItem.ref]
   });
-  return /* @__PURE__ */ import_jsx_runtime14.jsx(MenuRadioItemContext.Provider, {
+  return /* @__PURE__ */ import_jsx_runtime17.jsx(MenuRadioItemContext.Provider, {
     value: state,
     children: element2
   });
@@ -31283,9 +32285,9 @@ var MenuRadioItem = /* @__PURE__ */ React67.forwardRef(function MenuRadioItem2(c
 if (false)
   ;
 // node_modules/@base-ui/react/menu/radio-item-indicator/MenuRadioItemIndicator.mjs
-var React68 = __toESM(require_react(), 1);
+var React84 = __toESM(require_react(), 1);
 "use client";
-var MenuRadioItemIndicator = /* @__PURE__ */ React68.forwardRef(function MenuRadioItemIndicator2(componentProps, forwardedRef) {
+var MenuRadioItemIndicator = /* @__PURE__ */ React84.forwardRef(function MenuRadioItemIndicator2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -31294,7 +32296,7 @@ var MenuRadioItemIndicator = /* @__PURE__ */ React68.forwardRef(function MenuRad
     ...elementProps
   } = componentProps;
   const item = useMenuRadioItemContext();
-  const indicatorRef = React68.useRef(null);
+  const indicatorRef = React84.useRef(null);
   const {
     transitionStatus,
     setMounted
@@ -31329,107 +32331,25 @@ var MenuRadioItemIndicator = /* @__PURE__ */ React68.forwardRef(function MenuRad
 if (false)
   ;
 // node_modules/@base-ui/react/menu/root/MenuRoot.mjs
-var React75 = __toESM(require_react(), 1);
+var React88 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/menubar/MenubarContext.mjs
-var React69 = __toESM(require_react(), 1);
+var React85 = __toESM(require_react(), 1);
 "use client";
-var MenubarContext = /* @__PURE__ */ React69.createContext(null);
+var MenubarContext = /* @__PURE__ */ React85.createContext(null);
 if (false)
   ;
 function useMenubarContext(optional) {
-  const context = React69.useContext(MenubarContext);
+  const context = React85.useContext(MenubarContext);
   if (context === null && !optional) {
     throw new Error(formatErrorMessage_default(5));
   }
   return context;
 }
 
-// node_modules/@base-ui/react/utils/useOpenInteractionType.mjs
-var React72 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/utils/useEnhancedClickHandler.mjs
-var React70 = __toESM(require_react(), 1);
-"use client";
-function useEnhancedClickHandler(handler) {
-  const lastClickInteractionTypeRef = React70.useRef("");
-  const handlePointerDown = React70.useCallback((event) => {
-    if (event.defaultPrevented) {
-      return;
-    }
-    lastClickInteractionTypeRef.current = event.pointerType;
-    handler(event, event.pointerType);
-  }, [handler]);
-  const handleClick = React70.useCallback((event) => {
-    if (event.detail === 0) {
-      handler(event, "keyboard");
-      return;
-    }
-    if ("pointerType" in event) {
-      handler(event, event.pointerType);
-    } else {
-      handler(event, lastClickInteractionTypeRef.current);
-    }
-    lastClickInteractionTypeRef.current = "";
-  }, [handler]);
-  return {
-    onClick: handleClick,
-    onPointerDown: handlePointerDown
-  };
-}
-
-// node_modules/@base-ui/react/internals/useValueChanged.mjs
-var React71 = __toESM(require_react(), 1);
-"use client";
-function useValueChanged(value, onChange) {
-  const valueRef = React71.useRef(value);
-  const onChangeCallback = useStableCallback(onChange);
-  useIsoLayoutEffect(() => {
-    if (valueRef.current === value) {
-      return;
-    }
-    onChangeCallback(valueRef.current);
-  }, [value, onChangeCallback]);
-  useIsoLayoutEffect(() => {
-    valueRef.current = value;
-  }, [value]);
-}
-
-// node_modules/@base-ui/react/utils/useOpenInteractionType.mjs
-"use client";
-function useOpenMethodTriggerProps(open, setOpenMethod) {
-  const handleTriggerClick = useStableCallback((_, interactionType) => {
-    const isOpen = typeof open === "function" ? open() : open;
-    if (!isOpen) {
-      setOpenMethod(interactionType || (exports_parts.os.ios ? "touch" : ""));
-    }
-  });
-  const {
-    onClick,
-    onPointerDown
-  } = useEnhancedClickHandler(handleTriggerClick);
-  return React72.useMemo(() => ({
-    onClick,
-    onPointerDown
-  }), [onClick, onPointerDown]);
-}
-function useOpenInteractionType(open) {
-  const [openMethod, setOpenMethod] = React72.useState(null);
-  const triggerProps = useOpenMethodTriggerProps(open, setOpenMethod);
-  useValueChanged(open, (previousOpen) => {
-    if (previousOpen && !open) {
-      setOpenMethod(null);
-    }
-  });
-  return React72.useMemo(() => ({
-    openMethod,
-    triggerProps
-  }), [openMethod, triggerProps]);
-}
-
 // node_modules/@base-ui/react/menu/store/MenuStore.mjs
-var React73 = __toESM(require_react(), 1);
-var selectors2 = {
+var React86 = __toESM(require_react(), 1);
+var selectors3 = {
   ...popupStoreSelectors,
   disabled: createSelector((state) => state.parent.type === "menubar" ? state.parent.context.disabled || state.disabled : state.disabled),
   modal: createSelector((state) => (state.parent.type === undefined || state.parent.type === "context-menu") && (state.modal ?? true)),
@@ -31474,11 +32394,11 @@ var selectors2 = {
 class MenuStore extends ReactStore {
   constructor(initialState) {
     super({
-      ...createInitialState(),
+      ...createInitialState2(),
       ...initialState
     }, {
-      positionerRef: /* @__PURE__ */ React73.createRef(),
-      popupRef: /* @__PURE__ */ React73.createRef(),
+      positionerRef: /* @__PURE__ */ React86.createRef(),
+      popupRef: /* @__PURE__ */ React86.createRef(),
       typingRef: {
         current: false
       },
@@ -31491,11 +32411,11 @@ class MenuStore extends ReactStore {
       allowMouseUpTriggerRef: {
         current: false
       },
-      triggerFocusTargetRef: /* @__PURE__ */ React73.createRef(),
-      beforeContentFocusGuardRef: /* @__PURE__ */ React73.createRef(),
+      triggerFocusTargetRef: /* @__PURE__ */ React86.createRef(),
+      beforeContentFocusGuardRef: /* @__PURE__ */ React86.createRef(),
       onOpenChangeComplete: undefined,
       triggerElements: new PopupTriggerMap
-    }, selectors2);
+    }, selectors3);
     this.unsubscribeParentListener = this.observe("parent", (parent) => {
       this.unsubscribeParentListener?.();
       if (parent.type === "menu") {
@@ -31537,7 +32457,7 @@ class MenuStore extends ReactStore {
   }
   unsubscribeParentListener = null;
 }
-function createInitialState() {
+function createInitialState2() {
   return {
     ...createInitialPopupStoreState(),
     disabled: false,
@@ -31565,17 +32485,17 @@ function createInitialState() {
 }
 
 // node_modules/@base-ui/react/menu/submenu-root/MenuSubmenuRootContext.mjs
-var React74 = __toESM(require_react(), 1);
+var React87 = __toESM(require_react(), 1);
 "use client";
-var MenuSubmenuRootContext = /* @__PURE__ */ React74.createContext(undefined);
+var MenuSubmenuRootContext = /* @__PURE__ */ React87.createContext(undefined);
 if (false)
   ;
 function useMenuSubmenuRootContext() {
-  return React74.useContext(MenuSubmenuRootContext);
+  return React87.useContext(MenuSubmenuRootContext);
 }
 
 // node_modules/@base-ui/react/menu/root/MenuRoot.mjs
-var import_jsx_runtime15 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime18 = __toESM(require_jsx_runtime(), 1);
 "use client";
 var MenuRoot = fastComponent(function MenuRoot2(props) {
   const {
@@ -31599,7 +32519,7 @@ var MenuRoot = fastComponent(function MenuRoot2(props) {
   const parentMenuRootContext = useMenuRootContext(true);
   const menubarContext = useMenubarContext(true);
   const isSubmenu = useMenuSubmenuRootContext();
-  const parentFromContext = React75.useMemo(() => {
+  const parentFromContext = React88.useMemo(() => {
     if (isSubmenu && parentMenuRootContext) {
       return {
         type: "menu",
@@ -31648,10 +32568,10 @@ var MenuRoot = fastComponent(function MenuRoot2(props) {
   const activeIndex = store.useState("activeIndex");
   const payload = store.useState("payload");
   const floatingParentNodeId = store.useState("floatingParentNodeId");
-  const openEventRef = React75.useRef(null);
-  const allowOutsidePressDismissalRef = React75.useRef(parent.type !== "context-menu");
+  const openEventRef = React88.useRef(null);
+  const allowOutsidePressDismissalRef = React88.useRef(parent.type !== "context-menu");
   const allowOutsidePressDismissalTimeout = useTimeout();
-  const allowTouchToCloseRef = React75.useRef(true);
+  const allowTouchToCloseRef = React88.useRef(true);
   const allowTouchToCloseTimeout = useTimeout();
   const nested = floatingParentNodeId != null;
   if (false) {}
@@ -31692,7 +32612,7 @@ var MenuRoot = fastComponent(function MenuRoot2(props) {
       });
     }
   }, [contextMenuContext, parentMenuRootContext, floatingNodeIdFromContext, floatingParentNodeIdFromContext, store]);
-  React75.useEffect(() => {
+  React88.useEffect(() => {
     if (!open) {
       openEventRef.current = null;
     }
@@ -31764,7 +32684,7 @@ var MenuRoot = fastComponent(function MenuRoot2(props) {
     onOpenChange: setOpen
   });
   const floatingEvents = floatingRootContext.context.events;
-  React75.useEffect(() => {
+  React88.useEffect(() => {
     const handleSetOpenEvent = ({
       open: nextOpen,
       eventDetails
@@ -31774,10 +32694,10 @@ var MenuRoot = fastComponent(function MenuRoot2(props) {
       floatingEvents?.off("setOpen", handleSetOpenEvent);
     };
   }, [floatingEvents, setOpen]);
-  const handleImperativeClose = React75.useCallback(() => {
+  const handleImperativeClose = React88.useCallback(() => {
     store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction));
   }, [store]);
-  React75.useImperativeHandle(actionsRef, () => ({
+  React88.useImperativeHandle(actionsRef, () => ({
     unmount: forceUnmount,
     close: handleImperativeClose
   }), [forceUnmount, handleImperativeClose]);
@@ -31785,8 +32705,8 @@ var MenuRoot = fastComponent(function MenuRoot2(props) {
   if (parent.type === "context-menu") {
     ctx = parent.context;
   }
-  React75.useImperativeHandle(ctx?.positionerRef, () => positionerElement, [positionerElement]);
-  React75.useImperativeHandle(ctx?.actionsRef, () => ({
+  React88.useImperativeHandle(ctx?.positionerRef, () => positionerElement, [positionerElement]);
+  React88.useImperativeHandle(ctx?.actionsRef, () => ({
     setOpen
   }), [setOpen]);
   const dismiss = useDismiss(floatingRootContext, {
@@ -31803,7 +32723,7 @@ var MenuRoot = fastComponent(function MenuRoot2(props) {
     externalTree: nested ? floatingTreeRoot : undefined
   });
   const direction = useDirection();
-  const setActiveIndex = React75.useCallback((index4) => {
+  const setActiveIndex = React88.useCallback((index4) => {
     if (store.select("activeIndex") === index4) {
       return;
     }
@@ -31824,7 +32744,7 @@ var MenuRoot = fastComponent(function MenuRoot2(props) {
     externalTree: nested ? floatingTreeRoot : undefined,
     focusItemOnHover: highlightItemOnHover
   });
-  const onTyping = React75.useCallback((nextTyping) => {
+  const onTyping = React88.useCallback((nextTyping) => {
     store.context.typingRef.current = nextTyping;
   }, [store]);
   const typeahead = useTypeahead(floatingRootContext, {
@@ -31840,7 +32760,7 @@ var MenuRoot = fastComponent(function MenuRoot2(props) {
     },
     onTyping
   });
-  const activeTriggerProps = React75.useMemo(() => {
+  const activeTriggerProps = React88.useMemo(() => {
     const mergedProps = mergeProps(typeahead.reference, listNavigation2.reference, dismiss.reference, {
       onMouseMove() {
         store.set("allowMouseEnter", true);
@@ -31850,13 +32770,13 @@ var MenuRoot = fastComponent(function MenuRoot2(props) {
     mergedProps["aria-expanded"] = open;
     return mergedProps;
   }, [store, typeahead.reference, listNavigation2.reference, dismiss.reference, interactionTypeProps, open]);
-  const inactiveTriggerProps = React75.useMemo(() => {
+  const inactiveTriggerProps = React88.useMemo(() => {
     const mergedProps = mergeProps(listNavigation2.trigger, dismiss.trigger, interactionTypeProps);
     mergedProps["aria-haspopup"] = "menu";
     mergedProps["aria-expanded"] = false;
     return mergedProps;
   }, [listNavigation2.trigger, dismiss.trigger, interactionTypeProps]);
-  const popupProps = React75.useMemo(() => mergeProps(FOCUSABLE_POPUP_PROPS, {
+  const popupProps = React88.useMemo(() => mergeProps(FOCUSABLE_POPUP_PROPS, {
     id: floatingId,
     role: "menu",
     "aria-labelledby": activeTriggerElement?.id,
@@ -31886,18 +32806,18 @@ var MenuRoot = fastComponent(function MenuRoot2(props) {
     popupProps,
     itemProps
   });
-  const context = React75.useMemo(() => ({
+  const context = React88.useMemo(() => ({
     store,
     parent: parentFromContext
   }), [store, parentFromContext]);
-  const content3 = /* @__PURE__ */ import_jsx_runtime15.jsx(MenuRootContext.Provider, {
+  const content3 = /* @__PURE__ */ import_jsx_runtime18.jsx(MenuRootContext.Provider, {
     value: context,
     children: typeof children === "function" ? children({
       payload
     }) : children
   });
   if (parent.type === undefined || parent.type === "context-menu") {
-    return /* @__PURE__ */ import_jsx_runtime15.jsx(FloatingTree, {
+    return /* @__PURE__ */ import_jsx_runtime18.jsx(FloatingTree, {
       externalTree: floatingTreeRoot,
       children: content3
     });
@@ -31907,23 +32827,23 @@ var MenuRoot = fastComponent(function MenuRoot2(props) {
 if (false)
   ;
 // node_modules/@base-ui/react/menu/submenu-root/MenuSubmenuRoot.mjs
-var React76 = __toESM(require_react(), 1);
-var import_jsx_runtime16 = __toESM(require_jsx_runtime(), 1);
+var React89 = __toESM(require_react(), 1);
+var import_jsx_runtime19 = __toESM(require_jsx_runtime(), 1);
 "use client";
 function MenuSubmenuRoot(props) {
   const parentMenu = useMenuRootContext().store;
-  const contextValue = React76.useMemo(() => ({
+  const contextValue = React89.useMemo(() => ({
     parentMenu
   }), [parentMenu]);
-  return /* @__PURE__ */ import_jsx_runtime16.jsx(MenuSubmenuRootContext.Provider, {
+  return /* @__PURE__ */ import_jsx_runtime19.jsx(MenuSubmenuRootContext.Provider, {
     value: contextValue,
-    children: /* @__PURE__ */ import_jsx_runtime16.jsx(MenuRoot, {
+    children: /* @__PURE__ */ import_jsx_runtime19.jsx(MenuRoot, {
       ...props
     })
   });
 }
 // node_modules/@base-ui/react/menu/trigger/MenuTrigger.mjs
-var React80 = __toESM(require_react(), 1);
+var React93 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/utils/getPseudoElementBounds.mjs
 function getPseudoElementBounds(element2) {
@@ -31955,7 +32875,7 @@ function getPseudoElementBounds(element2) {
 }
 
 // node_modules/@base-ui/react/internals/composite/item/useCompositeItem.mjs
-var React77 = __toESM(require_react(), 1);
+var React90 = __toESM(require_react(), 1);
 "use client";
 function useCompositeItem(params = {}) {
   const {
@@ -31968,7 +32888,7 @@ function useCompositeItem(params = {}) {
     index: index4
   } = useCompositeListItem(params);
   const isHighlighted = highlightedIndex === index4;
-  const itemRef = React77.useRef(null);
+  const itemRef = React90.useRef(null);
   const mergedRef = useMergedRefs(ref, itemRef);
   const compositeProps = {
     tabIndex: isHighlighted ? 0 : -1,
@@ -32004,7 +32924,7 @@ function CompositeItem(componentProps) {
     props = EMPTY_ARRAY,
     refs = EMPTY_ARRAY,
     metadata,
-    stateAttributesMapping: stateAttributesMapping3,
+    stateAttributesMapping: stateAttributesMapping6,
     tag = "div",
     ...elementProps
   } = componentProps;
@@ -32018,7 +32938,7 @@ function CompositeItem(componentProps) {
     state,
     ref: [...refs, compositeRef],
     props: [compositeProps, ...props, elementProps],
-    stateAttributesMapping: stateAttributesMapping3
+    stateAttributesMapping: stateAttributesMapping6
   });
 }
 
@@ -32034,11 +32954,11 @@ function findRootOwnerId(node) {
 }
 
 // node_modules/@base-ui/react/utils/popups/useTriggerFocusGuards.mjs
-var React78 = __toESM(require_react(), 1);
+var React91 = __toESM(require_react(), 1);
 var ReactDOM7 = __toESM(require_react_dom(), 1);
 "use client";
 function useTriggerFocusGuards(store, triggerElementRef) {
-  const preFocusGuardRef = React78.useRef(null);
+  const preFocusGuardRef = React91.useRef(null);
   function handlePreFocusGuardFocus(event) {
     ReactDOM7.flushSync(() => {
       store.setOpen(false, createChangeEventDetails(exports_reason_parts.focusOut, event.nativeEvent, event.currentTarget));
@@ -32073,7 +32993,7 @@ function useTriggerFocusGuards(store, triggerElementRef) {
 }
 
 // node_modules/@base-ui/react/utils/useMixedToggleClickHandler.mjs
-var React79 = __toESM(require_react(), 1);
+var React92 = __toESM(require_react(), 1);
 "use client";
 function useMixedToggleClickHandler(params) {
   const {
@@ -32081,8 +33001,8 @@ function useMixedToggleClickHandler(params) {
     mouseDownAction,
     open
   } = params;
-  const ignoreClickRef = React79.useRef(false);
-  return React79.useMemo(() => {
+  const ignoreClickRef = React92.useRef(false);
+  return React92.useMemo(() => {
     if (!enabled) {
       return EMPTY_OBJECT;
     }
@@ -32108,7 +33028,7 @@ function useMixedToggleClickHandler(params) {
 }
 
 // node_modules/@base-ui/react/menu/trigger/MenuTrigger.mjs
-var import_jsx_runtime17 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime20 = __toESM(require_jsx_runtime(), 1);
 "use client";
 var BOUNDARY_OFFSET = 2;
 var MenuTrigger = fastComponentRef(function MenuTrigger2(componentProps, forwardedRef) {
@@ -32136,11 +33056,11 @@ var MenuTrigger = fastComponentRef(function MenuTrigger2(componentProps, forward
   const floatingRootContext = store.useState("floatingRootContext");
   const isOpenedByThisTrigger = store.useState("isOpenedByTrigger", thisTriggerId);
   const popupId = store.useState("triggerPopupId", thisTriggerId);
-  const triggerElementRef = React80.useRef(null);
+  const triggerElementRef = React93.useRef(null);
   const parent = useMenuParent();
   const compositeRootContext = useCompositeRootContext(true);
   const floatingTreeRootFromContext = useFloatingTree();
-  const floatingTreeRoot = React80.useMemo(() => {
+  const floatingTreeRoot = React93.useMemo(() => {
     return floatingTreeRootFromContext ?? new FloatingTreeStore;
   }, [floatingTreeRootFromContext]);
   const floatingNodeId = useFloatingNodeId(floatingTreeRoot);
@@ -32167,12 +33087,12 @@ var MenuTrigger = fastComponentRef(function MenuTrigger2(componentProps, forward
     disabled: disabled2,
     native: nativeButton
   });
-  React80.useEffect(() => {
+  React93.useEffect(() => {
     if (!isOpenedByThisTrigger && parent.type === undefined) {
       store.context.allowMouseUpTriggerRef.current = false;
     }
   }, [store, isOpenedByThisTrigger, parent.type]);
-  const triggerRef = React80.useRef(null);
+  const triggerRef = React93.useRef(null);
   const allowMouseUpTriggerTimeout = useTimeout();
   const handleDocumentMouseUp = useStableCallback((mouseEvent) => {
     if (!triggerRef.current) {
@@ -32196,7 +33116,7 @@ var MenuTrigger = fastComponentRef(function MenuTrigger2(componentProps, forward
       reason: exports_reason_parts.cancelOpen
     });
   });
-  React80.useEffect(() => {
+  React93.useEffect(() => {
     if (isOpenedByThisTrigger && store.select("lastOpenChangeReason") === exports_reason_parts.triggerHover) {
       const doc = ownerDocument(triggerRef.current);
       doc.addEventListener("mouseup", handleDocumentMouseUp, {
@@ -32238,7 +33158,7 @@ var MenuTrigger = fastComponentRef(function MenuTrigger2(componentProps, forward
     enabled: isInMenubar,
     mouseDownAction: "open"
   });
-  const localInteractionProps = React80.useMemo(() => mergeProps(focus.reference, click.reference), [focus.reference, click.reference]);
+  const localInteractionProps = React93.useMemo(() => mergeProps(focus.reference, click.reference), [focus.reference, click.reference]);
   const rootTriggerProps = store.useState("triggerProps", isMountedByThisTrigger);
   const {
     preFocusGuardRef,
@@ -32277,7 +33197,7 @@ var MenuTrigger = fastComponentRef(function MenuTrigger2(componentProps, forward
     props
   });
   if (isInMenubar) {
-    return /* @__PURE__ */ import_jsx_runtime17.jsx(CompositeItem, {
+    return /* @__PURE__ */ import_jsx_runtime20.jsx(CompositeItem, {
       tag: "button",
       render,
       className,
@@ -32289,19 +33209,19 @@ var MenuTrigger = fastComponentRef(function MenuTrigger2(componentProps, forward
     });
   }
   if (isOpenedByThisTrigger) {
-    return /* @__PURE__ */ import_jsx_runtime17.jsxs(React80.Fragment, {
-      children: [/* @__PURE__ */ import_jsx_runtime17.jsx(FocusGuard, {
+    return /* @__PURE__ */ import_jsx_runtime20.jsxs(React93.Fragment, {
+      children: [/* @__PURE__ */ import_jsx_runtime20.jsx(FocusGuard, {
         ref: preFocusGuardRef,
         onFocus: handlePreFocusGuardFocus
-      }, `${thisTriggerId}-pre-focus-guard`), /* @__PURE__ */ import_jsx_runtime17.jsx(React80.Fragment, {
+      }, `${thisTriggerId}-pre-focus-guard`), /* @__PURE__ */ import_jsx_runtime20.jsx(React93.Fragment, {
         children: element2
-      }, thisTriggerId), /* @__PURE__ */ import_jsx_runtime17.jsx(FocusGuard, {
+      }, thisTriggerId), /* @__PURE__ */ import_jsx_runtime20.jsx(FocusGuard, {
         ref: store.context.triggerFocusTargetRef,
         onFocus: handleFocusTargetFocus
       }, `${thisTriggerId}-post-focus-guard`)]
     });
   }
-  return /* @__PURE__ */ import_jsx_runtime17.jsx(React80.Fragment, {
+  return /* @__PURE__ */ import_jsx_runtime20.jsx(React93.Fragment, {
     children: element2
   }, thisTriggerId);
 });
@@ -32309,7 +33229,7 @@ if (false)
   ;
 function useStickIfOpen(open, openReason) {
   const stickIfOpenTimeout = useTimeout();
-  const [stickIfOpen, setStickIfOpen] = React80.useState(false);
+  const [stickIfOpen, setStickIfOpen] = React93.useState(false);
   useIsoLayoutEffect(() => {
     if (open && openReason === "trigger-hover") {
       setStickIfOpen(true);
@@ -32327,7 +33247,7 @@ function useMenuParent() {
   const contextMenuContext = useContextMenuRootContext(true);
   const parentContext = useMenuRootContext(true);
   const menubarContext = useMenubarContext(true);
-  const parent = React80.useMemo(() => {
+  const parent = React93.useMemo(() => {
     if (menubarContext) {
       return {
         type: "menubar",
@@ -32347,17 +33267,17 @@ function useMenuParent() {
   return parent;
 }
 // node_modules/@base-ui/react/menu/viewport/MenuViewport.mjs
-var React84 = __toESM(require_react(), 1);
+var React97 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/utils/usePopupViewport.mjs
-var React83 = __toESM(require_react(), 1);
+var React96 = __toESM(require_react(), 1);
 var ReactDOM8 = __toESM(require_react_dom(), 1);
 
 // node_modules/@base-ui/utils/usePreviousValue.mjs
-var React81 = __toESM(require_react(), 1);
+var React94 = __toESM(require_react(), 1);
 "use client";
 function usePreviousValue(value) {
-  const [state, setState] = React81.useState({
+  const [state, setState] = React94.useState({
     current: value,
     previous: null
   });
@@ -32371,7 +33291,7 @@ function usePreviousValue(value) {
 }
 
 // node_modules/@base-ui/react/utils/usePopupAutoResize.mjs
-var React82 = __toESM(require_react(), 1);
+var React95 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/utils/getCssDimensions.mjs
 function getCssDimensions2(element2) {
@@ -32407,12 +33327,12 @@ function usePopupAutoResize(parameters) {
   } = parameters;
   const runOnceAnimationsFinish = useAnimationsFinished(popupElement, true, false);
   const animationFrame = useAnimationFrame();
-  const committedDimensionsRef = React82.useRef(null);
-  const isInitialRenderRef = React82.useRef(true);
-  const restoreAnchoringStylesRef = React82.useRef(NOOP);
+  const committedDimensionsRef = React95.useRef(null);
+  const isInitialRenderRef = React95.useRef(true);
+  const restoreAnchoringStylesRef = React95.useRef(NOOP);
   const onMeasureLayout = useStableCallback(onMeasureLayoutParam);
   const onMeasureLayoutComplete = useStableCallback(onMeasureLayoutCompleteParam);
-  const anchoringStyles = React82.useMemo(() => {
+  const anchoringStyles = React95.useMemo(() => {
     let isOriginSide = side === "top";
     let isPhysicalLeft = side === "left";
     if (direction === "rtl") {
@@ -32523,7 +33443,7 @@ function setPositionerCssSize(positionerElement, size4) {
   positionerElement.style.setProperty("--positioner-height", height);
 }
 // node_modules/@base-ui/react/utils/usePopupViewport.mjs
-var import_jsx_runtime18 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime21 = __toESM(require_jsx_runtime(), 1);
 "use client";
 function usePopupViewport(parameters) {
   const {
@@ -32542,15 +33462,15 @@ function usePopupViewport(parameters) {
   const positionerElement = store.useState("positionerElement");
   const previousActiveTrigger = usePreviousValue(open ? activeTrigger : null);
   const currentContentKey = usePopupContentKey(activeTriggerId, payload);
-  const capturedNodeRef = React83.useRef(null);
-  const [previousContentNode, setPreviousContentNode] = React83.useState(null);
-  const [newTriggerOffset, setNewTriggerOffset] = React83.useState(null);
-  const currentContainerRef = React83.useRef(null);
-  const previousContainerRef = React83.useRef(null);
+  const capturedNodeRef = React96.useRef(null);
+  const [previousContentNode, setPreviousContentNode] = React96.useState(null);
+  const [newTriggerOffset, setNewTriggerOffset] = React96.useState(null);
+  const currentContainerRef = React96.useRef(null);
+  const previousContainerRef = React96.useRef(null);
   const onAnimationsFinished = useAnimationsFinished(currentContainerRef, true, false);
   const cleanupFrame = useAnimationFrame();
-  const [previousContentDimensions, setPreviousContentDimensions] = React83.useState(null);
-  const [showStartingStyleAttribute, setShowStartingStyleAttribute] = React83.useState(false);
+  const [previousContentDimensions, setPreviousContentDimensions] = React96.useState(null);
+  const [showStartingStyleAttribute, setShowStartingStyleAttribute] = React96.useState(false);
   useIsoLayoutEffect(() => {
     store.set("hasViewport", true);
     return () => {
@@ -32570,7 +33490,7 @@ function usePopupViewport(parameters) {
       setPreviousContentDimensions(previousDimensions);
     }
   });
-  const lastHandledTriggerRef = React83.useRef(null);
+  const lastHandledTriggerRef = React96.useRef(null);
   useIsoLayoutEffect(() => {
     if (!open || !mounted) {
       lastHandledTriggerRef.current = null;
@@ -32609,14 +33529,14 @@ function usePopupViewport(parameters) {
   const isTransitioning = previousContentNode != null;
   let childrenToRender;
   if (!isTransitioning) {
-    childrenToRender = /* @__PURE__ */ import_jsx_runtime18.jsx("div", {
+    childrenToRender = /* @__PURE__ */ import_jsx_runtime21.jsx("div", {
       "data-current": true,
       ref: currentContainerRef,
       children
     }, currentContentKey);
   } else {
-    childrenToRender = /* @__PURE__ */ import_jsx_runtime18.jsxs(React83.Fragment, {
-      children: [/* @__PURE__ */ import_jsx_runtime18.jsx("div", {
+    childrenToRender = /* @__PURE__ */ import_jsx_runtime21.jsxs(React96.Fragment, {
+      children: [/* @__PURE__ */ import_jsx_runtime21.jsx("div", {
         "data-previous": true,
         inert: inertValue(true),
         ref: previousContainerRef,
@@ -32628,7 +33548,7 @@ function usePopupViewport(parameters) {
           position: "absolute"
         },
         "data-ending-style": showStartingStyleAttribute ? undefined : ""
-      }, "previous"), /* @__PURE__ */ import_jsx_runtime18.jsx("div", {
+      }, "previous"), /* @__PURE__ */ import_jsx_runtime21.jsx("div", {
         "data-current": true,
         ref: currentContainerRef,
         "data-starting-style": showStartingStyleAttribute ? "" : undefined,
@@ -32694,10 +33614,10 @@ function calculateRelativePosition(from, to) {
   };
 }
 function usePopupContentKey(activeTriggerId, payload) {
-  const [contentKey, setContentKey] = React83.useState(0);
-  const previousActiveTriggerIdRef = React83.useRef(activeTriggerId);
-  const previousPayloadRef = React83.useRef(payload);
-  const pendingPayloadUpdateRef = React83.useRef(false);
+  const [contentKey, setContentKey] = React96.useState(0);
+  const previousActiveTriggerIdRef = React96.useRef(activeTriggerId);
+  const previousPayloadRef = React96.useRef(payload);
+  const pendingPayloadUpdateRef = React96.useRef(false);
   useIsoLayoutEffect(() => {
     const previousActiveTriggerId = previousActiveTriggerIdRef.current;
     const previousPayload = previousPayloadRef.current;
@@ -32725,12 +33645,12 @@ var MenuViewportCssVars = /* @__PURE__ */ function(MenuViewportCssVars2) {
 
 // node_modules/@base-ui/react/menu/viewport/MenuViewport.mjs
 "use client";
-var stateAttributesMapping3 = {
+var stateAttributesMapping6 = {
   activationDirection: (value) => value ? {
     "data-activation-direction": value
   } : null
 };
-var MenuViewport = /* @__PURE__ */ React84.forwardRef(function MenuViewport2(componentProps, forwardedRef) {
+var MenuViewport = /* @__PURE__ */ React97.forwardRef(function MenuViewport2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -32765,15 +33685,15 @@ var MenuViewport = /* @__PURE__ */ React84.forwardRef(function MenuViewport2(com
     props: [elementProps, {
       children: childrenToRender
     }],
-    stateAttributesMapping: stateAttributesMapping3
+    stateAttributesMapping: stateAttributesMapping6
   });
 });
 if (false)
   ;
 // node_modules/@base-ui/react/separator/Separator.mjs
-var React85 = __toESM(require_react(), 1);
+var React98 = __toESM(require_react(), 1);
 "use client";
-var Separator = /* @__PURE__ */ React85.forwardRef(function SeparatorComponent(componentProps, forwardedRef) {
+var Separator = /* @__PURE__ */ React98.forwardRef(function SeparatorComponent(componentProps, forwardedRef) {
   const {
     className,
     render,
@@ -32797,9 +33717,9 @@ var Separator = /* @__PURE__ */ React85.forwardRef(function SeparatorComponent(c
 if (false)
   ;
 // node_modules/@base-ui/react/menu/submenu-trigger/MenuSubmenuTrigger.mjs
-var React86 = __toESM(require_react(), 1);
+var React99 = __toESM(require_react(), 1);
 "use client";
-var MenuSubmenuTrigger = /* @__PURE__ */ React86.forwardRef(function MenuSubmenuTrigger2(componentProps, forwardedRef) {
+var MenuSubmenuTrigger = /* @__PURE__ */ React99.forwardRef(function MenuSubmenuTrigger2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -32826,7 +33746,7 @@ var MenuSubmenuTrigger = /* @__PURE__ */ React86.forwardRef(function MenuSubmenu
   const floatingTreeRoot = store.useState("floatingTreeRoot");
   const popupId = store.useState("triggerPopupId", thisTriggerId);
   const baseRegisterTrigger = useTriggerRegistration(thisTriggerId, store);
-  const registerTrigger = React86.useCallback((element3) => {
+  const registerTrigger = React99.useCallback((element3) => {
     const cleanup = baseRegisterTrigger(element3);
     if (element3 !== null && store.select("open") && store.select("activeTriggerId") == null) {
       store.update({
@@ -32837,8 +33757,8 @@ var MenuSubmenuTrigger = /* @__PURE__ */ React86.forwardRef(function MenuSubmenu
     }
     return cleanup;
   }, [baseRegisterTrigger, closeDelay, store, thisTriggerId]);
-  const triggerElementRef = React86.useRef(null);
-  const handleTriggerElementRef = React86.useCallback((el) => {
+  const triggerElementRef = React99.useRef(null);
+  const handleTriggerElementRef = React99.useCallback((el) => {
     triggerElementRef.current = el;
     store.set("activeTriggerElement", el);
   }, [store]);
@@ -32854,7 +33774,7 @@ var MenuSubmenuTrigger = /* @__PURE__ */ React86.forwardRef(function MenuSubmenu
   if (false) {}
   const itemProps = parentMenuStore.useState("itemProps");
   const highlighted = parentMenuStore.useState("isActive", listItem.index);
-  const itemMetadata = React86.useMemo(() => ({
+  const itemMetadata = React99.useMemo(() => ({
     type: "submenu-trigger",
     setActive() {
       if (parentMenuStore.select("highlightItemOnHover")) {
@@ -32950,10 +33870,10 @@ function createMenuHandle() {
   return new MenuHandle;
 }
 // node_modules/@base-ui/react/context-menu/root/ContextMenuRoot.mjs
-var import_jsx_runtime19 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime22 = __toESM(require_jsx_runtime(), 1);
 "use client";
 function ContextMenuRoot(props) {
-  const [anchor, setAnchor] = React87.useState({
+  const [anchor, setAnchor] = React100.useState({
     getBoundingClientRect() {
       return DOMRect.fromRect({
         width: 0,
@@ -32963,14 +33883,14 @@ function ContextMenuRoot(props) {
       });
     }
   });
-  const backdropRef = React87.useRef(null);
-  const internalBackdropRef = React87.useRef(null);
-  const actionsRef = React87.useRef(null);
-  const positionerRef = React87.useRef(null);
-  const allowMouseUpTriggerRef = React87.useRef(true);
-  const initialCursorPointRef = React87.useRef(null);
+  const backdropRef = React100.useRef(null);
+  const internalBackdropRef = React100.useRef(null);
+  const actionsRef = React100.useRef(null);
+  const positionerRef = React100.useRef(null);
+  const allowMouseUpTriggerRef = React100.useRef(true);
+  const initialCursorPointRef = React100.useRef(null);
   const id = useId();
-  const contextValue = React87.useMemo(() => ({
+  const contextValue = React100.useMemo(() => ({
     anchor,
     setAnchor,
     actionsRef,
@@ -32981,21 +33901,21 @@ function ContextMenuRoot(props) {
     initialCursorPointRef,
     rootId: id
   }), [anchor, id]);
-  return /* @__PURE__ */ import_jsx_runtime19.jsx(ContextMenuRootContext.Provider, {
+  return /* @__PURE__ */ import_jsx_runtime22.jsx(ContextMenuRootContext.Provider, {
     value: contextValue,
-    children: /* @__PURE__ */ import_jsx_runtime19.jsx(MenuRootContext.Provider, {
+    children: /* @__PURE__ */ import_jsx_runtime22.jsx(MenuRootContext.Provider, {
       value: undefined,
-      children: /* @__PURE__ */ import_jsx_runtime19.jsx(exports_index_parts.Root, {
+      children: /* @__PURE__ */ import_jsx_runtime22.jsx(exports_index_parts2.Root, {
         ...props
       })
     })
   });
 }
 // node_modules/@base-ui/react/context-menu/trigger/ContextMenuTrigger.mjs
-var React88 = __toESM(require_react(), 1);
+var React101 = __toESM(require_react(), 1);
 "use client";
 var LONG_PRESS_DELAY = 500;
-var ContextMenuTrigger = /* @__PURE__ */ React88.forwardRef(function ContextMenuTrigger2(componentProps, forwardedRef) {
+var ContextMenuTrigger = /* @__PURE__ */ React101.forwardRef(function ContextMenuTrigger2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -33017,11 +33937,11 @@ var ContextMenuTrigger = /* @__PURE__ */ React88.forwardRef(function ContextMenu
   } = useMenuRootContext(false);
   const open = store.useState("open");
   const disabled2 = store.useState("disabled");
-  const triggerRef = React88.useRef(null);
-  const touchPositionRef = React88.useRef(null);
+  const triggerRef = React101.useRef(null);
+  const touchPositionRef = React101.useRef(null);
   const longPressTimeout = useTimeout();
   const allowMouseUpTimeout = useTimeout();
-  const allowMouseUpRef = React88.useRef(false);
+  const allowMouseUpRef = React101.useRef(false);
   function handleLongPress(x, y, event) {
     const isTouchEvent = event.type.startsWith("touch");
     initialCursorPointRef.current = {
@@ -33105,7 +34025,7 @@ var ContextMenuTrigger = /* @__PURE__ */ React88.forwardRef(function ContextMenu
     longPressTimeout.clear();
     touchPositionRef.current = null;
   }
-  React88.useEffect(() => {
+  React101.useEffect(() => {
     function handleDocumentContextMenu(event) {
       if (disabled2) {
         return;
@@ -33142,15 +34062,15 @@ var ContextMenuTrigger = /* @__PURE__ */ React88.forwardRef(function ContextMenu
 if (false)
   ;
 // src/scriptorium/surface/ui/context-menu.tsx
-var jsx_runtime7 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime8 = __toESM(require_jsx_runtime(), 1);
 function ContextMenu({ ...props }) {
-  return /* @__PURE__ */ jsx_runtime7.jsx(exports_index_parts2.Root, {
+  return /* @__PURE__ */ jsx_runtime8.jsx(exports_index_parts3.Root, {
     "data-slot": "context-menu",
     ...props
   });
 }
 function ContextMenuTrigger3({ className, ...props }) {
-  return /* @__PURE__ */ jsx_runtime7.jsx(exports_index_parts2.Trigger, {
+  return /* @__PURE__ */ jsx_runtime8.jsx(exports_index_parts3.Trigger, {
     "data-slot": "context-menu-trigger",
     className: cn("select-none", className),
     ...props
@@ -33164,14 +34084,14 @@ function ContextMenuContent({
   sideOffset = 0,
   ...props
 }) {
-  return /* @__PURE__ */ jsx_runtime7.jsx(exports_index_parts2.Portal, {
-    children: /* @__PURE__ */ jsx_runtime7.jsx(exports_index_parts2.Positioner, {
+  return /* @__PURE__ */ jsx_runtime8.jsx(exports_index_parts3.Portal, {
+    children: /* @__PURE__ */ jsx_runtime8.jsx(exports_index_parts3.Positioner, {
       className: "isolate z-50 outline-none",
       align,
       alignOffset,
       side,
       sideOffset,
-      children: /* @__PURE__ */ jsx_runtime7.jsx(exports_index_parts2.Popup, {
+      children: /* @__PURE__ */ jsx_runtime8.jsx(exports_index_parts3.Popup, {
         "data-slot": "context-menu-content",
         className: cn("z-50 max-h-(--available-height) min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 outline-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className),
         ...props
@@ -33185,7 +34105,7 @@ function ContextMenuItem({
   variant = "default",
   ...props
 }) {
-  return /* @__PURE__ */ jsx_runtime7.jsx(exports_index_parts2.Item, {
+  return /* @__PURE__ */ jsx_runtime8.jsx(exports_index_parts3.Item, {
     "data-slot": "context-menu-item",
     "data-inset": inset,
     "data-variant": variant,
@@ -33194,7 +34114,7 @@ function ContextMenuItem({
   });
 }
 function ContextMenuSub({ ...props }) {
-  return /* @__PURE__ */ jsx_runtime7.jsx(exports_index_parts2.SubmenuRoot, {
+  return /* @__PURE__ */ jsx_runtime8.jsx(exports_index_parts3.SubmenuRoot, {
     "data-slot": "context-menu-sub",
     ...props
   });
@@ -33205,21 +34125,21 @@ function ContextMenuSubTrigger({
   children,
   ...props
 }) {
-  return /* @__PURE__ */ jsx_runtime7.jsxs(exports_index_parts2.SubmenuTrigger, {
+  return /* @__PURE__ */ jsx_runtime8.jsxs(exports_index_parts3.SubmenuTrigger, {
     "data-slot": "context-menu-sub-trigger",
     "data-inset": inset,
     className: cn("flex cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-inset:pl-7 data-open:bg-accent data-open:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", className),
     ...props,
     children: [
       children,
-      /* @__PURE__ */ jsx_runtime7.jsx(ChevronRight, {
+      /* @__PURE__ */ jsx_runtime8.jsx(ChevronRight, {
         className: "ml-auto"
       })
     ]
   });
 }
 function ContextMenuSubContent({ ...props }) {
-  return /* @__PURE__ */ jsx_runtime7.jsx(ContextMenuContent, {
+  return /* @__PURE__ */ jsx_runtime8.jsx(ContextMenuContent, {
     "data-slot": "context-menu-sub-content",
     className: "shadow-lg",
     side: "right",
@@ -33227,893 +34147,18 @@ function ContextMenuSubContent({ ...props }) {
   });
 }
 function ContextMenuSeparator({ className, ...props }) {
-  return /* @__PURE__ */ jsx_runtime7.jsx(exports_index_parts2.Separator, {
+  return /* @__PURE__ */ jsx_runtime8.jsx(exports_index_parts3.Separator, {
     "data-slot": "context-menu-separator",
     className: cn("-mx-1 my-1 h-px bg-border", className),
     ...props
   });
 }
 function ContextMenuShortcut({ className, ...props }) {
-  return /* @__PURE__ */ jsx_runtime7.jsx("span", {
+  return /* @__PURE__ */ jsx_runtime8.jsx("span", {
     "data-slot": "context-menu-shortcut",
     className: cn("ml-auto text-xs tracking-widest text-muted-foreground group-focus/context-menu-item:text-accent-foreground", className),
     ...props
   });
-}
-
-// node_modules/@base-ui/react/alert-dialog/index.parts.mjs
-var exports_index_parts3 = {};
-__export(exports_index_parts3, {
-  Backdrop: () => DialogBackdrop,
-  Close: () => DialogClose,
-  Description: () => DialogDescription,
-  Handle: () => AlertDialogHandle,
-  Popup: () => DialogPopup,
-  Portal: () => DialogPortal,
-  Root: () => AlertDialogRoot,
-  Title: () => DialogTitle,
-  Trigger: () => AlertDialogTrigger,
-  Viewport: () => DialogViewport,
-  createHandle: () => createAlertDialogHandle
-});
-
-// node_modules/@base-ui/react/dialog/root/useRenderDialogRoot.mjs
-var React92 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/dialog/root/useDialogRoot.mjs
-var React89 = __toESM(require_react(), 1);
-"use client";
-function useDialogRoot(params) {
-  const {
-    store,
-    actionsRef
-  } = params;
-  const open = store.useState("open");
-  usePopupRootSync(store, open);
-  useImplicitActiveTrigger(store);
-  const {
-    forceUnmount
-  } = useOpenStateTransitions(open, store);
-  const handleImperativeClose = React89.useCallback(() => {
-    store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction));
-  }, [store]);
-  React89.useImperativeHandle(actionsRef, () => ({
-    unmount: forceUnmount,
-    close: handleImperativeClose
-  }), [forceUnmount, handleImperativeClose]);
-}
-function DialogInteractions({
-  store,
-  parentContext,
-  isDrawer
-}) {
-  const open = store.useState("open");
-  const disablePointerDismissal = store.useState("disablePointerDismissal");
-  const modal = store.useState("modal");
-  const popupElement = store.useState("popupElement");
-  const floatingRootContext = store.useState("floatingRootContext");
-  const [ownNestedOpenDialogs, setOwnNestedOpenDialogs] = React89.useState(0);
-  const [ownNestedOpenDrawers, setOwnNestedOpenDrawers] = React89.useState(0);
-  const isTopmost = ownNestedOpenDialogs === 0;
-  const dismiss = useDismiss(floatingRootContext, {
-    outsidePressEvent() {
-      if (store.context.internalBackdropRef.current || store.context.backdropRef.current) {
-        return "intentional";
-      }
-      return {
-        mouse: modal === "trap-focus" ? "sloppy" : "intentional",
-        touch: "sloppy"
-      };
-    },
-    outsidePress(event) {
-      if (!store.context.outsidePressEnabledRef.current) {
-        return false;
-      }
-      if ("button" in event && event.button !== 0) {
-        return false;
-      }
-      if ("touches" in event && event.touches.length !== 1) {
-        return false;
-      }
-      const target = getTarget(event);
-      if (isTopmost && !disablePointerDismissal) {
-        if (modal) {
-          return store.context.internalBackdropRef.current || store.context.backdropRef.current ? store.context.internalBackdropRef.current === target || store.context.backdropRef.current === target || contains(target, popupElement) && !target?.hasAttribute("data-base-ui-portal") : true;
-        }
-        return true;
-      }
-      return false;
-    },
-    escapeKey: isTopmost
-  });
-  useScrollLock(open && modal === true, popupElement);
-  store.useContextCallback("onNestedDialogOpen", (dialogCount, drawerCount) => {
-    setOwnNestedOpenDialogs(dialogCount);
-    setOwnNestedOpenDrawers(drawerCount);
-  });
-  store.useContextCallback("onNestedDialogClose", () => {
-    setOwnNestedOpenDialogs(0);
-    setOwnNestedOpenDrawers(0);
-  });
-  React89.useEffect(() => {
-    if (parentContext?.onNestedDialogOpen && open) {
-      parentContext.onNestedDialogOpen(ownNestedOpenDialogs + 1, ownNestedOpenDrawers + (isDrawer ? 1 : 0));
-    }
-    if (parentContext?.onNestedDialogClose && !open) {
-      parentContext.onNestedDialogClose();
-    }
-    return () => {
-      if (parentContext?.onNestedDialogClose && open) {
-        parentContext.onNestedDialogClose();
-      }
-    };
-  }, [isDrawer, open, ownNestedOpenDialogs, ownNestedOpenDrawers, parentContext]);
-  const activeTriggerProps = dismiss.reference ?? EMPTY_OBJECT;
-  const inactiveTriggerProps = dismiss.trigger ?? EMPTY_OBJECT;
-  const popupProps = dismiss.floating ?? EMPTY_OBJECT;
-  usePopupInteractionProps(store, {
-    activeTriggerProps,
-    inactiveTriggerProps,
-    popupProps,
-    nestedOpenDialogCount: ownNestedOpenDialogs,
-    nestedOpenDrawerCount: ownNestedOpenDrawers
-  });
-  return null;
-}
-
-// node_modules/@base-ui/react/dialog/root/DialogRootContext.mjs
-var React90 = __toESM(require_react(), 1);
-"use client";
-var IsDrawerContext = /* @__PURE__ */ React90.createContext(false);
-if (false)
-  ;
-var DialogRootContext = /* @__PURE__ */ React90.createContext(undefined);
-if (false)
-  ;
-function useDialogRootContext(optional) {
-  const dialogRootContext = React90.useContext(DialogRootContext);
-  if (optional === false && dialogRootContext === undefined) {
-    throw new Error(formatErrorMessage_default(27));
-  }
-  return dialogRootContext;
-}
-
-// node_modules/@base-ui/react/dialog/store/DialogStore.mjs
-var React91 = __toESM(require_react(), 1);
-var selectors3 = {
-  ...popupStoreSelectors,
-  modal: createSelector((state) => state.modal),
-  nested: createSelector((state) => state.nested),
-  nestedOpenDialogCount: createSelector((state) => state.nestedOpenDialogCount),
-  nestedOpenDrawerCount: createSelector((state) => state.nestedOpenDrawerCount),
-  disablePointerDismissal: createSelector((state) => state.disablePointerDismissal),
-  openMethod: createSelector((state) => state.openMethod),
-  descriptionElementId: createSelector((state) => state.descriptionElementId),
-  titleElementId: createSelector((state) => state.titleElementId),
-  viewportElement: createSelector((state) => state.viewportElement),
-  role: createSelector((state) => state.role)
-};
-
-class DialogStore extends ReactStore {
-  constructor(initialState, floatingId, nested = false) {
-    const triggerElements = new PopupTriggerMap;
-    const state = createInitialState2(initialState);
-    state.floatingRootContext = createPopupFloatingRootContext(triggerElements, floatingId, nested);
-    super(state, {
-      popupRef: /* @__PURE__ */ React91.createRef(),
-      backdropRef: /* @__PURE__ */ React91.createRef(),
-      internalBackdropRef: /* @__PURE__ */ React91.createRef(),
-      outsidePressEnabledRef: {
-        current: true
-      },
-      triggerElements,
-      onOpenChange: undefined,
-      onOpenChangeComplete: undefined
-    }, selectors3);
-  }
-  setOpen = (nextOpen, eventDetails) => {
-    eventDetails.preventUnmountOnClose = () => {
-      this.set("preventUnmountingOnClose", true);
-    };
-    if (!nextOpen && eventDetails.trigger == null && this.state.activeTriggerId != null) {
-      eventDetails.trigger = this.state.activeTriggerElement ?? undefined;
-    }
-    this.context.onOpenChange?.(nextOpen, eventDetails);
-    if (eventDetails.isCanceled) {
-      return;
-    }
-    this.state.floatingRootContext.dispatchOpenChange(nextOpen, eventDetails);
-    const updatedState = {
-      open: nextOpen
-    };
-    setPopupOpenState(updatedState, nextOpen, eventDetails.trigger);
-    this.update(updatedState);
-  };
-  static useStore(externalStore, initialState) {
-    const store = usePopupStore(externalStore, (floatingId, nested) => new DialogStore(initialState, floatingId, nested), true).store;
-    return store;
-  }
-}
-function createInitialState2(initialState = {}) {
-  return {
-    ...createInitialPopupStoreState(),
-    modal: true,
-    disablePointerDismissal: false,
-    popupElement: null,
-    viewportElement: null,
-    descriptionElementId: undefined,
-    titleElementId: undefined,
-    openMethod: null,
-    nested: false,
-    nestedOpenDialogCount: 0,
-    nestedOpenDrawerCount: 0,
-    role: "dialog",
-    ...initialState
-  };
-}
-
-// node_modules/@base-ui/react/dialog/root/useRenderDialogRoot.mjs
-var import_jsx_runtime20 = __toESM(require_jsx_runtime(), 1);
-"use client";
-function useRenderDialogRoot(props, mode = "dialog") {
-  const {
-    children,
-    open: openProp,
-    defaultOpen = false,
-    onOpenChange,
-    onOpenChangeComplete,
-    disablePointerDismissal: disablePointerDismissalProp = false,
-    modal: modalProp = true,
-    actionsRef,
-    handle,
-    triggerId: triggerIdProp,
-    defaultTriggerId: defaultTriggerIdProp = null
-  } = props;
-  const isDrawer = mode === "drawer";
-  const isAlertDialog = mode === "alert-dialog";
-  const modal = isAlertDialog ? true : modalProp;
-  const disablePointerDismissal = isAlertDialog || disablePointerDismissalProp;
-  const role = isAlertDialog ? "alertdialog" : "dialog";
-  const parentDialogRootContext = useDialogRootContext(true);
-  const nested = Boolean(parentDialogRootContext);
-  const rootState = {
-    modal,
-    disablePointerDismissal,
-    nested,
-    role
-  };
-  const store = DialogStore.useStore(handle?.store, {
-    open: defaultOpen,
-    openProp,
-    activeTriggerId: defaultTriggerIdProp,
-    triggerIdProp,
-    ...rootState
-  });
-  useOnFirstRender(() => {
-    const nextState = openProp === undefined && store.state.open === false && defaultOpen === true ? {
-      open: true,
-      activeTriggerId: defaultTriggerIdProp
-    } : null;
-    if (isAlertDialog) {
-      store.update(nextState ? {
-        ...rootState,
-        ...nextState
-      } : rootState);
-    } else if (nextState) {
-      store.update(nextState);
-    }
-  });
-  store.useControlledProp("openProp", openProp);
-  store.useControlledProp("triggerIdProp", triggerIdProp);
-  store.useSyncedValues(rootState);
-  store.useContextCallback("onOpenChange", onOpenChange);
-  store.useContextCallback("onOpenChangeComplete", onOpenChangeComplete);
-  const open = store.useState("open");
-  const mounted = store.useState("mounted");
-  const payload = store.useState("payload");
-  useDialogRoot({
-    store,
-    actionsRef
-  });
-  const shouldRenderInteractions = open || mounted;
-  const contextValue = React92.useMemo(() => ({
-    store
-  }), [store]);
-  return /* @__PURE__ */ import_jsx_runtime20.jsx(IsDrawerContext.Provider, {
-    value: false,
-    children: /* @__PURE__ */ import_jsx_runtime20.jsxs(DialogRootContext.Provider, {
-      value: contextValue,
-      children: [shouldRenderInteractions && /* @__PURE__ */ import_jsx_runtime20.jsx(DialogInteractions, {
-        store,
-        parentContext: parentDialogRootContext?.store.context,
-        isDrawer
-      }), typeof children === "function" ? children({
-        payload
-      }) : children]
-    })
-  });
-}
-
-// node_modules/@base-ui/react/alert-dialog/root/AlertDialogRoot.mjs
-"use client";
-function AlertDialogRoot(props) {
-  return useRenderDialogRoot(props, "alert-dialog");
-}
-// node_modules/@base-ui/react/dialog/backdrop/DialogBackdrop.mjs
-var React93 = __toESM(require_react(), 1);
-"use client";
-var stateAttributesMapping4 = {
-  ...popupStateMapping,
-  ...transitionStatusMapping
-};
-var DialogBackdrop = /* @__PURE__ */ React93.forwardRef(function DialogBackdrop2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    forceRender = false,
-    ...elementProps
-  } = componentProps;
-  const {
-    store
-  } = useDialogRootContext();
-  const open = store.useState("open");
-  const nested = store.useState("nested");
-  const mounted = store.useState("mounted");
-  const transitionStatus = store.useState("transitionStatus");
-  const state = {
-    open,
-    transitionStatus
-  };
-  return useRenderElement("div", componentProps, {
-    state,
-    ref: [store.context.backdropRef, forwardedRef],
-    stateAttributesMapping: stateAttributesMapping4,
-    props: [{
-      role: "presentation",
-      hidden: !mounted,
-      style: {
-        userSelect: "none",
-        WebkitUserSelect: "none"
-      }
-    }, elementProps],
-    enabled: forceRender || !nested
-  });
-});
-if (false)
-  ;
-// node_modules/@base-ui/react/dialog/close/DialogClose.mjs
-var React94 = __toESM(require_react(), 1);
-"use client";
-var DialogClose = /* @__PURE__ */ React94.forwardRef(function DialogClose2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    disabled: disabled2 = false,
-    nativeButton = true,
-    ...elementProps
-  } = componentProps;
-  const {
-    store
-  } = useDialogRootContext();
-  const open = store.useState("open");
-  const {
-    getButtonProps,
-    buttonRef
-  } = useButton({
-    disabled: disabled2,
-    native: nativeButton
-  });
-  const state = {
-    disabled: disabled2
-  };
-  function handleClick(event) {
-    if (open) {
-      store.setOpen(false, createChangeEventDetails(exports_reason_parts.closePress, event.nativeEvent));
-    }
-  }
-  return useRenderElement("button", componentProps, {
-    state,
-    ref: [forwardedRef, buttonRef],
-    props: [{
-      onClick: handleClick
-    }, elementProps, getButtonProps]
-  });
-});
-if (false)
-  ;
-// node_modules/@base-ui/react/dialog/description/DialogDescription.mjs
-var React95 = __toESM(require_react(), 1);
-"use client";
-var DialogDescription = /* @__PURE__ */ React95.forwardRef(function DialogDescription2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    id: idProp,
-    ...elementProps
-  } = componentProps;
-  const {
-    store
-  } = useDialogRootContext();
-  const id = useBaseUiId(idProp);
-  store.useSyncedValueWithCleanup("descriptionElementId", id);
-  return useRenderElement("p", componentProps, {
-    ref: forwardedRef,
-    props: [{
-      id
-    }, elementProps]
-  });
-});
-if (false)
-  ;
-// node_modules/@base-ui/react/dialog/popup/DialogPopup.mjs
-var React97 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/dialog/popup/DialogPopupCssVars.mjs
-var DialogPopupCssVars = /* @__PURE__ */ function(DialogPopupCssVars2) {
-  DialogPopupCssVars2["nestedDialogs"] = "--nested-dialogs";
-  return DialogPopupCssVars2;
-}({});
-
-// node_modules/@base-ui/react/dialog/popup/DialogPopupDataAttributes.mjs
-var DialogPopupDataAttributes = function(DialogPopupDataAttributes2) {
-  DialogPopupDataAttributes2[DialogPopupDataAttributes2["open"] = CommonPopupDataAttributes.open] = "open";
-  DialogPopupDataAttributes2[DialogPopupDataAttributes2["closed"] = CommonPopupDataAttributes.closed] = "closed";
-  DialogPopupDataAttributes2[DialogPopupDataAttributes2["startingStyle"] = CommonPopupDataAttributes.startingStyle] = "startingStyle";
-  DialogPopupDataAttributes2[DialogPopupDataAttributes2["endingStyle"] = CommonPopupDataAttributes.endingStyle] = "endingStyle";
-  DialogPopupDataAttributes2["nested"] = "data-nested";
-  DialogPopupDataAttributes2["nestedDialogOpen"] = "data-nested-dialog-open";
-  return DialogPopupDataAttributes2;
-}({});
-
-// node_modules/@base-ui/react/dialog/portal/DialogPortalContext.mjs
-var React96 = __toESM(require_react(), 1);
-"use client";
-var DialogPortalContext = /* @__PURE__ */ React96.createContext(undefined);
-if (false)
-  ;
-function useDialogPortalContext() {
-  const value = React96.useContext(DialogPortalContext);
-  if (value === undefined) {
-    throw new Error(formatErrorMessage_default(26));
-  }
-  return value;
-}
-
-// node_modules/@base-ui/react/dialog/popup/DialogPopup.mjs
-var import_jsx_runtime21 = __toESM(require_jsx_runtime(), 1);
-"use client";
-var stateAttributesMapping5 = {
-  ...popupStateMapping,
-  ...transitionStatusMapping,
-  nestedDialogOpen(value) {
-    return value ? {
-      [DialogPopupDataAttributes.nestedDialogOpen]: ""
-    } : null;
-  }
-};
-var DialogPopup = /* @__PURE__ */ React97.forwardRef(function DialogPopup2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    finalFocus,
-    initialFocus,
-    ...elementProps
-  } = componentProps;
-  const {
-    store
-  } = useDialogRootContext();
-  const descriptionElementId = store.useState("descriptionElementId");
-  const disablePointerDismissal = store.useState("disablePointerDismissal");
-  const floatingRootContext = store.useState("floatingRootContext");
-  const rootPopupProps = store.useState("popupProps");
-  const modal = store.useState("modal");
-  const mounted = store.useState("mounted");
-  const nested = store.useState("nested");
-  const nestedOpenDialogCount = store.useState("nestedOpenDialogCount");
-  const open = store.useState("open");
-  const openMethod = store.useState("openMethod");
-  const titleElementId = store.useState("titleElementId");
-  const transitionStatus = store.useState("transitionStatus");
-  const role = store.useState("role");
-  const floatingId = floatingRootContext.useState("floatingId");
-  const popupId = elementProps.id ?? floatingId;
-  useDialogPortalContext();
-  useOpenChangeComplete({
-    open,
-    ref: store.context.popupRef,
-    onComplete() {
-      if (open) {
-        store.context.onOpenChangeComplete?.(true);
-      }
-    }
-  });
-  const resolvedInitialFocus = initialFocus === undefined ? createDefaultInitialFocus(store.context.popupRef) : initialFocus;
-  const nestedDialogOpen = nestedOpenDialogCount > 0;
-  const setPopupElement = store.useStateSetter("popupElement");
-  const state = {
-    open,
-    nested,
-    transitionStatus,
-    nestedDialogOpen
-  };
-  const element2 = useRenderElement("div", componentProps, {
-    state,
-    props: [rootPopupProps, {
-      id: popupId,
-      "aria-labelledby": titleElementId ?? undefined,
-      "aria-describedby": descriptionElementId ?? undefined,
-      role,
-      ...FOCUSABLE_POPUP_PROPS,
-      hidden: !mounted,
-      onKeyDown(event) {
-        if (COMPOSITE_KEYS.has(event.key)) {
-          event.stopPropagation();
-        }
-      },
-      style: {
-        [DialogPopupCssVars.nestedDialogs]: nestedOpenDialogCount
-      }
-    }, elementProps],
-    ref: [forwardedRef, store.context.popupRef, setPopupElement],
-    stateAttributesMapping: stateAttributesMapping5
-  });
-  return /* @__PURE__ */ import_jsx_runtime21.jsx(FloatingFocusManager, {
-    context: floatingRootContext,
-    openInteractionType: openMethod,
-    disabled: !mounted,
-    closeOnFocusOut: !disablePointerDismissal,
-    initialFocus: resolvedInitialFocus,
-    returnFocus: finalFocus,
-    modal: modal !== false,
-    restoreFocus: "popup",
-    children: element2
-  });
-});
-if (false)
-  ;
-// node_modules/@base-ui/react/dialog/portal/DialogPortal.mjs
-var React98 = __toESM(require_react(), 1);
-var import_jsx_runtime22 = __toESM(require_jsx_runtime(), 1);
-"use client";
-var DialogPortal = /* @__PURE__ */ React98.forwardRef(function DialogPortal2(props, forwardedRef) {
-  const {
-    keepMounted = false,
-    ...portalProps
-  } = props;
-  const {
-    store
-  } = useDialogRootContext();
-  const mounted = store.useState("mounted");
-  const modal = store.useState("modal");
-  const open = store.useState("open");
-  const shouldRender = mounted || keepMounted;
-  if (!shouldRender) {
-    return null;
-  }
-  return /* @__PURE__ */ import_jsx_runtime22.jsx(DialogPortalContext.Provider, {
-    value: keepMounted,
-    children: /* @__PURE__ */ import_jsx_runtime22.jsxs(FloatingPortal, {
-      ref: forwardedRef,
-      ...portalProps,
-      children: [mounted && modal === true && /* @__PURE__ */ import_jsx_runtime22.jsx(InternalBackdrop, {
-        ref: store.context.internalBackdropRef,
-        inert: inertValue(!open)
-      }), props.children]
-    })
-  });
-});
-if (false)
-  ;
-// node_modules/@base-ui/react/dialog/title/DialogTitle.mjs
-var React99 = __toESM(require_react(), 1);
-"use client";
-var DialogTitle = /* @__PURE__ */ React99.forwardRef(function DialogTitle2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    id: idProp,
-    ...elementProps
-  } = componentProps;
-  const {
-    store
-  } = useDialogRootContext();
-  const id = useBaseUiId(idProp);
-  store.useSyncedValueWithCleanup("titleElementId", id);
-  return useRenderElement("h2", componentProps, {
-    ref: forwardedRef,
-    props: [{
-      id
-    }, elementProps]
-  });
-});
-if (false)
-  ;
-// node_modules/@base-ui/react/dialog/trigger/DialogTrigger.mjs
-var React100 = __toESM(require_react(), 1);
-"use client";
-var DialogTrigger = /* @__PURE__ */ React100.forwardRef(function DialogTrigger2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    disabled: disabled2 = false,
-    nativeButton = true,
-    id: idProp,
-    payload,
-    handle,
-    ...elementProps
-  } = componentProps;
-  const dialogRootContext = useDialogRootContext(true);
-  const store = handle?.store ?? dialogRootContext?.store;
-  if (!store) {
-    throw new Error(formatErrorMessage_default(79));
-  }
-  const thisTriggerId = useBaseUiId(idProp);
-  const floatingContext = store.useState("floatingRootContext");
-  const isOpenedByThisTrigger = store.useState("isOpenedByTrigger", thisTriggerId);
-  const popupId = store.useState("triggerPopupId", thisTriggerId);
-  const triggerElementRef = React100.useRef(null);
-  const {
-    registerTrigger,
-    isMountedByThisTrigger
-  } = useTriggerDataForwarding(thisTriggerId, triggerElementRef, store, {
-    payload
-  });
-  const {
-    getButtonProps,
-    buttonRef
-  } = useButton({
-    disabled: disabled2,
-    native: nativeButton
-  });
-  const click = useClick(floatingContext, {
-    enabled: floatingContext != null
-  });
-  const interactionTypeProps = useOpenMethodTriggerProps(() => store.select("open"), (interactionType) => {
-    store.set("openMethod", interactionType);
-  });
-  const state = {
-    disabled: disabled2,
-    open: isOpenedByThisTrigger
-  };
-  const rootTriggerProps = store.useState("triggerProps", isMountedByThisTrigger);
-  return useRenderElement("button", componentProps, {
-    state,
-    ref: [buttonRef, forwardedRef, registerTrigger, triggerElementRef],
-    props: [click.reference, rootTriggerProps, interactionTypeProps, {
-      [CLICK_TRIGGER_IDENTIFIER]: "",
-      id: thisTriggerId,
-      "aria-haspopup": "dialog",
-      "aria-expanded": isOpenedByThisTrigger,
-      "aria-controls": popupId
-    }, elementProps, getButtonProps],
-    stateAttributesMapping: triggerOpenStateMapping
-  });
-});
-if (false)
-  ;
-
-// node_modules/@base-ui/react/alert-dialog/trigger/AlertDialogTrigger.mjs
-"use client";
-var AlertDialogTrigger = DialogTrigger;
-// node_modules/@base-ui/react/dialog/viewport/DialogViewport.mjs
-var React101 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/dialog/viewport/DialogViewportDataAttributes.mjs
-var DialogViewportDataAttributes = function(DialogViewportDataAttributes2) {
-  DialogViewportDataAttributes2[DialogViewportDataAttributes2["open"] = CommonPopupDataAttributes.open] = "open";
-  DialogViewportDataAttributes2[DialogViewportDataAttributes2["closed"] = CommonPopupDataAttributes.closed] = "closed";
-  DialogViewportDataAttributes2[DialogViewportDataAttributes2["startingStyle"] = CommonPopupDataAttributes.startingStyle] = "startingStyle";
-  DialogViewportDataAttributes2[DialogViewportDataAttributes2["endingStyle"] = CommonPopupDataAttributes.endingStyle] = "endingStyle";
-  DialogViewportDataAttributes2["nested"] = "data-nested";
-  DialogViewportDataAttributes2["nestedDialogOpen"] = "data-nested-dialog-open";
-  return DialogViewportDataAttributes2;
-}({});
-
-// node_modules/@base-ui/react/dialog/viewport/DialogViewport.mjs
-"use client";
-var stateAttributesMapping6 = {
-  ...popupStateMapping,
-  ...transitionStatusMapping,
-  nested(value) {
-    return value ? {
-      [DialogViewportDataAttributes.nested]: ""
-    } : null;
-  },
-  nestedDialogOpen(value) {
-    return value ? {
-      [DialogViewportDataAttributes.nestedDialogOpen]: ""
-    } : null;
-  }
-};
-var DialogViewport = /* @__PURE__ */ React101.forwardRef(function DialogViewport2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    children,
-    ...elementProps
-  } = componentProps;
-  const keepMounted = useDialogPortalContext();
-  const {
-    store
-  } = useDialogRootContext();
-  const open = store.useState("open");
-  const nested = store.useState("nested");
-  const transitionStatus = store.useState("transitionStatus");
-  const nestedOpenDialogCount = store.useState("nestedOpenDialogCount");
-  const mounted = store.useState("mounted");
-  const setViewportElement = store.useStateSetter("viewportElement");
-  const nestedDialogOpen = nestedOpenDialogCount > 0;
-  const state = {
-    open,
-    nested,
-    transitionStatus,
-    nestedDialogOpen
-  };
-  const shouldRender = keepMounted || mounted;
-  return useRenderElement("div", componentProps, {
-    enabled: shouldRender,
-    state,
-    ref: [forwardedRef, setViewportElement],
-    stateAttributesMapping: stateAttributesMapping6,
-    props: [{
-      role: "presentation",
-      hidden: !mounted,
-      style: {
-        pointerEvents: !open ? "none" : undefined
-      },
-      children
-    }, elementProps]
-  });
-});
-if (false)
-  ;
-// node_modules/@base-ui/react/dialog/store/DialogHandle.mjs
-class DialogHandle {
-  constructor(store) {
-    this.store = store ?? new DialogStore;
-  }
-  open(triggerId) {
-    const triggerElement = triggerId ? this.store.context.triggerElements.getById(triggerId) : undefined;
-    if (false) {}
-    this.store.setOpen(true, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, triggerElement));
-  }
-  openWithPayload(payload) {
-    this.store.set("payload", payload);
-    this.store.setOpen(true, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, undefined));
-  }
-  close() {
-    this.store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, undefined));
-  }
-  get isOpen() {
-    return this.store.select("open");
-  }
-}
-function createDialogHandle() {
-  return new DialogHandle;
-}
-
-// node_modules/@base-ui/react/alert-dialog/handle.mjs
-var alertDialogState = {
-  modal: true,
-  disablePointerDismissal: true,
-  role: "alertdialog"
-};
-
-class AlertDialogHandle extends DialogHandle {
-  constructor(store) {
-    const alertDialogStore = store ?? new DialogStore(alertDialogState);
-    super(alertDialogStore);
-    if (store) {
-      this.store.update(alertDialogState);
-    }
-  }
-}
-function createAlertDialogHandle() {
-  return new AlertDialogHandle;
-}
-// src/kit/ui/ConfirmDialog.tsx
-var import_react9 = __toESM(require_react(), 1);
-
-// src/kit/lib/cn.ts
-function cn2(...inputs) {
-  return inputs.filter(Boolean).join(" ");
-}
-
-// src/kit/ui/ConfirmDialog.tsx
-var jsx_runtime8 = __toESM(require_jsx_runtime(), 1);
-var BUTTON = "inline-flex h-8 items-center justify-center rounded-md px-3 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ink-faint disabled:opacity-50";
-function ConfirmDialog({
-  open,
-  onOpenChange,
-  title,
-  message,
-  warning,
-  confirmLabel = "Confirm",
-  cancelLabel = "Cancel",
-  confirmClassName,
-  onConfirm,
-  onCancel
-}) {
-  return /* @__PURE__ */ jsx_runtime8.jsx(exports_index_parts3.Root, {
-    open,
-    onOpenChange: (next) => {
-      onOpenChange(next);
-      if (!next)
-        onCancel?.();
-    },
-    children: /* @__PURE__ */ jsx_runtime8.jsxs(exports_index_parts3.Portal, {
-      children: [
-        /* @__PURE__ */ jsx_runtime8.jsx(exports_index_parts3.Backdrop, {
-          className: "fixed inset-0 isolate z-50 bg-black/30 duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0"
-        }),
-        /* @__PURE__ */ jsx_runtime8.jsxs(exports_index_parts3.Popup, {
-          "data-slot": "confirm-dialog",
-          className: "fixed top-1/2 left-1/2 z-50 grid w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 gap-3 rounded-xl border border-edge bg-surface p-4 text-ink shadow-lg duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
-          children: [
-            /* @__PURE__ */ jsx_runtime8.jsx(exports_index_parts3.Title, {
-              className: "text-sm font-semibold text-ink",
-              children: title
-            }),
-            message && /* @__PURE__ */ jsx_runtime8.jsx(exports_index_parts3.Description, {
-              className: "text-sm leading-relaxed text-ink-faint",
-              children: message
-            }),
-            warning && /* @__PURE__ */ jsx_runtime8.jsx("p", {
-              className: "rounded-md border border-edge bg-bg px-2.5 py-2 text-xs leading-relaxed text-ink",
-              children: warning
-            }),
-            /* @__PURE__ */ jsx_runtime8.jsxs("div", {
-              className: "mt-1 flex justify-end gap-2",
-              children: [
-                /* @__PURE__ */ jsx_runtime8.jsx(exports_index_parts3.Close, {
-                  className: cn2(BUTTON, "border border-edge bg-surface text-ink hover:bg-bg"),
-                  children: cancelLabel
-                }),
-                /* @__PURE__ */ jsx_runtime8.jsx("button", {
-                  type: "button",
-                  onClick: onConfirm,
-                  className: cn2(BUTTON, confirmClassName ?? "border border-edge bg-ink text-bg hover:opacity-90"),
-                  children: confirmLabel
-                })
-              ]
-            })
-          ]
-        })
-      ]
-    })
-  });
-}
-function useConfirm() {
-  const [pending, setPending] = import_react9.useState(null);
-  const answer = import_react9.useRef(null);
-  const settle = import_react9.useCallback((ok) => {
-    const reply = answer.current;
-    answer.current = null;
-    setPending(null);
-    reply?.(ok);
-  }, []);
-  const confirm = import_react9.useCallback((request) => new Promise((resolve) => {
-    answer.current?.(false);
-    answer.current = resolve;
-    setPending(request);
-  }), []);
-  const dialog = pending ? /* @__PURE__ */ jsx_runtime8.jsx(ConfirmDialog, {
-    ...pending,
-    open: true,
-    onOpenChange: (next) => {
-      if (!next)
-        settle(false);
-    },
-    onConfirm: () => settle(true)
-  }) : null;
-  return { confirm, dialog };
 }
 
 // src/scriptorium/surface/components/context/AddPath.tsx
@@ -41804,6 +41849,24 @@ function fileLabel(name, max2 = 22) {
 function sideLabel(side, file, max2) {
   return side === "original" ? fileLabel(file, max2) : `v${side}`;
 }
+var NOTHING_TO_COMPARE = "Only one version — nothing to compare";
+function nothingToCompare(doc) {
+  return doc.versions.length < 2 && !doc.dirty && !doc.outsideChanged;
+}
+function NothingToCompare() {
+  return /* @__PURE__ */ jsx_runtime16.jsxs("div", {
+    role: "status",
+    className: "flex flex-1 items-center justify-center gap-2 text-sm text-ink-faint",
+    children: [
+      /* @__PURE__ */ jsx_runtime16.jsx(GitCompare, {
+        "aria-hidden": true,
+        className: "size-4"
+      }),
+      NOTHING_TO_COMPARE,
+      "."
+    ]
+  });
+}
 function rowsOf(lines, hunkIds) {
   const rows = [];
   let i = 0;
@@ -41887,6 +41950,8 @@ function CompareView({
   const { diff, active, against } = payload;
   const rows = rowsOf(diff.lines, diff.hunks.map((h) => h.id));
   const sides2 = ["original", ...versions.map((v) => v.n).filter((n) => n !== active)];
+  if (diff.same && sides2.length < 2)
+    return /* @__PURE__ */ jsx_runtime16.jsx(NothingToCompare, {});
   return /* @__PURE__ */ jsx_runtime16.jsxs("div", {
     className: "flex min-h-0 flex-1 flex-col",
     children: [
@@ -59791,13 +59856,13 @@ var import_react24 = __toESM(require_react(), 1);
 // src/scriptorium/surface/ui/dropdown-menu.tsx
 var jsx_runtime24 = __toESM(require_jsx_runtime(), 1);
 function DropdownMenu({ ...props }) {
-  return /* @__PURE__ */ jsx_runtime24.jsx(exports_index_parts.Root, {
+  return /* @__PURE__ */ jsx_runtime24.jsx(exports_index_parts2.Root, {
     "data-slot": "dropdown-menu",
     ...props
   });
 }
 function DropdownMenuTrigger({ ...props }) {
-  return /* @__PURE__ */ jsx_runtime24.jsx(exports_index_parts.Trigger, {
+  return /* @__PURE__ */ jsx_runtime24.jsx(exports_index_parts2.Trigger, {
     "data-slot": "dropdown-menu-trigger",
     ...props
   });
@@ -59810,14 +59875,14 @@ function DropdownMenuContent({
   className,
   ...props
 }) {
-  return /* @__PURE__ */ jsx_runtime24.jsx(exports_index_parts.Portal, {
-    children: /* @__PURE__ */ jsx_runtime24.jsx(exports_index_parts.Positioner, {
+  return /* @__PURE__ */ jsx_runtime24.jsx(exports_index_parts2.Portal, {
+    children: /* @__PURE__ */ jsx_runtime24.jsx(exports_index_parts2.Positioner, {
       className: "isolate z-50 outline-none",
       align: align2,
       alignOffset,
       side,
       sideOffset,
-      children: /* @__PURE__ */ jsx_runtime24.jsx(exports_index_parts.Popup, {
+      children: /* @__PURE__ */ jsx_runtime24.jsx(exports_index_parts2.Popup, {
         "data-slot": "dropdown-menu-content",
         className: cn("z-50 max-h-(--available-height) w-(--anchor-width) min-w-32 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 outline-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:overflow-hidden data-closed:fade-out-0 data-closed:zoom-out-95", className),
         ...props
@@ -59831,7 +59896,7 @@ function DropdownMenuItem({
   variant = "default",
   ...props
 }) {
-  return /* @__PURE__ */ jsx_runtime24.jsx(exports_index_parts.Item, {
+  return /* @__PURE__ */ jsx_runtime24.jsx(exports_index_parts2.Item, {
     "data-slot": "dropdown-menu-item",
     "data-inset": inset,
     "data-variant": variant,
@@ -59840,7 +59905,7 @@ function DropdownMenuItem({
   });
 }
 function DropdownMenuSeparator({ className, ...props }) {
-  return /* @__PURE__ */ jsx_runtime24.jsx(exports_index_parts.Separator, {
+  return /* @__PURE__ */ jsx_runtime24.jsx(exports_index_parts2.Separator, {
     "data-slot": "dropdown-menu-separator",
     className: cn("-mx-1 my-1 h-px bg-border", className),
     ...props
@@ -59876,7 +59941,8 @@ function VersionMenu({
   onCompare,
   onNewVersion,
   onDelete,
-  onReveal
+  onReveal,
+  ended = false
 }) {
   const rows = ordered(versions, active);
   const current = versions.find((v) => v.n === active);
@@ -59915,7 +59981,7 @@ function VersionMenu({
               }),
               /* @__PURE__ */ jsx_runtime25.jsx("p", {
                 className: "text-xs text-ink-faint",
-                children: "Choosing one makes it the version you edit and Save writes."
+                children: ended ? `${SESSION_ENDED}: versions can be read, not made, deleted or compared.` : "Choosing one makes it the version you edit and Save writes."
               })
             ]
           }),
@@ -59981,7 +60047,7 @@ function VersionMenu({
                             className: "size-3"
                           })
                         }),
-                        v.n !== active && /* @__PURE__ */ jsx_runtime25.jsxs("button", {
+                        v.n !== active && !ended && /* @__PURE__ */ jsx_runtime25.jsxs("button", {
                           type: "button",
                           onClick: (e) => {
                             e.stopPropagation();
@@ -59997,7 +60063,7 @@ function VersionMenu({
                             "Compare"
                           ]
                         }),
-                        v.n !== active && /* @__PURE__ */ jsx_runtime25.jsx("button", {
+                        v.n !== active && !ended && /* @__PURE__ */ jsx_runtime25.jsx("button", {
                           type: "button",
                           onClick: (e) => {
                             e.stopPropagation();
@@ -60021,6 +60087,7 @@ function VersionMenu({
           }),
           /* @__PURE__ */ jsx_runtime25.jsx(DropdownMenuSeparator, {}),
           /* @__PURE__ */ jsx_runtime25.jsxs(DropdownMenuItem, {
+            disabled: ended,
             onClick: () => {
               setOpen(false);
               onNewVersion("branch");
@@ -60036,6 +60103,7 @@ function VersionMenu({
             ]
           }),
           /* @__PURE__ */ jsx_runtime25.jsxs(DropdownMenuItem, {
+            disabled: ended,
             onClick: () => {
               setOpen(false);
               onNewVersion("snapshot");
@@ -60127,7 +60195,8 @@ function DocumentPane({
   headingEnd,
   toasts,
   dock,
-  quiet = false
+  quiet = false,
+  ended = false
 }) {
   const lastShown = import_react25.useRef(null);
   if (doc2 && text4 !== undefined)
@@ -60180,6 +60249,7 @@ function DocumentPane({
                   /* @__PURE__ */ jsx_runtime26.jsx(VersionMenu, {
                     versions: doc2.versions,
                     active: doc2.active,
+                    ended,
                     onActivate,
                     onCompare: (n) => {
                       onAgainst(n);
@@ -60222,8 +60292,8 @@ function DocumentPane({
                     variant: "ghost",
                     size: "sm",
                     onClick: onRevert,
-                    disabled: !doc2.dirty && !doc2.outsideChanged,
-                    title: "Take the file on disk back over your edits",
+                    disabled: ended || !doc2.dirty && !doc2.outsideChanged,
+                    title: ended ? SESSION_ENDED : "Take the file on disk back over your edits",
                     className: cn("h-7 gap-1.5 px-2 text-xs", fade),
                     children: [
                       /* @__PURE__ */ jsx_runtime26.jsx(UndoDot, {
@@ -60236,8 +60306,8 @@ function DocumentPane({
                     variant: "ghost",
                     size: "sm",
                     onClick: onSave,
-                    disabled: !doc2.dirty,
-                    title: `Save v${doc2.active} to ${doc2.name} — the file in your folder (⌘S)`,
+                    disabled: ended || !doc2.dirty,
+                    title: ended ? SESSION_ENDED : `Save v${doc2.active} to ${doc2.name} — the file in your folder (⌘S)`,
                     className: cn("h-7 gap-1.5 px-2 text-xs", !readerStaysLoud("save", doc2) && fade),
                     children: [
                       /* @__PURE__ */ jsx_runtime26.jsx(Save, {
@@ -60251,14 +60321,17 @@ function DocumentPane({
                     "aria-label": "How to show this document",
                     className: cn("flex items-center gap-0.5 rounded-md bg-surface-raised p-0.5", fade),
                     children: MODE_BUTTONS.map(({ mode: m2, label, icon: Icon2 }) => {
-                      const unavailable = m2 === "split" && !roomToSplit;
+                      const noSplit = m2 === "split" && !roomToSplit;
+                      const noCompare = m2 === "compare" && nothingToCompare(doc2);
+                      const endedCompare = m2 === "compare" && ended;
+                      const unavailable = noSplit || noCompare || endedCompare;
                       return /* @__PURE__ */ jsx_runtime26.jsx("button", {
                         type: "button",
                         onClick: () => onMode(m2),
                         disabled: unavailable,
                         "aria-pressed": showing === m2,
                         "aria-label": label,
-                        title: !unavailable ? label : room.ifCollapsed ? `${label} — the pane is too narrow; collapse the side columns to make room` : `${label} — the pane is too narrow`,
+                        title: !unavailable ? label : endedCompare ? SESSION_ENDED : noCompare ? NOTHING_TO_COMPARE : room.ifCollapsed ? `${label} — the pane is too narrow; collapse the side columns to make room` : `${label} — the pane is too narrow`,
                         className: cn("flex size-6 items-center justify-center rounded-sm text-ink-faint outline-none", "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", "disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-ink-faint", showing === m2 && "bg-bg text-ink shadow-sm"),
                         children: /* @__PURE__ */ jsx_runtime26.jsx(Icon2, {
                           "aria-hidden": true,
@@ -60289,7 +60362,9 @@ function DocumentPane({
           /* @__PURE__ */ jsx_runtime26.jsx("button", {
             type: "button",
             onClick: onAddFrontmatter,
-            className: "rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline",
+            disabled: ended,
+            title: ended ? SESSION_ENDED : undefined,
+            className: "rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:no-underline",
             children: "Add a block"
           })
         ]
@@ -60308,19 +60383,25 @@ function DocumentPane({
               onAgainst("original");
               onMode("compare");
             },
-            className: "rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline",
+            disabled: ended,
+            title: ended ? SESSION_ENDED : undefined,
+            className: "rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:no-underline",
             children: "See the difference"
           }),
           /* @__PURE__ */ jsx_runtime26.jsx("button", {
             type: "button",
             onClick: onSave,
-            className: "rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline",
+            disabled: ended,
+            title: ended ? SESSION_ENDED : undefined,
+            className: "rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:no-underline",
             children: "Keep mine"
           }),
           /* @__PURE__ */ jsx_runtime26.jsx("button", {
             type: "button",
             onClick: onRevert,
-            className: "rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline",
+            disabled: ended,
+            title: ended ? SESSION_ENDED : undefined,
+            className: "rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:no-underline",
             children: "Take the file's"
           })
         ]
@@ -60344,7 +60425,7 @@ function DocumentPane({
       }) : shown === undefined ? /* @__PURE__ */ jsx_runtime26.jsx("div", {
         className: "flex-1",
         "aria-busy": "true"
-      }) : showing === "compare" ? diff && diff.doc === doc2.slug ? /* @__PURE__ */ jsx_runtime26.jsx(CompareView, {
+      }) : showing === "compare" ? nothingToCompare(doc2) ? /* @__PURE__ */ jsx_runtime26.jsx(NothingToCompare, {}) : diff && diff.doc === doc2.slug ? /* @__PURE__ */ jsx_runtime26.jsx(CompareView, {
         payload: diff,
         file: doc2.name,
         versions: doc2.versions,
@@ -60356,7 +60437,7 @@ function DocumentPane({
       }) : showing === "raw" ? /* @__PURE__ */ jsx_runtime26.jsx(DocumentView, {
         docKey: doc2.slug,
         text: shown,
-        editable: true,
+        editable: !ended,
         notes: doc2.notes,
         onChange: onEdit,
         onSave,
@@ -60392,7 +60473,7 @@ function DocumentPane({
             children: /* @__PURE__ */ jsx_runtime26.jsx(DocumentView, {
               docKey: doc2.slug,
               text: shown,
-              editable: true,
+              editable: !ended,
               notes: doc2.notes,
               onChange: onEdit,
               onSave,
@@ -61483,12 +61564,14 @@ var textKey = (doc2, version3) => `${doc2}@${version3}`;
 function useDaemon() {
   const [state, setState] = import_react31.useState(null);
   const [connection, setConnection] = import_react31.useState("connecting");
+  const [endedBy, setEndedBy] = import_react31.useState(null);
   const [lastError, setLastError] = import_react31.useState(null);
   const [texts, setTexts] = import_react31.useState(() => new Map);
   const [done, setDone] = import_react31.useState(null);
   const [diff, setDiff] = import_react31.useState(null);
   const [search3, setSearch] = import_react31.useState(null);
   const wsRef = import_react31.useRef(null);
+  const endedRef = import_react31.useRef(null);
   const pending = import_react31.useRef(new Map);
   const plans = import_react31.useRef(new Map);
   const maps = import_react31.useRef(new Map);
@@ -61497,6 +61580,7 @@ function useDaemon() {
     let stopped = false;
     let delay = 250;
     let timer2;
+    let ended = null;
     const connect = () => {
       const url = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`;
       const ws = new WebSocket(url);
@@ -61515,7 +61599,11 @@ function useDaemon() {
         }
         if (msg.type === "state")
           setState(msg.state);
-        else if (msg.type === "error")
+        else if (msg.type === "closed") {
+          ended = msg.by;
+          endedRef.current = msg.by;
+          setEndedBy(msg.by);
+        } else if (msg.type === "error")
           setLastError(msg.message);
         else if (msg.type === "version.text") {
           const key = textKey(msg.doc, msg.version);
@@ -61561,7 +61649,8 @@ function useDaemon() {
         }
       };
       ws.onclose = () => {
-        setConnection("closed");
+        const after = afterSocketClose(ended);
+        setConnection(after.connection);
         for (const waiters of pending.current.values())
           for (const w of waiters)
             w({ entries: [], error: "disconnected" });
@@ -61578,7 +61667,7 @@ function useDaemon() {
           for (const w of waiters)
             w({ error: "disconnected" });
         suggestions.current.clear();
-        if (stopped)
+        if (stopped || !after.retry)
           return;
         timer2 = setTimeout(connect, delay);
         delay = Math.min(delay * 2, 5000);
@@ -61593,6 +61682,11 @@ function useDaemon() {
     };
   }, []);
   const send = import_react31.useCallback((msg) => {
+    if (endedRef.current) {
+      if (sentAfterEnd(msg) === "notice")
+        setLastError(ENDED_NOTICE);
+      return;
+    }
     const ws = wsRef.current;
     if (ws && ws.readyState === WebSocket.OPEN)
       ws.send(JSON.stringify(msg));
@@ -61668,6 +61762,7 @@ function useDaemon() {
   return {
     state,
     connection,
+    endedBy,
     search: search3,
     lastError,
     clearError,
@@ -61693,7 +61788,8 @@ var VIEW_PREF = "doc:view";
 var CONNECTION_LABEL = {
   connecting: "connecting…",
   open: "connected",
-  closed: "daemon unreachable — retrying"
+  closed: "daemon unreachable — retrying",
+  ended: "Session ended"
 };
 function ColumnButton({
   label: label2,
@@ -61739,8 +61835,9 @@ function PaneHeading({
 var prefKey = (key) => key.replace(/^react-resizable-panels:/, "panes:").slice(0, 64);
 function App() {
   const daemon = useDaemon();
-  const { state, connection, send } = daemon;
+  const { state, connection, endedBy, send } = daemon;
   const [theme2, setTheme] = import_react32.useState(readAppliedTheme);
+  const { confirm, dialog } = useConfirm();
   const [jump, setJump] = import_react32.useState(null);
   const savedTheme = state?.prefs.theme;
   import_react32.useEffect(() => {
@@ -61754,6 +61851,17 @@ function App() {
     applyTheme(next);
     setTheme(next);
     send({ type: "prefs.set", key: "theme", value: next });
+  };
+  const endSession = async () => {
+    const warning = state ? unsavedWarning(state.docs, state.openDoc) : null;
+    const ok3 = await confirm({
+      title: "End this session?",
+      message: "Scriptorium stops, and the agent is told you ended it on purpose. What is on screen stays here to look at.",
+      ...warning ? { warning } : {},
+      confirmLabel: "End session"
+    });
+    if (ok3)
+      send({ type: "session.end" });
   };
   return /* @__PURE__ */ jsx_runtime32.jsxs("div", {
     className: "flex h-full flex-col",
@@ -61789,8 +61897,23 @@ function App() {
           }),
           /* @__PURE__ */ jsx_runtime32.jsx("span", {
             "data-connection": connection,
+            title: endedBy ? endedTitle(endedBy) : undefined,
             className: "ml-auto text-xs text-ink-dim data-[connection=closed]:text-attention",
             children: CONNECTION_LABEL[connection]
+          }),
+          /* @__PURE__ */ jsx_runtime32.jsxs(Button3, {
+            variant: "ghost",
+            size: "sm",
+            onClick: endSession,
+            disabled: connection !== "open",
+            title: "End this session — the agent is told you are done",
+            className: "h-7 gap-1.5 px-2 text-xs",
+            children: [
+              /* @__PURE__ */ jsx_runtime32.jsx(Power, {
+                className: "size-3.5"
+              }),
+              "End session"
+            ]
           }),
           /* @__PURE__ */ jsx_runtime32.jsx(Button3, {
             variant: "ghost",
@@ -61808,7 +61931,8 @@ function App() {
       }) : /* @__PURE__ */ jsx_runtime32.jsx("div", {
         className: "flex-1",
         "aria-busy": "true"
-      })
+      }),
+      dialog
     ]
   });
 }
@@ -61829,8 +61953,10 @@ function Workspace({
     suggestMeta,
     lastError,
     clearError,
-    done
+    done,
+    endedBy
   } = daemon;
+  const ended = endedBy !== null;
   const prefsRef = import_react32.useRef(state.prefs);
   prefsRef.current = state.prefs;
   const storage = import_react32.useMemo(() => ({
@@ -61900,9 +62026,10 @@ function Workspace({
     panelIds: [...SPLIT_PANES],
     storage
   });
-  const saved = state.prefs[VIEW_PREF];
+  const [modeAfterEnd, setModeAfterEnd] = import_react32.useState(null);
+  const saved = modeAfterEnd ?? state.prefs[VIEW_PREF];
   const mode = VIEW_MODES.includes(saved ?? "") ? saved : "rendered";
-  const setMode = import_react32.useCallback((next) => send({ type: "prefs.set", key: VIEW_PREF, value: next }), [send]);
+  const setMode = import_react32.useCallback((next) => ended ? setModeAfterEnd(next) : send({ type: "prefs.set", key: VIEW_PREF, value: next }), [send, ended]);
   const reader = isReader(mode, collapsed);
   const toggleReader = () => {
     const act = readerAct(mode, collapsed);
@@ -62024,6 +62151,7 @@ function Workspace({
   const created = done && (done.op === "doc.create" || done.op === "folder.create") ? done : null;
   const composer = {
     connected: connection === "open",
+    ended,
     attachable: open && shown ? {
       doc: open.slug,
       name: open.name,
@@ -62141,6 +62269,7 @@ function Workspace({
               onMode: setMode,
               docPercent: layoutNow?.document ?? 100,
               quiet: reader,
+              ended,
               headingStart: collapsed.context && /* @__PURE__ */ jsx_runtime32.jsx(ColumnButton, {
                 label: "Show the context column",
                 control: "context-reopen",
