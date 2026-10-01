@@ -6,7 +6,7 @@ description:
   that signal. Add an End session affordance in the top bar that goes through
   the daemon.
 status: draft
-lifecycle: triage
+lifecycle: ready
 id: 01a0f97b-8ac4-7769-8210-b071edb8a5e5
 kind: task
 generated: { by: pdocs, at: 2026-10-01 }

@@ -6,7 +6,7 @@ description:
   (#117), Diff with one version (#116), and an End session button."
 tags: [scriptorium, surfaces]
 status: draft
-lifecycle: planned
+lifecycle: active
 started: 2026-10-01
 appetite:
   Stop when the three ship as a patch and a no-stake verifier has driven each in

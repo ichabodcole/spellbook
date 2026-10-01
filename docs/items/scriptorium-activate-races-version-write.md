@@ -6,7 +6,7 @@ description:
   activating it before the agent writes turns the write into an outside edit.
   Fix with version-new --body-file and a truer safeguard message."
 status: draft
-lifecycle: triage
+lifecycle: ready
 id: 01a0f97e-96c7-71ef-891d-eac7bed19813
 kind: bug
 generated: { by: pdocs, at: 2026-10-01 }
