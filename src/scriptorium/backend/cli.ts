@@ -637,6 +637,12 @@ async function readProse(
   else if (typeof flags["body-file"] === "string") {
     const path = flags["body-file"];
     if (!existsSync(path)) die(`${verb}: --body-file not found: ${path}`, o.missingFile ?? "usage");
+    // A directory is the caller's mistake, the same for every verb — it used
+    // to reach readFileSync and come out as an internal EISDIR (exit 1).
+    if (statSync(path).isDirectory())
+      die(`${verb}: --body-file is a directory, not a file: ${path}`, "usage", {
+        hint: "pass the path of the file that holds the text",
+      });
     text = readFileSync(path, "utf8");
   } else text = pos.join(" ");
   if (!text.trim())

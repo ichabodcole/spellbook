@@ -281,6 +281,21 @@ test.each([
   expect(doc.error.message).toBe(`${verb}: --body-file not found: /definitely/not/here.txt`);
 });
 
+test.each([
+  ["say", ["say"]],
+  ["task", ["task"]],
+  ["note", ["note", "--quote", "x"]],
+  ["note-edit", ["note-edit", "n-1"]],
+  ["version-new", ["version-new"]],
+])("%s's --body-file naming a DIRECTORY is usage (2), saying so — not an internal EISDIR", (verb, args) => {
+  const dir = mkdtempSync(join(tmpdir(), "scriptorium-bodydir-"));
+  const r = run([...args, "--body-file", dir]);
+  expect(r.code).toBe(2);
+  const doc = JSON.parse(r.stderr) as Envelope;
+  expect(doc.error.kind).toBe("usage");
+  expect(doc.error.message).toBe(`${verb}: --body-file is a directory, not a file: ${dir}`);
+});
+
 test("a prose refusal names the verb that was run, not `say`", () => {
   for (const verb of ["task", "note-edit"]) {
     const args = verb === "note-edit" ? [verb, "n-1"] : [verb];

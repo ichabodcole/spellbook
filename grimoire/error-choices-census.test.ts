@@ -222,7 +222,10 @@ const EXPECTED: Record<
   // `say`/`task`/`note` and `version-new --body-file`) refuses a `--body-file`
   // that is not there before reading it — usage for the older verbs, as
   // before, not_found for `version-new`. No `choices`: a path is not a closed set.
-  scriptorium: { sites: 28, choices: 4, verbRoster: true, flagMap: true },
+  // 28/4 -> 29/4 (round three's verify pass): the same reader refuses a
+  // `--body-file` that is a directory as usage, for every verb — it was an
+  // internal EISDIR. No `choices`, for the same reason.
+  scriptorium: { sites: 29, choices: 4, verbRoster: true, flagMap: true },
 };
 
 /**
