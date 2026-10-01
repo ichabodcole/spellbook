@@ -64,22 +64,32 @@ as `v1`; their keystrokes land there. The file on disk changes only when they
 press Save. You never write their file directly — not with Edit, not with Write.
 
 **2 · ⛔ NEVER WRITE THE ACTIVE VERSION.** The active version is the one they
-are typing in — `docs[].active` in `state`. To propose a change: `version-new`
-(it prints a path), then edit _that_ path with your own tools. The surface
-raises a toast the moment the version exists, naming it and you as its author,
-with **Activate** and **Show diff**; they choose whether to make it active. A
-version made while their browser was disconnected is toasted when it reconnects.
-**You do not need to announce a new version in chat.** Say _why_ you made it if
-that helps them decide. Writing the active version is detected, kept as a
-version of its own, and announced to both of you as a mistake — nothing is lost,
-but they are told, and their cursor was in there.
+are typing in — `docs[].active` in `state`. To propose a change, write your text
+to a file and hand it over in one step:
+`version-new --body-file <path> --label "…"` (or `--stdin` from a quoted
+heredoc). The version is born holding your text. The surface raises a toast the
+moment the version exists, naming it and you as its author, with **Activate**
+and **Show diff**; they choose whether to make it active. A version made while
+their browser was disconnected is toasted when it reconnects. **You do not need
+to announce a new version in chat.** Say _why_ you made it if that helps them
+decide. Writing the active version is detected, kept as a version of its own,
+and announced to both of you as a mistake — nothing is lost, but they are told,
+and their cursor was in there.
+
+The older two-step form still works and is **racy**: plain `version-new` copies
+a version and prints its path for you to edit, but the toast offers that copy at
+once. If they activate it before you write, your write lands on the active
+version. The safeguard keeps your text as yet another version and says so
+(`active.outside` with `activatedBeforeWritten: true`). **Do not make another
+version then**: tell them which version holds your draft.
 
 **3 · Save and Revert are theirs.** There is no verb for either, deliberately.
 Your work exists as versions until they accept it.
 
 **4 · Prose goes through a file.** `say --body-file <path>` or `--stdin` from a
 quoted heredoc, never as shell arguments — an unquoted heredoc eats backticks
-before the CLI sees them. Same for `task`, and `note --quote '<exact text>'`.
+before the CLI sees them. Same for `task`, `version-new`, and
+`note --quote '<exact text>'`.
 
 **Write `say` in markdown; it renders.** The conversation shows your message
 rendered (headings, lists, code blocks, tables, links), not as raw `**` and
@@ -132,8 +142,8 @@ the selected passage with its document, version and line numbers, and the path
 of the active version. Read it; do not ask what "this" means. Then:
 
 ```bash
-bun $S/scripts/cli.ts version-new --doc <slug, or a PATH if not open yet> --label "tighter opening"
-#   → {doc, version, path} — edit that path, then:
+bun $S/scripts/cli.ts version-new --doc <slug, or a PATH if not open yet> --label "tighter opening" --body-file /tmp/draft.md
+#   → {doc, version, path, written: true} — it already holds your text; then:
 bun $S/scripts/cli.ts say --body-file /tmp/reply.md
 ```
 
@@ -151,7 +161,8 @@ So for a document the human has not opened:
 bun $S/scripts/cli.ts version-new --doc /abs/path/from/the/context.md
 ```
 
-That opens it and gives you a v2 to write, without moving their view.
+That opens it and gives you a v2, without moving their view (add `--body-file`
+to have v2 hold your text from the start).
 
 **⚠ `--doc` accepts a slug or a unique filename only for a document that is
 ALREADY open.** For anything else it must be an absolute path — a filename gets
@@ -159,8 +170,9 @@ you `no document "keeper.md" in this session`. `state` lists what is open
 (`docs[].slug`) and what is merely in the context. A refusal names the paths you
 could have used.
 
-**The path `version-new` prints is never the active one** — that is what makes
-it safe to write with your own tools.
+**The path `version-new` prints is never the active one when it is made** — but
+the human can activate it a moment later, which is why the one-step
+`--body-file` form is the normal way to propose a version.
 
 ## What else arrives on the tail
 

@@ -623,7 +623,8 @@ export type ServerMsg =
 /** Agent → daemon, over `POST /cmd` (the CLI's verbs). */
 export type AgentCmd =
   | { type: "context.add"; paths: string[] }
-  | { type: "version.new"; doc?: string; from?: number; label?: string }
+  /** `text` (#117): the version is born holding it, rather than as a copy of `from`. */
+  | { type: "version.new"; doc?: string; from?: number; label?: string; text?: string }
   | { type: "say"; text: string }
   | { type: "activate"; doc?: string; version: number }
   | { type: "version.delete"; doc?: string; version: number }

@@ -542,32 +542,62 @@ async function cmdState(session: string | undefined, full: boolean) {
   printJson(data);
 }
 
-async function readSayBody(
+/**
+ * The ONE prose reader: arguments, `--stdin` or `--body-file`, exactly one of
+ * them. `say`/`task`/`note` need a message and trim it; `version-new` (#117)
+ * may have none (then it copies) and keeps its body byte for byte, because a
+ * version's text is a document, not a chat line. A body file that is not there
+ * is `not_found` (5), like any other path the caller names.
+ */
+async function readProse(
+  verb: string,
   pos: string[],
   flags: Record<string, string | boolean>,
-): Promise<string> {
+  o: { optional?: boolean } = {},
+): Promise<string | undefined> {
   const sources = [
     pos.length > 0,
     flags.stdin === true,
     typeof flags["body-file"] === "string",
   ].filter(Boolean).length;
+  if (sources === 0 && o.optional) return undefined;
   if (sources !== 1)
     die(
       sources === 0
-        ? "say needs a message"
-        : "say takes its message from exactly one place: arguments, --stdin or --body-file",
+        ? `${verb} needs a message`
+        : o.optional
+          ? `${verb} takes its body from one place: --stdin or --body-file, not both`
+          : `${verb} takes its message from exactly one place: arguments, --stdin or --body-file`,
       "usage",
       {
-        hint: "give the text as arguments, or prose through --body-file <path> / --stdin (never an unquoted heredoc)",
+        hint: o.optional
+          ? "give the text through --body-file <path> or --stdin (never an unquoted heredoc)"
+          : "give the text as arguments, or prose through --body-file <path> / --stdin (never an unquoted heredoc)",
         choices: ["--stdin", "--body-file"],
       },
     );
   let text: string;
   if (flags.stdin === true) text = await new Response(Bun.stdin.stream()).text();
-  else if (typeof flags["body-file"] === "string") text = readFileSync(flags["body-file"], "utf8");
-  else text = pos.join(" ");
-  if (!text.trim()) die("say: the message is empty", "usage");
-  return text.trim();
+  else if (typeof flags["body-file"] === "string") {
+    const path = flags["body-file"];
+    if (!existsSync(path)) die(`${verb}: --body-file not found: ${path}`, "not_found");
+    text = readFileSync(path, "utf8");
+  } else text = pos.join(" ");
+  if (!text.trim())
+    die(
+      o.optional ? `${verb}: the body is empty` : `${verb}: the message is empty`,
+      "usage",
+      o.optional ? { hint: `drop --body-file/--stdin to copy the source version instead` } : {},
+    );
+  return text;
+}
+
+async function readSayBody(
+  pos: string[],
+  flags: Record<string, string | boolean>,
+  verb = "say",
+): Promise<string> {
+  return ((await readProse(verb, pos, flags)) ?? "").trim();
 }
 
 /**
@@ -788,17 +818,20 @@ const ROWS: Row[] = [
   },
   {
     name: "version-new",
-    flags: [...SESSION, "doc", "from", "label"],
+    flags: [...SESSION, "doc", "from", "label", "stdin", "body-file"],
     positionals: [],
-    describe: "copy a version (default: the active one) to a new file; prints its path to edit",
+    describe:
+      "propose a new version holding your text (--body-file <path> or --stdin); without one, copies a version (default: the active one) and prints its path to edit",
     run: async (_pos, flags, session) => {
       const from = typeof flags.from === "string" ? parseVersion(flags.from, "--from") : undefined;
+      const text = await readProse("version-new", [], flags, { optional: true });
       printJson(
         await postCmd(session, {
           type: "version.new",
           ...(typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}),
           ...(from !== undefined ? { from } : {}),
           ...(typeof flags.label === "string" ? { label: flags.label } : {}),
+          ...(text !== undefined ? { text } : {}),
         }),
       );
     },

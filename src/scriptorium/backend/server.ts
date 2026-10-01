@@ -331,7 +331,14 @@ export async function startDaemon(opts: StartOpts) {
         // outside text is KEPT as a new agent version and the active version
         // keeps the human's text — nothing is lost, and the human's buffer is
         // not touched (verify-pass fix 4).
-        announceOutside(ev.doc, ev.version, ev.path, ev.preservedAs, ev.preservedPath);
+        announceOutside(
+          ev.doc,
+          ev.version,
+          ev.path,
+          ev.preservedAs,
+          ev.preservedPath,
+          ev.activatedBeforeWritten,
+        );
         return;
       case "original.reloaded":
         send({
@@ -364,10 +371,26 @@ export async function startDaemon(opts: StartOpts) {
     path: string,
     preservedAs: number,
     preservedPath: string,
+    activatedBeforeWritten: boolean,
   ) =>
     announce(
-      `v${version} of ${doc} is the ACTIVE version and was written from outside the editor. That text is kept as v${preservedAs}; the active version keeps your text. Agent edits belong in a new version (version-new).`,
-      { fact: "active.outside", doc, version, path, preservedAs, preservedPath },
+      // #117: the human activated the agent's `version-new` copy before the
+      // agent had written it. The agent followed the rule; the timing broke
+      // it. Say that, and name the act — its text is already safe, so another
+      // version would only add a duplicate. Agents route on the structured
+      // `activatedBeforeWritten`, never on this text.
+      activatedBeforeWritten
+        ? `The human activated v${version} of ${doc} before you had written it, so your write landed on the ACTIVE version. Nothing is lost: your text is kept as v${preservedAs} (${preservedPath}); v${version} keeps its own text. Do NOT create another version — say in the chat that v${preservedAs} is your draft and let the human activate it. Next time, propose a version in one step with version-new --body-file.`
+        : `v${version} of ${doc} is the ACTIVE version and was written from outside the editor. That text is kept as v${preservedAs}; the active version keeps your text. Agent edits belong in a new version (version-new).`,
+      {
+        fact: "active.outside",
+        doc,
+        version,
+        path,
+        preservedAs,
+        preservedPath,
+        activatedBeforeWritten,
+      },
     );
 
   // --- shared acts (surface and agent reach the same code) ---------------------
@@ -379,7 +402,7 @@ export async function startDaemon(opts: StartOpts) {
   };
 
   const activate = (doc: string | undefined, version: number, by: "human" | "agent") => {
-    const r = session.activate({ doc, version });
+    const r = session.activate({ doc, version, by });
     const view = session.doc(r.slug);
     const path = view.versions.find((v) => v.n === version)?.path ?? null;
     send({
@@ -611,6 +634,7 @@ export async function startDaemon(opts: StartOpts) {
             session.activePath(d.slug) ?? "",
             r.preserved.n,
             r.preserved.path,
+            r.preserved.activatedBeforeWritten,
           );
         } else if (r.dirtyChanged) broadcastState();
         return;
@@ -1357,17 +1381,33 @@ export async function startDaemon(opts: StartOpts) {
               by: "agent",
             });
         }
+        // #117: with `text` the file is written HERE, before the announce
+        // below — the version is never offered to the human unwritten.
         const r = session.newVersion({
           doc: cmd.doc,
           from: cmd.from,
           label: cmd.label,
+          ...(typeof cmd.text === "string" ? { text: cmd.text } : {}),
           author: "agent",
         });
         announce(
           `Agent created v${r.version.n} of ${r.slug} from v${r.version.from}${cmd.label ? ` — ${cmd.label}` : ""}.`,
           { fact: "version.created", doc: r.slug, version: r.version.n },
         );
-        return { doc: r.slug, version: r.version.n, from: r.version.from, path: r.version.path };
+        // The answer names the act it makes likely: a version born holding the
+        // agent's text is ready to talk about; a copy still has to be written,
+        // and is already on offer to the human (#117).
+        const written = typeof cmd.text === "string";
+        return {
+          doc: r.slug,
+          version: r.version.n,
+          from: r.version.from,
+          path: r.version.path,
+          written,
+          hint: written
+            ? `v${r.version.n} holds your text and the human has been offered it — no need to announce it; say why you made it if that helps them decide`
+            : `v${r.version.n} is a copy of v${r.version.from} and the human can already activate it — write your text to its path now (next time: version-new --body-file, one step)`,
+        };
       }
       case "say": {
         const m = session.addMessage("agent", cmd.text);

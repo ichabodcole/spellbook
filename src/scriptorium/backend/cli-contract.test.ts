@@ -223,6 +223,42 @@ test("say's message-source disjunction is choices, not prose (A1)", () => {
   expect(doc.error.choices).toEqual(["--stdin", "--body-file"]);
 });
 
+test("version-new's body (#117): one source, a file that exists, not empty — each refused before any session", () => {
+  const dir = mkdtempSync(join(tmpdir(), "scriptorium-body-"));
+  const body = join(dir, "body.md");
+  writeFileSync(body, "# a draft\n");
+  const both = run(["version-new", "--stdin", "--body-file", body]);
+  expect(both.code).toBe(2);
+  const bothDoc = JSON.parse(both.stderr) as Envelope;
+  expect(bothDoc.error.kind).toBe("usage");
+  expect(bothDoc.error.choices).toEqual(["--stdin", "--body-file"]);
+
+  const missing = run(["version-new", "--body-file", join(dir, "nope.md")]);
+  expect(missing.code).toBe(5);
+  const missingDoc = JSON.parse(missing.stderr) as Envelope;
+  expect(missingDoc.error.kind).toBe("not_found");
+  expect(missingDoc.error.message).toContain("--body-file not found");
+
+  const empty = join(dir, "empty.md");
+  writeFileSync(empty, "  \n");
+  const blank = run(["version-new", "--body-file", empty]);
+  expect(blank.code).toBe(2);
+  const blankDoc = JSON.parse(blank.stderr) as Envelope;
+  expect(blankDoc.error.message).toBe("version-new: the body is empty");
+  expect(blankDoc.error.hint).toContain("copy the source");
+
+  // A good body gets as far as the session — and there is none here.
+  const noSession = JSON.parse(run(["version-new", "--body-file", body]).stderr) as Envelope;
+  expect(noSession.error.kind).toBe("not_found");
+  expect(noSession.error.message).not.toContain("--body-file");
+});
+
+test("say's missing --body-file is not_found too — the one prose reader", () => {
+  const r = run(["say", "--body-file", "/definitely/not/here.txt"]);
+  expect(r.code).toBe(5);
+  expect((JSON.parse(r.stderr) as Envelope).error.message).toContain("--body-file not found");
+});
+
 test("restoring an unknown session names the saved sessions as choices — empty, and said", () => {
   const doc = JSON.parse(run(["open", "--no-open", "--restore", "nope"]).stderr) as Envelope;
   expect(doc.error.choices).toEqual([]);
