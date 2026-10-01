@@ -23894,12 +23894,19 @@ function afterSocketClose(endedBy) {
   return endedBy ? { connection: "ended", retry: false } : { connection: "closed", retry: true };
 }
 var SESSION_ENDED = "The session has ended";
+function unanswered(endedBy) {
+  return endedBy ? SESSION_ENDED : "disconnected";
+}
+var SEARCH_ENDED = `${SESSION_ENDED}, so search can't run. To keep working, ask the agent to reopen it.`;
+function endButtonTitle(endedBy) {
+  return endedBy ? SESSION_ENDED : "End this session — the agent is told you are done";
+}
 var ENDED_NOTICE = "The session has ended, so that did nothing. To keep working, ask the agent to reopen it.";
 var AMBIENT = new Set(["prefs.set", "select", "read", "diff", "edit"]);
 function sentAfterEnd(msg) {
   if (AMBIENT.has(msg.type))
     return "drop";
-  if (msg.type === "search" && !msg.query)
+  if (msg.type === "search")
     return "drop";
   return "notice";
 }
@@ -30172,7 +30179,7 @@ function ChatMessageView({
 }) {
   return /* @__PURE__ */ jsx_runtime7.jsxs("div", {
     "data-who": m.who,
-    className: "rounded-md px-2 py-1 text-xs leading-relaxed text-ink-dim data-[who=agent]:bg-surface-raised data-[who=agent]:text-ink data-[who=human]:bg-rubric/10 data-[who=human]:text-ink",
+    className: "min-w-0 wrap-anywhere rounded-md px-2 py-1 text-xs leading-relaxed text-ink-dim data-[who=agent]:bg-surface-raised data-[who=agent]:text-ink data-[who=human]:bg-rubric/10 data-[who=human]:text-ink",
     children: [
       m.who === "system" ? /* @__PURE__ */ jsx_runtime7.jsxs(jsx_runtime7.Fragment, {
         children: [
@@ -35584,7 +35591,7 @@ function AddPath({
         forValue: value,
         entries: listing.entries.filter((e) => (!foldersOnly || e.dir) && e.name.toLowerCase().startsWith(p)).slice(0, MAX_SUGGESTIONS)
       });
-      setError(listing.error && split.prefix === "" ? friendlyListError(listing.error, split.dir) : null);
+      setError(listing.error && (split.prefix === "" || listing.error === SESSION_ENDED) ? friendlyListError(listing.error, split.dir) : null);
       setHighlight(-1);
     }, 120);
     return () => clearTimeout(t);
@@ -38922,6 +38929,7 @@ function edgePath(a2, b) {
 }
 function MapOverlay({
   graph,
+  error,
   label,
   open,
   onOpenChange,
@@ -39012,7 +39020,7 @@ function MapOverlay({
               className: "min-h-0 flex-1 overflow-auto p-2",
               children: !graph ? /* @__PURE__ */ jsx_runtime13.jsx("p", {
                 className: "p-6 text-sm text-ink-dim",
-                children: "Reading the set…"
+                children: error ?? "Reading the set…"
               }) : graph.nodes.length === 0 ? /* @__PURE__ */ jsx_runtime13.jsx("p", {
                 className: "p-6 text-sm text-ink-dim",
                 children: "This set has no documents to map."
@@ -39407,7 +39415,7 @@ function ContextSidebar({
     setMapping({ entry, graph: null });
     const result = await mapOf(entry.id);
     setMapping((current) => current?.entry.id === entry.id ? { entry, graph: result } : current);
-    if (result.error)
+    if (result.error && result.graph)
       setLocalNotice(result.error);
   }, [mapOf]);
   const { confirm, dialog } = useConfirm();
@@ -39561,6 +39569,7 @@ function ContextSidebar({
         },
         label: mapping?.entry.label ?? "",
         graph: mapping?.graph?.graph ?? null,
+        error: mapping?.graph?.error,
         onOpenDoc: onOpenPath
       })
     ]
@@ -61055,7 +61064,8 @@ var DEBOUNCE_MS = 140;
 function SearchBar({
   report,
   onQuery,
-  onOpen
+  onOpen,
+  ended = false
 }) {
   const [query, setQuery] = import_react28.useState("");
   const [open, setOpen] = import_react28.useState(false);
@@ -61137,7 +61147,10 @@ function SearchBar({
       }),
       showing && /* @__PURE__ */ jsx_runtime29.jsx("div", {
         className: cn("absolute top-full right-0 left-0 z-50 mt-1 max-h-[60vh] overflow-auto", "rounded-md border border-edge bg-surface-raised shadow-lg"),
-        children: fresh === null ? /* @__PURE__ */ jsx_runtime29.jsx("p", {
+        children: ended ? /* @__PURE__ */ jsx_runtime29.jsx("p", {
+          className: "px-3 py-2 text-xs text-ink-dim",
+          children: SEARCH_ENDED
+        }) : fresh === null ? /* @__PURE__ */ jsx_runtime29.jsx("p", {
           className: "px-3 py-2 text-xs text-ink-faint",
           children: "Searching…"
         }) : nothing ? /* @__PURE__ */ jsx_runtime29.jsxs("p", {
@@ -61651,21 +61664,22 @@ function useDaemon() {
       ws.onclose = () => {
         const after = afterSocketClose(ended);
         setConnection(after.connection);
+        const why = unanswered(ended);
         for (const waiters of pending.current.values())
           for (const w of waiters)
-            w({ entries: [], error: "disconnected" });
+            w({ entries: [], error: why });
         pending.current.clear();
         for (const waiters of plans.current.values())
           for (const w of waiters)
-            w({ error: "disconnected" });
+            w({ error: why });
         plans.current.clear();
         for (const waiters of maps.current.values())
           for (const w of waiters)
-            w({ error: "disconnected" });
+            w({ error: why });
         maps.current.clear();
         for (const waiters of suggestions.current.values())
           for (const w of waiters)
-            w({ error: "disconnected" });
+            w({ error: why });
         suggestions.current.clear();
         if (stopped || !after.retry)
           return;
@@ -61694,7 +61708,7 @@ function useDaemon() {
   const listDir = import_react31.useCallback((path2) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
-      resolve({ entries: [], error: "disconnected" });
+      resolve({ entries: [], error: unanswered(endedRef.current) });
       return;
     }
     const waiters = pending.current.get(path2);
@@ -61708,7 +61722,7 @@ function useDaemon() {
   const planMove = import_react31.useCallback((path2, into) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
-      resolve({ error: "disconnected" });
+      resolve({ error: unanswered(endedRef.current) });
       return;
     }
     const key = `${path2}\x00${into}`;
@@ -61723,7 +61737,7 @@ function useDaemon() {
   const mapOf = import_react31.useCallback((entry) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
-      resolve({ error: "disconnected" });
+      resolve({ error: unanswered(endedRef.current) });
       return;
     }
     const waiters = maps.current.get(entry);
@@ -61737,7 +61751,7 @@ function useDaemon() {
   const suggestMeta = import_react31.useCallback((path2) => new Promise((resolve) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
-      resolve({ error: "disconnected" });
+      resolve({ error: unanswered(endedRef.current) });
       return;
     }
     const waiters = suggestions.current.get(path2);
@@ -61884,6 +61898,7 @@ function App() {
             className: "mx-auto flex min-w-0 flex-1 justify-center px-4",
             children: /* @__PURE__ */ jsx_runtime32.jsx(SearchBar, {
               report: daemon.search,
+              ended: endedBy !== null,
               onQuery: (query) => send({ type: "search", query }),
               onOpen: (target) => {
                 send({ type: "open", path: target.path });
@@ -61906,7 +61921,7 @@ function App() {
             size: "sm",
             onClick: endSession,
             disabled: connection !== "open",
-            title: "End this session — the agent is told you are done",
+            title: endButtonTitle(endedBy),
             className: "h-7 gap-1.5 px-2 text-xs",
             children: [
               /* @__PURE__ */ jsx_runtime32.jsx(Power, {
