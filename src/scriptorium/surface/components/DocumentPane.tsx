@@ -20,7 +20,7 @@ import type { DiffPayload, DiffSide, DocView, NoteWaiting } from "../../backend/
 import { readerStaysLoud, splitRoom } from "../state/columns";
 import { createPlace } from "../state/place";
 import { contentStats, relativeTime } from "../state/stats";
-import { CompareView } from "./CompareView";
+import { CompareView, NOTHING_TO_COMPARE, NothingToCompare, nothingToCompare } from "./CompareView";
 import { DocumentView } from "./DocumentView";
 import { MarkdownView } from "./MarkdownView";
 import { NewVersionDialog, type VersionIntent } from "./NewVersionDialog";
@@ -334,7 +334,11 @@ export function DocumentPane({
                 className={cn("flex items-center gap-0.5 rounded-md bg-surface-raised p-0.5", fade)}
               >
                 {MODE_BUTTONS.map(({ mode: m, label, icon: Icon }) => {
-                  const unavailable = m === "split" && !roomToSplit;
+                  const noSplit = m === "split" && !roomToSplit;
+                  // #116: disabled BEFORE the click, so the human never has to
+                  // open the view to find out there was nothing in it.
+                  const noCompare = m === "compare" && nothingToCompare(doc);
+                  const unavailable = noSplit || noCompare;
                   return (
                     <button
                       key={m}
@@ -346,9 +350,11 @@ export function DocumentPane({
                       title={
                         !unavailable
                           ? label
-                          : room.ifCollapsed
-                            ? `${label} — the pane is too narrow; collapse the side columns to make room`
-                            : `${label} — the pane is too narrow`
+                          : noCompare
+                            ? NOTHING_TO_COMPARE
+                            : room.ifCollapsed
+                              ? `${label} — the pane is too narrow; collapse the side columns to make room`
+                              : `${label} — the pane is too narrow`
                       }
                       className={cn(
                         "flex size-6 items-center justify-center rounded-sm text-ink-faint outline-none",
@@ -457,7 +463,11 @@ export function DocumentPane({
         // The payload is asked for by App whenever the document, the active
         // version or the chosen side changes; until the first one lands the
         // pane holds its space rather than flashing an empty comparison.
-        diff && diff.doc === doc.slug ? (
+        // #116: a compare mode saved from another document (or kept across a
+        // save that made v1 the file again) lands here with nothing to show.
+        nothingToCompare(doc) ? (
+          <NothingToCompare />
+        ) : diff && diff.doc === doc.slug ? (
           <CompareView
             payload={diff}
             file={doc.name}

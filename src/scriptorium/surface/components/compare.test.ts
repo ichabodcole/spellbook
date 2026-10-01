@@ -4,7 +4,7 @@
 // surface can actually be wrong.
 import { describe, expect, test } from "bun:test";
 import { diffText } from "../../backend/diff";
-import { fileLabel, rowsOf, sideLabel } from "./CompareView";
+import { fileLabel, NOTHING_TO_COMPARE, nothingToCompare, rowsOf, sideLabel } from "./CompareView";
 
 /** The rows a real comparison produces, the way the component builds them. */
 const rows = (before: string, after: string) => {
@@ -133,5 +133,34 @@ describe("fileLabel (E43)", () => {
   test("the saved side is called by the file; a version by its number", () => {
     expect(sideLabel("original", "note.md")).toBe("note.md");
     expect(sideLabel(3, "note.md")).toBe("v3");
+  });
+});
+
+describe("nothingToCompare (#116)", () => {
+  const v = (n: number) => ({ n, author: "human" as const, createdAt: 0, path: `/v${n}.md` });
+
+  test("one version that matches the file has nothing to compare", () => {
+    expect(nothingToCompare({ versions: [v(1)], dirty: false, outsideChanged: false })).toBe(true);
+  });
+
+  test("two versions always have something to compare", () => {
+    expect(nothingToCompare({ versions: [v(1), v(2)], dirty: false, outsideChanged: false })).toBe(
+      false,
+    );
+  });
+
+  test("one version with unsaved edits still compares against the file", () => {
+    // The file of record is a side of its own (E36): v1 against it is the
+    // unsaved edits, and E54's "See the difference" depends on that route.
+    expect(nothingToCompare({ versions: [v(1)], dirty: true, outsideChanged: false })).toBe(false);
+  });
+
+  test("one version whose file changed on disk still compares against the file", () => {
+    expect(nothingToCompare({ versions: [v(1)], dirty: false, outsideChanged: true })).toBe(false);
+  });
+
+  test("the message says there is nothing to compare, never that they are identical", () => {
+    expect(NOTHING_TO_COMPARE).toBe("Only one version — nothing to compare");
+    expect(NOTHING_TO_COMPARE.toLowerCase()).not.toContain("identical");
   });
 });
