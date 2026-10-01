@@ -1,0 +1,58 @@
+import { describe, expect, test } from "bun:test";
+import { afterSocketClose, endedTitle, unsavedWarning } from "./ending";
+
+const doc = (slug: string, name: string, active: number, dirty: boolean) => ({
+  slug,
+  name,
+  active,
+  dirty,
+});
+
+describe("afterSocketClose — a deliberate end stops the retrying", () => {
+  test("the daemon said it was ending: Session ended, and no retry", () => {
+    expect(afterSocketClose("human")).toEqual({ connection: "ended", retry: false });
+    expect(afterSocketClose("agent")).toEqual({ connection: "ended", retry: false });
+    expect(afterSocketClose("timeout")).toEqual({ connection: "ended", retry: false });
+  });
+
+  test("it said nothing (a crash, a kill, a sleeping laptop): retry, as before", () => {
+    expect(afterSocketClose(null)).toEqual({ connection: "closed", retry: true });
+  });
+});
+
+describe("endedTitle — who ended it, for the label's tooltip", () => {
+  test("names each closer", () => {
+    expect(endedTitle("human")).toBe("You ended this session");
+    expect(endedTitle("agent")).toBe("The agent ended this session");
+    expect(endedTitle("timeout")).toBe("This session closed after it sat idle");
+  });
+});
+
+describe("unsavedWarning — what the End session modal says about unsaved edits", () => {
+  test("nothing unsaved: nothing said", () => {
+    expect(unsavedWarning([doc("a", "a.md", 1, false)], "a")).toBeNull();
+    expect(unsavedWarning([], null)).toBeNull();
+  });
+
+  test("the open document has unsaved edits: named with its version", () => {
+    const w = unsavedWarning([doc("a", "a.md", 1, false), doc("n", "note.md", 2, true)], "n");
+    expect(w).toBe(
+      "v2 of note.md has unsaved changes. They stay in this session (the agent can bring it back with open --restore), but they won't be in your file.",
+    );
+  });
+
+  test("a document that is not open counts too — the file still won't have them", () => {
+    const w = unsavedWarning([doc("a", "a.md", 3, true)], null);
+    expect(w).toContain("v3 of a.md has unsaved changes");
+  });
+
+  test("several: counted and named, the open one first", () => {
+    const w = unsavedWarning(
+      [doc("a", "a.md", 1, true), doc("b", "b.md", 2, false), doc("c", "c.md", 4, true)],
+      "c",
+    );
+    expect(w).toBe(
+      "2 documents have unsaved changes (c.md, a.md). They stay in this session (the agent can bring it back with open --restore), but they won't be in your files.",
+    );
+  });
+});

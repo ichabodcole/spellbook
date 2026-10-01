@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   ClientMsg,
+  ClosedBy,
   DiffPayload,
   FsListEntry,
   GraphPayload,
@@ -17,8 +18,10 @@ import type {
   ServerMsg,
   StructureOpType,
 } from "../../backend/protocol";
+import { afterSocketClose } from "./ending";
 
-export type Connection = "connecting" | "open" | "closed";
+/** `ended`: the daemon said it was ending on purpose — nothing to retry (End session). */
+export type Connection = "connecting" | "open" | "closed" | "ended";
 
 export const textKey = (doc: string, version: number) => `${doc}@${version}`;
 
@@ -37,6 +40,8 @@ export type Done = { op: StructureOpType; path: string; seq: number };
 export function useDaemon(): {
   state: PublicState | null;
   connection: Connection;
+  /** Who ended the session, once the daemon has said; null while it runs. */
+  endedBy: ClosedBy | null;
   /** E59: the daemon's last search answer, or null before the first one. */
   search: SearchReport | null;
   lastError: string | null;
@@ -54,6 +59,7 @@ export function useDaemon(): {
 } {
   const [state, setState] = useState<PublicState | null>(null);
   const [connection, setConnection] = useState<Connection>("connecting");
+  const [endedBy, setEndedBy] = useState<ClosedBy | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
   const [texts, setTexts] = useState<ReadonlyMap<string, string>>(() => new Map());
   const [done, setDone] = useState<Done | null>(null);
@@ -76,6 +82,8 @@ export function useDaemon(): {
     let stopped = false;
     let delay = 250;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    /** Set by the daemon's `closed` frame, read when the socket goes. */
+    let ended: ClosedBy | null = null;
     const connect = () => {
       const url = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`;
       const ws = new WebSocket(url);
@@ -93,7 +101,10 @@ export function useDaemon(): {
           return;
         }
         if (msg.type === "state") setState(msg.state);
-        else if (msg.type === "error") setLastError(msg.message);
+        else if (msg.type === "closed") {
+          ended = msg.by;
+          setEndedBy(msg.by);
+        } else if (msg.type === "error") setLastError(msg.message);
         else if (msg.type === "version.text") {
           const key = textKey(msg.doc, msg.version);
           setTexts((prev) => {
@@ -138,7 +149,8 @@ export function useDaemon(): {
         }
       };
       ws.onclose = () => {
-        setConnection("closed");
+        const after = afterSocketClose(ended);
+        setConnection(after.connection);
         // Unanswered listings would otherwise wait forever on a dead socket.
         for (const waiters of pending.current.values())
           for (const w of waiters) w({ entries: [], error: "disconnected" });
@@ -152,7 +164,7 @@ export function useDaemon(): {
         for (const waiters of suggestions.current.values())
           for (const w of waiters) w({ error: "disconnected" });
         suggestions.current.clear();
-        if (stopped) return;
+        if (stopped || !after.retry) return;
         timer = setTimeout(connect, delay);
         delay = Math.min(delay * 2, 5000);
       };
@@ -262,6 +274,7 @@ export function useDaemon(): {
   return {
     state,
     connection,
+    endedBy,
     search,
     lastError,
     clearError,
