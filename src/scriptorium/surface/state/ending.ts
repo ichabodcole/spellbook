@@ -22,6 +22,26 @@ export function afterSocketClose(endedBy: ClosedBy | null): {
 /** The tooltip on a control the end has disabled (Save, Revert, the composer…). */
 export const SESSION_ENDED = "The session has ended";
 
+/**
+ * What a REQUEST waiting on the daemon resolves with when no answer is coming
+ * — the map, the path box's completion, a move plan, a frontmatter suggestion.
+ * After a deliberate end that is the end, in the same words as every other
+ * ended control; "disconnected" (or a spinner that never stops) read as a
+ * fault (verifier, 2026-10-01). A daemon that vanished on its own is still a
+ * disconnect: it may come back.
+ */
+export function unanswered(endedBy: ClosedBy | null): string {
+  return endedBy ? SESSION_ENDED : "disconnected";
+}
+
+/** The search box's answer after the end, in place of "Searching…". */
+export const SEARCH_ENDED = `${SESSION_ENDED}, so search can't run. To keep working, ask the agent to reopen it.`;
+
+/** The End session button's tooltip — once disabled by the end, it says so. */
+export function endButtonTitle(endedBy: ClosedBy | null): string {
+  return endedBy ? SESSION_ENDED : "End this session — the agent is told you are done";
+}
+
 /** What a click that could no longer reach the daemon is answered with. */
 export const ENDED_NOTICE =
   "The session has ended, so that did nothing. To keep working, ask the agent to reopen it.";
@@ -42,7 +62,9 @@ const AMBIENT = new Set<string>(["prefs.set", "select", "read", "diff", "edit"])
  */
 export function sentAfterEnd(msg: { type: string; query?: string }): "drop" | "notice" {
   if (AMBIENT.has(msg.type)) return "drop";
-  if (msg.type === "search" && !msg.query) return "drop";
+  // A search is answered IN PLACE: the box shows `SEARCH_ENDED` where results
+  // go, so a notice too would say it twice, once per pause in the typing.
+  if (msg.type === "search") return "drop";
   return "notice";
 }
 

@@ -18,7 +18,7 @@ import type {
   ServerMsg,
   StructureOpType,
 } from "../../backend/protocol";
-import { afterSocketClose, ENDED_NOTICE, sentAfterEnd } from "./ending";
+import { afterSocketClose, ENDED_NOTICE, sentAfterEnd, unanswered } from "./ending";
 
 /** `ended`: the daemon said it was ending on purpose — nothing to retry (End session). */
 export type Connection = "connecting" | "open" | "closed" | "ended";
@@ -154,18 +154,18 @@ export function useDaemon(): {
       ws.onclose = () => {
         const after = afterSocketClose(ended);
         setConnection(after.connection);
-        // Unanswered listings would otherwise wait forever on a dead socket.
+        // Unanswered listings would otherwise wait forever on a dead socket —
+        // and after a deliberate end they say so, not "disconnected".
+        const why = unanswered(ended);
         for (const waiters of pending.current.values())
-          for (const w of waiters) w({ entries: [], error: "disconnected" });
+          for (const w of waiters) w({ entries: [], error: why });
         pending.current.clear();
-        for (const waiters of plans.current.values())
-          for (const w of waiters) w({ error: "disconnected" });
+        for (const waiters of plans.current.values()) for (const w of waiters) w({ error: why });
         plans.current.clear();
-        for (const waiters of maps.current.values())
-          for (const w of waiters) w({ error: "disconnected" });
+        for (const waiters of maps.current.values()) for (const w of waiters) w({ error: why });
         maps.current.clear();
         for (const waiters of suggestions.current.values())
-          for (const w of waiters) w({ error: "disconnected" });
+          for (const w of waiters) w({ error: why });
         suggestions.current.clear();
         if (stopped || !after.retry) return;
         timer = setTimeout(connect, delay);
@@ -197,7 +197,7 @@ export function useDaemon(): {
       new Promise<Listing>((resolve) => {
         const ws = wsRef.current;
         if (!ws || ws.readyState !== WebSocket.OPEN) {
-          resolve({ entries: [], error: "disconnected" });
+          resolve({ entries: [], error: unanswered(endedRef.current) });
           return;
         }
         const waiters = pending.current.get(path);
@@ -216,7 +216,7 @@ export function useDaemon(): {
       new Promise<Planning>((resolve) => {
         const ws = wsRef.current;
         if (!ws || ws.readyState !== WebSocket.OPEN) {
-          resolve({ error: "disconnected" });
+          resolve({ error: unanswered(endedRef.current) });
           return;
         }
         const key = `${path}\u0000${into}`;
@@ -236,7 +236,7 @@ export function useDaemon(): {
       new Promise<Mapping>((resolve) => {
         const ws = wsRef.current;
         if (!ws || ws.readyState !== WebSocket.OPEN) {
-          resolve({ error: "disconnected" });
+          resolve({ error: unanswered(endedRef.current) });
           return;
         }
         const waiters = maps.current.get(entry);
@@ -255,7 +255,7 @@ export function useDaemon(): {
       new Promise<Suggestion>((resolve) => {
         const ws = wsRef.current;
         if (!ws || ws.readyState !== WebSocket.OPEN) {
-          resolve({ error: "disconnected" });
+          resolve({ error: unanswered(endedRef.current) });
           return;
         }
         const waiters = suggestions.current.get(path);

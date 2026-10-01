@@ -2,9 +2,12 @@ import { describe, expect, test } from "bun:test";
 import {
   afterSocketClose,
   ENDED_NOTICE,
+  endButtonTitle,
   endedTitle,
+  SEARCH_ENDED,
   SESSION_ENDED,
   sentAfterEnd,
+  unanswered,
   unsavedWarning,
 } from "./ending";
 
@@ -21,9 +24,9 @@ describe("sentAfterEnd — a click that can no longer reach the daemon says so",
       expect(sentAfterEnd({ type })).toBe("drop");
   });
 
-  test("clearing the search box is not an act worth a notice", () => {
+  test("a search is dropped: the box itself says the session has ended, so a toast would say it twice", () => {
     expect(sentAfterEnd({ type: "search", query: "" })).toBe("drop");
-    expect(sentAfterEnd({ type: "search", query: "draft" })).toBe("notice");
+    expect(sentAfterEnd({ type: "search", query: "draft" })).toBe("drop");
   });
 
   test("the words: the session has ended, and the way back", () => {
@@ -86,5 +89,35 @@ describe("unsavedWarning — what the End session modal says about unsaved edits
     expect(w).toBe(
       "2 documents have unsaved changes (c.md, a.md). They stay in this session (the agent can bring it back with open --restore), but they won't be in your files.",
     );
+  });
+});
+
+describe("unanswered — what a request the daemon will never answer resolves with", () => {
+  test("after a deliberate end it says the session has ended, never 'disconnected'", () => {
+    // The map, the path box's completion, a move plan and a frontmatter
+    // suggestion all wait on a reply; after End session they read
+    // "disconnected" (or spun) — a fault, when it was a choice.
+    for (const by of ["human", "agent", "timeout"] as const)
+      expect(unanswered(by)).toBe(SESSION_ENDED);
+  });
+
+  test("a daemon that vanished on its own is still a disconnect, and may come back", () => {
+    expect(unanswered(null)).toBe("disconnected");
+  });
+});
+
+describe("the search box after the end says why, in place", () => {
+  test("it names the end instead of spinning", () => {
+    expect(SEARCH_ENDED).toContain(SESSION_ENDED);
+  });
+});
+
+describe("endButtonTitle — the End session button's tooltip", () => {
+  test("while the session runs it says what the button does", () => {
+    expect(endButtonTitle(null)).toBe("End this session — the agent is told you are done");
+  });
+
+  test("once ended (disabled) it says the session has ended, not what a click would do", () => {
+    expect(endButtonTitle("human")).toBe(SESSION_ENDED);
   });
 });

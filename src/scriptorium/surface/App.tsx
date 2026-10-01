@@ -59,7 +59,7 @@ import {
   reopenSize,
   type Side,
 } from "./state/columns";
-import { endedTitle, unsavedWarning } from "./state/ending";
+import { endButtonTitle, endedTitle, unsavedWarning } from "./state/ending";
 import { askAboutNote, badgesOn, elsewhere, loudest, owedLabel, waitingOf } from "./state/notes";
 import { oneLine } from "./state/projection";
 import {
@@ -225,6 +225,7 @@ export function App() {
           <div className="mx-auto flex min-w-0 flex-1 justify-center px-4">
             <SearchBar
               report={daemon.search}
+              ended={endedBy !== null}
               onQuery={(query) => send({ type: "search", query })}
               onOpen={(target) => {
                 send({ type: "open", path: target.path });
@@ -251,7 +252,7 @@ export function App() {
           size="sm"
           onClick={endSession}
           disabled={connection !== "open"}
-          title="End this session — the agent is told you are done"
+          title={endButtonTitle(endedBy)}
           className="h-7 gap-1.5 px-2 text-xs"
         >
           <PowerIcon className="size-3.5" />

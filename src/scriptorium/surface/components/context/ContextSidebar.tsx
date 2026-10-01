@@ -232,7 +232,8 @@ export function ContextSidebar({
       setMapping((current) =>
         current?.entry.id === entry.id ? { entry, graph: result } : current,
       );
-      if (result.error) setLocalNotice(result.error);
+      // No graph: the overlay says why, in place — a toast too said it twice.
+      if (result.error && result.graph) setLocalNotice(result.error);
     },
     [mapOf],
   );
@@ -380,6 +381,7 @@ export function ContextSidebar({
         }}
         label={mapping?.entry.label ?? ""}
         graph={mapping?.graph?.graph ?? null}
+        error={mapping?.graph?.error}
         onOpenDoc={onOpenPath}
       />
     </div>
