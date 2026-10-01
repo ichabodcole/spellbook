@@ -460,6 +460,18 @@ describe("the manifest survives a restart (--restore)", () => {
     expect(Session.restore(home, s.id).restoreFindings).toEqual([]);
   });
 
+  test("who ended the session is in the manifest, which outlives the daemon; a restore clears it", () => {
+    const s = inContext();
+    s.markEnded("human");
+    s.persist();
+    const onDisk = JSON.parse(readFileSync(join(home, "sessions", s.id, "manifest.json"), "utf8"));
+    expect(onDisk.ended.by).toBe("human");
+    expect(typeof onDisk.ended.at).toBe("number");
+    Session.restore(home, s.id);
+    const after = JSON.parse(readFileSync(join(home, "sessions", s.id, "manifest.json"), "utf8"));
+    expect(after.ended).toBeUndefined();
+  });
+
   test("restoring an unknown session is not_found", () => {
     expect(refusal(() => Session.restore(home, "nope")).status).toBe(404);
   });

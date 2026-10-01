@@ -1723,6 +1723,9 @@ export async function startDaemon(opts: StartOpts) {
     for (const w of watchers.values()) w.close();
     watchers.clear();
     for (const t of pending.values()) clearTimeout(t);
+    // WHO ended it goes in the manifest before the persist: the manifest
+    // outlives this daemon, and a verb run after the end reads it there.
+    if (by) session.markEnded(by);
     try {
       session.persist();
     } catch {

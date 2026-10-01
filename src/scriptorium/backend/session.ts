@@ -68,6 +68,7 @@ import { type BundleIndex, buildGraph, type Resolution, resolveTarget } from "./
 import type {
   ChatMessage,
   ChatWho,
+  ClosedBy,
   ContextEntry,
   ContextNode,
   DiffPayload,
@@ -166,6 +167,14 @@ export type Manifest = {
   tasks?: Task[];
   /** E23's workspace. Absent in a manifest written before it existed: the user's home. */
   workspace?: string;
+  /**
+   * Who ended this session, and when — set at teardown, cleared by a restore.
+   * ⛔ IT LIVES HERE BECAUSE THE MANIFEST OUTLIVES THE DAEMON: a verb run after
+   * the end finds no daemon to ask, and must still tell "the human ended this
+   * on purpose" (do not reopen) from a timeout or a crash (reopen freely).
+   * Absent while live, after a crash, and on a manifest written before it existed.
+   */
+  ended?: { by: ClosedBy; at: number };
 };
 
 /** A refusal the daemon turns into an HTTP status — `choices` when the set is in hand (A1). */
@@ -304,7 +313,10 @@ export class Session {
         s.restoreFindings.push({ doc: d.slug, original: d.original, missing: now === null });
       }
     }
-    if (s.restoreFindings.length > 0) s.persist();
+    // A restored session is live again: whoever ended it before, nobody has now.
+    const wasEnded = s.m.ended !== undefined;
+    delete s.m.ended;
+    if (s.restoreFindings.length > 0 || wasEnded) s.persist();
     return s;
   }
 
@@ -370,6 +382,11 @@ export class Session {
   }
 
   // ── persistence ────────────────────────────────────────────────────────
+
+  /** Record who ended the session (teardown persists it next). */
+  markEnded(by: ClosedBy): void {
+    this.m.ended = { by, at: Date.now() };
+  }
 
   persist(): void {
     mkdirSync(this.dir, { recursive: true });

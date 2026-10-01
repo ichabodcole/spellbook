@@ -9,7 +9,14 @@
 // process's, `choices` wherever the valid set is in hand (register A1).
 
 import { afterAll, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync as mkdtempRaw, readdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync as mkdtempRaw,
+  readdirSync,
+  rmSync,
+  utimesSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -54,14 +61,18 @@ afterAll(() => {
 const EMPTY_TMP = mkdtempSync(join(tmpdir(), "scriptorium-contract-"));
 const EMPTY_HOME = mkdtempSync(join(tmpdir(), "scriptorium-contract-home-"));
 
-function run(args: string[], tmp = EMPTY_TMP): { code: number; stdout: string; stderr: string } {
+function run(
+  args: string[],
+  tmp = EMPTY_TMP,
+  home = EMPTY_HOME,
+): { code: number; stdout: string; stderr: string } {
   // Bun strips a bare `--` placed right after the script path; the added `--`
   // is the one it consumes, so the CLI receives exactly `args`.
   const p = Bun.spawnSync(["bun", CLI, "--", ...args], {
     stdout: "pipe",
     stderr: "pipe",
     stdin: new Uint8Array(0),
-    env: { ...process.env, TMPDIR: tmp, SCRIPTORIUM_HOME: EMPTY_HOME },
+    env: { ...process.env, TMPDIR: tmp, SCRIPTORIUM_HOME: home },
   });
   return {
     code: p.exitCode,
@@ -412,6 +423,73 @@ test.each([
   } finally {
     server.stop(true);
   }
+});
+
+// ── after the end: the refusal names the session asked about ─────────
+
+/** A home holding saved sessions, each manifest as given (`ended` or not). */
+function homeWith(sessions: { id: string; ended?: { by: string; at: number } }[]): string {
+  const home = mkdtempSync(join(tmpdir(), "scriptorium-ended-home-"));
+  for (const [i, s] of sessions.entries()) {
+    mkdirSync(join(home, "sessions", s.id), { recursive: true });
+    const path = join(home, "sessions", s.id, "manifest.json");
+    writeFileSync(
+      path,
+      JSON.stringify({ format: 1, sessionId: s.id, ...(s.ended ? { ended: s.ended } : {}) }),
+    );
+    // The LAST one written is the newest — the session a "most recent" lookup would name.
+    const t = new Date(Date.now() - (sessions.length - i) * 60_000);
+    utimesSync(path, t, t);
+  }
+  return home;
+}
+
+test("a named session with no daemon: the hint names THAT session, not the newest", () => {
+  const home = homeWith([{ id: "aaaa1111" }, { id: "bbbb2222" }]);
+  const r = run(["state", "--session", "aaaa1111"], EMPTY_TMP, home);
+  expect(r.code).toBe(5);
+  const doc = JSON.parse(r.stderr) as Envelope;
+  expect(doc.error.hint).toContain("open --restore aaaa1111");
+  expect(doc.error.hint).not.toContain("bbbb2222");
+  expect(doc.error.message).toContain("aaaa1111");
+});
+
+test("a session the HUMAN ended: the refusal says so, and does not invite a reopen", () => {
+  const home = homeWith([{ id: "aaaa1111", ended: { by: "human", at: 1 } }, { id: "bbbb2222" }]);
+  const r = run(["say", "hello", "--session", "aaaa1111"], EMPTY_TMP, home);
+  expect(r.code).toBe(5);
+  const doc = JSON.parse(r.stderr) as Envelope;
+  expect(doc.error.message).toBe("the human ended session aaaa1111");
+  expect(doc.error.hint).toBe(
+    "the human ended this session on purpose; do not reopen it unless they ask. If they ask: cli.ts open --restore aaaa1111",
+  );
+  expect(doc.error.choices).toBeUndefined();
+});
+
+test("a session ended by the agent or the idle timeout still offers the way back", () => {
+  for (const by of ["agent", "timeout"]) {
+    const home = homeWith([{ id: "aaaa1111", ended: { by, at: 1 } }]);
+    const doc = JSON.parse(
+      run(["state", "--session", "aaaa1111"], EMPTY_TMP, home).stderr,
+    ) as Envelope;
+    expect(doc.error.hint).toContain("bring it back with: cli.ts open --restore aaaa1111");
+  }
+});
+
+test("no --session: the newest saved session is named, and a human end routes the same way", () => {
+  const home = homeWith([{ id: "aaaa1111" }, { id: "bbbb2222", ended: { by: "human", at: 1 } }]);
+  const doc = JSON.parse(run(["state"], EMPTY_TMP, home).stderr) as Envelope;
+  expect(doc.error.message).toBe("the human ended session bbbb2222");
+});
+
+test("a named session that is not on disk names the saved ones as choices", () => {
+  const home = homeWith([{ id: "aaaa1111" }]);
+  const doc = JSON.parse(
+    run(["state", "--session", "zzzz9999"], EMPTY_TMP, home).stderr,
+  ) as Envelope;
+  expect(doc.error.message).toContain("zzzz9999");
+  expect(doc.error.choices).toEqual(["aaaa1111"]);
+  expect(doc.error.hint).not.toContain("open --restore zzzz9999");
 });
 
 test("a session pointer that cannot be READ is internal/1, not not_found/5", () => {

@@ -46,10 +46,14 @@ afterAll(async () => {
   rmSync(root, { recursive: true, force: true });
 });
 
-async function cli(...args: string[]): Promise<{ code: number; out: string }> {
+async function cli(...args: string[]): Promise<{ code: number; out: string; err: string }> {
   const p = Bun.spawn(["bun", CLI, ...args], { stdout: "pipe", stderr: "pipe", env, cwd: root });
-  const [out, code] = await Promise.all([new Response(p.stdout).text(), p.exited]);
-  return { code, out };
+  const [out, err, code] = await Promise.all([
+    new Response(p.stdout).text(),
+    new Response(p.stderr).text(),
+    p.exited,
+  ]);
+  return { code, out, err };
 }
 
 type Line = Record<string, unknown>;
@@ -274,6 +278,13 @@ describe("the wait ends on a closed or a lost session, naming how to come back",
     expect(String(lines[1]?.hint)).toContain("do not reopen it unless they ask");
     // The session's pointer is gone, as after an agent's close.
     expect(existsSync(join(root, "tmp", `scriptorium-${id}.json`))).toBe(false);
+    // A verb run after the end names THIS session and the human's end — read
+    // from the manifest, the one record that outlives the daemon.
+    const late = await cli("say", "hello", "--session", id);
+    expect(late.code).toBe(5);
+    const refusal = JSON.parse(late.err) as { error: { message: string; hint: string } };
+    expect(refusal.error.message).toBe(`the human ended session ${id}`);
+    expect(refusal.error.hint).toContain("do not reopen it unless they ask");
   }, 30_000);
 
   test("D1: re-armed at a session that closed in the gap → tail.closed at once, in both modes", async () => {

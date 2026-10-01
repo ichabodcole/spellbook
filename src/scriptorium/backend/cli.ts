@@ -61,7 +61,7 @@ import { homedir, tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { type CommandSpec, defineCli, type Invocation } from "../../kit/cli/registry";
 import { printJson } from "../../kit/lib/printJson";
-import { CliError, die, type ErrKind, reportCliError } from "../../kit/wire/errors";
+import { CliError, die, type ErrExtra, type ErrKind, reportCliError } from "../../kit/wire/errors";
 import {
   commandLine,
   readSince,
@@ -142,17 +142,65 @@ function restorable(): string[] {
   }
 }
 
-/** What to say when no daemon answers — including the way back, when there is one. */
-function noSessionHint(): { hint: string; choices?: string[] } {
+/** Who ended a saved session, read from its manifest (which outlives the daemon). */
+function endedBy(id: string): string | undefined {
+  try {
+    const m = JSON.parse(
+      readFileSync(join(scriptoriumHome(), "sessions", id, "manifest.json"), "utf8"),
+    ) as { ended?: { by?: unknown } };
+    return typeof m.ended?.by === "string" ? m.ended.by : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * What to say when no daemon answers — about the session ASKED about
+ * (`--session`), or the newest saved one when none was named.
+ *
+ * ⛔ A NAMED SESSION IS THE ONE THE HINT NAMES. This used to offer the newest
+ * saved session whatever was asked, so `say --session 786bcb09` after the
+ * human ended it said "bring it back with: open --restore b3f429d3" — another
+ * session, live at the time (verifier, 2026-10-01).
+ *
+ * ⛔ A HUMAN END IS ROUTED ON THE MANIFEST'S `ended.by`, NOT ON PROSE: the
+ * human ended it on purpose, so the refusal says so and does not offer the
+ * reopen as the next act (`choices` would invite it too, so there are none).
+ */
+function noSession(session?: string): { message: string; extra: ErrExtra } {
   const ids = restorable();
-  const newest = ids[0];
-  if (newest === undefined)
-    return { hint: "no session has been opened in this home yet — run: cli.ts open <path>" };
+  const id = session ?? ids[0];
+  if (id === undefined)
+    return {
+      message: "no running scriptorium session",
+      extra: { hint: "no session has been opened in this home yet — run: cli.ts open <path>" },
+    };
+  if (!ids.includes(id))
+    return {
+      message: `no scriptorium session ${id} in this home`,
+      extra: {
+        hint:
+          ids.length === 0
+            ? "no saved sessions in this home — run: cli.ts open <path>"
+            : "pass --session one of the saved sessions, or drop it for the most recent",
+        choices: ids.slice(0, 10),
+      },
+    };
+  if (endedBy(id) === "human")
+    return {
+      message: `the human ended session ${id}`,
+      extra: {
+        hint: `the human ended this session on purpose; do not reopen it unless they ask. If they ask: cli.ts open --restore ${id}`,
+      },
+    };
   return {
-    // ⚠ The COMMAND, with the id already in it. A hint that says "you can
-    // restore a session" leaves the reader to find the id and guess the flag.
-    hint: `no daemon is running, but the work is on disk — bring it back with: cli.ts open --restore ${newest}`,
-    choices: ids.slice(0, 10),
+    message: `no running scriptorium session ${id}`,
+    extra: {
+      // ⚠ The COMMAND, with the id already in it. A hint that says "you can
+      // restore a session" leaves the reader to find the id and guess the flag.
+      hint: `no daemon is running for session ${id}, but its work is on disk — bring it back with: cli.ts open --restore ${id}`,
+      choices: ids.slice(0, 10),
+    },
   };
 }
 
@@ -180,7 +228,10 @@ function readSession(session?: string): SessionPointer | null {
 
 function requireSession(session?: string): SessionPointer {
   const s = readSession(session);
-  if (!s) die("no running scriptorium session", "not_found", noSessionHint());
+  if (!s) {
+    const { message, extra } = noSession(session);
+    die(message, "not_found", extra);
+  }
   return s;
 }
 

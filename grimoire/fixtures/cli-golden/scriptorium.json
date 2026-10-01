@@ -2651,7 +2651,8 @@
       "verdict": "accepted",
       "stream": "stderr",
       "ok": false,
-      "kind": "not_found"
+      "kind": "not_found",
+      "choices": []
     },
     {
       "argv": ["say", "--session=s1", "hello"],
@@ -2659,7 +2660,8 @@
       "verdict": "accepted",
       "stream": "stderr",
       "ok": false,
-      "kind": "not_found"
+      "kind": "not_found",
+      "choices": []
     },
     {
       "argv": ["say", "--", "--x"],
