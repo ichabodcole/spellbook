@@ -1,5 +1,31 @@
 # Changelog
 
+## [5.1.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v5.0.1...spellbook-v5.1.0) (2026-10-02)
+
+
+### Features
+
+* **scriptorium:** an End session button in the top bar ([5af63e2](https://github.com/ichabodcole/spellbook/commit/5af63e2e8262227818740ce81d8dc12037b59576))
+* **scriptorium:** the closed event says who ended the session ([4f14c49](https://github.com/ichabodcole/spellbook/commit/4f14c499261a26fd1f4d5ed7009b6bdf083d5d50))
+
+
+### Bug Fixes
+
+* **scriptorium:** a --body-file that is a directory is usage, not EISDIR ([dd8e958](https://github.com/ichabodcole/spellbook/commit/dd8e958ff8789be40936efa0f569121e37ce6ba9))
+* **scriptorium:** a human flip-flop keeps the [#117](https://github.com/ichabodcole/spellbook/issues/117) activated-before-written fact ([becd56d](https://github.com/ichabodcole/spellbook/commit/becd56d103c5768819657e810ddf9abcc84a2325))
+* **scriptorium:** a human who typed in a version had written it ([#117](https://github.com/ichabodcole/spellbook/issues/117)) ([ee5f2b7](https://github.com/ichabodcole/spellbook/commit/ee5f2b70381e285ebad337f4e022016fb1491d50))
+* **scriptorium:** a tail re-armed after a human end still says stop ([24a1fa7](https://github.com/ichabodcole/spellbook/commit/24a1fa74cd9b014a36d7f239123795b042a911ce))
+* **scriptorium:** after an end, a refusal names the session asked about ([56929d2](https://github.com/ichabodcole/spellbook/commit/56929d2773078d10133d094c21a18160f1ff08c5))
+* **scriptorium:** after an end, controls that need the daemon say so ([d017e94](https://github.com/ichabodcole/spellbook/commit/d017e94dcd2d1d59acf66c90af1523f6bf66c79f))
+* **scriptorium:** after an end, search, the map and completion say so ([f439ca8](https://github.com/ichabodcole/spellbook/commit/f439ca815df315afa1cf0b5b4e0d60fe849f6fc1))
+* **scriptorium:** an unreadable --body-file is usage, not EACCES ([cfd3efb](https://github.com/ichabodcole/spellbook/commit/cfd3efb4bac5d7634d35a3679147e97dc459b298))
+* **scriptorium:** disable Diff when there is nothing to compare ([#116](https://github.com/ichabodcole/spellbook/issues/116)) ([7b607e6](https://github.com/ichabodcole/spellbook/commit/7b607e66132f2cc308d128eb0466c7766b705ebb))
+* **scriptorium:** keep the older prose verbs' missing-body-file code, and name the verb ([70188a8](https://github.com/ichabodcole/spellbook/commit/70188a829ee0fdd7a73d2441a2cd59736d59ec88))
+* **scriptorium:** the human gets their own line when an outside write is kept ([dfff54d](https://github.com/ichabodcole/spellbook/commit/dfff54dbcd4e65e0fd44b0e07b0557d1102813d1))
+* **scriptorium:** the human's safeguard lines name the document ([14e1128](https://github.com/ichabodcole/spellbook/commit/14e112855ce2455d5e1e7e6a5f7c6f64b5759c56))
+* **scriptorium:** the skill leads with version-new --body-file for a new document ([44c68ce](https://github.com/ichabodcole/spellbook/commit/44c68ce6db937c03b1360dd4dfbf7d92fdd8b62a))
+* **scriptorium:** version-new --body-file, so a version is never offered unwritten ([1282cb3](https://github.com/ichabodcole/spellbook/commit/1282cb358921398f1cf3962d155a8397a3852a09))
+
 ## [5.0.1](https://github.com/ichabodcole/spellbook/compare/spellbook-v5.0.0...spellbook-v5.0.1) (2026-09-29)
 
 
