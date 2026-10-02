@@ -43,6 +43,7 @@ import {
 import {
   DURABLE_TYPE,
   ENTITY_FILE,
+  CYCLES_FOLDER,
   FEATURES_FOLDER,
   ITEMS_FOLDER,
   KINDS,
@@ -246,6 +247,134 @@ export function templatePaths(ctx: Ctx): string[] {
   return out.sort();
 }
 
+/** The fixed opening line of every template's header comment. */
+export const TEMPLATE_HEADER_LINE = "OWNERSHIP (of this template file";
+
+/**
+ * A template's header comment: an HTML comment whose first text is
+ * `TEMPLATE_HEADER_LINE`. Anchored to the comment's opening so that a document
+ * QUOTING the line in prose — this check's own work item does — is not one,
+ * and matched only outside code (see `blankCode`) so that a document quoting
+ * the whole opening in a code block or span is not one either.
+ */
+const TEMPLATE_HEADER = /<!--\s*OWNERSHIP \(of this template file/;
+
+/** Whether `text` still holds a template's header comment, outside code. */
+export function hasTemplateHeader(text: string): boolean {
+  return TEMPLATE_HEADER.test(blankCode(text));
+}
+
+/**
+ * `md` with its code blanked to spaces, line breaks kept: fenced blocks (```
+ * or `~~~`, three or more, closed by a run of the same character at least as
+ * long, or running to the end of the file when never closed), indented code
+ * blocks (four spaces or a tab, after a blank line or more indented code), and
+ * inline code spans of any backtick run length, which may wrap lines but never
+ * cross a blank one.
+ *
+ * Not `stripCode` from the portable core: that one knows backtick fences and
+ * single-backtick spans only, and its link checker's behaviour is pinned by its
+ * own tests, so widening it there would change what the link check reads.
+ */
+export function blankCode(md: string): string {
+  const blank = (s: string) => s.replace(/[^\r\n]/g, " ");
+  const out: string[] = [];
+  let fence: { ch: string; len: number } | null = null;
+  let afterBlank = true;
+  let inIndented = false;
+  for (const raw of md.split("\n")) {
+    const line = raw.endsWith("\r") ? raw.slice(0, -1) : raw;
+    if (fence) {
+      const close = /^ {0,3}(`{3,}|~{3,})[ \t]*$/.exec(line);
+      if (close && close[1]![0] === fence.ch && close[1]!.length >= fence.len) fence = null;
+      out.push(blank(raw));
+      afterBlank = inIndented = false;
+      continue;
+    }
+    const open = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line);
+    // A backtick fence's info string may not hold a backtick: "```x```" is a span.
+    if (open && !(open[1]![0] === "`" && open[2]!.includes("`"))) {
+      fence = { ch: open[1]![0]!, len: open[1]!.length };
+      out.push(blank(raw));
+      afterBlank = inIndented = false;
+      continue;
+    }
+    if (line.trim() === "") {
+      out.push(raw);
+      afterBlank = true;
+      continue;
+    }
+    if (/^( {4}|\t)/.test(line) && (afterBlank || inIndented)) {
+      out.push(blank(raw));
+      inIndented = true;
+      afterBlank = false;
+      continue;
+    }
+    out.push(raw);
+    afterBlank = inIndented = false;
+  }
+  return blankSpans(out.join("\n"));
+}
+
+/** Inline code spans blanked: a run of N backticks to the next run of exactly N. */
+function blankSpans(md: string): string {
+  const chars = md.split("");
+  const runAt = (i: number) => {
+    let j = i;
+    while (md[j] === "`") j++;
+    return j - i;
+  };
+  let i = 0;
+  while (i < md.length) {
+    if (md[i] !== "`") {
+      i++;
+      continue;
+    }
+    const n = runAt(i);
+    let j = i + n;
+    let end = -1;
+    while (j < md.length) {
+      if (md[j] === "`") {
+        const m = runAt(j);
+        if (m === n) {
+          end = j + m;
+          break;
+        }
+        j += m;
+        continue;
+      }
+      // A span never crosses a blank line: that ends the paragraph.
+      if (md[j] === "\n" && /^\n[ \t]*\r?\n/.test(md.slice(j, j + 64))) break;
+      j++;
+    }
+    if (end === -1) {
+      i += n;
+      continue;
+    }
+    for (let k = i; k < end; k++) if (chars[k] !== "\n" && chars[k] !== "\r") chars[k] = " ";
+    i = end;
+  }
+  return chars.join("");
+}
+
+/**
+ * Every document under the docs root that is not a template and still holds a
+ * template's header comment, repo-relative and sorted. `pdocs new` copies the
+ * header in as guidance for filling the document; once it is filled the header
+ * is noise, and `pdocs check` says so as an advisory, never a problem.
+ */
+export function templateHeaderPaths(ctx: Ctx): string[] {
+  const isTpl = templateTest(ctx);
+  const excluded = excluder(ctx);
+  const out: string[] = [];
+  for (const path of walkMarkdown(ctx.docsRoot, new Set(ctx.config.lint.skip))) {
+    const rel = relative(ctx.repoRoot, path);
+    if (isTpl(path) || excluded(rel)) continue;
+    if (hasTemplateHeader(readFileSync(path, "utf8"))) out.push(rel);
+  }
+  return out.sort();
+}
+
 /**
  * Not documentation at all — `lint.exclude` in `.project-docs.json`, matched
  * against the path relative to the repository root.
@@ -404,7 +533,7 @@ function placeholderProblems(
   const h1 = at === -1 ? null : (body.split("\n")[at] as string).trim();
   const tags = yamlList(fields.get("tags"));
   if (placeholders.length && tags.length && tags.every((t) => PLACEHOLDER_TAGS.has(t)))
-    out.add(`PLACEHOLDER    ${rel}: \`tags\` is still the template's prompt [${tags.join(", ")}]`);
+    out.add(`PLACEHOLDER    ${rel}: \`tags\` holds only placeholder words [${tags.join(", ")}]`);
   for (const p of placeholders) {
     for (const [key, value] of p.fields)
       if (fields.get(key) === value)
@@ -441,10 +570,11 @@ export function workbenchFiles(ctx: Ctx): WorkbenchFile[] {
   const excluded = excluder(ctx);
   const out: WorkbenchFile[] = [];
 
-  // `features/_archive/` and `items/_archive/` are read whatever `lint.skip`
-  // says: the work rules are ABOUT the archive (only finished work may sit
-  // there, and an archived item still holds its id against the deletion
-  // check), so skipping it would switch those rules off rather than quiet
+  // `features/_archive/`, `items/_archive/` and `cycles/_archive/` are read
+  // whatever `lint.skip` says: the work rules are ABOUT the archive (only
+  // finished work may sit there, an archived item still holds its id against
+  // the deletion check, and an archived cycle still answers an item's
+  // `cycle:`), so skipping it would switch those rules off rather than quiet
   // them.
   const ownerSkip = new Set([...skip].filter((name) => name !== "_archive"));
 
@@ -452,7 +582,9 @@ export function workbenchFiles(ctx: Ctx): WorkbenchFile[] {
     const dir = join(ctx.docsRoot, folder);
     if (!existsSync(dir)) continue;
     const walkSkip =
-      folder === FEATURES_FOLDER || folder === ITEMS_FOLDER ? ownerSkip : skip;
+      folder === FEATURES_FOLDER || folder === ITEMS_FOLDER || folder === CYCLES_FOLDER
+        ? ownerSkip
+        : skip;
     for (const path of walkMarkdown(dir, walkSkip)) {
       const rel = relative(ctx.repoRoot, path);
       if (excluded(rel)) continue;
@@ -598,6 +730,25 @@ export function libraryFiles(ctx: Ctx): Array<{
 }
 
 /**
+ * The keys a document of `type` may carry: the universal required and optional
+ * ones, `lifecycle` when the type has one, and the type's registry extras.
+ * Every other key is an UNKNOWN FIELD. Exported so a migration that retypes a
+ * document can pin the fields it keeps to this set rather than to a copy.
+ */
+export function allowedFields(
+  type: string,
+  registry: ReadonlyMap<string, RegistryRow> = defaultRegistryIndex()
+): Set<string> {
+  const row = registry.get(type);
+  return new Set([
+    ...REQUIRED,
+    ...OPTIONAL,
+    ...(row?.lifecycle ? ["lifecycle"] : []),
+    ...(row?.extra ?? []),
+  ]);
+}
+
+/**
  * Presence, vocabulary and field hygiene for ONE document. Pure over its inputs
  * so both tiers can call it, which is the whole point: these rules are about
  * the document, not about which folder it lives in.
@@ -646,12 +797,7 @@ export function documentProblems(
     ...(requireTags ? ["tags"] : []),
     ...(row?.required ?? []),
   ];
-  const allowed = new Set([
-    ...REQUIRED,
-    ...OPTIONAL,
-    ...(lifecycle ? ["lifecycle"] : []),
-    ...(row?.extra ?? []),
-  ]);
+  const allowed = allowedFields(type, registry);
 
   for (const key of required) if (!fields.get(key)) missing.push(key);
   if (lifecycle && !fields.get("lifecycle")) missing.push("lifecycle");

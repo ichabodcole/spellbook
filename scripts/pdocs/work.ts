@@ -16,6 +16,7 @@ import { basename, isAbsolute, join, relative, sep } from "node:path";
 import { parseGenerated, yamlList } from "./docs-lint/index.ts";
 import { UsageError } from "./envelope.ts";
 import {
+  CYCLES_FOLDER,
   ENTITY_FILE,
   FEATURES_FOLDER,
   ITEMS_FOLDER,
@@ -52,6 +53,8 @@ export interface WorkEntity {
   folder: string | null;
   fields: ReadonlyMap<string, string>;
   title: string | null;
+  /** OKF `status`, as written (quotes removed): `draft`, `stable`, `deprecated`. */
+  status: string | null;
   lifecycle: string | null;
   /** `STATE_GROUP[lifecycle]`, or `null` for a state outside the vocabulary. */
   group: StateGroup | null;
@@ -110,7 +113,12 @@ function opt(fields: ReadonlyMap<string, string>, key: string): string | null {
   return v === "" ? null : v;
 }
 
-function entityOf(ctx: Ctx, doc: WorkbenchDocument): WorkEntity | null {
+/**
+ * One document as the model reads it, or `null` when it is not a feature, an
+ * item or a cycle in its place. Exported for a writer that needs a document
+ * it has not written yet as an entity (`pdocs new`'s review check).
+ */
+export function entityOf(ctx: Ctx, doc: WorkbenchDocument): WorkEntity | null {
   if (doc.misplaced) return null;
   const docsPath = relative(ctx.docsRoot, join(ctx.repoRoot, doc.rel))
     .split(sep)
@@ -123,6 +131,10 @@ function entityOf(ctx: Ctx, doc: WorkbenchDocument): WorkEntity | null {
   if (doc.type === "cycle") {
     entity = "cycle";
     slug = basename(doc.rel, ".md");
+    // `cycles/_archive/<slug>.md`: a closed or abandoned cycle, moved out of
+    // the live list. Its slug is unchanged, so `cycle:` still names it.
+    const segs = docsPath.split("/");
+    archived = segs.length === 3 && segs[0] === CYCLES_FOLDER && segs[1] === ARCHIVE;
   } else if (doc.type === "feature" || doc.type === "item") {
     const pos = ownerPosition(ctx, doc.rel);
     if (!pos) return null;
@@ -146,6 +158,7 @@ function entityOf(ctx: Ctx, doc: WorkbenchDocument): WorkEntity | null {
     folder,
     fields: f,
     title: opt(f, "title"),
+    status: opt(f, "status"),
     lifecycle,
     group: (lifecycle && STATE_GROUP[lifecycle]) || null,
     id: opt(f, "id"),
@@ -245,7 +258,55 @@ export const shortenIds = (text: string, ids: Iterable<string> = []): string => 
 };
 
 const FORMS =
-  "a full item id, a unique id prefix of 8+ characters, `item/<slug>`, `feature/<slug>` or `cycle/<slug>`";
+  "a full item id, a unique id prefix of 8+ characters, `item/<slug>`, `feature/<slug>` or `cycle/<filename>`";
+
+/**
+ * The cycles a NAME given on the command line names. A cycle is named by its
+ * filename; its slug is that filename without `.md` (there is no `slug`
+ * field). The name is the filename with or without `.md`: `2026-10-auth` and `2026-10-auth.md` both name
+ * `cycles/2026-10-auth.md`, live or under `cycles/_archive/`. Both readings are
+ * tried, so a cycle literally named `2026-10-auth.md.md` makes `2026-10-auth.md`
+ * ambiguous rather than silently picking one.
+ */
+export function cyclesNamed(model: WorkModel, name: string): WorkEntity[] {
+  const found = [...(model.cyclesBySlug.get(name) ?? [])];
+  if (name.endsWith(".md"))
+    for (const e of model.cyclesBySlug.get(name.slice(0, -".md".length)) ?? [])
+      if (!found.includes(e)) found.push(e);
+  return found.sort(byPath);
+}
+
+/** What `--cycle` takes and writes, for `new` and `set` help. */
+export const CYCLE_FLAG_NOTE =
+  "Takes the cycle's filename, with or without `.md`, and writes its slug — the filename without `.md`.";
+
+/** The refusal when a cycle name matches no cycle file. */
+export function noCycleNamed(name: string, token: string): UsageError {
+  const file = name.endsWith(".md") ? name : `${name}.md`;
+  return new UsageError(
+    `no cycle file is named \`${file}\` — looked in ${CYCLES_FOLDER}/ and ${CYCLES_FOLDER}/${ARCHIVE}/. ` +
+      "A cycle is named by its filename, with or without `.md`; `pdocs find --type cycle` lists them.",
+    { token }
+  );
+}
+
+/**
+ * The refusal when a cycle name matches more than one cycle file. Two files
+ * with one name (live and archived) can only be renamed; `x.md` naming both
+ * `x.md` and `x.md.md` has a spelling for each — `x` and `x.md.md`.
+ */
+export function ambiguousCycle(name: string, found: readonly WorkEntity[], token: string): UsageError {
+  const fix =
+    new Set(found.map((e) => e.slug)).size === found.length
+      ? `Name one unambiguously: ${found
+          .map((e) => `\`${e.slug === name ? `${name}.md` : e.slug}\` (${e.path})`)
+          .join(" or ")}.`
+      : `A cycle's filename must be unique across ${CYCLES_FOLDER}/ and ${CYCLES_FOLDER}/${ARCHIVE}/ — rename one.`;
+  return new UsageError(
+    `cycle \`${name}\` is ambiguous — it names ${found.length} cycle files: ${found.map((e) => e.path).join(", ")}. ${fix}`,
+    { token, choices: found.map((e) => e.path) }
+  );
+}
 
 /**
  * The entity a reference names, in any form D6 accepts as INPUT:
@@ -254,7 +315,8 @@ const FORMS =
  * - a unique prefix of at least 8 characters of one;
  * - `item/<slug>` (a file or a folder, live or archived), or `item/<id-or-prefix>`;
  * - `feature/<slug>`;
- * - `cycle/<slug>`.
+ * - `cycle/<filename>`, the cycle file's name with or without `.md`
+ *   (`cyclesNamed`).
  *
  * `kinds` narrows what the reference may name (`--parent` takes a feature
  * only). Anything that names nothing, or names more than one, is a
@@ -305,7 +367,12 @@ export function resolveRef(
   if (m) {
     const [, kind, name] = m as unknown as [string, WorkEntity["entity"], string];
     if (kind === "feature") return one(model.featuresBySlug.get(name) ?? [], "feature");
-    if (kind === "cycle") return one(model.cyclesBySlug.get(name) ?? [], "cycle");
+    if (kind === "cycle") {
+      const found = cyclesNamed(model, name);
+      if (found.length === 0) throw noCycleNamed(name, ref);
+      if (found.length > 1) throw ambiguousCycle(name, found, ref);
+      return one(found, "cycle");
+    }
     const bySlug = model.itemsBySlug.get(name);
     if (bySlug) return one(bySlug, "item");
     const ids = /^[0-9a-f-]+$/i.test(name) ? byId(name) : null;
@@ -396,15 +463,15 @@ export function viewBacklog(model: WorkModel): WorkEntity[] {
 
 /**
  * `board`: live items (and, with `features`, live features) by state group.
- * The archive stays off the board: it holds only finished work, and keeping
- * the live view short is what it is for.
+ * The archive stays off the board unless `archived` asks for it: it holds only
+ * finished work, and keeping the live view short is what it is for.
  */
 export function viewBoard(
   model: WorkModel,
-  opts: { features?: boolean } = {}
+  opts: { features?: boolean; archived?: boolean } = {}
 ): Record<StateGroup, WorkEntity[]> {
   const live = [...(opts.features ? model.features : []), ...model.items].filter(
-    (e) => !e.archived
+    (e) => opts.archived || !e.archived
   );
   const out = {} as Record<StateGroup, WorkEntity[]>;
   for (const g of GROUPS) out[g] = ordered(live.filter((e) => e.group === g));
@@ -454,9 +521,20 @@ export function viewCycle(
   };
 }
 
-/** `scope <name>`: the features and items whose `scope` is `name`. */
-export function viewScope(model: WorkModel, scope: string): WorkEntity[] {
-  return ordered([...model.features, ...model.items].filter((e) => e.scope === scope));
+/**
+ * `scope <name>`: the features and items whose `scope` is `name`. A live view,
+ * so archived ones are left out unless `archived` asks for them.
+ */
+export function viewScope(
+  model: WorkModel,
+  scope: string,
+  opts: { archived?: boolean } = {}
+): WorkEntity[] {
+  return ordered(
+    [...model.features, ...model.items].filter(
+      (e) => e.scope === scope && (opts.archived || !e.archived)
+    )
+  );
 }
 
 /**
@@ -471,6 +549,20 @@ export function viewUnreleased(model: WorkModel, since?: string): WorkEntity[] {
         e.lifecycle === "done" &&
         e.releasedIn === null &&
         (since === undefined || (e.date !== null && e.date >= since))
+    )
+  );
+}
+
+/**
+ * `unreviewed`: the audit of finished work. `done` items whose own document
+ * was never marked reviewed — `status` anything but `stable`. Live only unless
+ * `archived` asks for the archive too. Not a finding: the review rule covers
+ * started work, and finished drafts are reviewed here, by choice, in batches.
+ */
+export function viewUnreviewed(model: WorkModel, opts: { archived?: boolean } = {}): WorkEntity[] {
+  return ordered(
+    model.items.filter(
+      (e) => e.lifecycle === "done" && e.status !== "stable" && (opts.archived || !e.archived)
     )
   );
 }
@@ -490,4 +582,114 @@ export function entitiesBySlug(
     : entity === "item"
       ? model.itemsBySlug
       : model.cyclesBySlug;
+}
+
+// ---------------------------------------------------------------------------------------
+// Portfolio
+// ---------------------------------------------------------------------------------------
+
+/** How many member items sit in each state group. `ungrouped` counts a
+ *  lifecycle outside the vocabulary (the lint reports it); `total` is all. */
+export type GroupCounts = Record<StateGroup | "ungrouped" | "total", number>;
+
+/** A cycle or feature in the portfolio, with its members counted. */
+export interface PortfolioEntry {
+  entity: WorkEntity;
+  /** Planned or active cycle; unarchived feature that is not done or dropped. */
+  current: boolean;
+  counts: GroupCounts;
+}
+
+export interface Portfolio {
+  cycles: PortfolioEntry[];
+  features: PortfolioEntry[];
+  /** Whether any current cycle is `active` — a planned one alone is not. */
+  activeCycle: boolean;
+  /** Live (unarchived) items with neither a `cycle` nor a `parent`. */
+  unattached: GroupCounts;
+}
+
+/** `cycle` lifecycles that make a cycle current. */
+export const CURRENT_CYCLE = ["active", "planned"] as const;
+
+function countGroups(items: readonly WorkEntity[]): GroupCounts {
+  const out: GroupCounts = {
+    unstarted: 0,
+    started: 0,
+    completed: 0,
+    cancelled: 0,
+    ungrouped: 0,
+    total: items.length,
+  };
+  for (const e of items) out[e.group ?? "ungrouped"]++;
+  return out;
+}
+
+const cmpStr = (x: string, y: string) => (x < y ? -1 : x > y ? 1 : 0);
+
+/** A cycle is current when it is planned or active and not archived. */
+export const isCurrentCycle = (c: WorkEntity): boolean =>
+  !c.archived && (CURRENT_CYCLE as readonly string[]).includes(c.lifecycle ?? "");
+
+/** A feature is current when it is not archived and not done or dropped. */
+export const isCurrentFeature = (f: WorkEntity): boolean =>
+  !f.archived && f.group !== "completed" && f.group !== "cancelled";
+
+/**
+ * `portfolio`: current cycles and features, each with its member items counted
+ * by state group. Membership is the item's `cycle` (a cycle's slug) and its
+ * `parent` (`feature/<slug>`) — nothing else — and every member counts,
+ * archived or not: archiving hides an item, it does not unmake its membership.
+ *
+ * `all` adds the rest: closed, abandoned and archived cycles, and done,
+ * dropped and archived features, each marked `current: false`.
+ *
+ * Order: current before history. Current cycles active first, then planned,
+ * each by slug (cycle slugs lead with the month). Current features started
+ * first, then unstarted, each in `workOrder`. History newest first: cycles by
+ * slug descending, features by `generated.at` descending, then path.
+ */
+export function viewPortfolio(model: WorkModel, opts: { all?: boolean } = {}): Portfolio {
+  const byCycle = index(model.items, (e) => e.cycle);
+  const byParent = index(model.items, (e) => e.parent);
+
+  const cycleRank = (c: WorkEntity) => (c.lifecycle === "active" ? 0 : 1);
+  const currentCycles = model.cycles
+    .filter(isCurrentCycle)
+    .sort((a, b) => cycleRank(a) - cycleRank(b) || cmpStr(a.slug, b.slug) || cmpStr(a.path, b.path));
+  const pastCycles = opts.all
+    ? model.cycles
+        .filter((c) => !isCurrentCycle(c))
+        .sort((a, b) => cmpStr(b.slug, a.slug) || cmpStr(a.path, b.path))
+    : [];
+
+  const featureRank = (f: WorkEntity) => (f.group === "started" ? 0 : f.group === "unstarted" ? 1 : 2);
+  const currentFeatures = model.features
+    .filter(isCurrentFeature)
+    .sort((a, b) => featureRank(a) - featureRank(b) || workOrder(a, b));
+  const pastFeatures = opts.all
+    ? model.features
+        .filter((f) => !isCurrentFeature(f))
+        .sort((a, b) => cmpStr(b.date ?? "", a.date ?? "") || cmpStr(a.path, b.path))
+    : [];
+
+  const cycleEntry = (c: WorkEntity): PortfolioEntry => ({
+    entity: c,
+    current: isCurrentCycle(c),
+    counts: countGroups(byCycle.get(c.slug) ?? []),
+  });
+  const featureEntry = (f: WorkEntity): PortfolioEntry => ({
+    entity: f,
+    current: isCurrentFeature(f),
+    counts: countGroups(byParent.get(`feature/${f.slug}`) ?? []),
+  });
+
+  return {
+    cycles: [...currentCycles, ...pastCycles].map(cycleEntry),
+    features: [...currentFeatures, ...pastFeatures].map(featureEntry),
+    activeCycle: currentCycles.some((c) => c.lifecycle === "active"),
+    unattached: countGroups(
+      model.items.filter((e) => !e.archived && e.cycle === null && e.parent === null)
+    ),
+  };
 }

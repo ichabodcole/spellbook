@@ -287,6 +287,13 @@ export const FEATURES_FOLDER = "features";
  *  once the item owns documents. */
 export const ITEMS_FOLDER = "items";
 
+/** The folder that holds cycles: `cycles/<slug>.md`, or `cycles/_archive/<slug>.md`
+ *  once a closed or abandoned cycle is archived. */
+export const CYCLES_FOLDER = "cycles";
+
+/** The `lifecycle` values a cycle ends in: the only ones `cycles/_archive/` holds. */
+export const CYCLE_ENDS: readonly string[] = ["closed", "abandoned"];
+
 /**
  * An owner folder's entry file, named after the entity (D2). A tool finds the
  * entry file by the folder's kind alone.
@@ -493,11 +500,10 @@ const CREATION: Record<string, Creation> = {
  * every answer in one place.
  */
 const VALIDATION: Record<string, Validator> = {
-  // A work item's references resolve, and are written in their full form
-  // (D6): `--parent` a feature, `--cycle` a cycle's slug, `--blocked-by` item
-  // ids. `scope` names one value `lint.scopes` declares. The same resolution
-  // the lint runs over the tree afterwards, so nothing `new` writes is a
-  // finding on the next `pdocs check`.
+  // A work item's references resolve as the lint resolves them, and are
+  // written in their stored form (D6): `parent` as `feature/<slug>`, `cycle`
+  // as the cycle's slug (its filename without `.md`; either is accepted),
+  // `blocked_by` as full ids. `scope` must be one of `lint.scopes`.
   item: ({ fields, resolve, scopes, set }) => {
     const problems: ValidationProblem[] = [];
     const value = (key: string) =>

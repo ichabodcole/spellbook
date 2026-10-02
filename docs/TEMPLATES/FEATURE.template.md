@@ -14,6 +14,8 @@ yours to edit. The scaffold records its hash, so a migration updates it only
 while you have not touched it. Frontmatter is the contract the lint enforces;
 below it is yours. See docs/SCHEMA.md → "Who owns which file".
 
+ONCE WRITTEN: delete this whole comment block from the document.
+
 USAGE: `bun scripts/pdocs/cli.ts new feature <slug>` writes this as
 docs/features/<slug>/feature.md. This file is the feature: it argues for the
 change, and its `lifecycle` is the feature's state. Its plan, sessions and other

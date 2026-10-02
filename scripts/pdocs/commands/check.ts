@@ -11,6 +11,12 @@
 //
 // The JSON rendering is NEW output and covered by tests of its own.
 
+import {
+  type Advisory,
+  advisoryLines,
+  reviewAdvisory,
+  templateHeaderAdvisory,
+} from "../advisories.ts";
 import type { Command, Invocation } from "../cli.ts";
 import { docsLintSummary } from "../docs-lint/index.ts";
 import { ExitCode, Outcome, UsageError, printEnvelope } from "../envelope.ts";
@@ -41,9 +47,26 @@ export interface CheckData {
    *  skipped as a template, repo-relative. A skip that wrongly catches a real
    *  page leaves no other trace, so the list is the only way to see it. */
   templates: string[];
+  /**
+   * What the gate reports and does not fail on by itself: the
+   * `work-item-review` advisory, over every item the review rule finds, then
+   * the `template-header` advisory, over every document that still holds a
+   * template's header comment. Empty when there is nothing to say. Under
+   * `checks.workItemReview.mode: strict` the review items are also
+   * `UNREVIEWED` problems.
+   */
+  advisories: Advisory[];
 }
 
-export function checkData(report: LintReport): CheckData {
+/** The advisories `pdocs check` attaches. An invalid setting is a `BAD CONFIG`
+ *  problem here, not a `bad-config` advisory. */
+export function checkAdvisories(report: LintReport, ctx: Invocation["ctx"]): Advisory[] {
+  const review = reviewAdvisory(report.reviews, ctx.config.checks.workItemReview.mode);
+  const header = templateHeaderAdvisory(report.templateHeaders);
+  return [...(review ? [review] : []), ...(header ? [header] : [])];
+}
+
+export function checkData(report: LintReport, advisories: Advisory[] = []): CheckData {
   const problems: CheckProblem[] = [
     ...report.library.fieldProblems.map((message) => ({
       tier: "library" as const,
@@ -65,6 +88,7 @@ export function checkData(report: LintReport): CheckData {
     problems,
     outside: report.outside,
     templates: report.templates,
+    advisories,
   };
 }
 
@@ -145,8 +169,15 @@ export const check: Command = {
     }
     const report = collect(against === undefined ? ctx : { ...ctx, against });
 
-    if (format === "json") printEnvelope("check", checkData(report));
-    else renderText(report, ctx.config.docsRoot);
+    const advisories = checkAdvisories(report, ctx);
+    if (format === "json") printEnvelope("check", checkData(report, advisories));
+    else {
+      renderText(report, ctx.config.docsRoot);
+      // After the verdict, as every view prints its advice: the inherited
+      // transcript above is unchanged when there is nothing to say.
+      if (advisories.length > 0) console.log("");
+      for (const l of advisoryLines(advisories)) console.log(l);
+    }
 
     // Clean, or dirty in a project that has declared itself mid-adoption.
     if (report.total === 0 || report.adopting) return ExitCode.Success;

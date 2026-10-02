@@ -135,7 +135,10 @@ Two templates are available:
 - **[TEMPLATE-domain.md](./TEMPLATE-domain.md)** - For individual domain
   specification files
 
-Copy the appropriate template when starting a new specification document.
+Start a specification with
+`bun scripts/pdocs/cli.ts new specification <domain> --variant overview` (or
+`--variant domain`), not by copying a template: the CLI numbers the file, fills
+the frontmatter and writes the catalog line.
 
 ## Tips
 

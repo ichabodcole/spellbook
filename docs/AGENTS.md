@@ -3,6 +3,10 @@
 For a complete overview of the documentation structure and how to use it, see
 [README.md](./README.md).
 
+**Create documents with the `pdocs` CLI, not by hand:**
+`bun scripts/pdocs/cli.ts new <type> <name>` puts one in the right folder with
+its frontmatter. `bun scripts/pdocs/cli.ts --help` says what else it does.
+
 ## Foundational Document
 
 - **PROJECT_MANIFESTO.md** - The constitution of this project. Defines what the
@@ -35,8 +39,8 @@ For a complete overview of the documentation structure and how to use it, see
   file, or a folder once it owns documents
 - **cycles/** - What is in play right now; items join a cycle through their
   `cycle:` field
-- **features/\_archive/**, **items/\_archive/** - done or dropped work, moved
-  there by `pdocs archive`
+- **features/\_archive/**, **items/\_archive/**, **cycles/\_archive/** - done or
+  dropped work, and closed or abandoned cycles, moved there by `pdocs archive`
 
 ### How work moves
 
@@ -66,18 +70,7 @@ fills the frontmatter. For a library page (architecture, specification,
 interaction, playbook) it also writes the line in [index.md](./index.md) that
 keeps the page out of the orphan list.
 
-The same CLI reads and changes the tree:
-
-- **check** - the gate: frontmatter, links, anchors, catalog coverage, and the
-  work rules
-- **find** - query by type, lifecycle, status, tag, date, kind, parent, cycle,
-  scope or id
-- **view** - derived views: backlog, board, ready, a feature, a cycle, a scope
-- **set** - change a feature's, an item's or a cycle's fields
-- **archive** - move a done or dropped feature or item into `_archive/`
-- **backlinks** - what cites a document, `related:` edges and body links apart
-- **orphans** - library pages the catalog cannot reach
-
+The same CLI reads the tree and changes work in place;
 `bun scripts/pdocs/cli.ts help` lists every command, flag and exit code.
 [SCHEMA.md](./SCHEMA.md) is the frontmatter contract the gate enforces, and
 [STYLE.md](./STYLE.md) says how the prose is written.

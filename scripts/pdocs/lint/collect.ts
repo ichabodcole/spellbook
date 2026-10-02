@@ -25,12 +25,14 @@ import {
   graphTier,
   libraryFieldChecks,
   schemaTableChecks,
+  templateHeaderPaths,
   templatePaths,
   templateProblems,
   templateTest,
   thinReport,
 } from "./rules.ts";
-import { configProblems, deletedItems, workProblems } from "./work.ts";
+import type { ReviewItem } from "../advisories.ts";
+import { configProblems, deletedItems, reviewFindings, reviewProblems, workProblems } from "./work.ts";
 
 /** Everything one run of the gate found, in the order a reader is shown it. */
 export interface LintReport {
@@ -54,6 +56,19 @@ export interface LintReport {
   templates: string[];
   /** `lint.adopting` in `.project-docs.json`: problems are reported and do not fail the gate. */
   adopting: boolean;
+  /**
+   * Items the review rule finds: started work, or the active cycle's unstarted
+   * work, whose document is not `stable`. Reported as an advisory in either
+   * mode; in `workbench` as well, as `UNREVIEWED`, only when
+   * `checks.workItemReview.mode` is `strict`.
+   */
+  reviews: ReviewItem[];
+  /**
+   * Documents under the docs root, not templates, that still hold a template's
+   * header comment, repo-relative. Reported as the `template-header` advisory;
+   * never a problem, never counted in `total`.
+   */
+  templateHeaders: string[];
 }
 
 /**
@@ -110,10 +125,12 @@ export function collect(ctx: Ctx): LintReport {
   // The thin pass and the work-taxonomy corpus rules share one read of the
   // workbench: `workProblems` takes the documents the thin pass already parsed.
   const thin = thinReport(ctx);
+  const reviews = reviewFindings(ctx, thin.documents);
   const workbench = [
     ...thin.problems,
     ...configProblems(ctx),
     ...workProblems(ctx, thin.documents),
+    ...(ctx.config.checks.workItemReview.mode === "strict" ? reviewProblems(reviews) : []),
     ...deletedItems(ctx, ctx.against ?? "HEAD", thin.documents),
     ...frontmatterSyntaxProblems(ctx),
     ...schemaTableChecks(readFileSync(join(ctx.docsRoot, "SCHEMA.md"), "utf8")),
@@ -133,5 +150,7 @@ export function collect(ctx: Ctx): LintReport {
     total: fieldProblems.length + graph.problems.length + workbench.length,
     templates: templatePaths(ctx),
     adopting: ctx.config.lint.adopting,
+    reviews,
+    templateHeaders: templateHeaderPaths(ctx),
   };
 }
