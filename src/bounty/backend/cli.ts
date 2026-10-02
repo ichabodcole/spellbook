@@ -46,6 +46,7 @@ import { createHash } from "node:crypto";
 import {
   copyFileSync,
   existsSync,
+  lstatSync,
   mkdirSync,
   openSync,
   readdirSync,
@@ -920,6 +921,24 @@ function restoreCandidates(arg: string): string[] {
 }
 
 /**
+ * False only when `path` is certainly not there. `existsSync` answers false for
+ * a file it cannot SEE (a `snapshots/` at mode 000), and a keyed respawn read
+ * that as "no snapshot": it never passed `--restore`, came up empty and said
+ * `restoreFailed: null` (item bounty-snapshot-edges-after-the-ownership-rule,
+ * point 3). "Cannot tell" is not "absent" (server.ts `snapshotPresent` makes
+ * the same call): the restore is attempted, and its failure is reported.
+ */
+function mayExist(path: string): boolean {
+  try {
+    lstatSync(path);
+    return true;
+  } catch (e) {
+    const code = (e as NodeJS.ErrnoException).code;
+    return code !== "ENOENT" && code !== "ENOTDIR";
+  }
+}
+
+/**
  * ⛔ ONE ACT, ONE ANSWER: A RESTORE OF NOTHING STARTS NOTHING. An explicit
  * `--restore` naming a snapshot that does not exist used to spawn a daemon
  * anyway: the daemon's read failed, it set `restoreFailed: ENOENT…` and came up
@@ -934,7 +953,7 @@ function restoreCandidates(arg: string): string[] {
  */
 function refuseMissingRestore(flags: Record<string, string | boolean>): void {
   if (typeof flags.restore !== "string") return;
-  if (restoreCandidates(flags.restore).some((p) => existsSync(p))) return;
+  if (restoreCandidates(flags.restore).some((p) => mayExist(p))) return;
   die(
     `no snapshot ${JSON.stringify(flags.restore)} to restore; no board was started`,
     "not_found",
@@ -961,7 +980,22 @@ function copyAsideBeforeTeardown(
   const source = restoreCandidates(flags.restore).find((p) => existsSync(p));
   if (!source || resolve(source) !== resolve(own)) return null;
   const path = join(SNAPSHOTS_DIR, `${id}.pre-fresh-${Date.now()}.bak.json`);
-  copyFileSync(own, path);
+  // ⛔ A COPY THAT FAILS IS A REFUSAL, BEFORE THE TEARDOWN. With `snapshots/`
+  // read-only this threw EACCES up through `open` as a raw stack, exit 1
+  // (item bounty-snapshot-edges-after-the-ownership-rule, point 2). The board
+  // survived only because the throw came first. It is now said: `conflict` (6),
+  // like every other refusal over a snapshot that cannot be written (`close`'s
+  // failed save), since nothing in bounty broke and fixing the folder then
+  // running the same `open` again is the recovery. The live board is untouched.
+  try {
+    copyFileSync(own, path);
+  } catch (e) {
+    die(
+      `the snapshot ${own} could not be copied aside (${e instanceof Error ? e.message : String(e)}) before --fresh tore board ${id} down, whose close would write over it; the live board was left running and nothing was restored`,
+      "conflict",
+      { hint: `make the folder ${SNAPSHOTS_DIR} writable, then run the same open again` },
+    );
+  }
   let taskCount: number | null = null;
   try {
     const tasks = (JSON.parse(readFileSync(path, "utf8")) as { tasks?: unknown }).tasks;
@@ -1137,7 +1171,7 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
     forcedId &&
     !flags.restore &&
     !flags.fresh &&
-    existsSync(join(SNAPSHOTS_DIR, `${forcedId}.json`))
+    mayExist(join(SNAPSHOTS_DIR, `${forcedId}.json`))
   ) {
     args.push("--restore", forcedId);
   }
@@ -1203,6 +1237,41 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
           // that has teeth and `=== null` alone is the one that passes vacuously.
           // (d) This act's backups: the teardown's (a `--fresh` over a live
           // board), then the new daemon's boot backups off its discovery file.
+          // (a) A concurrent keyed open can win the race to the board's lock.
+          // The daemon this open spawned then exited untouched (lock.ts), and
+          // this open has found the WINNER's board, which is the same board.
+          const holder = forcedId ? readLock(lockPath(BOUNTY_HOME, forcedId)) : null;
+          const lostRace = holder !== null && holder.pid !== proc.pid;
+          // ⛔ AND IT DID NONE OF WHAT THIS OPEN ASKED ITS DAEMON TO DO. An
+          // explicit `--restore Q` (or `--title`, `--timeout`) went to the daemon
+          // that exited, so the board running is the other open's, without Q.
+          // This open used to exit 0 with `restoreSkipped: null` and one `#`
+          // line on stderr (item bounty-snapshot-edges-after-the-ownership-rule,
+          // point 4). It is now the attach refusal #80.1 already gives the same
+          // situation found a moment earlier: exit 2, the board's coordinates
+          // and `restoreSkipped` on stdout. Any boot backups on the pointer are
+          // the winner's open's, reported there.
+          const lost = lostRace ? ATTACH_LOST_FLAGS.filter((f) => Boolean(flags[f])) : [];
+          if (lost.length) {
+            const named = lost.map((f) => `--${f}`).join(", ");
+            printJson({
+              ...s,
+              restoreSkipped: {
+                requested: lost,
+                reason: `another open started this board first, so the daemon this open spawned exited without touching it; ${named} configure a daemon at spawn time and the running board was left unchanged`,
+              },
+              snapshotBackups: nameBackups(
+                [...(preFresh ? [preFresh] : []), ...teardownBackups],
+                s.session_id,
+                key,
+              ),
+            });
+            process.stderr.write(
+              `bounty: refusing to report success — another open started board ${forcedId} first, so ${named} did not take effect (key "${key}")\n`,
+            );
+            if (flags.pin) writePin(s.session_id);
+            return 2;
+          }
           const boot = (s as Session & { snapshotBackups?: BackupRecord[] }).snapshotBackups;
           const snapshotBackups = nameBackups(
             [...(preFresh ? [preFresh] : []), ...teardownBackups, ...(boot ?? [])],
@@ -1211,11 +1280,7 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
           );
           printJson({ ...s, restoreSkipped: null, snapshotBackups });
           announceBackups(snapshotBackups);
-          // (a) A concurrent keyed open can win the race to the board's lock.
-          // The daemon this open spawned then exited untouched (lock.ts), and
-          // this open reports the WINNER's board, which is the same board.
-          const holder = forcedId ? readLock(lockPath(BOUNTY_HOME, forcedId)) : null;
-          if (holder && holder.pid !== proc.pid)
+          if (lostRace)
             process.stderr.write(
               `# another open started board ${forcedId} first; attached to it (key "${key}")\n`,
             );

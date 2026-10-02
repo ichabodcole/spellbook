@@ -6913,4 +6913,106 @@ describe("a restore keeps every task", () => {
       killBoard(id);
     }
   }, 60000);
+
+  test("point 2 — --fresh --restore <own id> with a read-only snapshots/ is a conflict envelope, and the board survives", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `rk5-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["p1"], env);
+    const sn = join(home, "snapshots");
+    try {
+      await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], { env });
+      chmodSync(sn, 0o555);
+      const f = await runCli(
+        ["open", "--session-key", key, "--fresh", "--restore", id, "--no-open", "--timeout", "30"],
+        { env },
+      );
+      expect(f.code).toBe(6);
+      expect(f.stdout).toBe("");
+      const err = onlyEnvelope(f.stderr);
+      expect(err.error.kind).toBe("conflict");
+      expect(err.error.message).toContain("copied aside");
+      expect(await liveTitles(id, env)).toEqual(["p1"]);
+      chmodSync(sn, 0o755);
+      expect((await runCli(["close", "--session", id], { env })).code).toBe(0);
+      expect(titlesAt(join(sn, `${id}.json`))).toEqual(["p1"]);
+    } finally {
+      try {
+        chmodSync(sn, 0o755);
+      } catch {}
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("point 3 — a keyed respawn with snapshots/ at mode 000 says its restore failed, and never blames --fresh", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `rk6-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["p1-precious"], env);
+    const sn = join(home, "snapshots");
+    const snap = join(sn, `${id}.json`);
+    try {
+      chmodSync(sn, 0o000);
+      const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      expect(o.code).toBe(0);
+      const hs = JSON.parse(o.stdout) as { restoreFailed: { path: string; reason: string } | null };
+      expect(hs.restoreFailed).not.toBeNull();
+      expect(hs.restoreFailed?.path).toBe(snap);
+      expect(hs.restoreFailed?.reason ?? "").toContain("EACCES");
+      await runCli(["add", "n1", "--session", id], { env });
+      chmodSync(sn, 0o755);
+      const c = await runCli(["close", "--session", id], { env });
+      expect(c.code).toBe(0);
+      const named = (JSON.parse(c.stdout) as { snapshotBackups: NamedBackupT[] }).snapshotBackups;
+      const kept = backupHolding(named, "p1-precious");
+      expect(kept?.kind).toBe("unread");
+      expect(kept?.reason ?? "").not.toContain("--fresh");
+      expect(kept?.reason ?? "").toContain("restore failed");
+    } finally {
+      try {
+        chmodSync(sn, 0o755);
+      } catch {}
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("point 4 — an open that loses the race does not report a restore it did not do", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const keyP = `rk7p-${crypto.randomUUID().slice(0, 8)}`;
+    const keyQ = `rk7q-${crypto.randomUUID().slice(0, 8)}`;
+    const pid = await seedClosed(keyP, ["p1"], env);
+    const qid = await seedClosed(keyQ, ["q1"], env);
+    const pointer = join(TEST_TMPDIR, `bounty-${pid}.json`);
+    try {
+      // P is live (another open's board). Hide its pointer so this open's entry
+      // check sees no live board and spawns its own daemon, which then loses the
+      // lock to P's daemon; put the pointer back so this open finds P's board.
+      await runCli(["open", "--session-key", keyP, "--no-open", "--timeout", "30"], { env });
+      const saved = readFileSync(pointer, "utf8");
+      rmSync(pointer);
+      const racing = runCli(
+        ["open", "--session-key", keyP, "--fresh", "--restore", qid, "--no-open"],
+        { env },
+      );
+      await Bun.sleep(1200);
+      writeFileSync(pointer, saved);
+      const r = await racing;
+      expect(r.code).toBe(2);
+      const hs = JSON.parse(r.stdout) as {
+        session_id: string;
+        restoreSkipped: { requested: string[]; reason: string } | null;
+      };
+      expect(hs.session_id).toBe(pid);
+      expect(hs.restoreSkipped?.requested).toEqual(["restore"]);
+      expect(hs.restoreSkipped?.reason ?? "").toContain("another open");
+      expect(await liveTitles(pid, env)).toEqual(["p1"]);
+      await runCli(["close", "--session", pid], { env });
+    } finally {
+      killBoard(pid);
+      killBoard(qid);
+    }
+  }, 60000);
 });
