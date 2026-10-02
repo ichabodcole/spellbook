@@ -9,8 +9,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"open: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--no-open\",\"--restore\",\"--start-timeout\",\"--timeout\"]},\"meta\":{\"command\":\"open\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:56Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:26Z"
     },
     {
       "path": ["add"],
@@ -20,8 +20,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"add: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"add\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:57Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:26Z"
     },
     {
       "path": ["state"],
@@ -31,8 +31,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"state: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--full\",\"--session\"]},\"meta\":{\"command\":\"state\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:57Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:26Z"
     },
     {
       "path": ["tail"],
@@ -42,8 +42,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"tail: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--once\",\"--session\",\"--since\"]},\"meta\":{\"command\":\"tail\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:57Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:26Z"
     },
     {
       "path": ["version-new"],
@@ -53,8 +53,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"version-new: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--body-file\",\"--doc\",\"--from\",\"--label\",\"--session\",\"--stdin\"]},\"meta\":{\"command\":\"version-new\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:57Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:26Z"
     },
     {
       "path": ["say"],
@@ -64,8 +64,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"say: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--body-file\",\"--session\",\"--stdin\"]},\"meta\":{\"command\":\"say\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:57Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:26Z"
     },
     {
       "path": ["version-delete"],
@@ -75,8 +75,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"version-delete: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--doc\",\"--session\"]},\"meta\":{\"command\":\"version-delete\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:57Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:26Z"
     },
     {
       "path": ["task"],
@@ -86,8 +86,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"task: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--body-file\",\"--session\",\"--stdin\"]},\"meta\":{\"command\":\"task\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:57Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:26Z"
     },
     {
       "path": ["task-status"],
@@ -97,8 +97,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"task-status: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"task-status\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:57Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:26Z"
     },
     {
       "path": ["task-done"],
@@ -108,8 +108,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"task-done: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"task-done\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:57Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:26Z"
     },
     {
       "path": ["task-remove"],
@@ -119,8 +119,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"task-remove: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"task-remove\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:57Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:26Z"
     },
     {
       "path": ["tasks-clear"],
@@ -130,8 +130,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"tasks-clear: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"tasks-clear\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:57Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:26Z"
     },
     {
       "path": ["working"],
@@ -141,8 +141,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"working: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--for\",\"--session\"]},\"meta\":{\"command\":\"working\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:57Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:26Z"
     },
     {
       "path": ["note"],
@@ -152,8 +152,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"note: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--body-file\",\"--doc\",\"--quote\",\"--session\",\"--stdin\"]},\"meta\":{\"command\":\"note\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:57Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:26Z"
     },
     {
       "path": ["notes"],
@@ -163,8 +163,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"notes: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--doc\",\"--full\",\"--session\"]},\"meta\":{\"command\":\"notes\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:57Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:26Z"
     },
     {
       "path": ["note-edit"],
@@ -174,8 +174,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"note-edit: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--body-file\",\"--doc\",\"--session\",\"--stdin\"]},\"meta\":{\"command\":\"note-edit\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:57Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:26Z"
     },
     {
       "path": ["note-resolve"],
@@ -185,8 +185,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"note-resolve: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--doc\",\"--reopen\",\"--session\"]},\"meta\":{\"command\":\"note-resolve\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:57Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:26Z"
     },
     {
       "path": ["note-remove"],
@@ -196,8 +196,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"note-remove: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--doc\",\"--session\"]},\"meta\":{\"command\":\"note-remove\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:57Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:26Z"
     },
     {
       "path": ["diff"],
@@ -207,8 +207,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"diff: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--context\",\"--doc\",\"--patch\",\"--session\"]},\"meta\":{\"command\":\"diff\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:57Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:26Z"
     },
     {
       "path": ["merge"],
@@ -218,8 +218,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"merge: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--doc\",\"--hunks\",\"--session\"]},\"meta\":{\"command\":\"merge\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:57Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:26Z"
     },
     {
       "path": ["activate"],
@@ -229,8 +229,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"activate: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--doc\",\"--session\"]},\"meta\":{\"command\":\"activate\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:57Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:26Z"
     },
     {
       "path": ["new-doc"],
@@ -240,8 +240,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"new-doc: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"new-doc\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:57Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:26Z"
     },
     {
       "path": ["new-folder"],
@@ -251,8 +251,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"new-folder: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"new-folder\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:57Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:26Z"
     },
     {
       "path": ["move"],
@@ -262,8 +262,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"move: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"move\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:57Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:27Z"
     },
     {
       "path": ["rename"],
@@ -273,8 +273,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"rename: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"rename\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:57Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:27Z"
     },
     {
       "path": ["hide"],
@@ -284,8 +284,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"hide: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"hide\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:57Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:27Z"
     },
     {
       "path": ["unhide"],
@@ -295,8 +295,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"unhide: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"unhide\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:57Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:27Z"
     },
     {
       "path": ["make-set"],
@@ -306,8 +306,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"make-set: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"make-set\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:58Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:27Z"
     },
     {
       "path": ["import"],
@@ -317,8 +317,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"import: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--into\",\"--session\"]},\"meta\":{\"command\":\"import\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:58Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:27Z"
     },
     {
       "path": ["workspace"],
@@ -328,8 +328,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"workspace: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"workspace\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:58Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:27Z"
     },
     {
       "path": ["meta"],
@@ -339,8 +339,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"meta: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"meta\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:58Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:27Z"
     },
     {
       "path": ["find"],
@@ -350,8 +350,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"find: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--lifecycle\",\"--session\",\"--since\",\"--status\",\"--tag\",\"--type\"]},\"meta\":{\"command\":\"find\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:58Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:27Z"
     },
     {
       "path": ["search"],
@@ -361,8 +361,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"search: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--limit\",\"--session\"]},\"meta\":{\"command\":\"search\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:58Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:27Z"
     },
     {
       "path": ["doctor"],
@@ -372,8 +372,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"doctor: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"doctor\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:58Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:27Z"
     },
     {
       "path": ["forget"],
@@ -383,8 +383,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"forget: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--doc\",\"--session\"]},\"meta\":{\"command\":\"forget\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:58Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:27Z"
     },
     {
       "path": ["dangling"],
@@ -394,8 +394,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"dangling: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--entry\",\"--session\"]},\"meta\":{\"command\":\"dangling\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:58Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:27Z"
     },
     {
       "path": ["graph"],
@@ -405,8 +405,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"graph: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--entry\",\"--session\"]},\"meta\":{\"command\":\"graph\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:58Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:27Z"
     },
     {
       "path": ["backlinks"],
@@ -416,8 +416,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"backlinks: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"backlinks\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:58Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:27Z"
     },
     {
       "path": ["meta-init"],
@@ -427,8 +427,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"meta-init: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--by\",\"--session\",\"--type\"]},\"meta\":{\"command\":\"meta-init\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:58Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:27Z"
     },
     {
       "path": ["meta-set"],
@@ -438,8 +438,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"meta-set: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"meta-set\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:58Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:27Z"
     },
     {
       "path": ["info"],
@@ -449,8 +449,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"info: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"info\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:58Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:27Z"
     },
     {
       "path": ["close"],
@@ -460,8 +460,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"close: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"close\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:58Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:27Z"
     },
     {
       "path": ["version"],
@@ -471,8 +471,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"version: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"version takes no flags\",\"choices\":[]},\"meta\":{\"command\":\"version\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:58Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:27Z"
     },
     {
       "path": ["schema"],
@@ -482,8 +482,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"schema: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"schema takes no flags\",\"choices\":[]},\"meta\":{\"command\":\"schema\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:58Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:27Z"
     },
     {
       "path": ["help"],
@@ -493,8 +493,8 @@
       "stdout": "",
       "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"help: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"help takes no flags\",\"choices\":[]},\"meta\":{\"command\":\"help\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-      "recordedAt": "2026-10-01T23:01:58Z"
+      "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+      "recordedAt": "2026-10-02T00:46:27Z"
     }
   ],
   "identity": {
@@ -504,7 +504,7 @@
     "stdout": "{\"name\":\"scriptorium\",\"version\":\"5.0.1\"}\n",
     "stderr": "",
     "completeness": "complete",
-    "recordedBy": "colereed via acc probe-plan harness, build b06d62e6, paths derived from the declaration",
-    "recordedAt": "2026-10-01T23:01:58Z"
+    "recordedBy": "colereed via acc probe-plan harness, build fd9aa752, paths derived from the declaration",
+    "recordedAt": "2026-10-02T00:46:27Z"
   }
 }
