@@ -29,4 +29,4 @@ versions are identical" (`CompareView.tsx`). The click is wasted, and
 - [x] Any other route into the compare view with one version (a shortcut, a deep
       link) shows that same message, never "identical".
 - [x] Driven in a real browser.
-- [ ] #116 answered and closed once released. (Open until the release ships.)
+- [x] #116 answered and closed once released (5.1.0, 2026-10-02).
