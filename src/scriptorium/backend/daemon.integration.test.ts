@@ -387,8 +387,10 @@ describe("a session, end to end through the launchers", () => {
     // agent's instructions (the tail line above carries those).
     const s2 = JSON.parse((await cli("state", "--full")).out) as PublicState;
     const mine = s2.chat.filter((m) => m.who === "system").at(-1);
+    // It names the document: two documents in one conversation must not read
+    // the same (second verifier, 2026-10-01).
     expect(mine?.text).toBe(
-      "v2 was written from outside the editor; that text is kept as v3, and v2 keeps yours.",
+      `v2 of ${st.docs[0]?.name} was written from outside the editor; that text is kept as v3, and v2 keeps yours.`,
     );
     expect(String(line.text)).toContain("Agent edits belong in a new version");
   });
@@ -714,10 +716,30 @@ describe("a version and the human's Activate: the race, and the one-step form th
     const st = JSON.parse((await s("state", "--full")).out) as PublicState;
     const human = st.chat.filter((m) => m.who === "system").at(-1);
     expect(human?.text).toBe(
-      `You activated v${v.version} before the agent had written it; the agent's text is v${line.preservedAs}.`,
+      `You activated v${v.version} of race.md before the agent had written it; the agent's text is v${line.preservedAs}.`,
     );
     expect(readFileSync(String(line.preservedPath), "utf8")).toBe(
       "the agent's draft, a moment late\n",
+    );
+  });
+
+  test("activated, TYPED IN, then the agent writes: not the race — the human had written it", async () => {
+    const r = await s("version-new", "--label", "typed");
+    expect(r.code).toBe(0);
+    const v = JSON.parse(r.out) as { version: number; path: string };
+    surface.send({ type: "activate", doc: "race", version: v.version });
+    await waitTail((l) => l.type === "activated" && l.version === v.version && l.by === "human");
+    surface.send({ type: "edit", doc: "race", version: v.version, text: "the human typed this\n" });
+    for (let i = 0; i < 250 && readFileSync(v.path, "utf8") !== "the human typed this\n"; i++)
+      await Bun.sleep(20);
+    expect(readFileSync(v.path, "utf8")).toBe("the human typed this\n");
+    writeFileSync(v.path, "the agent's draft, after the human typed\n");
+    const line = await waitTail((l) => l.fact === "active.outside" && l.version === v.version);
+    expect(line.activatedBeforeWritten).toBe(false);
+    const st = JSON.parse((await s("state", "--full")).out) as PublicState;
+    const human = st.chat.filter((m) => m.who === "system").at(-1);
+    expect(human?.text).toBe(
+      `v${v.version} of race.md was written from outside the editor; that text is kept as v${line.preservedAs}, and v${v.version} keeps yours.`,
     );
   });
 

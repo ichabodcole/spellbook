@@ -402,10 +402,10 @@ export async function startDaemon(opts: StartOpts) {
         activatedBeforeWritten,
       },
       // The human's own line: what happened to their version, no path, no
-      // instructions meant for the agent.
-      activatedBeforeWritten
-        ? `You activated v${version} before the agent had written it; the agent's text is v${preservedAs}.`
-        : `v${version} was written from outside the editor; that text is kept as v${preservedAs}, and v${version} keeps yours.`,
+      // instructions meant for the agent. It names the document by the name
+      // the human sees on its tab — two documents in one conversation must not
+      // read the same (second verifier, 2026-10-01).
+      humanOutsideLine(session.doc(doc).name, version, preservedAs, activatedBeforeWritten),
     );
 
   // --- shared acts (surface and agent reach the same code) ---------------------
@@ -1767,6 +1767,22 @@ export async function startDaemon(opts: StartOpts) {
  * expands it) and then Enter failed with "no such file or folder:
  * …/skills/scriptorium/~/Documents/…" (Cole, 2026-09-11).
  */
+/**
+ * The human's chat line when an outside write to the active version is kept
+ * (E2, #117): what happened to their version of WHICH document, no path, no
+ * instructions meant for the agent.
+ */
+export function humanOutsideLine(
+  name: string,
+  version: number,
+  preservedAs: number,
+  activatedBeforeWritten: boolean,
+): string {
+  return activatedBeforeWritten
+    ? `You activated v${version} of ${name} before the agent had written it; the agent's text is v${preservedAs}.`
+    : `v${version} of ${name} was written from outside the editor; that text is kept as v${preservedAs}, and v${version} keeps yours.`;
+}
+
 export function surfacePath(p: string): string {
   const t = p.trim();
   if (t === "~" || t.startsWith("~/")) return expandHome(t);
