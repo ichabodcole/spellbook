@@ -623,6 +623,38 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
     expect(out.lines().map((l) => JSON.parse(l).type)).toEqual(["tail.closed"]);
   });
 
+  test("S1 on the D1 path: a session found gone carries who ended it, from the spell's `goneBy`", async () => {
+    // Re-armed after the human ended it: no closing frame is ever seen, so
+    // `closedBy` has nothing to read. The spell keeps the fact elsewhere (its
+    // manifest), and the line must say the same as the live path did.
+    const out = collector();
+    await tailWithHandoff<Ev>(
+      base({ base: "unused" }, out, { resolve: () => null, onUnresolved: () => "stop" }),
+      {
+        spell: "demo",
+        mode: "once",
+        presence: false,
+        closedBy: (ev) => ev.by,
+        goneBy: () => "human",
+        commands: CMD,
+      },
+    );
+    const last = JSON.parse(out.lines().at(-1) ?? "{}");
+    expect([last.type, last.by, last.next]).toEqual(["tail.closed", "human", "stop"]);
+    expect(last.hint).toContain("on purpose");
+  });
+
+  test("D1 with no `goneBy` answer: tail.closed with no `by`, the generic hint", async () => {
+    const out = collector();
+    await tailWithHandoff<Ev>(
+      base({ base: "unused" }, out, { resolve: () => null, onUnresolved: () => "stop" }),
+      { spell: "demo", mode: "once", presence: false, goneBy: () => undefined, commands: CMD },
+    );
+    const last = JSON.parse(out.lines().at(-1) ?? "{}");
+    expect(last.type).toBe("tail.closed");
+    expect("by" in last).toBe(false);
+  });
+
   test("D2: a bookmark from a restarted log is dropped — the replay resets the cursor", async () => {
     // A restarted daemon: its ids began again at 1, so it answers since=8 by
     // replaying WHOLE (the kit's event log, point 3).

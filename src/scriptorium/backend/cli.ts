@@ -754,6 +754,9 @@ async function cmdTail(
       // The `closed` event says who ended it; `tail.closed` carries it as
       // `by`, and a human end tells the agent to stop and not reopen.
       closedBy: (ev) => (typeof ev.by === "string" ? ev.by : undefined),
+      // A re-arm after the end never sees `closed` (D1); the manifest's
+      // `ended.by` is the same fact, and it outlives the daemon.
+      goneBy: () => (boundId !== undefined ? endedBy(boundId) : undefined),
       commands: {
         tail: ({ since: at, once, epoch }) => tailCommand(["tail", ...pin()], at, once, epoch),
         comeBack: () => commandLine(["open", "--restore", boundId ?? "<id>", "--no-open"]),

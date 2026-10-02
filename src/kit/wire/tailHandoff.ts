@@ -276,7 +276,10 @@
  *      `closedBy`, and `tail.closed` carries it as `by`. `by: "human"` changes
  *      the hint: the human ended it ON PURPOSE, so the agent stops and does not
  *      reopen unless asked — the way back is still named, conditioned on that.
- *      The agent routes on `by`, never on the hint's prose.
+ *      The agent routes on `by`, never on the hint's prose. A re-arm after
+ *      the end sees no closing frame (D1's path), so the spell also passes
+ *      `goneBy`, read from where the fact outlives the daemon; without it the
+ *      re-armed line dropped `by` and invited the reopen (verifier, 2026-10-01).
  *      ⚖ Options not taken: a spell-side rewrite of the printed line (a second
  *      writer of the same line), or a spell-supplied hint (each spell would
  *      word "on purpose" its own way).
@@ -525,6 +528,11 @@ export type HandoffOptions<Ev> = {
   isClosed?: (ev: Ev) => boolean;
   /** Who the closing frame says ended the session (S1); carried on `tail.closed`. */
   closedBy?: (ev: Ev) => string | undefined;
+  /** Who ended a session found GONE (D1: re-armed after it closed, so no
+   *  closing frame is ever seen), read from wherever the spell keeps it — a
+   *  manifest that outlives the daemon. Carried on `tail.closed` as `by`, so
+   *  the line says what the live path's `closedBy` would have (S1). */
+  goneBy?: () => string | undefined;
   commands: HandoffCommands;
 };
 
@@ -586,7 +594,10 @@ export async function tailWithHandoff<Ev>(
         // D1: a tail that gives up on finding its session is watching a
         // session that is gone — whether this process ever reached it (its
         // pointer vanished) or it was re-armed at one that closed in the gap.
-        if (verdict === "stop" && end === null) end = "closed";
+        if (verdict === "stop" && end === null) {
+          end = "closed";
+          closedBy = h.goneBy?.();
+        }
         return verdict;
       },
       render: (ev, frame) => {

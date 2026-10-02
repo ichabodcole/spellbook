@@ -285,6 +285,23 @@ describe("the wait ends on a closed or a lost session, naming how to come back",
     const refusal = JSON.parse(late.err) as { error: { message: string; hint: string } };
     expect(refusal.error.message).toBe(`the human ended session ${id}`);
     expect(refusal.error.hint).toContain("do not reopen it unless they ask");
+    // A tail RE-ARMED after the end sees no `closed` frame (D1's path), yet
+    // says what the live tail said: `by` from the manifest, the same hint.
+    for (const args of [
+      ["--session", id, "--once"],
+      ["--session", id, "--since", String(since)],
+    ]) {
+      const again = spawnTail(args, 60_000);
+      expect(await again.exit(5000)).toBe(0);
+      const got = again.lines().filter((l) => l.type !== "grounding");
+      expect(got.map((l) => l.type)).toEqual(["tail.closed"]);
+      expect(got[0]).toMatchObject({
+        by: "human",
+        next: "stop",
+        command: cmd("open", "--restore", id, "--no-open"),
+      });
+      expect(got[0]?.hint).toBe(lines[1]?.hint);
+    }
   }, 30_000);
 
   test("D1: re-armed at a session that closed in the gap → tail.closed at once, in both modes", async () => {
