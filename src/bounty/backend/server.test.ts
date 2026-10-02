@@ -6901,6 +6901,12 @@ describe("a restore keeps every task", () => {
         env,
       });
       await runCli(["update", "s2", "--tag", "", "--session", id], { env });
+      // Notes set then cleared, and more status transitions (round 2: the
+      // narrowed empty-array rule must still let an ordinary board through).
+      await runCli(["update", "s2", "--notes", "n", "--session", id], { env });
+      await runCli(["update", "s2", "--clear-notes", "--session", id], { env });
+      await runCli(["update", "s1", "--status", "done", "--session", id], { env });
+      await runCli(["update", "s2", "--status", "doing", "--session", id], { env });
       await runCli(["close", "--session", id], { env });
       const r = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
         env,
@@ -6909,6 +6915,108 @@ describe("a restore keeps every task", () => {
       const c = await runCli(["close", "--session", id], { env });
       expect((JSON.parse(c.stdout) as { snapshotBackups: unknown[] }).snapshotBackups).toEqual([]);
       expect(readdirSync(join(home, "snapshots"))).toEqual([`${id}.json`]);
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("round 2 — an unknown field whose value is [] is a difference: it costs the one copy, not a silent erase", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `rk8-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["a"], env);
+    const snap = editSnapshot(home, id, (b) => {
+      (b.tasks[0] as Record<string, unknown>).reviewers = [];
+    });
+    const original = readFileSync(snap, "utf8");
+    try {
+      const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      const hs = JSON.parse(o.stdout) as { snapshotBackups: NamedBackupT[] };
+      expect(hs.snapshotBackups.map((b) => b.kind)).toEqual(["partial-restore"]);
+      expect(hs.snapshotBackups[0]?.reason ?? "").toContain("reviewers");
+      expect(readFileSync(hs.snapshotBackups[0]?.path as string, "utf8")).toBe(original);
+      await runCli(["close", "--session", id], { env });
+      expect(readFileSync(snap, "utf8")).not.toContain("reviewers");
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("round 2 — duplicate ids: the first is kept, later ones are named in restoreDropped, and the file is copied once", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `rk9-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["first"], env);
+    let dupId = "";
+    const snap = editSnapshot(home, id, (b) => {
+      const t0 = b.tasks[0] as Record<string, unknown>;
+      dupId = t0.id as string;
+      // An identical copy, then a different entry under the same id.
+      b.tasks.push({ ...t0 }, { ...t0, title: "second" });
+    });
+    const original = readFileSync(snap, "utf8");
+    const copies = () =>
+      readdirSync(join(home, "snapshots")).filter((f) => f.includes(".partial-restore-"));
+    try {
+      const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      const hs = JSON.parse(o.stdout) as {
+        restoreDropped: Dropped[];
+        snapshotBackups: NamedBackupT[];
+      };
+      expect(hs.restoreDropped.map((d) => [d.index, d.id])).toEqual([
+        [1, dupId],
+        [2, dupId],
+      ]);
+      expect(hs.restoreDropped[0]?.reason).toBe("duplicate id (index 0 already has it)");
+      expect(hs.snapshotBackups.map((b) => b.kind)).toEqual(["partial-restore"]);
+      expect(await liveTitles(id, env)).toEqual(["first"]);
+      await runCli(["close", "--session", id], { env });
+      for (let i = 0; i < 2; i++) {
+        const r = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+          env,
+        });
+        const rs = JSON.parse(r.stdout) as {
+          restoreDropped: Dropped[];
+          snapshotBackups: unknown[];
+        };
+        expect(rs.restoreDropped).toEqual([]);
+        expect(rs.snapshotBackups).toEqual([]);
+        await runCli(["close", "--session", id], { env });
+      }
+      expect(copies()).toHaveLength(1);
+      expect(readFileSync(join(home, "snapshots", copies()[0] as string), "utf8")).toBe(original);
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("round 2 — the partial-restore reason names each changed task and its fields, and a board field", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `rk11-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["a", "b"], env);
+    let changedId = "";
+    editSnapshot(home, id, (b) => {
+      const t0 = b.tasks[0] as Record<string, unknown>;
+      changedId = t0.id as string;
+      t0.priority = "high";
+      t0.size = "XXL";
+      (b as Record<string, unknown>).owner = "someone";
+    });
+    try {
+      const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      const hs = JSON.parse(o.stdout) as { snapshotBackups: NamedBackupT[] };
+      const reason = hs.snapshotBackups[0]?.reason ?? "";
+      expect(reason).toContain(`changed: ${changedId} (priority, size)`);
+      expect(reason).toContain("a board field (owner)");
+      expect(reason).not.toContain("changed an entry it read");
+      await runCli(["close", "--session", id], { env });
     } finally {
       killBoard(id);
     }

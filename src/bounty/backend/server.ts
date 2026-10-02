@@ -293,18 +293,67 @@ function snapshotPresent(path: string): boolean {
 // data used to fail it: KEY ORDER (a field set after creation, an `owner` or
 // the transition stamp after `size`, sits last in the stored task, and
 // validateTask rebuilds it in its own order) and an EMPTY ARRAY versus an
-// absent key (an explicit tag clear stores `tags: []`, and a restore drops it).
-// Either would have made the first respawn of an ordinary board copy its
-// snapshot aside. A dropped field, a changed value or a missing task still fail.
+// absent key for the fields validateTask writes only when non-empty
+// (NORMALISED_WHEN_EMPTY: an explicit tag clear stores `tags: []`, and a
+// restore drops it). Either would have made the first respawn of an ordinary
+// board copy its snapshot aside. A dropped field, a changed value or a missing
+// task still fail.
+//
+// ⚠ ONLY THOSE FIELDS (round 2). The empty-array rule first applied to every
+// field, so a field this build does not know holding `[]` (`reviewers: []`
+// from another tool) read as held, the board owned the file, and its first
+// write erased the field with no copy. Any other field present in the file and
+// absent from the board is a difference, and costs the one `partial-restore`.
+//
+// ⚠ A DUPLICATE ID IS A DIFFERENCE. The restore keeps the first entry with an
+// id (as add and init do), so a later one is in the file and not on the board,
+// even when it is an identical copy.
 function boardHoldsSnapshot(board: BoardState, parsed: unknown): boolean {
-  if (snapshotProblem(parsed)) return false;
+  const diff = snapshotDiff(board, parsed);
+  return diff !== null && !diff.fields.length && !diff.changed.length && !diff.missing;
+}
+
+/** The fields validateTask writes only when non-empty: `[]` there is absence. */
+const NORMALISED_WHEN_EMPTY: ReadonlySet<string> = new Set(["tags", "statusHistory"]);
+
+/**
+ * What the snapshot holds that the board does not: the top-level `fields`
+ * (other than `tasks`) that differ, each snapshot task the board holds but
+ * `changed` (with the fields that differ, sorted), and a count of the entries
+ * it does not hold at all (`missing`: no id, a later duplicate of an id, or an
+ * id not on the board). Null when `parsed` is not a snapshot.
+ */
+type SnapshotDiff = {
+  fields: string[];
+  changed: { id: string; fields: string[] }[];
+  missing: number;
+};
+function snapshotDiff(board: BoardState, parsed: unknown): SnapshotDiff | null {
+  if (snapshotProblem(parsed)) return null;
   const snap = parsed as Record<string, unknown> & { tasks: unknown[] };
   const b = board as unknown as Record<string, unknown>;
-  for (const [k, val] of Object.entries(snap)) {
-    if (k !== "tasks" && canonicalJson(val) !== canonicalJson(b[k])) return false;
+  const fields = Object.keys(snap)
+    .filter((k) => k !== "tasks" && canonicalJson(snap[k]) !== canonicalJson(b[k]))
+    .sort();
+  const have = new Map(board.tasks.map((t) => [t.id, taskData(t)]));
+  const seen = new Set<string>();
+  const changed: SnapshotDiff["changed"] = [];
+  let missing = 0;
+  for (const raw of snap.tasks) {
+    const id = (raw as { id?: unknown } | null)?.id;
+    const mine = typeof id === "string" && !seen.has(id) ? have.get(id) : undefined;
+    if (typeof id === "string") seen.add(id);
+    if (typeof id !== "string" || mine === undefined) {
+      missing++;
+      continue;
+    }
+    const theirs = taskData(raw);
+    const differ = [...new Set([...Object.keys(theirs), ...Object.keys(mine)])]
+      .filter((k) => canonicalJson(theirs[k]) !== canonicalJson(mine[k]))
+      .sort();
+    if (differ.length) changed.push({ id, fields: differ });
   }
-  const have = new Map(board.tasks.map((t) => [t.id, canonicalTask(t)]));
-  return snap.tasks.every((t) => have.get((t as { id?: string })?.id ?? "") === canonicalTask(t));
+  return { fields, changed, missing };
 }
 
 /** JSON with every object's keys sorted, so key order never reads as data. */
@@ -318,14 +367,12 @@ function canonicalJson(v: unknown): string {
   );
 }
 
-/** A task as data: canonical JSON, with an empty-array field read as absent. */
-function canonicalTask(t: unknown): string {
-  if (!t || typeof t !== "object" || Array.isArray(t)) return canonicalJson(t);
-  return canonicalJson(
-    Object.fromEntries(
-      Object.entries(t as Record<string, unknown>).filter(
-        ([, val]) => !(Array.isArray(val) && val.length === 0),
-      ),
+/** A task's fields as data: an empty NORMALISED_WHEN_EMPTY field reads as absent. */
+function taskData(t: unknown): Record<string, unknown> {
+  if (!t || typeof t !== "object" || Array.isArray(t)) return {};
+  return Object.fromEntries(
+    Object.entries(t as Record<string, unknown>).filter(
+      ([k, val]) => !(NORMALISED_WHEN_EMPTY.has(k) && Array.isArray(val) && val.length === 0),
     ),
   );
 }
@@ -634,6 +681,27 @@ function describeDrops(dropped: readonly RestoreDrop[]): string {
   return dropped
     .map((d) => `[${d.index}]${d.id !== null ? ` ${d.id}` : " (no id)"}: ${d.reason}`)
     .join("; ");
+}
+
+/**
+ * Why a board does not hold the snapshot it restored, as one line of prose:
+ * the entries the restore dropped, each task it changed with the fields that
+ * differ, and any board field (top level, not a task) that differs.
+ */
+function describeUnheld(dropped: readonly RestoreDrop[], diff: SnapshotDiff | null): string {
+  const parts: string[] = [];
+  if (dropped.length) parts.push(`it dropped ${dropped.length} task(s): ${describeDrops(dropped)}`);
+  if (diff?.changed.length)
+    parts.push(
+      `changed: ${diff.changed.map((c) => `${c.id} (${c.fields.join(", ")})`).join(", ")}`,
+    );
+  if (diff?.fields.length)
+    parts.push(
+      `${diff.fields.length === 1 ? "a board field" : "board fields"} (${diff.fields.join(", ")})`,
+    );
+  return parts.length
+    ? parts.join("; ")
+    : "it differs from the file in a way this build cannot name";
 }
 
 function validateTask(t: unknown): Task | null {
@@ -1031,12 +1099,29 @@ async function main(argv: string[]): Promise<number> {
       if (typeof merged.title === "string") state.title = merged.title;
       const kept: Task[] = [];
       const dropped: RestoreDrop[] = [];
+      // ⚠ THE FIRST ENTRY WITH AN ID WINS (round 2), as `add` and `init` refuse
+      // a second one. Keeping both put two cards under one id on the board,
+      // which boardHoldsSnapshot (by id) never matched, so every respawn made a
+      // new `partial-restore` copy. A later duplicate is a drop now: named, in
+      // the one copy, and the next respawn's file is the board's own.
+      const firstAt = new Map<string, number>();
       merged.tasks.forEach((raw, index) => {
+        const rawId = (raw as { id?: unknown } | null)?.id;
+        const earlier = typeof rawId === "string" ? firstAt.get(rawId) : undefined;
+        if (earlier !== undefined) {
+          dropped.push({
+            index,
+            id: rawId as string,
+            reason: `duplicate id (index ${earlier} already has it)`,
+          });
+          return;
+        }
         const reason = taskRejection(raw);
         const task = reason === null ? validateTask(raw) : null;
-        if (task) kept.push(task);
-        else {
-          const rawId = (raw as { id?: unknown } | null)?.id;
+        if (task) {
+          kept.push(task);
+          firstAt.set(task.id, index);
+        } else {
           dropped.push({
             index,
             id: typeof rawId === "string" ? rawId : null,
@@ -1048,7 +1133,7 @@ async function main(argv: string[]): Promise<number> {
       restoreDropped = dropped;
       if (dropped.length)
         process.stderr.write(
-          `bounty: restore dropped ${dropped.length} task(s) this build cannot read (${restorePath}): ${describeDrops(dropped)}\n`,
+          `bounty: restore dropped ${dropped.length} task(s) (${restorePath}): ${describeDrops(dropped)}\n`,
         );
       restoredFromElsewhere =
         !sessionId || resolve(restorePath) !== resolve(SNAPSHOTS_DIR, `${sessionId}.json`);
@@ -1458,11 +1543,10 @@ async function main(argv: string[]): Promise<number> {
         : restoredFromElsewhere
           ? "this board was restored from another file and never read its own snapshot"
           : readOwn
-            ? `this board restored its own snapshot but could not hold all of it (${
-                restoreDropped.length
-                  ? `it dropped ${restoreDropped.length} task(s) this build cannot read: ${describeDrops(restoreDropped)}`
-                  : "this build changed an entry it read"
-              })`
+            ? `this board restored its own snapshot but could not hold all of it (${describeUnheld(
+                restoreDropped,
+                readable ? snapshotDiff(state, parsed) : null,
+              )})`
             : "this board started without reading its own snapshot";
 
       // (c) A board whose own snapshot is unreadable (its keyed respawn's
