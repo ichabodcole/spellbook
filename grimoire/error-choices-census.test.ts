@@ -225,7 +225,10 @@ const EXPECTED: Record<
   // 28/4 -> 29/4 (round three's verify pass): the same reader refuses a
   // `--body-file` that is a directory as usage, for every verb — it was an
   // internal EISDIR. No `choices`, for the same reason.
-  scriptorium: { sites: 29, choices: 4, verbRoster: true, flagMap: true },
+  // 29/4 -> 30/4 (round three's second verify pass): and a `--body-file` it
+  // may not read (chmod 000) as usage, for every verb — it was an internal raw
+  // EACCES. No `choices`, for the same reason.
+  scriptorium: { sites: 30, choices: 4, verbRoster: true, flagMap: true },
 };
 
 /**

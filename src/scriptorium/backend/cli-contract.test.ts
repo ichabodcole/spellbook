@@ -10,6 +10,7 @@
 
 import { afterAll, expect, test } from "bun:test";
 import {
+  chmodSync,
   mkdirSync,
   mkdtempSync as mkdtempRaw,
   readdirSync,
@@ -294,6 +295,29 @@ test.each([
   const doc = JSON.parse(r.stderr) as Envelope;
   expect(doc.error.kind).toBe("usage");
   expect(doc.error.message).toBe(`${verb}: --body-file is a directory, not a file: ${dir}`);
+});
+
+test.each([
+  ["say", ["say"]],
+  ["task", ["task"]],
+  ["note", ["note", "--quote", "x"]],
+  ["note-edit", ["note-edit", "n-1"]],
+  ["version-new", ["version-new"]],
+])("%s's --body-file that CANNOT BE READ (chmod 000) is usage (2), saying so — not an internal EACCES", (verb, args) => {
+  const dir = mkdtempSync(join(tmpdir(), "scriptorium-bodylocked-"));
+  const locked = join(dir, "locked.md");
+  writeFileSync(locked, "# a draft\n");
+  chmodSync(locked, 0o000);
+  try {
+    const r = run([...args, "--body-file", locked]);
+    expect(r.code).toBe(2);
+    const doc = JSON.parse(r.stderr) as Envelope;
+    expect(doc.error.kind).toBe("usage");
+    expect(doc.error.message).toBe(`${verb}: --body-file cannot be read: ${locked}`);
+    expect(r.stderr).not.toContain("EACCES");
+  } finally {
+    chmodSync(locked, 0o644);
+  }
 });
 
 test("a prose refusal names the verb that was run, not `say`", () => {

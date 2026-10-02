@@ -643,7 +643,16 @@ async function readProse(
       die(`${verb}: --body-file is a directory, not a file: ${path}`, "usage", {
         hint: "pass the path of the file that holds the text",
       });
-    text = readFileSync(path, "utf8");
+    // So is a file this process may not read (chmod 000): it used to come out
+    // as an internal raw EACCES (exit 1). It is there and is a file, so any
+    // failure to read it is "cannot be read" — the caller's to fix.
+    try {
+      text = readFileSync(path, "utf8");
+    } catch {
+      die(`${verb}: --body-file cannot be read: ${path}`, "usage", {
+        hint: "check that the file's permissions let you read it, or pass another file",
+      });
+    }
   } else text = pos.join(" ");
   if (!text.trim())
     die(
