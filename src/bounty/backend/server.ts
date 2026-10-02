@@ -286,15 +286,48 @@ function snapshotPresent(path: string): boolean {
 // ⚠ NOT TASKS ALONE: the pre-restore guard used to compare only `tasks`, so a
 // restore that differed in its title wrote over the old title with no copy
 // (third verifier, 2026-09-28).
+//
+// ⚠ COMPARED AS DATA, NOT AS BYTES (2026-10, a restore keeps every task). Since
+// a restore of a board's own snapshot owns that file only when the board holds
+// it, this test runs on every keyed respawn, and two differences that carry no
+// data used to fail it: KEY ORDER (a field set after creation, an `owner` or
+// the transition stamp after `size`, sits last in the stored task, and
+// validateTask rebuilds it in its own order) and an EMPTY ARRAY versus an
+// absent key (an explicit tag clear stores `tags: []`, and a restore drops it).
+// Either would have made the first respawn of an ordinary board copy its
+// snapshot aside. A dropped field, a changed value or a missing task still fail.
 function boardHoldsSnapshot(board: BoardState, parsed: unknown): boolean {
   if (snapshotProblem(parsed)) return false;
   const snap = parsed as Record<string, unknown> & { tasks: unknown[] };
   const b = board as unknown as Record<string, unknown>;
   for (const [k, val] of Object.entries(snap)) {
-    if (k !== "tasks" && JSON.stringify(val) !== JSON.stringify(b[k])) return false;
+    if (k !== "tasks" && canonicalJson(val) !== canonicalJson(b[k])) return false;
   }
-  const have = new Map(board.tasks.map((t) => [t.id, JSON.stringify(t)]));
-  return snap.tasks.every((t) => have.get((t as { id?: string })?.id ?? "") === JSON.stringify(t));
+  const have = new Map(board.tasks.map((t) => [t.id, canonicalTask(t)]));
+  return snap.tasks.every((t) => have.get((t as { id?: string })?.id ?? "") === canonicalTask(t));
+}
+
+/** JSON with every object's keys sorted, so key order never reads as data. */
+function canonicalJson(v: unknown): string {
+  return JSON.stringify(v, (_k, val: unknown) =>
+    val && typeof val === "object" && !Array.isArray(val)
+      ? Object.fromEntries(
+          Object.entries(val as Record<string, unknown>).sort(([a], [b]) => (a < b ? -1 : 1)),
+        )
+      : val,
+  );
+}
+
+/** A task as data: canonical JSON, with an empty-array field read as absent. */
+function canonicalTask(t: unknown): string {
+  if (!t || typeof t !== "object" || Array.isArray(t)) return canonicalJson(t);
+  return canonicalJson(
+    Object.fromEntries(
+      Object.entries(t as Record<string, unknown>).filter(
+        ([, val]) => !(Array.isArray(val) && val.length === 0),
+      ),
+    ),
+  );
 }
 
 // What to do about a snapshot write that failed, naming the path that is
@@ -430,7 +463,10 @@ type ApplyResult = {
 // judge it), `pre-restore` (the board's own snapshot, before a board restored
 // from another file is written over it) or `unread` (the board's own snapshot,
 // which this daemon never read, kept before its first write over it: the rule
-// at `ownsSnapshot`). `taskCount` is the copy's own count, null when it is unreadable.
+// at `ownsSnapshot`). `partial-restore` is the board's own snapshot, which it
+// restored from but could not hold all of (restore dropped an entry this build
+// cannot read, or changed one), kept at boot before the board is written over
+// it. `taskCount` is the copy's own count, null when it is unreadable.
 // `unsaved` is not a copy of the snapshot: it is the BOARD, dumped to a file of
 // its own because the snapshot could not be written (see SnapshotSaveFailed).
 // The CLI adds the act that recovers it, since only the CLI knows the key.
@@ -441,7 +477,7 @@ type ApplyResult = {
 // task in no file). It says why, and the CLI offers no restore for it. Absent
 // on every other record, and on a dump that is still the newest copy.
 type BackupRecord = {
-  kind: "shrink" | "unreadable" | "pre-restore" | "unread" | "unsaved";
+  kind: "shrink" | "unreadable" | "pre-restore" | "partial-restore" | "unread" | "unsaved";
   path: string;
   taskCount: number | null;
   reason: string;
@@ -588,6 +624,16 @@ function taskRejection(t: unknown): string | null {
   )
     return "`blockedBy` must be an array of strings";
   return null;
+}
+
+/** One entry a restore could not keep (see `restoreDropped` in main). */
+type RestoreDrop = { index: number; id: string | null; reason: string };
+
+/** The drops, as one line of prose for a backup's `reason` or stderr. */
+function describeDrops(dropped: readonly RestoreDrop[]): string {
+  return dropped
+    .map((d) => `[${d.index}]${d.id !== null ? ` ${d.id}` : " (no id)"}: ${d.reason}`)
+    .join("; ");
 }
 
 function validateTask(t: unknown): Task | null {
@@ -951,6 +997,16 @@ async function main(argv: string[]): Promise<number> {
   // b15 — present-and-null on every boot: null means "no restore failed", never
   // "this daemon does not report restore failures".
   let restoreFailed: { path: string; reason: string } | null = null;
+  // Each entry of the restored file that this build could not keep, by its
+  // place in the file, its id (null when it has none) and why: the reason is
+  // `taskRejection`'s, the same rules `validateTask` applies. PRESENT AND `[]`
+  // on every boot, the way `restoreFailed` is present-and-null (b15): `[]` means
+  // "nothing was dropped", never "this daemon does not report drops". It is a
+  // list, not `init`'s `tasksDropped: {requested, dropped} | null`, because it
+  // sits beside `restoreFailed` as a boot fact and a restore's request count is
+  // already the file's. It used to be nowhere: a dropped task restored as
+  // `restoreFailed: null`, and the board's first write erased it from its file.
+  let restoreDropped: RestoreDrop[] = [];
   // (b) A board restored from a file OTHER than its own snapshot (a
   // `.pre-fresh-` copy, a `.bak`, another board's) is flushed to its own
   // snapshot on the first debounce tick, not at its first mutation. Until then
@@ -973,7 +1029,27 @@ async function main(argv: string[]): Promise<number> {
       if (problem) throw new Error(problem);
       const merged: BoardState = { title: state.title, tasks: [], ...snap };
       if (typeof merged.title === "string") state.title = merged.title;
-      state.tasks = merged.tasks.map(validateTask).filter((t): t is Task => t !== null);
+      const kept: Task[] = [];
+      const dropped: RestoreDrop[] = [];
+      merged.tasks.forEach((raw, index) => {
+        const reason = taskRejection(raw);
+        const task = reason === null ? validateTask(raw) : null;
+        if (task) kept.push(task);
+        else {
+          const rawId = (raw as { id?: unknown } | null)?.id;
+          dropped.push({
+            index,
+            id: typeof rawId === "string" ? rawId : null,
+            reason: reason ?? "rejected",
+          });
+        }
+      });
+      state.tasks = kept;
+      restoreDropped = dropped;
+      if (dropped.length)
+        process.stderr.write(
+          `bounty: restore dropped ${dropped.length} task(s) this build cannot read (${restorePath}): ${describeDrops(dropped)}\n`,
+        );
       restoredFromElsewhere =
         !sessionId || resolve(restorePath) !== resolve(SNAPSHOTS_DIR, `${sessionId}.json`);
     } catch (e) {
@@ -1361,14 +1437,33 @@ async function main(argv: string[]): Promise<number> {
     } catch {
       /* unreadable or not JSON: the copies below, or saveSnapshot, decide */
     }
-    if (readOwn || !present || (readable && boardHoldsSnapshot(state, parsed))) {
+    // ⛔ READING THE FILE IS NOT OWNING IT: THE BOARD MUST HOLD IT. This used to
+    // be `if (readOwn || …)`, so a restore that dropped a task validateTask
+    // rejects (a status or `notes` shape from another bounty version) still
+    // made the daemon owner, and its first write erased that task from the only
+    // file that had it, with `restoreFailed: null` and no backup (item
+    // bounty-snapshot-edges-after-the-ownership-rule, point 1). A clean restore
+    // holds its file (boardHoldsSnapshot compares data, not key order), so a
+    // keyed respawn still costs nothing; one that dropped or changed an entry
+    // keeps the file aside below, once: after the first write the file is the
+    // board's own.
+    if (!present || (readable && boardHoldsSnapshot(state, parsed))) {
       ownsSnapshot = true;
     } else {
+      // Each reason says what happened at THIS boot; the daemon is not told
+      // about `--fresh`, so the last one does not claim it (it used to say
+      // "(open --fresh)" on a keyed respawn that could not see its file).
       unownedWhy = restoreFailed
         ? `this board's restore failed (${restoreFailed.reason}), so it never read its own snapshot`
         : restoredFromElsewhere
           ? "this board was restored from another file and never read its own snapshot"
-          : "this board started without reading its own snapshot (open --fresh)";
+          : readOwn
+            ? `this board restored its own snapshot but could not hold all of it (${
+                restoreDropped.length
+                  ? `it dropped ${restoreDropped.length} task(s) this build cannot read: ${describeDrops(restoreDropped)}`
+                  : "this build changed an entry it read"
+              })`
+            : "this board started without reading its own snapshot";
 
       // (c) A board whose own snapshot is unreadable (its keyed respawn's
       // restore just failed on it, or `--fresh` never read it) keeps a copy
@@ -1421,6 +1516,36 @@ async function main(argv: string[]): Promise<number> {
             reason,
           });
           logDaemon("snapshotBackedUp", { kind: "pre-restore", backup, lost });
+          process.stderr.write(`bounty: ${reason} — copied to ${backup}\n`);
+        } catch {
+          /* not kept: saveSnapshot copies it before the first write, or dumps */
+        }
+      }
+
+      // A restore of the board's OWN snapshot that the board does not hold
+      // (the ownership rule above): keep the file byte-for-byte NOW, so `open`
+      // names the copy with the drops it explains. If the copy fails, the
+      // daemon still does not own the file, and saveSnapshot's rule copy
+      // (`unread`, whose reason says the same) is tried before the first write.
+      if (readOwn && readable && !ownsSnapshot) {
+        const backup = join(SNAPSHOTS_DIR, `${sessionId}.partial-restore-${Date.now()}.bak.json`);
+        try {
+          copyFileSync(own, backup);
+          ownsSnapshot = true;
+          keptSinceWrite = true;
+          const ownTaskCount = Array.isArray(ownTasks) ? ownTasks.length : null;
+          const reason = `${unownedWhy}; kept byte-for-byte before the board is written over it`;
+          backupsThisSession.push({
+            kind: "partial-restore",
+            path: backup,
+            taskCount: ownTaskCount,
+            reason,
+          });
+          logDaemon("snapshotBackedUp", {
+            kind: "partial-restore",
+            backup,
+            dropped: restoreDropped.length,
+          });
           process.stderr.write(`bounty: ${reason} — copied to ${backup}\n`);
         } catch {
           /* not kept: saveSnapshot copies it before the first write, or dumps */
@@ -1736,7 +1861,14 @@ async function main(argv: string[]): Promise<number> {
           .filter((d): d is { index: number; reason: string } => d.reason !== null);
         for (const task of msg.tasks.map(validateTask)) if (task) applyTaskAdd(state, task);
       }
-      broadcast({ type: "init", title: state.title, tasks: state.tasks, restoreFailed, sessionId });
+      broadcast({
+        type: "init",
+        title: state.title,
+        tasks: state.tasks,
+        restoreFailed,
+        restoreDropped,
+        sessionId,
+      });
       emitEvent({ type: "init", title: state.title, by });
       // Present-and-null, never absent: an absent field cannot distinguish "all
       // your tasks were seeded" from "this daemon does not report drops".
@@ -2022,6 +2154,7 @@ async function main(argv: string[]): Promise<number> {
               // b15 — also readable here: a boot line is missable and this fact
               // outlives it.
               restoreFailed,
+              restoreDropped,
               // The latest snapshot write failed, and where the board went
               // instead. Present-and-null when the last write succeeded.
               snapshotSaveFailed,
@@ -2110,6 +2243,7 @@ async function main(argv: string[]): Promise<number> {
               title: state.title,
               tasks: state.tasks,
               restoreFailed,
+              restoreDropped,
               sessionId,
             }),
           );
@@ -2154,6 +2288,7 @@ async function main(argv: string[]): Promise<number> {
                 title: state.title,
                 tasks: state.tasks,
                 restoreFailed,
+                restoreDropped,
                 sessionId,
               });
               emitEvent({
@@ -2288,6 +2423,9 @@ async function main(argv: string[]): Promise<number> {
     // later /state would mean the caller learns of it, if at all, on a different
     // command than the one that broke.
     restoreFailed,
+    // What the restore dropped, for the same reason, beside the copy that
+    // keeps it (`partial-restore` in snapshotBackups below).
+    restoreDropped,
     // (d) Any backup made at BOOT, before this file was written, for the same
     // reason: `open` prints this payload, and `open` is the act that made it.
     snapshotBackups: backupsThisSession,

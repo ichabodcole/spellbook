@@ -6721,3 +6721,196 @@ describe("a daemon never writes over a snapshot it has not read or kept", () => 
     expect(readdirSync(join(home, "snapshots"))).toEqual([`${id}.json`]);
   }, 30000);
 });
+
+// ── A restore keeps every task (cycle 2026-10-a-restore-keeps-every-task) ──
+// item/bounty-snapshot-edges-after-the-ownership-rule. A keyed respawn used to
+// own its snapshot after ANY restore of it, even one that dropped (or changed)
+// entries this build's validateTask cannot keep, so the first write erased
+// them. Ownership after a restore now needs the board to hold the file; a board
+// that does not keeps the file aside first, and `open` names what it dropped.
+type Dropped = { index: number; id: string | null; reason: string };
+
+/** Rewrite board `id`'s snapshot in `home` through `edit`. */
+function editSnapshot(
+  home: string,
+  id: string,
+  edit: (board: { title: string; tasks: Record<string, unknown>[] }) => void,
+): string {
+  const snap = join(home, "snapshots", `${id}.json`);
+  const board = JSON.parse(readFileSync(snap, "utf8")) as {
+    title: string;
+    tasks: Record<string, unknown>[];
+  };
+  edit(board);
+  writeFileSync(snap, JSON.stringify(board));
+  return snap;
+}
+
+describe("a restore keeps every task", () => {
+  test("point 1 — a dropped task survives restore → add → close, in a copy named on the envelope", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `rk1-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["good"], env);
+    // A status from another bounty version: this build's validateTask rejects it.
+    const snap = editSnapshot(home, id, (b) => {
+      b.tasks.push({ id: "t-alien", title: "alien", status: "blocked" });
+    });
+    const original = readFileSync(snap, "utf8");
+    try {
+      const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      expect(o.code).toBe(0);
+      const hs = JSON.parse(o.stdout) as {
+        restoreFailed: unknown;
+        restoreDropped: Dropped[];
+        snapshotBackups: NamedBackupT[];
+      };
+      expect(hs.restoreFailed).toBeNull();
+      expect(hs.restoreDropped).toHaveLength(1);
+      expect(hs.restoreDropped[0]?.index).toBe(1);
+      expect(hs.restoreDropped[0]?.id).toBe("t-alien");
+      expect(hs.restoreDropped[0]?.reason).toContain("status");
+      const kept = backupHolding(hs.snapshotBackups, "alien");
+      expect(kept?.kind).toBe("partial-restore");
+      expect(kept?.reason ?? "").toContain("t-alien");
+      expect(kept?.restore ?? "").toContain("--restore");
+      // Byte-for-byte: the copy is the file as it was.
+      expect(readFileSync(kept?.path as string, "utf8")).toBe(original);
+
+      // Add a card so the count does not shrink and the shrink guard is silent.
+      await runCli(["add", "new", "--session", id], { env });
+      const c = await runCli(["close", "--session", id], { env });
+      expect(c.code).toBe(0);
+      expect(titlesAt(snap)).toEqual(["good", "new"]);
+      const closed = (JSON.parse(c.stdout) as { snapshotBackups: NamedBackupT[] }).snapshotBackups;
+      expect(backupHolding(closed, "alien")?.path).toBe(kept?.path as string);
+      expect(titlesAt(kept?.path as string)).toContain("alien");
+
+      // One copy, not one per respawn: the file now holds what the board holds.
+      const r = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      const rs = JSON.parse(r.stdout) as { restoreDropped: Dropped[]; snapshotBackups: unknown[] };
+      expect(rs.restoreDropped).toEqual([]);
+      expect(rs.snapshotBackups).toEqual([]);
+      await runCli(["close", "--session", id], { env });
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("point 1 — restoreDropped rides open, /state and the browser init, and is present-and-[] on a clean boot", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `rk2-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["a"], env);
+    editSnapshot(home, id, (b) => {
+      b.tasks.push({ title: "no id", status: "todo" });
+    });
+    try {
+      const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      const hs = JSON.parse(o.stdout) as { port: number; restoreDropped: Dropped[] };
+      expect(hs.restoreDropped).toHaveLength(1);
+      expect(hs.restoreDropped[0]?.index).toBe(1);
+      expect(hs.restoreDropped[0]?.id).toBeNull();
+      expect(hs.restoreDropped[0]?.reason).toContain("id");
+      const st = (await (await fetch(`http://127.0.0.1:${hs.port}/state`)).json()) as {
+        restoreDropped: Dropped[];
+      };
+      expect(st.restoreDropped).toEqual(hs.restoreDropped);
+      const ws = new WebSocket(`ws://127.0.0.1:${hs.port}/ws`);
+      const init = await new Promise<Record<string, unknown>>((res, rej) => {
+        ws.onmessage = (e) => res(JSON.parse(String(e.data)) as Record<string, unknown>);
+        ws.onerror = () => rej(new Error("ws error"));
+      });
+      ws.close();
+      expect(init.type).toBe("init");
+      expect(init.restoreDropped).toEqual(hs.restoreDropped);
+      await runCli(["close", "--session", id], { env });
+
+      // A clean respawn: present and empty, never absent.
+      const r = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      const rs = JSON.parse(r.stdout) as Record<string, unknown>;
+      expect(Object.hasOwn(rs, "restoreDropped")).toBe(true);
+      expect(rs.restoreDropped).toEqual([]);
+      await runCli(["close", "--session", id], { env });
+      // An unkeyed new board too.
+      const u = await runCli(["open", "--no-open", "--timeout", "30"], { env });
+      const us = JSON.parse(u.stdout) as Record<string, unknown>;
+      expect(Object.hasOwn(us, "restoreDropped")).toBe(true);
+      expect(us.restoreDropped).toEqual([]);
+      await runCli(["close", "--session", us.session_id as string], { env });
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("point 1 — a task validateTask keeps but CHANGES costs one copy, not one per respawn", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `rk3-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["a"], env);
+    // A field from another bounty version: validateTask keeps the task, drops it.
+    editSnapshot(home, id, (b) => {
+      (b.tasks[0] as Record<string, unknown>).priority = "high";
+    });
+    try {
+      const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      const hs = JSON.parse(o.stdout) as {
+        restoreDropped: Dropped[];
+        snapshotBackups: NamedBackupT[];
+      };
+      expect(hs.restoreDropped).toEqual([]);
+      expect(hs.snapshotBackups.map((b) => b.kind)).toEqual(["partial-restore"]);
+      expect(readFileSync(hs.snapshotBackups[0]?.path as string, "utf8")).toContain("priority");
+      await runCli(["close", "--session", id], { env });
+      for (let i = 0; i < 2; i++) {
+        const r = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+          env,
+        });
+        expect((JSON.parse(r.stdout) as { snapshotBackups: unknown[] }).snapshotBackups).toEqual(
+          [],
+        );
+        await runCli(["close", "--session", id], { env });
+      }
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("point 1 — no cost: a board whose tasks were sized, claimed and tag-cleared respawns with no copy", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `rk4-${crypto.randomUUID().slice(0, 8)}`;
+    const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], { env });
+    const id = (JSON.parse(o.stdout) as { session_id: string }).session_id;
+    try {
+      await runCli(["add", "sized", "--id", "s1", "--size", "M", "--session", id], { env });
+      await runCli(["add", "tagged", "--id", "s2", "--tag", "x", "--session", id], { env });
+      // Fields added after creation land last in the stored object (key order),
+      // and an explicit tag clear stores `tags: []`, which a restore normalises.
+      await runCli(["update", "s1", "--owner", "bob", "--status", "doing", "--session", id], {
+        env,
+      });
+      await runCli(["update", "s2", "--tag", "", "--session", id], { env });
+      await runCli(["close", "--session", id], { env });
+      const r = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      expect((JSON.parse(r.stdout) as { snapshotBackups: unknown[] }).snapshotBackups).toEqual([]);
+      const c = await runCli(["close", "--session", id], { env });
+      expect((JSON.parse(c.stdout) as { snapshotBackups: unknown[] }).snapshotBackups).toEqual([]);
+      expect(readdirSync(join(home, "snapshots"))).toEqual([`${id}.json`]);
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+});
