@@ -6,7 +6,7 @@ description:
   it cannot validate, plus the snapshot edges filed beside it."
 tags: [bounty, spell-hardening]
 status: draft
-lifecycle: active
+lifecycle: closed
 started: 2026-10-02
 appetite:
   Stop when no restore can lose a task without saying so, and a no-stake
@@ -56,9 +56,53 @@ Decisions as they are made, with the options not taken.
 | 4   | 2026-10-02 | Integrated (`489d9341`, `4c5aa186`, `f1065949`, dist `72ce6f58`); gate 3195/0. Accepted the implementer's calls: the field is `restoreDropped: [{index, id, reason}]`, present-and-`[]` on every boot and on `open`, `/state` and every `init` frame; the copy is a new backup kind, `partial-restore`; the reason comes from the existing `taskRejection`, so `validateTask` is untouched. `boardHoldsSnapshot` now compares data, not bytes (sorted keys, an empty array the same as absent), because exact JSON made every clean respawn of an ordinary board copy its file. Point 2 refuses as `conflict` (6) before teardown; point 3 attempts the restore when `snapshots/` cannot be listed, so EACCES lands in `restoreFailed`; point 4 reuses the #80.1 attach refusal (exit 2, `restoreSkipped`). Not done: the browser does not show `restoreDropped` (a surface call). | `tasksDropped`'s shape for the field (that is an input report on `init`, not a boot fact); byte comparison (a copy per respawn); a new exit code for point 4 (#80.1 already rules that situation).                                                                   |
 | 5   | 2026-10-02 | No-stake verifier on the shipped launcher: all six claims **held** (it reproduced the race), and no task was lost in any scenario. Fixed in a second round, because each is a restore that loses data or says less than it did: an unknown field set to `[]` is erased with no copy (the loosened comparison let it through); duplicate ids copy the file on every respawn; a failed `partial-restore` copy is not mentioned on `open`; the copy's reason does not name changed tasks; a typo. Filed to [spell-refusal-envelope-nits](../items/spell-refusal-envelope-nits.md) for the reply-shape cycle: `init` dropping duplicates and fields under `tasksDropped: null`, the stale `restoreDropped` on an attach refusal, `--fresh` without a key, the snapshot title overriding `--title`. Point 4 also resolved that item's 5.0.0 lock-loser nit.                             | Fix the `init` drops here (an input report, not a restore: reply-shape's class); close with the five as known gaps (two are silent loss on restore, this cycle's own claim).                                                                                         |
 | 6   | 2026-10-02 | Round two integrated (`f50df0e3`, `0cb5713a`, `f5cb25d4`, `f10a70f0`, dist `8640c2a1`); gate 3199/0. "Empty array means absent" narrowed to the two fields `validateTask` writes only when non-empty (`tags`, `statusHistory`); any other field is a difference. A later duplicate id is dropped and listed, so the file is copied once. A failed `partial-restore` copy is `snapshotBackupFailed: {kind, path, error, fix} \| null` on `open` (present-and-null like `restoreFailed`) plus a `bounty:` stderr line; the reason names changed tasks and their fields.                                                                                                                                                                                                                                                                                                              | Report the failed copy inside `snapshotBackups` (breaks that list's rule that every entry is a real file); a `#` stderr line (those are notes that need nothing done; this one has a fix); keep duplicates (copies the file on every respawn).                       |
+| 7   | 2026-10-02 | Second no-stake verifier: all six claims **held**, no task lost in any scenario, every backup byte-identical. Doc nits fixed in SKILL.md (a duplicate keeps the first _valid_ entry; `snapshotBackupFailed.path` is the source; the empty-list wording). Filed, not fixed: [bounty-respawn-does-not-name-unsaved-dumps](../items/bounty-respawn-does-not-name-unsaved-dumps.md): after a failed save, the next respawn comes up from the older snapshot without naming the `unsaved` dump (no loss, predates the cycle, and the fix is a ruling on what a respawn restores). Bounty's acc surfaces are not re-recorded: no flag set or `choices` changed, only envelope fields and one refusal without `choices`. Cycle closed.                                                                                                                                                    | A third round for the dump (a feature with its own wire question; the appetite says cut); re-record the acc batch anyway (it would stamp a new build for identical records).                                                                                         |
 
 ## Outcome
 
-_Written at close._
+Closed 2026-10-02. Bounty's last open data-loss route is shut: no restore loses
+a task without saying so. Two rounds of fixes, each driven by a no-stake
+verifier on the shipped launcher under a scratch `HOME`; neither verifier could
+lose a task, and every backup they compared was byte-identical. Gate 3199 pass,
+0 fail.
+
+**Shipped.**
+
+- **A restore keeps what it cannot hold.** A board takes over its snapshot only
+  when it holds everything in it. A restore that drops a task (another bounty
+  version's status or `notes` shape, a missing id, a later duplicate id) or
+  changes one keeps the file byte-for-byte as a `partial-restore` backup before
+  its first write, once.
+- **`open` says what it dropped:** `restoreDropped: [{index, id, reason}]`,
+  present and `[]` on every boot, also on `/state` and the browser's `init`
+  frame. The backup's reason names the drops, the changed tasks and their
+  fields, and any board field. If the copy cannot be made, `open` says so in
+  `snapshotBackupFailed` and on stderr, and the file is not written over.
+- **The comparison is by data:** key order, and an empty `tags` or
+  `statusHistory`, are not differences, so an ordinary keyed respawn makes no
+  copy. Any other field, even one holding `[]`, is.
+- **Snapshot edges:** a read-only `snapshots/` under `--fresh --restore` is a
+  `conflict` (6) before teardown, not a stack; an unreadable `snapshots/` on
+  respawn is reported in `restoreFailed`, not a silent empty board; a racing
+  `open --restore`/`--title`/`--timeout` that attaches to another open's board
+  refuses (exit 2, `restoreSkipped`) instead of exiting 0. That last one also
+  resolves the 5.0.0 lock-loser nit.
+
+**For the release note:** new fields `restoreDropped` and
+`snapshotBackupFailed`, a new backup kind `partial-restore`. Two exit codes
+change where there was no answer before: `open --fresh --restore` with a
+read-only `snapshots/` (1, a stack → 6), and the lock-losing `open` given
+`--restore`, `--title` or `--timeout` (0 → 2).
+
+**Carried over:**
+[bounty-respawn-does-not-name-unsaved-dumps](../items/bounty-respawn-does-not-name-unsaved-dumps.md)
+(triage), and four findings appended to
+[spell-refusal-envelope-nits](../items/spell-refusal-envelope-nits.md) for the
+reply-shape cycle.
+
+**Learned.** The first round's loosened comparison let a real difference through
+(an unknown field holding `[]`); only the verifier, trying a shape the author
+did not, saw it. A rule that makes a check more lenient needs its own
+adversarial pass.
 
 ## Sessions

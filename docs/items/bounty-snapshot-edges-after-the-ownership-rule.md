@@ -6,7 +6,7 @@ description:
   reading the file; a --fresh --restore crash on a read-only snapshots folder;
   and a keyed respawn that can't see its snapshot comes up empty without a word.
 status: draft
-lifecycle: triage
+lifecycle: done
 id: 01a0ea35-9eca-73dc-8e2e-c625cd2d4213
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-09-28 }
@@ -48,3 +48,10 @@ size or larger keeps no copy (an explicit replace; see
 [rotation by content](bounty-snapshot-rotation-by-content-and-retention.md) for
 a by-content backup that would cover it). Another tool writing over a live
 board's `<id>.json` is outside bounty's control.
+
+## Done (2026-10-02)
+
+All four points fixed in
+[a restore keeps every task](../cycles/2026-10-a-restore-keeps-every-task.md):
+point 1 by the ownership rule and `restoreDropped` (`489d9341`, then `f50df0e3`,
+`0cb5713a`), points 2–4 in `4c5aa186`. Two no-stake verifiers held every claim.
