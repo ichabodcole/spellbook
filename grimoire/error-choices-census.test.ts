@@ -162,7 +162,11 @@ const EXPECTED: Record<
   // refusal is raised by the CLI with a hint (what to make writable, then the
   // `close` to run again), where it used to reach the generic daemon-refusal
   // funnel with its act only in the message. No `choices`.
-  bounty: { sites: 36, choices: 2, verbRoster: true, flagMap: true },
+  // 36 -> 37 (2026-10, a restore keeps every task): `open --fresh --restore
+  // <own id>` whose snapshot cannot be copied aside before the teardown is a
+  // `conflict`, where it used to throw EACCES as a raw stack at exit 1. No
+  // `choices`: the hint names the folder to make writable.
+  bounty: { sites: 37, choices: 2, verbRoster: true, flagMap: true },
   // 8/2 -> 7/1 (2026-09-26): digestify's flag rejection moved onto the kit
   // registry, as glamour's did. `--theme`'s `choices` is the one left here.
   digestify: { sites: 7, choices: 1, verbRoster: false, flagMap: true },

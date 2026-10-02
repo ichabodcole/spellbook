@@ -6721,3 +6721,454 @@ describe("a daemon never writes over a snapshot it has not read or kept", () => 
     expect(readdirSync(join(home, "snapshots"))).toEqual([`${id}.json`]);
   }, 30000);
 });
+
+// ── A restore keeps every task (cycle 2026-10-a-restore-keeps-every-task) ──
+// item/bounty-snapshot-edges-after-the-ownership-rule. A keyed respawn used to
+// own its snapshot after ANY restore of it, even one that dropped (or changed)
+// entries this build's validateTask cannot keep, so the first write erased
+// them. Ownership after a restore now needs the board to hold the file; a board
+// that does not keeps the file aside first, and `open` names what it dropped.
+type Dropped = { index: number; id: string | null; reason: string };
+
+/** Rewrite board `id`'s snapshot in `home` through `edit`. */
+function editSnapshot(
+  home: string,
+  id: string,
+  edit: (board: { title: string; tasks: Record<string, unknown>[] }) => void,
+): string {
+  const snap = join(home, "snapshots", `${id}.json`);
+  const board = JSON.parse(readFileSync(snap, "utf8")) as {
+    title: string;
+    tasks: Record<string, unknown>[];
+  };
+  edit(board);
+  writeFileSync(snap, JSON.stringify(board));
+  return snap;
+}
+
+describe("a restore keeps every task", () => {
+  test("point 1 — a dropped task survives restore → add → close, in a copy named on the envelope", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `rk1-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["good"], env);
+    // A status from another bounty version: this build's validateTask rejects it.
+    const snap = editSnapshot(home, id, (b) => {
+      b.tasks.push({ id: "t-alien", title: "alien", status: "blocked" });
+    });
+    const original = readFileSync(snap, "utf8");
+    try {
+      const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      expect(o.code).toBe(0);
+      const hs = JSON.parse(o.stdout) as {
+        restoreFailed: unknown;
+        restoreDropped: Dropped[];
+        snapshotBackups: NamedBackupT[];
+      };
+      expect(hs.restoreFailed).toBeNull();
+      expect(hs.restoreDropped).toHaveLength(1);
+      expect(hs.restoreDropped[0]?.index).toBe(1);
+      expect(hs.restoreDropped[0]?.id).toBe("t-alien");
+      expect(hs.restoreDropped[0]?.reason).toContain("status");
+      const kept = backupHolding(hs.snapshotBackups, "alien");
+      expect(kept?.kind).toBe("partial-restore");
+      expect(kept?.reason ?? "").toContain("t-alien");
+      expect(kept?.restore ?? "").toContain("--restore");
+      // Byte-for-byte: the copy is the file as it was.
+      expect(readFileSync(kept?.path as string, "utf8")).toBe(original);
+
+      // Add a card so the count does not shrink and the shrink guard is silent.
+      await runCli(["add", "new", "--session", id], { env });
+      const c = await runCli(["close", "--session", id], { env });
+      expect(c.code).toBe(0);
+      expect(titlesAt(snap)).toEqual(["good", "new"]);
+      const closed = (JSON.parse(c.stdout) as { snapshotBackups: NamedBackupT[] }).snapshotBackups;
+      expect(backupHolding(closed, "alien")?.path).toBe(kept?.path as string);
+      expect(titlesAt(kept?.path as string)).toContain("alien");
+
+      // One copy, not one per respawn: the file now holds what the board holds.
+      const r = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      const rs = JSON.parse(r.stdout) as { restoreDropped: Dropped[]; snapshotBackups: unknown[] };
+      expect(rs.restoreDropped).toEqual([]);
+      expect(rs.snapshotBackups).toEqual([]);
+      await runCli(["close", "--session", id], { env });
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("point 1 — restoreDropped rides open, /state and the browser init, and is present-and-[] on a clean boot", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `rk2-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["a"], env);
+    editSnapshot(home, id, (b) => {
+      b.tasks.push({ title: "no id", status: "todo" });
+    });
+    try {
+      const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      const hs = JSON.parse(o.stdout) as { port: number; restoreDropped: Dropped[] };
+      expect(hs.restoreDropped).toHaveLength(1);
+      expect(hs.restoreDropped[0]?.index).toBe(1);
+      expect(hs.restoreDropped[0]?.id).toBeNull();
+      expect(hs.restoreDropped[0]?.reason).toContain("id");
+      const st = (await (await fetch(`http://127.0.0.1:${hs.port}/state`)).json()) as {
+        restoreDropped: Dropped[];
+      };
+      expect(st.restoreDropped).toEqual(hs.restoreDropped);
+      const ws = new WebSocket(`ws://127.0.0.1:${hs.port}/ws`);
+      const init = await new Promise<Record<string, unknown>>((res, rej) => {
+        ws.onmessage = (e) => res(JSON.parse(String(e.data)) as Record<string, unknown>);
+        ws.onerror = () => rej(new Error("ws error"));
+      });
+      ws.close();
+      expect(init.type).toBe("init");
+      expect(init.restoreDropped).toEqual(hs.restoreDropped);
+      await runCli(["close", "--session", id], { env });
+
+      // A clean respawn: present and empty, never absent.
+      const r = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      const rs = JSON.parse(r.stdout) as Record<string, unknown>;
+      expect(Object.hasOwn(rs, "restoreDropped")).toBe(true);
+      expect(rs.restoreDropped).toEqual([]);
+      await runCli(["close", "--session", id], { env });
+      // An unkeyed new board too.
+      const u = await runCli(["open", "--no-open", "--timeout", "30"], { env });
+      const us = JSON.parse(u.stdout) as Record<string, unknown>;
+      expect(Object.hasOwn(us, "restoreDropped")).toBe(true);
+      expect(us.restoreDropped).toEqual([]);
+      await runCli(["close", "--session", us.session_id as string], { env });
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("point 1 — a task validateTask keeps but CHANGES costs one copy, not one per respawn", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `rk3-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["a"], env);
+    // A field from another bounty version: validateTask keeps the task, drops it.
+    editSnapshot(home, id, (b) => {
+      (b.tasks[0] as Record<string, unknown>).priority = "high";
+    });
+    try {
+      const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      const hs = JSON.parse(o.stdout) as {
+        restoreDropped: Dropped[];
+        snapshotBackups: NamedBackupT[];
+      };
+      expect(hs.restoreDropped).toEqual([]);
+      expect(hs.snapshotBackups.map((b) => b.kind)).toEqual(["partial-restore"]);
+      expect(readFileSync(hs.snapshotBackups[0]?.path as string, "utf8")).toContain("priority");
+      await runCli(["close", "--session", id], { env });
+      for (let i = 0; i < 2; i++) {
+        const r = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+          env,
+        });
+        expect((JSON.parse(r.stdout) as { snapshotBackups: unknown[] }).snapshotBackups).toEqual(
+          [],
+        );
+        await runCli(["close", "--session", id], { env });
+      }
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("point 1 — no cost: a board whose tasks were sized, claimed and tag-cleared respawns with no copy", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `rk4-${crypto.randomUUID().slice(0, 8)}`;
+    const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], { env });
+    const id = (JSON.parse(o.stdout) as { session_id: string }).session_id;
+    try {
+      await runCli(["add", "sized", "--id", "s1", "--size", "M", "--session", id], { env });
+      await runCli(["add", "tagged", "--id", "s2", "--tag", "x", "--session", id], { env });
+      // Fields added after creation land last in the stored object (key order),
+      // and an explicit tag clear stores `tags: []`, which a restore normalises.
+      await runCli(["update", "s1", "--owner", "bob", "--status", "doing", "--session", id], {
+        env,
+      });
+      await runCli(["update", "s2", "--tag", "", "--session", id], { env });
+      // Notes set then cleared, and more status transitions (round 2: the
+      // narrowed empty-array rule must still let an ordinary board through).
+      await runCli(["update", "s2", "--notes", "n", "--session", id], { env });
+      await runCli(["update", "s2", "--clear-notes", "--session", id], { env });
+      await runCli(["update", "s1", "--status", "done", "--session", id], { env });
+      await runCli(["update", "s2", "--status", "doing", "--session", id], { env });
+      await runCli(["close", "--session", id], { env });
+      const r = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      expect((JSON.parse(r.stdout) as { snapshotBackups: unknown[] }).snapshotBackups).toEqual([]);
+      const c = await runCli(["close", "--session", id], { env });
+      expect((JSON.parse(c.stdout) as { snapshotBackups: unknown[] }).snapshotBackups).toEqual([]);
+      expect(readdirSync(join(home, "snapshots"))).toEqual([`${id}.json`]);
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("round 2 — an unknown field whose value is [] is a difference: it costs the one copy, not a silent erase", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `rk8-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["a"], env);
+    const snap = editSnapshot(home, id, (b) => {
+      (b.tasks[0] as Record<string, unknown>).reviewers = [];
+    });
+    const original = readFileSync(snap, "utf8");
+    try {
+      const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      const hs = JSON.parse(o.stdout) as { snapshotBackups: NamedBackupT[] };
+      expect(hs.snapshotBackups.map((b) => b.kind)).toEqual(["partial-restore"]);
+      expect(hs.snapshotBackups[0]?.reason ?? "").toContain("reviewers");
+      expect(readFileSync(hs.snapshotBackups[0]?.path as string, "utf8")).toBe(original);
+      await runCli(["close", "--session", id], { env });
+      expect(readFileSync(snap, "utf8")).not.toContain("reviewers");
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("round 2 — duplicate ids: the first is kept, later ones are named in restoreDropped, and the file is copied once", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `rk9-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["first"], env);
+    let dupId = "";
+    const snap = editSnapshot(home, id, (b) => {
+      const t0 = b.tasks[0] as Record<string, unknown>;
+      dupId = t0.id as string;
+      // An identical copy, then a different entry under the same id.
+      b.tasks.push({ ...t0 }, { ...t0, title: "second" });
+    });
+    const original = readFileSync(snap, "utf8");
+    const copies = () =>
+      readdirSync(join(home, "snapshots")).filter((f) => f.includes(".partial-restore-"));
+    try {
+      const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      const hs = JSON.parse(o.stdout) as {
+        restoreDropped: Dropped[];
+        snapshotBackups: NamedBackupT[];
+      };
+      expect(hs.restoreDropped.map((d) => [d.index, d.id])).toEqual([
+        [1, dupId],
+        [2, dupId],
+      ]);
+      expect(hs.restoreDropped[0]?.reason).toBe("duplicate id (index 0 already has it)");
+      expect(hs.snapshotBackups.map((b) => b.kind)).toEqual(["partial-restore"]);
+      expect(await liveTitles(id, env)).toEqual(["first"]);
+      await runCli(["close", "--session", id], { env });
+      for (let i = 0; i < 2; i++) {
+        const r = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+          env,
+        });
+        const rs = JSON.parse(r.stdout) as {
+          restoreDropped: Dropped[];
+          snapshotBackups: unknown[];
+        };
+        expect(rs.restoreDropped).toEqual([]);
+        expect(rs.snapshotBackups).toEqual([]);
+        await runCli(["close", "--session", id], { env });
+      }
+      expect(copies()).toHaveLength(1);
+      expect(readFileSync(join(home, "snapshots", copies()[0] as string), "utf8")).toBe(original);
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("round 2 — a partial-restore copy that fails is named on open's envelope, with why and the fix", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `rk10-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["good"], env);
+    const snap = editSnapshot(home, id, (b) => {
+      b.tasks.push({ id: "t-bad", title: "bad", status: "blocked" });
+    });
+    const sn = join(home, "snapshots");
+    type Failed = { kind: string; path: string; error: string; fix: string } | null;
+    try {
+      chmodSync(sn, 0o555);
+      const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      expect(o.code).toBe(0);
+      const hs = JSON.parse(o.stdout) as {
+        restoreDropped: Dropped[];
+        snapshotBackups: unknown[];
+        snapshotBackupFailed: Failed;
+      };
+      expect(hs.restoreDropped.map((d) => d.id)).toEqual(["t-bad"]);
+      expect(hs.snapshotBackups).toEqual([]);
+      expect(hs.snapshotBackupFailed?.kind).toBe("partial-restore");
+      expect(hs.snapshotBackupFailed?.path).toBe(snap);
+      expect(hs.snapshotBackupFailed?.error ?? "").toContain("EACCES");
+      expect(hs.snapshotBackupFailed?.fix ?? "").toContain(`make the folder ${sn} writable`);
+      expect(o.stderr).toContain("could not copy");
+      expect(o.stderr).toContain(snap);
+      chmodSync(sn, 0o755);
+      const c = await runCli(["close", "--session", id], { env });
+      expect(c.code).toBe(0);
+      const r = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      const rs = JSON.parse(r.stdout) as Record<string, unknown>;
+      expect(Object.hasOwn(rs, "snapshotBackupFailed")).toBe(true);
+      expect(rs.snapshotBackupFailed).toBeNull();
+      await runCli(["close", "--session", id], { env });
+    } finally {
+      try {
+        chmodSync(sn, 0o755);
+      } catch {}
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("round 2 — the partial-restore reason names each changed task and its fields, and a board field", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `rk11-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["a", "b"], env);
+    let changedId = "";
+    editSnapshot(home, id, (b) => {
+      const t0 = b.tasks[0] as Record<string, unknown>;
+      changedId = t0.id as string;
+      t0.priority = "high";
+      t0.size = "XXL";
+      (b as Record<string, unknown>).owner = "someone";
+    });
+    try {
+      const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      const hs = JSON.parse(o.stdout) as { snapshotBackups: NamedBackupT[] };
+      const reason = hs.snapshotBackups[0]?.reason ?? "";
+      expect(reason).toContain(`changed: ${changedId} (priority, size)`);
+      expect(reason).toContain("a board field (owner)");
+      expect(reason).not.toContain("changed an entry it read");
+      await runCli(["close", "--session", id], { env });
+    } finally {
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("point 2 — --fresh --restore <own id> with a read-only snapshots/ is a conflict envelope, and the board survives", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `rk5-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["p1"], env);
+    const sn = join(home, "snapshots");
+    try {
+      await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], { env });
+      chmodSync(sn, 0o555);
+      const f = await runCli(
+        ["open", "--session-key", key, "--fresh", "--restore", id, "--no-open", "--timeout", "30"],
+        { env },
+      );
+      expect(f.code).toBe(6);
+      expect(f.stdout).toBe("");
+      const err = onlyEnvelope(f.stderr);
+      expect(err.error.kind).toBe("conflict");
+      expect(err.error.message).toContain("copied aside");
+      expect(await liveTitles(id, env)).toEqual(["p1"]);
+      chmodSync(sn, 0o755);
+      expect((await runCli(["close", "--session", id], { env })).code).toBe(0);
+      expect(titlesAt(join(sn, `${id}.json`))).toEqual(["p1"]);
+    } finally {
+      try {
+        chmodSync(sn, 0o755);
+      } catch {}
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("point 3 — a keyed respawn with snapshots/ at mode 000 says its restore failed, and never blames --fresh", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `rk6-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["p1-precious"], env);
+    const sn = join(home, "snapshots");
+    const snap = join(sn, `${id}.json`);
+    try {
+      chmodSync(sn, 0o000);
+      const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      expect(o.code).toBe(0);
+      const hs = JSON.parse(o.stdout) as { restoreFailed: { path: string; reason: string } | null };
+      expect(hs.restoreFailed).not.toBeNull();
+      expect(hs.restoreFailed?.path).toBe(snap);
+      expect(hs.restoreFailed?.reason ?? "").toContain("EACCES");
+      await runCli(["add", "n1", "--session", id], { env });
+      chmodSync(sn, 0o755);
+      const c = await runCli(["close", "--session", id], { env });
+      expect(c.code).toBe(0);
+      const named = (JSON.parse(c.stdout) as { snapshotBackups: NamedBackupT[] }).snapshotBackups;
+      const kept = backupHolding(named, "p1-precious");
+      expect(kept?.kind).toBe("unread");
+      expect(kept?.reason ?? "").not.toContain("--fresh");
+      expect(kept?.reason ?? "").toContain("restore failed");
+    } finally {
+      try {
+        chmodSync(sn, 0o755);
+      } catch {}
+      killBoard(id);
+    }
+  }, 60000);
+
+  test("point 4 — an open that loses the race does not report a restore it did not do", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const keyP = `rk7p-${crypto.randomUUID().slice(0, 8)}`;
+    const keyQ = `rk7q-${crypto.randomUUID().slice(0, 8)}`;
+    const pid = await seedClosed(keyP, ["p1"], env);
+    const qid = await seedClosed(keyQ, ["q1"], env);
+    const pointer = join(TEST_TMPDIR, `bounty-${pid}.json`);
+    try {
+      // P is live (another open's board). Hide its pointer so this open's entry
+      // check sees no live board and spawns its own daemon, which then loses the
+      // lock to P's daemon; put the pointer back so this open finds P's board.
+      await runCli(["open", "--session-key", keyP, "--no-open", "--timeout", "30"], { env });
+      const saved = readFileSync(pointer, "utf8");
+      rmSync(pointer);
+      const racing = runCli(
+        ["open", "--session-key", keyP, "--fresh", "--restore", qid, "--no-open"],
+        { env },
+      );
+      await Bun.sleep(1200);
+      writeFileSync(pointer, saved);
+      const r = await racing;
+      expect(r.code).toBe(2);
+      const hs = JSON.parse(r.stdout) as {
+        session_id: string;
+        restoreSkipped: { requested: string[]; reason: string } | null;
+      };
+      expect(hs.session_id).toBe(pid);
+      expect(hs.restoreSkipped?.requested).toEqual(["restore"]);
+      expect(hs.restoreSkipped?.reason ?? "").toContain("another open");
+      expect(hs.restoreSkipped?.reason ?? "").toContain("configures a daemon at spawn time");
+      expect(await liveTitles(pid, env)).toEqual(["p1"]);
+      await runCli(["close", "--session", pid], { env });
+    } finally {
+      killBoard(pid);
+      killBoard(qid);
+    }
+  }, 60000);
+});
