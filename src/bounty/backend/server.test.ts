@@ -6994,6 +6994,53 @@ describe("a restore keeps every task", () => {
     }
   }, 60000);
 
+  test("round 2 — a partial-restore copy that fails is named on open's envelope, with why and the fix", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `rk10-${crypto.randomUUID().slice(0, 8)}`;
+    const id = await seedClosed(key, ["good"], env);
+    const snap = editSnapshot(home, id, (b) => {
+      b.tasks.push({ id: "t-bad", title: "bad", status: "blocked" });
+    });
+    const sn = join(home, "snapshots");
+    type Failed = { kind: string; path: string; error: string; fix: string } | null;
+    try {
+      chmodSync(sn, 0o555);
+      const o = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      expect(o.code).toBe(0);
+      const hs = JSON.parse(o.stdout) as {
+        restoreDropped: Dropped[];
+        snapshotBackups: unknown[];
+        snapshotBackupFailed: Failed;
+      };
+      expect(hs.restoreDropped.map((d) => d.id)).toEqual(["t-bad"]);
+      expect(hs.snapshotBackups).toEqual([]);
+      expect(hs.snapshotBackupFailed?.kind).toBe("partial-restore");
+      expect(hs.snapshotBackupFailed?.path).toBe(snap);
+      expect(hs.snapshotBackupFailed?.error ?? "").toContain("EACCES");
+      expect(hs.snapshotBackupFailed?.fix ?? "").toContain(`make the folder ${sn} writable`);
+      expect(o.stderr).toContain("could not copy");
+      expect(o.stderr).toContain(snap);
+      chmodSync(sn, 0o755);
+      const c = await runCli(["close", "--session", id], { env });
+      expect(c.code).toBe(0);
+      const r = await runCli(["open", "--session-key", key, "--no-open", "--timeout", "30"], {
+        env,
+      });
+      const rs = JSON.parse(r.stdout) as Record<string, unknown>;
+      expect(Object.hasOwn(rs, "snapshotBackupFailed")).toBe(true);
+      expect(rs.snapshotBackupFailed).toBeNull();
+      await runCli(["close", "--session", id], { env });
+    } finally {
+      try {
+        chmodSync(sn, 0o755);
+      } catch {}
+      killBoard(id);
+    }
+  }, 60000);
+
   test("round 2 — the partial-restore reason names each changed task and its fields, and a board field", async () => {
     const home = uniqHome();
     const env = { BOUNTY_HOME: home };

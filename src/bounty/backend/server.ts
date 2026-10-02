@@ -1075,6 +1075,19 @@ async function main(argv: string[]): Promise<number> {
   // already the file's. It used to be nowhere: a dropped task restored as
   // `restoreFailed: null`, and the board's first write erased it from its file.
   let restoreDropped: RestoreDrop[] = [];
+  // A copy this boot owed and could not make: `kind` is the backup it would
+  // have been, `path` the file left uncopied (and so not written over), `error`
+  // why, and `fix` what to make writable (snapshotFix, as on
+  // SnapshotSaveFailed). PRESENT AND NULL on every boot's discovery payload,
+  // like `restoreFailed`; it is an `open` fact, on the act that owed the copy.
+  // Only the `partial-restore` copy reports here today: it is the one whose
+  // absence `open` otherwise reads as "dropped and not kept".
+  let snapshotBackupFailed: {
+    kind: "partial-restore";
+    path: string;
+    error: string;
+    fix: string;
+  } | null = null;
   // (b) A board restored from a file OTHER than its own snapshot (a
   // `.pre-fresh-` copy, a `.bak`, another board's) is flushed to its own
   // snapshot on the first debounce tick, not at its first mutation. Until then
@@ -1631,8 +1644,22 @@ async function main(argv: string[]): Promise<number> {
             dropped: restoreDropped.length,
           });
           process.stderr.write(`bounty: ${reason} — copied to ${backup}\n`);
-        } catch {
-          /* not kept: saveSnapshot copies it before the first write, or dumps */
+        } catch (e) {
+          // ⛔ AND IF IT FAILS, `open` SAYS SO (round 2). It used to be silent:
+          // exit 0, `restoreDropped` naming the entry, `snapshotBackups: []`,
+          // so the caller read "dropped, nothing kept" when the truth is "the
+          // file is untouched and will not be written over until a copy is
+          // made" (saveSnapshot's rule copy is tried before every write; until
+          // it works the board goes to an `unsaved` dump and `close` exits 6).
+          const error = e instanceof Error ? e.message : String(e);
+          snapshotBackupFailed = {
+            kind: "partial-restore",
+            path: own,
+            error,
+            fix: snapshotFix(backup),
+          };
+          logDaemon("snapshotBackupFailed", { kind: "partial-restore", path: own, error });
+          process.stderr.write(`bounty: could not copy ${own} aside (${error}); ${unownedWhy}\n`);
         }
       }
     }
@@ -2513,6 +2540,8 @@ async function main(argv: string[]): Promise<number> {
     // (d) Any backup made at BOOT, before this file was written, for the same
     // reason: `open` prints this payload, and `open` is the act that made it.
     snapshotBackups: backupsThisSession,
+    // A boot copy that could not be made, beside the list it is missing from.
+    snapshotBackupFailed,
   });
   // ⚠ ATOMIC, because readSession now treats unparseable content as corruption
   // rather than absence. A bare writeFileSync is not atomic: a CLI reading while

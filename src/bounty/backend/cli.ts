@@ -666,7 +666,14 @@ type CmdResult = {
  *  board dumped to a file of its own when its snapshot could not be written
  *  (`unsaved`). */
 type BackupRecord = {
-  kind: "shrink" | "unreadable" | "pre-fresh" | "pre-restore" | "unread" | "unsaved";
+  kind:
+    | "shrink"
+    | "unreadable"
+    | "pre-fresh"
+    | "pre-restore"
+    | "partial-restore"
+    | "unread"
+    | "unsaved";
   path: string;
   taskCount: number | null;
   reason: string;
@@ -676,6 +683,14 @@ type BackupRecord = {
 };
 
 type NamedBackup = BackupRecord & { restore: string | null };
+
+/** A boot copy the daemon owed and could not make (server.ts, same name). */
+type SnapshotBackupFailed = {
+  kind: "partial-restore";
+  path: string;
+  error: string;
+  fix: string;
+} | null;
 
 function keyFromFlags(flags: Record<string, string | boolean>): string | undefined {
   return typeof flags["session-key"] === "string"
@@ -1082,6 +1097,7 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
             reason: `a live board already exists for this key, so open attached to it instead of spawning a daemon; ${named} configure a daemon at spawn time and the running board was left unchanged`,
           },
           snapshotBackups: [],
+          snapshotBackupFailed: null,
         });
         process.stderr.write(
           `bounty: refusing to attach — ${named} cannot take effect on a board that is already running (key "${key}", board ${forcedId})\n`,
@@ -1098,8 +1114,9 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
         return 2;
       }
       // An attach backs nothing up. The discovery file's own list is the
-      // running daemon's boot backups, made by an earlier act and reported then.
-      printJson({ ...live, restoreSkipped: null, snapshotBackups: [] });
+      // running daemon's boot backups, made by an earlier act and reported then
+      // (and so is a boot copy that failed, `snapshotBackupFailed`).
+      printJson({ ...live, restoreSkipped: null, snapshotBackups: [], snapshotBackupFailed: null });
       process.stderr.write(`# attached to existing board ${forcedId} (key "${key}")\n`);
       if (flags.pin) writePin(forcedId);
       return 0;
@@ -1265,6 +1282,7 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
                 s.session_id,
                 key,
               ),
+              snapshotBackupFailed: null,
             });
             process.stderr.write(
               `bounty: refusing to report success — another open started board ${forcedId} first, so ${named} did not take effect (key "${key}")\n`,
@@ -1278,8 +1296,25 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
             s.session_id,
             key,
           );
-          printJson({ ...s, restoreSkipped: null, snapshotBackups });
+          // A boot copy the daemon owed and could not make (server.ts
+          // `snapshotBackupFailed`). Present-and-null; a daemon build that
+          // predates it reads as null rather than absent.
+          const backupFailed =
+            (s as Session & { snapshotBackupFailed?: SnapshotBackupFailed }).snapshotBackupFailed ??
+            null;
+          printJson({
+            ...s,
+            restoreSkipped: null,
+            snapshotBackups,
+            snapshotBackupFailed: backupFailed,
+          });
           announceBackups(snapshotBackups);
+          // `bounty:`, not `#`: a `#` line is a note that needs nothing done
+          // (attached, scoped, pinned); this one has an act, like a backup's.
+          if (backupFailed)
+            process.stderr.write(
+              `bounty: could not copy ${backupFailed.path} aside before the board writes over it (${backupFailed.error}); it is not written over until a copy can be made: ${backupFailed.fix}\n`,
+            );
           if (lostRace)
             process.stderr.write(
               `# another open started board ${forcedId} first; attached to it (key "${key}")\n`,
