@@ -418,6 +418,7 @@ export class Session {
 
   private writeActive(d: DocRecord, text: string): void {
     this.writeOwned(this.versionPath(d, d.active), text);
+    this.contentChanged(this.versionPath(d, d.active), text);
     this.activeHash.set(d.slug, contentHash(text));
     this.lastActiveText.set(d.slug, text);
   }
@@ -429,11 +430,18 @@ export class Session {
 
   /** Keep an outside write to the active version as a NEW agent version. */
   private preserveOutside(d: DocRecord, text: string): PreservedVersion {
+    const path = this.versionPath(d, d.active);
+    // #117 — true only while BOTH hold: the human activated this version as an
+    // unwritten copy, AND it is one still (nobody has changed its content
+    // since). A human who typed in it had written it (second verifier,
+    // 2026-10-01: activate, type, wait, agent writes → was told "before the
+    // agent had written it"). The content rule decides, not the activation.
+    const activatedBeforeWritten =
+      this.activatedUnwritten.get(d.slug) === d.active && this.unwrittenCopies.has(path);
     // Someone wrote the active version: whatever it holds next, it has been written.
-    this.unwrittenCopies.delete(this.versionPath(d, d.active));
+    this.unwrittenCopies.delete(path);
     // Said once: the first outside write after the race is the agent filling
     // the copy in; any later one is the ordinary case.
-    const activatedBeforeWritten = this.activatedUnwritten.get(d.slug) === d.active;
     this.activatedUnwritten.delete(d.slug);
     const n = this.takeVersion(d);
     const rec: Omit<Version, "path"> = {

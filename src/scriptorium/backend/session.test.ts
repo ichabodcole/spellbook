@@ -350,6 +350,33 @@ describe("a version born holding its text — and the race it removes (#117)", (
     expect(s.onFileEvent(version.path)).toMatchObject({ activatedBeforeWritten: false });
   });
 
+  test("activated, then TYPED IN, then the agent writes — not the race: the human had written it", () => {
+    // Second verifier's sequence: version-new → v2; the human activates v2,
+    // types in the editor and waits; the agent writes v2's path. The human
+    // wrote v2, so "you activated v2 before the agent had written it" is false.
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    const { version } = s.newVersion({ doc: slug, author: "agent" });
+    s.activate({ doc: slug, version: version.n, by: "human" });
+    s.edit(slug, version.n, "# Solo, the human's\n");
+    writeFileSync(version.path, "the agent's draft\n");
+    expect(s.onFileEvent(version.path)).toMatchObject({
+      kind: "active.outside",
+      activatedBeforeWritten: false,
+    });
+  });
+
+  test("activated, typed in, then the agent writes before the watcher fires — not the race either", () => {
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    const { version } = s.newVersion({ doc: slug, author: "agent" });
+    s.activate({ doc: slug, version: version.n, by: "human" });
+    s.edit(slug, version.n, "# Solo, the human's\n");
+    writeFileSync(version.path, "the agent's draft\n");
+    const r = s.edit(slug, version.n, "# Solo, the human's, more\n");
+    expect(r.preserved).toMatchObject({ activatedBeforeWritten: false });
+  });
+
   test("the race through check-before-write (the human types before the watcher fires) carries it too", () => {
     const s = inContext();
     const { slug } = s.openPath(join(docs, "solo.md"));
