@@ -13,6 +13,8 @@ yours to edit. The scaffold records its hash, so a migration updates it only
 while you have not touched it. Frontmatter is the contract the lint enforces;
 below it is yours. See docs/SCHEMA.md → "Who owns which file".
 
+ONCE WRITTEN: delete this whole comment block from the document.
+
 USAGE: a write-up is the answer a research item owns. File the question first
 (`pdocs new item <slug> --kind research`), then
 `bun scripts/pdocs/cli.ts new write-up --owner item/<slug>` writes this as

@@ -120,6 +120,10 @@ Create interaction design documentation for:
 
 A ready-to-use template is available: **[TEMPLATE.md](./TEMPLATE.md)**
 
+Create a page from it with `bun scripts/pdocs/cli.ts new interaction <feature>`
+(it writes `<feature>-flow.md`), not by copying it: the CLI fills the
+frontmatter and writes the catalog line.
+
 The template is optimized for documenting **user flows and interaction
 patterns** within specific features.
 

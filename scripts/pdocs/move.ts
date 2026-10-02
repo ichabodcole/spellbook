@@ -10,6 +10,12 @@
 //
 // Nothing is written until every new text has been computed and the
 // destination is known to be free, so a refusal leaves the tree as it was.
+//
+// A respelled link is longer or shorter than it was, so the paragraph, list
+// item or table around it no longer wraps or pads the way Prettier prints it.
+// Every file whose text Prettier already left as it was goes back through the
+// project's own Prettier after the rewrite, so it stays that way; a file that
+// was not Prettier's to begin with keeps every byte but its links.
 
 import {
   existsSync,
@@ -24,6 +30,7 @@ import { trackedMarkdown } from "./docs-lint/unlinted-links.ts";
 import { ConflictError } from "./envelope.ts";
 import { movedTo, rewriteFromField, rewriteLinks } from "./links-rewrite.ts";
 import { type Ctx, excluder, gitEnv } from "./lint/rules.ts";
+import { projectPrettier } from "./prettier.ts";
 
 export interface MoveResult {
   /** Repo-relative, before and after. */
@@ -57,15 +64,17 @@ export function moveAndRewrite(ctx: Ctx, from: string, to: string): MoveResult {
     throw new ConflictError(`${rel(to)} already exists — pdocs will not move ${rel(from)} over it.`);
 
   const moveMap = new Map([[from, to]]);
-  const edits: Array<{ path: string; text: string; changed: number }> = [];
+  const edits: Array<{ from: string; was: string; path: string; text: string; changed: number }> = [];
   for (const file of linkingFiles(ctx)) {
     const target = movedTo(file, moveMap);
-    const r = rewriteLinks(readFileSync(file, "utf8"), file, target, moveMap, existsSync);
+    const was = readFileSync(file, "utf8");
+    const r = rewriteLinks(was, file, target, moveMap, existsSync);
     // A path-form `from:` (D6) is a link too, written in frontmatter.
     const f = rewriteFromField(r.text, ctx.docsRoot, moveMap);
     const changed = r.changed + f.changed;
-    if (changed > 0) edits.push({ path: target, text: f.text, changed });
+    if (changed > 0) edits.push({ from: file, was, path: target, text: f.text, changed });
   }
+  keepPrettierStable(ctx, edits);
 
   mkdirSync(dirname(to), { recursive: true });
   renameSync(from, to);
@@ -77,4 +86,28 @@ export function moveAndRewrite(ctx: Ctx, from: string, to: string): MoveResult {
     rewritten: edits.map((e) => rel(e.path)).sort(),
     links: edits.reduce((n, e) => n + e.changed, 0),
   };
+}
+
+/**
+ * Each edit whose file the project's Prettier already left unchanged, put back
+ * in Prettier's shape after its links were respelled. One Prettier run over
+ * both texts of every edit: before the move at the old path, after it at the
+ * new one. With no Prettier in the project, nothing changes.
+ */
+function keepPrettierStable(
+  ctx: Ctx,
+  edits: Array<{ from: string; was: string; path: string; text: string }>
+): void {
+  const out = projectPrettier(
+    ctx.repoRoot,
+    edits.flatMap((e) => [
+      { path: e.from, text: e.was },
+      { path: e.path, text: e.text },
+    ])
+  );
+  edits.forEach((e, i) => {
+    const before = out[2 * i];
+    const after = out[2 * i + 1];
+    if (before === e.was && typeof after === "string") e.text = after;
+  });
 }

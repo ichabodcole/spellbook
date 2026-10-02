@@ -20,6 +20,7 @@ import { ExitCode, UsageError, printEnvelope } from "../envelope.ts";
 import { type Page, collectPages, pageSlug } from "../pages.ts";
 import { KINDS, buildRegistry, retiredWordReason } from "../lint/registry.ts";
 import { DEFAULT_CONFIG } from "../docs-lint/config.ts";
+import { type WorkEntity, ambiguousCycle, collectWork, cyclesNamed } from "../work.ts";
 
 /** A match, minus the edges. Whoever wants those asks `pdocs graph` or
  *  `pdocs backlinks` — `find` answers "which documents", not "what cites
@@ -200,7 +201,7 @@ export const find: Command = {
   summary: "Query the tree by type, lifecycle, status, tag, date, or work field.",
   usage:
     "pdocs find [--type <t>] [--lifecycle <l>] [--status <s>] [--tag <t>] [--since <YYYY-MM-DD>] " +
-    "[--kind <k>] [--parent feature/<slug>] [--cycle <slug>] [--scope <name>] [--id <prefix>]",
+    "[--kind <k>] [--parent feature/<slug>] [--cycle <filename>] [--scope <name>] [--id <prefix>]",
   options: [
     { flag: "--type", metavar: "<type>", summary: "Documents of this type." },
     {
@@ -225,7 +226,7 @@ export const find: Command = {
     },
     { flag: "--kind", metavar: "<kind>", summary: "Work items of this kind: task | bug | chore | research." },
     { flag: "--parent", metavar: "feature/<slug>", summary: "Work items whose parent is this feature." },
-    { flag: "--cycle", metavar: "<slug>", summary: "Work items in this cycle." },
+    { flag: "--cycle", metavar: "<filename>", summary: "Work items in this cycle (its filename, `.md` optional)." },
     { flag: "--scope", metavar: "<name>", summary: "Features and items in this scope." },
     { flag: "--id", metavar: "<id-or-prefix>", summary: "The work item whose id starts with this." },
   ],
@@ -235,13 +236,20 @@ export const find: Command = {
     // declared `runbook` in `.project-docs.json` must be able to filter on it.
     // Validating against the built-ins would reject exactly the types
     // `lint.types` exists to allow.
-    const data = findData(
-      collectPages(ctx),
-      parseFilters(
-        flags,
-        buildRegistry(ctx.config).map((r) => r.type)
-      )
+    const filters = parseFilters(
+      flags,
+      buildRegistry(ctx.config).map((r) => r.type)
     );
+    // `--cycle` takes a cycle's filename, `.md` optional, and filters on its
+    // slug — the filename without `.md`, which is what `cycle:` stores. A name
+    // that matches two cycle files is refused as `view cycle` refuses it; one
+    // that matches none filters as given, and finds nothing.
+    if (filters.cycle !== undefined) {
+      const found = cyclesNamed(collectWork(ctx), filters.cycle);
+      if (found.length > 1) throw ambiguousCycle(filters.cycle, found, filters.cycle);
+      if (found.length === 1) filters.cycle = (found[0] as WorkEntity).slug;
+    }
+    const data = findData(collectPages(ctx), filters);
 
     if (format === "json") printEnvelope("find", data);
     else renderText(data);

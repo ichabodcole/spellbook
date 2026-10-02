@@ -74,12 +74,17 @@ import {
   type WorkEntity,
   type WorkModel,
   collectWork,
+  CYCLE_FLAG_NOTE,
+  cyclesNamed,
   entitiesBySlug,
   refFor,
   resolveRef,
   modelIds,
   shortId,
+  entityOf,
 } from "../work.ts";
+import { type Advisory, adviseReview, advisoryLines } from "../advisories.ts";
+import { reviewGuard } from "../review-guard.ts";
 import { promoteItem } from "./promote.ts";
 import { movedTo } from "../links-rewrite.ts";
 
@@ -97,6 +102,12 @@ export interface NewData {
   /** A new work item's full id; `null` for every other type (D25: JSON
    *  always carries the full id, text prints its shortest unique prefix, 12+ characters — D25). */
   id: string | null;
+  /**
+   * The `work-item-review` advisory when a new item is filed into started work
+   * or into the active cycle without `--status stable`; `bad-config` when
+   * `checks.workItemReview` is invalid. Empty otherwise.
+   */
+  advisories: Advisory[];
 }
 
 // ---------------------------------------------------------------------------------------
@@ -730,6 +741,13 @@ export function appendRelated(body: string, bullet: string): string {
 // The catalog
 // ---------------------------------------------------------------------------------------
 
+/**
+ * A word Prettier never puts at the start of a line, because there it would
+ * open a block: a list marker (`-`, `+`, `*`, `1.`, `1)`), a heading (`#`) or
+ * a blockquote (`>…`). Prettier's own test, from its Markdown printer.
+ */
+const NO_BREAK_BEFORE = /^>|^(?:[*+-]|#{1,6}|\d+[).])$/;
+
 /** A catalog entry, wrapped the way Prettier (`proseWrap: always`, width 80)
  *  wraps one: the link is a single unbreakable token, and the dash and the
  *  description flow after it. */
@@ -738,15 +756,23 @@ export function catalogEntry(
   target: string,
   description: string
 ): string[] {
-  const lines: string[] = [];
   // The dash is a word of its own, as it is to Prettier: when it does not fit
   // after the link it opens the next line rather than overrunning this one.
-  let line = `- [${title}](${target})`;
+  // A word in NO_BREAK_BEFORE is bound to the word before it, and the two move
+  // to the next line together — a continuation line opening `- ` would be read
+  // as a nested list, and Prettier would rewrite the entry.
+  const units: string[] = [];
   for (const word of ["—", ...description.split(/\s+/).filter(Boolean)]) {
-    if (line.length + 1 + word.length <= PRINT_WIDTH) line += ` ${word}`;
+    if (units.length && NO_BREAK_BEFORE.test(word)) units[units.length - 1] += ` ${word}`;
+    else units.push(word);
+  }
+  const lines: string[] = [];
+  let line = `- [${title}](${target})`;
+  for (const unit of units) {
+    if (line.length + 1 + unit.length <= PRINT_WIDTH) line += ` ${unit}`;
     else {
       lines.push(line);
-      line = `  ${word}`;
+      line = `  ${unit}`;
     }
   }
   lines.push(line);
@@ -940,14 +966,15 @@ export const newCommand: Command = {
       metavar: "<path-or-ref>",
       summary:
         "What this came out of, linked from its Related section: a document's path, or — on an " +
-        "item — a reference (an item id, item/<slug>, feature/<slug>, cycle/<slug>), also written to `from:`.",
+        "item — a reference (an item id, item/<slug>, feature/<slug>, cycle/<filename>), also written to `from:`.",
     },
     ...EXTRA_FLAGS.map((key) => ({
       flag: flagFor(key),
-      metavar: "<value>",
+      metavar: key === "cycle" ? "<filename>" : "<value>",
       summary:
         `\`${key}:\` — only on a type that declares it.` +
-        (key === "kind" ? ` Required for an \`item\`: ${KINDS.join(" | ")}.` : ""),
+        (key === "kind" ? ` Required for an \`item\`: ${KINDS.join(" | ")}.` : "") +
+        (key === "cycle" ? ` ${CYCLE_FLAG_NOTE}` : ""),
     })),
   ],
 
@@ -965,7 +992,12 @@ export const newCommand: Command = {
     const placement = resolveDirectory(ctx, row, nameArg, flagValue(flags, "--owner"), model);
     const { dir } = placement;
     // A row that names its scope takes its name as the folder, not the slug.
-    const slug = namesScope ? undefined : nameArg;
+    // A cycle is named by its filename, so `2026-10-x.md` means `2026-10-x`.
+    const slug = namesScope
+      ? undefined
+      : row.type === "cycle" && nameArg !== undefined
+        ? nameArg.replace(/\.md$/i, "")
+        : nameArg;
     const scopeName = namesScope ? slugify(nameArg as string) : undefined;
 
     const date = today();
@@ -981,16 +1013,27 @@ export const newCommand: Command = {
     if (existsSync(target))
       throw new ConflictError(`${rel} already exists — pdocs will not overwrite it.`);
 
-    // An entity's slug names it (`item/<slug>`, `feature/<slug>`), live or
-    // archived, file or folder — so a slug already held anywhere is taken,
-    // even where the exact target path is free (review 3).
-    if ([FEATURES_FOLDER, ITEMS_FOLDER].some((o) => ENTITY_FILE[o]!.type === row.type)) {
+    // An entity's slug names it (`item/<slug>`, `feature/<slug>`,
+    // `cycle/<slug>`), live or archived, file or folder — so a slug already
+    // held anywhere is taken, even where the exact target path is free
+    // (review 3).
+    if (
+      row.type === "cycle" ||
+      [FEATURES_FOLDER, ITEMS_FOLDER].some((o) => ENTITY_FILE[o]!.type === row.type)
+    ) {
       const wanted = scopeName ?? basename(target, ".md");
-      const holders = entitiesBySlug(model(), row.type as "feature" | "item").get(wanted) ?? [];
+      // A cycle name is read with or without `.md`, so `x` is also taken when
+      // `x.md.md` exists: `x.md` would then name both.
+      const holders =
+        row.type === "cycle"
+          ? [...new Set([...cyclesNamed(model(), wanted), ...cyclesNamed(model(), `${wanted}.md`)])]
+          : (entitiesBySlug(model(), row.type as "feature" | "item").get(wanted) ?? []);
       if (holders.length)
         throw new ConflictError(
           `\`${row.type}/${wanted}\` is taken by ${holders.map((h) => h.path).join(", ")} — ` +
-            `a slug names one ${row.type}, archived or not. Choose another name.`
+            (row.type === "cycle"
+              ? "a cycle's filename names one cycle, archived or not, with or without `.md`. Choose another name."
+              : `a slug names one ${row.type}, archived or not. Choose another name.`)
         );
     }
 
@@ -1139,6 +1182,21 @@ export const newCommand: Command = {
       resolved = parseFrontmatter(frontmatter);
     }
 
+    // ---- the review rule: an item filed into started work or the active cycle ----------
+    // Evaluated on the item as it would be written, before the first write
+    // (a promotion, below). Strict refuses one that is not `stable`.
+    let advisories: Advisory[] = [];
+    if (row.type === "item") {
+      // The item as it would be written. A new item changes no cycle, so the
+      // model already read answers which cycle is active; and it did not
+      // exist before, so any finding on it is introduced.
+      const proposed = entityOf(ctx, { rel, type: row.type, fields: resolved, misplaced: false });
+      advisories = adviseReview(
+        ctx,
+        reviewGuard(ctx, model(), model(), proposed ? [proposed] : [], "new")
+      );
+    }
+
     // ---- the body ----------------------------------------------------------------------
     let out = body;
     // `--title` fills the H1 too: the template's is a placeholder (`# [Title]`)
@@ -1224,7 +1282,7 @@ export const newCommand: Command = {
         if (!created.includes(p)) created.push(p);
 
     const id = fills.get("id") ?? null;
-    const data: NewData = { path: rel, type: row.type, created, promoted, id };
+    const data: NewData = { path: rel, type: row.type, created, promoted, id, advisories };
     if (format === "json") printEnvelope("new", data);
     else {
       console.log(rel);
@@ -1240,6 +1298,7 @@ export const newCommand: Command = {
       console.log(
         `  next: fill its placeholders, then run the project's formatter before committing, e.g. npx prettier --write ${created.join(" ")}`
       );
+      for (const l of advisoryLines(advisories)) console.log(l);
     }
     return ExitCode.Success;
   },

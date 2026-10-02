@@ -13,6 +13,8 @@ yours to edit. The scaffold records its hash, so a migration updates it only
 while you have not touched it. Frontmatter is the contract the lint enforces;
 below it is yours. See docs/SCHEMA.md → "Who owns which file".
 
+ONCE WRITTEN: delete this whole comment block from the document.
+
 USAGE: `bun scripts/pdocs/cli.ts new report <topic> --owner item/<slug>` (or
 `feature/<slug>`) writes this as reports/YYYY-MM-DD-<topic>-report.md in the
 owner's folder and links the owner. A report is evidence: it belongs to the
