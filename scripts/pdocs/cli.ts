@@ -11,7 +11,7 @@
 //   bun scripts/pdocs/cli.ts new       create a document of a declared type
 //   bun scripts/pdocs/cli.ts set       change a work entity's fields
 //   bun scripts/pdocs/cli.ts promote   turn a single-file item into a folder
-//   bun scripts/pdocs/cli.ts archive   move a finished feature or item to _archive/
+//   bun scripts/pdocs/cli.ts archive   move a finished feature, item or cycle to _archive/
 //   bun scripts/pdocs/cli.ts schema    this CLI's own surface, as a declaration
 //
 // Hand-rolled dispatch, and ZERO DEPENDENCIES on purpose. The recipe for this
@@ -288,7 +288,7 @@ const EXIT_CODE_TABLE: Array<[number, string]> = [
   [1, "an unexpected fault inside pdocs itself"],
   [2, "bad invocation: unknown command, unknown flag, missing value"],
   [5, "no docs root, or no .project-docs.json"],
-  [6, "the document already exists"],
+  [6, "the document already exists, or the tree refuses the request"],
   [9, "outcome: it ran fine, and the documents are dirty"],
 ];
 
@@ -465,7 +465,7 @@ export function parseArgs(
  * release-please rewrites the literal below via the marker comment, the same
  * way anthill's CLI carries its own.
  */
-const VERSION = "9.1.0"; // x-release-please-version
+const VERSION = "9.4.0"; // x-release-please-version
 
 export function version(): string {
   return VERSION;

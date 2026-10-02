@@ -83,8 +83,10 @@ Examples:
 
 A ready-to-use template is available: **[TEMPLATE.md](./TEMPLATE.md)**
 
-Copy this template when documenting existing systems. Architecture docs explain
-"how things work" - they're written after implementation, not before.
+Create a page from it with `bun scripts/pdocs/cli.ts new architecture <system>`,
+not by copying it: the CLI names the file, fills the frontmatter and writes the
+catalog line. Architecture docs explain "how things work" - they're written
+after implementation, not before.
 
 ### Key Sections
 

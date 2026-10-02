@@ -46,4 +46,4 @@ removing it; a deliberate unchanged copy is a real use).
       the agent what to do.
 - [x] The scriptorium `SKILL.md` teaches the one-step form.
 - [x] The issue's repro driven by a no-stake verifier, before and after.
-- [ ] #117 answered and closed once released. (Open until the release ships.)
+- [x] #117 answered and closed once released (5.1.0, 2026-10-02).

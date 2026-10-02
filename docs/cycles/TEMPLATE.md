@@ -17,8 +17,11 @@ yours to edit. The scaffold records its hash, so a migration updates it only
 while you have not touched it. Frontmatter is the contract the lint enforces;
 below it is yours. See docs/SCHEMA.md → "Who owns which file".
 
+ONCE WRITTEN: delete this whole comment block from the document.
+
 USAGE: `bun scripts/pdocs/cli.ts new cycle <slug>` writes this as
-docs/cycles/YYYY-MM-<slug>.md. The file's name without `.md` is the cycle's slug.
+docs/cycles/YYYY-MM-<slug>.md. That filename is the cycle's identity;
+commands take it with or without `.md`.
 
 A cycle is an index over work in play, not a container for it. It lists nothing
 in its frontmatter: an item joins it by naming it, `cycle: YYYY-MM-<slug>`
@@ -44,7 +47,7 @@ list", say so — that is also a reason.]
 
 What this cycle sets out to ship, one line each: the features and items it is
 for, and what "done" looks like for each. The live list is
-`pdocs view cycle <this file's slug>`; this section is the intent.
+`pdocs view cycle <this file's name>`; this section is the intent.
 
 - **[feature/name]** — [what shipping this means]
 - **[item/name]** — [what shipping this means]

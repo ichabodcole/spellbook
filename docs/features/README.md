@@ -76,7 +76,9 @@ the lint checks it.
 A feature's work is done through items whose `parent` names it
 (`pdocs new item <slug> --kind task --parent feature/<slug>`).
 `pdocs view feature <slug>` lists them. A feature has no `cycle` field: its
-items join cycles.
+items join cycles. `pdocs view portfolio` lists every feature that is not
+archived, `done` or `dropped`, with its items counted by state group; `--all`
+adds the rest.
 
 ## What a feature owns
 

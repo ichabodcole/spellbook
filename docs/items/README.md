@@ -56,9 +56,13 @@ written:
 
 Leave `--cycle` and `--released-in` alone when filing: `init-branch` and
 `sweep-project` write them. The one exception is the item `finalize-branch`
-files for work that ran on a branch with no item. It is born with
-`--lifecycle review`, and with `--cycle` when the branch belongs to the active
-cycle, because the work is already built and is landing.
+files for work that ran on a branch with no item. It files the item plain,
+writes its body from the work, and shows the user its description and definition
+of done. Once they approve, one `pdocs set --status stable --lifecycle review`
+moves it, adding `--cycle` when the branch belongs to the active cycle. If they
+decline, it stays `draft` and in `triage`, under either policy, and
+`finalize-branch` closes it straight to `done` (with `--cycle`) when the branch
+lands.
 
 Do not copy the template by hand: the `id` must be a fresh UUID, and the CLI
 checks every reference. Change any field later with
@@ -76,15 +80,15 @@ writes each field; [SCHEMA.md](../SCHEMA.md#fields) has the full table.
 
 ## States, and who moves an item
 
-| State     | Means                                                                  | Set by                                                                    |
-| --------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| `triage`  | Filed, and nobody has decided to take it on                            | `pdocs new item`, by default                                              |
-| `backlog` | Accepted, and not yet shaped                                           | triage                                                                    |
-| `ready`   | Shaped and unblocked: an accepted definition of done, nothing blocking | triage or shaping; `finalize-branch` when the last item blocking it lands |
-| `active`  | Being worked                                                           | `init-branch`, when a branch starts on it — see below                     |
-| `review`  | Waiting on a human or a reviewer                                       | `finalize-branch`, when its review starts                                 |
-| `done`    | Landed                                                                 | `finalize-branch`; see also Research items                                |
-| `dropped` | Decided against. It stays in the tree                                  | whoever decides                                                           |
+| State     | Means                                                                  | Set by                                                                                                                                                  |
+| --------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `triage`  | Filed, and nobody has decided to take it on                            | `pdocs new item`, by default                                                                                                                            |
+| `backlog` | Accepted, and not yet shaped                                           | triage                                                                                                                                                  |
+| `ready`   | Shaped and unblocked: an accepted definition of done, nothing blocking | triage or shaping; `finalize-branch` when the last item blocking it lands                                                                               |
+| `active`  | Being worked                                                           | `init-branch`, when a branch starts on it — see below; for research the user asked for and approved, `create-investigation` or the `investigator` agent |
+| `review`  | Waiting on a human or a reviewer                                       | `finalize-branch`, when its review starts                                                                                                               |
+| `done`    | Landed                                                                 | `finalize-branch`; see also Research items                                                                                                              |
+| `dropped` | Decided against. It stays in the tree                                  | whoever decides                                                                                                                                         |
 
 `init-branch`, `finalize-branch`, `sweep-project` and `triage-items` are skills
 in the project-docs Claude Code plugin. `init-branch` offers the items
@@ -114,12 +118,24 @@ its definition of done is settled (`--lifecycle ready`).
 Shaping is writing or settling an accepted item's definition of done and its
 `blocked_by`. It moves a `backlog` item to `ready`.
 
-An item's `status` is OKF's document-trust marker, not its state. It keeps the
-value the template gives it, and no workflow step moves it: `lifecycle` carries
-where the work has got to.
+An item's `status` is OKF's document-trust marker, not its state: `draft` until
+the user has reviewed the item's description and definition of done, `stable`
+once they approve it. Show the user that content and get their approval before
+work starts — approval already given in the conversation counts — then run
+`pdocs set item/<slug> --status stable`, alone or in the same command as the
+start. Starting work, joining a cycle or changing `lifecycle` never moves it on
+its own; `lifecycle` carries where the work has got to. Starting an item that is
+not `stable`, or adding one to the active cycle, is reported — and refused under
+`checks.workItemReview.mode: strict` (SCHEMA.md → "The review advisory"). An
+item whose content the user declines to approve does not move, under either
+policy: not started, not moved to `review`, not joined to the active cycle
+(SCHEMA.md → "Who moves an item"). `pdocs view unreviewed` lists finished items
+that were never marked reviewed.
 
 `pdocs view backlog` lists everything unstarted, `pdocs view ready` what can be
 started now, and `pdocs view board` everything by state group.
+`pdocs view portfolio` counts items by state group per current cycle and
+feature, and counts the live items in neither.
 
 ## A file, then a folder
 
@@ -211,3 +227,9 @@ It refuses an item in any other state, moves the file or folder, and rewrites
 every link to and from it. References by `id` keep working. Archiving is
 optional, and only `pdocs archive` does it; the lint reports anything in
 `_archive/` that is not `done` or `dropped`.
+
+`pdocs view board` leaves archived items out (`--all` puts them back). Once more
+than `checks.archive.threshold` finished items (default 25) are unarchived, it
+ends with an advisory that says how many and suggests archiving some; its JSON
+form (`--format json`) lists the candidates. Nothing moves until someone agrees
+to a selection. `docs/SCHEMA.md` describes the setting.

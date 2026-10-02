@@ -1,0 +1,113 @@
+---
+type: cycle
+title: A restore keeps every task
+description:
+  "Close bounty's last open data-loss route: a restore that silently drops tasks
+  it cannot validate, plus the snapshot edges filed beside it."
+tags: [bounty, spell-hardening]
+status: draft
+lifecycle: closed
+started: 2026-10-02
+appetite:
+  Stop when no restore can lose a task without saying so, and a no-stake
+  verifier has driven it on a scratch HOME; a fix that needs a ruling from Cole
+  is cut, not held.
+after: []
+generated: { by: claude-opus-5-5, at: 2026-10-02 }
+---
+
+# A restore keeps every task
+
+## Why now
+
+It is the one open route where bounty loses data. It has waited since "Data you
+can't get back" (2026-09-28), and twice since then other work came first
+([round two](2026-09-scriptorium-from-real-use-2.md), row 1). Cole chose it as
+the first of two cycles after 5.1.0 (2026-10-02); the
+[reply-shape leftovers](2026-09-reply-shape-leftovers.md) follow.
+
+## Scope
+
+- **[item/bounty-snapshot-edges-after-the-ownership-rule](../items/bounty-snapshot-edges-after-the-ownership-rule.md)**
+  — the headline is its point 1: a snapshot holding a task this build's
+  `validateTask` rejects (from another bounty version or another tool) restores
+  without it, and still makes the daemon its owner, so the task is in no file
+  after the next write. Done means a restore either keeps the file as it was (or
+  copies it aside) or does not take ownership, and `open` names what it dropped.
+  Points 2–4 (an EACCES stack under `--fresh --restore`, a silent empty board
+  when `snapshots/` is unreadable, a racing `--fresh --restore`) sit in the same
+  code and come along if they stay small. Out of scope, deliberately:
+  [item/bounty-snapshot-rotation-by-content-and-retention](../items/bounty-snapshot-rotation-by-content-and-retention.md)
+  and [item/bounty-snapshot-small-gaps](../items/bounty-snapshot-small-gaps.md)
+  (backlog; nothing is lost without them), and any wire or exit-code cleanup
+  that belongs to the reply-shape cycle, including
+  [item/bounty-failed-restore-and-empty-replace-succeed](../items/bounty-failed-restore-and-empty-replace-succeed.md)
+  (row 3).
+
+## Decision log
+
+Decisions as they are made, with the options not taken.
+
+| #   | Date       | Decision                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Options not taken                                                                                                                                                                                                                                                    |
+| --- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | 2026-10-02 | Cole: two cycles after 5.1.0. This one first, on its own, because it is the only data-loss route and a design question; then the reply-shape leftovers. The Scriptorium UI nits wait for use.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | One cycle with everything (mixes a design question into a batch of small fixes); a third cycle for the Scriptorium nits.                                                                                                                                             |
+| 2   | 2026-10-02 | Convened. The cause is at `server.ts` ~1349: a restore from the board's own snapshot sets `readOwn` even when `validateTask` dropped or changed entries, so the board owns a file it does not hold and its next write erases them. Wire ruling (the team's): own the snapshot only when the board holds it (`boardHoldsSnapshot`, the test the other boot routes already use); otherwise keep the file aside before the first write, and `open` names each dropped entry. One implementer (all four points are in bounty's restore and ownership code), then one no-stake verifier on a scratch HOME.                                                                                                                                                                                                                                                                              | Refuse the restore (loses the entries that did validate, and blocks a board on a field it cannot read); keep the file aside on every restore (a copy per keyed respawn, most of them identical); one implementer per point (four agents in one region of two files). |
+| 3   | 2026-10-02 | The candidate, a failed restore and an empty replace both exiting 0, moves to the reply-shape cycle. It was filed as waiting on Cole, but it is a wire question (an agent can tell the cases apart; nothing Cole sees or feels changes), so the team rules it, and it is exit-code shaped like the rest of that cycle.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Hold it here for a ruling from Cole (the escalation contract says it is not his); fix it here (splits the caller-visible code changes across two release notes).                                                                                                     |
+| 4   | 2026-10-02 | Integrated (`489d9341`, `4c5aa186`, `f1065949`, dist `72ce6f58`); gate 3195/0. Accepted the implementer's calls: the field is `restoreDropped: [{index, id, reason}]`, present-and-`[]` on every boot and on `open`, `/state` and every `init` frame; the copy is a new backup kind, `partial-restore`; the reason comes from the existing `taskRejection`, so `validateTask` is untouched. `boardHoldsSnapshot` now compares data, not bytes (sorted keys, an empty array the same as absent), because exact JSON made every clean respawn of an ordinary board copy its file. Point 2 refuses as `conflict` (6) before teardown; point 3 attempts the restore when `snapshots/` cannot be listed, so EACCES lands in `restoreFailed`; point 4 reuses the #80.1 attach refusal (exit 2, `restoreSkipped`). Not done: the browser does not show `restoreDropped` (a surface call). | `tasksDropped`'s shape for the field (that is an input report on `init`, not a boot fact); byte comparison (a copy per respawn); a new exit code for point 4 (#80.1 already rules that situation).                                                                   |
+| 5   | 2026-10-02 | No-stake verifier on the shipped launcher: all six claims **held** (it reproduced the race), and no task was lost in any scenario. Fixed in a second round, because each is a restore that loses data or says less than it did: an unknown field set to `[]` is erased with no copy (the loosened comparison let it through); duplicate ids copy the file on every respawn; a failed `partial-restore` copy is not mentioned on `open`; the copy's reason does not name changed tasks; a typo. Filed to [spell-refusal-envelope-nits](../items/spell-refusal-envelope-nits.md) for the reply-shape cycle: `init` dropping duplicates and fields under `tasksDropped: null`, the stale `restoreDropped` on an attach refusal, `--fresh` without a key, the snapshot title overriding `--title`. Point 4 also resolved that item's 5.0.0 lock-loser nit.                             | Fix the `init` drops here (an input report, not a restore: reply-shape's class); close with the five as known gaps (two are silent loss on restore, this cycle's own claim).                                                                                         |
+| 6   | 2026-10-02 | Round two integrated (`f50df0e3`, `0cb5713a`, `f5cb25d4`, `f10a70f0`, dist `8640c2a1`); gate 3199/0. "Empty array means absent" narrowed to the two fields `validateTask` writes only when non-empty (`tags`, `statusHistory`); any other field is a difference. A later duplicate id is dropped and listed, so the file is copied once. A failed `partial-restore` copy is `snapshotBackupFailed: {kind, path, error, fix} \| null` on `open` (present-and-null like `restoreFailed`) plus a `bounty:` stderr line; the reason names changed tasks and their fields.                                                                                                                                                                                                                                                                                                              | Report the failed copy inside `snapshotBackups` (breaks that list's rule that every entry is a real file); a `#` stderr line (those are notes that need nothing done; this one has a fix); keep duplicates (copies the file on every respawn).                       |
+| 7   | 2026-10-02 | Second no-stake verifier: all six claims **held**, no task lost in any scenario, every backup byte-identical. Doc nits fixed in SKILL.md (a duplicate keeps the first _valid_ entry; `snapshotBackupFailed.path` is the source; the empty-list wording). Filed, not fixed: [bounty-respawn-does-not-name-unsaved-dumps](../items/bounty-respawn-does-not-name-unsaved-dumps.md): after a failed save, the next respawn comes up from the older snapshot without naming the `unsaved` dump (no loss, predates the cycle, and the fix is a ruling on what a respawn restores). Bounty's acc surfaces are not re-recorded: no flag set or `choices` changed, only envelope fields and one refusal without `choices`. Cycle closed.                                                                                                                                                    | A third round for the dump (a feature with its own wire question; the appetite says cut); re-record the acc batch anyway (it would stamp a new build for identical records).                                                                                         |
+
+## Outcome
+
+Closed 2026-10-02. Bounty's last open data-loss route is shut: no restore loses
+a task without saying so. Two rounds of fixes, each driven by a no-stake
+verifier on the shipped launcher under a scratch `HOME`; neither verifier could
+lose a task, and every backup they compared was byte-identical. Gate 3199 pass,
+0 fail.
+
+**Shipped.**
+
+- **A restore keeps what it cannot hold.** A board takes over its snapshot only
+  when it holds everything in it. A restore that drops a task (another bounty
+  version's status or `notes` shape, a missing id, a later duplicate id) or
+  changes one keeps the file byte-for-byte as a `partial-restore` backup before
+  its first write, once.
+- **`open` says what it dropped:** `restoreDropped: [{index, id, reason}]`,
+  present and `[]` on every boot, also on `/state` and the browser's `init`
+  frame. The backup's reason names the drops, the changed tasks and their
+  fields, and any board field. If the copy cannot be made, `open` says so in
+  `snapshotBackupFailed` and on stderr, and the file is not written over.
+- **The comparison is by data:** key order, and an empty `tags` or
+  `statusHistory`, are not differences, so an ordinary keyed respawn makes no
+  copy. Any other field, even one holding `[]`, is.
+- **Snapshot edges:** a read-only `snapshots/` under `--fresh --restore` is a
+  `conflict` (6) before teardown, not a stack; an unreadable `snapshots/` on
+  respawn is reported in `restoreFailed`, not a silent empty board; a racing
+  `open --restore`/`--title`/`--timeout` that attaches to another open's board
+  refuses (exit 2, `restoreSkipped`) instead of exiting 0. That last one also
+  resolves the 5.0.0 lock-loser nit.
+
+**For the release note:** new fields `restoreDropped` and
+`snapshotBackupFailed`, a new backup kind `partial-restore`. Two exit codes
+change where there was no answer before: `open --fresh --restore` with a
+read-only `snapshots/` (1, a stack → 6), and the lock-losing `open` given
+`--restore`, `--title` or `--timeout` (0 → 2).
+
+Ships as **5.2.0** (Cole, 2026-10-02): the new fields are a feature by the
+ward's type rule, though the commits are `fix`; the two code changes replace a
+crash and a race-only false success, so they are listed, not marked breaking.
+Set with a `Release-As` footer.
+
+**Carried over:**
+[bounty-respawn-does-not-name-unsaved-dumps](../items/bounty-respawn-does-not-name-unsaved-dumps.md)
+(triage), and four findings appended to
+[spell-refusal-envelope-nits](../items/spell-refusal-envelope-nits.md) for the
+reply-shape cycle.
+
+**Learned.** The first round's loosened comparison let a real difference through
+(an unknown field holding `[]`); only the verifier, trying a shape the author
+did not, saw it. A rule that makes a check more lenient needs its own
+adversarial pass.
+
+## Sessions
