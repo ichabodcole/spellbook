@@ -70,3 +70,20 @@ Found by the browser verifier of
   session…" title.
 - An agent-close refusal's `choices` lists every saved session, including
   unrelated live ones (the hint names the right one).
+
+**From the round-three third verifier (2026-10-01):**
+
+- **A bare `tail` (no `--session`) never stops after a session ends.** Even with
+  `--once` it prints "# no session yet, retrying…" every ~3 s while the pointer
+  names an ended session, though `say`/`info` with no `--session` correctly say
+  the human ended it. The kit's tail handoff waits on a bare first arm by design
+  (D1); after an end that wait is false.
+- **Same-named documents get identical human lines.** With `docs/beta.md` and
+  `other/beta.md` open, both outside-write lines say "v4 of beta.md…"; nearby
+  system lines use the agent's slug `beta-2`, which the sidebar never shows.
+- **One ⌘S in the raw editor sends two `saved` events** about 1 ms apart, and
+  the chat shows "Saved vN to …" twice; the Save button sends one.
+- A `--body-file` inside a folder that cannot be opened (folder chmod 000) is
+  reported as not found rather than cannot be read.
+- A re-armed `tail --once` with no `--since` prints `"cursor": -1` in
+  `tail.closed`.

@@ -6,7 +6,7 @@ description:
   then says the versions are identical; disable it and say there is nothing to
   compare."
 status: draft
-lifecycle: ready
+lifecycle: done
 id: 01a0f97e-9639-70b4-8804-2dc53f79e950
 kind: bug
 generated: { by: pdocs, at: 2026-10-01 }
