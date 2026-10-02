@@ -1094,7 +1094,7 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
           ...live,
           restoreSkipped: {
             requested,
-            reason: `a live board already exists for this key, so open attached to it instead of spawning a daemon; ${named} configure a daemon at spawn time and the running board was left unchanged`,
+            reason: `a live board already exists for this key, so open attached to it instead of spawning a daemon; ${named} ${requested.length === 1 ? "configures" : "configure"} a daemon at spawn time and the running board was left unchanged`,
           },
           snapshotBackups: [],
           snapshotBackupFailed: null,
@@ -1275,7 +1275,7 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
               ...s,
               restoreSkipped: {
                 requested: lost,
-                reason: `another open started this board first, so the daemon this open spawned exited without touching it; ${named} configure a daemon at spawn time and the running board was left unchanged`,
+                reason: `another open started this board first, so the daemon this open spawned exited without touching it; ${named} ${lost.length === 1 ? "configures" : "configure"} a daemon at spawn time and the running board was left unchanged`,
               },
               snapshotBackups: nameBackups(
                 [...(preFresh ? [preFresh] : []), ...teardownBackups],

@@ -7163,6 +7163,7 @@ describe("a restore keeps every task", () => {
       expect(hs.session_id).toBe(pid);
       expect(hs.restoreSkipped?.requested).toEqual(["restore"]);
       expect(hs.restoreSkipped?.reason ?? "").toContain("another open");
+      expect(hs.restoreSkipped?.reason ?? "").toContain("configures a daemon at spawn time");
       expect(await liveTitles(pid, env)).toEqual(["p1"]);
       await runCli(["close", "--session", pid], { env });
     } finally {
