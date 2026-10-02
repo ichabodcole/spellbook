@@ -9,8 +9,8 @@ status: draft
 lifecycle: closed
 started: 2026-10-01
 appetite:
-  Stop when the three ship as a patch and a no-stake verifier has driven each in
-  a real browser; anything that grows a design question is filed, not stretched.
+  Stop when the three ship and a no-stake verifier has driven each in a real
+  browser; anything that grows a design question is filed, not stretched.
 after: []
 generated: { by: pdocs, at: 2026-10-01 }
 ---
@@ -34,8 +34,8 @@ toast made likely, so it is ours to close.
   — an End session control in the top bar; the daemon ends the session after a
   confirmation modal (Cole's ruling).
 
-**Release:** a patch. `--body-file`/`--stdin` are new optional flags, and the
-`closed` event gains a field; nothing a caller sees changes meaning.
+**Release:** additive; nothing a caller sees changes meaning. (Planned as a
+patch; the End session `feat` commits make it a minor, 5.1.0: see Outcome.)
 
 ## Decision log
 
@@ -96,10 +96,12 @@ fail.
     and every control that needs the daemon is disabled or says the session
     ended. Closing the tab ends nothing.
 
-**Release:** a patch. New optional flags (`version-new --body-file/--stdin`),
-additive fields (`closed.by`, `activatedBeforeWritten`, manifest `ended`), and
-one new surface→daemon command (`session.end`). No caller-visible code changes
-meaning. Close #116 and #117 when released.
+**Release:** 5.1.0, a minor: the End session commits are `feat`, so
+release-please bumps the minor (the plan said "patch"; corrected at the
+release). New optional flags (`version-new --body-file/--stdin`), additive
+fields (`closed.by`, `activatedBeforeWritten`, manifest `ended`), and one new
+surface→daemon command (`session.end`). No caller-visible code changes meaning.
+Close #116 and #117 when released.
 
 **Falsified or corrected.**
 

@@ -23,9 +23,10 @@ versions are identical" (`CompareView.tsx`). The click is wasted, and
 
 ## Definition of done
 
-- [ ] The Diff control is disabled while the document has one version, with a
-      tooltip such as "Only one version — nothing to compare".
-- [ ] Any other route into the compare view with one version (a shortcut, a deep
+- [x] The Diff control is disabled when nothing can differ (one version, no
+      unsaved edits, file unchanged on disk; narrowed at build, cycle row 5),
+      with the tooltip "Only one version — nothing to compare".
+- [x] Any other route into the compare view with one version (a shortcut, a deep
       link) shows that same message, never "identical".
-- [ ] Driven in a real browser.
-- [ ] #116 answered and closed once released.
+- [x] Driven in a real browser.
+- [ ] #116 answered and closed once released. (Open until the release ships.)

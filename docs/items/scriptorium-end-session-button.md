@@ -60,14 +60,14 @@ purpose; do not reopen it unless they ask._ The skill says the same.
 
 ## Definition of done
 
-- [ ] The top bar has an End session control, reachable by keyboard. It asks for
+- [x] The top bar has an End session control, reachable by keyboard. It asks for
       confirmation in a modal, then ends the session through the daemon.
-- [ ] The agent's `tail` learns that the human ended the session, can tell it
+- [x] The agent's `tail` learns that the human ended the session, can tell it
       apart from a crash or an agent-run `close`, and is told not to reopen it
       unless asked.
-- [ ] After a deliberate end the page reads "Session ended" and stops retrying;
+- [x] After a deliberate end the page reads "Session ended" and stops retrying;
       the modal warns about unsaved edits.
-- [ ] Closing the tab alone still ends nothing.
-- [ ] Saying it in chat remains a path; the skill tells the agent what to do in
+- [x] Closing the tab alone still ends nothing.
+- [x] Saying it in chat remains a path; the skill tells the agent what to do in
       either case.
-- [ ] Driven in a real browser by a no-stake verifier.
+- [x] Driven in a real browser by a no-stake verifier.

@@ -2,9 +2,10 @@
 type: item
 title: "Scriptorium: small chat and toast leftovers"
 description:
-  A chat link to a missing doc gives no feedback; GFM footnote ids repeated
-  across messages (fixed); the agent's version-new then activate mounts the
-  new-version toast for ~1 ms.
+  "Small Scriptorium leftovers from real use and three verifier rounds: chat and
+  toast nits, the kit modal's focus trap, crash-path refusals with no restore
+  hint, a bare tail that retries after an end, same-named documents, a double
+  saved on ⌘S, phone width."
 status: draft
 lifecycle: backlog
 id: 01a0eab2-ed0c-7292-8381-bc4a228e93da

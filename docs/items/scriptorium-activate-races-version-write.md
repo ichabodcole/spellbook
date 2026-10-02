@@ -31,19 +31,19 @@ made it worse by creating yet another version.
 1. `version-new --body-file <path>` (and `--stdin`): the version is created
    holding the agent's text, so there is no window. Same convention as
    `say`/`task`/`note`.
-2. A truer safeguard message for this case (activated shortly after creation,
-   content still equal to its source), telling the agent not to make another
-   version.
+2. A truer safeguard message for this case, telling the agent not to make
+   another version. Built: decided by content (the version is still the
+   unwritten copy), not a time window (cycle rows 7, 9, 10).
 
 Not taken: toasting only once the copy changes (hides the race rather than
 removing it; a deliberate unchanged copy is a real use).
 
 ## Definition of done
 
-- [ ] `version-new --body-file` / `--stdin` create a version already holding the
+- [x] `version-new --body-file` / `--stdin` create a version already holding the
       given text; the toast never offers an unwritten copy made this way.
-- [ ] The safeguard's message names the activated-before-written case and tells
+- [x] The safeguard's message names the activated-before-written case and tells
       the agent what to do.
-- [ ] The scriptorium `SKILL.md` teaches the one-step form.
-- [ ] The issue's repro driven by a no-stake verifier, before and after.
-- [ ] #117 answered and closed once released.
+- [x] The scriptorium `SKILL.md` teaches the one-step form.
+- [x] The issue's repro driven by a no-stake verifier, before and after.
+- [ ] #117 answered and closed once released. (Open until the release ships.)
