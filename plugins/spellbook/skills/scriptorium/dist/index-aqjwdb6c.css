@@ -1777,6 +1777,10 @@
     overflow-wrap: break-word;
   }
 
+  .wrap-anywhere {
+    overflow-wrap: anywhere;
+  }
+
   .whitespace-nowrap {
     white-space: nowrap;
   }
@@ -2486,6 +2490,12 @@
   @media (hover: hover) {
     .disabled\:hover\:text-ink-faint:disabled:hover {
       color: var(--color-ink-faint);
+    }
+  }
+
+  @media (hover: hover) {
+    .disabled\:hover\:no-underline:disabled:hover {
+      text-decoration-line: none;
     }
   }
 

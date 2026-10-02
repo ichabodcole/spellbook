@@ -46,10 +46,14 @@ afterAll(async () => {
   rmSync(root, { recursive: true, force: true });
 });
 
-async function cli(...args: string[]): Promise<{ code: number; out: string }> {
+async function cli(...args: string[]): Promise<{ code: number; out: string; err: string }> {
   const p = Bun.spawn(["bun", CLI, ...args], { stdout: "pipe", stderr: "pipe", env, cwd: root });
-  const [out, code] = await Promise.all([new Response(p.stdout).text(), p.exited]);
-  return { code, out };
+  const [out, err, code] = await Promise.all([
+    new Response(p.stdout).text(),
+    new Response(p.stderr).text(),
+    p.exited,
+  ]);
+  return { code, out, err };
 }
 
 type Line = Record<string, unknown>;
@@ -232,10 +236,72 @@ describe("the wait ends on a closed or a lost session, naming how to come back",
     expect(await t.exit(5000)).toBe(0);
     const lines = t.lines();
     expect(lines.map((l) => l.type)).toEqual(["closed", "tail.closed"]);
+    expect(lines[0]).toMatchObject({ by: "agent" });
     expect(lines[1]).toMatchObject({
+      by: "agent",
       next: "stop",
       command: cmd("open", "--restore", id, "--no-open"),
     });
+  }, 30_000);
+
+  test("ended by the HUMAN (the page's End session): the page hears it, and the tail says stop, don't reopen", async () => {
+    const r = await cli("open", "--no-open", doc);
+    const { session_id: id, port } = JSON.parse(r.out) as { session_id: string; port: number };
+    opened.push(id);
+    const since = await lastId(id);
+    const t = spawnTail(["--session", id, "--since", String(since)], 60_000);
+    await Bun.sleep(800);
+    // The page, played the way it does it: one `session.end` over the socket,
+    // after its own confirmation. No agent is involved.
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+    const frames: Line[] = [];
+    ws.onmessage = (ev) => frames.push(JSON.parse(String(ev.data)) as Line);
+    await new Promise((res) => {
+      ws.onopen = res;
+    });
+    const gone = new Promise((res) => {
+      ws.onclose = res;
+    });
+    ws.send(JSON.stringify({ type: "session.end" }));
+    await Promise.race([gone, Bun.sleep(5000)]);
+    // The page is told BEFORE its socket closes, so it can stop retrying.
+    expect(frames.filter((f) => f.type === "closed")).toEqual([{ type: "closed", by: "human" }]);
+    expect(await t.exit(5000)).toBe(0);
+    const lines = t.lines();
+    expect(lines.map((l) => l.type)).toEqual(["closed", "tail.closed"]);
+    expect(lines[0]).toMatchObject({ by: "human" });
+    expect(lines[1]).toMatchObject({
+      by: "human",
+      next: "stop",
+      command: cmd("open", "--restore", id, "--no-open"),
+    });
+    expect(String(lines[1]?.hint)).toContain("do not reopen it unless they ask");
+    // The session's pointer is gone, as after an agent's close.
+    expect(existsSync(join(root, "tmp", `scriptorium-${id}.json`))).toBe(false);
+    // A verb run after the end names THIS session and the human's end — read
+    // from the manifest, the one record that outlives the daemon.
+    const late = await cli("say", "hello", "--session", id);
+    expect(late.code).toBe(5);
+    const refusal = JSON.parse(late.err) as { error: { message: string; hint: string } };
+    expect(refusal.error.message).toBe(`the human ended session ${id}`);
+    expect(refusal.error.hint).toContain("do not reopen it unless they ask");
+    // A tail RE-ARMED after the end sees no `closed` frame (D1's path), yet
+    // says what the live tail said: `by` from the manifest, the same hint.
+    for (const args of [
+      ["--session", id, "--once"],
+      ["--session", id, "--since", String(since)],
+    ]) {
+      const again = spawnTail(args, 60_000);
+      expect(await again.exit(5000)).toBe(0);
+      const got = again.lines().filter((l) => l.type !== "grounding");
+      expect(got.map((l) => l.type)).toEqual(["tail.closed"]);
+      expect(got[0]).toMatchObject({
+        by: "human",
+        next: "stop",
+        command: cmd("open", "--restore", id, "--no-open"),
+      });
+      expect(got[0]?.hint).toBe(lines[1]?.hint);
+    }
   }, 30_000);
 
   test("D1: re-armed at a session that closed in the gap → tail.closed at once, in both modes", async () => {

@@ -9,6 +9,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 import type { FsListEntry } from "../../../backend/protocol";
+import { SESSION_ENDED } from "../../state/ending";
 import type { Listing } from "../../state/useDaemon";
 
 const MAX_SUGGESTIONS = 8;
@@ -95,8 +96,12 @@ export function AddPath({
           .filter((e) => (!foldersOnly || e.dir) && e.name.toLowerCase().startsWith(p))
           .slice(0, MAX_SUGGESTIONS),
       });
+      // A half-typed name hides a listing error (the folder may not exist
+      // yet); the session's end is true whatever is typed.
       setError(
-        listing.error && split.prefix === "" ? friendlyListError(listing.error, split.dir) : null,
+        listing.error && (split.prefix === "" || listing.error === SESSION_ENDED)
+          ? friendlyListError(listing.error, split.dir)
+          : null,
       );
       setHighlight(-1);
     }, 120);

@@ -68,6 +68,7 @@ import { type BundleIndex, buildGraph, type Resolution, resolveTarget } from "./
 import type {
   ChatMessage,
   ChatWho,
+  ClosedBy,
   ContextEntry,
   ContextNode,
   DiffPayload,
@@ -166,6 +167,14 @@ export type Manifest = {
   tasks?: Task[];
   /** E23's workspace. Absent in a manifest written before it existed: the user's home. */
   workspace?: string;
+  /**
+   * Who ended this session, and when — set at teardown, cleared by a restore.
+   * ⛔ IT LIVES HERE BECAUSE THE MANIFEST OUTLIVES THE DAEMON: a verb run after
+   * the end finds no daemon to ask, and must still tell "the human ended this
+   * on purpose" (do not reopen) from a timeout or a crash (reopen freely).
+   * Absent while live, after a crash, and on a manifest written before it existed.
+   */
+  ended?: { by: ClosedBy; at: number };
 };
 
 /** A refusal the daemon turns into an HTTP status — `choices` when the set is in hand (A1). */
@@ -214,11 +223,17 @@ export type FileEvent =
       /** The new agent version the outside text was preserved as. */
       preservedAs: number;
       preservedPath: string;
+      /** #117: the human activated this version while it was still the agent's
+       *  unwritten copy, so the write was the agent filling it in, not breaking E2. */
+      activatedBeforeWritten: boolean;
     }
   | { kind: "version.created"; doc: string; version: number; path: string }
   | { kind: "original.reloaded"; doc: string; version: number; text: string; original: string }
   | { kind: "original.conflict"; doc: string; original: string }
   | { kind: "tree"; entryId: string };
+
+/** A version an outside write was kept as — and whether that write was the #117 race. */
+export type PreservedVersion = Version & { activatedBeforeWritten: boolean };
 
 export class Session {
   readonly dir: string;
@@ -230,6 +245,23 @@ export class Session {
   /** slug → the active version's text as the daemon last wrote (or adopted)
    *  it — what an outside write to the active version is reverted to. */
   private lastActiveText = new Map<string, string>();
+  /**
+   * #117 — path → hash of an agent `version-new` COPY as the daemon made it,
+   * while nobody has written it yet. Not persisted: it only has to outlive the
+   * seconds between `version-new` and the agent's write.
+   *
+   * ⛔ ACTIVATION DOES NOT CLEAR IT. The fact is "this version still holds the
+   * copy it was made from and nobody has written it" — true across any number
+   * of activations. Clearing it on activate lost it on a human flip-flop
+   * (activate v4, pick v1, pick v4 again; verifier, 2026-10-01), and the agent's
+   * write then got the old "belongs in a new version" message that invites the
+   * duplicate #117 set out to stop. It goes when the content changes (an
+   * outside write, a human edit) or the version is deleted.
+   */
+  private unwrittenCopies = new Map<string, string>();
+  /** #117 — slug → the version the HUMAN activated while it was still an
+   *  unwritten copy. Read (and cleared) by the next outside write to it. */
+  private activatedUnwritten = new Map<string, number>();
   /** What a restore found changed on disk while no daemon was watching. */
   restoreFindings: { doc: string; original: string; missing: boolean }[] = [];
 
@@ -289,7 +321,10 @@ export class Session {
         s.restoreFindings.push({ doc: d.slug, original: d.original, missing: now === null });
       }
     }
-    if (s.restoreFindings.length > 0) s.persist();
+    // A restored session is live again: whoever ended it before, nobody has now.
+    const wasEnded = s.m.ended !== undefined;
+    delete s.m.ended;
+    if (s.restoreFindings.length > 0 || wasEnded) s.persist();
     return s;
   }
 
@@ -356,6 +391,11 @@ export class Session {
 
   // ── persistence ────────────────────────────────────────────────────────
 
+  /** Record who ended the session (teardown persists it next). */
+  markEnded(by: ClosedBy): void {
+    this.m.ended = { by, at: Date.now() };
+  }
+
   persist(): void {
     mkdirSync(this.dir, { recursive: true });
     writeFileAtomic(join(this.dir, "manifest.json"), `${JSON.stringify(this.m, null, 2)}\n`);
@@ -378,12 +418,31 @@ export class Session {
 
   private writeActive(d: DocRecord, text: string): void {
     this.writeOwned(this.versionPath(d, d.active), text);
+    this.contentChanged(this.versionPath(d, d.active), text);
     this.activeHash.set(d.slug, contentHash(text));
     this.lastActiveText.set(d.slug, text);
   }
 
+  /** The version at `path` now holds `text`: an unwritten copy it no longer is. */
+  private contentChanged(path: string, text: string): void {
+    if (this.unwrittenCopies.get(path) !== contentHash(text)) this.unwrittenCopies.delete(path);
+  }
+
   /** Keep an outside write to the active version as a NEW agent version. */
-  private preserveOutside(d: DocRecord, text: string): Version {
+  private preserveOutside(d: DocRecord, text: string): PreservedVersion {
+    const path = this.versionPath(d, d.active);
+    // #117 — true only while BOTH hold: the human activated this version as an
+    // unwritten copy, AND it is one still (nobody has changed its content
+    // since). A human who typed in it had written it (second verifier,
+    // 2026-10-01: activate, type, wait, agent writes → was told "before the
+    // agent had written it"). The content rule decides, not the activation.
+    const activatedBeforeWritten =
+      this.activatedUnwritten.get(d.slug) === d.active && this.unwrittenCopies.has(path);
+    // Someone wrote the active version: whatever it holds next, it has been written.
+    this.unwrittenCopies.delete(path);
+    // Said once: the first outside write after the race is the agent filling
+    // the copy in; any later one is the ordinary case.
+    this.activatedUnwritten.delete(d.slug);
     const n = this.takeVersion(d);
     const rec: Omit<Version, "path"> = {
       n,
@@ -395,7 +454,7 @@ export class Session {
     d.versions.push(rec);
     this.writeOwned(this.versionPath(d, n), text);
     this.persist();
-    return { ...rec, path: this.versionPath(d, n) };
+    return { ...rec, path: this.versionPath(d, n), activatedBeforeWritten };
   }
 
   /** True iff `text` at `path` is exactly what the daemon last wrote there. */
@@ -657,7 +716,7 @@ export class Session {
     slug: string,
     n: number,
     text: string,
-  ): { dirtyChanged: boolean; preserved: Version | null } {
+  ): { dirtyChanged: boolean; preserved: PreservedVersion | null } {
     const d = this.docOrDie(slug);
     if (n !== d.active)
       throw new SessionError(
@@ -673,7 +732,7 @@ export class Session {
     // new file, where the watcher finds it and preserves it too.
     const staged = `${path}.${process.pid}.edit`;
     writeFileSync(staged, text);
-    let preserved: Version | null = null;
+    let preserved: PreservedVersion | null = null;
     let onDisk: string | null = null;
     try {
       onDisk = readFileSync(path, "utf8");
@@ -684,20 +743,32 @@ export class Session {
       preserved = this.preserveOutside(d, onDisk);
     this.owned.set(path, contentHash(text));
     renameSync(staged, path);
+    this.contentChanged(path, text);
     this.activeHash.set(d.slug, contentHash(text));
     this.lastActiveText.set(d.slug, text);
     return { dirtyChanged: before !== this.isDirty(d), preserved };
   }
 
-  /** Copy a version to a new file; the agent then edits that file with its own tools. */
-  newVersion(opts: { doc?: string; from?: number; label?: string; author: VersionAuthor }): {
+  /**
+   * Copy a version to a new file; the agent then edits that file with its own
+   * tools. With `text` (#117, `version-new --body-file`) the new file holds
+   * that text instead, written before anyone is told the version exists — so
+   * there is no moment in which an unwritten copy can be activated.
+   */
+  newVersion(opts: {
+    doc?: string;
+    from?: number;
+    label?: string;
+    text?: string;
+    author: VersionAuthor;
+  }): {
     slug: string;
     version: Version;
   } {
     const d = this.docOrDie(opts.doc);
     const from = opts.from ?? d.active;
     this.versionOrDie(d, from);
-    const text = readFileSync(this.versionPath(d, from), "utf8");
+    const text = opts.text ?? readFileSync(this.versionPath(d, from), "utf8");
     const n = this.takeVersion(d);
     const rec: Omit<Version, "path"> = {
       n,
@@ -708,6 +779,8 @@ export class Session {
     };
     d.versions.push(rec);
     this.writeOwned(this.versionPath(d, n), text);
+    if (opts.text === undefined && opts.author === "agent")
+      this.unwrittenCopies.set(this.versionPath(d, n), contentHash(text));
     this.persist();
     return { slug: d.slug, version: { ...rec, path: this.versionPath(d, n) } };
   }
@@ -756,6 +829,7 @@ export class Session {
       // tidy, a crash between write and record) must not block removing it.
     }
     this.owned.delete(path);
+    this.unwrittenCopies.delete(path);
     this.persist();
     return {
       slug: d.slug,
@@ -765,14 +839,26 @@ export class Session {
     };
   }
 
-  activate(opts: { doc?: string; version: number }): { slug: string; previous: number } {
+  activate(opts: { doc?: string; version: number; by?: "human" | "agent" }): {
+    slug: string;
+    previous: number;
+  } {
     const d = this.docOrDie(opts.doc);
     this.versionOrDie(d, opts.version);
     const previous = d.active;
     d.active = opts.version;
     // The new active version's text AS IT IS NOW is the baseline the next
     // check-before-write compares against.
-    this.adoptActive(d, readFileSync(this.versionPath(d, d.active), "utf8"));
+    const path = this.versionPath(d, d.active);
+    const text = readFileSync(path, "utf8");
+    this.adoptActive(d, text);
+    // #117: the human chose a version the agent has not written yet (its text
+    // is still the copy `version-new` made). The agent's write is coming and
+    // will land on the active version; remember why, so the safeguard can say so.
+    const unwritten = this.unwrittenCopies.get(path);
+    if (opts.by === "human" && unwritten === contentHash(text))
+      this.activatedUnwritten.set(d.slug, d.active);
+    else this.activatedUnwritten.delete(d.slug);
     this.persist();
     return { slug: d.slug, previous };
   }
@@ -1077,9 +1163,11 @@ export class Session {
           path: abs,
           preservedAs: kept.n,
           preservedPath: kept.path,
+          activatedBeforeWritten: kept.activatedBeforeWritten,
         };
       }
       this.owned.set(abs, contentHash(text));
+      this.unwrittenCopies.delete(abs);
       return { kind: "version.changed", doc: d.slug, version: n, text, active: false };
     }
 

@@ -82,6 +82,12 @@ describe("a system line", () => {
     expect(out).not.toContain("<strong>");
     expect(out).not.toContain("md-prose");
   });
+  test("a long unbroken path wraps inside the column instead of overflowing it", () => {
+    // md-chat wraps a rendered message; a system line is not rendered, so the
+    // line itself must (verifier, 2026-10-01: a preserved path overflowed).
+    const out = html(msg("Saved v2 to /a/very/long/unbroken/path/v2.md.", { who: "system" }));
+    expect(out).toMatch(/class="[^"]*\bwrap-anywhere\b/);
+  });
 });
 
 describe("the passage a message carried (E48)", () => {

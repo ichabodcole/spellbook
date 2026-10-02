@@ -24,6 +24,7 @@
 import { cn } from "cn";
 import { CornerDownLeftIcon, XIcon } from "lucide-react";
 import { Button } from "@/ui/button";
+import { SESSION_ENDED } from "../state/ending";
 
 export type Attachable = {
   doc: string;
@@ -47,10 +48,13 @@ export function ChatComposer({
   onDrop,
   onSend,
   floating = false,
+  ended = false,
 }: {
   /** The current selection, or null — what would ride along. */
   attachable: Attachable | null;
   connected: boolean;
+  /** The session was ended on purpose — not "waiting": nothing will come back. */
+  ended?: boolean;
   /**
    * The chip's X. ⛔ IT DROPS THE SELECTION, NOT THE CHIP: this used to be a
    * local `dropped` flag reset only on send, so after one X every new
@@ -114,7 +118,14 @@ export function ChatComposer({
         // about, and a question that grows past two lines scrolls in place.
         rows={floating ? 2 : 3}
         disabled={!connected}
-        placeholder={connected ? "Ask the agent…" : "Waiting for the daemon…"}
+        placeholder={
+          ended
+            ? `${SESSION_ENDED} — nothing reaches the agent now`
+            : connected
+              ? "Ask the agent…"
+              : "Waiting for the daemon…"
+        }
+        title={ended ? SESSION_ENDED : undefined}
         className={cn(
           "w-full resize-none rounded-md border border-edge bg-bg px-2 py-1.5 text-xs text-ink",
           "placeholder:text-ink-faint focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none",
@@ -131,7 +142,8 @@ export function ChatComposer({
         <Button
           type="submit"
           size="sm"
-          disabled={!text.trim() || !connected}
+          disabled={!text.trim() || !connected || ended}
+          title={ended ? SESSION_ENDED : undefined}
           className="ml-auto h-6 px-2 text-xs"
         >
           <CornerDownLeftIcon aria-hidden className="size-3" />

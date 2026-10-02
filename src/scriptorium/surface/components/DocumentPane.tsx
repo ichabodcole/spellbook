@@ -18,9 +18,10 @@ import { Separator } from "@/ui/separator";
 import { useConfirm } from "../../../kit/ui/ConfirmDialog";
 import type { DiffPayload, DiffSide, DocView, NoteWaiting } from "../../backend/protocol";
 import { readerStaysLoud, splitRoom } from "../state/columns";
+import { SESSION_ENDED } from "../state/ending";
 import { createPlace } from "../state/place";
 import { contentStats, relativeTime } from "../state/stats";
-import { CompareView } from "./CompareView";
+import { CompareView, NOTHING_TO_COMPARE, NothingToCompare, nothingToCompare } from "./CompareView";
 import { DocumentView } from "./DocumentView";
 import { MarkdownView } from "./MarkdownView";
 import { NewVersionDialog, type VersionIntent } from "./NewVersionDialog";
@@ -129,6 +130,7 @@ export function DocumentPane({
   toasts,
   dock,
   quiet = false,
+  ended = false,
 }: {
   doc: DocView | null;
   text: string | undefined;
@@ -186,6 +188,12 @@ export function DocumentPane({
   dock?: React.ReactNode;
   /** E64: reader mode — the chrome steps back until it is reached for. */
   quiet?: boolean;
+  /**
+   * The session was ended on purpose: what only WRITES (Save, Revert, a new
+   * version, typing, comparing — the daemon computes it) is disabled and says
+   * why; reading what is loaded is untouched.
+   */
+  ended?: boolean;
   /** The saved sizes of the split, kept in the home's prefs like the outer panes. */
   splitLayout: {
     defaultLayout: Parameters<typeof ResizablePanelGroup>[0]["defaultLayout"];
@@ -276,6 +284,7 @@ export function DocumentPane({
               <VersionMenu
                 versions={doc.versions}
                 active={doc.active}
+                ended={ended}
                 onActivate={onActivate}
                 onCompare={(n) => {
                   onAgainst(n);
@@ -310,8 +319,8 @@ export function DocumentPane({
                 variant="ghost"
                 size="sm"
                 onClick={onRevert}
-                disabled={!doc.dirty && !doc.outsideChanged}
-                title="Take the file on disk back over your edits"
+                disabled={ended || (!doc.dirty && !doc.outsideChanged)}
+                title={ended ? SESSION_ENDED : "Take the file on disk back over your edits"}
                 className={cn("h-7 gap-1.5 px-2 text-xs", fade)}
               >
                 <UndoDotIcon className="size-3.5" />
@@ -321,8 +330,12 @@ export function DocumentPane({
                 variant="ghost"
                 size="sm"
                 onClick={onSave}
-                disabled={!doc.dirty}
-                title={`Save v${doc.active} to ${doc.name} — the file in your folder (⌘S)`}
+                disabled={ended || !doc.dirty}
+                title={
+                  ended
+                    ? SESSION_ENDED
+                    : `Save v${doc.active} to ${doc.name} — the file in your folder (⌘S)`
+                }
                 className={cn("h-7 gap-1.5 px-2 text-xs", !readerStaysLoud("save", doc) && fade)}
               >
                 <SaveIcon className="size-3.5" />
@@ -334,7 +347,13 @@ export function DocumentPane({
                 className={cn("flex items-center gap-0.5 rounded-md bg-surface-raised p-0.5", fade)}
               >
                 {MODE_BUTTONS.map(({ mode: m, label, icon: Icon }) => {
-                  const unavailable = m === "split" && !roomToSplit;
+                  const noSplit = m === "split" && !roomToSplit;
+                  // #116: disabled BEFORE the click, so the human never has to
+                  // open the view to find out there was nothing in it.
+                  const noCompare = m === "compare" && nothingToCompare(doc);
+                  // The daemon computes every comparison, so none can load now.
+                  const endedCompare = m === "compare" && ended;
+                  const unavailable = noSplit || noCompare || endedCompare;
                   return (
                     <button
                       key={m}
@@ -346,9 +365,13 @@ export function DocumentPane({
                       title={
                         !unavailable
                           ? label
-                          : room.ifCollapsed
-                            ? `${label} — the pane is too narrow; collapse the side columns to make room`
-                            : `${label} — the pane is too narrow`
+                          : endedCompare
+                            ? SESSION_ENDED
+                            : noCompare
+                              ? NOTHING_TO_COMPARE
+                              : room.ifCollapsed
+                                ? `${label} — the pane is too narrow; collapse the side columns to make room`
+                                : `${label} — the pane is too narrow`
                       }
                       className={cn(
                         "flex size-6 items-center justify-center rounded-sm text-ink-faint outline-none",
@@ -384,7 +407,9 @@ export function DocumentPane({
           <button
             type="button"
             onClick={onAddFrontmatter}
-            className="rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline"
+            disabled={ended}
+            title={ended ? SESSION_ENDED : undefined}
+            className="rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:no-underline"
           >
             Add a block
           </button>
@@ -419,21 +444,27 @@ export function DocumentPane({
               onAgainst("original");
               onMode("compare");
             }}
-            className="rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline"
+            disabled={ended}
+            title={ended ? SESSION_ENDED : undefined}
+            className="rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:no-underline"
           >
             See the difference
           </button>
           <button
             type="button"
             onClick={onSave}
-            className="rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline"
+            disabled={ended}
+            title={ended ? SESSION_ENDED : undefined}
+            className="rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:no-underline"
           >
             Keep mine
           </button>
           <button
             type="button"
             onClick={onRevert}
-            className="rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline"
+            disabled={ended}
+            title={ended ? SESSION_ENDED : undefined}
+            className="rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:no-underline"
           >
             Take the file's
           </button>
@@ -457,7 +488,11 @@ export function DocumentPane({
         // The payload is asked for by App whenever the document, the active
         // version or the chosen side changes; until the first one lands the
         // pane holds its space rather than flashing an empty comparison.
-        diff && diff.doc === doc.slug ? (
+        // #116: a compare mode saved from another document (or kept across a
+        // save that made v1 the file again) lands here with nothing to show.
+        nothingToCompare(doc) ? (
+          <NothingToCompare />
+        ) : diff && diff.doc === doc.slug ? (
           <CompareView
             payload={diff}
             file={doc.name}
@@ -472,7 +507,7 @@ export function DocumentPane({
         <DocumentView
           docKey={doc.slug}
           text={shown}
-          editable
+          editable={!ended}
           notes={doc.notes}
           onChange={onEdit}
           onSave={onSave}
@@ -508,7 +543,7 @@ export function DocumentPane({
             <DocumentView
               docKey={doc.slug}
               text={shown}
-              editable
+              editable={!ended}
               notes={doc.notes}
               onChange={onEdit}
               onSave={onSave}

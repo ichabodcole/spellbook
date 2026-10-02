@@ -87,12 +87,16 @@ function edgePath(a: Placed, b: Placed): string {
 
 export function MapOverlay({
   graph,
+  error,
   label,
   open,
   onOpenChange,
   onOpenDoc,
 }: {
   graph: GraphPayload | null;
+  /** Why no graph is coming — said in place of "Reading the set…", which
+   *  otherwise spun forever (after End session: "The session has ended"). */
+  error?: string;
   label: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -195,7 +199,7 @@ export function MapOverlay({
 
           <div className="min-h-0 flex-1 overflow-auto p-2">
             {!graph ? (
-              <p className="p-6 text-sm text-ink-dim">Reading the set…</p>
+              <p className="p-6 text-sm text-ink-dim">{error ?? "Reading the set…"}</p>
             ) : graph.nodes.length === 0 ? (
               <p className="p-6 text-sm text-ink-dim">This set has no documents to map.</p>
             ) : mode === "force" ? (

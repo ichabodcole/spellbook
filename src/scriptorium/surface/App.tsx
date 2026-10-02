@@ -13,6 +13,7 @@ import {
   PanelLeftOpenIcon,
   PanelRightCloseIcon,
   PanelRightOpenIcon,
+  PowerIcon,
   SunIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -20,6 +21,7 @@ import { type Layout, useDefaultLayout, usePanelRef } from "react-resizable-pane
 import { Button } from "@/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/ui/empty";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/ui/resizable";
+import { useConfirm } from "../../kit/ui/ConfirmDialog";
 import type {
   ChatMessage,
   ContextEntry,
@@ -57,6 +59,7 @@ import {
   reopenSize,
   type Side,
 } from "./state/columns";
+import { endButtonTitle, endedTitle, unsavedWarning } from "./state/ending";
 import { askAboutNote, badgesOn, elsewhere, loudest, owedLabel, waitingOf } from "./state/notes";
 import { oneLine } from "./state/projection";
 import {
@@ -82,6 +85,7 @@ const CONNECTION_LABEL: Record<Connection, string> = {
   connecting: "connecting…",
   open: "connected",
   closed: "daemon unreachable — retrying",
+  ended: "Session ended",
 };
 
 /** A small icon button for the columns' own chrome — collapse, reopen, reader. */
@@ -151,8 +155,9 @@ const prefKey = (key: string) => key.replace(/^react-resizable-panels:/, "panes:
 
 export function App() {
   const daemon = useDaemon();
-  const { state, connection, send } = daemon;
+  const { state, connection, endedBy, send } = daemon;
   const [theme, setTheme] = useState<Theme>(readAppliedTheme);
+  const { confirm, dialog } = useConfirm();
   /**
    * A search result the human clicked (E59): open this document, and scroll to
    * `at` when it arrives. `seq` makes the same result clickable twice.
@@ -186,6 +191,25 @@ export function App() {
     send({ type: "prefs.set", key: "theme", value: next });
   };
 
+  /**
+   * The human's End session (Cole, 2026-10-01). A shortcut for saying "we're
+   * done" in the chat, never the only path. ⛔ CONFIRMED HERE AND ENDED BY THE
+   * DAEMON — no round trip through the agent: the modal only guards a stray
+   * click, and a session whose agent is gone must still close. The agent's
+   * tail hears `closed` with `by: "human"`. Closing the TAB still ends nothing.
+   */
+  const endSession = async () => {
+    const warning = state ? unsavedWarning(state.docs, state.openDoc) : null;
+    const ok = await confirm({
+      title: "End this session?",
+      message:
+        "Scriptorium stops, and the agent is told you ended it on purpose. What is on screen stays here to look at.",
+      ...(warning ? { warning } : {}),
+      confirmLabel: "End session",
+    });
+    if (ok) send({ type: "session.end" });
+  };
+
   return (
     <div className="flex h-full flex-col">
       <header className="flex h-11 shrink-0 items-center gap-3 border-b border-edge bg-surface px-3">
@@ -201,6 +225,7 @@ export function App() {
           <div className="mx-auto flex min-w-0 flex-1 justify-center px-4">
             <SearchBar
               report={daemon.search}
+              ended={endedBy !== null}
               onQuery={(query) => send({ type: "search", query })}
               onOpen={(target) => {
                 send({ type: "open", path: target.path });
@@ -217,10 +242,22 @@ export function App() {
         )}
         <span
           data-connection={connection}
+          title={endedBy ? endedTitle(endedBy) : undefined}
           className="ml-auto text-xs text-ink-dim data-[connection=closed]:text-attention"
         >
           {CONNECTION_LABEL[connection]}
         </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={endSession}
+          disabled={connection !== "open"}
+          title={endButtonTitle(endedBy)}
+          className="h-7 gap-1.5 px-2 text-xs"
+        >
+          <PowerIcon className="size-3.5" />
+          End session
+        </Button>
         <Button
           variant="ghost"
           size="icon-sm"
@@ -235,6 +272,7 @@ export function App() {
       ) : (
         <div className="flex-1" aria-busy="true" />
       )}
+      {dialog}
     </div>
   );
 }
@@ -267,7 +305,10 @@ function Workspace({
     lastError,
     clearError,
     done,
+    endedBy,
   } = daemon;
+  /** The session was ended on purpose — one fact, read by every control below. */
+  const ended = endedBy !== null;
   const prefsRef = useRef(state.prefs);
   prefsRef.current = state.prefs;
   const storage = useMemo(
@@ -384,13 +425,18 @@ function Workspace({
     storage,
   });
 
-  const saved = state.prefs[VIEW_PREF];
+  // ⚠ AFTER AN END THE MODE IS HELD HERE: it lives in the home's prefs, which
+  // nobody can write any more, and switching raw/rendered is reading — it must
+  // keep working on what is loaded rather than become a dead button.
+  const [modeAfterEnd, setModeAfterEnd] = useState<ViewMode | null>(null);
+  const saved = modeAfterEnd ?? state.prefs[VIEW_PREF];
   const mode: ViewMode = (VIEW_MODES as readonly string[]).includes(saved ?? "")
     ? (saved as ViewMode)
     : "rendered";
   const setMode = useCallback(
-    (next: ViewMode) => send({ type: "prefs.set", key: VIEW_PREF, value: next }),
-    [send],
+    (next: ViewMode) =>
+      ended ? setModeAfterEnd(next) : send({ type: "prefs.set", key: VIEW_PREF, value: next }),
+    [send, ended],
   );
   /** E64: rendered with both columns shut — derived, never stored (`isReader`). */
   const reader = isReader(mode, collapsed);
@@ -612,6 +658,7 @@ function Workspace({
   /** The one composer's props, whichever place it is drawn in (E64). */
   const composer = {
     connected: connection === "open",
+    ended,
     attachable:
       open && shown
         ? {
@@ -739,6 +786,7 @@ function Workspace({
             onMode={setMode}
             docPercent={layoutNow?.document ?? 100}
             quiet={reader}
+            ended={ended}
             // ⛔ A COLLAPSED COLUMN IS REOPENED FROM THE EDGE IT WENT TO (E64).
             // The button sits at that end of the document's heading, where the
             // column was, so the way back is where the eye goes looking for it.

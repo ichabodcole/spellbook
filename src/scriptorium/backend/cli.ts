@@ -61,7 +61,7 @@ import { homedir, tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { type CommandSpec, defineCli, type Invocation } from "../../kit/cli/registry";
 import { printJson } from "../../kit/lib/printJson";
-import { CliError, die, type ErrKind, reportCliError } from "../../kit/wire/errors";
+import { CliError, die, type ErrExtra, type ErrKind, reportCliError } from "../../kit/wire/errors";
 import {
   commandLine,
   readSince,
@@ -142,17 +142,65 @@ function restorable(): string[] {
   }
 }
 
-/** What to say when no daemon answers — including the way back, when there is one. */
-function noSessionHint(): { hint: string; choices?: string[] } {
+/** Who ended a saved session, read from its manifest (which outlives the daemon). */
+function endedBy(id: string): string | undefined {
+  try {
+    const m = JSON.parse(
+      readFileSync(join(scriptoriumHome(), "sessions", id, "manifest.json"), "utf8"),
+    ) as { ended?: { by?: unknown } };
+    return typeof m.ended?.by === "string" ? m.ended.by : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * What to say when no daemon answers — about the session ASKED about
+ * (`--session`), or the newest saved one when none was named.
+ *
+ * ⛔ A NAMED SESSION IS THE ONE THE HINT NAMES. This used to offer the newest
+ * saved session whatever was asked, so `say --session 786bcb09` after the
+ * human ended it said "bring it back with: open --restore b3f429d3" — another
+ * session, live at the time (verifier, 2026-10-01).
+ *
+ * ⛔ A HUMAN END IS ROUTED ON THE MANIFEST'S `ended.by`, NOT ON PROSE: the
+ * human ended it on purpose, so the refusal says so and does not offer the
+ * reopen as the next act (`choices` would invite it too, so there are none).
+ */
+function noSession(session?: string): { message: string; extra: ErrExtra } {
   const ids = restorable();
-  const newest = ids[0];
-  if (newest === undefined)
-    return { hint: "no session has been opened in this home yet — run: cli.ts open <path>" };
+  const id = session ?? ids[0];
+  if (id === undefined)
+    return {
+      message: "no running scriptorium session",
+      extra: { hint: "no session has been opened in this home yet — run: cli.ts open <path>" },
+    };
+  if (!ids.includes(id))
+    return {
+      message: `no scriptorium session ${id} in this home`,
+      extra: {
+        hint:
+          ids.length === 0
+            ? "no saved sessions in this home — run: cli.ts open <path>"
+            : "pass --session one of the saved sessions, or drop it for the most recent",
+        choices: ids.slice(0, 10),
+      },
+    };
+  if (endedBy(id) === "human")
+    return {
+      message: `the human ended session ${id}`,
+      extra: {
+        hint: `the human ended this session on purpose; do not reopen it unless they ask. If they ask: cli.ts open --restore ${id}`,
+      },
+    };
   return {
-    // ⚠ The COMMAND, with the id already in it. A hint that says "you can
-    // restore a session" leaves the reader to find the id and guess the flag.
-    hint: `no daemon is running, but the work is on disk — bring it back with: cli.ts open --restore ${newest}`,
-    choices: ids.slice(0, 10),
+    message: `no running scriptorium session ${id}`,
+    extra: {
+      // ⚠ The COMMAND, with the id already in it. A hint that says "you can
+      // restore a session" leaves the reader to find the id and guess the flag.
+      hint: `no daemon is running for session ${id}, but its work is on disk — bring it back with: cli.ts open --restore ${id}`,
+      choices: ids.slice(0, 10),
+    },
   };
 }
 
@@ -180,7 +228,10 @@ function readSession(session?: string): SessionPointer | null {
 
 function requireSession(session?: string): SessionPointer {
   const s = readSession(session);
-  if (!s) die("no running scriptorium session", "not_found", noSessionHint());
+  if (!s) {
+    const { message, extra } = noSession(session);
+    die(message, "not_found", extra);
+  }
   return s;
 }
 
@@ -542,32 +593,82 @@ async function cmdState(session: string | undefined, full: boolean) {
   printJson(data);
 }
 
-async function readSayBody(
+/**
+ * The ONE prose reader: arguments, `--stdin` or `--body-file`, exactly one of
+ * them. `say`/`task`/`note` need a message and trim it; `version-new` (#117)
+ * may have none (then it copies) and keeps its body byte for byte, because a
+ * version's text is a document, not a chat line.
+ *
+ * A body file that is not there is `usage` (2) by default — what `say`/`task`/
+ * `note`/`note-edit` have always answered — and `not_found` (5) where the
+ * caller asks (`version-new`, new in #117). ⚠ Aligning the older verbs on 5 is
+ * a caller-visible exit-code change, held for a release that can carry a
+ * breaking-changes note; cli-contract pins their 2 until then.
+ */
+async function readProse(
+  verb: string,
   pos: string[],
   flags: Record<string, string | boolean>,
-): Promise<string> {
+  o: { optional?: boolean; missingFile?: "usage" | "not_found" } = {},
+): Promise<string | undefined> {
   const sources = [
     pos.length > 0,
     flags.stdin === true,
     typeof flags["body-file"] === "string",
   ].filter(Boolean).length;
+  if (sources === 0 && o.optional) return undefined;
   if (sources !== 1)
     die(
       sources === 0
-        ? "say needs a message"
-        : "say takes its message from exactly one place: arguments, --stdin or --body-file",
+        ? `${verb} needs a message`
+        : o.optional
+          ? `${verb} takes its body from one place: --stdin or --body-file, not both`
+          : `${verb} takes its message from exactly one place: arguments, --stdin or --body-file`,
       "usage",
       {
-        hint: "give the text as arguments, or prose through --body-file <path> / --stdin (never an unquoted heredoc)",
+        hint: o.optional
+          ? "give the text through --body-file <path> or --stdin (never an unquoted heredoc)"
+          : "give the text as arguments, or prose through --body-file <path> / --stdin (never an unquoted heredoc)",
         choices: ["--stdin", "--body-file"],
       },
     );
   let text: string;
   if (flags.stdin === true) text = await new Response(Bun.stdin.stream()).text();
-  else if (typeof flags["body-file"] === "string") text = readFileSync(flags["body-file"], "utf8");
-  else text = pos.join(" ");
-  if (!text.trim()) die("say: the message is empty", "usage");
-  return text.trim();
+  else if (typeof flags["body-file"] === "string") {
+    const path = flags["body-file"];
+    if (!existsSync(path)) die(`${verb}: --body-file not found: ${path}`, o.missingFile ?? "usage");
+    // A directory is the caller's mistake, the same for every verb — it used
+    // to reach readFileSync and come out as an internal EISDIR (exit 1).
+    if (statSync(path).isDirectory())
+      die(`${verb}: --body-file is a directory, not a file: ${path}`, "usage", {
+        hint: "pass the path of the file that holds the text",
+      });
+    // So is a file this process may not read (chmod 000): it used to come out
+    // as an internal raw EACCES (exit 1). It is there and is a file, so any
+    // failure to read it is "cannot be read" — the caller's to fix.
+    try {
+      text = readFileSync(path, "utf8");
+    } catch {
+      die(`${verb}: --body-file cannot be read: ${path}`, "usage", {
+        hint: "check that the file's permissions let you read it, or pass another file",
+      });
+    }
+  } else text = pos.join(" ");
+  if (!text.trim())
+    die(
+      o.optional ? `${verb}: the body is empty` : `${verb}: the message is empty`,
+      "usage",
+      o.optional ? { hint: `drop --body-file/--stdin to copy the source version instead` } : {},
+    );
+  return text;
+}
+
+async function readSayBody(
+  pos: string[],
+  flags: Record<string, string | boolean>,
+  verb: string,
+): Promise<string> {
+  return ((await readProse(verb, pos, flags)) ?? "").trim();
 }
 
 /**
@@ -593,7 +694,7 @@ async function cmdTail(
   const reArm = session !== undefined || o.sinceGiven;
   let grounded = o.sinceGiven;
   const pin = () => (boundId !== undefined ? ["--session", boundId] : []);
-  return await tailWithHandoff<{ id?: number; epoch?: string; type?: string }>(
+  return await tailWithHandoff<{ id?: number; epoch?: string; type?: string; by?: string }>(
     {
       resolve: () => {
         const s = readSession(boundId);
@@ -659,6 +760,12 @@ async function cmdTail(
       spell: "scriptorium",
       mode: o.once ? "once" : "watch",
       presence: false,
+      // The `closed` event says who ended it; `tail.closed` carries it as
+      // `by`, and a human end tells the agent to stop and not reopen.
+      closedBy: (ev) => (typeof ev.by === "string" ? ev.by : undefined),
+      // A re-arm after the end never sees `closed` (D1); the manifest's
+      // `ended.by` is the same fact, and it outlives the daemon.
+      goneBy: () => (boundId !== undefined ? endedBy(boundId) : undefined),
       commands: {
         tail: ({ since: at, once, epoch }) => tailCommand(["tail", ...pin()], at, once, epoch),
         comeBack: () => commandLine(["open", "--restore", boundId ?? "<id>", "--no-open"]),
@@ -788,17 +895,23 @@ const ROWS: Row[] = [
   },
   {
     name: "version-new",
-    flags: [...SESSION, "doc", "from", "label"],
+    flags: [...SESSION, "doc", "from", "label", "stdin", "body-file"],
     positionals: [],
-    describe: "copy a version (default: the active one) to a new file; prints its path to edit",
+    describe:
+      "propose a new version holding your text (--body-file <path> or --stdin); without one, copies a version (default: the active one) and prints its path to edit",
     run: async (_pos, flags, session) => {
       const from = typeof flags.from === "string" ? parseVersion(flags.from, "--from") : undefined;
+      const text = await readProse("version-new", [], flags, {
+        optional: true,
+        missingFile: "not_found",
+      });
       printJson(
         await postCmd(session, {
           type: "version.new",
           ...(typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}),
           ...(from !== undefined ? { from } : {}),
           ...(typeof flags.label === "string" ? { label: flags.label } : {}),
+          ...(text !== undefined ? { text } : {}),
         }),
       );
     },
@@ -809,7 +922,9 @@ const ROWS: Row[] = [
     positionals: [{ name: "text", required: false, variadic: true }],
     describe: "post a chat message from the agent (prose: --body-file <path> or --stdin)",
     run: async (pos, flags, session) => {
-      printJson(await postCmd(session, { type: "say", text: await readSayBody(pos, flags) }));
+      printJson(
+        await postCmd(session, { type: "say", text: await readSayBody(pos, flags, "say") }),
+      );
     },
   },
   {
@@ -834,7 +949,7 @@ const ROWS: Row[] = [
     describe: "say you have started something; prints the id to finish it with",
     run: async (pos, flags, session) => {
       printJson(
-        await postCmd(session, { type: "task.start", text: await readSayBody(pos, flags) }),
+        await postCmd(session, { type: "task.start", text: await readSayBody(pos, flags, "task") }),
       );
     },
   },
@@ -924,7 +1039,7 @@ const ROWS: Row[] = [
         await postCmd(session, {
           type: "note.add",
           quote: flags.quote,
-          body: await readSayBody(pos, flags),
+          body: await readSayBody(pos, flags, "note"),
           ...(typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}),
         }),
       );
@@ -958,7 +1073,7 @@ const ROWS: Row[] = [
         await postCmd(session, {
           type: "note.edit",
           id: pos[0] as string,
-          body: await readSayBody(pos.slice(1), flags),
+          body: await readSayBody(pos.slice(1), flags, "note-edit"),
           ...(typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}),
         }),
       );

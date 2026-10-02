@@ -95,3 +95,10 @@ and either changes a ruled contract:
   needs the daemon to report its timeout.
 
 The CI test was fixed to stop passing `--timeout` (a test artefact).
+
+**From "Scriptorium from real use, round three" (2026-10-01):** scriptorium's
+`say`, `task`, `note` and `note-edit` report a missing `--body-file` as `usage`
+(exit 2), while grapevine, and now scriptorium's own `version-new`, report it as
+`not_found` (exit 5). The shared reader (`readProse`) can already answer 5; the
+three verbs were held at 2 only because that cycle shipped as a patch. Aligning
+them changes a caller-visible exit code, so it goes in a breaking-changes note.
