@@ -43,9 +43,12 @@ release note.
   [item/error-sites-never-regex-overreaches](../items/error-sites-never-regex-overreaches.md),
   [item/acc-ward-cannot-see-a-stale-surfaces-batch](../items/acc-ward-cannot-see-a-stale-surfaces-batch.md).
 
-Out of scope, deliberately:
-[item/bounty-failed-restore-and-empty-replace-succeed](../items/bounty-failed-restore-and-empty-replace-succeed.md)
-until Cole rules on it; where the outcome vocabulary's canonical copy lives
+- **[item/bounty-failed-restore-and-empty-replace-succeed](../items/bounty-failed-restore-and-empty-replace-succeed.md)**
+  — a corrupt or directory `--restore` and an all-invalid `init --replace` exit
+  0; the team rules what they answer (moved here 2026-10-02, see
+  [a restore keeps every task](2026-10-a-restore-keeps-every-task.md), row 3).
+
+Out of scope, deliberately: where the outcome vocabulary's canonical copy lives
 (still unruled).
 
 ## Decision log

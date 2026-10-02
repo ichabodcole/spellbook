@@ -36,16 +36,13 @@ the first of two cycles after 5.1.0 (2026-10-02); the
   copies it aside) or does not take ownership, and `open` names what it dropped.
   Points 2–4 (an EACCES stack under `--fresh --restore`, a silent empty board
   when `snapshots/` is unreadable, a racing `--fresh --restore`) sit in the same
-  code and come along if they stay small.
-- Candidate, check at convene:
+  code and come along if they stay small. Out of scope, deliberately:
+  [item/bounty-snapshot-rotation-by-content-and-retention](../items/bounty-snapshot-rotation-by-content-and-retention.md)
+  and [item/bounty-snapshot-small-gaps](../items/bounty-snapshot-small-gaps.md)
+  (backlog; nothing is lost without them), and any wire or exit-code cleanup
+  that belongs to the reply-shape cycle, including
   [item/bounty-failed-restore-and-empty-replace-succeed](../items/bounty-failed-restore-and-empty-replace-succeed.md)
-  — it is a design question, so it joins only once Cole has ruled on it.
-
-Out of scope, deliberately:
-[item/bounty-snapshot-rotation-by-content-and-retention](../items/bounty-snapshot-rotation-by-content-and-retention.md)
-and [item/bounty-snapshot-small-gaps](../items/bounty-snapshot-small-gaps.md)
-(backlog; nothing is lost without them), and any wire or exit-code cleanup that
-belongs to the reply-shape cycle.
+  (row 3).
 
 ## Decision log
 
@@ -55,6 +52,7 @@ Decisions as they are made, with the options not taken.
 | --- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1   | 2026-10-02 | Cole: two cycles after 5.1.0. This one first, on its own, because it is the only data-loss route and a design question; then the reply-shape leftovers. The Scriptorium UI nits wait for use.                                                                                                                                                                                                                                                                                                                                                                                                         | One cycle with everything (mixes a design question into a batch of small fixes); a third cycle for the Scriptorium nits.                                                                                                                                             |
 | 2   | 2026-10-02 | Convened. The cause is at `server.ts` ~1349: a restore from the board's own snapshot sets `readOwn` even when `validateTask` dropped or changed entries, so the board owns a file it does not hold and its next write erases them. Wire ruling (the team's): own the snapshot only when the board holds it (`boardHoldsSnapshot`, the test the other boot routes already use); otherwise keep the file aside before the first write, and `open` names each dropped entry. One implementer (all four points are in bounty's restore and ownership code), then one no-stake verifier on a scratch HOME. | Refuse the restore (loses the entries that did validate, and blocks a board on a field it cannot read); keep the file aside on every restore (a copy per keyed respawn, most of them identical); one implementer per point (four agents in one region of two files). |
+| 3   | 2026-10-02 | The candidate, a failed restore and an empty replace both exiting 0, moves to the reply-shape cycle. It was filed as waiting on Cole, but it is a wire question (an agent can tell the cases apart; nothing Cole sees or feels changes), so the team rules it, and it is exit-code shaped like the rest of that cycle.                                                                                                                                                                                                                                                                                | Hold it here for a ruling from Cole (the escalation contract says it is not his); fix it here (splits the caller-visible code changes across two release notes).                                                                                                     |
 
 ## Outcome
 
