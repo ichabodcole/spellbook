@@ -94,6 +94,11 @@ change where there was no answer before: `open --fresh --restore` with a
 read-only `snapshots/` (1, a stack → 6), and the lock-losing `open` given
 `--restore`, `--title` or `--timeout` (0 → 2).
 
+Ships as **5.2.0** (Cole, 2026-10-02): the new fields are a feature by the
+ward's type rule, though the commits are `fix`; the two code changes replace a
+crash and a race-only false success, so they are listed, not marked breaking.
+Set with a `Release-As` footer.
+
 **Carried over:**
 [bounty-respawn-does-not-name-unsaved-dumps](../items/bounty-respawn-does-not-name-unsaved-dumps.md)
 (triage), and four findings appended to
