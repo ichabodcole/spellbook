@@ -243,10 +243,18 @@ session by default; pass `--session <id>` to target a specific one.
 >   `state` and on the browser's `init` frame). Each entry is
 >   `{ index, id, reason }`: the task's place in the snapshot's `tasks`, its id
 >   (`null` if it has none) and why this build rejects it (the same rules as
->   `add`: a status or `notes` shape from another bounty version, say). The rest
->   of the board restores. When the restored file was the board's **own**
->   snapshot, the file is first kept byte-for-byte as a `partial-restore` backup
->   in `snapshotBackups`, so the dropped task is never written over.
+>   `add`: a status or `notes` shape from another bounty version, say). A
+>   **duplicate id** keeps the first entry, as `add` and `init` would; each
+>   later one is dropped with the reason
+>   `duplicate id (index N already has it)`. The rest of the board restores.
+>   When the restored file was the board's **own** snapshot, the file is first
+>   kept byte-for-byte as a `partial-restore` backup in `snapshotBackups`, so
+>   the dropped task is never written over. If that copy cannot be made (a
+>   read-only `snapshots/`), `open` still exits 0 but says so in
+>   **`snapshotBackupFailed`**: `{ kind: "partial-restore", path, error, fix }`,
+>   **present and `null`** on every other `open`, plus a `bounty:` line on
+>   stderr. The file is not written over until a copy can be made (see the
+>   ownership rule under Durability): do what `fix` says.
 >
 > A team coordinator (e.g. anthill) can therefore run
 > `open --session-key <team-channel>` at start and pass
@@ -616,19 +624,24 @@ file, then rename), so a death mid-write leaves the previous one.
 everything in that file (a keyed respawn that restored all of it), or it wrote
 the file itself since, or it has just copied it aside. A board with no snapshot
 yet owns it. Reading the file is not enough: a restore that dropped a task (see
-`restoreDropped`) or changed one (a field from another bounty version) keeps the
-file as a `partial-restore` copy at boot, once; after its first write the file
-is the board's own. Key order and an empty list versus a missing one are not
-differences. Any other board (started `--fresh`, restored from another file, or
-one whose read or copy failed at boot, say a mode-000 file or a read-only
-`snapshots/`) first copies the file to `<id>.unread-<ts>.bak.json` before its
-first write. If that copy fails, nothing is written over the file: the board
-goes to the `unsaved` dump below, and `snapshotSaveFailed.error` says the file
-could not be copied aside. The next write tries again, so once the disk heals
-the old board is kept and the write goes ahead. A normal open, add and close, or
-a keyed respawn and close, makes no copy. A copy made at boot (`unreadable`,
-`pre-restore`, `partial-restore`) or by the shrink rotation counts, so the file
-is never copied twice.
+`restoreDropped`, a later duplicate id among them) or changed one (a field from
+another bounty version) keeps the file as a `partial-restore` copy at boot,
+once; after its first write the file is the board's own. Its `reason` names the
+drops, each changed task with the fields that differ
+(`changed: t-3 (priority, size)`) and any board field that differs
+(`a board field (owner)`). Key order is not a difference, nor is an empty list
+versus a missing one for `tags` and `statusHistory`, the two fields bounty
+writes only when non-empty. Any other field present in the file and absent from
+the board, even one holding `[]`, is a difference. Any other board (started
+`--fresh`, restored from another file, or one whose read or copy failed at boot,
+say a mode-000 file or a read-only `snapshots/`) first copies the file to
+`<id>.unread-<ts>.bak.json` before its first write. If that copy fails, nothing
+is written over the file: the board goes to the `unsaved` dump below, and
+`snapshotSaveFailed.error` says the file could not be copied aside. The next
+write tries again, so once the disk heals the old board is kept and the write
+goes ahead. A normal open, add and close, or a keyed respawn and close, makes no
+copy. A copy made at boot (`unreadable`, `pre-restore`, `partial-restore`) or by
+the shrink rotation counts, so the file is never copied twice.
 
 - **A snapshot that exists but cannot be read** (truncated JSON, not an object,
   `tasks` missing or not an array) makes a restore fail with
@@ -697,7 +710,7 @@ and `[]`** when nothing was backed up. Each entry is
 | `unreadable`      | the daemon, before writing over a file it cannot read                                                                                                                      | `null`      | `null` (repair)           |
 | `pre-fresh`       | `open`, before a `--fresh --restore <own id>` teardown writes the snapshot                                                                                                 | the copy's  | the act                   |
 | `pre-restore`     | the daemon, at boot, when a board restored from ANOTHER file would be written over its own snapshot, and that snapshot holds a task or a title the restored board does not | the copy's  | the act                   |
-| `partial-restore` | the daemon, at boot, when it restored its own snapshot but could not hold all of it (a task dropped, named in `restoreDropped`, or changed); `reason` names the drops      | the copy's  | the act                   |
+| `partial-restore` | the daemon, at boot, when it restored its own snapshot but could not hold all of it (a task dropped, named in `restoreDropped`, or changed); `reason` names what differs   | the copy's  | the act                   |
 | `unread`          | the daemon, before its first write over its own snapshot, when it never read that file and no copy above kept it (the ownership rule above)                                | the copy's  | the act                   |
 | `unsaved`         | the daemon, when the snapshot could not be written (the board, dumped)                                                                                                     | the board's | the act, until superseded |
 
