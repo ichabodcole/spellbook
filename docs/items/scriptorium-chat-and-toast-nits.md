@@ -56,3 +56,17 @@ Found by the browser verifier of
   "connected".
 - With several versions, Compare opens against the file and says "These two
   versions are identical" when v1 equals the file, which can confuse.
+
+**From the round-three second verifier (2026-10-01):**
+
+- **After a crash, verbs answer `internal` with no way back.** After a
+  `kill -9`, the session pointer stays, and `say`/`state` on that session return
+  `internal` (exit 1, "Unable to connect…") with no restore hint; the hint only
+  appears once the pointer is gone. `tail.lost` does name `open --restore`.
+- **Search spins forever on a killed daemon.** The map and path box say
+  "disconnected"; search keeps showing "Searching…". Round three fixed the same
+  shape for a deliberate end only.
+- With a killed daemon, the disabled End session button keeps its "End this
+  session…" title.
+- An agent-close refusal's `choices` lists every saved session, including
+  unrelated live ones (the hint names the right one).
