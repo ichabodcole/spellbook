@@ -218,7 +218,17 @@ const EXPECTED: Record<
   // a quote the active version does not contain, an empty body, a range
   // outside the text — are SessionErrors, which this census does not count.)
   // 34/10 -> 27/4 (2026-09-26): the move onto the kit registry, as glamour's.
-  scriptorium: { sites: 27, choices: 4, verbRoster: true, flagMap: true },
+  // 27/4 -> 28/4 (#117): the one prose reader (`readProse`, now shared by
+  // `say`/`task`/`note` and `version-new --body-file`) refuses a `--body-file`
+  // that is not there before reading it — usage for the older verbs, as
+  // before, not_found for `version-new`. No `choices`: a path is not a closed set.
+  // 28/4 -> 29/4 (round three's verify pass): the same reader refuses a
+  // `--body-file` that is a directory as usage, for every verb — it was an
+  // internal EISDIR. No `choices`, for the same reason.
+  // 29/4 -> 30/4 (round three's second verify pass): and a `--body-file` it
+  // may not read (chmod 000) as usage, for every verb — it was an internal raw
+  // EACCES. No `choices`, for the same reason.
+  scriptorium: { sites: 30, choices: 4, verbRoster: true, flagMap: true },
 };
 
 /**

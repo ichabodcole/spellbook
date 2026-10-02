@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   ClientMsg,
+  ClosedBy,
   DiffPayload,
   FsListEntry,
   GraphPayload,
@@ -17,8 +18,10 @@ import type {
   ServerMsg,
   StructureOpType,
 } from "../../backend/protocol";
+import { afterSocketClose, ENDED_NOTICE, sentAfterEnd, unanswered } from "./ending";
 
-export type Connection = "connecting" | "open" | "closed";
+/** `ended`: the daemon said it was ending on purpose — nothing to retry (End session). */
+export type Connection = "connecting" | "open" | "closed" | "ended";
 
 export const textKey = (doc: string, version: number) => `${doc}@${version}`;
 
@@ -37,6 +40,8 @@ export type Done = { op: StructureOpType; path: string; seq: number };
 export function useDaemon(): {
   state: PublicState | null;
   connection: Connection;
+  /** Who ended the session, once the daemon has said; null while it runs. */
+  endedBy: ClosedBy | null;
   /** E59: the daemon's last search answer, or null before the first one. */
   search: SearchReport | null;
   lastError: string | null;
@@ -54,6 +59,7 @@ export function useDaemon(): {
 } {
   const [state, setState] = useState<PublicState | null>(null);
   const [connection, setConnection] = useState<Connection>("connecting");
+  const [endedBy, setEndedBy] = useState<ClosedBy | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
   const [texts, setTexts] = useState<ReadonlyMap<string, string>>(() => new Map());
   const [done, setDone] = useState<Done | null>(null);
@@ -63,6 +69,8 @@ export function useDaemon(): {
   /** E59's last answer. The caller drops it when the query has moved on. */
   const [search, setSearch] = useState<SearchReport | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  /** Mirrors `endedBy` for `send`, which must not change identity. */
+  const endedRef = useRef<ClosedBy | null>(null);
   // One pending listing per path; a later ask for the same path shares the answer.
   const pending = useRef(new Map<string, ((l: Listing) => void)[]>());
   // One pending move plan per from→into pair (E26's confirmation).
@@ -76,6 +84,8 @@ export function useDaemon(): {
     let stopped = false;
     let delay = 250;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    /** Set by the daemon's `closed` frame, read when the socket goes. */
+    let ended: ClosedBy | null = null;
     const connect = () => {
       const url = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`;
       const ws = new WebSocket(url);
@@ -93,7 +103,11 @@ export function useDaemon(): {
           return;
         }
         if (msg.type === "state") setState(msg.state);
-        else if (msg.type === "error") setLastError(msg.message);
+        else if (msg.type === "closed") {
+          ended = msg.by;
+          endedRef.current = msg.by;
+          setEndedBy(msg.by);
+        } else if (msg.type === "error") setLastError(msg.message);
         else if (msg.type === "version.text") {
           const key = textKey(msg.doc, msg.version);
           setTexts((prev) => {
@@ -138,21 +152,22 @@ export function useDaemon(): {
         }
       };
       ws.onclose = () => {
-        setConnection("closed");
-        // Unanswered listings would otherwise wait forever on a dead socket.
+        const after = afterSocketClose(ended);
+        setConnection(after.connection);
+        // Unanswered listings would otherwise wait forever on a dead socket —
+        // and after a deliberate end they say so, not "disconnected".
+        const why = unanswered(ended);
         for (const waiters of pending.current.values())
-          for (const w of waiters) w({ entries: [], error: "disconnected" });
+          for (const w of waiters) w({ entries: [], error: why });
         pending.current.clear();
-        for (const waiters of plans.current.values())
-          for (const w of waiters) w({ error: "disconnected" });
+        for (const waiters of plans.current.values()) for (const w of waiters) w({ error: why });
         plans.current.clear();
-        for (const waiters of maps.current.values())
-          for (const w of waiters) w({ error: "disconnected" });
+        for (const waiters of maps.current.values()) for (const w of waiters) w({ error: why });
         maps.current.clear();
         for (const waiters of suggestions.current.values())
-          for (const w of waiters) w({ error: "disconnected" });
+          for (const w of waiters) w({ error: why });
         suggestions.current.clear();
-        if (stopped) return;
+        if (stopped || !after.retry) return;
         timer = setTimeout(connect, delay);
         delay = Math.min(delay * 2, 5000);
       };
@@ -166,6 +181,13 @@ export function useDaemon(): {
   }, []);
 
   const send = useCallback((msg: ClientMsg) => {
+    // After a deliberate end nothing is listening: say so to the human's own
+    // acts, and drop what the page sends by itself (`sentAfterEnd`).
+    if (endedRef.current) {
+      if (sentAfterEnd(msg as { type: string; query?: string }) === "notice")
+        setLastError(ENDED_NOTICE);
+      return;
+    }
     const ws = wsRef.current;
     if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
   }, []);
@@ -175,7 +197,7 @@ export function useDaemon(): {
       new Promise<Listing>((resolve) => {
         const ws = wsRef.current;
         if (!ws || ws.readyState !== WebSocket.OPEN) {
-          resolve({ entries: [], error: "disconnected" });
+          resolve({ entries: [], error: unanswered(endedRef.current) });
           return;
         }
         const waiters = pending.current.get(path);
@@ -194,7 +216,7 @@ export function useDaemon(): {
       new Promise<Planning>((resolve) => {
         const ws = wsRef.current;
         if (!ws || ws.readyState !== WebSocket.OPEN) {
-          resolve({ error: "disconnected" });
+          resolve({ error: unanswered(endedRef.current) });
           return;
         }
         const key = `${path}\u0000${into}`;
@@ -214,7 +236,7 @@ export function useDaemon(): {
       new Promise<Mapping>((resolve) => {
         const ws = wsRef.current;
         if (!ws || ws.readyState !== WebSocket.OPEN) {
-          resolve({ error: "disconnected" });
+          resolve({ error: unanswered(endedRef.current) });
           return;
         }
         const waiters = maps.current.get(entry);
@@ -233,7 +255,7 @@ export function useDaemon(): {
       new Promise<Suggestion>((resolve) => {
         const ws = wsRef.current;
         if (!ws || ws.readyState !== WebSocket.OPEN) {
-          resolve({ error: "disconnected" });
+          resolve({ error: unanswered(endedRef.current) });
           return;
         }
         const waiters = suggestions.current.get(path);
@@ -262,6 +284,7 @@ export function useDaemon(): {
   return {
     state,
     connection,
+    endedBy,
     search,
     lastError,
     clearError,

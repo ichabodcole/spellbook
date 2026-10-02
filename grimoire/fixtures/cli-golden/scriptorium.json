@@ -145,8 +145,8 @@
         "  add <path...>                                 add files or folders to the context list",
         "  state [--full]                                the session: context, docs + versions (with paths), active, dirty, selection",
         "  tail [--since ..] [--once]                    the human's messages (with selection + active path) as JSON lines — wrap with Monitor; its last line names the next act",
-        "  version-new [--doc ..] [--from ..] [--label ..]",
-        "                                                copy a version (default: the active one) to a new file; prints its path to edit",
+        "  version-new [--doc ..] [--from ..] [--label ..] [--stdin] [--body-file ..]",
+        "                                                propose a new version holding your text (--body-file <path> or --stdin); without one, copies a version (default: the active one) and prints its path to edit",
         "  say [text...] [--stdin] [--body-file ..]      post a chat message from the agent (prose: --body-file <path> or --stdin)",
         "  version-delete <vN> [--doc ..]                remove a version and its file (never the active one — activate another first)",
         "  task [text...] [--stdin] [--body-file ..]     say you have started something; prints the id to finish it with",
@@ -216,8 +216,8 @@
         "  add <path...>                                 add files or folders to the context list",
         "  state [--full]                                the session: context, docs + versions (with paths), active, dirty, selection",
         "  tail [--since ..] [--once]                    the human's messages (with selection + active path) as JSON lines — wrap with Monitor; its last line names the next act",
-        "  version-new [--doc ..] [--from ..] [--label ..]",
-        "                                                copy a version (default: the active one) to a new file; prints its path to edit",
+        "  version-new [--doc ..] [--from ..] [--label ..] [--stdin] [--body-file ..]",
+        "                                                propose a new version holding your text (--body-file <path> or --stdin); without one, copies a version (default: the active one) and prints its path to edit",
         "  say [text...] [--stdin] [--body-file ..]      post a chat message from the agent (prose: --body-file <path> or --stdin)",
         "  version-delete <vN> [--doc ..]                remove a version and its file (never the active one — activate another first)",
         "  task [text...] [--stdin] [--body-file ..]     say you have started something; prints the id to finish it with",
@@ -288,8 +288,8 @@
         "  add <path...>                                 add files or folders to the context list",
         "  state [--full]                                the session: context, docs + versions (with paths), active, dirty, selection",
         "  tail [--since ..] [--once]                    the human's messages (with selection + active path) as JSON lines — wrap with Monitor; its last line names the next act",
-        "  version-new [--doc ..] [--from ..] [--label ..]",
-        "                                                copy a version (default: the active one) to a new file; prints its path to edit",
+        "  version-new [--doc ..] [--from ..] [--label ..] [--stdin] [--body-file ..]",
+        "                                                propose a new version holding your text (--body-file <path> or --stdin); without one, copies a version (default: the active one) and prints its path to edit",
         "  say [text...] [--stdin] [--body-file ..]      post a chat message from the agent (prose: --body-file <path> or --stdin)",
         "  version-delete <vN> [--doc ..]                remove a version and its file (never the active one — activate another first)",
         "  task [text...] [--stdin] [--body-file ..]     say you have started something; prints the id to finish it with",
@@ -510,6 +510,11 @@
             "path": ["version-new"],
             "args": [
               {
+                "name": "--body-file",
+                "type": "string",
+                "status": "valid"
+              },
+              {
                 "name": "--doc",
                 "type": "string",
                 "status": "valid"
@@ -527,6 +532,11 @@
               {
                 "name": "--session",
                 "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
                 "status": "valid"
               }
             ],
@@ -1511,7 +1521,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--doc", "--from", "--label", "--session"]
+      "choices": ["--body-file", "--doc", "--from", "--label", "--session", "--stdin"]
     },
     {
       "argv": ["version-new", "--help"],
@@ -1520,7 +1530,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--doc", "--from", "--label", "--session"]
+      "choices": ["--body-file", "--doc", "--from", "--label", "--session", "--stdin"]
     },
     {
       "argv": ["say", "--acc-bogus-flag"],
@@ -2641,7 +2651,8 @@
       "verdict": "accepted",
       "stream": "stderr",
       "ok": false,
-      "kind": "not_found"
+      "kind": "not_found",
+      "choices": []
     },
     {
       "argv": ["say", "--session=s1", "hello"],
@@ -2649,7 +2660,8 @@
       "verdict": "accepted",
       "stream": "stderr",
       "ok": false,
-      "kind": "not_found"
+      "kind": "not_found",
+      "choices": []
     },
     {
       "argv": ["say", "--", "--x"],

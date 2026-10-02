@@ -119,6 +119,48 @@ describe("handoff — which line, given how the tail ended (pure)", () => {
     });
   });
 
+  test("closed BY THE HUMAN → stop, says so, and offers the way back only if they ask", () => {
+    const line = handoff(
+      {
+        spell: "demo",
+        end: "closed",
+        by: "human",
+        mode: "watch",
+        events: 2,
+        cursor: 9,
+        presence: false,
+      },
+      CMD,
+    );
+    expect(line).toEqual({
+      type: "tail.closed",
+      spell: "demo",
+      events: 2,
+      cursor: 9,
+      by: "human",
+      next: "stop",
+      command: "open --restore s1",
+      hint: "the human ended this session on purpose; stop watching, and do not reopen it unless they ask. If they ask, run bun <this skill's directory>/scripts/cli.ts <command>; then arm the tail again with no --since, on the session id it prints where there is one (a restarted daemon starts a new event log, so the old bookmark does not apply)",
+    });
+  });
+
+  test("closed by anyone else carries who, and keeps the plain come-back hint", () => {
+    const line = handoff(
+      {
+        spell: "demo",
+        end: "closed",
+        by: "agent",
+        mode: "once",
+        events: 1,
+        cursor: 9,
+        presence: false,
+      },
+      CMD,
+    );
+    expect(line?.by).toBe("agent");
+    expect(line?.hint.startsWith("the session closed; there is nothing left to watch.")).toBe(true);
+  });
+
   test("disconnected (lost) → stop, naming how to come back — not a re-arm", () => {
     expect(
       handoff(
@@ -492,6 +534,20 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
     ]);
   });
 
+  test("the closing frame's `closedBy` reaches the line — a human end is routed on, not read", async () => {
+    const d = fakeDaemon((conn) => conn.push({ id: 3, type: "closed", by: "human" }));
+    const out = collector();
+    await tailWithHandoff<Ev>(base(d, out), {
+      spell: "demo",
+      mode: "watch",
+      presence: false,
+      closedBy: (ev) => ev.by,
+      commands: CMD,
+    });
+    const last = JSON.parse(out.lines().at(-1) ?? "{}");
+    expect([last.type, last.by, last.next]).toEqual(["tail.closed", "human", "stop"]);
+  });
+
   test("a pinned session that vanishes is closed, not a silent exit", async () => {
     let n = 0;
     const d = fakeDaemon((conn) => conn.end());
@@ -565,6 +621,38 @@ describe("tailWithHandoff — the window and --once over the real client", () =>
     );
     expect(code).toBe(0);
     expect(out.lines().map((l) => JSON.parse(l).type)).toEqual(["tail.closed"]);
+  });
+
+  test("S1 on the D1 path: a session found gone carries who ended it, from the spell's `goneBy`", async () => {
+    // Re-armed after the human ended it: no closing frame is ever seen, so
+    // `closedBy` has nothing to read. The spell keeps the fact elsewhere (its
+    // manifest), and the line must say the same as the live path did.
+    const out = collector();
+    await tailWithHandoff<Ev>(
+      base({ base: "unused" }, out, { resolve: () => null, onUnresolved: () => "stop" }),
+      {
+        spell: "demo",
+        mode: "once",
+        presence: false,
+        closedBy: (ev) => ev.by,
+        goneBy: () => "human",
+        commands: CMD,
+      },
+    );
+    const last = JSON.parse(out.lines().at(-1) ?? "{}");
+    expect([last.type, last.by, last.next]).toEqual(["tail.closed", "human", "stop"]);
+    expect(last.hint).toContain("on purpose");
+  });
+
+  test("D1 with no `goneBy` answer: tail.closed with no `by`, the generic hint", async () => {
+    const out = collector();
+    await tailWithHandoff<Ev>(
+      base({ base: "unused" }, out, { resolve: () => null, onUnresolved: () => "stop" }),
+      { spell: "demo", mode: "once", presence: false, goneBy: () => undefined, commands: CMD },
+    );
+    const last = JSON.parse(out.lines().at(-1) ?? "{}");
+    expect(last.type).toBe("tail.closed");
+    expect("by" in last).toBe(false);
   });
 
   test("D2: a bookmark from a restarted log is dropped — the replay resets the cursor", async () => {

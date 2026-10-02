@@ -71,6 +71,7 @@ import { type PickKind, parsePickerOutput, pickerCommand, wasCancelled } from ".
 import type {
   AgentCmd,
   ClientMsg,
+  ClosedBy,
   PublicState,
   Selection,
   ServerMsg,
@@ -241,9 +242,18 @@ export async function startDaemon(opts: StartOpts) {
   };
   const broadcastState = () => send({ type: "state", state: viewState() });
 
-  /** A system line in the chat — and, because the agent must know it too, on the tail. */
-  const announce = (text: string, fact: Record<string, unknown> = {}) => {
-    const m = session.addMessage("system", text);
+  /**
+   * A system line in the chat — and, because the agent must know it too, on the tail.
+   *
+   * `forHuman`, when given, is the chat's line and `text` stays the agent's
+   * (the tail event). For a fact whose agent text is instructions ("Do NOT
+   * create another version…") or carries a long path: the human was shown
+   * the agent's orders, and the path overflowed the chat column (verifier,
+   * 2026-10-01). The same split `save` already makes — a short chat line, a
+   * structured event.
+   */
+  const announce = (text: string, fact: Record<string, unknown> = {}, forHuman?: string) => {
+    const m = session.addMessage("system", forHuman ?? text);
     log.emit({ type: "system", text, ts: m.ts, ...fact });
     broadcastState();
   };
@@ -331,7 +341,14 @@ export async function startDaemon(opts: StartOpts) {
         // outside text is KEPT as a new agent version and the active version
         // keeps the human's text — nothing is lost, and the human's buffer is
         // not touched (verify-pass fix 4).
-        announceOutside(ev.doc, ev.version, ev.path, ev.preservedAs, ev.preservedPath);
+        announceOutside(
+          ev.doc,
+          ev.version,
+          ev.path,
+          ev.preservedAs,
+          ev.preservedPath,
+          ev.activatedBeforeWritten,
+        );
         return;
       case "original.reloaded":
         send({
@@ -364,10 +381,31 @@ export async function startDaemon(opts: StartOpts) {
     path: string,
     preservedAs: number,
     preservedPath: string,
+    activatedBeforeWritten: boolean,
   ) =>
     announce(
-      `v${version} of ${doc} is the ACTIVE version and was written from outside the editor. That text is kept as v${preservedAs}; the active version keeps your text. Agent edits belong in a new version (version-new).`,
-      { fact: "active.outside", doc, version, path, preservedAs, preservedPath },
+      // #117: the human activated the agent's `version-new` copy before the
+      // agent had written it. The agent followed the rule; the timing broke
+      // it. Say that, and name the act — its text is already safe, so another
+      // version would only add a duplicate. Agents route on the structured
+      // `activatedBeforeWritten`, never on this text.
+      activatedBeforeWritten
+        ? `The human activated v${version} of ${doc} before you had written it, so your write landed on the ACTIVE version. Nothing is lost: your text is kept as v${preservedAs} (${preservedPath}); v${version} keeps its own text. Do NOT create another version — say in the chat that v${preservedAs} is your draft and let the human activate it. Next time, propose a version in one step with version-new --body-file.`
+        : `v${version} of ${doc} is the ACTIVE version and was written from outside the editor. That text is kept as v${preservedAs}; the active version keeps your text. Agent edits belong in a new version (version-new).`,
+      {
+        fact: "active.outside",
+        doc,
+        version,
+        path,
+        preservedAs,
+        preservedPath,
+        activatedBeforeWritten,
+      },
+      // The human's own line: what happened to their version, no path, no
+      // instructions meant for the agent. It names the document by the name
+      // the human sees on its tab — two documents in one conversation must not
+      // read the same (second verifier, 2026-10-01).
+      humanOutsideLine(session.doc(doc).name, version, preservedAs, activatedBeforeWritten),
     );
 
   // --- shared acts (surface and agent reach the same code) ---------------------
@@ -379,7 +417,7 @@ export async function startDaemon(opts: StartOpts) {
   };
 
   const activate = (doc: string | undefined, version: number, by: "human" | "agent") => {
-    const r = session.activate({ doc, version });
+    const r = session.activate({ doc, version, by });
     const view = session.doc(r.slug);
     const path = view.versions.find((v) => v.n === version)?.path ?? null;
     send({
@@ -611,6 +649,7 @@ export async function startDaemon(opts: StartOpts) {
             session.activePath(d.slug) ?? "",
             r.preserved.n,
             r.preserved.path,
+            r.preserved.activatedBeforeWritten,
           );
         } else if (r.dirtyChanged) broadcastState();
         return;
@@ -947,6 +986,12 @@ export async function startDaemon(opts: StartOpts) {
         broadcastState();
         return;
       }
+      case "session.end":
+        // ⛔ THE DAEMON ENDS IT, NOT THE AGENT (Cole, 2026-10-01): the page
+        // already asked the human to confirm, and a session whose agent has
+        // gone must still be able to close. Same teardown as `close`.
+        resolveDone({ code: 0, reason: "close", by: "human" });
+        return;
       case "prefs.set": {
         if (
           !PREF_KEY.test(msg.key) ||
@@ -1130,8 +1175,8 @@ export async function startDaemon(opts: StartOpts) {
   };
 
   // --- agent commands (POST /cmd) ----------------------------------------------
-  let resolveDone!: (v: { code: number; reason: string }) => void;
-  const done = new Promise<{ code: number; reason: string }>((r) => {
+  let resolveDone!: (v: { code: number; reason: string; by: ClosedBy }) => void;
+  const done = new Promise<{ code: number; reason: string; by: ClosedBy }>((r) => {
     resolveDone = r;
   });
 
@@ -1357,17 +1402,33 @@ export async function startDaemon(opts: StartOpts) {
               by: "agent",
             });
         }
+        // #117: with `text` the file is written HERE, before the announce
+        // below — the version is never offered to the human unwritten.
         const r = session.newVersion({
           doc: cmd.doc,
           from: cmd.from,
           label: cmd.label,
+          ...(typeof cmd.text === "string" ? { text: cmd.text } : {}),
           author: "agent",
         });
         announce(
           `Agent created v${r.version.n} of ${r.slug} from v${r.version.from}${cmd.label ? ` — ${cmd.label}` : ""}.`,
           { fact: "version.created", doc: r.slug, version: r.version.n },
         );
-        return { doc: r.slug, version: r.version.n, from: r.version.from, path: r.version.path };
+        // The answer names the act it makes likely: a version born holding the
+        // agent's text is ready to talk about; a copy still has to be written,
+        // and is already on offer to the human (#117).
+        const written = typeof cmd.text === "string";
+        return {
+          doc: r.slug,
+          version: r.version.n,
+          from: r.version.from,
+          path: r.version.path,
+          written,
+          hint: written
+            ? `v${r.version.n} holds your text and the human has been offered it — no need to announce it; say why you made it if that helps them decide`
+            : `v${r.version.n} is a copy of v${r.version.from} and the human can already activate it — write your text to its path now (next time: version-new --body-file, one step)`,
+        };
       }
       case "say": {
         const m = session.addMessage("agent", cmd.text);
@@ -1377,7 +1438,7 @@ export async function startDaemon(opts: StartOpts) {
       case "activate":
         return activate(cmd.doc, cmd.version, "agent");
       case "close":
-        resolveDone({ code: 0, reason: "close" });
+        resolveDone({ code: 0, reason: "close", by: "agent" });
         return {};
       default:
         throw new SessionError(
@@ -1642,7 +1703,7 @@ export async function startDaemon(opts: StartOpts) {
     idleMs: () => performance.now() - lastActivity,
     touch,
     timeoutMs: (opts.timeoutS ?? 1800) * 1000,
-    onIdleClose: () => resolveDone({ code: 124, reason: "timeout" }),
+    onIdleClose: () => resolveDone({ code: 124, reason: "timeout", by: "timeout" }),
   });
 
   let closed = false;
@@ -1668,7 +1729,7 @@ export async function startDaemon(opts: StartOpts) {
   };
 
   // The order is the header's, and the header says why.
-  const close = () => {
+  const close = (by?: ClosedBy) => {
     if (closed) return;
     closed = true;
     stopHousekeeping();
@@ -1676,16 +1737,24 @@ export async function startDaemon(opts: StartOpts) {
     for (const w of watchers.values()) w.close();
     watchers.clear();
     for (const t of pending.values()) clearTimeout(t);
+    // WHO ended it goes in the manifest before the persist: the manifest
+    // outlives this daemon, and a verb run after the end reads it there.
+    if (by) session.markEnded(by);
     try {
       session.persist();
     } catch {
       /* best-effort */
     }
     cleanupDiscovery();
-    log.emit({ type: "closed" });
+    // WHO ended it rides the event, so the agent's tail can tell the human's
+    // deliberate end from its own `close` or the idle timeout — and the
+    // surface gets the same fact before its socket goes, so it can say
+    // "Session ended" instead of retrying a daemon that is not coming back.
+    log.emit({ type: "closed", ...(by ? { by } : {}) });
+    if (by) send({ type: "closed", by });
     void drainAndStop({ server, clients: sseClients, sockets }).then(resolveShutdown);
   };
-  done.then(() => close());
+  done.then((r) => close(r.by));
 
   return { port: boundPort, sessionId, mode, dir: session.dir, close, done, shutdown };
 }
@@ -1698,6 +1767,22 @@ export async function startDaemon(opts: StartOpts) {
  * expands it) and then Enter failed with "no such file or folder:
  * …/skills/scriptorium/~/Documents/…" (Cole, 2026-09-11).
  */
+/**
+ * The human's chat line when an outside write to the active version is kept
+ * (E2, #117): what happened to their version of WHICH document, no path, no
+ * instructions meant for the agent.
+ */
+export function humanOutsideLine(
+  name: string,
+  version: number,
+  preservedAs: number,
+  activatedBeforeWritten: boolean,
+): string {
+  return activatedBeforeWritten
+    ? `You activated v${version} of ${name} before the agent had written it; the agent's text is v${preservedAs}.`
+    : `v${version} of ${name} was written from outside the editor; that text is kept as v${preservedAs}, and v${version} keeps yours.`;
+}
+
 export function surfacePath(p: string): string {
   const t = p.trim();
   if (t === "~" || t.startsWith("~/")) return expandHome(t);

@@ -9,7 +9,15 @@
 // process's, `choices` wherever the valid set is in hand (register A1).
 
 import { afterAll, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync as mkdtempRaw, readdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync as mkdtempRaw,
+  readdirSync,
+  rmSync,
+  utimesSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -54,14 +62,18 @@ afterAll(() => {
 const EMPTY_TMP = mkdtempSync(join(tmpdir(), "scriptorium-contract-"));
 const EMPTY_HOME = mkdtempSync(join(tmpdir(), "scriptorium-contract-home-"));
 
-function run(args: string[], tmp = EMPTY_TMP): { code: number; stdout: string; stderr: string } {
+function run(
+  args: string[],
+  tmp = EMPTY_TMP,
+  home = EMPTY_HOME,
+): { code: number; stdout: string; stderr: string } {
   // Bun strips a bare `--` placed right after the script path; the added `--`
   // is the one it consumes, so the CLI receives exactly `args`.
   const p = Bun.spawnSync(["bun", CLI, "--", ...args], {
     stdout: "pipe",
     stderr: "pipe",
     stdin: new Uint8Array(0),
-    env: { ...process.env, TMPDIR: tmp, SCRIPTORIUM_HOME: EMPTY_HOME },
+    env: { ...process.env, TMPDIR: tmp, SCRIPTORIUM_HOME: home },
   });
   return {
     code: p.exitCode,
@@ -223,6 +235,99 @@ test("say's message-source disjunction is choices, not prose (A1)", () => {
   expect(doc.error.choices).toEqual(["--stdin", "--body-file"]);
 });
 
+test("version-new's body (#117): one source, a file that exists, not empty — each refused before any session", () => {
+  const dir = mkdtempSync(join(tmpdir(), "scriptorium-body-"));
+  const body = join(dir, "body.md");
+  writeFileSync(body, "# a draft\n");
+  const both = run(["version-new", "--stdin", "--body-file", body]);
+  expect(both.code).toBe(2);
+  const bothDoc = JSON.parse(both.stderr) as Envelope;
+  expect(bothDoc.error.kind).toBe("usage");
+  expect(bothDoc.error.choices).toEqual(["--stdin", "--body-file"]);
+
+  const missing = run(["version-new", "--body-file", join(dir, "nope.md")]);
+  expect(missing.code).toBe(5);
+  const missingDoc = JSON.parse(missing.stderr) as Envelope;
+  expect(missingDoc.error.kind).toBe("not_found");
+  expect(missingDoc.error.message).toContain("--body-file not found");
+
+  const empty = join(dir, "empty.md");
+  writeFileSync(empty, "  \n");
+  const blank = run(["version-new", "--body-file", empty]);
+  expect(blank.code).toBe(2);
+  const blankDoc = JSON.parse(blank.stderr) as Envelope;
+  expect(blankDoc.error.message).toBe("version-new: the body is empty");
+  expect(blankDoc.error.hint).toContain("copy the source");
+
+  // A good body gets as far as the session — and there is none here.
+  const noSession = JSON.parse(run(["version-new", "--body-file", body]).stderr) as Envelope;
+  expect(noSession.error.kind).toBe("not_found");
+  expect(noSession.error.message).not.toContain("--body-file");
+});
+
+// ⚠ PINNED, NOT AN OVERSIGHT: the older prose verbs answer a missing
+// --body-file with usage (2), as they always have; `version-new` alone, new in
+// #117, answers not_found (5). Moving these to 5 is a caller-visible exit-code
+// change held for a release that carries a breaking-changes note.
+test.each([
+  ["say", ["say"]],
+  ["task", ["task"]],
+  ["note", ["note", "--quote", "x"]],
+  ["note-edit", ["note-edit", "n-1"]],
+])("%s's missing --body-file stays usage (2), naming its own verb", (verb, args) => {
+  const r = run([...args, "--body-file", "/definitely/not/here.txt"]);
+  expect(r.code).toBe(2);
+  const doc = JSON.parse(r.stderr) as Envelope;
+  expect(doc.error.kind).toBe("usage");
+  expect(doc.error.message).toBe(`${verb}: --body-file not found: /definitely/not/here.txt`);
+});
+
+test.each([
+  ["say", ["say"]],
+  ["task", ["task"]],
+  ["note", ["note", "--quote", "x"]],
+  ["note-edit", ["note-edit", "n-1"]],
+  ["version-new", ["version-new"]],
+])("%s's --body-file naming a DIRECTORY is usage (2), saying so — not an internal EISDIR", (verb, args) => {
+  const dir = mkdtempSync(join(tmpdir(), "scriptorium-bodydir-"));
+  const r = run([...args, "--body-file", dir]);
+  expect(r.code).toBe(2);
+  const doc = JSON.parse(r.stderr) as Envelope;
+  expect(doc.error.kind).toBe("usage");
+  expect(doc.error.message).toBe(`${verb}: --body-file is a directory, not a file: ${dir}`);
+});
+
+test.each([
+  ["say", ["say"]],
+  ["task", ["task"]],
+  ["note", ["note", "--quote", "x"]],
+  ["note-edit", ["note-edit", "n-1"]],
+  ["version-new", ["version-new"]],
+])("%s's --body-file that CANNOT BE READ (chmod 000) is usage (2), saying so — not an internal EACCES", (verb, args) => {
+  const dir = mkdtempSync(join(tmpdir(), "scriptorium-bodylocked-"));
+  const locked = join(dir, "locked.md");
+  writeFileSync(locked, "# a draft\n");
+  chmodSync(locked, 0o000);
+  try {
+    const r = run([...args, "--body-file", locked]);
+    expect(r.code).toBe(2);
+    const doc = JSON.parse(r.stderr) as Envelope;
+    expect(doc.error.kind).toBe("usage");
+    expect(doc.error.message).toBe(`${verb}: --body-file cannot be read: ${locked}`);
+    expect(r.stderr).not.toContain("EACCES");
+  } finally {
+    chmodSync(locked, 0o644);
+  }
+});
+
+test("a prose refusal names the verb that was run, not `say`", () => {
+  for (const verb of ["task", "note-edit"]) {
+    const args = verb === "note-edit" ? [verb, "n-1"] : [verb];
+    const doc = JSON.parse(run(args).stderr) as Envelope;
+    expect(doc.error.message).toBe(`${verb} needs a message`);
+  }
+});
+
 test("restoring an unknown session names the saved sessions as choices — empty, and said", () => {
   const doc = JSON.parse(run(["open", "--no-open", "--restore", "nope"]).stderr) as Envelope;
   expect(doc.error.choices).toEqual([]);
@@ -357,6 +462,73 @@ test.each([
   } finally {
     server.stop(true);
   }
+});
+
+// ── after the end: the refusal names the session asked about ─────────
+
+/** A home holding saved sessions, each manifest as given (`ended` or not). */
+function homeWith(sessions: { id: string; ended?: { by: string; at: number } }[]): string {
+  const home = mkdtempSync(join(tmpdir(), "scriptorium-ended-home-"));
+  for (const [i, s] of sessions.entries()) {
+    mkdirSync(join(home, "sessions", s.id), { recursive: true });
+    const path = join(home, "sessions", s.id, "manifest.json");
+    writeFileSync(
+      path,
+      JSON.stringify({ format: 1, sessionId: s.id, ...(s.ended ? { ended: s.ended } : {}) }),
+    );
+    // The LAST one written is the newest — the session a "most recent" lookup would name.
+    const t = new Date(Date.now() - (sessions.length - i) * 60_000);
+    utimesSync(path, t, t);
+  }
+  return home;
+}
+
+test("a named session with no daemon: the hint names THAT session, not the newest", () => {
+  const home = homeWith([{ id: "aaaa1111" }, { id: "bbbb2222" }]);
+  const r = run(["state", "--session", "aaaa1111"], EMPTY_TMP, home);
+  expect(r.code).toBe(5);
+  const doc = JSON.parse(r.stderr) as Envelope;
+  expect(doc.error.hint).toContain("open --restore aaaa1111");
+  expect(doc.error.hint).not.toContain("bbbb2222");
+  expect(doc.error.message).toContain("aaaa1111");
+});
+
+test("a session the HUMAN ended: the refusal says so, and does not invite a reopen", () => {
+  const home = homeWith([{ id: "aaaa1111", ended: { by: "human", at: 1 } }, { id: "bbbb2222" }]);
+  const r = run(["say", "hello", "--session", "aaaa1111"], EMPTY_TMP, home);
+  expect(r.code).toBe(5);
+  const doc = JSON.parse(r.stderr) as Envelope;
+  expect(doc.error.message).toBe("the human ended session aaaa1111");
+  expect(doc.error.hint).toBe(
+    "the human ended this session on purpose; do not reopen it unless they ask. If they ask: cli.ts open --restore aaaa1111",
+  );
+  expect(doc.error.choices).toBeUndefined();
+});
+
+test("a session ended by the agent or the idle timeout still offers the way back", () => {
+  for (const by of ["agent", "timeout"]) {
+    const home = homeWith([{ id: "aaaa1111", ended: { by, at: 1 } }]);
+    const doc = JSON.parse(
+      run(["state", "--session", "aaaa1111"], EMPTY_TMP, home).stderr,
+    ) as Envelope;
+    expect(doc.error.hint).toContain("bring it back with: cli.ts open --restore aaaa1111");
+  }
+});
+
+test("no --session: the newest saved session is named, and a human end routes the same way", () => {
+  const home = homeWith([{ id: "aaaa1111" }, { id: "bbbb2222", ended: { by: "human", at: 1 } }]);
+  const doc = JSON.parse(run(["state"], EMPTY_TMP, home).stderr) as Envelope;
+  expect(doc.error.message).toBe("the human ended session bbbb2222");
+});
+
+test("a named session that is not on disk names the saved ones as choices", () => {
+  const home = homeWith([{ id: "aaaa1111" }]);
+  const doc = JSON.parse(
+    run(["state", "--session", "zzzz9999"], EMPTY_TMP, home).stderr,
+  ) as Envelope;
+  expect(doc.error.message).toContain("zzzz9999");
+  expect(doc.error.choices).toEqual(["aaaa1111"]);
+  expect(doc.error.hint).not.toContain("open --restore zzzz9999");
 });
 
 test("a session pointer that cannot be READ is internal/1, not not_found/5", () => {

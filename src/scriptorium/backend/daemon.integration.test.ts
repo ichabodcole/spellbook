@@ -383,8 +383,16 @@ describe("a session, end to end through the launchers", () => {
     expect(readFileSync(String(line.preservedPath), "utf8")).toBe("the agent broke the rule\n");
     // The active version keeps the human's text.
     expect(readFileSync(activePath, "utf8")).toBe(before);
+    // The HUMAN's line is their own: what happened to their version, not the
+    // agent's instructions (the tail line above carries those).
     const s2 = JSON.parse((await cli("state", "--full")).out) as PublicState;
-    expect(s2.chat.some((m) => m.who === "system" && m.text.includes("ACTIVE version"))).toBe(true);
+    const mine = s2.chat.filter((m) => m.who === "system").at(-1);
+    // It names the document: two documents in one conversation must not read
+    // the same (second verifier, 2026-10-01).
+    expect(mine?.text).toBe(
+      `v2 of ${st.docs[0]?.name} was written from outside the editor; that text is kept as v3, and v2 keeps yours.`,
+    );
+    expect(String(line.text)).toContain("Agent edits belong in a new version");
   });
 
   test("E24 — the agent's verbs and the surface's messages are one path: same change, announced to both", async () => {
@@ -633,4 +641,129 @@ describe("verify-pass fixes, through the launchers", () => {
     await Bun.sleep(600);
     expect(readdirSync(logs).length).toBe(before - 1);
   }, 60_000);
+});
+
+// #117 — its own session, so the versions it makes move no other block's numbers.
+describe("a version and the human's Activate: the race, and the one-step form that removes it (#117)", () => {
+  let sid = "";
+  const surface = new FakeSurface();
+  let tail: ReturnType<typeof Bun.spawn> | null = null;
+  let tailOut = "";
+  const race = join(docs, "race.md");
+
+  beforeAll(async () => {
+    writeFileSync(race, "# Race\n\nthe source.\n");
+    const r = await cli("open", "--no-open", race);
+    expect(r.code).toBe(0);
+    const hs = JSON.parse(r.out) as { port: number; session_id: string };
+    sid = hs.session_id;
+    await surface.connect(hs.port);
+    surface.send({ type: "open", path: race });
+    await surface.waitFor((m) => m.type === "state" && m.state.openDoc === "race");
+    tail = Bun.spawn(["bun", CLI, "tail", "--session", sid], {
+      stdout: "pipe",
+      stderr: "pipe",
+      stdin: "ignore",
+      env,
+    });
+    void (async () => {
+      const reader = (tail?.stdout as ReadableStream<Uint8Array>).getReader();
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        tailOut += new TextDecoder().decode(value);
+      }
+    })();
+  }, 60_000);
+
+  afterAll(async () => {
+    surface.close();
+    await cli("close", "--session", sid);
+    tail?.kill();
+  });
+
+  const waitTail = async (pred: (l: Record<string, unknown>) => boolean) => {
+    for (let i = 0; i < 250; i++) {
+      const hit = tailOut
+        .split("\n")
+        .filter(Boolean)
+        .map((l) => JSON.parse(l) as Record<string, unknown>)
+        .find(pred);
+      if (hit) return hit;
+      await Bun.sleep(20);
+    }
+    throw new Error(`tail never printed the line; got ${tailOut}`);
+  };
+  const s = (...args: string[]) => cli(...args, "--session", sid);
+
+  test("THE RACE: the human activates the agent's unwritten copy, the agent writes it — the safeguard says what happened", async () => {
+    const r = await s("version-new", "--label", "race");
+    expect(r.code).toBe(0);
+    const v = JSON.parse(r.out) as { version: number; path: string; written: boolean };
+    expect(v.written).toBe(false);
+    // The human clicks Activate on the toast before the agent has written.
+    surface.send({ type: "activate", doc: "race", version: v.version });
+    await waitTail((l) => l.type === "activated" && l.version === v.version && l.by === "human");
+    writeFileSync(v.path, "the agent's draft, a moment late\n");
+    const line = await waitTail((l) => l.fact === "active.outside" && l.version === v.version);
+    expect(line.activatedBeforeWritten).toBe(true);
+    expect(String(line.text)).toContain(
+      `activated v${v.version} of race before you had written it`,
+    );
+    expect(String(line.text)).toContain("Do NOT create another version");
+    // The human is not shown the agent's instructions, nor the long path: a
+    // short line of their own (verifier, 2026-10-01).
+    const st = JSON.parse((await s("state", "--full")).out) as PublicState;
+    const human = st.chat.filter((m) => m.who === "system").at(-1);
+    expect(human?.text).toBe(
+      `You activated v${v.version} of race.md before the agent had written it; the agent's text is v${line.preservedAs}.`,
+    );
+    expect(readFileSync(String(line.preservedPath), "utf8")).toBe(
+      "the agent's draft, a moment late\n",
+    );
+  });
+
+  test("activated, TYPED IN, then the agent writes: not the race — the human had written it", async () => {
+    const r = await s("version-new", "--label", "typed");
+    expect(r.code).toBe(0);
+    const v = JSON.parse(r.out) as { version: number; path: string };
+    surface.send({ type: "activate", doc: "race", version: v.version });
+    await waitTail((l) => l.type === "activated" && l.version === v.version && l.by === "human");
+    surface.send({ type: "edit", doc: "race", version: v.version, text: "the human typed this\n" });
+    for (let i = 0; i < 250 && readFileSync(v.path, "utf8") !== "the human typed this\n"; i++)
+      await Bun.sleep(20);
+    expect(readFileSync(v.path, "utf8")).toBe("the human typed this\n");
+    writeFileSync(v.path, "the agent's draft, after the human typed\n");
+    const line = await waitTail((l) => l.fact === "active.outside" && l.version === v.version);
+    expect(line.activatedBeforeWritten).toBe(false);
+    const st = JSON.parse((await s("state", "--full")).out) as PublicState;
+    const human = st.chat.filter((m) => m.who === "system").at(-1);
+    expect(human?.text).toBe(
+      `v${v.version} of race.md was written from outside the editor; that text is kept as v${line.preservedAs}, and v${v.version} keeps yours.`,
+    );
+  });
+
+  test("version-new --body-file: the version holds the text by the time it is announced", async () => {
+    const body = join(root, "v-body.md");
+    writeFileSync(body, "# Race\n\nborn whole.\n");
+    const r = await s("version-new", "--label", "whole", "--body-file", body);
+    expect(r.code).toBe(0);
+    const v = JSON.parse(r.out) as {
+      version: number;
+      path: string;
+      written: boolean;
+      hint: string;
+    };
+    expect(v.written).toBe(true);
+    expect(v.hint).toContain("holds your text");
+    const announced = await waitTail(
+      (l) => l.fact === "version.created" && l.version === v.version,
+    );
+    expect(String(announced.text)).toContain("— whole");
+    expect(readFileSync(v.path, "utf8")).toBe("# Race\n\nborn whole.\n");
+    // Activating it at once loses nothing: there is no write still to come.
+    surface.send({ type: "activate", doc: "race", version: v.version });
+    await waitTail((l) => l.type === "activated" && l.version === v.version);
+    expect(readFileSync(v.path, "utf8")).toBe("# Race\n\nborn whole.\n");
+  });
 });

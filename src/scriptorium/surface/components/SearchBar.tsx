@@ -16,6 +16,7 @@ import { cn } from "cn";
 import { FileTextIcon, SearchIcon, XIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { SearchReport } from "../../backend/protocol";
+import { SEARCH_ENDED } from "../state/ending";
 
 /** Typing pause before asking. Long enough not to search every keystroke. */
 const DEBOUNCE_MS = 140;
@@ -24,9 +25,12 @@ export function SearchBar({
   report,
   onQuery,
   onOpen,
+  ended = false,
 }: {
   /** The daemon's last answer, whatever it was for. */
   report: SearchReport | null;
+  /** The session was ended on purpose: the daemon that searches is gone. */
+  ended?: boolean;
   /** Ask; an empty string means "stop, I am done". */
   onQuery: (query: string) => void;
   /**
@@ -130,7 +134,11 @@ export function SearchBar({
             "rounded-md border border-edge bg-surface-raised shadow-lg",
           )}
         >
-          {fresh === null ? (
+          {ended ? (
+            // After the end no answer is coming: say so where the answer goes,
+            // never "Searching…" forever (verifier, 2026-10-01).
+            <p className="px-3 py-2 text-xs text-ink-dim">{SEARCH_ENDED}</p>
+          ) : fresh === null ? (
             <p className="px-3 py-2 text-xs text-ink-faint">Searching…</p>
           ) : nothing ? (
             <p className="px-3 py-2 text-xs text-ink-dim">

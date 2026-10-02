@@ -38,6 +38,7 @@ import {
   DropdownMenuTrigger,
 } from "@/ui/dropdown-menu";
 import type { Version } from "../../backend/protocol";
+import { SESSION_ENDED } from "../state/ending";
 
 /** The label is the identity; `vN` is what a version is called when unnamed. */
 export function versionLabel(v: Version): string {
@@ -80,6 +81,7 @@ export function VersionMenu({
   onNewVersion,
   onDelete,
   onReveal,
+  ended = false,
 }: {
   versions: Version[];
   active: number;
@@ -90,6 +92,8 @@ export function VersionMenu({
   onDelete: (n: number) => void;
   /** E44: show this version's file in the file manager — offered on EVERY row. */
   onReveal: (n: number) => void;
+  /** The session was ended on purpose: making, deleting and comparing need the daemon. */
+  ended?: boolean;
 }) {
   const rows = ordered(versions, active);
   const current = versions.find((v) => v.n === active);
@@ -127,7 +131,9 @@ export function VersionMenu({
         <div className="border-b border-edge px-2 py-1.5">
           <p className="text-sm font-medium text-ink">Versions</p>
           <p className="text-xs text-ink-faint">
-            Choosing one makes it the version you edit and Save writes.
+            {ended
+              ? `${SESSION_ENDED}: versions can be read, not made, deleted or compared.`
+              : "Choosing one makes it the version you edit and Save writes."}
           </p>
         </div>
         <div className="max-h-64 overflow-y-auto py-1">
@@ -192,7 +198,7 @@ export function VersionMenu({
                   >
                     <FolderOpenIcon aria-hidden className="size-3" />
                   </button>
-                  {v.n !== active && (
+                  {v.n !== active && !ended && (
                     // ⛔ Comparing must NOT activate. The whole point of reading
                     // a version first is to decide, and a menu that switched you
                     // to whatever you wanted to look at would make that
@@ -210,7 +216,7 @@ export function VersionMenu({
                       Compare
                     </button>
                   )}
-                  {v.n !== active && (
+                  {v.n !== active && !ended && (
                     // Offered ONLY on a version that is not active, which is
                     // the same rule the daemon enforces (E41) — the UI does
                     // not show an action the wire would refuse.
@@ -240,6 +246,7 @@ export function VersionMenu({
             second is the older behaviour, kept because "mark this and keep
             typing" is a real thing to want and branching labels it backwards. */}
         <DropdownMenuItem
+          disabled={ended}
           onClick={() => {
             setOpen(false);
             onNewVersion("branch");
@@ -249,6 +256,7 @@ export function VersionMenu({
           New version from v{active} and edit it…
         </DropdownMenuItem>
         <DropdownMenuItem
+          disabled={ended}
           onClick={() => {
             setOpen(false);
             onNewVersion("snapshot");

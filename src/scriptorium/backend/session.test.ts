@@ -284,6 +284,142 @@ describe("self-write suppression — whose write was that?", () => {
   });
 });
 
+describe("a version born holding its text — and the race it removes (#117)", () => {
+  test("version-new with a body writes that text, not a copy of the source", () => {
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    const { version } = s.newVersion({
+      doc: slug,
+      label: "draft",
+      text: "# Solo, rewritten\n",
+      author: "agent",
+    });
+    expect(version).toMatchObject({ n: 2, from: 1, author: "agent", label: "draft" });
+    expect(readFileSync(version.path, "utf8")).toBe("# Solo, rewritten\n");
+    // The daemon's own write: the watcher sees nothing to report.
+    expect(s.onFileEvent(version.path)).toBeNull();
+  });
+
+  test("THE RACE: the human activates an unwritten copy, then the agent writes it — the event says so", () => {
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    const { version } = s.newVersion({ doc: slug, author: "agent" });
+    s.activate({ doc: slug, version: version.n, by: "human" });
+    writeFileSync(version.path, "the agent's draft\n");
+    expect(s.onFileEvent(version.path)).toMatchObject({
+      kind: "active.outside",
+      version: 2,
+      preservedAs: 3,
+      activatedBeforeWritten: true,
+    });
+    expect(s.readVersion(slug, 3).text).toBe("the agent's draft\n");
+    // Said once: a second outside write is the ordinary case.
+    writeFileSync(version.path, "again\n");
+    expect(s.onFileEvent(version.path)).toMatchObject({
+      kind: "active.outside",
+      activatedBeforeWritten: false,
+    });
+  });
+
+  test("THE FLIP-FLOP: activated, away, and back before the agent writes — still the race", () => {
+    // The verifier's sequence: version-new → v2; the human activates v2 from
+    // the toast, picks v1 in the menu, picks v2 again; THEN the agent writes.
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    const { version } = s.newVersion({ doc: slug, author: "agent" });
+    s.activate({ doc: slug, version: version.n, by: "human" });
+    s.activate({ doc: slug, version: 1, by: "human" });
+    s.activate({ doc: slug, version: version.n, by: "human" });
+    writeFileSync(version.path, "the agent's draft\n");
+    expect(s.onFileEvent(version.path)).toMatchObject({
+      kind: "active.outside",
+      activatedBeforeWritten: true,
+    });
+  });
+
+  test("once the copy's content changes it is no longer an unwritten copy, wherever it is activated", () => {
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    const { version } = s.newVersion({ doc: slug, author: "agent" });
+    s.activate({ doc: slug, version: version.n, by: "human" });
+    // The human types into it: it is theirs now, not the agent's pending copy.
+    s.edit(slug, version.n, "# Solo, the human's\n");
+    s.activate({ doc: slug, version: 1, by: "human" });
+    s.activate({ doc: slug, version: version.n, by: "human" });
+    writeFileSync(version.path, "outside\n");
+    expect(s.onFileEvent(version.path)).toMatchObject({ activatedBeforeWritten: false });
+  });
+
+  test("activated, then TYPED IN, then the agent writes — not the race: the human had written it", () => {
+    // Second verifier's sequence: version-new → v2; the human activates v2,
+    // types in the editor and waits; the agent writes v2's path. The human
+    // wrote v2, so "you activated v2 before the agent had written it" is false.
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    const { version } = s.newVersion({ doc: slug, author: "agent" });
+    s.activate({ doc: slug, version: version.n, by: "human" });
+    s.edit(slug, version.n, "# Solo, the human's\n");
+    writeFileSync(version.path, "the agent's draft\n");
+    expect(s.onFileEvent(version.path)).toMatchObject({
+      kind: "active.outside",
+      activatedBeforeWritten: false,
+    });
+  });
+
+  test("activated, typed in, then the agent writes before the watcher fires — not the race either", () => {
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    const { version } = s.newVersion({ doc: slug, author: "agent" });
+    s.activate({ doc: slug, version: version.n, by: "human" });
+    s.edit(slug, version.n, "# Solo, the human's\n");
+    writeFileSync(version.path, "the agent's draft\n");
+    const r = s.edit(slug, version.n, "# Solo, the human's, more\n");
+    expect(r.preserved).toMatchObject({ activatedBeforeWritten: false });
+  });
+
+  test("the race through check-before-write (the human types before the watcher fires) carries it too", () => {
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    const { version } = s.newVersion({ doc: slug, author: "agent" });
+    s.activate({ doc: slug, version: version.n, by: "human" });
+    writeFileSync(version.path, "the agent's draft\n");
+    const r = s.edit(slug, 2, "the human typed\n");
+    expect(r.preserved).toMatchObject({ n: 3, activatedBeforeWritten: true });
+  });
+
+  test("not the race: the copy was written before it was activated, or the agent activated it, or it is a body version", () => {
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    const written = s.newVersion({ doc: slug, author: "agent" }).version;
+    writeFileSync(written.path, "written first\n");
+    s.onFileEvent(written.path);
+    s.activate({ doc: slug, version: written.n, by: "human" });
+    writeFileSync(written.path, "then outside\n");
+    expect(s.onFileEvent(written.path)).toMatchObject({ activatedBeforeWritten: false });
+
+    const byAgent = s.newVersion({ doc: slug, author: "agent" }).version;
+    s.activate({ doc: slug, version: byAgent.n, by: "agent" });
+    writeFileSync(byAgent.path, "outside\n");
+    expect(s.onFileEvent(byAgent.path)).toMatchObject({ activatedBeforeWritten: false });
+
+    const body = s.newVersion({ doc: slug, text: "born whole\n", author: "agent" }).version;
+    s.activate({ doc: slug, version: body.n, by: "human" });
+    writeFileSync(body.path, "outside\n");
+    expect(s.onFileEvent(body.path)).toMatchObject({ activatedBeforeWritten: false });
+  });
+
+  test("the ordinary outside write to the active version is not the race", () => {
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    const path = s.readVersion(slug, 1).path;
+    writeFileSync(path, "outside\n");
+    expect(s.onFileEvent(path)).toMatchObject({
+      kind: "active.outside",
+      activatedBeforeWritten: false,
+    });
+  });
+});
+
 describe("admission — only a document in the context is opened or saved (verify-pass fix 1)", () => {
   test("a document outside every context entry is refused", () => {
     const s = Session.create(home);
@@ -378,6 +514,18 @@ describe("the manifest survives a restart (--restore)", () => {
     const s = inContext();
     s.openPath(join(docs, "solo.md"));
     expect(Session.restore(home, s.id).restoreFindings).toEqual([]);
+  });
+
+  test("who ended the session is in the manifest, which outlives the daemon; a restore clears it", () => {
+    const s = inContext();
+    s.markEnded("human");
+    s.persist();
+    const onDisk = JSON.parse(readFileSync(join(home, "sessions", s.id, "manifest.json"), "utf8"));
+    expect(onDisk.ended.by).toBe("human");
+    expect(typeof onDisk.ended.at).toBe("number");
+    Session.restore(home, s.id);
+    const after = JSON.parse(readFileSync(join(home, "sessions", s.id, "manifest.json"), "utf8"));
+    expect(after.ended).toBeUndefined();
   });
 
   test("restoring an unknown session is not_found", () => {

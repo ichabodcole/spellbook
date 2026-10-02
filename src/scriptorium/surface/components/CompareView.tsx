@@ -15,7 +15,14 @@ import { cn } from "cn";
 import { CheckIcon, GitCompareIcon } from "lucide-react";
 import { Fragment } from "react";
 import { Button } from "@/ui/button";
-import type { DiffLine, DiffPayload, DiffSide, DiffSpan, Version } from "../../backend/protocol";
+import type {
+  DiffLine,
+  DiffPayload,
+  DiffSide,
+  DiffSpan,
+  DocView,
+  Version,
+} from "../../backend/protocol";
 
 /**
  * How a comparison side reads to a human (E43).
@@ -36,6 +43,32 @@ export function fileLabel(name: string, max = 22): string {
 
 export function sideLabel(side: DiffSide, file: string, max?: number): string {
   return side === "original" ? fileLabel(file, max) : `v${side}`;
+}
+
+/** What the compare control and the compare view say when there is no other side (#116). */
+export const NOTHING_TO_COMPARE = "Only one version — nothing to compare";
+
+/**
+ * True when a comparison could only ever say "identical" (#116): one version,
+ * and that version is the file. ⚠ NOT JUST "ONE VERSION". The file of record is
+ * a side of its own (E36), so v1 with unsaved edits, or whose file moved on
+ * disk, has a real difference — and E54's "See the difference" is that route.
+ */
+export function nothingToCompare(doc: Pick<DocView, "versions" | "dirty" | "outsideChanged">) {
+  return doc.versions.length < 2 && !doc.dirty && !doc.outsideChanged;
+}
+
+/** Where the compare view would be, when there is nothing to put in it. */
+export function NothingToCompare() {
+  return (
+    <div
+      role="status"
+      className="flex flex-1 items-center justify-center gap-2 text-sm text-ink-faint"
+    >
+      <GitCompareIcon aria-hidden className="size-4" />
+      {NOTHING_TO_COMPARE}.
+    </div>
+  );
 }
 
 /** One rendered row: the same line on both sides, or one side of a change. */
@@ -166,6 +199,10 @@ export function CompareView({
     diff.hunks.map((h) => h.id),
   );
   const sides: DiffSide[] = ["original", ...versions.map((v) => v.n).filter((n) => n !== active)];
+  // #116: one version, the same as its file — any route that lands here (a
+  // saved compare mode, a stale click) says there is nothing to compare,
+  // never "identical", which implies a comparison that did not happen.
+  if (diff.same && sides.length < 2) return <NothingToCompare />;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">

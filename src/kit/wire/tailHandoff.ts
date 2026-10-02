@@ -270,6 +270,19 @@
  * ⚖ THE LINE'S `command` IS COMPLETE BUT FOR THE LAUNCHER: pinned to the
  *   session this tail was bound to, with its scope flags. The skills name the
  *   rule once, launcher form included; the line carries the specifics.
+ *
+ * S1 · WHO CLOSED IT RIDES THE LINE (scriptorium's End session, 2026-10-01).
+ *      A spell whose `closed` frame says who ended the session passes
+ *      `closedBy`, and `tail.closed` carries it as `by`. `by: "human"` changes
+ *      the hint: the human ended it ON PURPOSE, so the agent stops and does not
+ *      reopen unless asked — the way back is still named, conditioned on that.
+ *      The agent routes on `by`, never on the hint's prose. A re-arm after
+ *      the end sees no closing frame (D1's path), so the spell also passes
+ *      `goneBy`, read from where the fact outlives the daemon; without it the
+ *      re-armed line dropped `by` and invited the reopen (verifier, 2026-10-01).
+ *      ⚖ Options not taken: a spell-side rewrite of the printed line (a second
+ *      writer of the same line), or a spell-supplied hint (each spell would
+ *      word "on purpose" its own way).
  */
 import { type SseFrame, type TailOptions, tailEvents } from "./tailEvents";
 
@@ -313,6 +326,8 @@ export type HandoffInput = {
   /** The spell whose tail this is, so the agent knows whose launcher runs it. */
   spell: string;
   end: TailEnd;
+  /** Who ended a `closed` session, when its closing frame said (S1). */
+  by?: string;
   mode: TailMode;
   /** Log frames this process wrote to stdout (A3). */
   events: number;
@@ -338,6 +353,8 @@ export type HandoffLine = {
   spell: string;
   events: number;
   cursor: number;
+  /** `tail.closed` only: who ended the session, when the spell says (S1). */
+  by?: string;
   /** `monitor`: arm Monitor (timeout_ms 1800000) with the launcher + `command`.
    *  `background`: run the launcher + `command` as a background Bash task.
    *  `stop`: nothing to watch; `command` is how to come back, if wanted. */
@@ -354,8 +371,8 @@ export const RUN_WITH_LAUNCHER = "bun <this skill's directory>/scripts/cli.ts <c
 
 /** The come-back hint, with how to RESUME after coming back (D2): a restored
  *  daemon starts a new log, so the old bookmark means nothing there. */
-const COME_BACK = (why: string) =>
-  `${why} To bring it back, run ${RUN_WITH_LAUNCHER}; then arm the tail again with no --since, on the session id it prints where there is one (a restarted daemon starts a new event log, so the old bookmark does not apply)`;
+const COME_BACK = (why: string, lead = "To bring it back") =>
+  `${why} ${lead}, run ${RUN_WITH_LAUNCHER}; then arm the tail again with no --since, on the session id it prints where there is one (a restarted daemon starts a new event log, so the old bookmark does not apply)`;
 
 /**
  * THE DECISION: given how the tail ended, which line it prints. Pure, so every
@@ -371,9 +388,16 @@ export function handoff(s: HandoffInput, cmd: HandoffCommands): HandoffLine | nu
       return {
         type: "tail.closed",
         ...base,
+        ...(s.by ? { by: s.by } : {}),
         next: "stop",
         command: cmd.comeBack(),
-        hint: COME_BACK("the session closed; there is nothing left to watch."),
+        hint:
+          s.by === "human"
+            ? COME_BACK(
+                "the human ended this session on purpose; stop watching, and do not reopen it unless they ask.",
+                "If they ask",
+              )
+            : COME_BACK("the session closed; there is nothing left to watch."),
       };
     case "lost":
       return {
@@ -502,6 +526,13 @@ export type HandoffOptions<Ev> = {
   counts?: (ev: Ev, frame: SseFrame) => boolean;
   /** Which terminal frame means the session closed. Default: every terminal. */
   isClosed?: (ev: Ev) => boolean;
+  /** Who the closing frame says ended the session (S1); carried on `tail.closed`. */
+  closedBy?: (ev: Ev) => string | undefined;
+  /** Who ended a session found GONE (D1: re-armed after it closed, so no
+   *  closing frame is ever seen), read from wherever the spell keeps it — a
+   *  manifest that outlives the daemon. Carried on `tail.closed` as `by`, so
+   *  the line says what the live path's `closedBy` would have (S1). */
+  goneBy?: () => string | undefined;
   commands: HandoffCommands;
 };
 
@@ -532,6 +563,7 @@ export async function tailWithHandoff<Ev>(
    *  id-less `connected`/`disconnected` ping is not on the log. */
   const isLogFrame = (ev: Ev, frame: SseFrame) => frameHasId && counts(ev, frame);
   let end: TailEnd | null = null;
+  let closedBy: string | undefined;
   let refusals = 0;
 
   const finish = (e: TailEnd) => {
@@ -562,7 +594,10 @@ export async function tailWithHandoff<Ev>(
         // D1: a tail that gives up on finding its session is watching a
         // session that is gone — whether this process ever reached it (its
         // pointer vanished) or it was re-armed at one that closed in the gap.
-        if (verdict === "stop" && end === null) end = "closed";
+        if (verdict === "stop" && end === null) {
+          end = "closed";
+          closedBy = h.goneBy?.();
+        }
         return verdict;
       },
       render: (ev, frame) => {
@@ -573,7 +608,10 @@ export async function tailWithHandoff<Ev>(
       },
       terminal: (ev, frame, accepted) => {
         if (tail.terminal?.(ev, frame, accepted)) {
-          if (end === null) end = (h.isClosed ?? (() => true))(ev) ? "closed" : "event";
+          if (end === null) {
+            end = (h.isClosed ?? (() => true))(ev) ? "closed" : "event";
+            if (end === "closed") closedBy = h.closedBy?.(ev);
+          }
           return true;
         }
         if (h.mode === "once" && accepted && isLogFrame(ev, frame)) {
@@ -607,6 +645,7 @@ export async function tailWithHandoff<Ev>(
     const line = handoff(
       {
         end: end ?? "stopped",
+        ...(closedBy ? { by: closedBy } : {}),
         mode: h.mode,
         events,
         cursor,

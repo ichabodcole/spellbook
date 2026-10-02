@@ -64,22 +64,32 @@ as `v1`; their keystrokes land there. The file on disk changes only when they
 press Save. You never write their file directly — not with Edit, not with Write.
 
 **2 · ⛔ NEVER WRITE THE ACTIVE VERSION.** The active version is the one they
-are typing in — `docs[].active` in `state`. To propose a change: `version-new`
-(it prints a path), then edit _that_ path with your own tools. The surface
-raises a toast the moment the version exists, naming it and you as its author,
-with **Activate** and **Show diff**; they choose whether to make it active. A
-version made while their browser was disconnected is toasted when it reconnects.
-**You do not need to announce a new version in chat.** Say _why_ you made it if
-that helps them decide. Writing the active version is detected, kept as a
-version of its own, and announced to both of you as a mistake — nothing is lost,
-but they are told, and their cursor was in there.
+are typing in — `docs[].active` in `state`. To propose a change, write your text
+to a file and hand it over in one step:
+`version-new --body-file <path> --label "…"` (or `--stdin` from a quoted
+heredoc). The version is born holding your text. The surface raises a toast the
+moment the version exists, naming it and you as its author, with **Activate**
+and **Show diff**; they choose whether to make it active. A version made while
+their browser was disconnected is toasted when it reconnects. **You do not need
+to announce a new version in chat.** Say _why_ you made it if that helps them
+decide. Writing the active version is detected, kept as a version of its own,
+and announced to both of you as a mistake — nothing is lost, but they are told,
+and their cursor was in there.
+
+The older two-step form still works and is **racy**: plain `version-new` copies
+a version and prints its path for you to edit, but the toast offers that copy at
+once. If they activate it before you write, your write lands on the active
+version. The safeguard keeps your text as yet another version and says so
+(`active.outside` with `activatedBeforeWritten: true`). **Do not make another
+version then**: tell them which version holds your draft.
 
 **3 · Save and Revert are theirs.** There is no verb for either, deliberately.
 Your work exists as versions until they accept it.
 
 **4 · Prose goes through a file.** `say --body-file <path>` or `--stdin` from a
 quoted heredoc, never as shell arguments — an unquoted heredoc eats backticks
-before the CLI sees them. Same for `task`, and `note --quote '<exact text>'`.
+before the CLI sees them. Same for `task`, `version-new`, and
+`note --quote '<exact text>'`.
 
 **Write `say` in markdown; it renders.** The conversation shows your message
 rendered (headings, lists, code blocks, tables, links), not as raw `**` and
@@ -132,8 +142,8 @@ the selected passage with its document, version and line numbers, and the path
 of the active version. Read it; do not ask what "this" means. Then:
 
 ```bash
-bun $S/scripts/cli.ts version-new --doc <slug, or a PATH if not open yet> --label "tighter opening"
-#   → {doc, version, path} — edit that path, then:
+bun $S/scripts/cli.ts version-new --doc <slug, or a PATH if not open yet> --label "tighter opening" --body-file /tmp/draft.md
+#   → {doc, version, path, written: true} — it already holds your text; then:
 bun $S/scripts/cli.ts say --body-file /tmp/reply.md
 ```
 
@@ -145,13 +155,15 @@ any of them. A document becomes open — copied in as `v1`, with versions you ca
 write — the first time someone reaches for it: the human by clicking it, you by
 naming its **path** to `version-new`.
 
-So for a document the human has not opened:
+So for a document the human has not opened, write your text to a file and:
 
 ```bash
-bun $S/scripts/cli.ts version-new --doc /abs/path/from/the/context.md
+bun $S/scripts/cli.ts version-new --doc /abs/path/from/the/context.md --body-file <path> --label "…"
 ```
 
-That opens it and gives you a v2 to write, without moving their view.
+That opens it and gives you a v2 that holds your text from the start, without
+moving their view (Rule 2). Leaving out `--body-file` makes v2 a copy for you to
+edit, which is the racy two-step form.
 
 **⚠ `--doc` accepts a slug or a unique filename only for a document that is
 ALREADY open.** For anything else it must be an absolute path — a filename gets
@@ -159,8 +171,9 @@ you `no document "keeper.md" in this session`. `state` lists what is open
 (`docs[].slug`) and what is merely in the context. A refusal names the paths you
 could have used.
 
-**The path `version-new` prints is never the active one** — that is what makes
-it safe to write with your own tools.
+**The path `version-new` prints is never the active one when it is made** — but
+the human can activate it a moment later, which is why the one-step
+`--body-file` form is the normal way to propose a version.
 
 ## What else arrives on the tail
 
@@ -185,9 +198,17 @@ Facts, not chatter. The ones worth acting on:
 - **`saved`, `activated`, `system`** — they changed what is where. `system`
   announcements carry a `fact` and, for structure changes, who did it.
 - **`closed`** — the session ended. The tail follows it with `tail.closed` and
-  exits 0. A daemon that dies without `closed` (a crash, a `kill -9`) ends the
-  tail with `tail.lost` instead, on stdout, so you hear it. Both name
-  `open --restore <id>` as the way back.
+  exits 0. The event and the line carry `by`: `human` (their End session
+  button), `agent` (your `close`), or `timeout` (the idle close). A daemon that
+  dies without `closed` (a crash, a `kill -9`) ends the tail with `tail.lost`
+  instead, on stdout, so you hear it. Both name `open --restore <id>` as the way
+  back.
+- **`by: "human"` means they ended it on purpose.** It is not a crash to repair.
+  Stop watching, and do not reopen it unless they ask; wrap up in the terminal
+  if there is anything to say. Route on `by`, not on the hint's wording.
+
+**When they say they are done in the chat** ("we're done", "that's all"), run
+`close` yourself. The button is a shortcut for saying it; saying it still works.
 
 ## When you go quiet
 
