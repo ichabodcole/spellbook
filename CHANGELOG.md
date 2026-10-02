@@ -1,5 +1,21 @@
 # Changelog
 
+## [5.2.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v5.1.0...spellbook-v5.2.0) (2026-10-02)
+
+
+### Bug Fixes
+
+* **bounty:** a restore that drops or changes a task keeps the file first ([489d934](https://github.com/ichabodcole/spellbook/commit/489d9341f5c06783229429ac0c6eeff68a41a36d))
+* **bounty:** an unknown [] field or a duplicate id costs the one copy, and its reason names what changed ([f50df0e](https://github.com/ichabodcole/spellbook/commit/f50df0e3baff953f8b8713139011b39e38dde19e))
+* **bounty:** open says what a snapshot edge did, instead of a stack or a silent success ([4c5aa18](https://github.com/ichabodcole/spellbook/commit/4c5aa186da01b0c30a0d67670c35b678b14ff2bf))
+* **bounty:** open says when the partial-restore copy could not be made ([0cb5713](https://github.com/ichabodcole/spellbook/commit/0cb5713abeeb284a91dece5654b70bf1313ec168))
+* **bounty:** restoreSkipped's reason agrees with the flags it names ([f5cb25d](https://github.com/ichabodcole/spellbook/commit/f5cb25d4a5dc80ff8d2dc0730ae9d3e00b5864cc))
+
+
+### Miscellaneous Chores
+
+* **release:** ship the bounty restore fix as 5.2.0 ([5d9e98f](https://github.com/ichabodcole/spellbook/commit/5d9e98f2bb386942c41c28ca9d8c5a405a9258f8))
+
 ## [5.1.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v5.0.1...spellbook-v5.1.0) (2026-10-02)
 
 
