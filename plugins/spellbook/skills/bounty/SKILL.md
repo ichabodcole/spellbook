@@ -244,17 +244,18 @@ session by default; pass `--session <id>` to target a specific one.
 >   `{ index, id, reason }`: the task's place in the snapshot's `tasks`, its id
 >   (`null` if it has none) and why this build rejects it (the same rules as
 >   `add`: a status or `notes` shape from another bounty version, say). A
->   **duplicate id** keeps the first entry, as `add` and `init` would; each
->   later one is dropped with the reason
+>   **duplicate id** keeps the first **valid** entry, as `add` and `init` would;
+>   each later one is dropped with the reason
 >   `duplicate id (index N already has it)`. The rest of the board restores.
 >   When the restored file was the board's **own** snapshot, the file is first
 >   kept byte-for-byte as a `partial-restore` backup in `snapshotBackups`, so
 >   the dropped task is never written over. If that copy cannot be made (a
 >   read-only `snapshots/`), `open` still exits 0 but says so in
->   **`snapshotBackupFailed`**: `{ kind: "partial-restore", path, error, fix }`,
->   **present and `null`** on every other `open`, plus a `bounty:` line on
->   stderr. The file is not written over until a copy can be made (see the
->   ownership rule under Durability): do what `fix` says.
+>   **`snapshotBackupFailed`**: `{ kind: "partial-restore", path, error, fix }`
+>   (`path` is the snapshot that was not copied; the copy's own path is in
+>   `error`), **present and `null`** on every other `open`, plus a `bounty:`
+>   line on stderr. The file is not written over until a copy can be made (see
+>   the ownership rule under Durability): do what `fix` says.
 >
 > A team coordinator (e.g. anthill) can therefore run
 > `open --session-key <team-channel>` at start and pass
@@ -630,8 +631,8 @@ once; after its first write the file is the board's own. Its `reason` names the
 drops, each changed task with the fields that differ
 (`changed: t-3 (priority, size)`) and any board field that differs
 (`a board field (owner)`). Key order is not a difference, nor is an empty list
-versus a missing one for `tags` and `statusHistory`, the two fields bounty
-writes only when non-empty. Any other field present in the file and absent from
+versus a missing one for `tags` and `statusHistory`, the two fields a restore
+normalises away when empty. Any other field present in the file and absent from
 the board, even one holding `[]`, is a difference. Any other board (started
 `--fresh`, restored from another file, or one whose read or copy failed at boot,
 say a mode-000 file or a read-only `snapshots/`) first copies the file to
