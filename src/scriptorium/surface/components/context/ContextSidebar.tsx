@@ -55,6 +55,7 @@ import {
   baseName,
   dirOf,
   docsIn,
+  drillFor,
   joinPath,
   moveTargets,
   shortPath,
@@ -177,6 +178,20 @@ export function ContextSidebar({
     setRenamePath(created.path);
   }, [created]);
   const renameStarted = useCallback(() => setRenamePath(null), []);
+
+  // #124: the open document changed (a followed link, the agent, a search)
+  // while the list is showing: drill into the set that holds it, so its tree
+  // can reveal the row. Only from the list, and only on a change: a set the
+  // human drilled into is never switched away from, and a single document
+  // already shows in the list.
+  const lastActive = useRef(activeDoc ? `${activeDoc.entryId}/${activeDoc.rel}` : null);
+  useEffect(() => {
+    const key = activeDoc ? `${activeDoc.entryId}/${activeDoc.rel}` : null;
+    if (key === lastActive.current) return;
+    lastActive.current = key;
+    const into = drillFor(entriesRef.current, activeDoc, drilled);
+    if (into) setDrilled(into);
+  }, [activeDoc, drilled]);
 
   const moveTargetsFor = useCallback(
     (path: string) => moveTargets(entries, workspace, path, userHome),

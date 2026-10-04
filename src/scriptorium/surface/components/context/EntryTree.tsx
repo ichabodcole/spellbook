@@ -47,6 +47,7 @@ import {
   ancestorsOf,
   baseName,
   dirOf,
+  foldersToReveal,
   indexTree,
   joinPath,
   type MoveTarget,
@@ -183,6 +184,65 @@ export function EntryTree({
     tree.getItemInstance(rel)?.startRenaming();
     onRenameStarted();
   }, [renamePath, index, entry.root, tree, onRenameStarted]);
+
+  // #124: the open document changed by another route than its own row (a
+  // followed link, the agent, a search): open the folders down to it and bring
+  // its row into view, so the highlight is somewhere the human can see. Only on
+  // the CHANGE of document: a folder the human shuts afterwards stays shut, and
+  // nothing the human had open is collapsed. The first render counts as a change
+  // too: `initialState` has opened the way, and a tree drilled into for a
+  // followed link still has to bring a row below the fold into view.
+  const revealed = useRef<string | null>(null);
+  const [scrollTo, setScrollTo] = useState<string | null>(null);
+  useEffect(() => {
+    if (activeRel === revealed.current) return;
+    if (activeRel !== null && !index.byId.has(activeRel)) return; // not in this snapshot yet
+    revealed.current = activeRel;
+    if (activeRel === null) return;
+    for (const a of foldersToReveal(activeRel, (id) => !!tree.getItemInstance(id)?.isExpanded()))
+      tree.getItemInstance(a)?.expand();
+    setScrollTo(activeRel);
+  }, [activeRel, index, tree]);
+  // The scroll, once the row can take one. It waits for the opened folders to
+  // render the row and, with the context column collapsed (kept mounted but
+  // `inert`, at no width), for the column to reopen: a scroll made while it is
+  // put away does nothing useful, and the row would come back out of view. It
+  // scrolls once, then clears; a newer reveal replaces it.
+  useEffect(() => {
+    if (scrollTo === null) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let watcher: MutationObserver | undefined;
+    let tries = 0;
+    let cancelled = false;
+    const attempt = () => {
+      if (cancelled) return;
+      watcher?.disconnect();
+      const el = tree.getItemInstance(scrollTo)?.getElement();
+      if (!el) {
+        if (++tries < 50) timer = setTimeout(attempt, 20);
+        else setScrollTo(null);
+        return;
+      }
+      const shut = el.closest<HTMLElement>("[inert],[hidden]");
+      if (shut) {
+        watcher = new MutationObserver(() => {
+          // Reopened: give the column a frame to lay out, then scroll.
+          if (!shut.inert && !shut.hidden)
+            requestAnimationFrame(() => requestAnimationFrame(attempt));
+        });
+        watcher.observe(shut, { attributes: true, attributeFilter: ["inert", "hidden"] });
+        return;
+      }
+      el.scrollIntoView?.({ block: "nearest" });
+      setScrollTo(null);
+    };
+    attempt();
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      watcher?.disconnect();
+    };
+  }, [scrollTo, tree]);
 
   // ONE context menu for the whole tree: a row's right-click names its node
   // first, then the event reaches the trigger; the background names none.
