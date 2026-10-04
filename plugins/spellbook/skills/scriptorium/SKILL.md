@@ -248,7 +248,9 @@ wrongly on precisely because you already know the ordinary English word.
   and what the document `wrote`) and, apart and not in `count`, links with a
   scheme nothing here opens, such as `op:doc/…` (`unsupported`, with `scheme`).
   Neither is an error. A link to a folder is a `folder` edge, not a dangling
-  one, and links inside code or HTML comments are not links.
+  one, and links inside code or HTML comments are not links. `dangling`'s `line`
+  is the file's line, but a `graph` edge's `line` counts from the start of the
+  body, below the frontmatter.
 - **The CONTEXT is what is in their sidebar** — the documents and sets they
   chose for this session. (Unrelated to `diff --context`, which means lines of
   surrounding text. Same word, two meanings, one of them a flag.)
