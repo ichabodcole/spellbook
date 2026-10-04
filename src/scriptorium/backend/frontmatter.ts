@@ -64,6 +64,9 @@ const isHuman = (actor: unknown): boolean =>
 /**
  * OKF's trust tiers, DERIVED: no `verified` → unverified; verified by machines
  * only → machine-confirmed; verified by a `human:<id>` → human-reviewed.
+ * The tier stays on the wire for every document (OKF's rule; `meta` and `state`
+ * readers see it beside `fields`), but the surface's header shows it only when
+ * `verified` is present: "unverified" from a missing field is not shown (E69).
  */
 export function trustTier(fields: Record<string, unknown>): TrustTier {
   const verified = fields.verified;
