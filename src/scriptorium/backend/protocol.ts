@@ -480,6 +480,8 @@ export type GraphPayload = {
     state: "in-bundle" | "outside" | "folder" | "missing";
   }[];
   dangling: number;
+  /** Body links with a scheme nothing here opens (`op:doc/…`), kept apart (#128). */
+  unsupported: { from: string; raw: string; line: number; scheme: string; rel: string[] }[];
 };
 
 /**

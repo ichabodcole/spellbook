@@ -73,6 +73,37 @@ describe("findings", () => {
     const one = findings({ ...clean, links: [{ entry: "c-1", label: "Set", dangling: 1 }] });
     expect(one[0]?.message).toContain("1 link that answer");
   });
+
+  test("links with a scheme nothing opens are their OWN finding, naming the schemes (#128)", () => {
+    const got = findings({
+      ...clean,
+      links: [
+        {
+          entry: "c-1",
+          label: "Hollowbrook",
+          dangling: 0,
+          unsupported: 12,
+          schemes: ["op", "tel"],
+        },
+      ],
+    });
+    expect(got.map((f) => f.kind)).toEqual(["links.unsupported"]);
+    expect(got[0]?.message).toBe(
+      "Hollowbrook has 12 links with a scheme nothing here opens (op:, tel:).",
+    );
+    expect(got[0]?.fix).toBe("dangling --entry c-1");
+    expect(got[0]?.count).toBe(12);
+    expect(summary(got)).toContain("1 set with unsupported links");
+  });
+
+  test("a set with both is two findings, missing first", () => {
+    const got = findings({
+      ...clean,
+      links: [{ entry: "c-1", label: "Set", dangling: 2, unsupported: 1, schemes: ["op"] }],
+    });
+    expect(got.map((f) => f.kind)).toEqual(["links.dangling", "links.unsupported"]);
+    expect(got[1]?.message).toContain("1 link with a scheme");
+  });
 });
 
 describe("summary — one line, and silence when clean", () => {

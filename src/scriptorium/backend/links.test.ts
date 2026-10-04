@@ -1,7 +1,7 @@
 // The resolver, over real shapes: the wiki's `type/slug` keys, Operator's typed
 // links, wiki links, and the frontmatter references that are NOT links.
 import { describe, expect, test } from "bun:test";
-import type { Edge, GraphNode } from "./links";
+import type { Edge, GraphNode, UnsupportedLink } from "./links";
 import {
   type BundleIndex,
   buildGraph,
@@ -446,6 +446,53 @@ describe("a link to a folder (#123)", () => {
   });
 });
 
+describe("links with a scheme nothing here opens (#128)", () => {
+  test("extraction keeps scheme targets only when asked, each with its scheme", () => {
+    const body = "[src](op:doc/1d63ec43-65cd) [web](https://x.dev) [doc](./a.md)";
+    expect(extractLinks(body).map((l) => l.raw)).toEqual(["./a.md"]);
+    expect(extractLinks(body, { schemes: true }).map((l) => [l.raw, l.scheme])).toEqual([
+      ["op:doc/1d63ec43-65cd", "op"],
+      ["https://x.dev", "https"],
+      ["./a.md", undefined],
+    ]);
+  });
+  test("the map keeps an `op:` link apart, with its line and the link as written", () => {
+    const g = buildGraph(index(), (p) =>
+      p === "/w/wiki/index.md"
+        ? ["intro", "[the source](op:doc/1d63?rel=derived-from)", "[w](https://x.dev)"].join("\n")
+        : "",
+    );
+    expect(g.unsupported).toEqual([
+      {
+        from: "/w/wiki/index.md",
+        raw: "op:doc/1d63?rel=derived-from",
+        line: 2,
+        scheme: "op",
+        rel: ["derived-from"],
+      },
+    ]);
+    // Not an edge, and not counted as a missing file.
+    expect(g.edges.some((e) => e.raw?.startsWith("op:"))).toBe(false);
+    expect(g.dangling).toBe(0);
+  });
+  test("http, https and mailto open outward, so they are never reported", () => {
+    const g = buildGraph(index(), (p) =>
+      p === "/w/wiki/index.md" ? "[a](http://x) [b](HTTPS://x) [c](mailto:a@b.c)" : "",
+    );
+    expect(g.unsupported).toEqual([]);
+  });
+  test("⚠ any other scheme is reported, as the surface strikes it through: tel:, ftp:, javascript:", () => {
+    const g = buildGraph(index(), (p) =>
+      p === "/w/wiki/index.md" ? "[a](tel:123) [b](FTP://x) [c](javascript:void(0))" : "",
+    );
+    expect(g.unsupported.map((u) => u.scheme)).toEqual(["tel", "ftp", "javascript"]);
+  });
+  test("an `op:` link written in code is still an example, not a report", () => {
+    const g = buildGraph(index(), (p) => (p === "/w/wiki/index.md" ? "`[x](op:doc/1)`" : ""));
+    expect(g.unsupported).toEqual([]);
+  });
+});
+
 describe("the map", () => {
   const bodies: Record<string, string> = {
     "/w/wiki/index.md": "[exit codes](./concepts/exit-codes.md) and [[stay-pre-1-0]]",
@@ -547,6 +594,14 @@ const _edgeToProto: ProtoEdge = {} as Edge;
 const _protoToEdge: Edge = {} as ProtoEdge;
 const _nodeToProto: ProtoNode = {} as GraphNode;
 const _protoToNode: GraphNode = {} as ProtoNode;
+// #128's `unsupported` is mirrored the same way.
+type ProtoUnsupported = GraphPayload["unsupported"][number];
+const _unsupportedKeysMatch: ExactKeys<UnsupportedLink, ProtoUnsupported> = true;
+const _unsupportedToProto: ProtoUnsupported = {} as UnsupportedLink;
+const _protoToUnsupported: UnsupportedLink = {} as ProtoUnsupported;
+void _unsupportedKeysMatch;
+void _unsupportedToProto;
+void _protoToUnsupported;
 void _edgeKeysMatch;
 void _nodeKeysMatch;
 void _edgeToProto;

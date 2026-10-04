@@ -241,7 +241,12 @@ wrongly on precisely because you already know the ordinary English word.
 - **A SET is a structural unit, not a loose grouping.** It is a top-level folder
   in the context, with an id (`--entry`), its own link graph, and rules about
   what may be created inside it. `make-set` is not cosmetic: it makes a folder
-  named for a document and moves the document into it.
+  named for a document and moves the document into it. `dangling --entry <id>`
+  lists the set's links that answer nothing (`links`, each with its file `line`
+  and what the document `wrote`) and, apart and not in `count`, links with a
+  scheme nothing here opens, such as `op:doc/…` (`unsupported`, with `scheme`).
+  Neither is an error. A link to a folder is a `folder` edge, not a dangling
+  one, and links inside code or HTML comments are not links.
 - **The CONTEXT is what is in their sidebar** — the documents and sets they
   chose for this session. (Unrelated to `diff --context`, which means lines of
   surrounding text. Same word, two meanings, one of them a flag.)

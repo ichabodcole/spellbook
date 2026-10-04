@@ -23,7 +23,7 @@
 
 /** One thing worth looking at, and what to do about it. */
 export type Finding = {
-  kind: "original.missing" | "context.ghost" | "links.dangling";
+  kind: "original.missing" | "context.ghost" | "links.dangling" | "links.unsupported";
   /** What it is about: a path, or an entry id. */
   subject: string;
   /** What the human reads. */
@@ -46,8 +46,17 @@ export type Checkup = {
   }[];
   /** Every doc node in every context entry, with whether the path exists. */
   nodes: readonly { entry: string; path: string; shown: string; exists: boolean }[];
-  /** Dangling link counts per mirrored entry. */
-  links: readonly { entry: string; label: string; dangling: number }[];
+  /**
+   * Link counts per mirrored entry: links that answer nothing, and links with a
+   * scheme nothing here opens (`op:doc/…`), with those schemes (#128).
+   */
+  links: readonly {
+    entry: string;
+    label: string;
+    dangling: number;
+    unsupported?: number;
+    schemes?: readonly string[];
+  }[];
 };
 
 /**
@@ -99,6 +108,24 @@ export function findings(c: Checkup): Finding[] {
     });
   }
 
+  // ⚠ A SEPARATE FINDING, NOT MORE DANGLING LINKS (#128). An `op:doc/<id>` link
+  // is one an export could not rewrite: it may want rewriting as a path, or
+  // keeping for the tool that reads it, and the human decides which.
+  for (const l of c.links) {
+    const n = l.unsupported ?? 0;
+    if (n <= 0) continue;
+    const schemes = (l.schemes ?? []).map((s) => `${s}:`).join(", ");
+    out.push({
+      kind: "links.unsupported",
+      subject: l.entry,
+      message: `${l.label} has ${n === 1 ? "1 link" : `${n} links`} with a scheme nothing here opens${
+        schemes ? ` (${schemes})` : ""
+      }.`,
+      fix: `dangling --entry ${l.entry}`,
+      count: n,
+    });
+  }
+
   return out;
 }
 
@@ -121,6 +148,7 @@ export function summary(list: readonly Finding[]): string | null {
     "original.missing": ["missing file", "missing files"],
     "context.ghost": ["ghost in the context", "ghosts in the context"],
     "links.dangling": ["set with dangling links", "sets with dangling links"],
+    "links.unsupported": ["set with unsupported links", "sets with unsupported links"],
   };
   const parts = [...byKind].map(([kind, n]) => `${n} ${label[kind][n === 1 ? 0 : 1]}`);
   return `Startup check: ${parts.join(", ")} — run \`doctor\` for the detail.`;

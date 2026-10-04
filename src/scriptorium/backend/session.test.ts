@@ -763,6 +763,45 @@ describe("a chat link resolves against its own origin, not the open document (#1
   });
 });
 
+describe("dangling reports links with a scheme nothing opens (#128)", () => {
+  test("an `op:doc/…` link is listed under `unsupported`, on its FILE line, and not counted", () => {
+    writeFileSync(
+      join(docs, "set", "a.md"),
+      [
+        "---",
+        "type: note",
+        "---",
+        "# A",
+        "",
+        "[the source](op:doc/1d63ec43-65cd-48aa-bbcd-d14c34e2a988)",
+        "[web](https://example.com)",
+        "",
+      ].join("\n"),
+    );
+    const s = Session.create(home);
+    const { entry } = s.addContext(join(docs, "set"));
+    const report = s.danglingLinks(entry.id) as {
+      count: number;
+      links: unknown[];
+      unsupported: { from: string; line: number; wrote: string; scheme: string }[];
+    };
+    expect(report.count).toBe(0);
+    expect(report.links).toEqual([]);
+    expect(report.unsupported).toEqual([
+      {
+        from: join(docs, "set", "a.md"),
+        line: 6,
+        wrote: "op:doc/1d63ec43-65cd-48aa-bbcd-d14c34e2a988",
+        scheme: "op",
+      },
+    ]);
+    // And the doctor raises it, as its own finding.
+    const found = s.checkup().filter((f) => f.kind.startsWith("links."));
+    expect(found.map((f) => f.kind)).toEqual(["links.unsupported"]);
+    expect(found[0]?.message).toContain("(op:)");
+  });
+});
+
 describe("a link to a folder (#123)", () => {
   test("following one says it is a folder, on the real disk", () => {
     const s = Session.create(home);

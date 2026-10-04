@@ -1681,15 +1681,27 @@ export class Session {
    */
   checkup(): Finding[] {
     const nodes: { entry: string; path: string; shown: string; exists: boolean }[] = [];
-    const links: { entry: string; label: string; dangling: number }[] = [];
+    const links: {
+      entry: string;
+      label: string;
+      dangling: number;
+      unsupported: number;
+      schemes: string[];
+    }[] = [];
     for (const e of this.m.context) {
       for (const p of docPaths(e))
         nodes.push({ entry: e.id, path: p, shown: this.display(p), exists: existsSync(p) });
       if (e.membership !== "mirrored") continue;
       try {
         const g = this.graphFor(e.id);
-        if (g.dangling > 0)
-          links.push({ entry: e.id, label: e.label ?? basename(e.root), dangling: g.dangling });
+        if (g.dangling > 0 || g.unsupported.length > 0)
+          links.push({
+            entry: e.id,
+            label: e.label ?? basename(e.root),
+            dangling: g.dangling,
+            unsupported: g.unsupported.length,
+            schemes: [...new Set(g.unsupported.map((u) => u.scheme))],
+          });
       } catch {
         // A set that cannot be mapped is not a finding about links.
       }
@@ -2205,6 +2217,17 @@ export class Session {
       entry: g.entry,
       root: g.root,
       count: broken.length,
+      // ⚠ KEPT APART FROM `links`, AND NEVER COUNTED IN `count` (#128). A link
+      // like `op:doc/<id>` names no file, so "where it looked" would be empty and
+      // calling it missing would mislead; it is dead all the same, and the
+      // rendered view strikes it through, so the report must not stay silent.
+      unsupported: g.unsupported.map((u) => ({
+        from: u.from,
+        line: u.line + offsetOf(u.from),
+        wrote: u.raw,
+        scheme: u.scheme,
+        ...(u.rel.length ? { rel: u.rel } : {}),
+      })),
       links: broken.map((e) => ({
         from: e.from,
         ...(e.line !== undefined ? { line: e.line + offsetOf(e.from) } : {}),

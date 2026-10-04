@@ -66,6 +66,12 @@ export type LinkRef = {
   /** Relations from `?rel=`; EMPTY means no assertion, never `references`. */
   rel: string[];
   label?: string;
+  /**
+   * The target's scheme, lower-cased and without its colon (`op`, `https`), on a
+   * link read with `{ schemes: true }` only (#128). Absent on every link that
+   * names a path.
+   */
+  scheme?: string;
 };
 
 /** A reference found in frontmatter, with the key that carried it. */
@@ -269,6 +275,19 @@ const unescapeMd = (s: string) => s.replace(ESCAPE, (e) => e.slice(1));
  * placeholder characters, so `\[` opens nothing and `\]` closes nothing while
  * the escaped text keeps its place. Line breaks always stay.
  */
+/** Web schemes: the surface opens these outward, so a link with one works. */
+export const OPENS_OUTWARD: ReadonlySet<string> = new Set(["http", "https", "mailto"]);
+
+/** What `extractLinks` keeps beyond document links. */
+export type ExtractOptions = {
+  /**
+   * Keep markdown targets with a scheme (`op:doc/…`, `https:`), each marked with
+   * its `scheme` (#128). The map needs them to report the ones nothing here
+   * opens; nothing that RESOLVES a link wants them.
+   */
+  schemes?: boolean;
+};
+
 function linkable(text: string): string {
   const blank = (s: string) => s.replace(/[^\n]/g, " ");
   return maskCode(text).replace(COMMENT, blank).replace(ESCAPE, "\u0001\u0001");
@@ -276,8 +295,9 @@ function linkable(text: string): string {
 
 /**
  * Every link a document's BODY points at, in order: markdown links and wiki
- * links, with images, external targets (`https:`, `mailto:`) and in-page
- * anchors (`#x`) left out, and nothing inside code (fenced, indented or
+ * links, with images, external targets (`https:`, `mailto:`, `op:`) and
+ * in-page anchors (`#x`) left out, unless `opts.schemes` keeps the scheme
+ * targets (each marked with its `scheme`), and nothing inside code (fenced, indented or
  * inline) or an HTML comment, which hold examples and asides, not links. A
  * backslash-escaped bracket is text.
  *
@@ -290,7 +310,7 @@ function linkable(text: string): string {
  * Reference-style links (`[x][ref]` with `[ref]: ./a.md`) are not read, here
  * or in the kit this was ported from.
  */
-export function extractLinks(body: string): LinkRef[] {
+export function extractLinks(body: string, opts: ExtractOptions = {}): LinkRef[] {
   if (!body.includes("[")) return [];
   const text = body;
   const masked = linkable(text);
@@ -341,7 +361,12 @@ export function extractLinks(body: string): LinkRef[] {
   for (const m of md) {
     if (m[1] === "!") continue; // an image is not a document link
     const raw = slice(m, 3) ?? slice(m, 4) ?? "";
-    if (raw === "" || raw.startsWith("#") || EXTERNAL.test(raw)) continue;
+    if (raw === "" || raw.startsWith("#")) continue;
+    // ⚠ ANY SCHEME-SHAPED PREFIX IS A SCHEME, which is the surface's rule too
+    // (`state/markdown.ts`): it strikes every one but http, https and mailto
+    // through, so the map must not call such a link a path.
+    const scheme = EXTERNAL.exec(raw)?.[0].slice(0, -1).toLowerCase();
+    if (scheme !== undefined && !opts.schemes) continue;
     const { path, query } = splitTarget(unescapeMd(raw));
     if (path === "") continue;
     const label = unescapeMd(slice(m, 2) ?? "")
@@ -355,6 +380,7 @@ export function extractLinks(body: string): LinkRef[] {
       line: lineOf(m.index) + 1,
       rel: parseRel(query),
       ...(label ? { label } : {}),
+      ...(scheme !== undefined ? { scheme } : {}),
     });
   }
   for (const m of wiki) {
@@ -559,21 +585,55 @@ export type GraphNode = {
   linksIn: number;
 };
 
+/**
+ * A body link whose scheme nothing here opens (#128): Operator's `op:doc/<id>`,
+ * left behind by an export that could not rewrite it. It names no file, so it
+ * is not an edge and not `missing`; it is kept apart so it can be reported.
+ */
+export type UnsupportedLink = {
+  from: string;
+  /** The target exactly as written. */
+  raw: string;
+  /** The body line it is on. */
+  line: number;
+  /** Lower-cased, without its colon: `op`. */
+  scheme: string;
+  rel: string[];
+};
+
 export type Graph = {
   root: string;
   nodes: GraphNode[];
   edges: Edge[];
   /** Targets nothing in the bundle answers — said, never an error (OKF §11). */
   dangling: number;
+  /**
+   * Body links with a scheme the surface strikes through (anything but http,
+   * https and mailto). They were dropped unseen before #128, while the reader
+   * could see they were dead.
+   */
+  unsupported: UnsupportedLink[];
 };
 
 /** Build a set's map: nodes are its documents, edges are the four sources. */
 export function buildGraph(index: BundleIndex, bodyOf: (path: string) => string, cap = 400): Graph {
   const paths = index.paths.slice(0, cap);
   const edges: Edge[] = [];
+  const unsupported: UnsupportedLink[] = [];
   for (const from of paths) {
     const meta = index.metaOf(from);
-    for (const link of extractLinks(bodyOf(from))) {
+    for (const link of extractLinks(bodyOf(from), { schemes: true })) {
+      if (link.scheme !== undefined) {
+        if (!OPENS_OUTWARD.has(link.scheme))
+          unsupported.push({
+            from,
+            raw: link.raw,
+            line: link.line,
+            scheme: link.scheme,
+            rel: link.rel,
+          });
+        continue;
+      }
       const r = resolveTarget(link.target, from, index);
       edges.push({
         from,
@@ -622,5 +682,6 @@ export function buildGraph(index: BundleIndex, bodyOf: (path: string) => string,
     nodes,
     edges,
     dangling: edges.filter((e) => e.state === "missing").length,
+    unsupported,
   };
 }
