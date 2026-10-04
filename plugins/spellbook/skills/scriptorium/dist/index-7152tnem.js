@@ -61648,6 +61648,27 @@ function readAppliedTheme() {
 
 // src/scriptorium/surface/state/useDaemon.ts
 var import_react31 = __toESM(require_react(), 1);
+
+// src/scriptorium/surface/state/linkRefusal.ts
+var folderOf = (path2) => path2.slice(0, path2.search(/[\\/][^\\/]*$/)) || "/";
+var isAbsolutePath = (p) => /^([\\/]|[A-Za-z]:[\\/])/.test(p);
+function linkRefusal(f) {
+  const written = f.target.split(/[?#]/)[0] || f.target;
+  switch (f.state) {
+    case "in-bundle":
+      return null;
+    case "outside":
+      return `${written} is outside this session's context. Add its folder, ${folderOf(f.path ?? "")}, to open it here.`;
+    case "folder":
+      return `${written} is a folder, not a document: ${f.path}.`;
+    case "missing":
+      if (!f.tried)
+        return `That link points at ${written}, which does not exist.`;
+      return isAbsolutePath(f.tried) ? `That link points at ${written}, which does not exist: nothing at ${f.tried}.` : `That link points at ${written}, which does not exist: no document here is named ${f.tried}.`;
+  }
+}
+
+// src/scriptorium/surface/state/useDaemon.ts
 var textKey = (doc2, version3) => `${doc2}@${version3}`;
 function useDaemon() {
   const [state, setState] = import_react31.useState(null);
@@ -61725,12 +61746,9 @@ function useDaemon() {
           for (const w of waiters ?? [])
             w({ block: msg.block, suggestedType: msg.suggestedType, error: msg.error });
         } else if (msg.type === "link.target") {
-          if (msg.state === "missing")
-            setLastError(`That link points at ${msg.target}, which is not in this set.`);
-          else if (msg.state === "folder")
-            setLastError(`${msg.target} is a folder, not a document: ${msg.path}.`);
-          else if (msg.state === "outside")
-            setLastError(`${msg.target} is outside this set. Add its folder to open it here — the file is at ${msg.path}.`);
+          const refusal = linkRefusal(msg);
+          if (refusal)
+            setLastError(refusal);
         } else if (msg.type === "fs.list") {
           const waiters = pending.current.get(msg.path);
           pending.current.delete(msg.path);
