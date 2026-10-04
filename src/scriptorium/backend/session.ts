@@ -2329,7 +2329,7 @@ export class Session {
   ): Resolution {
     const root = entry?.root ?? dirname(src);
     const paths = entry ? docPaths(entry) : [src];
-    return resolveTarget(target, src, {
+    const r = resolveTarget(target, src, {
       root,
       paths,
       metaOf: (p) => readMeta(readHead(p)),
@@ -2337,6 +2337,16 @@ export class Session {
       isDir: isDirAt,
       repoRoot: gitRootOf(root),
     });
+    // ⛔ "OUTSIDE" MEANS OUTSIDE THE WHOLE CONTEXT, not outside the set the link
+    // was read from. With `world` and `other` both open, `../other/t2.md` was
+    // reported outside with the advice to add a folder that was already there.
+    // Any context entry that lists the file opens it, from chat or from a
+    // document alike, which is Story Studio's kit's rule (`inContext`). The
+    // other forms (a key, a bare name) still look in the link's own set only.
+    // `locate` is what `openPath` admits, so what this calls open, opens.
+    if (r.state === "outside" && locate(this.m.context, r.path))
+      return { state: "in-bundle", path: r.path };
+    return r;
   }
 
   /**

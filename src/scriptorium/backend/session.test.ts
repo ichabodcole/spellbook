@@ -763,6 +763,53 @@ describe("a chat link resolves against its own origin, not the open document (#1
   });
 });
 
+describe("a link into another open set opens it, from chat or from a document", () => {
+  const t1 = () => join(docs, "world", "t1.md");
+  const t2 = () => join(docs, "other", "t2.md");
+  beforeEach(() => {
+    mkdirSync(join(docs, "world"), { recursive: true });
+    mkdirSync(join(docs, "other"), { recursive: true });
+    writeFileSync(t1(), "# T1\n\n[t2](../other/t2.md)\n");
+    writeFileSync(t2(), "# T2\n");
+  });
+
+  test("a chat link to `../other/t2.md` with a `world` document open opens it", () => {
+    const s = Session.create(home);
+    s.addContext(join(docs, "world"));
+    s.addContext(join(docs, "other"));
+    expect(s.resolveLink("chat", "../other/t2.md", t1())).toEqual({
+      state: "in-bundle",
+      path: t2(),
+    });
+    // With nothing open, read from the first entry's root, the same file.
+    expect(s.resolveLink("chat", "../other/t2.md")).toEqual({ state: "in-bundle", path: t2() });
+  });
+
+  test("the same link written in a `world` document opens it too", () => {
+    const s = Session.create(home);
+    s.addContext(join(docs, "world"));
+    s.addContext(join(docs, "other"));
+    expect(s.resolveLink(t1(), "../other/t2.md")).toEqual({ state: "in-bundle", path: t2() });
+  });
+
+  test("a single file opened on its own counts as open", () => {
+    const s = Session.create(home);
+    s.addContext(join(docs, "world"));
+    s.addContext(t2());
+    expect(s.resolveLink(t1(), "../other/t2.md")).toEqual({ state: "in-bundle", path: t2() });
+  });
+
+  test("with `other` not open, the file is still outside, and named", () => {
+    const s = Session.create(home);
+    s.addContext(join(docs, "world"));
+    expect(s.resolveLink(t1(), "../other/t2.md")).toEqual({ state: "outside", path: t2() });
+    expect(s.resolveLink("chat", "../other/t2.md", t1())).toEqual({
+      state: "outside",
+      path: t2(),
+    });
+  });
+});
+
 describe("dangling reports links with a scheme nothing opens (#128)", () => {
   test("an `op:doc/…` link is listed under `unsupported`, on its FILE line, and not counted", () => {
     writeFileSync(
