@@ -98,10 +98,12 @@ backticks, in a narrow side panel. Keep headings small and tables narrow. An
 beside the document they have open first, then from that document's set root
 (with nothing open, from the first entry's root). So write it relative to the
 set: `[the glade](./locations/the-glade.md)` opens the set's glade, unless the
-open document's own folder holds a `locations/the-glade.md` of its own. It opens
-any document in their context, in any set; a file outside the context, or one
-that does not exist, is reported to them instead. Raw HTML shows as text, and
-any other link scheme is struck through and does nothing.
+open document's own folder holds a `locations/the-glade.md` of its own. A path
+opens any document in their context, in any set, but a bare name (`the-glade`)
+or a `type/slug` key (`location/the-glade`) looks only in the link's own set. A
+file outside the context, or one that does not exist, is reported to them
+instead. Raw HTML shows as text, and any other link scheme is struck through and
+does nothing.
 
 ## The loop
 
