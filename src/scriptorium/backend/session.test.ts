@@ -747,6 +747,34 @@ describe("round three: one frontmatter value cannot take the map down", () => {
     expect((s.danglingLinks(entry.id) as { count: number }).count).toBe(0);
     expect(s.backlinks(join(docs, "set", "part", "b.md")).count).toBe(1);
   });
+  test("the map reads past 400 documents, the old silent stop", () => {
+    for (let i = 0; i < 450; i++) writeFileSync(join(docs, "set", `n${i}.md`), `# ${i}\n`);
+    writeFileSync(join(docs, "set", "n449.md"), "# last\n\n[gone](./gone.md)\n");
+    const s = Session.create(home);
+    const { entry } = s.addContext(join(docs, "set"));
+    const g = s.graphFor(entry.id);
+    expect(g.nodes.length).toBe(452); // 450, a.md and part/b.md
+    expect(g.truncated).toBeUndefined();
+    expect((s.danglingLinks(entry.id) as { count: number }).count).toBe(1);
+  });
+  test("a set whose listing stopped short says so in every reply built on its map", () => {
+    // Past the mirror's limit, the set lists only part of its folder.
+    for (let i = 0; i < 2005; i++) writeFileSync(join(docs, "set", `n${i}.md`), `# ${i}\n`);
+    const s = Session.create(home);
+    const { entry } = s.addContext(join(docs, "set"));
+    expect(entry.truncated).toBe(true);
+    const g = s.graphFor(entry.id);
+    expect(g.truncated).toEqual({ read: g.nodes.length, of: null });
+    expect(g.hint).toContain(`add `);
+    const dangling = s.danglingLinks(entry.id) as { truncated?: unknown; hint?: string };
+    expect(dangling.truncated).toEqual(g.truncated);
+    expect(dangling.hint).toBe(g.hint);
+    const back = s.backlinks(join(docs, "set", "a.md")) as { truncated?: unknown };
+    expect(back.truncated).toEqual(g.truncated);
+    const found = s.checkup().filter((f) => f.kind === "links.partial");
+    expect(found.map((f) => [f.subject, f.fix])).toEqual([[entry.id, `graph --entry ${entry.id}`]]);
+    expect(found[0]?.message).toContain(`${g.nodes.length} documents`);
+  });
   test("⛔ the doctor never calls a set clean when its map failed", () => {
     const s = Session.create(home);
     const { entry } = s.addContext(join(docs, "set"));

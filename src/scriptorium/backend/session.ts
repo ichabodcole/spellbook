@@ -1720,6 +1720,7 @@ export class Session {
       schemes: string[];
     }[] = [];
     const unread: { entry: string; label: string; error: string }[] = [];
+    const partial: { entry: string; label: string; read: number; of: number | null }[] = [];
     for (const e of this.m.context) {
       for (const p of docPaths(e))
         nodes.push({ entry: e.id, path: p, shown: this.display(p), exists: existsSync(p) });
@@ -1733,6 +1734,13 @@ export class Session {
             dangling: g.dangling,
             unsupported: g.unsupported.length,
             schemes: [...new Set(g.unsupported.map((u) => u.scheme))],
+          });
+        if (g.truncated)
+          partial.push({
+            entry: e.id,
+            label: e.label ?? basename(e.root),
+            read: g.truncated.read,
+            of: g.truncated.of,
           });
       } catch (err) {
         // ⛔ A SET THAT CANNOT BE MAPPED IS A FINDING. This catch once said it
@@ -1756,6 +1764,7 @@ export class Session {
       nodes,
       links,
       unread,
+      partial,
     });
   }
 
@@ -2164,7 +2173,24 @@ export class Session {
       repoRoot: gitRootOf(e.root),
     };
     const g = buildGraph(index, () => "", { linksOf: (p) => this.linkCache.linksOf(p) });
+    // ⛔ A SHORT LISTING MAKES A SHORT MAP, AND THE MAP SAYS SO. Past
+    // MIRROR_NODE_CAP the set lists only part of its folder (`truncated` on the
+    // entry), so the map, and every reply built on it, covers only that part.
+    if (e.truncated && !g.truncated) {
+      const read = g.nodes.length;
+      return {
+        entry: e.id,
+        ...g,
+        truncated: { read, of: null },
+        hint: `This set lists only the first ${MIRROR_NODE_CAP} files and folders under ${this.display(e.root)}, so this map read ${read} documents, and its links, dangling links and backlinks cover only those. To cover the rest, add a sub-folder as a set of its own (add <folder>), or take out folders that do not belong (hide <folder>).`,
+      };
+    }
     return { entry: e.id, ...g };
+  }
+
+  /** What a reply built on map `g` must carry when the map read part of its set. */
+  private partOf(g: GraphPayload): Record<string, unknown> {
+    return g.truncated ? { truncated: g.truncated, ...(g.hint ? { hint: g.hint } : {}) } : {};
   }
 
   /**
@@ -2251,6 +2277,7 @@ export class Session {
       entry: g.entry,
       root: g.root,
       count: broken.length,
+      ...this.partOf(g),
       // ⚠ KEPT APART FROM `links`, AND NEVER COUNTED IN `count` (#128). A link
       // like `op:doc/<id>` names no file, so "where it looked" would be empty and
       // calling it missing would mislead; it is dead all the same, and the
@@ -2299,6 +2326,7 @@ export class Session {
         .filter((x) => x.source === "link")
         .map((x) => ({ path: x.from, title: title(x.from), rel: x.rel })),
       count: inbound.length,
+      ...this.partOf(g),
     };
   }
 

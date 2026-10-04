@@ -28,7 +28,8 @@ export type Finding = {
     | "context.ghost"
     | "links.dangling"
     | "links.unsupported"
-    | "links.unread";
+    | "links.unread"
+    | "links.partial";
   /** What it is about: a path, or an entry id. */
   subject: string;
   /** What the human reads. */
@@ -68,6 +69,12 @@ export type Checkup = {
    * cycle, when `graph` threw on this repo's docs/ and `doctor` said clean).
    */
   unread?: readonly { entry: string; label: string; error: string }[];
+  /**
+   * Sets whose map read only part of them: `read` documents of `of` (`null`
+   * when the set's listing stopped at the mirror's limit). Their link findings
+   * above cover only that part, so it is said.
+   */
+  partial?: readonly { entry: string; label: string; read: number; of: number | null }[];
 };
 
 /**
@@ -146,6 +153,19 @@ export function findings(c: Checkup): Finding[] {
     });
   }
 
+  for (const p of c.partial ?? []) {
+    const part = p.of === null ? `${p.read} documents` : `${p.read} of its ${p.of} documents`;
+    out.push({
+      kind: "links.partial",
+      subject: p.entry,
+      message: `${p.label}'s links were checked in ${part}${
+        p.of === null ? ", because the set lists only part of its folder" : ""
+      }, so its link findings may be short. Add a sub-folder as a set of its own (add <folder>), or hide folders that do not belong (hide <folder>); the fix shows the map's own hint.`,
+      fix: `graph --entry ${p.entry}`,
+      count: p.read,
+    });
+  }
+
   return out;
 }
 
@@ -170,6 +190,10 @@ export function summary(list: readonly Finding[]): string | null {
     "links.dangling": ["set with dangling links", "sets with dangling links"],
     "links.unsupported": ["set with unsupported links", "sets with unsupported links"],
     "links.unread": ["set whose links could not be read", "sets whose links could not be read"],
+    "links.partial": [
+      "set whose links were checked in part",
+      "sets whose links were checked in part",
+    ],
   };
   const parts = [...byKind].map(([kind, n]) => `${n} ${label[kind][n === 1 ? 0 : 1]}`);
   return `Startup check: ${parts.join(", ")} — run \`doctor\` for the detail.`;

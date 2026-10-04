@@ -335,6 +335,20 @@ describe("round three: a file's links are read once until it changes", () => {
   });
 });
 
+describe("round three: a map that read part of its set says so", () => {
+  test("no cap by default: every document the set lists is read", () => {
+    const many = Array.from({ length: 450 }, (_, i) => `/w/wiki/n${i}.md`);
+    const g = buildGraph({ ...index(), paths: many }, () => "");
+    expect(g.nodes).toHaveLength(450);
+    expect(g.truncated).toBeUndefined();
+  });
+  test("a cap that cuts says how many it read, of how many", () => {
+    const g = buildGraph(index(), () => "", { cap: 2 });
+    expect(g.nodes).toHaveLength(2);
+    expect(g.truncated).toEqual({ read: 2, of: PATHS.length });
+  });
+});
+
 describe("what a dangling link report needs (E54)", () => {
   test("a link carries the target AS WRITTEN, not only the resolved shape", () => {
     const [link] = extractLinks("See [it](./missing/deep.md?rel=x#top).\n");

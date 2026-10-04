@@ -641,6 +641,14 @@ export type Graph = {
    * could see they were dead.
    */
   unsupported: UnsupportedLink[];
+  /**
+   * Present only when the map read PART of its set: `read` documents of `of`
+   * (`null` when the set's own listing stopped short, so the whole is not
+   * known). Everything built on the map (dangling, backlinks, the doctor)
+   * covers only those, and says so; `hint` says what to do about it.
+   */
+  truncated?: { read: number; of: number | null };
+  hint?: string;
 };
 
 /**
@@ -712,7 +720,14 @@ export function buildGraph(
   opts: GraphOptions = {},
 ): Graph {
   const index = diskSafe(given);
-  const paths = index.paths.slice(0, opts.cap ?? 400);
+  // ⛔ NO CAP BY DEFAULT (round three of this cycle). A fixed `cap = 400`, with
+  // no comment saying what it protected, stopped the map at 400 documents and
+  // said nothing: on this repo's 550-file docs/, graph, dangling, backlinks and
+  // the doctor all answered for 400 as if for the set. It bought speed, and
+  // the link cache buys that now. A set's size is bounded where it is listed
+  // (the mirror's MIRROR_NODE_CAP, which marks the entry `truncated`). A
+  // caller that still passes a cap is told what it cut.
+  const paths = opts.cap === undefined ? index.paths : index.paths.slice(0, opts.cap);
   const linksOf = opts.linksOf ?? ((p: string) => extractLinks(bodyOf(p), { schemes: true }));
   const edges: Edge[] = [];
   const unsupported: UnsupportedLink[] = [];
@@ -779,5 +794,11 @@ export function buildGraph(
     edges,
     dangling: edges.filter((e) => e.state === "missing").length,
     unsupported,
+    ...(paths.length < index.paths.length
+      ? {
+          truncated: { read: paths.length, of: index.paths.length },
+          hint: `This map read ${paths.length} of the set's ${index.paths.length} documents, so its links, dangling links and backlinks cover only those.`,
+        }
+      : {}),
   };
 }

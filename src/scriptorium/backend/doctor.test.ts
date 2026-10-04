@@ -116,6 +116,19 @@ describe("findings", () => {
     expect(got[0]?.message).toContain("ENAMETOOLONG");
     expect(summary(got)).toContain("1 set whose links could not be read");
   });
+
+  test("a set checked in part says how much, and what to do", () => {
+    const got = findings({
+      ...clean,
+      partial: [{ entry: "c-1", label: "docs", read: 400, of: 550 }],
+    });
+    expect(got.map((f) => [f.kind, f.subject, f.fix, f.count])).toEqual([
+      ["links.partial", "c-1", "graph --entry c-1", 400],
+    ]);
+    expect(got[0]?.message).toContain("400 of its 550 documents");
+    expect(got[0]?.message).toContain("add <folder>");
+    expect(summary(got)).toContain("1 set whose links were checked in part");
+  });
 });
 
 describe("summary — one line, and silence when clean", () => {

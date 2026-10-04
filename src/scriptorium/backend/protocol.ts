@@ -482,6 +482,13 @@ export type GraphPayload = {
   dangling: number;
   /** Body links with a scheme nothing here opens (`op:doc/…`), kept apart (#128). */
   unsupported: { from: string; raw: string; line: number; scheme: string; rel: string[] }[];
+  /**
+   * Present only when the map read part of its set: `read` documents of `of`,
+   * `of` null when the set's own listing stopped at the mirror's limit. `hint`
+   * says what to do about it.
+   */
+  truncated?: { read: number; of: number | null };
+  hint?: string;
 };
 
 /**
