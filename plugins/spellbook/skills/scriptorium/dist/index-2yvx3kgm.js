@@ -37433,6 +37433,15 @@ function ancestorsOf(rel) {
     out.push(parts.slice(0, i).join("/"));
   return out;
 }
+function foldersToReveal(rel, isOpen) {
+  return ancestorsOf(rel).filter((a) => !isOpen(a));
+}
+function drillFor(entries, activeDoc, drilled) {
+  if (!activeDoc || drilled !== null)
+    return null;
+  const holder = entries.find((e) => e.id === activeDoc.entryId);
+  return holder && singleDoc(holder) === null ? holder.id : null;
+}
 var DOC_EXTENSIONS = [".md", ".markdown", ".mdx", ".txt"];
 function isDocName(name) {
   const lower = name.toLowerCase();
@@ -37570,6 +37579,58 @@ function EntryTree({
     tree.getItemInstance(rel)?.startRenaming();
     onRenameStarted();
   }, [renamePath, index4, entry.root, tree, onRenameStarted]);
+  const revealed = import_react14.useRef(null);
+  const [scrollTo, setScrollTo] = import_react14.useState(null);
+  import_react14.useEffect(() => {
+    if (activeRel === revealed.current)
+      return;
+    if (activeRel !== null && !index4.byId.has(activeRel))
+      return;
+    revealed.current = activeRel;
+    if (activeRel === null)
+      return;
+    for (const a of foldersToReveal(activeRel, (id) => !!tree.getItemInstance(id)?.isExpanded()))
+      tree.getItemInstance(a)?.expand();
+    setScrollTo(activeRel);
+  }, [activeRel, index4, tree]);
+  import_react14.useEffect(() => {
+    if (scrollTo === null)
+      return;
+    let timer;
+    let watcher;
+    let tries = 0;
+    let cancelled = false;
+    const attempt = () => {
+      if (cancelled)
+        return;
+      watcher?.disconnect();
+      const el = tree.getItemInstance(scrollTo)?.getElement();
+      if (!el) {
+        if (++tries < 50)
+          timer = setTimeout(attempt, 20);
+        else
+          setScrollTo(null);
+        return;
+      }
+      const shut = el.closest("[inert],[hidden]");
+      if (shut) {
+        watcher = new MutationObserver(() => {
+          if (!shut.inert && !shut.hidden)
+            requestAnimationFrame(() => requestAnimationFrame(attempt));
+        });
+        watcher.observe(shut, { attributes: true, attributeFilter: ["inert", "hidden"] });
+        return;
+      }
+      el.scrollIntoView?.({ block: "nearest" });
+      setScrollTo(null);
+    };
+    attempt();
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      watcher?.disconnect();
+    };
+  }, [scrollTo, tree]);
   const [menuFor, setMenuFor] = import_react14.useState(null);
   const [bgDrop, setBgDrop] = import_react14.useState(false);
   const renameItem = (rel) => tree.getItemInstance(rel)?.startRenaming();
@@ -39395,6 +39456,16 @@ function ContextSidebar({
     setRenamePath(created.path);
   }, [created]);
   const renameStarted = import_react17.useCallback(() => setRenamePath(null), []);
+  const lastActive = import_react17.useRef(activeDoc ? `${activeDoc.entryId}/${activeDoc.rel}` : null);
+  import_react17.useEffect(() => {
+    const key = activeDoc ? `${activeDoc.entryId}/${activeDoc.rel}` : null;
+    if (key === lastActive.current)
+      return;
+    lastActive.current = key;
+    const into = drillFor(entriesRef.current, activeDoc, drilled);
+    if (into)
+      setDrilled(into);
+  }, [activeDoc, drilled]);
   const moveTargetsFor = import_react17.useCallback((path2) => moveTargets(entries, workspace, path2, userHome), [entries, workspace, userHome]);
   const importFiles = import_react17.useCallback((dt, into) => {
     const { files, folders } = droppedFiles(dt);
@@ -59057,6 +59128,9 @@ var TRUST_LABEL = {
   "machine-confirmed": "machine-confirmed",
   "human-reviewed": "human-reviewed"
 };
+function trustBadge(meta2) {
+  return Object.hasOwn(meta2.fields, "verified") ? meta2.trust : null;
+}
 var NAMED = new Set(["type", "title", "description", "status", "tags", "lifecycle", "verified"]);
 function showValue(value) {
   if (value === null || value === undefined)
@@ -59077,6 +59151,7 @@ function Chip({ children, className }) {
 }
 function MetaHeader({ meta: meta2 }) {
   const others = Object.entries(meta2.fields).filter(([k]) => !NAMED.has(k));
+  const trust = trustBadge(meta2);
   return /* @__PURE__ */ jsx_runtime18.jsxs("header", {
     "data-slot": "meta-header",
     className: "mb-6 flex flex-col gap-2 border-b border-edge pb-4 text-sm",
@@ -59099,17 +59174,17 @@ function MetaHeader({ meta: meta2 }) {
             className: "bg-surface-raised text-ink-dim",
             children: meta2.lifecycle
           }),
-          /* @__PURE__ */ jsx_runtime18.jsxs(Chip, {
+          trust && /* @__PURE__ */ jsx_runtime18.jsxs(Chip, {
             className: "bg-surface-raised text-ink-dim",
             children: [
-              meta2.trust === "human-reviewed" ? /* @__PURE__ */ jsx_runtime18.jsx(UserCheck, {
+              trust === "human-reviewed" ? /* @__PURE__ */ jsx_runtime18.jsx(UserCheck, {
                 "aria-hidden": true,
                 className: "size-3"
-              }) : meta2.trust === "machine-confirmed" ? /* @__PURE__ */ jsx_runtime18.jsx(BadgeCheck, {
+              }) : trust === "machine-confirmed" ? /* @__PURE__ */ jsx_runtime18.jsx(BadgeCheck, {
                 "aria-hidden": true,
                 className: "size-3"
               }) : null,
-              TRUST_LABEL[meta2.trust]
+              TRUST_LABEL[trust]
             ]
           }),
           meta2.stale && /* @__PURE__ */ jsx_runtime18.jsxs(Chip, {
@@ -61652,6 +61727,8 @@ function useDaemon() {
         } else if (msg.type === "link.target") {
           if (msg.state === "missing")
             setLastError(`That link points at ${msg.target}, which is not in this set.`);
+          else if (msg.state === "folder")
+            setLastError(`${msg.target} is a folder, not a document: ${msg.path}.`);
           else if (msg.state === "outside")
             setLastError(`${msg.target} is outside this set. Add its folder to open it here — the file is at ${msg.path}.`);
         } else if (msg.type === "fs.list") {
@@ -62538,10 +62615,12 @@ function Workspace({
                   }) : /* @__PURE__ */ jsx_runtime32.jsx(ActivityLog, {
                     chat: state.chat,
                     waiting: state.waiting,
-                    onFollowLink: (target) => {
-                      if (open)
-                        send({ type: "link.open", from: open.original, target });
-                    }
+                    onFollowLink: (target) => send({
+                      type: "link.open",
+                      from: "chat",
+                      target,
+                      ...open ? { doc: open.original } : {}
+                    })
                   }),
                   !collapsed.chat && /* @__PURE__ */ jsx_runtime32.jsx(ChatComposer, {
                     ...composer
