@@ -110,7 +110,10 @@ export type StartOpts = {
   port?: number;
   restore?: string;
   timeoutS?: number;
-  /** E23: a NEW session's workspace — the directory `open` ran in. A restore keeps its own. */
+  /**
+   * E23 + E67: a NEW session's workspace — the one folder `open` was given,
+   * else the directory it ran in (the CLI decides). A restore keeps its own.
+   */
   workspace?: string;
 };
 
@@ -1756,7 +1759,17 @@ export async function startDaemon(opts: StartOpts) {
   };
   done.then((r) => close(r.by));
 
-  return { port: boundPort, sessionId, mode, dir: session.dir, close, done, shutdown };
+  return {
+    port: boundPort,
+    sessionId,
+    mode,
+    dir: session.dir,
+    // The workspace AS STARTED (E67): a new session's, or a restored one's own.
+    workspace: session.workspace,
+    close,
+    done,
+    shutdown,
+  };
 }
 
 /**
@@ -1849,7 +1862,7 @@ export async function main(argv: string[]): Promise<number> {
     return status === 404 ? 5 : status === 409 ? 6 : 1;
   }
   process.stdout.write(
-    `${JSON.stringify({ url: `http://127.0.0.1:${d.port}`, port: d.port, session_id: d.sessionId, mode: d.mode, dir: d.dir })}\n`,
+    `${JSON.stringify({ url: `http://127.0.0.1:${d.port}`, port: d.port, session_id: d.sessionId, mode: d.mode, dir: d.dir, workspace: d.workspace })}\n`,
   );
   const res = await d.done;
   await d.shutdown;

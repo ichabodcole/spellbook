@@ -781,3 +781,40 @@ describe("a version and the human's Activate: the race, and the one-step form th
     expect(readFileSync(v.path, "utf8")).toBe("# Race\n\nborn whole.\n");
   });
 });
+
+// E67 (#130): one opened folder is the workspace; anything else keeps the
+// working directory; a restored session keeps its own. Read off the handshake,
+// which names the workspace so the agent can see where it landed.
+describe("one opened folder is the workspace (E67)", () => {
+  const opened: string[] = [];
+  const openIn = async (cwd: string, ...args: string[]) => {
+    const r = await cliIn(cwd, "open", "--no-open", ...args);
+    expect(r.code).toBe(0);
+    const hs = JSON.parse(r.out) as { session_id: string; workspace?: string };
+    opened.push(hs.session_id);
+    return hs;
+  };
+  const closeAll = async () => {
+    for (const id of opened.splice(0)) await cli("close", "--session", id);
+  };
+  const real = (p: string | undefined) => realpathSync(p ?? "");
+  afterAll(closeAll);
+
+  test("open over one folder makes it the workspace, from anywhere; a restore keeps it", async () => {
+    const hs = await openIn(root, join(docs, "set"));
+    expect(real(hs.workspace)).toBe(real(join(docs, "set")));
+    await closeAll();
+    // Restored from a different directory, with nothing given: its own workspace.
+    const back = await openIn(docs, "--restore", hs.session_id);
+    expect(real(back.workspace)).toBe(real(join(docs, "set")));
+    await closeAll();
+  }, 60_000);
+
+  test("a single file, or several entries, keep the working directory", async () => {
+    const file = await openIn(root, join(docs, "solo.md"));
+    expect(real(file.workspace)).toBe(real(root));
+    const several = await openIn(root, join(docs, "set"), join(docs, "solo.md"));
+    expect(real(several.workspace)).toBe(real(root));
+    await closeAll();
+  }, 60_000);
+});

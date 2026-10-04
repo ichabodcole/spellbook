@@ -246,10 +246,11 @@ wrongly on precisely because you already know the ordinary English word.
   chose for this session. (Unrelated to `diff --context`, which means lines of
   surrounding text. Same word, two meanings, one of them a flag.)
 - **The WORKSPACE is where new things land** — a `new-doc` outside a set goes
-  there. **⚠ `open` does NOT set it**, so it may be somewhere other than the
-  folder you just opened; `workspace` prints it, `workspace <dir>` moves it.
-  Check before creating, or you will leave a document where they are not
-  looking.
+  there. `open` over exactly ONE folder makes that folder the workspace; over
+  several entries, or a single file, it is the directory you ran `open` from,
+  and a `--restore`d session keeps its own. **⚠ Read `workspace` in `open`'s
+  output** before creating; `workspace` prints it later, `workspace <dir>` moves
+  it.
 - **ACTIVE means two different things in `state`.** `docs[].active` is a version
   number, and it is the one rule 2 is about. `state.active` (beside `openDoc`)
   is which document their VIEW is on, and is `null` before they open anything.
