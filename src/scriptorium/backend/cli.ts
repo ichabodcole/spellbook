@@ -54,6 +54,7 @@ import {
   openSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   statSync,
   unlinkSync,
 } from "node:fs";
@@ -406,7 +407,16 @@ function contextPaths(pos: string[]): string[] {
  * already checked to exist.
  */
 export function defaultWorkspace(paths: readonly string[], cwd: string): string {
-  const only = paths.length === 1 ? paths[0] : undefined;
+  // ⛔ THE RULE IS ABOUT DISTINCT FOLDERS, NOT ARGUMENTS. `open world world`
+  // (or `world` and a symlink to it) opens one folder, and counted as two it
+  // left the workspace in the cwd. Compared by realpath; the first spelling
+  // given is the one kept.
+  const distinct = new Map<string, string>();
+  for (const p of paths) {
+    const key = realpathSync(p);
+    if (!distinct.has(key)) distinct.set(key, p);
+  }
+  const only = distinct.size === 1 ? [...distinct.values()][0] : undefined;
   if (only !== undefined && statSync(only).isDirectory()) return only;
   return cwd;
 }
