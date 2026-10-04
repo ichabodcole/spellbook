@@ -98,3 +98,18 @@ Found by the browser verifier of
   the entries apart (#127 adds `line` and `raw`).
 - **`C:/win/path.md` is read as a link with scheme `c`** and reported under
   `dangling`'s `unsupported`, not as a path.
+
+**From the second "Links tell the truth" verifier (2026-10-04), predating that
+cycle:**
+
+- **Links inside an HTML block are counted** (`<div>\n[x](./a.md)\n</div>`, or
+  after `<table>` or a custom tag), though the view shows the block as text.
+- `[x](<./a.md)` (unclosed `<`) is counted with the target `<./a.md`.
+- `[x](./a&amp;b.md)` is looked up literally; the view opens `a&b.md`.
+- **Missed though clickable:** reference-style links (`[x][r]`, `[r][]`, `[r]`;
+  documented as unsupported), labels nested two deep, a target with two levels
+  of parentheses.
+- **A bare name searches only the link's own set:** `[x](Real)` in `other/` says
+  "no document here is named Real" with `world/real.md` open.
+- **A symlinked folder is entered twice:** `open world wlink` adds `/world` and
+  `/wlink`; `open world world` echoes the entry twice in `entries`.
