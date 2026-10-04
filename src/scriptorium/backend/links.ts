@@ -404,10 +404,14 @@ export function fieldRefs(fields: Record<string, unknown>, maxDepth = 4): FieldR
   return out;
 }
 
-/** Where a target landed. `outside` exists on disk but not in this bundle. */
+/**
+ * Where a target landed. `outside` is a file on disk but not in this bundle;
+ * `folder` is a folder on disk, which names no document (#123).
+ */
 export type Resolution =
   | { state: "in-bundle"; path: string }
   | { state: "outside"; path: string }
+  | { state: "folder"; path: string }
   | { state: "missing"; tried: string };
 
 export type BundleIndex = {
@@ -417,8 +421,13 @@ export type BundleIndex = {
   paths: readonly string[];
   /** A document's parsed frontmatter, for `type/slug` resolution. */
   metaOf: (path: string) => DocMeta | null;
-  /** Does this path exist on disk? (Injected, so the resolver stays pure.) */
+  /** Does this path exist on disk as a file? (Injected, so the resolver stays pure.) */
   exists: (path: string) => boolean;
+  /**
+   * Does this path exist on disk as a folder? Absent means "never", which is
+   * what a resolver without a disk (a test, a preview) should assume.
+   */
+  isDir?: (path: string) => boolean;
   /**
    * The git working tree the bundle sits in, when there is one. A third place
    * an unanchored path is tried: pdocs writes repo-relative paths
@@ -429,6 +438,9 @@ export type BundleIndex = {
 };
 
 const stem = (p: string) => basename(p, extname(p));
+
+/** A path without its trailing separator, unless it is only one. */
+const trimSlash = (p: string) => (p.length > 1 ? p.replace(/[\\/]+$/, "") || p : p);
 
 /**
  * Resolve one written target against the bundle.
@@ -457,7 +469,13 @@ export function resolveTarget(rawTarget: string, from: string, index: BundleInde
   // while the file sat right there. A target is a path when it is anchored
   // (`/`, `./`, `../`) or carries ANY extension; `concept/exit-codes` has
   // neither, which is what keeps a `type/slug` key a key.
+  // ⛔ A TRAILING SLASH NAMES A FOLDER, and only a folder (#123). Read as a key,
+  // `locations/` matched any `locations.md` by basename; read as a path, it had
+  // `.md` appended and was reported as a missing file beside a folder that
+  // plainly exists.
+  const folderish = target.length > 1 && target.endsWith("/");
   const looksPath =
+    folderish ||
     target.startsWith("/") ||
     target.startsWith("./") ||
     target.startsWith("../") ||
@@ -469,19 +487,28 @@ export function resolveTarget(rawTarget: string, from: string, index: BundleInde
     // page's `checker: src/acc/kit/checkers/…` was reported missing while
     // resolving from the bundle root would have found it.
     const anchored = target.startsWith("/") || target.startsWith("./") || target.startsWith("../");
-    const candidates = target.startsWith("/")
-      ? [normalize(join(index.root, target))]
-      : anchored
-        ? [normalize(resolvePath(dirname(from), target))]
-        : [
-            normalize(resolvePath(dirname(from), target)),
-            normalize(join(index.root, target)),
-            ...(index.repoRoot ? [normalize(join(index.repoRoot, target))] : []),
-          ];
+    const candidates = (
+      target.startsWith("/")
+        ? [normalize(join(index.root, target))]
+        : anchored
+          ? [normalize(resolvePath(dirname(from), target))]
+          : [
+              normalize(resolvePath(dirname(from), target)),
+              normalize(join(index.root, target)),
+              ...(index.repoRoot ? [normalize(join(index.repoRoot, target))] : []),
+            ]
+    ).map(trimSlash);
+    // ⛔ `.md` IS APPENDED ONLY TO LOOK FOR A FILE, never before asking whether
+    // the bare candidate is a folder (#123). A document beats a folder of the
+    // same name (`locations` with both `locations.md` and `locations/`), which
+    // is how Story Studio's kit orders it too.
     const tried = candidates.map((c) => (extname(c) === "" ? `${c}.md` : c));
-    for (const c of tried) if (index.paths.includes(c)) return { state: "in-bundle", path: c };
-    for (const c of tried) if (index.exists(c)) return { state: "outside", path: c };
-    return { state: "missing", tried: tried[0] as string };
+    if (!folderish) {
+      for (const c of tried) if (index.paths.includes(c)) return { state: "in-bundle", path: c };
+      for (const c of tried) if (index.exists(c)) return { state: "outside", path: c };
+    }
+    for (const c of candidates) if (index.isDir?.(c)) return { state: "folder", path: c };
+    return { state: "missing", tried: (folderish ? candidates[0] : tried[0]) as string };
   }
   const slash = target.indexOf("/");
   if (slash > 0) {
@@ -494,6 +521,10 @@ export function resolveTarget(rawTarget: string, from: string, index: BundleInde
   }
   const hit = index.paths.find((p) => stem(p) === stem(target));
   if (hit) return { state: "in-bundle", path: hit };
+  // A bare name no document answers may still be a folder beside the document,
+  // or at the bundle root: `[the places](locations)`.
+  for (const c of [resolvePath(dirname(from), target), normalize(join(index.root, target))])
+    if (index.isDir?.(c)) return { state: "folder", path: c };
   return { state: "missing", tried: target };
 }
 

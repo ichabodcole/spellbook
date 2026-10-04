@@ -763,6 +763,31 @@ describe("a chat link resolves against its own origin, not the open document (#1
   });
 });
 
+describe("a link to a folder (#123)", () => {
+  test("following one says it is a folder, on the real disk", () => {
+    const s = Session.create(home);
+    s.addContext(join(docs, "set"));
+    const from = join(docs, "set", "a.md");
+    for (const t of ["./part/", "./part", "part"])
+      expect(s.resolveLink(from, t)).toEqual({ state: "folder", path: join(docs, "set", "part") });
+  });
+  test("⛔ a folder named like a file is a folder, not a document outside the set", () => {
+    mkdirSync(join(docs, "set", "v1.2"));
+    const s = Session.create(home);
+    s.addContext(join(docs, "set"));
+    expect(s.resolveLink(join(docs, "set", "a.md"), "./v1.2")).toEqual({
+      state: "folder",
+      path: join(docs, "set", "v1.2"),
+    });
+  });
+  test("and dangling does not report it", () => {
+    writeFileSync(join(docs, "set", "a.md"), "# A\n\n[the parts](./part/)\n");
+    const s = Session.create(home);
+    const { entry } = s.addContext(join(docs, "set"));
+    expect((s.danglingLinks(entry.id) as { count: number }).count).toBe(0);
+  });
+});
+
 describe("removeCreated — undo's delete must forget the thing (E60 fix)", () => {
   test("⛔ A DELETED SINGLE DOCUMENT LEAVES THE SIDEBAR", () => {
     // Cole, within a minute of E60: "it's not being removed from the sidebar…

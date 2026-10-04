@@ -115,6 +115,14 @@ export const META_SCAN_CAP = 500;
 /** A frontmatter block lives at the top of a file; this is how much we read to find it. */
 const META_HEAD_BYTES = 8192;
 
+/**
+ * What the link resolver asks of the disk (#123): a file, or a folder. A plain
+ * `existsSync` answered yes for a folder too, so a folder named like a file was
+ * reported as a document outside the set.
+ */
+const isFileAt = (p: string) => statSync(p, { throwIfNoEntry: false })?.isFile() ?? false;
+const isDirAt = (p: string) => statSync(p, { throwIfNoEntry: false })?.isDirectory() ?? false;
+
 /** The first 8 KB of a file, as text — enough for any frontmatter block. */
 function readHead(path: string): string {
   let fd: number | undefined;
@@ -2099,7 +2107,8 @@ export class Session {
       root: e.root,
       paths,
       metaOf: (p) => readMeta(readHead(p)),
-      exists: (p) => existsSync(p),
+      exists: isFileAt,
+      isDir: isDirAt,
       repoRoot: gitRootOf(e.root),
     };
     const g = buildGraph(index, (p) => {
@@ -2301,7 +2310,8 @@ export class Session {
       root,
       paths,
       metaOf: (p) => readMeta(readHead(p)),
-      exists: (p) => existsSync(p),
+      exists: isFileAt,
+      isDir: isDirAt,
       repoRoot: gitRootOf(root),
     });
   }

@@ -382,6 +382,70 @@ describe("resolving against the bundle", () => {
   });
 });
 
+describe("a link to a folder (#123)", () => {
+  const from = "/w/wiki/index.md";
+  const DIRS = ["/w/wiki", "/w/wiki/concepts", "/w/wiki/rules", "/w/wiki/rules/exit-codes"];
+  const withDirs = (extra: Partial<BundleIndex> = {}): BundleIndex => ({
+    ...index(),
+    isDir: (p) => DIRS.includes(p),
+    ...extra,
+  });
+
+  test("`./concepts/` and `./concepts` are the folder, not a missing concepts.md", () => {
+    for (const t of ["./concepts/", "./concepts", "concepts/", "/concepts/", "./concepts/?rel=x"])
+      expect(resolveTarget(t, from, withDirs())).toEqual({
+        state: "folder",
+        path: "/w/wiki/concepts",
+      });
+  });
+  test("a bare name no document answers resolves as a folder too", () => {
+    expect(resolveTarget("rules", from, withDirs())).toEqual({
+      state: "folder",
+      path: "/w/wiki/rules",
+    });
+  });
+  test("a nested folder, from a document inside another one", () => {
+    expect(
+      resolveTarget("../rules/exit-codes/", "/w/wiki/concepts/exit-codes.md", withDirs()),
+    ).toEqual({ state: "folder", path: "/w/wiki/rules/exit-codes" });
+  });
+  test("a link to the bundle root itself is the root folder", () => {
+    expect(resolveTarget("/", from, withDirs())).toEqual({ state: "folder", path: "/w/wiki" });
+  });
+  test("⚠ a document beats a folder of the same name, without the slash", () => {
+    const both = withDirs({
+      paths: [...PATHS, "/w/wiki/rules.md"],
+      exists: (p) => PATHS.includes(p) || p === "/w/wiki/rules.md",
+    });
+    expect(resolveTarget("./rules", from, both)).toEqual({
+      state: "in-bundle",
+      path: "/w/wiki/rules.md",
+    });
+    // …and a trailing slash says FOLDER, whatever document shares the name.
+    expect(resolveTarget("./rules/", from, both)).toEqual({
+      state: "folder",
+      path: "/w/wiki/rules",
+    });
+  });
+  test("a trailing-slash target that is no folder is missing, and says the folder it tried", () => {
+    expect(resolveTarget("./places/", from, withDirs())).toEqual({
+      state: "missing",
+      tried: "/w/wiki/places",
+    });
+    // Read as a key it matched any `places.md` by basename; it no longer does.
+    expect(resolveTarget("index/", from, withDirs()).state).toBe("missing");
+  });
+  test("without a disk to ask (no `isDir`), nothing is a folder", () => {
+    expect(resolveTarget("./concepts/", from, index()).state).toBe("missing");
+  });
+  test("a folder edge is in the map, and is not dangling", () => {
+    const g = buildGraph(withDirs(), (p) => (p === from ? "[c](./concepts/) [r](rules)" : ""));
+    const folderEdges = g.edges.filter((e) => e.state === "folder");
+    expect(folderEdges.map((e) => e.to)).toEqual(["/w/wiki/concepts", "/w/wiki/rules"]);
+    expect(g.dangling).toBe(0);
+  });
+});
+
 describe("the map", () => {
   const bodies: Record<string, string> = {
     "/w/wiki/index.md": "[exit codes](./concepts/exit-codes.md) and [[stay-pre-1-0]]",

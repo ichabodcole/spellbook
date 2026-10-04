@@ -141,6 +141,8 @@ export function useDaemon(): {
           // one INSIDE the bundle needs no notice — the document just opens.
           if (msg.state === "missing")
             setLastError(`That link points at ${msg.target}, which is not in this set.`);
+          else if (msg.state === "folder")
+            setLastError(`${msg.target} is a folder, not a document: ${msg.path}.`);
           else if (msg.state === "outside")
             setLastError(
               `${msg.target} is outside this set. Add its folder to open it here — the file is at ${msg.path}.`,
