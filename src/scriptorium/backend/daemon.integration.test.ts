@@ -203,6 +203,16 @@ describe("a session, end to end through the launchers", () => {
     expect(realpathSync(r.path ?? "")).toBe(realpathSync(join(docs, "set", "a.md")));
   });
 
+  test("a link to a file that does not exist names the path it tried", async () => {
+    surface.send({ type: "link.open", from: join(docs, "set", "a.md"), target: "./nowhere.md" });
+    const r = await surface.waitFor((m) => m.type === "link.target" && m.target === "./nowhere.md");
+    if (r.type !== "link.target") throw new Error("unreachable");
+    expect(r.state).toBe("missing");
+    expect(realpathSync(join(r.tried ?? "", ".."))).toBe(realpathSync(join(docs, "set")));
+    expect(r.tried?.endsWith("nowhere.md")).toBe(true);
+    expect(r.path).toBeUndefined();
+  });
+
   test("prefs.set persists in the HOME (not the browser) and rides the state; a bad key is refused", async () => {
     surface.send({ type: "prefs.set", key: "panes:test", value: '{"context":40}' });
     const st = await surface.waitFor(

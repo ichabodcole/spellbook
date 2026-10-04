@@ -19,6 +19,7 @@ import type {
   StructureOpType,
 } from "../../backend/protocol";
 import { afterSocketClose, ENDED_NOTICE, sentAfterEnd, unanswered } from "./ending";
+import { linkRefusal } from "./linkRefusal";
 
 /** `ended`: the daemon said it was ending on purpose — nothing to retry (End session). */
 export type Connection = "connecting" | "open" | "closed" | "ended";
@@ -137,16 +138,10 @@ export function useDaemon(): {
           for (const w of waiters ?? [])
             w({ block: msg.block, suggestedType: msg.suggestedType, error: msg.error });
         } else if (msg.type === "link.target") {
-          // A link that left the bundle, or answered nothing: say so. Following
-          // one INSIDE the bundle needs no notice — the document just opens.
-          if (msg.state === "missing")
-            setLastError(`That link points at ${msg.target}, which is not in this set.`);
-          else if (msg.state === "folder")
-            setLastError(`${msg.target} is a folder, not a document: ${msg.path}.`);
-          else if (msg.state === "outside")
-            setLastError(
-              `${msg.target} is outside this set. Add its folder to open it here — the file is at ${msg.path}.`,
-            );
+          // A link that left the context, or answered nothing: say so. Following
+          // one INSIDE it needs no notice — the document just opens.
+          const refusal = linkRefusal(msg);
+          if (refusal) setLastError(refusal);
         } else if (msg.type === "fs.list") {
           const waiters = pending.current.get(msg.path);
           pending.current.delete(msg.path);

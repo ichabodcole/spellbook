@@ -1047,7 +1047,7 @@ export async function startDaemon(opts: StartOpts) {
           type: "link.target",
           target: msg.target,
           state: r.state,
-          ...(r.state === "missing" ? {} : { path: r.path }),
+          ...(r.state === "missing" ? { tried: r.tried } : { path: r.path }),
         });
         return;
       }

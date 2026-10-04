@@ -630,13 +630,16 @@ export type ServerMsg =
    * Where a link went. `in-bundle` means the daemon opened it; `outside` names
    * a real file the human may add; `folder` names a folder on disk, which is
    * not a document (#123); `missing` is a dangling link, said and tolerated
-   * (OKF §11).
+   * (OKF §11), with `tried`: the first path looked at, or for a bare name the
+   * name itself. `outside` means outside every context entry: a document in
+   * another open set opens.
    */
   | {
       type: "link.target";
       target: string;
       state: "in-bundle" | "outside" | "folder" | "missing";
       path?: string;
+      tried?: string;
     }
   /** To the sender only: a structure op landed, at `path` — so the surface can open or rename it. */
   | { type: "structure.done"; op: StructureOpType; path: string }
