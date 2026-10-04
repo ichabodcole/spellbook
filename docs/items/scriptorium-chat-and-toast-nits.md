@@ -113,3 +113,15 @@ cycle:**
   "no document here is named Real" with `world/real.md` open.
 - **A symlinked folder is entered twice:** `open world wlink` adds `/world` and
   `/wlink`; `open world world` echoes the entry twice in `entries`.
+
+**From round three of "Links tell the truth" (2026-10-04), predating that
+cycle:**
+
+- A link label whose `[` ends a line, followed by a list line
+  (`x][\n- 1. \[a](./a.md)`), is still counted; the view ends the paragraph
+  there.
+- Links in table cells beyond the header's column count are counted; the view
+  drops those cells.
+- **pdocs folder keys do not resolve:** `parent: feature/spell-hardening` names
+  `docs/features/<slug>/feature.md`, so on this repo's `docs/` 39 of 124
+  dangling links are false.
