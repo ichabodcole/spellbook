@@ -387,12 +387,36 @@ export function extractLinks(body: string, opts: ExtractOptions = {}): LinkRef[]
   return out.sort((a, b) => a.at - b.at).map(({ at: _at, ...link }) => link);
 }
 
-/** Does this frontmatter value LOOK like a document reference? */
+/** The longest file or folder name a disk holds (macOS, Linux, Windows: 255). */
+const NAME_MAX = 255;
+/** A name's extension, as a value ending in one has it: `.md`, `.png`. */
+const ENDS_IN_EXTENSION = /\.[a-z0-9]{1,8}$/i;
+/** Where prose breaks: a clause mark followed by a space, or a spaced dash. */
+const SENTENCE_BREAK = /[.,;:!?][ \t]|[ \t][—–][ \t]/;
+
+/**
+ * Does this frontmatter value LOOK like a document reference?
+ *
+ * ⛔ A SLASH IN PROSE IS NOT A PATH (round three of this cycle). `graph` and
+ * `dangling` threw ENAMETOOLONG on this repo's own docs/ while `doctor` called
+ * it clean: a session's `description` read "… the CLI/server pair … finalize.",
+ * the slash made it a reference, and the disk refused to look it up. 53 titles
+ * and descriptions there were references by that rule, each a dangling link
+ * nobody wrote. Story Studio's kit reads no frontmatter references at all, so
+ * the rule is this one's own: a value is a reference when it could name a
+ * file. Not when it has a line break or a name longer than any disk holds;
+ * and when it has a space (`places/Maren's Bakery.md` does), only when it ends
+ * in an extension and has no break that prose has (`, ` or ` — `).
+ */
 export function looksLikeRef(value: unknown): value is string {
   if (typeof value !== "string") return false;
   const v = value.trim();
   if (v === "" || EXTERNAL.test(v) || PROTOCOL_RELATIVE.test(v)) return false;
-  return v.includes("/") || v.toLowerCase().endsWith(".md");
+  if (!(v.includes("/") || v.toLowerCase().endsWith(".md"))) return false;
+  if (/[\r\n]/.test(v)) return false;
+  if (v.split("/").some((name) => Buffer.byteLength(name) > NAME_MAX)) return false;
+  if (/\s/.test(v)) return ENDS_IN_EXTENSION.test(v) && !SENTENCE_BREAK.test(v);
+  return true;
 }
 
 /**
@@ -614,8 +638,29 @@ export type Graph = {
   unsupported: UnsupportedLink[];
 };
 
+/**
+ * The index with its two disk questions made total: a lookup the disk refuses
+ * (ENAMETOOLONG, ELOOP, EACCES) answers "no such file", and the target is
+ * missing. ⛔ ONE VALUE MUST NOT TAKE THE MAP DOWN: one throw here used to
+ * abort the whole graph, and `dangling` with it.
+ */
+function diskSafe(index: BundleIndex): BundleIndex {
+  const total =
+    (ask: (p: string) => boolean) =>
+    (p: string): boolean => {
+      try {
+        return ask(p);
+      } catch {
+        return false;
+      }
+    };
+  const { isDir } = index;
+  return { ...index, exists: total(index.exists), ...(isDir ? { isDir: total(isDir) } : {}) };
+}
+
 /** Build a set's map: nodes are its documents, edges are the four sources. */
-export function buildGraph(index: BundleIndex, bodyOf: (path: string) => string, cap = 400): Graph {
+export function buildGraph(given: BundleIndex, bodyOf: (path: string) => string, cap = 400): Graph {
+  const index = diskSafe(given);
   const paths = index.paths.slice(0, cap);
   const edges: Edge[] = [];
   const unsupported: UnsupportedLink[] = [];

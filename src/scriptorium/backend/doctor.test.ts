@@ -104,6 +104,18 @@ describe("findings", () => {
     expect(got.map((f) => f.kind)).toEqual(["links.dangling", "links.unsupported"]);
     expect(got[1]?.message).toContain("1 link with a scheme");
   });
+
+  test("⛔ a set whose map failed is a finding, never silence", () => {
+    const got = findings({
+      ...clean,
+      unread: [{ entry: "c-1", label: "docs", error: "ENAMETOOLONG: name too long" }],
+    });
+    expect(got.map((f) => [f.kind, f.subject, f.fix])).toEqual([
+      ["links.unread", "c-1", "graph --entry c-1"],
+    ]);
+    expect(got[0]?.message).toContain("ENAMETOOLONG");
+    expect(summary(got)).toContain("1 set whose links could not be read");
+  });
 });
 
 describe("summary — one line, and silence when clean", () => {

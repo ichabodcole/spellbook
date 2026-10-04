@@ -708,6 +708,49 @@ describe("dangling links, as a report you can act on (E54)", () => {
   });
 });
 
+describe("round three: one frontmatter value cannot take the map down", () => {
+  test("a description with a slash is not a link, and graph and dangling answer", () => {
+    // The shape of docs/items/_archive/imago/sessions/2026-06-14-…md, which made
+    // `graph` and `dangling` throw ENAMETOOLONG on this repo's own docs/.
+    const prose = `The build-out of imago — ${"a long account of the work ".repeat(12)}and the CLI/server pair.`;
+    writeFileSync(
+      join(docs, "set", "a.md"),
+      ["---", "type: session", `description: "${prose}"`, "---", "# A", ""].join("\n"),
+    );
+    const s = Session.create(home);
+    const { entry } = s.addContext(join(docs, "set"));
+    expect(s.graphFor(entry.id).edges.filter((e) => e.source === "frontmatter")).toEqual([]);
+    expect((s.danglingLinks(entry.id) as { count: number }).count).toBe(0);
+  });
+  test("a path too long for the disk is a dangling link, not a crash", () => {
+    // Every segment fits a file name; the whole does not fit a path.
+    const long = Array.from({ length: 6 }, (_, i) => `${i}${"x".repeat(240)}`).join("/");
+    writeFileSync(
+      join(docs, "set", "a.md"),
+      ["---", "type: note", `related: [${long}/doc.md]`, "---", "# A", ""].join("\n"),
+    );
+    const s = Session.create(home);
+    const { entry } = s.addContext(join(docs, "set"));
+    const report = s.danglingLinks(entry.id) as { count: number; links: { key?: string }[] };
+    expect(report.count).toBe(1);
+    expect(report.links[0]?.key).toBe("related");
+    // A click on it is refused as missing too, not as an internal error.
+    expect(s.resolveLink(join(docs, "set", "a.md"), `./${long}.md`).state).toBe("missing");
+  });
+  test("⛔ the doctor never calls a set clean when its map failed", () => {
+    const s = Session.create(home);
+    const { entry } = s.addContext(join(docs, "set"));
+    s.graphFor = () => {
+      throw new Error("EACCES: permission denied");
+    };
+    const found = s.checkup().filter((f) => f.kind.startsWith("links."));
+    expect(found.map((f) => [f.kind, f.subject, f.fix])).toEqual([
+      ["links.unread", entry.id, `graph --entry ${entry.id}`],
+    ]);
+    expect(found[0]?.message).toContain("EACCES");
+  });
+});
+
 describe("a chat link resolves against its own origin, not the open document (#122)", () => {
   const glade = () => join(docs, "set", "locations", "the-glade.md");
   beforeEach(() => {

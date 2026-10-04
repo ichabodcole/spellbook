@@ -229,6 +229,55 @@ describe("frontmatter references — the SHAPE decides, not the key", () => {
   });
 });
 
+describe("round three: a frontmatter value that cannot be a path is not a reference", () => {
+  test("prose with a slash in it, as titles and descriptions have, is not one", () => {
+    // The description that took `graph` down on this repo's own docs/.
+    expect(
+      looksLikeRef(
+        "The build-out of imago — an end-to-end v1 build: the CLI/server pair, hardening and finalize.",
+      ),
+    ).toBe(false);
+    expect(looksLikeRef("MOVED — the conformance register now lives in docs/architecture/")).toBe(
+      false,
+    );
+    expect(looksLikeRef("mind-mapper acc L0 — and the census that went 0/48 → 49/49")).toBe(false);
+    expect(looksLikeRef("see notes/a.md, then b/c.md")).toBe(false);
+    expect(looksLikeRef("one/two\nthree")).toBe(false);
+  });
+  test("a value no filesystem could name is not one", () => {
+    expect(looksLikeRef(`notes/${"x".repeat(256)}.md`)).toBe(false);
+    expect(looksLikeRef(`notes/${"x".repeat(250)}.md`)).toBe(true);
+  });
+  test("⚠ a path with spaces in it still is", () => {
+    expect(looksLikeRef("./My Notes.md")).toBe(true);
+    expect(looksLikeRef("places/Maren's Bakery.md")).toBe(true);
+    expect(looksLikeRef("assets/a map.png")).toBe(true);
+    expect(looksLikeRef("concept/exit-codes")).toBe(true);
+  });
+  test("a disk that throws on one value leaves the rest of the map", () => {
+    const boom = "/w/wiki/deep/x.md";
+    const g = buildGraph(
+      {
+        ...index(),
+        metaOf: (p) => (p === "/w/wiki/index.md" ? meta({ related: ["deep/x"] }) : null),
+        exists: (p) => {
+          if (p === boom) throw Object.assign(new Error("name too long"), { code: "ENAMETOOLONG" });
+          return PATHS.includes(p);
+        },
+        isDir: () => {
+          throw new Error("ELOOP");
+        },
+      },
+      (p) => (p === "/w/wiki/index.md" ? "[ok](./concepts/exit-codes.md) [gone](./deep/x.md)" : ""),
+    );
+    expect(g.edges.filter((e) => e.from === "/w/wiki/index.md").map((e) => e.state)).toEqual([
+      "in-bundle",
+      "missing",
+      "missing",
+    ]);
+  });
+});
+
 describe("what a dangling link report needs (E54)", () => {
   test("a link carries the target AS WRITTEN, not only the resolved shape", () => {
     const [link] = extractLinks("See [it](./missing/deep.md?rel=x#top).\n");

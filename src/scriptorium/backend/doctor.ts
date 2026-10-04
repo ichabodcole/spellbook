@@ -23,7 +23,12 @@
 
 /** One thing worth looking at, and what to do about it. */
 export type Finding = {
-  kind: "original.missing" | "context.ghost" | "links.dangling" | "links.unsupported";
+  kind:
+    | "original.missing"
+    | "context.ghost"
+    | "links.dangling"
+    | "links.unsupported"
+    | "links.unread";
   /** What it is about: a path, or an entry id. */
   subject: string;
   /** What the human reads. */
@@ -57,6 +62,12 @@ export type Checkup = {
     unsupported?: number;
     schemes?: readonly string[];
   }[];
+  /**
+   * Sets whose map could not be built, with why. ⛔ NEVER LEFT OUT: a set the
+   * doctor could not read is not a set with nothing wrong (round three of this
+   * cycle, when `graph` threw on this repo's docs/ and `doctor` said clean).
+   */
+  unread?: readonly { entry: string; label: string; error: string }[];
 };
 
 /**
@@ -126,6 +137,15 @@ export function findings(c: Checkup): Finding[] {
     });
   }
 
+  for (const u of c.unread ?? []) {
+    out.push({
+      kind: "links.unread",
+      subject: u.entry,
+      message: `${u.label}'s links could not be read (${u.error}), so its dangling links are unknown, and graph, dangling and backlinks fail on it too. Run the fix to see the failure; it is a defect worth reporting.`,
+      fix: `graph --entry ${u.entry}`,
+    });
+  }
+
   return out;
 }
 
@@ -149,6 +169,7 @@ export function summary(list: readonly Finding[]): string | null {
     "context.ghost": ["ghost in the context", "ghosts in the context"],
     "links.dangling": ["set with dangling links", "sets with dangling links"],
     "links.unsupported": ["set with unsupported links", "sets with unsupported links"],
+    "links.unread": ["set whose links could not be read", "sets whose links could not be read"],
   };
   const parts = [...byKind].map(([kind, n]) => `${n} ${label[kind][n === 1 ? 0 : 1]}`);
   return `Startup check: ${parts.join(", ")} — run \`doctor\` for the detail.`;

@@ -120,8 +120,20 @@ const META_HEAD_BYTES = 8192;
  * `existsSync` answered yes for a folder too, so a folder named like a file was
  * reported as a document outside the set.
  */
-const isFileAt = (p: string) => statSync(p, { throwIfNoEntry: false })?.isFile() ?? false;
-const isDirAt = (p: string) => statSync(p, { throwIfNoEntry: false })?.isDirectory() ?? false;
+const isFileAt = (p: string) => statAt(p)?.isFile() ?? false;
+const isDirAt = (p: string) => statAt(p)?.isDirectory() ?? false;
+/**
+ * ⚠ `throwIfNoEntry` covers only ENOENT. A target the disk cannot even look up
+ * (ENAMETOOLONG from a long frontmatter value, ELOOP, EACCES) still threw, and
+ * a click on such a link was an internal error rather than "does not exist".
+ */
+function statAt(p: string): ReturnType<typeof statSync> | undefined {
+  try {
+    return statSync(p, { throwIfNoEntry: false });
+  } catch {
+    return undefined;
+  }
+}
 
 /** The first 8 KB of a file, as text — enough for any frontmatter block. */
 function readHead(path: string): string {
@@ -1688,6 +1700,7 @@ export class Session {
       unsupported: number;
       schemes: string[];
     }[] = [];
+    const unread: { entry: string; label: string; error: string }[] = [];
     for (const e of this.m.context) {
       for (const p of docPaths(e))
         nodes.push({ entry: e.id, path: p, shown: this.display(p), exists: existsSync(p) });
@@ -1702,8 +1715,15 @@ export class Session {
             unsupported: g.unsupported.length,
             schemes: [...new Set(g.unsupported.map((u) => u.scheme))],
           });
-      } catch {
-        // A set that cannot be mapped is not a finding about links.
+      } catch (err) {
+        // ⛔ A SET THAT CANNOT BE MAPPED IS A FINDING. This catch once said it
+        // was "not a finding about links", and so `graph` threw ENAMETOOLONG on
+        // a real set while the doctor reported `{"findings":[],"count":0}`.
+        unread.push({
+          entry: e.id,
+          label: e.label ?? basename(e.root),
+          error: err instanceof Error ? err.message : String(err),
+        });
       }
     }
     return findings({
@@ -1716,6 +1736,7 @@ export class Session {
       })),
       nodes,
       links,
+      unread,
     });
   }
 
