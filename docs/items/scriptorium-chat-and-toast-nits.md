@@ -138,3 +138,6 @@ cycle:**
 - `links.partial` stays on the parent set after the `add <sub-folder>` remedy
   until that folder is also hidden; one flat folder over 2,000 files has no
   remedy.
+- The frontmatter summary cache (`metaCache` in `session.ts`) keys on mtime only
+  (since 2026-09-11), so an edit that restores the exact mtime can leave the
+  sidebar's summary stale. The links cache now also keys on ctime and inode.
