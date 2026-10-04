@@ -94,9 +94,12 @@ before the CLI sees them. Same for `task`, `version-new`, and
 **Write `say` in markdown; it renders.** The conversation shows your message
 rendered (headings, lists, code blocks, tables, links), not as raw `**` and
 backticks, in a narrow side panel. Keep headings small and tables narrow. An
-`http`, `https` or `mailto` link opens in a new tab; a relative link is read
-against the document they have open. Raw HTML shows as text, and any other link
-scheme is struck through and does nothing.
+`http`, `https` or `mailto` link opens in a new tab. A relative link is tried
+beside the document they have open, then from the set's root (with nothing open,
+from the first entry's root), so write it relative to the set:
+`[the glade](./locations/the-glade.md)` opens the same file whatever is open.
+Raw HTML shows as text, and any other link scheme is struck through and does
+nothing.
 
 ## The loop
 

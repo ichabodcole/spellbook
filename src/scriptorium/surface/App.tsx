@@ -1086,11 +1086,18 @@ function Workspace({
                 <ActivityLog
                   chat={state.chat}
                   waiting={state.waiting}
-                  // A relative link in a message is read against the open
-                  // document, the same way the document's own links are (E33).
-                  onFollowLink={(target) => {
-                    if (open) send({ type: "link.open", from: open.original, target });
-                  }}
+                  // A chat link was not written beside the open document, so
+                  // the daemon reads it from the chat (#122): the open
+                  // document's folder, then the set's root, and with nothing
+                  // open, the first entry's root.
+                  onFollowLink={(target) =>
+                    send({
+                      type: "link.open",
+                      from: "chat",
+                      target,
+                      ...(open ? { doc: open.original } : {}),
+                    })
+                  }
                 />
               )}
               {/* ⛔ DRAWN IN ONE PLACE AT A TIME: here while the column is

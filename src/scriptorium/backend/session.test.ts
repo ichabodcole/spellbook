@@ -708,6 +708,61 @@ describe("dangling links, as a report you can act on (E54)", () => {
   });
 });
 
+describe("a chat link resolves against its own origin, not the open document (#122)", () => {
+  const glade = () => join(docs, "set", "locations", "the-glade.md");
+  beforeEach(() => {
+    mkdirSync(join(docs, "set", "locations"), { recursive: true });
+    writeFileSync(glade(), "# The Glade\n");
+  });
+
+  test("with the glade itself open, the agent's `./locations/the-glade.md` still opens it", () => {
+    const s = Session.create(home);
+    s.addContext(join(docs, "set"));
+    expect(s.resolveLink("chat", "./locations/the-glade.md", glade())).toEqual({
+      state: "in-bundle",
+      path: glade(),
+    });
+    // ⛔ THE SAME LINK WRITTEN IN THE DOCUMENT keeps the document's folder only.
+    expect(s.resolveLink(glade(), "./locations/the-glade.md").state).toBe("missing");
+  });
+
+  test("with a top-level document open, it opens the same file", () => {
+    const s = Session.create(home);
+    s.addContext(join(docs, "set"));
+    const r = s.resolveLink("chat", "./locations/the-glade.md", join(docs, "set", "a.md"));
+    expect(r).toEqual({ state: "in-bundle", path: glade() });
+  });
+
+  test("with no document open, it reads from the first entry's root", () => {
+    const s = Session.create(home);
+    s.addContext(join(docs, "set"));
+    expect(s.resolveLink("chat", "./locations/the-glade.md")).toEqual({
+      state: "in-bundle",
+      path: glade(),
+    });
+    expect(s.resolveLink("chat", "../set/part/b.md").state).toBe("in-bundle");
+  });
+
+  test("the open document's folder answers first when both have the name", () => {
+    writeFileSync(join(docs, "set", "locations", "a.md"), "# A beside the glade\n");
+    const s = Session.create(home);
+    s.addContext(join(docs, "set"));
+    expect(s.resolveLink("chat", "./a.md", glade())).toEqual({
+      state: "in-bundle",
+      path: join(docs, "set", "locations", "a.md"),
+    });
+  });
+
+  test("a target in neither place is reported missing, not thrown, even with an empty context", () => {
+    const s = Session.create(home);
+    s.addContext(join(docs, "set"));
+    expect(s.resolveLink("chat", "./nowhere.md", glade()).state).toBe("missing");
+    expect(Session.create(join(root, "home2")).resolveLink("chat", "./nowhere.md").state).toBe(
+      "missing",
+    );
+  });
+});
+
 describe("removeCreated — undo's delete must forget the thing (E60 fix)", () => {
   test("⛔ A DELETED SINGLE DOCUMENT LEAVES THE SIDEBAR", () => {
     // Cole, within a minute of E60: "it's not being removed from the sidebar…

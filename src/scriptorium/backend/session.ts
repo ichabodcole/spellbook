@@ -103,6 +103,13 @@ import {
 
 export const MANIFEST_FORMAT = 1;
 
+/**
+ * The file name a chat link resolves "from" when it reads from a folder rather
+ * than a document: `resolveTarget` reads only the folder of its `from`. No file
+ * of this name is ever looked up or created.
+ */
+const CHAT_ORIGIN = "\u0000chat";
+
 /** The most documents one frontmatter scan reads. */
 export const META_SCAN_CAP = 500;
 /** A frontmatter block lives at the top of a file; this is how much we read to find it. */
@@ -2229,12 +2236,65 @@ export class Session {
     };
   }
 
-  /** Where does this link go? The surface asks before following one (E33). */
-  resolveLink(from: string, target: string): Resolution {
-    const src = this.shownPath(from);
-    const entry = this.m.context.find(
-      (e) => e.membership === "mirrored" && src.startsWith(e.root + sep),
+  /**
+   * Where does this link go? The surface asks before following one (E33).
+   *
+   * `from` is the document the link was written in, or `"chat"` for a link in
+   * a chat message, with `doc` naming the document open at the click (if any).
+   *
+   * ⚠ A CHAT LINK WAS NOT WRITTEN BESIDE THE OPEN DOCUMENT (#122). The agent
+   * writes `./locations/the-glade.md` meaning the set, and the human may have
+   * any document open when they click it. Read against that document's folder
+   * alone, the same message opened from one document and was missing from
+   * another (`locations/locations/the-glade.md`), and with nothing open it did
+   * nothing at all. So a chat link tries the open document's folder and then
+   * the set's root, and with no document open it reads from the first
+   * context entry's root. A link written inside a document still resolves
+   * against that document's folder only.
+   */
+  resolveLink(from: string, target: string, doc?: string): Resolution {
+    if (from !== "chat") return this.resolveFrom(this.shownPath(from), target);
+    const open = doc ? this.shownPath(doc) : null;
+    const first = this.m.context[0];
+    // With no document open there is no folder to try first: the root is the
+    // first entry's (a single file's entry is rooted at its folder), and with
+    // an empty context, the workspace.
+    if (!open)
+      return this.resolveFrom(
+        join(first?.root ?? this.workspace, CHAT_ORIGIN),
+        target,
+        first ?? null,
+      );
+    const besideDoc = this.resolveFrom(open, target);
+    if (besideDoc.state === "in-bundle") return besideDoc;
+    // A document outside any set reads from its own folder, which it just did.
+    const entry = this.entryHolding(open);
+    if (!entry) return besideDoc;
+    const fromRoot = this.resolveFrom(join(entry.root, CHAT_ORIGIN), target, entry);
+    if (fromRoot.state === "in-bundle") return fromRoot;
+    // Neither landed in the set: the open document's folder answers first, as
+    // the document's own links would, and the root only when that found nothing.
+    return besideDoc.state !== "missing" || fromRoot.state === "missing" ? besideDoc : fromRoot;
+  }
+
+  /** The mirrored set a path sits in, if any. */
+  private entryHolding(src: string): ContextEntry | null {
+    return (
+      this.m.context.find((e) => e.membership === "mirrored" && src.startsWith(e.root + sep)) ??
+      null
     );
+  }
+
+  /**
+   * Resolve against the set holding `src` (a document, or a placeholder in the
+   * folder to read from). `entry` overrides the lookup: a chat link with no
+   * document open reads from a root, which no set "holds".
+   */
+  private resolveFrom(
+    src: string,
+    target: string,
+    entry: ContextEntry | null = this.entryHolding(src),
+  ): Resolution {
     const root = entry?.root ?? dirname(src);
     const paths = entry ? docPaths(entry) : [src];
     return resolveTarget(target, src, {

@@ -560,8 +560,14 @@ export type ClientMsg =
   | { type: "move.plan"; path: string; into: string }
   /** A set's map (E33) — answered with `graph`. */
   | { type: "graph"; entry: string }
-  /** Follow a link from a rendered document (E33) — answered with `link.target`. */
-  | { type: "link.open"; from: string; target: string }
+  /**
+   * Follow a link (E33) — answered with `link.target`. `from` is the document
+   * the link was written in, or `"chat"` for a link in a chat message: that one
+   * was not written beside the open document (`doc`, when one is open), so its
+   * `./` and `../` fall back to the set's root, and it works with nothing open
+   * (#122).
+   */
+  | { type: "link.open"; from: string; target: string; doc?: string }
   /** What a frontmatter block would say for this document (E35) — answered with `meta.suggestion`. */
   | { type: "meta.suggest"; path: string }
   | { type: "prefs.set"; key: string; value: string }

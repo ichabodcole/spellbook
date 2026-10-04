@@ -189,6 +189,20 @@ describe("a session, end to end through the launchers", () => {
     expect(again.type === "version.text" && again.text).toContain("edited");
   });
 
+  test("a chat link is read from the chat, not from the open document's folder (#122)", async () => {
+    // `./a.md` beside part/b.md does not exist; written in the chat it means the set's a.md.
+    surface.send({
+      type: "link.open",
+      from: "chat",
+      target: "./a.md",
+      doc: join(docs, "set", "part", "b.md"),
+    });
+    const r = await surface.waitFor((m) => m.type === "link.target" && m.target === "./a.md");
+    if (r.type !== "link.target") throw new Error("unreachable");
+    expect(r.state).toBe("in-bundle");
+    expect(realpathSync(r.path ?? "")).toBe(realpathSync(join(docs, "set", "a.md")));
+  });
+
   test("prefs.set persists in the HOME (not the browser) and rides the state; a bad key is refused", async () => {
     surface.send({ type: "prefs.set", key: "panes:test", value: '{"context":40}' });
     const st = await surface.waitFor(

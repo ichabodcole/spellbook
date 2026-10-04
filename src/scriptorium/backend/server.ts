@@ -1027,7 +1027,7 @@ export async function startDaemon(opts: StartOpts) {
       case "link.open": {
         // E33: a link inside the bundle is FOLLOWED; one that escapes it is
         // reported so the surface can offer to add it, never added silently.
-        const r = session.resolveLink(msg.from, msg.target);
+        const r = session.resolveLink(msg.from, msg.target, msg.doc);
         if (r.state === "in-bundle") {
           session.openPath(r.path);
           broadcastState();
