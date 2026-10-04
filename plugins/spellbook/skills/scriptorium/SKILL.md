@@ -95,11 +95,13 @@ before the CLI sees them. Same for `task`, `version-new`, and
 rendered (headings, lists, code blocks, tables, links), not as raw `**` and
 backticks, in a narrow side panel. Keep headings small and tables narrow. An
 `http`, `https` or `mailto` link opens in a new tab. A relative link is tried
-beside the document they have open, then from the set's root (with nothing open,
-from the first entry's root), so write it relative to the set:
-`[the glade](./locations/the-glade.md)` opens the same file whatever is open.
-Raw HTML shows as text, and any other link scheme is struck through and does
-nothing.
+beside the document they have open first, then from that document's set root
+(with nothing open, from the first entry's root). So write it relative to the
+set: `[the glade](./locations/the-glade.md)` opens the set's glade, unless the
+open document's own folder holds a `locations/the-glade.md` of its own. It opens
+any document in their context, in any set; a file outside the context, or one
+that does not exist, is reported to them instead. Raw HTML shows as text, and
+any other link scheme is struck through and does nothing.
 
 ## The loop
 
@@ -251,11 +253,11 @@ wrongly on precisely because you already know the ordinary English word.
   chose for this session. (Unrelated to `diff --context`, which means lines of
   surrounding text. Same word, two meanings, one of them a flag.)
 - **The WORKSPACE is where new things land** — a `new-doc` outside a set goes
-  there. `open` over exactly ONE folder makes that folder the workspace; over
-  several entries, or a single file, it is the directory you ran `open` from,
-  and a `--restore`d session keeps its own. **⚠ Read `workspace` in `open`'s
-  output** before creating; `workspace` prints it later, `workspace <dir>` moves
-  it.
+  there. `open` over exactly ONE folder (named twice is still one) makes that
+  folder the workspace; over several entries, or a single file, it is the
+  directory you ran `open` from, and a `--restore`d session keeps its own. **⚠
+  Read `workspace` in `open`'s output** before creating; `workspace` prints it
+  later, `workspace <dir>` moves it.
 - **ACTIVE means two different things in `state`.** `docs[].active` is a version
   number, and it is the one rule 2 is about. `state.active` (beside `openDoc`)
   is which document their VIEW is on, and is `null` before they open anything.
