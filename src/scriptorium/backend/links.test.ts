@@ -608,3 +608,52 @@ void _edgeToProto;
 void _protoToEdge;
 void _nodeToProto;
 void _protoToNode;
+
+describe("round two: a document beats a same-named folder, dots and all", () => {
+  const from = "/w/wiki/index.md";
+  const disk = (docs: string[], dirs: string[], files: string[] = []): BundleIndex => ({
+    root: ROOT,
+    paths: [...PATHS, ...docs],
+    metaOf: () => null,
+    exists: (p) => PATHS.includes(p) || docs.includes(p) || files.includes(p),
+    isDir: (p) => p === ROOT || dirs.includes(p),
+  });
+
+  test("`./v1.2` is v1.2.md when both it and a v1.2/ folder exist", () => {
+    const both = disk(["/w/wiki/v1.2.md"], ["/w/wiki/v1.2"]);
+    expect(resolveTarget("./v1.2", from, both)).toEqual({
+      state: "in-bundle",
+      path: "/w/wiki/v1.2.md",
+    });
+    expect(resolveTarget("./v1.2/", from, both)).toEqual({
+      state: "folder",
+      path: "/w/wiki/v1.2",
+    });
+    // With no document, the folder answers.
+    expect(resolveTarget("./v1.2", from, disk([], ["/w/wiki/v1.2"]))).toEqual({
+      state: "folder",
+      path: "/w/wiki/v1.2",
+    });
+  });
+  test("`./notes.v2` finds notes.v2.md", () => {
+    expect(resolveTarget("./notes.v2", from, disk(["/w/wiki/notes.v2.md"], []))).toEqual({
+      state: "in-bundle",
+      path: "/w/wiki/notes.v2.md",
+    });
+  });
+  test("⚠ a name with a real extension is still that file, and a miss says what was written", () => {
+    expect(resolveTarget("./lint.ts", from, disk([], [], ["/w/wiki/lint.ts"]))).toEqual({
+      state: "outside",
+      path: "/w/wiki/lint.ts",
+    });
+    expect(resolveTarget("./v9.9", from, disk([], []))).toEqual({
+      state: "missing",
+      tried: "/w/wiki/v9.9",
+    });
+    // A document name is not given a second `.md`.
+    expect(resolveTarget("./gone.md", from, disk([], []))).toEqual({
+      state: "missing",
+      tried: "/w/wiki/gone.md",
+    });
+  });
+});

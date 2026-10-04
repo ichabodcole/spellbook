@@ -42,7 +42,7 @@ import {
   resolve as resolvePath,
 } from "node:path";
 import type { DocMeta } from "./protocol";
-import { toPosix } from "./tree";
+import { DOC_EXTENSIONS, toPosix } from "./tree";
 
 export type LinkKind = "markdown" | "wiki";
 
@@ -465,6 +465,12 @@ export type BundleIndex = {
 
 const stem = (p: string) => basename(p, extname(p));
 
+/** A name that already names a document (tree.ts's DOC_EXTENSIONS), so `.md` is not appended. */
+const DOC_EXT = new RegExp(
+  `(?:${DOC_EXTENSIONS.map((e) => e.replace(".", "\\.")).join("|")})$`,
+  "i",
+);
+
 /** A path without its trailing separator, unless it is only one. */
 const trimSlash = (p: string) => (p.length > 1 ? p.replace(/[\\/]+$/, "") || p : p);
 
@@ -528,7 +534,16 @@ export function resolveTarget(rawTarget: string, from: string, index: BundleInde
     // the bare candidate is a folder (#123). A document beats a folder of the
     // same name (`locations` with both `locations.md` and `locations/`), which
     // is how Story Studio's kit orders it too.
-    const tried = candidates.map((c) => (extname(c) === "" ? `${c}.md` : c));
+    // ⛔ A DOT IS NOT AN EXTENSION UNTIL A FILE SAYS SO. `extname` reads `.2`
+    // in `./v1.2` and `.v2` in `./notes.v2`, and skipping the `.md` candidate
+    // on that sent `./v1.2` to the `v1.2/` folder beside `v1.2.md` (round one
+    // of this cycle) and left `./notes.v2` missing beside `notes.v2.md`. So a
+    // name is tried as written AND with `.md`, unless it already names a
+    // document; only a name with no dot at all skips the as-written form.
+    const lookups = candidates.map((c) =>
+      extname(c) === "" ? [`${c}.md`] : DOC_EXT.test(c) ? [c] : [c, `${c}.md`],
+    );
+    const tried = lookups.flat();
     if (!folderish) {
       for (const c of tried) if (index.paths.includes(c)) return { state: "in-bundle", path: c };
       for (const c of tried) if (index.exists(c)) return { state: "outside", path: c };
