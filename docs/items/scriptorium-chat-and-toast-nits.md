@@ -88,3 +88,13 @@ Found by the browser verifier of
   reported as not found rather than cannot be read.
 - A re-armed `tail --once` with no `--since` prints `"cursor": -1` in
   `tail.closed`.
+
+**From the "Links tell the truth" verifier (2026-10-04), predating that cycle:**
+
+- **Link toasts stay up until dismissed.** A followed link's "not in this set"
+  or folder toast never times out.
+- **Search lists a line twice** when the query matches twice on it.
+- **`backlinks` repeats the same source once per link**, with no line to tell
+  the entries apart (#127 adds `line` and `raw`).
+- **`C:/win/path.md` is read as a link with scheme `c`** and reported under
+  `dangling`'s `unsupported`, not as a path.
