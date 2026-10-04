@@ -64,7 +64,7 @@ import {
   titleFromBody,
   withBlock,
 } from "./frontmatter";
-import { type BundleIndex, buildGraph, type Resolution, resolveTarget } from "./links";
+import { type BundleIndex, buildGraph, LinkCache, type Resolution, resolveTarget } from "./links";
 import type {
   ChatMessage,
   ChatWho,
@@ -286,6 +286,25 @@ export class Session {
    * outside write, a human edit) or the version is deleted.
    */
   private unwrittenCopies = new Map<string, string>();
+  /**
+   * Every set's body links, per file, until the file's mtime or size changes
+   * (round three of the links cycle). The map, `dangling`, `backlinks` and the
+   * doctor all read through it, so the first of them pays for extraction and
+   * the rest do not. Keyed on the file on disk, which is what the map reads.
+   */
+  private readonly linkCache = new LinkCache(
+    (p) => {
+      const st = statAt(p);
+      return st?.isFile() ? `${st.mtimeMs}:${st.size}` : null;
+    },
+    (p) => {
+      try {
+        return splitFrontmatter(readFileSync(p, "utf8")).body;
+      } catch {
+        return "";
+      }
+    },
+  );
   /** #117 — slug → the version the HUMAN activated while it was still an
    *  unwritten copy. Read (and cleared) by the next outside write to it. */
   private activatedUnwritten = new Map<string, number>();
@@ -2144,13 +2163,7 @@ export class Session {
       isDir: isDirAt,
       repoRoot: gitRootOf(e.root),
     };
-    const g = buildGraph(index, (p) => {
-      try {
-        return splitFrontmatter(readFileSync(p, "utf8")).body;
-      } catch {
-        return "";
-      }
-    });
+    const g = buildGraph(index, () => "", { linksOf: (p) => this.linkCache.linksOf(p) });
     return { entry: e.id, ...g };
   }
 

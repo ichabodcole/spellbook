@@ -737,6 +737,16 @@ describe("round three: one frontmatter value cannot take the map down", () => {
     // A click on it is refused as missing too, not as an internal error.
     expect(s.resolveLink(join(docs, "set", "a.md"), `./${long}.md`).state).toBe("missing");
   });
+  test("a file changed on disk is read again: the cache never answers stale", () => {
+    const a = join(docs, "set", "a.md");
+    writeFileSync(a, "# A\n\n[gone](./gone.md)\n");
+    const s = Session.create(home);
+    const { entry } = s.addContext(join(docs, "set"));
+    expect((s.danglingLinks(entry.id) as { count: number }).count).toBe(1);
+    writeFileSync(a, "# A\n\n[b](./part/b.md) and more\n");
+    expect((s.danglingLinks(entry.id) as { count: number }).count).toBe(0);
+    expect(s.backlinks(join(docs, "set", "part", "b.md")).count).toBe(1);
+  });
   test("⛔ the doctor never calls a set clean when its map failed", () => {
     const s = Session.create(home);
     const { entry } = s.addContext(join(docs, "set"));

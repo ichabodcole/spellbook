@@ -291,7 +291,12 @@ function linkable(text: string): string {
  * or in the kit this was ported from.
  */
 export function extractLinks(body: string, opts: ExtractOptions = {}): LinkRef[] {
-  if (!body.includes("[")) return [];
+  // ⚠ NO `](` AND NO `[[`, NO LINK, and the parse is skipped. Exact, not a
+  // guess: masking only turns characters into spaces, so it cannot make a `](`
+  // or a `[[` that the text does not already hold, and every markdown link
+  // needs the one and every wiki link the other. On this repo's docs/ it keeps
+  // 266 of 550 documents (35% of the text) away from micromark (round three).
+  if (!body.includes("](") && !body.includes("[[")) return [];
   const text = body;
   const masked = linkable(text);
   // ⚠ LINES FROM A PRECOMPUTED TABLE. Walking from the start of the text for
@@ -658,15 +663,62 @@ function diskSafe(index: BundleIndex): BundleIndex {
   return { ...index, exists: total(index.exists), ...(isDir ? { isDir: total(isDir) } : {}) };
 }
 
+export type GraphOptions = {
+  /** The most documents read. */
+  cap?: number;
+  /**
+   * A document's body links, read with `{ schemes: true }`. Given, it replaces
+   * `bodyOf` + `extractLinks`, which is how the daemon reads through its
+   * `LinkCache`.
+   */
+  linksOf?: (path: string) => LinkRef[];
+};
+
+/**
+ * Each file's body links, kept until the file changes (round three of this
+ * cycle; issue #127 asks for the fuller one).
+ *
+ * ⚠ WHY: extraction parses each document with micromark, and on a 550-file
+ * set that was most of every `graph`, `dangling`, `backlinks` and `doctor`
+ * (1.3 s of a 1.7 s verb), paid again by each one though nothing had changed.
+ * The stamp is the caller's (the daemon's is mtime and size), so this stays
+ * free of the disk; a path with no stamp (gone, unreadable) is read every time
+ * and never kept. Nothing is ever evicted but a changed or vanished file: the
+ * cache holds at most the documents the context lists, a few link records each.
+ */
+export class LinkCache {
+  private readonly kept = new Map<string, { stamp: string; links: LinkRef[] }>();
+
+  constructor(
+    private readonly stampOf: (path: string) => string | null,
+    private readonly bodyOf: (path: string) => string,
+  ) {}
+
+  linksOf(path: string): LinkRef[] {
+    const stamp = this.stampOf(path);
+    const hit = this.kept.get(path);
+    if (stamp !== null && hit?.stamp === stamp) return hit.links;
+    const links = extractLinks(this.bodyOf(path), { schemes: true });
+    if (stamp === null) this.kept.delete(path);
+    else this.kept.set(path, { stamp, links });
+    return links;
+  }
+}
+
 /** Build a set's map: nodes are its documents, edges are the four sources. */
-export function buildGraph(given: BundleIndex, bodyOf: (path: string) => string, cap = 400): Graph {
+export function buildGraph(
+  given: BundleIndex,
+  bodyOf: (path: string) => string,
+  opts: GraphOptions = {},
+): Graph {
   const index = diskSafe(given);
-  const paths = index.paths.slice(0, cap);
+  const paths = index.paths.slice(0, opts.cap ?? 400);
+  const linksOf = opts.linksOf ?? ((p: string) => extractLinks(bodyOf(p), { schemes: true }));
   const edges: Edge[] = [];
   const unsupported: UnsupportedLink[] = [];
   for (const from of paths) {
     const meta = index.metaOf(from);
-    for (const link of extractLinks(bodyOf(from), { schemes: true })) {
+    for (const link of linksOf(from)) {
       if (link.scheme !== undefined) {
         if (!OPENS_OUTWARD.has(link.scheme))
           unsupported.push({

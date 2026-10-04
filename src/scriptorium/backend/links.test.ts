@@ -8,6 +8,7 @@ import {
   buildGraph,
   extractLinks,
   fieldRefs,
+  LinkCache,
   looksLikeRef,
   maskCode,
   parseRel,
@@ -275,6 +276,62 @@ describe("round three: a frontmatter value that cannot be a path is not a refere
       "missing",
       "missing",
     ]);
+  });
+});
+
+describe("round three: a file's links are read once until it changes", () => {
+  test("an unchanged stamp is not read again; a changed one is", () => {
+    const bodies: Record<string, string> = { "/w/a.md": "[b](./b.md)" };
+    const stamps: Record<string, string | null> = { "/w/a.md": "1:11" };
+    let reads = 0;
+    const cache = new LinkCache(
+      (p) => stamps[p] ?? null,
+      (p) => {
+        reads++;
+        return bodies[p] ?? "";
+      },
+    );
+    expect(cache.linksOf("/w/a.md").map((l) => l.raw)).toEqual(["./b.md"]);
+    expect(cache.linksOf("/w/a.md").map((l) => l.raw)).toEqual(["./b.md"]);
+    expect(reads).toBe(1);
+    bodies["/w/a.md"] = "[c](./c.md) [x](op:doc/1)";
+    stamps["/w/a.md"] = "2:24";
+    // Read with schemes, as the map reads, so `op:` links stay reportable.
+    expect(cache.linksOf("/w/a.md").map((l) => [l.raw, l.scheme])).toEqual([
+      ["./c.md", undefined],
+      ["op:doc/1", "op"],
+    ]);
+    expect(reads).toBe(2);
+  });
+  test("a file with no stamp (gone, unreadable) is read every time and never kept", () => {
+    let reads = 0;
+    const cache = new LinkCache(
+      () => null,
+      () => {
+        reads++;
+        return "[b](./b.md)";
+      },
+    );
+    cache.linksOf("/w/a.md");
+    cache.linksOf("/w/a.md");
+    expect(reads).toBe(2);
+  });
+  test("the map reads through it when given one", () => {
+    let reads = 0;
+    const cache = new LinkCache(
+      () => "s",
+      (p) => {
+        reads++;
+        return p === "/w/wiki/index.md" ? "[ok](./concepts/exit-codes.md)" : "";
+      },
+    );
+    const bodyOf = () => {
+      throw new Error("the map read a body past the cache");
+    };
+    const first = buildGraph(index(), bodyOf, { linksOf: (p) => cache.linksOf(p) });
+    const second = buildGraph(index(), bodyOf, { linksOf: (p) => cache.linksOf(p) });
+    expect(second.edges).toEqual(first.edges);
+    expect(reads).toBe(PATHS.length);
   });
 });
 
