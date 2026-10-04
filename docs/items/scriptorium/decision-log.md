@@ -2625,3 +2625,39 @@ are the same, and the chip and the daemon's path follow the new name together.
   offsets belong to one version's text, and a branch made to rewrite a passage
   is exactly the case where they stop matching. One rule is simpler to hold than
   "same document unless the text moved".
+
+## E67 — One opened folder is the workspace
+
+**Ruled:** Cole, 2026-10-04, on
+[issue #130](https://github.com/ichabodcole/spellbook/issues/130), a port-back
+from Story Studio (`ichabodcole/story-studio@cb47a04`). This refines
+[E23](#e23--the-workspace-folder--where-drops-and-new-top-level-documents-land);
+it does not reverse it.
+
+**⛔ THE RULE: when `open` is given exactly one folder, that folder is the
+workspace.** With several entries, or a single file, the workspace is still the
+working directory `open` ran from. A restored session keeps its own workspace.
+The handshake line names the workspace, so the agent can see where it landed.
+The human and the agent can still change it (E24).
+
+**Why.** An agent standing in one repository ran `open ~/worlds/x/`, and the
+workspace became that repository. A document the human then created from the
+sidebar's top row, or dropped there, was written into the repository, outside
+the world it belonged to.
+
+**Unchanged (Cole, the same day):** where a new document goes is decided by
+where it is made. Made inside an opened folder or one of its subfolders, it is
+written to that folder on disk. Made from the sidebar's top row, it goes to the
+workspace. The surface already did this (`dir: entry.root` / `menuDir` against
+`dir: workspace`); only the default workspace changes.
+
+**Not taken:**
+
+- **Keep E23 as it was.** That is the defect: the top row writes outside what
+  was opened.
+- **The first entry's folder, whatever was opened.** With several entries there
+  is no one right folder, and the working directory is the answer E23 already
+  gives.
+- **The folder holding an opened single file.** A single file says nothing about
+  where new documents belong, and the file's directory may be a repository's
+  root.
