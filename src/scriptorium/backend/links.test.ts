@@ -609,6 +609,52 @@ void _protoToEdge;
 void _nodeToProto;
 void _protoToNode;
 
+describe("round two: extraction agrees with the rendered view", () => {
+  const targets = (body: string) => extractLinks(body).map((l) => l.target);
+
+  test("indented code inside a LIST ITEM is code, as the surface renders it", () => {
+    expect(targets("- item\n\n      [x](./nope4.md)")).toEqual([]);
+    // An ordered item's content starts three columns in, so code is seven.
+    expect(targets("1. item\n\n       [x](./nope.md)\n\n[b](./b.md)")).toEqual(["./b.md"]);
+  });
+  test("indented code inside a BLOCKQUOTE is code too", () => {
+    expect(targets("> q\n>\n>     [x](./nope5.md)")).toEqual([]);
+    expect(targets("> - item\n>\n>       [x](./nope6.md)")).toEqual([]);
+  });
+  test("⚠ a list item's continuation PARAGRAPH is prose, and its links count", () => {
+    expect(targets("- a\n\n  more [x](./ok.md)")).toEqual(["./ok.md"]);
+    expect(targets("1. a\n\n   more [y](./ok2.md)")).toEqual(["./ok2.md"]);
+  });
+  test("a code span that runs onto the next line is still code", () => {
+    expect(targets("`a\n[x](./c3.md)`")).toEqual([]);
+    expect(targets("``a ` b\n[x](./c4.md) ``")).toEqual([]);
+    // A blank line ends the paragraph, so the ticks close nothing.
+    expect(targets("`a\n\n[x](./c5.md)`")).toEqual(["./c5.md"]);
+  });
+  test("a link wrapped around an image is an edge to the OUTER target", () => {
+    expect(targets("[![badge](./b.png)](./real.md)")).toEqual(["./real.md"]);
+    expect(targets("[t ![a](i.png)](./r.md)")).toEqual(["./r.md"]);
+    const [l] = extractLinks("[![a](i.png) and text](./r2.md?rel=see-also)");
+    expect([l?.target, l?.rel]).toEqual(["./r2.md", ["see-also"]]);
+    // The image inside is still an image, never a document link.
+    expect(extractLinks("[![b](./b.md)](./real.md)", { schemes: true }).map((x) => x.raw)).toEqual([
+      "./real.md",
+    ]);
+    // …and a LINK inside a label still means the inner one is what renders.
+    expect(targets("[![b](i.png) [x](./y.md)](./z.md)")).toEqual(["./y.md"]);
+  });
+  test("a protocol-relative URL is external, not a dangling path", () => {
+    expect(targets("[cdn](//cdn.example.com/x) [d](./d.md)")).toEqual(["./d.md"]);
+    expect(looksLikeRef("//cdn.example.com/x")).toBe(false);
+    const g = buildGraph(index(), (p) =>
+      p === "/w/wiki/index.md" ? "[cdn](//cdn.example.com/x.js)" : "",
+    );
+    expect(g.edges.filter((e) => e.from === "/w/wiki/index.md")).toEqual([]);
+    expect(g.unsupported).toEqual([]);
+    expect(g.dangling).toBe(0);
+  });
+});
+
 describe("round two: a document beats a same-named folder, dots and all", () => {
   const from = "/w/wiki/index.md";
   const disk = (docs: string[], dirs: string[], files: string[] = []): BundleIndex => ({

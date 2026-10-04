@@ -41,6 +41,8 @@ import {
   relative,
   resolve as resolvePath,
 } from "node:path";
+import { parse, postprocess, preprocess } from "micromark";
+import { gfm } from "micromark-extension-gfm";
 import type { DocMeta } from "./protocol";
 import { DOC_EXTENSIONS, toPosix } from "./tree";
 
@@ -79,100 +81,41 @@ export type FieldRef = { key: string; value: string };
 
 // ── where markdown is code ──────────────────────────────────────────────────
 //
-// Ported from Story Studio's kit (`packages/kit/src/lib/markdownCode.ts`,
-// story-studio@a57d65a), which took it from the same lineage as this file.
-// Line-based and deliberately small: there is no parse tree here to ask.
+// ⛔ ASKED OF THE RENDERER'S OWN PARSER, NOT GUESSED LINE BY LINE. #126 ported
+// Story Studio's line-based scanner (`packages/kit/src/lib/markdownCode.ts`,
+// story-studio@a57d65a), and the verifier found three places it disagreed with
+// what the rendered view shows: indented code inside a list item, indented code
+// inside a blockquote, and a code span that runs onto the next line. Each needs
+// CommonMark's container rules (where an item's content starts, what a `>`
+// carries), which is a parser's job. The rendered view is micromark + GFM
+// (`surface/state/markdown.ts`), so the same parser, with the same extension,
+// says where code is here: whatever it calls code, the reader sees as code.
 
-const FENCE = /^ {0,3}(`{3,}|~{3,})/;
-const INDENTED = /^( {4}|\t)/;
-const LIST_ITEM = /^ {0,3}([-*+]|\d{1,9}[.)])(\s|$)/;
-const BLANK = /^\s*$/;
-/** A blockquote's markers at the start of a line, nested or not. */
-const QUOTE = /^ {0,3}(?:> ?)+/;
-/** A fence at any indentation, for a list item's content or a quote's. */
-const FENCE_ANY = /^\s*(`{3,}|~{3,})/;
+/** micromark's names for code: a fenced block, an indented block, an inline span. */
+const CODE_TOKENS: ReadonlySet<string> = new Set(["codeFenced", "codeIndented", "codeText"]);
+/** Built once: the same extension the rendered view parses with. */
+const GFM = [gfm()];
 
-/**
- * The fence a line opens or closes, if any, and what follows it. Inside a
- * quote the `>` markers are read past, and inside a list item (or a quote) the
- * fence may be indented to the item's content.
- */
-function fenceOf(line: string, nested: boolean): { marker: string; rest: string } | null {
-  const q = QUOTE.exec(line);
-  const body = q ? line.slice(q[0].length) : line;
-  const m = (q || nested ? FENCE_ANY : FENCE).exec(body);
-  return m ? { marker: m[1] as string, rest: body.slice(m[0].length) } : null;
-}
-
-/**
- * The indices of the lines inside a code block: a fenced block with its fence
- * lines, or an indented block (four spaces or a tab, opened after a blank line
- * and not continuing a list). An unclosed fence runs to the end, as markdown
- * reads it.
- */
-function codeBlockLines(lines: readonly string[]): Set<number> {
-  const out = new Set<number>();
-  let fence: string | null = null;
-  let inList = false;
-  let indented = false;
-  let prevBlank = true;
-  lines.forEach((line, i) => {
-    if (fence !== null) {
-      out.add(i);
-      const m = fenceOf(line, true);
-      if (m && m.marker[0] === fence[0] && m.marker.length >= fence.length && BLANK.test(m.rest))
-        fence = null;
-      return;
-    }
-    const blank = BLANK.test(line);
-    if (indented && (blank || INDENTED.test(line))) {
-      out.add(i);
-      prevBlank = blank;
-      return;
-    }
-    indented = false;
-    const f = fenceOf(line, inList);
-    if (f) {
-      fence = f.marker;
-      out.add(i);
-      prevBlank = false;
-      return;
-    }
-    if (!blank && INDENTED.test(line) && prevBlank && !inList) {
-      indented = true;
-      out.add(i);
-      prevBlank = false;
-      return;
-    }
-    if (!blank && !INDENTED.test(line)) inList = LIST_ITEM.test(line) || (inList && !prevBlank);
-    prevBlank = blank;
-  });
+/** The `[from, to)` offsets of every piece of code in `text`, as the rendered view parses it. */
+function codeRanges(text: string): Array<[number, number]> {
+  const events = postprocess(
+    parse({ extensions: GFM })
+      .document()
+      .write(preprocess()(text, undefined, true)),
+  );
+  const out: Array<[number, number]> = [];
+  for (const [kind, token] of events)
+    if (kind === "enter" && CODE_TOKENS.has(token.type))
+      out.push([token.start.offset, token.end.offset]);
   return out;
-}
-
-/** Inline code spans in a line, as `[from, to)` ranges; an unclosed run is not a span. */
-function inlineSpans(line: string): Array<[number, number]> {
-  const spans: Array<[number, number]> = [];
-  const runs = [...line.matchAll(/(?<!\\)`+/g)].map((m) => ({
-    at: m.index as number,
-    len: m[0].length,
-  }));
-  for (let i = 0; i < runs.length; i++) {
-    const open = runs[i] as { at: number; len: number };
-    const close = runs.slice(i + 1).findIndex((r) => r.len === open.len);
-    if (close === -1) continue;
-    const end = runs[i + 1 + close] as { at: number; len: number };
-    spans.push([open.at, end.at + end.len]);
-    i += 1 + close;
-  }
-  return spans;
 }
 
 /**
  * `text` with its code blanked IN PLACE: every character of a code block
- * (fenced or indented) or an inline span, its ticks included, becomes a space,
- * and line breaks stay. The result is exactly as long as `text`, so an offset
- * found in it is an offset in `text`.
+ * (fenced or indented, at any depth of list or quote) or an inline span (on one
+ * line or several), its ticks included, becomes a space, and line breaks stay.
+ * The result is exactly as long as `text`, so an offset found in it is an
+ * offset in `text`.
  *
  * ⛔ A DOCUMENT ABOUT LINKS QUOTES LINK SYNTAX, and it does so in code: the wiki
  * this was built against has SCHEMA.md's fenced examples, and CONTRIBUTING-style
@@ -180,20 +123,15 @@ function inlineSpans(line: string): Array<[number, number]> {
  * (`withoutFences`); inline and indented code were edges until #126.
  */
 export function maskCode(text: string): string {
-  const lines = text.split("\n");
-  const blocks = codeBlockLines(lines);
-  return lines
-    .map((line, i) => {
-      if (blocks.has(i)) return " ".repeat(line.length);
-      let out = "";
-      let at = 0;
-      for (const [from, to] of inlineSpans(line)) {
-        out += line.slice(at, from) + " ".repeat(to - from);
-        at = to;
-      }
-      return out + line.slice(at);
-    })
-    .join("\n");
+  if (!/[`~]|( {4}|\t)/.test(text)) return text; // nothing here can open code
+  let out = "";
+  let at = 0;
+  for (const [from, to] of codeRanges(text)) {
+    if (from < at) continue; // nested inside a range already blanked
+    out += text.slice(at, from) + text.slice(from, to).replace(/[^\r\n]/g, " ");
+    at = to;
+  }
+  return out + text.slice(at);
 }
 
 /** `?rel=a,b` → `["a","b"]`, normalised the way Operator normalises them. */
@@ -245,6 +183,12 @@ export function splitTarget(raw: string): { path: string; query?: string; anchor
 }
 
 const EXTERNAL = /^[a-z][a-z0-9+.-]*:/i;
+/**
+ * `//cdn.example.com/x`: a URL that borrows the page's scheme, so a host and
+ * not a path. A browser opens it on the web (http or https), so it is neither
+ * an edge nor a scheme to report.
+ */
+const PROTOCOL_RELATIVE = /^\/\/[^/]/;
 /** One label character: anything but a bracket, and a line break only when the next line is not blank. */
 const LABEL_CHAR = String.raw`(?:[^\[\]\n]|\n(?![ \t]*\r?\n))`;
 /** An ATX heading line: a heading ends at its line break, and so does any label in it. */
@@ -260,6 +204,9 @@ const MD_LINK = new RegExp(
   String.raw`(!?)\[((?:${LABEL_CHAR}|\[${LABEL_CHAR}*\])*)\]\(\s*(?:<([^>\n]*)>|((?:[^\s()]|\([^\s()]*\))*))(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)`,
   "gd",
 );
+/** An image inside a link's label (whose brackets nest one level only), target and title included. */
+const IMAGE_IN_LABEL =
+  /!\[[^[\]]*\]\(\s*(?:<[^>\n]*>|(?:[^\s()]|\([^\s()]*\))*)(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)/g;
 const WIKI_LINK = /\[\[([^[\]\n]+)\]\]/dg;
 /** An HTML comment, to its end or to the end of the text when it never closes. */
 const COMMENT = /<!--[\s\S]*?(?:-->|$)/g;
@@ -295,8 +242,9 @@ function linkable(text: string): string {
 
 /**
  * Every link a document's BODY points at, in order: markdown links and wiki
- * links, with images, external targets (`https:`, `mailto:`, `op:`) and
- * in-page anchors (`#x`) left out, unless `opts.schemes` keeps the scheme
+ * links, with images, external targets (`https:`, `mailto:`, `op:`, and a
+ * protocol-relative `//host/x`) and in-page anchors (`#x`) left out (a link
+ * wrapped around an image is kept, by its outer target; the image is not), unless `opts.schemes` keeps the scheme
  * targets (each marked with its `scheme`), and nothing inside code (fenced, indented or
  * inline) or an HTML comment, which hold examples and asides, not links. A
  * backslash-escaped bracket is text.
@@ -342,7 +290,11 @@ export function extractLinks(body: string, opts: ExtractOptions = {}): LinkRef[]
   for (let m = MD_LINK.exec(masked); m; m = MD_LINK.exec(masked)) {
     const label = m[2] ?? "";
     const crossesHeading = label.includes("\n") && ATX_HEADING.test(lineText(lineOf(m.index)));
-    if (label.includes("](") || crossesHeading) {
+    // ⚠ AN IMAGE IN A LABEL IS NOT A LINK IN A LABEL: `[![badge](./b.png)](./real.md)`
+    // renders as one link around a picture, so the outer target is the edge.
+    // Rejecting it as a nested link left only the image, which is never one.
+    const holdsLink = label.replace(IMAGE_IN_LABEL, "").includes("](");
+    if (holdsLink || crossesHeading) {
       MD_LINK.lastIndex = m.index + 1;
       continue;
     }
@@ -361,7 +313,7 @@ export function extractLinks(body: string, opts: ExtractOptions = {}): LinkRef[]
   for (const m of md) {
     if (m[1] === "!") continue; // an image is not a document link
     const raw = slice(m, 3) ?? slice(m, 4) ?? "";
-    if (raw === "" || raw.startsWith("#")) continue;
+    if (raw === "" || raw.startsWith("#") || PROTOCOL_RELATIVE.test(raw)) continue;
     // ⚠ ANY SCHEME-SHAPED PREFIX IS A SCHEME, which is the surface's rule too
     // (`state/markdown.ts`): it strikes every one but http, https and mailto
     // through, so the map must not call such a link a path.
@@ -407,7 +359,7 @@ export function extractLinks(body: string, opts: ExtractOptions = {}): LinkRef[]
 export function looksLikeRef(value: unknown): value is string {
   if (typeof value !== "string") return false;
   const v = value.trim();
-  if (v === "" || EXTERNAL.test(v)) return false;
+  if (v === "" || EXTERNAL.test(v) || PROTOCOL_RELATIVE.test(v)) return false;
   return v.includes("/") || v.toLowerCase().endsWith(".md");
 }
 
