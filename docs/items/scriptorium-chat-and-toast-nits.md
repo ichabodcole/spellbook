@@ -125,3 +125,16 @@ cycle:**
 - **pdocs folder keys do not resolve:** `parent: feature/spell-hardening` names
   `docs/features/<slug>/feature.md`, so on this repo's `docs/` 39 of 124
   dangling links are false.
+
+**From the third "Links tell the truth" verifier (2026-10-04), predating that
+cycle:**
+
+- **An absolute filesystem path in a link is joined onto the set root**: a chat
+  link to an existing `/…/cc.md` toasts "nothing at $S/sets/e$S/sets/e/cc.md",
+  and `graph` calls an absolute body link `missing`. Agents write absolute
+  paths.
+- **An unreadable document (chmod 000) reads as having no links**, and nothing
+  reports it, so its outbound links vanish silently.
+- `links.partial` stays on the parent set after the `add <sub-folder>` remedy
+  until that folder is also hidden; one flat folder over 2,000 files has no
+  remedy.
