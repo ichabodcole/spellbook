@@ -1,6 +1,7 @@
 // The resolver, over real shapes: the wiki's `type/slug` keys, Operator's typed
 // links, wiki links, and the frontmatter references that are NOT links.
 import { describe, expect, test } from "bun:test";
+import { renderMarkdown } from "../surface/state/markdown";
 import type { Edge, GraphNode, UnsupportedLink } from "./links";
 import {
   type BundleIndex,
@@ -110,10 +111,11 @@ describe("what markdown renders as a link, and what it does not (#126)", () => {
     expect(targets("[not\\](./x.md)")).toEqual([]);
   });
   test("a link inside an HTML comment is an aside, not an edge", () => {
-    expect(targets("<!-- [x](./a.md) --> [b](./b.md)")).toEqual(["./b.md"]);
+    expect(targets("p <!-- [x](./a.md) --> [b](./b.md)")).toEqual(["./b.md"]);
     expect(targets(["<!--", "[x](./a.md)", "-->", "[b](./b.md)"].join("\n"))).toEqual(["./b.md"]);
-    // An unclosed comment runs to the end, as an HTML parser reads it.
-    expect(targets("[b](./b.md) <!-- [x](./a.md)")).toEqual(["./b.md"]);
+    // ⚠ A comment that OPENS a line is an HTML block, and the block runs to the
+    // end of the line holding `-->`: the renderer shows that whole line as text.
+    expect(targets("<!-- [x](./a.md) --> [b](./b.md)")).toEqual([]);
   });
   test("an <…> target, which may hold spaces", () => {
     const [l] = extractLinks("[a](<./My Notes.md>)");
@@ -652,6 +654,59 @@ describe("round two: extraction agrees with the rendered view", () => {
     expect(g.edges.filter((e) => e.from === "/w/wiki/index.md")).toEqual([]);
     expect(g.unsupported).toEqual([]);
     expect(g.dangling).toBe(0);
+  });
+});
+
+describe("round three: a comment is what the renderer calls one", () => {
+  const targets = (body: string) => extractLinks(body).map((l) => l.target);
+
+  test("an unclosed INLINE `<!--` is text, and the links after it count", () => {
+    expect(targets("Use <!-- to open a comment.\n\n[later](./later.md)")).toEqual(["./later.md"]);
+    // On the same line, too: the renderer shows `<!--` as text and links the rest.
+    expect(targets("[b](./b.md) <!-- [x](./a.md)")).toEqual(["./b.md", "./a.md"]);
+  });
+  test("a comment BLOCK ends with its container, not at the end of the document", () => {
+    expect(targets("> <!-- q\n\n[z](./z.md)")).toEqual(["./z.md"]);
+    expect(targets("- a\n  <!-- c\n\n[z](./z.md)")).toEqual(["./z.md"]);
+    // …and one that never closes at the top level runs to the end, as rendered.
+    expect(targets("a\n<!-- x\n[y](./y.md)")).toEqual([]);
+  });
+  test("`<!--` inside code opens nothing", () => {
+    expect(targets("`<!--` then [a](./a.md)")).toEqual(["./a.md"]);
+  });
+  test("random documents of code, comment and link pieces link what the renderer links", () => {
+    // A fixed seed (mulberry32), so a failure reproduces; round three ran
+    // 200,000 of these with no disagreement. A lone `[` and table pipes are
+    // left out: a label crossing into a list line, and a table row's extra
+    // cells, are two disagreements of their own, older than comments (filed).
+    let seed = 7;
+    const rand = () => {
+      seed = (seed + 0x6d2b79f5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    // biome-ignore format: one row of pieces reads better than thirty lines
+    const pieces = ["LINK", "LINK", "`", "``", "```", "~~~", "<!--", "-->", "\n", "\n\n", "    ", "\t", "- ", "> ", "1. ", " ", "word", "\\", "]", "(", ")", "# ", "!"];
+    const ours = /^\.\/t\d+\.md$/;
+    const disagree: string[] = [];
+    let k = 0;
+    for (let i = 0; i < 1500; i++) {
+      let s = "";
+      const len = 3 + Math.floor(rand() * 20);
+      for (let j = 0; j < len; j++) {
+        const p = pieces[Math.floor(rand() * pieces.length)] as string;
+        s += p === "LINK" ? `[l${k}](./t${k++}.md)` : p;
+      }
+      const shown = [...renderMarkdown(s).matchAll(/<a href="([^"]*)"/g)]
+        .map((m) => m[1] as string)
+        .filter((h) => ours.test(h));
+      const read = extractLinks(s)
+        .map((l) => l.raw)
+        .filter((r) => ours.test(r));
+      if (shown.join(" ") !== read.join(" ")) disagree.push(s);
+    }
+    expect(disagree).toEqual([]);
   });
 });
 

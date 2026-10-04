@@ -93,22 +93,42 @@ export type FieldRef = { key: string; value: string };
 
 /** micromark's names for code: a fenced block, an indented block, an inline span. */
 const CODE_TOKENS: ReadonlySet<string> = new Set(["codeFenced", "codeIndented", "codeText"]);
+/**
+ * micromark's names for raw HTML: a block, and a tag or comment inside a line.
+ * Only the ones that open with `<!--` are masked (see `maskCode`).
+ */
+const HTML_TOKENS: ReadonlySet<string> = new Set(["htmlFlow", "htmlText"]);
+/** `<!--` at the sticky position, after any indentation. */
+const OPENS_COMMENT = /[ \t]*<!--/y;
 /** Built once: the same extension the rendered view parses with. */
 const GFM = [gfm()];
 
-/** The `[from, to)` offsets of every piece of code in `text`, as the rendered view parses it. */
-function codeRanges(text: string): Array<[number, number]> {
+/**
+ * The `[from, to)` offsets of every piece of code in `text`, as the rendered
+ * view parses it, and with `comments`, of every HTML comment too.
+ */
+function codeRanges(text: string, comments: boolean): Array<[number, number]> {
   const events = postprocess(
     parse({ extensions: GFM })
       .document()
       .write(preprocess()(text, undefined, true)),
   );
   const out: Array<[number, number]> = [];
-  for (const [kind, token] of events)
-    if (kind === "enter" && CODE_TOKENS.has(token.type))
-      out.push([token.start.offset, token.end.offset]);
+  for (const [kind, token] of events) {
+    if (kind !== "enter") continue;
+    const from = token.start.offset;
+    if (CODE_TOKENS.has(token.type)) out.push([from, token.end.offset]);
+    else if (comments && HTML_TOKENS.has(token.type)) {
+      // A block's token starts at its indentation, so `  <!--` opens a comment too.
+      OPENS_COMMENT.lastIndex = from;
+      if (OPENS_COMMENT.test(text)) out.push([from, token.end.offset]);
+    }
+  }
   return out;
 }
+
+/** Could anything in `text` open code? */
+const MAY_OPEN_CODE = /[`~]|( {4}|\t)/;
 
 /**
  * `text` with its code blanked IN PLACE: every character of a code block
@@ -117,16 +137,31 @@ function codeRanges(text: string): Array<[number, number]> {
  * The result is exactly as long as `text`, so an offset found in it is an
  * offset in `text`.
  *
+ * With `{ comments: true }`, HTML comments are blanked the same way, and only
+ * what the rendered view treats as one:
+ *
+ * ⛔ AN UNCLOSED `<!--` INSIDE A LINE IS TEXT (round three of this cycle). A
+ * regex that ran a comment "to its end, or to the end of the text" hid every
+ * link below `Use <!-- to open a comment.`, while the renderer shows those four
+ * characters as text and every later link as a link. So the renderer's parser
+ * says where a comment is: one inside a line must close in its paragraph, and
+ * one that opens a line is an HTML block, which runs to the line holding `-->`
+ * or to the end of its container (a quote, a list item, the document). The
+ * view shows that whole block as text, so a link after `-->` on the same line
+ * is text too. Other HTML blocks are left as they were: their links still
+ * count, which is filed apart.
+ *
  * ⛔ A DOCUMENT ABOUT LINKS QUOTES LINK SYNTAX, and it does so in code: the wiki
  * this was built against has SCHEMA.md's fenced examples, and CONTRIBUTING-style
  * prose lists example links in backticks. Fenced code alone was blanked once
  * (`withoutFences`); inline and indented code were edges until #126.
  */
-export function maskCode(text: string): string {
-  if (!/[`~]|( {4}|\t)/.test(text)) return text; // nothing here can open code
+export function maskCode(text: string, opts: { comments?: boolean } = {}): string {
+  const comments = opts.comments === true && text.includes("<!--");
+  if (!comments && !MAY_OPEN_CODE.test(text)) return text; // nothing here can open code
   let out = "";
   let at = 0;
-  for (const [from, to] of codeRanges(text)) {
+  for (const [from, to] of codeRanges(text, comments)) {
     if (from < at) continue; // nested inside a range already blanked
     out += text.slice(at, from) + text.slice(from, to).replace(/[^\r\n]/g, " ");
     at = to;
@@ -208,8 +243,6 @@ const MD_LINK = new RegExp(
 const IMAGE_IN_LABEL =
   /!\[[^[\]]*\]\(\s*(?:<[^>\n]*>|(?:[^\s()]|\([^\s()]*\))*)(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)/g;
 const WIKI_LINK = /\[\[([^[\]\n]+)\]\]/dg;
-/** An HTML comment, to its end or to the end of the text when it never closes. */
-const COMMENT = /<!--[\s\S]*?(?:-->|$)/g;
 /** A backslash escape: markdown's, of any ASCII punctuation. */
 const ESCAPE = /\\[!-/:-@[-`{-~]/g;
 
@@ -236,8 +269,7 @@ export type ExtractOptions = {
 };
 
 function linkable(text: string): string {
-  const blank = (s: string) => s.replace(/[^\n]/g, " ");
-  return maskCode(text).replace(COMMENT, blank).replace(ESCAPE, "\u0001\u0001");
+  return maskCode(text, { comments: true }).replace(ESCAPE, "\u0001\u0001");
 }
 
 /**
