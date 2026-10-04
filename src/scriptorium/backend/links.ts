@@ -398,6 +398,8 @@ const NAME_MAX = 255;
 const ENDS_IN_EXTENSION = /\.[a-z0-9]{1,8}$/i;
 /** Where prose breaks: a clause mark followed by a space, or a spaced dash. */
 const SENTENCE_BREAK = /[.,;:!?][ \t]|[ \t][—–][ \t]/;
+/** A value that opens as a path does: `./`, `../` or `/`. */
+const ANCHORED = /^(?:\.{1,2})?\//;
 
 /**
  * Does this frontmatter value LOOK like a document reference?
@@ -412,6 +414,14 @@ const SENTENCE_BREAK = /[.,;:!?][ \t]|[ \t][—–][ \t]/;
  * file. Not when it has a line break or a name longer than any disk holds;
  * and when it has a space (`places/Maren's Bakery.md` does), only when it ends
  * in an extension and has no break that prose has (`, ` or ` — `).
+ *
+ * ⛔ AN ANCHORED VALUE IS A PATH, WHATEVER ITS PUNCTUATION (round four). The
+ * prose rule then dropped references that counted before it:
+ * `./notes/Chapter 1, Part 2.md`, `./notes/Dawn — Dusk.md`,
+ * `./notes/my chapter.md#scene`, `../research/field notes`. Prose does not open
+ * with `./`, `../` or `/`, so a value that does is a path, and only the limits
+ * a disk sets (a line break, a name over 255 bytes) can refuse it. The prose
+ * rule is for values without that anchor.
  */
 export function looksLikeRef(value: unknown): value is string {
   if (typeof value !== "string") return false;
@@ -420,6 +430,7 @@ export function looksLikeRef(value: unknown): value is string {
   if (!(v.includes("/") || v.toLowerCase().endsWith(".md"))) return false;
   if (/[\r\n]/.test(v)) return false;
   if (v.split("/").some((name) => Buffer.byteLength(name) > NAME_MAX)) return false;
+  if (ANCHORED.test(v)) return true;
   if (/\s/.test(v)) return ENDS_IN_EXTENSION.test(v) && !SENTENCE_BREAK.test(v);
   return true;
 }

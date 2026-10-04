@@ -255,6 +255,48 @@ describe("round three: a frontmatter value that cannot be a path is not a refere
     expect(looksLikeRef("assets/a map.png")).toBe(true);
     expect(looksLikeRef("concept/exit-codes")).toBe(true);
   });
+  test("⛔ round four: a value anchored at ./, ../ or / is a path whatever its punctuation", () => {
+    // Round three's prose rule dropped these, which were references before it.
+    expect(looksLikeRef("./notes/Chapter 1, Part 2.md")).toBe(true);
+    expect(looksLikeRef("./notes/Dawn — Dusk.md")).toBe(true);
+    expect(looksLikeRef("./notes/my chapter.md#scene")).toBe(true);
+    expect(looksLikeRef("./notes/my chapter")).toBe(true);
+    expect(looksLikeRef("../research/field notes")).toBe(true);
+    expect(looksLikeRef("/notes/a b, c.md")).toBe(true);
+    expect(looksLikeRef("./notes/my chapter.md")).toBe(true);
+    expect(
+      fieldRefs({
+        related: ["../research/field notes", "./notes/Chapter 1, Part 2.md"],
+        source: "../research/field notes",
+      }).map((r) => `${r.key}=${r.value}`),
+    ).toEqual([
+      "related=../research/field notes",
+      "related=./notes/Chapter 1, Part 2.md",
+      "source=../research/field notes",
+    ]);
+    // The limits a disk sets still hold for them.
+    expect(looksLikeRef("./notes/one\ntwo.md")).toBe(false);
+    expect(looksLikeRef(`./notes/${"x".repeat(256)}.md`)).toBe(false);
+    // Without the anchor, prose is still prose.
+    expect(looksLikeRef("Chapter 1, Part 2/notes.md")).toBe(false);
+    expect(looksLikeRef("//cdn.example.com/a b.md")).toBe(false);
+  });
+  test("an anchored reference with a fragment resolves to its file", () => {
+    const g = buildGraph(
+      {
+        ...index(),
+        metaOf: (p) =>
+          p === "/w/wiki/index.md"
+            ? meta({ related: ["./concepts/exit-codes.md#scene", "./concepts/exit-codes"] })
+            : null,
+      },
+      () => "",
+    );
+    expect(g.edges.filter((e) => e.source === "frontmatter").map((e) => [e.to, e.state])).toEqual([
+      ["/w/wiki/concepts/exit-codes.md", "in-bundle"],
+      ["/w/wiki/concepts/exit-codes.md", "in-bundle"],
+    ]);
+  });
   test("a disk that throws on one value leaves the rest of the map", () => {
     const boom = "/w/wiki/deep/x.md";
     const g = buildGraph(
