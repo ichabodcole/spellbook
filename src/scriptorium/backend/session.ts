@@ -291,11 +291,17 @@ export class Session {
    * (round three of the links cycle). The map, `dangling`, `backlinks` and the
    * doctor all read through it, so the first of them pays for extraction and
    * the rest do not. Keyed on the file on disk, which is what the map reads.
+   *
+   * ⛔ MTIME AND SIZE ARE NOT ENOUGH (round four). An edit that keeps the byte
+   * count and then puts the old mtime back (`touch -r`, `utimes`, a sync tool)
+   * left `graph` and `dangling` answering from the old links. The stamp also
+   * carries ctime, which no userland call can set back, and the inode, which an
+   * atomic replace changes.
    */
   private readonly linkCache = new LinkCache(
     (p) => {
       const st = statAt(p);
-      return st?.isFile() ? `${st.mtimeMs}:${st.size}` : null;
+      return st?.isFile() ? `${st.mtimeMs}:${st.size}:${st.ctimeMs}:${st.ino}` : null;
     },
     (p) => {
       try {

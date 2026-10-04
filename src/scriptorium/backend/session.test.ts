@@ -10,7 +10,9 @@ import {
   readFileSync,
   realpathSync,
   rmSync,
+  statSync,
   symlinkSync,
+  utimesSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -744,6 +746,24 @@ describe("round three: one frontmatter value cannot take the map down", () => {
     const { entry } = s.addContext(join(docs, "set"));
     expect((s.danglingLinks(entry.id) as { count: number }).count).toBe(1);
     writeFileSync(a, "# A\n\n[b](./part/b.md) and more\n");
+    expect((s.danglingLinks(entry.id) as { count: number }).count).toBe(0);
+    expect(s.backlinks(join(docs, "set", "part", "b.md")).count).toBe(1);
+  });
+  test("⛔ round four: an edit that keeps the size and puts the mtime back is still seen", () => {
+    const a = join(docs, "set", "a.md");
+    writeFileSync(a, "# A\n\n[g](./gonexx.md)\n");
+    // A whole-second mtime, so putting it back is exact.
+    const then = new Date("2026-01-02T03:04:05Z");
+    utimesSync(a, then, then);
+    const before = statSync(a);
+    const s = Session.create(home);
+    const { entry } = s.addContext(join(docs, "set"));
+    expect((s.danglingLinks(entry.id) as { count: number }).count).toBe(1);
+    // Same byte count, then the old mtime restored, as `touch -r` or a sync tool does.
+    writeFileSync(a, "# A\n\n[b](./part/b.md)\n");
+    utimesSync(a, before.atime, before.mtime);
+    expect(statSync(a).size).toBe(before.size);
+    expect(statSync(a).mtimeMs).toBe(before.mtimeMs);
     expect((s.danglingLinks(entry.id) as { count: number }).count).toBe(0);
     expect(s.backlinks(join(docs, "set", "part", "b.md")).count).toBe(1);
   });
