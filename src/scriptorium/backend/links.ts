@@ -71,31 +71,123 @@ export type LinkRef = {
 /** A reference found in frontmatter, with the key that carried it. */
 export type FieldRef = { key: string; value: string };
 
-const FENCE_LINE = /^(?:```|~~~)/;
+// ── where markdown is code ──────────────────────────────────────────────────
+//
+// Ported from Story Studio's kit (`packages/kit/src/lib/markdownCode.ts`,
+// story-studio@a57d65a), which took it from the same lineage as this file.
+// Line-based and deliberately small: there is no parse tree here to ask.
+
+const FENCE = /^ {0,3}(`{3,}|~{3,})/;
+const INDENTED = /^( {4}|\t)/;
+const LIST_ITEM = /^ {0,3}([-*+]|\d{1,9}[.)])(\s|$)/;
+const BLANK = /^\s*$/;
+/** A blockquote's markers at the start of a line, nested or not. */
+const QUOTE = /^ {0,3}(?:> ?)+/;
+/** A fence at any indentation, for a list item's content or a quote's. */
+const FENCE_ANY = /^\s*(`{3,}|~{3,})/;
 
 /**
- * Strip fenced code blocks. A document about links quotes link syntax, and the
- * wiki this was built against does exactly that — without this, SCHEMA.md's
- * examples become edges.
+ * The fence a line opens or closes, if any, and what follows it. Inside a
+ * quote the `>` markers are read past, and inside a list item (or a quote) the
+ * fence may be indented to the item's content.
  */
-export function withoutFences(body: string): string {
-  const out: string[] = [];
+function fenceOf(line: string, nested: boolean): { marker: string; rest: string } | null {
+  const q = QUOTE.exec(line);
+  const body = q ? line.slice(q[0].length) : line;
+  const m = (q || nested ? FENCE_ANY : FENCE).exec(body);
+  return m ? { marker: m[1] as string, rest: body.slice(m[0].length) } : null;
+}
+
+/**
+ * The indices of the lines inside a code block: a fenced block with its fence
+ * lines, or an indented block (four spaces or a tab, opened after a blank line
+ * and not continuing a list). An unclosed fence runs to the end, as markdown
+ * reads it.
+ */
+function codeBlockLines(lines: readonly string[]): Set<number> {
+  const out = new Set<number>();
   let fence: string | null = null;
-  for (const line of body.split("\n")) {
-    const m = FENCE_LINE.exec(line);
-    if (fence === null && m) {
-      fence = m[0];
-      out.push("");
-      continue;
-    }
+  let inList = false;
+  let indented = false;
+  let prevBlank = true;
+  lines.forEach((line, i) => {
     if (fence !== null) {
-      if (m && line.startsWith(fence)) fence = null;
-      out.push("");
-      continue;
+      out.add(i);
+      const m = fenceOf(line, true);
+      if (m && m.marker[0] === fence[0] && m.marker.length >= fence.length && BLANK.test(m.rest))
+        fence = null;
+      return;
     }
-    out.push(line);
+    const blank = BLANK.test(line);
+    if (indented && (blank || INDENTED.test(line))) {
+      out.add(i);
+      prevBlank = blank;
+      return;
+    }
+    indented = false;
+    const f = fenceOf(line, inList);
+    if (f) {
+      fence = f.marker;
+      out.add(i);
+      prevBlank = false;
+      return;
+    }
+    if (!blank && INDENTED.test(line) && prevBlank && !inList) {
+      indented = true;
+      out.add(i);
+      prevBlank = false;
+      return;
+    }
+    if (!blank && !INDENTED.test(line)) inList = LIST_ITEM.test(line) || (inList && !prevBlank);
+    prevBlank = blank;
+  });
+  return out;
+}
+
+/** Inline code spans in a line, as `[from, to)` ranges; an unclosed run is not a span. */
+function inlineSpans(line: string): Array<[number, number]> {
+  const spans: Array<[number, number]> = [];
+  const runs = [...line.matchAll(/(?<!\\)`+/g)].map((m) => ({
+    at: m.index as number,
+    len: m[0].length,
+  }));
+  for (let i = 0; i < runs.length; i++) {
+    const open = runs[i] as { at: number; len: number };
+    const close = runs.slice(i + 1).findIndex((r) => r.len === open.len);
+    if (close === -1) continue;
+    const end = runs[i + 1 + close] as { at: number; len: number };
+    spans.push([open.at, end.at + end.len]);
+    i += 1 + close;
   }
-  return out.join("\n");
+  return spans;
+}
+
+/**
+ * `text` with its code blanked IN PLACE: every character of a code block
+ * (fenced or indented) or an inline span, its ticks included, becomes a space,
+ * and line breaks stay. The result is exactly as long as `text`, so an offset
+ * found in it is an offset in `text`.
+ *
+ * ⛔ A DOCUMENT ABOUT LINKS QUOTES LINK SYNTAX, and it does so in code: the wiki
+ * this was built against has SCHEMA.md's fenced examples, and CONTRIBUTING-style
+ * prose lists example links in backticks. Fenced code alone was blanked once
+ * (`withoutFences`); inline and indented code were edges until #126.
+ */
+export function maskCode(text: string): string {
+  const lines = text.split("\n");
+  const blocks = codeBlockLines(lines);
+  return lines
+    .map((line, i) => {
+      if (blocks.has(i)) return " ".repeat(line.length);
+      let out = "";
+      let at = 0;
+      for (const [from, to] of inlineSpans(line)) {
+        out += line.slice(at, from) + " ".repeat(to - from);
+        at = to;
+      }
+      return out + line.slice(at);
+    })
+    .join("\n");
 }
 
 /** `?rel=a,b` → `["a","b"]`, normalised the way Operator normalises them. */
@@ -147,54 +239,142 @@ export function splitTarget(raw: string): { path: string; query?: string; anchor
 }
 
 const EXTERNAL = /^[a-z][a-z0-9+.-]*:/i;
-const MD_LINK = /(!?)\[([^\]\n]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
-const WIKI_LINK = /\[\[([^\]\n]+)\]\]/g;
+/** One label character: anything but a bracket, and a line break only when the next line is not blank. */
+const LABEL_CHAR = String.raw`(?:[^\[\]\n]|\n(?![ \t]*\r?\n))`;
+/** An ATX heading line: a heading ends at its line break, and so does any label in it. */
+const ATX_HEADING = /^ {0,3}#{1,6}(?:[ \t]|$)/;
+/**
+ * `[label](target)` or `[label](<target>)`, with an optional title in double or
+ * single quotes; `!` marks an image. A label may hold one level of brackets
+ * (`[a [b] c](x.md)`) and run onto the next line; a target may hold one level
+ * of balanced parentheses. Matched with indices (`d`), so every part can be
+ * read back out of the ORIGINAL text. (Ported from story-studio@a57d65a.)
+ */
+const MD_LINK = new RegExp(
+  String.raw`(!?)\[((?:${LABEL_CHAR}|\[${LABEL_CHAR}*\])*)\]\(\s*(?:<([^>\n]*)>|((?:[^\s()]|\([^\s()]*\))*))(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)`,
+  "gd",
+);
+const WIKI_LINK = /\[\[([^[\]\n]+)\]\]/dg;
+/** An HTML comment, to its end or to the end of the text when it never closes. */
+const COMMENT = /<!--[\s\S]*?(?:-->|$)/g;
+/** A backslash escape: markdown's, of any ASCII punctuation. */
+const ESCAPE = /\\[!-/:-@[-`{-~]/g;
 
-/** Every link a document's BODY points at — external targets and images left out. */
+const unescapeMd = (s: string) => s.replace(ESCAPE, (e) => e.slice(1));
+
+/**
+ * The text with everything that cannot hold a link blanked IN PLACE, so every
+ * offset in it is an offset in the original: code (fenced, indented, inline)
+ * and HTML comments become spaces, and a backslash escape becomes two
+ * placeholder characters, so `\[` opens nothing and `\]` closes nothing while
+ * the escaped text keeps its place. Line breaks always stay.
+ */
+function linkable(text: string): string {
+  const blank = (s: string) => s.replace(/[^\n]/g, " ");
+  return maskCode(text).replace(COMMENT, blank).replace(ESCAPE, "\u0001\u0001");
+}
+
+/**
+ * Every link a document's BODY points at, in order: markdown links and wiki
+ * links, with images, external targets (`https:`, `mailto:`) and in-page
+ * anchors (`#x`) left out, and nothing inside code (fenced, indented or
+ * inline) or an HTML comment, which hold examples and asides, not links. A
+ * backslash-escaped bracket is text.
+ *
+ * Matched over the whole body with what cannot hold a link blanked in place
+ * (`linkable`), so offsets need no mapping back: the target as written and the
+ * label are read straight out of the original text, and `line` is the body
+ * line the link starts on. A label may run onto the next line, as markdown
+ * allows, but a blank line or the end of an ATX heading line ends it.
+ *
+ * Reference-style links (`[x][ref]` with `[ref]: ./a.md`) are not read, here
+ * or in the kit this was ported from.
+ */
 export function extractLinks(body: string): LinkRef[] {
-  const text = withoutFences(body);
-  const out: LinkRef[] = [];
-  // ⚠ LINE NUMBERS SURVIVE `withoutFences` AND OFFSETS DO NOT: it blanks each
-  // fenced line rather than deleting it, so the line COUNT is preserved while
-  // the character offsets are not. Counting newlines is therefore sound; using
-  // `m.index` as a character position in the original body would not be.
-  const lineAt = (at: number) => {
-    let line = 1;
-    for (let i = 0; i < at && i < text.length; i++) if (text.charCodeAt(i) === 10) line++;
-    return line;
+  if (!body.includes("[")) return [];
+  const text = body;
+  const masked = linkable(text);
+  // ⚠ LINES FROM A PRECOMPUTED TABLE. Walking from the start of the text for
+  // every link made extraction O(links × length) on a long document (#126).
+  const starts = [0];
+  for (let i = 0; i < text.length; i++) if (text.charCodeAt(i) === 10) starts.push(i + 1);
+  /** The 0-based line holding offset `at`. */
+  const lineOf = (at: number) => {
+    let lo = 0;
+    let hi = starts.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      if ((starts[mid] as number) <= at) lo = mid;
+      else hi = mid - 1;
+    }
+    return lo;
   };
-  for (const m of text.matchAll(MD_LINK)) {
+  const lineText = (i: number) =>
+    text.slice(starts[i], (starts[i + 1] ?? text.length + 1) - 1).replace(/\r$/, "");
+
+  // Matched one at a time, so a rejected match can be retried one character on:
+  // a label holding a whole link (`[see [x](./y.md)](./z.md)`) is not one link,
+  // and retrying finds the inner `[x](./y.md)`, which is the one markdown
+  // renders. A label that runs past the end of a heading line is not one
+  // either: the heading ended there.
+  const md: RegExpExecArray[] = [];
+  MD_LINK.lastIndex = 0;
+  for (let m = MD_LINK.exec(masked); m; m = MD_LINK.exec(masked)) {
+    const label = m[2] ?? "";
+    const crossesHeading = label.includes("\n") && ATX_HEADING.test(lineText(lineOf(m.index)));
+    if (label.includes("](") || crossesHeading) {
+      MD_LINK.lastIndex = m.index + 1;
+      continue;
+    }
+    md.push(m);
+  }
+  const mdSpans: [number, number][] = md.map((m) => [m.index, m.index + m[0].length]);
+  const wiki = [...masked.matchAll(WIKI_LINK)].filter(
+    (m) => !mdSpans.some(([a, b]) => m.index < b && m.index + m[0].length > a),
+  );
+  const slice = (m: RegExpMatchArray, g: number) => {
+    const at = m.indices?.[g];
+    return at ? text.slice(at[0], at[1]) : undefined;
+  };
+
+  const out: (LinkRef & { at: number })[] = [];
+  for (const m of md) {
     if (m[1] === "!") continue; // an image is not a document link
-    const raw = m[3] ?? "";
-    if (EXTERNAL.test(raw) || raw.startsWith("#")) continue;
-    const { path, query } = splitTarget(raw);
+    const raw = slice(m, 3) ?? slice(m, 4) ?? "";
+    if (raw === "" || raw.startsWith("#") || EXTERNAL.test(raw)) continue;
+    const { path, query } = splitTarget(unescapeMd(raw));
     if (path === "") continue;
+    const label = unescapeMd(slice(m, 2) ?? "")
+      .replace(/\s*\n\s*/g, " ")
+      .trim();
     out.push({
+      at: m.index,
       kind: "markdown",
       target: path,
       raw,
-      line: lineAt(m.index ?? 0),
+      line: lineOf(m.index) + 1,
       rel: parseRel(query),
-      ...(m[2] ? { label: m[2] } : {}),
+      ...(label ? { label } : {}),
     });
   }
-  for (const m of text.matchAll(WIKI_LINK)) {
-    const inner = m[1] ?? "";
+  for (const m of wiki) {
+    const inner = slice(m, 1) ?? "";
     const pipe = inner.indexOf("|");
     const targetPart = pipe === -1 ? inner : inner.slice(0, pipe);
     const label = pipe === -1 ? undefined : inner.slice(pipe + 1).trim();
     const { path, query } = splitTarget(targetPart);
     if (path === "") continue;
     out.push({
+      at: m.index,
       kind: "wiki",
       target: path,
       raw: targetPart,
-      line: lineAt(m.index ?? 0),
+      line: lineOf(m.index) + 1,
       rel: parseRel(query),
       ...(label ? { label } : {}),
     });
   }
-  return out;
+  return out.sort((a, b) => a.at - b.at).map(({ at: _at, ...link }) => link);
 }
 
 /** Does this frontmatter value LOOK like a document reference? */

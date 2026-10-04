@@ -8,10 +8,10 @@ import {
   extractLinks,
   fieldRefs,
   looksLikeRef,
+  maskCode,
   parseRel,
   resolveTarget,
   splitTarget,
-  withoutFences,
 } from "./links";
 import type { DocMeta, GraphPayload } from "./protocol";
 
@@ -73,13 +73,113 @@ describe("what counts as a link", () => {
   test("⛔ a link inside a FENCE is an example, not an edge", () => {
     const body = ["Real: [a](./real.md)", "", "```md", "[fake](./fake.md)", "```", ""].join("\n");
     expect(extractLinks(body).map((l) => l.target)).toEqual(["./real.md"]);
-    expect(withoutFences(body)).not.toContain("fake");
+    expect(maskCode(body)).not.toContain("fake");
+    expect(maskCode(body)).toHaveLength(body.length);
   });
   test("an anchor is not part of the target, and a title is not a target", () => {
     expect(splitTarget("../concepts/exit-codes.md#the-taxonomy").path).toBe(
       "../concepts/exit-codes.md",
     );
     expect(extractLinks('[a](./other.md "A title")')[0]?.target).toBe("./other.md");
+  });
+});
+
+describe("what markdown renders as a link, and what it does not (#126)", () => {
+  const targets = (body: string) => extractLinks(body).map((l) => l.target);
+
+  test("a link in INLINE code is an example, not an edge", () => {
+    expect(targets("see `[x](./a.md)` and [real](./b.md)")).toEqual(["./b.md"]);
+    // A double-tick span holding a single tick, as CONTRIBUTING-style prose does.
+    expect(targets("``[x](./a.md) ` ``")).toEqual([]);
+    // An unclosed tick is not a span, so the link after it counts.
+    expect(targets("a stray ` then [y](./y.md)")).toEqual(["./y.md"]);
+  });
+  test("a link in an INDENTED code block is an example too", () => {
+    expect(targets(["prose", "", "    [x](./a.md)", "", "[b](./b.md)"].join("\n"))).toEqual([
+      "./b.md",
+    ]);
+  });
+  test("⚠ but an indented line continuing a LIST ITEM is prose, not code", () => {
+    expect(targets(["- item", "    [x](./a.md)"].join("\n"))).toEqual(["./a.md"]);
+  });
+  test("a fence inside a blockquote masks its contents", () => {
+    expect(targets(["> ```", "> [x](./a.md)", "> ```"].join("\n"))).toEqual([]);
+  });
+  test("an escaped bracket is text", () => {
+    expect(targets("\\[not](./x.md)")).toEqual([]);
+    expect(targets("[not\\](./x.md)")).toEqual([]);
+  });
+  test("a link inside an HTML comment is an aside, not an edge", () => {
+    expect(targets("<!-- [x](./a.md) --> [b](./b.md)")).toEqual(["./b.md"]);
+    expect(targets(["<!--", "[x](./a.md)", "-->", "[b](./b.md)"].join("\n"))).toEqual(["./b.md"]);
+    // An unclosed comment runs to the end, as an HTML parser reads it.
+    expect(targets("[b](./b.md) <!-- [x](./a.md)")).toEqual(["./b.md"]);
+  });
+  test("an <…> target, which may hold spaces", () => {
+    const [l] = extractLinks("[a](<./My Notes.md>)");
+    expect(l?.target).toBe("./My Notes.md");
+    expect(l?.raw).toBe("./My Notes.md");
+  });
+  test("a single-quoted title is not part of the target", () => {
+    expect(targets("[a](./x.md 'A title')")).toEqual(["./x.md"]);
+  });
+  test("nested brackets in a label", () => {
+    const [l] = extractLinks("[a [b] c](./x.md)");
+    expect(l?.target).toBe("./x.md");
+    expect(l?.label).toBe("a [b] c");
+  });
+  test("an escaped ] in a label", () => {
+    const [l] = extractLinks("[a \\] b](./x.md)");
+    expect(l?.target).toBe("./x.md");
+    expect(l?.label).toBe("a ] b");
+  });
+  test("a label that wraps onto the next line (a Prettier reflow) is one link, on its first line", () => {
+    const [l] = extractLinks(["intro", "see [the long", "label](./x.md) here"].join("\n"));
+    expect(l?.target).toBe("./x.md");
+    expect(l?.label).toBe("the long label");
+    expect(l?.line).toBe(2);
+  });
+  test("⚠ a BLANK line ends a label, and so does the end of a heading", () => {
+    expect(targets(["[a", "", "b](./x.md)"].join("\n"))).toEqual([]);
+    expect(targets(["# [a", "b](./x.md)"].join("\n"))).toEqual([]);
+  });
+  test("parentheses in a target", () => {
+    expect(targets("[a](./notes(1).md)")).toEqual(["./notes(1).md"]);
+    expect(targets("[a](./notes\\(2\\).md)")).toEqual(["./notes(2).md"]);
+  });
+  test("a link inside another link's label: the INNER one is what renders", () => {
+    expect(targets("[see [x](./y.md)](./z.md)")).toEqual(["./y.md"]);
+  });
+  test("an escaped image marker leaves a plain link", () => {
+    expect(targets("\\![pic](./pic.md)")).toEqual(["./pic.md"]);
+  });
+  test("a wiki link in code is masked too, and links come back in document order", () => {
+    const links = extractLinks("`[[skip]]` [[b]] then [a](./a.md)");
+    expect(links.map((l) => l.target)).toEqual(["b", "./a.md"]);
+  });
+  test("line numbers are right on every line of a long document", () => {
+    const lines = Array.from({ length: 2000 }, (_, i) => `line ${i} [l${i}](./d${i}.md)`);
+    const links = extractLinks(lines.join("\n"));
+    expect(links).toHaveLength(2000);
+    expect(links.every((l, i) => l.line === i + 1 && l.target === `./d${i}.md`)).toBe(true);
+  });
+  test("the map (and so backlinks and dangling) reads links the same way", () => {
+    const g = buildGraph(index(), (p) =>
+      p === "/w/wiki/index.md"
+        ? "`[x](./gone.md)` <!-- [y](./gone2.md) --> \\[z](./gone3.md) [ok](./concepts/exit-codes.md)"
+        : "",
+    );
+    const fromIndex = g.edges.filter((e) => e.from === "/w/wiki/index.md" && e.source === "link");
+    expect(fromIndex.map((e) => e.raw)).toEqual(["./concepts/exit-codes.md"]);
+    expect(g.dangling).toBe(0);
+  });
+  test("adversarial runs finish quickly (the cost was quadratic)", () => {
+    const n = 50_000;
+    for (const unit of ["[", "(", "](", "`", "<!--", "[a](", "[[", "\\["]) {
+      const started = performance.now();
+      extractLinks(unit.repeat(Math.ceil(n / unit.length)));
+      expect(performance.now() - started).toBeLessThan(2000);
+    }
   });
 });
 
@@ -142,8 +242,8 @@ describe("what a dangling link report needs (E54)", () => {
     expect(links.map((l) => `${l.target}:${l.line}`)).toEqual(["x.md:5", "y.md:6"]);
   });
 
-  test("⚠ A FENCED BLOCK SHIFTS NOTHING — line numbers survive fence stripping", () => {
-    // `withoutFences` BLANKS fenced lines rather than removing them, so the
+  test("⚠ A FENCED BLOCK SHIFTS NOTHING — line numbers survive code masking", () => {
+    // `maskCode` BLANKS fenced lines rather than removing them, so the
     // count is preserved. A link after a code block must still report its real
     // line, or every report in a document with code is off by the block.
     const body = [
