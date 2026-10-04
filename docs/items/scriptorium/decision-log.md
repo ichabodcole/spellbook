@@ -2661,3 +2661,78 @@ workspace. The surface already did this (`dir: entry.root` / `menuDir` against
 - **The folder holding an opened single file.** A single file says nothing about
   where new documents belong, and the file's directory may be a repository's
   root.
+
+## E68 — The human can move a file to the Trash
+
+**Ruled:** Cole, 2026-10-04, on
+[issue #134](https://github.com/ichabodcole/spellbook/issues/134), a port-back
+from Story Studio (`ichabodcole/story-studio@a06a47f`). This makes one exception
+to
+[E24](#e24--equal-capabilities-different-affordances--structure-changes-go-through-the-daemon)
+("there is no Delete action").
+
+**⛔ THE RULE: Move to Trash is a human act from the sidebar, and nothing is
+ever unlinked.** A dialog names what goes, counts a folder's files, and warns
+about unsaved edits and session-only versions. Files go to the system Trash
+(macOS `trash` or NSFileManager; Linux `gio` or `trash-put`), so the human can
+take them back. There is no agent verb, and the daemon refuses it over `/cmd`.
+The check refuses whole sets, nested sets, the workspace, the session store, and
+paths that leave the set through a link, and it runs again at the moment of the
+move. "Remove from Scriptorium" still only hides.
+
+**Why the agent gets no verb.** It is E24's one asymmetry, on purpose: a file
+leaving the disk is the one structure change that should need a human's hand.
+The agent can still remove a document from Scriptorium, which hides it.
+
+**The same issue, ruled with it:** an open document whose file or folder is
+deleted outside the app is marked missing, not dirty, after a re-check that lets
+an editor's atomic save pass. A banner offers "Save to recreate it" or Close,
+and a missing document's links count as dangling.
+
+**Not taken:**
+
+- **Keep E24 whole (no deletion at all).** Cole's use asked for it, and the
+  Trash keeps it recoverable.
+- **Unlink, with a confirmation.** Not recoverable.
+- **Give the agent a `trash` verb.** A file leaving the disk should take the
+  human's hand.
+
+## E69 — "Unverified" only where `verified` is in use
+
+**Ruled:** Cole, 2026-10-04, on
+[issue #131](https://github.com/ichabodcole/spellbook/issues/131), a port-back
+from Story Studio (`ichabodcole/story-studio@a06a47f`).
+
+**⛔ THE RULE: nothing reads "unverified" because a field is missing.** The
+trust badge shows only on a document that has a `verified` field. A folder whose
+files never use the field, such as a world bible exported from Operator, shows
+no badge at all.
+
+**Why.** On such a folder every document read "unverified", which reads as a
+judgement on the writing, not as the absence of a field.
+
+**Not taken:**
+
+- **Keep deriving "unverified" from absence** (`frontmatter.ts`'s OKF tier).
+  That is the defect.
+- **Make the badge an option the host turns off,** as Story Studio's Atlas does.
+  Scriptorium has one host, so an option nobody sets is extra surface; showing
+  it only where the field exists gives the same result.
+
+## E70 — Features from real use: link picker, link relations, shared names, agent presence, Compare navigation
+
+**Ruled:** Cole, 2026-10-04: his own use has called for
+[#125](https://github.com/ichabodcole/spellbook/issues/125) (a searchable link
+picker), [#127](https://github.com/ichabodcole/spellbook/issues/127) (relation
+chips and a "Linked from" list),
+[#129](https://github.com/ichabodcole/spellbook/issues/129) (shared file names
+flagged, live link health in the status bar),
+[#132](https://github.com/ichabodcole/spellbook/issues/132) (whether an agent is
+listening, and a toast when a task starts) and
+[#133](https://github.com/ichabodcole/spellbook/issues/133) (Compare navigation,
+a `show` verb for the agent to point at a passage, find in the rendered view).
+Each is a port-back from Story Studio's kit, so each is built from that fix, not
+designed afresh. They pass the wait-for-real-use rule.
+
+**Not taken:** backlog them until a second signal (the signal is already Cole's
+own use).
