@@ -4,8 +4,8 @@ title: What to take back from Story Studio
 description:
   Scan of Story Studio's kit, Atlas and practices for what Spellbook's kit and
   Scriptorium should port back, with a steal/skip call on each.
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: active
 id: 01a131ec-fb0f-71a4-b587-d155e3d4f56d
 kind: research
 generated: { by: claude-opus-5-5, at: 2026-10-12 }
@@ -28,8 +28,8 @@ generic workspace kit.
 
 ## Definition of done
 
-- [ ] The write-up lists every candidate the scan found, each with evidence in
+- [x] The write-up lists every candidate the scan found, each with evidence in
       Story Studio (path or commit) and Spellbook's current state.
-- [ ] Cole has made a call on each: take, take later, or skip.
+- [x] Cole has made a call on each: take, take later, or skip.
 - [ ] Each taken candidate is filed as an item (or a GitHub issue, if it is one
       of Story Studio's own), and the E67 overlap has a ruling.

@@ -5,7 +5,7 @@ description:
   "Which of Story Studio's kit, Atlas and practice changes Spellbook should port
   back: each candidate with its evidence and a call to make."
 tags: [scriptorium, kit, story-studio]
-status: draft
+status: stable
 generated: { by: claude-opus-5-5, at: 2026-10-12 }
 ---
 
