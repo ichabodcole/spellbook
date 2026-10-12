@@ -77,9 +77,8 @@ Story Studio's later "workspace holds the files" model
 Next step: reproduce in Scriptorium, then rule whether a new E-number supersedes
 E67.
 
-**Call:** reproduced 2026-10-12: every `open <folder>` overlaps (details in the
-item). Ruling pending: supersede E67 with Atlas's rule, build it with B or fix
-it now.
+**Call:** **E71** (Cole, 2026-10-12): supersede E67 with Atlas's rule, built
+with B.
 
 ## Quick wins
 

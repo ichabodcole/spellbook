@@ -2628,6 +2628,9 @@ are the same, and the chip and the daemon's path follow the new name together.
 
 ## E67 — One opened folder is the workspace
 
+> **Superseded by [E71](#e71--the-workspace-is-never-a-sets-folder)**
+> (2026-10-12): the workspace is the folder containing the one opened.
+
 **Ruled:** Cole, 2026-10-04, on
 [issue #130](https://github.com/ichabodcole/spellbook/issues/130), a port-back
 from Story Studio (`ichabodcole/story-studio@cb47a04`). This refines
@@ -2736,3 +2739,41 @@ designed afresh. They pass the wait-for-real-use rule.
 
 **Not taken:** backlog them until a second signal (the signal is already Cole's
 own use).
+
+## E71 — The workspace is never a set's folder
+
+**Ruled:** Cole, 2026-10-12, on the Story Studio port-back review
+([write-up](../story-studio-port-back/write-up.md)). This supersedes
+[E67](#e67--one-opened-folder-is-the-workspace), and takes Story Studio's own
+later ruling (2026-10-06, `ichabodcole/story-studio@8696830`,
+`docs/items/kit-workspace-set-overlap`).
+
+**THE RULE: a workspace may not be a set's folder or inside one.** `open` given
+exactly one folder makes the folder **containing** it the workspace. E67's
+motive stands: the sidebar's top row still writes beside what was opened, not
+into the repository `open` ran from.
+
+**Why.** Under E67 the opened folder is both the workspace and a set, on every
+`open <folder>`. Reproduced 2026-10-12 on the shipped launcher: "New set" makes
+a subfolder inside the existing set rather than a set; new documents and imports
+join that set instead of standing as their own items; the sidebar shows the one
+folder twice; "Move to" hides the set behind "Workspace"; and `doctor` says
+nothing. `workspace <a folder inside a set>` and `add <the workspace>` make the
+same overlap by hand. No file lands in the wrong place.
+
+**When:** built with the kit re-base (option B in the write-up), whose ported
+workspace session code carries the check (`overlapOf`). Scriptorium is not
+patched before then.
+
+**Settled when it is built, from Story Studio's answers unless the port shows a
+reason not to:** the fallback when the containing folder is the home folder or
+`/` (Story Studio: a session-local `imported/`); an undo back to an overlapping
+workspace (refused, saying why); and sessions saved before the change that
+already overlap (open as they are; a `doctor` finding names the fix).
+
+**Not taken:**
+
+- **Fix it in Scriptorium now.** No file is misplaced, and the re-base brings
+  the check; patching twice buys a few weeks.
+- **Keep E67 and tell the sidebar about the overlap.** Two names for one folder
+  is the defect, not its presentation.
