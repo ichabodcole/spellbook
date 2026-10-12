@@ -31,7 +31,7 @@ extraction fix (#126). Cole agreed the three-cycle split on 2026-10-04.
 
 ## Scope
 
-- **[item/scriptorium-links-tell-the-truth](../items/scriptorium-links-tell-the-truth.md)**
+- **[item/scriptorium-links-tell-the-truth](../../items/scriptorium-links-tell-the-truth.md)**
   — seven issues, each ported from the Story Studio commit it names:
   [#126](https://github.com/ichabodcole/spellbook/issues/126) (extraction
   ignores code, escapes and comments; finds the missing link shapes; linear line
@@ -50,7 +50,7 @@ extraction fix (#126). Cole agreed the three-cycle split on 2026-10-04.
 
 Out of scope, deliberately: the link features (#125, #127, #129, cycle two);
 agent presence, Compare and the file lifecycle (#132, #133, #134, cycle three);
-the queued [reply-shape leftovers](2026-09-reply-shape-leftovers.md), which
+the queued [reply-shape leftovers](../2026-09-reply-shape-leftovers.md), which
 follow this cycle.
 
 **Release:** caller-visible: graph, backlinks and dangling output change (#126,
@@ -116,7 +116,7 @@ state, `dangling` gains `unsupported`, doctor gains `links.unsupported`,
 `dist/server.js` grows from 792 KB to 1.81 MB (micromark).
 
 **Carried over:** the pre-existing defects the verifiers found, appended to
-[scriptorium-chat-and-toast-nits](../items/scriptorium-chat-and-toast-nits.md)
+[scriptorium-chat-and-toast-nits](../../items/scriptorium-chat-and-toast-nits.md)
 (backlog). Among them: HTML-block links, reference-style links, absolute
 filesystem paths, pdocs `feature/<slug>` keys, and `metaCache` keyed on mtime
 only.
