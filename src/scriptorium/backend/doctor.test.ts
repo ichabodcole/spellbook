@@ -73,6 +73,62 @@ describe("findings", () => {
     const one = findings({ ...clean, links: [{ entry: "c-1", label: "Set", dangling: 1 }] });
     expect(one[0]?.message).toContain("1 link that answer");
   });
+
+  test("links with a scheme nothing opens are their OWN finding, naming the schemes (#128)", () => {
+    const got = findings({
+      ...clean,
+      links: [
+        {
+          entry: "c-1",
+          label: "Hollowbrook",
+          dangling: 0,
+          unsupported: 12,
+          schemes: ["op", "tel"],
+        },
+      ],
+    });
+    expect(got.map((f) => f.kind)).toEqual(["links.unsupported"]);
+    expect(got[0]?.message).toBe(
+      "Hollowbrook has 12 links with a scheme nothing here opens (op:, tel:).",
+    );
+    expect(got[0]?.fix).toBe("dangling --entry c-1");
+    expect(got[0]?.count).toBe(12);
+    expect(summary(got)).toContain("1 set with unsupported links");
+  });
+
+  test("a set with both is two findings, missing first", () => {
+    const got = findings({
+      ...clean,
+      links: [{ entry: "c-1", label: "Set", dangling: 2, unsupported: 1, schemes: ["op"] }],
+    });
+    expect(got.map((f) => f.kind)).toEqual(["links.dangling", "links.unsupported"]);
+    expect(got[1]?.message).toContain("1 link with a scheme");
+  });
+
+  test("⛔ a set whose map failed is a finding, never silence", () => {
+    const got = findings({
+      ...clean,
+      unread: [{ entry: "c-1", label: "docs", error: "ENAMETOOLONG: name too long" }],
+    });
+    expect(got.map((f) => [f.kind, f.subject, f.fix])).toEqual([
+      ["links.unread", "c-1", "graph --entry c-1"],
+    ]);
+    expect(got[0]?.message).toContain("ENAMETOOLONG");
+    expect(summary(got)).toContain("1 set whose links could not be read");
+  });
+
+  test("a set checked in part says how much, and what to do", () => {
+    const got = findings({
+      ...clean,
+      partial: [{ entry: "c-1", label: "docs", read: 400, of: 550 }],
+    });
+    expect(got.map((f) => [f.kind, f.subject, f.fix, f.count])).toEqual([
+      ["links.partial", "c-1", "graph --entry c-1", 400],
+    ]);
+    expect(got[0]?.message).toContain("400 of its 550 documents");
+    expect(got[0]?.message).toContain("add <folder>");
+    expect(summary(got)).toContain("1 set whose links were checked in part");
+  });
 });
 
 describe("summary — one line, and silence when clean", () => {

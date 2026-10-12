@@ -189,6 +189,30 @@ describe("a session, end to end through the launchers", () => {
     expect(again.type === "version.text" && again.text).toContain("edited");
   });
 
+  test("a chat link is read from the chat, not from the open document's folder (#122)", async () => {
+    // `./a.md` beside part/b.md does not exist; written in the chat it means the set's a.md.
+    surface.send({
+      type: "link.open",
+      from: "chat",
+      target: "./a.md",
+      doc: join(docs, "set", "part", "b.md"),
+    });
+    const r = await surface.waitFor((m) => m.type === "link.target" && m.target === "./a.md");
+    if (r.type !== "link.target") throw new Error("unreachable");
+    expect(r.state).toBe("in-bundle");
+    expect(realpathSync(r.path ?? "")).toBe(realpathSync(join(docs, "set", "a.md")));
+  });
+
+  test("a link to a file that does not exist names the path it tried", async () => {
+    surface.send({ type: "link.open", from: join(docs, "set", "a.md"), target: "./nowhere.md" });
+    const r = await surface.waitFor((m) => m.type === "link.target" && m.target === "./nowhere.md");
+    if (r.type !== "link.target") throw new Error("unreachable");
+    expect(r.state).toBe("missing");
+    expect(realpathSync(join(r.tried ?? "", ".."))).toBe(realpathSync(join(docs, "set")));
+    expect(r.tried?.endsWith("nowhere.md")).toBe(true);
+    expect(r.path).toBeUndefined();
+  });
+
   test("prefs.set persists in the HOME (not the browser) and rides the state; a bad key is refused", async () => {
     surface.send({ type: "prefs.set", key: "panes:test", value: '{"context":40}' });
     const st = await surface.waitFor(
@@ -766,4 +790,41 @@ describe("a version and the human's Activate: the race, and the one-step form th
     await waitTail((l) => l.type === "activated" && l.version === v.version);
     expect(readFileSync(v.path, "utf8")).toBe("# Race\n\nborn whole.\n");
   });
+});
+
+// E67 (#130): one opened folder is the workspace; anything else keeps the
+// working directory; a restored session keeps its own. Read off the handshake,
+// which names the workspace so the agent can see where it landed.
+describe("one opened folder is the workspace (E67)", () => {
+  const opened: string[] = [];
+  const openIn = async (cwd: string, ...args: string[]) => {
+    const r = await cliIn(cwd, "open", "--no-open", ...args);
+    expect(r.code).toBe(0);
+    const hs = JSON.parse(r.out) as { session_id: string; workspace?: string };
+    opened.push(hs.session_id);
+    return hs;
+  };
+  const closeAll = async () => {
+    for (const id of opened.splice(0)) await cli("close", "--session", id);
+  };
+  const real = (p: string | undefined) => realpathSync(p ?? "");
+  afterAll(closeAll);
+
+  test("open over one folder makes it the workspace, from anywhere; a restore keeps it", async () => {
+    const hs = await openIn(root, join(docs, "set"));
+    expect(real(hs.workspace)).toBe(real(join(docs, "set")));
+    await closeAll();
+    // Restored from a different directory, with nothing given: its own workspace.
+    const back = await openIn(docs, "--restore", hs.session_id);
+    expect(real(back.workspace)).toBe(real(join(docs, "set")));
+    await closeAll();
+  }, 60_000);
+
+  test("a single file, or several entries, keep the working directory", async () => {
+    const file = await openIn(root, join(docs, "solo.md"));
+    expect(real(file.workspace)).toBe(real(root));
+    const several = await openIn(root, join(docs, "set"), join(docs, "solo.md"));
+    expect(real(several.workspace)).toBe(real(root));
+    await closeAll();
+  }, 60_000);
 });

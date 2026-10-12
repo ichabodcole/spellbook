@@ -10,7 +10,9 @@ import {
   readFileSync,
   realpathSync,
   rmSync,
+  statSync,
   symlinkSync,
+  utimesSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -705,6 +707,271 @@ describe("dangling links, as a report you can act on (E54)", () => {
     expect(ref?.key).toBe("related");
     // There is no line to give: the address is the key.
     expect(ref?.line).toBeUndefined();
+  });
+});
+
+describe("round three: one frontmatter value cannot take the map down", () => {
+  test("a description with a slash is not a link, and graph and dangling answer", () => {
+    // The shape of docs/items/_archive/imago/sessions/2026-06-14-…md, which made
+    // `graph` and `dangling` throw ENAMETOOLONG on this repo's own docs/.
+    const prose = `The build-out of imago — ${"a long account of the work ".repeat(12)}and the CLI/server pair.`;
+    writeFileSync(
+      join(docs, "set", "a.md"),
+      ["---", "type: session", `description: "${prose}"`, "---", "# A", ""].join("\n"),
+    );
+    const s = Session.create(home);
+    const { entry } = s.addContext(join(docs, "set"));
+    expect(s.graphFor(entry.id).edges.filter((e) => e.source === "frontmatter")).toEqual([]);
+    expect((s.danglingLinks(entry.id) as { count: number }).count).toBe(0);
+  });
+  test("a path too long for the disk is a dangling link, not a crash", () => {
+    // Every segment fits a file name; the whole does not fit a path.
+    const long = Array.from({ length: 6 }, (_, i) => `${i}${"x".repeat(240)}`).join("/");
+    writeFileSync(
+      join(docs, "set", "a.md"),
+      ["---", "type: note", `related: [${long}/doc.md]`, "---", "# A", ""].join("\n"),
+    );
+    const s = Session.create(home);
+    const { entry } = s.addContext(join(docs, "set"));
+    const report = s.danglingLinks(entry.id) as { count: number; links: { key?: string }[] };
+    expect(report.count).toBe(1);
+    expect(report.links[0]?.key).toBe("related");
+    // A click on it is refused as missing too, not as an internal error.
+    expect(s.resolveLink(join(docs, "set", "a.md"), `./${long}.md`).state).toBe("missing");
+  });
+  test("a file changed on disk is read again: the cache never answers stale", () => {
+    const a = join(docs, "set", "a.md");
+    writeFileSync(a, "# A\n\n[gone](./gone.md)\n");
+    const s = Session.create(home);
+    const { entry } = s.addContext(join(docs, "set"));
+    expect((s.danglingLinks(entry.id) as { count: number }).count).toBe(1);
+    writeFileSync(a, "# A\n\n[b](./part/b.md) and more\n");
+    expect((s.danglingLinks(entry.id) as { count: number }).count).toBe(0);
+    expect(s.backlinks(join(docs, "set", "part", "b.md")).count).toBe(1);
+  });
+  test("⛔ round four: an edit that keeps the size and puts the mtime back is still seen", () => {
+    const a = join(docs, "set", "a.md");
+    writeFileSync(a, "# A\n\n[g](./gonexx.md)\n");
+    // A whole-second mtime, so putting it back is exact.
+    const then = new Date("2026-01-02T03:04:05Z");
+    utimesSync(a, then, then);
+    const before = statSync(a);
+    const s = Session.create(home);
+    const { entry } = s.addContext(join(docs, "set"));
+    expect((s.danglingLinks(entry.id) as { count: number }).count).toBe(1);
+    // Same byte count, then the old mtime restored, as `touch -r` or a sync tool does.
+    writeFileSync(a, "# A\n\n[b](./part/b.md)\n");
+    utimesSync(a, before.atime, before.mtime);
+    expect(statSync(a).size).toBe(before.size);
+    expect(statSync(a).mtimeMs).toBe(before.mtimeMs);
+    expect((s.danglingLinks(entry.id) as { count: number }).count).toBe(0);
+    expect(s.backlinks(join(docs, "set", "part", "b.md")).count).toBe(1);
+  });
+  test("the map reads past 400 documents, the old silent stop", () => {
+    for (let i = 0; i < 450; i++) writeFileSync(join(docs, "set", `n${i}.md`), `# ${i}\n`);
+    writeFileSync(join(docs, "set", "n449.md"), "# last\n\n[gone](./gone.md)\n");
+    const s = Session.create(home);
+    const { entry } = s.addContext(join(docs, "set"));
+    const g = s.graphFor(entry.id);
+    expect(g.nodes.length).toBe(452); // 450, a.md and part/b.md
+    expect(g.truncated).toBeUndefined();
+    expect((s.danglingLinks(entry.id) as { count: number }).count).toBe(1);
+  });
+  test("a set whose listing stopped short says so in every reply built on its map", () => {
+    // Past the mirror's limit, the set lists only part of its folder.
+    for (let i = 0; i < 2005; i++) writeFileSync(join(docs, "set", `n${i}.md`), `# ${i}\n`);
+    const s = Session.create(home);
+    const { entry } = s.addContext(join(docs, "set"));
+    expect(entry.truncated).toBe(true);
+    const g = s.graphFor(entry.id);
+    expect(g.truncated).toEqual({ read: g.nodes.length, of: null });
+    expect(g.hint).toContain(`add `);
+    const dangling = s.danglingLinks(entry.id) as { truncated?: unknown; hint?: string };
+    expect(dangling.truncated).toEqual(g.truncated);
+    expect(dangling.hint).toBe(g.hint);
+    const back = s.backlinks(join(docs, "set", "a.md")) as { truncated?: unknown };
+    expect(back.truncated).toEqual(g.truncated);
+    const found = s.checkup().filter((f) => f.kind === "links.partial");
+    expect(found.map((f) => [f.subject, f.fix])).toEqual([[entry.id, `graph --entry ${entry.id}`]]);
+    expect(found[0]?.message).toContain(`${g.nodes.length} documents`);
+  });
+  test("⛔ the doctor never calls a set clean when its map failed", () => {
+    const s = Session.create(home);
+    const { entry } = s.addContext(join(docs, "set"));
+    s.graphFor = () => {
+      throw new Error("EACCES: permission denied");
+    };
+    const found = s.checkup().filter((f) => f.kind.startsWith("links."));
+    expect(found.map((f) => [f.kind, f.subject, f.fix])).toEqual([
+      ["links.unread", entry.id, `graph --entry ${entry.id}`],
+    ]);
+    expect(found[0]?.message).toContain("EACCES");
+  });
+});
+
+describe("a chat link resolves against its own origin, not the open document (#122)", () => {
+  const glade = () => join(docs, "set", "locations", "the-glade.md");
+  beforeEach(() => {
+    mkdirSync(join(docs, "set", "locations"), { recursive: true });
+    writeFileSync(glade(), "# The Glade\n");
+  });
+
+  test("with the glade itself open, the agent's `./locations/the-glade.md` still opens it", () => {
+    const s = Session.create(home);
+    s.addContext(join(docs, "set"));
+    expect(s.resolveLink("chat", "./locations/the-glade.md", glade())).toEqual({
+      state: "in-bundle",
+      path: glade(),
+    });
+    // ⛔ THE SAME LINK WRITTEN IN THE DOCUMENT keeps the document's folder only.
+    expect(s.resolveLink(glade(), "./locations/the-glade.md").state).toBe("missing");
+  });
+
+  test("with a top-level document open, it opens the same file", () => {
+    const s = Session.create(home);
+    s.addContext(join(docs, "set"));
+    const r = s.resolveLink("chat", "./locations/the-glade.md", join(docs, "set", "a.md"));
+    expect(r).toEqual({ state: "in-bundle", path: glade() });
+  });
+
+  test("with no document open, it reads from the first entry's root", () => {
+    const s = Session.create(home);
+    s.addContext(join(docs, "set"));
+    expect(s.resolveLink("chat", "./locations/the-glade.md")).toEqual({
+      state: "in-bundle",
+      path: glade(),
+    });
+    expect(s.resolveLink("chat", "../set/part/b.md").state).toBe("in-bundle");
+  });
+
+  test("the open document's folder answers first when both have the name", () => {
+    writeFileSync(join(docs, "set", "locations", "a.md"), "# A beside the glade\n");
+    const s = Session.create(home);
+    s.addContext(join(docs, "set"));
+    expect(s.resolveLink("chat", "./a.md", glade())).toEqual({
+      state: "in-bundle",
+      path: join(docs, "set", "locations", "a.md"),
+    });
+  });
+
+  test("a target in neither place is reported missing, not thrown, even with an empty context", () => {
+    const s = Session.create(home);
+    s.addContext(join(docs, "set"));
+    expect(s.resolveLink("chat", "./nowhere.md", glade()).state).toBe("missing");
+    expect(Session.create(join(root, "home2")).resolveLink("chat", "./nowhere.md").state).toBe(
+      "missing",
+    );
+  });
+});
+
+describe("a link into another open set opens it, from chat or from a document", () => {
+  const t1 = () => join(docs, "world", "t1.md");
+  const t2 = () => join(docs, "other", "t2.md");
+  beforeEach(() => {
+    mkdirSync(join(docs, "world"), { recursive: true });
+    mkdirSync(join(docs, "other"), { recursive: true });
+    writeFileSync(t1(), "# T1\n\n[t2](../other/t2.md)\n");
+    writeFileSync(t2(), "# T2\n");
+  });
+
+  test("a chat link to `../other/t2.md` with a `world` document open opens it", () => {
+    const s = Session.create(home);
+    s.addContext(join(docs, "world"));
+    s.addContext(join(docs, "other"));
+    expect(s.resolveLink("chat", "../other/t2.md", t1())).toEqual({
+      state: "in-bundle",
+      path: t2(),
+    });
+    // With nothing open, read from the first entry's root, the same file.
+    expect(s.resolveLink("chat", "../other/t2.md")).toEqual({ state: "in-bundle", path: t2() });
+  });
+
+  test("the same link written in a `world` document opens it too", () => {
+    const s = Session.create(home);
+    s.addContext(join(docs, "world"));
+    s.addContext(join(docs, "other"));
+    expect(s.resolveLink(t1(), "../other/t2.md")).toEqual({ state: "in-bundle", path: t2() });
+  });
+
+  test("a single file opened on its own counts as open", () => {
+    const s = Session.create(home);
+    s.addContext(join(docs, "world"));
+    s.addContext(t2());
+    expect(s.resolveLink(t1(), "../other/t2.md")).toEqual({ state: "in-bundle", path: t2() });
+  });
+
+  test("with `other` not open, the file is still outside, and named", () => {
+    const s = Session.create(home);
+    s.addContext(join(docs, "world"));
+    expect(s.resolveLink(t1(), "../other/t2.md")).toEqual({ state: "outside", path: t2() });
+    expect(s.resolveLink("chat", "../other/t2.md", t1())).toEqual({
+      state: "outside",
+      path: t2(),
+    });
+  });
+});
+
+describe("dangling reports links with a scheme nothing opens (#128)", () => {
+  test("an `op:doc/…` link is listed under `unsupported`, on its FILE line, and not counted", () => {
+    writeFileSync(
+      join(docs, "set", "a.md"),
+      [
+        "---",
+        "type: note",
+        "---",
+        "# A",
+        "",
+        "[the source](op:doc/1d63ec43-65cd-48aa-bbcd-d14c34e2a988)",
+        "[web](https://example.com)",
+        "",
+      ].join("\n"),
+    );
+    const s = Session.create(home);
+    const { entry } = s.addContext(join(docs, "set"));
+    const report = s.danglingLinks(entry.id) as {
+      count: number;
+      links: unknown[];
+      unsupported: { from: string; line: number; wrote: string; scheme: string }[];
+    };
+    expect(report.count).toBe(0);
+    expect(report.links).toEqual([]);
+    expect(report.unsupported).toEqual([
+      {
+        from: join(docs, "set", "a.md"),
+        line: 6,
+        wrote: "op:doc/1d63ec43-65cd-48aa-bbcd-d14c34e2a988",
+        scheme: "op",
+      },
+    ]);
+    // And the doctor raises it, as its own finding.
+    const found = s.checkup().filter((f) => f.kind.startsWith("links."));
+    expect(found.map((f) => f.kind)).toEqual(["links.unsupported"]);
+    expect(found[0]?.message).toContain("(op:)");
+  });
+});
+
+describe("a link to a folder (#123)", () => {
+  test("following one says it is a folder, on the real disk", () => {
+    const s = Session.create(home);
+    s.addContext(join(docs, "set"));
+    const from = join(docs, "set", "a.md");
+    for (const t of ["./part/", "./part", "part"])
+      expect(s.resolveLink(from, t)).toEqual({ state: "folder", path: join(docs, "set", "part") });
+  });
+  test("⛔ a folder named like a file is a folder, not a document outside the set", () => {
+    mkdirSync(join(docs, "set", "v1.2"));
+    const s = Session.create(home);
+    s.addContext(join(docs, "set"));
+    expect(s.resolveLink(join(docs, "set", "a.md"), "./v1.2")).toEqual({
+      state: "folder",
+      path: join(docs, "set", "v1.2"),
+    });
+  });
+  test("and dangling does not report it", () => {
+    writeFileSync(join(docs, "set", "a.md"), "# A\n\n[the parts](./part/)\n");
+    const s = Session.create(home);
+    const { entry } = s.addContext(join(docs, "set"));
+    expect((s.danglingLinks(entry.id) as { count: number }).count).toBe(0);
   });
 });
 

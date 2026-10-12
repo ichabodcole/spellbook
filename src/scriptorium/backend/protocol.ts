@@ -477,9 +477,18 @@ export type GraphPayload = {
     raw?: string;
     line?: number;
     rel: string[];
-    state: "in-bundle" | "outside" | "missing";
+    state: "in-bundle" | "outside" | "folder" | "missing";
   }[];
   dangling: number;
+  /** Body links with a scheme nothing here opens (`op:doc/…`), kept apart (#128). */
+  unsupported: { from: string; raw: string; line: number; scheme: string; rel: string[] }[];
+  /**
+   * Present only when the map read part of its set: `read` documents of `of`,
+   * `of` null when the set's own listing stopped at the mirror's limit. `hint`
+   * says what to do about it.
+   */
+  truncated?: { read: number; of: number | null };
+  hint?: string;
 };
 
 /**
@@ -560,8 +569,14 @@ export type ClientMsg =
   | { type: "move.plan"; path: string; into: string }
   /** A set's map (E33) — answered with `graph`. */
   | { type: "graph"; entry: string }
-  /** Follow a link from a rendered document (E33) — answered with `link.target`. */
-  | { type: "link.open"; from: string; target: string }
+  /**
+   * Follow a link (E33) — answered with `link.target`. `from` is the document
+   * the link was written in, or `"chat"` for a link in a chat message: that one
+   * was not written beside the open document (`doc`, when one is open), so its
+   * `./` and `../` fall back to the set's root, and it works with nothing open
+   * (#122).
+   */
+  | { type: "link.open"; from: string; target: string; doc?: string }
   /** What a frontmatter block would say for this document (E35) — answered with `meta.suggestion`. */
   | { type: "meta.suggest"; path: string }
   | { type: "prefs.set"; key: string; value: string }
@@ -620,14 +635,18 @@ export type ServerMsg =
     }
   /**
    * Where a link went. `in-bundle` means the daemon opened it; `outside` names
-   * a real file the human may add; `missing` is a dangling link, said and
-   * tolerated (OKF §11).
+   * a real file the human may add; `folder` names a folder on disk, which is
+   * not a document (#123); `missing` is a dangling link, said and tolerated
+   * (OKF §11), with `tried`: the first path looked at, or for a bare name the
+   * name itself. `outside` means outside every context entry: a document in
+   * another open set opens.
    */
   | {
       type: "link.target";
       target: string;
-      state: "in-bundle" | "outside" | "missing";
+      state: "in-bundle" | "outside" | "folder" | "missing";
       path?: string;
+      tried?: string;
     }
   /** To the sender only: a structure op landed, at `path` — so the surface can open or rename it. */
   | { type: "structure.done"; op: StructureOpType; path: string }

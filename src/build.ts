@@ -220,6 +220,19 @@ async function buildBackendEntry(spell: string, name: string): Promise<number> {
     target: "bun",
     sourcemap: "inline",
     external: [SURFACE_HTML_EXTERNAL],
+    // ⛔ PIN NODE_ENV, OR A DEPENDENCY RESOLVES TO ITS DEVELOPMENT BUILD AND THE
+    // DAEMON RUNS SLOW. Unset, Bun.build resolves the `development` export
+    // condition, and micromark (scriptorium's link extraction, every package of
+    // it and of micromark-extension-gfm) ships a `dev/` build there: assertions
+    // on every token plus the `debug` package. Measured on a 550-file copy of
+    // docs/: extraction took 3.3 s with the dev build and 1.9 s without, about
+    // 1.4 s on every graph, dangling and doctor. `bun run` of the SOURCE already
+    // resolves the production entry, so tests never saw it. No backend reads
+    // NODE_ENV and no other daemon pulls a dev-conditioned dependency, so every
+    // other backend artifact is byte-identical with this in (checked when it
+    // went in, round three of the links cycle). `define` only, as the
+    // surface's pin above it is, and for the same reason: no minify.
+    define: { "process.env.NODE_ENV": '"production"' },
     // An entry naming of [name].[ext] off an `X.ts` entry emits exactly `X.js`,
     // which is the literal path the launcher at `scripts/X.ts` imports - so
     // this naming is load-bearing, not a free choice.

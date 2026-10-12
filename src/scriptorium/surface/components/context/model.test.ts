@@ -5,6 +5,8 @@ import {
   baseName,
   dirOf,
   docsIn,
+  drillFor,
+  foldersToReveal,
   indexTree,
   joinPath,
   moveTargets,
@@ -160,5 +162,38 @@ describe("organizing helpers (E22–E24)", () => {
       docs: [0, 2],
       skipped: ["pic.png"],
     });
+  });
+});
+
+describe("revealing the open document (#124)", () => {
+  test("opens only the shut folders down to it, never one of its own", () => {
+    const open = new Set(["locations"]);
+    expect(foldersToReveal("locations/caves/the-cave.md", (id) => open.has(id))).toEqual([
+      "locations/caves",
+    ]);
+    expect(foldersToReveal("top.md", () => false)).toEqual([]);
+  });
+
+  test("the list drills into the set holding a newly opened document", () => {
+    const set: ContextEntry = {
+      id: "s",
+      label: "set",
+      root: "/w/set",
+      membership: "mirrored",
+      nodes: [doc("a.md")],
+    };
+    const solo: ContextEntry = {
+      id: "f",
+      label: "solo.md",
+      root: "/w",
+      membership: "listed",
+      nodes: [doc("solo.md")],
+    };
+    expect(drillFor([set, solo], { entryId: "s" }, null)).toBe("s");
+    // ⛔ NEVER AWAY FROM A SET THE HUMAN DRILLED INTO.
+    expect(drillFor([set, solo], { entryId: "s" }, "other")).toBeNull();
+    // A single document already shows in the list.
+    expect(drillFor([set, solo], { entryId: "f" }, null)).toBeNull();
+    expect(drillFor([set, solo], null, null)).toBeNull();
   });
 });

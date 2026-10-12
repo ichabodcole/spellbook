@@ -54,6 +54,7 @@ import {
   openSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   statSync,
   unlinkSync,
 } from "node:fs";
@@ -399,6 +400,28 @@ function contextPaths(pos: string[]): string[] {
 }
 
 /**
+ * Where a NEW session's workspace goes (E23, refined by E67): the one folder
+ * `open` was given, so a session over a world opened from anywhere puts new
+ * documents in that world; otherwise (several entries, a lone file, nothing)
+ * the folder `open` ran in. `paths` are `contextPaths`'s, already absolute and
+ * already checked to exist.
+ */
+export function defaultWorkspace(paths: readonly string[], cwd: string): string {
+  // ⛔ THE RULE IS ABOUT DISTINCT FOLDERS, NOT ARGUMENTS. `open world world`
+  // (or `world` and a symlink to it) opens one folder, and counted as two it
+  // left the workspace in the cwd. Compared by realpath; the first spelling
+  // given is the one kept.
+  const distinct = new Map<string, string>();
+  for (const p of paths) {
+    const key = realpathSync(p);
+    if (!distinct.has(key)) distinct.set(key, p);
+  }
+  const only = distinct.size === 1 ? [...distinct.values()][0] : undefined;
+  if (only !== undefined && statSync(only).isDirectory()) return only;
+  return cwd;
+}
+
+/**
  * `--doc` as the CLI's caller meant it (verify-pass fix 8): a token with a path
  * separator, or one naming a file in THIS process's cwd, is resolved here to an
  * absolute path — the daemon's cwd is not the caller's. Anything else (a slug,
@@ -464,8 +487,9 @@ async function cmdOpen(pos: string[], flags: Record<string, string | boolean>) {
   const daemonArgs = ["run", SERVER_SCRIPT];
   if (typeof flags.timeout === "string") daemonArgs.push("--timeout", flags.timeout);
   if (typeof flags.restore === "string") daemonArgs.push("--restore", flags.restore);
-  // E23: a new session's workspace is where `open` ran. A restored one keeps its own.
-  else daemonArgs.push("--workspace", process.cwd());
+  // E23 + E67: a new session's workspace is the one folder it was given, else
+  // where `open` ran (`defaultWorkspace`). A restored one keeps its own.
+  else daemonArgs.push("--workspace", defaultWorkspace(paths, process.cwd()));
 
   const cwd = daemonCwd();
   if (!existsSync(cwd))
@@ -556,6 +580,8 @@ async function cmdOpen(pos: string[], flags: Record<string, string | boolean>) {
     url: string;
     port: number;
     session_id: string;
+    /** Where drops and new top-level documents land: named so the agent sees it (E67). */
+    workspace?: string;
     ok?: boolean;
     status?: number;
     error?: string;
@@ -861,7 +887,7 @@ const ROWS: Row[] = [
     flags: ["no-open", "restore", "timeout", "start-timeout"],
     positionals: [{ name: "path", required: false, variadic: true }],
     describe:
-      "spawn a session (opens the browser), adding paths; prints {url, port, session_id}. --timeout <seconds> sets the idle close (default 1800); --timeout 0 stands until closed",
+      "spawn a session (opens the browser), adding paths; prints {url, port, session_id, workspace}; the workspace is the one folder given, else the current folder. --timeout <seconds> sets the idle close (default 1800); --timeout 0 stands until closed",
     run: (pos, flags) => cmdOpen(pos, flags),
   },
   {

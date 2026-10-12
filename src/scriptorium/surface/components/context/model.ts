@@ -114,6 +114,32 @@ export function ancestorsOf(rel: string): string[] {
 }
 
 /**
+ * #124: the open document changed by some route other than its own row (a
+ * followed link, the agent, a search): the folders to open so its row shows.
+ * Only the shut ones, and nothing is ever collapsed, so a folder the human
+ * shuts afterwards stays shut until the document changes again.
+ */
+export function foldersToReveal(rel: string, isOpen: (id: string) => boolean): string[] {
+  return ancestorsOf(rel).filter((a) => !isOpen(a));
+}
+
+/**
+ * #124, the list half: the open document changed while the sidebar shows the
+ * LIST, so drill into the entry holding it, where its tree can reveal the row.
+ * Never away from an entry the human drilled into (`drilled` set), and never
+ * for an entry the list already shows as its one document.
+ */
+export function drillFor(
+  entries: readonly ContextEntry[],
+  activeDoc: { entryId: string } | null,
+  drilled: string | null,
+): string | null {
+  if (!activeDoc || drilled !== null) return null;
+  const holder = entries.find((e) => e.id === activeDoc.entryId);
+  return holder && singleDoc(holder) === null ? holder.id : null;
+}
+
+/**
  * What scriptorium opens as a document — the daemon's `DOC_EXTENSIONS`
  * (`backend/tree.ts`, which imports `node:fs` and so cannot be bundled here).
  * A test holds the two lists equal.

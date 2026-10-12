@@ -29,6 +29,18 @@ const TRUST_LABEL = {
   "human-reviewed": "human-reviewed",
 } as const;
 
+/**
+ * E69: the trust badge to show, or null for none. ⛔ NOTHING READS
+ * "UNVERIFIED" BECAUSE A FIELD IS MISSING: a folder whose files never use
+ * `verified` (a world bible exported from Operator) put "unverified" on every
+ * document, which reads as a judgement on the writing. The tier itself is still
+ * derived and still on the wire (`meta`, `state`), where an agent reads it
+ * beside the fields; only the header stops claiming it from absence.
+ */
+export function trustBadge(meta: Pick<DocMeta, "fields" | "trust">): DocMeta["trust"] | null {
+  return Object.hasOwn(meta.fields, "verified") ? meta.trust : null;
+}
+
 /** Keys the header shows in its own way; the rest fall through to "other fields". */
 const NAMED = new Set(["type", "title", "description", "status", "tags", "lifecycle", "verified"]);
 
@@ -59,6 +71,7 @@ function Chip({ children, className }: { children: ReactNode; className?: string
 
 export function MetaHeader({ meta }: { meta: DocMeta }) {
   const others = Object.entries(meta.fields).filter(([k]) => !NAMED.has(k));
+  const trust = trustBadge(meta);
   return (
     <header
       data-slot="meta-header"
@@ -74,14 +87,16 @@ export function MetaHeader({ meta }: { meta: DocMeta }) {
           {meta.status}
         </Chip>
         {meta.lifecycle && <Chip className="bg-surface-raised text-ink-dim">{meta.lifecycle}</Chip>}
-        <Chip className="bg-surface-raised text-ink-dim">
-          {meta.trust === "human-reviewed" ? (
-            <UserCheckIcon aria-hidden className="size-3" />
-          ) : meta.trust === "machine-confirmed" ? (
-            <BadgeCheckIcon aria-hidden className="size-3" />
-          ) : null}
-          {TRUST_LABEL[meta.trust]}
-        </Chip>
+        {trust && (
+          <Chip className="bg-surface-raised text-ink-dim">
+            {trust === "human-reviewed" ? (
+              <UserCheckIcon aria-hidden className="size-3" />
+            ) : trust === "machine-confirmed" ? (
+              <BadgeCheckIcon aria-hidden className="size-3" />
+            ) : null}
+            {TRUST_LABEL[trust]}
+          </Chip>
+        )}
         {meta.stale && (
           <Chip className="bg-attention/15 text-attention">
             <ClockIcon aria-hidden className="size-3" />

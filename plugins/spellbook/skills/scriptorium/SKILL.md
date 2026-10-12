@@ -94,9 +94,16 @@ before the CLI sees them. Same for `task`, `version-new`, and
 **Write `say` in markdown; it renders.** The conversation shows your message
 rendered (headings, lists, code blocks, tables, links), not as raw `**` and
 backticks, in a narrow side panel. Keep headings small and tables narrow. An
-`http`, `https` or `mailto` link opens in a new tab; a relative link is read
-against the document they have open. Raw HTML shows as text, and any other link
-scheme is struck through and does nothing.
+`http`, `https` or `mailto` link opens in a new tab. A relative link is tried
+beside the document they have open first, then from that document's set root
+(with nothing open, from the first entry's root). So write it relative to the
+set: `[the glade](./locations/the-glade.md)` opens the set's glade, unless the
+open document's own folder holds a `locations/the-glade.md` of its own. A path
+opens any document in their context, in any set, but a bare name (`the-glade`)
+or a `type/slug` key (`location/the-glade`) looks only in the link's own set. A
+file outside the context, or one that does not exist, is reported to them
+instead. Raw HTML shows as text, and any other link scheme is struck through and
+does nothing.
 
 ## The loop
 
@@ -238,15 +245,27 @@ wrongly on precisely because you already know the ordinary English word.
 - **A SET is a structural unit, not a loose grouping.** It is a top-level folder
   in the context, with an id (`--entry`), its own link graph, and rules about
   what may be created inside it. `make-set` is not cosmetic: it makes a folder
-  named for a document and moves the document into it.
+  named for a document and moves the document into it. `dangling --entry <id>`
+  lists the set's links that answer nothing (`links`, each with its file `line`
+  and what the document `wrote`) and, apart and not in `count`, links with a
+  scheme nothing here opens, such as `op:doc/…` (`unsupported`, with `scheme`).
+  Neither is an error. A link to a folder is a `folder` edge, not a dangling
+  one, and links inside code or HTML comments are not links. `dangling`'s `line`
+  is the file's line, but a `graph` edge's `line` counts from the start of the
+  body, below the frontmatter. **⚠ If `graph`, `dangling` or `backlinks` carries
+  `truncated`, it covers part of the set:** `{read, of}` documents, with `of`
+  null when the set lists only part of its folder (a very large folder). Their
+  `hint` says what to do: `add` a sub-folder as a set of its own, or `hide`
+  folders that do not belong. The `doctor` reports it as `links.partial`.
 - **The CONTEXT is what is in their sidebar** — the documents and sets they
   chose for this session. (Unrelated to `diff --context`, which means lines of
   surrounding text. Same word, two meanings, one of them a flag.)
 - **The WORKSPACE is where new things land** — a `new-doc` outside a set goes
-  there. **⚠ `open` does NOT set it**, so it may be somewhere other than the
-  folder you just opened; `workspace` prints it, `workspace <dir>` moves it.
-  Check before creating, or you will leave a document where they are not
-  looking.
+  there. `open` over exactly ONE folder (named twice is still one) makes that
+  folder the workspace; over several entries, or a single file, it is the
+  directory you ran `open` from, and a `--restore`d session keeps its own. **⚠
+  Read `workspace` in `open`'s output** before creating; `workspace` prints it
+  later, `workspace <dir>` moves it.
 - **ACTIVE means two different things in `state`.** `docs[].active` is a version
   number, and it is the one rule 2 is about. `state.active` (beside `openDoc`)
   is which document their VIEW is on, and is `null` before they open anything.

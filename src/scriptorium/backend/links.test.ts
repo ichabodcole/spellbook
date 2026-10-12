@@ -1,17 +1,19 @@
 // The resolver, over real shapes: the wiki's `type/slug` keys, Operator's typed
 // links, wiki links, and the frontmatter references that are NOT links.
 import { describe, expect, test } from "bun:test";
-import type { Edge, GraphNode } from "./links";
+import { renderMarkdown } from "../surface/state/markdown";
+import type { Edge, GraphNode, UnsupportedLink } from "./links";
 import {
   type BundleIndex,
   buildGraph,
   extractLinks,
   fieldRefs,
+  LinkCache,
   looksLikeRef,
+  maskCode,
   parseRel,
   resolveTarget,
   splitTarget,
-  withoutFences,
 } from "./links";
 import type { DocMeta, GraphPayload } from "./protocol";
 
@@ -73,13 +75,114 @@ describe("what counts as a link", () => {
   test("⛔ a link inside a FENCE is an example, not an edge", () => {
     const body = ["Real: [a](./real.md)", "", "```md", "[fake](./fake.md)", "```", ""].join("\n");
     expect(extractLinks(body).map((l) => l.target)).toEqual(["./real.md"]);
-    expect(withoutFences(body)).not.toContain("fake");
+    expect(maskCode(body)).not.toContain("fake");
+    expect(maskCode(body)).toHaveLength(body.length);
   });
   test("an anchor is not part of the target, and a title is not a target", () => {
     expect(splitTarget("../concepts/exit-codes.md#the-taxonomy").path).toBe(
       "../concepts/exit-codes.md",
     );
     expect(extractLinks('[a](./other.md "A title")')[0]?.target).toBe("./other.md");
+  });
+});
+
+describe("what markdown renders as a link, and what it does not (#126)", () => {
+  const targets = (body: string) => extractLinks(body).map((l) => l.target);
+
+  test("a link in INLINE code is an example, not an edge", () => {
+    expect(targets("see `[x](./a.md)` and [real](./b.md)")).toEqual(["./b.md"]);
+    // A double-tick span holding a single tick, as CONTRIBUTING-style prose does.
+    expect(targets("``[x](./a.md) ` ``")).toEqual([]);
+    // An unclosed tick is not a span, so the link after it counts.
+    expect(targets("a stray ` then [y](./y.md)")).toEqual(["./y.md"]);
+  });
+  test("a link in an INDENTED code block is an example too", () => {
+    expect(targets(["prose", "", "    [x](./a.md)", "", "[b](./b.md)"].join("\n"))).toEqual([
+      "./b.md",
+    ]);
+  });
+  test("⚠ but an indented line continuing a LIST ITEM is prose, not code", () => {
+    expect(targets(["- item", "    [x](./a.md)"].join("\n"))).toEqual(["./a.md"]);
+  });
+  test("a fence inside a blockquote masks its contents", () => {
+    expect(targets(["> ```", "> [x](./a.md)", "> ```"].join("\n"))).toEqual([]);
+  });
+  test("an escaped bracket is text", () => {
+    expect(targets("\\[not](./x.md)")).toEqual([]);
+    expect(targets("[not\\](./x.md)")).toEqual([]);
+  });
+  test("a link inside an HTML comment is an aside, not an edge", () => {
+    expect(targets("p <!-- [x](./a.md) --> [b](./b.md)")).toEqual(["./b.md"]);
+    expect(targets(["<!--", "[x](./a.md)", "-->", "[b](./b.md)"].join("\n"))).toEqual(["./b.md"]);
+    // ⚠ A comment that OPENS a line is an HTML block, and the block runs to the
+    // end of the line holding `-->`: the renderer shows that whole line as text.
+    expect(targets("<!-- [x](./a.md) --> [b](./b.md)")).toEqual([]);
+  });
+  test("an <…> target, which may hold spaces", () => {
+    const [l] = extractLinks("[a](<./My Notes.md>)");
+    expect(l?.target).toBe("./My Notes.md");
+    expect(l?.raw).toBe("./My Notes.md");
+  });
+  test("a single-quoted title is not part of the target", () => {
+    expect(targets("[a](./x.md 'A title')")).toEqual(["./x.md"]);
+  });
+  test("nested brackets in a label", () => {
+    const [l] = extractLinks("[a [b] c](./x.md)");
+    expect(l?.target).toBe("./x.md");
+    expect(l?.label).toBe("a [b] c");
+  });
+  test("an escaped ] in a label", () => {
+    const [l] = extractLinks("[a \\] b](./x.md)");
+    expect(l?.target).toBe("./x.md");
+    expect(l?.label).toBe("a ] b");
+  });
+  test("a label that wraps onto the next line (a Prettier reflow) is one link, on its first line", () => {
+    const [l] = extractLinks(["intro", "see [the long", "label](./x.md) here"].join("\n"));
+    expect(l?.target).toBe("./x.md");
+    expect(l?.label).toBe("the long label");
+    expect(l?.line).toBe(2);
+  });
+  test("⚠ a BLANK line ends a label, and so does the end of a heading", () => {
+    expect(targets(["[a", "", "b](./x.md)"].join("\n"))).toEqual([]);
+    expect(targets(["# [a", "b](./x.md)"].join("\n"))).toEqual([]);
+  });
+  test("parentheses in a target", () => {
+    expect(targets("[a](./notes(1).md)")).toEqual(["./notes(1).md"]);
+    expect(targets("[a](./notes\\(2\\).md)")).toEqual(["./notes(2).md"]);
+  });
+  test("a link inside another link's label: the INNER one is what renders", () => {
+    expect(targets("[see [x](./y.md)](./z.md)")).toEqual(["./y.md"]);
+  });
+  test("an escaped image marker leaves a plain link", () => {
+    expect(targets("\\![pic](./pic.md)")).toEqual(["./pic.md"]);
+  });
+  test("a wiki link in code is masked too, and links come back in document order", () => {
+    const links = extractLinks("`[[skip]]` [[b]] then [a](./a.md)");
+    expect(links.map((l) => l.target)).toEqual(["b", "./a.md"]);
+  });
+  test("line numbers are right on every line of a long document", () => {
+    const lines = Array.from({ length: 2000 }, (_, i) => `line ${i} [l${i}](./d${i}.md)`);
+    const links = extractLinks(lines.join("\n"));
+    expect(links).toHaveLength(2000);
+    expect(links.every((l, i) => l.line === i + 1 && l.target === `./d${i}.md`)).toBe(true);
+  });
+  test("the map (and so backlinks and dangling) reads links the same way", () => {
+    const g = buildGraph(index(), (p) =>
+      p === "/w/wiki/index.md"
+        ? "`[x](./gone.md)` <!-- [y](./gone2.md) --> \\[z](./gone3.md) [ok](./concepts/exit-codes.md)"
+        : "",
+    );
+    const fromIndex = g.edges.filter((e) => e.from === "/w/wiki/index.md" && e.source === "link");
+    expect(fromIndex.map((e) => e.raw)).toEqual(["./concepts/exit-codes.md"]);
+    expect(g.dangling).toBe(0);
+  });
+  test("adversarial runs finish quickly (the cost was quadratic)", () => {
+    const n = 50_000;
+    for (const unit of ["[", "(", "](", "`", "<!--", "[a](", "[[", "\\["]) {
+      const started = performance.now();
+      extractLinks(unit.repeat(Math.ceil(n / unit.length)));
+      expect(performance.now() - started).toBeLessThan(2000);
+    }
   });
 });
 
@@ -127,6 +230,167 @@ describe("frontmatter references — the SHAPE decides, not the key", () => {
   });
 });
 
+describe("round three: a frontmatter value that cannot be a path is not a reference", () => {
+  test("prose with a slash in it, as titles and descriptions have, is not one", () => {
+    // The description that took `graph` down on this repo's own docs/.
+    expect(
+      looksLikeRef(
+        "The build-out of imago — an end-to-end v1 build: the CLI/server pair, hardening and finalize.",
+      ),
+    ).toBe(false);
+    expect(looksLikeRef("MOVED — the conformance register now lives in docs/architecture/")).toBe(
+      false,
+    );
+    expect(looksLikeRef("mind-mapper acc L0 — and the census that went 0/48 → 49/49")).toBe(false);
+    expect(looksLikeRef("see notes/a.md, then b/c.md")).toBe(false);
+    expect(looksLikeRef("one/two\nthree")).toBe(false);
+  });
+  test("a value no filesystem could name is not one", () => {
+    expect(looksLikeRef(`notes/${"x".repeat(256)}.md`)).toBe(false);
+    expect(looksLikeRef(`notes/${"x".repeat(250)}.md`)).toBe(true);
+  });
+  test("⚠ a path with spaces in it still is", () => {
+    expect(looksLikeRef("./My Notes.md")).toBe(true);
+    expect(looksLikeRef("places/Maren's Bakery.md")).toBe(true);
+    expect(looksLikeRef("assets/a map.png")).toBe(true);
+    expect(looksLikeRef("concept/exit-codes")).toBe(true);
+  });
+  test("⛔ round four: a value anchored at ./, ../ or / is a path whatever its punctuation", () => {
+    // Round three's prose rule dropped these, which were references before it.
+    expect(looksLikeRef("./notes/Chapter 1, Part 2.md")).toBe(true);
+    expect(looksLikeRef("./notes/Dawn — Dusk.md")).toBe(true);
+    expect(looksLikeRef("./notes/my chapter.md#scene")).toBe(true);
+    expect(looksLikeRef("./notes/my chapter")).toBe(true);
+    expect(looksLikeRef("../research/field notes")).toBe(true);
+    expect(looksLikeRef("/notes/a b, c.md")).toBe(true);
+    expect(looksLikeRef("./notes/my chapter.md")).toBe(true);
+    expect(
+      fieldRefs({
+        related: ["../research/field notes", "./notes/Chapter 1, Part 2.md"],
+        source: "../research/field notes",
+      }).map((r) => `${r.key}=${r.value}`),
+    ).toEqual([
+      "related=../research/field notes",
+      "related=./notes/Chapter 1, Part 2.md",
+      "source=../research/field notes",
+    ]);
+    // The limits a disk sets still hold for them.
+    expect(looksLikeRef("./notes/one\ntwo.md")).toBe(false);
+    expect(looksLikeRef(`./notes/${"x".repeat(256)}.md`)).toBe(false);
+    // Without the anchor, prose is still prose.
+    expect(looksLikeRef("Chapter 1, Part 2/notes.md")).toBe(false);
+    expect(looksLikeRef("//cdn.example.com/a b.md")).toBe(false);
+  });
+  test("an anchored reference with a fragment resolves to its file", () => {
+    const g = buildGraph(
+      {
+        ...index(),
+        metaOf: (p) =>
+          p === "/w/wiki/index.md"
+            ? meta({ related: ["./concepts/exit-codes.md#scene", "./concepts/exit-codes"] })
+            : null,
+      },
+      () => "",
+    );
+    expect(g.edges.filter((e) => e.source === "frontmatter").map((e) => [e.to, e.state])).toEqual([
+      ["/w/wiki/concepts/exit-codes.md", "in-bundle"],
+      ["/w/wiki/concepts/exit-codes.md", "in-bundle"],
+    ]);
+  });
+  test("a disk that throws on one value leaves the rest of the map", () => {
+    const boom = "/w/wiki/deep/x.md";
+    const g = buildGraph(
+      {
+        ...index(),
+        metaOf: (p) => (p === "/w/wiki/index.md" ? meta({ related: ["deep/x"] }) : null),
+        exists: (p) => {
+          if (p === boom) throw Object.assign(new Error("name too long"), { code: "ENAMETOOLONG" });
+          return PATHS.includes(p);
+        },
+        isDir: () => {
+          throw new Error("ELOOP");
+        },
+      },
+      (p) => (p === "/w/wiki/index.md" ? "[ok](./concepts/exit-codes.md) [gone](./deep/x.md)" : ""),
+    );
+    expect(g.edges.filter((e) => e.from === "/w/wiki/index.md").map((e) => e.state)).toEqual([
+      "in-bundle",
+      "missing",
+      "missing",
+    ]);
+  });
+});
+
+describe("round three: a file's links are read once until it changes", () => {
+  test("an unchanged stamp is not read again; a changed one is", () => {
+    const bodies: Record<string, string> = { "/w/a.md": "[b](./b.md)" };
+    const stamps: Record<string, string | null> = { "/w/a.md": "1:11" };
+    let reads = 0;
+    const cache = new LinkCache(
+      (p) => stamps[p] ?? null,
+      (p) => {
+        reads++;
+        return bodies[p] ?? "";
+      },
+    );
+    expect(cache.linksOf("/w/a.md").map((l) => l.raw)).toEqual(["./b.md"]);
+    expect(cache.linksOf("/w/a.md").map((l) => l.raw)).toEqual(["./b.md"]);
+    expect(reads).toBe(1);
+    bodies["/w/a.md"] = "[c](./c.md) [x](op:doc/1)";
+    stamps["/w/a.md"] = "2:24";
+    // Read with schemes, as the map reads, so `op:` links stay reportable.
+    expect(cache.linksOf("/w/a.md").map((l) => [l.raw, l.scheme])).toEqual([
+      ["./c.md", undefined],
+      ["op:doc/1", "op"],
+    ]);
+    expect(reads).toBe(2);
+  });
+  test("a file with no stamp (gone, unreadable) is read every time and never kept", () => {
+    let reads = 0;
+    const cache = new LinkCache(
+      () => null,
+      () => {
+        reads++;
+        return "[b](./b.md)";
+      },
+    );
+    cache.linksOf("/w/a.md");
+    cache.linksOf("/w/a.md");
+    expect(reads).toBe(2);
+  });
+  test("the map reads through it when given one", () => {
+    let reads = 0;
+    const cache = new LinkCache(
+      () => "s",
+      (p) => {
+        reads++;
+        return p === "/w/wiki/index.md" ? "[ok](./concepts/exit-codes.md)" : "";
+      },
+    );
+    const bodyOf = () => {
+      throw new Error("the map read a body past the cache");
+    };
+    const first = buildGraph(index(), bodyOf, { linksOf: (p) => cache.linksOf(p) });
+    const second = buildGraph(index(), bodyOf, { linksOf: (p) => cache.linksOf(p) });
+    expect(second.edges).toEqual(first.edges);
+    expect(reads).toBe(PATHS.length);
+  });
+});
+
+describe("round three: a map that read part of its set says so", () => {
+  test("no cap by default: every document the set lists is read", () => {
+    const many = Array.from({ length: 450 }, (_, i) => `/w/wiki/n${i}.md`);
+    const g = buildGraph({ ...index(), paths: many }, () => "");
+    expect(g.nodes).toHaveLength(450);
+    expect(g.truncated).toBeUndefined();
+  });
+  test("a cap that cuts says how many it read, of how many", () => {
+    const g = buildGraph(index(), () => "", { cap: 2 });
+    expect(g.nodes).toHaveLength(2);
+    expect(g.truncated).toEqual({ read: 2, of: PATHS.length });
+  });
+});
+
 describe("what a dangling link report needs (E54)", () => {
   test("a link carries the target AS WRITTEN, not only the resolved shape", () => {
     const [link] = extractLinks("See [it](./missing/deep.md?rel=x#top).\n");
@@ -142,8 +406,8 @@ describe("what a dangling link report needs (E54)", () => {
     expect(links.map((l) => `${l.target}:${l.line}`)).toEqual(["x.md:5", "y.md:6"]);
   });
 
-  test("⚠ A FENCED BLOCK SHIFTS NOTHING — line numbers survive fence stripping", () => {
-    // `withoutFences` BLANKS fenced lines rather than removing them, so the
+  test("⚠ A FENCED BLOCK SHIFTS NOTHING — line numbers survive code masking", () => {
+    // `maskCode` BLANKS fenced lines rather than removing them, so the
     // count is preserved. A link after a code block must still report its real
     // line, or every report in a document with code is off by the block.
     const body = [
@@ -282,6 +546,117 @@ describe("resolving against the bundle", () => {
   });
 });
 
+describe("a link to a folder (#123)", () => {
+  const from = "/w/wiki/index.md";
+  const DIRS = ["/w/wiki", "/w/wiki/concepts", "/w/wiki/rules", "/w/wiki/rules/exit-codes"];
+  const withDirs = (extra: Partial<BundleIndex> = {}): BundleIndex => ({
+    ...index(),
+    isDir: (p) => DIRS.includes(p),
+    ...extra,
+  });
+
+  test("`./concepts/` and `./concepts` are the folder, not a missing concepts.md", () => {
+    for (const t of ["./concepts/", "./concepts", "concepts/", "/concepts/", "./concepts/?rel=x"])
+      expect(resolveTarget(t, from, withDirs())).toEqual({
+        state: "folder",
+        path: "/w/wiki/concepts",
+      });
+  });
+  test("a bare name no document answers resolves as a folder too", () => {
+    expect(resolveTarget("rules", from, withDirs())).toEqual({
+      state: "folder",
+      path: "/w/wiki/rules",
+    });
+  });
+  test("a nested folder, from a document inside another one", () => {
+    expect(
+      resolveTarget("../rules/exit-codes/", "/w/wiki/concepts/exit-codes.md", withDirs()),
+    ).toEqual({ state: "folder", path: "/w/wiki/rules/exit-codes" });
+  });
+  test("a link to the bundle root itself is the root folder", () => {
+    expect(resolveTarget("/", from, withDirs())).toEqual({ state: "folder", path: "/w/wiki" });
+  });
+  test("⚠ a document beats a folder of the same name, without the slash", () => {
+    const both = withDirs({
+      paths: [...PATHS, "/w/wiki/rules.md"],
+      exists: (p) => PATHS.includes(p) || p === "/w/wiki/rules.md",
+    });
+    expect(resolveTarget("./rules", from, both)).toEqual({
+      state: "in-bundle",
+      path: "/w/wiki/rules.md",
+    });
+    // …and a trailing slash says FOLDER, whatever document shares the name.
+    expect(resolveTarget("./rules/", from, both)).toEqual({
+      state: "folder",
+      path: "/w/wiki/rules",
+    });
+  });
+  test("a trailing-slash target that is no folder is missing, and says the folder it tried", () => {
+    expect(resolveTarget("./places/", from, withDirs())).toEqual({
+      state: "missing",
+      tried: "/w/wiki/places",
+    });
+    // Read as a key it matched any `places.md` by basename; it no longer does.
+    expect(resolveTarget("index/", from, withDirs()).state).toBe("missing");
+  });
+  test("without a disk to ask (no `isDir`), nothing is a folder", () => {
+    expect(resolveTarget("./concepts/", from, index()).state).toBe("missing");
+  });
+  test("a folder edge is in the map, and is not dangling", () => {
+    const g = buildGraph(withDirs(), (p) => (p === from ? "[c](./concepts/) [r](rules)" : ""));
+    const folderEdges = g.edges.filter((e) => e.state === "folder");
+    expect(folderEdges.map((e) => e.to)).toEqual(["/w/wiki/concepts", "/w/wiki/rules"]);
+    expect(g.dangling).toBe(0);
+  });
+});
+
+describe("links with a scheme nothing here opens (#128)", () => {
+  test("extraction keeps scheme targets only when asked, each with its scheme", () => {
+    const body = "[src](op:doc/1d63ec43-65cd) [web](https://x.dev) [doc](./a.md)";
+    expect(extractLinks(body).map((l) => l.raw)).toEqual(["./a.md"]);
+    expect(extractLinks(body, { schemes: true }).map((l) => [l.raw, l.scheme])).toEqual([
+      ["op:doc/1d63ec43-65cd", "op"],
+      ["https://x.dev", "https"],
+      ["./a.md", undefined],
+    ]);
+  });
+  test("the map keeps an `op:` link apart, with its line and the link as written", () => {
+    const g = buildGraph(index(), (p) =>
+      p === "/w/wiki/index.md"
+        ? ["intro", "[the source](op:doc/1d63?rel=derived-from)", "[w](https://x.dev)"].join("\n")
+        : "",
+    );
+    expect(g.unsupported).toEqual([
+      {
+        from: "/w/wiki/index.md",
+        raw: "op:doc/1d63?rel=derived-from",
+        line: 2,
+        scheme: "op",
+        rel: ["derived-from"],
+      },
+    ]);
+    // Not an edge, and not counted as a missing file.
+    expect(g.edges.some((e) => e.raw?.startsWith("op:"))).toBe(false);
+    expect(g.dangling).toBe(0);
+  });
+  test("http, https and mailto open outward, so they are never reported", () => {
+    const g = buildGraph(index(), (p) =>
+      p === "/w/wiki/index.md" ? "[a](http://x) [b](HTTPS://x) [c](mailto:a@b.c)" : "",
+    );
+    expect(g.unsupported).toEqual([]);
+  });
+  test("⚠ any other scheme is reported, as the surface strikes it through: tel:, ftp:, javascript:", () => {
+    const g = buildGraph(index(), (p) =>
+      p === "/w/wiki/index.md" ? "[a](tel:123) [b](FTP://x) [c](javascript:void(0))" : "",
+    );
+    expect(g.unsupported.map((u) => u.scheme)).toEqual(["tel", "ftp", "javascript"]);
+  });
+  test("an `op:` link written in code is still an example, not a report", () => {
+    const g = buildGraph(index(), (p) => (p === "/w/wiki/index.md" ? "`[x](op:doc/1)`" : ""));
+    expect(g.unsupported).toEqual([]);
+  });
+});
+
 describe("the map", () => {
   const bodies: Record<string, string> = {
     "/w/wiki/index.md": "[exit codes](./concepts/exit-codes.md) and [[stay-pre-1-0]]",
@@ -383,9 +758,165 @@ const _edgeToProto: ProtoEdge = {} as Edge;
 const _protoToEdge: Edge = {} as ProtoEdge;
 const _nodeToProto: ProtoNode = {} as GraphNode;
 const _protoToNode: GraphNode = {} as ProtoNode;
+// #128's `unsupported` is mirrored the same way.
+type ProtoUnsupported = GraphPayload["unsupported"][number];
+const _unsupportedKeysMatch: ExactKeys<UnsupportedLink, ProtoUnsupported> = true;
+const _unsupportedToProto: ProtoUnsupported = {} as UnsupportedLink;
+const _protoToUnsupported: UnsupportedLink = {} as ProtoUnsupported;
+void _unsupportedKeysMatch;
+void _unsupportedToProto;
+void _protoToUnsupported;
 void _edgeKeysMatch;
 void _nodeKeysMatch;
 void _edgeToProto;
 void _protoToEdge;
 void _nodeToProto;
 void _protoToNode;
+
+describe("round two: extraction agrees with the rendered view", () => {
+  const targets = (body: string) => extractLinks(body).map((l) => l.target);
+
+  test("indented code inside a LIST ITEM is code, as the surface renders it", () => {
+    expect(targets("- item\n\n      [x](./nope4.md)")).toEqual([]);
+    // An ordered item's content starts three columns in, so code is seven.
+    expect(targets("1. item\n\n       [x](./nope.md)\n\n[b](./b.md)")).toEqual(["./b.md"]);
+  });
+  test("indented code inside a BLOCKQUOTE is code too", () => {
+    expect(targets("> q\n>\n>     [x](./nope5.md)")).toEqual([]);
+    expect(targets("> - item\n>\n>       [x](./nope6.md)")).toEqual([]);
+  });
+  test("⚠ a list item's continuation PARAGRAPH is prose, and its links count", () => {
+    expect(targets("- a\n\n  more [x](./ok.md)")).toEqual(["./ok.md"]);
+    expect(targets("1. a\n\n   more [y](./ok2.md)")).toEqual(["./ok2.md"]);
+  });
+  test("a code span that runs onto the next line is still code", () => {
+    expect(targets("`a\n[x](./c3.md)`")).toEqual([]);
+    expect(targets("``a ` b\n[x](./c4.md) ``")).toEqual([]);
+    // A blank line ends the paragraph, so the ticks close nothing.
+    expect(targets("`a\n\n[x](./c5.md)`")).toEqual(["./c5.md"]);
+  });
+  test("a link wrapped around an image is an edge to the OUTER target", () => {
+    expect(targets("[![badge](./b.png)](./real.md)")).toEqual(["./real.md"]);
+    expect(targets("[t ![a](i.png)](./r.md)")).toEqual(["./r.md"]);
+    const [l] = extractLinks("[![a](i.png) and text](./r2.md?rel=see-also)");
+    expect([l?.target, l?.rel]).toEqual(["./r2.md", ["see-also"]]);
+    // The image inside is still an image, never a document link.
+    expect(extractLinks("[![b](./b.md)](./real.md)", { schemes: true }).map((x) => x.raw)).toEqual([
+      "./real.md",
+    ]);
+    // …and a LINK inside a label still means the inner one is what renders.
+    expect(targets("[![b](i.png) [x](./y.md)](./z.md)")).toEqual(["./y.md"]);
+  });
+  test("a protocol-relative URL is external, not a dangling path", () => {
+    expect(targets("[cdn](//cdn.example.com/x) [d](./d.md)")).toEqual(["./d.md"]);
+    expect(looksLikeRef("//cdn.example.com/x")).toBe(false);
+    const g = buildGraph(index(), (p) =>
+      p === "/w/wiki/index.md" ? "[cdn](//cdn.example.com/x.js)" : "",
+    );
+    expect(g.edges.filter((e) => e.from === "/w/wiki/index.md")).toEqual([]);
+    expect(g.unsupported).toEqual([]);
+    expect(g.dangling).toBe(0);
+  });
+});
+
+describe("round three: a comment is what the renderer calls one", () => {
+  const targets = (body: string) => extractLinks(body).map((l) => l.target);
+
+  test("an unclosed INLINE `<!--` is text, and the links after it count", () => {
+    expect(targets("Use <!-- to open a comment.\n\n[later](./later.md)")).toEqual(["./later.md"]);
+    // On the same line, too: the renderer shows `<!--` as text and links the rest.
+    expect(targets("[b](./b.md) <!-- [x](./a.md)")).toEqual(["./b.md", "./a.md"]);
+  });
+  test("a comment BLOCK ends with its container, not at the end of the document", () => {
+    expect(targets("> <!-- q\n\n[z](./z.md)")).toEqual(["./z.md"]);
+    expect(targets("- a\n  <!-- c\n\n[z](./z.md)")).toEqual(["./z.md"]);
+    // …and one that never closes at the top level runs to the end, as rendered.
+    expect(targets("a\n<!-- x\n[y](./y.md)")).toEqual([]);
+  });
+  test("`<!--` inside code opens nothing", () => {
+    expect(targets("`<!--` then [a](./a.md)")).toEqual(["./a.md"]);
+  });
+  test("random documents of code, comment and link pieces link what the renderer links", () => {
+    // A fixed seed (mulberry32), so a failure reproduces; round three ran
+    // 200,000 of these with no disagreement. A lone `[` and table pipes are
+    // left out: a label crossing into a list line, and a table row's extra
+    // cells, are two disagreements of their own, older than comments (filed).
+    let seed = 7;
+    const rand = () => {
+      seed = (seed + 0x6d2b79f5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    // biome-ignore format: one row of pieces reads better than thirty lines
+    const pieces = ["LINK", "LINK", "`", "``", "```", "~~~", "<!--", "-->", "\n", "\n\n", "    ", "\t", "- ", "> ", "1. ", " ", "word", "\\", "]", "(", ")", "# ", "!"];
+    const ours = /^\.\/t\d+\.md$/;
+    const disagree: string[] = [];
+    let k = 0;
+    for (let i = 0; i < 1500; i++) {
+      let s = "";
+      const len = 3 + Math.floor(rand() * 20);
+      for (let j = 0; j < len; j++) {
+        const p = pieces[Math.floor(rand() * pieces.length)] as string;
+        s += p === "LINK" ? `[l${k}](./t${k++}.md)` : p;
+      }
+      const shown = [...renderMarkdown(s).matchAll(/<a href="([^"]*)"/g)]
+        .map((m) => m[1] as string)
+        .filter((h) => ours.test(h));
+      const read = extractLinks(s)
+        .map((l) => l.raw)
+        .filter((r) => ours.test(r));
+      if (shown.join(" ") !== read.join(" ")) disagree.push(s);
+    }
+    expect(disagree).toEqual([]);
+  });
+});
+
+describe("round two: a document beats a same-named folder, dots and all", () => {
+  const from = "/w/wiki/index.md";
+  const disk = (docs: string[], dirs: string[], files: string[] = []): BundleIndex => ({
+    root: ROOT,
+    paths: [...PATHS, ...docs],
+    metaOf: () => null,
+    exists: (p) => PATHS.includes(p) || docs.includes(p) || files.includes(p),
+    isDir: (p) => p === ROOT || dirs.includes(p),
+  });
+
+  test("`./v1.2` is v1.2.md when both it and a v1.2/ folder exist", () => {
+    const both = disk(["/w/wiki/v1.2.md"], ["/w/wiki/v1.2"]);
+    expect(resolveTarget("./v1.2", from, both)).toEqual({
+      state: "in-bundle",
+      path: "/w/wiki/v1.2.md",
+    });
+    expect(resolveTarget("./v1.2/", from, both)).toEqual({
+      state: "folder",
+      path: "/w/wiki/v1.2",
+    });
+    // With no document, the folder answers.
+    expect(resolveTarget("./v1.2", from, disk([], ["/w/wiki/v1.2"]))).toEqual({
+      state: "folder",
+      path: "/w/wiki/v1.2",
+    });
+  });
+  test("`./notes.v2` finds notes.v2.md", () => {
+    expect(resolveTarget("./notes.v2", from, disk(["/w/wiki/notes.v2.md"], []))).toEqual({
+      state: "in-bundle",
+      path: "/w/wiki/notes.v2.md",
+    });
+  });
+  test("⚠ a name with a real extension is still that file, and a miss says what was written", () => {
+    expect(resolveTarget("./lint.ts", from, disk([], [], ["/w/wiki/lint.ts"]))).toEqual({
+      state: "outside",
+      path: "/w/wiki/lint.ts",
+    });
+    expect(resolveTarget("./v9.9", from, disk([], []))).toEqual({
+      state: "missing",
+      tried: "/w/wiki/v9.9",
+    });
+    // A document name is not given a second `.md`.
+    expect(resolveTarget("./gone.md", from, disk([], []))).toEqual({
+      state: "missing",
+      tried: "/w/wiki/gone.md",
+    });
+  });
+});

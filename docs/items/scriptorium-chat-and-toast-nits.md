@@ -88,3 +88,56 @@ Found by the browser verifier of
   reported as not found rather than cannot be read.
 - A re-armed `tail --once` with no `--since` prints `"cursor": -1` in
   `tail.closed`.
+
+**From the "Links tell the truth" verifier (2026-10-04), predating that cycle:**
+
+- **Link toasts stay up until dismissed.** A followed link's "not in this set"
+  or folder toast never times out.
+- **Search lists a line twice** when the query matches twice on it.
+- **`backlinks` repeats the same source once per link**, with no line to tell
+  the entries apart (#127 adds `line` and `raw`).
+- **`C:/win/path.md` is read as a link with scheme `c`** and reported under
+  `dangling`'s `unsupported`, not as a path.
+
+**From the second "Links tell the truth" verifier (2026-10-04), predating that
+cycle:**
+
+- **Links inside an HTML block are counted** (`<div>\n[x](./a.md)\n</div>`, or
+  after `<table>` or a custom tag), though the view shows the block as text.
+- `[x](<./a.md)` (unclosed `<`) is counted with the target `<./a.md`.
+- `[x](./a&amp;b.md)` is looked up literally; the view opens `a&b.md`.
+- **Missed though clickable:** reference-style links (`[x][r]`, `[r][]`, `[r]`;
+  documented as unsupported), labels nested two deep, a target with two levels
+  of parentheses.
+- **A bare name searches only the link's own set:** `[x](Real)` in `other/` says
+  "no document here is named Real" with `world/real.md` open.
+- **A symlinked folder is entered twice:** `open world wlink` adds `/world` and
+  `/wlink`; `open world world` echoes the entry twice in `entries`.
+
+**From round three of "Links tell the truth" (2026-10-04), predating that
+cycle:**
+
+- A link label whose `[` ends a line, followed by a list line
+  (`x][\n- 1. \[a](./a.md)`), is still counted; the view ends the paragraph
+  there.
+- Links in table cells beyond the header's column count are counted; the view
+  drops those cells.
+- **pdocs folder keys do not resolve:** `parent: feature/spell-hardening` names
+  `docs/features/<slug>/feature.md`, so on this repo's `docs/` 39 of 124
+  dangling links are false.
+
+**From the third "Links tell the truth" verifier (2026-10-04), predating that
+cycle:**
+
+- **An absolute filesystem path in a link is joined onto the set root**: a chat
+  link to an existing `/…/cc.md` toasts "nothing at $S/sets/e$S/sets/e/cc.md",
+  and `graph` calls an absolute body link `missing`. Agents write absolute
+  paths.
+- **An unreadable document (chmod 000) reads as having no links**, and nothing
+  reports it, so its outbound links vanish silently.
+- `links.partial` stays on the parent set after the `add <sub-folder>` remedy
+  until that folder is also hidden; one flat folder over 2,000 files has no
+  remedy.
+- The frontmatter summary cache (`metaCache` in `session.ts`) keys on mtime only
+  (since 2026-09-11), so an edit that restores the exact mtime can leave the
+  sidebar's summary stale. The links cache now also keys on ctime and inode.

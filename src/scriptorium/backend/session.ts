@@ -64,7 +64,7 @@ import {
   titleFromBody,
   withBlock,
 } from "./frontmatter";
-import { type BundleIndex, buildGraph, type Resolution, resolveTarget } from "./links";
+import { type BundleIndex, buildGraph, LinkCache, type Resolution, resolveTarget } from "./links";
 import type {
   ChatMessage,
   ChatWho,
@@ -103,10 +103,37 @@ import {
 
 export const MANIFEST_FORMAT = 1;
 
+/**
+ * The file name a chat link resolves "from" when it reads from a folder rather
+ * than a document: `resolveTarget` reads only the folder of its `from`. No file
+ * of this name is ever looked up or created.
+ */
+const CHAT_ORIGIN = "\u0000chat";
+
 /** The most documents one frontmatter scan reads. */
 export const META_SCAN_CAP = 500;
 /** A frontmatter block lives at the top of a file; this is how much we read to find it. */
 const META_HEAD_BYTES = 8192;
+
+/**
+ * What the link resolver asks of the disk (#123): a file, or a folder. A plain
+ * `existsSync` answered yes for a folder too, so a folder named like a file was
+ * reported as a document outside the set.
+ */
+const isFileAt = (p: string) => statAt(p)?.isFile() ?? false;
+const isDirAt = (p: string) => statAt(p)?.isDirectory() ?? false;
+/**
+ * ⚠ `throwIfNoEntry` covers only ENOENT. A target the disk cannot even look up
+ * (ENAMETOOLONG from a long frontmatter value, ELOOP, EACCES) still threw, and
+ * a click on such a link was an internal error rather than "does not exist".
+ */
+function statAt(p: string): ReturnType<typeof statSync> | undefined {
+  try {
+    return statSync(p, { throwIfNoEntry: false });
+  } catch {
+    return undefined;
+  }
+}
 
 /** The first 8 KB of a file, as text — enough for any frontmatter block. */
 function readHead(path: string): string {
@@ -259,6 +286,31 @@ export class Session {
    * outside write, a human edit) or the version is deleted.
    */
   private unwrittenCopies = new Map<string, string>();
+  /**
+   * Every set's body links, per file, until the file's mtime or size changes
+   * (round three of the links cycle). The map, `dangling`, `backlinks` and the
+   * doctor all read through it, so the first of them pays for extraction and
+   * the rest do not. Keyed on the file on disk, which is what the map reads.
+   *
+   * ⛔ MTIME AND SIZE ARE NOT ENOUGH (round four). An edit that keeps the byte
+   * count and then puts the old mtime back (`touch -r`, `utimes`, a sync tool)
+   * left `graph` and `dangling` answering from the old links. The stamp also
+   * carries ctime, which no userland call can set back, and the inode, which an
+   * atomic replace changes.
+   */
+  private readonly linkCache = new LinkCache(
+    (p) => {
+      const st = statAt(p);
+      return st?.isFile() ? `${st.mtimeMs}:${st.size}:${st.ctimeMs}:${st.ino}` : null;
+    },
+    (p) => {
+      try {
+        return splitFrontmatter(readFileSync(p, "utf8")).body;
+      } catch {
+        return "";
+      }
+    },
+  );
   /** #117 — slug → the version the HUMAN activated while it was still an
    *  unwritten copy. Read (and cleared) by the next outside write to it. */
   private activatedUnwritten = new Map<string, number>();
@@ -1666,17 +1718,45 @@ export class Session {
    */
   checkup(): Finding[] {
     const nodes: { entry: string; path: string; shown: string; exists: boolean }[] = [];
-    const links: { entry: string; label: string; dangling: number }[] = [];
+    const links: {
+      entry: string;
+      label: string;
+      dangling: number;
+      unsupported: number;
+      schemes: string[];
+    }[] = [];
+    const unread: { entry: string; label: string; error: string }[] = [];
+    const partial: { entry: string; label: string; read: number; of: number | null }[] = [];
     for (const e of this.m.context) {
       for (const p of docPaths(e))
         nodes.push({ entry: e.id, path: p, shown: this.display(p), exists: existsSync(p) });
       if (e.membership !== "mirrored") continue;
       try {
         const g = this.graphFor(e.id);
-        if (g.dangling > 0)
-          links.push({ entry: e.id, label: e.label ?? basename(e.root), dangling: g.dangling });
-      } catch {
-        // A set that cannot be mapped is not a finding about links.
+        if (g.dangling > 0 || g.unsupported.length > 0)
+          links.push({
+            entry: e.id,
+            label: e.label ?? basename(e.root),
+            dangling: g.dangling,
+            unsupported: g.unsupported.length,
+            schemes: [...new Set(g.unsupported.map((u) => u.scheme))],
+          });
+        if (g.truncated)
+          partial.push({
+            entry: e.id,
+            label: e.label ?? basename(e.root),
+            read: g.truncated.read,
+            of: g.truncated.of,
+          });
+      } catch (err) {
+        // ⛔ A SET THAT CANNOT BE MAPPED IS A FINDING. This catch once said it
+        // was "not a finding about links", and so `graph` threw ENAMETOOLONG on
+        // a real set while the doctor reported `{"findings":[],"count":0}`.
+        unread.push({
+          entry: e.id,
+          label: e.label ?? basename(e.root),
+          error: err instanceof Error ? err.message : String(err),
+        });
       }
     }
     return findings({
@@ -1689,6 +1769,8 @@ export class Session {
       })),
       nodes,
       links,
+      unread,
+      partial,
     });
   }
 
@@ -2092,17 +2174,29 @@ export class Session {
       root: e.root,
       paths,
       metaOf: (p) => readMeta(readHead(p)),
-      exists: (p) => existsSync(p),
+      exists: isFileAt,
+      isDir: isDirAt,
       repoRoot: gitRootOf(e.root),
     };
-    const g = buildGraph(index, (p) => {
-      try {
-        return splitFrontmatter(readFileSync(p, "utf8")).body;
-      } catch {
-        return "";
-      }
-    });
+    const g = buildGraph(index, () => "", { linksOf: (p) => this.linkCache.linksOf(p) });
+    // ⛔ A SHORT LISTING MAKES A SHORT MAP, AND THE MAP SAYS SO. Past
+    // MIRROR_NODE_CAP the set lists only part of its folder (`truncated` on the
+    // entry), so the map, and every reply built on it, covers only that part.
+    if (e.truncated && !g.truncated) {
+      const read = g.nodes.length;
+      return {
+        entry: e.id,
+        ...g,
+        truncated: { read, of: null },
+        hint: `This set lists only the first ${MIRROR_NODE_CAP} files and folders under ${this.display(e.root)}, so this map read ${read} documents, and its links, dangling links and backlinks cover only those. To cover the rest, add a sub-folder as a set of its own (add <folder>), or take out folders that do not belong (hide <folder>).`,
+      };
+    }
     return { entry: e.id, ...g };
+  }
+
+  /** What a reply built on map `g` must carry when the map read part of its set. */
+  private partOf(g: GraphPayload): Record<string, unknown> {
+    return g.truncated ? { truncated: g.truncated, ...(g.hint ? { hint: g.hint } : {}) } : {};
   }
 
   /**
@@ -2189,6 +2283,18 @@ export class Session {
       entry: g.entry,
       root: g.root,
       count: broken.length,
+      ...this.partOf(g),
+      // ⚠ KEPT APART FROM `links`, AND NEVER COUNTED IN `count` (#128). A link
+      // like `op:doc/<id>` names no file, so "where it looked" would be empty and
+      // calling it missing would mislead; it is dead all the same, and the
+      // rendered view strikes it through, so the report must not stay silent.
+      unsupported: g.unsupported.map((u) => ({
+        from: u.from,
+        line: u.line + offsetOf(u.from),
+        wrote: u.raw,
+        scheme: u.scheme,
+        ...(u.rel.length ? { rel: u.rel } : {}),
+      })),
       links: broken.map((e) => ({
         from: e.from,
         ...(e.line !== undefined ? { line: e.line + offsetOf(e.from) } : {}),
@@ -2226,24 +2332,89 @@ export class Session {
         .filter((x) => x.source === "link")
         .map((x) => ({ path: x.from, title: title(x.from), rel: x.rel })),
       count: inbound.length,
+      ...this.partOf(g),
     };
   }
 
-  /** Where does this link go? The surface asks before following one (E33). */
-  resolveLink(from: string, target: string): Resolution {
-    const src = this.shownPath(from);
-    const entry = this.m.context.find(
-      (e) => e.membership === "mirrored" && src.startsWith(e.root + sep),
+  /**
+   * Where does this link go? The surface asks before following one (E33).
+   *
+   * `from` is the document the link was written in, or `"chat"` for a link in
+   * a chat message, with `doc` naming the document open at the click (if any).
+   *
+   * ⚠ A CHAT LINK WAS NOT WRITTEN BESIDE THE OPEN DOCUMENT (#122). The agent
+   * writes `./locations/the-glade.md` meaning the set, and the human may have
+   * any document open when they click it. Read against that document's folder
+   * alone, the same message opened from one document and was missing from
+   * another (`locations/locations/the-glade.md`), and with nothing open it did
+   * nothing at all. So a chat link tries the open document's folder and then
+   * the set's root, and with no document open it reads from the first
+   * context entry's root. A link written inside a document still resolves
+   * against that document's folder only.
+   */
+  resolveLink(from: string, target: string, doc?: string): Resolution {
+    if (from !== "chat") return this.resolveFrom(this.shownPath(from), target);
+    const open = doc ? this.shownPath(doc) : null;
+    const first = this.m.context[0];
+    // With no document open there is no folder to try first: the root is the
+    // first entry's (a single file's entry is rooted at its folder), and with
+    // an empty context, the workspace.
+    if (!open)
+      return this.resolveFrom(
+        join(first?.root ?? this.workspace, CHAT_ORIGIN),
+        target,
+        first ?? null,
+      );
+    const besideDoc = this.resolveFrom(open, target);
+    if (besideDoc.state === "in-bundle") return besideDoc;
+    // A document outside any set reads from its own folder, which it just did.
+    const entry = this.entryHolding(open);
+    if (!entry) return besideDoc;
+    const fromRoot = this.resolveFrom(join(entry.root, CHAT_ORIGIN), target, entry);
+    if (fromRoot.state === "in-bundle") return fromRoot;
+    // Neither landed in the set: the open document's folder answers first, as
+    // the document's own links would, and the root only when that found nothing.
+    return besideDoc.state !== "missing" || fromRoot.state === "missing" ? besideDoc : fromRoot;
+  }
+
+  /** The mirrored set a path sits in, if any. */
+  private entryHolding(src: string): ContextEntry | null {
+    return (
+      this.m.context.find((e) => e.membership === "mirrored" && src.startsWith(e.root + sep)) ??
+      null
     );
+  }
+
+  /**
+   * Resolve against the set holding `src` (a document, or a placeholder in the
+   * folder to read from). `entry` overrides the lookup: a chat link with no
+   * document open reads from a root, which no set "holds".
+   */
+  private resolveFrom(
+    src: string,
+    target: string,
+    entry: ContextEntry | null = this.entryHolding(src),
+  ): Resolution {
     const root = entry?.root ?? dirname(src);
     const paths = entry ? docPaths(entry) : [src];
-    return resolveTarget(target, src, {
+    const r = resolveTarget(target, src, {
       root,
       paths,
       metaOf: (p) => readMeta(readHead(p)),
-      exists: (p) => existsSync(p),
+      exists: isFileAt,
+      isDir: isDirAt,
       repoRoot: gitRootOf(root),
     });
+    // ⛔ "OUTSIDE" MEANS OUTSIDE THE WHOLE CONTEXT, not outside the set the link
+    // was read from. With `world` and `other` both open, `../other/t2.md` was
+    // reported outside with the advice to add a folder that was already there.
+    // Any context entry that lists the file opens it, from chat or from a
+    // document alike, which is Story Studio's kit's rule (`inContext`). The
+    // other forms (a key, a bare name) still look in the link's own set only.
+    // `locate` is what `openPath` admits, so what this calls open, opens.
+    if (r.state === "outside" && locate(this.m.context, r.path))
+      return { state: "in-bundle", path: r.path };
+    return r;
   }
 
   /**

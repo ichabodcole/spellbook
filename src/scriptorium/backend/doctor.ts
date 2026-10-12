@@ -23,7 +23,13 @@
 
 /** One thing worth looking at, and what to do about it. */
 export type Finding = {
-  kind: "original.missing" | "context.ghost" | "links.dangling";
+  kind:
+    | "original.missing"
+    | "context.ghost"
+    | "links.dangling"
+    | "links.unsupported"
+    | "links.unread"
+    | "links.partial";
   /** What it is about: a path, or an entry id. */
   subject: string;
   /** What the human reads. */
@@ -46,8 +52,29 @@ export type Checkup = {
   }[];
   /** Every doc node in every context entry, with whether the path exists. */
   nodes: readonly { entry: string; path: string; shown: string; exists: boolean }[];
-  /** Dangling link counts per mirrored entry. */
-  links: readonly { entry: string; label: string; dangling: number }[];
+  /**
+   * Link counts per mirrored entry: links that answer nothing, and links with a
+   * scheme nothing here opens (`op:doc/…`), with those schemes (#128).
+   */
+  links: readonly {
+    entry: string;
+    label: string;
+    dangling: number;
+    unsupported?: number;
+    schemes?: readonly string[];
+  }[];
+  /**
+   * Sets whose map could not be built, with why. ⛔ NEVER LEFT OUT: a set the
+   * doctor could not read is not a set with nothing wrong (round three of this
+   * cycle, when `graph` threw on this repo's docs/ and `doctor` said clean).
+   */
+  unread?: readonly { entry: string; label: string; error: string }[];
+  /**
+   * Sets whose map read only part of them: `read` documents of `of` (`null`
+   * when the set's listing stopped at the mirror's limit). Their link findings
+   * above cover only that part, so it is said.
+   */
+  partial?: readonly { entry: string; label: string; read: number; of: number | null }[];
 };
 
 /**
@@ -99,6 +126,46 @@ export function findings(c: Checkup): Finding[] {
     });
   }
 
+  // ⚠ A SEPARATE FINDING, NOT MORE DANGLING LINKS (#128). An `op:doc/<id>` link
+  // is one an export could not rewrite: it may want rewriting as a path, or
+  // keeping for the tool that reads it, and the human decides which.
+  for (const l of c.links) {
+    const n = l.unsupported ?? 0;
+    if (n <= 0) continue;
+    const schemes = (l.schemes ?? []).map((s) => `${s}:`).join(", ");
+    out.push({
+      kind: "links.unsupported",
+      subject: l.entry,
+      message: `${l.label} has ${n === 1 ? "1 link" : `${n} links`} with a scheme nothing here opens${
+        schemes ? ` (${schemes})` : ""
+      }.`,
+      fix: `dangling --entry ${l.entry}`,
+      count: n,
+    });
+  }
+
+  for (const u of c.unread ?? []) {
+    out.push({
+      kind: "links.unread",
+      subject: u.entry,
+      message: `${u.label}'s links could not be read (${u.error}), so its dangling links are unknown, and graph, dangling and backlinks fail on it too. Run the fix to see the failure; it is a defect worth reporting.`,
+      fix: `graph --entry ${u.entry}`,
+    });
+  }
+
+  for (const p of c.partial ?? []) {
+    const part = p.of === null ? `${p.read} documents` : `${p.read} of its ${p.of} documents`;
+    out.push({
+      kind: "links.partial",
+      subject: p.entry,
+      message: `${p.label}'s links were checked in ${part}${
+        p.of === null ? ", because the set lists only part of its folder" : ""
+      }, so its link findings may be short. Add a sub-folder as a set of its own (add <folder>), or hide folders that do not belong (hide <folder>); the fix shows the map's own hint.`,
+      fix: `graph --entry ${p.entry}`,
+      count: p.read,
+    });
+  }
+
   return out;
 }
 
@@ -121,6 +188,12 @@ export function summary(list: readonly Finding[]): string | null {
     "original.missing": ["missing file", "missing files"],
     "context.ghost": ["ghost in the context", "ghosts in the context"],
     "links.dangling": ["set with dangling links", "sets with dangling links"],
+    "links.unsupported": ["set with unsupported links", "sets with unsupported links"],
+    "links.unread": ["set whose links could not be read", "sets whose links could not be read"],
+    "links.partial": [
+      "set whose links were checked in part",
+      "sets whose links were checked in part",
+    ],
   };
   const parts = [...byKind].map(([kind, n]) => `${n} ${label[kind][n === 1 ? 0 : 1]}`);
   return `Startup check: ${parts.join(", ")} — run \`doctor\` for the detail.`;

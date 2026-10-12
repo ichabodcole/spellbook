@@ -15,6 +15,7 @@ import {
   mkdtempSync as mkdtempRaw,
   readdirSync,
   rmSync,
+  symlinkSync,
   utimesSync,
   writeFileSync,
 } from "node:fs";
@@ -22,6 +23,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  defaultWorkspace,
   docArg,
   flagsFor,
   parseTailSince,
@@ -593,4 +595,35 @@ test("fix 8 — --doc paths resolve against the CLI's own cwd; slugs and bare na
   expect(docArg("sub/ch3.md")).toBe(resolve("sub/ch3.md"));
   expect(docArg("./x.md")).toBe(resolve("x.md"));
   expect(docArg("opening")).toBe("opening");
+});
+
+test("E67 — one folder given is the workspace; a file, several entries or none keep the cwd", () => {
+  const dir = mkdtempSync(join(tmpdir(), "scriptorium-ws-"));
+  try {
+    mkdirSync(join(dir, "world"));
+    writeFileSync(join(dir, "a.md"), "# A\n");
+    expect(defaultWorkspace([join(dir, "world")], "/cwd")).toBe(join(dir, "world"));
+    expect(defaultWorkspace([join(dir, "a.md")], "/cwd")).toBe("/cwd");
+    expect(defaultWorkspace([join(dir, "world"), join(dir, "a.md")], "/cwd")).toBe("/cwd");
+    expect(defaultWorkspace([], "/cwd")).toBe("/cwd");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("E67 — the rule counts DISTINCT folders: `open world world` is one folder", () => {
+  const dir = mkdtempSync(join(tmpdir(), "scriptorium-ws-"));
+  try {
+    mkdirSync(join(dir, "world"));
+    mkdirSync(join(dir, "other"));
+    symlinkSync(join(dir, "world"), join(dir, "alias"));
+    const world = join(dir, "world");
+    expect(defaultWorkspace([world, world], "/cwd")).toBe(world);
+    // The same folder by another spelling (a symlink) is still one folder.
+    expect(defaultWorkspace([world, join(dir, "alias")], "/cwd")).toBe(world);
+    // Two distinct folders are still several entries.
+    expect(defaultWorkspace([world, join(dir, "other"), world], "/cwd")).toBe("/cwd");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
