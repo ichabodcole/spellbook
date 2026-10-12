@@ -7,7 +7,7 @@ description:
   #128, #130, #131)."
 tags: [scriptorium, links]
 status: draft
-lifecycle: active
+lifecycle: closed
 started: 2026-10-04
 appetite:
   Stop when the seven issues ship as ports of their Story Studio fixes and a
@@ -15,6 +15,7 @@ appetite:
   browser; anything that grows a design question is filed, not stretched.
 after: []
 generated: { by: claude-opus-5-5, at: 2026-10-04 }
+closed: 2026-10-12
 ---
 
 # Links tell the truth
@@ -75,6 +76,59 @@ Decisions as they are made, with the options not taken.
 
 ## Outcome
 
-_Written at close._
+Closed 2026-10-12. All seven issues shipped: five held at the first no-stake
+verifier, and #126 and #123 held after the fixes that followed. Four rounds of
+fixes went through three verifiers, on the shipped launcher and in Playwright.
+Gate 3293 pass, 0 fail. No data loss in any round.
+
+**Shipped.**
+
+- **#126, link extraction:** the renderer's own parser (micromark + GFM) finds
+  code and comments, so the CLI and the view agree on what a link is. 200,000
+  random documents found no disagreement outside HTML blocks. A link wrapped
+  around an image is an edge. A prose frontmatter value is not a reference, but
+  one starting `./`, `../` or `/` always is.
+- **#122:** a chat link resolves against its own origin (`link.open` with
+  `from: "chat"`), and a link may resolve into any open context entry, as the
+  kit's do. Toasts say "does not exist" with the path tried, or "outside this
+  session's context".
+- **#123:** a link to a folder is reported as a folder (new `folder` state).
+  `./v1.2` finds `v1.2.md` before a folder of that name.
+- **#124:** following a link reveals the document in the tree.
+- **#128:** `dangling` and the doctor report non-web schemes as `unsupported`.
+  `tel:`, `ftp:` and `javascript:` are reported too, because the surface strikes
+  them through.
+- **#130 (E67):** one distinct folder, counted by realpath, is the workspace.
+- **#131 (E69):** the trust badge shows only on a document with a `verified`
+  field.
+- **Not in Scope:** `graph` has no document cap (Cole, 2026-10-12, decision 10).
+  The mirror's 2000 bound says when it is hit with `truncated: {read, of}` and a
+  `hint`. New doctor findings `links.unread` and `links.partial`. A links cache
+  keyed on path, mtime, ctime, inode and size: on 550 files the first link verb
+  takes 1.6 s and later ones about 0.1 s. A shared build fix: every daemon is
+  built with `NODE_ENV` pinned to production. All other daemons rebuilt
+  byte-identical.
+
+**For the release note:** graph, backlinks and dangling output changes (#126,
+#128, `truncated`), `link.open` gains `from: "chat"`, links gain a `folder`
+state, `dangling` gains `unsupported`, doctor gains `links.unsupported`,
+`links.unread` and `links.partial`, and the default workspace changes (#130).
+`dist/server.js` grows from 792 KB to 1.81 MB (micromark).
+
+**Carried over:** the pre-existing defects the verifiers found, appended to
+[scriptorium-chat-and-toast-nits](../items/scriptorium-chat-and-toast-nits.md)
+(backlog). Among them: HTML-block links, reference-style links, absolute
+filesystem paths, pdocs `feature/<slug>` keys, and `metaCache` keyed on mtime
+only.
+
+**Learned.** "Port the fix" understated it. The kit had all five extraction
+defects round one found, so three rounds of extraction work were new design.
+Those fixes are worth porting back to Story Studio. Two of round three's own
+fixes (the prose rule and the mtime cache) were regressions that only the next
+verifier caught. A rule that skips input (prose is not a path, a stamp means
+unchanged) needs an adversarial pass, the same lesson as the last cycle's
+lenient comparison. Once a parser change has a performance cost, measure the
+obvious remedies before taking the cost to Cole: the per-file cache turned 3 s
+into 0.1 s.
 
 ## Sessions

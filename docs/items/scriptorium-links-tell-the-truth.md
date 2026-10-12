@@ -6,7 +6,7 @@ description:
   folders and non-web schemes are reported correctly, extraction ignores code,
   one opened folder is the workspace, no unverified badge from a missing field."
 status: stable
-lifecycle: active
+lifecycle: done
 id: 01a1082f-9c18-72db-ae92-4a38f7c639c5
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-04 }
@@ -25,31 +25,31 @@ behaviour and say where it differs.
 
 ## Definition of done
 
-- [ ] [#126](https://github.com/ichabodcole/spellbook/issues/126)
+- [x] [#126](https://github.com/ichabodcole/spellbook/issues/126)
       (story-studio@a57d65a) — `extractLinks` skips inline and indented code,
       escaped brackets and HTML comments, finds the link shapes the issue lists,
       and counts lines in linear time. Graph, backlinks and dangling agree with
       it.
-- [ ] [#122](https://github.com/ichabodcole/spellbook/issues/122)
+- [x] [#122](https://github.com/ichabodcole/spellbook/issues/122)
       (story-studio@3034d9c) — a link clicked in chat resolves against its own
       origin (`link.open` with `from: "chat"`), with or without a document open.
-- [ ] [#123](https://github.com/ichabodcole/spellbook/issues/123)
+- [x] [#123](https://github.com/ichabodcole/spellbook/issues/123)
       (story-studio@3034d9c) — a link to a folder resolves as a folder, not a
       missing `.md`.
-- [ ] [#124](https://github.com/ichabodcole/spellbook/issues/124)
+- [x] [#124](https://github.com/ichabodcole/spellbook/issues/124)
       (story-studio@3034d9c) — following a link into a collapsed folder reveals
       the document in the tree.
-- [ ] [#128](https://github.com/ichabodcole/spellbook/issues/128)
+- [x] [#128](https://github.com/ichabodcole/spellbook/issues/128)
       (story-studio@9b4ece7) — `dangling` and the doctor report links with a
       non-web scheme (`op:doc/…`) instead of dropping them.
-- [ ] [#130](https://github.com/ichabodcole/spellbook/issues/130)
+- [x] [#130](https://github.com/ichabodcole/spellbook/issues/130)
       (story-studio@cb47a04) — E67: `open` given exactly one folder makes it the
       workspace; several entries or a file keep the working directory; a
       restored session keeps its own; the handshake names the workspace.
-- [ ] [#131](https://github.com/ichabodcole/spellbook/issues/131)
+- [x] [#131](https://github.com/ichabodcole/spellbook/issues/131)
       (story-studio@a06a47f) — E69: the trust badge shows only on a document
       with a `verified` field.
-- [ ] SKILL.md says what changed for an agent; tests cover each; gate green; a
+- [x] SKILL.md says what changed for an agent; tests cover each; gate green; a
       no-stake verifier has driven the CLI changes on the shipped launcher and
       the surface changes in a real browser.
 
