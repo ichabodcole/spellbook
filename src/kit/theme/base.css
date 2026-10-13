@@ -36,7 +36,10 @@
    ────────────────────────────────────────────────────────────────────────── */
 
 /* The enter and exit animations the primitives use. Their presence is keyed on
-   Base UI's own open and closed data attributes. */
+   Base UI's own open and closed data attributes. bounty, grapevine and
+   scriptorium already wrote these in their own recipes, where they did nothing
+   until this import; their popups now animate, and that is kept (Cole,
+   2026-10-13). */
 @import "tw-animate-css";
 
 /* ⛔ THIS @source IS THE ONLY THING THAT PUTS src/kit/ IN FRONT OF TAILWIND.
