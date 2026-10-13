@@ -40,9 +40,16 @@ not adopt Story Studio's colours.
 - Rename `theme/mode.ts`'s `story-studio:theme` key and `theme/index.ts`'s
   `@story-studio/kit` specifier.
 
+**Ported and verified (2026-10-13).** Two rulings came out of the port. Cole
+kept the popup animations that `tw-animate-css` now turns on in bounty,
+grapevine and Scriptorium. The primitives' utility classes reach every spell
+that imports `base.css`, which is dead CSS until a spell adopts them; making
+that opt-in is filed as
+[kit-primitives-css-opt-in](./kit-primitives-css-opt-in.md).
+
 ## Definition of done
 
-- [ ] `src/kit/ui` holds the primitives and `src/kit/theme` the fuller theme,
+- [x] `src/kit/ui` holds the primitives and `src/kit/theme` the fuller theme,
       with Spellbook's palette kept
-- [ ] The happy-dom harness runs the ported component tests in the repo gate
-- [ ] The styling, CSS-scope and kit-adoption wards pass
+- [x] The happy-dom harness runs the ported component tests in the repo gate
+- [x] The styling, CSS-scope and kit-adoption wards pass
