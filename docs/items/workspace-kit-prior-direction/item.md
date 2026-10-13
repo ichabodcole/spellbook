@@ -6,7 +6,7 @@ description:
   is it superseded by what Story Studio built, an evolution to carry on top of
   the ported kit, or a direction still open?"
 status: stable
-lifecycle: active
+lifecycle: done
 id: 01a13662-6a31-7495-b914-eafa00335352
 kind: research
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
@@ -60,13 +60,13 @@ close, continue, or fold into Workspace Kit.
 
 ## Definition of done
 
-- [ ] A write-up that sorts each prior idea as superseded (Story Studio's
+- [x] A write-up that sorts each prior idea as superseded (Story Studio's
       version is as good or better), an evolution (carry it on top of the ported
       module, with where it attaches), or an open direction (outside Workspace
       Kit), each with evidence from both codebases
-- [ ] A recommendation for each of the four earlier documents (close, continue,
+- [x] A recommendation for each of the four earlier documents (close, continue,
       or fold in), with Cole's ruling
-- [ ] The evolutions are added to Workspace Kit's chat and context work, before
+- [x] The evolutions are added to Workspace Kit's chat and context work, before
       that cycle starts
 
 ## Related Documents

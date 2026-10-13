@@ -6,7 +6,7 @@ description:
   thinking into superseded, evolution or open direction against Story Studio's
   kit, with code evidence from both
 tags: [kit, chat, context, story-studio]
-status: draft
+status: stable
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
 ---
 
@@ -44,6 +44,29 @@ four earlier documents.
   SKILL text have to move with it.
 - **Three claims in the earlier documents do not hold against the code.** See
   [Claims checked](#claims-in-the-earlier-documents-checked-against-the-code).
+
+## Rulings (Cole, 2026-10-13)
+
+- **The four documents:** as recommended. Context and Chat Kit continues,
+  narrowed. `shared-context-and-chat-components` closes. `message-log-primitive`
+  closes, folded into Workspace Kit. `context-primitive` continues as the
+  cross-project standard.
+- **No `pointedDocs` mirror (finding 11).** An event goes to the agent only when
+  there is something for it to do. Context arrives with the message, not ahead
+  of it as ambient state.
+- **A human note or task stays out of the chat log (finding 6).** It already
+  reaches the agent as an event and has its own tab. The ported kit's toasts
+  tell the human it happened. If the log ever shows everything, it needs
+  filters, which is finding 7.
+- **`via` and `refs` go to both kits.** Story Studio takes both upstream (its
+  item `kit-message-via-refs`), so channels are no longer a divergence. The
+  shared shape is [Message via and refs](../message-via-and-refs.md): one
+  subject, and refs from a tree multi-select or "Add as reference". Atlas's
+  canvas selection stays its own `about.canvas` part.
+- **E65 goes back to Story Studio** as `kit-per-note-waiting`.
+
+These were reached in Scriptorium and on the grapevine channel `kit-parity` with
+Story Studio's agent.
 
 ## Question
 
@@ -578,14 +601,14 @@ changed.
 The port order is `lib`, `wire` → `theme`, `ui`, `cli` → `workspace` → `chat`,
 `context` → `document` → `shell`. Proposed:
 
-| Step in the port  | Carry with it                                                                                                                     | Why here                                                                                                                                                                                            |
-| ----------------- | --------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ui`              | Nothing required. The drop normaliser (12) may land after it, as Context and Chat Kit phase 1 work.                               | It needs the primitives, and it saves the ported sidebar from being a sixth copy.                                                                                                                   |
-| `workspace`       | E65's daemon half (13): `notesWaiting`, the `say` note guard. Scriptorium's agent-facing `message` shape change in acc and SKILL. | It is a Spellbook-ahead merge, like the links cycle, and it is daemon code.                                                                                                                         |
-| `chat`, `context` | E65's surface half (13). Store and label the app's `about` parts (5). Decide `entryIds` (11).                                     | They sit in the files being ported; doing them later means reopening them.                                                                                                                          |
-| After `shell`     | Channels (6), then facets and collapse (7), then the house-style entry (17). Mirror `pointedDocs` (11). Chip actions (5).         | Preferred, not required: the composer and `askDescribe` both live in the shell. The `via` field could land at `workspace`, defaulting to the composer, with each producer stamping as it is ported. |
-| After the re-base | The quiet-tail audit (14), sent back to Story Studio. The ambiguous-name refusal (4), sent back.                                  | Once Scriptorium runs on the whole stack (after `shell`, the last port step). Both are fixes to shared behaviour, better made once and upstream.                                                    |
-| Later, on `about` | The ref contract (1-3), as Context and Chat Kit phase 1.                                                                          | Cole's ruling: it comes after the port, on top.                                                                                                                                                     |
+| Step in the port  | Carry with it                                                                                                                             | Why here                                                                                                                                                                                            |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ui`              | Nothing required. The drop normaliser (12) may land after it, as Context and Chat Kit phase 1 work.                                       | It needs the primitives, and it saves the ported sidebar from being a sixth copy.                                                                                                                   |
+| `workspace`       | E65's daemon half (13): `notesWaiting`, the `say` note guard. Scriptorium's agent-facing `message` shape change in acc and SKILL.         | It is a Spellbook-ahead merge, like the links cycle, and it is daemon code.                                                                                                                         |
+| `chat`, `context` | E65's surface half (13). Store and label the app's `about` parts (5). Decide `entryIds` (11).                                             | They sit in the files being ported; doing them later means reopening them.                                                                                                                          |
+| After `shell`     | Channels (6), then facets and collapse (7), then the house-style entry (17). ~~Mirror `pointedDocs` (11)~~ (ruled out). Chip actions (5). | Preferred, not required: the composer and `askDescribe` both live in the shell. The `via` field could land at `workspace`, defaulting to the composer, with each producer stamping as it is ported. |
+| After the re-base | The quiet-tail audit (14), sent back to Story Studio. The ambiguous-name refusal (4), sent back.                                          | Once Scriptorium runs on the whole stack (after `shell`, the last port step). Both are fixes to shared behaviour, better made once and upstream.                                                    |
+| Later, on `about` | The ref contract (1-3), as Context and Chat Kit phase 1.                                                                                  | Cole's ruling: it comes after the port, on top.                                                                                                                                                     |
 
 One cost applies to every row: each evolution makes Spellbook's kit differ from
 Story Studio's, and the feature counts on "later Story Studio fixes port nearly
@@ -597,16 +620,9 @@ divergence; that is worth asking its side.
 
 ## Next steps
 
-1. Cole rules on the four documents and on the two product questions: whether a
-   human task and a note should appear in the log as channels (finding 6), and
-   whether pointed-at documents should be readable in `state` before a send
-   (finding 11).
-2. Add the evolutions to Workspace Kit's chat and context work, in the order
-   above, before that cycle starts. This is the item's third box, and it is not
-   done here: this investigation edited no other document.
-3. Add E65 to Workspace Kit's list of places where Spellbook is ahead.
-4. Correct Workspace Kit's "replaces its phase 2 … and phase 3" (it holds for
-   phase 3 only on the disk host) and "the agent sees nothing new" lines.
+All four are done (2026-10-13). Cole ruled (see Rulings). Workspace Kit now
+carries the evolutions in port order, lists E65 among the places Spellbook is
+ahead, and has its phase 3 and "the agent sees nothing new" lines corrected.
 
 ## What I could not determine
 
@@ -655,8 +671,8 @@ divergence; that is worth asking its side.
   talking about, rather than searching for a file he named in passing. An app
   that adds no refs behaves as today, so this extends the port and does not
   change it; it belongs to Workspace Kit's chat work, after the port.
-- Does Story Studio want channels upstream? If yes, they port both ways and the
-  divergence cost disappears.
+- ~~Does Story Studio want channels upstream?~~ **Answered: yes.** `via` and
+  `refs` port both ways, as [Message via and refs](../message-via-and-refs.md).
 
 ## Sources
 
