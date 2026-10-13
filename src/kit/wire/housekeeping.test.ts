@@ -121,6 +121,66 @@ describe("drainAndStop", () => {
     expect(order).toEqual(["tail-a", "tail-b", "ws", "stop:true"]);
   });
 
+  describe("the grace period", () => {
+    const stopOnly = { stop: () => {} };
+    const timed = async (opts: Parameters<typeof drainAndStop>[0]) => {
+      const t0 = performance.now();
+      await drainAndStop(opts);
+      return performance.now() - t0;
+    };
+    const tail = (): SseClients => new Set([{ close: () => {}, send: () => {} }]);
+
+    test("a connected tail gets the whole grace before it is closed", async () => {
+      let closedAt = Number.NaN;
+      const t0 = performance.now();
+      const clients: SseClients = new Set([
+        { close: () => (closedAt = performance.now() - t0), send: () => {} },
+      ]);
+      await drainAndStop({ server: stopOnly, clients, graceMs: 120, stopMs: 20 });
+      expect(closedAt).toBeGreaterThanOrEqual(110);
+    });
+
+    test("a connected socket, or a request still being answered, gets it too", async () => {
+      expect(
+        await timed({ server: stopOnly, sockets: [{ close: () => {} }], graceMs: 120, stopMs: 20 }),
+      ).toBeGreaterThanOrEqual(110);
+      expect(
+        await timed({ server: { ...stopOnly, pendingRequests: 1 }, graceMs: 120, stopMs: 20 }),
+      ).toBeGreaterThanOrEqual(110);
+    });
+
+    test("with nobody connected there is no wait at all", async () => {
+      expect(
+        await timed({ server: stopOnly, clients: new Set(), sockets: [], graceMs: 5_000 }),
+      ).toBeLessThan(1_000);
+      expect(
+        await timed({ server: { ...stopOnly, pendingRequests: 0 }, graceMs: 5_000 }),
+      ).toBeLessThan(1_000);
+    });
+
+    test("the stop race's timer is cleared once the stop wins", async () => {
+      const real = globalThis.setTimeout;
+      const live = new Set<unknown>();
+      const cleared = globalThis.clearTimeout;
+      globalThis.setTimeout = ((fn: () => void, ms?: number) => {
+        const t = real(fn, ms);
+        if (ms === 60_000) live.add(t); // the stop race's, not the grace's
+        return t;
+      }) as typeof setTimeout;
+      globalThis.clearTimeout = ((t: Parameters<typeof clearTimeout>[0]) => {
+        live.delete(t);
+        cleared(t);
+      }) as typeof clearTimeout;
+      try {
+        await drainAndStop({ server: stopOnly, clients: tail(), graceMs: 1, stopMs: 60_000 });
+        expect(live.size).toBe(0);
+      } finally {
+        globalThis.setTimeout = real;
+        globalThis.clearTimeout = cleared;
+      }
+    });
+  });
+
   test("⛔ A HANGING `server.stop` DOES NOT HANG TEARDOWN", async () => {
     // `server.stop(true)` awaits its connections and one wedged peer parks it
     // forever — which is how a 23-minute hang shipped once. The race is the
