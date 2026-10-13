@@ -5,7 +5,10 @@
 //
 // A test file pairs it with `beforeAll(installDom)` (a module evaluates once per
 // process, so a file that runs after another has removed the DOM registers it
-// again) and `afterAll(removeDom)`. Nothing registers a DOM for the whole run:
+// again) and `afterAll(removeDom)`. A file that throws while it loads never
+// reaches those hooks; `domGuard.ts`, the repo's test preload, removes the DOM
+// it left behind before the next test runs. Nothing registers a DOM for the
+// whole run:
 // the daemon's tests share the process and rely on Bun's own `fetch`,
 // `WebSocket`, `Request` and timers, which a DOM replaces. The happy-dom
 // registrator does not put every one of them back, so the globals are
@@ -83,8 +86,23 @@ function pinPlatform(platform: string | undefined): void {
   Object.defineProperty(globalThis.navigator, "platform", { value: platform, configurable: true });
 }
 
-/** Register the DOM (idempotent). */
+/**
+ * Whether a test file has claimed the registered DOM by calling `installDom`
+ * from its own `beforeAll`. The registration this module makes when it is
+ * imported is NOT a claim: a file that throws while it loads has registered the
+ * DOM and never reaches its hooks, so nothing of its own would remove it. A DOM
+ * still unclaimed when a test starts is therefore stale, and `domGuard.ts` (the
+ * repo's test preload) removes it before that test runs.
+ */
+let claimed = false;
+
+/** Register the DOM (idempotent) and claim it for the file that calls this. */
 export function installDom(): void {
+  register();
+  claimed = true;
+}
+
+function register(): void {
   if (!GlobalRegistrator.isRegistered) {
     const platform = (globalThis as { navigator?: Navigator }).navigator?.platform;
     snapshot = takeSnapshot();
@@ -99,6 +117,7 @@ export function installDom(): void {
 }
 
 export async function removeDom(): Promise<void> {
+  claimed = false;
   (globalThis as ActGlobal).IS_REACT_ACT_ENVIRONMENT = false;
   if (!GlobalRegistrator.isRegistered) return;
   await GlobalRegistrator.unregister();
@@ -125,4 +144,14 @@ export async function removeDom(): Promise<void> {
   snapshot = null;
 }
 
-installDom();
+/**
+ * What the preload guard reads. It sits on a global symbol so the guard never
+ * imports this module, since importing it registers a DOM. `domGuard.ts`
+ * spells the same key.
+ */
+(globalThis as Record<symbol, unknown>)[Symbol.for("spellbook.kit.registerDom")] = {
+  stale: () => GlobalRegistrator.isRegistered && !claimed,
+  remove: removeDom,
+};
+
+register();
