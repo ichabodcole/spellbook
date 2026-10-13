@@ -39,8 +39,8 @@ export function StatusStrip({
           )}
           <span
             className={cn(
-              "flex items-baseline gap-1",
-              s.priority === "low" && "hidden @[44rem]:flex",
+              "items-baseline gap-1",
+              s.priority === "low" ? "hidden @[44rem]:flex" : "flex",
               !s.loud && fade,
             )}
           >
