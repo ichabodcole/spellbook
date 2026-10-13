@@ -1,0 +1,28 @@
+---
+type: item
+title: Declare micromark-extension-gfm in package.json
+description:
+  Scriptorium imports micromark-extension-gfm in backend/links.ts and
+  surface/state/markdown.ts, but package.json does not declare it; it resolves
+  only transitively.
+status: draft
+lifecycle: triage
+id: 01a1371b-0c3d-7137-b719-2313811b2630
+kind: chore
+generated: { by: claude-opus-5-5, at: 2026-10-13 }
+tags: [deps, scriptorium]
+---
+
+# Declare micromark-extension-gfm in package.json
+
+`src/scriptorium/backend/links.ts:45` and
+`src/scriptorium/surface/state/markdown.ts` import `micromark-extension-gfm`,
+but the root `package.json` does not declare it. It resolves only because
+another dependency pulls it in, so an upgrade that drops it would break
+Scriptorium's link extraction without warning. Found by the `lib`/`wire` scoping
+for the kit-foundation cycle (2026-10-13).
+
+## Definition of done
+
+- [ ] `package.json` declares `micromark-extension-gfm` at the version now
+      resolved, and the gate passes
