@@ -149,7 +149,10 @@ the shell port instead, because the primitives converge on the kit's and the
 shell gives Scriptorium Atlas's layout by default. The look is then at what
 still differs, and it is not a redesign. Spellbook keeps its own colour theme.
 Before the shell port, its item lists what Scriptorium does better and must not
-lose.
+lose. So far that is E53 and E65's waiting marks, and E64's floating composer.
+Story Studio is porting the composer into its kit itself
+(`kit-floating-composer`) with a collapsed rail and a composer-closed state,
+which Scriptorium gains with the shell.
 
 ## Scope
 
@@ -179,6 +182,12 @@ lose.
 
 - Mind-mapper re-shaped as a second app on the workspace stack.
 - Canvas boards, if mind-mapper takes that shape.
+- Reaching a spell from your other devices over Tailscale (Cole, 2026-10-13: an
+  interesting idea, with no use case yet). Spells keep binding to loopback, and
+  `tailscale serve` proxies the tailnet name to them. The kit's origin and
+  `Host` guards would need an opt-in allow-list of extra names (for example
+  `SPELLBOOK_ALLOWED_HOSTS`). Opening a spell to the LAN directly is not the
+  path, because the daemons have no login.
 
 ## Technical Approach
 
