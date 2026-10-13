@@ -90,23 +90,9 @@
   --color-selected: #3f5f8f;
 }
 
-/* Two recipes reach past the utility layer with a raw var() (the secondary
-   button's color-mix hover); alias them so the hover is not dropped. */
-:root {
-  --foreground: var(--color-ink);
-  --secondary: var(--color-surface-raised);
-}
-
 /* The recipes' `dark:` arms follow the THEME ATTRIBUTE, not the OS — so a
    viewer who picked light on a dark OS gets the light arms, the kit's too. */
 @custom-variant dark (&:is([data-theme="dark"] *));
-
-@layer base {
-  button:not(:disabled),
-  [role="button"]:not(:disabled) {
-    cursor: pointer;
-  }
-}
 
 /* ─── The rendered document (E29) ─────────────────────────────────────────────
    `.md-prose` styles micromark's output, which is plain semantic HTML with no

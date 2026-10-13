@@ -152,12 +152,10 @@ export function VersionMenu({
                 stacked
                 className={cn(
                   // ⛔ THE ACTIVE ROW IS HIGHLIGHTED, NOT MUTED (Cole, E39).
-                  // `disabled` is the right SEMANTICS — you cannot switch to
-                  // where you already are — but shadcn renders it at 50%
-                  // opacity, which says "unavailable" when the thing it needs
-                  // to say is "you are here". The pointer-events-none half of
-                  // `disabled` is kept; the dimming is overridden, and the row
-                  // gains the accent instead.
+                  // It is not `disabled`: shadcn renders that at 50% opacity,
+                  // which says "unavailable" when the row needs to say "you
+                  // are here". Clicking it does nothing (see onClick), and
+                  // the row carries the selection accent instead.
                   v.n === active && "bg-selected/14 ring-1 ring-selected/30",
                 )}
               >

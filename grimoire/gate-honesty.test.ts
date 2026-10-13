@@ -316,6 +316,13 @@ import { join } from "node:path";
 // src/kit/theme/theme.test.ts, which the gate does run; the L1 aliases are
 // checked only for their var() shape, and the rest of the file is read by
 // nothing.
+//
+// ⛔ RE-DECLARED 2026-10-13 — 29/2,521 -> 29/2,507, from the object's own sum.
+// MEMBERSHIP DID NOT MOVE; one entry shrank:
+//     -14  src/scriptorium/surface/styles.css   403 -> 389
+// Scriptorium's surface moved onto src/kit/ui, and the two blocks base.css
+// now provides (the raw --foreground/--secondary aliases and the pointer
+// cursor rule) were deleted from the spell's sheet.
 const DECLARED_BLIND: Record<string, number> = {
   "src/digestify/surface/styles.css": 515,
   "src/digestify/surface/index.html": 26,
@@ -355,7 +362,7 @@ const DECLARED_BLIND: Record<string, number> = {
   // rules and so unreachable from a utility as well.
   "src/scriptorium/bunfig.toml": 2,
   "src/scriptorium/surface/index.html": 40,
-  "src/scriptorium/surface/styles.css": 403,
+  "src/scriptorium/surface/styles.css": 389,
 };
 
 type BlindReport = {
