@@ -13,6 +13,12 @@ generated: { by: claude-opus-5-5, at: 2026-09-25 }
 
 # Context and Chat Kit
 
+> **Partly superseded by [Workspace Kit](../workspace-kit/feature.md)** (Cole,
+> 2026-10-13). Phase 2 (the chat seam), phase 3 (the context list) and the
+> out-of-scope lines ruling out shadcn primitives in `kit/ui` and extracting
+> Scriptorium's sidebar now belong to that feature. Phase 1, the ref contract
+> and the drop intake, stays here.
+
 ## Overview
 
 Almost every spell has a context area and a chat bar, and each spell built its
