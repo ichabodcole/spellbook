@@ -13,11 +13,26 @@ generated: { by: claude-opus-5-5, at: 2026-09-25 }
 
 # Context and Chat Kit
 
-> **Partly superseded by [Workspace Kit](../workspace-kit/feature.md)** (Cole,
-> 2026-10-13). Phase 2 (the chat seam), phase 3 (the context list) and the
-> out-of-scope lines ruling out shadcn primitives in `kit/ui` and extracting
-> Scriptorium's sidebar now belong to that feature. Phase 1, the ref contract
-> and the drop intake, stays here.
+> **Continues, narrowed** (Cole, 2026-10-13, on the
+> [prior-direction write-up](../../items/workspace-kit-prior-direction/write-up.md)).
+> [Workspace Kit](../workspace-kit/feature.md) ports Story Studio's kit, and
+> with it most of this feature:
+>
+> - **Phase 1 stays, rewritten on top of the ported `MessageAbout`.**
+>   Scriptorium's adopter case becomes the ported `about`. The contract adds the
+>   quote anchor to the range union (finding 2), and the drop intake starts from
+>   Story Studio's `splitDropped` (finding 12). Roles and "one subject, plus
+>   refs" are settled by
+>   [Message via and refs](../../items/message-via-and-refs.md), shared with
+>   Story Studio.
+> - **Phase 2 is superseded by the ported chat.** Channels, facets, collapse and
+>   the chip changes move to Workspace Kit as evolutions.
+> - **Phase 3 is superseded only for the disk host.** The backend-agnostic list
+>   stays here as a gated phase.
+> - The out-of-scope lines ruling out shadcn primitives in `kit/ui` and
+>   extracting Scriptorium's sidebar no longer hold: Workspace Kit does both.
+> - The "no spell shows its refs as chips" line below was wrong when written:
+>   Story Studio's ported chat shows them.
 
 ## Overview
 

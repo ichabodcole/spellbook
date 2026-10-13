@@ -5,7 +5,7 @@ description:
   Investigating the communication log as a durable, first-class primitive for
   spell message management.
 status: stable
-lifecycle: active
+lifecycle: done
 id: 019fd391-49b0-73b3-a187-ab95cc24e035
 kind: research
 generated: { by: migrate-v2.10-to-v3.0, at: 2026-08-05 }
@@ -15,3 +15,10 @@ generated: { by: migrate-v2.10-to-v3.0, at: 2026-08-05 }
 
 The question this research asked, and where it got to. The answer is in
 [the write-up](./write-up.md).
+
+**Closed 2026-10-13 (Cole): folded into
+[Workspace Kit](../../features/workspace-kit/feature.md).** Story Studio's
+protocol settles the naming. The live content (channels, facets, collapse, and
+writing the paradigm into house style) becomes Workspace Kit evolutions, and the
+kit itself replaces the "extract when a third spell needs it" path. See the
+[prior-direction write-up](../workspace-kit-prior-direction/write-up.md).
