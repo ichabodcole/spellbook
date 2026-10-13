@@ -139,13 +139,17 @@ Write-up candidates Cole took "with B":
 The Compare minimap (#133) and the link-health strip (#129) are already filed
 and land on the ported panes.
 
-### First step: compare the interfaces
+### After the shell port: compare what is left
 
-Before porting the shell, run Atlas and Scriptorium side by side: header,
-sidebars, status strip and chat. Cole finds Atlas tighter and cleaner in places.
-Atlas also tells apart a connected session and an agent that is listening. The
-comparison decides what the ported shell keeps from each. It is a look, not a
-redesign.
+Run Atlas and the ported Scriptorium side by side: header, sidebars, status
+strip and chat. Cole finds Atlas tighter and cleaner in places, and Atlas tells
+a connected session apart from an agent that is listening. This was the first
+step, before any port. Cole agreed (2026-10-13) to port first and compare after
+the shell port instead, because the primitives converge on the kit's and the
+shell gives Scriptorium Atlas's layout by default. The look is then at what
+still differs, and it is not a redesign. Spellbook keeps its own colour theme.
+Before the shell port, its item lists what Scriptorium does better and must not
+lose.
 
 ## Scope
 
@@ -315,8 +319,8 @@ Scriptorium's re-base are the large part.
 
 **Kit foundation, with Scriptorium as the first adopter:**
 
-1. Compare Atlas and Scriptorium side by side. This informs the theme and
-   primitives now, and the shell later.
+1. ~~Compare Atlas and Scriptorium side by side.~~ Moved to after the shell port
+   (Cole, 2026-10-13).
 2. Port `lib` and `wire` with their fixes.
 3. Port `theme` and `ui`, with the happy-dom harness.
 4. Change the primitives rule in house style.
