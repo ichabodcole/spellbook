@@ -76,8 +76,51 @@ export function sameOrigin(req: Request, port: number | undefined): boolean {
  * of nine copies, and `if (x) return x;` is the shortest shape that cannot be
  * written wrong. 403 with a JSON body, because every spell's wire answers JSON
  * and a refusal that breaks that shape is a second bug.
+ *
+ * ⚠ PASS `boundHost`, the `hostname` the server was bound to (`srv.hostname`
+ * inside a Bun `fetch`), so a spell started with a non-loopback `--host` still
+ * answers its own CLI. Leaving it out is the loopback-only reading.
  */
-export function refuseForeignOrigin(req: Request, port: number | undefined): Response | null {
+export function refuseForeignOrigin(
+  req: Request,
+  port: number | undefined,
+  boundHost?: string,
+): Response | null {
+  if (!ownHost(req, port, boundHost))
+    return Response.json({ ok: false, error: "foreign host refused" }, { status: 403 });
   if (sameOrigin(req, port)) return null;
   return Response.json({ ok: false, error: "foreign origin refused" }, { status: 403 });
+}
+
+/**
+ * Was this request addressed to us by a name we answer to?
+ *
+ * ⛔ THE OTHER HALF OF THE GUARD: DNS REBINDING. A page at `evil.example` can
+ * point its own name at 127.0.0.1 once loaded; its requests are then SAME-ORIGIN
+ * to the browser, so a GET carries no `Origin` at all and `sameOrigin` waves it
+ * through. What the browser cannot hide is the name it used: `Host` says
+ * `evil.example:<port>`. So `Host` must be one of the names the daemon may be
+ * reached by: `127.0.0.1:<port>` or `localhost:<port>`, the same pair `ours`
+ * accepts, plus the address the server was bound to. An absent `Host` is no
+ * browser (HTTP/1.1 browsers always send one): allowed, like an absent
+ * `Origin`. An unknown port matches nothing, as in `ours`.
+ *
+ * ⚠ THE BOUND ADDRESS IS ACCEPTED because spells take `--host`, and a spell's
+ * CLI reaches its daemon at `http://<host>:<port>`, which is the `Host` it
+ * sends. Refusing it would break every non-loopback `--host` for the one caller
+ * this module exists to let through. It is matched LITERALLY: a wildcard bind
+ * (`0.0.0.0`) accepts `0.0.0.0:<port>`, not every name the machine answers to,
+ * so a rebinding page still cannot reach it through its own domain. An IPv6
+ * bind is matched in the bracketed form a `Host` header carries (`[::1]:<port>`).
+ */
+export function ownHost(req: Request, port: number | undefined, boundHost?: string): boolean {
+  const host = req.headers.get("host");
+  if (host === null) return true;
+  if (typeof port !== "number" || !Number.isFinite(port)) return false;
+  const names = [`127.0.0.1:${port}`, `localhost:${port}`];
+  if (boundHost) {
+    const bound = boundHost.toLowerCase();
+    names.push(bound.includes(":") ? `[${bound}]:${port}` : `${bound}:${port}`);
+  }
+  return names.includes(host.toLowerCase());
 }

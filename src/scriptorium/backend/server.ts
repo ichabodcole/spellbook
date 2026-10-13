@@ -1509,7 +1509,7 @@ export async function startDaemon(opts: StartOpts) {
       // inventory can go stale, and `grimoire/origin-guard-ward.test.ts` holds
       // the other eight daemons to the same line.
       {
-        const refused = refuseForeignOrigin(req, srv.port);
+        const refused = refuseForeignOrigin(req, srv.port, srv.hostname);
         if (refused) return refused;
       }
       const url = new URL(req.url);

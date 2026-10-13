@@ -1434,7 +1434,7 @@ async function main(argv: string[]): Promise<number> {
         // attaches its `Origin` and the CLI sends none. `src/kit/wire/origin.ts`
         // carries the reasoning and the demonstrated payload.
         {
-          const refused = refuseForeignOrigin(req, srv.port);
+          const refused = refuseForeignOrigin(req, srv.port, srv.hostname);
           if (refused) return refused;
         }
         const url = new URL(req.url);

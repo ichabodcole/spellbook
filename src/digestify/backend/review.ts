@@ -676,7 +676,7 @@ async function runReview(v: Invocation<Flag>["flags"]): Promise<number> {
         // `srv` was added to this signature for the guard; Bun has always
         // passed it.
         {
-          const refused = refuseForeignOrigin(req, srv.port);
+          const refused = refuseForeignOrigin(req, srv.port, srv.hostname);
           if (refused) return refused;
         }
         const url = new URL(req.url);
