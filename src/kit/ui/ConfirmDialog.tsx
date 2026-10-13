@@ -11,14 +11,16 @@ import { cn } from "../lib/cn";
  * which is the kit's own rule for what belongs here (see Dot).
  *
  * ⛔ THE CONFIRM BUTTON'S TONE IS THE CALLER'S, and this is the same rule Dot
- * states for its fill — here it is forced rather than chosen. The kit's L0 set
- * (../theme/base.css) carries only the five neutral roles this file paints
- * with; the tokens for danger and for a primary action are L1, a spell's own
- * vocabulary, where one spell's alias is another spell's brand slot. A kit
- * component that reached for either would ship one spell's palette into every
- * other one. So the structure, the neutrals and the behaviour are here, and
- * `confirmClassName` carries the spell's own tone for the action; a caller
- * that passes nothing gets a neutral button, readable in every theme.
+ * states for its fill. The kit's theme (../theme/base.css) now has a brand and
+ * a danger token, but only as defaults: each spell names its own accent
+ * (scriptorium's rubric, grapevine's grape, bounty's mammoth) and none of them
+ * maps it onto the kit's brand, so a default painted with the brand would show
+ * the kit's violet in every spell rather than the spell's own colour. Story
+ * Studio's copy of this file does default to its brand; that default is not
+ * taken here for that reason. So the structure, the neutrals and the behaviour
+ * are here, and `confirmClassName` carries the spell's own tone for the
+ * action; a caller that passes nothing gets a neutral button, readable in
+ * every theme.
  *
  * (No utility class is named in this file's prose that the code does not
  * place: kit comments are a Tailwind content source for every adopting spell —

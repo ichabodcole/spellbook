@@ -38,8 +38,9 @@ import { cn } from "../lib/cn";
  *
  * ⛔ NO L1 SHADCN ALIAS. Nothing here may reach a utility built on a shadcn
  * alias token — a fill, ink or rim carrying `--color-accent`, `--color-popover`
- * or `--color-muted` &c — see the header of ../theme/base.css for why that
- * would put a 95-site rename on this phase's critical path. (This rule used to
+ * or `--color-muted` &c. imago gives two of those names its own meaning (its
+ * brand and its dim ink), so such a dot would paint differently there, and
+ * renaming imago's tokens out of the way is a 95-site change. (This rule used to
  * spell those three utilities out, and thereby SHIPPED all three to every
  * adopting spell: the muted fill was a real rule in imago's stylesheet that
  * imago's own source never asked for. The alias TOKEN names are safe to write —
