@@ -23,8 +23,15 @@ reply-shape leftovers (`outcome-nouns-left-to-migrate`,
 `spell-refusal-envelope-nits`) touch the same CLIs and can join here if they are
 still open (Cole, 2026-10-13).
 
+It also replaces the hard-coded exit codes 124 and 130 that the `lib`/`wire`
+port left in other spells with the kit's `EXIT_IDLE_TIMEOUT` and
+`EXIT_CANCELLED`. They are in glamour, astrolabe, digestify, scriptorium and
+imago (`backend/server.ts` or `review.ts`). Bounty's `onFatal("SIGINT", 130)`
+stays a literal, because it is a signal exit.
+
 ## Definition of done
 
 - [ ] `src/kit/cli` gives per-verb help, and the spells on it use it
+- [ ] No spell hard-codes 124 or 130 where the kit's constant applies
 - [ ] acc passes for every spell whose schema changed, with any new known
       failure recorded as debt
