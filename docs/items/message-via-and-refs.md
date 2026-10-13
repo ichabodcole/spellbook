@@ -69,7 +69,15 @@ its open questions.
   part in "one kind at a time": changing the selection keeps them. They clear
   when the message is sent, as the subject does.
 - A ref whose `path` is the subject's own is dropped, and so is a duplicate
-  `path`.
+  `path`. Dedup is against the kit's subject only, never against an app's
+  `about` part: a file card can be both pointed at and a ref, because the two
+  say different things.
+- **An app's own pointing stays an app part.** Atlas's canvas selection is
+  `about.canvas` (`{ board, nodes }`, built in `messageAbout`), and it stays
+  there. Most cards have no file, the agent's canvas verbs need card ids, and a
+  selection is pointing, not a ref gesture (checked by Story Studio's agent,
+  2026-10-13). Refs fit Atlas through an explicit "Add as reference" on a
+  document row or a file card's menu, with `path` set to the card's file.
 - **The chip** shows the subject as it does now. The refs sit in a second,
   quieter row, each labelled by its role, each with its own X.
 - **Nothing reaches the agent before send.** Held refs live in the surface, like
@@ -85,8 +93,9 @@ its open questions.
 
 ## Definition of done
 
-- [ ] Story Studio's agent has checked this shape against Atlas, and Cole has
-      approved it.
+- [x] Story Studio's agent has checked this shape against Atlas (kit-parity,
+      2026-10-13; app parts stay app parts, folded in above).
+- [ ] Cole has approved the shape.
 - [ ] One change to the kit's `protocol.ts`, daemon and chat, with tests for:
   - `via` stored, defaulted for an old message, and carried on the tail;
   - an unknown `via` or `role` stored, with the advisory;
