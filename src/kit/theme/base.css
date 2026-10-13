@@ -1,30 +1,43 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   src/kit/theme/base.css — L0 BASE TOKENS for the shared kit.
+   src/kit/theme/base.css — the kit's theme: the tokens every spell surface
+   shares, in four layers (Story Studio's structure, Spellbook's palette).
 
-   THE LAYERS (R3's four-layer mechanism, proven in src/mind-mapper/surface):
-     L0  these tokens — the shared vocabulary, with a default value each
-     L1  a spell's shadcn aliases (--color-accent, --color-popover, …)
-     L2  a spell's own @theme, which OVERRIDES any L0 token by redeclaring it
-     L3  a mode override ([data-theme="light"]) on the same names
+   THE LAYERS:
+     L0  the kit's semantic tokens, each with a default value (this file)
+     L1  the shadcn aliases the kit's primitives read (--color-popover, ...),
+         each a var() onto an L0 token, so the mode block below is the only
+         palette switch (this file)
+     L2  a spell's own @theme, which OVERRIDES any L0 or L1 token by
+         redeclaring it
+     L3  the mode override, [data-theme="light"], on the same names
 
-   A spell imports this file AFTER `@import "tailwindcss"` and BEFORE its own
-   @theme. Later declarations win, so a spell that redeclares --color-surface
-   keeps its own value and one that does not inherits the kit's.
+   A spell imports this file AFTER `@import "tailwindcss" source(none)` and
+   BEFORE its own @theme. Later declarations win, so a spell that redeclares a
+   token keeps its own value and one that does not inherits the kit's. The
+   spells that import this sheet declare most of their L1 aliases themselves
+   (imago gives two of the names its own meaning: its brand and its dim ink),
+   so the kit's L1 defaults reach a spell only for a name it leaves undeclared.
 
-   ⛔ THE L0 SET IS THE INTERSECTION OF NAMES THE ROSTER ALREADY USES, NOT AN
-   INVENTION. Every token here is spelled the same way in at least two shipped
-   surfaces today. Where the roster DISAGREES on a name for one role
-   (mind-mapper's `ink-dim`/`ink-faint` vs imago's `muted`/`faint`;
-   `surface-raised` vs `surface-3`) the token is DELIBERATELY ABSENT — picking a
-   winner there is a rename across two surfaces, and this phase is relocation
-   plus a naming decision, not a migration. Add one when a second signal asks.
+   THE PALETTE IS SPELLBOOK'S, NOT STORY STUDIO'S. The five tokens this file
+   carried before the port (bg, surface, ink, edge, ink-faint) keep their
+   values in both modes. That palette is mind-mapper's: Tailwind's slate scale
+   in the dark, warm paper in the light. The tokens the primitives added are
+   DERIVED from it: mind-mapper's own value where it has one, and otherwise
+   the Tailwind hue that sits with slate, each named beside it below.
 
-   ⛔ NO L1 SHADCN ALIAS BELONGS HERE. `--color-accent` is imago's BRAND slot
-   and simultaneously mind-mapper's shadcn alias (`var(--color-edge)`) — the two
-   meanings collide, and R3 resolves it by renaming imago's brand out of the
-   shadcn namespace across 95 sites. A kit component that touched `bg-accent`
-   would drag that rename onto this phase's critical path. It does not.
+   WHAT IS LEFT OUT OF STORY STUDIO'S SHEET, ON PURPOSE:
+     • the font tokens: declaring the sans family here would change the body
+       font of every spell that imports this sheet;
+     • the dark variant: Story Studio keys it on the theme attribute, and a
+       spell on the default variant (digestify follows the OS) would lose its
+       dark arms. A spell that adopts the primitives declares its own;
+     • the rendered-markdown, highlight, flash and scrollbar rules: they
+       belong to the chat, document and shell modules, and land with them.
    ────────────────────────────────────────────────────────────────────────── */
+
+/* The enter and exit animations the primitives use. Their presence is keyed on
+   Base UI's own open and closed data attributes. */
+@import "tw-animate-css";
 
 /* ⛔ THIS @source IS THE ONLY THING THAT PUTS src/kit/ IN FRONT OF TAILWIND.
    Resolved relative to THIS FILE, not to the importer — verified empirically,
@@ -99,27 +112,88 @@
 @theme {
   --color-bg: #020617;
   --color-surface: #0f172a;
+  /* mind-mapper's raised surface. */
+  --color-surface-raised: #16213b;
   --color-ink: #e2e8f0;
+  /* Slate 400, mind-mapper's dim ink. */
+  --color-ink-dim: #94a3b8;
   --color-edge: #1e293b;
-  /* Tertiary ink. THIS IS THE NAMING DECISION the phase called for, and it is
-     the one token here that a consumer does NOT already define: the roster
-     spells this role two ways — mind-mapper `ink-faint`, imago `faint`. The kit
-     takes mind-mapper's spelling because it is the `ink-*` family's third
-     member and the family already reads as a scale. imago keeps its own
-     `--color-faint` untouched (renaming 
-     it is a migration, not this phase) and simply INHERITS this one.
-     ⛔ That inheritance is what makes this file load-bearing rather than
-     decorative: every other token here is overridden by both consumers, so
-     this is the only one whose absence a consumer would feel. */
+  /* Tertiary ink. The roster spells this role two ways (mind-mapper
+     `ink-faint`, imago `faint`); the kit takes mind-mapper's spelling because
+     it is the third member of the ink family. imago keeps its own name and
+     inherits this one. */
   --color-ink-faint: #64748b;
+  /* The brand slot: the primary action, the focus ring, a drop target. Violet
+     400, mind-mapper's thread tier, with the page background on it. */
+  --color-brand: #a78bfa;
+  --color-on-brand: #020617;
+  /* Amber 500, mind-mapper's attention. */
+  --color-attention: #f59e0b;
+  /* Red 400. */
+  --color-danger: #f87171;
+  /* The diff needs a second hue against danger: green 400 and rose 400. */
+  --color-added: #4ade80;
+  --color-removed: #fb7185;
+  /* Selection asserts nothing: not a warning, not a success. Blue 400. */
+  --color-selected: #60a5fa;
+  /* What was just pointed at: its own hue, so it never reads as a selection
+     or a note. Fuchsia 400. */
+  --color-pointed: #e879f9;
+
+  /* L1: the names the kit's primitives consume. */
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-ink);
+  --color-primary: var(--color-brand);
+  --color-primary-foreground: var(--color-on-brand);
+  --color-secondary: var(--color-surface-raised);
+  --color-secondary-foreground: var(--color-ink);
+  --color-muted: var(--color-surface-raised);
+  --color-muted-foreground: var(--color-ink-dim);
+  --color-accent: var(--color-edge);
+  --color-accent-foreground: var(--color-ink);
+  --color-destructive: var(--color-danger);
+  --color-border: var(--color-edge);
+  --color-input: var(--color-edge);
+  --color-ring: var(--color-brand);
+  --color-popover: var(--color-surface-raised);
+  --color-popover-foreground: var(--color-ink);
 }
 
-/* L3 — the mode override, on the same names. A spell that redeclares a token
-   in its OWN [data-theme="light"] block wins here too, by the same rule. */
+/* L3: the light palette, as token overrides. Unlayered, so it beats @theme's
+   layered declarations without a specificity fight. A spell that redeclares a
+   token in its OWN [data-theme="light"] block wins here too, by the same rule.
+   The derived tokens take mind-mapper's light value where it has one, and
+   otherwise the 700 step of the same Tailwind hue. */
 [data-theme="light"] {
+  color-scheme: light;
   --color-bg: #f7f6f3;
   --color-surface: #fdfcfa;
+  --color-surface-raised: #efece6;
   --color-ink: #1e293b;
+  --color-ink-dim: #475569;
   --color-edge: #ddd8cf;
   --color-ink-faint: #8b93a1;
+  --color-brand: #7c3aed;
+  --color-on-brand: #ffffff;
+  --color-attention: #b45309;
+  --color-danger: #b91c1c;
+  --color-added: #15803d;
+  --color-removed: #be123c;
+  --color-selected: #1d4ed8;
+  --color-pointed: #a21caf;
+}
+
+/* Two recipes reach past the utility layer with a raw var(); alias them. */
+:root {
+  --foreground: var(--color-ink);
+  --secondary: var(--color-surface-raised);
+}
+
+/* Base UI renders its buttons without a pointer cursor, and the recipes rely
+   on this rule for it. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
 }
