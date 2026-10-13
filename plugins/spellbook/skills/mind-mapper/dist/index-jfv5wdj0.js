@@ -11635,7 +11635,8 @@ var import_react23 = __toESM(require_react(), 1);
 
 // src/kit/lib/cn.ts
 function cn(...inputs) {
-  return inputs.filter(Boolean).join(" ");
+  const join = (state) => inputs.map((i) => typeof i === "function" ? i(state) : i).filter(Boolean).join(" ");
+  return inputs.some((i) => typeof i === "function") ? (state) => join(state) : join();
 }
 
 // src/kit/ui/Dot.tsx
