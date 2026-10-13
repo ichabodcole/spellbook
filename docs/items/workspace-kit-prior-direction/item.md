@@ -17,8 +17,8 @@ from: feature/workspace-kit
 
 # Where our messaging and context direction meets Story Studio's kit
 
-[Workspace Kit](../features/workspace-kit/feature.md) ports Story Studio's chat
-and context modules as they are. Spellbook was already heading somewhere
+[Workspace Kit](../../features/workspace-kit/feature.md) ports Story Studio's
+chat and context modules as they are. Spellbook was already heading somewhere
 similar, and some of that thinking may go further than what Story Studio built.
 Cole (2026-10-13): Story Studio's improvements are real, but they don't
 necessarily supersede our direction for messaging and context. Before the
@@ -26,17 +26,17 @@ workspace stack's chat and context modules are ported, map where the two meet.
 
 **Spellbook's prior thinking to weigh:**
 
-- [Context and Chat Kit](../features/context-and-chat-kit/feature.md): the ref
-  contract (pinned/live, range union, role, resolution that refuses with
+- [Context and Chat Kit](../../features/context-and-chat-kit/feature.md): the
+  ref contract (pinned/live, range union, role, resolution that refuses with
   candidates), drop intake, and the gated headless context list.
-- [Shared context and chat components](./shared-context-and-chat-components/write-up.md):
+- [Shared context and chat components](../shared-context-and-chat-components/write-up.md):
   the census, ref chips in messages, telling gestures apart from typed messages,
   the UI not knowing the backend (disk, db, inline), the two channels _selected_
   and _active_, adapter capabilities.
-- [The communication log as a primitive](./message-log-primitive/write-up.md):
+- [The communication log as a primitive](../message-log-primitive/write-up.md):
   mind-mapper's `messageChannel.ts`, with channels, gesture provenance, `ground`
   and facets; the naming questions (`who`/`role`, `kind`).
-- [Context as a first-class primitive](./context-primitive/write-up.md): a
+- [Context as a first-class primitive](../context-primitive/write-up.md): a
   cross-project standard for context documents (`rel`, OKF, where the standard
   lives, the agent's cheap map).
 - House canon: the message-surface paradigm, ambient vs intent, one state with
@@ -71,4 +71,4 @@ close, continue, or fold into Workspace Kit.
 
 ## Related Documents
 
-- [Workspace Kit](../features/workspace-kit/feature.md)
+- [Workspace Kit](../../features/workspace-kit/feature.md)

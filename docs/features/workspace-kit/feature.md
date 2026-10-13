@@ -254,6 +254,13 @@ Scriptorium's re-base are the large part.
   workspace stack, and the canvas boards come back into scope. That decision
   belongs to mind-mapper, not to this feature. Until then, mind-mapper takes the
   foundation tier only.
+- **What the chat and context modules carry beyond the port.** Spellbook's
+  earlier thinking may go further than Story Studio in places: the message log's
+  channels and gesture provenance, ref chips, a context list that does not know
+  its backend, a cross-project context standard.
+  [An investigation](../../items/workspace-kit-prior-direction/item.md) sorts
+  each idea into superseded, an evolution to carry on top, or an open direction.
+  It gates the workspace stack's chat and context modules, not the first cycle.
 - **Where document profiles' schemas live.** Atlas uses `_meta/profiles/`.
 - **The three unchecked Atlas items:**
   - `kit-watcher-missed-write-macos`
