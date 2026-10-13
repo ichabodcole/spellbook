@@ -629,12 +629,32 @@ divergence; that is worth asking its side.
 
 ## Open questions
 
-- Should `via` be free text with a fallback, as mind-mapper's channel is, or a
-  closed union each host extends? Mind-mapper chose open with an advisory on
-  unknown values.
-- Should the composer be able to hold a selection and pointed-at documents at
-  once? Story Studio rules it out on purpose ("a message is never about two
-  things at once"); imago needs it.
+- ~~Should `via` be free text with a fallback, as mind-mapper's channel is, or a
+  closed union each host extends?~~ **Answered (Cole, 2026-10-13): both, from
+  one list.** The stored message carries `via: string`, and the kit never
+  rejects or drops a value. The kit exports its own `as const` list of channels,
+  and each host extends it with its own. That one list gives the host a union
+  type for its code (autocomplete, and an exhaustive renderer), and the daemon
+  checks incoming values against it, answering an unknown one with mind-mapper's
+  advisory: stored as sent, here are the known channels, add it if it is real. A
+  type cannot check the wire (the agent's `--via`, old logs), and a
+  host-extended union in the stored shape would thread a type parameter through
+  every chat component for checking only the renderer needs.
+- ~~Should the composer be able to hold a selection and pointed-at documents at
+  once?~~ **Answered (Cole, 2026-10-13): one subject, plus references.** Story
+  Studio's rule stays for the subject: a message is about one thing (a
+  selection, or the pointed-at document), so "fix this" is never ambiguous.
+  `about` gains an optional `refs` list, `{ doc, path, role?, text? }[]`, for
+  things the message draws on: other documents, images, imago's reference set. A
+  ref is added by its own gesture (imago's ref toggle, "add as reference", a
+  multi-select where the active document is the subject and the rest are refs),
+  never by pointing alone. `role` is open text with a host list, as `via` is
+  (imago `reference`; StoryLoom `guidance`, `adherence`), which is where finding
+  3 lands. The chip shows the subject as now and the refs in a quieter row
+  labelled by role. The point is that the agent already holds what Cole is
+  talking about, rather than searching for a file he named in passing. An app
+  that adds no refs behaves as today, so this extends the port and does not
+  change it; it belongs to Workspace Kit's chat work, after the port.
 - Does Story Studio want channels upstream? If yes, they port both ways and the
   divergence cost disappears.
 
