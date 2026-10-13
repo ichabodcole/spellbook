@@ -58,8 +58,18 @@ export const EXIT_FOR: Record<ErrKind, number> = {
   conflict: 6, // a precondition failed
 };
 
+// Session endings are outcomes, not failures, and stay outside the taxonomy:
+// an agent reads them as "the session ended this way", not "the verb broke".
+// The numbers are the shell's (`timeout`'s 124, SIGINT's 128 + 2), so a
+// wrapper that already knows them needs no table.
+/** A daemon that closed itself after its idle timeout. An outcome, not a failure. */
+export const EXIT_IDLE_TIMEOUT = 124;
+/** The user cancelled. An outcome, not a failure. */
+export const EXIT_CANCELLED = 130;
+
 /**
- * Extra fields a failure may carry. `hint` is prose for a human or an agent;
+ * Extra fields a failure may carry. `token` is a stable machine-readable name
+ * for the cause (`no_session`), `hint` is prose for a human or an agent;
  * `choices` enumerates what WOULD have been accepted.
  *
  * ⚠ **`server` ARRIVED IN PHASE 2, AND IT IS A FINDING ABOUT THIS MODULE.** The
@@ -76,7 +86,7 @@ export const EXIT_FOR: Record<ErrKind, number> = {
  * arbitrary context: the whole value of the field is that a caller can trust it
  * is what the other side actually said.
  */
-export type ErrExtra = { hint?: string; choices?: string[]; server?: unknown };
+export type ErrExtra = { token?: string; hint?: string; choices?: string[]; server?: unknown };
 
 /** The verb under execution, so an envelope can name it. Set once by `main`. */
 let currentCommand: string | null = null;
@@ -104,6 +114,8 @@ export function errorEnvelope(kind: ErrKind, message: string, extra?: ErrExtra):
       // Only rate limits are worth retrying unchanged; nothing the house raises is.
       retryable: false,
       message,
+      // Only present when given, so an envelope without one keeps its bytes.
+      ...(extra?.token ? { token: extra.token } : {}),
       ...(extra?.hint ? { hint: extra.hint } : {}),
       ...(extra?.choices ? { choices: extra.choices } : {}),
       // Last, so a spell that already emitted this key keeps its byte order.

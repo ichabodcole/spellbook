@@ -4976,7 +4976,7 @@ describe("P1e — Bun.serve carries an idleTimeout the heartbeat can survive", (
       "resolveDone({ code, reason: reason as CloseReason })",
       'resolveDone({ code: 0, reason: "close" })',
       'resolveDone({ code: 0, reason: "user" })',
-      'resolveDone({ code: 124, reason: "timeout" })',
+      'resolveDone({ code: EXIT_IDLE_TIMEOUT, reason: "timeout" })',
     ]) {
       expect(src).toContain(entry);
     }

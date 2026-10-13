@@ -50,7 +50,8 @@
 // the daemon keeps.
 //
 // Exit codes: 0 on any clean dismiss (the human's "Close board" → reason "user",
-// or an agent cli.ts close → reason "close"), 2 bad args, 124 idle timeout. The
+// or an agent cli.ts close → reason "close"), 2 bad args, 124 idle timeout
+// (`EXIT_IDLE_TIMEOUT`, `kit/wire/errors.ts`). The
 // board is a conjuration — there's no "cancel"/130 discard path.
 
 import {
@@ -88,6 +89,7 @@ import type {
 } from "../../../plugins/spellbook/skills/bounty/shared/types";
 import { SIZE_MINUTES, VALID_STATUS } from "../../../plugins/spellbook/skills/bounty/shared/types";
 import { unlinkIfMatches, writeFileAtomic } from "../../kit/wire/discovery.ts";
+import { EXIT_IDLE_TIMEOUT } from "../../kit/wire/errors.ts";
 import { createEventLog } from "../../kit/wire/eventLog.ts";
 import { drainAndStop, shouldIdleClose, startHousekeeping } from "../../kit/wire/housekeeping.ts";
 import { refuseForeignOrigin } from "../../kit/wire/origin.ts";
@@ -2621,7 +2623,7 @@ async function main(argv: string[]): Promise<number> {
         touch();
         return;
       }
-      resolveDone({ code: 124, reason: "timeout" });
+      resolveDone({ code: EXIT_IDLE_TIMEOUT, reason: "timeout" });
     },
     snapshot: {
       dirty: () => snapDirty,
