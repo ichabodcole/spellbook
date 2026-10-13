@@ -29,10 +29,9 @@ on a foundation that has already been used.
 
 ## Scope
 
-The feature's First Cycle, one item per step:
+The feature's First Cycle, one item per step. The Atlas comparison moved to
+after the shell port (Cole, 2026-10-13):
 
-- **[item/kit-atlas-scriptorium-comparison](../items/kit-atlas-scriptorium-comparison.md)**
-  — the side-by-side look, with its theme calls fed into the port.
 - **[item/kit-port-lib-wire](../items/kit-port-lib-wire.md)** — `lib` and
   `wire`, merged with Spellbook's ahead-of-kit fixes.
 - **[item/kit-port-theme-ui](../items/kit-port-theme-ui.md)** — the primitives,
@@ -46,9 +45,10 @@ The feature's First Cycle, one item per step:
 
 Out of scope, deliberately: the workspace stack (`workspace`, `chat`, `context`,
 `document`, `shell`), which is next cycle, and with it E71, the evolutions, the
-`via`/`refs` change and the open questions about profiles and the Atlas items.
-Other spells move onto the kit only when they opt in. The planned
-[reply-shape leftovers](./2026-09-reply-shape-leftovers.md) stay planned.
+`via`/`refs` change, the Atlas comparison and the open questions about profiles
+and the Atlas items. Other spells move onto the kit only when they opt in. The
+planned [reply-shape leftovers](./2026-09-reply-shape-leftovers.md) stay
+planned.
 
 ## Outcome
 
