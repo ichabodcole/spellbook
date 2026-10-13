@@ -305,6 +305,16 @@ import { join } from "node:path";
 // an `@source not "../cli"` line and the note that has to sit with it: the kit
 // CLI registry's prose was being scanned for class candidates, and one of its
 // words became a utility in three spells' shipped stylesheets.
+//
+// ⛔ RE-DECLARED 2026-10-13 — 29/2,444 -> 29/2,518, from the object's own sum.
+// MEMBERSHIP DID NOT MOVE; one entry grew:
+//     +74  src/kit/theme/base.css   125 -> 199
+// the kit-foundation port of Story Studio's theme: the L0 tokens the
+// primitives need (each derived from Spellbook's palette), the L1 shadcn
+// aliases, the light block for them, the animation import and the
+// pointer-cursor rule. The colour values are pinned by src/kit/theme/
+// theme.test.ts, which the gate does run, so the palette half of this file is
+// checked by a test even though the gate cannot parse the file.
 const DECLARED_BLIND: Record<string, number> = {
   "src/digestify/surface/styles.css": 515,
   "src/digestify/surface/index.html": 26,
@@ -316,7 +326,7 @@ const DECLARED_BLIND: Record<string, number> = {
   "src/magpie/surface/styles.css": 186,
   "src/imago/surface/styles.css": 167,
   "plugins/spellbook/skills/magpie/scripts/remove.py": 145,
-  "src/kit/theme/base.css": 125,
+  "src/kit/theme/base.css": 199,
   "src/astrolabe/surface/styles.css": 104,
   "src/astrolabe/surface/index.html": 35,
   "src/mind-mapper/surface/index.html": 52,
