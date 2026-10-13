@@ -23,6 +23,9 @@ and Atlas tells a connected session apart from an agent that is listening. The
 comparison is a look, not a redesign. It informs the theme and primitives this
 cycle, and what the ported shell keeps from each next cycle.
 
+**Spellbook keeps its own colour theme** (Cole, 2026-10-13). The comparison
+looks at layout, density and behaviour, not at Story Studio's palette.
+
 ## Definition of done
 
 - [ ] A write-up with screenshots of both apps, area by area, each with a call:
