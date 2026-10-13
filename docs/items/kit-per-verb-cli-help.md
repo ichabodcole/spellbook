@@ -16,7 +16,7 @@ parent: feature/workspace-kit
 
 # Per-verb CLI help, with an acc re-run
 
-Step 6 of [Workspace Kit](../features/workspace-kit/feature.md)'s first cycle.
+Part of [Workspace Kit](../features/workspace-kit/feature.md)'s first cycle.
 Port Story Studio's per-verb help into `src/kit/cli`. It changes each adopting
 CLI's schema, so acc is re-run for every spell whose schema changes. The
 reply-shape leftovers (`outcome-nouns-left-to-migrate`,

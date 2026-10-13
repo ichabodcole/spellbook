@@ -16,7 +16,7 @@ parent: feature/workspace-kit
 
 # Port lib and wire from Story Studio's kit
 
-Step 2 of [Workspace Kit](../features/workspace-kit/feature.md)'s first cycle.
+Part of [Workspace Kit](../features/workspace-kit/feature.md)'s first cycle.
 Port Story Studio's `lib` and `wire` into `src/kit`: the detached `startDaemon`,
 `stdinWaiting`, reply hints, the faster stop that skips the drain wait when
 nothing is open, and the new exit codes. Merge with the places Spellbook is
