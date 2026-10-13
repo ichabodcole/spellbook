@@ -27,6 +27,19 @@ Story Studio's theme structure (the fuller `base.css`, its token layers, and
 what the primitives need from them) and keeps Spellbook's palette in it. It does
 not adopt Story Studio's colours.
 
+**From the `lib`/`wire` scoping (2026-10-13):**
+
+- The harness is Story Studio's `lib/afterIo`, `lib/registerDom` and
+  `lib/testDom`. It needs `@happy-dom/global-registrator`, which is a new dev
+  dependency. Port `testDom` without its re-export of `testImages`, which only
+  the workspace stack uses.
+- Leave out `ui`'s `ImageViewer`, `ImageDescription` and `usePaneSize`, along
+  with their barrel lines. Only the shell uses them, and they would pull in
+  about 900 lines of workspace-stack `lib` (`docFormat`, `bundles`, `sidecar`,
+  `viewport`).
+- Rename `theme/mode.ts`'s `story-studio:theme` key and `theme/index.ts`'s
+  `@story-studio/kit` specifier.
+
 ## Definition of done
 
 - [ ] `src/kit/ui` holds the primitives and `src/kit/theme` the fuller theme,
