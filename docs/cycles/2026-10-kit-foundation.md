@@ -5,7 +5,7 @@ description:
   Port Story Studio's kit foundation (lib, wire, theme, ui, cli) into
   Spellbook's kit, with Scriptorium as its first adopter.
 tags: [kit, scriptorium, story-studio]
-status: draft
+status: stable
 lifecycle: active
 started: 2026-10-13
 appetite:
