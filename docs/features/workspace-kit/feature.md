@@ -105,9 +105,12 @@ Its names are translated:
 - the app home is reconciled with `$SCRIPTORIUM_HOME`.
 
 Each module is also merged with the places where Spellbook is ahead: the
-links-cycle extraction fixes, `tailHandoff`'s `by: human`, and the registry's
-`--` warning. Spellbook's `Dot` and `ConfirmDialog` stay where they read ahead
-of Story Studio's.
+links-cycle extraction fixes, `tailHandoff`'s `by: human`, the registry's `--`
+warning, and E65 (a note shows that it is with the agent: `notesWaiting` and the
+`say` note guard in `workspace`, the badge and "Ask the agent" in
+`chat/NotesPanel.tsx`). Story Studio is taking E65 back as its own item,
+`kit-per-note-waiting`. Spellbook's `Dot` and `ConfirmDialog` stay where they
+read ahead of Story Studio's.
 
 ### What arrives with it
 
@@ -189,28 +192,50 @@ redesign.
     inside the recipe.
   - It gains the opt-out: a spell that does not take the kit's UI keeps its own
     `surface/ui/` under the current rule.
-- **Context and Chat Kit is partly superseded** (Cole, 2026-10-13):
-  - This feature replaces its phase 2 (the chat seam) and phase 3 (the context
-    list, which was gated on a real consumer; Scriptorium on the stack is that
-    consumer).
+- **Context and Chat Kit continues, narrowed** (Cole, 2026-10-13):
+  - This feature replaces its phase 2 (the chat seam). It replaces phase 3 (the
+    context list) only for the disk host: the backend-agnostic list stays there
+    as a gated phase.
   - It also drops that feature's two out-of-scope lines: no shadcn primitives in
     `kit/ui`, and no extraction of Scriptorium's sidebar.
-  - Its phase 1 stays.
-  - Related active items need a ruling before the first cycle starts:
-    `shared-context-and-chat-components`, `context-primitive` and
-    `message-log-primitive`. Each either folds into this feature or is dropped.
+  - Its phase 1, the ref contract and drop intake, stays, rewritten on top of
+    the ported `about`.
+  - Of the related research, `shared-context-and-chat-components` and
+    `message-log-primitive` are closed (the latter folded into this feature),
+    and `context-primitive` continues outside it as the cross-project standard.
 - **The chat's refs port as they are** (Cole, 2026-10-13). Story Studio's
   message `about` and `HeldSelection` come with the chat module unchanged:
   - `about` is Scriptorium's selection (pinned to a version, a line range), plus
     `entryIds`, `docs` and `noteId`.
   - The selection rules come with their tests: one held selection, which the
     chip is, and a selection that dies when its text leaves the screen.
-  - The agent sees nothing new.
+  - The agent's message shape changes: Scriptorium's `selection`, `active` and
+    `note` on a human message become the ported `about`. Scriptorium's SKILL
+    text and acc config are updated with the `workspace` port.
   - The broader contract (Context and Chat Kit phase 1) comes later and treats
     `about` as the workspace stack's case of it: a selection is a pinned ref
     with a line range, and tree rows and whole documents are refs without one.
   - That contract is what widens refs to other media: images, bundles and types
     a spell defines. Links to headings give its `#fragment` range a first user.
+- **Evolutions carried on top**, from the
+  [prior-direction investigation](../../items/workspace-kit-prior-direction/write-up.md),
+  in port order:
+  - `workspace`: E65's daemon half, and the agent-facing `about` change above.
+  - `chat`, `context`: E65's surface half; store and label an app's own `about`
+    parts on the chip; wire `entryIds` to a gesture or remove it.
+  - After the port: [`via` and `refs`](../../items/message-via-and-refs.md), one
+    change shared with Story Studio, landing in its kit first. Every message
+    says which gesture sent it, and a message keeps one subject and can carry
+    refs (a tree multi-select, or "Add as reference").
+  - After `shell`: facets and collapse in the log, once `via` exists; chip
+    actions; the paradigm's house-style entry.
+  - After the re-base: the quiet-tail audit and the ambiguous-name refusal, sent
+    back to Story Studio.
+  - **Not carried** (Cole, 2026-10-13): no daemon mirror of `pointedDocs`.
+    Context arrives with the message, not ahead of it as ambient state. A human
+    note or task does not appear in the chat log: it already reaches the agent
+    as an event and has its own tab. The ported kit's toasts tell the human it
+    happened. If the log ever shows everything, it needs filters.
 - **Ports run as delegated phases.** Each runs on a cycle branch with an
   implementer and a no-stake verifier who runs the claims. That loop is the
   write-up's delegated-phase playbook, filed separately.
@@ -254,13 +279,11 @@ Scriptorium's re-base are the large part.
   workspace stack, and the canvas boards come back into scope. That decision
   belongs to mind-mapper, not to this feature. Until then, mind-mapper takes the
   foundation tier only.
-- **What the chat and context modules carry beyond the port.** Spellbook's
-  earlier thinking may go further than Story Studio in places: the message log's
-  channels and gesture provenance, ref chips, a context list that does not know
-  its backend, a cross-project context standard.
-  [An investigation](../../items/workspace-kit-prior-direction/item.md) sorts
-  each idea into superseded, an evolution to carry on top, or an open direction.
-  It gates the workspace stack's chat and context modules, not the first cycle.
+- ~~What the chat and context modules carry beyond the port.~~ **Answered** by
+  the
+  [prior-direction investigation](../../items/workspace-kit-prior-direction/write-up.md)
+  and Cole's rulings on it (2026-10-13). The result is the evolutions list under
+  Technical Approach.
 - **Where document profiles' schemas live.** Atlas uses `_meta/profiles/`.
 - **The three unchecked Atlas items:**
   - `kit-watcher-missed-write-macos`
