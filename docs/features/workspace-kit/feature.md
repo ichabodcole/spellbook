@@ -6,8 +6,8 @@ description:
   set of primitives and Scriptorium's three-pane workspace becomes a kit any
   spell can build on.
 tags: [kit, scriptorium, story-studio, surfaces]
-status: draft
-lifecycle: backlog
+status: stable
+lifecycle: ready
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
 ---
 
