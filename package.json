@@ -46,6 +46,9 @@
     "prettier": "^3.8.3",
     "tailwindcss": "^4.3.0"
   },
+  "overrides": {
+    "happy-dom": "20.14.5"
+  },
   "peerDependencies": {
     "typescript": "^5"
   },
