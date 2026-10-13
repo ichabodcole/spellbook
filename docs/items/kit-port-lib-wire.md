@@ -53,10 +53,10 @@ where it names one of ours). The kit stays a leaf (`import-boundary-wards`).
 
 ## Definition of done
 
-- [ ] `src/kit/lib` and `src/kit/wire` carry the ported parts above, each with
+- [x] `src/kit/lib` and `src/kit/wire` carry the ported parts above, each with
       its tests, and Spellbook's ahead-of-kit changes are intact
-- [ ] Every spell that imports `src/kit/wire` builds and passes its tests
-- [ ] The wards pass; any ward the port breaks is filed as a finding, not
+- [x] Every spell that imports `src/kit/wire` builds and passes its tests
+- [x] The wards pass; any ward the port breaks is filed as a finding, not
       loosened
-- [ ] A no-stake verifier has run the claims, including a real spell's daemon
+- [x] A no-stake verifier has run the claims, including a real spell's daemon
       refusing a forged `Host` and serving its own
