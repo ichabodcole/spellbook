@@ -6,7 +6,7 @@ description:
   Spellbook's kit, with Scriptorium as its first adopter.
 tags: [kit, scriptorium, story-studio]
 status: draft
-lifecycle: planned
+lifecycle: active
 started: 2026-10-13
 appetite:
   Stop when Scriptorium's surface runs on the ported src/kit/ui and every
@@ -62,3 +62,5 @@ a reader six months from now can tell what happened without reading every
 session.]
 
 ## Sessions
+
+- cycle/kit-foundation (open)
