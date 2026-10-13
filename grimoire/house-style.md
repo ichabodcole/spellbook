@@ -569,35 +569,59 @@ authoritative:
 > untested backup. The digestify trigger above names an owner and an occasion
 > for exactly this reason.
 
-### A spell's primitives come from the shadcn registry; a variant extends the recipe, never fights it.
+### A spell's primitives are the kit's; a variant extends the recipe, never fights it.
 
 <!-- rule-id: registry-primitives-variant-extends-recipe -->
-<!-- enforced-by: none — checkable, unchecked: a check would assert `shadcn info` lists every file under each spell's `surface/ui/` as installed and that the L1 alias block in `styles.css` holds only `var()` values -->
+<!-- enforced-by: none — checkable, unchecked: a check would assert that a spell importing from `src/kit/ui` holds no `surface/ui/` of its own, that a spell keeping `surface/ui/` has every file listed by `shadcn info`, and that every L1 alias holds only a `var()` -->
 
-A spell with a React surface takes its primitives from the shadcn registry
-through the CLI (`bunx --bun shadcn@latest add …` from the spell's
-`components.json`), `base` flavour on `@base-ui/react`. The registry owns every
-file under `surface/ui/`: no provenance header, no hand-written look-alike, no
-comment about where it came from — the next `add --overwrite` rewrites the file,
-and a header that survives only until then is a lie waiting to happen. Where the
-spell's look disagrees with a recipe, **add a variant inside the recipe's `cva`
-config** (two lines, one comment) and use it — never a parallel lookup, never a
-stack of overriding utilities at the call site, and never a copy of the file
-under another name. The spell's tokens do the rest: the L1 alias block in
-`styles.css` maps every registry name the installed set consumes
-(`--color-primary`, `--color-muted-foreground`, …) onto the spell's own tokens,
-each a `var()`, never a value — so a recipe changes shape, size and weight, and
-the palette stays the spell's.
+The primitives live once, in `src/kit/ui`. They are shadcn's `base` recipes on
+`@base-ui/react`, ported from Story Studio's kit on 2026-10-13 (Workspace Kit).
+The kit owns those files. Each one carries the one-line header the kit prose
+ward asks of every kit module, and they use the kit's `cn`
+(`src/kit/lib/cn.ts`). A spell with a React surface uses them, and does not keep
+a `surface/ui/` of its own.
 
-- **Boundary check:** `bunx --bun shadcn@latest info` from the spell folder
-  lists every file under `surface/ui/` as installed and nothing else lives
-  there; `git diff` of a re-`add` shows only the variant lines. If a `className`
-  at a call site sets a colour, a font or a radius the recipe also sets, that is
-  a variant that has not been written yet. If a spell's `styles.css` carries a
-  registry name as a literal colour, the alias rule has been broken.
-- **Repeal when:** the kit ships the primitives itself (the kit extraction
-  project), at which point this rule moves to the kit and spells stop holding a
-  `surface/ui/` at all.
+Where a spell's look disagrees with a recipe, **add a variant inside the
+recipe's `cva` config** in `src/kit/ui` (two lines, one comment) and use it.
+Never a parallel lookup, never a stack of overriding utilities at the call site,
+never a copy of the file under another name.
+
+The palette stays the spell's through tokens. The kit's `base.css` maps every
+registry colour name the recipes consume (`--color-primary`,
+`--color-muted-foreground`, …) onto L0 tokens, each a `var()` and never a value.
+A spell sets its own L0 values and gets its own colours on every primitive.
+
+**The kit is a default, not a requirement** (Cole, 2026-10-13). The question is
+asked twice:
+
+- **When a spell starts:** does it fit the kit's UI, or does it need its own? A
+  spell with a different shape, like digestify, may skip the kit's primitives.
+- **While it is built:** when a kit piece stops fitting, either extend it (a
+  variant here, or a slot) or replace it locally.
+
+**A spell that opts out** keeps its own `surface/ui/`, under the rule as it
+stood before the kit shipped. The registry owns every file there, installed
+through the CLI from the spell's `components.json`: no provenance header, no
+hand-written look-alike, and a variant added inside the recipe. Its L1 aliases
+live in the spell's own `styles.css`.
+
+- **Boundary check:**
+  - **A spell on the kit's primitives:** it imports them from `src/kit/ui`, and
+    has no `surface/ui/`.
+  - **A spell that opts out:** `bunx --bun shadcn@latest info` from its folder
+    lists every file under `surface/ui/` as installed, and nothing else lives
+    there.
+  - **Either kind:** a `className` at a call site that sets a colour, font or
+    radius the recipe also sets is a variant that hasn't been written yet. A
+    registry name given a literal colour, in `base.css` or a spell's
+    `styles.css`, breaks the alias rule.
+- **Migration:** spells move onto the kit's primitives one at a time, as they
+  opt in. Scriptorium is first (`kit-port-theme-ui`, then
+  `scriptorium-surface-on-kit-ui`). Until a spell moves, its `surface/ui/` stays
+  under the opt-out terms above.
+- **Repeal when:** a spell's needs can't be met by a variant or a slot, and
+  several spells replace the same piece locally. That is the signal that the
+  kit's recipe is wrong, not the spells.
 
 ### The surface dep cap: `@base-ui/react`, `lucide-react`, `cn`, `class-variance-authority` — and nothing else without a ruling.
 
@@ -620,9 +644,16 @@ registry uses the registry's `cn` throughout, one semantics per spell.
   four; the root `package.json` gained no surface dependency for this spell; a
   registry file that imports something else (`tw-animate-css`, a `radix-ui`
   slot) is a signal to look at the recipe's flavour, not to add the package.
-  _(Measured 2026-09-05 on shadcn 4.21: `add` does not install
-  `class-variance-authority` — only `init` does — so it is added by hand,
-  once.)_
+- **The kit's own dependencies are ruled** (the kit-foundation cycle,
+  2026-10-13). The kit's primitives and harness are shared by every spell, so
+  their dependencies sit at the **root**, not in a spell's manifest:
+  `class-variance-authority`, `react-resizable-panels`, `tw-animate-css` (its
+  popup animations kept, Cole 2026-10-13), and `@happy-dom/global-registrator`
+  with `happy-dom` pinned (dev only). That is not a breach of the root line
+  above, which is about one spell's surface. A spell on the kit's primitives
+  needs none of these in its own manifest. _(Measured 2026-09-05 on shadcn 4.21:
+  `add` does not install `class-variance-authority` — only `init` does — so it
+  is added by hand, once.)_
 - **Repeal when:** a component the house needs cannot be built on these four and
   a ruling names the fifth. Record the ruling here, with the name, before
   `bun add`.
