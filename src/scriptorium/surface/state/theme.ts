@@ -1,7 +1,7 @@
 // Theme resolution: an explicit stored choice beats the OS preference beats
 // dark. The SAME rule runs as the pre-paint script in index.html (before the
 // bundle, so no wrong-theme flash) — keep the two in sync by hand.
-import { safeStorage } from "./storage";
+import { safeStorage } from "../../../kit/lib/storage";
 
 export const THEME_STORAGE_KEY = "scriptorium:theme";
 
