@@ -4,8 +4,8 @@ title: Move Scriptorium's surface onto src/kit/ui
 description:
   Scriptorium's surface drops its own primitives for the ported kit's, as the
   first adopter.
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: ready
 id: 01a13706-982a-7562-89f2-4404be644989
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-13 }

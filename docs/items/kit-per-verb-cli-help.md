@@ -4,8 +4,8 @@ title: Per-verb CLI help, with an acc re-run
 description:
   Port the kit's per-verb help into src/kit/cli and re-run acc for every spell
   whose schema it changes.
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: ready
 id: 01a13706-98cd-77ec-8780-7af9e1e51778
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-13 }

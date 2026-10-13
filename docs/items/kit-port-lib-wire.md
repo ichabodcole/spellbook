@@ -4,8 +4,8 @@ title: Port lib and wire from Story Studio's kit
 description:
   Port the kit's lib and wire modules into src/kit, merged with the places
   Spellbook is ahead.
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: ready
 id: 01a13706-9638-77c4-8471-bc5a17295b37
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-13 }

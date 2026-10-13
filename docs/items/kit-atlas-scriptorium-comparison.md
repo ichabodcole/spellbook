@@ -4,8 +4,8 @@ title: Compare Atlas and Scriptorium side by side
 description:
   Read Atlas and Scriptorium against each other to inform the theme and
   primitives now and the shell later.
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: ready
 id: 01a13706-9597-7581-b770-897b4bbb4706
 kind: research
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
