@@ -5,7 +5,7 @@ description:
   Port the kit's theme and primitives into src/kit with the happy-dom test
   harness and the fuller base.css.
 status: stable
-lifecycle: ready
+lifecycle: active
 id: 01a13706-96dd-765f-9c64-2ecf15ee08f2
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
