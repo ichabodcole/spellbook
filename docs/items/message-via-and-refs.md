@@ -4,7 +4,7 @@ title: Message via and refs, shared with Story Studio
 description:
   "One change to the kit's protocol and chat, written to port both ways: a via
   channel on every message and an optional refs list beside the one subject."
-status: draft
+status: stable
 lifecycle: triage
 id: 01a136e5-9834-7106-b8d1-f3d40eb4ea4c
 kind: task
@@ -50,8 +50,12 @@ its open questions.
 
 ### `refs`: what a message draws on, beside its one subject
 
-- The subject is unchanged: a text selection, or the pointed-at `docs`, one kind
-  at a time, as Story Studio's composer holds it today.
+- **The subject is one item** (Cole, 2026-10-13): a text selection, else the
+  active document or image, or an app part such as a selected canvas card. A
+  message is never about several things at once. Today `pointedDocs` can make
+  several documents the subject (`about.docs`); under this shape the active one
+  is the subject and the rest become refs. `about.docs` is no longer written,
+  and old messages that carry it still read as before.
 - `MessageAbout` gains `refs?: MessageRef[]`, where `MessageRef` is
   `{ path: string; doc?: string; version?: number; role?: string; label?: string; text?: string }`.
   `path` is required and absolute, because it is what the agent reads. `text` is
@@ -62,12 +66,21 @@ its open questions.
   with an advisory.
 - `refs` joins `KIT_ABOUT_KEYS`, so no app's `messageAbout` part can take the
   key. The `satisfies Record<keyof MessageAbout, true>` there enforces it.
-- **A ref is added only by its own gesture, never by pointing.** The workspace
-  context gains `refs`, `addRef`, `removeRef` and `clearRefs`. Examples: an
-  app's "add as reference", imago's reference toggle, and a multi-select where
-  the active document is the subject and the rest are refs. Refs do not take
-  part in "one kind at a time": changing the selection keeps them. They clear
-  when the message is sent, as the subject does.
+- **Refs come from two gestures.**
+  - **A multi-select in the file tree** (Cole, 2026-10-13): the documents and
+    images selected there, other than the subject, are the refs for the next
+    message. One document can be the subject with a few documents or images
+    beside it, or a canvas card the subject with tree selections beside it.
+    These refs are the tree's own selection, read at send, not a copy kept
+    somewhere else. A ref chip's X deselects the entry in the tree.
+  - **An explicit "Add as reference"** on a document row, a file card's menu, or
+    imago's reference toggle, for something that is not in the tree's selection.
+    The workspace context gains `refs`, `addRef`, `removeRef` and `clearRefs`
+    for these.
+- Refs do not take part in "one kind at a time": changing the subject keeps
+  them. Explicit refs clear when the message is sent. The tree's selection is
+  the tree's, and the human clears it there; the chip's second row shows that it
+  will go with the next message too.
 - A ref whose `path` is the subject's own is dropped, and so is a duplicate
   `path`. Dedup is against the kit's subject only, never against an app's
   `about` part: a file card can be both pointed at and a ref, because the two
@@ -95,13 +108,16 @@ its open questions.
 
 - [x] Story Studio's agent has checked this shape against Atlas (kit-parity,
       2026-10-13; app parts stay app parts, folded in above).
-- [ ] Cole has approved the shape.
+- [x] Cole has approved the shape (2026-10-13, through Story Studio's agent),
+      adding the tree multi-select and the one-item subject.
 - [ ] One change to the kit's `protocol.ts`, daemon and chat, with tests for:
   - `via` stored, defaulted for an old message, and carried on the tail;
   - an unknown `via` or `role` stored, with the advisory;
   - `refs` on `about` through `say`, and on the tail;
   - dedup against the subject and between refs;
-  - refs surviving a selection change and clearing on send;
+  - a tree multi-select giving one subject and the rest as refs;
+  - a ref chip's X deselecting in the tree;
+  - explicit refs surviving a subject change and clearing on send;
   - `KIT_ABOUT_KEYS` refusing an app part named `refs`;
   - the chip's second row.
 - [ ] The same change lands in Story Studio's kit and in Spellbook's ported kit,
