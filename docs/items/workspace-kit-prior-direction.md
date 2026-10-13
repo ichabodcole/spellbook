@@ -5,8 +5,8 @@ description:
   "For each idea in Spellbook's earlier context, chat and message-log thinking:
   is it superseded by what Story Studio built, an evolution to carry on top of
   the ported kit, or a direction still open?"
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: active
 id: 01a13662-6a31-7495-b914-eafa00335352
 kind: research
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
