@@ -26,6 +26,15 @@ const buttonVariants = cva(
           "h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
         xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
         sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
+        // A header or toolbar action (scriptorium's End session, Revert, Save): sm's height, xs text.
+        chrome:
+          "h-7 gap-1.5 rounded-[min(var(--radius-md),12px)] px-2 text-xs [&_svg:not([class*='size-'])]:size-3.5",
+        // An action inside a row (scriptorium's note Save/Cancel, a diff hunk's Take).
+        "2xs":
+          "h-5 gap-1 rounded-[min(var(--radius-md),12px)] px-1.5 text-[11px] [&_svg:not([class*='size-'])]:size-3",
+        // The same, a step finer, beside a 10px caption (scriptorium's task Mark done, Clear).
+        "3xs":
+          "h-5 gap-1 rounded-[min(var(--radius-md),12px)] px-1.5 text-[10px] [&_svg:not([class*='size-'])]:size-3",
         lg: "h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
         icon: "size-8",
         "icon-xs":
