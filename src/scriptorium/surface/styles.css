@@ -4,8 +4,8 @@
 @import "../../kit/theme/base.css";
 /* `source(none)` is load-bearing: automatic detection roots at the process cwd
    (the repo root under `bun run build`). This bare-directory @source is the
-   surface's ONLY content source — index.html and ui/ included. The kit sheet
-   brings its own. grimoire/spell-css-scope-ward.test.ts runs each claim red. */
+   surface's ONLY content source. The kit sheet brings its own, which scans
+   src/kit/ui. grimoire/spell-css-scope-ward.test.ts runs each claim red. */
 @source "./";
 
 /* L2 — scriptorium's palette: a warm paper-and-ink manuscript room. Semantic
@@ -46,9 +46,9 @@
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
   --font-manuscript: "Iowan Old Style", Palatino, Georgia, serif;
 
-  /* L1 — the shadcn names the installed recipes (resizable, empty, button)
-     consume, each a var() onto a token above so the light block below is the
-     only palette switch. Add a name when a newly added component reads one. */
+  /* L1 — the shadcn names the kit's recipes (src/kit/ui) consume, each a var()
+     onto a token above, so the light block below is the only palette switch.
+     These come after base.css's own, so primary and ring stay the rubric. */
   --color-background: var(--color-bg);
   --color-foreground: var(--color-ink);
   --color-primary: var(--color-rubric);
@@ -98,7 +98,7 @@
 }
 
 /* The recipes' `dark:` arms follow the THEME ATTRIBUTE, not the OS — so a
-   viewer who picked light on a dark OS gets the light arms. */
+   viewer who picked light on a dark OS gets the light arms, the kit's too. */
 @custom-variant dark (&:is([data-theme="dark"] *));
 
 @layer base {

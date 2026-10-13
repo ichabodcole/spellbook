@@ -35,16 +35,22 @@ import {
   useRef,
   useState,
 } from "react";
-import { Button } from "@/ui/button";
+import { Button } from "../../../../kit/ui/button";
+import { useConfirm } from "../../../../kit/ui/ConfirmDialog";
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuTrigger,
-} from "@/ui/context-menu";
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/ui/empty";
-import { useConfirm } from "../../../../kit/ui/ConfirmDialog";
+} from "../../../../kit/ui/context-menu";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "../../../../kit/ui/empty";
 import type { ContextEntry, DocSummary, StructureOp } from "../../../backend/protocol";
 import type { Listing, Mapping, Planning } from "../../state/useDaemon";
 import { AddPath } from "./AddPath";

@@ -20,7 +20,7 @@ import {
   UndoDotIcon,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/ui/button";
+import { Button } from "../../../kit/ui/button";
 import type { NoteWaiting, PlacedNote, Waiting } from "../../backend/protocol";
 import { waitingOf } from "../state/notes";
 import { WaitingBadge, WaitingDot } from "./WaitingBadge";
@@ -135,18 +135,13 @@ function Note({
             <Button
               type="button"
               variant="ghost"
-              size="sm"
+              size="2xs"
               onClick={() => setDraft(null)}
-              className="ml-auto h-5 px-1.5 text-[11px]"
+              className="ml-auto"
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              size="sm"
-              disabled={!draft.trim()}
-              className="h-5 px-1.5 text-[11px]"
-            >
+            <Button type="submit" size="2xs" disabled={!draft.trim()}>
               Save
             </Button>
           </div>
@@ -312,7 +307,7 @@ export function NotesPanel({
           <button
             type="button"
             onClick={() => setShowResolved((v) => !v)}
-            className="mt-2 w-full rounded-sm px-1 py-1 text-[11px] text-ink-faint hover:text-ink"
+            className="mt-2 w-full rounded-sm px-1 py-1 text-[11px] text-ink-faint"
           >
             {showResolved ? "Hide" : "Show"} {resolved.length} resolved
           </button>
@@ -344,12 +339,7 @@ export function NotesPanel({
         />
         <div className="mt-1 flex items-center gap-2">
           <span className="text-[10px] text-ink-faint">⌘↩ to add</span>
-          <Button
-            type="submit"
-            size="sm"
-            disabled={!selection || !body.trim()}
-            className="ml-auto h-6 px-2 text-xs"
-          >
+          <Button type="submit" size="xs" disabled={!selection || !body.trim()} className="ml-auto">
             <MessageSquarePlusIcon aria-hidden className="size-3" />
             Add note
           </Button>

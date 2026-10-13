@@ -4,7 +4,7 @@
 // come from DocumentPane (the counts debounced, per Operator's `useContentStats`).
 import { cn } from "cn";
 import { Fragment } from "react";
-import { Separator } from "@/ui/separator";
+import { Separator } from "../../../kit/ui/separator";
 
 /** `low` segments give way first when the centre pane is narrow (verify pass: the strip clipped). */
 export type StatusSegment = {

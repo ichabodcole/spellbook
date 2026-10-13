@@ -36,7 +36,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/ui/dropdown-menu";
+} from "../../../kit/ui/dropdown-menu";
 import type { Version } from "../../backend/protocol";
 import { SESSION_ENDED } from "../state/ending";
 
@@ -149,8 +149,8 @@ export function VersionMenu({
                 // the row you are already in is simply nothing.
                 onClick={() => v.n !== active && onActivate(v.n)}
                 aria-current={v.n === active ? "true" : undefined}
+                stacked
                 className={cn(
-                  "flex-col items-start gap-0.5 py-1.5",
                   // ⛔ THE ACTIVE ROW IS HIGHLIGHTED, NOT MUTED (Cole, E39).
                   // `disabled` is the right SEMANTICS — you cannot switch to
                   // where you already are — but shadcn renders it at 50%

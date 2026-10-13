@@ -23,7 +23,7 @@
 // (`state/selection.ts`), so it follows for free.
 import { cn } from "cn";
 import { CornerDownLeftIcon, XIcon } from "lucide-react";
-import { Button } from "@/ui/button";
+import { Button } from "../../../kit/ui/button";
 import { SESSION_ENDED } from "../state/ending";
 
 export type Attachable = {
@@ -105,7 +105,7 @@ export function ChatComposer({
             onClick={onDrop}
             aria-label="Clear the selection"
             title="Clear the selection — it stops riding along, and stops being highlighted"
-            className="shrink-0 rounded-sm p-0.5 text-ink-faint hover:text-ink"
+            className="shrink-0 rounded-sm p-0.5 text-ink-faint"
           >
             <XIcon aria-hidden className="size-3" />
           </button>
@@ -141,10 +141,10 @@ export function ChatComposer({
         <span className="text-[10px] text-ink-faint">⌘↩ to send</span>
         <Button
           type="submit"
-          size="sm"
+          size="xs"
           disabled={!text.trim() || !connected || ended}
           title={ended ? SESSION_ENDED : undefined}
-          className="ml-auto h-6 px-2 text-xs"
+          className="ml-auto"
         >
           <CornerDownLeftIcon aria-hidden className="size-3" />
           Send

@@ -19,7 +19,7 @@
 // The wording for each is Operator's for snapshot ("preserve the current
 // document state so you can refer back to it later") and ours for branch.
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/ui/button";
+import { Button } from "../../../kit/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -27,8 +27,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/ui/dialog";
-import { Input } from "@/ui/input";
+} from "../../../kit/ui/dialog";
+import { Input } from "../../../kit/ui/input";
 
 /** Which intention the human picked — the whole difference between the two. */
 export type VersionIntent = "branch" | "snapshot";
@@ -68,7 +68,7 @@ export function NewVersionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent size="md">
         <form onSubmit={submit} className="flex flex-col gap-6">
           <DialogHeader>
             <DialogTitle>New version from v{from}</DialogTitle>
@@ -108,7 +108,7 @@ export function NewVersionDialog({
               Leave it empty and it is just its number.
             </p>
           </div>
-          <DialogFooter className="gap-2">
+          <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>

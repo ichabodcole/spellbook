@@ -6,8 +6,8 @@
 import { cn } from "cn";
 import { CornerDownLeftIcon, FileTextIcon, FolderIcon, FolderOpenIcon } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
-import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
+import { Button } from "../../../../kit/ui/button";
+import { Input } from "../../../../kit/ui/input";
 import type { FsListEntry } from "../../../backend/protocol";
 import { SESSION_ENDED } from "../../state/ending";
 import type { Listing } from "../../state/useDaemon";
