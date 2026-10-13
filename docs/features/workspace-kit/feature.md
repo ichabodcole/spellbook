@@ -199,6 +199,18 @@ redesign.
   - Related active items need a ruling before the first cycle starts:
     `shared-context-and-chat-components`, `context-primitive` and
     `message-log-primitive`. Each either folds into this feature or is dropped.
+- **The chat's refs port as they are** (Cole, 2026-10-13). Story Studio's
+  message `about` and `HeldSelection` come with the chat module unchanged:
+  - `about` is Scriptorium's selection (pinned to a version, a line range), plus
+    `entryIds`, `docs` and `noteId`.
+  - The selection rules come with their tests: one held selection, which the
+    chip is, and a selection that dies when its text leaves the screen.
+  - The agent sees nothing new.
+  - The broader contract (Context and Chat Kit phase 1) comes later and treats
+    `about` as the workspace stack's case of it: a selection is a pinned ref
+    with a line range, and tree rows and whole documents are refs without one.
+  - That contract is what widens refs to other media: images, bundles and types
+    a spell defines. Links to headings give its `#fragment` range a first user.
 - **Ports run as delegated phases.** Each runs on a cycle branch with an
   implementer and a no-stake verifier who runs the claims. That loop is the
   write-up's delegated-phase playbook, filed separately.
@@ -228,9 +240,6 @@ redesign.
 - **Re-basing breaks open sessions.** Users have state under `~/.scriptorium`.
   _Mitigation:_ the app slot carries a version and a `migrate`. E71's doctor
   finding covers sessions that already overlap.
-- **The ported chat brings its own ref shape.** It may collide with Context and
-  Chat Kit's phase 1 ref contract. _Mitigation:_ settle which one wins before
-  the chat module is ported (an open question below).
 - **Per-verb help changes the CLI's schema.** _Mitigation:_ re-run acc for every
   spell, as the call says.
 
@@ -245,8 +254,6 @@ Scriptorium's re-base are the large part.
   workspace stack, and the canvas boards come back into scope. That decision
   belongs to mind-mapper, not to this feature. Until then, mind-mapper takes the
   foundation tier only.
-- **The chat ref shape vs the phase 1 ref contract.** Which one does the ported
-  chat carry?
 - **Where document profiles' schemas live.** Atlas uses `_meta/profiles/`.
 - **The three unchecked Atlas items:**
   - `kit-watcher-missed-write-macos`
