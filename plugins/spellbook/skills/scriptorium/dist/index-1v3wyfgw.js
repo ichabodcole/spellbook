@@ -15844,7 +15844,13 @@ var cva = (base, config) => (props) => {
   return cx(base, getVariantClassNames, getCompoundVariantClassNames, props === null || props === undefined ? undefined : props.class, props === null || props === undefined ? undefined : props.className);
 };
 
-// src/scriptorium/surface/ui/button.tsx
+// src/kit/lib/cn.ts
+function cn2(...inputs) {
+  const join = (state) => inputs.map((i) => typeof i === "function" ? i(state) : i).filter(Boolean).join(" ");
+  return inputs.some((i) => typeof i === "function") ? (state) => join(state) : join();
+}
+
+// src/kit/ui/button.tsx
 var jsx_runtime = __toESM(require_jsx_runtime(), 1);
 var buttonVariants = cva("group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", {
   variants: {
@@ -15860,6 +15866,9 @@ var buttonVariants = cva("group/button inline-flex shrink-0 items-center justify
       default: "h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
       xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
       sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
+      chrome: "h-7 gap-1.5 rounded-[min(var(--radius-md),12px)] px-2 text-xs [&_svg:not([class*='size-'])]:size-3.5",
+      "2xs": "h-5 gap-1 rounded-[min(var(--radius-md),12px)] px-1.5 text-[11px] [&_svg:not([class*='size-'])]:size-3",
+      "3xs": "h-5 gap-1 rounded-[min(var(--radius-md),12px)] px-1.5 text-[10px] [&_svg:not([class*='size-'])]:size-3",
       lg: "h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
       icon: "size-8",
       "icon-xs": "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
@@ -15880,92 +15889,8 @@ function Button3({
 }) {
   return /* @__PURE__ */ jsx_runtime.jsx(Button, {
     "data-slot": "button",
-    className: cn(buttonVariants({ variant, size, className })),
+    className: cn2(buttonVariants({ variant, size, className })),
     ...props
-  });
-}
-
-// src/scriptorium/surface/ui/empty.tsx
-var jsx_runtime2 = __toESM(require_jsx_runtime(), 1);
-function Empty({ className, ...props }) {
-  return /* @__PURE__ */ jsx_runtime2.jsx("div", {
-    "data-slot": "empty",
-    className: cn("flex w-full min-w-0 flex-1 flex-col items-center justify-center gap-4 rounded-xl border-dashed p-6 text-center text-balance", className),
-    ...props
-  });
-}
-function EmptyHeader({ className, ...props }) {
-  return /* @__PURE__ */ jsx_runtime2.jsx("div", {
-    "data-slot": "empty-header",
-    className: cn("flex max-w-sm flex-col items-center gap-2", className),
-    ...props
-  });
-}
-var emptyMediaVariants = cva("mb-2 flex shrink-0 items-center justify-center [&_svg]:pointer-events-none [&_svg]:shrink-0", {
-  variants: {
-    variant: {
-      default: "bg-transparent",
-      icon: "flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground [&_svg:not([class*='size-'])]:size-4"
-    }
-  },
-  defaultVariants: {
-    variant: "default"
-  }
-});
-function EmptyMedia({
-  className,
-  variant = "default",
-  ...props
-}) {
-  return /* @__PURE__ */ jsx_runtime2.jsx("div", {
-    "data-slot": "empty-icon",
-    "data-variant": variant,
-    className: cn(emptyMediaVariants({ variant, className })),
-    ...props
-  });
-}
-function EmptyTitle({ className, ...props }) {
-  return /* @__PURE__ */ jsx_runtime2.jsx("div", {
-    "data-slot": "empty-title",
-    className: cn("text-sm font-medium tracking-tight", className),
-    ...props
-  });
-}
-function EmptyDescription({ className, ...props }) {
-  return /* @__PURE__ */ jsx_runtime2.jsx("div", {
-    "data-slot": "empty-description",
-    className: cn("text-sm/relaxed text-muted-foreground [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary", className),
-    ...props
-  });
-}
-
-// src/scriptorium/surface/ui/resizable.tsx
-var jsx_runtime3 = __toESM(require_jsx_runtime(), 1);
-function ResizablePanelGroup({ className, ...props }) {
-  return /* @__PURE__ */ jsx_runtime3.jsx(qt, {
-    "data-slot": "resizable-panel-group",
-    className: cn("flex h-full w-full aria-[orientation=vertical]:flex-col", className),
-    ...props
-  });
-}
-function ResizablePanel({ ...props }) {
-  return /* @__PURE__ */ jsx_runtime3.jsx(Qt, {
-    "data-slot": "resizable-panel",
-    ...props
-  });
-}
-function ResizableHandle({
-  withHandle,
-  className,
-  ...props
-}) {
-  return /* @__PURE__ */ jsx_runtime3.jsx(nn, {
-    "data-slot": "resizable-handle",
-    className: cn("relative flex w-px items-center justify-center bg-border ring-offset-background after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-hidden aria-[orientation=horizontal]:h-px aria-[orientation=horizontal]:w-full aria-[orientation=horizontal]:after:left-0 aria-[orientation=horizontal]:after:h-1 aria-[orientation=horizontal]:after:w-full aria-[orientation=horizontal]:after:translate-x-0 aria-[orientation=horizontal]:after:-translate-y-1/2 [&[aria-orientation=horizontal]>div]:rotate-90", className),
-    ...props,
-    children: withHandle && /* @__PURE__ */ jsx_runtime3.jsx("div", {
-      className: "z-10 flex h-6 w-1 shrink-0 rounded-lg bg-border"
-    })
   });
 }
 
@@ -23722,15 +23647,7 @@ function createAlertDialogHandle() {
 }
 // src/kit/ui/ConfirmDialog.tsx
 var import_react7 = __toESM(require_react(), 1);
-
-// src/kit/lib/cn.ts
-function cn2(...inputs) {
-  const join = (state) => inputs.map((i) => typeof i === "function" ? i(state) : i).filter(Boolean).join(" ");
-  return inputs.some((i) => typeof i === "function") ? (state) => join(state) : join();
-}
-
-// src/kit/ui/ConfirmDialog.tsx
-var jsx_runtime4 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime2 = __toESM(require_jsx_runtime(), 1);
 var BUTTON = "inline-flex h-8 items-center justify-center rounded-md px-3 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ink-faint disabled:opacity-50";
 function ConfirmDialog({
   open,
@@ -23744,42 +23661,42 @@ function ConfirmDialog({
   onConfirm,
   onCancel
 }) {
-  return /* @__PURE__ */ jsx_runtime4.jsx(exports_index_parts.Root, {
+  return /* @__PURE__ */ jsx_runtime2.jsx(exports_index_parts.Root, {
     open,
     onOpenChange: (next) => {
       onOpenChange(next);
       if (!next)
         onCancel?.();
     },
-    children: /* @__PURE__ */ jsx_runtime4.jsxs(exports_index_parts.Portal, {
+    children: /* @__PURE__ */ jsx_runtime2.jsxs(exports_index_parts.Portal, {
       children: [
-        /* @__PURE__ */ jsx_runtime4.jsx(exports_index_parts.Backdrop, {
+        /* @__PURE__ */ jsx_runtime2.jsx(exports_index_parts.Backdrop, {
           className: "fixed inset-0 isolate z-50 bg-black/30 duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0"
         }),
-        /* @__PURE__ */ jsx_runtime4.jsxs(exports_index_parts.Popup, {
+        /* @__PURE__ */ jsx_runtime2.jsxs(exports_index_parts.Popup, {
           "data-slot": "confirm-dialog",
           className: "fixed top-1/2 left-1/2 z-50 grid w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 gap-3 rounded-xl border border-edge bg-surface p-4 text-ink shadow-lg duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           children: [
-            /* @__PURE__ */ jsx_runtime4.jsx(exports_index_parts.Title, {
+            /* @__PURE__ */ jsx_runtime2.jsx(exports_index_parts.Title, {
               className: "text-sm font-semibold text-ink",
               children: title
             }),
-            message && /* @__PURE__ */ jsx_runtime4.jsx(exports_index_parts.Description, {
+            message && /* @__PURE__ */ jsx_runtime2.jsx(exports_index_parts.Description, {
               className: "text-sm leading-relaxed text-ink-faint",
               children: message
             }),
-            warning && /* @__PURE__ */ jsx_runtime4.jsx("p", {
+            warning && /* @__PURE__ */ jsx_runtime2.jsx("p", {
               className: "rounded-md border border-edge bg-bg px-2.5 py-2 text-xs leading-relaxed text-ink",
               children: warning
             }),
-            /* @__PURE__ */ jsx_runtime4.jsxs("div", {
+            /* @__PURE__ */ jsx_runtime2.jsxs("div", {
               className: "mt-1 flex justify-end gap-2",
               children: [
-                /* @__PURE__ */ jsx_runtime4.jsx(exports_index_parts.Close, {
+                /* @__PURE__ */ jsx_runtime2.jsx(exports_index_parts.Close, {
                   className: cn2(BUTTON, "border border-edge bg-surface text-ink hover:bg-bg"),
                   children: cancelLabel
                 }),
-                /* @__PURE__ */ jsx_runtime4.jsx("button", {
+                /* @__PURE__ */ jsx_runtime2.jsx("button", {
                   type: "button",
                   onClick: onConfirm,
                   className: cn2(BUTTON, confirmClassName ?? "border border-edge bg-ink text-bg hover:opacity-90"),
@@ -23807,7 +23724,7 @@ function useConfirm() {
     answer.current = resolve;
     setPending(request);
   }), []);
-  const dialog = pending ? /* @__PURE__ */ jsx_runtime4.jsx(ConfirmDialog, {
+  const dialog = pending ? /* @__PURE__ */ jsx_runtime2.jsx(ConfirmDialog, {
     ...pending,
     open: true,
     onOpenChange: (next) => {
@@ -23817,6 +23734,90 @@ function useConfirm() {
     onConfirm: () => settle(true)
   }) : null;
   return { confirm, dialog };
+}
+
+// src/kit/ui/empty.tsx
+var jsx_runtime3 = __toESM(require_jsx_runtime(), 1);
+function Empty({ className, ...props }) {
+  return /* @__PURE__ */ jsx_runtime3.jsx("div", {
+    "data-slot": "empty",
+    className: cn2("flex w-full min-w-0 flex-1 flex-col items-center justify-center gap-4 rounded-xl border-dashed p-6 text-center text-balance", className),
+    ...props
+  });
+}
+function EmptyHeader({ className, ...props }) {
+  return /* @__PURE__ */ jsx_runtime3.jsx("div", {
+    "data-slot": "empty-header",
+    className: cn2("flex max-w-sm flex-col items-center gap-2", className),
+    ...props
+  });
+}
+var emptyMediaVariants = cva("mb-2 flex shrink-0 items-center justify-center [&_svg]:pointer-events-none [&_svg]:shrink-0", {
+  variants: {
+    variant: {
+      default: "bg-transparent",
+      icon: "flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground [&_svg:not([class*='size-'])]:size-4"
+    }
+  },
+  defaultVariants: {
+    variant: "default"
+  }
+});
+function EmptyMedia({
+  className,
+  variant = "default",
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_runtime3.jsx("div", {
+    "data-slot": "empty-icon",
+    "data-variant": variant,
+    className: cn2(emptyMediaVariants({ variant, className })),
+    ...props
+  });
+}
+function EmptyTitle({ className, ...props }) {
+  return /* @__PURE__ */ jsx_runtime3.jsx("div", {
+    "data-slot": "empty-title",
+    className: cn2("text-sm font-medium tracking-tight", className),
+    ...props
+  });
+}
+function EmptyDescription({ className, ...props }) {
+  return /* @__PURE__ */ jsx_runtime3.jsx("div", {
+    "data-slot": "empty-description",
+    className: cn2("text-sm/relaxed text-muted-foreground [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary", className),
+    ...props
+  });
+}
+
+// src/kit/ui/resizable.tsx
+var jsx_runtime4 = __toESM(require_jsx_runtime(), 1);
+function ResizablePanelGroup({ className, ...props }) {
+  return /* @__PURE__ */ jsx_runtime4.jsx(qt, {
+    "data-slot": "resizable-panel-group",
+    className: cn2("flex h-full w-full aria-[orientation=vertical]:flex-col", className),
+    ...props
+  });
+}
+function ResizablePanel({ ...props }) {
+  return /* @__PURE__ */ jsx_runtime4.jsx(Qt, {
+    "data-slot": "resizable-panel",
+    ...props
+  });
+}
+function ResizableHandle({
+  withHandle,
+  className,
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_runtime4.jsx(nn, {
+    "data-slot": "resizable-handle",
+    className: cn2("relative flex w-px items-center justify-center bg-border ring-offset-background after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-hidden aria-[orientation=horizontal]:h-px aria-[orientation=horizontal]:w-full aria-[orientation=horizontal]:after:left-0 aria-[orientation=horizontal]:after:h-1 aria-[orientation=horizontal]:after:w-full aria-[orientation=horizontal]:after:translate-x-0 aria-[orientation=horizontal]:after:-translate-y-1/2 [&[aria-orientation=horizontal]>div]:rotate-90", className),
+    ...props,
+    children: withHandle && /* @__PURE__ */ jsx_runtime4.jsx("div", {
+      className: "z-10 flex h-6 w-1 shrink-0 rounded-lg bg-border"
+    })
+  });
 }
 
 // src/scriptorium/backend/selection.ts
@@ -23987,7 +23988,7 @@ function ChatComposer({
             onClick: onDrop,
             "aria-label": "Clear the selection",
             title: "Clear the selection — it stops riding along, and stops being highlighted",
-            className: "shrink-0 rounded-sm p-0.5 text-ink-faint hover:text-ink",
+            className: "shrink-0 rounded-sm p-0.5 text-ink-faint",
             children: /* @__PURE__ */ jsx_runtime5.jsx(X, {
               "aria-hidden": true,
               className: "size-3"
@@ -24017,10 +24018,10 @@ function ChatComposer({
           }),
           /* @__PURE__ */ jsx_runtime5.jsxs(Button3, {
             type: "submit",
-            size: "sm",
+            size: "xs",
             disabled: !text.trim() || !connected || ended,
             title: ended ? SESSION_ENDED : undefined,
-            className: "ml-auto h-6 px-2 text-xs",
+            className: "ml-auto",
             children: [
               /* @__PURE__ */ jsx_runtime5.jsx(CornerDownLeft, {
                 "aria-hidden": true,
@@ -34069,7 +34070,7 @@ var ContextMenuTrigger = /* @__PURE__ */ React101.forwardRef(function ContextMen
 });
 if (false)
   ;
-// src/scriptorium/surface/ui/context-menu.tsx
+// src/kit/ui/context-menu.tsx
 var jsx_runtime8 = __toESM(require_jsx_runtime(), 1);
 function ContextMenu({ ...props }) {
   return /* @__PURE__ */ jsx_runtime8.jsx(exports_index_parts3.Root, {
@@ -34080,7 +34081,7 @@ function ContextMenu({ ...props }) {
 function ContextMenuTrigger3({ className, ...props }) {
   return /* @__PURE__ */ jsx_runtime8.jsx(exports_index_parts3.Trigger, {
     "data-slot": "context-menu-trigger",
-    className: cn("select-none", className),
+    className: cn2("select-none", className),
     ...props
   });
 }
@@ -34090,6 +34091,8 @@ function ContextMenuContent({
   alignOffset = 4,
   side = "right",
   sideOffset = 0,
+  collisionBoundary,
+  collisionPadding,
   ...props
 }) {
   return /* @__PURE__ */ jsx_runtime8.jsx(exports_index_parts3.Portal, {
@@ -34099,9 +34102,11 @@ function ContextMenuContent({
       alignOffset,
       side,
       sideOffset,
+      ...collisionBoundary ? { collisionBoundary } : {},
+      ...collisionPadding !== undefined ? { collisionPadding } : {},
       children: /* @__PURE__ */ jsx_runtime8.jsx(exports_index_parts3.Popup, {
         "data-slot": "context-menu-content",
-        className: cn("z-50 max-h-(--available-height) min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 outline-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className),
+        className: cn2("z-50 max-h-(--available-height) min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 outline-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className),
         ...props
       })
     })
@@ -34117,7 +34122,7 @@ function ContextMenuItem({
     "data-slot": "context-menu-item",
     "data-inset": inset,
     "data-variant": variant,
-    className: cn("group/context-menu-item relative flex cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-inset:pl-7 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 focus:*:[svg]:text-accent-foreground data-[variant=destructive]:*:[svg]:text-destructive", className),
+    className: cn2("group/context-menu-item relative flex cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-inset:pl-7 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 focus:*:[svg]:text-accent-foreground data-[variant=destructive]:*:[svg]:text-destructive", className),
     ...props
   });
 }
@@ -34136,7 +34141,7 @@ function ContextMenuSubTrigger({
   return /* @__PURE__ */ jsx_runtime8.jsxs(exports_index_parts3.SubmenuTrigger, {
     "data-slot": "context-menu-sub-trigger",
     "data-inset": inset,
-    className: cn("flex cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-inset:pl-7 data-open:bg-accent data-open:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", className),
+    className: cn2("flex cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-inset:pl-7 data-open:bg-accent data-open:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", className),
     ...props,
     children: [
       children,
@@ -34157,14 +34162,14 @@ function ContextMenuSubContent({ ...props }) {
 function ContextMenuSeparator({ className, ...props }) {
   return /* @__PURE__ */ jsx_runtime8.jsx(exports_index_parts3.Separator, {
     "data-slot": "context-menu-separator",
-    className: cn("-mx-1 my-1 h-px bg-border", className),
+    className: cn2("-mx-1 my-1 h-px bg-border", className),
     ...props
   });
 }
 function ContextMenuShortcut({ className, ...props }) {
   return /* @__PURE__ */ jsx_runtime8.jsx("span", {
     "data-slot": "context-menu-shortcut",
-    className: cn("ml-auto text-xs tracking-widest text-muted-foreground group-focus/context-menu-item:text-accent-foreground", className),
+    className: cn2("ml-auto text-xs tracking-widest text-muted-foreground group-focus/context-menu-item:text-accent-foreground", className),
     ...props
   });
 }
@@ -35519,13 +35524,13 @@ var Input = /* @__PURE__ */ React120.forwardRef(function Input2(props, forwarded
 });
 if (false)
   ;
-// src/scriptorium/surface/ui/input.tsx
+// src/kit/ui/input.tsx
 var jsx_runtime9 = __toESM(require_jsx_runtime(), 1);
 function Input3({ className, type, ...props }) {
   return /* @__PURE__ */ jsx_runtime9.jsx(Input, {
     type,
     "data-slot": "input",
-    className: cn("h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40", className),
+    className: cn2("h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40", className),
     ...props
   });
 }
@@ -40092,13 +40097,13 @@ function SetView({
 
 // src/scriptorium/surface/components/DocumentPane.tsx
 var import_react25 = __toESM(require_react(), 1);
-// src/scriptorium/surface/ui/separator.tsx
+// src/kit/ui/separator.tsx
 var jsx_runtime15 = __toESM(require_jsx_runtime(), 1);
 function Separator2({ className, orientation = "horizontal", ...props }) {
   return /* @__PURE__ */ jsx_runtime15.jsx(Separator, {
     "data-slot": "separator",
     orientation,
-    className: cn("shrink-0 bg-border data-horizontal:h-px data-horizontal:w-full data-vertical:w-px data-vertical:self-stretch", className),
+    className: cn2("shrink-0 bg-border data-horizontal:h-px data-horizontal:w-full data-vertical:w-px data-vertical:self-stretch", className),
     ...props
   });
 }
@@ -42074,11 +42079,10 @@ function CompareView({
               diff.same ? "identical" : `${diff.hunks.length} change${diff.hunks.length === 1 ? "" : "s"}`,
               !diff.same && /* @__PURE__ */ jsx_runtime16.jsx(Button3, {
                 variant: "ghost",
-                size: "sm",
+                size: "xs",
                 disabled: busy,
                 onClick: () => onTake(diff.hunks.map((h) => h.id)),
                 title: `Take every change from ${sideLabel(against, file, 60)} into v${active}`,
-                className: "h-6 px-2 text-xs",
                 children: "Take all"
               })
             ]
@@ -42138,11 +42142,11 @@ function CompareView({
                     }),
                     row.first && /* @__PURE__ */ jsx_runtime16.jsx(Button3, {
                       variant: "ghost",
-                      size: "sm",
+                      size: "2xs",
                       disabled: busy,
                       onClick: () => onTake([row.hunk]),
                       title: `Take change ${row.hunk} into v${active}`,
-                      className: "absolute top-0 right-1 h-5 bg-bg px-1.5 font-sans text-[11px] shadow-sm",
+                      className: "absolute top-0 right-1 bg-bg font-sans shadow-sm",
                       children: "Take"
                     })
                   ]
@@ -59503,7 +59507,7 @@ function pointOffset(root2, projection, x3, y3) {
 // src/scriptorium/surface/components/NewVersionDialog.tsx
 var import_react21 = __toESM(require_react(), 1);
 
-// src/scriptorium/surface/ui/dialog.tsx
+// src/kit/ui/dialog.tsx
 var jsx_runtime20 = __toESM(require_jsx_runtime(), 1);
 "use client";
 function Dialog({ ...props }) {
@@ -59521,7 +59525,7 @@ function DialogPortal3({ ...props }) {
 function DialogOverlay({ className, ...props }) {
   return /* @__PURE__ */ jsx_runtime20.jsx(exports_index_parts5.Backdrop, {
     "data-slot": "dialog-overlay",
-    className: cn("fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0", className),
+    className: cn2("fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0", className),
     ...props
   });
 }
@@ -59529,6 +59533,7 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  size: size4 = "default",
   ...props
 }) {
   return /* @__PURE__ */ jsx_runtime20.jsxs(DialogPortal3, {
@@ -59536,7 +59541,8 @@ function DialogContent({
       /* @__PURE__ */ jsx_runtime20.jsx(DialogOverlay, {}),
       /* @__PURE__ */ jsx_runtime20.jsxs(exports_index_parts5.Popup, {
         "data-slot": "dialog-content",
-        className: cn("fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className),
+        "data-size": size4,
+        className: cn2("fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-[size=md]:sm:max-w-md data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className),
         ...props,
         children: [
           children,
@@ -59563,7 +59569,7 @@ function DialogContent({
 function DialogHeader({ className, ...props }) {
   return /* @__PURE__ */ jsx_runtime20.jsx("div", {
     "data-slot": "dialog-header",
-    className: cn("flex flex-col gap-2", className),
+    className: cn2("flex flex-col gap-2", className),
     ...props
   });
 }
@@ -59575,7 +59581,7 @@ function DialogFooter({
 }) {
   return /* @__PURE__ */ jsx_runtime20.jsxs("div", {
     "data-slot": "dialog-footer",
-    className: cn("-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end", className),
+    className: cn2("-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end", className),
     ...props,
     children: [
       children,
@@ -59591,14 +59597,14 @@ function DialogFooter({
 function DialogTitle3({ className, ...props }) {
   return /* @__PURE__ */ jsx_runtime20.jsx(exports_index_parts5.Title, {
     "data-slot": "dialog-title",
-    className: cn("text-base leading-none font-medium", className),
+    className: cn2("text-base leading-none font-medium", className),
     ...props
   });
 }
 function DialogDescription3({ className, ...props }) {
   return /* @__PURE__ */ jsx_runtime20.jsx(exports_index_parts5.Description, {
     "data-slot": "dialog-description",
-    className: cn("text-sm text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground", className),
+    className: cn2("text-sm text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground", className),
     ...props
   });
 }
@@ -59629,7 +59635,7 @@ function NewVersionDialog({
     open,
     onOpenChange,
     children: /* @__PURE__ */ jsx_runtime21.jsx(DialogContent, {
-      className: "sm:max-w-md",
+      size: "md",
       children: /* @__PURE__ */ jsx_runtime21.jsxs("form", {
         onSubmit: submit,
         className: "flex flex-col gap-6",
@@ -59709,7 +59715,6 @@ function NewVersionDialog({
             ]
           }),
           /* @__PURE__ */ jsx_runtime21.jsxs(DialogFooter, {
-            className: "gap-2",
             children: [
               /* @__PURE__ */ jsx_runtime21.jsx(Button3, {
                 type: "button",
@@ -59826,9 +59831,9 @@ function NoteAtSelection({
             }),
             /* @__PURE__ */ jsx_runtime22.jsx(Button3, {
               type: "submit",
-              size: "sm",
+              size: "xs",
               disabled: !body.trim(),
-              className: "ml-auto h-6 px-2 text-xs",
+              className: "ml-auto",
               children: "Add note"
             })
           ]
@@ -59938,7 +59943,7 @@ function StatusStrip({
 // src/scriptorium/surface/components/VersionMenu.tsx
 var import_react24 = __toESM(require_react(), 1);
 
-// src/scriptorium/surface/ui/dropdown-menu.tsx
+// src/kit/ui/dropdown-menu.tsx
 var jsx_runtime24 = __toESM(require_jsx_runtime(), 1);
 function DropdownMenu({ ...props }) {
   return /* @__PURE__ */ jsx_runtime24.jsx(exports_index_parts2.Root, {
@@ -59969,7 +59974,7 @@ function DropdownMenuContent({
       sideOffset,
       children: /* @__PURE__ */ jsx_runtime24.jsx(exports_index_parts2.Popup, {
         "data-slot": "dropdown-menu-content",
-        className: cn("z-50 max-h-(--available-height) w-(--anchor-width) min-w-32 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 outline-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:overflow-hidden data-closed:fade-out-0 data-closed:zoom-out-95", className),
+        className: cn2("z-50 max-h-(--available-height) w-(--anchor-width) min-w-32 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 outline-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:overflow-hidden data-closed:fade-out-0 data-closed:zoom-out-95", className),
         ...props
       })
     })
@@ -59978,21 +59983,23 @@ function DropdownMenuContent({
 function DropdownMenuItem({
   className,
   inset,
+  stacked,
   variant = "default",
   ...props
 }) {
   return /* @__PURE__ */ jsx_runtime24.jsx(exports_index_parts2.Item, {
     "data-slot": "dropdown-menu-item",
     "data-inset": inset,
+    "data-stacked": stacked || undefined,
     "data-variant": variant,
-    className: cn("group/dropdown-menu-item relative flex cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-inset:pl-7 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[variant=destructive]:*:[svg]:text-destructive", className),
+    className: cn2("group/dropdown-menu-item relative flex cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-inset:pl-7 data-stacked:flex-col data-stacked:items-start data-stacked:gap-0.5 data-stacked:py-1.5 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[variant=destructive]:*:[svg]:text-destructive", className),
     ...props
   });
 }
 function DropdownMenuSeparator({ className, ...props }) {
   return /* @__PURE__ */ jsx_runtime24.jsx(exports_index_parts2.Separator, {
     "data-slot": "dropdown-menu-separator",
-    className: cn("-mx-1 my-1 h-px bg-border", className),
+    className: cn2("-mx-1 my-1 h-px bg-border", className),
     ...props
   });
 }
@@ -60078,7 +60085,8 @@ function VersionMenu({
                 /* @__PURE__ */ jsx_runtime25.jsxs(DropdownMenuItem, {
                   onClick: () => v.n !== active && onActivate(v.n),
                   "aria-current": v.n === active ? "true" : undefined,
-                  className: cn("flex-col items-start gap-0.5 py-1.5", v.n === active && "bg-selected/14 ring-1 ring-selected/30"),
+                  stacked: true,
+                  className: cn(v.n === active && "bg-selected/14 ring-1 ring-selected/30"),
                   children: [
                     /* @__PURE__ */ jsx_runtime25.jsxs("span", {
                       className: "flex w-full items-center gap-1.5",
@@ -60375,11 +60383,11 @@ function DocumentPane({
                 children: [
                   /* @__PURE__ */ jsx_runtime26.jsxs(Button3, {
                     variant: "ghost",
-                    size: "sm",
+                    size: "chrome",
                     onClick: onRevert,
                     disabled: ended || !doc2.dirty && !doc2.outsideChanged,
                     title: ended ? SESSION_ENDED : "Take the file on disk back over your edits",
-                    className: cn("h-7 gap-1.5 px-2 text-xs", fade),
+                    className: fade,
                     children: [
                       /* @__PURE__ */ jsx_runtime26.jsx(UndoDot, {
                         className: "size-3.5"
@@ -60389,11 +60397,11 @@ function DocumentPane({
                   }),
                   /* @__PURE__ */ jsx_runtime26.jsxs(Button3, {
                     variant: "ghost",
-                    size: "sm",
+                    size: "chrome",
                     onClick: onSave,
                     disabled: ended || !doc2.dirty,
                     title: ended ? SESSION_ENDED : `Save v${doc2.active} to ${doc2.name} — the file in your folder (⌘S)`,
-                    className: cn("h-7 gap-1.5 px-2 text-xs", !readerStaysLoud("save", doc2) && fade),
+                    className: cn(!readerStaysLoud("save", doc2) && fade),
                     children: [
                       /* @__PURE__ */ jsx_runtime26.jsx(Save, {
                         className: "size-3.5"
@@ -60899,16 +60907,15 @@ function Note({
               /* @__PURE__ */ jsx_runtime28.jsx(Button3, {
                 type: "button",
                 variant: "ghost",
-                size: "sm",
+                size: "2xs",
                 onClick: () => setDraft(null),
-                className: "ml-auto h-5 px-1.5 text-[11px]",
+                className: "ml-auto",
                 children: "Cancel"
               }),
               /* @__PURE__ */ jsx_runtime28.jsx(Button3, {
                 type: "submit",
-                size: "sm",
+                size: "2xs",
                 disabled: !draft.trim(),
-                className: "h-5 px-1.5 text-[11px]",
                 children: "Save"
               })
             ]
@@ -61075,7 +61082,7 @@ function NotesPanel({
           resolved.length > 0 && /* @__PURE__ */ jsx_runtime28.jsxs("button", {
             type: "button",
             onClick: () => setShowResolved((v) => !v),
-            className: "mt-2 w-full rounded-sm px-1 py-1 text-[11px] text-ink-faint hover:text-ink",
+            className: "mt-2 w-full rounded-sm px-1 py-1 text-[11px] text-ink-faint",
             children: [
               showResolved ? "Hide" : "Show",
               " ",
@@ -61114,9 +61121,9 @@ function NotesPanel({
               }),
               /* @__PURE__ */ jsx_runtime28.jsxs(Button3, {
                 type: "submit",
-                size: "sm",
+                size: "xs",
                 disabled: !selection || !body.trim(),
-                className: "ml-auto h-6 px-2 text-xs",
+                className: "ml-auto",
                 children: [
                   /* @__PURE__ */ jsx_runtime28.jsx(MessageSquarePlus, {
                     "aria-hidden": true,
@@ -61389,9 +61396,9 @@ function Row2({ task, onDone }) {
           open && /* @__PURE__ */ jsx_runtime30.jsx(Button3, {
             type: "button",
             variant: "ghost",
-            size: "sm",
+            size: "3xs",
             onClick: () => onDone(task.id),
-            className: "ml-auto h-5 px-1.5 text-[10px] opacity-0 group-hover/task:opacity-100 focus-visible:opacity-100",
+            className: "ml-auto opacity-0 group-hover/task:opacity-100 focus-visible:opacity-100",
             children: "Mark done"
           })
         ]
@@ -61428,10 +61435,10 @@ function TasksPanel({
             /* @__PURE__ */ jsx_runtime30.jsxs(Button3, {
               type: "button",
               variant: "ghost",
-              size: "sm",
+              size: "3xs",
               onClick: onClear,
               title: "Forget every finished task; outstanding ones stay",
-              className: "ml-auto h-5 px-1.5 text-[10px] text-ink-faint hover:text-ink",
+              className: "ml-auto text-ink-faint",
               children: [
                 "Clear ",
                 done.length,
@@ -61621,7 +61628,7 @@ function ToastCard({
   });
 }
 
-// src/scriptorium/surface/state/storage.ts
+// src/kit/lib/storage.ts
 var safeStorage = {
   getItem(key) {
     try {
@@ -62014,11 +62021,10 @@ function App() {
           }),
           /* @__PURE__ */ jsx_runtime32.jsxs(Button3, {
             variant: "ghost",
-            size: "sm",
+            size: "chrome",
             onClick: endSession,
             disabled: connection !== "open",
             title: endButtonTitle(endedBy),
-            className: "h-7 gap-1.5 px-2 text-xs",
             children: [
               /* @__PURE__ */ jsx_runtime32.jsx(Power, {
                 className: "size-3.5"
