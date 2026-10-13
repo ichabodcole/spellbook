@@ -312,9 +312,10 @@ import { join } from "node:path";
 // the kit-foundation port of Story Studio's theme: the L0 tokens the
 // primitives need (each derived from Spellbook's palette), the L1 shadcn
 // aliases, the light block for them, the animation import and the
-// pointer-cursor rule. The colour values are pinned by src/kit/theme/
-// theme.test.ts, which the gate does run, so the palette half of this file is
-// checked by a test even though the gate cannot parse the file.
+// pointer-cursor rule. Every L0 token's value, in both modes, is pinned by
+// src/kit/theme/theme.test.ts, which the gate does run; the L1 aliases are
+// checked only for their var() shape, and the rest of the file is read by
+// nothing.
 const DECLARED_BLIND: Record<string, number> = {
   "src/digestify/surface/styles.css": 515,
   "src/digestify/surface/index.html": 26,

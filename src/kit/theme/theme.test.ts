@@ -30,16 +30,53 @@ describe("the base stylesheet", () => {
     expect(resolve(surface, BASE_CSS_SPECIFIER)).toBe(resolve(BASE_CSS_PATH));
   });
 
-  test("keeps Spellbook's palette: the tokens it carried before the port hold their values", () => {
+  test("keeps Spellbook's palette: every L0 token holds its value in both modes", () => {
     const themeBlock = /@theme\s*\{([\s\S]*?)\n\}/.exec(css)?.[1] ?? "";
     const lightBlock = /\[data-theme="light"\]\s*\{([\s\S]*?)\n\}/.exec(css)?.[1] ?? "";
     const value = (block: string, token: string) =>
       new RegExp(`--color-${token}:\\s*([^;]+);`).exec(block)?.[1];
-    const dark = { bg: "#020617", surface: "#0f172a", ink: "#e2e8f0", edge: "#1e293b" };
-    const light = { bg: "#f7f6f3", surface: "#fdfcfa", ink: "#1e293b", edge: "#ddd8cf" };
-    for (const [t, v] of Object.entries({ ...dark, "ink-faint": "#64748b" }))
+    const dark = {
+      bg: "#020617",
+      surface: "#0f172a",
+      ink: "#e2e8f0",
+      edge: "#1e293b",
+      "ink-faint": "#64748b",
+      // Derived from that palette in the port, and Spellbook's from then on.
+      "surface-raised": "#16213b",
+      "ink-dim": "#94a3b8",
+      brand: "#a78bfa",
+      "on-brand": "#020617",
+      attention: "#f59e0b",
+      danger: "#f87171",
+      added: "#4ade80",
+      removed: "#fb7185",
+      selected: "#60a5fa",
+      pointed: "#e879f9",
+    };
+    const light = {
+      bg: "#f7f6f3",
+      surface: "#fdfcfa",
+      ink: "#1e293b",
+      edge: "#ddd8cf",
+      "ink-faint": "#8b93a1",
+      "surface-raised": "#efece6",
+      "ink-dim": "#475569",
+      brand: "#7c3aed",
+      "on-brand": "#ffffff",
+      attention: "#b45309",
+      danger: "#b91c1c",
+      added: "#15803d",
+      removed: "#be123c",
+      selected: "#1d4ed8",
+      pointed: "#a21caf",
+    };
+    // Every L0 token is pinned, in both modes: a token added later fails here
+    // until its values are written down too.
+    expect(Object.keys(dark).sort()).toEqual([...THEME_TOKENS].sort());
+    expect(Object.keys(light).sort()).toEqual([...THEME_TOKENS].sort());
+    for (const [t, v] of Object.entries(dark))
       expect(value(themeBlock, t), `dark --color-${t}`).toBe(v);
-    for (const [t, v] of Object.entries({ ...light, "ink-faint": "#8b93a1" }))
+    for (const [t, v] of Object.entries(light))
       expect(value(lightBlock, t), `light --color-${t}`).toBe(v);
   });
 
