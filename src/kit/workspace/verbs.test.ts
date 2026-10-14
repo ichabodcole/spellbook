@@ -340,7 +340,9 @@ test("the in-process census: every path's unknown-flag rejection names exactly w
       mismatches.push(`${c.path.join(" ") || "(root)"}: ${accepted} vs ${declared}`);
   }
   expect(mismatches).toEqual([]);
-});
+  // One run per verb: it passes in under 2 s alone, but under a full
+  // parallel gate it has run past the 5 s default.
+}, 30_000);
 
 // ── 3. parsers ──────────────────────────────────────────────────────
 
