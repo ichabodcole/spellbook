@@ -3832,8 +3832,20 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           };
         }
         case "say": {
-          const about =
-            cmd.about && (cmd.about.entryIds?.length || cmd.about.noteId) ? cmd.about : undefined;
+          // Only what an agent's message may point at: entries and a note. The
+          // rest of `MessageAbout` is the human's (`ask` is the one-ask guard's
+          // mark, `docs` and a passage are what the human pointed at), so it is
+          // dropped, not stored as sent.
+          const raw = cmd.about as Partial<MessageAbout> | null | undefined;
+          const entryIds =
+            Array.isArray(raw?.entryIds) && raw.entryIds.every((e) => typeof e === "string")
+              ? raw.entryIds
+              : undefined;
+          const noteId = typeof raw?.noteId === "string" && raw.noteId ? raw.noteId : undefined;
+          const about: Pick<MessageAbout, "entryIds" | "noteId"> | undefined =
+            entryIds?.length || noteId
+              ? { ...(entryIds?.length ? { entryIds } : {}), ...(noteId ? { noteId } : {}) }
+              : undefined;
           const m = session.addMessage({
             from: "agent",
             type: "message",

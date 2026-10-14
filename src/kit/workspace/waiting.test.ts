@@ -416,6 +416,13 @@ describe("askOutstanding", () => {
     expect(askOutstanding(note("n1", 0), [typedAt("n1", 1000)])).toBe(false);
   });
 
+  test("only the human's mark counts: an agent message carrying one is no ask", () => {
+    const agentMarked = { ...msg("agent", 1000), about: { noteId: "n1", ask: true as const } };
+    expect(askOutstanding(note("n1", 0), [agentMarked])).toBe(false);
+    // …so the human's first marked ask after it is owed, and not already answered.
+    expect(askOutstanding(note("n1", 0), [agentMarked, askAt("n1", 2000)])).toBe(true);
+  });
+
   test("an ask about another note says nothing about this one", () => {
     expect(askOutstanding(note("n1", 0), [askAt("n2", 1000)])).toBe(false);
   });

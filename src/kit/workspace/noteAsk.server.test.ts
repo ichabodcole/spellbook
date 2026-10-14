@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { fixtureDaemon } from "./fixtures/app";
-import { cmd, collectEvents, FakeSurface } from "./fixtures/harness";
+import { cmd, collectEvents, FakeSurface, waitUntil } from "./fixtures/harness";
 import type { WorkspaceDaemon } from "./server";
 import { seedDocs, tempRoot } from "./testing";
 
@@ -136,6 +136,32 @@ describe("one ask at a time", () => {
       "and the third",
     ]);
     expect(s.frames.some((f) => f.op === "error")).toBe(false);
+  });
+
+  test("the agent's say keeps only entryIds and noteId: its ask mark is dropped, and holds nothing", async () => {
+    const { s, t, base } = await start();
+    await openA(s);
+    const n = await humanNote(s, t, "stuck?");
+    const r = await cmd(base, {
+      op: "say",
+      text: "a note from me",
+      about: { noteId: n, ask: true, docs: [join(docs, "set", "a.md")], text: "one", fromLine: 1 },
+    });
+    expect(r.status).toBe(200);
+    const stored = await waitUntil("stored", () => s.state.chat.find((m) => m.id === r.body.id));
+    expect(stored.about).toEqual({ noteId: n });
+    const kept = await cmd(base, {
+      op: "say",
+      text: "two",
+      about: { entryIds: ["e1"], ask: true },
+    });
+    const second = await waitUntil("stored", () => s.state.chat.find((m) => m.id === kept.body.id));
+    expect(second.about).toEqual({ entryIds: ["e1"] });
+    // The human's first marked ask still goes: the agent's mark held nothing.
+    s.send(ask(n, "my first ask", "r1"));
+    await settle(s, t, "marker");
+    expect(messagesAbout(t, n).map((e) => e.text)).toContain("my first ask");
+    expect(s.frames.some((f) => f.op === "error" && f.requestId === "r1")).toBe(false);
   });
 
   test("ask, the agent answers, ask again: two messages", async () => {
