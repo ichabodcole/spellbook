@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { fstatSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { startDaemon } from "./detach.ts";
@@ -97,5 +98,72 @@ describe("startDaemon", () => {
     pids.push(helper);
     await new Promise((r) => setTimeout(r, 200));
     expect(() => process.kill(helper, 0)).toThrow();
+  });
+
+  test("a daemon that ignores SIGTERM after a start timeout is sent SIGKILL", async () => {
+    const dir = tmp();
+    const pidFile = join(dir, "daemon.pid");
+    // Never says ready, and shrugs off SIGTERM.
+    const script = `
+      process.on("SIGTERM", () => {});
+      require("node:fs").writeFileSync(${JSON.stringify(pidFile)}, String(process.pid));
+      setInterval(() => {}, 1000);
+    `;
+    const started = Date.now();
+    await expect(
+      startDaemon({
+        command: process.execPath,
+        args: ["-e", script],
+        logFile: join(dir, "daemon.log"),
+        startTimeoutMs: 500,
+        killGraceMs: 300,
+      }),
+    ).rejects.toThrow(/daemon start timeout/);
+    // The grace was spent: SIGTERM did not end it, so the wait ran out.
+    expect(Date.now() - started).toBeGreaterThanOrEqual(800);
+    const pid = Number(readFileSync(pidFile, "utf8"));
+    pids.push(pid);
+    await new Promise((r) => setTimeout(r, 200));
+    expect(() => process.kill(pid, 0)).toThrow();
+  });
+
+  test("a spawn that throws synchronously rejects and does not leak the log fd", async () => {
+    const dir = tmp();
+    let fd: number | undefined;
+    const throwing = ((_cmd: string, _args: string[], o: { stdio: unknown[] }) => {
+      fd = o.stdio[2] as number;
+      throw new Error("spawn exploded");
+    }) as unknown as typeof spawn;
+    await expect(
+      startDaemon(
+        { command: process.execPath, args: [], logFile: join(dir, "daemon.log") },
+        { spawn: throwing },
+      ),
+    ).rejects.toThrow(/spawn exploded/);
+    expect(typeof fd).toBe("number");
+    expect(() => fstatSync(fd as number)).toThrow();
+  });
+
+  test("a daemon that says ready with no pid is a failed start, not pid -1", async () => {
+    const dir = tmp();
+    const noPid = ((...a: Parameters<typeof spawn>) => {
+      const child = spawn(...a);
+      if (child.pid !== undefined) pids.push(child.pid);
+      Object.defineProperty(child, "pid", { value: undefined, configurable: true });
+      return child;
+    }) as typeof spawn;
+    await expect(
+      startDaemon(
+        {
+          command: process.execPath,
+          args: [
+            "-e",
+            "console.log(JSON.stringify({ ready: true })); setInterval(() => {}, 1000);",
+          ],
+          logFile: join(dir, "daemon.log"),
+        },
+        { spawn: noPid },
+      ),
+    ).rejects.toThrow(/no pid/);
   });
 });

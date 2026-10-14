@@ -32,6 +32,11 @@ export type StartDaemonOptions = {
   logFile: string;
   /** How long to wait for the ready line. Default 45 s. */
   startTimeoutMs?: number;
+  /**
+   * How long a daemon being killed after a failed start gets to leave on
+   * SIGTERM before it is sent SIGKILL. Default 2 s.
+   */
+  killGraceMs?: number;
 };
 
 export type StartedDaemon<T> = {
@@ -39,6 +44,9 @@ export type StartedDaemon<T> = {
   /** The ready line, parsed. */
   ready: T;
 };
+
+/** What `startDaemon` spawns with. A test seam; callers leave it alone. */
+export type StartDaemonDeps = { spawn?: typeof spawn };
 
 /** The last few lines of a log file, for a start failure to quote. */
 function tailOf(path: string, lines = 12): string {
@@ -50,26 +58,67 @@ function tailOf(path: string, lines = 12): string {
 }
 
 /**
+ * Signal the child's process group, or the child alone when the group is gone.
+ * False when neither is there to signal.
+ */
+function signal(pid: number, sig: NodeJS.Signals | 0): boolean {
+  try {
+    process.kill(-pid, sig);
+    return true;
+  } catch {
+    try {
+      process.kill(pid, sig);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+
+/**
+ * Kill a daemon that never said ready: SIGTERM, then SIGKILL if it (or any
+ * helper in its group) is still there after the grace. A daemon that ignores
+ * SIGTERM must not outlive a failed start.
+ */
+async function killGroup(pid: number, graceMs: number): Promise<void> {
+  if (!signal(pid, "SIGTERM")) return;
+  const end = Date.now() + graceMs;
+  while (Date.now() < end) {
+    if (!signal(pid, 0)) return;
+    await new Promise((r) => setTimeout(r, 25));
+  }
+  signal(pid, "SIGKILL");
+}
+
+/**
  * Spawn the daemon detached and wait for its ready line. Rejects when the
- * daemon exits first, does not say ready in time, or prints a line that is not
- * JSON. On rejection the child is left for the caller's pointer cleanup; a
- * daemon that never said ready is killed.
+ * daemon cannot be spawned, exits first, does not say ready in time, prints a
+ * line that is not JSON, or has no pid to report. On rejection the child is
+ * left for the caller's pointer cleanup; a daemon that never said ready is
+ * killed (its whole process group, SIGKILL after a grace).
  */
 export async function startDaemon<T = Record<string, unknown>>(
   opts: StartDaemonOptions,
+  deps: StartDaemonDeps = {},
 ): Promise<StartedDaemon<T>> {
   mkdirSync(dirname(opts.logFile), { recursive: true });
   const logFd = openSync(opts.logFile, "a");
-  const child = spawn(opts.command, [...opts.args], {
-    cwd: opts.cwd,
-    env: opts.env ?? process.env,
-    detached: true,
-    stdio: ["ignore", "pipe", logFd],
-  });
-  closeSync(logFd);
+  let child: ReturnType<typeof spawn>;
+  try {
+    child = (deps.spawn ?? spawn)(opts.command, [...opts.args], {
+      cwd: opts.cwd,
+      env: opts.env ?? process.env,
+      detached: true,
+      stdio: ["ignore", "pipe", logFd],
+    });
+  } finally {
+    // The child holds its own copy; ours closes whether or not spawn threw.
+    closeSync(logFd);
+  }
   child.unref();
 
   const timeoutMs = opts.startTimeoutMs ?? 45_000;
+  const graceMs = opts.killGraceMs ?? 2_000;
   return await new Promise<StartedDaemon<T>>((resolve, reject) => {
     let buf = "";
     let settled = false;
@@ -84,21 +133,14 @@ export async function startDaemon<T = Record<string, unknown>>(
     };
     const fail = (message: string, kill: boolean) =>
       settle(() => {
-        if (kill && child.pid !== undefined) {
-          // The child leads its own process group (`detached`), so signal the
-          // group: a helper the daemon spawned must not outlive a failed start.
-          try {
-            process.kill(-child.pid, "SIGTERM");
-          } catch {
-            try {
-              process.kill(child.pid, "SIGTERM");
-            } catch {
-              /* already gone */
-            }
-          }
-        }
-        const log = tailOf(opts.logFile);
-        reject(new Error(log ? `${message}\n${log}` : message));
+        const pid = child.pid;
+        // The child leads its own process group (`detached`), so the group is
+        // signalled: a helper the daemon spawned must not outlive a failed start.
+        const killed = kill && pid !== undefined ? killGroup(pid, graceMs) : Promise.resolve();
+        void killed.then(() => {
+          const log = tailOf(opts.logFile);
+          reject(new Error(log ? `${message}\n${log}` : message));
+        });
       });
     const timer = setTimeout(
       () => fail(`daemon start timeout (${timeoutMs / 1000}s)`, true),
@@ -111,16 +153,21 @@ export async function startDaemon<T = Record<string, unknown>>(
       const nl = buf.indexOf("\n");
       if (nl < 0) return;
       const line = buf.slice(0, nl);
+      let ready: T;
       try {
         const parsed: unknown = JSON.parse(line);
         if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
           throw new Error("not an object");
         }
-        const ready = parsed as T;
-        settle(() => resolve({ pid: child.pid ?? -1, ready }));
+        ready = parsed as T;
       } catch {
         fail(`the daemon's first line was not a JSON object: ${line.slice(0, 200)}`, true);
+        return;
       }
+      const pid = child.pid;
+      // A daemon with no pid cannot be stopped or found again: not a start.
+      if (pid === undefined) fail("the daemon said ready but has no pid", false);
+      else settle(() => resolve({ pid, ready }));
     });
   });
 }
