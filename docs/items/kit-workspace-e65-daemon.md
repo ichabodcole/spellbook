@@ -33,16 +33,42 @@ form that can go back to Story Studio as `kit-per-note-waiting`:
 **Ruled (Cole, 2026-10-14):** Scriptorium's `note.edited` and `note.reopened`
 events are kept.
 
+**Done and verified (2026-10-14).** A verifier drove the same scenarios through
+Scriptorium's daemon and the kit's and got the same answers each time:
+
+- two notes, then one reply;
+- a rewrite, and a reopen;
+- the agent resolving one note while another stays owed;
+- a reply in the same millisecond;
+- a double ask;
+- a restore;
+- badge timing, including `working`.
+
+**Wire changes for Story Studio's port-back:**
+
+- the `system` fact `note.edited` is gone;
+- a reopen is now `note.reopened`;
+- `editNote` and `resolveNote` take a `by`;
+- the event count goes from 21 to 23.
+
+**Open:**
+
+- **For Cole to rule:** the one-ask guard drops any human `say` carrying an
+  already-asked note's `noteId`. In the kit, any composer can attach `noteId`,
+  so a different, typed follow-up would vanish silently.
+- **Later:** the kit has no agent `note-edit` verb yet.
+
 ## Definition of done
 
-- [ ] E65's rules hold, by tests ported from Scriptorium's `waiting.test.ts` and
+- [x] E65's rules hold, by tests ported from Scriptorium's `waiting.test.ts` and
       the server's note tests:
   - two notes and then one reply clear both;
   - a human rewrite or reopen re-arms;
   - a double ask sends one message;
   - the state survives a restore.
-- [ ] `PublicState.notesWaiting` exists.
-- [ ] Story Studio's agent has been offered the diff on `kit-parity`.
+- [x] `PublicState.notesWaiting` exists.
+- [x] Story Studio's agent has been offered the diff on `kit-parity` (message
+      28).
 
 ## Related Documents
 
