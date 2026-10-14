@@ -294,6 +294,30 @@ describe("every rendered primitive holds one class per group", () => {
     await settle(() => {
       store.announce("Saved", "All of it", [{ label: "Undo", onAct: () => {} }]);
     });
+    // A primitive that did not render has no classes to conflict: check each
+    // one is there first, or an empty container passes.
+    const toasts = () => m.container.querySelector('[data-slot="toasts"]');
+    await waitFor(() => !!toasts()?.textContent?.includes("Saved"), "the toast");
+    expect(toasts()?.querySelector("button")?.textContent).toContain("Undo");
+    for (const slot of [
+      "input",
+      "separator",
+      "empty",
+      "empty-header",
+      "empty-icon",
+      "empty-title",
+      "empty-description",
+      "empty-content",
+      "button",
+      "resizable-panel-group",
+      "resizable-panel",
+      "resizable-handle",
+      "status-strip",
+    ])
+      expect(m.container.querySelector(`[data-slot="${slot}"]`), slot).not.toBeNull();
+    expect(m.container.querySelectorAll('[data-slot="separator"]').length).toBeGreaterThanOrEqual(
+      2,
+    );
     expect(offenders(m.container)).toEqual([]);
     store.dispose();
     await m.unmount();
@@ -414,7 +438,15 @@ describe("every rendered primitive holds one class per group", () => {
         </Popover>
       </div>,
     );
+    // Both popups must be open before their classes are read: awaiting only the
+    // tooltip let a popover that never opened pass.
     await waitFor(() => !!document.querySelector('[data-slot="tooltip-content"]'), "the tooltip");
+    await waitFor(() => !!document.querySelector('[data-slot="popover-content"]'), "the popover");
+    expect(document.querySelector('[data-slot="tooltip-content"]')?.textContent).toContain(
+      "Says more",
+    );
+    expect(document.querySelector('[data-slot="popover-title"]')?.textContent).toBe("t");
+    expect(document.querySelector('[data-slot="popover-description"]')?.textContent).toBe("d");
     expect(offenders(document.body)).toEqual([]);
     await m.unmount();
   });
