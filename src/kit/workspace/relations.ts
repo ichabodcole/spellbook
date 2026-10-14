@@ -76,9 +76,17 @@ export type RelationDef = {
 
 /**
  * A vocabulary file as read: its relations in file order, with `warnings` for
- * keys it ignored (a usable file still), or why it cannot be read.
+ * keys it ignored (a usable file still), or why it cannot be read. `folded`
+ * names each key ignored because it folds onto an earlier key (`Extends` after
+ * `extends`), with that earlier key: its warning is in `warnings` too, and the
+ * doctor tells the two kinds apart by it.
  */
-export type RelationsRead = { relations: RelationDef[]; warnings?: string[] } | { broken: string };
+export type RelationsRead =
+  | { relations: RelationDef[]; warnings?: string[]; folded?: FoldedKey[] }
+  | { broken: string };
+
+/** A vocabulary key ignored because it is an earlier key in another case. */
+export type FoldedKey = { key: string; earlier: string };
 
 const isObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
@@ -102,6 +110,9 @@ export function parseRelations(text: string, source = ""): RelationsRead {
   if (!isObject(raw.relations)) return { broken: `"relations" must be an object` };
   const out: RelationDef[] = [];
   const warnings: string[] = [];
+  const folded: FoldedKey[] = [];
+  /** Each relation's key as the file writes it, by its folded name. */
+  const keyOf = new Map<string, string>();
   for (const [key, entry] of Object.entries(raw.relations)) {
     const at = `relations.${key}`;
     if (!RELATION_WORD.test(key))
@@ -113,12 +124,15 @@ export function parseRelations(text: string, source = ""): RelationsRead {
     // the file writes. Two keys that fold together are one relation: the first
     // stands, the later one is said and ignored.
     const rel = key.toLowerCase();
-    if (out.some((d) => d.rel === rel)) {
+    const earlier = keyOf.get(rel);
+    if (earlier !== undefined) {
       warnings.push(
-        `${at} is the same relation as one above it (relations are read case-insensitively, as ${JSON.stringify(rel)}); it is ignored`,
+        `${at} is relations.${earlier} again in another case (a relation is read case-insensitively, as ${JSON.stringify(rel)}); relations.${earlier} stands and this one is ignored`,
       );
+      folded.push({ key, earlier });
       continue;
     }
+    keyOf.set(rel, key);
     if (!isObject(entry)) return { broken: `${at} must be an object` };
     const text = (key: string): string | undefined | { bad: string } => {
       const v = entry[key];
@@ -161,7 +175,11 @@ export function parseRelations(text: string, source = ""): RelationsRead {
       source,
     });
   }
-  return { relations: out, ...(warnings.length > 0 ? { warnings } : {}) };
+  return {
+    relations: out,
+    ...(warnings.length > 0 ? { warnings } : {}),
+    ...(folded.length > 0 ? { folded } : {}),
+  };
 }
 
 /** The keys a relation's entry reads. */

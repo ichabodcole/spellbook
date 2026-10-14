@@ -127,8 +127,9 @@ describe("parseRelations", () => {
     if (!("relations" in r)) throw new Error("broken");
     expect(r.relations.map((d) => [d.rel, d.label])).toEqual([["extends", "a"]]);
     expect(r.warnings).toEqual([
-      'relations.Extends is the same relation as one above it (relations are read case-insensitively, as "extends"); it is ignored',
+      'relations.Extends is relations.extends again in another case (a relation is read case-insensitively, as "extends"); relations.extends stands and this one is ignored',
     ]);
+    expect(r.folded).toEqual([{ key: "Extends", earlier: "extends" }]);
   });
 
   test("a file that does not parse is broken, with the line and column", () => {

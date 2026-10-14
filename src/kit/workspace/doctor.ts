@@ -35,6 +35,7 @@ export type Finding = {
     | "profiles.warnings"
     | "relations.broken"
     | "relations.warnings"
+    | "relations.folded"
     | "workspace.overlap";
   /** What it is about: a path, or for a link finding the verb that lists them. */
   subject: string;
@@ -79,7 +80,17 @@ export type Checkup = {
     broken: number;
   };
   /** Relation vocabulary files (`_relations.json`) that do not parse or are not usable. Absent: not checked. */
-  relations?: { broken: number; warnings?: number };
+  relations?: {
+    broken: number;
+    /** Keys the vocabulary ignores, of every kind, `folded` ones included. */
+    warnings?: number;
+    /**
+     * The ignored keys that are an earlier key in another case (`relations.ts`,
+     * `FoldedKey`), each with its file. Absent: not told apart, and every
+     * ignored key is said by one message that covers both kinds.
+     */
+    folded?: { key: string; earlier: string; file: string }[];
+  };
   /**
    * The set the workspace folder is, or is inside (a session from before the
    * block). Absent: none.
@@ -250,16 +261,37 @@ export function findings(c: Checkup): Finding[] {
     });
   // A key a relation does not read is ignored, which is quiet by nature: a
   // typo such as `symetric` leaves a relation one-way and says nothing. Said
-  // here, and kept out of the startup line, like profile warnings.
-  if (r && (r.warnings ?? 0) > 0)
+  // here, and kept out of the startup line, like profile warnings. A key that
+  // is an earlier one in another case is ignored too, and is no typo: said
+  // apart, naming the key that stands, when the counts tell them apart.
+  const folded = r?.folded ?? [];
+  const unread = (r?.warnings ?? 0) - folded.length;
+  if (r && unread > 0)
     out.push({
       kind: "relations.warnings",
       subject: RELATIONS_VERB,
-      message: `${plural(r.warnings ?? 0, "key", "keys")} in the relation vocabulary (_relations.json) ${
-        r.warnings === 1 ? "is" : "are"
-      } not read and ignored, perhaps a typo of label, means, symmetric or inverse.`,
+      message:
+        r.folded === undefined
+          ? `${plural(unread, "key", "keys")} in the relation vocabulary (_relations.json) ${
+              unread === 1 ? "is" : "are"
+            } ignored: one a relation does not read (perhaps a typo of label, means, symmetric, inverse or color), or a relation repeated in another case.`
+          : `${plural(unread, "key", "keys")} in the relation vocabulary (_relations.json) ${
+              unread === 1 ? "is" : "are"
+            } not read and ignored, perhaps a typo of label, means, symmetric, inverse or color.`,
       fix: `run \`${RELATIONS_VERB}\` for each file's warnings; offer to fix the key in a new version the human saves`,
-      count: r.warnings,
+      count: unread,
+    });
+  if (folded.length > 0)
+    out.push({
+      kind: "relations.folded",
+      subject: RELATIONS_VERB,
+      message: `${plural(folded.length, "key", "keys")} in the relation vocabulary (_relations.json) ${
+        folded.length === 1 ? "repeats" : "repeat"
+      } an earlier key in another case, and ${folded.length === 1 ? "is" : "are"} ignored (a relation is read case-insensitively): ${folded
+        .map((f) => `${f.key} in ${f.file}, after ${f.earlier}`)
+        .join("; ")}.`,
+      fix: "offer to merge each into the key that stands, or remove it, in a new version the human saves",
+      count: folded.length,
     });
 
   return out;
@@ -288,6 +320,7 @@ export const SUMMARY_LEAVES_OUT: readonly Finding["kind"][] = [
   "names.shared",
   "profiles.warnings",
   "relations.warnings",
+  "relations.folded",
   // Said in full by its own startup line, which names what to change.
   "workspace.overlap",
 ];

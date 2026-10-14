@@ -165,3 +165,44 @@ describe("summary: one line, and silence when clean", () => {
     expect(line).toContain("doctor");
   });
 });
+
+describe("the relation vocabulary's ignored keys", () => {
+  test("a key repeated in another case is said apart, naming the key that stands, never as a typo", () => {
+    const got = findings({
+      ...clean,
+      relations: {
+        broken: 0,
+        warnings: 2,
+        folded: [{ key: "Extends", earlier: "extends", file: "_meta/profiles/_relations.json" }],
+      },
+    });
+    expect(got.map((f) => [f.kind, f.count])).toEqual([
+      ["relations.warnings", 1],
+      ["relations.folded", 1],
+    ]);
+    const folded = got.find((f) => f.kind === "relations.folded");
+    expect(folded?.message).toContain("Extends in _meta/profiles/_relations.json, after extends");
+    expect(folded?.message).not.toContain("typo");
+    expect(got.find((f) => f.kind === "relations.warnings")?.message).toContain("typo");
+    // Quiet, like the other vocabulary warnings.
+    expect(summary(got)).toBeNull();
+  });
+
+  test("only repeats: no typo finding at all", () => {
+    const got = findings({
+      ...clean,
+      relations: {
+        broken: 0,
+        warnings: 1,
+        folded: [{ key: "Extends", earlier: "extends", file: "x.json" }],
+      },
+    });
+    expect(got.map((f) => f.kind)).toEqual(["relations.folded"]);
+  });
+
+  test("not told apart (no `folded`): one message that does not claim a typo only", () => {
+    const [f] = findings({ ...clean, relations: { broken: 0, warnings: 2 } });
+    expect(f?.kind).toBe("relations.warnings");
+    expect(f?.message).toContain("or a relation repeated in another case");
+  });
+});
