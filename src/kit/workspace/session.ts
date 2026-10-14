@@ -1809,14 +1809,6 @@ export class WorkspaceSession {
     return this.m.docs.find((d) => d.notes.some((n) => n.id === id))?.slug;
   }
 
-  /**
-   * Every document's notes as stored: no placement, so no file reads. The
-   * attention tick asks this every second, where `view()` would place every note.
-   */
-  noteFacts(): { slug: string; notes: readonly Note[] }[] {
-    return this.m.docs.map((d) => ({ slug: d.slug, notes: d.notes }));
-  }
-
   /** Notes on a document, placed; `all` includes the resolved ones. */
   notesOf(opts: { doc?: string; all?: boolean }): { slug: string; notes: PlacedNote[] } {
     const d = this.docOrDie(opts.doc);
@@ -1836,34 +1828,22 @@ export class WorkspaceSession {
   }
 
   /** Change what a note says. Its anchor is untouched: it is still about the same passage. */
-  editNote(opts: { doc?: string; id: string; body: string; by: Author }): {
-    slug: string;
-    note: Note;
-  } {
+  editNote(opts: { doc?: string; id: string; body: string }): { slug: string; note: Note } {
     const d = this.docOrDie(opts.doc);
     const note = this.noteOrDie(d, opts.id);
     const body = opts.body.trim();
     if (!body) throw new SessionError("a note needs something written in it", 400);
     note.body = body;
-    note.editedAt = nowIso();
-    // Whose rewrite it was decides whether the note is owed an answer.
-    note.editedBy = opts.by;
     this.persist();
     return { slug: d.slug, note };
   }
 
-  resolveNote(opts: { doc?: string; id: string; resolved: boolean; by: Author }): {
+  resolveNote(opts: { doc?: string; id: string; resolved: boolean }): {
     slug: string;
     note: Note;
   } {
     const d = this.docOrDie(opts.doc);
     const note = this.noteOrDie(d, opts.id);
-    // A reopen is a write: a human reopening asks again, and the wait is timed
-    // from here; the agent reopening is an act on the note.
-    if (note.resolved && !opts.resolved) {
-      note.reopenedAt = nowIso();
-      note.reopenedBy = opts.by;
-    }
     note.resolved = opts.resolved;
     if (opts.resolved) note.resolvedAt = nowIso();
     else delete note.resolvedAt;

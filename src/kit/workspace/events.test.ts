@@ -18,8 +18,8 @@ void _events;
 void _facts;
 
 test("the list of kit events and of system facts are what the contract names", () => {
-  expect(KIT_EVENTS).toHaveLength(23);
-  expect(new Set(KIT_EVENTS).size).toBe(23);
+  expect(KIT_EVENTS).toHaveLength(21);
+  expect(new Set(KIT_EVENTS).size).toBe(21);
   expect([...SYSTEM_FACTS].sort() as string[]).toEqual(
     [
       "active.outside",
@@ -49,6 +49,7 @@ test("the list of kit events and of system facts are what the contract names", (
       "workspace.overlap",
       "history.undo",
       "history.redo",
+      "note.edited",
       "note.removed",
       "reveal",
       "slot.migrated",

@@ -134,7 +134,6 @@ import {
   attentionKey,
   DEFAULT_SNOOZE_MS,
   noteEventFacts,
-  notesWaiting,
   replyHint,
   waitingHint,
   waitingOn,
@@ -1003,12 +1002,6 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     });
 
     const appCtx = (): WorkspaceContext => ctx;
-    /** The notes owed an answer: `waiting`'s rule, for notes, on the same clock and snooze. */
-    const owedNotes = (now = Date.now()) =>
-      notesWaiting(session.noteFacts(), session.messages(), now, {
-        acknowledgedUntil,
-        stallMs: opts.stallMs,
-      });
     const viewState = (): PublicState => {
       const base = session.view();
       return {
@@ -1027,7 +1020,6 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         chat: base.chat,
         tasks: engine.view(),
         waiting: waitingOn(base.chat, Date.now(), { acknowledgedUntil, stallMs: opts.stallMs }),
-        notesWaiting: owedNotes(),
         history: history.view(),
         ...((offer) => (offer ? { relink: offer } : {}))(relinkView()),
         prefs: readPrefs(),
@@ -2943,12 +2935,6 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         case "say": {
           const text = msg.text.trim();
           if (!text) return;
-          // One ask at a time. While a message about this note is unanswered
-          // the note already says it was asked (`askedIn`), so a second is a
-          // double-click, not a new question: dropped. Derived, not flagged: it
-          // is the same fact the note's own badge reads.
-          const askedAbout = msg.about?.noteId;
-          if (askedAbout && owedNotes().some((w) => w.noteId === askedAbout && w.askedIn)) return;
           const about = aboutFor(msg.withSelection, msg.about);
           const m = session.addMessage({
             from: "human",
@@ -3005,36 +2991,22 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           return;
         }
         case "note.edit": {
-          const r = session.editNote({ doc: msg.doc, id: msg.id, body: msg.body, by: "human" });
-          // A human's rewrite is owed an answer again, so it says what the note
-          // now says, exactly as `note.added` does.
-          emit("note.edited", {
-            doc: r.slug,
-            note: r.note.id,
-            by: "human",
-            ...noteFacts(r.slug, r.note),
-          });
+          const r = session.editNote({ doc: msg.doc, id: msg.id, body: msg.body });
+          emit("system", { fact: "note.edited", doc: r.slug, note: r.note.id, by: "human" });
           broadcastState();
           return;
         }
         case "note.resolve": {
-          const r = session.resolveNote({
-            doc: msg.doc,
-            id: msg.id,
-            resolved: msg.resolved,
+          const r = session.resolveNote({ doc: msg.doc, id: msg.id, resolved: msg.resolved });
+          emit("note.resolved", {
+            doc: r.slug,
+            note: r.note.id,
             by: "human",
+            resolved: r.note.resolved,
+            // A human reopening a note is asking again, so it carries what
+            // `note.added` carries.
+            ...(r.note.resolved ? {} : noteFacts(r.slug, r.note)),
           });
-          if (r.note.resolved)
-            emit("note.resolved", { doc: r.slug, note: r.note.id, by: "human", resolved: true });
-          // A human reopening a note is asking again, so it carries what
-          // `note.added` carries.
-          else
-            emit("note.reopened", {
-              doc: r.slug,
-              note: r.note.id,
-              by: "human",
-              ...noteFacts(r.slug, r.note),
-            });
           broadcastState();
           return;
         }
@@ -3623,18 +3595,16 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           return { doc: r.slug, notes: r.notes };
         }
         case "note.resolve": {
-          const r = session.resolveNote({
-            doc: cmd.doc,
-            id: cmd.id,
-            resolved: cmd.resolved,
-            by: "agent",
-          });
+          const r = session.resolveNote({ doc: cmd.doc, id: cmd.id, resolved: cmd.resolved });
           line(
             `Agent ${cmd.resolved ? "resolved" : "reopened"} a note on ${r.slug}: "${quoteLabel(r.note.quote)}".`,
           );
-          if (r.note.resolved)
-            emit("note.resolved", { doc: r.slug, note: r.note.id, by: "agent", resolved: true });
-          else emit("note.reopened", { doc: r.slug, note: r.note.id, by: "agent" });
+          emit("note.resolved", {
+            doc: r.slug,
+            note: r.note.id,
+            by: "agent",
+            resolved: r.note.resolved,
+          });
           return { doc: r.slug, note: r.note.id, resolved: r.note.resolved };
         }
         case "working": {
@@ -4279,15 +4249,11 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
      */
     let lastWaiting: string | null = null;
     const attentionTimer = setInterval(() => {
-      const now = Date.now();
-      const w = waitingOn(session.messages(), now, {
+      const w = waitingOn(session.messages(), Date.now(), {
         acknowledgedUntil,
         stallMs: opts.stallMs,
       });
-      // A note going to "may be stuck" is a change the surface must see too.
-      // Not a nudge: the event that delivered the note already carried it, and
-      // the human's way out is to ask in the conversation, which is nudged.
-      const key = attentionKey(w, owedNotes(now));
+      const key = attentionKey(w);
       if (key === lastWaiting) return;
       lastWaiting = key;
       // The badge changed, so the surface needs the new snapshot.
