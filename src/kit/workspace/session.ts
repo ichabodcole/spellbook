@@ -5072,17 +5072,35 @@ export class WorkspaceSession {
     };
   }
 
-  /** How many vocabulary files in the context are broken, and how many keys they ignore: the doctor's counts. */
-  private vocabularyHealth(index: ContextIndex): { broken: number; warnings: number } {
+  /**
+   * How many vocabulary files in the context are broken, how many keys they
+   * ignore, and which of those repeat an earlier key in another case (each
+   * with its file, shown as `relations` shows it): the doctor's counts.
+   */
+  private vocabularyHealth(index: ContextIndex): {
+    broken: number;
+    warnings: number;
+    folded: { key: string; earlier: string; file: string }[];
+  } {
     const pass = this.relationPass(index);
     for (const c of this.markdownCandidates()) pass.at(c.path);
     const files = pass.lookup.files();
+    const entryOf = this.entryFinder(index);
+    const shown = (path: string) => {
+      const entry = entryOf(path);
+      return entry ? toPosix(relative(entry.root, path)) : basename(path);
+    };
+    const folded: { key: string; earlier: string; file: string }[] = [];
+    for (const f of files)
+      if (!("broken" in f.read))
+        for (const k of f.read.folded ?? []) folded.push({ ...k, file: shown(f.path) });
     return {
       broken: files.filter((f) => "broken" in f.read).length,
       warnings: files.reduce(
         (n, f) => n + ("broken" in f.read ? 0 : (f.read.warnings?.length ?? 0)),
         0,
       ),
+      folded,
     };
   }
 

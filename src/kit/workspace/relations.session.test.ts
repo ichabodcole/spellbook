@@ -232,6 +232,30 @@ describe("the relations verb", () => {
     expect(summary(found)).toBeNull();
   });
 
+  test("a key repeated in another case is its own doctor finding, naming the key that stands, and no typo", () => {
+    dreamwood();
+    vocabulary(world, {
+      relations: {
+        ...VOCABULARY.relations,
+        Extends: { label: "extends" },
+        extends: { label: "extends, again" },
+      },
+    });
+    s = inContext(join(root, "sessions"), world);
+    expect(s.relations().warnings).toBe(1);
+    // The doctor op, and the findings a save wakes the agent with, alike.
+    for (const all of [s.checkup(), s.reportedFindings()]) {
+      const found = all.filter((f) => f.kind.startsWith("relations."));
+      expect(found.map((f) => [f.kind, f.subject, f.count])).toEqual([
+        ["relations.folded", "relations", 1],
+      ]);
+      expect(found[0]?.message).toContain(
+        "extends in _meta/profiles/_relations.json, after Extends",
+      );
+      expect(found[0]?.message).not.toContain("typo");
+    }
+  });
+
   test("files, each declared relation with its uses, the undeclared and the used", () => {
     dreamwood();
     s = inContext(join(root, "sessions"), world);
