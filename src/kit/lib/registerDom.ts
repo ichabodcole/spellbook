@@ -3,12 +3,14 @@
 // loads, whether it is running in a browser, so a DOM registered in `beforeAll`
 // (which runs after every import) arrives too late and popups never portal.
 //
-// A test file pairs it with `beforeAll(installDom)` (a module evaluates once per
-// process, so a file that runs after another has removed the DOM registers it
-// again) and `afterAll(removeDom)`. A file that throws while it loads never
-// reaches those hooks; `domGuard.ts`, the repo's test preload, removes the DOM
-// it left behind before the next test runs. Nothing registers a DOM for the
-// whole run:
+// A module evaluates once per process, so this import registers only in the
+// first file that loads it. For every later file, `domGuard.ts` (the repo's
+// test preload) registers the DOM again when the file imports this module or
+// `testDom.ts`, before any of its modules load. A test file pairs the import
+// with `beforeAll(installDom)`, which claims the DOM, and `afterAll(removeDom)`.
+// A file that throws while it loads never reaches those hooks; the preload
+// removes the DOM it left behind before the next test runs. Nothing registers
+// a DOM for the whole run:
 // the daemon's tests share the process and rely on Bun's own `fetch`,
 // `WebSocket`, `Request` and timers, which a DOM replaces. The happy-dom
 // registrator does not put every one of them back, so the globals are
@@ -75,11 +77,11 @@ const KEEP_NATIVE = [
 /**
  * The DOM's `navigator.platform` is pinned to the runtime's own. A module may
  * read the platform once, when it loads: CodeMirror decides there whether `Mod`
- * is Cmd or Ctrl. Only the first test file in a process loads its modules under
- * this file's import-time DOM; a later one loads them after the earlier file's
- * `removeDom`, so they read Bun's own navigator ("MacIntel" on a Mac), while a
- * test reads happy-dom's (from its user agent, "X11; Darwin arm64") and presses
- * the other key. One platform for both keeps the order of files from mattering.
+ * is Cmd or Ctrl. A module that first loads with no DOM registered (one a
+ * backend file loaded first, say) reads Bun's own navigator ("MacIntel" on a
+ * Mac), while a test reads happy-dom's (from its user agent, "X11; Darwin
+ * arm64") and presses the other key. One platform for both keeps the order of
+ * files from mattering.
  */
 function pinPlatform(platform: string | undefined): void {
   if (platform === undefined) return;
@@ -152,6 +154,7 @@ export async function removeDom(): Promise<void> {
 (globalThis as Record<symbol, unknown>)[Symbol.for("spellbook.kit.registerDom")] = {
   stale: () => GlobalRegistrator.isRegistered && !claimed,
   remove: removeDom,
+  register,
 };
 
 register();
