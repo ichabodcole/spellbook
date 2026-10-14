@@ -302,6 +302,13 @@ describe("a session, end to end through the launchers", () => {
       [join(docs, "set", "part", "b.md"), 0],
       [join(docs, "set", "a.md"), 1],
     ]);
+    // Relations are read case-folded, and so is `--rel`: `EXTENDS` is the
+    // `extends` in view, kept and never warned about as matching nothing.
+    const shouted = await cli("graph", "--session", sessionId, "--rel", "EXTENDS,Sister-Of");
+    expect(shouted.err).toBe("");
+    const s = json<{ edges: { rel: string[] }[]; warnings?: string[] }>(shouted);
+    expect(s.edges.map((e) => e.rel)).toContainEqual(["extends", "sister-of"]);
+    expect((s.warnings ?? []).filter((w) => w.startsWith("rel:"))).toEqual([]);
     const bad = await cli("graph", "--session", sessionId, "--hops", "9");
     expect(bad.code).toBe(2);
     const gone = await cli("graph", "--session", sessionId, "--focus", "nope.md");
