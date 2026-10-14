@@ -66,6 +66,12 @@ const DIFFERENCES = {
    * that are not a relation word (`<relationship>`).
    */
   relCase: "found: the kit keeps a rel's case and drops non-word rels",
+  /**
+   * Found here: a `/`-anchored target. Scriptorium looks under the bundle root
+   * only; the kit looks under the root and then at the absolute path on disk
+   * (its chat writes absolute paths), so `/w/other/notes.md` is `outside`.
+   */
+  rootFallback: "found: the kit also tries a `/` target as a filesystem path",
 } as const;
 type Difference = keyof typeof DIFFERENCES;
 
@@ -157,18 +163,51 @@ const asKit = (i: BundleIndex): KitIndex => ({
   isDir: (p) => i.isDir?.(p) ?? false,
 });
 /**
- * A resolution in the kit's words. Scriptorium's `in-bundle` is the kit's
- * `in-context` (§3e.7's rename, which changes no answer), and a miss is compared
- * by the first place looked: Scriptorium reports one, the kit every one.
+ * The index with every question put to the disk written down, in order: a
+ * file (`exists`) or a folder (`isDir`). A resolver that has no `isDir` asks
+ * no folder question, on either side.
  */
-type Landed = { state: string; path: string } | { state: "missing"; tried: string | undefined };
-const landedScr = (r: Resolution): Landed =>
+const probed = (i: BundleIndex): { index: BundleIndex; looked: string[] } => {
+  const looked: string[] = [];
+  const isDir = i.isDir;
+  return {
+    looked,
+    index: {
+      ...i,
+      exists: (p) => {
+        looked.push(`file ${p}`);
+        return i.exists(p);
+      },
+      ...(isDir
+        ? {
+            isDir: (p: string) => {
+              looked.push(`dir ${p}`);
+              return isDir(p);
+            },
+          }
+        : {}),
+    },
+  };
+};
+/**
+ * A resolution in the kit's words. Scriptorium's `in-bundle` is the kit's
+ * `in-context` (§3e.7's rename, which changes no answer). A miss is compared by
+ * EVERY place the resolver asked the disk about, in order, not by what it
+ * reports: Scriptorium reports one place and the kit every one, so comparing
+ * reports by their first entry hid a place only the kit looks (`rootFallback`).
+ */
+type Landed = { state: string; path: string } | { state: "missing"; looked: string[] };
+// Asking the disk the same question twice changes no answer (Scriptorium asks
+// once per candidate, and an unanchored target's two candidates can be one), so
+// a repeat is not a difference.
+const once = (looked: string[]) => [...new Set(looked)];
+const landedScr = (r: Resolution, looked: string[]): Landed =>
   r.state === "missing"
-    ? { state: "missing", tried: r.tried }
+    ? { state: "missing", looked: once(looked) }
     : { state: r.state === "in-bundle" ? "in-context" : r.state, path: r.path };
-const landedKit = (r: ReturnType<typeof kitResolve>): Landed =>
+const landedKit = (r: ReturnType<typeof kitResolve>, looked: string[]): Landed =>
   r.state === "missing"
-    ? { state: "missing", tried: r.tried[0] }
+    ? { state: "missing", looked: once(looked) }
     : { state: r.state, path: r.path };
 
 // ── the cases ───────────────────────────────────────────────────────────────
@@ -602,7 +641,8 @@ const BOTH_RULES = withDirs({
   exists: (p) => PATHS.includes(p) || p === "/w/wiki/rules.md",
 });
 const lands = (path: string): Landed => ({ state: "in-context", path });
-const missing = (tried: string): Landed => ({ state: "missing", tried });
+/** A miss, with every question it put to the disk (`file …`, `dir …`), in order. */
+const missing = (...looked: string[]): Landed => ({ state: "missing", looked });
 
 const RESOLVE: ResolveCase[] = [
   {
@@ -639,7 +679,10 @@ const RESOLVE: ResolveCase[] = [
     differs: {
       why: "wikiForms",
       scr: lands("/w/wiki/concepts/exit-codes.md"),
-      kit: missing("/w/wiki/decisions/concept/exit-codes.md"),
+      kit: missing(
+        "file /w/wiki/decisions/concept/exit-codes.md",
+        "file /w/wiki/concept/exit-codes.md",
+      ),
     },
   },
   {
@@ -650,7 +693,10 @@ const RESOLVE: ResolveCase[] = [
     differs: {
       why: "wikiForms",
       scr: lands("/w/wiki/concepts/exit-codes.md"),
-      kit: missing("/w/wiki/decisions/guide/exit-codes.md"),
+      kit: missing(
+        "file /w/wiki/decisions/guide/exit-codes.md",
+        "file /w/wiki/guide/exit-codes.md",
+      ),
     },
   },
   {
@@ -660,8 +706,12 @@ const RESOLVE: ResolveCase[] = [
     index: index(),
     differs: {
       why: "wikiForms",
-      scr: missing("concept/nothing-here"),
-      kit: missing("/w/wiki/decisions/concept/nothing-here.md"),
+      // Scriptorium answers a key from its index alone, and asks the disk nothing.
+      scr: missing(),
+      kit: missing(
+        "file /w/wiki/decisions/concept/nothing-here.md",
+        "file /w/wiki/concept/nothing-here.md",
+      ),
     },
   },
   {
@@ -694,7 +744,12 @@ const RESOLVE: ResolveCase[] = [
     differs: {
       why: "wikiForms",
       scr: { state: "outside", path: "/w/src/acc/kit/checkers/a.ts" },
-      kit: missing("/w/wiki/rules/src/acc/kit/checkers/a.ts"),
+      kit: missing(
+        "file /w/wiki/rules/src/acc/kit/checkers/a.ts",
+        "file /w/wiki/rules/src/acc/kit/checkers/a.ts.md",
+        "file /w/wiki/src/acc/kit/checkers/a.ts",
+        "file /w/wiki/src/acc/kit/checkers/a.ts.md",
+      ),
     },
   },
   {
@@ -711,7 +766,7 @@ const RESOLVE: ResolveCase[] = [
     differs: {
       why: "wikiForms",
       scr: lands("/w/wiki/concepts/exit-codes.md"),
-      kit: missing("/w/wiki/decisions/exit-codes.md"),
+      kit: missing("file /w/wiki/decisions/exit-codes.md", "file /w/wiki/exit-codes.md"),
     },
   },
   {
@@ -721,6 +776,29 @@ const RESOLVE: ResolveCase[] = [
     index: index(["/w/other/notes.md"]),
   },
   { name: "nothing answers", target: "./gone.md", from: FROM, index: index() },
+  {
+    // The kit looks under the root, then on the filesystem, for a `/` target.
+    name: "a `/` target nothing answers",
+    target: "/gone.md",
+    from: FROM,
+    index: index(),
+    differs: {
+      why: "rootFallback",
+      scr: missing("file /w/wiki/gone.md"),
+      kit: missing("file /w/wiki/gone.md", "file /gone.md"),
+    },
+  },
+  {
+    name: "a `/` target that is an absolute path on disk",
+    target: "/w/other/notes.md",
+    from: FROM,
+    index: index(["/w/other/notes.md"]),
+    differs: {
+      why: "rootFallback",
+      scr: missing("file /w/wiki/w/other/notes.md"),
+      kit: { state: "outside", path: "/w/other/notes.md" },
+    },
+  },
   ...["./concepts/", "./concepts", "concepts/", "/concepts/", "./concepts/?rel=x"].map(
     (t): ResolveCase => ({ name: `a folder, ${t}`, target: t, from: IDX, index: withDirs() }),
   ),
@@ -774,8 +852,10 @@ const RESOLVE: ResolveCase[] = [
 describe("the kit's resolver against Scriptorium's resolving cases", () => {
   for (const c of RESOLVE) {
     test(`${c.name}${c.differs ? ` [${c.differs.why}]` : ""}`, () => {
-      const scr = landedScr(resolveTarget(c.target, c.from, c.index));
-      const kit = landedKit(kitResolve(c.target, c.from, asKit(c.index)));
+      const s = probed(c.index);
+      const scr = landedScr(resolveTarget(c.target, c.from, s.index), s.looked);
+      const k = probed(c.index);
+      const kit = landedKit(kitResolve(c.target, c.from, asKit(k.index)), k.looked);
       if (!c.differs) {
         expect(kit).toEqual(scr);
         return;
