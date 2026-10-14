@@ -64,15 +64,17 @@ written (no case folding).
   (ruled).
 - `wikiForms`: `type/slug` keys, bare names and the repo root — Scriptorium's
   behaviour, added as a resolver slot in the wiki-layer cycle.
-- `relCase`: Scriptorium lowercases rels — kit rule (ruled): rels keep their
-  case, with the kit's placeholder filter and its reading of every pair.
+- `relCase`: Scriptorium lowercases rels — Scriptorium's rule (ruled): the kit
+  folds rel case, and keeps its placeholder filter and its reading of every
+  pair.
 
 ## Definition of done
 
 - [x] A differential test exists.
 - [x] Each known difference is matched or listed for Cole with a recommendation.
-      All are ruled: each takes the kit's rule.
+      All are ruled: each takes the kit's rule, except rel case.
 - [x] The quadratic image-in-label case is filed, if it isn't already tracked.
+- [ ] The kit lowercases rels, and the differential matches `relCase`.
 
 ## Related Documents
 
