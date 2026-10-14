@@ -104,6 +104,10 @@ its open questions.
 - Scriptorium's acc config and census learn the new `say` flag and the tail
   field. This lands on Spellbook's side with the port.
 
+**Story Studio builds it (Cole, 2026-10-13).** Story Studio implements the
+change in its kit from this spec, and Spellbook ports it with the workspace
+stack. Spellbook reviews Story Studio's diff against the spec.
+
 ## Definition of done
 
 - [x] Story Studio's agent has checked this shape against Atlas (kit-parity,
