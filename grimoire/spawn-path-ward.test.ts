@@ -877,15 +877,20 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
     expect(FAMILY.reads.length).toBeGreaterThan(0);
     expect(adopters.length).toBeGreaterThan(0);
 
-    // The enumerated opaque calls leave the finding list, and each must still
-    // be found: a row whose call is gone is stale and fails here.
+    // The enumerated opaque calls leave the finding list. Each row stands for
+    // EXACTLY ONE call site: a row found nowhere is stale, and a row matching
+    // two sites (the declared call copied somewhere else, outside its guard)
+    // has not been looked at twice, so both fail here.
     const declared = (u: string) =>
       OPAQUE_FAMILY_CALLS.find((o) => u.startsWith(`${o.file}:`) && u.endsWith(` ${o.call}`));
-    const stale = OPAQUE_FAMILY_CALLS.filter((o) => !unresolved.some((u) => declared(u) === o)).map(
-      (o) => `${o.file}  ${o.call}`,
-    );
+    const miscounted = OPAQUE_FAMILY_CALLS.map((o) => ({
+      row: `${o.file}  ${o.call}`,
+      sites: unresolved.filter((u) => declared(u) === o),
+    }))
+      .filter((r) => r.sites.length !== 1)
+      .map((r) => `${r.row}  (matched ${r.sites.length} sites, declared for 1)`);
     expect(unresolved.filter((u) => declared(u) === undefined)).toEqual([]);
-    expect(stale).toEqual([]);
+    expect(miscounted).toEqual([]);
     expect(blind).toEqual([]);
     expect(missing).toEqual([]);
   });
