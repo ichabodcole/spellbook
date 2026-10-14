@@ -32,6 +32,12 @@ Before the shell port, its item carries a short list of what Scriptorium does
 better and must not lose (for example E53 and E65's waiting marks), so this
 check is not the only guard.
 
+**Already noticed (Cole, 2026-10-13, testing the kit-foundation build):**
+Scriptorium's side columns collapse all the way, while Story Studio's collapse
+to a rail. The shell port should bring the rail for both columns, along with the
+chat rail's composer-closed state (`kit-floating-composer`). This check confirms
+it arrived.
+
 ## Definition of done
 
 - [ ] A write-up with screenshots of both apps, area by area, listing each
