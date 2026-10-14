@@ -137,12 +137,12 @@ export function startHousekeeping(opts: HousekeepingOptions): () => void {
 
 export interface DrainOptions {
   /** The bound server. Typed structurally so the kit stays free of `bun`. */
-  server: { stop(closeActiveConnections?: boolean): unknown };
+  server: { stop(closeActiveConnections?: boolean): unknown; pendingRequests?: number };
   /** Live SSE tails; every registered closer is invoked. */
   clients?: SseClients;
   /** Live WebSockets. */
   sockets?: Iterable<{ close(): void }>;
-  /** How long queued frames get to flush before anything is closed. */
+  /** How long queued frames get to flush before anything is closed, when anyone is connected. */
   graceMs?: number;
   /** How long the graceful stop gets before teardown proceeds regardless. */
   stopMs?: number;
@@ -156,6 +156,10 @@ export interface DrainOptions {
  * client never sees — the queue goes with the socket. The 150 ms is what turns
  * "the daemon told you why it died" from a hope into an observation, and every
  * one of the eight daemons converged on that number independently.
+ * It is skipped only when nobody could be waiting on a frame: no tail, no
+ * socket and no request still being answered (a `stop` command's own reply).
+ * Bun's server reports the last as `pendingRequests`; a structural stand-in
+ * without it counts as none.
  *
  * ⛔ **AND THE STOP IS RACED, BECAUSE A SLOW SOCKET MUST NOT BE ABLE TO HANG
  * TEARDOWN.** `server.stop(true)` awaits its connections; one wedged peer is
@@ -209,7 +213,11 @@ export async function drainAndStop(opts: DrainOptions): Promise<void> {
   const graceMs = opts.graceMs ?? 150;
   const stopMs = opts.stopMs ?? 200;
 
-  await new Promise((r) => setTimeout(r, graceMs));
+  const listeners =
+    (opts.clients?.size ?? 0) +
+    [...(opts.sockets ?? [])].length +
+    (opts.server.pendingRequests ?? 0);
+  if (listeners > 0) await new Promise((r) => setTimeout(r, graceMs));
 
   if (opts.clients) {
     for (const client of [...opts.clients]) client.close();
@@ -224,8 +232,16 @@ export async function drainAndStop(opts: DrainOptions): Promise<void> {
     }
   }
 
-  await Promise.race([
-    Promise.resolve(opts.server.stop(true)),
-    new Promise((r) => setTimeout(r, stopMs)),
-  ]);
+  let raceTimer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      Promise.resolve(opts.server.stop(true)),
+      new Promise((r) => {
+        raceTimer = setTimeout(r, stopMs);
+      }),
+    ]);
+  } finally {
+    // Left running it would keep a spawned daemon's process alive `stopMs` after `stop`.
+    clearTimeout(raceTimer);
+  }
 }

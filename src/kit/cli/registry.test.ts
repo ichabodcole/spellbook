@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { parseArgs } from "node:util";
 import { type CommandSpec, defineCli, type Invocation } from "./registry";
 
 // ── harness ────────────────────────────────────────────────────────────────
@@ -398,6 +399,429 @@ describe("interceptors pass the rest on to their row", () => {
       expect(r.err).toBe("");
       expect(r.out).toBe(`${cli.renderHelp()}\n`);
     }
+  });
+});
+
+describe("help <verb>", () => {
+  const cli = defineCli({
+    name: "tool",
+    version: () => ({}),
+    options: { to: { type: "string" }, quiet: { type: "boolean" }, as: { type: "string" } },
+    commands: [
+      {
+        name: "send",
+        flags: ["to", "quiet", "as"],
+        positionals: [{ name: "file", required: true }],
+        describe: "send a file somewhere",
+        flagHelp: { to: "where it goes", quiet: "say nothing" },
+        examples: ["tool send a.txt --to b"],
+        run: () => {},
+      },
+      {
+        name: "post",
+        flags: ["to", "quiet"],
+        requiredFlags: ["to"],
+        positionals: [],
+        describe: "post somewhere",
+        run: () => {},
+      },
+      { name: "node edit", flags: [], positionals: [], describe: "edit a node", run: () => {} },
+    ],
+  });
+
+  test("shows the verb's usage, what it does, each flag with its line, and its examples", async () => {
+    const r = await capture(() => cli.main(["help", "send"]));
+    expect(r.code).toBe(0);
+    expect(r.out).toBe(
+      [
+        "usage: send <file> [--to ..] [--quiet] [--as ..]",
+        "",
+        "send a file somewhere",
+        "",
+        "flags:",
+        "  --to <to>  where it goes",
+        "  --quiet    say nothing",
+        "  --as <as>",
+        "",
+        "examples:",
+        "  tool send a.txt --to b",
+        "",
+      ].join("\n"),
+    );
+    expect(cli.renderVerbHelp("node edit")).toBe("usage: node edit\n\nedit a node");
+    expect((await capture(() => cli.main(["help", "node", "edit"]))).code).toBe(0);
+  });
+
+  test("`<verb> --help` and `<verb> -h` show the same, whatever else is given; after `--` it is an argument", async () => {
+    for (const argv of [
+      ["send", "--help"],
+      ["send", "a.txt", "-h"],
+      ["send", "--to", "b", "--help"],
+    ]) {
+      const r = await capture(() => cli.main(argv));
+      expect(r.code).toBe(0);
+      expect(r.out).toBe(`${cli.renderVerbHelp("send")}\n`);
+    }
+    const r = await capture(() => cli.main(["node", "edit", "--help"]));
+    expect(r.out).toBe(`${cli.renderVerbHelp("node edit")}\n`);
+  });
+
+  test("a required flag shows without brackets and is refused as missing", async () => {
+    expect(cli.usageOf("post")).toBe("post --to .. [--quiet]");
+    const env = envelope(await capture(() => cli.main(["post", "--quiet"])));
+    expect(env.error.exit_code).toBe(2);
+    expect(env.error.message).toBe("post: missing required --to");
+    expect(env.error.hint).toBe("expects: post --to .. [--quiet]");
+    expect((await capture(() => cli.main(["post", "--to", "x"]))).code).toBe(0);
+    expect(() =>
+      defineCli({
+        name: "bad",
+        version: () => ({}),
+        options: { to: { type: "string" } },
+        commands: [
+          {
+            name: "x",
+            flags: [],
+            requiredFlags: ["to"],
+            positionals: [],
+            describe: "",
+            run: () => {},
+          },
+        ],
+      }),
+    ).toThrow('requires flag "to"');
+  });
+
+  test("an unknown verb is a usage error listing the verbs", async () => {
+    const env = envelope(await capture(() => cli.main(["help", "nope"])));
+    expect(env.error.exit_code).toBe(2);
+    expect(env.error.message).toBe('help: no verb "nope"');
+    expect(env.error.choices).toContain("send");
+  });
+});
+
+describe("help <verb>: value slots, global flags, built-in rows and a verbless root", () => {
+  const ran: Invocation[] = [];
+  const cli = defineCli({
+    name: "board",
+    version: () => ({}),
+    options: {
+      notes: { type: "string", short: "n" },
+      force: { type: "boolean" },
+      session: { type: "string" },
+    },
+    globalFlags: ["session"],
+    commands: [
+      {
+        name: "add",
+        flags: ["notes", "force"],
+        positionals: [{ name: "title", required: false }],
+        describe: "add a task",
+        flagHelp: { notes: "free text" },
+        run: (inv) => {
+          ran.push(inv);
+        },
+      },
+      { name: "bare", flags: [], positionals: [], describe: "", run: () => {} },
+    ],
+  });
+
+  // The value-slot cells use their own table: string flags (one with a short),
+  // booleans (one with a short, for clusters) and a value-taking global.
+  const slotRan: Invocation[] = [];
+  const SLOT_OPTIONS = {
+    notes: { type: "string", short: "n" },
+    owner: { type: "string" },
+    quiet: { type: "boolean", short: "q" },
+    session: { type: "string" },
+    other: { type: "boolean" },
+  } as const;
+  const slotSpec = {
+    name: "board",
+    version: () => ({}),
+    globalFlags: ["session"],
+    commands: [
+      {
+        name: "add",
+        flags: ["notes", "owner", "quiet"],
+        positionals: [{ name: "title", required: false }],
+        describe: "add a task",
+        run: (inv: Invocation) => {
+          slotRan.push(inv);
+        },
+      },
+      { name: "other", flags: ["other"], positionals: [], describe: "", run: () => {} },
+    ],
+  } as const;
+  const slot = defineCli({ ...slotSpec, options: SLOT_OPTIONS } as Parameters<
+    typeof defineCli<typeof SLOT_OPTIONS>
+  >[0]);
+  // BASE, i.e. before per-verb help: `--help` and `-h` were tokens the table
+  // did not know — exactly an unknown long and an unknown short. This CLI is
+  // the same table with the two spelled as such, so it answers as base did.
+  const UNKNOWN_LONG = "--zz-not-help";
+  const UNKNOWN_SHORT = "-Z";
+  const toBase = (argv: string[]) => {
+    const end = argv.indexOf("--");
+    return argv.map((t, i) =>
+      end !== -1 && i > end ? t : t === "--help" ? UNKNOWN_LONG : t === "-h" ? UNKNOWN_SHORT : t,
+    );
+  };
+  const run = async (argv: string[]) => {
+    slotRan.length = 0;
+    const r = await capture(() => slot.main(argv));
+    return { ...r, ran: slotRan.length };
+  };
+
+  test("`--help` anywhere a value slot can reach it is NOT a request: exit 2 as on base, nothing runs", async () => {
+    // Before this, each of these printed help at exit 0 and silently dropped
+    // the add — an exit-code reader believed the task was added.
+    for (const argv of [
+      ["add", "t", "--notes", "--help"],
+      ["add", "t", "--notes", "-h"],
+      ["add", "t", "-n", "--help"],
+      ["add", "t", "--notes", "--owner", "--help"], // two value flags in a row
+      ["add", "t", "--notes", "--quiet", "--help"], // a boolean in the value slot
+      ["add", "t", "--notes", "-n", "--help"],
+      ["add", "t", "--notes", "--", "--help"], // `--` in the value slot
+      ["add", "t", "-qn", "-h"], // a cluster ending in a string short
+      ["add", "t", "--session", "--help"], // a value-taking GLOBAL
+      // A positional AFTER the value-slot `--help`: removing the token let the
+      // next word fill the slot, so a remove-and-reparse rule called it help.
+      ["add", "t", "--notes", "--help", "more", "words"],
+      ["add", "--notes", "--help", "My", "Title"],
+      ["add", "t", "--notes", "-h", "title"],
+      ["add", "t", "--session", "--help", "hi"], // a global, then a positional
+    ]) {
+      const r = await run(argv);
+      const base = await run(toBase(argv));
+      expect({ argv, code: r.code }).toEqual({ argv, code: 2 });
+      expect(base.code).toBe(2);
+      expect(r.out).toBe("");
+      expect(envelope(r).error.kind).toBe("usage");
+      expect(r.ran).toBe(0);
+    }
+  });
+
+  test("flags-anywhere: `--session --help info x` is refused as on base, not help for info", async () => {
+    let ranInfo = 0;
+    const anywhere = defineCli({
+      name: "g",
+      version: () => ({}),
+      grammar: "flags-anywhere",
+      options: { session: { type: "string" } },
+      globalFlags: ["session"],
+      commands: [
+        {
+          name: "info",
+          flags: [],
+          positionals: [{ name: "x", required: false }],
+          describe: "info",
+          run: () => {
+            ranInfo++;
+          },
+        },
+      ],
+    });
+    const r = await capture(() => anywhere.main(["--session", "--help", "info", "x"]));
+    expect(r.code).toBe(2);
+    expect(r.out).toBe("");
+    expect(ranInfo).toBe(0);
+    const ok = await capture(() => anywhere.main(["--session", "s", "info", "--help"]));
+    expect(ok.code).toBe(0);
+    expect(ok.out).toStartWith("usage: info");
+  });
+
+  test("a spell that claims `-h` keeps it", async () => {
+    const seen: Invocation[] = [];
+    const claims = defineCli({
+      name: "c",
+      version: () => ({}),
+      options: { host: { type: "string", short: "h" } },
+      commands: [
+        {
+          name: "serve",
+          flags: ["host"],
+          positionals: [],
+          describe: "serve",
+          run: (inv) => {
+            seen.push(inv);
+          },
+        },
+      ],
+    });
+    expect((await capture(() => claims.main(["serve", "-h", "x"]))).code).toBe(0);
+    expect(seen[0]?.flags.host).toBe("x");
+    expect((await capture(() => claims.main(["serve", "--help"]))).out).toStartWith("usage: serve");
+  });
+
+  test("a real request still answers: after a value, after a boolean; the equals form and `--` stay literal", async () => {
+    for (const argv of [
+      ["add", "t", "--notes", "x", "--help"],
+      ["add", "t", "--quiet", "--help"],
+      ["add", "t", "-q", "-h"],
+      ["add", "--help"],
+    ]) {
+      const r = await run(argv);
+      expect({ argv, code: r.code }).toEqual({ argv, code: 0 });
+      expect(r.out).toStartWith("usage: add");
+      expect(r.ran).toBe(0);
+    }
+    let r = await run(["add", "t", "--notes=--help"]);
+    expect(r.code).toBe(0);
+    expect(slotRan[0]?.flags.notes).toBe("--help");
+    r = await run(["add", "--", "--help"]);
+    expect(r.code).toBe(0);
+    expect(slotRan[0]?.pos).toEqual(["--help"]);
+  });
+
+  test("DIFFERENTIAL: help exactly where a reference parse reads `help` as the flag; everywhere else, base", async () => {
+    // The REFERENCE is independent of the registry: node's strict parse of the
+    // ORIGINAL argv (after the verb) against the same table plus a `help`
+    // boolean. Help is allowed iff that parse succeeds and reads `help` as an
+    // option token. (The earlier property — "the argv minus the token parses"
+    // — accepted `--notes --help t`, where `t` slides into the value slot.)
+    const refHelp = (args: string[]): boolean => {
+      try {
+        const { tokens } = parseArgs({
+          args,
+          options: { ...SLOT_OPTIONS, help: { type: "boolean", short: "h" } },
+          strict: true,
+          allowPositionals: true,
+          tokens: true,
+        });
+        return tokens.some((t) => t.kind === "option" && t.name === "help");
+      } catch {
+        return false;
+      }
+    };
+    const shapes: string[][] = [];
+    const pieces = [
+      ["--notes"],
+      ["--notes", "x"],
+      ["--owner"],
+      ["-n"],
+      ["-qn"],
+      ["-q"],
+      ["--quiet"],
+      ["--session"],
+      ["--session", "s"],
+      ["--"],
+      ["--other"], // known to the table, misplaced on `add`
+      ["--bogus"],
+      ["t"],
+      ["more", "words"],
+    ];
+    for (const help of ["--help", "-h"])
+      for (const a of pieces)
+        for (const b of [[], ...pieces]) {
+          shapes.push(["add", ...a, help, ...b]);
+          shapes.push(["add", ...a, ...b, help]);
+        }
+    let helped = 0;
+    for (const argv of shapes) {
+      const r = await run(argv);
+      const base = await run(toBase(argv));
+      const gaveHelp = r.out.startsWith("usage: add");
+      expect({ argv, gaveHelp }).toEqual({ argv, gaveHelp: refHelp(argv.slice(1)) });
+      if (gaveHelp) {
+        helped++;
+        expect({ argv, code: r.code, ran: r.ran }).toEqual({ argv, code: 0, ran: 0 });
+      } else {
+        // Not help: the new code answers exactly as base did.
+        expect({ argv, code: r.code, ran: r.ran }).toEqual({
+          argv,
+          code: base.code,
+          ran: base.ran,
+        });
+      }
+    }
+    expect(helped).toBeGreaterThan(20); // the property is not vacuous
+  });
+
+  test("global flags get their own block; a row with no description prints no blank block", () => {
+    expect(cli.renderVerbHelp("add")).toBe(
+      [
+        "usage: add [title] [--notes ..] [--force]",
+        "",
+        "add a task",
+        "",
+        "flags:",
+        "  --notes <notes>      free text", // one column across both blocks
+        "  --force",
+        "",
+        "global flags:",
+        "  --session <session>",
+      ].join("\n"),
+    );
+    expect(cli.renderVerbHelp("bare")).toBe(
+      ["usage: bare", "", "global flags:", "  --session <session>"].join("\n"),
+    );
+  });
+
+  test("a `usageHides` flag the row takes is listed after the rest, under `also accepted:`", () => {
+    const hid = defineCli({
+      name: "b",
+      version: () => ({}),
+      options: { notes: { type: "string" }, session: { type: "string" } },
+      usageHides: ["session"],
+      commands: [
+        { name: "add", flags: ["session", "notes"], positionals: [], describe: "", run: () => {} },
+      ],
+    });
+    expect(hid.renderVerbHelp("add")).toBe(
+      [
+        "usage: add [--notes ..]",
+        "",
+        "flags:",
+        "  --notes <notes>",
+        "",
+        "also accepted:",
+        "  --session <session>",
+      ].join("\n"),
+    );
+  });
+
+  test("the built-in rows answer `--help` with their own help", async () => {
+    for (const verb of ["help", "schema", "version"]) {
+      const r = await capture(() => cli.main([verb, "--help"]));
+      expect(r.code).toBe(0);
+      expect(r.out).toBe(`${cli.renderVerbHelp(verb)}\n`);
+    }
+  });
+
+  test("a verbless root answers `--help` after its flags with its own help", async () => {
+    const calls: Invocation[] = [];
+    const review = defineCli({
+      name: "review",
+      version: () => ({}),
+      options: { file: { type: "string" }, quiet: { type: "boolean" } },
+      root: {
+        flags: ["file", "quiet"],
+        positionals: [],
+        describe: "review a file",
+        run: (inv) => {
+          calls.push(inv);
+        },
+      },
+    });
+    const r = await capture(() => review.main(["--file", "x.md", "--help"]));
+    expect(r.code).toBe(0);
+    expect(r.out).toBe(
+      [
+        "usage: review [--file ..] [--quiet]",
+        "",
+        "review a file",
+        "",
+        "flags:",
+        "  --file <file>",
+        "  --quiet",
+        "",
+      ].join("\n"),
+    );
+    expect(calls).toHaveLength(0);
+    // …but not in the value slot.
+    expect((await capture(() => review.main(["--file", "--help"]))).code).toBe(2);
   });
 });
 

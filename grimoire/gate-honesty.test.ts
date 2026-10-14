@@ -305,6 +305,24 @@ import { join } from "node:path";
 // an `@source not "../cli"` line and the note that has to sit with it: the kit
 // CLI registry's prose was being scanned for class candidates, and one of its
 // words became a utility in three spells' shipped stylesheets.
+//
+// ⛔ RE-DECLARED 2026-10-13 — 29/2,444 -> 29/2,521, from the object's own sum.
+// MEMBERSHIP DID NOT MOVE; one entry grew:
+//     +77  src/kit/theme/base.css   125 -> 202
+// the kit-foundation port of Story Studio's theme: the L0 tokens the
+// primitives need (each derived from Spellbook's palette), the L1 shadcn
+// aliases, the light block for them, the animation import and the
+// pointer-cursor rule. Every L0 token's value, in both modes, is pinned by
+// src/kit/theme/theme.test.ts, which the gate does run; the L1 aliases are
+// checked only for their var() shape, and the rest of the file is read by
+// nothing.
+//
+// ⛔ RE-DECLARED 2026-10-13 — 29/2,521 -> 29/2,507, from the object's own sum.
+// MEMBERSHIP DID NOT MOVE; one entry shrank:
+//     -14  src/scriptorium/surface/styles.css   403 -> 389
+// Scriptorium's surface moved onto src/kit/ui, and the two blocks base.css
+// now provides (the raw --foreground/--secondary aliases and the pointer
+// cursor rule) were deleted from the spell's sheet.
 const DECLARED_BLIND: Record<string, number> = {
   "src/digestify/surface/styles.css": 515,
   "src/digestify/surface/index.html": 26,
@@ -316,7 +334,7 @@ const DECLARED_BLIND: Record<string, number> = {
   "src/magpie/surface/styles.css": 186,
   "src/imago/surface/styles.css": 167,
   "plugins/spellbook/skills/magpie/scripts/remove.py": 145,
-  "src/kit/theme/base.css": 125,
+  "src/kit/theme/base.css": 202,
   "src/astrolabe/surface/styles.css": 104,
   "src/astrolabe/surface/index.html": 35,
   "src/mind-mapper/surface/index.html": 52,
@@ -344,7 +362,7 @@ const DECLARED_BLIND: Record<string, number> = {
   // rules and so unreachable from a utility as well.
   "src/scriptorium/bunfig.toml": 2,
   "src/scriptorium/surface/index.html": 40,
-  "src/scriptorium/surface/styles.css": 403,
+  "src/scriptorium/surface/styles.css": 389,
 };
 
 type BlindReport = {

@@ -13,7 +13,7 @@
 import { cn } from "cn";
 import { MessageSquarePlusIcon, MessagesSquareIcon, Trash2Icon } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Button } from "@/ui/button";
+import { Button } from "../../../kit/ui/button";
 import type { Waiting } from "../../backend/protocol";
 import { WaitingDot } from "./WaitingBadge";
 
@@ -132,12 +132,7 @@ export function NoteAtSelection({
           />
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-ink-faint">⌘↩ to add · esc to close</span>
-            <Button
-              type="submit"
-              size="sm"
-              disabled={!body.trim()}
-              className="ml-auto h-6 px-2 text-xs"
-            >
+            <Button type="submit" size="xs" disabled={!body.trim()} className="ml-auto">
               Add note
             </Button>
           </div>

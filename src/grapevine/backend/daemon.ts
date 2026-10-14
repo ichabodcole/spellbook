@@ -713,13 +713,13 @@ async function readJsonBody(req: Request): Promise<JsonBody> {
   }
 }
 
-async function handle(req: Request, srv?: { port?: number }): Promise<Response> {
+async function handle(req: Request, srv?: { port?: number; hostname?: string }): Promise<Response> {
   // ⛔ FOREIGN ORIGIN REFUSED — FIRST, BEFORE ANY ROUTING. `Bun.serve` has
   // always passed the server as the second argument; this handler simply never
   // named it. The port is OS-assigned here (`port: 0`), so the BOUND port must
   // come from the server rather than from the option.
   {
-    const refused = refuseForeignOrigin(req, srv?.port);
+    const refused = refuseForeignOrigin(req, srv?.port, srv?.hostname);
     if (refused) return refused;
   }
   const url = new URL(req.url);

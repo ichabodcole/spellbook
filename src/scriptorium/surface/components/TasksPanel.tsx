@@ -10,7 +10,7 @@
 // step it is on, and work that never does is not shown as lesser.
 import { cn } from "cn";
 import { CheckIcon, LoaderIcon } from "lucide-react";
-import { Button } from "@/ui/button";
+import { Button } from "../../../kit/ui/button";
 import type { Task } from "../../backend/protocol";
 
 const when = (ms: number) =>
@@ -56,9 +56,9 @@ function Row({ task, onDone }: { task: Task; onDone: (id: string) => void }) {
           <Button
             type="button"
             variant="ghost"
-            size="sm"
+            size="3xs"
             onClick={() => onDone(task.id)}
-            className="ml-auto h-5 px-1.5 text-[10px] opacity-0 group-hover/task:opacity-100 focus-visible:opacity-100"
+            className="ml-auto opacity-0 group-hover/task:opacity-100 focus-visible:opacity-100"
           >
             Mark done
           </Button>
@@ -98,10 +98,10 @@ export function TasksPanel({
               <Button
                 type="button"
                 variant="ghost"
-                size="sm"
+                size="3xs"
                 onClick={onClear}
                 title="Forget every finished task; outstanding ones stay"
-                className="ml-auto h-5 px-1.5 text-[10px] text-ink-faint hover:text-ink"
+                className="ml-auto text-ink-faint"
               >
                 Clear {done.length} completed
               </Button>

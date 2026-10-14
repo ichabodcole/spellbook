@@ -57,6 +57,7 @@ import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs as nodeParseArgs } from "node:util";
 import { unlinkIfMatches, writeFileAtomic } from "../../kit/wire/discovery.ts";
+import { EXIT_IDLE_TIMEOUT } from "../../kit/wire/errors.ts";
 import { createEventLog } from "../../kit/wire/eventLog.ts";
 import { drainAndStop, startHousekeeping } from "../../kit/wire/housekeeping.ts";
 import { refuseForeignOrigin } from "../../kit/wire/origin.ts";
@@ -1509,7 +1510,7 @@ export async function startDaemon(opts: StartOpts) {
       // inventory can go stale, and `grimoire/origin-guard-ward.test.ts` holds
       // the other eight daemons to the same line.
       {
-        const refused = refuseForeignOrigin(req, srv.port);
+        const refused = refuseForeignOrigin(req, srv.port, srv.hostname);
         if (refused) return refused;
       }
       const url = new URL(req.url);
@@ -1706,7 +1707,7 @@ export async function startDaemon(opts: StartOpts) {
     idleMs: () => performance.now() - lastActivity,
     touch,
     timeoutMs: (opts.timeoutS ?? 1800) * 1000,
-    onIdleClose: () => resolveDone({ code: 124, reason: "timeout", by: "timeout" }),
+    onIdleClose: () => resolveDone({ code: EXIT_IDLE_TIMEOUT, reason: "timeout", by: "timeout" }),
   });
 
   let closed = false;

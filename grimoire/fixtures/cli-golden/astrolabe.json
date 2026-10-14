@@ -98,7 +98,7 @@
         "  info                                          daemon status: running, url, port",
         "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
         "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
-        "  help                                          show this message (alias: --help, -h)",
+        "  help [verb...]                                show this message (alias: --help, -h); `help <verb>` shows one verb: its usage, each flag, and examples",
         "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
         "",
         "  join and tail ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
@@ -139,7 +139,7 @@
         "  info                                          daemon status: running, url, port",
         "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
         "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
-        "  help                                          show this message (alias: --help, -h)",
+        "  help [verb...]                                show this message (alias: --help, -h); `help <verb>` shows one verb: its usage, each flag, and examples",
         "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
         "",
         "  join and tail ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
@@ -181,7 +181,7 @@
         "  info                                          daemon status: running, url, port",
         "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
         "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
-        "  help                                          show this message (alias: --help, -h)",
+        "  help [verb...]                                show this message (alias: --help, -h); `help <verb>` shows one verb: its usage, each flag, and examples",
         "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
         "",
         "  join and tail ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
@@ -538,7 +538,13 @@
           {
             "path": ["help"],
             "args": [],
-            "positionals": []
+            "positionals": [
+              {
+                "name": "verb",
+                "required": false,
+                "variadic": true
+              }
+            ]
           }
         ]
       }
@@ -622,12 +628,20 @@
     },
     {
       "argv": ["open", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--no-open", "--timeout"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: open [--no-open]",
+        "",
+        "ensure the daemon is up + open the board in the browser",
+        "",
+        "flags:",
+        "  --no-open",
+        "",
+        "also accepted:",
+        "  --timeout <timeout>"
+      ]
     },
     {
       "argv": ["add", "--acc-bogus-flag"],
@@ -640,12 +654,23 @@
     },
     {
       "argv": ["add", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--avatar", "--description", "--from", "--id", "--path", "--stdin"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: add <name...> [--path ..] [--description ..] [--avatar ..] [--id ..] [--stdin] [--as ..] [--from ..]",
+        "",
+        "register a project (--path required; dedupe-guarded; id + avatar derived from the name). echoes the derived id for join/status/attention/remove",
+        "",
+        "flags:",
+        "  --as <as>",
+        "  --from <from>",
+        "  --path <path>",
+        "  --description <description>",
+        "  --avatar <avatar>",
+        "  --id <id>",
+        "  --stdin"
+      ]
     },
     {
       "argv": ["remove", "--acc-bogus-flag"],
@@ -658,12 +683,18 @@
     },
     {
       "argv": ["remove", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: remove <id> [--as ..] [--from ..]",
+        "",
+        "unregister a project",
+        "",
+        "flags:",
+        "  --as <as>",
+        "  --from <from>"
+      ]
     },
     {
       "argv": ["join", "--acc-bogus-flag"],
@@ -676,12 +707,19 @@
     },
     {
       "argv": ["join", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from", "--since"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: join <id> [--since ..] [--as ..] [--from ..]",
+        "",
+        "activate the card + listen for pokes (scoped tail; wrap with Monitor). end it to idle the card",
+        "",
+        "flags:",
+        "  --as <as>",
+        "  --from <from>",
+        "  --since <since>"
+      ]
     },
     {
       "argv": ["status", "--acc-bogus-flag"],
@@ -694,12 +732,20 @@
     },
     {
       "argv": ["status", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from", "--phase", "--stdin"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: status <id> [summary...] [--phase ..] [--stdin] [--as ..] [--from ..]",
+        "",
+        "replace a project's current status (the summary is positional, or --stdin)",
+        "",
+        "flags:",
+        "  --as <as>",
+        "  --from <from>",
+        "  --phase <phase>",
+        "  --stdin"
+      ]
     },
     {
       "argv": ["attention", "--acc-bogus-flag"],
@@ -712,12 +758,20 @@
     },
     {
       "argv": ["attention", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--clear", "--from", "--question"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: attention <id> [question...] [--clear] [--question ..] [--as ..] [--from ..]",
+        "",
+        "raise / clear (--clear) the needs-you gate (--question attaches the prompt)",
+        "",
+        "flags:",
+        "  --as <as>",
+        "  --from <from>",
+        "  --question <question>",
+        "  --clear"
+      ]
     },
     {
       "argv": ["poke", "--acc-bogus-flag"],
@@ -730,12 +784,18 @@
     },
     {
       "argv": ["poke", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: poke <id> [--as ..] [--from ..]",
+        "",
+        "request a fresh status from the project's agent",
+        "",
+        "flags:",
+        "  --as <as>",
+        "  --from <from>"
+      ]
     },
     {
       "argv": ["state", "--acc-bogus-flag"],
@@ -748,12 +808,14 @@
     },
     {
       "argv": ["state", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": []
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: state",
+        "",
+        "read-back: project cards (each carries a derived zone: attention | active | quiet)"
+      ]
     },
     {
       "argv": ["tail", "--acc-bogus-flag"],
@@ -766,12 +828,19 @@
     },
     {
       "argv": ["tail", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from", "--since"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: tail [--since ..] [--as ..] [--from ..]",
+        "",
+        "unscoped event tail as JSONL (no presence)",
+        "",
+        "flags:",
+        "  --as <as>",
+        "  --from <from>",
+        "  --since <since>"
+      ]
     },
     {
       "argv": ["list", "--acc-bogus-flag"],
@@ -784,12 +853,10 @@
     },
     {
       "argv": ["list", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": []
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: list", "", "the registered projects, compact"]
     },
     {
       "argv": ["close", "--acc-bogus-flag"],
@@ -802,12 +869,18 @@
     },
     {
       "argv": ["close", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: close [--as ..] [--from ..]",
+        "",
+        "dismiss the observatory",
+        "",
+        "flags:",
+        "  --as <as>",
+        "  --from <from>"
+      ]
     },
     {
       "argv": ["info", "--acc-bogus-flag"],
@@ -820,12 +893,10 @@
     },
     {
       "argv": ["info", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": []
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: info", "", "daemon status: running, url, port"]
     },
     {
       "argv": ["version", "--acc-bogus-flag"],
@@ -838,12 +909,10 @@
     },
     {
       "argv": ["version", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": []
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: version", "", "this CLI's {name, version} as JSON (alias: --version, -V)"]
     },
     {
       "argv": ["schema", "--acc-bogus-flag"],
@@ -856,12 +925,10 @@
     },
     {
       "argv": ["schema", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": []
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: schema", "", "this CLI's machine-readable interface (acc declaration v0)"]
     },
     {
       "argv": ["help", "--acc-bogus-flag"],
@@ -874,12 +941,14 @@
     },
     {
       "argv": ["help", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": []
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: help [verb...]",
+        "",
+        "show this message (alias: --help, -h); `help <verb>` shows one verb: its usage, each flag, and examples"
+      ]
     },
     {
       "argv": [

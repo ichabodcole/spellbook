@@ -1304,7 +1304,13 @@
                 "status": "valid"
               }
             ],
-            "positionals": []
+            "positionals": [
+              {
+                "name": "verb",
+                "required": false,
+                "variadic": true
+              }
+            ]
           }
         ]
       }
@@ -1422,12 +1428,20 @@
     },
     {
       "argv": ["open", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--fresh", "--from", "--topic"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: open <name> [--topic ..] [--fresh]",
+        "",
+        "flags:",
+        "  --topic <topic>",
+        "  --fresh",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
+      ]
     },
     {
       "argv": ["topic", "--acc-bogus-flag"],
@@ -1440,12 +1454,16 @@
     },
     {
       "argv": ["topic", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: topic <name> [text...]",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
+      ]
     },
     {
       "argv": ["list", "--acc-bogus-flag"],
@@ -1458,12 +1476,10 @@
     },
     {
       "argv": ["list", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: list", "", "global flags:", "  --as <as>", "  --from <from>"]
     },
     {
       "argv": ["send", "--acc-bogus-flag"],
@@ -1485,20 +1501,23 @@
     },
     {
       "argv": ["send", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "--as",
-        "--body-file",
-        "--force",
-        "--from",
-        "--in-reply-to",
-        "--quiet",
-        "--stdin",
-        "--verbose"
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: send <name> [text...] [--body-file ..] [--stdin] [--quiet] [--verbose] [--force] [--in-reply-to ..]",
+        "",
+        "flags:",
+        "  --body-file <body-file>",
+        "  --in-reply-to <in-reply-to>",
+        "  --force",
+        "  --quiet",
+        "  --stdin",
+        "  --verbose",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
       ]
     },
     {
@@ -1512,12 +1531,23 @@
     },
     {
       "argv": ["announce", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--body-file", "--channels", "--force", "--from", "--quiet", "--stdin"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: announce [text...] [--body-file ..] [--stdin] [--quiet] [--force] [--channels ..]",
+        "",
+        "flags:",
+        "  --body-file <body-file>",
+        "  --channels <channels>",
+        "  --force",
+        "  --quiet",
+        "  --stdin",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
+      ]
     },
     {
       "argv": ["pull", "--acc-bogus-flag"],
@@ -1530,12 +1560,20 @@
     },
     {
       "argv": ["pull", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from", "--since", "--status"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: pull <name> [--since ..] [--status ..]",
+        "",
+        "flags:",
+        "  --since <since>",
+        "  --status <status>",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
+      ]
     },
     {
       "argv": ["triage", "--acc-bogus-flag"],
@@ -1548,12 +1586,19 @@
     },
     {
       "argv": ["triage", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from", "--human"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: triage <name> [--human]",
+        "",
+        "flags:",
+        "  --human",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
+      ]
     },
     {
       "argv": ["read", "--acc-bogus-flag"],
@@ -1566,12 +1611,19 @@
     },
     {
       "argv": ["read", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from", "--text"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: read <name> <id> [--text]",
+        "",
+        "flags:",
+        "  --text",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
+      ]
     },
     {
       "argv": ["wait", "--acc-bogus-flag"],
@@ -1584,12 +1636,20 @@
     },
     {
       "argv": ["wait", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from", "--since", "--timeout"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: wait <name> [--since ..] [--timeout ..]",
+        "",
+        "flags:",
+        "  --since <since>",
+        "  --timeout <timeout>",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
+      ]
     },
     {
       "argv": ["who", "--acc-bogus-flag"],
@@ -1602,12 +1662,19 @@
     },
     {
       "argv": ["who", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--all", "--as", "--from"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: who [name] [--all]",
+        "",
+        "flags:",
+        "  --all",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
+      ]
     },
     {
       "argv": ["alias", "--acc-bogus-flag"],
@@ -1620,12 +1687,10 @@
     },
     {
       "argv": ["alias", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: alias [name]", "", "global flags:", "  --as <as>", "  --from <from>"]
     },
     {
       "argv": ["tail", "--acc-bogus-flag"],
@@ -1647,20 +1712,23 @@
     },
     {
       "argv": ["tail", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "--as",
-        "--from",
-        "--from-start",
-        "--human",
-        "--last",
-        "--lurk",
-        "--max",
-        "--since"
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: tail <name> [--since ..] [--from-start] [--last ..] [--human] [--lurk] [--max ..]",
+        "",
+        "flags:",
+        "  --last <last>",
+        "  --max <max>",
+        "  --since <since>",
+        "  --from-start",
+        "  --human",
+        "  --lurk",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
       ]
     },
     {
@@ -1674,12 +1742,19 @@
     },
     {
       "argv": ["grep", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from", "--literal"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: grep <name> <pattern...> [--literal]",
+        "",
+        "flags:",
+        "  --literal",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
+      ]
     },
     {
       "argv": ["close", "--acc-bogus-flag"],
@@ -1692,12 +1767,10 @@
     },
     {
       "argv": ["close", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: close <name>", "", "global flags:", "  --as <as>", "  --from <from>"]
     },
     {
       "argv": ["reset", "--acc-bogus-flag"],
@@ -1710,12 +1783,19 @@
     },
     {
       "argv": ["reset", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--force", "--from"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: reset <name> [--force]",
+        "",
+        "flags:",
+        "  --force",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
+      ]
     },
     {
       "argv": ["mark", "--acc-bogus-flag"],
@@ -1728,12 +1808,19 @@
     },
     {
       "argv": ["mark", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from", "--note"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: mark <name> <id> <disposition...> [--note ..]",
+        "",
+        "flags:",
+        "  --note <note>",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
+      ]
     },
     {
       "argv": ["reopen", "--acc-bogus-flag"],
@@ -1746,12 +1833,19 @@
     },
     {
       "argv": ["reopen", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from", "--note"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: reopen <name> <id> [--note ..]",
+        "",
+        "flags:",
+        "  --note <note>",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
+      ]
     },
     {
       "argv": ["archive", "--acc-bogus-flag"],
@@ -1764,12 +1858,10 @@
     },
     {
       "argv": ["archive", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: archive <name>", "", "global flags:", "  --as <as>", "  --from <from>"]
     },
     {
       "argv": ["unarchive", "--acc-bogus-flag"],
@@ -1782,12 +1874,10 @@
     },
     {
       "argv": ["unarchive", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: unarchive <name>", "", "global flags:", "  --as <as>", "  --from <from>"]
     },
     {
       "argv": ["start", "--acc-bogus-flag"],
@@ -1800,12 +1890,10 @@
     },
     {
       "argv": ["start", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: start", "", "global flags:", "  --as <as>", "  --from <from>"]
     },
     {
       "argv": ["up", "--acc-bogus-flag"],
@@ -1818,12 +1906,10 @@
     },
     {
       "argv": ["up", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: start", "", "global flags:", "  --as <as>", "  --from <from>"]
     },
     {
       "argv": ["restart", "--acc-bogus-flag"],
@@ -1836,12 +1922,20 @@
     },
     {
       "argv": ["restart", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--force", "--from", "--yes"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: restart [--force] [--yes]",
+        "",
+        "flags:",
+        "  --force",
+        "  --yes",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
+      ]
     },
     {
       "argv": ["roll", "--acc-bogus-flag"],
@@ -1854,12 +1948,20 @@
     },
     {
       "argv": ["roll", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--force", "--from", "--yes"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: roll [--force] [--yes]",
+        "",
+        "flags:",
+        "  --force",
+        "  --yes",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
+      ]
     },
     {
       "argv": ["stop", "--acc-bogus-flag"],
@@ -1872,12 +1974,19 @@
     },
     {
       "argv": ["stop", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from", "--hold"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: stop [--hold ..]",
+        "",
+        "flags:",
+        "  --hold <hold>",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
+      ]
     },
     {
       "argv": ["watch", "--acc-bogus-flag"],
@@ -1890,12 +1999,10 @@
     },
     {
       "argv": ["watch", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: watch [name]", "", "global flags:", "  --as <as>", "  --from <from>"]
     },
     {
       "argv": ["reap", "--acc-bogus-flag"],
@@ -1908,12 +2015,20 @@
     },
     {
       "argv": ["reap", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--dry-run", "--force", "--from"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: reap [--force] [--dry-run]",
+        "",
+        "flags:",
+        "  --dry-run",
+        "  --force",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
+      ]
     },
     {
       "argv": ["prune", "--acc-bogus-flag"],
@@ -1926,12 +2041,20 @@
     },
     {
       "argv": ["prune", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--dry-run", "--force", "--from"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: reap [--force] [--dry-run]",
+        "",
+        "flags:",
+        "  --dry-run",
+        "  --force",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
+      ]
     },
     {
       "argv": ["info", "--acc-bogus-flag"],
@@ -1944,12 +2067,10 @@
     },
     {
       "argv": ["info", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: info", "", "global flags:", "  --as <as>", "  --from <from>"]
     },
     {
       "argv": ["doctor", "--acc-bogus-flag"],
@@ -1962,12 +2083,10 @@
     },
     {
       "argv": ["doctor", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: doctor", "", "global flags:", "  --as <as>", "  --from <from>"]
     },
     {
       "argv": ["version", "--acc-bogus-flag"],
@@ -1980,12 +2099,19 @@
     },
     {
       "argv": ["version", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from", "--human"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: version [--human]",
+        "",
+        "flags:",
+        "  --human",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
+      ]
     },
     {
       "argv": ["schema", "--acc-bogus-flag"],
@@ -1998,12 +2124,18 @@
     },
     {
       "argv": ["schema", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: schema",
+        "",
+        "this CLI's machine-readable interface (acc declaration v0)",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
+      ]
     },
     {
       "argv": ["help", "--acc-bogus-flag"],
@@ -2016,12 +2148,18 @@
     },
     {
       "argv": ["help", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: help [verb...]",
+        "",
+        "show this message (alias: --help, -h); `help <verb>` shows one verb: its usage, each flag, and examples",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
+      ]
     },
     {
       "argv": ["list"],

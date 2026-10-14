@@ -36,7 +36,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/ui/dropdown-menu";
+} from "../../../kit/ui/dropdown-menu";
 import type { Version } from "../../backend/protocol";
 import { SESSION_ENDED } from "../state/ending";
 
@@ -127,7 +127,7 @@ export function VersionMenu({
         <span className="font-medium tabular-nums">v{active}</span>
         <ChevronDownIcon aria-hidden className="size-3 shrink-0 text-ink-faint" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-80">
+      <DropdownMenuContent align="start" size="md">
         <div className="border-b border-edge px-2 py-1.5">
           <p className="text-sm font-medium text-ink">Versions</p>
           <p className="text-xs text-ink-faint">
@@ -149,15 +149,13 @@ export function VersionMenu({
                 // the row you are already in is simply nothing.
                 onClick={() => v.n !== active && onActivate(v.n)}
                 aria-current={v.n === active ? "true" : undefined}
+                stacked
                 className={cn(
-                  "flex-col items-start gap-0.5 py-1.5",
                   // ⛔ THE ACTIVE ROW IS HIGHLIGHTED, NOT MUTED (Cole, E39).
-                  // `disabled` is the right SEMANTICS — you cannot switch to
-                  // where you already are — but shadcn renders it at 50%
-                  // opacity, which says "unavailable" when the thing it needs
-                  // to say is "you are here". The pointer-events-none half of
-                  // `disabled` is kept; the dimming is overridden, and the row
-                  // gains the accent instead.
+                  // It is not `disabled`: shadcn renders that at 50% opacity,
+                  // which says "unavailable" when the row needs to say "you
+                  // are here". Clicking it does nothing (see onClick), and
+                  // the row carries the selection accent instead.
                   v.n === active && "bg-selected/14 ring-1 ring-selected/30",
                 )}
               >

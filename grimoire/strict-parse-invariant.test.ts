@@ -110,9 +110,12 @@ describe("ward — every parseArgs invocation refuses unknown flags", () => {
     // 14 → 13: magpie moved onto the registry (2026-09-26), taking its one.
     // 13 → 11: mind-mapper moved onto the registry (2026-09-26), taking its
     // two (the per-path parse and the doc-path probe parse).
+    // 11 → 12: the registry's per-verb help adds a strict try-parse
+    // (`asksForHelp`: is the argv WITHOUT the `--help` token one the row
+    // accepts?), 2026-10-13.
     expect({ notStrict, invocationsChecked: invocations.length }).toEqual({
       notStrict: [],
-      invocationsChecked: 11,
+      invocationsChecked: 12,
     });
   });
 

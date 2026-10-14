@@ -18,10 +18,10 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type Layout, useDefaultLayout, usePanelRef } from "react-resizable-panels";
-import { Button } from "@/ui/button";
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/ui/empty";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/ui/resizable";
+import { Button } from "../../kit/ui/button";
 import { useConfirm } from "../../kit/ui/ConfirmDialog";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../../kit/ui/empty";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../../kit/ui/resizable";
 import type {
   ChatMessage,
   ContextEntry,
@@ -249,11 +249,10 @@ export function App() {
         </span>
         <Button
           variant="ghost"
-          size="sm"
+          size="chrome"
           onClick={endSession}
           disabled={connection !== "open"}
           title={endButtonTitle(endedBy)}
-          className="h-7 gap-1.5 px-2 text-xs"
         >
           <PowerIcon className="size-3.5" />
           End session

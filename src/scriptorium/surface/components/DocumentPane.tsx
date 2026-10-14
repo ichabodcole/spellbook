@@ -11,11 +11,17 @@ import {
   UndoDotIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button } from "@/ui/button";
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/ui/empty";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/ui/resizable";
-import { Separator } from "@/ui/separator";
+import { Button } from "../../../kit/ui/button";
 import { useConfirm } from "../../../kit/ui/ConfirmDialog";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "../../../kit/ui/empty";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../../../kit/ui/resizable";
+import { Separator } from "../../../kit/ui/separator";
 import type { DiffPayload, DiffSide, DocView, NoteWaiting } from "../../backend/protocol";
 import { readerStaysLoud, splitRoom } from "../state/columns";
 import { SESSION_ENDED } from "../state/ending";
@@ -315,20 +321,21 @@ export function DocumentPane({
               </span>
             </div>
             <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1">
+              {/* ⚠ ORDER-DEPENDENT: on these two Buttons FADE's transition-opacity beats the recipe's transition-all by stylesheet order only; without it their hover background would fade over 300ms too. */}
               <Button
                 variant="ghost"
-                size="sm"
+                size="chrome"
                 onClick={onRevert}
                 disabled={ended || (!doc.dirty && !doc.outsideChanged)}
                 title={ended ? SESSION_ENDED : "Take the file on disk back over your edits"}
-                className={cn("h-7 gap-1.5 px-2 text-xs", fade)}
+                className={fade}
               >
                 <UndoDotIcon className="size-3.5" />
                 Revert
               </Button>
               <Button
                 variant="ghost"
-                size="sm"
+                size="chrome"
                 onClick={onSave}
                 disabled={ended || !doc.dirty}
                 title={
@@ -336,7 +343,7 @@ export function DocumentPane({
                     ? SESSION_ENDED
                     : `Save v${doc.active} to ${doc.name} — the file in your folder (⌘S)`
                 }
-                className={cn("h-7 gap-1.5 px-2 text-xs", !readerStaysLoud("save", doc) && fade)}
+                className={cn(!readerStaysLoud("save", doc) && fade)}
               >
                 <SaveIcon className="size-3.5" />
                 Save

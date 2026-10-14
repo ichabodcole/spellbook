@@ -4558,12 +4558,15 @@ describe("P0c #81 — the equals form, and unknown flags", () => {
     // ⚠ THE DESTRUCTIVE ARM, and the most important user-facing fix in the
     // lane. Pre-fix `--help` was swallowed as an unknown flag and `close` ran:
     // asking for help DESTROYED the board — and `close` also writes the
-    // snapshot, so it takes the resume point with it.
+    // snapshot, so it takes the resume point with it. Since the kit's per-verb
+    // help, `close --help` answers with close's help at exit 0 (it used to be
+    // refused as an unknown flag); either way `close` must not run.
     const env = { BOUNTY_HOME: uniqHome() };
     const id = await board(env);
     try {
       const r = await runCli(["close", "--help", "--session", id], { env });
-      expect(r.code).not.toBe(0);
+      expect(r.code).toBe(0);
+      expect(r.stdout).toStartWith("usage: close");
       const after = await runCli(["state", "--session", id], { env });
       expect(after.code).toBe(0); // the board is STILL THERE
       expect((JSON.parse(after.stdout) as { state: BoardState }).state.tasks).toHaveLength(2);
@@ -4976,7 +4979,7 @@ describe("P1e — Bun.serve carries an idleTimeout the heartbeat can survive", (
       "resolveDone({ code, reason: reason as CloseReason })",
       'resolveDone({ code: 0, reason: "close" })',
       'resolveDone({ code: 0, reason: "user" })',
-      'resolveDone({ code: 124, reason: "timeout" })',
+      'resolveDone({ code: EXIT_IDLE_TIMEOUT, reason: "timeout" })',
     ]) {
       expect(src).toContain(entry);
     }

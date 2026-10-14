@@ -40,7 +40,7 @@ import {
   ContextMenuSeparator,
   ContextMenuShortcut,
   ContextMenuTrigger,
-} from "@/ui/context-menu";
+} from "../../../../kit/ui/context-menu";
 import type { ContextEntry, ContextNode, DocSummary, StructureOp } from "../../../backend/protocol";
 import { carriesFiles, MoveToMenu, RevealItem } from "./menus";
 import {

@@ -14,7 +14,7 @@
 import { cn } from "cn";
 import { CheckIcon, GitCompareIcon } from "lucide-react";
 import { Fragment } from "react";
-import { Button } from "@/ui/button";
+import { Button } from "../../../kit/ui/button";
 import type {
   DiffLine,
   DiffPayload,
@@ -240,11 +240,10 @@ export function CompareView({
           {!diff.same && (
             <Button
               variant="ghost"
-              size="sm"
+              size="xs"
               disabled={busy}
               onClick={() => onTake(diff.hunks.map((h) => h.id))}
               title={`Take every change from ${sideLabel(against, file, 60)} into v${active}`}
-              className="h-6 px-2 text-xs"
             >
               Take all
             </Button>
@@ -293,11 +292,11 @@ export function CompareView({
                       // does not offer it.
                       <Button
                         variant="ghost"
-                        size="sm"
+                        size="2xs"
                         disabled={busy}
                         onClick={() => onTake([row.hunk])}
                         title={`Take change ${row.hunk} into v${active}`}
-                        className="absolute top-0 right-1 h-5 bg-bg px-1.5 font-sans text-[11px] shadow-sm"
+                        className="absolute top-0 right-1 bg-bg font-sans shadow-sm"
                       >
                         Take
                       </Button>

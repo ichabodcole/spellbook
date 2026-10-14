@@ -183,3 +183,20 @@ test("the WIRE CONTRACT the emitter exists to hold: one document, one trailing n
   expect(out.slice(0, -1)).not.toContain("\n");
   expect(JSON.parse(out)).toEqual(payload);
 });
+
+test("a real child process writes exactly one document to stdout", async () => {
+  const proc = Bun.spawn(
+    [
+      process.execPath,
+      "-e",
+      `import { printJson } from ${JSON.stringify(`${import.meta.dir}/printJson.ts`)}; printJson({ ok: true, big: "x".repeat(300000) });`,
+    ],
+    { stdout: "pipe", stderr: "pipe", stdin: new Response("").body },
+  );
+  const out = await new Response(proc.stdout).text();
+  await proc.exited;
+  expect(out.endsWith("\n")).toBe(true);
+  expect(out.slice(0, -1)).not.toContain("\n");
+  expect(out).toBe(`${JSON.stringify(JSON.parse(out))}\n`);
+  expect(out.length).toBeGreaterThan(300000);
+});

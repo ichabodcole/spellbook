@@ -59,8 +59,10 @@ The seam map (2026-10-12) shows B is two jobs of different sizes:
 
 **The foundation** is for every spell: Base UI primitives installed once into
 `src/kit/ui`, the fuller theme, the component-test harness, the wire fixes
-(detached `startDaemon`, stdin refusal, reply hints, the stop that skips the
-drain wait when nothing is open, exit codes) and per-verb CLI help.
+(detached `startDaemon`, the `Host` guard, the session-pointer API, the stop
+that skips the drain wait when nothing is open, exit codes) and per-verb CLI
+help. Stdin refusal (`stdinWaiting`) and reply hints turned out to belong to the
+workspace stack, their only consumer, and move with it.
 
 **The workspace stack** is the generic daemon and panes. An app plugs in through
 four points:
@@ -105,20 +107,21 @@ Its names are translated:
 - the app home is reconciled with `$SCRIPTORIUM_HOME`.
 
 Each module is also merged with the places where Spellbook is ahead: the
-links-cycle extraction fixes, `tailHandoff`'s `by: human`, the registry's `--`
-warning, and E65 (a note shows that it is with the agent: `notesWaiting` and the
-`say` note guard in `workspace`, the badge and "Ask the agent" in
-`chat/NotesPanel.tsx`). Story Studio is taking E65 back as its own item,
-`kit-per-note-waiting`. Spellbook's `Dot` and `ConfirmDialog` stay where they
-read ahead of Story Studio's.
+links-cycle extraction fixes, `tailHandoff`'s `by: human` (and its `spell` key
+and the error envelope's `server` key, which Story Studio renamed), and E65 (a
+note shows that it is with the agent: `notesWaiting` and the `say` note guard in
+`workspace`, the badge and "Ask the agent" in `chat/NotesPanel.tsx`). Story
+Studio is taking E65 back as its own item, `kit-per-note-waiting`. Spellbook's
+`Dot` and `ConfirmDialog` stay where they read ahead of Story Studio's.
 
 ### What arrives with it
 
 Write-up candidates Cole took "with B":
 
 - **Foundation:** the primitives and the happy-dom test harness; the fuller
-  `base.css`; `startDaemon`, `stdinWaiting`, reply hints, the faster stop and
-  the new exit codes; per-verb help, with an acc re-run for every spell.
+  `base.css`; `startDaemon`, the `Host` guard, the session pointers, the faster
+  stop and the new exit codes; per-verb help, with an acc re-run for every
+  spell. (`stdinWaiting` and reply hints move with the workspace stack.)
 - **Workspace stack:**
   - the quiet tail;
   - the outside change toast (Reload / Keep);
@@ -149,7 +152,10 @@ the shell port instead, because the primitives converge on the kit's and the
 shell gives Scriptorium Atlas's layout by default. The look is then at what
 still differs, and it is not a redesign. Spellbook keeps its own colour theme.
 Before the shell port, its item lists what Scriptorium does better and must not
-lose.
+lose. So far that is E53 and E65's waiting marks, and E64's floating composer.
+Story Studio is porting the composer into its kit itself
+(`kit-floating-composer`) with a collapsed rail and a composer-closed state,
+which Scriptorium gains with the shell.
 
 ## Scope
 
@@ -179,6 +185,12 @@ lose.
 
 - Mind-mapper re-shaped as a second app on the workspace stack.
 - Canvas boards, if mind-mapper takes that shape.
+- Reaching a spell from your other devices over Tailscale (Cole, 2026-10-13: an
+  interesting idea, with no use case yet). Spells keep binding to loopback, and
+  `tailscale serve` proxies the tailnet name to them. The kit's origin and
+  `Host` guards would need an opt-in allow-list of extra names (for example
+  `SPELLBOOK_ALLOWED_HOSTS`). Opening a spell to the LAN directly is not the
+  path, because the daemons have no login.
 
 ## Technical Approach
 

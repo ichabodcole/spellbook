@@ -6,7 +6,7 @@ import {
   ContextMenuSub,
   ContextMenuSubContent,
   ContextMenuSubTrigger,
-} from "@/ui/context-menu";
+} from "../../../../kit/ui/context-menu";
 import type { MoveTarget } from "./model";
 
 /** "Move to ▸" — the workspace and every set's folder. Moving between sets by drag needs both on screen; this does not. */

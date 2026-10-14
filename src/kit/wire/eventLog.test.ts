@@ -69,7 +69,7 @@ describe("createEventLog — replay and subscribe", () => {
 
   test("a non-finite `since` replays whole rather than nothing", () => {
     // `parseInt("x")` is NaN and every `id > NaN` is false, so the copies
-    // answered a typo'd cursor with an empty-but-open stream.
+    // answered a typo'd cursor with a stream that was open and empty.
     const log = createEventLog<{ t: string }>();
     log.emit({ t: "a" });
     expect(drain(log, Number.NaN).seen).toEqual([1]);

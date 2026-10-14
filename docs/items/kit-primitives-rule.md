@@ -5,7 +5,7 @@ description:
   "Fire registry-primitives-variant-extends-recipe's own repeal: the rule moves
   to src/kit/ui and gains the opt-out for spells that skip the kit's UI."
 status: stable
-lifecycle: backlog
+lifecycle: done
 id: 01a13706-977e-7489-9eef-6b7bfd11797c
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
@@ -27,6 +27,7 @@ requirement": a spell that does not take the kit's UI keeps its own
 
 ## Definition of done
 
-- [ ] `grimoire/house-style.md` states the moved rule and the opt-out, and the
+- [x] `grimoire/house-style.md` states the moved rule and the opt-out, and the
       repealed form is gone
-- [ ] Any ward that enforces the rule checks the new location
+- [x] Any ward that enforces the rule checks the new location _(none does: the
+      rule is `enforced-by: none`, and the grimoire wards pass, 303/303)_

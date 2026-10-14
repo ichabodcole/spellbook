@@ -46,7 +46,13 @@ import { existsSync, readFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineCli, type Invocation } from "../../kit/cli/registry.ts";
-import { die, reportCliError, setCurrentCommand } from "../../kit/wire/errors.ts";
+import {
+  die,
+  EXIT_CANCELLED,
+  EXIT_IDLE_TIMEOUT,
+  reportCliError,
+  setCurrentCommand,
+} from "../../kit/wire/errors.ts";
 import { shouldIdleClose } from "../../kit/wire/housekeeping.ts";
 import { refuseForeignOrigin } from "../../kit/wire/origin.ts";
 import { resolveMode as resolveModeIn, serveFromDist } from "../../kit/wire/serveDist.ts";
@@ -676,7 +682,7 @@ async function runReview(v: Invocation<Flag>["flags"]): Promise<number> {
         // `srv` was added to this signature for the guard; Bun has always
         // passed it.
         {
-          const refused = refuseForeignOrigin(req, srv.port);
+          const refused = refuseForeignOrigin(req, srv.port, srv.hostname);
           if (refused) return refused;
         }
         const url = new URL(req.url);
@@ -804,7 +810,7 @@ async function runReview(v: Invocation<Flag>["flags"]): Promise<number> {
               headers: { "Content-Type": "application/json" },
             });
           }
-          resolveDone({ code: 130, data: null });
+          resolveDone({ code: EXIT_CANCELLED, data: null });
           return new Response('{"ok":true}', { headers: { "Content-Type": "application/json" } });
         }
         if (method === "POST" && path === "/heartbeat") {
@@ -900,7 +906,7 @@ async function runReview(v: Invocation<Flag>["flags"]): Promise<number> {
   const timeoutMs = timeout * 1000;
   const idleTimer = setInterval(() => {
     if (shouldIdleClose(0, performance.now() - heartbeatAt, timeoutMs)) {
-      resolveDone({ code: 124, data: null });
+      resolveDone({ code: EXIT_IDLE_TIMEOUT, data: null });
     }
   }, 50);
 
@@ -943,7 +949,7 @@ async function runReview(v: Invocation<Flag>["flags"]): Promise<number> {
       `${JSON.stringify({
         submitted: false,
         exit: code,
-        reason: code === 124 ? "idle-timeout" : "closed-without-submitting",
+        reason: code === EXIT_IDLE_TIMEOUT ? "idle-timeout" : "closed-without-submitting",
         observed,
         pageServed,
         departure,

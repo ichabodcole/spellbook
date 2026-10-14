@@ -6,8 +6,8 @@
 import { cn } from "cn";
 import { CornerDownLeftIcon, FileTextIcon, FolderIcon, FolderOpenIcon } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
-import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
+import { Button } from "../../../../kit/ui/button";
+import { Input } from "../../../../kit/ui/input";
 import type { FsListEntry } from "../../../backend/protocol";
 import { SESSION_ENDED } from "../../state/ending";
 import type { Listing } from "../../state/useDaemon";
@@ -137,7 +137,7 @@ export function AddPath({
         aria-controls={listId}
         aria-activedescendant={highlight >= 0 ? `${listId}-${highlight}` : undefined}
         spellCheck={false}
-        className="h-8 min-w-0 flex-1 font-mono text-xs"
+        className="flex-1 font-mono"
         onKeyDown={(e) => {
           if (e.key === "ArrowDown" && suggestions.length) {
             e.preventDefault();
