@@ -107,7 +107,7 @@
         "  info                                          print the resolved discovery JSON",
         "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
         "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
-        "  help                                          show this message (alias: --help, -h)",
+        "  help [verb...]                                show this message (alias: --help, -h); `help <verb>` shows one verb: its usage, each flag, and examples",
         "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
         "",
         "  Add --session <id> to any verb that talks to a session (default: most recent).",
@@ -152,7 +152,7 @@
         "  info                                          print the resolved discovery JSON",
         "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
         "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
-        "  help                                          show this message (alias: --help, -h)",
+        "  help [verb...]                                show this message (alias: --help, -h); `help <verb>` shows one verb: its usage, each flag, and examples",
         "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
         "",
         "  Add --session <id> to any verb that talks to a session (default: most recent).",
@@ -198,7 +198,7 @@
         "  info                                          print the resolved discovery JSON",
         "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
         "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
-        "  help                                          show this message (alias: --help, -h)",
+        "  help [verb...]                                show this message (alias: --help, -h); `help <verb>` shows one verb: its usage, each flag, and examples",
         "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
         "",
         "  Add --session <id> to any verb that talks to a session (default: most recent).",
@@ -692,7 +692,13 @@
           {
             "path": ["help"],
             "args": [],
-            "positionals": []
+            "positionals": [
+              {
+                "name": "verb",
+                "required": false,
+                "variadic": true
+              }
+            ]
           }
         ]
       }
@@ -786,12 +792,22 @@
     },
     {
       "argv": ["open", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--intent", "--no-open", "--restore", "--start-timeout", "--timeout", "--title"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: open [--title ..] [--intent ..] [--no-open] [--timeout ..] [--start-timeout ..] [--restore ..]",
+        "",
+        "spawn a session (opens the browser); prints {url, port, session_id}",
+        "",
+        "flags:",
+        "  --intent <intent>",
+        "  --restore <restore>",
+        "  --start-timeout <start-timeout>",
+        "  --timeout <timeout>",
+        "  --title <title>",
+        "  --no-open"
+      ]
     },
     {
       "argv": ["tail", "--acc-bogus-flag"],
@@ -804,12 +820,19 @@
     },
     {
       "argv": ["tail", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--once", "--session", "--since"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: tail [--since ..] [--once]",
+        "",
+        "SSE user events → JSONL (wrap with Monitor; waits for a session, never exits 5); ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
+        "",
+        "flags:",
+        "  --session <session>",
+        "  --since <since>",
+        "  --once"
+      ]
     },
     {
       "argv": ["state", "--acc-bogus-flag"],
@@ -822,12 +845,18 @@
     },
     {
       "argv": ["state", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--full", "--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: state [--full]",
+        "",
+        "lean state snapshot (--full for raw incl. base64)",
+        "",
+        "flags:",
+        "  --session <session>",
+        "  --full"
+      ]
     },
     {
       "argv": ["intent", "--acc-bogus-flag"],
@@ -840,12 +869,17 @@
     },
     {
       "argv": ["intent", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: intent <text...>",
+        "",
+        "update the session intent",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["annotate", "--acc-bogus-flag"],
@@ -858,12 +892,17 @@
     },
     {
       "argv": ["annotate", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: annotate <id> <text...>",
+        "",
+        "write agent annotation onto a library item",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["say", "--acc-bogus-flag"],
@@ -876,12 +915,18 @@
     },
     {
       "argv": ["say", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--kind", "--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: say <text...> [--kind ..]",
+        "",
+        "post agent dialogue into the conversation (--kind info|working|result|error)",
+        "",
+        "flags:",
+        "  --kind <kind>",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["section", "--acc-bogus-flag"],
@@ -894,12 +939,21 @@
     },
     {
       "argv": ["section", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--colors", "--content", "--prompts", "--session", "--status"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: section <key> [--status ..] [--content ..] [--prompts ..] [--colors ..]",
+        "",
+        "shape a style-guide section (--prompts a||b; --colors \"#hex:Name||#hex:Name\")",
+        "",
+        "flags:",
+        "  --colors <colors>",
+        "  --content <content>",
+        "  --prompts <prompts>",
+        "  --session <session>",
+        "  --status <status>"
+      ]
     },
     {
       "argv": ["status", "--acc-bogus-flag"],
@@ -912,12 +966,17 @@
     },
     {
       "argv": ["status", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: status <on|off> [text...]",
+        "",
+        "show/hide the working spinner",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["gen", "--acc-bogus-flag"],
@@ -942,23 +1001,26 @@
     },
     {
       "argv": ["gen", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": [
-        "--cost",
-        "--custom",
-        "--file",
-        "--label",
-        "--model",
-        "--prompt",
-        "--round",
-        "--seed",
-        "--session",
-        "--src",
-        "--url"
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: gen [--url ..] [--file ..] [--src ..] [--prompt ..] [--model ..] [--round ..] [--seed ..] [--cost ..] [--label ..] [--custom ..]",
+        "",
+        "post a generated image (one of --url|--file|--src, and --prompt --model --round required)",
+        "",
+        "flags:",
+        "  --cost <cost>",
+        "  --custom <custom>",
+        "  --file <file>",
+        "  --label <label>",
+        "  --model <model>",
+        "  --prompt <prompt>",
+        "  --round <round>",
+        "  --seed <seed>",
+        "  --session <session>",
+        "  --src <src>",
+        "  --url <url>"
       ]
     },
     {
@@ -972,12 +1034,18 @@
     },
     {
       "argv": ["gen-cost", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--cost", "--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: gen-cost <id> [--cost ..]",
+        "",
+        "backfill a generated image's cost (--cost <n> required)",
+        "",
+        "flags:",
+        "  --cost <cost>",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["gen-meta", "--acc-bogus-flag"],
@@ -990,12 +1058,19 @@
     },
     {
       "argv": ["gen-meta", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--custom", "--prompt", "--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: gen-meta <id> [--prompt ..] [--custom ..]",
+        "",
+        "backfill the real prompt / refs onto a gen (--prompt and/or --custom)",
+        "",
+        "flags:",
+        "  --custom <custom>",
+        "  --prompt <prompt>",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["focus", "--acc-bogus-flag"],
@@ -1008,12 +1083,18 @@
     },
     {
       "argv": ["focus", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--note", "--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: focus <id...> [--note ..]",
+        "",
+        "scope the focus lens to these items (+ --note to ask)",
+        "",
+        "flags:",
+        "  --note <note>",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["style-save", "--acc-bogus-flag"],
@@ -1026,12 +1107,17 @@
     },
     {
       "argv": ["style-save", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: style-save <label...>",
+        "",
+        "codify the current style → project tray",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["style-archive", "--acc-bogus-flag"],
@@ -1044,12 +1130,18 @@
     },
     {
       "argv": ["style-archive", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session", "--unarchive"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: style-archive <id> [--unarchive]",
+        "",
+        "archive (or --unarchive) a saved style",
+        "",
+        "flags:",
+        "  --session <session>",
+        "  --unarchive"
+      ]
     },
     {
       "argv": ["tray", "--acc-bogus-flag"],
@@ -1062,12 +1154,17 @@
     },
     {
       "argv": ["tray", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: tray",
+        "",
+        "list the project's saved styles",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["close", "--acc-bogus-flag"],
@@ -1080,12 +1177,10 @@
     },
     {
       "argv": ["close", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: close", "", "shut down the session", "", "flags:", "  --session <session>"]
     },
     {
       "argv": ["info", "--acc-bogus-flag"],
@@ -1098,12 +1193,17 @@
     },
     {
       "argv": ["info", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: info",
+        "",
+        "print the resolved discovery JSON",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["version", "--acc-bogus-flag"],

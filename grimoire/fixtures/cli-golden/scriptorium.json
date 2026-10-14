@@ -190,7 +190,7 @@
         "  close                                         shut the session down (the manifest stays, for open --restore)",
         "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
         "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
-        "  help                                          show this message (alias: --help, -h)",
+        "  help [verb...]                                show this message (alias: --help, -h); `help <verb>` shows one verb: its usage, each flag, and examples",
         "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
         "",
         "  Add --session <id> to any verb that talks to a session (default: most recent).",
@@ -261,7 +261,7 @@
         "  close                                         shut the session down (the manifest stays, for open --restore)",
         "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
         "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
-        "  help                                          show this message (alias: --help, -h)",
+        "  help [verb...]                                show this message (alias: --help, -h); `help <verb>` shows one verb: its usage, each flag, and examples",
         "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
         "",
         "  Add --session <id> to any verb that talks to a session (default: most recent).",
@@ -333,7 +333,7 @@
         "  close                                         shut the session down (the manifest stays, for open --restore)",
         "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
         "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
-        "  help                                          show this message (alias: --help, -h)",
+        "  help [verb...]                                show this message (alias: --help, -h); `help <verb>` shows one verb: its usage, each flag, and examples",
         "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
         "",
         "  Add --session <id> to any verb that talks to a session (default: most recent).",
@@ -1309,7 +1309,13 @@
           {
             "path": ["help"],
             "args": [],
-            "positionals": []
+            "positionals": [
+              {
+                "name": "verb",
+                "required": false,
+                "variadic": true
+              }
+            ]
           }
         ]
       }
@@ -1453,12 +1459,20 @@
     },
     {
       "argv": ["open", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--no-open", "--restore", "--start-timeout", "--timeout"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: open [path...] [--no-open] [--restore ..] [--timeout ..] [--start-timeout ..]",
+        "",
+        "spawn a session (opens the browser), adding paths; prints {url, port, session_id, workspace}; the workspace is the one folder given, else the current folder. --timeout <seconds> sets the idle close (default 1800); --timeout 0 stands until closed",
+        "",
+        "flags:",
+        "  --no-open",
+        "  --restore <restore>",
+        "  --start-timeout <start-timeout>",
+        "  --timeout <timeout>"
+      ]
     },
     {
       "argv": ["add", "--acc-bogus-flag"],
@@ -1471,12 +1485,17 @@
     },
     {
       "argv": ["add", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: add <path...>",
+        "",
+        "add files or folders to the context list",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["state", "--acc-bogus-flag"],
@@ -1489,12 +1508,18 @@
     },
     {
       "argv": ["state", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--full", "--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: state [--full]",
+        "",
+        "the session: context, docs + versions (with paths), active, dirty, selection",
+        "",
+        "flags:",
+        "  --full",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["tail", "--acc-bogus-flag"],
@@ -1507,12 +1532,19 @@
     },
     {
       "argv": ["tail", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--once", "--session", "--since"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: tail [--since ..] [--once]",
+        "",
+        "the human's messages (with selection + active path) as JSON lines — wrap with Monitor; its last line names the next act",
+        "",
+        "flags:",
+        "  --once",
+        "  --session <session>",
+        "  --since <since>"
+      ]
     },
     {
       "argv": ["version-new", "--acc-bogus-flag"],
@@ -1525,12 +1557,22 @@
     },
     {
       "argv": ["version-new", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--body-file", "--doc", "--from", "--label", "--session", "--stdin"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: version-new [--doc ..] [--from ..] [--label ..] [--stdin] [--body-file ..]",
+        "",
+        "propose a new version holding your text (--body-file <path> or --stdin); without one, copies a version (default: the active one) and prints its path to edit",
+        "",
+        "flags:",
+        "  --body-file <body-file>",
+        "  --doc <doc>",
+        "  --from <from>",
+        "  --label <label>",
+        "  --session <session>",
+        "  --stdin"
+      ]
     },
     {
       "argv": ["say", "--acc-bogus-flag"],
@@ -1543,12 +1585,19 @@
     },
     {
       "argv": ["say", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--body-file", "--session", "--stdin"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: say [text...] [--stdin] [--body-file ..]",
+        "",
+        "post a chat message from the agent (prose: --body-file <path> or --stdin)",
+        "",
+        "flags:",
+        "  --body-file <body-file>",
+        "  --session <session>",
+        "  --stdin"
+      ]
     },
     {
       "argv": ["version-delete", "--acc-bogus-flag"],
@@ -1561,12 +1610,18 @@
     },
     {
       "argv": ["version-delete", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--doc", "--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: version-delete <vN> [--doc ..]",
+        "",
+        "remove a version and its file (never the active one — activate another first)",
+        "",
+        "flags:",
+        "  --doc <doc>",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["task", "--acc-bogus-flag"],
@@ -1579,12 +1634,19 @@
     },
     {
       "argv": ["task", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--body-file", "--session", "--stdin"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: task [text...] [--stdin] [--body-file ..]",
+        "",
+        "say you have started something; prints the id to finish it with",
+        "",
+        "flags:",
+        "  --body-file <body-file>",
+        "  --session <session>",
+        "  --stdin"
+      ]
     },
     {
       "argv": ["task-status", "--acc-bogus-flag"],
@@ -1597,12 +1659,17 @@
     },
     {
       "argv": ["task-status", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: task-status <id> <status...>",
+        "",
+        "say what step a task is on (for work worth watching)",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["task-done", "--acc-bogus-flag"],
@@ -1615,12 +1682,17 @@
     },
     {
       "argv": ["task-done", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: task-done <id> [outcome...]",
+        "",
+        "mark a task finished, optionally saying what came of it",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["task-remove", "--acc-bogus-flag"],
@@ -1633,12 +1705,17 @@
     },
     {
       "argv": ["task-remove", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: task-remove <id>",
+        "",
+        "forget a task entirely — for one started by mistake",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["tasks-clear", "--acc-bogus-flag"],
@@ -1651,12 +1728,17 @@
     },
     {
       "argv": ["tasks-clear", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: tasks-clear",
+        "",
+        "forget every finished task; outstanding ones are left alone",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["working", "--acc-bogus-flag"],
@@ -1669,12 +1751,18 @@
     },
     {
       "argv": ["working", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--for", "--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: working [--for ..]",
+        "",
+        "say you are still on it — silences the waiting nudge, keeps the human's pulse",
+        "",
+        "flags:",
+        "  --for <for>",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["note", "--acc-bogus-flag"],
@@ -1687,12 +1775,21 @@
     },
     {
       "argv": ["note", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--body-file", "--doc", "--quote", "--session", "--stdin"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: note [text...] [--doc ..] [--quote ..] [--stdin] [--body-file ..]",
+        "",
+        "note a passage of the active version (--quote 'exact text'; prose: --body-file or --stdin)",
+        "",
+        "flags:",
+        "  --body-file <body-file>",
+        "  --doc <doc>",
+        "  --quote <quote>",
+        "  --session <session>",
+        "  --stdin"
+      ]
     },
     {
       "argv": ["notes", "--acc-bogus-flag"],
@@ -1705,12 +1802,19 @@
     },
     {
       "argv": ["notes", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--doc", "--full", "--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: notes [--doc ..] [--full]",
+        "",
+        "the notes on a document, placed in the active version (--full includes resolved)",
+        "",
+        "flags:",
+        "  --doc <doc>",
+        "  --full",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["note-edit", "--acc-bogus-flag"],
@@ -1723,12 +1827,20 @@
     },
     {
       "argv": ["note-edit", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--body-file", "--doc", "--session", "--stdin"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: note-edit <id> [text...] [--doc ..] [--stdin] [--body-file ..]",
+        "",
+        "rewrite what a note says (its passage is unchanged)",
+        "",
+        "flags:",
+        "  --body-file <body-file>",
+        "  --doc <doc>",
+        "  --session <session>",
+        "  --stdin"
+      ]
     },
     {
       "argv": ["note-resolve", "--acc-bogus-flag"],
@@ -1741,12 +1853,19 @@
     },
     {
       "argv": ["note-resolve", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--doc", "--reopen", "--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: note-resolve <id> [--doc ..] [--reopen]",
+        "",
+        "mark a note dealt with (--reopen puts it back)",
+        "",
+        "flags:",
+        "  --doc <doc>",
+        "  --reopen",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["note-remove", "--acc-bogus-flag"],
@@ -1759,12 +1878,18 @@
     },
     {
       "argv": ["note-remove", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--doc", "--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: note-remove <id> [--doc ..]",
+        "",
+        "delete a note",
+        "",
+        "flags:",
+        "  --doc <doc>",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["diff", "--acc-bogus-flag"],
@@ -1777,12 +1902,20 @@
     },
     {
       "argv": ["diff", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--context", "--doc", "--patch", "--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: diff <against> [--doc ..] [--context ..] [--patch]",
+        "",
+        "compare the active version with another (vN or 'saved' for the file on disk); --patch for plain unified text",
+        "",
+        "flags:",
+        "  --context <context>",
+        "  --doc <doc>",
+        "  --patch",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["merge", "--acc-bogus-flag"],
@@ -1795,12 +1928,19 @@
     },
     {
       "argv": ["merge", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--doc", "--hunks", "--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: merge <against> [--doc ..] [--hunks ..]",
+        "",
+        "take changes from another version into the active one (--hunks 1,3; default: all of them)",
+        "",
+        "flags:",
+        "  --doc <doc>",
+        "  --hunks <hunks>",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["activate", "--acc-bogus-flag"],
@@ -1813,12 +1953,18 @@
     },
     {
       "argv": ["activate", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--doc", "--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: activate <vN> [--doc ..]",
+        "",
+        "make a version the active one (the one the human edits and Save writes)",
+        "",
+        "flags:",
+        "  --doc <doc>",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["new-doc", "--acc-bogus-flag"],
@@ -1831,12 +1977,17 @@
     },
     {
       "argv": ["new-doc", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: new-doc <path>",
+        "",
+        "create an empty document (its folder must be a set, a folder in one, or the workspace)",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["new-folder", "--acc-bogus-flag"],
@@ -1849,12 +2000,17 @@
     },
     {
       "argv": ["new-folder", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: new-folder <path>",
+        "",
+        "create a folder — inside a set, or in the workspace as a new set",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["move", "--acc-bogus-flag"],
@@ -1867,12 +2023,17 @@
     },
     {
       "argv": ["move", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: move <path> <into>",
+        "",
+        "move a document or folder into another folder (a real move on disk)",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["rename", "--acc-bogus-flag"],
@@ -1885,12 +2046,17 @@
     },
     {
       "argv": ["rename", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: rename <path> <name>",
+        "",
+        "rename a document or folder in place",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["hide", "--acc-bogus-flag"],
@@ -1903,12 +2069,17 @@
     },
     {
       "argv": ["hide", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: hide <path>",
+        "",
+        "remove a document, folder or set from Scriptorium — the files stay on disk",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["unhide", "--acc-bogus-flag"],
@@ -1921,12 +2092,17 @@
     },
     {
       "argv": ["unhide", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: unhide <entry>",
+        "",
+        "bring back everything hidden in a set (its entry id, from state)",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["make-set", "--acc-bogus-flag"],
@@ -1939,12 +2115,17 @@
     },
     {
       "argv": ["make-set", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: make-set <path>",
+        "",
+        "turn a single document into a set: a folder named for it, the document moved in",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["import", "--acc-bogus-flag"],
@@ -1957,12 +2138,18 @@
     },
     {
       "argv": ["import", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--into", "--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: import <file> [--into ..]",
+        "",
+        "copy a document in (default: into the workspace) and show the copy",
+        "",
+        "flags:",
+        "  --into <into>",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["workspace", "--acc-bogus-flag"],
@@ -1975,12 +2162,17 @@
     },
     {
       "argv": ["workspace", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: workspace [dir]",
+        "",
+        "print the workspace (where drops and new top-level documents land), or set it",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["meta", "--acc-bogus-flag"],
@@ -1993,12 +2185,17 @@
     },
     {
       "argv": ["meta", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: meta [path]",
+        "",
+        "a document's frontmatter as the daemon read it (no path: every context document)",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["find", "--acc-bogus-flag"],
@@ -2011,12 +2208,22 @@
     },
     {
       "argv": ["find", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--lifecycle", "--session", "--since", "--status", "--tag", "--type"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: find [--type ..] [--status ..] [--lifecycle ..] [--tag ..] [--since ..]",
+        "",
+        "documents by frontmatter — filters AND, all optional; an empty result is an answer (count)",
+        "",
+        "flags:",
+        "  --lifecycle <lifecycle>",
+        "  --session <session>",
+        "  --since <since>",
+        "  --status <status>",
+        "  --tag <tag>",
+        "  --type <type>"
+      ]
     },
     {
       "argv": ["search", "--acc-bogus-flag"],
@@ -2029,12 +2236,18 @@
     },
     {
       "argv": ["search", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--limit", "--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: search <query...> [--limit ..]",
+        "",
+        "search the context: fuzzy on names, exact in text — searches the ACTIVE version of open documents, which grep cannot see",
+        "",
+        "flags:",
+        "  --limit <limit>",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["doctor", "--acc-bogus-flag"],
@@ -2047,12 +2260,17 @@
     },
     {
       "argv": ["doctor", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: doctor",
+        "",
+        "what is worth looking at in this session — each finding names the verb that fixes it",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["forget", "--acc-bogus-flag"],
@@ -2065,12 +2283,18 @@
     },
     {
       "argv": ["forget", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--doc", "--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: forget [--doc ..]",
+        "",
+        "forget a document whose file of record is gone (refused while the file exists — use hide to take one out of the context)",
+        "",
+        "flags:",
+        "  --doc <doc>",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["dangling", "--acc-bogus-flag"],
@@ -2083,12 +2307,18 @@
     },
     {
       "argv": ["dangling", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--entry", "--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: dangling [--entry ..]",
+        "",
+        "links in a set that nothing answers — file, line, and the target as written",
+        "",
+        "flags:",
+        "  --entry <entry>",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["graph", "--acc-bogus-flag"],
@@ -2101,12 +2331,18 @@
     },
     {
       "argv": ["graph", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--entry", "--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: graph [--entry ..]",
+        "",
+        "a set's map as JSON — nodes, edges (body links and frontmatter kept apart), dangling",
+        "",
+        "flags:",
+        "  --entry <entry>",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["backlinks", "--acc-bogus-flag"],
@@ -2119,12 +2355,17 @@
     },
     {
       "argv": ["backlinks", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: backlinks <path>",
+        "",
+        "what cites a document — `related` (frontmatter) and `links` (body), kept apart",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["meta-init", "--acc-bogus-flag"],
@@ -2137,12 +2378,19 @@
     },
     {
       "argv": ["meta-init", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--by", "--session", "--type"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: meta-init <path> [--type ..] [--by ..]",
+        "",
+        "add a frontmatter block to a document that has none (type guessed from its neighbours)",
+        "",
+        "flags:",
+        "  --by <by>",
+        "  --session <session>",
+        "  --type <type>"
+      ]
     },
     {
       "argv": ["meta-set", "--acc-bogus-flag"],
@@ -2155,12 +2403,17 @@
     },
     {
       "argv": ["meta-set", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: meta-set <path> <key=value...>",
+        "",
+        "set frontmatter keys — one line edit each, everything else untouched",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["info", "--acc-bogus-flag"],
@@ -2173,12 +2426,17 @@
     },
     {
       "argv": ["info", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: info",
+        "",
+        "print the resolved session pointer",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["close", "--acc-bogus-flag"],
@@ -2191,12 +2449,17 @@
     },
     {
       "argv": ["close", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: close",
+        "",
+        "shut the session down (the manifest stays, for open --restore)",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["version", "--acc-bogus-flag"],

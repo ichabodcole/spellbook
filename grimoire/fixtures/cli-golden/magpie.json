@@ -99,7 +99,7 @@
         "  info                                          the session pointer as JSON",
         "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
         "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
-        "  help                                          show this message (alias: --help, -h)",
+        "  help [verb...]                                show this message (alias: --help, -h); `help <verb>` shows one verb: its usage, each flag, and examples",
         "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
         "",
         "  extract --model = a rembg model name (isnet-general-use, birefnet-general, …)",
@@ -151,7 +151,7 @@
         "  info                                          the session pointer as JSON",
         "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
         "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
-        "  help                                          show this message (alias: --help, -h)",
+        "  help [verb...]                                show this message (alias: --help, -h); `help <verb>` shows one verb: its usage, each flag, and examples",
         "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
         "",
         "  extract --model = a rembg model name (isnet-general-use, birefnet-general, …)",
@@ -204,7 +204,7 @@
         "  info                                          the session pointer as JSON",
         "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
         "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
-        "  help                                          show this message (alias: --help, -h)",
+        "  help [verb...]                                show this message (alias: --help, -h); `help <verb>` shows one verb: its usage, each flag, and examples",
         "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
         "",
         "  extract --model = a rembg model name (isnet-general-use, birefnet-general, …)",
@@ -623,7 +623,13 @@
           {
             "path": ["help"],
             "args": [],
-            "positionals": []
+            "positionals": [
+              {
+                "name": "verb",
+                "required": false,
+                "variadic": true
+              }
+            ]
           }
         ]
       }
@@ -715,12 +721,21 @@
     },
     {
       "argv": ["open", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--intent", "--no-open", "--restore", "--timeout", "--title"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: open [--title ..] [--intent ..] [--timeout ..] [--restore ..] [--no-open]",
+        "",
+        "spawn a session (opens the browser; --restore <id|path> resumes one, --timeout S); prints {port, session_id, files_dir}",
+        "",
+        "flags:",
+        "  --intent <intent>",
+        "  --restore <restore>",
+        "  --timeout <timeout>",
+        "  --title <title>",
+        "  --no-open"
+      ]
     },
     {
       "argv": ["sessions", "--acc-bogus-flag"],
@@ -733,12 +748,10 @@
     },
     {
       "argv": ["sessions", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": []
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: sessions", "", "list saved (resumable) sessions"]
     },
     {
       "argv": ["tail", "--acc-bogus-flag"],
@@ -751,12 +764,19 @@
     },
     {
       "argv": ["tail", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--once", "--session", "--since"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: tail [--since ..] [--once]",
+        "",
+        "SSE user events → JSONL (wrap with Monitor); ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
+        "",
+        "flags:",
+        "  --session <session>",
+        "  --since <since>",
+        "  --once"
+      ]
     },
     {
       "argv": ["state", "--acc-bogus-flag"],
@@ -769,12 +789,18 @@
     },
     {
       "argv": ["state", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--full", "--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: state [--full]",
+        "",
+        "lean state snapshot (--full for raw)",
+        "",
+        "flags:",
+        "  --session <session>",
+        "  --full"
+      ]
     },
     {
       "argv": ["say", "--acc-bogus-flag"],
@@ -787,12 +813,18 @@
     },
     {
       "argv": ["say", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session", "--stdin"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: say [text...] [--stdin]",
+        "",
+        "post agent dialogue (text args OR piped stdin with --stdin)",
+        "",
+        "flags:",
+        "  --session <session>",
+        "  --stdin"
+      ]
     },
     {
       "argv": ["ask", "--acc-bogus-flag"],
@@ -805,12 +837,18 @@
     },
     {
       "argv": ["ask", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--options", "--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: ask <text...> [--options ..]",
+        "",
+        "ask the user a question in-thread (--options \"a|b|c\")",
+        "",
+        "flags:",
+        "  --options <options>",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["status", "--acc-bogus-flag"],
@@ -823,12 +861,17 @@
     },
     {
       "argv": ["status", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: status [on|off] [text...]",
+        "",
+        "show/hide the \"magpie working\" spinner: status on [text...] | status off",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["source", "--acc-bogus-flag"],
@@ -841,12 +884,17 @@
     },
     {
       "argv": ["source", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: source <imagePath>",
+        "",
+        "register the composite under review (computes sha + size)",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["discover", "--acc-bogus-flag"],
@@ -859,12 +907,17 @@
     },
     {
       "argv": ["discover", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: discover",
+        "",
+        "run discover on the current source → post the breakdown (needs OPENROUTER_API_KEY)",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["extract", "--acc-bogus-flag"],
@@ -877,12 +930,23 @@
     },
     {
       "argv": ["extract", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--alpha", "--ids", "--label", "--model", "--pad", "--remove", "--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: extract [--ids ..] [--remove] [--alpha ..] [--pad ..] [--model ..] [--label ..]",
+        "",
+        "cut slices (crop-only; --remove adds rembg; --alpha auto|all|none; --pad N)",
+        "",
+        "flags:",
+        "  --alpha <alpha>",
+        "  --ids <ids>",
+        "  --label <label>",
+        "  --model <model>",
+        "  --pad <pad>",
+        "  --session <session>",
+        "  --remove"
+      ]
     },
     {
       "argv": ["export", "--acc-bogus-flag"],
@@ -895,12 +959,18 @@
     },
     {
       "argv": ["export", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--ids", "--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: export [--ids ..]",
+        "",
+        "build magpie-bundle.zip (assets/, crops/, manifest.json, gallery.html)",
+        "",
+        "flags:",
+        "  --ids <ids>",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["element-add", "--acc-bogus-flag"],
@@ -913,12 +983,20 @@
     },
     {
       "argv": ["element-add", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--bbox", "--name", "--session", "--type"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: element-add [--bbox ..] [--name ..] [--type ..]",
+        "",
+        "box a region in source px: --bbox \"x1,y1,x2,y2\"",
+        "",
+        "flags:",
+        "  --bbox <bbox>",
+        "  --name <name>",
+        "  --session <session>",
+        "  --type <type>"
+      ]
     },
     {
       "argv": ["element-remove", "--acc-bogus-flag"],
@@ -931,12 +1009,17 @@
     },
     {
       "argv": ["element-remove", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: element-remove <id>",
+        "",
+        "retract a boxed region",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["cmd", "--acc-bogus-flag"],
@@ -949,12 +1032,18 @@
     },
     {
       "argv": ["cmd", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session", "--stdin"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: cmd [json...] [--stdin]",
+        "",
+        "POST a raw AgentCommand JSON body (pipe it with --stdin)",
+        "",
+        "flags:",
+        "  --session <session>",
+        "  --stdin"
+      ]
     },
     {
       "argv": ["close", "--acc-bogus-flag"],
@@ -967,12 +1056,17 @@
     },
     {
       "argv": ["close", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: close",
+        "",
+        "shut the session (writes its snapshot)",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["info", "--acc-bogus-flag"],
@@ -985,12 +1079,17 @@
     },
     {
       "argv": ["info", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: info",
+        "",
+        "the session pointer as JSON",
+        "",
+        "flags:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["version", "--acc-bogus-flag"],

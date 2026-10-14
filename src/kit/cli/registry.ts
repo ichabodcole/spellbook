@@ -58,6 +58,13 @@
  *    combination the declaration cannot express (flag-dependent arity).
  * 8. The row runs; a number it returns is the exit code, anything else is 0.
  *
+ * Per-verb help (ported from Story Studio's kit): `help <verb>` and
+ * `<verb> --help` (or `-h`, when no flag claims that short) print one row's
+ * usage, its line, each accepted flag with its `flagHelp` line, and its
+ * `examples`. The `--help` check runs before contract 5, on the tokens before
+ * any `--`. A row's `requiredFlags` drop their brackets in its usage and are
+ * refused as missing after the arity check.
+ *
  * The module adds `help`, `version` and `schema` rows unless the spell defines
  * a row of that name (grapevine's `version --human`). They are ordinary rows:
  * declared, strict, and given `globalFlags` like every other row.
@@ -112,6 +119,18 @@ export type CommandSpec<F extends string = string> = {
   rejectHint?: string;
   /** `false` hands node's own "Unexpected argument" refusal any positional. */
   allowPositionals?: boolean;
+  /**
+   * What each of this row's flags does, one line each, for `help <verb>`. A
+   * flag with no line is listed by name only.
+   */
+  flagHelp?: Readonly<Partial<Record<F, string>>>;
+  /** Whole command lines that show the row in use, for `help <verb>`. */
+  examples?: readonly string[];
+  /**
+   * Flags of this row that must be given: shown without brackets in its
+   * usage, and refused as missing, like a required positional.
+   */
+  requiredFlags?: readonly F[];
   /**
    * Flag-dependent arity (imago `handoff --clear`, mind-mapper `--to|--clear`)
    * and any other combination rule. Runs after the arity check; a returned
@@ -205,6 +224,8 @@ export type Cli = {
   dispatch(argv: string[]): Promise<number>;
   declaration(): Declaration;
   renderHelp(): string;
+  /** One verb's help (`help <verb>`); a usage error for a verb that is not there. */
+  renderVerbHelp(path: string): string;
   /** A row's usage line (`"close <id> [--force]"`); `""` for an unknown path. */
   usageOf(path: string): string;
   /** Every first token that dispatches: verbs, aliases and group tokens. */
@@ -223,6 +244,9 @@ export type Cli = {
 type Row = RowView & {
   rejectHint?: string;
   allowPositionals: boolean;
+  flagHelp: Readonly<Record<string, string | undefined>>;
+  examples: readonly string[];
+  required: ReadonlySet<string>;
   check?: (inv: Invocation) => string | undefined;
   run: (inv: Invocation) => unknown;
 };
@@ -289,6 +313,12 @@ export function defineCli<const O extends OptionsTable>(spec: CliSpec<O>): Cli {
         throw new Error(`defineCli(${cliName}): row "${c.name}" names flag "${f}", not in options`);
       }
     }
+    for (const f of c.requiredFlags ?? []) {
+      if (!c.flags.includes(f))
+        throw new Error(
+          `defineCli(${cliName}): row "${c.name}" requires flag "${f}", not one of its own`,
+        );
+    }
     return {
       name: c.name,
       aliases: [...(c.aliases ?? [])],
@@ -299,6 +329,9 @@ export function defineCli<const O extends OptionsTable>(spec: CliSpec<O>): Cli {
       auto,
       rejectHint: c.rejectHint,
       allowPositionals: c.allowPositionals ?? true,
+      flagHelp: { ...(c.flagHelp ?? {}) } as Record<string, string | undefined>,
+      examples: [...(c.examples ?? [])],
+      required: new Set(c.requiredFlags ?? []),
       check: c.check as Row["check"],
       run: c.run as Row["run"],
     };
@@ -330,10 +363,11 @@ export function defineCli<const O extends OptionsTable>(spec: CliSpec<O>): Cli {
     {
       name: "help",
       flags: [],
-      positionals: [],
-      describe: "show this message (alias: --help, -h)",
-      run: () => {
-        const text = cli.renderHelp();
+      positionals: [{ name: "verb", required: false, variadic: true }],
+      describe:
+        "show this message (alias: --help, -h); `help <verb>` shows one verb: its usage, each flag, and examples",
+      run: (inv) => {
+        const text = inv.pos.length > 0 ? cli.renderVerbHelp(inv.pos.join(" ")) : cli.renderHelp();
         process.stdout.write(text.endsWith("\n") ? text : `${text}\n`);
       },
     },
@@ -403,13 +437,15 @@ export function defineCli<const O extends OptionsTable>(spec: CliSpec<O>): Cli {
     const inner = p.variadic ? `${p.name}...` : p.name;
     return p.required ? `<${inner}>` : `[${inner}]`;
   };
-  const renderFlag = (k: string): string =>
-    spec.options[k]?.type === "boolean" ? `[--${k}]` : `[--${k} ..]`;
+  const renderFlag = (k: string, required = false): string => {
+    const flag = spec.options[k]?.type === "boolean" ? `--${k}` : `--${k} ..`;
+    return required ? flag : `[${flag}]`;
+  };
   const usageLine = (r: Row): string =>
     [
       label(r),
       ...r.positionals.map(renderPositional),
-      ...r.flags.filter((k) => !hides.has(k)).map(renderFlag),
+      ...r.flags.filter((k) => !hides.has(k)).map((k) => renderFlag(k, r.required.has(k))),
     ].join(" ");
   const expects = (r: Row): string => `expects: ${usageLine(r)}`;
 
@@ -426,6 +462,39 @@ export function defineCli<const O extends OptionsTable>(spec: CliSpec<O>): Cli {
     const head = spec.summary ? `${cliName} — ${spec.summary}` : cliName;
     const tokens = `  ${INTERCEPTORS.map((i) => i.name).join(" | ")}  root tokens: help, or {name, version} as JSON`;
     return `${head}\n\n${body}\n${tokens}${spec.helpFooter ? `\n\n${spec.helpFooter}` : ""}`;
+  };
+
+  /**
+   * One verb's help: its usage line, what it does, each flag it takes with
+   * what it does, and its examples. An unknown verb is a usage error that
+   * lists the verbs there are.
+   */
+  const renderVerbHelp = (path: string): string => {
+    const r = byToken.get(path);
+    if (r === undefined)
+      return die(`help: no verb "${path}"`, "usage", {
+        choices: paths,
+        hint: "help with no verb lists them all",
+      });
+    const flags = r.accepted.map((k) => {
+      const value = spec.options[k]?.type === "boolean" ? `--${k}` : `--${k} <${k}>`;
+      return [value, r.flagHelp[k] ?? ""] as const;
+    });
+    const width = Math.min(Math.max(0, ...flags.map(([f]) => f.length)), 28);
+    const flagLines = flags.map(([f, d]) =>
+      d === ""
+        ? `  ${f}`
+        : f.length <= width
+          ? `  ${f.padEnd(width)}  ${d}`
+          : `  ${f}\n  ${"".padEnd(width)}  ${d}`,
+    );
+    return [
+      `usage: ${usageLine(r)}`,
+      "",
+      r.describe,
+      ...(flagLines.length > 0 ? ["", "flags:", ...flagLines] : []),
+      ...(r.examples.length > 0 ? ["", "examples:", ...r.examples.map((e) => `  ${e}`)] : []),
+    ].join("\n");
   };
 
   // ── the declaration ──
@@ -585,6 +654,18 @@ export function defineCli<const O extends OptionsTable>(spec: CliSpec<O>): Cli {
   const runRow = async (row: Row, token: string, args: string[]): Promise<number> => {
     setCurrentCommand(row.name === "" ? null : row.name);
     const name = label(row);
+    // `<verb> --help` (or `-h`, unless the spell gave `-h` a flag of its own) is
+    // `help <verb>`: asked before anything else is checked.
+    const end = args.indexOf("--");
+    const before = end === -1 ? args : args.slice(0, end);
+    if (
+      row.name !== "" &&
+      !row.auto &&
+      (before.includes("--help") || (before.includes("-h") && !shortToKey.has("h")))
+    ) {
+      process.stdout.write(`${renderVerbHelp(row.name)}\n`);
+      return 0;
+    }
     const accepted = new Set(row.accepted);
     const choices = row.name === "" ? rootChoices : flagsFor(row.name);
     const flagHint = (): string | undefined =>
@@ -647,6 +728,10 @@ export function defineCli<const O extends OptionsTable>(spec: CliSpec<O>): Cli {
         flags[k] = (Array.isArray(d) ? [...d] : d) as FlagValue;
       }
     }
+
+    for (const k of row.required)
+      if (flags[k] === undefined)
+        die(`${name}: missing required --${k}`, "usage", { hint: expects(row) });
 
     const inv: Invocation = { path: row.name, token, pos: positionals, flags };
     const refused = row.check?.(inv);
@@ -752,6 +837,7 @@ export function defineCli<const O extends OptionsTable>(spec: CliSpec<O>): Cli {
     dispatch,
     declaration,
     renderHelp,
+    renderVerbHelp,
     usageOf: (path: string) => {
       const r = rowFor(path);
       return r === undefined ? "" : usageLine(r);

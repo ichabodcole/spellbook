@@ -401,6 +401,104 @@ describe("interceptors pass the rest on to their row", () => {
   });
 });
 
+describe("help <verb>", () => {
+  const cli = defineCli({
+    name: "tool",
+    version: () => ({}),
+    options: { to: { type: "string" }, quiet: { type: "boolean" }, as: { type: "string" } },
+    commands: [
+      {
+        name: "send",
+        flags: ["to", "quiet", "as"],
+        positionals: [{ name: "file", required: true }],
+        describe: "send a file somewhere",
+        flagHelp: { to: "where it goes", quiet: "say nothing" },
+        examples: ["tool send a.txt --to b"],
+        run: () => {},
+      },
+      {
+        name: "post",
+        flags: ["to", "quiet"],
+        requiredFlags: ["to"],
+        positionals: [],
+        describe: "post somewhere",
+        run: () => {},
+      },
+      { name: "node edit", flags: [], positionals: [], describe: "edit a node", run: () => {} },
+    ],
+  });
+
+  test("shows the verb's usage, what it does, each flag with its line, and its examples", async () => {
+    const r = await capture(() => cli.main(["help", "send"]));
+    expect(r.code).toBe(0);
+    expect(r.out).toBe(
+      [
+        "usage: send <file> [--to ..] [--quiet] [--as ..]",
+        "",
+        "send a file somewhere",
+        "",
+        "flags:",
+        "  --to <to>  where it goes",
+        "  --quiet    say nothing",
+        "  --as <as>",
+        "",
+        "examples:",
+        "  tool send a.txt --to b",
+        "",
+      ].join("\n"),
+    );
+    expect(cli.renderVerbHelp("node edit")).toBe("usage: node edit\n\nedit a node");
+    expect((await capture(() => cli.main(["help", "node", "edit"]))).code).toBe(0);
+  });
+
+  test("`<verb> --help` and `<verb> -h` show the same, whatever else is given; after `--` it is an argument", async () => {
+    for (const argv of [
+      ["send", "--help"],
+      ["send", "a.txt", "-h"],
+      ["send", "--to", "b", "--help"],
+    ]) {
+      const r = await capture(() => cli.main(argv));
+      expect(r.code).toBe(0);
+      expect(r.out).toBe(`${cli.renderVerbHelp("send")}\n`);
+    }
+    const r = await capture(() => cli.main(["node", "edit", "--help"]));
+    expect(r.out).toBe(`${cli.renderVerbHelp("node edit")}\n`);
+  });
+
+  test("a required flag shows without brackets and is refused as missing", async () => {
+    expect(cli.usageOf("post")).toBe("post --to .. [--quiet]");
+    const env = envelope(await capture(() => cli.main(["post", "--quiet"])));
+    expect(env.error.exit_code).toBe(2);
+    expect(env.error.message).toBe("post: missing required --to");
+    expect(env.error.hint).toBe("expects: post --to .. [--quiet]");
+    expect((await capture(() => cli.main(["post", "--to", "x"]))).code).toBe(0);
+    expect(() =>
+      defineCli({
+        name: "bad",
+        version: () => ({}),
+        options: { to: { type: "string" } },
+        commands: [
+          {
+            name: "x",
+            flags: [],
+            requiredFlags: ["to"],
+            positionals: [],
+            describe: "",
+            run: () => {},
+          },
+        ],
+      }),
+    ).toThrow('requires flag "to"');
+  });
+
+  test("an unknown verb is a usage error listing the verbs", async () => {
+    const env = envelope(await capture(() => cli.main(["help", "nope"])));
+    expect(env.error.exit_code).toBe(2);
+    expect(env.error.message).toBe('help: no verb "nope"');
+    expect(env.error.choices).toContain("send");
+  });
+});
+
 // ── the L0 contract ──────────────────────────────────────────────────────
 
 describe("C2/D2: a bare invocation", () => {
