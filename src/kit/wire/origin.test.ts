@@ -31,6 +31,9 @@ describe("ownHost: DNS rebinding", () => {
     expect(refuseForeignOrigin(at("192.168.1.5:4242"), 4242, "192.168.1.5")).toBeNull();
     expect(ownHost(at("0.0.0.0:4242"), 4242, "0.0.0.0")).toBe(true);
     expect(ownHost(at("[::1]:4242"), 4242, "::1")).toBe(true);
+    // A bracketed bind reports itself bracketed; it must not become `[[::1]]`.
+    expect(ownHost(at("[::1]:4242"), 4242, "[::1]")).toBe(true);
+    expect(ownHost(at("[[::1]]:4242"), 4242, "[::1]")).toBe(false);
     expect(ownHost(at("MyMac.Local:4242"), 4242, "mymac.local")).toBe(true);
     // Loopback still works beside it, and the bound name buys no other name.
     expect(ownHost(at("127.0.0.1:4242"), 4242, "192.168.1.5")).toBe(true);
@@ -57,6 +60,26 @@ describe("ownHost: DNS rebinding", () => {
       server.stop(true);
     }
   });
+
+  for (const hostname of ["::1", "[::1]"]) {
+    test(`a real IPv6 loopback server bound as \`${hostname}\` answers its own CLI`, async () => {
+      // `--host` reaches `Bun.serve` as typed, and Bun reports a bracketed bind
+      // back bracketed; the CLI then fetches `http://[::1]:<port>` either way.
+      const server = Bun.serve({
+        port: 0,
+        hostname,
+        fetch: (r, srv) => refuseForeignOrigin(r, srv.port, srv.hostname) ?? new Response("ok"),
+      });
+      try {
+        const base = `http://[::1]:${server.port}/state`;
+        expect((await fetch(base)).status).toBe(200);
+        const rebound = await fetch(base, { headers: { Host: `evil.example:${server.port}` } });
+        expect(rebound.status).toBe(403);
+      } finally {
+        server.stop(true);
+      }
+    });
+  }
 });
 
 const req = (origin?: string) =>

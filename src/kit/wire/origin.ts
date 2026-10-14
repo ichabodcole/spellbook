@@ -111,7 +111,8 @@ export function refuseForeignOrigin(
  * this module exists to let through. It is matched LITERALLY: a wildcard bind
  * (`0.0.0.0`) accepts `0.0.0.0:<port>`, not every name the machine answers to,
  * so a rebinding page still cannot reach it through its own domain. An IPv6
- * bind is matched in the bracketed form a `Host` header carries (`[::1]:<port>`).
+ * bind is matched in the bracketed form a `Host` header carries (`[::1]:<port>`),
+ * whether the bind was spelled `::1` or `[::1]`.
  */
 export function ownHost(req: Request, port: number | undefined, boundHost?: string): boolean {
   const host = req.headers.get("host");
@@ -119,7 +120,9 @@ export function ownHost(req: Request, port: number | undefined, boundHost?: stri
   if (typeof port !== "number" || !Number.isFinite(port)) return false;
   const names = [`127.0.0.1:${port}`, `localhost:${port}`];
   if (boundHost) {
-    const bound = boundHost.toLowerCase();
+    // A bind given as `[::1]` reports `srv.hostname === "[::1]"`: strip the
+    // brackets before wrapping, or the name becomes `[[::1]]:<port>`.
+    const bound = boundHost.toLowerCase().replace(/^\[(.*)\]$/, "$1");
     names.push(bound.includes(":") ? `[${bound}]:${port}` : `${bound}:${port}`);
   }
   return names.includes(host.toLowerCase());
