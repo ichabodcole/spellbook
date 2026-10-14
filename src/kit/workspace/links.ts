@@ -477,18 +477,88 @@ const unescapeMd = (s: string) => s.replace(ESCAPE, (e) => e.slice(1));
 const schemeOf = linkScheme;
 
 /**
- * A line, trimmed, cut to a window around `[at, at + len)` with "…" at each cut
- * end. `spans` are the line's links: a cut never falls inside one, so a quoted
- * line never ends in half a link (`[the Cave](./locat…`). A link the cut would
- * split is taken whole when it is short, and left out when it is long.
+ * One line of a document, read once for every link on it: its text (`line`),
+ * trimmed (`text`) with how much was trimmed from its start (`lead`), and
+ * `near`, the line's links that could hold either of two places on it.
+ *
+ * ⛔ ONCE PER LINE, NOT ONCE PER LINK. Slicing and trimming the line, and
+ * walking every link on it, for each of its links made reading a document
+ * O(links²) on a dense line: `[a](b)` run together to 50 000 characters took
+ * about 3 s, where Scriptorium's extractor, which keeps no context, took 2 ms.
  */
-function contextOf(line: string, at: number, len: number, spans: [number, number][]): string {
+type LineCtx = {
+  line: string;
+  lead: number;
+  text: string;
+  /**
+   * The line's links, as `[from, to)` offsets in `line`, in the order they were
+   * found, that belong to a run of overlapping links strictly holding `p` or
+   * `q`. Only those can hold a window's edge at any step of `contextOf`: an
+   * edge moves only to an end of a link holding it, and any link strictly
+   * holding that end overlaps the first, so it is in the same run.
+   */
+  near: (p: number, q: number) => [number, number][];
+};
+
+/** `LineCtx` for a line and its links (offsets in the line, in found order). */
+function lineCtx(line: string, spans: [number, number][]): LineCtx {
   const lead = line.length - line.trimStart().length;
   const text = line.trim();
+  let runs: { lo: number; hi: number; members: number[] }[] | null = null;
+  const runOf = (p: number) => {
+    if (runs === null) {
+      runs = [];
+      const order = spans
+        .map((_, i) => i)
+        .sort((x, y) => (spans[x]?.[0] ?? 0) - (spans[y]?.[0] ?? 0));
+      for (const i of order) {
+        const [a, b] = spans[i] as [number, number];
+        const last = runs[runs.length - 1];
+        if (last && a < last.hi) {
+          last.hi = Math.max(last.hi, b);
+          last.members.push(i);
+        } else runs.push({ lo: a, hi: b, members: [i] });
+      }
+    }
+    // The last run starting before `p`, if it reaches past it.
+    let lo = 0;
+    let hi = runs.length - 1;
+    let found = -1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if ((runs[mid]?.lo ?? 0) < p) {
+        found = mid;
+        lo = mid + 1;
+      } else hi = mid - 1;
+    }
+    const run = found === -1 ? undefined : runs[found];
+    return run && p < run.hi ? run : undefined;
+  };
+  return {
+    line,
+    lead,
+    text,
+    near: (p, q) => {
+      const a = runOf(p);
+      const b = runOf(q);
+      const members = a === b ? (a?.members ?? []) : [...(a?.members ?? []), ...(b?.members ?? [])];
+      return members.sort((x, y) => x - y).map((i) => spans[i] as [number, number]);
+    },
+  };
+}
+
+/**
+ * A line, trimmed, cut to a window around `[at, at + len)` with "…" at each cut
+ * end. The line's links are never cut through, so a quoted line never ends in
+ * half a link (`[the Cave](./locat…`). A link the cut would split is taken
+ * whole when it is short, and left out when it is long.
+ */
+function contextOf(ctx: LineCtx, at: number, len: number): string {
+  const { lead, text } = ctx;
   if (text.length <= CONTEXT_WIDTH) return text;
   let start = Math.max(0, Math.min(at - lead - 40, text.length - CONTEXT_WIDTH));
   let end = Math.min(text.length, Math.max(start + CONTEXT_WIDTH, at - lead + len));
-  for (const [a0, b0] of spans) {
+  for (const [a0, b0] of ctx.near(start + lead, end + lead)) {
     const a = a0 - lead;
     const b = b0 - lead;
     if (start > a && start < b) start = b - a <= WHOLE_LINK ? a : b;
@@ -607,8 +677,27 @@ function readLinks(text: string, opts: ExtractOptions): ReadLink[] {
     MD_LINK.lastIndex = end;
   }
   const mdSpans: [number, number][] = md.map((m) => [m.index, m.index + m[0].length]);
+  // A wiki link inside a markdown link is not one. Asked of the markdown links
+  // sorted by start, with the furthest end reached so far, so a run of both
+  // kinds costs a search per wiki link rather than a walk of every markdown one.
+  const bySt = [...mdSpans].sort((x, y) => x[0] - y[0]);
+  const reach: number[] = [];
+  for (const [, b] of bySt) reach.push(Math.max(b, reach[reach.length - 1] ?? b));
+  const overlapsMd = (from: number, to: number) => {
+    let lo = 0;
+    let hi = bySt.length - 1;
+    let last = -1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if ((bySt[mid]?.[0] ?? 0) < to) {
+        last = mid;
+        lo = mid + 1;
+      } else hi = mid - 1;
+    }
+    return last !== -1 && (reach[last] as number) > from;
+  };
   const wiki = [...masked.matchAll(WIKI_LINK)].filter(
-    (m) => !mdSpans.some(([a, b]) => m.index < b && m.index + m[0].length > a),
+    (m) => !overlapsMd(m.index, m.index + m[0].length),
   );
   const spans: [number, number][] = [
     ...mdSpans,
@@ -618,15 +707,27 @@ function readLinks(text: string, opts: ExtractOptions): ReadLink[] {
     const at = m.indices?.[g];
     return at ? text.slice(at[0], at[1]) : undefined;
   };
+  // Each link's spans, by the lines they touch (in found order), and each
+  // line's context, built once when a link on it first asks.
+  const spansByLine = new Map<number, [number, number][]>();
+  for (const [a, b] of spans)
+    for (let i = lineOf(a), last = lineOf(Math.max(a, b - 1)); i <= last; i++) {
+      const at = starts[i] as number;
+      const list = spansByLine.get(i);
+      if (list) list.push([a - at, b - at]);
+      else spansByLine.set(i, [[a - at, b - at]]);
+    }
+  const lines = new Map<number, LineCtx>();
   const place = (from: number, to: number) => {
     const i = lineOf(from);
     const start = starts[i] as number;
-    const line = lineText(i);
-    const len = Math.min(to, start + line.length) - from;
-    const onLine = spans
-      .filter(([a, b]) => a < start + line.length && b > start)
-      .map(([a, b]): [number, number] => [a - start, b - start]);
-    return { line: i + 1, from, to, context: contextOf(line, from - start, len, onLine) };
+    let ctx = lines.get(i);
+    if (!ctx) {
+      ctx = lineCtx(lineText(i), spansByLine.get(i) ?? []);
+      lines.set(i, ctx);
+    }
+    const len = Math.min(to, start + ctx.line.length) - from;
+    return { line: i + 1, from, to, context: contextOf(ctx, from - start, len) };
   };
 
   const out: ReadLink[] = [];

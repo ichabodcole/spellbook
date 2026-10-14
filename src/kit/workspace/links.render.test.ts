@@ -240,16 +240,21 @@ describe("random documents of code, comment and link pieces", () => {
   });
 
   test("adversarial runs finish quickly", () => {
-    // Images inside link labels, run together, are still quadratic: about
-    // 0.5 s at 50 000 characters here and over 2 s on a CI runner. They were
-    // before the port too (`kit-links-image-label-quadratic`), so they are
-    // held to a shorter run until that is fixed, and the rest to the full one.
+    // ⛔ WHOLE LINKS, RUN TOGETHER ON ONE LINE, TOO. Building each link's
+    // context walked the line and every link on it, per link: 50 000
+    // characters of `[a](b)` took about 3 s, `[[a]]` about 5 s, and images in
+    // link labels were held to 10 000 characters for it
+    // (`kit-links-image-label-quadratic`). Each line is now read once, and
+    // whole links are held to four times the length: linear, that is about
+    // 60 ms; quadratic, it was over 10 s, which a fast machine cannot hide.
+    const units = ["[", "(", "](", "`", "<!--", "[a](", "[[", "\\["];
+    const links = ["[a](b)", "[[a]]", "![a](b)", "[![a](b)", "[a](b)[[c]]"];
     const runs: [string, number][] = [
-      ...["[", "(", "](", "`", "<!--", "[a](", "[[", "\\["].map((u): [string, number] => [
-        u,
-        50_000,
+      ...units.map((u): [string, number] => [u, 50_000]),
+      ...links.flatMap((u): [string, number][] => [
+        [u, 50_000],
+        [u, 200_000],
       ]),
-      ["[![a](b)", 10_000],
     ];
     for (const [unit, n] of runs) {
       const started = performance.now();
