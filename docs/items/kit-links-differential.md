@@ -80,6 +80,11 @@ offered to Story Studio (message 32), which took the rule as
   doctor's message does not name the key that stands.
 - The `_relations.json` broken-key message does not mention marks.
 - Nothing normalises to NFC, in either kit or in Scriptorium.
+- Story Studio's `e82d3ff` (kit-parity message 34) adds the case fold to the
+  link picker: `rankRelations` merges offers by case, with the declared one's
+  fields winning; `suggestRelations` and `hasRelation` ignore case; and
+  `hrefWithRelations` writes the author's first spelling. The rendered relation
+  chip also shows the folded name. Port these with the document pane (cycle 4).
 
 ## Definition of done
 
