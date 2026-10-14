@@ -740,10 +740,12 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
   // Everything the running daemon owns lives in `run`, set by `start`.
   let run: { port: number; session: WorkspaceSession; ctx: WorkspaceContext } | null = null;
 
-  const need = <T>(v: T | undefined | null, what: string): T => {
+  // A function, not a generic arrow: `<T>(` reads as JSX to a tsx parser,
+  // and the import-boundary ward audits every file with one.
+  function need<T>(v: T | undefined | null, what: string): T {
     if (v === undefined || v === null) throw new Error(`the daemon is not started (${what})`);
     return v;
-  };
+  }
 
   return {
     async start() {

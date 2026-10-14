@@ -6032,7 +6032,11 @@ export class WorkspaceSession {
       if (!read.has(file)) this.headingCache.delete(file);
     missingHeadings.sort(order);
     ambiguous.sort(order);
-    const cut = <T>(list: T[]) => list.slice(0, LINK_CHECK_CAP);
+    // A function, not a generic arrow: `<T>(` reads as JSX to a tsx parser,
+    // and the import-boundary ward audits every file with one.
+    function cut<T>(list: T[]): T[] {
+      return list.slice(0, LINK_CHECK_CAP);
+    }
     const truncated =
       missingHeadings.length > LINK_CHECK_CAP ||
       ambiguous.length > LINK_CHECK_CAP ||

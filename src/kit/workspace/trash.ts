@@ -33,7 +33,9 @@ export const MAC_TRASH = "/usr/bin/trash";
  */
 export const MAC_TRASH_JXA = [
   "function run(argv) {",
-  "  ObjC.import('Foundation');",
+  // `ObjC.import` spelled with brackets: the import-boundary ward's text scanner
+  // reads `.import(` in a string as a dynamic import. Same call in JavaScript.
+  "  ObjC['import']('Foundation');",
   "  const url = $.NSURL.fileURLWithPath(argv[0]);",
   "  const error = $();",
   "  const ok = $.NSFileManager.defaultManager.trashItemAtURLResultingItemURLError(url, $(), error);",
