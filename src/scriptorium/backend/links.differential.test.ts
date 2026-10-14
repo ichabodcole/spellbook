@@ -61,13 +61,18 @@ const DIFFERENCES = {
    */
   wikiForms: "found: no `type/slug`, basename or repo-root resolution in the kit",
   /**
-   * Found here: `?rel=` values. Case and repeats now agree (ruled by Cole,
+   * Found here: `?rel=` values. Case and repeats agree (ruled by Cole,
    * kit-links-differential `relCase`: the kit lowercases and drops a repeat
-   * after folding, as Scriptorium does). What still differs: Scriptorium keeps
-   * any value and reads the first `rel=` pair only; the kit drops a value that
-   * is not a relation word (`<relationship>`) and reads every `rel=` pair.
+   * after folding, as Scriptorium does), non-ASCII case included (`İ`, `Ü`,
+   * Greek). What still differs:
+   * - Scriptorium keeps any value; the kit drops one that is not a relation
+   *   word (`<relationship>`).
+   * - Scriptorium reads the first `rel=` pair only; the kit reads every pair.
+   * - Scriptorium decodes the value and then splits it on `,`; the kit splits
+   *   and then decodes, so an encoded comma (`rel=a%2Cb`) is one value, `a,b`,
+   *   which is not a relation word: `[]`.
    */
-  relWords: "found: the kit drops non-word rels and reads every rel= pair",
+  relWords: "found: the kit drops non-word rels, reads every rel= pair, and splits before decoding",
   /**
    * Found here: a `/`-anchored target. Scriptorium looks under the bundle root
    * only; the kit looks under the root and then at the absolute path on disk
@@ -695,6 +700,11 @@ describe("the kit's target parsing against Scriptorium's", () => {
     // Folded on both sides, the difference is only in which pairs and words count.
     expect(parseRel("rel=A&rel=B")).toEqual(["a"]);
     expect(kitParseRel("rel=A&rel=B")).toEqual(["a", "b"]);
+    // Scriptorium decodes, then splits; the kit splits, then decodes.
+    expect(parseRel("rel=a%2Cb")).toEqual(["a", "b"]);
+    expect(kitParseRel("rel=a%2Cb")).toEqual([]);
+    expect(parseRel("rel=A%2CB,a")).toEqual(["a", "b"]);
+    expect(kitParseRel("rel=A%2CB,a")).toEqual(["a"]);
   });
 });
 
