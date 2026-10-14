@@ -63,9 +63,9 @@
  * usage, its line, each own flag with its `flagHelp` line, the global flags in
  * their own block, and its `examples`. Every row answers `--help`, the auto
  * rows and a verbless root included. The check runs before contract 5, on the
- * tokens before any `--`, and counts a `--help` only when the argv WITHOUT
- * it parses for the row (`asksForHelp`), so a value-slot `--help` stays the
- * parser's refusal. A row's
+ * whole argv, and counts `--help` only when a strict parse (the table plus a
+ * `help` boolean) reads it as the flag (`asksForHelp`), so a value-slot
+ * `--help` stays the parser's refusal. A row's
  * `requiredFlags` drop their brackets in its usage and are refused as missing
  * after the arity check.
  *
@@ -519,41 +519,42 @@ export function defineCli<const O extends OptionsTable>(spec: CliSpec<O>): Cli {
   };
 
   /**
-   * Does `args` ask for this row's help? THE RULE IS STRUCTURAL: a `--help`
-   * (or `-h`, when no option claims that short) before the first bare `--` is
-   * a help request ONLY IF removing that one token leaves an argv this row's
-   * parser accepts — node's strict parse against the whole table, plus the
-   * misplaced-flag check (contract 5). Anything else is refused by the normal
-   * path exactly as it was before per-verb help, when `--help` was just an
-   * unknown flag. So every way the token can sit in a value slot — `--notes
-   * --help`, `--notes --owner --help`, `-qn -h`, `--notes -- --help` — stays
-   * the parser's exit 2, never a silent help-and-drop. Arity and `check` are
-   * NOT required: help for an incomplete command is the point of asking.
-   * The scan stops at the first `--`, value or not, which is the conservative
-   * side: a `--help` after it is never a request. `--notes=--help` is one
-   * token, stores the literal, and never reads as `--help` here.
+   * Does `args` ask for this row's help? THE PARSER DECIDES, with no shape
+   * rules: one strict parse of the ORIGINAL argv against the whole table plus
+   * a registered `help` boolean (short `h` unless a spell claims `-h`). It is
+   * a request iff that parse succeeds AND reads `help` as an option token —
+   * the flag itself, never a value it took (`--notes=--help`) nor text after
+   * `--`. A failed parse is not a request: the normal path then refuses the
+   * original argv exactly as it did when `--help` was an unknown flag. A
+   * dash-led token in a string flag's value slot is the parser's "argument is
+   * ambiguous" in strict mode, so `--notes --help [more words]`, `-qn -h`,
+   * `--notes -- --help` and every other value-slot shape stay exit 2, and the
+   * command is never dropped silently. Arity and `check` are NOT consulted:
+   * help for an incomplete command is the point of asking.
    */
+  const helpOptions = known.has("help")
+    ? undefined
+    : {
+        ...parseOptions,
+        help: shortToKey.has("h")
+          ? { type: "boolean" as const }
+          : { type: "boolean" as const, short: "h" },
+      };
   const asksForHelp = (row: Row, args: readonly string[]): boolean => {
-    const end = args.indexOf("--");
-    const scan = end === -1 ? args.length : end;
-    const accepted = new Set(row.accepted);
-    for (let i = 0; i < scan; i++) {
-      const t = args[i];
-      if (t !== "--help" && !(t === "-h" && !shortToKey.has("h"))) continue;
-      const rest = [...args.slice(0, i), ...args.slice(i + 1)];
-      try {
-        const { values } = parseArgs({
-          args: rest,
-          options: parseOptions,
-          strict: true,
-          allowPositionals: row.allowPositionals,
-        });
-        if (Object.keys(values).every((k) => accepted.has(k))) return true;
-      } catch {
-        // This removal leaves an argv the row refuses; try the next candidate.
-      }
+    // A spell that declares its own `help` option owns the token outright.
+    if (helpOptions === undefined) return false;
+    try {
+      const { tokens } = parseArgs({
+        args: [...args],
+        options: helpOptions,
+        strict: true,
+        allowPositionals: row.allowPositionals,
+        tokens: true,
+      });
+      return tokens.some((t) => t.kind === "option" && t.name === "help");
+    } catch {
+      return false;
     }
-    return false;
   };
 
   // ── the declaration ──

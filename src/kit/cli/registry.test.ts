@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { parseArgs } from "node:util";
 import { type CommandSpec, defineCli, type Invocation } from "./registry";
 
 // ── harness ────────────────────────────────────────────────────────────────
@@ -585,6 +586,12 @@ describe("help <verb>: value slots, global flags, built-in rows and a verbless r
       ["add", "t", "--notes", "--", "--help"], // `--` in the value slot
       ["add", "t", "-qn", "-h"], // a cluster ending in a string short
       ["add", "t", "--session", "--help"], // a value-taking GLOBAL
+      // A positional AFTER the value-slot `--help`: removing the token let the
+      // next word fill the slot, so a remove-and-reparse rule called it help.
+      ["add", "t", "--notes", "--help", "more", "words"],
+      ["add", "--notes", "--help", "My", "Title"],
+      ["add", "t", "--notes", "-h", "title"],
+      ["add", "t", "--session", "--help", "hi"], // a global, then a positional
     ]) {
       const r = await run(argv);
       const base = await run(toBase(argv));
@@ -594,6 +601,58 @@ describe("help <verb>: value slots, global flags, built-in rows and a verbless r
       expect(envelope(r).error.kind).toBe("usage");
       expect(r.ran).toBe(0);
     }
+  });
+
+  test("flags-anywhere: `--session --help info x` is refused as on base, not help for info", async () => {
+    let ranInfo = 0;
+    const anywhere = defineCli({
+      name: "g",
+      version: () => ({}),
+      grammar: "flags-anywhere",
+      options: { session: { type: "string" } },
+      globalFlags: ["session"],
+      commands: [
+        {
+          name: "info",
+          flags: [],
+          positionals: [{ name: "x", required: false }],
+          describe: "info",
+          run: () => {
+            ranInfo++;
+          },
+        },
+      ],
+    });
+    const r = await capture(() => anywhere.main(["--session", "--help", "info", "x"]));
+    expect(r.code).toBe(2);
+    expect(r.out).toBe("");
+    expect(ranInfo).toBe(0);
+    const ok = await capture(() => anywhere.main(["--session", "s", "info", "--help"]));
+    expect(ok.code).toBe(0);
+    expect(ok.out).toStartWith("usage: info");
+  });
+
+  test("a spell that claims `-h` keeps it", async () => {
+    const seen: Invocation[] = [];
+    const claims = defineCli({
+      name: "c",
+      version: () => ({}),
+      options: { host: { type: "string", short: "h" } },
+      commands: [
+        {
+          name: "serve",
+          flags: ["host"],
+          positionals: [],
+          describe: "serve",
+          run: (inv) => {
+            seen.push(inv);
+          },
+        },
+      ],
+    });
+    expect((await capture(() => claims.main(["serve", "-h", "x"]))).code).toBe(0);
+    expect(seen[0]?.flags.host).toBe("x");
+    expect((await capture(() => claims.main(["serve", "--help"]))).out).toStartWith("usage: serve");
   });
 
   test("a real request still answers: after a value, after a boolean; the equals form and `--` stay literal", async () => {
@@ -616,7 +675,26 @@ describe("help <verb>: value slots, global flags, built-in rows and a verbless r
     expect(slotRan[0]?.pos).toEqual(["--help"]);
   });
 
-  test("DIFFERENTIAL: help only ever replaces a base exit 2, and only when the argv minus the help token runs", async () => {
+  test("DIFFERENTIAL: help exactly where a reference parse reads `help` as the flag; everywhere else, base", async () => {
+    // The REFERENCE is independent of the registry: node's strict parse of the
+    // ORIGINAL argv (after the verb) against the same table plus a `help`
+    // boolean. Help is allowed iff that parse succeeds and reads `help` as an
+    // option token. (The earlier property — "the argv minus the token parses"
+    // — accepted `--notes --help t`, where `t` slides into the value slot.)
+    const refHelp = (args: string[]): boolean => {
+      try {
+        const { tokens } = parseArgs({
+          args,
+          options: { ...SLOT_OPTIONS, help: { type: "boolean", short: "h" } },
+          strict: true,
+          allowPositionals: true,
+          tokens: true,
+        });
+        return tokens.some((t) => t.kind === "option" && t.name === "help");
+      } catch {
+        return false;
+      }
+    };
     const shapes: string[][] = [];
     const pieces = [
       ["--notes"],
@@ -632,6 +710,7 @@ describe("help <verb>: value slots, global flags, built-in rows and a verbless r
       ["--other"], // known to the table, misplaced on `add`
       ["--bogus"],
       ["t"],
+      ["more", "words"],
     ];
     for (const help of ["--help", "-h"])
       for (const a of pieces)
@@ -643,21 +722,11 @@ describe("help <verb>: value slots, global flags, built-in rows and a verbless r
     for (const argv of shapes) {
       const r = await run(argv);
       const base = await run(toBase(argv));
-      if (r.out.startsWith("usage: add")) {
+      const gaveHelp = r.out.startsWith("usage: add");
+      expect({ argv, gaveHelp }).toEqual({ argv, gaveHelp: refHelp(argv.slice(1)) });
+      if (gaveHelp) {
         helped++;
-        expect({ argv, base: base.code }).toEqual({ argv, base: 2 });
-        expect(r.ran).toBe(0);
-        const i = argv.findIndex((t) => t === "--help" || t === "-h");
-        // Valid = the row's PARSER accepts it: it runs, or the only refusal is
-        // arity (`add t --help t`), which help for an incomplete or overfull
-        // command is allowed to answer.
-        const without = await run([...argv.slice(0, i), ...argv.slice(i + 1)]);
-        const parsed =
-          (without.code === 0 && without.ran === 1) ||
-          (without.code === 2 &&
-            without.ran === 0 &&
-            /unexpected argument|missing required </.test(envelope(without).error.message));
-        expect({ argv, parsed }).toEqual({ argv, parsed: true });
+        expect({ argv, code: r.code, ran: r.ran }).toEqual({ argv, code: 0, ran: 0 });
       } else {
         // Not help: the new code answers exactly as base did.
         expect({ argv, code: r.code, ran: r.ran }).toEqual({
