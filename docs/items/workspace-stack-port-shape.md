@@ -6,8 +6,8 @@ description:
   commit to port from now that its kit adopted a new workspace model, how to
   split 44k lines into cycles, and where Scriptorium's wiki layer and kept
   features plug in."
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: active
 id: 01a138d7-624c-766c-bce7-d6ac23d90ee7
 kind: research
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
@@ -44,9 +44,17 @@ the feature alone. Three questions need answering first:
 The answer feeds Cole's ruling on the port base and the workspace model, and the
 next cycle's scope.
 
+**Ruled (Cole, 2026-10-13): port from `027d7a3`, without the new workspace
+model.** That model is Story Studio's own. The investigation therefore answers
+the port-base question narrowly. Which of the commits after `027d7a3` that are
+not the workspace model are generic fixes worth taking? Candidates are `0ff5698`
+(send a pending edit before switching version), `d7ef948` (New set / New folder
+wording) and `a538a2e` (CI race holds). And does anything at `027d7a3` already
+lean on the new model?
+
 ## Definition of done
 
 - [ ] A write-up that answers the three questions with evidence from both
       codebases, and recommends a port base and a cycle split
-- [ ] Cole has ruled on the port base and the workspace model
+- [x] Cole has ruled on the port base and the workspace model
 - [ ] The next cycle is drafted from the ruling
