@@ -45,6 +45,10 @@ const base = {
   ...process.env,
   SCRIPTORIUM_HOME: home,
   TMPDIR: `${join(root, "tmp")}/`,
+  // Pinned, not inherited: `bun test` sets NODE_ENV=test only when it is unset,
+  // and every under-test guard in the spawned CLI and daemon (the real Trash
+  // refused, the real home refused) reads it.
+  NODE_ENV: "test",
 };
 delete (base as Record<string, string | undefined>).SCRIPTORIUM_KIT;
 /** The flagged environment, and the shipped one (no flag at all). */
@@ -290,6 +294,12 @@ describe("the kit path, end to end through Scriptorium's launchers", () => {
     // Trash, so the assertion is that it is refused and the file is still here.
     const doomed = join(docs, "extra", "e.md");
     expect(existsSync(doomed)).toBe(true);
+    // ⛔ CHECKED BEFORE THE OP IS SENT, AND THROWN, NOT EXPECTED: the daemon's
+    // guard holds only if it was spawned with NODE_ENV=test, and `bun test`
+    // keeps a NODE_ENV that was already set (`NODE_ENV=development bun test`).
+    // The session was opened, and so the daemon spawned, with `kitEnv`.
+    if (kitEnv.NODE_ENV !== "test")
+      throw new Error("the kit daemon was not spawned under test: refusing to send a delete");
     surface.send({ op: "trash", path: doomed, rid: "t1" } as never);
     const refused = await surface.waitFor(
       (f) => f.op === "error" && (f as { requestId?: unknown }).requestId === "t1",
