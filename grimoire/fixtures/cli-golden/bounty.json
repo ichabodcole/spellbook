@@ -974,12 +974,14 @@
         "",
         "flags:",
         "  --restore <restore>",
-        "  --session-key <session-key>",
         "  --timeout <timeout>",
         "  --title <title>",
         "  --fresh",
         "  --no-open",
-        "  --pin"
+        "  --pin",
+        "",
+        "also accepted:",
+        "  --session-key <session-key>"
       ]
     },
     {
@@ -1002,12 +1004,14 @@
         "read-back: {state, cursor, readMode}; --mine | --owner <name> scope it (--full is accepted but redundant: the read is full by default — b6)",
         "",
         "flags:",
-        "  --as <as>",
         "  --owner <owner>",
-        "  --session <session>",
-        "  --session-key <session-key>",
         "  --full",
-        "  --mine"
+        "  --mine",
+        "",
+        "also accepted:",
+        "  --as <as>",
+        "  --session <session>",
+        "  --session-key <session-key>"
       ]
     },
     {
@@ -1030,13 +1034,15 @@
         "board events as JSON lines — wrap with Monitor; it ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
         "",
         "flags:",
-        "  --as <as>",
         "  --owner <owner>",
-        "  --session <session>",
-        "  --session-key <session-key>",
         "  --since <since>",
         "  --once",
-        "  --mine"
+        "  --mine",
+        "",
+        "also accepted:",
+        "  --as <as>",
+        "  --session <session>",
+        "  --session-key <session-key>"
       ]
     },
     {
@@ -1071,17 +1077,19 @@
         "add a task (the title, or --stdin); --size S|M|L is a heartbeat estimate (5/10/20 min), --expect <min> overrides it",
         "",
         "flags:",
-        "  --as <as>",
         "  --expect <expect>",
         "  --id <id>",
         "  --notes <notes>",
         "  --owner <owner>",
-        "  --session <session>",
-        "  --session-key <session-key>",
         "  --size <size>",
         "  --status <status>",
         "  --tag <tag>",
-        "  --stdin"
+        "  --stdin",
+        "",
+        "also accepted:",
+        "  --as <as>",
+        "  --session <session>",
+        "  --session-key <session-key>"
       ]
     },
     {
@@ -1117,18 +1125,20 @@
         "patch a task; --stdin reads the new TITLE; --clear-notes clears the notes (an empty --notes is refused); --tag \"\" clears the tags",
         "",
         "flags:",
-        "  --as <as>",
         "  --expect <expect>",
         "  --notes <notes>",
         "  --owner <owner>",
-        "  --session <session>",
-        "  --session-key <session-key>",
         "  --size <size>",
         "  --status <status>",
         "  --tag <tag>",
         "  --title <title>",
         "  --stdin",
-        "  --clear-notes"
+        "  --clear-notes",
+        "",
+        "also accepted:",
+        "  --as <as>",
+        "  --session <session>",
+        "  --session-key <session-key>"
       ]
     },
     {
@@ -1150,7 +1160,7 @@
         "",
         "self-claim an UNOWNED task as --as <name> (rejected if another owns it)",
         "",
-        "flags:",
+        "also accepted:",
         "  --as <as>",
         "  --session <session>",
         "  --session-key <session-key>"
@@ -1176,8 +1186,10 @@
         "mark <id> blocked on --on <id>[,<id>...] (rejected on a cycle)",
         "",
         "flags:",
-        "  --as <as>",
         "  --on <on>",
+        "",
+        "also accepted:",
+        "  --as <as>",
         "  --session <session>",
         "  --session-key <session-key>"
       ]
@@ -1202,8 +1214,10 @@
         "remove blocker edge(s) --on <id>[,<id>...]",
         "",
         "flags:",
-        "  --as <as>",
         "  --on <on>",
+        "",
+        "also accepted:",
+        "  --as <as>",
         "  --session <session>",
         "  --session-key <session-key>"
       ]
@@ -1227,7 +1241,7 @@
         "",
         "delete a task",
         "",
-        "flags:",
+        "also accepted:",
         "  --as <as>",
         "  --session <session>",
         "  --session-key <session-key>"
@@ -1253,10 +1267,12 @@
         "show a toast on the board (the text, or --stdin)",
         "",
         "flags:",
+        "  --stdin",
+        "",
+        "also accepted:",
         "  --as <as>",
         "  --session <session>",
-        "  --session-key <session-key>",
-        "  --stdin"
+        "  --session-key <session-key>"
       ]
     },
     {
@@ -1279,12 +1295,14 @@
         "seed the board (tasks = JSON array on stdin; each task REQUIRES id + title + status — init does NOT mint ids, unlike add; any dropped task is reported per-entry in tasksDropped). Over a board that has tasks it is refused (exit 6) unless --replace, which reports tasksReplaced",
         "",
         "flags:",
-        "  --as <as>",
-        "  --session <session>",
-        "  --session-key <session-key>",
         "  --title <title>",
         "  --stdin-tasks",
-        "  --replace"
+        "  --replace",
+        "",
+        "also accepted:",
+        "  --as <as>",
+        "  --session <session>",
+        "  --session-key <session-key>"
       ]
     },
     {
@@ -1306,7 +1324,7 @@
         "",
         "end the board (writes its snapshot); prints {ok, sent, down, snapshotBackups} — any backup the board wrote, and the act that recovers it",
         "",
-        "flags:",
+        "also accepted:",
         "  --as <as>",
         "  --session <session>",
         "  --session-key <session-key>"
@@ -1331,7 +1349,7 @@
         "",
         "the resolved board's {url, port, session_id, title}",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>",
         "  --session-key <session-key>"
       ]
@@ -1387,12 +1405,10 @@
     },
     {
       "argv": ["version", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": []
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: version", "", "this CLI's {name, version} as JSON (alias: --version, -V)"]
     },
     {
       "argv": ["schema", "--acc-bogus-flag"],
@@ -1405,12 +1421,10 @@
     },
     {
       "argv": ["schema", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": []
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: schema", "", "this CLI's machine-readable interface (acc declaration v0)"]
     },
     {
       "argv": ["help", "--acc-bogus-flag"],
@@ -1423,12 +1437,14 @@
     },
     {
       "argv": ["help", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": []
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: help [verb...]",
+        "",
+        "show this message (alias: --help, -h); `help <verb>` shows one verb: its usage, each flag, and examples"
+      ]
     },
     {
       "argv": ["state"],

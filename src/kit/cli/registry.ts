@@ -60,10 +60,13 @@
  *
  * Per-verb help (ported from Story Studio's kit): `help <verb>` and
  * `<verb> --help` (or `-h`, when no flag claims that short) print one row's
- * usage, its line, each accepted flag with its `flagHelp` line, and its
- * `examples`. The `--help` check runs before contract 5, on the tokens before
- * any `--`. A row's `requiredFlags` drop their brackets in its usage and are
- * refused as missing after the arity check.
+ * usage, its line, each own flag with its `flagHelp` line, the global flags in
+ * their own block, and its `examples`. Every row answers `--help`, the auto
+ * rows and a verbless root included. The check runs before contract 5, on the
+ * tokens before any `--`, and skips a token in a value-taking flag's value
+ * slot (`--notes --help` stays the parser's ambiguity refusal). A row's
+ * `requiredFlags` drop their brackets in its usage and are refused as missing
+ * after the arity check.
  *
  * The module adds `help`, `version` and `schema` rows unless the spell defines
  * a row of that name (grapevine's `version --human`). They are ordinary rows:
@@ -465,10 +468,45 @@ export function defineCli<const O extends OptionsTable>(spec: CliSpec<O>): Cli {
   };
 
   /**
-   * One verb's help: its usage line, what it does, each flag it takes with
-   * what it does, and its examples. An unknown verb is a usage error that
-   * lists the verbs there are.
+   * One row's help: its usage line, what it does (when it says), each flag it
+   * takes with what it does, and its examples. The row's own flags come first;
+   * the `globalFlags` every row takes follow in their own block, then any
+   * `usageHides` flag the row accepts, so a verb's own flags read on their own.
    */
+  const renderRowHelp = (r: Row): string => {
+    const line = (k: string) => {
+      const value = spec.options[k]?.type === "boolean" ? `--${k}` : `--${k} <${k}>`;
+      return [value, r.flagHelp[k] ?? ""] as const;
+    };
+    const isGlobal = (k: string) => !r.flags.includes(k) || globals.includes(k);
+    const own = r.accepted.filter((k) => !isGlobal(k) && !hides.has(k)).map(line);
+    const global = r.accepted.filter(isGlobal).map(line);
+    // `usageHides` flags (bounty's `--session`/`--as`, astrolabe's legacy
+    // `--timeout`): accepted, kept off the usage line, listed after the rest.
+    const hidden = r.accepted.filter((k) => !isGlobal(k) && hides.has(k)).map(line);
+    const width = Math.min(
+      Math.max(0, ...[...own, ...global, ...hidden].map(([f]) => f.length)),
+      28,
+    );
+    const render = (flags: (readonly [string, string])[]) =>
+      flags.map(([f, d]) =>
+        d === ""
+          ? `  ${f}`
+          : f.length <= width
+            ? `  ${f.padEnd(width)}  ${d}`
+            : `  ${f}\n  ${"".padEnd(width)}  ${d}`,
+      );
+    return [
+      `usage: ${usageLine(r)}`,
+      ...(r.describe !== "" ? ["", r.describe] : []),
+      ...(own.length > 0 ? ["", "flags:", ...render(own)] : []),
+      ...(global.length > 0 ? ["", "global flags:", ...render(global)] : []),
+      ...(hidden.length > 0 ? ["", "also accepted:", ...render(hidden)] : []),
+      ...(r.examples.length > 0 ? ["", "examples:", ...r.examples.map((e) => `  ${e}`)] : []),
+    ].join("\n");
+  };
+
+  /** One verb's help (`help <verb>`); an unknown verb is a usage error listing the verbs. */
   const renderVerbHelp = (path: string): string => {
     const r = byToken.get(path);
     if (r === undefined)
@@ -476,25 +514,37 @@ export function defineCli<const O extends OptionsTable>(spec: CliSpec<O>): Cli {
         choices: paths,
         hint: "help with no verb lists them all",
       });
-    const flags = r.accepted.map((k) => {
-      const value = spec.options[k]?.type === "boolean" ? `--${k}` : `--${k} <${k}>`;
-      return [value, r.flagHelp[k] ?? ""] as const;
-    });
-    const width = Math.min(Math.max(0, ...flags.map(([f]) => f.length)), 28);
-    const flagLines = flags.map(([f, d]) =>
-      d === ""
-        ? `  ${f}`
-        : f.length <= width
-          ? `  ${f.padEnd(width)}  ${d}`
-          : `  ${f}\n  ${"".padEnd(width)}  ${d}`,
-    );
-    return [
-      `usage: ${usageLine(r)}`,
-      "",
-      r.describe,
-      ...(flagLines.length > 0 ? ["", "flags:", ...flagLines] : []),
-      ...(r.examples.length > 0 ? ["", "examples:", ...r.examples.map((e) => `  ${e}`)] : []),
-    ].join("\n");
+    return renderRowHelp(r);
+  };
+
+  /**
+   * Does `args` ask for this row's help? A `--help` (or `-h`, when no option
+   * claims that short) among the tokens before any `--` — but NOT one sitting
+   * in the value slot of a value-taking flag: `add t --notes --help` is the
+   * parser's to refuse as ambiguous (exit 2), as it was before per-verb help,
+   * never a silent help-and-drop. `--notes=--help` is one token and stores the
+   * literal, so it never reads as `--help` here.
+   */
+  const asksForHelp = (args: readonly string[]): boolean => {
+    const takesValue = (t: string): boolean => {
+      if (t.startsWith("--"))
+        return !t.includes("=") && spec.options[t.slice(2)]?.type === "string";
+      if (t.startsWith("-") && t.length === 2) {
+        const k = shortToKey.get(t.slice(1));
+        return k !== undefined && spec.options[k]?.type === "string";
+      }
+      return false;
+    };
+    for (let i = 0; i < args.length; i++) {
+      const t = args[i] as string;
+      if (t === "--") return false;
+      if (takesValue(t)) {
+        i++; // the next token is this flag's value slot, whatever it spells
+        continue;
+      }
+      if (t === "--help" || (t === "-h" && !shortToKey.has("h"))) return true;
+    }
+    return false;
   };
 
   // ── the declaration ──
@@ -655,15 +705,12 @@ export function defineCli<const O extends OptionsTable>(spec: CliSpec<O>): Cli {
     setCurrentCommand(row.name === "" ? null : row.name);
     const name = label(row);
     // `<verb> --help` (or `-h`, unless the spell gave `-h` a flag of its own) is
-    // `help <verb>`: asked before anything else is checked.
-    const end = args.indexOf("--");
-    const before = end === -1 ? args : args.slice(0, end);
-    if (
-      row.name !== "" &&
-      !row.auto &&
-      (before.includes("--help") || (before.includes("-h") && !shortToKey.has("h")))
-    ) {
-      process.stdout.write(`${renderVerbHelp(row.name)}\n`);
+    // `help <verb>`: asked before anything else is checked. Every row answers
+    // it — the auto rows (`help --help`, `schema --help`) and a verbless root
+    // (`digestify --file x --help`) included. `asksForHelp` names the one place
+    // a `--help` token is not a request.
+    if (asksForHelp(args)) {
+      process.stdout.write(`${renderRowHelp(row)}\n`);
       return 0;
     }
     const accepted = new Set(row.accepted);

@@ -799,9 +799,11 @@
         "SSE user events → JSONL (wrap with Monitor); ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
         "",
         "flags:",
-        "  --session <session>",
         "  --since <since>",
-        "  --once"
+        "  --once",
+        "",
+        "also accepted:",
+        "  --session <session>"
       ]
     },
     {
@@ -824,8 +826,10 @@
         "lean state snapshot (--full for raw, incl. base64)",
         "",
         "flags:",
-        "  --session <session>",
-        "  --full"
+        "  --full",
+        "",
+        "also accepted:",
+        "  --session <session>"
       ]
     },
     {
@@ -847,7 +851,7 @@
         "",
         "post agent dialogue into the conversation",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -872,6 +876,8 @@
         "",
         "flags:",
         "  --n <n>",
+        "",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -896,6 +902,8 @@
         "",
         "flags:",
         "  --options <options>",
+        "",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -931,9 +939,11 @@
         "  --kind <kind>",
         "  --models <models>",
         "  --prompt <prompt>",
-        "  --session <session>",
         "  --summary <summary>",
-        "  --tag <tag>"
+        "  --tag <tag>",
+        "",
+        "also accepted:",
+        "  --session <session>"
       ]
     },
     {
@@ -955,7 +965,7 @@
         "",
         "put an image on the canvas",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -978,7 +988,7 @@
         "",
         "point a variant at the next gen as a reference (`off` releases it)",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -1001,7 +1011,7 @@
         "",
         "write your read onto an image (durable metadata)",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -1028,8 +1038,10 @@
         "  --content <content>",
         "  --image <image>",
         "  --link <link>",
-        "  --session <session>",
-        "  --tags <tags>"
+        "  --tags <tags>",
+        "",
+        "also accepted:",
+        "  --session <session>"
       ]
     },
     {
@@ -1051,7 +1063,7 @@
         "",
         "show (on [text...]) or hide (off) the \"imago working\" spinner",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -1074,7 +1086,7 @@
         "",
         "cumulative spend display (e.g. \"$0.38 · 8 imgs\")",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -1098,8 +1110,10 @@
         "raise (<text...>) or clear (--clear) a terminal-ask escalation",
         "",
         "flags:",
-        "  --session <session>",
-        "  --clear"
+        "  --clear",
+        "",
+        "also accepted:",
+        "  --session <session>"
       ]
     },
     {
@@ -1116,7 +1130,7 @@
       "exit": 0,
       "verdict": "accepted",
       "stream": "stdout",
-      "text": ["usage: close", "", "end the session", "", "flags:", "  --session <session>"]
+      "text": ["usage: close", "", "end the session", "", "also accepted:", "  --session <session>"]
     },
     {
       "argv": ["info", "--acc-bogus-flag"],
@@ -1132,7 +1146,14 @@
       "exit": 0,
       "verdict": "accepted",
       "stream": "stdout",
-      "text": ["usage: info", "", "print the session JSON", "", "flags:", "  --session <session>"]
+      "text": [
+        "usage: info",
+        "",
+        "print the session JSON",
+        "",
+        "also accepted:",
+        "  --session <session>"
+      ]
     },
     {
       "argv": ["sessions", "--acc-bogus-flag"],
@@ -1168,12 +1189,10 @@
     },
     {
       "argv": ["version", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": []
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: version", "", "this CLI's {name, version} as JSON (alias: --version, -V)"]
     },
     {
       "argv": ["schema", "--acc-bogus-flag"],
@@ -1186,12 +1205,10 @@
     },
     {
       "argv": ["schema", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": []
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: schema", "", "this CLI's machine-readable interface (acc declaration v0)"]
     },
     {
       "argv": ["help", "--acc-bogus-flag"],
@@ -1204,12 +1221,14 @@
     },
     {
       "argv": ["help", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": []
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: help [verb...]",
+        "",
+        "show this message (alias: --help, -h); `help <verb>` shows one verb: its usage, each flag, and examples"
+      ]
     },
     {
       "argv": ["state"],

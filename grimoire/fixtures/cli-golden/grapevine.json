@@ -1434,13 +1434,13 @@
       "text": [
         "usage: open <name> [--topic ..] [--fresh]",
         "",
-        "",
-        "",
         "flags:",
-        "  --as <as>",
-        "  --from <from>",
         "  --topic <topic>",
-        "  --fresh"
+        "  --fresh",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
       ]
     },
     {
@@ -1460,9 +1460,7 @@
       "text": [
         "usage: topic <name> [text...]",
         "",
-        "",
-        "",
-        "flags:",
+        "global flags:",
         "  --as <as>",
         "  --from <from>"
       ]
@@ -1481,7 +1479,7 @@
       "exit": 0,
       "verdict": "accepted",
       "stream": "stdout",
-      "text": ["usage: list", "", "", "", "flags:", "  --as <as>", "  --from <from>"]
+      "text": ["usage: list", "", "global flags:", "  --as <as>", "  --from <from>"]
     },
     {
       "argv": ["send", "--acc-bogus-flag"],
@@ -1509,17 +1507,17 @@
       "text": [
         "usage: send <name> [text...] [--body-file ..] [--stdin] [--quiet] [--verbose] [--force] [--in-reply-to ..]",
         "",
-        "",
-        "",
         "flags:",
-        "  --as <as>",
         "  --body-file <body-file>",
-        "  --from <from>",
         "  --in-reply-to <in-reply-to>",
         "  --force",
         "  --quiet",
         "  --stdin",
-        "  --verbose"
+        "  --verbose",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
       ]
     },
     {
@@ -1539,16 +1537,16 @@
       "text": [
         "usage: announce [text...] [--body-file ..] [--stdin] [--quiet] [--force] [--channels ..]",
         "",
-        "",
-        "",
         "flags:",
-        "  --as <as>",
         "  --body-file <body-file>",
         "  --channels <channels>",
-        "  --from <from>",
         "  --force",
         "  --quiet",
-        "  --stdin"
+        "  --stdin",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
       ]
     },
     {
@@ -1568,13 +1566,13 @@
       "text": [
         "usage: pull <name> [--since ..] [--status ..]",
         "",
-        "",
-        "",
         "flags:",
-        "  --as <as>",
-        "  --from <from>",
         "  --since <since>",
-        "  --status <status>"
+        "  --status <status>",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
       ]
     },
     {
@@ -1594,12 +1592,12 @@
       "text": [
         "usage: triage <name> [--human]",
         "",
-        "",
-        "",
         "flags:",
+        "  --human",
+        "",
+        "global flags:",
         "  --as <as>",
-        "  --from <from>",
-        "  --human"
+        "  --from <from>"
       ]
     },
     {
@@ -1619,12 +1617,12 @@
       "text": [
         "usage: read <name> <id> [--text]",
         "",
-        "",
-        "",
         "flags:",
+        "  --text",
+        "",
+        "global flags:",
         "  --as <as>",
-        "  --from <from>",
-        "  --text"
+        "  --from <from>"
       ]
     },
     {
@@ -1644,13 +1642,13 @@
       "text": [
         "usage: wait <name> [--since ..] [--timeout ..]",
         "",
-        "",
-        "",
         "flags:",
-        "  --as <as>",
-        "  --from <from>",
         "  --since <since>",
-        "  --timeout <timeout>"
+        "  --timeout <timeout>",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
       ]
     },
     {
@@ -1670,12 +1668,12 @@
       "text": [
         "usage: who [name] [--all]",
         "",
-        "",
-        "",
         "flags:",
+        "  --all",
+        "",
+        "global flags:",
         "  --as <as>",
-        "  --from <from>",
-        "  --all"
+        "  --from <from>"
       ]
     },
     {
@@ -1692,7 +1690,7 @@
       "exit": 0,
       "verdict": "accepted",
       "stream": "stdout",
-      "text": ["usage: alias [name]", "", "", "", "flags:", "  --as <as>", "  --from <from>"]
+      "text": ["usage: alias [name]", "", "global flags:", "  --as <as>", "  --from <from>"]
     },
     {
       "argv": ["tail", "--acc-bogus-flag"],
@@ -1720,17 +1718,17 @@
       "text": [
         "usage: tail <name> [--since ..] [--from-start] [--last ..] [--human] [--lurk] [--max ..]",
         "",
-        "",
-        "",
         "flags:",
-        "  --as <as>",
-        "  --from <from>",
         "  --last <last>",
         "  --max <max>",
         "  --since <since>",
         "  --from-start",
         "  --human",
-        "  --lurk"
+        "  --lurk",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
       ]
     },
     {
@@ -1750,12 +1748,12 @@
       "text": [
         "usage: grep <name> <pattern...> [--literal]",
         "",
-        "",
-        "",
         "flags:",
+        "  --literal",
+        "",
+        "global flags:",
         "  --as <as>",
-        "  --from <from>",
-        "  --literal"
+        "  --from <from>"
       ]
     },
     {
@@ -1772,7 +1770,7 @@
       "exit": 0,
       "verdict": "accepted",
       "stream": "stdout",
-      "text": ["usage: close <name>", "", "", "", "flags:", "  --as <as>", "  --from <from>"]
+      "text": ["usage: close <name>", "", "global flags:", "  --as <as>", "  --from <from>"]
     },
     {
       "argv": ["reset", "--acc-bogus-flag"],
@@ -1791,12 +1789,12 @@
       "text": [
         "usage: reset <name> [--force]",
         "",
-        "",
-        "",
         "flags:",
+        "  --force",
+        "",
+        "global flags:",
         "  --as <as>",
-        "  --from <from>",
-        "  --force"
+        "  --from <from>"
       ]
     },
     {
@@ -1816,12 +1814,12 @@
       "text": [
         "usage: mark <name> <id> <disposition...> [--note ..]",
         "",
-        "",
-        "",
         "flags:",
+        "  --note <note>",
+        "",
+        "global flags:",
         "  --as <as>",
-        "  --from <from>",
-        "  --note <note>"
+        "  --from <from>"
       ]
     },
     {
@@ -1841,12 +1839,12 @@
       "text": [
         "usage: reopen <name> <id> [--note ..]",
         "",
-        "",
-        "",
         "flags:",
+        "  --note <note>",
+        "",
+        "global flags:",
         "  --as <as>",
-        "  --from <from>",
-        "  --note <note>"
+        "  --from <from>"
       ]
     },
     {
@@ -1863,7 +1861,7 @@
       "exit": 0,
       "verdict": "accepted",
       "stream": "stdout",
-      "text": ["usage: archive <name>", "", "", "", "flags:", "  --as <as>", "  --from <from>"]
+      "text": ["usage: archive <name>", "", "global flags:", "  --as <as>", "  --from <from>"]
     },
     {
       "argv": ["unarchive", "--acc-bogus-flag"],
@@ -1879,7 +1877,7 @@
       "exit": 0,
       "verdict": "accepted",
       "stream": "stdout",
-      "text": ["usage: unarchive <name>", "", "", "", "flags:", "  --as <as>", "  --from <from>"]
+      "text": ["usage: unarchive <name>", "", "global flags:", "  --as <as>", "  --from <from>"]
     },
     {
       "argv": ["start", "--acc-bogus-flag"],
@@ -1895,7 +1893,7 @@
       "exit": 0,
       "verdict": "accepted",
       "stream": "stdout",
-      "text": ["usage: start", "", "", "", "flags:", "  --as <as>", "  --from <from>"]
+      "text": ["usage: start", "", "global flags:", "  --as <as>", "  --from <from>"]
     },
     {
       "argv": ["up", "--acc-bogus-flag"],
@@ -1911,7 +1909,7 @@
       "exit": 0,
       "verdict": "accepted",
       "stream": "stdout",
-      "text": ["usage: start", "", "", "", "flags:", "  --as <as>", "  --from <from>"]
+      "text": ["usage: start", "", "global flags:", "  --as <as>", "  --from <from>"]
     },
     {
       "argv": ["restart", "--acc-bogus-flag"],
@@ -1930,13 +1928,13 @@
       "text": [
         "usage: restart [--force] [--yes]",
         "",
-        "",
-        "",
         "flags:",
-        "  --as <as>",
-        "  --from <from>",
         "  --force",
-        "  --yes"
+        "  --yes",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
       ]
     },
     {
@@ -1956,13 +1954,13 @@
       "text": [
         "usage: roll [--force] [--yes]",
         "",
-        "",
-        "",
         "flags:",
-        "  --as <as>",
-        "  --from <from>",
         "  --force",
-        "  --yes"
+        "  --yes",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
       ]
     },
     {
@@ -1982,12 +1980,12 @@
       "text": [
         "usage: stop [--hold ..]",
         "",
-        "",
-        "",
         "flags:",
+        "  --hold <hold>",
+        "",
+        "global flags:",
         "  --as <as>",
-        "  --from <from>",
-        "  --hold <hold>"
+        "  --from <from>"
       ]
     },
     {
@@ -2004,7 +2002,7 @@
       "exit": 0,
       "verdict": "accepted",
       "stream": "stdout",
-      "text": ["usage: watch [name]", "", "", "", "flags:", "  --as <as>", "  --from <from>"]
+      "text": ["usage: watch [name]", "", "global flags:", "  --as <as>", "  --from <from>"]
     },
     {
       "argv": ["reap", "--acc-bogus-flag"],
@@ -2023,13 +2021,13 @@
       "text": [
         "usage: reap [--force] [--dry-run]",
         "",
-        "",
-        "",
         "flags:",
-        "  --as <as>",
-        "  --from <from>",
         "  --dry-run",
-        "  --force"
+        "  --force",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
       ]
     },
     {
@@ -2049,13 +2047,13 @@
       "text": [
         "usage: reap [--force] [--dry-run]",
         "",
-        "",
-        "",
         "flags:",
-        "  --as <as>",
-        "  --from <from>",
         "  --dry-run",
-        "  --force"
+        "  --force",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
       ]
     },
     {
@@ -2072,7 +2070,7 @@
       "exit": 0,
       "verdict": "accepted",
       "stream": "stdout",
-      "text": ["usage: info", "", "", "", "flags:", "  --as <as>", "  --from <from>"]
+      "text": ["usage: info", "", "global flags:", "  --as <as>", "  --from <from>"]
     },
     {
       "argv": ["doctor", "--acc-bogus-flag"],
@@ -2088,7 +2086,7 @@
       "exit": 0,
       "verdict": "accepted",
       "stream": "stdout",
-      "text": ["usage: doctor", "", "", "", "flags:", "  --as <as>", "  --from <from>"]
+      "text": ["usage: doctor", "", "global flags:", "  --as <as>", "  --from <from>"]
     },
     {
       "argv": ["version", "--acc-bogus-flag"],
@@ -2107,12 +2105,12 @@
       "text": [
         "usage: version [--human]",
         "",
-        "",
-        "",
         "flags:",
+        "  --human",
+        "",
+        "global flags:",
         "  --as <as>",
-        "  --from <from>",
-        "  --human"
+        "  --from <from>"
       ]
     },
     {
@@ -2126,12 +2124,18 @@
     },
     {
       "argv": ["schema", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: schema",
+        "",
+        "this CLI's machine-readable interface (acc declaration v0)",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
+      ]
     },
     {
       "argv": ["help", "--acc-bogus-flag"],
@@ -2144,12 +2148,18 @@
     },
     {
       "argv": ["help", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--as", "--from"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: help [verb...]",
+        "",
+        "show this message (alias: --help, -h); `help <verb>` shows one verb: its usage, each flag, and examples",
+        "",
+        "global flags:",
+        "  --as <as>",
+        "  --from <from>"
+      ]
     },
     {
       "argv": ["list"],

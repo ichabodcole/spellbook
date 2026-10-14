@@ -773,9 +773,11 @@
         "SSE user events → JSONL (wrap with Monitor); ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0",
         "",
         "flags:",
-        "  --session <session>",
         "  --since <since>",
-        "  --once"
+        "  --once",
+        "",
+        "also accepted:",
+        "  --session <session>"
       ]
     },
     {
@@ -798,8 +800,10 @@
         "lean state snapshot (--full for raw)",
         "",
         "flags:",
-        "  --session <session>",
-        "  --full"
+        "  --full",
+        "",
+        "also accepted:",
+        "  --session <session>"
       ]
     },
     {
@@ -822,8 +826,10 @@
         "post agent dialogue (text args OR piped stdin with --stdin)",
         "",
         "flags:",
-        "  --session <session>",
-        "  --stdin"
+        "  --stdin",
+        "",
+        "also accepted:",
+        "  --session <session>"
       ]
     },
     {
@@ -847,6 +853,8 @@
         "",
         "flags:",
         "  --options <options>",
+        "",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -869,7 +877,7 @@
         "",
         "show/hide the \"magpie working\" spinner: status on [text...] | status off",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -892,7 +900,7 @@
         "",
         "register the composite under review (computes sha + size)",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -915,7 +923,7 @@
         "",
         "run discover on the current source → post the breakdown (needs OPENROUTER_API_KEY)",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -944,8 +952,10 @@
         "  --label <label>",
         "  --model <model>",
         "  --pad <pad>",
-        "  --session <session>",
-        "  --remove"
+        "  --remove",
+        "",
+        "also accepted:",
+        "  --session <session>"
       ]
     },
     {
@@ -969,6 +979,8 @@
         "",
         "flags:",
         "  --ids <ids>",
+        "",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -994,8 +1006,10 @@
         "flags:",
         "  --bbox <bbox>",
         "  --name <name>",
-        "  --session <session>",
-        "  --type <type>"
+        "  --type <type>",
+        "",
+        "also accepted:",
+        "  --session <session>"
       ]
     },
     {
@@ -1017,7 +1031,7 @@
         "",
         "retract a boxed region",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -1041,8 +1055,10 @@
         "POST a raw AgentCommand JSON body (pipe it with --stdin)",
         "",
         "flags:",
-        "  --session <session>",
-        "  --stdin"
+        "  --stdin",
+        "",
+        "also accepted:",
+        "  --session <session>"
       ]
     },
     {
@@ -1064,7 +1080,7 @@
         "",
         "shut the session (writes its snapshot)",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -1087,7 +1103,7 @@
         "",
         "the session pointer as JSON",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -1102,12 +1118,10 @@
     },
     {
       "argv": ["version", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": []
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: version", "", "this CLI's {name, version} as JSON (alias: --version, -V)"]
     },
     {
       "argv": ["schema", "--acc-bogus-flag"],
@@ -1120,12 +1134,10 @@
     },
     {
       "argv": ["schema", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": []
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: schema", "", "this CLI's machine-readable interface (acc declaration v0)"]
     },
     {
       "argv": ["help", "--acc-bogus-flag"],
@@ -1138,12 +1150,14 @@
     },
     {
       "argv": ["help", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": []
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: help [verb...]",
+        "",
+        "show this message (alias: --help, -h); `help <verb>` shows one verb: its usage, each flag, and examples"
+      ]
     },
     {
       "argv": ["sessions"],

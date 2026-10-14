@@ -1493,7 +1493,7 @@
         "",
         "add files or folders to the context list",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -1518,6 +1518,8 @@
         "",
         "flags:",
         "  --full",
+        "",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -1542,8 +1544,10 @@
         "",
         "flags:",
         "  --once",
-        "  --session <session>",
-        "  --since <since>"
+        "  --since <since>",
+        "",
+        "also accepted:",
+        "  --session <session>"
       ]
     },
     {
@@ -1570,8 +1574,10 @@
         "  --doc <doc>",
         "  --from <from>",
         "  --label <label>",
-        "  --session <session>",
-        "  --stdin"
+        "  --stdin",
+        "",
+        "also accepted:",
+        "  --session <session>"
       ]
     },
     {
@@ -1595,8 +1601,10 @@
         "",
         "flags:",
         "  --body-file <body-file>",
-        "  --session <session>",
-        "  --stdin"
+        "  --stdin",
+        "",
+        "also accepted:",
+        "  --session <session>"
       ]
     },
     {
@@ -1620,6 +1628,8 @@
         "",
         "flags:",
         "  --doc <doc>",
+        "",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -1644,8 +1654,10 @@
         "",
         "flags:",
         "  --body-file <body-file>",
-        "  --session <session>",
-        "  --stdin"
+        "  --stdin",
+        "",
+        "also accepted:",
+        "  --session <session>"
       ]
     },
     {
@@ -1667,7 +1679,7 @@
         "",
         "say what step a task is on (for work worth watching)",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -1690,7 +1702,7 @@
         "",
         "mark a task finished, optionally saying what came of it",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -1713,7 +1725,7 @@
         "",
         "forget a task entirely — for one started by mistake",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -1736,7 +1748,7 @@
         "",
         "forget every finished task; outstanding ones are left alone",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -1761,6 +1773,8 @@
         "",
         "flags:",
         "  --for <for>",
+        "",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -1787,8 +1801,10 @@
         "  --body-file <body-file>",
         "  --doc <doc>",
         "  --quote <quote>",
-        "  --session <session>",
-        "  --stdin"
+        "  --stdin",
+        "",
+        "also accepted:",
+        "  --session <session>"
       ]
     },
     {
@@ -1813,6 +1829,8 @@
         "flags:",
         "  --doc <doc>",
         "  --full",
+        "",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -1838,8 +1856,10 @@
         "flags:",
         "  --body-file <body-file>",
         "  --doc <doc>",
-        "  --session <session>",
-        "  --stdin"
+        "  --stdin",
+        "",
+        "also accepted:",
+        "  --session <session>"
       ]
     },
     {
@@ -1864,6 +1884,8 @@
         "flags:",
         "  --doc <doc>",
         "  --reopen",
+        "",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -1888,6 +1910,8 @@
         "",
         "flags:",
         "  --doc <doc>",
+        "",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -1914,6 +1938,8 @@
         "  --context <context>",
         "  --doc <doc>",
         "  --patch",
+        "",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -1939,6 +1965,8 @@
         "flags:",
         "  --doc <doc>",
         "  --hunks <hunks>",
+        "",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -1963,6 +1991,8 @@
         "",
         "flags:",
         "  --doc <doc>",
+        "",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -1985,7 +2015,7 @@
         "",
         "create an empty document (its folder must be a set, a folder in one, or the workspace)",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -2008,7 +2038,7 @@
         "",
         "create a folder — inside a set, or in the workspace as a new set",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -2031,7 +2061,7 @@
         "",
         "move a document or folder into another folder (a real move on disk)",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -2054,7 +2084,7 @@
         "",
         "rename a document or folder in place",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -2077,7 +2107,7 @@
         "",
         "remove a document, folder or set from Scriptorium — the files stay on disk",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -2100,7 +2130,7 @@
         "",
         "bring back everything hidden in a set (its entry id, from state)",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -2123,7 +2153,7 @@
         "",
         "turn a single document into a set: a folder named for it, the document moved in",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -2148,6 +2178,8 @@
         "",
         "flags:",
         "  --into <into>",
+        "",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -2170,7 +2202,7 @@
         "",
         "print the workspace (where drops and new top-level documents land), or set it",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -2193,7 +2225,7 @@
         "",
         "a document's frontmatter as the daemon read it (no path: every context document)",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -2218,11 +2250,13 @@
         "",
         "flags:",
         "  --lifecycle <lifecycle>",
-        "  --session <session>",
         "  --since <since>",
         "  --status <status>",
         "  --tag <tag>",
-        "  --type <type>"
+        "  --type <type>",
+        "",
+        "also accepted:",
+        "  --session <session>"
       ]
     },
     {
@@ -2246,6 +2280,8 @@
         "",
         "flags:",
         "  --limit <limit>",
+        "",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -2268,7 +2304,7 @@
         "",
         "what is worth looking at in this session — each finding names the verb that fixes it",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -2293,6 +2329,8 @@
         "",
         "flags:",
         "  --doc <doc>",
+        "",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -2317,6 +2355,8 @@
         "",
         "flags:",
         "  --entry <entry>",
+        "",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -2341,6 +2381,8 @@
         "",
         "flags:",
         "  --entry <entry>",
+        "",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -2363,7 +2405,7 @@
         "",
         "what cites a document — `related` (frontmatter) and `links` (body), kept apart",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -2388,8 +2430,10 @@
         "",
         "flags:",
         "  --by <by>",
-        "  --session <session>",
-        "  --type <type>"
+        "  --type <type>",
+        "",
+        "also accepted:",
+        "  --session <session>"
       ]
     },
     {
@@ -2411,7 +2455,7 @@
         "",
         "set frontmatter keys — one line edit each, everything else untouched",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -2434,7 +2478,7 @@
         "",
         "print the resolved session pointer",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -2457,7 +2501,7 @@
         "",
         "shut the session down (the manifest stays, for open --restore)",
         "",
-        "flags:",
+        "also accepted:",
         "  --session <session>"
       ]
     },
@@ -2472,12 +2516,10 @@
     },
     {
       "argv": ["version", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": []
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: version", "", "this CLI's {name, version} as JSON (alias: --version, -V)"]
     },
     {
       "argv": ["schema", "--acc-bogus-flag"],
@@ -2490,12 +2532,10 @@
     },
     {
       "argv": ["schema", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": []
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: schema", "", "this CLI's machine-readable interface (acc declaration v0)"]
     },
     {
       "argv": ["help", "--acc-bogus-flag"],
@@ -2508,12 +2548,14 @@
     },
     {
       "argv": ["help", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": []
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: help [verb...]",
+        "",
+        "show this message (alias: --help, -h); `help <verb>` shows one verb: its usage, each flag, and examples"
+      ]
     },
     {
       "argv": ["add", "golden.md", "docs"],
