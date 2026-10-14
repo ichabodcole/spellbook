@@ -6,7 +6,7 @@ description:
   explicit one-ask guard for the Ask-the-agent button, offered back to Story
   Studio."
 status: stable
-lifecycle: active
+lifecycle: review
 id: 01a1393e-acfb-72b4-93d1-a1f5fea2984a
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-14 }
@@ -83,6 +83,14 @@ A no-stake verifier found the port byte-identical to `85a319e` apart from two
 declared context hunks. It also confirmed the behaviour on a live daemon,
 including across a restart.
 
+**Superseded on the wire (2026-10-14, kit-parity messages 38 and 39).** Cole
+ruled in Story Studio that the kit's buttons get their own `via` values
+(`KIT_VIA = ["chat", "describe", "fix", "ask"]`). So the one-ask guard keys on
+`via === "ask"` with `about.noteId`, and `about.ask` goes. Story Studio builds
+that guard from `askOutstanding` and its tests, and we take it back with their
+via-and-refs daemon half, dropping `about.ask` in the same port. Until then
+nothing sends either marker.
+
 **For the chat cycle:** the Ask-the-agent button sends the marker with a `rid`,
 and reads an error frame as "already with the agent", not as an error. Typed
 messages never set `ask`.
@@ -106,11 +114,11 @@ The boxes below record the first shape (`d1ca788d`), now superseded.
 
 Converged shape:
 
-- [ ] `d1ca788d` is reverted, and the workspace half of `85a319e` is ported,
+- [x] `d1ca788d` is reverted, and the workspace half of `85a319e` is ported,
       with its tests passing.
-- [ ] A marked ask is sent once per note; an unmarked `say` carrying a `noteId`
+- [x] A marked ask is sent once per note; an unmarked `say` carrying a `noteId`
       is always delivered. Both are tested.
-- [ ] The guard has been offered to Story Studio on `kit-parity`.
+- [x] The guard has been offered to Story Studio on `kit-parity` (message 32).
 
 ## Related Documents
 

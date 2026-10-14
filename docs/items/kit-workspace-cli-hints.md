@@ -24,6 +24,11 @@ Found while verifying [the flagged Scriptorium](./scriptorium-on-kit-daemon.md)
   answers "no daemon is running… open --restore <id>", even while that daemon
   runs. Following the hint is safe: it gives a conflict. But the hint is wrong.
 - `tail --once` prints a `: scriptorium-keepalive` line, which is not JSON.
+- `close --session <id>` for a session that isn't running hints at a different
+  session's id (found by the finalize review).
+- SIGTERM leaves the session pointer behind, because no signal handler is
+  installed. Readers cope with a stale pointer; the shipped daemon behaves the
+  same way.
 
 ## Definition of done
 

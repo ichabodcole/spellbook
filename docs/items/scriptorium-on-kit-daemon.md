@@ -5,7 +5,7 @@ description:
   With SCRIPTORIUM_KIT=1, Scriptorium's CLI and daemon run on the kit's
   workspace daemon with their own sessions root, beside the shipped Scriptorium.
 status: stable
-lifecycle: active
+lifecycle: review
 id: 01a1393e-adb9-73df-aa57-15a8422d444f
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-14 }

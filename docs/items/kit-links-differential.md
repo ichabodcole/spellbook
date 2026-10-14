@@ -5,7 +5,7 @@ description:
   Run Scriptorium's links tests against the kit's extractor and resolver; each
   difference is matched or put to Cole.
 status: stable
-lifecycle: active
+lifecycle: review
 id: 01a1393e-ac37-7191-a323-1a6a647acd73
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-14 }
@@ -30,7 +30,7 @@ raw HTML is masked, not only comments.
 
 **Done and verified (2026-10-14).**
 `src/scriptorium/backend/links.differential.test.ts` holds the kit's extractor
-and resolver to Scriptorium's link cases: 139 tests, a seeded random comparison
+and resolver to Scriptorium's link cases: 141 tests, a seeded random comparison
 of full link shapes, and a comparison of every disk question each resolver asks.
 The kit needed no change for Scriptorium's links-cycle fixes.
 
@@ -43,8 +43,9 @@ quadratic case is filed as
 **Ruled (Cole, 2026-10-14): every declared difference takes the kit's behaviour,
 as Story Studio implements it.** If one causes a UX problem in use, it is fixed
 then, possibly by going back to Scriptorium's behaviour, and in that case both
-apps change together. So the kit keeps its root fallback and keeps rels as
-written (no case folding).
+apps change together. So the kit keeps its root fallback. The one exception is
+rel case: the kit lowercases rels, as Scriptorium does (Cole), and the change is
+offered to Story Studio.
 
 **Declared differences.** What each one became is given after the dash:
 
@@ -52,8 +53,12 @@ written (no case folding).
 - `embeds`: `![x](y)` is returned as an embed — kit rule.
 - `lines`: lines counted from the top of the file — kit rule; update the SKILL
   line when Scriptorium switches.
-- `schemes` and `colonResolve`: `Chapter2:intro.md` and `Note:Thing` read as a
-  scheme — kit rule.
+- `schemes`: the kit's extractor reads `Chapter2:intro.md` as a path, where
+  Scriptorium reads a scheme — kit rule.
+- `colonResolve`: the kit's resolver refuses a scheme-shaped target such as
+  `Note:Thing` — kit rule.
+- `fragments`: the kit keeps same-page anchors as fragments only on request
+  (`{ fragments: true }`) — kit rule.
 - `wikiTrim`: `[[ x ]]`'s raw is trimmed — kit rule.
 - `notADoc`: `not-a-doc` in place of `outside` — kit rule, mapped to `outside`
   on Scriptorium's wire.
@@ -76,9 +81,8 @@ offered to Story Studio (message 32), which took the rule as
 
 **Left for later:**
 
-- The session does not yet pass the doctor the keys that fold together, so the
-  doctor's message does not name the key that stands.
-- The `_relations.json` broken-key message does not mention marks.
+- Done later in the cycle: the doctor names the key that stands (`d0588a72`),
+  and the broken-key message mentions marks (`3c6f702a`).
 - Nothing normalises to NFC, in either kit or in Scriptorium.
 - Story Studio's `e82d3ff` (kit-parity message 34) adds the case fold to the
   link picker: `rankRelations` merges offers by case, with the declared one's
