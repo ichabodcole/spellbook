@@ -1112,9 +1112,38 @@ describe("open --restore of a session the kit did not write", () => {
     expect(r.code).toBe(6);
     const err = JSON.parse(r.err).error;
     expect(err.kind).toBe("conflict");
-    expect(err.message).toContain("no app slot");
+    expect(err.message).toContain("Scriptorium's shape");
     expect(err.hint).toContain("a Scriptorium session");
     expect(readFileSync(join(dir, "manifest.json"), "utf8")).toBe(manifest);
     expect(existsSync(pointerFile(id))).toBe(false);
+  }, 30_000);
+});
+
+describe("a daemon whose start fails after binding", () => {
+  test("stops listening, leaves no pointer, and exits", async () => {
+    // A port known to be free a moment ago, so the test can knock on it after.
+    const probe = Bun.serve({ port: 0, fetch: () => new Response("") });
+    const port = probe.port as number;
+    probe.stop(true);
+    const tmp = join(root, "tmp-failed-start");
+    mkdirSync(tmp, { recursive: true });
+    const server = join(dirname(CLI), "server.ts");
+    const preload = join(dirname(CLI), "failAfterBind.ts");
+    const p = Bun.spawn(["bun", "--preload", preload, server, "--port", String(port)], {
+      stdout: "pipe",
+      stderr: "pipe",
+      stdin: "ignore",
+      env: { ...env, TMPDIR: `${tmp}/` },
+      cwd: root,
+    });
+    // Our own child, by its own pid: a daemon that never exits is killed here.
+    const exited = await Promise.race([p.exited, Bun.sleep(10_000).then(() => null)]);
+    if (exited === null) p.kill();
+    const out = await new Response(p.stdout).text();
+    expect(exited).toBe(1);
+    expect(JSON.parse(out.trim())).toMatchObject({ ok: false, status: 500 });
+    expect(out).toContain("planted");
+    await expect(fetch(`http://127.0.0.1:${port}/state`)).rejects.toThrow();
+    expect(readdirSync(tmp).filter((n) => n.startsWith("kit-fixture."))).toEqual([]);
   }, 30_000);
 });

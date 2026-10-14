@@ -739,6 +739,8 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
 
   // Everything the running daemon owns lives in `run`, set by `start`.
   let run: { port: number; session: WorkspaceSession; ctx: WorkspaceContext } | null = null;
+  /** While `boot` runs past binding: what a throw must undo. Cleared once it returns. */
+  let unwindBoot: (() => void) | null = null;
 
   // A function, not a generic arrow: `<T>(` reads as JSX to a tsx parser,
   // and the import-boundary ward audits every file with one.
@@ -750,7 +752,16 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
   return {
     async start() {
       if (run) throw new Error("the daemon is already started");
-      run = await boot();
+      try {
+        run = await boot();
+      } catch (e) {
+        // A start that failed after binding leaves nothing behind: no port
+        // still listening, no pointer naming it for `close` to get a 500 from.
+        unwindBoot?.();
+        throw e;
+      } finally {
+        unwindBoot = null;
+      }
     },
     async stop() {
       if (!run) return;
@@ -4125,6 +4136,16 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     });
 
     const boundPort = server.port as number;
+    unwindBoot = () => {
+      for (const w of watchers.values()) w.close();
+      watchers.clear();
+      try {
+        removePointer(app.name, sessionId, { tmp: opts.tmp });
+      } catch {
+        /* gone, fine */
+      }
+      server.stop(true);
+    };
     // --- discovery -------------------------------------------------------------------
     try {
       publishPointer(
