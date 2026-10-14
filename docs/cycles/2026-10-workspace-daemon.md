@@ -6,7 +6,7 @@ description:
   Scriptorium on it, the first of five workspace-stack cycles.
 tags: [kit, scriptorium, story-studio]
 status: stable
-lifecycle: planned
+lifecycle: active
 started: 2026-10-14
 appetite:
   Stop when the flagged Scriptorium daemon and CLI run on src/kit/workspace with
@@ -65,3 +65,5 @@ a reader six months from now can tell what happened without reading every
 session.]
 
 ## Sessions
+
+- cycle/workspace-daemon (open)
