@@ -488,6 +488,18 @@ const EXTRACT: ExtractCase[] = [
     },
   },
   { name: "a same-page anchor, by default", body: "[top](#top) [[#top]] [b](./b.md)" },
+  // A label is trimmed by both, whatever space surrounds it.
+  { name: "a wiki label with space around it", body: "[[y|  the label  ]]" },
+  {
+    // ...and the target before the pipe is §3e.5: only its raw differs.
+    name: "a wiki link with space around its pipe",
+    body: "[[x | the label ]]",
+    differs: {
+      why: "wikiTrim",
+      scr: [{ kind: "wiki", target: "x", raw: "x ", line: 1, rel: [], label: "the label" }],
+      kit: [{ kind: "wiki", target: "x", raw: "x", line: 1, rel: [], label: "the label" }],
+    },
+  },
   {
     name: "a wiki link with space inside its brackets",
     body: "[[ exit-codes ]]",
@@ -549,8 +561,11 @@ describe("the kit's extractor against Scriptorium's link cases", () => {
 
   test("random documents of code, comment and link pieces read the same in both", () => {
     // links.test.ts's generator, seed and pieces, compared kit against
-    // Scriptorium rather than against the renderer. Embeds are the kit's own
-    // (§3e.1), so they are set aside; every other link must agree.
+    // Scriptorium rather than against the renderer, with wiki links and typed,
+    // spaced labels added, and EVERYTHING a link carries compared: kind,
+    // target, raw, line, rel and label. Embeds are the kit's own (§3e.1), so
+    // they are set aside; every other link must agree. A wiki target is
+    // written without space before its `|`: that is §3e.5, shown on its own.
     let seed = 7;
     const rand = () => {
       seed = (seed + 0x6d2b79f5) | 0;
@@ -559,7 +574,7 @@ describe("the kit's extractor against Scriptorium's link cases", () => {
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
     // biome-ignore format: one row of pieces reads better than thirty lines
-    const pieces = ["LINK", "LINK", "`", "``", "```", "~~~", "<!--", "-->", "\n", "\n\n", "    ", "\t", "- ", "> ", "1. ", " ", "word", "\\", "]", "(", ")", "# ", "!"];
+    const pieces = ["LINK", "LINK", "WIKI", "`", "``", "```", "~~~", "<!--", "-->", "\n", "\n\n", "    ", "\t", "- ", "> ", "1. ", " ", "word", "\\", "]", "(", ")", "# ", "!"];
     const disagree: string[] = [];
     let k = 0;
     for (let i = 0; i < 1500; i++) {
@@ -567,13 +582,21 @@ describe("the kit's extractor against Scriptorium's link cases", () => {
       const len = 3 + Math.floor(rand() * 20);
       for (let j = 0; j < len; j++) {
         const p = pieces[Math.floor(rand() * pieces.length)] as string;
-        s += p === "LINK" ? `[l${k}](./t${k++}.md)` : p;
+        const n = k++;
+        s +=
+          p === "LINK"
+            ? [`[l${n}](./t${n}.md)`, `[ l ${n} ](./t${n}.md?rel=see-also)`][n % 2]
+            : p === "WIKI"
+              ? [`[[w${n}]]`, `[[w${n}| the w${n} ]]`, `[[w${n}?rel=extends|w]]`][n % 3]
+              : p;
       }
-      const scr = scrExtract(s).map((l) => `${l.raw}:${l.line}`);
-      const kit = kitExtract(s)
-        .filter((l) => !l.embed)
-        .map((l) => `${l.raw}:${l.line}`);
-      if (scr.join(" ") !== kit.join(" ")) disagree.push(s);
+      const scr = JSON.stringify(scrExtract(s).map(fromScr));
+      const kit = JSON.stringify(
+        kitExtract(s)
+          .filter((l) => !l.embed)
+          .map(fromKit),
+      );
+      if (scr !== kit) disagree.push(s);
     }
     expect(disagree).toEqual([]);
   });
