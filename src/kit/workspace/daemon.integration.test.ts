@@ -1089,3 +1089,32 @@ describe("version-new with a body, through the launchers", () => {
     expect(readFileSync(d?.versions[1]?.path ?? "", "utf8")).toBe(readFileSync(other, "utf8"));
   }, 20_000);
 });
+
+describe("open --restore of a session the kit did not write", () => {
+  test("a Scriptorium-shaped manifest is a conflict envelope with a hint, not a crash", async () => {
+    // Scriptorium's shape (src/scriptorium/backend/session.ts): format 1, no
+    // `app`, no `tasks`, times in milliseconds, chat by `who`.
+    const id = "scr-shaped";
+    const dir = join(root, "home", "sessions", id);
+    mkdirSync(dir, { recursive: true });
+    const manifest = JSON.stringify({
+      format: 1,
+      sessionId: id,
+      createdAt: 1_760_000_000_000,
+      context: [],
+      docs: [],
+      openDoc: null,
+      chat: [{ id: "m1", who: "human", text: "hello", ts: 1_760_000_000_000 }],
+    });
+    writeFileSync(join(dir, "manifest.json"), manifest);
+    const r = await cli("open", "--no-open", "--restore", id);
+    expect(r.out).toBe("");
+    expect(r.code).toBe(6);
+    const err = JSON.parse(r.err).error;
+    expect(err.kind).toBe("conflict");
+    expect(err.message).toContain("no app slot");
+    expect(err.hint).toContain("a Scriptorium session");
+    expect(readFileSync(join(dir, "manifest.json"), "utf8")).toBe(manifest);
+    expect(existsSync(pointerFile(id))).toBe(false);
+  }, 30_000);
+});

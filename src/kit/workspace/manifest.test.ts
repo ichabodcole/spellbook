@@ -1,7 +1,7 @@
 // The manifest: its shape, the app slot and its migration hook, the refusal of
 // a format this build does not know, and what a restore does to tasks.
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { type AppDeclaration, checkApp, checkSessionId, WorkspaceSession } from "./session";
 import { refusal, seedDocs, tempRoot, testApp } from "./testing";
@@ -29,6 +29,7 @@ describe("the manifest's shape", () => {
     expect(Object.keys(m).sort()).toEqual(
       [
         "app",
+        "appName",
         "chat",
         "context",
         "createdAt",
@@ -42,6 +43,7 @@ describe("the manifest's shape", () => {
     );
     expect(m.format).toBe(1);
     expect(m.sessionId).toBe(s.id);
+    expect(m.appName).toBe(testApp.name);
     expect(new Date(String(m.createdAt)).toISOString()).toBe(String(m.createdAt));
     // A fresh slot is `migrate({}, 0)` at the declared version.
     expect(m.app).toEqual({ renders: [], version: 2 });
@@ -110,7 +112,7 @@ describe("manifest migration and refusal", () => {
   test("a slot with no version at all is migrated from 0", () => {
     const s = WorkspaceSession.create(sessions, testApp);
     const m = readManifest(s);
-    delete m.app;
+    m.app = {};
     writeManifest(s, m);
     const r = WorkspaceSession.restore(sessions, testApp, s.id);
     expect(r.appSlot).toEqual({ renders: [] });
@@ -173,6 +175,8 @@ describe("manifest migration and refusal", () => {
     const s = WorkspaceSession.create(sessions, testApp);
     const m = readManifest(s);
     m.app = { version: 0 };
+    // Unstamped, as a kit manifest from before `appName`, so bad-app may read it.
+    delete m.appName;
     writeManifest(s, m);
     expect(() => WorkspaceSession.restore(sessions, bad, s.id)).toThrow(/may not set/);
   });
@@ -301,5 +305,100 @@ describe("session ids", () => {
     m.sessionId = "two";
     writeManifest(s, m);
     expect(refusal(() => WorkspaceSession.restore(sessions, testApp, "one")).status).toBe(409);
+  });
+});
+
+/**
+ * A Scriptorium session manifest, by the shape `src/scriptorium/backend/session.ts`
+ * writes (`Manifest`, format 1): no `app`, times in milliseconds, chat by `who`,
+ * versions by `author`, and `tasks` only from E50 on. Built here, never read from
+ * a real `~/.scriptorium`.
+ */
+function scriptoriumManifest(sessionId: string, withTasks: boolean): Record<string, unknown> {
+  const t = 1_760_000_000_000;
+  return {
+    format: 1,
+    sessionId,
+    createdAt: t,
+    context: [],
+    docs: [
+      {
+        slug: "solo",
+        name: "solo.md",
+        original: join(docs, "solo.md"),
+        entryId: null,
+        rel: null,
+        ext: ".md",
+        versions: [{ n: 1, author: "human", createdAt: t }],
+        active: 1,
+        originalHash: "0",
+        outsideChanged: false,
+      },
+    ],
+    openDoc: "solo",
+    chat: [{ id: "m1", who: "human", text: "hello", ts: t }],
+    ...(withTasks
+      ? { tasks: [{ id: "t1", text: "Tighten it", who: "agent", createdAt: t, messageId: "m1" }] }
+      : {}),
+    workspace: docs,
+  };
+}
+
+describe("a manifest that is not this app's own", () => {
+  const plant = (id: string, m: Record<string, unknown>) => {
+    mkdirSync(join(sessions, id), { recursive: true });
+    const path = join(sessions, id, "manifest.json");
+    writeFileSync(path, JSON.stringify(m));
+    return path;
+  };
+
+  for (const withTasks of [false, true])
+    test(`a Scriptorium manifest ${withTasks ? "with" : "without"} tasks is refused with a hint, and left alone`, () => {
+      const path = plant("scr1", scriptoriumManifest("scr1", withTasks));
+      const before = readFileSync(path, "utf8");
+      const e = refusal(() => WorkspaceSession.restore(sessions, testApp, "scr1"));
+      expect(e.status).toBe(409);
+      expect(e.message).toContain("no app slot");
+      expect(e.hint).toContain("a Scriptorium session");
+      expect(readFileSync(path, "utf8")).toBe(before);
+    });
+
+  test("a manifest with no app slot that is not Scriptorium's is still refused", () => {
+    const s = WorkspaceSession.create(sessions, testApp);
+    const m = readManifest(s);
+    delete m.app;
+    writeManifest(s, m);
+    const e = refusal(() => WorkspaceSession.restore(sessions, testApp, s.id));
+    expect(e.status).toBe(409);
+    expect(e.hint).toContain("no `app` slot");
+    // An app slot that is not an object is no slot either.
+    for (const bad of [null, 3, "x", []]) {
+      m.app = bad;
+      writeManifest(s, m);
+      expect(refusal(() => WorkspaceSession.restore(sessions, testApp, s.id)).status).toBe(409);
+    }
+  });
+
+  test("another app's manifest is refused, naming that app", () => {
+    const s = WorkspaceSession.create(sessions, testApp);
+    const m = readManifest(s);
+    m.appName = "sound-stage";
+    writeManifest(s, m);
+    const e = refusal(() => WorkspaceSession.restore(sessions, testApp, s.id));
+    expect(e.status).toBe(409);
+    expect(e.message).toContain("belongs to sound-stage");
+    expect(e.hint).toContain("a sound-stage session");
+  });
+
+  test("a kit manifest from before the app's name was stamped still restores, and gains it", () => {
+    const s = WorkspaceSession.create(sessions, testApp);
+    s.addMessage({ from: "human", text: "kept" });
+    const m = readManifest(s);
+    delete m.appName;
+    writeManifest(s, m);
+    const r = WorkspaceSession.restore(sessions, testApp, s.id);
+    expect(r.messages().map((x) => x.text)).toEqual(["kept"]);
+    r.addMessage({ from: "human", text: "again" });
+    expect(readManifest(r).appName).toBe(testApp.name);
   });
 });

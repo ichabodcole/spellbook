@@ -399,6 +399,11 @@ export type TaskView = Task & { progress?: number };
 export type Session = {
   format: 1;
   sessionId: string;
+  /**
+   * The app that wrote this session (`AppDeclaration.name`). A restore refuses
+   * another app's. Absent in a kit manifest older than it, and stamped on restore.
+   */
+  appName?: string;
   createdAt: string;
   /** Where dropped files and new top-level documents land. Absent in a manifest older than it. */
   workspace?: string;

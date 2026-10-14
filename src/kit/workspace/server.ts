@@ -4375,7 +4375,11 @@ export async function runWorkspaceDaemon(
   } catch (e) {
     // The handshake line is JSON either way, so the CLI reads one shape.
     const status = e instanceof SessionError ? e.status : 500;
-    process.stdout.write(`${JSON.stringify({ ok: false, status, error: messageOf(e) })}\n`);
+    // The refusal's hint rides along: `open` forwards it to the envelope.
+    const hint = e instanceof SessionError && e.hint ? { hint: e.hint } : {};
+    process.stdout.write(
+      `${JSON.stringify({ ok: false, status, error: messageOf(e), ...hint })}\n`,
+    );
     return status === 404 ? 5 : status === 409 ? 6 : 1;
   }
   process.stdout.write(

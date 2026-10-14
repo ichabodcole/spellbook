@@ -777,6 +777,7 @@ export class WorkspaceSession {
     const s = new WorkspaceSession(sessionsRoot, app, {
       format: MANIFEST_FORMAT,
       sessionId,
+      appName: app.name,
       createdAt: nowIso(),
       // Where `open` ran (the CLI passes its cwd). Nothing said: the session's
       // own `imported/` folder, made on demand. Never the home folder.
@@ -812,6 +813,7 @@ export class WorkspaceSession {
         `session ${sessionId} has manifest format ${JSON.stringify(raw.format)}; this build reads format ${MANIFEST_FORMAT}`,
         409,
       );
+    refuseForeignManifest(raw, app, sessionId);
     if (raw.sessionId !== sessionId)
       throw new SessionError(
         `session ${sessionId}'s manifest says it is ${JSON.stringify(raw.sessionId)}`,
@@ -823,6 +825,9 @@ export class WorkspaceSession {
     // stale `ended` for a re-armed tail to read.
     const wasEnded = m.ended !== undefined;
     delete m.ended;
+    // A kit manifest from before the name was stamped: its slot passed the
+    // shape check, so it is this app's. Written with the next change.
+    m.appName = app.name;
     const report: RestoreReport = { outside: [], tasks: [] };
     m.app = migrateSlot(app, m.app, sessionId, report);
     // A manifest written before the workspace existed: the first context entry's
@@ -6666,6 +6671,52 @@ function placeNote(text: string, note: Note): PlacedNote {
 }
 
 /** Bring a stored app slot to the declared version, or refuse one from the future. */
+/**
+ * ⛔ Refuse a manifest that is not this app's own, by its shape, never by its
+ * path. Scriptorium's session manifests say `format: 1` too, and a restore that
+ * took one would throw on a missing `tasks` or, worse, misread `who`, times in
+ * milliseconds and `author` without a word. The kit's own manifests always
+ * carry an `app` slot (an object), so a manifest without one is not the kit's.
+ * One with `appName` names the app that wrote it; another app's is refused too.
+ */
+function refuseForeignManifest(
+  raw: Record<string, unknown>,
+  app: AppDeclaration,
+  sessionId: string,
+): void {
+  const slot = raw.app;
+  if (slot === null || typeof slot !== "object" || Array.isArray(slot)) {
+    const what = looksLikeScriptorium(raw)
+      ? "a Scriptorium session (format 1 with no `app` slot, times in milliseconds, chat by `who`)"
+      : "a manifest with no `app` slot, so not one a workspace-kit app wrote";
+    throw new SessionError(
+      `session ${sessionId} was not written by ${app.name}: its manifest has no app slot`,
+      409,
+      undefined,
+      `it looks like ${what}. Restore it with the app that wrote it; ${app.name} will not read it`,
+    );
+  }
+  const owner = raw.appName;
+  if (owner !== undefined && owner !== app.name) {
+    const name = typeof owner === "string" ? owner : JSON.stringify(owner);
+    throw new SessionError(
+      `session ${sessionId} belongs to ${name}, not ${app.name}`,
+      409,
+      undefined,
+      `it looks like a ${name} session. Restore it with ${name}; ${app.name} will not read it`,
+    );
+  }
+}
+
+/** Scriptorium's manifest: `createdAt` in milliseconds, or chat messages that say `who`. */
+function looksLikeScriptorium(raw: Record<string, unknown>): boolean {
+  if (typeof raw.createdAt === "number") return true;
+  return (
+    Array.isArray(raw.chat) &&
+    raw.chat.some((m) => m !== null && typeof m === "object" && "who" in m)
+  );
+}
+
 function migrateSlot(
   app: AppDeclaration,
   stored: unknown,
