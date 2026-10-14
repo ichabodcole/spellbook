@@ -1082,7 +1082,7 @@ export type GraphFilter = {
   focus?: string;
   /** How far from the focus, in links followed either way. Default 1. */
   hops?: number;
-  /** Keep links carrying any of these relations. Untyped links go unless `untyped`. */
+  /** Keep links carrying any of these relations (case-folded, as `parseRel` reads them). Untyped links go unless `untyped`. */
   rel?: readonly string[];
   /** Keep untyped links. Default: true with no `rel`, false with one. */
   untyped?: boolean;
@@ -1263,7 +1263,7 @@ export function linkGraph(
     .map(([rel, count]) => ({ rel, count }))
     .sort((a, b) => b.count - a.count || a.rel.localeCompare(b.rel));
 
-  const relSet = filter.rel ? new Set(filter.rel) : null;
+  const relSet = filter.rel ? new Set(filter.rel.map((r) => r.toLowerCase())) : null;
   const keepUntyped = filter.untyped ?? relSet === null;
   // References were asked for by asking for bundles: no relation filter drops them.
   let edges = all.filter((e) =>

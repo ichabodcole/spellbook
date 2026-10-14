@@ -71,6 +71,22 @@ describe("linkGraph", () => {
     expect(typedOnly.nodes).toHaveLength(4);
   });
 
+  test("a relation in two cases is one relation in the legend and one edge, and the filter matches either case", () => {
+    const w = world({
+      "a.md": "[b](./b.md?rel=Mirrors) [b again](./b.md?rel=mirrors) [c](./c.md?rel=applies)",
+      "b.md": "",
+      "c.md": "",
+    });
+    const g = linkGraph(w.docs, w.sources, w.resolve);
+    expect(g.edges).toContainEqual({ from: "/w/a.md", to: "/w/b.md", rel: ["mirrors"], count: 2 });
+    expect(g.relations).toEqual([
+      { rel: "mirrors", count: 2 },
+      { rel: "applies", count: 1 },
+    ]);
+    const only = linkGraph(w.docs, w.sources, w.resolve, { rel: ["MIRRORS"] });
+    expect(only.edges.map((e) => e.to)).toEqual(["/w/b.md"]);
+  });
+
   test("a kind filter drops other kinds and their links, keeps the focus, and lists every kind", () => {
     const w = world(
       { "a.md": "[b](./b.md) [c](./c.md)", "b.md": "[c](./c.md)", "c.md": "" },

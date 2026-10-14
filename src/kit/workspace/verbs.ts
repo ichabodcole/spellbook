@@ -1388,7 +1388,8 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
           if (names.length === 0) die(`graph ${what}: name at least one`, "usage");
           return names;
         };
-        const rel = list(flags.rel, "--rel");
+        // Relations are read case-folded (`parseRel`), so a filter is too.
+        const rel = list(flags.rel, "--rel")?.map((r) => r.toLowerCase());
         const kind = list(flags.kind, "--kind");
         const hops =
           typeof flags.hops === "string" ? parseCount(flags.hops, "graph --hops") : undefined;

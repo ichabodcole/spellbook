@@ -61,11 +61,13 @@ const DIFFERENCES = {
    */
   wikiForms: "found: no `type/slug`, basename or repo-root resolution in the kit",
   /**
-   * Found here: `?rel=` values. Scriptorium lowercases them and keeps any
-   * value; the kit keeps their case, reads every `rel=` pair, and drops values
-   * that are not a relation word (`<relationship>`).
+   * Found here: `?rel=` values. Case and repeats now agree (ruled by Cole,
+   * kit-links-differential `relCase`: the kit lowercases and drops a repeat
+   * after folding, as Scriptorium does). What still differs: Scriptorium keeps
+   * any value and reads the first `rel=` pair only; the kit drops a value that
+   * is not a relation word (`<relationship>`) and reads every `rel=` pair.
    */
-  relCase: "found: the kit keeps a rel's case and drops non-word rels",
+  relWords: "found: the kit drops non-word rels and reads every rel= pair",
   /**
    * Found here: a `/`-anchored target. Scriptorium looks under the bundle root
    * only; the kit looks under the root and then at the absolute path on disk
@@ -535,21 +537,24 @@ const EXTRACT: ExtractCase[] = [
   {
     name: "a rel with capitals",
     body: "[a](./x.md?rel=Extends,%20governs,extends)",
+    // Agrees since the relCase ruling: both sides lowercase, then drop the repeat.
+  },
+  {
+    name: "a rel in two pairs, and a placeholder rel",
+    body: "[a](./x.md?rel=Extends&rel=Governs) [b](./y.md?rel=<relationship>)",
     differs: {
-      why: "relCase",
+      why: "relWords",
       scr: [
-        md("./x.md", 1, {
-          raw: "./x.md?rel=Extends,%20governs,extends",
-          rel: ["extends", "governs"],
-          label: "a",
-        }),
+        md("./x.md", 1, { raw: "./x.md?rel=Extends&rel=Governs", rel: ["extends"], label: "a" }),
+        md("./y.md", 1, { raw: "./y.md?rel=<relationship>", rel: ["<relationship>"], label: "b" }),
       ],
       kit: [
         md("./x.md", 1, {
-          raw: "./x.md?rel=Extends,%20governs,extends",
-          rel: ["Extends", "governs", "extends"],
+          raw: "./x.md?rel=Extends&rel=Governs",
+          rel: ["extends", "governs"],
           label: "a",
         }),
+        md("./y.md", 1, { raw: "./y.md?rel=<relationship>", rel: [], label: "b" }),
       ],
     },
   },
@@ -666,18 +671,25 @@ describe("the kit's target parsing against Scriptorium's", () => {
     ])
       expect(kitParseRel(q)).toEqual(parseRel(q));
   });
-  test(`parseRel [relCase]: ${DIFFERENCES.relCase}`, () => {
-    expect(parseRel("rel=Extends,%20governs,extends")).toEqual(["extends", "governs"]);
-    expect(kitParseRel("rel=Extends,%20governs,extends")).toEqual([
-      "Extends",
-      "governs",
-      "extends",
-    ]);
+  test("parseRel agrees on case and repeats (relCase, ruled): lowercased, first seen kept", () => {
+    for (const q of [
+      "rel=Extends,%20governs,extends",
+      "rel=Extends",
+      "rel=SEE-ALSO,see-also",
+      "rel=A,b,a",
+    ])
+      expect(kitParseRel(q)).toEqual(parseRel(q));
+    expect(kitParseRel("rel=Extends,%20governs,extends")).toEqual(["extends", "governs"]);
+  });
+  test(`parseRel [relWords]: ${DIFFERENCES.relWords}`, () => {
     expect(parseRel("rel=<relationship>")).toEqual(["<relationship>"]);
     expect(kitParseRel("rel=<relationship>")).toEqual([]);
     // Scriptorium reads the first `rel=` pair; the kit reads them all.
     expect(parseRel("rel=a&rel=b")).toEqual(["a"]);
     expect(kitParseRel("rel=a&rel=b")).toEqual(["a", "b"]);
+    // Folded on both sides, the difference is only in which pairs and words count.
+    expect(parseRel("rel=A&rel=B")).toEqual(["a"]);
+    expect(kitParseRel("rel=A&rel=B")).toEqual(["a", "b"]);
   });
 });
 

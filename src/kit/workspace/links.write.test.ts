@@ -95,6 +95,23 @@ describe("relations", () => {
     expect(parseRel("relation=applies")).toEqual([]);
   });
 
+  test("parseRel folds case and drops what repeats after folding, first seen first (relCase, as Scriptorium)", () => {
+    expect(parseRel("rel=Extends,%20governs,extends")).toEqual(["extends", "governs"]);
+    expect(parseRel("rel=Sister-Of&rel=sister-of,EXTENDS")).toEqual(["sister-of", "extends"]);
+    expect(parseRel("rel=Located%2DIn")).toEqual(["located-in"]);
+    // The kit's own reading stays: every `rel=` pair, and the placeholder filter.
+    expect(parseRel("rel=A&rel=b")).toEqual(["a", "b"]);
+    expect(parseRel("rel=<Relationship>")).toEqual([]);
+  });
+
+  test("one relation written in two cases is one entry in the vocabulary, counted once per use", () => {
+    const texts = [
+      "[a](./a.md?rel=Extends) [b](./b.md?rel=extends)",
+      "[c](./c.md?rel=EXTENDS,extends)",
+    ];
+    expect(collectRelations(texts)).toEqual([{ rel: "extends", count: 3 }]);
+  });
+
   test("the vocabulary is every `?rel=` on a link across the documents, most used first", () => {
     const texts = [
       "[a](./a.md?rel=applies) and [b](../b.md?rel=sister-of,extends#top)",

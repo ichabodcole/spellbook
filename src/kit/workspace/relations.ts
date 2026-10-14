@@ -101,12 +101,23 @@ export function parseRelations(text: string, source = ""): RelationsRead {
   if (!isObject(raw.relations)) return { broken: `"relations" must be an object` };
   const out: RelationDef[] = [];
   const warnings: string[] = [];
-  for (const [rel, entry] of Object.entries(raw.relations)) {
-    const at = `relations.${rel}`;
-    if (!RELATION_WORD.test(rel))
+  for (const [key, entry] of Object.entries(raw.relations)) {
+    const at = `relations.${key}`;
+    if (!RELATION_WORD.test(key))
       return {
-        broken: `${JSON.stringify(rel)} cannot be written in ?rel=: a relation starts with a letter or a digit and holds only letters, digits, _, . and -`,
+        broken: `${JSON.stringify(key)} cannot be written in ?rel=: a relation starts with a letter or a digit and holds only letters, digits, _, . and -`,
       };
+    // A relation's name is case-folded, as `?rel=` is read (`parseRel`): a
+    // declared `Extends` is the `extends` links carry. Its label keeps the case
+    // the file writes. Two keys that fold together are one relation: the first
+    // stands, the later one is said and ignored.
+    const rel = key.toLowerCase();
+    if (out.some((d) => d.rel === rel)) {
+      warnings.push(
+        `${at} is the same relation as one above it (relations are read case-insensitively, as ${JSON.stringify(rel)}); it is ignored`,
+      );
+      continue;
+    }
     if (!isObject(entry)) return { broken: `${at} must be an object` };
     const text = (key: string): string | undefined | { bad: string } => {
       const v = entry[key];
@@ -141,7 +152,7 @@ export function parseRelations(text: string, source = ""): RelationsRead {
         );
     out.push({
       rel,
-      label: (label as string | undefined) ?? rel,
+      label: (label as string | undefined) ?? key,
       ...(means !== undefined ? { means: means as string } : {}),
       symmetric,
       ...(inverse !== undefined ? { inverse: inverse as string } : {}),

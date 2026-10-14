@@ -97,6 +97,28 @@ describe("parseRelations", () => {
     });
   });
 
+  test("a relation's name is case-folded, as `?rel=` reads it; its default label keeps the file's case", () => {
+    const r = parseRelations(
+      '{"relations": {"Extends": {}, "Grounded-In": {"label": "grounded in"}}}',
+    );
+    if (!("relations" in r)) throw new Error("broken");
+    expect(r.relations.map((d) => [d.rel, d.label])).toEqual([
+      ["extends", "Extends"],
+      ["grounded-in", "grounded in"],
+    ]);
+  });
+
+  test("two keys that fold to one relation: the first stands, the later one is a warning", () => {
+    const r = parseRelations(
+      '{"relations": {"extends": {"label": "a"}, "Extends": {"label": "b"}}}',
+    );
+    if (!("relations" in r)) throw new Error("broken");
+    expect(r.relations.map((d) => [d.rel, d.label])).toEqual([["extends", "a"]]);
+    expect(r.warnings).toEqual([
+      'relations.Extends is the same relation as one above it (relations are read case-insensitively, as "extends"); it is ignored',
+    ]);
+  });
+
   test("a file that does not parse is broken, with the line and column", () => {
     const r = parseRelations('{\n  "relations": {\n    "a": { "label": "x", }\n  }\n}');
     expect(r).toEqual({
@@ -174,6 +196,16 @@ describe("relationOffers", () => {
       symmetric: true,
     });
     expect(offers.find((o) => o.rel === "grounded-in")?.inverse).toBe("grounds");
+  });
+
+  test("a relation declared in one case and used in another is offered once", () => {
+    const r = parseRelations('{"relations": {"Extends": {"label": "extends"}}}');
+    if (!("relations" in r)) throw new Error("broken");
+    const offers = relationOffers(new Map([["extends", 3]]), {
+      relations: new Map(r.relations.map((d) => [d.rel, d])),
+      any: true,
+    });
+    expect(offers.map((o) => [o.rel, o.count, o.declared])).toEqual([["extends", 3, true]]);
   });
 
   test("with no vocabulary, exactly the relations in use, most used first", () => {

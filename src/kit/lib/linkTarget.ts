@@ -86,9 +86,15 @@ export function linkScheme(raw: string): string | undefined {
 const RELATION = /^[\p{L}\p{N}][\p{L}\p{N}_.-]*$/u;
 
 /**
- * The relations in a target's query (`rel=a,b`), decoded, in order, without
- * repeats. Other query parameters are ignored, and so is a value that is not a
- * relation word (empty, or a placeholder like `<relationship>`).
+ * The relations in a target's query (`rel=a,b`), decoded, lower-cased, in
+ * order, without repeats. Other query parameters are ignored, and so is a value
+ * that is not a relation word (empty, or a placeholder like `<relationship>`).
+ *
+ * Case is folded on READ, as Scriptorium does (the kit-links-differential item,
+ * `relCase`): `rel=Extends,extends` is one relation, `extends`, so the same
+ * relation never shows up twice with different case, in a count, a filter or a
+ * picker. A written link keeps its author's text; nothing rewrites a file to
+ * change a relation's case.
  *
  * ⛔ A BARE LINK ASSERTS NOTHING: no `rel` is `[]`, never an implied
  * `references`. Whatever groups or draws links must not invent a claim nobody
@@ -101,7 +107,7 @@ export function parseRel(query: string | undefined): string[] {
     const eq = pair.indexOf("=");
     if (eq === -1 || pair.slice(0, eq) !== "rel") continue;
     for (const raw of pair.slice(eq + 1).split(",")) {
-      const v = decodePath(raw).trim();
+      const v = decodePath(raw).trim().toLowerCase();
       if (RELATION.test(v) && !out.includes(v)) out.push(v);
     }
   }
