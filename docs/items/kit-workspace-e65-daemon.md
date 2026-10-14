@@ -6,7 +6,7 @@ description:
   explicit one-ask guard for the Ask-the-agent button, offered back to Story
   Studio."
 status: stable
-lifecycle: review
+lifecycle: done
 id: 01a1393e-acfb-72b4-93d1-a1f5fea2984a
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-14 }

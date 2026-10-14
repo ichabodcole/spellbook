@@ -5,7 +5,7 @@ description:
   Run Scriptorium's links tests against the kit's extractor and resolver; each
   difference is matched or put to Cole.
 status: stable
-lifecycle: review
+lifecycle: done
 id: 01a1393e-ac37-7191-a323-1a6a647acd73
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-14 }
