@@ -6670,32 +6670,47 @@ function placeNote(text: string, note: Note): PlacedNote {
   return { ...note, ...at, fromLine: lines.from, toLine: lines.to };
 }
 
-/** Bring a stored app slot to the declared version, or refuse one from the future. */
 /**
  * ⛔ Refuse a manifest that is not this app's own, by its shape, never by its
  * path. Scriptorium's session manifests say `format: 1` too, and a restore that
  * took one would throw on a missing `tasks` or, worse, misread `who`, times in
- * milliseconds and `author` without a word. The kit's own manifests always
- * carry an `app` slot (an object), so a manifest without one is not the kit's.
- * One with `appName` names the app that wrote it; another app's is refused too.
+ * milliseconds and `author` without a word, then persist it as the kit's.
+ *
+ * - Scriptorium's shape (millisecond `createdAt`, chat by `who`) is refused
+ *   whatever else the manifest carries, an `app` slot included.
+ * - The kit always writes an `app` slot (an object); a manifest without one is
+ *   not the kit's.
+ * - `appName` names the app that wrote it; another app's is refused.
+ * - Stamped (`appName` present): the slot's `version` is a whole number from 0,
+ *   as every stamping build writes it.
+ * - Unstamped: a kit manifest from before `appName`. It is told from a foreign
+ *   one by the kit's own marks: an ISO `createdAt` (a string), and a slot
+ *   `version` that is absent (migrated from 0) or a whole number from 0.
  */
 function refuseForeignManifest(
   raw: Record<string, unknown>,
   app: AppDeclaration,
   sessionId: string,
 ): void {
-  const slot = raw.app;
-  if (slot === null || typeof slot !== "object" || Array.isArray(slot)) {
-    const what = looksLikeScriptorium(raw)
-      ? "a Scriptorium session (format 1 with no `app` slot, times in milliseconds, chat by `who`)"
-      : "a manifest with no `app` slot, so not one a workspace-kit app wrote";
+  const refuse = (message: string, what: string): never => {
     throw new SessionError(
-      `session ${sessionId} was not written by ${app.name}: its manifest has no app slot`,
+      `session ${sessionId} was not written by ${app.name}: ${message}`,
       409,
       undefined,
       `it looks like ${what}. Restore it with the app that wrote it; ${app.name} will not read it`,
     );
-  }
+  };
+  if (looksLikeScriptorium(raw))
+    refuse(
+      "its manifest has Scriptorium's shape",
+      "a Scriptorium session (format 1, times in milliseconds, chat by `who`)",
+    );
+  const slot = raw.app;
+  if (slot === null || typeof slot !== "object" || Array.isArray(slot))
+    refuse(
+      "its manifest has no app slot",
+      "a manifest with no `app` slot, so not one a workspace-kit app wrote",
+    );
   const owner = raw.appName;
   if (owner !== undefined && owner !== app.name) {
     const name = typeof owner === "string" ? owner : JSON.stringify(owner);
@@ -6706,6 +6721,24 @@ function refuseForeignManifest(
       `it looks like a ${name} session. Restore it with ${name}; ${app.name} will not read it`,
     );
   }
+  const version = (slot as Record<string, unknown>).version;
+  const wholeVersion = typeof version === "number" && Number.isInteger(version) && version >= 0;
+  if (owner === undefined) {
+    if (typeof raw.createdAt !== "string")
+      refuse(
+        "its manifest has no `appName` and no ISO `createdAt`",
+        "a manifest no workspace-kit app wrote",
+      );
+    if (version !== undefined && !wholeVersion)
+      refuse(
+        `its app slot's version is ${JSON.stringify(version)}`,
+        "a manifest no workspace-kit app wrote",
+      );
+  } else if (!wholeVersion)
+    refuse(
+      `its app slot's version is ${JSON.stringify(version)}, not a whole number`,
+      "a damaged or hand-made manifest",
+    );
 }
 
 /** Scriptorium's manifest: `createdAt` in milliseconds, or chat messages that say `who`. */
@@ -6717,6 +6750,7 @@ function looksLikeScriptorium(raw: Record<string, unknown>): boolean {
   );
 }
 
+/** Bring a stored app slot to the declared version, or refuse one from the future. */
 function migrateSlot(
   app: AppDeclaration,
   stored: unknown,

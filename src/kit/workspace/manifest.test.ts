@@ -1,7 +1,7 @@
 // The manifest: its shape, the app slot and its migration hook, the refusal of
 // a format this build does not know, and what a restore does to tasks.
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { type AppDeclaration, checkApp, checkSessionId, WorkspaceSession } from "./session";
 import { refusal, seedDocs, tempRoot, testApp } from "./testing";
@@ -113,6 +113,8 @@ describe("manifest migration and refusal", () => {
     const s = WorkspaceSession.create(sessions, testApp);
     const m = readManifest(s);
     m.app = {};
+    // Only a kit manifest from before `appName` may have a slot with no version.
+    delete m.appName;
     writeManifest(s, m);
     const r = WorkspaceSession.restore(sessions, testApp, s.id);
     expect(r.appSlot).toEqual({ renders: [] });
@@ -309,40 +311,81 @@ describe("session ids", () => {
 });
 
 /**
- * A Scriptorium session manifest, by the shape `src/scriptorium/backend/session.ts`
- * writes (`Manifest`, format 1): no `app`, times in milliseconds, chat by `who`,
- * versions by `author`, and `tasks` only from E50 on. Built here, never read from
- * a real `~/.scriptorium`.
+ * Scriptorium session manifests, as its real writer (`Session` in
+ * `src/scriptorium/backend/session.ts`) wrote them: captured once from a scratch
+ * home and pasted here with the paths swapped for this test's. Format 1, no
+ * `app`, times in milliseconds, chat by `who`, versions by `author`, `tasks`
+ * only once one is started. Never read from a real `~/.scriptorium`.
  */
-function scriptoriumManifest(sessionId: string, withTasks: boolean): Record<string, unknown> {
-  const t = 1_760_000_000_000;
+function scriptoriumManifests(): Record<string, Record<string, unknown>> {
+  const t = 1_791_971_430_501;
   return {
-    format: 1,
-    sessionId,
-    createdAt: t,
-    context: [],
-    docs: [
-      {
-        slug: "solo",
-        name: "solo.md",
-        original: join(docs, "solo.md"),
-        entryId: null,
-        rel: null,
-        ext: ".md",
-        versions: [{ n: 1, author: "human", createdAt: t }],
-        active: 1,
-        originalHash: "0",
-        outsideChanged: false,
-      },
-    ],
-    openDoc: "solo",
-    chat: [{ id: "m1", who: "human", text: "hello", ts: t }],
-    ...(withTasks
-      ? { tasks: [{ id: "t1", text: "Tighten it", who: "agent", createdAt: t, messageId: "m1" }] }
-      : {}),
-    workspace: docs,
+    fresh: { format: 1, createdAt: t, context: [], docs: [], openDoc: null, chat: [] },
+    withDoc: {
+      format: 1,
+      createdAt: t + 1,
+      context: [
+        {
+          id: "c-fa416a",
+          label: "docs",
+          root: docs,
+          membership: "mirrored",
+          nodes: [{ kind: "doc", rel: "solo.md" }],
+        },
+      ],
+      docs: [
+        {
+          slug: "solo",
+          name: "solo.md",
+          original: join(docs, "solo.md"),
+          entryId: "c-fa416a",
+          rel: "solo.md",
+          ext: ".md",
+          versions: [{ n: 1, author: "human", createdAt: t + 2 }],
+          active: 1,
+          originalHash: "17cbf5684b3ff932",
+          outsideChanged: false,
+          admitted: true,
+        },
+      ],
+      openDoc: "solo",
+      chat: [{ id: "m-be815bdc", who: "human", text: "hello", ts: t + 2 }],
+    },
+    withTasks: {
+      format: 1,
+      createdAt: t + 2,
+      context: [],
+      docs: [],
+      openDoc: null,
+      chat: [
+        { id: "m-68186054", who: "human", text: "hi", ts: t + 3 },
+        { id: "m-e608abb0", who: "agent", text: "Tighten it", ts: t + 3 },
+      ],
+      tasks: [
+        {
+          id: "t-ea06e4a1",
+          text: "Tighten it",
+          who: "agent",
+          createdAt: t + 3,
+          messageId: "m-e608abb0",
+        },
+      ],
+    },
+    ended: {
+      format: 1,
+      createdAt: t + 3,
+      context: [],
+      docs: [],
+      openDoc: null,
+      chat: [{ id: "m-876bb87b", who: "agent", text: "bye", ts: t + 3 }],
+      ended: { by: "human", at: t + 4 },
+    },
   };
 }
+
+const SCRIPTORIUM_TASKS = [
+  { id: "t-1", text: "Tighten it", who: "agent", createdAt: 1_791_971_430_600, messageId: "m-1" },
+];
 
 describe("a manifest that is not this app's own", () => {
   const plant = (id: string, m: Record<string, unknown>) => {
@@ -352,16 +395,58 @@ describe("a manifest that is not this app's own", () => {
     return path;
   };
 
-  for (const withTasks of [false, true])
-    test(`a Scriptorium manifest ${withTasks ? "with" : "without"} tasks is refused with a hint, and left alone`, () => {
-      const path = plant("scr1", scriptoriumManifest("scr1", withTasks));
-      const before = readFileSync(path, "utf8");
-      const e = refusal(() => WorkspaceSession.restore(sessions, testApp, "scr1"));
-      expect(e.status).toBe(409);
-      expect(e.message).toContain("no app slot");
-      expect(e.hint).toContain("a Scriptorium session");
-      expect(readFileSync(path, "utf8")).toBe(before);
-    });
+  // Each real-writer shape, as written and with an empty `app: {}` slot added
+  // (which once passed the slot check and was migrated into the kit's), each
+  // with and without `tasks`.
+  for (const shape of ["fresh", "withDoc", "withTasks", "ended"])
+    for (const slot of ["no slot", "app: {}"] as const)
+      for (const withTasks of [false, true])
+        test(`Scriptorium's ${shape} manifest, ${slot}, ${withTasks ? "with" : "without"} tasks, is refused with a hint, and left alone`, () => {
+          const id = `scr-${shape}`;
+          const base = scriptoriumManifests()[shape] ?? {};
+          const { tasks: _tasks, ...rest } = base;
+          const m: Record<string, unknown> = {
+            ...rest,
+            sessionId: id,
+            ...(slot === "app: {}" ? { app: {} } : {}),
+            ...(withTasks ? { tasks: base.tasks ?? SCRIPTORIUM_TASKS } : {}),
+          };
+          const path = plant(id, m);
+          const before = readFileSync(path, "utf8");
+          const e = refusal(() => WorkspaceSession.restore(sessions, testApp, id));
+          expect(e.status).toBe(409);
+          expect(e.hint).toContain("a Scriptorium session");
+          expect(readFileSync(path, "utf8")).toBe(before);
+          expect(readdirSync(join(sessions, id))).toEqual(["manifest.json"]);
+        });
+
+  test("an unstamped manifest without the kit's ISO createdAt is refused", () => {
+    const s = WorkspaceSession.create(sessions, testApp);
+    const m = readManifest(s);
+    delete m.appName;
+    delete m.createdAt;
+    writeManifest(s, m);
+    expect(refusal(() => WorkspaceSession.restore(sessions, testApp, s.id)).status).toBe(409);
+  });
+
+  test("a slot whose version is not a whole number from 0 is refused, stamped or not", () => {
+    const s = WorkspaceSession.create(sessions, testApp);
+    const m = readManifest(s);
+    for (const version of [-1, 1.5, "2", null, undefined]) {
+      m.app = version === undefined ? {} : { version };
+      writeManifest(s, m);
+      const e = refusal(() => WorkspaceSession.restore(sessions, testApp, s.id));
+      expect(e.status, String(version)).toBe(409);
+      if (version === undefined) continue; // unstamped, a missing version is the legacy path
+      const unstamped = { ...m };
+      delete unstamped.appName;
+      writeManifest(s, unstamped);
+      expect(
+        refusal(() => WorkspaceSession.restore(sessions, testApp, s.id)).status,
+        String(version),
+      ).toBe(409);
+    }
+  });
 
   test("a manifest with no app slot that is not Scriptorium's is still refused", () => {
     const s = WorkspaceSession.create(sessions, testApp);
