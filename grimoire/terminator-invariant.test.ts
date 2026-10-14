@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
+import ts from "typescript";
 import {
   type Cli,
   type CommandSpec,
@@ -162,22 +163,110 @@ const registryImporters = srcSources()
  * ── A FACTORY IS READ THROUGH WHAT IT BUILDS (added 2026-10-14) ─────────────
  * The kit's workspace CLI (`src/kit/workspace/verbs.ts`) imports the registry
  * but exports no `Cli`: it exports `createWorkspaceCli`, and each caller builds
- * its own. Such a file is read through the sources that value-import it and
- * export exactly one `Cli` (its followers), each driven here as an adopter in
- * its place. A file that imports the registry, exports no `Cli` and has no
- * follower stays a RED cell, as before: the instrument still could not read
- * it. Today the one follower is the kit's own fixture CLI
- * (`src/kit/workspace/fixtures/cli.ts`); a spell built on the factory joins
- * by the same import.
+ * its own. Such a file is read through its FOLLOWERS, each driven here as an
+ * adopter in its place.
+ *
+ * A follower is a source that EXPORTS THE RESULT OF CALLING something it
+ * imported from the factory (`export const cli = createWorkspaceCli(…)`, read
+ * from the syntax tree by `builtExports`). Importing the factory is not enough:
+ * a barrel that re-exports it builds nothing, and a file that imports it and
+ * re-exports some other `Cli` would otherwise pass for one (the verification's
+ * orphan.ts + follower.ts plant). A follower must then export exactly one
+ * `Cli`, and that `Cli` must be the value of one of those built exports; any
+ * follower that fails is a RED cell, even when another follower passes.
+ *
+ * A file that imports the registry, exports no `Cli` and has no follower stays
+ * RED, as before: the instrument still could not read it. Today the one
+ * follower is the kit's own fixture CLI (`src/kit/workspace/fixtures/cli.ts`);
+ * a spell built on the factory joins by the same call.
  */
-function followersOf(factory: string): string[] {
+function followersOf(factory: string): { file: string; built: string[] }[] {
   const target = join(BACKEND_SRC_DIR, factory).replace(/\.[cm]?[jt]sx?$/, "");
-  return srcSources()
-    .filter((rel) => {
-      const abs = join(BACKEND_SRC_DIR, rel);
-      return rel !== factory && importsModule(abs, readFileSync(abs, "utf8"), target);
-    })
-    .sort();
+  const out: { file: string; built: string[] }[] = [];
+  for (const rel of srcSources().sort()) {
+    if (rel === factory) continue;
+    const abs = join(BACKEND_SRC_DIR, rel);
+    const src = readFileSync(abs, "utf8");
+    if (!importsModule(abs, src, target)) continue;
+    const built = builtExports(src, (spec) =>
+      spec.startsWith(".")
+        ? resolve(dirname(abs), spec).replace(/\.[cm]?[jt]sx?$/, "") === target
+        : false,
+    );
+    if (built.length > 0) out.push({ file: rel, built });
+  }
+  return out;
+}
+
+/**
+ * The names a module exports whose value is a call to something it imported
+ * from a module `fromFactory` accepts: `export const x = f(…)`,
+ * `const x = f(…); export { x as y }`, and `export default f(…)` (as
+ * `default`). `f` may be a named or default import, or a member of a namespace
+ * import (`ns.f(…)`). Read from the syntax tree; anything else builds nothing.
+ */
+function builtExports(src: string, fromFactory: (spec: string) => boolean): string[] {
+  const sf = ts.createSourceFile("m.tsx", src, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const fns = new Set<string>();
+  const namespaces = new Set<string>();
+  for (const s of sf.statements) {
+    if (!ts.isImportDeclaration(s) || !ts.isStringLiteral(s.moduleSpecifier)) continue;
+    const clause = s.importClause;
+    if (!clause || clause.isTypeOnly || !fromFactory(s.moduleSpecifier.text)) continue;
+    if (clause.name) fns.add(clause.name.text);
+    const nb = clause.namedBindings;
+    if (nb && ts.isNamespaceImport(nb)) namespaces.add(nb.name.text);
+    if (nb && ts.isNamedImports(nb))
+      for (const el of nb.elements) if (!el.isTypeOnly) fns.add(el.name.text);
+  }
+  const callsFactory = (e: ts.Expression | undefined): boolean => {
+    while (e && (ts.isAwaitExpression(e) || ts.isParenthesizedExpression(e))) e = e.expression;
+    if (!e || !ts.isCallExpression(e)) return false;
+    const c = e.expression;
+    if (ts.isIdentifier(c)) return fns.has(c.text);
+    return (
+      ts.isPropertyAccessExpression(c) &&
+      ts.isIdentifier(c.expression) &&
+      namespaces.has(c.expression.text)
+    );
+  };
+  const exported = (s: ts.Statement) =>
+    ts.canHaveModifiers(s) &&
+    (ts.getModifiers(s) ?? []).some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
+  const built = new Set<string>();
+  /** Local names bound to a factory call, for `export { x }`. */
+  const local = new Set<string>();
+  for (const s of sf.statements) {
+    if (ts.isVariableStatement(s))
+      for (const d of s.declarationList.declarations)
+        if (ts.isIdentifier(d.name) && callsFactory(d.initializer)) {
+          local.add(d.name.text);
+          if (exported(s)) built.add(d.name.text);
+        }
+    if (ts.isExportAssignment(s) && !s.isExportEquals && callsFactory(s.expression))
+      built.add("default");
+  }
+  for (const s of sf.statements)
+    if (
+      ts.isExportDeclaration(s) &&
+      !s.moduleSpecifier &&
+      s.exportClause &&
+      ts.isNamedExports(s.exportClause)
+    )
+      for (const el of s.exportClause.elements)
+        if (local.has((el.propertyName ?? el.name).text)) built.add(el.name.text);
+  return [...built].sort();
+}
+
+/**
+ * A follower's `Cli`, or null (red): it must export exactly one `Cli`, and that
+ * `Cli` must be the value of one of its built exports.
+ */
+function builtCli(mod: Record<string, unknown>, built: readonly string[]): Cli | null {
+  const clis = Object.values(mod).filter(isCli);
+  if (clis.length !== 1) return null;
+  const cli = clis[0] as Cli;
+  return built.some((name) => mod[name] === cli) ? cli : null;
 }
 
 const isCli = (v: unknown): v is Cli =>
@@ -233,23 +322,21 @@ const importEffects: string[] = [];
   (process as unknown as { exit: unknown }).exit = () => {
     importEffects.push(`${importing}: process.exit`);
   };
-  const clisOf = async (file: string): Promise<Cli[]> => {
+  const moduleOf = async (file: string): Promise<Record<string, unknown>> => {
     importing = file;
-    const mod = (await import(join(BACKEND_SRC_DIR, file))) as Record<string, unknown>;
-    return Object.values(mod).filter(isCli);
+    return (await import(join(BACKEND_SRC_DIR, file))) as Record<string, unknown>;
   };
   try {
     for (const file of registryImporters) {
-      const clis = await clisOf(file);
+      const clis = Object.values(await moduleOf(file)).filter(isCli);
       if (clis.length === 0) {
-        // A factory: read through its followers (see `followersOf`).
-        const followers: Adopter[] = [];
-        for (const f of followersOf(file)) {
-          const theirs = await clisOf(f);
-          if (theirs.length === 1) followers.push({ file: f, cli: theirs[0] as Cli });
-        }
+        // A factory: read through its followers (see `followersOf`). Every
+        // follower is a cell of its own; one that fails is red, never dropped
+        // because another follower passed.
+        const followers = followersOf(file);
         if (followers.length > 0) {
-          adopters.push(...followers);
+          for (const { file: f, built } of followers)
+            adopters.push({ file: f, cli: builtCli(await moduleOf(f), built) });
           continue;
         }
       }
@@ -482,6 +569,47 @@ describe("ward — a flag demoted by `--` is warned about, on every registry ado
   test("every file that imports the registry exports exactly one Cli, or is a factory read through its followers (null is red, not 0)", () => {
     const unreadable = adopters.filter((a) => a.cli === null).map((a) => a.file);
     expect(unreadable).toEqual([]);
+  });
+
+  test("CALIBRATION: a follower is what CALLS the factory into an export, and its Cli must be that export", () => {
+    const fromF = (spec: string) => spec === "./f";
+    // Built: a named, default or namespace import called into an export.
+    expect(
+      builtExports('import { make } from "./f";\nexport const cli = make({});', fromF),
+    ).toEqual(["cli"]);
+    expect(builtExports('import make from "./f";\nexport default make();', fromF)).toEqual([
+      "default",
+    ]);
+    expect(
+      builtExports('import * as f from "./f";\nconst c = f.make();\nexport { c as cli };', fromF),
+    ).toEqual(["cli"]);
+    // Not built: importing, re-exporting, a type import, or a call kept private.
+    expect(
+      builtExports(
+        'import { make } from "./f";\nmake;\nexport { cli } from "../bounty/backend/cli";',
+        fromF,
+      ),
+    ).toEqual([]);
+    expect(builtExports('export { make } from "./f";', fromF)).toEqual([]);
+    expect(
+      builtExports('import type { make } from "./f";\nexport const cli = make();', fromF),
+    ).toEqual([]);
+    expect(builtExports('import { make } from "./f";\nconst c = make();', fromF)).toEqual([]);
+    expect(builtExports('import { make } from "./g";\nexport const cli = make();', fromF)).toEqual(
+      [],
+    );
+
+    const fake = (): Cli =>
+      ({ dispatch: async () => 0, rows: [], declaration: () => ({}) }) as unknown as Cli;
+    const a = fake();
+    const b = fake();
+    expect(builtCli({ cli: a }, ["cli"])).toBe(a);
+    // An unrelated Cli beside a built non-Cli: red.
+    expect(builtCli({ cli: a, built: {} }, ["built"])).toBeNull();
+    // Two Clis: red, even when one of them is the built one.
+    expect(builtCli({ cli: a, other: b }, ["cli"])).toBeNull();
+    // None: red.
+    expect(builtCli({ built: {} }, ["built"])).toBeNull();
   });
 
   test("the rebuilt table IS the adopter's table (declarations equal)", () => {
