@@ -137,23 +137,48 @@ function srcSources(dir = BACKEND_SRC_DIR): string[] {
   return out;
 }
 
-/** Does this source value-import the registry module, under any local name? */
-function importsRegistry(abs: string, src: string): boolean {
+/** Does this source value-import `target` (an absolute path without its extension), under any local name? */
+function importsModule(abs: string, src: string, target: string): boolean {
   for (const m of src.matchAll(IMPORT_SPEC)) {
     const spec = m[2] as string;
     if (m[1] !== undefined || !spec.startsWith(".")) continue;
-    if (resolve(dirname(abs), spec).replace(/\.[cm]?[jt]sx?$/, "") === REGISTRY) return true;
+    if (resolve(dirname(abs), spec).replace(/\.[cm]?[jt]sx?$/, "") === target) return true;
   }
   return false;
 }
 
+/** Does this source value-import the registry module, under any local name? */
+const importsRegistry = (abs: string, src: string): boolean => importsModule(abs, src, REGISTRY);
+
 /** Every source that hands a table to the kit registry: found by its import. */
-const adopterFiles = srcSources()
+const registryImporters = srcSources()
   .filter((rel) => {
     const abs = join(BACKEND_SRC_DIR, rel);
     return importsRegistry(abs, readFileSync(abs, "utf8"));
   })
   .sort();
+
+/**
+ * ── A FACTORY IS READ THROUGH WHAT IT BUILDS (added 2026-10-14) ─────────────
+ * The kit's workspace CLI (`src/kit/workspace/verbs.ts`) imports the registry
+ * but exports no `Cli`: it exports `createWorkspaceCli`, and each caller builds
+ * its own. Such a file is read through the sources that value-import it and
+ * export exactly one `Cli` (its followers), each driven here as an adopter in
+ * its place. A file that imports the registry, exports no `Cli` and has no
+ * follower stays a RED cell, as before: the instrument still could not read
+ * it. Today the one follower is the kit's own fixture CLI
+ * (`src/kit/workspace/fixtures/cli.ts`); a spell built on the factory joins
+ * by the same import.
+ */
+function followersOf(factory: string): string[] {
+  const target = join(BACKEND_SRC_DIR, factory).replace(/\.[cm]?[jt]sx?$/, "");
+  return srcSources()
+    .filter((rel) => {
+      const abs = join(BACKEND_SRC_DIR, rel);
+      return rel !== factory && importsModule(abs, readFileSync(abs, "utf8"), target);
+    })
+    .sort();
+}
 
 const isCli = (v: unknown): v is Cli =>
   typeof v === "object" &&
@@ -208,11 +233,26 @@ const importEffects: string[] = [];
   (process as unknown as { exit: unknown }).exit = () => {
     importEffects.push(`${importing}: process.exit`);
   };
+  const clisOf = async (file: string): Promise<Cli[]> => {
+    importing = file;
+    const mod = (await import(join(BACKEND_SRC_DIR, file))) as Record<string, unknown>;
+    return Object.values(mod).filter(isCli);
+  };
   try {
-    for (const file of adopterFiles) {
-      importing = file;
-      const mod = (await import(join(BACKEND_SRC_DIR, file))) as Record<string, unknown>;
-      const clis = Object.values(mod).filter(isCli);
+    for (const file of registryImporters) {
+      const clis = await clisOf(file);
+      if (clis.length === 0) {
+        // A factory: read through its followers (see `followersOf`).
+        const followers: Adopter[] = [];
+        for (const f of followersOf(file)) {
+          const theirs = await clisOf(f);
+          if (theirs.length === 1) followers.push({ file: f, cli: theirs[0] as Cli });
+        }
+        if (followers.length > 0) {
+          adopters.push(...followers);
+          continue;
+        }
+      }
       adopters.push({ file, cli: clis.length === 1 ? (clis[0] as Cli) : null });
     }
   } finally {
@@ -222,6 +262,8 @@ const importEffects: string[] = [];
     process.exit = savedExit;
   }
 }
+/** The files whose `Cli` this ward drives: each registry importer, or a factory's followers. */
+const adopterFiles = adopters.map((a) => a.file).sort();
 
 const STUB_EXIT = 7;
 const FILLER = "ward-filler";
@@ -437,7 +479,7 @@ describe("ward — a flag demoted by `--` is warned about, on every registry ado
     expect(importEffects).toEqual([]);
   });
 
-  test("every file that imports the registry exports exactly one Cli (null is red, not 0)", () => {
+  test("every file that imports the registry exports exactly one Cli, or is a factory read through its followers (null is red, not 0)", () => {
     const unreadable = adopters.filter((a) => a.cli === null).map((a) => a.file);
     expect(unreadable).toEqual([]);
   });
@@ -516,16 +558,18 @@ describe("ward — a flag demoted by `--` is warned about, on every registry ado
         ]),
       ),
     }).toEqual({
-      adopters: 9,
+      // 10 since 2026-10-14: the kit workspace CLI joined, read through its
+      // fixture (see `followersOf`), with 23 rows that take positionals.
+      adopters: 10,
       // Every row with ANY positional (required, optional or variadic), not
       // only c1's 43 variadic + 6 one-optional rows: a demoted token can fill
       // any positional slot. Measured 2026-09-27 on 41065365.
-      rowsWithPositionals: 114,
+      rowsWithPositionals: 137,
       // Per (row, spelling, accepted flag), globals included: one direct and
       // one =value case, plus one after-text case wherever the row has room.
       // Measured 2026-09-27: 311 direct cases before the alias spelling joined.
-      cases: 761,
-      byForm: { direct: 312, "after-text": 137, "=value": 312 },
+      cases: 887,
+      byForm: { direct: 362, "after-text": 163, "=value": 362 },
       // mind-mapper `message` -> `read`: direct and =value. `read` has one
       // non-variadic positional, so no after-text case.
       viaAlias: 2,
@@ -533,7 +577,7 @@ describe("ward — a flag demoted by `--` is warned about, on every registry ado
       // `prune` alias rows with no positionals, so they have no case here.
       aliasRows: ["mind-mapper/backend/cli.ts:read<-message"],
       // One per (row, spelling).
-      quietCases: 115,
+      quietCases: 138,
       perAdopter: {
         "astrolabe/backend/cli.ts": 6,
         "bounty/backend/cli.ts": 7,
@@ -542,6 +586,7 @@ describe("ward — a flag demoted by `--` is warned about, on every registry ado
         "glamour/backend/cli.ts": 10,
         "grapevine/backend/cli.ts": 19,
         "imago/backend/cli.ts": 11,
+        "kit/workspace/fixtures/cli.ts": 23,
         "magpie/backend/cli.ts": 6,
         "mind-mapper/backend/cli.ts": 26,
         "scriptorium/backend/cli.ts": 29,
