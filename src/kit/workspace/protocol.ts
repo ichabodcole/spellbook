@@ -220,6 +220,23 @@ export type Note = {
   body: string;
   by: Author;
   createdAt: string;
+  /** When the body was last rewritten; absent if it never was. */
+  editedAt?: string;
+  /**
+   * Who rewrote it then: what tells a human's rewrite, which is owed an answer
+   * again, from the agent's, which is one (`notesWaiting`).
+   */
+  editedBy?: Author;
+  /**
+   * What the note said before the agent rewrote it, kept so the human can see it
+   * and put it back. Absent when the agent never rewrote it, or the human has
+   * rewritten it since.
+   */
+  replacedBody?: string;
+  /** When it was last put back after being resolved; absent if it never was. */
+  reopenedAt?: string;
+  /** Who put it back: the human reopening asks again; the agent reopening is an act on it. */
+  reopenedBy?: Author;
   resolved: boolean;
   resolvedAt?: string;
 };
@@ -356,6 +373,22 @@ export type Waiting = {
   since: string;
   badge: "working" | "stalled";
   /** The agent said it is still working (`working`) and the snooze holds. */
+  acknowledged?: true;
+};
+
+/**
+ * A note the human wrote that the agent has not answered: `Waiting`, for a
+ * note, with the same two badges and the same rule (`stalled` is static).
+ * Derived by the daemon from the notes and the conversation (`notesWaiting` in
+ * `waiting.ts`). Nothing stores it, so a reload or a restart derives it again.
+ */
+export type NoteWaiting = {
+  doc: string;
+  noteId: string;
+  /** When the human last put the note in front of the agent: made, rewrote or reopened it. */
+  since: string;
+  badge: Waiting["badge"];
+  /** The agent's "still working" snooze holds: it covers notes as it covers messages. */
   acknowledged?: true;
 };
 
@@ -581,6 +614,12 @@ export type PublicState = {
    * that is where the clock is. Null when nobody is waiting.
    */
   waiting: Waiting | null;
+  /**
+   * Every note still owed an answer, across the session, oldest first: the same
+   * derivation as `waiting`, for notes, computed in the same place. Optional so
+   * an older snapshot still reads; absent means none.
+   */
+  notesWaiting?: NoteWaiting[];
   /** What the context's undo arrows should show. Not the editor's undo. */
   history: HistoryView;
   /** Links the last rename or move broke, offered for updating; absent when there are none. */
@@ -1746,6 +1785,8 @@ export type AgentCmd =
   /** The agent notes a quote: it has no offsets, and counting characters would be asking it to be wrong. */
   | { op: "note.add"; doc?: string; quote: string; body: string }
   | { op: "notes"; doc?: string; all?: boolean }
+  /** Rewrite what a note says; its passage stays. The agent's rewrite answers the note. */
+  | { op: "note.edit"; doc?: string; id: string; body: string }
   | { op: "note.resolve"; doc?: string; id: string; resolved: boolean }
   /** "Still working": silences the waiting nudge for a while, and nothing else. */
   | { op: "working"; seconds?: number }

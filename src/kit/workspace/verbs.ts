@@ -1110,6 +1110,27 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
       },
     },
     {
+      name: "note-edit",
+      flags: [...SESSION, "doc", "stdin", "body-file"],
+      positionals: [
+        { name: "id", required: true },
+        { name: "text", required: false, variadic: true },
+      ],
+      describe:
+        "rewrite what a note says; its passage stays (prose: --body-file or --stdin). Answers the note, as a reply does",
+      run: async (pos, flags, session) => {
+        const [id, ...text] = pos;
+        printJson(
+          await postCmd(session, {
+            op: "note.edit",
+            id: id as string,
+            body: await readBody(text, flags, "note-edit"),
+            ...withDoc(flags),
+          }),
+        );
+      },
+    },
+    {
       name: "note-resolve",
       flags: [...SESSION, "doc", "reopen"],
       positionals: [{ name: "id", required: true }],

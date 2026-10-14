@@ -162,7 +162,7 @@ type Who = "human" | "agent";
 /** What the log stamps on every frame. */
 export type LogStamp = { id: number; epoch?: string };
 
-/** The note facts `note.added` (and a reopened note) carries when short enough. */
+/** The note facts `note.added` (and a reopened or human-rewritten note) carries when short enough. */
 export type NoteFactsPayload = {
   lines?: { from: number; to: number };
   quote?: string;
@@ -402,7 +402,9 @@ export type SystemFactPayload =
   /** A session from before the overlap block: the workspace is, or is inside, the set at `set`. */
   | { fact: "workspace.overlap"; path: string; set: string }
   | { fact: "history.undo" | "history.redo" }
-  | { fact: "note.edited" | "note.removed"; doc: string; note: string }
+  /** A human's rewrite carries what the note now says, as `note.added` does. */
+  | ({ fact: "note.edited"; doc: string; note: string } & NoteFactsPayload)
+  | { fact: "note.removed"; doc: string; note: string }
   | { fact: "reveal"; path: string }
   | { fact: "slot.migrated"; from: number }
   | { fact: "doctor"; findings: number };

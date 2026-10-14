@@ -134,6 +134,7 @@ import {
   attentionKey,
   DEFAULT_SNOOZE_MS,
   noteEventFacts,
+  notesWaiting,
   replyHint,
   waitingHint,
   waitingOn,
@@ -1020,6 +1021,12 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         chat: base.chat,
         tasks: engine.view(),
         waiting: waitingOn(base.chat, Date.now(), { acknowledgedUntil, stallMs: opts.stallMs }),
+        // The same rule for notes, over the whole conversation: a reply that
+        // answers a note may be older than the chat a snapshot carries.
+        notesWaiting: notesWaiting(session.noteFacts(), session.messages(), Date.now(), {
+          acknowledgedUntil,
+          stallMs: opts.stallMs,
+        }),
         history: history.view(),
         ...((offer) => (offer ? { relink: offer } : {}))(relinkView()),
         prefs: readPrefs(),
@@ -2991,13 +2998,28 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           return;
         }
         case "note.edit": {
-          const r = session.editNote({ doc: msg.doc, id: msg.id, body: msg.body });
-          emit("system", { fact: "note.edited", doc: r.slug, note: r.note.id, by: "human" });
+          const r = session.editNote({ doc: msg.doc, id: msg.id, body: msg.body, by: "human" });
+          // A Save with nothing changed is not a rewrite: nothing to tell anyone.
+          if (!r.changed) return;
+          // A human's rewrite is owed an answer again, so it says what the note
+          // now says, as `note.added` does.
+          emit("system", {
+            fact: "note.edited",
+            doc: r.slug,
+            note: r.note.id,
+            by: "human",
+            ...noteFacts(r.slug, r.note),
+          });
           broadcastState();
           return;
         }
         case "note.resolve": {
-          const r = session.resolveNote({ doc: msg.doc, id: msg.id, resolved: msg.resolved });
+          const r = session.resolveNote({
+            doc: msg.doc,
+            id: msg.id,
+            resolved: msg.resolved,
+            by: "human",
+          });
           emit("note.resolved", {
             doc: r.slug,
             note: r.note.id,
@@ -3587,24 +3609,44 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
             quote: cmd.quote,
           });
           line(`Agent noted "${quoteLabel(r.note.quote)}" on ${r.slug}.`);
-          emit("note.added", { doc: r.slug, note: r.note.id, by: "agent" });
+          // The agent's own acts on notes stay on the log and off its tail: it
+          // knows what it just did, and its reply already says it.
+          emit("note.added", { doc: r.slug, note: r.note.id, by: "agent" }, { wake: false });
           return { doc: r.slug, note: r.note.id, quote: r.note.quote };
         }
         case "notes": {
           const r = session.notesOf({ doc: cmd.doc, ...(cmd.all ? { all: true } : {}) });
           return { doc: r.slug, notes: r.notes };
         }
+        case "note.edit": {
+          // The agent's rewrite answers the note (`notesWaiting`): an act on
+          // this note that the human sees on this note.
+          const r = session.editNote({ doc: cmd.doc, id: cmd.id, body: cmd.body, by: "agent" });
+          if (!r.changed)
+            return { doc: r.slug, note: r.note.id, body: r.note.body, unchanged: true };
+          line(`Agent rewrote a note on ${r.slug}: "${quoteLabel(r.note.quote)}".`);
+          emit(
+            "system",
+            { fact: "note.edited", doc: r.slug, note: r.note.id, by: "agent" },
+            { wake: false },
+          );
+          return { doc: r.slug, note: r.note.id, body: r.note.body };
+        }
         case "note.resolve": {
-          const r = session.resolveNote({ doc: cmd.doc, id: cmd.id, resolved: cmd.resolved });
+          const r = session.resolveNote({
+            doc: cmd.doc,
+            id: cmd.id,
+            resolved: cmd.resolved,
+            by: "agent",
+          });
           line(
             `Agent ${cmd.resolved ? "resolved" : "reopened"} a note on ${r.slug}: "${quoteLabel(r.note.quote)}".`,
           );
-          emit("note.resolved", {
-            doc: r.slug,
-            note: r.note.id,
-            by: "agent",
-            resolved: r.note.resolved,
-          });
+          emit(
+            "note.resolved",
+            { doc: r.slug, note: r.note.id, by: "agent", resolved: r.note.resolved },
+            { wake: false },
+          );
           return { doc: r.slug, note: r.note.id, resolved: r.note.resolved };
         }
         case "working": {
@@ -4249,11 +4291,19 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
      */
     let lastWaiting: string | null = null;
     const attentionTimer = setInterval(() => {
-      const w = waitingOn(session.messages(), Date.now(), {
+      const now = Date.now();
+      const w = waitingOn(session.messages(), now, {
         acknowledgedUntil,
         stallMs: opts.stallMs,
       });
-      const key = attentionKey(w);
+      // A note flipping to "may be stuck" is a change the surface must see too.
+      // Not a nudge: the mark is the human's, and the event that delivered the
+      // note already carried it to the agent.
+      const notes = notesWaiting(session.noteFacts(), session.messages(), now, {
+        acknowledgedUntil,
+        stallMs: opts.stallMs,
+      });
+      const key = attentionKey(w, notes);
       if (key === lastWaiting) return;
       lastWaiting = key;
       // The badge changed, so the surface needs the new snapshot.

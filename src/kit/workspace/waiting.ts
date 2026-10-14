@@ -16,7 +16,7 @@
 // waiting. Counting it would silence the signal precisely in the case this
 // exists for: an agent busy doing things that has not said a word to the human.
 // Only `from === "agent"` clears.
-import type { Message, Waiting } from "./protocol";
+import type { Author, Message, Note, NoteWaiting, Waiting } from "./protocol";
 
 /**
  * How long a human waits before the wait is worth reporting. Long enough that
@@ -81,20 +81,120 @@ export function waitingOn(
     messageId = m.id;
   }
 
+  return { messageId, since, ...badgeFor(since, now, opts) };
+}
+
+/**
+ * Pulse or stalled, for anything owed an answer since `since`, and whether the
+ * snooze holds. One place, so a note and a message that have waited equally
+ * long can never read differently.
+ */
+function badgeFor(
+  since: string,
+  now: number,
+  opts: { stallMs?: number; acknowledgedUntil?: number },
+): Pick<Waiting, "badge" | "acknowledged"> {
   const stallMs = opts.stallMs ?? STALL_MS;
   const acknowledged = opts.acknowledgedUntil !== undefined && now < opts.acknowledgedUntil;
   const stalled = now - at(since, now) >= stallMs && !acknowledged;
   return {
-    messageId,
-    since,
     badge: stalled ? "stalled" : "working",
     ...(acknowledged ? { acknowledged: true as const } : {}),
   };
 }
 
-/** What the attention tick compares to decide whether the surface needs a new snapshot. */
-export function attentionKey(w: Waiting | null): string {
-  return w ? `${w.messageId}:${w.badge}${w.acknowledged ? ":ack" : ""}` : "-";
+// ── the same question, asked of a note ───────────────────────────────────────
+//
+// Ported from the earlier work. Agents act on nearly every note, and that is the
+// right instinct; what was missing was any sign, between adding a note and the
+// agent's answer, that something was happening. So a note gets the message
+// wait's treatment whole: derived, never declared; a pulse, then a static "may
+// be stuck" at the same 30 s; the same snooze. Nothing here asks the agent for
+// anything new, and nothing here is sent to the agent: the mark is the human's.
+//
+// What answers a note, each part a fact the daemon already holds:
+//   - Resolved. Resolving is the act that closes a note, by either party, so a
+//     resolved note is owed nothing. It is the note's own stored state.
+//   - An agent message after it. The agent spoke to the human after the note
+//     was written, which is what the human is waiting for: the same reason one
+//     reply answers a run of messages. It claims "the agent has said something
+//     since", never "the agent dealt with this", so it clears the mark and
+//     leaves the note open: dealt with is `resolved`. Counting only `resolved`
+//     was the option not taken: an agent visibly working on a note would flip
+//     it to "may be stuck" whenever it forgot to resolve, and the whole premise
+//     of the wait is that it forgets.
+//   - The agent rewriting (or reopening) this note: an act on this note, seen
+//     on this note.
+// A system line is still not a reply. The agent resolving note A is narrated
+// as a system line; it answers A (A is resolved) and says nothing about B.
+
+/** What the rule reads off a note: the stored fields, nothing placed. */
+export type NoteFacts = Pick<
+  Note,
+  "id" | "by" | "createdAt" | "editedAt" | "editedBy" | "reopenedAt" | "reopenedBy" | "resolved"
+>;
+
+/**
+ * When the human last put this note in front of the agent, or null if they
+ * never did or the agent has acted on it since. Making it, rewriting it and
+ * reopening it all count; the latest act decides. The agent rewriting or
+ * reopening it is an act on this note, and answers it. An edit whose author
+ * was not recorded is not evidence either way.
+ */
+function humanWroteAt(n: NoteFacts): string | null {
+  const acts: { at: string; by: Author }[] = [{ at: n.createdAt, by: n.by }];
+  if (n.editedAt !== undefined && n.editedBy) acts.push({ at: n.editedAt, by: n.editedBy });
+  if (n.reopenedAt !== undefined && n.reopenedBy) acts.push({ at: n.reopenedAt, by: n.reopenedBy });
+  let last = acts[0] as { at: string; by: Author };
+  for (const a of acts) if (Date.parse(a.at) >= Date.parse(last.at)) last = a;
+  return last.by === "human" ? last.at : null;
+}
+
+/** Every note owed an answer, across the session's documents, oldest first. */
+export function notesWaiting(
+  docs: readonly { slug: string; notes: readonly NoteFacts[] }[],
+  chat: readonly Msg[],
+  now: number,
+  opts: { stallMs?: number; acknowledgedUntil?: number } = {},
+): NoteWaiting[] {
+  // The conversation is in order, so the newest agent message is the last one
+  // whose time parses; one that does not is passed over, not taken as the newest.
+  let lastAgent = Number.NEGATIVE_INFINITY;
+  for (let i = chat.length - 1; i >= 0; i--) {
+    const m = chat[i];
+    if (m?.from !== "agent") continue;
+    const t = Date.parse(m.ts);
+    if (Number.isFinite(t)) {
+      lastAgent = t;
+      break;
+    }
+  }
+  const out: { w: NoteWaiting; t: number }[] = [];
+  for (const d of docs)
+    for (const n of d.notes) {
+      if (n.resolved) continue;
+      const since = humanWroteAt(n);
+      // Strictly after: a reply in the same millisecond cannot have read it.
+      if (since === null || lastAgent > Date.parse(since)) continue;
+      out.push({
+        w: { doc: d.slug, noteId: n.id, since, ...badgeFor(since, now, opts) },
+        t: at(since, now),
+      });
+    }
+  return out.sort((a, b) => a.t - b.t).map((o) => o.w);
+}
+
+/**
+ * What the attention tick compares to decide whether the surface needs a new
+ * snapshot: the message wait and every owed note, with their badges. A note
+ * flipping to "may be stuck" happens with nothing else changing (no message, no
+ * act), so a key blind to notes would leave the pulse running over a stuck note.
+ */
+export function attentionKey(w: Waiting | null, notes: readonly NoteWaiting[] = []): string {
+  return [
+    w ? `${w.messageId}:${w.badge}${w.acknowledged ? ":ack" : ""}` : "-",
+    ...notes.map((n) => `${n.doc}/${n.noteId}:${n.badge}${n.acknowledged ? ":ack" : ""}`),
+  ].join("|");
 }
 
 /**

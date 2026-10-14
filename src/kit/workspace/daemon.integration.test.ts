@@ -489,11 +489,109 @@ describe("a session, end to end through the launchers", () => {
     const notes = json<{ notes: { id: string }[] }>(await cli("notes", "--doc", "a"));
     expect(notes.notes.map((n) => n.id)).toEqual([String(added.note)]);
     expect((await cli("note-resolve", String(added.note), "--doc", "a")).code).toBe(0);
-    await waitTail((l) => l.type === "note.resolved" && l.by === "agent");
+    // The agent's own resolve is on the log, not its tail: the verb's answer says it.
     expect(json<{ notes: unknown[] }>(await cli("notes", "--doc", "a")).notes).toEqual([]);
     const quoted = await cli("note", "--doc", "a", "--quote", "# A", "a title");
     expect(quoted.code).toBe(0);
     expect(json<{ quote: string }>(quoted).quote).toBe("# A");
+  });
+
+  // Per-note waiting: a note the human leaves is owed an
+  // answer until it is resolved, the agent speaks after it, or the agent
+  // rewrites it. The agent hears nothing new about it.
+  const owed = async () => (await state()).notesWaiting ?? [];
+  const S = () => ["--session", sessionId];
+
+  test("a note is owed an answer, and a reply or a resolve closes it; a human reopen asks again", async () => {
+    const path = (await state()).docs[0]?.versions[0]?.path ?? "";
+    const at = readFileSync(path, "utf8").indexOf("line three");
+    surface.send({ op: "note.add", doc: "a", from: at, to: at + 10, body: "owed one" });
+    const first = await waitTail((l) => l.type === "note.added" && l.body === "owed one");
+    expect(await owed()).toEqual([
+      expect.objectContaining({ doc: "a", noteId: first.note, badge: "working" }),
+    ]);
+    // A system line is not an answer: the agent noting something posts one.
+    expect((await cli("note", ...S(), "--doc", "a", "--quote", "# A", "narrated")).code).toBe(0);
+    expect((await owed()).map((n) => n.noteId)).toEqual([String(first.note)]);
+    expect((await cli("say", ...S(), "on it")).code).toBe(0);
+    expect(await owed()).toEqual([]);
+
+    // A second note, closed by resolving it, with nothing said.
+    surface.send({ op: "note.add", doc: "a", from: at, to: at + 4, body: "and this" });
+    const second = await waitTail((l) => l.type === "note.added" && l.body === "and this");
+    expect((await owed()).map((n) => n.noteId)).toEqual([String(second.note)]);
+    expect((await cli("note-resolve", ...S(), String(second.note), "--doc", "a")).code).toBe(0);
+    expect(await owed()).toEqual([]);
+
+    // Reopened by the human, it is owed again, timed from the reopen.
+    const reopenedAfter = Date.now();
+    surface.send({ op: "note.resolve", doc: "a", id: String(second.note), resolved: false });
+    const reopened = await waitTail(
+      (l) => l.type === "note.resolved" && l.note === second.note && l.resolved === false,
+    );
+    expect(reopened).toMatchObject({ body: "and this", lines: { from: 4, to: 4 } });
+    const again = await owed();
+    expect(again.map((n) => n.noteId)).toEqual([String(second.note)]);
+    expect(Date.parse(again[0]?.since ?? "")).toBeGreaterThanOrEqual(reopenedAfter);
+    expect((await cli("say", ...S(), "seen")).code).toBe(0);
+    expect(await owed()).toEqual([]);
+  });
+
+  test("who rewrote or reopened a note is recorded, and decides whether it is owed", async () => {
+    const note = (await state()).docs[0]?.notes.find((n) => n.body === "and this");
+    if (!note) throw new Error("the previous test's note is missing");
+    expect(await owed()).toEqual([]);
+
+    // The human rewrites it: owed again, timed from the rewrite, and the tail
+    // is told what it now says.
+    const rewroteAfter = Date.now();
+    surface.send({ op: "note.edit", doc: "a", id: note.id, body: "and this, rewritten" });
+    const edited = await waitTail(
+      (l) => l.type === "system" && l.fact === "note.edited" && l.by === "human",
+    );
+    expect(edited).toMatchObject({ note: note.id, body: "and this, rewritten", quote: "line" });
+    const again = await owed();
+    expect(again.map((n) => n.noteId)).toEqual([note.id]);
+    expect(Date.parse(again[0]?.since ?? "")).toBeGreaterThanOrEqual(rewroteAfter);
+
+    // The agent rewrites it: that answers it, and the chat says so as a system line.
+    const r = await cli("note-edit", ...S(), note.id, "--doc", "a", "agreed: cut");
+    expect(r.code).toBe(0);
+    expect(json(r)).toMatchObject({ doc: "a", note: note.id, body: "agreed: cut" });
+    expect(await owed()).toEqual([]);
+    const st = await state(true);
+    expect(st.docs[0]?.notes.find((n) => n.id === note.id)).toMatchObject({
+      body: "agreed: cut",
+      editedBy: "agent",
+    });
+    expect(st.chat.at(-1)).toMatchObject({ from: "system" });
+    // ...and keeps the human's words, for them to see and put back.
+    expect(st.docs[0]?.notes.find((n) => n.id === note.id)?.replacedBody).toBe(
+      "and this, rewritten",
+    );
+
+    // A Save with nothing changed is not a rewrite: still answered, and nothing sent.
+    surface.send({ op: "note.edit", doc: "a", id: note.id, body: "agreed: cut" });
+    surface.send({ op: "say", text: "marker three", withSelection: false });
+    await waitTail((l) => l.type === "message" && l.text === "marker three");
+    expect(await owed()).toEqual([]);
+    expect(
+      tailLines().filter((l) => l.fact === "note.edited" && l.note === note.id && l.by === "human"),
+    ).toHaveLength(1);
+    expect((await cli("say", ...S(), "marker seen")).code).toBe(0);
+
+    // The agent resolving and then reopening it is an act on it, not a new ask.
+    expect((await cli("note-resolve", ...S(), note.id, "--doc", "a")).code).toBe(0);
+    expect((await cli("note-resolve", ...S(), note.id, "--doc", "a", "--reopen")).code).toBe(0);
+    expect(await owed()).toEqual([]);
+    expect((await state()).docs[0]?.notes.find((n) => n.id === note.id)?.reopenedBy).toBe("agent");
+
+    // An unknown note is refused with the notes there are.
+    const missing = await cli("note-edit", ...S(), "n-nope", "--doc", "a", "x");
+    expect(missing.code).not.toBe(0);
+    expect(missing.err).toContain("n-nope");
+    // Put away, so later tests start with nothing owed.
+    expect((await cli("note-resolve", ...S(), note.id, "--doc", "a")).code).toBe(0);
   });
 
   test("version-new by a fake agent: the agent edits that file and the surface receives the text", async () => {

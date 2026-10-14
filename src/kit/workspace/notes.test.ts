@@ -101,20 +101,92 @@ describe("the stored note", () => {
 
   test("resolve stamps resolvedAt, reopen clears it, and the hidden ones return with `all`", () => {
     const { note } = s.addNote({ doc: slug, by: "agent", quote: "Release", body: "x" });
-    const r = s.resolveNote({ doc: slug, id: note.id, resolved: true });
+    const r = s.resolveNote({ doc: slug, id: note.id, resolved: true, by: "agent" });
     expect(r.note.resolved).toBe(true);
     expect(new Date(String(r.note.resolvedAt)).toISOString()).toBe(String(r.note.resolvedAt));
     expect(s.notesOf({ doc: slug }).notes).toHaveLength(0);
     expect(s.notesOf({ doc: slug, all: true }).notes).toHaveLength(1);
-    const reopened = s.resolveNote({ doc: slug, id: note.id, resolved: false });
+    const reopened = s.resolveNote({ doc: slug, id: note.id, resolved: false, by: "agent" });
     expect(reopened.note.resolved).toBe(false);
     expect("resolvedAt" in reopened.note).toBe(false);
     expect(s.notesOf({ doc: slug }).notes).toHaveLength(1);
   });
 
+  test("a rewrite stamps when and who, so a human's rewrite can be told from the agent's", () => {
+    const { note } = s.addNote({ doc: slug, by: "human", quote: "Release", body: "x" });
+    const human = s.editNote({ doc: slug, id: note.id, body: "y", by: "human" });
+    expect(human.note).toMatchObject({ body: "y", editedBy: "human" });
+    expect(new Date(String(human.note.editedAt)).toISOString()).toBe(String(human.note.editedAt));
+    const agent = s.editNote({ doc: slug, id: note.id, body: "z", by: "agent" });
+    expect(agent.note).toMatchObject({ body: "z", editedBy: "agent" });
+    // The passage is untouched: a rewrite changes what a note says, not what it is about.
+    expect(agent.note.quote).toBe("Release");
+  });
+
+  test("the agent's rewrite keeps the words it replaced; the human's own rewrite lets them go", () => {
+    const { note } = s.addNote({ doc: slug, by: "human", quote: "Release", body: "mine" });
+    s.editNote({ doc: slug, id: note.id, body: "the agent's", by: "agent" });
+    expect(placed(note.id)).toMatchObject({ body: "the agent's", replacedBody: "mine" });
+    // A second rewrite by the agent still keeps the human's words, not its own first try.
+    s.editNote({ doc: slug, id: note.id, body: "the agent's again", by: "agent" });
+    expect(placed(note.id)?.replacedBody).toBe("mine");
+    // Putting them back is the human's rewrite: nothing is left to restore.
+    s.editNote({ doc: slug, id: note.id, body: "mine", by: "human" });
+    expect(placed(note.id)).toMatchObject({ body: "mine", editedBy: "human" });
+    expect(placed(note.id)).not.toHaveProperty("replacedBody");
+  });
+
+  test("the agent rewriting a note back to the human's words leaves nothing to put back", () => {
+    const { note } = s.addNote({ doc: slug, by: "human", quote: "Release", body: "mine" });
+    s.editNote({ doc: slug, id: note.id, body: "the agent's", by: "agent" });
+    s.editNote({ doc: slug, id: note.id, body: "mine", by: "agent" });
+    expect(placed(note.id)).toMatchObject({ body: "mine", editedBy: "agent" });
+    expect(placed(note.id)).not.toHaveProperty("replacedBody");
+  });
+
+  test("a rewrite that changes nothing is not a rewrite: nothing is stamped or stored", () => {
+    const { note } = s.addNote({ doc: slug, by: "human", quote: "Release", body: "same" });
+    const r = s.editNote({ doc: slug, id: note.id, body: "  same \n", by: "human" });
+    expect(r.changed).toBe(false);
+    expect(placed(note.id)).not.toHaveProperty("editedAt");
+    expect(placed(note.id)).not.toHaveProperty("editedBy");
+    expect(s.editNote({ doc: slug, id: note.id, body: "other", by: "human" }).changed).toBe(true);
+  });
+
+  test("a reopen stamps when and who; a resolve leaves the reopen as it was", () => {
+    const { note } = s.addNote({ doc: slug, by: "human", quote: "Release", body: "x" });
+    s.resolveNote({ doc: slug, id: note.id, resolved: true, by: "agent" });
+    expect(placed(note.id)?.reopenedAt).toBeUndefined();
+    const back = s.resolveNote({ doc: slug, id: note.id, resolved: false, by: "human" });
+    expect(back.note.reopenedBy).toBe("human");
+    expect(new Date(String(back.note.reopenedAt)).toISOString()).toBe(String(back.note.reopenedAt));
+    s.resolveNote({ doc: slug, id: note.id, resolved: true, by: "human" });
+    expect(placed(note.id)?.reopenedBy).toBe("human");
+  });
+
+  test("the stored facts of every document's notes, unplaced, for the waiting rule", () => {
+    const { note } = s.addNote({ doc: slug, by: "human", quote: "Release", body: "x" });
+    const facts = s.noteFacts().find((d) => d.slug === slug);
+    expect(facts?.notes.map((n) => n.id)).toEqual([note.id]);
+    // Stored, not placed: no offsets read from the text.
+    expect(facts?.notes[0]).not.toHaveProperty("from");
+  });
+
+  test("who rewrote and who reopened survive a restore", () => {
+    const { note } = s.addNote({ doc: slug, by: "human", quote: "Release", body: "x" });
+    s.editNote({ doc: slug, id: note.id, body: "y", by: "agent" });
+    s.resolveNote({ doc: slug, id: note.id, resolved: true, by: "human" });
+    s.resolveNote({ doc: slug, id: note.id, resolved: false, by: "agent" });
+    const r = (s.constructor as typeof WorkspaceSession).restore(sessions, s.app, s.id);
+    expect(r.notesOf({ doc: slug }).notes[0]).toMatchObject({
+      editedBy: "agent",
+      reopenedBy: "agent",
+    });
+  });
+
   test("an unknown note is a 404 listing the notes there are", () => {
     const { note } = s.addNote({ doc: slug, by: "agent", quote: "Release", body: "x" });
-    const e = refusal(() => s.resolveNote({ doc: slug, id: "nope", resolved: true }));
+    const e = refusal(() => s.resolveNote({ doc: slug, id: "nope", resolved: true, by: "agent" }));
     expect(e.status).toBe(404);
     expect(e.choices).toEqual([note.id]);
   });

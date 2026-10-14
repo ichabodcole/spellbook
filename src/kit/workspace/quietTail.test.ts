@@ -186,6 +186,43 @@ describe("the agent's tail", () => {
   });
 });
 
+describe("notes", () => {
+  test("the agent's own acts on notes are on the log and off its tail; the human's wake it", async () => {
+    const { s, base, listen } = await start();
+    s.send({ op: "context.add", path: docs });
+    await humanOpens(s, inSet("a.md"));
+    const agent = listen(-1, { agent: true });
+    const everyone = listen(-1);
+    // The human's note wakes the agent.
+    s.send({ op: "note.add", doc: "a", from: 5, to: 8, body: "cut this?" });
+    const added = await agent.waitFor((e) => e.type === "note.added" && e.by === "human");
+    const id = String(added.note);
+    // The agent's own: a note, a rewrite, a resolve and a reopen.
+    const own = await cmd(base, { op: "note.add", doc: "a", quote: "one", body: "mine" });
+    expect(own.status).toBe(200);
+    expect((await cmd(base, { op: "note.edit", doc: "a", id, body: "cut" })).status).toBe(200);
+    expect((await cmd(base, { op: "note.resolve", doc: "a", id, resolved: true })).status).toBe(
+      200,
+    );
+    await everyone.waitFor((e) => e.type === "note.resolved" && e.by === "agent");
+    // The human's acts after them do wake it.
+    s.send({ op: "note.resolve", doc: "a", id, resolved: false });
+    await agent.waitFor((e) => e.type === "note.resolved" && e.by === "human");
+    s.send({ op: "note.edit", doc: "a", id, body: "cut it, then" });
+    await agent.waitFor((e) => e.fact === "note.edited" && e.by === "human");
+    const byAgent = (evs: Ev[]) =>
+      evs.filter(
+        (e) => e.by === "agent" && /^note\./.test(String(e.type === "system" ? e.fact : e.type)),
+      );
+    expect(byAgent(agent.events)).toEqual([]);
+    expect(byAgent(everyone.events).map((e) => (e.type === "system" ? e.fact : e.type))).toEqual([
+      "note.added",
+      "note.edited",
+      "note.resolved",
+    ]);
+  });
+});
+
 describe("the human's save", () => {
   async function opened() {
     const started = await start();

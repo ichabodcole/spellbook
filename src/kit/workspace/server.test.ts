@@ -140,6 +140,7 @@ describe("the daemon's surface", () => {
         "history",
         "launcher",
         "mode",
+        "notesWaiting",
         "openDoc",
         "openImage",
         "prefs",

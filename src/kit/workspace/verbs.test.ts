@@ -124,6 +124,7 @@ test("the kit's verb roster is the resolution's, and an app adds its own to the 
     "version-delete",
     "note",
     "notes",
+    "note-edit",
     "note-resolve",
     "task",
     "task-status",
@@ -164,7 +165,9 @@ test("the kit's verb roster is the resolution's, and an app adds its own to the 
   // kit-picker-relation-meanings admitted `relations`: the world's relation
   // vocabulary and how the links use it, never writing.
   // kit-image-import-settings admitted `image-settings`: the app's image
-  // import settings, read, or set when the user asks.
+  // import settings, read, or set when the user asks. kit-per-note-waiting
+  // (here kit-workspace-e65-daemon) admitted `note-edit`: the agent rewriting a note is one of the three acts
+  // that answer it. Removing a note stays the human's.
   for (const gone of [
     "find",
     "map",
@@ -177,7 +180,6 @@ test("the kit's verb roster is the resolution's, and an app adds its own to the 
     "make-set",
     "forget",
     "info",
-    "note-edit",
     "note-remove",
     "task-remove",
     "tasks-clear",

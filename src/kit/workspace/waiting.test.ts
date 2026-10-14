@@ -5,6 +5,7 @@ import {
   DEFAULT_SNOOZE_MS,
   NOTE_TEXT_MAX,
   noteEventFacts,
+  notesWaiting,
   STALL_MS,
   waitingOn,
 } from "./waiting";
@@ -185,8 +186,217 @@ describe("noteEventFacts: what `note.added` tells the agent", () => {
   });
 });
 
+// ── a note is owed an answer too ──────────────────────────────────────────────
+//
+// The twin of the cells above, for notes, ported with them. Every expectation
+// below is a literal, a timestamp or an id written out, never recomputed with
+// the code's own arithmetic, so a mutation to the rule has something to
+// disagree with.
+
+type NoteFact = {
+  id: string;
+  by: "human" | "agent";
+  createdAt: string;
+  editedAt?: string;
+  editedBy?: "human" | "agent";
+  reopenedAt?: string;
+  reopenedBy?: "human" | "agent";
+  resolved: boolean;
+};
+const note = (
+  id: string,
+  createdAt: number,
+  more: Partial<Omit<NoteFact, "createdAt" | "editedAt" | "reopenedAt">> & {
+    editedAt?: number;
+    reopenedAt?: number;
+  } = {},
+): NoteFact => {
+  const { editedAt, reopenedAt, ...rest } = more;
+  return {
+    id,
+    by: "human",
+    createdAt: iso(createdAt),
+    resolved: false,
+    ...rest,
+    ...(editedAt !== undefined ? { editedAt: iso(editedAt) } : {}),
+    ...(reopenedAt !== undefined ? { reopenedAt: iso(reopenedAt) } : {}),
+  };
+};
+const inDoc = (...notes: NoteFact[]) => [{ slug: "maren", notes }];
+const owed = (noteId: string, since: number, badge: "working" | "stalled", doc = "maren") => ({
+  doc,
+  noteId,
+  since: iso(since),
+  badge,
+});
+
+describe("notesWaiting", () => {
+  test("no notes, nothing owed", () => {
+    expect(notesWaiting([], [], 1000)).toEqual([]);
+    expect(notesWaiting(inDoc(), [msg("human", 0)], 1000)).toEqual([]);
+  });
+
+  test("a human's note with no word from the agent since is waiting: a pulse at first", () => {
+    expect(notesWaiting(inDoc(note("n1", 1000)), [], 1500)).toEqual([owed("n1", 1000, "working")]);
+  });
+
+  test("under the threshold it is a pulse; at it, stalled: the message's 30 s, not a second number", () => {
+    const docs = inDoc(note("n1", 0));
+    expect(notesWaiting(docs, [], 29_999)[0]?.badge).toBe("working");
+    expect(notesWaiting(docs, [], 30_000)[0]?.badge).toBe("stalled");
+  });
+
+  test("an agent message after the note answers it", () => {
+    expect(notesWaiting(inDoc(note("n1", 1000)), [msg("agent", 1001)], 999_999)).toEqual([]);
+  });
+
+  test("an agent message before the note does not", () => {
+    expect(notesWaiting(inDoc(note("n1", 1000)), [msg("agent", 999)], 1500)).toHaveLength(1);
+  });
+
+  test("an agent message in the same millisecond does not: it cannot have seen the note", () => {
+    expect(notesWaiting(inDoc(note("n1", 1000)), [msg("agent", 1000)], 1500)).toHaveLength(1);
+  });
+
+  test("a system line is not a reply: the agent resolving another note says nothing about this one", () => {
+    const got = notesWaiting(inDoc(note("n1", 0)), [msg("system", 5), msg("system", 9)], 40_000);
+    expect(got).toEqual([owed("n1", 0, "stalled")]);
+  });
+
+  test("a human message after the note is not an answer either", () => {
+    expect(notesWaiting(inDoc(note("n1", 0)), [msg("human", 5)], 100)).toHaveLength(1);
+  });
+
+  test("resolved is done: a resolved note is owed nothing, whoever resolved it and whether or not anyone spoke", () => {
+    expect(notesWaiting(inDoc(note("n1", 0, { resolved: true })), [], 999_999)).toEqual([]);
+  });
+
+  test("the agent's own note is not waiting on the agent", () => {
+    expect(notesWaiting(inDoc(note("n1", 0, { by: "agent" })), [], 999_999)).toEqual([]);
+  });
+
+  test("the agent rewriting the note answers it: an act on this note, not narration", () => {
+    const docs = inDoc(note("n1", 0, { editedAt: 5000, editedBy: "agent" }));
+    expect(notesWaiting(docs, [], 999_999)).toEqual([]);
+  });
+
+  test("the agent rewriting another note says nothing about this one", () => {
+    const docs = inDoc(note("n1", 0), note("n2", 0, { editedAt: 5000, editedBy: "agent" }));
+    expect(notesWaiting(docs, [], 6000)).toEqual([owed("n1", 0, "working")]);
+  });
+
+  test("the human rewriting it after an answer makes it owed again, from the rewrite", () => {
+    const docs = inDoc(note("n1", 0, { editedAt: 20_000, editedBy: "human" }));
+    expect(notesWaiting(docs, [msg("agent", 10_000)], 25_000)).toEqual([
+      owed("n1", 20_000, "working"),
+    ]);
+  });
+
+  test("the human rewriting an unanswered note keeps it owed, timed from the rewrite", () => {
+    const docs = inDoc(note("n1", 0, { editedAt: 20_000, editedBy: "human" }));
+    expect(notesWaiting(docs, [], 35_000)).toEqual([owed("n1", 20_000, "working")]);
+  });
+
+  test("the human rewriting the agent's note is the human writing: it is owed an answer", () => {
+    const docs = inDoc(note("n1", 0, { by: "agent", editedAt: 7000, editedBy: "human" }));
+    expect(notesWaiting(docs, [], 8000)).toEqual([owed("n1", 7000, "working")]);
+  });
+
+  test("an edit with no author recorded is not evidence either way: the note counts from when it was made", () => {
+    const docs = inDoc(note("n1", 1000, { editedAt: 50_000 }));
+    expect(notesWaiting(docs, [msg("agent", 2000)], 60_000)).toEqual([]);
+    expect(notesWaiting(docs, [], 31_000)).toEqual([owed("n1", 1000, "stalled")]);
+  });
+
+  test("two notes, then one reply: both are answered, as a run of messages is by one reply", () => {
+    const docs = inDoc(note("n1", 1000), note("n2", 2000));
+    expect(notesWaiting(docs, [msg("agent", 3000)], 999_999)).toEqual([]);
+  });
+
+  test("but a note made after that reply is still owed", () => {
+    const docs = inDoc(note("n1", 1000), note("n2", 4000));
+    expect(notesWaiting(docs, [msg("agent", 3000)], 5000)).toEqual([owed("n2", 4000, "working")]);
+  });
+
+  test("each note keeps its own clock: the first can be stuck while the second is fresh", () => {
+    const docs = inDoc(note("n1", 0), note("n2", 20_000));
+    expect(notesWaiting(docs, [], 30_000)).toEqual([
+      owed("n1", 0, "stalled"),
+      owed("n2", 20_000, "working"),
+    ]);
+  });
+
+  test("oldest first, across documents", () => {
+    const docs = [
+      { slug: "a", notes: [note("late", 9000)] },
+      { slug: "b", notes: [note("early", 1000)] },
+    ];
+    expect(notesWaiting(docs, [], 10_000).map((w) => w.noteId)).toEqual(["early", "late"]);
+  });
+
+  test("`working` snoozes a note exactly as it snoozes a message, and its expiry tells the truth", () => {
+    const docs = inDoc(note("n1", 0));
+    expect(notesWaiting(docs, [], 40_000, { acknowledgedUntil: 50_000 })).toEqual([
+      { ...owed("n1", 0, "working"), acknowledged: true },
+    ]);
+    expect(notesWaiting(docs, [], 50_000, { acknowledgedUntil: 50_000 })).toEqual([
+      owed("n1", 0, "stalled"),
+    ]);
+  });
+
+  test("the threshold is the same option the message wait takes", () => {
+    expect(notesWaiting(inDoc(note("n1", 0)), [], 500, { stallMs: 100 })[0]?.badge).toBe("stalled");
+  });
+
+  test("an unparseable time never reads as stalled", () => {
+    const docs = [{ slug: "maren", notes: [{ ...note("n1", 0), createdAt: "not a time" }] }];
+    expect(notesWaiting(docs, [], 999_999)[0]?.badge).toBe("working");
+  });
+
+  test("an agent message with an unparseable time is passed over for the newest one that parses", () => {
+    const docs = inDoc(note("n1", 1000));
+    const broken = { ...msg("agent", 0), ts: "not a time" };
+    expect(notesWaiting(docs, [msg("agent", 2000), broken], 5000)).toEqual([]);
+    expect(notesWaiting(docs, [msg("agent", 500), broken], 5000)).toHaveLength(1);
+  });
+});
+
+describe("notesWaiting: reopening", () => {
+  test("a note resolved before any reply and reopened is owed from the reopen, not from when it was made", () => {
+    const docs = inDoc(note("n1", 0, { reopenedAt: 50_000, reopenedBy: "human" }));
+    expect(notesWaiting(docs, [], 55_000)).toEqual([owed("n1", 50_000, "working")]);
+  });
+
+  test("and one rule for the answered case: reopening an answered note asks again", () => {
+    const docs = inDoc(note("n1", 0, { reopenedAt: 20_000, reopenedBy: "human" }));
+    expect(notesWaiting(docs, [msg("agent", 10_000)], 25_000)).toEqual([
+      owed("n1", 20_000, "working"),
+    ]);
+  });
+
+  test("the agent reopening a note is an act on it, and answers it", () => {
+    const docs = inDoc(note("n1", 0, { reopenedAt: 20_000, reopenedBy: "agent" }));
+    expect(notesWaiting(docs, [], 99_000)).toEqual([]);
+  });
+
+  test("the latest write wins: a human rewrite after the agent's reopen is owed again", () => {
+    const docs = inDoc(
+      note("n1", 0, {
+        reopenedAt: 20_000,
+        reopenedBy: "agent",
+        editedAt: 30_000,
+        editedBy: "human",
+      }),
+    );
+    expect(notesWaiting(docs, [], 31_000)).toEqual([owed("n1", 30_000, "working")]);
+  });
+});
+
 describe("attentionKey: what makes the tick re-broadcast", () => {
   const w = (badge: "working" | "stalled") => ({ messageId: "m1", since: iso(0), badge });
+  // A note's flip to "may be stuck" reaches the surface only because the tick
+  // sees this key change; a key blind to notes leaves the pulse running.
+  const nw = (badge: "working" | "stalled") => owed("n1", 0, badge, "a");
 
   test("a message's badge changing changes it", () => {
     expect(attentionKey(w("working"))).not.toBe(attentionKey(w("stalled")));
@@ -196,5 +406,26 @@ describe("attentionKey: what makes the tick re-broadcast", () => {
   test("the same state gives the same key, so nothing is re-sent", () => {
     expect(attentionKey(w("stalled"))).toBe(attentionKey(w("stalled")));
     expect(attentionKey(null)).toBe(attentionKey(null));
+    expect(attentionKey(null, [nw("stalled")])).toBe(attentionKey(null, [nw("stalled")]));
+  });
+
+  test("a note going from pulse to stalled changes it, with no message waiting", () => {
+    expect(attentionKey(null, [nw("working")])).not.toBe(attentionKey(null, [nw("stalled")]));
+  });
+
+  test("a note appearing or going changes it", () => {
+    expect(attentionKey(null, [])).not.toBe(attentionKey(null, [nw("working")]));
+  });
+
+  test("a note's snooze ending changes it", () => {
+    expect(attentionKey(null, [{ ...nw("working"), acknowledged: true }])).not.toBe(
+      attentionKey(null, [nw("working")]),
+    );
+  });
+
+  test("the same note id on another document is another note", () => {
+    expect(attentionKey(null, [owed("n1", 0, "working", "a")])).not.toBe(
+      attentionKey(null, [owed("n1", 0, "working", "b")]),
+    );
   });
 });

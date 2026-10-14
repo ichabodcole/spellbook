@@ -1827,23 +1827,58 @@ export class WorkspaceSession {
     return note;
   }
 
-  /** Change what a note says. Its anchor is untouched: it is still about the same passage. */
-  editNote(opts: { doc?: string; id: string; body: string }): { slug: string; note: Note } {
+  /**
+   * Every document's notes as stored: no placement, so no file reads. The
+   * attention tick asks this every second, and `view()` would place every note.
+   */
+  noteFacts(): { slug: string; notes: readonly Note[] }[] {
+    return this.m.docs.map((d) => ({ slug: d.slug, notes: d.notes }));
+  }
+
+  /**
+   * Change what a note says. Its anchor is untouched: it is still about the same
+   * passage. Who rewrote it is stored, because it decides whether the note is
+   * owed an answer (`notesWaiting`). The agent's rewrite keeps the words it
+   * replaced (the first it replaced, while it goes on rewriting), so the human
+   * can see them and put them back; the human's own rewrite lets them go.
+   *
+   * A body that is the same is not a rewrite (`changed: false`): nothing is
+   * stamped or stored, so a Save with nothing changed does not put the note in
+   * front of the agent again.
+   */
+  editNote(opts: { doc?: string; id: string; body: string; by: Author }): {
+    slug: string;
+    note: Note;
+    changed: boolean;
+  } {
     const d = this.docOrDie(opts.doc);
     const note = this.noteOrDie(d, opts.id);
     const body = opts.body.trim();
     if (!body) throw new SessionError("a note needs something written in it", 400);
+    if (body === note.body) return { slug: d.slug, note, changed: false };
+    // An agent rewrite back to the words it replaced leaves nothing to put back.
+    if (opts.by === "agent" && body !== (note.replacedBody ?? note.body))
+      note.replacedBody ??= note.body;
+    else delete note.replacedBody;
     note.body = body;
+    note.editedAt = nowIso();
+    note.editedBy = opts.by;
     this.persist();
-    return { slug: d.slug, note };
+    return { slug: d.slug, note, changed: true };
   }
 
-  resolveNote(opts: { doc?: string; id: string; resolved: boolean }): {
+  resolveNote(opts: { doc?: string; id: string; resolved: boolean; by: Author }): {
     slug: string;
     note: Note;
   } {
     const d = this.docOrDie(opts.doc);
     const note = this.noteOrDie(d, opts.id);
+    // A reopen is a write: the human reopening asks again, timed from here; the
+    // agent reopening is an act on the note.
+    if (note.resolved && !opts.resolved) {
+      note.reopenedAt = nowIso();
+      note.reopenedBy = opts.by;
+    }
     note.resolved = opts.resolved;
     if (opts.resolved) note.resolvedAt = nowIso();
     else delete note.resolvedAt;
