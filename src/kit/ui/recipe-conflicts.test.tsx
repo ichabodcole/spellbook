@@ -84,30 +84,72 @@ export function groupsOf(utility: string): string[] {
   if (/^size-/.test(u)) return ["height", "width"];
   if (/^h-/.test(u)) return ["height"];
   if (/^w-/.test(u)) return ["width"];
-  if (/^max-w-/.test(u)) return ["max-width"];
-  if (/^p-/.test(u)) return ["padding-l", "padding-r", "padding-t", "padding-b"];
-  if (/^px-/.test(u)) return ["padding-l", "padding-r"];
-  if (/^py-/.test(u)) return ["padding-t", "padding-b"];
-  if (/^pl-/.test(u)) return ["padding-l"];
-  if (/^pr-/.test(u)) return ["padding-r"];
-  if (/^pt-/.test(u)) return ["padding-t"];
-  if (/^pb-/.test(u)) return ["padding-b"];
+  if (/^max-w-/.test(u)) return ["maxWidth"];
+  if (/^p-/.test(u)) return ["paddingL", "paddingR", "paddingT", "paddingB"];
+  if (/^px-/.test(u)) return ["paddingL", "paddingR"];
+  if (/^py-/.test(u)) return ["paddingT", "paddingB"];
+  if (/^pl-/.test(u)) return ["paddingL"];
+  if (/^pr-/.test(u)) return ["paddingR"];
+  if (/^pt-/.test(u)) return ["paddingT"];
+  if (/^pb-/.test(u)) return ["paddingB"];
   if (/^gap-\d|^gap-\[/.test(u)) return ["gap"];
-  if (FONT_SIZE.test(u)) return ["font-size"];
-  if (/^text-/.test(u) && !TEXT_OTHER.test(u)) return ["text-color"];
-  if (/^bg-/.test(u) && !BG_OTHER.test(u)) return ["bg-color"];
+  if (FONT_SIZE.test(u)) return ["fontSize"];
+  if (/^text-/.test(u) && !TEXT_OTHER.test(u)) return ["textColor"];
+  if (/^bg-/.test(u) && !BG_OTHER.test(u)) return ["bgColor"];
   if (/^font-(thin|light|normal|medium|semibold|bold|extrabold|black)$/.test(u))
-    return ["font-weight"];
-  if (/^font-(sans|serif|mono)$/.test(u)) return ["font-family"];
+    return ["fontWeight"];
+  if (/^font-(sans|serif|mono)$/.test(u)) return ["fontFamily"];
   if (/^(flex|grid|block|inline-flex|inline-block|inline|hidden|contents)$/.test(u))
     return ["display"];
-  if (/^items-/.test(u)) return ["align-items"];
+  if (/^items-/.test(u)) return ["alignItems"];
   if (/^justify-(start|end|center|between|around|evenly|stretch)$/.test(u))
-    return ["justify-content"];
-  if (/^flex-(row|col)(-reverse)?$/.test(u)) return ["flex-direction"];
+    return ["justifyContent"];
+  if (/^flex-(row|col)(-reverse)?$/.test(u)) return ["flexDirection"];
   if (/^(absolute|relative|fixed|sticky)$/.test(u)) return ["position"];
+  // ⛔ The bracketed letters below keep a bare utility name out of this file's
+  // text: Tailwind scans src/kit/ and would ship any class this file spells.
+  const corner = /^rounded-(tl|tr|bl|br|t|b|l|r|s|e)-/.exec(u)?.[1];
+  if (corner) return CORNERS[corner] ?? [];
+  if (/^b[o]rder(-\d+|-\[\d[^\]]*px\])?$/.test(u)) return ["borderWidth"];
+  const side = /^border-([trblxy])(-\d+|-\[\d[^\]]*px\])?$/.exec(u)?.[1];
+  if (side) return SIDES[side] ?? [];
+  if (/^sh[a]dow(-(2xs|xs|sm|md|lg|xl|2xl|none|inner))?$/.test(u)) return ["boxShadow"];
+  if (/^opacity-/.test(u)) return ["opacity"];
+  if (/^r[i]ng(-\d+|-\[\d[^\]]*px\])?$/.test(u)) return ["ringWidth"];
+  if (/^leading-/.test(u)) return ["lineHeight"];
+  if (/^tracking-/.test(u)) return ["letterSpacing"];
+  if (/^min-h-/.test(u)) return ["minHeight"];
+  if (/^max-h-/.test(u)) return ["maxHeight"];
+  if (/^min-w-/.test(u)) return ["minWidth"];
+  const flow = /^overflow-(x-|y-)?(auto|hidden|clip|visible|scroll)$/.exec(u);
+  if (flow)
+    return flow[1] ? [flow[1][0] === "x" ? "overflowX" : "overflowY"] : ["overflowX", "overflowY"];
+  if (/^z-/.test(u)) return ["zIndex"];
+  if (/^tr[a]nsition(-(all|colors|opacity|shadow|transform|none|\[.*\]))?$/.test(u))
+    return ["transitionProperty"];
   return [];
 }
+
+const CORNERS: Record<string, string[]> = {
+  t: ["radiusTl", "radiusTr"],
+  b: ["radiusBl", "radiusBr"],
+  l: ["radiusTl", "radiusBl"],
+  r: ["radiusTr", "radiusBr"],
+  s: ["radiusTl", "radiusBl"],
+  e: ["radiusTr", "radiusBr"],
+  tl: ["radiusTl"],
+  tr: ["radiusTr"],
+  bl: ["radiusBl"],
+  br: ["radiusBr"],
+};
+const SIDES: Record<string, string[]> = {
+  t: ["borderT"],
+  b: ["borderB"],
+  l: ["borderL"],
+  r: ["borderR"],
+  x: ["borderL", "borderR"],
+  y: ["borderT", "borderB"],
+};
 
 /** Splits a class at its last top-level colon: the variant prefix, then the utility. */
 function split(cls: string): [string, string] {
@@ -143,14 +185,39 @@ describe("the group check itself", () => {
     expect(conflicts("rounded-lg rounded-[min(var(--radius-md),12px)]")).toHaveLength(1);
     expect(conflicts("size-7 h-8")).toEqual(["height: size-7 + h-8"]);
     expect(conflicts("p-4 px-2").length).toBeGreaterThan(0);
-    expect(conflicts("text-sm text-xs")).toEqual(["font-size: text-sm + text-xs"]);
+    expect(conflicts("text-sm text-xs")).toEqual(["fontSize: text-sm + text-xs"]);
     expect(conflicts("text-sm/relaxed text-[11px]")).toHaveLength(1);
   });
   test("lets one group per variant prefix through, and colours apart from sizes", () => {
     expect(conflicts("rounded-md in-data-[slot=button-group]:rounded-lg")).toEqual([]);
     expect(conflicts("text-sm text-ink bg-bg bg-clip-padding")).toEqual([]);
-    expect(conflicts("px-2 py-1 pl-1.5")).toEqual(["padding-l: px-2 + pl-1.5"]);
+    expect(conflicts("px-2 py-1 pl-1.5")).toEqual(["paddingL: px-2 + pl-1.5"]);
+    expect(conflicts("border-0 border-b overflow-x-hidden overflow-y-auto")).toEqual([]);
+    expect(
+      conflicts("ring-1 focus-visible:ring-2 ring-foreground/10 rounded-lg rounded-b-xl"),
+    ).toEqual([]);
   });
+  // One planted conflict per group. A pair the kit does not ship is split
+  // across two literals, so this file never spells a class Tailwind would emit.
+  const PLANTED: [string, string][] = [
+    ["borderWidth", "border border-0"],
+    ["borderB", `border-b border-${"b-2"}`],
+    ["boxShadow", "shadow-md shadow-lg"],
+    ["opacity", `hover:opacity-90 hover:opa${"city-50"}`],
+    ["ringWidth", "focus-visible:ring-1 focus-visible:ring-2"],
+    ["lineHeight", "leading-none leading-relaxed"],
+    ["letterSpacing", "tracking-tight tracking-widest"],
+    ["minHeight", "min-h-0 min-h-8"],
+    ["maxHeight", "max-h-56 max-h-(--available-height)"],
+    ["overflowY", "overflow-hidden overflow-y-auto"],
+    ["zIndex", "z-10 z-50"],
+    ["transitionProperty", "transition-all transition-colors"],
+    ["radiusBl", `rounded-b-xl rounded-${"bl-md"}`],
+  ];
+  for (const [group, classes] of PLANTED)
+    test(`fails on two classes from ${group}`, () => {
+      expect(conflicts(classes).some((c) => c.startsWith(`${group}: `))).toBe(true);
+    });
 });
 
 const VARIANTS = ["default", "outline", "secondary", "ghost", "destructive", "link"] as const;
