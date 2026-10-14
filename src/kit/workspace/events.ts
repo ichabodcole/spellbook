@@ -22,7 +22,9 @@ export const KIT_EVENTS = [
   "reverted",
   "merged",
   "note.added",
+  "note.edited",
   "note.resolved",
+  "note.reopened",
   "task.created",
   "task.started",
   "task.progress",
@@ -89,7 +91,11 @@ export const KIT_EVENT_TAIL: Readonly<Record<KitEvent, TailRule>> = {
   merged: "wake",
   // A note asks the agent to act; a resolved one closes a thread it may hold.
   "note.added": "wake",
+  // A human's rewrite or reopen puts the note in front of the agent again, and
+  // carries what `note.added` carries. The agent's own reopen confirms its act.
+  "note.edited": "wake",
   "note.resolved": "wake",
+  "note.reopened": "wake",
   // Tasks: a request to pick up, or work in flight that moved.
   "task.created": "wake",
   "task.started": "wake",
@@ -148,7 +154,6 @@ export const SYSTEM_FACTS = [
   "relink",
   "relink.left",
   "relink.kept",
-  "note.edited",
   "note.removed",
   "reveal",
   "slot.migrated",
@@ -162,7 +167,7 @@ type Who = "human" | "agent";
 /** What the log stamps on every frame. */
 export type LogStamp = { id: number; epoch?: string };
 
-/** The note facts `note.added` (and a reopened note) carries when short enough. */
+/** The note facts `note.added` (and a human's `note.edited` or `note.reopened`) carries when short enough. */
 export type NoteFactsPayload = {
   lines?: { from: number; to: number };
   quote?: string;
@@ -245,13 +250,11 @@ export type KitLogEventBody =
       ts?: string;
     }
   | ({ type: "note.added"; doc: string; note: string; by: Who } & NoteFactsPayload)
-  | ({
-      type: "note.resolved";
-      doc: string;
-      note: string;
-      by: Who;
-      resolved: boolean;
-    } & NoteFactsPayload)
+  /** A human's rewrite carries the note's facts; it is owed an answer again. */
+  | ({ type: "note.edited"; doc: string; note: string; by: Who } & NoteFactsPayload)
+  | { type: "note.resolved"; doc: string; note: string; by: Who; resolved: true }
+  /** A human's reopen carries the note's facts, as `note.added` does; the agent's carries none. */
+  | ({ type: "note.reopened"; doc: string; note: string; by: Who } & NoteFactsPayload)
   | {
       type: "task.created";
       task: string;
@@ -402,7 +405,7 @@ export type SystemFactPayload =
   /** A session from before the overlap block: the workspace is, or is inside, the set at `set`. */
   | { fact: "workspace.overlap"; path: string; set: string }
   | { fact: "history.undo" | "history.redo" }
-  | { fact: "note.edited" | "note.removed"; doc: string; note: string }
+  | { fact: "note.removed"; doc: string; note: string }
   | { fact: "reveal"; path: string }
   | { fact: "slot.migrated"; from: number }
   | { fact: "doctor"; findings: number };

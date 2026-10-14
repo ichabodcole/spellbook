@@ -101,12 +101,12 @@ describe("the stored note", () => {
 
   test("resolve stamps resolvedAt, reopen clears it, and the hidden ones return with `all`", () => {
     const { note } = s.addNote({ doc: slug, by: "agent", quote: "Release", body: "x" });
-    const r = s.resolveNote({ doc: slug, id: note.id, resolved: true });
+    const r = s.resolveNote({ doc: slug, id: note.id, resolved: true, by: "agent" });
     expect(r.note.resolved).toBe(true);
     expect(new Date(String(r.note.resolvedAt)).toISOString()).toBe(String(r.note.resolvedAt));
     expect(s.notesOf({ doc: slug }).notes).toHaveLength(0);
     expect(s.notesOf({ doc: slug, all: true }).notes).toHaveLength(1);
-    const reopened = s.resolveNote({ doc: slug, id: note.id, resolved: false });
+    const reopened = s.resolveNote({ doc: slug, id: note.id, resolved: false, by: "agent" });
     expect(reopened.note.resolved).toBe(false);
     expect("resolvedAt" in reopened.note).toBe(false);
     expect(s.notesOf({ doc: slug }).notes).toHaveLength(1);
@@ -114,7 +114,7 @@ describe("the stored note", () => {
 
   test("an unknown note is a 404 listing the notes there are", () => {
     const { note } = s.addNote({ doc: slug, by: "agent", quote: "Release", body: "x" });
-    const e = refusal(() => s.resolveNote({ doc: slug, id: "nope", resolved: true }));
+    const e = refusal(() => s.resolveNote({ doc: slug, id: "nope", resolved: true, by: "agent" }));
     expect(e.status).toBe(404);
     expect(e.choices).toEqual([note.id]);
   });

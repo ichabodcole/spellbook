@@ -220,6 +220,19 @@ export type Note = {
   body: string;
   by: Author;
   createdAt: string;
+  /** When the body was last changed; absent if it never was. */
+  editedAt?: string;
+  /**
+   * Who changed it then: a human's rewrite is owed an answer, the agent's is
+   * one. Absent on an edit made before this was recorded.
+   */
+  editedBy?: Author;
+  /**
+   * When it was last reopened, and by whom: a human reopening a note is asking
+   * again, so the wait is timed from here.
+   */
+  reopenedAt?: string;
+  reopenedBy?: Author;
   resolved: boolean;
   resolvedAt?: string;
 };
@@ -357,6 +370,28 @@ export type Waiting = {
   badge: "working" | "stalled";
   /** The agent said it is still working (`working`) and the snooze holds. */
   acknowledged?: true;
+};
+
+/**
+ * A note the human wrote that the agent has not answered: `Waiting`, for a
+ * note, with the same badges by the same rule (`notesWaiting` in
+ * `waiting.ts`). Derived by the daemon from the notes and the conversation;
+ * nothing stores it, so a reload or a restore re-derives it.
+ */
+export type NoteWaiting = {
+  doc: string;
+  noteId: string;
+  /** The human's latest write: making, rewriting or reopening it. */
+  since: string;
+  badge: Waiting["badge"];
+  acknowledged?: true;
+  /**
+   * Set while the human has asked about this note in the conversation (a
+   * message whose `about.noteId` names it) and that message is unanswered: the
+   * message's id. `badge` is then the conversation's badge, so the two cannot
+   * disagree.
+   */
+  askedIn?: string;
 };
 
 // ── tasks ─────────────────────────────────────────────────────────────────
@@ -581,6 +616,11 @@ export type PublicState = {
    * that is where the clock is. Null when nobody is waiting.
    */
   waiting: Waiting | null;
+  /**
+   * Every note still owed an answer, oldest first, across the session: the
+   * same derivation as `waiting`, for notes, computed in the same place.
+   */
+  notesWaiting: NoteWaiting[];
   /** What the context's undo arrows should show. Not the editor's undo. */
   history: HistoryView;
   /** Links the last rename or move broke, offered for updating; absent when there are none. */
