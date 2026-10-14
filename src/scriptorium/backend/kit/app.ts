@@ -20,8 +20,10 @@
  * shipped ones.
  */
 
-import { homedir } from "node:os";
 import { join, resolve } from "node:path";
+// The kit's one reader of the home: a test preload moves it, and a test run
+// that has the real home is refused it (`os.homedir()` is neither).
+import { homeDir } from "../../../kit/lib/home";
 import type { AppDeclaration } from "../../../kit/workspace/session";
 
 /** The flag. Exactly `1`: any other value, or none, is the shipped Scriptorium. */
@@ -33,7 +35,7 @@ export function kitPathOn(env: NodeJS.ProcessEnv = process.env): boolean {
 
 /** `$SCRIPTORIUM_HOME`, default `~/.scriptorium`: the shipped daemon's rule, read the same way. */
 export function scriptoriumHome(env: NodeJS.ProcessEnv = process.env): string {
-  return resolve(env.SCRIPTORIUM_HOME ?? join(homedir(), ".scriptorium"));
+  return resolve(env.SCRIPTORIUM_HOME ?? join(homeDir(), ".scriptorium"));
 }
 
 /** Where the kit path keeps its sessions: `$SCRIPTORIUM_HOME/kit/sessions`. */

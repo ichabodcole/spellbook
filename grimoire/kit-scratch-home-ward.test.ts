@@ -25,6 +25,9 @@
 // arguments merely contained the word "env". The calibration cells plant each
 // of those shapes.
 //
+// The homedir rule also covers the kit-path Scriptorium
+// (`src/scriptorium/backend/kit/`), which runs on the kit.
+//
 // What a green here does NOT mean: that a spell's own tests (outside src/kit)
 // are isolated. They get the same `HOME`, but nothing checks how they read it.
 
@@ -309,6 +312,24 @@ describe("kit scratch-home ward", () => {
           `${rel(f)}:${line} names homedir, which a test preload cannot move: use homeDir() from src/kit/lib/home.ts`,
         );
     }
+    expect(offenders).toEqual([]);
+  });
+
+  // The kit-path Scriptorium (`src/scriptorium/backend/kit/`) runs on the kit
+  // and is held to the kit's rule: its home comes from homeDir(). The shipped
+  // backend beside it is not on the kit, and is not checked here.
+  test("no file of the kit-path Scriptorium names homedir", () => {
+    const scriptoriumKit = join(REPO_ROOT, "src", "scriptorium", "backend", "kit");
+    const files = walk(scriptoriumKit, (n) => /\.(ts|tsx|mts|cts|js|jsx|mjs|cjs)$/.test(n));
+    // Not vacuous: the app declaration, its CLI and its daemon at least.
+    expect(files).toContain(join(scriptoriumKit, "app.ts"));
+    expect(files.length).toBeGreaterThanOrEqual(3);
+    const offenders: string[] = [];
+    for (const f of files)
+      for (const line of homedirReads(readFileSync(f, "utf8"), f))
+        offenders.push(
+          `${rel(f)}:${line} names homedir, which a test preload cannot move: use homeDir() from src/kit/lib/home.ts`,
+        );
     expect(offenders).toEqual([]);
   });
 
