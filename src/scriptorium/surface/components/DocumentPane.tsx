@@ -321,6 +321,7 @@ export function DocumentPane({
               </span>
             </div>
             <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1">
+              {/* ⚠ ORDER-DEPENDENT: on these two Buttons FADE's transition-opacity beats the recipe's transition-all by stylesheet order only; without it their hover background would fade over 300ms too. */}
               <Button
                 variant="ghost"
                 size="chrome"

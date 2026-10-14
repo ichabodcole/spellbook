@@ -137,7 +137,7 @@ export function AddPath({
         aria-controls={listId}
         aria-activedescendant={highlight >= 0 ? `${listId}-${highlight}` : undefined}
         spellCheck={false}
-        className="h-8 min-w-0 flex-1 font-mono text-xs"
+        className="flex-1 font-mono"
         onKeyDown={(e) => {
           if (e.key === "ArrowDown" && suggestions.length) {
             e.preventDefault();

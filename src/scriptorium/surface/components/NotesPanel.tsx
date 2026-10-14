@@ -307,7 +307,7 @@ export function NotesPanel({
           <button
             type="button"
             onClick={() => setShowResolved((v) => !v)}
-            className="mt-2 w-full rounded-sm px-1 py-1 text-[11px] text-ink-faint"
+            className="mt-2 w-full rounded-sm px-1 py-1 text-[11px] text-ink-faint hover:text-ink"
           >
             {showResolved ? "Hide" : "Show"} {resolved.length} resolved
           </button>

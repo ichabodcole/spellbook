@@ -127,7 +127,7 @@ export function VersionMenu({
         <span className="font-medium tabular-nums">v{active}</span>
         <ChevronDownIcon aria-hidden className="size-3 shrink-0 text-ink-faint" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-80">
+      <DropdownMenuContent align="start" size="md">
         <div className="border-b border-edge px-2 py-1.5">
           <p className="text-sm font-medium text-ink">Versions</p>
           <p className="text-xs text-ink-faint">
