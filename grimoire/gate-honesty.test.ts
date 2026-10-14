@@ -323,6 +323,15 @@ import { join } from "node:path";
 // Scriptorium's surface moved onto src/kit/ui, and the two blocks base.css
 // now provides (the raw --foreground/--secondary aliases and the pointer
 // cursor rule) were deleted from the spell's sheet.
+//
+// ⛔ RE-DECLARED 2026-10-14 — 29/2,507 -> 29/2,523, from the object's own sum.
+// MEMBERSHIP DID NOT MOVE; one entry grew:
+//     +16  src/kit/theme/base.css   202 -> 218
+// three more `@source not` lines and their notes, from the workspace port:
+// src/kit/workspace/ and src/kit/lib/ (daemon code and pure helpers, whose
+// prose was becoming utilities) and every test file under src/kit/ (whose
+// example class strings were still shipping). Measured by diffing every
+// spell's rebuilt stylesheet against the committed one: rules only removed.
 const DECLARED_BLIND: Record<string, number> = {
   "src/digestify/surface/styles.css": 515,
   "src/digestify/surface/index.html": 26,
@@ -334,7 +343,7 @@ const DECLARED_BLIND: Record<string, number> = {
   "src/magpie/surface/styles.css": 186,
   "src/imago/surface/styles.css": 167,
   "plugins/spellbook/skills/magpie/scripts/remove.py": 145,
-  "src/kit/theme/base.css": 202,
+  "src/kit/theme/base.css": 218,
   "src/astrolabe/surface/styles.css": 104,
   "src/astrolabe/surface/index.html": 35,
   "src/mind-mapper/surface/index.html": 52,
