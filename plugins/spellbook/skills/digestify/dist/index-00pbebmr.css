@@ -2519,6 +2519,10 @@
     --tw-enter-translate-y: calc(2 * var(--spacing));
   }
 
+  .data-\[size\=md\]\:w-80[data-size="md"] {
+    width: calc(var(--spacing) * 80);
+  }
+
   :is(.\*\*\:data-\[slot\=kbd\]\:relative *)[data-slot="kbd"] {
     position: relative;
   }

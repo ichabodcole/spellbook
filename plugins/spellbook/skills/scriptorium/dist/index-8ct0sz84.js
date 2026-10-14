@@ -23988,7 +23988,7 @@ function ChatComposer({
             onClick: onDrop,
             "aria-label": "Clear the selection",
             title: "Clear the selection — it stops riding along, and stops being highlighted",
-            className: "shrink-0 rounded-sm p-0.5 text-ink-faint",
+            className: "shrink-0 rounded-sm p-0.5 text-ink-faint hover:text-ink",
             children: /* @__PURE__ */ jsx_runtime5.jsx(X, {
               "aria-hidden": true,
               className: "size-3"
@@ -35630,7 +35630,7 @@ function AddPath({
         "aria-controls": listId,
         "aria-activedescendant": highlight >= 0 ? `${listId}-${highlight}` : undefined,
         spellCheck: false,
-        className: "h-8 min-w-0 flex-1 font-mono text-xs",
+        className: "flex-1 font-mono",
         onKeyDown: (e) => {
           if (e.key === "ArrowDown" && suggestions.length) {
             e.preventDefault();
@@ -59962,6 +59962,7 @@ function DropdownMenuContent({
   alignOffset = 0,
   side = "bottom",
   sideOffset = 4,
+  size: size4 = "default",
   className,
   ...props
 }) {
@@ -59974,7 +59975,8 @@ function DropdownMenuContent({
       sideOffset,
       children: /* @__PURE__ */ jsx_runtime24.jsx(exports_index_parts2.Popup, {
         "data-slot": "dropdown-menu-content",
-        className: cn2("z-50 max-h-(--available-height) w-(--anchor-width) min-w-32 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 outline-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:overflow-hidden data-closed:fade-out-0 data-closed:zoom-out-95", className),
+        "data-size": size4,
+        className: cn2("z-50 max-h-(--available-height) w-(--anchor-width) min-w-32 data-[size=md]:w-80 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 outline-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:overflow-hidden data-closed:fade-out-0 data-closed:zoom-out-95", className),
         ...props
       })
     })
@@ -60062,7 +60064,7 @@ function VersionMenu({
       }),
       /* @__PURE__ */ jsx_runtime25.jsxs(DropdownMenuContent, {
         align: "start",
-        className: "w-80",
+        size: "md",
         children: [
           /* @__PURE__ */ jsx_runtime25.jsxs("div", {
             className: "border-b border-edge px-2 py-1.5",
@@ -61082,7 +61084,7 @@ function NotesPanel({
           resolved.length > 0 && /* @__PURE__ */ jsx_runtime28.jsxs("button", {
             type: "button",
             onClick: () => setShowResolved((v) => !v),
-            className: "mt-2 w-full rounded-sm px-1 py-1 text-[11px] text-ink-faint",
+            className: "mt-2 w-full rounded-sm px-1 py-1 text-[11px] text-ink-faint hover:text-ink",
             children: [
               showResolved ? "Hide" : "Show",
               " ",
