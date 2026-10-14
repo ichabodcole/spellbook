@@ -24,9 +24,18 @@ import { homedir } from "node:os";
 /** The shape of the preload's scratch home: `<temp>/spellbook-test/run-<pid>-…/home`. */
 const SCRATCH_HOME = /\/spellbook-test\/run-\d+-[^/]+\/home$/;
 
-/** Whether this process is a test run, or a child one started. */
-export function underTest(): boolean {
-  return process.env.NODE_ENV === "test";
+/**
+ * Whether this process is a test run, or a child one started.
+ *
+ * ⛔ READ THROUGH A PARAMETER, NEVER AS `process.env.NODE_ENV`. A bundler that
+ * defines `process.env.NODE_ENV` (Spellbook's backend build pins it to
+ * "production", so dependencies resolve their production builds) rewrites that
+ * exact member chain, and this check compiles to `false`: every under-test
+ * guard on it (the real home, the real Trash) is gone from the built daemon a
+ * test spawns. `env.NODE_ENV` on a parameter is not the chain, so it survives.
+ */
+export function underTest(env: NodeJS.ProcessEnv = process.env): boolean {
+  return env.NODE_ENV === "test";
 }
 
 /** The home folder: `HOME` when it is set, else the OS's answer. */

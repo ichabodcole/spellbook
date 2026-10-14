@@ -18,7 +18,6 @@ import {
   type WorkspaceDaemon,
   type WorkspaceDaemonOptions,
 } from "../../../kit/workspace/server";
-import { SessionError } from "../../../kit/workspace/session";
 import { kitSessionsRoot, scriptoriumApp } from "./app";
 
 /** What a browser shows at the session's URL while the kit path has no surface. */
@@ -32,35 +31,12 @@ surface yet: the agent works with it through the CLI, and you can follow along i
 </body>
 `;
 
-/**
- * Whether this daemon runs under `bun test` (which sets `NODE_ENV=test`, and a
- * test's spawned CLI and daemon inherit it).
- *
- * ⛔ READ THROUGH A PARAMETER, NEVER AS `process.env.NODE_ENV`. The backend
- * build defines that exact member chain as `"production"` (`src/build.ts`), so
- * the kit's own under-test refusal of the real Trash, written that way, is
- * compiled out of `dist/server.js`. A daemon spawned by a test through the
- * launcher runs that artifact, and a delete would reach the real Trash. The
- * define matches the chain as written; `env.NODE_ENV` on a parameter is not it,
- * so this check survives the build.
- */
-export function underTestAtRuntime(env: NodeJS.ProcessEnv = process.env): boolean {
-  return env.NODE_ENV === "test";
-}
-
-/** Under test, the Trash refuses: the kit's own refusal, kept alive in the built artifact. */
-export const refuseTrashUnderTest = async (): Promise<never> => {
-  throw new SessionError("the real Trash is not used under test: pass a trash function", 409);
-};
-
 export function kitDaemonOptions(
   overrides: Partial<WorkspaceDaemonOptions> = {},
 ): WorkspaceDaemonOptions {
   return {
     app: scriptoriumApp,
     sessionsRoot: kitSessionsRoot(),
-    // Out of test, nothing is passed and the kit uses the system Trash.
-    ...(underTestAtRuntime() ? { trash: refuseTrashUnderTest } : {}),
     http: (req, url) =>
       req.method === "GET" && url.pathname === "/"
         ? new Response(NO_SURFACE_PAGE, {

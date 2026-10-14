@@ -33,7 +33,7 @@ import { bundleDisplayName, bundleOf, bundleTypeOf, linkPlacesText } from "../li
 import { EXTENSION_OF, isImageName, sniffImage } from "../lib/docFormat.ts";
 import { findHeading, headingPlainText, lineRange, nearestHeading } from "../lib/headingAnchor.ts";
 import { headingsOf } from "../lib/headings.ts";
-import { homeDir } from "../lib/home.ts";
+import { homeDir, underTest } from "../lib/home.ts";
 import {
   describeImageImport,
   IMAGE_PREF_KEYS,
@@ -1405,7 +1405,9 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     // --- the Trash: the human's delete, never the agent's ---------------------
     const trashFn: TrashFn =
       opts.trash ??
-      (process.env.NODE_ENV === "test"
+      // `underTest()`, not `process.env.NODE_ENV`: a build that defines the
+      // latter would compile this refusal out (see `../lib/home.ts`).
+      (underTest()
         ? async () => {
             throw new SessionError(
               "the real Trash is not used under test: pass a trash function",
