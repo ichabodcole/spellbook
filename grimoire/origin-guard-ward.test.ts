@@ -86,6 +86,27 @@ describe("every daemon refuses a foreign origin", () => {
     expect(missing).toEqual([]);
   });
 
+  test("⛔ EVERY CALL PASSES THE SERVER'S BOUND HOSTNAME as its third argument", () => {
+    // Without it the guard takes the loopback-only reading, and a spell started
+    // with a non-loopback `--host` refuses its own CLI (whose `Host` is the bound
+    // address). The argument is the server's own `hostname` (`srv.hostname`, or
+    // `srv?.hostname` where the server is optional), so the shape is checked:
+    // a call with two arguments, or with something else third, is a miss.
+    const wrong: string[] = [];
+    for (const f of files) {
+      const c = code(readFileSync(f, "utf8"));
+      for (const m of c.matchAll(/refuseForeignOrigin\(([^()]*)\)/g)) {
+        const args = (m[1] ?? "")
+          .split(",")
+          .map((a) => a.trim())
+          .filter((a) => a !== "");
+        if (args.length !== 3 || !/^[A-Za-z_$][\w$]*\??\.hostname$/.test(args[2] ?? ""))
+          wrong.push(`${show(f)} — refuseForeignOrigin(${m[1]})`);
+      }
+    }
+    expect(wrong).toEqual([]);
+  });
+
   test("⛔ AND IMPORTS IT FROM THE KIT RATHER THAN KEEPING A COPY", () => {
     // A local re-implementation is how the fifth copy of the error taxonomy
     // happened (register item, filed not fixed). One definition, or the next
