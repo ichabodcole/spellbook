@@ -7,7 +7,7 @@ description:
   split 44k lines into cycles, and where Scriptorium's wiki layer and kept
   features plug in."
 status: stable
-lifecycle: active
+lifecycle: done
 id: 01a138d7-624c-766c-bce7-d6ac23d90ee7
 kind: research
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
@@ -54,7 +54,8 @@ lean on the new model?
 
 ## Definition of done
 
-- [ ] A write-up that answers the three questions with evidence from both
+- [x] A write-up that answers the three questions with evidence from both
       codebases, and recommends a port base and a cycle split
 - [x] Cole has ruled on the port base and the workspace model
-- [ ] The next cycle is drafted from the ruling
+- [x] The next cycle is drafted from the ruling
+      ([2026-10-workspace-daemon](../../cycles/2026-10-workspace-daemon.md))

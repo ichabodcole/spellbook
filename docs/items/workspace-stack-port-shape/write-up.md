@@ -7,7 +7,7 @@ description:
   beside the shipped one, daemon first; six kit slots are missing for the wiki
   layer.
 tags: [kit, scriptorium, story-studio]
-status: draft
+status: stable
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
 ---
 
@@ -714,14 +714,14 @@ no-stake verifier. Run item 1 first, then 2–4 in parallel, then 5.
 
 1. The lead files cycle 1's five items and the cycle document from the list
    above. Cole approves them.
-2. **Rulings to ask Cole for**, best before cycle 1 starts:
-   - the HTML rule for links (recommend the kit's: mask all raw HTML);
-   - whether Scriptorium keeps an undo for setting the workspace (the kit has
-     none);
-   - whether Scriptorium's `note.edited` and `note.reopened` events stay as they
-     are (recommend yes, as part of the E65 merge);
-   - `SCRIPTORIUM_KIT` and a separate sessions root as the dual path's
-     mechanism.
+2. **Ruled (Cole, 2026-10-14):**
+   - **Links inside raw HTML:** the kit's rule. All raw HTML is masked.
+   - **Undo for setting the workspace:** Scriptorium keeps it for now. The kit
+     has none, so it becomes a seam to add when Scriptorium moves onto the kit's
+     workspace verbs.
+   - **`note.edited` and `note.reopened`:** kept, as part of the E65 merge.
+   - **The dual path:** a second Scriptorium built on the kit, side by side,
+     behind `SCRIPTORIUM_KIT` with its own sessions root.
 3. On `kit-parity`, tell Story Studio's agent the port base and the picks, and
    ask about `kit-floating-composer`'s timing before cycle 5.
 4. The item's definition-of-done line "the next cycle is drafted from the
