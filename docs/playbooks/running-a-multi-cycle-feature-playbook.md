@@ -74,6 +74,13 @@ moved to project-docs 9.0.0.
    `pdocs view feature`, what happened and what carried over by the last
    Outcome. If you want a handoff, write a better Outcome. The `HANDOFF`
    template is for deployments only.
+8. **Give every delegated verifier a scratch `HOME` for each spell CLI it
+   drives.** A verifier that compares a branch against its base runs real
+   launchers. Without a scratch `HOME`, a write verb lands on the human's real
+   daemon. In the kit-foundation cycle, a `send` created a channel on Cole's
+   live grapevine. Put the instruction in the brief itself, next to "never kill
+   a process by matching `server.ts`", and have the verifier report the `HOME`
+   it used.
 
 ## Verification
 
@@ -88,5 +95,7 @@ moved to project-docs 9.0.0.
       no body edits after the close commit, only erratum lines.
 - [ ] `grep -nE '[a-zA-Z_./-]+\.(ts|md|json):[0-9]+' <closed plan>` returns
       nothing that is not under a pinned-commit line.
+- [ ] Every verifier brief in the cycle says to run spell CLIs under a scratch
+      `HOME`, and each report names the `HOME` it used.
 - [ ] Nothing named like a handoff (`handoff*.md`, `next-*.md`) exists in the
       feature's folder unless it is a deployment handoff.

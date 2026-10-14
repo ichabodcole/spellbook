@@ -6,7 +6,7 @@ description:
   Spellbook's kit, with Scriptorium as its first adopter.
 tags: [kit, scriptorium, story-studio]
 status: stable
-lifecycle: active
+lifecycle: closed
 started: 2026-10-13
 appetite:
   Stop when Scriptorium's surface runs on the ported src/kit/ui and every
@@ -15,6 +15,7 @@ appetite:
   one.
 after: []
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
+closed: 2026-10-13
 ---
 
 # Kit foundation
@@ -52,15 +53,54 @@ planned.
 
 ## Outcome
 
-_Written at close, not before — and for an `abandoned` cycle too._
+**Shipped:**
 
-[What shipped. What was cut, and why. What carried over to the next cycle: each
-item still open, and the cycle it joined. What was learned that will change how
-the next cycle is scoped. For an `abandoned` cycle, what was falsified: the
-assumption that stopped it. Two paragraphs is usually enough; the point is that
-a reader six months from now can tell what happened without reading every
-session.]
+- **The kit foundation, in `src/kit`:**
+  - `lib`'s `cn` and `storage`;
+  - `wire`'s drain skip, exit codes, `Host` guard, session pointers and
+    `startDaemon`;
+  - the theme with Spellbook's palette;
+  - the Base UI primitives, with a happy-dom harness and a recipe-conflict
+    guard;
+  - per-verb CLI help in the registry.
+- **The primitives rule, moved into the kit,** with Cole's opt-out.
+- **Scriptorium on the kit's primitives,** pixel-identical, verified over 52
+  screenshot pairs.
+
+Every item passed a no-stake verification, and the branch passed a two-reviewer
+finalize review after one fix round. The gate ran 3,483 tests, and acc is
+conformant on all nine spells.
+
+**Cut:** the Atlas/Scriptorium comparison, moved to after the shell port. Once
+the primitives converge on the kit and the shell brings Atlas's layout by
+default, a before-the-port look would have predicted what the port settles. It
+stays open as `kit-atlas-scriptorium-comparison`.
+
+**Not in Scope, and what changed how the next cycle is scoped:**
+
+- **Story Studio's kit relies on tailwind-merge without having it.** Its recipes
+  clashed with their own sizes. The kit now forbids base/variant clashes, and
+  Story Studio has the fix.
+- **A raw `--help` scan dropped commands at exit 0.** Two narrow fixes leaked
+  before "let the parser decide" held. Ported code that interprets input needs a
+  differential test against the base, not shape-by-shape fixes.
+- **Test files under `src/kit` ship classes into every spell's CSS,** because
+  Tailwind scans them.
+
+Seven follow-ups are filed, none of them blocking:
+
+- `kit-dom-harness-gaps`
+- `kit-primitives-css-opt-in`
+- `declare-micromark-gfm`
+- `kit-discovery-pointer-hardening`
+- `kit-cli-registry-followups`
+- `origin-ward-same-server`
+- `scriptorium-cn-semantics`
+
+The next cycle is the workspace stack. It gets the evolutions listed in
+[Workspace Kit](../features/workspace-kit/feature.md), and Story Studio's links
+port-back may already be there when it starts.
 
 ## Sessions
 
-- cycle/kit-foundation (open)
+- cycle/kit-foundation (landed 2026-10-13)

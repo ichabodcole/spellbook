@@ -5,7 +5,7 @@ description:
   "Fire registry-primitives-variant-extends-recipe's own repeal: the rule moves
   to src/kit/ui and gains the opt-out for spells that skip the kit's UI."
 status: stable
-lifecycle: active
+lifecycle: done
 id: 01a13706-977e-7489-9eef-6b7bfd11797c
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-13 }

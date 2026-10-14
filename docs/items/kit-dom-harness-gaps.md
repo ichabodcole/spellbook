@@ -28,6 +28,10 @@ test, the preload removes a DOM that no file has claimed. The no-stake verifier
 - **Outside the root:** Bun reads `bunfig.toml` from the cwd only, so `bun test`
   run from `src/<spell>/` or a skill directory has no guard. No repo workflow
   does that today.
+- **Extensionless imports:** the preload's re-registration hook matches only
+  specifiers ending in `.ts`. A file that imports `.../registerDom` without the
+  extension stays order-dependent. Every import uses `.ts` today. (Finalize
+  re-verification, 2026-10-13.)
 - **`THEME_TOKENS` is hand-written:** a token added to `base.css` but not to the
   list goes unpinned.
 
