@@ -50,6 +50,26 @@ describe("what counts as a link", () => {
     ]);
   });
 
+  test("a wiki link touching a markdown link on either side is still read", () => {
+    // A wiki link is dropped only when it overlaps a markdown link; one that
+    // starts exactly where a markdown link ends, or ends exactly where one
+    // starts, does not overlap it.
+    const read = (s: string) => extractLinks(s).map((l) => [l.kind, l.target]);
+    expect(read("[a](b)[[c]] and [x](y) [[z]]")).toEqual([
+      ["markdown", "b"],
+      ["wiki", "c"],
+      ["markdown", "y"],
+      ["wiki", "z"],
+    ]);
+    expect(read("[[v]][x](y)")).toEqual([
+      ["wiki", "v"],
+      ["markdown", "y"],
+    ]);
+    // A wiki link inside a markdown label is the link, as with a markdown
+    // link inside a label: the outer one is not read.
+    expect(read("[x [[w]]](y)")).toEqual([["wiki", "w"]]);
+  });
+
   test("⛔ a link inside a FENCE is an example, not a link", () => {
     const body = ["Real: [a](./real.md)", "", "```md", "[fake](./fake.md)", "```", ""].join("\n");
     expect(extractLinks(body).map((l) => l.target)).toEqual(["./real.md"]);
