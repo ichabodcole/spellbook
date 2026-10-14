@@ -63,8 +63,9 @@
  * usage, its line, each own flag with its `flagHelp` line, the global flags in
  * their own block, and its `examples`. Every row answers `--help`, the auto
  * rows and a verbless root included. The check runs before contract 5, on the
- * tokens before any `--`, and skips a token in a value-taking flag's value
- * slot (`--notes --help` stays the parser's ambiguity refusal). A row's
+ * tokens before any `--`, and counts a `--help` only when the argv WITHOUT
+ * it parses for the row (`asksForHelp`), so a value-slot `--help` stays the
+ * parser's refusal. A row's
  * `requiredFlags` drop their brackets in its usage and are refused as missing
  * after the arity check.
  *
@@ -518,31 +519,39 @@ export function defineCli<const O extends OptionsTable>(spec: CliSpec<O>): Cli {
   };
 
   /**
-   * Does `args` ask for this row's help? A `--help` (or `-h`, when no option
-   * claims that short) among the tokens before any `--` — but NOT one sitting
-   * in the value slot of a value-taking flag: `add t --notes --help` is the
-   * parser's to refuse as ambiguous (exit 2), as it was before per-verb help,
-   * never a silent help-and-drop. `--notes=--help` is one token and stores the
-   * literal, so it never reads as `--help` here.
+   * Does `args` ask for this row's help? THE RULE IS STRUCTURAL: a `--help`
+   * (or `-h`, when no option claims that short) before the first bare `--` is
+   * a help request ONLY IF removing that one token leaves an argv this row's
+   * parser accepts — node's strict parse against the whole table, plus the
+   * misplaced-flag check (contract 5). Anything else is refused by the normal
+   * path exactly as it was before per-verb help, when `--help` was just an
+   * unknown flag. So every way the token can sit in a value slot — `--notes
+   * --help`, `--notes --owner --help`, `-qn -h`, `--notes -- --help` — stays
+   * the parser's exit 2, never a silent help-and-drop. Arity and `check` are
+   * NOT required: help for an incomplete command is the point of asking.
+   * The scan stops at the first `--`, value or not, which is the conservative
+   * side: a `--help` after it is never a request. `--notes=--help` is one
+   * token, stores the literal, and never reads as `--help` here.
    */
-  const asksForHelp = (args: readonly string[]): boolean => {
-    const takesValue = (t: string): boolean => {
-      if (t.startsWith("--"))
-        return !t.includes("=") && spec.options[t.slice(2)]?.type === "string";
-      if (t.startsWith("-") && t.length === 2) {
-        const k = shortToKey.get(t.slice(1));
-        return k !== undefined && spec.options[k]?.type === "string";
+  const asksForHelp = (row: Row, args: readonly string[]): boolean => {
+    const end = args.indexOf("--");
+    const scan = end === -1 ? args.length : end;
+    const accepted = new Set(row.accepted);
+    for (let i = 0; i < scan; i++) {
+      const t = args[i];
+      if (t !== "--help" && !(t === "-h" && !shortToKey.has("h"))) continue;
+      const rest = [...args.slice(0, i), ...args.slice(i + 1)];
+      try {
+        const { values } = parseArgs({
+          args: rest,
+          options: parseOptions,
+          strict: true,
+          allowPositionals: row.allowPositionals,
+        });
+        if (Object.keys(values).every((k) => accepted.has(k))) return true;
+      } catch {
+        // This removal leaves an argv the row refuses; try the next candidate.
       }
-      return false;
-    };
-    for (let i = 0; i < args.length; i++) {
-      const t = args[i] as string;
-      if (t === "--") return false;
-      if (takesValue(t)) {
-        i++; // the next token is this flag's value slot, whatever it spells
-        continue;
-      }
-      if (t === "--help" || (t === "-h" && !shortToKey.has("h"))) return true;
     }
     return false;
   };
@@ -709,7 +718,7 @@ export function defineCli<const O extends OptionsTable>(spec: CliSpec<O>): Cli {
     // it — the auto rows (`help --help`, `schema --help`) and a verbless root
     // (`digestify --file x --help`) included. `asksForHelp` names the one place
     // a `--help` token is not a request.
-    if (asksForHelp(args)) {
+    if (asksForHelp(row, args)) {
       process.stdout.write(`${renderRowHelp(row)}\n`);
       return 0;
     }

@@ -525,37 +525,149 @@ describe("help <verb>: value slots, global flags, built-in rows and a verbless r
     ],
   });
 
-  test("`--help` in a value-taking flag's slot is NOT a help request: refused as before, nothing runs", async () => {
-    // Before this, `add t --notes --help` printed help at exit 0 and silently
-    // dropped the add — an exit-code reader believed the task was added.
+  // The value-slot cells use their own table: string flags (one with a short),
+  // booleans (one with a short, for clusters) and a value-taking global.
+  const slotRan: Invocation[] = [];
+  const SLOT_OPTIONS = {
+    notes: { type: "string", short: "n" },
+    owner: { type: "string" },
+    quiet: { type: "boolean", short: "q" },
+    session: { type: "string" },
+    other: { type: "boolean" },
+  } as const;
+  const slotSpec = {
+    name: "board",
+    version: () => ({}),
+    globalFlags: ["session"],
+    commands: [
+      {
+        name: "add",
+        flags: ["notes", "owner", "quiet"],
+        positionals: [{ name: "title", required: false }],
+        describe: "add a task",
+        run: (inv: Invocation) => {
+          slotRan.push(inv);
+        },
+      },
+      { name: "other", flags: ["other"], positionals: [], describe: "", run: () => {} },
+    ],
+  } as const;
+  const slot = defineCli({ ...slotSpec, options: SLOT_OPTIONS } as Parameters<
+    typeof defineCli<typeof SLOT_OPTIONS>
+  >[0]);
+  // BASE, i.e. before per-verb help: `--help` and `-h` were tokens the table
+  // did not know — exactly an unknown long and an unknown short. This CLI is
+  // the same table with the two spelled as such, so it answers as base did.
+  const UNKNOWN_LONG = "--zz-not-help";
+  const UNKNOWN_SHORT = "-Z";
+  const toBase = (argv: string[]) => {
+    const end = argv.indexOf("--");
+    return argv.map((t, i) =>
+      end !== -1 && i > end ? t : t === "--help" ? UNKNOWN_LONG : t === "-h" ? UNKNOWN_SHORT : t,
+    );
+  };
+  const run = async (argv: string[]) => {
+    slotRan.length = 0;
+    const r = await capture(() => slot.main(argv));
+    return { ...r, ran: slotRan.length };
+  };
+
+  test("`--help` anywhere a value slot can reach it is NOT a request: exit 2 as on base, nothing runs", async () => {
+    // Before this, each of these printed help at exit 0 and silently dropped
+    // the add — an exit-code reader believed the task was added.
     for (const argv of [
       ["add", "t", "--notes", "--help"],
       ["add", "t", "--notes", "-h"],
       ["add", "t", "-n", "--help"],
+      ["add", "t", "--notes", "--owner", "--help"], // two value flags in a row
+      ["add", "t", "--notes", "--quiet", "--help"], // a boolean in the value slot
+      ["add", "t", "--notes", "-n", "--help"],
+      ["add", "t", "--notes", "--", "--help"], // `--` in the value slot
+      ["add", "t", "-qn", "-h"], // a cluster ending in a string short
       ["add", "t", "--session", "--help"], // a value-taking GLOBAL
     ]) {
-      ran.length = 0;
-      const r = await capture(() => cli.main(argv));
-      expect(r.code).toBe(2);
+      const r = await run(argv);
+      const base = await run(toBase(argv));
+      expect({ argv, code: r.code }).toEqual({ argv, code: 2 });
+      expect(base.code).toBe(2);
       expect(r.out).toBe("");
       expect(envelope(r).error.kind).toBe("usage");
-      expect(ran).toHaveLength(0);
+      expect(r.ran).toBe(0);
     }
   });
 
-  test("the equals form stores the literal, and a later `--help` is still a request", async () => {
-    ran.length = 0;
-    expect((await capture(() => cli.main(["add", "t", "--notes=--help"]))).code).toBe(0);
-    expect(ran[0]?.flags.notes).toBe("--help");
-    ran.length = 0;
-    const r = await capture(() => cli.main(["add", "t", "--notes", "x", "--help"]));
+  test("a real request still answers: after a value, after a boolean; the equals form and `--` stay literal", async () => {
+    for (const argv of [
+      ["add", "t", "--notes", "x", "--help"],
+      ["add", "t", "--quiet", "--help"],
+      ["add", "t", "-q", "-h"],
+      ["add", "--help"],
+    ]) {
+      const r = await run(argv);
+      expect({ argv, code: r.code }).toEqual({ argv, code: 0 });
+      expect(r.out).toStartWith("usage: add");
+      expect(r.ran).toBe(0);
+    }
+    let r = await run(["add", "t", "--notes=--help"]);
     expect(r.code).toBe(0);
-    expect(r.out).toStartWith("usage: add");
-    expect(ran).toHaveLength(0);
-    // After `--` it is text, as before.
-    ran.length = 0;
-    expect((await capture(() => cli.main(["add", "--", "--help"]))).code).toBe(0);
-    expect(ran[0]?.pos).toEqual(["--help"]);
+    expect(slotRan[0]?.flags.notes).toBe("--help");
+    r = await run(["add", "--", "--help"]);
+    expect(r.code).toBe(0);
+    expect(slotRan[0]?.pos).toEqual(["--help"]);
+  });
+
+  test("DIFFERENTIAL: help only ever replaces a base exit 2, and only when the argv minus the help token runs", async () => {
+    const shapes: string[][] = [];
+    const pieces = [
+      ["--notes"],
+      ["--notes", "x"],
+      ["--owner"],
+      ["-n"],
+      ["-qn"],
+      ["-q"],
+      ["--quiet"],
+      ["--session"],
+      ["--session", "s"],
+      ["--"],
+      ["--other"], // known to the table, misplaced on `add`
+      ["--bogus"],
+      ["t"],
+    ];
+    for (const help of ["--help", "-h"])
+      for (const a of pieces)
+        for (const b of [[], ...pieces]) {
+          shapes.push(["add", ...a, help, ...b]);
+          shapes.push(["add", ...a, ...b, help]);
+        }
+    let helped = 0;
+    for (const argv of shapes) {
+      const r = await run(argv);
+      const base = await run(toBase(argv));
+      if (r.out.startsWith("usage: add")) {
+        helped++;
+        expect({ argv, base: base.code }).toEqual({ argv, base: 2 });
+        expect(r.ran).toBe(0);
+        const i = argv.findIndex((t) => t === "--help" || t === "-h");
+        // Valid = the row's PARSER accepts it: it runs, or the only refusal is
+        // arity (`add t --help t`), which help for an incomplete or overfull
+        // command is allowed to answer.
+        const without = await run([...argv.slice(0, i), ...argv.slice(i + 1)]);
+        const parsed =
+          (without.code === 0 && without.ran === 1) ||
+          (without.code === 2 &&
+            without.ran === 0 &&
+            /unexpected argument|missing required </.test(envelope(without).error.message));
+        expect({ argv, parsed }).toEqual({ argv, parsed: true });
+      } else {
+        // Not help: the new code answers exactly as base did.
+        expect({ argv, code: r.code, ran: r.ran }).toEqual({
+          argv,
+          code: base.code,
+          ran: base.ran,
+        });
+      }
+    }
+    expect(helped).toBeGreaterThan(20); // the property is not vacuous
   });
 
   test("global flags get their own block; a row with no description prints no blank block", () => {
