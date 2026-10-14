@@ -284,6 +284,23 @@ describe("the kit path, end to end through Scriptorium's launchers", () => {
     expect(refused).toMatchObject({ op: "error" });
   });
 
+  test("under test, the built daemon refuses the real Trash: a human delete leaves the file", async () => {
+    // The sentinel: a file of our own in the scratch docs, on the context list
+    // through `add`. Were the refusal compiled out, this would reach the real
+    // Trash, so the assertion is that it is refused and the file is still here.
+    const doomed = join(docs, "extra", "e.md");
+    expect(existsSync(doomed)).toBe(true);
+    surface.send({ op: "trash", path: doomed, rid: "t1" } as never);
+    const refused = await surface.waitFor(
+      (f) => f.op === "error" && (f as { requestId?: unknown }).requestId === "t1",
+    );
+    expect((refused as { message?: string }).message).toContain(
+      "the real Trash is not used under test",
+    );
+    expect(surface.frames.some((f) => f.op === "trash.done")).toBe(false);
+    expect(readFileSync(doomed, "utf8")).toBe("# E\n");
+  });
+
   test("doctor answers with findings, each saying what to do", async () => {
     const r = await cli("doctor", "--session", sessionId);
     expect(r.err).toBe("");
