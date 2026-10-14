@@ -72,6 +72,24 @@ const DIFFERENCES = {
    * (its chat writes absolute paths), so `/w/other/notes.md` is `outside`.
    */
   rootFallback: "found: the kit also tries a `/` target as a filesystem path",
+  /**
+   * Found here: a missing image or SVG. The kit looks for an image's name as
+   * written only; Scriptorium, which has no image types, also tries it with
+   * `.md` added (`gone.png.md`).
+   */
+  imageLookups: "found: the kit never adds `.md` to an image or SVG name",
+  /**
+   * Found here, on the click path only (extraction drops these): an empty
+   * target, `?rel=x` or `#top`. Scriptorium answers the document's own folder;
+   * the kit answers a miss without asking the disk.
+   */
+  emptyTarget: "found: an empty target is a miss in the kit, the document's folder in Scriptorium",
+  /**
+   * Found here, the resolver's side of §3e.3: a markdown target shaped like a
+   * scheme with no document name after it (`Note:Thing`, `C:/x.md`) is a
+   * scheme to the kit, which asks nothing; Scriptorium looks for it as a path.
+   */
+  colonResolve: "found: the kit's resolver refuses a scheme-shaped markdown target",
 } as const;
 type Difference = keyof typeof DIFFERENCES;
 
@@ -169,7 +187,6 @@ const asKit = (i: BundleIndex): KitIndex => ({
  */
 const probed = (i: BundleIndex): { index: BundleIndex; looked: string[] } => {
   const looked: string[] = [];
-  const isDir = i.isDir;
   return {
     looked,
     index: {
@@ -178,14 +195,14 @@ const probed = (i: BundleIndex): { index: BundleIndex; looked: string[] } => {
         looked.push(`file ${p}`);
         return i.exists(p);
       },
-      ...(isDir
-        ? {
-            isDir: (p: string) => {
-              looked.push(`dir ${p}`);
-              return isDir(p);
-            },
-          }
-        : {}),
+      // ⚠ ALWAYS GIVEN, and always written down. Scriptorium's resolver skips
+      // the folder questions when an index has no `isDir`, which the kit's
+      // cannot; a fixture without one is "no folder anywhere", so both are
+      // handed that, and every folder question either side asks is recorded.
+      isDir: (p: string) => {
+        looked.push(`dir ${p}`);
+        return i.isDir?.(p) ?? false;
+      },
     },
   };
 };
@@ -299,6 +316,12 @@ const EXTRACT: ExtractCase[] = [
     body: "`[x](./gone.md)` <!-- [y](./gone2.md) --> \\[z](./gone3.md) [ok](./concepts/exit-codes.md)",
   },
   { name: "a typed link", body: "[a](./x.md?rel=supersedes)" },
+  { name: "a repeated rel", body: "[a](./x.md?rel=a,a,b,a) [[y?rel=c,c|y]]" },
+  {
+    // The shape Prettier writes: a list item's label wrapped, indented under it.
+    name: "a wrapped label indented at the break",
+    body: "- [a list\n  item label](./y.md)\n\n[b\n\t  c](./z.md)",
+  },
   { name: "a typed wiki link", body: "[[x?rel=see-also|label]]" },
   { name: "a bare link", body: "[a](./x.md)" },
   { name: "a bare wiki link", body: "[[x]]" },
@@ -585,7 +608,11 @@ describe("the kit's extractor against Scriptorium's link cases", () => {
         const n = k++;
         s +=
           p === "LINK"
-            ? [`[l${n}](./t${n}.md)`, `[ l ${n} ](./t${n}.md?rel=see-also)`][n % 2]
+            ? [
+                `[l${n}](./t${n}.md)`,
+                `[ l ${n} ](./t${n}.md?rel=see-also)`,
+                `[l ${n}\n   wrapped](./t${n}.md)`,
+              ][n % 3]
             : p === "WIKI"
               ? [`[[w${n}]]`, `[[w${n}| the w${n} ]]`, `[[w${n}?rel=extends|w]]`][n % 3]
               : p;
@@ -627,7 +654,16 @@ describe("the kit's target parsing against Scriptorium's", () => {
     });
 
   test("parseRel agrees on lower-case words", () => {
-    for (const q of ["rel=supersedes", "rel=see-also", "rel=renders-per", "rel=a,b", "", undefined])
+    for (const q of [
+      "rel=supersedes",
+      "rel=see-also",
+      "rel=renders-per",
+      "rel=a,b",
+      "rel=a,a",
+      "rel=a,b,a",
+      "",
+      undefined,
+    ])
       expect(kitParseRel(q)).toEqual(parseRel(q));
   });
   test(`parseRel [relCase]: ${DIFFERENCES.relCase}`, () => {
@@ -647,6 +683,8 @@ describe("the kit's target parsing against Scriptorium's", () => {
 
 type ResolveCase = {
   name: string;
+  /** What wrote the target: a wiki link's is resolved by the kit's wiki branch. */
+  kind?: LinkKind;
   target: string;
   from: string;
   index: BundleIndex;
@@ -696,6 +734,7 @@ const RESOLVE: ResolveCase[] = [
   },
   {
     name: "`type/slug` by type and basename",
+    kind: "wiki",
     target: "concept/exit-codes",
     from: FROM,
     index: index(),
@@ -705,11 +744,14 @@ const RESOLVE: ResolveCase[] = [
       kit: missing(
         "file /w/wiki/decisions/concept/exit-codes.md",
         "file /w/wiki/concept/exit-codes.md",
+        "dir /w/wiki/decisions/concept/exit-codes",
+        "dir /w/wiki/concept/exit-codes",
       ),
     },
   },
   {
     name: "`type/slug` with the wrong type falls back to basename",
+    kind: "wiki",
     target: "guide/exit-codes",
     from: FROM,
     index: index(),
@@ -719,21 +761,29 @@ const RESOLVE: ResolveCase[] = [
       kit: missing(
         "file /w/wiki/decisions/guide/exit-codes.md",
         "file /w/wiki/guide/exit-codes.md",
+        "dir /w/wiki/decisions/guide/exit-codes",
+        "dir /w/wiki/guide/exit-codes",
       ),
     },
   },
   {
     name: "`type/slug` that nothing answers",
+    kind: "wiki",
     target: "concept/nothing-here",
     from: FROM,
     index: index(),
     differs: {
       why: "wikiForms",
-      // Scriptorium answers a key from its index alone, and asks the disk nothing.
-      scr: missing(),
+      // Scriptorium answers a key from its index, then asks only for a folder.
+      scr: missing(
+        "dir /w/wiki/decisions/concept/nothing-here",
+        "dir /w/wiki/concept/nothing-here",
+      ),
       kit: missing(
         "file /w/wiki/decisions/concept/nothing-here.md",
         "file /w/wiki/concept/nothing-here.md",
+        "dir /w/wiki/decisions/concept/nothing-here",
+        "dir /w/wiki/concept/nothing-here",
       ),
     },
   },
@@ -772,6 +822,8 @@ const RESOLVE: ResolveCase[] = [
         "file /w/wiki/rules/src/acc/kit/checkers/a.ts.md",
         "file /w/wiki/src/acc/kit/checkers/a.ts",
         "file /w/wiki/src/acc/kit/checkers/a.ts.md",
+        "dir /w/wiki/rules/src/acc/kit/checkers/a.ts",
+        "dir /w/wiki/src/acc/kit/checkers/a.ts",
       ),
     },
   },
@@ -783,13 +835,19 @@ const RESOLVE: ResolveCase[] = [
   },
   {
     name: "a bare name by basename",
+    kind: "wiki",
     target: "exit-codes",
     from: FROM,
     index: index(),
     differs: {
       why: "wikiForms",
       scr: lands("/w/wiki/concepts/exit-codes.md"),
-      kit: missing("file /w/wiki/decisions/exit-codes.md", "file /w/wiki/exit-codes.md"),
+      kit: missing(
+        "file /w/wiki/decisions/exit-codes.md",
+        "file /w/wiki/exit-codes.md",
+        "dir /w/wiki/decisions/exit-codes",
+        "dir /w/wiki/exit-codes",
+      ),
     },
   },
   {
@@ -807,8 +865,8 @@ const RESOLVE: ResolveCase[] = [
     index: index(),
     differs: {
       why: "rootFallback",
-      scr: missing("file /w/wiki/gone.md"),
-      kit: missing("file /w/wiki/gone.md", "file /gone.md"),
+      scr: missing("file /w/wiki/gone.md", "dir /w/wiki/gone.md"),
+      kit: missing("file /w/wiki/gone.md", "file /gone.md", "dir /w/wiki/gone.md", "dir /gone.md"),
     },
   },
   {
@@ -818,7 +876,7 @@ const RESOLVE: ResolveCase[] = [
     index: index(["/w/other/notes.md"]),
     differs: {
       why: "rootFallback",
-      scr: missing("file /w/wiki/w/other/notes.md"),
+      scr: missing("file /w/wiki/w/other/notes.md", "dir /w/wiki/w/other/notes.md"),
       kit: { state: "outside", path: "/w/other/notes.md" },
     },
   },
@@ -868,6 +926,64 @@ const RESOLVE: ResolveCase[] = [
       kit: { state: "not-a-doc", path: "/w/wiki/lint.ts" },
     },
   },
+  ...["./gone.png", "./gone.svg", "./gone.PNG"].map(
+    (t): ResolveCase => ({
+      name: `a missing image, ${t}`,
+      target: t,
+      from: IDX,
+      index: withDirs(),
+      differs: {
+        why: "imageLookups",
+        scr: missing(
+          `file /w/wiki/${t.slice(2)}`,
+          `file /w/wiki/${t.slice(2)}.md`,
+          `dir /w/wiki/${t.slice(2)}`,
+        ),
+        kit: missing(`file /w/wiki/${t.slice(2)}`, `dir /w/wiki/${t.slice(2)}`),
+      },
+    }),
+  ),
+  ...["", "?rel=x", "#top"].map(
+    (t): ResolveCase => ({
+      name: `an empty target, ${JSON.stringify(t)}`,
+      target: t,
+      from: IDX,
+      index: withDirs(),
+      differs: { why: "emptyTarget", scr: { state: "folder", path: "/w/wiki" }, kit: missing() },
+    }),
+  ),
+  {
+    name: "a colon target, Note:Thing",
+    target: "Note:Thing",
+    from: IDX,
+    index: withDirs(),
+    differs: { why: "colonResolve", scr: missing("dir /w/wiki/Note:Thing"), kit: missing() },
+  },
+  {
+    name: "a colon target, C:/x.md",
+    target: "C:/x.md",
+    from: IDX,
+    index: withDirs(),
+    differs: {
+      why: "colonResolve",
+      scr: missing("file /w/wiki/C:/x.md", "dir /w/wiki/C:/x.md"),
+      kit: missing(),
+    },
+  },
+  {
+    // A wiki link's target is a name, never a scheme, in both; the kit still
+    // reads it as a path (`wikiForms`), so it asks for a file Scriptorium does not.
+    name: "a wiki name with a colon",
+    kind: "wiki",
+    target: "Note:Thing",
+    from: IDX,
+    index: withDirs(),
+    differs: {
+      why: "wikiForms",
+      scr: missing("dir /w/wiki/Note:Thing"),
+      kit: missing("file /w/wiki/Note:Thing.md", "dir /w/wiki/Note:Thing"),
+    },
+  },
   { name: "./v9.9 missing", target: "./v9.9", from: IDX, index: disk([], []) },
   { name: "./gone.md missing", target: "./gone.md", from: IDX, index: disk([], []) },
 ];
@@ -878,7 +994,10 @@ describe("the kit's resolver against Scriptorium's resolving cases", () => {
       const s = probed(c.index);
       const scr = landedScr(resolveTarget(c.target, c.from, s.index), s.looked);
       const k = probed(c.index);
-      const kit = landedKit(kitResolve(c.target, c.from, asKit(k.index)), k.looked);
+      const kit = landedKit(
+        kitResolve(c.target, c.from, asKit(k.index), "document", c.kind ?? "markdown"),
+        k.looked,
+      );
       if (!c.differs) {
         expect(kit).toEqual(scr);
         return;
