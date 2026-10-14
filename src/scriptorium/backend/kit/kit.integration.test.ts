@@ -368,7 +368,10 @@ describe("neither Scriptorium reads the other's sessions", () => {
     expect(r.code).toBe(6);
     const err = envelope(r);
     expect(err.kind).toBe("conflict");
-    expect(typeof err.hint).toBe("string");
+    // The kit path's own words: which Scriptorium wrote it, and how to open it.
+    expect(err.message).toContain("is a shipped Scriptorium session");
+    expect(err.hint).toContain("without SCRIPTORIUM_KIT");
+    expect(err.hint).not.toContain("will not read it");
     expect(readFileSync(manifest).equals(before)).toBe(true);
     rmSync(into, { recursive: true, force: true });
   });

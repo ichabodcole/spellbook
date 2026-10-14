@@ -48,4 +48,11 @@ export const scriptoriumApp: AppDeclaration = {
   // wiki layer (docMeta, hidden entries) moves in here in a later cycle, with
   // a migrate from this shape.
   slot: { version: 1, migrate: (prev) => ({ ...prev }) },
+  // Both apps are named scriptorium, so the kit's generic refusal ("restore it
+  // with the app that wrote it; scriptorium will not read it") names this app
+  // twice. Say which Scriptorium wrote it, and how to open it there.
+  refuseScriptorium: (sessionId) => ({
+    message: `session ${sessionId} is a shipped Scriptorium session, not a kit-path one`,
+    hint: `open it without SCRIPTORIUM_KIT: unset SCRIPTORIUM_KIT, then open --restore ${sessionId} (its home is $SCRIPTORIUM_HOME/sessions, not kit/sessions)`,
+  }),
 };
