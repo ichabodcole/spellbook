@@ -442,6 +442,14 @@ describe("askOutstanding", () => {
     }
   });
 
+  test("a write in the same millisecond as the ask keeps it held, by either party", () => {
+    const chat = [askAt("n1", 1000)];
+    for (const by of ["human", "agent"] as const) {
+      expect(askOutstanding(note("n1", 0, { editedAt: 1000, editedBy: by }), chat)).toBe(true);
+      expect(askOutstanding(note("n1", 0, { reopenedAt: 1000, reopenedBy: by }), chat)).toBe(true);
+    }
+  });
+
   test("a rewrite before the ask does not", () => {
     const docs = note("n1", 0, { editedAt: 500, editedBy: "human" });
     expect(askOutstanding(docs, [askAt("n1", 1000)])).toBe(true);

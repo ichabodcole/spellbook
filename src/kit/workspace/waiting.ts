@@ -219,10 +219,12 @@ export function askOutstanding(note: NoteFacts, chat: readonly AskMsg[]): boolea
   }
   // Never asked, or asked at a time that does not parse: nothing to hold back.
   if (!Number.isFinite(askedAt)) return false;
-  // A write on the note at or after the ask: by the agent it answers the ask,
-  // by the human it is a new question.
+  // A write on the note strictly after the ask: by the agent it answers the ask,
+  // by the human it is a new question. A write in the same millisecond keeps
+  // the guard held: a typed follow-up still goes, so holding loses nothing,
+  // while releasing would let the next double-click through.
   for (const w of [note.editedAt, note.reopenedAt])
-    if (w !== undefined && Date.parse(w) >= askedAt) return false;
+    if (w !== undefined && Date.parse(w) > askedAt) return false;
   // Strictly after, as for the note: a reply in the same millisecond cannot have read it.
   for (let i = chat.length - 1; i >= 0; i--) {
     const m = chat[i];
