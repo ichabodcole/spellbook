@@ -144,6 +144,13 @@ describe("linkGraph on a session", () => {
     ]);
   });
 
+  test("a capitalised rel from the wire matches its lowercase relation, with no warning", () => {
+    const g = s.linkGraph({ rel: ["Mirrors"] });
+    expect(g.warnings).toBeUndefined();
+    expect(g.edges.length).toBeGreaterThan(0);
+    expect(g.edges.every((e) => e.rel.includes("mirrors"))).toBe(true);
+  });
+
   test("refuses a focus outside the session, hops past three, a zero limit and a relative folder", () => {
     expect(refusal(() => s.linkGraph({ focus: "nope.md" })).status).toBe(404);
     expect(refusal(() => s.linkGraph({ hops: 4 })).status).toBe(400);

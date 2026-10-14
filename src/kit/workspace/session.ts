@@ -6223,6 +6223,10 @@ export class WorkspaceSession {
     if (within === undefined) this.pruneLinkCache(read);
     const limit = Math.min(opts.limit ?? GRAPH_CAP, GRAPH_CAP);
     const profiles = this.profilePass(index);
+    // Relations are matched case-folded, as the CLI's `--rel` folds them: a wire
+    // client asking for `Extends` means `extends`. Folded once, so the filter
+    // and the "matches nothing" warning below can never disagree.
+    const rels = opts.rel?.map((r) => r.toLowerCase());
     const g = linkGraph(
       [
         ...all.map((c) => ({
@@ -6237,7 +6241,7 @@ export class WorkspaceSession {
       {
         ...(focus !== undefined ? { focus } : {}),
         ...(opts.hops !== undefined ? { hops: opts.hops } : {}),
-        ...(opts.rel !== undefined ? { rel: opts.rel } : {}),
+        ...(rels !== undefined ? { rel: rels } : {}),
         ...(opts.untyped !== undefined ? { untyped: opts.untyped } : {}),
         ...(opts.kind !== undefined ? { kind: opts.kind } : {}),
         ...(opts.kindless !== undefined ? { kindless: opts.kindless } : {}),
@@ -6291,7 +6295,7 @@ export class WorkspaceSession {
         `kind: no document is of kind ${strayKinds.join(", ")}; the kinds are ${kindNames.join(", ") || "none"}`,
       );
     const relNames = g.relations.map((r) => r.rel);
-    const strayRels = (opts.rel ?? []).filter((r) => !relNames.includes(r));
+    const strayRels = (rels ?? []).filter((r) => !relNames.includes(r));
     if (strayRels.length > 0)
       warnings.push(
         `rel: no link in view carries ${strayRels.join(", ")}; the relations in view are ${relNames.join(", ") || "none"}`,
