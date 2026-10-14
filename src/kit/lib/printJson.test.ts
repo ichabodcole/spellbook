@@ -151,6 +151,7 @@ test("BYTE-IDENTICAL ON THE WIRE — both SHIPPED CLIs, driven as processes, emi
   for (const spell of SPELLS) {
     const cli = join(REPO_ROOT, "plugins", "spellbook", "skills", spell, "scripts", "cli.ts");
     const proc = Bun.spawn([process.execPath, "run", cli, "--version"], {
+      env: process.env,
       stdout: "pipe",
       stderr: "pipe",
       // An explicit stdin so a stdin-defaulting verb can never inherit the test
@@ -191,7 +192,7 @@ test("a real child process writes exactly one document to stdout", async () => {
       "-e",
       `import { printJson } from ${JSON.stringify(`${import.meta.dir}/printJson.ts`)}; printJson({ ok: true, big: "x".repeat(300000) });`,
     ],
-    { stdout: "pipe", stderr: "pipe", stdin: new Response("").body },
+    { env: process.env, stdout: "pipe", stderr: "pipe", stdin: new Response("").body },
   );
   const out = await new Response(proc.stdout).text();
   await proc.exited;
