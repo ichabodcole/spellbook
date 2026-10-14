@@ -68,6 +68,8 @@ import { unified } from "./diff";
 import { summary } from "./doctor";
 import { IDLE_TIMEOUT_SEC, SSE_HEARTBEAT_MS } from "./heartbeat";
 import { type Act, type After, type Before, History, type Inverse, planInverse } from "./history";
+import { kitPathOn } from "./kit/app";
+import { runKitDaemon } from "./kit/server";
 import { type PickKind, parsePickerOutput, pickerCommand, wasCancelled } from "./picker";
 import type {
   AgentCmd,
@@ -1857,8 +1859,13 @@ export async function main(argv: string[]): Promise<number> {
   } catch (e) {
     // The handshake line is JSON either way, so the CLI reads ONE shape.
     const status = e instanceof SessionError ? e.status : 500;
+    // A refusal's hint rides along, and `open` forwards it to the envelope
+    // (`daemonRefused` reads `hint`). Only a SessionError carries one, and at
+    // boot only a restore of a manifest this Scriptorium did not write does:
+    // every other boot failure writes the same bytes as before.
+    const hint = e instanceof SessionError && e.hint ? { hint: e.hint } : {};
     process.stdout.write(
-      `${JSON.stringify({ ok: false, status, error: e instanceof Error ? e.message : String(e) })}\n`,
+      `${JSON.stringify({ ok: false, status, error: e instanceof Error ? e.message : String(e), ...hint })}\n`,
     );
     return status === 404 ? 5 : status === 409 ? 6 : 1;
   }
@@ -1884,5 +1891,8 @@ export async function main(argv: string[]): Promise<number> {
  * command line belongs to the file that parses it.
  */
 export async function run(): Promise<number> {
+  // The kit path (`SCRIPTORIUM_KIT=1`, set by the kit CLI's `open`): the
+  // workspace kit's daemon under Scriptorium's name (`./kit/server.ts`).
+  if (kitPathOn()) return await runKitDaemon(process.argv.slice(2));
   return await main(process.argv.slice(2));
 }

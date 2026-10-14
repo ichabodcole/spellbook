@@ -16,7 +16,7 @@ const REPO_ROOT = join(import.meta.dir, "..", "..", "..");
 async function runPair(cwd: string): Promise<string> {
   const run = Bun.spawn(
     [process.execPath, "test", join(DIR, "1-throws-at-load.tsx"), join(DIR, "2-backend.ts")],
-    { cwd, stdout: "pipe", stderr: "pipe" },
+    { cwd, env: process.env, stdout: "pipe", stderr: "pipe" },
   );
   const [, out, err] = await Promise.all([
     run.exited,

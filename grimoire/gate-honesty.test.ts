@@ -323,18 +323,36 @@ import { join } from "node:path";
 // Scriptorium's surface moved onto src/kit/ui, and the two blocks base.css
 // now provides (the raw --foreground/--secondary aliases and the pointer
 // cursor rule) were deleted from the spell's sheet.
+//
+// ⛔ RE-DECLARED 2026-10-14 — 29/2,507 -> 29/2,523, from the object's own sum.
+// MEMBERSHIP DID NOT MOVE; one entry grew:
+//     +16  src/kit/theme/base.css   202 -> 218
+// three more `@source not` lines and their notes, from the workspace port:
+// src/kit/workspace/ and src/kit/lib/ (daemon code and pure helpers, whose
+// prose was becoming utilities) and every test file under src/kit/ (whose
+// example class strings were still shipping). Measured by diffing every
+// spell's rebuilt stylesheet against the committed one: rules only removed.
+//
+// ⛔ RE-DECLARED 2026-10-14 — 29/2,523 -> 29/2,550, from the object's own sum.
+// MEMBERSHIP DID NOT MOVE; nine entries grew by 3 each:
+//     +3  src/<spell>/bunfig.toml, for all nine spells
+// a `[test]` section with the root's preloads (the scratch HOME and the DOM
+// guard). `bun test` reads only the bunfig in its cwd, so a spell's tests run
+// from its own folder used the real home. No comment rides with them: the
+// reason lives in grimoire/kit-scratch-home-ward.test.ts, which the gate runs
+// and which reds on a bunfig without the preload.
 const DECLARED_BLIND: Record<string, number> = {
   "src/digestify/surface/styles.css": 515,
   "src/digestify/surface/index.html": 26,
-  "src/digestify/bunfig.toml": 2,
+  "src/digestify/bunfig.toml": 5,
   "src/bounty/surface/styles.css": 158,
   "src/bounty/surface/index.html": 32,
-  "src/bounty/bunfig.toml": 2,
+  "src/bounty/bunfig.toml": 5,
   "src/mind-mapper/surface/styles.css": 238,
   "src/magpie/surface/styles.css": 186,
   "src/imago/surface/styles.css": 167,
   "plugins/spellbook/skills/magpie/scripts/remove.py": 145,
-  "src/kit/theme/base.css": 202,
+  "src/kit/theme/base.css": 218,
   "src/astrolabe/surface/styles.css": 104,
   "src/astrolabe/surface/index.html": 35,
   "src/mind-mapper/surface/index.html": 52,
@@ -344,12 +362,12 @@ const DECLARED_BLIND: Record<string, number> = {
   "src/glamour/surface/styles.css": 25,
   "src/grapevine/surface/styles.css": 110,
   "src/grapevine/surface/index.html": 24,
-  "src/grapevine/bunfig.toml": 2,
-  "src/mind-mapper/bunfig.toml": 4,
-  "src/astrolabe/bunfig.toml": 2,
-  "src/glamour/bunfig.toml": 2,
-  "src/imago/bunfig.toml": 2,
-  "src/magpie/bunfig.toml": 2,
+  "src/grapevine/bunfig.toml": 5,
+  "src/mind-mapper/bunfig.toml": 7,
+  "src/astrolabe/bunfig.toml": 5,
+  "src/glamour/bunfig.toml": 5,
+  "src/imago/bunfig.toml": 5,
+  "src/magpie/bunfig.toml": 5,
   // scriptorium (2026-09-11), the first spell SCAFFOLDED onto the build —
   // membership 26 -> 29, three hand-authored non-gated files, +126 lines:
   // the dev-serve bunfig, the surface entry (its pre-paint theme script) and
@@ -360,7 +378,7 @@ const DECLARED_BLIND: Record<string, number> = {
   // for micromark's classless output, which no utility can express.
   // 212 -> 254 (E30): scrollbars in the spell's colours, which are pseudo-element
   // rules and so unreachable from a utility as well.
-  "src/scriptorium/bunfig.toml": 2,
+  "src/scriptorium/bunfig.toml": 5,
   "src/scriptorium/surface/index.html": 40,
   "src/scriptorium/surface/styles.css": 389,
 };

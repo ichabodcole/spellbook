@@ -78,8 +78,12 @@ Then confirm that exact set appears in each listing above.
       naming/solidification step — not before prototyping; check collisions +
       reserved namespaces)
 - [ ] **Authored source at `src/<name>/{backend,surface}/`**, with a two-line
-      `src/<name>/build.ts` delegator and a `bunfig.toml` — **not** inside the
-      plugin subtree (seams Contract 4). 8/8 spells have exactly this shape.
+      `src/<name>/build.ts` delegator and a `bunfig.toml` whose `[test]` section
+      preloads `src/kit/lib/scratchHome.ts` — **not** inside the plugin subtree
+      (seams Contract 4). 8/8 spells have exactly this shape. ⛔ **`bun test`
+      reads only the `bunfig.toml` in its cwd**: without the preload, a run from
+      the spell's folder uses the REAL home
+      (`grimoire/kit-scratch-home-ward.test.ts` fails on it).
 - [ ] **A launcher at `plugins/spellbook/skills/<name>/scripts/<entry>.ts` for
       every backend entry** — three code lines, no logic, no `import.meta.main`,
       `run()` with no arguments. ⛔ **The launcher is the build's own entry

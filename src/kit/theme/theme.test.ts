@@ -97,11 +97,17 @@ describe("the base stylesheet", () => {
     }
   });
 
-  test("scans the kit for its markup, and not its CLI module", () => {
+  test("scans the kit for its markup, and not its CLI, workspace, lib or test files", () => {
     const sources = [...css.matchAll(/^@source (not )?"([^"]+)";/gm)].map((m) =>
       `${m[1] ?? ""}${m[2]}`.trim(),
     );
-    expect(sources).toEqual(["../", "not ../cli"]);
+    expect(sources).toEqual([
+      "../",
+      "not ../cli",
+      "not ../workspace",
+      "not ../lib",
+      "not ../**/*.test.*",
+    ]);
   });
 
   test("keeps its L1 aliases out of the light block", () => {

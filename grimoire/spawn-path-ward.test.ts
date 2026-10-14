@@ -763,6 +763,29 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
     ]);
   });
 
+  /**
+   * ⛔ THE OPAQUE FAMILY CALLS, ENUMERATED — NOT ALLOWLISTED. A family call whose
+   * dist argument this ward cannot resolve is a finding (D42), and each one
+   * here was looked at and has to be re-declared if it moves. Matched on the
+   * file and the call's exact text, never a line number, so a rebuild that
+   * shifts lines keeps it and a change to the call itself reddens.
+   *
+   * - scriptorium's kit path (`SCRIPTORIUM_KIT=1`, 2026-10-14), the first app
+   *   bundling the kit's workspace daemon (`src/kit/workspace/server.ts`). Its
+   *   `distDir` is the APP's `surface.distDir` option, so no anchor exists in
+   *   the emitted text to follow. The kit path passes no surface: `mode` is
+   *   `"dev"` whenever `distDir` is absent, and this call sits behind
+   *   `mode === "release" && distDir`, so it never runs. When the kit path gets
+   *   a surface (the chat cycle), its `surface.distDir` becomes this read's
+   *   anchor and the row is re-ruled.
+   */
+  const OPAQUE_FAMILY_CALLS: readonly { file: string; call: string }[] = [
+    {
+      file: "plugins/spellbook/skills/scriptorium/dist/server.js",
+      call: 'const asset = serveFromDist(distDir, path2 === "/" ? "index.html" : path2.slice(1));',
+    },
+  ];
+
   test("⛔ THE SHARED DIST FAMILY IS FOLLOWED TO ITS CALL SITE — the read behind a PARAMETER is a pin (C8)", () => {
     // ⛔ WHAT THIS CELL IS FOR. Until D98 this ward could not answer its own
     // question — _does this artifact's `dist/` resolution work from where it
@@ -854,7 +877,20 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
     expect(FAMILY.reads.length).toBeGreaterThan(0);
     expect(adopters.length).toBeGreaterThan(0);
 
-    expect(unresolved).toEqual([]);
+    // The enumerated opaque calls leave the finding list. Each row stands for
+    // EXACTLY ONE call site: a row found nowhere is stale, and a row matching
+    // two sites (the declared call copied somewhere else, outside its guard)
+    // has not been looked at twice, so both fail here.
+    const declared = (u: string) =>
+      OPAQUE_FAMILY_CALLS.find((o) => u.startsWith(`${o.file}:`) && u.endsWith(` ${o.call}`));
+    const miscounted = OPAQUE_FAMILY_CALLS.map((o) => ({
+      row: `${o.file}  ${o.call}`,
+      sites: unresolved.filter((u) => declared(u) === o),
+    }))
+      .filter((r) => r.sites.length !== 1)
+      .map((r) => `${r.row}  (matched ${r.sites.length} sites, declared for 1)`);
+    expect(unresolved.filter((u) => declared(u) === undefined)).toEqual([]);
+    expect(miscounted).toEqual([]);
     expect(blind).toEqual([]);
     expect(missing).toEqual([]);
   });

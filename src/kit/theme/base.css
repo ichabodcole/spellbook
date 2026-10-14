@@ -112,6 +112,22 @@
    this file like it. Nothing under src/kit/cli/ may ever need a class. */
 @source not "../cli";
 
+/* ⛔ NOR src/kit/workspace/ OR src/kit/lib/, FOR THE SAME REASON. The workspace
+   is daemon code with no markup, about 45k lines of prose and identifiers.
+   lib is pure helpers with no markup either; when the workspace port brought
+   its parsers, three words of their prose (a byte-order mark's adjective, a
+   setext heading's rule, a letter's case) became utilities in six spells'
+   stylesheets. Measured by diffing each rebuilt stylesheet against the
+   committed one. Nothing under either may ever need a class. */
+@source not "../workspace";
+@source not "../lib";
+
+/* ⛔ NOR ANY TEST FILE UNDER src/kit/. A test's example class strings are
+   test data, not styling, and they shipped in every importing spell's
+   stylesheet in the foundation cycle until the tests were rewritten to avoid
+   them. Excluded by name, so no test has to be careful. */
+@source not "../**/*.test.*";
+
 @theme {
   --color-bg: #020617;
   --color-surface: #0f172a;

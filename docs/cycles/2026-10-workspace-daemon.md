@@ -6,7 +6,7 @@ description:
   Scriptorium on it, the first of five workspace-stack cycles.
 tags: [kit, scriptorium, story-studio]
 status: stable
-lifecycle: planned
+lifecycle: closed
 started: 2026-10-14
 appetite:
   Stop when the flagged Scriptorium daemon and CLI run on src/kit/workspace with
@@ -14,6 +14,7 @@ appetite:
   needs the surface or the wiki layer is filed for later cycles.
 after: []
 generated: { by: claude-opus-5-5, at: 2026-10-14 }
+closed: 2026-10-14
 ---
 
 # Workspace daemon
@@ -55,13 +56,36 @@ Out of scope, deliberately:
 
 ## Outcome
 
-_Written at close, not before — and for an `abandoned` cycle too._
+**What shipped.** All five items shipped. Story Studio's workspace daemon now
+lives in `src/kit/workspace`, from `027d7a3` plus the agreed picks. Every test
+runs under a scratch home. The kit refuses a manifest that isn't its own, and
+its links code is held to Scriptorium's tests: every difference takes the kit's
+rule, except relation names, which both kits now lowercase. E65 follows Story
+Studio's `85a319e`, plus a one-ask guard. With `SCRIPTORIUM_KIT=1`, a second
+Scriptorium runs on the kit, and the default path is byte-identical.
 
-[What shipped. What was cut, and why. What carried over to the next cycle: each
-item still open, and the cycle it joined. What was learned that will change how
-the next cycle is scoped. For an `abandoned` cycle, what was falsified: the
-assumption that stopped it. Two paragraphs is usually enough; the point is that
-a reader six months from now can tell what happened without reading every
-session.]
+**What was cut.** Spellbook's own E65 daemon half (`d1ca788d`) was cut in favour
+of Story Studio's. Converging cost one revert and left one wire for both apps.
+The guard's `about.ask` marker is already superseded: Cole ruled that the kit's
+buttons get their own `via` values, so the guard moves to `via: "ask"` when
+Story Studio's via-and-refs daemon half (`bbc54fd`) is ported.
+
+**Carried over.** No item stayed open. The via-and-refs port goes to the next
+cycle, ahead of the wiki layer (cycle 2) or with it. Seven findings were filed
+to triage; see the session.
+
+**What was learned.**
+
+- **Built bundles.** A bundler's `NODE_ENV` define silently removed the kit's
+  safety guards from every built bundle. Any guard that must hold in `dist/`
+  needs a test that builds it.
+- **Reviews.** Both finalize reviews found correct but unpinned invariants. In
+  this codebase a planted regression is the review step that finds the most.
+- **Parallel work.** Two agents building the same feature in parallel (E65) cost
+  a revert. Next cycle, check `kit-parity` for in-flight Story Studio work
+  before starting an item that ports back.
 
 ## Sessions
+
+- cycle/workspace-daemon (landed 2026-10-14):
+  [Workspace daemon — 2026-10-14](../features/workspace-kit/sessions/2026-10-14-workspace-daemon.md)

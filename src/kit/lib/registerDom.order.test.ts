@@ -13,7 +13,7 @@ const DIR = join(import.meta.dir, "fixtures", "domOrder");
 test("a DOM test file after another one still gets the shortcut CodeMirror expects", async () => {
   const run = Bun.spawn(
     [process.execPath, "test", join(DIR, "1-earlier.tsx"), join(DIR, "2-shortcut.tsx")],
-    { cwd: import.meta.dir, stdout: "pipe", stderr: "pipe" },
+    { cwd: import.meta.dir, env: process.env, stdout: "pipe", stderr: "pipe" },
   );
   const [code, out, err] = await Promise.all([
     run.exited,
