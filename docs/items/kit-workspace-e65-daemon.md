@@ -2,8 +2,8 @@
 type: item
 title: A note shows it is with the agent, on the kit daemon
 description:
-  "E65's daemon half in the kit: notesWaiting, askedIn, the one-ask guard, the
-  edit and reopen fields, and the shared badge rule, written to go back to Story
+  "E65's daemon half in the kit, converged on Story Studio's 85a319e, plus an
+  explicit one-ask guard for the Ask-the-agent button, offered back to Story
   Studio."
 status: stable
 lifecycle: active
@@ -51,14 +51,29 @@ Scriptorium's daemon and the kit's and got the same answers each time:
 - `editNote` and `resolveNote` take a `by`;
 - the event count goes from 21 to 23.
 
-**Open:**
+**Superseded by convergence (Cole, 2026-10-14).** Story Studio built E65 in its
+own kit as `85a319e` (kit-parity message 29): no `askedIn`, an agent `note-edit`
+verb with `replacedBody` and undo, the agent's own note acts kept quiet, and the
+wire unchanged (`note.edited` stays a fact; a reopen is still
+`note.resolved{false}`). Cole ruled to converge on it:
 
-- **For Cole to rule:** the one-ask guard drops any human `say` carrying an
-  already-asked note's `noteId`. In the kit, any composer can attach `noteId`,
-  so a different, typed follow-up would vanish silently.
-- **Later:** the kit has no agent `note-edit` verb yet.
+- drop `d1ca788d` and port the workspace half of `85a319e`;
+- add only an explicit one-ask guard: a `say` marked as the "Ask the agent" act
+  is sent once per note, and a typed follow-up carrying a `noteId` is never
+  dropped;
+- offer the guard back to Story Studio on `kit-parity`.
+
+If the converged behaviour causes a UX problem in use, it is fixed then,
+possibly by going back to the earlier shape, and both apps follow the same path.
+The earlier ruling to keep `note.edited` and `note.reopened` as events is
+superseded by this one for the kit; Scriptorium's own daemon is unchanged until
+the cutover.
+
+The chat, shell and document halves of `85a319e` wait for their own cycles.
 
 ## Definition of done
+
+The boxes below record the first shape (`d1ca788d`), now superseded.
 
 - [x] E65's rules hold, by tests ported from Scriptorium's `waiting.test.ts` and
       the server's note tests:
@@ -69,6 +84,14 @@ Scriptorium's daemon and the kit's and got the same answers each time:
 - [x] `PublicState.notesWaiting` exists.
 - [x] Story Studio's agent has been offered the diff on `kit-parity` (message
       28).
+
+Converged shape:
+
+- [ ] `d1ca788d` is reverted, and the workspace half of `85a319e` is ported,
+      with its tests passing.
+- [ ] A marked ask is sent once per note; an unmarked `say` carrying a `noteId`
+      is always delivered. Both are tested.
+- [ ] The guard has been offered to Story Studio on `kit-parity`.
 
 ## Related Documents
 

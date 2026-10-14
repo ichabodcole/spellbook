@@ -40,8 +40,13 @@ Output is unchanged across more than 2.8 million links. Scriptorium's own
 quadratic case is filed as
 [scriptorium-mixed-link-line-quadratic](./scriptorium-mixed-link-line-quadratic.md).
 
-**Declared differences, listed for Cole.** The recommendation for each is given
-after the dash:
+**Ruled (Cole, 2026-10-14): every declared difference takes the kit's behaviour,
+as Story Studio implements it.** If one causes a UX problem in use, it is fixed
+then, possibly by going back to Scriptorium's behaviour, and in that case both
+apps change together. So the kit keeps its root fallback and keeps rels as
+written (no case folding).
+
+**Declared differences.** What each one became is given after the dash:
 
 - `html` (ruled): links in raw HTML follow the kit's rule.
 - `embeds`: `![x](y)` is returned as an embed — kit rule.
@@ -55,18 +60,18 @@ after the dash:
 - `imageLookups`: a missing image never tries `<name>.md` — kit rule.
 - `emptyTarget`: `""`, `?rel=` and `#top` are `missing`, not the folder — kit
   rule.
-- `rootFallback`: a `/` target is also tried as a filesystem path — **Cole to
-  rule**.
+- `rootFallback`: a `/` target is also tried as a filesystem path — kit rule
+  (ruled).
 - `wikiForms`: `type/slug` keys, bare names and the repo root — Scriptorium's
   behaviour, added as a resolver slot in the wiki-layer cycle.
-- `relCase`: Scriptorium lowercases rels — fold case in the kit, and keep the
-  kit's placeholder filter and its reading of every pair. **Cole to confirm.**
+- `relCase`: Scriptorium lowercases rels — kit rule (ruled): rels keep their
+  case, with the kit's placeholder filter and its reading of every pair.
 
 ## Definition of done
 
 - [x] A differential test exists.
 - [x] Each known difference is matched or listed for Cole with a recommendation.
-      The HTML case is settled: it takes the kit's rule.
+      All are ruled: each takes the kit's rule.
 - [x] The quadratic image-in-label case is filed, if it isn't already tracked.
 
 ## Related Documents
