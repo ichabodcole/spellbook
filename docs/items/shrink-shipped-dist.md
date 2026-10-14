@@ -5,7 +5,7 @@ description:
   Spell bundles embed their full TypeScript as inline source maps (about 45% of
   the 21 MB shipped); the source is in the repo, so drop the maps, then minify
   once the text-reading wards are calibrated.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a13cb1-9bd5-7559-a38a-288c1a47de8e
 kind: task
