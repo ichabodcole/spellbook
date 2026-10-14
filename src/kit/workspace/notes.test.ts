@@ -1,0 +1,254 @@
+// Notes on a document: the stored shape, and re-anchoring after the text is
+// edited under them. The anchor is the quote plus a little of what surrounded
+// it, never an offset, so the tests that matter are the ones where the document
+// has changed.
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { readFileSync, rmSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import type { WorkspaceSession } from "./session";
+import { inContext as inContextIn, refusal, seedDocs, tempRoot } from "./testing";
+
+let root: string;
+let sessions: string;
+let docs: string;
+let s: WorkspaceSession;
+let slug: string;
+
+const TEXT = `# Release notes
+
+The daemon watches the folder and writes nothing.
+Every change is announced on the wire.
+
+## Open questions
+
+The daemon watches the folder and writes nothing.
+`;
+
+beforeEach(() => {
+  root = tempRoot("workspace-notes");
+  sessions = join(root, "sessions");
+  docs = seedDocs(root);
+  writeFileSync(join(docs, "release.md"), TEXT);
+  s = inContextIn(sessions, docs);
+  slug = s.openPath(join(docs, "release.md")).slug;
+});
+afterEach(() => rmSync(root, { recursive: true, force: true }));
+
+const placed = (id: string) => s.notesOf({ doc: slug, all: true }).notes.find((n) => n.id === id);
+
+describe("the stored note", () => {
+  test("a human's note from a selection stores the quote, its surroundings and an offset", () => {
+    const at = TEXT.indexOf("Every change");
+    const { note } = s.addNote({
+      doc: slug,
+      by: "human",
+      range: { from: at, to: at + "Every change is announced".length },
+      body: "on which wire?",
+    });
+    expect(note).toMatchObject({
+      version: 1,
+      quote: "Every change is announced",
+      before: expect.stringContaining("writes nothing.\n"),
+      // A bounded amount of surrounding text, not the whole document.
+      after: " on the wire.\n\n## Open questions\n\nThe daemon wat",
+      at,
+      body: "on which wire?",
+      by: "human",
+      resolved: false,
+    });
+    expect(note.resolvedAt).toBeUndefined();
+    expect(new Date(note.createdAt).toISOString()).toBe(note.createdAt);
+    expect(Object.keys(note).sort()).toEqual(
+      [
+        "after",
+        "at",
+        "before",
+        "body",
+        "by",
+        "createdAt",
+        "id",
+        "quote",
+        "resolved",
+        "version",
+      ].sort(),
+    );
+  });
+
+  test("an agent's note from a quote anchors to the first occurrence", () => {
+    const { note, how } = s.addNote({ doc: slug, by: "agent", quote: "Open questions", body: "x" });
+    expect(how).toBe("quote");
+    expect(note.at).toBe(TEXT.indexOf("Open questions"));
+    expect(note.by).toBe("agent");
+  });
+
+  test("a quote the active version does not contain, an empty note and a bad range are refused", () => {
+    expect(
+      refusal(() => s.addNote({ doc: slug, by: "agent", quote: "nowhere", body: "x" })).status,
+    ).toBe(404);
+    expect(
+      refusal(() => s.addNote({ doc: slug, by: "agent", quote: "Release", body: "  " })).status,
+    ).toBe(400);
+    expect(
+      refusal(() => s.addNote({ doc: slug, by: "human", range: { from: 5, to: 5 }, body: "x" }))
+        .status,
+    ).toBe(400);
+    expect(
+      refusal(() => s.addNote({ doc: slug, by: "human", range: { from: 0, to: 99999 }, body: "x" }))
+        .status,
+    ).toBe(400);
+    expect(refusal(() => s.addNote({ doc: slug, by: "agent", body: "x" })).status).toBe(400);
+  });
+
+  test("resolve stamps resolvedAt, reopen clears it, and the hidden ones return with `all`", () => {
+    const { note } = s.addNote({ doc: slug, by: "agent", quote: "Release", body: "x" });
+    const r = s.resolveNote({ doc: slug, id: note.id, resolved: true });
+    expect(r.note.resolved).toBe(true);
+    expect(new Date(String(r.note.resolvedAt)).toISOString()).toBe(String(r.note.resolvedAt));
+    expect(s.notesOf({ doc: slug }).notes).toHaveLength(0);
+    expect(s.notesOf({ doc: slug, all: true }).notes).toHaveLength(1);
+    const reopened = s.resolveNote({ doc: slug, id: note.id, resolved: false });
+    expect(reopened.note.resolved).toBe(false);
+    expect("resolvedAt" in reopened.note).toBe(false);
+    expect(s.notesOf({ doc: slug }).notes).toHaveLength(1);
+  });
+
+  test("an unknown note is a 404 listing the notes there are", () => {
+    const { note } = s.addNote({ doc: slug, by: "agent", quote: "Release", body: "x" });
+    const e = refusal(() => s.resolveNote({ doc: slug, id: "nope", resolved: true }));
+    expect(e.status).toBe(404);
+    expect(e.choices).toEqual([note.id]);
+  });
+
+  test("notes survive a restore with their anchors", () => {
+    const { note } = s.addNote({ doc: slug, by: "agent", quote: "Release", body: "x" });
+    const r = (s.constructor as typeof WorkspaceSession).restore(sessions, s.app, s.id);
+    expect(r.notesOf({ doc: slug }).notes[0]).toMatchObject({
+      id: note.id,
+      quote: "Release",
+      from: 2,
+    });
+  });
+});
+
+describe("re-anchoring after an edit", () => {
+  test("text inserted before the quote moves the note with it, and its lines follow", () => {
+    const at = TEXT.indexOf("Every change");
+    const { note } = s.addNote({
+      doc: slug,
+      by: "human",
+      range: { from: at, to: at + "Every change is announced".length },
+      body: "which wire?",
+    });
+    const first = placed(note.id);
+    expect(first).toMatchObject({ from: at, how: "context", fromLine: 4, toLine: 4 });
+
+    // Insert two lines above, and fix a typo on the way.
+    const edited = TEXT.replace(
+      "# Release notes\n",
+      "# Release notes\n\nA new paragraph.\n\nAnother.\n",
+    );
+    s.edit(slug, 1, edited);
+
+    const after = placed(note.id);
+    expect(after?.from).toBe(edited.indexOf("Every change"));
+    expect(after?.to).toBe((after?.from ?? 0) + "Every change is announced".length);
+    expect(after?.how).toBe("context");
+    // Line numbers are derived for display, and moved by four lines.
+    expect(after?.fromLine).toBe(8);
+    expect(after?.toLine).toBe(8);
+    // The stored anchor is untouched: only the placement is derived.
+    const stored = s.notesOf({ doc: slug, all: true }).notes[0];
+    expect(stored?.at).toBe(at);
+    expect(stored?.quote).toBe("Every change is announced");
+  });
+
+  test("two identical passages are told apart by what surrounds them", () => {
+    const second = TEXT.lastIndexOf("The daemon watches");
+    const { note } = s.addNote({
+      doc: slug,
+      by: "human",
+      range: { from: second, to: second + "The daemon watches".length },
+      body: "the second one",
+    });
+    // Insert text before both; the note must still pick the SECOND.
+    const edited = `Preface.\n\n${TEXT}`;
+    s.edit(slug, 1, edited);
+    const after = placed(note.id);
+    expect(after?.from).toBe(edited.lastIndexOf("The daemon watches"));
+    expect(after?.how).toBe("context");
+  });
+
+  test("when the surroundings change but the quote stays unique, it is found and says so", () => {
+    const { note } = s.addNote({
+      doc: slug,
+      by: "agent",
+      quote: "announced on the wire",
+      body: "x",
+    });
+    s.edit(
+      slug,
+      1,
+      TEXT.replace(
+        "Every change is announced on the wire.",
+        "Each change is announced on the wire!",
+      ),
+    );
+    expect(placed(note.id)?.how).toBe("unique");
+    expect(placed(note.id)?.from).not.toBeNull();
+  });
+
+  test("when the quote is gone the note is orphaned, not pinned somewhere plausible", () => {
+    const { note } = s.addNote({
+      doc: slug,
+      by: "agent",
+      quote: "announced on the wire",
+      body: "x",
+    });
+    s.edit(slug, 1, TEXT.replace("announced on the wire", "sent elsewhere"));
+    expect(placed(note.id)).toMatchObject({
+      from: null,
+      to: null,
+      how: "orphaned",
+      fromLine: null,
+      toLine: null,
+    });
+    // It is still a note, and still on the document.
+    expect(s.notesOf({ doc: slug }).notes).toHaveLength(1);
+  });
+
+  test("a note is placed against the active version: activating another version re-places it", () => {
+    const { note } = s.addNote({
+      doc: slug,
+      by: "agent",
+      quote: "announced on the wire",
+      body: "x",
+    });
+    const v2 = s.newVersion({ doc: slug, by: "agent" }).version;
+    writeFileSync(v2.path, "# A different draft\n\nNothing alike.\n");
+    s.activate({ doc: slug, version: 2 });
+    expect(placed(note.id)?.how).toBe("orphaned");
+    s.activate({ doc: slug, version: 1 });
+    expect(placed(note.id)?.how).not.toBe("orphaned");
+    // The note still names the version it was made on.
+    expect(s.notesOf({ doc: slug }).notes[0]?.version).toBe(1);
+  });
+
+  test("an edit through merge re-anchors too: it lands on the active version", () => {
+    const { note } = s.addNote({ doc: slug, by: "agent", quote: "Every change", body: "x" });
+    const v2 = s.newVersion({ doc: slug, by: "agent" }).version;
+    writeFileSync(v2.path, TEXT.replace("# Release notes", "# Release notes (draft)"));
+    const d = s.compare({ doc: slug, against: 2 }).diff;
+    s.merge({ doc: slug, against: 2, hunks: d.hunks.map((h) => h.id) });
+    expect(readFileSync(s.readVersion(slug, 1).path, "utf8")).toContain("(draft)");
+    expect(placed(note.id)?.from).toBe(
+      readFileSync(s.readVersion(slug, 1).path, "utf8").indexOf("Every change"),
+    );
+  });
+
+  test("noteLines reports the lines now, or null when the passage is gone", () => {
+    const { note } = s.addNote({ doc: slug, by: "agent", quote: "Every change", body: "x" });
+    expect(s.noteLines(slug, note)).toEqual({ from: 4, to: 4 });
+    s.edit(slug, 1, "nothing left\n");
+    expect(s.noteLines(slug, note)).toBeNull();
+  });
+});
