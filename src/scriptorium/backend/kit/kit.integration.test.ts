@@ -383,6 +383,8 @@ describe("neither Scriptorium reads the other's sessions", () => {
     const err = envelope(r);
     expect(err.kind).toBe("conflict");
     expect(err.message).toContain("SCRIPTORIUM_KIT=1");
+    // The refusal's hint survives the boot handshake into the envelope.
+    expect(err.hint).toContain("$SCRIPTORIUM_HOME/kit/sessions");
     expect(readFileSync(manifest).equals(before)).toBe(true);
     // Refused at the restore, so no daemon and no pointer were left behind.
     expect(existsSync(shippedPointer(kitId))).toBe(false);

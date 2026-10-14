@@ -1859,8 +1859,13 @@ export async function main(argv: string[]): Promise<number> {
   } catch (e) {
     // The handshake line is JSON either way, so the CLI reads ONE shape.
     const status = e instanceof SessionError ? e.status : 500;
+    // A refusal's hint rides along, and `open` forwards it to the envelope
+    // (`daemonRefused` reads `hint`). Only a SessionError carries one, and at
+    // boot only a restore of a manifest this Scriptorium did not write does:
+    // every other boot failure writes the same bytes as before.
+    const hint = e instanceof SessionError && e.hint ? { hint: e.hint } : {};
     process.stdout.write(
-      `${JSON.stringify({ ok: false, status, error: e instanceof Error ? e.message : String(e) })}\n`,
+      `${JSON.stringify({ ok: false, status, error: e instanceof Error ? e.message : String(e), ...hint })}\n`,
     );
     return status === 404 ? 5 : status === 409 ? 6 : 1;
   }

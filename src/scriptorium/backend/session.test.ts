@@ -17,6 +17,8 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { WorkspaceSession } from "../../kit/workspace/session";
+import { scriptoriumApp } from "./kit/app";
 import { contentHash, Session, SessionError } from "./session";
 
 let root: string;
@@ -528,6 +530,29 @@ describe("the manifest survives a restart (--restore)", () => {
     Session.restore(home, s.id);
     const after = JSON.parse(readFileSync(join(home, "sessions", s.id, "manifest.json"), "utf8"));
     expect(after.ended).toBeUndefined();
+  });
+
+  test("a manifest the workspace kit wrote is refused with a hint, and left as it was", () => {
+    // Written by the kit's own writer into this Scriptorium's sessions root.
+    const kit = WorkspaceSession.create(join(home, "sessions"), scriptoriumApp);
+    const path = join(home, "sessions", kit.id, "manifest.json");
+    const before = readFileSync(path);
+    const e = refusal(() => Session.restore(home, kit.id));
+    expect(e.status).toBe(409);
+    expect(e.message).toContain("SCRIPTORIUM_KIT=1");
+    expect(e.hint).toContain("kit/sessions");
+    expect(readFileSync(path).equals(before)).toBe(true);
+  });
+
+  test("a kit-shaped manifest without its appName stamp is still refused, by its ISO createdAt", () => {
+    const kit = WorkspaceSession.create(join(home, "sessions"), scriptoriumApp);
+    const path = join(home, "sessions", kit.id, "manifest.json");
+    const m = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+    delete m.appName;
+    writeFileSync(path, JSON.stringify(m));
+    const before = readFileSync(path);
+    expect(refusal(() => Session.restore(home, kit.id)).status).toBe(409);
+    expect(readFileSync(path).equals(before)).toBe(true);
   });
 
   test("restoring an unknown session is not_found", () => {
