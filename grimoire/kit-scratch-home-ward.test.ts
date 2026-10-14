@@ -100,14 +100,60 @@ function isBunSpawn(n: ts.Node): boolean {
   return false;
 }
 
-/** Whether an options object literal has an `env` property of its own. */
-function hasEnv(o: ts.ObjectLiteralExpression): boolean {
-  return o.properties.some(
-    (p) =>
-      (ts.isPropertyAssignment(p) || ts.isShorthandPropertyAssignment(p)) &&
-      (ts.isIdentifier(p.name) || ts.isStringLiteralLike(p.name)) &&
-      p.name.text === "env",
-  );
+const nameOf = (p: ts.ObjectLiteralElementLike): string | undefined =>
+  p.name && (ts.isIdentifier(p.name) || ts.isStringLiteralLike(p.name)) ? p.name.text : undefined;
+
+/**
+ * Whether an environment expression is shown to carry `HOME`. A child given an
+ * environment with no `HOME` falls back to the password database: the REAL
+ * home. So it must be `process.env` itself, an object literal that spreads one
+ * that is or sets `HOME`, or a name bound in this file (every `const`/`let` of
+ * that name) to one of those. `undefined`, `{}` and `{ PATH, X_HOME }` are not;
+ * neither is anything this file cannot see into (`rig.env`, a parameter).
+ */
+function givesHome(e: ts.Expression, sf: ts.SourceFile, depth = 0): boolean {
+  while (
+    ts.isParenthesizedExpression(e) ||
+    ts.isAsExpression(e) ||
+    ts.isSatisfiesExpression(e) ||
+    ts.isNonNullExpression(e)
+  )
+    e = e.expression;
+  if (
+    ts.isPropertyAccessExpression(e) &&
+    ts.isIdentifier(e.expression) &&
+    e.expression.text === "process" &&
+    e.name.text === "env"
+  )
+    return true;
+  if (ts.isObjectLiteralExpression(e))
+    return e.properties.some(
+      (p) =>
+        (ts.isSpreadAssignment(p) && givesHome(p.expression, sf, depth)) ||
+        ((ts.isPropertyAssignment(p) || ts.isShorthandPropertyAssignment(p)) &&
+          nameOf(p) === "HOME"),
+    );
+  if (ts.isIdentifier(e) && depth < 5) {
+    const inits: ts.Expression[] = [];
+    let unseeable = false;
+    visit(sf, (n) => {
+      if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.name.text === e.text) {
+        if (n.initializer) inits.push(n.initializer);
+        else unseeable = true;
+      }
+    });
+    return !unseeable && inits.length > 0 && inits.every((i) => givesHome(i, sf, depth + 1));
+  }
+  return false;
+}
+
+/** Whether an options object literal has an `env` property that is shown to carry `HOME`. */
+function hasEnv(o: ts.ObjectLiteralExpression, sf: ts.SourceFile): boolean {
+  return o.properties.some((p) => {
+    if (nameOf(p) !== "env") return false;
+    if (ts.isShorthandPropertyAssignment(p)) return givesHome(p.name, sf);
+    return ts.isPropertyAssignment(p) && givesHome(p.initializer, sf);
+  });
 }
 
 /**
@@ -128,7 +174,7 @@ function spawnsWithoutEnv(src: string, name?: string): number[] {
         return;
       }
       const opts = [...call.arguments].reverse().find(ts.isObjectLiteralExpression);
-      if (!opts || !hasEnv(opts)) at.push(lineOf(sf, n));
+      if (!opts || !hasEnv(opts, sf)) at.push(lineOf(sf, n));
     } else if (
       ts.isVariableDeclaration(n) &&
       ts.isObjectBindingPattern(n.name) &&
@@ -266,7 +312,7 @@ describe("kit scratch-home ward", () => {
     expect(offenders).toEqual([]);
   });
 
-  test("CALIBRATION: a spawn passes env only with an env property, and an alias is not followed", () => {
+  test("CALIBRATION: a spawn's env must carry HOME, and an alias is not followed", () => {
     for (const planted of [
       'Bun.spawn(["x"], { stdout: "pipe" });',
       'Bun.spawn(["env"]);',
@@ -274,16 +320,25 @@ describe("kit scratch-home ward", () => {
       'Bun.spawnSync(["x"], { cwd: env.dir });',
       'Bun.spawn({ cmd: ["x"] });',
       'Bun["spawn"](["x"], { stdout: "pipe" });',
-      'const s = Bun.spawn; s(["x"], { env });',
-      'const { spawn } = Bun; spawn(["x"], { env });',
+      'const env = process.env; const s = Bun.spawn; s(["x"], { env });',
+      'const env = process.env; const { spawn } = Bun; spawn(["x"], { env });',
       'Bun.spawn(["x"], opts);',
+      // An env with no HOME: the child falls back to the REAL home.
+      'Bun.spawn(["x"], { env: undefined });',
+      'Bun.spawn(["x"], { env: {} });',
+      'const PATH = "/bin"; Bun.spawn(["x"], { env: { PATH, BOUNTY_HOME: "/b" } });',
+      'const env = { PATH: "/bin" }; Bun.spawn(["x"], { env });',
+      'Bun.spawn(["x"], { env: rig.env });',
+      'function f(env) { Bun.spawn(["x"], { env }); }',
+      'Bun.spawn(["x"], { env });',
     ])
       expect(spawnsWithoutEnv(planted), planted).toHaveLength(1);
     for (const clean of [
-      'Bun.spawn(["x"], { env, stdout: "pipe" });',
+      'const env = { ...process.env, A: "1" }; Bun.spawn(["x"], { env, stdout: "pipe" });',
       'Bun.spawnSync(["x"], { env: process.env });',
       'Bun.spawn(["x"], { ...base, env: { ...process.env, A: "1" } });',
-      'Bun.spawn({ cmd: ["x"], env });',
+      'const env = { ...process.env }; Bun.spawn({ cmd: ["x"], env: { ...env, B: "2" } });',
+      'Bun.spawn(["x"], { env: { ...rig.env, HOME: process.env.HOME } });',
       'Bun["spawnSync"](["x"], { "env": process.env });',
       '// Bun.spawn(["x"])',
     ])
@@ -302,13 +357,53 @@ describe("kit scratch-home ward", () => {
       });
       for (const line of spawnsWithoutEnv(src, f))
         offenders.push(
-          `${rel(f)}:${line} Bun.spawn without an env property: its child starts with the REAL home. Pass env: process.env (or a copy of it).`,
+          `${rel(f)}:${line} Bun.spawn with no env shown to carry HOME: its child starts with the REAL home. Pass env: process.env, or an object that spreads it or sets HOME.`,
         );
     }
     // The population is not vacuous.
     expect(seen).toBeGreaterThanOrEqual(5);
     expect(offenders).toEqual([]);
   });
+
+  test("a kit test run with no preload is refused the home, loudly, before it touches it", () => {
+    // `bun test` reads only the bunfig.toml in its cwd, and src/kit/ has none.
+    // HOME is a stand-in for the real home here (any folder that is not a
+    // scratch one is refused the same way), so a broken guard writes nowhere
+    // that matters. Bun's transpiler cache is turned off so the stand-in stays
+    // empty unless the test itself touches it.
+    const fake = realpathSync(mkdtempSync(join(tmpdir(), "not-a-scratch-home-")));
+    const run = (extra: string[]) =>
+      Bun.spawnSync(
+        [
+          process.execPath,
+          "test",
+          ...extra,
+          "./workspace/verbs.test.ts",
+          "-t",
+          "a new session's workspace holds the one folder",
+        ],
+        {
+          cwd: KIT,
+          env: { ...process.env, HOME: fake, BUN_RUNTIME_TRANSPILER_CACHE_PATH: "0" },
+          stdout: "pipe",
+          stderr: "pipe",
+        },
+      );
+    try {
+      const bare = run([]);
+      const out = bare.stdout.toString() + bare.stderr.toString();
+      expect(bare.exitCode, out).not.toBe(0);
+      expect(out).toContain(`refusing the real home folder (${fake}) in a test run`);
+      expect(out).toContain("scratchHome.ts");
+      expect(readdirSync(fake)).toEqual([]);
+      // Control: the same run with the preload passes, so the refusal above is
+      // the guard and not a broken command.
+      const preloaded = run(["--preload", "./lib/scratchHome.ts"]);
+      expect(preloaded.exitCode, preloaded.stdout.toString() + preloaded.stderr.toString()).toBe(0);
+    } finally {
+      rmSync(fake, { recursive: true, force: true });
+    }
+  }, 60_000);
 
   test("runs do not pile up: a passing run removes its folder, and the next run removes a dead one's", () => {
     const tmp = realpathSync(mkdtempSync(join(tmpdir(), "scratch-runs-")));

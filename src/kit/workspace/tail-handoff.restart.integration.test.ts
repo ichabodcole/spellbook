@@ -47,7 +47,7 @@ describe("the wait ends on a lost session, and a restart starts a new log", () =
     const back = Bun.spawn(["sh", "-c", `bun ${rig.CLI} ${lost[0]?.command}`], {
       stdout: "pipe",
       stderr: "pipe",
-      env: rig.env,
+      env: { ...rig.env, HOME: process.env.HOME },
       cwd: rig.root,
     });
     expect(await back.exited).toBe(0);
@@ -93,7 +93,7 @@ describe("the wait ends on a lost session, and a restart starts a new log", () =
     const p = Bun.spawn(["sh", "-c", `bun ${rig.CLI} ${printed.command}`], {
       stdout: "pipe",
       stderr: "pipe",
-      env: { ...rig.env, SPELLBOOK_TAIL_WINDOW_MS: "1500" },
+      env: { ...rig.env, HOME: process.env.HOME, SPELLBOOK_TAIL_WINDOW_MS: "1500" },
     });
     const out = await new Response(p.stdout).text();
     expect(await p.exited).toBe(0);
