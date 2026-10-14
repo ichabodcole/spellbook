@@ -31,7 +31,7 @@ extraction fix (#126). Cole agreed the three-cycle split on 2026-10-04.
 
 ## Scope
 
-- **[item/scriptorium-links-tell-the-truth](../../items/scriptorium-links-tell-the-truth.md)**
+- **[item/scriptorium-links-tell-the-truth](../../items/_archive/scriptorium-links-tell-the-truth.md)**
   — seven issues, each ported from the Story Studio commit it names:
   [#126](https://github.com/ichabodcole/spellbook/issues/126) (extraction
   ignores code, escapes and comments; finds the missing link shapes; linear line

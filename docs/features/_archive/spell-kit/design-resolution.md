@@ -311,10 +311,10 @@ files**:
 **Neither reading is the ward the project needs.** As measured it is green on
 arrival and **structurally blind to the one escape that actually breaks a
 deps-free destination** — `sharp`, which stops the shipped imago daemon booting
-at all ([filed](../../../items/imago-daemon-cannot-start-offline.md)). As stated
-it is red on arrival with **95** violations, against correct code — the exact
-failure this ruling already anticipated on the dynamic axis and then reproduced
-on the static one.
+at all ([filed](../../../items/_archive/imago-daemon-cannot-start-offline.md)).
+As stated it is red on arrival with **95** violations, against correct code —
+the exact failure this ruling already anticipated on the dynamic axis and then
+reproduced on the static one.
 
 ### Ruled at 1b, 2026-08-31 — the straddler is no longer a straddler
 

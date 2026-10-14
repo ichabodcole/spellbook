@@ -24,7 +24,7 @@ then re-bases onto it, and the next spell that wants a file tree, a document and
 a chat gets them from the kit instead of copying Scriptorium.
 
 This proposal is based on
-[Write-up: What to take back from Story Studio](../../items/story-studio-port-back/write-up.md).
+[Write-up: What to take back from Story Studio](../../items/_archive/story-studio-port-back/write-up.md).
 Cole chose this path (B, re-base) over cherry-picking on 2026-10-12. Most of the
 write-up's taken candidates arrive with it.
 
@@ -346,7 +346,7 @@ been used.
 
 **Related Documents:**
 
-- [What to take back from Story Studio](../../items/story-studio-port-back/write-up.md)
+- [What to take back from Story Studio](../../items/_archive/story-studio-port-back/write-up.md)
 - [Context and Chat Kit](../context-and-chat-kit/feature.md), phases 2 and 3
   superseded by this feature
-- [Scriptorium decision log, E71](../../items/scriptorium/decision-log.md)
+- [Scriptorium decision log, E71](../../items/_archive/scriptorium/decision-log.md)

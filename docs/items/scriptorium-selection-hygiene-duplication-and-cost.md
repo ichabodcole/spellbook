@@ -49,4 +49,4 @@ look first. Measure before changing anything.
 - `src/scriptorium/surface/components/MarkdownView.tsx`,
   `src/scriptorium/surface/components/DocumentView.tsx`
 - Session:
-  [the chip and the lines it pointed at](scriptorium/sessions/2026-09-22-the-chip-and-the-lines-it-pointed-at.md)
+  [the chip and the lines it pointed at](_archive/scriptorium/sessions/2026-09-22-the-chip-and-the-lines-it-pointed-at.md)

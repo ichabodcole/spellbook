@@ -13,7 +13,7 @@ generated: { by: unknown, at: 2026-08-06 }
 **Status:** Active · **Current sprint:**
 **[06, "filed is not fixed"](./sprints/06-filed-is-not-fixed/plan.md) — 🟡
 SCAFFOLD, not ratified, no branch cut.** Tracked as the planned cycle
-[2026-09-filed-is-not-fixed](../../cycles/2026-09-filed-is-not-fixed.md).
+[2026-09-filed-is-not-fixed](../../cycles/_archive/2026-09-filed-is-not-fixed.md).
 [05](./sprints/05-the-gate/plan.md) merged to `develop` 2026-08-10 and is **held
 unreleased** so 05 and 06 ship together. **Started:** 2026-08-05 ·
 [03](./sprints/03-what-close-takes-with-it/plan.md) shipped in v2.1.0;
@@ -40,7 +40,8 @@ unreleased** so 05 and 06 ship together. **Started:** 2026-08-05 ·
 > body is **not reachable from `docs/`**, which is the gap, not the record.
 >
 > _Two warnings stood here for four days. Writing a third would have been the
-> failure itself — see [the unclosed unit](../../items/the-unclosed-unit.md)._
+> failure itself — see
+> [the unclosed unit](../../items/_archive/the-unclosed-unit.md)._
 
 Fourteen reported defects across the shipped spells, all of one family: a
 command that cannot do the thing returns something shaped like success. This

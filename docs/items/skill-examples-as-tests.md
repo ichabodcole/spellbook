@@ -10,7 +10,7 @@ id: 01a13647-91e9-72a7-9942-3a779f5c1949
 kind: research
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
 tags: [skills, testing]
-from: items/story-studio-port-back/write-up.md
+from: items/_archive/story-studio-port-back/write-up.md
 ---
 
 # Run SKILL.md examples as tests?
@@ -29,4 +29,4 @@ item, which moves detail out of skills into CLI help.
 
 ## Related Documents
 
-- [What to take back from Story Studio](./story-studio-port-back/write-up.md)
+- [What to take back from Story Studio](./_archive/story-studio-port-back/write-up.md)

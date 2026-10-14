@@ -17,7 +17,7 @@ parent: feature/spell-hardening
 # The error-site enumerator's `: never` pattern reads into the next function
 
 Found by the astrolabe implementer in
-[cycle/2026-09-one-act-one-answer](../cycles/2026-09-one-act-one-answer.md),
+[cycle/2026-09-one-act-one-answer](../cycles/_archive/2026-09-one-act-one-answer.md),
 2026-09-28; worked around, not fixed.
 
 `grimoire/lib/error-sites.ts` finds always-throwing helpers with

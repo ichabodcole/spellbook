@@ -10,7 +10,7 @@ id: 01a13647-904e-72e5-b055-9981e6f3208e
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
 tags: [house-style, skills]
-from: items/story-studio-port-back/write-up.md
+from: items/_archive/story-studio-port-back/write-up.md
 ---
 
 # Shell rules for skills in house style
@@ -29,4 +29,4 @@ ids as literals, and generate `references/verbs.md` from `help`.
 
 ## Related Documents
 
-- [What to take back from Story Studio](./story-studio-port-back/write-up.md)
+- [What to take back from Story Studio](./_archive/story-studio-port-back/write-up.md)

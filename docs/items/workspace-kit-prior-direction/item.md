@@ -29,11 +29,11 @@ workspace stack's chat and context modules are ported, map where the two meet.
 - [Context and Chat Kit](../../features/context-and-chat-kit/feature.md): the
   ref contract (pinned/live, range union, role, resolution that refuses with
   candidates), drop intake, and the gated headless context list.
-- [Shared context and chat components](../shared-context-and-chat-components/write-up.md):
+- [Shared context and chat components](../_archive/shared-context-and-chat-components/write-up.md):
   the census, ref chips in messages, telling gestures apart from typed messages,
   the UI not knowing the backend (disk, db, inline), the two channels _selected_
   and _active_, adapter capabilities.
-- [The communication log as a primitive](../message-log-primitive/write-up.md):
+- [The communication log as a primitive](../_archive/message-log-primitive/write-up.md):
   mind-mapper's `messageChannel.ts`, with channels, gesture provenance, `ground`
   and facets; the naming questions (`who`/`role`, `kind`).
 - [Context as a first-class primitive](../context-primitive/write-up.md): a

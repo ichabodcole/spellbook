@@ -17,7 +17,7 @@ cycle: 2026-09-reply-shape-leftovers
 # Small inconsistencies in the bounty and astrolabe refusal envelopes
 
 Found by the no-stake verifier of
-[cycle/2026-09-one-act-one-answer](../cycles/2026-09-one-act-one-answer.md),
+[cycle/2026-09-one-act-one-answer](../cycles/_archive/2026-09-one-act-one-answer.md),
 2026-09-28, on `a7c041d3`, under a scratch `HOME`; filed, not chased. Its
 scripts were `t1.sh`–`t9.sh` in that session's scratchpad (not kept).
 
@@ -104,7 +104,7 @@ three verbs were held at 2 only because that cycle shipped as a patch. Aligning
 them changes a caller-visible exit code, so it goes in a breaking-changes note.
 
 > **Resolved 2026-10-02** by
-> [a restore keeps every task](../cycles/2026-10-a-restore-keeps-every-task.md)
+> [a restore keeps every task](../cycles/_archive/2026-10-a-restore-keeps-every-task.md)
 > (point 4, `4c5aa186`): the lock loser now refuses the same way (exit 2,
 > `restoreSkipped`) when it was given `--restore`, `--title` or `--timeout`. A
 > no-stake verifier reproduced the race and saw the refusal.

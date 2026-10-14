@@ -86,7 +86,7 @@ an earlier draft's header claimed they could.
 > `Cannot find package 'sharp'`, and there is no `node_modules` anywhere up-tree
 > from the installed plugin. Proof 3 above **cannot pass** until it is fixed.
 > Measured and scoped in
-> [the backlog item](../../../../../items/imago-daemon-cannot-start-offline.md):
+> [the backlog item](../../../../../items/_archive/imago-daemon-cannot-start-offline.md):
 > `Bun.Image` is a **behaviourally equivalent** drop-in, one function, 12 lines,
 > one call site. ⚠ **Not byte-identical** — that claim was falsified 2026-08-31
 > on a 10-input sha256 corpus; identity holds only where nothing resamples. **Do
@@ -291,7 +291,7 @@ _Everything above can be green while both of these are true._
 > (the original claim, falsified 2026-08-31 on a 10-input sha256 corpus; the
 > first corpus had nothing in it that resampled real content). One function, 12
 > lines, one call site (`server.ts:194`), plus the test's own fixture. Proof in
-> [the backlog item](../../../../../items/imago-daemon-cannot-start-offline.md).
+> [the backlog item](../../../../../items/_archive/imago-daemon-cannot-start-offline.md).
 
 **Goal:** `plugins/spellbook/skills/imago/scripts/server.ts` has **zero** value
 imports from `../surface/`, while every file is still where it is today.
@@ -320,7 +320,7 @@ R1's three-way sort, applied to the five sites:
   and in `imageOptimize.ts:4` — do not correct them in place.** A comment
   describing a library the file no longer uses is exactly the defect filed
   against
-  [magpie](../../../../../items/magpie-hand-rolls-scale-math-it-does-not-need.md);
+  [magpie](../../../../../items/_archive/magpie-hand-rolls-scale-math-it-does-not-need.md);
   do not create a second instance while closing the first. See the box above —
   it is what makes proof 3 reachable, and doing it first means ward 1b never
   goes red rather than going red and being waited out.
@@ -446,7 +446,7 @@ _The sprint can be reported green while every one of these is true._
 - **Nothing here runs `bunx tsc`.** The team gate is `check && test`.
 - **Nothing runs `build.ts`.** A `dist/` can be stale or absent and the suite
   stays green — the hole that
-  [`stale-dist-fires-unconditionally`](../../../../../items/stale-dist-fires-unconditionally.md)
+  [`stale-dist-fires-unconditionally`](../../../../../items/_archive/stale-dist-fires-unconditionally.md)
   documents from the other side.
 
 ## Carry-forward into Sprint 02

@@ -10,7 +10,7 @@ id: 01a13647-8fc6-73ee-a1e2-fa05cebc3fcf
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
 tags: [playbooks, scaffold]
-from: items/story-studio-port-back/write-up.md
+from: items/_archive/story-studio-port-back/write-up.md
 ---
 
 # Compress the scaffolding playbook
@@ -28,4 +28,4 @@ either.
 
 ## Related Documents
 
-- [What to take back from Story Studio](./story-studio-port-back/write-up.md)
+- [What to take back from Story Studio](./_archive/story-studio-port-back/write-up.md)

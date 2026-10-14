@@ -16,9 +16,9 @@ brief, not a plan. **Predecessor:** [Phase 1a](./brief.md), landed `894e249`.
 Read [the proposal](./feature.md), [the decision log](./decision-log.md) (D1–D8
 — **D6 defines this phase** and **D8 is a contract you inherit**), and
 [the Phase 1a journal](./phase-1-journal.md) in full. The two censuses
-([spine](../../../items/daemon-spine-census/write-up.md),
-[tail](../../../items/tail-reader-convergence/write-up.md)) carry the drafted
-signatures and the defect tables L1–L7 / B1–B8.
+([spine](../../../items/_archive/daemon-spine-census/write-up.md),
+[tail](../../../items/_archive/tail-reader-convergence/write-up.md)) carry the
+drafted signatures and the defect tables L1–L7 / B1–B8.
 
 ---
 

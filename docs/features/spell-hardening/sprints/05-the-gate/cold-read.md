@@ -26,9 +26,9 @@ asked to write the merge message · **Project:**
 > **Both were right to ask, and the reason they had to is that I was the only
 > one holding the output.** A report read once, by the person who commissioned
 > it, who then relays a filtered summary — that is
-> [the unclosed unit](../../../../items/the-unclosed-unit.md) with the lead as
-> the single point of loss. **Answering each seat individually treats the
-> instance. Landing the output treats the class.**
+> [the unclosed unit](../../../../items/_archive/the-unclosed-unit.md) with the
+> lead as the single point of loss. **Answering each seat individually treats
+> the instance. Landing the output treats the class.**
 >
 > The finalize ritual names this exactly: _"the largest leak is a report's
 > recommendations section, and nothing in any ritual pulls from one."_

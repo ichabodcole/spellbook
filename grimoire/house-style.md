@@ -97,7 +97,7 @@ that failed re-measurement: an accuracy bar from a probe that flattered it, a
 headline population that disagreed with its own detail figures, and a count
 nobody could verify. Every blocking item from the reviewer was a claim like
 these, not code.
-([Session](../docs/items/scriptorium/sessions/2026-09-22-keeping-your-place-and-the-guard-that-guesses.md#the-rule-that-came-out-of-it-and-it-is-not-scriptoriums))_
+([Session](../docs/items/_archive/scriptorium/sessions/2026-09-22-keeping-your-place-and-the-guard-that-guesses.md#the-rule-that-came-out-of-it-and-it-is-not-scriptoriums))_
 
 ### Start minimal; subtract before you test.
 
@@ -238,12 +238,12 @@ dismissal, every later selection stayed hidden, and the daemon, whose held
 selection `say` attaches, was never told the passage had gone. Fixed on
 `fix/scriptorium-selection-context`: clearing the chip clears the selection, in
 both panes and in the daemon. The rule stands.
-([Session](../docs/items/scriptorium/sessions/2026-09-22-the-chip-and-the-lines-it-pointed-at.md#the-ruling),
+([Session](../docs/items/_archive/scriptorium/sessions/2026-09-22-the-chip-and-the-lines-it-pointed-at.md#the-ruling),
 [memory](../docs/memories/2026-09-22-scriptorium-selection-and-the-chip.md);
 applied on purpose in
-[branch 3](../docs/items/scriptorium/sessions/2026-09-22-room-to-read-and-the-width-the-anchors-forgot.md#what-was-built)
+[branch 3](../docs/items/_archive/scriptorium/sessions/2026-09-22-room-to-read-and-the-width-the-anchors-forgot.md#what-was-built)
 and
-[the chip-across-documents fix](../docs/items/scriptorium/sessions/2026-09-22-a-selection-that-outlived-its-document.md#the-fix).)_
+[the chip-across-documents fix](../docs/items/_archive/scriptorium/sessions/2026-09-22-a-selection-that-outlived-its-document.md#the-fix).)_
 
 ### Keep the client thin — MCP at the auth layer.
 
@@ -459,10 +459,10 @@ that `say` attaches. The kit's tail bookmark `--since N` was a cursor with no
 log, so after a daemon restart it skipped the new log's start. Both are fixed
 (E66, and `--since N@<epoch>` on `feat/tail-quiet-handoff`). The rule stands,
 and the spells whose daemon stamps no epoch still carry the gap.
-([Session](../docs/items/scriptorium/sessions/2026-09-22-a-selection-that-outlived-its-document.md),
+([Session](../docs/items/_archive/scriptorium/sessions/2026-09-22-a-selection-that-outlived-its-document.md),
 [memory](../docs/memories/2026-09-22-a-place-in-a-document-names-its-document.md);
 the tail:
-[session](../docs/items/scriptorium/sessions/2026-09-23-the-tail-hands-off-before-the-cap.md#review).)_
+[session](../docs/items/_archive/scriptorium/sessions/2026-09-23-the-tail-hands-off-before-the-cap.md#review).)_
 
 ---
 
@@ -510,13 +510,13 @@ than a schedule.**
 | _(none)_ | —             | —        |
 
 **Every spell in the roster builds.** digestify left the queue on 2026-09-07
-(`docs/items/digestify-conversion/`), the third and last rewrite: 1,505 lines of
-hand-written HTML with three CDN runtime dependencies became a React surface
-with its primitives from the shadcn registry, taken INSIDE the rewrite rather
-than vendored first. bounty went on 2026-09-06 and grapevine — the pathfinder —
-on 2026-09-05. **A spell with no `surface/` is not yet a port subject**; the
-porting playbook's Applicability says the same thing from its side, and it now
-governs nobody.
+(`docs/items/_archive/digestify-conversion/`), the third and last rewrite: 1,505
+lines of hand-written HTML with three CDN runtime dependencies became a React
+surface with its primitives from the shadcn registry, taken INSIDE the rewrite
+rather than vendored first. bounty went on 2026-09-06 and grapevine — the
+pathfinder — on 2026-09-05. **A spell with no `surface/` is not yet a port
+subject**; the porting playbook's Applicability says the same thing from its
+side, and it now governs nobody.
 
 > **⏳ DIGESTIFY'S TRIGGER FIRED, AND NOT THE WAY IT WAS WRITTEN.** The
 > condition was "digestify ports when it becomes dynamic enough to want a
@@ -720,7 +720,7 @@ _Scar: the kit's `tail --once` hung three ways before it shipped: an open stream
 after its event, a dead daemon retried forever, and a session closed in the gap.
 None printed anything wrong. All three are fixed on `feat/tail-quiet-handoff`,
 and the rule stands for every other wait.
-([Session](../docs/items/scriptorium/sessions/2026-09-23-the-tail-hands-off-before-the-cap.md),
+([Session](../docs/items/_archive/scriptorium/sessions/2026-09-23-the-tail-hands-off-before-the-cap.md),
 [memory](../docs/memories/2026-09-23-a-wait-that-wakes-by-ending-must-end.md))_
 
 ### Enumerate the roster by behaviour, never by a fixed path or a name.

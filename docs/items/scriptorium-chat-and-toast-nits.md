@@ -16,7 +16,7 @@ generated: { by: claude-opus-5-5, at: 2026-09-28 }
 # Scriptorium: small chat and toast leftovers
 
 Found by the browser verifier of
-[cycle/2026-09-scriptorium-from-real-use-2](../cycles/2026-09-scriptorium-from-real-use-2.md)
+[cycle/2026-09-scriptorium-from-real-use-2](../cycles/_archive/2026-09-scriptorium-from-real-use-2.md)
 (2026-09-28); filed, not scheduled.
 
 - **A chat link to nowhere gives no feedback.** A relative link to a missing doc

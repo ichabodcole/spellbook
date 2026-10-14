@@ -580,11 +580,11 @@ changed.
    - Phase 3 is superseded only for the disk host. Keep the backend-agnostic
      list as a gated phase here, or move it to its own item.
    - Correct the "no spell shows its refs as chips" line.
-2. **[Shared context and chat components](../shared-context-and-chat-components/write-up.md):
+2. **[Shared context and chat components](../_archive/shared-context-and-chat-components/write-up.md):
    close as done.** Its recommendation became Context and Chat Kit, and its open
    questions are now answered (tasks and notes generalise) or owned elsewhere
    (image sets, by phase 3; StoryLoom's model, already surveyed).
-3. **[The communication log as a primitive](../message-log-primitive/write-up.md):
+3. **[The communication log as a primitive](../_archive/message-log-primitive/write-up.md):
    close as done, folded into Workspace Kit.** The naming is settled by Story
    Studio's protocol. Its live content (channels, facets, collapse, writing the
    paradigm into house style) becomes Workspace Kit evolutions 6, 7 and 17. Its
@@ -678,7 +678,7 @@ ahead, and has its phase 3 and "the agent sees nothing new" lines corrected.
 
 - Spellbook: the four documents above;
   [Workspace Kit](../../features/workspace-kit/feature.md);
-  [the Scriptorium decision log, E65](../scriptorium/decision-log.md);
+  [the Scriptorium decision log, E65](../_archive/scriptorium/decision-log.md);
   `grimoire/house-style.md`; the memories `message-surface-paradigm`,
   `co-presence-ambient-vs-intent`, `shared-ui-backend-agnostic` and
   `conversation-primary-surfaces`; code under `src/scriptorium`,
@@ -697,4 +697,4 @@ ahead, and has its phase 3 and "the agent sees nothing new" lines corrected.
 - [Where our messaging and context direction meets Story Studio's kit](./item.md)
 - [Workspace Kit](../../features/workspace-kit/feature.md)
 - [Context and Chat Kit](../../features/context-and-chat-kit/feature.md)
-- [What to take back from Story Studio](../story-studio-port-back/write-up.md)
+- [What to take back from Story Studio](../_archive/story-studio-port-back/write-up.md)

@@ -50,5 +50,5 @@ None of the three printed anything wrong. They just never ended.
 `src/scriptorium/backend/tail-handoff.integration.test.ts`
 
 **Docs:**
-[The session](../items/scriptorium/sessions/2026-09-23-the-tail-hands-off-before-the-cap.md)
-· [The investigation](../items/monitor-expiry-and-the-tail/write-up.md)
+[The session](../items/_archive/scriptorium/sessions/2026-09-23-the-tail-hands-off-before-the-cap.md)
+· [The investigation](../items/_archive/monitor-expiry-and-the-tail/write-up.md)

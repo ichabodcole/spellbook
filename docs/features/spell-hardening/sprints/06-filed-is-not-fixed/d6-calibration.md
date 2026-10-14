@@ -13,7 +13,7 @@ generated: { by: claude-opus-5-5, at: 2026-09-27 }
 # Sprint 06 D6: calibration of four wards
 
 Part of
-[terminator-ward-over-the-registry](../../../../items/terminator-ward-over-the-registry.md).
+[terminator-ward-over-the-registry](../../../../items/_archive/terminator-ward-over-the-registry.md).
 Run on 2026-09-27 against `0adb8fe5` (the terminator-invariant rewrite on top of
 `41065365`) by a seat that wrote none of roster-drift, gate-honesty or
 strict-parse-invariant. It did write terminator-invariant, so that ward's

@@ -68,6 +68,6 @@ The **hermeticity** half (our own test suite doing the hijacking) is fixed as
 _our_ tests, not any other process, and they do nothing about the identity gap.
 
 Related:
-[`2026-08-06-bounty-fresh-restore-destroys-snapshot`](./bounty-fresh-restore-destroys-snapshot.md),
+[`2026-08-06-bounty-fresh-restore-destroys-snapshot`](./_archive/bounty-fresh-restore-destroys-snapshot.md),
 and #85–#88 / the [CLI-contract investigation](spell-cli-contract/write-up.md),
 which decides what a read envelope owes its caller.

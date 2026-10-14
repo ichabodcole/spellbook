@@ -1264,7 +1264,7 @@ freshly-built dists is what made them report stale.
 toolchain that cannot be pinned. At that point the basis must be **re-derived, not patched**.
 
 **Proof:** `fae8830` (the stamp's removal, and the rebuild-is-a-git-no-op measurement) ·
-[the 2026-08-31 spike](../../docs/items/releasing-a-non-stale-build/write-up.md),
+[the 2026-08-31 spike](../../docs/items/_archive/releasing-a-non-stale-build/write-up.md),
 which carries the touch-point pricing and what no layer catches.
 
 ## Contract 19 — a ward's population must follow its subject, and "loosen the predicate" is the moment to check that it has

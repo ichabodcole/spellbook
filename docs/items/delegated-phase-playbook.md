@@ -10,7 +10,7 @@ id: 01a13647-8f42-7707-80eb-2430a9e7ca22
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
 tags: [playbooks, practices]
-from: items/story-studio-port-back/write-up.md
+from: items/_archive/story-studio-port-back/write-up.md
 ---
 
 # Delegated-phase playbook
@@ -30,4 +30,4 @@ Studio wrote it down as `docs/playbooks/delegated-phase-playbook.md`. The
 
 ## Related Documents
 
-- [What to take back from Story Studio](./story-studio-port-back/write-up.md)
+- [What to take back from Story Studio](./_archive/story-studio-port-back/write-up.md)

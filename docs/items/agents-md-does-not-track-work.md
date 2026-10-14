@@ -10,7 +10,7 @@ id: 01a13647-915e-779f-a5d6-04c0a51a752d
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
 tags: [agents-md, docs]
-from: items/story-studio-port-back/write-up.md
+from: items/_archive/story-studio-port-back/write-up.md
 ---
 
 # AGENTS.md does not track work
@@ -26,4 +26,4 @@ should be minimal and not need churn. Tone stays as it is.
 
 ## Related Documents
 
-- [What to take back from Story Studio](./story-studio-port-back/write-up.md)
+- [What to take back from Story Studio](./_archive/story-studio-port-back/write-up.md)

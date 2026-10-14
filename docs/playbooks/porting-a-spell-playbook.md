@@ -126,7 +126,7 @@ then neither is wrong.
 - **The spell's daemon starts offline.** `bun --no-install scripts/server.ts`
   must not die on a missing package. If it does, that is a live defect and it
   blocks the port's only real proof — see
-  [imago's case](../items/imago-daemon-cannot-start-offline.md).
+  [imago's case](../items/_archive/imago-daemon-cannot-start-offline.md).
 - **A measured pre-move baseline**, captured as _error lines_, not counts, and
   **name the tsconfig** — the root `-p .` and a spell's own (only some spells
   carry one; glamour's is `plugins/spellbook/skills/glamour/tsconfig.json`) are
@@ -3687,10 +3687,10 @@ spell made a Bun workspace member so the CLI would run at all. Same two-agent
 shape; the verifier found two visible differences the author's twelve-row table
 omitted, two call sites breaking the branch's own new house-style rule, and put
 a number on the dead stylesheet that turned into a ruling. Full method in
-[the shadcn journal](../items/grapevine-shadcn/shadcn-journal.md) and
-[its verify journal](../items/grapevine-shadcn/verify-journal.md); the options
-not taken for where the config lives are in
-[the decision log](../items/grapevine-shadcn/decision-log.md).
+[the shadcn journal](../items/_archive/grapevine-shadcn/shadcn-journal.md) and
+[its verify journal](../items/_archive/grapevine-shadcn/verify-journal.md); the
+options not taken for where the config lives are in
+[the decision log](../items/_archive/grapevine-shadcn/decision-log.md).
 
 ### Example 8: bounty — three entries, and a guarantee that did not reach
 
@@ -3745,11 +3745,11 @@ one whose daemon has no spawner** — so it is the run that exercised the kit's 
 mode override (documented since the kit was written, never used until now) and
 the run that found where Contract 5 lands when nothing spawns the daemon. Full
 record in
-[the rewrite journal](../items/digestify-conversion/rewrite-journal.md);
+[the rewrite journal](../items/_archive/digestify-conversion/rewrite-journal.md);
 inventory at
-[behaviour-inventory.md](../items/digestify-conversion/behaviour-inventory.md) —
-138 rows, 128 driven in a browser, five `not:` — and the options not taken in
-[the decision log](../items/digestify-conversion/decision-log.md).
+[behaviour-inventory.md](../items/_archive/digestify-conversion/behaviour-inventory.md)
+— 138 rows, 128 driven in a browser, five `not:` — and the options not taken in
+[the decision log](../items/_archive/digestify-conversion/decision-log.md).
 
 ### Example 10: mind-mapper — the last port, and the one where the kit was the SOURCE
 
@@ -4013,7 +4013,7 @@ port **taught**, not what it confirmed.
   fatal handler will eat the dev import's error; an `url()` in the sheet is a
   build input; and a test file under `surface/` changes the shipped stylesheet.
   Full record in
-  [the rewrite journal](../items/bounty-conversion/rewrite-journal.md).
+  [the rewrite journal](../items/_archive/bounty-conversion/rewrite-journal.md).
 - **2026-09-07** — **digestify, the third rewrite, and the LAST — the population
   is closed.** Taught, mostly by being the first subject with no reactive shell:
   R2 and R3 have a second shape for an imperative page (sort the INVENTORY, not

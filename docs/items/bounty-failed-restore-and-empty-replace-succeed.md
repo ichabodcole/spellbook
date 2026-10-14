@@ -15,7 +15,7 @@ parent: feature/spell-hardening
 # A failed restore and a replace that seeds nothing both exit 0
 
 Found by the no-stake verifier of
-[cycle/2026-09-one-act-one-answer](../cycles/2026-09-one-act-one-answer.md),
+[cycle/2026-09-one-act-one-answer](../cycles/_archive/2026-09-one-act-one-answer.md),
 2026-09-28, on `a7c041d3`, under a scratch `HOME`; filed, not chased. Its
 scripts were `t1.sh`–`t9.sh` in that session's scratchpad (not kept).
 

@@ -199,7 +199,7 @@ serve path cannot run, which would force a build **into the dev loop**.
 > dependency.
 
 See
-[Astryx evaluation](../../items/astryx-component-library-evaluation/write-up.md).
+[Astryx evaluation](../../items/_archive/astryx-component-library-evaluation/write-up.md).
 
 ### §6 — Delivery: Approach A, staged toward C
 
@@ -345,7 +345,7 @@ _(Were open questions; settled in the `prospero` design session.)_
 
 **Related Documents:**
 
-- [Astryx component-library evaluation](../../items/astryx-component-library-evaluation/write-up.md)
+- [Astryx component-library evaluation](../../items/_archive/astryx-component-library-evaluation/write-up.md)
   — source of the §5 guardrail
 - Memory: `spell-deps-resolution-in-host-repo` (the distributed-spell build
   model), `spell-surface-stack`, `astrolabe-spell`,

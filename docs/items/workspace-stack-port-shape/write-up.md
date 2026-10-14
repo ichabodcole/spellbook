@@ -765,8 +765,8 @@ no-stake verifier. Run item 1 first, then 2–4 in parallel, then 5.
     [its session](../../features/workspace-kit/sessions/2026-10-13-kit-foundation.md);
   - [the prior-direction write-up](../workspace-kit-prior-direction/write-up.md);
   - [Message via and refs](../message-via-and-refs.md);
-  - [Scriptorium's decision log](../scriptorium/decision-log.md), E53, E64, E65,
-    E67 and E71;
+  - [Scriptorium's decision log](../_archive/scriptorium/decision-log.md), E53,
+    E64, E65, E67 and E71;
   - `src/scriptorium` and `src/kit` at `e592924b`;
   - `plugins/spellbook/skills/scriptorium/` (the SKILL, acc and launchers).
 
@@ -778,4 +778,4 @@ no-stake verifier. Run item 1 first, then 2–4 in parallel, then 5.
 - [Workspace Kit](../../features/workspace-kit/feature.md)
 - [Where our messaging and context direction meets Story Studio's kit](../workspace-kit-prior-direction/write-up.md)
 - [Message via and refs](../message-via-and-refs.md)
-- [Scriptorium decision log](../scriptorium/decision-log.md)
+- [Scriptorium decision log](../_archive/scriptorium/decision-log.md)

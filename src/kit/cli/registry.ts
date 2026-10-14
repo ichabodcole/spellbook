@@ -4,7 +4,7 @@
  * (`schema`, format v0).
  *
  * Generalised from the three hand-built registries (grapevine, glamour,
- * scriptorium) per `docs/items/shared-cli-registry-in-the-kit/write-up.md`, as
+ * scriptorium) per `docs/items/_archive/shared-cli-registry-in-the-kit/write-up.md`, as
  * amended by its cold read (`…/artifacts/cold-read.md`). Where they disagreed,
  * the cold read won.
  *
@@ -672,7 +672,7 @@ export function defineCli<const O extends OptionsTable>(spec: CliSpec<O>): Cli {
 
   /**
    * Contract 5's `--` made the caller's flag TEXT; say so (c1,
-   * `docs/items/terminator-eats-session-key.md`). A post-`--` token that spells
+   * `docs/items/_archive/terminator-eats-session-key.md`). A post-`--` token that spells
    * a flag this row accepts — `--k`, `--k=v`, or the short `-s` of an accepted
    * `k`, globals included — is named in ONE `# warning:` line on stderr, with
    * the move that recovers it. Stdout and the exit code do not change, and the

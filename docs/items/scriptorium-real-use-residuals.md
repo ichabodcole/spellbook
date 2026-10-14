@@ -18,14 +18,14 @@ generated: { by: claude-opus-5.5, at: 2026-09-24 }
 # Residuals from the Scriptorium real-use cycle
 
 These were recorded under "Known and not built" in the sessions of
-[Scriptorium from real use](../cycles/2026-09-scriptorium-real-use.md), and
-nowhere else, plus two found later (sections 6 and 7). They are grouped here so
-that none is lost. Each is small, or is waiting on Cole. If one grows, split it
-into its own item. The versioned plugin path from the same list has
-[its own item](./tail-rearm-command-names-a-versioned-plugin-path.md), because
-it can bite at the next release. It is resolved: the printed command names no
-path, and the agent runs it with its own launcher (Cole's ruling, 2026-09-24;
-`fix/tail-rearm-without-plugin-path`).
+[Scriptorium from real use](../cycles/_archive/2026-09-scriptorium-real-use.md),
+and nowhere else, plus two found later (sections 6 and 7). They are grouped here
+so that none is lost. Each is small, or is waiting on Cole. If one grows, split
+it into its own item. The versioned plugin path from the same list has
+[its own item](./_archive/tail-rearm-command-names-a-versioned-plugin-path.md),
+because it can bite at the next release. It is resolved: the printed command
+names no path, and the agent runs it with its own launcher (Cole's ruling,
+2026-09-24; `fix/tail-rearm-without-plugin-path`).
 
 ## 1. The no-epoch spells' fallback gap
 
@@ -47,7 +47,7 @@ Re-arm with `tail --since N`. The two events never arrive.
 
 **Pointers:** the ⚠ STATED LIMIT under D2 in the header of
 `src/kit/wire/tailHandoff.ts`;
-[session](scriptorium/sessions/2026-09-23-the-tail-hands-off-before-the-cap.md#known-and-not-built).
+[session](_archive/scriptorium/sessions/2026-09-23-the-tail-hands-off-before-the-cap.md#known-and-not-built).
 
 ## 2. The keyed late-lead edge
 
@@ -65,7 +65,7 @@ printed re-arm, still with no board. It prints `tail.closed`.
 
 **Pointers:** "KNOWN EDGE, NOT FIXED" in the header of
 `src/kit/wire/tailHandoff.ts`;
-[session](scriptorium/sessions/2026-09-23-the-tail-hands-off-before-the-cap.md#known-and-not-built).
+[session](_archive/scriptorium/sessions/2026-09-23-the-tail-hands-off-before-the-cap.md#known-and-not-built).
 
 ## 3. A resize does not re-place a pane
 
@@ -80,8 +80,8 @@ reopen.
 **Repro:** in split view, scroll to a heading, then drag the divider wide.
 
 **Pointers:**
-[branch 2 session](scriptorium/sessions/2026-09-22-keeping-your-place-and-the-guard-that-guesses.md#known-and-not-built),
-[branch 3 session](scriptorium/sessions/2026-09-22-room-to-read-and-the-width-the-anchors-forgot.md#known-and-not-built).
+[branch 2 session](_archive/scriptorium/sessions/2026-09-22-keeping-your-place-and-the-guard-that-guesses.md#known-and-not-built),
+[branch 3 session](_archive/scriptorium/sessions/2026-09-22-room-to-read-and-the-width-the-anchors-forgot.md#known-and-not-built).
 
 ## 4. Triple-click in rendered mode gives no chip
 
@@ -96,7 +96,7 @@ at the composer.
 
 **Pointers:** `src/scriptorium/surface/state/selection.ts`
 (`renderedSelectionAct`), `MarkdownView.tsx`;
-[session](scriptorium/sessions/2026-09-22-room-to-read-and-the-width-the-anchors-forgot.md#known-and-not-built).
+[session](_archive/scriptorium/sessions/2026-09-22-room-to-read-and-the-width-the-anchors-forgot.md#known-and-not-built).
 
 ## 5. Batched note review
 
@@ -107,8 +107,8 @@ cycle kept it out of scope because it may reshape branch 4's design rather than
 extend it. It was option 4 in the note item and is untouched.
 
 **Pointers:**
-[the note item, option 4](./scriptorium-a-note-is-acted-on-and-nothing-shows-it.md);
-[branch 4 session](scriptorium/sessions/2026-09-22-a-note-that-says-it-is-with-the-agent.md#rulings).
+[the note item, option 4](./_archive/scriptorium-a-note-is-acted-on-and-nothing-shows-it.md);
+[branch 4 session](_archive/scriptorium/sessions/2026-09-22-a-note-that-says-it-is-with-the-agent.md#rulings).
 
 ## 6. Magpie's `--once` wakes on a tab connecting
 

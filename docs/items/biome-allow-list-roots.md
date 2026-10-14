@@ -10,7 +10,7 @@ id: 01a13647-90da-72c6-aafa-9e81eea7fe0a
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
 tags: [tooling, biome]
-from: items/story-studio-port-back/write-up.md
+from: items/_archive/story-studio-port-back/write-up.md
 ---
 
 # Allow-list Biome roots
@@ -26,4 +26,4 @@ names only the roots to scan.
 
 ## Related Documents
 
-- [What to take back from Story Studio](./story-studio-port-back/write-up.md)
+- [What to take back from Story Studio](./_archive/story-studio-port-back/write-up.md)

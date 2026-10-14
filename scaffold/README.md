@@ -30,7 +30,7 @@ seen.
 
 **What a template tree here would still have to generate**, and the condition
 for writing it, are ruled in
-[`docs/items/scaffolding-a-spell/decision-log.md`](../docs/items/scaffolding-a-spell/decision-log.md)
+[`docs/items/_archive/scaffolding-a-spell/decision-log.md`](../docs/items/_archive/scaffolding-a-spell/decision-log.md)
 (**S3**): not yet — the condition is one real spell walking the playbook and
 reporting which steps were mechanical.
 

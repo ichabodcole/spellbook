@@ -16,8 +16,8 @@ generated: { by: claude-opus-5-5, at: 2026-09-26 }
 
 Cole ruled that all nine spell CLIs go through the full acc guidance (seven
 steps), then left the lead to run the cycle
-([2026-09-acc-conformance](../../../cycles/2026-09-acc-conformance.md)) with
-subagents doing the work. Every call made in his absence is in the
+([2026-09-acc-conformance](../../../cycles/_archive/2026-09-acc-conformance.md))
+with subagents doing the work. Every call made in his absence is in the
 [decision log](../decision-log.md) with the options not taken; ⭐ marks the ones
 for his review.
 

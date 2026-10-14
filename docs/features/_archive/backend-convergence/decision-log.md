@@ -1294,7 +1294,7 @@ undiscussed orders, on the authority of whichever spell ported first.
 
 **Ruled:** Cole, 2026-09-09 — _"move to bun 1.4.0 to match the installed
 version."_ Option 3 of
-[the backlog item](../../../items/bun-pin-disagrees-with-the-bun-that-builds.md),
+[the backlog item](../../../items/_archive/bun-pin-disagrees-with-the-bun-that-builds.md),
 at Cole's version.
 
 Before: `.bun-version` **1.4.0**, PATH bun **1.4.0**, and the bun that actually

@@ -94,12 +94,13 @@ CLI beyond what the guidance requires; acc itself (friction goes upstream, step
   surface, `schema` verb, census) and scriptorium.
   `docs/features/glamour-acc-l0/` records how glamour got there.
 - **Step 6 runs on a shared kit module** (decided 2026-09-26 from
-  [the research](../../items/shared-cli-registry-in-the-kit/write-up.md) and
-  [its cold read](../../items/shared-cli-registry-in-the-kit/artifacts/cold-read.md)):
+  [the research](../../items/_archive/shared-cli-registry-in-the-kit/write-up.md)
+  and
+  [its cold read](../../items/_archive/shared-cli-registry-in-the-kit/artifacts/cold-read.md)):
   `src/kit/cli/registry.ts`, built first in
-  [item/build-kit-cli-registry](../../items/build-kit-cli-registry.md) behind a
-  golden snapshot of all nine CLIs, and proven on glamour, scriptorium and
-  grapevine. The other six items are blocked on it.
+  [item/build-kit-cli-registry](../../items/_archive/build-kit-cli-registry.md)
+  behind a golden snapshot of all nine CLIs, and proven on glamour, scriptorium
+  and grapevine. The other six items are blocked on it.
 - **Execution:** subagents do the work, one per item; the lead briefs, reviews
   and lands. Run the gate item early enough that later items land against it.
 
@@ -110,7 +111,7 @@ CLI beyond what the guidance requires; acc itself (friction goes upstream, step
   contract, and grapevine made the same break at V2.0; say so in the release
   note.
 - **Overlap with spell-hardening:** bounty's A6 failure is
-  [item/terminator-eats-session-key](../../items/terminator-eats-session-key.md)
+  [item/terminator-eats-session-key](../../items/_archive/terminator-eats-session-key.md)
   (`c1`), and C2/D1 sit close to that feature's unbuilt exit-code contract.
   Whatever spell-hardening keeps, do not do this work twice.
 - **Census noise:** recording below the root on a verb-first CLI surfaces many

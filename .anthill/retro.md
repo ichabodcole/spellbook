@@ -283,7 +283,7 @@ Nothing else came close: this session's three lead measurement errors are `princ
 **Shape:** convened directly from a scope ruling, no plan document — see the container note below. 10+ commits on `fix/spell-hardening-05`; gate 1416 → **1447 pass / 0 fail**, 105 → 109 files.
 **Thesis under test:** *the rules exist AND are enforced* — part 2 of the project's end condition, part 1 having been drained the same day.
 
-> ⛔ **This sprint ran nine hours with no `plan.md` and no row in its project's sprint table.** Found at finalize by the docs-of-record sweep, not by anyone noticing. Container created retroactively at `388602e`, and it says so on its face rather than pretending it was there. **Third consecutive sprint with a container gap, and this one had [`the unclosed unit`](../docs/items/the-unclosed-unit.md) written about it the same day, by the same lead, hours earlier.**
+> ⛔ **This sprint ran nine hours with no `plan.md` and no row in its project's sprint table.** Found at finalize by the docs-of-record sweep, not by anyone noticing. Container created retroactively at `388602e`, and it says so on its face rather than pretending it was there. **Third consecutive sprint with a container gap, and this one had [`the unclosed unit`](../docs/items/_archive/the-unclosed-unit.md) written about it the same day, by the same lead, hours earlier.**
 
 ---
 

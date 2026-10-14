@@ -24,7 +24,8 @@ generated: { by: unknown, at: 2026-08-10 }
 > **today**, by the same lead, hours earlier.
 >
 > **That is three consecutive sprints, and this one had the finding in front of
-> it.** See [`the unclosed unit`](../../../../items/the-unclosed-unit.md).
+> it.** See
+> [`the unclosed unit`](../../../../items/_archive/the-unclosed-unit.md).
 > Recording it rather than quietly authoring a plausible plan, because a
 > retroactive plan is a document claiming a ratification that never happened.
 

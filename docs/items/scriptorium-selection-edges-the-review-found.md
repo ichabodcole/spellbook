@@ -159,4 +159,4 @@ edge but lives here because the same drive found it.
 - `src/scriptorium/surface/state/selection.ts` (`renderedSelectionAct`)
 - `src/scriptorium/surface/components/MarkdownView.tsx`
 - Session:
-  [the chip and the lines it pointed at](scriptorium/sessions/2026-09-22-the-chip-and-the-lines-it-pointed-at.md)
+  [the chip and the lines it pointed at](_archive/scriptorium/sessions/2026-09-22-the-chip-and-the-lines-it-pointed-at.md)

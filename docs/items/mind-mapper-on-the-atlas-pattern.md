@@ -10,7 +10,7 @@ id: 01a13647-8eba-7218-b8b2-2fe204b3233a
 kind: research
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
 tags: [mind-mapper, kit, canvas]
-from: items/story-studio-port-back/write-up.md
+from: items/_archive/story-studio-port-back/write-up.md
 ---
 
 # Mind-mapper on the Atlas pattern
@@ -34,4 +34,4 @@ whether canvas boards are ported with it.
 
 ## Related Documents
 
-- [What to take back from Story Studio](./story-studio-port-back/write-up.md)
+- [What to take back from Story Studio](./_archive/story-studio-port-back/write-up.md)

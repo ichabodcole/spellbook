@@ -10,7 +10,7 @@ id: 01a13647-9270-73d4-8b90-318f67c0d67d
 kind: research
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
 tags: [testing, gate]
-from: items/story-studio-port-back/write-up.md
+from: items/_archive/story-studio-port-back/write-up.md
 ---
 
 # Parallel tests in the gate?
@@ -29,4 +29,4 @@ whether Spellbook's daemons can share a parallel run (temp discovery pointers).
 
 ## Related Documents
 
-- [What to take back from Story Studio](./story-studio-port-back/write-up.md)
+- [What to take back from Story Studio](./_archive/story-studio-port-back/write-up.md)

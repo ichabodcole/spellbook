@@ -365,9 +365,9 @@ should keep it in view as a second host. Tracked in
 
 **Related Documents:**
 
-- [Investigation: Shared context and chat components for spell surfaces](../../items/shared-context-and-chat-components/write-up.md):
+- [Investigation: Shared context and chat components for spell surfaces](../../items/_archive/shared-context-and-chat-components/write-up.md):
   the census, cold read, visual survey and StoryLoom survey behind this proposal
-- [Shared code and the build boundary](../../items/shared-code-and-the-build-boundary/write-up.md):
+- [Shared code and the build boundary](../../items/_archive/shared-code-and-the-build-boundary/write-up.md):
   how shared code ships
 - [Spell surface pipeline](../spell-surface-pipeline/): the bundler every
   surface ships through

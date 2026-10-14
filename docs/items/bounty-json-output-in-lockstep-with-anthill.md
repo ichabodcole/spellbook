@@ -16,8 +16,8 @@ from: 01a0e03d-f826-7663-8e5f-e343cc87d3c6
 
 # Switch bounty's list and sessions to JSON in lockstep with anthill
 
-From [the bounty acc item](acc-conformance-bounty.md) and decision log #20 in
-[the acc feature](../features/spell-cli-acc-conformance/decision-log.md).
+From [the bounty acc item](_archive/acc-conformance-bounty.md) and decision log
+#20 in [the acc feature](../features/spell-cli-acc-conformance/decision-log.md).
 
 `bounty list` and `bounty sessions` print prose, so bounty cannot declare
 `defaultOutput: json` and acc's B5 stays `unverified`. They stayed prose because

@@ -193,11 +193,11 @@ Existing terminal agent conversation
   human-first apps, with StoryLoom and dream-flute as pilots. **The "local
   bridge" half of this topology is close to its sidecar.** It also notes MCP as
   the interop front door for hosted or foreign agents later.
-- [Cross-harness spell distribution](../cross-harness-spell-distribution/write-up.md)
+- [Cross-harness spell distribution](../_archive/cross-harness-spell-distribution/write-up.md)
   (concluded): the portable unit is the skill directory. That's relevant if the
   bridge ships as part of a skill.
-- [Monitor expiry and the tail](../monitor-expiry-and-the-tail/write-up.md) and
-  the tail handoff: the agent's side of real-time delivery, which a remote
+- [Monitor expiry and the tail](../_archive/monitor-expiry-and-the-tail/write-up.md)
+  and the tail handoff: the agent's side of real-time delivery, which a remote
   transport must not break.
 
 ## Initial Observations (hypotheses to test)
@@ -581,8 +581,8 @@ bridge would become a small channel server that:
 
 That would **replace Monitor plus the tail for delivery**, which makes the
 30-minute Monitor cap and the whole tail-handoff apparatus unnecessary (see
-[Monitor expiry and the tail](../monitor-expiry-and-the-tail/write-up.md)), and
-it batches events that arrive while the agent is busy. **It applies to local
+[Monitor expiry and the tail](../_archive/monitor-expiry-and-the-tail/write-up.md)),
+and it batches events that arrive while the agent is busy. **It applies to local
 spells too, not only hosted ones.**
 
 **What doesn't fit:**
@@ -976,11 +976,11 @@ server would use. Its brief is `~/Projects/wocky-talky/docs/spike-brief.md`.
 
 - [Context and chat kit (proposal)](../../features/context-and-chat-kit/feature.md):
   the chat seam a hosted surface uses
-- [Shared context and chat components](../shared-context-and-chat-components/write-up.md):
+- [Shared context and chat components](../_archive/shared-context-and-chat-components/write-up.md):
   where the StoryLoom convergence was found
 - [Agent co-presence retrofit](../agent-co-presence-retrofit/write-up.md)
-- [Cross-harness spell distribution](../cross-harness-spell-distribution/write-up.md)
-- [Monitor expiry and the tail](../monitor-expiry-and-the-tail/write-up.md)
+- [Cross-harness spell distribution](../_archive/cross-harness-spell-distribution/write-up.md)
+- [Monitor expiry and the tail](../_archive/monitor-expiry-and-the-tail/write-up.md)
 - [Spell backends architecture](../../architecture/spell-backend-architecture.md)
 - StoryLoom:
   `~/Projects/dreamwood/story-loom/docs/reports/2026-09-25-collaborative-workspaces-and-hosted-spells-report.md`

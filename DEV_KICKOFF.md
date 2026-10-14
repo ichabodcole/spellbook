@@ -33,8 +33,8 @@ route it to Cole through the lead.
 reproduction and the measured evidence, and are more detailed than the plan):
 
 - `docs/backlog/2026-08-05-cli-stdout-truncation-on-pipe.md` — **P0**
-- `docs/items/bounty-snapshot-clobber-data-loss.md` +
-  `docs/items/2026-07-16-bounty-daemon-idle-death.md` +
+- `docs/items/_archive/bounty-snapshot-clobber-data-loss.md` +
+  `docs/items/_archive/2026-07-16-bounty-daemon-idle-death.md` +
   `docs/items/bounty-daemon-robustness-nits.md` — **P1**
 - `docs/items/grapevine-bounded-tail.md` + `docs/items/bounty-tail-drain.md` —
   **P2**

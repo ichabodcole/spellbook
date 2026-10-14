@@ -54,12 +54,12 @@ This is not only about release notes. The signals accumulating:
   that follows.
 
 > **⚠ SHARPENED LATER THE SAME DAY — read
-> [`2026-08-10-the-unclosed-unit.md`](./the-unclosed-unit.md) first.** Point 2
-> below ("sprints have no terminal artifact") is **wrong as written**: this repo
-> authored a sprint convention AND a `SPRINT-OUTCOME.template.md`, and two
-> sprints skipped it anyway with the absence recorded both times. The gap is not
-> a missing artifact type; it is that nothing can require one, and recording the
-> omission feels like discharging it. That file carries the five-instance
+> [`2026-08-10-the-unclosed-unit.md`](./_archive/the-unclosed-unit.md) first.**
+> Point 2 below ("sprints have no terminal artifact") is **wrong as written**:
+> this repo authored a sprint convention AND a `SPRINT-OUTCOME.template.md`, and
+> two sprints skipped it anyway with the absence recorded both times. The gap is
+> not a missing artifact type; it is that nothing can require one, and recording
+> the omission feels like discharging it. That file carries the five-instance
 > evidence across two repos.
 
 ## What a fix would need to cover

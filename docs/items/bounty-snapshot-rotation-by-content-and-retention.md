@@ -15,7 +15,7 @@ parent: feature/spell-hardening
 # Bounty snapshot backups: by content, with a retention limit
 
 Found by the re-measure in
-[cycle/2026-09-data-you-cant-get-back](../cycles/2026-09-data-you-cant-get-back.md),
+[cycle/2026-09-data-you-cant-get-back](../cycles/_archive/2026-09-data-you-cant-get-back.md),
 2026-09-28, on `493f01f5` (shipped launcher, scratch `HOME`); filed, not
 scheduled (decision-log row 5).
 

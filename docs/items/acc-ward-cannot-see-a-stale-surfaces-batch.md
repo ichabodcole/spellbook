@@ -16,7 +16,7 @@ parent: feature/spell-cli-acc-conformance
 # The acc ward cannot see a stale recorded-surfaces batch
 
 Found 2026-09-28 while re-recording bounty's batch in
-[cycle/2026-09-one-act-one-answer](../cycles/2026-09-one-act-one-answer.md).
+[cycle/2026-09-one-act-one-answer](../cycles/_archive/2026-09-one-act-one-answer.md).
 
 The ward in `grimoire/acc-conformance.test.ts` passes `--recorded-surfaces` to
 `acc check`, but not `--declaration`, so it only checks that the batch was read.

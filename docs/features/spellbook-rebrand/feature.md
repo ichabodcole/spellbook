@@ -52,8 +52,8 @@ The spells were built independently, each with its own name and mascot. For the
 collection to read as _one spellbook_ rather than a themed toolbox, they should
 share a cohesive identity. This is a **pre-release** chapter — renames are
 cheapest now (single user, no install equity). Graduated from
-[the aesthetic fragment](../../items/spellbook-aesthetic-and-rebrand.md), which
-holds the fuller exploration.
+[the aesthetic fragment](../../items/_archive/spellbook-aesthetic-and-rebrand.md),
+which holds the fuller exploration.
 
 ## Problem Statement
 
@@ -129,7 +129,7 @@ straightforward but must be done deliberately.
 
 **Related Documents:**
 
-- [Aesthetic + rebrand fragment](../../items/spellbook-aesthetic-and-rebrand.md)
+- [Aesthetic + rebrand fragment](../../items/_archive/spellbook-aesthetic-and-rebrand.md)
   (origin + full exploration)
 - `grimoire/trigger-registry.md` (renames are registry-first)
 - `docs/PROJECT_MANIFESTO.md` (§2 "why spells"; naming-is-the-mechanic)

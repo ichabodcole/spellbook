@@ -321,13 +321,13 @@ controlled experiment only if the isolation is mechanical.
 
 ## Not in this sprint
 
-| out                                                             | where it goes                                                                                                                                                       |
-| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `#82`, `#85`–`#88`                                              | [the CLI-contract investigation](../../../../items/spell-cli-contract/write-up.md), Active. It decides what right looks like; a lane comes after                    |
-| `#64` as filed — _"the daemon idle-dies"_                       | [Investigated 2026-08-07](../../../../items/2026-08-07-bounty-daemon-idle-death/write-up.md). Re-title and re-scope, do not close — P1e and P1f are what it becomes |
-| `#72` (size affordance), `#11` (wordmark), `#75` (bounded tail) | Not this defect family. Backlog                                                                                                                                     |
-| A CLI-process harness for glamour · imago · magpie              | Still out of scope; still why 3 of 5 P0f sites are driven rather than pinned                                                                                        |
-| The narrower `/cmd` contract (_"did state CHANGE"_)             | Ruled out in sprint 02 (A12), left explicitly unclaimed                                                                                                             |
+| out                                                             | where it goes                                                                                                                                                                |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `#82`, `#85`–`#88`                                              | [the CLI-contract investigation](../../../../items/spell-cli-contract/write-up.md), Active. It decides what right looks like; a lane comes after                             |
+| `#64` as filed — _"the daemon idle-dies"_                       | [Investigated 2026-08-07](../../../../items/_archive/2026-08-07-bounty-daemon-idle-death/write-up.md). Re-title and re-scope, do not close — P1e and P1f are what it becomes |
+| `#72` (size affordance), `#11` (wordmark), `#75` (bounded tail) | Not this defect family. Backlog                                                                                                                                              |
+| A CLI-process harness for glamour · imago · magpie              | Still out of scope; still why 3 of 5 P0f sites are driven rather than pinned                                                                                                 |
+| The narrower `/cmd` contract (_"did state CHANGE"_)             | Ruled out in sprint 02 (A12), left explicitly unclaimed                                                                                                                      |
 
 ⚠ **On `#64`'s falsification, precisely.** Across all 32 `timeout` exits in
 `daemon.log`, `subscribers` was 0 — 32 of 32. That exonerates the idle logic

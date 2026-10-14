@@ -142,7 +142,7 @@ discovering it after both are half-built.
 - Companion fragment:
   [`2026-08-05-project-roadmap-surface.md`](./project-roadmap-surface.md)
 - Substrate precedent:
-  [`2026-06-30-mind-mapper-spell-concept.md`](./mind-mapper-spell-concept.md)
+  [`2026-06-30-mind-mapper-spell-concept.md`](./_archive/mind-mapper-spell-concept.md)
   and `docs/projects/mind-mapper/`
 - Landscape work still owed: the Operator implementation, Obsidian, and other
   markdown editors — Cole explicitly asked for this before settling the

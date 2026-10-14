@@ -1800,7 +1800,7 @@ describe("cli.ts ↔ daemon parity", () => {
     }
   }, 20000);
 
-  // c1 (docs/items/terminator-eats-session-key.md) and acc A6, on the kit
+  // c1 (docs/items/_archive/terminator-eats-session-key.md) and acc A6, on the kit
   // registry: after a bare `--` every token is a positional, never a flag. So a
   // `--session-key` there is TEXT — it becomes part of a variadic title, and a
   // verb whose positionals are full refuses it by name instead of dropping it.
@@ -2241,7 +2241,7 @@ describe("ownership scoping (Phase C E2E)", () => {
     }
   }, 25000);
 
-  // s5-9 + s5-5 (docs/items/bounty-update-stdin-misroutes-to-title.md,
+  // s5-9 + s5-5 (docs/items/_archive/bounty-update-stdin-misroutes-to-title.md,
   // bounty-notes-clear-vs-empty-substitution.md): every way `update` used to
   // blank or overwrite a field at `ok:true` without the caller naming it is
   // refused at exit 2 with the recovery in the message, and the task reads back

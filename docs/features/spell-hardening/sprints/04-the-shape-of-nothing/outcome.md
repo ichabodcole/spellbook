@@ -154,7 +154,7 @@ substitute for the artifact; it is the marker that one is owed"_ — and that
 commit did not produce the artifact either.
 
 **The finding, which is
-[`the unclosed unit`](../../../../items/the-unclosed-unit.md):**
+[`the unclosed unit`](../../../../items/_archive/the-unclosed-unit.md):**
 
 > Documenting an omission is not producing the artifact, and it **feels like**
 > discharging the obligation. Nothing downstream can tell the difference between

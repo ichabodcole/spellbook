@@ -248,7 +248,7 @@ instruction applies: bank the ruling, narrow the proof.
   > for free by the same check that catches a surface change.
   >
   > **Not built here.** It is the release-pipeline sprint's, whose plan is
-  > [the 2026-08-31 spike](../../../../../items/releasing-a-non-stale-build/write-up.md).
+  > [the 2026-08-31 spike](../../../../../items/_archive/releasing-a-non-stale-build/write-up.md).
 
 **This phase is done when:**
 `grep -rl "surface/lib/utils" plugins/spellbook/skills/*/dist/` returns

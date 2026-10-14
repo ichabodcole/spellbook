@@ -302,8 +302,8 @@ design.
   agent-as-runtime
 - [Spell Surface Pipeline proposal](../../features/spell-surface-pipeline/feature.md)
   — the adjacent "spells grow real builds" thread
-- [Astryx investigation](../astryx-component-library-evaluation/write-up.md) —
-  precedent for cross-project investigations living in this repo
+- [Astryx investigation](../_archive/astryx-component-library-evaluation/write-up.md)
+  — precedent for cross-project investigations living in this repo
 - dream-flute grounding:
   `/Users/colereed/Projects/dreamwood/dream-flute/AGENTS.md` (frozen JSON
   contract: `apps/studio/app/lib/project.ts`)

@@ -46,7 +46,8 @@ release note.
 - **[item/bounty-failed-restore-and-empty-replace-succeed](../items/bounty-failed-restore-and-empty-replace-succeed.md)**
   — a corrupt or directory `--restore` and an all-invalid `init --replace` exit
   0; the team rules what they answer (moved here 2026-10-02, see
-  [a restore keeps every task](2026-10-a-restore-keeps-every-task.md), row 3).
+  [a restore keeps every task](_archive/2026-10-a-restore-keeps-every-task.md),
+  row 3).
 
 Out of scope, deliberately: where the outcome vocabulary's canonical copy lives
 (still unruled).
@@ -55,9 +56,9 @@ Out of scope, deliberately: where the outcome vocabulary's canonical copy lives
 
 Decisions as they are made, with the options not taken.
 
-| #   | Date       | Decision                                                                                                                                                                                                                                 | Options not taken                                                                          |
-| --- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| 1   | 2026-10-02 | Cole: this is the second of two cycles after 5.1.0, after [a restore keeps every task](2026-10-a-restore-keeps-every-task.md). It takes the wire-shaped Scriptorium nits, so every caller-visible code change ships in one release note. | Fold it into the bounty cycle (one cycle); give the Scriptorium nits a cycle of their own. |
+| #   | Date       | Decision                                                                                                                                                                                                                                          | Options not taken                                                                          |
+| --- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| 1   | 2026-10-02 | Cole: this is the second of two cycles after 5.1.0, after [a restore keeps every task](_archive/2026-10-a-restore-keeps-every-task.md). It takes the wire-shaped Scriptorium nits, so every caller-visible code change ships in one release note. | Fold it into the bounty cycle (one cycle); give the Scriptorium nits a cycle of their own. |
 
 ## Outcome
 

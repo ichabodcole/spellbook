@@ -38,9 +38,9 @@ generated: { by: unknown, at: 2026-09-10 }
 2026-09-10** · **Ruled by:** Cole
 
 **Evidence:** three investigations, all 2026-09-08 —
-[the recon](../../../items/backend-duplication-recon/write-up.md),
-[the spine census](../../../items/daemon-spine-census/write-up.md),
-[the tail convergence design](../../../items/tail-reader-convergence/write-up.md)
+[the recon](../../../items/_archive/backend-duplication-recon/write-up.md),
+[the spine census](../../../items/_archive/daemon-spine-census/write-up.md),
+[the tail convergence design](../../../items/_archive/tail-reader-convergence/write-up.md)
 
 ## The problem, stated once
 
