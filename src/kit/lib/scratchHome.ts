@@ -83,6 +83,11 @@ mkdirSync(home);
 mkdirSync(tmp);
 process.env.HOME = home;
 process.env.TMPDIR = tmp;
+// ⛔ SET, NOT DEFAULTED. `bun test` sets NODE_ENV=test only when it is unset,
+// so `NODE_ENV=development bun test` ran every under-test guard (the real home
+// refused, the real Trash refused) as a plain run. Set here, it holds in this
+// process and in every child that inherits the environment (`home.ts`).
+process.env.NODE_ENV = "test";
 afterAll(() => {
   try {
     rmSync(scratch, { recursive: true, force: true });

@@ -4,6 +4,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
+import { underTest } from "../lib/home";
 import { fixtureDaemon } from "./fixtures/app";
 import { cmd, collectEvents, FakeSurface, waitUntil } from "./fixtures/harness";
 import type { WorkspaceDaemon } from "./server";
@@ -214,6 +215,10 @@ describe("the daemon's trash op", () => {
   });
 
   test("under test, a daemon with no trash function refuses rather than use the real Trash", async () => {
+    // ⛔ CHECKED BEFORE THE OP IS SENT, AND THROWN, NOT EXPECTED: this daemon
+    // has no trash function, so outside a test run it would use the real Trash.
+    if (!underTest())
+      throw new Error("not under test: refusing to send a delete with no trash function");
     const { s } = await start(false);
     s.send({ op: "trash", path: join(docs, "set", "a.md"), rid: 5 } as never);
     const err = await s.waitFor((m) => m.op === "error" && m.requestId === 5);
