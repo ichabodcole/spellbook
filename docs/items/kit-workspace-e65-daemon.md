@@ -71,6 +71,25 @@ the cutover.
 
 The chat, shell and document halves of `85a319e` wait for their own cycles.
 
+**Converged and verified (2026-10-14).** The revert is `4cfa9e49`, the port is
+`3f33074e`, and the guard is `7aa3eea0` plus `14c9bb52`:
+
+- the marker is `about: { noteId, ask: true }`, stored on the message and
+  stripped from the agent's tail;
+- a second marked ask while the note is owed answers the sender with an error
+  frame for its `rid`, and nothing else sees it.
+
+A no-stake verifier found the port byte-identical to `85a319e` apart from two
+declared context hunks. It also confirmed the behaviour on a live daemon,
+including across a restart.
+
+**For the chat cycle:** the Ask-the-agent button sends the marker with a `rid`,
+and reads an error frame as "already with the agent", not as an error. Typed
+messages never set `ask`.
+
+**For item 5 (the skill):** the `note-edit` row and example in `verbs.md`, and
+the "with the agent" note in `SKILL.md`, as `85a319e` wrote them for Atlas.
+
 ## Definition of done
 
 The boxes below record the first shape (`d1ca788d`), now superseded.

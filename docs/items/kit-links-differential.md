@@ -68,13 +68,27 @@ written (no case folding).
   folds rel case, and keeps its placeholder filter and its reading of every
   pair.
 
+**Rel case, verified (2026-10-14):** `6a18fbd5`, `43117069`, `970b6eb6`,
+`7e0e6524`, `c1efac97` and `5f455fa5`. The first verification found that a rel
+containing `İ` was dropped once lowercased; it is fixed. The changes were
+offered to Story Studio (message 32), which took the rule as
+`kit-relation-names-lowercase`.
+
+**Left for later:**
+
+- The session does not yet pass the doctor the keys that fold together, so the
+  doctor's message does not name the key that stands.
+- The `_relations.json` broken-key message does not mention marks.
+- Nothing normalises to NFC, in either kit or in Scriptorium.
+
 ## Definition of done
 
 - [x] A differential test exists.
 - [x] Each known difference is matched or listed for Cole with a recommendation.
       All are ruled: each takes the kit's rule, except rel case.
 - [x] The quadratic image-in-label case is filed, if it isn't already tracked.
-- [ ] The kit lowercases rels, and the differential matches `relCase`.
+- [x] The kit lowercases rels, and the differential matches `relCase` (now
+      `relWords`, which lists what still differs).
 
 ## Related Documents
 
