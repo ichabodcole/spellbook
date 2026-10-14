@@ -73,6 +73,7 @@ import {
   validateProject,
 } from "../../../plugins/spellbook/skills/astrolabe/scripts/state.ts";
 import { unlinkIfMatches, writeFileAtomic } from "../../kit/wire/discovery.ts";
+import { EXIT_IDLE_TIMEOUT } from "../../kit/wire/errors.ts";
 import { createEventLog } from "../../kit/wire/eventLog.ts";
 import { drainAndStop, startHousekeeping } from "../../kit/wire/housekeeping.ts";
 import { refuseForeignOrigin } from "../../kit/wire/origin.ts";
@@ -694,7 +695,7 @@ async function main(argv: string[]): Promise<number> {
     idleMs: () => performance.now() - lastActivity,
     touch,
     timeoutMs: timeout * 1000, // 0 = standing; the observatory's default
-    onIdleClose: () => resolveDone({ code: 124, reason: "timeout" }),
+    onIdleClose: () => resolveDone({ code: EXIT_IDLE_TIMEOUT, reason: "timeout" }),
     snapshot: {
       dirty: () => snapDirty,
       clear: () => {
