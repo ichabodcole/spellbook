@@ -117,7 +117,7 @@ export function parseRelations(text: string, source = ""): RelationsRead {
     const at = `relations.${key}`;
     if (!RELATION_WORD.test(key))
       return {
-        broken: `${JSON.stringify(key)} cannot be written in ?rel=: a relation starts with a letter or a digit and holds only letters, digits, _, . and -`,
+        broken: `${JSON.stringify(key)} cannot be written in ?rel=: a relation starts with a letter or a digit and holds only letters, digits, combining marks (after the first character), _, . and -`,
       };
     // A relation's name is case-folded, as `?rel=` is read (`parseRel`): a
     // declared `Extends` is the `extends` links carry. Its label keeps the case

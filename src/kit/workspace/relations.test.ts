@@ -163,7 +163,12 @@ describe("parseRelations", () => {
     ],
     [
       '{"relations": {"sourced from": {}}}',
-      '"sourced from" cannot be written in ?rel=: a relation starts with a letter or a digit and holds only letters, digits, _, . and -',
+      '"sourced from" cannot be written in ?rel=: a relation starts with a letter or a digit and holds only letters, digits, combining marks (after the first character), _, . and -',
+    ],
+    [
+      // A combining mark carries the character before it, so it cannot come first.
+      '{"relations": {"\u0301a": {}}}',
+      '"\u0301a" cannot be written in ?rel=: a relation starts with a letter or a digit and holds only letters, digits, combining marks (after the first character), _, . and -',
     ],
   ])("%s is broken: %s", (text, why) => {
     expect(parseRelations(text)).toEqual({ broken: why });
