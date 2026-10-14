@@ -71,6 +71,8 @@ import {
   WINDOW_HELP,
 } from "../../kit/wire/tailHandoff";
 import { TAIL_IDLE_MS } from "./heartbeat";
+import { kitPathOn } from "./kit/app";
+import { runKitCli } from "./kit/cli";
 import { DOC_EXTENSIONS, isDocName } from "./tree";
 
 // ⚠ DECLARED FIRST, ABOVE EVERY OTHER FUNCTION, ON PURPOSE. The `choices`
@@ -1518,6 +1520,14 @@ async function main(argv: string[]): Promise<number> {
  * (the command line belongs to the file that parses it).
  */
 export async function run(): Promise<number> {
+  // The kit path (`SCRIPTORIUM_KIT=1`): a second Scriptorium on the workspace
+  // kit, beside this one until the cutover. Its daemon is spawned through the
+  // same launcher, so the path is handed over from here (`./kit/cli.ts`).
+  if (kitPathOn())
+    return await runKitCli(process.argv.slice(2), {
+      serverScript: SERVER_SCRIPT,
+      version: versionInfo,
+    });
   return await main(process.argv.slice(2));
 }
 
