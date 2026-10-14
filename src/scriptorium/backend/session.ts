@@ -348,6 +348,17 @@ export class Session {
     const m = JSON.parse(readFileSync(path, "utf8")) as Manifest;
     if (m.format !== MANIFEST_FORMAT)
       throw new SessionError(`session ${sessionId} has manifest format ${m.format}`, 409);
+    // ⛔ A KIT MANIFEST IS ALSO `format: 1`, and read as this one it is misread
+    // and then rewritten (measured 2026-10-14). The kit stamps `appName` and
+    // writes ISO times; this writer does neither. Refused before anything is
+    // written, so the file is left as it was.
+    if ("appName" in m || typeof m.createdAt !== "number")
+      throw new SessionError(
+        `session ${sessionId} was not written by this Scriptorium: its manifest is the workspace kit's (open it with SCRIPTORIUM_KIT=1)`,
+        409,
+        undefined,
+        "a kit-path session lives under $SCRIPTORIUM_HOME/kit/sessions and opens with SCRIPTORIUM_KIT=1",
+      );
     const s = new Session(home, m);
     mkdirSync(join(s.dir, "docs"), { recursive: true });
     // Mirrors are re-read, not trusted: the folder may have changed while no
