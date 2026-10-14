@@ -1,6 +1,7 @@
 // The human is waiting, and how that reads.
 import { describe, expect, test } from "bun:test";
 import {
+  askOutstanding,
   attentionKey,
   DEFAULT_SNOOZE_MS,
   NOTE_TEXT_MAX,
@@ -389,6 +390,66 @@ describe("notesWaiting: reopening", () => {
       }),
     );
     expect(notesWaiting(docs, [], 31_000)).toEqual([owed("n1", 30_000, "working")]);
+  });
+});
+
+// ── one ask at a time ────────────────────────────────────────────────────────
+
+/** The human's marked "Ask the agent" about `noteId`, at `ms`. */
+const askAt = (noteId: string, ms: number) => ({
+  ...msg("human", ms),
+  about: { noteId, ask: true as const },
+});
+/** A message the human typed that names the note, unmarked. */
+const typedAt = (noteId: string, ms: number) => ({ ...msg("human", ms), about: { noteId } });
+
+describe("askOutstanding", () => {
+  test("never asked: nothing held back", () => {
+    expect(askOutstanding(note("n1", 0), [])).toBe(false);
+  });
+
+  test("asked, and nothing since: the ask is owed, so another is held back", () => {
+    expect(askOutstanding(note("n1", 0), [askAt("n1", 1000)])).toBe(true);
+  });
+
+  test("only the mark counts: a typed message about the note is no ask", () => {
+    expect(askOutstanding(note("n1", 0), [typedAt("n1", 1000)])).toBe(false);
+  });
+
+  test("an ask about another note says nothing about this one", () => {
+    expect(askOutstanding(note("n1", 0), [askAt("n2", 1000)])).toBe(false);
+  });
+
+  test("an agent message after the ask answers it; one in the same millisecond does not", () => {
+    expect(askOutstanding(note("n1", 0), [askAt("n1", 1000), msg("agent", 1001)])).toBe(false);
+    expect(askOutstanding(note("n1", 0), [askAt("n1", 1000), msg("agent", 1000)])).toBe(true);
+  });
+
+  test("a system line and a typed follow-up are not answers", () => {
+    const chat = [askAt("n1", 1000), msg("system", 2000), typedAt("n1", 3000)];
+    expect(askOutstanding(note("n1", 0), chat)).toBe(true);
+  });
+
+  test("resolved is done", () => {
+    expect(askOutstanding(note("n1", 0, { resolved: true }), [askAt("n1", 1000)])).toBe(false);
+  });
+
+  test("a rewrite or a reopen after the ask re-arms it, by either party", () => {
+    const chat = [askAt("n1", 1000)];
+    for (const by of ["human", "agent"] as const) {
+      expect(askOutstanding(note("n1", 0, { editedAt: 2000, editedBy: by }), chat)).toBe(false);
+      expect(askOutstanding(note("n1", 0, { reopenedAt: 2000, reopenedBy: by }), chat)).toBe(false);
+    }
+  });
+
+  test("a rewrite before the ask does not", () => {
+    const docs = note("n1", 0, { editedAt: 500, editedBy: "human" });
+    expect(askOutstanding(docs, [askAt("n1", 1000)])).toBe(true);
+  });
+
+  test("the latest ask decides: answered, then asked again, is owed again", () => {
+    const chat = [askAt("n1", 1000), msg("agent", 2000), askAt("n1", 3000)];
+    expect(askOutstanding(note("n1", 0), chat)).toBe(true);
   });
 });
 

@@ -16,7 +16,7 @@
 // waiting. Counting it would silence the signal precisely in the case this
 // exists for: an agent busy doing things that has not said a word to the human.
 // Only `from === "agent"` clears.
-import type { Author, Message, Note, NoteWaiting, Waiting } from "./protocol";
+import type { Author, Message, MessageAbout, Note, NoteWaiting, Waiting } from "./protocol";
 
 /**
  * How long a human waits before the wait is worth reporting. Long enough that
@@ -182,6 +182,53 @@ export function notesWaiting(
       });
     }
   return out.sort((a, b) => a.t - b.t).map((o) => o.w);
+}
+
+// ── one ask at a time ────────────────────────────────────────────────────────
+//
+// The "Ask the agent" act on a note sends a message marked `about.ask`. A second
+// marked ask while the first is still owed an answer is a double-click, not a
+// new question, so it is not sent. Only the mark is guarded: a message that
+// names a note without it is something the human typed, and is always sent.
+//
+// The ask is owed by the note's own rule (`notesWaiting`), timed from the ask:
+// it is answered when the note is resolved, when the agent says anything after
+// it, or when the agent rewrites or reopens the note. A human rewrite or reopen
+// after it re-arms too: the note is a new question, and may be asked about.
+// Derived from the stored note and the stored conversation, so it survives a
+// restore with them; nothing is flagged.
+
+/** What the guard reads off a message: who, when, and what it was about. */
+type AskMsg = Pick<Message, "from" | "ts"> & {
+  about?: Pick<MessageAbout, "noteId" | "ask">;
+};
+
+/**
+ * Whether the human's last marked ask about this note is still owed an answer,
+ * in which case another marked ask is not sent.
+ */
+export function askOutstanding(note: NoteFacts, chat: readonly AskMsg[]): boolean {
+  if (note.resolved) return false;
+  let askedAt = Number.NaN;
+  for (let i = chat.length - 1; i >= 0; i--) {
+    const m = chat[i];
+    if (m?.from === "human" && m.about?.ask === true && m.about.noteId === note.id) {
+      askedAt = Date.parse(m.ts);
+      break;
+    }
+  }
+  // Never asked, or asked at a time that does not parse: nothing to hold back.
+  if (!Number.isFinite(askedAt)) return false;
+  // A write on the note at or after the ask: by the agent it answers the ask,
+  // by the human it is a new question.
+  for (const w of [note.editedAt, note.reopenedAt])
+    if (w !== undefined && Date.parse(w) >= askedAt) return false;
+  // Strictly after, as for the note: a reply in the same millisecond cannot have read it.
+  for (let i = chat.length - 1; i >= 0; i--) {
+    const m = chat[i];
+    if (m?.from === "agent" && Date.parse(m.ts) > askedAt) return false;
+  }
+  return true;
 }
 
 /**

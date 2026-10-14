@@ -339,6 +339,14 @@ export type MessageAbout = {
    */
   docs?: string[];
   noteId?: string;
+  /**
+   * Set on the human's "Ask the agent" act for the note `noteId` names, and
+   * only there: the one-ask guard reads it (`askOutstanding` in `waiting.ts`).
+   * A message that names a note without it is a typed follow-up, always
+   * delivered. Kept on the stored message, so the guard survives a restore;
+   * never on the tail, which is unchanged.
+   */
+  ask?: true;
 };
 
 export type MessageType = "message" | "info" | "result";
@@ -1564,12 +1572,18 @@ export type ClientOp =
   | { op: "history.redo" }
   /** End the session, from the page's End session button once the human has confirmed. */
   | { op: "close" }
-  /** `about` carries what the human pointed at besides the selection (`entryIds`, `noteId`, `docs`). */
+  /**
+   * `about` carries what the human pointed at besides the selection (`entryIds`,
+   * `noteId`, `docs`). `about: { noteId, ask: true }` is the "Ask the agent" act
+   * for that note: sent once while the note is owed an answer, and a second is
+   * refused with an `error` that says it was not sent. Without `ask`, a message
+   * naming a note is a typed follow-up and is always delivered.
+   */
   | {
       op: "say";
       text: string;
       withSelection: boolean;
-      about?: Pick<MessageAbout, "entryIds" | "noteId" | "docs">;
+      about?: Pick<MessageAbout, "entryIds" | "noteId" | "docs" | "ask">;
     }
   | { op: "activate"; doc: string; version: number }
   /** `activate` separates branching (move into it) from snapshotting (stay). */

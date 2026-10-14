@@ -131,6 +131,7 @@ import { systemTrash, type TrashFn } from "./trash";
 import { listDir, PathError } from "./tree";
 
 import {
+  askOutstanding,
   attentionKey,
   DEFAULT_SNOOZE_MS,
   noteEventFacts,
@@ -465,6 +466,7 @@ const KIT_ABOUT_KEYS = new Set<string>(
     entryIds: true,
     docs: true,
     noteId: true,
+    ask: true,
   } satisfies Record<keyof MessageAbout, true>),
 );
 
@@ -2498,7 +2500,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
 
     const aboutFor = (
       withSelection: boolean,
-      extra?: Pick<MessageAbout, "entryIds" | "noteId" | "docs">,
+      extra?: Pick<MessageAbout, "entryIds" | "noteId" | "docs" | "ask">,
     ): MessageAbout | undefined => {
       // Pointed-at documents arrive from the page: kept only when they are
       // documents in the session's context (the agent reads them), and at most a
@@ -2532,6 +2534,8 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           : {}),
         ...(extra?.entryIds?.length ? { entryIds: extra.entryIds } : {}),
         ...(extra?.noteId ? { noteId: extra.noteId } : {}),
+        // The ask mark means something only beside the note it asks about.
+        ...(extra?.noteId && extra.ask === true ? { ask: true as const } : {}),
         ...(docs.length ? { docs } : {}),
       };
       return Object.keys(about).length > 0 ? about : undefined;
@@ -2942,6 +2946,27 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         case "say": {
           const text = msg.text.trim();
           if (!text) return;
+          // One ask at a time: a marked "Ask the agent" for a note whose last
+          // ask is still owed an answer is a double-click, so it is not sent,
+          // and the sender is told so. Unmarked, it is typed, and always sent.
+          const asking = msg.about?.ask === true ? msg.about.noteId : undefined;
+          if (asking) {
+            const n = session
+              .noteFacts()
+              .flatMap((d) => d.notes)
+              .find((x) => x.id === asking);
+            if (n && askOutstanding(n, session.messages())) {
+              replyRaw(
+                ws,
+                {
+                  op: "error",
+                  message: `note ${asking} is already with the agent, and the agent has not answered yet: the ask was not sent again`,
+                },
+                rid,
+              );
+              return;
+            }
+          }
           const about = aboutFor(msg.withSelection, msg.about);
           const m = session.addMessage({
             from: "human",
@@ -2951,7 +2976,13 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           });
           // What the app adds to `about` from what this page shows (Atlas: its
           // map). On the tail's message only: the chat keeps the kit's parts.
-          const told: MessageAboutOnTail | undefined = withAppAbout(about, surfaceId(ws));
+          // The ask mark stays on the stored message, for the guard; the tail
+          // is the same with or without it.
+          const { ask: _ask, ...aboutOnTail } = about ?? {};
+          const told: MessageAboutOnTail | undefined = withAppAbout(
+            about ? aboutOnTail : undefined,
+            surfaceId(ws),
+          );
           // Every human message names the three honest answers: the one that
           // goes wrong is work done with no task, which the human cannot see.
           const reply = pickReplyHint({
