@@ -22,6 +22,9 @@ another dependency pulls it in, so an upgrade that drops it would break
 Scriptorium's link extraction without warning. Found by the `lib`/`wire` scoping
 for the kit-foundation cycle (2026-10-13).
 
+**Satisfied by the workspace port (2026-10-14),** which declares both `yaml` and
+`micromark-extension-gfm`. It's ready to close at triage.
+
 ## Definition of done
 
 - [ ] `package.json` declares `micromark-extension-gfm` at the version now

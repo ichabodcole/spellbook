@@ -32,6 +32,10 @@ test, the preload removes a DOM that no file has claimed. The no-stake verifier
   specifiers ending in `.ts`. A file that imports `.../registerDom` without the
   extension stays order-dependent. Every import uses `.ts` today. (Finalize
   re-verification, 2026-10-13.)
+- **The home guard can be bypassed on purpose:** a test run with no preload and
+  `NODE_ENV` explicitly overridden reads the real home. Reads only; every kit
+  caller of `homeDir()` only reads or displays it. (Workspace-port verification,
+  2026-10-14.)
 - **`THEME_TOKENS` is hand-written:** a token added to `base.css` but not to the
   list goes unpinned.
 
