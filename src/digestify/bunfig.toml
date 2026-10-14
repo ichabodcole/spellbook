@@ -1,2 +1,5 @@
 [serve.static]
 plugins = ["bun-plugin-tailwind"]
+
+[test]
+preload = ["../kit/lib/scratchHome.ts", "../kit/lib/domGuard.ts"]

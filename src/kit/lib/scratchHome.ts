@@ -1,16 +1,24 @@
-// The test preload (root bunfig.toml) that gives every test process a scratch
-// home folder, so no test can write into the real one.
+// The test preload (every bunfig.toml in the repo) that gives every test
+// process a scratch home folder, so no test can write into the real one.
 //
 // A test that reaches the home folder (the workspace's `defaultWorkspace`, a
 // spell CLI that keeps its state under `~`) must find an empty folder of its
 // own. A foundation-cycle verifier once wrote a channel into the real
 // grapevine because nothing set one.
 //
-// One scratch folder holds two: `home/` becomes `HOME`, and `tmp/` becomes
-// `TMPDIR`. The temp folder moves too because the home must not sit inside it:
-// `defaultWorkspace` refuses a workspace at or above the home, and a test that
-// steps out of a folder in the temp folder lands on the temp folder itself.
-// With the home inside it, that step would be refused for the wrong reason.
+// Each run gets `<temp>/spellbook-test/run-<pid>-<random>/`, holding two
+// folders: `home/` becomes `HOME`, and `tmp/` becomes `TMPDIR`. The temp folder
+// moves too because the home must not sit inside it: `defaultWorkspace`
+// refuses a workspace at or above the home, and a test that steps out of a
+// folder in the temp folder lands on the temp folder itself.
+//
+// ⛔ CLEANUP. Under `bun test`, `process.on("exit")` never fires (measured on
+// Bun 1.4.0: a whole run left its folder, about 14 MB with Bun's transpiler
+// cache under `home/`). A global `afterAll` registered here does fire, once,
+// after the last file. A run that dies before it (a crash, a kill) leaves its
+// folder, so every run first removes the folders of runs whose process is gone,
+// read from the pid in each folder's name. A live run's folder is never
+// touched.
 //
 // What it covers, and what it cannot (measured on Bun 1.4.0):
 // - In this process, `process.env.HOME` is the scratch home. The kit reads its
@@ -26,21 +34,59 @@
 //
 // The ward is `grimoire/kit-scratch-home-ward.test.ts`.
 
-import { mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
+import { afterAll } from "bun:test";
+import { mkdirSync, mkdtempSync, readdirSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const scratch = realpathSync(mkdtempSync(join(tmpdir(), "spellbook-test-")));
+/** The one folder every run's scratch folder sits in. */
+export const SCRATCH_PARENT = "spellbook-test";
+const RUN = /^run-(\d+)-/;
+
+/** Whether a process with this pid is still running. */
+function alive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (e) {
+    // EPERM: it exists, and belongs to someone else.
+    return (e as { code?: string }).code === "EPERM";
+  }
+}
+
+/** Removes the run folders under `parent` whose process is gone. */
+export function pruneDeadRuns(parent: string): void {
+  let names: string[] = [];
+  try {
+    names = readdirSync(parent);
+  } catch {
+    return;
+  }
+  for (const name of names) {
+    const pid = Number(RUN.exec(name)?.[1]);
+    if (!Number.isInteger(pid) || pid <= 0 || pid === process.pid || alive(pid)) continue;
+    try {
+      rmSync(join(parent, name), { recursive: true, force: true });
+    } catch {
+      // Another run pruning the same folder got there first.
+    }
+  }
+}
+
+const parent = join(realpathSync(tmpdir()), SCRATCH_PARENT);
+mkdirSync(parent, { recursive: true });
+pruneDeadRuns(parent);
+const scratch = mkdtempSync(join(parent, `run-${process.pid}-`));
 const home = join(scratch, "home");
 const tmp = join(scratch, "tmp");
 mkdirSync(home);
 mkdirSync(tmp);
 process.env.HOME = home;
 process.env.TMPDIR = tmp;
-process.on("exit", () => {
+afterAll(() => {
   try {
     rmSync(scratch, { recursive: true, force: true });
   } catch {
-    // A folder a child still holds open is left for the OS to clear.
+    // A folder a child still holds open is pruned by the next run.
   }
 });
