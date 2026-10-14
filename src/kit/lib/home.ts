@@ -10,9 +10,11 @@
 // reads only the bunfig.toml in its cwd, so a run started from a folder with
 // none (src/kit/, grimoire/, a spell's backend/) has no preload and the real
 // home. Rather than hope a ward is in that run, the kit refuses to hand that
-// home out. A test run is known by `NODE_ENV=test`, which `bun test` sets in
-// its process and its children inherit (measured on Bun 1.4.0), or by the test
-// runner's own `Bun.jest`, present only in the runner's process.
+// home out. A test run is known by `NODE_ENV=test` alone, which `bun test`
+// sets in its process, with or without a preload, and its children inherit
+// (measured on Bun 1.4.0; a plain `bun` leaves it unset). NOT by `Bun.jest`:
+// it is a function in every Bun process, so it made every plain run refuse the
+// real home, and every spell on the kit with it.
 //
 // The ward `grimoire/kit-scratch-home-ward.test.ts` holds the kit to this: no
 // other kit file names `homedir`.
@@ -24,10 +26,7 @@ const SCRATCH_HOME = /\/spellbook-test\/run-\d+-[^/]+\/home$/;
 
 /** Whether this process is a test run, or a child one started. */
 export function underTest(): boolean {
-  return (
-    process.env.NODE_ENV === "test" ||
-    typeof (Bun as unknown as { jest?: unknown }).jest === "function"
-  );
+  return process.env.NODE_ENV === "test";
 }
 
 /** The home folder: `HOME` when it is set, else the OS's answer. */

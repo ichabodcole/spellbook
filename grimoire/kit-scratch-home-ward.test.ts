@@ -365,6 +365,67 @@ describe("kit scratch-home ward", () => {
     expect(offenders).toEqual([]);
   });
 
+  // ⛔ THE GUARD MUST NOT FIRE OUTSIDE A TEST RUN. Its first version also keyed
+  // on `Bun.jest`, which is a function in EVERY Bun process: a plain run
+  // refused the real home, and so would every spell on the kit. The gate never
+  // saw it, because everything it runs is a test run. These two cells run the
+  // kit the way a user does: no `NODE_ENV`, and a home that is not a scratch
+  // one (a stand-in folder, so nothing here can reach the real home).
+  const plainEnv = (home: string, extra: Record<string, string> = {}) => {
+    const { NODE_ENV: _testRun, ...env } = process.env;
+    return { ...env, HOME: home, ...extra };
+  };
+
+  test("outside a test run, homeDir() answers HOME and does not refuse it", () => {
+    const fake = realpathSync(mkdtempSync(join(tmpdir(), "plain-home-")));
+    try {
+      const p = Bun.spawnSync(
+        [
+          process.execPath,
+          "-e",
+          `import { homeDir } from ${JSON.stringify(HOME_HELPER)}; console.log(process.env.NODE_ENV ?? "unset"); console.log(homeDir());`,
+        ],
+        { env: plainEnv(fake), stdout: "pipe", stderr: "pipe" },
+      );
+      expect(p.exitCode, p.stderr.toString()).toBe(0);
+      expect(p.stdout.toString().trim().split("\n")).toEqual(["unset", fake]);
+    } finally {
+      rmSync(fake, { recursive: true, force: true });
+    }
+  });
+
+  test("outside a test run, the fixture CLI's open is not refused the home", async () => {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), "plain-open-")));
+    const home = join(root, "home");
+    const docs = join(root, "docs");
+    const CLI = join(KIT, "workspace", "fixtures", "cli.ts");
+    const env = plainEnv(home, {
+      KIT_FIXTURE_HOME: join(root, "fixture"),
+      TMPDIR: `${join(root, "tmp")}/`,
+    });
+    for (const d of [home, join(docs, "set"), join(root, "tmp")])
+      Bun.spawnSync(["mkdir", "-p", d], { env });
+    const cli = (...args: string[]) =>
+      Bun.spawnSync([process.execPath, CLI, ...args], {
+        cwd: root,
+        env,
+        stdin: "ignore",
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+    try {
+      // One folder: it becomes a set and the workspace steps out of it, which
+      // is the path that reads the home folder.
+      const r = cli("open", "--no-open", join(docs, "set"));
+      const out = r.stdout.toString() + r.stderr.toString();
+      expect(out).not.toContain("refusing the real home folder");
+      expect(r.exitCode, out).toBe(0);
+    } finally {
+      cli("close");
+      rmSync(root, { recursive: true, force: true });
+    }
+  }, 30_000);
+
   test("a kit test run with no preload is refused the home, loudly, before it touches it", () => {
     // `bun test` reads only the bunfig.toml in its cwd, and src/kit/ has none.
     // HOME is a stand-in for the real home here (any folder that is not a
