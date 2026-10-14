@@ -5,14 +5,15 @@ description:
   "E65's daemon half in the kit: notesWaiting, askedIn, the one-ask guard, the
   edit and reopen fields, and the shared badge rule, written to go back to Story
   Studio."
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: backlog
 id: 01a1393e-acfb-72b4-93d1-a1f5fea2984a
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-14 }
 tags: [kit, notes, e65]
 cycle: 2026-10-workspace-daemon
 parent: feature/workspace-kit
+blocked_by: [01a1393e-aab6-7627-8b3c-f7785e244373]
 from: items/workspace-stack-port-shape/write-up.md
 ---
 

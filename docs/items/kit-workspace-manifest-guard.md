@@ -4,14 +4,15 @@ title: The kit refuses a session manifest that is not its own
 description:
   A manifest without an app, or of another format, is refused with a hint rather
   than misread, so a kit daemon can never misread a Scriptorium session.
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: backlog
 id: 01a1393e-ab7a-76ef-b520-5fd5ea18f624
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-14 }
 tags: [kit, sessions]
 cycle: 2026-10-workspace-daemon
 parent: feature/workspace-kit
+blocked_by: [01a1393e-aab6-7627-8b3c-f7785e244373]
 from: items/workspace-stack-port-shape/write-up.md
 ---
 

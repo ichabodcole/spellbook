@@ -4,8 +4,8 @@ title: Port the workspace daemon into the kit
 description:
   Bring Story Studio's workspace module at 027d7a3 plus its generic follow-up
   fixes into src/kit/workspace, with the lib and wire pieces it imports.
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: ready
 id: 01a1393e-aab6-7627-8b3c-f7785e244373
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-14 }

@@ -4,14 +4,15 @@ title: One link extractor, held to Scriptorium's links tests
 description:
   Run Scriptorium's links tests against the kit's extractor and resolver; each
   difference is matched or put to Cole.
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: backlog
 id: 01a1393e-ac37-7191-a323-1a6a647acd73
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-14 }
 tags: [kit, links]
 cycle: 2026-10-workspace-daemon
 parent: feature/workspace-kit
+blocked_by: [01a1393e-aab6-7627-8b3c-f7785e244373]
 from: items/workspace-stack-port-shape/write-up.md
 ---
 

@@ -4,14 +4,16 @@ title: A flagged Scriptorium daemon and CLI on the kit
 description:
   With SCRIPTORIUM_KIT=1, Scriptorium's CLI and daemon run on the kit's
   workspace daemon with their own sessions root, beside the shipped Scriptorium.
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: backlog
 id: 01a1393e-adb9-73df-aa57-15a8422d444f
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-14 }
 tags: [scriptorium, kit]
 cycle: 2026-10-workspace-daemon
 parent: feature/workspace-kit
+blocked_by:
+  [01a1393e-aab6-7627-8b3c-f7785e244373, 01a1393e-ab7a-76ef-b520-5fd5ea18f624]
 from: items/workspace-stack-port-shape/write-up.md
 ---
 

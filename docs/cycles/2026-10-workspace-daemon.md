@@ -5,7 +5,7 @@ description:
   Port Story Studio's workspace daemon into src/kit and run a flagged second
   Scriptorium on it, the first of five workspace-stack cycles.
 tags: [kit, scriptorium, story-studio]
-status: draft
+status: stable
 lifecycle: planned
 started: 2026-10-14
 appetite:
