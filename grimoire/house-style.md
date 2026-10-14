@@ -576,10 +576,11 @@ authoritative:
 
 The primitives live once, in `src/kit/ui`. They are shadcn's `base` recipes on
 `@base-ui/react`, ported from Story Studio's kit on 2026-10-13 (Workspace Kit).
-The kit owns those files. Each one carries the one-line header the kit prose
-ward asks of every kit module, and they use the kit's `cn`
-(`src/kit/lib/cn.ts`). A spell with a React surface uses them, and does not keep
-a `surface/ui/` of its own.
+The kit owns those files, and they use the kit's `cn` (`src/kit/lib/cn.ts`),
+which joins classes without merging them. So a recipe's base classes must not
+clash with its own variants; `src/kit/ui/recipe-conflicts.test.tsx` guards that.
+A spell with a React surface uses them, and does not keep a `surface/ui/` of its
+own.
 
 Where a spell's look disagrees with a recipe, **add a variant inside the
 recipe's `cva` config** in `src/kit/ui` (two lines, one comment) and use it.
