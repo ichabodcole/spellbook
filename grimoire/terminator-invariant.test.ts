@@ -687,17 +687,18 @@ describe("ward — a flag demoted by `--` is warned about, on every registry ado
       ),
     }).toEqual({
       // 10 since 2026-10-14: the kit workspace CLI joined, read through its
-      // fixture (see `followersOf`), with 23 rows that take positionals.
+      // fixture (see `followersOf`), with 23 rows that take positionals (24
+      // since `note-edit`, kit-workspace-e65-daemon).
       adopters: 10,
       // Every row with ANY positional (required, optional or variadic), not
       // only c1's 43 variadic + 6 one-optional rows: a demoted token can fill
       // any positional slot. Measured 2026-09-27 on 41065365.
-      rowsWithPositionals: 137,
+      rowsWithPositionals: 138,
       // Per (row, spelling, accepted flag), globals included: one direct and
       // one =value case, plus one after-text case wherever the row has room.
       // Measured 2026-09-27: 311 direct cases before the alias spelling joined.
-      cases: 887,
-      byForm: { direct: 362, "after-text": 163, "=value": 362 },
+      cases: 899,
+      byForm: { direct: 366, "after-text": 167, "=value": 366 },
       // mind-mapper `message` -> `read`: direct and =value. `read` has one
       // non-variadic positional, so no after-text case.
       viaAlias: 2,
@@ -705,7 +706,7 @@ describe("ward — a flag demoted by `--` is warned about, on every registry ado
       // `prune` alias rows with no positionals, so they have no case here.
       aliasRows: ["mind-mapper/backend/cli.ts:read<-message"],
       // One per (row, spelling).
-      quietCases: 138,
+      quietCases: 139,
       perAdopter: {
         "astrolabe/backend/cli.ts": 6,
         "bounty/backend/cli.ts": 7,
@@ -714,7 +715,7 @@ describe("ward — a flag demoted by `--` is warned about, on every registry ado
         "glamour/backend/cli.ts": 10,
         "grapevine/backend/cli.ts": 19,
         "imago/backend/cli.ts": 11,
-        "kit/workspace/fixtures/cli.ts": 23,
+        "kit/workspace/fixtures/cli.ts": 24,
         "magpie/backend/cli.ts": 6,
         "mind-mapper/backend/cli.ts": 26,
         "scriptorium/backend/cli.ts": 29,
