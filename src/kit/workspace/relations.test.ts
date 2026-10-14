@@ -5,6 +5,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdirSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { parseRel } from "../lib/linkTarget";
 import {
   NO_VOCABULARY,
   oneWaySymmetric,
@@ -106,6 +107,17 @@ describe("parseRelations", () => {
       ["extends", "Extends"],
       ["grounded-in", "grounded in"],
     ]);
+  });
+
+  test("a non-ASCII key folds as `?rel=` does, so a link written with it matches it", () => {
+    const r = parseRelations('{"relations": {"İlgili": {}, "Über": {}, "Αναφέρεται": {}}}');
+    if (!("relations" in r)) throw new Error("broken");
+    expect(r.relations.map((d) => d.rel)).toEqual([
+      ...parseRel("rel=İlgili"),
+      ...parseRel("rel=Über"),
+      ...parseRel("rel=Αναφέρεται"),
+    ]);
+    expect(r.relations.map((d) => d.label)).toEqual(["İlgili", "Über", "Αναφέρεται"]);
   });
 
   test("two keys that fold to one relation: the first stands, the later one is a warning", () => {

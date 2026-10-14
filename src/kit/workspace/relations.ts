@@ -44,6 +44,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describeJsonProblem, jsonProblem } from "../lib/json";
+import { RELATION } from "../lib/linkTarget";
 import { PROFILES_DIR, profileFolders } from "./profiles";
 import type { RelationOffer } from "./protocol";
 
@@ -53,8 +54,8 @@ export const RELATIONS_FILE = "_relations.json";
 /** A relation's `color`: a JSON Canvas preset ("1" to "6") or a hex. */
 const COLOR = /^(?:[1-6]|#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6})$/;
 
-/** A relation word as `?rel=` reads one (`lib/linkTarget.ts`). */
-const RELATION_WORD = /^[\p{L}\p{N}][\p{L}\p{N}_.-]*$/u;
+/** A relation word as `?rel=` reads one: the one rule, `lib/linkTarget.ts`. */
+const RELATION_WORD = RELATION;
 
 /** One declared relation, as its file writes it. */
 export type RelationDef = {

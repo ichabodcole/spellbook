@@ -104,6 +104,20 @@ describe("relations", () => {
     expect(parseRel("rel=<Relationship>")).toEqual([]);
   });
 
+  test("non-ASCII case folds too, and a folded word stays a relation (İ folds to i + a combining dot)", () => {
+    const dotted = "i\u0307lgili";
+    expect("İlgili".toLowerCase()).toBe(dotted);
+    expect(parseRel("rel=İlgili")).toEqual([dotted]);
+    expect(parseRel(`rel=İlgili,${dotted}`)).toEqual([dotted]);
+    expect(parseRel("rel=Über,über,ÜBER")).toEqual(["über"]);
+    expect(parseRel("rel=Αναφέρεται,ΑΝΑΦΈΡΕΤΑΙ,αναφέρεται")).toEqual(["αναφέρεται"]);
+    // What the reader emits reads back as itself: a folded word written into a link.
+    for (const q of ["rel=İlgili", "rel=Über", "rel=Αναφέρεται"]) {
+      const [folded] = parseRel(q);
+      expect(parseRel(`rel=${folded}`)).toEqual([folded as string]);
+    }
+  });
+
   test("one relation written in two cases is one entry in the vocabulary, counted once per use", () => {
     const texts = [
       "[a](./a.md?rel=Extends) [b](./b.md?rel=extends)",

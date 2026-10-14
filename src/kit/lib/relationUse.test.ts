@@ -1,7 +1,8 @@
 // The world's use of each relation between kinds, folded for one source kind:
 // what the link picker ranks by, and what Atlas ranks a board connection by.
 import { describe, expect, test } from "bun:test";
-import { countPair, type KindPairUse, kindUseFrom } from "./relationUse.ts";
+import { parseRel } from "./linkTarget.ts";
+import { countPair, type KindPairUse, kindUseFrom, normaliseRelation } from "./relationUse.ts";
 
 describe("kindUseFrom", () => {
   const pairs = (() => {
@@ -36,5 +37,18 @@ describe("kindUseFrom", () => {
 
   test("from no kind, nothing is from it", () => {
     expect(kindUseFrom(pairs, null).every((u) => u.fromKind === 0)).toBe(true);
+  });
+});
+
+describe("normaliseRelation", () => {
+  test("keeps the case and the marks typed, so what it writes `parseRel` reads, folded", () => {
+    expect(normaliseRelation("İlgili")).toBe("İlgili");
+    expect(normaliseRelation("Grounded In")).toBe("Grounded-In");
+    expect(normaliseRelation("i\u0307lgili")).toBe("i\u0307lgili");
+    expect(normaliseRelation("\u0307-x")).toBe("x");
+    for (const typed of ["İlgili", "Über alles", "Αναφέρεται σε", "contrasts with"])
+      expect(parseRel(`rel=${normaliseRelation(typed)}`)).toEqual([
+        normaliseRelation(typed).toLowerCase(),
+      ]);
   });
 });

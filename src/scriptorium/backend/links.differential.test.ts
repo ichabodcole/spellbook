@@ -677,6 +677,11 @@ describe("the kit's target parsing against Scriptorium's", () => {
       "rel=Extends",
       "rel=SEE-ALSO,see-also",
       "rel=A,b,a",
+      // Non-ASCII case: İ folds to i + a combining dot on both sides, and the kit still reads it.
+      "rel=İlgili",
+      "rel=%C4%B0lgili",
+      "rel=Über,über",
+      "rel=Αναφέρεται,αναφέρεται",
     ])
       expect(kitParseRel(q)).toEqual(parseRel(q));
     expect(kitParseRel("rel=Extends,%20governs,extends")).toEqual(["extends", "governs"]);

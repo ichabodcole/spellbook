@@ -7,8 +7,9 @@
 /**
  * A relation as typed, made fit for `?rel=`: whitespace runs become one hyphen
  * (the vocabulary's own shape, `contrasts-with`), and anything outside the
- * characters a relation is read with (`workspace/links.ts`, `RELATION`:
- * letters, digits, `_`, `.`, `-`, starting with a letter or digit) is dropped.
+ * characters a relation is read with (`lib/linkTarget.ts`, `RELATION`:
+ * letters, combining marks, digits, `_`, `.`, `-`, starting with a letter or
+ * digit) is dropped. Case is kept as typed: `?rel=` is case-folded on read.
  * A `(`, `)` or `'` would end or break the link it is written into. Empty when
  * nothing is left. The link picker writes a typed relation with it, and an app
  * makes a new relation's key from a label with it.
@@ -17,9 +18,9 @@ export function normaliseRelation(typed: string): string {
   return typed
     .trim()
     .replace(/[\s,]+/gu, "-")
-    .replace(/[^\p{L}\p{N}_.-]/gu, "")
+    .replace(/[^\p{L}\p{M}\p{N}_.-]/gu, "")
     .replace(/-{2,}/g, "-")
-    .replace(/^[_.-]+|[_.-]+$/g, "");
+    .replace(/^[\p{M}_.-]+|[_.-]+$/gu, "");
 }
 
 /**

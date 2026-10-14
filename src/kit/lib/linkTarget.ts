@@ -82,8 +82,13 @@ export function linkScheme(raw: string): string | undefined {
   return m[0].slice(0, -1).toLowerCase();
 }
 
-/** A relation worth offering: a word or a hyphenated phrase, never prose or a placeholder. */
-const RELATION = /^[\p{L}\p{N}][\p{L}\p{N}_.-]*$/u;
+/**
+ * A relation worth offering: a word or a hyphenated phrase, never prose or a
+ * placeholder. A combining mark (`\p{M}`) may follow the first character, since
+ * folding case can make one: `İlgili` lower-cases to `i` + U+0307 + `lgili`, and
+ * the folded word must still read as a relation, written back or not.
+ */
+export const RELATION = /^[\p{L}\p{N}][\p{L}\p{M}\p{N}_.-]*$/u;
 
 /**
  * The relations in a target's query (`rel=a,b`), decoded, lower-cased, in
