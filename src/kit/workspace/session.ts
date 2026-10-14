@@ -815,6 +815,8 @@ export class WorkspaceSession {
     } catch {
       throw new SessionError(`session ${sessionId} has a manifest that is not valid JSON`, 409);
     }
+    if (raw === null || typeof raw !== "object" || Array.isArray(raw))
+      throw new SessionError(`session ${sessionId} has a manifest that is not a JSON object`, 409);
     // An unknown format is refused, never guessed at: a newer kit may have
     // written fields this one would silently drop on the next write.
     if (raw.format !== MANIFEST_FORMAT)
@@ -828,6 +830,10 @@ export class WorkspaceSession {
         `session ${sessionId}'s manifest says it is ${JSON.stringify(raw.sessionId)}`,
         409,
       );
+    // ⛔ CHECKED WHOLE, BEFORE ANYTHING IS CHANGED OR WRITTEN. A restore that
+    // failed part-way (a document with no `notes`) had already marked outside
+    // changes and persisted the manifest, then answered a 500.
+    refuseMalformedManifest(raw, sessionId);
     const m = raw as unknown as Session;
     // A restored session is live again: whoever ended it before, nobody has
     // now. Written below, so a daemon that dies without closing leaves no
@@ -6753,6 +6759,75 @@ function placeNote(text: string, note: Note): PlacedNote {
  *   one by the kit's own marks: an ISO `createdAt` (a string), and a slot
  *   `version` that is absent (migrated from 0) or a whole number from 0.
  */
+/**
+ * Refuses (409) a manifest that is this app's but not of the shape a restore
+ * reads: the lists it walks, and the fields of each entry it reads, are of
+ * their type. Nothing is changed or written before it answers.
+ */
+function refuseMalformedManifest(raw: Record<string, unknown>, sessionId: string): void {
+  const refuse = (what: string): never => {
+    throw new SessionError(
+      `session ${sessionId} has a malformed manifest: ${what}. Nothing was changed`,
+      409,
+      undefined,
+      "the manifest was edited by hand or written by something else: fix it, or start a new session",
+    );
+  };
+  const isObj = (v: unknown): v is Record<string, unknown> =>
+    v !== null && typeof v === "object" && !Array.isArray(v);
+  const list = (key: string): Record<string, unknown>[] => {
+    const v = raw[key];
+    if (!Array.isArray(v)) return refuse(`\`${key}\` is not a list`);
+    v.forEach((x, i) => {
+      if (!isObj(x)) refuse(`\`${key}[${i}]\` is not an object`);
+    });
+    return v as Record<string, unknown>[];
+  };
+  const fields = (at: string, o: Record<string, unknown>, spec: Record<string, string>) => {
+    for (const [k, type] of Object.entries(spec)) {
+      const v = o[k];
+      const ok =
+        type === "list"
+          ? Array.isArray(v)
+          : type === "number"
+            ? typeof v === "number" && Number.isFinite(v)
+            : typeof v === type;
+      if (!ok) refuse(`\`${at}.${k}\` is not ${type === "list" ? "a list" : `a ${type}`}`);
+    }
+  };
+  list("context").forEach((e, i) => {
+    fields(`context[${i}]`, e, {
+      id: "string",
+      root: "string",
+      membership: "string",
+      nodes: "list",
+    });
+  });
+  list("docs").forEach((d, i) => {
+    fields(`docs[${i}]`, d, {
+      slug: "string",
+      name: "string",
+      original: "string",
+      versions: "list",
+      active: "number",
+      notes: "list",
+    });
+    (d.versions as unknown[]).forEach((v, j) => {
+      if (!isObj(v)) refuse(`\`docs[${i}].versions[${j}]\` is not an object`);
+      fields(`docs[${i}].versions[${j}]`, v as Record<string, unknown>, { n: "number" });
+    });
+    (d.notes as unknown[]).forEach((n, j) => {
+      if (!isObj(n)) refuse(`\`docs[${i}].notes[${j}]\` is not an object`);
+    });
+  });
+  list("chat");
+  list("tasks").forEach((t, i) => {
+    fields(`tasks[${i}]`, t, { id: "string", status: "string" });
+  });
+  if (raw.openDoc != null && typeof raw.openDoc !== "string")
+    refuse("`openDoc` is not a string or null");
+}
+
 function refuseForeignManifest(
   raw: Record<string, unknown>,
   app: AppDeclaration,

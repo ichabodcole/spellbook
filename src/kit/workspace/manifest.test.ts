@@ -169,6 +169,53 @@ describe("manifest migration and refusal", () => {
     expect(e.message).toContain("not valid JSON");
   });
 
+  test("a malformed manifest is refused before anything is changed, and left byte for byte", () => {
+    const s = WorkspaceSession.create(sessions, testApp);
+    s.addContext(docs);
+    s.openPath(join(docs, "solo.md"));
+    // Changed outside while closed: a restore that got as far as the documents
+    // would mark it and write the manifest before failing.
+    writeFileSync(join(docs, "solo.md"), "# Solo, changed outside\n");
+    const good = readManifest(s);
+    const file = join(s.dir, "manifest.json");
+    const variants: [string, (m: Record<string, unknown>) => unknown][] = [
+      ["a document with no notes", (m) => delete (m.docs as Record<string, unknown>[])[0]?.notes],
+      ["no context", (m) => delete m.context],
+      ["no tasks", (m) => delete m.tasks],
+      ["a string context", (m) => (m.context = "docs")],
+      [
+        "a document whose versions are not a list",
+        (m) => {
+          ((m.docs as Record<string, unknown>[])[0] as Record<string, unknown>).versions = 1;
+        },
+      ],
+      ["a null in the docs", (m) => (m.docs = [null])],
+      ["no chat", (m) => delete m.chat],
+    ];
+    for (const [what, spoil] of variants) {
+      const m = structuredClone(good);
+      spoil(m);
+      writeManifest(s, m);
+      const before = readFileSync(file);
+      const e = refusal(() => WorkspaceSession.restore(sessions, testApp, s.id));
+      expect(e.status, what).toBe(409);
+      expect(e.message, what).toContain("malformed manifest");
+      expect(readFileSync(file).equals(before), what).toBe(true);
+    }
+    // A manifest that is JSON but not an object: null, a list, a number.
+    for (const text of ["null", "[]", "3"]) {
+      writeFileSync(file, text);
+      const e = refusal(() => WorkspaceSession.restore(sessions, testApp, s.id));
+      expect(e.status, text).toBe(409);
+      expect(e.message, text).toContain("not a JSON object");
+      expect(readFileSync(file, "utf8")).toBe(text);
+    }
+    // The manifest put back restores, and the outside change is marked then.
+    writeManifest(s, good);
+    const r = WorkspaceSession.restore(sessions, testApp, s.id);
+    expect(r.restoreReport.outside).toHaveLength(1);
+  });
+
   test("migrate may not smuggle in a version key", () => {
     const bad: AppDeclaration = {
       name: "bad-app",
