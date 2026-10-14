@@ -228,6 +228,77 @@ export function rebaseLines(
   return { text: out.join("\n"), kept };
 }
 
+/**
+ * The kit's agent commands' fields, by type, checked before the command runs
+ * (`checkAgentCmd`). A field of the wrong type reached the session as sent: a
+ * `say` stored `{"x":1}` as its text, a `reveal` of `null` threw a 500 from
+ * `node:path`. `text` (must say something) and `str` are required strings;
+ * `optStr` and `optNum` may be absent or null; `strs` is a list of strings.
+ */
+type CmdFields = {
+  text?: string[];
+  str?: string[];
+  optStr?: string[];
+  num?: string[];
+  optNum?: string[];
+  bool?: string[];
+  strs?: string[];
+};
+const AGENT_CMD_FIELDS: Record<string, CmdFields> = {
+  say: { text: ["text"] },
+  reveal: { str: ["path"] },
+  "context.add": { strs: ["paths"] },
+  "version.new": { optStr: ["doc", "label"], optNum: ["from"] },
+  activate: { optStr: ["doc"], num: ["version"] },
+  "version.delete": { optStr: ["doc"], num: ["version"] },
+  "note.add": { str: ["quote", "body"], optStr: ["doc"] },
+  notes: { optStr: ["doc"] },
+  "note.edit": { str: ["id", "body"], optStr: ["doc"] },
+  "note.resolve": { str: ["id"], optStr: ["doc"], bool: ["resolved"] },
+  working: { optNum: ["seconds"] },
+  "task.create": { str: ["title"], optStr: ["detail", "parent"] },
+  "task.status": { str: ["id", "detail"] },
+  "task.done": { str: ["id"], optStr: ["outcome"] },
+  "task.cancel": { str: ["id"] },
+  diff: { optStr: ["doc"], optNum: ["context"] },
+  merge: { optStr: ["doc"] },
+  show: { optStr: ["doc", "quote", "heading"], optNum: ["hunk"] },
+  search: { str: ["query"], optNum: ["limit"] },
+  backlinks: { optStr: ["doc"] },
+  profile: { optStr: ["doc"] },
+  "image.describe": { str: ["image"], optStr: ["source", "label"] },
+  "doc.create": { str: ["dir"], optStr: ["name", "text"] },
+  "folder.create": { str: ["dir"], optStr: ["name"] },
+  "bundle.create": { str: ["dir"], optStr: ["extension", "name"] },
+  duplicate: { str: ["path"] },
+  move: { str: ["path", "into"] },
+  rename: { str: ["path", "name"] },
+  import: { str: ["name", "text"], optStr: ["dir"] },
+  "workspace.set": { str: ["path"] },
+};
+
+/** Refuses (400) an agent command whose fields are not of their type: before anything runs. */
+export function checkAgentCmd(cmd: Record<string, unknown>): void {
+  const spec = typeof cmd.op === "string" ? AGENT_CMD_FIELDS[cmd.op] : undefined;
+  if (!spec) return;
+  const bad = (field: string, what: string) =>
+    new SessionError(`${cmd.op}: ${field} must be ${what}: nothing was applied`, 400);
+  for (const f of spec.text ?? [])
+    if (typeof cmd[f] !== "string" || !(cmd[f] as string).trim()) throw bad(f, "non-empty text");
+  for (const f of spec.str ?? []) if (typeof cmd[f] !== "string") throw bad(f, "a string");
+  for (const f of spec.optStr ?? [])
+    if (cmd[f] != null && typeof cmd[f] !== "string") throw bad(f, "a string when given");
+  for (const f of spec.num ?? [])
+    if (typeof cmd[f] !== "number" || !Number.isFinite(cmd[f])) throw bad(f, "a number");
+  for (const f of spec.optNum ?? [])
+    if (cmd[f] != null && (typeof cmd[f] !== "number" || !Number.isFinite(cmd[f])))
+      throw bad(f, "a number when given");
+  for (const f of spec.bool ?? []) if (typeof cmd[f] !== "boolean") throw bad(f, "true or false");
+  for (const f of spec.strs ?? [])
+    if (!Array.isArray(cmd[f]) || !(cmd[f] as unknown[]).every((p) => typeof p === "string"))
+      throw bad(f, "a list of strings");
+}
+
 /** The ops the kit answers itself, so an app's namespaced op can never shadow one. */
 const STRUCTURE_OPS = new Set<string>([
   "doc.create",
@@ -4144,8 +4215,13 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           // Only the agent's CLI posts here: a call is the agent at work, unless
           // the CLI says it is its own bookkeeping (`open` adding its paths).
           if (req.headers.get(NOT_PRESENCE_HEADER) !== "1") holdAgent(agentGraceMs);
+          if (body === null || typeof body !== "object" || Array.isArray(body))
+            return Response.json(
+              { ok: false, error: 'a command must be a JSON object, with its "op"' },
+              { status: 400 },
+            );
           try {
-            const cmd = (body ?? {}) as Record<string, unknown> & { op?: string };
+            const cmd = body as Record<string, unknown> & { op?: string };
             const hit = typeof cmd.op === "string" ? verbs.has(cmd.op) : false;
             if (hit) {
               const r = await callVerb(cmd.op as string, cmd, { from: "agent", reply: () => {} });
@@ -4155,6 +4231,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
                 ...(result && typeof result === "object" ? (result as object) : {}),
               });
             }
+            checkAgentCmd(cmd);
             beforeKitAct(cmd.op);
             return Response.json({ ok: true, ...(await handleAgentCmd(body as AgentCmd)) });
           } catch (e) {

@@ -1262,6 +1262,46 @@ describe("the app's own verbs and events", () => {
     expect(noBody.status).toBe(400);
   });
 
+  test("a command that is not an object, or whose fields are of the wrong type, is refused before it runs", async () => {
+    const { base, d } = await start({}, { connect: false, listen: false });
+    const raw = (body: string) => fetch(`${base}/cmd`, { method: "POST", body });
+    for (const body of ["null", "[]", "3", '"say"']) {
+      const r = await raw(body);
+      expect(r.status, body).toBe(400);
+      expect(((await r.json()) as { error: string }).error).toContain("JSON object");
+    }
+    const before = d.session.messages().length;
+    const cases: [Record<string, unknown> & { op: string }, RegExp][] = [
+      [{ op: "say" }, /say: text must be non-empty text/],
+      [{ op: "say", text: { x: 1 } }, /say: text must be non-empty text/],
+      [{ op: "say", text: 123 }, /say: text must be non-empty text/],
+      [{ op: "say", text: "  " }, /say: text must be non-empty text/],
+      [{ op: "reveal", path: null }, /reveal: path must be a string/],
+      [{ op: "reveal" }, /reveal: path must be a string/],
+      [{ op: "context.add", paths: "a" }, /context.add: paths must be a list of strings/],
+      [{ op: "context.add", paths: [1] }, /context.add: paths must be a list of strings/],
+      [{ op: "note.add", quote: 1, body: "b" }, /note.add: quote must be a string/],
+      [{ op: "note.resolve", id: "n", resolved: "yes" }, /note.resolve: resolved must be true/],
+      [{ op: "task.create", title: 5 }, /task.create: title must be a string/],
+      [{ op: "activate", version: "2" }, /activate: version must be a number/],
+      [{ op: "version.new", label: 7 }, /version.new: label must be a string when given/],
+      [{ op: "rename", path: "/x", name: null }, /rename: name must be a string/],
+      [{ op: "workspace.set", path: 1 }, /workspace.set: path must be a string/],
+      [{ op: "image.describe", image: null }, /image.describe: image must be a string/],
+    ];
+    for (const [body, said] of cases) {
+      const r = await cmd(base, body);
+      expect(r.status, JSON.stringify(body)).toBe(400);
+      expect(String(r.body.error), JSON.stringify(body)).toMatch(said);
+    }
+    // Nothing reached the conversation, and nothing was revealed.
+    expect(d.session.messages().length).toBe(before);
+    expect(revealed).toEqual([]);
+    // An optional field may be left out or null, and a good say still goes.
+    expect((await cmd(base, { op: "say", text: "fine", about: null })).status).toBe(200);
+    expect((await cmd(base, { op: "notes", doc: null })).status).not.toBe(500);
+  });
+
   test("the app's own http hook answers first, and falls through when it has nothing to say", async () => {
     const { base } = await start(
       {
