@@ -5,8 +5,8 @@ description:
   Each spell's tab shows the browser's generic icon; give each one an inline
   Lucide SVG favicon in its brand colour, light and dark, as Story Studio did,
   starting with Scriptorium.
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: backlog
 id: 01a1460b-2e23-7442-a641-8240e69bc407
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-16 }
