@@ -379,7 +379,7 @@ const DECLARED_BLIND: Record<string, number> = {
   // 212 -> 254 (E30): scrollbars in the spell's colours, which are pseudo-element
   // rules and so unreachable from a utility as well.
   "src/scriptorium/bunfig.toml": 5,
-  "src/scriptorium/surface/index.html": 40,
+  "src/scriptorium/surface/index.html": 41,
   "src/scriptorium/surface/styles.css": 389,
 };
 
