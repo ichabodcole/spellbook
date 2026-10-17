@@ -10,6 +10,7 @@
 //
 // Kit code, new in Spellbook (Story Studio has no such slot): offered back.
 
+import type { ReactNode } from "react";
 import type { ConfirmRequest } from "../ui/ConfirmDialog.tsx";
 import { baseName } from "./model.ts";
 
@@ -35,15 +36,31 @@ export const PRE_MOVE_TIMEOUT_MS = 5000;
 export type MoveVerdict = { go: true } | { go: false; notice?: string };
 
 /**
- * The check could not be made (it failed, or did not answer in time): the human
- * still chooses. Moving at once would skip the look the app asked for; refusing
- * would leave the human unable to move while the app is slow or down. So the
- * dialog says the move was not checked, and Cancel (and Escape) is the way out.
+ * What the app says went unchecked when its check could not be made: the
+ * fallback dialog's warning, in the app's own words (the kit cannot know what
+ * an app's check looks at). Absent, the dialog says only that the move was not
+ * checked.
  */
-export function uncheckedMovePrompt(move: PendingMove, why: string): ConfirmRequest {
+export type UncheckedMoveNote = (move: PendingMove) => ReactNode;
+
+/**
+ * The check could not be made (it failed, or did not answer in time): the human
+ * still chooses (Cole's ruling, 2026-10-17). Moving at once would skip the look
+ * the app asked for; refusing would leave the human unable to move while the
+ * app is slow or down. So the dialog says the move was not checked, names what
+ * went unchecked when the app says (`note`), and Cancel (and Escape) is the
+ * way out.
+ */
+export function uncheckedMovePrompt(
+  move: PendingMove,
+  why: string,
+  note?: UncheckedMoveNote,
+): ConfirmRequest {
+  const warning = note?.(move);
   return {
     title: `Move “${baseName(move.path)}” into “${baseName(move.into)}”?`,
-    message: `What this move would change could not be checked first (${why}). It can still be moved; the links it breaks, if any, show after the move.`,
+    message: `What this move would change could not be checked first (${why}). It can still be moved.`,
+    ...(warning ? { warning } : {}),
     confirmLabel: "Move anyway",
   };
 }
@@ -60,6 +77,7 @@ export async function askBeforeMove(
   beforeMove: BeforeMove,
   confirm: (request: ConfirmRequest) => Promise<boolean>,
   timeoutMs: number = PRE_MOVE_TIMEOUT_MS,
+  uncheckedNote?: UncheckedMoveNote,
 ): Promise<MoveVerdict> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   let answer: BeforeMoveAnswer;
@@ -74,7 +92,9 @@ export async function askBeforeMove(
       }),
     ]);
   } catch (e) {
-    return (await confirm(uncheckedMovePrompt(move, why(e)))) ? { go: true } : { go: false };
+    return (await confirm(uncheckedMovePrompt(move, why(e), uncheckedNote)))
+      ? { go: true }
+      : { go: false };
   } finally {
     clearTimeout(timer);
   }

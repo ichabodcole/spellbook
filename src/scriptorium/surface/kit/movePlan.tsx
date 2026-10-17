@@ -17,13 +17,18 @@
  *     question, the move goes at once;
  *   - otherwise: the plan, and the move waits for Move or Cancel.
  * A plan that cannot be fetched (the socket is down, or no answer in time)
- * rejects, and the sidebar asks the human without it.
+ * rejects, and the sidebar asks the human without it: "Move anyway", with
+ * `scriptoriumUncheckedMoveNote` naming what went unchecked.
  */
 
 import type { ReactNode } from "react";
 import { type Daemon, DaemonError } from "../../../kit/context/daemonClient";
 import { baseName, shortPath } from "../../../kit/context/model";
-import { type BeforeMove, PRE_MOVE_TIMEOUT_MS } from "../../../kit/context/preMove";
+import {
+  type BeforeMove,
+  PRE_MOVE_TIMEOUT_MS,
+  type UncheckedMoveNote,
+} from "../../../kit/context/preMove";
 import type { ConfirmRequest } from "../../../kit/ui/ConfirmDialog";
 import type { MovePlan } from "../../../kit/workspace/movePlan";
 
@@ -119,6 +124,24 @@ export function movePrompt(
     confirmClassName: "bg-rubric text-on-rubric hover:bg-rubric/90",
   };
 }
+
+/**
+ * What went unchecked when the plan could not be fetched (Cole's ruling,
+ * 2026-10-17: the human may still Move anyway, told what was not checked).
+ * Passed to `ContextSidebar` as `uncheckedMoveNote`, beside `beforeMove`.
+ */
+export const scriptoriumUncheckedMoveNote: UncheckedMoveNote = () => (
+  <>
+    <span className="block">
+      The links into and out of what moves were not checked. Any it breaks show after the move, with
+      the offer to rewrite them.
+    </span>
+    <span className="mt-1 block">
+      Nor was whether it leaves a git repository: if it does, git will see the files as deleted
+      there until the move is committed.
+    </span>
+  </>
+);
 
 /**
  * The slot's function for a connected daemon client. `timeoutMs` bounds the

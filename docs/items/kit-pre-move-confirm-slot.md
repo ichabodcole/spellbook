@@ -77,7 +77,8 @@ path was deferred by one microtask.
 **A check that fails or times out still lets the human choose.** If `beforeMove`
 throws, or doesn't answer within `beforeMoveTimeoutMs` (5 s), the sidebar shows
 its own dialog, "Move X into Y?", saying the move could not be checked first and
-why. The buttons are **Move anyway** and Cancel, and Escape cancels. A late
+why, with the app's `uncheckedMoveNote` as its warning (see Cole's ruling
+below). The buttons are **Move anyway** and Cancel, and Escape cancels. A late
 answer is ignored. I rejected two alternatives. Moving silently would skip the
 look the app asked for. Refusing, which is what the shipped surface does when
 its plan fetch fails, would leave the human unable to move anything while the
@@ -109,29 +110,45 @@ dialog's message is a paragraph.
   when the set view's `onMove` bypasses the slot. A third test holds that a
   cancelled "Move to…" expects nothing: a later `moved` report for the same
   place does not carry the view there.
-- `src/scriptorium/surface/kit/movePlan.test.tsx` has 7 tests. 4 of them run
+- `src/scriptorium/surface/kit/movePlan.test.tsx` has 10 tests. 4 of them run
   against a real flagged daemon (`kitDaemon`, in-process, scratch
   `SCRIPTORIUM_HOME`) with the sidebar in happy-dom. A menu move and a drag move
   show the plan. Cancel leaves every file under `docs/` byte-identical and the
   daemon's context unchanged. Move moves the file on disk and in the tree. A
   refused move shows the notice. The other 3 test the adapter's answers: when it
   asks, that the dialog lists wiki links and frontmatter references as written,
-  and refusal, failure and timeout against a stand-in `request`.
+  and refusal, failure and timeout against a stand-in `request`. 3 more drive
+  the sidebar with Scriptorium's fallback (below): the dialog names both things
+  not checked, Move anyway sends the move, and Cancel sends nothing. That first
+  test goes red when the git line is dropped from the note.
 - The existing context tests pass unchanged (278 in 18 files, with the new
   ones).
-- The gate is green: 5936 pass, 0 fail.
 - `dist` is unchanged by the build.
 
-**Open.** The fallback for a failed or timed-out check ("Move anyway") waits on
-Cole's ruling: it stays, or the shipped refusal comes back.
+**Cole's ruling on the fallback (2026-10-17).** "Move anyway" stays, but the
+fallback dialog must name what could not be checked. The kit's dialog stays
+app-agnostic, so the app supplies those words. `ContextSidebar` takes a new
+optional `uncheckedMoveNote`, and its words are shown as the fallback dialog's
+warning. Without it, the dialog says only that the move was not checked. Escape
+still cancels, and a late answer is still ignored.
+
+Scriptorium's adapter exports `scriptoriumUncheckedMoveNote`, which the interim
+frame passes beside `beforeMove`. It says:
+
+- the links into and out of what moves were not checked, and any it breaks show
+  after the move with the offer to rewrite them;
+- nor was whether it leaves a git repository: if it does, git will see the files
+  as deleted there until the move is committed.
 
 ## Port-back notes
 
 - New `src/kit/context/preMove.ts`: `PendingMove`, `BeforeMove`,
-  `BeforeMoveAnswer`, `PRE_MOVE_TIMEOUT_MS`, `askBeforeMove` and
-  `uncheckedMovePrompt`. It is exported from `context/index.ts`.
+  `BeforeMoveAnswer`, `UncheckedMoveNote`, `PRE_MOVE_TIMEOUT_MS`,
+  `askBeforeMove` and `uncheckedMovePrompt`. It is exported from
+  `context/index.ts`.
 - `ContextSidebar`:
-  - It has two new optional props, `beforeMove` and `beforeMoveTimeoutMs`.
+  - It has three new optional props: `beforeMove`, `beforeMoveTimeoutMs` and
+    `uncheckedMoveNote`.
   - `useConfirm()` moved above `move`, which now uses it. The Delete comment
     moved with `askDelete`.
   - `move` returns `true` (sent) or a `Promise<boolean>`.

@@ -31,10 +31,16 @@ import {
   settle,
   waitFor,
 } from "../../../kit/lib/testDom";
+import type { ContextEntry, StructureOp } from "../../../kit/workspace/protocol";
 import type { WorkspaceDaemon } from "../../../kit/workspace/server";
 import { tempRoot } from "../../../kit/workspace/testing";
 import { kitDaemon } from "../../backend/kit/server";
-import { movePrompt, type ScriptoriumMovePlan, scriptoriumBeforeMove } from "./movePlan";
+import {
+  movePrompt,
+  type ScriptoriumMovePlan,
+  scriptoriumBeforeMove,
+  scriptoriumUncheckedMoveNote,
+} from "./movePlan";
 
 const root = tempRoot("scriptorium-premove");
 const set = join(root, "docs", "set");
@@ -351,5 +357,83 @@ describe("the adapter's answers", () => {
       { timeoutMs: 50 },
     );
     await expect(down({ path: "/h/a.md", into: "/h/b" })).rejects.toThrow("within 50 ms");
+  });
+});
+
+// Cole's ruling (2026-10-17): a plan that cannot be fetched still lets the
+// human Move anyway, and the dialog names what was not checked.
+describe("when the plan cannot be fetched", () => {
+  const list: ContextEntry = {
+    id: "c-notes",
+    label: "notes",
+    root: "/h/notes",
+    membership: "listed",
+    nodes: [{ kind: "doc", rel: "memo.md" }],
+  };
+  const drafts: ContextEntry = {
+    id: "c-drafts",
+    label: "drafts",
+    root: "/h/drafts",
+    membership: "mirrored",
+    nodes: [{ kind: "doc", rel: "a.md" }],
+  };
+  async function unchecked() {
+    const structure: StructureOp[] = [];
+    const m = await mount(
+      <div style={{ width: 300, height: 600, display: "flex" }}>
+        <ContextSidebar
+          entries={[list, drafts]}
+          activeDoc={null}
+          userHome="/h"
+          onOpenDoc={() => {}}
+          onAddPath={() => {}}
+          onStructure={(op) => structure.push(op)}
+          onRemoveEntry={() => {}}
+          onReveal={() => {}}
+          onPick={() => {}}
+          listDir={async () => ({ entries: [] })}
+          beforeMove={scriptoriumBeforeMove({
+            request: async () => {
+              throw new Error("the session has ended");
+            },
+          })}
+          uncheckedMoveNote={scriptoriumUncheckedMoveNote}
+        />
+      </div>,
+    );
+    await rightClick(buttonWith("memo.md"));
+    await waitFor(() => menuItem("Move to") !== null, "the menu");
+    await click(menuItem("Move to"));
+    await waitFor(() => option("drafts") !== null, "the Move to dialog");
+    await click(option("drafts"));
+    await waitFor(() => dialog() !== null, "the unchecked question");
+    return { structure, m };
+  }
+
+  test("the dialog names both things not checked: the links, and leaving a git repository", async () => {
+    const { m } = await unchecked();
+    const text = dialog()?.textContent ?? "";
+    expect(text).toContain("could not be checked first (the session has ended)");
+    expect(text).toContain("The links into and out of what moves were not checked.");
+    expect(text).toContain("Nor was whether it leaves a git repository");
+    expect(text).toContain("git will see the files as deleted");
+    await m.unmount();
+  });
+
+  test("Move anyway sends the move", async () => {
+    const { structure, m } = await unchecked();
+    await click(buttonWith("Move anyway", dialog() as ParentNode));
+    await waitFor(() => structure.length === 1, "the move");
+    expect(structure).toEqual([{ op: "move", path: "/h/notes/memo.md", into: "/h/drafts" }]);
+    await m.unmount();
+  });
+
+  test("Cancel sends nothing", async () => {
+    const { structure, m } = await unchecked();
+    await click(buttonWith("Cancel", dialog() as ParentNode));
+    await waitFor(() => dialog() === null, "the dialog to close");
+    await settle(() => {});
+    expect(structure).toEqual([]);
+    await m.unmount();
   });
 });

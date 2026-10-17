@@ -92,7 +92,7 @@ import {
   splitDropped,
   tildify,
 } from "./model.ts";
-import { askBeforeMove, type BeforeMove } from "./preMove.ts";
+import { askBeforeMove, type BeforeMove, type UncheckedMoveNote } from "./preMove.ts";
 import { carriesRows, type DraggedRow, readRowDrag, rowKindOf, writeRowDrag } from "./rowDrag.ts";
 import { TRASH_CONFIRM_CLASS, trashDialog } from "./trashDialog.ts";
 
@@ -195,6 +195,12 @@ export type ContextSidebarProps = {
   beforeMove?: BeforeMove;
   /** How long a move waits for `beforeMove` before asking the human without it. Default 5 s. */
   beforeMoveTimeoutMs?: number;
+  /**
+   * When `beforeMove` fails or does not answer in time, the human is still
+   * asked ("Move anyway"); this names what went unchecked, as the dialog's
+   * warning. Absent, the dialog says only that the move was not checked.
+   */
+  uncheckedMoveNote?: UncheckedMoveNote;
 };
 
 const NO_ACTIONS: MenuAction[] = [];
@@ -246,6 +252,7 @@ export function ContextSidebar({
   onAddRef,
   beforeMove,
   beforeMoveTimeoutMs,
+  uncheckedMoveNote,
 }: ContextSidebarProps) {
   const [drilled, setDrilled] = useState<string | null>(null);
   const drilledEntry = drilled ? entries.find((e) => e.id === drilled) : undefined;
@@ -326,7 +333,13 @@ export function ContextSidebar({
         return true;
       }
       const asked = moves.current.then(async () => {
-        const v = await askBeforeMove({ path, into }, beforeMove, confirm, beforeMoveTimeoutMs);
+        const v = await askBeforeMove(
+          { path, into },
+          beforeMove,
+          confirm,
+          beforeMoveTimeoutMs,
+          uncheckedMoveNote,
+        );
         if (v.go) onStructure({ op: "move", path, into });
         else if (v.notice) setLocalNotice(v.notice);
         return v.go;
@@ -334,7 +347,7 @@ export function ContextSidebar({
       moves.current = asked.catch(() => {});
       return asked;
     },
-    [onStructure, beforeMove, beforeMoveTimeoutMs, confirm],
+    [onStructure, beforeMove, beforeMoveTimeoutMs, uncheckedMoveNote, confirm],
   );
   // A drop on the list itself, or on a set's way back: each row from INSIDE a
   // set to the workspace folder, unless it is there already. A list row (a whole
