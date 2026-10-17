@@ -282,3 +282,107 @@ describe("a check that fails or never answers still lets the human choose", () =
     await m.unmount();
   });
 });
+
+describe("a drag inside one set's tree (headless-tree's own drag state)", () => {
+  const nested: ContextEntry = {
+    id: "c-nested",
+    label: "nested",
+    root: "/w/nested",
+    membership: "mirrored",
+    nodes: [
+      { kind: "group", rel: "sub", children: [{ kind: "doc", rel: "sub/b.md" }] },
+      { kind: "doc", rel: "a.md" },
+    ],
+  };
+  const treeRow = (name: string) =>
+    [...document.querySelectorAll('[role="treeitem"]')].find((e) =>
+      (e.textContent ?? "").trim().startsWith(name),
+    ) ?? null;
+  /** A DataTransfer the library can write its drag into and read it back from. */
+  function dataTransfer() {
+    const store = new Map<string, string>();
+    return {
+      dropEffect: "move",
+      effectAllowed: "move",
+      types: [] as string[],
+      files: [],
+      items: [],
+      setData(t: string, v: string) {
+        store.set(t, v);
+        this.types.push(t);
+      },
+      getData: (t: string) => store.get(t) ?? "",
+      setDragImage() {},
+    };
+  }
+  async function fire(el: Element, type: string, dt: unknown) {
+    await settle(() => {
+      const ev = new window.Event(type, { bubbles: true, cancelable: true });
+      Object.defineProperty(ev, "dataTransfer", { value: dt });
+      Object.defineProperty(ev, "clientX", { value: 5 });
+      Object.defineProperty(ev, "clientY", { value: 5 });
+      el.dispatchEvent(ev);
+    });
+  }
+  async function dragIntoSub(over: Partial<ContextSidebarProps>) {
+    const h = harness({ entries: [nested], ...over });
+    const m = await mountSidebar(<ContextSidebar {...h.props} />);
+    await click(buttonWith("nested"));
+    await waitFor(() => treeRow("a.md") !== null && treeRow("sub") !== null, "the tree");
+    const dt = dataTransfer();
+    await fire(treeRow("a.md") as Element, "dragstart", dt);
+    await fire(treeRow("sub") as Element, "dragover", dt);
+    await fire(treeRow("sub") as Element, "drop", dt);
+    return { ...h, m };
+  }
+
+  test("with no slot, the drop moves the row into the folder at once", async () => {
+    const { structure, m } = await dragIntoSub({});
+    await waitFor(() => structure.length > 0, "the move");
+    expect(structure).toEqual([{ op: "move", path: "/w/nested/a.md", into: "/w/nested/sub" }]);
+    await m.unmount();
+  });
+
+  test("with a slot, it is asked with the move, and nothing is sent until the human answers", async () => {
+    const asked: PendingMove[] = [];
+    const { structure, m } = await dragIntoSub({ beforeMove: plan(asked) });
+    await waitFor(() => dialog() !== null, "the slot's dialog");
+    expect(asked).toEqual([{ path: "/w/nested/a.md", into: "/w/nested/sub" }]);
+    await Bun.sleep(50);
+    expect(structure).toEqual([]);
+    await click(buttonWith("Confirm", dialog() as ParentNode));
+    await waitFor(() => structure.length === 1, "the move");
+    expect(structure).toEqual([{ op: "move", path: "/w/nested/a.md", into: "/w/nested/sub" }]);
+    await m.unmount();
+  });
+});
+
+describe("a cancelled Move to… expects nothing", () => {
+  test("the daemon later reporting a move to that same place (the agent's) does not take the view there", async () => {
+    const { props } = harness({ beforeMove: plan([]) });
+    const m = await mountSidebar(<ContextSidebar {...props} />);
+    await moveTo("memo.md", "drafts");
+    await waitFor(() => dialog() !== null, "the slot's dialog");
+    await click(buttonWith("Cancel", dialog() as ParentNode));
+    await waitFor(() => dialog() === null, "the dialog to close");
+    // Later the agent moves memo.md into drafts, and the daemon reports it.
+    const after: ContextEntry = {
+      ...drafts,
+      nodes: [...drafts.nodes, { kind: "doc", rel: "memo.md" }],
+    };
+    await m.render(
+      <div style={{ width: 300, height: 600, display: "flex" }}>
+        <ContextSidebar
+          {...props}
+          entries={[after, ideas]}
+          moved={{ path: "/w/drafts/memo.md", seq: 1 }}
+        />
+      </div>,
+    );
+    await Bun.sleep(50);
+    await settle(() => {});
+    // Still the list: the human's view was not carried into drafts.
+    expect(document.querySelector('[role="tree"]')).toBeNull();
+    await m.unmount();
+  });
+});

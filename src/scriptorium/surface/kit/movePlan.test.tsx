@@ -308,6 +308,25 @@ describe("the adapter's answers", () => {
     ).not.toBeNull();
   });
 
+  test("the dialog lists the wiki links and frontmatter references it breaks, each as written, and says they are never rewritten", async () => {
+    const p = movePrompt(
+      {
+        ...base,
+        wiki: [{ path: "/h/set/x.md", line: 3, raw: "[[a]]" }],
+        edges: [{ kind: "frontmatter", source: "/h/set/y.md", key: "related", raw: "./a.md" }],
+      },
+      "/h",
+    );
+    const m = await mount(<div>{p?.message}</div>);
+    const text = m.container.textContent ?? "";
+    expect(text).toContain("1 wiki link would no longer find its page");
+    expect(text).toContain("~/set/x.md:3 [[a]]");
+    expect(text).toContain("1 frontmatter reference would point elsewhere");
+    expect(text).toContain("~/set/y.md related: ./a.md");
+    expect(text).not.toContain("It breaks no links.");
+    await m.unmount();
+  });
+
   test("a refusal is an answer; any other failure rejects, so the sidebar asks without a plan; the timeout is passed on", async () => {
     let asked: unknown = null;
     const refused = scriptoriumBeforeMove({

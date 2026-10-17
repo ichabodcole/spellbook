@@ -52,6 +52,16 @@ New kit code, not a port: Story Studio's context pane has no such slot (read at
   `beforeMoveTimeoutMs`; the logic is in `src/kit/context/preMove.ts`.
 - `a1356892`: Scriptorium's adapter, `scriptoriumBeforeMove(daemon)` in
   `src/scriptorium/surface/kit/movePlan.tsx`, for the interim frame to pass in.
+- A tests-only follow-up from the no-stake verification: headless-tree's own
+  in-tree drag, a cancelled "Move to…" clearing its focus expectation, and the
+  dialog's wiki and frontmatter lists.
+
+**About the second box.** The adapter exists, and it is tested against a real
+flagged daemon with the kit's sidebar in happy-dom. No surface passes it in yet:
+wiring it into the human's page is the interim frame's job
+([scriptorium-kit-interim-frame](scriptorium-kit-interim-frame.md)), which
+passes `beforeMove={scriptoriumBeforeMove(daemon, { userHome })}` to
+`ContextSidebar`.
 
 **The slot.** Every move the sidebar makes asks it first: "Move to…", a row
 dropped on a set or folder, and a row dropped on the list or a set's way back.
@@ -92,26 +102,28 @@ dialog's message is a paragraph.
 
 **Verified.**
 
-- `ContextSidebar.preMove.test.tsx` has 8 tests on fixtures.
-- `src/scriptorium/surface/kit/movePlan.test.tsx` has 6 tests. 4 of them run
+- `ContextSidebar.preMove.test.tsx` has 11 tests on fixtures. Two of them drive
+  headless-tree's real in-tree drag (dragstart on a document row, dragover and
+  drop on a folder in the same set). With a slot, the slot is asked with
+  `{path, into}` and nothing is sent until the human answers; that test goes red
+  when the set view's `onMove` bypasses the slot. A third test holds that a
+  cancelled "Move to…" expects nothing: a later `moved` report for the same
+  place does not carry the view there.
+- `src/scriptorium/surface/kit/movePlan.test.tsx` has 7 tests. 4 of them run
   against a real flagged daemon (`kitDaemon`, in-process, scratch
   `SCRIPTORIUM_HOME`) with the sidebar in happy-dom. A menu move and a drag move
   show the plan. Cancel leaves every file under `docs/` byte-identical and the
   daemon's context unchanged. Move moves the file on disk and in the tree. A
-  refused move shows the notice. The other 2 test the adapter's answers with a
-  stand-in `request`.
-- The existing context tests pass unchanged (275 in 18 files, with the new
+  refused move shows the notice. The other 3 test the adapter's answers: when it
+  asks, that the dialog lists wiki links and frontmatter references as written,
+  and refusal, failure and timeout against a stand-in `request`.
+- The existing context tests pass unchanged (278 in 18 files, with the new
   ones).
 - The gate is green: 5936 pass, 0 fail.
 - `dist` is unchanged by the build.
 
-**Not covered.**
-
-- The drag test drops a row's payload onto another set's row in the list. A drag
-  within one set's tree goes through headless-tree's own drag state, and the
-  sidebar's tests don't drive that in happy-dom. It reaches the same `move`, but
-  no test drives it.
-- Clearing a cancelled "Move to…"'s focus expectation is untested.
+**Open.** The fallback for a failed or timed-out check ("Move anyway") waits on
+Cole's ruling: it stays, or the shipped refusal comes back.
 
 ## Port-back notes
 
