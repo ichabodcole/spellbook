@@ -5,7 +5,7 @@ description:
   On the kit path, an unknown --session is told no daemon is running and to
   restore it, even while that daemon runs; and tail --once prints a non-JSON
   keepalive comment line.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a13c0d-b24c-75b2-af4d-ac78fa192dec
 kind: bug

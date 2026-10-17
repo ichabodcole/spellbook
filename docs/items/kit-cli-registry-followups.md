@@ -5,7 +5,7 @@ description:
   Group words have no help, two hand-written root helps do not mention help
   <verb>, required flags are not marked in schema, a required flag with a
   default can never be missing, and no spell supplies flagHelp or examples yet.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a138c6-afb2-7406-a222-5672da0779f7
 kind: task

@@ -7,7 +7,7 @@ description:
   folder goes into the selected document's set or folder, asks for a location
   (last one preselected) when nothing is selected, and the agent names where it
   creates; the opening folder becomes an ordinary added folder."
-status: draft
+status: stable
 lifecycle: triage
 id: 01a14606-4a31-7535-9dbd-5f19712c490c
 kind: task
@@ -24,14 +24,9 @@ go wrong:
 
 - **The name.** "Workspace" says the tree's contents live there, and most of
   them don't. It is only a default save location.
-- **Nobody chose it.** It is set by wherever the agent opened the session, and
-  nothing shows it. You find out where it is when a new file lands somewhere you
-  didn't expect.
-
-Story Studio is different on purpose. It is a project space: imports are copied
-into one workspace, and external references, if added, are read-only and look
-different. Scriptorium edits files where they already are. So the kit lets each
-app declare its model, and Scriptorium declares no home workspace.
+- **Nobody chose it.** It is set by wherever the agent opened the session, not
+  by you. The sidebar's workspace picker does show it, but quietly, so it's easy
+  to lose track of where new files will land.
 
 Cole ruled this on 2026-10-16, from his braindump
 `fragments/scriptorium-default-workspace.md` in the Spellbook Operator workspace

@@ -5,7 +5,7 @@ description:
   A directory symlink pointing outside the workspace shows its files in a
   mirrored set, and symlink loops are walked until the 2000-entry cap, listing
   alias paths as separate documents. Inherited from Story Studio's tree.ts.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a13c65-0307-737d-bd5b-d00816a2d5cf
 kind: bug

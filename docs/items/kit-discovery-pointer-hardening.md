@@ -5,7 +5,7 @@ description:
   The ported discovery pointer API trusts a dead-pid latest pointer, treats pid
   0 or -1 as alive, does not match a file name to its session_id, and writes a
   predictable temp name in a shared tmpdir on Linux.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a138c6-ae85-761c-a3f1-6a7bd4aa7385
 kind: chore

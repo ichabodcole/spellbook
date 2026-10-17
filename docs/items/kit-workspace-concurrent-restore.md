@@ -5,7 +5,7 @@ description:
   The kit's already-running check is check-then-act in the CLI and the daemon
   takes no lock, so two simultaneous open --restore calls both start and one
   daemon's writes are lost. Inherited from Story Studio 027d7a3.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a13c64-ca08-759c-8075-f36b83fd6430
 kind: bug

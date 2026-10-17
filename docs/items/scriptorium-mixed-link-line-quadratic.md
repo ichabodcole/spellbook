@@ -7,7 +7,7 @@ description:
   Scriptorium's wiki-inside-markdown scan makes a 200k-character line mixing
   markdown and wiki links take 1.2-1.8 s; the kit's extractor is linear, so this
   goes away when Scriptorium moves onto it.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a139ee-790f-73bf-b84a-69ed0055a6b2
 kind: bug

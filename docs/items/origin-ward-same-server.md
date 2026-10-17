@@ -6,7 +6,7 @@ description:
   The origin-guard ward accepts any <identifier>.hostname as
   refuseForeignOrigin's third argument, so passing a different object's hostname
   would pass.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a138c6-b08c-77d1-8103-208875f6d6bf
 kind: chore

@@ -6,7 +6,7 @@ description:
   and each near() call copies and sorts the run: 1.6 s at 98k characters, in
   both kits. Story Studio filed it as kit-links-images-in-one-label; whoever
   fixes it first posts the commit."
-status: draft
+status: stable
 lifecycle: triage
 id: 01a13bdd-bafc-7333-ae73-072ea44abbda
 kind: bug

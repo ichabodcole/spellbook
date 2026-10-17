@@ -5,7 +5,7 @@ description:
   Scriptorium's kit primitives use the kit's join-only cn while its own
   components still use the npm cn (tailwind-merge); the surface dep cap says one
   semantics per spell and needs a ruling for spells on the kit.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a138c6-b13d-738a-be53-c5c299d80b4c
 kind: chore

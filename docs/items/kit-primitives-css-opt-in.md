@@ -5,7 +5,7 @@ description:
   The kit's @source pulls the primitives' utility classes into every spell that
   imports base.css, growing their CSS 33-71% with classes they never use; make
   the primitives' CSS opt-in.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a1376e-9fb0-7452-82e6-c1d987e38191
 kind: chore
