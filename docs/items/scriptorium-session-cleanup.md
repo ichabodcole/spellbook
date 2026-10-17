@@ -52,8 +52,8 @@ metadata a work item has, without copying the project-docs frontmatter verbatim.
 **What it needs to do:**
 
 - **Record what a session is for and where it got to:** a description, and a
-  lifecycle the human or the agent sets (open or done, the final set of states
-  to be decided in shaping). Both survive restore, unlike `ended`.
+  lifecycle the human or the agent sets (open or done). Both survive restore,
+  unlike `ended`.
 - **Show the human** which sessions exist: each one's description and lifecycle,
   when it was last used, whether its daemon is running, and what it showed (its
   sets and documents), so the human can tell a finished one from one worth
@@ -76,13 +76,25 @@ metadata a work item has, without copying the project-docs frontmatter verbatim.
   default.
 - **Which path?** Build only on the kit path, which takes over at the cutover,
   or add it to shipped Scriptorium as well.
-- **The lifecycle's states.** Is open/done enough, or does it want a third state
-  such as "parked"? Does marking a session done end its daemon, or the other way
-  round?
-- **Sessions saved before this.** They have no description. Should the list fall
-  back to their documents' names, or should the agent offer to write one?
 - **Imported files.** A session's `imported/` folder holds copies the session
   owns, so deleting the session takes them too. The delete has to say so first.
+
+**Cole's rulings (2026-10-17):**
+
+- **Two states, open and done.** Start simple; add a state when real use asks
+  for one.
+- **Ending a session is not marking it done.** Ending only means nobody is using
+  the session right now: the agent isn't listening, and the human may come back
+  after a break and reopen it. "Done" is a separate, deliberate mark. A new
+  session starts open.
+- **The end of a session is the moment to ask.** When the human ends a session,
+  the agent asks whether to mark it done or leave it open. This rides on the
+  end-session message the agent already receives, plus a line in the SKILL. It
+  is not a dialog that blocks the end.
+- **Sessions saved before this are shown, not hidden.** They have no description
+  and are open. Showing them is how they get cleaned up: the human and the agent
+  can go through them, see what is in them, and mark them done or delete them.
+  The list falls back to what each one showed, such as its documents' names.
 
 **Constraints already settled:**
 
@@ -95,12 +107,17 @@ metadata a work item has, without copying the project-docs frontmatter verbatim.
 
 ## Definition of done
 
-- [ ] A session's manifest carries a description and a lifecycle. Both survive
-      restore, and the human or the agent can set them. The SKILL says the agent
-      writes a description when it opens a session.
+- [ ] A session's manifest carries a description and a lifecycle (`open` or
+      `done`, `open` by default). Both survive restore and ending, and the human
+      or the agent can set them. The SKILL says the agent writes a description
+      when it opens a session.
+- [ ] Ending a session leaves its lifecycle alone. When the human ends one, the
+      agent is told, and the SKILL says to ask whether to mark it done or leave
+      it open.
 - [ ] The human can see every session Scriptorium holds, with its description,
       its lifecycle, when it was last used, whether its daemon is running, and
-      what it showed.
+      what it showed. Sessions from before this are listed too, as open,
+      labelled by what they showed.
 - [ ] The human can delete one or more ended sessions from Scriptorium, after a
       confirm that names what goes (including imported files). Done sessions are
       offered first.
