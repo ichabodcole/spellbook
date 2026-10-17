@@ -17,7 +17,7 @@
  * Daemon side only: the CLI's half is `./wikiCommands.ts`.
  */
 
-import { closeSync, openSync, readFileSync, readSync, statSync, writeFileSync } from "node:fs";
+import { closeSync, openSync, readFileSync, readSync, statSync } from "node:fs";
 import { basename, dirname } from "node:path";
 import type { VerbHandler } from "../../../kit/workspace/server";
 import { SessionError, type WorkspaceSession } from "../../../kit/workspace/session";
@@ -267,9 +267,13 @@ export function metaSet(
  * with any write to an opened original: a document with no unsaved edits
  * takes the new text as its active version; one with unsaved edits keeps
  * them, and is marked changed outside, so the human chooses.
+ *
+ * ⛔ Through the kit's world writer (`WorkspaceSession.writeShown`), never a
+ * raw write: a set that shows the sessions (an old manifest's, a link in an
+ * added folder) never makes another session's files a place to write.
  */
-function writeOriginal(abs: string, text: string): void {
-  writeFileSync(abs, text);
+function writeOriginal(s: WorkspaceSession, abs: string, text: string): void {
+  s.writeShown(abs, text);
 }
 
 // ── the move plan (E26) ─────────────────────────────────────────────────────
@@ -325,7 +329,7 @@ export const wikiVerbs: Record<string, VerbHandler> = {
       ...(metaType ? { type: metaType } : {}),
       by: optStr(args, "by") ?? by(call.from),
     });
-    writeOriginal(r.path, text);
+    writeOriginal(ctx.session, r.path, text);
     ctx.announce(`${who(call.from)} added frontmatter to ${ctx.session.display(r.path)}.`, {
       fact: "meta.init",
       by: by(call.from),
@@ -350,7 +354,7 @@ export const wikiVerbs: Record<string, VerbHandler> = {
       pathArg(args, "path", "meta-set"),
       fields as Record<string, string>,
     );
-    writeOriginal(r.path, text);
+    writeOriginal(ctx.session, r.path, text);
     ctx.announce(`${who(call.from)} set ${r.set.join(", ")} on ${ctx.session.display(r.path)}.`, {
       fact: "meta.set",
       by: by(call.from),

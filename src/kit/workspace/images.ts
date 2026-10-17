@@ -18,18 +18,16 @@ import { randomUUID } from "node:crypto";
 import {
   closeSync,
   constants,
-  mkdirSync,
   openSync,
   readdirSync,
   readSync,
-  renameSync,
   type Stats,
   statSync,
-  unlinkSync,
 } from "node:fs";
 import { join } from "node:path";
 import { type ImageType, sniffImage } from "../lib/docFormat.ts";
 import { type ImageImportSettings, importChangesImages } from "../lib/imageImport.ts";
+import { DiskRefusal, sessionDiskAt } from "./disk";
 import { hasMetadata, holdsMetadata, stripMetadata, strippedWords } from "./imageMetadata.ts";
 
 /** The most one dropped image may weigh. A photograph, not an archive. */
@@ -587,24 +585,28 @@ export async function thumbnail(
   const hit = cachedThumb(sessionDir, stamp, width);
   if (hit) return hit;
   const out = thumbPath(sessionDir, stamp, width);
-  mkdirSync(join(sessionDir, "thumbs"), { recursive: true });
+  // The session's own writer: a `thumbs/` that is a link leading out of the
+  // session is refused, and nothing is written (`./disk.ts`).
+  const disk = sessionDiskAt(sessionDir);
+  disk.mkdir(join(sessionDir, "thumbs"), { recursive: true });
   // Written to a temporary name of its own and renamed, so a half-made thumbnail
   // is never served, and two cold requests for the same one never collide.
   const tmp = `${out}.${randomUUID().slice(0, 8)}.tmp`;
   try {
-    await new Bun.Image(read(), { maxPixels: IMAGE_MAX_PIXELS })
+    const bytes = await new Bun.Image(read(), { maxPixels: IMAGE_MAX_PIXELS })
       .resize(width, width, { fit: "inside", withoutEnlargement: true })
       .webp({ quality: 75 })
-      .write(tmp);
-    renameSync(tmp, out);
+      .bytes();
+    disk.writeFile(tmp, bytes);
+    disk.rename(tmp, out);
     return out;
   } catch (e) {
     try {
-      unlinkSync(tmp);
+      disk.unlink(tmp);
     } catch {
       /* never written */
     }
-    if (e instanceof ImageError) throw e;
+    if (e instanceof ImageError || e instanceof DiskRefusal) throw e;
     const code = codeOf(e);
     if (code === "ERR_IMAGE_FORMAT_UNSUPPORTED")
       throw new ImageError("this machine cannot decode that image", "unsupported");
@@ -629,6 +631,7 @@ export function pruneThumbs(
   now = Date.now(),
 ): number {
   const dir = join(sessionDir, "thumbs");
+  const disk = sessionDiskAt(sessionDir);
   let names: string[];
   try {
     names = readdirSync(dir);
@@ -649,10 +652,10 @@ export function pruneThumbs(
     }
     if (!drop) continue;
     try {
-      unlinkSync(join(dir, name));
+      disk.unlink(join(dir, name));
       gone++;
     } catch {
-      /* gone already */
+      /* gone already, or refused (a thumbs/ that leads out): left */
     }
   }
   return gone;

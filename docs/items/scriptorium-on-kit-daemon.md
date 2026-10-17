@@ -225,6 +225,13 @@ Not yet in the shipped SKILL. It goes in at the cutover.
   - `hide` takes a document out of Scriptorium's views, but it is not a
     confidentiality boundary: a document opened before it was hidden keeps its
     notes and versions.
+  - The app verbs (`hide`, `meta`, `meta-init`, `meta-set`, `move-plan`) take a
+    full path or one from `~/` on `/cmd` and the socket, as the kit's own ops
+    do; a relative one is refused.
+  - `meta-set`, `meta-init`, `describe-image` and `relink` never write a file
+    among the sessions or in `$SCRIPTORIUM_HOME`, even where a set shows it (an
+    old manifest's set, a link in an added folder): the verb is refused (409),
+    and `relink` lists such a document in `skipped`.
 - **The ask:** `via: "ask"` with `about: { noteId }` (there is no `about.ask`).
   A second ask while the note is owed gets an error frame for its `rid`. Only a
   human's ask counts; any other `via` naming the note is a typed follow-up, and

@@ -14,10 +14,10 @@
  */
 
 import { existsSync, statSync } from "node:fs";
-import { basename, isAbsolute } from "node:path";
+import { basename } from "node:path";
 import type { AppAct } from "../../../kit/workspace/history";
 import type { ContextEntry } from "../../../kit/workspace/protocol";
-import type { VerbHandler } from "../../../kit/workspace/server";
+import { surfacePath, type VerbHandler } from "../../../kit/workspace/server";
 import { GoneError, SessionError, type WorkspaceSession } from "../../../kit/workspace/session";
 import { type HiddenLists, hiddenLists } from "./app";
 
@@ -29,9 +29,13 @@ import { type HiddenLists, hiddenLists } from "./app";
  * in the agent's own directory before it posts.
  */
 export function fullPathOrDie(path: string, verb: string): string {
-  if (!isAbsolute(path))
-    throw new SessionError(`${verb}: "${path}" is not a full path: start it with /`, 400);
-  return path;
+  // The kit's own reading (`surfacePath`), so an app verb takes what a kit op
+  // takes: a full path, or one from `~/`, expanded against the home folder.
+  try {
+    return surfacePath(path);
+  } catch {
+    throw new SessionError(`${verb}: "${path}" is not a full path: start it with / or ~/`, 400);
+  }
 }
 
 export type HideResult = { path: string; entry: string; removedEntry: boolean };

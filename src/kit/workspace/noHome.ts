@@ -12,8 +12,8 @@
  * plain data: `session.ts` wraps them in its `SessionError`.
  */
 
-import { realpathSync } from "node:fs";
-import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { lstatSync, realpathSync } from "node:fs";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { homeDir } from "../lib/home.ts";
 
 /** What an app says about a home workspace. Read off the app declaration. */
@@ -152,7 +152,36 @@ export function within(p: string, root: string): boolean {
  * folder inside them a write may still reach: a home-workspace app's own
  * `imported/` folder in the session, its default workspace.
  */
-export type OwnPlaces = { sessionsRoot: string; appHome?: string; except?: string };
+export type OwnPlaces = {
+  sessionsRoot: string;
+  appHome?: string;
+  except?: string;
+  /**
+   * Where `except` must really be for the exception to hold: the session
+   * folder's realpath at open, joined with the folder's name. Absent: its
+   * parent's realpath now. ⛔ The exception never follows a link: an `except`
+   * that is a link, or that leads anywhere else (another session's folder),
+   * is no exception at all.
+   */
+  exceptReal?: string;
+};
+
+/**
+ * The exception, as written and as the disk resolves it, when it holds: not a
+ * link itself, and really where `exceptReal` says. Null when it does not.
+ */
+function exceptionOf(own: OwnPlaces): { written: string; real: string } | null {
+  if (own.except === undefined) return null;
+  const written = resolve(own.except);
+  try {
+    if (lstatSync(written).isSymbolicLink()) return null;
+  } catch {
+    /* not there yet: where it would be is checked below */
+  }
+  const real = onDisk(written);
+  const expected = own.exceptReal ?? join(onDisk(dirname(written)), basename(written));
+  return real === expected ? { written, real } : null;
+}
 
 const ownRoots = (own: OwnPlaces): string[] => [
   own.sessionsRoot,
@@ -168,12 +197,19 @@ const ownName = (root: string, own: OwnPlaces): string =>
  * as well as a spelling with `..` in it.
  */
 export function inOwnPlaces(path: string, own: OwnPlaces): string | null {
-  const forms = [resolve(path), onDisk(path)];
-  const except = own.except !== undefined ? [resolve(own.except), onDisk(own.except)] : [];
+  // Each form is excused only by the same form of the exception: the path as
+  // written by the folder as written, the path on disk by where the folder
+  // really is. A link inside the exception that leads to another session is
+  // caught by its disk form.
+  const exc = exceptionOf(own);
+  const forms: [string, string | undefined][] = [
+    [resolve(path), exc?.written],
+    [onDisk(path), exc?.real],
+  ];
   for (const root of ownRoots(own))
     for (const r of [resolve(root), onDisk(root)])
-      for (const f of forms)
-        if (within(f, r) && !except.some((x) => within(f, x)))
+      for (const [f, x] of forms)
+        if (within(f, r) && !(x !== undefined && within(f, x)))
           return root === own.sessionsRoot
             ? `${path} is among the sessions' own folders`
             : `${path} is in the app's own folder (${root}), where its sessions live`;

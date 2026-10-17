@@ -28,7 +28,7 @@
  */
 
 import { join } from "node:path";
-import { writeFileAtomic } from "../wire/discovery.ts";
+import { type Disk, sessionDiskAt } from "./disk";
 
 /** Where a restore keeps the manifest a whole-manifest migrate replaced, in the session folder. */
 export const PRE_MIGRATE_FILE = "manifest.pre-migrate.json";
@@ -107,8 +107,13 @@ export function runManifestMigrate(
  * an old manifest back (and maybe used it): the bytes it is about to replace
  * are the ones worth keeping, and they take the place of the earlier copy.
  */
-export function keepPreMigrate(dir: string, originalText: string): string {
+export function keepPreMigrate(
+  dir: string,
+  originalText: string,
+  disk: Disk = sessionDiskAt(dir),
+): string {
   const kept = join(dir, PRE_MIGRATE_FILE);
-  writeFileAtomic(kept, originalText);
+  // The session's own writer: only inside its folder (`./disk.ts`).
+  disk.writeAtomic(kept, originalText);
   return kept;
 }

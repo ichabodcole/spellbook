@@ -27,29 +27,21 @@
  * lets the unit tests drive the whole model with a temp folder.
  */
 
+// ⛔ No raw write from `node:fs` here: every write goes through `./disk.ts`
+// (`this.world` for the world the sets show, `this.own` for the session's own
+// files), which checks each path at the syscall. The ward
+// `grimoire/kit-disk-write-ward.test.ts` holds this file to it.
 import {
   accessSync,
   closeSync,
   constants,
-  copyFileSync,
-  cpSync,
   existsSync,
   fstatSync,
   lstatSync,
-  mkdirSync,
   readdirSync,
   readFileSync,
   realpathSync,
-  renameSync,
-  // `rmdirSync` rather than `rmSync(..., { recursive: true })` on purpose: it
-  // throws ENOTEMPTY, which is a second net under `removeCreated`'s own
-  // emptiness check. A recursive delete would make the bug it prevents
-  // unrecoverable rather than loud.
-  rmdirSync,
-  rmSync,
   statSync,
-  unlinkSync,
-  writeFileSync,
 } from "node:fs";
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { parseDocument } from "yaml";
@@ -108,9 +100,9 @@ import {
   sidecarOf,
   sidecarSkeleton,
 } from "../lib/sidecar.ts";
-import { writeFileAtomic } from "../wire/discovery.ts";
 import { type Anchor, anchorOf, findAnchor, linesOf } from "./anchors";
 import { applyHunks, diffText } from "./diff";
+import { type Disk, sessionDisk, worldDisk } from "./disk";
 import { type Finding, findings, type Overlap } from "./doctor";
 import type { ClosedBy } from "./events";
 import { IMAGE_MAX_BYTES, openNoFollow, readAllFd, readHeadFd, stampOf } from "./images";
@@ -950,7 +942,7 @@ export class WorkspaceSession {
       tasks: [],
       app: { ...app.slot.migrate({}, 0), version: app.slot.version },
     });
-    mkdirSync(join(s.dir, "docs"), { recursive: true });
+    s.own.mkdir(join(s.dir, "docs"), { recursive: true });
     s.pinDir();
     s.persist();
     return s;
@@ -1045,7 +1037,7 @@ export class WorkspaceSession {
     }
     const s = new WorkspaceSession(sessionsRoot, app, m);
     s.restoreReport = report;
-    mkdirSync(join(s.dir, "docs"), { recursive: true });
+    s.own.mkdir(join(s.dir, "docs"), { recursive: true });
     s.pinDir();
     // Mirrors are re-read, not trusted: the folder may have changed while no
     // daemon was watching it.
@@ -1114,7 +1106,7 @@ export class WorkspaceSession {
       // between the two leaves the original readable.
       if (report.manifestMigrated) {
         migrateWriteOrDie();
-        keepPreMigrate(s.dir, stored);
+        keepPreMigrate(s.dir, stored, s.own);
       }
       s.persist();
     }
@@ -1204,7 +1196,7 @@ export class WorkspaceSession {
     this.notOwnPlaceOrDie(dir);
     if (existsSync(dir)) return dir;
     if (dir === join(this.dir, IMPORTED_DIR)) {
-      mkdirSync(dir, { recursive: true });
+      this.own.mkdir(dir, { recursive: true });
       return dir;
     }
     throw new SessionError(
@@ -1355,9 +1347,9 @@ export class WorkspaceSession {
 
   /** Write the manifest, atomically. Call it on status changes, never on progress ticks. */
   persist(): void {
-    mkdirSync(this.dir, { recursive: true });
+    this.own.mkdir(this.dir, { recursive: true });
     this.dirStillOrDie();
-    writeFileAtomic(join(this.dir, "manifest.json"), `${JSON.stringify(this.m, null, 2)}\n`);
+    this.own.writeAtomic(join(this.dir, "manifest.json"), `${JSON.stringify(this.m, null, 2)}\n`);
   }
 
   /**
@@ -1388,8 +1380,50 @@ export class WorkspaceSession {
     return {
       sessionsRoot: this.sessionsRoot,
       ...(this.appHome !== undefined ? { appHome: this.appHome } : {}),
-      ...(this.hasHome ? { except: join(this.dir, IMPORTED_DIR) } : {}),
+      ...(this.hasHome
+        ? {
+            except: join(this.dir, IMPORTED_DIR),
+            // Only where the session folder really was at the open: an
+            // `imported/` that is a link, or a session folder swapped since,
+            // is no exception (`exceptionOf` in `./noHome.ts`).
+            ...(this.realDir !== undefined ? { exceptReal: join(this.realDir, IMPORTED_DIR) } : {}),
+          }
+        : {}),
     };
+  }
+
+  /** A refusal at the write: the session's 409. */
+  private static refuseWrite = (message: string): Error => new SessionError(message, 409);
+
+  /**
+   * ⛔ THE WORLD'S WRITER: every write to a file or folder the sets show (a
+   * create, a drop, a sidecar, a Save, a link rewrite, a move). Never among
+   * the sessions or in the app home, as written or as the disk resolves it,
+   * checked at the syscall (`worldDisk` in `./disk.ts`).
+   */
+  private readonly world: Disk = worldDisk(() => this.ownPlaces, WorkspaceSession.refuseWrite);
+
+  /**
+   * ⛔ THE SESSION'S OWN WRITER: its manifest, versions and the folders for
+   * them. Only inside the session folder, as written and as the disk resolves
+   * it against the folder's realpath at open (`sessionDisk` in `./disk.ts`).
+   */
+  readonly own: Disk = sessionDisk(
+    () => ({ dir: this.dir, ...(this.realDir !== undefined ? { realDir: this.realDir } : {}) }),
+    WorkspaceSession.refuseWrite,
+  );
+
+  /**
+   * An app verb's write of a file the context shows (an app's own edit of a
+   * document, such as Scriptorium's frontmatter verbs): through the world's
+   * writer, so never among the sessions or in the app home, whatever the sets
+   * show. Not remembered as the session's own write: the watcher treats it as
+   * any write to an opened original.
+   */
+  writeShown(rawPath: string, text: string): string {
+    const { abs } = this.shownAt(rawPath);
+    this.world.writeFile(abs, text);
+    return abs;
   }
 
   /**
@@ -1464,15 +1498,19 @@ export class WorkspaceSession {
 
   /** A version file written: only inside the session's own `docs/` (`ownFileOrDie`). */
   private writeVersion(path: string, text: string): void {
-    this.writeOwned(this.ownFileOrDie(path), text);
+    this.writeOwned(this.ownFileOrDie(path), text, this.own);
   }
 
-  private writeOwned(path: string, text: string): void {
-    mkdirSync(dirname(path), { recursive: true });
+  /** A write the watcher will know as the daemon's own: a version (`this.own`) or an original (`this.world`). */
+  private writeOwned(path: string, text: string, disk: Disk): void {
+    // Checked before anything: a refused write leaves no hash behind.
+    const why = disk.refusal(path);
+    if (why !== null) throw WorkspaceSession.refuseWrite(why);
+    disk.mkdir(dirname(path), { recursive: true });
     // Remember before writing: the watcher's event can arrive before this
     // function returns, and it must find the hash already there.
     this.owned.set(path, contentHash(text));
-    writeFileSync(path, text);
+    disk.writeFile(path, text);
   }
 
   private adoptActive(d: Doc, text: string): void {
@@ -2044,7 +2082,7 @@ export class WorkspaceSession {
     // new file, where the watcher finds it and preserves it too.
     const staged = `${path}.${process.pid}.edit`;
     this.ownFileOrDie(path);
-    writeFileSync(staged, text);
+    this.own.writeFile(staged, text);
     let preserved: (Version & { path: string }) | null = null;
     let onDisk: string | null = null;
     try {
@@ -2055,7 +2093,7 @@ export class WorkspaceSession {
     if (onDisk !== null && !this.isOwnWrite(path, onDisk))
       preserved = this.preserveOutside(d, onDisk);
     this.owned.set(path, contentHash(text));
-    renameSync(staged, path);
+    this.own.rename(staged, path);
     this.activeHash.set(d.slug, contentHash(text));
     this.lastActiveText.set(d.slug, text);
     return { dirtyChanged: before !== this.isDirty(d), preserved };
@@ -2169,11 +2207,15 @@ export class WorkspaceSession {
     this.checkDeletable(opts);
     const d = this.docOrDie(opts.doc);
     const v = this.versionOrDie(d, opts.version);
-    const path = this.versionPath(d, opts.version);
+    // ⛔ Only a file inside the session's own docs/, as the disk resolves it:
+    // a version folder swapped for a link deletes nothing outside. Refused
+    // before the record changes.
+    const path = this.ownFileOrDie(this.versionPath(d, opts.version));
     d.versions = d.versions.filter((x) => x.n !== opts.version);
     try {
-      rmSync(path);
-    } catch {
+      this.own.rm(path);
+    } catch (e) {
+      if (e instanceof SessionError) throw e;
       // The record is what the session believes; a file already gone (a hand
       // tidy, a crash between write and record) must not block removing it.
     }
@@ -2535,7 +2577,7 @@ export class WorkspaceSession {
     // The bytes on disk are already the text: a save that changes nothing, which
     // the daemon never wakes the agent for. Still written, as the human asked.
     const unchanged = fileThere && readFileSync(d.original).equals(Buffer.from(text, "utf8"));
-    this.writeOwned(d.original, text);
+    this.writeOwned(d.original, text, this.world);
     d.originalHash = contentHash(text);
     d.outsideChanged = false;
     const recreated = fileThere ? undefined : folderThere ? "file" : "folder";
@@ -2992,10 +3034,10 @@ export class WorkspaceSession {
    */
   private carrySidecar(from: string, to: string, sidecar: string, sidecarTo: string): void {
     try {
-      renameSync(sidecar, sidecarTo);
+      this.world.rename(sidecar, sidecarTo);
     } catch (e) {
       try {
-        renameSync(to, from);
+        this.world.rename(to, from);
       } catch {
         /* the refusal below still says what failed */
       }
@@ -3047,7 +3089,7 @@ export class WorkspaceSession {
     // A converted image's description records the name it came in with.
     const cameAs = this.m.importedAs?.[abs];
     const text = sidecarSkeleton(cameAs ?? basename(abs), source, added);
-    writeFileSync(path, text, { flag: "wx" });
+    this.world.writeFile(path, text, { flag: "wx" });
     if (cameAs !== undefined && this.m.importedAs) {
       delete this.m.importedAs[abs];
       if (Object.keys(this.m.importedAs).length === 0) delete this.m.importedAs;
@@ -3172,7 +3214,7 @@ export class WorkspaceSession {
       file = this.freeImageName(dir, file);
     }
     const abs = join(dir, file);
-    writeFileSync(abs, bytes, { flag: "wx" });
+    this.world.writeFile(abs, bytes, { flag: "wx" });
     this.adoptNew(abs);
     this.persist();
     return { path: abs };
@@ -3213,7 +3255,7 @@ export class WorkspaceSession {
         `${this.display(assets)} is not a plain folder: not written into`,
         400,
       );
-    if (!st) mkdirSync(assets);
+    if (!st) this.world.mkdir(assets);
     return { bundle: abs, assets };
   }
 
@@ -3243,7 +3285,7 @@ export class WorkspaceSession {
     // image never takes over an orphaned sidecar.
     const file = this.freeImageName(assets, given);
     const abs = join(assets, file);
-    writeFileSync(abs, bytes, { flag: "wx" });
+    this.world.writeFile(abs, bytes, { flag: "wx" });
     return { path: abs, card: `./assets/${file}` };
   }
 
@@ -3269,13 +3311,13 @@ export class WorkspaceSession {
       throw new SessionError(`${basename(f.abs)} is already this board's own`, 400);
     const file = this.freeImageName(assets, basename(f.abs));
     const abs = join(assets, file);
-    writeFileSync(abs, bytes, { flag: "wx" });
+    this.world.writeFile(abs, bytes, { flag: "wx" });
     const from = sidecarOf(f.abs);
     const to = sidecarOf(abs);
     let sidecar: string | undefined;
     try {
       if (lstatSync(from).isFile() && !existsSync(to)) {
-        writeFileSync(to, readFileSync(from), { flag: "wx" });
+        this.world.writeFile(to, readFileSync(from), { flag: "wx" });
         sidecar = to;
       }
     } catch {
@@ -3320,7 +3362,7 @@ export class WorkspaceSession {
     const dir = this.imagesDirBeside(doc);
     file = this.freeImageName(dir, file);
     const abs = join(dir, file);
-    writeFileSync(abs, bytes, { flag: "wx" });
+    this.world.writeFile(abs, bytes, { flag: "wx" });
     const set = this.coveringEntry(abs);
     if (set) this.rescan(set.id);
     else this.adoptNew(abs);
@@ -3363,7 +3405,7 @@ export class WorkspaceSession {
     }
     let made = false;
     if (st === null) {
-      mkdirSync(dir);
+      this.world.mkdir(dir);
       made = true;
       if (set) this.rescan(set.id);
     } else if (!st.isDirectory() && !(set && st.isSymbolicLink()))
@@ -3385,7 +3427,7 @@ export class WorkspaceSession {
     } catch (e) {
       if (made) {
         try {
-          rmdirSync(dir);
+          this.world.rmdir(dir);
         } catch {
           /* not empty, or gone: leave it */
         }
@@ -3446,14 +3488,14 @@ export class WorkspaceSession {
     this.imageBytesOrDie(name, bytes);
     this.notOwnPlaceOrDie(dirname(target));
     const staged = join(dirname(target), `.${basename(target)}.incoming-${randHex(4)}`);
-    writeFileSync(staged, bytes, { flag: "wx" });
+    this.world.writeFile(staged, bytes, { flag: "wx" });
     return staged;
   }
 
   /** Put a staged replacement in place of `target`, whose old file is now in the Trash. */
   placeStaged(staged: string, target: string): { path: string } {
     this.refuseExisting(target);
-    renameSync(staged, target);
+    this.world.rename(staged, target);
     // A loose image's entry is still there (only the file went to the Trash); one
     // the context no longer showed is given an entry again, as a new drop would be.
     if (this.itemAt(target)) this.rescanAround(target);
@@ -3465,9 +3507,9 @@ export class WorkspaceSession {
   /** Drop a staged replacement that will not be used. */
   unstage(staged: string): void {
     try {
-      unlinkSync(staged);
+      this.world.unlink(staged);
     } catch {
-      /* already gone */
+      /* already gone, or refused: nothing removed */
     }
   }
 
@@ -3766,7 +3808,7 @@ export class WorkspaceSession {
           const next = this.takeVersion(d);
           const to = this.versionPath(d, next);
           this.owned.set(to, contentHash(text));
-          renameSync(abs, to);
+          this.own.rename(abs, this.ownFileOrDie(to));
           d.versions.push({ n: next, by: "agent", createdAt: nowIso() });
           d.versions.sort((a, b) => a.n - b.n);
           this.persist();
@@ -4291,7 +4333,7 @@ export class WorkspaceSession {
     // A new JSON document starts as the smallest JSON there is, so its first
     // Save is not refused for being empty.
     const text = opts.text ?? (docFormat(file) === "json" ? "{}\n" : "");
-    writeFileSync(abs, text, { flag: "wx" });
+    this.world.writeFile(abs, text, { flag: "wx" });
     this.adoptNew(abs);
     this.persist();
     return { path: abs };
@@ -4309,7 +4351,7 @@ export class WorkspaceSession {
     this.refuseBundleName(folder, "a new folder");
     const abs = join(dir, folder);
     this.refuseExisting(abs);
-    mkdirSync(abs);
+    this.world.mkdir(abs);
     this.adoptNew(abs);
     this.persist();
     return { path: abs };
@@ -4355,9 +4397,11 @@ export class WorkspaceSession {
     const abs = join(dir, folder);
     this.refuseExisting(abs);
     this.wroteBundle(abs);
-    mkdirSync(abs);
-    writeFileSync(join(abs, BUNDLE_INFO), newBundleInfo(type, bundleStem(folder)), { flag: "wx" });
-    writeFileSync(join(abs, type.main), type.mainTemplate, { flag: "wx" });
+    this.world.mkdir(abs);
+    this.world.writeFile(join(abs, BUNDLE_INFO), newBundleInfo(type, bundleStem(folder)), {
+      flag: "wx",
+    });
+    this.world.writeFile(join(abs, type.main), type.mainTemplate, { flag: "wx" });
     this.adoptNew(abs);
     this.persist();
     return { path: abs, hash: treeHash(abs) };
@@ -4404,8 +4448,9 @@ export class WorkspaceSession {
       // fails if anything is at `to` by now (a link, a folder another process
       // just made): only a folder this act made is ever removed below.
       try {
-        mkdirSync(to);
+        this.world.mkdir(to);
       } catch (e) {
+        if (e instanceof SessionError) throw e;
         throw refused(e);
       }
       try {
@@ -4414,7 +4459,7 @@ export class WorkspaceSession {
         // is copied as written, so a relative one (`../a.md`) still leads
         // inside the copy, never back into the original.
         for (const name of readdirSync(item.abs))
-          cpSync(join(item.abs, name), join(to, name), {
+          this.world.cp(join(item.abs, name), join(to, name), {
             recursive: true,
             errorOnExist: true,
             force: false,
@@ -4423,7 +4468,7 @@ export class WorkspaceSession {
       } catch (e) {
         // Part of a copy is no copy: the folder this act made goes again.
         try {
-          rmSync(to, { recursive: true, force: true });
+          this.world.rm(to, { recursive: true, force: true });
         } catch {
           /* said below either way */
         }
@@ -4435,15 +4480,16 @@ export class WorkspaceSession {
       const info = readBundleInfo(to);
       const title = typeof info?.title === "string" ? info.title : bundleStem(basename(item.abs));
       if (info !== null)
-        writeFileSync(
+        this.world.writeFile(
           join(to, BUNDLE_INFO),
           writeBundleInfo(info, item.bundle, { title: `${uncopied(title)}${suffix}` }),
         );
     } else {
       this.refuseExisting(to);
       try {
-        copyFileSync(item.abs, to, constants.COPYFILE_EXCL);
+        this.world.copyFile(item.abs, to, constants.COPYFILE_EXCL);
       } catch (e) {
+        if (e instanceof SessionError) throw e;
         throw refused(e);
       }
     }
@@ -4845,7 +4891,10 @@ export class WorkspaceSession {
     }
     if (titleTo !== titleFrom) {
       this.wroteBundle(to);
-      writeFileSync(join(to, BUNDLE_INFO), writeBundleInfo(before, type, { title: titleTo }));
+      this.world.writeFile(
+        join(to, BUNDLE_INFO),
+        writeBundleInfo(before, type, { title: titleTo }),
+      );
       this.rescanAround(to);
       this.refreshListed(to);
     }
@@ -4915,7 +4964,7 @@ export class WorkspaceSession {
     const text = "{}\n";
     const d = this.m.docs.find((x) => x.original === to);
     if (d && this.activeText(d) !== "") return null;
-    this.writeOwned(to, text);
+    this.writeOwned(to, text, this.world);
     if (!d) return null;
     this.edit(d.slug, d.active, text);
     d.originalHash = contentHash(text);
@@ -5159,6 +5208,13 @@ export class WorkspaceSession {
       const swapIn = (text: string) =>
         rb ? rb.references.swap(text, swap) : swapLinkTargets(text, swap);
       const noun = rb ? { noun: rb.references.noun } : {};
+      // ⛔ A document among the sessions or in the app home (one a set shows
+      // only because it shows them) is never rewritten: named, and left.
+      const refused = this.world.refusal(edit.path);
+      if (refused !== null) {
+        skipped.push({ path: edit.path, reason: refused });
+        continue;
+      }
       const read = (p: string): string | null => {
         try {
           return readFileSync(p, "utf8");
@@ -5204,7 +5260,7 @@ export class WorkspaceSession {
         if (onDisk.count > 0) {
           // Before the write, so the watcher finds its own write already known.
           d.originalHash = contentHash(onDisk.text);
-          this.writeOwned(d.original, onDisk.text);
+          this.writeOwned(d.original, onDisk.text, this.world);
         }
         let activeCount = heldCount ?? 0;
         if (heldCount === undefined) {
@@ -5228,7 +5284,7 @@ export class WorkspaceSession {
       }
       const out = swapIn(text);
       if (out.count === 0) continue;
-      writeFileSync(edit.path, out.text);
+      this.world.writeFile(edit.path, out.text);
       docs.push({ path: edit.path, count: out.count, ...noun });
       total += out.count;
     }
@@ -5240,8 +5296,9 @@ export class WorkspaceSession {
     this.notOwnSourceOrDie(from);
     this.notOwnPlaceOrDie(to);
     try {
-      renameSync(from, to);
+      this.world.rename(from, to);
     } catch (e) {
+      if (e instanceof SessionError) throw e;
       const code = (e as NodeJS.ErrnoException).code;
       throw new SessionError(
         code === "EXDEV"
@@ -5287,9 +5344,12 @@ export class WorkspaceSession {
           409,
           left.slice(0, 10),
         );
-      rmdirSync(abs);
+      // `rmdir` rather than a recursive remove on purpose: it throws
+      // ENOTEMPTY, a second net under the emptiness check above. A recursive
+      // delete would make the bug it prevents unrecoverable rather than loud.
+      this.world.rmdir(abs);
     } else {
-      unlinkSync(abs);
+      this.world.unlink(abs);
     }
     this.forgetPath(abs);
     return { path: abs, removed: true };
@@ -5382,8 +5442,9 @@ export class WorkspaceSession {
     this.mayBeASetOrDie(folder);
     const pins = opts.links ? this.pinLinks([item.abs]) : null;
     try {
-      mkdirSync(folder);
+      this.world.mkdir(folder);
     } catch (err) {
+      if (err instanceof SessionError) throw err;
       throw new SessionError(
         `cannot make the folder ${tilde(folder)}: ${(err as NodeJS.ErrnoException).code ?? String(err)}`,
         409,
@@ -5394,7 +5455,7 @@ export class WorkspaceSession {
     } catch (err) {
       // Nothing moved: the folder made for it goes, so a refusal changes nothing.
       try {
-        rmdirSync(folder);
+        this.world.rmdir(folder);
       } catch {
         /* left empty: a later rescan shows it, nothing is lost */
       }
@@ -5453,7 +5514,7 @@ export class WorkspaceSession {
     this.refuseExisting(to);
     this.renameOrDie(abs, to);
     try {
-      rmdirSync(folder);
+      this.world.rmdir(folder);
     } catch {
       /* not empty after all, or gone: the document is out either way */
     }
@@ -5529,8 +5590,9 @@ export class WorkspaceSession {
     }
     this.refuseExisting(abs);
     try {
-      mkdirSync(abs);
+      this.world.mkdir(abs);
     } catch (err) {
+      if (err instanceof SessionError) throw err;
       throw new SessionError(
         `cannot make the folder ${tilde(abs)}: ${(err as NodeJS.ErrnoException).code ?? String(err)}`,
         409,
@@ -5573,7 +5635,7 @@ export class WorkspaceSession {
       );
     const dir = into ? this.destinationOrDie(into) : this.workspaceOrDie();
     const abs = join(dir, this.freeName(dir, file, false));
-    writeFileSync(abs, text, { flag: "wx" });
+    this.world.writeFile(abs, text, { flag: "wx" });
     this.adoptNew(abs);
     this.persist();
     return { path: abs };
