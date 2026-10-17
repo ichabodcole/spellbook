@@ -86,12 +86,4 @@ session.]
 
 ## Sessions
 
-<!--
-One line per branch, appended by `init-branch` as it opens them:
-
-  - feature/some-branch (open)
-
-`finalize-branch` rewrites `(open)` as `(landed YYYY-MM-DD)` when the branch
-lands. Leave this section empty until the first branch; do not carry a
-placeholder line into a real cycle.
--->
+- cycle/wiki-layer (open)
