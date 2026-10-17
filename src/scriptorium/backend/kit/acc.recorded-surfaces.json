@@ -337,10 +337,10 @@
       "exitCode": 2,
       "streams": "separated",
       "stdout": "",
-      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"backlinks: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--doc\",\"--session\"]},\"meta\":{\"command\":\"backlinks\"}}\n",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"backlinks: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--doc\",\"--edge\",\"--session\"]},\"meta\":{\"command\":\"backlinks\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build 6a13f0be, paths derived from the declaration",
-      "recordedAt": "2026-10-17T02:15:08Z"
+      "recordedBy": "colereed via acc probe-plan harness, build 5de0438a-dirty, paths derived from the declaration",
+      "recordedAt": "2026-10-17T04:31:28Z"
     },
     {
       "path": ["link-check"],
@@ -348,10 +348,10 @@
       "exitCode": 2,
       "streams": "separated",
       "stdout": "",
-      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"link-check: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"link-check\"}}\n",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"link-check: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--edge\",\"--session\"]},\"meta\":{\"command\":\"link-check\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build 6a13f0be, paths derived from the declaration",
-      "recordedAt": "2026-10-17T02:15:08Z"
+      "recordedBy": "colereed via acc probe-plan harness, build 5de0438a-dirty, paths derived from the declaration",
+      "recordedAt": "2026-10-17T04:31:28Z"
     },
     {
       "path": ["graph"],
@@ -359,10 +359,10 @@
       "exitCode": 2,
       "streams": "separated",
       "stdout": "",
-      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"graph: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--bundles\",\"--focus\",\"--hops\",\"--kind\",\"--kindless\",\"--limit\",\"--rel\",\"--session\",\"--untyped\",\"--within\"]},\"meta\":{\"command\":\"graph\"}}\n",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"graph: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--bundles\",\"--edge\",\"--focus\",\"--hops\",\"--kind\",\"--kindless\",\"--limit\",\"--rel\",\"--session\",\"--untyped\",\"--within\"]},\"meta\":{\"command\":\"graph\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build 6a13f0be, paths derived from the declaration",
-      "recordedAt": "2026-10-17T02:15:08Z"
+      "recordedBy": "colereed via acc probe-plan harness, build 5de0438a-dirty, paths derived from the declaration",
+      "recordedAt": "2026-10-17T04:31:28Z"
     },
     {
       "path": ["profiles"],

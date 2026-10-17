@@ -56,7 +56,7 @@ import {
   resolve,
   sep,
 } from "node:path";
-import { isImageName, isSvgName } from "../lib/docFormat.ts";
+import { DOC_EXTENSIONS, isImageName, isSvgName } from "../lib/docFormat.ts";
 import { splitFrontmatter } from "../lib/frontmatter.ts";
 import {
   decodePath,
@@ -66,7 +66,7 @@ import {
   splitTarget,
 } from "../lib/linkTarget.ts";
 import { maskCode } from "../lib/markdownCode.ts";
-import { type AppEdge, BODY_LINKS, edgeKeeps } from "./linkEdges";
+import { APP_RESOLVE_CAP, type AppEdge, BODY_LINKS, edgeKeeps } from "./linkEdges";
 import { isDocName } from "./tree";
 
 // Reading a written target (its decoded path, its query, its relations) is pure
@@ -192,7 +192,8 @@ export function resolveTarget(
     // miss, so a link the kit answers never reaches the app.
     const more = index.app ? appCandidates(index.app(target, kind), bare) : [];
     if (more.length > 0) {
-      const files = [...new Set(more.flatMap(fileLookups))].filter((c) => !tried.includes(c));
+      const seen = new Set(tried);
+      const files = [...new Set(more.flatMap(fileLookups))].filter((c) => !seen.has(c));
       for (const c of files) {
         const own = index.inContext(c);
         if (own !== null) return { state: "in-context", path: own };
@@ -208,17 +209,24 @@ export function resolveTarget(
   return { state: "missing", tried: folderish ? bare : tried };
 }
 
-/** What the app's resolver offers, absolute and normalized, less what the kit already tried. */
+/**
+ * What the app's resolver offers, absolute and normalized, less what the kit
+ * already tried: the first `APP_RESOLVE_CAP` of them, so a resolver that
+ * answers with every document costs one target a bounded look, not a
+ * quadratic one.
+ */
 function appCandidates(given: readonly string[] | undefined, bare: readonly string[]): string[] {
   if (!Array.isArray(given)) return [];
-  const out: string[] = [];
+  const skip = new Set(bare);
+  const out = new Set<string>();
   for (const g of given) {
+    if (out.size >= APP_RESOLVE_CAP) break;
     if (typeof g !== "string" || !isAbsolute(g)) continue;
     const n = normalize(g);
     const c = n.length > 1 && n.endsWith("/") ? n.slice(0, -1) : n;
-    if (!bare.includes(c) && !out.includes(c)) out.push(c);
+    if (!skip.has(c)) out.add(c);
   }
-  return out;
+  return [...out];
 }
 
 /**
@@ -867,12 +875,24 @@ export type Backlink = Omit<LinkRef, "target"> & { source: string };
  */
 export type LinkSource = { path: string; links: readonly LinkRef[]; edges?: readonly AppEdge[] };
 
-/** The file name a written path can land on, NFC and lower-cased: what `backlinksTo` sifts by. */
+/**
+ * The name a written path can land on, NFC and lower-cased, a document's
+ * extension dropped: what `backlinksTo` and the graph sift by. On the STEM, so
+ * `thing` and `thing.md` sift with `thing.markdown` and `thing.txt`: an app's
+ * resolver may land an extensionless form on any document kind
+ * (kit-link-edges-slot), and the kit's own `v1.2` lands on `v1.2.md`. A wider
+ * sift only resolves a few more links; the resolver still decides.
+ */
 export function landingName(path: string): string {
-  const name = basename(path.endsWith("/") ? path.slice(0, -1) : path);
   // NFC on both sides: macOS hands back decomposed names (`é` as `e` + accent)
   // where an editor writes composed ones, and the two must sift as one name.
-  return (extname(name) === "" ? `${name}.md` : name).normalize("NFC").toLowerCase();
+  const name = basename(path.endsWith("/") ? path.slice(0, -1) : path)
+    .normalize("NFC")
+    .toLowerCase();
+  const ext = extname(name);
+  return ext !== "" && (DOC_EXTENSIONS as readonly string[]).includes(ext)
+    ? name.slice(0, -ext.length)
+    : name;
 }
 
 /**

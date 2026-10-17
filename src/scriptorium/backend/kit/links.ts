@@ -58,14 +58,20 @@ function gitRootOf(dir: string): string | null {
 }
 
 /**
- * The resolver for Scriptorium's wiki forms, with what it learns kept per
- * answer: the documents by file name (keyed by the kit's array, which is the
- * same for every target in one answer) and each set's repo root.
+ * The resolver for Scriptorium's wiki forms, with what it learns kept: the
+ * documents by file name per answer (keyed by the kit's array, which is the
+ * same for every target in one answer), and each set's repo root for the
+ * daemon's life (see `roots`).
  */
 export function wikiFormsResolver(
   repoRoot: (dir: string) => string | null = gitRootOf,
 ): NonNullable<LinkSlot["resolve"]> {
   const byStem = new WeakMap<readonly ResolvableDocument[], Map<string, ResolvableDocument[]>>();
+  // Each set's repo root, kept for the daemon's life: the slot hears of no
+  // rescan, and keying it per answer would mean calling `documents()` on the
+  // path branch, which reads every document's frontmatter for a single click.
+  // A set whose `.git` appears or goes while the daemon runs keeps the old
+  // answer until a restart; one `existsSync` per level is all it saves.
   const roots = new Map<string, string | null>();
   const named = (docs: readonly ResolvableDocument[]) => {
     let m = byStem.get(docs);

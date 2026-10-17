@@ -93,12 +93,15 @@ export type AppResolveInput = {
 /**
  * The app's slot, on `WorkspaceDaemonOptions.links`.
  *
- * ⚠ A RESOLVER SHOULD LAND ON A DOCUMENT NAMED AS THE TARGET ENDS. Backlinks
- * and the graph pass over a link whose last segment names no document before
- * resolving anything (the name sift that keeps a 2,500-document world cheap),
- * so a form that names a document by something other than its file name
- * (an alias, an id) is followed and checked, but not counted as a backlink or
- * drawn as an edge. Scriptorium's forms all end in the file's own name.
+ * ⚠ A RESOLVER SHOULD LAND ON A DOCUMENT WHOSE STEM THE TARGET ENDS IN.
+ * Backlinks and the graph pass over a link whose last segment names no
+ * document before resolving anything (the name sift that keeps a
+ * 2,500-document world cheap). The sift is on the stem, a document's extension
+ * dropped on both sides, so `concept/thing` reaches `thing.md`,
+ * `thing.markdown` and `thing.txt` alike. What it still misses: a form that
+ * names a document by something other than its stem (an alias, an id) is
+ * followed and checked by `link-check`, but not counted as a backlink or drawn
+ * as an edge. Scriptorium's forms all end in the stem.
  */
 export type LinkSlot = {
   /**
@@ -114,9 +117,17 @@ export type LinkSlot = {
    * path is (no extension: the markdown file), in the context first, then on
    * disk; the first found answers, and a folder among them answers last.
    * Return nothing for a target the app has no form for.
+   *
+   * Capped: only the first `APP_RESOLVE_CAP` (16) usable places are tried
+   * (absolute, and not already tried by the kit); the rest are dropped, so a
+   * resolver that answers with every document costs a bounded look per
+   * target. Put the likeliest first. A relative place is dropped too.
    */
   resolve?: (input: AppResolveInput) => readonly string[] | undefined;
 };
+
+/** The most places an app's resolver may offer for one target; the rest are not tried. */
+export const APP_RESOLVE_CAP = 16;
 
 /** Validate an app's slot where the mistake is cheap to read. */
 export function checkLinkSlot(slot: LinkSlot | undefined): LinkSlot {

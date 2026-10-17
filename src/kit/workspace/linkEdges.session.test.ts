@@ -6,8 +6,8 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdirSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import { type AppEdge, BODY_LINKS, type LinkSlot, readEdges } from "./linkEdges";
-import type { WorkspaceSession } from "./session";
+import { APP_RESOLVE_CAP, type AppEdge, BODY_LINKS, type LinkSlot, readEdges } from "./linkEdges";
+import { BACKLINK_CAP, type WorkspaceSession } from "./session";
 import { inContext, tempRoot } from "./testing";
 
 let root: string;
@@ -299,5 +299,58 @@ describe("what an app hands over is checked, not trusted", () => {
       },
     });
     expect(s.linkGraph().total.links).toBe(2);
+  });
+});
+
+describe("the slot's bounds", () => {
+  test("setting the slot reads again what was read without it", () => {
+    // Read once with no slot: every document is cached with no edges.
+    expect(s.linkGraph().edges.some((e) => e.edge !== undefined)).toBe(false);
+    s.setLinkSlot({ edges: conceptEdges });
+    expect(s.linkGraph({ edge: ["concept"] }).edges.map((e) => basename(e.to))).toEqual([
+      "ruin.md",
+    ]);
+  });
+
+  test("a relative place from the resolver is dropped, never tried", () => {
+    s.setLinkSlot({
+      resolve: (input) => [`aliases/${input.target}`, ...(aliasResolver(input) ?? [])],
+    });
+    expect(s.resolveLink("@nobody", s.openPath(at("notes.md")).slug)).toEqual({
+      state: "missing",
+      tried: [at("@nobody.md"), at("aliases/@nobody.md")],
+    });
+  });
+
+  test(`a resolver's places are capped at ${APP_RESOLVE_CAP} per target, the first kept`, () => {
+    const from = s.openPath(at("notes.md")).slug;
+    const decoys = (n: number) => Array.from({ length: n }, (_, i) => at(`decoys/d${i}`));
+    // 100,000 places: only the first APP_RESOLVE_CAP are tried.
+    s.setLinkSlot({ resolve: () => decoys(100_000) });
+    const r = s.resolveLink("@nobody", from);
+    expect(r.state === "missing" ? r.tried : r).toEqual([
+      at("@nobody.md"),
+      ...decoys(APP_RESOLVE_CAP).map((d) => `${d}.md`),
+    ]);
+    // The real one as the last place within the cap lands; one past it does not.
+    const real = at("aliases/@well");
+    s.setLinkSlot({ resolve: () => [...decoys(APP_RESOLVE_CAP - 1), real] });
+    expect(s.resolveLink("@well", from)).toEqual({ state: "in-context", path: `${real}.md` });
+    s.setLinkSlot({ resolve: () => [...decoys(APP_RESOLVE_CAP), real] });
+    expect(s.resolveLink("@well", from).state).toBe("missing");
+  });
+
+  test("backlinks say truncated when the edges alone pass the cap", () => {
+    mkdirSync(join(world, "many"));
+    for (let i = 0; i <= BACKLINK_CAP; i++)
+      writeFileSync(join(world, "many", `m${i}.md`), "---\nconcepts: [../ruin.md]\n---\n# M\n");
+    const t = inContext(join(root, "sessions-many"), world);
+    t.setLinkSlot({ edges: conceptEdges });
+    const b = t.backlinks(at("ruin.md"));
+    // One body link (the glade's), far under the cap; the edges over it.
+    expect(b.count).toBe(1);
+    expect(b.edgeCount).toBe(BACKLINK_CAP + 2);
+    expect(b.edges?.length).toBe(BACKLINK_CAP);
+    expect(b.truncated).toBe(true);
   });
 });

@@ -139,6 +139,40 @@ describe("on a kit session", () => {
     ]);
   });
 
+  test("references and wiki links to a `.markdown` or `.txt` document are backlinks and edges", () => {
+    // Every document kind the kit treats as markdown, as the shipped graph counts them.
+    writeFileSync(join(set, "concepts", "thing.markdown"), "---\ntype: concept\n---\n# Thing\n");
+    writeFileSync(join(set, "concepts", "log.txt"), "a plain log\n");
+    const from = join(set, "decisions", "cites.md");
+    writeFileSync(
+      from,
+      "---\ntype: decision\nrelated: [concept/thing, note/log]\n---\n# Cites\n\n[[thing]] and [[log]].\n",
+    );
+    const thing = join(set, "concepts", "thing.markdown");
+    const log = join(set, "concepts", "log.txt");
+    // A session opened after they were written, so its scan lists them.
+    s = inContext(join(root, "sessions-2"), set);
+    s.setLinkSlot(scriptoriumLinkSlot());
+    for (const [doc, key, wiki] of [
+      [thing, "concept/thing", "thing"],
+      [log, "note/log", "log"],
+    ] as const) {
+      const b = s.backlinks(doc);
+      expect(b.backlinks.map((l) => [l.source, l.raw])).toEqual([[from, wiki]]);
+      expect(b.edges?.map((e) => [e.source, e.raw])).toEqual([[from, key]]);
+    }
+    const g = s.linkGraph({ focus: from });
+    const out = (edge?: string) =>
+      g.edges
+        .filter((e) => e.from === from && e.edge === edge)
+        .map((e) => e.to)
+        .sort();
+    expect(out(FRONTMATTER_EDGE)).toEqual([log, thing]);
+    expect(out(undefined)).toEqual([log, thing]);
+    // And nothing about them dangles.
+    expect(s.linkCheck().edges?.links.map((e) => e.raw)).toEqual(["../concepts/missing.md"]);
+  });
+
   test("the link check reports a reference nothing answers, and finds one from the repo root", () => {
     const c = s.linkCheck();
     expect(c.edges?.links.map((e) => [e.raw, e.key])).toEqual([
