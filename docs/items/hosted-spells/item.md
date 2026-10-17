@@ -7,7 +7,7 @@ description:
   brought to conventionally hosted apps such as StoryLoom, and what is the
   smallest reusable layer that does it?
 status: stable
-lifecycle: active
+lifecycle: done
 id: 01a0daf1-2198-79e0-aebd-ceabda0e4851
 kind: research
 generated: { by: migrate-v2.10-to-v3.0, at: 2026-09-25 }

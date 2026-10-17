@@ -5,7 +5,7 @@ description:
   Active exploration of adding co-presence via sidecar session daemon and
   CLI-with-tail to retrofitto human-first apps.
 status: stable
-lifecycle: active
+lifecycle: done
 id: 019f6bf2-47a0-766e-906f-80de1143d8bc
 kind: research
 generated: { by: migrate-v2.10-to-v3.0, at: 2026-07-14 }

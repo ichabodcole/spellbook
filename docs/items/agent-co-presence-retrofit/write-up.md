@@ -294,6 +294,13 @@ design.
    `docs/projects/` (implementation lives there; the pattern stays here), and
    decide the kit's packaging home.
 
+**Outcome (sweep, 2026-10-17).** Step 6 was taken: dream-flute holds the pilot
+as its own feature (`docs/features/agent-co-presence-spike/` in that repo),
+which takes its transport shape from this write-up. The story-loom variant and
+the packaging question moved to [hosted-spells](../hosted-spells/write-up.md),
+which answered them with the wocky-talky repo. Steps 1–5 continue in those two
+places, not here.
+
 ---
 
 **Related Documents:**

@@ -259,7 +259,11 @@ a string prefix.
 
 ## Recommendation
 
-**Provisional — this investigation is not concluded.**
+**Concluded by what shipped (sweep, 2026-10-17).** The recommendation was built:
+the shared failure contract (`src/kit/wire/errors.ts`), the shared CLI registry
+(`src/kit/cli/registry.ts`), and acc as the conformance suite across all nine
+spells (`spell-cli-acc-conformance`, `spell-hardening`). The Next Steps left
+unticked below were overtaken by that work rather than answered here.
 
 - **Option 3 as the primary artifact**, with Option 2 for the two pieces where
   eight hand-rolled implementations already produced identical bugs (`parseArgs`
@@ -301,10 +305,10 @@ document is not.
 ## Next Steps
 
 - [ ] Resolve the nine categories in Finding 3 — the blocking unknown.
-- [ ] Decide the failure envelope's shape, taking mind-mapper's typed nouns as
+- [x] Decide the failure envelope's shape, taking mind-mapper's typed nouns as
       the starting point rather than a blank page.
 - [ ] Answer the two forward-compatibility questions in Finding 8.
-- [ ] Prototype the conformance suite against **two** spells (one well-behaved,
+- [x] Prototype the conformance suite against **two** spells (one well-behaved,
       one not) before proposing it for eight.
 - [ ] Re-run the exhaustive audit **after** `spell-hardening` lands, as the
       suite's first regression baseline.

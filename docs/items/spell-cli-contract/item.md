@@ -5,7 +5,7 @@ description:
   "Spell CLI contract establishing what every spell's stdout should promise for
   predictable integration."
 status: stable
-lifecycle: active
+lifecycle: done
 id: 019fd4fe-1468-76ed-b040-0c24075d6d18
 kind: research
 generated: { by: migrate-v2.10-to-v3.0, at: 2026-08-06 }

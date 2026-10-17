@@ -13,7 +13,11 @@ generated: { by: claude-opus-5-5, at: 2026-09-25 }
 
 # Investigation: Co-presence for hosted apps
 
-**Outcome:** In progress. **Reframed 2026-09-25** (see below). The earlier
+**Outcome:** Concluded 2026-09-29: the answer is the
+[wocky-talky](https://github.com/ichabodcole/wocky-talky) repo, a
+language-agnostic co-presence spec and layer whose hosted demo went live that
+day. The StoryLoom spike (Next Steps 4) is follow-on implementation there, not
+open research. **Reframed 2026-09-25** (see below). The earlier
 grapevine-hosting findings still hold as groundwork (auth, direct mode,
 channels). The target is now a reusable co-presence layer for hosted apps, not
 hosted versions of spells.
