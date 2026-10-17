@@ -113,14 +113,27 @@ Not yet in the shipped SKILL. It goes in at the cutover.
 - **Wire:**
   - A `message` carries `about` (`doc`, `version`, `path`, `fromLine`, `toLine`,
     `text`, `noteId`) in place of `selection`, `activePath` and `note`.
+  - A `message` always carries `via`, the gesture that sent it: `chat` when
+    typed, `describe`, `fix` or `ask` for a button. Tell a typed question from a
+    pressed button by it.
+  - `about.refs` lists what the message draws on beside its one subject (`path`,
+    and `doc`, `version`, `role`, `label`, `text` when given). Each is a
+    document or image in the context, never the subject, at most 50.
+    `about.docs` is no longer written.
+  - A `message` carries `warning` when the page's `via`, refs or named subject
+    were not taken as sent (dropped refs, an unknown value).
+  - `say` takes `--via`. Leave it out for your own messages; a button's value is
+    stored, with a warning on stderr.
   - Chat uses `from` in place of `who`, and times are ISO strings.
   - `version.created` and `note.added` are events.
   - A human edit is a `note.edited` system fact, and a reopen is
     `note.resolved{false}`.
   - `note-edit` keeps `replacedBody` for the human to put back.
   - `--version` adds `path: "kit"`.
-- **The ask marker:** `about: { noteId, ask: true }`. A second marked ask while
-  the note is owed gets an error frame for its `rid`.
+- **The ask:** `via: "ask"` with `about: { noteId }` (there is no `about.ask`).
+  A second ask while the note is owed gets an error frame for its `rid`. Only a
+  human's ask counts; any other `via` naming the note is a typed follow-up, and
+  always goes.
 - **From 85a319e's SKILL for Atlas:** say that a note shows it is with the agent
   until the agent replies, resolves it, or rewrites it with `note-edit`, and
   that a human rewrite asks again.
