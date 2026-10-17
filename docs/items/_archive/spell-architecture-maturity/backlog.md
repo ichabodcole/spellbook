@@ -23,9 +23,9 @@ generated: { by: unknown, at: 2026-08-10 }
 > exempt.
 >
 > **The rest was absorbed, not dropped:** surface complexity and build posture →
-> [`spell-surface-pipeline`](../../../features/spell-surface-pipeline/);
+> [`spell-surface-pipeline`](../../../features/_archive/spell-surface-pipeline/);
 > correctness and parity defects →
-> [`spell-hardening`](../../../features/spell-hardening/).
+> [`spell-hardening`](../../../features/_archive/spell-hardening/).
 >
 > **Two things this archive does NOT resolve, recorded so they are not lost:**
 >

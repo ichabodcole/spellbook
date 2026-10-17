@@ -17,8 +17,8 @@ parent: feature/workspace-kit
 # Mirrored sets follow symlinks out of the workspace and through loops
 
 Found by the finalize review of the
-[workspace-daemon cycle](../cycles/2026-10-workspace-daemon.md) (2026-10-14).
-The tree code is the same as Story Studio's `tree.ts`.
+[workspace-daemon cycle](../cycles/_archive/2026-10-workspace-daemon.md)
+(2026-10-14). The tree code is the same as Story Studio's `tree.ts`.
 
 - A directory symlink inside a mirrored set that points outside the workspace
   shows that folder's files as documents in the set.

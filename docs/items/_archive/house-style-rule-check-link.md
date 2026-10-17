@@ -16,12 +16,12 @@ cycle: 2026-09-filed-is-not-fixed
 
 # Link every house-style rule to its check, both directions, gated
 
-Part of [spell-hardening](../../features/spell-hardening/feature.md), sprint 06
-phase 2.
+Part of [spell-hardening](../../features/_archive/spell-hardening/feature.md),
+sprint 06 phase 2.
 
 Clause (ii) of spell-hardening's end condition, scoped by Cole on 2026-09-27 to
 **house-style.md only**
-([phase-2 scope](../../features/spell-hardening/sprints/06-filed-is-not-fixed/phase-2-scope.md)).
+([phase-2 scope](../../features/_archive/spell-hardening/sprints/06-filed-is-not-fixed/phase-2-scope.md)).
 All 25 rules already carry gated `rule-id` markers (`grimoire/rule-id.test.ts`);
 nothing links them to checks.
 

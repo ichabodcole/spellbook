@@ -17,7 +17,7 @@ blocked_by: []
 # Take imago's CLI through the full acc guidance
 
 Part of
-[Spell CLI acc conformance](../../features/spell-cli-acc-conformance/feature.md).
+[Spell CLI acc conformance](../../features/_archive/spell-cli-acc-conformance/feature.md).
 
 **Baseline (acc v0.1.15, 2026-09-26),** from
 `cd plugins/spellbook/skills/imago && bunx acc check ./scripts/cli.ts`:

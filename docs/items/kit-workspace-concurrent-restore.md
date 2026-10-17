@@ -17,7 +17,8 @@ parent: feature/workspace-kit
 # Two concurrent restores of one session start two daemons
 
 Found by the finalize review of the
-[workspace-daemon cycle](../cycles/2026-10-workspace-daemon.md) (2026-10-14).
+[workspace-daemon cycle](../cycles/_archive/2026-10-workspace-daemon.md)
+(2026-10-14).
 
 The kit's "already running" check (`src/kit/workspace/verbs.ts`, around
 line 567) checks and then acts, in the CLI, and the daemon takes no lock. Two

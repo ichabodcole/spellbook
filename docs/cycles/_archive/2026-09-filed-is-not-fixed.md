@@ -21,9 +21,9 @@ generated: { by: claude-opus-5-5, at: 2026-09-26 }
 > closed the same day; see [Outcome](#outcome).
 
 The sixth sprint of
-[spell-hardening](../../features/spell-hardening/feature.md), scaffolded
-2026-08-11 and never convened. Its plan, **unratified**, is
-[sprints/06-filed-is-not-fixed/plan.md](../../features/spell-hardening/sprints/06-filed-is-not-fixed/plan.md):
+[spell-hardening](../../features/_archive/spell-hardening/feature.md),
+scaffolded 2026-08-11 and never convened. Its plan, **unratified**, is
+[sprints/06-filed-is-not-fixed/plan.md](../../features/_archive/spell-hardening/sprints/06-filed-is-not-fixed/plan.md):
 the phase ordering, the two design calls phase 1 cannot start without, and the
 five falsifiers the convene should shoot at first. This cycle is the index over
 that work; the plan stays the argument.
@@ -77,7 +77,7 @@ question (Cole's). The stale-dist item the plan listed has since shipped
 Closed 2026-09-27. Both phases shipped; phase 2 was re-scoped by measurement
 before it started, and by Cole's canon rulings. The decision log with every
 option not taken is at the bottom of
-[the plan](../../features/spell-hardening/sprints/06-filed-is-not-fixed/plan.md).
+[the plan](../../features/_archive/spell-hardening/sprints/06-filed-is-not-fixed/plan.md).
 
 **Planned vs. shipped.**
 
@@ -109,7 +109,7 @@ option not taken is at the bottom of
   house-style: sprint 04's gated rule ids had already fixed it. It does hold for
   every other canon doc.
 - Five premises of the plan's Phase 2 were wrong on arrival (listed in
-  [phase-2-scope.md](../../features/spell-hardening/sprints/06-filed-is-not-fixed/phase-2-scope.md)):
+  [phase-2-scope.md](../../features/_archive/spell-hardening/sprints/06-filed-is-not-fixed/phase-2-scope.md)):
   `c1`'s 7/16 entry points are now one parser; D6's cell counts; row 3's failure
   half was already built; D5 was already ruled (D52); outcome-contract has no
   rule ids.
@@ -134,7 +134,7 @@ option not taken is at the bottom of
 - **One-off runs:** the phase-1 re-measure and no-stake verification on the
   shipped launchers under a scratch `HOME` (it broke one claim, `fields` naming
   a dropped status write, fixed in `d8ba0578`); D6's four-ward calibration
-  ([d6-calibration.md](../../features/spell-hardening/sprints/06-filed-is-not-fixed/d6-calibration.md));
+  ([d6-calibration.md](../../features/_archive/spell-hardening/sprints/06-filed-is-not-fixed/d6-calibration.md));
   the canon's exit-code facts spot-checked against source.
 - **Gate:** full `bun run gate` green at each landing (2976 at phase 1; 2993 at
   phase 2, after `7aca0af0`).

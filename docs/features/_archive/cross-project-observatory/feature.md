@@ -19,7 +19,7 @@ generated: { by: unknown, at: 2026-08-10 }
 >
 > **Not carried by this archive:** the surface **build/distribution** question
 > the React re-home raised is a separate, still-open project —
-> [`spell-surface-pipeline`](../../spell-surface-pipeline/). Astrolabe was its
+> [`spell-surface-pipeline`](../spell-surface-pipeline/). Astrolabe was its
 > intended pilot; as of 2026-08-10 that pilot has **not** run (astrolabe still
 > ships surface source, no `dist/`). Archiving this project does not close that.
 >

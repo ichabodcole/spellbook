@@ -102,8 +102,8 @@ The workspace stack runs in five cycles
 ([port shape, §2b](../../items/workspace-stack-port-shape/write-up.md#2b-the-cycles)):
 the daemon, the wiki layer (with the session converter), the chat and context
 panes, the document pane, then the shell and the cutover. The first two have
-landed: [workspace daemon](../../cycles/2026-10-workspace-daemon.md) and
-[wiki layer](../../cycles/2026-10-wiki-layer.md).
+landed: [workspace daemon](../../cycles/_archive/2026-10-workspace-daemon.md)
+and [wiki layer](../../cycles/_archive/2026-10-wiki-layer.md).
 
 Each module is read for assumptions specific to Story Studio before it lands.
 Its names are translated:
@@ -359,7 +359,7 @@ Scriptorium's re-base are the large part.
 6. ~~Add per-verb `cli` help, and re-run acc.~~
 
 Steps 2–6 landed in the
-[kit-foundation cycle](../../cycles/2026-10-kit-foundation.md) (closed
+[kit-foundation cycle](../../cycles/_archive/2026-10-kit-foundation.md) (closed
 2026-10-13). The workspace stack started in the cycle after it, on that
 foundation.
 

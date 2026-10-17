@@ -27,7 +27,7 @@ board daemon dies during active sessions — **4 times in one dream-flute anthil
 session, with a host keep-alive tail running.** Two hardening sprints have now
 declined to close it. Sprint 01 ruled it **"genuinely unexplained — needs its
 own investigation, not a lane"**
-([`sprints/01-drained-exit/outcome.md`](../../../features/spell-hardening/sprints/01-drained-exit/outcome.md)).
+([`sprints/01-drained-exit/outcome.md`](../../../features/_archive/spell-hardening/sprints/01-drained-exit/outcome.md)).
 
 Three things were known going in, and each was re-checked rather than inherited:
 
@@ -441,8 +441,8 @@ sprints of re-derivation.
 - [Backlog: bounty daemon robustness nits](../../bounty-daemon-robustness-nits.md)
   (R#4, the tail retry)
 - [Backlog: discovery pointer is machine-global](../../discovery-pointer-is-machine-global.md)
-- [Sprint 01 outcome — the drained exit](../../../features/spell-hardening/sprints/01-drained-exit/outcome.md)
-- [Sprint 02 outcome — success-shaped lies](../../../features/spell-hardening/sprints/02-success-shaped-lies/outcome.md)
+- [Sprint 01 outcome — the drained exit](../../../features/_archive/spell-hardening/sprints/01-drained-exit/outcome.md)
+- [Sprint 02 outcome — success-shaped lies](../../../features/_archive/spell-hardening/sprints/02-success-shaped-lies/outcome.md)
 - Code: `plugins/spellbook/skills/bounty/scripts/server.ts`, `cli.ts` (at
   `d8e5b6f`; last touched by `82adf9a`)
 - Instrument: `~/.bounty/daemon.log` (`e10c994`)

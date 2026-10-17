@@ -714,8 +714,8 @@ generalised from the spells that happen to exist.
 
 - [Shared code and the build boundary](../shared-code-and-the-build-boundary/write-up.md):
   the packaging groundwork
-- [Spell surface pipeline](../../../features/spell-surface-pipeline/): the
-  bundler every surface now ships through
+- [Spell surface pipeline](../../../features/_archive/spell-surface-pipeline/):
+  the bundler every surface now ships through
 - [Imago unified context library (backlog)](../../imago-unified-context-library.md):
   an open item this may absorb
 - [Scriptorium: chat context doesn't mirror the selection (backlog)](../scriptorium-chat-context-does-not-mirror-the-selection.md):

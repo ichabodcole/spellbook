@@ -369,8 +369,8 @@ should keep it in view as a second host. Tracked in
   the census, cold read, visual survey and StoryLoom survey behind this proposal
 - [Shared code and the build boundary](../../items/_archive/shared-code-and-the-build-boundary/write-up.md):
   how shared code ships
-- [Spell surface pipeline](../spell-surface-pipeline/): the bundler every
-  surface ships through
+- [Spell surface pipeline](../_archive/spell-surface-pipeline/): the bundler
+  every surface ships through
 - [Imago unified context library (backlog)](../../items/imago-unified-context-library.md):
   possibly absorbed by phase 3
 - StoryLoom:

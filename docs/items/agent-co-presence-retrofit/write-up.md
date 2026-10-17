@@ -307,7 +307,7 @@ places, not here.
 
 - [Project manifesto](../../PROJECT_MANIFESTO.md) — co-presence,
   agent-as-runtime
-- [Spell Surface Pipeline proposal](../../features/spell-surface-pipeline/feature.md)
+- [Spell Surface Pipeline proposal](../../features/_archive/spell-surface-pipeline/feature.md)
   — the adjacent "spells grow real builds" thread
 - [Astryx investigation](../_archive/astryx-component-library-evaluation/write-up.md)
   — precedent for cross-project investigations living in this repo

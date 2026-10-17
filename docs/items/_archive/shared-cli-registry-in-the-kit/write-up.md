@@ -454,7 +454,7 @@ runs `bounty schema | acc check … --declaration -`.
 **Related Documents:**
 
 - [Should the kit own a shared CLI registry?](./item.md)
-- [Spell CLI acc conformance](../../../features/spell-cli-acc-conformance/feature.md)
+- [Spell CLI acc conformance](../../../features/_archive/spell-cli-acc-conformance/feature.md)
 - [grapevine CLI](../../../../src/grapevine/backend/cli.ts),
   [glamour CLI](../../../../src/glamour/backend/cli.ts),
   [scriptorium CLI](../../../../src/scriptorium/backend/cli.ts)

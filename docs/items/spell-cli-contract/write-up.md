@@ -15,8 +15,8 @@ generated: { by: unknown, at: 2026-08-06 }
 > [#81](https://github.com/ichabodcole/spellbook/issues/81), which produced
 > [#82](https://github.com/ichabodcole/spellbook/issues/82) (a cross-tool naming
 > convention) and then outgrew it. The
-> [spell-hardening](../../features/spell-hardening/feature.md) project fixes the
-> instances; this asks what the rule is.
+> [spell-hardening](../../features/_archive/spell-hardening/feature.md) project
+> fixes the instances; this asks what the rule is.
 
 ---
 
@@ -334,8 +334,9 @@ document is not.
 
 **Related Documents:**
 
-- [spell-hardening proposal](../../features/spell-hardening/feature.md) and
-  [roadmap](../../features/spell-hardening/roadmap.md) — fixes the instances
+- [spell-hardening proposal](../../features/_archive/spell-hardening/feature.md)
+  and [roadmap](../../features/_archive/spell-hardening/roadmap.md) — fixes the
+  instances
 - Issues: [#82](https://github.com/ichabodcole/spellbook/issues/82) (the naming
   question that outgrew itself), #83–#88 (defects found by the audit),
   #77/#78/#80/#81 (the defect class)

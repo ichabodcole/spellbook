@@ -117,9 +117,9 @@ digits, five different schemes.
 
 ---
 
-**Related:** [`spell-surface-pipeline`](../../spell-surface-pipeline/feature.md)
-— the standard this ratchets; its [plan](../../spell-surface-pipeline/plan.md)
-has no remaining work as of R7.
+**Related:** [`spell-surface-pipeline`](../spell-surface-pipeline/feature.md) —
+the standard this ratchets; its [plan](../spell-surface-pipeline/plan.md) has no
+remaining work as of R7.
 
 ---
 

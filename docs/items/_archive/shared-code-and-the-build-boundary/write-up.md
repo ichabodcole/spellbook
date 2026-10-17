@@ -308,7 +308,7 @@ cannot be. A build collapses the two into one function.
 ### Finding 5 — The build is already validated. The canon that should have followed is not
 
 This is not a greenfield decision.
-[`spell-surface-pipeline`](../../../features/spell-surface-pipeline/feature.md)
+[`spell-surface-pipeline`](../../../features/_archive/spell-surface-pipeline/feature.md)
 proposed the T2→T3 pipeline; its own plan header records the outcome:
 
 > **✅ THE HYPOTHESIS IS VALIDATED. The pilot changed spells, and this plan was
@@ -756,14 +756,14 @@ for (const [l, n] of [...counts]
 
 **Related Documents:**
 
-- [`spell-surface-pipeline` proposal](../../../features/spell-surface-pipeline/feature.md)
-  and [plan](../../../features/spell-surface-pipeline/plan.md) — the standard
-  this ratchets, and the record that it already validated
+- [`spell-surface-pipeline` proposal](../../../features/_archive/spell-surface-pipeline/feature.md)
+  and [plan](../../../features/_archive/spell-surface-pipeline/plan.md) — the
+  standard this ratchets, and the record that it already validated
 - [Spell CLI contract investigation](../../spell-cli-contract/write-up.md) —
   reached the same conclusion from the convention side
 - [The typecheck gate is a project, not a flag](../../typecheck-gate-is-a-project-not-a-flag.md)
 - [CLI: a FAILED read and a legitimate EMPTY result are the same output](../../cli-empty-vs-failed-read.md)
-- [`spellbook-coherence` proposal](../../../features/spellbook-coherence/feature.md)
+- [`spellbook-coherence` proposal](../../../features/_archive/spellbook-coherence/feature.md)
 - `grimoire/house-style.md` §"The build (there isn't one)" — the canon that
   contradicts the tree
 - `grimoire/lib/entry-points.ts` — the extraction argument, already made, for

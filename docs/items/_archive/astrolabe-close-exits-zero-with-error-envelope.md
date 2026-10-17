@@ -124,7 +124,7 @@ Branch `fix/astrolabe-close-noop`, cycle `2026-09-filed-is-not-fixed`.
 `"no daemon running"`, `s5-8`) finds no ward or check that reads it; the only
 grimoire mention of `astrolabe close` is `grimoire/tail-since-refusal.test.ts`'s
 `afterAll`, which runs it as cleanup and ignores its output. The
-[re-measure](../../features/spell-hardening/sprints/06-filed-is-not-fixed/remeasure.md)
+[re-measure](../../features/_archive/spell-hardening/sprints/06-filed-is-not-fixed/remeasure.md)
 reached the same verdict.
 
 **Which shape:** the benign no-op (the lead's 2026-09-27 ruling). `cmdClose` in

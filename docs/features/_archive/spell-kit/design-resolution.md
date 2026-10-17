@@ -574,11 +574,11 @@ implementer's call.
 ## R7 — astrolabe is dropped as the reference spell
 
 **Resolved 2026-08-30 (Cole).** Closes the last outstanding item in
-[`spell-surface-pipeline`'s plan](../../spell-surface-pipeline/plan.md), which
-had stood since v2.2.0. **imago is the reference spell.** The ruling is recorded
-in the pipeline plan itself, where the question was asked — that plan's
-remaining work is now zero, since spell-kit carries both Seam C and the
-second-spell validation.
+[`spell-surface-pipeline`'s plan](../spell-surface-pipeline/plan.md), which had
+stood since v2.2.0. **imago is the reference spell.** The ruling is recorded in
+the pipeline plan itself, where the question was asked — that plan's remaining
+work is now zero, since spell-kit carries both Seam C and the second-spell
+validation.
 
 ### Optional, and recommended: port astrolabe anyway — first
 

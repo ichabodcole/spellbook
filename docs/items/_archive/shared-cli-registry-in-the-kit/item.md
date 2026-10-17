@@ -17,7 +17,7 @@ cycle: 2026-09-acc-conformance
 # Should the kit own a shared CLI registry?
 
 Part of
-[Spell CLI acc conformance](../../../features/spell-cli-acc-conformance/feature.md).
+[Spell CLI acc conformance](../../../features/_archive/spell-cli-acc-conformance/feature.md).
 
 Step 6 of the acc guidance is one table driving parser, help, rejections and the
 published interface. glamour, grapevine and scriptorium each built that

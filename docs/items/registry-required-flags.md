@@ -9,7 +9,6 @@ lifecycle: triage # triage | backlog | ready | active | review | done | dropped
 id: 01a0e0b7-568d-762a-a272-c2359c28d804
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-09-26 }
-parent: feature/spell-cli-acc-conformance
 ---
 
 # Mark required flags in the kit CLI registry

@@ -18,7 +18,7 @@ from: 01a0e03d-fc41-75f2-8096-9a86bd1ff0c8
 # Build the kit CLI registry and prove it on three spells
 
 Part of
-[Spell CLI acc conformance](../../features/spell-cli-acc-conformance/feature.md).
+[Spell CLI acc conformance](../../features/_archive/spell-cli-acc-conformance/feature.md).
 The design is
 [the shared-registry write-up](shared-cli-registry-in-the-kit/write-up.md), **as
 amended by

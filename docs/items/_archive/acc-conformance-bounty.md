@@ -17,7 +17,7 @@ blocked_by: []
 # Take bounty's CLI through the full acc guidance
 
 Part of
-[Spell CLI acc conformance](../../features/spell-cli-acc-conformance/feature.md).
+[Spell CLI acc conformance](../../features/_archive/spell-cli-acc-conformance/feature.md).
 
 **Baseline (acc v0.1.15, 2026-09-26),** from
 `cd plugins/spellbook/skills/bounty && bunx acc check ./scripts/cli.ts`:
@@ -62,7 +62,7 @@ Source is `src/bounty/backend/`; the checked target is the launcher, never
       verb (`how-to-derive-your-surface-from-one-registry.md`; take the
       shared-registry research's answer into account).
 - [x] **Step 7:** what bit is collected in the feature's
-      [upstream feedback draft](../../features/spell-cli-acc-conformance/acc-upstream-feedback.md)
+      [upstream feedback draft](../../features/_archive/spell-cli-acc-conformance/acc-upstream-feedback.md)
       (filing waits for Cole, decision log #23).
 - [x] Behaviour changes a user can see (exit codes, help on stdout) are named in
       the commit, for the release note.

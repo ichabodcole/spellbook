@@ -23,11 +23,11 @@ route it to Cole through the lead.
 
 **Project:** `spell-hardening`
 
-- [Proposal](docs/features/spell-hardening/feature.md) — scope, the harm
-  ordering, and the **two rulings** you build to (D1 snapshot semantics, D2
+- [Proposal](docs/features/_archive/spell-hardening/feature.md) — scope, the
+  harm ordering, and the **two rulings** you build to (D1 snapshot semantics, D2
   heartbeat card model), each with the reasoning that produced it
-- [Roadmap](docs/features/spell-hardening/roadmap.md) — four phases with owners,
-  verified file refs, and a cold gate per phase
+- [Roadmap](docs/features/_archive/spell-hardening/roadmap.md) — four phases
+  with owners, verified file refs, and a cold gate per phase
 
 **The triage these came from** (read the ones for your phase — they carry the
 reproduction and the measured evidence, and are more detailed than the plan):

@@ -12,7 +12,7 @@ generated: { by: claude-opus-5-5, at: 2026-10-13 }
 
 # Kit foundation — 2026-10-13
 
-Part of [Kit foundation](../../../cycles/2026-10-kit-foundation.md).
+Part of [Kit foundation](../../../cycles/_archive/2026-10-kit-foundation.md).
 
 ## Context
 

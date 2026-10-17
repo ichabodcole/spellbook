@@ -8,7 +8,6 @@ lifecycle: triage
 id: 01a0e711-ef68-701d-a5a3-6a8fa03bc7e0
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-09-28 }
-parent: feature/spell-hardening
 ---
 
 # `bounty list` shows a board's old title after `init --title`

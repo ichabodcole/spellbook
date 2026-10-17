@@ -16,11 +16,11 @@ cycle: 2026-09-filed-is-not-fixed
 
 # Bring the canon in line with what phase 1 and the acc cycle shipped
 
-Part of [spell-hardening](../../features/spell-hardening/feature.md), sprint 06
-phase 2.
+Part of [spell-hardening](../../features/_archive/spell-hardening/feature.md),
+sprint 06 phase 2.
 
 The canon edits phase 2's reads found owed
-([phase-2 scope](../../features/spell-hardening/sprints/06-filed-is-not-fixed/phase-2-scope.md)).
+([phase-2 scope](../../features/_archive/spell-hardening/sprints/06-filed-is-not-fixed/phase-2-scope.md)).
 Docs only; no code.
 
 ## Definition of done

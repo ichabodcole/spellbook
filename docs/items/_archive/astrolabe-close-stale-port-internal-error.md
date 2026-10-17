@@ -15,7 +15,7 @@ parent: feature/spell-hardening
 # `astrolabe close` with a stale port file reports an internal error
 
 Found by
-[the sprint 06 re-measure](../../features/spell-hardening/sprints/06-filed-is-not-fixed/remeasure.md)
+[the sprint 06 re-measure](../../features/_archive/spell-hardening/sprints/06-filed-is-not-fixed/remeasure.md)
 on `b0e9d852`, and deliberately not chased in that cycle.
 
 ```

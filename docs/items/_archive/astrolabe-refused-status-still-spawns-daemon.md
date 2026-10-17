@@ -16,7 +16,7 @@ cycle: 2026-09-one-act-one-answer
 # `astrolabe status` spawns a daemon for a command it refuses
 
 Found by
-[the sprint 06 re-measure](../../features/spell-hardening/sprints/06-filed-is-not-fixed/remeasure.md)
+[the sprint 06 re-measure](../../features/_archive/spell-hardening/sprints/06-filed-is-not-fixed/remeasure.md)
 on `b0e9d852`, and deliberately not chased in that cycle.
 
 ```

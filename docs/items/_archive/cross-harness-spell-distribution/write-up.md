@@ -496,7 +496,7 @@ for b in codex opencode goose amp cursor-agent gemini crush dsh; do
 
 - [Shared code and the build boundary](../shared-code-and-the-build-boundary/write-up.md)
   — the parent; its §Q2 options are amended by this
-- [`spell-surface-pipeline` proposal](../../../features/spell-surface-pipeline/feature.md)
+- [`spell-surface-pipeline` proposal](../../../features/_archive/spell-surface-pipeline/feature.md)
   — §4's origin-vs-artifact split is the same idea one channel earlier
 - [mind-mapper is undeclared and shipped](../../mind-mapper-is-undeclared-and-shipped.md)
 - `grimoire/house-style.md` §"The build (there isn't one)" — _"zip one folder

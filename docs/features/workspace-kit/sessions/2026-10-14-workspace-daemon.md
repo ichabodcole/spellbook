@@ -12,7 +12,8 @@ generated: { by: claude-opus-5-5, at: 2026-10-14 }
 
 # Workspace daemon — 2026-10-14
 
-Part of [Workspace daemon](../../../cycles/2026-10-workspace-daemon.md).
+Part of
+[Workspace daemon](../../../cycles/_archive/2026-10-workspace-daemon.md).
 
 ## Context
 

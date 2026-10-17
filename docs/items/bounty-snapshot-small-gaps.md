@@ -11,7 +11,6 @@ lifecycle: backlog
 id: 01a0e988-853f-7247-99c7-10303b5ee793
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-09-28 }
-parent: feature/spell-hardening
 ---
 
 # Bounty snapshot: a board's first edits are lost to SIGKILL, and a restore is not announced

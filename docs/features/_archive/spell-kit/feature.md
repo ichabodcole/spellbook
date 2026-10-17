@@ -236,9 +236,9 @@ that prove four capabilities beat four hundred lines that prove one.
 - [Shared code and the build boundary](../../../items/_archive/shared-code-and-the-build-boundary/write-up.md)
   ·
   [Cross-harness spell distribution](../../../items/_archive/cross-harness-spell-distribution/write-up.md)
-- [`spell-surface-pipeline`](../../spell-surface-pipeline/feature.md) — the
-  standard this ratchets; its [plan](../../spell-surface-pipeline/plan.md)
-  records what actually shipped
+- [`spell-surface-pipeline`](../spell-surface-pipeline/feature.md) — the
+  standard this ratchets; its [plan](../spell-surface-pipeline/plan.md) records
+  what actually shipped
 - `.anthill/dev/seams.md` — Contracts 1, 2, 4. **Prefer these over the pipeline
   plan.**
 

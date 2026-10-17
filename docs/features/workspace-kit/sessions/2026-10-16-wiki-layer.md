@@ -12,7 +12,7 @@ generated: { by: claude-opus-5-5, at: 2026-10-17 }
 
 # Wiki layer — 2026-10-16
 
-Part of [Wiki layer](../../../cycles/2026-10-wiki-layer.md).
+Part of [Wiki layer](../../../cycles/_archive/2026-10-wiki-layer.md).
 
 ## Context
 

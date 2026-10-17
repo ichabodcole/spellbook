@@ -3674,10 +3674,11 @@ primitives, a tested `state/` module and a 74-line stylesheet; the daemon serves
 the built `dist/` at `/watch`. A brief-driven implementing agent and a separate
 verify agent; the verifier found one severe regression the author's `fill()`
 drive could not see, and drove five of seven "not driven" rows. Full method in
-[the rewrite journal](../features/grapevine-conversion/rewrite-journal.md) and
-[the verify journal](../features/grapevine-conversion/verify-journal.md);
+[the rewrite journal](../features/_archive/grapevine-conversion/rewrite-journal.md)
+and
+[the verify journal](../features/_archive/grapevine-conversion/verify-journal.md);
 inventory at
-[behaviour-inventory.md](../features/grapevine-conversion/behaviour-inventory.md).
+[behaviour-inventory.md](../features/_archive/grapevine-conversion/behaviour-inventory.md).
 
 ### Example 6: grapevine — Phase S, the registry, as its own branch
 

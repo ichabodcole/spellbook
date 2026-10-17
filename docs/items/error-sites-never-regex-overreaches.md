@@ -11,7 +11,6 @@ lifecycle: triage
 id: 01a0e6ff-78bd-77cc-bd2a-bb4348d0aa9e
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-09-28 }
-parent: feature/spell-hardening
 ---
 
 # The error-site enumerator's `: never` pattern reads into the next function

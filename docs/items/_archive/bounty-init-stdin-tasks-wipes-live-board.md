@@ -16,7 +16,7 @@ cycle: 2026-09-one-act-one-answer
 # `bounty init --stdin-tasks` wipes a live board at ok:true
 
 Found by
-[the sprint 06 re-measure](../../features/spell-hardening/sprints/06-filed-is-not-fixed/remeasure.md)
+[the sprint 06 re-measure](../../features/_archive/spell-hardening/sprints/06-filed-is-not-fixed/remeasure.md)
 on `b0e9d852`, and deliberately not chased in that cycle.
 
 ```

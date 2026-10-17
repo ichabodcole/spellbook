@@ -217,7 +217,7 @@ domain"** — and it is read as **"nothing happened."**
   **Whether shipped code already carries a gate-manufactured erasure was
   measured, and the answer is zero** (sprint 05's D4, measured 2026-09-27 on
   `6128a9b6` for
-  [sprint 06 phase 2](../docs/features/spell-hardening/sprints/06-filed-is-not-fixed/phase-2-scope.md)):
+  [sprint 06 phase 2](../docs/features/_archive/spell-hardening/sprints/06-filed-is-not-fixed/phase-2-scope.md)):
   571 `?.` sites across the 380 non-test `.ts`/`.tsx` files under `src/`; 12 of
   them read, in a value position, a name that can be null; read by hand, **0
   erase a present-and-null wire field**. ⚠ **The limit is the population: it is
@@ -358,7 +358,7 @@ Boundary 3, **derive it from the argv actually received, not from the known-flag
 table**, or it cannot see the very tokens the terminator ate.
 
 **What ships is a stderr line, not an envelope entry** (team ruling 2026-09-27,
-[sprint 06 decision log](../docs/features/spell-hardening/sprints/06-filed-is-not-fixed/plan.md)).
+[sprint 06 decision log](../docs/features/_archive/spell-hardening/sprints/06-filed-is-not-fixed/plan.md)).
 The kit registry (`src/kit/cli/registry.ts`, `dccd2cb7`) writes one `# warning:`
 line on stderr when a token after `--` spells a flag that verb accepts, naming
 the recovery: move it before `--`. Exit code and stdout are unchanged. This

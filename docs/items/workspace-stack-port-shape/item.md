@@ -58,4 +58,4 @@ lean on the new model?
       codebases, and recommends a port base and a cycle split
 - [x] Cole has ruled on the port base and the workspace model
 - [x] The next cycle is drafted from the ruling
-      ([2026-10-workspace-daemon](../../cycles/2026-10-workspace-daemon.md))
+      ([2026-10-workspace-daemon](../../cycles/_archive/2026-10-workspace-daemon.md))

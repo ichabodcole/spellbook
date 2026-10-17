@@ -16,7 +16,7 @@ cycle: 2026-09-acc-conformance
 # Gate every spell CLI on `acc check`
 
 Part of
-[Spell CLI acc conformance](../../features/spell-cli-acc-conformance/feature.md).
+[Spell CLI acc conformance](../../features/_archive/spell-cli-acc-conformance/feature.md).
 
 Nothing runs `acc` today: `bun run gate` is build + biome + docs check +
 `bun test`, and the five `acc.config.json` files are only read when someone runs

@@ -295,4 +295,4 @@ gate · K2 itself · cross-harness distribution as a goal.
 [shared code and the build boundary](../../../items/_archive/shared-code-and-the-build-boundary/write-up.md)
 ·
 [cross-harness spell distribution](../../../items/_archive/cross-harness-spell-distribution/write-up.md)
-· [`spell-surface-pipeline` plan](../../spell-surface-pipeline/plan.md)
+· [`spell-surface-pipeline` plan](../spell-surface-pipeline/plan.md)

@@ -19,11 +19,11 @@ cycle: 2026-09-filed-is-not-fixed
 
 # Rewrite terminator-invariant over the kit registry, then calibrate D6's four wards
 
-Part of [spell-hardening](../../features/spell-hardening/feature.md), sprint 06
-phase 2.
+Part of [spell-hardening](../../features/_archive/spell-hardening/feature.md),
+sprint 06 phase 2.
 
 Merges `c1`'s unwritten entry-point ward with D6's second-seat calibration
-([phase-2 scope](../../features/spell-hardening/sprints/06-filed-is-not-fixed/phase-2-scope.md)).
+([phase-2 scope](../../features/_archive/spell-hardening/sprints/06-filed-is-not-fixed/phase-2-scope.md)).
 Phase 1 (`dccd2cb7`) made the kit registry warn when a flag the row accepts
 appears after `--`. `grimoire/terminator-invariant.test.ts` still says "NOT
 SOLVED… nothing warns" and pins "6 of 7 UNVERIFIED"; it stays green because it
@@ -46,7 +46,7 @@ parser (the registry) with 9 adopters.
 
 Done on `test/terminator-ward-over-the-registry`: the ward rewrite is
 `0adb8fe5`; the calibration record is
-[d6-calibration.md](../../features/spell-hardening/sprints/06-filed-is-not-fixed/d6-calibration.md).
+[d6-calibration.md](../../features/_archive/spell-hardening/sprints/06-filed-is-not-fixed/d6-calibration.md).
 
 **2026-09-27, no-stake verifier findings fixed** (`f5fbe2e3`, `a2ae88ff`). R1:
 every case put the demoted flag straight after `--`, so a registry reading only

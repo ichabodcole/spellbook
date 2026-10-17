@@ -761,7 +761,7 @@ no-stake verifier. Run item 1 first, then 2–4 in parallel, then 5.
     `kit-port-back-from-spellbook` at `5e5ffed`.
 - Spellbook:
   - [Workspace Kit](../../features/workspace-kit/feature.md);
-  - [Kit foundation](../../cycles/2026-10-kit-foundation.md) and
+  - [Kit foundation](../../cycles/_archive/2026-10-kit-foundation.md) and
     [its session](../../features/workspace-kit/sessions/2026-10-13-kit-foundation.md);
   - [the prior-direction write-up](../workspace-kit-prior-direction/write-up.md);
   - [Message via and refs](../message-via-and-refs.md);

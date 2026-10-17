@@ -20,10 +20,10 @@ closed: 2026-09-26
 # Spell CLI acc conformance
 
 The cycle for
-[feature/spell-cli-acc-conformance](../../features/spell-cli-acc-conformance/feature.md).
+[feature/spell-cli-acc-conformance](../../features/_archive/spell-cli-acc-conformance/feature.md).
 Decisions made while Cole was away are logged, with the options not taken, in
 the feature's
-[decision log](../../features/spell-cli-acc-conformance/decision-log.md).
+[decision log](../../features/_archive/spell-cli-acc-conformance/decision-log.md).
 
 ## Why now
 
@@ -83,7 +83,7 @@ hand, with the full gate after each wave, kept that tractable. Bun strips a
 leading `--` after the script path, and Tailwind scans prose in `src/kit/`: both
 were silent until a run looked closely. Decisions and the options not taken are
 in the feature's
-[decision log](../../features/spell-cli-acc-conformance/decision-log.md).
+[decision log](../../features/_archive/spell-cli-acc-conformance/decision-log.md).
 
 ## Sessions
 

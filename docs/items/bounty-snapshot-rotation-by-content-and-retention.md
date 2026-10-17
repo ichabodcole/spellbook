@@ -9,7 +9,6 @@ lifecycle: backlog
 id: 01a0e988-664f-771e-af3b-0516a873c85a
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-09-28 }
-parent: feature/spell-hardening
 ---
 
 # Bounty snapshot backups: by content, with a retention limit

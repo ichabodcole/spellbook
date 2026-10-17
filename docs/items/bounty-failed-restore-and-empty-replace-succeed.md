@@ -9,7 +9,6 @@ lifecycle: triage
 id: 01a0e711-eecd-77c1-9022-7389c7dfeeed
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-09-28 }
-parent: feature/spell-hardening
 ---
 
 # A failed restore and a replace that seeds nothing both exit 0

@@ -16,7 +16,7 @@ cycle: 2026-09-one-act-one-answer
 # `bounty open --restore <missing>` exits 0 and opens a fresh board
 
 Found by
-[the sprint 06 re-measure](../../features/spell-hardening/sprints/06-filed-is-not-fixed/remeasure.md)
+[the sprint 06 re-measure](../../features/_archive/spell-hardening/sprints/06-filed-is-not-fixed/remeasure.md)
 on `b0e9d852`, and deliberately not chased in that cycle.
 
 ```

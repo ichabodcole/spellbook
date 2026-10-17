@@ -12,7 +12,7 @@ kind: bug
 generated: { by: claude-opus-5-5, at: 2026-09-26 }
 cycle: 2026-09-filed-is-not-fixed
 parent: feature/spell-hardening
-from: features/spell-hardening/sprints/05-the-gate/carries.md
+from: features/_archive/spell-hardening/sprints/05-the-gate/carries.md
 ---
 
 # The `--` terminator eats `--session-key`; the write lands on the ambient board
@@ -113,5 +113,5 @@ after all spells move):
 
 ## Related Documents
 
-- [Sprint 05 → 06 carries: the `c1` card and its denominator](../../features/spell-hardening/sprints/05-the-gate/carries.md)
-- [Sprint 06 plan, design call 2](../../features/spell-hardening/sprints/06-filed-is-not-fixed/plan.md)
+- [Sprint 05 → 06 carries: the `c1` card and its denominator](../../features/_archive/spell-hardening/sprints/05-the-gate/carries.md)
+- [Sprint 06 plan, design call 2](../../features/_archive/spell-hardening/sprints/06-filed-is-not-fixed/plan.md)
