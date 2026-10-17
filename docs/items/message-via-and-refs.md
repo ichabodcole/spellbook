@@ -12,6 +12,7 @@ generated: { by: claude-opus-5-5, at: 2026-10-13 }
 tags: [kit, chat, story-studio]
 parent: feature/workspace-kit
 from: items/workspace-kit-prior-direction/write-up.md
+cycle: 2026-10-panes
 ---
 
 # Message via and refs, shared with Story Studio
