@@ -5,12 +5,14 @@
  * `SCRIPTORIUM_KIT=1`; the launcher (`scripts/server.ts`) and the artifact it
  * imports (`dist/server.js`) are the shipped ones.
  *
- * What it does not have yet, each a later cycle's:
- * - a surface. `GET /` answers with a short page saying so, so a browser that
- *   `open` started shows a sentence and not a JSON 404;
- * - the rest of the wiki layer (meta, find, make-set, forget, …); `hide` and
- *   `unhide` are here (`./hide.ts`), and so are its frontmatter references and
- *   wiki forms (`./links.ts`);
+ * What it does not have yet: a surface, a later cycle's. `GET /` answers with
+ * a short page saying so, so a browser that `open` started shows a sentence and
+ * not a JSON 404.
+ *
+ * The wiki layer is here: `hide` and `unhide` (`./hide.ts`), frontmatter
+ * references and wiki forms (`./links.ts`), and meta, find, forget, the move
+ * plan and the remove verbs (`./wiki.ts`); `make-set` and `add-folder` are the
+ * kit's structure ops (`./commands.ts`).
  *
  * It has no workspace to set, so no undo for setting one: the app declares no
  * home workspace (`homeWorkspace: false`, `./app.ts`), and new files go where

@@ -92,7 +92,7 @@ Recorded here for cycle 3 (the panes). Nothing of it is built in this cycle.
 
 Commits on `impl/scriptorium-no-default-workspace`:
 
-- `35c205d7` **kit slot.** `AppDeclaration.homeWorkspace: false`, with an
+- `c079f872` **kit slot.** `AppDeclaration.homeWorkspace: false`, with an
   optional `locationHint` (the app's own words for naming a place;
   `src/kit/workspace/noHome.ts`). With it, the session keeps no workspace
   folder, every write that names no place (or a place outside every set) is
@@ -102,7 +102,7 @@ Commits on `impl/scriptorium-no-default-workspace`:
   with no paths adds the folder it ran in. An app that says nothing is
   byte-identical: the fixture CLI's help and refusals were compared before and
   after, and every kit test passes unchanged.
-- `24b18c0a` **Scriptorium on it.** The kit path declares no home workspace. The
+- `1b812f32` **Scriptorium on it.** The kit path declares no home workspace. The
   converter stops writing a `workspace`. The kit census drops `workspace` and
   re-records `import`.
 

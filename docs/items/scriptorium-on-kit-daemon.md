@@ -33,7 +33,9 @@ With `SCRIPTORIUM_KIT=1`, Scriptorium's CLI and daemon run on
 - with no surface and no wiki layer yet.
 
 Scriptorium keeps its undo for setting the workspace for now (Cole). The kit has
-none, so on this path it becomes a seam for a later cycle.
+none, so on this path it becomes a seam for a later cycle. (As of the wiki-layer
+cycle, the kit path has no default workspace, so this seam is closed; see
+below.)
 
 **Done and verified (2026-10-14).** The flag is `SCRIPTORIUM_KIT`, and only the
 exact value `1` turns it on. The code lives in `src/scriptorium/backend/kit/`:
@@ -107,7 +109,6 @@ Not yet in the shipped SKILL. It goes in at the cutover.
   - `describe-image`, `image-settings`;
   - `link-check` (in place of `dangling`);
   - `profiles`, `profile`, `profile-check`, `relations`;
-  - `note-edit`;
   - `add-folder <path>`: an empty folder at a path you name, anywhere on disk
     whose parent exists. Outside every set it is a new set in the context (its
     `entry` and `set: true` are printed); where a set shows folders, a folder
@@ -247,13 +248,13 @@ Not yet in the shipped SKILL. It goes in at the cutover.
   always goes.
 - **Converted sessions**
   ([kit-manifest-migrate-hook](./kit-manifest-migrate-hook.md)): a session the
-  shipped Scriptorium wrote opens on the kit path converted, and its first chat
-  line says so and where the old manifest is kept (`manifest.pre-migrate.json`,
-  system fact `manifest.migrated`). Its old workspace is an ordinary added
-  folder: name where a new file goes. Its tasks read `open`, `running` (the old
-  step is `detail`) or `done`. Until the cutover this happens only under
-  `SCRIPTORIUM_KIT_MIGRATE=1` on a scratch copy; the SKILL says nothing about
-  the flag.
+  shipped Scriptorium wrote opens on the kit path converted, and a chat line
+  after the converted chat says so and where the old manifest is kept
+  (`manifest.pre-migrate.json`, system fact `manifest.migrated`). Its old
+  workspace is an ordinary added folder: name where a new file goes. Its tasks
+  read `open`, `running` (the old step is `detail`) or `done`. Until the cutover
+  this happens only under `SCRIPTORIUM_KIT_MIGRATE=1` on a scratch copy; the
+  SKILL says nothing about the flag.
 - **From 85a319e's SKILL for Atlas:** say that a note shows it is with the agent
   until the agent replies, resolves it, or rewrites it with `note-edit`, and
   that a human rewrite asks again.
@@ -261,12 +262,18 @@ Not yet in the shipped SKILL. It goes in at the cutover.
 ### Seams for later cycles
 
 - **No workspace undo on the kit path** (Cole: the shipped path keeps it).
+  Settled in the wiki-layer cycle: the kit path has no default workspace
+  ([scriptorium-no-default-workspace](./scriptorium-no-default-workspace.md)),
+  so there is nothing to undo.
 - **No surface.** `/` is a placeholder page. Revisit the spawn-path ward's
   opaque `serveFromDist` row once the kit path passes `surface.distDir`.
   `launcher` is unset in the declaration.
 - **No wiki layer:** `meta`, `find`, `hide`, `make-set`, `forget` and `info`
-  (cycle 2).
+  (cycle 2). Done in the wiki-layer cycle; see the SKILL delta above.
 - **No migration.** The kit path can't open shipped sessions until the cutover.
+  The wiki-layer cycle added the converter, behind `SCRIPTORIUM_KIT_MIGRATE=1`
+  ([kit-manifest-migrate-hook](./kit-manifest-migrate-hook.md)); it stays off
+  until the cutover.
 - **Bundle size.** `dist/server.js` grew from 1.67 MB to 4.6 MB, and
   `dist/cli.js` from 413 KB to 1.58 MB. `--version` takes 22 ms against 19 ms.
 - **The manifest guards go by shape only.** A hand-forged manifest can pass

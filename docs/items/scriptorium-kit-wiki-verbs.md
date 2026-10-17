@@ -42,8 +42,8 @@ panes.
 
 ## Done and verified
 
-Two commits on `impl/scriptorium-kit-wiki-verbs`: `b15842d1` (the kit) and
-`c21121a7` (Scriptorium on it). A fix round on top, "a move plan is the move:
+Two commits on `impl/scriptorium-kit-wiki-verbs`: `5d2a5d1b` (the kit) and
+`d02fc26a` (Scriptorium on it). A fix round on top, "a move plan is the move:
 ambiguous names, new sets, and the app edges it breaks", closes what the
 verifier found (see "The fix round" below).
 

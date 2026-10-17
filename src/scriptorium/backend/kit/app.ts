@@ -176,8 +176,8 @@ export const scriptoriumApp: AppDeclaration = {
   name: "scriptorium",
   title: "Scriptorium",
   // Slot version 2: the hidden lists (`hide`). Version 1 kept nothing, so it
-  // gains an empty `hidden`. The rest of the wiki layer (docMeta) moves in
-  // here later, with a migrate from this shape.
+  // gains an empty `hidden`. docMeta is not stored: it is computed for
+  // `appState` (`./wiki.ts`).
   slot: { version: 2, migrate: (prev) => ({ ...prev, hidden: hiddenLists(prev) }) },
   // `hide` on the kit's tree scan: what an entry's hidden list names is left
   // out of the tree, and so out of search, links and the graph. The files stay

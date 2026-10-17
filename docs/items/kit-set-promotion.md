@@ -39,7 +39,7 @@ how you make room for new files. So this item matters more than it did.
 
 ## Done and verified
 
-Two commits on `impl/kit-set-promotion`: `b17f7f94` (the kit) and `b451b19f`
+Two commits on `impl/kit-set-promotion`: `ba2484db` (the kit) and `c90ec845`
 (Scriptorium on it). The kit's session has `makeSet(path, { links })`, its way
 back `unmakeSet(path)`, and `addFolder(path)`. On the wire they are the
 structure ops `set.make` and `folder.add`, with system facts of the same names.
