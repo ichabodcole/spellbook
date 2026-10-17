@@ -8,7 +8,7 @@ description:
   resolver slot for its own wiki forms; Scriptorium's frontmatter references and
   wiki forms are the first users.
 status: stable
-lifecycle: review
+lifecycle: done
 id: 01a1478f-32fb-74d2-98a8-cc6678eb222a
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-16 }

@@ -5,7 +5,7 @@ description:
   Add a hook that rewrites a whole manifest before restore, and Scriptorium's
   converter for shipped sessions, dry-run against copies of real sessions.
 status: stable
-lifecycle: review
+lifecycle: done
 id: 01a1478f-34ad-7712-b515-b36144069584
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-16 }

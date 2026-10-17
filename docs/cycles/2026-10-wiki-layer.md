@@ -7,7 +7,7 @@ description:
   second of five workspace-stack cycles."
 tags: [kit, scriptorium, story-studio]
 status: stable
-lifecycle: active
+lifecycle: closed
 started: 2026-10-16
 appetite:
   Stop when the flagged Scriptorium's CLI covers every shipped wiki verb through
@@ -15,6 +15,7 @@ appetite:
   the gate and acc are green; anything that needs a pane is filed for cycle 3.
 after: []
 generated: { by: claude-opus-5-5, at: 2026-10-16 }
+closed: 2026-10-17
 ---
 
 # Wiki layer
@@ -109,4 +110,4 @@ reconciliation to plan, not a patch to send.
 
 ## Sessions
 
-- cycle/wiki-layer (open)
+- cycle/wiki-layer (landed 2026-10-17)
