@@ -92,6 +92,17 @@ import {
   thumbnail,
 } from "./images";
 import { extractLinks, swapLinkTargets } from "./links";
+import {
+  cleanVia,
+  KIT_REF_ROLES,
+  KIT_VIA,
+  MAX_REFS,
+  messageVia,
+  refRole,
+  roleAdvisory,
+  VIA_MAX,
+  viaAdvisory,
+} from "./messageParts";
 import { type PickKind, parsePickerOutput, pickerCommand, wasCancelled } from "./picker";
 import type {
   AgentCmd,
@@ -103,6 +114,7 @@ import type {
   HeadingLanding,
   Message,
   MessageAbout,
+  MessageRef,
   Note,
   PublicState,
   RelinkOffer,
@@ -245,7 +257,7 @@ type CmdFields = {
   strs?: string[];
 };
 const AGENT_CMD_FIELDS: Record<string, CmdFields> = {
-  say: { text: ["text"] },
+  say: { text: ["text"], optStr: ["via"] },
   reveal: { str: ["path"] },
   "context.add": { strs: ["paths"] },
   "version.new": { optStr: ["doc", "label"], optNum: ["from"] },
@@ -537,6 +549,7 @@ const KIT_ABOUT_KEYS = new Set<string>(
     entryIds: true,
     docs: true,
     noteId: true,
+    refs: true,
     ask: true,
   } satisfies Record<keyof MessageAbout, true>),
 );
@@ -574,6 +587,19 @@ export type WorkspaceDaemonOptions = {
    * hint. Every command it names must carry `--session <id>`.
    */
   messageHint?: (input: MessageHintInput) => string | undefined;
+  /**
+   * The app's own gestures a message can come through, beside the kit's
+   * (`KIT_VIA`): Sound Stage's pace button is `"pace"`. Build one list,
+   * `[...KIT_VIA, "pace"] as const`, and derive the app's union from it. A
+   * `say` with a value outside the list is stored as sent and answered with an
+   * advisory, never refused.
+   */
+  via?: readonly string[];
+  /**
+   * The app's own ref roles, beside the kit's (`KIT_REF_ROLES`). An unknown
+   * role is stored as sent, with an advisory.
+   */
+  refRoles?: readonly string[];
   /** The app's own view of the session, for `appState` in the snapshot. */
   appState?: (ctx: WorkspaceContext) => unknown;
   /** Extra HTTP routes (an audio stream, say). Return nothing to fall through. */
@@ -2571,22 +2597,106 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       }
     };
 
+    const viaKnown: readonly string[] = [...KIT_VIA, ...(opts.via ?? [])];
+    const rolesKnown: readonly string[] = [...KIT_REF_ROLES, ...(opts.refRoles ?? [])];
+
+    /**
+     * The refs a message draws on, from what the page sent: each kept only when
+     * its path is a document or image in the session's context (the agent
+     * reads it), canonical; one naming the subject is dropped, and so is a
+     * second with the same path. At most `MAX_REFS`. Dedup is against the
+     * kit's subject only, never an app's `about` part. What was dropped as
+     * outside the context or past the cap is counted, for the advisory; one
+     * naming the subject, or a repeat, is no loss and is not.
+     */
+    const refsFor = (
+      raw: unknown,
+      subject: ReadonlySet<string>,
+    ): { refs: MessageRef[]; outside: number; over: number } => {
+      if (!Array.isArray(raw)) return { refs: [], outside: 0, over: 0 };
+      const given = raw.filter((r): r is Record<string, unknown> => !!r && typeof r === "object");
+      // One read of the context for the whole list, however many refs it holds.
+      const kept = session.contextDocEach(given.map((r) => r.path));
+      const refs: MessageRef[] = [];
+      const seen = new Set<string>();
+      let outside = 0;
+      let over = 0;
+      given.forEach((ref, i) => {
+        const path = kept[i];
+        if (!path) {
+          outside++;
+          return;
+        }
+        if (subject.has(path) || seen.has(path)) return;
+        seen.add(path);
+        if (refs.length === MAX_REFS) {
+          over++;
+          return;
+        }
+        refs.push({
+          path,
+          ...(typeof ref.doc === "string" ? { doc: ref.doc } : {}),
+          ...(typeof ref.version === "number" ? { version: ref.version } : {}),
+          ...(typeof ref.role === "string" ? { role: ref.role } : {}),
+          ...(typeof ref.label === "string" ? { label: ref.label } : {}),
+          ...(typeof ref.text === "string" ? { text: ref.text } : {}),
+        });
+      });
+      return { refs, outside, over };
+    };
+
+    /** The subject's own paths: its file, and a document's original beside its version's. */
+    const subjectPaths = (about: MessageAbout): Set<string> => {
+      const paths = new Set<string>();
+      if (about.path) paths.add(about.path);
+      if (about.doc) {
+        const d = session.findDoc(about.doc);
+        if (d) paths.add(d.original);
+      }
+      return paths;
+    };
+
+    /**
+     * What a human message is about, and what it is answered with: the
+     * advisories for a subject named outside the context, refs dropped, and a
+     * role outside the app's list. They ride the tail's message as `warning`.
+     */
     const aboutFor = (
       withSelection: boolean,
-      extra?: Pick<MessageAbout, "entryIds" | "noteId" | "docs" | "ask">,
-    ): MessageAbout | undefined => {
-      // Pointed-at documents arrive from the page: kept only when they are
-      // documents in the session's context (the agent reads them), and at most a
-      // screenful of them.
-      const docs = Array.isArray(extra?.docs)
-        ? session.contextDocs(extra.docs.slice(0, 200)).slice(0, 50)
-        : [];
+      extra?: Pick<MessageAbout, "entryIds" | "noteId" | "path" | "refs" | "ask">,
+    ): { about: MessageAbout | undefined; advice: string[] } => {
+      const advice: string[] = [];
       // A backstop: every path that moves the open document or its version
       // broadcasts first, and the broadcast's read has already dropped a stale
       // selection. It reads through the rule anyway, for the path somebody adds
       // without a broadcast.
       const sel = withSelection ? heldSelection() : null;
-      const active = sel ? activeOf(sel.doc) : activeOf();
+      // With no selection the page may name the subject itself, a whole
+      // document or image (an open image, a document a view points at): kept
+      // only when it is in the session's context. A document the session holds
+      // is said as its active version, as the open document is. One named
+      // outside the context is no subject at all: the human pointed at it, so
+      // the open document would be the wrong answer.
+      const asked = !sel && typeof extra?.path === "string" ? extra.path : undefined;
+      const named = asked !== undefined ? session.contextDocEach([asked])[0] : undefined;
+      if (asked !== undefined && !named)
+        advice.push(
+          `the subject ${JSON.stringify(asked)} is not a document or image in the session's context: the message names no subject.`,
+        );
+      const namedDoc = named ? session.findDoc(named) : undefined;
+      // With nothing named and no selection, an open image is the subject before
+      // the document behind it.
+      const image = !sel && asked === undefined ? session.openImagePath : null;
+      const active = sel
+        ? activeOf(sel.doc)
+        : asked !== undefined
+          ? namedDoc
+            ? activeOf(namedDoc.slug)
+            : null
+          : image
+            ? null
+            : activeOf();
+      const wholePath = named && !namedDoc ? named : image;
       const about: MessageAbout = {
         ...(active
           ? {
@@ -2594,7 +2704,9 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
               version: active.version,
               ...(active.path ? { path: active.path } : {}),
             }
-          : {}),
+          : wholePath
+            ? { path: wholePath }
+            : {}),
         ...(sel
           ? {
               doc: sel.doc,
@@ -2609,9 +2721,42 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         ...(extra?.noteId ? { noteId: extra.noteId } : {}),
         // The ask mark means something only beside the note it asks about.
         ...(extra?.noteId && extra.ask === true ? { ask: true as const } : {}),
-        ...(docs.length ? { docs } : {}),
       };
-      return Object.keys(about).length > 0 ? about : undefined;
+      const { refs, outside, over } = refsFor(extra?.refs, subjectPaths(about));
+      if (refs.length > 0) about.refs = refs;
+      if (outside > 0)
+        advice.push(
+          `${outside} ${outside === 1 ? "ref was" : "refs were"} dropped: not a document or image in the session's context.`,
+        );
+      if (over > 0)
+        advice.push(
+          `${over} ${over === 1 ? "ref was" : "refs were"} dropped past the first ${MAX_REFS}.`,
+        );
+      const role = roleAdvisory(refs.map(refRole), rolesKnown);
+      if (role) advice.push(role);
+      return { about: Object.keys(about).length > 0 ? about : undefined, advice };
+    };
+
+    /** A `say`'s `via`, as stored: cut to its length, with the advisories it earns. */
+    const viaOf = (
+      raw: unknown,
+      by: "human" | "agent" = "human",
+    ): { via: string | undefined; advice: string[] } => {
+      const { via, cut } = cleanVia(raw);
+      const advice: string[] = [];
+      if (cut)
+        advice.push(
+          `via was longer than ${VIA_MAX} characters: it was cut to ${JSON.stringify(via)}.`,
+        );
+      const unknown = viaAdvisory(via, viaKnown, cut ? "cut" : "as sent");
+      if (unknown) advice.push(unknown);
+      // Every value past `chat` names a button the human presses: from the
+      // agent it says something that did not happen. Stored, never refused.
+      if (by === "agent" && via !== undefined && via !== "chat" && viaKnown.includes(via))
+        advice.push(
+          `via ${JSON.stringify(via)} is a button the human presses: the message was stored with it, and shows as if pressed. Leave via out (or "chat") for your own messages.`,
+        );
+      return { via, advice };
     };
 
     /**
@@ -3019,6 +3164,9 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         case "say": {
           const text = msg.text.trim();
           if (!text) return;
+          // The gesture, stored as sent (cut to its length); one outside the
+          // app's list is answered on the tail's message, never refused.
+          const { via, advice: viaAdvice } = viaOf(msg.via);
           // One ask at a time: a marked "Ask the agent" for a note whose last
           // ask is still owed an answer is a double-click, so it is not sent,
           // and the sender is told so. Unmarked, it is typed, and always sent.
@@ -3040,12 +3188,14 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
               return;
             }
           }
-          const about = aboutFor(msg.withSelection, msg.about);
+          const { about, advice: aboutAdvice } = aboutFor(msg.withSelection, msg.about);
+          const advice = [...viaAdvice, ...aboutAdvice];
           const m = session.addMessage({
             from: "human",
             type: "message",
             text,
             ...(about ? { about } : {}),
+            ...(via ? { via } : {}),
           });
           // What the app adds to `about` from what this page shows (Atlas: its
           // map). On the tail's message only: the chat keeps the kit's parts.
@@ -3070,7 +3220,12 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           emit("message", {
             message_id: m.id,
             text,
+            // Always said, so the agent can tell a typed question from a pressed button.
+            via: messageVia(m),
             ...(told ? { about: told } : {}),
+            // What the page sent that was not taken as sent: said to the agent,
+            // who can act on it, rather than to a log nobody reads.
+            ...(advice.length > 0 ? { warning: advice.join(" ") } : {}),
             ts: m.ts,
             hint: about?.noteId
               ? `about note ${about.noteId}: \`notes --session ${sessionId}${noteDoc}\` has it whole, and \`note-resolve ${about.noteId} --session ${sessionId}${noteDoc}\` when it is dealt with. ${reply}`
@@ -3905,26 +4060,29 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         case "say": {
           // Only what an agent's message may point at: entries and a note. The
           // rest of `MessageAbout` is the human's (`ask` is the one-ask guard's
-          // mark, `docs` and a passage are what the human pointed at), so it is
-          // dropped, not stored as sent.
+          // mark, `refs`, `docs`, a subject and a passage are what the human
+          // pointed at), so it is dropped, not stored as sent. An entry id that
+          // is not a string is dropped on its own; the others stay.
           const raw = cmd.about as Partial<MessageAbout> | null | undefined;
-          const entryIds =
-            Array.isArray(raw?.entryIds) && raw.entryIds.every((e) => typeof e === "string")
-              ? raw.entryIds
-              : undefined;
+          const entryIds = Array.isArray(raw?.entryIds)
+            ? (raw.entryIds as unknown[]).filter((e): e is string => typeof e === "string")
+            : undefined;
           const noteId = typeof raw?.noteId === "string" && raw.noteId ? raw.noteId : undefined;
           const about: Pick<MessageAbout, "entryIds" | "noteId"> | undefined =
             entryIds?.length || noteId
               ? { ...(entryIds?.length ? { entryIds } : {}), ...(noteId ? { noteId } : {}) }
               : undefined;
+          const { via, advice } = viaOf(cmd.via, "agent");
           const m = session.addMessage({
             from: "agent",
             type: "message",
             text: cmd.text,
             ...(about ? { about } : {}),
+            ...(via ? { via } : {}),
           });
           broadcastState();
-          return { id: m.id };
+          // Stored as sent; one outside the list is answered, not refused.
+          return { id: m.id, ...(advice.length > 0 ? { warning: advice.join(" ") } : {}) };
         }
         case "activate":
           return activate(cmd.doc, cmd.version, "agent");

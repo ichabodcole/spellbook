@@ -4538,6 +4538,8 @@ export class WorkspaceSession {
     text: string;
     type?: MessageType;
     about?: MessageAbout;
+    /** The gesture it came through, as sent (`Message.via`). */
+    via?: string;
   }): Message {
     const msg: Message = {
       id: `m-${randHex(4)}`,
@@ -4545,6 +4547,7 @@ export class WorkspaceSession {
       type: input.type ?? (input.from === "system" ? "info" : "message"),
       text: input.text,
       ...(input.about ? { about: input.about } : {}),
+      ...(input.via ? { via: input.via } : {}),
       ts: nowIso(),
     };
     this.m.chat.push(msg);
@@ -6183,18 +6186,28 @@ export class WorkspaceSession {
   }
 
   contextDocs(paths: readonly unknown[]): string[] {
-    const index = this.contextIndex();
     const out: string[] = [];
-    for (const p of paths) {
-      if (typeof p !== "string" || !isAbsolute(p)) continue;
+    for (const own of this.contextDocEach(paths))
+      if (own !== undefined && !out.includes(own)) out.push(own);
+    return out;
+  }
+
+  /**
+   * Each path as `contextDocs` keeps it, in place: canonical when it is a
+   * document or an image the tree shows, undefined when it is not. The
+   * context's index is built once for the whole list (a message's refs).
+   */
+  contextDocEach(paths: readonly unknown[]): (string | undefined)[] {
+    const index = this.contextIndex();
+    return paths.map((p) => {
+      if (typeof p !== "string" || !isAbsolute(p)) return undefined;
       const own = this.canonical(resolve(p), index);
       // A document, or an image the tree shows (a message about an image, such
       // as "describe this", points at the image file itself).
-      if (out.includes(own)) continue;
-      if (index.entryOf.has(own)) out.push(own);
-      else if (index.images.has(own) && this.imageInside(own)) out.push(own);
-    }
-    return out;
+      if (index.entryOf.has(own)) return own;
+      if (index.images.has(own) && this.imageInside(own)) return own;
+      return undefined;
+    });
   }
 
   /**

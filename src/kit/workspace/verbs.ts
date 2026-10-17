@@ -102,6 +102,7 @@ export const KIT_OPTIONS = {
   timeout: { type: "string" },
   untyped: { type: "boolean" },
   "update-links": { type: "boolean" },
+  via: { type: "string" },
   kindless: { type: "boolean" },
   bundles: { type: "boolean" },
   within: { type: "string" },
@@ -909,11 +910,16 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
     },
     {
       name: "say",
-      flags: [...SESSION, "stdin", "body-file"],
+      flags: [...SESSION, "stdin", "body-file", "via"],
       positionals: [{ name: "text", required: false, variadic: true }],
-      describe: "post a chat message from the agent (prose: --body-file <path> or --stdin)",
+      describe:
+        'post a chat message from the agent (prose: --body-file <path> or --stdin). --via <gesture> says what it came through (default "chat", the kit\'s only one; an app adds its own): a value the app does not list is stored as sent, and the advisory is printed to stderr',
       run: async (pos, flags, session) => {
-        printJson(await postCmd(session, { op: "say", text: await readBody(pos, flags, "say") }));
+        const text = await readBody(pos, flags, "say");
+        const via = typeof flags.via === "string" ? flags.via : undefined;
+        const r = await postCmd(session, { op: "say", text, ...(via ? { via } : {}) });
+        if (typeof r.warning === "string") process.stderr.write(`${r.warning}\n`);
+        printJson(r);
       },
     },
     {

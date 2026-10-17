@@ -39,6 +39,14 @@ export {
   type Inverse,
   planInverse,
 } from "./history";
+export {
+  KIT_REF_ROLES,
+  KIT_VIA,
+  messageVia,
+  refRole,
+  roleAdvisory,
+  viaAdvisory,
+} from "./messageParts";
 export { type PickKind, parsePickerOutput, pickerCommand, wasCancelled } from "./picker";
 export type * from "./protocol";
 export { revealCommand } from "./reveal";

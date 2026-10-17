@@ -350,11 +350,12 @@ describe("the agent writes descriptions", () => {
       op: "say",
       text: "Please describe it",
       withSelection: false,
-      about: { docs: [join(world, "images", "plain.png")] },
+      about: { path: join(world, "images", "plain.png") },
     });
     await waitUntil("said", () => s.state.chat.some((m) => m.text === "Please describe it"));
     const m = s.state.chat.find((x) => x.text === "Please describe it");
-    expect(m?.about?.docs).toEqual([join(world, "images", "plain.png")]);
+    // The image is the subject, whatever document is open.
+    expect(m?.about).toEqual({ path: join(world, "images", "plain.png") });
   });
 });
 
@@ -513,11 +514,18 @@ describe("describe-image, undone and refused", () => {
       op: "say",
       text: "Look at this",
       withSelection: false,
-      about: { docs: [join(world, "images", "escape.png"), join(world, "images", "plain.png")] },
+      about: {
+        path: join(world, "images", "escape.png"),
+        refs: [
+          { path: join(world, "images", "escape.png") },
+          { path: join(world, "images", "plain.png") },
+        ],
+      },
     });
     await waitUntil("said", () => s.state.chat.some((m) => m.text === "Look at this"));
     const m = s.state.chat.find((x) => x.text === "Look at this");
-    expect(m?.about?.docs).toEqual([join(world, "images", "plain.png")]);
+    // Neither as the subject nor as a ref.
+    expect(m?.about).toEqual({ refs: [{ path: join(world, "images", "plain.png") }] });
   });
 });
 

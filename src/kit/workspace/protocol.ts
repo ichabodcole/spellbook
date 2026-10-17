@@ -321,11 +321,32 @@ export type DocView = {
 
 // ── chat ──────────────────────────────────────────────────────────────────
 
-/** What a message concerns. */
+/**
+ * Something a message draws on beside its one subject: a document or an image
+ * selected in the file tree with it, or added as a reference. What it is for is
+ * its `role` (`KIT_REF_ROLES` and the app's own; absent, `"reference"`).
+ */
+export type MessageRef = {
+  /** Absolute: what the agent reads. */
+  path: string;
+  doc?: string;
+  version?: number;
+  role?: string;
+  /** Its name as the human saw it. */
+  label?: string;
+  /** A passage of it, when the gesture carried one. */
+  text?: string;
+};
+
+/**
+ * What a message concerns: ONE subject (a text selection, else the active
+ * document or image, or an app's own part such as a selected canvas card), and
+ * the `refs` it draws on besides.
+ */
 export type MessageAbout = {
   doc?: string;
   version?: number;
-  /** Absolute path of the version's file, so the agent knows what to read. */
+  /** Absolute path of the version's file (or of the image), so the agent knows what to read. */
   path?: string;
   fromLine?: number;
   toLine?: number;
@@ -333,12 +354,14 @@ export type MessageAbout = {
   text?: string;
   entryIds?: string[];
   /**
-   * Whole documents the human pointed at (absolute paths), from a view that
-   * shows documents rather than text: an app's graph of them, say. The
-   * documents themselves are what to read; there is no passage.
+   * Whole documents pointed at (absolute paths), on a message from before
+   * `refs`: no longer written. An old message that carries it reads as it did;
+   * a new one has one subject, and what else it points at is in `refs`.
    */
   docs?: string[];
   noteId?: string;
+  /** What the message draws on beside its subject: never the subject itself, each path once. */
+  refs?: MessageRef[];
   /**
    * Set on the human's "Ask the agent" act for the note `noteId` names, and
    * only there: the one-ask guard reads it (`askOutstanding` in `waiting.ts`).
@@ -358,6 +381,12 @@ export type Message = {
   type: MessageType;
   text: string;
   about?: MessageAbout;
+  /**
+   * The gesture it came through (`KIT_VIA` and the app's own): the composer is
+   * `"chat"`, an app's button its own value. Absent on a message from before
+   * the field, which reads as `"chat"` (`messageVia`).
+   */
+  via?: string;
   ts: string;
 };
 
@@ -1573,17 +1602,22 @@ export type ClientOp =
   /** End the session, from the page's End session button once the human has confirmed. */
   | { op: "close" }
   /**
-   * `about` carries what the human pointed at besides the selection (`entryIds`,
-   * `noteId`, `docs`). `about: { noteId, ask: true }` is the "Ask the agent" act
-   * for that note: sent once while the note is owed an answer, and a second is
-   * refused with an `error` that says it was not sent. Without `ask`, a message
-   * naming a note is a typed follow-up and is always delivered.
+   * `about` carries what the human pointed at besides the selection
+   * (`entryIds`, `noteId`), the `refs` the message draws on, and, with no
+   * selection, `path`: the whole document or image that is its subject in
+   * place of the active document (an open image, a document a view points at).
+   * `via` is the gesture it came through: the composer sends `"chat"`.
+   * `about: { noteId, ask: true }` is the "Ask the agent" act for that note:
+   * sent once while the note is owed an answer, and a second is refused with an
+   * `error` that says it was not sent. Without `ask`, a message naming a note is
+   * a typed follow-up and is always delivered.
    */
   | {
       op: "say";
       text: string;
       withSelection: boolean;
-      about?: Pick<MessageAbout, "entryIds" | "noteId" | "docs" | "ask">;
+      via?: string;
+      about?: Pick<MessageAbout, "entryIds" | "noteId" | "path" | "refs" | "ask">;
     }
   | { op: "activate"; doc: string; version: number }
   /** `activate` separates branching (move into it) from snapshotting (stay). */
@@ -1793,7 +1827,7 @@ export type AgentCmd =
   | { op: "context.add"; paths: string[] }
   /** `body`, when given, is the new version's text, written in the same act; without it the version is a copy. */
   | { op: "version.new"; doc?: string; from?: number; label?: string; body?: string }
-  | { op: "say"; text: string; about?: Pick<MessageAbout, "entryIds" | "noteId"> }
+  | { op: "say"; text: string; via?: string; about?: Pick<MessageAbout, "entryIds" | "noteId"> }
   | { op: "activate"; doc?: string; version: number }
   | { op: "version.delete"; doc?: string; version: number }
   /** The agent notes a quote: it has no offsets, and counting characters would be asking it to be wrong. */
