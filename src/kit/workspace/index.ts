@@ -40,6 +40,13 @@ export {
   planInverse,
 } from "./history";
 export {
+  type ManifestMigrateContext,
+  type ManifestMigrated,
+  type ManifestMigration,
+  type MigrateManifest,
+  PRE_MIGRATE_FILE,
+} from "./manifestMigrate";
+export {
   KIT_REF_ROLES,
   KIT_VIA,
   messageVia,

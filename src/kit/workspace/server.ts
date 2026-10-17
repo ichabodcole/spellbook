@@ -4633,6 +4633,12 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     // What changed on disk while no daemon was watching, and what a restore had
     // to settle.
     const report = session.restoreReport;
+    // Said first: everything below is about the session as converted.
+    if (report.manifestMigrated)
+      announce(
+        `${report.manifestMigrated.note ?? `This session was converted for ${app.name}.`} The manifest it had is kept at ${report.manifestMigrated.kept}.`,
+        { fact: "manifest.migrated", kept: report.manifestMigrated.kept },
+      );
     for (const f of report.outside)
       announce(
         f.missing

@@ -134,6 +134,14 @@ import {
   swapLinkTargets,
 } from "./links";
 import {
+  keepPreMigrate,
+  type ManifestMigrated,
+  type MigrateManifest,
+  migrateRefusal,
+  PRE_MIGRATE_FILE,
+  runManifestMigrate,
+} from "./manifestMigrate";
+import {
   checkFields,
   type FieldRule,
   fixFor,
@@ -515,6 +523,14 @@ export type AppDeclaration = {
    * search and links follow. `undefined` (or no hook) scans everything.
    */
   scan?: (at: ScanAt) => ScanRule | undefined;
+  /**
+   * A whole-manifest migrate, run on a stored manifest before a restore reads
+   * it: before the format check and the foreign-manifest guard. For sessions
+   * written by something with another core shape. Null for a manifest that
+   * needs nothing; a throw refuses the restore with its reason, and nothing is
+   * written. See `manifestMigrate.ts` for the rules.
+   */
+  migrateManifest?: MigrateManifest;
 };
 
 const APP_NAME = /^[a-z][a-z0-9-]*$/;
@@ -683,6 +699,8 @@ export type RestoreReport = {
   tasks: { id: string; title: string; was: TaskStatus; now: TaskStatus }[];
   /** The app slot was brought forward from this version. */
   slotMigratedFrom?: number;
+  /** The app's whole-manifest migrate converted the stored manifest (`AppDeclaration.migrateManifest`). */
+  manifestMigrated?: ManifestMigrated;
   /** The manifest had no workspace: the folder chosen for it (the first context entry's, else the session's `imported/`). */
   workspaceDefaulted?: string;
 };
@@ -838,13 +856,26 @@ export class WorkspaceSession {
     const path = join(sessionsRoot, sessionId, "manifest.json");
     if (!existsSync(path)) throw new SessionError(`no saved session ${sessionId}`, 404);
     let raw: Record<string, unknown>;
+    const stored = readFileSync(path, "utf8");
     try {
-      raw = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+      raw = JSON.parse(stored) as Record<string, unknown>;
     } catch {
       throw new SessionError(`session ${sessionId} has a manifest that is not valid JSON`, 409);
     }
     if (raw === null || typeof raw !== "object" || Array.isArray(raw))
       throw new SessionError(`session ${sessionId} has a manifest that is not a JSON object`, 409);
+    // The app's whole-manifest migrate, before any check: what it returns is
+    // checked below exactly as a stored manifest is, and nothing is written
+    // until every check has passed.
+    const migrated = runManifestMigrate(
+      app.migrateManifest,
+      raw,
+      { sessionId, dir: join(sessionsRoot, sessionId), sessionsRoot },
+      (reason) => {
+        throw new SessionError(migrateRefusal(app.name, sessionId, reason), 409);
+      },
+    );
+    raw = migrated.raw;
     // An unknown format is refused, never guessed at: a newer kit may have
     // written fields this one would silently drop on the next write.
     if (raw.format !== MANIFEST_FORMAT)
@@ -872,6 +903,11 @@ export class WorkspaceSession {
     // shape check, so it is this app's. Written with the next change.
     m.appName = app.name;
     const report: RestoreReport = { outside: [], tasks: [] };
+    if (migrated.migration)
+      report.manifestMigrated = {
+        ...(migrated.migration.note !== undefined ? { note: migrated.migration.note } : {}),
+        kept: join(sessionsRoot, sessionId, PRE_MIGRATE_FILE),
+      };
     m.app = migrateSlot(app, m.app, sessionId, report);
     // A manifest written before the workspace existed: the first context entry's
     // folder, else the session's own `imported/` folder (what drops did before).
@@ -944,9 +980,14 @@ export class WorkspaceSession {
       report.outside.length > 0 ||
       report.tasks.length > 0 ||
       report.workspaceDefaulted ||
-      report.slotMigratedFrom !== undefined
-    )
+      report.slotMigratedFrom !== undefined ||
+      report.manifestMigrated
+    ) {
+      // A converted manifest keeps what it replaced, written first: a failure
+      // between the two leaves the original readable.
+      if (report.manifestMigrated) keepPreMigrate(s.dir, stored);
       s.persist();
+    }
     return s;
   }
 

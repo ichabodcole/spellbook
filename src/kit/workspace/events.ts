@@ -154,6 +154,7 @@ export const SYSTEM_FACTS = [
   "note.removed",
   "reveal",
   "slot.migrated",
+  "manifest.migrated",
   "doctor",
 ] as const;
 
@@ -413,6 +414,8 @@ export type SystemFactPayload =
   | { fact: "note.removed"; doc: string; note: string }
   | { fact: "reveal"; path: string }
   | { fact: "slot.migrated"; from: number }
+  /** The app's whole-manifest migrate converted this session; `kept` is the manifest it replaced. */
+  | { fact: "manifest.migrated"; kept: string }
   | { fact: "doctor"; findings: number };
 
 /** A kit event as a reader receives it, with the log's stamp. */

@@ -55,6 +55,7 @@ test("the list of kit events and of system facts are what the contract names", (
       "note.removed",
       "reveal",
       "slot.migrated",
+      "manifest.migrated",
       "doctor",
     ].sort(),
   );
