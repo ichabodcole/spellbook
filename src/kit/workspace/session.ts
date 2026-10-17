@@ -225,6 +225,7 @@ import {
   locate,
   MIRROR_NODE_CAP,
   readBundleInfo,
+  type ScanSkip,
   scanTree,
   sidecarFile,
   sidecarPaths,
@@ -470,6 +471,24 @@ export type AppSlot = {
   migrate(prev: Record<string, unknown>, prevVersion: number): Record<string, unknown>;
 };
 
+/** Where a set's scan is: the entry, its folder, and the app's slot as it is now (read-only). */
+export type ScanAt = {
+  entryId: string;
+  root: string;
+  slot: Readonly<Record<string, unknown>>;
+};
+
+/**
+ * What an app says about one scan of a set (`AppDeclaration.scan`). `skip`
+ * leaves a path out of the tree, and so out of search, links and the graph;
+ * the files stay on disk. The object is the place for more of the same kind
+ * (a rule that changes a node rather than dropping it), so an app can say
+ * more without a second hook.
+ */
+export type ScanRule = {
+  skip?: ScanSkip;
+};
+
 /** What an app declares about itself: its name and its manifest slot. */
 export type AppDeclaration = {
   name: string;
@@ -487,6 +506,14 @@ export type AppDeclaration = {
    * kit's; only what the reader is told changes.
    */
   refuseScriptorium?: (sessionId: string) => { message: string; hint: string };
+  /**
+   * The app's filter on the kit's tree scan: asked once per scan of a set (a
+   * restore, a rescan, an outside change, an add), with the slot as it is
+   * then. Keep what it reads in the app slot, so it survives a restart and
+   * every rescan sees it; after changing that, call `refilter` so the tree,
+   * search and links follow. `undefined` (or no hook) scans everything.
+   */
+  scan?: (at: ScanAt) => ScanRule | undefined;
 };
 
 const APP_NAME = /^[a-z][a-z0-9-]*$/;
@@ -1172,6 +1199,8 @@ export class WorkspaceSession {
         409,
       );
     this.m.context.push(probe);
+    // The app's filter sees a new set too: scanned again, through it.
+    if (probe.membership === "mirrored" && this.app.scan) this.rescan(probe.id);
     // A loose image comes with its description, when one is beside it: listed
     // too, and folded into the image's row by the surface.
     const only = listedFile(probe);
@@ -1213,7 +1242,8 @@ export class WorkspaceSession {
   rescan(entryId: string): boolean {
     const e = this.m.context.find((x) => x.id === entryId);
     if (e?.membership !== "mirrored") return false;
-    const { nodes, truncated } = scanTree(e.root, MIRROR_NODE_CAP);
+    const rule = this.app.scan?.({ entryId: e.id, root: e.root, slot: this.appSlot });
+    const { nodes, truncated } = scanTree(e.root, MIRROR_NODE_CAP, rule?.skip);
     const changed =
       JSON.stringify(nodes) !== JSON.stringify(e.nodes) || !!truncated !== !!e.truncated;
     e.nodes = nodes;
@@ -1221,6 +1251,46 @@ export class WorkspaceSession {
     else delete e.truncated;
     if (changed) this.relink();
     return changed;
+  }
+
+  /**
+   * Scan sets again through the app's filter (`AppDeclaration.scan`), after
+   * the app changed what it reads: one entry, or every set. The tree, search
+   * and links follow; an open document or image the context no longer shows
+   * is closed in the view (its versions stay). Persists. Returns whether any
+   * tree changed.
+   */
+  refilter(entryId?: string): boolean {
+    if (entryId !== undefined && !this.m.context.some((e) => e.id === entryId))
+      throw new SessionError(
+        `no context entry ${entryId}`,
+        404,
+        this.m.context.map((e) => e.id),
+      );
+    let changed = false;
+    for (const e of this.m.context)
+      if ((entryId === undefined || e.id === entryId) && this.rescan(e.id)) changed = true;
+    this.relink();
+    this.closeOrphanedOpenDoc();
+    if (this.m.openImage && !this.imageNodeAt(this.m.openImage)) this.closeImage();
+    this.persist();
+    return changed;
+  }
+
+  /**
+   * Where the context shows a path: its entry, its `rel` from the entry's
+   * root, and whether it is the whole entry (a set's own folder, a listed
+   * item). A 404 when nothing shows it. For an app act on what the tree shows
+   * (Scriptorium's `hide`).
+   */
+  shownAt(rawPath: string): { abs: string; entryId: string; rel: string; whole: boolean } {
+    const item = this.itemOrDie(rawPath);
+    return {
+      abs: item.abs,
+      entryId: item.entry.id,
+      rel: toPosix(relative(item.entry.root, item.abs)),
+      whole: item.whole,
+    };
   }
 
   private relink(): void {

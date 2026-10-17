@@ -83,6 +83,8 @@ export {
   nowIso,
   type RestoreReport,
   realOr,
+  type ScanAt,
+  type ScanRule,
   SessionError,
   sideName,
   WorkspaceSession,
@@ -106,6 +108,7 @@ export {
   locate,
   MIRROR_NODE_CAP,
   PathError,
+  type ScanSkip,
   scanTree,
   toPosix,
 } from "./tree";
