@@ -146,6 +146,19 @@ describe("one ask at a time", () => {
     expect(s.frames.some((f) => f.op === "error")).toBe(false);
   });
 
+  test('only the exact "ask" is held: a human\'s "Ask" about an owed note goes', async () => {
+    const { s, t } = await start();
+    await openA(s);
+    const n = await humanNote(s, t, "stuck?");
+    s.send(ask(n, "About my note", "r1"));
+    await t.waitFor((e) => e.type === "message" && e.text === "About my note");
+    s.send({ ...ask(n, "a case variant", "r2"), via: "Ask" });
+    await settle(s, t, "marker");
+    expect(messagesAbout(t, n).map((e) => e.text)).toEqual(["About my note", "a case variant"]);
+    expect(messagesAbout(t, n)[1]?.via).toBe("Ask");
+    expect(s.frames.some((f) => f.op === "error" && f.requestId === "r2")).toBe(false);
+  });
+
   test("the agent's say with via ask about the note holds nothing: the human's first ask still goes", async () => {
     const { s, t, base } = await start();
     await openA(s);

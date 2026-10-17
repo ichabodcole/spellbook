@@ -427,6 +427,8 @@ describe("askOutstanding", () => {
   });
 
   test("only the ask counts: no other gesture, the kit's or an app's, is one", () => {
+    // As stored. A human's "ask " never reaches the store as sent: `cleanVia`
+    // trims it on arrival to "ask", which is guarded. A case variant never is.
     for (const via of ["chat", "describe", "fix", "pace", "Ask", "ask "])
       expect(
         askOutstanding(note("n1", 0), [{ ...msg("human", 1000), via, about: { noteId: "n1" } }]),

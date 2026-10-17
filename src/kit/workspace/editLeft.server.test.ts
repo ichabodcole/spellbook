@@ -190,6 +190,22 @@ describe("only an edit a switch just overtook is taken late", () => {
     expect(docOf(s, "solo")?.versions).toHaveLength(2);
   });
 
+  test("within the window, an edit to a version the switch did not leave is refused, its file untouched", async () => {
+    const { d, s } = await start();
+    const { v2 } = await soloWithTwo(s, d.url);
+    await cmd(d.url, { op: "version.new", doc: "solo", from: 1, body: "# Version three\n" });
+    await waitUntil("v3", () => docOf(s, "solo")?.versions.length === 3);
+    // v1 to v3: v2 was never active, so the switch did not leave it.
+    expect((await cmd(d.url, { op: "activate", doc: "solo", version: 3 })).status).toBe(200);
+    edit(s, 2, "# Over v2\n", "e1");
+    await settle(s, "after");
+    expect(refusedFor(s, "e1")).toBeDefined();
+    expect(readFileSync(v2, "utf8")).toBe("# Version two\n");
+    expect(docOf(s, "solo")?.versions).toHaveLength(3);
+    expect(docOf(s, "solo")?.active).toBe(3);
+    expect(chat(s).filter((t) => t.includes("last edit"))).toEqual([]);
+  });
+
   test("a version that does not exist is refused, and none is made", async () => {
     const { d, s } = await start();
     await soloWithTwo(s, d.url);

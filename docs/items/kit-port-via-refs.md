@@ -41,11 +41,13 @@ in three kit commits and one for the flagged Scriptorium:
 
 Removing `from === "human"` from `askOutstanding` turns three tests red (two
 unit cells and a daemon cell). So does counting any `via` (two unit cells), or
-arming the daemon's check on any `via` (two daemon cells). The kit and
-Scriptorium suites pass. acc is conformant for both CLIs. The default path's
-help, every verb's help, schema, boot errors and a scripted session with its
-tail are byte-identical to `cycle/wiki-layer` after masking ids, ports and
-times.
+arming the daemon's check on any `via` (two daemon cells), or on a
+case-insensitive `"ask"` (one daemon cell). Removing the version check from
+`switchLeaving` turns one `editLeft` cell red: an edit to a version the switch
+did not leave. The kit and Scriptorium suites pass. acc is conformant for both
+CLIs. The default path's help, every verb's help, schema, boot errors and a
+scripted session with its tail are byte-identical to `cycle/wiki-layer` after
+masking ids, ports and times.
 
 ### Differences from Story Studio
 
@@ -59,11 +61,15 @@ times.
   converge; nothing here pinned the old way.
 - **`4e6d4d4`'s tests are client tests** (`context/daemonClient.agentSwitch`),
   and this kit has no client yet. `editLeft.server.test.ts` drives the same
-  cells through the socket instead, plus one: a version the human makes and
-  moves into counts as a switch.
+  cells through the socket instead, plus two: a version the human makes and
+  moves into counts as a switch, and an edit to a version the switch did not
+  leave is refused within the window.
 - **Test cells kept beside Story Studio's:**
   - the agent's `say` with `via: "ask"` leaves the human's first ask free;
-  - no other `via` (an app's, a case or space variant) is an ask;
+  - no other `via` (an app's, or a case variant such as `"Ask"`) is an ask, in
+    the guard and in the daemon; surrounding spaces are trimmed on arrival
+    (`cleanVia`), so a human's `"ask "` is stored as `"ask"` and is guarded, as
+    in Story Studio;
   - a system line is never an ask;
   - a message about a note with no `via` is typed.
 - **Test plumbing:**
