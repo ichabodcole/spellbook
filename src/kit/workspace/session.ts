@@ -2080,9 +2080,10 @@ export class WorkspaceSession {
     // outside write could slip between them is microseconds, not the length of
     // a multi-megabyte write, and a write landing after the rename goes to the
     // new file, where the watcher finds it and preserves it too.
-    const staged = `${path}.${process.pid}.edit`;
+    // A fresh file under a random name (`stage`): never through a link
+    // planted at a name it could guess.
     this.ownFileOrDie(path);
-    this.own.writeFile(staged, text);
+    const staged = this.own.stage(path, text, "edit");
     let preserved: (Version & { path: string }) | null = null;
     let onDisk: string | null = null;
     try {

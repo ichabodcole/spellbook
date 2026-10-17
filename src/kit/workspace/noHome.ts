@@ -12,7 +12,7 @@
  * plain data: `session.ts` wraps them in its `SessionError`.
  */
 
-import { lstatSync, realpathSync } from "node:fs";
+import { lstatSync, readlinkSync, realpathSync } from "node:fs";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { homeDir } from "../lib/home.ts";
 
@@ -121,23 +121,51 @@ export function notAddedWhole(path: string, sessionsRoot: string, appHome?: stri
   return null;
 }
 
+/** More links than any disk follows on one path: past it, the path cannot be written through. */
+const MAX_LINKS = 40;
+
 /**
  * A path as the disk resolves it: the realpath of its nearest folder that
  * exists, with the rest appended, so a symlink anywhere above it is followed
  * even when the path itself is not there yet.
+ *
+ * ⛔ A LINK THAT LEADS NOWHERE YET IS FOLLOWED TOO. `realpath` fails on a
+ * dangling link exactly as on a missing file, so the nearest folder that
+ * resolves is the one the link sits in. The next name down is read with
+ * `lstat`: when it is a link, its target (`readlink`, relative to the folder
+ * it sits in) takes its place and the walk starts again, link after link. A
+ * write to that path lands where the last link leads (a new file made in
+ * another session), so that is where it is judged. After `MAX_LINKS` links
+ * the path is returned as it stands: no write follows that many (`ELOOP`).
  */
 export function onDisk(p: string): string {
-  const abs = resolve(p);
-  let at = abs;
-  for (;;) {
-    try {
-      return join(realpathSync(at), relative(at, abs));
-    } catch {
-      const up = dirname(at);
-      if (up === at) return abs;
-      at = up;
+  let abs = resolve(p);
+  for (let hops = 0; hops < MAX_LINKS; hops++) {
+    let at = abs;
+    let real: string;
+    for (;;) {
+      try {
+        real = realpathSync(at);
+        break;
+      } catch {
+        const up = dirname(at);
+        if (up === at) return abs;
+        at = up;
+      }
     }
+    if (at === abs) return real;
+    const rest = relative(at, abs).split(sep);
+    const next = join(real, rest[0] as string);
+    let target: string | undefined;
+    try {
+      if (lstatSync(next).isSymbolicLink()) target = readlinkSync(next);
+    } catch {
+      /* not there: the rest is appended as written */
+    }
+    if (target === undefined) return join(real, ...rest);
+    abs = join(resolve(real, target), ...rest.slice(1));
   }
+  return abs;
 }
 
 /** `p` is `root`, or inside it (both absolute). */

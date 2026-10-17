@@ -18,11 +18,23 @@
 // it, so prose cannot trip it or satisfy it):
 // - a use of any write function imported from `node:fs`, `fs`,
 //   `node:fs/promises` or `fs/promises` (named, renamed, or as a member of a
-//   namespace or default import, or of `require("node:fs")`);
-// - `writeFileAtomic` (`src/kit/wire/discovery.ts`), which writes;
-// - anything written off `Bun` that writes (`Bun.write`, an image's `.write`,
-//   a file's `.writer`);
+//   namespace or default import, of `require("node:fs")`, or of its
+//   `promises`; or destructured off any of those);
+// - any dynamic `import()` of those modules, or of `child_process`: a write in
+//   itself, since what it is bound to is not followed;
+// - any use of `child_process`, which can write anything;
+// - the helpers from other folders that write (`writeFileAtomic`,
+//   `publishPointer`, `removePointer`, `unlinkIfMatches`, `pruneDeadRuns`,
+//   `startDaemon`), by any import name or off a namespace;
+// - anything off `Bun` (or a name bound to it, or `globalThis.Bun`, or
+//   imported from "bun") that writes, removes or runs: `Bun.write`, an image's
+//   `.write`, a file's `.writer`, `.delete` and `.unlink`, `Bun.spawn`,
+//   `Bun.spawnSync`, `Bun.$`;
 // - `openSync`/`open` with flags other than read-only.
+// Each shape has a calibration cell below (fix round 3 added the ones a
+// re-verifier wrote past it: a dynamic import, `fs.promises`, a destructured
+// namespace, an aliased `Bun`, an aliased helper, a file's `.delete()`, a
+// spawn).
 // Tests (`*.test.ts`) are out of scope: they write their own fixtures.
 //
 // ⛔ THE ALLOW-LIST IS COUNTED. Each entry names a file, a function and HOW
@@ -95,10 +107,29 @@ const FS_WRITES = new Set([
 ]);
 const OPENS = new Set(["openSync", "open"]);
 const FS_MODULES = new Set(["fs", "node:fs", "fs/promises", "node:fs/promises"]);
-/** Write helpers outside `node:fs` that write a file. */
-const OTHER_WRITERS = new Set(["writeFileAtomic"]);
-/** Members written off `Bun` (or a chain that starts at it) that write. */
-const BUN_WRITES = new Set(["write", "writer"]);
+/** A child process can write anything: every use of these modules counts. */
+const CHILD_MODULES = new Set(["child_process", "node:child_process"]);
+/**
+ * Helpers from other folders that write a file (or start a process that
+ * does): `src/kit/wire`'s pointer files and atomic write, its daemon start.
+ * Counted under their own name however they are imported.
+ */
+const OTHER_WRITERS = new Set([
+  "writeFileAtomic",
+  "publishPointer",
+  "removePointer",
+  "unlinkIfMatches",
+  "pruneDeadRuns",
+  "startDaemon",
+]);
+/**
+ * Members off `Bun` (or a chain that starts at it, or a name bound to it) that
+ * write, remove, or start a process: `Bun.write`, an image's `.write`, a
+ * file's `.writer`/`.delete`/`.unlink`, `Bun.spawn`, `Bun.$`.
+ */
+const BUN_WRITES = new Set(["write", "writer", "delete", "unlink", "spawn", "spawnSync", "$"]);
+/** Names a global (`Bun`) can be reached through. */
+const GLOBALS = new Set(["globalThis", "global", "self", "window"]);
 
 /**
  * ⛔ THE ALLOW-LIST. `<file>::<function>` → the exact number of uses, and why
@@ -113,6 +144,34 @@ const ALLOWED: Record<string, { uses: number; why: string }> = {
   "src/kit/workspace/server.ts::unlinkSync": {
     uses: 1,
     why: "the daemon's own empty log at a clean close, the `--log` path its own `open` gave it",
+  },
+  "src/kit/workspace/server.ts::publishPointer": {
+    uses: 1,
+    why: "the daemon's discovery pointer, `<tmp>/<app>.<session id>.json` (`src/kit/wire/discovery.ts`): its name is the app's and the session id's, never a request's",
+  },
+  "src/kit/workspace/server.ts::removePointer": {
+    uses: 2,
+    why: "the same pointer removed at close, and only while it still names this daemon (`unlinkIfMatches`)",
+  },
+  "src/kit/workspace/server.ts::Bun…spawn": {
+    uses: 2,
+    why: "the file manager's reveal (`revealCommand`, an argv with no shell) and the native file picker (`pickerCommand`): both only show or choose a path; neither writes one",
+  },
+  "src/kit/workspace/trash.ts::Bun…spawn": {
+    uses: 1,
+    why: "the platform's Trash command (`trashCommand`, an argv with no shell), for the human's delete only: it moves a path to the Trash and writes none (never run under test)",
+  },
+  "src/kit/workspace/verbs.ts::startDaemon": {
+    uses: 1,
+    why: "`open` starts the daemon (`src/kit/wire/detach.ts`), which writes only through this guard and the entries above",
+  },
+  "src/kit/workspace/verbs.ts::child_process.spawn": {
+    uses: 1,
+    why: "`open` opens the surface's URL in the browser (`open`/`xdg-open` with the URL as its one argument, no shell)",
+  },
+  "src/kit/workspace/fixtures/tailRig.ts::Bun…spawn": {
+    uses: 2,
+    why: "a test rig: runs the CLI under test in the rig's own temp root",
   },
   "src/kit/workspace/verbs.ts::mkdirSync": {
     uses: 1,
@@ -182,24 +241,33 @@ function visit(node: ts.Node, fn: (n: ts.Node) => void): void {
 const lineOf = (sf: ts.SourceFile, n: ts.Node): number =>
   sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1;
 
-const isFsRequire = (e: ts.Expression | undefined): boolean =>
-  e !== undefined &&
-  ts.isCallExpression(e) &&
-  ts.isIdentifier(e.expression) &&
-  e.expression.text === "require" &&
-  e.arguments.length === 1 &&
-  ts.isStringLiteralLike(e.arguments[0] as ts.Expression) &&
-  FS_MODULES.has((e.arguments[0] as ts.StringLiteral).text);
+const unwrap = (e: ts.Expression): ts.Expression => {
+  while (ts.isParenthesizedExpression(e) || ts.isAwaitExpression(e) || ts.isAsExpression(e))
+    e = e.expression;
+  return e;
+};
 
-/** The root of a member/call chain: `new Bun.Image(x).webp().write(p)` → `Bun`. */
-function chainRoot(e: ts.Expression): ts.Expression {
-  for (;;) {
-    if (ts.isPropertyAccessExpression(e) || ts.isElementAccessExpression(e)) e = e.expression;
-    else if (ts.isCallExpression(e) || ts.isNewExpression(e)) e = e.expression;
-    else if (ts.isParenthesizedExpression(e) || ts.isAwaitExpression(e)) e = e.expression;
-    else return e;
-  }
-}
+/** `require("<module>")` of one of `mods`. */
+const isRequireOf = (e: ts.Expression | undefined, mods: Set<string>): boolean => {
+  if (e === undefined) return false;
+  const c = unwrap(e);
+  return (
+    ts.isCallExpression(c) &&
+    ts.isIdentifier(c.expression) &&
+    c.expression.text === "require" &&
+    c.arguments.length === 1 &&
+    ts.isStringLiteralLike(c.arguments[0] as ts.Expression) &&
+    mods.has((c.arguments[0] as ts.StringLiteral).text)
+  );
+};
+
+/** A dynamic `import("<module>")` of one of `mods`. */
+const isDynamicImportOf = (e: ts.Node, mods: Set<string>): boolean =>
+  ts.isCallExpression(e) &&
+  e.expression.kind === ts.SyntaxKind.ImportKeyword &&
+  e.arguments.length >= 1 &&
+  ts.isStringLiteralLike(e.arguments[0] as ts.Expression) &&
+  mods.has((e.arguments[0] as ts.StringLiteral).text);
 
 const memberName = (n: ts.Node): string | undefined =>
   ts.isPropertyAccessExpression(n)
@@ -216,41 +284,144 @@ function readOnlyFlags(arg: ts.Expression | undefined, sf: ts.SourceFile): boole
   return /O_RDONLY/.test(text) && !/O_WRONLY|O_RDWR|O_CREAT|O_APPEND|O_TRUNC/.test(text);
 }
 
+/** The name an identifier declares, rather than uses (an import, a destructured key, a member's name). */
+const declares = (n: ts.Identifier): boolean => {
+  const p = n.parent;
+  return (
+    ts.isImportSpecifier(p) ||
+    ts.isImportClause(p) ||
+    ts.isNamespaceImport(p) ||
+    (ts.isBindingElement(p) && (p.name === n || p.propertyName === n)) ||
+    (ts.isVariableDeclaration(p) && p.name === n) ||
+    (ts.isFunctionDeclaration(p) && p.name === n) ||
+    (ts.isPropertyAccessExpression(p) && p.name === n) ||
+    (ts.isPropertyAssignment(p) && p.name === n)
+  );
+};
+
 /** Every raw write in a source, as `{ fn, line }`: one per use. */
 export function rawWrites(src: string, name?: string): { fn: string; line: number }[] {
   const sf = parse(src, name);
   const found: { fn: string; line: number }[] = [];
-  /** Local name → the fs function it is (named imports, destructured requires). */
+  /** Local name → the write it is (`rmSync`, `Bun…write`, `child_process.spawn`, `publishPointer`). */
   const named = new Map<string, string>();
-  /** Local names bound to the fs module itself (namespace, default, `require`). */
-  const modules = new Set<string>();
-  visit(sf, (n) => {
-    if (
-      ts.isImportDeclaration(n) &&
-      ts.isStringLiteralLike(n.moduleSpecifier) &&
-      FS_MODULES.has(n.moduleSpecifier.text)
-    ) {
-      const c = n.importClause;
-      if (c?.name) modules.add(c.name.text);
-      const b = c?.namedBindings;
-      if (b && ts.isNamespaceImport(b)) modules.add(b.name.text);
-      if (b && ts.isNamedImports(b))
-        for (const el of b.elements) {
-          const fn = (el.propertyName ?? el.name).text;
-          if (FS_WRITES.has(fn) || OPENS.has(fn)) named.set(el.name.text, fn);
-        }
+  /** Local names bound to the fs module, or to its `promises` (namespace, default, `require`, destructured, aliased). */
+  const fsNames = new Set<string>();
+  /** Local names bound to `Bun` (`const B = Bun`, `globalThis.Bun`, `import * as B from "bun"`). */
+  const bunNames = new Set<string>();
+  /** Local names bound to `child_process`. */
+  const childNames = new Set<string>();
+  /** Namespace imports of any other module, for `ns.publishPointer(…)`. */
+  const nsNames = new Set<string>();
+
+  const isFs = (e: ts.Expression): boolean => {
+    const x = unwrap(e);
+    if (ts.isIdentifier(x)) return fsNames.has(x.text);
+    if (isRequireOf(x, FS_MODULES)) return true;
+    // `fs.promises`, `require("fs").promises`, `fs.default`.
+    const m = memberName(x);
+    return (
+      (m === "promises" || m === "default") &&
+      isFs((x as ts.PropertyAccessExpression | ts.ElementAccessExpression).expression)
+    );
+  };
+  const isBun = (e: ts.Expression): boolean => {
+    const x = unwrap(e);
+    if (ts.isIdentifier(x)) return x.text === "Bun" || bunNames.has(x.text);
+    // `globalThis.Bun`, `globalThis["Bun"]`.
+    const owner = (x as ts.PropertyAccessExpression).expression;
+    return (
+      memberName(x) === "Bun" &&
+      owner !== undefined &&
+      ts.isIdentifier(unwrap(owner)) &&
+      GLOBALS.has((unwrap(owner) as ts.Identifier).text)
+    );
+  };
+  const isChild = (e: ts.Expression): boolean => {
+    const x = unwrap(e);
+    return (ts.isIdentifier(x) && childNames.has(x.text)) || isRequireOf(x, CHILD_MODULES);
+  };
+  /** The root of a member/call chain, stopping at `Bun`: `new Bun.Image(x).webp().write(p)` → `Bun`. */
+  const bunRooted = (start: ts.Expression): boolean => {
+    let e = start;
+    for (;;) {
+      if (isBun(e)) return true;
+      if (ts.isPropertyAccessExpression(e) || ts.isElementAccessExpression(e)) e = e.expression;
+      else if (ts.isCallExpression(e) || ts.isNewExpression(e)) e = e.expression;
+      else if (ts.isParenthesizedExpression(e) || ts.isAwaitExpression(e)) e = e.expression;
+      else return false;
     }
-    if (ts.isVariableDeclaration(n) && isFsRequire(n.initializer)) {
-      if (ts.isIdentifier(n.name)) modules.add(n.name.text);
-      else if (ts.isObjectBindingPattern(n.name))
-        for (const el of n.name.elements) {
-          const key = el.propertyName ?? el.name;
-          const fn = ts.isIdentifier(key) || ts.isStringLiteralLike(key) ? key.text : undefined;
-          if (fn && (FS_WRITES.has(fn) || OPENS.has(fn)) && ts.isIdentifier(el.name))
-            named.set(el.name.text, fn);
-        }
+  };
+
+  const bindImport = (n: ts.ImportDeclaration): void => {
+    if (!ts.isStringLiteralLike(n.moduleSpecifier)) return;
+    const mod = n.moduleSpecifier.text;
+    const c = n.importClause;
+    const b = c?.namedBindings;
+    const whole = [
+      ...(c?.name ? [c.name.text] : []),
+      ...(b && ts.isNamespaceImport(b) ? [b.name.text] : []),
+    ];
+    const each = b && ts.isNamedImports(b) ? b.elements : [];
+    if (FS_MODULES.has(mod)) {
+      for (const w of whole) fsNames.add(w);
+      for (const el of each) {
+        const fn = (el.propertyName ?? el.name).text;
+        if (fn === "promises" || fn === "default") fsNames.add(el.name.text);
+        else if (FS_WRITES.has(fn) || OPENS.has(fn)) named.set(el.name.text, fn);
+      }
+    } else if (CHILD_MODULES.has(mod)) {
+      for (const w of whole) childNames.add(w);
+      for (const el of each)
+        named.set(el.name.text, `child_process.${(el.propertyName ?? el.name).text}`);
+    } else if (mod === "bun") {
+      for (const w of whole) bunNames.add(w);
+      for (const el of each) {
+        const fn = (el.propertyName ?? el.name).text;
+        if (BUN_WRITES.has(fn)) named.set(el.name.text, `Bun…${fn}`);
+      }
+    } else {
+      for (const w of whole) nsNames.add(w);
+      for (const el of each) {
+        const fn = (el.propertyName ?? el.name).text;
+        if (OTHER_WRITERS.has(fn)) named.set(el.name.text, fn);
+      }
     }
-  });
+  };
+
+  const bindVariable = (n: ts.VariableDeclaration): void => {
+    const init = n.initializer;
+    if (init === undefined) return;
+    if (ts.isIdentifier(n.name)) {
+      if (isFs(init)) fsNames.add(n.name.text);
+      else if (isBun(init)) bunNames.add(n.name.text);
+      else if (isChild(init)) childNames.add(n.name.text);
+      return;
+    }
+    if (!ts.isObjectBindingPattern(n.name)) return;
+    const fromFs = isFs(init);
+    const fromBun = isBun(init);
+    const fromChild = isChild(init);
+    for (const el of n.name.elements) {
+      if (!ts.isIdentifier(el.name)) continue;
+      const key = el.propertyName ?? el.name;
+      const fn = ts.isIdentifier(key) || ts.isStringLiteralLike(key) ? key.text : undefined;
+      if (fn === undefined) continue;
+      if (fromFs && (fn === "promises" || fn === "default")) fsNames.add(el.name.text);
+      else if (fromFs && (FS_WRITES.has(fn) || OPENS.has(fn))) named.set(el.name.text, fn);
+      else if (fromBun && BUN_WRITES.has(fn)) named.set(el.name.text, `Bun…${fn}`);
+      else if (fromChild) named.set(el.name.text, `child_process.${fn}`);
+    }
+  };
+
+  // Bindings first, twice, so a name bound from another bound name is found
+  // whatever the order (`const fs = require("fs"); const { rm } = fs.promises`).
+  for (let pass = 0; pass < 2; pass++)
+    visit(sf, (n) => {
+      if (ts.isImportDeclaration(n)) bindImport(n);
+      if (ts.isVariableDeclaration(n)) bindVariable(n);
+    });
+
   const openCall = (n: ts.Node, fn: string): boolean => {
     if (!OPENS.has(fn)) return false;
     const call = n.parent;
@@ -259,35 +430,39 @@ export function rawWrites(src: string, name?: string): { fn: string; line: numbe
     return readOnlyFlags(call.arguments[1], sf);
   };
   visit(sf, (n) => {
-    // A use of a named import (not the import itself, nor a property name).
-    if (
-      ts.isIdentifier(n) &&
-      named.has(n.text) &&
-      !ts.isImportSpecifier(n.parent) &&
-      !ts.isBindingElement(n.parent) &&
-      !(ts.isPropertyAccessExpression(n.parent) && n.parent.name === n)
-    ) {
+    // A dynamic import of the fs or child_process module is a write in
+    // itself: what it is bound to is not followed, so it is never allowed
+    // by accident.
+    if (isDynamicImportOf(n, FS_MODULES) || isDynamicImportOf(n, CHILD_MODULES)) {
+      const mod = ((n as ts.CallExpression).arguments[0] as ts.StringLiteral).text;
+      found.push({ fn: `import(${mod})`, line: lineOf(sf, n) });
+    }
+    // A use of a bound write (not where it is bound, nor a member's name).
+    if (ts.isIdentifier(n) && named.has(n.text) && !declares(n)) {
       const fn = named.get(n.text) as string;
       if (!openCall(n, fn)) found.push({ fn, line: lineOf(sf, n) });
     }
-    // `fs.writeFileSync(…)`, `fs["rmSync"]`, `require("fs").rmSync`.
+    // An unbound helper by its own name (one declared or imported in a way
+    // not seen above).
+    if (ts.isIdentifier(n) && OTHER_WRITERS.has(n.text) && !named.has(n.text) && !declares(n))
+      found.push({ fn: n.text, line: lineOf(sf, n) });
+    // `fs.writeFileSync(…)`, `fs["rmSync"]`, `fs.promises.rm`, `require("fs").rmSync`,
+    // `cp.spawn`, `Bun.write`, `B.file(p).delete()`, `ns.publishPointer(…)`.
     const m = memberName(n);
     if (m !== undefined) {
       const owner = (n as ts.PropertyAccessExpression | ts.ElementAccessExpression).expression;
-      const ofFs = (ts.isIdentifier(owner) && modules.has(owner.text)) || isFsRequire(owner);
-      if (ofFs && (FS_WRITES.has(m) || OPENS.has(m)) && !openCall(n, m))
+      if (isFs(owner) && (FS_WRITES.has(m) || OPENS.has(m)) && !openCall(n, m))
         found.push({ fn: m, line: lineOf(sf, n) });
-      const root = chainRoot(owner);
-      if (BUN_WRITES.has(m) && ts.isIdentifier(root) && root.text === "Bun")
+      else if (isChild(owner)) found.push({ fn: `child_process.${m}`, line: lineOf(sf, n) });
+      else if (BUN_WRITES.has(m) && bunRooted(owner))
         found.push({ fn: `Bun…${m}`, line: lineOf(sf, n) });
+      else if (
+        OTHER_WRITERS.has(m) &&
+        ts.isIdentifier(unwrap(owner)) &&
+        nsNames.has((unwrap(owner) as ts.Identifier).text)
+      )
+        found.push({ fn: m, line: lineOf(sf, n) });
     }
-    if (
-      ts.isIdentifier(n) &&
-      OTHER_WRITERS.has(n.text) &&
-      !ts.isImportSpecifier(n.parent) &&
-      !(ts.isPropertyAccessExpression(n.parent) && n.parent.name === n)
-    )
-      found.push({ fn: n.text, line: lineOf(sf, n) });
   });
   return found;
 }
@@ -312,6 +487,44 @@ describe("kit disk-write ward", () => {
       'import { openSync, constants } from "node:fs"; openSync("/a", constants.O_WRONLY | constants.O_CREAT);',
       // Passed on, not called: still a use.
       'import { unlinkSync } from "node:fs"; [1].forEach(unlinkSync);',
+      // Fix round 3: the shapes the second re-verifier wrote past the ward.
+      // A dynamic import is a write in itself, whatever it is bound to.
+      'const fs = await import("node:fs"); fs.readFileSync("/a");',
+      'const { rm } = await import("fs/promises"); await rm("/a");',
+      '(await import("node:fs")).rmSync("/a");',
+      'import("node:child_process");',
+      // `promises`, off a namespace, a require, or imported by name.
+      'import * as fs from "node:fs"; await fs.promises.rm("/a");',
+      'await require("fs").promises.unlink("/a");',
+      'import { promises } from "node:fs"; await promises.writeFile("/a", "b");',
+      'import { promises as p } from "fs"; await p.rename("/a", "/b");',
+      'const { promises } = require("node:fs"); await promises.rmdir("/a");',
+      // Destructured off a namespace or default import, or off its `promises`.
+      'import * as fs from "node:fs"; const { unlinkSync } = fs; unlinkSync("/a");',
+      'import fs from "fs"; const { rm: gone } = fs.promises; await gone("/a");',
+      // `Bun` by another name.
+      "const B = Bun; await B.write('/a', 'b');",
+      "await globalThis.Bun.write('/a', 'b');",
+      "const G = globalThis.Bun; G.file('/a').writer();",
+      'import { write } from "bun"; await write("/a", "b");',
+      "const { write: w } = Bun; await w('/a', 'b');",
+      // A file removed off `Bun`.
+      "await Bun.file('/a').delete();",
+      "await Bun.file('/a').unlink();",
+      // An aliased helper, by name or off a namespace.
+      'import { writeFileAtomic as atomic } from "../wire/discovery.ts"; atomic("/a", "b");',
+      'import * as d from "../wire/discovery.ts"; d.publishPointer("app", {});',
+      'import { removePointer } from "../wire/discovery.ts"; removePointer("app", "id");',
+      'import { unlinkIfMatches } from "../wire/discovery.ts"; unlinkIfMatches("/a", () => true);',
+      'import { pruneDeadRuns } from "../wire/runs.ts"; pruneDeadRuns();',
+      'import { startDaemon } from "../wire/detach"; await startDaemon({});',
+      // A process can write anything.
+      'import { spawn } from "node:child_process"; spawn("rm", ["/a"]);',
+      'import * as cp from "child_process"; cp.execSync("rm /a");',
+      'const { execFile } = require("node:child_process"); execFile("rm");',
+      "Bun.spawn(['rm', '/a']);",
+      "Bun.spawnSync(['rm', '/a']);",
+      "await Bun.$`rm /a`;",
     ])
       expect(rawWrites(planted), planted).toHaveLength(1);
     for (const clean of [
@@ -323,13 +536,25 @@ describe("kit disk-write ward", () => {
       "this.world.writeFile(p, t); disk.rename(a, b); disk.mkdir(d);",
       "await new Bun.Image(b).webp().bytes();",
       "const o = { rename: 1 }; o.rename;",
+      'import { promises } from "node:fs"; await promises.readFile("/a");',
+      "await Bun.file('/a').text(); const m = new Map(); m.delete('k');",
+      "const B = Bun; B.file('/a').exists();",
+      'import { publishPointer } from "../wire/discovery.ts";',
+      "const o = { spawn: 1, write: 2 }; o.spawn; o.write;",
     ])
       expect(rawWrites(clean), clean).toEqual([]);
   });
 
   test("the guard module is found by the same matcher (positive control)", () => {
     const writes = rawWrites(readFileSync(GUARD, "utf8"), GUARD).map((w) => w.fn);
-    for (const fn of ["writeFileSync", "renameSync", "rmSync", "mkdirSync", "writeFileAtomic"])
+    for (const fn of [
+      "writeFileSync",
+      "renameSync",
+      "rmSync",
+      "mkdirSync",
+      "openSync",
+      "writeSync",
+    ])
       expect(writes).toContain(fn);
   });
 

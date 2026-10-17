@@ -9,9 +9,12 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import {
   existsSync,
+  linkSync,
+  lstatSync,
   mkdirSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   renameSync,
   rmSync,
   symlinkSync,
@@ -19,7 +22,7 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { DiskRefusal, notInSession, sessionDiskAt, worldDisk } from "./disk";
-import { inOwnPlaces } from "./noHome";
+import { inOwnPlaces, onDisk } from "./noHome";
 import { safeSlug } from "./safeNames";
 import { type AppDeclaration, WorkspaceSession } from "./session";
 import { refusal, seedDocs, tempRoot, testApp } from "./testing";
@@ -310,5 +313,169 @@ describe("normal use still works through the guard", () => {
     expect(existsSync(made.path)).toBe(true);
     const f = s.addFolder(join(docs, "set", "fresh"));
     expect(existsSync(f.path)).toBe(true);
+  });
+});
+
+// Fix round 3: a link planted where the kit then writes (a temp name, a name
+// that leads nowhere yet, a hard link to another session's file). Each needs
+// someone who can already plant links on disk; the kit's own API makes none.
+describe("planted links and twins", () => {
+  const own = () => ({ sessionsRoot: sessions, appHome });
+
+  test("writeAtomic: a link at the old temp name (`<path>.<pid>.tmp`) is never written through", () => {
+    const { v1 } = victim();
+    const before = readFileSync(v1, "utf8");
+    const x = session();
+    const manifest = join(x.dir, "manifest.json");
+    symlinkSync(v1, `${manifest}.${process.pid}.tmp`);
+    x.own.writeAtomic(manifest, "{}\n");
+    expect(readFileSync(v1, "utf8")).toBe(before);
+    expect(lstatSync(manifest).isSymbolicLink()).toBe(false);
+    expect(readFileSync(manifest, "utf8")).toBe("{}\n");
+    // The fresh temp file is gone: only the planted link is left beside it.
+    expect(readdirSync(x.dir).filter((n) => n.startsWith("manifest.json."))).toEqual([
+      `manifest.json.${process.pid}.tmp`,
+    ]);
+  });
+
+  test("stage makes a new file under a random name, beside its target", () => {
+    const x = session();
+    mkdirSync(join(x.dir, "docs"), { recursive: true });
+    const at = join(x.dir, "docs", "v1.md");
+    const a = x.own.stage(at, "one", "edit");
+    const b = x.own.stage(at, "two", "edit");
+    expect(a).not.toBe(b);
+    expect(a).toMatch(/v1\.md\.[0-9a-f]{8}\.edit$/);
+    expect(readFileSync(a, "utf8")).toBe("one");
+    expect(() => x.own.stage(join(sessions, "other", "v1.md"), "x")).toThrow();
+  });
+
+  test("an edit: a link at the old staging name (`<path>.<pid>.edit`) that leads nowhere yet writes nothing there", () => {
+    const { folder } = victim();
+    const x = session();
+    x.addContext(join(docs, "set"));
+    const { slug } = x.openPath(join(docs, "set", "a.md"));
+    const mine = join(x.dir, "docs", slug, "v1.md");
+    const planted = join(folder, "planted-by-edit.md");
+    symlinkSync(planted, `${mine}.${process.pid}.edit`);
+    x.edit(slug, 1, "typed\n");
+    expect(existsSync(planted)).toBe(false);
+    expect(readFileSync(mine, "utf8")).toBe("typed\n");
+    expect(lstatSync(mine).isSymbolicLink()).toBe(false);
+  });
+
+  test("a link that leads nowhere yet is judged where it leads (world: dangling, chained, relative)", () => {
+    const disk = worldDisk(own);
+    mkdirSync(join(sessions, "victim"), { recursive: true });
+    const dang = join(outside, "dang.md");
+    symlinkSync(join(sessions, "victim", "new.md"), dang);
+    expect(onDisk(dang)).toBe(join(realpathSync(sessions), "victim", "new.md"));
+    expect(() => disk.writeFile(dang, "x")).toThrow(DiskRefusal);
+    // A link to a link to nowhere, the last one relative to where it sits.
+    symlinkSync("new2.md", join(sessions, "victim", "hop.md"));
+    symlinkSync(join(sessions, "victim", "hop.md"), join(outside, "chain.md"));
+    expect(() => disk.writeFile(join(outside, "chain.md"), "x")).toThrow(DiskRefusal);
+    // A folder link to nowhere, below which a folder would be made.
+    symlinkSync(join(sessions, "victim", "newdir"), join(outside, "dd"));
+    expect(() => disk.mkdir(join(outside, "dd", "sub"), { recursive: true })).toThrow(DiskRefusal);
+    // A copy and a rename onto one.
+    writeFileSync(join(outside, "src.md"), "SRC");
+    symlinkSync(join(sessions, "victim", "c.md"), join(outside, "cdang.md"));
+    expect(() => disk.copyFile(join(outside, "src.md"), join(outside, "cdang.md"))).toThrow(
+      DiskRefusal,
+    );
+    expect(() => disk.rename(join(outside, "src.md"), join(outside, "cdang.md"))).toThrow(
+      DiskRefusal,
+    );
+    expect(readdirSync(join(sessions, "victim")).sort()).toEqual(["hop.md"]);
+    // A loop ends: its path cannot be written through anyway.
+    symlinkSync(join(outside, "loop2"), join(outside, "loop1"));
+    symlinkSync(join(outside, "loop1"), join(outside, "loop2"));
+    expect(typeof onDisk(join(outside, "loop1", "x"))).toBe("string");
+  });
+
+  test("session: a dangling link out is refused, and so is any link, even one that stays inside", () => {
+    const s = WorkspaceSession.create(sessions, testApp);
+    const disk = sessionDiskAt(s.dir);
+    const victimDir = join(sessions, "victim");
+    mkdirSync(victimDir, { recursive: true });
+    symlinkSync(join(victimDir, "s.md"), join(s.dir, "out.md"));
+    expect(() => disk.writeFile(join(s.dir, "out.md"), "x")).toThrow(DiskRefusal);
+    expect(existsSync(join(victimDir, "s.md"))).toBe(false);
+    writeFileSync(join(s.dir, "real.md"), "real\n");
+    symlinkSync(join(s.dir, "real.md"), join(s.dir, "inside.md"));
+    for (const write of [
+      () => disk.writeFile(join(s.dir, "inside.md"), "x"),
+      () => disk.writeAtomic(join(s.dir, "inside.md"), "x"),
+      () => disk.copyFile(join(s.dir, "real.md"), join(s.dir, "inside.md")),
+      () => disk.rename(join(s.dir, "real.md"), join(s.dir, "inside.md")),
+    ])
+      expect(write).toThrow("is a link, and a session's own file never is");
+    expect(readFileSync(join(s.dir, "real.md"), "utf8")).toBe("real\n");
+    // Removing a link only removes the link.
+    disk.unlink(join(s.dir, "inside.md"));
+    expect(existsSync(join(s.dir, "real.md"))).toBe(true);
+  });
+
+  test("world: a document the human linked on purpose saves to where it really is", () => {
+    const real = join(outside, "real.md");
+    writeFileSync(real, "# Real\n");
+    symlinkSync(real, join(docs, "set", "linked.md"));
+    const s = session();
+    s.addContext(join(docs, "set"));
+    s.writeShown(join(docs, "set", "linked.md"), "# Real, saved\n");
+    expect(readFileSync(real, "utf8")).toBe("# Real, saved\n");
+    expect(lstatSync(join(docs, "set", "linked.md")).isSymbolicLink()).toBe(true);
+  });
+
+  test("hard links: the session writer never writes into one", () => {
+    const s = WorkspaceSession.create(sessions, testApp);
+    const disk = sessionDiskAt(s.dir);
+    writeFileSync(join(outside, "w.md"), "world\n");
+    linkSync(join(outside, "w.md"), join(s.dir, "twin.md"));
+    expect(() => disk.writeFile(join(s.dir, "twin.md"), "x")).toThrow("a hard link");
+    expect(() => disk.copyFile(join(outside, "w.md"), join(s.dir, "twin.md"))).toThrow(
+      "a hard link",
+    );
+    expect(readFileSync(join(outside, "w.md"), "utf8")).toBe("world\n");
+    // A rename over it changes only this name: the twin keeps its bytes.
+    disk.writeAtomic(join(s.dir, "twin.md"), "mine\n");
+    expect(readFileSync(join(outside, "w.md"), "utf8")).toBe("world\n");
+  });
+
+  test("hard links: the world writer refuses one on the sessions' disk, and writes one on another", () => {
+    const { v1 } = victim();
+    const before = readFileSync(v1, "utf8");
+    const h = join(docs, "set", "h.md");
+    linkSync(v1, h);
+    const s = session();
+    s.addContext(join(docs, "set"));
+    expect(refusal(() => s.writeShown(h, "PWNED\n")).message).toContain("a hard link");
+    expect(readFileSync(v1, "utf8")).toBe(before);
+    // `wx` makes a new file or fails: never written into, so not refused for it.
+    const disk = worldDisk(own);
+    expect(() => disk.writeFile(h, "x", { flag: "wx" })).toThrow("EEXIST");
+    // The sessions on another device (`/dev` is its own file system): a twin
+    // there could not be one of theirs, so a hard-linked note still saves.
+    const elsewhere = worldDisk(() => ({ sessionsRoot: "/dev/no-such-kit-sessions" }));
+    writeFileSync(join(outside, "note.md"), "note\n");
+    linkSync(join(outside, "note.md"), join(outside, "note-twin.md"));
+    elsewhere.writeFile(join(outside, "note-twin.md"), "saved\n");
+    expect(readFileSync(join(outside, "note.md"), "utf8")).toBe("saved\n");
+  });
+
+  test("cp checks its target, and rm refuses a folder that holds the sessions", () => {
+    const disk = worldDisk(own);
+    mkdirSync(sessions, { recursive: true });
+    writeFileSync(join(outside, "src.md"), "SRC");
+    expect(() => disk.cp(join(outside, "src.md"), join(sessions, "copied.md"), {})).toThrow(
+      DiskRefusal,
+    );
+    expect(existsSync(join(sessions, "copied.md"))).toBe(false);
+    disk.cp(join(outside, "src.md"), join(outside, "copied.md"), {});
+    expect(readFileSync(join(outside, "copied.md"), "utf8")).toBe("SRC");
+    // `root` is outside the sessions, and holds them.
+    expect(() => disk.rm(root, { recursive: true, force: true })).toThrow("holds");
+    expect(existsSync(sessions)).toBe(true);
   });
 });
