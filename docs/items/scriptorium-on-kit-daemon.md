@@ -91,7 +91,7 @@ Not yet in the shipped SKILL. It goes in at the cutover.
 
 - **Shipped only:**
   - `task-remove`, `tasks-clear`, `note-remove`;
-  - `hide`, `unhide`, `make-set`, `forget`;
+  - `hide`, `unhide`, `forget`;
   - `meta`, `meta-init`, `meta-set`;
   - `find`, `dangling`, `info`.
 - **Kit only:**
@@ -99,7 +99,17 @@ Not yet in the shipped SKILL. It goes in at the cutover.
   - `describe-image`, `image-settings`;
   - `link-check` (in place of `dangling`);
   - `profiles`, `profile`, `profile-check`, `relations`;
-  - `note-edit`.
+  - `note-edit`;
+  - `add-folder <path>`: an empty folder at a path you name, anywhere on disk
+    whose parent exists. Outside every set it is a new set in the context (its
+    `entry` and `set: true` are printed); where a set shows folders, a folder
+    there.
+- **Changed:**
+  - `make-set` is the kit's `set.make`. It keeps the entry's id as before, and
+    is undoable from the context's arrows (the document goes back, listed by the
+    same entry). It prints `broken`, the links the move into the folder broke,
+    each with the target that lands; it does not rewrite them, and `relink` does
+    not apply to it.
 - **Flags:**
   - `tail` adds `--all`;
   - `task` adds `--parent`;
@@ -126,6 +136,8 @@ Not yet in the shipped SKILL. It goes in at the cutover.
     stored, with a warning on stderr.
   - Chat uses `from` in place of `who`, and times are ISO strings.
   - `version.created` and `note.added` are events.
+  - `make-set` and `add-folder` are `set.make` and `folder.add` system facts,
+    each carrying the `entry` id.
   - A human edit is a `note.edited` system fact, and a reopen is
     `note.resolved{false}`.
   - `note-edit` keeps `replacedBody` for the human to put back.
