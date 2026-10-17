@@ -1901,7 +1901,10 @@ describe("the workspace", () => {
     // A set holding the workspace, from either side.
     const holds = await cmd(base, { op: "context.add", paths: [root] });
     expect(holds.status).toBe(409);
-    expect(String(holds.body.error)).toContain("holds the workspace folder");
+    // This root also holds the sessions in plain sight: the one set guard
+    // refuses it first, before any scan (the workspace overlap is the session
+    // tests' to cover).
+    expect(String(holds.body.error)).toContain("holds the sessions' own folders");
     expect(s.state.context).toHaveLength(1);
   });
 

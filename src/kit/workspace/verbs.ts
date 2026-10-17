@@ -64,6 +64,7 @@ import {
   NOT_PRESENCE_HEADER,
   TAIL_IDLE_MS,
 } from "./heartbeat";
+import { type HomeDeclaration, hasHomeWorkspace, locationHint, notAddedWhole } from "./noHome";
 import type { DiffSide } from "./protocol";
 import { DOC_EXTENSIONS, isDocName } from "./tree";
 
@@ -74,6 +75,7 @@ export const KIT_OPTIONS = {
   "body-file": { type: "string" },
   context: { type: "string" },
   doc: { type: "string" },
+  edge: { type: "string" },
   failed: { type: "boolean" },
   focus: { type: "string" },
   for: { type: "string" },
@@ -102,6 +104,7 @@ export const KIT_OPTIONS = {
   timeout: { type: "string" },
   untyped: { type: "boolean" },
   "update-links": { type: "boolean" },
+  via: { type: "string" },
   kindless: { type: "boolean" },
   bundles: { type: "boolean" },
   within: { type: "string" },
@@ -110,7 +113,13 @@ export const KIT_OPTIONS = {
   "max-side": { type: "string" },
 } as const satisfies OptionsTable;
 
+/** The flags only an app with no home workspace has (`./noHome.ts`): `import --into`. */
+export const NO_HOME_OPTIONS = {
+  into: { type: "string" },
+} as const satisfies OptionsTable;
+
 export type KitFlag = keyof typeof KIT_OPTIONS;
+type NoHomeFlag = keyof typeof NO_HOME_OPTIONS;
 type Flags = Record<string, FlagValue | undefined>;
 
 export class UsageError extends CliError {
@@ -195,6 +204,21 @@ export function parseCount(token: string, what: string): number {
   const t = token.trim();
   if (!/^\d+$/.test(t)) die(`${what}: "${token}" is not a whole number`, "usage");
   return Number(t);
+}
+
+/**
+ * An `--edge a,b` filter (kit-link-edges-slot): the edge kinds to keep, `link`
+ * naming the body links; undefined when the flag is absent.
+ */
+export function edgeList(v: FlagValue | undefined, verb: string): string[] | undefined {
+  if (v === undefined) return undefined;
+  if (typeof v !== "string") die(`${verb} --edge: name at least one edge kind`, "usage");
+  const names = v
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s !== "");
+  if (names.length === 0) die(`${verb} --edge: name at least one edge kind`, "usage");
+  return names;
 }
 
 /**
@@ -295,6 +319,23 @@ export function defaultWorkspace(paths: readonly string[], cwd: string): string 
   return ws;
 }
 
+/**
+ * The folder `open` ran in, for an app with no home workspace opened on no
+ * paths: added to the session as an ordinary entry (`context.add`, so a set),
+ * or why it is not. Not the home folder or one above it, the top of the disk,
+ * a folder that holds the app's sessions or lies among them, or the app's own
+ * home (`appHome`) or a folder in it: those are no place to mirror whole
+ * (`notAddedWhole`).
+ */
+export function openingFolder(
+  cwd: string,
+  sessionsRoot: string,
+  appHome?: string,
+): { path: string } | { skipped: string } {
+  const why = notAddedWhole(cwd, sessionsRoot, appHome);
+  return why === null ? { path: cwd } : { skipped: why };
+}
+
 /** Keep the newest `LOG_KEEP - 1` daemon logs, so the one about to be written makes `LOG_KEEP`. */
 const LOG_KEEP = 10;
 function pruneLogs(logDir: string): void {
@@ -368,8 +409,14 @@ export type CliHelpers = {
 };
 
 export type WorkspaceCliOptions = {
-  /** The app's name: it fixes the discovery names the CLI reads. */
-  app: { name: string };
+  /**
+   * The app's name: it fixes the discovery names the CLI reads. Its
+   * `homeWorkspace: false` (the app declaration's, `./noHome.ts`) changes the
+   * verbs that would write to a place nobody named: `open` with no paths adds
+   * the folder it ran in as an ordinary entry, `import` takes `--into`, and
+   * there is no `workspace` verb.
+   */
+  app: HomeDeclaration;
   /** One line for the help's first line. */
   summary?: string;
   /** The app's own flags, beside the kit's. */
@@ -380,6 +427,12 @@ export type WorkspaceCliOptions = {
   daemon: DaemonLauncher;
   /** Where sessions live (the same folder the daemon is given). Lazy, so `help` reads no environment. */
   sessionsRoot: () => string;
+  /**
+   * The app's own folder, which holds its sessions and settings (Scriptorium's
+   * `$SCRIPTORIUM_HOME`): never added as the folder `open` ran in. Lazy, as
+   * `sessionsRoot` is.
+   */
+  appHome?: () => string;
   /** The `version` row's payload. */
   version: () => Record<string, unknown> | Promise<Record<string, unknown>>;
   /** Appended to the help. */
@@ -398,7 +451,13 @@ const DASH_HINT = "for free text containing dashes, put it after a bare --";
 
 export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
   const app = opts.app.name;
-  const options = { ...KIT_OPTIONS, ...(opts.options ?? {}) } as OptionsTable;
+  /** The app has no home workspace: nothing is written where the caller did not point. */
+  const noHome = !hasHomeWorkspace(opts.app);
+  const options = {
+    ...KIT_OPTIONS,
+    ...(noHome ? NO_HOME_OPTIONS : {}),
+    ...(opts.options ?? {}),
+  } as OptionsTable;
 
   // ── finding the daemon ──────────────────────────────────────────────────
 
@@ -550,8 +609,15 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
   // ── the verbs ───────────────────────────────────────────────────────────
 
   async function cmdOpen(pos: string[], flags: Flags): Promise<void> {
-    const paths = contextPaths(pos);
     const root = opts.sessionsRoot();
+    // No home workspace: a new session opened on nothing shows the folder it
+    // was opened in, as an ordinary entry (a set) the human sees and can
+    // remove, never a hidden destination. Given paths, those are the session.
+    const opening =
+      noHome && pos.length === 0 && typeof flags.restore !== "string"
+        ? openingFolder(process.cwd(), root, opts.appHome?.())
+        : null;
+    const paths = opening && "path" in opening ? [opening.path] : contextPaths(pos);
 
     if (typeof flags.restore === "string") {
       const id = flags.restore;
@@ -585,7 +651,8 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
     // A new session's workspace is the folder holding the one folder it was
     // given, else where `open` ran, never a set's folder (`defaultWorkspace`).
     // None at all: the session's own `imported/`. A restored one keeps its own.
-    else {
+    // An app with no home workspace is given none.
+    else if (!noHome) {
       const ws = defaultWorkspace(paths, process.cwd());
       if (ws !== undefined) daemonArgs.push("--workspace", ws);
     }
@@ -648,7 +715,17 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
       const r = await postCmd(hs.session_id, { op: "context.add", paths }, { presence: false });
       entries = (r.entries as unknown[]) ?? [];
     }
-    printJson({ ...hs, ...(paths.length > 0 ? { entries } : {}) });
+    printJson({
+      ...hs,
+      ...(paths.length > 0 ? { entries } : {}),
+      // The opening folder was not added, and why: the session starts empty.
+      ...(opening && "skipped" in opening
+        ? {
+            entries: [],
+            note: `nothing was added: ${opening.skipped}. Add a folder with \`add <folder>\``,
+          }
+        : {}),
+    });
 
     if (!flags["no-open"]) {
       const opener =
@@ -689,7 +766,18 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
   }
 
   /** `import <file>`: the file's text is sent, so the daemon writes a copy into the workspace folder. */
-  async function cmdImport(file: string, session: string | undefined): Promise<void> {
+  async function cmdImport(
+    file: string,
+    session: string | undefined,
+    into?: string,
+  ): Promise<void> {
+    // No home workspace: the copy goes where the caller points, or nowhere.
+    if (noHome && into === undefined)
+      die(
+        `import: name the folder the copy goes in with --into <folder>: ${app} has no default folder`,
+        "usage",
+        { hint: locationHint(opts.app) },
+      );
     const abs = resolve(file);
     let st: ReturnType<typeof statSync>;
     try {
@@ -708,6 +796,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
         op: "import",
         name: basename(abs),
         text: readFileSync(abs, "utf8"),
+        ...(into !== undefined ? { dir: resolve(into) } : {}),
       }),
     );
   }
@@ -833,7 +922,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
     printJson,
   };
 
-  type Row = Omit<CommandSpec<KitFlag>, "run" | "rejectHint"> & {
+  type Row = Omit<CommandSpec<KitFlag | NoHomeFlag>, "run" | "rejectHint"> & {
     run: (pos: string[], flags: Flags, session: string | undefined) => unknown;
   };
 
@@ -854,8 +943,9 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
       name: "open",
       flags: ["no-open", "restore", "timeout", "start-timeout"],
       positionals: [{ name: "path", required: false, variadic: true }],
-      describe:
-        "start a session (opens the browser), adding paths; prints {url, port, session_id, workspace}; the workspace is the folder holding the one folder given, else the current folder, never a set's folder. --restore <id> brings a saved one back; --timeout <seconds> sets the idle close (default 1800); --timeout 0 stands until closed",
+      describe: noHome
+        ? "start a session (opens the browser), adding paths; with none, the current folder is added as a set; prints {url, port, session_id, entries}. --restore <id> brings a saved one back; --timeout <seconds> sets the idle close (default 1800); --timeout 0 stands until closed"
+        : "start a session (opens the browser), adding paths; prints {url, port, session_id, workspace}; the workspace is the folder holding the one folder given, else the current folder, never a set's folder. --restore <id> brings a saved one back; --timeout <seconds> sets the idle close (default 1800); --timeout 0 stands until closed",
       run: (pos, flags) => cmdOpen(pos, flags),
     },
     {
@@ -868,22 +958,41 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
         printJson(await postCmd(session, { op: "context.add", paths: contextPaths(pos) }));
       },
     },
-    {
-      name: "import",
-      flags: SESSION,
-      positionals: [{ name: "file", required: true }],
-      describe:
-        "copy a document into the workspace folder and show the copy (what dropping a file does)",
-      run: (pos, _flags, session) => cmdImport(pos[0] as string, session),
-    },
-    {
-      name: "workspace",
-      flags: SESSION,
-      positionals: [{ name: "dir", required: false }],
-      describe:
-        "print the workspace (where drops and new top-level documents land), or set it to a folder",
-      run: (pos, _flags, session) => cmdWorkspace(pos[0], session),
-    },
+    noHome
+      ? {
+          name: "import",
+          flags: [...SESSION, "into"],
+          positionals: [{ name: "file", required: true }],
+          describe:
+            "copy a document into --into <folder> (a set, or a folder in one) and show the copy (what dropping a file does); --into is required",
+          run: (pos, flags, session) =>
+            cmdImport(
+              pos[0] as string,
+              session,
+              typeof flags.into === "string" ? flags.into : undefined,
+            ),
+        }
+      : {
+          name: "import",
+          flags: SESSION,
+          positionals: [{ name: "file", required: true }],
+          describe:
+            "copy a document into the workspace folder and show the copy (what dropping a file does)",
+          run: (pos, _flags, session) => cmdImport(pos[0] as string, session),
+        },
+    // No home workspace, no `workspace` verb: there is nothing to print or set.
+    ...(noHome
+      ? []
+      : [
+          {
+            name: "workspace",
+            flags: SESSION,
+            positionals: [{ name: "dir", required: false }],
+            describe:
+              "print the workspace (where drops and new top-level documents land), or set it to a folder",
+            run: (pos, _flags, session) => cmdWorkspace(pos[0], session),
+          } satisfies Row,
+        ]),
     {
       name: "state",
       flags: [...SESSION, "full"],
@@ -909,11 +1018,16 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
     },
     {
       name: "say",
-      flags: [...SESSION, "stdin", "body-file"],
+      flags: [...SESSION, "stdin", "body-file", "via"],
       positionals: [{ name: "text", required: false, variadic: true }],
-      describe: "post a chat message from the agent (prose: --body-file <path> or --stdin)",
+      describe:
+        'post a chat message from the agent (prose: --body-file <path> or --stdin). --via <gesture> says what it came through (default "chat", the kit\'s only one; an app adds its own): a value the app does not list is stored as sent, and the advisory is printed to stderr',
       run: async (pos, flags, session) => {
-        printJson(await postCmd(session, { op: "say", text: await readBody(pos, flags, "say") }));
+        const text = await readBody(pos, flags, "say");
+        const via = typeof flags.via === "string" ? flags.via : undefined;
+        const r = await postCmd(session, { op: "say", text, ...(via ? { via } : {}) });
+        if (typeof r.warning === "string") process.stderr.write(`${r.warning}\n`);
+        printJson(r);
       },
     },
     {
@@ -1215,8 +1329,9 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
       name: "new-doc",
       flags: SESSION,
       positionals: [{ name: "path", required: true }],
-      describe:
-        "create an empty document (its folder must be a set, a folder in one, or the workspace)",
+      describe: noHome
+        ? "create an empty document at <path> (its folder must be a set or a folder in one)"
+        : "create an empty document (its folder must be a set, a folder in one, or the workspace)",
       run: async (pos, _flags, session) => {
         const abs = resolve(pos[0] as string);
         printJson(
@@ -1228,7 +1343,9 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
       name: "new-folder",
       flags: SESSION,
       positionals: [{ name: "path", required: true }],
-      describe: "create a folder inside a set, or in the workspace as a new set",
+      describe: noHome
+        ? "create a folder at <path> inside a set or a folder in one"
+        : "create a folder inside a set, or in the workspace as a new set",
       run: async (pos, _flags, session) => {
         const abs = resolve(pos[0] as string);
         printJson(
@@ -1343,22 +1460,26 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
     },
     {
       name: "backlinks",
-      flags: [...SESSION, "doc"],
+      flags: [...SESSION, "doc", "edge"],
       positionals: [],
       describe:
-        "what links to a document or an image (--doc: a path, or the open one): each link's source, line, target as written and relations, read from each source's ACTIVE version; a bare link has rel [], an embed (![alt](x.png)) has embed: true; bundles lists apart the bundles it is on (an app's boards: name, noun, and each card's id, line, path as written and subpath), which are not canon",
+        "what links to a document or an image (--doc: a path, or the open one): each link's source, line, target as written and relations, read from each source's ACTIVE version; a bare link has rel [], an embed (![alt](x.png)) has embed: true; bundles lists apart the bundles it is on (an app's boards: name, noun, and each card's id, line, path as written and subpath), which are not canon; edges lists apart the app's own edges that land on it, when it adds any (edge: its kind, raw: the target as written, key: what carries it), counted in edgeCount, not count; --edge a,b keeps those edge kinds only (link: the body links)",
       run: async (_pos, flags, session) => {
-        printJson(await postCmd(session, { op: "backlinks", ...withDoc(flags) }));
+        const edge = edgeList(flags.edge, "backlinks");
+        printJson(
+          await postCmd(session, { op: "backlinks", ...withDoc(flags), ...(edge ? { edge } : {}) }),
+        );
       },
     },
     {
       name: "link-check",
-      flags: SESSION,
+      flags: [...SESSION, "edge"],
       positionals: [],
       describe:
-        "check the session's links, in sections: dangling (file, line, the link as written, where it looked), unsupported (a scheme nothing here opens, like op:), duplicates (shared file names, each with a suggested rename, never applied), unusedImages (images in an images/ folder that no link or embed reaches, as an undone paste leaves them; never deleted), symmetry (hints: a relation the world's _relations.json declares symmetric, written one way only, the document linked to not linking back; never a problem), headings (links whose document opens but whose #anchor names no heading in it, a link that is only #heading read against its own document, each with the anchor decoded, the target and the nearest remaining heading, often the heading reworded; counted as problems), and ambiguousHeadings (hints: a bare #anchor naming a repeated heading, which lands on the first; write Parent#Child to name one); references (a bundle's references whose file is gone, an app's board cards: the bundle, the card's id, line, path as written, where it looked, and a sentence saying so; counted as problems); unusedImages, symmetry and ambiguousHeadings are kept out of count, which counts link problems only; reports, exits 0",
-      run: async (_pos, _flags, session) => {
-        printJson(await postCmd(session, { op: "link.check" }));
+        "check the session's links, in sections: dangling (file, line, the link as written, where it looked), unsupported (a scheme nothing here opens, like op:), duplicates (shared file names, each with a suggested rename, never applied), unusedImages (images in an images/ folder that no link or embed reaches, as an undone paste leaves them; never deleted), symmetry (hints: a relation the world's _relations.json declares symmetric, written one way only, the document linked to not linking back; never a problem), headings (links whose document opens but whose #anchor names no heading in it, a link that is only #heading read against its own document, each with the anchor decoded, the target and the nearest remaining heading, often the heading reworded; counted as problems), and ambiguousHeadings (hints: a bare #anchor naming a repeated heading, which lands on the first; write Parent#Child to name one); references (a bundle's references whose file is gone, an app's board cards: the bundle, the card's id, line, path as written, where it looked, and a sentence saying so; counted as problems); edges (the app's own edges that nothing answers, when it adds any: the edge's kind, the target as written, the key that carries it, where it looked; counted as problems); unusedImages, symmetry and ambiguousHeadings are kept out of count, which counts link problems only; --edge a,b keeps those edge kinds only (link: the body links' sections); reports, exits 0",
+      run: async (_pos, flags, session) => {
+        const edge = edgeList(flags.edge, "link-check");
+        printJson(await postCmd(session, { op: "link.check", ...(edge ? { edge } : {}) }));
       },
     },
     {
@@ -1374,10 +1495,11 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
         "within",
         "limit",
         "bundles",
+        "edge",
       ],
       positionals: [],
       describe:
-        "the session's documents and the typed links between them: nodes (path, title, kind, the kind's label, canon, links in and out) and edges (from, to, rel, count; rel [] is an untyped link), read from each document's ACTIVE version. --focus <doc> centres on one, --hops n (0-3, default 1) says how far; --kind a,b keeps documents of those kinds (the matched profile's kind, else the frontmatter type) and drops the rest BEFORE the hop search, so a focus reaches only through those kinds, and documents with no kind go too unless --kindless; --rel a,b keeps links with those relations (--untyped keeps untyped ones too) and keeps every document, though a focus then reaches only along the kept links; --within <folder> keeps one folder; --limit n keeps the n best connected (at most 500). relations and untyped count the links in view before --rel, kinds the documents before --kind; total.links counts links, total.edges folded pairs; warnings says what in the filter matched nothing. --bundles adds the bundles whose type reads references (an app's boards) as nodes of their own kind, not canon (bundle: { noun }), with an edge marked reference: true to each file their cards point at",
+        "the session's documents and the typed links between them: nodes (path, title, kind, the kind's label, canon, links in and out) and edges (from, to, rel, count; rel [] is an untyped link), read from each document's ACTIVE version. --focus <doc> centres on one, --hops n (0-3, default 1) says how far; --kind a,b keeps documents of those kinds (the matched profile's kind, else the frontmatter type) and drops the rest BEFORE the hop search, so a focus reaches only through those kinds, and documents with no kind go too unless --kindless; --rel a,b keeps links with those relations (--untyped keeps untyped ones too) and keeps every document, though a focus then reaches only along the kept links; --within <folder> keeps one folder; --limit n keeps the n best connected (at most 500). relations and untyped count the links in view before --rel, kinds the documents before --kind; total.links counts links, total.edges folded pairs; warnings says what in the filter matched nothing. --bundles adds the bundles whose type reads references (an app's boards) as nodes of their own kind, not canon (bundle: { noun }), with an edge marked reference: true to each file their cards point at. An app that adds edges of its own has them in edges too, marked edge: <kind> (frontmatter), with edgeKinds counting links per kind (link: the body links); --edge a,b keeps those kinds only",
       run: async (_pos, flags, session) => {
         const list = (v: FlagValue | undefined, what: string): string[] | undefined => {
           if (typeof v !== "string") return undefined;
@@ -1391,6 +1513,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
         // Relations are read case-folded (`parseRel`), so a filter is too.
         const rel = list(flags.rel, "--rel")?.map((r) => r.toLowerCase());
         const kind = list(flags.kind, "--kind");
+        const edge = edgeList(flags.edge, "graph");
         const hops =
           typeof flags.hops === "string" ? parseCount(flags.hops, "graph --hops") : undefined;
         if (hops !== undefined && hops > 3) die("graph --hops: at most 3", "usage");
@@ -1409,6 +1532,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
             ...(typeof flags.within === "string" ? { within: resolve(flags.within) } : {}),
             ...(limit !== undefined ? { limit } : {}),
             ...(flags.bundles === true ? { bundles: true } : {}),
+            ...(edge ? { edge } : {}),
           }),
         );
       },

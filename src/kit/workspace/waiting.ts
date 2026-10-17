@@ -186,10 +186,13 @@ export function notesWaiting(
 
 // ── one ask at a time ────────────────────────────────────────────────────────
 //
-// The "Ask the agent" act on a note sends a message marked `about.ask`. A second
-// marked ask while the first is still owed an answer is a double-click, not a
-// new question, so it is not sent. Only the mark is guarded: a message that
-// names a note without it is something the human typed, and is always sent.
+// The "Ask the agent" act on a note sends a message with `via: "ask"` and
+// `about.noteId`. A second ask while the first is still owed an answer is a
+// double-click, not a new question, so it is not sent. Only the human's ask is
+// guarded: a message that names a note through any other gesture is something
+// the human typed, and is always sent, and the agent's message is never an
+// ask, whatever its `via` says. (The mark was `about.ask: true` until Story
+// Studio's bbc54fd made the gesture the mark; that field is gone.)
 //
 // The ask is owed by the note's own rule (`notesWaiting`), timed from the ask:
 // it is answered when the note is resolved, when the agent says anything after
@@ -198,21 +201,21 @@ export function notesWaiting(
 // Derived from the stored note and the stored conversation, so it survives a
 // restore with them; nothing is flagged.
 
-/** What the guard reads off a message: who, when, and what it was about. */
-type AskMsg = Pick<Message, "from" | "ts"> & {
-  about?: Pick<MessageAbout, "noteId" | "ask">;
+/** What the guard reads off a message: who, when, how, and which note. */
+type AskMsg = Pick<Message, "from" | "ts" | "via"> & {
+  about?: Pick<MessageAbout, "noteId">;
 };
 
 /**
- * Whether the human's last marked ask about this note is still owed an answer,
- * in which case another marked ask is not sent.
+ * Whether the human's last ask about this note is still owed an answer, in
+ * which case another ask is not sent.
  */
 export function askOutstanding(note: NoteFacts, chat: readonly AskMsg[]): boolean {
   if (note.resolved) return false;
   let askedAt = Number.NaN;
   for (let i = chat.length - 1; i >= 0; i--) {
     const m = chat[i];
-    if (m?.from === "human" && m.about?.ask === true && m.about.noteId === note.id) {
+    if (m?.from === "human" && m.via === "ask" && m.about?.noteId === note.id) {
       askedAt = Date.parse(m.ts);
       break;
     }

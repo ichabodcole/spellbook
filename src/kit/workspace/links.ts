@@ -45,8 +45,18 @@
  * is reported, with the folder to add, and the user decides; `context.add` stays
  * the one way in.
  */
-import { basename, dirname, extname, join, normalize, relative, resolve, sep } from "node:path";
-import { isImageName, isSvgName } from "../lib/docFormat.ts";
+import {
+  basename,
+  dirname,
+  extname,
+  isAbsolute,
+  join,
+  normalize,
+  relative,
+  resolve,
+  sep,
+} from "node:path";
+import { DOC_EXTENSIONS, isImageName, isSvgName } from "../lib/docFormat.ts";
 import { splitFrontmatter } from "../lib/frontmatter.ts";
 import {
   decodePath,
@@ -56,6 +66,7 @@ import {
   splitTarget,
 } from "../lib/linkTarget.ts";
 import { maskCode } from "../lib/markdownCode.ts";
+import { APP_RESOLVE_CAP, type AppEdge, BODY_LINKS, edgeKeeps } from "./linkEdges";
 import { isDocName } from "./tree";
 
 // Reading a written target (its decoded path, its query, its relations) is pure
@@ -97,6 +108,13 @@ export type LinkIndex = {
   exists: (path: string) => boolean;
   /** Does this path exist on disk as a folder? */
   isDir: (path: string) => boolean;
+  /**
+   * The app's own forms (kit-link-edges-slot): more places `target` (its path,
+   * decoded) may name, absolute, asked only when the kit's own lookup found no
+   * file. Each is tried as a candidate is, files first, and any folder among
+   * them answers after the kit's. See `LinkSlot.resolve`.
+   */
+  app?: (target: string, kind: LinkKind) => readonly string[] | undefined;
 };
 
 /** Where the link was written, which decides how far an anchored path may look. */
@@ -170,9 +188,45 @@ export function resolveTarget(
     for (const c of tried)
       if (index.exists(c))
         return isDocName(c) ? { state: "outside", path: c } : { state: "not-a-doc", path: c };
+    // The app's forms, after the kit's (kit-link-edges-slot): asked only on a
+    // miss, so a link the kit answers never reaches the app.
+    const more = index.app ? appCandidates(index.app(target, kind), bare) : [];
+    if (more.length > 0) {
+      const seen = new Set(tried);
+      const files = [...new Set(more.flatMap(fileLookups))].filter((c) => !seen.has(c));
+      for (const c of files) {
+        const own = index.inContext(c);
+        if (own !== null) return { state: "in-context", path: own };
+      }
+      for (const c of files)
+        if (index.exists(c))
+          return isDocName(c) ? { state: "outside", path: c } : { state: "not-a-doc", path: c };
+      tried.push(...files);
+      bare.push(...more);
+    }
   }
   for (const c of bare) if (index.isDir(c)) return { state: "folder", path: c };
   return { state: "missing", tried: folderish ? bare : tried };
+}
+
+/**
+ * What the app's resolver offers, absolute and normalized, less what the kit
+ * already tried: the first `APP_RESOLVE_CAP` of them, so a resolver that
+ * answers with every document costs one target a bounded look, not a
+ * quadratic one.
+ */
+function appCandidates(given: readonly string[] | undefined, bare: readonly string[]): string[] {
+  if (!Array.isArray(given)) return [];
+  const skip = new Set(bare);
+  const out = new Set<string>();
+  for (const g of given) {
+    if (out.size >= APP_RESOLVE_CAP) break;
+    if (typeof g !== "string" || !isAbsolute(g)) continue;
+    const n = normalize(g);
+    const c = n.length > 1 && n.endsWith("/") ? n.slice(0, -1) : n;
+    if (!skip.has(c)) out.add(c);
+  }
+  return [...out];
 }
 
 /**
@@ -339,6 +393,9 @@ export function rebaseCopy(
 
 /** A relation in use, and how many links use it. */
 export type RelationUse = { rel: string; count: number };
+
+/** An edge kind in use (`link`, or an app's), and how many links are of it. */
+export type EdgeKindUse = { kind: string; count: number };
 
 /** A markdown link's target: `](target)` or `](<target>)`, with an optional title after it. */
 const LINK_TARGET = /\]\(\s*(?:<([^>\n]*)>|([^\s()]*))(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)/dg;
@@ -812,15 +869,30 @@ function readLinks(text: string, opts: ExtractOptions): ReadLink[] {
 /** A link, written in document `source`, that lands on the document asked about. */
 export type Backlink = Omit<LinkRef, "target"> & { source: string };
 
-/** A document's links, already extracted: what `backlinksTo` reads. */
-export type LinkSource = { path: string; links: readonly LinkRef[] };
+/**
+ * A document's links, already extracted: what `backlinksTo` reads. `edges` are
+ * the app's (kit-link-edges-slot), which only the graph reads from here.
+ */
+export type LinkSource = { path: string; links: readonly LinkRef[]; edges?: readonly AppEdge[] };
 
-/** The file name a written path can land on, NFC and lower-cased: what `backlinksTo` sifts by. */
-function landingName(path: string): string {
-  const name = basename(path.endsWith("/") ? path.slice(0, -1) : path);
+/**
+ * The name a written path can land on, NFC and lower-cased, a document's
+ * extension dropped: what `backlinksTo` and the graph sift by. On the STEM, so
+ * `thing` and `thing.md` sift with `thing.markdown` and `thing.txt`: an app's
+ * resolver may land an extensionless form on any document kind
+ * (kit-link-edges-slot), and the kit's own `v1.2` lands on `v1.2.md`. A wider
+ * sift only resolves a few more links; the resolver still decides.
+ */
+export function landingName(path: string): string {
   // NFC on both sides: macOS hands back decomposed names (`é` as `e` + accent)
   // where an editor writes composed ones, and the two must sift as one name.
-  return (extname(name) === "" ? `${name}.md` : name).normalize("NFC").toLowerCase();
+  const name = basename(path.endsWith("/") ? path.slice(0, -1) : path)
+    .normalize("NFC")
+    .toLowerCase();
+  const ext = extname(name);
+  return ext !== "" && (DOC_EXTENSIONS as readonly string[]).includes(ext)
+    ? name.slice(0, -ext.length)
+    : name;
 }
 
 /**
@@ -1066,6 +1138,8 @@ export type GraphLink = {
   count: number;
   /** A bundle's references (a board's cards), which assert no relation. */
   reference?: true;
+  /** An app's edges of this kind (kit-link-edges-slot), not body links: `frontmatter`. */
+  edge?: string;
 };
 
 /** A document in the answer, with its links in and out of the filtered graph. */
@@ -1092,6 +1166,11 @@ export type GraphFilter = {
   kindless?: boolean;
   /** The most documents to answer with, the best connected first. */
   limit?: number;
+  /**
+   * Keep edges of these kinds only: an app's edge kinds, `link` for the body
+   * links (kit-link-edges-slot). A bundle's references stay.
+   */
+  edge?: readonly string[];
 };
 
 export type LinkGraphResult = {
@@ -1107,6 +1186,12 @@ export type LinkGraphResult = {
   untyped: number;
   /** Every kind among the documents, before `kind` filters, most first; null is no kind. */
   kinds: GraphKind[];
+  /**
+   * Links of each edge kind among the documents kept by `kind`, before `edge`
+   * filters, most first, `link` counting the body links: present only when an
+   * app edge is among them (kit-link-edges-slot).
+   */
+  edgeKinds?: EdgeKindUse[];
   /**
    * What passed the filters, before the cut: documents, edges (folded pairs)
    * and the links they fold. With bundles among them, `bundles` and
@@ -1162,6 +1247,18 @@ export function linkGraph(
       if (had) had.count++;
       else folded.set(key, { from: s.path, to: r.path, rel, count: 1 });
     }
+    // An app's edges (kit-link-edges-slot): resolved as a markdown link written
+    // in the document is, sifted the same way, folded apart from the body links.
+    for (const e of s.edges ?? []) {
+      if (!names.has(landingName(splitTarget(e.target).path))) continue;
+      const r = resolve(e.target, s.path, "markdown");
+      if (r.state !== "in-context" || r.path === s.path || !byPath.has(r.path)) continue;
+      const rel = [...new Set(e.rel ?? [])].sort();
+      const key = `${s.path}\0${r.path}\0${rel.join("\0")}\0\0edge:${e.kind}`;
+      const had = folded.get(key);
+      if (had) had.count++;
+      else folded.set(key, { from: s.path, to: r.path, rel, count: 1, edge: e.kind });
+    }
   }
   for (const ref of references) {
     if (ref.from === ref.to || !byPath.has(ref.from) || !byPath.has(ref.to)) continue;
@@ -1214,7 +1311,23 @@ export function linkGraph(
       )
       .map((d) => d.path),
   );
-  const all = [...folded.values()].filter((e) => kept.has(e.from) && kept.has(e.to));
+  const kindKept = [...folded.values()].filter((e) => kept.has(e.from) && kept.has(e.to));
+  // Edge kinds (kit-link-edges-slot): counted before `edge` filters, so a legend
+  // still names what the filter hides; said only where an app edge is.
+  let edgeKinds: EdgeKindUse[] | undefined;
+  if (kindKept.some((e) => e.edge !== undefined)) {
+    const byKind = new Map<string, number>();
+    for (const e of kindKept) {
+      if (e.reference) continue;
+      const k = e.edge ?? BODY_LINKS;
+      byKind.set(k, (byKind.get(k) ?? 0) + e.count);
+    }
+    edgeKinds = [...byKind]
+      .map(([kind, count]) => ({ kind, count }))
+      .sort((a, b) => b.count - a.count || a.kind.localeCompare(b.kind));
+  }
+  const keepEdge = edgeKeeps(filter.edge);
+  const all = kindKept.filter((e) => e.reference || keepEdge(e.edge ?? BODY_LINKS));
 
   /** What is within the hops of the focus over `over`, with each document's distance. */
   const reach = (over: readonly GraphLink[]): Map<string, number> => {
@@ -1319,6 +1432,7 @@ export function linkGraph(
     relations,
     untyped,
     kinds,
+    ...(edgeKinds ? { edgeKinds } : {}),
     total,
   };
 }

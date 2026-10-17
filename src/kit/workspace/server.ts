@@ -91,7 +91,20 @@ import {
   THUMB_WIDTHS,
   thumbnail,
 } from "./images";
+import type { LinkSlot } from "./linkEdges";
 import { extractLinks, swapLinkTargets } from "./links";
+import {
+  cleanVia,
+  KIT_REF_ROLES,
+  KIT_VIA,
+  MAX_REFS,
+  messageVia,
+  refRole,
+  roleAdvisory,
+  VIA_MAX,
+  viaAdvisory,
+} from "./messageParts";
+import { missingDir } from "./noHome";
 import { type PickKind, parsePickerOutput, pickerCommand, wasCancelled } from "./picker";
 import type {
   AgentCmd,
@@ -103,6 +116,7 @@ import type {
   HeadingLanding,
   Message,
   MessageAbout,
+  MessageRef,
   Note,
   PublicState,
   RelinkOffer,
@@ -245,7 +259,7 @@ type CmdFields = {
   strs?: string[];
 };
 const AGENT_CMD_FIELDS: Record<string, CmdFields> = {
-  say: { text: ["text"] },
+  say: { text: ["text"], optStr: ["via"] },
   reveal: { str: ["path"] },
   "context.add": { strs: ["paths"] },
   "version.new": { optStr: ["doc", "label"], optNum: ["from"] },
@@ -269,6 +283,8 @@ const AGENT_CMD_FIELDS: Record<string, CmdFields> = {
   "image.describe": { str: ["image"], optStr: ["source", "label"] },
   "doc.create": { str: ["dir"], optStr: ["name", "text"] },
   "folder.create": { str: ["dir"], optStr: ["name"] },
+  "folder.add": { str: ["path"] },
+  "set.make": { str: ["path"] },
   "bundle.create": { str: ["dir"], optStr: ["extension", "name"] },
   duplicate: { str: ["path"] },
   move: { str: ["path", "into"] },
@@ -303,6 +319,8 @@ export function checkAgentCmd(cmd: Record<string, unknown>): void {
 const STRUCTURE_OPS = new Set<string>([
   "doc.create",
   "folder.create",
+  "folder.add",
+  "set.make",
   "bundle.create",
   "duplicate",
   "move",
@@ -319,6 +337,15 @@ const isStructureOp = (m: { op: string }): m is StructureOp => STRUCTURE_OPS.has
  * this, so a minute is enough for both.
  */
 export const AGENT_GRACE_MS = 60_000;
+
+/**
+ * How long after a switch the human's edit to the version it left is still
+ * taken into that version: the client's pause (`EDIT_DEBOUNCE_MS`) and a
+ * round trip, with room for a loaded machine. Later, or with no switch on
+ * record (a restarted daemon), an edit to a version that is not active is
+ * refused as it always was (`kit-agent-activate-pending-edit`).
+ */
+export const LATE_EDIT_MS = 3000;
 
 /**
  * How long the daemon waits after an image arrives in a document before it
@@ -441,7 +468,17 @@ function graphOptions(raw: Record<string, unknown>): GraphOptions {
       throw new SessionError("graph: bundles must be true or false", 400);
     out.bundles = raw.bundles;
   }
+  const edge = edgeKinds(raw.edge, "graph");
+  if (edge !== undefined) out.edge = edge;
   return out;
+}
+
+/** An `edge` filter as the wire sends it (kit-link-edges-slot): a list of edge kinds, or absent. */
+function edgeKinds(v: unknown, verb: string): string[] | undefined {
+  if (v === undefined) return undefined;
+  if (!Array.isArray(v) || v.length === 0 || !v.every((x) => typeof x === "string" && x !== ""))
+    throw new SessionError(`${verb}: edge must be a list of edge kinds (link, or the app's)`, 400);
+  return v as string[];
 }
 
 /** What a verb handler is told about how it was reached. */
@@ -537,7 +574,7 @@ const KIT_ABOUT_KEYS = new Set<string>(
     entryIds: true,
     docs: true,
     noteId: true,
-    ask: true,
+    refs: true,
   } satisfies Record<keyof MessageAbout, true>),
 );
 
@@ -556,6 +593,13 @@ export type WorkspaceDaemonOptions = {
   app: AppDeclaration;
   /** Where sessions live: `<home>/<app>/sessions`. Preferences are kept beside it. */
   sessionsRoot: string;
+  /**
+   * The app's own folder, where its sessions, settings and logs live (by
+   * default only the sessions root is guarded). No set shows it and no
+   * structure op writes in it, as for the sessions root (`notASet`,
+   * `inOwnPlaces` in `./noHome.ts`).
+   */
+  appHome?: string;
   /** Task runners by `kind`. */
   runners?: Record<string, TaskRunner>;
   /** The app's own ops, keyed `<app>.<name>`: reachable from `/cmd` and the WebSocket. */
@@ -574,6 +618,19 @@ export type WorkspaceDaemonOptions = {
    * hint. Every command it names must carry `--session <id>`.
    */
   messageHint?: (input: MessageHintInput) => string | undefined;
+  /**
+   * The app's own gestures a message can come through, beside the kit's
+   * (`KIT_VIA`): Sound Stage's pace button is `"pace"`. Build one list,
+   * `[...KIT_VIA, "pace"] as const`, and derive the app's union from it. A
+   * `say` with a value outside the list is stored as sent and answered with an
+   * advisory, never refused.
+   */
+  via?: readonly string[];
+  /**
+   * The app's own ref roles, beside the kit's (`KIT_REF_ROLES`). An unknown
+   * role is stored as sent, with an advisory.
+   */
+  refRoles?: readonly string[];
   /** The app's own view of the session, for `appState` in the snapshot. */
   appState?: (ctx: WorkspaceContext) => unknown;
   /** Extra HTTP routes (an audio stream, say). Return nothing to fall through. */
@@ -602,6 +659,13 @@ export type WorkspaceDaemonOptions = {
    * wait. A test seam.
    */
   drainGraceMs?: number;
+  /**
+   * The app's part of the link layer (kit-link-edges-slot): edges it adds
+   * beside each document's body links, each with a kind, and a resolver for
+   * its own ways of naming a document, tried after the kit's. `graph`,
+   * `backlinks` and `link-check` carry the edges and filter by kind.
+   */
+  links?: LinkSlot;
   /** Hooks an app may set to take part in an act the kit performs. */
   hooks?: {
     /**
@@ -744,7 +808,13 @@ export function surfacePath(p: string): string {
   return resolve(t);
 }
 
-/** A structure op from the surface, with every path field through `surfacePath`. */
+/**
+ * A structure op with every path field through `surfacePath`: from the surface,
+ * and from the agent's `/cmd` too. The daemon's working directory is the folder
+ * `open` ran in, which no caller named, so an empty or relative `dir`, `into` or
+ * `path` is refused rather than resolved against it. The kit's CLI resolves a
+ * relative path in the agent's own directory before it posts.
+ */
 function anchorSurfacePaths(op: StructureOp): StructureOp {
   const out: Record<string, unknown> = { ...op };
   for (const k of ["dir", "path", "into"] as const)
@@ -868,6 +938,8 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     const session = opts.restore
       ? WorkspaceSession.restore(opts.sessionsRoot, app, opts.restore)
       : WorkspaceSession.create(opts.sessionsRoot, app, sessionId, opts.workspace);
+    if (opts.links) session.setLinkSlot(opts.links);
+    if (opts.appHome !== undefined) session.setAppHome(opts.appHome);
 
     let selection: Selection | null = null;
     /** The document text on screen: the open document at its active version. */
@@ -1083,7 +1155,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         ...(app.title ? { appTitle: app.title } : {}),
         sessionId,
         dir: session.dir,
-        workspace: session.workspace,
+        ...(session.hasHome ? { workspace: session.workspace } : {}),
         mode,
         agentListening: agentListening(),
         context: base.context,
@@ -1126,6 +1198,12 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     };
 
     /** A system line in the chat and, because the agent must know it too, on the log. */
+    /** A create with no folder (`dir`), from either route: a 400 with the app's hint (`missingDir`). */
+    const refuseMissingDir = (cmd: { op?: unknown; dir?: unknown }): void => {
+      const r = missingDir(app, cmd);
+      if (r) throw new SessionError(r.message, 400, undefined, r.hint);
+    };
+
     const announce = (text: string, fact: Record<string, unknown> = {}) => {
       const m = session.addMessage({ from: "system", type: "info", text });
       emit("system", { text, ts: m.ts, ...fact });
@@ -1855,10 +1933,30 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       }
     };
 
+    /**
+     * Each document's recent switches: the version that was active just before,
+     * who switched and when. Only an edit to one of these versions, within
+     * `LATE_EDIT_MS` of its switch, is taken late (`editLeft`). In memory only.
+     */
+    const switches = new Map<string, { from: number; by: "human" | "agent"; at: number }[]>();
+    const recordSwitch = (slug: string, from: number, by: "human" | "agent") => {
+      const now = performance.now();
+      const recent = (switches.get(slug) ?? []).filter((x) => now - x.at < LATE_EDIT_MS);
+      recent.push({ from, by, at: now });
+      switches.set(slug, recent);
+    };
+    /** The switch that just left `version`, if it is recent enough for an edit typed there to be taken. */
+    const switchLeaving = (slug: string, version: number) => {
+      const now = performance.now();
+      return (switches.get(slug) ?? [])
+        .filter((x) => x.from === version && now - x.at < LATE_EDIT_MS)
+        .at(-1);
+    };
     const activate = (doc: string | undefined, version: number, by: "human" | "agent") => {
       // Another version active: a rewrite of the old one is nothing its edits rebase onto.
       if (doc !== undefined) forgetRewrite(doc);
       const r = session.activate({ doc, version, ...(by === "agent" ? { json: "refuse" } : {}) });
+      recordSwitch(r.slug, r.previous, by);
       const view = session.doc(r.slug);
       const path = view.versions.find((v) => v.n === version)?.path ?? null;
       send({
@@ -1919,6 +2017,28 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       };
     };
 
+    /**
+     * The way back from `set.make`, and forward again: the session's own
+     * (`unmakeSet`, `makeSet`), following where the document is after each.
+     */
+    type AppInverse = Extract<Inverse, { kind: "app" }>;
+    /** What a set made from a document says of the links it broke: no verb rewrites them. */
+    const SET_MAKE_LINKS_HINT =
+      "Turning a document into a set does not rewrite links: write each one as its `to`, or leave it for the link check. Wiki links are never rewritten.";
+    const setMakeInverse = (from: string, at: string): AppInverse => {
+      let now = at;
+      const undo = () => {
+        now = session.unmakeSet(now).path;
+      };
+      // Made again, it breaks the links the first make did: said as that make said them.
+      const redo = () => {
+        const m = session.makeSet(now, { links: true });
+        now = m.path;
+        noteRedoBroke(m, "redo", SET_MAKE_LINKS_HINT);
+      };
+      return { kind: "app", label: `turned ${basename(from)} into a set`, undo, redo };
+    };
+
     const structure = (op: StructureOp, by: "human" | "agent"): Record<string, unknown> => {
       const who = by === "agent" ? "Agent" : "You";
       const shown = (p: string) => session.display(p);
@@ -1932,6 +2052,8 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       let names: { from?: string; to?: string } | undefined;
       // A folder creation made a set (a folder with its own entry), for its words.
       let madeSet = false;
+      // An act whose way back the session holds (`set.make`), and its links fact.
+      let own: { inverse: AppInverse; fact?: Record<string, unknown> } | undefined;
       switch (op.op) {
         case "doc.create":
           r = session.createDoc(op.dir, op.name, {
@@ -1946,6 +2068,29 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           madeSet = session.context.some((e) => e.root === r.path);
           text = `${who} created the ${madeSet ? "set" : "folder"} ${shown(r.path as string)}.`;
           break;
+        case "folder.add":
+          r = session.addFolder(op.path);
+          madeSet = r.set === true;
+          text = `${who} created the ${madeSet ? "set" : "folder"} ${shown(r.path as string)}.`;
+          break;
+        case "set.make": {
+          const { links, wiki: w, ...m } = session.makeSet(op.path, { links: true });
+          r = m;
+          text = `${who} turned ${basename(m.from)} into a set: ${shown(m.folder)}.`;
+          own = { inverse: setMakeInverse(m.from, m.path) };
+          // The links the move into the folder broke: said, never rewritten.
+          // There is no `relink` offer for this act; the link check lists them.
+          if ((links?.length ?? 0) > 0 || (w?.length ?? 0) > 0) {
+            text += ` ${brokenText(links ?? [], w ?? [], basename(m.from))}`;
+            own.fact = {
+              broken: {
+                ...brokenFact(links ?? [], w ?? []),
+                hint: SET_MAKE_LINKS_HINT,
+              },
+            };
+          }
+          break;
+        }
         case "bundle.create": {
           const { hash: h, ...made } = session.createBundle(op.dir, op.extension, op.name);
           hash = h;
@@ -2037,10 +2182,11 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         ...(hash !== undefined ? { hash } : {}),
         ...(names ? { names } : {}),
         ...(madeSet ? { set: true } : {}),
+        ...(own ? { inverse: own.inverse } : {}),
       });
       if (follow && (act?.inverse.kind === "move" || act?.inverse.kind === "rename"))
         act.inverse.follow = follow;
-      let linkFact: Record<string, unknown> = {};
+      let linkFact: Record<string, unknown> = own?.fact ?? {};
       if (
         (fixes.length > 0 || wiki.length > 0) &&
         act &&
@@ -2315,7 +2461,13 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
      */
     let linkNote = "";
     /** A redo of an act that carried no link edits found links it broke: offered afresh. */
-    let redoBroke: { fixes: DocLinkFixes[]; wiki: WikiBreak[]; what: string } | null = null;
+    // `hint`: an act with no `relink` offer (`set.make`) says its own words instead.
+    let redoBroke: {
+      fixes: DocLinkFixes[];
+      wiki: WikiBreak[];
+      what: string;
+      hint?: string;
+    } | null = null;
     const redoBrokeNow = () => redoBroke;
 
     /** The links an undone or redone act carried, put as they were with it. */
@@ -2329,13 +2481,14 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     const noteRedoBroke = (
       m: { from: string; links?: DocLinkFixes[]; wiki?: WikiBreak[] },
       dir: "undo" | "redo",
+      hint?: string,
     ) => {
       if (dir !== "redo") return;
       const fixes = m.links ?? [];
       const wiki = m.wiki ?? [];
       if (fixes.length === 0 && wiki.length === 0) return;
       const what = basename(m.from);
-      redoBroke = { fixes, wiki, what };
+      redoBroke = { fixes, wiki, what, ...(hint ? { hint } : {}) };
       linkNote = ` ${brokenText(fixes, wiki, what)}`;
     };
 
@@ -2571,22 +2724,106 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       }
     };
 
+    const viaKnown: readonly string[] = [...KIT_VIA, ...(opts.via ?? [])];
+    const rolesKnown: readonly string[] = [...KIT_REF_ROLES, ...(opts.refRoles ?? [])];
+
+    /**
+     * The refs a message draws on, from what the page sent: each kept only when
+     * its path is a document or image in the session's context (the agent
+     * reads it), canonical; one naming the subject is dropped, and so is a
+     * second with the same path. At most `MAX_REFS`. Dedup is against the
+     * kit's subject only, never an app's `about` part. What was dropped as
+     * outside the context or past the cap is counted, for the advisory; one
+     * naming the subject, or a repeat, is no loss and is not.
+     */
+    const refsFor = (
+      raw: unknown,
+      subject: ReadonlySet<string>,
+    ): { refs: MessageRef[]; outside: number; over: number } => {
+      if (!Array.isArray(raw)) return { refs: [], outside: 0, over: 0 };
+      const given = raw.filter((r): r is Record<string, unknown> => !!r && typeof r === "object");
+      // One read of the context for the whole list, however many refs it holds.
+      const kept = session.contextDocEach(given.map((r) => r.path));
+      const refs: MessageRef[] = [];
+      const seen = new Set<string>();
+      let outside = 0;
+      let over = 0;
+      given.forEach((ref, i) => {
+        const path = kept[i];
+        if (!path) {
+          outside++;
+          return;
+        }
+        if (subject.has(path) || seen.has(path)) return;
+        seen.add(path);
+        if (refs.length === MAX_REFS) {
+          over++;
+          return;
+        }
+        refs.push({
+          path,
+          ...(typeof ref.doc === "string" ? { doc: ref.doc } : {}),
+          ...(typeof ref.version === "number" ? { version: ref.version } : {}),
+          ...(typeof ref.role === "string" ? { role: ref.role } : {}),
+          ...(typeof ref.label === "string" ? { label: ref.label } : {}),
+          ...(typeof ref.text === "string" ? { text: ref.text } : {}),
+        });
+      });
+      return { refs, outside, over };
+    };
+
+    /** The subject's own paths: its file, and a document's original beside its version's. */
+    const subjectPaths = (about: MessageAbout): Set<string> => {
+      const paths = new Set<string>();
+      if (about.path) paths.add(about.path);
+      if (about.doc) {
+        const d = session.findDoc(about.doc);
+        if (d) paths.add(d.original);
+      }
+      return paths;
+    };
+
+    /**
+     * What a human message is about, and what it is answered with: the
+     * advisories for a subject named outside the context, refs dropped, and a
+     * role outside the app's list. They ride the tail's message as `warning`.
+     */
     const aboutFor = (
       withSelection: boolean,
-      extra?: Pick<MessageAbout, "entryIds" | "noteId" | "docs" | "ask">,
-    ): MessageAbout | undefined => {
-      // Pointed-at documents arrive from the page: kept only when they are
-      // documents in the session's context (the agent reads them), and at most a
-      // screenful of them.
-      const docs = Array.isArray(extra?.docs)
-        ? session.contextDocs(extra.docs.slice(0, 200)).slice(0, 50)
-        : [];
+      extra?: Pick<MessageAbout, "entryIds" | "noteId" | "path" | "refs">,
+    ): { about: MessageAbout | undefined; advice: string[] } => {
+      const advice: string[] = [];
       // A backstop: every path that moves the open document or its version
       // broadcasts first, and the broadcast's read has already dropped a stale
       // selection. It reads through the rule anyway, for the path somebody adds
       // without a broadcast.
       const sel = withSelection ? heldSelection() : null;
-      const active = sel ? activeOf(sel.doc) : activeOf();
+      // With no selection the page may name the subject itself, a whole
+      // document or image (an open image, a document a view points at): kept
+      // only when it is in the session's context. A document the session holds
+      // is said as its active version, as the open document is. One named
+      // outside the context is no subject at all: the human pointed at it, so
+      // the open document would be the wrong answer.
+      const asked = !sel && typeof extra?.path === "string" ? extra.path : undefined;
+      const named = asked !== undefined ? session.contextDocEach([asked])[0] : undefined;
+      if (asked !== undefined && !named)
+        advice.push(
+          `the subject ${JSON.stringify(asked)} is not a document or image in the session's context: the message names no subject.`,
+        );
+      const namedDoc = named ? session.findDoc(named) : undefined;
+      // With nothing named and no selection, an open image is the subject before
+      // the document behind it.
+      const image = !sel && asked === undefined ? session.openImagePath : null;
+      const active = sel
+        ? activeOf(sel.doc)
+        : asked !== undefined
+          ? namedDoc
+            ? activeOf(namedDoc.slug)
+            : null
+          : image
+            ? null
+            : activeOf();
+      const wholePath = named && !namedDoc ? named : image;
       const about: MessageAbout = {
         ...(active
           ? {
@@ -2594,7 +2831,9 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
               version: active.version,
               ...(active.path ? { path: active.path } : {}),
             }
-          : {}),
+          : wholePath
+            ? { path: wholePath }
+            : {}),
         ...(sel
           ? {
               doc: sel.doc,
@@ -2607,11 +2846,42 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           : {}),
         ...(extra?.entryIds?.length ? { entryIds: extra.entryIds } : {}),
         ...(extra?.noteId ? { noteId: extra.noteId } : {}),
-        // The ask mark means something only beside the note it asks about.
-        ...(extra?.noteId && extra.ask === true ? { ask: true as const } : {}),
-        ...(docs.length ? { docs } : {}),
       };
-      return Object.keys(about).length > 0 ? about : undefined;
+      const { refs, outside, over } = refsFor(extra?.refs, subjectPaths(about));
+      if (refs.length > 0) about.refs = refs;
+      if (outside > 0)
+        advice.push(
+          `${outside} ${outside === 1 ? "ref was" : "refs were"} dropped: not a document or image in the session's context.`,
+        );
+      if (over > 0)
+        advice.push(
+          `${over} ${over === 1 ? "ref was" : "refs were"} dropped past the first ${MAX_REFS}.`,
+        );
+      const role = roleAdvisory(refs.map(refRole), rolesKnown);
+      if (role) advice.push(role);
+      return { about: Object.keys(about).length > 0 ? about : undefined, advice };
+    };
+
+    /** A `say`'s `via`, as stored: cut to its length, with the advisories it earns. */
+    const viaOf = (
+      raw: unknown,
+      by: "human" | "agent" = "human",
+    ): { via: string | undefined; advice: string[] } => {
+      const { via, cut } = cleanVia(raw);
+      const advice: string[] = [];
+      if (cut)
+        advice.push(
+          `via was longer than ${VIA_MAX} characters: it was cut to ${JSON.stringify(via)}.`,
+        );
+      const unknown = viaAdvisory(via, viaKnown, cut ? "cut" : "as sent");
+      if (unknown) advice.push(unknown);
+      // Every value past `chat` names a button the human presses: from the
+      // agent it says something that did not happen. Stored, never refused.
+      if (by === "agent" && via !== undefined && via !== "chat" && viaKnown.includes(via))
+        advice.push(
+          `via ${JSON.stringify(via)} is a button the human presses: the message was stored with it, and shows as if pressed. Leave via out (or "chat") for your own messages.`,
+        );
+      return { via, advice };
     };
 
     /**
@@ -2813,6 +3083,34 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       else if (opts.appState) scheduleEditBroadcast();
     };
 
+    /**
+     * The human's edit to a version that is no longer active: the switch
+     * overtook it in the client's pause, which only the human's own switch can
+     * prevent (its client sends the edit first). The edit is saved where it was
+     * typed, or kept as a version of its own (`session.editLeft`), and the
+     * human is told in the chat. The agent is not: nothing on its tail asks it
+     * to act, and the version it moved to is untouched.
+     */
+    const editLeft = (doc: string, version: number, text: string, by: "human" | "agent") => {
+      const r = session.editLeft(doc, version, text);
+      const d = session.findDoc(doc);
+      if (!d) return;
+      const name = `v${version} of ${d.slug}`;
+      const why = r.kept === "changed" ? "changed" : "was deleted";
+      // The human's own switch (a key typed after the click, before the switch
+      // was seen) is said as theirs; the agent's names the agent.
+      const said =
+        by === "agent"
+          ? r.kept === null
+            ? `Your last edit was saved to ${name}; the agent made v${d.active} active.`
+            : `Your last edit to ${name} was kept as v${r.saved}, because v${version} ${why} after the switch; the agent made v${d.active} active.`
+          : r.kept === null
+            ? `Your last edit was saved to ${name} before you switched to v${d.active}.`
+            : `Your last edit to ${name} was kept as v${r.saved}, because v${version} ${why} after you switched to v${d.active}.`;
+      session.addMessage({ from: "system", type: "info", text: said });
+      broadcastState();
+    };
+
     /** An app's own pending writes, made before a kit act reads or replaces a document. */
     const beforeKitAct = (op: unknown) => {
       if (typeof op !== "string" || !opts.hooks?.beforeKitAct) return;
@@ -2852,6 +3150,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       const reply = (w: import("bun").ServerWebSocket<unknown>, f: ServerOp | { op: string }) =>
         replyRaw(w, f, rid);
       if (isStructureOp(msg)) {
+        refuseMissingDir(msg);
         const r = structure(anchorSurfacePaths(msg), "human");
         if (typeof r.path === "string")
           reply(ws, {
@@ -2927,6 +3226,18 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           broadcastState();
           return;
         case "edit": {
+          // Typed in a version that a switch just left while the edit waited
+          // out its pause (the agent switched): it goes to that version. Any
+          // other version that is not active is refused, below, as before.
+          const typedIn = session.findDoc(msg.doc);
+          const left =
+            typedIn && typedIn.active !== msg.version
+              ? switchLeaving(typedIn.slug, msg.version)
+              : undefined;
+          if (left) {
+            editLeft(msg.doc, msg.version, msg.text, left.by);
+            return;
+          }
           const followed = followedEdit(msg.doc, msg.version, msg.text, msg.base);
           // A stale edit was rebased onto a link rewrite: the editor is told the text kept.
           editActive(
@@ -2993,12 +3304,19 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
             relinkOffer = null;
             // Read through a call: set inside `applyInverse`, which the compiler cannot see.
             const broke = redoBrokeNow();
-            if (broke && back && broke.fixes.length > 0)
+            if (broke && back && broke.fixes.length > 0 && !broke.hint)
               relinkOffer = { act: back, ...broke, by: "human" };
             syncWatchers();
             announce(`You redid: ${withoutLinkCount(act.label)}.${linkNote}`, {
               fact: "history.redo",
-              ...(broke ? { broken: brokenFact(broke.fixes, broke.wiki) } : {}),
+              ...(broke
+                ? {
+                    broken: {
+                      ...brokenFact(broke.fixes, broke.wiki),
+                      ...(broke.hint ? { hint: broke.hint } : {}),
+                    },
+                  }
+                : {}),
             });
             broadcastState();
           } catch (e) {
@@ -3019,10 +3337,17 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         case "say": {
           const text = msg.text.trim();
           if (!text) return;
-          // One ask at a time: a marked "Ask the agent" for a note whose last
-          // ask is still owed an answer is a double-click, so it is not sent,
-          // and the sender is told so. Unmarked, it is typed, and always sent.
-          const asking = msg.about?.ask === true ? msg.about.noteId : undefined;
+          // The gesture, stored as sent (cut to its length); one outside the
+          // app's list is answered on the tail's message, never refused.
+          const { via, advice: viaAdvice } = viaOf(msg.via);
+          // One ask at a time: `via: "ask"` naming a note whose last ask is
+          // still owed an answer is a double-click, so it is not sent, and only
+          // the sender is told. Any other `via` naming a note is a typed
+          // follow-up, and always goes.
+          const asking =
+            via === "ask" && typeof msg.about?.noteId === "string" && msg.about.noteId
+              ? msg.about.noteId
+              : undefined;
           if (asking) {
             const n = session
               .noteFacts()
@@ -3040,22 +3365,18 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
               return;
             }
           }
-          const about = aboutFor(msg.withSelection, msg.about);
+          const { about, advice: aboutAdvice } = aboutFor(msg.withSelection, msg.about);
+          const advice = [...viaAdvice, ...aboutAdvice];
           const m = session.addMessage({
             from: "human",
             type: "message",
             text,
             ...(about ? { about } : {}),
+            ...(via ? { via } : {}),
           });
           // What the app adds to `about` from what this page shows (Atlas: its
           // map). On the tail's message only: the chat keeps the kit's parts.
-          // The ask mark stays on the stored message, for the guard; the tail
-          // is the same with or without it.
-          const { ask: _ask, ...aboutOnTail } = about ?? {};
-          const told: MessageAboutOnTail | undefined = withAppAbout(
-            about ? aboutOnTail : undefined,
-            surfaceId(ws),
-          );
+          const told: MessageAboutOnTail | undefined = withAppAbout(about, surfaceId(ws));
           // Every human message names the three honest answers: the one that
           // goes wrong is work done with no task, which the human cannot see.
           const reply = pickReplyHint({
@@ -3070,7 +3391,12 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           emit("message", {
             message_id: m.id,
             text,
+            // Always said, so the agent can tell a typed question from a pressed button.
+            via: messageVia(m),
             ...(told ? { about: told } : {}),
+            // What the page sent that was not taken as sent: said to the agent,
+            // who can act on it, rather than to a log nobody reads.
+            ...(advice.length > 0 ? { warning: advice.join(" ") } : {}),
             ts: m.ts,
             hint: about?.noteId
               ? `about note ${about.noteId}: \`notes --session ${sessionId}${noteDoc}\` has it whole, and \`note-resolve ${about.noteId} --session ${sessionId}${noteDoc}\` when it is dealt with. ${reply}`
@@ -3191,7 +3517,10 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           // Say where they are, not just what was made: announcing the new
           // version and going quiet about which one the human is editing is how
           // someone types into v1 believing they are in v2.
-          if (msg.activate) session.activate({ doc: r.slug, version: r.version.n });
+          if (msg.activate) {
+            const a = session.activate({ doc: r.slug, version: r.version.n });
+            recordSwitch(r.slug, a.previous, "human");
+          }
           const m = session.addMessage({
             from: "system",
             type: "info",
@@ -3585,7 +3914,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
 
     // --- agent commands (POST /cmd) -----------------------------------------------
     const handleAgentCmd = async (cmd: AgentCmd): Promise<Record<string, unknown>> => {
-      if (isStructureOp(cmd)) return structure(cmd, "agent");
+      if (isStructureOp(cmd)) return structure(anchorSurfacePaths(cmd), "agent");
       switch (cmd.op) {
         case "doctor": {
           const list = session.checkup();
@@ -3593,10 +3922,14 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         }
         case "search":
           return { ...session.search(cmd) };
-        case "backlinks":
-          return { ...session.backlinks(cmd.doc) };
-        case "link.check":
-          return { ...session.linkCheck() };
+        case "backlinks": {
+          const edge = edgeKinds(cmd.edge, "backlinks");
+          return { ...session.backlinks(cmd.doc, edge ? { edge } : {}) };
+        }
+        case "link.check": {
+          const edge = edgeKinds(cmd.edge, "link-check");
+          return { ...session.linkCheck(edge ? { edge } : {}) };
+        }
         case "graph": {
           const { op: _op, ...opts } = cmd;
           return { ...session.linkGraph(graphOptions(opts)) };
@@ -3904,27 +4237,30 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         }
         case "say": {
           // Only what an agent's message may point at: entries and a note. The
-          // rest of `MessageAbout` is the human's (`ask` is the one-ask guard's
-          // mark, `docs` and a passage are what the human pointed at), so it is
-          // dropped, not stored as sent.
+          // rest of `MessageAbout` is the human's (`refs`, `docs`, a subject and
+          // a passage are what the human pointed at), so it is dropped, not
+          // stored as sent, and so is any other key sent. An entry id that is
+          // not a string is dropped on its own; the others stay.
           const raw = cmd.about as Partial<MessageAbout> | null | undefined;
-          const entryIds =
-            Array.isArray(raw?.entryIds) && raw.entryIds.every((e) => typeof e === "string")
-              ? raw.entryIds
-              : undefined;
+          const entryIds = Array.isArray(raw?.entryIds)
+            ? (raw.entryIds as unknown[]).filter((e): e is string => typeof e === "string")
+            : undefined;
           const noteId = typeof raw?.noteId === "string" && raw.noteId ? raw.noteId : undefined;
           const about: Pick<MessageAbout, "entryIds" | "noteId"> | undefined =
             entryIds?.length || noteId
               ? { ...(entryIds?.length ? { entryIds } : {}), ...(noteId ? { noteId } : {}) }
               : undefined;
+          const { via, advice } = viaOf(cmd.via, "agent");
           const m = session.addMessage({
             from: "agent",
             type: "message",
             text: cmd.text,
             ...(about ? { about } : {}),
+            ...(via ? { via } : {}),
           });
           broadcastState();
-          return { id: m.id };
+          // Stored as sent; one outside the list is answered, not refused.
+          return { id: m.id, ...(advice.length > 0 ? { warning: advice.join(" ") } : {}) };
         }
         case "activate":
           return activate(cmd.doc, cmd.version, "agent");
@@ -4231,6 +4567,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
                 ...(result && typeof result === "object" ? (result as object) : {}),
               });
             }
+            refuseMissingDir(cmd);
             checkAgentCmd(cmd);
             beforeKitAct(cmd.op);
             return Response.json({ ok: true, ...(await handleAgentCmd(body as AgentCmd)) });
@@ -4282,7 +4619,15 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
             // A refusal the human caused (edit a non-active version, open a
             // vanished file) reaches them as an error frame the surface shows: a
             // chat-visible system line would be too loud for a keystroke.
-            replyRaw(ws, { op: "error", message: messageOf(e) }, rid);
+            replyRaw(
+              ws,
+              {
+                op: "error",
+                message: messageOf(e),
+                ...(e instanceof SessionError && e.hint ? { hint: e.hint } : {}),
+              },
+              rid,
+            );
           }
         },
         close(ws) {
@@ -4342,6 +4687,12 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     // What changed on disk while no daemon was watching, and what a restore had
     // to settle.
     const report = session.restoreReport;
+    // Said first: everything below is about the session as converted.
+    if (report.manifestMigrated)
+      announce(
+        `${report.manifestMigrated.note ?? `This session was converted for ${app.name}.`} The manifest it had is kept at ${report.manifestMigrated.kept}.`,
+        { fact: "manifest.migrated", kept: report.manifestMigrated.kept },
+      );
     for (const f of report.outside)
       announce(
         f.missing
@@ -4368,6 +4719,11 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       announce(
         `This session was saved before it had a workspace folder, so ${report.workspaceDefaulted} is the workspace now. Change it with the pencil in the sidebar or \`workspace <dir>\`.`,
         { fact: "workspace.defaulted", path: report.workspaceDefaulted },
+      );
+    if (report.workspaceAdded !== undefined)
+      announce(
+        `This session was saved with ${report.workspaceAdded} as its workspace folder. ${app.name} has no default folder now, so it is a set in the sidebar: its files are still here, and a new file goes where you point.`,
+        { fact: "workspace.added", path: report.workspaceAdded },
       );
     // A session from before the overlap block still opens, and says what to
     // change: once, not at every restore (`doctor` keeps listing it).
@@ -4576,8 +4932,9 @@ export async function runWorkspaceDaemon(
     return status === 404 ? 5 : status === 409 ? 6 : 1;
   }
   process.stdout.write(
-    // `workspace` rides the handshake so `open` can name it, restored or new.
-    `${JSON.stringify({ url: d.url, port: d.port, session_id: d.sessionId, mode: d.mode, dir: d.dir, workspace: d.session.workspace })}\n`,
+    // `workspace` rides the handshake so `open` can name it, restored or new;
+    // left out (undefined) for an app with no home workspace.
+    `${JSON.stringify({ url: d.url, port: d.port, session_id: d.sessionId, mode: d.mode, dir: d.dir, workspace: d.session.hasHome ? d.session.workspace : undefined })}\n`,
   );
   const res = await d.done;
   await d.shutdown;

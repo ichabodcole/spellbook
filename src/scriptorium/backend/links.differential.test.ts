@@ -22,6 +22,7 @@ import {
   type LinkKind,
 } from "../../kit/workspace/links";
 import { renderMarkdown } from "../surface/state/markdown";
+import { wikiFormsResolver } from "./kit/links";
 import {
   type BundleIndex,
   type ExtractOptions,
@@ -57,7 +58,9 @@ const DIFFERENCES = {
   /**
    * Found here: the kit resolves every target as a path. Scriptorium's wiki
    * forms (a `type/slug` key by type and basename, a bare name by basename) and
-   * its third place to look (the repo root) are not in the kit.
+   * its third place to look (the repo root) are not in the kit's own resolver.
+   * On the kit path they come through Scriptorium's resolver slot
+   * (kit-link-edges-slot): the block at the end of this file lands them.
    */
   wikiForms: "found: no `type/slug`, basename or repo-root resolution in the kit",
   /**
@@ -1044,4 +1047,59 @@ describe("every declared difference is shown by a case", () => {
     ]);
     expect(Object.keys(DIFFERENCES).filter((d) => !cited.has(d))).toEqual([]);
   });
+});
+
+// ── the wiki forms on the kit path (kit-link-edges-slot) ────────────────────
+//
+// The kit's resolver, given Scriptorium's resolver slot (`./kit/links.ts`, the
+// one the flagged daemon runs with), lands every `wikiForms` case where
+// Scriptorium's own resolver does. A miss is a miss on both sides; where each
+// looked still differs (the kit asks for a file first), which is the kit's rule.
+// Every other case answers exactly as the bare kit does: the slot is asked only
+// when the kit's own lookup found no file.
+describe("on the kit path, Scriptorium's wiki forms go through its resolver slot", () => {
+  const withSlot = (i: BundleIndex): KitIndex => {
+    const app = wikiFormsResolver(() => i.repoRoot ?? null);
+    const docs = i.paths.map((path) => ({
+      path,
+      type: i.metaOf(path)?.type ?? null,
+      frontmatter: i.metaOf(path)?.fields ?? null,
+    }));
+    return {
+      ...asKit(i),
+      app: (target, kind) => app({ target, from: null, root: i.root, kind, documents: () => docs }),
+    };
+  };
+  for (const c of RESOLVE) {
+    const wiki = c.differs?.why === "wikiForms";
+    test(`${c.name}${wiki ? " [wikiForms, now landed]" : " [unchanged by the slot]"}`, () => {
+      const k = probed(c.index);
+      const slotted = landedKit(
+        kitResolve(c.target, c.from, withSlot(k.index), "document", c.kind ?? "markdown"),
+        k.looked,
+      );
+      if (!wiki) {
+        const b = probed(c.index);
+        const bare = landedKit(
+          kitResolve(c.target, c.from, asKit(b.index), "document", c.kind ?? "markdown"),
+          b.looked,
+        );
+        expect(slotted).toEqual(bare);
+        return;
+      }
+      const s = probed(c.index);
+      const scr = landedScr(resolveTarget(c.target, c.from, s.index), s.looked);
+      if (scr.state === "missing") {
+        expect(slotted.state).toBe("missing");
+        return;
+      }
+      // The repo-root case lands on a `.ts` file: `outside` to Scriptorium,
+      // `not-a-doc` to the kit (`notADoc`, ruled).
+      const expected =
+        scr.state === "outside" && "path" in scr && !scr.path.endsWith(".md")
+          ? { state: "not-a-doc", path: scr.path }
+          : scr;
+      expect(slotted).toEqual(expected);
+    });
+  }
 });

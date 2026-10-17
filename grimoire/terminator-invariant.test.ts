@@ -697,8 +697,10 @@ describe("ward — a flag demoted by `--` is warned about, on every registry ado
       // Per (row, spelling, accepted flag), globals included: one direct and
       // one =value case, plus one after-text case wherever the row has room.
       // Measured 2026-09-27: 311 direct cases before the alias spelling joined.
-      cases: 899,
-      byForm: { direct: 366, "after-text": 167, "=value": 366 },
+      // 902 since the kit's `say` took `--via` (kit-port-via-refs): one more
+      // case in each form.
+      cases: 902,
+      byForm: { direct: 367, "after-text": 168, "=value": 367 },
       // mind-mapper `message` -> `read`: direct and =value. `read` has one
       // non-variadic positional, so no after-text case.
       viaAlias: 2,

@@ -1,9 +1,12 @@
 // One ask at a time: the "Ask the agent" act for a note, driven through the
-// daemon in process. A `say` marked `about: { noteId, ask: true }` is sent once
+// daemon in process. A `say` with `via: "ask"` and `about.noteId` is sent once
 // while that ask is owed an answer; a second is refused to its sender and never
-// reaches the agent. A `say` that names a note without the mark is typed, and
-// always delivered. The guard re-arms when the note is no longer owed, and,
-// being derived from the stored note and conversation, survives a restore.
+// reaches the agent. A `say` that names a note through any other gesture is
+// typed, and always delivered, and the agent's message is never an ask. This is
+// Story Studio's bbc54fd test (the gesture is the mark), with our cells kept
+// beside it: the agent's `via: "ask"`, and a message about the note with no
+// `via`. The guard re-arms when the note is no longer owed, and, being derived
+// from the stored note and conversation, survives a restore.
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
@@ -75,19 +78,21 @@ async function humanNote(
   return String(ev.note);
 }
 
-/** The "Ask the agent" act, marked, with a request id to answer. */
+/** The "Ask the agent" act, with a request id to answer. */
 const ask = (noteId: string, text: string, rid: string) => ({
   op: "say",
   text,
   withSelection: false,
-  about: { noteId, ask: true },
+  via: "ask",
+  about: { noteId },
   rid,
 });
-/** A typed follow-up that names the note: no mark. */
+/** A typed follow-up that names the note: the composer's gesture. */
 const typed = (noteId: string, text: string) => ({
   op: "say",
   text,
   withSelection: false,
+  via: "chat",
   about: { noteId },
 });
 
@@ -103,7 +108,7 @@ const messagesAbout = (t: ReturnType<typeof collectEvents>, noteId: string) =>
   );
 
 describe("one ask at a time", () => {
-  test("a double marked ask sends one message, and the second is refused to its sender", async () => {
+  test("a double ask sends one message, and the second is refused to its sender", async () => {
     const { s, t } = await start();
     await openA(s);
     const n = await humanNote(s, t, "stuck?");
@@ -112,9 +117,12 @@ describe("one ask at a time", () => {
     await settle(s, t, "marker");
     expect(messagesAbout(t, n).map((e) => e.text)).toEqual(["About my note"]);
     expect(s.state.chat.filter((m) => m.about?.noteId === n)).toHaveLength(1);
-    // The stored message keeps the mark; the tail never carries it.
-    expect(s.state.chat.find((m) => m.about?.noteId === n)?.about?.ask).toBe(true);
-    expect(messagesAbout(t, n)[0]?.about).not.toHaveProperty("ask");
+    // The gesture is the mark, stored and on the tail.
+    expect(s.state.chat.find((m) => m.about?.noteId === n)?.via).toBe("ask");
+    expect(messagesAbout(t, n)[0]?.via).toBe("ask");
+    expect(messagesAbout(t, n)[0]?.about).toEqual(expect.objectContaining({ noteId: n, doc: "a" }));
+    // Nothing of the refused one was stored, broadcast or emitted.
+    expect(s.state.chat.filter((m) => m.text === "About my note")).toHaveLength(1);
     // The first was not refused; the second was, and says it was not sent.
     expect(s.frames.some((f) => f.op === "error" && f.requestId === "r1")).toBe(false);
     const refused = s.frames.find((f) => f.op === "error" && f.requestId === "r2");
@@ -122,7 +130,7 @@ describe("one ask at a time", () => {
     expect((refused as { message: string }).message).toContain("not sent");
   });
 
-  test("a marked ask and then a typed follow-up about the same note are both delivered", async () => {
+  test("an ask and then a typed follow-up about the same note are both delivered", async () => {
     const { s, t } = await start();
     await openA(s);
     const n = await humanNote(s, t, "stuck?");
@@ -138,30 +146,64 @@ describe("one ask at a time", () => {
     expect(s.frames.some((f) => f.op === "error")).toBe(false);
   });
 
-  test("the agent's say keeps only entryIds and noteId: its ask mark is dropped, and holds nothing", async () => {
+  test('only the exact "ask" is held: a human\'s "Ask" about an owed note goes', async () => {
+    const { s, t } = await start();
+    await openA(s);
+    const n = await humanNote(s, t, "stuck?");
+    s.send(ask(n, "About my note", "r1"));
+    await t.waitFor((e) => e.type === "message" && e.text === "About my note");
+    s.send({ ...ask(n, "a case variant", "r2"), via: "Ask" });
+    await settle(s, t, "marker");
+    expect(messagesAbout(t, n).map((e) => e.text)).toEqual(["About my note", "a case variant"]);
+    expect(messagesAbout(t, n)[1]?.via).toBe("Ask");
+    expect(s.frames.some((f) => f.op === "error" && f.requestId === "r2")).toBe(false);
+  });
+
+  test("the agent's say with via ask about the note holds nothing: the human's first ask still goes", async () => {
     const { s, t, base } = await start();
     await openA(s);
     const n = await humanNote(s, t, "stuck?");
     const r = await cmd(base, {
       op: "say",
       text: "a note from me",
-      about: { noteId: n, ask: true, docs: [join(docs, "set", "a.md")], text: "one", fromLine: 1 },
+      via: "ask",
+      about: { noteId: n, docs: [join(docs, "set", "a.md")], text: "one", fromLine: 1 },
     });
     expect(r.status).toBe(200);
+    expect(String(r.body.warning)).toContain('via "ask" is a button the human presses');
     const stored = await waitUntil("stored", () => s.state.chat.find((m) => m.id === r.body.id));
+    // Stored as sent, with its warning; the human's parts are dropped.
+    expect(stored.via).toBe("ask");
     expect(stored.about).toEqual({ noteId: n });
-    const kept = await cmd(base, {
-      op: "say",
-      text: "two",
-      about: { entryIds: ["e1"], ask: true },
-    });
-    const second = await waitUntil("stored", () => s.state.chat.find((m) => m.id === kept.body.id));
-    expect(second.about).toEqual({ entryIds: ["e1"] });
-    // The human's first marked ask still goes: the agent's mark held nothing.
+    await Bun.sleep(3);
     s.send(ask(n, "my first ask", "r1"));
     await settle(s, t, "marker");
     expect(messagesAbout(t, n).map((e) => e.text)).toContain("my first ask");
     expect(s.frames.some((f) => f.op === "error" && f.requestId === "r1")).toBe(false);
+    // …and that ask is owed: a second is held back.
+    s.send(ask(n, "my second ask", "r2"));
+    await settle(s, t, "marker two");
+    expect(messagesAbout(t, n).map((e) => e.text)).not.toContain("my second ask");
+    expect(s.frames.some((f) => f.op === "error" && f.requestId === "r2")).toBe(true);
+  });
+
+  test("a message about the note with no via is typed: two go, neither refused", async () => {
+    const { s, t } = await start();
+    await openA(s);
+    const n = await humanNote(s, t, "stuck?");
+    const plain = (text: string, rid: string) => ({
+      op: "say",
+      text,
+      withSelection: false,
+      about: { noteId: n },
+      rid,
+    });
+    s.send(plain("plain one", "r1"));
+    s.send(plain("plain two", "r2"));
+    await settle(s, t, "marker");
+    expect(messagesAbout(t, n).map((e) => e.text)).toEqual(["plain one", "plain two"]);
+    expect(s.frames.some((f) => f.op === "error")).toBe(false);
+    for (const e of messagesAbout(t, n)) expect(e.via).toBe("chat");
   });
 
   test("ask, the agent answers, ask again: two messages", async () => {
@@ -223,14 +265,16 @@ describe("one ask at a time", () => {
     expect(s.frames.some((f) => f.op === "error")).toBe(false);
   });
 
-  test("a mark without a note is no ask, and an ask about an unknown note is delivered", async () => {
+  test("an ask without a note is no ask, and an ask about an unknown note is delivered", async () => {
     const { s, t } = await start();
-    s.send({ op: "say", text: "one", withSelection: false, about: { ask: true } });
+    s.send({ op: "say", text: "one", withSelection: false, via: "ask" });
+    s.send({ op: "say", text: "one again", withSelection: false, via: "ask" });
     s.send(ask("n-gone", "two", "r1"));
     s.send(ask("n-gone", "three", "r2"));
     await settle(s, t, "marker");
     expect(t.events.filter((e) => e.type === "message").map((e) => e.text)).toEqual([
       "one",
+      "one again",
       "two",
       "three",
       "marker",

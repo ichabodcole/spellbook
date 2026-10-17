@@ -259,7 +259,7 @@ describe("the kit path, end to end through Scriptorium's launchers", () => {
     });
   });
 
-  test("the one-ask marker: a marked ask about the human's note reaches the tail once, with its noteId", async () => {
+  test("the one-ask guard: an ask (via ask) about the human's note reaches the tail once, with its noteId", async () => {
     // The human notes "line two" (offsets 5..13 of the active text).
     surface.send({ op: "note.add", doc: "a", from: 5, to: 13, body: "stuck here?" });
     const added = await waitTail((l) => l.type === "note.added" && l.body === "stuck here?");
@@ -268,7 +268,8 @@ describe("the kit path, end to end through Scriptorium's launchers", () => {
       op: "say",
       text: "see my note",
       withSelection: false,
-      about: { noteId, ask: true },
+      via: "ask",
+      about: { noteId },
       rid,
     });
     surface.send(ask("r1"));
@@ -279,8 +280,8 @@ describe("the kit path, end to end through Scriptorium's launchers", () => {
     const asks = tailLines().filter((l) => l.type === "message" && l.text === "see my note");
     expect(asks).toHaveLength(1);
     expect(asks[0]?.about).toMatchObject({ noteId });
-    // The marker is the daemon's to keep; the agent's tail never carries it.
-    expect((asks[0]?.about as Record<string, unknown>).ask).toBeUndefined();
+    // The gesture rides the tail, so the agent can tell a pressed ask from a typed message.
+    expect(asks[0]?.via).toBe("ask");
     // The second ask is refused to its sender alone, by its request id.
     const refused = await surface.waitFor(
       (f) => f.op === "error" && (f as { requestId?: unknown }).requestId === "r2",
@@ -316,6 +317,44 @@ describe("the kit path, end to end through Scriptorium's launchers", () => {
     expect(r.err).toBe("");
     expect(r.code).toBe(0);
     expect(Array.isArray(json<{ findings: unknown[] }>(r).findings)).toBe(true);
+  });
+
+  test("make-set turns a document listed on its own into a set, the same entry; a second is refused", async () => {
+    const lone = join(docs, "lone.md");
+    writeFileSync(lone, "# Lone\n");
+    expect((await cli("add", "--session", sessionId, lone)).code).toBe(0);
+    const before = (await state()).context.find((e) => e.label === "lone.md");
+    expect(before?.membership).toBe("listed");
+    const m = await cli("make-set", "--session", sessionId, lone);
+    expect(m.err).toBe("");
+    expect(m.code).toBe(0);
+    const folder = join(docs, "lone");
+    expect(json(m)).toMatchObject({ folder, path: join(folder, "lone.md"), entry: before?.id });
+    expect(existsSync(lone)).toBe(false);
+    expect((await state()).context.find((e) => e.id === before?.id)).toMatchObject({
+      membership: "mirrored",
+      root: folder,
+    });
+    await waitTail((l) => l.type === "system" && l.fact === "set.make" && l.entry === before?.id);
+    const again = await cli("make-set", "--session", sessionId, join(folder, "lone.md"));
+    expect(again.code).not.toBe(0);
+    expect(envelope(again).message).toContain("make a folder there instead");
+  });
+
+  test("add-folder makes an empty folder where the caller names it, as a new set", async () => {
+    const where = join(root, "made-here");
+    const r = await cli("add-folder", "--session", sessionId, where);
+    expect(r.err).toBe("");
+    expect(r.code).toBe(0);
+    const made = json<{ path: string; entry: string; set: boolean }>(r);
+    expect(made).toMatchObject({ path: where, set: true });
+    expect((await state()).context.find((e) => e.id === made.entry)).toMatchObject({
+      membership: "mirrored",
+      root: where,
+    });
+    const nowhere = await cli("add-folder", "--session", sessionId, join(root, "no", "such"));
+    expect(nowhere.code).not.toBe(0);
+    expect(envelope(nowhere).message).toContain("is not a folder on disk");
   });
 
   test("--version names the kit path", async () => {

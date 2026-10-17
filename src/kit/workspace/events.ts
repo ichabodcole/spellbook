@@ -130,6 +130,8 @@ export const SYSTEM_FACTS = [
   "trash",
   "doc.create",
   "folder.create",
+  "folder.add",
+  "set.make",
   "bundle.create",
   "duplicate",
   "bundle.changed",
@@ -142,6 +144,7 @@ export const SYSTEM_FACTS = [
   "image.describe",
   "workspace.set",
   "workspace.defaulted",
+  "workspace.added",
   "workspace.overlap",
   "history.undo",
   "history.redo",
@@ -152,6 +155,7 @@ export const SYSTEM_FACTS = [
   "note.removed",
   "reveal",
   "slot.migrated",
+  "manifest.migrated",
   "doctor",
 ] as const;
 
@@ -348,6 +352,10 @@ export type SystemFactPayload =
       sidecar?: string;
     }
   | { fact: "doc.create" | "folder.create" | "import" | "bundle.create"; path: string }
+  /** A new folder where the caller named it; `set` when it is a new set in the context. */
+  | { fact: "folder.add"; path: string; entry: string; set: boolean }
+  /** A document became a set: its folder, where the document is now, the entry (same id). */
+  | { fact: "set.make"; path: string; from: string; folder: string; entry: string }
   /** A copy of a document or a whole bundle, beside it; `dir` for a bundle's. */
   | { fact: "duplicate"; path: string; from: string; dir?: true }
   /**
@@ -399,6 +407,8 @@ export type SystemFactPayload =
   | { fact: "relink.kept"; doc: string; path: string; links: { line: number; raw: string }[] }
   | { fact: "workspace.set"; path: string; from: string }
   | { fact: "workspace.defaulted"; path: string }
+  /** No home workspace: a restored session's old workspace folder, which holds files, added as a set. */
+  | { fact: "workspace.added"; path: string }
   /** A session from before the overlap block: the workspace is, or is inside, the set at `set`. */
   | { fact: "workspace.overlap"; path: string; set: string }
   | { fact: "history.undo" | "history.redo" }
@@ -407,6 +417,8 @@ export type SystemFactPayload =
   | { fact: "note.removed"; doc: string; note: string }
   | { fact: "reveal"; path: string }
   | { fact: "slot.migrated"; from: number }
+  /** The app's whole-manifest migrate converted this session; `kept` is the manifest it replaced. */
+  | { fact: "manifest.migrated"; kept: string }
   | { fact: "doctor"; findings: number };
 
 /** A kit event as a reader receives it, with the log's stamp. */

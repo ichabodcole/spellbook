@@ -71,9 +71,29 @@ describe("what the Trash may not take", () => {
     const sessions = join(docs, "set", "sessions");
     mkdirSync(sessions, { recursive: true });
     // The workspace outside the set: its own imported/ folder would be inside it.
-    const s = WorkspaceSession.create(sessions, testApp, undefined, root);
-    s.addContext(docs);
+    const made = WorkspaceSession.create(sessions, testApp, undefined, root);
+    // `add` refuses a set that shows the sessions (the one set guard)...
+    expect(refusal(() => made.addContext(docs)).message).toContain(
+      "holds the sessions' own folders",
+    );
+    // ...so the set comes in the way an old manifest brings it: the trash's
+    // own refusal, and the structure backstop, still hold.
+    const file = join(made.dir, "manifest.json");
+    const m = JSON.parse(readFileSync(file, "utf8"));
+    m.context.push({
+      id: "c-old001",
+      label: "docs",
+      root: docs,
+      membership: "mirrored",
+      nodes: [],
+    });
+    writeFileSync(file, JSON.stringify(m));
+    const s = WorkspaceSession.restore(sessions, testApp, made.id);
+    expect(s.context.map((e) => e.root)).toEqual([docs]);
     expect(refusal(() => s.trashPreview(sessions)).message).toMatch(/session/);
+    expect(refusal(() => s.trashPreview(join(sessions, made.id))).message).toContain(
+      "among the sessions' own folders",
+    );
   });
 });
 

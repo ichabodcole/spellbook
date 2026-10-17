@@ -1,6 +1,6 @@
-// What a page says it points at, over a real daemon: `about.docs` keeps only
-// documents in the session's context, and an app hears which page's socket
-// closed (`VerbCall.surface`, `hooks.onSurfaceClose`).
+// Which page is which, over a real daemon: an app hears which page's socket
+// closed (`VerbCall.surface`, `hooks.onSurfaceClose`). What a page points at
+// (`about.refs`, and a subject it names) is `messageViaRefs.test.ts`.
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -42,43 +42,6 @@ beforeEach(async () => {
 afterEach(async () => {
   await daemon.stop();
   rmSync(root, { recursive: true, force: true });
-});
-
-test("about.docs keeps documents in the context, canonical, and drops an outside path and a climbing one", async () => {
-  const surface = new FakeSurface();
-  await surface.connect(daemon.port);
-  surface.send({ op: "context.add", path: world });
-  await waitUntil("context", () => surface.state.context.length === 1);
-  surface.send({
-    op: "say",
-    text: "these",
-    withSelection: false,
-    about: {
-      docs: [
-        join(world, "places", "cave.md"),
-        "/etc/passwd",
-        join(world, "places", "..", "..", "outside.md"),
-        // A `..` that stays inside the context is the same document, kept once.
-        join(world, "places", "..", "stair.md"),
-        join(world, "stair.md"),
-        "relative/stair.md",
-        42,
-      ],
-    } as never,
-  });
-  await waitUntil("the message", () => surface.state.chat.some((m) => m.text === "these"));
-  const said = surface.state.chat.find((m) => m.text === "these");
-  expect(said?.about?.docs).toEqual([join(world, "places", "cave.md"), join(world, "stair.md")]);
-  // Nothing in the context at all: no docs, and no empty list either.
-  surface.send({
-    op: "say",
-    text: "nothing",
-    withSelection: false,
-    about: { docs: ["/etc/passwd"] },
-  });
-  await waitUntil("the second", () => surface.state.chat.some((m) => m.text === "nothing"));
-  expect(surface.state.chat.find((m) => m.text === "nothing")?.about?.docs).toBeUndefined();
-  surface.close();
 });
 
 test("a page's verb calls carry its id, and the app hears when that page's socket closes", async () => {

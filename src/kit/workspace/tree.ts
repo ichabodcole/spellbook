@@ -382,7 +382,7 @@ type FolderMode = "set" | "member" | "own";
  * `later`, a bundle met in a set has its own files put off there, for the
  * scan to read once the set is read (`finishOwnContents`).
  */
-function folderWalker(cap: number, later?: PendingBundle[]) {
+function folderWalker(cap: number, later?: PendingBundle[], skip?: ScanSkip) {
   let count = 0;
   let truncated = false;
   const walk = (
@@ -417,6 +417,10 @@ function folderWalker(cap: number, later?: PendingBundle[]) {
       const rel = relDir === "" ? name : `${relDir}/${name}`;
       const here = modeOf ? modeOf(name, st.isDirectory()) : mode;
       if (here === null) continue;
+      // The app's filter (`ScanRule.skip`), on a set's own entries only: a
+      // skipped folder is not read, so everything under it goes with it, and
+      // nothing skipped counts toward the cap.
+      if (skip && here === "set" && skip(rel, st.isDirectory())) continue;
       if (count >= cap) {
         truncated = true;
         break;
@@ -468,18 +472,27 @@ function folderWalker(cap: number, later?: PendingBundle[]) {
 }
 
 /**
+ * An app's say over one path a set's scan meets: `rel` is POSIX, from the
+ * set's root; true leaves it out of the tree, and so out of everything read
+ * from the tree (search, links, the graph). A folder left out takes everything
+ * under it. Asked of a set's own files and folders, never of a bundle's insides.
+ */
+export type ScanSkip = (rel: string, isDir: boolean) => boolean;
+
+/**
  * Mirror `root` into a sorted node tree: groups first, then docs, by name.
- * Noise directories and dotfiles are skipped.
+ * Noise directories and dotfiles are skipped, and so is whatever `skip` says.
  */
 export function scanTree(
   root: string,
   cap = MIRROR_NODE_CAP,
+  skip?: ScanSkip,
 ): { nodes: ContextNode[]; truncated: boolean } {
   // Two passes: the set's documents, bundles and their member folders first,
   // then the bundles' own files (`audio/…`) from what is left, so a stage's
   // renders never push a document out of the tree.
   const later: PendingBundle[] = [];
-  const walker = folderWalker(cap, later);
+  const walker = folderWalker(cap, later, skip);
   const nodes = walker.walk(root, "", "set");
   finishOwnContents(later, cap - walker.count());
   return { nodes, truncated: walker.truncated() };
@@ -519,9 +532,15 @@ export class PathError extends Error {
  * An entry for an absolute path. A directory is `mirrored`; a document or an
  * image file is `listed`, rooted at its parent, holding only itself (a `doc` or
  * an `image` node). An SVG is refused with its reason, and a HEIC photo with the
- * way in that converts it.
+ * way in that converts it. `skipFor`: the app's filter for a set rooted where
+ * the directory is (`ScanRule.skip`), asked only when the path is a set, so its
+ * first scan is already filtered.
  */
-export function entryForPath(rawAbs: string, id: string): ContextEntry {
+export function entryForPath(
+  rawAbs: string,
+  id: string,
+  skipFor?: (root: string) => ScanSkip | undefined,
+): ContextEntry {
   // Anything inside a bundle stands for the bundle: its insides are never an
   // entry of their own (a set of its `assets/`, a listed `info.json`), as named
   // or, through a link, as it really is.
@@ -546,7 +565,7 @@ export function entryForPath(rawAbs: string, id: string): ContextEntry {
       realRoot: realOf(dirname(abs)),
     };
   if (st.isDirectory()) {
-    const { nodes, truncated } = scanTree(abs);
+    const { nodes, truncated } = scanTree(abs, MIRROR_NODE_CAP, skipFor?.(abs));
     return {
       id,
       label: basename(abs) || abs,

@@ -279,8 +279,12 @@ which Scriptorium gains with the shell.
   21k. _Mitigation:_ go leaf first, read each module for Story-specific code
   before it lands, and cut what no Spellbook spell uses.
 - **Re-basing breaks open sessions.** Users have state under `~/.scriptorium`.
-  _Mitigation:_ the app slot carries a version and a `migrate`. E71's doctor
-  finding covers sessions that already overlap.
+  _Mitigation:_ the app slot's `migrate` covers only the app's own slot, so the
+  wiki-layer cycle added a whole-manifest migrate hook and Scriptorium's
+  converter
+  ([kit-manifest-migrate-hook](../../items/kit-manifest-migrate-hook.md)), tried
+  against copies of every real session. E71's doctor finding covers sessions
+  that already overlap.
 - **Per-verb help changes the CLI's schema.** _Mitigation:_ re-run acc for every
   spell, as the call says.
 

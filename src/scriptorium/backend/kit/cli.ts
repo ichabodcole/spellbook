@@ -18,8 +18,19 @@
  * shipped CLI are the kit's; the item records the delta.
  */
 
+import { resolve } from "node:path";
+import { errorEnvelope } from "../../../kit/wire/errors";
 import { createWorkspaceCli, type WorkspaceCli } from "../../../kit/workspace/verbs";
-import { KIT_FLAG, kitSessionsRoot, scriptoriumApp } from "./app";
+import {
+  KIT_FLAG,
+  kitMigrateRefusal,
+  kitSessionsRoot,
+  MIGRATE_FLAG,
+  scriptoriumApp,
+  scriptoriumHome,
+} from "./app";
+import { scriptoriumKitCommands } from "./commands";
+import { scriptoriumWikiCommands, WIKI_OPTIONS } from "./wikiCommands";
 
 export type KitCliDeps = {
   /** The daemon launcher, absolute: `<skill>/scripts/server.ts`. */
@@ -40,7 +51,42 @@ export function scriptoriumKitCli(deps: KitCliDeps): WorkspaceCli {
       env: { ...process.env, [KIT_FLAG]: "1" },
     },
     sessionsRoot: () => kitSessionsRoot(),
+    // `open` run in `$SCRIPTORIUM_HOME`, or a folder in it (the shipped
+    // `sessions/`), adds no set that would mirror a session's own files.
+    appHome: () => scriptoriumHome(),
     version: () => ({ ...deps.version(), path: "kit" }),
+    // The shipped verbs, with the shipped words: the kit path keeps the hidden
+    // lists in its app slot (`./hide.ts`), not on the kit's entries.
+    options: WIKI_OPTIONS,
+    commands: (h) => [
+      ...scriptoriumKitCommands(h),
+      ...scriptoriumWikiCommands(h),
+      {
+        name: "hide",
+        flags: [...h.SESSION],
+        positionals: [{ name: "path", required: true }],
+        describe: "remove a document, folder or set from Scriptorium — the files stay on disk",
+        run: async (inv) => {
+          h.printJson(
+            await h.postCmd(h.sessionOf(inv), {
+              op: "scriptorium.hide",
+              path: resolve(inv.pos[0] as string),
+            }),
+          );
+        },
+      },
+      {
+        name: "unhide",
+        flags: [...h.SESSION],
+        positionals: [{ name: "entry", required: true }],
+        describe: "bring back everything hidden in a set (its entry id, from state)",
+        run: async (inv) => {
+          h.printJson(
+            await h.postCmd(h.sessionOf(inv), { op: "scriptorium.unhide", entry: inv.pos[0] }),
+          );
+        },
+      },
+    ],
     helpFooter:
       "  This is the kit path (SCRIPTORIUM_KIT=1). Its sessions live under\n  $SCRIPTORIUM_HOME/kit/sessions, apart from the shipped Scriptorium's. It has no\n  surface yet: run open with --no-open, and work through these verbs.",
   });
@@ -48,5 +94,15 @@ export function scriptoriumKitCli(deps: KitCliDeps): WorkspaceCli {
 
 /** The hand-off `../cli.ts` makes. Returns the exit code, as the shipped `run()` does. */
 export async function runKitCli(argv: string[], deps: KitCliDeps): Promise<number> {
+  // The conversion dry run on the real home is refused before any verb runs.
+  const refused = kitMigrateRefusal();
+  if (refused !== null) {
+    process.stderr.write(
+      errorEnvelope("usage", refused, {
+        hint: `unset ${MIGRATE_FLAG}, or set SCRIPTORIUM_HOME to a scratch copy of the sessions`,
+      }),
+    );
+    return 2;
+  }
   return await scriptoriumKitCli(deps).run(argv);
 }

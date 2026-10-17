@@ -39,6 +39,26 @@ export {
   type Inverse,
   planInverse,
 } from "./history";
+export {
+  type ManifestMigrateContext,
+  type ManifestMigrated,
+  type ManifestMigration,
+  type MigrateManifest,
+  PRE_MIGRATE_FILE,
+} from "./manifestMigrate";
+export {
+  KIT_REF_ROLES,
+  KIT_VIA,
+  messageVia,
+  refRole,
+  roleAdvisory,
+  viaAdvisory,
+} from "./messageParts";
+export {
+  DEFAULT_LOCATION_HINT,
+  type HomeDeclaration,
+  hasHomeWorkspace,
+} from "./noHome";
 export { type PickKind, parsePickerOutput, pickerCommand, wasCancelled } from "./picker";
 export type * from "./protocol";
 export { revealCommand } from "./reveal";
@@ -75,6 +95,8 @@ export {
   nowIso,
   type RestoreReport,
   realOr,
+  type ScanAt,
+  type ScanRule,
   SessionError,
   sideName,
   WorkspaceSession,
@@ -98,6 +120,7 @@ export {
   locate,
   MIRROR_NODE_CAP,
   PathError,
+  type ScanSkip,
   scanTree,
   toPosix,
 } from "./tree";
@@ -109,6 +132,7 @@ export {
   docArg,
   KIT_OPTIONS,
   type KitFlag,
+  openingFolder,
   parseCount,
   parseSide,
   parseTailSince,

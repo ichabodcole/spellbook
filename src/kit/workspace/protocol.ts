@@ -321,11 +321,32 @@ export type DocView = {
 
 // ── chat ──────────────────────────────────────────────────────────────────
 
-/** What a message concerns. */
+/**
+ * Something a message draws on beside its one subject: a document or an image
+ * selected in the file tree with it, or added as a reference. What it is for is
+ * its `role` (`KIT_REF_ROLES` and the app's own; absent, `"reference"`).
+ */
+export type MessageRef = {
+  /** Absolute: what the agent reads. */
+  path: string;
+  doc?: string;
+  version?: number;
+  role?: string;
+  /** Its name as the human saw it. */
+  label?: string;
+  /** A passage of it, when the gesture carried one. */
+  text?: string;
+};
+
+/**
+ * What a message concerns: ONE subject (a text selection, else the active
+ * document or image, or an app's own part such as a selected canvas card), and
+ * the `refs` it draws on besides.
+ */
 export type MessageAbout = {
   doc?: string;
   version?: number;
-  /** Absolute path of the version's file, so the agent knows what to read. */
+  /** Absolute path of the version's file (or of the image), so the agent knows what to read. */
   path?: string;
   fromLine?: number;
   toLine?: number;
@@ -333,20 +354,14 @@ export type MessageAbout = {
   text?: string;
   entryIds?: string[];
   /**
-   * Whole documents the human pointed at (absolute paths), from a view that
-   * shows documents rather than text: an app's graph of them, say. The
-   * documents themselves are what to read; there is no passage.
+   * Whole documents pointed at (absolute paths), on a message from before
+   * `refs`: no longer written. An old message that carries it reads as it did;
+   * a new one has one subject, and what else it points at is in `refs`.
    */
   docs?: string[];
   noteId?: string;
-  /**
-   * Set on the human's "Ask the agent" act for the note `noteId` names, and
-   * only there: the one-ask guard reads it (`askOutstanding` in `waiting.ts`).
-   * A message that names a note without it is a typed follow-up, always
-   * delivered. Kept on the stored message, so the guard survives a restore;
-   * never on the tail, which is unchanged.
-   */
-  ask?: true;
+  /** What the message draws on beside its subject: never the subject itself, each path once. */
+  refs?: MessageRef[];
 };
 
 export type MessageType = "message" | "info" | "result";
@@ -358,6 +373,12 @@ export type Message = {
   type: MessageType;
   text: string;
   about?: MessageAbout;
+  /**
+   * The gesture it came through (`KIT_VIA` and the app's own): the composer is
+   * `"chat"`, an app's button its own value. Absent on a message from before
+   * the field, which reads as `"chat"` (`messageVia`).
+   */
+  via?: string;
   ts: string;
 };
 
@@ -598,8 +619,12 @@ export type PublicState = {
   appTitle?: string;
   sessionId: string;
   dir: string;
-  /** The folder dropped files and new top-level documents land in. */
-  workspace: string;
+  /**
+   * The folder dropped files and new top-level documents land in. Absent for
+   * an app with no home workspace (`AppDeclaration.homeWorkspace: false`):
+   * there, a new file goes only where the caller points.
+   */
+  workspace?: string;
   mode: "dev" | "release";
   /**
    * Whether an agent is following the session: one of its tails is attached, or
@@ -720,7 +745,17 @@ export type StructureOp =
   /** A copy of a dropped file's text, written into `dir` (a set, or a folder in one) or, without one, the workspace folder. */
   | { op: "import"; name: string; text: string; dir?: string }
   /** Point the workspace at an existing folder. */
-  | { op: "workspace.set"; path: string };
+  | { op: "workspace.set"; path: string }
+  /**
+   * A document listed on its own becomes a set: a folder named for it beside
+   * it, the document moved in, the same entry (by id) now mirroring the folder.
+   */
+  | { op: "set.make"; path: string }
+  /**
+   * A new, empty folder at `path`, a full path: a folder where a set shows
+   * one, else, anywhere on disk whose parent exists, a new set in the context.
+   */
+  | { op: "folder.add"; path: string };
 
 export type StructureOpName = StructureOp["op"];
 
@@ -998,8 +1033,39 @@ export type Backlinks = {
    * under its own heading, "On the board The well". Not in `count`.
    */
   bundles: ReferenceBacklinkView[];
+  /**
+   * The app's edges that land on the document (kit-link-edges-slot), apart from
+   * `backlinks`: Scriptorium's frontmatter references. Present only when the
+   * app adds edges; cut at the same cap, `edgeCount` the whole. Not in `count`.
+   */
+  edges?: EdgeBacklinkView[];
+  edgeCount?: number;
   truncated?: true;
 };
+
+/** An app's edge (kit-link-edges-slot) as a report shows it: where it is written, and its target as written. */
+export type EdgeBacklinkView = {
+  /** The document the edge is written in, absolute. */
+  source: string;
+  /** Its file name, with its extension. */
+  name: string;
+  /** Its path from the root of its context entry. */
+  shown: string;
+  /** The edge's kind, the app's word for it: `frontmatter`. */
+  edge: string;
+  /** The target exactly as written. */
+  raw: string;
+  /** What in the document carries it, when the app says: a frontmatter key (`related`). */
+  key?: string;
+  /** The 1-based line of the source file, when the app knows it. */
+  line?: number;
+  /** Relations it asserts; empty for none. */
+  rel: string[];
+  label?: string;
+};
+
+/** An app's edge that nothing answers: `tried` is every place the resolver looked. */
+export type CheckedEdgeView = Omit<EdgeBacklinkView, "rel"> & { tried: string[] };
 
 /** A bundle that references a document: the boards a document is on, each with the cards that point at it. */
 export type ReferenceBacklinkView = {
@@ -1215,6 +1281,12 @@ export type LinkCheck = {
    * beside the documents' dangling links. Counted in `count`.
    */
   references: { count: number; links: CheckedReferenceView[] };
+  /**
+   * The app's edges that nothing answers (kit-link-edges-slot): Scriptorium's
+   * frontmatter references to a page not written. Present only when the app
+   * adds edges; `kinds` is every edge kind among them. Counted in `count`.
+   */
+  edges?: { count: number; kinds: string[]; links: CheckedEdgeView[] };
   truncated?: true;
 };
 
@@ -1305,6 +1377,12 @@ export type GraphOptions = {
    * `reference`). Default false.
    */
   bundles?: boolean;
+  /**
+   * Keep links of these edge kinds only (kit-link-edges-slot): `link` for the
+   * body links, or an app's own kind (`frontmatter`). A bundle's references
+   * stay. Default: every kind.
+   */
+  edge?: string[];
 };
 
 /** A document in the link graph. */
@@ -1344,6 +1422,8 @@ export type GraphEdgeView = {
   rel: string[];
   count: number;
   reference?: true;
+  /** An app's edges of this kind (kit-link-edges-slot), not body links: `frontmatter`. */
+  edge?: string;
 };
 
 /**
@@ -1365,6 +1445,11 @@ export type LinkGraph = {
    * label and whether it is canon (false only when every document of it is not).
    */
   kinds: { kind: string | null; label: string | null; canon: boolean; count: number }[];
+  /**
+   * Links of each edge kind before `edge` filters, most first (`link`: the
+   * body links). Present only when an app's edge is among them.
+   */
+  edgeKinds?: { kind: string; count: number }[];
   /**
    * What passed the filters, before the cut: documents, edges (folded pairs)
    * and the links they fold. With bundles shown (`bundles: true`), `bundles`
@@ -1565,6 +1650,11 @@ export type ClientOp =
    * `base`: the newest `rev` of a daemon-rewritten text this surface took for
    * the document (`version.text`), so a late edit typed over an older text is
    * rebased onto the rewrite rather than undoing it.
+   *
+   * `version` is the one the text was typed in. An edit naming a version that
+   * is no longer active (another was activated while it waited out the
+   * client's pause) is saved there, or kept as a version of its own when that
+   * one changed or went since, and the chat says which: never refused.
    */
   | { op: "edit"; doc: string; version: number; text: string; base?: number }
   | { op: "select"; selection: Selection | null }
@@ -1573,17 +1663,22 @@ export type ClientOp =
   /** End the session, from the page's End session button once the human has confirmed. */
   | { op: "close" }
   /**
-   * `about` carries what the human pointed at besides the selection (`entryIds`,
-   * `noteId`, `docs`). `about: { noteId, ask: true }` is the "Ask the agent" act
-   * for that note: sent once while the note is owed an answer, and a second is
-   * refused with an `error` that says it was not sent. Without `ask`, a message
+   * `about` carries what the human pointed at besides the selection
+   * (`entryIds`, `noteId`), the `refs` the message draws on, and, with no
+   * selection, `path`: the whole document or image that is its subject in
+   * place of the active document (an open image, a document a view points at).
+   * `via` is the gesture it came through: the composer sends `"chat"`.
+   * `via: "ask"` with `about.noteId` is the "Ask the agent" act for that note:
+   * sent once while the note is owed an answer, and a second is refused with an
+   * `error` that says it was not sent. Through any other gesture, a message
    * naming a note is a typed follow-up and is always delivered.
    */
   | {
       op: "say";
       text: string;
       withSelection: boolean;
-      about?: Pick<MessageAbout, "entryIds" | "noteId" | "docs" | "ask">;
+      via?: string;
+      about?: Pick<MessageAbout, "entryIds" | "noteId" | "path" | "refs">;
     }
   | { op: "activate"; doc: string; version: number }
   /** `activate` separates branching (move into it) from snapshotting (stay). */
@@ -1772,7 +1867,14 @@ export type ServerOp =
    * A refusal. `requestId` echoes the `id` of the client frame that caused it,
    * when that frame carried one; `choices` lists what would have been accepted.
    */
-  | { op: "error"; message: string; requestId?: string | number; choices?: string[] };
+  | {
+      op: "error";
+      message: string;
+      requestId?: string | number;
+      choices?: string[];
+      /** What to do instead, when the refusal knows (a create with no folder: the app's location hint). */
+      hint?: string;
+    };
 
 /**
  * A client frame may carry a `rid`, its request id. It is optional and should be
@@ -1793,7 +1895,7 @@ export type AgentCmd =
   | { op: "context.add"; paths: string[] }
   /** `body`, when given, is the new version's text, written in the same act; without it the version is a copy. */
   | { op: "version.new"; doc?: string; from?: number; label?: string; body?: string }
-  | { op: "say"; text: string; about?: Pick<MessageAbout, "entryIds" | "noteId"> }
+  | { op: "say"; text: string; via?: string; about?: Pick<MessageAbout, "entryIds" | "noteId"> }
   | { op: "activate"; doc?: string; version: number }
   | { op: "version.delete"; doc?: string; version: number }
   /** The agent notes a quote: it has no offsets, and counting characters would be asking it to be wrong. */
@@ -1828,10 +1930,13 @@ export type AgentCmd =
   | { op: "reveal"; path: string }
   | { op: "doctor" }
   | { op: "search"; query: string; limit?: number }
-  /** What links to `doc` (a slug, a held name, or an absolute path in the context). */
-  | { op: "backlinks"; doc?: string }
-  /** Dangling links, unsupported links and shared file names, across the session. */
-  | { op: "link.check" }
+  /**
+   * What links to `doc` (a slug, a held name, or an absolute path in the
+   * context). `edge` keeps those edge kinds only (`link`: the body links).
+   */
+  | { op: "backlinks"; doc?: string; edge?: string[] }
+  /** Dangling links, unsupported links and shared file names, across the session; `edge` as for backlinks. */
+  | { op: "link.check"; edge?: string[] }
   /** The link graph, filtered by focus, hops, relation, kind and folder. */
   | ({ op: "graph" } & GraphOptions)
   /** The world's profiles: kinds, where each came from, types with none, broken files. */
