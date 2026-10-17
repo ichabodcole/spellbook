@@ -18,7 +18,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fixtureDaemon } from "../workspace/fixtures/app";
-import { cmd, collectEvents, testWorkspace, waitUntil } from "../workspace/fixtures/harness";
+import { cmd, collectEvents, waitUntil } from "../workspace/fixtures/harness";
 import type { WorkspaceDaemon } from "../workspace/server";
 import { LATE_EDIT_MS } from "../workspace/server";
 import { seedDocs, tempRoot } from "../workspace/testing";
@@ -35,7 +35,10 @@ beforeEach(async () => {
   root = tempRoot("agent-switch");
   mkdirSync(join(root, "tmp"), { recursive: true });
   process.env.KIT_FIXTURE_HOME = join(root, "home");
-  ws = testWorkspace(root, "ws");
+  // Story Studio's testWorkspace (a8776ab, its explicit-workspace model) is not
+  // in this kit's harness: the folder it made, made here.
+  ws = join(root, "ws");
+  mkdirSync(ws, { recursive: true });
   docs = seedDocs(ws);
   client = null;
   daemon = fixtureDaemon({ tmp: join(root, "tmp"), workspace: ws });

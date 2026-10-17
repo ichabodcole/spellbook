@@ -15,7 +15,7 @@
 import type { ContextNode } from "../workspace/protocol";
 
 /** The MIME type a dragged sidebar row is carried under. */
-export const ROW_DRAG_MIME = "application/x-story-studio-rows+json";
+export const ROW_DRAG_MIME = "application/x-spellbook-rows+json";
 
 /**
  * What a row is. `set` is a whole context entry dragged from the list;
