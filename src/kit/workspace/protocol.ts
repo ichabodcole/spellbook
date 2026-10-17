@@ -1867,7 +1867,14 @@ export type ServerOp =
    * A refusal. `requestId` echoes the `id` of the client frame that caused it,
    * when that frame carried one; `choices` lists what would have been accepted.
    */
-  | { op: "error"; message: string; requestId?: string | number; choices?: string[] };
+  | {
+      op: "error";
+      message: string;
+      requestId?: string | number;
+      choices?: string[];
+      /** What to do instead, when the refusal knows (a create with no folder: the app's location hint). */
+      hint?: string;
+    };
 
 /**
  * A client frame may carry a `rid`, its request id. It is optional and should be

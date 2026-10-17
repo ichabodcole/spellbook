@@ -124,3 +124,32 @@ Deliberate choices:
   new place is made, so the session always shows where its files went.
 - **`version-new --doc <path>`** already needed a document that exists in the
   context. It never creates a file, so it needed no change.
+
+A fix round after a no-stake verification, in one commit on
+`impl/scriptorium-no-default-workspace-fix` ("no destination by default on any
+route; the opening folder never holds the sessions"):
+
+- **`/cmd` no longer resolves a path against the daemon's cwd.** The daemon's
+  cwd is the folder `open` ran in, which nobody named. So an empty or relative
+  `dir`, `into` or `path` on a structure op is refused
+  (`"" is not a full path: start it with / or ~/`), as the surface's socket
+  already refused it. `~/` still expands. This is applied for every app, not
+  only those with no home workspace. The kit's CLI resolves a relative path in
+  the agent's own directory before it posts, so no CLI verb changes. A test runs
+  `new-doc` from a folder other than the one `open` ran in, and the document
+  lands in the agent's folder.
+- **A create with no `dir`** (`doc.create`, `folder.create`, `bundle.create`) is
+  refused 400 with the app's location hint on both routes. Over the socket, it
+  used to fail with a raw Node error. The socket's `error` frame now carries a
+  `hint` whenever the refusal has one.
+- **`open` never adds a folder that holds the sessions.** It skips a folder that
+  holds the sessions root or lies inside it. It also skips the app's own home or
+  any folder inside it (`WorkspaceCliOptions.appHome`, which is
+  `$SCRIPTORIUM_HOME` for Scriptorium). All of these are compared by realpath.
+  The check lives in one place (`notAddedWhole`, `noHome.ts`).
+- **A kit session saved with a workspace keeps its files.** On restore, an app
+  with no home workspace adds the stored workspace folder as an ordinary set
+  when that folder holds files, and the chat says so once (`workspace.added`).
+  This is what the converter does with `c-workspace`. The folder is not added
+  when it is the session's own `imported/`, lies among the sessions, is empty,
+  is gone, or is already shown by a set.

@@ -104,6 +104,7 @@ import {
   VIA_MAX,
   viaAdvisory,
 } from "./messageParts";
+import { missingDir } from "./noHome";
 import { type PickKind, parsePickerOutput, pickerCommand, wasCancelled } from "./picker";
 import type {
   AgentCmd,
@@ -800,7 +801,13 @@ export function surfacePath(p: string): string {
   return resolve(t);
 }
 
-/** A structure op from the surface, with every path field through `surfacePath`. */
+/**
+ * A structure op with every path field through `surfacePath`: from the surface,
+ * and from the agent's `/cmd` too. The daemon's working directory is the folder
+ * `open` ran in, which no caller named, so an empty or relative `dir`, `into` or
+ * `path` is refused rather than resolved against it. The kit's CLI resolves a
+ * relative path in the agent's own directory before it posts.
+ */
 function anchorSurfacePaths(op: StructureOp): StructureOp {
   const out: Record<string, unknown> = { ...op };
   for (const k of ["dir", "path", "into"] as const)
@@ -1183,6 +1190,12 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     };
 
     /** A system line in the chat and, because the agent must know it too, on the log. */
+    /** A create with no folder (`dir`), from either route: a 400 with the app's hint (`missingDir`). */
+    const refuseMissingDir = (cmd: { op?: unknown; dir?: unknown }): void => {
+      const r = missingDir(app, cmd);
+      if (r) throw new SessionError(r.message, 400, undefined, r.hint);
+    };
+
     const announce = (text: string, fact: Record<string, unknown> = {}) => {
       const m = session.addMessage({ from: "system", type: "info", text });
       emit("system", { text, ts: m.ts, ...fact });
@@ -3129,6 +3142,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       const reply = (w: import("bun").ServerWebSocket<unknown>, f: ServerOp | { op: string }) =>
         replyRaw(w, f, rid);
       if (isStructureOp(msg)) {
+        refuseMissingDir(msg);
         const r = structure(anchorSurfacePaths(msg), "human");
         if (typeof r.path === "string")
           reply(ws, {
@@ -3892,7 +3906,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
 
     // --- agent commands (POST /cmd) -----------------------------------------------
     const handleAgentCmd = async (cmd: AgentCmd): Promise<Record<string, unknown>> => {
-      if (isStructureOp(cmd)) return structure(cmd, "agent");
+      if (isStructureOp(cmd)) return structure(anchorSurfacePaths(cmd), "agent");
       switch (cmd.op) {
         case "doctor": {
           const list = session.checkup();
@@ -4545,6 +4559,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
                 ...(result && typeof result === "object" ? (result as object) : {}),
               });
             }
+            refuseMissingDir(cmd);
             checkAgentCmd(cmd);
             beforeKitAct(cmd.op);
             return Response.json({ ok: true, ...(await handleAgentCmd(body as AgentCmd)) });
@@ -4596,7 +4611,15 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
             // A refusal the human caused (edit a non-active version, open a
             // vanished file) reaches them as an error frame the surface shows: a
             // chat-visible system line would be too loud for a keystroke.
-            replyRaw(ws, { op: "error", message: messageOf(e) }, rid);
+            replyRaw(
+              ws,
+              {
+                op: "error",
+                message: messageOf(e),
+                ...(e instanceof SessionError && e.hint ? { hint: e.hint } : {}),
+              },
+              rid,
+            );
           }
         },
         close(ws) {
@@ -4688,6 +4711,11 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       announce(
         `This session was saved before it had a workspace folder, so ${report.workspaceDefaulted} is the workspace now. Change it with the pencil in the sidebar or \`workspace <dir>\`.`,
         { fact: "workspace.defaulted", path: report.workspaceDefaulted },
+      );
+    if (report.workspaceAdded !== undefined)
+      announce(
+        `This session was saved with ${report.workspaceAdded} as its workspace folder. ${app.name} has no default folder now, so it is a set in the sidebar: its files are still here, and a new file goes where you point.`,
+        { fact: "workspace.added", path: report.workspaceAdded },
       );
     // A session from before the overlap block still opens, and says what to
     // change: once, not at every restore (`doctor` keeps listing it).

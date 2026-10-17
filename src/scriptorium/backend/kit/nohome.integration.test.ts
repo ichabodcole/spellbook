@@ -184,6 +184,39 @@ describe("open with no paths", () => {
   });
 });
 
+describe("open in the app's own folders", () => {
+  test("$SCRIPTORIUM_HOME, its kit/ and its sessions/ are never added as a set", async () => {
+    const home = env.SCRIPTORIUM_HOME as string;
+    for (const d of [join(home, "kit", "sessions"), join(home, "sessions")])
+      mkdirSync(d, { recursive: true });
+    for (const cwd of [
+      home,
+      join(home, "kit"),
+      join(home, "kit", "sessions"),
+      join(home, "sessions"),
+    ]) {
+      const r = await cli(cwd, "open", "--no-open");
+      expect(r.code, cwd).toBe(0);
+      const hs = json<{ session_id: string; entries?: unknown[]; note?: string }>(r);
+      opened.push(hs.session_id);
+      expect(hs.entries ?? [], cwd).toEqual([]);
+      expect(hs.note, cwd).toContain("nothing was added");
+    }
+  }, 120_000);
+});
+
+describe("a relative path is the agent's, never the daemon's", () => {
+  test("new-doc run in a folder of the set resolves there, not where open ran", async () => {
+    const r = await cli(project, "open", "--no-open");
+    const id = json<{ session_id: string }>(r).session_id;
+    opened.push(id);
+    const made = await cli(join(project, "notes"), "new-doc", "rel.md", "--session", id);
+    expect(made.code).toBe(0);
+    expect(existsSync(join(project, "notes", "rel.md"))).toBe(true);
+    expect(existsSync(join(project, "rel.md"))).toBe(false);
+  }, 60_000);
+});
+
 describe("open with paths", () => {
   test("the paths are the session: the folder it ran in is not added", async () => {
     const r = await cli(project, "open", "--no-open", join(project, "notes", "a.md"));

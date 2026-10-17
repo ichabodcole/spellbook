@@ -63,7 +63,7 @@ Deliberate choices:
 - **`add-folder` inside a set** makes a folder of that set, refused where
   `new-folder` refuses one. Outside every set it needs an existing parent, and
   it is never inside a bundle or among the sessions. The workspace is untouched;
-  removing it is the next item's job.
+  removing it is the next item's job (done in scriptorium-no-default-workspace).
 
 A fix round after a no-stake verification, in one commit on
 `impl/kit-set-promotion-fix` (the commit titled "set promotion's guards follow

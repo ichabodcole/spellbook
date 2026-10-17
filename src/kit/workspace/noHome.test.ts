@@ -263,4 +263,73 @@ describe("the folder `open` ran in, for an app with no home workspace", () => {
     symlinkSync(process.env.HOME as string, link);
     expect("skipped" in openingFolder(link, sessions)).toBe(true);
   });
+
+  test("not a folder that holds the sessions, nor the app's home or a folder in it", () => {
+    // As Scriptorium lays it out: `<home>/kit/sessions`, and the shipped `<home>/sessions`.
+    const appHome = join(root, "app-home");
+    const kitSessions = join(appHome, "kit", "sessions");
+    const shipped = join(appHome, "sessions");
+    mkdirSync(kitSessions, { recursive: true });
+    mkdirSync(shipped, { recursive: true });
+    for (const cwd of [appHome, join(appHome, "kit"), kitSessions, shipped]) {
+      const r = openingFolder(cwd, kitSessions, appHome);
+      expect("skipped" in r, cwd).toBe(true);
+    }
+    // Holding the sessions is enough, with no app home given.
+    expect("skipped" in openingFolder(join(appHome, "kit"), kitSessions)).toBe(true);
+    expect("skipped" in openingFolder(appHome, kitSessions)).toBe(true);
+    // Compared by where each really is: a link to the app's home is its home.
+    const link = join(root, "app-link");
+    symlinkSync(appHome, link);
+    expect("skipped" in openingFolder(link, kitSessions, appHome)).toBe(true);
+    expect("skipped" in openingFolder(join(link, "sessions"), kitSessions, appHome)).toBe(true);
+    // A folder beside them is an ordinary folder.
+    expect(openingFolder(opened, kitSessions, appHome)).toEqual({ path: opened });
+  });
+});
+
+describe("a restore keeps the files of a workspace the app no longer has", () => {
+  /** A session saved before the app declared no home workspace, with `folder` its workspace, restored with none. */
+  function savedWith(folder: string): WorkspaceSession {
+    const s = noHome();
+    writeFileSync(
+      join(s.dir, "manifest.json"),
+      JSON.stringify({ ...manifest(s), workspace: folder }),
+    );
+    return WorkspaceSession.restore(sessions, noHomeApp, s.id);
+  }
+  const roots = (s: WorkspaceSession) =>
+    s.context.filter((e) => e.membership === "mirrored").map((e) => e.root);
+
+  test("a folder that holds files becomes a set, said once in the report", () => {
+    writeFileSync(join(opened, "kept.md"), "# Kept\n");
+    const back = savedWith(opened);
+    expect(back.restoreReport.workspaceAdded).toBe(opened);
+    expect(roots(back)).toContain(opened);
+    expect("workspace" in manifest(back)).toBe(false);
+    // Written: the next restore finds it a set already, and says nothing.
+    const again = WorkspaceSession.restore(sessions, noHomeApp, back.id);
+    expect(again.restoreReport.workspaceAdded).toBeUndefined();
+    expect(roots(again).filter((r) => r === opened)).toHaveLength(1);
+    // And a create there goes where it is pointed.
+    expect(again.createDoc(opened, "new.md").path).toBe(join(opened, "new.md"));
+  });
+
+  test("not an empty folder, a gone one, one a set shows, or the session's own imported/", () => {
+    // Empty (dot files do not count).
+    writeFileSync(join(opened, ".DS_Store"), "");
+    expect(savedWith(opened).restoreReport.workspaceAdded).toBeUndefined();
+    // Gone.
+    expect(savedWith(join(root, "gone")).restoreReport.workspaceAdded).toBeUndefined();
+    // A set, or a folder inside one, already.
+    expect(savedWith(set).restoreReport.workspaceAdded).toBeUndefined();
+    expect(savedWith(join(set, "part")).restoreReport.workspaceAdded).toBeUndefined();
+    // The session's own imported/, holding files (the kit's old default).
+    const own = WorkspaceSession.create(sessions, testApp);
+    mkdirSync(join(own.dir, "imported"));
+    writeFileSync(join(own.dir, "imported", "d.md"), "# D\n");
+    const ownBack = WorkspaceSession.restore(sessions, noHomeApp, own.id);
+    expect(ownBack.restoreReport.workspaceAdded).toBeUndefined();
+    expect(ownBack.context).toHaveLength(0);
+  });
 });

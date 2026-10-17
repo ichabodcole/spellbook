@@ -88,8 +88,9 @@ slot at its current version, and the ask only for a human).
     and the chat line says why, when the manifest has none (the shipped app then
     used the home folder), when it is the home folder, when it is gone, or when
     a set already shows it.
-  - `workspace` becomes the session's own `imported/`, so nothing writes to a
-    folder nobody chose.
+  - The converter writes no `workspace`: the kit path has no home workspace
+    (`scriptorium-no-default-workspace`), so nothing writes to a folder nobody
+    chose. The old one is the `c-workspace` entry above.
   - `hidden` moves to `app.hidden[<entry id>]`, the key the tree-scan filter
     reads.
   - The app slot is written at the app's current version

@@ -48,6 +48,7 @@ test("the list of kit events and of system facts are what the contract names", (
       "image.describe",
       "workspace.set",
       "workspace.defaulted",
+      "workspace.added",
       "workspace.overlap",
       "history.undo",
       "history.redo",

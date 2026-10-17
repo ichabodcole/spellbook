@@ -21,7 +21,14 @@
 import { resolve } from "node:path";
 import { errorEnvelope } from "../../../kit/wire/errors";
 import { createWorkspaceCli, type WorkspaceCli } from "../../../kit/workspace/verbs";
-import { KIT_FLAG, kitMigrateRefusal, kitSessionsRoot, MIGRATE_FLAG, scriptoriumApp } from "./app";
+import {
+  KIT_FLAG,
+  kitMigrateRefusal,
+  kitSessionsRoot,
+  MIGRATE_FLAG,
+  scriptoriumApp,
+  scriptoriumHome,
+} from "./app";
 import { scriptoriumKitCommands } from "./commands";
 
 export type KitCliDeps = {
@@ -43,6 +50,9 @@ export function scriptoriumKitCli(deps: KitCliDeps): WorkspaceCli {
       env: { ...process.env, [KIT_FLAG]: "1" },
     },
     sessionsRoot: () => kitSessionsRoot(),
+    // `open` run in `$SCRIPTORIUM_HOME`, or a folder in it (the shipped
+    // `sessions/`), adds no set that would mirror a session's own files.
+    appHome: () => scriptoriumHome(),
     version: () => ({ ...deps.version(), path: "kit" }),
     // The shipped verbs, with the shipped words: the kit path keeps the hidden
     // lists in its app slot (`./hide.ts`), not on the kit's entries.

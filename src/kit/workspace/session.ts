@@ -152,7 +152,13 @@ import {
   PRE_MIGRATE_FILE,
   runManifestMigrate,
 } from "./manifestMigrate";
-import { hasHomeWorkspace, noLocation, notALocation, noWorkspaceToSet } from "./noHome";
+import {
+  hasHomeWorkspace,
+  noLocation,
+  notAddedWhole,
+  notALocation,
+  noWorkspaceToSet,
+} from "./noHome";
 import {
   checkFields,
   type FieldRule,
@@ -731,6 +737,11 @@ export type RestoreReport = {
   manifestMigrated?: ManifestMigrated;
   /** The manifest had no workspace: the folder chosen for it (the first context entry's, else the session's `imported/`). */
   workspaceDefaulted?: string;
+  /**
+   * An app with no home workspace: the folder the manifest still held as its
+   * workspace, dropped and added as a set because it holds files.
+   */
+  workspaceAdded?: string;
 };
 
 /** The legal task transitions. Everything else is a conflict. */
@@ -970,10 +981,13 @@ export class WorkspaceSession {
     // Not a set's own folder, though: the workspace may not overlap a set
     // (`overlapOf`), so a first entry that is a set gives way to `imported/`.
     // An app with no home workspace keeps none: one a manifest still holds
-    // (written before the app declared none) is dropped, never used.
+    // (written before the app declared none) is dropped, never used. Its files
+    // stay reachable: a folder that holds some becomes a set, below.
     let droppedWorkspace = false;
+    let storedWorkspace: string | undefined;
     if (!hasHomeWorkspace(app)) {
       if (m.workspace !== undefined) {
+        if (typeof m.workspace === "string" && m.workspace !== "") storedWorkspace = m.workspace;
         delete m.workspace;
         droppedWorkspace = true;
       }
@@ -993,6 +1007,10 @@ export class WorkspaceSession {
     for (const e of s.m.context) if (e.membership === "mirrored") s.rescan(e.id);
     // A manifest from before entries kept their root's realpath: taken now.
     for (const e of s.m.context) if (!e.realRoot) e.realRoot = realOr(e.root);
+    if (storedWorkspace !== undefined) {
+      const added = s.keepDroppedWorkspace(storedWorkspace);
+      if (added) report.workspaceAdded = added;
+    }
     for (const d of s.m.docs) {
       const p = s.versionPath(d, d.active);
       const text = existsSync(p) ? readFileSync(p, "utf8") : "";
@@ -1071,6 +1089,42 @@ export class WorkspaceSession {
 
   get docsDir(): string {
     return join(this.dir, "docs");
+  }
+
+  /**
+   * A restored no-home session's dropped workspace folder, added as an
+   * ordinary set when it still holds files (as the converter adds the shipped
+   * session's old workspace), so they stay reachable as a destination. Not the
+   * session's own `imported/`, a folder a set already shows, or one no set
+   * should mirror whole (`notAddedWhole`). Returns the folder when added.
+   */
+  private keepDroppedWorkspace(folder: string): string | undefined {
+    if (realOr(folder) === realOr(join(this.dir, IMPORTED_DIR))) return undefined;
+    if (notAddedWhole(folder, this.sessionsRoot) !== null) return undefined;
+    let names: string[];
+    try {
+      names = readdirSync(folder);
+    } catch {
+      return undefined; // gone, or not a folder
+    }
+    if (!names.some((n) => !n.startsWith("."))) return undefined;
+    const real = realOr(folder);
+    if (
+      this.m.context.some(
+        (e) =>
+          e.membership === "mirrored" &&
+          (real === realOr(e.root) || real.startsWith(realOr(e.root) + sep)),
+      )
+    )
+      return undefined;
+    // As `addContext` does, but unpersisted: the restore writes the manifest
+    // once, after it keeps any pre-migrate copy.
+    const id = `c-${randHex(3)}`;
+    const entry = entryForPath(resolve(folder), id, (root) => this.scanSkip(id, root));
+    if (entry.membership !== "mirrored") return undefined;
+    this.m.context.push(entry);
+    this.relink();
+    return folder;
   }
 
   /** Whether the app keeps a home workspace (`AppDeclaration.homeWorkspace`). */

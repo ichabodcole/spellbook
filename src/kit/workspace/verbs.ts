@@ -64,7 +64,7 @@ import {
   NOT_PRESENCE_HEADER,
   TAIL_IDLE_MS,
 } from "./heartbeat";
-import { type HomeDeclaration, hasHomeWorkspace, locationHint } from "./noHome";
+import { type HomeDeclaration, hasHomeWorkspace, locationHint, notAddedWhole } from "./noHome";
 import type { DiffSide } from "./protocol";
 import { DOC_EXTENSIONS, isDocName } from "./tree";
 
@@ -323,28 +323,17 @@ export function defaultWorkspace(paths: readonly string[], cwd: string): string 
  * The folder `open` ran in, for an app with no home workspace opened on no
  * paths: added to the session as an ordinary entry (`context.add`, so a set),
  * or why it is not. Not the home folder or one above it, the top of the disk,
- * or a folder among the app's own sessions: those are no place to mirror whole.
+ * a folder that holds the app's sessions or lies among them, or the app's own
+ * home (`appHome`) or a folder in it: those are no place to mirror whole
+ * (`notAddedWhole`).
  */
 export function openingFolder(
   cwd: string,
   sessionsRoot: string,
+  appHome?: string,
 ): { path: string } | { skipped: string } {
-  const real = (p: string) => {
-    try {
-      return realpathSync(p);
-    } catch {
-      return p;
-    }
-  };
-  const at = real(cwd);
-  const home = real(homeDir());
-  if (at === home) return { skipped: `${cwd} is your home folder, which is not added whole` };
-  if (at === dirname(at) || home.startsWith(at + sep))
-    return { skipped: `${cwd} holds your home folder, which is not added whole` };
-  const sessions = real(sessionsRoot);
-  if (at === sessions || at.startsWith(sessions + sep))
-    return { skipped: `${cwd} is among the sessions' own folders` };
-  return { path: cwd };
+  const why = notAddedWhole(cwd, sessionsRoot, appHome);
+  return why === null ? { path: cwd } : { skipped: why };
 }
 
 /** Keep the newest `LOG_KEEP - 1` daemon logs, so the one about to be written makes `LOG_KEEP`. */
@@ -438,6 +427,12 @@ export type WorkspaceCliOptions = {
   daemon: DaemonLauncher;
   /** Where sessions live (the same folder the daemon is given). Lazy, so `help` reads no environment. */
   sessionsRoot: () => string;
+  /**
+   * The app's own folder, which holds its sessions and settings (Scriptorium's
+   * `$SCRIPTORIUM_HOME`): never added as the folder `open` ran in. Lazy, as
+   * `sessionsRoot` is.
+   */
+  appHome?: () => string;
   /** The `version` row's payload. */
   version: () => Record<string, unknown> | Promise<Record<string, unknown>>;
   /** Appended to the help. */
@@ -620,7 +615,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
     // remove, never a hidden destination. Given paths, those are the session.
     const opening =
       noHome && pos.length === 0 && typeof flags.restore !== "string"
-        ? openingFolder(process.cwd(), root)
+        ? openingFolder(process.cwd(), root, opts.appHome?.())
         : null;
     const paths = opening && "path" in opening ? [opening.path] : contextPaths(pos);
 

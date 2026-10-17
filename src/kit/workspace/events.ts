@@ -144,6 +144,7 @@ export const SYSTEM_FACTS = [
   "image.describe",
   "workspace.set",
   "workspace.defaulted",
+  "workspace.added",
   "workspace.overlap",
   "history.undo",
   "history.redo",
@@ -406,6 +407,8 @@ export type SystemFactPayload =
   | { fact: "relink.kept"; doc: string; path: string; links: { line: number; raw: string }[] }
   | { fact: "workspace.set"; path: string; from: string }
   | { fact: "workspace.defaulted"; path: string }
+  /** No home workspace: a restored session's old workspace folder, which holds files, added as a set. */
+  | { fact: "workspace.added"; path: string }
   /** A session from before the overlap block: the workspace is, or is inside, the set at `set`. */
   | { fact: "workspace.overlap"; path: string; set: string }
   | { fact: "history.undo" | "history.redo" }
