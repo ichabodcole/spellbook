@@ -9,7 +9,8 @@
  * - a surface. `GET /` answers with a short page saying so, so a browser that
  *   `open` started shows a sentence and not a JSON 404;
  * - the rest of the wiki layer (meta, find, make-set, forget, …); `hide` and
- *   `unhide` are here (`./hide.ts`);
+ *   `unhide` are here (`./hide.ts`), and so are its frontmatter references and
+ *   wiki forms (`./links.ts`);
  * - undo for setting the workspace, which the shipped Scriptorium keeps.
  */
 
@@ -23,6 +24,7 @@ import type { AppDeclaration } from "../../../kit/workspace/session";
 import { kitMigrateOn, kitMigrateRefusal, kitSessionsRoot, scriptoriumApp } from "./app";
 import { convertShippedManifest } from "./convert";
 import { hideVerbs, liveHiddenLists } from "./hide";
+import { scriptoriumLinkSlot } from "./links";
 
 /**
  * The app in the conversion dry run (`SCRIPTORIUM_KIT_MIGRATE=1`): the kit
@@ -55,6 +57,8 @@ export function kitDaemonOptions(
     // What `hide` left out, per entry id: the shipped state carried it on each
     // entry (`hidden`); the kit's entries are the kit's, so it rides here.
     appState: (ctx) => ({ hidden: liveHiddenLists(ctx.session) }),
+    // Frontmatter references as edges, and the wiki forms as a resolver (kit-link-edges-slot).
+    links: scriptoriumLinkSlot(),
     http: (req, url) =>
       req.method === "GET" && url.pathname === "/"
         ? new Response(NO_SURFACE_PAGE, {
