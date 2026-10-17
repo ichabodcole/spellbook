@@ -116,10 +116,14 @@ Not yet in the shipped SKILL. It goes in at the cutover.
     prints the shipped plan (`from`, `into`, `name`, `folder`, `docs`, `repo`,
     `leavesRepo`), plus `to`, and `links`: the links the move would break, by
     document, each with the rewrite `move --update-links` would offer. `wiki`
-    lists wiki links it would break, which are never rewritten. `references`
-    counts board references, which are not judged. It refuses what `move`
-    refuses. `docs` counts the documents the context shows under the item;
-    shipped counted the markdown files on disk.
+    lists wiki links it would break, which are never rewritten. `edges` lists
+    the frontmatter references it would break (`kind`, `source`, `key`, `raw`),
+    which are reported, never rewritten; `checked` counts them with the links.
+    `references` counts board references, which are not judged. It refuses what
+    `move` refuses. `docs` counts the documents the context shows under the
+    item; shipped counted the markdown files on disk.
+  - `move --update-links` also prints `edges`: the frontmatter references the
+    move broke, as `move-plan` lists them. They are not rewritten.
 - **Changed:**
   - `task-remove` and `tasks-clear` are thin verbs on the kit's own removal, and
     they are built, not mapped: `task-cancel` ends a task, it does not forget

@@ -2,9 +2,8 @@
 // document whose file is gone. The plan's one promise is checked against the
 // move itself: for the same world, the links the plan says a move would break
 // are exactly the links the move then finds broken, and the plan writes
-// nothing. Scriptorium's verbs over these are in
-// `src/scriptorium/backend/kit/wiki.integration.test.ts`.
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+// nothing. An app's verbs over these are tested with the app.
+import { afterEach, beforeAll, beforeEach, describe, expect, test } from "bun:test";
 import {
   existsSync,
   mkdirSync,
@@ -14,10 +13,12 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { join, relative } from "node:path";
-import { movedWorld } from "./movePlan";
+import { basename, join, relative } from "node:path";
+import { registerBundleType } from "../lib/bundles";
+import type { LinkSlot } from "./linkEdges";
+import { movedWorld, treeOrder } from "./movePlan";
 import { SessionError, WorkspaceSession } from "./session";
-import { tempRoot, testApp } from "./testing";
+import { TEST_BUNDLE, tempRoot, testApp } from "./testing";
 
 let root: string;
 let set: string;
@@ -36,6 +37,24 @@ const session = () => {
   const s = WorkspaceSession.create(join(root, "sessions"), testApp, undefined, root);
   s.addContext(set);
   return s;
+};
+
+/**
+ * An app's slot, as a wiki app's is: a bare name lands on the FIRST document
+ * of that stem the session hands over, so which one depends on the order the
+ * documents come in; and a `related:` frontmatter edge.
+ */
+const wikiSlot: LinkSlot = {
+  resolve: ({ target, documents }) =>
+    target.includes("/")
+      ? undefined
+      : documents()
+          .filter((d) => basename(d.path).replace(/\.[^.]+$/, "") === target)
+          .map((d) => d.path),
+  edges: ({ frontmatter }) =>
+    typeof frontmatter?.related === "string"
+      ? [{ kind: "related", target: frontmatter.related, key: "related" }]
+      : [],
 };
 
 /** Every file under the root, with its bytes and mtime: what "writes nothing" is checked against. */
@@ -63,9 +82,8 @@ const refusal = (f: () => unknown): SessionError => {
   throw new Error("expected a refusal");
 };
 
-/** The plan, then the move: the plan's links must be the move's. */
-function planThenMove(path: string, into: string) {
-  const s = session();
+/** The plan, then the move: the plan's links and edges must be the move's. */
+function planThenMove(path: string, into: string, s: WorkspaceSession = session()) {
   const before = snapshot();
   const plan = s.movePlan(path, into);
   expect(snapshot()).toEqual(before);
@@ -73,8 +91,39 @@ function planThenMove(path: string, into: string) {
   expect(plan.to).toBe(moved.path);
   expect(plan.links).toEqual(moved.links ?? []);
   expect(plan.wiki).toEqual(moved.wiki ?? []);
+  expect(plan.edges).toEqual(moved.edges ?? []);
   return { plan, moved };
 }
+
+const withSlot = () => {
+  const s = session();
+  s.setLinkSlot(wikiSlot);
+  return s;
+};
+
+describe("the order a set's scan lists documents in", () => {
+  beforeAll(() => registerBundleType(TEST_BUNDLE));
+  test("subfolders before files, each by name; a bundle among the files, its main file first", () => {
+    const paths = [
+      "z.md",
+      "a.md",
+      "b/x.md",
+      "a/z/y.md",
+      "a/b.md",
+      "The well.boardbundle/board.board",
+      "The well.boardbundle/notes/n.md",
+    ];
+    expect([...paths].sort(treeOrder)).toEqual([
+      "a/z/y.md",
+      "a/b.md",
+      "b/x.md",
+      "a.md",
+      "The well.boardbundle/board.board",
+      "The well.boardbundle/notes/n.md",
+      "z.md",
+    ]);
+  });
+});
 
 describe("the world after a move", () => {
   test("forward maps the moved place and what is under it; back undoes it, and the old place is gone", () => {
@@ -216,6 +265,88 @@ describe("movePlan: the move's links, found before the move", () => {
     ]);
   });
 
+  for (const link of ["[[keeper]]", "[k](keeper)"])
+    test(`two documents of one name: the plan picks the one the move will pick (${link})`, () => {
+      for (const d of ["b", "c", "d"]) mkdirSync(at(d));
+      write("b/keeper.md", "# B's keeper\n");
+      write("c/keeper.md", "# C's keeper\n");
+      write("index.md", `# Index\n\n${link}\n`);
+      const { plan } = planThenMove(at("b/keeper.md"), at("d"), withSlot());
+      // Before the move the name lands on b's keeper, the first in the tree;
+      // after it, c's comes before d's, so the name lands on c's: broken.
+      const broke = [...plan.wiki.map((w) => w.line), ...plan.links.map((d) => d.fixes[0]?.line)];
+      expect(broke).toEqual([3]);
+    });
+
+  test("a folder moved: a file the context does not show is looked for where it will be", () => {
+    writeFileSync(at("places/data.csv"), "a,b\n");
+    write("places/glade.md", "# Glade\n");
+    write("index.md", "[data](./places/data.csv)\n");
+    mkdirSync(at("lore"));
+    const { plan } = planThenMove(at("places"), at("lore"));
+    expect(plan.links.flatMap((d) => d.fixes.map((f) => f.to))).toEqual(["./lore/places/data.csv"]);
+  });
+
+  test("a bare name to a document moved up beside it is still found there, not where it was", () => {
+    write("places/glade.md", "# Glade\n");
+    write("places/other.md", "[g](glade.md)\n");
+    const { plan } = planThenMove(at("places/glade.md"), set);
+    expect(plan.links).toEqual([]);
+  });
+
+  test("a folder moved into the workspace becomes a set: links from its root are read from there", () => {
+    // A workspace with a document of its own listed, whose root is the
+    // workspace: the moved folder is no part of it, but a set of its own.
+    writeFileSync(join(root, "solo.md"), "# Solo\n");
+    write("places/glade.md", "# Glade\n");
+    write("people/keeper.md", "[Glade](/places/glade.md) and [me](/keeper.md)\n");
+    const s = session();
+    s.addContext(join(root, "solo.md"));
+    const { plan, moved } = planThenMove(at("people"), root, s);
+    expect(s.context.some((e) => e.root === moved.path && e.membership === "mirrored")).toBe(true);
+    expect(plan.links.flatMap((d) => d.fixes.map((f) => [f.from, f.to]))).toEqual([
+      ["/places/glade.md", "../world/places/glade.md"],
+    ]);
+  });
+
+  test("an app edge the move breaks is reported, counted and never rewritten", () => {
+    write("a.md", "---\nrelated: ./b.md\n---\n# A\n");
+    write("b.md", "# B\n");
+    mkdirSync(at("sub"));
+    const s = withSlot();
+    const before = s.linkCheck().edges?.count;
+    const { plan, moved } = planThenMove(at("b.md"), at("sub"), s);
+    expect(plan.edges).toEqual([
+      { kind: "related", source: at("a.md"), key: "related", raw: "./b.md" },
+    ]);
+    expect(moved.edges).toEqual(plan.edges);
+    expect(plan.links).toEqual([]);
+    expect(plan.checked).toBe(1);
+    expect(readFileSync(at("a.md"), "utf8")).toContain("related: ./b.md");
+    expect(s.linkCheck().edges?.count).toBe((before ?? 0) + 1);
+  });
+
+  test("an app edge written in the moved document, and one that still lands, each as the move finds it", () => {
+    write("x.md", "# X\n");
+    write("places/glade.md", "---\nrelated: ../x.md\n---\n# Glade\n");
+    write("index.md", "---\nrelated: /places/glade.md\n---\n# Index\n");
+    mkdirSync(at("places/deep"));
+    const { plan } = planThenMove(at("places/glade.md"), at("places/deep"), withSlot());
+    expect(plan.edges.map((e) => [e.source, e.raw])).toEqual([
+      [at("places/deep/glade.md"), "../x.md"],
+      [at("index.md"), "/places/glade.md"],
+    ]);
+    expect(plan.checked).toBe(2);
+  });
+
+  test("an app with no edges is told none, and the move's answer has no edges at all", () => {
+    write("b.md", "# B\n");
+    mkdirSync(at("sub"));
+    const s = session();
+    expect(s.movePlan(at("b.md"), at("sub")).edges).toEqual([]);
+    expect("edges" in s.move(at("b.md"), at("sub"), { links: true })).toBe(false);
+  });
+
   test("it refuses exactly what a move refuses, with the same status", () => {
     write("places/glade.md", "# Glade\n");
     write("people/glade.md", "# Another\n");
@@ -280,6 +411,16 @@ describe("forgetDoc: the answer to a document whose file is gone", () => {
     const open = s.openDocSlug;
     expect(open).not.toBe(slug);
     expect(s.view().docs.some((d) => d.slug === open)).toBe(true);
+  });
+
+  test("the forgetting is kept: a session restored from disk no longer has the document", () => {
+    write("solo.md", "# Solo\n");
+    const s = session();
+    const { slug } = s.openPath(at("solo.md"));
+    rmSync(at("solo.md"));
+    s.forgetDoc(slug);
+    const back = WorkspaceSession.restore(join(root, "sessions"), testApp, s.id);
+    expect(back.view().docs.map((d) => d.slug)).not.toContain(slug);
   });
 
   test("an unknown document is a refusal", () => {

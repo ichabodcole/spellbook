@@ -399,7 +399,21 @@ export const wikiVerbs: Record<string, VerbHandler> = {
   },
 
   "scriptorium.task.remove": (ctx, args) => {
-    const t = ctx.session.removeTask(str(args, "id", "task-remove"));
+    const id = str(args, "id", "task-remove");
+    let t: ReturnType<WorkspaceSession["removeTask"]>;
+    try {
+      t = ctx.session.removeTask(id);
+    } catch (e) {
+      // An unfinished task: the refusal names the two verbs that answer it.
+      if (e instanceof SessionError && e.status === 409 && e.hint === undefined)
+        throw new SessionError(
+          e.message,
+          409,
+          e.choices,
+          `task-cancel ${id}, then task-remove ${id}`,
+        );
+      throw e;
+    }
     ctx.broadcast();
     return { task: t.id, removed: true };
   },

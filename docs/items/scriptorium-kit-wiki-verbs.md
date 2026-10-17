@@ -43,7 +43,9 @@ panes.
 ## Done and verified
 
 Two commits on `impl/scriptorium-kit-wiki-verbs`: `b15842d1` (the kit) and
-`c21121a7` (Scriptorium on it).
+`c21121a7` (Scriptorium on it). A fix round on top, "a move plan is the move:
+ambiguous names, new sets, and the app edges it breaks", closes what the
+verifier found (see "The fix round" below).
 
 **The kit** gains two methods on `WorkspaceSession`:
 
@@ -82,6 +84,30 @@ Deliberate choices:
 - **What differs in words:** the kit's "no document is open: name one with
   --doc" (shipped has a dash), and `info`'s pointer fields. `meta` and `find`
   cover the kit's documents, `.json` included and `.mdx` not.
+
+**The fix round.** The plan now holds to "the plan is the move" in three places
+it did not:
+
+- **A name two documents share.** An app's resolver takes the first document of
+  a name, so the order matters. The plan hands it the documents in the order the
+  session will have them after the move (`treeOrder` in `movePlan.ts`: each set
+  as its scan lists it), not the old order with the paths changed.
+- **A move into the workspace.** The moved folder becomes a set of its own. The
+  plan models that entry (`planWorld` in `session.ts`, as `adoptNew` makes it),
+  so a `/`-link in it is read from its new root.
+- **App edges.** The plan lists the app edges the move would break (for
+  Scriptorium, frontmatter references) under `edges`, with `kind`, `source`,
+  `key` and `raw`, and counts them in `checked`. `move --update-links` reports
+  them the same way. Nothing rewrites frontmatter: a move only says what it
+  broke, and `link-check` lists the same references afterwards. Should a move
+  offer to rewrite them? That is a later call.
+
+`task-remove` on an unfinished task now has a `hint`:
+`task-cancel <id>, then task-remove <id>`. The layering guard admits the move
+plan by name. New tests cover reading the moved world on disk and in the
+context, a `forget` that survives a restore, and `docMeta`'s 500 cap, its flag
+and its de-duplication (`wiki.test.ts`). The verifier's fuzzer finds no case
+where the plan and the move differ, over 250 worlds for each of five seeds.
 
 The SKILL delta in
 [scriptorium-on-kit-daemon](./scriptorium-on-kit-daemon.md#skill-delta-for-the-kit-path)

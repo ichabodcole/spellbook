@@ -152,7 +152,7 @@ import {
   PRE_MIGRATE_FILE,
   runManifestMigrate,
 } from "./manifestMigrate";
-import { type MovedWorld, type MovePlan, movedWorld } from "./movePlan";
+import { type EdgeBreak, type MovedWorld, type MovePlan, movedWorld, treeOrder } from "./movePlan";
 import {
   hasHomeWorkspace,
   noLocation,
@@ -323,6 +323,29 @@ type LinkPin = {
   embed?: true;
   /** A reference's holder, by its id in the file. */
   id?: string;
+};
+
+/** An app edge pinned before a move (`pinEdges`): where it is written, as written, and where it landed. */
+type EdgePin = {
+  kind: string;
+  src: string;
+  raw: string;
+  target: string;
+  key?: string;
+  line?: number;
+};
+
+/** A context entry as it would be after a move (`planWorld`), with a listed entry's one item. */
+type EntryAfter = { e: ContextEntry; file: string | null };
+
+/**
+ * The world after a move that has not happened (`movePlan`): the paths, the
+ * context's entries as they would be, and the documents an app's resolver
+ * would be handed then, once built.
+ */
+type PlanWorld = MovedWorld & {
+  entries: readonly EntryAfter[];
+  docs?: readonly ResolvableDocument[];
 };
 
 type DocFacts = {
@@ -4295,6 +4318,8 @@ export class WorkspaceSession {
     links?: DocLinkFixes[];
     /** With `opts.links`: the wiki links it broke, which are never rewritten. */
     wiki?: WikiBreak[];
+    /** With `opts.links`, for an app with edges: the app edges it broke, which are never rewritten. */
+    edges?: EdgeBreak[];
   } {
     // A recorded move whose item has gone from disk can never be replayed.
     if (opts.back && !existsSync(resolve(rawPath)))
@@ -4317,6 +4342,11 @@ export class WorkspaceSession {
     if (sidecarTo) this.refuseExisting(sidecarTo);
     const sidecarShown = sidecar !== null && this.itemAt(sidecar);
     const pins = opts.links ? this.pinLinks(sidecar ? [item.abs, sidecar] : [item.abs]) : null;
+    // The app's edges it breaks are said as the plan says them, never rewritten.
+    const edgePins =
+      opts.links && this.appEdges
+        ? this.pinEdges(sidecar ? [item.abs, sidecar] : [item.abs])
+        : null;
     this.renameOrDie(item.abs, to);
     if (sidecar && sidecarTo) this.carrySidecar(item.abs, to, sidecar, sidecarTo);
     this.followMove(item.abs, to);
@@ -4324,21 +4354,25 @@ export class WorkspaceSession {
     if (!this.itemAt(to)) this.adoptNew(to);
     if (sidecarTo && sidecarShown && !this.itemAt(sidecarTo)) this.adoptNew(sidecarTo);
     this.persist();
-    const links = pins ? this.planRelink(pins, movedPairs(item.abs, to, sidecar, sidecarTo)) : null;
+    const pairs = movedPairs(item.abs, to, sidecar, sidecarTo);
+    const links = pins ? this.planRelink(pins, pairs) : null;
+    const edges = edgePins ? this.brokenEdges(edgePins, pairs) : null;
     return {
       path: to,
       from: item.abs,
       ...(sidecarTo ? { sidecar: sidecarTo } : {}),
       ...(links ? { links: links.fixes, wiki: links.wiki } : {}),
+      ...(edges ? { edges } : {}),
     };
   }
 
   /**
    * What `move` would do, without doing it (kit-move-plan): the item, where it
    * would land, how many documents go with it, and the links it would break,
-   * each with the rewrite `move --update-links` would offer (`./movePlan.ts`).
-   * Refuses exactly what `move` refuses, so a move confirmed from the plan is
-   * admitted. It writes nothing: no file, no manifest.
+   * each with the rewrite `move --update-links` would offer (`./movePlan.ts`),
+   * and the app edges it would break. Refuses exactly what `move` refuses, so a
+   * move confirmed from the plan is admitted. It writes nothing: no file, no
+   * manifest.
    */
   movePlan(rawPath: string, rawInto: string): MovePlan {
     const item = this.itemOrDie(rawPath);
@@ -4354,8 +4388,14 @@ export class WorkspaceSession {
     const sidecarTo = sidecar ? sidecarOf(to) : null;
     if (sidecarTo) this.refuseExisting(sidecarTo);
     const pairs = movedPairs(item.abs, to, sidecar, sidecarTo);
-    const pins = this.pinLinks(sidecar ? [item.abs, sidecar] : [item.abs]);
-    const plan = this.planRelink(pins, pairs, movedWorld(pairs));
+    const moved = sidecar ? [item.abs, sidecar] : [item.abs];
+    const pins = this.pinLinks(moved);
+    const edgePins = this.pinEdges(moved);
+    // As `move` adopts them: the item where it lands, and an image's
+    // description the tree shows, each given an entry when nothing shows it.
+    const adopted = [to, ...(sidecar && sidecarTo && this.itemAt(sidecar) ? [sidecarTo] : [])];
+    const world = this.planWorld(movedWorld(pairs), adopted);
+    const plan = this.planRelink(pins, pairs, world);
     const docs = item.dir
       ? [...this.contextIndex().entryOf.keys()].filter((p) => p.startsWith(item.abs + sep)).length
       : 1;
@@ -4369,42 +4409,176 @@ export class WorkspaceSession {
       ...(sidecarTo ? { sidecar: sidecarTo } : {}),
       links: plan.fixes,
       wiki: plan.wiki,
+      edges: this.brokenEdges(edgePins, pairs, world),
       references: pins.filter((p) => p.kind === "reference").length,
-      checked: pins.length,
+      checked: pins.length + edgePins.length,
     };
   }
 
   /**
-   * The context entry a path is in after a move that has not happened, with
-   * its root where it would be, as `entryFinder` would answer once the move
-   * is made (`followMove` keeps the context): a path the move leaves where it
-   * is keeps its entry; a moved one is in the first entry, in context order,
-   * that would list it (a listed entry's own file, or under a set's root),
-   * else under whose root it lies. An entry the move takes into a set that
-   * covers it is dropped, as `followMove` drops it.
+   * The context as it would be after a move that has not happened, entry by
+   * entry in context order, as `followMove` and then `adoptNew` would leave
+   * it: each entry with its root where it would be (a listed entry's one item
+   * too), less an entry the move takes into a set that covers it, and then an
+   * entry for each of `adopted` that nothing would show: a set rooted at a
+   * folder, a listed item for a file or a bundle, as `entryForPath` makes them.
    */
-  private entryAfter(
-    path: string,
-    world: MovedWorld,
-    entryOf: (path: string) => ContextEntry | undefined,
-  ): ContextEntry | undefined {
-    if (world.back(path) === path) {
-      const e = entryOf(path);
-      return e && { ...e, root: world.forward(e.root) };
-    }
-    const after: { e: ContextEntry; file: string | null }[] = [];
+  private planWorld(world: MovedWorld, adopted: readonly string[]): PlanWorld {
+    const entries: EntryAfter[] = [];
     for (const e of this.m.context) {
       const only = e.membership === "listed" ? listedFile(e) : null;
       if (e.membership === "listed" && !only) continue;
       const was = only ? only.abs : e.root;
       const now = world.forward(was);
       if (now !== was && this.coveringEntry(now, e.id)) continue;
-      after.push({ e: { ...e, root: only ? dirname(now) : now }, file: only ? now : null });
+      entries.push({ e: { ...e, root: only ? dirname(now) : now }, file: only ? now : null });
     }
-    const lists = after.find(({ e, file }) =>
-      file !== null ? file === path : path.startsWith(e.root + sep),
+    for (const p of adopted) {
+      const shown = entries.some(({ e, file }) =>
+        file !== null
+          ? p === file || p.startsWith(file + sep)
+          : e.membership === "mirrored" && (p === e.root || p.startsWith(e.root + sep)),
+      );
+      if (shown) continue;
+      const at = world.back(p);
+      let dir = false;
+      try {
+        dir = at !== null && statSync(at).isDirectory();
+      } catch {
+        continue;
+      }
+      const set = dir && bundleTypeOf(p) === null;
+      const e: ContextEntry = {
+        id: `c-plan-${entries.length}`,
+        label: basename(p),
+        root: set ? p : dirname(p),
+        membership: set ? "mirrored" : "listed",
+        nodes: [],
+        realRoot: set ? p : dirname(p),
+      };
+      entries.push({ e, file: set ? null : p });
+    }
+    return { ...world, entries };
+  }
+
+  /**
+   * The first entry of the world after a move that lists `path` (its listed
+   * item, or under a set's root), as the context index would answer once the
+   * move is made; -1 when none does.
+   */
+  private listedAfter(path: string, world: PlanWorld): number {
+    return world.entries.findIndex(({ e, file }) =>
+      file !== null ? path === file || path.startsWith(file + sep) : path.startsWith(e.root + sep),
     );
-    return (lists ?? after.find(({ e }) => path.startsWith(e.root + sep)))?.e;
+  }
+
+  /**
+   * The context entry a path is in after a move that has not happened, with
+   * its root where it would be, as `entryFinder` would answer once the move
+   * is made: a path the move leaves where it is keeps its entry; a moved one
+   * is in the first entry that would list it, else under whose root it lies
+   * (`planWorld` holds the entries, the one `adoptNew` would make among them).
+   */
+  private entryAfter(
+    path: string,
+    world: PlanWorld,
+    entryOf: (path: string) => ContextEntry | undefined,
+  ): ContextEntry | undefined {
+    if (world.back(path) === path) {
+      const e = entryOf(path);
+      return e && { ...e, root: world.forward(e.root) };
+    }
+    const at = this.listedAfter(path, world);
+    if (at >= 0) return world.entries[at]?.e;
+    return world.entries.find(({ e }) => path.startsWith(e.root + sep))?.e;
+  }
+
+  /**
+   * The documents an app's resolver is handed in the world after a move, in
+   * the order the session will have them then (`candidates`): each entry's
+   * documents in context order, each set's as its scan lists them
+   * (`treeOrder`), then the documents no entry lists, as they were. An app's
+   * resolver that takes the first match of a name (a wiki link) then matches
+   * what it will match after the move. Built once per plan.
+   */
+  private docsAfter(index: ContextIndex, world: PlanWorld): readonly ResolvableDocument[] {
+    if (world.docs) return world.docs;
+    const keyed = this.resolvableDocs(index).map((d, i) => {
+      const path = world.forward(d.path);
+      const at = this.listedAfter(path, world);
+      return { d: { ...d, path }, i, at: at < 0 ? Number.POSITIVE_INFINITY : at };
+    });
+    keyed.sort((a, b) => {
+      if (a.at !== b.at) return a.at - b.at;
+      const e = world.entries[a.at]?.e;
+      if (!e) return a.i - b.i;
+      return treeOrder(relative(e.root, a.d.path), relative(e.root, b.d.path)) || a.i - b.i;
+    });
+    world.docs = keyed.map((k) => k.d);
+    return world.docs;
+  }
+
+  /**
+   * Every app edge (the link slot's `edges`) that a move of `moved` could
+   * break: one that lands on the moved thing (or inside it), or is written in
+   * a document inside it, with where it lands now. None for an app without
+   * edges.
+   */
+  private pinEdges(moved: readonly string[]): EdgePin[] {
+    if (!this.appEdges) return [];
+    const under = (p: string) => moved.some((m) => p === m || p.startsWith(m + sep));
+    const index = this.contextIndex();
+    const entryOf = this.entryFinder(index);
+    const read = new Set<string>();
+    const pins: EdgePin[] = [];
+    for (const c of this.markdownCandidates()) {
+      const inside = under(c.path);
+      for (const e of this.readOf(c, read)?.edges ?? []) {
+        // Resolved as the link check resolves an edge.
+        const r = this.resolveFrom(e.target, c.path, entryOf(c.path), "document", index);
+        if (r.state === "missing" || (!inside && !under(r.path))) continue;
+        pins.push({
+          kind: e.kind,
+          src: c.path,
+          raw: e.target,
+          target: r.path,
+          ...(e.key !== undefined ? { key: e.key } : {}),
+          ...(e.line !== undefined ? { line: e.line } : {}),
+        });
+      }
+    }
+    return pins;
+  }
+
+  /**
+   * The pinned app edges the move broke (or, with `world`, would break): each
+   * that no longer lands where its target went. Reported, never rewritten: an
+   * edge is the app's text, written in the app's form.
+   */
+  private brokenEdges(
+    pins: readonly EdgePin[],
+    pairs: readonly (readonly [string, string])[],
+    world?: PlanWorld,
+  ): EdgeBreak[] {
+    if (pins.length === 0) return [];
+    const map = movedWorld(pairs).forward;
+    const index = this.contextIndex();
+    const entryOf = this.entryFinder(index);
+    const out: EdgeBreak[] = [];
+    for (const pin of pins) {
+      const src = map(pin.src);
+      const entry = world ? this.entryAfter(src, world, entryOf) : entryOf(src);
+      const r = this.resolveFrom(pin.raw, src, entry, "document", index, "markdown", world);
+      if (r.state !== "missing" && r.path === map(pin.target)) continue;
+      out.push({
+        kind: pin.kind,
+        source: src,
+        ...(pin.key !== undefined ? { key: pin.key } : {}),
+        ...(pin.line !== undefined ? { line: pin.line } : {}),
+        raw: pin.raw,
+      });
+    }
+    return out;
   }
 
   rename(
@@ -4660,7 +4834,7 @@ export class WorkspaceSession {
      * resolved in this world after it. A bundle's references are skipped
      * here: the caller counts them.
      */
-    world?: MovedWorld,
+    world?: PlanWorld,
   ): { fixes: DocLinkFixes[]; wiki: WikiBreak[] } {
     const wiki: WikiBreak[] = [];
     if (pins.length === 0) return { fixes: [], wiki };
@@ -6009,7 +6183,7 @@ export class WorkspaceSession {
      * `src`, `entry` and every path asked about are that world's, and each
      * is read on disk where it is now.
      */
-    world?: MovedWorld,
+    world?: PlanWorld,
   ): Resolution {
     const root = entry?.root ?? (src ? dirname(src) : this.workspace);
     const is = (p: string, what: "file" | "dir") => {
@@ -6047,12 +6221,7 @@ export class WorkspaceSession {
                     root,
                     kind: k,
                     documents: () =>
-                      world
-                        ? this.resolvableDocs(index).map((d) => ({
-                            ...d,
-                            path: world.forward(d.path),
-                          }))
-                        : this.resolvableDocs(index),
+                      world ? this.docsAfter(index, world) : this.resolvableDocs(index),
                   });
                 } catch {
                   // An app resolver that throws answers nothing: the link is missing.

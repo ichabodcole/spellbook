@@ -439,6 +439,34 @@ describe("move-plan: what a move would do, before it does it (E26)", () => {
     expect((await run("move", join(set, "glade.md"), join(set, "part"))).code).toBe(0);
   });
 
+  test("a frontmatter reference the move would break is in the plan's edges, and in the move's answer", async () => {
+    writeFileSync(join(set, "fm-a.md"), "---\ntype: note\nrelated: ./fm-b.md\n---\n# FM A\n");
+    writeFileSync(join(set, "fm-b.md"), "# FM B\n");
+    await until(
+      async () => (await run("meta", join(set, "fm-b.md"))).code === 0,
+      "fm-b.md to be in the tree",
+    );
+    try {
+      const plan = json<{ edges: unknown[]; checked: number }>(
+        await run("move-plan", join(set, "fm-b.md"), join(set, "lore")),
+      );
+      expect(plan.edges).toEqual([
+        { kind: "frontmatter", source: join(set, "fm-a.md"), key: "related", raw: "./fm-b.md" },
+      ]);
+      expect(plan.checked).toBe(1);
+      const moved = json<{ edges?: unknown[] }>(
+        await run("move", "--update-links", join(set, "fm-b.md"), join(set, "lore")),
+      );
+      expect(moved.edges).toEqual(plan.edges);
+      // Reported, never rewritten.
+      expect(readFileSync(join(set, "fm-a.md"), "utf8")).toContain("related: ./fm-b.md");
+    } finally {
+      rmSync(join(set, "fm-a.md"), { force: true });
+      rmSync(join(set, "fm-b.md"), { force: true });
+      rmSync(join(set, "lore", "fm-b.md"), { force: true });
+    }
+  });
+
   test("a move out of a git working tree says so, and one inside it does not", async () => {
     mkdirSync(join(set, ".git"));
     try {
@@ -507,6 +535,7 @@ describe("the remove verbs, and info", () => {
     const open = await run("task-remove", t);
     expect(open.code).toBe(6);
     expect(open.err).toContain("cancel it before removing it");
+    expect(open.err).toContain(`task-cancel ${t}, then task-remove ${t}`);
     expect((await run("task-cancel", t)).code).toBe(0);
     expect(json(await run("task-remove", t))).toMatchObject({ task: t, removed: true });
     expect((await state()).tasks.map((x) => x.id)).not.toContain(t);

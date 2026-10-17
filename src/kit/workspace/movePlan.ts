@@ -14,6 +14,7 @@
  */
 
 import { sep } from "node:path";
+import { type BundleType, bundleTypeOf } from "../lib/bundles";
 import type { DocLinkFixes, WikiBreak } from "./protocol";
 
 /** One move's pairs, `[from, to]`: the item, and an image's description beside it. */
@@ -45,8 +46,8 @@ export function movedWorld(pairs: MovedPairs): MovedWorld {
 
 /**
  * The plan: what moves, and what it breaks. Read before a move is confirmed
- * (Scriptorium's confirm dialog, cycle 3); a confirmed move is then admitted,
- * because the plan refuses exactly what the move refuses.
+ * (an app's confirm dialog); a confirmed move is then admitted, because the
+ * plan refuses exactly what the move refuses.
  */
 export type MovePlan = {
   /** The item, as the context names it. */
@@ -72,11 +73,75 @@ export type MovePlan = {
   /** The wiki links the move would break: they name a page, and are never rewritten. */
   wiki: WikiBreak[];
   /**
+   * The app's edges (its link slot's `edges`, such as frontmatter references)
+   * the move would break: reported, never rewritten. Empty for an app with no
+   * edges.
+   */
+  edges: EdgeBreak[];
+  /**
    * A bundle's references (a board's cards) that land on the moved thing or
    * are written inside it: counted, not judged. Whether each still lands is
    * read after the move (`move --update-links`, or the link check).
    */
   references: number;
-  /** How many links in all land on the moved thing or are written inside it. */
+  /** How many links and app edges in all land on the moved thing or are written inside it. */
   checked: number;
 };
+
+/**
+ * An app edge a move breaks: it landed on the moved thing (or is written
+ * inside it), and after the move it lands nowhere, or elsewhere. `source` is
+ * the document it is in, after the move; `key` says where in it, as the app
+ * named it (a frontmatter key, `related[0]`).
+ */
+export type EdgeBreak = {
+  kind: string;
+  source: string;
+  key?: string;
+  line?: number;
+  /** The target as written. */
+  raw: string;
+};
+
+/**
+ * The order a set's scan lists two documents in, by their paths from the
+ * entry's root (`tree.ts`): depth-first, a folder's subfolders before its
+ * files, each by name; a bundle is listed among the files, its main file
+ * first and then its contents, folders first. What puts the documents of the
+ * world after a move in the order the session will have them, which is the
+ * order an app's resolver meets them in.
+ */
+export function treeOrder(a: string, b: string): number {
+  const x = a.split(sep);
+  const y = b.split(sep);
+  let bundle: BundleType | null = null;
+  let bundleAt = -1;
+  const n = Math.min(x.length, y.length);
+  for (let i = 0; i < n; i++) {
+    const xs = x[i] as string;
+    const ys = y[i] as string;
+    const xLeaf = i === x.length - 1;
+    const yLeaf = i === y.length - 1;
+    if (xs === ys && !xLeaf && !yLeaf) {
+      if (!bundle) {
+        const t = bundleTypeOf(xs);
+        if (t) {
+          bundle = t;
+          bundleAt = i;
+        }
+      }
+      continue;
+    }
+    if (bundle && i === bundleAt + 1) {
+      const xMain = xLeaf && xs === bundle.main;
+      const yMain = yLeaf && ys === bundle.main;
+      if (xMain !== yMain) return xMain ? -1 : 1;
+    }
+    // A folder is a group, unless it is a bundle met in a set: one item, among the files.
+    const xGroup = !xLeaf && (bundle !== null || bundleTypeOf(xs) === null);
+    const yGroup = !yLeaf && (bundle !== null || bundleTypeOf(ys) === null);
+    if (xGroup !== yGroup) return xGroup ? -1 : 1;
+    if (xs !== ys) return xs.localeCompare(ys);
+  }
+  return x.length - y.length;
+}

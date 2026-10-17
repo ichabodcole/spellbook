@@ -1,6 +1,7 @@
 // What stayed behind. The wiki layer of the editor this was ported from (links,
 // frontmatter, the map, move plans, the workspace and hide model) is
-// absent, not dormant: a file or an export that names it fails here.
+// absent, not dormant: a file or an export that names it fails here, unless
+// it was admitted by name below.
 //
 // Two pieces of that layer were admitted, each by name and each kept and tested
 // below, reaching the world through the daemon, not the barrel:
@@ -15,7 +16,11 @@
 //   `link.check` and the `link-check` verb), then the graph (kit-link-graph:
 //   `linkGraph`, the documents and typed links as data, through the daemon's
 //   `link.graph` and the `graph` verb). Drawing it, the map, is an app's and
-//   stays excluded, as do move plans.
+//   stays excluded.
+// - move plans (the kit-move-plan item, with scriptorium-kit-wiki-verbs): what
+//   a move would do before it does it, the links and app edges it would break,
+//   in `movePlan.ts` (the world after a move, and the plan's shape) and the
+//   session's `movePlan`, which an app's verb calls. Not in the barrel.
 // - profiles (the kit-document-profiles item): a world's
 //   `_meta/profiles/<kind>.json` files, the nearest per kind, and the warnings
 //   a document's frontmatter gets against its kind, through the daemon and the
@@ -34,18 +39,28 @@ import { fileURLToPath } from "node:url";
 import { IMAGE_EXTENSIONS } from "../lib/docFormat.ts";
 import * as workspace from "./index";
 import * as links from "./links";
+import * as movePlan from "./movePlan";
 import * as profiles from "./profiles";
 import * as relations from "./relations";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
+/** The move plan's own files: admitted by name, as links and search were. */
+const ADMITTED_MOVE_PLAN_FILES = ["movePlan.test.ts", "movePlan.ts"];
+
 test("the modules the resolution leaves out are not in the folder", () => {
   const files = readdirSync(here);
-  for (const gone of ["frontmatter", "map", "graph", "move-plan", "workspace"])
+  // Read as one word whatever the spelling: `move-plan`, `move_plan` and
+  // `movePlan` all name the move plan.
+  const word = (f: string) => f.toLowerCase().replace(/[-_]/g, "");
+  for (const gone of ["frontmatter", "map", "graph", "moveplan", "workspace"])
     expect(
-      files.filter((f) => f.startsWith(`${gone}.`)),
+      files.filter((f) => word(f).startsWith(`${gone}.`) && !ADMITTED_MOVE_PLAN_FILES.includes(f)),
       gone,
     ).toEqual([]);
+  expect(files.filter((f) => word(f).startsWith("moveplan.")).sort()).toEqual(
+    ADMITTED_MOVE_PLAN_FILES,
+  );
 });
 
 /**
@@ -136,6 +151,7 @@ test("the modules the plan names are all here, each with its tests where it has 
     "links",
     "profiles",
     "relations",
+    "movePlan",
   ])
     expect(files, kept).toContain(`${kept}.ts`);
   for (const tested of [
@@ -152,6 +168,7 @@ test("the modules the plan names are all here, each with its tests where it has 
     "links",
     "profiles",
     "relations",
+    "movePlan",
   ])
     expect(files, `${tested} tests`).toContain(`${tested}.test.ts`);
 });
@@ -165,7 +182,7 @@ test("nothing exported belongs to the wiki layer", () => {
     /graph/i,
     /backlink/i,
     /profile/i, // reached through the daemon, like links and search
-    /movePlan/i,
+    /movePlan/i, // reached through the session's `movePlan`, not the barrel
     /hide/i,
     /setWorkspace/i,
     /makeSet/i,
@@ -216,7 +233,13 @@ test("the links module holds resolving, following, writing, backlinks, the check
     ).toEqual([]);
 });
 
-test("no barrel re-exports a value of the links, profiles or relations modules, under any name", async () => {
+test("the move plan module holds the world after a move and the scan's order, and nothing else", () => {
+  // kit-move-plan admitted it; scriptorium-kit-wiki-verbs added `treeOrder`,
+  // the order the documents come in after a move. Widen this by name.
+  expect(Object.keys(movePlan).sort()).toEqual(["movedWorld", "treeOrder"]);
+});
+
+test("no barrel re-exports a value of the links, profiles, relations or move plan modules, under any name", async () => {
   // By identity, not by name: a name check let `checkFields` through, and an
   // export renamed on the way out would pass one too.
   const src = dirname(here);
@@ -232,9 +255,12 @@ test("no barrel re-exports a value of the links, profiles or relations modules, 
   ].filter((b) => existsSync(join(src, b)));
   expect(barrels).toContain("workspace/index.ts");
   const guarded = new Set<unknown>(
-    [...Object.values(links), ...Object.values(profiles), ...Object.values(relations)].filter(
-      (v) => typeof v === "function" || (typeof v === "object" && v !== null),
-    ),
+    [
+      ...Object.values(links),
+      ...Object.values(profiles),
+      ...Object.values(relations),
+      ...Object.values(movePlan),
+    ].filter((v) => typeof v === "function" || (typeof v === "object" && v !== null)),
   );
   expect(guarded.size).toBeGreaterThan(10);
   for (const b of barrels) {
