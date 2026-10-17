@@ -264,7 +264,7 @@ export function ChatComposer({
       />
       <div className="mt-1 flex items-center gap-2">
         <span className="text-[10px] text-ink-faint">⌘↩ to send</span>
-        {/* The xs size is the 24 px, 12 px-text button this row wants; a class
+        {/* The xs size is the 24 px button with 12 px text this row wants; a class
             beside sm's own height and text would lose to it (kit-caller-class-overrides). */}
         <Button type="submit" size="xs" disabled={!draft.trim() || !connected} className="ml-auto">
           <CornerDownLeftIcon aria-hidden className="size-3" />

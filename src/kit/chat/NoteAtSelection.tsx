@@ -63,7 +63,7 @@ export function NoteAtSelection({
   onAddLink?: (at: At) => void;
 }) {
   // Two steps on purpose: the MENU is where other acts on a passage will go
-  // (ask the agent, copy the quote), so it does not collapse into the composer.
+  // (ask the agent, copy the quote), so it does not fold into the composer.
   const [writing, setWriting] = useState(false);
   const [body, setBody] = useState("");
   const card = useRef<HTMLDivElement>(null);

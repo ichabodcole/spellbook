@@ -164,7 +164,7 @@ export function ChatMessageView({
   );
 }
 
-/** A message body, rendered. `md-chat` is the narrow-panel variant of `md-prose`. */
+/** A message body, rendered in the kit's prose style. */
 function ChatMarkdown({
   id,
   text,
