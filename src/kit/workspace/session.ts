@@ -4688,8 +4688,11 @@ export class WorkspaceSession {
    * among the app's sessions.
    */
   addFolder(rawPath: string): { path: string; entry: string; set: boolean } {
-    const abs = this.contextForm(resolve(rawPath));
-    const name = basename(abs);
+    // Named by where its parent folder really is: the folder itself does not
+    // exist yet, so a link on the way there is followed through the parent.
+    const raw = resolve(rawPath);
+    const name = basename(raw);
+    const abs = join(this.contextForm(dirname(raw)), name);
     if (this.nameOrDie(name) !== name)
       throw new SessionError(`"${name}" is not a usable name: no space at either end`, 400);
     this.refuseBundleName(name, "a new folder");
@@ -4705,14 +4708,19 @@ export class WorkspaceSession {
         throw err;
     }
     if (!shown) {
-      const inBundle = bundleHolding(abs);
+      // Where it would really be: its parent's realpath and its name, since a
+      // path that does not exist yet has no realpath of its own.
+      const real = join(realOr(parent), name);
+      const inBundle = bundleOf(abs) ?? bundleOf(real);
       if (inBundle)
         throw new SessionError(
           `${tilde(abs)} is inside the ${inBundle.type.label} ${bundleNameAt(inBundle.root)}: ${outsideMembers(inBundle.type)}`,
           409,
         );
       const sessions = dirname(this.dir);
-      if (abs === sessions || abs.startsWith(sessions + sep))
+      const realSessions = realOr(sessions);
+      const among = (p: string, root: string) => p === root || p.startsWith(root + sep);
+      if (among(abs, sessions) || among(real, realSessions))
         throw new SessionError(`${tilde(abs)} is among the sessions' own folders`, 400);
       let isDir = false;
       try {
@@ -4727,7 +4735,14 @@ export class WorkspaceSession {
         );
     }
     this.refuseExisting(abs);
-    mkdirSync(abs);
+    try {
+      mkdirSync(abs);
+    } catch (err) {
+      throw new SessionError(
+        `cannot make the folder ${tilde(abs)}: ${(err as NodeJS.ErrnoException).code ?? String(err)}`,
+        409,
+      );
+    }
     this.adoptNew(abs);
     this.persist();
     // The entry that shows it: a set (its own, when it made one), or a bundle

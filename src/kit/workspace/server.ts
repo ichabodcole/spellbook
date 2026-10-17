@@ -1982,13 +1982,19 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
      * (`unmakeSet`, `makeSet`), following where the document is after each.
      */
     type AppInverse = Extract<Inverse, { kind: "app" }>;
+    /** What a set made from a document says of the links it broke: no verb rewrites them. */
+    const SET_MAKE_LINKS_HINT =
+      "Turning a document into a set does not rewrite links: write each one as its `to`, or leave it for the link check. Wiki links are never rewritten.";
     const setMakeInverse = (from: string, at: string): AppInverse => {
       let now = at;
       const undo = () => {
         now = session.unmakeSet(now).path;
       };
+      // Made again, it breaks the links the first make did: said as that make said them.
       const redo = () => {
-        now = session.makeSet(now).path;
+        const m = session.makeSet(now, { links: true });
+        now = m.path;
+        noteRedoBroke(m, "redo", SET_MAKE_LINKS_HINT);
       };
       return { kind: "app", label: `turned ${basename(from)} into a set`, undo, redo };
     };
@@ -2039,7 +2045,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
             own.fact = {
               broken: {
                 ...brokenFact(links ?? [], w ?? []),
-                hint: "make-set does not rewrite links: write each one as its `to`, or leave it for the link check. Wiki links are never rewritten.",
+                hint: SET_MAKE_LINKS_HINT,
               },
             };
           }
@@ -2415,7 +2421,13 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
      */
     let linkNote = "";
     /** A redo of an act that carried no link edits found links it broke: offered afresh. */
-    let redoBroke: { fixes: DocLinkFixes[]; wiki: WikiBreak[]; what: string } | null = null;
+    // `hint`: an act with no `relink` offer (`set.make`) says its own words instead.
+    let redoBroke: {
+      fixes: DocLinkFixes[];
+      wiki: WikiBreak[];
+      what: string;
+      hint?: string;
+    } | null = null;
     const redoBrokeNow = () => redoBroke;
 
     /** The links an undone or redone act carried, put as they were with it. */
@@ -2429,13 +2441,14 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     const noteRedoBroke = (
       m: { from: string; links?: DocLinkFixes[]; wiki?: WikiBreak[] },
       dir: "undo" | "redo",
+      hint?: string,
     ) => {
       if (dir !== "redo") return;
       const fixes = m.links ?? [];
       const wiki = m.wiki ?? [];
       if (fixes.length === 0 && wiki.length === 0) return;
       const what = basename(m.from);
-      redoBroke = { fixes, wiki, what };
+      redoBroke = { fixes, wiki, what, ...(hint ? { hint } : {}) };
       linkNote = ` ${brokenText(fixes, wiki, what)}`;
     };
 
@@ -3250,12 +3263,19 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
             relinkOffer = null;
             // Read through a call: set inside `applyInverse`, which the compiler cannot see.
             const broke = redoBrokeNow();
-            if (broke && back && broke.fixes.length > 0)
+            if (broke && back && broke.fixes.length > 0 && !broke.hint)
               relinkOffer = { act: back, ...broke, by: "human" };
             syncWatchers();
             announce(`You redid: ${withoutLinkCount(act.label)}.${linkNote}`, {
               fact: "history.redo",
-              ...(broke ? { broken: brokenFact(broke.fixes, broke.wiki) } : {}),
+              ...(broke
+                ? {
+                    broken: {
+                      ...brokenFact(broke.fixes, broke.wiki),
+                      ...(broke.hint ? { hint: broke.hint } : {}),
+                    },
+                  }
+                : {}),
             });
             broadcastState();
           } catch (e) {

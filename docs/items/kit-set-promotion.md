@@ -64,3 +64,27 @@ Deliberate choices:
   `new-folder` refuses one. Outside every set it needs an existing parent, and
   it is never inside a bundle or among the sessions. The workspace is untouched;
   removing it is the next item's job.
+
+A fix round after a no-stake verification, in one commit on
+`impl/kit-set-promotion-fix` (the commit titled "set promotion's guards follow
+symlinks"):
+
+- **Guards follow links.** `addFolder` names the new folder by its parent's real
+  place, and judges the bundle and sessions guards by the parent's realpath
+  joined with the name. A link into a bundle or to the sessions' root no longer
+  slips past them.
+- **Plain errors.** A folder the disk will not make (`EACCES`, `EROFS`) is a 409
+  refusal in words, as `makeSet`'s own `mkdir` already was.
+- **App-neutral hint.** The `broken` hint on `set.make` names no app verb:
+  "Turning a document into a set does not rewrite links: ...".
+- **Redo reports.** A redone `set.make` reports the links it breaks, with the
+  same hint and no `relink` offer.
+- **Refusal wording.** The kit says
+  `is already in a set: make a folder there instead`, with a colon. No ward bans
+  em dashes (the kit prose ward is about class names), but no message in the
+  kit's `session.ts` or `server.ts` uses one, here or in Story Studio's kit. The
+  daemon test asserts the exact words.
+- **Tests.** New cells cover the bundle-name refusal in `makeSet`, the folder
+  cleanup after a failed move, a set's hidden folder in `addFolder`, the new
+  set's `realRoot`, and both link cases. Each one fails with its mutation
+  planted.

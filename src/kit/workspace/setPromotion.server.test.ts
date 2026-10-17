@@ -64,7 +64,9 @@ describe("set.make through the daemon", () => {
     expect(r.body).toMatchObject({ folder, path: join(folder, "solo.md"), entry: id });
     const broken = (r.body as { broken?: { count: number; hint: string } }).broken;
     expect(broken?.count).toBe(1);
-    expect(broken?.hint).toContain("make-set does not rewrite links");
+    expect(broken?.hint).toBe(
+      "Turning a document into a set does not rewrite links: write each one as its `to`, or leave it for the link check. Wiki links are never rewritten.",
+    );
     expect(readFileSync(join(folder, "solo.md"), "utf8")).toContain("(sibling.md)");
     await waitUntil("mirrored", () =>
       s.state.context.some((e) => e.id === id && e.membership === "mirrored" && e.root === folder),
@@ -89,7 +91,7 @@ describe("set.make through the daemon", () => {
   });
 
   test("undo puts the document back, listed by the same entry; redo makes the set again", async () => {
-    const { s, d } = await start();
+    const { s, t, d } = await start();
     const id = s.state.context.find((e) => e.label === "solo.md")?.id ?? "";
     await cmd(d.url, { op: "set.make", path: join(docs, "solo.md") });
     await waitUntil("set", () => s.state.history.undoLabel === "turned solo.md into a set");
@@ -107,18 +109,39 @@ describe("set.make through the daemon", () => {
     await waitUntil("mirrored again", () =>
       s.state.context.some((e) => e.id === id && e.membership === "mirrored"),
     );
+    // The redo breaks the link the make broke, and says so as the make did.
+    await t.waitFor(
+      (e) =>
+        e.type === "system" &&
+        e.fact === "history.redo" &&
+        (e.broken as { count?: number } | undefined)?.count === 1 &&
+        (e.broken as { hint?: string } | undefined)?.hint?.startsWith(
+          "Turning a document into a set does not rewrite links",
+        ) === true,
+    );
+    expect(
+      s.state.chat.some(
+        (m) =>
+          m.text.startsWith("You redid: turned solo.md into a set.") && m.text.includes("1 link"),
+      ),
+    ).toBe(true);
     // And back once more: the redo's own undo follows where the document is.
     s.send({ op: "history.undo" });
     await waitUntil("undone again", () => existsSync(join(docs, "solo.md")));
   });
 
-  test("a document in a set is refused with the shipped words, and nothing changes", async () => {
+  test("a document in a set is refused in the shipped words, and nothing changes", async () => {
     const { s, d } = await start();
     s.send({ op: "context.add", path: join(docs, "set") });
     await waitUntil("the set", () => s.state.context.length === 3);
     const r = await cmd(d.url, { op: "set.make", path: join(docs, "set", "a.md") });
     expect(r.status).toBe(400);
-    expect(JSON.stringify(r.body)).toContain("make a folder there instead");
+    // The shipped words, with a colon where Scriptorium has a dash: the kit's
+    // messages (and Story Studio's) carry no em dash.
+    expect(r.body).toEqual({
+      ok: false,
+      error: "set/a.md is already in a set: make a folder there instead",
+    });
     expect(existsSync(join(docs, "set", "a"))).toBe(false);
   });
 });

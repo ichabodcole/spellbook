@@ -5,11 +5,20 @@
 // (E22)"), with what the kit adds: what is keyed by the document and the entry
 // survives, links, and the way back.
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import { registerBundleType, unregisterBundleType } from "../lib/bundles.ts";
 import type { ContextNode } from "./protocol";
-import { GoneError, WorkspaceSession } from "./session";
+import { GoneError, tilde, WorkspaceSession } from "./session";
 import { refusal, TEST_BUNDLE, tempRoot, testApp } from "./testing";
 
 let root: string;
@@ -44,6 +53,9 @@ const rels = (nodes: readonly ContextNode[]): string[] =>
   nodes.flatMap((n) => (n.kind === "group" ? [n.rel, ...rels(n.children)] : [n.rel]));
 
 const entryById = (s: WorkspaceSession, id: string) => s.context.find((e) => e.id === id);
+
+// Permission refusals mean nothing to root: those tests are skipped there.
+const asRoot = process.getuid?.() === 0;
 
 describe("makeSet: a document listed on its own becomes a set", () => {
   test("a folder named for it, the document moved in, the SAME entry now mirrors the folder", () => {
@@ -143,6 +155,49 @@ describe("makeSet: a document listed on its own becomes a set", () => {
     s.addContext(board);
     expect(refusal(() => s.makeSet(board)).status).toBe(400);
     expect(existsSync(join(root, "b"))).toBe(false);
+  });
+
+  test("a document whose folder would be named as a bundle is refused, and nothing is made", () => {
+    const s = session();
+    writeFileSync(join(root, "x.boardbundle.md"), "# X\n");
+    s.addContext(join(root, "x.boardbundle.md"));
+    const e = refusal(() => s.makeSet(join(root, "x.boardbundle.md")));
+    expect(e.status).toBe(400);
+    expect(e.message).toContain("would make the set's folder a board");
+    expect(existsSync(join(root, "x.boardbundle"))).toBe(false);
+    expect(existsSync(join(root, "x.boardbundle.md"))).toBe(true);
+  });
+
+  test.skipIf(asRoot)(
+    "a move that fails takes away the folder made for it: nothing changes",
+    () => {
+      const s = session();
+      const { entry } = s.addContext(join(root, "solo.md"));
+      // Every folder made while this mask holds is read-only: the move into it fails.
+      const mask = process.umask(0o222);
+      let e: ReturnType<typeof refusal>;
+      try {
+        e = refusal(() => s.makeSet(join(root, "solo.md")));
+      } finally {
+        process.umask(mask);
+      }
+      expect(e.status).toBe(409);
+      expect(existsSync(join(root, "solo"))).toBe(false);
+      expect(existsSync(join(root, "solo.md"))).toBe(true);
+      expect(entryById(s, entry.id)).toMatchObject({ membership: "listed", root });
+    },
+  );
+
+  test("the set's entry is judged where its folder really is: the workspace beside it is no overlap", () => {
+    const s = session();
+    const { entry } = s.addContext(join(root, "solo.md"));
+    const r = s.makeSet(join(root, "solo.md"));
+    expect(entryById(s, entry.id)?.realRoot).toBe(realpathSync(r.folder));
+    // Judged by the folder the document was listed from, the workspace (a
+    // folder beside the set) would look inside it.
+    expect(s.workspaceOverlap()).toBeNull();
+    mkdirSync(join(root, "other"));
+    expect(s.setWorkspace(join(root, "other")).path).toBe(join(root, "other"));
   });
 
   test("a path not shown is refused (404)", () => {
@@ -250,6 +305,51 @@ describe("addFolder: a new folder where the caller names it", () => {
     mkdirSync(board);
     expect(refusal(() => s.addFolder(join(board, "inside"))).status).toBe(409);
     expect(existsSync(join(board, "inside"))).toBe(false);
+    expect(s.context).toHaveLength(1);
+  });
+
+  test("a set's hidden folder is refused, not made a set of its own", () => {
+    const s = session();
+    mkdirSync(join(set, ".git"));
+    expect(refusal(() => s.addFolder(join(set, ".git", "x"))).status).toBe(400);
+    expect(existsSync(join(set, ".git", "x"))).toBe(false);
+    expect(s.context).toHaveLength(1);
+  });
+
+  test("a bundle's insides through a link are refused as the bundle's own", () => {
+    const s = session();
+    const board = join(root, "b.boardbundle");
+    mkdirSync(board);
+    symlinkSync(board, join(root, "linkb"));
+    const e = refusal(() => s.addFolder(join(root, "linkb", "inside")));
+    expect(e.status).toBe(409);
+    expect(e.message).toContain("is inside the board");
+    expect(existsSync(join(board, "inside"))).toBe(false);
+    expect(s.context).toHaveLength(1);
+  });
+
+  test("the sessions' own folders through a link are refused", () => {
+    const s = session();
+    symlinkSync(sessions, join(root, "ls"));
+    const e = refusal(() => s.addFolder(join(root, "ls", "evil")));
+    expect(e.status).toBe(400);
+    expect(e.message).toContain("is among the sessions' own folders");
+    expect(existsSync(join(sessions, "evil"))).toBe(false);
+    expect(s.context).toHaveLength(1);
+  });
+
+  test.skipIf(asRoot)("a folder the disk will not make is refused in words, not as a crash", () => {
+    const s = session();
+    const locked = join(root, "locked");
+    mkdirSync(locked);
+    chmodSync(locked, 0o555);
+    try {
+      const e = refusal(() => s.addFolder(join(locked, "x")));
+      expect(e.status).toBe(409);
+      expect(e.message).toBe(`cannot make the folder ${tilde(join(locked, "x"))}: EACCES`);
+    } finally {
+      chmodSync(locked, 0o755);
+    }
     expect(s.context).toHaveLength(1);
   });
 });
