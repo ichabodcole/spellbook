@@ -152,6 +152,7 @@ import {
   PRE_MIGRATE_FILE,
   runManifestMigrate,
 } from "./manifestMigrate";
+import { type MovedWorld, type MovePlan, movedWorld } from "./movePlan";
 import {
   hasHomeWorkspace,
   noLocation,
@@ -2392,6 +2393,35 @@ export class WorkspaceSession {
     return { slug: d.slug };
   }
 
+  /**
+   * Forget a document whose file is gone: its record goes, with the way to
+   * its versions, so the session stops offering it back and its slug is free.
+   * Refused (409) while the file is on disk: forgetting a live document's
+   * record would throw away its history while the document sits there. The
+   * version files are left where they are: nothing reads them once the record
+   * is gone, and removing them would be a second deletion nobody asked for.
+   */
+  forgetDoc(ref?: string): { slug: string; name: string; original: string; versions: number } {
+    const d = this.docOrDie(ref);
+    if (existsSync(d.original))
+      throw new SessionError(
+        `${this.display(d.original)} is still on disk: forget is for a document whose file is gone`,
+        409,
+      );
+    const forgotten = {
+      slug: d.slug,
+      name: this.docName(d),
+      original: d.original,
+      versions: d.versions.length,
+    };
+    this.m.docs = this.m.docs.filter((x) => x.slug !== d.slug);
+    if (this.m.openDoc === d.slug) this.m.openDoc = this.m.docs[0]?.slug ?? null;
+    this.relink();
+    this.closeOrphanedOpenDoc();
+    this.persist();
+    return forgotten;
+  }
+
   // ── images: shown in the tree, opened in the viewer, served, brought in ─
   //
   // An image is a node of its own kind (`image`), shown inside a mirrored set
@@ -4303,6 +4333,80 @@ export class WorkspaceSession {
     };
   }
 
+  /**
+   * What `move` would do, without doing it (kit-move-plan): the item, where it
+   * would land, how many documents go with it, and the links it would break,
+   * each with the rewrite `move --update-links` would offer (`./movePlan.ts`).
+   * Refuses exactly what `move` refuses, so a move confirmed from the plan is
+   * admitted. It writes nothing: no file, no manifest.
+   */
+  movePlan(rawPath: string, rawInto: string): MovePlan {
+    const item = this.itemOrDie(rawPath);
+    if (!item.dir) this.refuseLoneSidecar(item.abs, "move");
+    const into = this.destinationOrDie(rawInto);
+    if (into === item.abs || into.startsWith(item.abs + sep))
+      throw new SessionError(`cannot move ${this.display(item.abs)} into itself`, 400);
+    if (dirname(item.abs) === into)
+      throw new SessionError(`${this.display(item.abs)} is already in that folder`, 400);
+    const to = join(into, basename(item.abs));
+    this.refuseExisting(to);
+    const sidecar = item.dir ? null : this.sidecarFileOf(item.abs);
+    const sidecarTo = sidecar ? sidecarOf(to) : null;
+    if (sidecarTo) this.refuseExisting(sidecarTo);
+    const pairs = movedPairs(item.abs, to, sidecar, sidecarTo);
+    const pins = this.pinLinks(sidecar ? [item.abs, sidecar] : [item.abs]);
+    const plan = this.planRelink(pins, pairs, movedWorld(pairs));
+    const docs = item.dir
+      ? [...this.contextIndex().entryOf.keys()].filter((p) => p.startsWith(item.abs + sep)).length
+      : 1;
+    return {
+      from: item.abs,
+      to,
+      into,
+      name: basename(item.abs),
+      folder: item.dir,
+      docs,
+      ...(sidecarTo ? { sidecar: sidecarTo } : {}),
+      links: plan.fixes,
+      wiki: plan.wiki,
+      references: pins.filter((p) => p.kind === "reference").length,
+      checked: pins.length,
+    };
+  }
+
+  /**
+   * The context entry a path is in after a move that has not happened, with
+   * its root where it would be, as `entryFinder` would answer once the move
+   * is made (`followMove` keeps the context): a path the move leaves where it
+   * is keeps its entry; a moved one is in the first entry, in context order,
+   * that would list it (a listed entry's own file, or under a set's root),
+   * else under whose root it lies. An entry the move takes into a set that
+   * covers it is dropped, as `followMove` drops it.
+   */
+  private entryAfter(
+    path: string,
+    world: MovedWorld,
+    entryOf: (path: string) => ContextEntry | undefined,
+  ): ContextEntry | undefined {
+    if (world.back(path) === path) {
+      const e = entryOf(path);
+      return e && { ...e, root: world.forward(e.root) };
+    }
+    const after: { e: ContextEntry; file: string | null }[] = [];
+    for (const e of this.m.context) {
+      const only = e.membership === "listed" ? listedFile(e) : null;
+      if (e.membership === "listed" && !only) continue;
+      const was = only ? only.abs : e.root;
+      const now = world.forward(was);
+      if (now !== was && this.coveringEntry(now, e.id)) continue;
+      after.push({ e: { ...e, root: only ? dirname(now) : now }, file: only ? now : null });
+    }
+    const lists = after.find(({ e, file }) =>
+      file !== null ? file === path : path.startsWith(e.root + sep),
+    );
+    return (lists ?? after.find(({ e }) => path.startsWith(e.root + sep)))?.e;
+  }
+
   rename(
     rawPath: string,
     name: string,
@@ -4551,6 +4655,12 @@ export class WorkspaceSession {
   private planRelink(
     pins: readonly LinkPin[],
     pairs: readonly (readonly [string, string])[],
+    /**
+     * Plan only (`movePlan`): the move has not happened, and links are
+     * resolved in this world after it. A bundle's references are skipped
+     * here: the caller counts them.
+     */
+    world?: MovedWorld,
   ): { fixes: DocLinkFixes[]; wiki: WikiBreak[] } {
     const wiki: WikiBreak[] = [];
     if (pins.length === 0) return { fixes: [], wiki };
@@ -4568,16 +4678,17 @@ export class WorkspaceSession {
     // same document always lands in the same place.
     const verdicts = new Map<string, string | null>();
     for (const pin of pins) {
+      if (world && pin.kind === "reference") continue;
       const src = map(pin.src);
       const to = map(pin.target);
       const key = `${src}\0${pin.kind}\0${pin.raw}`;
-      const entry = entryOf(src);
+      const entry = world ? this.entryAfter(src, world, entryOf) : entryOf(src);
       const rb = pin.kind === "reference" ? referencingBundle(src) : null;
       const lands = (raw: string) => {
         const r =
           pin.kind === "reference"
             ? this.resolveReference(raw, src, entry, index)
-            : this.resolveFrom(raw, src, entry, "document", index, pin.kind);
+            : this.resolveFrom(raw, src, entry, "document", index, pin.kind, world);
         return r.state !== "missing" && r.path === to;
       };
       // A wiki link names a page, not a path: one the move broke is counted
@@ -5893,15 +6004,29 @@ export class WorkspaceSession {
     origin: LinkOrigin,
     index: ContextIndex,
     kind: LinkKind = "markdown",
+    /**
+     * Resolve in the world after a move that has not happened (`movePlan`):
+     * `src`, `entry` and every path asked about are that world's, and each
+     * is read on disk where it is now.
+     */
+    world?: MovedWorld,
   ): Resolution {
     const root = entry?.root ?? (src ? dirname(src) : this.workspace);
     const is = (p: string, what: "file" | "dir") => {
+      const at = world ? world.back(p) : p;
+      if (at === null) return false;
       try {
-        const st = statSync(p);
+        const st = statSync(at);
         return what === "file" ? st.isFile() : st.isDirectory();
       } catch {
         return false;
       }
+    };
+    const inContext = (p: string): string | null => {
+      if (!world) return this.inContextAt(p, index);
+      const at = world.back(p);
+      const own = at === null ? null : this.inContextAt(at, index);
+      return own === null ? null : world.forward(own);
     };
     const app = this.linkSlot.resolve;
     return resolveTarget(
@@ -5909,7 +6034,7 @@ export class WorkspaceSession {
       src,
       {
         root,
-        inContext: (p) => this.inContextAt(p, index),
+        inContext,
         exists: (p) => is(p, "file"),
         isDir: (p) => is(p, "dir"),
         ...(app
@@ -5921,7 +6046,13 @@ export class WorkspaceSession {
                     from: src,
                     root,
                     kind: k,
-                    documents: () => this.resolvableDocs(index),
+                    documents: () =>
+                      world
+                        ? this.resolvableDocs(index).map((d) => ({
+                            ...d,
+                            path: world.forward(d.path),
+                          }))
+                        : this.resolvableDocs(index),
                   });
                 } catch {
                   // An app resolver that throws answers nothing: the link is missing.
