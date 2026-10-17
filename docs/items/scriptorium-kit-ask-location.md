@@ -6,7 +6,7 @@ description:
   scriptorium-no-default-workspace: New File, New Folder and a drop with nothing
   selected ask for a location among the session's sets, with the last one used
   preselected, and offer a new folder at a path."
-status: draft
+status: stable
 lifecycle: triage
 id: 01a14bca-18cc-72b3-8890-08d709c255a9
 kind: task

@@ -7,7 +7,7 @@ description:
   A message chip keeps and names the about parts an app adds (Scriptorium's
   version and selection), and the agent-only entryIds field either gets a
   surface gesture that sends it or is removed from the wire.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a14bca-16a0-772c-a8d2-b31df9ffef83
 kind: task

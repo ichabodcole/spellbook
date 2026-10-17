@@ -5,7 +5,7 @@ description:
   Port packages/kit/src/context from 027d7a3 plus d7ef948, a538a2e, 0ff5698 and
   the context halves of bbc54fd, ae08f10 and 4e6d4d4, leaving out the copy-in
   commits, so sets are still added from where they live.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a14bca-14ab-7119-bc8a-05b2b7dcd676
 kind: task

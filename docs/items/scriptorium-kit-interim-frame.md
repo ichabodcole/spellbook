@@ -8,7 +8,7 @@ description:
   kit's context sidebar, chat, Notes and Tasks; hide, make-set and the move plan
   go in through menuActions and the confirm slot. The frame is thrown away at
   the shell cycle.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a14bca-1792-702e-9950-a08158191b3f
 kind: task

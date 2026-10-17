@@ -7,7 +7,7 @@ description:
   The kit's context pane asks the app before a move and can show the human what
   the move would change; Scriptorium's move.plan (links a move would break)
   fills it, so a move waits for the human's confirm.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a14bca-15aa-7799-ac7c-13940a5dd463
 kind: task
