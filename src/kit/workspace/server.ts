@@ -593,6 +593,13 @@ export type WorkspaceDaemonOptions = {
   app: AppDeclaration;
   /** Where sessions live: `<home>/<app>/sessions`. Preferences are kept beside it. */
   sessionsRoot: string;
+  /**
+   * The app's own folder, where its sessions, settings and logs live (by
+   * default only the sessions root is guarded). No set shows it and no
+   * structure op writes in it, as for the sessions root (`notASet`,
+   * `inOwnPlaces` in `./noHome.ts`).
+   */
+  appHome?: string;
   /** Task runners by `kind`. */
   runners?: Record<string, TaskRunner>;
   /** The app's own ops, keyed `<app>.<name>`: reachable from `/cmd` and the WebSocket. */
@@ -932,6 +939,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       ? WorkspaceSession.restore(opts.sessionsRoot, app, opts.restore)
       : WorkspaceSession.create(opts.sessionsRoot, app, sessionId, opts.workspace);
     if (opts.links) session.setLinkSlot(opts.links);
+    if (opts.appHome !== undefined) session.setAppHome(opts.appHome);
 
     let selection: Selection | null = null;
     /** The document text on screen: the open document at its active version. */

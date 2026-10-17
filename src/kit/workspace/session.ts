@@ -146,6 +146,7 @@ import {
 } from "./links";
 import {
   keepPreMigrate,
+  type ManifestMigrateContext,
   type ManifestMigrated,
   type MigrateManifest,
   migrateRefusal,
@@ -154,11 +155,17 @@ import {
 } from "./manifestMigrate";
 import { type EdgeBreak, type MovedWorld, type MovePlan, movedWorld, treeOrder } from "./movePlan";
 import {
+  onDisk as diskPath,
   hasHomeWorkspace,
+  holdsOwnPlaces,
+  inOwnPlaces,
   noLocation,
   notAddedWhole,
   notALocation,
+  notASet,
   noWorkspaceToSet,
+  type OwnPlaces,
+  within,
 } from "./noHome";
 import {
   checkFields,
@@ -239,6 +246,7 @@ import {
   type TypedEdge,
   type Vocabulary,
 } from "./relations";
+import { safeExt, safeSlug } from "./safeNames";
 import { type Candidate, DEFAULT_LIMIT, searchDocuments } from "./search";
 import {
   bundleNode,
@@ -575,6 +583,14 @@ export type AppDeclaration = {
    * written. See `manifestMigrate.ts` for the rules.
    */
   migrateManifest?: MigrateManifest;
+  /**
+   * Asked again at the moment a conversion is written (the kept copy and the
+   * converted manifest), and before anything else in the session folder is
+   * touched: why the write is refused now, or null. For a rule the app checked
+   * at boot that the disk can break later (a sessions folder swapped for a
+   * link). A refusal is the restore's 409, and nothing is written.
+   */
+  migrateWriteRefusal?: (at: ManifestMigrateContext) => string | null;
   /**
    * `false`: the app has no home workspace (`./noHome.ts`). Nothing writes a
    * new file or folder to a place the caller did not name: a create, drop or
@@ -935,6 +951,7 @@ export class WorkspaceSession {
       app: { ...app.slot.migrate({}, 0), version: app.slot.version },
     });
     mkdirSync(join(s.dir, "docs"), { recursive: true });
+    s.pinDir();
     s.persist();
     return s;
   }
@@ -957,15 +974,18 @@ export class WorkspaceSession {
     // The app's whole-manifest migrate, before any check: what it returns is
     // checked below exactly as a stored manifest is, and nothing is written
     // until every check has passed.
-    const migrated = runManifestMigrate(
-      app.migrateManifest,
-      raw,
-      { sessionId, dir: join(sessionsRoot, sessionId), sessionsRoot },
-      (reason) => {
-        throw new SessionError(migrateRefusal(app.name, sessionId, reason), 409);
-      },
-    );
+    const migrateAt = { sessionId, dir: join(sessionsRoot, sessionId), sessionsRoot };
+    const migrated = runManifestMigrate(app.migrateManifest, raw, migrateAt, (reason) => {
+      throw new SessionError(migrateRefusal(app.name, sessionId, reason), 409);
+    });
     raw = migrated.raw;
+    // The app's write check for a conversion, asked now (before anything in the
+    // session folder is touched) and again just before the conversion is written.
+    const migrateWriteOrDie = (): void => {
+      const why = migrated.migration ? (app.migrateWriteRefusal?.(migrateAt) ?? null) : null;
+      if (why !== null) throw new SessionError(migrateRefusal(app.name, sessionId, why), 409);
+    };
+    migrateWriteOrDie();
     // An unknown format is refused, never guessed at: a newer kit may have
     // written fields this one would silently drop on the next write.
     if (raw.format !== MANIFEST_FORMAT)
@@ -1026,6 +1046,7 @@ export class WorkspaceSession {
     const s = new WorkspaceSession(sessionsRoot, app, m);
     s.restoreReport = report;
     mkdirSync(join(s.dir, "docs"), { recursive: true });
+    s.pinDir();
     // Mirrors are re-read, not trusted: the folder may have changed while no
     // daemon was watching it.
     for (const e of s.m.context) if (e.membership === "mirrored") s.rescan(e.id);
@@ -1091,7 +1112,10 @@ export class WorkspaceSession {
     ) {
       // A converted manifest keeps what it replaced, written first: a failure
       // between the two leaves the original readable.
-      if (report.manifestMigrated) keepPreMigrate(s.dir, stored);
+      if (report.manifestMigrated) {
+        migrateWriteOrDie();
+        keepPreMigrate(s.dir, stored);
+      }
       s.persist();
     }
     return s;
@@ -1177,6 +1201,7 @@ export class WorkspaceSession {
     // and bundles, drops, imported images, moves): a workspace inside a bundle
     // would write into the bundle, which is one item and never a folder.
     refuseWorkspaceInBundle(dir);
+    this.notOwnPlaceOrDie(dir);
     if (existsSync(dir)) return dir;
     if (dir === join(this.dir, IMPORTED_DIR)) {
       mkdirSync(dir, { recursive: true });
@@ -1194,7 +1219,7 @@ export class WorkspaceSession {
       const r = noWorkspaceToSet(this.app);
       throw new SessionError(r.message, 400, undefined, r.hint);
     }
-    const abs = resolve(rawPath);
+    const abs = this.notOwnPlaceOrDie(resolve(rawPath));
     let isDir = false;
     try {
       isDir = statSync(abs).isDirectory();
@@ -1331,7 +1356,115 @@ export class WorkspaceSession {
   /** Write the manifest, atomically. Call it on status changes, never on progress ticks. */
   persist(): void {
     mkdirSync(this.dir, { recursive: true });
+    this.dirStillOrDie();
     writeFileAtomic(join(this.dir, "manifest.json"), `${JSON.stringify(this.m, null, 2)}\n`);
+  }
+
+  /**
+   * Where the session folder really was when it was opened (its realpath),
+   * taken once the folder exists (`pinDir`). Every write to the session's own
+   * files checks the folder still leads there.
+   */
+  private realDir: string | undefined;
+
+  /**
+   * The app's own folder, where its sessions, settings and logs live, when the
+   * daemon names one (`WorkspaceDaemonOptions.appHome`). Without it only the
+   * sessions root is guarded.
+   */
+  private appHome: string | undefined;
+
+  /** Name the app's own folder (`appHome`): guarded as the sessions root is. */
+  setAppHome(appHome: string | undefined): void {
+    this.appHome = appHome === undefined ? undefined : resolve(appHome);
+  }
+
+  /**
+   * The places no set shows and no structure op writes in: the sessions root
+   * and the app home. A home-workspace app's own `imported/` folder is the one
+   * exception (its default workspace, inside the session).
+   */
+  private get ownPlaces(): OwnPlaces {
+    return {
+      sessionsRoot: this.sessionsRoot,
+      ...(this.appHome !== undefined ? { appHome: this.appHome } : {}),
+      ...(this.hasHome ? { except: join(this.dir, IMPORTED_DIR) } : {}),
+    };
+  }
+
+  /**
+   * ⛔ THE BACKSTOP FOR EVERY STRUCTURE OP (create, move, rename, delete,
+   * trash, import, make-set). Nothing is written among the sessions or in the
+   * app home, whatever the sets say: a set that shows them (one restored from
+   * an old manifest, one whose folder became a link) never makes them a place
+   * to write. Refused before anything is changed.
+   */
+  private notOwnPlaceOrDie(abs: string, status: 400 | 409 = 409): string {
+    const why = inOwnPlaces(abs, this.ownPlaces);
+    if (why !== null)
+      throw new SessionError(`${why}: nothing is written or moved there from here`, status);
+    return abs;
+  }
+
+  /** As `notOwnPlaceOrDie`, for what an op takes away (a move's, a rename's, a trash's source): nor one that holds them. */
+  private notOwnSourceOrDie(abs: string): string {
+    this.notOwnPlaceOrDie(abs);
+    const why = holdsOwnPlaces(abs, this.ownPlaces);
+    if (why !== null)
+      throw new SessionError(`${why}: it is not moved, renamed or removed from here`, 409);
+    return abs;
+  }
+
+  /** The one guard on every route that makes a set or a listed entry (`notASet`). 409 when refused. */
+  private mayBeASetOrDie(abs: string, gone = false): void {
+    const why = notASet(abs, this.ownPlaces);
+    if (why === null) return;
+    const message = `${why}: it is not added to the context`;
+    throw gone ? new GoneError(message, 409) : new SessionError(message, 409);
+  }
+
+  /** Take the session folder's realpath, once: called as a session is made or restored. */
+  private pinDir(): void {
+    if (this.realDir === undefined) this.realDir = realpathSync(this.dir);
+  }
+
+  /**
+   * ⛔ THE SESSION'S FILES ARE WRITTEN WHERE THE SESSION WAS OPENED. A sessions
+   * folder (or one session's) swapped for a link after the open would carry
+   * every later write to wherever the link leads: someone else's sessions, a
+   * real home a dry run was kept away from. Refused, and nothing is written.
+   */
+  private dirStillOrDie(): void {
+    if (this.realDir === undefined) return;
+    const now = realOr(this.dir);
+    if (now !== this.realDir)
+      throw new SessionError(
+        `the session folder ${this.dir} now leads to ${now}, not where this session was opened (${this.realDir}): nothing was written`,
+        409,
+      );
+  }
+
+  /**
+   * A version file's path, refused unless it is in the session's own `docs/`
+   * folder as written and as the disk resolves it (a slug or extension that
+   * climbs out, a linked folder that leads out). The manifest check refuses
+   * such a slug or extension on restore; this is the backstop at every write.
+   */
+  private ownFileOrDie(path: string): string {
+    this.dirStillOrDie();
+    const docs = this.docsDir;
+    const real = this.realDir !== undefined ? join(this.realDir, "docs") : diskPath(docs);
+    if (!within(resolve(path), docs) || resolve(path) === docs || !within(diskPath(path), real))
+      throw new SessionError(
+        `${path} is not inside this session's docs folder (${docs}): nothing was written`,
+        409,
+      );
+    return path;
+  }
+
+  /** A version file written: only inside the session's own `docs/` (`ownFileOrDie`). */
+  private writeVersion(path: string, text: string): void {
+    this.writeOwned(this.ownFileOrDie(path), text);
   }
 
   private writeOwned(path: string, text: string): void {
@@ -1350,7 +1483,7 @@ export class WorkspaceSession {
   }
 
   private writeActive(d: Doc, text: string): void {
-    this.writeOwned(this.versionPath(d, d.active), text);
+    this.writeVersion(this.versionPath(d, d.active), text);
     this.activeHash.set(d.slug, contentHash(text));
     this.lastActiveText.set(d.slug, text);
   }
@@ -1366,7 +1499,7 @@ export class WorkspaceSession {
       label: `outside write to v${d.active}`,
     };
     d.versions.push(rec);
-    this.writeOwned(this.versionPath(d, n), text);
+    this.writeVersion(this.versionPath(d, n), text);
     this.persist();
     return { ...rec, path: this.versionPath(d, n) };
   }
@@ -1380,6 +1513,7 @@ export class WorkspaceSession {
 
   addContext(rawPath: string): { entry: ContextEntry; added: boolean } {
     const abs = resolve(rawPath);
+    this.mayBeASetOrDie(abs);
     const id = `c-${randHex(3)}`;
     // The app's filter sees a new set from its first scan.
     const probe = entryForPath(abs, id, (root) => this.scanSkip(id, root));
@@ -1452,6 +1586,9 @@ export class WorkspaceSession {
       entry.membership === "mirrored" ? entry.root : only ? join(entry.root, only.rel) : null;
     if (path === null)
       throw new GoneError(`${entry.label} (${entry.id}) shows nothing to put back`, 409);
+    // Checked now, where the disk really leads: a folder swapped for a link to
+    // the sessions since it was hidden is never put back as a set.
+    this.mayBeASetOrDie(path, true);
     let fresh: ContextEntry;
     try {
       fresh = entryForPath(path, entry.id, (root) => this.scanSkip(entry.id, root));
@@ -1589,7 +1726,18 @@ export class WorkspaceSession {
 
   // ── documents and versions ─────────────────────────────────────────────
 
+  /**
+   * `<docs>/<slug>/v<n><ext>`. ⛔ Refused unless the slug is one safe name and
+   * the extension a plain one (`safeSlug`, `safeExt`): the manifest check
+   * refuses both on restore, so this only fires on a manifest changed under a
+   * live session. Writes also check where the path really leads (`ownFileOrDie`).
+   */
   private versionPath(d: Doc, n: number): string {
+    if (safeSlug(d.slug) !== null || safeExt(d.ext) !== null)
+      throw new SessionError(
+        `${JSON.stringify(d.slug)} (${JSON.stringify(d.ext)}) does not name a version file inside this session`,
+        409,
+      );
     return join(this.docsDir, d.slug, `v${n}${d.ext}`);
   }
 
@@ -1895,6 +2043,7 @@ export class WorkspaceSession {
     // a multi-megabyte write, and a write landing after the rename goes to the
     // new file, where the watcher finds it and preserves it too.
     const staged = `${path}.${process.pid}.edit`;
+    this.ownFileOrDie(path);
     writeFileSync(staged, text);
     let preserved: (Version & { path: string }) | null = null;
     let onDisk: string | null = null;
@@ -1941,7 +2090,7 @@ export class WorkspaceSession {
         onDisk = null;
       }
       if (onDisk !== null && (onDisk === text || this.isOwnWrite(path, onDisk))) {
-        this.writeOwned(path, text);
+        this.writeVersion(path, text);
         return { saved: n, kept: null, path };
       }
     }
@@ -1955,7 +2104,7 @@ export class WorkspaceSession {
     };
     d.versions.push(rec);
     const path = this.versionPath(d, v);
-    this.writeOwned(path, text);
+    this.writeVersion(path, text);
     this.persist();
     return { saved: v, kept: was ? "changed" : "deleted", path };
   }
@@ -1982,7 +2131,7 @@ export class WorkspaceSession {
       ...(opts.label ? { label: opts.label } : {}),
     };
     d.versions.push(rec);
-    this.writeOwned(this.versionPath(d, n), text);
+    this.writeVersion(this.versionPath(d, n), text);
     this.persist();
     return { slug: d.slug, version: { ...rec, path: this.versionPath(d, n) } };
   }
@@ -3051,6 +3200,7 @@ export class WorkspaceSession {
     );
     if (!entry) throw new SessionError(`${this.display(abs)} is not a bundle a set shows`, 404);
     this.realInsideOrDie(abs, entry, "not written into");
+    this.notOwnPlaceOrDie(abs);
     const assets = join(abs, "assets");
     let st: ReturnType<typeof lstatSync> | null = null;
     try {
@@ -3185,6 +3335,7 @@ export class WorkspaceSession {
    */
   private imagesDirBeside(doc: string): string {
     const docDir = dirname(doc);
+    this.notOwnPlaceOrDie(docDir);
     const dir = join(docDir, IMAGES_DIR);
     const set = this.coveringEntry(docDir);
     if (!set && !this.isWorkspace(docDir))
@@ -3293,6 +3444,7 @@ export class WorkspaceSession {
    */
   stageImage(target: string, name: string, bytes: Uint8Array): string {
     this.imageBytesOrDie(name, bytes);
+    this.notOwnPlaceOrDie(dirname(target));
     const staged = join(dirname(target), `.${basename(target)}.incoming-${randHex(4)}`);
     writeFileSync(staged, bytes, { flag: "wx" });
     return staged;
@@ -3338,6 +3490,7 @@ export class WorkspaceSession {
   trashPreview(rawPath: string): TrashPreview {
     if (!isAbsolute(rawPath)) throw new SessionError(`"${rawPath}" is not a full path`, 400);
     const item = this.itemOrDie(rawPath);
+    this.notOwnSourceOrDie(item.abs);
     const shown = this.display(item.abs);
     if (item.whole && item.dir && !item.bundle)
       throw new SessionError(
@@ -3802,7 +3955,7 @@ export class WorkspaceSession {
     // (a linked folder in a set that leads into one's insides).
     const shown = (): string => {
       refuseInBundle(abs, "that folder");
-      return abs;
+      return this.notOwnPlaceOrDie(abs);
     };
     for (const e of this.m.context) {
       // A listed entry is no place to put things, but for a folder inside an
@@ -3828,7 +3981,7 @@ export class WorkspaceSession {
 
   /** An existing folder on disk, as the context names it: where an undone move goes back to. */
   private folderOrDie(rawDir: string): string {
-    const abs = this.contextForm(resolve(rawDir));
+    const abs = this.notOwnPlaceOrDie(this.contextForm(resolve(rawDir)));
     let isDir = false;
     try {
       isDir = statSync(abs).isDirectory();
@@ -4048,6 +4201,9 @@ export class WorkspaceSession {
     // again. An entry of its own would be the bundle a second time.
     else if (listed) this.refreshListed(listed);
     else {
+      // Every write that lands here passed the backstop; a new entry still
+      // takes the one set guard.
+      this.mayBeASetOrDie(abs);
       const id = `c-${randHex(3)}`;
       this.m.context.push(entryForPath(abs, id, (root) => this.scanSkip(id, root)));
     }
@@ -4219,6 +4375,7 @@ export class WorkspaceSession {
    */
   duplicate(rawPath: string): { path: string; from: string; hash: string; dir: boolean } {
     const item = this.itemOrDie(rawPath);
+    this.notOwnPlaceOrDie(dirname(item.abs));
     const isDoc = !item.dir && isDocName(item.abs) && !isImageName(item.abs);
     if (!item.bundle && !isDoc)
       throw new SessionError(
@@ -5080,6 +5237,8 @@ export class WorkspaceSession {
   }
 
   private renameOrDie(from: string, to: string): void {
+    this.notOwnSourceOrDie(from);
+    this.notOwnPlaceOrDie(to);
     try {
       renameSync(from, to);
     } catch (e) {
@@ -5107,7 +5266,7 @@ export class WorkspaceSession {
    * the world moved and the recorded inverse no longer describes it.
    */
   removeCreated(rawPath: string, dir: boolean): { path: string; removed: boolean } {
-    const abs = resolve(rawPath);
+    const abs = this.notOwnSourceOrDie(resolve(rawPath));
     let st: ReturnType<typeof statSync>;
     try {
       st = statSync(abs);
@@ -5218,6 +5377,9 @@ export class WorkspaceSession {
     this.refuseBundleName(name, "the set's folder");
     const folder = join(parent, name);
     const to = join(folder, basename(item.abs));
+    // The one set guard, and the backstop: never a set among the sessions.
+    this.notOwnSourceOrDie(item.abs);
+    this.mayBeASetOrDie(folder);
     const pins = opts.links ? this.pinLinks([item.abs]) : null;
     try {
       mkdirSync(folder);
@@ -5287,6 +5449,7 @@ export class WorkspaceSession {
         left.slice(0, 10),
       );
     const to = join(dirname(folder), basename(abs));
+    this.mayBeASetOrDie(to, true);
     this.refuseExisting(to);
     this.renameOrDie(abs, to);
     try {
@@ -5319,6 +5482,9 @@ export class WorkspaceSession {
     const raw = resolve(rawPath);
     const name = basename(raw);
     const abs = join(this.contextForm(dirname(raw)), name);
+    // Never among the sessions or in the app home, even where a set shows it.
+    this.notOwnPlaceOrDie(raw, 400);
+    this.notOwnPlaceOrDie(abs, 400);
     if (this.nameOrDie(name) !== name)
       throw new SessionError(`"${name}" is not a usable name: no space at either end`, 400);
     this.refuseBundleName(name, "a new folder");
@@ -5348,6 +5514,7 @@ export class WorkspaceSession {
       const among = (p: string, root: string) => p === root || p.startsWith(root + sep);
       if (among(abs, sessions) || among(real, realSessions))
         throw new SessionError(`${tilde(abs)} is among the sessions' own folders`, 400);
+      this.mayBeASetOrDie(abs);
       let isDir = false;
       try {
         isDir = statSync(parent).isDirectory();
@@ -7863,6 +8030,8 @@ function refuseMalformedManifest(raw: Record<string, unknown>, sessionId: string
       membership: "string",
       nodes: "list",
     });
+    // A relative root would be read against the daemon's working directory.
+    if (!isAbsolute(e.root as string)) refuse(`\`context[${i}].root\` is not a full path`);
   });
   list("docs").forEach((d, i) => {
     fields(`docs[${i}]`, d, {
@@ -7873,6 +8042,12 @@ function refuseMalformedManifest(raw: Record<string, unknown>, sessionId: string
       active: "number",
       notes: "list",
     });
+    // ⛔ Both become part of a path the kit writes (`docs/<slug>/v<n><ext>`):
+    // one that climbs out would put a version anywhere (`safeNames.ts`).
+    const badSlug = safeSlug(d.slug);
+    if (badSlug !== null) refuse(`\`docs[${i}].slug\` is not one safe folder name: ${badSlug}`);
+    const badExt = safeExt(d.ext);
+    if (badExt !== null) refuse(`\`docs[${i}].ext\` is not a plain extension: ${badExt}`);
     (d.versions as unknown[]).forEach((v, j) => {
       if (!isObj(v)) refuse(`\`docs[${i}].versions[${j}]\` is not an object`);
       fields(`docs[${i}].versions[${j}]`, v as Record<string, unknown>, { n: "number" });

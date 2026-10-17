@@ -32,12 +32,13 @@
  */
 
 import { readdirSync, realpathSync, statSync } from "node:fs";
-import { basename, join, sep } from "node:path";
-import { homeDir } from "../../../kit/lib/home";
+import { basename, dirname, isAbsolute, join, sep } from "node:path";
 import type {
   ManifestMigrateContext,
   ManifestMigration,
 } from "../../../kit/workspace/manifestMigrate";
+import { notAddedWhole } from "../../../kit/workspace/noHome";
+import { safeExt, safeSlug } from "../../../kit/workspace/safeNames";
 import { scriptoriumApp } from "./app";
 
 type Obj = Record<string, unknown>;
@@ -162,6 +163,14 @@ function highestOnDisk(dir: string): number {
 
 function doc(d: Obj, at: string, sessionDir: string): Obj {
   const slug = str(d.slug, `${at}.slug`);
+  // ⛔ Never written through: both become part of a version file's path
+  // (`docs/<slug>/v<n><ext>`), and one that climbs out names any file.
+  const badSlug = safeSlug(slug);
+  if (badSlug !== null)
+    throw unconvertible(`\`${at}.slug\` is ${JSON.stringify(slug)}: ${badSlug}`);
+  const ext = str(d.ext, `${at}.ext`);
+  const badExt = safeExt(ext);
+  if (badExt !== null) throw unconvertible(`\`${at}.ext\` is ${JSON.stringify(ext)}: ${badExt}`);
   const versions = list(d.versions, `${at}.versions`).map((v, j) =>
     version(v, `${at}.versions[${j}]`),
   );
@@ -180,7 +189,7 @@ function doc(d: Obj, at: string, sessionDir: string): Obj {
     original: str(d.original, `${at}.original`),
     entryId: typeof d.entryId === "string" ? d.entryId : null,
     rel: typeof d.rel === "string" ? d.rel : null,
-    ext: str(d.ext, `${at}.ext`),
+    ext,
     versions,
     active: num(d.active, `${at}.active`),
     nextVersion,
@@ -269,12 +278,20 @@ const realOr = (p: string): string => {
 function workspaceEntry(
   workspace: unknown,
   context: readonly Obj[],
+  at: ManifestMigrateContext,
 ): { entry: Obj } | { skipped: string } {
   if (typeof workspace !== "string" || workspace === "")
     return { skipped: "it had no workspace folder of its own (it used your home folder)" };
+  // A relative path would be read against the daemon's working directory.
+  if (!isAbsolute(workspace))
+    return { skipped: `its workspace ${JSON.stringify(workspace)} is not a full path` };
   const real = realOr(workspace);
-  if (real === realOr(homeDir()))
-    return { skipped: "its workspace was your home folder, which is not added whole" };
+  // The kit's rule for a folder no one picked as a set: not the home folder
+  // or one above it, the top of the disk, the sessions (or a folder holding
+  // them), or the app's home. The shipped sessions root is
+  // `<app home>/sessions`, so the app home is the folder above it.
+  const notWhole = notAddedWhole(workspace, at.sessionsRoot, dirname(at.sessionsRoot));
+  if (notWhole !== null) return { skipped: notWhole };
   let isDir = false;
   try {
     isDir = statSync(workspace).isDirectory();
@@ -327,7 +344,8 @@ function convert(raw: Obj, at: ManifestMigrateContext): ManifestMigration {
   const context = list(raw.context, "context").map((e, i) => {
     const { hidden: h, ...rest } = e;
     const id = str(e.id, `context[${i}].id`);
-    str(e.root, `context[${i}].root`);
+    if (!isAbsolute(str(e.root, `context[${i}].root`)))
+      throw unconvertible(`\`context[${i}].root\` is not a full path`);
     oneOf(e.membership, ["mirrored", "listed"] as const, `context[${i}].membership`);
     if (!Array.isArray(e.nodes)) throw unconvertible(`\`context[${i}].nodes\` is not a list`);
     if (h !== undefined) {
@@ -337,7 +355,7 @@ function convert(raw: Obj, at: ManifestMigrateContext): ManifestMigration {
     }
     return rest;
   });
-  const ws = workspaceEntry(raw.workspace, context);
+  const ws = workspaceEntry(raw.workspace, context, at);
   if ("entry" in ws) {
     if (context.some((e) => e.id === WORKSPACE_ENTRY_ID))
       throw unconvertible(`a context entry already has the id ${WORKSPACE_ENTRY_ID}`);

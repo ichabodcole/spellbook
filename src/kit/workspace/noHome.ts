@@ -13,7 +13,7 @@
  */
 
 import { realpathSync } from "node:fs";
-import { dirname, sep } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { homeDir } from "../lib/home.ts";
 
 /** What an app says about a home workspace. Read off the app declaration. */
@@ -118,5 +118,110 @@ export function notAddedWhole(path: string, sessionsRoot: string, appHome?: stri
     if (at === own || at.startsWith(own + sep))
       return `${path} is in the app's own folder (${appHome}), where its sessions live`;
   }
+  return null;
+}
+
+/**
+ * A path as the disk resolves it: the realpath of its nearest folder that
+ * exists, with the rest appended, so a symlink anywhere above it is followed
+ * even when the path itself is not there yet.
+ */
+export function onDisk(p: string): string {
+  const abs = resolve(p);
+  let at = abs;
+  for (;;) {
+    try {
+      return join(realpathSync(at), relative(at, abs));
+    } catch {
+      const up = dirname(at);
+      if (up === at) return abs;
+      at = up;
+    }
+  }
+}
+
+/** `p` is `root`, or inside it (both absolute). */
+export function within(p: string, root: string): boolean {
+  const r = relative(root, p);
+  return r === "" || (r !== ".." && !r.startsWith(`..${sep}`) && !isAbsolute(r));
+}
+
+/**
+ * The app's own places: its sessions root and, when it names one, its app
+ * home (where its sessions, settings and logs live). `except` is the one
+ * folder inside them a write may still reach: a home-workspace app's own
+ * `imported/` folder in the session, its default workspace.
+ */
+export type OwnPlaces = { sessionsRoot: string; appHome?: string; except?: string };
+
+const ownRoots = (own: OwnPlaces): string[] => [
+  own.sessionsRoot,
+  ...(own.appHome !== undefined ? [own.appHome] : []),
+];
+
+const ownName = (root: string, own: OwnPlaces): string =>
+  root === own.sessionsRoot ? "the sessions' own folders" : `the app's own folder (${root})`;
+
+/**
+ * Why `path` is inside the app's own places, or null. Compared both as
+ * written and as the disk resolves it, so a link into the sessions is caught
+ * as well as a spelling with `..` in it.
+ */
+export function inOwnPlaces(path: string, own: OwnPlaces): string | null {
+  const forms = [resolve(path), onDisk(path)];
+  const except = own.except !== undefined ? [resolve(own.except), onDisk(own.except)] : [];
+  for (const root of ownRoots(own))
+    for (const r of [resolve(root), onDisk(root)])
+      for (const f of forms)
+        if (within(f, r) && !except.some((x) => within(f, x)))
+          return root === own.sessionsRoot
+            ? `${path} is among the sessions' own folders`
+            : `${path} is in the app's own folder (${root}), where its sessions live`;
+  return null;
+}
+
+/** Why `path` holds the app's sessions root or app home (a folder above one), or null. */
+export function holdsOwnPlaces(path: string, own: OwnPlaces): string | null {
+  const at = [resolve(path), onDisk(path)];
+  for (const root of ownRoots(own))
+    for (const r of [resolve(root), onDisk(root)])
+      if (at.some((a) => a !== r && within(r, a))) return `${path} holds ${ownName(root, own)}`;
+  return null;
+}
+
+/**
+ * Why `path` may not become a set or a listed entry, on every route that
+ * makes one (`add`, the undo of a hide, `add-folder`, `make-set`, a new item
+ * that gets an entry of its own), or null when it may.
+ *
+ * ⛔ THE RULE. Refused: a path among the sessions or in the app home (its
+ * manifests and versions would be shown, and written, as documents); the top
+ * of the disk and every folder above the home folder; and a folder that holds
+ * the sessions or the app home, unless the way down to them passes through a
+ * dot-folder. The tree scan never shows a dot-folder, so `add ~` with the
+ * default `~/.<app>` shows none of it and stays allowed, as the shipped
+ * Scriptorium allows it. A home that is not a dot-folder (a scratch one) is in
+ * plain sight, and a folder holding it is refused. Compared as written and as
+ * the disk resolves it.
+ */
+export function notASet(path: string, own: OwnPlaces): string | null {
+  const inside = inOwnPlaces(path, own);
+  if (inside !== null) return inside;
+  const at = onDisk(path);
+  const home = onDisk(homeDir());
+  if (at === dirname(at)) return `${path} is the top of the disk, which is not added whole`;
+  if (at !== home && within(home, at))
+    return `${path} holds your home folder, which is not added whole`;
+  for (const root of ownRoots(own))
+    for (const r of [resolve(root), onDisk(root)])
+      for (const a of [resolve(path), at]) {
+        if (a === r || !within(r, a)) continue;
+        if (
+          !relative(a, r)
+            .split(sep)
+            .some((part) => part.startsWith("."))
+        )
+          return `${path} holds ${ownName(root, own)} in plain sight, which no set may show`;
+      }
   return null;
 }

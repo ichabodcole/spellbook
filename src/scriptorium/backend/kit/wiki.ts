@@ -37,6 +37,7 @@ import {
 } from "../frontmatter";
 import type { DocMeta, DocSummary } from "../protocol";
 import { gitRootOf, META_SCAN_CAP } from "../session";
+import { fullPathOrDie } from "./hide";
 
 /** A frontmatter block lives at the top of a file; this is how much is read to find it (the shipped size). */
 const META_HEAD_BYTES = 8192;
@@ -300,6 +301,10 @@ function str(args: Record<string, unknown>, key: string, verb: string): string {
   return v;
 }
 
+/** A path argument: present, and a full path (`fullPathOrDie`). */
+const pathArg = (args: Record<string, unknown>, key: string, verb: string): string =>
+  fullPathOrDie(str(args, key, verb), verb);
+
 /** The kit's `forgetDoc` refusal reads `<path> is still on disk: …`. */
 const STILL_ON_DISK = " is still on disk";
 
@@ -307,13 +312,16 @@ const optStr = (args: Record<string, unknown>, key: string): string | undefined 
   typeof args[key] === "string" && args[key] !== "" ? (args[key] as string) : undefined;
 
 export const wikiVerbs: Record<string, VerbHandler> = {
-  "scriptorium.meta": (ctx, args) => metaFor(ctx.session, optStr(args, "path")),
+  "scriptorium.meta": (ctx, args) => {
+    const path = optStr(args, "path");
+    return metaFor(ctx.session, path === undefined ? undefined : fullPathOrDie(path, "meta"));
+  },
 
   "scriptorium.find": (ctx, args) => find(ctx.session, filterOf(args.filter)),
 
   "scriptorium.meta.init": (ctx, args, call) => {
     const metaType = optStr(args, "metaType");
-    const { text, ...r } = metaInit(ctx.session, str(args, "path", "meta-init"), {
+    const { text, ...r } = metaInit(ctx.session, pathArg(args, "path", "meta-init"), {
       ...(metaType ? { type: metaType } : {}),
       by: optStr(args, "by") ?? by(call.from),
     });
@@ -339,7 +347,7 @@ export const wikiVerbs: Record<string, VerbHandler> = {
       throw new SessionError("meta-set needs fields: an object of key to string value", 400);
     const { text, ...r } = metaSet(
       ctx.session,
-      str(args, "path", "meta-set"),
+      pathArg(args, "path", "meta-set"),
       fields as Record<string, string>,
     );
     writeOriginal(r.path, text);
@@ -375,8 +383,8 @@ export const wikiVerbs: Record<string, VerbHandler> = {
   },
 
   "scriptorium.move.plan": (ctx, args, call) => {
-    const path = str(args, "path", "move-plan");
-    const into = str(args, "into", "move-plan");
+    const path = pathArg(args, "path", "move-plan");
+    const into = pathArg(args, "into", "move-plan");
     const plan = movePlan(ctx.session, path, into);
     call.reply({ op: "scriptorium.move.plan", path, into, plan });
     return plan;

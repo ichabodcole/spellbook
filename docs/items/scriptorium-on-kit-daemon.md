@@ -222,6 +222,9 @@ Not yet in the shipped SKILL. It goes in at the cutover.
     `hide` or `unhide`. Undo of a whole-entry hide brings back the same entry id
     (shipped re-adds it under a new one), and a redo's chat line repeats the
     act's label ("You redid: removed solo.md from the context.").
+  - `hide` takes a document out of Scriptorium's views, but it is not a
+    confidentiality boundary: a document opened before it was hidden keeps its
+    notes and versions.
 - **The ask:** `via: "ask"` with `about: { noteId }` (there is no `about.ask`).
   A second ask while the note is owed gets an error frame for its `rid`. Only a
   human's ask counts; any other `via` naming the note is a typed follow-up, and

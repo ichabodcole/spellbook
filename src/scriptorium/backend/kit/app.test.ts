@@ -72,8 +72,8 @@ describe("the dry run refuses the real sessions by any spelling", () => {
     expect(refused(join(root, "scratch", "not-made-yet"))).toBeNull();
     const sib = join(root, "scratch", "sib");
     mkdirSync(sib);
-    mkdirSync(join(realHome, ".scriptorium", "sessions-old"));
-    symlinkSync(join(realHome, ".scriptorium", "sessions-old"), join(sib, "sessions"));
+    mkdirSync(join(realHome, ".scriptorium-old", "sessions"), { recursive: true });
+    symlinkSync(join(realHome, ".scriptorium-old", "sessions"), join(sib, "sessions"));
     expect(refused(sib)).toBeNull();
   });
 

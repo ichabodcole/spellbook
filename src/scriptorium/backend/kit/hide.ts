@@ -14,12 +14,25 @@
  */
 
 import { existsSync, statSync } from "node:fs";
-import { basename } from "node:path";
+import { basename, isAbsolute } from "node:path";
 import type { AppAct } from "../../../kit/workspace/history";
 import type { ContextEntry } from "../../../kit/workspace/protocol";
 import type { VerbHandler } from "../../../kit/workspace/server";
 import { GoneError, SessionError, type WorkspaceSession } from "../../../kit/workspace/session";
 import { type HiddenLists, hiddenLists } from "./app";
+
+/**
+ * A path an app verb was sent, refused unless it is a full one. The daemon's
+ * working directory is the folder `open` ran in, which no caller named, so a
+ * relative path from `/cmd` or the socket is refused rather than read against
+ * it (as the kit's structure ops refuse one). The CLI resolves a relative path
+ * in the agent's own directory before it posts.
+ */
+export function fullPathOrDie(path: string, verb: string): string {
+  if (!isAbsolute(path))
+    throw new SessionError(`${verb}: "${path}" is not a full path: start it with /`, 400);
+  return path;
+}
 
 export type HideResult = { path: string; entry: string; removedEntry: boolean };
 export type UnhideResult = { entry: string; restored: number };
@@ -167,7 +180,7 @@ export const hideVerbs: Record<string, VerbHandler> = {
   "scriptorium.hide": (ctx, args, call) => {
     if (typeof args.path !== "string" || args.path === "")
       throw new SessionError("hide needs a path", 400);
-    const { before, ...r } = hide(ctx.session, args.path);
+    const { before, ...r } = hide(ctx.session, fullPathOrDie(args.path, "hide"));
     const shown = ctx.session.display(r.path);
     // ⚠ The parenthetical has to be true (the shipped line's lesson): a ghost
     // is already gone from disk, and a folder is not a file.

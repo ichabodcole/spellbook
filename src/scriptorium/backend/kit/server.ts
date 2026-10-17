@@ -24,7 +24,14 @@ import {
   type WorkspaceDaemonOptions,
 } from "../../../kit/workspace/server";
 import type { AppDeclaration } from "../../../kit/workspace/session";
-import { kitMigrateOn, kitMigrateRefusal, kitSessionsRoot, scriptoriumApp } from "./app";
+import {
+  kitMigrateOn,
+  kitMigrateRefusal,
+  kitMigrateWriteRefusal,
+  kitSessionsRoot,
+  scriptoriumApp,
+  scriptoriumHome,
+} from "./app";
 import { convertShippedManifest } from "./convert";
 import { hideVerbs, liveHiddenLists } from "./hide";
 import { scriptoriumLinkSlot } from "./links";
@@ -38,6 +45,8 @@ import { docMeta, wikiVerbs } from "./wiki";
 export const migratingApp: AppDeclaration = {
   ...scriptoriumApp,
   migrateManifest: convertShippedManifest,
+  // Asked again where the conversion is written, not only at boot.
+  migrateWriteRefusal: (at) => kitMigrateWriteRefusal(at),
 };
 
 /** What a browser shows at the session's URL while the kit path has no surface. */
@@ -57,6 +66,9 @@ export function kitDaemonOptions(
   return {
     app: kitMigrateOn() ? migratingApp : scriptoriumApp,
     sessionsRoot: kitSessionsRoot(),
+    // $SCRIPTORIUM_HOME: the shipped sessions, the kit path's, logs and prefs.
+    // No set shows it and nothing is written in it from a structure op.
+    appHome: scriptoriumHome(),
     verbs: { ...hideVerbs, ...wikiVerbs },
     // What `hide` left out, per entry id: the shipped state carried it on each
     // entry (`hidden`); the kit's entries are the kit's, so it rides here.

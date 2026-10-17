@@ -24,7 +24,7 @@
  * it is restored, and is refused anywhere but a scratch copy of the sessions.
  */
 
-import { realpathSync } from "node:fs";
+import { lstatSync, realpathSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 // The kit's one reader of the home: a test preload moves it, and a test run
 // that has the real home is refused it (`os.homedir()` is neither).
@@ -127,14 +127,54 @@ export function kitMigrateRefusal(
   const set = env.SCRIPTORIUM_HOME;
   if (set === undefined || set === "")
     return `${MIGRATE_FLAG}=1 converts the sessions under $SCRIPTORIUM_HOME, and SCRIPTORIUM_HOME is not set: until the cutover it runs only on a copy. Copy the sessions into a scratch home and set SCRIPTORIUM_HOME to it`;
-  const homes = [homeDir(), ...(realHome ? [realHome] : [])].map((h) => join(h, ".scriptorium"));
-  // The home check is implied by the sessions one (a home that resolves to the
-  // real one has the real sessions under it); it is kept as the plain rule,
-  // and no test can tell the two apart.
+  const users = [homeDir(), ...(realHome ? [realHome] : [])];
+  const homes = users.map((h) => onDisk(join(h, ".scriptorium")));
   const home = onDisk(set);
   const sessions = onDisk(join(resolve(set), "sessions"));
-  if (homes.some((h) => home === onDisk(h) || within(sessions, onDisk(join(h, "sessions")))))
-    return `${MIGRATE_FLAG}=1 will not convert the real sessions in ~/.scriptorium before the cutover: copy them into a scratch home and set SCRIPTORIUM_HOME to it`;
+  // Refused: a home that is a user's home itself, or lies in a real
+  // `.scriptorium` (it, or a folder inside it); a sessions root that lies in
+  // one, or holds one (a `sessions` linked to the real `.scriptorium` or to
+  // the real home). Each compared as the disk resolves it.
+  const real = (p: string) => homes.some((h) => within(p, h) || within(h, p));
+  if (users.some((u) => home === onDisk(u)) || homes.some((h) => within(home, h)) || real(sessions))
+    return REAL_REFUSAL;
+  return null;
+}
+
+const REAL_REFUSAL = `${MIGRATE_FLAG}=1 will not convert the real sessions in ~/.scriptorium before the cutover: copy them into a scratch home and set SCRIPTORIUM_HOME to it`;
+
+/**
+ * Why the dry run may not write the conversion of the session at `at` now, or
+ * null. Asked when the converted manifest and its kept copy are about to be
+ * written (`AppDeclaration.migrateWriteRefusal`), so a sessions folder swapped
+ * for a link after boot is caught where it matters:
+ * - the boot rule again (`kitMigrateRefusal`), on the paths as they are now;
+ * - the session's folder must really be inside the sessions root as the disk
+ *   resolves both (one session folder linked in from elsewhere is refused),
+ *   and must not lie in a real `.scriptorium`;
+ * - its manifest must not be a hard link (a second name for a file elsewhere).
+ */
+export function kitMigrateWriteRefusal(
+  at: { dir: string; sessionsRoot: string },
+  env: NodeJS.ProcessEnv = process.env,
+  realHome: string | null = accountHome(),
+): string | null {
+  const boot = kitMigrateRefusal(env, realHome);
+  if (boot !== null) return boot;
+  const dir = onDisk(at.dir);
+  const root = onDisk(at.sessionsRoot);
+  if (dir === root || !within(dir, root))
+    return `its folder ${at.dir} leads outside the sessions folder (to ${dir}): it is converted only where it is`;
+  const homes = [homeDir(), ...(realHome ? [realHome] : [])].map((h) =>
+    onDisk(join(h, ".scriptorium")),
+  );
+  if (homes.some((h) => within(dir, h))) return REAL_REFUSAL;
+  try {
+    if (lstatSync(join(at.dir, "manifest.json")).nlink > 1)
+      return "its manifest is a hard link to a file elsewhere: copy the session folder, do not link it";
+  } catch {
+    /* no manifest: the restore says so */
+  }
   return null;
 }
 
