@@ -442,6 +442,28 @@
       "recordedAt": "2026-10-17T02:15:08Z"
     },
     {
+      "path": ["make-set"],
+      "argv": ["make-set", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"make-set: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"make-set\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build 195cec23-dirty, paths derived from the declaration",
+      "recordedAt": "2026-10-17T03:13:35Z"
+    },
+    {
+      "path": ["add-folder"],
+      "argv": ["add-folder", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"add-folder: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"add-folder\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build 195cec23-dirty, paths derived from the declaration",
+      "recordedAt": "2026-10-17T03:13:35Z"
+    },
+    {
       "path": ["version"],
       "argv": ["version", "--acc-not-a-flag"],
       "exitCode": 2,

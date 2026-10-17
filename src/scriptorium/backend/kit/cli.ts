@@ -20,6 +20,7 @@
 
 import { createWorkspaceCli, type WorkspaceCli } from "../../../kit/workspace/verbs";
 import { KIT_FLAG, kitSessionsRoot, scriptoriumApp } from "./app";
+import { scriptoriumKitCommands } from "./commands";
 
 export type KitCliDeps = {
   /** The daemon launcher, absolute: `<skill>/scripts/server.ts`. */
@@ -39,6 +40,7 @@ export function scriptoriumKitCli(deps: KitCliDeps): WorkspaceCli {
       // Explicit, not inherited by accident: the daemon must take the kit path too.
       env: { ...process.env, [KIT_FLAG]: "1" },
     },
+    commands: scriptoriumKitCommands,
     sessionsRoot: () => kitSessionsRoot(),
     version: () => ({ ...deps.version(), path: "kit" }),
     helpFooter:
