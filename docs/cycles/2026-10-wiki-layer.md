@@ -75,14 +75,37 @@ Out of scope, deliberately:
 
 ## Outcome
 
-_Written at close, not before — and for an `abandoned` cycle too._
+**What shipped.** All seven items, on the flagged Scriptorium
+(`SCRIPTORIUM_KIT=1`). The kit gained an app link-edge slot with a resolver, a
+tree-scan filter, set promotion and folder creation at a named place, a
+whole-manifest migrate hook, a no-home-workspace option, a move plan that writes
+nothing and matches the move, and Story Studio's `via` and `refs`. On them, the
+flagged Scriptorium has its wiki layer: `hide`, `make-set`, `add-folder`,
+`meta`, `find`, `forget`, `move-plan`, the remove verbs and `docMeta`. Its
+converter turns all 54 of Cole's real sessions into kit sessions in a dry run,
+behind `SCRIPTORIUM_KIT_MIGRATE=1`, and is off until the cutover. The shipped
+Scriptorium is unchanged.
 
-[What shipped. What was cut, and why. What carried over to the next cycle: each
-item still open, and the cycle it joined. What was learned that will change how
-the next cycle is scoped. For an `abandoned` cycle, what was falsified: the
-assumption that stopped it. Two paragraphs is usually enough; the point is that
-a reader six months from now can tell what happened without reading every
-session.]
+**What was added that the scope did not name.** The final security review found
+that the agent could be steered into writing outside the folders it should
+touch: a crafted manifest name, the converter's dangerous roots, routes into the
+sessions folder, and then planted links and hard links. Four fix rounds ended
+with every disk write going through one module (`src/kit/workspace/disk.ts`),
+held by a ward. Cole set the line at planted links; races and read exposure are
+filed. The flagged path now refuses to save a hard-linked note on the disk that
+holds the sessions, by design.
+
+**What was cut or deferred.** Story Studio's `0ff5698` (panes only), layout in
+daemon prefs, and undo for setting a workspace, which no longer exists on this
+path. The three slot offers to Story Studio (link edges, scan filter, set
+promotion) go out on kit-parity after landing.
+
+**What was learned.** Parallel items that touch the same options object can lose
+a feature in a clean merge; check the combined branch for every verb. A security
+fix applied site by site leaks; route through one module and ward it. A dry run
+is evidence only for the code it ran against. And the two kits now hold opposite
+workspace models, so porting these slots back to Story Studio is a
+reconciliation to plan, not a patch to send.
 
 ## Sessions
 

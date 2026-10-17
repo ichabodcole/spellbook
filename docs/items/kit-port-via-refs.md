@@ -5,7 +5,7 @@ description:
   'Port the workspace half of Story Studio''s bbc54fd (a message''s via and
   refs) and of 4e6d4d4, and move the one-ask guard from about.ask to via: "ask".'
 status: stable
-lifecycle: active
+lifecycle: review
 id: 01a1478f-325f-7538-8b08-92d7bd9f7ca2
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-16 }

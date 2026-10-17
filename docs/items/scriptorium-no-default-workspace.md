@@ -8,7 +8,7 @@ description:
   (last one preselected) when nothing is selected, and the agent names where it
   creates; the opening folder becomes an ordinary added folder."
 status: stable
-lifecycle: ready
+lifecycle: review
 id: 01a14606-4a31-7535-9dbd-5f19712c490c
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-16 }

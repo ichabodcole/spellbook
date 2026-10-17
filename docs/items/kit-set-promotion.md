@@ -5,7 +5,7 @@ description:
   Add a session API that turns a listed entry into a mirrored set and keeps its
   id, and build Scriptorium's make-set and folder creation on it.
 status: stable
-lifecycle: ready
+lifecycle: review
 id: 01a1478f-341d-770a-8ad1-8c3f9e934f0e
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-16 }

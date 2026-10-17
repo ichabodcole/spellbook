@@ -6,7 +6,7 @@ description:
   and the remove verbs to the flagged Scriptorium through the kit's verb and
   appState slots.
 status: stable
-lifecycle: ready
+lifecycle: review
 id: 01a1478f-353c-7581-9e00-69376c30d10d
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-16 }

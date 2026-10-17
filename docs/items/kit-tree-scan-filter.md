@@ -5,7 +5,7 @@ description:
   Let an app filter what the kit's tree scan shows, kept in the app slot, and
   build Scriptorium's hide and unhide on it.
 status: stable
-lifecycle: ready
+lifecycle: review
 id: 01a1478f-338b-7095-b5ea-8cbd6a9b8edd
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-16 }
