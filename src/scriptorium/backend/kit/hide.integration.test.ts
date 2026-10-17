@@ -206,6 +206,84 @@ describe("hide and unhide on the kit path", () => {
     expect(existsSync(solo)).toBe(true);
   });
 
+  test("undo of a whole-entry hide puts the same entry back; redo takes it out again; the chat says so in the shipped words", async () => {
+    const port = (JSON.parse(readFileSync(pointer(sessionId), "utf8")) as { port: number }).port;
+    const surface = new FakeSurface();
+    await surface.connect(port);
+    try {
+      // The previous test hid solo.md: its entry is gone. Put it back by hand
+      // first, so this test reads the id the undo has to keep.
+      expect((await cli("add", "--session", sessionId, solo)).code).toBe(0);
+      const soloId = (await state()).context.find((e) => e.label === "solo.md")?.id ?? "";
+      expect(soloId).not.toBe("");
+      expect((await cli("hide", "--session", sessionId, solo)).code).toBe(0);
+      const said = async (text: string) => {
+        for (let i = 0; i < 100 && !(await state()).chat.some((c) => c.text === text); i++)
+          await Bun.sleep(20);
+        expect((await state()).chat.map((c) => c.text)).toContain(text);
+      };
+      surface.send({ op: "history.undo" });
+      await said("You undid: removed solo.md from the context.");
+      expect((await state()).context.find((e) => e.label === "solo.md")?.id).toBe(soloId);
+      surface.send({ op: "history.redo" });
+      await said("You redid: removed solo.md from the context.");
+      expect((await state()).context.map((e) => e.label)).toEqual(["set"]);
+    } finally {
+      surface.close();
+    }
+  });
+
+  test("undo of an unhide hides them again, and says how many came back", async () => {
+    const port = (JSON.parse(readFileSync(pointer(sessionId), "utf8")) as { port: number }).port;
+    const surface = new FakeSurface();
+    await surface.connect(port);
+    try {
+      expect((await cli("hide", "--session", sessionId, join(set, "drafts"))).code).toBe(0);
+      expect(json(await cli("unhide", "--session", sessionId, entry))).toMatchObject({
+        restored: 1,
+      });
+      expect(await tree()).toContain("drafts");
+      surface.send({ op: "history.undo" });
+      for (let i = 0; i < 100 && (await tree()).includes("drafts"); i++) await Bun.sleep(20);
+      expect(await tree()).not.toContain("drafts");
+      expect((await state()).chat.at(-1)?.text).toBe("You undid: brought back 1 hidden item.");
+      surface.send({ op: "history.redo" });
+      for (let i = 0; i < 100 && !(await tree()).includes("drafts"); i++) await Bun.sleep(20);
+      expect(await tree()).toContain("drafts");
+      expect((await state()).chat.at(-1)?.text).toBe("You redid: brought back 1 hidden item.");
+    } finally {
+      surface.close();
+    }
+  });
+
+  test("a hide's undo whose entry has left the context comes off the list, and the older acts are reached", async () => {
+    const port = (JSON.parse(readFileSync(pointer(sessionId), "utf8")) as { port: number }).port;
+    const surface = new FakeSurface();
+    await surface.connect(port);
+    try {
+      // The older act: solo.md back by hand, then hidden (its undo re-adds it).
+      expect((await cli("add", "--session", sessionId, solo)).code).toBe(0);
+      expect((await cli("hide", "--session", sessionId, solo)).code).toBe(0);
+      // The newer: a hide in the set, whose set then leaves by the kit's own
+      // removal, which pushes no act.
+      expect((await cli("hide", "--session", sessionId, join(set, "drafts", "old"))).code).toBe(0);
+      surface.send({ op: "context.remove", id: entry });
+      for (let i = 0; i < 100 && (await state()).context.some((e) => e.id === entry); i++)
+        await Bun.sleep(20);
+      expect((await state()).context.map((e) => e.label)).toEqual([]);
+      surface.send({ op: "history.undo" });
+      const refused = await surface.waitFor((m) => m.op === "error");
+      expect(JSON.stringify(refused)).toContain("taken off the undo list");
+      surface.send({ op: "history.undo" });
+      for (let i = 0; i < 100 && (await state()).context.length === 0; i++) await Bun.sleep(20);
+      expect((await state()).context.map((e) => e.label)).toEqual(["solo.md"]);
+      // The set's list went with the set: the agent is not told of it.
+      expect((await state()).appState).toEqual({ hidden: {} });
+    } finally {
+      surface.close();
+    }
+  });
+
   test("hide <a path nothing shows> is refused as not found", async () => {
     const r = await cli("hide", "--session", sessionId, join(root, "nowhere.md"));
     expect(r.code).toBe(5);

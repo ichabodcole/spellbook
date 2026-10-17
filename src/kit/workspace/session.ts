@@ -224,6 +224,7 @@ import {
   listedFile,
   locate,
   MIRROR_NODE_CAP,
+  PathError,
   readBundleInfo,
   type ScanSkip,
   scanTree,
@@ -1180,7 +1181,9 @@ export class WorkspaceSession {
 
   addContext(rawPath: string): { entry: ContextEntry; added: boolean } {
     const abs = resolve(rawPath);
-    const probe = entryForPath(abs, `c-${randHex(3)}`);
+    const id = `c-${randHex(3)}`;
+    // The app's filter sees a new set from its first scan.
+    const probe = entryForPath(abs, id, (root) => this.scanSkip(id, root));
     const same = this.m.context.find(
       (e) =>
         e.root === probe.root &&
@@ -1199,8 +1202,6 @@ export class WorkspaceSession {
         409,
       );
     this.m.context.push(probe);
-    // The app's filter sees a new set too: scanned again, through it.
-    if (probe.membership === "mirrored" && this.app.scan) this.rescan(probe.id);
     // A loose image comes with its description, when one is beside it: listed
     // too, and folded into the image's row by the surface.
     const only = listedFile(probe);
@@ -1212,7 +1213,11 @@ export class WorkspaceSession {
     return { entry: probe, added: true };
   }
 
-  removeContext(id: string): void {
+  /**
+   * Take an entry out of the context (the files stay on disk). Returns the
+   * entry and where it stood, which `restoreContext` takes to put it back.
+   */
+  removeContext(id: string): { entry: ContextEntry; index: number } {
     const i = this.m.context.findIndex((e) => e.id === id);
     if (i < 0)
       throw new SessionError(
@@ -1220,12 +1225,68 @@ export class WorkspaceSession {
         404,
         this.m.context.map((e) => e.id),
       );
-    this.m.context.splice(i, 1);
+    const [entry] = this.m.context.splice(i, 1) as [ContextEntry];
     this.relink();
     this.closeOrphanedOpenDoc();
     // An open image the context no longer shows is put away, as `closeImage` does.
     if (this.m.openImage && !this.imageNodeAt(this.m.openImage)) this.closeImage();
     this.persist();
+    return { entry, index: i };
+  }
+
+  /**
+   * Put back an entry `removeContext` took out: the SAME id, root and
+   * membership, at `index` (clamped to the list), so whatever names it by id
+   * (an app's slot, an act on the history) finds it again. What it shows is
+   * read again from disk, a set's through the app's filter. A `GoneError` when
+   * it can never come back this way: its id or its folder (or item) is in the
+   * context already, or what it showed is gone from disk or is no longer the
+   * same kind of entry. A 409 when a set would hold the workspace, as
+   * `addContext` refuses it. Persists. For an app's undo of a removal
+   * (Scriptorium's `hide` of a whole entry).
+   */
+  restoreContext(entry: ContextEntry, index = this.m.context.length): ContextEntry {
+    if (this.m.context.some((e) => e.id === entry.id))
+      throw new GoneError(`${entry.label} (${entry.id}) is in the context already`, 409);
+    const only = entry.membership === "listed" ? entry.nodes[0] : undefined;
+    const path =
+      entry.membership === "mirrored" ? entry.root : only ? join(entry.root, only.rel) : null;
+    if (path === null)
+      throw new GoneError(`${entry.label} (${entry.id}) shows nothing to put back`, 409);
+    let fresh: ContextEntry;
+    try {
+      fresh = entryForPath(path, entry.id, (root) => this.scanSkip(entry.id, root));
+    } catch (e) {
+      if (e instanceof PathError)
+        throw new GoneError(`${tilde(path)} cannot come back: ${e.message}`, 409);
+      throw e;
+    }
+    if (fresh.membership !== entry.membership || fresh.root !== entry.root)
+      throw new GoneError(`${tilde(path)} is no longer what ${entry.label} was`, 409);
+    if (
+      this.m.context.some(
+        (e) =>
+          e.root === fresh.root &&
+          e.membership === fresh.membership &&
+          (fresh.membership === "mirrored" ||
+            JSON.stringify(e.nodes) === JSON.stringify(fresh.nodes)),
+      )
+    )
+      throw new GoneError(`${tilde(path)} is in the context already`, 409);
+    if (fresh.membership === "mirrored" && overlapOf(this.workspace, [fresh]))
+      throw new SessionError(
+        `${fresh.label} cannot come back as a set: its folder holds the workspace folder (${tilde(this.workspace)})`,
+        409,
+      );
+    const back: ContextEntry = {
+      ...fresh,
+      label: entry.label,
+      ...(entry.realRoot ? { realRoot: entry.realRoot } : {}),
+    };
+    this.m.context.splice(Math.max(0, Math.min(index, this.m.context.length)), 0, back);
+    this.relink();
+    this.persist();
+    return back;
   }
 
   /**
@@ -1242,8 +1303,7 @@ export class WorkspaceSession {
   rescan(entryId: string): boolean {
     const e = this.m.context.find((x) => x.id === entryId);
     if (e?.membership !== "mirrored") return false;
-    const rule = this.app.scan?.({ entryId: e.id, root: e.root, slot: this.appSlot });
-    const { nodes, truncated } = scanTree(e.root, MIRROR_NODE_CAP, rule?.skip);
+    const { nodes, truncated } = scanTree(e.root, MIRROR_NODE_CAP, this.scanSkip(e.id, e.root));
     const changed =
       JSON.stringify(nodes) !== JSON.stringify(e.nodes) || !!truncated !== !!e.truncated;
     e.nodes = nodes;
@@ -1251,6 +1311,33 @@ export class WorkspaceSession {
     else delete e.truncated;
     if (changed) this.relink();
     return changed;
+  }
+
+  /** The app's filter for a set's scan (`AppDeclaration.scan`), as the slot is now. */
+  private scanSkip(entryId: string, root: string): ScanSkip | undefined {
+    return this.app.scan?.({ entryId, root, slot: this.appSlot })?.skip;
+  }
+
+  /**
+   * Whether the app's filter leaves `abs` out of a set whose folder holds it:
+   * the path itself, or a folder above it, skipped (`ScanRule.skip`). A path no
+   * set holds is not filtered.
+   */
+  private filteredOut(): (abs: string) => boolean {
+    const rules: { root: string; skip: ScanSkip }[] = [];
+    if (this.app.scan)
+      for (const e of this.m.context) {
+        if (e.membership !== "mirrored") continue;
+        const skip = this.scanSkip(e.id, e.root);
+        if (skip) rules.push({ root: e.root, skip });
+      }
+    return (abs) =>
+      rules.some(({ root, skip }) => {
+        const rel = toPosix(relative(root, abs));
+        if (rel === "" || rel.startsWith("..") || isAbsolute(rel)) return false;
+        const parts = rel.split("/");
+        return parts.some((_, i) => skip(parts.slice(0, i + 1).join("/"), i < parts.length - 1));
+      });
   }
 
   /**
@@ -3726,7 +3813,10 @@ export class WorkspaceSession {
     // Made in a member folder of a bundle listed on its own: its row is read
     // again. An entry of its own would be the bundle a second time.
     else if (listed) this.refreshListed(listed);
-    else this.m.context.push(entryForPath(abs, `c-${randHex(3)}`));
+    else {
+      const id = `c-${randHex(3)}`;
+      this.m.context.push(entryForPath(abs, id, (root) => this.scanSkip(id, root)));
+    }
     this.relink();
   }
 
@@ -5119,7 +5209,14 @@ export class WorkspaceSession {
           path,
           this.m.docs.find((d) => d.original === path),
         );
-    for (const d of this.m.docs) add(d.original, d);
+    // A document the session keeps but no entry lists (opened, then its entry
+    // left) is still one the human has, unless a set's folder holds it and the
+    // app's filter leaves it out there (`ScanRule.skip`): then it is out of
+    // search and links as it is out of the tree. Its record stays, versions
+    // and unsaved text, for when the filter lets it back.
+    const filtered = this.filteredOut();
+    for (const d of this.m.docs)
+      if (!(d.entryId === null && filtered(d.original))) add(d.original, d);
     return candidates;
   }
 

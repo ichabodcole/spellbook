@@ -5,10 +5,10 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { ContextNode } from "../../../kit/workspace/protocol";
-import { WorkspaceSession } from "../../../kit/workspace/session";
+import { GoneError, WorkspaceSession } from "../../../kit/workspace/session";
 import { tempRoot } from "../../../kit/workspace/testing";
 import { hiddenLists, scriptoriumApp } from "./app";
-import { hide, unhide } from "./hide";
+import { hide, hideLabel, listAct, liveHiddenLists, removalAct, unhide, unhideLabel } from "./hide";
 
 let root: string;
 let set: string;
@@ -90,6 +90,68 @@ describe("unhide", () => {
 
   test("nothing hidden restores nothing", () => {
     expect(unhide(s, entry)).toMatchObject({ restored: 0 });
+  });
+});
+
+describe("the way back (the acts the verbs push)", () => {
+  test("a whole-entry hide's undo puts the same entry back where it stood, with its list; redo takes it out again", () => {
+    hide(s, join(set, "drafts"));
+    const r = hide(s, set);
+    if (!r.before.removed) throw new Error("no removal recorded");
+    const act = removalAct(s, hideLabel(r.path), r.before.removed, r.before.hidden);
+    expect(act.label).toBe("removed set from the context");
+    act.undo();
+    expect(s.context.map((e) => e.id)[0]).toBe(entry);
+    expect(hiddenLists(s.appSlot)).toEqual({ [entry]: ["drafts"] });
+    expect(tree()).toEqual(["a.md"]);
+    act.redo?.();
+    expect(s.context.map((e) => e.label)).toEqual(["solo.md"]);
+    expect(hiddenLists(s.appSlot)).toEqual({});
+    // And back again, from where the redo took it.
+    act.undo();
+    expect(s.context.map((e) => e.id)[0]).toBe(entry);
+  });
+
+  test("a whole-entry hide's undo once the entry is back by hand is a GoneError", () => {
+    const r = hide(s, join(root, "solo.md"));
+    if (!r.before.removed) throw new Error("no removal recorded");
+    const act = removalAct(s, hideLabel(r.path), r.before.removed, r.before.hidden);
+    s.addContext(join(root, "solo.md"));
+    expect(() => act.undo()).toThrow(GoneError);
+  });
+
+  test("a list act whose entry left the context is a GoneError both ways", () => {
+    const r = hide(s, join(set, "drafts"));
+    const act = listAct(s, hideLabel(r.path), entry, r.before.hidden);
+    s.removeContext(entry);
+    expect(() => act.undo()).toThrow(GoneError);
+    expect(() => act.redo?.()).toThrow(GoneError);
+  });
+
+  test("an unhide's undo hides the items again; its redo brings them back", () => {
+    hide(s, join(set, "drafts", "old"));
+    hide(s, join(set, "a.md"));
+    const u = unhide(s, entry);
+    const act = listAct(s, unhideLabel(u.restored), entry, u.before);
+    expect(act.label).toBe("brought back 2 hidden items");
+    act.undo();
+    expect(hiddenLists(s.appSlot)[entry]).toEqual(["drafts/old", "a.md"]);
+    expect(tree()).toEqual(["drafts", "drafts/rough.md"]);
+    act.redo?.();
+    expect(hiddenLists(s.appSlot)).toEqual({});
+  });
+
+  test("a removed entry's list is pruned at the next change, and the agent never reads it", () => {
+    const other = join(root, "other");
+    mkdirSync(other);
+    writeFileSync(join(other, "b.md"), "# B\n");
+    const otherId = s.addContext(other).entry.id;
+    hide(s, join(set, "drafts"));
+    // Taken out by the kit's own removal (`context.remove`), not by hide.
+    s.removeContext(entry);
+    expect(liveHiddenLists(s)).toEqual({});
+    hide(s, join(other, "b.md"));
+    expect(hiddenLists(s.appSlot)).toEqual({ [otherId]: ["b.md"] });
   });
 });
 

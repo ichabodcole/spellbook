@@ -532,9 +532,15 @@ export class PathError extends Error {
  * An entry for an absolute path. A directory is `mirrored`; a document or an
  * image file is `listed`, rooted at its parent, holding only itself (a `doc` or
  * an `image` node). An SVG is refused with its reason, and a HEIC photo with the
- * way in that converts it.
+ * way in that converts it. `skipFor`: the app's filter for a set rooted where
+ * the directory is (`ScanRule.skip`), asked only when the path is a set, so its
+ * first scan is already filtered.
  */
-export function entryForPath(rawAbs: string, id: string): ContextEntry {
+export function entryForPath(
+  rawAbs: string,
+  id: string,
+  skipFor?: (root: string) => ScanSkip | undefined,
+): ContextEntry {
   // Anything inside a bundle stands for the bundle: its insides are never an
   // entry of their own (a set of its `assets/`, a listed `info.json`), as named
   // or, through a link, as it really is.
@@ -559,7 +565,7 @@ export function entryForPath(rawAbs: string, id: string): ContextEntry {
       realRoot: realOf(dirname(abs)),
     };
   if (st.isDirectory()) {
-    const { nodes, truncated } = scanTree(abs);
+    const { nodes, truncated } = scanTree(abs, MIRROR_NODE_CAP, skipFor?.(abs));
     return {
       id,
       label: basename(abs) || abs,

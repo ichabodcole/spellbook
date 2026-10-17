@@ -19,8 +19,8 @@ import {
   type WorkspaceDaemon,
   type WorkspaceDaemonOptions,
 } from "../../../kit/workspace/server";
-import { hiddenLists, kitSessionsRoot, scriptoriumApp } from "./app";
-import { hideVerbs } from "./hide";
+import { kitSessionsRoot, scriptoriumApp } from "./app";
+import { hideVerbs, liveHiddenLists } from "./hide";
 
 /** What a browser shows at the session's URL while the kit path has no surface. */
 export const NO_SURFACE_PAGE = `<!doctype html>
@@ -42,7 +42,7 @@ export function kitDaemonOptions(
     verbs: { ...hideVerbs },
     // What `hide` left out, per entry id: the shipped state carried it on each
     // entry (`hidden`); the kit's entries are the kit's, so it rides here.
-    appState: (ctx) => ({ hidden: hiddenLists(ctx.session.appSlot) }),
+    appState: (ctx) => ({ hidden: liveHiddenLists(ctx.session) }),
     http: (req, url) =>
       req.method === "GET" && url.pathname === "/"
         ? new Response(NO_SURFACE_PAGE, {

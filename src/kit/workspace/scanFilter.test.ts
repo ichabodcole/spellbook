@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { ContextNode } from "./protocol";
-import { type AppDeclaration, WorkspaceSession } from "./session";
+import { type AppDeclaration, GoneError, WorkspaceSession } from "./session";
 import { tempRoot } from "./testing";
 import { scanTree } from "./tree";
 
@@ -136,6 +136,25 @@ describe("a scan filter (AppDeclaration.scan)", () => {
     expect(rels(entry.nodes)).toEqual(["aside.md", "canon.md"]);
   });
 
+  test("a set the session makes (a folder moved into the workspace) is scanned through it from the first scan", () => {
+    const pre: AppDeclaration = {
+      ...filterApp,
+      scan: () => ({ skip: (rel) => rel === "secret" }),
+    };
+    const ws = join(root, "ws");
+    mkdirSync(ws, { recursive: true });
+    mkdirSync(join(world, "box", "secret"), { recursive: true });
+    writeFileSync(join(world, "box", "keep.md"), "# Keep\n");
+    writeFileSync(join(world, "box", "secret", "x.md"), "# X\n");
+    const s = WorkspaceSession.create(sessions, pre);
+    s.setWorkspace(ws);
+    s.addContext(world);
+    const moved = s.move(join(world, "box"), ws);
+    const made = s.context.find((e) => e.root === moved.path);
+    expect(made?.membership).toBe("mirrored");
+    expect(rels(made?.nodes ?? [])).toEqual(["keep.md"]);
+  });
+
   test("refilter names an entry that is not there with the ones that are", () => {
     const { s, entry } = open();
     expect(() => s.refilter("c-nope")).toThrow("no context entry c-nope");
@@ -153,6 +172,110 @@ describe("a scan filter (AppDeclaration.scan)", () => {
     });
     skip(s, entry, ["drafts"]);
     expect(() => s.shownAt(at("drafts/old"))).toThrow("not shown");
+  });
+});
+
+describe("an opened document the filter then skips", () => {
+  // The session keeps an opened document's record (its versions, its unsaved
+  // text) after the filter takes it away, for when it comes back. The record
+  // is not the context: search and links read the context.
+  const leaks = (s: WorkspaceSession, canonSlug: string) => {
+    const rough = at("drafts/rough.md");
+    const broken = at("drafts/broken.md");
+    expect(searched(s)).not.toContain(rough);
+    expect(searched(s)).not.toContain(broken);
+    // Its unsaved text is not searched either.
+    expect(s.search({ query: "zephyr" }).results).toEqual([]);
+    expect(graphed(s)).not.toContain(rough);
+    expect(linkingIn(s)).not.toContain(rough);
+    expect(s.linkTargets(canonSlug).targets.map((t) => t.path)).not.toContain(rough);
+    expect(s.linkCheck().dangling.links.map((l) => l.source)).not.toContain(broken);
+  };
+
+  test("is out of search, the graph, backlinks, link targets and the link check, and stays out across a restore; its record comes back with it", () => {
+    writeFileSync(at("drafts/broken.md"), "# Broken\n\nlighthouse [gone](./nowhere.md)\n");
+    const { s, entry } = open();
+    const rough = at("drafts/rough.md");
+    const { slug } = s.openPath(rough);
+    const active = s.findDoc(slug)?.active ?? 0;
+    s.edit(slug, active, "# Rough\n\nzephyr, see [canon](../canon.md).\n");
+    s.openPath(at("drafts/broken.md"));
+    const canonSlug = s.openPath(at("canon.md")).slug;
+    // Before: all of it is in.
+    expect(s.search({ query: "zephyr" }).results.map((r) => r.path)).toEqual([rough]);
+    expect(s.linkCheck().dangling.links.map((l) => l.source)).toContain(at("drafts/broken.md"));
+
+    skip(s, entry, ["drafts"]);
+    leaks(s, canonSlug);
+
+    const back = WorkspaceSession.restore(sessions, filterApp, s.id);
+    leaks(back, canonSlug);
+
+    // The filter lets it back: the same record, unsaved text and all.
+    skip(back, entry, []);
+    expect(back.findDoc(slug)).toBeDefined();
+    expect(back.search({ query: "zephyr" }).results.map((r) => r.path)).toEqual([rough]);
+    expect(linkingIn(back)).toContain(rough);
+  });
+
+  test("a skipped file alone (not its folder) is out too", () => {
+    const { s, entry } = open();
+    s.openPath(at("drafts/rough.md"));
+    skip(s, entry, ["drafts/rough.md"]);
+    expect(searched(s)).not.toContain(at("drafts/rough.md"));
+    expect(searched(s)).toContain(at("drafts/old/older.md"));
+  });
+
+  test("an opened document whose whole set left the context is still one the human has", () => {
+    // Not the filter's: nothing skips it, so it stays found, as before.
+    const { s, entry } = open();
+    s.openPath(at("drafts/rough.md"));
+    s.removeContext(entry);
+    expect(searched(s)).toEqual([at("drafts/rough.md")]);
+  });
+});
+
+describe("restoreContext", () => {
+  test("puts a removed entry back with the same id and membership, where it stood, through the filter", () => {
+    const { s, entry } = open();
+    const solo = join(root, "solo.md");
+    writeFileSync(solo, "# Solo\n\nlighthouse\n");
+    s.addContext(solo);
+    skip(s, entry, ["drafts"]);
+    const removed = s.removeContext(entry);
+    expect(removed.index).toBe(0);
+    expect(s.context.map((e) => e.label)).toEqual(["solo.md"]);
+    const back = s.restoreContext(removed.entry, removed.index);
+    expect(back.id).toBe(entry);
+    expect(back.membership).toBe("mirrored");
+    expect(s.context.map((e) => e.id)[0]).toBe(entry);
+    // The slot still names it by id: still filtered.
+    expect(treeOf(s, entry)).toEqual(["aside.md", "canon.md"]);
+    expect(searched(s)).toContain(at("canon.md"));
+    // A listed one too.
+    const soloEntry = s.context[1];
+    if (!soloEntry) throw new Error("no solo entry");
+    const r2 = s.removeContext(soloEntry.id);
+    expect(s.restoreContext(r2.entry, r2.index)).toMatchObject({
+      id: soloEntry.id,
+      membership: "listed",
+    });
+    expect(searched(s)).toContain(solo);
+  });
+
+  test("one that can never come back is a GoneError: in the context already, or gone from disk", () => {
+    const { s, entry } = open();
+    const removed = s.removeContext(entry);
+    s.restoreContext(removed.entry, removed.index);
+    expect(() => s.restoreContext(removed.entry, 0)).toThrow(GoneError);
+    s.removeContext(entry);
+    // Added back by hand (a new id): this one cannot come back as well.
+    s.addContext(world);
+    expect(() => s.restoreContext(removed.entry, 0)).toThrow(GoneError);
+    s.removeContext(s.context[0]?.id ?? "");
+    rmSync(world, { recursive: true, force: true });
+    expect(() => s.restoreContext(removed.entry, 0)).toThrow(GoneError);
+    expect(s.context).toEqual([]);
   });
 });
 

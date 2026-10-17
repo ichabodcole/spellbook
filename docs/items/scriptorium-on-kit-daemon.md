@@ -145,7 +145,9 @@ Not yet in the shipped SKILL. It goes in at the cutover.
   - What `hide` left out is `appState.hidden` (rels by entry id) in the state,
     not `hidden` on each context entry. `hide` and `unhide` answer with the
     shipped fields and the kit's `ok: true`; the chat line is a `system` fact
-    `hide` or `unhide`.
+    `hide` or `unhide`. Undo of a whole-entry hide brings back the same entry id
+    (shipped re-adds it under a new one), and a redo's chat line repeats the
+    act's label ("You redid: removed solo.md from the context.").
 - **The ask:** `via: "ask"` with `about: { noteId }` (there is no `about.ask`).
   A second ask while the note is owed gets an error frame for its `rid`. Only a
   human's ask counts; any other `via` naming the note is a typed follow-up, and
