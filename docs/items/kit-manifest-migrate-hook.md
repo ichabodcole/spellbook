@@ -50,8 +50,11 @@ own, so the hook is offered back but not needed there.
 
 ## Done and verified
 
-There are three commits on `impl/kit-manifest-migrate-hook`: the kit hook,
-Scriptorium's converter, and this doc.
+There are four commits on `impl/kit-manifest-migrate-hook-2`, rebased onto
+`cycle/wiki-layer` after `kit-set-promotion` and `kit-tree-scan-filter` landed
+there: the kit hook (d0d643b2), Scriptorium's converter (ed2a27ce), this doc
+(897a524c), and a fix round on top (the real-home guard by any spelling, the
+slot at its current version, and the ask only for a human).
 
 - **The hook.**
   `AppDeclaration.migrateManifest(raw, {sessionId, dir, sessionsRoot})` returns
@@ -87,10 +90,17 @@ Scriptorium's converter, and this doc.
     a set already shows it.
   - `workspace` becomes the session's own `imported/`, so nothing writes to a
     folder nobody chose.
-  - `hidden` moves to `app.hidden[<entry id>]`. The tree-scan-filter item must
-    read the same key.
+  - `hidden` moves to `app.hidden[<entry id>]`, the key the tree-scan filter
+    reads.
+  - The app slot is written at the app's current version
+    (`scriptoriumApp.slot.version`, 2 since the tree-scan filter), never a fixed
+    number. So the same restore has no slot migrate to run, and the chat gets
+    one conversion line and no `slot.migrated` line (tested in process and
+    through the launchers).
   - A task with a step is `running`, and the step becomes its `detail`.
-  - An E65 ask becomes `via: "ask"` with `about.noteId`.
+  - An E65 ask becomes `via: "ask"` with `about.noteId`, for a human's message
+    only. An agent's or the system's message naming a note keeps `about.noteId`
+    and gets no `via`.
   - `nextVersion` is set past every version file on disk.
   - A second conversion, of an old manifest put back by hand, keeps the bytes it
     replaced.
@@ -104,6 +114,16 @@ Scriptorium's converter, and this doc.
   - The flag is refused unless `SCRIPTORIUM_HOME` is set and is not
     `~/.scriptorium`. This matters because a converted manifest is the kit's,
     and the shipped daemon refuses it.
+  - "Not `~/.scriptorium`" holds by any spelling. The real home is found apart
+    from `HOME` too (`accountHome()` in `src/kit/lib/home.ts`, the account's
+    home from the user database), and paths are compared as the disk resolves
+    them (the realpath of the nearest folder that exists). So it refuses a moved
+    `HOME` with the real path spelled out, a `SCRIPTORIUM_HOME` that is a
+    symlink to the real one, and a scratch home whose `sessions` is a symlink to
+    the real sessions or into them. `app.test.ts` covers each route against a
+    fake real home it builds itself; it never points at the real one. A symlink
+    to a real session folder planted _inside_ a scratch `sessions` is not
+    checked.
   - Without the flag, the kit path still refuses a shipped manifest.
   - The cutover drops the flag and the home check.
 - **Dry run, 2026-10-16.** The real `~/.scriptorium/sessions` (54 sessions) was
@@ -117,3 +137,4 @@ Scriptorium's converter, and this doc.
     for byte, every version file is unchanged, and every chat carries the
     conversion line.
   - **Refused:** none. Nothing in `~/.scriptorium` was written.
+  - The dry run ran before the fix round and was not re-run on it.

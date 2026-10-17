@@ -114,9 +114,10 @@ describe("every shape the shipped writer has written", () => {
       ],
     });
     const s = restore("s1");
+    expect(s.restoreReport.slotMigratedFrom).toBeUndefined();
     const m = stored("s1");
     expect(m).toMatchObject({ format: 1, appName: "scriptorium", createdAt: iso(T), tasks: [] });
-    expect(m.app).toEqual({ version: 1 });
+    expect(m.app).toEqual({ version: scriptoriumApp.slot.version });
     // No workspace of its own: nothing is added, and new files go to the session's own folder.
     expect((m.context as { id: string }[]).map((e) => e.id)).toEqual(["c-1"]);
     expect(m.workspace).toBe(join(sessions, "s1", "imported"));
@@ -179,7 +180,10 @@ describe("every shape the shipped writer has written", () => {
       [WORKSPACE_ENTRY_ID, ws, "mirrored"],
     ]);
     expect(ctx.some((e) => "hidden" in e)).toBe(false);
-    expect(m.app).toEqual({ version: 1, hidden: { "c-set": ["drafts", "a-old.md"] } });
+    expect(m.app).toEqual({
+      version: scriptoriumApp.slot.version,
+      hidden: { "c-set": ["drafts", "a-old.md"] },
+    });
     // An ordinary added folder: mirrored, re-read on restore, its document in the tree.
     expect(JSON.stringify(ctx[1]?.nodes)).toContain("w.md");
     // The workspace is no longer where new files go.
@@ -356,6 +360,25 @@ describe("every shape the shipped writer has written", () => {
     });
   });
 
+  test("only a human's message about a note is an ask: an agent's or the system's keeps the note, not via", () => {
+    plant("s9", {
+      createdAt: T,
+      context: [listedEntry()],
+      docs: [{ ...firstDoc("s9"), notes: [], nextVersion: 2, admitted: true }],
+      openDoc: "solo",
+      chat: [
+        { id: "m-a", who: "agent", text: "on it", ts: T + 1, note: { doc: "solo", id: "n-1" } },
+        { id: "m-s", who: "system", text: "noted", ts: T + 2, note: { doc: "solo", id: "n-1" } },
+      ],
+      tasks: [],
+    });
+    const msgs = restore("s9").messages();
+    expect(msgs.map((m) => [m.from, m.via, m.about?.noteId])).toEqual([
+      ["agent", undefined, "n-1"],
+      ["system", undefined, "n-1"],
+    ]);
+  });
+
   test("56929d27: ended {by, at}, which the restore clears as the kit does", () => {
     plant("s8", {
       createdAt: T,
@@ -398,12 +421,14 @@ describe("the shipped writer, as it writes today", () => {
     const versionFiles = readdirSync(join(sessions, "today", "docs", slug)).sort();
 
     const k = restore("today");
+    // Converted at the slot's current version: no slot migrate on the same restore.
+    expect(k.restoreReport.slotMigratedFrom).toBeUndefined();
     expect(k.restoreReport.manifestMigrated?.kept).toBe(join(sessions, "today", PRE_MIGRATE_FILE));
     expect(readFileSync(join(sessions, "today", PRE_MIGRATE_FILE), "utf8")).toBe(before);
     expect(readdirSync(join(sessions, "today", "docs", slug)).sort()).toEqual(versionFiles);
     const m = stored("today");
     expect(m.app).toMatchObject({
-      version: 1,
+      version: scriptoriumApp.slot.version,
       hidden: { [String((m.context as { id: string }[])[0]?.id)]: ["a.md"] },
     });
     expect((m.context as { label: string }[]).map((e) => e.label)).toEqual([

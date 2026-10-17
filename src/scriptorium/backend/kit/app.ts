@@ -25,10 +25,10 @@
  */
 
 import { realpathSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 // The kit's one reader of the home: a test preload moves it, and a test run
 // that has the real home is refused it (`os.homedir()` is neither).
-import { homeDir } from "../../../kit/lib/home";
+import { accountHome, homeDir } from "../../../kit/lib/home";
 import type { AppDeclaration } from "../../../kit/workspace/session";
 
 /**
@@ -81,20 +81,59 @@ export function scriptoriumHome(env: NodeJS.ProcessEnv = process.env): string {
  */
 export const MIGRATE_FLAG = "SCRIPTORIUM_KIT_MIGRATE";
 
-/** Why the dry-run flag is refused here, or null when it is off or allowed. */
-export function kitMigrateRefusal(env: NodeJS.ProcessEnv = process.env): string | null {
+/**
+ * A path as the disk resolves it: the realpath of its nearest folder that
+ * exists, with the rest appended. So a symlink anywhere above it is followed,
+ * even when the path itself is not there yet.
+ */
+function onDisk(p: string): string {
+  const abs = resolve(p);
+  let at = abs;
+  for (;;) {
+    try {
+      return join(realpathSync(at), relative(at, abs));
+    } catch {
+      const up = dirname(at);
+      if (up === at) return abs;
+      at = up;
+    }
+  }
+}
+
+/** `p` is `root`, or inside it. */
+function within(p: string, root: string): boolean {
+  const r = relative(root, p);
+  return r === "" || (r !== ".." && !r.startsWith(`..${sep}`) && !isAbsolute(r));
+}
+
+/**
+ * Why the dry-run flag is refused here, or null when it is off or allowed.
+ *
+ * ⛔ THE REAL SESSIONS ARE REFUSED BY ANY SPELLING. `homeDir()` reads `HOME`,
+ * which a caller can point anywhere, so the real home is also found apart from
+ * it (`realHome`, by default the account's own home from the user database),
+ * and the paths are compared as the disk resolves them: a symlinked
+ * `SCRIPTORIUM_HOME`, or a scratch home whose `sessions` is a symlink to the
+ * real one, is the real sessions. Refused when `SCRIPTORIUM_HOME` resolves to
+ * either home's `.scriptorium`, or the sessions root resolves to either home's
+ * `.scriptorium/sessions` or inside it. `realHome` is a parameter so a test can
+ * stand up a fake one; nothing else passes it.
+ */
+export function kitMigrateRefusal(
+  env: NodeJS.ProcessEnv = process.env,
+  realHome: string | null = accountHome(),
+): string | null {
   if (!kitPathOn(env) || env[MIGRATE_FLAG] !== "1") return null;
   const set = env.SCRIPTORIUM_HOME;
   if (set === undefined || set === "")
     return `${MIGRATE_FLAG}=1 converts the sessions under $SCRIPTORIUM_HOME, and SCRIPTORIUM_HOME is not set: until the cutover it runs only on a copy. Copy the sessions into a scratch home and set SCRIPTORIUM_HOME to it`;
-  const real = (p: string) => {
-    try {
-      return realpathSync(p);
-    } catch {
-      return resolve(p);
-    }
-  };
-  if (real(set) === real(join(homeDir(), ".scriptorium")))
+  const homes = [homeDir(), ...(realHome ? [realHome] : [])].map((h) => join(h, ".scriptorium"));
+  // The home check is implied by the sessions one (a home that resolves to the
+  // real one has the real sessions under it); it is kept as the plain rule,
+  // and no test can tell the two apart.
+  const home = onDisk(set);
+  const sessions = onDisk(join(resolve(set), "sessions"));
+  if (homes.some((h) => home === onDisk(h) || within(sessions, onDisk(join(h, "sessions")))))
     return `${MIGRATE_FLAG}=1 will not convert the real sessions in ~/.scriptorium before the cutover: copy them into a scratch home and set SCRIPTORIUM_HOME to it`;
   return null;
 }

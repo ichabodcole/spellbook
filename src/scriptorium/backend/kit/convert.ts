@@ -14,7 +14,7 @@
  * | shipped (`../protocol.ts`, `Manifest`)     | kit (`kit/workspace/protocol.ts`, `Session`)          |
  * | ------------------------------------------ | ----------------------------------------------------- |
  * | `createdAt`, `ts`, `at`: milliseconds      | ISO 8601 strings                                      |
- * | no `appName`, no `app`                     | `appName: "scriptorium"`, `app: {version: 1, …}`      |
+ * | no `appName`, no `app`                     | `appName: "scriptorium"`, `app` at the slot version   |
  * | `workspace` (absent before 923ee09a: home) | an added folder (`context`); `workspace` the session's `imported/` |
  * | `context[].hidden` (923ee09a)              | `app.hidden[<entry id>]`                              |
  * | `docs[].versions[]`: `author`, `from`      | `by`, `fromVersion`                                   |
@@ -38,6 +38,7 @@ import type {
   ManifestMigrateContext,
   ManifestMigration,
 } from "../../../kit/workspace/manifestMigrate";
+import { scriptoriumApp } from "./app";
 
 type Obj = Record<string, unknown>;
 
@@ -361,7 +362,12 @@ function convert(raw: Obj, at: ManifestMigrateContext): ManifestMigration {
     openDoc: typeof raw.openDoc === "string" ? raw.openDoc : null,
     chat: list(raw.chat, "chat").map((c, i) => message(c, `chat[${i}]`, at.dir)),
     tasks: list(raw.tasks, "tasks", true).map((t, i) => task(t, `tasks[${i}]`)),
-    app: { version: 1, ...(Object.keys(hidden).length > 0 ? { hidden } : {}) },
+    // The slot as the app declares it now, so the restore has no slot migrate
+    // to run (and no second chat line): the converter writes the current shape.
+    app: {
+      version: scriptoriumApp.slot.version,
+      ...(Object.keys(hidden).length > 0 ? { hidden } : {}),
+    },
     ended,
   });
   const where =

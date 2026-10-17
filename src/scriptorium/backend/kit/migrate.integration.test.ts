@@ -20,6 +20,7 @@ import { fileURLToPath } from "node:url";
 import { pointerPid, waitForExit } from "../../../kit/workspace/fixtures/harness";
 import { PRE_MIGRATE_FILE } from "../../../kit/workspace/manifestMigrate";
 import type { PublicState } from "../../../kit/workspace/protocol";
+import { scriptoriumApp } from "./app";
 
 const KIT_DIR = dirname(fileURLToPath(import.meta.url));
 const CLI = join(
@@ -166,6 +167,20 @@ describe("the kit path, with the dry-run flag, restores a shipped session conver
     expect(said?.text).toContain(join(dir(), PRE_MIGRATE_FILE));
     // The folder the shipped session opened in is now an ordinary added folder.
     expect(st.context.map((e) => [e.root, e.membership])).toContainEqual([docs, "mirrored"]);
+  });
+
+  test("one line says it was converted, and no second line says the slot was brought forward", async () => {
+    // The converter writes the slot at the app's current version, so the same
+    // restore has no slot migrate to run, and nothing to announce for it.
+    const st = json<PublicState>(await run(migrateEnv, "state", "--session", id));
+    const system = st.chat.filter((m) => m.from === "system").map((m) => m.text);
+    expect(system.filter((t) => t.includes("converted from the shipped Scriptorium"))).toHaveLength(
+      1,
+    );
+    expect(system.filter((t) => t.includes("brought forward from version"))).toEqual([]);
+    expect((JSON.parse(manifestText()) as { app: unknown }).app).toMatchObject({
+      version: scriptoriumApp.slot.version,
+    });
   });
 
   test("the manifest is the kit's, the original is kept, and no version file moved", () => {

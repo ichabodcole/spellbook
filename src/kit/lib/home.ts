@@ -29,7 +29,7 @@
 // The ward `grimoire/kit-scratch-home-ward.test.ts` holds the kit to this: no
 // other kit file names `homedir`.
 
-import { homedir } from "node:os";
+import { homedir, userInfo } from "node:os";
 
 /** The shape of the preload's scratch home: `<temp>/spellbook-test/run-<pid>-…/home`. */
 const SCRATCH_HOME = /\/spellbook-test\/run-\d+-[^/]+\/home$/;
@@ -59,4 +59,18 @@ export function homeDir(): string {
         "src/kit/lib/scratchHome.ts, or pass --preload <repo>/src/kit/lib/scratchHome.ts.",
     );
   return home;
+}
+
+/**
+ * The account's own home, from the user database, whatever `HOME` says (Bun's
+ * `os.homedir()` answers `HOME` when it is set). NOT a home to read or write
+ * in: it is for guards that must recognise the real home under any `HOME` — a
+ * test preload's scratch one, or a caller's. Null when the system cannot say.
+ */
+export function accountHome(): string | null {
+  try {
+    return userInfo().homedir || null;
+  } catch {
+    return null;
+  }
 }
