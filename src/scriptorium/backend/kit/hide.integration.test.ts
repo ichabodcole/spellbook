@@ -121,7 +121,9 @@ describe("hide and unhide on the kit path", () => {
     });
     expect(await tree()).toEqual(["a.md"]);
     // The agent reads what is hidden where the shipped state had it per entry.
-    expect((await state()).appState).toEqual({ hidden: { [entry]: ["drafts"] } });
+    expect(((await state()).appState as { hidden: unknown }).hidden).toEqual({
+      [entry]: ["drafts"],
+    });
     expect(await found()).toEqual([join(set, "a.md")]);
     const graph = json<{ nodes: { path: string }[] }>(await cli("graph", "--session", sessionId));
     expect(graph.nodes.map((n) => n.path)).not.toContain(join(set, "drafts", "rough.md"));
@@ -278,7 +280,7 @@ describe("hide and unhide on the kit path", () => {
       for (let i = 0; i < 100 && (await state()).context.length === 0; i++) await Bun.sleep(20);
       expect((await state()).context.map((e) => e.label)).toEqual(["solo.md"]);
       // The set's list went with the set: the agent is not told of it.
-      expect((await state()).appState).toEqual({ hidden: {} });
+      expect(((await state()).appState as { hidden: unknown }).hidden).toEqual({});
     } finally {
       surface.close();
     }

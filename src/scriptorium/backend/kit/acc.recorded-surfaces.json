@@ -453,6 +453,116 @@
       "recordedAt": "2026-10-17T03:13:35Z"
     },
     {
+      "path": ["meta"],
+      "argv": ["meta", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"meta: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"meta\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build ff5bdf3c-dirty, paths derived from the declaration",
+      "recordedAt": "2026-10-17T05:01:37Z"
+    },
+    {
+      "path": ["find"],
+      "argv": ["find", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"find: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--lifecycle\",\"--session\",\"--since\",\"--status\",\"--tag\",\"--type\"]},\"meta\":{\"command\":\"find\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build ff5bdf3c-dirty, paths derived from the declaration",
+      "recordedAt": "2026-10-17T05:01:37Z"
+    },
+    {
+      "path": ["meta-init"],
+      "argv": ["meta-init", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"meta-init: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--by\",\"--session\",\"--type\"]},\"meta\":{\"command\":\"meta-init\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build ff5bdf3c-dirty, paths derived from the declaration",
+      "recordedAt": "2026-10-17T05:01:37Z"
+    },
+    {
+      "path": ["meta-set"],
+      "argv": ["meta-set", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"meta-set: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"meta-set\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build ff5bdf3c-dirty, paths derived from the declaration",
+      "recordedAt": "2026-10-17T05:01:37Z"
+    },
+    {
+      "path": ["forget"],
+      "argv": ["forget", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"forget: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--doc\",\"--session\"]},\"meta\":{\"command\":\"forget\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build ff5bdf3c-dirty, paths derived from the declaration",
+      "recordedAt": "2026-10-17T05:01:37Z"
+    },
+    {
+      "path": ["move-plan"],
+      "argv": ["move-plan", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"move-plan: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"move-plan\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build ff5bdf3c-dirty, paths derived from the declaration",
+      "recordedAt": "2026-10-17T05:01:38Z"
+    },
+    {
+      "path": ["note-remove"],
+      "argv": ["note-remove", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"note-remove: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--doc\",\"--session\"]},\"meta\":{\"command\":\"note-remove\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build ff5bdf3c-dirty, paths derived from the declaration",
+      "recordedAt": "2026-10-17T05:01:38Z"
+    },
+    {
+      "path": ["task-remove"],
+      "argv": ["task-remove", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"task-remove: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"task-remove\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build ff5bdf3c-dirty, paths derived from the declaration",
+      "recordedAt": "2026-10-17T05:01:38Z"
+    },
+    {
+      "path": ["tasks-clear"],
+      "argv": ["tasks-clear", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"tasks-clear: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"tasks-clear\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build ff5bdf3c-dirty, paths derived from the declaration",
+      "recordedAt": "2026-10-17T05:01:38Z"
+    },
+    {
+      "path": ["info"],
+      "argv": ["info", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"info: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"info\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "colereed via acc probe-plan harness, build ff5bdf3c-dirty, paths derived from the declaration",
+      "recordedAt": "2026-10-17T05:01:38Z"
+    },
+    {
       "path": ["hide"],
       "argv": ["hide", "--acc-not-a-flag"],
       "exitCode": 2,

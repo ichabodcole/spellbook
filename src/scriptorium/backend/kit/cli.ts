@@ -30,6 +30,7 @@ import {
   scriptoriumHome,
 } from "./app";
 import { scriptoriumKitCommands } from "./commands";
+import { scriptoriumWikiCommands, WIKI_OPTIONS } from "./wikiCommands";
 
 export type KitCliDeps = {
   /** The daemon launcher, absolute: `<skill>/scripts/server.ts`. */
@@ -56,8 +57,10 @@ export function scriptoriumKitCli(deps: KitCliDeps): WorkspaceCli {
     version: () => ({ ...deps.version(), path: "kit" }),
     // The shipped verbs, with the shipped words: the kit path keeps the hidden
     // lists in its app slot (`./hide.ts`), not on the kit's entries.
+    options: WIKI_OPTIONS,
     commands: (h) => [
       ...scriptoriumKitCommands(h),
+      ...scriptoriumWikiCommands(h),
       {
         name: "hide",
         flags: [...h.SESSION],

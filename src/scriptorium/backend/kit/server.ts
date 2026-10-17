@@ -28,6 +28,7 @@ import { kitMigrateOn, kitMigrateRefusal, kitSessionsRoot, scriptoriumApp } from
 import { convertShippedManifest } from "./convert";
 import { hideVerbs, liveHiddenLists } from "./hide";
 import { scriptoriumLinkSlot } from "./links";
+import { docMeta, wikiVerbs } from "./wiki";
 
 /**
  * The app in the conversion dry run (`SCRIPTORIUM_KIT_MIGRATE=1`): the kit
@@ -56,10 +57,10 @@ export function kitDaemonOptions(
   return {
     app: kitMigrateOn() ? migratingApp : scriptoriumApp,
     sessionsRoot: kitSessionsRoot(),
-    verbs: { ...hideVerbs },
+    verbs: { ...hideVerbs, ...wikiVerbs },
     // What `hide` left out, per entry id: the shipped state carried it on each
     // entry (`hidden`); the kit's entries are the kit's, so it rides here.
-    appState: (ctx) => ({ hidden: liveHiddenLists(ctx.session) }),
+    appState: (ctx) => ({ hidden: liveHiddenLists(ctx.session), ...docMeta(ctx.session) }),
     // Frontmatter references as edges, and the wiki forms as a resolver (kit-link-edges-slot).
     links: scriptoriumLinkSlot(),
     http: (req, url) =>

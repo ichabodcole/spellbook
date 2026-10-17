@@ -236,7 +236,10 @@ const EXPECTED: Record<
   // conversion dry run's flag (`SCRIPTORIUM_KIT_MIGRATE=1`) on the real home,
   // or with no SCRIPTORIUM_HOME, as usage. No `choices`: the way out is a
   // scratch home, named in the hint.
-  scriptorium: { sites: 31, choices: 4, verbRoster: true, flagMap: true },
+  // 31/4 -> 33/4 (scriptorium-kit-wiki-verbs): the kit path's `find --since`
+  // refuses a non-date and `meta-set` a pair that is not key=value, both as
+  // usage, as the shipped verbs do. No `choices`: neither is a closed set.
+  scriptorium: { sites: 33, choices: 4, verbRoster: true, flagMap: true },
 };
 
 /**
