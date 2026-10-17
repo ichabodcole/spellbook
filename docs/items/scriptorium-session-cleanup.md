@@ -6,7 +6,7 @@ description:
   Scriptorium shows the human what sessions it holds and lets the human or the
   agent delete finished ones, without touching the documents they showed.
 status: stable
-lifecycle: triage
+lifecycle: backlog
 id: 01a14b7a-f972-77ac-a2fb-bb4167368edb
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-17 }
