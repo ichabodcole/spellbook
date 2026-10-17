@@ -2,9 +2,9 @@
 type: session
 title: Wiki layer — 2026-10-16
 description:
-  "The second Workspace Kit cycle: four kit slots and Scriptorium's wiki layer
-  on them, no default workspace, a session converter, and a disk-write guard the
-  final reviews forced."
+  "The third Workspace Kit cycle, the second of the workspace stack: four kit
+  slots and Scriptorium's wiki layer on them, no default workspace, a session
+  converter, and a disk-write guard the final reviews forced."
 tags: [kit, scriptorium, story-studio]
 status: stable
 generated: { by: claude-opus-5-5, at: 2026-10-17 }

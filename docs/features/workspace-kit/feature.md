@@ -7,7 +7,7 @@ description:
   spell can build on.
 tags: [kit, scriptorium, story-studio, surfaces]
 status: stable
-lifecycle: ready
+lifecycle: active
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
 ---
 
@@ -98,6 +98,13 @@ mandatory.
 `lib`, `wire` → `theme`, `ui`, `cli` → `workspace` → `chat`, `context` →
 `document` → `shell`.
 
+The workspace stack runs in five cycles
+([port shape, §2b](../../items/workspace-stack-port-shape/write-up.md#2b-the-cycles)):
+the daemon, the wiki layer (with the session converter), the chat and context
+panes, the document pane, then the shell and the cutover. The first two have
+landed: [workspace daemon](../../cycles/2026-10-workspace-daemon.md) and
+[wiki layer](../../cycles/2026-10-wiki-layer.md).
+
 Each module is read for assumptions specific to Story Studio before it lands.
 Its names are translated:
 
@@ -110,9 +117,10 @@ Each module is also merged with the places where Spellbook is ahead: the
 links-cycle extraction fixes, `tailHandoff`'s `by: human` (and its `spell` key
 and the error envelope's `server` key, which Story Studio renamed), and E65 (a
 note shows that it is with the agent: `notesWaiting` and the `say` note guard in
-`workspace`, the badge and "Ask the agent" in `chat/NotesPanel.tsx`). Story
-Studio is taking E65 back as its own item, `kit-per-note-waiting`. Spellbook's
-`Dot` and `ConfirmDialog` stay where they read ahead of Story Studio's.
+`workspace`, the badge and "Ask the agent" in `chat/NotesPanel.tsx`). For E65's
+daemon half, the workspace-daemon cycle adopted Story Studio's `85a319e`, plus a
+one-ask guard, and cut Spellbook's own (`d1ca788d`). Spellbook's `Dot` and
+`ConfirmDialog` stay where they read ahead of Story Studio's.
 
 ### What arrives with it
 
@@ -237,12 +245,16 @@ which Scriptorium gains with the shell.
   [prior-direction investigation](../../items/workspace-kit-prior-direction/write-up.md),
   in port order:
   - `workspace`: E65's daemon half, and the agent-facing `about` change above.
+    Landed in the workspace-daemon cycle.
   - `chat`, `context`: E65's surface half; store and label an app's own `about`
     parts on the chip; wire `entryIds` to a gesture or remove it.
   - After the port: [`via` and `refs`](../../items/message-via-and-refs.md), one
     change shared with Story Studio, landing in its kit first. Every message
     says which gesture sent it, and a message keeps one subject and can carry
-    refs (a tree multi-select, or "Add as reference").
+    refs (a tree multi-select, or "Add as reference"). Story Studio landed it
+    (`bbc54fd`), and its workspace half was ported in the wiki-layer cycle
+    (`kit-port-via-refs`). The chat half (the composer's `via`, ref chips, the
+    tree multi-select) comes with the panes.
   - After `shell`: facets and collapse in the log, once `via` exists; chip
     actions; the paradigm's house-style entry.
   - After the re-base: the quiet-tail audit and the ambiguous-name refusal, sent
@@ -274,7 +286,10 @@ which Scriptorium gains with the shell.
   ahead of the kit's (the links cycle). The kit's relink, headings and
   link-check code assume the kit's own extraction. _Mitigation:_ port
   Scriptorium's extraction into the kit as the single extractor, with the
-  links-cycle tests as the bar. Do not run two.
+  links-cycle tests as the bar. Do not run two. _What happened:_ the
+  workspace-daemon cycle kept the kit's extractor and held it to Scriptorium's
+  tests; every difference took the kit's rule, except relation names, which both
+  kits now lowercase.
 - **The workspace stack is twice Scriptorium's size.** About 40k lines replace
   21k. _Mitigation:_ go leaf first, read each module for Story-specific code
   before it lands, and cut what no Spellbook spell uses.
@@ -337,14 +352,16 @@ Scriptorium's re-base are the large part.
 
 1. ~~Compare Atlas and Scriptorium side by side.~~ Moved to after the shell port
    (Cole, 2026-10-13).
-2. Port `lib` and `wire` with their fixes.
-3. Port `theme` and `ui`, with the happy-dom harness.
-4. Change the primitives rule in house style.
-5. Move Scriptorium's surface onto `src/kit/ui`.
-6. Add per-verb `cli` help, and re-run acc.
+2. ~~Port `lib` and `wire` with their fixes.~~
+3. ~~Port `theme` and `ui`, with the happy-dom harness.~~
+4. ~~Change the primitives rule in house style.~~
+5. ~~Move Scriptorium's surface onto `src/kit/ui`.~~
+6. ~~Add per-verb `cli` help, and re-run acc.~~
 
-The workspace stack starts in the next cycle, on a foundation that has already
-been used.
+Steps 2–6 landed in the
+[kit-foundation cycle](../../cycles/2026-10-kit-foundation.md) (closed
+2026-10-13). The workspace stack started in the cycle after it, on that
+foundation.
 
 ---
 
