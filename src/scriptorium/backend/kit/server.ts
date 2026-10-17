@@ -8,7 +8,8 @@
  * What it does not have yet, each a later cycle's:
  * - a surface. `GET /` answers with a short page saying so, so a browser that
  *   `open` started shows a sentence and not a JSON 404;
- * - the wiki layer (meta, find, hide, make-set, forget, …);
+ * - the rest of the wiki layer (meta, find, make-set, forget, …); `hide` and
+ *   `unhide` are here (`./hide.ts`);
  * - undo for setting the workspace, which the shipped Scriptorium keeps.
  */
 
@@ -18,7 +19,8 @@ import {
   type WorkspaceDaemon,
   type WorkspaceDaemonOptions,
 } from "../../../kit/workspace/server";
-import { kitSessionsRoot, scriptoriumApp } from "./app";
+import { hiddenLists, kitSessionsRoot, scriptoriumApp } from "./app";
+import { hideVerbs } from "./hide";
 
 /** What a browser shows at the session's URL while the kit path has no surface. */
 export const NO_SURFACE_PAGE = `<!doctype html>
@@ -37,6 +39,10 @@ export function kitDaemonOptions(
   return {
     app: scriptoriumApp,
     sessionsRoot: kitSessionsRoot(),
+    verbs: { ...hideVerbs },
+    // What `hide` left out, per entry id: the shipped state carried it on each
+    // entry (`hidden`); the kit's entries are the kit's, so it rides here.
+    appState: (ctx) => ({ hidden: hiddenLists(ctx.session.appSlot) }),
     http: (req, url) =>
       req.method === "GET" && url.pathname === "/"
         ? new Response(NO_SURFACE_PAGE, {

@@ -26,6 +26,23 @@ import { join, resolve } from "node:path";
 import { homeDir } from "../../../kit/lib/home";
 import type { AppDeclaration } from "../../../kit/workspace/session";
 
+/**
+ * What the kit path keeps in the app slot for `hide`: per context entry, the
+ * rels hidden in it (POSIX, from the entry's root), as the shipped
+ * `ContextEntry.hidden` holds them. A hidden folder hides everything under it.
+ */
+export type HiddenLists = Record<string, string[]>;
+
+/** The slot's hidden lists, whatever the slot holds (a missing or odd value is none). */
+export function hiddenLists(slot: Readonly<Record<string, unknown>>): HiddenLists {
+  const h = slot.hidden;
+  if (h === null || typeof h !== "object" || Array.isArray(h)) return {};
+  const out: HiddenLists = {};
+  for (const [id, rels] of Object.entries(h as Record<string, unknown>))
+    if (Array.isArray(rels)) out[id] = rels.filter((r): r is string => typeof r === "string");
+  return out;
+}
+
 /** The flag. Exactly `1`: any other value, or none, is the shipped Scriptorium. */
 export const KIT_FLAG = "SCRIPTORIUM_KIT";
 
@@ -46,10 +63,20 @@ export function kitSessionsRoot(env: NodeJS.ProcessEnv = process.env): string {
 export const scriptoriumApp: AppDeclaration = {
   name: "scriptorium",
   title: "Scriptorium",
-  // Slot version 1: the app keeps nothing of its own in the manifest yet. The
-  // wiki layer (docMeta, hidden entries) moves in here in a later cycle, with
-  // a migrate from this shape.
-  slot: { version: 1, migrate: (prev) => ({ ...prev }) },
+  // Slot version 2: the hidden lists (`hide`). Version 1 kept nothing, so it
+  // gains an empty `hidden`. The rest of the wiki layer (docMeta) moves in
+  // here later, with a migrate from this shape.
+  slot: { version: 2, migrate: (prev) => ({ ...prev, hidden: hiddenLists(prev) }) },
+  // `hide` on the kit's tree scan: what an entry's hidden list names is left
+  // out of the tree, and so out of search, links and the graph. The files stay
+  // on disk, and the list rides the manifest, so a restart and every rescan
+  // see it.
+  scan: ({ entryId, slot }) => {
+    const rels = hiddenLists(slot)[entryId];
+    if (!rels?.length) return undefined;
+    const skip = new Set(rels);
+    return { skip: (rel) => skip.has(rel) };
+  },
   // Both apps are named scriptorium, so the kit's generic refusal ("restore it
   // with the app that wrote it; scriptorium will not read it") names this app
   // twice. Say which Scriptorium wrote it, and how to open it there.

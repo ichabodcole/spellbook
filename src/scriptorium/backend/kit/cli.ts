@@ -18,6 +18,7 @@
  * shipped CLI are the kit's; the item records the delta.
  */
 
+import { resolve } from "node:path";
 import { createWorkspaceCli, type WorkspaceCli } from "../../../kit/workspace/verbs";
 import { KIT_FLAG, kitSessionsRoot, scriptoriumApp } from "./app";
 import { scriptoriumKitCommands } from "./commands";
@@ -40,9 +41,38 @@ export function scriptoriumKitCli(deps: KitCliDeps): WorkspaceCli {
       // Explicit, not inherited by accident: the daemon must take the kit path too.
       env: { ...process.env, [KIT_FLAG]: "1" },
     },
-    commands: scriptoriumKitCommands,
     sessionsRoot: () => kitSessionsRoot(),
     version: () => ({ ...deps.version(), path: "kit" }),
+    // The shipped verbs, with the shipped words: the kit path keeps the hidden
+    // lists in its app slot (`./hide.ts`), not on the kit's entries.
+    commands: (h) => [
+      ...scriptoriumKitCommands(h),
+      {
+        name: "hide",
+        flags: [...h.SESSION],
+        positionals: [{ name: "path", required: true }],
+        describe: "remove a document, folder or set from Scriptorium — the files stay on disk",
+        run: async (inv) => {
+          h.printJson(
+            await h.postCmd(h.sessionOf(inv), {
+              op: "scriptorium.hide",
+              path: resolve(inv.pos[0] as string),
+            }),
+          );
+        },
+      },
+      {
+        name: "unhide",
+        flags: [...h.SESSION],
+        positionals: [{ name: "entry", required: true }],
+        describe: "bring back everything hidden in a set (its entry id, from state)",
+        run: async (inv) => {
+          h.printJson(
+            await h.postCmd(h.sessionOf(inv), { op: "scriptorium.unhide", entry: inv.pos[0] }),
+          );
+        },
+      },
+    ],
     helpFooter:
       "  This is the kit path (SCRIPTORIUM_KIT=1). Its sessions live under\n  $SCRIPTORIUM_HOME/kit/sessions, apart from the shipped Scriptorium's. It has no\n  surface yet: run open with --no-open, and work through these verbs.",
   });
