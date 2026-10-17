@@ -92,6 +92,7 @@ import {
   splitDropped,
   tildify,
 } from "./model.ts";
+import { askBeforeMove, type BeforeMove } from "./preMove.ts";
 import { carriesRows, type DraggedRow, readRowDrag, rowKindOf, writeRowDrag } from "./rowDrag.ts";
 import { TRASH_CONFIRM_CLASS, trashDialog } from "./trashDialog.ts";
 
@@ -185,6 +186,15 @@ export type ContextSidebarProps = {
   onSelect?: (rows: readonly string[]) => void;
   /** "Add as reference" on a document or image row: what to read, and its name. Absent, not offered. */
   onAddRef?: (path: string, name: string) => void;
+  /**
+   * The pre-move slot (`./preMove.ts`): asked before every move the sidebar
+   * makes, it answers with a confirm dialog's words (the move waits for the
+   * human), a refusal, or nothing (the move goes at once). Absent, every move
+   * is sent at once, as without it.
+   */
+  beforeMove?: BeforeMove;
+  /** How long a move waits for `beforeMove` before asking the human without it. Default 5 s. */
+  beforeMoveTimeoutMs?: number;
 };
 
 const NO_ACTIONS: MenuAction[] = [];
@@ -234,6 +244,8 @@ export function ContextSidebar({
   selected,
   onSelect,
   onAddRef,
+  beforeMove,
+  beforeMoveTimeoutMs,
 }: ContextSidebarProps) {
   const [drilled, setDrilled] = useState<string | null>(null);
   const drilledEntry = drilled ? entries.find((e) => e.id === drilled) : undefined;
@@ -300,9 +312,29 @@ export function ContextSidebar({
     );
     if (holder) setDrilled(holder.id);
   }, [focusPath, entries]);
+  // Delete, an image's taken name and the pre-move slot ask through one dialog.
+  const { confirm, dialog } = useConfirm();
+  // Moves with a pre-move slot are asked one at a time, in the order made, so
+  // a drag of several rows asks about each in turn (a second ask while one is
+  // open would answer the first with Cancel). Without a slot a move is sent at
+  // once, as it always was, and true says so.
+  const moves = useRef<Promise<unknown>>(Promise.resolve());
   const move = useCallback(
-    (path: string, into: string) => onStructure({ op: "move", path, into }),
-    [onStructure],
+    (path: string, into: string): true | Promise<boolean> => {
+      if (!beforeMove) {
+        onStructure({ op: "move", path, into });
+        return true;
+      }
+      const asked = moves.current.then(async () => {
+        const v = await askBeforeMove({ path, into }, beforeMove, confirm, beforeMoveTimeoutMs);
+        if (v.go) onStructure({ op: "move", path, into });
+        else if (v.notice) setLocalNotice(v.notice);
+        return v.go;
+      });
+      moves.current = asked.catch(() => {});
+      return asked;
+    },
+    [onStructure, beforeMove, beforeMoveTimeoutMs, confirm],
   );
   // A drop on the list itself, or on a set's way back: each row from INSIDE a
   // set to the workspace folder, unless it is there already. A list row (a whole
@@ -327,10 +359,6 @@ export function ContextSidebar({
    * folder it was dropped on, else the workspace. A dropped folder is refused,
    * with the way that works.
    */
-  // Delete: ask the daemon what would go, name it in a dialog, and only then
-  // move it to the Trash. A refusal (a whole set, a path that is gone) is the
-  // notice, so the human reads why.
-  const { confirm, dialog } = useConfirm();
 
   /**
    * One dropped image: its bytes sent as they are (never read as text), written
@@ -389,6 +417,9 @@ export function ContextSidebar({
     },
     [onStructure, importOneImage],
   );
+  // Delete: ask the daemon what would go, name it in a dialog, and only then
+  // move it to the Trash. A refusal (a whole set, a path that is gone) is the
+  // notice, so the human reads why.
   const askDelete = useCallback(
     async (path: string) => {
       if (!trashPreview || !onTrash) return;
@@ -487,8 +518,12 @@ export function ContextSidebar({
           targets={moveTargets(entries, moving, workspace ?? null)}
           userHome={userHome}
           onMove={(into) => {
-            expectMove.current = joinPath(into, baseName(moving));
-            move(moving, into);
+            const to = joinPath(into, baseName(moving));
+            expectMove.current = to;
+            // A move the human cancelled at the slot's dialog expects nothing.
+            void Promise.resolve(move(moving, into)).then((went) => {
+              if (!went && expectMove.current === to) expectMove.current = null;
+            });
           }}
           onClose={() => setMoving(null)}
         />

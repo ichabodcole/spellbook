@@ -10,6 +10,7 @@ export * from "./HistoryArrows.tsx";
 export * from "./menuActions.ts";
 export * from "./menus.tsx";
 export * from "./model.ts";
+export * from "./preMove.ts";
 export * from "./rowDrag.ts";
 export * from "./selection.ts";
 export * from "./useDaemon.ts";
