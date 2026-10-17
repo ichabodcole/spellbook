@@ -62,6 +62,19 @@ import `@headless-tree`. The 135 chat and `oneLine` tests pass, as do the kit
 wards and `layers.test.ts`, and the gate is green. Chat is not wired into any
 surface.
 
+**No-stake verification (2026-10-17):** ready to cherry-pick. The port matches
+Story Studio `2c4b6c2` except for the four listed adaptations, and 191 of 191
+CLI cases across six spells match base. Two gaps it found, both small:
+
+- **The disk-write ward doesn't scan chat.** It covers `src/kit/workspace` and
+  the flagged Scriptorium's backend, so the box above holds but tests nothing in
+  chat. A raw `node:fs` write planted in chat survived. Chat is browser code, so
+  this isn't exploitable today.
+- **Nothing tests the message body's memoised `__html` prop.** It is inherited
+  from Story Studio, and its comment says it keeps the human's selection across
+  re-renders. Removing it left every test green. It's worth a test on both
+  sides; offer it on kit-parity.
+
 ## Port-back notes
 
 - `ChatMessageView.tsx`: the comment
