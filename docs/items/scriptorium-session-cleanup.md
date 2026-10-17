@@ -29,11 +29,35 @@ deleting folders by hand.
 
 Cole raised this on 2026-10-17, when the trial conversion's count came up.
 
+**A session says too little about itself to be judged.** The kit's manifest (the
+`Session` type, `src/kit/workspace/protocol.ts`) records what a session showed,
+but not what it was for. It has no title or description. Its only end-state is
+`ended` (who ended the daemon, and when), and a restore clears it. So `ended`
+means "the daemon stopped", not "this work is finished". A session whose daemon
+died without closing has no `ended` at all.
+
+Cole's direction (2026-10-17, to explore in shaping): give a session the kind of
+metadata a work item has, without copying the project-docs frontmatter verbatim.
+
+- **A short description** of what the session is about, so a list of sessions
+  reads "oh, that was the cycle-2 review, that's done". The agent can write it
+  when it opens the session, since it knows the purpose, and the human can edit
+  it.
+- **A lifecycle the human sets on purpose**, separate from whether the daemon is
+  running. "Done" means everything in the session has been looked at and no more
+  work will go into it. "Open" means it is kept to be reopened. This is what
+  decides deletion: done sessions are the ones to clear, open ones are left
+  alone.
+
 **What it needs to do:**
 
-- **Show the human** which sessions exist: when each was last used, whether it
-  is live or ended, and what it showed (its sets and documents), so the human
-  can tell a finished one from one worth reopening.
+- **Record what a session is for and where it got to:** a description, and a
+  lifecycle the human or the agent sets (open or done, the final set of states
+  to be decided in shaping). Both survive restore, unlike `ended`.
+- **Show the human** which sessions exist: each one's description and lifecycle,
+  when it was last used, whether its daemon is running, and what it showed (its
+  sets and documents), so the human can tell a finished one from one worth
+  reopening.
 - **Let the human delete** finished sessions from Scriptorium. Deleting one
   removes the session's own record (versions, notes, tasks, chat and anything
   imported into it) and **never** a document it showed from where it lives.
@@ -52,6 +76,11 @@ Cole raised this on 2026-10-17, when the trial conversion's count came up.
   default.
 - **Which path?** Build only on the kit path, which takes over at the cutover,
   or add it to shipped Scriptorium as well.
+- **The lifecycle's states.** Is open/done enough, or does it want a third state
+  such as "parked"? Does marking a session done end its daemon, or the other way
+  round?
+- **Sessions saved before this.** They have no description. Should the list fall
+  back to their documents' names, or should the agent offer to write one?
 - **Imported files.** A session's `imported/` folder holds copies the session
   owns, so deleting the session takes them too. The delete has to say so first.
 
@@ -66,13 +95,18 @@ Cole raised this on 2026-10-17, when the trial conversion's count came up.
 
 ## Definition of done
 
-- [ ] The human can see every session Scriptorium holds, with when it was last
-      used, whether it is live or ended, and what it showed.
+- [ ] A session's manifest carries a description and a lifecycle. Both survive
+      restore, and the human or the agent can set them. The SKILL says the agent
+      writes a description when it opens a session.
+- [ ] The human can see every session Scriptorium holds, with its description,
+      its lifecycle, when it was last used, whether its daemon is running, and
+      what it showed.
 - [ ] The human can delete one or more ended sessions from Scriptorium, after a
-      confirm that names what goes (including imported files).
-- [ ] The agent has a verb that lists sessions with the same facts, and a verb
-      that deletes a named ended session. The SKILL says the agent deletes only
-      when the human asks.
+      confirm that names what goes (including imported files). Done sessions are
+      offered first.
+- [ ] The agent has a verb that lists sessions with the same facts, verbs that
+      set a session's description and lifecycle, and a verb that deletes a named
+      ended session. The SKILL says the agent deletes only when the human asks.
 - [ ] A delete removes only the session's own folder. A test shows a document it
       showed, and a planted link inside the session folder, are left alone.
 - [ ] A live session is refused, with a hint to end it first.
