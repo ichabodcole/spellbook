@@ -5,6 +5,8 @@
 // advisory, never refused: a new button should not lose its message to a list
 // nobody updated.
 
+import type { MessageAbout } from "./protocol";
+
 /**
  * The gestures the kit knows (the user, 2026-10-14): the composer (`chat`,
  * typed), and the kit's own buttons, each its own: "Ask the agent to describe"
@@ -71,4 +73,36 @@ export function roleAdvisory(roles: readonly string[], known: readonly string[])
   if (unknown.length === 0) return null;
   const named = unknown.map((r) => JSON.stringify(r)).join(", ");
   return `ref role ${named} is not one this app knows (${known.join(", ")}): the ref was stored with it as sent. Add it to the app's list (WorkspaceDaemonOptions.refRoles) if it is real.`;
+}
+
+/**
+ * `about` keys the kit no longer writes but an old stored message may carry.
+ * `entryIds` had no producer (no gesture sent it, no CLI verb took it) and was
+ * removed (`kit-chat-about-chip`): kept reserved so an old message's value is
+ * never read as an app's part.
+ */
+const RETIRED_ABOUT_KEYS = { entryIds: true } as const;
+
+/** The kit's own `about` keys, which an app's part may not take. Every key, by type, and the retired ones. */
+export const KIT_ABOUT_KEYS: ReadonlySet<string> = new Set<string>(
+  Object.keys({
+    doc: true,
+    version: true,
+    path: true,
+    fromLine: true,
+    toLine: true,
+    text: true,
+    docs: true,
+    noteId: true,
+    refs: true,
+    ...RETIRED_ABOUT_KEYS,
+  } satisfies Record<keyof MessageAbout | keyof typeof RETIRED_ABOUT_KEYS, true>),
+);
+
+/**
+ * An `about`'s app parts, in the order it holds them: every key the kit does
+ * not own, with a value. What the chip hands the app's labeller.
+ */
+export function appAboutParts(about: object): [string, unknown][] {
+  return Object.entries(about).filter(([k, v]) => v !== undefined && !KIT_ABOUT_KEYS.has(k));
 }

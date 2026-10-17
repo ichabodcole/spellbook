@@ -24,6 +24,7 @@ import { bundleDisplayName, bundleOf, isBundleMember } from "../lib/bundles.ts";
 import { cn } from "../lib/cn.ts";
 import { EMBED_IN_CHAT, renderMarkdown } from "../lib/markdown.ts";
 import { oneLine } from "../lib/oneLine.ts";
+import { appAboutParts } from "../workspace/messageParts";
 import type { Message, MessageAbout } from "../workspace/protocol";
 import { onRenderedLinkClick } from "./renderedLink.ts";
 import { type BadgeKind, WaitingBadge } from "./WaitingBadge.tsx";
@@ -54,11 +55,38 @@ export function pointedLabel(names: readonly string[]): string {
   return `${names.length} documents`;
 }
 
-/** What a message was about, as the chip reads: `plan · v3 · lines 4–6`. Null when it names no document. */
+/**
+ * How an app names one of its own `about` parts on the chip (what its
+ * `hooks.messageAbout` added): the part's key and value in, the words for it
+ * out. Null or undefined leaves the part off the chip, and so does every app
+ * part when no labeller is given: the kit cannot say what an app's value means.
+ */
+export type AboutPartLabel = (part: string, value: unknown) => string | null | undefined;
+
+/** The app's words for its parts, in the order `about` holds them. A labeller that throws costs only its part. */
+function appPartLabels(about: object, label: AboutPartLabel | undefined): string[] {
+  if (!label) return [];
+  const out: string[] = [];
+  for (const [part, value] of appAboutParts(about)) {
+    try {
+      const said = label(part, value);
+      if (typeof said === "string" && said.trim() !== "") out.push(said);
+    } catch {
+      // A chip that drops one part beats a log that fails to draw.
+    }
+  }
+  return out;
+}
+
+/**
+ * What a message was about, as the chip reads: `plan · v3 · lines 4–6`, then
+ * the app's parts in its own words (`partLabel`). Null when it names nothing.
+ */
 export function aboutLabel(
   about: MessageAbout,
   docName: (slug: string) => string,
   pathName: (path: string) => string = pathLabel,
+  partLabel?: AboutPartLabel,
 ): string | null {
   const parts: string[] = [];
   if (about.doc) parts.push(docName(about.doc));
@@ -75,10 +103,7 @@ export function aboutLabel(
   }
   // A whole document or image named as the subject, with no slug to name it by.
   if (!about.doc && about.path) parts.unshift(pathName(about.path));
-  if (about.entryIds?.length)
-    parts.push(
-      `${about.entryIds.length} context ${about.entryIds.length === 1 ? "item" : "items"}`,
-    );
+  parts.push(...appPartLabels(about, partLabel));
   return parts.length ? parts.join(" · ") : null;
 }
 
@@ -87,6 +112,7 @@ export function ChatMessageView({
   badge,
   docName = (slug) => slug,
   pathName = pathLabel,
+  aboutPart,
   onFollowLink,
   actions,
 }: {
@@ -97,13 +123,15 @@ export function ChatMessageView({
   docName?: (slug: string) => string;
   /** A path's display name (a bundle by its title). Default: `pathLabel`. */
   pathName?: (path: string) => string;
+  /** The app's words for its own `about` parts. Default: none shown. */
+  aboutPart?: AboutPartLabel;
   /** An internal link: the daemon resolves it. */
   onFollowLink?: (target: string) => void;
   /** The app's own actions for this message (`ChatSidebar`'s `messageActions`), under it. */
   actions?: ReactNode;
 }) {
   const plain = m.from === "system" || m.type === "info";
-  const chip = m.about ? aboutLabel(m.about, docName, pathName) : null;
+  const chip = m.about ? aboutLabel(m.about, docName, pathName, aboutPart) : null;
   return (
     <div
       data-from={m.from}

@@ -139,8 +139,6 @@ describe("what a message was about", () => {
     expect(linesLabel({})).toBeNull();
     expect(aboutLabel({ doc: "a", version: 2 }, name)).toBe("a · v2");
     expect(aboutLabel({ doc: "a", noteId: "n1" }, name)).toBe("a · a note");
-    expect(aboutLabel({ entryIds: ["c1", "c2"] }, name)).toBe("2 context items");
-    expect(aboutLabel({ entryIds: ["c1"] }, name)).toBe("1 context item");
     expect(aboutLabel({}, name)).toBeNull();
   });
   test("an old message's pointed documents read as they did, though no new one carries them", () => {
@@ -165,6 +163,84 @@ describe("what a message was about", () => {
     expect(aboutLabel({ path: "/w/fox.png", refs: [{ path: "/w/b.md" }] }, name)).toBe(
       "fox.png · with b",
     );
+  });
+});
+
+// An app's own `about` parts (what its `hooks.messageAbout` added) are stored
+// with the message; the chip names them only in the app's words. The fixture
+// app's part is a `glance`: where the human was looking on its canvas.
+describe("an app's own parts of what a message was about", () => {
+  const name = (s: string) => s;
+  const glance = (part: string, value: unknown) =>
+    part === "glance" ? `at ${(value as { at: string }).at}` : null;
+  test("are named in the app's words, after the kit's parts, in the order about holds them", () => {
+    expect(
+      aboutLabel(
+        { doc: "a", version: 2, glance: { at: "the harbour" } } as never,
+        name,
+        undefined,
+        glance,
+      ),
+    ).toBe("a · v2 · at the harbour");
+    const two = (part: string) =>
+      part === "zoom" ? "zoomed" : part === "glance" ? "glance" : null;
+    expect(aboutLabel({ zoom: 2, glance: {} } as never, name, undefined, two)).toBe(
+      "zoomed · glance",
+    );
+  });
+  test("with no labeller, or a part the labeller declines, the chip shows the kit's parts only", () => {
+    const about = { doc: "a", version: 1, glance: { at: "the harbour" }, other: 1 } as never;
+    expect(aboutLabel(about, name)).toBe("a · v1");
+    expect(aboutLabel(about, name, undefined, glance)).toBe("a · v1 · at the harbour");
+    expect(aboutLabel({ other: 1 } as never, name, undefined, glance)).toBeNull();
+    expect(html(msg("hi", { from: "human", about: { other: 1 } }))).not.toContain("about-chip");
+  });
+  test("a labeller is never handed a kit key, nor the retired entryIds", () => {
+    const seen: string[] = [];
+    const record = (part: string) => {
+      seen.push(part);
+      return null;
+    };
+    aboutLabel(
+      {
+        doc: "a",
+        version: 1,
+        path: "/p",
+        fromLine: 1,
+        toLine: 2,
+        text: "t",
+        noteId: "n",
+        docs: ["/d"],
+        refs: [{ path: "/r" }],
+        entryIds: ["c1"],
+        glance: 1,
+      } as never,
+      name,
+      undefined,
+      record,
+    );
+    expect(seen).toEqual(["glance"]);
+  });
+  test("a labeller that throws costs only its part", () => {
+    const shaky = (part: string) => {
+      if (part === "bad") throw new Error("no words");
+      return part;
+    };
+    expect(aboutLabel({ bad: 1, good: 2 } as never, name, undefined, shaky)).toBe("good");
+  });
+  test("the message view passes aboutPart to the chip", () => {
+    const out = html(
+      msg("look here", { from: "human", about: { glance: { at: "the harbour" } } }),
+      { aboutPart: glance },
+    );
+    expect(out).toContain('data-slot="about-chip"');
+    expect(out).toContain("at the harbour");
+  });
+  test("an old message's entryIds restores without a chip of its own", () => {
+    const old = msg("these?", { from: "human", about: { entryIds: ["c1", "c2"] } as never });
+    expect(html(old)).not.toContain("about-chip");
+    expect(html(old)).not.toContain("context item");
+    expect(aboutLabel({ doc: "a", entryIds: ["c1"] } as never, name)).toBe("a");
   });
 });
 

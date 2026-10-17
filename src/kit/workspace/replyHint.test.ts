@@ -138,8 +138,11 @@ describe("a human message on the tail", () => {
     expect(one?.about).toEqual({ glance: { at: "the harbour" } });
     expect(two?.about).toBeUndefined();
     expect(asked[0]).toBe(asked[1]);
-    // The chat keeps the kit's parts only.
-    expect(s.state.chat.find((m) => m.text === "one")?.about).toBeUndefined();
+    // The chat keeps what the tail got: the record shows what was sent.
+    expect(s.state.chat.find((m) => m.text === "one")?.about).toEqual({
+      glance: { at: "the harbour" },
+    });
+    expect(s.state.chat.find((m) => m.text === "two")?.about).toBeUndefined();
   });
 
   test("the slot replaces the fixed hint, and leaving it undefined keeps it", async () => {

@@ -4,7 +4,7 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import type { Message, Waiting } from "../workspace/protocol";
 import { type Attachable, ChatComposer } from "./ChatComposer.tsx";
-import { ChatMessageView } from "./ChatMessageView.tsx";
+import { type AboutPartLabel, ChatMessageView } from "./ChatMessageView.tsx";
 import { badgeFor } from "./WaitingBadge.tsx";
 
 type ChatSidebarBase = {
@@ -21,6 +21,12 @@ type ChatSidebarBase = {
   docName?: (slug: string) => string;
   /** A path's display name, for a message's chip: a bundle by its title. */
   pathName?: (path: string) => string;
+  /**
+   * The app's words for its own parts of a message's `about` (what its
+   * `hooks.messageAbout` added), on the chip after the kit's. Without it the
+   * chip shows the kit's parts only.
+   */
+  aboutPart?: AboutPartLabel;
   onFollowLink?: (target: string) => void;
   /**
    * An app's own actions under a message (a button, a link), or nothing. The
@@ -64,6 +70,7 @@ export function ChatSidebar(props: ChatSidebarProps) {
     agentListening = true,
     docName,
     pathName,
+    aboutPart,
     onFollowLink,
     messageActions,
   } = props;
@@ -105,6 +112,7 @@ export function ChatSidebar(props: ChatSidebarProps) {
               badge={waiting?.messageId === m.id ? badgeFor(waiting, agentListening) : null}
               docName={docName}
               pathName={pathName}
+              aboutPart={aboutPart}
               onFollowLink={onFollowLink}
               actions={messageActions?.(m)}
             />

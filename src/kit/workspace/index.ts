@@ -47,6 +47,8 @@ export {
   PRE_MIGRATE_FILE,
 } from "./manifestMigrate";
 export {
+  appAboutParts,
+  KIT_ABOUT_KEYS,
   KIT_REF_ROLES,
   KIT_VIA,
   messageVia,
@@ -68,7 +70,6 @@ export {
   type EmitOptions,
   expandHome,
   type LogEvent,
-  type MessageAboutOnTail,
   type MessageHintInput,
   runWorkspaceDaemon,
   surfacePath,

@@ -256,6 +256,23 @@ describe("ChatSidebar", () => {
     await m.unmount();
   });
 
+  test("aboutPart names an app's own part on the chip, in the app's words", async () => {
+    const about = { glance: { at: "the harbour" } };
+    const m = await mount(
+      <ChatSidebar
+        messages={[{ ...(msgs[0] as Message), about }]}
+        waiting={null}
+        attachable={null}
+        connected
+        aboutPart={(part, v) => (part === "glance" ? `at ${(v as { at: string }).at}` : null)}
+        onSend={() => {}}
+        onDropSelection={() => {}}
+      />,
+    );
+    expect(q('[data-slot="about-chip"]')?.textContent).toBe("at the harbour");
+    await m.unmount();
+  });
+
   test("an empty log says so, and sending goes out through onSend", async () => {
     const sent: unknown[] = [];
     const m = await mount(
