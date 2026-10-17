@@ -259,7 +259,7 @@ describe("the kit path, end to end through Scriptorium's launchers", () => {
     });
   });
 
-  test("the one-ask marker: a marked ask about the human's note reaches the tail once, with its noteId", async () => {
+  test("the one-ask guard: an ask (via ask) about the human's note reaches the tail once, with its noteId", async () => {
     // The human notes "line two" (offsets 5..13 of the active text).
     surface.send({ op: "note.add", doc: "a", from: 5, to: 13, body: "stuck here?" });
     const added = await waitTail((l) => l.type === "note.added" && l.body === "stuck here?");
@@ -268,7 +268,8 @@ describe("the kit path, end to end through Scriptorium's launchers", () => {
       op: "say",
       text: "see my note",
       withSelection: false,
-      about: { noteId, ask: true },
+      via: "ask",
+      about: { noteId },
       rid,
     });
     surface.send(ask("r1"));
@@ -279,8 +280,8 @@ describe("the kit path, end to end through Scriptorium's launchers", () => {
     const asks = tailLines().filter((l) => l.type === "message" && l.text === "see my note");
     expect(asks).toHaveLength(1);
     expect(asks[0]?.about).toMatchObject({ noteId });
-    // The marker is the daemon's to keep; the agent's tail never carries it.
-    expect((asks[0]?.about as Record<string, unknown>).ask).toBeUndefined();
+    // The gesture rides the tail, so the agent can tell a pressed ask from a typed message.
+    expect(asks[0]?.via).toBe("ask");
     // The second ask is refused to its sender alone, by its request id.
     const refused = await surface.waitFor(
       (f) => f.op === "error" && (f as { requestId?: unknown }).requestId === "r2",

@@ -362,14 +362,6 @@ export type MessageAbout = {
   noteId?: string;
   /** What the message draws on beside its subject: never the subject itself, each path once. */
   refs?: MessageRef[];
-  /**
-   * Set on the human's "Ask the agent" act for the note `noteId` names, and
-   * only there: the one-ask guard reads it (`askOutstanding` in `waiting.ts`).
-   * A message that names a note without it is a typed follow-up, always
-   * delivered. Kept on the stored message, so the guard survives a restore;
-   * never on the tail, which is unchanged.
-   */
-  ask?: true;
 };
 
 export type MessageType = "message" | "info" | "result";
@@ -1607,17 +1599,17 @@ export type ClientOp =
    * selection, `path`: the whole document or image that is its subject in
    * place of the active document (an open image, a document a view points at).
    * `via` is the gesture it came through: the composer sends `"chat"`.
-   * `about: { noteId, ask: true }` is the "Ask the agent" act for that note:
+   * `via: "ask"` with `about.noteId` is the "Ask the agent" act for that note:
    * sent once while the note is owed an answer, and a second is refused with an
-   * `error` that says it was not sent. Without `ask`, a message naming a note is
-   * a typed follow-up and is always delivered.
+   * `error` that says it was not sent. Through any other gesture, a message
+   * naming a note is a typed follow-up and is always delivered.
    */
   | {
       op: "say";
       text: string;
       withSelection: boolean;
       via?: string;
-      about?: Pick<MessageAbout, "entryIds" | "noteId" | "path" | "refs" | "ask">;
+      about?: Pick<MessageAbout, "entryIds" | "noteId" | "path" | "refs">;
     }
   | { op: "activate"; doc: string; version: number }
   /** `activate` separates branching (move into it) from snapshotting (stay). */

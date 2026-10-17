@@ -395,13 +395,20 @@ describe("notesWaiting: reopening", () => {
 
 // ── one ask at a time ────────────────────────────────────────────────────────
 
-/** The human's marked "Ask the agent" about `noteId`, at `ms`. */
+// The gesture is the mark: `via: "ask"` (Story Studio's bbc54fd).
+
+/** The human's "Ask the agent" about `noteId`, at `ms`. */
 const askAt = (noteId: string, ms: number) => ({
   ...msg("human", ms),
-  about: { noteId, ask: true as const },
+  via: "ask",
+  about: { noteId },
 });
-/** A message the human typed that names the note, unmarked. */
-const typedAt = (noteId: string, ms: number) => ({ ...msg("human", ms), about: { noteId } });
+/** A message the human typed that names the note, through the composer. */
+const typedAt = (noteId: string, ms: number) => ({
+  ...msg("human", ms),
+  via: "chat",
+  about: { noteId },
+});
 
 describe("askOutstanding", () => {
   test("never asked: nothing held back", () => {
@@ -412,15 +419,31 @@ describe("askOutstanding", () => {
     expect(askOutstanding(note("n1", 0), [askAt("n1", 1000)])).toBe(true);
   });
 
-  test("only the mark counts: a typed message about the note is no ask", () => {
+  test("only the ask counts: a typed message about the note, or one with no via, is no ask", () => {
     expect(askOutstanding(note("n1", 0), [typedAt("n1", 1000)])).toBe(false);
+    expect(
+      askOutstanding(note("n1", 0), [{ ...msg("human", 1000), about: { noteId: "n1" } }]),
+    ).toBe(false);
   });
 
-  test("only the human's mark counts: an agent message carrying one is no ask", () => {
-    const agentMarked = { ...msg("agent", 1000), about: { noteId: "n1", ask: true as const } };
-    expect(askOutstanding(note("n1", 0), [agentMarked])).toBe(false);
-    // …so the human's first marked ask after it is owed, and not already answered.
-    expect(askOutstanding(note("n1", 0), [agentMarked, askAt("n1", 2000)])).toBe(true);
+  test("only the ask counts: no other gesture, the kit's or an app's, is one", () => {
+    for (const via of ["chat", "describe", "fix", "pace", "Ask", "ask "])
+      expect(
+        askOutstanding(note("n1", 0), [{ ...msg("human", 1000), via, about: { noteId: "n1" } }]),
+      ).toBe(false);
+  });
+
+  test("only the human asks: an agent message with via ask about the note holds nothing back", () => {
+    const agentAsk = { ...msg("agent", 1000), via: "ask", about: { noteId: "n1" } };
+    expect(askOutstanding(note("n1", 0), [agentAsk])).toBe(false);
+    expect(askOutstanding(note("n1", 0), [agentAsk, msg("system", 1500)])).toBe(false);
+    // …so the human's first ask after it is owed, and not already answered.
+    expect(askOutstanding(note("n1", 0), [agentAsk, askAt("n1", 2000)])).toBe(true);
+  });
+
+  test("a system line is never an ask, whatever it carries", () => {
+    const systemAsk = { ...msg("system", 1000), via: "ask", about: { noteId: "n1" } };
+    expect(askOutstanding(note("n1", 0), [systemAsk])).toBe(false);
   });
 
   test("an ask about another note says nothing about this one", () => {

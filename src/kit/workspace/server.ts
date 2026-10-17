@@ -550,7 +550,6 @@ const KIT_ABOUT_KEYS = new Set<string>(
     docs: true,
     noteId: true,
     refs: true,
-    ask: true,
   } satisfies Record<keyof MessageAbout, true>),
 );
 
@@ -2663,7 +2662,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
      */
     const aboutFor = (
       withSelection: boolean,
-      extra?: Pick<MessageAbout, "entryIds" | "noteId" | "path" | "refs" | "ask">,
+      extra?: Pick<MessageAbout, "entryIds" | "noteId" | "path" | "refs">,
     ): { about: MessageAbout | undefined; advice: string[] } => {
       const advice: string[] = [];
       // A backstop: every path that moves the open document or its version
@@ -2719,8 +2718,6 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           : {}),
         ...(extra?.entryIds?.length ? { entryIds: extra.entryIds } : {}),
         ...(extra?.noteId ? { noteId: extra.noteId } : {}),
-        // The ask mark means something only beside the note it asks about.
-        ...(extra?.noteId && extra.ask === true ? { ask: true as const } : {}),
       };
       const { refs, outside, over } = refsFor(extra?.refs, subjectPaths(about));
       if (refs.length > 0) about.refs = refs;
@@ -3167,10 +3164,14 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           // The gesture, stored as sent (cut to its length); one outside the
           // app's list is answered on the tail's message, never refused.
           const { via, advice: viaAdvice } = viaOf(msg.via);
-          // One ask at a time: a marked "Ask the agent" for a note whose last
-          // ask is still owed an answer is a double-click, so it is not sent,
-          // and the sender is told so. Unmarked, it is typed, and always sent.
-          const asking = msg.about?.ask === true ? msg.about.noteId : undefined;
+          // One ask at a time: `via: "ask"` naming a note whose last ask is
+          // still owed an answer is a double-click, so it is not sent, and only
+          // the sender is told. Any other `via` naming a note is a typed
+          // follow-up, and always goes.
+          const asking =
+            via === "ask" && typeof msg.about?.noteId === "string" && msg.about.noteId
+              ? msg.about.noteId
+              : undefined;
           if (asking) {
             const n = session
               .noteFacts()
@@ -3199,13 +3200,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           });
           // What the app adds to `about` from what this page shows (Atlas: its
           // map). On the tail's message only: the chat keeps the kit's parts.
-          // The ask mark stays on the stored message, for the guard; the tail
-          // is the same with or without it.
-          const { ask: _ask, ...aboutOnTail } = about ?? {};
-          const told: MessageAboutOnTail | undefined = withAppAbout(
-            about ? aboutOnTail : undefined,
-            surfaceId(ws),
-          );
+          const told: MessageAboutOnTail | undefined = withAppAbout(about, surfaceId(ws));
           // Every human message names the three honest answers: the one that
           // goes wrong is work done with no task, which the human cannot see.
           const reply = pickReplyHint({
@@ -4059,10 +4054,10 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         }
         case "say": {
           // Only what an agent's message may point at: entries and a note. The
-          // rest of `MessageAbout` is the human's (`ask` is the one-ask guard's
-          // mark, `refs`, `docs`, a subject and a passage are what the human
-          // pointed at), so it is dropped, not stored as sent. An entry id that
-          // is not a string is dropped on its own; the others stay.
+          // rest of `MessageAbout` is the human's (`refs`, `docs`, a subject and
+          // a passage are what the human pointed at), so it is dropped, not
+          // stored as sent, and so is any other key sent. An entry id that is
+          // not a string is dropped on its own; the others stay.
           const raw = cmd.about as Partial<MessageAbout> | null | undefined;
           const entryIds = Array.isArray(raw?.entryIds)
             ? (raw.entryIds as unknown[]).filter((e): e is string => typeof e === "string")
