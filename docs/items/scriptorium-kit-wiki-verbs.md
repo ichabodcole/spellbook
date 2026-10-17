@@ -29,13 +29,61 @@ panes.
 
 ## Definition of done
 
-- [ ] On the flagged path, `meta`, `meta-init`, `meta-set`, `find`, `info` and
+- [x] On the flagged path, `meta`, `meta-init`, `meta-set`, `find`, `info` and
       `forget` behave as the shipped verbs do, with tests ported from the
       shipped suite.
-- [ ] `docMeta`, the trust tier and `stale` reach the agent through `appState`.
-- [ ] A move plan is a daemon command: what would move, and which links would
+- [x] `docMeta`, the trust tier and `stale` reach the agent through `appState`.
+- [x] A move plan is a daemon command: what would move, and which links would
       change. It writes nothing.
-- [ ] `note-remove`, `task-remove` and `tasks-clear` are either built or mapped
+- [x] `note-remove`, `task-remove` and `tasks-clear` are either built or mapped
       to the kit's verbs, and the SKILL delta says which.
-- [ ] acc is conformant on both paths, the census is re-run for the flagged CLI,
+- [x] acc is conformant on both paths, the census is re-run for the flagged CLI,
       and the default path is unchanged.
+
+## Done and verified
+
+Two commits on `impl/scriptorium-kit-wiki-verbs`: `b15842d1` (the kit) and
+`c21121a7` (Scriptorium on it).
+
+**The kit** gains two methods on `WorkspaceSession`:
+
+- `movePlan(path, into)` returns `MovePlan` (`src/kit/workspace/movePlan.ts`):
+  `from`, `to`, `into`, `name`, `folder`, `docs`, `sidecar`, `links`, `wiki`,
+  `references` and `checked`. It runs the move's own `pinLinks` and `planRelink`
+  in the world after the move (`movedWorld`), so nothing moves.
+- `forgetDoc(ref)` drops the record of a document whose file is gone.
+
+**Scriptorium's verbs** are in `src/scriptorium/backend/kit/wiki.ts` (the
+daemon) and `wikiCommands.ts` (the CLI): `meta`, `meta-init`, `meta-set`,
+`find`, `forget`, `move-plan`, `note-remove`, `task-remove`, `tasks-clear` and
+`info`. `appState` carries `docMeta` beside `hidden`.
+
+**Tests.** `src/kit/workspace/movePlan.test.ts` checks each plan against the
+move that follows it, and ports the shipped `forget` tests.
+`src/scriptorium/backend/kit/wiki.integration.test.ts` ports the shipped `find`,
+line-edit, `forget` and `movePlan` cases to the CLI.
+
+**Side by side.** Both CLIs were driven over the same world: `meta`, `find`
+(each filter), `meta-init`, `meta-set` (the file byte for byte), the refusals,
+`forget`, `note-remove`, and `meta-set` on an open document. A clean document
+reloads; one whose active version differs is marked changed outside. The
+answers, refusals and chat lines match, except where noted below.
+
+Deliberate choices:
+
+- **`task-remove` and `tasks-clear` are built, not mapped.** `task-cancel` ends
+  a task; it does not forget it. They keep the kit's rule: an unfinished task is
+  cancelled before it is removed, where shipped removed it at once.
+- **The move plan's links** are the links `move --update-links` would offer,
+  checked against the move itself in the tests. Board references are counted,
+  not judged. `docs` counts what the context shows; shipped counted markdown on
+  disk. The plan is also a surface op, answered with a `scriptorium.move.plan`
+  frame. The confirm dialog is cycle 3.
+- **What differs in words:** the kit's "no document is open: name one with
+  --doc" (shipped has a dash), and `info`'s pointer fields. `meta` and `find`
+  cover the kit's documents, `.json` included and `.mdx` not.
+
+The SKILL delta in
+[scriptorium-on-kit-daemon](./scriptorium-on-kit-daemon.md#skill-delta-for-the-kit-path)
+says the same. Its "Seams for later cycles" still lists the wiki layer as
+missing. That list is outside the delta, so it was left alone.

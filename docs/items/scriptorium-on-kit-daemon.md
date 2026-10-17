@@ -90,10 +90,18 @@ removed. A changed flag goes unnoticed; that is filed as
 Not yet in the shipped SKILL. It goes in at the cutover.
 
 - **Shipped only:**
-  - `task-remove`, `tasks-clear`, `note-remove`;
-  - `forget`;
-  - `meta`, `meta-init`, `meta-set`;
-  - `find`, `dangling`, `info`.
+  - `dangling`.
+- **The same as shipped**
+  ([scriptorium-kit-wiki-verbs](./scriptorium-kit-wiki-verbs.md)):
+  - `meta`, `meta-init`, `meta-set`, `find`, `forget` and `note-remove` give the
+    same answers, refusals and chat lines for the same world. Two refusals
+    differ in punctuation: the kit's "no document is open: name one with --doc"
+    where shipped has a dash.
+  - `meta`, `meta-init` and `meta-set` read the file on disk. `meta-set` writes
+    the file. An open document with no unsaved edits reloads it, and one whose
+    active version differs is marked changed outside, as shipped.
+  - `meta` and `find` cover what the kit's context shows: `.json` documents are
+    included (no frontmatter), and `.mdx` files are not shown.
 - **Kit only:**
   - `show`, `task-cancel`, `relink`, `reveal`;
   - `describe-image`, `image-settings`;
@@ -104,7 +112,24 @@ Not yet in the shipped SKILL. It goes in at the cutover.
     whose parent exists. Outside every set it is a new set in the context (its
     `entry` and `set: true` are printed); where a set shows folders, a folder
     there.
+  - `move-plan <path> <into>`: what `move` would do, and it writes nothing. It
+    prints the shipped plan (`from`, `into`, `name`, `folder`, `docs`, `repo`,
+    `leavesRepo`), plus `to`, and `links`: the links the move would break, by
+    document, each with the rewrite `move --update-links` would offer. `wiki`
+    lists wiki links it would break, which are never rewritten. `references`
+    counts board references, which are not judged. It refuses what `move`
+    refuses. `docs` counts the documents the context shows under the item;
+    shipped counted the markdown files on disk.
 - **Changed:**
+  - `task-remove` and `tasks-clear` are thin verbs on the kit's own removal, and
+    they are built, not mapped: `task-cancel` ends a task, it does not forget
+    it. The kit's rule holds. Only a finished task (done, failed or cancelled)
+    can be removed, so `task-remove` on an open or running one is refused with
+    "cancel it before removing it", where shipped removed it. To remove a task
+    started by mistake, run `task-cancel` and then `task-remove`. `tasks-clear`
+    clears done, failed and cancelled tasks.
+  - `info` prints the kit's pointer (`url`, `port`, `session_id`, `dir`, `pid`),
+    where shipped has `home` and `mode` in place of `pid`.
   - `make-set` is the kit's `set.make`. It keeps the entry's id as before, and
     is undoable from the context's arrows (the document goes back, listed by the
     same entry). It prints `broken`, the links the move into the folder broke,
@@ -178,6 +203,15 @@ Not yet in the shipped SKILL. It goes in at the cutover.
     `note.resolved{false}`.
   - `note-edit` keeps `replacedBody` for the human to put back.
   - `--version` adds `path: "kit"`.
+  - Each document's frontmatter summary is `appState.docMeta` (by path: `type`,
+    `title`, `status`, `tags`, `lifecycle`, the trust tier `trust` and `stale`),
+    with `appState.docMetaTruncated` past 500 documents. Shipped has them as
+    `docMeta` and `docMetaTruncated` at the top of the state.
+  - The move plan is the daemon op `scriptorium.move.plan` (`path`, `into`). A
+    page that sends it gets a `scriptorium.move.plan` frame with `plan`; shipped
+    answered `move.plan`.
+  - `meta-init`, `meta-set`, `forget` and `note-remove` post the shipped
+    `system` facts (`meta.init`, `meta.set`, `doc.forgotten`, `note.removed`).
   - What `hide` left out is `appState.hidden` (rels by entry id) in the state,
     not `hidden` on each context entry. `hide` and `unhide` answer with the
     shipped fields and the kit's `ok: true`; the chat line is a `system` fact
