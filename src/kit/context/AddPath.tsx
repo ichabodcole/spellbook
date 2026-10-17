@@ -53,7 +53,7 @@ export function AddPath({
   foldersOnly?: boolean;
   initialValue?: string;
   autoFocus?: boolean;
-  /** Escape on an already-empty box, or blur: the caller closes it. */
+  /** Escape on an already-empty box, or focus leaving it: the caller closes it. */
   onCancel?: () => void;
   className?: string;
   /**
@@ -210,7 +210,7 @@ export function AddPath({
                   "flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1 font-mono text-xs text-ink-dim",
                   i === highlight ? "bg-edge text-ink" : "hover:bg-edge/60",
                 )}
-                // mousedown, not click: the input's blur must not win the race.
+                // mousedown, not click: the input losing focus must not win the race.
                 onMouseDown={(e) => {
                   e.preventDefault();
                   if (s.dir) complete(s);

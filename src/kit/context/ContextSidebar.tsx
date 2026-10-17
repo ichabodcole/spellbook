@@ -634,7 +634,7 @@ function WorkspaceRow({
   );
 }
 
-/** A name box for renaming a list row in place: Enter keeps, Escape or blur drops. */
+/** A name box for renaming a list row in place: Enter keeps, Escape or leaving the box drops. */
 function RenameBox({
   initial,
   whole = false,

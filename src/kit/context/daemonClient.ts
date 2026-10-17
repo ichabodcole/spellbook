@@ -214,7 +214,7 @@ export type Daemon = DaemonView & {
   ) => boolean;
   /**
    * Send what is pending now, for one document or every one: before Save, on
-   * blur, on unmount. `send` and `request` do it on their own before an op
+   * losing focus, on unmount. `send` and `request` do it on their own before an op
    * the write would otherwise land after (`activate`, `version.new`, `merge`).
    */
   flushText: (doc?: string) => void;

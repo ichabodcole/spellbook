@@ -18,7 +18,7 @@ import type { HeldSelection, Reveal } from "./selection.ts";
 export type PaneName = "context" | "centre" | "chat";
 
 /**
- * The side columns as the centre sees them: which are shut, and the shell's own
+ * Each side column as the centre sees it: which are shut, and the shell's own
  * acts that shut and reopen them (a reopen goes back to the remembered width). The
  * centre never holds a copy: collapsed is read off the layout every render.
  */
@@ -87,7 +87,7 @@ export type Workspace = {
   setTheme: (theme: Theme) => void;
   /** Move keyboard focus into a pane. */
   focusPane: (pane: PaneName) => void;
-  /** The side columns: which are collapsed, and collapsing or reopening one. */
+  /** Each side column: which are collapsed, and collapsing or reopening one. */
   columns: Columns;
   /**
    * The centre says whether it is in a quiet reading mode (reader mode), so the

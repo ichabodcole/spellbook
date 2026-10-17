@@ -1,3 +1,5 @@
+// The Delete confirmation's words, from the daemon's preview of what goes to
+// the Trash.
 import { describe, expect, test } from "bun:test";
 import type { TrashPreview } from "../workspace/protocol";
 import { listNames, trashDialog } from "./trashDialog.ts";

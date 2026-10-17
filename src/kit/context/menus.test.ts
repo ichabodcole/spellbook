@@ -1,3 +1,5 @@
+// What a drop from outside the page carries, and what the sidebar says about
+// the files and folders it cannot take.
 import { describe, expect, test } from "bun:test";
 import { carriesFiles, dropNotice, droppedFiles } from "./menus.tsx";
 
