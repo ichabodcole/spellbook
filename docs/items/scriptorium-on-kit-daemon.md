@@ -91,7 +91,7 @@ Not yet in the shipped SKILL. It goes in at the cutover.
 
 - **Shipped only:**
   - `task-remove`, `tasks-clear`, `note-remove`;
-  - `hide`, `unhide`, `forget`;
+  - `forget`;
   - `meta`, `meta-init`, `meta-set`;
   - `find`, `dangling`, `info`.
 - **Kit only:**
@@ -142,6 +142,10 @@ Not yet in the shipped SKILL. It goes in at the cutover.
     `note.resolved{false}`.
   - `note-edit` keeps `replacedBody` for the human to put back.
   - `--version` adds `path: "kit"`.
+  - What `hide` left out is `appState.hidden` (rels by entry id) in the state,
+    not `hidden` on each context entry. `hide` and `unhide` answer with the
+    shipped fields and the kit's `ok: true`; the chat line is a `system` fact
+    `hide` or `unhide`.
 - **The ask:** `via: "ask"` with `about: { noteId }` (there is no `about.ask`).
   A second ask while the note is owed gets an error frame for its `rid`. Only a
   human's ask counts; any other `via` naming the note is a typed follow-up, and
