@@ -114,7 +114,8 @@ Deliberate choices:
   session opens empty and the answer's `note` says why. **`open` with paths**
   adds only those paths. The caller pointed, and "where the session was opened
   decides nothing". Adding the folder it ran in too would mirror, say, a whole
-  repository around one document.
+  repository around one document. Cole confirmed this reading on 2026-10-17, to
+  be revisited if it feels wrong in real use.
 - **The `workspace` verb is removed, not answered.** The ruling takes away the
   concept along with the default. A verb that printed "there is no workspace"
   would keep the name in the help and teach it to every agent that reads it.
