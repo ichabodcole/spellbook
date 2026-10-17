@@ -152,6 +152,15 @@ Not yet in the shipped SKILL. It goes in at the cutover.
   A second ask while the note is owed gets an error frame for its `rid`. Only a
   human's ask counts; any other `via` naming the note is a typed follow-up, and
   always goes.
+- **Converted sessions**
+  ([kit-manifest-migrate-hook](./kit-manifest-migrate-hook.md)): a session the
+  shipped Scriptorium wrote opens on the kit path converted, and its first chat
+  line says so and where the old manifest is kept (`manifest.pre-migrate.json`,
+  system fact `manifest.migrated`). Its old workspace is an ordinary added
+  folder: name where a new file goes. Its tasks read `open`, `running` (the old
+  step is `detail`) or `done`. Until the cutover this happens only under
+  `SCRIPTORIUM_KIT_MIGRATE=1` on a scratch copy; the SKILL says nothing about
+  the flag.
 - **From 85a319e's SKILL for Atlas:** say that a note shows it is with the agent
   until the agent replies, resolves it, or rewrites it with `note-edit`, and
   that a human rewrite asks again.
