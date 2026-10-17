@@ -19,8 +19,9 @@
  */
 
 import { resolve } from "node:path";
+import { errorEnvelope } from "../../../kit/wire/errors";
 import { createWorkspaceCli, type WorkspaceCli } from "../../../kit/workspace/verbs";
-import { KIT_FLAG, kitSessionsRoot, scriptoriumApp } from "./app";
+import { KIT_FLAG, kitMigrateRefusal, kitSessionsRoot, MIGRATE_FLAG, scriptoriumApp } from "./app";
 import { scriptoriumKitCommands } from "./commands";
 
 export type KitCliDeps = {
@@ -80,5 +81,15 @@ export function scriptoriumKitCli(deps: KitCliDeps): WorkspaceCli {
 
 /** The hand-off `../cli.ts` makes. Returns the exit code, as the shipped `run()` does. */
 export async function runKitCli(argv: string[], deps: KitCliDeps): Promise<number> {
+  // The conversion dry run on the real home is refused before any verb runs.
+  const refused = kitMigrateRefusal();
+  if (refused !== null) {
+    process.stderr.write(
+      errorEnvelope("usage", refused, {
+        hint: `unset ${MIGRATE_FLAG}, or set SCRIPTORIUM_HOME to a scratch copy of the sessions`,
+      }),
+    );
+    return 2;
+  }
   return await scriptoriumKitCli(deps).run(argv);
 }

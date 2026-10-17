@@ -19,8 +19,20 @@ import {
   type WorkspaceDaemon,
   type WorkspaceDaemonOptions,
 } from "../../../kit/workspace/server";
-import { kitSessionsRoot, scriptoriumApp } from "./app";
+import type { AppDeclaration } from "../../../kit/workspace/session";
+import { kitMigrateOn, kitMigrateRefusal, kitSessionsRoot, scriptoriumApp } from "./app";
+import { convertShippedManifest } from "./convert";
 import { hideVerbs, liveHiddenLists } from "./hide";
+
+/**
+ * The app in the conversion dry run (`SCRIPTORIUM_KIT_MIGRATE=1`): the kit
+ * path's own, with the converter for the shipped Scriptorium's sessions. Only
+ * the daemon restores, so only the daemon carries it.
+ */
+export const migratingApp: AppDeclaration = {
+  ...scriptoriumApp,
+  migrateManifest: convertShippedManifest,
+};
 
 /** What a browser shows at the session's URL while the kit path has no surface. */
 export const NO_SURFACE_PAGE = `<!doctype html>
@@ -37,7 +49,7 @@ export function kitDaemonOptions(
   overrides: Partial<WorkspaceDaemonOptions> = {},
 ): WorkspaceDaemonOptions {
   return {
-    app: scriptoriumApp,
+    app: kitMigrateOn() ? migratingApp : scriptoriumApp,
     sessionsRoot: kitSessionsRoot(),
     verbs: { ...hideVerbs },
     // What `hide` left out, per entry id: the shipped state carried it on each
@@ -58,5 +70,11 @@ export const kitDaemon = (overrides: Partial<WorkspaceDaemonOptions> = {}): Work
 
 /** The hand-off `../server.ts` makes: parse the daemon's flags, boot, handshake, wait. */
 export async function runKitDaemon(argv: string[]): Promise<number> {
+  // The dry-run flag on the real home is refused before anything boots.
+  const refused = kitMigrateRefusal();
+  if (refused !== null) {
+    process.stderr.write(`scriptorium: ${refused}\n`);
+    return 2;
+  }
   return await runWorkspaceDaemon(argv, (flags) => kitDaemon({ ...flags }), "scriptorium");
 }

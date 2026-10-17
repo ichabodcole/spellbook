@@ -18,8 +18,13 @@
  * restores from (it reads `$SCRIPTORIUM_HOME/sessions/<id>` only). The kit's
  * logs and prefs sit beside it (`kit/logs`, `kit/prefs.json`), not beside the
  * shipped ones.
+ *
+ * The one exception is the conversion dry run (`SCRIPTORIUM_KIT_MIGRATE=1`,
+ * below), which reads the shipped root on purpose, converting each session as
+ * it is restored, and is refused anywhere but a scratch copy of the sessions.
  */
 
+import { realpathSync } from "node:fs";
 import { join, resolve } from "node:path";
 // The kit's one reader of the home: a test preload moves it, and a test run
 // that has the real home is refused it (`os.homedir()` is neither).
@@ -55,8 +60,57 @@ export function scriptoriumHome(env: NodeJS.ProcessEnv = process.env): string {
   return resolve(env.SCRIPTORIUM_HOME ?? join(homeDir(), ".scriptorium"));
 }
 
-/** Where the kit path keeps its sessions: `$SCRIPTORIUM_HOME/kit/sessions`. */
+/**
+ * The conversion dry run's flag: the kit path reads the shipped Scriptorium's
+ * own sessions, converting each as it is restored (`./convert.ts`).
+ *
+ * ⛔ OFF FOR REAL USE UNTIL THE CUTOVER, three ways:
+ * - it does nothing without `SCRIPTORIUM_KIT=1` as well;
+ * - it is refused unless `SCRIPTORIUM_HOME` is set, and is not the default
+ *   `~/.scriptorium`: a dry run works on a copy, never on the real sessions,
+ *   because a converted manifest is the kit's and the shipped daemon refuses it;
+ * - without it, the kit path's app has no converter and its sessions root is
+ *   `kit/sessions`, so a shipped manifest is never converted, and is refused
+ *   (`refuseScriptorium`) if one is ever found there.
+ *
+ * Why a second flag, and not "convert whatever is under the shipped root": the
+ * kit path never reads the shipped root, so that rule would never fire, and
+ * pointing it there is the whole act. One flag that both points it there and
+ * turns the converter on keeps the two from ever happening apart. The cutover
+ * drops the flag and the home check, and makes both the default.
+ */
+export const MIGRATE_FLAG = "SCRIPTORIUM_KIT_MIGRATE";
+
+/** Why the dry-run flag is refused here, or null when it is off or allowed. */
+export function kitMigrateRefusal(env: NodeJS.ProcessEnv = process.env): string | null {
+  if (!kitPathOn(env) || env[MIGRATE_FLAG] !== "1") return null;
+  const set = env.SCRIPTORIUM_HOME;
+  if (set === undefined || set === "")
+    return `${MIGRATE_FLAG}=1 converts the sessions under $SCRIPTORIUM_HOME, and SCRIPTORIUM_HOME is not set: until the cutover it runs only on a copy. Copy the sessions into a scratch home and set SCRIPTORIUM_HOME to it`;
+  const real = (p: string) => {
+    try {
+      return realpathSync(p);
+    } catch {
+      return resolve(p);
+    }
+  };
+  if (real(set) === real(join(homeDir(), ".scriptorium")))
+    return `${MIGRATE_FLAG}=1 will not convert the real sessions in ~/.scriptorium before the cutover: copy them into a scratch home and set SCRIPTORIUM_HOME to it`;
+  return null;
+}
+
+/** The dry run is on: both flags, and a home that is not the real one. */
+export function kitMigrateOn(env: NodeJS.ProcessEnv = process.env): boolean {
+  return kitPathOn(env) && env[MIGRATE_FLAG] === "1" && kitMigrateRefusal(env) === null;
+}
+
+/**
+ * Where the kit path keeps its sessions: `$SCRIPTORIUM_HOME/kit/sessions`; in
+ * the conversion dry run, the shipped root `$SCRIPTORIUM_HOME/sessions`, where
+ * the sessions stay after the cutover (their version files never move).
+ */
 export function kitSessionsRoot(env: NodeJS.ProcessEnv = process.env): string {
+  if (kitMigrateOn(env)) return join(scriptoriumHome(env), "sessions");
   return join(scriptoriumHome(env), "kit", "sessions");
 }
 

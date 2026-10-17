@@ -232,7 +232,11 @@ const EXPECTED: Record<
   // 29/4 -> 30/4 (round three's second verify pass): and a `--body-file` it
   // may not read (chmod 000) as usage, for every verb — it was an internal raw
   // EACCES. No `choices`, for the same reason.
-  scriptorium: { sites: 30, choices: 4, verbRoster: true, flagMap: true },
+  // 30/4 -> 31/4 (kit-manifest-migrate-hook): the kit path's CLI refuses the
+  // conversion dry run's flag (`SCRIPTORIUM_KIT_MIGRATE=1`) on the real home,
+  // or with no SCRIPTORIUM_HOME, as usage. No `choices`: the way out is a
+  // scratch home, named in the hint.
+  scriptorium: { sites: 31, choices: 4, verbRoster: true, flagMap: true },
 };
 
 /**
