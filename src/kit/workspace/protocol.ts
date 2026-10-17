@@ -1586,6 +1586,11 @@ export type ClientOp =
    * `base`: the newest `rev` of a daemon-rewritten text this surface took for
    * the document (`version.text`), so a late edit typed over an older text is
    * rebased onto the rewrite rather than undoing it.
+   *
+   * `version` is the one the text was typed in. An edit naming a version that
+   * is no longer active (another was activated while it waited out the
+   * client's pause) is saved there, or kept as a version of its own when that
+   * one changed or went since, and the chat says which: never refused.
    */
   | { op: "edit"; doc: string; version: number; text: string; base?: number }
   | { op: "select"; selection: Selection | null }

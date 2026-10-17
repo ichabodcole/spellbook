@@ -333,6 +333,15 @@ const isStructureOp = (m: { op: string }): m is StructureOp => STRUCTURE_OPS.has
 export const AGENT_GRACE_MS = 60_000;
 
 /**
+ * How long after a switch the human's edit to the version it left is still
+ * taken into that version: the client's pause (`EDIT_DEBOUNCE_MS`) and a
+ * round trip, with room for a loaded machine. Later, or with no switch on
+ * record (a restarted daemon), an edit to a version that is not active is
+ * refused as it always was (`kit-agent-activate-pending-edit`).
+ */
+export const LATE_EDIT_MS = 3000;
+
+/**
  * How long the daemon waits after an image arrives in a document before it
  * tells the agent: several pasted or dropped at once are sent one request
  * each, and are told as ONE `image.pasted` fact, not one per image.
@@ -1880,10 +1889,30 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       }
     };
 
+    /**
+     * Each document's recent switches: the version that was active just before,
+     * who switched and when. Only an edit to one of these versions, within
+     * `LATE_EDIT_MS` of its switch, is taken late (`editLeft`). In memory only.
+     */
+    const switches = new Map<string, { from: number; by: "human" | "agent"; at: number }[]>();
+    const recordSwitch = (slug: string, from: number, by: "human" | "agent") => {
+      const now = performance.now();
+      const recent = (switches.get(slug) ?? []).filter((x) => now - x.at < LATE_EDIT_MS);
+      recent.push({ from, by, at: now });
+      switches.set(slug, recent);
+    };
+    /** The switch that just left `version`, if it is recent enough for an edit typed there to be taken. */
+    const switchLeaving = (slug: string, version: number) => {
+      const now = performance.now();
+      return (switches.get(slug) ?? [])
+        .filter((x) => x.from === version && now - x.at < LATE_EDIT_MS)
+        .at(-1);
+    };
     const activate = (doc: string | undefined, version: number, by: "human" | "agent") => {
       // Another version active: a rewrite of the old one is nothing its edits rebase onto.
       if (doc !== undefined) forgetRewrite(doc);
       const r = session.activate({ doc, version, ...(by === "agent" ? { json: "refuse" } : {}) });
+      recordSwitch(r.slug, r.previous, by);
       const view = session.doc(r.slug);
       const path = view.versions.find((v) => v.n === version)?.path ?? null;
       send({
@@ -2955,6 +2984,34 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       else if (opts.appState) scheduleEditBroadcast();
     };
 
+    /**
+     * The human's edit to a version that is no longer active: the switch
+     * overtook it in the client's pause, which only the human's own switch can
+     * prevent (its client sends the edit first). The edit is saved where it was
+     * typed, or kept as a version of its own (`session.editLeft`), and the
+     * human is told in the chat. The agent is not: nothing on its tail asks it
+     * to act, and the version it moved to is untouched.
+     */
+    const editLeft = (doc: string, version: number, text: string, by: "human" | "agent") => {
+      const r = session.editLeft(doc, version, text);
+      const d = session.findDoc(doc);
+      if (!d) return;
+      const name = `v${version} of ${d.slug}`;
+      const why = r.kept === "changed" ? "changed" : "was deleted";
+      // The human's own switch (a key typed after the click, before the switch
+      // was seen) is said as theirs; the agent's names the agent.
+      const said =
+        by === "agent"
+          ? r.kept === null
+            ? `Your last edit was saved to ${name}; the agent made v${d.active} active.`
+            : `Your last edit to ${name} was kept as v${r.saved}, because v${version} ${why} after the switch; the agent made v${d.active} active.`
+          : r.kept === null
+            ? `Your last edit was saved to ${name} before you switched to v${d.active}.`
+            : `Your last edit to ${name} was kept as v${r.saved}, because v${version} ${why} after you switched to v${d.active}.`;
+      session.addMessage({ from: "system", type: "info", text: said });
+      broadcastState();
+    };
+
     /** An app's own pending writes, made before a kit act reads or replaces a document. */
     const beforeKitAct = (op: unknown) => {
       if (typeof op !== "string" || !opts.hooks?.beforeKitAct) return;
@@ -3069,6 +3126,18 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           broadcastState();
           return;
         case "edit": {
+          // Typed in a version that a switch just left while the edit waited
+          // out its pause (the agent switched): it goes to that version. Any
+          // other version that is not active is refused, below, as before.
+          const typedIn = session.findDoc(msg.doc);
+          const left =
+            typedIn && typedIn.active !== msg.version
+              ? switchLeaving(typedIn.slug, msg.version)
+              : undefined;
+          if (left) {
+            editLeft(msg.doc, msg.version, msg.text, left.by);
+            return;
+          }
           const followed = followedEdit(msg.doc, msg.version, msg.text, msg.base);
           // A stale edit was rebased onto a link rewrite: the editor is told the text kept.
           editActive(
@@ -3341,7 +3410,10 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           // Say where they are, not just what was made: announcing the new
           // version and going quiet about which one the human is editing is how
           // someone types into v1 believing they are in v2.
-          if (msg.activate) session.activate({ doc: r.slug, version: r.version.n });
+          if (msg.activate) {
+            const a = session.activate({ doc: r.slug, version: r.version.n });
+            recordSwitch(r.slug, a.previous, "human");
+          }
           const m = session.addMessage({
             from: "system",
             type: "info",

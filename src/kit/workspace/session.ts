@@ -1557,6 +1557,54 @@ export class WorkspaceSession {
   }
 
   /**
+   * The human's edit to a version that stopped being active while the edit
+   * waited out its pause: the agent (or another viewer) activated another
+   * version, and the human's client could not send the edit first as it does
+   * before its own switch (`kit-agent-activate-pending-edit`).
+   *
+   * The text was typed in version `n`, so it is written there when that file is
+   * still what the daemon last wrote to it. When it is not (the agent rewrote
+   * `n` with its own tools once it was no longer active) or `n` is gone, the
+   * text is kept as a new version by the human instead, made from `n` (or from
+   * the active version when `n` is gone) and not activated. Never refused: it
+   * is the last of what the human typed in that version.
+   */
+  editLeft(
+    slug: string,
+    n: number,
+    text: string,
+  ): { saved: number; kept: null | "changed" | "deleted"; path: string } {
+    const d = this.docOrDie(slug);
+    const was = d.versions.find((v) => v.n === n);
+    if (was) {
+      const path = this.versionPath(d, n);
+      let onDisk: string | null = null;
+      try {
+        onDisk = readFileSync(path, "utf8");
+      } catch {
+        onDisk = null;
+      }
+      if (onDisk !== null && (onDisk === text || this.isOwnWrite(path, onDisk))) {
+        this.writeOwned(path, text);
+        return { saved: n, kept: null, path };
+      }
+    }
+    const v = this.takeVersion(d);
+    const rec: Version = {
+      n: v,
+      by: "human",
+      fromVersion: was ? n : d.active,
+      createdAt: nowIso(),
+      label: `edit to v${n} after a switch`,
+    };
+    d.versions.push(rec);
+    const path = this.versionPath(d, v);
+    this.writeOwned(path, text);
+    this.persist();
+    return { saved: v, kept: was ? "changed" : "deleted", path };
+  }
+
+  /**
    * Copy a version to a new file; the agent then edits that file with its own
    * tools. With `body`, the new file holds that text instead of the copy, in the
    * same act; `fromVersion` still names the version it was made from.
