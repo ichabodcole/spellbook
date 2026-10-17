@@ -54,6 +54,11 @@ export {
   roleAdvisory,
   viaAdvisory,
 } from "./messageParts";
+export {
+  DEFAULT_LOCATION_HINT,
+  type HomeDeclaration,
+  hasHomeWorkspace,
+} from "./noHome";
 export { type PickKind, parsePickerOutput, pickerCommand, wasCancelled } from "./picker";
 export type * from "./protocol";
 export { revealCommand } from "./reveal";
@@ -127,6 +132,7 @@ export {
   docArg,
   KIT_OPTIONS,
   type KitFlag,
+  openingFolder,
   parseCount,
   parseSide,
   parseTailSince,

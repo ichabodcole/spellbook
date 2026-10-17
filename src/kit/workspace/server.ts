@@ -1140,7 +1140,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         ...(app.title ? { appTitle: app.title } : {}),
         sessionId,
         dir: session.dir,
-        workspace: session.workspace,
+        ...(session.hasHome ? { workspace: session.workspace } : {}),
         mode,
         agentListening: agentListening(),
         context: base.context,
@@ -4896,8 +4896,9 @@ export async function runWorkspaceDaemon(
     return status === 404 ? 5 : status === 409 ? 6 : 1;
   }
   process.stdout.write(
-    // `workspace` rides the handshake so `open` can name it, restored or new.
-    `${JSON.stringify({ url: d.url, port: d.port, session_id: d.sessionId, mode: d.mode, dir: d.dir, workspace: d.session.workspace })}\n`,
+    // `workspace` rides the handshake so `open` can name it, restored or new;
+    // left out (undefined) for an app with no home workspace.
+    `${JSON.stringify({ url: d.url, port: d.port, session_id: d.sessionId, mode: d.mode, dir: d.dir, workspace: d.session.hasHome ? d.session.workspace : undefined })}\n`,
   );
   const res = await d.done;
   await d.shutdown;

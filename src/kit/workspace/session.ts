@@ -152,6 +152,7 @@ import {
   PRE_MIGRATE_FILE,
   runManifestMigrate,
 } from "./manifestMigrate";
+import { hasHomeWorkspace, noLocation, notALocation, noWorkspaceToSet } from "./noHome";
 import {
   checkFields,
   type FieldRule,
@@ -544,6 +545,20 @@ export type AppDeclaration = {
    * written. See `manifestMigrate.ts` for the rules.
    */
   migrateManifest?: MigrateManifest;
+  /**
+   * `false`: the app has no home workspace (`./noHome.ts`). Nothing writes a
+   * new file or folder to a place the caller did not name: a create, drop or
+   * import that names no folder is refused with the way to name one, the
+   * session keeps no workspace folder, and `workspace.set` is refused. Absent
+   * (or `true`): the kit's home workspace, where those land.
+   */
+  homeWorkspace?: boolean;
+  /**
+   * With `homeWorkspace: false`: how this app's caller names a place, or makes
+   * one, in its own verbs' words; the hint of every refusal for want of one.
+   * Absent: the kit's words (`DEFAULT_LOCATION_HINT`).
+   */
+  locationHint?: string;
 };
 
 const APP_NAME = /^[a-z][a-z0-9-]*$/;
@@ -870,8 +885,13 @@ export class WorkspaceSession {
       appName: app.name,
       createdAt: nowIso(),
       // Where `open` ran (the CLI passes its cwd). Nothing said: the session's
-      // own `imported/` folder, made on demand. Never the home folder.
-      workspace: workspace ? resolve(workspace) : join(sessionsRoot, sessionId, IMPORTED_DIR),
+      // own `imported/` folder, made on demand. Never the home folder. An app
+      // with no home workspace keeps none, whatever was passed.
+      ...(hasHomeWorkspace(app)
+        ? {
+            workspace: workspace ? resolve(workspace) : join(sessionsRoot, sessionId, IMPORTED_DIR),
+          }
+        : {}),
       context: [],
       docs: [],
       openDoc: null,
@@ -949,7 +969,15 @@ export class WorkspaceSession {
     // Never the home folder: drops and new documents would write straight into it.
     // Not a set's own folder, though: the workspace may not overlap a set
     // (`overlapOf`), so a first entry that is a set gives way to `imported/`.
-    if (typeof m.workspace !== "string" || m.workspace === "") {
+    // An app with no home workspace keeps none: one a manifest still holds
+    // (written before the app declared none) is dropped, never used.
+    let droppedWorkspace = false;
+    if (!hasHomeWorkspace(app)) {
+      if (m.workspace !== undefined) {
+        delete m.workspace;
+        droppedWorkspace = true;
+      }
+    } else if (typeof m.workspace !== "string" || m.workspace === "") {
       const first = m.context[0]?.root;
       m.workspace =
         first !== undefined && overlapOf(first, m.context) === null
@@ -1015,6 +1043,7 @@ export class WorkspaceSession {
       report.outside.length > 0 ||
       report.tasks.length > 0 ||
       report.workspaceDefaulted ||
+      droppedWorkspace ||
       report.slotMigratedFrom !== undefined ||
       report.manifestMigrated
     ) {
@@ -1044,6 +1073,11 @@ export class WorkspaceSession {
     return join(this.dir, "docs");
   }
 
+  /** Whether the app keeps a home workspace (`AppDeclaration.homeWorkspace`). */
+  get hasHome(): boolean {
+    return hasHomeWorkspace(this.app);
+  }
+
   /** The folder dropped files and new top-level documents land in. */
   get workspace(): string {
     return this.m.workspace ?? join(this.dir, IMPORTED_DIR);
@@ -1055,6 +1089,11 @@ export class WorkspaceSession {
    * words, never a raw ENOENT.
    */
   private workspaceOrDie(): string {
+    // No home workspace: a write that names no folder has nowhere to go.
+    if (!this.hasHome) {
+      const r = noLocation(this.app);
+      throw new SessionError(r.message, 400, undefined, r.hint);
+    }
     const dir = this.workspace;
     // ⛔ The one gate for writing into the workspace (new documents, folders
     // and bundles, drops, imported images, moves): a workspace inside a bundle
@@ -1073,6 +1112,10 @@ export class WorkspaceSession {
 
   /** Point the workspace at an existing folder (relative paths resolve against the daemon's cwd: callers send absolute ones). */
   setWorkspace(rawPath: string): { path: string; from: string } {
+    if (!this.hasHome) {
+      const r = noWorkspaceToSet(this.app);
+      throw new SessionError(r.message, 400, undefined, r.hint);
+    }
     const abs = resolve(rawPath);
     let isDir = false;
     try {
@@ -1106,6 +1149,7 @@ export class WorkspaceSession {
    * and the daemon says what to change.
    */
   workspaceOverlap(): Overlap | null {
+    if (!this.hasHome) return null;
     return overlapOf(this.workspace, this.m.context);
   }
 
@@ -1126,6 +1170,7 @@ export class WorkspaceSession {
 
   /** Whether `abs` is the workspace folder, as named or by where it really is. */
   isWorkspace(abs: string): boolean {
+    if (!this.hasHome) return false;
     return abs === this.workspace || realOr(abs) === realOr(this.workspace);
   }
 
@@ -1270,7 +1315,7 @@ export class WorkspaceSession {
     if (same) return { entry: same, added: false };
     // A set whose folder is the workspace, or holds it, would make a file in the
     // workspace belong to both: refused, with the way round it.
-    if (probe.membership === "mirrored" && overlapOf(this.workspace, [probe]))
+    if (probe.membership === "mirrored" && this.hasHome && overlapOf(this.workspace, [probe]))
       throw new SessionError(
         `${probe.label} cannot be added as a set: its folder ${
           realOr(this.workspace) === realOr(probe.root) ? "is" : "holds"
@@ -1349,7 +1394,7 @@ export class WorkspaceSession {
       )
     )
       throw new GoneError(`${tilde(path)} is in the context already`, 409);
-    if (fresh.membership === "mirrored" && overlapOf(this.workspace, [fresh]))
+    if (fresh.membership === "mirrored" && this.hasHome && overlapOf(this.workspace, [fresh]))
       throw new SessionError(
         `${fresh.label} cannot come back as a set: its folder holds the workspace folder (${tilde(this.workspace)})`,
         409,
@@ -2810,7 +2855,9 @@ export class WorkspaceSession {
     if (!set) {
       if (this.isWorkspace(dir)) return dir;
       throw new SessionError(
-        `${this.display(dir)} is not a set, a folder in one, or the workspace: drop it on one of those`,
+        this.hasHome
+          ? `${this.display(dir)} is not a set, a folder in one, or the workspace: drop it on one of those`
+          : `${this.display(dir)} is not a set or a folder in one: drop it on one of those`,
         400,
       );
     }
@@ -3035,7 +3082,7 @@ export class WorkspaceSession {
     const set = this.coveringEntry(docDir);
     if (!set && !this.isWorkspace(docDir))
       throw new SessionError(
-        `${this.display(doc)} is not in a set or in the workspace folder, so an image has nowhere of the session's to go beside it: move the document into one first`,
+        `${this.display(doc)} is not in a set${this.hasHome ? " or in the workspace folder" : ""}, so an image has nowhere of the session's to go beside it: move the document into one first`,
         400,
       );
     // Before anything is made: the document's folder must really be in the set
@@ -3605,7 +3652,7 @@ export class WorkspaceSession {
       } else if (e.nodes.some((n) => join(e.root, n.rel) === abs)) return e.label;
     }
     if (abs.startsWith(this.dir + sep)) return toPosix(relative(this.dir, abs));
-    if (abs.startsWith(this.workspace + sep))
+    if (this.hasHome && abs.startsWith(this.workspace + sep))
       return `workspace/${toPosix(relative(this.workspace, abs))}`;
     const home = homeDir();
     return abs === home ? "~" : abs.startsWith(home + sep) ? `~${abs.slice(home.length)}` : abs;
@@ -3662,6 +3709,10 @@ export class WorkspaceSession {
       }
     }
     if (this.isWorkspace(abs)) return this.workspaceOrDie();
+    if (!this.hasHome) {
+      const r = notALocation(this.app, abs);
+      throw new SessionError(r.message, 400, undefined, r.hint);
+    }
     throw new SessionError(
       `${abs} is not a folder in this session: name a set, a folder inside one, or the workspace (${this.workspace})`,
       400,

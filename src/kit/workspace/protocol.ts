@@ -619,8 +619,12 @@ export type PublicState = {
   appTitle?: string;
   sessionId: string;
   dir: string;
-  /** The folder dropped files and new top-level documents land in. */
-  workspace: string;
+  /**
+   * The folder dropped files and new top-level documents land in. Absent for
+   * an app with no home workspace (`AppDeclaration.homeWorkspace: false`):
+   * there, a new file goes only where the caller points.
+   */
+  workspace?: string;
   mode: "dev" | "release";
   /**
    * Whether an agent is following the session: one of its tails is attached, or

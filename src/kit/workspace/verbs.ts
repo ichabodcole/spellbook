@@ -64,6 +64,7 @@ import {
   NOT_PRESENCE_HEADER,
   TAIL_IDLE_MS,
 } from "./heartbeat";
+import { type HomeDeclaration, hasHomeWorkspace, locationHint } from "./noHome";
 import type { DiffSide } from "./protocol";
 import { DOC_EXTENSIONS, isDocName } from "./tree";
 
@@ -112,7 +113,13 @@ export const KIT_OPTIONS = {
   "max-side": { type: "string" },
 } as const satisfies OptionsTable;
 
+/** The flags only an app with no home workspace has (`./noHome.ts`): `import --into`. */
+export const NO_HOME_OPTIONS = {
+  into: { type: "string" },
+} as const satisfies OptionsTable;
+
 export type KitFlag = keyof typeof KIT_OPTIONS;
+type NoHomeFlag = keyof typeof NO_HOME_OPTIONS;
 type Flags = Record<string, FlagValue | undefined>;
 
 export class UsageError extends CliError {
@@ -312,6 +319,34 @@ export function defaultWorkspace(paths: readonly string[], cwd: string): string 
   return ws;
 }
 
+/**
+ * The folder `open` ran in, for an app with no home workspace opened on no
+ * paths: added to the session as an ordinary entry (`context.add`, so a set),
+ * or why it is not. Not the home folder or one above it, the top of the disk,
+ * or a folder among the app's own sessions: those are no place to mirror whole.
+ */
+export function openingFolder(
+  cwd: string,
+  sessionsRoot: string,
+): { path: string } | { skipped: string } {
+  const real = (p: string) => {
+    try {
+      return realpathSync(p);
+    } catch {
+      return p;
+    }
+  };
+  const at = real(cwd);
+  const home = real(homeDir());
+  if (at === home) return { skipped: `${cwd} is your home folder, which is not added whole` };
+  if (at === dirname(at) || home.startsWith(at + sep))
+    return { skipped: `${cwd} holds your home folder, which is not added whole` };
+  const sessions = real(sessionsRoot);
+  if (at === sessions || at.startsWith(sessions + sep))
+    return { skipped: `${cwd} is among the sessions' own folders` };
+  return { path: cwd };
+}
+
 /** Keep the newest `LOG_KEEP - 1` daemon logs, so the one about to be written makes `LOG_KEEP`. */
 const LOG_KEEP = 10;
 function pruneLogs(logDir: string): void {
@@ -385,8 +420,14 @@ export type CliHelpers = {
 };
 
 export type WorkspaceCliOptions = {
-  /** The app's name: it fixes the discovery names the CLI reads. */
-  app: { name: string };
+  /**
+   * The app's name: it fixes the discovery names the CLI reads. Its
+   * `homeWorkspace: false` (the app declaration's, `./noHome.ts`) changes the
+   * verbs that would write to a place nobody named: `open` with no paths adds
+   * the folder it ran in as an ordinary entry, `import` takes `--into`, and
+   * there is no `workspace` verb.
+   */
+  app: HomeDeclaration;
   /** One line for the help's first line. */
   summary?: string;
   /** The app's own flags, beside the kit's. */
@@ -415,7 +456,13 @@ const DASH_HINT = "for free text containing dashes, put it after a bare --";
 
 export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
   const app = opts.app.name;
-  const options = { ...KIT_OPTIONS, ...(opts.options ?? {}) } as OptionsTable;
+  /** The app has no home workspace: nothing is written where the caller did not point. */
+  const noHome = !hasHomeWorkspace(opts.app);
+  const options = {
+    ...KIT_OPTIONS,
+    ...(noHome ? NO_HOME_OPTIONS : {}),
+    ...(opts.options ?? {}),
+  } as OptionsTable;
 
   // ── finding the daemon ──────────────────────────────────────────────────
 
@@ -567,8 +614,15 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
   // ── the verbs ───────────────────────────────────────────────────────────
 
   async function cmdOpen(pos: string[], flags: Flags): Promise<void> {
-    const paths = contextPaths(pos);
     const root = opts.sessionsRoot();
+    // No home workspace: a new session opened on nothing shows the folder it
+    // was opened in, as an ordinary entry (a set) the human sees and can
+    // remove, never a hidden destination. Given paths, those are the session.
+    const opening =
+      noHome && pos.length === 0 && typeof flags.restore !== "string"
+        ? openingFolder(process.cwd(), root)
+        : null;
+    const paths = opening && "path" in opening ? [opening.path] : contextPaths(pos);
 
     if (typeof flags.restore === "string") {
       const id = flags.restore;
@@ -602,7 +656,8 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
     // A new session's workspace is the folder holding the one folder it was
     // given, else where `open` ran, never a set's folder (`defaultWorkspace`).
     // None at all: the session's own `imported/`. A restored one keeps its own.
-    else {
+    // An app with no home workspace is given none.
+    else if (!noHome) {
       const ws = defaultWorkspace(paths, process.cwd());
       if (ws !== undefined) daemonArgs.push("--workspace", ws);
     }
@@ -665,7 +720,17 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
       const r = await postCmd(hs.session_id, { op: "context.add", paths }, { presence: false });
       entries = (r.entries as unknown[]) ?? [];
     }
-    printJson({ ...hs, ...(paths.length > 0 ? { entries } : {}) });
+    printJson({
+      ...hs,
+      ...(paths.length > 0 ? { entries } : {}),
+      // The opening folder was not added, and why: the session starts empty.
+      ...(opening && "skipped" in opening
+        ? {
+            entries: [],
+            note: `nothing was added: ${opening.skipped}. Add a folder with \`add <folder>\``,
+          }
+        : {}),
+    });
 
     if (!flags["no-open"]) {
       const opener =
@@ -706,7 +771,18 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
   }
 
   /** `import <file>`: the file's text is sent, so the daemon writes a copy into the workspace folder. */
-  async function cmdImport(file: string, session: string | undefined): Promise<void> {
+  async function cmdImport(
+    file: string,
+    session: string | undefined,
+    into?: string,
+  ): Promise<void> {
+    // No home workspace: the copy goes where the caller points, or nowhere.
+    if (noHome && into === undefined)
+      die(
+        `import: name the folder the copy goes in with --into <folder>: ${app} has no default folder`,
+        "usage",
+        { hint: locationHint(opts.app) },
+      );
     const abs = resolve(file);
     let st: ReturnType<typeof statSync>;
     try {
@@ -725,6 +801,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
         op: "import",
         name: basename(abs),
         text: readFileSync(abs, "utf8"),
+        ...(into !== undefined ? { dir: resolve(into) } : {}),
       }),
     );
   }
@@ -850,7 +927,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
     printJson,
   };
 
-  type Row = Omit<CommandSpec<KitFlag>, "run" | "rejectHint"> & {
+  type Row = Omit<CommandSpec<KitFlag | NoHomeFlag>, "run" | "rejectHint"> & {
     run: (pos: string[], flags: Flags, session: string | undefined) => unknown;
   };
 
@@ -871,8 +948,9 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
       name: "open",
       flags: ["no-open", "restore", "timeout", "start-timeout"],
       positionals: [{ name: "path", required: false, variadic: true }],
-      describe:
-        "start a session (opens the browser), adding paths; prints {url, port, session_id, workspace}; the workspace is the folder holding the one folder given, else the current folder, never a set's folder. --restore <id> brings a saved one back; --timeout <seconds> sets the idle close (default 1800); --timeout 0 stands until closed",
+      describe: noHome
+        ? "start a session (opens the browser), adding paths; with none, the current folder is added as a set; prints {url, port, session_id, entries}. --restore <id> brings a saved one back; --timeout <seconds> sets the idle close (default 1800); --timeout 0 stands until closed"
+        : "start a session (opens the browser), adding paths; prints {url, port, session_id, workspace}; the workspace is the folder holding the one folder given, else the current folder, never a set's folder. --restore <id> brings a saved one back; --timeout <seconds> sets the idle close (default 1800); --timeout 0 stands until closed",
       run: (pos, flags) => cmdOpen(pos, flags),
     },
     {
@@ -885,22 +963,41 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
         printJson(await postCmd(session, { op: "context.add", paths: contextPaths(pos) }));
       },
     },
-    {
-      name: "import",
-      flags: SESSION,
-      positionals: [{ name: "file", required: true }],
-      describe:
-        "copy a document into the workspace folder and show the copy (what dropping a file does)",
-      run: (pos, _flags, session) => cmdImport(pos[0] as string, session),
-    },
-    {
-      name: "workspace",
-      flags: SESSION,
-      positionals: [{ name: "dir", required: false }],
-      describe:
-        "print the workspace (where drops and new top-level documents land), or set it to a folder",
-      run: (pos, _flags, session) => cmdWorkspace(pos[0], session),
-    },
+    noHome
+      ? {
+          name: "import",
+          flags: [...SESSION, "into"],
+          positionals: [{ name: "file", required: true }],
+          describe:
+            "copy a document into --into <folder> (a set, or a folder in one) and show the copy (what dropping a file does); --into is required",
+          run: (pos, flags, session) =>
+            cmdImport(
+              pos[0] as string,
+              session,
+              typeof flags.into === "string" ? flags.into : undefined,
+            ),
+        }
+      : {
+          name: "import",
+          flags: SESSION,
+          positionals: [{ name: "file", required: true }],
+          describe:
+            "copy a document into the workspace folder and show the copy (what dropping a file does)",
+          run: (pos, _flags, session) => cmdImport(pos[0] as string, session),
+        },
+    // No home workspace, no `workspace` verb: there is nothing to print or set.
+    ...(noHome
+      ? []
+      : [
+          {
+            name: "workspace",
+            flags: SESSION,
+            positionals: [{ name: "dir", required: false }],
+            describe:
+              "print the workspace (where drops and new top-level documents land), or set it to a folder",
+            run: (pos, _flags, session) => cmdWorkspace(pos[0], session),
+          } satisfies Row,
+        ]),
     {
       name: "state",
       flags: [...SESSION, "full"],
@@ -1237,8 +1334,9 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
       name: "new-doc",
       flags: SESSION,
       positionals: [{ name: "path", required: true }],
-      describe:
-        "create an empty document (its folder must be a set, a folder in one, or the workspace)",
+      describe: noHome
+        ? "create an empty document at <path> (its folder must be a set or a folder in one)"
+        : "create an empty document (its folder must be a set, a folder in one, or the workspace)",
       run: async (pos, _flags, session) => {
         const abs = resolve(pos[0] as string);
         printJson(
@@ -1250,7 +1348,9 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
       name: "new-folder",
       flags: SESSION,
       positionals: [{ name: "path", required: true }],
-      describe: "create a folder inside a set, or in the workspace as a new set",
+      describe: noHome
+        ? "create a folder at <path> inside a set or a folder in one"
+        : "create a folder inside a set, or in the workspace as a new set",
       run: async (pos, _flags, session) => {
         const abs = resolve(pos[0] as string);
         printJson(
