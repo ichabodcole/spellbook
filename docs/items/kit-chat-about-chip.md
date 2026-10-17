@@ -90,11 +90,26 @@ Two leftovers from the port-shape plan's row 3. Neither is built in Story Studio
     that the kit chip reads `a · v1 · lines 3–4` with the passage, and `a · v1`
     for the active version.
 - **`c807d4b1`** rebuilds `dist`.
+- **Verification fixes** (no-stake review, "with fixes"), one commit after the
+  docs commit:
+  - Each app part is checked before storage (`cleanAppAbout`,
+    `messageParts.ts`). Without the check, a hook part that JSON cannot carry (a
+    BigInt, a cycle) made every later persist and broadcast throw. Such a part
+    is now dropped, and only that part is lost.
+  - A part over `APP_ABOUT_PART_MAX` (4 KB) is dropped. So is each part that
+    would take the message past `APP_ABOUT_TOTAL_MAX` (16 KB) in all, taken in
+    order. The tail's `warning` counts each kind of drop.
+  - `Object.prototype`'s own names and `prototype` are never part names
+    (`RESERVED_PART_NAMES`).
+  - The chip reads a stored `about` as data. Anything but a plain object names
+    nothing. `docs` and `refs` of the wrong shape are left off rather than
+    thrown on. A whitespace-only label is left off, and a test now pins that.
 
 ## Port-back notes
 
-Changes to Story Studio's kit code (`packages/kit/src`, `develop` `7d2cee7`),
-for their agent to weigh:
+Changes to Story Studio's kit code, for their agent to weigh. The code is in
+`packages/kit/src`. This work was aligned against `develop` at `7d2cee7`; their
+`develop` is now at `fb34b86`, and the notes below hold against it.
 
 - **`workspace/server.ts` `say`.** The message is stored with
   `withAppAbout(...)`, the same `about` as the tail. Before, it kept the kit's
@@ -108,12 +123,29 @@ for their agent to weigh:
 - **`KIT_ABOUT_KEYS`** moves from `server.ts` to `workspace/messageParts.ts` and
   is exported, with a new `appAboutParts(about)`. It now includes the retired
   `entryIds`.
+- **`KIT_ABOUT_KEYS` and `plugins.ts`.** Their `plugins.ts` checks each plugin's
+  declared `messageAbout` keys with `claim("about key", ...)`. That check passes
+  no reserved set, unlike `via`, which passes `KIT_VIA`.
+  - So today a plugin can declare a kit key such as `doc`, or `entryIds`, or a
+    reserved name. The daemon then drops that part silently on every message.
+  - Now that `KIT_ABOUT_KEYS` is exported from `messageParts.ts`, they can pass
+    `new Set([...KIT_ABOUT_KEYS, ...RESERVED_PART_NAMES])` as `claim`'s
+    `reserved` argument. That turns the silent drop into a startup error that
+    names the plugin.
+- **`cleanAppAbout`, `APP_ABOUT_PART_MAX`, `APP_ABOUT_TOTAL_MAX`,
+  `RESERVED_PART_NAMES` and `isPlainObject`** are new in `messageParts.ts`.
+  - `withAppAbout` now returns `{ about, advice }`. The advice joins the tail's
+    `warning`.
+  - Atlas's canvas hook returns every selected card, so a large selection now
+    loses parts past the caps and says so in the `warning`.
 - **`chat/ChatMessageView.tsx`** gains:
   - the new `AboutPartLabel` type;
   - `aboutLabel`'s fourth argument, `partLabel`;
   - a new `aboutPart` prop.
 
-  It drops the "N context items" part.
+  It drops the "N context items" part. `aboutLabel` now reads a stored `about`
+  defensively: a non-plain object names nothing, and `docs` or `refs` that are
+  not arrays are left off.
 
 - **`chat/ChatSidebar.tsx`** gains a new `aboutPart` prop, passed through to
   each message.
