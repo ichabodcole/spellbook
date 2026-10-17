@@ -8,12 +8,13 @@ description:
   (last one preselected) when nothing is selected, and the agent names where it
   creates; the opening folder becomes an ordinary added folder."
 status: stable
-lifecycle: triage
+lifecycle: ready
 id: 01a14606-4a31-7535-9dbd-5f19712c490c
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-16 }
 tags: [kit, scriptorium, workspace]
 parent: feature/workspace-kit
+cycle: 2026-10-wiki-layer
 ---
 
 # Scriptorium on the kit: no default workspace; new files go where you point
