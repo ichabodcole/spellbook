@@ -47,9 +47,10 @@ single root, the wording is ours to fix.
 
 - [x] `src/kit/context` is `027d7a3`'s, with the six commits above applied and
       the copy-in commits left out, on Spellbook's names. Its tests pass.
-- [ ] Adding a path adds a set where the path lives. No context code copies a
-      file anywhere. _(First half verified. Second half not true as written: see
-      "Done and verified".)_
+- [x] Adding a path adds a set where the path lives. Nothing is copied except a
+      file the human drops onto a set or folder they chose. _(Reworded by Cole,
+      2026-10-17: the first wording, "no context code copies a file anywhere",
+      also ruled out the drop import the shipped Scriptorium has always had.)_
 - [x] The tree multi-select and "Add as reference" send refs the daemon accepts,
       as `kit-port-via-refs` stored them.
 - [x] The port-back note names what we left out and why, for kit-parity.
@@ -93,6 +94,21 @@ the interim-frame item; this item leaves it as Story Studio had it.
 only when the session has a workspace folder. With no home workspace, the
 Scriptorium surface shows no such row, so the wording never reads wrong here,
 and it is left unchanged.
+
+**No-stake verification (2026-10-17):** ready to cherry-pick.
+
+- **Port fidelity holds both ways.** `027d7a3` plus the six commits, and
+  `develop` minus the three copy-in commits, are byte-identical. Ours differs
+  from them only by the listed translations.
+- **A Finder drop onto a folder** sends `import` with that folder as `dir`, and
+  the daemon writes a copy there under a free name, never overwriting. The
+  shipped Scriptorium does the same for documents. A drop on the list sends no
+  `dir`, and the flagged Scriptorium refuses it (`homeWorkspace: false`).
+- **A hazard for the port back:** Story Studio's two atlas canvas tests
+  hard-code `application/x-story-studio-rows+json`. Our renamed `ROW_DRAG_MIME`
+  must not go back as it is.
+- **The refs test's "a folder is no ref" assertion** is also held by the
+  daemon's own filter, so `model.test.ts` is the test that pins it.
 
 ## Port-back notes
 
