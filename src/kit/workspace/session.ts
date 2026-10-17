@@ -4549,6 +4549,198 @@ export class WorkspaceSession {
     this.persist();
   }
 
+  // ── set promotion, and a folder where the caller names ───────────────────
+
+  /**
+   * A document listed on its own becomes a set: a folder named for it beside
+   * it (the next free name: `solo`, else `solo 2`), the document moved in, and
+   * the SAME entry, by id, now mirroring that folder. What is keyed by the
+   * document's slug (its versions, notes, a chat reference's `doc`) and by
+   * the entry's id follows, as it does a move.
+   *
+   * Refused (400) for anything else: a document already in a set ("make a
+   * folder there instead"), a set's own folder, an image, a bundle.
+   * `opts.links`: the links the move broke, as `move` finds them; nothing is
+   * rewritten.
+   */
+  makeSet(
+    rawPath: string,
+    opts: { links?: boolean } = {},
+  ): {
+    path: string;
+    from: string;
+    folder: string;
+    entry: string;
+    links?: DocLinkFixes[];
+    wiki?: WikiBreak[];
+  } {
+    const item = this.itemOrDie(rawPath);
+    const e = item.entry;
+    if (e.membership !== "listed" || !item.whole)
+      throw new SessionError(
+        `${this.display(item.abs)} is already in a set: make a folder there instead`,
+        400,
+      );
+    if (listedFile(e)?.kind !== "doc")
+      throw new SessionError(
+        `${this.display(item.abs)} is not a document: only a document listed on its own becomes a set`,
+        400,
+      );
+    const parent = dirname(item.abs);
+    const stem = basename(item.abs, extname(item.abs)) || "Untitled";
+    const name = this.freeName(parent, stem, true);
+    this.refuseBundleName(name, "the set's folder");
+    const folder = join(parent, name);
+    const to = join(folder, basename(item.abs));
+    const pins = opts.links ? this.pinLinks([item.abs]) : null;
+    try {
+      mkdirSync(folder);
+    } catch (err) {
+      throw new SessionError(
+        `cannot make the folder ${tilde(folder)}: ${(err as NodeJS.ErrnoException).code ?? String(err)}`,
+        409,
+      );
+    }
+    try {
+      this.renameOrDie(item.abs, to);
+    } catch (err) {
+      // Nothing moved: the folder made for it goes, so a refusal changes nothing.
+      try {
+        rmdirSync(folder);
+      } catch {
+        /* left empty: a later rescan shows it, nothing is lost */
+      }
+      throw err;
+    }
+    // The entry switches BEFORE the model follows the move: a listed entry
+    // would otherwise follow its document to the new folder as a listed one.
+    e.membership = "mirrored";
+    e.root = folder;
+    e.realRoot = realOr(folder);
+    e.label = basename(folder);
+    e.nodes = [];
+    delete e.truncated;
+    this.followMove(item.abs, to);
+    this.persist();
+    const links = pins ? this.planRelink(pins, movedPairs(item.abs, to, null, null)) : null;
+    return {
+      path: to,
+      from: item.abs,
+      folder,
+      entry: e.id,
+      ...(links ? { links: links.fixes, wiki: links.wiki } : {}),
+    };
+  }
+
+  /**
+   * The way back from `makeSet`: the document at `rawPath`, alone in a set's
+   * own folder, goes back up beside that folder, the folder (now empty) is
+   * removed, and the same entry lists the document again. Refuses before it
+   * changes anything: a folder that is no set's now (`GoneError`: it can never
+   * apply again), one that holds anything else, a name taken beside it.
+   */
+  unmakeSet(rawPath: string): { path: string; from: string; folder: string; entry: string } {
+    const abs = this.contextForm(resolve(rawPath));
+    const folder = dirname(abs);
+    const e = this.m.context.find((x) => x.membership === "mirrored" && x.root === folder);
+    let left: string[] | null = null;
+    try {
+      left = statSync(abs).isFile() ? readdirSync(folder) : null;
+    } catch {
+      left = null;
+    }
+    if (!e || left === null)
+      throw new GoneError(
+        `${tilde(abs)} is no longer a document in a set of its own: it cannot be turned back`,
+        409,
+      );
+    if (left.length !== 1)
+      throw new SessionError(
+        `${this.display(folder)} holds more than ${basename(abs)} now (${left.length} items): move the rest out first`,
+        409,
+        left.slice(0, 10),
+      );
+    const to = join(dirname(folder), basename(abs));
+    this.refuseExisting(to);
+    this.renameOrDie(abs, to);
+    try {
+      rmdirSync(folder);
+    } catch {
+      /* not empty after all, or gone: the document is out either way */
+    }
+    e.membership = "listed";
+    e.root = dirname(to);
+    e.realRoot = realOr(e.root);
+    e.label = basename(to);
+    e.nodes = [docNode(basename(to), to)];
+    delete e.truncated;
+    this.followMove(abs, to);
+    this.persist();
+    return { path: to, from: abs, folder, entry: e.id };
+  }
+
+  /**
+   * A new, empty folder at `rawPath`, a full path the caller names. Where a
+   * set shows folders (a set, a folder in one, a bundle's member folder) it is
+   * a folder there, as `createFolder` makes one. Anywhere else on disk whose
+   * parent folder exists, it is added to the context as a set of its own: a
+   * new entry. Never inside a bundle, never over anything that exists, never
+   * among the app's sessions.
+   */
+  addFolder(rawPath: string): { path: string; entry: string; set: boolean } {
+    const abs = this.contextForm(resolve(rawPath));
+    const name = basename(abs);
+    if (this.nameOrDie(name) !== name)
+      throw new SessionError(`"${name}" is not a usable name: no space at either end`, 400);
+    this.refuseBundleName(name, "a new folder");
+    const parent = dirname(abs);
+    let shown = false;
+    try {
+      this.destinationOrDie(parent);
+      shown = true;
+    } catch (err) {
+      // Inside a set but not where it shows folders (a hidden one, a bundle's
+      // own files): refused as `new-folder` refuses it.
+      if (this.coveringEntry(parent) || !(err instanceof SessionError) || err.status !== 400)
+        throw err;
+    }
+    if (!shown) {
+      const inBundle = bundleHolding(abs);
+      if (inBundle)
+        throw new SessionError(
+          `${tilde(abs)} is inside the ${inBundle.type.label} ${bundleNameAt(inBundle.root)}: ${outsideMembers(inBundle.type)}`,
+          409,
+        );
+      const sessions = dirname(this.dir);
+      if (abs === sessions || abs.startsWith(sessions + sep))
+        throw new SessionError(`${tilde(abs)} is among the sessions' own folders`, 400);
+      let isDir = false;
+      try {
+        isDir = statSync(parent).isDirectory();
+      } catch {
+        isDir = false;
+      }
+      if (!isDir)
+        throw new SessionError(
+          `${tilde(parent)} is not a folder on disk: name a place whose folder exists`,
+          400,
+        );
+    }
+    this.refuseExisting(abs);
+    mkdirSync(abs);
+    this.adoptNew(abs);
+    this.persist();
+    // The entry that shows it: a set (its own, when it made one), or a bundle
+    // listed on its own whose member folder it was made in.
+    const e =
+      this.coveringEntry(abs) ??
+      this.m.context.find((x) => {
+        const only = listedFile(x);
+        return only?.kind === "bundle" && abs.startsWith(only.abs + sep);
+      });
+    return { path: abs, entry: e?.id ?? "", set: e?.root === abs };
+  }
+
   /** The most text one import carries: a document, not a data dump. */
   static readonly IMPORT_MAX_BYTES = 8 * 1024 * 1024;
 

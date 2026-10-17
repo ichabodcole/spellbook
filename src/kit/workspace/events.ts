@@ -130,6 +130,8 @@ export const SYSTEM_FACTS = [
   "trash",
   "doc.create",
   "folder.create",
+  "folder.add",
+  "set.make",
   "bundle.create",
   "duplicate",
   "bundle.changed",
@@ -348,6 +350,10 @@ export type SystemFactPayload =
       sidecar?: string;
     }
   | { fact: "doc.create" | "folder.create" | "import" | "bundle.create"; path: string }
+  /** A new folder where the caller named it; `set` when it is a new set in the context. */
+  | { fact: "folder.add"; path: string; entry: string; set: boolean }
+  /** A document became a set: its folder, where the document is now, the entry (same id). */
+  | { fact: "set.make"; path: string; from: string; folder: string; entry: string }
   /** A copy of a document or a whole bundle, beside it; `dir` for a bundle's. */
   | { fact: "duplicate"; path: string; from: string; dir?: true }
   /**

@@ -178,6 +178,11 @@ export type After = {
   title?: { from?: string; to?: string };
   /** What a folder creation made has an entry of its own: a set. */
   set?: boolean;
+  /**
+   * The way back the session holds and only the daemon can call (`set.make`'s
+   * `unmakeSet`), as an app's act holds one: run as one.
+   */
+  inverse?: Extract<Inverse, { kind: "app" }>;
 };
 
 const base = (p: string): string => p.split("/").pop() ?? p;
@@ -201,6 +206,14 @@ export function planInverse(op: StructureOp, after: After): Act | null {
         label: `created the ${after.set ? "set" : "folder"} ${base(after.path ?? "")}`,
         inverse: { kind: "delete", path: after.path ?? "", dir: true },
       };
+    case "folder.add":
+      return {
+        label: `created the ${after.set ? "set" : "folder"} ${base(after.path ?? "")}`,
+        inverse: { kind: "delete", path: after.path ?? "", dir: true },
+      };
+    // Its way back is the session's (`unmakeSet`): the daemon hands it in.
+    case "set.make":
+      return after.inverse ? { label: after.inverse.label, inverse: after.inverse } : null;
     case "import":
       return {
         label: `copied in ${base(after.path ?? "")}`,

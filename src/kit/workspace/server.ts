@@ -281,6 +281,8 @@ const AGENT_CMD_FIELDS: Record<string, CmdFields> = {
   "image.describe": { str: ["image"], optStr: ["source", "label"] },
   "doc.create": { str: ["dir"], optStr: ["name", "text"] },
   "folder.create": { str: ["dir"], optStr: ["name"] },
+  "folder.add": { str: ["path"] },
+  "set.make": { str: ["path"] },
   "bundle.create": { str: ["dir"], optStr: ["extension", "name"] },
   duplicate: { str: ["path"] },
   move: { str: ["path", "into"] },
@@ -315,6 +317,8 @@ export function checkAgentCmd(cmd: Record<string, unknown>): void {
 const STRUCTURE_OPS = new Set<string>([
   "doc.create",
   "folder.create",
+  "folder.add",
+  "set.make",
   "bundle.create",
   "duplicate",
   "move",
@@ -1973,6 +1977,22 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       };
     };
 
+    /**
+     * The way back from `set.make`, and forward again: the session's own
+     * (`unmakeSet`, `makeSet`), following where the document is after each.
+     */
+    type AppInverse = Extract<Inverse, { kind: "app" }>;
+    const setMakeInverse = (from: string, at: string): AppInverse => {
+      let now = at;
+      const undo = () => {
+        now = session.unmakeSet(now).path;
+      };
+      const redo = () => {
+        now = session.makeSet(now).path;
+      };
+      return { kind: "app", label: `turned ${basename(from)} into a set`, undo, redo };
+    };
+
     const structure = (op: StructureOp, by: "human" | "agent"): Record<string, unknown> => {
       const who = by === "agent" ? "Agent" : "You";
       const shown = (p: string) => session.display(p);
@@ -1986,6 +2006,8 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       let names: { from?: string; to?: string } | undefined;
       // A folder creation made a set (a folder with its own entry), for its words.
       let madeSet = false;
+      // An act whose way back the session holds (`set.make`), and its links fact.
+      let own: { inverse: AppInverse; fact?: Record<string, unknown> } | undefined;
       switch (op.op) {
         case "doc.create":
           r = session.createDoc(op.dir, op.name, {
@@ -2000,6 +2022,29 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           madeSet = session.context.some((e) => e.root === r.path);
           text = `${who} created the ${madeSet ? "set" : "folder"} ${shown(r.path as string)}.`;
           break;
+        case "folder.add":
+          r = session.addFolder(op.path);
+          madeSet = r.set === true;
+          text = `${who} created the ${madeSet ? "set" : "folder"} ${shown(r.path as string)}.`;
+          break;
+        case "set.make": {
+          const { links, wiki: w, ...m } = session.makeSet(op.path, { links: true });
+          r = m;
+          text = `${who} turned ${basename(m.from)} into a set: ${shown(m.folder)}.`;
+          own = { inverse: setMakeInverse(m.from, m.path) };
+          // The links the move into the folder broke: said, never rewritten.
+          // There is no `relink` offer for this act; the link check lists them.
+          if ((links?.length ?? 0) > 0 || (w?.length ?? 0) > 0) {
+            text += ` ${brokenText(links ?? [], w ?? [], basename(m.from))}`;
+            own.fact = {
+              broken: {
+                ...brokenFact(links ?? [], w ?? []),
+                hint: "make-set does not rewrite links: write each one as its `to`, or leave it for the link check. Wiki links are never rewritten.",
+              },
+            };
+          }
+          break;
+        }
         case "bundle.create": {
           const { hash: h, ...made } = session.createBundle(op.dir, op.extension, op.name);
           hash = h;
@@ -2091,10 +2136,11 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         ...(hash !== undefined ? { hash } : {}),
         ...(names ? { names } : {}),
         ...(madeSet ? { set: true } : {}),
+        ...(own ? { inverse: own.inverse } : {}),
       });
       if (follow && (act?.inverse.kind === "move" || act?.inverse.kind === "rename"))
         act.inverse.follow = follow;
-      let linkFact: Record<string, unknown> = {};
+      let linkFact: Record<string, unknown> = own?.fact ?? {};
       if (
         (fixes.length > 0 || wiki.length > 0) &&
         act &&

@@ -741,7 +741,17 @@ export type StructureOp =
   /** A copy of a dropped file's text, written into `dir` (a set, or a folder in one) or, without one, the workspace folder. */
   | { op: "import"; name: string; text: string; dir?: string }
   /** Point the workspace at an existing folder. */
-  | { op: "workspace.set"; path: string };
+  | { op: "workspace.set"; path: string }
+  /**
+   * A document listed on its own becomes a set: a folder named for it beside
+   * it, the document moved in, the same entry (by id) now mirroring the folder.
+   */
+  | { op: "set.make"; path: string }
+  /**
+   * A new, empty folder at `path`, a full path: a folder where a set shows
+   * one, else, anywhere on disk whose parent exists, a new set in the context.
+   */
+  | { op: "folder.add"; path: string };
 
 export type StructureOpName = StructureOp["op"];
 

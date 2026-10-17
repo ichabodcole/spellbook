@@ -34,6 +34,8 @@ test("the list of kit events and of system facts are what the contract names", (
       "trash",
       "doc.create",
       "folder.create",
+      "folder.add",
+      "set.make",
       "bundle.create",
       "duplicate",
       "bundle.changed",
