@@ -29,21 +29,10 @@
       "exitCode": 2,
       "streams": "separated",
       "stdout": "",
-      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"import: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"import\"}}\n",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"import: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--into\",\"--session\"]},\"meta\":{\"command\":\"import\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build 6a13f0be, paths derived from the declaration",
-      "recordedAt": "2026-10-17T02:15:06Z"
-    },
-    {
-      "path": ["workspace"],
-      "argv": ["workspace", "--acc-not-a-flag"],
-      "exitCode": 2,
-      "streams": "separated",
-      "stdout": "",
-      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"workspace: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--session\"]},\"meta\":{\"command\":\"workspace\"}}\n",
-      "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build 6a13f0be, paths derived from the declaration",
-      "recordedAt": "2026-10-17T02:15:06Z"
+      "recordedBy": "colereed via acc probe-plan harness, build ff5bdf3c-dirty, paths derived from the declaration",
+      "recordedAt": "2026-10-17T05:05:36Z"
     },
     {
       "path": ["state"],

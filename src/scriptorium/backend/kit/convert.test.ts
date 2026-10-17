@@ -118,9 +118,10 @@ describe("every shape the shipped writer has written", () => {
     const m = stored("s1");
     expect(m).toMatchObject({ format: 1, appName: "scriptorium", createdAt: iso(T), tasks: [] });
     expect(m.app).toEqual({ version: scriptoriumApp.slot.version });
-    // No workspace of its own: nothing is added, and new files go to the session's own folder.
+    // No workspace of its own: nothing is added, and no destination is written
+    // for it (the kit path has no home workspace).
     expect((m.context as { id: string }[]).map((e) => e.id)).toEqual(["c-1"]);
-    expect(m.workspace).toBe(join(sessions, "s1", "imported"));
+    expect("workspace" in m).toBe(false);
     const d = (m.docs as Record<string, unknown>[])[0];
     expect(d).toMatchObject({ nextVersion: 2, notes: [], admitted: false });
     expect(d?.versions).toEqual([{ n: 1, by: "human", createdAt: iso(T + 1) }]);
@@ -172,6 +173,15 @@ describe("every shape the shipped writer has written", () => {
       openDoc: null,
       chat: [],
     });
+    // The converter itself writes no destination (the restore would drop one
+    // too, so the manifest it hands back is asked, not only the stored one).
+    const raw = JSON.parse(readFileSync(join(sessions, "s3", "manifest.json"), "utf8"));
+    const converted = convertShippedManifest(raw, {
+      sessionId: "s3",
+      dir: join(sessions, "s3"),
+      sessionsRoot: sessions,
+    });
+    expect(converted && "workspace" in converted.manifest).toBe(false);
     const s = restore("s3");
     const m = stored("s3");
     const ctx = m.context as Record<string, unknown>[];
@@ -186,8 +196,11 @@ describe("every shape the shipped writer has written", () => {
     });
     // An ordinary added folder: mirrored, re-read on restore, its document in the tree.
     expect(JSON.stringify(ctx[1]?.nodes)).toContain("w.md");
-    // The workspace is no longer where new files go.
-    expect(s.workspace).toBe(join(sessions, "s3", "imported"));
+    // The workspace is no longer where new files go: there is no destination
+    // nobody chose, and a drop that names no folder is refused.
+    expect("workspace" in m).toBe(false);
+    expect(s.hasHome).toBe(false);
+    expect(() => s.importText("dropped.md", "x")).toThrow(/no location was named/);
     expect(s.restoreReport.manifestMigrated?.note).toContain(
       `Its workspace folder, ${ws}, is now an ordinary added folder`,
     );

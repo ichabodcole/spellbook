@@ -170,6 +170,12 @@ export const scriptoriumApp: AppDeclaration = {
     const skip = new Set(rels);
     return { skip: (rel) => skip.has(rel) };
   },
+  // No default workspace (`scriptorium-no-default-workspace`, ruled
+  // 2026-10-16): a new file or folder goes where the caller points, never to
+  // a folder nobody chose. The folder `open` ran in is an ordinary set.
+  homeWorkspace: false,
+  locationHint:
+    "name a place inside a set (`state` lists them), such as the folder of the document under discussion: `new-doc <folder>/<name>.md`, `new-folder <folder>/<name>`, `import <file> --into <folder>`. To make a new place: `add-folder <path>` (anywhere, as a new set), `make-set <doc>`, or `add <folder>` for one that exists",
   // Both apps are named scriptorium, so the kit's generic refusal ("restore it
   // with the app that wrote it; scriptorium will not read it") names this app
   // twice. Say which Scriptorium wrote it, and how to open it there.

@@ -11,7 +11,10 @@
  * - the rest of the wiki layer (meta, find, make-set, forget, …); `hide` and
  *   `unhide` are here (`./hide.ts`), and so are its frontmatter references and
  *   wiki forms (`./links.ts`);
- * - undo for setting the workspace, which the shipped Scriptorium keeps.
+ *
+ * It has no workspace to set, so no undo for setting one: the app declares no
+ * home workspace (`homeWorkspace: false`, `./app.ts`), and new files go where
+ * the caller points.
  */
 
 import {

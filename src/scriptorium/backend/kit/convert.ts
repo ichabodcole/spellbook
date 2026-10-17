@@ -15,7 +15,7 @@
  * | ------------------------------------------ | ----------------------------------------------------- |
  * | `createdAt`, `ts`, `at`: milliseconds      | ISO 8601 strings                                      |
  * | no `appName`, no `app`                     | `appName: "scriptorium"`, `app` at the slot version   |
- * | `workspace` (absent before 923ee09a: home) | an added folder (`context`); `workspace` the session's `imported/` |
+ * | `workspace` (absent before 923ee09a: home) | an added folder (`context`); no `workspace` (the kit path has no home one) |
  * | `context[].hidden` (923ee09a)              | `app.hidden[<entry id>]`                              |
  * | `docs[].versions[]`: `author`, `from`      | `by`, `fromVersion`                                   |
  * | `docs[].nextVersion` (absent before e2a756e6) | required: past every number used, on disk too     |
@@ -354,9 +354,9 @@ function convert(raw: Obj, at: ManifestMigrateContext): ManifestMigration {
     sessionId,
     appName: "scriptorium",
     createdAt: iso(raw.createdAt, "createdAt"),
-    // Nothing writes here unasked: the session's own folder, which the kit
-    // makes on demand, never a folder nobody chose.
-    workspace: join(at.dir, "imported"),
+    // No `workspace`: the kit path has no home workspace (`homeWorkspace:
+    // false`), so a converted session has no destination nobody chose. The
+    // old one is an added folder (`workspaceEntry`, above).
     context,
     docs: list(raw.docs, "docs").map((d, i) => doc(d, `docs[${i}]`, at.dir)),
     openDoc: typeof raw.openDoc === "string" ? raw.openDoc : null,
