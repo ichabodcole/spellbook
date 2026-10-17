@@ -30,14 +30,33 @@ Story Studio asked that the slot be generic: edges supplied by the app, each
 with a kind, not only frontmatter (kit-parity message 42). Their Atlas concept
 graph would use it.
 
+**Done and verified (2026-10-16).** `835c1ec3` adds the kit slot,
+`WorkspaceDaemonOptions.links` (`LinkSlot`, `src/kit/workspace/linkEdges.ts`):
+`edges(doc)` returns edges with a kind, read in the same pass as a document's
+links and cached under the same stamp; `resolve(input)` returns more places a
+target may name, asked only when the kit's own lookup finds no file. `graph`
+marks app edges `edge: <kind>` and counts `edgeKinds`; `backlinks` lists them
+under `edges`, apart from `backlinks`; `link-check` reports those nothing
+answers under `edges`, counted in `count`. All three take `--edge a,b`, where
+`link` names the body links. With no slot, every answer is unchanged. `6e8b9834`
+puts Scriptorium's frontmatter references (`fieldRefs`, kind `frontmatter`) and
+its wiki forms on the slot. Deliberate choices: the edge kind is `edge` on the
+wire, because `kind` already means a document's kind in `graph` and a link's
+kind in `backlinks`; app edges fold, filter by `rel` and count as links in the
+graph; Scriptorium's names are looked up in the set the link is written in, as
+the shipped resolver looks in its bundle. The graph and backlinks still sift by
+file name before resolving, so a resolver form that does not end in the
+document's name (an alias) is followed and checked but not drawn or counted.
+That is written on `LinkSlot` for Story Studio to weigh.
+
 ## Definition of done
 
-- [ ] An app can supply extra edges, each with a kind, to the kit's link cache
+- [x] An app can supply extra edges, each with a kind, to the kit's link cache
       and graph. `graph`, `backlinks` and `link-check` include them and can
       filter by kind. Body links behave exactly as before.
-- [ ] An app can add a resolver for its own wiki forms, tried after the kit's.
-- [ ] The flagged Scriptorium supplies its frontmatter references as edges and
+- [x] An app can add a resolver for its own wiki forms, tried after the kit's.
+- [x] The flagged Scriptorium supplies its frontmatter references as edges and
       its wiki forms as a resolver. The links differential's `wikiForms` case
       now passes on the kit path.
-- [ ] Edges stay current when a document's frontmatter changes, with a test.
+- [x] Edges stay current when a document's frontmatter changes, with a test.
 - [ ] The slot is offered to Story Studio on kit-parity.

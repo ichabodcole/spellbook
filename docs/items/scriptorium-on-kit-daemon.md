@@ -117,9 +117,25 @@ Not yet in the shipped SKILL. It goes in at the cutover.
   - `move` and `rename` add `--update-links`;
   - `import` drops `--into`;
   - `graph` takes
-    `--bundles --focus --hops --kind --kindless --limit --rel --untyped --within`
+    `--bundles --edge --focus --hops --kind --kindless --limit --rel --untyped --within`
     in place of `--entry`;
-  - `backlinks` takes `--doc` in place of a positional.
+  - `backlinks` takes `--doc` in place of a positional, and `--edge`;
+  - `link-check` takes `--edge`.
+- **Frontmatter references** (kit-link-edges-slot):
+  - They are edges of kind `frontmatter`, read by the shipped rule (any key, by
+    shape). `--edge a,b` keeps those edge kinds on `graph`, `backlinks` and
+    `link-check`; `link` names the body links.
+  - `backlinks` lists them under `edges` (`edge`, `raw`, `key`, `rel`), counted
+    in `edgeCount`, where the shipped verb says `related` (`path`, `title`,
+    `key`). The body links stay in `backlinks`, where the shipped verb says
+    `links`.
+  - `graph` marks each one `edge: "frontmatter"` and counts both kinds in
+    `edgeKinds`; the shipped `source: "frontmatter"` and `source: "link"` go.
+  - `link-check` reports a reference nothing answers under `edges` (`raw`,
+    `key`, `tried`), counted in `count`, where the shipped `dangling` says
+    `source: "frontmatter"`.
+  - Wiki forms resolve as in the shipped Scriptorium (a `type/slug` key, a bare
+    name, a path from the repo root), after the kit's own lookup.
 - **Wire:**
   - A `message` carries `about` (`doc`, `version`, `path`, `fromLine`, `toLine`,
     `text`, `noteId`) in place of `selection`, `activePath` and `note`.
