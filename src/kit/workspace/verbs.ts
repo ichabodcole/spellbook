@@ -74,6 +74,7 @@ export const KIT_OPTIONS = {
   "body-file": { type: "string" },
   context: { type: "string" },
   doc: { type: "string" },
+  edge: { type: "string" },
   failed: { type: "boolean" },
   focus: { type: "string" },
   for: { type: "string" },
@@ -196,6 +197,21 @@ export function parseCount(token: string, what: string): number {
   const t = token.trim();
   if (!/^\d+$/.test(t)) die(`${what}: "${token}" is not a whole number`, "usage");
   return Number(t);
+}
+
+/**
+ * An `--edge a,b` filter (kit-link-edges-slot): the edge kinds to keep, `link`
+ * naming the body links; undefined when the flag is absent.
+ */
+export function edgeList(v: FlagValue | undefined, verb: string): string[] | undefined {
+  if (v === undefined) return undefined;
+  if (typeof v !== "string") die(`${verb} --edge: name at least one edge kind`, "usage");
+  const names = v
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s !== "");
+  if (names.length === 0) die(`${verb} --edge: name at least one edge kind`, "usage");
+  return names;
 }
 
 /**
@@ -1349,22 +1365,26 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
     },
     {
       name: "backlinks",
-      flags: [...SESSION, "doc"],
+      flags: [...SESSION, "doc", "edge"],
       positionals: [],
       describe:
-        "what links to a document or an image (--doc: a path, or the open one): each link's source, line, target as written and relations, read from each source's ACTIVE version; a bare link has rel [], an embed (![alt](x.png)) has embed: true; bundles lists apart the bundles it is on (an app's boards: name, noun, and each card's id, line, path as written and subpath), which are not canon",
+        "what links to a document or an image (--doc: a path, or the open one): each link's source, line, target as written and relations, read from each source's ACTIVE version; a bare link has rel [], an embed (![alt](x.png)) has embed: true; bundles lists apart the bundles it is on (an app's boards: name, noun, and each card's id, line, path as written and subpath), which are not canon; edges lists apart the app's own edges that land on it, when it adds any (edge: its kind, raw: the target as written, key: what carries it), counted in edgeCount, not count; --edge a,b keeps those edge kinds only (link: the body links)",
       run: async (_pos, flags, session) => {
-        printJson(await postCmd(session, { op: "backlinks", ...withDoc(flags) }));
+        const edge = edgeList(flags.edge, "backlinks");
+        printJson(
+          await postCmd(session, { op: "backlinks", ...withDoc(flags), ...(edge ? { edge } : {}) }),
+        );
       },
     },
     {
       name: "link-check",
-      flags: SESSION,
+      flags: [...SESSION, "edge"],
       positionals: [],
       describe:
-        "check the session's links, in sections: dangling (file, line, the link as written, where it looked), unsupported (a scheme nothing here opens, like op:), duplicates (shared file names, each with a suggested rename, never applied), unusedImages (images in an images/ folder that no link or embed reaches, as an undone paste leaves them; never deleted), symmetry (hints: a relation the world's _relations.json declares symmetric, written one way only, the document linked to not linking back; never a problem), headings (links whose document opens but whose #anchor names no heading in it, a link that is only #heading read against its own document, each with the anchor decoded, the target and the nearest remaining heading, often the heading reworded; counted as problems), and ambiguousHeadings (hints: a bare #anchor naming a repeated heading, which lands on the first; write Parent#Child to name one); references (a bundle's references whose file is gone, an app's board cards: the bundle, the card's id, line, path as written, where it looked, and a sentence saying so; counted as problems); unusedImages, symmetry and ambiguousHeadings are kept out of count, which counts link problems only; reports, exits 0",
-      run: async (_pos, _flags, session) => {
-        printJson(await postCmd(session, { op: "link.check" }));
+        "check the session's links, in sections: dangling (file, line, the link as written, where it looked), unsupported (a scheme nothing here opens, like op:), duplicates (shared file names, each with a suggested rename, never applied), unusedImages (images in an images/ folder that no link or embed reaches, as an undone paste leaves them; never deleted), symmetry (hints: a relation the world's _relations.json declares symmetric, written one way only, the document linked to not linking back; never a problem), headings (links whose document opens but whose #anchor names no heading in it, a link that is only #heading read against its own document, each with the anchor decoded, the target and the nearest remaining heading, often the heading reworded; counted as problems), and ambiguousHeadings (hints: a bare #anchor naming a repeated heading, which lands on the first; write Parent#Child to name one); references (a bundle's references whose file is gone, an app's board cards: the bundle, the card's id, line, path as written, where it looked, and a sentence saying so; counted as problems); edges (the app's own edges that nothing answers, when it adds any: the edge's kind, the target as written, the key that carries it, where it looked; counted as problems); unusedImages, symmetry and ambiguousHeadings are kept out of count, which counts link problems only; --edge a,b keeps those edge kinds only (link: the body links' sections); reports, exits 0",
+      run: async (_pos, flags, session) => {
+        const edge = edgeList(flags.edge, "link-check");
+        printJson(await postCmd(session, { op: "link.check", ...(edge ? { edge } : {}) }));
       },
     },
     {
@@ -1380,10 +1400,11 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
         "within",
         "limit",
         "bundles",
+        "edge",
       ],
       positionals: [],
       describe:
-        "the session's documents and the typed links between them: nodes (path, title, kind, the kind's label, canon, links in and out) and edges (from, to, rel, count; rel [] is an untyped link), read from each document's ACTIVE version. --focus <doc> centres on one, --hops n (0-3, default 1) says how far; --kind a,b keeps documents of those kinds (the matched profile's kind, else the frontmatter type) and drops the rest BEFORE the hop search, so a focus reaches only through those kinds, and documents with no kind go too unless --kindless; --rel a,b keeps links with those relations (--untyped keeps untyped ones too) and keeps every document, though a focus then reaches only along the kept links; --within <folder> keeps one folder; --limit n keeps the n best connected (at most 500). relations and untyped count the links in view before --rel, kinds the documents before --kind; total.links counts links, total.edges folded pairs; warnings says what in the filter matched nothing. --bundles adds the bundles whose type reads references (an app's boards) as nodes of their own kind, not canon (bundle: { noun }), with an edge marked reference: true to each file their cards point at",
+        "the session's documents and the typed links between them: nodes (path, title, kind, the kind's label, canon, links in and out) and edges (from, to, rel, count; rel [] is an untyped link), read from each document's ACTIVE version. --focus <doc> centres on one, --hops n (0-3, default 1) says how far; --kind a,b keeps documents of those kinds (the matched profile's kind, else the frontmatter type) and drops the rest BEFORE the hop search, so a focus reaches only through those kinds, and documents with no kind go too unless --kindless; --rel a,b keeps links with those relations (--untyped keeps untyped ones too) and keeps every document, though a focus then reaches only along the kept links; --within <folder> keeps one folder; --limit n keeps the n best connected (at most 500). relations and untyped count the links in view before --rel, kinds the documents before --kind; total.links counts links, total.edges folded pairs; warnings says what in the filter matched nothing. --bundles adds the bundles whose type reads references (an app's boards) as nodes of their own kind, not canon (bundle: { noun }), with an edge marked reference: true to each file their cards point at. An app that adds edges of its own has them in edges too, marked edge: <kind> (frontmatter), with edgeKinds counting links per kind (link: the body links); --edge a,b keeps those kinds only",
       run: async (_pos, flags, session) => {
         const list = (v: FlagValue | undefined, what: string): string[] | undefined => {
           if (typeof v !== "string") return undefined;
@@ -1397,6 +1418,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
         // Relations are read case-folded (`parseRel`), so a filter is too.
         const rel = list(flags.rel, "--rel")?.map((r) => r.toLowerCase());
         const kind = list(flags.kind, "--kind");
+        const edge = edgeList(flags.edge, "graph");
         const hops =
           typeof flags.hops === "string" ? parseCount(flags.hops, "graph --hops") : undefined;
         if (hops !== undefined && hops > 3) die("graph --hops: at most 3", "usage");
@@ -1415,6 +1437,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
             ...(typeof flags.within === "string" ? { within: resolve(flags.within) } : {}),
             ...(limit !== undefined ? { limit } : {}),
             ...(flags.bundles === true ? { bundles: true } : {}),
+            ...(edge ? { edge } : {}),
           }),
         );
       },

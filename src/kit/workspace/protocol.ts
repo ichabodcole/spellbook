@@ -1029,8 +1029,39 @@ export type Backlinks = {
    * under its own heading, "On the board The well". Not in `count`.
    */
   bundles: ReferenceBacklinkView[];
+  /**
+   * The app's edges that land on the document (kit-link-edges-slot), apart from
+   * `backlinks`: Scriptorium's frontmatter references. Present only when the
+   * app adds edges; cut at the same cap, `edgeCount` the whole. Not in `count`.
+   */
+  edges?: EdgeBacklinkView[];
+  edgeCount?: number;
   truncated?: true;
 };
+
+/** An app's edge (kit-link-edges-slot) as a report shows it: where it is written, and its target as written. */
+export type EdgeBacklinkView = {
+  /** The document the edge is written in, absolute. */
+  source: string;
+  /** Its file name, with its extension. */
+  name: string;
+  /** Its path from the root of its context entry. */
+  shown: string;
+  /** The edge's kind, the app's word for it: `frontmatter`. */
+  edge: string;
+  /** The target exactly as written. */
+  raw: string;
+  /** What in the document carries it, when the app says: a frontmatter key (`related`). */
+  key?: string;
+  /** The 1-based line of the source file, when the app knows it. */
+  line?: number;
+  /** Relations it asserts; empty for none. */
+  rel: string[];
+  label?: string;
+};
+
+/** An app's edge that nothing answers: `tried` is every place the resolver looked. */
+export type CheckedEdgeView = Omit<EdgeBacklinkView, "rel"> & { tried: string[] };
 
 /** A bundle that references a document: the boards a document is on, each with the cards that point at it. */
 export type ReferenceBacklinkView = {
@@ -1246,6 +1277,12 @@ export type LinkCheck = {
    * beside the documents' dangling links. Counted in `count`.
    */
   references: { count: number; links: CheckedReferenceView[] };
+  /**
+   * The app's edges that nothing answers (kit-link-edges-slot): Scriptorium's
+   * frontmatter references to a page not written. Present only when the app
+   * adds edges; `kinds` is every edge kind among them. Counted in `count`.
+   */
+  edges?: { count: number; kinds: string[]; links: CheckedEdgeView[] };
   truncated?: true;
 };
 
@@ -1336,6 +1373,12 @@ export type GraphOptions = {
    * `reference`). Default false.
    */
   bundles?: boolean;
+  /**
+   * Keep links of these edge kinds only (kit-link-edges-slot): `link` for the
+   * body links, or an app's own kind (`frontmatter`). A bundle's references
+   * stay. Default: every kind.
+   */
+  edge?: string[];
 };
 
 /** A document in the link graph. */
@@ -1375,6 +1418,8 @@ export type GraphEdgeView = {
   rel: string[];
   count: number;
   reference?: true;
+  /** An app's edges of this kind (kit-link-edges-slot), not body links: `frontmatter`. */
+  edge?: string;
 };
 
 /**
@@ -1396,6 +1441,11 @@ export type LinkGraph = {
    * label and whether it is canon (false only when every document of it is not).
    */
   kinds: { kind: string | null; label: string | null; canon: boolean; count: number }[];
+  /**
+   * Links of each edge kind before `edge` filters, most first (`link`: the
+   * body links). Present only when an app's edge is among them.
+   */
+  edgeKinds?: { kind: string; count: number }[];
   /**
    * What passed the filters, before the cut: documents, edges (folded pairs)
    * and the links they fold. With bundles shown (`bundles: true`), `bundles`
@@ -1869,10 +1919,13 @@ export type AgentCmd =
   | { op: "reveal"; path: string }
   | { op: "doctor" }
   | { op: "search"; query: string; limit?: number }
-  /** What links to `doc` (a slug, a held name, or an absolute path in the context). */
-  | { op: "backlinks"; doc?: string }
-  /** Dangling links, unsupported links and shared file names, across the session. */
-  | { op: "link.check" }
+  /**
+   * What links to `doc` (a slug, a held name, or an absolute path in the
+   * context). `edge` keeps those edge kinds only (`link`: the body links).
+   */
+  | { op: "backlinks"; doc?: string; edge?: string[] }
+  /** Dangling links, unsupported links and shared file names, across the session; `edge` as for backlinks. */
+  | { op: "link.check"; edge?: string[] }
   /** The link graph, filtered by focus, hops, relation, kind and folder. */
   | ({ op: "graph" } & GraphOptions)
   /** The world's profiles: kinds, where each came from, types with none, broken files. */

@@ -91,6 +91,7 @@ import {
   THUMB_WIDTHS,
   thumbnail,
 } from "./images";
+import type { LinkSlot } from "./linkEdges";
 import { extractLinks, swapLinkTargets } from "./links";
 import {
   cleanVia,
@@ -466,7 +467,17 @@ function graphOptions(raw: Record<string, unknown>): GraphOptions {
       throw new SessionError("graph: bundles must be true or false", 400);
     out.bundles = raw.bundles;
   }
+  const edge = edgeKinds(raw.edge, "graph");
+  if (edge !== undefined) out.edge = edge;
   return out;
+}
+
+/** An `edge` filter as the wire sends it (kit-link-edges-slot): a list of edge kinds, or absent. */
+function edgeKinds(v: unknown, verb: string): string[] | undefined {
+  if (v === undefined) return undefined;
+  if (!Array.isArray(v) || v.length === 0 || !v.every((x) => typeof x === "string" && x !== ""))
+    throw new SessionError(`${verb}: edge must be a list of edge kinds (link, or the app's)`, 400);
+  return v as string[];
 }
 
 /** What a verb handler is told about how it was reached. */
@@ -640,6 +651,13 @@ export type WorkspaceDaemonOptions = {
    * wait. A test seam.
    */
   drainGraceMs?: number;
+  /**
+   * The app's part of the link layer (kit-link-edges-slot): edges it adds
+   * beside each document's body links, each with a kind, and a resolver for
+   * its own ways of naming a document, tried after the kit's. `graph`,
+   * `backlinks` and `link-check` carry the edges and filter by kind.
+   */
+  links?: LinkSlot;
   /** Hooks an app may set to take part in an act the kit performs. */
   hooks?: {
     /**
@@ -906,6 +924,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     const session = opts.restore
       ? WorkspaceSession.restore(opts.sessionsRoot, app, opts.restore)
       : WorkspaceSession.create(opts.sessionsRoot, app, sessionId, opts.workspace);
+    if (opts.links) session.setLinkSlot(opts.links);
 
     let selection: Selection | null = null;
     /** The document text on screen: the open document at its active version. */
@@ -3881,10 +3900,14 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         }
         case "search":
           return { ...session.search(cmd) };
-        case "backlinks":
-          return { ...session.backlinks(cmd.doc) };
-        case "link.check":
-          return { ...session.linkCheck() };
+        case "backlinks": {
+          const edge = edgeKinds(cmd.edge, "backlinks");
+          return { ...session.backlinks(cmd.doc, edge ? { edge } : {}) };
+        }
+        case "link.check": {
+          const edge = edgeKinds(cmd.edge, "link-check");
+          return { ...session.linkCheck(edge ? { edge } : {}) };
+        }
         case "graph": {
           const { op: _op, ...opts } = cmd;
           return { ...session.linkGraph(graphOptions(opts)) };

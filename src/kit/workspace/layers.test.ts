@@ -183,8 +183,9 @@ test("the links module holds resolving, following, writing, backlinks, the check
   // `backlinksTo`. kit-link-check added the check: `danglingLinks` and
   // `duplicateNames`. kit-link-graph added `linkGraph`. kit-rename-updates-references
   // added `retarget` and `swapLinkTargets`. sound-stage-stage-bundle added
-  // `rebaseCopy`, a copy's links rewritten to keep resolving. Widen this by name, as
-  // each item did.
+  // `rebaseCopy`, a copy's links rewritten to keep resolving. kit-link-edges-slot
+  // added `landingName`, the name sift its app edges share with backlinks. Widen
+  // this by name, as each item did.
   expect(Object.keys(links).sort()).toEqual([
     "backlinksTo",
     "collectRelations",
@@ -193,6 +194,7 @@ test("the links module holds resolving, following, writing, backlinks, the check
     "duplicateNames",
     "encodeLinkSegment",
     "extractLinks",
+    "landingName",
     "linkGraph",
     "parseRel",
     "rebaseCopy",

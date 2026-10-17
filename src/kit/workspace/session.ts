@@ -115,6 +115,16 @@ import { type Finding, findings, type Overlap } from "./doctor";
 import type { ClosedBy } from "./events";
 import { IMAGE_MAX_BYTES, openNoFollow, readAllFd, readHeadFd, stampOf } from "./images";
 import {
+  type AppEdge,
+  BODY_LINKS,
+  checkLinkSlot,
+  edgeBacklinksTo,
+  edgeKeeps,
+  type LinkSlot,
+  type ResolvableDocument,
+  readEdges,
+} from "./linkEdges";
+import {
   backlinksTo,
   type DanglingLink,
   danglingLinks,
@@ -124,6 +134,7 @@ import {
   type LinkKind,
   type LinkOrigin,
   type LinkRef,
+  landingName,
   linkGraph,
   type Resolution,
   rebaseCopy,
@@ -156,6 +167,7 @@ import type {
   Backlinks,
   BacklinkView,
   BrokenProfileView,
+  CheckedEdgeView,
   CheckedLinkView,
   CheckedReferenceView,
   ContextEntry,
@@ -170,6 +182,7 @@ import type {
   DocumentProfile,
   DocView,
   DroppedLink,
+  EdgeBacklinkView,
   EmbedView,
   GraphNodeView,
   GraphOptions,
@@ -790,8 +803,14 @@ export class WorkspaceSession {
       facts: DocFacts;
       /** A bundle's references, for a main file whose type reads them; else empty. */
       refs: BundleReference[];
+      /** The app's edges from it (kit-link-edges-slot), read from the same text. */
+      edges: AppEdge[];
     }
   >();
+  /** The app's part of the link layer: its edges and its resolver (`setLinkSlot`). */
+  private linkSlot: LinkSlot = {};
+  /** The documents the app's resolver may land on, built once per context index. */
+  private resolvable = new WeakMap<ContextIndex, readonly ResolvableDocument[]>();
   /**
    * A document's headings, by the file they were read from and its stamp, as
    * `linkCache` holds links: read only for a document some link names with an
@@ -816,6 +835,22 @@ export class WorkspaceSession {
   ) {
     this.m = manifest;
     this.dir = join(sessionsRoot, manifest.sessionId);
+  }
+
+  /**
+   * The app's part of the link layer (kit-link-edges-slot): edges it adds
+   * beside the body links, and a resolver for its own forms. Set once, as the
+   * daemon boots (`WorkspaceDaemonOptions.links`); what was read before is
+   * read again.
+   */
+  setLinkSlot(slot: LinkSlot | undefined): void {
+    this.linkSlot = checkLinkSlot(slot);
+    this.linkCache.clear();
+  }
+
+  /** Whether the app adds edges of its own: what decides that the answers carry them. */
+  private get appEdges(): boolean {
+    return this.linkSlot.edges !== undefined;
   }
 
   static create(
@@ -5763,6 +5798,7 @@ export class WorkspaceSession {
         return false;
       }
     };
+    const app = this.linkSlot.resolve;
     return resolveTarget(
       target,
       src,
@@ -5771,10 +5807,45 @@ export class WorkspaceSession {
         inContext: (p) => this.inContextAt(p, index),
         exists: (p) => is(p, "file"),
         isDir: (p) => is(p, "dir"),
+        ...(app
+          ? {
+              app: (path: string, k: LinkKind) => {
+                try {
+                  return app({
+                    target: path,
+                    from: src,
+                    root,
+                    kind: k,
+                    documents: () => this.resolvableDocs(index),
+                  });
+                } catch {
+                  // An app resolver that throws answers nothing: the link is missing.
+                  return undefined;
+                }
+              },
+            }
+          : {}),
       },
       origin,
       kind,
     );
+  }
+
+  /**
+   * Every markdown document in the context, with its frontmatter, for the
+   * app's resolver: built once per context index (one answer), read through
+   * the link cache, so the same array is handed to every target in it.
+   */
+  private resolvableDocs(index: ContextIndex): readonly ResolvableDocument[] {
+    const had = this.resolvable.get(index);
+    if (had) return had;
+    const read = new Set<string>();
+    const docs = this.markdownCandidates().map((c) => {
+      const f = this.readOf(c, read)?.facts ?? NO_FACTS;
+      return { path: c.path, type: f.type, frontmatter: f.fields };
+    });
+    this.resolvable.set(index, docs);
+    return docs;
   }
 
   /**
@@ -5902,7 +5973,13 @@ export class WorkspaceSession {
   private readOf(
     c: Candidate,
     read: Set<string>,
-  ): { links: LinkRef[]; fragments: LinkRef[]; facts: DocFacts; refs: BundleReference[] } | null {
+  ): {
+    links: LinkRef[];
+    fragments: LinkRef[];
+    facts: DocFacts;
+    refs: BundleReference[];
+    edges: AppEdge[];
+  } | null {
     const d = c.slug === null ? undefined : this.m.docs.find((x) => x.slug === c.slug);
     const file = d ? this.versionPath(d, d.active) : c.path;
     read.add(file);
@@ -5920,7 +5997,7 @@ export class WorkspaceSession {
     // read by its type; any other JSON document has nothing here.
     const bundle = referencingBundle(c.path);
     if (docFormat(c.path) === "json" && !bundle)
-      return { links: [], fragments: [], facts: NO_FACTS, refs: [] };
+      return { links: [], fragments: [], facts: NO_FACTS, refs: [], edges: [] };
     const hit = this.linkCache.get(file);
     if (hit?.stamp === stamp) return hit;
     let entry: {
@@ -5929,11 +6006,12 @@ export class WorkspaceSession {
       fragments: LinkRef[];
       facts: DocFacts;
       refs: BundleReference[];
+      edges: AppEdge[];
     };
     if (bundle) {
       try {
         const refs = bundle.references.read(readFileSync(file, "utf8"));
-        entry = { stamp, links: [], fragments: [], facts: NO_FACTS, refs };
+        entry = { stamp, links: [], fragments: [], facts: NO_FACTS, refs, edges: [] };
       } catch {
         return null;
       }
@@ -5946,12 +6024,16 @@ export class WorkspaceSession {
       // Links to a place in the same document (`#heading`) are read apart,
       // for the link check's headings; nothing that resolves paths sees them.
       const all = extractLinks(text, { schemes: true, fragments: true });
+      const facts = docFacts(text);
       entry = {
         stamp,
         links: all.filter((l) => !l.fragment),
         fragments: all.filter((l) => l.fragment),
-        facts: docFacts(text),
+        facts,
         refs: [],
+        // The app's edges, from the same read and kept under the same stamp,
+        // so a save or an edit on disk re-reads them with the links.
+        edges: readEdges(this.linkSlot, { path: c.path, text, frontmatter: facts.fields }),
       };
     } catch {
       return null;
@@ -6393,7 +6475,7 @@ export class WorkspaceSession {
    * through the same per-file link cache and one context index, so a second
    * check after an edit re-reads only the document that changed.
    */
-  linkCheck(): LinkCheck {
+  linkCheck(opts: { edge?: readonly string[] } = {}): LinkCheck {
     const index = this.contextIndex();
     const all = this.markdownCandidates();
     const read = new Set<string>();
@@ -6412,7 +6494,12 @@ export class WorkspaceSession {
     const sources = all.map((c) => {
       const got = this.readOf(c, read);
       facts.set(c.path, got?.facts ?? NO_FACTS);
-      return { path: c.path, links: got?.links ?? [], fragments: got?.fragments ?? [] };
+      return {
+        path: c.path,
+        links: got?.links ?? [],
+        fragments: got?.fragments ?? [],
+        edges: got?.edges ?? [],
+      };
     });
     // A bundle's references whose file nothing answers, beside the documents'
     // dangling links ("card 'The Glade' points at …, which is missing"). Each
@@ -6448,6 +6535,33 @@ export class WorkspaceSession {
         }
         return r;
       },
+    );
+    // The app's edges that nothing answers (kit-link-edges-slot), apart from
+    // the body links: a frontmatter reference to a page not written yet.
+    const keep = edgeKeeps(opts.edge);
+    const danglingEdges: CheckedEdgeView[] = [];
+    if (this.appEdges)
+      for (const s of sources)
+        for (const e of s.edges) {
+          if (!keep(e.kind)) continue;
+          const r = this.resolveFrom(e.target, s.path, entryOf(s.path), "document", index);
+          if (r.state !== "missing") continue;
+          danglingEdges.push({
+            source: s.path,
+            name: basename(s.path),
+            shown: shown(s.path),
+            edge: e.kind,
+            raw: e.target,
+            ...(e.key !== undefined ? { key: e.key } : {}),
+            ...(e.line !== undefined ? { line: e.line } : {}),
+            ...(e.label !== undefined ? { label: e.label } : {}),
+            tried: r.tried,
+          });
+        }
+    danglingEdges.sort(
+      (a, b) =>
+        a.shown.localeCompare(b.shown, undefined, { numeric: true }) ||
+        (a.line ?? 0) - (b.line ?? 0),
     );
     this.pruneLinkCache(read);
     const view = (l: Omit<DanglingLink, "tried"> | SchemeLink): CheckedLinkView => ({
@@ -6576,7 +6690,16 @@ export class WorkspaceSession {
     function cut<T>(list: T[]): T[] {
       return list.slice(0, LINK_CHECK_CAP);
     }
+    // An `edge` filter without `link` keeps no body link's section.
+    if (!keep(BODY_LINKS)) {
+      dangling.length = 0;
+      unsupported.length = 0;
+      missingHeadings.length = 0;
+      ambiguous.length = 0;
+      symmetry.length = 0;
+    }
     const truncated =
+      danglingEdges.length > LINK_CHECK_CAP ||
       missingHeadings.length > LINK_CHECK_CAP ||
       ambiguous.length > LINK_CHECK_CAP ||
       dangling.length > LINK_CHECK_CAP ||
@@ -6591,7 +6714,8 @@ export class WorkspaceSession {
         unsupported.length +
         names.length +
         missingHeadings.length +
-        references.length,
+        references.length +
+        danglingEdges.length,
       dangling: { count: dangling.length, links: cut(dangling) },
       unsupported: {
         count: unsupported.length,
@@ -6604,6 +6728,15 @@ export class WorkspaceSession {
       headings: { count: missingHeadings.length, links: cut(missingHeadings) },
       ambiguousHeadings: { count: ambiguous.length, hints: cut(ambiguous) },
       references: { count: references.length, links: cut(references) },
+      ...(this.appEdges
+        ? {
+            edges: {
+              count: danglingEdges.length,
+              kinds: [...new Set(danglingEdges.map((e) => e.edge))].sort(),
+              links: cut(danglingEdges),
+            },
+          }
+        : {}),
       ...(truncated ? { truncated: true as const } : {}),
     };
   }
@@ -6702,7 +6835,7 @@ export class WorkspaceSession {
     const sources = all.map((c) => {
       const got = this.readOf(c, read);
       facts.set(c.path, got?.facts ?? NO_FACTS);
-      return { path: c.path, links: got?.links ?? [] };
+      return { path: c.path, links: got?.links ?? [], edges: got?.edges ?? [] };
     });
     const entryOf = this.entryFinder(index);
     // Boards as nodes of their own kind (`bundles`, off by default): a bundle
@@ -6754,6 +6887,7 @@ export class WorkspaceSession {
         ...(opts.untyped !== undefined ? { untyped: opts.untyped } : {}),
         ...(opts.kind !== undefined ? { kind: opts.kind } : {}),
         ...(opts.kindless !== undefined ? { kindless: opts.kindless } : {}),
+        ...(opts.edge !== undefined ? { edge: opts.edge } : {}),
         limit,
       },
       referenceEdges,
@@ -6809,6 +6943,13 @@ export class WorkspaceSession {
       warnings.push(
         `rel: no link in view carries ${strayRels.join(", ")}; the relations in view are ${relNames.join(", ") || "none"}`,
       );
+    // An edge kind no link among the documents is of (kit-link-edges-slot).
+    const edgeNames = g.edgeKinds?.map((k) => k.kind) ?? [BODY_LINKS];
+    const strayEdges = (opts.edge ?? []).filter((k) => !edgeNames.includes(k));
+    if (strayEdges.length > 0)
+      warnings.push(
+        `edge: no link is of kind ${strayEdges.join(", ")}; the edge kinds are ${edgeNames.join(", ")}`,
+      );
     if (g.total.nodes === 0) warnings.push("the filter left no document");
     return {
       focus: focus ?? null,
@@ -6817,6 +6958,7 @@ export class WorkspaceSession {
       relations: g.relations,
       untyped: g.untyped,
       kinds: g.kinds,
+      ...(g.edgeKinds ? { edgeKinds: g.edgeKinds } : {}),
       total: g.total,
       ...(g.total.nodes > nodes.length ? { truncated: true as const } : {}),
       ...(warnings.length > 0 ? { warnings } : {}),
@@ -6835,7 +6977,7 @@ export class WorkspaceSession {
    * cut. Each document's links come from `linksOf`'s cache, so asking again
    * after an edit re-reads only the document that changed.
    */
-  backlinks(key?: string): Backlinks {
+  backlinks(key?: string, opts: { edge?: readonly string[] } = {}): Backlinks {
     // ⛔ ONE INDEX PER ANSWER. Resolving a link asks "is this in the context?",
     // and `locate` answers by walking every entry's tree: once per link, a hub
     // that 644 of 2,500 documents link to took about 490 ms an ask, on every
@@ -6845,17 +6987,51 @@ export class WorkspaceSession {
     const all = this.markdownCandidates();
     const read = new Set<string>();
     const entryOf = this.entryFinder(index);
+    const keep = edgeKeeps(opts.edge);
     const found = backlinksTo(
       target.path,
       all.map((c) => ({
         path: c.path,
         // Belt and braces: a scheme link could never land here anyway, since
         // `resolveTarget` answers `missing` for one; filtering just skips the ask.
-        links: this.linksOf(c, read).filter((l) => l.scheme === undefined),
+        links: keep(BODY_LINKS) ? this.linksOf(c, read).filter((l) => l.scheme === undefined) : [],
       })),
       // ⛔ As written in a DOCUMENT: no chat fallback (see `backlinksTo`).
       (raw, from, kind) => this.resolveFrom(raw, from, entryOf(from), "document", index, kind),
     );
+    // The app's edges that land on it (kit-link-edges-slot), apart from the
+    // links: Scriptorium's frontmatter references are a claim about the
+    // document, a body link a citation in prose. Sifted by name as links are.
+    const edges: EdgeBacklinkView[] = [];
+    if (this.appEdges) {
+      const want = landingName(target.path);
+      for (const e of edgeBacklinksTo(
+        target.path,
+        all.map((c) => ({
+          path: c.path,
+          edges: (this.readOf(c, read)?.edges ?? []).filter((x) => keep(x.kind)),
+        })),
+        (raw) => landingName(splitTarget(raw).path) === want,
+        (raw, from) => {
+          const r = this.resolveFrom(raw, from, entryOf(from), "document", index);
+          return r.state === "in-context" ? r.path : null;
+        },
+      )) {
+        const entry = entryOf(e.source);
+        edges.push({
+          source: e.source,
+          name: basename(e.source),
+          shown: entry ? toPosix(relative(entry.root, e.source)) : basename(e.source),
+          edge: e.kind,
+          raw: e.target,
+          ...(e.key !== undefined ? { key: e.key } : {}),
+          ...(e.line !== undefined ? { line: e.line } : {}),
+          rel: [...(e.rel ?? [])],
+          ...(e.label !== undefined ? { label: e.label } : {}),
+        });
+      }
+      edges.sort((a, b) => a.shown.localeCompare(b.shown) || (a.line ?? 0) - (b.line ?? 0));
+    }
     // The bundles that reference it (the boards it is on), each once with its
     // references to it, apart from the links: a board is not canon. Sifted by
     // the name a reference would end in (a bundle's folder for its main file)
@@ -6922,6 +7098,7 @@ export class WorkspaceSession {
       })
       .sort((a, b) => b.count - a.count || a.rel.localeCompare(b.rel));
     const kept = views.slice(0, BACKLINK_CAP);
+    const keptEdges = edges.slice(0, BACKLINK_CAP);
     return {
       doc: target.doc,
       path: target.path,
@@ -6930,7 +7107,10 @@ export class WorkspaceSession {
       relations,
       bare,
       bundles,
-      ...(views.length > kept.length ? { truncated: true as const } : {}),
+      ...(this.appEdges ? { edges: keptEdges, edgeCount: edges.length } : {}),
+      ...(views.length > kept.length || edges.length > keptEdges.length
+        ? { truncated: true as const }
+        : {}),
     };
   }
 
