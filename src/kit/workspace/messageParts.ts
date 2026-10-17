@@ -100,9 +100,86 @@ export const KIT_ABOUT_KEYS: ReadonlySet<string> = new Set<string>(
 );
 
 /**
- * An `about`'s app parts, in the order it holds them: every key the kit does
- * not own, with a value. What the chip hands the app's labeller.
+ * Names no app part may take, whatever the app says: `Object.prototype`'s own
+ * (`__proto__`, `constructor`, `toString`, ...) and `prototype`. A part under
+ * one would reach every reader of the stored message as a trap.
  */
-export function appAboutParts(about: object): [string, unknown][] {
-  return Object.entries(about).filter(([k, v]) => v !== undefined && !KIT_ABOUT_KEYS.has(k));
+export const RESERVED_PART_NAMES: ReadonlySet<string> = new Set<string>([
+  ...Object.getOwnPropertyNames(Object.prototype),
+  "prototype",
+]);
+
+/** The most one app part may weigh, as JSON (UTF-8 bytes). Past it the part is dropped. */
+export const APP_ABOUT_PART_MAX = 4 * 1024;
+/** The most all of one message's app parts may weigh together, as JSON (UTF-8 bytes). */
+export const APP_ABOUT_TOTAL_MAX = 16 * 1024;
+
+/** An object literal's shape: its prototype is `Object.prototype` or none. Not an array, a string or a class instance. */
+export function isPlainObject(v: unknown): v is Record<string, unknown> {
+  if (v === null || typeof v !== "object") return false;
+  const proto = Object.getPrototypeOf(v);
+  return proto === Object.prototype || proto === null;
+}
+
+/** An app may name its part this: not a kit key, retired or not, and not a reserved name. */
+const isAppPartName = (k: string): boolean => !KIT_ABOUT_KEYS.has(k) && !RESERVED_PART_NAMES.has(k);
+
+/**
+ * An `about`'s app parts, in the order it holds them: every key the kit does
+ * not own and no reserved name, with a value. What the chip hands the app's
+ * labeller. Anything but a plain object has none.
+ */
+export function appAboutParts(about: unknown): [string, unknown][] {
+  if (!isPlainObject(about)) return [];
+  return Object.entries(about).filter(([k, v]) => v !== undefined && isAppPartName(k));
+}
+
+const utf8Bytes = (s: string): number => new TextEncoder().encode(s).length;
+
+/**
+ * What an app's `hooks.messageAbout` gave, as the message keeps it: its parts
+ * (`appAboutParts`), less each that JSON cannot carry (a BigInt, a cycle, a
+ * function: it would make the message unstorable), each over
+ * `APP_ABOUT_PART_MAX`, and, in order, each that would take the message past
+ * `APP_ABOUT_TOTAL_MAX`. Each drop costs its part, never the message, and
+ * `advice` says how many went and why, for the tail's `warning`.
+ */
+export function cleanAppAbout(given: unknown): { parts: [string, unknown][]; advice: string[] } {
+  const parts: [string, unknown][] = [];
+  let unserialisable = 0;
+  let heavy = 0;
+  let over = 0;
+  let total = 0;
+  for (const [k, v] of appAboutParts(given)) {
+    let json: string | undefined;
+    try {
+      json = JSON.stringify(v);
+    } catch {
+      json = undefined;
+    }
+    if (json === undefined) {
+      unserialisable++;
+      continue;
+    }
+    const bytes = utf8Bytes(json);
+    if (bytes > APP_ABOUT_PART_MAX) {
+      heavy++;
+      continue;
+    }
+    if (total + bytes > APP_ABOUT_TOTAL_MAX) {
+      over++;
+      continue;
+    }
+    total += bytes;
+    // Stored as JSON reads it back, so what is kept is what a restore gives.
+    parts.push([k, JSON.parse(json)]);
+  }
+  const n = (count: number) =>
+    count === 1 ? "1 app about part was" : `${count} app about parts were`;
+  const advice: string[] = [];
+  if (unserialisable > 0)
+    advice.push(`${n(unserialisable)} dropped: not JSON (a BigInt, a cycle, a function).`);
+  if (heavy > 0) advice.push(`${n(heavy)} dropped: over ${APP_ABOUT_PART_MAX} bytes each.`);
+  if (over > 0) advice.push(`${n(over)} dropped past ${APP_ABOUT_TOTAL_MAX} bytes in all.`);
+  return { parts, advice };
 }

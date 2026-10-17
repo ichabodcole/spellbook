@@ -24,7 +24,7 @@ import { bundleDisplayName, bundleOf, isBundleMember } from "../lib/bundles.ts";
 import { cn } from "../lib/cn.ts";
 import { EMBED_IN_CHAT, renderMarkdown } from "../lib/markdown.ts";
 import { oneLine } from "../lib/oneLine.ts";
-import { appAboutParts } from "../workspace/messageParts";
+import { appAboutParts, isPlainObject } from "../workspace/messageParts";
 import type { Message, MessageAbout } from "../workspace/protocol";
 import { onRenderedLinkClick } from "./renderedLink.ts";
 import { type BadgeKind, WaitingBadge } from "./WaitingBadge.tsx";
@@ -64,8 +64,8 @@ export function pointedLabel(names: readonly string[]): string {
 export type AboutPartLabel = (part: string, value: unknown) => string | null | undefined;
 
 /** The app's words for its parts, in the order `about` holds them. A labeller that throws costs only its part. */
-function appPartLabels(about: object, label: AboutPartLabel | undefined): string[] {
-  if (!label) return [];
+function appPartLabels(about: unknown, label: AboutPartLabel | undefined): string[] {
+  if (!label || !isPlainObject(about)) return [];
   const out: string[] = [];
   for (const [part, value] of appAboutParts(about)) {
     try {
@@ -81,6 +81,9 @@ function appPartLabels(about: object, label: AboutPartLabel | undefined): string
 /**
  * What a message was about, as the chip reads: `plan · v3 · lines 4–6`, then
  * the app's parts in its own words (`partLabel`). Null when it names nothing.
+ * A stored `about` is read as data, not trusted as typed: anything but a plain
+ * object names nothing, and `docs` or `refs` of the wrong shape are left off,
+ * so one odd message never stops the log from drawing.
  */
 export function aboutLabel(
   about: MessageAbout,
@@ -88,6 +91,7 @@ export function aboutLabel(
   pathName: (path: string) => string = pathLabel,
   partLabel?: AboutPartLabel,
 ): string | null {
+  if (!isPlainObject(about)) return null;
   const parts: string[] = [];
   if (about.doc) parts.push(docName(about.doc));
   if (about.doc && about.version !== undefined) parts.push(`v${about.version}`);
@@ -95,14 +99,21 @@ export function aboutLabel(
   if (lines) parts.push(lines);
   if (about.noteId) parts.push("a note");
   // An old message's pointed documents (no longer written), as it always read.
-  if (about.docs?.length) parts.push(pointedLabel(about.docs.map((p) => pathName(p))));
+  const docs = Array.isArray(about.docs)
+    ? about.docs.filter((p): p is string => typeof p === "string")
+    : [];
+  if (docs.length) parts.push(pointedLabel(docs.map((p) => pathName(p))));
   // What it drew on besides its subject: the subject's own path is already named.
-  if (about.refs?.length) {
-    const names = about.refs.map((r) => r.label ?? pathName(r.path));
+  const refs = Array.isArray(about.refs)
+    ? about.refs.filter((r) => isPlainObject(r) && typeof r.path === "string")
+    : [];
+  if (refs.length) {
+    const names = refs.map((r) => (typeof r.label === "string" ? r.label : pathName(r.path)));
     parts.push(`with ${names.length <= 3 ? names.join(", ") : `${names.length} references`}`);
   }
   // A whole document or image named as the subject, with no slug to name it by.
-  if (!about.doc && about.path) parts.unshift(pathName(about.path));
+  if (!about.doc && typeof about.path === "string" && about.path)
+    parts.unshift(pathName(about.path));
   parts.push(...appPartLabels(about, partLabel));
   return parts.length ? parts.join(" · ") : null;
 }
@@ -174,7 +185,7 @@ export function ChatMessageView({
           className="mt-1 border-l-2 border-edge pl-2 font-mono text-[11px] text-ink-dim"
         >
           <span className="text-ink-faint">{chip}</span>
-          {m.about.text && (
+          {typeof m.about.text === "string" && m.about.text && (
             <>
               <br />
               {oneLine(m.about.text)}

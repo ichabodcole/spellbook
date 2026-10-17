@@ -47,11 +47,15 @@ export {
   PRE_MIGRATE_FILE,
 } from "./manifestMigrate";
 export {
+  APP_ABOUT_PART_MAX,
+  APP_ABOUT_TOTAL_MAX,
   appAboutParts,
+  cleanAppAbout,
   KIT_ABOUT_KEYS,
   KIT_REF_ROLES,
   KIT_VIA,
   messageVia,
+  RESERVED_PART_NAMES,
   refRole,
   roleAdvisory,
   viaAdvisory,

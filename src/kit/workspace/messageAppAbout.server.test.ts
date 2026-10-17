@@ -11,6 +11,12 @@ import { join } from "node:path";
 import { aboutLabel } from "../chat/ChatMessageView.tsx";
 import { fixtureDaemon } from "./fixtures/app";
 import { cmd, collectEvents, FakeSurface, waitUntil } from "./fixtures/harness";
+import {
+  APP_ABOUT_PART_MAX,
+  APP_ABOUT_TOTAL_MAX,
+  cleanAppAbout,
+  RESERVED_PART_NAMES,
+} from "./messageParts";
 import type { Message } from "./protocol";
 import type { WorkspaceDaemon } from "./server";
 import { seedDocs, tempRoot } from "./testing";
@@ -154,5 +160,99 @@ describe("entryIds is retired", () => {
     // The session goes on: a new message is said and stored.
     two.s.send({ op: "say", text: "newer", withSelection: false });
     await two.t.waitFor((e) => e.type === "message" && e.text === "newer");
+  });
+});
+
+describe("what an app's part may be", () => {
+  test("a part JSON cannot carry costs only itself: the message is stored, the session goes on", async () => {
+    const cyclic: Record<string, unknown> = { name: "loop" };
+    cyclic.self = cyclic;
+    const { d, s, t } = await start({
+      hooks: {
+        messageAbout: () => ({ big: 10n, cyclic, fn: () => 1, glance: { at: "the harbour" } }),
+      },
+    });
+    s.send({ op: "say", text: "odd parts", withSelection: false });
+    const ev = await t.waitFor((e) => e.type === "message" && e.text === "odd parts");
+    expect(ev.about).toEqual({ glance: { at: "the harbour" } });
+    expect(String(ev.warning)).toContain("3 app about parts were dropped: not JSON");
+    expect((await waitUntil("stored", () => said(s, "odd parts"))).about).toEqual({
+      glance: { at: "the harbour" },
+    });
+    // Persisted and still answering: the agent's say goes through, and the manifest holds both.
+    const r = await cmd(d.url, { op: "say", text: "still here" });
+    expect(r.status).toBe(200);
+    await waitUntil("agent said", () => said(s, "still here"));
+    const id = d.sessionId;
+    await stop();
+    const onDisk = JSON.parse(readFileSync(manifestAt(id), "utf8")) as { chat: Message[] };
+    expect(onDisk.chat.map((m) => m.text)).toEqual(
+      expect.arrayContaining(["odd parts", "still here"]),
+    );
+  });
+
+  test("a part over APP_ABOUT_PART_MAX is dropped, and parts past APP_ABOUT_TOTAL_MAX in all", async () => {
+    // Each `x.repeat(n)` part is n + 2 bytes of JSON.
+    const fits = APP_ABOUT_PART_MAX - 2;
+    const { s, t } = await start({
+      hooks: {
+        messageAbout: () => ({
+          heavy: "x".repeat(APP_ABOUT_PART_MAX - 1),
+          a: "a".repeat(fits),
+          b: "b".repeat(fits),
+          c: "c".repeat(fits),
+          d: "d".repeat(fits),
+          e: "e".repeat(fits),
+        }),
+      },
+    });
+    s.send({ op: "say", text: "heavy", withSelection: false });
+    const ev = await t.waitFor((e) => e.type === "message" && e.text === "heavy");
+    expect(Object.keys(ev.about as object)).toEqual(["a", "b", "c", "d"]);
+    const warning = String(ev.warning);
+    expect(warning).toContain(
+      `1 app about part was dropped: over ${APP_ABOUT_PART_MAX} bytes each.`,
+    );
+    expect(warning).toContain(
+      `1 app about part was dropped past ${APP_ABOUT_TOTAL_MAX} bytes in all.`,
+    );
+    expect((await waitUntil("stored", () => said(s, "heavy"))).about).toEqual(ev.about as never);
+  });
+
+  test("a part under a reserved name is never stored", async () => {
+    const given = JSON.parse(
+      '{"__proto__":{"polluted":1},"constructor":1,"prototype":2,"toString":3,"hasOwnProperty":4,"ok":1}',
+    );
+    const { s, t } = await start({ hooks: { messageAbout: () => given } });
+    s.send({ op: "say", text: "names", withSelection: false });
+    const ev = await t.waitFor((e) => e.type === "message" && e.text === "names");
+    expect(Object.keys(ev.about as object)).toEqual(["ok"]);
+    const stored = await waitUntil("stored", () => said(s, "names"));
+    expect(Object.keys(stored.about ?? {})).toEqual(["ok"]);
+    expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+  });
+});
+
+describe("cleanAppAbout", () => {
+  test("keeps the app's parts in order, drops kit keys, and takes nothing from a non-object", () => {
+    expect(cleanAppAbout({ doc: "x", refs: [], b: 1, a: { n: 2 } }).parts).toEqual([
+      ["b", 1],
+      ["a", { n: 2 }],
+    ]);
+    for (const given of [undefined, null, "str", [1, 2], 7])
+      expect(cleanAppAbout(given)).toEqual({ parts: [], advice: [] });
+    expect(cleanAppAbout(Object.assign(Object.create(null), { ok: 1 })).parts).toEqual([["ok", 1]]);
+  });
+  test("a part at exactly the per-part cap is kept; one byte over is not", () => {
+    expect(cleanAppAbout({ p: "x".repeat(APP_ABOUT_PART_MAX - 2) }).parts).toHaveLength(1);
+    expect(cleanAppAbout({ p: "x".repeat(APP_ABOUT_PART_MAX - 1) }).parts).toHaveLength(0);
+    // Bytes, not characters: a two-byte character weighs two.
+    expect(cleanAppAbout({ p: "é".repeat(APP_ABOUT_PART_MAX / 2) }).parts).toHaveLength(0);
+  });
+  test("every reserved name is refused, Object.prototype's own and prototype", () => {
+    for (const k of RESERVED_PART_NAMES)
+      expect(cleanAppAbout(JSON.parse(`{"${k}":1}`)).parts).toEqual([]);
+    expect(RESERVED_PART_NAMES.has("__proto__")).toBe(true);
+    expect(RESERVED_PART_NAMES.has("prototype")).toBe(true);
   });
 });

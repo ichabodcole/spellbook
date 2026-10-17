@@ -228,6 +228,49 @@ describe("an app's own parts of what a message was about", () => {
     };
     expect(aboutLabel({ bad: 1, good: 2 } as never, name, undefined, shaky)).toBe("good");
   });
+  test("a whitespace-only label is left off the chip", () => {
+    const blank = (part: string) => (part === "blank" ? "  \n\t" : part === "empty" ? "" : part);
+    expect(aboutLabel({ blank: 1, empty: 1, kept: 1 } as never, name, undefined, blank)).toBe(
+      "kept",
+    );
+    expect(aboutLabel({ blank: 1 } as never, name, undefined, blank)).toBeNull();
+  });
+  test("a stored about that is not a plain object names nothing, and never asks the labeller", () => {
+    const asked: string[] = [];
+    const any = (part: string) => {
+      asked.push(part);
+      return part;
+    };
+    for (const odd of [
+      "a string",
+      ["x", "y"],
+      7,
+      new Date(0),
+      Object.create({ doc: "inherited", version: 1 }),
+    ]) {
+      expect(aboutLabel(odd as never, name, undefined, any)).toBeNull();
+      expect(
+        html(msg("odd", { from: "human", about: odd as never }), { aboutPart: any }),
+      ).not.toContain("about-chip");
+    }
+    expect(asked).toEqual([]);
+    // A null-prototype object is still a plain one.
+    const bare = Object.assign(Object.create(null), { doc: "a", glance: 1 });
+    expect(aboutLabel(bare, name, undefined, any)).toBe("a · glance");
+  });
+  test("docs and refs of the wrong shape are left off, never thrown on", () => {
+    const odd = (extra: object) => ({ doc: "a", version: 1, ...extra }) as never;
+    expect(aboutLabel(odd({ refs: "/w/b.md" }), name)).toBe("a · v1");
+    expect(aboutLabel(odd({ docs: "/w/b.md" }), name)).toBe("a · v1");
+    expect(aboutLabel(odd({ refs: { path: "/w/b.md" } }), name)).toBe("a · v1");
+    expect(
+      aboutLabel(odd({ refs: [null, 3, { label: "no path" }, { path: "/w/c.md" }] }), name),
+    ).toBe("a · v1 · with c");
+    expect(aboutLabel(odd({ docs: [null, 3, "/w/d.md"] }), name)).toBe("a · v1 · d");
+    expect(aboutLabel({ path: 7, text: 9 } as never, name)).toBeNull();
+    const out = html(msg("odd", { from: "human", about: odd({ refs: "x", text: 9 }) }));
+    expect(out).toContain("a · v1");
+  });
   test("the message view passes aboutPart to the chip", () => {
     const out = html(
       msg("look here", { from: "human", about: { glance: { at: "the harbour" } } }),

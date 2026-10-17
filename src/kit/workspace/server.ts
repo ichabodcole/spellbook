@@ -94,7 +94,7 @@ import {
 import type { LinkSlot } from "./linkEdges";
 import { extractLinks, swapLinkTargets } from "./links";
 import {
-  appAboutParts,
+  cleanAppAbout,
   cleanVia,
   KIT_REF_ROLES,
   KIT_VIA,
@@ -2914,24 +2914,26 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     /**
      * The `about` a human message is stored with and the agent's tail gets: the
      * kit's, plus what the app adds from what the sending page shows
-     * (`hooks.messageAbout`). A part may not take a kit key, and an app hook that
-     * throws costs its part, never the message.
+     * (`hooks.messageAbout`). A part may not take a kit key or a reserved name,
+     * and an app hook that throws costs its parts, never the message. A part
+     * JSON cannot carry, or over the size caps, costs only itself, and the
+     * `advice` says so (`cleanAppAbout`).
      */
     const withAppAbout = (
       about: MessageAbout | undefined,
       surface: string,
-    ): MessageAboutOnTail | undefined => {
+    ): { about: MessageAboutOnTail | undefined; advice: string[] } => {
       const hook = opts.hooks?.messageAbout;
-      if (!hook) return about;
-      let parts: Record<string, unknown> | undefined;
+      if (!hook) return { about, advice: [] };
+      let given: unknown;
       try {
-        parts = hook(surface, ctx);
+        given = hook(surface, ctx);
       } catch (e) {
         process.stderr.write(`${app.name}: messageAbout failed: ${messageOf(e)}\n`);
       }
-      const extra = appAboutParts(parts ?? {});
-      if (extra.length === 0) return about;
-      return { ...(about ?? {}), ...Object.fromEntries(extra) };
+      const { parts, advice } = cleanAppAbout(given);
+      if (parts.length === 0) return { about, advice };
+      return { about: { ...(about ?? {}), ...Object.fromEntries(parts) }, advice };
     };
 
     /** The slot's hint, or the fixed one when it has none or fails: the message goes out regardless. */
@@ -3347,12 +3349,12 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
             }
           }
           const { about: kitAbout, advice: aboutAdvice } = aboutFor(msg.withSelection, msg.about);
-          const advice = [...viaAdvice, ...aboutAdvice];
           // What the app adds to `about` from what this page shows (Atlas: its
           // map). Stored with the message as the tail carries it: the record
           // shows what was sent, and the chip names the app's parts in the
           // app's words (`ChatSidebar`'s `aboutPart`).
-          const about: MessageAboutOnTail | undefined = withAppAbout(kitAbout, surfaceId(ws));
+          const { about, advice: appAdvice } = withAppAbout(kitAbout, surfaceId(ws));
+          const advice = [...viaAdvice, ...aboutAdvice, ...appAdvice];
           const m = session.addMessage({
             from: "human",
             type: "message",
