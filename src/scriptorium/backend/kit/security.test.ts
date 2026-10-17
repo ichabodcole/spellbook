@@ -156,6 +156,34 @@ describe("the boot refusal, with the cases the review found allowed", () => {
   test("a plain scratch copy is still allowed", () => {
     expect(refused(home)).toBeNull();
   });
+
+  // Fix round 4: app.ts had its own `onDisk`, which judged a link that leads
+  // nowhere yet where the link sat. The migrate would then make the real
+  // sessions folder through it. It now uses the kit's, which follows it.
+  test("a scratch sessions link to the real .scriptorium/sessions that is not there yet", () => {
+    rmSync(realSessions, { recursive: true });
+    const h = join(root, "h7");
+    mkdirSync(h);
+    symlinkSync(realSessions, join(h, "sessions"));
+    expect(refused(h)).toContain("will not convert the real sessions");
+    expect(
+      kitMigrateWriteRefusal(
+        { dir: join(h, "sessions", "abc"), sessionsRoot: join(h, "sessions") },
+        { ...on(h), HOME: process.env.HOME },
+        realHome,
+      ),
+    ).toContain("will not convert the real sessions");
+    expect(existsSync(realSessions)).toBe(false);
+  });
+
+  test("SCRIPTORIUM_HOME a link to the real .scriptorium that is not there yet", () => {
+    const fresh = join(root, "Users", "fresh");
+    mkdirSync(fresh, { recursive: true });
+    const h = join(root, "h8");
+    symlinkSync(join(fresh, ".scriptorium"), h);
+    expect(kitMigrateRefusal(on(h), fresh)).toContain("will not convert the real sessions");
+    expect(existsSync(join(fresh, ".scriptorium"))).toBe(false);
+  });
 });
 
 describe("the write-time refusal (kitMigrateWriteRefusal)", () => {

@@ -13,7 +13,7 @@
  */
 
 import { lstatSync, readlinkSync, realpathSync } from "node:fs";
-import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { basename, dirname, isAbsolute, join, parse, relative, resolve, sep } from "node:path";
 import { homeDir } from "../lib/home.ts";
 
 /** What an app says about a home workspace. Read off the app declaration. */
@@ -125,47 +125,63 @@ export function notAddedWhole(path: string, sessionsRoot: string, appHome?: stri
 const MAX_LINKS = 40;
 
 /**
- * A path as the disk resolves it: the realpath of its nearest folder that
- * exists, with the rest appended, so a symlink anywhere above it is followed
- * even when the path itself is not there yet.
+ * A path as the disk resolves it: where a write to `p` would really land.
  *
- * ⛔ A LINK THAT LEADS NOWHERE YET IS FOLLOWED TOO. `realpath` fails on a
- * dangling link exactly as on a missing file, so the nearest folder that
- * resolves is the one the link sits in. The next name down is read with
- * `lstat`: when it is a link, its target (`readlink`, relative to the folder
- * it sits in) takes its place and the walk starts again, link after link. A
- * write to that path lands where the last link leads (a new file made in
- * another session), so that is where it is judged. After `MAX_LINKS` links
- * the path is returned as it stands: no write follows that many (`ELOOP`).
+ * A path that is there is its `realpath`. One that is not is walked one name
+ * at a time from the top, as the kernel walks it: each name that is there is
+ * taken as its realpath; a `..` climbs from the folder the walk has really
+ * reached; a link is replaced by its target (`readlink`, relative to the folder
+ * it sits in) and the walk goes on through it; the first name that is not
+ * there ends the walk, with the rest appended (anything made there is a plain
+ * folder, so a `..` after it is plain too).
+ *
+ * ⛔ A `..` IS NEVER TAKEN AS TEXT BEFORE THE WALK REACHES IT. `resolve` drops
+ * `sub/..` as text, but the disk follows `sub` first: with `sub` a link into
+ * another session, `sub/../x` lands beside where `sub` leads, not beside
+ * `sub`. So `p` is not normalised first, and a link's target is not joined
+ * onto its folder as text: both are walked.
+ *
+ * ⛔ A LINK THAT LEADS NOWHERE YET IS FOLLOWED TOO, link after link: a write
+ * to it makes a new file where the last one leads (in another session), so that
+ * is where it is judged. After `MAX_LINKS` links the walk stops and the path is
+ * returned as far as it got: no write follows that many (`ELOOP`).
  */
 export function onDisk(p: string): string {
-  let abs = resolve(p);
-  for (let hops = 0; hops < MAX_LINKS; hops++) {
-    let at = abs;
-    let real: string;
-    for (;;) {
-      try {
-        real = realpathSync(at);
-        break;
-      } catch {
-        const up = dirname(at);
-        if (up === at) return abs;
-        at = up;
-      }
-    }
-    if (at === abs) return real;
-    const rest = relative(at, abs).split(sep);
-    const next = join(real, rest[0] as string);
-    let target: string | undefined;
-    try {
-      if (lstatSync(next).isSymbolicLink()) target = readlinkSync(next);
-    } catch {
-      /* not there: the rest is appended as written */
-    }
-    if (target === undefined) return join(real, ...rest);
-    abs = join(resolve(real, target), ...rest.slice(1));
+  const raw = isAbsolute(p) ? p : `${process.cwd()}${sep}${p}`;
+  try {
+    return realpathSync(raw);
+  } catch {
+    /* a name on the way is not there, or a link leads nowhere yet: walked below */
   }
-  return abs;
+  const top = parse(raw).root || sep;
+  let at = realOr(top);
+  const todo = raw.slice(top.length).split(sep);
+  let hops = 0;
+  while (todo.length > 0) {
+    const name = todo.shift() as string;
+    if (name === "" || name === ".") continue;
+    if (name === "..") {
+      at = dirname(at);
+      continue;
+    }
+    const next = join(at, name);
+    let link: boolean;
+    try {
+      link = lstatSync(next).isSymbolicLink();
+    } catch {
+      return join(next, ...todo);
+    }
+    if (!link) {
+      at = realOr(next);
+      continue;
+    }
+    if (++hops > MAX_LINKS) return join(next, ...todo);
+    const target = readlinkSync(next);
+    const root = isAbsolute(target) ? parse(target).root || sep : "";
+    if (root !== "") at = realOr(root);
+    todo.unshift(...target.slice(root.length).split(sep));
+  }
+  return at;
 }
 
 /** `p` is `root`, or inside it (both absolute). */

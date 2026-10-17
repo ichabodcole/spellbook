@@ -24,11 +24,15 @@
  * it is restored, and is refused anywhere but a scratch copy of the sessions.
  */
 
-import { lstatSync, realpathSync } from "node:fs";
-import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { lstatSync } from "node:fs";
+import { join, resolve } from "node:path";
 // The kit's one reader of the home: a test preload moves it, and a test run
 // that has the real home is refused it (`os.homedir()` is neither).
 import { accountHome, homeDir } from "../../../kit/lib/home";
+// The kit's one `onDisk`: it follows a link that leads nowhere yet, and a
+// `..` that passes through a link, exactly as the disk would. A copy here
+// once did neither, and a dangling `sessions` link passed the refusal.
+import { onDisk, within } from "../../../kit/workspace/noHome";
 import type { AppDeclaration } from "../../../kit/workspace/session";
 
 /**
@@ -80,31 +84,6 @@ export function scriptoriumHome(env: NodeJS.ProcessEnv = process.env): string {
  * drops the flag and the home check, and makes both the default.
  */
 export const MIGRATE_FLAG = "SCRIPTORIUM_KIT_MIGRATE";
-
-/**
- * A path as the disk resolves it: the realpath of its nearest folder that
- * exists, with the rest appended. So a symlink anywhere above it is followed,
- * even when the path itself is not there yet.
- */
-function onDisk(p: string): string {
-  const abs = resolve(p);
-  let at = abs;
-  for (;;) {
-    try {
-      return join(realpathSync(at), relative(at, abs));
-    } catch {
-      const up = dirname(at);
-      if (up === at) return abs;
-      at = up;
-    }
-  }
-}
-
-/** `p` is `root`, or inside it. */
-function within(p: string, root: string): boolean {
-  const r = relative(root, p);
-  return r === "" || (r !== ".." && !r.startsWith(`..${sep}`) && !isAbsolute(r));
-}
 
 /**
  * Why the dry-run flag is refused here, or null when it is off or allowed.

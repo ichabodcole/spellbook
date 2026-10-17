@@ -30,12 +30,31 @@
 //   imported from "bun") that writes, removes or runs: `Bun.write`, an image's
 //   `.write`, a file's `.writer`, `.delete` and `.unlink`, `Bun.spawn`,
 //   `Bun.spawnSync`, `Bun.$`;
-// - `openSync`/`open` with flags other than read-only.
+// - `openSync`/`open` with flags other than read-only;
+// - a module loaded by name however it is loaded: `require`,
+//   `process.getBuiltinModule`, or a `require` a `createRequire(…)` made;
+// - a re-export of fs, child_process or `bun:sqlite` (a barrel), anywhere in
+//   `src/`; and a `*Sync` write name imported from any module, or used off
+//   its namespace, so a barrel elsewhere is seen from the file that imports it;
+// - any import of `bun:sqlite` (a `Database` opens and makes its file).
+// A wrapper that changes nothing at run time (`as`, `satisfies`, `!`) is seen
+// through.
 // Each shape has a calibration cell below (fix round 3 added the ones a
 // re-verifier wrote past it: a dynamic import, `fs.promises`, a destructured
 // namespace, an aliased `Bun`, an aliased helper, a file's `.delete()`, a
-// spawn).
+// spawn; fix round 4 the next ones: `getBuiltinModule`, `createRequire`, a
+// barrel, `file` off `Bun` by another name, `bun:sqlite`, `new WriteStream`,
+// `satisfies`, and more of fs's write names).
 // Tests (`*.test.ts`) are out of scope: they write their own fixtures.
+//
+// ⛔ KNOWN LIMITS. A syntax-tree ward reads names, not values, so these still
+// pass it. Each needs code written to hide a write, which a review sees:
+// - a computed key (`fs[name]`, `fs["write" + "FileSync"]`, `Bun[k]`);
+// - `eval`, `new Function`, `process.binding`, a `Worker` running a script;
+// - `Bun.mmap` (a shared mapping writes through to its file);
+// - aliasing by assignment or by passing (`let g; g = fs`, `f(fs)`,
+//   `{ ...fs }`), and an async (non-`Sync`) write imported from a barrel
+//   outside `src/` (a package in `node_modules`).
 //
 // ⛔ THE ALLOW-LIST IS COUNTED. Each entry names a file, a function and HOW
 // MANY uses it may have, with the reason. A new use of an allowed function in
@@ -103,8 +122,31 @@ const FS_WRITES = new Set([
   "utimesSync",
   "utimes",
   "lutimesSync",
+  "lutimes",
   "futimesSync",
+  "futimes",
+  "lchmod",
+  "lchown",
+  "fchmodSync",
+  "fchmod",
+  "fchownSync",
+  "fchown",
+  "mkdtempDisposableSync",
+  "mkdtempDisposable",
+  // Classes: `new fs.WriteStream(p)` opens `p` for writing.
+  "WriteStream",
+  "SyncWriteStream",
 ]);
+/**
+ * Fix round 4: a `*Sync` write name is fs's alone. Imported by that name from
+ * ANY module, or used off a namespace import of any module, it counts: that is
+ * how a barrel that re-exports fs is seen from the file that imports it.
+ */
+const SYNC_WRITES = new Set([...FS_WRITES].filter((n) => n.endsWith("Sync")));
+/** `bun:sqlite` opens (and makes) a database file: any import of it is a write. */
+const SQLITE_MODULES = new Set(["bun:sqlite"]);
+/** The modules that make a `require` (`createRequire`), however imported. */
+const MODULE_MODULES = new Set(["module", "node:module"]);
 const OPENS = new Set(["openSync", "open"]);
 const FS_MODULES = new Set(["fs", "node:fs", "fs/promises", "node:fs/promises"]);
 /** A child process can write anything: every use of these modules counts. */
@@ -241,20 +283,39 @@ function visit(node: ts.Node, fn: (n: ts.Node) => void): void {
 const lineOf = (sf: ts.SourceFile, n: ts.Node): number =>
   sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1;
 
+/** A wrapper that changes nothing at run time: parentheses, `await`, `as`, `satisfies`, `!`, `<T>x`. */
+const isWrapper = (
+  e: ts.Expression,
+): e is
+  | ts.ParenthesizedExpression
+  | ts.AwaitExpression
+  | ts.AsExpression
+  | ts.SatisfiesExpression
+  | ts.NonNullExpression
+  | ts.TypeAssertion =>
+  ts.isParenthesizedExpression(e) ||
+  ts.isAwaitExpression(e) ||
+  ts.isAsExpression(e) ||
+  ts.isSatisfiesExpression(e) ||
+  ts.isNonNullExpression(e) ||
+  ts.isTypeAssertionExpression(e);
+
 const unwrap = (e: ts.Expression): ts.Expression => {
-  while (ts.isParenthesizedExpression(e) || ts.isAwaitExpression(e) || ts.isAsExpression(e))
-    e = e.expression;
+  while (isWrapper(e)) e = e.expression;
   return e;
 };
 
-/** `require("<module>")` of one of `mods`. */
-const isRequireOf = (e: ts.Expression | undefined, mods: Set<string>): boolean => {
+/** A call to a `require` (by `isRequire`'s say) of one of `mods`, by its literal name. */
+const isRequireOf = (
+  e: ts.Expression | undefined,
+  mods: Set<string>,
+  isRequire: (callee: ts.Expression) => boolean,
+): boolean => {
   if (e === undefined) return false;
   const c = unwrap(e);
   return (
     ts.isCallExpression(c) &&
-    ts.isIdentifier(c.expression) &&
-    c.expression.text === "require" &&
+    isRequire(c.expression) &&
     c.arguments.length === 1 &&
     ts.isStringLiteralLike(c.arguments[0] as ts.Expression) &&
     mods.has((c.arguments[0] as ts.StringLiteral).text)
@@ -313,11 +374,41 @@ export function rawWrites(src: string, name?: string): { fn: string; line: numbe
   const childNames = new Set<string>();
   /** Namespace imports of any other module, for `ns.publishPointer(…)`. */
   const nsNames = new Set<string>();
+  /** Names that are a `require`: the global one, and what a `createRequire(…)` made. */
+  const requireNames = new Set(["require"]);
+  /** Names bound to `createRequire`, and namespace imports of `node:module`. */
+  const createRequireNames = new Set<string>();
+  const moduleNames = new Set<string>();
+
+  /** `createRequire`, by its import name or off `node:module`. */
+  const isCreateRequire = (e: ts.Expression): boolean => {
+    const x = unwrap(e);
+    if (ts.isIdentifier(x)) return createRequireNames.has(x.text);
+    if (memberName(x) !== "createRequire") return false;
+    const owner = unwrap((x as ts.PropertyAccessExpression).expression);
+    return (
+      (ts.isIdentifier(owner) && moduleNames.has(owner.text)) ||
+      isRequireOf(owner, MODULE_MODULES, isRequireCallee)
+    );
+  };
+  /**
+   * Whether a callee loads a module by name: `require`, a name a
+   * `createRequire(…)` made, `createRequire(…)` called in place, or
+   * `process.getBuiltinModule` (off any owner).
+   */
+  function isRequireCallee(e: ts.Expression): boolean {
+    const x = unwrap(e);
+    if (ts.isIdentifier(x)) return requireNames.has(x.text);
+    if (ts.isCallExpression(x)) return isCreateRequire(x.expression);
+    return memberName(x) === "getBuiltinModule";
+  }
+  const req = (e: ts.Expression | undefined, mods: Set<string>): boolean =>
+    isRequireOf(e, mods, isRequireCallee);
 
   const isFs = (e: ts.Expression): boolean => {
     const x = unwrap(e);
     if (ts.isIdentifier(x)) return fsNames.has(x.text);
-    if (isRequireOf(x, FS_MODULES)) return true;
+    if (req(x, FS_MODULES)) return true;
     // `fs.promises`, `require("fs").promises`, `fs.default`.
     const m = memberName(x);
     return (
@@ -339,7 +430,7 @@ export function rawWrites(src: string, name?: string): { fn: string; line: numbe
   };
   const isChild = (e: ts.Expression): boolean => {
     const x = unwrap(e);
-    return (ts.isIdentifier(x) && childNames.has(x.text)) || isRequireOf(x, CHILD_MODULES);
+    return (ts.isIdentifier(x) && childNames.has(x.text)) || req(x, CHILD_MODULES);
   };
   /** The root of a member/call chain, stopping at `Bun`: `new Bun.Image(x).webp().write(p)` → `Bun`. */
   const bunRooted = (start: ts.Expression): boolean => {
@@ -348,7 +439,7 @@ export function rawWrites(src: string, name?: string): { fn: string; line: numbe
       if (isBun(e)) return true;
       if (ts.isPropertyAccessExpression(e) || ts.isElementAccessExpression(e)) e = e.expression;
       else if (ts.isCallExpression(e) || ts.isNewExpression(e)) e = e.expression;
-      else if (ts.isParenthesizedExpression(e) || ts.isAwaitExpression(e)) e = e.expression;
+      else if (isWrapper(e)) e = e.expression;
       else return false;
     }
   };
@@ -379,12 +470,21 @@ export function rawWrites(src: string, name?: string): { fn: string; line: numbe
       for (const el of each) {
         const fn = (el.propertyName ?? el.name).text;
         if (BUN_WRITES.has(fn)) named.set(el.name.text, `Bun…${fn}`);
+        // `file`, `Image`, …: a chain that starts at one is a chain off `Bun`.
+        else bunNames.add(el.name.text);
       }
+    } else if (MODULE_MODULES.has(mod)) {
+      for (const w of whole) moduleNames.add(w);
+      for (const el of each)
+        if ((el.propertyName ?? el.name).text === "createRequire")
+          createRequireNames.add(el.name.text);
     } else {
       for (const w of whole) nsNames.add(w);
       for (const el of each) {
         const fn = (el.propertyName ?? el.name).text;
-        if (OTHER_WRITERS.has(fn)) named.set(el.name.text, fn);
+        // A `*Sync` write is fs's own name: imported from anywhere, it is fs
+        // through a barrel.
+        if (OTHER_WRITERS.has(fn) || SYNC_WRITES.has(fn)) named.set(el.name.text, fn);
       }
     }
   };
@@ -393,9 +493,12 @@ export function rawWrites(src: string, name?: string): { fn: string; line: numbe
     const init = n.initializer;
     if (init === undefined) return;
     if (ts.isIdentifier(n.name)) {
+      const call = unwrap(init);
       if (isFs(init)) fsNames.add(n.name.text);
       else if (isBun(init)) bunNames.add(n.name.text);
       else if (isChild(init)) childNames.add(n.name.text);
+      else if (ts.isCallExpression(call) && isCreateRequire(call.expression))
+        requireNames.add(n.name.text);
       return;
     }
     if (!ts.isObjectBindingPattern(n.name)) return;
@@ -410,6 +513,8 @@ export function rawWrites(src: string, name?: string): { fn: string; line: numbe
       if (fromFs && (fn === "promises" || fn === "default")) fsNames.add(el.name.text);
       else if (fromFs && (FS_WRITES.has(fn) || OPENS.has(fn))) named.set(el.name.text, fn);
       else if (fromBun && BUN_WRITES.has(fn)) named.set(el.name.text, `Bun…${fn}`);
+      // `const { file } = Bun`: a chain that starts at it is a chain off `Bun`.
+      else if (fromBun) bunNames.add(el.name.text);
       else if (fromChild) named.set(el.name.text, `child_process.${fn}`);
     }
   };
@@ -433,10 +538,43 @@ export function rawWrites(src: string, name?: string): { fn: string; line: numbe
     // A dynamic import of the fs or child_process module is a write in
     // itself: what it is bound to is not followed, so it is never allowed
     // by accident.
-    if (isDynamicImportOf(n, FS_MODULES) || isDynamicImportOf(n, CHILD_MODULES)) {
+    if (
+      isDynamicImportOf(n, FS_MODULES) ||
+      isDynamicImportOf(n, CHILD_MODULES) ||
+      isDynamicImportOf(n, SQLITE_MODULES)
+    ) {
       const mod = ((n as ts.CallExpression).arguments[0] as ts.StringLiteral).text;
       found.push({ fn: `import(${mod})`, line: lineOf(sf, n) });
     }
+    // A re-export of fs, child_process or sqlite makes a barrel the checks
+    // above cannot see through: never allowed (`export { rmSync } from
+    // "node:fs"`, `export * from "fs"`, `export * as x from "fs"`).
+    if (
+      ts.isExportDeclaration(n) &&
+      n.moduleSpecifier !== undefined &&
+      ts.isStringLiteralLike(n.moduleSpecifier) &&
+      (FS_MODULES.has(n.moduleSpecifier.text) ||
+        CHILD_MODULES.has(n.moduleSpecifier.text) ||
+        SQLITE_MODULES.has(n.moduleSpecifier.text))
+    )
+      found.push({ fn: `export from ${n.moduleSpecifier.text}`, line: lineOf(sf, n) });
+    // `bun:sqlite` opens and makes a database file: importing it is a write.
+    if (
+      ts.isImportDeclaration(n) &&
+      ts.isStringLiteralLike(n.moduleSpecifier) &&
+      SQLITE_MODULES.has(n.moduleSpecifier.text)
+    )
+      found.push({ fn: n.moduleSpecifier.text, line: lineOf(sf, n) });
+    if (ts.isCallExpression(n) && req(n, SQLITE_MODULES))
+      found.push({ fn: "bun:sqlite", line: lineOf(sf, n) });
+    // `process.getBuiltinModule(x)` with a name that is not written out:
+    // whatever it loads is not followed, so it counts.
+    if (
+      ts.isCallExpression(n) &&
+      memberName(unwrap(n.expression)) === "getBuiltinModule" &&
+      !(n.arguments.length === 1 && ts.isStringLiteralLike(n.arguments[0] as ts.Expression))
+    )
+      found.push({ fn: "getBuiltinModule(?)", line: lineOf(sf, n) });
     // A use of a bound write (not where it is bound, nor a member's name).
     if (ts.isIdentifier(n) && named.has(n.text) && !declares(n)) {
       const fn = named.get(n.text) as string;
@@ -457,7 +595,7 @@ export function rawWrites(src: string, name?: string): { fn: string; line: numbe
       else if (BUN_WRITES.has(m) && bunRooted(owner))
         found.push({ fn: `Bun…${m}`, line: lineOf(sf, n) });
       else if (
-        OTHER_WRITERS.has(m) &&
+        (OTHER_WRITERS.has(m) || SYNC_WRITES.has(m)) &&
         ts.isIdentifier(unwrap(owner)) &&
         nsNames.has((unwrap(owner) as ts.Identifier).text)
       )
@@ -525,6 +663,46 @@ describe("kit disk-write ward", () => {
       "Bun.spawn(['rm', '/a']);",
       "Bun.spawnSync(['rm', '/a']);",
       "await Bun.$`rm /a`;",
+      // Fix round 4: the shapes the third re-verifier wrote past the ward.
+      // A builtin loaded by name.
+      'process.getBuiltinModule("node:fs").writeFileSync("/a", "b");',
+      'const fs = process.getBuiltinModule("fs"); fs.rmSync("/a");',
+      'process.getBuiltinModule("child_process").execSync("rm /a");',
+      "const m = process.getBuiltinModule(name);",
+      // A `require` made by `createRequire`.
+      'import { createRequire } from "node:module"; const req = createRequire(import.meta.url); req("fs").writeFileSync("/a", "b");',
+      'import { createRequire as cr } from "module"; cr(import.meta.url)("node:fs").rmSync("/a");',
+      'import * as mod from "node:module"; const r = mod.createRequire("/x"); const { unlinkSync } = r("fs"); unlinkSync("/a");',
+      // A barrel: re-exporting is a write in itself, and a `*Sync` write
+      // imported from any module (or off its namespace) is one too.
+      'export { rmSync } from "node:fs";',
+      'export * from "fs";',
+      'export * as fsx from "node:fs/promises";',
+      'export { spawn } from "node:child_process";',
+      'import { rmSync } from "./fsx"; rmSync("/a");',
+      'import * as fsx from "./fsx"; fsx.writeFileSync("/a", "b");',
+      // `file` off `Bun` by another name, then written, removed or opened for writing.
+      "const { file } = Bun; await file('/a').delete();",
+      "const { file: f } = Bun; await f('/a').write('b');",
+      'import { file } from "bun"; await file("/a").write("b");',
+      'import { file } from "bun"; await file("/a").unlink();',
+      'import { file } from "bun"; file("/a").writer();',
+      // sqlite opens (and makes) a database file.
+      'import { Database } from "bun:sqlite"; new Database("/a/x.db");',
+      'const { Database } = require("bun:sqlite");',
+      'await import("bun:sqlite");',
+      // A write stream made with `new`.
+      'import * as fs from "node:fs"; new fs.WriteStream("/a");',
+      'import { WriteStream } from "fs"; new WriteStream("/a");',
+      // A wrapper that changes nothing at run time.
+      'import * as fs from "node:fs"; (fs satisfies object).rmSync("/a");',
+      'import * as fs from "node:fs"; fs!.rmSync("/a");',
+      "(Bun satisfies object).write('/a', 'b');",
+      // More of fs's writes by name.
+      'import * as fs from "node:fs"; fs.mkdtempDisposableSync("/tmp/x");',
+      'import * as fs from "node:fs"; fs.futimes(1, 1, 1, () => {});',
+      'import { lutimes } from "node:fs/promises"; await lutimes("/a", 1, 1);',
+      'import * as fs from "node:fs"; fs.fchownSync(1, 0, 0);',
     ])
       expect(rawWrites(planted), planted).toHaveLength(1);
     for (const clean of [
@@ -541,6 +719,12 @@ describe("kit disk-write ward", () => {
       "const B = Bun; B.file('/a').exists();",
       'import { publishPointer } from "../wire/discovery.ts";',
       "const o = { spawn: 1, write: 2 }; o.spawn; o.write;",
+      'const path = process.getBuiltinModule("node:path"); path.join("a", "b");',
+      'import { createRequire } from "node:module"; const r = createRequire(import.meta.url); r("node:path");',
+      'export { onDisk } from "./noHome";',
+      'import { file } from "bun"; await file("/a").text();',
+      "const { file } = Bun; await file('/a').exists();",
+      'import { readFileSync } from "./barrel"; readFileSync("/a");',
     ])
       expect(rawWrites(clean), clean).toEqual([]);
   });
@@ -589,6 +773,17 @@ describe("kit disk-write ward", () => {
       if (!uses.has(key))
         offenders.push(`${key}: on the allow-list, but no longer used: take it off`);
     expect(offenders).toEqual([]);
+  });
+
+  test("no file in src/ re-exports fs, child_process or bun:sqlite: there is no barrel to import a write from", () => {
+    const all = walk(join(REPO_ROOT, "src"));
+    expect(all.length).toBeGreaterThan(files.length);
+    const barrels = all.flatMap((f) =>
+      rawWrites(readFileSync(f, "utf8"), f)
+        .filter((w) => w.fn.startsWith("export from "))
+        .map((w) => `${rel(f)}:${w.line} ${w.fn}`),
+    );
+    expect(barrels).toEqual([]);
   });
 
   test("every allow-list entry says why", () => {

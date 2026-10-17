@@ -21,7 +21,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import { DiskRefusal, notInSession, sessionDiskAt, worldDisk } from "./disk";
+import { DiskRefusal, notInSession, sessionDiskAt, stageRandomForTest, worldDisk } from "./disk";
 import { inOwnPlaces, onDisk } from "./noHome";
 import { safeSlug } from "./safeNames";
 import { type AppDeclaration, WorkspaceSession } from "./session";
@@ -477,5 +477,104 @@ describe("planted links and twins", () => {
     // `root` is outside the sessions, and holds them.
     expect(() => disk.rm(root, { recursive: true, force: true })).toThrow("holds");
     expect(existsSync(sessions)).toBe(true);
+  });
+
+  // Fix round 4: `resolve` drops `sub/..` as text, but the disk follows `sub`
+  // (a link) first. A dangling `rel.md -> sub/../x.md` with `sub` a link into
+  // another session lands beside where `sub` leads.
+  test("a link's `..` is resolved on disk: through a link, it climbs from where that link leads", () => {
+    const disk = worldDisk(own);
+    const deep = join(sessions, "victim", "deep");
+    mkdirSync(deep, { recursive: true });
+    symlinkSync(deep, join(outside, "sub"));
+    symlinkSync("sub/../dotdot.md", join(outside, "rel.md"));
+    expect(onDisk(join(outside, "rel.md"))).toBe(
+      join(realpathSync(sessions), "victim", "dotdot.md"),
+    );
+    expect(() => disk.writeFile(join(outside, "rel.md"), "x")).toThrow(DiskRefusal);
+    writeFileSync(join(outside, "src.md"), "SRC");
+    symlinkSync("sub/../cp.md", join(outside, "rel2.md"));
+    expect(() => disk.copyFile(join(outside, "src.md"), join(outside, "rel2.md"))).toThrow(
+      DiskRefusal,
+    );
+    // The same `..` in the path itself, not in a link's target.
+    expect(() => disk.writeFile(join(outside, "sub") + "/../plain-dd.md", "x")).toThrow(
+      DiskRefusal,
+    );
+    // A dangling folder link whose target climbs through `sub`.
+    symlinkSync("sub/../newdir", join(outside, "pdd"));
+    expect(() => disk.mkdir(join(outside, "pdd", "x"), { recursive: true })).toThrow(DiskRefusal);
+    expect(readdirSync(join(sessions, "victim")).sort()).toEqual(["deep"]);
+    // A `..` with no link before it is still plain: it stays outside, and saves.
+    mkdirSync(join(outside, "plain"));
+    symlinkSync("plain/../plain-ok.md", join(outside, "ok.md"));
+    disk.writeFile(join(outside, "ok.md"), "ok\n");
+    expect(readFileSync(join(outside, "plain-ok.md"), "utf8")).toBe("ok\n");
+  });
+
+  test("a two-hop dangling chain whose first hop stays outside is followed to its end", () => {
+    const disk = worldDisk(own);
+    mkdirSync(join(sessions, "victim"), { recursive: true });
+    symlinkSync(join(sessions, "victim", "end.md"), join(outside, "b.md"));
+    symlinkSync(join(outside, "b.md"), join(outside, "a.md"));
+    expect(onDisk(join(outside, "a.md"))).toBe(join(realpathSync(sessions), "victim", "end.md"));
+    expect(() => disk.writeFile(join(outside, "a.md"), "x")).toThrow(DiskRefusal);
+    expect(existsSync(join(sessions, "victim", "end.md"))).toBe(false);
+  });
+
+  test("stage refuses a name already there, a file or a link, and never writes through it", () => {
+    const x = session();
+    const at = join(x.dir, "manifest.json");
+    const { v1 } = victim();
+    const before = readFileSync(v1, "utf8");
+    stageRandomForTest((n) => Buffer.alloc(n, 0xab));
+    try {
+      const name = `${at}.abababab.tmp`;
+      writeFileSync(name, "already\n");
+      expect(() => x.own.stage(at, "x")).toThrow("EEXIST");
+      expect(readFileSync(name, "utf8")).toBe("already\n");
+      rmSync(name);
+      symlinkSync(v1, name);
+      expect(() => x.own.stage(at, "x")).toThrow();
+      expect(readFileSync(v1, "utf8")).toBe(before);
+      // A link that leads nowhere yet is no different: nothing is made where it leads.
+      rmSync(name);
+      symlinkSync(join(outside, "made.md"), name);
+      expect(() => x.own.stage(at, "x")).toThrow();
+      expect(existsSync(join(outside, "made.md"))).toBe(false);
+    } finally {
+      stageRandomForTest();
+    }
+  });
+
+  test("a check that throws is a refusal, never a pass", () => {
+    const disk = worldDisk(() => {
+      throw new Error("no places");
+    });
+    expect(() => disk.writeFile(join(outside, "w.md"), "x")).toThrow("could not be checked");
+    expect(() => disk.mkdir(join(outside, "d"))).toThrow("could not be checked");
+    expect(disk.refusal(join(outside, "w.md"))).toContain("could not be checked");
+    expect(existsSync(join(outside, "w.md"))).toBe(false);
+    expect(existsSync(join(outside, "d"))).toBe(false);
+  });
+
+  test("a failed write leaves nothing behind: writeAtomic's staged file goes", () => {
+    const disk = worldDisk(own);
+    // A folder at the name: the rename onto it fails.
+    mkdirSync(join(outside, "taken.md"));
+    expect(() => disk.writeAtomic(join(outside, "taken.md"), "x")).toThrow();
+    expect(readdirSync(outside).filter((n) => n.startsWith("taken.md."))).toEqual([]);
+  });
+
+  test("a failed edit leaves nothing behind: its staged file goes", () => {
+    const x = session();
+    x.addContext(join(docs, "set"));
+    const { slug } = x.openPath(join(docs, "set", "a.md"));
+    const folder = join(x.dir, "docs", slug);
+    const v = join(folder, "v1.md");
+    rmSync(v);
+    mkdirSync(v); // the version's name is now a folder: the rename onto it fails
+    expect(() => x.edit(slug, 1, "typed\n")).toThrow();
+    expect(readdirSync(folder)).toEqual(["v1.md"]);
   });
 });

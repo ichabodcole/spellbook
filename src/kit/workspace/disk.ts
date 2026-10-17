@@ -37,7 +37,7 @@
  * or a `DiskRefusal` (status 409) by default. Nothing is written.
  */
 
-import { randomBytes } from "node:crypto";
+import { randomBytes as cryptoRandomBytes } from "node:crypto";
 import {
   type CopySyncOptions,
   closeSync,
@@ -98,6 +98,18 @@ export type Disk = {
 
 /** A check: why a path is refused, or null. */
 type Check = (p: string) => string | null;
+
+/** Where a staged name's random part comes from. Only a test replaces it (`stageRandomForTest`). */
+let randomBytes: (n: number) => Buffer = cryptoRandomBytes;
+
+/**
+ * TEST ONLY: makes `stage` draw its names from `bytes`, so a test can plant a
+ * file or a link at the very name it will try (and see the open refuse it).
+ * No argument puts the real random source back.
+ */
+export function stageRandomForTest(bytes?: (n: number) => Buffer): void {
+  randomBytes = bytes ?? cryptoRandomBytes;
+}
 
 /** `O_NOFOLLOW` where the platform has it: a link at the name fails the open, never followed. */
 const NOFOLLOW = constants.O_NOFOLLOW ?? 0;

@@ -2085,16 +2085,28 @@ export class WorkspaceSession {
     this.ownFileOrDie(path);
     const staged = this.own.stage(path, text, "edit");
     let preserved: (Version & { path: string }) | null = null;
-    let onDisk: string | null = null;
+    let landed = false;
     try {
-      onDisk = readFileSync(path, "utf8");
-    } catch {
-      onDisk = null;
+      let onDisk: string | null = null;
+      try {
+        onDisk = readFileSync(path, "utf8");
+      } catch {
+        onDisk = null;
+      }
+      if (onDisk !== null && !this.isOwnWrite(path, onDisk))
+        preserved = this.preserveOutside(d, onDisk);
+      this.owned.set(path, contentHash(text));
+      this.own.rename(staged, path);
+      landed = true;
+    } finally {
+      // A failed edit leaves nothing behind: the staged file goes with it.
+      if (!landed)
+        try {
+          this.own.unlink(staged);
+        } catch {
+          /* already gone */
+        }
     }
-    if (onDisk !== null && !this.isOwnWrite(path, onDisk))
-      preserved = this.preserveOutside(d, onDisk);
-    this.owned.set(path, contentHash(text));
-    this.own.rename(staged, path);
     this.activeHash.set(d.slug, contentHash(text));
     this.lastActiveText.set(d.slug, text);
     return { dirtyChanged: before !== this.isDirty(d), preserved };

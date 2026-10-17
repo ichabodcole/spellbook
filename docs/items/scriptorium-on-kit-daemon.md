@@ -232,6 +232,15 @@ Not yet in the shipped SKILL. It goes in at the cutover.
     among the sessions or in `$SCRIPTORIUM_HOME`, even where a set shows it (an
     old manifest's set, a link in an added folder): the verb is refused (409),
     and `relink` lists such a document in `skipped`.
+  - A document that is a symlink saves to where the link really leads, even one
+    that leads nowhere yet, and a `..` in it is taken where the disk takes it
+    (past any link it passes through). A link that leads among the sessions or
+    into `$SCRIPTORIUM_HOME` is refused (409).
+  - A hard-linked note (one file with two names) on the disk that holds the
+    sessions cannot be saved in place: its other name could be a session's own
+    file, and nothing says where it is. The save is refused (409) and says so;
+    copy the note to make it a file of its own, then save. A hard-linked note on
+    another disk saves as usual.
 - **The ask:** `via: "ask"` with `about: { noteId }` (there is no `about.ask`).
   A second ask while the note is owed gets an error frame for its `rid`. Only a
   human's ask counts; any other `via` naming the note is a typed follow-up, and
