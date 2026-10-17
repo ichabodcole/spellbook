@@ -115,12 +115,32 @@ Not yet in the shipped SKILL. It goes in at the cutover.
   - `task` adds `--parent`;
   - `task-done` adds `--failed`;
   - `move` and `rename` add `--update-links`;
-  - `import` drops `--into`;
+  - `import` requires `--into` (see "No default workspace" below);
   - `graph` takes
     `--bundles --edge --focus --hops --kind --kindless --limit --rel --untyped --within`
     in place of `--entry`;
   - `backlinks` takes `--doc` in place of a positional, and `--edge`;
   - `link-check` takes `--edge`.
+- **No default workspace**
+  ([scriptorium-no-default-workspace](./scriptorium-no-default-workspace.md)):
+  - You name where every new file or folder goes. Use the folder of the document
+    under discussion when there is one; otherwise name a place inside a set
+    (`state` lists them). Where the session was opened decides nothing.
+  - `new-doc <path>` and `new-folder <path>` create at that path, which must be
+    inside a set or a folder in one. Anywhere else is refused (`usage`, exit 2),
+    and the hint says how to name a place.
+  - `import <file> --into <folder>`: `--into` is required. Without it the verb
+    is refused before anything is read; there is no default folder.
+  - `version-new --doc <path>` takes a document that exists in the session (it
+    is opened if it is not open yet). It never creates a file.
+  - To make a new place: `add-folder <path>` (anywhere whose parent exists, as a
+    new set), `make-set <doc>`, or `add <folder>` for a folder that exists.
+  - `open` with no paths adds the folder it ran in as an ordinary set, which
+    shows in `entries` (not your home folder or above it: then nothing is added,
+    and `note` says so). Given paths, those are the session, and the folder it
+    ran in is not added. The handshake and `state` carry no `workspace`.
+  - **Shipped only:** `workspace`. It is gone, not answered: there is no
+    workspace to print or set. The daemon refuses `workspace.set` (400).
 - **Frontmatter references** (kit-link-edges-slot):
   - They are edges of kind `frontmatter`, read by the shipped rule (any key, by
     shape). `--edge a,b` keeps those edge kinds on `graph`, `backlinks` and
