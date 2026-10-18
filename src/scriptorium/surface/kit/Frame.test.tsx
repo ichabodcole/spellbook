@@ -1,8 +1,10 @@
 // The interim frame's wiring against a REAL flagged daemon (`kitDaemon`, in
 // this process, under a scratch SCRIPTORIUM_HOME), mounted in happy-dom: chat
 // reaches the daemon, a set is added, hide and unhide and make-set go through
-// the menu, a move asks with the plan, opening a document says why nothing
-// shows, a refusal's hint is the notice, and the daemon serves the built frame.
+// the menu, a move asks with the plan, opening a document shows it in the
+// kit's document pane, a refusal's hint is the notice, and the daemon serves
+// the built frame. What the pane does in the frame (edits, the held selection,
+// notes, chips, the outside-change toast) is `Frame.document.test.tsx`.
 // Where a create goes: with a selection beside or inside it, unasked; with
 // nothing selected, or a drop on the list itself, the location dialog. Every
 // test is watched: a create, import or drop that reaches the daemon without a
@@ -166,7 +168,7 @@ async function open(...paths: string[]) {
 }
 
 describe("the interim frame on a real kit daemon", () => {
-  test("it shows the context, the chat with its composer, Notes and Tasks, and the centre's message", async () => {
+  test("it shows the context, the chat with its composer, Notes and Tasks, and the document pane", async () => {
     const m = await open();
     // An empty context: the sidebar's own empty state, offering to add.
     expect(document.querySelector('[data-pane="context"]')?.textContent).toContain("Add");
@@ -174,7 +176,9 @@ describe("the interim frame on a real kit daemon", () => {
       document.querySelector('[data-pane="chat"] [data-slot="composer-input"]'),
     ).not.toBeNull();
     expect(all('[role="tab"]').map((t) => t.textContent)).toEqual(["Chat", "Notes", "Tasks"]);
-    expect(centre()).toContain("The document pane arrives in the next cycle.");
+    // The pane's own empty state; nothing says a pane is still to come.
+    expect(centre()).toContain("No document open");
+    expect(centre()).not.toContain("next cycle");
     await click(withText('[role="tab"]', "Tasks"));
     expect(document.querySelector('input[aria-label="New task"]')).not.toBeNull();
     await click(withText('[role="tab"]', "Notes"));
@@ -182,14 +186,16 @@ describe("the interim frame on a real kit daemon", () => {
     await m.unmount();
   });
 
-  test("Notes says why no note can be added, instead of a form that does nothing", async () => {
+  test("Notes offers its form, waiting for a passage selected in the document", async () => {
     const m = await open();
     await click(withText('[role="tab"]', "Notes"));
-    expect(document.querySelector('textarea[aria-label="New note"]')).toBeNull();
-    expect(withText('[data-pane="chat"] button', "Add note")).toBeNull();
-    expect(document.querySelector('[data-pane="chat"]')?.textContent).toContain(
-      "which this surface cannot show yet",
+    const form = document.querySelector<HTMLTextAreaElement>('textarea[aria-label="New note"]');
+    expect(form).not.toBeNull();
+    expect(form?.disabled).toBe(true);
+    expect(document.querySelector('[data-pane="chat"] form')?.textContent).toContain(
+      "No selection",
     );
+    expect(document.querySelector('[data-pane="chat"]')?.textContent).not.toContain("cannot show");
     await m.unmount();
   });
 
@@ -299,15 +305,19 @@ describe("the interim frame on a real kit daemon", () => {
     await m.unmount();
   });
 
-  test("opening a document says, in the centre, that it cannot be shown yet", async () => {
+  test("opening a document from the tree shows it in the centre's document pane", async () => {
     const m = await open(set);
     await click(listRow("set"));
     await waitFor(() => treeRow("index.md") !== null, "the set's tree");
     await click(treeRow("index.md"));
     await waitFor(() => client?.state?.openDoc != null, "the daemon opened it");
-    await waitFor(() => centre().includes("is open in this session"), "the centre's answer");
+    await waitFor(
+      () => document.querySelector('[data-pane="centre"] .cm-editor') !== null,
+      "the pane's editor",
+    );
     expect(centre()).toContain("index.md");
-    expect(centre()).toContain("the document pane arrives in the next cycle");
+    expect(centre()).toContain("Index");
+    expect(centre()).not.toContain("next cycle");
     await m.unmount();
   });
 
