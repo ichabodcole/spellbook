@@ -288,7 +288,7 @@ export type DocumentPaneSlots = {
   formatViews?: Readonly<Record<string, FormatView>>;
   /**
    * An offer of text for the top of the document, shown as a line under the
-   * header (Scriptorium: a frontmatter block for a document that has none).
+   * header (a frontmatter block for a document that has none, say).
    * Asked with the open document and its active version's text on each render;
    * null offers nothing. Taking it writes into the active version as the
    * human's own edit, unsaved: the file changes only when they Save. Not asked

@@ -30,7 +30,7 @@ import { testWorkspace } from "../workspace/fixtures/harness";
 import type { DocView } from "../workspace/protocol";
 import type { WorkspaceDaemon } from "../workspace/server";
 import { tempRoot } from "../workspace/testing";
-import { DocumentPane, type TextOffer } from "./DocumentPane.tsx";
+import { type AppView, DocumentPane, type TextOffer } from "./DocumentPane.tsx";
 
 beforeAll(() => {
   installDom();
@@ -51,6 +51,15 @@ let world: string;
 let daemon: WorkspaceDaemon;
 let client: Daemon | null = null;
 let announced: [string, string | undefined][] = [];
+/** The ops this test's client has sent, in order. */
+let sent: string[] = [];
+const Native = nativeGlobal<typeof WebSocket>("WebSocket");
+class Recording extends Native {
+  override send(data: string | ArrayBufferLike | Blob | ArrayBufferView): void {
+    if (typeof data === "string") sent.push((JSON.parse(data) as { op: string }).op);
+    super.send(data);
+  }
+}
 
 beforeEach(async () => {
   root = tempRoot("document-pane-offer");
@@ -62,6 +71,7 @@ beforeEach(async () => {
   daemon = fixtureDaemon({ tmp: join(root, "tmp"), workspace: ws });
   await daemon.start();
   announced = [];
+  sent = [];
 });
 afterEach(async () => {
   await cleanup();
@@ -79,10 +89,10 @@ const offering =
   (_doc, text) =>
     text.startsWith(HEAD) ? null : { id: "head", message: "No head.", label: "Add one", take };
 
-function Host({ slot }: { slot: Slot }) {
+function Host({ slot, appView }: { slot: Slot; appView?: AppView }) {
   const d = useDaemon({
     url: `${daemon.url}/ws`,
-    WebSocket: nativeGlobal<typeof WebSocket>("WebSocket"),
+    WebSocket: Recording as typeof WebSocket,
     minDelayMs: 20,
     maxDelayMs: 60,
   });
@@ -115,7 +125,7 @@ function Host({ slot }: { slot: Slot }) {
   return (
     <WorkspaceContext.Provider value={workspace}>
       <main data-pane="centre" tabIndex={-1} style={{ width: 900, height: 700 }}>
-        <DocumentPane textOffer={slot} />
+        <DocumentPane textOffer={slot} appView={appView} />
       </main>
     </WorkspaceContext.Provider>
   );
@@ -136,10 +146,10 @@ const active = () => {
   return readFileSync(d.versions.find((v) => v.n === d.active)?.path ?? "", "utf8");
 };
 
-async function open(slot: Slot, name = "story.md", text = "Body.\n") {
+async function open(slot: Slot, name = "story.md", text = "Body.\n", appView?: AppView) {
   const path = join(world, name);
   writeFileSync(path, text);
-  await mount(<Host slot={slot} />);
+  await mount(<Host slot={slot} appView={appView} />);
   await waitFor(() => client?.state !== null && client?.connection === "open", "the hello");
   await settle(() => {
     client?.send({ op: "context.add", path: world });
@@ -227,5 +237,72 @@ describe("textOffer: an app's offer of text for the top of the document", () => 
     await open(slot, "data.json", '{ "a": "Body." }\n');
     expect(asked).toBe(0);
     expect(offer()).toBeNull();
+  });
+
+  test("while the app's own view is showing, nothing is offered", async () => {
+    const view: AppView = {
+      id: "board",
+      label: "Board",
+      icon: null,
+      active: true,
+      onActive: () => {},
+      render: () => <p>The app's view. Body.</p>,
+    };
+    await open(
+      offering(() => HEAD),
+      "story.md",
+      "Body.\n",
+      view,
+    );
+    await waitFor(() => q('[data-slot="app-view"]') !== null, "the app's view");
+    expect(offer()).toBeNull();
+  });
+
+  test("an answer that arrives after another version became active writes nothing", async () => {
+    let answer: (s: string) => void = () => {};
+    await open(offering(() => new Promise<string>((r) => (answer = r))));
+    await waitFor(() => offer() !== null, "the offer");
+    await take();
+    // Another version is made and made active while the answer is on its way.
+    await settle(() => {
+      client?.send({ op: "version.new", doc: "story", activate: true });
+    });
+    await waitFor(() => daemon.session.doc("story").active === 2, "v2 active");
+    await waitFor(() => client?.state?.docs[0]?.active === 2, "the client sees v2");
+    await settle(() => answer(HEAD));
+    await settle(() => new Promise((r) => setTimeout(r, 400)));
+    const d = daemon.session.doc("story");
+    for (const v of d.versions) expect(readFileSync(v.path, "utf8")).toBe("Body.\n");
+  });
+
+  test("taken, the text is sent at once, not after the typing pause", async () => {
+    localStorage.setItem("spellbook:view-mode", "rendered");
+    await open(offering(() => HEAD));
+    await waitFor(() => offer() !== null, "the offer");
+    sent = [];
+    await take();
+    // The take resolves at once, and the edit has gone with it: without the
+    // flush it would wait out the client's 250 ms pause.
+    await settle(() => {});
+    expect(sent).toContain("edit");
+    await waitFor(() => active() === `${HEAD}Body.\n`, "the active version");
+  });
+
+  test("rendered: taken there, one undo in the raw editor takes it back", async () => {
+    localStorage.setItem("spellbook:view-mode", "rendered");
+    await open(offering(() => HEAD));
+    await waitFor(() => offer() !== null, "the offer");
+    await take();
+    await waitFor(() => active() === `${HEAD}Body.\n`, "the active version");
+    await click(q('button[aria-label="Raw text"]'));
+    await waitFor(
+      () => !!q(".cm-editor") && viewOf().state.doc.toString() === `${HEAD}Body.\n`,
+      "the raw editor",
+    );
+    await settle(() => {
+      undo(viewOf());
+    });
+    expect(viewOf().state.doc.toString()).toBe("Body.\n");
+    await waitFor(() => active() === "Body.\n", "the undo written");
   });
 });
