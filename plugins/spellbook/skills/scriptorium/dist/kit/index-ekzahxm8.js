@@ -37063,6 +37063,24 @@ function TruncatedBadge() {
 var NO_ACTIONS = [];
 var noActions = () => NO_ACTIONS;
 var noBadge = () => null;
+function withRowMarker(badgeFor2, rowMarker) {
+  return (path2) => {
+    const badge = badgeFor2(path2);
+    const bundle = isBundleMain(path2) ? bundleOf(path2) : null;
+    const mark = rowMarker(bundle ? bundle.root : path2);
+    if (!mark)
+      return badge;
+    if (!badge)
+      return mark;
+    return /* @__PURE__ */ jsx_runtime17.jsxs("span", {
+      className: "flex items-center gap-1",
+      children: [
+        badge,
+        mark
+      ]
+    });
+  };
+}
 function openMenuOnShiftF10(e) {
   if (e.key !== "F10" || !e.shiftKey)
     return;
@@ -37089,7 +37107,8 @@ function ContextSidebar({
   onSetWorkspace,
   askLocation,
   listDir,
-  badgeFor: badgeFor2 = noBadge,
+  badgeFor: appBadgeFor = noBadge,
+  rowMarker,
   folderBadgeFor = noBadge,
   appActionsFor = noActions,
   created,
@@ -37108,6 +37127,7 @@ function ContextSidebar({
   beforeMoveTimeoutMs,
   uncheckedMoveNote
 }) {
+  const badgeFor2 = import_react19.useMemo(() => rowMarker ? withRowMarker(appBadgeFor, rowMarker) : appBadgeFor, [appBadgeFor, rowMarker]);
   const [drilled, setDrilled] = import_react19.useState(null);
   const drilledEntry = drilled ? entries.find((e) => e.id === drilled) : undefined;
   const [renamePath, setRenamePath] = import_react19.useState(null);
@@ -38107,6 +38127,22 @@ var safeStorage = {
   }
 };
 
+// src/scriptorium/surface/components/context/model.ts
+var collator2 = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
+function statusMark(summary) {
+  if (!summary)
+    return null;
+  if (summary.error)
+    return { tone: "unreadable", title: `Frontmatter unreadable: ${summary.error}` };
+  if (summary.stale)
+    return { tone: "stale", title: "Past its stale_after date" };
+  if (summary.status === "draft")
+    return { tone: "draft", title: "status: draft" };
+  if (summary.status === "deprecated")
+    return { tone: "deprecated", title: "status: deprecated" };
+  return null;
+}
+
 // src/scriptorium/surface/kit/movePlan.tsx
 var jsx_runtime18 = __toESM(require_jsx_runtime(), 1);
 var LISTED = 6;
@@ -38266,6 +38302,19 @@ var NO_ENTRIES = [];
 var MAKE_ROOM = "A document listed on its own can take new files beside it once it is a set: Turn into a set, in its row's menu.";
 var THEME_KEY = "scriptorium:theme";
 var hiddenOf = (state) => state.appState?.hidden ?? {};
+var docMetaOf = (state) => state.appState?.docMeta ?? {};
+function scriptoriumRowMarker(docMeta) {
+  return (path2) => {
+    const mark = statusMark(docMeta[path2]);
+    if (!mark)
+      return null;
+    return /* @__PURE__ */ jsx_runtime19.jsx("span", {
+      title: mark.title,
+      "data-tone": mark.tone,
+      className: cn("size-1.5 shrink-0 rounded-full", "data-[tone=draft]:bg-attention data-[tone=stale]:bg-attention/70", "data-[tone=deprecated]:bg-danger data-[tone=unreadable]:bg-ink-faint")
+    });
+  };
+}
 function scriptoriumMenuActions(send, hidden) {
   return ({ kind, path: path2, entry }) => {
     if (kind === "background" || !entry)
@@ -38401,6 +38450,7 @@ function Frame({ daemon }) {
               onReveal: (path2) => send({ op: "reveal", path: path2 }),
               onPick: (want) => send({ op: "pick", want }),
               listDir: daemon.listDir,
+              rowMarker: scriptoriumRowMarker(docMetaOf(state)),
               appActionsFor: (t) => scriptoriumMenuActions(send, hiddenOf(state))({ ...t, doc: docAt(state.docs, t.path) }),
               created,
               moved,

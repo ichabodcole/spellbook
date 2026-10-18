@@ -26,7 +26,7 @@ import {
   MoonIcon,
   SunIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { ChatSidebar } from "../../../kit/chat/ChatSidebar";
 import { NotesPanel } from "../../../kit/chat/NotesPanel";
 import { TasksPanel } from "../../../kit/chat/TasksPanel";
@@ -39,6 +39,8 @@ import { bundlePlace } from "../../../kit/lib/bundles";
 import { cn } from "../../../kit/lib/cn";
 import { safeStorage } from "../../../kit/lib/storage";
 import type { PublicState } from "../../../kit/workspace/protocol";
+import type { DocSummary } from "../../backend/protocol";
+import { statusMark } from "../components/context/model";
 import { scriptoriumBeforeMove, scriptoriumUncheckedMoveNote } from "./movePlan";
 
 const NO_ENTRIES: PublicState["context"] = [];
@@ -62,6 +64,35 @@ const hiddenOf = (state: PublicState): Record<string, string[]> =>
     string,
     string[]
   >;
+
+/** Each document's frontmatter, by absolute path (the kit daemon's `appState.docMeta`). */
+const docMetaOf = (state: PublicState): Record<string, DocSummary> =>
+  (state.appState as { docMeta?: Record<string, DocSummary> } | null)?.docMeta ?? {};
+
+/**
+ * The sidebar's `rowMarker`: the shipped tree's status dot (draft, stale,
+ * deprecated, unreadable), decided by the shipped `statusMark` and drawn in its
+ * classes, so both trees mark the same documents the same way.
+ */
+export function scriptoriumRowMarker(
+  docMeta: Record<string, DocSummary>,
+): (path: string) => ReactNode {
+  return (path) => {
+    const mark = statusMark(docMeta[path]);
+    if (!mark) return null;
+    return (
+      <span
+        title={mark.title}
+        data-tone={mark.tone}
+        className={cn(
+          "size-1.5 shrink-0 rounded-full",
+          "data-[tone=draft]:bg-attention data-[tone=stale]:bg-attention/70",
+          "data-[tone=deprecated]:bg-danger data-[tone=unreadable]:bg-ink-faint",
+        )}
+      />
+    );
+  };
+}
 
 /**
  * Scriptorium's menu actions: Hide on anything inside a set, Show hidden on a set that hides something, and Turn into a set on a
@@ -228,6 +259,7 @@ export function Frame({ daemon }: { daemon: Daemon }) {
             onReveal={(path) => send({ op: "reveal", path })}
             onPick={(want) => send({ op: "pick", want })}
             listDir={daemon.listDir}
+            rowMarker={scriptoriumRowMarker(docMetaOf(state))}
             appActionsFor={(t) =>
               scriptoriumMenuActions(
                 send,
