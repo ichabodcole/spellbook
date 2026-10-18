@@ -12257,8 +12257,17 @@ var __iconNode47 = [
   ]
 ];
 var Moon = createLucideIcon("moon", __iconNode47);
-// node_modules/lucide-react/dist/esm/icons/package.mjs
+// node_modules/lucide-react/dist/esm/icons/network.mjs
 var __iconNode48 = [
+  ["rect", { x: "16", y: "16", width: "6", height: "6", rx: "1", key: "4q2zg0" }],
+  ["rect", { x: "2", y: "16", width: "6", height: "6", rx: "1", key: "8cvhb9" }],
+  ["rect", { x: "9", y: "2", width: "6", height: "6", rx: "1", key: "1egb70" }],
+  ["path", { d: "M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3", key: "1jsf9p" }],
+  ["path", { d: "M12 12V8", key: "2874zd" }]
+];
+var Network = createLucideIcon("network", __iconNode48);
+// node_modules/lucide-react/dist/esm/icons/package.mjs
+var __iconNode49 = [
   [
     "path",
     {
@@ -12270,9 +12279,9 @@ var __iconNode48 = [
   ["polyline", { points: "3.29 7 12 12 20.71 7", key: "ousv84" }],
   ["path", { d: "m7.5 4.27 9 5.15", key: "1c824w" }]
 ];
-var Package = createLucideIcon("package", __iconNode48);
+var Package = createLucideIcon("package", __iconNode49);
 // node_modules/lucide-react/dist/esm/icons/pencil.mjs
-var __iconNode49 = [
+var __iconNode50 = [
   [
     "path",
     {
@@ -12282,15 +12291,15 @@ var __iconNode49 = [
   ],
   ["path", { d: "m15 5 4 4", key: "1mk7zo" }]
 ];
-var Pencil = createLucideIcon("pencil", __iconNode49);
+var Pencil = createLucideIcon("pencil", __iconNode50);
 // node_modules/lucide-react/dist/esm/icons/plus.mjs
-var __iconNode50 = [
+var __iconNode51 = [
   ["path", { d: "M5 12h14", key: "1ays0h" }],
   ["path", { d: "M12 5v14", key: "s699le" }]
 ];
-var Plus = createLucideIcon("plus", __iconNode50);
+var Plus = createLucideIcon("plus", __iconNode51);
 // node_modules/lucide-react/dist/esm/icons/save.mjs
-var __iconNode51 = [
+var __iconNode52 = [
   [
     "path",
     {
@@ -12301,9 +12310,9 @@ var __iconNode51 = [
   ["path", { d: "M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7", key: "1ydtos" }],
   ["path", { d: "M7 3v4a1 1 0 0 0 1 1h7", key: "t51u73" }]
 ];
-var Save = createLucideIcon("save", __iconNode51);
+var Save = createLucideIcon("save", __iconNode52);
 // node_modules/lucide-react/dist/esm/icons/sun.mjs
-var __iconNode52 = [
+var __iconNode53 = [
   ["circle", { cx: "12", cy: "12", r: "4", key: "4exip2" }],
   ["path", { d: "M12 2v2", key: "tus03m" }],
   ["path", { d: "M12 20v2", key: "1lh1kg" }],
@@ -12314,52 +12323,52 @@ var __iconNode52 = [
   ["path", { d: "m6.34 17.66-1.41 1.41", key: "1m8zz5" }],
   ["path", { d: "m19.07 4.93-1.41 1.41", key: "1shlcs" }]
 ];
-var Sun = createLucideIcon("sun", __iconNode52);
+var Sun = createLucideIcon("sun", __iconNode53);
 // node_modules/lucide-react/dist/esm/icons/text-quote.mjs
-var __iconNode53 = [
+var __iconNode54 = [
   ["path", { d: "M17 5H3", key: "1cn7zz" }],
   ["path", { d: "M21 12H8", key: "scolzb" }],
   ["path", { d: "M21 19H8", key: "13qgcb" }],
   ["path", { d: "M3 12v7", key: "1ri8j3" }]
 ];
-var TextQuote = createLucideIcon("text-quote", __iconNode53);
+var TextQuote = createLucideIcon("text-quote", __iconNode54);
 // node_modules/lucide-react/dist/esm/icons/trash-2.mjs
-var __iconNode54 = [
+var __iconNode55 = [
   ["path", { d: "M10 11v6", key: "nco0om" }],
   ["path", { d: "M14 11v6", key: "outv1u" }],
   ["path", { d: "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6", key: "miytrc" }],
   ["path", { d: "M3 6h18", key: "d0wm0j" }],
   ["path", { d: "M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2", key: "e791ji" }]
 ];
-var Trash2 = createLucideIcon("trash-2", __iconNode54);
+var Trash2 = createLucideIcon("trash-2", __iconNode55);
 // node_modules/lucide-react/dist/esm/icons/undo-dot.mjs
-var __iconNode55 = [
+var __iconNode56 = [
   ["path", { d: "M21 17a9 9 0 0 0-15-6.7L3 13", key: "8mp6z9" }],
   ["path", { d: "M3 7v6h6", key: "1v2h90" }],
   ["circle", { cx: "12", cy: "17", r: "1", key: "1ixnty" }]
 ];
-var UndoDot = createLucideIcon("undo-dot", __iconNode55);
+var UndoDot = createLucideIcon("undo-dot", __iconNode56);
 // node_modules/lucide-react/dist/esm/icons/user-check.mjs
-var __iconNode56 = [
+var __iconNode57 = [
   ["path", { d: "m16 11 2 2 4-4", key: "9rsbq5" }],
   ["path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", key: "1yyitq" }],
   ["circle", { cx: "9", cy: "7", r: "4", key: "nufk8" }]
 ];
-var UserCheck = createLucideIcon("user-check", __iconNode56);
+var UserCheck = createLucideIcon("user-check", __iconNode57);
 // node_modules/lucide-react/dist/esm/icons/user.mjs
-var __iconNode57 = [
+var __iconNode58 = [
   ["path", { d: "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2", key: "975kel" }],
   ["circle", { cx: "12", cy: "7", r: "4", key: "17ys0d" }]
 ];
-var User = createLucideIcon("user", __iconNode57);
+var User = createLucideIcon("user", __iconNode58);
 // node_modules/lucide-react/dist/esm/icons/x.mjs
-var __iconNode58 = [
+var __iconNode59 = [
   ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
   ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
 ];
-var X = createLucideIcon("x", __iconNode58);
+var X = createLucideIcon("x", __iconNode59);
 // src/scriptorium/surface/kit/Frame.tsx
-var import_react41 = __toESM(require_react(), 1);
+var import_react44 = __toESM(require_react(), 1);
 
 // src/kit/chat/ChatSidebar.tsx
 var import_react7 = __toESM(require_react(), 1);
@@ -74628,7 +74637,8 @@ function DocumentPane({
   versionDeleteWarnings,
   linkedFromAction,
   appView,
-  formatViews
+  formatViews,
+  textOffer
 }) {
   const w = useWorkspace();
   const { daemon, openDoc: doc2 } = w;
@@ -75118,6 +75128,44 @@ function DocumentPane({
     const r2 = replay.current;
     replay.current = r2 && r2.slug === doc2.slug && applyChanges(r2.base, r2.changes) === now3 ? { ...r2, changes: [...r2.changes, change] } : { slug: doc2.slug, base: now3, changes: [change] };
   };
+  const [taking, setTaking] = import_react39.useState(false);
+  const offerNow = import_react39.useRef({ doc: doc2, editorMounted, textOffer });
+  offerNow.current = { doc: doc2, editorMounted, textOffer };
+  const takeOffer = (offer2) => {
+    if (!doc2 || taking)
+      return;
+    const at2 = { slug: doc2.slug, active: doc2.active };
+    setTaking(true);
+    (async () => {
+      let insert2;
+      try {
+        insert2 = await offer2.take();
+      } catch (e) {
+        w.announce(`Not done: ${offer2.label}`, e instanceof Error ? e.message : String(e));
+        return;
+      } finally {
+        setTaking(false);
+      }
+      const { doc: now3, editorMounted: mounted, textOffer: ask } = offerNow.current;
+      if (!insert2 || !now3 || now3.slug !== at2.slug || now3.active !== at2.active)
+        return;
+      const ed = mounted ? editorHandle.current : null;
+      const before = ed ? ed.text() : shownBefore.current;
+      if (before === undefined || ask?.(now3, before)?.id !== offer2.id)
+        return;
+      if (ed) {
+        if (!ed.replaceRange(0, 0, insert2))
+          return;
+      } else {
+        const change = { from: 0, to: 0, insert: insert2 };
+        if (!writeText(now3, now3.active, applyChanges(before, [change])))
+          return;
+        const r2 = replay.current;
+        replay.current = r2 && r2.slug === now3.slug && applyChanges(r2.base, r2.changes) === before ? { ...r2, changes: [...r2.changes, change] } : { slug: now3.slug, base: before, changes: [change] };
+      }
+      flushText(now3.slug);
+    })();
+  };
   const { importImage } = daemon;
   const takeImages = (r2) => {
     if (!doc2 || isJson || daemon.connection === "ended") {
@@ -75312,6 +75360,7 @@ function DocumentPane({
     })
   });
   const appActive = !!appView?.active;
+  const offer = textOffer && doc2 && !isJson && !appActive && shown2 !== undefined ? textOffer(doc2, shown2) : null;
   const numbersToggle = lineNumbers2 && doc2 && !isJson && !formatView && !appActive && hasEditor(showing) ? /* @__PURE__ */ jsx_runtime38.jsx("button", {
     type: "button",
     onMouseDown: (e) => e.preventDefault(),
@@ -75494,6 +75543,23 @@ function DocumentPane({
             children: appViewButton
           }),
           !doc2 && readerToggle
+        ]
+      }),
+      offer && /* @__PURE__ */ jsx_runtime38.jsxs("div", {
+        "data-slot": "text-offer",
+        "data-offer": offer.id,
+        className: "flex shrink-0 items-center gap-2 border-b border-edge bg-surface-raised/60 px-3 py-1.5 text-xs text-ink-dim",
+        children: [
+          /* @__PURE__ */ jsx_runtime38.jsx("span", {
+            children: offer.message
+          }),
+          /* @__PURE__ */ jsx_runtime38.jsx("button", {
+            type: "button",
+            onClick: () => takeOffer(offer),
+            disabled: taking || daemon.connection === "ended",
+            className: "rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:no-underline",
+            children: offer.label
+          })
         ]
       }),
       !appActive && doc2?.missing && /* @__PURE__ */ jsx_runtime38.jsxs("div", {
@@ -75798,6 +75864,13 @@ function DocumentPane({
 }
 
 // src/scriptorium/backend/frontmatter.ts
+var BLOCK = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
+function splitFrontmatter2(text4) {
+  const m = BLOCK.exec(text4);
+  if (!m)
+    return { raw: null, body: text4 };
+  return { raw: m[1] ?? "", body: text4.slice(m[0].length) };
+}
 function isStale(fields, now2) {
   const at2 = fields.stale_after;
   const t2 = at2 instanceof Date ? at2.getTime() : typeof at2 === "string" ? Date.parse(at2) : Number.NaN;
@@ -76196,23 +76269,1660 @@ function scriptoriumBeforeMove(daemon, opts = {}) {
   };
 }
 
-// src/scriptorium/surface/kit/Frame.tsx
+// src/scriptorium/surface/kit/suggestMeta.ts
+var NO_FRONTMATTER = "This document has no frontmatter.";
+var ADD_A_BLOCK = "Add a block";
+var NONE = [];
+var noFrontmatterOf = (state) => state?.appState?.noFrontmatter ?? NONE;
+function scriptoriumTextOffer(daemon, noFrontmatter) {
+  return (doc2, text4) => !noFrontmatter.includes(doc2.slug) || splitFrontmatter2(text4).raw !== null ? null : {
+    id: "scriptorium.add-frontmatter",
+    message: NO_FRONTMATTER,
+    label: ADD_A_BLOCK,
+    take: async () => {
+      const frame = await daemon.request({
+        op: "scriptorium.meta.suggest",
+        path: doc2.original
+      });
+      if (typeof frame.block !== "string")
+        throw new Error("the daemon's answer carried no block");
+      return frame.block;
+    }
+  };
+}
+
+// src/scriptorium/surface/kit/useMapView.tsx
+var import_react43 = __toESM(require_react(), 1);
+
+// src/scriptorium/surface/kit/MapView.tsx
+var import_react42 = __toESM(require_react(), 1);
+
+// node_modules/d3-force/src/center.js
+function center_default(x, y) {
+  var nodes, strength = 1;
+  if (x == null)
+    x = 0;
+  if (y == null)
+    y = 0;
+  function force() {
+    var i2, n = nodes.length, node2, sx = 0, sy = 0;
+    for (i2 = 0;i2 < n; ++i2) {
+      node2 = nodes[i2], sx += node2.x, sy += node2.y;
+    }
+    for (sx = (sx / n - x) * strength, sy = (sy / n - y) * strength, i2 = 0;i2 < n; ++i2) {
+      node2 = nodes[i2], node2.x -= sx, node2.y -= sy;
+    }
+  }
+  force.initialize = function(_) {
+    nodes = _;
+  };
+  force.x = function(_) {
+    return arguments.length ? (x = +_, force) : x;
+  };
+  force.y = function(_) {
+    return arguments.length ? (y = +_, force) : y;
+  };
+  force.strength = function(_) {
+    return arguments.length ? (strength = +_, force) : strength;
+  };
+  return force;
+}
+// node_modules/d3-quadtree/src/add.js
+function add_default(d) {
+  const x = +this._x.call(null, d), y = +this._y.call(null, d);
+  return add2(this.cover(x, y), x, y, d);
+}
+function add2(tree, x, y, d) {
+  if (isNaN(x) || isNaN(y))
+    return tree;
+  var parent, node2 = tree._root, leaf = { data: d }, x0 = tree._x0, y0 = tree._y0, x1 = tree._x1, y1 = tree._y1, xm, ym, xp, yp, right, bottom, i2, j2;
+  if (!node2)
+    return tree._root = leaf, tree;
+  while (node2.length) {
+    if (right = x >= (xm = (x0 + x1) / 2))
+      x0 = xm;
+    else
+      x1 = xm;
+    if (bottom = y >= (ym = (y0 + y1) / 2))
+      y0 = ym;
+    else
+      y1 = ym;
+    if (parent = node2, !(node2 = node2[i2 = bottom << 1 | right]))
+      return parent[i2] = leaf, tree;
+  }
+  xp = +tree._x.call(null, node2.data);
+  yp = +tree._y.call(null, node2.data);
+  if (x === xp && y === yp)
+    return leaf.next = node2, parent ? parent[i2] = leaf : tree._root = leaf, tree;
+  do {
+    parent = parent ? parent[i2] = new Array(4) : tree._root = new Array(4);
+    if (right = x >= (xm = (x0 + x1) / 2))
+      x0 = xm;
+    else
+      x1 = xm;
+    if (bottom = y >= (ym = (y0 + y1) / 2))
+      y0 = ym;
+    else
+      y1 = ym;
+  } while ((i2 = bottom << 1 | right) === (j2 = (yp >= ym) << 1 | xp >= xm));
+  return parent[j2] = node2, parent[i2] = leaf, tree;
+}
+function addAll(data) {
+  var d, i2, n = data.length, x, y, xz = new Array(n), yz = new Array(n), x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (i2 = 0;i2 < n; ++i2) {
+    if (isNaN(x = +this._x.call(null, d = data[i2])) || isNaN(y = +this._y.call(null, d)))
+      continue;
+    xz[i2] = x;
+    yz[i2] = y;
+    if (x < x0)
+      x0 = x;
+    if (x > x1)
+      x1 = x;
+    if (y < y0)
+      y0 = y;
+    if (y > y1)
+      y1 = y;
+  }
+  if (x0 > x1 || y0 > y1)
+    return this;
+  this.cover(x0, y0).cover(x1, y1);
+  for (i2 = 0;i2 < n; ++i2) {
+    add2(this, xz[i2], yz[i2], data[i2]);
+  }
+  return this;
+}
+
+// node_modules/d3-quadtree/src/cover.js
+function cover_default(x, y) {
+  if (isNaN(x = +x) || isNaN(y = +y))
+    return this;
+  var x0 = this._x0, y0 = this._y0, x1 = this._x1, y1 = this._y1;
+  if (isNaN(x0)) {
+    x1 = (x0 = Math.floor(x)) + 1;
+    y1 = (y0 = Math.floor(y)) + 1;
+  } else {
+    var z = x1 - x0 || 1, node2 = this._root, parent, i2;
+    while (x0 > x || x >= x1 || y0 > y || y >= y1) {
+      i2 = (y < y0) << 1 | x < x0;
+      parent = new Array(4), parent[i2] = node2, node2 = parent, z *= 2;
+      switch (i2) {
+        case 0:
+          x1 = x0 + z, y1 = y0 + z;
+          break;
+        case 1:
+          x0 = x1 - z, y1 = y0 + z;
+          break;
+        case 2:
+          x1 = x0 + z, y0 = y1 - z;
+          break;
+        case 3:
+          x0 = x1 - z, y0 = y1 - z;
+          break;
+      }
+    }
+    if (this._root && this._root.length)
+      this._root = node2;
+  }
+  this._x0 = x0;
+  this._y0 = y0;
+  this._x1 = x1;
+  this._y1 = y1;
+  return this;
+}
+
+// node_modules/d3-quadtree/src/data.js
+function data_default() {
+  var data = [];
+  this.visit(function(node2) {
+    if (!node2.length)
+      do
+        data.push(node2.data);
+      while (node2 = node2.next);
+  });
+  return data;
+}
+
+// node_modules/d3-quadtree/src/extent.js
+function extent_default(_) {
+  return arguments.length ? this.cover(+_[0][0], +_[0][1]).cover(+_[1][0], +_[1][1]) : isNaN(this._x0) ? undefined : [[this._x0, this._y0], [this._x1, this._y1]];
+}
+
+// node_modules/d3-quadtree/src/quad.js
+function quad_default(node2, x0, y0, x1, y1) {
+  this.node = node2;
+  this.x0 = x0;
+  this.y0 = y0;
+  this.x1 = x1;
+  this.y1 = y1;
+}
+
+// node_modules/d3-quadtree/src/find.js
+function find_default(x, y, radius) {
+  var data, x0 = this._x0, y0 = this._y0, x1, y1, x2, y2, x3 = this._x1, y3 = this._y1, quads = [], node2 = this._root, q2, i2;
+  if (node2)
+    quads.push(new quad_default(node2, x0, y0, x3, y3));
+  if (radius == null)
+    radius = Infinity;
+  else {
+    x0 = x - radius, y0 = y - radius;
+    x3 = x + radius, y3 = y + radius;
+    radius *= radius;
+  }
+  while (q2 = quads.pop()) {
+    if (!(node2 = q2.node) || (x1 = q2.x0) > x3 || (y1 = q2.y0) > y3 || (x2 = q2.x1) < x0 || (y2 = q2.y1) < y0)
+      continue;
+    if (node2.length) {
+      var xm = (x1 + x2) / 2, ym = (y1 + y2) / 2;
+      quads.push(new quad_default(node2[3], xm, ym, x2, y2), new quad_default(node2[2], x1, ym, xm, y2), new quad_default(node2[1], xm, y1, x2, ym), new quad_default(node2[0], x1, y1, xm, ym));
+      if (i2 = (y >= ym) << 1 | x >= xm) {
+        q2 = quads[quads.length - 1];
+        quads[quads.length - 1] = quads[quads.length - 1 - i2];
+        quads[quads.length - 1 - i2] = q2;
+      }
+    } else {
+      var dx = x - +this._x.call(null, node2.data), dy = y - +this._y.call(null, node2.data), d2 = dx * dx + dy * dy;
+      if (d2 < radius) {
+        var d = Math.sqrt(radius = d2);
+        x0 = x - d, y0 = y - d;
+        x3 = x + d, y3 = y + d;
+        data = node2.data;
+      }
+    }
+  }
+  return data;
+}
+
+// node_modules/d3-quadtree/src/remove.js
+function remove_default(d) {
+  if (isNaN(x = +this._x.call(null, d)) || isNaN(y = +this._y.call(null, d)))
+    return this;
+  var parent, node2 = this._root, retainer, previous3, next, x0 = this._x0, y0 = this._y0, x1 = this._x1, y1 = this._y1, x, y, xm, ym, right, bottom, i2, j2;
+  if (!node2)
+    return this;
+  if (node2.length)
+    while (true) {
+      if (right = x >= (xm = (x0 + x1) / 2))
+        x0 = xm;
+      else
+        x1 = xm;
+      if (bottom = y >= (ym = (y0 + y1) / 2))
+        y0 = ym;
+      else
+        y1 = ym;
+      if (!(parent = node2, node2 = node2[i2 = bottom << 1 | right]))
+        return this;
+      if (!node2.length)
+        break;
+      if (parent[i2 + 1 & 3] || parent[i2 + 2 & 3] || parent[i2 + 3 & 3])
+        retainer = parent, j2 = i2;
+    }
+  while (node2.data !== d)
+    if (!(previous3 = node2, node2 = node2.next))
+      return this;
+  if (next = node2.next)
+    delete node2.next;
+  if (previous3)
+    return next ? previous3.next = next : delete previous3.next, this;
+  if (!parent)
+    return this._root = next, this;
+  next ? parent[i2] = next : delete parent[i2];
+  if ((node2 = parent[0] || parent[1] || parent[2] || parent[3]) && node2 === (parent[3] || parent[2] || parent[1] || parent[0]) && !node2.length) {
+    if (retainer)
+      retainer[j2] = node2;
+    else
+      this._root = node2;
+  }
+  return this;
+}
+function removeAll(data) {
+  for (var i2 = 0, n = data.length;i2 < n; ++i2)
+    this.remove(data[i2]);
+  return this;
+}
+
+// node_modules/d3-quadtree/src/root.js
+function root_default() {
+  return this._root;
+}
+
+// node_modules/d3-quadtree/src/size.js
+function size_default() {
+  var size4 = 0;
+  this.visit(function(node2) {
+    if (!node2.length)
+      do
+        ++size4;
+      while (node2 = node2.next);
+  });
+  return size4;
+}
+
+// node_modules/d3-quadtree/src/visit.js
+function visit_default(callback) {
+  var quads = [], q2, node2 = this._root, child, x0, y0, x1, y1;
+  if (node2)
+    quads.push(new quad_default(node2, this._x0, this._y0, this._x1, this._y1));
+  while (q2 = quads.pop()) {
+    if (!callback(node2 = q2.node, x0 = q2.x0, y0 = q2.y0, x1 = q2.x1, y1 = q2.y1) && node2.length) {
+      var xm = (x0 + x1) / 2, ym = (y0 + y1) / 2;
+      if (child = node2[3])
+        quads.push(new quad_default(child, xm, ym, x1, y1));
+      if (child = node2[2])
+        quads.push(new quad_default(child, x0, ym, xm, y1));
+      if (child = node2[1])
+        quads.push(new quad_default(child, xm, y0, x1, ym));
+      if (child = node2[0])
+        quads.push(new quad_default(child, x0, y0, xm, ym));
+    }
+  }
+  return this;
+}
+
+// node_modules/d3-quadtree/src/visitAfter.js
+function visitAfter_default(callback) {
+  var quads = [], next = [], q2;
+  if (this._root)
+    quads.push(new quad_default(this._root, this._x0, this._y0, this._x1, this._y1));
+  while (q2 = quads.pop()) {
+    var node2 = q2.node;
+    if (node2.length) {
+      var child, x0 = q2.x0, y0 = q2.y0, x1 = q2.x1, y1 = q2.y1, xm = (x0 + x1) / 2, ym = (y0 + y1) / 2;
+      if (child = node2[0])
+        quads.push(new quad_default(child, x0, y0, xm, ym));
+      if (child = node2[1])
+        quads.push(new quad_default(child, xm, y0, x1, ym));
+      if (child = node2[2])
+        quads.push(new quad_default(child, x0, ym, xm, y1));
+      if (child = node2[3])
+        quads.push(new quad_default(child, xm, ym, x1, y1));
+    }
+    next.push(q2);
+  }
+  while (q2 = next.pop()) {
+    callback(q2.node, q2.x0, q2.y0, q2.x1, q2.y1);
+  }
+  return this;
+}
+
+// node_modules/d3-quadtree/src/x.js
+function defaultX(d) {
+  return d[0];
+}
+function x_default(_) {
+  return arguments.length ? (this._x = _, this) : this._x;
+}
+
+// node_modules/d3-quadtree/src/y.js
+function defaultY(d) {
+  return d[1];
+}
+function y_default(_) {
+  return arguments.length ? (this._y = _, this) : this._y;
+}
+
+// node_modules/d3-quadtree/src/quadtree.js
+function quadtree(nodes, x, y) {
+  var tree = new Quadtree(x == null ? defaultX : x, y == null ? defaultY : y, NaN, NaN, NaN, NaN);
+  return nodes == null ? tree : tree.addAll(nodes);
+}
+function Quadtree(x, y, x0, y0, x1, y1) {
+  this._x = x;
+  this._y = y;
+  this._x0 = x0;
+  this._y0 = y0;
+  this._x1 = x1;
+  this._y1 = y1;
+  this._root = undefined;
+}
+function leaf_copy(leaf) {
+  var copy = { data: leaf.data }, next = copy;
+  while (leaf = leaf.next)
+    next = next.next = { data: leaf.data };
+  return copy;
+}
+var treeProto = quadtree.prototype = Quadtree.prototype;
+treeProto.copy = function() {
+  var copy = new Quadtree(this._x, this._y, this._x0, this._y0, this._x1, this._y1), node2 = this._root, nodes, child;
+  if (!node2)
+    return copy;
+  if (!node2.length)
+    return copy._root = leaf_copy(node2), copy;
+  nodes = [{ source: node2, target: copy._root = new Array(4) }];
+  while (node2 = nodes.pop()) {
+    for (var i2 = 0;i2 < 4; ++i2) {
+      if (child = node2.source[i2]) {
+        if (child.length)
+          nodes.push({ source: child, target: node2.target[i2] = new Array(4) });
+        else
+          node2.target[i2] = leaf_copy(child);
+      }
+    }
+  }
+  return copy;
+};
+treeProto.add = add_default;
+treeProto.addAll = addAll;
+treeProto.cover = cover_default;
+treeProto.data = data_default;
+treeProto.extent = extent_default;
+treeProto.find = find_default;
+treeProto.remove = remove_default;
+treeProto.removeAll = removeAll;
+treeProto.root = root_default;
+treeProto.size = size_default;
+treeProto.visit = visit_default;
+treeProto.visitAfter = visitAfter_default;
+treeProto.x = x_default;
+treeProto.y = y_default;
+// node_modules/d3-force/src/constant.js
+function constant_default(x) {
+  return function() {
+    return x;
+  };
+}
+
+// node_modules/d3-force/src/jiggle.js
+function jiggle_default(random) {
+  return (random() - 0.5) * 0.000001;
+}
+
+// node_modules/d3-force/src/collide.js
+function x(d) {
+  return d.x + d.vx;
+}
+function y(d) {
+  return d.y + d.vy;
+}
+function collide_default(radius) {
+  var nodes, radii, random, strength = 1, iterations = 1;
+  if (typeof radius !== "function")
+    radius = constant_default(radius == null ? 1 : +radius);
+  function force() {
+    var i2, n = nodes.length, tree, node2, xi, yi, ri, ri2;
+    for (var k = 0;k < iterations; ++k) {
+      tree = quadtree(nodes, x, y).visitAfter(prepare);
+      for (i2 = 0;i2 < n; ++i2) {
+        node2 = nodes[i2];
+        ri = radii[node2.index], ri2 = ri * ri;
+        xi = node2.x + node2.vx;
+        yi = node2.y + node2.vy;
+        tree.visit(apply);
+      }
+    }
+    function apply(quad, x0, y0, x1, y1) {
+      var { data, r: rj } = quad, r2 = ri + rj;
+      if (data) {
+        if (data.index > node2.index) {
+          var x2 = xi - data.x - data.vx, y2 = yi - data.y - data.vy, l = x2 * x2 + y2 * y2;
+          if (l < r2 * r2) {
+            if (x2 === 0)
+              x2 = jiggle_default(random), l += x2 * x2;
+            if (y2 === 0)
+              y2 = jiggle_default(random), l += y2 * y2;
+            l = (r2 - (l = Math.sqrt(l))) / l * strength;
+            node2.vx += (x2 *= l) * (r2 = (rj *= rj) / (ri2 + rj));
+            node2.vy += (y2 *= l) * r2;
+            data.vx -= x2 * (r2 = 1 - r2);
+            data.vy -= y2 * r2;
+          }
+        }
+        return;
+      }
+      return x0 > xi + r2 || x1 < xi - r2 || y0 > yi + r2 || y1 < yi - r2;
+    }
+  }
+  function prepare(quad) {
+    if (quad.data)
+      return quad.r = radii[quad.data.index];
+    for (var i2 = quad.r = 0;i2 < 4; ++i2) {
+      if (quad[i2] && quad[i2].r > quad.r) {
+        quad.r = quad[i2].r;
+      }
+    }
+  }
+  function initialize() {
+    if (!nodes)
+      return;
+    var i2, n = nodes.length, node2;
+    radii = new Array(n);
+    for (i2 = 0;i2 < n; ++i2)
+      node2 = nodes[i2], radii[node2.index] = +radius(node2, i2, nodes);
+  }
+  force.initialize = function(_nodes, _random) {
+    nodes = _nodes;
+    random = _random;
+    initialize();
+  };
+  force.iterations = function(_) {
+    return arguments.length ? (iterations = +_, force) : iterations;
+  };
+  force.strength = function(_) {
+    return arguments.length ? (strength = +_, force) : strength;
+  };
+  force.radius = function(_) {
+    return arguments.length ? (radius = typeof _ === "function" ? _ : constant_default(+_), initialize(), force) : radius;
+  };
+  return force;
+}
+// node_modules/d3-force/src/link.js
+function index5(d) {
+  return d.index;
+}
+function find2(nodeById, nodeId) {
+  var node2 = nodeById.get(nodeId);
+  if (!node2)
+    throw new Error("node not found: " + nodeId);
+  return node2;
+}
+function link_default(links2) {
+  var id = index5, strength = defaultStrength, strengths, distance = constant_default(30), distances, nodes, count, bias, random, iterations = 1;
+  if (links2 == null)
+    links2 = [];
+  function defaultStrength(link) {
+    return 1 / Math.min(count[link.source.index], count[link.target.index]);
+  }
+  function force(alpha) {
+    for (var k = 0, n = links2.length;k < iterations; ++k) {
+      for (var i2 = 0, link, source, target, x2, y2, l, b;i2 < n; ++i2) {
+        link = links2[i2], source = link.source, target = link.target;
+        x2 = target.x + target.vx - source.x - source.vx || jiggle_default(random);
+        y2 = target.y + target.vy - source.y - source.vy || jiggle_default(random);
+        l = Math.sqrt(x2 * x2 + y2 * y2);
+        l = (l - distances[i2]) / l * alpha * strengths[i2];
+        x2 *= l, y2 *= l;
+        target.vx -= x2 * (b = bias[i2]);
+        target.vy -= y2 * b;
+        source.vx += x2 * (b = 1 - b);
+        source.vy += y2 * b;
+      }
+    }
+  }
+  function initialize() {
+    if (!nodes)
+      return;
+    var i2, n = nodes.length, m = links2.length, nodeById = new Map(nodes.map((d, i3) => [id(d, i3, nodes), d])), link;
+    for (i2 = 0, count = new Array(n);i2 < m; ++i2) {
+      link = links2[i2], link.index = i2;
+      if (typeof link.source !== "object")
+        link.source = find2(nodeById, link.source);
+      if (typeof link.target !== "object")
+        link.target = find2(nodeById, link.target);
+      count[link.source.index] = (count[link.source.index] || 0) + 1;
+      count[link.target.index] = (count[link.target.index] || 0) + 1;
+    }
+    for (i2 = 0, bias = new Array(m);i2 < m; ++i2) {
+      link = links2[i2], bias[i2] = count[link.source.index] / (count[link.source.index] + count[link.target.index]);
+    }
+    strengths = new Array(m), initializeStrength();
+    distances = new Array(m), initializeDistance();
+  }
+  function initializeStrength() {
+    if (!nodes)
+      return;
+    for (var i2 = 0, n = links2.length;i2 < n; ++i2) {
+      strengths[i2] = +strength(links2[i2], i2, links2);
+    }
+  }
+  function initializeDistance() {
+    if (!nodes)
+      return;
+    for (var i2 = 0, n = links2.length;i2 < n; ++i2) {
+      distances[i2] = +distance(links2[i2], i2, links2);
+    }
+  }
+  force.initialize = function(_nodes, _random) {
+    nodes = _nodes;
+    random = _random;
+    initialize();
+  };
+  force.links = function(_) {
+    return arguments.length ? (links2 = _, initialize(), force) : links2;
+  };
+  force.id = function(_) {
+    return arguments.length ? (id = _, force) : id;
+  };
+  force.iterations = function(_) {
+    return arguments.length ? (iterations = +_, force) : iterations;
+  };
+  force.strength = function(_) {
+    return arguments.length ? (strength = typeof _ === "function" ? _ : constant_default(+_), initializeStrength(), force) : strength;
+  };
+  force.distance = function(_) {
+    return arguments.length ? (distance = typeof _ === "function" ? _ : constant_default(+_), initializeDistance(), force) : distance;
+  };
+  return force;
+}
+// node_modules/d3-dispatch/src/dispatch.js
+var noop7 = { value: () => {} };
+function dispatch() {
+  for (var i2 = 0, n = arguments.length, _ = {}, t2;i2 < n; ++i2) {
+    if (!(t2 = arguments[i2] + "") || t2 in _ || /[\s.]/.test(t2))
+      throw new Error("illegal type: " + t2);
+    _[t2] = [];
+  }
+  return new Dispatch(_);
+}
+function Dispatch(_) {
+  this._ = _;
+}
+function parseTypenames(typenames, types2) {
+  return typenames.trim().split(/^|\s+/).map(function(t2) {
+    var name2 = "", i2 = t2.indexOf(".");
+    if (i2 >= 0)
+      name2 = t2.slice(i2 + 1), t2 = t2.slice(0, i2);
+    if (t2 && !types2.hasOwnProperty(t2))
+      throw new Error("unknown type: " + t2);
+    return { type: t2, name: name2 };
+  });
+}
+Dispatch.prototype = dispatch.prototype = {
+  constructor: Dispatch,
+  on: function(typename, callback) {
+    var _ = this._, T2 = parseTypenames(typename + "", _), t2, i2 = -1, n = T2.length;
+    if (arguments.length < 2) {
+      while (++i2 < n)
+        if ((t2 = (typename = T2[i2]).type) && (t2 = get(_[t2], typename.name)))
+          return t2;
+      return;
+    }
+    if (callback != null && typeof callback !== "function")
+      throw new Error("invalid callback: " + callback);
+    while (++i2 < n) {
+      if (t2 = (typename = T2[i2]).type)
+        _[t2] = set2(_[t2], typename.name, callback);
+      else if (callback == null)
+        for (t2 in _)
+          _[t2] = set2(_[t2], typename.name, null);
+    }
+    return this;
+  },
+  copy: function() {
+    var copy = {}, _ = this._;
+    for (var t2 in _)
+      copy[t2] = _[t2].slice();
+    return new Dispatch(copy);
+  },
+  call: function(type, that) {
+    if ((n = arguments.length - 2) > 0)
+      for (var args = new Array(n), i2 = 0, n, t2;i2 < n; ++i2)
+        args[i2] = arguments[i2 + 2];
+    if (!this._.hasOwnProperty(type))
+      throw new Error("unknown type: " + type);
+    for (t2 = this._[type], i2 = 0, n = t2.length;i2 < n; ++i2)
+      t2[i2].value.apply(that, args);
+  },
+  apply: function(type, that, args) {
+    if (!this._.hasOwnProperty(type))
+      throw new Error("unknown type: " + type);
+    for (var t2 = this._[type], i2 = 0, n = t2.length;i2 < n; ++i2)
+      t2[i2].value.apply(that, args);
+  }
+};
+function get(type, name2) {
+  for (var i2 = 0, n = type.length, c;i2 < n; ++i2) {
+    if ((c = type[i2]).name === name2) {
+      return c.value;
+    }
+  }
+}
+function set2(type, name2, callback) {
+  for (var i2 = 0, n = type.length;i2 < n; ++i2) {
+    if (type[i2].name === name2) {
+      type[i2] = noop7, type = type.slice(0, i2).concat(type.slice(i2 + 1));
+      break;
+    }
+  }
+  if (callback != null)
+    type.push({ name: name2, value: callback });
+  return type;
+}
+var dispatch_default = dispatch;
+// node_modules/d3-timer/src/timer.js
+var frame = 0;
+var timeout = 0;
+var interval = 0;
+var pokeDelay = 1000;
+var taskHead;
+var taskTail;
+var clockLast = 0;
+var clockNow = 0;
+var clockSkew = 0;
+var clock = typeof performance === "object" && performance.now ? performance : Date;
+var setFrame = typeof window === "object" && window.requestAnimationFrame ? window.requestAnimationFrame.bind(window) : function(f) {
+  setTimeout(f, 17);
+};
+function now2() {
+  return clockNow || (setFrame(clearNow), clockNow = clock.now() + clockSkew);
+}
+function clearNow() {
+  clockNow = 0;
+}
+function Timer() {
+  this._call = this._time = this._next = null;
+}
+Timer.prototype = timer.prototype = {
+  constructor: Timer,
+  restart: function(callback, delay, time) {
+    if (typeof callback !== "function")
+      throw new TypeError("callback is not a function");
+    time = (time == null ? now2() : +time) + (delay == null ? 0 : +delay);
+    if (!this._next && taskTail !== this) {
+      if (taskTail)
+        taskTail._next = this;
+      else
+        taskHead = this;
+      taskTail = this;
+    }
+    this._call = callback;
+    this._time = time;
+    sleep();
+  },
+  stop: function() {
+    if (this._call) {
+      this._call = null;
+      this._time = Infinity;
+      sleep();
+    }
+  }
+};
+function timer(callback, delay, time) {
+  var t2 = new Timer;
+  t2.restart(callback, delay, time);
+  return t2;
+}
+function timerFlush() {
+  now2();
+  ++frame;
+  var t2 = taskHead, e;
+  while (t2) {
+    if ((e = clockNow - t2._time) >= 0)
+      t2._call.call(undefined, e);
+    t2 = t2._next;
+  }
+  --frame;
+}
+function wake() {
+  clockNow = (clockLast = clock.now()) + clockSkew;
+  frame = timeout = 0;
+  try {
+    timerFlush();
+  } finally {
+    frame = 0;
+    nap();
+    clockNow = 0;
+  }
+}
+function poke() {
+  var now3 = clock.now(), delay = now3 - clockLast;
+  if (delay > pokeDelay)
+    clockSkew -= delay, clockLast = now3;
+}
+function nap() {
+  var t0, t1 = taskHead, t2, time = Infinity;
+  while (t1) {
+    if (t1._call) {
+      if (time > t1._time)
+        time = t1._time;
+      t0 = t1, t1 = t1._next;
+    } else {
+      t2 = t1._next, t1._next = null;
+      t1 = t0 ? t0._next = t2 : taskHead = t2;
+    }
+  }
+  taskTail = t0;
+  sleep(time);
+}
+function sleep(time) {
+  if (frame)
+    return;
+  if (timeout)
+    timeout = clearTimeout(timeout);
+  var delay = time - clockNow;
+  if (delay > 24) {
+    if (time < Infinity)
+      timeout = setTimeout(wake, time - clock.now() - clockSkew);
+    if (interval)
+      interval = clearInterval(interval);
+  } else {
+    if (!interval)
+      clockLast = clock.now(), interval = setInterval(poke, pokeDelay);
+    frame = 1, setFrame(wake);
+  }
+}
+// node_modules/d3-force/src/lcg.js
+var a = 1664525;
+var c = 1013904223;
+var m = 4294967296;
+function lcg_default() {
+  let s = 1;
+  return () => (s = (a * s + c) % m) / m;
+}
+
+// node_modules/d3-force/src/simulation.js
+function x2(d) {
+  return d.x;
+}
+function y2(d) {
+  return d.y;
+}
+var initialRadius = 10;
+var initialAngle = Math.PI * (3 - Math.sqrt(5));
+function simulation_default(nodes) {
+  var simulation, alpha = 1, alphaMin = 0.001, alphaDecay = 1 - Math.pow(alphaMin, 1 / 300), alphaTarget = 0, velocityDecay = 0.6, forces = new Map, stepper = timer(step), event = dispatch_default("tick", "end"), random = lcg_default();
+  if (nodes == null)
+    nodes = [];
+  function step() {
+    tick();
+    event.call("tick", simulation);
+    if (alpha < alphaMin) {
+      stepper.stop();
+      event.call("end", simulation);
+    }
+  }
+  function tick(iterations) {
+    var i2, n = nodes.length, node2;
+    if (iterations === undefined)
+      iterations = 1;
+    for (var k = 0;k < iterations; ++k) {
+      alpha += (alphaTarget - alpha) * alphaDecay;
+      forces.forEach(function(force) {
+        force(alpha);
+      });
+      for (i2 = 0;i2 < n; ++i2) {
+        node2 = nodes[i2];
+        if (node2.fx == null)
+          node2.x += node2.vx *= velocityDecay;
+        else
+          node2.x = node2.fx, node2.vx = 0;
+        if (node2.fy == null)
+          node2.y += node2.vy *= velocityDecay;
+        else
+          node2.y = node2.fy, node2.vy = 0;
+      }
+    }
+    return simulation;
+  }
+  function initializeNodes() {
+    for (var i2 = 0, n = nodes.length, node2;i2 < n; ++i2) {
+      node2 = nodes[i2], node2.index = i2;
+      if (node2.fx != null)
+        node2.x = node2.fx;
+      if (node2.fy != null)
+        node2.y = node2.fy;
+      if (isNaN(node2.x) || isNaN(node2.y)) {
+        var radius = initialRadius * Math.sqrt(0.5 + i2), angle = i2 * initialAngle;
+        node2.x = radius * Math.cos(angle);
+        node2.y = radius * Math.sin(angle);
+      }
+      if (isNaN(node2.vx) || isNaN(node2.vy)) {
+        node2.vx = node2.vy = 0;
+      }
+    }
+  }
+  function initializeForce(force) {
+    if (force.initialize)
+      force.initialize(nodes, random);
+    return force;
+  }
+  initializeNodes();
+  return simulation = {
+    tick,
+    restart: function() {
+      return stepper.restart(step), simulation;
+    },
+    stop: function() {
+      return stepper.stop(), simulation;
+    },
+    nodes: function(_) {
+      return arguments.length ? (nodes = _, initializeNodes(), forces.forEach(initializeForce), simulation) : nodes;
+    },
+    alpha: function(_) {
+      return arguments.length ? (alpha = +_, simulation) : alpha;
+    },
+    alphaMin: function(_) {
+      return arguments.length ? (alphaMin = +_, simulation) : alphaMin;
+    },
+    alphaDecay: function(_) {
+      return arguments.length ? (alphaDecay = +_, simulation) : +alphaDecay;
+    },
+    alphaTarget: function(_) {
+      return arguments.length ? (alphaTarget = +_, simulation) : alphaTarget;
+    },
+    velocityDecay: function(_) {
+      return arguments.length ? (velocityDecay = 1 - _, simulation) : 1 - velocityDecay;
+    },
+    randomSource: function(_) {
+      return arguments.length ? (random = _, forces.forEach(initializeForce), simulation) : random;
+    },
+    force: function(name2, _) {
+      return arguments.length > 1 ? (_ == null ? forces.delete(name2) : forces.set(name2, initializeForce(_)), simulation) : forces.get(name2);
+    },
+    find: function(x3, y3, radius) {
+      var i2 = 0, n = nodes.length, dx, dy, d2, node2, closest;
+      if (radius == null)
+        radius = Infinity;
+      else
+        radius *= radius;
+      for (i2 = 0;i2 < n; ++i2) {
+        node2 = nodes[i2];
+        dx = x3 - node2.x;
+        dy = y3 - node2.y;
+        d2 = dx * dx + dy * dy;
+        if (d2 < radius)
+          closest = node2, radius = d2;
+      }
+      return closest;
+    },
+    on: function(name2, _) {
+      return arguments.length > 1 ? (event.on(name2, _), simulation) : event.on(name2);
+    }
+  };
+}
+
+// node_modules/d3-force/src/manyBody.js
+function manyBody_default() {
+  var nodes, node2, random, alpha, strength = constant_default(-30), strengths, distanceMin2 = 1, distanceMax2 = Infinity, theta2 = 0.81;
+  function force(_) {
+    var i2, n = nodes.length, tree = quadtree(nodes, x2, y2).visitAfter(accumulate);
+    for (alpha = _, i2 = 0;i2 < n; ++i2)
+      node2 = nodes[i2], tree.visit(apply);
+  }
+  function initialize() {
+    if (!nodes)
+      return;
+    var i2, n = nodes.length, node3;
+    strengths = new Array(n);
+    for (i2 = 0;i2 < n; ++i2)
+      node3 = nodes[i2], strengths[node3.index] = +strength(node3, i2, nodes);
+  }
+  function accumulate(quad) {
+    var strength2 = 0, q2, c2, weight = 0, x3, y3, i2;
+    if (quad.length) {
+      for (x3 = y3 = i2 = 0;i2 < 4; ++i2) {
+        if ((q2 = quad[i2]) && (c2 = Math.abs(q2.value))) {
+          strength2 += q2.value, weight += c2, x3 += c2 * q2.x, y3 += c2 * q2.y;
+        }
+      }
+      quad.x = x3 / weight;
+      quad.y = y3 / weight;
+    } else {
+      q2 = quad;
+      q2.x = q2.data.x;
+      q2.y = q2.data.y;
+      do
+        strength2 += strengths[q2.data.index];
+      while (q2 = q2.next);
+    }
+    quad.value = strength2;
+  }
+  function apply(quad, x1, _, x22) {
+    if (!quad.value)
+      return true;
+    var x3 = quad.x - node2.x, y3 = quad.y - node2.y, w = x22 - x1, l = x3 * x3 + y3 * y3;
+    if (w * w / theta2 < l) {
+      if (l < distanceMax2) {
+        if (x3 === 0)
+          x3 = jiggle_default(random), l += x3 * x3;
+        if (y3 === 0)
+          y3 = jiggle_default(random), l += y3 * y3;
+        if (l < distanceMin2)
+          l = Math.sqrt(distanceMin2 * l);
+        node2.vx += x3 * quad.value * alpha / l;
+        node2.vy += y3 * quad.value * alpha / l;
+      }
+      return true;
+    } else if (quad.length || l >= distanceMax2)
+      return;
+    if (quad.data !== node2 || quad.next) {
+      if (x3 === 0)
+        x3 = jiggle_default(random), l += x3 * x3;
+      if (y3 === 0)
+        y3 = jiggle_default(random), l += y3 * y3;
+      if (l < distanceMin2)
+        l = Math.sqrt(distanceMin2 * l);
+    }
+    do
+      if (quad.data !== node2) {
+        w = strengths[quad.data.index] * alpha / l;
+        node2.vx += x3 * w;
+        node2.vy += y3 * w;
+      }
+    while (quad = quad.next);
+  }
+  force.initialize = function(_nodes, _random) {
+    nodes = _nodes;
+    random = _random;
+    initialize();
+  };
+  force.strength = function(_) {
+    return arguments.length ? (strength = typeof _ === "function" ? _ : constant_default(+_), initialize(), force) : strength;
+  };
+  force.distanceMin = function(_) {
+    return arguments.length ? (distanceMin2 = _ * _, force) : Math.sqrt(distanceMin2);
+  };
+  force.distanceMax = function(_) {
+    return arguments.length ? (distanceMax2 = _ * _, force) : Math.sqrt(distanceMax2);
+  };
+  force.theta = function(_) {
+    return arguments.length ? (theta2 = _ * _, force) : Math.sqrt(theta2);
+  };
+  return force;
+}
+// src/scriptorium/surface/components/context/forceLayout.ts
+var import_react41 = __toESM(require_react(), 1);
+var bodyRadius = (linksIn) => 5 + Math.min(11, Math.sqrt(linksIn) * 2.4);
+function useForceLayout(nodes, edges, size4, enabled) {
+  const [positions, setPositions] = import_react41.useState(new Map);
+  const sim = import_react41.useRef(null);
+  const bodies = import_react41.useRef(new Map);
+  const [dragging, setDragging] = import_react41.useState(null);
+  import_react41.useEffect(() => {
+    if (!enabled || nodes.length === 0) {
+      sim.current?.stop();
+      sim.current = null;
+      return;
+    }
+    const previous3 = bodies.current;
+    const list2 = nodes.map((n) => ({ id: n.path, ...previous3.get(n.path) ?? {} }));
+    bodies.current = new Map(list2.map((b) => [b.id, b]));
+    const ids = new Set(list2.map((b) => b.id));
+    const springs = edges.filter((e) => ids.has(e.from) && ids.has(e.to)).map((e) => ({ source: e.from, target: e.to }));
+    const simulation = simulation_default(list2).force("charge", manyBody_default().strength(-520)).force("link", link_default(springs).id((d) => d.id).distance(150).strength(0.14)).force("center", center_default(size4.width / 2, size4.height / 2)).force("collide", collide_default().radius((d) => {
+      const n = nodes.find((x3) => x3.path === d.id);
+      return bodyRadius(n?.linksIn ?? 0) + 34;
+    }));
+    simulation.on("tick", () => {
+      setPositions(new Map(list2.map((b) => [b.id, { x: b.x ?? 0, y: b.y ?? 0 }])));
+    });
+    sim.current = simulation;
+    return () => {
+      simulation.stop();
+    };
+  }, [nodes, edges, size4.width, size4.height, enabled]);
+  const onDragStart = import_react41.useCallback((path2, at2) => {
+    const body = bodies.current.get(path2);
+    if (!body)
+      return;
+    setDragging(path2);
+    body.fx = at2.x;
+    body.fy = at2.y;
+    sim.current?.alphaTarget(0.3).restart();
+  }, []);
+  const onDragMove = import_react41.useCallback((at2) => {
+    if (!dragging)
+      return;
+    const body = bodies.current.get(dragging);
+    if (!body)
+      return;
+    body.fx = at2.x;
+    body.fy = at2.y;
+  }, [dragging]);
+  const onDragEnd = import_react41.useCallback(() => {
+    if (!dragging)
+      return;
+    const body = bodies.current.get(dragging);
+    if (body) {
+      body.fx = null;
+      body.fy = null;
+    }
+    sim.current?.alphaTarget(0);
+    setDragging(null);
+  }, [dragging]);
+  return { positions, onDragStart, onDragMove, onDragEnd, dragging };
+}
+
+// src/scriptorium/surface/kit/MapView.tsx
 var jsx_runtime40 = __toESM(require_jsx_runtime(), 1);
+var NODE_W = 168;
+var NODE_H = 34;
+var COL_GAP = 96;
+var ROW_GAP = 12;
+var PAD = 24;
+var COLUMN_ROWS = 12;
+var SUB_GAP = 14;
+var DRAW_CAP = 140;
+var DENSE_EDGES = 150;
+function layout(nodes) {
+  const byType = new Map;
+  const headings = new Map;
+  for (const n of nodes.slice(0, DRAW_CAP)) {
+    const key = n.type ?? "—";
+    headings.set(key, n.typeLabel ?? key);
+    const list2 = byType.get(key) ?? [];
+    list2.push(n);
+    byType.set(key, list2);
+  }
+  const columns = [...byType.entries()].sort((a2, b) => b[1].length - a2[1].length);
+  const placed = [];
+  let x3 = PAD;
+  let height = 0;
+  for (const [type, list2] of columns) {
+    const sorted = [...list2].sort((a2, b) => b.linksIn - a2.linksIn || a2.title.localeCompare(b.title));
+    const rows = Math.min(sorted.length, COLUMN_ROWS);
+    sorted.forEach((n, i2) => {
+      const sub = Math.floor(i2 / COLUMN_ROWS);
+      placed.push({
+        ...n,
+        x: x3 + sub * (NODE_W + SUB_GAP),
+        y: PAD + 28 + i2 % COLUMN_ROWS * (NODE_H + ROW_GAP),
+        column: type
+      });
+    });
+    height = Math.max(height, PAD + 28 + rows * (NODE_H + ROW_GAP));
+    const subs = Math.ceil(sorted.length / COLUMN_ROWS);
+    x3 += subs * NODE_W + (subs - 1) * SUB_GAP + COL_GAP;
+  }
+  return { placed, width: x3 - COL_GAP + PAD, height: height + PAD, headings };
+}
+function edgePath(a2, b) {
+  const x1 = a2.x + NODE_W;
+  const y1 = a2.y + NODE_H / 2;
+  const x22 = b.x;
+  const y22 = b.y + NODE_H / 2;
+  const dx = Math.max(40, Math.abs(x22 - x1) / 2);
+  return `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x22 - dx} ${y22}, ${x22} ${y22}`;
+}
+var nodeLabel2 = (n) => `${n.title} — ${n.status ? `${n.status}, ` : ""}${n.linksIn} citations`;
+var dotTone = (n, otherwise) => n.stale || n.status === "draft" ? "fill-attention" : n.status === "deprecated" ? "fill-danger" : otherwise;
+function MapView({
+  graph,
+  error,
+  label,
+  mode,
+  onMode,
+  onOpenDoc,
+  onClose
+}) {
+  const root2 = import_react42.useRef(null);
+  const close = import_react42.useRef(onClose);
+  close.current = onClose;
+  import_react42.useEffect(() => {
+    const onKey = (e) => {
+      if (e.key !== "Escape" || e.defaultPrevented)
+        return;
+      const t2 = e.target instanceof HTMLElement ? e.target : null;
+      const field = t2?.closest("input, textarea, select, [contenteditable='true']");
+      if (field && !root2.current?.contains(field))
+        return;
+      if (t2?.closest('[role="menu"], [role="dialog"], [role="alertdialog"]'))
+        return;
+      close.current();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+  const [hover, setHover] = import_react42.useState(null);
+  const [alwaysEdges, setAlwaysEdges] = import_react42.useState(null);
+  const { placed, width, height, headings } = import_react42.useMemo(() => graph ? layout(graph.nodes) : { placed: [], width: 0, height: 0, headings: new Map }, [graph]);
+  const at2 = import_react42.useMemo(() => new Map(placed.map((p) => [p.path, p])), [placed]);
+  const drawn = import_react42.useMemo(() => (graph?.edges ?? []).filter((e) => at2.has(e.from) && at2.has(e.to)), [graph, at2]);
+  const links2 = drawn.reduce((sum, e) => sum + e.count, 0);
+  const dense = links2 > DENSE_EDGES;
+  const showAll = alwaysEdges ?? !dense;
+  const connected = import_react42.useMemo(() => {
+    if (!hover)
+      return null;
+    const set3 = new Set([hover]);
+    for (const e of drawn) {
+      if (e.from === hover)
+        set3.add(e.to);
+      if (e.to === hover)
+        set3.add(e.from);
+    }
+    return set3;
+  }, [hover, drawn]);
+  const lit = (path2) => connected === null || connected.has(path2);
+  const forceSize = { width: 1500, height: 1000 };
+  const force = useForceLayout(import_react42.useMemo(() => (graph?.nodes ?? []).map((n) => ({ path: n.path, linksIn: n.linksIn })), [graph]), import_react42.useMemo(() => drawn.map((e) => ({ from: e.from, to: e.to })), [drawn]), forceSize, mode === "force");
+  return /* @__PURE__ */ jsx_runtime40.jsxs("div", {
+    ref: root2,
+    "data-slot": "map",
+    className: "flex min-h-0 flex-1 flex-col overflow-hidden bg-surface",
+    children: [
+      /* @__PURE__ */ jsx_runtime40.jsxs("div", {
+        className: "flex shrink-0 items-center gap-3 border-b border-edge px-4 py-2.5",
+        children: [
+          /* @__PURE__ */ jsx_runtime40.jsxs("h2", {
+            className: "text-sm font-medium text-ink",
+            children: [
+              "Map of ",
+              label
+            ]
+          }),
+          graph && /* @__PURE__ */ jsx_runtime40.jsxs("span", {
+            "data-slot": "map-summary",
+            className: "text-xs text-ink-dim",
+            children: [
+              graph.nodes.length,
+              " documents · ",
+              links2,
+              " links inside",
+              graph.cut > 0 && ` · ${graph.cut} more not read`,
+              graph.nodes.length > DRAW_CAP && ` · drawing the ${DRAW_CAP} best-connected`
+            ]
+          }),
+          /* @__PURE__ */ jsx_runtime40.jsx("div", {
+            role: "toolbar",
+            "aria-label": "How to lay the map out",
+            className: "ml-auto flex items-center gap-0.5 rounded-md bg-surface-raised p-0.5",
+            children: ["columns", "force"].map((m2) => /* @__PURE__ */ jsx_runtime40.jsx("button", {
+              type: "button",
+              onClick: () => onMode(m2),
+              "aria-pressed": mode === m2,
+              className: cn("rounded-sm px-2 py-0.5 text-[11px] text-ink-faint outline-none", "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", mode === m2 && "bg-bg text-ink shadow-sm"),
+              children: m2 === "columns" ? "columns" : "physics"
+            }, m2))
+          }),
+          /* @__PURE__ */ jsx_runtime40.jsx("button", {
+            type: "button",
+            "aria-label": "Back to the document",
+            title: "Back to the document",
+            onClick: onClose,
+            className: "rounded-md p-1 text-ink-dim hover:bg-surface-raised hover:text-ink",
+            children: /* @__PURE__ */ jsx_runtime40.jsx(X, {
+              className: "size-4"
+            })
+          })
+        ]
+      }),
+      /* @__PURE__ */ jsx_runtime40.jsx("div", {
+        className: "min-h-0 flex-1 overflow-auto p-2",
+        children: !graph ? /* @__PURE__ */ jsx_runtime40.jsx("p", {
+          className: "p-6 text-sm text-ink-dim",
+          children: error ?? "Reading the set…"
+        }) : graph.nodes.length === 0 ? /* @__PURE__ */ jsx_runtime40.jsx("p", {
+          className: "p-6 text-sm text-ink-dim",
+          children: "This set has no documents to map."
+        }) : mode === "force" ? /* @__PURE__ */ jsx_runtime40.jsx(ForceCanvas, {
+          nodes: graph.nodes,
+          edges: drawn,
+          size: forceSize,
+          force,
+          hover,
+          onHover: setHover,
+          lit,
+          showAll,
+          onOpen: onOpenDoc
+        }) : /* @__PURE__ */ jsx_runtime40.jsxs("svg", {
+          "data-slot": "map-columns",
+          width,
+          height,
+          role: "img",
+          "aria-label": `${graph.nodes.length} documents and ${links2} links`,
+          children: [
+            /* @__PURE__ */ jsx_runtime40.jsxs("title", {
+              children: [
+                graph.nodes.length,
+                " documents, ",
+                links2,
+                " links between them"
+              ]
+            }),
+            drawn.map((e, i2) => {
+              const a2 = at2.get(e.from);
+              const b = at2.get(e.to);
+              if (!a2 || !b)
+                return null;
+              const touching = hover === e.from || hover === e.to;
+              const lit2 = touching || showAll && hover === null;
+              if (!lit2 && !showAll)
+                return null;
+              return /* @__PURE__ */ jsx_runtime40.jsx("path", {
+                "data-source": e.source,
+                d: edgePath(a2, b),
+                fill: "none",
+                stroke: e.source === "frontmatter" ? "var(--color-rubric)" : "var(--color-ink-faint)",
+                strokeWidth: touching ? 1.6 : 1,
+                strokeDasharray: e.source === "frontmatter" ? "4 3" : undefined,
+                opacity: touching ? 0.95 : showAll ? 0.14 : 0
+              }, `${e.from}->${e.to}:${i2}`);
+            }),
+            [...new Set(placed.map((p) => p.column))].map((type) => {
+              const first = placed.find((p) => p.column === type);
+              if (!first)
+                return null;
+              return /* @__PURE__ */ jsx_runtime40.jsx("text", {
+                x: first.x,
+                y: PAD + 12,
+                className: "fill-ink-faint text-[11px] font-medium",
+                children: headings.get(type) ?? type
+              }, type);
+            }),
+            placed.map((n) => /* @__PURE__ */ jsx_runtime40.jsxs("g", {
+              "data-path": n.path,
+              transform: `translate(${n.x}, ${n.y})`,
+              onMouseEnter: () => setHover(n.path),
+              onMouseLeave: () => setHover(null),
+              onFocus: () => setHover(n.path),
+              onBlur: () => setHover(null),
+              onClick: () => onOpenDoc(n.path),
+              onKeyDown: (e) => {
+                if (e.key !== "Enter" && e.key !== " ")
+                  return;
+                e.preventDefault();
+                onOpenDoc(n.path);
+              },
+              role: "button",
+              tabIndex: 0,
+              "aria-label": nodeLabel2(n),
+              opacity: lit(n.path) ? 1 : 0.22,
+              className: "cursor-pointer outline-none transition-opacity focus-visible:[&>rect]:stroke-rubric",
+              children: [
+                /* @__PURE__ */ jsx_runtime40.jsxs("title", {
+                  children: [
+                    n.rel,
+                    n.status ? ` · ${n.status}` : "",
+                    n.stale ? " · stale" : "",
+                    " · ",
+                    n.linksIn,
+                    " in, ",
+                    n.linksOut,
+                    " out",
+                    n.tags.length ? ` · ${n.tags.join(", ")}` : ""
+                  ]
+                }),
+                /* @__PURE__ */ jsx_runtime40.jsx("rect", {
+                  width: NODE_W,
+                  height: NODE_H,
+                  rx: 6,
+                  className: cn("fill-bg stroke-edge", hover === n.path && "fill-surface-raised stroke-rubric"),
+                  strokeWidth: 1
+                }),
+                /* @__PURE__ */ jsx_runtime40.jsx("circle", {
+                  cx: 12,
+                  cy: NODE_H / 2,
+                  r: 3,
+                  className: dotTone(n, "fill-ink-faint")
+                }),
+                /* @__PURE__ */ jsx_runtime40.jsx("text", {
+                  x: 24,
+                  y: NODE_H / 2 + 4,
+                  className: "fill-ink text-[11px]",
+                  textLength: n.title.length > 22 ? NODE_W - 36 : undefined,
+                  lengthAdjust: "spacingAndGlyphs",
+                  children: n.title.length > 26 ? `${n.title.slice(0, 25)}…` : n.title
+                })
+              ]
+            }, n.path))
+          ]
+        })
+      }),
+      /* @__PURE__ */ jsx_runtime40.jsxs("div", {
+        className: "flex shrink-0 items-center gap-4 border-t border-edge px-4 py-2 text-[11px] text-ink-dim",
+        children: [
+          /* @__PURE__ */ jsx_runtime40.jsxs("span", {
+            className: "flex items-center gap-1.5",
+            children: [
+              /* @__PURE__ */ jsx_runtime40.jsxs("svg", {
+                width: "22",
+                height: "6",
+                "aria-hidden": true,
+                role: "img",
+                children: [
+                  /* @__PURE__ */ jsx_runtime40.jsx("title", {
+                    children: "a solid line"
+                  }),
+                  /* @__PURE__ */ jsx_runtime40.jsx("line", {
+                    x1: "0",
+                    y1: "3",
+                    x2: "22",
+                    y2: "3",
+                    stroke: "var(--color-ink-faint)",
+                    strokeWidth: "1.5"
+                  })
+                ]
+              }),
+              "a link in the prose"
+            ]
+          }),
+          /* @__PURE__ */ jsx_runtime40.jsxs("span", {
+            className: "flex items-center gap-1.5",
+            children: [
+              /* @__PURE__ */ jsx_runtime40.jsxs("svg", {
+                width: "22",
+                height: "6",
+                "aria-hidden": true,
+                role: "img",
+                children: [
+                  /* @__PURE__ */ jsx_runtime40.jsx("title", {
+                    children: "a dashed line"
+                  }),
+                  /* @__PURE__ */ jsx_runtime40.jsx("line", {
+                    x1: "0",
+                    y1: "3",
+                    x2: "22",
+                    y2: "3",
+                    stroke: "var(--color-rubric)",
+                    strokeWidth: "1.5",
+                    strokeDasharray: "4 3"
+                  })
+                ]
+              }),
+              "a frontmatter reference"
+            ]
+          }),
+          /* @__PURE__ */ jsx_runtime40.jsxs("label", {
+            className: "flex cursor-pointer items-center gap-1.5",
+            children: [
+              /* @__PURE__ */ jsx_runtime40.jsx("input", {
+                type: "checkbox",
+                checked: showAll,
+                onChange: (e) => setAlwaysEdges(e.target.checked),
+                className: "size-3 accent-[var(--color-rubric)]"
+              }),
+              "draw every link",
+              dense && !showAll ? " (hover a document to see its own)" : ""
+            ]
+          }),
+          /* @__PURE__ */ jsx_runtime40.jsx("span", {
+            className: "ml-auto",
+            children: "click a document to open it"
+          })
+        ]
+      })
+    ]
+  });
+}
+function ForceCanvas({
+  nodes,
+  edges,
+  size: size4,
+  force,
+  hover,
+  onHover,
+  lit,
+  showAll,
+  onOpen
+}) {
+  const svg = import_react42.useRef(null);
+  const { positions, onDragStart, onDragMove, onDragEnd, dragging } = force;
+  const at2 = (e) => {
+    const box = svg.current?.getBoundingClientRect();
+    return { x: e.clientX - (box?.left ?? 0), y: e.clientY - (box?.top ?? 0) };
+  };
+  return /* @__PURE__ */ jsx_runtime40.jsxs("svg", {
+    ref: svg,
+    "data-slot": "map-force",
+    width: size4.width,
+    height: size4.height,
+    role: "img",
+    "aria-label": `${nodes.length} documents, arranged by their links`,
+    onPointerMove: (e) => dragging && onDragMove(at2(e)),
+    onPointerUp: onDragEnd,
+    onPointerLeave: onDragEnd,
+    className: dragging ? "cursor-grabbing" : undefined,
+    children: [
+      /* @__PURE__ */ jsx_runtime40.jsxs("title", {
+        children: [
+          nodes.length,
+          " documents, arranged by their links"
+        ]
+      }),
+      edges.map((e, i2) => {
+        const a2 = positions.get(e.from);
+        const b = positions.get(e.to);
+        if (!a2 || !b)
+          return null;
+        const touching = hover === e.from || hover === e.to;
+        if (!touching && !showAll)
+          return null;
+        return /* @__PURE__ */ jsx_runtime40.jsx("line", {
+          x1: a2.x,
+          y1: a2.y,
+          x2: b.x,
+          y2: b.y,
+          stroke: e.source === "frontmatter" ? "var(--color-rubric)" : "var(--color-ink-faint)",
+          strokeWidth: touching ? 1.6 : 1,
+          strokeDasharray: e.source === "frontmatter" ? "4 3" : undefined,
+          opacity: touching ? 0.95 : 0.14
+        }, `${e.from}->${e.to}:${i2}`);
+      }),
+      [...nodes].sort((a2, b) => (a2.path === hover ? 1 : 0) - (b.path === hover ? 1 : 0)).map((n) => {
+        const p = positions.get(n.path);
+        if (!p)
+          return null;
+        const r2 = bodyRadius(n.linksIn);
+        return /* @__PURE__ */ jsx_runtime40.jsxs("g", {
+          "data-path": n.path,
+          transform: `translate(${p.x}, ${p.y})`,
+          role: "button",
+          tabIndex: 0,
+          "aria-label": nodeLabel2(n),
+          opacity: lit(n.path) ? 1 : 0.18,
+          onPointerDown: (e) => {
+            e.currentTarget.setPointerCapture?.(e.pointerId);
+            onDragStart(n.path, at2(e));
+          },
+          onPointerEnter: () => onHover(n.path),
+          onPointerLeave: () => onHover(null),
+          onFocus: () => onHover(n.path),
+          onBlur: () => onHover(null),
+          onDoubleClick: () => onOpen(n.path),
+          onKeyDown: (e) => {
+            if (e.key !== "Enter" && e.key !== " ")
+              return;
+            e.preventDefault();
+            onOpen(n.path);
+          },
+          className: "cursor-grab outline-none transition-opacity",
+          children: [
+            /* @__PURE__ */ jsx_runtime40.jsxs("title", {
+              children: [
+                n.rel,
+                n.status ? ` · ${n.status}` : "",
+                n.stale ? " · stale" : "",
+                " · ",
+                n.linksIn,
+                " in, ",
+                n.linksOut,
+                " out"
+              ]
+            }),
+            /* @__PURE__ */ jsx_runtime40.jsx("circle", {
+              r: r2,
+              className: cn("stroke-edge", dotTone(n, hover === n.path ? "fill-rubric" : "fill-ink-faint")),
+              strokeWidth: hover === n.path ? 2 : 1
+            }),
+            /* @__PURE__ */ jsx_runtime40.jsx("text", {
+              x: r2 + 5,
+              y: 4,
+              className: cn("text-[11px]", hover === n.path ? "fill-ink" : "fill-ink-dim"),
+              children: n.title.length > 28 ? `${n.title.slice(0, 27)}…` : n.title
+            })
+          ]
+        }, n.path);
+      })
+    ]
+  });
+}
+
+// src/scriptorium/surface/kit/mapGraph.ts
+var FRONTMATTER = "frontmatter";
+function mapGraph(graph, docMeta) {
+  const nodes = graph.nodes.filter((n) => !n.bundle).map((n) => {
+    const meta2 = docMeta[n.path];
+    return {
+      path: n.path,
+      rel: n.shown,
+      title: n.title,
+      ...n.kind !== null ? { type: n.kind, typeLabel: n.label ?? n.kind } : {},
+      ...n.status !== undefined ? { status: n.status } : {},
+      stale: meta2?.stale === true,
+      tags: meta2?.tags ?? [],
+      linksIn: n.linksIn,
+      linksOut: n.linksOut
+    };
+  });
+  const at2 = new Set(nodes.map((n) => n.path));
+  const edges = [];
+  for (const e of graph.edges) {
+    if (e.edge !== undefined && e.edge !== FRONTMATTER)
+      continue;
+    if (!at2.has(e.from) || !at2.has(e.to))
+      continue;
+    edges.push({
+      from: e.from,
+      to: e.to,
+      source: e.edge === FRONTMATTER ? "frontmatter" : "link",
+      rel: e.rel,
+      count: e.count
+    });
+  }
+  return {
+    nodes,
+    edges,
+    links: edges.reduce((sum, e) => sum + e.count, 0),
+    cut: Math.max(0, graph.total.nodes - graph.nodes.length)
+  };
+}
+
+// src/scriptorium/surface/kit/useMapView.tsx
+var jsx_runtime41 = __toESM(require_jsx_runtime(), 1);
+var MAP_VIEW = "scriptorium.map";
+var MAP_LABEL = "Show the map of this set";
+var messageOf = (e) => e instanceof Error ? e.message : String(e);
+function useMapView(daemon) {
+  const [showing, setShowing] = import_react43.useState(null);
+  const [active, setActive] = import_react43.useState(false);
+  const [mode, setMode] = import_react43.useState("columns");
+  const { request, send, state } = daemon;
+  const asked = import_react43.useRef(0);
+  const fetch2 = import_react43.useCallback((entry2) => {
+    const seq2 = ++asked.current;
+    setShowing({ entryId: entry2.id, graph: null });
+    const keep = (next) => {
+      if (seq2 === asked.current)
+        setShowing({ entryId: entry2.id, ...next });
+    };
+    request({ op: "scriptorium.map", within: entry2.root }).then((frame2) => {
+      const a2 = frame2;
+      keep({ graph: mapGraph(a2.graph, a2.docMeta) });
+    }, (e) => keep({ graph: null, error: messageOf(e) }));
+  }, [request]);
+  const entry = showing ? state?.context.find((e) => e.id === showing.entryId) : undefined;
+  const gone = showing !== null && state !== null && entry === undefined;
+  import_react43.useEffect(() => {
+    if (!gone)
+      return;
+    asked.current++;
+    setShowing(null);
+    setActive(false);
+  }, [gone]);
+  const show = import_react43.useCallback((e) => {
+    fetch2(e);
+    setActive(true);
+  }, [fetch2]);
+  const appView = import_react43.useMemo(() => {
+    if (!showing || !entry)
+      return;
+    return {
+      id: MAP_VIEW,
+      label: `Map of ${entry.label}`,
+      icon: /* @__PURE__ */ jsx_runtime41.jsx(Network, {
+        "aria-hidden": true,
+        className: "size-3.5"
+      }),
+      active,
+      onActive: (next) => {
+        if (next)
+          fetch2(entry);
+        setActive(next);
+      },
+      render: () => /* @__PURE__ */ jsx_runtime41.jsx(MapView, {
+        graph: showing.graph,
+        ...showing.error !== undefined ? { error: showing.error } : {},
+        label: entry.label,
+        mode,
+        onMode: setMode,
+        onOpenDoc: (path2) => {
+          send({ op: "open", path: path2 });
+          setActive(false);
+        },
+        onClose: () => setActive(false)
+      })
+    };
+  }, [showing, entry, active, mode, fetch2, send]);
+  const menuActions = import_react43.useCallback(({ kind, entry: entry2 }) => kind === "entry" && entry2 && !singleDoc(entry2) ? [{ id: MAP_VIEW, label: MAP_LABEL, icon: /* @__PURE__ */ jsx_runtime41.jsx(Network, {}), onSelect: () => show(entry2) }] : [], [show]);
+  return { appView, menuActions };
+}
+
+// src/scriptorium/surface/kit/Frame.tsx
+var jsx_runtime42 = __toESM(require_jsx_runtime(), 1);
 var NO_ENTRIES = [];
 var MAKE_ROOM = "A document listed on its own can take new files beside it once it is a set: Turn into a set, in its row's menu.";
 var THEME_KEY = "scriptorium:theme";
 var VIEW_MODE_KEY = "scriptorium:view-mode";
 var LINE_NUMBERS_KEY = "scriptorium:line-numbers";
 var STALE_TITLE = "Past its stale_after date";
-function scriptoriumChips(now2 = Date.now) {
-  return (fields, chips) => isStale(fields, now2()) ? [
+function scriptoriumChips(now3 = Date.now) {
+  return (fields, chips) => isStale(fields, now3()) ? [
     ...chips,
     {
       tone: "attention",
       title: STALE_TITLE,
-      label: /* @__PURE__ */ jsx_runtime40.jsxs(jsx_runtime40.Fragment, {
+      label: /* @__PURE__ */ jsx_runtime42.jsxs(jsx_runtime42.Fragment, {
         children: [
-          /* @__PURE__ */ jsx_runtime40.jsx(Clock, {
+          /* @__PURE__ */ jsx_runtime42.jsx(Clock, {
             "aria-hidden": true,
             className: "size-3"
           }),
@@ -76231,7 +77941,7 @@ function scriptoriumRowMarker(docMeta) {
     const mark2 = statusMark(docMeta[path2]);
     if (!mark2)
       return null;
-    return /* @__PURE__ */ jsx_runtime40.jsx("span", {
+    return /* @__PURE__ */ jsx_runtime42.jsx("span", {
       title: mark2.title,
       "data-tone": mark2.tone,
       className: cn("size-1.5 shrink-0 rounded-full", "data-[tone=draft]:bg-attention data-[tone=stale]:bg-attention/70", "data-[tone=deprecated]:bg-danger data-[tone=unreadable]:bg-ink-faint")
@@ -76248,7 +77958,7 @@ function scriptoriumMenuActions(send, hidden) {
       actions.push({
         id: "scriptorium.make-set",
         label: "Turn into a set",
-        icon: /* @__PURE__ */ jsx_runtime40.jsx(FolderTree, {}),
+        icon: /* @__PURE__ */ jsx_runtime42.jsx(FolderTree, {}),
         onSelect: () => send({ op: "set.make", path: entryPath(entry) })
       });
     const n = hidden[entry.id]?.length ?? 0;
@@ -76256,7 +77966,7 @@ function scriptoriumMenuActions(send, hidden) {
       actions.push({
         id: "scriptorium.unhide",
         label: `Show ${n} hidden ${n === 1 ? "item" : "items"}`,
-        icon: /* @__PURE__ */ jsx_runtime40.jsx(Eye, {}),
+        icon: /* @__PURE__ */ jsx_runtime42.jsx(Eye, {}),
         onSelect: () => send({ op: "scriptorium.unhide", entry: entry.id })
       });
     const beside = (kind === "doc" || kind === "image" || kind === "bundle") && bundlePlace(path2) !== "own";
@@ -76265,12 +77975,12 @@ function scriptoriumMenuActions(send, hidden) {
       actions.push({
         id: "scriptorium.new-doc-beside",
         label: "New document beside it",
-        icon: /* @__PURE__ */ jsx_runtime40.jsx(FilePlus, {}),
+        icon: /* @__PURE__ */ jsx_runtime42.jsx(FilePlus, {}),
         onSelect: () => send({ op: "doc.create", dir })
       }, {
         id: "scriptorium.new-folder-beside",
         label: "New folder beside it",
-        icon: /* @__PURE__ */ jsx_runtime40.jsx(FolderPlus, {}),
+        icon: /* @__PURE__ */ jsx_runtime42.jsx(FolderPlus, {}),
         onSelect: () => send({ op: "folder.create", dir })
       });
     }
@@ -76278,7 +77988,7 @@ function scriptoriumMenuActions(send, hidden) {
       actions.push({
         id: "scriptorium.hide",
         label: "Hide from Scriptorium",
-        icon: /* @__PURE__ */ jsx_runtime40.jsx(EyeOff, {}),
+        icon: /* @__PURE__ */ jsx_runtime42.jsx(EyeOff, {}),
         onSelect: () => send({ op: "scriptorium.hide", path: path2 })
       });
     return actions;
@@ -76286,31 +77996,33 @@ function scriptoriumMenuActions(send, hidden) {
 }
 function Frame({ daemon }) {
   const { state, send } = daemon;
-  const [tab, setTab] = import_react41.useState("chat");
-  const [theme2, setTheme] = import_react41.useState(() => document.documentElement.dataset.theme === "light" ? "light" : "dark");
-  import_react41.useEffect(() => {
+  const [tab, setTab] = import_react44.useState("chat");
+  const [theme2, setTheme] = import_react44.useState(() => document.documentElement.dataset.theme === "light" ? "light" : "dark");
+  import_react44.useEffect(() => {
     document.documentElement.dataset.theme = theme2;
     safeStorage.setItem(THEME_KEY, theme2);
   }, [theme2]);
   const savedTheme = state?.prefs.theme;
-  import_react41.useEffect(() => {
+  import_react44.useEffect(() => {
     if (savedTheme === "dark" || savedTheme === "light")
       setTheme(savedTheme);
   }, [savedTheme]);
-  const chooseTheme = import_react41.useCallback((next) => {
+  const chooseTheme = import_react44.useCallback((next) => {
     setTheme(next);
     send({ op: "prefs.set", key: "theme", value: next });
   }, [send]);
   const toggleTheme = () => chooseTheme(theme2 === "light" ? "dark" : "light");
   const toasts = useToastStore();
   const ws = useFrameWorkspace({ daemon, toasts, theme: theme2, setTheme: chooseTheme });
-  const hints = import_react41.useRef(new Map);
-  import_react41.useEffect(() => daemon.onFrame((f) => {
+  const hints = import_react44.useRef(new Map);
+  import_react44.useEffect(() => daemon.onFrame((f) => {
     if (f.op === "error" && typeof f.hint === "string" && typeof f.message === "string")
       hints.current.set(f.message, f.hint);
   }), [daemon.onFrame]);
   const userHome = state?.userHome || null;
-  const beforeMove = import_react41.useMemo(() => scriptoriumBeforeMove(daemon, { userHome }), [daemon.request, userHome]);
+  const beforeMove = import_react44.useMemo(() => scriptoriumBeforeMove(daemon, { userHome }), [daemon.request, userHome]);
+  const noBlock = noFrontmatterOf(state);
+  const textOffer = import_react44.useMemo(() => scriptoriumTextOffer(daemon, noBlock), [daemon.request, noBlock]);
   const ask = useAskLocation({
     entries: state?.context ?? NO_ENTRIES,
     userHome,
@@ -76319,30 +78031,31 @@ function Frame({ daemon }) {
     hint: MAKE_ROOM
   });
   const done = daemon.done;
-  const created = import_react41.useMemo(() => done && ["doc.create", "folder.create", "bundle.create"].includes(done.of) ? { path: done.path, seq: done.seq } : null, [done]);
-  const moved = import_react41.useMemo(() => done?.of === "move" ? { path: done.path, seq: done.seq } : null, [done]);
+  const created = import_react44.useMemo(() => done && ["doc.create", "folder.create", "bundle.create"].includes(done.of) ? { path: done.path, seq: done.seq } : null, [done]);
+  const moved = import_react44.useMemo(() => done?.of === "move" ? { path: done.path, seq: done.seq } : null, [done]);
   const docMeta = docMetaOf(state);
-  const rowMarker = import_react41.useMemo(() => scriptoriumRowMarker(docMeta), [docMeta]);
+  const rowMarker = import_react44.useMemo(() => scriptoriumRowMarker(docMeta), [docMeta]);
+  const map2 = useMapView(daemon);
   const { workspace, openDoc, heldHere, collapsed } = ws;
   if (!state || !workspace)
-    return /* @__PURE__ */ jsx_runtime40.jsx("div", {
+    return /* @__PURE__ */ jsx_runtime42.jsx("div", {
       className: "flex h-full items-center justify-center text-ink-dim",
       children: daemon.connection === "ended" ? "The session has ended." : "Connecting to Scriptorium…"
     });
   const notice = daemon.lastError ? [daemon.lastError, hints.current.get(daemon.lastError)].filter(Boolean).join(". To go on: ") : null;
   const docName = (slug) => state.docs.find((d) => d.slug === slug)?.name ?? slug;
   const tabs = { chat: "Chat", notes: "Notes", tasks: "Tasks" };
-  return /* @__PURE__ */ jsx_runtime40.jsxs(WorkspaceContext.Provider, {
+  return /* @__PURE__ */ jsx_runtime42.jsxs(WorkspaceContext.Provider, {
     value: workspace,
     children: [
-      /* @__PURE__ */ jsx_runtime40.jsx(OutsideChangeToasts, {
+      /* @__PURE__ */ jsx_runtime42.jsx(OutsideChangeToasts, {
         doc: openDoc,
         announce: toasts.announce,
         dismiss: toasts.dismiss,
         onReload: (doc2) => send({ op: "revert", doc: doc2 }),
         onShowDiff: (doc2) => ws.requestDiff(doc2, "original")
       }),
-      /* @__PURE__ */ jsx_runtime40.jsx(NewVersionToasts, {
+      /* @__PURE__ */ jsx_runtime42.jsx(NewVersionToasts, {
         doc: openDoc,
         connected: daemon.connection === "open",
         announce: toasts.announce,
@@ -76350,43 +78063,43 @@ function Frame({ daemon }) {
         onActivate: (doc2, version3) => send({ op: "activate", doc: doc2, version: version3 }),
         onShowDiff: (doc2, version3) => ws.requestDiff(doc2, version3)
       }),
-      /* @__PURE__ */ jsx_runtime40.jsxs("div", {
+      /* @__PURE__ */ jsx_runtime42.jsxs("div", {
         "data-slot": "interim-frame",
         className: "flex h-full flex-col",
         children: [
-          /* @__PURE__ */ jsx_runtime40.jsxs("header", {
+          /* @__PURE__ */ jsx_runtime42.jsxs("header", {
             className: "flex h-9 shrink-0 items-center gap-3 border-b border-edge px-3 text-xs",
             children: [
-              /* @__PURE__ */ jsx_runtime40.jsx("span", {
+              /* @__PURE__ */ jsx_runtime42.jsx("span", {
                 className: "font-manuscript text-sm text-rubric",
                 children: "Scriptorium"
               }),
-              /* @__PURE__ */ jsx_runtime40.jsx("span", {
+              /* @__PURE__ */ jsx_runtime42.jsx("span", {
                 className: "text-ink-faint",
                 children: state.sessionId
               }),
-              /* @__PURE__ */ jsx_runtime40.jsx("span", {
+              /* @__PURE__ */ jsx_runtime42.jsx("span", {
                 className: "ml-auto text-ink-dim",
                 children: daemon.connection
               }),
-              /* @__PURE__ */ jsx_runtime40.jsx("button", {
+              /* @__PURE__ */ jsx_runtime42.jsx("button", {
                 type: "button",
                 "aria-label": "Switch theme",
                 className: "text-ink-faint hover:text-ink [&_svg]:size-3.5",
                 onClick: toggleTheme,
-                children: theme2 === "light" ? /* @__PURE__ */ jsx_runtime40.jsx(Moon, {}) : /* @__PURE__ */ jsx_runtime40.jsx(Sun, {})
+                children: theme2 === "light" ? /* @__PURE__ */ jsx_runtime42.jsx(Moon, {}) : /* @__PURE__ */ jsx_runtime42.jsx(Sun, {})
               })
             ]
           }),
-          /* @__PURE__ */ jsx_runtime40.jsxs("div", {
+          /* @__PURE__ */ jsx_runtime42.jsxs("div", {
             className: "flex min-h-0 flex-1",
             children: [
-              /* @__PURE__ */ jsx_runtime40.jsx("aside", {
+              /* @__PURE__ */ jsx_runtime42.jsx("aside", {
                 "data-pane": "context",
                 tabIndex: -1,
                 hidden: collapsed.context,
                 className: "flex w-80 shrink-0 flex-col",
-                children: /* @__PURE__ */ jsx_runtime40.jsx(ContextSidebar, {
+                children: /* @__PURE__ */ jsx_runtime42.jsx(ContextSidebar, {
                   entries: state.context,
                   activeDoc: openDoc?.entryId && openDoc.rel ? { entryId: openDoc.entryId, rel: openDoc.rel } : null,
                   userHome,
@@ -76398,7 +78111,10 @@ function Frame({ daemon }) {
                   onPick: (want) => send({ op: "pick", want }),
                   listDir: daemon.listDir,
                   rowMarker,
-                  appActionsFor: (t2) => scriptoriumMenuActions(send, hiddenOf(state))({ ...t2, doc: docAt(state.docs, t2.path) }),
+                  appActionsFor: (t2) => [
+                    ...scriptoriumMenuActions(send, hiddenOf(state))({ ...t2, doc: docAt(state.docs, t2.path) }),
+                    ...map2.menuActions(t2)
+                  ],
                   created,
                   moved,
                   notice,
@@ -76409,35 +78125,37 @@ function Frame({ daemon }) {
                   uncheckedMoveNote: scriptoriumUncheckedMoveNote
                 })
               }),
-              /* @__PURE__ */ jsx_runtime40.jsxs("main", {
+              /* @__PURE__ */ jsx_runtime42.jsxs("main", {
                 "data-pane": "centre",
                 tabIndex: -1,
                 className: "relative flex min-w-0 flex-1 flex-col border-l border-edge",
                 children: [
-                  /* @__PURE__ */ jsx_runtime40.jsx(DocumentPane, {
+                  /* @__PURE__ */ jsx_runtime42.jsx(DocumentPane, {
                     showDiff: ws.showDiff,
                     viewModeKey: VIEW_MODE_KEY,
                     lineNumbers: true,
                     lineNumbersKey: LINE_NUMBERS_KEY,
                     splitView: true,
                     frontmatterTrust: true,
-                    frontmatterChips: CHIPS
+                    frontmatterChips: CHIPS,
+                    appView: map2.appView,
+                    textOffer
                   }),
-                  /* @__PURE__ */ jsx_runtime40.jsx(Toasts, {
+                  /* @__PURE__ */ jsx_runtime42.jsx(Toasts, {
                     store: toasts
                   })
                 ]
               }),
-              /* @__PURE__ */ jsx_runtime40.jsxs("aside", {
+              /* @__PURE__ */ jsx_runtime42.jsxs("aside", {
                 "data-pane": "chat",
                 tabIndex: -1,
                 hidden: collapsed.chat,
                 className: "flex w-80 shrink-0 flex-col border-l border-edge",
                 children: [
-                  /* @__PURE__ */ jsx_runtime40.jsx("div", {
+                  /* @__PURE__ */ jsx_runtime42.jsx("div", {
                     role: "tablist",
                     className: "flex h-9 shrink-0 border-b border-edge text-xs",
-                    children: Object.keys(tabs).map((id) => /* @__PURE__ */ jsx_runtime40.jsx("button", {
+                    children: Object.keys(tabs).map((id) => /* @__PURE__ */ jsx_runtime42.jsx("button", {
                       type: "button",
                       role: "tab",
                       "aria-selected": tab === id,
@@ -76446,7 +78164,7 @@ function Frame({ daemon }) {
                       children: tabs[id]
                     }, id))
                   }),
-                  tab === "chat" && /* @__PURE__ */ jsx_runtime40.jsx(ChatSidebar, {
+                  tab === "chat" && /* @__PURE__ */ jsx_runtime42.jsx(ChatSidebar, {
                     messages: state.chat,
                     waiting: state.waiting,
                     agentListening: state.agentListening !== false,
@@ -76464,7 +78182,7 @@ function Frame({ daemon }) {
                     onSend: (text4, withSelection) => send({ op: "say", text: text4, withSelection, via: "chat" }),
                     onDropSelection: ws.dropSelection
                   }),
-                  tab === "notes" && /* @__PURE__ */ jsx_runtime40.jsx(NotesPanel, {
+                  tab === "notes" && /* @__PURE__ */ jsx_runtime42.jsx(NotesPanel, {
                     notes: openDoc?.notes ?? [],
                     waiting: badgesOn(state.notesWaiting ?? [], openDoc?.slug ?? null),
                     agentListening: state.agentListening !== false,
@@ -76479,7 +78197,7 @@ function Frame({ daemon }) {
                     onResolve: (id, resolved) => openDoc && send({ op: "note.resolve", doc: openDoc.slug, id, resolved }),
                     onRemove: (id) => openDoc && send({ op: "note.remove", doc: openDoc.slug, id })
                   }),
-                  tab === "tasks" && /* @__PURE__ */ jsx_runtime40.jsx(TasksPanel, {
+                  tab === "tasks" && /* @__PURE__ */ jsx_runtime42.jsx(TasksPanel, {
                     tasks: state.tasks,
                     onCancel: (id) => send({ op: "task.cancel", id }),
                     onRemove: (id) => send({ op: "task.remove", id }),
@@ -76498,12 +78216,12 @@ function Frame({ daemon }) {
 }
 
 // src/scriptorium/surface/kit/main.tsx
-var jsx_runtime41 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime43 = __toESM(require_jsx_runtime(), 1);
 function FramePage() {
-  return /* @__PURE__ */ jsx_runtime41.jsx(Frame, {
+  return /* @__PURE__ */ jsx_runtime43.jsx(Frame, {
     daemon: useDaemon()
   });
 }
 var el = document.getElementById("root");
 if (el)
-  import_client.createRoot(el).render(/* @__PURE__ */ jsx_runtime41.jsx(FramePage, {}));
+  import_client.createRoot(el).render(/* @__PURE__ */ jsx_runtime43.jsx(FramePage, {}));
