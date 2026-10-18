@@ -1,14 +1,32 @@
 // The document pane's small decisions (pane.ts), as pure rules.
 import { describe, expect, test } from "bun:test";
 import {
+  DEFAULT_LINE_NUMBERS_KEY,
   hasEditor,
   pointedRange,
+  readLineNumbers,
   readViewMode,
   SPLIT_MIN_PX,
   saveState,
   shownViewMode,
   splitFits,
+  storedLineNumbers,
 } from "./pane";
+
+describe("the line-number choice", () => {
+  test("on only when stored on; anything else, nothing stored included, is off", () => {
+    expect(DEFAULT_LINE_NUMBERS_KEY).toBe("spellbook:line-numbers");
+    expect(readLineNumbers("on")).toBe(true);
+    expect(readLineNumbers("off")).toBe(false);
+    expect(readLineNumbers(null)).toBe(false);
+    expect(readLineNumbers("true")).toBe(false);
+  });
+
+  test("stored as it is read back", () => {
+    expect(readLineNumbers(storedLineNumbers(true))).toBe(true);
+    expect(readLineNumbers(storedLineNumbers(false))).toBe(false);
+  });
+});
 
 describe("the save marker", () => {
   test("a file gone from disk says so before anything else", () => {

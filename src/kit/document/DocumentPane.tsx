@@ -28,6 +28,7 @@ import {
   FileTextIcon,
   GitCompareIcon,
   GlassesIcon,
+  ListOrderedIcon,
   SaveIcon,
   UndoDotIcon,
 } from "lucide-react";
@@ -126,14 +127,18 @@ import { MarkdownView } from "./MarkdownView.tsx";
 import type { InlineToken } from "./markdownMode.ts";
 import { NewVersionDialog, type VersionIntent } from "./NewVersionDialog.tsx";
 import {
+  DEFAULT_LINE_NUMBERS_KEY,
   DEFAULT_VIEW_MODE_KEY,
+  hasEditor,
   nextVersionNumber,
   pointedRange,
+  readLineNumbers,
   readViewMode,
   SPLIT_MIN_PX,
   saveState,
   shownViewMode,
   splitFits,
+  storedLineNumbers,
   textToShow,
   type ViewMode,
 } from "./pane.ts";
@@ -176,6 +181,9 @@ const MODE_BUTTONS: { mode: ViewMode; label: string; icon: typeof FileTextIcon }
   { mode: "split", label: "Raw and rendered side by side", icon: Columns2Icon },
   { mode: "compare", label: "Compare with another version", icon: GitCompareIcon },
 ];
+
+/** The line-number toggle's name. */
+export const LINE_NUMBERS_LABEL = "Line numbers";
 
 /** The reader toggle's tooltip, for entering and for leaving. */
 export const READER_LABEL = {
@@ -339,6 +347,8 @@ export function DocumentPane({
   onMode,
   viewModeKey = DEFAULT_VIEW_MODE_KEY,
   splitView = false,
+  lineNumbers = false,
+  lineNumbersKey = DEFAULT_LINE_NUMBERS_KEY,
   rawExtensions,
   rawTokens,
   inlineWidgets,
@@ -362,6 +372,15 @@ export function DocumentPane({
    * side. Off by default. Off, a stored or controlled `split` is drawn as raw.
    */
   splitView?: boolean;
+  /**
+   * Offer a line-number gutter in the raw editor: a toggle in the header, shown
+   * in raw and split (split's raw half only; the rendered half has no source
+   * lines). Off by default, as split is. On, the gutter starts off until the
+   * human turns it on, and their choice is remembered under `lineNumbersKey`.
+   */
+  lineNumbers?: boolean;
+  /** Where the line-number choice is remembered. */
+  lineNumbersKey?: string;
 } & DocumentPaneSlots) {
   const w = useWorkspace();
   const { daemon, openDoc: doc } = w;
@@ -371,6 +390,15 @@ export function DocumentPane({
     readViewMode(safeStorage.getItem(viewModeKey), { split: splitView }),
   );
   const mode = modeProp ?? ownMode;
+  // The line-number gutter: a viewer preference, remembered as the view mode is.
+  const [numbered, setNumbered] = useState(() =>
+    readLineNumbers(safeStorage.getItem(lineNumbersKey)),
+  );
+  const toggleNumbered = () => {
+    const next = !numbered;
+    safeStorage.setItem(lineNumbersKey, storedLineNumbers(next));
+    setNumbered(next);
+  };
   const rootRef = useRef<HTMLDivElement>(null);
   const width = usePaneWidth(rootRef);
   const splitRoom = splitFits(width);
@@ -1366,6 +1394,32 @@ export function DocumentPane({
     </button>
   );
   const appActive = !!appView?.active;
+  // Only where the raw editor is drawn and numbers would be its choice: not in
+  // the rendered view (no source lines), not for JSON (always numbered), not
+  // over an app's own view.
+  const numbersToggle =
+    lineNumbers && doc && !isJson && !formatView && !appActive && hasEditor(showing) ? (
+      <button
+        type="button"
+        // A press with the pointer leaves focus where it was, so the caret stays
+        // in the editor and the next key types there. The keyboard still reaches
+        // the button by Tab and works it with Enter or Space.
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={toggleNumbered}
+        aria-pressed={numbered}
+        aria-label={LINE_NUMBERS_LABEL}
+        title={numbered ? `${LINE_NUMBERS_LABEL}: on` : `${LINE_NUMBERS_LABEL}: off`}
+        data-slot="line-numbers-toggle"
+        className={cn(
+          "flex size-6 shrink-0 items-center justify-center rounded-sm outline-none",
+          "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60",
+          numbered ? "bg-surface-raised text-ink" : "text-ink-faint",
+          fade,
+        )}
+      >
+        <ListOrderedIcon aria-hidden className="size-3.5" />
+      </button>
+    ) : null;
   const appViewButton = appView ? (
     <button
       type="button"
@@ -1561,6 +1615,7 @@ export function DocumentPane({
                 })}
                 {appViewButton}
               </div>
+              {numbersToggle}
               {!isJson && readerToggle}
             </div>
           </>
@@ -1810,6 +1865,8 @@ export function DocumentPane({
                   extensions={rawExtensions}
                   tokens={rawTokens}
                   format={isJson ? "json" : "markdown"}
+                  lineNumbers={lineNumbers && numbered}
+                  quiet={reader}
                 />
               </div>
             )}

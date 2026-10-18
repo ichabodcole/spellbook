@@ -53,6 +53,23 @@ export function shownViewMode(mode: ViewMode, opts: { split: boolean; width: num
   return opts.split && splitFits(opts.width) ? "split" : "raw";
 }
 
+/** Where the pane keeps the line-number choice when the app names no key of its own. */
+export const DEFAULT_LINE_NUMBERS_KEY = "spellbook:line-numbers";
+
+/**
+ * Whether the raw editor numbers its lines: only when the human turned it on. A
+ * viewer preference, stored as "on" or "off" beside the view mode, so it
+ * survives a reload; anything else (nothing stored, a value it cannot read) is off.
+ */
+export function readLineNumbers(stored: string | null): boolean {
+  return stored === "on";
+}
+
+/** The stored form of the line-number choice. */
+export function storedLineNumbers(on: boolean): "on" | "off" {
+  return on ? "on" : "off";
+}
+
 /** Whether a mode shows the raw editor, so there is a caret to insert at. */
 export function hasEditor(mode: ViewMode): boolean {
   return mode === "raw" || mode === "split";
