@@ -199,12 +199,17 @@ There was no console warning or error. What happened:
 
 Screenshots are in the implementer's scratchpad (`centre-live/01…09`).
 
-**The gate** was green at `5f574bde` (see the report for the count). **The
-shipped Scriptorium:** before and after, its `--help`, `--version`,
-`open --no-open`, `state` and `close` on a scratch home match. The only
-differences are the entry id (a hash of the scratch path) and the epoch. Its
-built `index-x7h9dpmj.css`, `index-w940m06p.js`, `cli.js` and `server.js` are
-byte-identical. The branch changes only `dist/kit`.
+**The gate** at `5f574bde` exited 1: 6,485 pass and 2 fail, in files this item
+does not touch. One is the shipped `backend/cli-contract.test.ts` ("a daemon
+refusal with HTTP 500 …"), which also failed in the run before. The other is
+`kit/workspace/diskGuard.test.ts` ("hard links: …"). Run alone, all three of
+those files passed every time: 62/62 three times and 154/154 twice. So they look
+like failures under load. Whether they also fail on the cycle base under the
+full gate was not checked. **The shipped Scriptorium:** before and after, its
+`--help`, `--version`, `open --no-open`, `state` and `close` on a scratch home
+match. The only differences are the entry id (a hash of the scratch path) and
+the epoch. Its built `index-x7h9dpmj.css`, `index-w940m06p.js`, `cli.js` and
+`server.js` are byte-identical. The branch changes only `dist/kit`.
 
 ## The three older items, checked against the kit
 
