@@ -104,6 +104,19 @@ Two leftovers from the port-shape plan's row 3. Neither is built in Story Studio
   - The chip reads a stored `about` as data. Anything but a plain object names
     nothing. `docs` and `refs` of the wrong shape are left off rather than
     thrown on. A whitespace-only label is left off, and a test now pins that.
+- **Second verification round:**
+  - `cleanAppAbout` never throws. Before, a hook result that threw when read (a
+    top-level getter, or a Proxy whose `ownKeys` or `getPrototypeOf` trap
+    throws) escaped the `say` handler and lost the human's whole message. It now
+    costs all of that result's parts, and the tail's `warning` says they could
+    not be read. The message is still stored.
+  - A part's weight now counts its JSON-encoded name and the colon as well as
+    its value. Without that, a 1 MB name, or 5,000 parts with long names,
+    slipped past both caps.
+  - A third cap is added: `APP_ABOUT_PARTS_MAX`, 32 parts per message.
+  - Tests now pin that a `toJSON` value is kept as its JSON (what is stored is
+    what a restore gives) and that a ref label that is not a string is not
+    shown.
 
 ## Port-back notes
 
@@ -132,8 +145,10 @@ Changes to Story Studio's kit code, for their agent to weigh. The code is in
     `new Set([...KIT_ABOUT_KEYS, ...RESERVED_PART_NAMES])` as `claim`'s
     `reserved` argument. That turns the silent drop into a startup error that
     names the plugin.
-- **`cleanAppAbout`, `APP_ABOUT_PART_MAX`, `APP_ABOUT_TOTAL_MAX`,
-  `RESERVED_PART_NAMES` and `isPlainObject`** are new in `messageParts.ts`.
+- **`cleanAppAbout` (total: it never throws), `APP_ABOUT_PART_MAX`,
+  `APP_ABOUT_TOTAL_MAX`, `APP_ABOUT_PARTS_MAX` (a part weighs its JSON name, the
+  colon and its value), `RESERVED_PART_NAMES` and `isPlainObject`** are new in
+  `messageParts.ts`.
   - `withAppAbout` now returns `{ about, advice }`. The advice joins the tail's
     `warning`.
   - Atlas's canvas hook returns every selected card, so a large selection now
