@@ -703,6 +703,39 @@ describe("writeText", () => {
     expect(c.getSnapshot().texts.get(textKey(slug, doc.active))).toBe("# Solo, typed\n");
   });
 
+  test("a read between two sent edits is passed over: it holds the first, not the second", async () => {
+    daemon = await boot();
+    const c = await connect(daemon);
+    const { slug, path } = await openSolo(c);
+    const doc = docOf(c, slug) as NonNullable<ReturnType<typeof docOf>>;
+    c.getSnapshot().writeText(doc, doc.active, "# one\n");
+    c.getSnapshot().flushText(slug);
+    c.getSnapshot().send({ op: "read", doc: slug, version: doc.active });
+    c.getSnapshot().writeText(doc, doc.active, "# one two\n");
+    c.getSnapshot().flushText(slug);
+    await c.getSnapshot().listDir(docs);
+    expect(readFileSync(path, "utf8")).toBe("# one two\n");
+    expect(c.getSnapshot().texts.get(textKey(slug, doc.active))).toBe("# one two\n");
+  });
+
+  test("after a reconnect, the pane's read is answered and taken: request ids never start again", async () => {
+    const first = await boot();
+    const c = await connect(first);
+    const { slug } = await openSolo(c);
+    const doc = docOf(c, slug) as NonNullable<ReturnType<typeof docOf>>;
+    c.getSnapshot().writeText(doc, doc.active, "# typed\n");
+    c.getSnapshot().flushText(slug);
+    await c.getSnapshot().listDir(docs);
+    await first.stop();
+    await waitUntil("closed", () => c.getSnapshot().connection === "closed");
+    await boot({ port: first.port, restore: first.sessionId });
+    await waitUntil("open", () => c.getSnapshot().connection === "open", 5000);
+    // The reconnect dropped what was loaded; the pane asks again, as it does.
+    c.getSnapshot().send({ op: "read", doc: slug, version: doc.active });
+    await waitUntil("the text back", () => c.getSnapshot().texts.get(textKey(slug, doc.active)));
+    expect(c.getSnapshot().texts.get(textKey(slug, doc.active))).toBe("# typed\n");
+  });
+
   test("only a reply to a request sent before the edit, for that version, is passed over", async () => {
     class FakeSocket {
       static last: FakeSocket;

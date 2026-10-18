@@ -322,6 +322,8 @@ export function createDaemonClient(options: DaemonOptions = {}): DaemonClient {
   let reconnecting = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
   // Unique on a socket; one counter for the client's life is unique on every socket.
+  // Never reset it (not on a reconnect either): `sentEdit` is kept across sockets
+  // and compares these ids, so a counter starting again would freeze a document.
   let nextId = 1;
   const pending = new Map<
     RequestId,
