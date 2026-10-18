@@ -19312,6 +19312,39 @@ function oneLine(text4) {
   return text4.replace(/\s+/gu, " ").trim();
 }
 
+// src/kit/workspace/messageParts.ts
+var RETIRED_ABOUT_KEYS = { entryIds: true };
+var KIT_ABOUT_KEYS = new Set(Object.keys({
+  doc: true,
+  version: true,
+  path: true,
+  fromLine: true,
+  toLine: true,
+  text: true,
+  docs: true,
+  noteId: true,
+  refs: true,
+  ...RETIRED_ABOUT_KEYS
+}));
+var RESERVED_PART_NAMES = new Set([
+  ...Object.getOwnPropertyNames(Object.prototype),
+  "prototype"
+]);
+var APP_ABOUT_PART_MAX = 4 * 1024;
+var APP_ABOUT_TOTAL_MAX = 16 * 1024;
+function isPlainObject(v) {
+  if (v === null || typeof v !== "object")
+    return false;
+  const proto = Object.getPrototypeOf(v);
+  return proto === Object.prototype || proto === null;
+}
+var isAppPartName = (k) => !KIT_ABOUT_KEYS.has(k) && !RESERVED_PART_NAMES.has(k);
+function appAboutParts(about) {
+  if (!isPlainObject(about))
+    return [];
+  return Object.entries(about).filter(([k, v]) => v !== undefined && isAppPartName(k));
+}
+
 // src/kit/chat/renderedLink.ts
 var OPENS_OUTWARD = /^(https?:|mailto:)/i;
 function fragmentId(raw) {
@@ -19426,7 +19459,22 @@ function pointedLabel(names) {
     return names.join(", ");
   return `${names.length} documents`;
 }
-function aboutLabel(about, docName, pathName = pathLabel) {
+function appPartLabels(about, label) {
+  if (!label || !isPlainObject(about))
+    return [];
+  const out = [];
+  for (const [part, value] of appAboutParts(about)) {
+    try {
+      const said = label(part, value);
+      if (typeof said === "string" && said.trim() !== "")
+        out.push(said);
+    } catch {}
+  }
+  return out;
+}
+function aboutLabel(about, docName, pathName = pathLabel, partLabel) {
+  if (!isPlainObject(about))
+    return null;
   const parts = [];
   if (about.doc)
     parts.push(docName(about.doc));
@@ -19437,16 +19485,17 @@ function aboutLabel(about, docName, pathName = pathLabel) {
     parts.push(lines);
   if (about.noteId)
     parts.push("a note");
-  if (about.docs?.length)
-    parts.push(pointedLabel(about.docs.map((p) => pathName(p))));
-  if (about.refs?.length) {
-    const names = about.refs.map((r2) => r2.label ?? pathName(r2.path));
+  const docs = Array.isArray(about.docs) ? about.docs.filter((p) => typeof p === "string") : [];
+  if (docs.length)
+    parts.push(pointedLabel(docs.map((p) => pathName(p))));
+  const refs = Array.isArray(about.refs) ? about.refs.filter((r2) => isPlainObject(r2) && typeof r2.path === "string") : [];
+  if (refs.length) {
+    const names = refs.map((r2) => typeof r2.label === "string" ? r2.label : pathName(r2.path));
     parts.push(`with ${names.length <= 3 ? names.join(", ") : `${names.length} references`}`);
   }
-  if (!about.doc && about.path)
+  if (!about.doc && typeof about.path === "string" && about.path)
     parts.unshift(pathName(about.path));
-  if (about.entryIds?.length)
-    parts.push(`${about.entryIds.length} context ${about.entryIds.length === 1 ? "item" : "items"}`);
+  parts.push(...appPartLabels(about, partLabel));
   return parts.length ? parts.join(" · ") : null;
 }
 function ChatMessageView({
@@ -19454,11 +19503,12 @@ function ChatMessageView({
   badge,
   docName = (slug) => slug,
   pathName = pathLabel,
+  aboutPart,
   onFollowLink,
   actions
 }) {
   const plain = m.from === "system" || m.type === "info";
-  const chip = m.about ? aboutLabel(m.about, docName, pathName) : null;
+  const chip = m.about ? aboutLabel(m.about, docName, pathName, aboutPart) : null;
   return /* @__PURE__ */ jsx_runtime3.jsxs("div", {
     "data-from": m.from,
     "data-type": m.type,
@@ -19511,7 +19561,7 @@ function ChatMessageView({
             className: "text-ink-faint",
             children: chip
           }),
-          m.about.text && /* @__PURE__ */ jsx_runtime3.jsxs(jsx_runtime3.Fragment, {
+          typeof m.about.text === "string" && m.about.text && /* @__PURE__ */ jsx_runtime3.jsxs(jsx_runtime3.Fragment, {
             children: [
               /* @__PURE__ */ jsx_runtime3.jsx("br", {}),
               oneLine(m.about.text)
@@ -19763,6 +19813,7 @@ function ChatSidebar(props) {
     agentListening = true,
     docName,
     pathName,
+    aboutPart,
     onFollowLink,
     messageActions
   } = props;
@@ -19795,6 +19846,7 @@ function ChatSidebar(props) {
           badge: waiting?.messageId === m.id ? badgeFor(waiting, agentListening) : null,
           docName,
           pathName,
+          aboutPart,
           onFollowLink,
           actions: messageActions?.(m)
         }, m.id))
