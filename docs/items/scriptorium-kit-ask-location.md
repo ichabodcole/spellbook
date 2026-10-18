@@ -92,6 +92,19 @@ refusal, a dropped document and image copied into the set chosen, and the three
 creates with a selection, none of which asked. The shipped Scriptorium's parity
 holds, and the full gate is green.
 
+After a no-stake verification, three small fixes, each its own commit with a
+test that goes red under its mutation:
+
+- **A folder made at a path with `.`, `..` or `//`** was made but never
+  highlighted: the dialog looked for it under the path as typed. It now resolves
+  the path as the context names places (`placePath`), and also looks for the
+  `path` the daemon's answer gives.
+- **The move dialog** promised that the chat names the links left pointing at
+  the old place; the chat only counts them. It now says so, and that the list in
+  the dialog is them.
+- **The Notes tab's empty list**, with `addUnavailable`, no longer asks the
+  human to select text the surface cannot show.
+
 ## Port-back notes
 
 - `ContextSidebar`: the optional `askLocation` prop; with it and no `workspace`,
@@ -105,3 +118,9 @@ holds, and the full gate is green.
 - `model.ts`: `moveTargets` takes `item: string | null`. Null means nothing is
   moving, so no place is left out.
 - `index.ts` exports the new module.
+- `AskLocation.tsx`: `placePath` resolves a typed path (`~/`, `.`, `..`, `//`)
+  before the dialog looks for the folder it made, and the `path` in
+  `addFolder`'s answer is looked for too.
+- `chat/NotesPanel.tsx`: with `addUnavailable`, the empty list says "No notes on
+  this document." instead of asking for a selection. Without the prop, as
+  before.
