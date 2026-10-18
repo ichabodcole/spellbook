@@ -115,6 +115,18 @@ export function daemonCwd(): string {
   return existsSync(join(DIST_DIR, "index.html")) ? SKILL_ROOT : SURFACE_CWD;
 }
 
+/**
+ * The kit path's daemon cwd (`SCRIPTORIUM_KIT=1`): Contract 5's rule on the
+ * interim frame's built page (`dist/kit/`). A dev frame is bundled from
+ * `src/scriptorium/surface/kit/` by Bun's dev server, which loads the Tailwind
+ * plugin only from the bunfig in its cwd.
+ */
+export function kitDaemonCwd(): string {
+  if (process.env.SPELLBOOK_SURFACE_MODE === "release") return SKILL_ROOT;
+  if (process.env.SPELLBOOK_SURFACE_MODE === "dev") return SURFACE_CWD;
+  return existsSync(join(DIST_DIR, "kit", "index.html")) ? SKILL_ROOT : SURFACE_CWD;
+}
+
 /** `$SCRIPTORIUM_HOME`, default `~/.scriptorium` — the same rule as the daemon's. */
 function scriptoriumHome(): string {
   return resolve(process.env.SCRIPTORIUM_HOME ?? join(homedir(), ".scriptorium"));
@@ -1526,6 +1538,7 @@ export async function run(): Promise<number> {
   if (kitPathOn())
     return await runKitCli(process.argv.slice(2), {
       serverScript: SERVER_SCRIPT,
+      daemonCwd: kitDaemonCwd,
       version: versionInfo,
     });
   return await main(process.argv.slice(2));

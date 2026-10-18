@@ -35,6 +35,8 @@ import { scriptoriumWikiCommands, WIKI_OPTIONS } from "./wikiCommands";
 export type KitCliDeps = {
   /** The daemon launcher, absolute: `<skill>/scripts/server.ts`. */
   serverScript: string;
+  /** Where the daemon runs (Contract 5): `src/scriptorium/` in dev mode, for its bunfig. */
+  daemonCwd: () => string;
   /** The shipped `version` row's payload, so both paths answer the same `--version`. */
   version: () => Record<string, unknown>;
 };
@@ -47,6 +49,7 @@ export function scriptoriumKitCli(deps: KitCliDeps): WorkspaceCli {
     daemon: {
       command: "bun",
       args: ["run", deps.serverScript],
+      cwd: deps.daemonCwd(),
       // Explicit, not inherited by accident: the daemon must take the kit path too.
       env: { ...process.env, [KIT_FLAG]: "1" },
     },
