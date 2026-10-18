@@ -5,7 +5,7 @@ description:
   "One change to the kit's protocol and chat, written to port both ways: a via
   channel on every message and an optional refs list beside the one subject."
 status: stable
-lifecycle: triage
+lifecycle: review
 id: 01a136e5-9834-7106-b8d1-f3d40eb4ea4c
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
@@ -115,7 +115,7 @@ stack. Spellbook reviews Story Studio's diff against the spec.
       2026-10-13; app parts stay app parts, folded in above).
 - [x] Cole has approved the shape (2026-10-13, through Story Studio's agent),
       adding the tree multi-select and the one-item subject.
-- [ ] One change to the kit's `protocol.ts`, daemon and chat, with tests for:
+- [x] One change to the kit's `protocol.ts`, daemon and chat, with tests for:
   - `via` stored, defaulted for an old message, and carried on the tail;
   - an unknown `via` or `role` stored, with the advisory;
   - `refs` on `about` through `say`, and on the tail;
@@ -125,8 +125,18 @@ stack. Spellbook reviews Story Studio's diff against the spec.
   - explicit refs surviving a subject change and clearing on send;
   - `KIT_ABOUT_KEYS` refusing an app part named `refs`;
   - the chip's second row.
-- [ ] The same change lands in Story Studio's kit and in Spellbook's ported kit,
+- [x] The same change lands in Story Studio's kit and in Spellbook's ported kit,
       so neither diverges.
+
+**Landed in both kits (2026-10-17).** Story Studio landed it as `bbc54fd`.
+Spellbook ported the workspace half in the wiki-layer cycle
+(`kit-port-via-refs`). It ported the chat half (the composer's `via`, ref chips,
+"N more not sent") with [kit-port-chat](kit-port-chat.md), and the tree
+multi-select and "Add as reference" with
+[kit-port-context](kit-port-context.md), in the panes cycle. The tests above
+came across with each half (`messageViaRefs.test.ts`, the chat tests,
+`ContextSidebar.refs.test.tsx` and `model.test.ts`). `entryIds` was retired in
+the same cycle ([kit-chat-about-chip](kit-chat-about-chip.md)).
 
 ## Related Documents
 

@@ -9,7 +9,7 @@ description:
   go in through menuActions and the confirm slot. The frame is thrown away at
   the shell cycle.
 status: stable
-lifecycle: triage
+lifecycle: review
 id: 01a14bca-1792-702e-9950-a08158191b3f
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-17 }

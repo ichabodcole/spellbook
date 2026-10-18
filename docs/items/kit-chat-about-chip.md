@@ -8,7 +8,7 @@ description:
   version and selection), and the agent-only entryIds field either gets a
   surface gesture that sends it or is removed from the wire.
 status: stable
-lifecycle: triage
+lifecycle: review
 id: 01a14bca-16a0-772c-a8d2-b31df9ffef83
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-17 }

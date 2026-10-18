@@ -6,7 +6,7 @@ description:
   composer, notes with the agent, via/refs in the composer) into src/kit/chat,
   with lib/oneLine.ts, on Spellbook's wire names.
 status: stable
-lifecycle: triage
+lifecycle: review
 id: 01a14bca-13a0-72e6-91f1-2e1653184ea9
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-17 }
