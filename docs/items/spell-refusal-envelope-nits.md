@@ -6,7 +6,7 @@ description:
   that does not run, warm astrolabe refusals without the choices cold ones
   carry, an ok:true nested in bounty's conflict envelope, retry comments that
   claim a board never existed, a repeated restoreDropped.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a0e711-f00a-77cf-b43b-5b2e10d34c46
 kind: bug

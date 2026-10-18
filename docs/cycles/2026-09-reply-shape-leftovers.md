@@ -5,7 +5,7 @@ description:
   Finish moving bounty, grapevine and astrolabe replies onto the outcome
   contract, and fix the replies that say the wrong thing.
 tags: [cli, conformance, spell-hardening]
-status: draft
+status: stable
 lifecycle: planned
 started: 2026-09-28
 appetite:
