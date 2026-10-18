@@ -37,10 +37,11 @@ import {
   type ReactNode,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
-import { bundleTypeOf, bundleTypes } from "../lib/bundles.ts";
+import { bundleOf, bundleTypeOf, bundleTypes, isBundleMain } from "../lib/bundles.ts";
 import { cn } from "../lib/cn.ts";
 import { Button } from "../ui/button.tsx";
 import { useConfirm } from "../ui/ConfirmDialog.tsx";
@@ -152,6 +153,14 @@ export type ContextSidebarProps = {
   listDir: (path: string) => Promise<Listing>;
   /** The per-document badge slot: what an app shows at a row's trailing edge, by absolute path. */
   badgeFor?: (path: string) => ReactNode;
+  /**
+   * A mark at the trailing edge of any tree row, open or not: a document, an
+   * image or a bundle, by the row's own absolute path (a bundle's folder, not
+   * its main file). After the row's badge. Story Studio's `WorkspaceShell` prop
+   * of this name and shape, held here so an app that composes the sidebar
+   * without a shell can mark rows too.
+   */
+  rowMarker?: (path: string) => ReactNode;
   /** The folder badge slot: what an app shows on a set's row and on each folder inside it, by absolute path. */
   folderBadgeFor?: (path: string) => ReactNode;
   /** The app's own menu actions for a target. */
@@ -218,6 +227,31 @@ const NO_ACTIONS: MenuAction[] = [];
 const noActions = () => NO_ACTIONS;
 const noBadge = () => null;
 
+/**
+ * A row's badge with the app's row mark after it. The badge is asked by the
+ * row's document path (a bundle's main file); the mark by the row's own path,
+ * so a bundle's by its folder. Story Studio's `WorkspaceShell` does this inline
+ * in the `badgeFor` it hands its sidebar.
+ */
+export function withRowMarker(
+  badgeFor: (path: string) => ReactNode,
+  rowMarker: (path: string) => ReactNode,
+): (path: string) => ReactNode {
+  return (path) => {
+    const badge = badgeFor(path);
+    const bundle = isBundleMain(path) ? bundleOf(path) : null;
+    const mark = rowMarker(bundle ? bundle.root : path);
+    if (!mark) return badge;
+    if (!badge) return mark;
+    return (
+      <span className="flex items-center gap-1">
+        {badge}
+        {mark}
+      </span>
+    );
+  };
+}
+
 /** macOS has no native key for a context menu, so Shift+F10 is synthesised. */
 export function openMenuOnShiftF10(e: KeyboardEvent<HTMLElement>) {
   if (e.key !== "F10" || !e.shiftKey) return;
@@ -247,7 +281,8 @@ export function ContextSidebar({
   onSetWorkspace,
   askLocation,
   listDir,
-  badgeFor = noBadge,
+  badgeFor: appBadgeFor = noBadge,
+  rowMarker,
   folderBadgeFor = noBadge,
   appActionsFor = noActions,
   created,
@@ -266,6 +301,10 @@ export function ContextSidebar({
   beforeMoveTimeoutMs,
   uncheckedMoveNote,
 }: ContextSidebarProps) {
+  const badgeFor = useMemo(
+    () => (rowMarker ? withRowMarker(appBadgeFor, rowMarker) : appBadgeFor),
+    [appBadgeFor, rowMarker],
+  );
   const [drilled, setDrilled] = useState<string | null>(null);
   const drilledEntry = drilled ? entries.find((e) => e.id === drilled) : undefined;
   const [renamePath, setRenamePath] = useState<string | null>(null);
