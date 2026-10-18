@@ -494,6 +494,26 @@ describe("NotesPanel", () => {
     expect(document.body.textContent).toContain(note("n1").body);
     await m.unmount();
   });
+
+  test("with nowhere to select, the empty list asks for no selection", async () => {
+    const m = await mount(
+      <NotesPanel
+        notes={[]}
+        focusedId={null}
+        selection={null}
+        addUnavailable="No document view here."
+        onAdd={() => {}}
+        onGoTo={() => {}}
+        onEdit={() => {}}
+        onResolve={() => {}}
+        onRemove={() => {}}
+      />,
+    );
+    expect(document.body.textContent).not.toContain("Select some text");
+    expect(document.body.textContent).toContain("No notes on this document.");
+    expect(document.body.textContent).toContain("No document view here.");
+    await m.unmount();
+  });
 });
 
 describe("NoteAtSelection", () => {

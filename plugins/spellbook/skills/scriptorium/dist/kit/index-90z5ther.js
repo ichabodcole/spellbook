@@ -20108,7 +20108,7 @@ function NotesPanel({
           }),
           shown.length === 0 ? /* @__PURE__ */ jsx_runtime6.jsx("p", {
             className: "px-1 py-6 text-center text-xs text-ink-faint",
-            children: "Select some text in the document and write a note about it."
+            children: addUnavailable ? "No notes on this document." : "Select some text in the document and write a note about it."
           }) : /* @__PURE__ */ jsx_runtime6.jsx("div", {
             className: "flex flex-col gap-2",
             children: shown.map((n) => /* @__PURE__ */ jsx_runtime6.jsx(Note, {

@@ -370,7 +370,10 @@ export function NotesPanel({
         )}
         {shown.length === 0 ? (
           <p className="px-1 py-6 text-center text-xs text-ink-faint">
-            Select some text in the document and write a note about it.
+            {/* With nowhere to select, the reason below says why; this does not ask for it. */}
+            {addUnavailable
+              ? "No notes on this document."
+              : "Select some text in the document and write a note about it."}
           </p>
         ) : (
           <div className="flex flex-col gap-2">
