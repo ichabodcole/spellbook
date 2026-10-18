@@ -463,16 +463,17 @@ describe("messages and what they are about", () => {
     expect(ev.about).toMatchObject({ doc: "solo" });
   });
 
-  test("entryIds and noteId ride about; an agent say is from agent and type message", async () => {
+  test("noteId rides about, the retired entryIds does not; an agent say is from agent and type message", async () => {
     const { s, t, base, d } = await start();
     s.send({
       op: "say",
       text: "what is in these?",
       withSelection: false,
-      about: { entryIds: ["c-1", "c-2"] },
+      about: { entryIds: ["c-1", "c-2"] } as never,
     });
     const ev = await t.waitFor((e) => e.type === "message");
-    expect(ev.about).toEqual({ entryIds: ["c-1", "c-2"] });
+    // An old page's `entryIds` is not taken: nothing named a subject.
+    expect(ev.about).toBeUndefined();
     // A message about a note names the commands to answer it, each with the session.
     s.send({ op: "say", text: "and this note?", withSelection: false, about: { noteId: "n-1" } });
     const onNote = await t.waitFor((e) => e.type === "message" && e.text === "and this note?");

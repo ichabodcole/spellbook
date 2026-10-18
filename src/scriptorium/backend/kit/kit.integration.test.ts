@@ -176,11 +176,23 @@ describe("the kit path, end to end through Scriptorium's launchers", () => {
     await waitTail((l) => l.type === "ready");
   });
 
-  test("with no surface, the session's URL answers with a page that says so", async () => {
+  test("the session's URL is the interim frame, built, with the scroll-text favicon; only its own files are served", async () => {
     const res = await fetch(`http://127.0.0.1:${port}/`);
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toContain("text/html");
-    expect(await res.text()).toContain("no\nsurface yet");
+    const html = await res.text();
+    expect(html).toContain("<title>scriptorium (kit path)</title>");
+    // Lucide `scroll-text`, as the shipped surface's tab carries it.
+    expect(html).toContain('rel="icon"');
+    expect(html).toContain("M15%2012h-5");
+    const chunks = [...html.matchAll(/(?:src|href)="\.?\/?(index-[a-z0-9]+\.(?:js|css))"/g)].map(
+      (m) => m[1] as string,
+    );
+    expect(chunks.length).toBe(2);
+    for (const c of chunks) expect((await fetch(`http://127.0.0.1:${port}/${c}`)).status).toBe(200);
+    // The daemon's own bundle and the shipped surface's page sit one folder up: not served.
+    expect((await fetch(`http://127.0.0.1:${port}/server.js`)).status).toBe(404);
+    expect((await fetch(`http://127.0.0.1:${port}/kit/index.html`)).status).toBe(404);
   });
 
   test("add puts a folder on the context list", async () => {

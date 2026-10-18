@@ -94,6 +94,7 @@ import {
 import type { LinkSlot } from "./linkEdges";
 import { extractLinks, swapLinkTargets } from "./links";
 import {
+  cleanAppAbout,
   cleanVia,
   KIT_REF_ROLES,
   KIT_VIA,
@@ -116,6 +117,7 @@ import type {
   HeadingLanding,
   Message,
   MessageAbout,
+  MessageAboutOnTail,
   MessageRef,
   Note,
   PublicState,
@@ -556,27 +558,8 @@ export type MessageHintInput = {
   about?: MessageAboutOnTail;
 };
 
-/**
- * A human message's `about` as the agent's tail carries it: the kit's parts,
- * and any part the app adds (`hooks.messageAbout`), such as Atlas's `map`.
- */
-export type MessageAboutOnTail = MessageAbout & { [part: string]: unknown };
-
-/** The kit's own `about` keys, which an app's part may not take. Every key, by type. */
-const KIT_ABOUT_KEYS = new Set<string>(
-  Object.keys({
-    doc: true,
-    version: true,
-    path: true,
-    fromLine: true,
-    toLine: true,
-    text: true,
-    entryIds: true,
-    docs: true,
-    noteId: true,
-    refs: true,
-  } satisfies Record<keyof MessageAbout, true>),
-);
+/** Kept here for callers that imported it from the daemon; defined in `protocol.ts`. */
+export type { MessageAboutOnTail };
 
 /** How one emit departs from its type's tail rule. */
 export type EmitOptions = { wake?: boolean };
@@ -2790,7 +2773,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
      */
     const aboutFor = (
       withSelection: boolean,
-      extra?: Pick<MessageAbout, "entryIds" | "noteId" | "path" | "refs">,
+      extra?: Pick<MessageAbout, "noteId" | "path" | "refs">,
     ): { about: MessageAbout | undefined; advice: string[] } => {
       const advice: string[] = [];
       // A backstop: every path that moves the open document or its version
@@ -2844,7 +2827,6 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
               text: sel.text,
             }
           : {}),
-        ...(extra?.entryIds?.length ? { entryIds: extra.entryIds } : {}),
         ...(extra?.noteId ? { noteId: extra.noteId } : {}),
       };
       const { refs, outside, over } = refsFor(extra?.refs, subjectPaths(about));
@@ -2930,27 +2912,28 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     };
 
     /**
-     * The `about` the agent's tail gets: the kit's, plus what the app adds from
-     * what the sending page shows (`hooks.messageAbout`). A part may not take a
-     * kit key, and an app hook that throws costs its part, never the message.
+     * The `about` a human message is stored with and the agent's tail gets: the
+     * kit's, plus what the app adds from what the sending page shows
+     * (`hooks.messageAbout`). A part may not take a kit key or a reserved name,
+     * and an app hook that throws costs its parts, never the message. A part
+     * JSON cannot carry, or over the size caps, costs only itself, and the
+     * `advice` says so (`cleanAppAbout`).
      */
     const withAppAbout = (
       about: MessageAbout | undefined,
       surface: string,
-    ): MessageAboutOnTail | undefined => {
+    ): { about: MessageAboutOnTail | undefined; advice: string[] } => {
       const hook = opts.hooks?.messageAbout;
-      if (!hook) return about;
-      let parts: Record<string, unknown> | undefined;
+      if (!hook) return { about, advice: [] };
+      let given: unknown;
       try {
-        parts = hook(surface, ctx);
+        given = hook(surface, ctx);
       } catch (e) {
         process.stderr.write(`${app.name}: messageAbout failed: ${messageOf(e)}\n`);
       }
-      const extra = Object.entries(parts ?? {}).filter(
-        ([k, v]) => v !== undefined && !KIT_ABOUT_KEYS.has(k),
-      );
-      if (extra.length === 0) return about;
-      return { ...(about ?? {}), ...Object.fromEntries(extra) };
+      const { parts, advice } = cleanAppAbout(given);
+      if (parts.length === 0) return { about, advice };
+      return { about: { ...(about ?? {}), ...Object.fromEntries(parts) }, advice };
     };
 
     /** The slot's hint, or the fixed one when it has none or fails: the message goes out regardless. */
@@ -3365,8 +3348,13 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
               return;
             }
           }
-          const { about, advice: aboutAdvice } = aboutFor(msg.withSelection, msg.about);
-          const advice = [...viaAdvice, ...aboutAdvice];
+          const { about: kitAbout, advice: aboutAdvice } = aboutFor(msg.withSelection, msg.about);
+          // What the app adds to `about` from what this page shows (Atlas: its
+          // map). Stored with the message as the tail carries it: the record
+          // shows what was sent, and the chip names the app's parts in the
+          // app's words (`ChatSidebar`'s `aboutPart`).
+          const { about, advice: appAdvice } = withAppAbout(kitAbout, surfaceId(ws));
+          const advice = [...viaAdvice, ...aboutAdvice, ...appAdvice];
           const m = session.addMessage({
             from: "human",
             type: "message",
@@ -3374,16 +3362,13 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
             ...(about ? { about } : {}),
             ...(via ? { via } : {}),
           });
-          // What the app adds to `about` from what this page shows (Atlas: its
-          // map). On the tail's message only: the chat keeps the kit's parts.
-          const told: MessageAboutOnTail | undefined = withAppAbout(about, surfaceId(ws));
           // Every human message names the three honest answers: the one that
           // goes wrong is work done with no task, which the human cannot see.
           const reply = pickReplyHint({
             session: sessionId,
             messageId: m.id,
             text,
-            ...(told ? { about: told } : {}),
+            ...(about ? { about } : {}),
           });
           // The note's own document, which need not be the one open now.
           const noteSlug = about?.noteId ? session.noteDoc(about.noteId) : undefined;
@@ -3393,7 +3378,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
             text,
             // Always said, so the agent can tell a typed question from a pressed button.
             via: messageVia(m),
-            ...(told ? { about: told } : {}),
+            ...(about ? { about } : {}),
             // What the page sent that was not taken as sent: said to the agent,
             // who can act on it, rather than to a log nobody reads.
             ...(advice.length > 0 ? { warning: advice.join(" ") } : {}),
@@ -4236,20 +4221,14 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           };
         }
         case "say": {
-          // Only what an agent's message may point at: entries and a note. The
-          // rest of `MessageAbout` is the human's (`refs`, `docs`, a subject and
-          // a passage are what the human pointed at), so it is dropped, not
-          // stored as sent, and so is any other key sent. An entry id that is
-          // not a string is dropped on its own; the others stay.
+          // Only what an agent's message may point at: a note. The rest of
+          // `MessageAbout` is the human's (`refs`, `docs`, a subject and a
+          // passage are what the human pointed at), so it is dropped, not
+          // stored as sent, and so is any other key sent (the retired
+          // `entryIds` among them).
           const raw = cmd.about as Partial<MessageAbout> | null | undefined;
-          const entryIds = Array.isArray(raw?.entryIds)
-            ? (raw.entryIds as unknown[]).filter((e): e is string => typeof e === "string")
-            : undefined;
           const noteId = typeof raw?.noteId === "string" && raw.noteId ? raw.noteId : undefined;
-          const about: Pick<MessageAbout, "entryIds" | "noteId"> | undefined =
-            entryIds?.length || noteId
-              ? { ...(entryIds?.length ? { entryIds } : {}), ...(noteId ? { noteId } : {}) }
-              : undefined;
+          const about: Pick<MessageAbout, "noteId"> | undefined = noteId ? { noteId } : undefined;
           const { via, advice } = viaOf(cmd.via, "agent");
           const m = session.addMessage({
             from: "agent",

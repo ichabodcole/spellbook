@@ -1,0 +1,102 @@
+// "There's a new version": the pure half of the new-version toast.
+//
+// IT WATCHES THE FACT, NOT THE ACTION. The agent's `version.new` never
+// activates, so its versions would arrive in the menu with no signal at all. What
+// is news is a version the surface has not SEEN on this document, that is not the
+// active one. The active case already has its own "now editing" line; announcing
+// it here too would say the same thing twice.
+import type { DocView, Version } from "../workspace/protocol";
+
+/** The label if it has one, else the number: the version menu's rule. */
+export function versionName(doc: DocView, n: number): string {
+  const label = doc.versions.find((v) => v.n === n)?.label?.trim();
+  return label ? `v${n} · ${label}` : `v${n}`;
+}
+
+/**
+ * The versions of `doc` that are news, given the ones already seen on it.
+ * `seen` undefined is this page's first sight of the document (opening it,
+ * or a reload): a baseline, never news. A reconnect is not a first sight: the
+ * page remembers what it saw (`createVersionWatch`).
+ */
+export function spotNewVersions(
+  seen: ReadonlySet<number> | undefined,
+  doc: DocView,
+): { fresh: Version[]; seen: Set<number> } {
+  const now = new Set(doc.versions.map((v) => v.n));
+  if (seen === undefined) return { fresh: [], seen: now };
+  const fresh = doc.versions.filter((v) => !seen.has(v.n) && v.n !== doc.active);
+  return { fresh, seen: now };
+}
+
+/**
+ * The versions seen per document, over one page's life: what the toast
+ * component keeps, as a pure object so its rules are cells.
+ *
+ * A DROPPED CONNECTION KEEPS THE MEMORY. It used to
+ * reset it, making the first snapshot after a reconnect a baseline, and so a
+ * version the agent made while the browser was disconnected was never
+ * announced: the same silent stall the toast exists to end. Now the first
+ * snapshot back announces every version this page has not seen. A RELOAD
+ * stays quiet without any rule here: it is a new page, so a new, empty watch,
+ * and every document's first sight is a baseline again.
+ */
+export type VersionWatch = {
+  /** The connection dropped. Deliberately forgets nothing (see above). */
+  disconnected: () => void;
+  /** A snapshot of the open document arrived: the versions in it that are news. */
+  snapshot: (doc: DocView) => Version[];
+};
+
+export function createVersionWatch(): VersionWatch {
+  const seen = new Map<string, Set<number>>();
+  return {
+    disconnected: () => {},
+    snapshot: (doc) => {
+      const spotted = spotNewVersions(seen.get(doc.slug), doc);
+      seen.set(doc.slug, spotted.seen);
+      return spotted.fresh;
+    },
+  };
+}
+
+/** What the toast says. The author is recorded on every version, so it is known. */
+export function newVersionToast(
+  doc: DocView,
+  version: Version,
+): { title: string; description: string } {
+  // A version the daemon kept from a write to the active file is stored as the agent's,
+  // but nobody proposed it: say what it is.
+  const outside = version.label?.startsWith("outside write") === true;
+  const who = outside ? "an outside write" : version.by === "agent" ? "the agent" : "you";
+  return {
+    title: `New version: ${versionName(doc, version.n)}`,
+    description: `Made by ${who} in ${doc.name}. You're still editing v${doc.active}.`,
+  };
+}
+
+export type VersionTarget = { doc: string; n: number };
+
+/**
+ * Whether an announced version's toast has stopped being true: the version
+ * became active ("Now editing" says so), was deleted, or its document is no
+ * longer the open one (Show diff acts on the open document's compare view).
+ */
+export function withdrawn(target: VersionTarget, open: DocView | null): boolean {
+  if (!open || open.slug !== target.doc) return true;
+  if (open.active === target.n) return true;
+  return !open.versions.some((v) => v.n === target.n);
+}
+
+/** What a toast button asks for. The app's shell performs it. */
+export type VersionAct = { activate: VersionTarget } | { showDiff: VersionTarget };
+
+/**
+ * What each button does: two different use cases, never combined. Activate is
+ * exactly the menu's `activate`. Show diff only asks the app to compare the active
+ * version against the new one, and does NOT activate: the kit has no compare view
+ * of its own, so the act is the app's to perform.
+ */
+export function newVersionActs(kind: "activate" | "diff", target: VersionTarget): VersionAct[] {
+  return kind === "activate" ? [{ activate: target }] : [{ showDiff: target }];
+}

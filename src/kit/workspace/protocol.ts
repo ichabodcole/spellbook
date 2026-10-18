@@ -352,7 +352,6 @@ export type MessageAbout = {
   toLine?: number;
   /** The selected text. */
   text?: string;
-  entryIds?: string[];
   /**
    * Whole documents pointed at (absolute paths), on a message from before
    * `refs`: no longer written. An old message that carries it reads as it did;
@@ -364,6 +363,14 @@ export type MessageAbout = {
   refs?: MessageRef[];
 };
 
+/**
+ * A message's `about` as it is stored and as the agent's tail carries it: the
+ * kit's parts, and any part the app adds from what the sending page shows
+ * (`hooks.messageAbout`), such as Atlas's `map`. The chip names an app's part
+ * only through the app's own labeller (`ChatSidebar`'s `aboutPart`).
+ */
+export type MessageAboutOnTail = MessageAbout & { [part: string]: unknown };
+
 export type MessageType = "message" | "info" | "result";
 
 export type Message = {
@@ -372,7 +379,7 @@ export type Message = {
   /** The display axis: a spoken message, a system line, or the outcome of work. */
   type: MessageType;
   text: string;
-  about?: MessageAbout;
+  about?: MessageAboutOnTail;
   /**
    * The gesture it came through (`KIT_VIA` and the app's own): the composer is
    * `"chat"`, an app's button its own value. Absent on a message from before
@@ -1664,7 +1671,7 @@ export type ClientOp =
   | { op: "close" }
   /**
    * `about` carries what the human pointed at besides the selection
-   * (`entryIds`, `noteId`), the `refs` the message draws on, and, with no
+   * (`noteId`), the `refs` the message draws on, and, with no
    * selection, `path`: the whole document or image that is its subject in
    * place of the active document (an open image, a document a view points at).
    * `via` is the gesture it came through: the composer sends `"chat"`.
@@ -1678,7 +1685,7 @@ export type ClientOp =
       text: string;
       withSelection: boolean;
       via?: string;
-      about?: Pick<MessageAbout, "entryIds" | "noteId" | "path" | "refs">;
+      about?: Pick<MessageAbout, "noteId" | "path" | "refs">;
     }
   | { op: "activate"; doc: string; version: number }
   /** `activate` separates branching (move into it) from snapshotting (stay). */
@@ -1895,7 +1902,7 @@ export type AgentCmd =
   | { op: "context.add"; paths: string[] }
   /** `body`, when given, is the new version's text, written in the same act; without it the version is a copy. */
   | { op: "version.new"; doc?: string; from?: number; label?: string; body?: string }
-  | { op: "say"; text: string; via?: string; about?: Pick<MessageAbout, "entryIds" | "noteId"> }
+  | { op: "say"; text: string; via?: string; about?: Pick<MessageAbout, "noteId"> }
   | { op: "activate"; doc?: string; version: number }
   | { op: "version.delete"; doc?: string; version: number }
   /** The agent notes a quote: it has no offsets, and counting characters would be asking it to be wrong. */

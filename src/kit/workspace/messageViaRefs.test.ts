@@ -191,7 +191,7 @@ describe("via", () => {
     expect(plain.body).not.toHaveProperty("warning");
   });
 
-  test("the agent's say keeps only entryIds and noteId: refs, docs and a subject are not stored", async () => {
+  test("the agent's say keeps only noteId: entryIds, refs, docs and a subject are not stored", async () => {
     const { d, s } = await start();
     const r = await cmd(d.url, {
       op: "say",
@@ -205,7 +205,7 @@ describe("via", () => {
       },
     });
     expect(r.status).toBe(200);
-    expect((await sent(s, "about a note")).about).toEqual({ entryIds: ["e1"], noteId: "n-1" });
+    expect((await sent(s, "about a note")).about).toEqual({ noteId: "n-1" });
     await cmd(d.url, { op: "say", text: "only refs", about: { refs: [{ path: "/etc/passwd" }] } });
     expect((await sent(s, "only refs")).about).toBeUndefined();
   });

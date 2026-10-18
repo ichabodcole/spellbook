@@ -125,8 +125,13 @@ export function trackedBuildInputs(spell: string, root: string = REPO_ROOT): str
 export function diskDistFiles(spell: string, root: string = REPO_ROOT): string[] {
   const dir = join(root, distRoot(spell));
   if (!existsSync(dir)) return [];
-  return readdirSync(dir)
-    .map((f) => `${distRoot(spell)}/${f}`)
+  // ⚠ RECURSIVE, AND FILES ONLY: a further surface builds into `dist/<sub>/`
+  // (`src/build.ts` `subSurfaceNames`, scriptorium's kit-path frame). A flat
+  // read listed `dist/kit` itself as one untracked "file" on every clean run,
+  // and never saw the files inside it.
+  return readdirSync(dir, { recursive: true, withFileTypes: true })
+    .filter((e) => e.isFile())
+    .map((e) => `${distRoot(spell)}/${relative(dir, join(e.parentPath, e.name))}`)
     .sort();
 }
 
@@ -212,6 +217,9 @@ export function untrackedDistFiles(spell: string, root: string = REPO_ROOT): str
 // a second parameter, and which would have been a SILENT wrong answer had the
 // parameter been anything `join` tolerates. Every call site below wraps it.
 export const isBackendArtifact = (repoRelative: string, root: string = REPO_ROOT): boolean => {
+  // A file in a folder under `dist/` belongs to a further surface: the build
+  // emits every backend entry FLAT (`dist/<name>.js`, the launcher's import).
+  if (/\/dist\/[^/]+\//.test(repoRelative)) return false;
   const verdict = classifyBackendArtifact(join(root, repoRelative), root);
   if (verdict === null) {
     throw new Error(

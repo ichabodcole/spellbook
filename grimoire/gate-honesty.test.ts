@@ -380,6 +380,10 @@ const DECLARED_BLIND: Record<string, number> = {
   // rules and so unreachable from a utility as well.
   "src/scriptorium/bunfig.toml": 5,
   "src/scriptorium/surface/index.html": 41,
+  // The kit path's interim frame (scriptorium-kit-interim-frame, 2026-10-17):
+  // its own entry page, the shipped one's pre-paint theme script and favicon
+  // under a second title. Thrown away with the frame at the shell cycle.
+  "src/scriptorium/surface/kit/index.html": 41,
   "src/scriptorium/surface/styles.css": 389,
 };
 
