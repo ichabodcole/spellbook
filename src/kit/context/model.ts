@@ -339,13 +339,15 @@ export type MoveTarget = { label: string; path: string; kind: "workspace" | "set
  */
 export function moveTargets(
   entries: readonly ContextEntry[],
-  item: string,
+  /** Null: nothing is moving (a place to create in), so no place is left out. */
+  item: string | null,
   workspace: string | null = null,
 ): MoveTarget[] {
-  const here = dirOf(item);
+  const here = item === null ? null : dirOf(item);
   const out: MoveTarget[] = [];
   const offer = (t: MoveTarget) => {
-    if (t.path === here || t.path === item || t.path.startsWith(`${item}/`)) return;
+    if (item !== null && (t.path === here || t.path === item || t.path.startsWith(`${item}/`)))
+      return;
     if (!out.some((o) => o.path === t.path)) out.push(t);
   };
   // A whole set is not offered the workspace: its folder would be carried from

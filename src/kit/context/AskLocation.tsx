@@ -1,0 +1,311 @@
+// "Where should it go?": the ask for an app with no home workspace. With no
+// workspace there is no folder a new document, a new folder or a dropped file
+// can fall into unasked, so the context sidebar asks the app (its `askLocation`
+// slot) and sends the place the human chose as the op's `dir`.
+//
+// `useAskLocation` is the kit's answer to that slot: a dialog listing every set
+// and the folders inside it (the same places "Move to…" offers), searchable,
+// with the place chosen last already highlighted, so making several documents
+// in a row is one Enter each. The last place is held here, in the surface, for
+// as long as the page lives: a session's surface is its own page, so nothing
+// keyed by origin is needed, and a place that left the context is simply not
+// highlighted. With `addFolder` it can also make room: a new folder at a full
+// path (the daemon's `folder.add`), highlighted once the context shows it.
+import { Dialog } from "@base-ui/react/dialog";
+import { FolderIcon, FolderTreeIcon } from "lucide-react";
+import {
+  type KeyboardEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { bundlePlace } from "../lib/bundles.ts";
+import { cn } from "../lib/cn.ts";
+import type { ContextEntry } from "../workspace/protocol";
+import { AddPath } from "./AddPath.tsx";
+import type { Listing } from "./daemonClient.ts";
+import { filterMoveTargets, joinPath, type MoveTarget, moveTargets } from "./model.ts";
+
+/** One ask: what is being made or brought in, and the question the dialog puts. */
+export type LocationAsk = {
+  /** Decides which places can take it: a bundle is never made inside another one. */
+  what: "document" | "folder" | "bundle" | "files";
+  /** The dialog's title, in the sidebar's words ("Where should the new document go?"). */
+  title: string;
+};
+
+/**
+ * The slot: ask the human where something goes. Resolves with the folder chosen
+ * (a full path the context shows), or null when they backed out.
+ */
+export type AskLocation = (ask: LocationAsk) => Promise<string | null>;
+
+/** Every place something can be created in or copied into: each set, then its folders. */
+export function locationTargets(
+  entries: readonly ContextEntry[],
+  what: LocationAsk["what"] = "document",
+): MoveTarget[] {
+  const all = moveTargets(entries, null);
+  return what === "bundle" ? all.filter((t) => bundlePlace(t.path) === null) : all;
+}
+
+/** A path as typed, with a leading `~/` made whole, for finding it among the places. */
+function expandHome(path: string, userHome: string | null): string {
+  return path.startsWith("~/") && userHome ? joinPath(userHome, path.slice(2)) : path;
+}
+
+export function LocationDialog({
+  title,
+  targets,
+  preselect,
+  userHome,
+  listDir,
+  addFolder,
+  hint,
+  onChoose,
+  onClose,
+}: {
+  title: string;
+  targets: readonly MoveTarget[];
+  /** The place to highlight on opening (the last one chosen); ignored when it is not among `targets`. */
+  preselect: string | null;
+  userHome: string | null;
+  listDir: (path: string) => Promise<Listing>;
+  /** Make a new folder at a full path; rejects with the refusal. Absent, not offered. */
+  addFolder?: (path: string) => Promise<unknown>;
+  /** The app's own words under the list: how else to make room. */
+  hint?: ReactNode;
+  onChoose: (path: string) => void;
+  onClose: () => void;
+}) {
+  const [query, setQuery] = useState("");
+  const shown = useMemo(() => filterMoveTargets(targets, query), [targets, query]);
+  // The highlight is held by path, so a snapshot that adds or drops a place
+  // while the dialog is open never moves it onto another one.
+  const [atPath, setAtPath] = useState<string | null>(() =>
+    preselect && targets.some((t) => t.path === preselect) ? preselect : null,
+  );
+  const at = atPath === null ? -1 : shown.findIndex((t) => t.path === atPath);
+  // A folder asked for by path: highlighted once the context shows it.
+  const [making, setMaking] = useState<string | null>(null);
+  const [refusal, setRefusal] = useState<string | null>(null);
+  const listId = useId();
+  const listRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (making && targets.some((t) => t.path === making)) {
+      setAtPath(making);
+      // Back to the search, so the next Enter makes it there, not another folder.
+      searchRef.current?.focus();
+      setMaking(null);
+    }
+  }, [making, targets]);
+  useEffect(() => {
+    listRef.current
+      ?.querySelector<HTMLElement>(`[data-index="${at}"]`)
+      ?.scrollIntoView?.({ block: "nearest" });
+  }, [at]);
+
+  const search = (q: string) => {
+    setQuery(q);
+    // A search highlights its first match; clearing it highlights nothing.
+    setAtPath(q.trim() === "" ? null : (filterMoveTargets(targets, q)[0]?.path ?? null));
+  };
+  const choose = (t: MoveTarget | undefined) => {
+    if (!t) return;
+    onChoose(t.path);
+  };
+  const onKey = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setAtPath(shown[Math.min(at + 1, shown.length - 1)]?.path ?? null);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setAtPath(shown[Math.max(at - 1, 0)]?.path ?? null);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      choose(shown[at]);
+    }
+  };
+  const make = (typed: string) => {
+    if (!addFolder) return;
+    const full = expandHome(typed, userHome);
+    setRefusal(null);
+    setQuery("");
+    setMaking(full);
+    addFolder(typed).catch((e: unknown) => {
+      setMaking(null);
+      setRefusal(e instanceof Error ? e.message : String(e));
+    });
+  };
+
+  return (
+    <Dialog.Root
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <Dialog.Portal>
+        <Dialog.Backdrop className="fixed inset-0 isolate z-50 bg-black/30 duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
+        <Dialog.Popup
+          data-slot="location-dialog"
+          className="fixed top-1/2 left-1/2 z-50 flex max-h-[70vh] w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 flex-col gap-2 rounded-xl border border-edge bg-surface p-3 text-ink shadow-lg duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
+        >
+          <Dialog.Title className="truncate text-sm font-semibold text-ink">{title}</Dialog.Title>
+          <input
+            value={query}
+            onChange={(e) => search(e.target.value)}
+            onKeyDown={onKey}
+            ref={searchRef}
+            // biome-ignore lint/a11y/noAutofocus: the human asked to make something; choosing its place is the way on.
+            autoFocus
+            placeholder="Search sets and folders…"
+            aria-label="Search sets and folders"
+            role="combobox"
+            aria-expanded={shown.length > 0}
+            aria-controls={shown.length > 0 ? listId : undefined}
+            aria-activedescendant={shown[at] ? `${listId}-${at}` : undefined}
+            spellCheck={false}
+            className="h-8 w-full min-w-0 rounded-md border border-edge bg-bg px-2 text-sm text-ink outline-none placeholder:text-ink-faint focus-visible:ring-2 focus-visible:ring-ring/60"
+          />
+          {shown.length === 0 ? (
+            <p className="px-1 py-2 text-xs text-ink-faint">
+              {targets.length > 0
+                ? "No set or folder matches."
+                : addFolder
+                  ? "There is no set to put it in yet. Make a folder at a path below, or add a folder to the context."
+                  : "There is no set to put it in yet. Add a folder to the context first."}
+            </p>
+          ) : (
+            <div
+              ref={listRef}
+              id={listId}
+              role="listbox"
+              aria-label="Places"
+              className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-auto"
+            >
+              {shown.map((t, i) => {
+                const Icon = t.kind === "set" ? FolderTreeIcon : FolderIcon;
+                return (
+                  // biome-ignore lint/a11y/useKeyWithClickEvents: the field owns the keyboard (aria-activedescendant); a row is only clicked.
+                  <div
+                    key={t.path}
+                    id={`${listId}-${i}`}
+                    data-index={i}
+                    role="option"
+                    tabIndex={-1}
+                    aria-selected={i === at}
+                    title={t.path}
+                    onMouseMove={() => setAtPath(t.path)}
+                    // The input keeps the focus: a click chooses, nothing else.
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => choose(t)}
+                    className={cn(
+                      "flex cursor-default items-center gap-2 rounded-md px-2 py-1.5",
+                      i === at && "bg-surface-raised",
+                    )}
+                  >
+                    <Icon aria-hidden className="size-4 shrink-0 text-ink-faint" />
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="truncate text-sm">{t.label}</span>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {addFolder && (
+            <AddPath
+              listDir={listDir}
+              foldersOnly
+              verb="makes it"
+              placeholder="New folder at a path…"
+              onAdd={make}
+            />
+          )}
+          {making && (
+            <p role="status" className="px-1 py-2 text-xs text-ink-faint">
+              Making {making}…
+            </p>
+          )}
+          {refusal && <p className="px-2 py-1 text-xs text-attention">{refusal}</p>}
+          {hint && <p className="px-1 py-2 text-xs text-ink-faint">{hint}</p>}
+        </Dialog.Popup>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
+/**
+ * The `askLocation` slot, ready to pass, and the dialog to render beside it.
+ * One ask at a time: a second one answers the first with null.
+ */
+export function useAskLocation({
+  entries,
+  userHome,
+  listDir,
+  addFolder,
+  hint,
+}: {
+  entries: readonly ContextEntry[];
+  userHome: string | null;
+  listDir: (path: string) => Promise<Listing>;
+  addFolder?: (path: string) => Promise<unknown>;
+  hint?: ReactNode;
+}): { askLocation: AskLocation; dialog: ReactNode; last: string | null } {
+  const [asking, setAsking] = useState<{
+    ask: LocationAsk;
+    answer: (dir: string | null) => void;
+    seq: number;
+  } | null>(null);
+  const seq = useRef(0);
+  const [last, setLast] = useState<string | null>(null);
+  const pending = useRef<((dir: string | null) => void) | null>(null);
+
+  const askLocation = useCallback<AskLocation>(
+    (ask) =>
+      new Promise<string | null>((resolve) => {
+        pending.current?.(null);
+        const answer = (dir: string | null) => {
+          if (pending.current !== answer) return;
+          pending.current = null;
+          setAsking(null);
+          resolve(dir);
+        };
+        pending.current = answer;
+        setAsking({ ask, answer, seq: ++seq.current });
+      }),
+    [],
+  );
+  // An ask still open when the surface goes is answered, so nothing waits on it.
+  useEffect(() => () => pending.current?.(null), []);
+
+  const targets = useMemo(
+    () => (asking ? locationTargets(entries, asking.ask.what) : []),
+    [entries, asking],
+  );
+  const dialog = asking ? (
+    <LocationDialog
+      key={asking.seq}
+      title={asking.ask.title}
+      targets={targets}
+      preselect={last}
+      userHome={userHome}
+      listDir={listDir}
+      addFolder={addFolder}
+      hint={hint}
+      onChoose={(dir) => {
+        setLast(dir);
+        asking.answer(dir);
+      }}
+      onClose={() => asking.answer(null)}
+    />
+  ) : null;
+  return { askLocation, dialog, last };
+}

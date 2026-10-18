@@ -6,7 +6,9 @@
 //   - the LIST: every context entry. One holding a single document or image
 //     shows as that file and opens it on click; any other entry shows as a set
 //     and drills in on click. A file dropped on the list itself (not on a set)
-//     is copied into the workspace folder and becomes such an entry.
+//     is copied into the workspace folder and becomes such an entry. An app
+//     with no workspace supplies `askLocation` instead: the list then offers
+//     New document and New folder, and they and such a drop ask where to go.
 //   - a SET, drilled into: its tree (EntryTree), with a way back to the list.
 //
 // Moving is one act wherever it starts: "Move to…" on any row opens one dialog
@@ -52,6 +54,7 @@ import {
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../ui/empty.tsx";
 import type { ContextEntry, StructureOp, TrashPreview } from "../workspace/protocol";
 import { AddPath } from "./AddPath.tsx";
+import type { AskLocation } from "./AskLocation.tsx";
 import type { Daemon, Listing } from "./daemonClient.ts";
 import {
   AddRefItem,
@@ -138,6 +141,14 @@ export type ContextSidebarProps = {
   workspace?: string | null;
   /** Point the workspace at another folder (a path as typed: absolute or `~`). */
   onSetWorkspace?: (path: string) => void;
+  /**
+   * For an app with no workspace: ask the human where something goes (see
+   * `./AskLocation.tsx`, whose `useAskLocation` answers it). Given, and with no
+   * `workspace`, the list offers New document and New folder, which ask, and a
+   * file dropped on the list itself asks before it is copied; every op then
+   * names the place chosen, and backing out sends nothing. Absent, nothing asks.
+   */
+  askLocation?: AskLocation;
   listDir: (path: string) => Promise<Listing>;
   /** The per-document badge slot: what an app shows at a row's trailing edge, by absolute path. */
   badgeFor?: (path: string) => ReactNode;
@@ -234,6 +245,7 @@ export function ContextSidebar({
   onPick,
   workspace,
   onSetWorkspace,
+  askLocation,
   listDir,
   badgeFor = noBadge,
   folderBadgeFor = noBadge,
@@ -404,9 +416,8 @@ export function ContextSidebar({
     [importImage, confirm],
   );
 
-  const importFiles = useCallback(
-    (dt: DataTransfer, into?: string) => {
-      const { files, folders } = droppedFiles(dt);
+  const importDropped = useCallback(
+    ({ files, folders }: { files: File[]; folders: string[] }, into?: string) => {
       const { docs, images, svg, skipped } = splitDropped(files);
       for (const i of docs) {
         const f = files[i] as File;
@@ -429,6 +440,46 @@ export function ContextSidebar({
         })();
     },
     [onStructure, importOneImage],
+  );
+  const importFiles = useCallback(
+    (dt: DataTransfer, into?: string) => importDropped(droppedFiles(dt), into),
+    [importDropped],
+  );
+
+  // With no workspace, what has no place under it asks for one (`askLocation`).
+  const asks = !workspace && askLocation ? askLocation : undefined;
+  const askAndCreate = useCallback(
+    async (what: "document" | "folder" | "bundle", extension?: string, label?: string) => {
+      if (!asks) return;
+      const name = what === "bundle" ? (label ?? "bundle") : what;
+      const dir = await asks({ what, title: `Where should the new ${name} go?` });
+      if (!dir) return;
+      if (what === "document") onStructure({ op: "doc.create", dir });
+      else if (what === "folder") onStructure({ op: "folder.create", dir });
+      else onStructure({ op: "bundle.create", dir, ...(extension ? { extension } : {}) });
+    },
+    [asks, onStructure],
+  );
+  // A drop on the list itself. The files are read off the drop now: the
+  // browser empties a drop's data once its event is over.
+  const importOnList = useCallback(
+    (dt: DataTransfer, into?: string) => {
+      if (into || !asks) return importFiles(dt, into);
+      const dropped = droppedFiles(dt);
+      const { docs, images } = splitDropped(dropped.files);
+      const n = docs.length + images.length;
+      // Nothing that would be copied: only the notice, with no ask.
+      if (n === 0) return importDropped(dropped);
+      const one = dropped.files[(docs[0] ?? images[0]) as number] as File;
+      const title =
+        n === 1
+          ? `Where should ${one.name} be copied?`
+          : `Where should these ${n} files be copied?`;
+      void asks({ what: "files", title }).then((dir) => {
+        if (dir) importDropped(dropped, dir);
+      });
+    },
+    [asks, importFiles, importDropped],
   );
   // Delete: ask the daemon what would go, name it in a dialog, and only then
   // move it to the Trash. A refusal (a whole set, a path that is gone) is the
@@ -502,7 +553,8 @@ export function ContextSidebar({
           onDrill={(e) => setDrilled(e.id)}
           onStructure={onStructure}
           onRemoveEntry={onRemoveEntry}
-          onImportFiles={importFiles}
+          onImportFiles={importOnList}
+          onAskCreate={asks ? askAndCreate : undefined}
           onAskMove={onAskMove}
           focusPath={focusPath}
           onFocused={focused}
@@ -745,8 +797,15 @@ function ListView({
   onAddRef,
   focusPath,
   onFocused,
+  onAskCreate,
 }: {
   onAddRef?: ContextSidebarProps["onAddRef"];
+  /** No workspace, and the app asks where: New document and New folder ask, then make it there. */
+  onAskCreate?: (
+    what: "document" | "folder" | "bundle",
+    extension?: string,
+    label?: string,
+  ) => void;
   entries: readonly ContextEntry[];
   activeDoc: ContextSidebarProps["activeDoc"];
   userHome: string | null;
@@ -890,6 +949,19 @@ function ListView({
         </>
       ) : (
         <>
+          {onAskCreate && (
+            <>
+              <ContextMenuItem onClick={() => onAskCreate("document")}>
+                <FilePlusIcon />
+                New document…
+              </ContextMenuItem>
+              <ContextMenuItem onClick={() => onAskCreate("folder")}>
+                <FolderPlusIcon />
+                New folder…
+              </ContextMenuItem>
+              <ContextMenuSeparator />
+            </>
+          )}
           <ContextMenuItem onClick={() => onPick("context-file")}>
             <FilePlusIcon />
             Add documents…
@@ -960,8 +1032,29 @@ function ListView({
           <span className="flex-1 truncate px-1 text-[11px] text-ink-faint">
             {workspace !== null
               ? "Drop documents or images here to copy them into the workspace"
-              : "Drop documents or images here to copy them in"}
+              : onAskCreate
+                ? "Drop documents or images, then choose a set"
+                : "Drop documents or images here to copy them in"}
           </span>
+          {onAskCreate && (
+            <>
+              <ToolButton label="New document…" onClick={() => onAskCreate("document")}>
+                <FilePlusIcon />
+              </ToolButton>
+              <ToolButton label="New folder…" onClick={() => onAskCreate("folder")}>
+                <FolderPlusIcon />
+              </ToolButton>
+              {bundleTypes().map((t) => (
+                <ToolButton
+                  key={t.extension}
+                  label={`New ${t.label}…`}
+                  onClick={() => onAskCreate("bundle", t.extension, t.label)}
+                >
+                  <BundleIcon type={t} />
+                </ToolButton>
+              ))}
+            </>
+          )}
         </div>
         {rows.length === 0 ? (
           <Empty className="flex-1">
@@ -971,8 +1064,9 @@ function ListView({
               </EmptyMedia>
               <EmptyTitle>No context yet</EmptyTitle>
               <EmptyDescription>
-                Add a markdown file, an image or a folder by path below, drop documents or images
-                here to copy them in, or ask the agent to add one.
+                {onAskCreate
+                  ? "Add a markdown file, an image or a folder by path below, or ask the agent to add one. A document or image dropped here is copied into a set you choose."
+                  : "Add a markdown file, an image or a folder by path below, drop documents or images here to copy them in, or ask the agent to add one."}
               </EmptyDescription>
             </EmptyHeader>
           </Empty>

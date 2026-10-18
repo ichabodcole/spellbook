@@ -1,0 +1,457 @@
+// The ask for a place, for an app with no workspace: the sidebar's `askLocation`
+// slot, and the kit's answer to it (`useAskLocation`), driven from fixtures.
+// What it must hold: New document, New folder and a drop on the list itself ask,
+// and every op sent names the place chosen; backing out sends nothing; the
+// place chosen last is preselected, and nothing is when it has left the
+// context; "new folder at a path" makes room and highlights it. Without the slot
+// the sidebar is as it was (ContextSidebar.test.tsx holds that).
+
+import "../lib/registerDom.ts";
+import { afterAll, afterEach, beforeAll, describe, expect, test } from "bun:test";
+import { useState } from "react";
+import { type BundleType, registerBundleType, unregisterBundleType } from "../lib/bundles.ts";
+import {
+  cleanup,
+  installDom,
+  mount,
+  removeDom,
+  settle,
+  typeInto,
+  waitFor,
+} from "../lib/testDom.ts";
+import type { ContextEntry, StructureOp } from "../workspace/protocol";
+import { type LocationAsk, locationTargets, useAskLocation } from "./AskLocation.tsx";
+import { ContextSidebar, type ContextSidebarProps } from "./ContextSidebar.tsx";
+import type { ImageImportOptions } from "./daemonClient.ts";
+
+beforeAll(installDom);
+afterEach(cleanup);
+afterAll(removeDom);
+
+const lone: ContextEntry = {
+  id: "c-lone",
+  label: "memo.md",
+  root: "/h/notes",
+  membership: "listed",
+  nodes: [{ kind: "doc", rel: "memo.md" }],
+};
+const drafts: ContextEntry = {
+  id: "c-drafts",
+  label: "drafts",
+  root: "/h/drafts",
+  membership: "mirrored",
+  nodes: [
+    { kind: "doc", rel: "a.md" },
+    { kind: "group", rel: "part", children: [{ kind: "doc", rel: "part/b.md" }] },
+  ],
+};
+const world: ContextEntry = {
+  id: "c-world",
+  label: "world",
+  root: "/h/world",
+  membership: "mirrored",
+  nodes: [],
+};
+
+const SHELF: BundleType = {
+  extension: ".shelfbundle",
+  type: "shelf",
+  main: "shelf.json",
+  format: "json",
+  label: "shelf",
+  mainTemplate: "{}\n",
+  expand: { members: ["docs"] },
+};
+const R = "lighthouse.shelfbundle";
+/** A set holding an expandable bundle, whose member folder takes documents. */
+const shelved: ContextEntry = {
+  ...world,
+  nodes: [
+    {
+      kind: "bundle",
+      rel: R,
+      type: "shelf",
+      main: "shelf.json",
+      title: "The lighthouse",
+      contents: [{ kind: "group", rel: `${R}/docs`, children: [] }],
+    },
+  ],
+};
+
+type Seen = {
+  structure: StructureOp[];
+  images: ImageImportOptions[];
+  asks: LocationAsk[];
+  added: string[];
+};
+
+/**
+ * The sidebar with no workspace, its slot filled by `useAskLocation`, over a
+ * context the test can change (`setEntries`), as a daemon's snapshot would.
+ */
+function harness(initial: ContextEntry[], over: Partial<ContextSidebarProps> = {}) {
+  const seen: Seen = { structure: [], images: [], asks: [], added: [] };
+  let setEntries: (e: ContextEntry[]) => void = () => {};
+  let refuseAdd: string | null = null;
+  function Host() {
+    const [entries, set] = useState(initial);
+    setEntries = set;
+    const ask = useAskLocation({
+      entries,
+      userHome: "/h",
+      listDir: async () => ({ entries: [] }),
+      addFolder: async (path) => {
+        seen.added.push(path);
+        if (refuseAdd) throw new Error(refuseAdd);
+      },
+      hint: "Turn a document into a set to make room beside it.",
+    });
+    return (
+      <div style={{ width: 300, height: 600, display: "flex" }}>
+        <ContextSidebar
+          entries={entries}
+          activeDoc={null}
+          userHome="/h"
+          onOpenDoc={() => {}}
+          onAddPath={() => {}}
+          onStructure={(op) => seen.structure.push(op)}
+          onRemoveEntry={() => {}}
+          onReveal={() => {}}
+          onPick={() => {}}
+          listDir={async () => ({ entries: [] })}
+          importImage={async (_f, opts) => {
+            seen.images.push(opts);
+            return { ok: true, path: `${opts.dir}/x.png` };
+          }}
+          askLocation={(a) => {
+            seen.asks.push(a);
+            return ask.askLocation(a);
+          }}
+          {...over}
+        />
+        {ask.dialog}
+      </div>
+    );
+  }
+  return {
+    seen,
+    mountIt: () => mount(<Host />),
+    setEntries: (e: ContextEntry[]) => settle(() => setEntries(e)),
+    refuse: (why: string | null) => {
+      refuseAdd = why;
+    },
+  };
+}
+
+const byLabel = (l: string) => document.querySelector(`[aria-label="${l}"]`);
+const dialogEl = () => document.querySelector<HTMLElement>('[data-slot="location-dialog"]');
+const places = () =>
+  [...document.querySelectorAll('[data-slot="location-dialog"] [role="option"]')].map((e) =>
+    (e.textContent ?? "").trim(),
+  );
+const chosen = () =>
+  [
+    ...document.querySelectorAll(
+      '[data-slot="location-dialog"] [role="option"][aria-selected="true"]',
+    ),
+  ].map((e) => (e.textContent ?? "").trim());
+const place = (text: string) =>
+  [...document.querySelectorAll('[data-slot="location-dialog"] [role="option"]')].find(
+    (e) => (e.textContent ?? "").trim() === text,
+  ) ?? null;
+const search = () =>
+  document.querySelector<HTMLInputElement>('[data-slot="location-dialog"] input[role="combobox"]');
+const pathBox = () =>
+  document.querySelector<HTMLInputElement>(
+    '[data-slot="location-dialog"] input[aria-label="New folder at a path"]',
+  );
+const click = async (el: Element | null) => {
+  if (!el) throw new Error("nothing to click");
+  await settle(() => {
+    el.dispatchEvent(new window.MouseEvent("click", { bubbles: true, cancelable: true }));
+  });
+};
+const key = (el: Element | null, k: string) =>
+  settle(() => {
+    if (!el) throw new Error("no element for the key");
+    el.dispatchEvent(new window.KeyboardEvent("keydown", { key: k, bubbles: true }));
+  });
+const menuItem = (text: string) =>
+  [...document.querySelectorAll('[role^="menuitem"]')].find((e) =>
+    (e.textContent ?? "").includes(text),
+  ) ?? null;
+const listArea = () => {
+  const ul = document.querySelector('ul[aria-label="Context"]');
+  return (ul?.parentElement ?? document.querySelector('[data-slot="empty"]')?.parentElement) as
+    | Element
+    | undefined;
+};
+const file = (name: string, text: string) => ({ file: new File([text], name), isDirectory: false });
+function transfer(files: ReturnType<typeof file>[]) {
+  return {
+    types: ["Files"],
+    files: files.map((f) => f.file),
+    items: files.map((f) => ({ webkitGetAsEntry: () => ({ isDirectory: f.isDirectory }) })),
+    getData: () => "",
+  };
+}
+async function drop(target: Element, dt: object) {
+  await settle(() => {
+    const ev = new window.Event("drop", { bubbles: true, cancelable: true });
+    Object.defineProperty(ev, "dataTransfer", { value: dt });
+    target.dispatchEvent(ev);
+  });
+}
+
+describe("locationTargets", () => {
+  test("every set and the folders inside it; a document listed on its own is no place", () => {
+    expect(locationTargets([lone, drafts, world]).map((t) => `${t.kind}:${t.label}`)).toEqual([
+      "set:drafts",
+      "folder:drafts/part",
+      "set:world",
+    ]);
+  });
+
+  test("a new bundle is never offered a place inside another bundle", () => {
+    registerBundleType(SHELF);
+    try {
+      expect(locationTargets([shelved], "document").map((t) => t.label)).toEqual([
+        "world",
+        "world/The lighthouse/docs",
+      ]);
+      expect(locationTargets([shelved], "bundle").map((t) => t.label)).toEqual(["world"]);
+    } finally {
+      unregisterBundleType(SHELF.extension);
+    }
+  });
+});
+
+describe("with nothing selected, the list asks where", () => {
+  test("the list says a drop asks, and never promises it lands somewhere unseen", async () => {
+    const h = harness([]);
+    const m = await h.mountIt();
+    const text = document.body.textContent ?? "";
+    expect(text).not.toContain("drop documents or images here to copy them in");
+    expect(text).not.toContain("here to copy them in");
+    expect(text).toContain("copied into a set you choose");
+    await h.setEntries([drafts]);
+    expect(document.body.textContent).toContain("Drop documents or images, then choose a set");
+    await m.unmount();
+  });
+
+  test("New document asks, and makes it where the human chose; backing out sends nothing", async () => {
+    const h = harness([lone, drafts, world]);
+    const m = await h.mountIt();
+    await click(byLabel("New document…"));
+    await waitFor(() => dialogEl() !== null, "the dialog");
+    expect(dialogEl()?.textContent).toContain("Where should the new document go?");
+    expect(places()).toEqual(["drafts", "drafts/part", "world"]);
+    // The first time, nothing is chosen for them: Enter does nothing.
+    expect(chosen()).toEqual([]);
+    await key(search(), "Enter");
+    expect(dialogEl()).not.toBeNull();
+    await click(place("drafts/part"));
+    await waitFor(() => dialogEl() === null, "the dialog closed");
+    expect(h.seen.structure).toEqual([{ op: "doc.create", dir: "/h/drafts/part" }]);
+    // Escape backs out: nothing is sent.
+    await click(byLabel("New folder…"));
+    await waitFor(() => dialogEl() !== null, "the dialog again");
+    expect(dialogEl()?.textContent).toContain("Where should the new folder go?");
+    await key(search(), "Escape");
+    await waitFor(() => dialogEl() === null, "the dialog closed");
+    expect(h.seen.structure).toHaveLength(1);
+    await m.unmount();
+  });
+
+  test("the place chosen last is preselected, so the next is one Enter; gone from the context, nothing is", async () => {
+    const h = harness([drafts, world]);
+    const m = await h.mountIt();
+    await click(byLabel("New document…"));
+    await waitFor(() => dialogEl() !== null, "the dialog");
+    await click(place("world"));
+    await waitFor(() => dialogEl() === null, "closed");
+    await click(byLabel("New folder…"));
+    await waitFor(() => dialogEl() !== null, "the dialog again");
+    expect(chosen()).toEqual(["world"]);
+    await key(search(), "Enter");
+    await waitFor(() => dialogEl() === null, "closed by Enter");
+    expect(h.seen.structure).toEqual([
+      { op: "doc.create", dir: "/h/world" },
+      { op: "folder.create", dir: "/h/world" },
+    ]);
+    // A search moves the highlight; clearing it highlights nothing.
+    await click(byLabel("New document…"));
+    await waitFor(() => dialogEl() !== null, "the dialog");
+    await typeInto(search() as HTMLInputElement, "part");
+    expect(chosen()).toEqual(["drafts/part"]);
+    await key(search(), "Escape");
+    await waitFor(() => dialogEl() === null, "closed");
+    // The set leaves the context: the next ask preselects nothing.
+    await h.setEntries([drafts]);
+    await click(byLabel("New document…"));
+    await waitFor(() => dialogEl() !== null, "the dialog");
+    expect(places()).toEqual(["drafts", "drafts/part"]);
+    expect(chosen()).toEqual([]);
+    await key(search(), "Enter");
+    expect(dialogEl()).not.toBeNull();
+    await key(search(), "Escape");
+    await waitFor(() => dialogEl() === null, "closed");
+    expect(h.seen.structure).toHaveLength(2);
+    await m.unmount();
+  });
+
+  test("the list's own menu offers the same asks", async () => {
+    const h = harness([drafts]);
+    const m = await h.mountIt();
+    await settle(() => {
+      (listArea() as Element).dispatchEvent(
+        new window.MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: 9 }),
+      );
+    });
+    await waitFor(() => menuItem("New document…") !== null, "the menu");
+    expect(menuItem("New folder…")).not.toBeNull();
+    await click(menuItem("New folder…"));
+    await waitFor(() => dialogEl() !== null, "the dialog");
+    await click(place("drafts"));
+    await waitFor(() => h.seen.structure.length === 1, "the create");
+    expect(h.seen.structure).toEqual([{ op: "folder.create", dir: "/h/drafts" }]);
+    await m.unmount();
+  });
+
+  test("a registered bundle type gets its own ask, offered no place inside a bundle", async () => {
+    registerBundleType(SHELF);
+    try {
+      const h = harness([shelved]);
+      const m = await h.mountIt();
+      await click(byLabel("New shelf…"));
+      await waitFor(() => dialogEl() !== null, "the dialog");
+      expect(dialogEl()?.textContent).toContain("Where should the new shelf go?");
+      expect(places()).toEqual(["world"]);
+      await click(place("world"));
+      await waitFor(() => h.seen.structure.length === 1, "the create");
+      expect(h.seen.structure).toEqual([
+        { op: "bundle.create", dir: "/h/world", extension: ".shelfbundle" },
+      ]);
+      await m.unmount();
+    } finally {
+      unregisterBundleType(SHELF.extension);
+    }
+  });
+});
+
+describe("a drop on the list itself asks where to copy it", () => {
+  test("documents and images are copied into the place chosen, each op naming it", async () => {
+    const h = harness([drafts, world]);
+    const m = await h.mountIt();
+    await drop(listArea() as Element, transfer([file("scene.md", "# Scene\n")]));
+    await waitFor(() => dialogEl() !== null, "the dialog");
+    expect(dialogEl()?.textContent).toContain("Where should scene.md be copied?");
+    expect(h.seen.structure).toEqual([]);
+    await click(place("world"));
+    await waitFor(() => h.seen.structure.length === 1, "the import");
+    expect(h.seen.structure).toEqual([
+      { op: "import", name: "scene.md", text: "# Scene\n", dir: "/h/world" },
+    ]);
+    await drop(
+      listArea() as Element,
+      transfer([file("fox.png", "x"), file("one.md", "1"), file("cover.psd", "x")]),
+    );
+    await waitFor(() => dialogEl() !== null, "the dialog");
+    expect(dialogEl()?.textContent).toContain("Where should these 2 files be copied?");
+    expect(chosen()).toEqual(["world"]);
+    await key(search(), "Enter");
+    await waitFor(() => h.seen.images.length === 1 && h.seen.structure.length === 2, "both");
+    expect(h.seen.structure[1]).toEqual({
+      op: "import",
+      name: "one.md",
+      text: "1",
+      dir: "/h/world",
+    });
+    expect(h.seen.images[0]?.dir).toBe("/h/world");
+    expect(document.querySelector('[role="alert"]')?.textContent).toContain("cover.psd");
+    await m.unmount();
+  });
+
+  test("backing out copies nothing; a drop with nothing to copy only says why, unasked", async () => {
+    const h = harness([drafts]);
+    const m = await h.mountIt();
+    await drop(listArea() as Element, transfer([file("scene.md", "# Scene\n")]));
+    await waitFor(() => dialogEl() !== null, "the dialog");
+    await key(search(), "Escape");
+    await waitFor(() => dialogEl() === null, "closed");
+    await Bun.sleep(30);
+    expect(h.seen.structure).toEqual([]);
+    await drop(listArea() as Element, transfer([file("cover.psd", "x")]));
+    await waitFor(() => document.querySelector('[role="alert"]') !== null, "the notice");
+    expect(dialogEl()).toBeNull();
+    expect(h.seen.asks).toHaveLength(1);
+    await m.unmount();
+  });
+
+  test("a drop on a set's row needs no ask: it lands in that set", async () => {
+    const h = harness([drafts]);
+    const m = await h.mountIt();
+    const row = [...document.querySelectorAll('ul[aria-label="Context"] button')].find((b) =>
+      (b.textContent ?? "").includes("drafts"),
+    ) as Element;
+    await drop(row, transfer([file("scene.md", "# Scene\n")]));
+    await waitFor(() => h.seen.structure.length === 1, "the import");
+    expect(h.seen.structure).toEqual([
+      { op: "import", name: "scene.md", text: "# Scene\n", dir: "/h/drafts" },
+    ]);
+    expect(h.seen.asks).toEqual([]);
+    await m.unmount();
+  });
+
+  test("with a workspace the slot is not asked: the workspace is where things go", async () => {
+    const h = harness([drafts], { workspace: "/h/ws" });
+    const m = await h.mountIt();
+    expect(byLabel("New document…")).toBeNull();
+    await drop(listArea() as Element, transfer([file("scene.md", "# Scene\n")]));
+    await waitFor(() => h.seen.structure.length === 1, "the import");
+    expect(h.seen.structure).toEqual([{ op: "import", name: "scene.md", text: "# Scene\n" }]);
+    expect(h.seen.asks).toEqual([]);
+    await m.unmount();
+  });
+});
+
+describe("making room from the dialog", () => {
+  test("with no set yet it says so; a new folder at a path is made and highlighted once it shows", async () => {
+    const h = harness([]);
+    const m = await h.mountIt();
+    await click(byLabel("New document…"));
+    await waitFor(() => dialogEl() !== null, "the dialog");
+    expect(dialogEl()?.textContent).toContain("There is no set to put it in yet");
+    expect(dialogEl()?.textContent).toContain("Turn a document into a set");
+    await typeInto(pathBox() as HTMLInputElement, "~/fresh");
+    await key(pathBox(), "Enter");
+    expect(h.seen.added).toEqual(["~/fresh"]);
+    expect(dialogEl()?.textContent).toContain("Making /h/fresh");
+    // The daemon's snapshot brings the new set: highlighted, and Enter makes the document there.
+    await h.setEntries([{ ...world, id: "c-fresh", label: "fresh", root: "/h/fresh" }]);
+    expect(chosen()).toEqual(["fresh"]);
+    // The focus is back in the search, so the next Enter chooses it, not another folder.
+    expect(document.activeElement).toBe(search());
+    await key(search(), "Enter");
+    await waitFor(() => h.seen.structure.length === 1, "the create");
+    expect(h.seen.structure).toEqual([{ op: "doc.create", dir: "/h/fresh" }]);
+    await m.unmount();
+  });
+
+  test("a refused folder says why, in the dialog", async () => {
+    const h = harness([drafts]);
+    h.refuse("/nowhere/x: its parent folder does not exist");
+    const m = await h.mountIt();
+    await click(byLabel("New folder…"));
+    await waitFor(() => dialogEl() !== null, "the dialog");
+    await typeInto(pathBox() as HTMLInputElement, "/nowhere/x");
+    await key(pathBox(), "Enter");
+    await waitFor(
+      () => (dialogEl()?.textContent ?? "").includes("its parent folder does not exist"),
+      "the refusal",
+    );
+    expect(dialogEl()?.textContent).not.toContain("Making");
+    expect(h.seen.structure).toEqual([]);
+    await m.unmount();
+  });
+});

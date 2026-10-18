@@ -2,6 +2,7 @@
 // sidebar. Imports `lib`, `theme`, `ui` and the workspace's wire types only.
 
 export * from "./AddPath.tsx";
+export * from "./AskLocation.tsx";
 export * from "./ContextSidebar.tsx";
 export * from "./columns.ts";
 export * from "./daemonClient.ts";
