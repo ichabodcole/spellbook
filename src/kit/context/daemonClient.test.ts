@@ -788,3 +788,75 @@ describe("writeText", () => {
     expect(readFileSync(path, "utf8")).toBe("# Solo\n");
   });
 });
+
+describe("the app's view, marked unchanged (StateFrame)", () => {
+  test("against the real daemon: a broadcast that leaves the view alone keeps it, and a changed one replaces it", async () => {
+    // The pair under test: this daemon marks an unchanged view, and this client
+    // keeps it. A client that did not fold the mark would lose the view here.
+    let view = "big".repeat(1000);
+    daemon = await boot({ attentionMs: 60_000, appState: () => ({ view }) });
+    const c = await connect(daemon);
+    expect(c.getSnapshot().state?.appState).toEqual({ view });
+    c.getSnapshot().send({ op: "context.add", path: docs });
+    await waitUntil("the entry", () => (c.getSnapshot().state?.context.length ?? 0) === 1);
+    expect(c.getSnapshot().state?.appState).toEqual({ view });
+    view = "changed";
+    daemon.context.broadcast();
+    await waitUntil(
+      "the changed view",
+      () => (c.getSnapshot().state?.appState as { view?: string } | null)?.view === "changed",
+    );
+  });
+
+  test("a marked frame keeps the view held; after a reconnect, the new hello's view is the one kept", async () => {
+    class FakeSocket {
+      static last: FakeSocket;
+      readyState = 1;
+      onopen: (() => void) | null = null;
+      onmessage: ((e: { data: string }) => void) | null = null;
+      onclose: (() => void) | null = null;
+      constructor(readonly url: string) {
+        FakeSocket.last = this;
+        queueMicrotask(() => this.onopen?.());
+      }
+      send() {}
+      close() {}
+      deliver(frame: Record<string, unknown>) {
+        this.onmessage?.({ data: JSON.stringify(frame) });
+      }
+    }
+    const client = createDaemonClient({
+      url: "http://127.0.0.1:1/ws",
+      WebSocket: FakeSocket as unknown as typeof WebSocket,
+      minDelayMs: 1,
+    });
+    client.connect();
+    await Bun.sleep(5);
+    const held = () => client.getSnapshot().state;
+    const first = FakeSocket.last;
+    first.deliver({ op: "state", state: { sessionId: "s", docs: [], appState: { n: 1 } } });
+    first.deliver({ op: "state", state: { sessionId: "s", docs: [], appStateUnchanged: true } });
+    expect(held()?.appState).toEqual({ n: 1 });
+    expect("appStateUnchanged" in (held() ?? {})).toBe(false);
+    // An app with no view says so: null is a view, not a mark.
+    first.deliver({ op: "state", state: { sessionId: "s", docs: [], appState: null } });
+    expect(held()?.appState).toBeNull();
+    first.deliver({ op: "state", state: { sessionId: "s", docs: [], appState: { n: 2 } } });
+
+    // The daemon goes away and comes back: its hello is whole, and is kept.
+    first.readyState = 3;
+    first.onclose?.();
+    await waitUntil("a new socket", () => FakeSocket.last !== first);
+    await Bun.sleep(5);
+    const second = FakeSocket.last;
+    second.deliver({ op: "state", state: { sessionId: "s", docs: [], appState: { n: 3 } } });
+    second.deliver({ op: "state", state: { sessionId: "s", docs: [], appStateUnchanged: true } });
+    expect(held()?.appState).toEqual({ n: 3 });
+
+    // A mark from another session has nothing of its own to keep: no view,
+    // never the old session's.
+    second.deliver({ op: "state", state: { sessionId: "t", docs: [], appStateUnchanged: true } });
+    expect(held()?.appState).toBeNull();
+    client.close();
+  });
+});

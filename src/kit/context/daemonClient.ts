@@ -34,6 +34,7 @@ import type {
   StateSnapshot,
   StructureOpName,
 } from "../workspace/protocol";
+import { resolveAppState } from "../workspace/protocol";
 
 /** The heading of a toast for a link that did not open. */
 export const LINK_REFUSED = "That link didn't open";
@@ -617,7 +618,12 @@ export function createDaemonClient(options: DaemonOptions = {}): DaemonClient {
     }
     switch (frame.op) {
       case "state": {
-        const next = (frame as Extract<ServerOp, { op: "state" }>).state;
+        // A frame may mark the app's view unchanged (`StateFrame`): the view
+        // this client holds is kept.
+        const next = resolveAppState(
+          view.state,
+          (frame as Extract<ServerOp, { op: "state" }>).state,
+        );
         // A write waiting for a version this state no longer has active (the
         // agent switched, and this client could not send it first as it does
         // before its own switch): sent now, before the surface hears of the

@@ -1721,6 +1721,68 @@ describe("guards the review asked for", () => {
     expect(states()).toBe(before + 1);
   });
 
+  test("a state broadcast marks an unchanged app view instead of resending it; a new connection and GET /state get it whole", async () => {
+    let view = "big".repeat(1000);
+    const { s, d, base } = await start({ attentionMs: 60_000, appState: () => ({ view }) });
+    await s.waitFor((m) => m.op === "state");
+    const raw = () => s.frames.filter((f) => f.op === "state").map((f) => f.state);
+    // The hello carries the view whole.
+    expect(raw()[0]).toMatchObject({ appState: { view } });
+    expect("appStateUnchanged" in (raw()[0] ?? {})).toBe(false);
+
+    // A chat line changes the state, not the view: the frame is marked.
+    s.send({ op: "say", text: "hello", withSelection: false });
+    await waitUntil("the chat line", () => s.state.chat.length === 1);
+    const marked = raw().at(-1) as Record<string, unknown>;
+    expect(marked.appStateUnchanged).toBe(true);
+    expect("appState" in marked).toBe(false);
+    expect(JSON.stringify(marked).length).toBeLessThan(view.length);
+    expect(s.state.appState).toEqual({ view }); // folded, as a client folds it
+
+    // A new connection starts whole, then is marked like the first.
+    const other = new FakeSurface();
+    await other.connect(d.port);
+    try {
+      await other.waitFor((m) => m.op === "state");
+      expect(other.frames[0]).toMatchObject({ op: "state", state: { appState: { view } } });
+      d.context.broadcast();
+      await waitUntil(
+        "a second frame",
+        () => other.frames.filter((f) => f.op === "state").length === 2,
+      );
+      expect(other.frames.at(-1)).toMatchObject({ state: { appStateUnchanged: true } });
+
+      // A changed view goes whole to both.
+      view = "changed";
+      d.context.broadcast();
+      await waitUntil(
+        "the new view",
+        () => (s.state.appState as { view: string }).view === "changed",
+      );
+      await waitUntil(
+        "the new view, there too",
+        () => (other.state.appState as { view: string }).view === "changed",
+      );
+      expect(raw().at(-1)).toMatchObject({ appState: { view: "changed" } });
+    } finally {
+      other.close();
+    }
+    // The agent's read is always whole.
+    const st = (await (await fetch(`${base}/state`)).json()) as Record<string, unknown>;
+    expect(st.appState).toEqual({ view: "changed" });
+    expect("appStateUnchanged" in st).toBe(false);
+  });
+
+  test("an app without an appState hook sends appState: null on every frame, as before", async () => {
+    const { s } = await start({ attentionMs: 60_000 });
+    s.send({ op: "say", text: "hello", withSelection: false });
+    await waitUntil("the chat line", () => s.state.chat.length === 1);
+    const states = s.frames.filter((f) => f.op === "state");
+    expect(states.length).toBeGreaterThan(1);
+    for (const f of states)
+      expect(f.op === "state" && "appState" in f.state && f.state.appState).toBe(null);
+  });
+
   test("an app can ask for a save dialog through the context, one at a time", async () => {
     let release: (r: { paths: string[]; cancelled: boolean }) => void = () => {};
     const asked: unknown[][] = [];

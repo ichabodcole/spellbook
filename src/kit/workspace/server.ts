@@ -1172,11 +1172,53 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         appState: opts.appState?.(appCtx()) ?? null,
       };
     };
+    /**
+     * The app's view as each connection was last sent it, serialized. A state
+     * frame carries the view only to a connection whose copy differs, and marks
+     * it unchanged (`appStateUnchanged`, see `StateFrame`) to the rest. Every
+     * connection gets every broadcast, but this is kept per connection anyway:
+     * a frame Bun drops (`send` answers 0) leaves that one connection behind,
+     * and its next frame must carry the view whole. An app without the hook
+     * sends `appState: null` on every frame, as before.
+     */
+    const viewSent = new WeakMap<import("bun").ServerWebSocket<unknown>, string>();
+    /** One state frame to one connection, the app's view whole or marked unchanged. */
+    const sendState = (
+      ws: import("bun").ServerWebSocket<unknown>,
+      state: PublicState,
+      view: string | null,
+      frames: { full?: string; same?: string },
+    ) => {
+      const same = view !== null && viewSent.get(ws) === view;
+      let text: string;
+      if (same) {
+        if (frames.same === undefined) {
+          const { appState: _, ...rest } = state;
+          frames.same = JSON.stringify({
+            op: "state",
+            state: { ...rest, appStateUnchanged: true },
+          });
+        }
+        text = frames.same;
+      } else {
+        frames.full ??= JSON.stringify({ op: "state", state });
+        text = frames.full;
+      }
+      try {
+        const n = ws.send(text);
+        if (view === null || n === 0) viewSent.delete(ws);
+        else viewSent.set(ws, view);
+      } catch {
+        viewSent.delete(ws); /* socket closed */
+      }
+    };
     broadcastState = () => {
       presenceShown = agentListening();
       const state = viewState();
-      if (opts.appState) sentAppState = JSON.stringify(state.appState);
-      send({ op: "state", state });
+      const view = opts.appState ? JSON.stringify(state.appState) : null;
+      sentAppState = view;
+      const frames = {};
+      for (const ws of sockets) sendState(ws, state, view, frames);
     };
 
     /** A line in the chat. */
@@ -4577,7 +4619,10 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         open(ws) {
           sockets.add(ws);
           touch();
-          ws.send(JSON.stringify({ op: "state", state: viewState() }));
+          // A new connection (a reconnect too) starts with the app's view whole.
+          viewSent.delete(ws);
+          const state = viewState();
+          sendState(ws, state, opts.appState ? JSON.stringify(state.appState) : null, {});
         },
         async message(ws, raw) {
           touch();

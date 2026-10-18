@@ -11201,6 +11201,15 @@ function isSvgName(name) {
 var SVG_REFUSED = "SVG is not brought in: an SVG can carry script, which would run inside the app. Export it as PNG or WebP instead.";
 var IMAGE_HEAD_BYTES = 64 * 1024;
 
+// src/kit/workspace/protocol.ts
+function resolveAppState(prev, next) {
+  if (!("appStateUnchanged" in next) || next.appStateUnchanged !== true)
+    return next;
+  const { appStateUnchanged: _, ...rest } = next;
+  const kept = prev && prev.sessionId === next.sessionId ? prev.appState : null;
+  return { ...rest, appState: kept };
+}
+
 // src/kit/context/daemonClient.ts
 var LINK_REFUSED = "That link didn't open";
 var folderOf = (path) => path.slice(0, path.lastIndexOf("/")) || "/";
@@ -11509,7 +11518,7 @@ function createDaemonClient(options2 = {}) {
     }
     switch (frame.op) {
       case "state": {
-        const next = frame.state;
+        const next = resolveAppState(view.state, frame.state);
         if (view.state?.sessionId === next.sessionId)
           for (const [slug, w] of [...writes]) {
             const d = next.docs.find((x) => x.slug === slug);
