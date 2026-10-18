@@ -164,7 +164,7 @@ describe("with an edge slot", () => {
     expect(entry?.getAttribute("data-source")).toBe(join(set, "r.md"));
     expect(entry?.getAttribute("data-key")).toBe("refs[0]");
     expect(entry?.getAttribute("aria-label")).toBe(
-      "r, a frontmatter reference, not a link in its text",
+      "r: reference (frontmatter), not a link in its text",
     );
     expect(entry?.querySelector('[data-slot="reference-line"]')?.textContent).toBe(
       "refs[0]: ./part/b.md",

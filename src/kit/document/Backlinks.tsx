@@ -113,7 +113,8 @@ export function edgeLine(e: EdgeBacklinkView): string {
 /**
  * One document that refers to this one by an app's edge: a reference (a
  * frontmatter key, say), not a link in its text, so it has no line to quote.
- * Its kind is the app's word, and the entry says it.
+ * Its kind is the app's word, and the entry says it. No line is shown: the
+ * entry opens its source at the top, since opening takes no line.
  */
 function EdgeEntry({
   e,
@@ -130,13 +131,12 @@ function EdgeEntry({
     <li>
       <button
         type="button"
-        aria-label={`${name}, a ${e.edge} reference, not a link in its text`}
+        aria-label={`${name}: reference (${e.edge}), not a link in its text`}
         aria-describedby={lineId}
         data-slot="backlink-reference"
         data-source={e.source}
         data-edge={e.edge}
         {...(e.key !== undefined ? { "data-key": e.key } : {})}
-        {...(e.line !== undefined ? { "data-line": e.line } : {})}
         onClick={() => onOpen(e)}
         title={`Open ${e.shown}`}
         className="group/backlink w-full rounded-md px-2 py-1.5 text-left outline-none hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring/60"
@@ -147,11 +147,6 @@ function EdgeEntry({
           </span>
           {folderOf(e.shown) && (
             <span className="truncate text-[11px] text-ink-faint">{folderOf(e.shown)}</span>
-          )}
-          {e.line !== undefined && (
-            <span className="ml-auto shrink-0 font-mono text-[10px] text-ink-faint">
-              line {e.line}
-            </span>
           )}
         </span>
         <span
@@ -328,6 +323,11 @@ export function Backlinks({
               </div>
             ))}
           </div>
+          {data.truncated && data.backlinks.length < data.count && (
+            <p className="mt-2 px-2 text-[11px] text-ink-faint">
+              Showing the first {data.backlinks.length} of {data.count}.
+            </p>
+          )}
           {edges.length > 0 && onOpenEdge && (
             <div className={groups.length > 0 ? "mt-3 flex flex-col gap-3" : "flex flex-col gap-3"}>
               {groupEdges(edges).map((g) => (
@@ -343,9 +343,10 @@ export function Backlinks({
                     <span>{g.edges.length}</span>
                   </h3>
                   <ul className="flex flex-col">
-                    {g.edges.map((e) => (
+                    {g.edges.map((e, i) => (
                       <EdgeEntry
-                        key={`${e.source}:${e.key ?? ""}:${e.raw}`}
+                        // biome-ignore lint/suspicious/noArrayIndexKey: one source may name one target twice under the same key (two entries in a list); the list is the daemon's, fixed for this answer.
+                        key={`${e.source}:${e.key ?? ""}:${e.raw}:${i}`}
                         e={e}
                         onOpen={onOpenEdge}
                         asOf={asOf}
@@ -355,11 +356,6 @@ export function Backlinks({
                 </div>
               ))}
             </div>
-          )}
-          {data.truncated && data.backlinks.length < data.count && (
-            <p className="mt-2 px-2 text-[11px] text-ink-faint">
-              Showing the first {data.backlinks.length} of {data.count}.
-            </p>
           )}
           {edges.length < edgeCount && (
             <p data-slot="references-cut" className="mt-2 px-2 text-[11px] text-ink-faint">
