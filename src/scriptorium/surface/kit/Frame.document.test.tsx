@@ -30,7 +30,7 @@ import type { DocView } from "../../../kit/workspace/protocol";
 import type { WorkspaceDaemon } from "../../../kit/workspace/server";
 import { tempRoot } from "../../../kit/workspace/testing";
 import { kitDaemon } from "../../backend/kit/server";
-import { Frame, scriptoriumChips, VIEW_MODE_KEY } from "./Frame";
+import { Frame, scriptoriumChips } from "./Frame";
 
 const root = tempRoot("scriptorium-frame-document");
 const docs = join(root, "docs");
@@ -186,8 +186,54 @@ describe("the frame's centre is the kit's document pane", () => {
     const split = q('button[aria-label="Raw and rendered side by side"]') as HTMLButtonElement;
     expect(split).not.toBeNull();
     await click(q('button[aria-label="Rendered"]'));
-    expect(localStorage.getItem(VIEW_MODE_KEY)).toBe("rendered");
+    expect(localStorage.getItem("scriptorium:view-mode")).toBe("rendered");
     expect(localStorage.getItem("spellbook:view-mode")).toBeNull();
+    await m.unmount();
+  });
+
+  test("raw offers line numbers, and the choice is kept under Scriptorium's name", async () => {
+    const m = await openFile(join(docs, "numbers.md"), "One.\nTwo.\n");
+    const toggle = q('[data-slot="line-numbers-toggle"]');
+    expect(toggle).not.toBeNull();
+    await click(toggle);
+    await waitFor(() => q(".cm-lineNumbers") !== null, "the gutter");
+    expect(localStorage.getItem("scriptorium:line-numbers")).toBe("on");
+    expect(localStorage.getItem("spellbook:line-numbers")).toBeNull();
+    await m.unmount();
+  });
+
+  test("reader mode hides both columns, and leaving it brings them back", async () => {
+    const m = await openFile(join(docs, "reader.md"), "# Reader\n\nQuiet.\n");
+    const hidden = (pane: string) =>
+      (q(`[data-pane="${pane}"]`) as HTMLElement | null)?.hidden ?? null;
+    expect([hidden("context"), hidden("chat")]).toEqual([false, false]);
+    await click(q('button[aria-label^="Reader mode"]'));
+    await waitFor(() => hidden("chat") === true, "the chat column hidden");
+    expect(hidden("context")).toBe(true);
+    await click(q('button[aria-label^="Leave reader mode"]'));
+    await waitFor(() => hidden("chat") === false, "the chat column back");
+    expect(hidden("context")).toBe(false);
+    await m.unmount();
+  });
+});
+
+describe("a new version", () => {
+  test("its toast's Show diff opens compare against that version, without activating it", async () => {
+    const m = await openFile(join(docs, "versions.md"), "First.\n");
+    const slug = openDoc()?.slug as string;
+    await fetch(`${daemon.url}/cmd`, {
+      method: "POST",
+      body: JSON.stringify({ op: "version.new", doc: slug, label: "theirs" }),
+    });
+    await waitFor(
+      () => withText('[data-slot="toasts"] article', "New version") !== null,
+      "the toast",
+    );
+    await click(withText('[data-slot="toasts"] button', "Show diff"));
+    await waitFor(() => centre().includes("compared with"), "the compare view");
+    const pressed = q('[aria-label="Compare against"] button[aria-pressed="true"]');
+    expect(pressed?.textContent).toBe("v2");
+    expect(openDoc()?.active).toBe(1);
     await m.unmount();
   });
 });
@@ -206,6 +252,11 @@ describe("the held selection reaches the chat and Notes", () => {
     expect(said?.from).toBe("human");
     expect(said?.about?.text).toBe("beta");
     expect(said?.about?.fromLine).toBe(1);
+    // The path is the active version's file, whose lines fromLine counts: the
+    // kit's `about.path`, not the shipped app's `selection.path` (the original).
+    const shown = openDoc();
+    expect(said?.about?.path).toBe(shown?.versions.find((v) => v.n === shown.active)?.path);
+    expect(said?.about?.path).not.toBe(shown?.original);
 
     await click(q('[data-pane="chat"] button[aria-label="Clear the selection"]'));
     await heldBecomes(null, "the daemon let it go");
