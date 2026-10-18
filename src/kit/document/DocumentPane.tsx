@@ -166,8 +166,12 @@ function mapThrough(pos: number, c: TextChange, assoc: 1 | -1): number {
 /** A problem's words as a sentence: ended with a full stop unless they end already. */
 const sentence = (s: string) => (/[.?!]$/.test(s) ? s : `${s}.`);
 
-/** A request, from outside the pane, to compare the open document with a version. */
-export type ShowDiff = { doc: string; version: number; seq: number };
+/**
+ * A request, from outside the pane, to compare the open document with a version,
+ * or with the file on disk (`"original"`: the outside-change toast's "See the
+ * difference").
+ */
+export type ShowDiff = { doc: string; version: DiffSide; seq: number };
 
 /** How long the backlinks wait after a change before asking: a burst of snapshots is one ask. */
 const BACKLINKS_PAUSE_MS = 150;

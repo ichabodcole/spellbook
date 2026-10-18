@@ -1015,10 +1015,12 @@ describe("OutsideChangeToasts", () => {
     d,
     store,
     onReload,
+    onShowDiff,
   }: {
     d: DocView | null;
     store: ReturnType<typeof createToastStore>;
     onReload: (doc: string) => void;
+    onShowDiff?: (doc: string) => void;
   }) {
     return (
       <OutsideChangeToasts
@@ -1026,9 +1028,38 @@ describe("OutsideChangeToasts", () => {
         announce={store.announce}
         dismiss={store.dismiss}
         onReload={onReload}
+        {...(onShowDiff ? { onShowDiff } : {})}
       />
     );
   }
+
+  test("with a comparison to open, See the difference comes first, opens it, and decides nothing", async () => {
+    const store = createToastStore();
+    const reloaded: string[] = [];
+    const compared: string[] = [];
+    const m = await mount(
+      <Host
+        d={changed({ dirty: true })}
+        store={store}
+        onReload={(d) => reloaded.push(d)}
+        onShowDiff={(d) => compared.push(d)}
+      />,
+    );
+    const [toast] = store.snapshot();
+    expect(toast?.actions?.map((a) => a.label)).toEqual(["See the difference", "Reload", "Keep"]);
+    expect(toast?.actions?.[0]?.ariaLabel).toBe("Compare note.md with the file on disk");
+    toast?.actions?.[0]?.onAct();
+    expect(compared).toEqual(["note"]);
+    expect(reloaded).toEqual([]);
+    // The toast has done its job; the flag is still up, so it is not raised again.
+    expect(store.snapshot()).toHaveLength(0);
+    await m.render(
+      <Host d={changed({ dirty: true })} store={store} onReload={() => {}} onShowDiff={() => {}} />,
+    );
+    expect(store.snapshot()).toHaveLength(0);
+    store.dispose();
+    await m.unmount();
+  });
 
   test("the flag going up raises one toast with Reload and Keep, and a repeat snapshot adds none", async () => {
     const store = createToastStore();
