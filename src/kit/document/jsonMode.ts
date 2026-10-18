@@ -27,9 +27,17 @@ const GUTTER_THEME = EditorView.theme({
 });
 
 /**
+ * The numbered-line gutter, in the kit's tokens: always on for JSON, and the
+ * human's choice for markdown (`DocumentView`'s `lineNumbers`).
+ */
+export function numberedLines(): Extension {
+  return [lineNumbers(), GUTTER_THEME];
+}
+
+/**
  * How a JSON document is edited: the language (highlighting, with its own
  * bracket matching) and numbered lines.
  */
 export function jsonHighlighting(): Extension {
-  return [json(), syntaxHighlighting(JSON_STYLE), lineNumbers(), GUTTER_THEME];
+  return [json(), syntaxHighlighting(JSON_STYLE), numberedLines()];
 }

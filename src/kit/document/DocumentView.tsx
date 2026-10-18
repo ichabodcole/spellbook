@@ -23,6 +23,7 @@ import {
 import { highlightSelectionMatches, search, searchKeymap } from "@codemirror/search";
 import {
   Annotation,
+  Compartment,
   EditorState,
   type Extension,
   StateEffect,
@@ -35,7 +36,7 @@ import type { DocFormat } from "../lib/docFormat.ts";
 import { caretInCode } from "../lib/markdownCode.ts";
 import type { PlacedNote } from "../workspace/protocol";
 import { clipboardImages, isImageLike } from "./imagePaste.ts";
-import { jsonHighlighting } from "./jsonMode.ts";
+import { jsonHighlighting, numberedLines } from "./jsonMode.ts";
 import { modClickFollowsLinks } from "./linkClick.ts";
 import { type LinkKind, type LinkRequest, type LinkTracker, linkTrigger } from "./linkInsert.ts";
 import { type InlineToken, markdownHighlighting } from "./markdownMode.ts";
@@ -238,7 +239,29 @@ const editorTheme = EditorView.theme({
   ".cm-selectionMatch": {
     backgroundColor: "color-mix(in srgb, var(--color-ink-faint) 18%, transparent)",
   },
+  // A quiet reading mode fades the gutter as `QUIET_FADE` fades the chrome (the
+  // same strength and pace) and never hides it: the human turned the numbers on.
+  // The pointer on the gutter brings it back, as it brings a bar back.
+  "&.cm-quiet .cm-gutters": { opacity: "0.4", transition: "opacity 300ms" },
+  "&.cm-quiet .cm-gutters:hover": { opacity: "1" },
 });
+
+/** The class a quiet reading mode puts on the editor, which fades its gutter. */
+export const QUIET_GUTTER_CLASS = "cm-quiet";
+
+/**
+ * The line-number gutter, on or off. JSON's highlighting carries the same
+ * gutter, which CodeMirror holds once however often it is named: on adds no
+ * second one there, and off leaves JSON's.
+ */
+function gutterFor(on: boolean): Extension {
+  return on ? numberedLines() : [];
+}
+
+/** The quiet fade on the gutter, or nothing. */
+function quietFor(quiet: boolean): Extension {
+  return quiet ? EditorView.editorAttributes.of({ class: QUIET_GUTTER_CLASS }) : [];
+}
 
 /**
  * What is inserted at the caret: the text, or a function of the character before
@@ -363,6 +386,8 @@ export function DocumentView({
   onRows,
   replay,
   onReplayed,
+  lineNumbers = false,
+  quiet = false,
 }: {
   docKey: string;
   text: string;
@@ -465,6 +490,17 @@ export function DocumentView({
   replay?: { base: string; changes: readonly TextChange[] } | null;
   /** Told once `replay` has been read, whether or not it still matched. */
   onReplayed?: () => void;
+  /**
+   * Number the lines in a gutter. Changing it reconfigures the editor in place
+   * (a compartment), never rebuilds it, so the scroll, the selection and the
+   * undo history stay. A JSON document is numbered whatever this says.
+   */
+  lineNumbers?: boolean;
+  /**
+   * A quiet reading mode is on: the gutter fades as the chrome does (`QUIET_FADE`),
+   * and stays. Reconfigured in place, like `lineNumbers`.
+   */
+  quiet?: boolean;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
@@ -507,6 +543,12 @@ export function DocumentView({
   focusedRef.current = focusedNote;
   const additions = useRef({ extensions, tokens });
   additions.current = { extensions, tokens };
+  // The gutter and its fade, each in a compartment of its own: read when the
+  // view is built, and reconfigured in place when they change (below), so
+  // turning the numbers on or off never rebuilds the editor.
+  const gutter = useRef({ numbers: new Compartment(), quiet: new Compartment() });
+  const gutterNow = useRef({ lineNumbers, quiet });
+  gutterNow.current = { lineNumbers, quiet };
   /** The ranges open link pickers will replace, mapped through every change. */
   const trackers = useRef(new Set<Tracked>());
   const follow = (from: number, to: number, fromAssoc: -1 | 1, toAssoc: -1 | 1): LinkTracker => {
@@ -630,6 +672,8 @@ export function DocumentView({
         });
       }),
       editorTheme,
+      gutter.current.numbers.of(gutterFor(gutterNow.current.lineNumbers)),
+      gutter.current.quiet.of(quietFor(gutterNow.current.quiet)),
       EditorState.readOnly.of(!editable),
       EditorView.editable.of(editable),
     ];
@@ -830,6 +874,16 @@ export function DocumentView({
       view.current = null;
     };
   }, [docKey, editable, format]);
+
+  // The gutter turned on or off, or the reading mode quieted: reconfigured in
+  // the view there is. Declared after the view effect, so a rebuild (a new
+  // document) is built with the current choice and this finds nothing to change.
+  useEffect(() => {
+    view.current?.dispatch({ effects: gutter.current.numbers.reconfigure(gutterFor(lineNumbers)) });
+  }, [lineNumbers]);
+  useEffect(() => {
+    view.current?.dispatch({ effects: gutter.current.quiet.reconfigure(quietFor(quiet)) });
+  }, [quiet]);
 
   // Keeping your place. CodeMirror already knows both directions exactly:
   // `posAtCoords` for the line under the top edge of the scroller, and
