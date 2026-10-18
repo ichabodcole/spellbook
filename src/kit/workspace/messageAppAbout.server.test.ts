@@ -13,6 +13,7 @@ import { fixtureDaemon } from "./fixtures/app";
 import { cmd, collectEvents, FakeSurface, waitUntil } from "./fixtures/harness";
 import {
   APP_ABOUT_PART_MAX,
+  APP_ABOUT_PARTS_MAX,
   APP_ABOUT_TOTAL_MAX,
   cleanAppAbout,
   RESERVED_PART_NAMES,
@@ -192,8 +193,9 @@ describe("what an app's part may be", () => {
   });
 
   test("a part over APP_ABOUT_PART_MAX is dropped, and parts past APP_ABOUT_TOTAL_MAX in all", async () => {
-    // Each `x.repeat(n)` part is n + 2 bytes of JSON.
-    const fits = APP_ABOUT_PART_MAX - 2;
+    // A one-letter name and `x.repeat(n)` weigh `"a"` + `:` + n + 2 = n + 6 bytes:
+    // four at the per-part cap fill the total exactly, and a fifth is over it.
+    const fits = APP_ABOUT_PART_MAX - 6;
     const { s, t } = await start({
       hooks: {
         messageAbout: () => ({
@@ -233,6 +235,61 @@ describe("what an app's part may be", () => {
   });
 });
 
+describe("a hook result that throws when read", () => {
+  test("costs the app's parts with a warning, never the human's message", async () => {
+    const shapes: Record<string, unknown> = {
+      getter: {
+        get glance(): unknown {
+          throw new Error("getter says no");
+        },
+      },
+      ownKeys: new Proxy(
+        {},
+        {
+          ownKeys() {
+            throw new Error("ownKeys says no");
+          },
+        },
+      ),
+      getPrototypeOf: new Proxy(
+        {},
+        {
+          getPrototypeOf() {
+            throw new Error("getPrototypeOf says no");
+          },
+        },
+      ),
+    };
+    let current = "getter";
+    const { s, t } = await start({ hooks: { messageAbout: () => shapes[current] as never } });
+    for (const shape of Object.keys(shapes)) {
+      current = shape;
+      s.send({ op: "say", text: `via ${shape}`, withSelection: false });
+      const ev = await t.waitFor((e) => e.type === "message" && e.text === `via ${shape}`);
+      expect(ev.about).toBeUndefined();
+      expect(String(ev.warning)).toContain(
+        "the app's about parts were dropped: they could not be read",
+      );
+      expect(await waitUntil(`stored ${shape}`, () => said(s, `via ${shape}`))).toBeDefined();
+    }
+  });
+});
+
+describe("what is stored is what a restore gives", () => {
+  test("a toJSON value reads the same live and restored", async () => {
+    const one = await start({ hooks: { messageAbout: () => ({ when: new Date(0) }) } });
+    one.s.send({ op: "say", text: "dated", withSelection: false });
+    const live = await waitUntil("stored", () => said(one.s, "dated"));
+    expect(live.about).toEqual({ when: "1970-01-01T00:00:00.000Z" });
+    const id = one.d.sessionId;
+    await stop();
+    const two = await start({ restore: id });
+    await two.s.waitFor((f) => f.op === "state" && f.state.sessionId === id);
+    const back = await waitUntil("restored", () => said(two.s, "dated"));
+    expect(back.about).toEqual(live.about as never);
+  });
+});
+
 describe("cleanAppAbout", () => {
   test("keeps the app's parts in order, drops kit keys, and takes nothing from a non-object", () => {
     expect(cleanAppAbout({ doc: "x", refs: [], b: 1, a: { n: 2 } }).parts).toEqual([
@@ -244,10 +301,84 @@ describe("cleanAppAbout", () => {
     expect(cleanAppAbout(Object.assign(Object.create(null), { ok: 1 })).parts).toEqual([["ok", 1]]);
   });
   test("a part at exactly the per-part cap is kept; one byte over is not", () => {
-    expect(cleanAppAbout({ p: "x".repeat(APP_ABOUT_PART_MAX - 2) }).parts).toHaveLength(1);
-    expect(cleanAppAbout({ p: "x".repeat(APP_ABOUT_PART_MAX - 1) }).parts).toHaveLength(0);
+    // `"p"` + `:` is 4 bytes, the value's quotes 2.
+    expect(cleanAppAbout({ p: "x".repeat(APP_ABOUT_PART_MAX - 6) }).parts).toHaveLength(1);
+    expect(cleanAppAbout({ p: "x".repeat(APP_ABOUT_PART_MAX - 5) }).parts).toHaveLength(0);
     // Bytes, not characters: a two-byte character weighs two.
-    expect(cleanAppAbout({ p: "é".repeat(APP_ABOUT_PART_MAX / 2) }).parts).toHaveLength(0);
+    expect(cleanAppAbout({ p: "é".repeat(APP_ABOUT_PART_MAX / 2 - 2) }).parts).toHaveLength(0);
+  });
+  test("a part's name weighs too: a huge name is over the per-part cap, many long names over the total", () => {
+    const huge = { ["k".repeat(1024 * 1024)]: 1, small: 1 };
+    const one = cleanAppAbout(huge);
+    expect(one.parts).toEqual([["small", 1]]);
+    expect(one.advice).toEqual([
+      `1 app about part was dropped: over ${APP_ABOUT_PART_MAX} bytes each.`,
+    ]);
+    // 5,000 parts with ~1 KB names: each fits alone, the total and the count do not.
+    const many = Object.fromEntries(
+      Array.from({ length: 5000 }, (_, i) => [`${i}`.padStart(1000, "n"), i]),
+    );
+    const r = cleanAppAbout(many);
+    const weight = r.parts.reduce(
+      (w, [k, v]) => w + JSON.stringify(k).length + 1 + JSON.stringify(v).length,
+      0,
+    );
+    expect(weight).toBeLessThanOrEqual(APP_ABOUT_TOTAL_MAX);
+    expect(r.parts.length).toBe(16);
+    expect(r.advice.join(" ")).toContain(`dropped past ${APP_ABOUT_TOTAL_MAX} bytes in all`);
+  });
+  test("past APP_ABOUT_PARTS_MAX parts, the rest are dropped", () => {
+    const tiny = Object.fromEntries(
+      Array.from({ length: APP_ABOUT_PARTS_MAX + 3 }, (_, i) => [`p${i}`, i]),
+    );
+    const r = cleanAppAbout(tiny);
+    expect(r.parts).toHaveLength(APP_ABOUT_PARTS_MAX);
+    expect(r.parts.at(-1)).toEqual([`p${APP_ABOUT_PARTS_MAX - 1}`, APP_ABOUT_PARTS_MAX - 1]);
+    expect(r.advice).toEqual([
+      `3 app about parts were dropped past the first ${APP_ABOUT_PARTS_MAX}.`,
+    ]);
+  });
+  test("a result that throws when read costs its parts, with advice, and never throws", () => {
+    const getter = {
+      ok: 1,
+      get bad(): number {
+        throw new Error("getter says no");
+      },
+    };
+    const keys = new Proxy(
+      {},
+      {
+        ownKeys() {
+          throw new Error("ownKeys says no");
+        },
+      },
+    );
+    const proto = new Proxy(
+      {},
+      {
+        getPrototypeOf() {
+          throw new Error("getPrototypeOf says no");
+        },
+      },
+    );
+    for (const [given, why] of [
+      [getter, "getter says no"],
+      [keys, "ownKeys says no"],
+      [proto, "getPrototypeOf says no"],
+    ] as const) {
+      const r = cleanAppAbout(given);
+      expect(r.parts).toEqual([]);
+      expect(r.advice).toEqual([
+        `the app's about parts were dropped: they could not be read (${why}).`,
+      ]);
+    }
+  });
+  test("what is kept is what a restore gives: a toJSON value is kept as its JSON", () => {
+    const r = cleanAppAbout({ when: new Date(0), at: { toJSON: () => "the harbour" } });
+    expect(r.parts).toEqual([
+      ["when", "1970-01-01T00:00:00.000Z"],
+      ["at", "the harbour"],
+    ]);
   });
   test("every reserved name is refused, Object.prototype's own and prototype", () => {
     for (const k of RESERVED_PART_NAMES)

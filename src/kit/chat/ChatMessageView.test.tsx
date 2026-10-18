@@ -258,6 +258,14 @@ describe("an app's own parts of what a message was about", () => {
     const bare = Object.assign(Object.create(null), { doc: "a", glance: 1 });
     expect(aboutLabel(bare, name, undefined, any)).toBe("a · glance");
   });
+  test("a ref's label that is not a string is not shown: its path names it", () => {
+    const refs = [
+      { path: "/w/b.md", label: 7 },
+      { path: "/w/c.md", label: { x: 1 } },
+      { path: "/w/d.md", label: "D" },
+    ];
+    expect(aboutLabel({ doc: "a", refs } as never, name)).toBe("a · with b, c, D");
+  });
   test("docs and refs of the wrong shape are left off, never thrown on", () => {
     const odd = (extra: object) => ({ doc: "a", version: 1, ...extra }) as never;
     expect(aboutLabel(odd({ refs: "/w/b.md" }), name)).toBe("a · v1");

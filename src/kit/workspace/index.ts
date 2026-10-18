@@ -48,6 +48,7 @@ export {
 } from "./manifestMigrate";
 export {
   APP_ABOUT_PART_MAX,
+  APP_ABOUT_PARTS_MAX,
   APP_ABOUT_TOTAL_MAX,
   appAboutParts,
   cleanAppAbout,
