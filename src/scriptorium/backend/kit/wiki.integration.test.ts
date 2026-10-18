@@ -555,8 +555,8 @@ describe("the remove verbs, and info", () => {
   });
 });
 
-describe("docMeta on the wire: a pause in typing does not resend it (kit-docmeta-push-cost)", () => {
-  test("typing sends no state; a chat line marks docMeta unchanged; a saved frontmatter edit sends it fresh, and the agent reads it", async () => {
+describe("docMeta on the wire: sent only when it changed (kit-docmeta-push-cost)", () => {
+  test("a typing pause and a chat line send frames without docMeta; a saved frontmatter edit sends it fresh, and the agent reads it", async () => {
     const t = join(set, "typing.md");
     writeFileSync(t, "---\ntype: note\nstatus: draft\n---\n# Typing\n\nbody\n");
     await until(
@@ -573,27 +573,30 @@ describe("docMeta on the wire: a pause in typing does not resend it (kit-docmeta
       const head = "---\ntype: note\nstatus: draft\n---\n# Typing\n\n";
       surface.send({ op: "edit", doc, version: 1, text: `${head}one\n` });
       await until(async () => surface.state.docs.some((d) => d.dirty), "the dirty flip");
-      // Quiet first: the flip's own broadcast and its pause, and the daemon's
-      // once-a-second attention sweep (whose first tick broadcasts), settle.
       const stateFrames = () => surface.frames.filter((f) => f.op === "state");
-      for (let seen = -1; seen !== stateFrames().length; ) {
-        seen = stateFrames().length;
-        await Bun.sleep(1200);
-      }
       const before = stateFrames().length;
+      const hash = () => surface.state.docs.find((d) => d.slug === doc)?.hash;
+      const seen = hash();
+      // Two pauses in typing: each sends a frame, for the documents' hashes,
+      // with docMeta marked unchanged, not resent.
       surface.send({ op: "edit", doc, version: 1, text: `${head}two\n` });
-      await Bun.sleep(400);
+      await until(async () => hash() !== seen, "the first pause's frame");
+      const mid = hash();
       surface.send({ op: "edit", doc, version: 1, text: `${head}three\n` });
-      await Bun.sleep(400); // two pauses in typing
-      expect(stateFrames().length).toBe(before);
-
-      // A chat line is a broadcast that leaves docMeta alone: it is marked
-      // unchanged, not resent, and the surface keeps the docMeta it holds.
+      await until(async () => hash() !== mid, "the second pause's frame");
+      // A chat line is a broadcast that leaves docMeta alone too.
       surface.send({ op: "say", text: "a line, not a frontmatter edit", withSelection: false });
-      await until(async () => stateFrames().length > before, "the chat line's broadcast");
-      const line = stateFrames().at(-1) as { state: Record<string, unknown> };
-      expect(line.state.appStateUnchanged).toBe(true);
-      expect(JSON.stringify(line)).not.toContain("docMeta");
+      await until(
+        async () => surface.state.chat.some((m) => m.text === "a line, not a frontmatter edit"),
+        "the chat line's broadcast",
+      );
+      const since = stateFrames().slice(before) as { state: Record<string, unknown> }[];
+      expect(since.length).toBeGreaterThanOrEqual(3);
+      for (const f of since) {
+        expect(f.state.appStateUnchanged).toBe(true);
+        expect(JSON.stringify(f)).not.toContain("docMeta");
+      }
+      // The surface keeps the docMeta it holds.
       expect((surface.state.appState as AppState).docMeta[t]?.status).toBe("draft");
 
       // The frontmatter edit, saved: the surface hears the new docMeta.
