@@ -7,7 +7,7 @@ description:
   by eye.
 tags: [scriptorium, editor, ux]
 status: stable
-lifecycle: active
+lifecycle: review
 id: 01a0d4b7-de98-724e-8498-d806a64b6369
 kind: task
 generated: { by: claude-opus-5.5, at: 2026-09-24 }
@@ -68,10 +68,10 @@ document-pane cycle, so it is built once in the kit, not in the shipped surface.
       pins that.
 - [x] The choice survives a reload.
 - [ ] In reader mode the gutter fades with the rest of the chrome, and stays
-      visible. _(Left unticked. In the kit, reader mode is always the rendered
-      view, so the gutter can never be on screen there today. The fade is built
-      (40%, never hidden) and waits for reader mode to cover raw. Cole rules
-      whether it ever should.)_
+      visible. _(Built: the fade is 40% and never hides. It cannot be seen until
+      reader mode covers raw, which Cole ruled it should on 2026-10-18. That box
+      carries over to
+      [kit-reader-mode-covers-raw](kit-reader-mode-covers-raw.md).)_
 - [x] In split view only the raw half shows the gutter. The rendered half is
       unchanged.
 - [ ] The change is offered on kit-parity.

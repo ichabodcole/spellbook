@@ -6,7 +6,7 @@ description:
   context, wire the held selection to chat and notes, and fill Scriptorium's
   slots: trust, stale, split view."
 status: stable
-lifecycle: active
+lifecycle: review
 id: 01a14dc5-6f94-7529-ac57-306dea4e021a
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-17 }

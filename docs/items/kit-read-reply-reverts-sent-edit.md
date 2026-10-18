@@ -6,7 +6,7 @@ description:
   client's copy; the next keystroke then sends the old text and the earlier
   typing is gone. Kit path only; the shipped client sends no second read.
 status: stable
-lifecycle: active
+lifecycle: review
 id: 01a14eb6-f99c-750f-953b-69dcc00f60f6
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-18 }
