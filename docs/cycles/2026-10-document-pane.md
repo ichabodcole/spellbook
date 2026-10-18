@@ -6,8 +6,8 @@ description:
   with the map as its app view: the fourth of five workspace-stack cycles."
 tags: [kit, scriptorium, story-studio]
 status: stable
-lifecycle: planned
-started: 2026-10-17
+lifecycle: active
+started: 2026-10-18
 appetite:
   Stop when the flagged Scriptorium opens, edits, versions, compares and notes a
   document in the kit's pane, and shows the map, with the gate and acc green;
