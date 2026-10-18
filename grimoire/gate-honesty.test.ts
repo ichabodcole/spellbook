@@ -363,6 +363,17 @@ import { join } from "node:path";
 // Scanned from base.css, the pane's utilities had grown every themed spell's
 // stylesheet by about a tenth. With this, every spell's rebuilt stylesheet is
 // byte-identical to the cycle base's. theme.test.ts holds the scan split.
+//
+// ⛔ RE-DECLARED 2026-10-18 — 31/2,902 -> 32/2,916, from the object's own sum.
+// MEMBERSHIP GREW BY ONE:
+//     +14  src/scriptorium/surface/kit/styles.css   (new)
+// the document-centre item (scriptorium-kit-document-centre): the interim
+// frame's own sheet, two @imports (the shipped sheet, then the kit's
+// document.css) and the comment saying why. The frame had linked the shipped
+// sheet directly; adding document.css to it would have changed the shipped
+// Scriptorium. The rules it pulls in are held where they live (theme.test.ts);
+// the frame's tests and the browser check are what read this file's effect.
+// Thrown away with the frame at the shell cycle.
 const DECLARED_BLIND: Record<string, number> = {
   "src/digestify/surface/styles.css": 515,
   "src/digestify/surface/index.html": 26,
@@ -407,6 +418,9 @@ const DECLARED_BLIND: Record<string, number> = {
   // its own entry page, the shipped one's pre-paint theme script and favicon
   // under a second title. Thrown away with the frame at the shell cycle.
   "src/scriptorium/surface/kit/index.html": 41,
+  // The frame's own sheet (scriptorium-kit-document-centre): the shipped one,
+  // then the kit's document.css.
+  "src/scriptorium/surface/kit/styles.css": 14,
   "src/scriptorium/surface/styles.css": 389,
 };
 
