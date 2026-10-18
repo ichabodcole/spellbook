@@ -65,7 +65,7 @@ beforeEach(async () => {
   root = tempRoot("document-pane-gone");
   mkdirSync(join(root, "tmp"), { recursive: true });
   process.env.KIT_FIXTURE_HOME = join(root, "home");
-  // The set sits in the workspace, so it is in the context from the start.
+  // The set sits in the session's workspace folder.
   ws = testWorkspace(root, "ws");
   world = join(ws, "world");
   part = join(world, "part");

@@ -61,7 +61,7 @@ beforeEach(async () => {
   root = tempRoot("document-pane-bundles");
   mkdirSync(join(root, "tmp"), { recursive: true });
   process.env.KIT_FIXTURE_HOME = join(root, "home");
-  // The set sits in the workspace, so it is in the context from the start.
+  // The set sits in the session's workspace folder.
   ws = testWorkspace(root, "ws");
   world = join(ws, "world");
   mkdirSync(world, { recursive: true });
@@ -141,7 +141,7 @@ async function openWell() {
 
 describe("a bundle in the pane", () => {
   test("with no view of its own, its main file opens raw, in its format's mode", async () => {
-    localStorage.setItem("story-studio:view-mode", "rendered");
+    localStorage.setItem("spellbook:view-mode", "rendered");
     await openWell();
     await waitFor(() => (q(".cm-content")?.textContent ?? "").includes("lantern"), "the editor");
     const view = EditorView.findFromDOM(q(".cm-editor") as HTMLElement) as EditorView;
@@ -188,7 +188,7 @@ describe("a bundle in the pane", () => {
   });
 
   test("the header names the type: its icon, a chip, and the view's own mode button", async () => {
-    // A second registration throws: the type is swapped for the variant, then back.
+    // The type is swapped for the variant, then back.
     unregisterBundleType(TEST_BUNDLE.extension);
     registerBundleType({ ...TEST_BUNDLE, icon: <svg data-testid="board-icon" /> });
     try {

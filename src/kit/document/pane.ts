@@ -13,7 +13,7 @@ export const VIEW_MODES = ["raw", "rendered", "split", "compare"] as const;
 export type ViewMode = (typeof VIEW_MODES)[number];
 
 /** Where the pane keeps the view mode when the app names no key of its own. */
-export const DEFAULT_VIEW_MODE_KEY = "story-studio:view-mode";
+export const DEFAULT_VIEW_MODE_KEY = "spellbook:view-mode";
 
 /**
  * A stored mode, or raw. Compare is never restored: it needs a payload that is gone.

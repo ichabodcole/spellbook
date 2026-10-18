@@ -71,8 +71,7 @@ beforeEach(async () => {
   root = tempRoot("document-pane-json");
   mkdirSync(join(root, "tmp"), { recursive: true });
   process.env.KIT_FIXTURE_HOME = join(root, "home");
-  // The world is inside the workspace, so it is a set there from the start
-  // (every file of a session lives inside its workspace).
+  // The world sits in the session's workspace folder.
   const ws = testWorkspace(root, "ws");
   world = join(ws, "world");
   mkdirSync(join(world, "_meta", "profiles"), { recursive: true });
@@ -176,7 +175,7 @@ async function typeAll(text: string) {
 describe("a JSON document in the pane", () => {
   test("opens raw in JSON mode, with no rendered, split, reader or link controls", async () => {
     // A stored rendered mode, as a reader of markdown would leave it.
-    localStorage.setItem("story-studio:view-mode", "rendered");
+    localStorage.setItem("spellbook:view-mode", "rendered");
     await open(profile);
     expect(q(".md-prose")).toBeNull();
     expect(q(".cm-editor")).not.toBeNull();
@@ -295,7 +294,7 @@ describe("a JSON document in the pane", () => {
   });
 
   test("Raw, the way out of Compare, does not become the markdown documents' view", async () => {
-    localStorage.setItem("story-studio:view-mode", "rendered");
+    localStorage.setItem("spellbook:view-mode", "rendered");
     await open(profile);
     await typeAll(VALID.replace('"title"', '"title", "status"'));
     await waitFor(() => document.body.textContent?.includes("Unsaved") === true, "Unsaved");
@@ -303,7 +302,7 @@ describe("a JSON document in the pane", () => {
     await waitFor(() => document.body.textContent?.includes("compared with") === true, "compare");
     await click(q('button[aria-label="Raw text"]'));
     await waitFor(() => q(".cm-editor") !== null, "the editor again");
-    expect(localStorage.getItem("story-studio:view-mode")).toBe("rendered");
+    expect(localStorage.getItem("spellbook:view-mode")).toBe("rendered");
   });
 
   test("activating a version that does not parse says so at once, before any Save", async () => {

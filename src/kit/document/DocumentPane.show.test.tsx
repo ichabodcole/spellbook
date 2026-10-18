@@ -58,8 +58,7 @@ beforeEach(async () => {
   root = tempRoot("document-show");
   mkdirSync(join(root, "tmp"), { recursive: true });
   process.env.KIT_FIXTURE_HOME = join(root, "home");
-  // The story is inside the workspace, so it is in the context from the start
-  // (every file of a session lives inside its workspace).
+  // The story sits in the session's workspace folder.
   const ws = testWorkspace(root, "ws");
   story = join(ws, "story.md");
   writeFileSync(story, TEXT);

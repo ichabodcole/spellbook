@@ -66,10 +66,10 @@ beforeEach(async () => {
   sent = [];
   refused = [];
   client = null;
-  // The set is the workspace, so its top is the context and `solo.md` beside
-  // it is outside (every file of a session lives inside its workspace).
-  daemon = fixtureDaemon({ tmp: join(root, "tmp"), workspace: join(docs, "set") });
+  daemon = fixtureDaemon({ tmp: join(root, "tmp") });
   await daemon.start();
+  // Only the set is in the context: `solo.md` beside it is outside.
+  daemon.session.addContext(join(docs, "set"));
 });
 afterEach(async () => {
   await daemon.stop().catch(() => {});
@@ -160,7 +160,6 @@ async function openA() {
 describe("following a link in the rendered document", () => {
   test("a typed `./` link opens its target, and a `../` link from there comes back", async () => {
     const m = await openA();
-    const before = client?.state?.context.length;
     await click(link("typed"));
     await waitFor(() => openName() === "b.md", "b.md open");
     expect(sent.find((f) => f.op === "link.open")).toMatchObject({
@@ -171,22 +170,21 @@ describe("following a link in the rendered document", () => {
     await click(link("back"));
     await waitFor(() => openName() === "a.md", "a.md open again");
     // Following added nothing to the context, and nothing was refused.
-    expect(client?.state?.context.length).toBe(before as number);
+    expect(client?.state?.context).toHaveLength(1);
     expect(refused).toEqual([]);
     await m.unmount();
   });
 
   test("a target outside the context is refused by name, with the folder to add, and adds nothing", async () => {
     const m = await openA();
-    const before = client?.state?.context.length;
     await click(link("outside"));
     await waitFor(() => refused.length > 0, "the refusal");
     // The target as written, without its `?rel=` and `#anchor`, and the folder's path.
     expect(refused).toEqual([
-      `../solo.md is outside this workspace, in ${docs}. Copy it in (add) to open the copy here.`,
+      `../solo.md is outside this session's context. Add its folder, ${docs}, to open it here.`,
     ]);
     expect(openName()).toBe("a.md");
-    expect(client?.state?.context.length).toBe(before as number);
+    expect(client?.state?.context).toHaveLength(1);
     await m.unmount();
   });
 

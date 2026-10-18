@@ -91,7 +91,7 @@ beforeEach(async () => {
   paneMode = "rendered";
   said = [];
   client = null;
-  // The seeded folder is the workspace, so its set is in the context from the start.
+  // The seeded folder is the session's workspace folder; the set inside it is added below.
   daemon = fixtureDaemon({ tmp: join(root, "tmp"), workspace: docs });
   await daemon.start();
   daemon.session.addContext(join(docs, "set"));

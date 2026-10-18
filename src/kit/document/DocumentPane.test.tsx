@@ -70,7 +70,7 @@ beforeEach(async () => {
   root = tempRoot("document-pane");
   mkdirSync(join(root, "tmp"), { recursive: true });
   process.env.KIT_FIXTURE_HOME = join(root, "home");
-  // The story sits in the workspace, so it is in the context from the start.
+  // The story sits in the session's workspace folder.
   ws = testWorkspace(root, "ws");
   story = join(ws, "story.md");
   writeFileSync(story, "First line.\n\nSecond line.\n");
@@ -400,7 +400,7 @@ describe("split, raw and rendered side by side", () => {
     await waitFor(() => q("[data-slot=split-view] .md-prose p") !== null, "the rendered half");
     expect(q("[data-slot=split-view] .cm-editor")).not.toBeNull();
     expect(q(SPLIT)?.getAttribute("aria-pressed")).toBe("true");
-    expect(localStorage.getItem("story-studio:view-mode")).toBe("split");
+    expect(localStorage.getItem("spellbook:view-mode")).toBe("split");
     await settle(() => viewOf().dispatch({ changes: { from: 0, insert: "Now. " } }));
     await waitFor(
       () => q(".md-prose p")?.textContent === "Now. First line.",
@@ -448,7 +448,7 @@ describe("split, raw and rendered side by side", () => {
   });
 
   test("too narrow, split is disabled with the reason, and a stored split shows raw", async () => {
-    localStorage.setItem("story-studio:view-mode", "split");
+    localStorage.setItem("spellbook:view-mode", "split");
     const undo = paneWidth(600);
     try {
       await openStory(undefined, undefined, { splitView: true });
@@ -459,14 +459,14 @@ describe("split, raw and rendered side by side", () => {
       expect(q(".md-prose")).toBeNull();
       expect(q('button[aria-label="Raw text"]')?.getAttribute("aria-pressed")).toBe("true");
       // The choice is kept, so a wider pane brings split back.
-      expect(localStorage.getItem("story-studio:view-mode")).toBe("split");
+      expect(localStorage.getItem("spellbook:view-mode")).toBe("split");
     } finally {
       undo();
     }
   });
 
   test("a stored split in an app with split off falls back to raw", async () => {
-    localStorage.setItem("story-studio:view-mode", "split");
+    localStorage.setItem("spellbook:view-mode", "split");
     await openStory();
     expect(q(SPLIT)).toBeNull();
     expect(q(".md-prose")).toBeNull();
@@ -494,7 +494,7 @@ describe("reader mode, rendered with both columns out of the way", () => {
     expect(readerPressed()).toBe(true);
     expect(q(READER)?.getAttribute("title")).toContain("Leave reader mode");
     expect(q("[data-reader]")).not.toBeNull();
-    expect(localStorage.getItem("story-studio:view-mode")).toBe("rendered");
+    expect(localStorage.getItem("spellbook:view-mode")).toBe("rendered");
     expect(quietSaid.at(-1)).toBe(true);
 
     await click(q(READER));

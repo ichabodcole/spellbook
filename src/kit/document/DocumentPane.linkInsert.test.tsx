@@ -75,8 +75,7 @@ beforeEach(async () => {
   client = null;
   announced = [];
   startMode = "split";
-  // The workspace is the folder that holds the set, so the set is a
-  // top-level entry (every file of a session lives inside its workspace).
+  // The session's workspace is the folder that holds the set.
   daemon = fixtureDaemon({ tmp: join(root, "tmp"), workspace: join(root, "docs") });
   await daemon.start();
   daemon.session.addContext(set);

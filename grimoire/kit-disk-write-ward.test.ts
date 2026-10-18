@@ -259,6 +259,10 @@ const ALLOWED: Record<string, { uses: number; why: string }> = {
     uses: 1,
     why: "a test rig: removing its own temp root",
   },
+  "src/kit/workspace/fixtures/harness.ts::mkdirSync": {
+    uses: 1,
+    why: "test support (`testWorkspace`): an empty folder in a test's temp root, set as its session's workspace",
+  },
 };
 
 function walk(dir: string, out: string[] = []): string[] {

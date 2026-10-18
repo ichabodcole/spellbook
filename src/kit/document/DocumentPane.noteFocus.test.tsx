@@ -101,7 +101,7 @@ beforeEach(async () => {
   root = tempRoot("document-note-focus");
   mkdirSync(join(root, "tmp"), { recursive: true });
   process.env.KIT_FIXTURE_HOME = join(root, "home");
-  // The story sits in the workspace, so it is in the context from the start.
+  // The story sits in the session's workspace folder.
   const ws = testWorkspace(root, "ws");
   story = join(ws, "story.md");
   writeFileSync(story, TEXT);
@@ -179,6 +179,9 @@ const pick = (id: string | null) => settle(() => choose(id));
 async function openStory(mode: ViewMode) {
   const m = await mount(<Host mode={mode} />);
   await waitFor(() => open !== null || q('[data-pane="centre"]') !== null, "the pane");
+  // Spellbook: the workspace folder is not in the context by itself (no copy-in
+  // model), so the story is added where it lives before it is opened.
+  await post({ op: "context.add", paths: [story] });
   const socket = new (nativeGlobal<typeof WebSocket>("WebSocket"))(`${daemon.url}/ws`);
   await new Promise<void>((r) => {
     socket.onopen = () => r();
