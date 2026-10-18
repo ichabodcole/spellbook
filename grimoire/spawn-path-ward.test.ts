@@ -679,6 +679,45 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
     expect(missing).toEqual([]);
   });
 
+  /**
+   * ⛔ A DIRECTORY PIN INSIDE THE SKILL RESOLVES TOO. `isShippedFile` admits a
+   * pin only when its last segment has an extension, so a folder the daemon
+   * reads (the kit path's interim frame, `FRAME_DIST = join(HERE, "kit")`,
+   * handed to the kit as `surface.distDir`) was outside the cell above: moved
+   * to a folder the build never writes, it stayed green here, and only a test
+   * that boots the built daemon could see it. This cell asserts every
+   * extensionless literal pin INTO A SKILL'S `dist/` names an existing
+   * directory: `dist/` is build output, so a folder pinned there is one the
+   * build must have written. Folders elsewhere in the skill may be made at
+   * run time (imago's `assets/`), so they are not asserted. A pin that names a
+   * folder holding a built page (`index.html`) is listed, so the frame's row is
+   * visible, not merely counted.
+   */
+  test("⛔ EVERY SHIPPED DIRECTORY PIN RESOLVES — a moved frame folder goes red here", () => {
+    const missing: string[] = [];
+    const pages: string[] = [];
+    for (const spell of spells) {
+      for (const file of emittedJs(spell)) {
+        for (const pin of pinnedPaths(file)) {
+          if (pin.kind !== "literal") continue;
+          if (!pin.resolved.startsWith(`${PLUGIN_ROOT}/`) || isShippedFile(pin)) continue;
+          if (!relative(PLUGIN_ROOT, pin.resolved).split("/").includes("dist")) continue;
+          const rel = relative(REPO_ROOT, pin.resolved);
+          if (!existsSync(pin.resolved) || !statSync(pin.resolved).isDirectory())
+            missing.push(`${pin.file}:${pin.line} -> ${rel} (${pin.expr})`);
+          else if (existsSync(join(pin.resolved, "index.html")))
+            pages.push(`${pin.file} -> ${rel}`);
+        }
+      }
+    }
+    expect(missing).toEqual([]);
+    // The kit path's frame is a served page in a folder of its own: its pin
+    // must land on one.
+    expect(pages).toContain(
+      "plugins/spellbook/skills/scriptorium/dist/server.js -> plugins/spellbook/skills/scriptorium/dist/kit",
+    );
+  });
+
   test("a pin that leaves the skill folder is ENUMERATED, not silently exempt", () => {
     // These cannot be asserted from this repo (see `isShippedFile`). Pinning the
     // SET is what stops the exemption growing quietly: a new escape fails here
@@ -785,9 +824,10 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
    *   ⚠ RE-RULED 2026-10-17 (scriptorium-kit-interim-frame): the kit path has a
    *   surface now, and this read RUNS. Its argument is the app's `FRAME_DIST`,
    *   `join(HERE, "kit")` on the bundle's own `import.meta.dir`, which this
-   *   ward reads as a literal pin and resolves to the skill's `dist/kit/` (so
-   *   a frame built anywhere else reddens the pin cell). The call itself stays
-   *   opaque: the kit receives the folder as a parameter.
+   *   ward reads as a literal DIRECTORY pin: the directory-pin cell above
+   *   asserts it lands on the skill's built `dist/kit/` (a frame folder moved
+   *   reddens there). The call itself stays opaque: the kit receives the
+   *   folder as a parameter.
    */
   const OPAQUE_FAMILY_CALLS: readonly { file: string; call: string }[] = [
     {
