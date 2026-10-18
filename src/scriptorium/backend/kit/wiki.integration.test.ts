@@ -254,6 +254,41 @@ describe("docMeta: the agent reads each document's frontmatter, trust and stale 
   });
 });
 
+describe("meta-suggest: the block 'Add a block' puts in the buffer (E35), written nowhere", () => {
+  test("a surface asks for it as a daemon op: the shipped suggestion, by human, and no file changes", async () => {
+    const port = (JSON.parse(readFileSync(pointer(sessionId), "utf8")) as { port: number }).port;
+    const before = files();
+    const surface = new FakeSurface();
+    await surface.connect(port);
+    try {
+      surface.send({ op: "scriptorium.meta.suggest", path: join(set, "b.md") });
+      const frame = (await surface.waitFor(
+        (m) => (m.op as string) === "scriptorium.meta.suggest",
+      )) as unknown as { path: string; block: string; suggestedType?: string };
+      expect(frame.path).toBe(join(set, "b.md"));
+      expect(frame.suggestedType).toBe("note");
+      expect(frame.block.startsWith("---\ntype: note\ntitle: Bee\ndescription: \n")).toBe(true);
+      expect(frame.block).toContain("generated: { by: human, at: ");
+      expect(files()).toEqual(before);
+      // A document whose file has a block is refused, as the shipped one is.
+      surface.send({ op: "scriptorium.meta.suggest", path: join(set, "a.md") });
+      const no = (await surface.waitFor(
+        (m) =>
+          m.op === "error" &&
+          String((m as { message?: unknown }).message).includes("already has frontmatter"),
+      )) as unknown as { message: string };
+      expect(no.message).toBe("a.md already has frontmatter");
+    } finally {
+      surface.close();
+    }
+  });
+
+  test("it is the surface's alone: the CLI has no meta-suggest", async () => {
+    const r = await run("meta-suggest", join(set, "b.md"));
+    expect(r.code).not.toBe(0);
+  });
+});
+
 describe("meta-init and meta-set: the shipped text edits, and what the open document does", () => {
   test("meta-init: the type is guessed from the neighbours, the title from the H1; the body is untouched", async () => {
     const r = await run("meta-init", join(set, "b.md"));

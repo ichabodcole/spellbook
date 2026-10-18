@@ -183,8 +183,13 @@ function filterOf(raw: unknown): MetaFilter {
 
 // ── the writes ─────────────────────────────────────────────────────────────
 
-/** What a frontmatter block for this document would say (shipped `suggestMeta`). */
-function suggestMeta(
+/**
+ * What a frontmatter block for this document would say (shipped `suggestMeta`,
+ * E35): the type from the documents beside it, the title from its own H1,
+ * `description` left blank. Read from the file on disk, as the shipped one
+ * reads it; a document whose file already has a block is refused (409).
+ */
+export function suggestMeta(
   s: WorkspaceSession,
   rawPath: string,
   by?: string,
@@ -337,6 +342,20 @@ export const wikiVerbs: Record<string, VerbHandler> = {
     });
     ctx.broadcast();
     return r;
+  },
+
+  /**
+   * The block "Add a block" puts into the human's buffer (E35): suggested,
+   * never written. Asked by the surface, which answers the shipped
+   * `meta.suggest` the same way, and given no CLI command: the agent's half of
+   * E35 is `meta-init`, which writes the file, and the shipped CLI has no
+   * suggest verb either.
+   */
+  "scriptorium.meta.suggest": (ctx, args, call) => {
+    const r = suggestMeta(ctx.session, pathArg(args, "path", "meta-suggest"), by(call.from));
+    const answer = { path: r.path, block: r.block, ...(r.type ? { suggestedType: r.type } : {}) };
+    call.reply({ op: "scriptorium.meta.suggest", ...answer });
+    return answer;
   },
 
   "scriptorium.meta.set": (ctx, args, call) => {
