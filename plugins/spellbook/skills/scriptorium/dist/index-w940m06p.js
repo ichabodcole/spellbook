@@ -44092,7 +44092,7 @@ class EditorState {
       text4 = this.toText(text4);
     return this.changeByRange((range) => ({
       changes: { from: range.from, to: range.to, insert: text4 },
-      range: EditorSelection.cursor(range.from + text4.length)
+      range: EditorSelection.cursor(range.from + text4.length, -1)
     }));
   }
   changeByRange(f) {
@@ -44937,8 +44937,10 @@ function compare2(a2, startA, b, startB, length, comparator) {
         comparator.comparePoint(pos, clipEnd, a2.point, b.point);
       boundChange = false;
     } else {
-      if (boundChange)
+      if (boundChange) {
         comparator.boundChange(pos);
+        boundChange = false;
+      }
       if (clipEnd > pos && !sameValues(a2.active, b.active))
         comparator.compareRange(pos, clipEnd, a2.active, b.active);
       if (bounds && clipEnd < endB && (dEnd || a2.openEnd(end) != b.openEnd(end)))
@@ -46252,8 +46254,20 @@ function trivialOrder(length) {
 var movedOver = "";
 function moveVisually(line, order, dir, start, forward) {
   var _a;
-  let startIndex = start.head - line.from;
-  let spanI = BidiSpan.find(order, startIndex, (_a = start.bidiLevel) !== null && _a !== undefined ? _a : -1, start.assoc);
+  if (!line.length)
+    return null;
+  let startIndex = start.head - line.from, spanI;
+  if (start.head == line.from && start.assoc < 0) {
+    if (!forward)
+      return null;
+    startIndex = order[spanI = 0].side(false, dir);
+  } else if (start.head == line.to && start.assoc > 0) {
+    if (forward)
+      return null;
+    startIndex = order[spanI = order.length - 1].side(true, dir);
+  } else {
+    spanI = BidiSpan.find(order, startIndex, (_a = start.bidiLevel) !== null && _a !== undefined ? _a : -1, start.assoc);
+  }
   let span = order[spanI], spanEnd = span.side(forward, dir);
   if (startIndex == spanEnd) {
     let nextI = spanI += forward ? 1 : -1;
@@ -46268,8 +46282,12 @@ function moveVisually(line, order, dir, start, forward) {
     nextIndex = spanEnd;
   movedOver = line.text.slice(Math.min(startIndex, nextIndex), Math.max(startIndex, nextIndex));
   let nextSpan = spanI == (forward ? order.length - 1 : 0) ? null : order[spanI + (forward ? 1 : -1)];
-  if (nextSpan && nextIndex == spanEnd && nextSpan.level + (forward ? 0 : 1) < span.level)
-    return EditorSelection.cursor(nextSpan.side(!forward, dir) + line.from, nextSpan.forward(forward, dir) ? 1 : -1, nextSpan.level);
+  if (nextIndex == spanEnd) {
+    if (!nextSpan)
+      return forward ? EditorSelection.cursor(line.to, 1) : EditorSelection.cursor(line.from, -1);
+    if (nextSpan.level + (forward ? 0 : 1) < span.level)
+      return EditorSelection.cursor(nextSpan.side(!forward, dir) + line.from, nextSpan.forward(forward, dir) ? 1 : -1, nextSpan.level);
+  }
   return EditorSelection.cursor(nextIndex + line.from, span.forward(forward, dir) ? -1 : 1, span.level);
 }
 function autoDirection(text4, from, to) {
@@ -47187,12 +47205,13 @@ class TileBuilder {
           last2.setDOM(freeNode(mark.dom));
         head = last2;
       } else {
+        let { dom } = mark;
         if (this.cache.reused.get(mark)) {
           let tile = Tile.get(mark.dom);
           if (tile)
-            tile.setDOM(freeNode(mark.dom));
+            dom = freeNode(mark.dom);
         }
-        let nw = MarkTile.of(mark.mark, mark.dom);
+        let nw = MarkTile.of(mark.mark, dom);
         head.append(nw);
         head = nw;
       }
@@ -47650,11 +47669,13 @@ class TileUpdate {
         line = tile;
       else if (tile instanceof BlockWrapperTile)
         ;
-      else if (parent.nodeName == "DIV" && !line && parent != this.view.contentDOM)
+      else if (parent.nodeName == "DIV" && !line)
         line = new LineTile(parent, lineBaseAttrs);
       else if (!line)
         marks.push(MarkTile.of(new MarkDecoration({ tagName: parent.nodeName.toLowerCase(), attributes: getAttrs(parent) }), parent));
     }
+    if (!line)
+      return null;
     return { line, marks };
   }
 }
@@ -48443,11 +48464,11 @@ function blockAt(view, pos, side) {
   return line;
 }
 function moveToLineBoundary(view, start, forward, includeWrap) {
-  let line = blockAt(view, start.head, start.assoc || -1);
-  let coords = !includeWrap || line.type != BlockType.Text || !(view.lineWrapping || line.widgetLineBreaks) ? null : view.coordsAtPos(start.assoc < 0 && start.head > line.from ? start.head - 1 : start.head);
+  let block = blockAt(view, start.head, start.assoc || -1);
+  let coords = !includeWrap || block.type != BlockType.Text || !(view.lineWrapping || block.widgetLineBreaks) ? null : view.coordsAtPos(start.assoc < 0 && start.head > block.from ? start.head - 1 : start.head);
   if (coords) {
     let editorRect = view.dom.getBoundingClientRect();
-    let direction = view.textDirectionAt(line.from);
+    let direction = view.textDirectionAt(block.from);
     let pos = view.posAtCoords({
       x: forward == (direction == Direction.LTR) ? editorRect.right - 1 : editorRect.left + 1,
       y: (coords.top + coords.bottom) / 2
@@ -48455,7 +48476,7 @@ function moveToLineBoundary(view, start, forward, includeWrap) {
     if (pos != null)
       return EditorSelection.cursor(pos, forward ? -1 : 1);
   }
-  return EditorSelection.cursor(forward ? line.to : line.from, forward ? -1 : 1);
+  return EditorSelection.cursor(forward ? block.to : block.from, forward ? -1 : 1);
 }
 function moveByChar(view, start, forward, by) {
   let line = view.state.doc.lineAt(start.head), spans = view.bidiSpans(line);
@@ -48469,7 +48490,7 @@ function moveByChar(view, start, forward, by) {
 `;
       line = view.state.doc.line(line.number + (forward ? 1 : -1));
       spans = view.bidiSpans(line);
-      next = view.visualLineSide(line, !forward);
+      next = forward ? EditorSelection.cursor(line.from, -1) : EditorSelection.cursor(line.to, 1);
     }
     if (!check) {
       if (!by)
@@ -49144,7 +49165,7 @@ function selectionFromPoints(points, base2) {
   if (points.length == 0)
     return null;
   let anchor = points[0].pos, head = points.length == 2 ? points[1].pos : anchor;
-  return anchor > -1 && head > -1 ? EditorSelection.single(anchor + base2, head + base2) : null;
+  return anchor < 0 || head < 0 ? null : anchor == head ? EditorSelection.create([EditorSelection.cursor(head + base2, -1)]) : EditorSelection.single(anchor + base2, head + base2);
 }
 function sameSelPos(selection, range) {
   return range.head == selection.main.head && range.anchor == selection.main.anchor;
@@ -49249,8 +49270,11 @@ class InputState {
       let mods = { ctrlKey: event.ctrlKey, altKey: event.altKey, metaKey: event.metaKey, shiftKey: event.shiftKey };
       if (mods.shiftKey && browser.ios && !/^(off|none)$/.test(this.view.contentDOM.autocapitalize) && iosVirtualKeyboardOpen(this.view.win))
         mods.shiftKey = false;
-      this.pendingIOSKey = { key: event.key, keyCode: event.keyCode, mods };
-      setTimeout(() => this.flushIOSKey(), 50);
+      let pending = this.pendingIOSKey = { key: event.key, keyCode: event.keyCode, mods };
+      setTimeout(() => {
+        if (this.pendingIOSKey == pending)
+          this.flushIOSKey();
+      }, 50);
       return true;
     }
     if (event.keyCode != 229)
@@ -49521,7 +49545,7 @@ function doPaste(view, input) {
       let insert2 = state.toText((byLine ? text4.line(i2++).text : input) + state.lineBreak);
       return {
         changes: { from: line.from, insert: insert2 },
-        range: EditorSelection.cursor(range.from + insert2.length)
+        range: EditorSelection.cursor(range.from + insert2.length, -1)
       };
     });
   } else if (byLine) {
@@ -49529,7 +49553,7 @@ function doPaste(view, input) {
       let line = text4.line(i2++);
       return {
         changes: { from: range.from, to: range.to, insert: line.text },
-        range: EditorSelection.cursor(range.from + line.length)
+        range: EditorSelection.cursor(range.from + line.length, -1)
       };
     });
   } else {
@@ -49852,6 +49876,13 @@ observers.compositionstart = observers.compositionupdate = (view) => {
   if (view.inputState.compositionFirstChange == null)
     view.inputState.compositionFirstChange = true;
   if (view.inputState.composing < 0) {
+    let { main } = view.state.selection;
+    if (!main.empty && view.lineBlockAt(main.from).from != view.lineBlockAt(main.to).from) {
+      view.dispatch({
+        changes: view.state.selection.ranges.filter((r2) => !r2.empty).map((r2) => ({ from: r2.from, to: r2.to })),
+        userEvent: "input"
+      });
+    }
     view.inputState.composing = 0;
   }
 };
@@ -50127,12 +50158,12 @@ class HeightMap {
           after += next.size;
       }
     }
-    let brk = 0;
+    let brk = false;
     if (nodes[i2 - 1] == null) {
-      brk = 1;
+      brk = true;
       i2--;
     } else if (nodes[i2] == null) {
-      brk = 1;
+      brk = true;
       j2++;
     }
     return new HeightMapBranch(HeightMap.of(nodes.slice(0, i2)), brk, HeightMap.of(nodes.slice(j2)));
@@ -50356,7 +50387,7 @@ class HeightMapGap extends HeightMap {
 
 class HeightMapBranch extends HeightMap {
   constructor(left, brk, right) {
-    super(left.length + brk + right.length, left.height + right.height, brk | (left.outdated || right.outdated ? 2 : 0));
+    super(left.length + (brk ? 1 : 0) + right.length, left.height + right.height, (brk ? 1 : 0) | (left.outdated || right.outdated ? 2 : 0));
     this.left = left;
     this.right = right;
     this.size = left.size + right.size;
@@ -50390,11 +50421,11 @@ class HeightMapBranch extends HeightMap {
     } else {
       let mid = this.lineAt(rightOffset, QueryType.ByPos, oracle, top2, offset4);
       if (from < mid.from)
-        this.left.forEachLine(from, mid.from - 1, oracle, top2, offset4, f);
+        this.left.forEachLine(from, Math.min(to, mid.from - 1), oracle, top2, offset4, f);
       if (mid.to >= from && mid.from <= to)
         f(mid);
       if (to > mid.to)
-        this.right.forEachLine(mid.to + 1, to, oracle, rightTop, rightOffset, f);
+        this.right.forEachLine(Math.max(from, mid.to + 1), to, oracle, rightTop, rightOffset, f);
     }
   }
   replace(from, to, nodes) {
@@ -52184,6 +52215,7 @@ class EditorView {
     this.updateState = 2;
     this.measureScheduled = -1;
     this.measureRequests = [];
+    this.clearAnnouncement = -1;
     this.contentDOM = document.createElement("div");
     this.scrollDOM = document.createElement("div");
     this.scrollDOM.tabIndex = -1;
@@ -52534,9 +52566,14 @@ class EditorView {
     for (let tr of trs)
       for (let effect of tr.effects)
         if (effect.is(EditorView.announce)) {
-          if (first)
+          if (first) {
             this.announceDOM.textContent = "";
-          first = false;
+            this.win.clearTimeout(this.clearAnnouncement);
+            this.clearAnnouncement = this.win.setTimeout(() => {
+              this.announceDOM.textContent = " ";
+            }, 200);
+            first = false;
+          }
           let div = this.announceDOM.appendChild(document.createElement("div"));
           div.textContent = effect.value;
         }
@@ -52610,9 +52647,7 @@ class EditorView {
     return skipAtoms(this, start, moveByChar(this, start, forward, (initial2) => byGroup(this, start.head, initial2)));
   }
   visualLineSide(line, end) {
-    let order = this.bidiSpans(line), dir = this.textDirectionAt(line.from);
-    let span = order[end ? order.length - 1 : 0];
-    return EditorSelection.cursor(span.side(end, dir) + line.from, span.forward(!end, dir) ? 1 : -1);
+    return end ? EditorSelection.cursor(line.to, 1) : EditorSelection.cursor(line.from, -1);
   }
   moveToLineBoundary(start, forward, includeWrap = true) {
     return moveToLineBoundary(this, start, forward, includeWrap);
@@ -52639,6 +52674,15 @@ class EditorView {
     this.readMeasured();
     let line = this.state.doc.lineAt(pos), order = this.bidiSpans(line);
     let span = order[BidiSpan.find(order, pos - line.from, -1, side)];
+    if (line.length && (pos == line.from && side < 0 || pos == line.to && side > 0) && span.dir != this.textDirectionAt(line.from)) {
+      if (pos == line.to) {
+        pos = line.from + span.from;
+        side = 1;
+      } else {
+        pos = line.from + span.to;
+        side = -1;
+      }
+    }
     return this.docView.coordsAt(pos, side, span.dir == Direction.RTL);
   }
   coordsForChar(pos) {
@@ -52705,6 +52749,7 @@ class EditorView {
     this.docView.destroy();
     this.dom.remove();
     this.observer.destroy();
+    this.win.clearTimeout(this.clearAnnouncement);
     if (this.measureScheduled > -1)
       this.win.cancelAnimationFrame(this.measureScheduled);
     this.destroyed = true;
@@ -54735,7 +54780,7 @@ var ruleNodeProp = new NodeProp({
   combine(a2, b) {
     let cur, root2, take;
     while (a2 || b) {
-      if (!a2 || b && a2.depth >= b.depth) {
+      if (!a2 || b && a2.depth <= b.depth) {
         take = b;
         b = b.next;
       } else {
@@ -56937,8 +56982,8 @@ var cursorLineBoundaryForward = (view) => moveSel(view, (range) => moveByLineBou
 var cursorLineBoundaryBackward = (view) => moveSel(view, (range) => moveByLineBoundary(view, range, false));
 var cursorLineBoundaryLeft = (view) => moveSel(view, (range) => moveByLineBoundary(view, range, !ltrAtCursor(view)));
 var cursorLineBoundaryRight = (view) => moveSel(view, (range) => moveByLineBoundary(view, range, ltrAtCursor(view)));
-var cursorLineStart = (view) => moveSel(view, (range) => EditorSelection.cursor(view.lineBlockAt(range.head).from, 1));
-var cursorLineEnd = (view) => moveSel(view, (range) => EditorSelection.cursor(view.lineBlockAt(range.head).to, -1));
+var cursorLineStart = (view) => moveSel(view, (range) => view.moveToLineBoundary(range, false, false));
+var cursorLineEnd = (view) => moveSel(view, (range) => view.moveToLineBoundary(range, true, false));
 function toMatchingBracket(state, dispatch2, extend) {
   let found = false, selection = updateSel(state.selection, (range) => {
     let matching = matchBrackets(state, range.head, -1) || matchBrackets(state, range.head, 1) || range.head > 0 && matchBrackets(state, range.head - 1, 1) || range.head < state.doc.length && matchBrackets(state, range.head + 1, -1);
