@@ -554,3 +554,55 @@ describe("the remove verbs, and info", () => {
     expect(json(r)).toMatchObject({ session_id: sessionId });
   });
 });
+
+describe("docMeta on the wire: a pause in typing does not resend it (kit-docmeta-push-cost)", () => {
+  test("typing in the body sends no state, so no docMeta; a saved frontmatter edit sends it fresh, and the agent reads it", async () => {
+    const t = join(set, "typing.md");
+    writeFileSync(t, "---\ntype: note\nstatus: draft\n---\n# Typing\n\nbody\n");
+    await until(
+      async () => (await appState()).docMeta[t]?.status === "draft",
+      "typing.md in docMeta",
+    );
+    const port = (JSON.parse(readFileSync(pointer(sessionId), "utf8")) as { port: number }).port;
+    const surface = new FakeSurface();
+    await surface.connect(port);
+    try {
+      surface.send({ op: "open", path: t });
+      await surface.waitFor((m) => m.op === "version.text");
+      const doc = surface.state.openDoc ?? "";
+      const head = "---\ntype: note\nstatus: draft\n---\n# Typing\n\n";
+      surface.send({ op: "edit", doc, version: 1, text: `${head}one\n` });
+      await until(async () => surface.state.docs.some((d) => d.dirty), "the dirty flip");
+      // Quiet first: the flip's own broadcast and its pause, and the daemon's
+      // once-a-second attention sweep (whose first tick broadcasts), settle.
+      const stateFrames = () => surface.frames.filter((f) => f.op === "state");
+      for (let seen = -1; seen !== stateFrames().length; ) {
+        seen = stateFrames().length;
+        await Bun.sleep(1200);
+      }
+      const before = stateFrames().length;
+      surface.send({ op: "edit", doc, version: 1, text: `${head}two\n` });
+      await Bun.sleep(400);
+      surface.send({ op: "edit", doc, version: 1, text: `${head}three\n` });
+      await Bun.sleep(400); // two pauses in typing
+      expect(stateFrames().length).toBe(before);
+
+      // The frontmatter edit, saved: the surface hears the new docMeta.
+      surface.send({
+        op: "edit",
+        doc,
+        version: 1,
+        text: "---\ntype: note\nstatus: stable\n---\n# Typing\n\nthree\n",
+      });
+      surface.send({ op: "save", doc });
+      await until(
+        async () => (surface.state.appState as AppState).docMeta[t]?.status === "stable",
+        "the surface to hear the fresh docMeta",
+      );
+      // And the agent reads it too.
+      expect((await appState()).docMeta[t]?.status).toBe("stable");
+    } finally {
+      surface.close();
+    }
+  }, 20_000);
+});
