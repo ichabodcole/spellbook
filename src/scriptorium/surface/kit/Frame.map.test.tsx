@@ -31,6 +31,8 @@ const root = tempRoot("scriptorium-frame-map");
 const set = join(root, "docs", "set");
 const big = join(root, "docs", "big");
 const lone = join(root, "docs", "lone.md");
+const mut = join(root, "docs", "mut");
+const gone = join(root, "docs", "gone");
 const savedHome = process.env.SCRIPTORIUM_HOME;
 let daemon: WorkspaceDaemon;
 let client: Daemon | null = null;
@@ -56,6 +58,10 @@ beforeAll(async () => {
   for (let i = 0; i < DRAW_CAP + 10; i++)
     writeFileSync(join(big, `n${String(i).padStart(3, "0")}.md`), `# Note ${i}\n`);
   writeFileSync(lone, "# Lone\n");
+  mkdirSync(mut, { recursive: true });
+  writeFileSync(join(mut, "note.md"), "---\ntitle: Note\nstatus: stable\n---\n\n# Note\n");
+  mkdirSync(gone, { recursive: true });
+  writeFileSync(join(gone, "a.md"), "# A\n");
   daemon = kitDaemon({
     tmp: join(root, "tmp"),
     drainGraceMs: 10,
@@ -182,9 +188,15 @@ describe("the map as the document pane's app view", () => {
     await showMap("set");
     await waitFor(() => columnNodes().length === 4, "the columns");
     await click(withText('[aria-label="How to lay the map out"] button', "physics"));
+    // The canvas, not its bodies: `d3-timer` binds the window's animation frame
+    // once, when it first loads, so in a run where another test file loaded it
+    // under a DOM since removed, its ticks never come. The bodies are checked
+    // in the browser.
     await waitFor(
-      () => all('[data-slot="map-force"] g[data-path]').length === 4,
-      "four bodies in the simulation",
+      () =>
+        document.querySelector('[data-slot="map-force"]')?.getAttribute("aria-label") ===
+        "4 documents, arranged by their links",
+      "the physics canvas, of four documents",
     );
     expect(columnNodes().length).toBe(0);
     await click(withText('[aria-label="How to lay the map out"] button', "columns"));
@@ -214,13 +226,61 @@ describe("the map as the document pane's app view", () => {
     await m.unmount();
   });
 
-  test("past the draw cap the columns draw the first 140, and say so", async () => {
+  test("past the draw cap the columns draw the 140 best connected, and say so", async () => {
     const m = await open(big);
     await showMap("big");
     await waitFor(() => columnNodes().length > 0, "the map");
     expect(columnNodes().length).toBe(DRAW_CAP);
     expect(summary()).toContain(`${DRAW_CAP + 10} documents`);
-    expect(summary()).toContain(`drawing the first ${DRAW_CAP}`);
+    expect(summary()).toContain(`drawing the ${DRAW_CAP} best-connected`);
+    await m.unmount();
+  });
+
+  test("a status and a stale change between two showings appear together; Escape leaves the map", async () => {
+    const m = await open(mut);
+    await showMap("mut");
+    const note = () => columnNodes()[0];
+    await waitFor(() => note() !== undefined, "the note drawn");
+    expect(note()?.getAttribute("aria-label")).toBe("Note — stable, 0 citations");
+    expect(note()?.querySelector("title")?.textContent).not.toContain("stale");
+    // Escape goes back to the document, as Escape closed the shipped overlay.
+    await settle(() => {
+      document.body.dispatchEvent(
+        new window.KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+      );
+    });
+    await waitFor(() => map() === null, "the map left by Escape");
+    // Between showings, the note becomes deprecated and stale on disk.
+    writeFileSync(
+      join(mut, "note.md"),
+      "---\ntitle: Note\nstatus: deprecated\nstale_after: 2001-01-01\n---\n\n# Note\n",
+    );
+    // Shown again by the pane's toggle at once: both changes, from one ask. Not
+    // waiting for the page's docMeta, which a change to an unheld document
+    // does not push: the map must not depend on it.
+    await click(document.querySelector('[data-slot="app-view-toggle"]'));
+    await waitFor(
+      () => (note()?.getAttribute("aria-label") ?? "").includes("deprecated"),
+      "the new status",
+    );
+    expect(note()?.querySelector("title")?.textContent).toContain("deprecated · stale");
+    await m.unmount();
+  });
+
+  test("a set taken out of the context withdraws its map", async () => {
+    const m = await open(gone);
+    await showMap("gone");
+    await waitFor(() => columnNodes().length === 1, "the map");
+    const id = client?.state?.context.find((e) => e.root.endsWith("/docs/gone"))?.id as string;
+    await settle(() => {
+      client?.send({ op: "context.remove", id });
+    });
+    await waitFor(() => map() === null, "the map withdrawn");
+    expect(
+      [...document.querySelectorAll('[data-slot="app-view-toggle"]')].map((b) =>
+        b.getAttribute("aria-label"),
+      ),
+    ).not.toContain("Map of gone");
     await m.unmount();
   });
 

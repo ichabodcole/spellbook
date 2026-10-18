@@ -283,7 +283,7 @@ export function Frame({ daemon }: { daemon: Daemon }) {
   // One marker per docMeta, not per render: the sidebar memoises on it.
   const docMeta = docMetaOf(state);
   const rowMarker = useMemo(() => scriptoriumRowMarker(docMeta), [docMeta]);
-  const map = useMapView(daemon, docMeta);
+  const map = useMapView(daemon);
   const { workspace, openDoc, heldHere, collapsed } = ws;
   if (!state || !workspace)
     return (

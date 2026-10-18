@@ -13,8 +13,11 @@
  * What differs from the overlay, and why:
  * - It is fed `MapGraph` (`./mapGraph.ts`): the kit's `LinkGraph` joined with
  *   `docMeta`. Its edges are folded, so the header counts links, not lines.
- * - The header drops "leaving the set" and "dangling" (see `mapGraph.ts`), and
- *   says when the kit's graph cut documents from a set past its cap.
+ * - The header drops "leaving the set" and "dangling" (see `mapGraph.ts`),
+ *   says the drawn 140 are the best connected, and says when the kit's graph
+ *   cut documents from a set past its cap.
+ * - The layout mode is the caller's, so it survives leaving the map; Escape
+ *   leaves it, as Escape closed the overlay.
  * - A node with no `status` says none, where the shipped graph said `stable`.
  * - "Close" is "back to the document": the view is a mode of the centre.
  *
@@ -24,7 +27,13 @@
  */
 
 import { XIcon } from "lucide-react";
-import { type PointerEvent as ReactPointerEvent, useMemo, useRef, useState } from "react";
+import {
+  type PointerEvent as ReactPointerEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { cn } from "../../../kit/lib/cn";
 import { bodyRadius, useForceLayout } from "../components/context/forceLayout";
 import type { MapEdge, MapGraph, MapNode } from "./mapGraph";
@@ -37,10 +46,17 @@ const PAD = 24;
 /** A column taller than this wraps — one type must not outgrow the screen. */
 const COLUMN_ROWS = 12;
 const SUB_GAP = 14;
-/** More nodes than this and the drawing stops being readable; said, not silent. */
+/**
+ * More nodes than this and the drawing stops being readable; said, not silent.
+ * The kit answers best connected first, so the first DRAW_CAP are the best
+ * connected (the shipped graph's first were by file order).
+ */
 export const DRAW_CAP = 140;
 /** More edges than this and the map reads better with them on hover only. */
 const DENSE_EDGES = 150;
+
+/** How the map is laid out: columns by type, or physics. */
+export type MapMode = "columns" | "force";
 
 type Placed = MapNode & { x: number; y: number; column: string };
 
@@ -114,6 +130,8 @@ export function MapView({
   graph,
   error,
   label,
+  mode,
+  onMode,
   onOpenDoc,
   onClose,
 }: {
@@ -121,10 +139,31 @@ export function MapView({
   /** Why no graph is coming, said in place of "Reading the set…". */
   error?: string;
   label: string;
+  /** The layout, held by the caller so it survives leaving the map. */
+  mode: MapMode;
+  onMode: (mode: MapMode) => void;
   onOpenDoc: (path: string) => void;
-  /** Back to the document: the view is left, not dismissed. */
+  /** Back to the document: the view is left, not dismissed. Escape does it too. */
   onClose: () => void;
 }) {
+  // Escape left the shipped overlay; it leaves the view. Not from a field
+  // outside the map (the composer, the sidebar's path box), where Escape is
+  // that field's own, and not from a menu or a dialog, which Escape closes.
+  const root = useRef<HTMLDivElement>(null);
+  const close = useRef(onClose);
+  close.current = onClose;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      const t = e.target instanceof HTMLElement ? e.target : null;
+      const field = t?.closest("input, textarea, select, [contenteditable='true']");
+      if (field && !root.current?.contains(field)) return;
+      if (t?.closest('[role="menu"], [role="dialog"], [role="alertdialog"]')) return;
+      close.current();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   const [hover, setHover] = useState<string | null>(null);
   /**
    * ⛔ A DENSE MAP DRAWN WHOLE IS A HAIRBALL, and the real wiki is one: 46
@@ -134,7 +173,6 @@ export function MapView({
    * the toggle is there for when you want the whole shape at once.
    */
   const [alwaysEdges, setAlwaysEdges] = useState<boolean | null>(null);
-  const [mode, setMode] = useState<"columns" | "force">("columns");
   const { placed, width, height, headings } = useMemo(
     () =>
       graph
@@ -177,14 +215,18 @@ export function MapView({
   );
 
   return (
-    <div data-slot="map" className="flex min-h-0 flex-1 flex-col overflow-hidden bg-surface">
+    <div
+      ref={root}
+      data-slot="map"
+      className="flex min-h-0 flex-1 flex-col overflow-hidden bg-surface"
+    >
       <div className="flex shrink-0 items-center gap-3 border-b border-edge px-4 py-2.5">
         <h2 className="text-sm font-medium text-ink">Map of {label}</h2>
         {graph && (
           <span data-slot="map-summary" className="text-xs text-ink-dim">
             {graph.nodes.length} documents · {links} links inside
             {graph.cut > 0 && ` · ${graph.cut} more not read`}
-            {graph.nodes.length > DRAW_CAP && ` · drawing the first ${DRAW_CAP}`}
+            {graph.nodes.length > DRAW_CAP && ` · drawing the ${DRAW_CAP} best-connected`}
           </span>
         )}
         <div
@@ -196,7 +238,7 @@ export function MapView({
             <button
               key={m}
               type="button"
-              onClick={() => setMode(m)}
+              onClick={() => onMode(m)}
               aria-pressed={mode === m}
               className={cn(
                 "rounded-sm px-2 py-0.5 text-[11px] text-ink-faint outline-none",
