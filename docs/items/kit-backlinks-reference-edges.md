@@ -6,12 +6,13 @@ description:
   would drop the frontmatter references the wiki layer added; render them and
   offer it back.
 status: stable
-lifecycle: triage
+lifecycle: active
 id: 01a14dc5-6e65-725d-911e-4c7631081b09
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-17 }
 tags: [kit, document, links]
 parent: feature/workspace-kit
+cycle: 2026-10-document-pane
 ---
 
 # Linked from shows frontmatter references, not only body links

@@ -5,12 +5,13 @@ description:
   A rowMarker slot on ContextSidebar so Scriptorium's tree shows draft, stale,
   deprecated and unreadable marks from docMeta, as the shipped tree does.
 status: stable
-lifecycle: triage
+lifecycle: active
 id: 01a14dc5-6efd-75c7-aaed-1b2bec2cdc3a
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-17 }
 tags: [kit, context, scriptorium]
 parent: feature/workspace-kit
+cycle: 2026-10-document-pane
 ---
 
 # Tree rows carry an app's status mark

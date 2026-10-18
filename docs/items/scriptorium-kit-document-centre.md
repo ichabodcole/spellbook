@@ -6,12 +6,13 @@ description:
   context, wire the held selection to chat and notes, and fill Scriptorium's
   slots: trust, stale, split view."
 status: stable
-lifecycle: triage
+lifecycle: active
 id: 01a14dc5-6f94-7529-ac57-306dea4e021a
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-17 }
 tags: [scriptorium, kit, document]
 parent: feature/workspace-kit
+cycle: 2026-10-document-pane
 ---
 
 # The flagged Scriptorium edits documents in the kit's document pane

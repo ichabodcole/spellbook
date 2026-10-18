@@ -6,12 +6,13 @@ description:
   src/kit/document, with its stylesheet rules and dependencies, on Spellbook's
   names.
 status: stable
-lifecycle: triage
+lifecycle: active
 id: 01a14dc5-6dcd-72df-91e6-9e9de1d19629
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-17 }
 tags: [kit, story-studio, document]
 parent: feature/workspace-kit
+cycle: 2026-10-document-pane
 ---
 
 # Port Story Studio's document pane into the kit

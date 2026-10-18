@@ -102,3 +102,5 @@ Cole took the recommendation on each of the first three questions.
 _Written at close, not before._
 
 ## Sessions
+
+- cycle/document-pane (open)

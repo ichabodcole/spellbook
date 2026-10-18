@@ -5,12 +5,13 @@ description:
   "Bring E35 to the kit path: a verb returns a suggested frontmatter block and
   the pane offers it into the buffer, as the shipped meta.suggest does."
 status: stable
-lifecycle: triage
+lifecycle: active
 id: 01a14dc5-70c3-7762-8b0a-db667fbc47c8
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-17 }
 tags: [scriptorium, kit, frontmatter]
 parent: feature/workspace-kit
+cycle: 2026-10-document-pane
 ---
 
 # A document with no frontmatter is offered a block to add

@@ -6,12 +6,13 @@ description:
   appView, fed from the kit's LinkGraph joined with docMeta, opened from a set's
   menu.
 status: stable
-lifecycle: triage
+lifecycle: active
 id: 01a14dc5-7029-765d-aac9-d090db989e62
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-17 }
 tags: [scriptorium, kit, map]
 parent: feature/workspace-kit
+cycle: 2026-10-document-pane
 ---
 
 # The map opens as the document pane's app view

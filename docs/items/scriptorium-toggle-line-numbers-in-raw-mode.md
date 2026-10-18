@@ -7,10 +7,11 @@ description:
   by eye.
 tags: [scriptorium, editor, ux]
 status: stable
-lifecycle: backlog
+lifecycle: active
 id: 01a0d4b7-de98-724e-8498-d806a64b6369
 kind: task
 generated: { by: claude-opus-5.5, at: 2026-09-24 }
+cycle: 2026-10-document-pane
 ---
 
 # Toggle line numbers in the raw editor
