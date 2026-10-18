@@ -6,7 +6,7 @@ description:
   editor, remembered like the view mode, so the human can check a line reference
   by eye.
 tags: [scriptorium, editor, ux]
-status: draft
+status: stable
 lifecycle: backlog
 id: 01a0d4b7-de98-724e-8498-d806a64b6369
 kind: task
@@ -44,10 +44,12 @@ document-pane cycle, so it is built once in the kit, not in the shipped surface.
 
 ## Open points
 
-- Whether the gutter follows reader mode's "quieter chrome" (E64), and hides or
-  fades there.
-- Whether split's rendered half needs anything so the two halves still line up
-  at a glance.
+- ~~Whether the gutter follows reader mode's "quieter chrome" (E64), and hides
+  or fades there.~~ **Ruled (Cole, 2026-10-18):** it fades in reader mode but
+  never hides. The human turned the numbers on, and that choice is respected.
+- ~~Whether split's rendered half needs anything so the two halves still line up
+  at a glance.~~ **Ruled (Cole, 2026-10-18):** no. Only the raw half has line
+  numbers, and the rendered half is unchanged.
 
 ## Definition of done
 
@@ -57,7 +59,10 @@ document-pane cycle, so it is built once in the kit, not in the shipped surface.
 - [ ] Toggling keeps the editor's scroll, selection and undo history, and a test
       pins that.
 - [ ] The choice survives a reload.
-- [ ] The two open points above are answered in this file.
+- [ ] In reader mode the gutter fades with the rest of the chrome, and stays
+      visible.
+- [ ] In split view only the raw half shows the gutter. The rendered half is
+      unchanged.
 - [ ] The change is offered on kit-parity.
 
 ## References
