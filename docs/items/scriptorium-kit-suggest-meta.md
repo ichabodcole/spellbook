@@ -30,9 +30,84 @@ it into the editor unsaved.
 
 ## Definition of done
 
-- [ ] With `SCRIPTORIUM_KIT=1`, a document with no frontmatter offers "Add a
+- [x] With `SCRIPTORIUM_KIT=1`, a document with no frontmatter offers "Add a
       block". Taking it puts the suggested block into the editor, unsaved, and
       the file is untouched until Save.
-- [ ] The suggested block matches what the shipped app suggests for the same
+- [x] The suggested block matches what the shipped app suggests for the same
       document.
-- [ ] Any kit change is a generic slot, offered back on kit-parity.
+- [ ] Any kit change is a generic slot, offered back on kit-parity. (The slot is
+      generic, with port-back notes below; the kit-parity offer is the lead's.)
+
+## Done and verified
+
+Commits on `impl/scriptorium-kit-suggest-meta`, from `cycle/document-pane`
+(`231abf60`); nothing is ported from Story Studio, so there is no Story Studio
+sha:
+
+- `f745ba10`: `scriptorium.meta.suggest`, an app verb on the flagged backend
+  (`backend/kit/wiki.ts`). It returns the shipped `suggestMeta`'s block for a
+  document, `by: human` when the surface asks, and writes nothing.
+  `suggestMeta.test.ts` holds it against the shipped `Session.suggestMeta` on
+  one world: neighbour majority, a tie, folder fallback, a quoted title, no H1,
+  no `by`, and the 409 for a block, readable or not. `wiki.integration.test.ts`
+  asks it over a real daemon and checks that no file changes.
+- `d370e18f`: the kit's `textOffer` slot on `DocumentPane`, with its tests.
+- `1fd1a45a`: the frame fills the slot (`surface/kit/suggestMeta.ts`, a
+  three-line `Frame.tsx` edit), with a frame test against a real flagged daemon.
+- `08a16ece`: the dist rebuild. Only the kit page and `server.js` changed.
+
+Deliberate choices:
+
+- **Surface-only, no CLI command.** The agent's half of E35 is `meta-init`,
+  which writes the file. The shipped CLI has no suggest verb either, so the acc
+  surface is unchanged. A test pins that `meta-suggest` is not a command.
+- **The offer rule is the shipped header's.** The frame decides whether there is
+  a block with the shipped reader's `splitFrontmatter`, over the active
+  version's text, as the shipped `doc.meta === null` does. So an unreadable
+  block gets no offer, and the header shows it as written. The kit's own reader
+  is stricter (it needs a key line), so the frame does not use it.
+- **A refusal is announced.** The shipped click ignores a refusal silently (for
+  example, a buffer with no block whose file on disk has one). The kit pane
+  announces it with the daemon's words instead.
+
+Real browser (Playwright, 127.0.0.1 only), on a scratch HOME, SCRIPTORIUM_HOME
+and TMPDIR, with `open` stubbed and `SCRIPTORIUM_KIT=1`:
+
+- `bare.md` showed "This document has no frontmatter. Add a block".
+- Taking the offer put `type: memo` (from a neighbour), `title: The bare one`
+  and `generated: { by: human, … }` at the top of the editor. The pane said
+  Unsaved, the offer went away, and the file on disk was byte-identical.
+- Save wrote the block to the file.
+- `has.md` showed no offer.
+- `bad.md` (an unclosed flow sequence) showed no offer, and its rendered header
+  was the "could not be read, so it is shown as written" one.
+
+The gate passes on `08a16ece` with this doc on top: `bun run gate`, run unpiped
+with a scratch HOME, SCRIPTORIUM_HOME and TMPDIR, exited 0 (6547 pass, 0 fail).
+The shipped Scriptorium is unchanged. Its `--help`, `--version`, and a scripted
+`open --no-open`, `state`, `meta` and `close` on a scratch home give the same
+output against the cycle tip's dist as against this branch's. The only
+difference is the random session epoch.
+
+## Port-back notes
+
+- `DocumentPane` gains `textOffer?: (doc, text) => TextOffer | null` in
+  `DocumentPaneSlots`, and exports the `TextOffer` type (`id`, `message`,
+  `label`, `take`).
+  - The pane shows the offer as a line under the header, with `data-slot`
+    `text-offer` and `data-offer` set to the id.
+  - Taking it awaits `take()`. It then asks `textOffer` again with the text as
+    it is then, and writes only if the same offer still stands.
+  - It inserts at offset 0: through the editor's `replaceRange` when the raw
+    editor is mounted (one undo step), otherwise through `writeText` with the
+    change kept in `replay` for the editor's undo, as `chooseRendered` does.
+    Then it calls `flushText`.
+  - `null` writes nothing. A throw is announced as "Not done: <label>" with its
+    message.
+  - The slot is not asked for JSON, nor while the app's view is active.
+  - Optional; absent, the pane is unchanged.
+- Seen while testing, not changed and not fully diagnosed: an edit sent in the
+  first moments after an open was kept by the daemon. The client's own copy,
+  though, went back to the older text. The likely cause is the open's `read`
+  reply arriving after the edit. The kit test waits for the open to settle
+  before taking the offer.
