@@ -100,10 +100,14 @@ Commits on `impl/kit-port-document`:
   cell;
 - `b3a88a9c`: the rendered-markdown rules in `src/kit/theme/document.css`;
 - `07a3721c`: the chat test's HTML-sink census in Story Studio's form;
-- `ab17c3ef`: the rebuilt dist.
+- `ab17c3ef`: the rebuilt dist;
+- after the first verification:
+  - `383a2b37`: only a page with the document pane carries its utilities;
+  - `742583f9`: the flash's keyframes are pinned;
+  - `d2fb4966`: every spell's stylesheet is back to the cycle base's.
 
 The document tests pass (445 in 44 files), the kit wards pass, and so does the
-gate: exit 0, with 6,460 passing and 0 failing across 428 files.
+gate: exit 0, with 6,462 passing and 0 failing across 428 files.
 
 **The stylesheet is a sheet of its own, not `base.css`.** Every themed spell
 imports `base.css`, the shipped Scriptorium among them, and Scriptorium writes
@@ -114,6 +118,24 @@ Nothing imports it yet: the
 [document-centre item](scriptorium-kit-document-centre.md) wires it into the
 flagged page. It was built through Tailwind in a scratch page, and every rule
 was emitted.
+
+**The pane's utilities stay out of other spells' stylesheets.** `base.css` used
+to scan all of `src/kit` and exclude a few folders. That put the document pane's
+classes into every themed spell's stylesheet, none of them used: bounty +462
+lines, digestify +455, grapevine +451, imago +405, mind-mapper +399 and
+Scriptorium +236, about a tenth each, plus three theme variables. An exclusion
+cannot keep them out, because Tailwind 4.3's `@source not` applies to the whole
+build. A `not` in `base.css` also cancelled `document.css`'s own scan of the
+folder. So `base.css` now names the kit's shared markup modules (chat, context,
+theme, ui, wire). `document.css` scans `src/kit/document` itself. `base.css`
+also leaves out `document.css`, whose text alone marked `--color-pointed` as
+used in every spell.
+
+Every themed spell's rebuilt stylesheet is now byte-identical to the cycle
+base's, Scriptorium's included. `theme.test.ts` holds that every kit module with
+markup is scanned by one of the two sheets, and the pane only by `document.css`.
+It also holds that the flash's keyframes exist. A new markup module is not
+scanned until it is added to `base.css`'s list, and that test fails until it is.
 
 **Our session and the workspace folder.** A set inside the workspace folder is
 treated like any other set: it is not an overlap (`overlapOf`), and the tests
@@ -126,7 +148,7 @@ first.
 **The shipped Scriptorium is unchanged.** Its CLI help, version,
 `open --no-open`, `state`, `add` and `close`, run against the cycle base and
 this branch in scratch homes, match apart from run-specific ids and paths. Its
-stylesheet only gains rules (the kit's utilities). Its surface bundle changes
+stylesheet is byte-identical to the cycle base's. Its surface bundle changes
 only inside CodeMirror's patch versions.
 
 ## Port-back notes
