@@ -254,6 +254,41 @@ describe("docMeta: the agent reads each document's frontmatter, trust and stale 
   });
 });
 
+describe("meta-suggest: the block 'Add a block' puts in the buffer (E35), written nowhere", () => {
+  test("a surface asks for it as a daemon op: the shipped suggestion, by human, and no file changes", async () => {
+    const port = (JSON.parse(readFileSync(pointer(sessionId), "utf8")) as { port: number }).port;
+    const before = files();
+    const surface = new FakeSurface();
+    await surface.connect(port);
+    try {
+      surface.send({ op: "scriptorium.meta.suggest", path: join(set, "b.md") });
+      const frame = (await surface.waitFor(
+        (m) => (m.op as string) === "scriptorium.meta.suggest",
+      )) as unknown as { path: string; block: string; suggestedType?: string };
+      expect(frame.path).toBe(join(set, "b.md"));
+      expect(frame.suggestedType).toBe("note");
+      expect(frame.block.startsWith("---\ntype: note\ntitle: Bee\ndescription: \n")).toBe(true);
+      expect(frame.block).toContain("generated: { by: human, at: ");
+      expect(files()).toEqual(before);
+      // A document whose file has a block is refused, as the shipped one is.
+      surface.send({ op: "scriptorium.meta.suggest", path: join(set, "a.md") });
+      const no = (await surface.waitFor(
+        (m) =>
+          m.op === "error" &&
+          String((m as { message?: unknown }).message).includes("already has frontmatter"),
+      )) as unknown as { message: string };
+      expect(no.message).toBe("a.md already has frontmatter");
+    } finally {
+      surface.close();
+    }
+  });
+
+  test("it is the surface's alone: the CLI has no meta-suggest", async () => {
+    const r = await run("meta-suggest", join(set, "b.md"));
+    expect(r.code).not.toBe(0);
+  });
+});
+
 describe("meta-init and meta-set: the shipped text edits, and what the open document does", () => {
   test("meta-init: the type is guessed from the neighbours, the title from the H1; the body is untouched", async () => {
     const r = await run("meta-init", join(set, "b.md"));
@@ -553,4 +588,73 @@ describe("the remove verbs, and info", () => {
     const r = await run("info");
     expect(json(r)).toMatchObject({ session_id: sessionId });
   });
+});
+
+describe("docMeta on the wire: sent only when it changed (kit-docmeta-push-cost)", () => {
+  test("a typing pause and a chat line send frames without docMeta; a saved frontmatter edit sends it fresh, and the agent reads it", async () => {
+    const t = join(set, "typing.md");
+    writeFileSync(t, "---\ntype: note\nstatus: draft\n---\n# Typing\n\nbody\n");
+    await until(
+      async () => (await appState()).docMeta[t]?.status === "draft",
+      "typing.md in docMeta",
+    );
+    const port = (JSON.parse(readFileSync(pointer(sessionId), "utf8")) as { port: number }).port;
+    const surface = new FakeSurface();
+    await surface.connect(port);
+    try {
+      surface.send({ op: "open", path: t });
+      await surface.waitFor((m) => m.op === "version.text");
+      const doc = surface.state.openDoc ?? "";
+      const head = "---\ntype: note\nstatus: draft\n---\n# Typing\n\n";
+      surface.send({ op: "edit", doc, version: 1, text: `${head}one\n` });
+      await until(async () => surface.state.docs.some((d) => d.dirty), "the dirty flip");
+      const stateFrames = () => surface.frames.filter((f) => f.op === "state");
+      const before = stateFrames().length;
+      const hash = () => surface.state.docs.find((d) => d.slug === doc)?.hash;
+      const seen = hash();
+      // Two pauses in typing: each sends a frame, for the documents' hashes,
+      // with docMeta marked unchanged, not resent.
+      surface.send({ op: "edit", doc, version: 1, text: `${head}two\n` });
+      await until(async () => hash() !== seen, "the first pause's frame");
+      const mid = hash();
+      surface.send({ op: "edit", doc, version: 1, text: `${head}three\n` });
+      await until(async () => hash() !== mid, "the second pause's frame");
+      // A chat line is a broadcast that leaves docMeta alone too.
+      surface.send({ op: "say", text: "a line, not a frontmatter edit", withSelection: false });
+      await until(
+        async () => surface.state.chat.some((m) => m.text === "a line, not a frontmatter edit"),
+        "the chat line's broadcast",
+      );
+      const since = stateFrames().slice(before) as { state: Record<string, unknown> }[];
+      expect(since.length).toBeGreaterThanOrEqual(3);
+      for (const f of since) {
+        expect(f.state.appStateUnchanged).toBe(true);
+        expect(JSON.stringify(f)).not.toContain("docMeta");
+      }
+      // The surface keeps the docMeta it holds.
+      expect((surface.state.appState as AppState).docMeta[t]?.status).toBe("draft");
+
+      // The frontmatter edit, saved: the surface hears the new docMeta.
+      surface.send({
+        op: "edit",
+        doc,
+        version: 1,
+        text: "---\ntype: note\nstatus: stable\n---\n# Typing\n\nthree\n",
+      });
+      surface.send({ op: "save", doc });
+      await until(
+        async () => (surface.state.appState as AppState).docMeta[t]?.status === "stable",
+        "the surface to hear the fresh docMeta",
+      );
+      expect(
+        stateFrames().some(
+          (f) => JSON.stringify(f).includes("docMeta") && JSON.stringify(f).includes("stable"),
+        ),
+      ).toBe(true);
+      // And the agent reads it too.
+      expect((await appState()).docMeta[t]?.status).toBe("stable");
+    } finally {
+      surface.close();
+    }
+  }, 20_000);
 });

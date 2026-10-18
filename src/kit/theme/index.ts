@@ -15,6 +15,18 @@ export const BASE_CSS_PATH = `${import.meta.dir}/base.css`;
 export const BASE_CSS_SPECIFIER = "../../kit/theme/base.css";
 
 /**
+ * The kit's rendered-markdown sheet: the prose body, embeds, typed link chips,
+ * and the note, find and flash marks the chat and document panes draw. Kept out
+ * of the base sheet, which every themed spell imports, so a spell with prose
+ * rules of its own is not changed by it. A page that adopts either pane imports
+ * it after the base sheet.
+ */
+export const DOCUMENT_CSS_PATH = `${import.meta.dir}/document.css`;
+
+/** What a spell writes in its own stylesheet to take the kit's rendered-markdown sheet. */
+export const DOCUMENT_CSS_SPECIFIER = "../../kit/theme/document.css";
+
+/**
  * The four layers a surface's tokens come from, lowest first. Later layers win,
  * so a spell overrides a kit token by redeclaring it in its own `@theme` (L2) and
  * again in its mode block (L3).

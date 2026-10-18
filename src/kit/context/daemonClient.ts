@@ -34,6 +34,7 @@ import type {
   StateSnapshot,
   StructureOpName,
 } from "../workspace/protocol";
+import { resolveAppState } from "../workspace/protocol";
 
 /** The heading of a toast for a link that did not open. */
 export const LINK_REFUSED = "That link didn't open";
@@ -321,6 +322,8 @@ export function createDaemonClient(options: DaemonOptions = {}): DaemonClient {
   let reconnecting = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
   // Unique on a socket; one counter for the client's life is unique on every socket.
+  // Never reset it (not on a reconnect either): `sentEdit` is kept across sockets
+  // and compares these ids, so a counter starting again would freeze a document.
   let nextId = 1;
   const pending = new Map<
     RequestId,
@@ -444,6 +447,14 @@ export function createDaemonClient(options: DaemonOptions = {}): DaemonClient {
   /** The newest daemon-rewritten text taken per document (`version.text`'s `rev`), sent as an edit's `base`. */
   const seenRev = new Map<string, number>();
 
+  /**
+   * The request id of the newest edit sent, by `doc@version`. The daemon takes
+   * one socket's frames in the order they were sent and answers each as it
+   * takes it, so a reply to a request sent before that edit (an `open`'s or a
+   * `read`'s `version.text`) holds the text from before it: see `version.text`.
+   */
+  const sentEdit = new Map<string, RequestId>();
+
   /** Writes waiting out their pause, by document slug. */
   const writes = new Map<
     string,
@@ -470,19 +481,19 @@ export function createDaemonClient(options: DaemonOptions = {}): DaemonClient {
     // it to the version it was typed in, or keeps it as one of its own.
     const text = typeof w.text === "function" ? w.text() : w.text;
     const base = seenRev.get(slug);
-    if (
-      send({
-        op: "edit",
-        doc: slug,
-        version: w.version,
-        text,
-        ...(base !== undefined ? { base } : {}),
-      }) === null
-    ) {
+    const id = send({
+      op: "edit",
+      doc: slug,
+      version: w.version,
+      text,
+      ...(base !== undefined ? { base } : {}),
+    });
+    if (id === null) {
       w.timer = setTimeout(() => fireWrite(slug), EDIT_RETRY_MS);
       return false;
     }
     writes.delete(slug);
+    sentEdit.set(textKey(slug, w.version), id);
     noteText(slug, w.version, text);
     return true;
   }
@@ -617,7 +628,12 @@ export function createDaemonClient(options: DaemonOptions = {}): DaemonClient {
     }
     switch (frame.op) {
       case "state": {
-        const next = (frame as Extract<ServerOp, { op: "state" }>).state;
+        // A frame may mark the app's view unchanged (`StateFrame`): the view
+        // this client holds is kept.
+        const next = resolveAppState(
+          view.state,
+          (frame as Extract<ServerOp, { op: "state" }>).state,
+        );
         // A write waiting for a version this state no longer has active (the
         // agent switched, and this client could not send it first as it does
         // before its own switch): sent now, before the surface hears of the
@@ -657,6 +673,14 @@ export function createDaemonClient(options: DaemonOptions = {}): DaemonClient {
         // A write is waiting for this very version: this frame's text is older than
         // the buffer it would replace, and the write will say what is current.
         if (writes.get(f.doc)?.version === f.version) break;
+        // The answer to a request sent before an edit this client has sent for
+        // this very version: the daemon read the text before it took the edit,
+        // so it is older than the copy here, which holds the edit. Taken, it
+        // would put the old text back in the editor, and the next keystroke
+        // would send it, losing what was typed. A frame that answers no request
+        // (a rewrite, a revert, a change on disk) is the daemon's news: taken.
+        const sent = sentEdit.get(textKey(f.doc, f.version));
+        if (typeof rid === "number" && typeof sent === "number" && rid < sent) break;
         // Taken: the next edit is typed over this text (see the daemon's `linkFollow`).
         if (f.rev !== undefined) seenRev.set(f.doc, Math.max(seenRev.get(f.doc) ?? 0, f.rev));
         noteText(f.doc, f.version, f.text);

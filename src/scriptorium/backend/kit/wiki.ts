@@ -129,6 +129,56 @@ export function docMeta(s: WorkspaceSession): {
   return { docMeta: map, ...(truncated ? { docMetaTruncated: true as const } : {}) };
 }
 
+// ── noFrontmatter: which open documents "Add a block" is offered on (E35) ───
+
+const blockCaches = new WeakMap<WorkspaceSession, Map<string, { stamp: string; none: boolean }>>();
+
+/**
+ * The open documents whose ACTIVE version has no frontmatter block, by slug:
+ * the shipped header's `doc.meta === null` (S/backend/session.ts `metaOf`
+ * reads the active version, whole, and the shipped `splitFrontmatter` decides).
+ * In appState, so every surface of the session reads the same answer: one tab
+ * that adds a block takes the offer away from the others, as the shipped
+ * snapshot's `doc.meta` does. An edit reaches it with the edit's broadcast.
+ * Cached by the version's path, mtime and size.
+ */
+export function noFrontmatter(s: WorkspaceSession): { noFrontmatter: string[] } {
+  let cache = blockCaches.get(s);
+  if (!cache) {
+    cache = new Map();
+    blockCaches.set(s, cache);
+  }
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const d of s.view().docs) {
+    const path = s.activePath(d.slug);
+    if (!path) continue;
+    seen.add(path);
+    let stamp: string;
+    try {
+      const st = statSync(path);
+      stamp = `${st.mtimeMs}:${st.size}`;
+    } catch {
+      continue;
+    }
+    let hit = cache.get(path);
+    if (!hit || hit.stamp !== stamp) {
+      let none = false;
+      try {
+        none = splitFrontmatter(readFileSync(path, "utf8")).raw === null;
+      } catch {
+        // Unreadable is the shipped `metaOf`'s null too.
+        none = true;
+      }
+      hit = { stamp, none };
+      cache.set(path, hit);
+    }
+    if (hit.none) out.push(d.slug);
+  }
+  for (const p of cache.keys()) if (!seen.has(p)) cache.delete(p);
+  return { noFrontmatter: out };
+}
+
 // ── the reads ──────────────────────────────────────────────────────────────
 
 /** One document's frontmatter as read, or every context document's (shipped `metaFor`). */
@@ -183,8 +233,13 @@ function filterOf(raw: unknown): MetaFilter {
 
 // ── the writes ─────────────────────────────────────────────────────────────
 
-/** What a frontmatter block for this document would say (shipped `suggestMeta`). */
-function suggestMeta(
+/**
+ * What a frontmatter block for this document would say (shipped `suggestMeta`,
+ * E35): the type from the documents beside it, the title from its own H1,
+ * `description` left blank. Read from the file on disk, as the shipped one
+ * reads it; a document whose file already has a block is refused (409).
+ */
+export function suggestMeta(
   s: WorkspaceSession,
   rawPath: string,
   by?: string,
@@ -337,6 +392,20 @@ export const wikiVerbs: Record<string, VerbHandler> = {
     });
     ctx.broadcast();
     return r;
+  },
+
+  /**
+   * The block "Add a block" puts into the human's buffer (E35): suggested,
+   * never written. Asked by the surface, which answers the shipped
+   * `meta.suggest` the same way, and given no CLI command: the agent's half of
+   * E35 is `meta-init`, which writes the file, and the shipped CLI has no
+   * suggest verb either.
+   */
+  "scriptorium.meta.suggest": (ctx, args, call) => {
+    const r = suggestMeta(ctx.session, pathArg(args, "path", "meta-suggest"), by(call.from));
+    const answer = { path: r.path, block: r.block, ...(r.type ? { suggestedType: r.type } : {}) };
+    call.reply({ op: "scriptorium.meta.suggest", ...answer });
+    return answer;
   },
 
   "scriptorium.meta.set": (ctx, args, call) => {

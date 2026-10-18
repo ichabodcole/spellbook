@@ -1,0 +1,14 @@
+/* The interim frame's sheet: the shipped Scriptorium's, then the kit's document
+   rules, which only this page carries (src/kit/theme/document.css: the rendered
+   view, notes, find and flash marks, embeds and relation chips, and the scan of
+   src/kit/document's utilities).
+
+   The shipped sheet comes whole, palette and all, so both pages are one room.
+   Its `@source "./"` is relative to it, so it scans all of surface/, this folder
+   included: the frame still writes only classes the shipped surface already
+   uses, or they would grow the shipped stylesheet too. The document sheet comes
+   after base.css (inside ../styles.css), as its header asks. Where both style
+   `.md-prose`, the kit's rules come later and win; a property only the shipped
+   rules set still applies here. Cycle 5's shell brings a sheet of its own. */
+@import "../styles.css";
+@import "../../../kit/theme/document.css";

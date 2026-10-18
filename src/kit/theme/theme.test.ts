@@ -1,12 +1,14 @@
 import "../lib/registerDom.ts";
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from "bun:test";
-import { existsSync, readFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import { installDom, removeDom } from "../lib/registerDom.ts";
 import {
   applyTheme,
   BASE_CSS_PATH,
   BASE_CSS_SPECIFIER,
+  DOCUMENT_CSS_PATH,
+  DOCUMENT_CSS_SPECIFIER,
   readAppliedTheme,
   resolveInitialTheme,
   THEME_LAYERS,
@@ -97,22 +99,110 @@ describe("the base stylesheet", () => {
     }
   });
 
-  test("scans the kit for its markup, and not its CLI, workspace, lib or test files", () => {
+  test("scans the kit's shared markup modules by name, and not its CLI, workspace, lib or test files", () => {
     const sources = [...css.matchAll(/^@source (not )?"([^"]+)";/gm)].map((m) =>
       `${m[1] ?? ""}${m[2]}`.trim(),
     );
     expect(sources).toEqual([
-      "../",
+      "../chat",
+      "../context",
+      "../theme",
+      "../ui",
+      "../wire",
       "not ../cli",
       "not ../workspace",
       "not ../lib",
+      "not ./document.css",
       "not ../**/*.test.*",
     ]);
+  });
+
+  test("scans every kit module with markup, the document pane's through its own sheet only", () => {
+    // A module holding .tsx is markup; one nobody scans ships its components
+    // with none of their utilities, silently. So each is scanned by one of the
+    // two sheets, and the document pane never by the base sheet, which every
+    // themed spell imports: its utilities would ship to all of them.
+    const kit = join(import.meta.dir, "..");
+    const scans = (path: string) =>
+      [...readFileSync(path, "utf8").matchAll(/^@source "([^"]+)";/gm)].map((m) =>
+        resolve(dirname(path), m[1] as string),
+      );
+    const base = scans(BASE_CSS_PATH);
+    const docs = scans(DOCUMENT_CSS_PATH);
+    const reaches = (roots: string[], dir: string) =>
+      roots.some((r) => dir === r || dir.startsWith(`${r}/`));
+    const markup = readdirSync(kit, { withFileTypes: true })
+      .filter((e) => e.isDirectory())
+      .map((e) => join(kit, e.name))
+      .filter((d) => readdirSync(d).some((f) => f.endsWith(".tsx") && !f.includes(".test.")));
+    const documentPane = join(kit, "document");
+    expect(markup).toContain(documentPane);
+    expect(markup.length).toBeGreaterThan(1);
+    for (const dir of markup) {
+      if (dir === documentPane) {
+        expect(reaches(base, dir), "the base sheet reaches the document pane").toBe(false);
+        expect(reaches(docs, dir), "document.css scans the document pane").toBe(true);
+      } else {
+        expect(reaches(base, dir), `the base sheet scans ${dir}`).toBe(true);
+      }
+    }
   });
 
   test("keeps its L1 aliases out of the light block", () => {
     const lightBlock = /\[data-theme="light"\]\s*\{([\s\S]*?)\n\}/.exec(css)?.[1] ?? "";
     expect(lightBlock).not.toContain("--color-popover");
+  });
+});
+
+describe("the rendered-markdown sheet", () => {
+  const doc = readFileSync(DOCUMENT_CSS_PATH, "utf8");
+  const kit = join(import.meta.dir, "..");
+  /** Every highlight name a kit module paints with (`const X_HL = "name"`). */
+  const paintedNames = () =>
+    ["document/MarkdownView.tsx", "document/FindBar.tsx"].flatMap((f) =>
+      [...readFileSync(join(kit, f), "utf8").matchAll(/_HL = "([\w-]+)"/g)].map((m) => m[1]),
+    );
+
+  test("is where the theme says it is, and the specifier reaches it from a spell's surface", () => {
+    expect(existsSync(DOCUMENT_CSS_PATH)).toBe(true);
+    const surface = join(import.meta.dir, "..", "..", "scriptorium", "surface");
+    expect(resolve(surface, DOCUMENT_CSS_SPECIFIER)).toBe(resolve(DOCUMENT_CSS_PATH));
+  });
+
+  test("styles every highlight the panes paint, the flash, embeds and relation chips", () => {
+    const names = paintedNames();
+    expect(names.sort()).toEqual([
+      "doc-flash",
+      "doc-note",
+      "doc-note-focus",
+      "doc-note-pending",
+      "find-current",
+      "find-match",
+    ]);
+    for (const n of names) expect(doc, `::highlight(${n})`).toContain(`::highlight(${n}) {`);
+    expect(doc).toContain('[data-flash="on"] {');
+    expect(doc).toContain(".md-prose .md-embed {");
+    expect(doc).toContain(".md-prose a[data-rel]::after {");
+    expect(doc).toContain(".md-prose a[data-blocked-link] {");
+  });
+
+  test("stays out of the base sheet, so a spell with prose rules of its own is unchanged", () => {
+    expect(css).not.toContain(".md-prose");
+    expect(css).not.toContain("::highlight(");
+    expect(css).not.toContain("data-flash");
+  });
+
+  test("the flash's animation names keyframes the sheet defines", () => {
+    const rule = /\[data-flash="on"\]\s*\{([^}]*)\}/.exec(doc)?.[1] ?? "";
+    const name = /animation:\s*([\w-]+)/.exec(rule)?.[1];
+    expect(name).toBeDefined();
+    expect(doc).toContain(`@keyframes ${name} {`);
+  });
+
+  test("uses the kit's tokens, never a fixed colour", () => {
+    const body = doc.replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(body).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+    expect(body).toContain("var(--color-");
   });
 });
 

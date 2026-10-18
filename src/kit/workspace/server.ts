@@ -125,6 +125,7 @@ import type {
   Selection,
   ServerOp,
   ShowTarget,
+  StateFrame,
   StructureOp,
   WikiBreak,
 } from "./protocol";
@@ -1112,6 +1113,8 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     // An app's own view can depend on the text (an app that hashes the active
     // version), and the kit only broadcasts an edit when the dirty flag flips, so a
     // daemon with an `appState` hook also broadcasts after a pause in typing.
+    // The frame carries the documents' hashes as well; an unchanged view rides
+    // it marked, not whole (`sendState`).
     let editTimer: ReturnType<typeof setTimeout> | null = null;
     const scheduleEditBroadcast = () => {
       if (editTimer) return;
@@ -1163,9 +1166,51 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         appState: opts.appState?.(appCtx()) ?? null,
       };
     };
+    /**
+     * The app's view as each connection was last sent it, serialized. A state
+     * frame carries the view only to a connection whose copy differs, and marks
+     * it unchanged (`appStateUnchanged`, see `StateFrame`) to the rest. Every
+     * connection gets every broadcast, but this is kept per connection anyway:
+     * a frame Bun drops (`send` answers 0) leaves that one connection behind,
+     * and its next frame must carry the view whole. An app without the hook
+     * sends `appState: null` on every frame, as before.
+     */
+    const viewSent = new WeakMap<import("bun").ServerWebSocket<unknown>, string>();
+    /** One state frame to one connection, the app's view whole or marked unchanged. */
+    const sendState = (
+      ws: import("bun").ServerWebSocket<unknown>,
+      state: PublicState,
+      view: string | null,
+      frames: { full?: string; same?: string },
+    ) => {
+      const same = view !== null && viewSent.get(ws) === view;
+      let text: string;
+      if (same) {
+        if (frames.same === undefined) {
+          const { appState: _, ...rest } = state;
+          const marked: StateFrame = { ...rest, appStateUnchanged: true };
+          frames.same = JSON.stringify({ op: "state", state: marked } satisfies ServerOp);
+        }
+        text = frames.same;
+      } else {
+        const whole: StateFrame = state;
+        frames.full ??= JSON.stringify({ op: "state", state: whole } satisfies ServerOp);
+        text = frames.full;
+      }
+      try {
+        const n = ws.send(text);
+        if (view === null || n === 0) viewSent.delete(ws);
+        else viewSent.set(ws, view);
+      } catch {
+        viewSent.delete(ws); /* socket closed */
+      }
+    };
     broadcastState = () => {
       presenceShown = agentListening();
-      send({ op: "state", state: viewState() });
+      const state = viewState();
+      const view = opts.appState ? JSON.stringify(state.appState) : null;
+      const frames = {};
+      for (const ws of sockets) sendState(ws, state, view, frames);
     };
 
     /** A line in the chat. */
@@ -4566,7 +4611,10 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         open(ws) {
           sockets.add(ws);
           touch();
-          ws.send(JSON.stringify({ op: "state", state: viewState() }));
+          // A new connection (a reconnect too) is a new key in `viewSent`, so
+          // its first frame carries the app's view whole.
+          const state = viewState();
+          sendState(ws, state, opts.appState ? JSON.stringify(state.appState) : null, {});
         },
         async message(ws, raw) {
           touch();

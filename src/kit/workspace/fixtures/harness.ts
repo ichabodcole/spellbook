@@ -1,10 +1,11 @@
 // What the daemon tests share: the surface's half played by a WebSocket client,
 // the agent's tail read as parsed frames, and a polling wait.
 
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { afterIo, LAST_LOOK_TURNS, lastLook, probed } from "../../lib/afterIo.ts";
 import { AGENT_ONCE_PARAM, AGENT_TAIL_PARAM } from "../heartbeat";
-import type { ClientOp, PublicState, ServerOp } from "../protocol";
+import { type ClientOp, type PublicState, resolveAppState, type ServerOp } from "../protocol";
 
 export type Ev = { id: number; epoch?: string; type: string; [key: string]: unknown };
 
@@ -89,13 +90,15 @@ export class FakeSurface {
     return waitUntil("a surface frame", () => this.frames.find(pred), timeoutMs);
   }
 
-  /** The newest state frame. */
+  /**
+   * The newest state, folded as a client folds it: a frame that marks the
+   * app's view unchanged keeps the one before (`resolveAppState`).
+   */
   get state(): PublicState {
-    for (let i = this.frames.length - 1; i >= 0; i--) {
-      const f = this.frames[i];
-      if (f?.op === "state") return f.state;
-    }
-    throw new Error("no state frame yet");
+    let state: PublicState | null = null;
+    for (const f of this.frames) if (f.op === "state") state = resolveAppState(state, f.state);
+    if (!state) throw new Error("no state frame yet");
+    return state;
   }
 
   close(): void {
@@ -194,4 +197,16 @@ export function pointerPid(file: string): number | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * An empty folder to set as a test session's workspace (`workspace` in the
+ * daemon's options): made inside `parent`, the test's own temp folder, beside
+ * the folders it adds, so it holds none of them. Only a folder; nothing is
+ * copied into it.
+ */
+export function testWorkspace(parent: string, name = "workspace"): string {
+  const dir = join(parent, name);
+  mkdirSync(dir, { recursive: true });
+  return dir;
 }

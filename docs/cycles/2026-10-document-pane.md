@@ -97,8 +97,80 @@ Cole took the recommendation on each of the first three questions.
      joins, on the kit's editor.
    - [kit-mdx-documents](../items/kit-mdx-documents.md) is skipped for now.
 
+**Mid-cycle rulings (Cole, 2026-10-18):**
+
+5. **The typing race joins this cycle.** A verifier found that typing right
+   after opening a document can be lost on the kit path when the daemon is slow.
+   [kit-read-reply-reverts-sent-edit](../items/kit-read-reply-reverts-sent-edit.md)
+   was approved as written, and it is fixed before landing. Not taken: landing
+   now and fixing it before the cutover.
+6. **Broken links must be visible to the human.** The kit map drops the shipped
+   header's "leaving" and "dangling" numbers, and lands as it is. A visible sign
+   with an act attached is filed as
+   [kit-broken-links-visible](../items/kit-broken-links-visible.md). Not taken:
+   restoring the map's numbers now, or leaving it to the agent's verbs.
+7. **Reader mode should cover the raw editor too.** That is filed as
+   [kit-reader-mode-covers-raw](../items/kit-reader-mode-covers-raw.md). Until
+   it lands, the line-number gutter's fade is built but cannot be seen. Not
+   taken: keeping reader mode rendered-only.
+
 ## Outcome
 
-_Written at close, not before._
+**What shipped:**
+
+- **The kit's document pane,** ported whole from Story Studio's `develop`
+  (`b6d5956`), with its own stylesheet. The other spells' stylesheets are
+  unchanged, byte for byte.
+- **The flagged Scriptorium edits documents in it:**
+  - versions, compare and merge;
+  - raw, rendered and split views;
+  - the held selection going to chat and Notes;
+  - the trust and stale chips;
+  - line numbers;
+  - "Linked from", including frontmatter references;
+  - the map as the pane's own view;
+  - "Add a block" (E35);
+  - "See the difference" on an outside change.
+- **The kit gained six optional slots,** each to be offered back on kit-parity:
+  `rowMarker`, `textOffer`, `lineNumbers`, `onShowDiff`, `onOpenEdge` and
+  `appStateUnchanged`. The last is a change to the wire: `docMeta` is only
+  resent when it changed.
+- **A data-loss race the port carried** is fixed: typing right after opening a
+  document could be lost. Story Studio has the same code.
+
+**What was cut, or changed scope:**
+
+- **The map lost its "leaving the set" and "dangling" numbers.** Cole ruled that
+  broken links must be visible to the human some other way
+  (`kit-broken-links-visible`).
+- **The reader-mode fade for line numbers is built but can't be seen yet.** Cole
+  ruled that reader mode should cover the raw editor
+  (`kit-reader-mode-covers-raw`).
+- **A selection's `about.path` is now the version file,** not the original on
+  disk. This is an agent-facing change for the cutover.
+- **`.mdx` was skipped** (ruling 4).
+
+**What was learned:**
+
+- **A port carries its source's bugs, including data loss.** The race came from
+  the shared client. It surfaced only because a verifier added network lag in a
+  real browser. That is worth doing for every pane that edits.
+- **Decide from shared state, not a tab's copy.** "Add a block" first decided
+  from its own tab's text, and a stale tab overwrote another tab's typing. The
+  kit not syncing edits across tabs (`kit-second-tab-misses-edits`) makes every
+  per-tab decision suspect.
+- **Every verifier found something its implementer couldn't:**
+  - CSS that grew in five other spells;
+  - a Story Studio reader of `docs[].hash`;
+  - a false port-back claim;
+  - a map node showing two moments.
+
+  Seven of eight invented mutations that survived the author's tests.
+
+- **Gates run under the load of three agents gave false reds.** The verdict came
+  from each verifier's own gate on the committed tip. The combined gate on
+  `cycle/document-pane` ended at 6,585 pass, 0 fail.
 
 ## Sessions
+
+- cycle/document-pane (open)

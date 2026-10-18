@@ -677,6 +677,39 @@ export type PublicState = {
   appState: unknown;
 };
 
+/**
+ * The state as a `state` frame carries it over the WebSocket. Either the app's
+ * view is there in full (`appState`), or the frame says it is the same as the
+ * last one this connection was sent (`appStateUnchanged: true`, and no
+ * `appState` key). An app's view can be large (a frontmatter index of every
+ * document), and most broadcasts do not change it.
+ *
+ * The marker is explicit, not a missing key, so "keep what you have" cannot be
+ * read as "this app has no view" (`appState: null`) or as an older daemon's
+ * frame. A connection's first frame always carries the view in full, so a new
+ * socket (a reconnect) starts whole. A client folds frames with
+ * `resolveAppState`; one that does not would lose the app's view on the first
+ * marked frame, so the daemon and its client change together.
+ *
+ * `GET /state` (the agent's read) always carries the view in full.
+ */
+export type StateFrame = Omit<PublicState, "appState"> &
+  ({ appState: unknown; appStateUnchanged?: never } | { appStateUnchanged: true });
+
+/**
+ * The whole state from a `state` frame and the state the client held before
+ * it: a marked frame keeps the previous view. A marked frame with nothing to
+ * keep (no previous state, or another session's) is a daemon that broke the
+ * first-frame rule; it reads as no view (`null`) rather than another
+ * session's.
+ */
+export function resolveAppState(prev: PublicState | null, next: StateFrame): PublicState {
+  if (!("appStateUnchanged" in next) || next.appStateUnchanged !== true) return next as PublicState;
+  const { appStateUnchanged: _, ...rest } = next;
+  const kept = prev && prev.sessionId === next.sessionId ? prev.appState : null;
+  return { ...rest, appState: kept } as PublicState;
+}
+
 /** What `GET /state` answers: the snapshot, plus the log's position and the chat's length. */
 export type StateSnapshot = PublicState & {
   /** `chat` is the last ten messages unless `?full=1`; this is how many there are. */
@@ -1793,7 +1826,7 @@ export type ClientOp =
 
 /** Daemon to surface, over the WebSocket. An app adds `<app>.<name>` frames. */
 export type ServerOp =
-  | { op: "state"; state: PublicState }
+  | { op: "state"; state: StateFrame }
   /**
    * `rev`: on a text the daemon rewrote (a link update after a rename or
    * move), its revision. The surface sends the newest it took as an edit's

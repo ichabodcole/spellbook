@@ -3,7 +3,7 @@
 
 import "../lib/registerDom.ts";
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "bun:test";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { useState } from "react";
 import { cleanup, installDom, mount, removeDom, settle, typeInto } from "../lib/testDom.ts";
@@ -79,18 +79,10 @@ describe("what the surface shares with the daemon", () => {
       }
     };
     walk(src);
-    // Spellbook: the document pane is ported after chat, so until `document/`
-    // exists the chat body is the only sink. Once it lands, both are required.
-    const hasDocument = existsSync(join(src, "document"));
-    expect(sinks.sort()).toEqual(
-      hasDocument
-        ? ["chat/ChatMessageView.tsx", "document/MarkdownView.tsx"]
-        : ["chat/ChatMessageView.tsx"],
-    );
+    expect(sinks.sort()).toEqual(["chat/ChatMessageView.tsx", "document/MarkdownView.tsx"]);
     const text = readFileSync(join(src, "chat", "ChatMessageView.tsx"), "utf8");
     expect(text).toContain("renderMarkdown(text");
     expect(text).toContain("__html: html");
-    if (!hasDocument) return;
     const rendered = readFileSync(join(src, "document", "MarkdownView.tsx"), "utf8");
     expect(rendered).toContain("renderDocument(text, widgets)");
     expect(rendered).toContain("__html: html");
@@ -1023,10 +1015,12 @@ describe("OutsideChangeToasts", () => {
     d,
     store,
     onReload,
+    onShowDiff,
   }: {
     d: DocView | null;
     store: ReturnType<typeof createToastStore>;
     onReload: (doc: string) => void;
+    onShowDiff?: (doc: string) => void;
   }) {
     return (
       <OutsideChangeToasts
@@ -1034,9 +1028,38 @@ describe("OutsideChangeToasts", () => {
         announce={store.announce}
         dismiss={store.dismiss}
         onReload={onReload}
+        {...(onShowDiff ? { onShowDiff } : {})}
       />
     );
   }
+
+  test("with a comparison to open, See the difference comes first, opens it, and decides nothing", async () => {
+    const store = createToastStore();
+    const reloaded: string[] = [];
+    const compared: string[] = [];
+    const m = await mount(
+      <Host
+        d={changed({ dirty: true })}
+        store={store}
+        onReload={(d) => reloaded.push(d)}
+        onShowDiff={(d) => compared.push(d)}
+      />,
+    );
+    const [toast] = store.snapshot();
+    expect(toast?.actions?.map((a) => a.label)).toEqual(["See the difference", "Reload", "Keep"]);
+    expect(toast?.actions?.[0]?.ariaLabel).toBe("Compare note.md with the file on disk");
+    toast?.actions?.[0]?.onAct();
+    expect(compared).toEqual(["note"]);
+    expect(reloaded).toEqual([]);
+    // The toast has done its job; the flag is still up, so it is not raised again.
+    expect(store.snapshot()).toHaveLength(0);
+    await m.render(
+      <Host d={changed({ dirty: true })} store={store} onReload={() => {}} onShowDiff={() => {}} />,
+    );
+    expect(store.snapshot()).toHaveLength(0);
+    store.dispose();
+    await m.unmount();
+  });
 
   test("the flag going up raises one toast with Reload and Keep, and a repeat snapshot adds none", async () => {
     const store = createToastStore();

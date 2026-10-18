@@ -341,6 +341,39 @@ import { join } from "node:path";
 // from its own folder used the real home. No comment rides with them: the
 // reason lives in grimoire/kit-scratch-home-ward.test.ts, which the gate runs
 // and which reds on a bunfig without the preload.
+//
+// ⛔ RE-DECLARED 2026-10-18 — 30/2,592 -> 31/2,866, from the object's own sum.
+// MEMBERSHIP GREW BY ONE, and one entry grew:
+//     +270  src/kit/theme/document.css   (new)
+//     +4    src/kit/theme/base.css       218 -> 222
+// the document-pane port (kit-port-document): Story Studio's rendered-markdown,
+// note, find and flash rules, in a sheet of their own because the shipped
+// Scriptorium imports base.css and writes its own prose rules under the same
+// class. base.css grew only by the note that says where they went.
+// src/kit/theme/theme.test.ts, which the gate runs, holds that the new sheet
+// styles every highlight name the panes paint and that base.css carries none
+// of it; the rest of the file is read by nothing.
+//
+// ⛔ RE-DECLARED 2026-10-18, SAME ITEM — 31/2,866 -> 31/2,902, from the
+// object's own sum. MEMBERSHIP DID NOT MOVE; two entries grew:
+//     +29  src/kit/theme/base.css       222 -> 251
+//     +7   src/kit/theme/document.css   270 -> 277
+// base.css now scans the kit's shared markup modules by name, and leaves the
+// document pane and document.css out; document.css scans the pane itself.
+// Scanned from base.css, the pane's utilities had grown every themed spell's
+// stylesheet by about a tenth. With this, every spell's rebuilt stylesheet is
+// byte-identical to the cycle base's. theme.test.ts holds the scan split.
+//
+// ⛔ RE-DECLARED 2026-10-18 — 31/2,902 -> 32/2,916, from the object's own sum.
+// MEMBERSHIP GREW BY ONE:
+//     +14  src/scriptorium/surface/kit/styles.css   (new)
+// the document-centre item (scriptorium-kit-document-centre): the interim
+// frame's own sheet, two @imports (the shipped sheet, then the kit's
+// document.css) and the comment saying why. The frame had linked the shipped
+// sheet directly; adding document.css to it would have changed the shipped
+// Scriptorium. The rules it pulls in are held where they live (theme.test.ts);
+// the frame's tests and the browser check are what read this file's effect.
+// Thrown away with the frame at the shell cycle.
 const DECLARED_BLIND: Record<string, number> = {
   "src/digestify/surface/styles.css": 515,
   "src/digestify/surface/index.html": 26,
@@ -352,7 +385,8 @@ const DECLARED_BLIND: Record<string, number> = {
   "src/magpie/surface/styles.css": 186,
   "src/imago/surface/styles.css": 167,
   "plugins/spellbook/skills/magpie/scripts/remove.py": 145,
-  "src/kit/theme/base.css": 218,
+  "src/kit/theme/base.css": 251,
+  "src/kit/theme/document.css": 277,
   "src/astrolabe/surface/styles.css": 104,
   "src/astrolabe/surface/index.html": 35,
   "src/mind-mapper/surface/index.html": 52,
@@ -384,6 +418,9 @@ const DECLARED_BLIND: Record<string, number> = {
   // its own entry page, the shipped one's pre-paint theme script and favicon
   // under a second title. Thrown away with the frame at the shell cycle.
   "src/scriptorium/surface/kit/index.html": 41,
+  // The frame's own sheet (scriptorium-kit-document-centre): the shipped one,
+  // then the kit's document.css.
+  "src/scriptorium/surface/kit/styles.css": 14,
   "src/scriptorium/surface/styles.css": 389,
 };
 

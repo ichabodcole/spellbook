@@ -666,6 +666,128 @@ describe("writeText", () => {
     client.close();
   });
 
+  // kit-read-reply-reverts-sent-edit: a text read before an edit this client has
+  // already SENT (not one still waiting) used to replace the client's copy, and
+  // the next keystroke sent the old text back, losing what was typed. A request
+  // answered after the stale reply is the fence: one socket, in order.
+  test("an edit sent in the same tick as a re-open keeps its text: the open's older reply is not taken", async () => {
+    daemon = await boot();
+    const c = await connect(daemon);
+    const { slug, path } = await openSolo(c);
+    await c.getSnapshot().request({ op: "open", path: join(docs, "sibling.md") });
+    // Back to solo: its text is held, so a surface shows it at once and the
+    // human types; the open's reply is still on its way.
+    c.getSnapshot().send({ op: "open", path: join(docs, "solo.md") });
+    const doc = docOf(c, slug) as NonNullable<ReturnType<typeof docOf>>;
+    expect(c.getSnapshot().writeText(doc, doc.active, "# Solo, typed\n")).toBe(true);
+    c.getSnapshot().flushText(slug);
+    await c.getSnapshot().listDir(docs);
+    expect(readFileSync(path, "utf8")).toBe("# Solo, typed\n");
+    expect(c.getSnapshot().texts.get(textKey(slug, doc.active))).toBe("# Solo, typed\n");
+  });
+
+  test("an edit sent while a `read` is in flight keeps its text: the read's older reply is not taken", async () => {
+    daemon = await boot();
+    const c = await connect(daemon);
+    const { slug, path } = await openSolo(c);
+    const doc = docOf(c, slug) as NonNullable<ReturnType<typeof docOf>>;
+    // The pane asks for the text it does not have yet; the human types first.
+    c.getSnapshot().send({ op: "read", doc: slug, version: doc.active });
+    c.getSnapshot().writeText(doc, doc.active, "# Solo, typed\n");
+    c.getSnapshot().flushText(slug);
+    await c.getSnapshot().listDir(docs);
+    expect(readFileSync(path, "utf8")).toBe("# Solo, typed\n");
+    expect(c.getSnapshot().texts.get(textKey(slug, doc.active))).toBe("# Solo, typed\n");
+    // A read sent after the edit is answered with the edit in it, and taken.
+    await c.getSnapshot().request({ op: "read", doc: slug, version: doc.active });
+    expect(c.getSnapshot().texts.get(textKey(slug, doc.active))).toBe("# Solo, typed\n");
+  });
+
+  test("a read between two sent edits is passed over: it holds the first, not the second", async () => {
+    daemon = await boot();
+    const c = await connect(daemon);
+    const { slug, path } = await openSolo(c);
+    const doc = docOf(c, slug) as NonNullable<ReturnType<typeof docOf>>;
+    c.getSnapshot().writeText(doc, doc.active, "# one\n");
+    c.getSnapshot().flushText(slug);
+    c.getSnapshot().send({ op: "read", doc: slug, version: doc.active });
+    c.getSnapshot().writeText(doc, doc.active, "# one two\n");
+    c.getSnapshot().flushText(slug);
+    await c.getSnapshot().listDir(docs);
+    expect(readFileSync(path, "utf8")).toBe("# one two\n");
+    expect(c.getSnapshot().texts.get(textKey(slug, doc.active))).toBe("# one two\n");
+  });
+
+  test("after a reconnect, the pane's read is answered and taken: request ids never start again", async () => {
+    const first = await boot();
+    const c = await connect(first);
+    const { slug } = await openSolo(c);
+    const doc = docOf(c, slug) as NonNullable<ReturnType<typeof docOf>>;
+    c.getSnapshot().writeText(doc, doc.active, "# typed\n");
+    c.getSnapshot().flushText(slug);
+    await c.getSnapshot().listDir(docs);
+    await first.stop();
+    await waitUntil("closed", () => c.getSnapshot().connection === "closed");
+    await boot({ port: first.port, restore: first.sessionId });
+    await waitUntil("open", () => c.getSnapshot().connection === "open", 5000);
+    // The reconnect dropped what was loaded; the pane asks again, as it does.
+    c.getSnapshot().send({ op: "read", doc: slug, version: doc.active });
+    await waitUntil("the text back", () => c.getSnapshot().texts.get(textKey(slug, doc.active)));
+    expect(c.getSnapshot().texts.get(textKey(slug, doc.active))).toBe("# typed\n");
+  });
+
+  test("only a reply to a request sent before the edit, for that version, is passed over", async () => {
+    class FakeSocket {
+      static last: FakeSocket;
+      readyState = 1;
+      sent: string[] = [];
+      onopen: (() => void) | null = null;
+      onmessage: ((e: { data: string }) => void) | null = null;
+      onclose: (() => void) | null = null;
+      constructor(readonly url: string) {
+        FakeSocket.last = this;
+        queueMicrotask(() => this.onopen?.());
+      }
+      send(data: string) {
+        this.sent.push(data);
+      }
+      close() {}
+      deliver(frame: Record<string, unknown>) {
+        this.onmessage?.({ data: JSON.stringify(frame) });
+      }
+    }
+    const client = createDaemonClient({
+      url: "http://127.0.0.1:1/ws",
+      WebSocket: FakeSocket as unknown as typeof WebSocket,
+    });
+    client.connect();
+    await Bun.sleep(5);
+    const sock = FakeSocket.last;
+    const doc = { slug: "solo", active: 1 };
+    sock.deliver({ op: "state", state: { sessionId: "s", docs: [doc] } });
+    const text = (v = 1) => client.getSnapshot().texts.get(textKey("solo", v));
+    const asked = client.getSnapshot().send({ op: "read", doc: "solo", version: 1 }) as number;
+    client.getSnapshot().writeText(doc, 1, "typed");
+    client.getSnapshot().flushText("solo");
+    const edit = JSON.parse(sock.sent.at(-1) as string) as { op: string; rid: number };
+    expect(edit.op).toBe("edit");
+    expect(asked).toBeLessThan(edit.rid);
+    const reply = { op: "version.text", doc: "solo", version: 1, origin: "load" };
+    // Asked before the edit: read before the daemon took it. Passed over.
+    sock.deliver({ ...reply, text: "older", requestId: asked });
+    expect(text()).toBe("typed");
+    // Another version is not the one typed in: taken.
+    sock.deliver({ ...reply, version: 2, text: "v2", requestId: asked });
+    expect(text(2)).toBe("v2");
+    // The daemon's own news answers no request: taken.
+    sock.deliver({ ...reply, text: "from disk", origin: "remote" });
+    expect(text()).toBe("from disk");
+    // Asked after the edit: the edit is in it. Taken.
+    sock.deliver({ ...reply, text: "re-read", requestId: edit.rid + 1 });
+    expect(text()).toBe("re-read");
+    client.close();
+  });
+
   test("an edit carries the newest rewritten text it took as its base, and a dropped one is not taken", async () => {
     class FakeSocket {
       static last: FakeSocket;
@@ -786,5 +908,77 @@ describe("writeText", () => {
     c.close();
     await Bun.sleep(EDIT_DEBOUNCE_MS + 150);
     expect(readFileSync(path, "utf8")).toBe("# Solo\n");
+  });
+});
+
+describe("the app's view, marked unchanged (StateFrame)", () => {
+  test("against the real daemon: a broadcast that leaves the view alone keeps it, and a changed one replaces it", async () => {
+    // The pair under test: this daemon marks an unchanged view, and this client
+    // keeps it. A client that did not fold the mark would lose the view here.
+    let view = "big".repeat(1000);
+    daemon = await boot({ attentionMs: 60_000, appState: () => ({ view }) });
+    const c = await connect(daemon);
+    expect(c.getSnapshot().state?.appState).toEqual({ view });
+    c.getSnapshot().send({ op: "context.add", path: docs });
+    await waitUntil("the entry", () => (c.getSnapshot().state?.context.length ?? 0) === 1);
+    expect(c.getSnapshot().state?.appState).toEqual({ view });
+    view = "changed";
+    daemon.context.broadcast();
+    await waitUntil(
+      "the changed view",
+      () => (c.getSnapshot().state?.appState as { view?: string } | null)?.view === "changed",
+    );
+  });
+
+  test("a marked frame keeps the view held; after a reconnect, the new hello's view is the one kept", async () => {
+    class FakeSocket {
+      static last: FakeSocket;
+      readyState = 1;
+      onopen: (() => void) | null = null;
+      onmessage: ((e: { data: string }) => void) | null = null;
+      onclose: (() => void) | null = null;
+      constructor(readonly url: string) {
+        FakeSocket.last = this;
+        queueMicrotask(() => this.onopen?.());
+      }
+      send() {}
+      close() {}
+      deliver(frame: Record<string, unknown>) {
+        this.onmessage?.({ data: JSON.stringify(frame) });
+      }
+    }
+    const client = createDaemonClient({
+      url: "http://127.0.0.1:1/ws",
+      WebSocket: FakeSocket as unknown as typeof WebSocket,
+      minDelayMs: 1,
+    });
+    client.connect();
+    await Bun.sleep(5);
+    const held = () => client.getSnapshot().state;
+    const first = FakeSocket.last;
+    first.deliver({ op: "state", state: { sessionId: "s", docs: [], appState: { n: 1 } } });
+    first.deliver({ op: "state", state: { sessionId: "s", docs: [], appStateUnchanged: true } });
+    expect(held()?.appState).toEqual({ n: 1 });
+    expect("appStateUnchanged" in (held() ?? {})).toBe(false);
+    // An app with no view says so: null is a view, not a mark.
+    first.deliver({ op: "state", state: { sessionId: "s", docs: [], appState: null } });
+    expect(held()?.appState).toBeNull();
+    first.deliver({ op: "state", state: { sessionId: "s", docs: [], appState: { n: 2 } } });
+
+    // The daemon goes away and comes back: its hello is whole, and is kept.
+    first.readyState = 3;
+    first.onclose?.();
+    await waitUntil("a new socket", () => FakeSocket.last !== first);
+    await Bun.sleep(5);
+    const second = FakeSocket.last;
+    second.deliver({ op: "state", state: { sessionId: "s", docs: [], appState: { n: 3 } } });
+    second.deliver({ op: "state", state: { sessionId: "s", docs: [], appStateUnchanged: true } });
+    expect(held()?.appState).toEqual({ n: 3 });
+
+    // A mark from another session has nothing of its own to keep: no view,
+    // never the old session's.
+    second.deliver({ op: "state", state: { sessionId: "t", docs: [], appStateUnchanged: true } });
+    expect(held()?.appState).toBeNull();
+    client.close();
   });
 });

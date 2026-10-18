@@ -1668,27 +1668,136 @@ describe("guards the review asked for", () => {
     expect(lines.some((l) => l.includes("tidying up after it failed: disk full"))).toBe(true);
   });
 
-  test("an app that has an appState hook gets a state broadcast after every applied edit, not only the first", async () => {
+  test("an app that has an appState hook gets a state broadcast after every applied edit's pause, its view unchanged or not, and the hook runs once a frame", async () => {
+    // A view that never changes: the pause still broadcasts, for the
+    // documents' hashes (a canvas card, another surface's compare).
     let calls = 0;
-    const { s } = await start({ appState: () => ({ calls: ++calls }) });
+    const { s } = await start({
+      attentionMs: 60_000,
+      appState: () => {
+        calls++;
+        return { fixed: true };
+      },
+    });
     s.send({ op: "context.add", path: docs });
     s.send({ op: "open", path: inSet("a.md") });
     await s.waitFor((m) => m.op === "version.text");
     s.send({ op: "edit", doc: "a", version: 1, text: "first\n" });
     await waitUntil("dirty flip", () => s.state.docs[0]?.dirty === true);
-    const seen = (s.state.appState as { calls: number }).calls;
+    const hash = () => s.state.docs[0]?.hash;
+    const seen = hash();
     s.send({ op: "edit", doc: "a", version: 1, text: "second\n" });
-    await waitUntil(
-      "a broadcast after the second edit",
-      () => (s.state.appState as { calls: number }).calls > seen,
-    );
+    await waitUntil("a broadcast after the second edit", () => hash() !== seen);
     s.send({ op: "edit", doc: "a", version: 1, text: "third\n" });
     s.send({ op: "edit", doc: "a", version: 1, text: "fourth\n" });
-    const before = (s.state.appState as { calls: number }).calls;
+    const before = hash();
+    await waitUntil("a debounced broadcast", () => hash() !== before);
+    await Bun.sleep(300); // nothing left in flight
+    // One hook call per state frame: the hello and each broadcast, no more.
+    expect(calls).toBe(s.frames.filter((f) => f.op === "state").length);
+  });
+
+  test("a pause in typing sends the new hash with the app's view marked unchanged, and the view whole when it changed", async () => {
+    // The app's view is the active version's first line, read from disk, as a
+    // frontmatter index is: typing in the body leaves it alone. The attention
+    // sweep is slowed out of the way, so every state frame here is the edit's.
+    const { s } = await start({
+      attentionMs: 60_000,
+      appState: (ctx) => {
+        const path = ctx.session.findDoc("a") ? ctx.session.activePath("a") : null;
+        return { head: path ? readFileSync(path, "utf8").split("\n")[0] : null };
+      },
+    });
+    s.send({ op: "context.add", path: docs });
+    s.send({ op: "open", path: inSet("a.md") });
+    await s.waitFor((m) => m.op === "version.text");
+    s.send({ op: "edit", doc: "a", version: 1, text: "# A\n\nfirst\n" });
+    await waitUntil("dirty flip", () => s.state.docs[0]?.dirty === true);
+    await Bun.sleep(400); // the flip's own pause
+    const raw = () => s.frames.filter((f) => f.op === "state").map((f) => f.state);
+    const before = raw().length;
+    const seen = s.state.docs[0]?.hash;
+    s.send({ op: "edit", doc: "a", version: 1, text: "# A\n\nsecond\n" });
+    await waitUntil("the pause's frame", () => raw().length > before);
+    const pause = raw().at(-1) as Record<string, unknown>;
+    expect(pause.appStateUnchanged).toBe(true);
+    expect("appState" in pause).toBe(false);
+    expect(s.state.docs[0]?.hash).not.toBe(seen);
+    expect(s.state.appState).toEqual({ head: "# A" });
+    s.send({ op: "edit", doc: "a", version: 1, text: "# Renamed\n\nsecond\n" });
     await waitUntil(
-      "a debounced broadcast",
-      () => (s.state.appState as { calls: number }).calls > before,
+      "the changed view, after a pause",
+      () => (s.state.appState as { head: string }).head === "# Renamed",
     );
+    expect(raw().at(-1)).toMatchObject({ appState: { head: "# Renamed" } });
+  });
+
+  test("a state broadcast marks an unchanged app view instead of resending it; a new connection and GET /state get it whole", async () => {
+    let view = "big".repeat(1000);
+    const { s, d, base } = await start({ attentionMs: 60_000, appState: () => ({ view }) });
+    await s.waitFor((m) => m.op === "state");
+    const raw = () => s.frames.filter((f) => f.op === "state").map((f) => f.state);
+    // The hello carries the view whole.
+    expect(raw()[0]).toMatchObject({ appState: { view } });
+    expect("appStateUnchanged" in (raw()[0] ?? {})).toBe(false);
+
+    // A chat line changes the state, not the view: the frame is marked.
+    s.send({ op: "say", text: "hello", withSelection: false });
+    await waitUntil("the chat line", () => s.state.chat.length === 1);
+    const marked = raw().at(-1) as Record<string, unknown>;
+    expect(marked.appStateUnchanged).toBe(true);
+    expect("appState" in marked).toBe(false);
+    expect(JSON.stringify(marked).length).toBeLessThan(view.length);
+    expect(s.state.appState).toEqual({ view }); // folded, as a client folds it
+
+    // A new connection starts whole, then is marked like the first.
+    const other = new FakeSurface();
+    await other.connect(d.port);
+    try {
+      await other.waitFor((m) => m.op === "state");
+      expect(other.frames[0]).toMatchObject({ op: "state", state: { appState: { view } } });
+      d.context.broadcast();
+      await waitUntil(
+        "a second frame",
+        () => other.frames.filter((f) => f.op === "state").length === 2,
+      );
+      expect(other.frames.at(-1)).toMatchObject({ state: { appStateUnchanged: true } });
+
+      // A changed view goes whole to both.
+      view = "changed";
+      d.context.broadcast();
+      await waitUntil(
+        "the new view",
+        () => (s.state.appState as { view: string }).view === "changed",
+      );
+      await waitUntil(
+        "the new view, there too",
+        () => (other.state.appState as { view: string }).view === "changed",
+      );
+      expect(raw().at(-1)).toMatchObject({ appState: { view: "changed" } });
+    } finally {
+      other.close();
+    }
+    // The agent's read is always whole.
+    const st = (await (await fetch(`${base}/state`)).json()) as Record<string, unknown>;
+    expect(st.appState).toEqual({ view: "changed" });
+    expect("appStateUnchanged" in st).toBe(false);
+  });
+
+  test("an app without an appState hook sends appState: null on every frame, as before", async () => {
+    const { s, d } = await start({ attentionMs: 60_000 });
+    await s.waitFor((m) => m.op === "state");
+    // Past the hello and past the first broadcast: a mark would show on the second.
+    s.send({ op: "say", text: "hello", withSelection: false });
+    await waitUntil("the chat line", () => s.state.chat.length === 1);
+    d.context.broadcast();
+    d.context.broadcast();
+    const states = () => s.frames.filter((f) => f.op === "state").map((f) => f.state);
+    await waitUntil("four frames", () => states().length >= 4);
+    for (const f of states()) {
+      expect("appStateUnchanged" in f).toBe(false);
+      expect("appState" in f && f.appState).toBe(null);
+    }
   });
 
   test("an app can ask for a save dialog through the context, one at a time", async () => {

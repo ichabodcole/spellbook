@@ -1,0 +1,277 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   src/kit/theme/document.css — the kit's rendered-markdown rules: the prose
+   body (a chat message, the document's rendered view), its embeds and typed
+   link chips, and the note, find and flash marks. Story Studio's `base.css`
+   lines 118–369 at b6d5956, verbatim from the next comment on.
+
+   WHY A SHEET OF ITS OWN, NOT base.css. Every spell that themes itself on the
+   kit imports base.css, the shipped Scriptorium among them, and Scriptorium
+   writes its own prose rules under the same class name. Added to base.css,
+   these would merge into its rendered view and change a surface that must not
+   change. So a page that adopts the kit's chat or document pane imports this
+   sheet after base.css (`DOCUMENT_CSS_SPECIFIER` in ./index.ts).
+
+   Plain CSS on the kit's tokens: no utilities, so nothing here depends on the
+   class scan, and both modes follow. The scrollbar rules after these in Story
+   Studio's sheet belong to the shell and come with it.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* The document pane's markup, scanned here and only here: base.css leaves
+   src/kit/document/ out, so a spell without the pane gains none of its
+   utilities. Resolved relative to this file. Its tests stay out, as they do
+   for the rest of the kit. */
+@source "../document";
+@source not "../document/**/*.test.*";
+
+/* A rendered markdown body (a chat message), as element rules under one class:
+   the renderer's output is plain semantic HTML with no classes on it. Sized for
+   a narrow side panel; anything wider than the panel scrolls inside itself, and
+   a long word wraps. Tokens only, so both modes follow. */
+@layer components {
+  .md-prose {
+    color: inherit;
+    font-size: inherit;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+    min-width: 0;
+  }
+  .md-prose > :first-child {
+    margin-top: 0;
+  }
+  .md-prose > :last-child {
+    margin-bottom: 0;
+  }
+  .md-prose h1,
+  .md-prose h2,
+  .md-prose h3,
+  .md-prose h4,
+  .md-prose h5,
+  .md-prose h6 {
+    font-size: 1.1em;
+    font-weight: 600;
+    line-height: 1.35;
+    margin: 0.7em 0 0.3em;
+  }
+  .md-prose h1 {
+    font-size: 1.2em;
+  }
+  .md-prose p,
+  .md-prose ul,
+  .md-prose ol,
+  .md-prose blockquote,
+  .md-prose pre,
+  .md-prose table {
+    margin: 0.4em 0;
+  }
+  .md-prose ul,
+  .md-prose ol {
+    padding-left: 1.25em;
+  }
+  .md-prose ul {
+    list-style: disc;
+  }
+  .md-prose ol {
+    list-style: decimal;
+  }
+  .md-prose li {
+    margin: 0.1em 0;
+  }
+  .md-prose li > p {
+    margin: 0;
+  }
+  .md-prose a {
+    color: var(--color-brand);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  /*
+   * A typed link's relations (`?rel=`), drawn after it as a small muted chip.
+   * Drawn from the attribute, never written as text, so selection and notes
+   * still align with the source (rendered.ts `markRelations`). Inline-block, so
+   * the link's underline does not run through it, and dim ink on the raised
+   * surface, which reads in both themes without competing with the link.
+   */
+  .md-prose a[data-rel]::after {
+    content: attr(data-rel);
+    display: inline-block;
+    margin-left: 0.3em;
+    padding: 0 0.45em;
+    border: 1px solid var(--color-edge);
+    border-radius: 999px;
+    background: var(--color-surface-raised);
+    color: var(--color-ink-dim);
+    font-family: var(--font-sans);
+    font-size: 0.7em;
+    font-weight: 500;
+    line-height: 1.45;
+    letter-spacing: 0.01em;
+    vertical-align: 0.12em;
+    white-space: nowrap;
+  }
+  /* A link whose target the renderer refused: the words stay, the link does not. */
+  .md-prose a[data-blocked-link] {
+    color: var(--color-ink-dim);
+    text-decoration: line-through;
+    cursor: not-allowed;
+  }
+  .md-prose blockquote {
+    border-left: 2px solid var(--color-edge);
+    padding-left: 0.7em;
+    color: var(--color-ink-dim);
+  }
+  .md-prose code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    background: var(--color-bg);
+    border-radius: 4px;
+    padding: 0.15em 0.35em;
+  }
+  .md-prose pre {
+    background: var(--color-bg);
+    border: 1px solid var(--color-edge);
+    border-radius: 6px;
+    padding: 0.5em 0.65em;
+    max-width: 100%;
+    overflow-x: auto;
+    /* Code keeps its lines: it scrolls sideways rather than wrapping. */
+    overflow-wrap: normal;
+  }
+  .md-prose pre code {
+    background: none;
+    padding: 0;
+    font-size: 0.95em;
+    white-space: pre;
+  }
+  .md-prose table {
+    border-collapse: collapse;
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-wrap: normal;
+  }
+  .md-prose th,
+  .md-prose td {
+    border: 1px solid var(--color-edge);
+    padding: 0.25em 0.5em;
+    text-align: left;
+  }
+  .md-prose th {
+    background: var(--color-bg);
+    font-weight: 600;
+  }
+  .md-prose hr {
+    border: none;
+    border-top: 1px solid var(--color-edge);
+    margin: 0.8em 0;
+  }
+  .md-prose img {
+    max-width: 100%;
+    border-radius: 6px;
+  }
+  /*
+   * An embed (`![alt](x.png)`): the renderer writes an empty span, never an
+   * `<img>` (lib/markdown.ts `embedSpans`). Shown, it holds the image in a
+   * button that opens the viewer, as wide as the image and never wider than
+   * the column (never enlarged). Not shown, it is a quiet box that says its
+   * alt text and why, drawn from attributes so no text joins the rendered
+   * view's selection.
+   */
+  .md-prose .md-embed {
+    display: inline-block;
+    max-width: 100%;
+    vertical-align: top;
+  }
+  .md-prose .md-embed > button {
+    display: block;
+    max-width: 100%;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    cursor: zoom-in;
+    outline: none;
+  }
+  .md-prose .md-embed > button:focus-visible {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-ring) 60%, transparent);
+  }
+  .md-prose .md-embed img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+  .md-prose .md-embed:not([data-embed-state="shown"]) {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 0.1em;
+    min-width: min(18rem, 100%);
+    padding: 0.55em 0.8em;
+    border: 1px dashed var(--color-edge);
+    border-radius: 6px;
+    background: var(--color-surface-raised);
+    color: var(--color-ink-dim);
+    font-family: var(--font-sans);
+    font-size: 0.8em;
+    line-height: 1.4;
+  }
+  .md-prose .md-embed:not([data-embed-state="shown"])::before {
+    content: attr(data-alt);
+    color: var(--color-ink);
+    font-weight: 500;
+  }
+  .md-prose .md-embed:not([data-embed-state="shown"])[data-alt=""]::before {
+    content: "Image";
+  }
+  .md-prose .md-embed[data-embed-reason]::after {
+    content: attr(data-embed-reason);
+  }
+  .md-prose del {
+    color: var(--color-ink-dim);
+  }
+}
+
+/* Notes in the rendered view are painted with the CSS Custom Highlight API, so
+   nothing is wrapped around the text. The names are the ones the document
+   subpath's MarkdownView sets. */
+::highlight(doc-note) {
+  background-color: color-mix(in srgb, var(--color-attention) 22%, transparent);
+}
+::highlight(doc-note-focus) {
+  background-color: color-mix(in srgb, var(--color-attention) 45%, transparent);
+}
+::highlight(doc-note-pending) {
+  background-color: color-mix(in srgb, var(--color-brand) 24%, transparent);
+}
+/* The kit's find bar (rendered and compare views), painted like CodeMirror's
+   search matches in the raw view so a match looks the same in every view. */
+::highlight(find-match) {
+  background-color: color-mix(in srgb, var(--color-attention) 26%, transparent);
+}
+::highlight(find-current) {
+  background-color: color-mix(in srgb, var(--color-pointed) 40%, transparent);
+  text-decoration: underline 2px var(--color-pointed);
+}
+/* A passage just brought into view (a reveal, or the agent pointing at it). */
+::highlight(doc-flash) {
+  background-color: color-mix(in srgb, var(--color-pointed) 34%, transparent);
+}
+
+/* A change just brought into view in the compare view: tinted, then fading.
+   An inset shadow rather than a background, so the row's own tone stays under it. */
+[data-flash="on"] {
+  animation: kit-flash 1.6s ease-out both;
+}
+@keyframes kit-flash {
+  0%,
+  35% {
+    box-shadow: inset 0 0 0 100vmax color-mix(in srgb, var(--color-pointed) 26%, transparent);
+  }
+  100% {
+    box-shadow: inset 0 0 0 100vmax transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-flash="on"] {
+    animation: none;
+    box-shadow: inset 0 0 0 100vmax color-mix(in srgb, var(--color-pointed) 20%, transparent);
+  }
+}
