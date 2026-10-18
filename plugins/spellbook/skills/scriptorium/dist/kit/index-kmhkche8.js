@@ -30055,8 +30055,20 @@ function locationTargets(entries, what = "document") {
   const all = moveTargets(entries, null);
   return what === "bundle" ? all.filter((t) => bundlePlace(t.path) === null) : all;
 }
-function expandHome(path2, userHome) {
-  return path2.startsWith("~/") && userHome ? joinPath(userHome, path2.slice(2)) : path2;
+function placePath(typed, userHome) {
+  const path2 = typed.startsWith("~/") && userHome ? joinPath(userHome, typed.slice(2)) : typed;
+  if (!path2.startsWith("/"))
+    return path2;
+  const parts = [];
+  for (const seg of path2.split("/")) {
+    if (seg === "" || seg === ".")
+      continue;
+    if (seg === "..")
+      parts.pop();
+    else
+      parts.push(seg);
+  }
+  return `/${parts.join("/")}`;
 }
 function LocationDialog({
   title,
@@ -30079,8 +30091,9 @@ function LocationDialog({
   const listRef = import_react12.useRef(null);
   const searchRef = import_react12.useRef(null);
   import_react12.useEffect(() => {
-    if (making && targets.some((t) => t.path === making)) {
-      setAtPath(making);
+    const made = making && targets.find((t) => making.includes(t.path));
+    if (made) {
+      setAtPath(made.path);
       searchRef.current?.focus();
       setMaking(null);
     }
@@ -30112,11 +30125,16 @@ function LocationDialog({
   const make = (typed) => {
     if (!addFolder)
       return;
-    const full = expandHome(typed, userHome);
+    const full = placePath(typed, userHome);
+    const names = [full];
     setRefusal(null);
     setQuery("");
-    setMaking(full);
-    addFolder(typed).catch((e) => {
+    setMaking(names);
+    addFolder(typed).then((r2) => {
+      const said = r2?.path;
+      if (typeof said === "string" && said !== full)
+        setMaking((cur) => cur === names ? [full, said] : cur);
+    }, (e) => {
       setMaking(null);
       setRefusal(e instanceof Error ? e.message : String(e));
     });
@@ -30205,7 +30223,7 @@ function LocationDialog({
               className: "px-1 py-2 text-xs text-ink-faint",
               children: [
                 "Making ",
-                making,
+                making[0],
                 "…"
               ]
             }),

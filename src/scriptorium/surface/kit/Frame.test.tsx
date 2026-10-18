@@ -454,6 +454,23 @@ describe("where a new file goes (no default workspace)", () => {
     await m.unmount();
   });
 
+  test("a folder made at a path typed with . and .. is highlighted once it shows", async () => {
+    mkdirSync(join(root, "made", "beta"), { recursive: true });
+    const m = await open();
+    await click(byLabel("New folder…"));
+    await waitFor(() => where() !== null, "the location dialog");
+    const box = document.querySelector<HTMLInputElement>(
+      '[data-slot="location-dialog"] input[aria-label="New folder at a path"]',
+    );
+    await typeInto(box as HTMLInputElement, `${root}/made/./beta/../dotted`);
+    await key(box, "Enter");
+    await waitFor(() => chosen().join() === "dotted", "the new set, highlighted");
+    expect(where()?.textContent).not.toContain("Making");
+    await key(search(), "Escape");
+    await waitFor(() => where() === null, "backed out");
+    await m.unmount();
+  });
+
   test("after a create, the list the human went back to stays when the next snapshot comes", async () => {
     const m = await open(set);
     if (!byLabel("New document in this set")) await click(listRow("set"));

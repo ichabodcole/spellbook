@@ -20,7 +20,7 @@ import {
   waitFor,
 } from "../lib/testDom.ts";
 import type { ContextEntry, StructureOp } from "../workspace/protocol";
-import { type LocationAsk, locationTargets, useAskLocation } from "./AskLocation.tsx";
+import { type LocationAsk, locationTargets, placePath, useAskLocation } from "./AskLocation.tsx";
 import { ContextSidebar, type ContextSidebarProps } from "./ContextSidebar.tsx";
 import type { ImageImportOptions } from "./daemonClient.ts";
 
@@ -93,6 +93,7 @@ function harness(initial: ContextEntry[], over: Partial<ContextSidebarProps> = {
   const seen: Seen = { structure: [], images: [], asks: [], added: [] };
   let setEntries: (e: ContextEntry[]) => void = () => {};
   let refuseAdd: string | null = null;
+  let replyPath: string | null = null;
   function Host() {
     const [entries, set] = useState(initial);
     setEntries = set;
@@ -103,6 +104,7 @@ function harness(initial: ContextEntry[], over: Partial<ContextSidebarProps> = {
       addFolder: async (path) => {
         seen.added.push(path);
         if (refuseAdd) throw new Error(refuseAdd);
+        return replyPath ? { op: "structure.done", of: "folder.add", path: replyPath } : undefined;
       },
       hint: "Turn a document into a set to make room beside it.",
     });
@@ -137,6 +139,9 @@ function harness(initial: ContextEntry[], over: Partial<ContextSidebarProps> = {
     seen,
     mountIt: () => mount(<Host />),
     setEntries: (e: ContextEntry[]) => settle(() => setEntries(e)),
+    reply: (path: string | null) => {
+      replyPath = path;
+    },
     refuse: (why: string | null) => {
       refuseAdd = why;
     },
@@ -453,5 +458,42 @@ describe("making room from the dialog", () => {
     expect(dialogEl()?.textContent).not.toContain("Making");
     expect(h.seen.structure).toEqual([]);
     await m.unmount();
+  });
+
+  test("a path typed with ., .. or doubled slashes is found once made, under the name the context gives it", async () => {
+    const h = harness([]);
+    const m = await h.mountIt();
+    await click(byLabel("New document…"));
+    await waitFor(() => dialogEl() !== null, "the dialog");
+    await typeInto(pathBox() as HTMLInputElement, "~/work/./beta/../alpha//fresh/");
+    await key(pathBox(), "Enter");
+    expect(h.seen.added).toEqual(["~/work/./beta/../alpha//fresh"]);
+    expect(dialogEl()?.textContent).toContain("Making /h/work/alpha/fresh");
+    await h.setEntries([{ ...world, id: "c-fresh", label: "fresh", root: "/h/work/alpha/fresh" }]);
+    expect(chosen()).toEqual(["fresh"]);
+    expect(dialogEl()?.textContent).not.toContain("Making");
+    await m.unmount();
+  });
+
+  test("the path the maker answers with is looked for too", async () => {
+    const h = harness([]);
+    h.reply("/real/h/fresh");
+    const m = await h.mountIt();
+    await click(byLabel("New document…"));
+    await waitFor(() => dialogEl() !== null, "the dialog");
+    await typeInto(pathBox() as HTMLInputElement, "/h/link/fresh");
+    await key(pathBox(), "Enter");
+    await h.setEntries([{ ...world, id: "c-fresh", label: "fresh", root: "/real/h/fresh" }]);
+    expect(chosen()).toEqual(["fresh"]);
+    await m.unmount();
+  });
+});
+
+describe("placePath", () => {
+  test("expands ~/ and resolves ., .. and doubled slashes", () => {
+    expect(placePath("~/a/./b//c/../d", "/h")).toBe("/h/a/b/d");
+    expect(placePath("/x/y/..", null)).toBe("/x");
+    expect(placePath("/", null)).toBe("/");
+    expect(placePath("~/a", null)).toBe("~/a");
   });
 });

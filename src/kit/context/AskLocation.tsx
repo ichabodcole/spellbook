@@ -53,9 +53,21 @@ export function locationTargets(
   return what === "bundle" ? all.filter((t) => bundlePlace(t.path) === null) : all;
 }
 
-/** A path as typed, with a leading `~/` made whole, for finding it among the places. */
-function expandHome(path: string, userHome: string | null): string {
-  return path.startsWith("~/") && userHome ? joinPath(userHome, path.slice(2)) : path;
+/**
+ * A path as typed, made the way the context names places: a leading `~/` made
+ * whole, and `.`, `..` and doubled slashes resolved (`~/work/./notes` is
+ * `/home/me/work/notes`), so the folder it makes can be found among them.
+ */
+export function placePath(typed: string, userHome: string | null): string {
+  const path = typed.startsWith("~/") && userHome ? joinPath(userHome, typed.slice(2)) : typed;
+  if (!path.startsWith("/")) return path;
+  const parts: string[] = [];
+  for (const seg of path.split("/")) {
+    if (seg === "" || seg === ".") continue;
+    if (seg === "..") parts.pop();
+    else parts.push(seg);
+  }
+  return `/${parts.join("/")}`;
 }
 
 export function LocationDialog({
@@ -75,7 +87,11 @@ export function LocationDialog({
   preselect: string | null;
   userHome: string | null;
   listDir: (path: string) => Promise<Listing>;
-  /** Make a new folder at a full path; rejects with the refusal. Absent, not offered. */
+  /**
+   * Make a new folder at a full path; rejects with the refusal. What it resolves
+   * with may carry the `path` made (the daemon's reply), which is looked for
+   * too. Absent, not offered.
+   */
   addFolder?: (path: string) => Promise<unknown>;
   /** The app's own words under the list: how else to make room. */
   hint?: ReactNode;
@@ -90,16 +106,18 @@ export function LocationDialog({
     preselect && targets.some((t) => t.path === preselect) ? preselect : null,
   );
   const at = atPath === null ? -1 : shown.findIndex((t) => t.path === atPath);
-  // A folder asked for by path: highlighted once the context shows it.
-  const [making, setMaking] = useState<string | null>(null);
+  // A folder asked for by path, by every name it may show under: highlighted
+  // once the context shows it.
+  const [making, setMaking] = useState<readonly string[] | null>(null);
   const [refusal, setRefusal] = useState<string | null>(null);
   const listId = useId();
   const listRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (making && targets.some((t) => t.path === making)) {
-      setAtPath(making);
+    const made = making && targets.find((t) => making.includes(t.path));
+    if (made) {
+      setAtPath(made.path);
       // Back to the search, so the next Enter makes it there, not another folder.
       searchRef.current?.focus();
       setMaking(null);
@@ -134,14 +152,23 @@ export function LocationDialog({
   };
   const make = (typed: string) => {
     if (!addFolder) return;
-    const full = expandHome(typed, userHome);
+    const full = placePath(typed, userHome);
+    const names = [full];
     setRefusal(null);
     setQuery("");
-    setMaking(full);
-    addFolder(typed).catch((e: unknown) => {
-      setMaking(null);
-      setRefusal(e instanceof Error ? e.message : String(e));
-    });
+    setMaking(names);
+    addFolder(typed).then(
+      (r) => {
+        const said = (r as { path?: unknown } | null | undefined)?.path;
+        // Still this ask (not a later one): also look for the name the maker gave.
+        if (typeof said === "string" && said !== full)
+          setMaking((cur) => (cur === names ? [full, said] : cur));
+      },
+      (e: unknown) => {
+        setMaking(null);
+        setRefusal(e instanceof Error ? e.message : String(e));
+      },
+    );
   };
 
   return (
@@ -231,7 +258,7 @@ export function LocationDialog({
           )}
           {making && (
             <p role="status" className="px-1 py-2 text-xs text-ink-faint">
-              Making {making}…
+              Making {making[0]}…
             </p>
           )}
           {refusal && <p className="px-2 py-1 text-xs text-attention">{refusal}</p>}
