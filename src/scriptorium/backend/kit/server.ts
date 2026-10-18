@@ -40,7 +40,7 @@ import { convertShippedManifest } from "./convert";
 import { hideVerbs, liveHiddenLists } from "./hide";
 import { scriptoriumLinkSlot } from "./links";
 import { mapVerbs } from "./map";
-import { docMeta, wikiVerbs } from "./wiki";
+import { docMeta, noFrontmatter, wikiVerbs } from "./wiki";
 
 /**
  * The app in the conversion dry run (`SCRIPTORIUM_KIT_MIGRATE=1`): the kit
@@ -111,7 +111,12 @@ export function kitDaemonOptions(
     verbs: { ...hideVerbs, ...wikiVerbs, ...mapVerbs },
     // What `hide` left out, per entry id: the shipped state carried it on each
     // entry (`hidden`); the kit's entries are the kit's, so it rides here.
-    appState: (ctx) => ({ hidden: liveHiddenLists(ctx.session), ...docMeta(ctx.session) }),
+    // Which open documents have no block (E35's offer), read by every surface.
+    appState: (ctx) => ({
+      hidden: liveHiddenLists(ctx.session),
+      ...docMeta(ctx.session),
+      ...noFrontmatter(ctx.session),
+    }),
     // Frontmatter references as edges, and the wiki forms as a resolver (kit-link-edges-slot).
     links: scriptoriumLinkSlot(),
     // The interim frame at `/` (release: `dist/kit/`, and its chunks beside it).

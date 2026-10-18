@@ -26,7 +26,7 @@ import type { WorkspaceDaemon } from "../../../kit/workspace/server";
 import { tempRoot } from "../../../kit/workspace/testing";
 import { kitDaemon } from "../../backend/kit/server";
 import { Frame } from "./Frame";
-import { ADD_A_BLOCK, NO_FRONTMATTER, scriptoriumTextOffer } from "./suggestMeta";
+import { ADD_A_BLOCK, NO_FRONTMATTER, noFrontmatterOf, scriptoriumTextOffer } from "./suggestMeta";
 
 const root = tempRoot("scriptorium-frame-suggest");
 const docs = join(root, "docs");
@@ -196,13 +196,97 @@ describe("Add a block (E35): offered, put in the buffer, written by Save", () =>
   });
 });
 
-describe("the offer's rule is the shipped header's", () => {
-  const ask = scriptoriumTextOffer({
-    request: async () => {
-      throw new Error("not asked");
-    },
+/** A second tab: its own daemon client and frame, beside the first. */
+let second: Daemon | null = null;
+function SecondTab() {
+  const d = useDaemon({
+    url: `${daemon.url}/ws`,
+    WebSocket: nativeGlobal<typeof WebSocket>("WebSocket"),
+    minDelayMs: 20,
+    maxDelayMs: 60,
   });
-  const doc = { original: "/x/a.md" } as DocView;
+  second = d;
+  return (
+    <div style={{ width: 1400, height: 800 }}>
+      <Frame daemon={d} />
+    </div>
+  );
+}
+
+describe("two tabs: the offer follows the daemon, not one tab's copy", () => {
+  test("one tab takes it and types on; the other tab's offer goes, and the typing is kept", async () => {
+    const path = join(notes, "twotab.md");
+    const original = "# Two tabs\n\nProse.\n";
+    const one = await openFile(path, original, "Prose.");
+    const two = await mount(<SecondTab />);
+    await waitFor(() => second?.state?.openDoc === openDoc()?.slug, "the second tab's state");
+    const offerIn = (m: { container: HTMLElement }) =>
+      m.container.querySelector('[data-slot="text-offer"]');
+    const editorIn = (m: { container: HTMLElement }) =>
+      EditorView.findFromDOM(m.container.querySelector(".cm-editor") as HTMLElement) as EditorView;
+    await waitFor(() => offerIn(one) !== null && offerIn(two) !== null, "both tabs offer");
+    await click(offerIn(one)?.querySelector("button") ?? null);
+    await waitFor(() => editorIn(one).state.doc.toString().startsWith("---\n"), "tab one's block");
+    await settle(() => {
+      const v = editorIn(one);
+      v.dispatch({ changes: { from: v.state.doc.length, insert: "MORE FROM TAB ONE\n" } });
+    });
+    // The daemon's broadcast takes the offer from the tab that never saw the edit.
+    await waitFor(() => offerIn(two) === null, "tab two's offer gone");
+    expect(readFileSync(path, "utf8")).toBe(original);
+    const saveIn = () =>
+      [...one.container.querySelectorAll("button")].find((b) => b.textContent?.trim() === "Save") as
+        | HTMLButtonElement
+        | undefined;
+    await waitFor(() => saveIn()?.disabled === false, "Save on in tab one");
+    await click(saveIn() ?? null);
+    await waitFor(() => readFileSync(path, "utf8").includes("MORE FROM TAB ONE"), "saved");
+    const saved = readFileSync(path, "utf8");
+    expect(saved.match(/^---$/gm)?.length).toBe(2);
+    expect(saved.endsWith(`---\n${original}MORE FROM TAB ONE\n`)).toBe(true);
+    await two.unmount();
+    await one.unmount();
+  }, 20_000);
+
+  test("the daemon's list: an open document leaves it when its active version gains a block", async () => {
+    const path = join(notes, "listed.md");
+    const m = await openFile(path, "# Listed\n\nText.\n", "Text.");
+    const slug = openDoc()?.slug as string;
+    expect(noFrontmatterOf(client?.state)).toContain(slug);
+    await settle(() => {
+      client?.send({
+        op: "edit",
+        doc: slug,
+        version: openDoc()?.active as number,
+        text: "---\ntype: x\n---\n# Listed\n",
+      });
+    });
+    await waitFor(() => !noFrontmatterOf(client?.state).includes(slug), "off the list");
+    // A block that cannot be read is a block: still off.
+    await settle(() => {
+      client?.send({
+        op: "edit",
+        doc: slug,
+        version: openDoc()?.active as number,
+        text: "---\n: : :\n---\n# Listed\n",
+      });
+    });
+    await settle(() => new Promise((r) => setTimeout(r, 400)));
+    expect(noFrontmatterOf(client?.state)).not.toContain(slug);
+    await m.unmount();
+  });
+});
+
+describe("the offer's rule is the shipped header's", () => {
+  const ask = scriptoriumTextOffer(
+    {
+      request: async () => {
+        throw new Error("not asked");
+      },
+    },
+    ["a"],
+  );
+  const doc = { slug: "a", original: "/x/a.md" } as DocView;
   test("no block: offered; a block, readable or not, or an empty one: not", () => {
     expect(ask(doc, "# A\n")?.label).toBe(ADD_A_BLOCK);
     expect(ask(doc, "")?.label).toBe(ADD_A_BLOCK);
@@ -210,5 +294,8 @@ describe("the offer's rule is the shipped header's", () => {
     expect(ask(doc, "---\n: : :\n---\n# A\n")).toBeNull();
     // The shipped reader's rule, not the kit's: a block with no key line is still a block.
     expect(ask(doc, "---\n\n---\nBody\n")).toBeNull();
+  });
+  test("a document the daemon says has a block is not offered, whatever this tab's copy says", () => {
+    expect(ask({ ...doc, slug: "b" }, "# A\n")).toBeNull();
   });
 });

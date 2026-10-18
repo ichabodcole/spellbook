@@ -62,7 +62,7 @@ import type { DocSummary } from "../../backend/protocol";
 import { statusMark } from "../components/context/model";
 import { useFrameWorkspace } from "./frameWorkspace";
 import { scriptoriumBeforeMove, scriptoriumUncheckedMoveNote } from "./movePlan";
-import { scriptoriumTextOffer } from "./suggestMeta";
+import { noFrontmatterOf, scriptoriumTextOffer } from "./suggestMeta";
 import { useMapView } from "./useMapView";
 
 const NO_ENTRIES: PublicState["context"] = [];
@@ -258,7 +258,8 @@ export function Frame({ daemon }: { daemon: Daemon }) {
     [daemon.request, userHome],
   );
   // "Add a block" (E35) for a document with no frontmatter: `./suggestMeta.ts`.
-  const textOffer = useMemo(() => scriptoriumTextOffer(daemon), [daemon.request]);
+  const noBlock = noFrontmatterOf(state);
+  const textOffer = useMemo(() => scriptoriumTextOffer(daemon, noBlock), [daemon.request, noBlock]);
   // Where to create when nothing is selected. The place chosen last is held by
   // the hook for as long as this page lives, which is this session's surface.
   const ask = useAskLocation({
