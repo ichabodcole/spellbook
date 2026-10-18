@@ -556,7 +556,7 @@ describe("the remove verbs, and info", () => {
 });
 
 describe("docMeta on the wire: a pause in typing does not resend it (kit-docmeta-push-cost)", () => {
-  test("typing in the body sends no state, so no docMeta; a saved frontmatter edit sends it fresh, and the agent reads it", async () => {
+  test("typing sends no state; a chat line marks docMeta unchanged; a saved frontmatter edit sends it fresh, and the agent reads it", async () => {
     const t = join(set, "typing.md");
     writeFileSync(t, "---\ntype: note\nstatus: draft\n---\n# Typing\n\nbody\n");
     await until(
@@ -587,6 +587,15 @@ describe("docMeta on the wire: a pause in typing does not resend it (kit-docmeta
       await Bun.sleep(400); // two pauses in typing
       expect(stateFrames().length).toBe(before);
 
+      // A chat line is a broadcast that leaves docMeta alone: it is marked
+      // unchanged, not resent, and the surface keeps the docMeta it holds.
+      surface.send({ op: "say", text: "a line, not a frontmatter edit", withSelection: false });
+      await until(async () => stateFrames().length > before, "the chat line's broadcast");
+      const line = stateFrames().at(-1) as { state: Record<string, unknown> };
+      expect(line.state.appStateUnchanged).toBe(true);
+      expect(JSON.stringify(line)).not.toContain("docMeta");
+      expect((surface.state.appState as AppState).docMeta[t]?.status).toBe("draft");
+
       // The frontmatter edit, saved: the surface hears the new docMeta.
       surface.send({
         op: "edit",
@@ -599,6 +608,11 @@ describe("docMeta on the wire: a pause in typing does not resend it (kit-docmeta
         async () => (surface.state.appState as AppState).docMeta[t]?.status === "stable",
         "the surface to hear the fresh docMeta",
       );
+      expect(
+        stateFrames().some(
+          (f) => JSON.stringify(f).includes("docMeta") && JSON.stringify(f).includes("stable"),
+        ),
+      ).toBe(true);
       // And the agent reads it too.
       expect((await appState()).docMeta[t]?.status).toBe("stable");
     } finally {
