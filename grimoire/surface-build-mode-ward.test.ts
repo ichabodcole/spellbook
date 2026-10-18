@@ -60,16 +60,26 @@ const SKILLS = join(REPO, "plugins/spellbook/skills");
 // the actual leak. The track label is the string they measure under.
 const DEV_MARKERS = ["logComponentRender", "logComponentEffect", "Components ⚛"];
 
-/** Every shipped surface bundle: `<spell>/dist/index-<hash>.js`. */
+/**
+ * Every shipped surface bundle: `<spell>/dist/index-<hash>.js`, and a further
+ * surface's `<spell>/dist/<sub>/index-<hash>.js` (`src/build.ts`'s
+ * `subSurfaceNames`: scriptorium's kit-path frame), named `<spell>/<sub>`. A
+ * second page is a second React build, and it crashes the same way.
+ */
 function surfaceBundles(): { spell: string; path: string }[] {
   const out: { spell: string; path: string }[] = [];
+  const scan = (dir: string, label: string) => {
+    for (const f of readdirSync(dir, { withFileTypes: true })) {
+      if (f.isDirectory()) {
+        if (!label.includes("/")) scan(join(dir, f.name), `${label}/${f.name}`);
+      } else if (/^index-[a-z0-9]+\.js$/.test(f.name))
+        out.push({ spell: label, path: join(dir, f.name) });
+    }
+  };
   for (const d of readdirSync(SKILLS, { withFileTypes: true })) {
     if (!d.isDirectory()) continue;
     const dist = join(SKILLS, d.name, "dist");
-    if (!existsSync(dist)) continue;
-    for (const f of readdirSync(dist)) {
-      if (/^index-[a-z0-9]+\.js$/.test(f)) out.push({ spell: d.name, path: join(dist, f) });
-    }
+    if (existsSync(dist)) scan(dist, d.name);
   }
   return out.sort((a, b) => a.spell.localeCompare(b.spell));
 }
