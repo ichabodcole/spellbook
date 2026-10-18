@@ -644,9 +644,9 @@ export function DocumentPane({
     if (!doc) return;
     // Revert discards unsaved work: a write still in its pause is dropped, not
     // sent after the revert to land on top of the file's text. Pressing Revert
-    // blurs whatever had focus, and a view that writes on blur (a board's
-    // sticky being typed in) queues one just now. The client drops it as it
-    // sends the revert.
+    // takes focus from whatever had it, and a view that writes when focus
+    // leaves (a board's note card being typed in) queues one just now. The
+    // client drops it as it sends the revert.
     send({ op: "revert", doc: doc.slug });
   };
   /** Save over a missing original: the human's explicit choice, the folder included. */

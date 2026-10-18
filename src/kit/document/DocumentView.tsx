@@ -374,7 +374,7 @@ export function DocumentView({
    * large document is not copied on every keystroke.
    */
   onChange?: (read: () => string) => void;
-  /** Send what is pending now: before a save, on blur, on unmount. */
+  /** Send what is pending now: before a save, when focus leaves, on unmount. */
   onFlush?: () => void;
   /** Mod-S: the one act that writes the original. */
   onSave?: () => void;

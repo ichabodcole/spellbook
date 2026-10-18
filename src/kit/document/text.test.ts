@@ -1,3 +1,4 @@
+// The smallest change between two texts (text.ts), checked by applying it.
 import { describe, expect, test } from "bun:test";
 import { minimalChange } from "./text";
 

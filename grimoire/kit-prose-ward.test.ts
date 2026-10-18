@@ -642,7 +642,7 @@ describe("kit prose ward", () => {
     expect(shaped("lucide-react")).toBe(false);
     expect(shaped("https://tailwindcss.com/docs")).toBe(false);
     expect(shaped("v4.3.0")).toBe(false);
-    expect(shaped("box-sizing")).toBe(false);
+    expect(shaped("font-family")).toBe(false);
     // A bare word has no structural marker and is out of scope by shape.
     expect(shaped("flex")).toBe(false);
 
@@ -658,6 +658,12 @@ describe("kit prose ward", () => {
     // this ward governs.
     expect(shaped("left-to-right")).toBe(true);
     expect(shaped("top-left")).toBe(true);
+    // A CSS property name joined the set with the document pane (2026-10-18):
+    // its compare view's `box-content` made `box` a leading segment, and
+    // `field-sizing` in the roster's textareas already supplied `sizing`. It was
+    // the property-name example above until then; Dot.tsx's note, the one place
+    // kit prose spelled it, now says it in words.
+    expect(shaped("box-sizing")).toBe(true);
     // These cells exist so that a future tightening has something to move: if
     // one of them flips to false, the rule got sharper and this comment is the
     // record of what it used to cost.

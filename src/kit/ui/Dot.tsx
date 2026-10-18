@@ -29,7 +29,7 @@ import { cn } from "../lib/cn";
  * theme-INDEPENDENT (`--color-edge` is #1e293b in mind-mapper and #2e2640 in
  * imago, in both palettes), because `edge` is the only shared token whose value
  * genuinely differs between the two spells — they happen to agree on tertiary
- * ink. But `box-sizing: border-box` means a 1px rim shrinks an 8px dot's
+ * ink. But sizing by the border box means a 1px rim shrinks an 8px dot's
  * apparent fill to 6px on two SHIPPED surfaces, and that is something a human
  * SEES. Measured side by side, and the difference shows. Restoring it is one
  * line here; the

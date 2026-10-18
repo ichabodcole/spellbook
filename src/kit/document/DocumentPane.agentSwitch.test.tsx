@@ -177,7 +177,7 @@ describe("the agent switches the open document's version while an edit waits", (
     held.hold();
     await type("Now. ");
     await cmd(daemon.url, { op: "activate", doc: "story", version: 2 });
-    // The pane has not seen the switch; its pause ends (a blur flushes the same way).
+    // The pane has not seen the switch; its pause ends (focus leaving flushes the same way).
     await settle(() => client?.flushText("story"));
     await settle(() => held.release());
     await waitFor(() => editorText().includes("Version two."), "v2 in the editor");

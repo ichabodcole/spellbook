@@ -2,8 +2,8 @@
 // a REAL workspace daemon: `![alt](x.png)` is drawn through the guarded file
 // route (its 1024 px thumbnail) with its alt text, resolved as a link from the
 // document is; a click opens the viewer and Close brings the document back; a
-// missing, remote, SVG or not-really-an-image embed is a quiet placeholder that
-// says why; and a document without embeds asks nothing and changes nothing.
+// missing, remote or SVG embed, or one that is not really an image, is a quiet
+// placeholder that says why; and a document without embeds asks nothing and changes nothing.
 
 import "../lib/registerDom.ts";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from "bun:test";
@@ -77,7 +77,7 @@ beforeEach(async () => {
   localStorage.clear();
   sent = [];
   client = null;
-  // The seeded folder is the workspace, so its set is in the context from the start.
+  // The seeded folder is the session's workspace folder; the set inside it is added below.
   daemon = fixtureDaemon({ tmp: join(root, "tmp"), workspace: docs });
   await daemon.start();
   daemon.session.addContext(set);

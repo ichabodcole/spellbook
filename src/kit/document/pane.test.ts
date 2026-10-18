@@ -1,3 +1,4 @@
+// The document pane's small decisions (pane.ts), as pure rules.
 import { describe, expect, test } from "bun:test";
 import {
   hasEditor,
