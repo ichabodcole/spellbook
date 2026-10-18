@@ -215,7 +215,10 @@ describe("the move plan through the kit's pre-move slot, on a real kit daemon", 
     expect(text).toContain("It breaks 1 link in 1 document.");
     expect(text).toContain("./part/c.md → ./lore/c.md");
     // What happens now, not a relink offer the frame does not show yet.
-    expect(text).toContain("the chat names the links still pointing at the old place");
+    // The chat only counts the links left behind; the dialog is what names them.
+    expect(text).toContain("the chat says how many still point at the old place");
+    expect(text).toContain("They are these, each with the rewrite");
+    expect(text).not.toContain("the chat names");
     expect(text).not.toMatch(/offer/i);
     await click(buttonWith("Cancel", dialog() as ParentNode));
     await waitFor(() => dialog() === null, "the dialog to close");

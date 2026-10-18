@@ -38105,7 +38105,7 @@ function movePrompt(plan, userHome) {
           plural2(fixes, "link"),
           " in ",
           plural2(plan.links.length, "document"),
-          ". They are left as they are; after the move, the chat names the links still pointing at the old place. Each is listed with the rewrite that would land it again.",
+          ". They are left as they are; after the move, the chat says how many still point at the old place. They are these, each with the rewrite that would land it again.",
           listed(plan.links.flatMap((d) => d.fixes.map((f) => ({ d, f }))), ({ d, f }, i) => /* @__PURE__ */ jsx_runtime18.jsxs("span", {
             className: "block pl-2 font-mono text-xs",
             children: [

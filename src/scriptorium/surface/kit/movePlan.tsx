@@ -74,8 +74,8 @@ export function movePrompt(
       {fixes > 0 && (
         <span className="mt-2 block">
           It breaks {plural(fixes, "link")} in {plural(plan.links.length, "document")}. They are
-          left as they are; after the move, the chat names the links still pointing at the old
-          place. Each is listed with the rewrite that would land it again.
+          left as they are; after the move, the chat says how many still point at the old place.
+          They are these, each with the rewrite that would land it again.
           {listed(
             plan.links.flatMap((d) => d.fixes.map((f) => ({ d, f }))),
             ({ d, f }, i) => (
