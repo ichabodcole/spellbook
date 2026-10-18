@@ -472,6 +472,28 @@ describe("NotesPanel", () => {
     expect(document.body.textContent).toContain("No selection");
     await m.unmount();
   });
+
+  test("a host with nowhere to select says why, in place of the form", async () => {
+    const m = await mount(
+      <NotesPanel
+        notes={[note("n1")]}
+        focusedId={null}
+        selection={null}
+        addUnavailable="No document view here."
+        onAdd={() => {}}
+        onGoTo={() => {}}
+        onEdit={() => {}}
+        onResolve={() => {}}
+        onRemove={() => {}}
+      />,
+    );
+    expect(q('textarea[aria-label="New note"]')).toBeNull();
+    expect(document.body.textContent).not.toContain("Add note");
+    expect(document.body.textContent).toContain("No document view here.");
+    // The notes themselves are still listed.
+    expect(document.body.textContent).toContain(note("n1").body);
+    await m.unmount();
+  });
 });
 
 describe("NoteAtSelection", () => {

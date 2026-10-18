@@ -20044,6 +20044,7 @@ function NotesPanel({
   showResolved: showResolvedProp,
   onShowResolved,
   selection,
+  addUnavailable,
   onAdd,
   onGoTo,
   onEdit,
@@ -20134,7 +20135,10 @@ function NotesPanel({
           })
         ]
       }),
-      /* @__PURE__ */ jsx_runtime6.jsxs("form", {
+      addUnavailable ? /* @__PURE__ */ jsx_runtime6.jsx("p", {
+        className: "shrink-0 border-t border-edge p-2 text-[11px] text-ink-faint",
+        children: addUnavailable
+      }) : /* @__PURE__ */ jsx_runtime6.jsxs("form", {
         onSubmit: submit,
         className: "shrink-0 border-t border-edge p-2",
         children: [
@@ -37789,7 +37793,7 @@ function movePrompt(plan, userHome) {
           plural2(fixes, "link"),
           " in ",
           plural2(plan.links.length, "document"),
-          ". Each can be rewritten to land again; you are offered that right after the move.",
+          ". They are left as they are; after the move, the chat names the links still pointing at the old place. Each is listed with the rewrite that would land it again.",
           listed(plan.links.flatMap((d) => d.fixes.map((f) => ({ d, f }))), ({ d, f }, i) => /* @__PURE__ */ jsx_runtime17.jsxs("span", {
             className: "block pl-2 font-mono text-xs",
             children: [
@@ -37866,7 +37870,7 @@ var scriptoriumUncheckedMoveNote = () => /* @__PURE__ */ jsx_runtime17.jsxs(jsx_
   children: [
     /* @__PURE__ */ jsx_runtime17.jsx("span", {
       className: "block",
-      children: "The links into and out of what moves were not checked. Any it breaks show after the move, with the offer to rewrite them."
+      children: "The links into and out of what moves were not checked. Any it breaks are named in the chat after the move."
     }),
     /* @__PURE__ */ jsx_runtime17.jsx("span", {
       className: "mt-1 block",
@@ -37935,6 +37939,16 @@ function Frame({ daemon }) {
     document.documentElement.dataset.theme = theme;
     safeStorage.setItem(THEME_KEY, theme);
   }, [theme]);
+  const savedTheme = state?.prefs.theme;
+  import_react19.useEffect(() => {
+    if (savedTheme === "dark" || savedTheme === "light")
+      setTheme(savedTheme);
+  }, [savedTheme]);
+  const toggleTheme = () => {
+    const next = theme === "light" ? "dark" : "light";
+    setTheme(next);
+    send({ op: "prefs.set", key: "theme", value: next });
+  };
   const hints = import_react19.useRef(new Map);
   import_react19.useEffect(() => daemon.onFrame((f) => {
     if (f.op === "error" && typeof f.hint === "string" && typeof f.message === "string")
@@ -37976,7 +37990,7 @@ function Frame({ daemon }) {
             type: "button",
             "aria-label": "Switch theme",
             className: "text-ink-faint hover:text-ink [&_svg]:size-3.5",
-            onClick: () => setTheme((t) => t === "light" ? "dark" : "light"),
+            onClick: toggleTheme,
             children: theme === "light" ? /* @__PURE__ */ jsx_runtime18.jsx(Moon, {}) : /* @__PURE__ */ jsx_runtime18.jsx(Sun, {})
           })
         ]
@@ -38059,6 +38073,7 @@ function Frame({ daemon }) {
                 notes: openDoc?.notes ?? [],
                 focusedId: null,
                 selection: null,
+                addUnavailable: "Notes are added on a passage in the document, which this surface cannot show yet.",
                 onAdd: () => {},
                 onGoTo: () => {},
                 onEdit: (id, body) => openDoc && send({ op: "note.edit", doc: openDoc.slug, id, body }),

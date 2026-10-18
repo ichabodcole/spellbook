@@ -139,6 +139,35 @@ describe("the interim frame on a real kit daemon", () => {
     await m.unmount();
   });
 
+  test("Notes says why no note can be added, instead of a form that does nothing", async () => {
+    const m = await open();
+    await click(withText('[role="tab"]', "Notes"));
+    expect(document.querySelector('textarea[aria-label="New note"]')).toBeNull();
+    expect(withText('[data-pane="chat"] button', "Add note")).toBeNull();
+    expect(document.querySelector('[data-pane="chat"]')?.textContent).toContain(
+      "which this surface cannot show yet",
+    );
+    await m.unmount();
+  });
+
+  test("the theme is kept in the daemon's prefs, and a theme chosen elsewhere is applied", async () => {
+    const m = await open();
+    const before = document.documentElement.dataset.theme;
+    const next = before === "light" ? "dark" : "light";
+    await click(document.querySelector('[aria-label="Switch theme"]'));
+    await waitFor(() => client?.state?.prefs.theme === next, "the theme in the prefs");
+    expect(document.documentElement.dataset.theme).toBe(next);
+    // Another session (another port, another origin) chose the other one.
+    await settle(() => {
+      client?.send({ op: "prefs.set", key: "theme", value: before === "light" ? "light" : "dark" });
+    });
+    await waitFor(
+      () => document.documentElement.dataset.theme === (before === "light" ? "light" : "dark"),
+      "the prefs' theme applied",
+    );
+    await m.unmount();
+  });
+
   test("a message typed in the composer reaches the daemon's chat", async () => {
     const m = await open();
     await typeInto(

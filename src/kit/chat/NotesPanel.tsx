@@ -263,6 +263,7 @@ export function NotesPanel({
   showResolved: showResolvedProp,
   onShowResolved,
   selection,
+  addUnavailable,
   onAdd,
   onGoTo,
   onEdit,
@@ -300,6 +301,12 @@ export function NotesPanel({
   onShowResolved?: (show: boolean) => void;
   /** The editor's current selection, or null: what a new note would be about. */
   selection: { from: number; to: number; text: string } | null;
+  /**
+   * Why no note can be added here at all (a host with no document view to
+   * select in): shown in place of the form. Absent, the form is shown, and
+   * waits for a selection.
+   */
+  addUnavailable?: string;
   onAdd: (from: number, to: number, body: string) => void;
   onGoTo: (n: PlacedNote) => void;
   onEdit: (id: string, body: string) => void;
@@ -393,44 +400,50 @@ export function NotesPanel({
         )}
       </div>
 
-      <form onSubmit={submit} className="shrink-0 border-t border-edge p-2">
-        {/* THE QUOTE IS SHOWN BEFORE THE NOTE IS MADE. A note is about a passage,
+      {addUnavailable ? (
+        <p className="shrink-0 border-t border-edge p-2 text-[11px] text-ink-faint">
+          {addUnavailable}
+        </p>
+      ) : (
+        <form onSubmit={submit} className="shrink-0 border-t border-edge p-2">
+          {/* THE QUOTE IS SHOWN BEFORE THE NOTE IS MADE. A note is about a passage,
             and writing one without seeing which passage is how you end up with a
             note on the wrong sentence. */}
-        <p className="mb-1 truncate font-mono text-[11px] text-ink-faint">
-          {selection ? oneLine(selection.text) : "No selection"}
-        </p>
-        <textarea
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          disabled={!selection}
-          aria-label="New note"
-          placeholder={selection ? "What about it?" : "Select text in the document first"}
-          rows={2}
-          className={cn(
-            "w-full resize-none rounded-md border border-edge bg-bg px-2 py-1.5 text-xs text-ink",
-            "placeholder:text-ink-faint focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none",
-            "disabled:cursor-not-allowed disabled:opacity-60",
-          )}
-          onKeyDown={(e) => {
-            // Cmd or Ctrl plus Enter submits, because a note is prose and Enter
-            // must make a line.
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submit(e);
-          }}
-        />
-        <div className="mt-1 flex items-center gap-2">
-          <span className="text-[10px] text-ink-faint">⌘↩ to add</span>
-          <Button
-            type="submit"
-            size="sm"
-            disabled={!selection || !body.trim()}
-            className="ml-auto h-6 px-2 text-xs"
-          >
-            <MessageSquarePlusIcon aria-hidden className="size-3" />
-            Add note
-          </Button>
-        </div>
-      </form>
+          <p className="mb-1 truncate font-mono text-[11px] text-ink-faint">
+            {selection ? oneLine(selection.text) : "No selection"}
+          </p>
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            disabled={!selection}
+            aria-label="New note"
+            placeholder={selection ? "What about it?" : "Select text in the document first"}
+            rows={2}
+            className={cn(
+              "w-full resize-none rounded-md border border-edge bg-bg px-2 py-1.5 text-xs text-ink",
+              "placeholder:text-ink-faint focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none",
+              "disabled:cursor-not-allowed disabled:opacity-60",
+            )}
+            onKeyDown={(e) => {
+              // Cmd or Ctrl plus Enter submits, because a note is prose and Enter
+              // must make a line.
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submit(e);
+            }}
+          />
+          <div className="mt-1 flex items-center gap-2">
+            <span className="text-[10px] text-ink-faint">⌘↩ to add</span>
+            <Button
+              type="submit"
+              size="sm"
+              disabled={!selection || !body.trim()}
+              className="ml-auto h-6 px-2 text-xs"
+            >
+              <MessageSquarePlusIcon aria-hidden className="size-3" />
+              Add note
+            </Button>
+          </div>
+        </form>
+      )}
     </div>
   );
 }

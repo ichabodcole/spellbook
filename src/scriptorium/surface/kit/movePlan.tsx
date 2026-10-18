@@ -4,7 +4,9 @@
  * ask the kit daemon for its move plan (`scriptorium.move.plan`, built last
  * cycle in `../../backend/kit/wiki.ts`) and put it to the human: what moves,
  * whether it leaves its git working tree, and the links it would break, each
- * with the rewrite the move's relink offer would make.
+ * with the rewrite that would land it again. Nothing is rewritten: the frame
+ * shows no relink offer yet (set-make-relink-offer), so the words promise only
+ * what happens now, the chat line naming what still points at the old place.
  *
  * Kit path only (`SCRIPTORIUM_KIT=1`). The shipped surface does not import this
  * file; the interim frame (scriptorium-kit-interim-frame) passes it to
@@ -71,8 +73,9 @@ export function movePrompt(
       {breaks === 0 && <span className="mt-1 block">It breaks no links.</span>}
       {fixes > 0 && (
         <span className="mt-2 block">
-          It breaks {plural(fixes, "link")} in {plural(plan.links.length, "document")}. Each can be
-          rewritten to land again; you are offered that right after the move.
+          It breaks {plural(fixes, "link")} in {plural(plan.links.length, "document")}. They are
+          left as they are; after the move, the chat names the links still pointing at the old
+          place. Each is listed with the rewrite that would land it again.
           {listed(
             plan.links.flatMap((d) => d.fixes.map((f) => ({ d, f }))),
             ({ d, f }, i) => (
@@ -133,8 +136,8 @@ export function movePrompt(
 export const scriptoriumUncheckedMoveNote: UncheckedMoveNote = () => (
   <>
     <span className="block">
-      The links into and out of what moves were not checked. Any it breaks show after the move, with
-      the offer to rewrite them.
+      The links into and out of what moves were not checked. Any it breaks are named in the chat
+      after the move.
     </span>
     <span className="mt-1 block">
       Nor was whether it leaves a git repository: if it does, git will see the files as deleted

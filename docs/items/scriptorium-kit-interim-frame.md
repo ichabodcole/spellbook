@@ -86,7 +86,13 @@ links (the chat line says so); that belongs with
 
 ## Port-back notes
 
-No Story Studio kit code was changed. What is ours alone:
+One change to Story Studio's kit code, an extension point:
+
+- `chat/NotesPanel.tsx` takes `addUnavailable?: string`: why no note can be
+  added in this host (the interim frame has no document view to select in),
+  shown in place of the add form. Absent, the panel is as before.
+
+What is ours alone:
 
 - `src/build.ts` builds further surfaces (`dist/<sub>/`): a Spellbook build
   concern, not the kit's.
@@ -96,3 +102,20 @@ No Story Studio kit code was changed. What is ours alone:
 - The daemon client drops an error frame's `hint`; the frame recovers it with
   `onFrame`. If Story Studio wants hints shown, `lastError` carrying the hint
   would be the kit-side change.
+
+### After the no-stake verification (2026-10-17)
+
+Fixed on the same branch, each pinned by a test or ward cell that went red under
+its mutation:
+
+- the gate-honesty blind set declares `surface/kit/index.html`;
+- dev mode: the kit CLI spawns the daemon in `src/scriptorium/` (`kitDaemonCwd`,
+  Contract 5), checked from the repository root;
+- the spawn-path ward asserts directory pins into `dist/`, so a moved frame
+  folder goes red there, not only in the launcher-driven test;
+- `scripts/dist-check.ts` walks `dist/<sub>/` and rosters its files;
+- the move dialog no longer promises a relink offer: it says the chat names the
+  links still pointing at the old place;
+- the theme is kept in the daemon's prefs, as the shipped surface keeps its own
+  (per-port origins share no browser storage);
+- Notes says why no note can be added, in place of a form that did nothing.

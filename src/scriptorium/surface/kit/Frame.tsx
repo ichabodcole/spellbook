@@ -29,7 +29,13 @@ import { safeStorage } from "../../../kit/lib/storage";
 import type { PublicState } from "../../../kit/workspace/protocol";
 import { scriptoriumBeforeMove, scriptoriumUncheckedMoveNote } from "./movePlan";
 
-/** The shipped surface's key, so a theme chosen in either is kept in both. */
+/**
+ * The browser's copy of the theme, read by the page's pre-paint script so a
+ * load does not flash. Each session has its own port, so its own origin and
+ * storage: this copy is not shared between sessions, nor with the shipped
+ * surface. What carries the choice is the daemon's prefs (`theme`, kept in the
+ * kit path's `prefs.json`), as the shipped surface keeps its own.
+ */
 const THEME_KEY = "scriptorium:theme";
 
 /** What `hide` left out of each entry, by entry id (the kit daemon's `appState.hidden`). */
@@ -88,6 +94,16 @@ export function Frame({ daemon }: { daemon: Daemon }) {
     document.documentElement.dataset.theme = theme;
     safeStorage.setItem(THEME_KEY, theme);
   }, [theme]);
+  // One theme for every kit-path session, last choice wins: the prefs carry it.
+  const savedTheme = state?.prefs.theme;
+  useEffect(() => {
+    if (savedTheme === "dark" || savedTheme === "light") setTheme(savedTheme);
+  }, [savedTheme]);
+  const toggleTheme = () => {
+    const next = theme === "light" ? "dark" : "light";
+    setTheme(next);
+    send({ op: "prefs.set", key: "theme", value: next });
+  };
   // The client keeps a refusal's message only; the daemon's hint (what to do
   // instead, as for a create with no folder) is read off the frame here.
   const hints = useRef(new Map<string, string>());
@@ -131,7 +147,7 @@ export function Frame({ daemon }: { daemon: Daemon }) {
           type="button"
           aria-label="Switch theme"
           className="text-ink-faint hover:text-ink [&_svg]:size-3.5"
-          onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
+          onClick={toggleTheme}
         >
           {theme === "light" ? <MoonIcon /> : <SunIcon />}
         </button>
@@ -220,6 +236,9 @@ export function Frame({ daemon }: { daemon: Daemon }) {
               notes={openDoc?.notes ?? []}
               focusedId={null}
               selection={null}
+              // A note is made on a passage selected in the document, and this
+              // frame has no document view to select in.
+              addUnavailable="Notes are added on a passage in the document, which this surface cannot show yet."
               onAdd={() => {}}
               onGoTo={() => {}}
               onEdit={(id, body) =>

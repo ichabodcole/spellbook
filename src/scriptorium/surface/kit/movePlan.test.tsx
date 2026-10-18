@@ -75,7 +75,8 @@ beforeAll(async () => {
 afterEach(cleanup);
 afterAll(async () => {
   await daemon?.stop().catch(() => {});
-  removeDom();
+  // Awaited: the next file's `installDom` must not find this DOM still leaving.
+  await removeDom();
   if (savedHome === undefined) delete process.env.SCRIPTORIUM_HOME;
   else process.env.SCRIPTORIUM_HOME = savedHome;
   rmSync(root, { recursive: true, force: true });
@@ -213,6 +214,9 @@ describe("the move plan through the kit's pre-move slot, on a real kit daemon", 
     expect(text).toContain("1 document moved on disk");
     expect(text).toContain("It breaks 1 link in 1 document.");
     expect(text).toContain("./part/c.md → ./lore/c.md");
+    // What happens now, not a relink offer the frame does not show yet.
+    expect(text).toContain("the chat names the links still pointing at the old place");
+    expect(text).not.toMatch(/offer/i);
     await click(buttonWith("Cancel", dialog() as ParentNode));
     await waitFor(() => dialog() === null, "the dialog to close");
     // Give a stray move every chance to land before looking.
@@ -417,6 +421,9 @@ describe("when the plan cannot be fetched", () => {
     expect(text).toContain("The links into and out of what moves were not checked.");
     expect(text).toContain("Nor was whether it leaves a git repository");
     expect(text).toContain("git will see the files as deleted");
+    expect(text).toContain("Any it breaks are named in the chat after the move.");
+    // The frame shows no relink offer yet: nothing may promise one.
+    expect(text).not.toMatch(/offer/i);
     await m.unmount();
   });
 
