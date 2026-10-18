@@ -10984,15 +10984,15 @@ var require_jsx_runtime = __commonJS(function(exports, module) {
 
 // node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.production.js
 var require_use_sync_external_store_shim_production = __commonJS(function(exports) {
-  var React45 = __toESM(require_react());
+  var React49 = __toESM(require_react());
   function is2(x, y) {
     return x === y && (x !== 0 || 1 / x === 1 / y) || x !== x && y !== y;
   }
   var objectIs2 = typeof Object.is === "function" ? Object.is : is2;
-  var useState14 = React45.useState;
-  var useEffect14 = React45.useEffect;
-  var useLayoutEffect3 = React45.useLayoutEffect;
-  var useDebugValue = React45.useDebugValue;
+  var useState14 = React49.useState;
+  var useEffect14 = React49.useEffect;
+  var useLayoutEffect3 = React49.useLayoutEffect;
+  var useDebugValue = React49.useDebugValue;
   function useSyncExternalStore$2(subscribe, getSnapshot) {
     var value = getSnapshot(), _useState = useState14({ inst: { value, getSnapshot } }), inst = _useState[0].inst, forceUpdate = _useState[1];
     useLayoutEffect3(function() {
@@ -11023,7 +11023,7 @@ var require_use_sync_external_store_shim_production = __commonJS(function(export
     return getSnapshot();
   }
   var shim = typeof window === "undefined" || typeof window.document === "undefined" || typeof window.document.createElement === "undefined" ? useSyncExternalStore$1 : useSyncExternalStore$2;
-  exports.useSyncExternalStore = React45.useSyncExternalStore !== undefined ? React45.useSyncExternalStore : shim;
+  exports.useSyncExternalStore = React49.useSyncExternalStore !== undefined ? React49.useSyncExternalStore : shim;
 });
 
 // node_modules/use-sync-external-store/shim/index.js
@@ -11035,17 +11035,17 @@ var require_shim = __commonJS(function(exports, module) {
 
 // node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.production.js
 var require_with_selector_production = __commonJS(function(exports) {
-  var React45 = __toESM(require_react());
+  var React49 = __toESM(require_react());
   var shim = require_shim();
   function is2(x, y) {
     return x === y && (x !== 0 || 1 / x === 1 / y) || x !== x && y !== y;
   }
   var objectIs2 = typeof Object.is === "function" ? Object.is : is2;
   var useSyncExternalStore2 = shim.useSyncExternalStore;
-  var useRef20 = React45.useRef;
-  var useEffect14 = React45.useEffect;
-  var useMemo14 = React45.useMemo;
-  var useDebugValue = React45.useDebugValue;
+  var useRef20 = React49.useRef;
+  var useEffect14 = React49.useEffect;
+  var useMemo14 = React49.useMemo;
+  var useDebugValue = React49.useDebugValue;
   exports.useSyncExternalStoreWithSelector = function(subscribe, getSnapshot, getServerSnapshot, selector, isEqual) {
     var instRef = useRef20(null);
     if (instRef.current === null) {
@@ -12185,7 +12185,7 @@ var __iconNode39 = [
 ];
 var X = createLucideIcon("x", __iconNode39);
 // src/scriptorium/surface/kit/Frame.tsx
-var import_react19 = __toESM(require_react(), 1);
+var import_react20 = __toESM(require_react(), 1);
 
 // src/kit/chat/ChatSidebar.tsx
 var import_react7 = __toESM(require_react(), 1);
@@ -22893,41 +22893,217 @@ function TasksPanel({
   });
 }
 
-// src/kit/context/ContextSidebar.tsx
-var import_react18 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/alert-dialog/index.parts.mjs
+// node_modules/@base-ui/react/dialog/index.parts.mjs
 var exports_index_parts2 = {};
 __export(exports_index_parts2, {
   Backdrop: () => DialogBackdrop,
   Close: () => DialogClose,
   Description: () => DialogDescription,
-  Handle: () => AlertDialogHandle,
+  Handle: () => DialogHandle,
   Popup: () => DialogPopup,
   Portal: () => DialogPortal,
-  Root: () => AlertDialogRoot,
+  Root: () => DialogRoot,
   Title: () => DialogTitle,
-  Trigger: () => AlertDialogTrigger,
+  Trigger: () => DialogTrigger,
   Viewport: () => DialogViewport,
-  createHandle: () => createAlertDialogHandle
+  createHandle: () => createDialogHandle
 });
 
-// node_modules/@base-ui/react/dialog/root/useRenderDialogRoot.mjs
-var React59 = __toESM(require_react(), 1);
+// node_modules/@base-ui/react/dialog/backdrop/DialogBackdrop.mjs
+var React38 = __toESM(require_react(), 1);
 
-// node_modules/@base-ui/utils/useOnFirstRender.mjs
+// node_modules/@base-ui/react/dialog/root/DialogRootContext.mjs
 var React37 = __toESM(require_react(), 1);
 "use client";
-function useOnFirstRender(fn) {
-  const ref = React37.useRef(true);
-  if (ref.current) {
-    ref.current = false;
-    fn();
+var IsDrawerContext = /* @__PURE__ */ React37.createContext(false);
+if (false)
+  ;
+var DialogRootContext = /* @__PURE__ */ React37.createContext(undefined);
+if (false)
+  ;
+function useDialogRootContext(optional) {
+  const dialogRootContext = React37.useContext(DialogRootContext);
+  if (optional === false && dialogRootContext === undefined) {
+    throw new Error(formatErrorMessage_default(27));
   }
+  return dialogRootContext;
 }
 
-// node_modules/@base-ui/react/dialog/root/useDialogRoot.mjs
-var React56 = __toESM(require_react(), 1);
+// node_modules/@base-ui/react/utils/popupStateMapping.mjs
+var CommonPopupDataAttributes = function(CommonPopupDataAttributes2) {
+  CommonPopupDataAttributes2["open"] = "data-open";
+  CommonPopupDataAttributes2["closed"] = "data-closed";
+  CommonPopupDataAttributes2[CommonPopupDataAttributes2["startingStyle"] = TransitionStatusDataAttributes.startingStyle] = "startingStyle";
+  CommonPopupDataAttributes2[CommonPopupDataAttributes2["endingStyle"] = TransitionStatusDataAttributes.endingStyle] = "endingStyle";
+  CommonPopupDataAttributes2["anchorHidden"] = "data-anchor-hidden";
+  CommonPopupDataAttributes2["side"] = "data-side";
+  CommonPopupDataAttributes2["align"] = "data-align";
+  return CommonPopupDataAttributes2;
+}({});
+var CommonTriggerDataAttributes = /* @__PURE__ */ function(CommonTriggerDataAttributes2) {
+  CommonTriggerDataAttributes2["popupOpen"] = "data-popup-open";
+  CommonTriggerDataAttributes2["pressed"] = "data-pressed";
+  return CommonTriggerDataAttributes2;
+}({});
+var TRIGGER_HOOK = {
+  [CommonTriggerDataAttributes.popupOpen]: ""
+};
+var PRESSABLE_TRIGGER_HOOK = {
+  [CommonTriggerDataAttributes.popupOpen]: "",
+  [CommonTriggerDataAttributes.pressed]: ""
+};
+var POPUP_OPEN_HOOK = {
+  [CommonPopupDataAttributes.open]: ""
+};
+var POPUP_CLOSED_HOOK = {
+  [CommonPopupDataAttributes.closed]: ""
+};
+var ANCHOR_HIDDEN_HOOK = {
+  [CommonPopupDataAttributes.anchorHidden]: ""
+};
+var triggerOpenStateMapping = {
+  open(value) {
+    if (value) {
+      return TRIGGER_HOOK;
+    }
+    return null;
+  }
+};
+var pressableTriggerOpenStateMapping = {
+  open(value) {
+    if (value) {
+      return PRESSABLE_TRIGGER_HOOK;
+    }
+    return null;
+  }
+};
+var popupStateMapping = {
+  open(value) {
+    if (value) {
+      return POPUP_OPEN_HOOK;
+    }
+    return POPUP_CLOSED_HOOK;
+  },
+  anchorHidden(value) {
+    if (value) {
+      return ANCHOR_HIDDEN_HOOK;
+    }
+    return null;
+  }
+};
+
+// node_modules/@base-ui/react/dialog/backdrop/DialogBackdrop.mjs
+"use client";
+var stateAttributesMapping2 = {
+  ...popupStateMapping,
+  ...transitionStatusMapping
+};
+var DialogBackdrop = /* @__PURE__ */ React38.forwardRef(function DialogBackdrop2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    forceRender = false,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useDialogRootContext();
+  const open = store.useState("open");
+  const nested = store.useState("nested");
+  const mounted = store.useState("mounted");
+  const transitionStatus = store.useState("transitionStatus");
+  const state = {
+    open,
+    transitionStatus
+  };
+  return useRenderElement("div", componentProps, {
+    state,
+    ref: [store.context.backdropRef, forwardedRef],
+    stateAttributesMapping: stateAttributesMapping2,
+    props: [{
+      role: "presentation",
+      hidden: !mounted,
+      style: {
+        userSelect: "none",
+        WebkitUserSelect: "none"
+      }
+    }, elementProps],
+    enabled: forceRender || !nested
+  });
+});
+if (false)
+  ;
+// node_modules/@base-ui/react/dialog/close/DialogClose.mjs
+var React39 = __toESM(require_react(), 1);
+"use client";
+var DialogClose = /* @__PURE__ */ React39.forwardRef(function DialogClose2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    disabled: disabled2 = false,
+    nativeButton = true,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useDialogRootContext();
+  const open = store.useState("open");
+  const {
+    getButtonProps,
+    buttonRef
+  } = useButton({
+    disabled: disabled2,
+    native: nativeButton
+  });
+  const state = {
+    disabled: disabled2
+  };
+  function handleClick(event) {
+    if (open) {
+      store.setOpen(false, createChangeEventDetails(exports_reason_parts.closePress, event.nativeEvent));
+    }
+  }
+  return useRenderElement("button", componentProps, {
+    state,
+    ref: [forwardedRef, buttonRef],
+    props: [{
+      onClick: handleClick
+    }, elementProps, getButtonProps]
+  });
+});
+if (false)
+  ;
+// node_modules/@base-ui/react/dialog/description/DialogDescription.mjs
+var React40 = __toESM(require_react(), 1);
+"use client";
+var DialogDescription = /* @__PURE__ */ React40.forwardRef(function DialogDescription2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    id: idProp,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useDialogRootContext();
+  const id = useBaseUiId(idProp);
+  store.useSyncedValueWithCleanup("descriptionElementId", id);
+  return useRenderElement("p", componentProps, {
+    ref: forwardedRef,
+    props: [{
+      id
+    }, elementProps]
+  });
+});
+if (false)
+  ;
+// node_modules/@base-ui/react/dialog/popup/DialogPopup.mjs
+var React61 = __toESM(require_react(), 1);
+// node_modules/@base-ui/react/floating-ui-react/components/FloatingFocusManager.mjs
+var React44 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/utils/addEventListener.mjs
 function addEventListener(target, type, listener, options2) {
@@ -22936,207 +23112,6 @@ function addEventListener(target, type, listener, options2) {
     target.removeEventListener(type, listener, options2);
   };
 }
-
-// node_modules/@base-ui/utils/useScrollLock.mjs
-"use client";
-var originalHtmlStyles = {};
-var originalBodyStyles = {};
-var originalHtmlScrollBehavior = "";
-function hasInsetScrollbars(referenceElement) {
-  if (typeof document === "undefined") {
-    return false;
-  }
-  const doc = ownerDocument(referenceElement);
-  const win = getWindow(doc);
-  return win.innerWidth - doc.documentElement.clientWidth > 0;
-}
-function supportsStableScrollbarGutter(referenceElement) {
-  const supported = typeof CSS !== "undefined" && CSS.supports && CSS.supports("scrollbar-gutter", "stable");
-  if (!supported || typeof document === "undefined") {
-    return false;
-  }
-  const doc = ownerDocument(referenceElement);
-  const html = doc.documentElement;
-  const body = doc.body;
-  const scrollContainer = isOverflowElement(html) ? html : body;
-  const originalScrollContainerOverflowY = scrollContainer.style.overflowY;
-  const originalHtmlStyleGutter = html.style.scrollbarGutter;
-  html.style.scrollbarGutter = "stable";
-  scrollContainer.style.overflowY = "scroll";
-  const before = scrollContainer.offsetWidth;
-  scrollContainer.style.overflowY = "hidden";
-  const after = scrollContainer.offsetWidth;
-  scrollContainer.style.overflowY = originalScrollContainerOverflowY;
-  html.style.scrollbarGutter = originalHtmlStyleGutter;
-  return before === after;
-}
-function preventScrollOverlayScrollbars(referenceElement) {
-  const doc = ownerDocument(referenceElement);
-  const html = doc.documentElement;
-  const body = doc.body;
-  const elementToLock = isOverflowElement(html) ? html : body;
-  const originalElementToLockStyles = {
-    overflowY: elementToLock.style.overflowY,
-    overflowX: elementToLock.style.overflowX
-  };
-  Object.assign(elementToLock.style, {
-    overflowY: "hidden",
-    overflowX: "hidden"
-  });
-  return () => {
-    Object.assign(elementToLock.style, originalElementToLockStyles);
-  };
-}
-function preventScrollInsetScrollbars(referenceElement) {
-  const doc = ownerDocument(referenceElement);
-  const html = doc.documentElement;
-  const body = doc.body;
-  const win = getWindow(html);
-  let scrollTop = 0;
-  let scrollLeft = 0;
-  let updateGutterOnly = false;
-  const resizeFrame = AnimationFrame.create();
-  if (exports_parts.engine.webkit && (win.visualViewport?.scale ?? 1) !== 1) {
-    return () => {};
-  }
-  function lockScroll() {
-    const htmlStyles = win.getComputedStyle(html);
-    const bodyStyles = win.getComputedStyle(body);
-    const htmlScrollbarGutterValue = htmlStyles.scrollbarGutter || "";
-    const hasBothEdges = htmlScrollbarGutterValue.includes("both-edges");
-    const scrollbarGutterValue = hasBothEdges ? "stable both-edges" : "stable";
-    scrollTop = html.scrollTop;
-    scrollLeft = html.scrollLeft;
-    originalHtmlStyles = {
-      scrollbarGutter: html.style.scrollbarGutter,
-      overflowY: html.style.overflowY,
-      overflowX: html.style.overflowX
-    };
-    originalHtmlScrollBehavior = html.style.scrollBehavior;
-    originalBodyStyles = {
-      position: body.style.position,
-      height: body.style.height,
-      width: body.style.width,
-      boxSizing: body.style.boxSizing,
-      overflowY: body.style.overflowY,
-      overflowX: body.style.overflowX,
-      scrollBehavior: body.style.scrollBehavior
-    };
-    const isScrollableY = html.scrollHeight > html.clientHeight;
-    const isScrollableX = html.scrollWidth > html.clientWidth;
-    const hasConstantOverflowY = htmlStyles.overflowY === "scroll" || bodyStyles.overflowY === "scroll";
-    const hasConstantOverflowX = htmlStyles.overflowX === "scroll" || bodyStyles.overflowX === "scroll";
-    const scrollbarWidth = Math.max(0, win.innerWidth - body.clientWidth);
-    const scrollbarHeight = Math.max(0, win.innerHeight - body.clientHeight);
-    const marginY = parseFloat(bodyStyles.marginTop) + parseFloat(bodyStyles.marginBottom);
-    const marginX = parseFloat(bodyStyles.marginLeft) + parseFloat(bodyStyles.marginRight);
-    const elementToLock = isOverflowElement(html) ? html : body;
-    updateGutterOnly = supportsStableScrollbarGutter(referenceElement);
-    if (updateGutterOnly) {
-      html.style.scrollbarGutter = scrollbarGutterValue;
-      elementToLock.style.overflowY = "hidden";
-      elementToLock.style.overflowX = "hidden";
-      return;
-    }
-    Object.assign(html.style, {
-      scrollbarGutter: scrollbarGutterValue,
-      overflowY: "hidden",
-      overflowX: "hidden"
-    });
-    if (isScrollableY || hasConstantOverflowY) {
-      html.style.overflowY = "scroll";
-    }
-    if (isScrollableX || hasConstantOverflowX) {
-      html.style.overflowX = "scroll";
-    }
-    Object.assign(body.style, {
-      position: "relative",
-      height: marginY || scrollbarHeight ? `calc(100dvh - ${marginY + scrollbarHeight}px)` : "100dvh",
-      width: marginX || scrollbarWidth ? `calc(100vw - ${marginX + scrollbarWidth}px)` : "100vw",
-      boxSizing: "border-box",
-      overflow: "hidden",
-      scrollBehavior: "unset"
-    });
-    body.scrollTop = scrollTop;
-    body.scrollLeft = scrollLeft;
-    html.setAttribute("data-base-ui-scroll-locked", "");
-    html.style.scrollBehavior = "unset";
-  }
-  function cleanup() {
-    Object.assign(html.style, originalHtmlStyles);
-    Object.assign(body.style, originalBodyStyles);
-    if (!updateGutterOnly) {
-      html.scrollTop = scrollTop;
-      html.scrollLeft = scrollLeft;
-      html.removeAttribute("data-base-ui-scroll-locked");
-      html.style.scrollBehavior = originalHtmlScrollBehavior;
-    }
-  }
-  function handleResize() {
-    cleanup();
-    resizeFrame.request(lockScroll);
-  }
-  lockScroll();
-  const unsubscribeResize = addEventListener(win, "resize", handleResize);
-  return () => {
-    resizeFrame.cancel();
-    cleanup();
-    if (typeof win.removeEventListener === "function") {
-      unsubscribeResize();
-    }
-  };
-}
-
-class ScrollLocker {
-  lockCount = 0;
-  restore = null;
-  timeoutLock = Timeout.create();
-  timeoutUnlock = Timeout.create();
-  acquire(referenceElement) {
-    this.lockCount += 1;
-    if (this.lockCount === 1 && this.restore === null) {
-      this.timeoutLock.start(0, () => this.lock(referenceElement));
-    }
-    return this.release;
-  }
-  release = () => {
-    this.lockCount -= 1;
-    if (this.lockCount === 0 && this.restore) {
-      this.timeoutUnlock.start(0, this.unlock);
-    }
-  };
-  unlock = () => {
-    if (this.lockCount === 0 && this.restore) {
-      this.restore?.();
-      this.restore = null;
-    }
-  };
-  lock(referenceElement) {
-    if (this.lockCount === 0 || this.restore !== null) {
-      return;
-    }
-    const doc = ownerDocument(referenceElement);
-    const html = doc.documentElement;
-    const htmlOverflowY = getWindow(html).getComputedStyle(html).overflowY;
-    if (htmlOverflowY === "hidden" || htmlOverflowY === "clip") {
-      this.restore = NOOP;
-      return;
-    }
-    const hasOverlayScrollbars = exports_parts.os.ios || !hasInsetScrollbars(referenceElement);
-    this.restore = hasOverlayScrollbars ? preventScrollOverlayScrollbars(referenceElement) : preventScrollInsetScrollbars(referenceElement);
-  }
-}
-var SCROLL_LOCKER = new ScrollLocker;
-function useScrollLock(enabled = true, referenceElement = null) {
-  useIsoLayoutEffect(() => {
-    if (!enabled) {
-      return;
-    }
-    return SCROLL_LOCKER.acquire(referenceElement);
-  }, [enabled, referenceElement]);
-}
-// node_modules/@base-ui/react/floating-ui-react/components/FloatingFocusManager.mjs
-var React41 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/utils/mergeCleanups.mjs
 function mergeCleanups(...cleanups) {
@@ -23170,7 +23145,7 @@ function createLatestRef(value) {
 }
 
 // node_modules/@base-ui/react/utils/FocusGuard.mjs
-var React38 = __toESM(require_react(), 1);
+var React41 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/utils/visuallyHidden.mjs
 var visuallyHiddenBase = {
@@ -23197,8 +23172,8 @@ var visuallyHiddenInput = {
 // node_modules/@base-ui/react/utils/FocusGuard.mjs
 var import_jsx_runtime7 = __toESM(require_jsx_runtime(), 1);
 "use client";
-var FocusGuard = /* @__PURE__ */ React38.forwardRef(function FocusGuard2(props, ref) {
-  const [role, setRole] = React38.useState();
+var FocusGuard = /* @__PURE__ */ React41.forwardRef(function FocusGuard2(props, ref) {
+  const [role, setRole] = React41.useState();
   useIsoLayoutEffect(() => {
     if (exports_parts.screenReader.voiceOver && exports_parts.engine.webkit) {
       setRole("button");
@@ -23412,7 +23387,7 @@ function markOthers(avoidElements, options2 = {}) {
 }
 
 // node_modules/@base-ui/react/floating-ui-react/components/FloatingPortal.mjs
-var React39 = __toESM(require_react(), 1);
+var React42 = __toESM(require_react(), 1);
 var ReactDOM3 = __toESM(require_react_dom(), 1);
 
 // node_modules/@base-ui/react/internals/constants.mjs
@@ -23444,10 +23419,10 @@ var ownerVisuallyHidden = {
 // node_modules/@base-ui/react/floating-ui-react/components/FloatingPortal.mjs
 var import_jsx_runtime8 = __toESM(require_jsx_runtime(), 1);
 "use client";
-var PortalContext = /* @__PURE__ */ React39.createContext(null);
+var PortalContext = /* @__PURE__ */ React42.createContext(null);
 if (false)
   ;
-var usePortalContext = () => React39.useContext(PortalContext);
+var usePortalContext = () => React42.useContext(PortalContext);
 var attr = createAttribute("portal");
 function useFloatingPortalNode(props = {}) {
   const {
@@ -23459,14 +23434,14 @@ function useFloatingPortalNode(props = {}) {
   const uniqueId = useId();
   const portalContext = usePortalContext();
   const parentPortalNode = portalContext?.portalNode;
-  const [containerElement, setContainerElement] = React39.useState(null);
-  const [portalNode, setPortalNode] = React39.useState(null);
+  const [containerElement, setContainerElement] = React42.useState(null);
+  const [portalNode, setPortalNode] = React42.useState(null);
   const setPortalNodeRef = useStableCallback((node) => {
     if (node !== null) {
       setPortalNode(node);
     }
   });
-  const containerRef = React39.useRef(null);
+  const containerRef = React42.useRef(null);
   useIsoLayoutEffect(() => {
     if (containerProp === null) {
       if (containerRef.current) {
@@ -23507,7 +23482,7 @@ function useFloatingPortalNode(props = {}) {
     portalSubtree
   };
 }
-var FloatingPortal = /* @__PURE__ */ React39.forwardRef(function FloatingPortal2(componentProps, forwardedRef) {
+var FloatingPortal = /* @__PURE__ */ React42.forwardRef(function FloatingPortal2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -23526,16 +23501,16 @@ var FloatingPortal = /* @__PURE__ */ React39.forwardRef(function FloatingPortal2
     componentProps,
     elementProps
   });
-  const beforeOutsideRef = React39.useRef(null);
-  const afterOutsideRef = React39.useRef(null);
-  const beforeInsideRef = React39.useRef(null);
-  const afterInsideRef = React39.useRef(null);
-  const [focusManagerState, setFocusManagerState] = React39.useState(null);
-  const focusInsideDisabledRef = React39.useRef(false);
+  const beforeOutsideRef = React42.useRef(null);
+  const afterOutsideRef = React42.useRef(null);
+  const beforeInsideRef = React42.useRef(null);
+  const afterInsideRef = React42.useRef(null);
+  const [focusManagerState, setFocusManagerState] = React42.useState(null);
+  const focusInsideDisabledRef = React42.useRef(false);
   const modal = focusManagerState?.modal;
   const open = focusManagerState?.open;
   const shouldRenderGuards = typeof renderGuards === "boolean" ? renderGuards : !!focusManagerState && !focusManagerState.modal && focusManagerState.open && !!portalNode;
-  React39.useEffect(() => {
+  React42.useEffect(() => {
     if (!portalNode || modal) {
       return;
     }
@@ -23561,7 +23536,7 @@ var FloatingPortal = /* @__PURE__ */ React39.forwardRef(function FloatingPortal2
     enableFocusInside(portalNode);
     focusInsideDisabledRef.current = false;
   }, [open, portalNode]);
-  const portalContextValue = React39.useMemo(() => ({
+  const portalContextValue = React42.useMemo(() => ({
     beforeOutsideRef,
     afterOutsideRef,
     beforeInsideRef,
@@ -23569,7 +23544,7 @@ var FloatingPortal = /* @__PURE__ */ React39.forwardRef(function FloatingPortal2
     portalNode,
     setFocusManagerState
   }), [portalNode]);
-  return /* @__PURE__ */ import_jsx_runtime8.jsxs(React39.Fragment, {
+  return /* @__PURE__ */ import_jsx_runtime8.jsxs(React42.Fragment, {
     children: [portalSubtree, /* @__PURE__ */ import_jsx_runtime8.jsxs(PortalContext.Provider, {
       value: portalContextValue,
       children: [shouldRenderGuards && portalNode && /* @__PURE__ */ import_jsx_runtime8.jsx(FocusGuard, {
@@ -23610,7 +23585,7 @@ if (false)
   ;
 
 // node_modules/@base-ui/react/floating-ui-react/components/FloatingTree.mjs
-var React40 = __toESM(require_react(), 1);
+var React43 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/floating-ui-react/utils/createEventEmitter.mjs
 function createEventEmitter() {
@@ -23651,15 +23626,15 @@ class FloatingTreeStore {
 // node_modules/@base-ui/react/floating-ui-react/components/FloatingTree.mjs
 var import_jsx_runtime9 = __toESM(require_jsx_runtime(), 1);
 "use client";
-var FloatingNodeContext = /* @__PURE__ */ React40.createContext(null);
+var FloatingNodeContext = /* @__PURE__ */ React43.createContext(null);
 if (false)
   ;
-var FloatingTreeContext = /* @__PURE__ */ React40.createContext(null);
+var FloatingTreeContext = /* @__PURE__ */ React43.createContext(null);
 if (false)
   ;
-var useFloatingParentNodeId = () => React40.useContext(FloatingNodeContext)?.id || null;
+var useFloatingParentNodeId = () => React43.useContext(FloatingNodeContext)?.id || null;
 var useFloatingTree = (externalTree) => {
-  const contextTree = React40.useContext(FloatingTreeContext);
+  const contextTree = React43.useContext(FloatingTreeContext);
   return externalTree ?? contextTree;
 };
 function useFloatingNodeId(externalTree) {
@@ -23688,7 +23663,7 @@ function FloatingNode(props) {
   } = props;
   const parentId = useFloatingParentNodeId();
   return /* @__PURE__ */ import_jsx_runtime9.jsx(FloatingNodeContext.Provider, {
-    value: React40.useMemo(() => ({
+    value: React43.useMemo(() => ({
       id,
       parentId
     }), [id, parentId]),
@@ -23815,14 +23790,14 @@ function FloatingFocusManager(props) {
   const openRef = useValueAsRef(open);
   const tree = useFloatingTree(externalTree);
   const portalContext = usePortalContext();
-  const preventReturnFocusRef = React41.useRef(false);
-  const isPointerDownRef = React41.useRef(false);
-  const pointerDownOutsideRef = React41.useRef(false);
-  const lastFocusedTabbableRef = React41.useRef(null);
-  const closeTypeRef = React41.useRef("");
-  const lastInteractionTypeRef = React41.useRef("");
-  const beforeGuardRef = React41.useRef(null);
-  const afterGuardRef = React41.useRef(null);
+  const preventReturnFocusRef = React44.useRef(false);
+  const isPointerDownRef = React44.useRef(false);
+  const pointerDownOutsideRef = React44.useRef(false);
+  const lastFocusedTabbableRef = React44.useRef(null);
+  const closeTypeRef = React44.useRef("");
+  const lastInteractionTypeRef = React44.useRef("");
+  const beforeGuardRef = React44.useRef(null);
+  const afterGuardRef = React44.useRef(null);
   const mergedBeforeGuardRef = useMergedRefs(beforeGuardRef, beforeContentFocusGuardRef, portalContext?.beforeInsideRef);
   const mergedAfterGuardRef = useMergedRefs(afterGuardRef, portalContext?.afterInsideRef);
   const blurTimeout = useTimeout();
@@ -23834,7 +23809,7 @@ function FloatingFocusManager(props) {
     return container ? tabbable(container) : [];
   });
   const getResolvedInsideElements = useStableCallback(() => getInsideElements?.().filter((element2) => element2 != null) ?? []);
-  React41.useEffect(() => {
+  React44.useEffect(() => {
     if (disabled2 || !modal) {
       return;
     }
@@ -23848,7 +23823,7 @@ function FloatingFocusManager(props) {
     const doc = ownerDocument(floatingFocusElement);
     return addEventListener(doc, "keydown", onKeyDown);
   }, [disabled2, floatingFocusElement, modal, isUntrappedTypeableCombobox, getTabbableContent]);
-  React41.useEffect(() => {
+  React44.useEffect(() => {
     if (disabled2 || !open) {
       return;
     }
@@ -23874,7 +23849,7 @@ function FloatingFocusManager(props) {
     }
     return mergeCleanups(addEventListener(doc, "pointerdown", onPointerDown, true), addEventListener(doc, "pointerup", clearPointerDownOutside, true), addEventListener(doc, "pointercancel", clearPointerDownOutside, true), addEventListener(doc, "keydown", onKeyDown, true), clearPointerDownOutside);
   }, [disabled2, floating, domReference, floatingFocusElement, open, portalContext, pointerDownTimeout, getResolvedInsideElements]);
-  React41.useEffect(() => {
+  React44.useEffect(() => {
     if (disabled2 || !closeOnFocusOut) {
       return;
     }
@@ -23949,7 +23924,7 @@ function FloatingFocusManager(props) {
     }
     return mergeCleanups(domReferenceElement && addEventListener(domReferenceElement, "focusout", handleFocusOutside), domReferenceElement && addEventListener(domReferenceElement, "pointerdown", handlePointerDown), floating && addEventListener(floating, "focusin", handleFocusIn), floating && addEventListener(floating, "focusout", handleFocusOutside), floating && portalContext && addEventListener(floating, "focusout", markInsideReactTree, true));
   }, [disabled2, domReference, floating, floatingFocusElement, modal, tree, portalContext, store, closeOnFocusOut, restoreFocus, getTabbableContent, isUntrappedTypeableCombobox, getNodeId, dataRef, blurTimeout, pointerDownTimeout, restoreFocusFrame, nextFocusableElement, previousFocusableElement, getResolvedInsideElements]);
-  React41.useEffect(() => {
+  React44.useEffect(() => {
     if (disabled2 || !floating || !open) {
       return;
     }
@@ -24130,7 +24105,7 @@ function FloatingFocusManager(props) {
     };
   }, [disabled2, floatingFocusElement]);
   const shouldRenderGuards = !disabled2 && (modal ? !isUntrappedTypeableCombobox : true) && (isInsidePortal || modal);
-  return /* @__PURE__ */ import_jsx_runtime10.jsxs(React41.Fragment, {
+  return /* @__PURE__ */ import_jsx_runtime10.jsxs(React44.Fragment, {
     children: [shouldRenderGuards && /* @__PURE__ */ import_jsx_runtime10.jsx(FocusGuard, {
       "data-type": "inside",
       ref: mergedBeforeGuardRef,
@@ -24170,7 +24145,7 @@ function FloatingFocusManager(props) {
   });
 }
 // node_modules/@base-ui/react/floating-ui-react/hooks/useClick.mjs
-var React42 = __toESM(require_react(), 1);
+var React45 = __toESM(require_react(), 1);
 "use client";
 function useClick(context, props = {}) {
   const {
@@ -24184,10 +24159,10 @@ function useClick(context, props = {}) {
   } = props;
   const store = "rootStore" in context ? context.rootStore : context;
   const dataRef = store.context.dataRef;
-  const pointerTypeRef = React42.useRef(undefined);
+  const pointerTypeRef = React45.useRef(undefined);
   const frame = useAnimationFrame();
   const touchOpenTimeout = useTimeout();
-  const reference = React42.useMemo(() => {
+  const reference = React45.useMemo(() => {
     function setOpenWithTouchDelay(nextOpen, nativeEvent, target, pointerType) {
       const details = createChangeEventDetails(reason, nativeEvent, target);
       if (nextOpen && pointerType === "touch" && touchOpenDelay > 0) {
@@ -24258,12 +24233,12 @@ function useClick(context, props = {}) {
       }
     };
   }, [dataRef, eventOption, ignoreMouse, reason, store, stickIfOpen, toggle, frame, touchOpenTimeout, touchOpenDelay]);
-  return React42.useMemo(() => enabled ? {
+  return React45.useMemo(() => enabled ? {
     reference
   } : EMPTY_OBJECT, [enabled, reference]);
 }
 // node_modules/@base-ui/react/floating-ui-react/hooks/useDismiss.mjs
-var React43 = __toESM(require_react(), 1);
+var React46 = __toESM(require_react(), 1);
 "use client";
 function alwaysFalse() {
   return false;
@@ -24299,12 +24274,12 @@ function useDismiss(context, props = {}) {
     escapeKey: escapeKeyBubbles,
     outsidePress: outsidePressBubbles
   } = normalizeProp(bubbles);
-  const pressStartedInsideRef = React43.useRef(false);
-  const pressStartPreventedRef = React43.useRef(false);
-  const suppressNextOutsideClickRef = React43.useRef(false);
-  const isComposingRef = React43.useRef(false);
-  const currentPointerTypeRef = React43.useRef("");
-  const touchStateRef = React43.useRef(null);
+  const pressStartedInsideRef = React46.useRef(false);
+  const pressStartPreventedRef = React46.useRef(false);
+  const suppressNextOutsideClickRef = React46.useRef(false);
+  const isComposingRef = React46.useRef(false);
+  const currentPointerTypeRef = React46.useRef("");
+  const touchStateRef = React46.useRef(null);
   const cancelDismissOnEndTimeout = useTimeout();
   const clearInsideReactTreeTimeout = useTimeout();
   const clearInsideReactTree = useStableCallback(() => {
@@ -24373,7 +24348,7 @@ function useDismiss(context, props = {}) {
       pressStartPreventedRef.current = true;
     }
   });
-  React43.useEffect(() => {
+  React46.useEffect(() => {
     if (!open || !enabled) {
       return;
     }
@@ -24615,13 +24590,13 @@ function useDismiss(context, props = {}) {
       suppressNextOutsideClickRef.current = false;
     };
   }, [dataRef, floatingElement, escapeKey2, outsidePressEnabled, outsidePress2, open, enabled, escapeKeyBubbles, outsidePressBubbles, closeOnEscapeKeyDown, clearInsideReactTree, getOutsidePressEventProp, hasBlockingChild, isEventWithinOwnElements, tree, store, cancelDismissOnEndTimeout]);
-  React43.useEffect(clearInsideReactTree, [outsidePress2, clearInsideReactTree]);
-  const reference = React43.useMemo(() => ({
+  React46.useEffect(clearInsideReactTree, [outsidePress2, clearInsideReactTree]);
+  const reference = React46.useMemo(() => ({
     onKeyDown: closeOnEscapeKeyDown,
     onPointerDown: closeOnReferencePress,
     onClick: closeOnReferencePress
   }), [closeOnEscapeKeyDown, closeOnReferencePress]);
-  const floating = React43.useMemo(() => ({
+  const floating = React46.useMemo(() => ({
     onKeyDown: closeOnEscapeKeyDown,
     onPointerDown: markInsidePressStartPrevented,
     onMouseDown: markInsidePressStartPrevented,
@@ -24638,14 +24613,14 @@ function useDismiss(context, props = {}) {
     onTouchEndCapture: markInsideReactTree,
     onTouchMoveCapture: markInsideReactTree
   }), [closeOnEscapeKeyDown, markInsideReactTree, markPressStartedInsideReactTree, markInsidePressStartPrevented]);
-  return React43.useMemo(() => enabled ? {
+  return React46.useMemo(() => enabled ? {
     reference,
     floating,
     trigger: reference
   } : {}, [enabled, reference, floating]);
 }
 // node_modules/@base-ui/react/floating-ui-react/hooks/useFloating.mjs
-var React50 = __toESM(require_react(), 1);
+var React54 = __toESM(require_react(), 1);
 
 // node_modules/@floating-ui/core/dist/floating-ui.core.mjs
 function computeCoordsFromPlacement(_ref, placement, rtl) {
@@ -25887,7 +25862,7 @@ var computePosition2 = (reference, floating, options2) => {
 };
 
 // node_modules/@floating-ui/react-dom/dist/floating-ui.react-dom.mjs
-var React44 = __toESM(require_react(), 1);
+var React47 = __toESM(require_react(), 1);
 var import_react10 = __toESM(require_react(), 1);
 var ReactDOM4 = __toESM(require_react_dom(), 1);
 var isClient = typeof document !== "undefined";
@@ -25953,7 +25928,7 @@ function roundByDPR(element2, value) {
   return Math.round(value * dpr) / dpr;
 }
 function useLatestRef(value) {
-  const ref = React44.useRef(value);
+  const ref = React47.useRef(value);
   index3(() => {
     ref.current = value;
   });
@@ -25976,7 +25951,7 @@ function useFloating(options2) {
     whileElementsMounted,
     open
   } = options2;
-  const [data, setData] = React44.useState({
+  const [data, setData] = React47.useState({
     x: 0,
     y: 0,
     strategy,
@@ -25984,19 +25959,19 @@ function useFloating(options2) {
     middlewareData: {},
     isPositioned: false
   });
-  const [latestMiddleware, setLatestMiddleware] = React44.useState(middleware);
+  const [latestMiddleware, setLatestMiddleware] = React47.useState(middleware);
   if (!deepEqual(latestMiddleware, middleware)) {
     setLatestMiddleware(middleware);
   }
-  const [_reference, _setReference] = React44.useState(null);
-  const [_floating, _setFloating] = React44.useState(null);
-  const setReference = React44.useCallback((node) => {
+  const [_reference, _setReference] = React47.useState(null);
+  const [_floating, _setFloating] = React47.useState(null);
+  const setReference = React47.useCallback((node) => {
     if (node !== referenceRef.current) {
       referenceRef.current = node;
       _setReference(node);
     }
   }, []);
-  const setFloating = React44.useCallback((node) => {
+  const setFloating = React47.useCallback((node) => {
     if (node !== floatingRef.current) {
       floatingRef.current = node;
       _setFloating(node);
@@ -26004,14 +25979,14 @@ function useFloating(options2) {
   }, []);
   const referenceEl = externalReference || _reference;
   const floatingEl = externalFloating || _floating;
-  const referenceRef = React44.useRef(null);
-  const floatingRef = React44.useRef(null);
-  const dataRef = React44.useRef(data);
+  const referenceRef = React47.useRef(null);
+  const floatingRef = React47.useRef(null);
+  const dataRef = React47.useRef(data);
   const hasWhileElementsMounted = whileElementsMounted != null;
   const whileElementsMountedRef = useLatestRef(whileElementsMounted);
   const platformRef = useLatestRef(platform3);
   const openRef = useLatestRef(open);
-  const update2 = React44.useCallback(() => {
+  const update2 = React47.useCallback(() => {
     if (!referenceRef.current || !floatingRef.current) {
       return;
     }
@@ -26045,7 +26020,7 @@ function useFloating(options2) {
       }));
     }
   }, [open]);
-  const isMountedRef = React44.useRef(false);
+  const isMountedRef = React47.useRef(false);
   index3(() => {
     isMountedRef.current = true;
     return () => {
@@ -26064,17 +26039,17 @@ function useFloating(options2) {
       update2();
     }
   }, [referenceEl, floatingEl, update2, whileElementsMountedRef, hasWhileElementsMounted]);
-  const refs = React44.useMemo(() => ({
+  const refs = React47.useMemo(() => ({
     reference: referenceRef,
     floating: floatingRef,
     setReference,
     setFloating
   }), [setReference, setFloating]);
-  const elements = React44.useMemo(() => ({
+  const elements = React47.useMemo(() => ({
     reference: referenceEl,
     floating: floatingEl
   }), [referenceEl, floatingEl]);
-  const floatingStyles = React44.useMemo(() => {
+  const floatingStyles = React47.useMemo(() => {
     const initialStyles = {
       position: strategy,
       left: 0,
@@ -26100,7 +26075,7 @@ function useFloating(options2) {
       top: y
     };
   }, [strategy, transform, elements.floating, data.x, data.y]);
-  return React44.useMemo(() => ({
+  return React47.useMemo(() => ({
     ...data,
     update: update2,
     refs,
@@ -26157,11 +26132,22 @@ var hide3 = (options2, deps) => {
 };
 
 // node_modules/@base-ui/react/utils/popups/popupStoreUtils.mjs
-var React49 = __toESM(require_react(), 1);
+var React53 = __toESM(require_react(), 1);
 var ReactDOM5 = __toESM(require_react_dom(), 1);
 
-// node_modules/@base-ui/react/floating-ui-react/hooks/useSyncedFloatingRootContext.mjs
+// node_modules/@base-ui/utils/useOnFirstRender.mjs
 var React48 = __toESM(require_react(), 1);
+"use client";
+function useOnFirstRender(fn) {
+  const ref = React48.useRef(true);
+  if (ref.current) {
+    ref.current = false;
+    fn();
+  }
+}
+
+// node_modules/@base-ui/react/floating-ui-react/hooks/useSyncedFloatingRootContext.mjs
+var React52 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/utils/store/createSelector.mjs
 var createSelector = (a, b, c, d, e, f, ...other) => {
@@ -26213,12 +26199,12 @@ var createSelector = (a, b, c, d, e, f, ...other) => {
 };
 
 // node_modules/@base-ui/utils/store/useStore.mjs
-var React46 = __toESM(require_react(), 1);
+var React50 = __toESM(require_react(), 1);
 var import_shim = __toESM(require_shim(), 1);
 var import_with_selector = __toESM(require_with_selector(), 1);
 
 // node_modules/@base-ui/utils/fastHooks.mjs
-var React45 = __toESM(require_react(), 1);
+var React49 = __toESM(require_react(), 1);
 var hooks = [];
 var currentInstance = undefined;
 function getInstance() {
@@ -26250,7 +26236,7 @@ function fastComponent(fn) {
   return FastComponent;
 }
 function fastComponentRef(fn) {
-  return /* @__PURE__ */ React45.forwardRef(fastComponent(fn));
+  return /* @__PURE__ */ React49.forwardRef(fastComponent(fn));
 }
 function createInstance() {
   return {
@@ -26265,7 +26251,7 @@ function useStore(store, selector, a1, a2, a3) {
   return useStoreImplementation(store, selector, a1, a2, a3);
 }
 function useStoreR19(store, selector, a1, a2, a3) {
-  const getSelection = React46.useCallback(() => selector(store.getSnapshot(), a1, a2, a3), [store, selector, a1, a2, a3]);
+  const getSelection = React50.useCallback(() => selector(store.getSnapshot(), a1, a2, a3), [store, selector, a1, a2, a3]);
   return import_shim.useSyncExternalStore(store.subscribe, getSelection, getSelection);
 }
 register({
@@ -26415,7 +26401,7 @@ class Store {
 }
 
 // node_modules/@base-ui/utils/store/ReactStore.mjs
-var React47 = __toESM(require_react(), 1);
+var React51 = __toESM(require_react(), 1);
 "use client";
 
 class ReactStore extends Store {
@@ -26425,7 +26411,7 @@ class ReactStore extends Store {
     this.selectors = selectors;
   }
   useSyncedValue(key, value) {
-    React47.useDebugValue(key);
+    React51.useDebugValue(key);
     const store = this;
     useIsoLayoutEffect(() => {
       if (store.state[key] !== value) {
@@ -26453,7 +26439,7 @@ class ReactStore extends Store {
     }, [store, ...dependencies]);
   }
   useControlledProp(key, controlled) {
-    React47.useDebugValue(key);
+    React51.useDebugValue(key);
     const store = this;
     const isControlled = controlled !== undefined;
     useIsoLayoutEffect(() => {
@@ -26471,16 +26457,16 @@ class ReactStore extends Store {
     return selector(this.state, a1, a2, a3);
   }
   useState(key, a1, a2, a3) {
-    React47.useDebugValue(key);
+    React51.useDebugValue(key);
     return useStore(this, this.selectors[key], a1, a2, a3);
   }
   useContextCallback(key, fn) {
-    React47.useDebugValue(key);
+    React51.useDebugValue(key);
     const stableFunction = useStableCallback(fn ?? NOOP);
     this.context[key] = stableFunction;
   }
   useStateSetter(key) {
-    const ref = React47.useRef(undefined);
+    const ref = React51.useRef(undefined);
     if (ref.current === undefined) {
       ref.current = (value) => {
         this.set(key, value);
@@ -26584,7 +26570,7 @@ function useSyncedFloatingRootContext(options2) {
   const floatingElement = popupStore.useState(treatPopupAsFloatingElement ? "popupElement" : "positionerElement");
   const triggerElements = popupStore.context.triggerElements;
   const handleOpenChange = onOpenChange;
-  const internalStoreRef = React48.useRef(null);
+  const internalStoreRef = React52.useRef(null);
   if (floatingRootContextProp === undefined && internalStoreRef.current === null) {
     internalStoreRef.current = new FloatingRootStore({
       open,
@@ -26632,7 +26618,7 @@ function createDefaultInitialFocus(popupRef) {
 function usePopupStore(externalStore, createStore, treatPopupAsFloatingElement = false) {
   const floatingId = useId();
   const nested = useFloatingParentNodeId() != null;
-  const internalStoreRef = React49.useRef(null);
+  const internalStoreRef = React53.useRef(null);
   if (externalStore === undefined && internalStoreRef.current === null) {
     internalStoreRef.current = createStore(floatingId, nested);
   }
@@ -26651,9 +26637,9 @@ function usePopupStore(externalStore, createStore, treatPopupAsFloatingElement =
   };
 }
 function useTriggerRegistration(id, store) {
-  const registeredElementIdRef = React49.useRef(null);
-  const registeredElementRef = React49.useRef(null);
-  return React49.useCallback((element2) => {
+  const registeredElementIdRef = React53.useRef(null);
+  const registeredElementRef = React53.useRef(null);
+  return React53.useCallback((element2) => {
     if (id === undefined) {
       return;
     }
@@ -27062,12 +27048,12 @@ function useFloating2(options2 = {}) {
   const domReferenceElement = store.useState("domReferenceElement");
   const open = store.useState("open");
   const floatingId = store.useState("floatingId");
-  const [positionReference, setPositionReferenceRaw] = React50.useState(null);
-  const [localDomReference, setLocalDomReference] = React50.useState(undefined);
-  const [localFloatingElement, setLocalFloatingElement] = React50.useState(undefined);
-  const domReferenceRef = React50.useRef(null);
+  const [positionReference, setPositionReferenceRaw] = React54.useState(null);
+  const [localDomReference, setLocalDomReference] = React54.useState(undefined);
+  const [localFloatingElement, setLocalFloatingElement] = React54.useState(undefined);
+  const domReferenceRef = React54.useRef(null);
   const tree = useFloatingTree(externalTree);
-  const storeElements = React50.useMemo(() => ({
+  const storeElements = React54.useMemo(() => ({
     reference: referenceElement,
     floating: floatingElement,
     domReference: domReferenceElement
@@ -27086,7 +27072,7 @@ function useFloating2(options2 = {}) {
   store.useSyncedValue("referenceElement", localDomReference ?? null);
   store.useSyncedValue("domReferenceElement", localDomReference === undefined ? domReferenceElement : localDomReferenceElement);
   store.useSyncedValue("floatingElement", syncedFloatingElement);
-  const setPositionReference = React50.useCallback((node) => {
+  const setPositionReference = React54.useCallback((node) => {
     const computedPositionReference = isElement(node) ? {
       getBoundingClientRect: () => node.getBoundingClientRect(),
       getClientRects: () => node.getClientRects(),
@@ -27095,7 +27081,7 @@ function useFloating2(options2 = {}) {
     setPositionReferenceRaw(computedPositionReference);
     position.refs.setReference(computedPositionReference);
   }, [position.refs]);
-  const setReference = React50.useCallback((node) => {
+  const setReference = React54.useCallback((node) => {
     if (isElement(node) || node === null) {
       domReferenceRef.current = node;
       setLocalDomReference(node);
@@ -27104,22 +27090,22 @@ function useFloating2(options2 = {}) {
       position.refs.setReference(node);
     }
   }, [position.refs, setLocalDomReference]);
-  const setFloating = React50.useCallback((node) => {
+  const setFloating = React54.useCallback((node) => {
     setLocalFloatingElement(node);
     position.refs.setFloating(node);
   }, [position.refs]);
-  const refs = React50.useMemo(() => ({
+  const refs = React54.useMemo(() => ({
     ...position.refs,
     setReference,
     setFloating,
     setPositionReference,
     domReference: domReferenceRef
   }), [position.refs, setReference, setFloating, setPositionReference]);
-  const elements = React50.useMemo(() => ({
+  const elements = React54.useMemo(() => ({
     ...position.elements,
     domReference: domReferenceElement
   }), [position.elements, domReferenceElement]);
-  const context = React50.useMemo(() => ({
+  const context = React54.useMemo(() => ({
     ...position,
     dataRef: store.context.dataRef,
     open,
@@ -27143,7 +27129,7 @@ function useFloating2(options2 = {}) {
       node.context = context;
     }
   });
-  return React50.useMemo(() => ({
+  return React54.useMemo(() => ({
     ...position,
     context,
     refs,
@@ -27152,7 +27138,7 @@ function useFloating2(options2 = {}) {
   }), [position, refs, elements, context, store]);
 }
 // node_modules/@base-ui/react/floating-ui-react/hooks/useFocus.mjs
-var React51 = __toESM(require_react(), 1);
+var React55 = __toESM(require_react(), 1);
 "use client";
 var isMacSafari = exports_parts.os.mac && exports_parts.engine.webkit;
 function useFocus(context, props = {}) {
@@ -27165,11 +27151,11 @@ function useFocus(context, props = {}) {
     events,
     dataRef
   } = store.context;
-  const blockFocusRef = React51.useRef(false);
-  const blockedReferenceRef = React51.useRef(null);
-  const keyboardModalityRef = React51.useRef(true);
+  const blockFocusRef = React55.useRef(false);
+  const blockedReferenceRef = React55.useRef(null);
+  const keyboardModalityRef = React55.useRef(true);
   const timeout = useTimeout();
-  React51.useEffect(() => {
+  React55.useEffect(() => {
     const domReference = store.select("domReferenceElement");
     if (!enabled) {
       return;
@@ -27189,7 +27175,7 @@ function useFocus(context, props = {}) {
     }
     return mergeCleanups(addEventListener(win, "blur", onBlur), isMacSafari && addEventListener(win, "keydown", onKeyDown, true), isMacSafari && addEventListener(win, "pointerdown", onPointerDown, true));
   }, [store, enabled]);
-  React51.useEffect(() => {
+  React55.useEffect(() => {
     if (!enabled) {
       return;
     }
@@ -27207,7 +27193,7 @@ function useFocus(context, props = {}) {
       events.off("openchange", onOpenChangeLocal);
     };
   }, [events, enabled, store]);
-  const reference = React51.useMemo(() => {
+  const reference = React55.useMemo(() => {
     function resetBlockedFocus() {
       blockFocusRef.current = false;
       blockedReferenceRef.current = null;
@@ -27274,13 +27260,13 @@ function useFocus(context, props = {}) {
       }
     };
   }, [dataRef, delay, store, timeout]);
-  return React51.useMemo(() => enabled ? {
+  return React55.useMemo(() => enabled ? {
     reference,
     trigger: reference
   } : {}, [enabled, reference]);
 }
 // node_modules/@base-ui/react/floating-ui-react/hooks/useHoverFloatingInteraction.mjs
-var React52 = __toESM(require_react(), 1);
+var React56 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/floating-ui-react/hooks/useHoverInteractionSharedState.mjs
 "use client";
@@ -27423,7 +27409,7 @@ function useHoverFloatingInteraction(context, parameters = {}) {
       clearPointerEvents();
     }
   }, [open, instance, clearPointerEvents]);
-  React52.useEffect(() => {
+  React56.useEffect(() => {
     return clearPointerEvents;
   }, [clearPointerEvents]);
   useIsoLayoutEffect(() => {
@@ -27452,7 +27438,7 @@ function useHoverFloatingInteraction(context, parameters = {}) {
     }
     return;
   }, [enabled, open, domReferenceElement, floatingElement, instance, isHoverOpen, tree, parentId, clearPointerEvents]);
-  React52.useEffect(() => {
+  React56.useEffect(() => {
     if (!enabled) {
       return;
     }
@@ -27526,7 +27512,7 @@ function useHoverFloatingInteraction(context, parameters = {}) {
   }, [enabled, floatingElement, store, dataRef, closeDelayProp, nodeIdProp, isHoverOpen, isClickLikeOpenEvent2, clearPointerEvents, instance, tree, parentId, childClosedTimeout]);
 }
 // node_modules/@base-ui/react/floating-ui-react/hooks/useHoverReferenceInteraction.mjs
-var React53 = __toESM(require_react(), 1);
+var React57 = __toESM(require_react(), 1);
 var ReactDOM6 = __toESM(require_react_dom(), 1);
 "use client";
 var EMPTY_REF = {
@@ -27554,7 +27540,7 @@ function useHoverReferenceInteraction(context, props = {}) {
   } = store.context;
   const tree = useFloatingTree(externalTree);
   const instance = useHoverInteractionSharedState(store);
-  const isHoverCloseActiveRef = React53.useRef(false);
+  const isHoverCloseActiveRef = React57.useRef(false);
   const handleCloseRef = useValueAsRef(handleClose);
   const delayRef = useValueAsRef(delay);
   const restMsRef = useValueAsRef(restMs);
@@ -27592,8 +27578,8 @@ function useHoverReferenceInteraction(context, props = {}) {
   if (isActiveTrigger) {
     instance.handleCloseOptions = handleCloseRef.current?.__options;
   }
-  React53.useEffect(() => cleanupMouseMoveHandler, [cleanupMouseMoveHandler]);
-  React53.useEffect(() => {
+  React57.useEffect(() => cleanupMouseMoveHandler, [cleanupMouseMoveHandler]);
+  React57.useEffect(() => {
     if (!enabled) {
       return;
     }
@@ -27614,7 +27600,7 @@ function useHoverReferenceInteraction(context, props = {}) {
       events.off("openchange", onOpenChangeLocal);
     };
   }, [enabled, events, instance, cleanupMouseMoveHandler]);
-  React53.useEffect(() => {
+  React57.useEffect(() => {
     if (!enabled) {
       return;
     }
@@ -27735,7 +27721,7 @@ function useHoverReferenceInteraction(context, props = {}) {
     }
     return mergeCleanups(addEventListener(trigger, "mouseenter", onMouseEnter), addEventListener(trigger, "mouseleave", onMouseLeave));
   }, [cleanupMouseMoveHandler, clearPointerEvents, dataRef, delayRef, store, enabled, handleCloseRef, instance, isActiveTrigger, isOverInactiveTrigger, isClickLikeOpenEvent2, mouseOnly, move, restMsRef, triggerElementRef, tree, enabledRef, getHandleCloseContext, isClosingRef, checkShouldOpen]);
-  return React53.useMemo(() => {
+  return React57.useMemo(() => {
     if (!enabled) {
       return;
     }
@@ -27800,7 +27786,7 @@ function useHoverReferenceInteraction(context, props = {}) {
   }, [enabled, instance, isClickLikeOpenEvent2, isOverInactiveTrigger, mouseOnly, store, restMsRef, checkShouldOpen]);
 }
 // node_modules/@base-ui/react/floating-ui-react/hooks/useListNavigation.mjs
-var React54 = __toESM(require_react(), 1);
+var React58 = __toESM(require_react(), 1);
 "use client";
 var ESCAPE = "Escape";
 function doSwitch(orientation, vertical, horizontal) {
@@ -27871,18 +27857,18 @@ function useListNavigation(context, props) {
   const floatingFocusElementRef = useValueAsRef(floatingFocusElement);
   const parentId = useFloatingParentNodeId();
   const tree = useFloatingTree(externalTree);
-  const focusItemOnOpenRef = React54.useRef(focusItemOnOpen);
-  const indexRef = React54.useRef(selectedIndex ?? -1);
-  const keyRef = React54.useRef(null);
-  const isPointerModalityRef = React54.useRef(true);
+  const focusItemOnOpenRef = React58.useRef(focusItemOnOpen);
+  const indexRef = React58.useRef(selectedIndex ?? -1);
+  const keyRef = React58.useRef(null);
+  const isPointerModalityRef = React58.useRef(true);
   const onNavigate = useStableCallback((event) => {
     onNavigateProp(indexRef.current === -1 ? null : indexRef.current, event);
   });
-  const previousMountedRef = React54.useRef(!!floatingElement);
-  const previousOpenRef = React54.useRef(open);
-  const forceSyncFocusRef = React54.useRef(false);
-  const forceScrollIntoViewRef = React54.useRef(false);
-  const cancelQueuedFocusRef = React54.useRef(null);
+  const previousMountedRef = React58.useRef(!!floatingElement);
+  const previousOpenRef = React58.useRef(open);
+  const forceSyncFocusRef = React58.useRef(false);
+  const forceScrollIntoViewRef = React58.useRef(false);
+  const cancelQueuedFocusRef = React58.useRef(null);
   const disabledIndicesRef = useValueAsRef(disabledIndices);
   const latestOpenRef = useValueAsRef(open);
   const selectedIndexRef = useValueAsRef(selectedIndex);
@@ -28129,7 +28115,7 @@ function useListNavigation(context, props) {
       onNavigate(event);
     }
   });
-  const item = React54.useMemo(() => {
+  const item = React58.useMemo(() => {
     const itemProps = {
       onFocus(event) {
         forceSyncFocusRef.current = true;
@@ -28176,12 +28162,12 @@ function useListNavigation(context, props) {
     };
     return itemProps;
   }, [syncCurrentTarget, latestOpenRef, floatingFocusElementRef, focusItemOnHover, listRef, onNavigate, resetOnPointerLeaveRef, virtual]);
-  const ariaActiveDescendantProp = React54.useMemo(() => {
+  const ariaActiveDescendantProp = React58.useMemo(() => {
     return virtual && open && hasActiveIndex && {
       "aria-activedescendant": `${id}-${activeIndex}`
     };
   }, [virtual, open, hasActiveIndex, id, activeIndex]);
-  const floating = React54.useMemo(() => {
+  const floating = React58.useMemo(() => {
     return {
       "aria-orientation": orientation === "both" ? undefined : orientation,
       ...!typeableComboboxReference ? ariaActiveDescendantProp : {},
@@ -28205,7 +28191,7 @@ function useListNavigation(context, props) {
       }
     };
   }, [ariaActiveDescendantProp, commonOnKeyDown, floatingFocusElementRef, orientation, typeableComboboxReference, store, open, virtual, domReferenceElement]);
-  const trigger = React54.useMemo(() => {
+  const trigger = React58.useMemo(() => {
     function openOnNavigationKeyDown(event) {
       store.setOpen(true, createChangeEventDetails(exports_reason_parts.listNavigation, event.nativeEvent, event.currentTarget));
     }
@@ -28278,13 +28264,13 @@ function useListNavigation(context, props) {
       onClick: checkVirtualMouse
     };
   }, [commonOnKeyDown, focusItemOnOpen, getMinEnabledIndex, nested, onNavigate, store, openOnArrowKeyDown, orientation, getParentOrientation, rtl, selectedIndexRef, virtual]);
-  const reference = React54.useMemo(() => {
+  const reference = React58.useMemo(() => {
     return {
       ...ariaActiveDescendantProp,
       ...trigger
     };
   }, [ariaActiveDescendantProp, trigger]);
-  return React54.useMemo(() => enabled ? {
+  return React58.useMemo(() => enabled ? {
     reference,
     floating,
     item,
@@ -28292,7 +28278,7 @@ function useListNavigation(context, props) {
   } : {}, [enabled, reference, floating, trigger, item]);
 }
 // node_modules/@base-ui/react/floating-ui-react/hooks/useTypeahead.mjs
-var React55 = __toESM(require_react(), 1);
+var React59 = __toESM(require_react(), 1);
 "use client";
 function useTypeahead(context, props) {
   const {
@@ -28309,9 +28295,9 @@ function useTypeahead(context, props) {
   const store = "rootStore" in context ? context.rootStore : context;
   const open = store.useState("open");
   const timeout = useTimeout();
-  const stringRef = React55.useRef("");
-  const prevIndexRef = React55.useRef(selectedIndex ?? activeIndex ?? -1);
-  const matchIndexRef = React55.useRef(null);
+  const stringRef = React59.useRef("");
+  const prevIndexRef = React59.useRef(selectedIndex ?? activeIndex ?? -1);
+  const matchIndexRef = React59.useRef(null);
   const onKeyDown = useStableCallback((event) => {
     function isVisible(index5) {
       const element2 = elementsRef?.current[index5];
@@ -28410,11 +28396,11 @@ function useTypeahead(context, props) {
       prevIndexRef.current = selectedIndex ?? activeIndex ?? -1;
     }
   }, [open, selectedIndex, activeIndex]);
-  const sharedProps = React55.useMemo(() => ({
+  const sharedProps = React59.useMemo(() => ({
     onKeyDown,
     onBlur
   }), [onKeyDown, onBlur]);
-  return React55.useMemo(() => enabled ? {
+  return React59.useMemo(() => enabled ? {
     reference: sharedProps,
     floating: sharedProps
   } : {}, [enabled, sharedProps]);
@@ -28634,461 +28620,6 @@ function safePolygon(options2 = {}) {
   };
   return fn;
 }
-// node_modules/@base-ui/react/dialog/root/useDialogRoot.mjs
-"use client";
-function useDialogRoot(params) {
-  const {
-    store,
-    actionsRef
-  } = params;
-  const open = store.useState("open");
-  usePopupRootSync(store, open);
-  useImplicitActiveTrigger(store);
-  const {
-    forceUnmount
-  } = useOpenStateTransitions(open, store);
-  const handleImperativeClose = React56.useCallback(() => {
-    store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction));
-  }, [store]);
-  React56.useImperativeHandle(actionsRef, () => ({
-    unmount: forceUnmount,
-    close: handleImperativeClose
-  }), [forceUnmount, handleImperativeClose]);
-}
-function DialogInteractions({
-  store,
-  parentContext,
-  isDrawer
-}) {
-  const open = store.useState("open");
-  const disablePointerDismissal = store.useState("disablePointerDismissal");
-  const modal = store.useState("modal");
-  const popupElement = store.useState("popupElement");
-  const floatingRootContext = store.useState("floatingRootContext");
-  const [ownNestedOpenDialogs, setOwnNestedOpenDialogs] = React56.useState(0);
-  const [ownNestedOpenDrawers, setOwnNestedOpenDrawers] = React56.useState(0);
-  const isTopmost = ownNestedOpenDialogs === 0;
-  const dismiss = useDismiss(floatingRootContext, {
-    outsidePressEvent() {
-      if (store.context.internalBackdropRef.current || store.context.backdropRef.current) {
-        return "intentional";
-      }
-      return {
-        mouse: modal === "trap-focus" ? "sloppy" : "intentional",
-        touch: "sloppy"
-      };
-    },
-    outsidePress(event) {
-      if (!store.context.outsidePressEnabledRef.current) {
-        return false;
-      }
-      if ("button" in event && event.button !== 0) {
-        return false;
-      }
-      if ("touches" in event && event.touches.length !== 1) {
-        return false;
-      }
-      const target = getTarget(event);
-      if (isTopmost && !disablePointerDismissal) {
-        if (modal) {
-          return store.context.internalBackdropRef.current || store.context.backdropRef.current ? store.context.internalBackdropRef.current === target || store.context.backdropRef.current === target || contains(target, popupElement) && !target?.hasAttribute("data-base-ui-portal") : true;
-        }
-        return true;
-      }
-      return false;
-    },
-    escapeKey: isTopmost
-  });
-  useScrollLock(open && modal === true, popupElement);
-  store.useContextCallback("onNestedDialogOpen", (dialogCount, drawerCount) => {
-    setOwnNestedOpenDialogs(dialogCount);
-    setOwnNestedOpenDrawers(drawerCount);
-  });
-  store.useContextCallback("onNestedDialogClose", () => {
-    setOwnNestedOpenDialogs(0);
-    setOwnNestedOpenDrawers(0);
-  });
-  React56.useEffect(() => {
-    if (parentContext?.onNestedDialogOpen && open) {
-      parentContext.onNestedDialogOpen(ownNestedOpenDialogs + 1, ownNestedOpenDrawers + (isDrawer ? 1 : 0));
-    }
-    if (parentContext?.onNestedDialogClose && !open) {
-      parentContext.onNestedDialogClose();
-    }
-    return () => {
-      if (parentContext?.onNestedDialogClose && open) {
-        parentContext.onNestedDialogClose();
-      }
-    };
-  }, [isDrawer, open, ownNestedOpenDialogs, ownNestedOpenDrawers, parentContext]);
-  const activeTriggerProps = dismiss.reference ?? EMPTY_OBJECT;
-  const inactiveTriggerProps = dismiss.trigger ?? EMPTY_OBJECT;
-  const popupProps = dismiss.floating ?? EMPTY_OBJECT;
-  usePopupInteractionProps(store, {
-    activeTriggerProps,
-    inactiveTriggerProps,
-    popupProps,
-    nestedOpenDialogCount: ownNestedOpenDialogs,
-    nestedOpenDrawerCount: ownNestedOpenDrawers
-  });
-  return null;
-}
-
-// node_modules/@base-ui/react/dialog/root/DialogRootContext.mjs
-var React57 = __toESM(require_react(), 1);
-"use client";
-var IsDrawerContext = /* @__PURE__ */ React57.createContext(false);
-if (false)
-  ;
-var DialogRootContext = /* @__PURE__ */ React57.createContext(undefined);
-if (false)
-  ;
-function useDialogRootContext(optional) {
-  const dialogRootContext = React57.useContext(DialogRootContext);
-  if (optional === false && dialogRootContext === undefined) {
-    throw new Error(formatErrorMessage_default(27));
-  }
-  return dialogRootContext;
-}
-
-// node_modules/@base-ui/react/dialog/store/DialogStore.mjs
-var React58 = __toESM(require_react(), 1);
-var selectors2 = {
-  ...popupStoreSelectors,
-  modal: createSelector((state) => state.modal),
-  nested: createSelector((state) => state.nested),
-  nestedOpenDialogCount: createSelector((state) => state.nestedOpenDialogCount),
-  nestedOpenDrawerCount: createSelector((state) => state.nestedOpenDrawerCount),
-  disablePointerDismissal: createSelector((state) => state.disablePointerDismissal),
-  openMethod: createSelector((state) => state.openMethod),
-  descriptionElementId: createSelector((state) => state.descriptionElementId),
-  titleElementId: createSelector((state) => state.titleElementId),
-  viewportElement: createSelector((state) => state.viewportElement),
-  role: createSelector((state) => state.role)
-};
-
-class DialogStore extends ReactStore {
-  constructor(initialState, floatingId, nested = false) {
-    const triggerElements = new PopupTriggerMap;
-    const state = createInitialState(initialState);
-    state.floatingRootContext = createPopupFloatingRootContext(triggerElements, floatingId, nested);
-    super(state, {
-      popupRef: /* @__PURE__ */ React58.createRef(),
-      backdropRef: /* @__PURE__ */ React58.createRef(),
-      internalBackdropRef: /* @__PURE__ */ React58.createRef(),
-      outsidePressEnabledRef: {
-        current: true
-      },
-      triggerElements,
-      onOpenChange: undefined,
-      onOpenChangeComplete: undefined
-    }, selectors2);
-  }
-  setOpen = (nextOpen, eventDetails) => {
-    eventDetails.preventUnmountOnClose = () => {
-      this.set("preventUnmountingOnClose", true);
-    };
-    if (!nextOpen && eventDetails.trigger == null && this.state.activeTriggerId != null) {
-      eventDetails.trigger = this.state.activeTriggerElement ?? undefined;
-    }
-    this.context.onOpenChange?.(nextOpen, eventDetails);
-    if (eventDetails.isCanceled) {
-      return;
-    }
-    this.state.floatingRootContext.dispatchOpenChange(nextOpen, eventDetails);
-    const updatedState = {
-      open: nextOpen
-    };
-    setPopupOpenState(updatedState, nextOpen, eventDetails.trigger);
-    this.update(updatedState);
-  };
-  static useStore(externalStore, initialState) {
-    const store = usePopupStore(externalStore, (floatingId, nested) => new DialogStore(initialState, floatingId, nested), true).store;
-    return store;
-  }
-}
-function createInitialState(initialState = {}) {
-  return {
-    ...createInitialPopupStoreState(),
-    modal: true,
-    disablePointerDismissal: false,
-    popupElement: null,
-    viewportElement: null,
-    descriptionElementId: undefined,
-    titleElementId: undefined,
-    openMethod: null,
-    nested: false,
-    nestedOpenDialogCount: 0,
-    nestedOpenDrawerCount: 0,
-    role: "dialog",
-    ...initialState
-  };
-}
-
-// node_modules/@base-ui/react/dialog/root/useRenderDialogRoot.mjs
-var import_jsx_runtime11 = __toESM(require_jsx_runtime(), 1);
-"use client";
-function useRenderDialogRoot(props, mode = "dialog") {
-  const {
-    children,
-    open: openProp,
-    defaultOpen = false,
-    onOpenChange,
-    onOpenChangeComplete,
-    disablePointerDismissal: disablePointerDismissalProp = false,
-    modal: modalProp = true,
-    actionsRef,
-    handle,
-    triggerId: triggerIdProp,
-    defaultTriggerId: defaultTriggerIdProp = null
-  } = props;
-  const isDrawer = mode === "drawer";
-  const isAlertDialog = mode === "alert-dialog";
-  const modal = isAlertDialog ? true : modalProp;
-  const disablePointerDismissal = isAlertDialog || disablePointerDismissalProp;
-  const role = isAlertDialog ? "alertdialog" : "dialog";
-  const parentDialogRootContext = useDialogRootContext(true);
-  const nested = Boolean(parentDialogRootContext);
-  const rootState = {
-    modal,
-    disablePointerDismissal,
-    nested,
-    role
-  };
-  const store = DialogStore.useStore(handle?.store, {
-    open: defaultOpen,
-    openProp,
-    activeTriggerId: defaultTriggerIdProp,
-    triggerIdProp,
-    ...rootState
-  });
-  useOnFirstRender(() => {
-    const nextState = openProp === undefined && store.state.open === false && defaultOpen === true ? {
-      open: true,
-      activeTriggerId: defaultTriggerIdProp
-    } : null;
-    if (isAlertDialog) {
-      store.update(nextState ? {
-        ...rootState,
-        ...nextState
-      } : rootState);
-    } else if (nextState) {
-      store.update(nextState);
-    }
-  });
-  store.useControlledProp("openProp", openProp);
-  store.useControlledProp("triggerIdProp", triggerIdProp);
-  store.useSyncedValues(rootState);
-  store.useContextCallback("onOpenChange", onOpenChange);
-  store.useContextCallback("onOpenChangeComplete", onOpenChangeComplete);
-  const open = store.useState("open");
-  const mounted = store.useState("mounted");
-  const payload = store.useState("payload");
-  useDialogRoot({
-    store,
-    actionsRef
-  });
-  const shouldRenderInteractions = open || mounted;
-  const contextValue = React59.useMemo(() => ({
-    store
-  }), [store]);
-  return /* @__PURE__ */ import_jsx_runtime11.jsx(IsDrawerContext.Provider, {
-    value: false,
-    children: /* @__PURE__ */ import_jsx_runtime11.jsxs(DialogRootContext.Provider, {
-      value: contextValue,
-      children: [shouldRenderInteractions && /* @__PURE__ */ import_jsx_runtime11.jsx(DialogInteractions, {
-        store,
-        parentContext: parentDialogRootContext?.store.context,
-        isDrawer
-      }), typeof children === "function" ? children({
-        payload
-      }) : children]
-    })
-  });
-}
-
-// node_modules/@base-ui/react/alert-dialog/root/AlertDialogRoot.mjs
-"use client";
-function AlertDialogRoot(props) {
-  return useRenderDialogRoot(props, "alert-dialog");
-}
-// node_modules/@base-ui/react/dialog/backdrop/DialogBackdrop.mjs
-var React60 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/utils/popupStateMapping.mjs
-var CommonPopupDataAttributes = function(CommonPopupDataAttributes2) {
-  CommonPopupDataAttributes2["open"] = "data-open";
-  CommonPopupDataAttributes2["closed"] = "data-closed";
-  CommonPopupDataAttributes2[CommonPopupDataAttributes2["startingStyle"] = TransitionStatusDataAttributes.startingStyle] = "startingStyle";
-  CommonPopupDataAttributes2[CommonPopupDataAttributes2["endingStyle"] = TransitionStatusDataAttributes.endingStyle] = "endingStyle";
-  CommonPopupDataAttributes2["anchorHidden"] = "data-anchor-hidden";
-  CommonPopupDataAttributes2["side"] = "data-side";
-  CommonPopupDataAttributes2["align"] = "data-align";
-  return CommonPopupDataAttributes2;
-}({});
-var CommonTriggerDataAttributes = /* @__PURE__ */ function(CommonTriggerDataAttributes2) {
-  CommonTriggerDataAttributes2["popupOpen"] = "data-popup-open";
-  CommonTriggerDataAttributes2["pressed"] = "data-pressed";
-  return CommonTriggerDataAttributes2;
-}({});
-var TRIGGER_HOOK = {
-  [CommonTriggerDataAttributes.popupOpen]: ""
-};
-var PRESSABLE_TRIGGER_HOOK = {
-  [CommonTriggerDataAttributes.popupOpen]: "",
-  [CommonTriggerDataAttributes.pressed]: ""
-};
-var POPUP_OPEN_HOOK = {
-  [CommonPopupDataAttributes.open]: ""
-};
-var POPUP_CLOSED_HOOK = {
-  [CommonPopupDataAttributes.closed]: ""
-};
-var ANCHOR_HIDDEN_HOOK = {
-  [CommonPopupDataAttributes.anchorHidden]: ""
-};
-var triggerOpenStateMapping = {
-  open(value) {
-    if (value) {
-      return TRIGGER_HOOK;
-    }
-    return null;
-  }
-};
-var pressableTriggerOpenStateMapping = {
-  open(value) {
-    if (value) {
-      return PRESSABLE_TRIGGER_HOOK;
-    }
-    return null;
-  }
-};
-var popupStateMapping = {
-  open(value) {
-    if (value) {
-      return POPUP_OPEN_HOOK;
-    }
-    return POPUP_CLOSED_HOOK;
-  },
-  anchorHidden(value) {
-    if (value) {
-      return ANCHOR_HIDDEN_HOOK;
-    }
-    return null;
-  }
-};
-
-// node_modules/@base-ui/react/dialog/backdrop/DialogBackdrop.mjs
-"use client";
-var stateAttributesMapping2 = {
-  ...popupStateMapping,
-  ...transitionStatusMapping
-};
-var DialogBackdrop = /* @__PURE__ */ React60.forwardRef(function DialogBackdrop2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    forceRender = false,
-    ...elementProps
-  } = componentProps;
-  const {
-    store
-  } = useDialogRootContext();
-  const open = store.useState("open");
-  const nested = store.useState("nested");
-  const mounted = store.useState("mounted");
-  const transitionStatus = store.useState("transitionStatus");
-  const state = {
-    open,
-    transitionStatus
-  };
-  return useRenderElement("div", componentProps, {
-    state,
-    ref: [store.context.backdropRef, forwardedRef],
-    stateAttributesMapping: stateAttributesMapping2,
-    props: [{
-      role: "presentation",
-      hidden: !mounted,
-      style: {
-        userSelect: "none",
-        WebkitUserSelect: "none"
-      }
-    }, elementProps],
-    enabled: forceRender || !nested
-  });
-});
-if (false)
-  ;
-// node_modules/@base-ui/react/dialog/close/DialogClose.mjs
-var React61 = __toESM(require_react(), 1);
-"use client";
-var DialogClose = /* @__PURE__ */ React61.forwardRef(function DialogClose2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    disabled: disabled2 = false,
-    nativeButton = true,
-    ...elementProps
-  } = componentProps;
-  const {
-    store
-  } = useDialogRootContext();
-  const open = store.useState("open");
-  const {
-    getButtonProps,
-    buttonRef
-  } = useButton({
-    disabled: disabled2,
-    native: nativeButton
-  });
-  const state = {
-    disabled: disabled2
-  };
-  function handleClick(event) {
-    if (open) {
-      store.setOpen(false, createChangeEventDetails(exports_reason_parts.closePress, event.nativeEvent));
-    }
-  }
-  return useRenderElement("button", componentProps, {
-    state,
-    ref: [forwardedRef, buttonRef],
-    props: [{
-      onClick: handleClick
-    }, elementProps, getButtonProps]
-  });
-});
-if (false)
-  ;
-// node_modules/@base-ui/react/dialog/description/DialogDescription.mjs
-var React62 = __toESM(require_react(), 1);
-"use client";
-var DialogDescription = /* @__PURE__ */ React62.forwardRef(function DialogDescription2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    id: idProp,
-    ...elementProps
-  } = componentProps;
-  const {
-    store
-  } = useDialogRootContext();
-  const id = useBaseUiId(idProp);
-  store.useSyncedValueWithCleanup("descriptionElementId", id);
-  return useRenderElement("p", componentProps, {
-    ref: forwardedRef,
-    props: [{
-      id
-    }, elementProps]
-  });
-});
-if (false)
-  ;
-// node_modules/@base-ui/react/dialog/popup/DialogPopup.mjs
-var React64 = __toESM(require_react(), 1);
-
 // node_modules/@base-ui/react/dialog/popup/DialogPopupCssVars.mjs
 var DialogPopupCssVars = /* @__PURE__ */ function(DialogPopupCssVars2) {
   DialogPopupCssVars2["nestedDialogs"] = "--nested-dialogs";
@@ -29107,13 +28638,13 @@ var DialogPopupDataAttributes = function(DialogPopupDataAttributes2) {
 }({});
 
 // node_modules/@base-ui/react/dialog/portal/DialogPortalContext.mjs
-var React63 = __toESM(require_react(), 1);
+var React60 = __toESM(require_react(), 1);
 "use client";
-var DialogPortalContext = /* @__PURE__ */ React63.createContext(undefined);
+var DialogPortalContext = /* @__PURE__ */ React60.createContext(undefined);
 if (false)
   ;
 function useDialogPortalContext() {
-  const value = React63.useContext(DialogPortalContext);
+  const value = React60.useContext(DialogPortalContext);
   if (value === undefined) {
     throw new Error(formatErrorMessage_default(26));
   }
@@ -29140,7 +28671,7 @@ var META = "Meta";
 var MODIFIER_KEYS = new Set([SHIFT, CONTROL, ALT, META]);
 
 // node_modules/@base-ui/react/dialog/popup/DialogPopup.mjs
-var import_jsx_runtime12 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime11 = __toESM(require_jsx_runtime(), 1);
 "use client";
 var stateAttributesMapping3 = {
   ...popupStateMapping,
@@ -29151,7 +28682,7 @@ var stateAttributesMapping3 = {
     } : null;
   }
 };
-var DialogPopup = /* @__PURE__ */ React64.forwardRef(function DialogPopup2(componentProps, forwardedRef) {
+var DialogPopup = /* @__PURE__ */ React61.forwardRef(function DialogPopup2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -29218,7 +28749,7 @@ var DialogPopup = /* @__PURE__ */ React64.forwardRef(function DialogPopup2(compo
     ref: [forwardedRef, store.context.popupRef, setPopupElement],
     stateAttributesMapping: stateAttributesMapping3
   });
-  return /* @__PURE__ */ import_jsx_runtime12.jsx(FloatingFocusManager, {
+  return /* @__PURE__ */ import_jsx_runtime11.jsx(FloatingFocusManager, {
     context: floatingRootContext,
     openInteractionType: openMethod,
     disabled: !mounted,
@@ -29233,7 +28764,7 @@ var DialogPopup = /* @__PURE__ */ React64.forwardRef(function DialogPopup2(compo
 if (false)
   ;
 // node_modules/@base-ui/react/dialog/portal/DialogPortal.mjs
-var React66 = __toESM(require_react(), 1);
+var React63 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/utils/inertValue.mjs
 function inertValue(value) {
@@ -29244,9 +28775,9 @@ function inertValue(value) {
 }
 
 // node_modules/@base-ui/react/utils/InternalBackdrop.mjs
-var React65 = __toESM(require_react(), 1);
-var import_jsx_runtime13 = __toESM(require_jsx_runtime(), 1);
-var InternalBackdrop = /* @__PURE__ */ React65.forwardRef(function InternalBackdrop2(props, ref) {
+var React62 = __toESM(require_react(), 1);
+var import_jsx_runtime12 = __toESM(require_jsx_runtime(), 1);
+var InternalBackdrop = /* @__PURE__ */ React62.forwardRef(function InternalBackdrop2(props, ref) {
   const {
     cutout,
     ...otherProps
@@ -29256,7 +28787,7 @@ var InternalBackdrop = /* @__PURE__ */ React65.forwardRef(function InternalBackd
     const rect = cutout.getBoundingClientRect();
     clipPath = `polygon(0% 0%,100% 0%,100% 100%,0% 100%,0% 0%,${rect.left}px ${rect.top}px,${rect.left}px ${rect.bottom}px,${rect.right}px ${rect.bottom}px,${rect.right}px ${rect.top}px,${rect.left}px ${rect.top}px)`;
   }
-  return /* @__PURE__ */ import_jsx_runtime13.jsx("div", {
+  return /* @__PURE__ */ import_jsx_runtime12.jsx("div", {
     ref,
     role: "presentation",
     "data-base-ui-inert": "",
@@ -29274,9 +28805,9 @@ if (false)
   ;
 
 // node_modules/@base-ui/react/dialog/portal/DialogPortal.mjs
-var import_jsx_runtime14 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime13 = __toESM(require_jsx_runtime(), 1);
 "use client";
-var DialogPortal = /* @__PURE__ */ React66.forwardRef(function DialogPortal2(props, forwardedRef) {
+var DialogPortal = /* @__PURE__ */ React63.forwardRef(function DialogPortal2(props, forwardedRef) {
   const {
     keepMounted = false,
     ...portalProps
@@ -29291,12 +28822,12 @@ var DialogPortal = /* @__PURE__ */ React66.forwardRef(function DialogPortal2(pro
   if (!shouldRender) {
     return null;
   }
-  return /* @__PURE__ */ import_jsx_runtime14.jsx(DialogPortalContext.Provider, {
+  return /* @__PURE__ */ import_jsx_runtime13.jsx(DialogPortalContext.Provider, {
     value: keepMounted,
-    children: /* @__PURE__ */ import_jsx_runtime14.jsxs(FloatingPortal, {
+    children: /* @__PURE__ */ import_jsx_runtime13.jsxs(FloatingPortal, {
       ref: forwardedRef,
       ...portalProps,
-      children: [mounted && modal === true && /* @__PURE__ */ import_jsx_runtime14.jsx(InternalBackdrop, {
+      children: [mounted && modal === true && /* @__PURE__ */ import_jsx_runtime13.jsx(InternalBackdrop, {
         ref: store.context.internalBackdropRef,
         inert: inertValue(!open)
       }), props.children]
@@ -29305,185 +28836,478 @@ var DialogPortal = /* @__PURE__ */ React66.forwardRef(function DialogPortal2(pro
 });
 if (false)
   ;
-// node_modules/@base-ui/react/dialog/title/DialogTitle.mjs
+// node_modules/@base-ui/react/dialog/root/DialogRoot.mjs
 var React67 = __toESM(require_react(), 1);
-"use client";
-var DialogTitle = /* @__PURE__ */ React67.forwardRef(function DialogTitle2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    id: idProp,
-    ...elementProps
-  } = componentProps;
-  const {
-    store
-  } = useDialogRootContext();
-  const id = useBaseUiId(idProp);
-  store.useSyncedValueWithCleanup("titleElementId", id);
-  return useRenderElement("h2", componentProps, {
-    ref: forwardedRef,
-    props: [{
-      id
-    }, elementProps]
-  });
-});
-if (false)
-  ;
-// node_modules/@base-ui/react/dialog/trigger/DialogTrigger.mjs
-var React71 = __toESM(require_react(), 1);
 
-// node_modules/@base-ui/react/utils/useOpenInteractionType.mjs
-var React70 = __toESM(require_react(), 1);
+// node_modules/@base-ui/react/dialog/root/useRenderDialogRoot.mjs
+var React66 = __toESM(require_react(), 1);
 
-// node_modules/@base-ui/utils/useEnhancedClickHandler.mjs
-var React68 = __toESM(require_react(), 1);
-"use client";
-function useEnhancedClickHandler(handler) {
-  const lastClickInteractionTypeRef = React68.useRef("");
-  const handlePointerDown = React68.useCallback((event) => {
-    if (event.defaultPrevented) {
-      return;
-    }
-    lastClickInteractionTypeRef.current = event.pointerType;
-    handler(event, event.pointerType);
-  }, [handler]);
-  const handleClick = React68.useCallback((event) => {
-    if (event.detail === 0) {
-      handler(event, "keyboard");
-      return;
-    }
-    if ("pointerType" in event) {
-      handler(event, event.pointerType);
-    } else {
-      handler(event, lastClickInteractionTypeRef.current);
-    }
-    lastClickInteractionTypeRef.current = "";
-  }, [handler]);
-  return {
-    onClick: handleClick,
-    onPointerDown: handlePointerDown
-  };
-}
+// node_modules/@base-ui/react/dialog/root/useDialogRoot.mjs
+var React64 = __toESM(require_react(), 1);
 
-// node_modules/@base-ui/react/internals/useValueChanged.mjs
-var React69 = __toESM(require_react(), 1);
+// node_modules/@base-ui/utils/useScrollLock.mjs
 "use client";
-function useValueChanged(value, onChange) {
-  const valueRef = React69.useRef(value);
-  const onChangeCallback = useStableCallback(onChange);
-  useIsoLayoutEffect(() => {
-    if (valueRef.current === value) {
-      return;
-    }
-    onChangeCallback(valueRef.current);
-  }, [value, onChangeCallback]);
-  useIsoLayoutEffect(() => {
-    valueRef.current = value;
-  }, [value]);
-}
-
-// node_modules/@base-ui/react/utils/useOpenInteractionType.mjs
-"use client";
-function useOpenMethodTriggerProps(open, setOpenMethod) {
-  const handleTriggerClick = useStableCallback((_, interactionType) => {
-    const isOpen = typeof open === "function" ? open() : open;
-    if (!isOpen) {
-      setOpenMethod(interactionType || (exports_parts.os.ios ? "touch" : ""));
-    }
-  });
-  const {
-    onClick,
-    onPointerDown
-  } = useEnhancedClickHandler(handleTriggerClick);
-  return React70.useMemo(() => ({
-    onClick,
-    onPointerDown
-  }), [onClick, onPointerDown]);
-}
-function useOpenInteractionType(open) {
-  const [openMethod, setOpenMethod] = React70.useState(null);
-  const triggerProps = useOpenMethodTriggerProps(open, setOpenMethod);
-  useValueChanged(open, (previousOpen) => {
-    if (previousOpen && !open) {
-      setOpenMethod(null);
-    }
-  });
-  return React70.useMemo(() => ({
-    openMethod,
-    triggerProps
-  }), [openMethod, triggerProps]);
-}
-
-// node_modules/@base-ui/react/dialog/trigger/DialogTrigger.mjs
-"use client";
-var DialogTrigger = /* @__PURE__ */ React71.forwardRef(function DialogTrigger2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    disabled: disabled2 = false,
-    nativeButton = true,
-    id: idProp,
-    payload,
-    handle,
-    ...elementProps
-  } = componentProps;
-  const dialogRootContext = useDialogRootContext(true);
-  const store = handle?.store ?? dialogRootContext?.store;
-  if (!store) {
-    throw new Error(formatErrorMessage_default(79));
+var originalHtmlStyles = {};
+var originalBodyStyles = {};
+var originalHtmlScrollBehavior = "";
+function hasInsetScrollbars(referenceElement) {
+  if (typeof document === "undefined") {
+    return false;
   }
-  const thisTriggerId = useBaseUiId(idProp);
-  const floatingContext = store.useState("floatingRootContext");
-  const isOpenedByThisTrigger = store.useState("isOpenedByTrigger", thisTriggerId);
-  const popupId = store.useState("triggerPopupId", thisTriggerId);
-  const triggerElementRef = React71.useRef(null);
-  const {
-    registerTrigger,
-    isMountedByThisTrigger
-  } = useTriggerDataForwarding(thisTriggerId, triggerElementRef, store, {
-    payload
-  });
-  const {
-    getButtonProps,
-    buttonRef
-  } = useButton({
-    disabled: disabled2,
-    native: nativeButton
-  });
-  const click = useClick(floatingContext, {
-    enabled: floatingContext != null
-  });
-  const interactionTypeProps = useOpenMethodTriggerProps(() => store.select("open"), (interactionType) => {
-    store.set("openMethod", interactionType);
-  });
-  const state = {
-    disabled: disabled2,
-    open: isOpenedByThisTrigger
+  const doc = ownerDocument(referenceElement);
+  const win = getWindow(doc);
+  return win.innerWidth - doc.documentElement.clientWidth > 0;
+}
+function supportsStableScrollbarGutter(referenceElement) {
+  const supported = typeof CSS !== "undefined" && CSS.supports && CSS.supports("scrollbar-gutter", "stable");
+  if (!supported || typeof document === "undefined") {
+    return false;
+  }
+  const doc = ownerDocument(referenceElement);
+  const html = doc.documentElement;
+  const body = doc.body;
+  const scrollContainer = isOverflowElement(html) ? html : body;
+  const originalScrollContainerOverflowY = scrollContainer.style.overflowY;
+  const originalHtmlStyleGutter = html.style.scrollbarGutter;
+  html.style.scrollbarGutter = "stable";
+  scrollContainer.style.overflowY = "scroll";
+  const before = scrollContainer.offsetWidth;
+  scrollContainer.style.overflowY = "hidden";
+  const after = scrollContainer.offsetWidth;
+  scrollContainer.style.overflowY = originalScrollContainerOverflowY;
+  html.style.scrollbarGutter = originalHtmlStyleGutter;
+  return before === after;
+}
+function preventScrollOverlayScrollbars(referenceElement) {
+  const doc = ownerDocument(referenceElement);
+  const html = doc.documentElement;
+  const body = doc.body;
+  const elementToLock = isOverflowElement(html) ? html : body;
+  const originalElementToLockStyles = {
+    overflowY: elementToLock.style.overflowY,
+    overflowX: elementToLock.style.overflowX
   };
-  const rootTriggerProps = store.useState("triggerProps", isMountedByThisTrigger);
-  return useRenderElement("button", componentProps, {
-    state,
-    ref: [buttonRef, forwardedRef, registerTrigger, triggerElementRef],
-    props: [click.reference, rootTriggerProps, interactionTypeProps, {
-      [CLICK_TRIGGER_IDENTIFIER]: "",
-      id: thisTriggerId,
-      "aria-haspopup": "dialog",
-      "aria-expanded": isOpenedByThisTrigger,
-      "aria-controls": popupId
-    }, elementProps, getButtonProps],
-    stateAttributesMapping: triggerOpenStateMapping
+  Object.assign(elementToLock.style, {
+    overflowY: "hidden",
+    overflowX: "hidden"
   });
-});
-if (false)
-  ;
+  return () => {
+    Object.assign(elementToLock.style, originalElementToLockStyles);
+  };
+}
+function preventScrollInsetScrollbars(referenceElement) {
+  const doc = ownerDocument(referenceElement);
+  const html = doc.documentElement;
+  const body = doc.body;
+  const win = getWindow(html);
+  let scrollTop = 0;
+  let scrollLeft = 0;
+  let updateGutterOnly = false;
+  const resizeFrame = AnimationFrame.create();
+  if (exports_parts.engine.webkit && (win.visualViewport?.scale ?? 1) !== 1) {
+    return () => {};
+  }
+  function lockScroll() {
+    const htmlStyles = win.getComputedStyle(html);
+    const bodyStyles = win.getComputedStyle(body);
+    const htmlScrollbarGutterValue = htmlStyles.scrollbarGutter || "";
+    const hasBothEdges = htmlScrollbarGutterValue.includes("both-edges");
+    const scrollbarGutterValue = hasBothEdges ? "stable both-edges" : "stable";
+    scrollTop = html.scrollTop;
+    scrollLeft = html.scrollLeft;
+    originalHtmlStyles = {
+      scrollbarGutter: html.style.scrollbarGutter,
+      overflowY: html.style.overflowY,
+      overflowX: html.style.overflowX
+    };
+    originalHtmlScrollBehavior = html.style.scrollBehavior;
+    originalBodyStyles = {
+      position: body.style.position,
+      height: body.style.height,
+      width: body.style.width,
+      boxSizing: body.style.boxSizing,
+      overflowY: body.style.overflowY,
+      overflowX: body.style.overflowX,
+      scrollBehavior: body.style.scrollBehavior
+    };
+    const isScrollableY = html.scrollHeight > html.clientHeight;
+    const isScrollableX = html.scrollWidth > html.clientWidth;
+    const hasConstantOverflowY = htmlStyles.overflowY === "scroll" || bodyStyles.overflowY === "scroll";
+    const hasConstantOverflowX = htmlStyles.overflowX === "scroll" || bodyStyles.overflowX === "scroll";
+    const scrollbarWidth = Math.max(0, win.innerWidth - body.clientWidth);
+    const scrollbarHeight = Math.max(0, win.innerHeight - body.clientHeight);
+    const marginY = parseFloat(bodyStyles.marginTop) + parseFloat(bodyStyles.marginBottom);
+    const marginX = parseFloat(bodyStyles.marginLeft) + parseFloat(bodyStyles.marginRight);
+    const elementToLock = isOverflowElement(html) ? html : body;
+    updateGutterOnly = supportsStableScrollbarGutter(referenceElement);
+    if (updateGutterOnly) {
+      html.style.scrollbarGutter = scrollbarGutterValue;
+      elementToLock.style.overflowY = "hidden";
+      elementToLock.style.overflowX = "hidden";
+      return;
+    }
+    Object.assign(html.style, {
+      scrollbarGutter: scrollbarGutterValue,
+      overflowY: "hidden",
+      overflowX: "hidden"
+    });
+    if (isScrollableY || hasConstantOverflowY) {
+      html.style.overflowY = "scroll";
+    }
+    if (isScrollableX || hasConstantOverflowX) {
+      html.style.overflowX = "scroll";
+    }
+    Object.assign(body.style, {
+      position: "relative",
+      height: marginY || scrollbarHeight ? `calc(100dvh - ${marginY + scrollbarHeight}px)` : "100dvh",
+      width: marginX || scrollbarWidth ? `calc(100vw - ${marginX + scrollbarWidth}px)` : "100vw",
+      boxSizing: "border-box",
+      overflow: "hidden",
+      scrollBehavior: "unset"
+    });
+    body.scrollTop = scrollTop;
+    body.scrollLeft = scrollLeft;
+    html.setAttribute("data-base-ui-scroll-locked", "");
+    html.style.scrollBehavior = "unset";
+  }
+  function cleanup() {
+    Object.assign(html.style, originalHtmlStyles);
+    Object.assign(body.style, originalBodyStyles);
+    if (!updateGutterOnly) {
+      html.scrollTop = scrollTop;
+      html.scrollLeft = scrollLeft;
+      html.removeAttribute("data-base-ui-scroll-locked");
+      html.style.scrollBehavior = originalHtmlScrollBehavior;
+    }
+  }
+  function handleResize() {
+    cleanup();
+    resizeFrame.request(lockScroll);
+  }
+  lockScroll();
+  const unsubscribeResize = addEventListener(win, "resize", handleResize);
+  return () => {
+    resizeFrame.cancel();
+    cleanup();
+    if (typeof win.removeEventListener === "function") {
+      unsubscribeResize();
+    }
+  };
+}
 
-// node_modules/@base-ui/react/alert-dialog/trigger/AlertDialogTrigger.mjs
+class ScrollLocker {
+  lockCount = 0;
+  restore = null;
+  timeoutLock = Timeout.create();
+  timeoutUnlock = Timeout.create();
+  acquire(referenceElement) {
+    this.lockCount += 1;
+    if (this.lockCount === 1 && this.restore === null) {
+      this.timeoutLock.start(0, () => this.lock(referenceElement));
+    }
+    return this.release;
+  }
+  release = () => {
+    this.lockCount -= 1;
+    if (this.lockCount === 0 && this.restore) {
+      this.timeoutUnlock.start(0, this.unlock);
+    }
+  };
+  unlock = () => {
+    if (this.lockCount === 0 && this.restore) {
+      this.restore?.();
+      this.restore = null;
+    }
+  };
+  lock(referenceElement) {
+    if (this.lockCount === 0 || this.restore !== null) {
+      return;
+    }
+    const doc = ownerDocument(referenceElement);
+    const html = doc.documentElement;
+    const htmlOverflowY = getWindow(html).getComputedStyle(html).overflowY;
+    if (htmlOverflowY === "hidden" || htmlOverflowY === "clip") {
+      this.restore = NOOP;
+      return;
+    }
+    const hasOverlayScrollbars = exports_parts.os.ios || !hasInsetScrollbars(referenceElement);
+    this.restore = hasOverlayScrollbars ? preventScrollOverlayScrollbars(referenceElement) : preventScrollInsetScrollbars(referenceElement);
+  }
+}
+var SCROLL_LOCKER = new ScrollLocker;
+function useScrollLock(enabled = true, referenceElement = null) {
+  useIsoLayoutEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    return SCROLL_LOCKER.acquire(referenceElement);
+  }, [enabled, referenceElement]);
+}
+
+// node_modules/@base-ui/react/dialog/root/useDialogRoot.mjs
 "use client";
-var AlertDialogTrigger = DialogTrigger;
+function useDialogRoot(params) {
+  const {
+    store,
+    actionsRef
+  } = params;
+  const open = store.useState("open");
+  usePopupRootSync(store, open);
+  useImplicitActiveTrigger(store);
+  const {
+    forceUnmount
+  } = useOpenStateTransitions(open, store);
+  const handleImperativeClose = React64.useCallback(() => {
+    store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction));
+  }, [store]);
+  React64.useImperativeHandle(actionsRef, () => ({
+    unmount: forceUnmount,
+    close: handleImperativeClose
+  }), [forceUnmount, handleImperativeClose]);
+}
+function DialogInteractions({
+  store,
+  parentContext,
+  isDrawer
+}) {
+  const open = store.useState("open");
+  const disablePointerDismissal = store.useState("disablePointerDismissal");
+  const modal = store.useState("modal");
+  const popupElement = store.useState("popupElement");
+  const floatingRootContext = store.useState("floatingRootContext");
+  const [ownNestedOpenDialogs, setOwnNestedOpenDialogs] = React64.useState(0);
+  const [ownNestedOpenDrawers, setOwnNestedOpenDrawers] = React64.useState(0);
+  const isTopmost = ownNestedOpenDialogs === 0;
+  const dismiss = useDismiss(floatingRootContext, {
+    outsidePressEvent() {
+      if (store.context.internalBackdropRef.current || store.context.backdropRef.current) {
+        return "intentional";
+      }
+      return {
+        mouse: modal === "trap-focus" ? "sloppy" : "intentional",
+        touch: "sloppy"
+      };
+    },
+    outsidePress(event) {
+      if (!store.context.outsidePressEnabledRef.current) {
+        return false;
+      }
+      if ("button" in event && event.button !== 0) {
+        return false;
+      }
+      if ("touches" in event && event.touches.length !== 1) {
+        return false;
+      }
+      const target = getTarget(event);
+      if (isTopmost && !disablePointerDismissal) {
+        if (modal) {
+          return store.context.internalBackdropRef.current || store.context.backdropRef.current ? store.context.internalBackdropRef.current === target || store.context.backdropRef.current === target || contains(target, popupElement) && !target?.hasAttribute("data-base-ui-portal") : true;
+        }
+        return true;
+      }
+      return false;
+    },
+    escapeKey: isTopmost
+  });
+  useScrollLock(open && modal === true, popupElement);
+  store.useContextCallback("onNestedDialogOpen", (dialogCount, drawerCount) => {
+    setOwnNestedOpenDialogs(dialogCount);
+    setOwnNestedOpenDrawers(drawerCount);
+  });
+  store.useContextCallback("onNestedDialogClose", () => {
+    setOwnNestedOpenDialogs(0);
+    setOwnNestedOpenDrawers(0);
+  });
+  React64.useEffect(() => {
+    if (parentContext?.onNestedDialogOpen && open) {
+      parentContext.onNestedDialogOpen(ownNestedOpenDialogs + 1, ownNestedOpenDrawers + (isDrawer ? 1 : 0));
+    }
+    if (parentContext?.onNestedDialogClose && !open) {
+      parentContext.onNestedDialogClose();
+    }
+    return () => {
+      if (parentContext?.onNestedDialogClose && open) {
+        parentContext.onNestedDialogClose();
+      }
+    };
+  }, [isDrawer, open, ownNestedOpenDialogs, ownNestedOpenDrawers, parentContext]);
+  const activeTriggerProps = dismiss.reference ?? EMPTY_OBJECT;
+  const inactiveTriggerProps = dismiss.trigger ?? EMPTY_OBJECT;
+  const popupProps = dismiss.floating ?? EMPTY_OBJECT;
+  usePopupInteractionProps(store, {
+    activeTriggerProps,
+    inactiveTriggerProps,
+    popupProps,
+    nestedOpenDialogCount: ownNestedOpenDialogs,
+    nestedOpenDrawerCount: ownNestedOpenDrawers
+  });
+  return null;
+}
+
+// node_modules/@base-ui/react/dialog/store/DialogStore.mjs
+var React65 = __toESM(require_react(), 1);
+var selectors2 = {
+  ...popupStoreSelectors,
+  modal: createSelector((state) => state.modal),
+  nested: createSelector((state) => state.nested),
+  nestedOpenDialogCount: createSelector((state) => state.nestedOpenDialogCount),
+  nestedOpenDrawerCount: createSelector((state) => state.nestedOpenDrawerCount),
+  disablePointerDismissal: createSelector((state) => state.disablePointerDismissal),
+  openMethod: createSelector((state) => state.openMethod),
+  descriptionElementId: createSelector((state) => state.descriptionElementId),
+  titleElementId: createSelector((state) => state.titleElementId),
+  viewportElement: createSelector((state) => state.viewportElement),
+  role: createSelector((state) => state.role)
+};
+
+class DialogStore extends ReactStore {
+  constructor(initialState, floatingId, nested = false) {
+    const triggerElements = new PopupTriggerMap;
+    const state = createInitialState(initialState);
+    state.floatingRootContext = createPopupFloatingRootContext(triggerElements, floatingId, nested);
+    super(state, {
+      popupRef: /* @__PURE__ */ React65.createRef(),
+      backdropRef: /* @__PURE__ */ React65.createRef(),
+      internalBackdropRef: /* @__PURE__ */ React65.createRef(),
+      outsidePressEnabledRef: {
+        current: true
+      },
+      triggerElements,
+      onOpenChange: undefined,
+      onOpenChangeComplete: undefined
+    }, selectors2);
+  }
+  setOpen = (nextOpen, eventDetails) => {
+    eventDetails.preventUnmountOnClose = () => {
+      this.set("preventUnmountingOnClose", true);
+    };
+    if (!nextOpen && eventDetails.trigger == null && this.state.activeTriggerId != null) {
+      eventDetails.trigger = this.state.activeTriggerElement ?? undefined;
+    }
+    this.context.onOpenChange?.(nextOpen, eventDetails);
+    if (eventDetails.isCanceled) {
+      return;
+    }
+    this.state.floatingRootContext.dispatchOpenChange(nextOpen, eventDetails);
+    const updatedState = {
+      open: nextOpen
+    };
+    setPopupOpenState(updatedState, nextOpen, eventDetails.trigger);
+    this.update(updatedState);
+  };
+  static useStore(externalStore, initialState) {
+    const store = usePopupStore(externalStore, (floatingId, nested) => new DialogStore(initialState, floatingId, nested), true).store;
+    return store;
+  }
+}
+function createInitialState(initialState = {}) {
+  return {
+    ...createInitialPopupStoreState(),
+    modal: true,
+    disablePointerDismissal: false,
+    popupElement: null,
+    viewportElement: null,
+    descriptionElementId: undefined,
+    titleElementId: undefined,
+    openMethod: null,
+    nested: false,
+    nestedOpenDialogCount: 0,
+    nestedOpenDrawerCount: 0,
+    role: "dialog",
+    ...initialState
+  };
+}
+
+// node_modules/@base-ui/react/dialog/root/useRenderDialogRoot.mjs
+var import_jsx_runtime14 = __toESM(require_jsx_runtime(), 1);
+"use client";
+function useRenderDialogRoot(props, mode = "dialog") {
+  const {
+    children,
+    open: openProp,
+    defaultOpen = false,
+    onOpenChange,
+    onOpenChangeComplete,
+    disablePointerDismissal: disablePointerDismissalProp = false,
+    modal: modalProp = true,
+    actionsRef,
+    handle,
+    triggerId: triggerIdProp,
+    defaultTriggerId: defaultTriggerIdProp = null
+  } = props;
+  const isDrawer = mode === "drawer";
+  const isAlertDialog = mode === "alert-dialog";
+  const modal = isAlertDialog ? true : modalProp;
+  const disablePointerDismissal = isAlertDialog || disablePointerDismissalProp;
+  const role = isAlertDialog ? "alertdialog" : "dialog";
+  const parentDialogRootContext = useDialogRootContext(true);
+  const nested = Boolean(parentDialogRootContext);
+  const rootState = {
+    modal,
+    disablePointerDismissal,
+    nested,
+    role
+  };
+  const store = DialogStore.useStore(handle?.store, {
+    open: defaultOpen,
+    openProp,
+    activeTriggerId: defaultTriggerIdProp,
+    triggerIdProp,
+    ...rootState
+  });
+  useOnFirstRender(() => {
+    const nextState = openProp === undefined && store.state.open === false && defaultOpen === true ? {
+      open: true,
+      activeTriggerId: defaultTriggerIdProp
+    } : null;
+    if (isAlertDialog) {
+      store.update(nextState ? {
+        ...rootState,
+        ...nextState
+      } : rootState);
+    } else if (nextState) {
+      store.update(nextState);
+    }
+  });
+  store.useControlledProp("openProp", openProp);
+  store.useControlledProp("triggerIdProp", triggerIdProp);
+  store.useSyncedValues(rootState);
+  store.useContextCallback("onOpenChange", onOpenChange);
+  store.useContextCallback("onOpenChangeComplete", onOpenChangeComplete);
+  const open = store.useState("open");
+  const mounted = store.useState("mounted");
+  const payload = store.useState("payload");
+  useDialogRoot({
+    store,
+    actionsRef
+  });
+  const shouldRenderInteractions = open || mounted;
+  const contextValue = React66.useMemo(() => ({
+    store
+  }), [store]);
+  return /* @__PURE__ */ import_jsx_runtime14.jsx(IsDrawerContext.Provider, {
+    value: false,
+    children: /* @__PURE__ */ import_jsx_runtime14.jsxs(DialogRootContext.Provider, {
+      value: contextValue,
+      children: [shouldRenderInteractions && /* @__PURE__ */ import_jsx_runtime14.jsx(DialogInteractions, {
+        store,
+        parentContext: parentDialogRootContext?.store.context,
+        isDrawer
+      }), typeof children === "function" ? children({
+        payload
+      }) : children]
+    })
+  });
+}
+
+// node_modules/@base-ui/react/dialog/root/DialogRoot.mjs
+"use client";
+function DialogRoot(props) {
+  const mode = React67.useContext(IsDrawerContext) ? "drawer" : "dialog";
+  return useRenderDialogRoot(props, mode);
+}
 // node_modules/@base-ui/react/dialog/viewport/DialogViewport.mjs
-var React72 = __toESM(require_react(), 1);
+var React68 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/dialog/viewport/DialogViewportDataAttributes.mjs
 var DialogViewportDataAttributes = function(DialogViewportDataAttributes2) {
@@ -29512,7 +29336,7 @@ var stateAttributesMapping4 = {
     } : null;
   }
 };
-var DialogViewport = /* @__PURE__ */ React72.forwardRef(function DialogViewport2(componentProps, forwardedRef) {
+var DialogViewport = /* @__PURE__ */ React68.forwardRef(function DialogViewport2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -29555,6 +29379,179 @@ var DialogViewport = /* @__PURE__ */ React72.forwardRef(function DialogViewport2
 });
 if (false)
   ;
+// node_modules/@base-ui/react/dialog/title/DialogTitle.mjs
+var React69 = __toESM(require_react(), 1);
+"use client";
+var DialogTitle = /* @__PURE__ */ React69.forwardRef(function DialogTitle2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    id: idProp,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useDialogRootContext();
+  const id = useBaseUiId(idProp);
+  store.useSyncedValueWithCleanup("titleElementId", id);
+  return useRenderElement("h2", componentProps, {
+    ref: forwardedRef,
+    props: [{
+      id
+    }, elementProps]
+  });
+});
+if (false)
+  ;
+// node_modules/@base-ui/react/dialog/trigger/DialogTrigger.mjs
+var React73 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/utils/useOpenInteractionType.mjs
+var React72 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/useEnhancedClickHandler.mjs
+var React70 = __toESM(require_react(), 1);
+"use client";
+function useEnhancedClickHandler(handler) {
+  const lastClickInteractionTypeRef = React70.useRef("");
+  const handlePointerDown = React70.useCallback((event) => {
+    if (event.defaultPrevented) {
+      return;
+    }
+    lastClickInteractionTypeRef.current = event.pointerType;
+    handler(event, event.pointerType);
+  }, [handler]);
+  const handleClick = React70.useCallback((event) => {
+    if (event.detail === 0) {
+      handler(event, "keyboard");
+      return;
+    }
+    if ("pointerType" in event) {
+      handler(event, event.pointerType);
+    } else {
+      handler(event, lastClickInteractionTypeRef.current);
+    }
+    lastClickInteractionTypeRef.current = "";
+  }, [handler]);
+  return {
+    onClick: handleClick,
+    onPointerDown: handlePointerDown
+  };
+}
+
+// node_modules/@base-ui/react/internals/useValueChanged.mjs
+var React71 = __toESM(require_react(), 1);
+"use client";
+function useValueChanged(value, onChange) {
+  const valueRef = React71.useRef(value);
+  const onChangeCallback = useStableCallback(onChange);
+  useIsoLayoutEffect(() => {
+    if (valueRef.current === value) {
+      return;
+    }
+    onChangeCallback(valueRef.current);
+  }, [value, onChangeCallback]);
+  useIsoLayoutEffect(() => {
+    valueRef.current = value;
+  }, [value]);
+}
+
+// node_modules/@base-ui/react/utils/useOpenInteractionType.mjs
+"use client";
+function useOpenMethodTriggerProps(open, setOpenMethod) {
+  const handleTriggerClick = useStableCallback((_, interactionType) => {
+    const isOpen = typeof open === "function" ? open() : open;
+    if (!isOpen) {
+      setOpenMethod(interactionType || (exports_parts.os.ios ? "touch" : ""));
+    }
+  });
+  const {
+    onClick,
+    onPointerDown
+  } = useEnhancedClickHandler(handleTriggerClick);
+  return React72.useMemo(() => ({
+    onClick,
+    onPointerDown
+  }), [onClick, onPointerDown]);
+}
+function useOpenInteractionType(open) {
+  const [openMethod, setOpenMethod] = React72.useState(null);
+  const triggerProps = useOpenMethodTriggerProps(open, setOpenMethod);
+  useValueChanged(open, (previousOpen) => {
+    if (previousOpen && !open) {
+      setOpenMethod(null);
+    }
+  });
+  return React72.useMemo(() => ({
+    openMethod,
+    triggerProps
+  }), [openMethod, triggerProps]);
+}
+
+// node_modules/@base-ui/react/dialog/trigger/DialogTrigger.mjs
+"use client";
+var DialogTrigger = /* @__PURE__ */ React73.forwardRef(function DialogTrigger2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    disabled: disabled2 = false,
+    nativeButton = true,
+    id: idProp,
+    payload,
+    handle,
+    ...elementProps
+  } = componentProps;
+  const dialogRootContext = useDialogRootContext(true);
+  const store = handle?.store ?? dialogRootContext?.store;
+  if (!store) {
+    throw new Error(formatErrorMessage_default(79));
+  }
+  const thisTriggerId = useBaseUiId(idProp);
+  const floatingContext = store.useState("floatingRootContext");
+  const isOpenedByThisTrigger = store.useState("isOpenedByTrigger", thisTriggerId);
+  const popupId = store.useState("triggerPopupId", thisTriggerId);
+  const triggerElementRef = React73.useRef(null);
+  const {
+    registerTrigger,
+    isMountedByThisTrigger
+  } = useTriggerDataForwarding(thisTriggerId, triggerElementRef, store, {
+    payload
+  });
+  const {
+    getButtonProps,
+    buttonRef
+  } = useButton({
+    disabled: disabled2,
+    native: nativeButton
+  });
+  const click = useClick(floatingContext, {
+    enabled: floatingContext != null
+  });
+  const interactionTypeProps = useOpenMethodTriggerProps(() => store.select("open"), (interactionType) => {
+    store.set("openMethod", interactionType);
+  });
+  const state = {
+    disabled: disabled2,
+    open: isOpenedByThisTrigger
+  };
+  const rootTriggerProps = store.useState("triggerProps", isMountedByThisTrigger);
+  return useRenderElement("button", componentProps, {
+    state,
+    ref: [buttonRef, forwardedRef, registerTrigger, triggerElementRef],
+    props: [click.reference, rootTriggerProps, interactionTypeProps, {
+      [CLICK_TRIGGER_IDENTIFIER]: "",
+      id: thisTriggerId,
+      "aria-haspopup": "dialog",
+      "aria-expanded": isOpenedByThisTrigger,
+      "aria-controls": popupId
+    }, elementProps, getButtonProps],
+    stateAttributesMapping: triggerOpenStateMapping
+  });
+});
+if (false)
+  ;
 // node_modules/@base-ui/react/dialog/store/DialogHandle.mjs
 class DialogHandle {
   constructor(store) {
@@ -29579,7 +29576,722 @@ class DialogHandle {
 function createDialogHandle() {
   return new DialogHandle;
 }
+// src/kit/context/AskLocation.tsx
+var import_react12 = __toESM(require_react(), 1);
 
+// src/kit/context/AddPath.tsx
+var import_react11 = __toESM(require_react(), 1);
+var jsx_runtime9 = __toESM(require_jsx_runtime(), 1);
+var MAX_SUGGESTIONS = 8;
+function friendlyListError(raw, dir) {
+  if (/ENOENT/.test(raw))
+    return `No folder at ${dir}`;
+  if (/EACCES|EPERM/.test(raw))
+    return `Not allowed to read ${dir}`;
+  if (/ENOTDIR/.test(raw))
+    return `${dir} is a file, not a folder`;
+  return raw;
+}
+function splitForCompletion(typed) {
+  if (!typed.startsWith("/") && !typed.startsWith("~"))
+    return null;
+  if (typed === "~")
+    return { dir: "~", prefix: "" };
+  const i = typed.lastIndexOf("/");
+  if (i === -1)
+    return null;
+  return { dir: i === 0 ? "/" : typed.slice(0, i), prefix: typed.slice(i + 1) };
+}
+function AddPath({
+  listDir,
+  onAdd,
+  placeholder = "Add a file or folder by path…",
+  verb = "adds",
+  foldersOnly = false,
+  initialValue = "",
+  autoFocus = false,
+  onCancel,
+  className,
+  onPick,
+  openDown = false
+}) {
+  const [value, setValue] = import_react11.useState(initialValue);
+  const [listed, setListed] = import_react11.useState({
+    forValue: "",
+    entries: []
+  });
+  const suggestions = listed.forValue === value ? listed.entries : [];
+  const [error, setError] = import_react11.useState(null);
+  const [highlight, setHighlight] = import_react11.useState(-1);
+  const listId = import_react11.useId();
+  const seq = import_react11.useRef(0);
+  import_react11.useEffect(() => {
+    const split = splitForCompletion(value);
+    if (!split) {
+      setListed({ forValue: value, entries: [] });
+      setError(null);
+      return;
+    }
+    const mine = ++seq.current;
+    const t = setTimeout(async () => {
+      const listing = await listDir(split.dir);
+      if (mine !== seq.current)
+        return;
+      const p = split.prefix.toLowerCase();
+      setListed({
+        forValue: value,
+        entries: listing.entries.filter((e) => (!foldersOnly || e.dir) && e.name.toLowerCase().startsWith(p)).slice(0, MAX_SUGGESTIONS)
+      });
+      setError(listing.error && split.prefix === "" ? friendlyListError(listing.error, split.dir) : null);
+      setHighlight(-1);
+    }, 120);
+    return () => clearTimeout(t);
+  }, [value, listDir, foldersOnly]);
+  const complete = (e) => {
+    const dir = splitForCompletion(value)?.dir ?? "";
+    setValue(`${dir === "/" ? "" : dir}/${e.name}${e.dir ? "/" : ""}`);
+  };
+  const submit = (path2) => {
+    const p = path2.trim().replace(/\/+$/, "");
+    if (!p)
+      return;
+    onAdd(p);
+    setValue("");
+  };
+  return /* @__PURE__ */ jsx_runtime9.jsxs("div", {
+    className: cn("relative flex items-center gap-1 border-t border-edge p-2", className),
+    children: [
+      /* @__PURE__ */ jsx_runtime9.jsx(Input3, {
+        value,
+        onChange: (e) => setValue(e.target.value),
+        placeholder,
+        "aria-label": placeholder.replace(/…$/, ""),
+        autoFocus,
+        onBlur: () => {
+          if (onCancel && !suggestions.length)
+            onCancel();
+        },
+        role: "combobox",
+        "aria-autocomplete": "list",
+        "aria-expanded": suggestions.length > 0,
+        "aria-controls": listId,
+        "aria-activedescendant": highlight >= 0 ? `${listId}-${highlight}` : undefined,
+        spellCheck: false,
+        className: "h-8 min-w-0 flex-1 font-mono text-xs",
+        onKeyDown: (e) => {
+          if (e.key === "ArrowDown" && suggestions.length) {
+            e.preventDefault();
+            setHighlight((h) => (h + 1) % suggestions.length);
+          } else if (e.key === "ArrowUp" && suggestions.length) {
+            e.preventDefault();
+            setHighlight((h) => h <= 0 ? suggestions.length - 1 : h - 1);
+          } else if (e.key === "Tab" && suggestions.length) {
+            const pick = suggestions[highlight >= 0 ? highlight : 0];
+            if (pick) {
+              e.preventDefault();
+              complete(pick);
+            }
+          } else if (e.key === "Enter") {
+            e.preventDefault();
+            const pick = highlight >= 0 ? suggestions[highlight] : undefined;
+            submit(pick ? pick.path : value);
+          } else if (e.key === "Escape") {
+            if (suggestions.length || error) {
+              setListed({ forValue: "", entries: [] });
+              setError(null);
+            } else if (onCancel)
+              onCancel();
+            else
+              setValue("");
+          }
+        }
+      }),
+      onPick && !foldersOnly && /* @__PURE__ */ jsx_runtime9.jsx(Button3, {
+        variant: "ghost",
+        size: "icon-sm",
+        onClick: () => onPick("file"),
+        "aria-label": "Choose documents with the file picker",
+        title: "Choose documents with the file picker",
+        children: /* @__PURE__ */ jsx_runtime9.jsx(FileText, {})
+      }),
+      onPick && /* @__PURE__ */ jsx_runtime9.jsx(Button3, {
+        variant: "ghost",
+        size: "icon-sm",
+        onClick: () => onPick("folder"),
+        "aria-label": "Choose a folder with the file picker",
+        title: "Choose a folder with the file picker",
+        children: /* @__PURE__ */ jsx_runtime9.jsx(FolderOpen, {})
+      }),
+      (suggestions.length > 0 || error) && /* @__PURE__ */ jsx_runtime9.jsxs("div", {
+        className: cn("absolute right-2 left-2 z-10 rounded-md border border-edge bg-surface-raised p-1 shadow-lg", openDown ? "top-full mt-1" : "bottom-full mb-1"),
+        children: [
+          error && /* @__PURE__ */ jsx_runtime9.jsx("p", {
+            className: "px-2 py-1 text-xs text-attention",
+            children: error
+          }),
+          /* @__PURE__ */ jsx_runtime9.jsx("div", {
+            id: listId,
+            role: "listbox",
+            "aria-label": "Matching files and folders",
+            className: "max-h-64 overflow-auto",
+            children: suggestions.map((s, i) => /* @__PURE__ */ jsx_runtime9.jsxs("div", {
+              id: `${listId}-${i}`,
+              role: "option",
+              tabIndex: -1,
+              "aria-selected": i === highlight,
+              className: cn("flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1 font-mono text-xs text-ink-dim", i === highlight ? "bg-edge text-ink" : "hover:bg-edge/60"),
+              onMouseDown: (e) => {
+                e.preventDefault();
+                if (s.dir)
+                  complete(s);
+                else
+                  submit(s.path);
+              },
+              children: [
+                s.dir ? /* @__PURE__ */ jsx_runtime9.jsx(Folder, {
+                  "aria-hidden": true,
+                  className: "size-3.5 shrink-0"
+                }) : /* @__PURE__ */ jsx_runtime9.jsx(FileText, {
+                  "aria-hidden": true,
+                  className: "size-3.5 shrink-0"
+                }),
+                /* @__PURE__ */ jsx_runtime9.jsx("span", {
+                  className: "truncate",
+                  children: s.name
+                }),
+                s.dir && /* @__PURE__ */ jsx_runtime9.jsx("span", {
+                  className: "ml-auto text-ink-faint",
+                  children: "/"
+                })
+              ]
+            }, s.path))
+          }),
+          /* @__PURE__ */ jsx_runtime9.jsxs("p", {
+            className: "flex items-center gap-1 px-2 pt-1 text-[10px] text-ink-faint",
+            children: [
+              /* @__PURE__ */ jsx_runtime9.jsx(CornerDownLeft, {
+                "aria-hidden": true,
+                className: "size-3"
+              }),
+              " ",
+              verb,
+              " · Tab completes"
+            ]
+          })
+        ]
+      })
+    ]
+  });
+}
+
+// src/kit/lib/sidecar.ts
+var SIDECAR_SUFFIX = ".md";
+var SIDECAR_NAME = new RegExp(`(?:${IMAGE_EXTENSIONS.map((e) => e.replace(".", "\\.")).join("|")})\\.md$`, "i");
+function isSidecarName(name) {
+  return SIDECAR_NAME.test(name);
+}
+function imageOfSidecar(name) {
+  if (!isSidecarName(name))
+    return null;
+  const image = name.slice(0, -SIDECAR_SUFFIX.length);
+  return isImageName(image) ? image : null;
+}
+
+// src/kit/context/model.ts
+function baseName(rel) {
+  const i = rel.lastIndexOf("/");
+  return i === -1 ? rel : rel.slice(i + 1);
+}
+function nodeLabel(node) {
+  return node.kind === "bundle" ? bundleDisplayName(baseName(node.rel), node.title) : baseName(node.rel);
+}
+function docPathOf(root2, node) {
+  return joinPath(root2, node.kind === "bundle" ? `${node.rel}/${node.main}` : node.rel);
+}
+function joinPath(root2, rel) {
+  return root2.endsWith("/") ? `${root2}${rel}` : `${root2}/${rel}`;
+}
+function tildify(path2, home) {
+  if (!home)
+    return path2;
+  if (path2 === home)
+    return "~";
+  return path2.startsWith(`${home}/`) ? `~${path2.slice(home.length)}` : path2;
+}
+function shortPath(path2, home, keep = 2) {
+  const t = tildify(path2, home);
+  const parts = t.split("/");
+  const lead = t.startsWith("~") ? 1 : t.startsWith("/") ? 1 : 0;
+  if (parts.length - lead <= keep + 1)
+    return t;
+  return `…/${parts.slice(-keep).join("/")}`;
+}
+var collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
+function sortNodes(nodes) {
+  return [...nodes].sort((a, b) => {
+    const ag = a.kind === "group";
+    const bg = b.kind === "group";
+    if (ag !== bg)
+      return ag ? -1 : 1;
+    return collator.compare(nodeLabel(a), nodeLabel(b));
+  });
+}
+function docsIn(nodes) {
+  const out = [];
+  for (const n of nodes) {
+    if (n.kind === "doc" || n.kind === "bundle")
+      out.push(n);
+    else if (n.kind === "group")
+      out.push(...docsIn(n.children));
+  }
+  return out;
+}
+function imagesIn(nodes) {
+  const out = [];
+  for (const n of nodes) {
+    if (n.kind === "image")
+      out.push(n);
+    else if (n.kind === "group")
+      out.push(...imagesIn(n.children));
+  }
+  return out;
+}
+function foldSidecars(nodes) {
+  const sidecars = new Map;
+  const walk = (list2) => {
+    const images = new Set(list2.filter((n) => n.kind === "image").map((n) => n.rel));
+    const out = [];
+    for (const n of list2) {
+      if (n.kind === "group") {
+        out.push({ ...n, children: walk(n.children) });
+        continue;
+      }
+      if (n.kind === "bundle" && n.contents) {
+        out.push({ ...n, contents: walk(n.contents) });
+        continue;
+      }
+      const image = n.kind === "doc" && n.sidecar ? imageOfSidecar(n.rel) : null;
+      if (image !== null && images.has(image)) {
+        sidecars.set(image, n.rel);
+        continue;
+      }
+      out.push(n);
+    }
+    return out;
+  };
+  return { nodes: walk(nodes), sidecars };
+}
+function countEntry(nodes) {
+  const folded = foldSidecars(nodes).nodes;
+  return { docs: docsIn(folded).length, images: imagesIn(folded).length };
+}
+function foldListedSidecars(entries) {
+  const imageEntry = new Map;
+  for (const e of entries) {
+    const only = singleFile(e);
+    if (only?.kind === "image")
+      imageEntry.set(joinPath(e.root, only.rel), e.id);
+  }
+  const described = new Map;
+  const out = [];
+  for (const e of entries) {
+    const only = singleFile(e);
+    if (only?.kind === "doc" && only.sidecar) {
+      const path2 = joinPath(e.root, only.rel);
+      const image = imageOfSidecar(path2);
+      const id = image === null ? undefined : imageEntry.get(image);
+      if (id !== undefined) {
+        described.set(id, e);
+        continue;
+      }
+    }
+    out.push(e);
+  }
+  return { entries: out, described };
+}
+function countsInWords(docs, images) {
+  const d = `${docs} ${docs === 1 ? "document" : "documents"}`;
+  return images > 0 ? `${d}, ${images} ${images === 1 ? "image" : "images"}` : d;
+}
+function singleDoc(entry) {
+  if (entry.membership !== "listed")
+    return null;
+  const [only, ...rest] = entry.nodes;
+  return only && rest.length === 0 && only.kind === "doc" ? only : null;
+}
+function singleFile(entry) {
+  if (entry.membership !== "listed")
+    return null;
+  const [only, ...rest] = entry.nodes;
+  return only && rest.length === 0 && only.kind !== "group" ? only : null;
+}
+function entryPath(entry) {
+  const only = singleFile(entry);
+  return only ? joinPath(entry.root, only.rel) : entry.root;
+}
+var ROOT_ID = "/";
+function indexTree(all) {
+  const { nodes, sidecars } = foldSidecars(all);
+  const imageOf = new Map([...sidecars].map(([image, sidecar]) => [sidecar, image]));
+  const byId = new Map;
+  const children = new Map;
+  const bundleOf2 = new Map;
+  const walk = (parent, list2) => {
+    const sorted = sortNodes(list2);
+    children.set(parent, sorted.map((n) => n.rel));
+    for (const n of sorted) {
+      byId.set(n.rel, n);
+      if (n.kind === "group")
+        walk(n.rel, n.children);
+      else if (n.kind === "bundle") {
+        bundleOf2.set(`${n.rel}/${n.main}`, n.rel);
+        if (n.contents)
+          walk(n.rel, n.contents);
+      }
+    }
+  };
+  walk(ROOT_ID, nodes);
+  return { byId, children, sidecars, imageOf, bundleOf: bundleOf2 };
+}
+function rowHolds(node, activeRel) {
+  if (activeRel === null)
+    return false;
+  return node.kind === "bundle" ? activeRel === node.rel || activeRel === `${node.rel}/${node.main}` : activeRel === node.rel;
+}
+function ancestorsOf(rel) {
+  const parts = rel.split("/");
+  const out = [];
+  for (let i = 1;i < parts.length; i++)
+    out.push(parts.slice(0, i).join("/"));
+  return out;
+}
+function dirOf(path2) {
+  const i = path2.lastIndexOf("/");
+  return i <= 0 ? "/" : path2.slice(0, i);
+}
+function moveTargets(entries, item, workspace = null) {
+  const here = item === null ? null : dirOf(item);
+  const out = [];
+  const offer = (t) => {
+    if (item !== null && (t.path === here || t.path === item || t.path.startsWith(`${item}/`)))
+      return;
+    if (!out.some((o) => o.path === t.path))
+      out.push(t);
+  };
+  const wholeSet = entries.some((e) => e.membership === "mirrored" && e.root === item);
+  if (workspace && !wholeSet)
+    offer({ label: "Workspace", path: workspace, kind: "workspace" });
+  const folders = (e, nodes, at = e.label) => {
+    for (const n of nodes) {
+      if (n.kind === "bundle" && n.contents) {
+        const name = nodeLabel(n);
+        const inside = (rel) => rel.slice(n.rel.length + 1);
+        const members = (list2) => {
+          for (const m of list2) {
+            if (m.kind !== "group")
+              continue;
+            const path2 = joinPath(e.root, m.rel);
+            const place = bundlePlace(path2);
+            if (place !== "member" && place !== "member-folder")
+              continue;
+            const label = `${name}/${inside(m.rel)}`;
+            offer({ label: at ? `${at}/${label}` : label, path: path2, kind: "folder" });
+            members(m.children);
+          }
+        };
+        members(n.contents);
+      }
+      if (n.kind !== "group")
+        continue;
+      offer({ label: `${at}/${n.rel}`, path: joinPath(e.root, n.rel), kind: "folder" });
+      folders(e, n.children, at);
+    }
+  };
+  for (const e of entries) {
+    if (e.membership !== "mirrored") {
+      const only = singleFile(e);
+      if (only?.kind === "bundle" && only.contents)
+        folders(e, [only], "");
+      continue;
+    }
+    offer({ label: e.label, path: e.root, kind: "set" });
+    folders(e, e.nodes);
+  }
+  return out;
+}
+function filterMoveTargets(targets, query) {
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+  if (words.length === 0)
+    return [...targets];
+  return targets.filter((t) => {
+    const label = t.label.toLowerCase();
+    return words.every((w) => label.includes(w));
+  });
+}
+function splitDropped(files) {
+  const docs = [];
+  const images = [];
+  const svg = [];
+  const skipped = [];
+  files.forEach((f, i) => {
+    if (isDocName(f.name))
+      docs.push(i);
+    else if (isImageName(f.name) || isHeicName(f.name))
+      images.push(i);
+    else if (isSvgName(f.name))
+      svg.push(f.name);
+    else
+      skipped.push(f.name);
+  });
+  return { docs, images, svg, skipped };
+}
+function docAt(docs, path2) {
+  return docs.find((d) => d.original === path2);
+}
+
+// src/kit/context/AskLocation.tsx
+var jsx_runtime10 = __toESM(require_jsx_runtime(), 1);
+function locationTargets(entries, what = "document") {
+  const all = moveTargets(entries, null);
+  return what === "bundle" ? all.filter((t) => bundlePlace(t.path) === null) : all;
+}
+function expandHome(path2, userHome) {
+  return path2.startsWith("~/") && userHome ? joinPath(userHome, path2.slice(2)) : path2;
+}
+function LocationDialog({
+  title,
+  targets,
+  preselect,
+  userHome,
+  listDir,
+  addFolder,
+  hint,
+  onChoose,
+  onClose
+}) {
+  const [query, setQuery] = import_react12.useState("");
+  const shown = import_react12.useMemo(() => filterMoveTargets(targets, query), [targets, query]);
+  const [atPath, setAtPath] = import_react12.useState(() => preselect && targets.some((t) => t.path === preselect) ? preselect : null);
+  const at = atPath === null ? -1 : shown.findIndex((t) => t.path === atPath);
+  const [making, setMaking] = import_react12.useState(null);
+  const [refusal, setRefusal] = import_react12.useState(null);
+  const listId = import_react12.useId();
+  const listRef = import_react12.useRef(null);
+  const searchRef = import_react12.useRef(null);
+  import_react12.useEffect(() => {
+    if (making && targets.some((t) => t.path === making)) {
+      setAtPath(making);
+      searchRef.current?.focus();
+      setMaking(null);
+    }
+  }, [making, targets]);
+  import_react12.useEffect(() => {
+    listRef.current?.querySelector(`[data-index="${at}"]`)?.scrollIntoView?.({ block: "nearest" });
+  }, [at]);
+  const search2 = (q) => {
+    setQuery(q);
+    setAtPath(q.trim() === "" ? null : filterMoveTargets(targets, q)[0]?.path ?? null);
+  };
+  const choose = (t) => {
+    if (!t)
+      return;
+    onChoose(t.path);
+  };
+  const onKey = (e) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setAtPath(shown[Math.min(at + 1, shown.length - 1)]?.path ?? null);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setAtPath(shown[Math.max(at - 1, 0)]?.path ?? null);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      choose(shown[at]);
+    }
+  };
+  const make = (typed) => {
+    if (!addFolder)
+      return;
+    const full = expandHome(typed, userHome);
+    setRefusal(null);
+    setQuery("");
+    setMaking(full);
+    addFolder(typed).catch((e) => {
+      setMaking(null);
+      setRefusal(e instanceof Error ? e.message : String(e));
+    });
+  };
+  return /* @__PURE__ */ jsx_runtime10.jsx(exports_index_parts2.Root, {
+    open: true,
+    onOpenChange: (open) => {
+      if (!open)
+        onClose();
+    },
+    children: /* @__PURE__ */ jsx_runtime10.jsxs(exports_index_parts2.Portal, {
+      children: [
+        /* @__PURE__ */ jsx_runtime10.jsx(exports_index_parts2.Backdrop, {
+          className: "fixed inset-0 isolate z-50 bg-black/30 duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0"
+        }),
+        /* @__PURE__ */ jsx_runtime10.jsxs(exports_index_parts2.Popup, {
+          "data-slot": "location-dialog",
+          className: "fixed top-1/2 left-1/2 z-50 flex max-h-[70vh] w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 flex-col gap-2 rounded-xl border border-edge bg-surface p-3 text-ink shadow-lg duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          children: [
+            /* @__PURE__ */ jsx_runtime10.jsx(exports_index_parts2.Title, {
+              className: "truncate text-sm font-semibold text-ink",
+              children: title
+            }),
+            /* @__PURE__ */ jsx_runtime10.jsx("input", {
+              value: query,
+              onChange: (e) => search2(e.target.value),
+              onKeyDown: onKey,
+              ref: searchRef,
+              autoFocus: true,
+              placeholder: "Search sets and folders…",
+              "aria-label": "Search sets and folders",
+              role: "combobox",
+              "aria-expanded": shown.length > 0,
+              "aria-controls": shown.length > 0 ? listId : undefined,
+              "aria-activedescendant": shown[at] ? `${listId}-${at}` : undefined,
+              spellCheck: false,
+              className: "h-8 w-full min-w-0 rounded-md border border-edge bg-bg px-2 text-sm text-ink outline-none placeholder:text-ink-faint focus-visible:ring-2 focus-visible:ring-ring/60"
+            }),
+            shown.length === 0 ? /* @__PURE__ */ jsx_runtime10.jsx("p", {
+              className: "px-1 py-2 text-xs text-ink-faint",
+              children: targets.length > 0 ? "No set or folder matches." : addFolder ? "There is no set to put it in yet. Make a folder at a path below, or add a folder to the context." : "There is no set to put it in yet. Add a folder to the context first."
+            }) : /* @__PURE__ */ jsx_runtime10.jsx("div", {
+              ref: listRef,
+              id: listId,
+              role: "listbox",
+              "aria-label": "Places",
+              className: "flex min-h-0 flex-1 flex-col gap-0.5 overflow-auto",
+              children: shown.map((t, i) => {
+                const Icon2 = t.kind === "set" ? FolderTree : Folder;
+                return /* @__PURE__ */ jsx_runtime10.jsxs("div", {
+                  id: `${listId}-${i}`,
+                  "data-index": i,
+                  role: "option",
+                  tabIndex: -1,
+                  "aria-selected": i === at,
+                  title: t.path,
+                  onMouseMove: () => setAtPath(t.path),
+                  onMouseDown: (e) => e.preventDefault(),
+                  onClick: () => choose(t),
+                  className: cn("flex cursor-default items-center gap-2 rounded-md px-2 py-1.5", i === at && "bg-surface-raised"),
+                  children: [
+                    /* @__PURE__ */ jsx_runtime10.jsx(Icon2, {
+                      "aria-hidden": true,
+                      className: "size-4 shrink-0 text-ink-faint"
+                    }),
+                    /* @__PURE__ */ jsx_runtime10.jsx("span", {
+                      className: "flex min-w-0 flex-1 flex-col",
+                      children: /* @__PURE__ */ jsx_runtime10.jsx("span", {
+                        className: "truncate text-sm",
+                        children: t.label
+                      })
+                    })
+                  ]
+                }, t.path);
+              })
+            }),
+            addFolder && /* @__PURE__ */ jsx_runtime10.jsx(AddPath, {
+              listDir,
+              foldersOnly: true,
+              verb: "makes it",
+              placeholder: "New folder at a path…",
+              onAdd: make
+            }),
+            making && /* @__PURE__ */ jsx_runtime10.jsxs("p", {
+              role: "status",
+              className: "px-1 py-2 text-xs text-ink-faint",
+              children: [
+                "Making ",
+                making,
+                "…"
+              ]
+            }),
+            refusal && /* @__PURE__ */ jsx_runtime10.jsx("p", {
+              className: "px-2 py-1 text-xs text-attention",
+              children: refusal
+            }),
+            hint && /* @__PURE__ */ jsx_runtime10.jsx("p", {
+              className: "px-1 py-2 text-xs text-ink-faint",
+              children: hint
+            })
+          ]
+        })
+      ]
+    })
+  });
+}
+function useAskLocation({
+  entries,
+  userHome,
+  listDir,
+  addFolder,
+  hint
+}) {
+  const [asking, setAsking] = import_react12.useState(null);
+  const seq = import_react12.useRef(0);
+  const [last, setLast] = import_react12.useState(null);
+  const pending = import_react12.useRef(null);
+  const askLocation = import_react12.useCallback((ask) => new Promise((resolve) => {
+    pending.current?.(null);
+    const answer = (dir) => {
+      if (pending.current !== answer)
+        return;
+      pending.current = null;
+      setAsking(null);
+      resolve(dir);
+    };
+    pending.current = answer;
+    setAsking({ ask, answer, seq: ++seq.current });
+  }), []);
+  import_react12.useEffect(() => () => pending.current?.(null), []);
+  const targets = import_react12.useMemo(() => asking ? locationTargets(entries, asking.ask.what) : [], [entries, asking]);
+  const dialog = asking ? /* @__PURE__ */ jsx_runtime10.jsx(LocationDialog, {
+    title: asking.ask.title,
+    targets,
+    preselect: last,
+    userHome,
+    listDir,
+    addFolder,
+    hint,
+    onChoose: (dir) => {
+      setLast(dir);
+      asking.answer(dir);
+    },
+    onClose: () => asking.answer(null)
+  }, asking.seq) : null;
+  return { askLocation, dialog, last };
+}
+
+// src/kit/context/ContextSidebar.tsx
+var import_react19 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/alert-dialog/index.parts.mjs
+var exports_index_parts3 = {};
+__export(exports_index_parts3, {
+  Backdrop: () => DialogBackdrop,
+  Close: () => DialogClose,
+  Description: () => DialogDescription,
+  Handle: () => AlertDialogHandle,
+  Popup: () => DialogPopup,
+  Portal: () => DialogPortal,
+  Root: () => AlertDialogRoot,
+  Title: () => DialogTitle,
+  Trigger: () => AlertDialogTrigger,
+  Viewport: () => DialogViewport,
+  createHandle: () => createAlertDialogHandle
+});
+
+// node_modules/@base-ui/react/alert-dialog/root/AlertDialogRoot.mjs
+"use client";
+function AlertDialogRoot(props) {
+  return useRenderDialogRoot(props, "alert-dialog");
+}
+// node_modules/@base-ui/react/alert-dialog/trigger/AlertDialogTrigger.mjs
+"use client";
+var AlertDialogTrigger = DialogTrigger;
 // node_modules/@base-ui/react/alert-dialog/handle.mjs
 var alertDialogState = {
   modal: true,
@@ -29600,8 +30312,8 @@ function createAlertDialogHandle() {
   return new AlertDialogHandle;
 }
 // src/kit/ui/ConfirmDialog.tsx
-var import_react11 = __toESM(require_react(), 1);
-var jsx_runtime9 = __toESM(require_jsx_runtime(), 1);
+var import_react13 = __toESM(require_react(), 1);
+var jsx_runtime11 = __toESM(require_jsx_runtime(), 1);
 var BUTTON = "inline-flex h-8 items-center justify-center rounded-md px-3 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ink-faint disabled:opacity-50";
 function ConfirmDialog({
   open,
@@ -29615,42 +30327,42 @@ function ConfirmDialog({
   onConfirm,
   onCancel
 }) {
-  return /* @__PURE__ */ jsx_runtime9.jsx(exports_index_parts2.Root, {
+  return /* @__PURE__ */ jsx_runtime11.jsx(exports_index_parts3.Root, {
     open,
     onOpenChange: (next) => {
       onOpenChange(next);
       if (!next)
         onCancel?.();
     },
-    children: /* @__PURE__ */ jsx_runtime9.jsxs(exports_index_parts2.Portal, {
+    children: /* @__PURE__ */ jsx_runtime11.jsxs(exports_index_parts3.Portal, {
       children: [
-        /* @__PURE__ */ jsx_runtime9.jsx(exports_index_parts2.Backdrop, {
+        /* @__PURE__ */ jsx_runtime11.jsx(exports_index_parts3.Backdrop, {
           className: "fixed inset-0 isolate z-50 bg-black/30 duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0"
         }),
-        /* @__PURE__ */ jsx_runtime9.jsxs(exports_index_parts2.Popup, {
+        /* @__PURE__ */ jsx_runtime11.jsxs(exports_index_parts3.Popup, {
           "data-slot": "confirm-dialog",
           className: "fixed top-1/2 left-1/2 z-50 grid w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 gap-3 rounded-xl border border-edge bg-surface p-4 text-ink shadow-lg duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           children: [
-            /* @__PURE__ */ jsx_runtime9.jsx(exports_index_parts2.Title, {
+            /* @__PURE__ */ jsx_runtime11.jsx(exports_index_parts3.Title, {
               className: "text-sm font-semibold text-ink",
               children: title
             }),
-            message && /* @__PURE__ */ jsx_runtime9.jsx(exports_index_parts2.Description, {
+            message && /* @__PURE__ */ jsx_runtime11.jsx(exports_index_parts3.Description, {
               className: "text-sm leading-relaxed text-ink-faint",
               children: message
             }),
-            warning && /* @__PURE__ */ jsx_runtime9.jsx("p", {
+            warning && /* @__PURE__ */ jsx_runtime11.jsx("p", {
               className: "rounded-md border border-edge bg-bg px-2.5 py-2 text-xs leading-relaxed text-ink",
               children: warning
             }),
-            /* @__PURE__ */ jsx_runtime9.jsxs("div", {
+            /* @__PURE__ */ jsx_runtime11.jsxs("div", {
               className: "mt-1 flex justify-end gap-2",
               children: [
-                /* @__PURE__ */ jsx_runtime9.jsx(exports_index_parts2.Close, {
+                /* @__PURE__ */ jsx_runtime11.jsx(exports_index_parts3.Close, {
                   className: cn(BUTTON, "border border-edge bg-surface text-ink hover:bg-bg"),
                   children: cancelLabel
                 }),
-                /* @__PURE__ */ jsx_runtime9.jsx("button", {
+                /* @__PURE__ */ jsx_runtime11.jsx("button", {
                   type: "button",
                   onClick: onConfirm,
                   className: cn(BUTTON, confirmClassName ?? "border border-edge bg-ink text-bg hover:opacity-90"),
@@ -29665,20 +30377,20 @@ function ConfirmDialog({
   });
 }
 function useConfirm() {
-  const [pending, setPending] = import_react11.useState(null);
-  const answer = import_react11.useRef(null);
-  const settle = import_react11.useCallback((ok) => {
+  const [pending, setPending] = import_react13.useState(null);
+  const answer = import_react13.useRef(null);
+  const settle = import_react13.useCallback((ok) => {
     const reply = answer.current;
     answer.current = null;
     setPending(null);
     reply?.(ok);
   }, []);
-  const confirm = import_react11.useCallback((request) => new Promise((resolve) => {
+  const confirm = import_react13.useCallback((request) => new Promise((resolve) => {
     answer.current?.(false);
     answer.current = resolve;
     setPending(request);
   }), []);
-  const dialog = pending ? /* @__PURE__ */ jsx_runtime9.jsx(ConfirmDialog, {
+  const dialog = pending ? /* @__PURE__ */ jsx_runtime11.jsx(ConfirmDialog, {
     ...pending,
     open: true,
     onOpenChange: (next) => {
@@ -29691,8 +30403,8 @@ function useConfirm() {
 }
 
 // node_modules/@base-ui/react/context-menu/index.parts.mjs
-var exports_index_parts4 = {};
-__export(exports_index_parts4, {
+var exports_index_parts5 = {};
+__export(exports_index_parts5, {
   Arrow: () => MenuArrow,
   Backdrop: () => MenuBackdrop,
   CheckboxItem: () => MenuCheckboxItem,
@@ -29715,16 +30427,16 @@ __export(exports_index_parts4, {
 });
 
 // node_modules/@base-ui/react/context-menu/root/ContextMenuRoot.mjs
-var React119 = __toESM(require_react(), 1);
+var React120 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/context-menu/root/ContextMenuRootContext.mjs
-var React73 = __toESM(require_react(), 1);
+var React74 = __toESM(require_react(), 1);
 "use client";
-var ContextMenuRootContext = /* @__PURE__ */ React73.createContext(undefined);
+var ContextMenuRootContext = /* @__PURE__ */ React74.createContext(undefined);
 if (false)
   ;
 function useContextMenuRootContext(optional = true) {
-  const context = React73.useContext(ContextMenuRootContext);
+  const context = React74.useContext(ContextMenuRootContext);
   if (context === undefined && !optional) {
     throw new Error(formatErrorMessage_default(25));
   }
@@ -29732,8 +30444,8 @@ function useContextMenuRootContext(optional = true) {
 }
 
 // node_modules/@base-ui/react/menu/index.parts.mjs
-var exports_index_parts3 = {};
-__export(exports_index_parts3, {
+var exports_index_parts4 = {};
+__export(exports_index_parts4, {
   Arrow: () => MenuArrow,
   Backdrop: () => MenuBackdrop,
   CheckboxItem: () => MenuCheckboxItem,
@@ -29759,16 +30471,16 @@ __export(exports_index_parts3, {
 });
 
 // node_modules/@base-ui/react/menu/arrow/MenuArrow.mjs
-var React76 = __toESM(require_react(), 1);
+var React77 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/menu/positioner/MenuPositionerContext.mjs
-var React74 = __toESM(require_react(), 1);
+var React75 = __toESM(require_react(), 1);
 "use client";
-var MenuPositionerContext = /* @__PURE__ */ React74.createContext(undefined);
+var MenuPositionerContext = /* @__PURE__ */ React75.createContext(undefined);
 if (false)
   ;
 function useMenuPositionerContext(optional) {
-  const context = React74.useContext(MenuPositionerContext);
+  const context = React75.useContext(MenuPositionerContext);
   if (context === undefined && !optional) {
     throw new Error(formatErrorMessage_default(33));
   }
@@ -29776,13 +30488,13 @@ function useMenuPositionerContext(optional) {
 }
 
 // node_modules/@base-ui/react/menu/root/MenuRootContext.mjs
-var React75 = __toESM(require_react(), 1);
+var React76 = __toESM(require_react(), 1);
 "use client";
-var MenuRootContext = /* @__PURE__ */ React75.createContext(undefined);
+var MenuRootContext = /* @__PURE__ */ React76.createContext(undefined);
 if (false)
   ;
 function useMenuRootContext(optional) {
-  const context = React75.useContext(MenuRootContext);
+  const context = React76.useContext(MenuRootContext);
   if (context === undefined && !optional) {
     throw new Error(formatErrorMessage_default(36));
   }
@@ -29791,7 +30503,7 @@ function useMenuRootContext(optional) {
 
 // node_modules/@base-ui/react/menu/arrow/MenuArrow.mjs
 "use client";
-var MenuArrow = /* @__PURE__ */ React76.forwardRef(function MenuArrow2(componentProps, forwardedRef) {
+var MenuArrow = /* @__PURE__ */ React77.forwardRef(function MenuArrow2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -29829,13 +30541,13 @@ var MenuArrow = /* @__PURE__ */ React76.forwardRef(function MenuArrow2(component
 if (false)
   ;
 // node_modules/@base-ui/react/menu/backdrop/MenuBackdrop.mjs
-var React77 = __toESM(require_react(), 1);
+var React78 = __toESM(require_react(), 1);
 "use client";
 var stateAttributesMapping5 = {
   ...popupStateMapping,
   ...transitionStatusMapping
 };
-var MenuBackdrop = /* @__PURE__ */ React77.forwardRef(function MenuBackdrop2(componentProps, forwardedRef) {
+var MenuBackdrop = /* @__PURE__ */ React78.forwardRef(function MenuBackdrop2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -29872,16 +30584,16 @@ var MenuBackdrop = /* @__PURE__ */ React77.forwardRef(function MenuBackdrop2(com
 if (false)
   ;
 // node_modules/@base-ui/react/menu/checkbox-item/MenuCheckboxItem.mjs
-var React83 = __toESM(require_react(), 1);
+var React84 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/menu/checkbox-item/MenuCheckboxItemContext.mjs
-var React78 = __toESM(require_react(), 1);
+var React79 = __toESM(require_react(), 1);
 "use client";
-var MenuCheckboxItemContext = /* @__PURE__ */ React78.createContext(undefined);
+var MenuCheckboxItemContext = /* @__PURE__ */ React79.createContext(undefined);
 if (false)
   ;
 function useMenuCheckboxItemContext() {
-  const context = React78.useContext(MenuCheckboxItemContext);
+  const context = React79.useContext(MenuCheckboxItemContext);
   if (context === undefined) {
     throw new Error(formatErrorMessage_default(30));
   }
@@ -29889,10 +30601,10 @@ function useMenuCheckboxItemContext() {
 }
 
 // node_modules/@base-ui/react/menu/item/useMenuItem.mjs
-var React80 = __toESM(require_react(), 1);
+var React81 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/menu/item/useMenuItemCommonProps.mjs
-var React79 = __toESM(require_react(), 1);
+var React80 = __toESM(require_react(), 1);
 "use client";
 function useMenuItemCommonProps(params) {
   const {
@@ -29911,7 +30623,7 @@ function useMenuItemCommonProps(params) {
   const open = store.useState("open");
   const contextMenuContext = useContextMenuRootContext(true);
   const isContextMenu = contextMenuContext !== undefined;
-  return React79.useMemo(() => ({
+  return React80.useMemo(() => ({
     id,
     role: "menuitem",
     tabIndex: open && highlighted ? 0 : -1,
@@ -29976,7 +30688,7 @@ function useMenuItem(params) {
   } = params;
   const rootDisabled = store.useState("disabled");
   const disabled2 = disabledProp || rootDisabled;
-  const itemRef = React80.useRef(null);
+  const itemRef = React81.useRef(null);
   const {
     getButtonProps,
     buttonRef
@@ -29996,7 +30708,7 @@ function useMenuItem(params) {
     itemRef,
     itemMetadata
   });
-  const getItemProps = React80.useCallback((externalProps) => {
+  const getItemProps = React81.useCallback((externalProps) => {
     return mergeProps(commonProps, {
       onMouseEnter() {
         if (itemMetadata.type !== "submenu-trigger") {
@@ -30007,19 +30719,19 @@ function useMenuItem(params) {
     }, externalProps, getButtonProps);
   }, [commonProps, getButtonProps, itemMetadata]);
   const mergedRef = useMergedRefs(itemRef, buttonRef);
-  return React80.useMemo(() => ({
+  return React81.useMemo(() => ({
     getItemProps,
     itemRef: mergedRef
   }), [getItemProps, mergedRef]);
 }
 
 // node_modules/@base-ui/react/internals/composite/list/useCompositeListItem.mjs
-var React82 = __toESM(require_react(), 1);
+var React83 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/internals/composite/list/CompositeListContext.mjs
-var React81 = __toESM(require_react(), 1);
+var React82 = __toESM(require_react(), 1);
 "use client";
-var CompositeListContext = /* @__PURE__ */ React81.createContext({
+var CompositeListContext = /* @__PURE__ */ React82.createContext({
   register: () => {},
   unregister: () => {},
   subscribeMapChange: () => {
@@ -30035,7 +30747,7 @@ var CompositeListContext = /* @__PURE__ */ React81.createContext({
 if (false)
   ;
 function useCompositeListContext() {
-  return React81.useContext(CompositeListContext);
+  return React82.useContext(CompositeListContext);
 }
 
 // node_modules/@base-ui/react/internals/composite/list/useCompositeListItem.mjs
@@ -30061,8 +30773,8 @@ function useCompositeListItem(params = {}) {
     labelsRef,
     nextIndexRef
   } = useCompositeListContext();
-  const indexRef = React82.useRef(-1);
-  const [index4, setIndex] = React82.useState(externalIndex ?? (indexGuessBehavior === IndexGuessBehavior.GuessFromOrder ? () => {
+  const indexRef = React83.useRef(-1);
+  const [index4, setIndex] = React83.useState(externalIndex ?? (indexGuessBehavior === IndexGuessBehavior.GuessFromOrder ? () => {
     if (indexRef.current === -1) {
       const newIndex = nextIndexRef.current;
       nextIndexRef.current += 1;
@@ -30070,8 +30782,8 @@ function useCompositeListItem(params = {}) {
     }
     return indexRef.current;
   } : -1));
-  const componentRef = React82.useRef(null);
-  const ref = React82.useCallback((node) => {
+  const componentRef = React83.useRef(null);
+  const ref = React83.useCallback((node) => {
     componentRef.current = node;
     if (index4 !== -1 && node !== null) {
       elementsRef.current[index4] = node;
@@ -30138,7 +30850,7 @@ var itemMapping = {
 // node_modules/@base-ui/react/menu/checkbox-item/MenuCheckboxItem.mjs
 var import_jsx_runtime15 = __toESM(require_jsx_runtime(), 1);
 "use client";
-var MenuCheckboxItem = /* @__PURE__ */ React83.forwardRef(function MenuCheckboxItem2(componentProps, forwardedRef) {
+var MenuCheckboxItem = /* @__PURE__ */ React84.forwardRef(function MenuCheckboxItem2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -30182,7 +30894,7 @@ var MenuCheckboxItem = /* @__PURE__ */ React83.forwardRef(function MenuCheckboxI
     nodeId: menuPositionerContext?.context.nodeId,
     itemMetadata: REGULAR_ITEM
   });
-  const state = React83.useMemo(() => ({
+  const state = React84.useMemo(() => ({
     disabled: disabled2,
     highlighted,
     checked
@@ -30215,9 +30927,9 @@ var MenuCheckboxItem = /* @__PURE__ */ React83.forwardRef(function MenuCheckboxI
 if (false)
   ;
 // node_modules/@base-ui/react/menu/checkbox-item-indicator/MenuCheckboxItemIndicator.mjs
-var React84 = __toESM(require_react(), 1);
+var React85 = __toESM(require_react(), 1);
 "use client";
-var MenuCheckboxItemIndicator = /* @__PURE__ */ React84.forwardRef(function MenuCheckboxItemIndicator2(componentProps, forwardedRef) {
+var MenuCheckboxItemIndicator = /* @__PURE__ */ React85.forwardRef(function MenuCheckboxItemIndicator2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -30226,7 +30938,7 @@ var MenuCheckboxItemIndicator = /* @__PURE__ */ React84.forwardRef(function Menu
     ...elementProps
   } = componentProps;
   const item = useMenuCheckboxItemContext();
-  const indicatorRef = React84.useRef(null);
+  const indicatorRef = React85.useRef(null);
   const {
     transitionStatus,
     setMounted
@@ -30261,16 +30973,16 @@ var MenuCheckboxItemIndicator = /* @__PURE__ */ React84.forwardRef(function Menu
 if (false)
   ;
 // node_modules/@base-ui/react/menu/group/MenuGroup.mjs
-var React86 = __toESM(require_react(), 1);
+var React87 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/menu/group/MenuGroupContext.mjs
-var React85 = __toESM(require_react(), 1);
+var React86 = __toESM(require_react(), 1);
 "use client";
-var MenuGroupContext = /* @__PURE__ */ React85.createContext(undefined);
+var MenuGroupContext = /* @__PURE__ */ React86.createContext(undefined);
 if (false)
   ;
 function useMenuGroupRootContext() {
-  const context = React85.useContext(MenuGroupContext);
+  const context = React86.useContext(MenuGroupContext);
   if (context === undefined) {
     throw new Error(formatErrorMessage_default(31));
   }
@@ -30280,14 +30992,14 @@ function useMenuGroupRootContext() {
 // node_modules/@base-ui/react/menu/group/MenuGroup.mjs
 var import_jsx_runtime16 = __toESM(require_jsx_runtime(), 1);
 "use client";
-var MenuGroup = /* @__PURE__ */ React86.forwardRef(function MenuGroup2(componentProps, forwardedRef) {
+var MenuGroup = /* @__PURE__ */ React87.forwardRef(function MenuGroup2(componentProps, forwardedRef) {
   const {
     render,
     className,
     style: style2,
     ...elementProps
   } = componentProps;
-  const [labelId, setLabelId] = React86.useState(undefined);
+  const [labelId, setLabelId] = React87.useState(undefined);
   const element2 = useRenderElement("div", componentProps, {
     ref: forwardedRef,
     props: {
@@ -30304,9 +31016,9 @@ var MenuGroup = /* @__PURE__ */ React86.forwardRef(function MenuGroup2(component
 if (false)
   ;
 // node_modules/@base-ui/react/menu/group-label/MenuGroupLabel.mjs
-var React87 = __toESM(require_react(), 1);
+var React88 = __toESM(require_react(), 1);
 "use client";
-var MenuGroupLabel = /* @__PURE__ */ React87.forwardRef(function MenuGroupLabel2(componentProps, forwardedRef) {
+var MenuGroupLabel = /* @__PURE__ */ React88.forwardRef(function MenuGroupLabel2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -30334,9 +31046,9 @@ var MenuGroupLabel = /* @__PURE__ */ React87.forwardRef(function MenuGroupLabel2
 if (false)
   ;
 // node_modules/@base-ui/react/menu/item/MenuItem.mjs
-var React88 = __toESM(require_react(), 1);
+var React89 = __toESM(require_react(), 1);
 "use client";
-var MenuItem = /* @__PURE__ */ React88.forwardRef(function MenuItem2(componentProps, forwardedRef) {
+var MenuItem = /* @__PURE__ */ React89.forwardRef(function MenuItem2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -30384,9 +31096,9 @@ var MenuItem = /* @__PURE__ */ React88.forwardRef(function MenuItem2(componentPr
 if (false)
   ;
 // node_modules/@base-ui/react/menu/link-item/MenuLinkItem.mjs
-var React89 = __toESM(require_react(), 1);
+var React90 = __toESM(require_react(), 1);
 "use client";
-var MenuLinkItem = /* @__PURE__ */ React89.forwardRef(function MenuLinkItem2(componentProps, forwardedRef) {
+var MenuLinkItem = /* @__PURE__ */ React90.forwardRef(function MenuLinkItem2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -30396,7 +31108,7 @@ var MenuLinkItem = /* @__PURE__ */ React89.forwardRef(function MenuLinkItem2(com
     style: style2,
     ...elementProps
   } = componentProps;
-  const linkRef = React89.useRef(null);
+  const linkRef = React90.useRef(null);
   const listItem = useCompositeListItem({
     label
   });
@@ -30440,16 +31152,16 @@ var MenuLinkItem = /* @__PURE__ */ React89.forwardRef(function MenuLinkItem2(com
 if (false)
   ;
 // node_modules/@base-ui/react/menu/popup/MenuPopup.mjs
-var React91 = __toESM(require_react(), 1);
+var React92 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/toolbar/root/ToolbarRootContext.mjs
-var React90 = __toESM(require_react(), 1);
+var React91 = __toESM(require_react(), 1);
 "use client";
-var ToolbarRootContext = /* @__PURE__ */ React90.createContext(undefined);
+var ToolbarRootContext = /* @__PURE__ */ React91.createContext(undefined);
 if (false)
   ;
 function useToolbarRootContext(optional) {
-  const context = React90.useContext(ToolbarRootContext);
+  const context = React91.useContext(ToolbarRootContext);
   if (context === undefined && !optional) {
     throw new Error(formatErrorMessage_default(69));
   }
@@ -30468,7 +31180,7 @@ var stateAttributesMapping6 = {
   ...popupStateMapping,
   ...transitionStatusMapping
 };
-var MenuPopup = /* @__PURE__ */ React91.forwardRef(function MenuPopup2(componentProps, forwardedRef) {
+var MenuPopup = /* @__PURE__ */ React92.forwardRef(function MenuPopup2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -30510,7 +31222,7 @@ var MenuPopup = /* @__PURE__ */ React91.forwardRef(function MenuPopup2(component
       }
     }
   });
-  React91.useEffect(() => {
+  React92.useEffect(() => {
     function handleClose(event) {
       store.setOpen(false, createChangeEventDetails(event.reason, event.domEvent));
     }
@@ -30523,7 +31235,7 @@ var MenuPopup = /* @__PURE__ */ React91.forwardRef(function MenuPopup2(component
     enabled: hoverEnabled && !disabled2 && !isContextMenu && parent.type !== "menubar",
     closeDelay
   });
-  const setPopupElement = React91.useCallback((element3) => {
+  const setPopupElement = React92.useCallback((element3) => {
     store.set("popupElement", element3);
   }, [store]);
   const state = {
@@ -30570,16 +31282,16 @@ var MenuPopup = /* @__PURE__ */ React91.forwardRef(function MenuPopup2(component
 if (false)
   ;
 // node_modules/@base-ui/react/menu/portal/MenuPortal.mjs
-var React93 = __toESM(require_react(), 1);
+var React94 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/menu/portal/MenuPortalContext.mjs
-var React92 = __toESM(require_react(), 1);
+var React93 = __toESM(require_react(), 1);
 "use client";
-var MenuPortalContext = /* @__PURE__ */ React92.createContext(undefined);
+var MenuPortalContext = /* @__PURE__ */ React93.createContext(undefined);
 if (false)
   ;
 function useMenuPortalContext() {
-  const value = React92.useContext(MenuPortalContext);
+  const value = React93.useContext(MenuPortalContext);
   if (value === undefined) {
     throw new Error(formatErrorMessage_default(32));
   }
@@ -30589,7 +31301,7 @@ function useMenuPortalContext() {
 // node_modules/@base-ui/react/menu/portal/MenuPortal.mjs
 var import_jsx_runtime18 = __toESM(require_jsx_runtime(), 1);
 "use client";
-var MenuPortal = /* @__PURE__ */ React93.forwardRef(function MenuPortal2(props, forwardedRef) {
+var MenuPortal = /* @__PURE__ */ React94.forwardRef(function MenuPortal2(props, forwardedRef) {
   const {
     keepMounted = false,
     ...portalProps
@@ -30613,19 +31325,19 @@ var MenuPortal = /* @__PURE__ */ React93.forwardRef(function MenuPortal2(props, 
 if (false)
   ;
 // node_modules/@base-ui/react/menu/positioner/MenuPositioner.mjs
-var React98 = __toESM(require_react(), 1);
+var React99 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/utils/useAnchorPositioning.mjs
-var React95 = __toESM(require_react(), 1);
+var React96 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/internals/direction-context/DirectionContext.mjs
-var React94 = __toESM(require_react(), 1);
+var React95 = __toESM(require_react(), 1);
 "use client";
-var DirectionContext = /* @__PURE__ */ React94.createContext(undefined);
+var DirectionContext = /* @__PURE__ */ React95.createContext(undefined);
 if (false)
   ;
 function useDirection() {
-  const context = React94.useContext(DirectionContext);
+  const context = React95.useContext(DirectionContext);
   return context?.direction ?? "ltr";
 }
 
@@ -30847,7 +31559,7 @@ function useAnchorPositioning(params) {
     lazyFlip = false,
     externalTree
   } = params;
-  const [mountSide, setMountSide] = React95.useState(null);
+  const [mountSide, setMountSide] = React96.useState(null);
   if (!mounted && mountSide !== null) {
     setMountSide(null);
   }
@@ -30895,7 +31607,7 @@ function useAnchorPositioning(params) {
     boundary: collisionBoundary === "clipping-ancestors" ? "clippingAncestors" : collisionBoundary,
     padding: collisionPadding
   };
-  const arrowRef = React95.useRef(null);
+  const arrowRef = React96.useRef(null);
   const sideOffsetRef = useValueAsRef(sideOffset);
   const alignOffsetRef = useValueAsRef(alignOffset);
   const sideOffsetDep = typeof sideOffset !== "function" ? sideOffset : 0;
@@ -31038,7 +31750,7 @@ function useAnchorPositioning(params) {
       });
     }
   }, [mounted, floatingRootContext]);
-  const autoUpdateOptions = React95.useMemo(() => ({
+  const autoUpdateOptions = React96.useMemo(() => ({
     elementResize: !disableAnchorTracking && typeof ResizeObserver !== "undefined",
     layoutShift: !disableAnchorTracking && typeof IntersectionObserver !== "undefined"
   }), [disableAnchorTracking]);
@@ -31068,7 +31780,7 @@ function useAnchorPositioning(params) {
     sideY
   } = middlewareData.adaptiveOrigin || DEFAULT_SIDES;
   const resolvedPosition = isPositioned ? positionMethod : "fixed";
-  const floatingStyles = React95.useMemo(() => {
+  const floatingStyles = React96.useMemo(() => {
     const base = adaptiveOrigin2 ? {
       position: resolvedPosition,
       [sideX]: x,
@@ -31082,7 +31794,7 @@ function useAnchorPositioning(params) {
     }
     return base;
   }, [adaptiveOrigin2, resolvedPosition, sideX, x, sideY, y, originalFloatingStyles, isPositioned]);
-  const registeredPositionReferenceRef = React95.useRef(null);
+  const registeredPositionReferenceRef = React96.useRef(null);
   useIsoLayoutEffect(() => {
     if (!mounted) {
       return;
@@ -31096,7 +31808,7 @@ function useAnchorPositioning(params) {
       registeredPositionReferenceRef.current = finalAnchor;
     }
   }, [mounted, refs, anchorDep, anchorValueRef]);
-  React95.useEffect(() => {
+  React96.useEffect(() => {
     if (!mounted) {
       return;
     }
@@ -31109,7 +31821,7 @@ function useAnchorPositioning(params) {
       registeredPositionReferenceRef.current = anchorValue.current;
     }
   }, [mounted, refs, anchorDep, anchorValueRef]);
-  React95.useEffect(() => {
+  React96.useEffect(() => {
     if (keepMounted && mounted && elements.reference && elements.floating) {
       return autoUpdate(elements.reference, elements.floating, update2, autoUpdateOptions);
     }
@@ -31124,13 +31836,13 @@ function useAnchorPositioning(params) {
       setMountSide(renderedSide);
     }
   }, [lazyFlip, mounted, isPositioned, renderedSide]);
-  const arrowStyles = React95.useMemo(() => ({
+  const arrowStyles = React96.useMemo(() => ({
     position: "absolute",
     top: middlewareData.arrow?.y,
     left: middlewareData.arrow?.x
   }), [middlewareData.arrow]);
   const arrowUncentered = middlewareData.arrow?.centerOffset !== 0;
-  return React95.useMemo(() => ({
+  return React96.useMemo(() => ({
     positionerStyles: floatingStyles,
     arrowStyles,
     arrowRef,
@@ -31150,7 +31862,7 @@ function isRef(param) {
 }
 
 // node_modules/@base-ui/react/internals/composite/list/CompositeList.mjs
-var React96 = __toESM(require_react(), 1);
+var React97 = __toESM(require_react(), 1);
 var import_jsx_runtime19 = __toESM(require_jsx_runtime(), 1);
 "use client";
 function CompositeList(props) {
@@ -31161,11 +31873,11 @@ function CompositeList(props) {
     onMapChange: onMapChangeProp
   } = props;
   const onMapChange = useStableCallback(onMapChangeProp);
-  const nextIndexRef = React96.useRef(0);
+  const nextIndexRef = React97.useRef(0);
   const listeners = useRefWithInit(createListeners).current;
   const map = useRefWithInit(createMap).current;
-  const [mapTick, setMapTick] = React96.useState(0);
-  const lastTickRef = React96.useRef(mapTick);
+  const [mapTick, setMapTick] = React97.useState(0);
+  const lastTickRef = React97.useRef(mapTick);
   const register2 = useStableCallback((node, metadata) => {
     map.set(node, metadata ?? null);
     lastTickRef.current += 1;
@@ -31176,7 +31888,7 @@ function CompositeList(props) {
     lastTickRef.current += 1;
     setMapTick(lastTickRef.current);
   });
-  const sortedMap = React96.useMemo(() => {
+  const sortedMap = React97.useMemo(() => {
     disableEslintWarning(mapTick);
     const newMap = new Map;
     const sortedNodes = Array.from(map.keys()).filter((node) => node.isConnected).sort(sortByDocumentPosition);
@@ -31250,7 +31962,7 @@ function CompositeList(props) {
   useIsoLayoutEffect(() => {
     listeners.forEach((l) => l(sortedMap));
   }, [listeners, sortedMap]);
-  const contextValue = React96.useMemo(() => ({
+  const contextValue = React97.useMemo(() => ({
     register: register2,
     unregister,
     subscribeMapChange,
@@ -31310,11 +32022,11 @@ function usePositioner(componentProps, state, {
 }
 
 // node_modules/@base-ui/react/utils/useAnchoredPopupScrollLock.mjs
-var React97 = __toESM(require_react(), 1);
+var React98 = __toESM(require_react(), 1);
 "use client";
 var VIEWPORT_WIDTH_TOLERANCE_PX = 20;
 function useAnchoredPopupScrollLock(enabled, touchOpen, positionerElement, referenceElement) {
-  const [touchOpenShouldLockScroll, setTouchOpenShouldLockScroll] = React97.useState(false);
+  const [touchOpenShouldLockScroll, setTouchOpenShouldLockScroll] = React98.useState(false);
   useIsoLayoutEffect(() => {
     if (!enabled || !touchOpen || positionerElement == null) {
       setTouchOpenShouldLockScroll(false);
@@ -31330,7 +32042,7 @@ function useAnchoredPopupScrollLock(enabled, touchOpen, positionerElement, refer
 // node_modules/@base-ui/react/menu/positioner/MenuPositioner.mjs
 var import_jsx_runtime20 = __toESM(require_jsx_runtime(), 1);
 "use client";
-var MenuPositioner = /* @__PURE__ */ React98.forwardRef(function MenuPositioner2(componentProps, forwardedRef) {
+var MenuPositioner = /* @__PURE__ */ React99.forwardRef(function MenuPositioner2(componentProps, forwardedRef) {
   const {
     anchor: anchorProp,
     positionMethod: positionMethodProp = "absolute",
@@ -31370,7 +32082,7 @@ var MenuPositioner = /* @__PURE__ */ React98.forwardRef(function MenuPositioner2
   const floatingNodeId = store.useState("floatingNodeId");
   const floatingParentNodeId = store.useState("floatingParentNodeId");
   const domReference = floatingRootContext.useState("domReferenceElement");
-  const previousTriggerRef = React98.useRef(null);
+  const previousTriggerRef = React99.useRef(null);
   const runOnceAnimationsFinish = useAnimationsFinished(positionerElement, false, false);
   let anchor = anchorProp;
   let sideOffset = sideOffsetProp;
@@ -31417,7 +32129,7 @@ var MenuPositioner = /* @__PURE__ */ React98.forwardRef(function MenuPositioner2
     externalTree: floatingTreeRoot,
     adaptiveOrigin: hasViewport ? adaptiveOrigin : undefined
   });
-  React98.useEffect(() => {
+  React99.useEffect(() => {
     function onMenuOpenChange(details) {
       if (details.open) {
         if (details.parentNodeId === floatingNodeId) {
@@ -31433,7 +32145,7 @@ var MenuPositioner = /* @__PURE__ */ React98.forwardRef(function MenuPositioner2
       floatingTreeRoot.events.off("menuopenchange", onMenuOpenChange);
     };
   }, [store, floatingTreeRoot.events, floatingNodeId]);
-  React98.useEffect(() => {
+  React99.useEffect(() => {
     if (store.select("floatingParentNodeId") == null) {
       return;
     }
@@ -31450,12 +32162,12 @@ var MenuPositioner = /* @__PURE__ */ React98.forwardRef(function MenuPositioner2
     };
   }, [floatingTreeRoot.events, store]);
   const closeTimeout = useTimeout();
-  React98.useEffect(() => {
+  React99.useEffect(() => {
     if (!open) {
       closeTimeout.clear();
     }
   }, [open, closeTimeout]);
-  React98.useEffect(() => {
+  React99.useEffect(() => {
     function onItemHover(event) {
       if (!open || event.nodeId !== store.select("floatingParentNodeId")) {
         return;
@@ -31480,7 +32192,7 @@ var MenuPositioner = /* @__PURE__ */ React98.forwardRef(function MenuPositioner2
       floatingTreeRoot.events.off("itemhover", onItemHover);
     };
   }, [floatingTreeRoot.events, open, triggerElement, store, closeTimeout]);
-  React98.useEffect(() => {
+  React99.useEffect(() => {
     const eventDetails = {
       open,
       nodeId: floatingNodeId,
@@ -31552,16 +32264,16 @@ var MenuPositioner = /* @__PURE__ */ React98.forwardRef(function MenuPositioner2
 if (false)
   ;
 // node_modules/@base-ui/react/menu/radio-group/MenuRadioGroup.mjs
-var React100 = __toESM(require_react(), 1);
+var React101 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/menu/radio-group/MenuRadioGroupContext.mjs
-var React99 = __toESM(require_react(), 1);
+var React100 = __toESM(require_react(), 1);
 "use client";
-var MenuRadioGroupContext = /* @__PURE__ */ React99.createContext(undefined);
+var MenuRadioGroupContext = /* @__PURE__ */ React100.createContext(undefined);
 if (false)
   ;
 function useMenuRadioGroupContext() {
-  const context = React99.useContext(MenuRadioGroupContext);
+  const context = React100.useContext(MenuRadioGroupContext);
   if (context === undefined) {
     throw new Error(formatErrorMessage_default(34));
   }
@@ -31571,7 +32283,7 @@ function useMenuRadioGroupContext() {
 // node_modules/@base-ui/react/menu/radio-group/MenuRadioGroup.mjs
 var import_jsx_runtime21 = __toESM(require_jsx_runtime(), 1);
 "use client";
-var MenuRadioGroup = /* @__PURE__ */ React100.memo(/* @__PURE__ */ React100.forwardRef(function MenuRadioGroup2(componentProps, forwardedRef) {
+var MenuRadioGroup = /* @__PURE__ */ React101.memo(/* @__PURE__ */ React101.forwardRef(function MenuRadioGroup2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -31583,7 +32295,7 @@ var MenuRadioGroup = /* @__PURE__ */ React100.memo(/* @__PURE__ */ React100.forw
     "aria-labelledby": ariaLabelledByProp,
     ...elementProps
   } = componentProps;
-  const [labelId, setLabelId] = React100.useState(undefined);
+  const [labelId, setLabelId] = React101.useState(undefined);
   const [value, setValueUnwrapped] = useControlled({
     controlled: valueProp,
     default: defaultValue,
@@ -31609,7 +32321,7 @@ var MenuRadioGroup = /* @__PURE__ */ React100.memo(/* @__PURE__ */ React100.forw
       ...elementProps
     }
   });
-  const context = React100.useMemo(() => ({
+  const context = React101.useMemo(() => ({
     value,
     setValue,
     disabled: disabled2
@@ -31625,16 +32337,16 @@ var MenuRadioGroup = /* @__PURE__ */ React100.memo(/* @__PURE__ */ React100.forw
 if (false)
   ;
 // node_modules/@base-ui/react/menu/radio-item/MenuRadioItem.mjs
-var React102 = __toESM(require_react(), 1);
+var React103 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/menu/radio-item/MenuRadioItemContext.mjs
-var React101 = __toESM(require_react(), 1);
+var React102 = __toESM(require_react(), 1);
 "use client";
-var MenuRadioItemContext = /* @__PURE__ */ React101.createContext(undefined);
+var MenuRadioItemContext = /* @__PURE__ */ React102.createContext(undefined);
 if (false)
   ;
 function useMenuRadioItemContext() {
-  const context = React101.useContext(MenuRadioItemContext);
+  const context = React102.useContext(MenuRadioItemContext);
   if (context === undefined) {
     throw new Error(formatErrorMessage_default(35));
   }
@@ -31644,7 +32356,7 @@ function useMenuRadioItemContext() {
 // node_modules/@base-ui/react/menu/radio-item/MenuRadioItem.mjs
 var import_jsx_runtime22 = __toESM(require_jsx_runtime(), 1);
 "use client";
-var MenuRadioItem = /* @__PURE__ */ React102.forwardRef(function MenuRadioItem2(componentProps, forwardedRef) {
+var MenuRadioItem = /* @__PURE__ */ React103.forwardRef(function MenuRadioItem2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -31687,7 +32399,7 @@ var MenuRadioItem = /* @__PURE__ */ React102.forwardRef(function MenuRadioItem2(
     nodeId: menuPositionerContext?.context.nodeId,
     itemMetadata: REGULAR_ITEM
   });
-  const state = React102.useMemo(() => ({
+  const state = React103.useMemo(() => ({
     disabled: disabled2,
     highlighted,
     checked
@@ -31716,9 +32428,9 @@ var MenuRadioItem = /* @__PURE__ */ React102.forwardRef(function MenuRadioItem2(
 if (false)
   ;
 // node_modules/@base-ui/react/menu/radio-item-indicator/MenuRadioItemIndicator.mjs
-var React103 = __toESM(require_react(), 1);
+var React104 = __toESM(require_react(), 1);
 "use client";
-var MenuRadioItemIndicator = /* @__PURE__ */ React103.forwardRef(function MenuRadioItemIndicator2(componentProps, forwardedRef) {
+var MenuRadioItemIndicator = /* @__PURE__ */ React104.forwardRef(function MenuRadioItemIndicator2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -31727,7 +32439,7 @@ var MenuRadioItemIndicator = /* @__PURE__ */ React103.forwardRef(function MenuRa
     ...elementProps
   } = componentProps;
   const item = useMenuRadioItemContext();
-  const indicatorRef = React103.useRef(null);
+  const indicatorRef = React104.useRef(null);
   const {
     transitionStatus,
     setMounted
@@ -31762,16 +32474,16 @@ var MenuRadioItemIndicator = /* @__PURE__ */ React103.forwardRef(function MenuRa
 if (false)
   ;
 // node_modules/@base-ui/react/menu/root/MenuRoot.mjs
-var React107 = __toESM(require_react(), 1);
+var React108 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/menubar/MenubarContext.mjs
-var React104 = __toESM(require_react(), 1);
+var React105 = __toESM(require_react(), 1);
 "use client";
-var MenubarContext = /* @__PURE__ */ React104.createContext(null);
+var MenubarContext = /* @__PURE__ */ React105.createContext(null);
 if (false)
   ;
 function useMenubarContext(optional) {
-  const context = React104.useContext(MenubarContext);
+  const context = React105.useContext(MenubarContext);
   if (context === null && !optional) {
     throw new Error(formatErrorMessage_default(5));
   }
@@ -31779,7 +32491,7 @@ function useMenubarContext(optional) {
 }
 
 // node_modules/@base-ui/react/menu/store/MenuStore.mjs
-var React105 = __toESM(require_react(), 1);
+var React106 = __toESM(require_react(), 1);
 var selectors3 = {
   ...popupStoreSelectors,
   disabled: createSelector((state) => state.parent.type === "menubar" ? state.parent.context.disabled || state.disabled : state.disabled),
@@ -31828,8 +32540,8 @@ class MenuStore extends ReactStore {
       ...createInitialState2(),
       ...initialState
     }, {
-      positionerRef: /* @__PURE__ */ React105.createRef(),
-      popupRef: /* @__PURE__ */ React105.createRef(),
+      positionerRef: /* @__PURE__ */ React106.createRef(),
+      popupRef: /* @__PURE__ */ React106.createRef(),
       typingRef: {
         current: false
       },
@@ -31842,8 +32554,8 @@ class MenuStore extends ReactStore {
       allowMouseUpTriggerRef: {
         current: false
       },
-      triggerFocusTargetRef: /* @__PURE__ */ React105.createRef(),
-      beforeContentFocusGuardRef: /* @__PURE__ */ React105.createRef(),
+      triggerFocusTargetRef: /* @__PURE__ */ React106.createRef(),
+      beforeContentFocusGuardRef: /* @__PURE__ */ React106.createRef(),
       onOpenChangeComplete: undefined,
       triggerElements: new PopupTriggerMap
     }, selectors3);
@@ -31916,13 +32628,13 @@ function createInitialState2() {
 }
 
 // node_modules/@base-ui/react/menu/submenu-root/MenuSubmenuRootContext.mjs
-var React106 = __toESM(require_react(), 1);
+var React107 = __toESM(require_react(), 1);
 "use client";
-var MenuSubmenuRootContext = /* @__PURE__ */ React106.createContext(undefined);
+var MenuSubmenuRootContext = /* @__PURE__ */ React107.createContext(undefined);
 if (false)
   ;
 function useMenuSubmenuRootContext() {
-  return React106.useContext(MenuSubmenuRootContext);
+  return React107.useContext(MenuSubmenuRootContext);
 }
 
 // node_modules/@base-ui/react/menu/root/MenuRoot.mjs
@@ -31950,7 +32662,7 @@ var MenuRoot = fastComponent(function MenuRoot2(props) {
   const parentMenuRootContext = useMenuRootContext(true);
   const menubarContext = useMenubarContext(true);
   const isSubmenu = useMenuSubmenuRootContext();
-  const parentFromContext = React107.useMemo(() => {
+  const parentFromContext = React108.useMemo(() => {
     if (isSubmenu && parentMenuRootContext) {
       return {
         type: "menu",
@@ -31999,10 +32711,10 @@ var MenuRoot = fastComponent(function MenuRoot2(props) {
   const activeIndex = store.useState("activeIndex");
   const payload = store.useState("payload");
   const floatingParentNodeId = store.useState("floatingParentNodeId");
-  const openEventRef = React107.useRef(null);
-  const allowOutsidePressDismissalRef = React107.useRef(parent.type !== "context-menu");
+  const openEventRef = React108.useRef(null);
+  const allowOutsidePressDismissalRef = React108.useRef(parent.type !== "context-menu");
   const allowOutsidePressDismissalTimeout = useTimeout();
-  const allowTouchToCloseRef = React107.useRef(true);
+  const allowTouchToCloseRef = React108.useRef(true);
   const allowTouchToCloseTimeout = useTimeout();
   const nested = floatingParentNodeId != null;
   if (false) {}
@@ -32043,7 +32755,7 @@ var MenuRoot = fastComponent(function MenuRoot2(props) {
       });
     }
   }, [contextMenuContext, parentMenuRootContext, floatingNodeIdFromContext, floatingParentNodeIdFromContext, store]);
-  React107.useEffect(() => {
+  React108.useEffect(() => {
     if (!open) {
       openEventRef.current = null;
     }
@@ -32115,7 +32827,7 @@ var MenuRoot = fastComponent(function MenuRoot2(props) {
     onOpenChange: setOpen
   });
   const floatingEvents = floatingRootContext.context.events;
-  React107.useEffect(() => {
+  React108.useEffect(() => {
     const handleSetOpenEvent = ({
       open: nextOpen,
       eventDetails
@@ -32125,10 +32837,10 @@ var MenuRoot = fastComponent(function MenuRoot2(props) {
       floatingEvents?.off("setOpen", handleSetOpenEvent);
     };
   }, [floatingEvents, setOpen]);
-  const handleImperativeClose = React107.useCallback(() => {
+  const handleImperativeClose = React108.useCallback(() => {
     store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction));
   }, [store]);
-  React107.useImperativeHandle(actionsRef, () => ({
+  React108.useImperativeHandle(actionsRef, () => ({
     unmount: forceUnmount,
     close: handleImperativeClose
   }), [forceUnmount, handleImperativeClose]);
@@ -32136,8 +32848,8 @@ var MenuRoot = fastComponent(function MenuRoot2(props) {
   if (parent.type === "context-menu") {
     ctx = parent.context;
   }
-  React107.useImperativeHandle(ctx?.positionerRef, () => positionerElement, [positionerElement]);
-  React107.useImperativeHandle(ctx?.actionsRef, () => ({
+  React108.useImperativeHandle(ctx?.positionerRef, () => positionerElement, [positionerElement]);
+  React108.useImperativeHandle(ctx?.actionsRef, () => ({
     setOpen
   }), [setOpen]);
   const dismiss = useDismiss(floatingRootContext, {
@@ -32154,7 +32866,7 @@ var MenuRoot = fastComponent(function MenuRoot2(props) {
     externalTree: nested ? floatingTreeRoot : undefined
   });
   const direction = useDirection();
-  const setActiveIndex = React107.useCallback((index4) => {
+  const setActiveIndex = React108.useCallback((index4) => {
     if (store.select("activeIndex") === index4) {
       return;
     }
@@ -32175,7 +32887,7 @@ var MenuRoot = fastComponent(function MenuRoot2(props) {
     externalTree: nested ? floatingTreeRoot : undefined,
     focusItemOnHover: highlightItemOnHover
   });
-  const onTyping = React107.useCallback((nextTyping) => {
+  const onTyping = React108.useCallback((nextTyping) => {
     store.context.typingRef.current = nextTyping;
   }, [store]);
   const typeahead = useTypeahead(floatingRootContext, {
@@ -32191,7 +32903,7 @@ var MenuRoot = fastComponent(function MenuRoot2(props) {
     },
     onTyping
   });
-  const activeTriggerProps = React107.useMemo(() => {
+  const activeTriggerProps = React108.useMemo(() => {
     const mergedProps = mergeProps(typeahead.reference, listNavigation2.reference, dismiss.reference, {
       onMouseMove() {
         store.set("allowMouseEnter", true);
@@ -32201,13 +32913,13 @@ var MenuRoot = fastComponent(function MenuRoot2(props) {
     mergedProps["aria-expanded"] = open;
     return mergedProps;
   }, [store, typeahead.reference, listNavigation2.reference, dismiss.reference, interactionTypeProps, open]);
-  const inactiveTriggerProps = React107.useMemo(() => {
+  const inactiveTriggerProps = React108.useMemo(() => {
     const mergedProps = mergeProps(listNavigation2.trigger, dismiss.trigger, interactionTypeProps);
     mergedProps["aria-haspopup"] = "menu";
     mergedProps["aria-expanded"] = false;
     return mergedProps;
   }, [listNavigation2.trigger, dismiss.trigger, interactionTypeProps]);
-  const popupProps = React107.useMemo(() => mergeProps(FOCUSABLE_POPUP_PROPS, {
+  const popupProps = React108.useMemo(() => mergeProps(FOCUSABLE_POPUP_PROPS, {
     id: floatingId,
     role: "menu",
     "aria-labelledby": activeTriggerElement?.id,
@@ -32237,7 +32949,7 @@ var MenuRoot = fastComponent(function MenuRoot2(props) {
     popupProps,
     itemProps
   });
-  const context = React107.useMemo(() => ({
+  const context = React108.useMemo(() => ({
     store,
     parent: parentFromContext
   }), [store, parentFromContext]);
@@ -32258,12 +32970,12 @@ var MenuRoot = fastComponent(function MenuRoot2(props) {
 if (false)
   ;
 // node_modules/@base-ui/react/menu/submenu-root/MenuSubmenuRoot.mjs
-var React108 = __toESM(require_react(), 1);
+var React109 = __toESM(require_react(), 1);
 var import_jsx_runtime24 = __toESM(require_jsx_runtime(), 1);
 "use client";
 function MenuSubmenuRoot(props) {
   const parentMenu = useMenuRootContext().store;
-  const contextValue = React108.useMemo(() => ({
+  const contextValue = React109.useMemo(() => ({
     parentMenu
   }), [parentMenu]);
   return /* @__PURE__ */ import_jsx_runtime24.jsx(MenuSubmenuRootContext.Provider, {
@@ -32274,7 +32986,7 @@ function MenuSubmenuRoot(props) {
   });
 }
 // node_modules/@base-ui/react/menu/trigger/MenuTrigger.mjs
-var React112 = __toESM(require_react(), 1);
+var React113 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/utils/getPseudoElementBounds.mjs
 function getPseudoElementBounds(element2) {
@@ -32306,7 +33018,7 @@ function getPseudoElementBounds(element2) {
 }
 
 // node_modules/@base-ui/react/internals/composite/item/useCompositeItem.mjs
-var React109 = __toESM(require_react(), 1);
+var React110 = __toESM(require_react(), 1);
 "use client";
 function useCompositeItem(params = {}) {
   const {
@@ -32319,7 +33031,7 @@ function useCompositeItem(params = {}) {
     index: index4
   } = useCompositeListItem(params);
   const isHighlighted = highlightedIndex === index4;
-  const itemRef = React109.useRef(null);
+  const itemRef = React110.useRef(null);
   const mergedRef = useMergedRefs(ref, itemRef);
   const compositeProps = {
     tabIndex: isHighlighted ? 0 : -1,
@@ -32385,11 +33097,11 @@ function findRootOwnerId(node) {
 }
 
 // node_modules/@base-ui/react/utils/popups/useTriggerFocusGuards.mjs
-var React110 = __toESM(require_react(), 1);
+var React111 = __toESM(require_react(), 1);
 var ReactDOM7 = __toESM(require_react_dom(), 1);
 "use client";
 function useTriggerFocusGuards(store, triggerElementRef) {
-  const preFocusGuardRef = React110.useRef(null);
+  const preFocusGuardRef = React111.useRef(null);
   function handlePreFocusGuardFocus(event) {
     ReactDOM7.flushSync(() => {
       store.setOpen(false, createChangeEventDetails(exports_reason_parts.focusOut, event.nativeEvent, event.currentTarget));
@@ -32424,7 +33136,7 @@ function useTriggerFocusGuards(store, triggerElementRef) {
 }
 
 // node_modules/@base-ui/react/utils/useMixedToggleClickHandler.mjs
-var React111 = __toESM(require_react(), 1);
+var React112 = __toESM(require_react(), 1);
 "use client";
 function useMixedToggleClickHandler(params) {
   const {
@@ -32432,8 +33144,8 @@ function useMixedToggleClickHandler(params) {
     mouseDownAction,
     open
   } = params;
-  const ignoreClickRef = React111.useRef(false);
-  return React111.useMemo(() => {
+  const ignoreClickRef = React112.useRef(false);
+  return React112.useMemo(() => {
     if (!enabled) {
       return EMPTY_OBJECT;
     }
@@ -32487,11 +33199,11 @@ var MenuTrigger = fastComponentRef(function MenuTrigger2(componentProps, forward
   const floatingRootContext = store.useState("floatingRootContext");
   const isOpenedByThisTrigger = store.useState("isOpenedByTrigger", thisTriggerId);
   const popupId = store.useState("triggerPopupId", thisTriggerId);
-  const triggerElementRef = React112.useRef(null);
+  const triggerElementRef = React113.useRef(null);
   const parent = useMenuParent();
   const compositeRootContext = useCompositeRootContext(true);
   const floatingTreeRootFromContext = useFloatingTree();
-  const floatingTreeRoot = React112.useMemo(() => {
+  const floatingTreeRoot = React113.useMemo(() => {
     return floatingTreeRootFromContext ?? new FloatingTreeStore;
   }, [floatingTreeRootFromContext]);
   const floatingNodeId = useFloatingNodeId(floatingTreeRoot);
@@ -32518,12 +33230,12 @@ var MenuTrigger = fastComponentRef(function MenuTrigger2(componentProps, forward
     disabled: disabled2,
     native: nativeButton
   });
-  React112.useEffect(() => {
+  React113.useEffect(() => {
     if (!isOpenedByThisTrigger && parent.type === undefined) {
       store.context.allowMouseUpTriggerRef.current = false;
     }
   }, [store, isOpenedByThisTrigger, parent.type]);
-  const triggerRef = React112.useRef(null);
+  const triggerRef = React113.useRef(null);
   const allowMouseUpTriggerTimeout = useTimeout();
   const handleDocumentMouseUp = useStableCallback((mouseEvent) => {
     if (!triggerRef.current) {
@@ -32547,7 +33259,7 @@ var MenuTrigger = fastComponentRef(function MenuTrigger2(componentProps, forward
       reason: exports_reason_parts.cancelOpen
     });
   });
-  React112.useEffect(() => {
+  React113.useEffect(() => {
     if (isOpenedByThisTrigger && store.select("lastOpenChangeReason") === exports_reason_parts.triggerHover) {
       const doc = ownerDocument(triggerRef.current);
       doc.addEventListener("mouseup", handleDocumentMouseUp, {
@@ -32589,7 +33301,7 @@ var MenuTrigger = fastComponentRef(function MenuTrigger2(componentProps, forward
     enabled: isInMenubar,
     mouseDownAction: "open"
   });
-  const localInteractionProps = React112.useMemo(() => mergeProps(focus.reference, click.reference), [focus.reference, click.reference]);
+  const localInteractionProps = React113.useMemo(() => mergeProps(focus.reference, click.reference), [focus.reference, click.reference]);
   const rootTriggerProps = store.useState("triggerProps", isMountedByThisTrigger);
   const {
     preFocusGuardRef,
@@ -32640,11 +33352,11 @@ var MenuTrigger = fastComponentRef(function MenuTrigger2(componentProps, forward
     });
   }
   if (isOpenedByThisTrigger) {
-    return /* @__PURE__ */ import_jsx_runtime25.jsxs(React112.Fragment, {
+    return /* @__PURE__ */ import_jsx_runtime25.jsxs(React113.Fragment, {
       children: [/* @__PURE__ */ import_jsx_runtime25.jsx(FocusGuard, {
         ref: preFocusGuardRef,
         onFocus: handlePreFocusGuardFocus
-      }, `${thisTriggerId}-pre-focus-guard`), /* @__PURE__ */ import_jsx_runtime25.jsx(React112.Fragment, {
+      }, `${thisTriggerId}-pre-focus-guard`), /* @__PURE__ */ import_jsx_runtime25.jsx(React113.Fragment, {
         children: element2
       }, thisTriggerId), /* @__PURE__ */ import_jsx_runtime25.jsx(FocusGuard, {
         ref: store.context.triggerFocusTargetRef,
@@ -32652,7 +33364,7 @@ var MenuTrigger = fastComponentRef(function MenuTrigger2(componentProps, forward
       }, `${thisTriggerId}-post-focus-guard`)]
     });
   }
-  return /* @__PURE__ */ import_jsx_runtime25.jsx(React112.Fragment, {
+  return /* @__PURE__ */ import_jsx_runtime25.jsx(React113.Fragment, {
     children: element2
   }, thisTriggerId);
 });
@@ -32660,7 +33372,7 @@ if (false)
   ;
 function useStickIfOpen(open, openReason) {
   const stickIfOpenTimeout = useTimeout();
-  const [stickIfOpen, setStickIfOpen] = React112.useState(false);
+  const [stickIfOpen, setStickIfOpen] = React113.useState(false);
   useIsoLayoutEffect(() => {
     if (open && openReason === "trigger-hover") {
       setStickIfOpen(true);
@@ -32678,7 +33390,7 @@ function useMenuParent() {
   const contextMenuContext = useContextMenuRootContext(true);
   const parentContext = useMenuRootContext(true);
   const menubarContext = useMenubarContext(true);
-  const parent = React112.useMemo(() => {
+  const parent = React113.useMemo(() => {
     if (menubarContext) {
       return {
         type: "menubar",
@@ -32698,17 +33410,17 @@ function useMenuParent() {
   return parent;
 }
 // node_modules/@base-ui/react/menu/viewport/MenuViewport.mjs
-var React116 = __toESM(require_react(), 1);
+var React117 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/utils/usePopupViewport.mjs
-var React115 = __toESM(require_react(), 1);
+var React116 = __toESM(require_react(), 1);
 var ReactDOM8 = __toESM(require_react_dom(), 1);
 
 // node_modules/@base-ui/utils/usePreviousValue.mjs
-var React113 = __toESM(require_react(), 1);
+var React114 = __toESM(require_react(), 1);
 "use client";
 function usePreviousValue(value) {
-  const [state, setState] = React113.useState({
+  const [state, setState] = React114.useState({
     current: value,
     previous: null
   });
@@ -32722,7 +33434,7 @@ function usePreviousValue(value) {
 }
 
 // node_modules/@base-ui/react/utils/usePopupAutoResize.mjs
-var React114 = __toESM(require_react(), 1);
+var React115 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/utils/getCssDimensions.mjs
 function getCssDimensions2(element2) {
@@ -32758,12 +33470,12 @@ function usePopupAutoResize(parameters) {
   } = parameters;
   const runOnceAnimationsFinish = useAnimationsFinished(popupElement, true, false);
   const animationFrame = useAnimationFrame();
-  const committedDimensionsRef = React114.useRef(null);
-  const isInitialRenderRef = React114.useRef(true);
-  const restoreAnchoringStylesRef = React114.useRef(NOOP);
+  const committedDimensionsRef = React115.useRef(null);
+  const isInitialRenderRef = React115.useRef(true);
+  const restoreAnchoringStylesRef = React115.useRef(NOOP);
   const onMeasureLayout = useStableCallback(onMeasureLayoutParam);
   const onMeasureLayoutComplete = useStableCallback(onMeasureLayoutCompleteParam);
-  const anchoringStyles = React114.useMemo(() => {
+  const anchoringStyles = React115.useMemo(() => {
     let isOriginSide = side === "top";
     let isPhysicalLeft = side === "left";
     if (direction === "rtl") {
@@ -32893,15 +33605,15 @@ function usePopupViewport(parameters) {
   const positionerElement = store.useState("positionerElement");
   const previousActiveTrigger = usePreviousValue(open ? activeTrigger : null);
   const currentContentKey = usePopupContentKey(activeTriggerId, payload);
-  const capturedNodeRef = React115.useRef(null);
-  const [previousContentNode, setPreviousContentNode] = React115.useState(null);
-  const [newTriggerOffset, setNewTriggerOffset] = React115.useState(null);
-  const currentContainerRef = React115.useRef(null);
-  const previousContainerRef = React115.useRef(null);
+  const capturedNodeRef = React116.useRef(null);
+  const [previousContentNode, setPreviousContentNode] = React116.useState(null);
+  const [newTriggerOffset, setNewTriggerOffset] = React116.useState(null);
+  const currentContainerRef = React116.useRef(null);
+  const previousContainerRef = React116.useRef(null);
   const onAnimationsFinished = useAnimationsFinished(currentContainerRef, true, false);
   const cleanupFrame = useAnimationFrame();
-  const [previousContentDimensions, setPreviousContentDimensions] = React115.useState(null);
-  const [showStartingStyleAttribute, setShowStartingStyleAttribute] = React115.useState(false);
+  const [previousContentDimensions, setPreviousContentDimensions] = React116.useState(null);
+  const [showStartingStyleAttribute, setShowStartingStyleAttribute] = React116.useState(false);
   useIsoLayoutEffect(() => {
     store.set("hasViewport", true);
     return () => {
@@ -32921,7 +33633,7 @@ function usePopupViewport(parameters) {
       setPreviousContentDimensions(previousDimensions);
     }
   });
-  const lastHandledTriggerRef = React115.useRef(null);
+  const lastHandledTriggerRef = React116.useRef(null);
   useIsoLayoutEffect(() => {
     if (!open || !mounted) {
       lastHandledTriggerRef.current = null;
@@ -32966,7 +33678,7 @@ function usePopupViewport(parameters) {
       children
     }, currentContentKey);
   } else {
-    childrenToRender = /* @__PURE__ */ import_jsx_runtime26.jsxs(React115.Fragment, {
+    childrenToRender = /* @__PURE__ */ import_jsx_runtime26.jsxs(React116.Fragment, {
       children: [/* @__PURE__ */ import_jsx_runtime26.jsx("div", {
         "data-previous": true,
         inert: inertValue(true),
@@ -33045,10 +33757,10 @@ function calculateRelativePosition(from, to) {
   };
 }
 function usePopupContentKey(activeTriggerId, payload) {
-  const [contentKey, setContentKey] = React115.useState(0);
-  const previousActiveTriggerIdRef = React115.useRef(activeTriggerId);
-  const previousPayloadRef = React115.useRef(payload);
-  const pendingPayloadUpdateRef = React115.useRef(false);
+  const [contentKey, setContentKey] = React116.useState(0);
+  const previousActiveTriggerIdRef = React116.useRef(activeTriggerId);
+  const previousPayloadRef = React116.useRef(payload);
+  const pendingPayloadUpdateRef = React116.useRef(false);
   useIsoLayoutEffect(() => {
     const previousActiveTriggerId = previousActiveTriggerIdRef.current;
     const previousPayload = previousPayloadRef.current;
@@ -33081,7 +33793,7 @@ var stateAttributesMapping7 = {
     "data-activation-direction": value
   } : null
 };
-var MenuViewport = /* @__PURE__ */ React116.forwardRef(function MenuViewport2(componentProps, forwardedRef) {
+var MenuViewport = /* @__PURE__ */ React117.forwardRef(function MenuViewport2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -33122,9 +33834,9 @@ var MenuViewport = /* @__PURE__ */ React116.forwardRef(function MenuViewport2(co
 if (false)
   ;
 // node_modules/@base-ui/react/separator/Separator.mjs
-var React117 = __toESM(require_react(), 1);
+var React118 = __toESM(require_react(), 1);
 "use client";
-var Separator = /* @__PURE__ */ React117.forwardRef(function SeparatorComponent(componentProps, forwardedRef) {
+var Separator = /* @__PURE__ */ React118.forwardRef(function SeparatorComponent(componentProps, forwardedRef) {
   const {
     className,
     render,
@@ -33148,9 +33860,9 @@ var Separator = /* @__PURE__ */ React117.forwardRef(function SeparatorComponent(
 if (false)
   ;
 // node_modules/@base-ui/react/menu/submenu-trigger/MenuSubmenuTrigger.mjs
-var React118 = __toESM(require_react(), 1);
+var React119 = __toESM(require_react(), 1);
 "use client";
-var MenuSubmenuTrigger = /* @__PURE__ */ React118.forwardRef(function MenuSubmenuTrigger2(componentProps, forwardedRef) {
+var MenuSubmenuTrigger = /* @__PURE__ */ React119.forwardRef(function MenuSubmenuTrigger2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -33177,7 +33889,7 @@ var MenuSubmenuTrigger = /* @__PURE__ */ React118.forwardRef(function MenuSubmen
   const floatingTreeRoot = store.useState("floatingTreeRoot");
   const popupId = store.useState("triggerPopupId", thisTriggerId);
   const baseRegisterTrigger = useTriggerRegistration(thisTriggerId, store);
-  const registerTrigger = React118.useCallback((element3) => {
+  const registerTrigger = React119.useCallback((element3) => {
     const cleanup = baseRegisterTrigger(element3);
     if (element3 !== null && store.select("open") && store.select("activeTriggerId") == null) {
       store.update({
@@ -33188,8 +33900,8 @@ var MenuSubmenuTrigger = /* @__PURE__ */ React118.forwardRef(function MenuSubmen
     }
     return cleanup;
   }, [baseRegisterTrigger, closeDelay, store, thisTriggerId]);
-  const triggerElementRef = React118.useRef(null);
-  const handleTriggerElementRef = React118.useCallback((el) => {
+  const triggerElementRef = React119.useRef(null);
+  const handleTriggerElementRef = React119.useCallback((el) => {
     triggerElementRef.current = el;
     store.set("activeTriggerElement", el);
   }, [store]);
@@ -33205,7 +33917,7 @@ var MenuSubmenuTrigger = /* @__PURE__ */ React118.forwardRef(function MenuSubmen
   if (false) {}
   const itemProps = parentMenuStore.useState("itemProps");
   const highlighted = parentMenuStore.useState("isActive", listItem.index);
-  const itemMetadata = React118.useMemo(() => ({
+  const itemMetadata = React119.useMemo(() => ({
     type: "submenu-trigger",
     setActive() {
       if (parentMenuStore.select("highlightItemOnHover")) {
@@ -33304,7 +34016,7 @@ function createMenuHandle() {
 var import_jsx_runtime27 = __toESM(require_jsx_runtime(), 1);
 "use client";
 function ContextMenuRoot(props) {
-  const [anchor, setAnchor] = React119.useState({
+  const [anchor, setAnchor] = React120.useState({
     getBoundingClientRect() {
       return DOMRect.fromRect({
         width: 0,
@@ -33314,14 +34026,14 @@ function ContextMenuRoot(props) {
       });
     }
   });
-  const backdropRef = React119.useRef(null);
-  const internalBackdropRef = React119.useRef(null);
-  const actionsRef = React119.useRef(null);
-  const positionerRef = React119.useRef(null);
-  const allowMouseUpTriggerRef = React119.useRef(true);
-  const initialCursorPointRef = React119.useRef(null);
+  const backdropRef = React120.useRef(null);
+  const internalBackdropRef = React120.useRef(null);
+  const actionsRef = React120.useRef(null);
+  const positionerRef = React120.useRef(null);
+  const allowMouseUpTriggerRef = React120.useRef(true);
+  const initialCursorPointRef = React120.useRef(null);
   const id = useId();
-  const contextValue = React119.useMemo(() => ({
+  const contextValue = React120.useMemo(() => ({
     anchor,
     setAnchor,
     actionsRef,
@@ -33336,17 +34048,17 @@ function ContextMenuRoot(props) {
     value: contextValue,
     children: /* @__PURE__ */ import_jsx_runtime27.jsx(MenuRootContext.Provider, {
       value: undefined,
-      children: /* @__PURE__ */ import_jsx_runtime27.jsx(exports_index_parts3.Root, {
+      children: /* @__PURE__ */ import_jsx_runtime27.jsx(exports_index_parts4.Root, {
         ...props
       })
     })
   });
 }
 // node_modules/@base-ui/react/context-menu/trigger/ContextMenuTrigger.mjs
-var React120 = __toESM(require_react(), 1);
+var React121 = __toESM(require_react(), 1);
 "use client";
 var LONG_PRESS_DELAY = 500;
-var ContextMenuTrigger = /* @__PURE__ */ React120.forwardRef(function ContextMenuTrigger2(componentProps, forwardedRef) {
+var ContextMenuTrigger = /* @__PURE__ */ React121.forwardRef(function ContextMenuTrigger2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -33368,11 +34080,11 @@ var ContextMenuTrigger = /* @__PURE__ */ React120.forwardRef(function ContextMen
   } = useMenuRootContext(false);
   const open = store.useState("open");
   const disabled2 = store.useState("disabled");
-  const triggerRef = React120.useRef(null);
-  const touchPositionRef = React120.useRef(null);
+  const triggerRef = React121.useRef(null);
+  const touchPositionRef = React121.useRef(null);
   const longPressTimeout = useTimeout();
   const allowMouseUpTimeout = useTimeout();
-  const allowMouseUpRef = React120.useRef(false);
+  const allowMouseUpRef = React121.useRef(false);
   function handleLongPress(x, y, event) {
     const isTouchEvent = event.type.startsWith("touch");
     initialCursorPointRef.current = {
@@ -33456,7 +34168,7 @@ var ContextMenuTrigger = /* @__PURE__ */ React120.forwardRef(function ContextMen
     longPressTimeout.clear();
     touchPositionRef.current = null;
   }
-  React120.useEffect(() => {
+  React121.useEffect(() => {
     function handleDocumentContextMenu(event) {
       if (disabled2) {
         return;
@@ -33493,15 +34205,15 @@ var ContextMenuTrigger = /* @__PURE__ */ React120.forwardRef(function ContextMen
 if (false)
   ;
 // src/kit/ui/context-menu.tsx
-var jsx_runtime10 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime12 = __toESM(require_jsx_runtime(), 1);
 function ContextMenu({ ...props }) {
-  return /* @__PURE__ */ jsx_runtime10.jsx(exports_index_parts4.Root, {
+  return /* @__PURE__ */ jsx_runtime12.jsx(exports_index_parts5.Root, {
     "data-slot": "context-menu",
     ...props
   });
 }
 function ContextMenuTrigger3({ className, ...props }) {
-  return /* @__PURE__ */ jsx_runtime10.jsx(exports_index_parts4.Trigger, {
+  return /* @__PURE__ */ jsx_runtime12.jsx(exports_index_parts5.Trigger, {
     "data-slot": "context-menu-trigger",
     className: cn("select-none", className),
     ...props
@@ -33517,8 +34229,8 @@ function ContextMenuContent({
   collisionPadding,
   ...props
 }) {
-  return /* @__PURE__ */ jsx_runtime10.jsx(exports_index_parts4.Portal, {
-    children: /* @__PURE__ */ jsx_runtime10.jsx(exports_index_parts4.Positioner, {
+  return /* @__PURE__ */ jsx_runtime12.jsx(exports_index_parts5.Portal, {
+    children: /* @__PURE__ */ jsx_runtime12.jsx(exports_index_parts5.Positioner, {
       className: "isolate z-50 outline-none",
       align,
       alignOffset,
@@ -33526,7 +34238,7 @@ function ContextMenuContent({
       sideOffset,
       ...collisionBoundary ? { collisionBoundary } : {},
       ...collisionPadding !== undefined ? { collisionPadding } : {},
-      children: /* @__PURE__ */ jsx_runtime10.jsx(exports_index_parts4.Popup, {
+      children: /* @__PURE__ */ jsx_runtime12.jsx(exports_index_parts5.Popup, {
         "data-slot": "context-menu-content",
         className: cn("z-50 max-h-(--available-height) min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 outline-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className),
         ...props
@@ -33540,7 +34252,7 @@ function ContextMenuItem({
   variant = "default",
   ...props
 }) {
-  return /* @__PURE__ */ jsx_runtime10.jsx(exports_index_parts4.Item, {
+  return /* @__PURE__ */ jsx_runtime12.jsx(exports_index_parts5.Item, {
     "data-slot": "context-menu-item",
     "data-inset": inset,
     "data-variant": variant,
@@ -33549,14 +34261,14 @@ function ContextMenuItem({
   });
 }
 function ContextMenuSeparator({ className, ...props }) {
-  return /* @__PURE__ */ jsx_runtime10.jsx(exports_index_parts4.Separator, {
+  return /* @__PURE__ */ jsx_runtime12.jsx(exports_index_parts5.Separator, {
     "data-slot": "context-menu-separator",
     className: cn("-mx-1 my-1 h-px bg-border", className),
     ...props
   });
 }
 function ContextMenuShortcut({ className, ...props }) {
-  return /* @__PURE__ */ jsx_runtime10.jsx("span", {
+  return /* @__PURE__ */ jsx_runtime12.jsx("span", {
     "data-slot": "context-menu-shortcut",
     className: cn("ml-auto text-xs tracking-widest text-muted-foreground group-focus/context-menu-item:text-accent-foreground", className),
     ...props
@@ -33564,16 +34276,16 @@ function ContextMenuShortcut({ className, ...props }) {
 }
 
 // src/kit/ui/empty.tsx
-var jsx_runtime11 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime13 = __toESM(require_jsx_runtime(), 1);
 function Empty({ className, ...props }) {
-  return /* @__PURE__ */ jsx_runtime11.jsx("div", {
+  return /* @__PURE__ */ jsx_runtime13.jsx("div", {
     "data-slot": "empty",
     className: cn("flex w-full min-w-0 flex-1 flex-col items-center justify-center gap-4 rounded-xl border-dashed p-6 text-center text-balance", className),
     ...props
   });
 }
 function EmptyHeader({ className, ...props }) {
-  return /* @__PURE__ */ jsx_runtime11.jsx("div", {
+  return /* @__PURE__ */ jsx_runtime13.jsx("div", {
     "data-slot": "empty-header",
     className: cn("flex max-w-sm flex-col items-center gap-2", className),
     ...props
@@ -33595,7 +34307,7 @@ function EmptyMedia({
   variant = "default",
   ...props
 }) {
-  return /* @__PURE__ */ jsx_runtime11.jsx("div", {
+  return /* @__PURE__ */ jsx_runtime13.jsx("div", {
     "data-slot": "empty-icon",
     "data-variant": variant,
     className: cn(emptyMediaVariants({ variant, className })),
@@ -33603,222 +34315,17 @@ function EmptyMedia({
   });
 }
 function EmptyTitle({ className, ...props }) {
-  return /* @__PURE__ */ jsx_runtime11.jsx("div", {
+  return /* @__PURE__ */ jsx_runtime13.jsx("div", {
     "data-slot": "empty-title",
     className: cn("text-sm font-medium tracking-tight", className),
     ...props
   });
 }
 function EmptyDescription({ className, ...props }) {
-  return /* @__PURE__ */ jsx_runtime11.jsx("div", {
+  return /* @__PURE__ */ jsx_runtime13.jsx("div", {
     "data-slot": "empty-description",
     className: cn("text-sm/relaxed text-muted-foreground [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary", className),
     ...props
-  });
-}
-
-// src/kit/context/AddPath.tsx
-var import_react12 = __toESM(require_react(), 1);
-var jsx_runtime12 = __toESM(require_jsx_runtime(), 1);
-var MAX_SUGGESTIONS = 8;
-function friendlyListError(raw, dir) {
-  if (/ENOENT/.test(raw))
-    return `No folder at ${dir}`;
-  if (/EACCES|EPERM/.test(raw))
-    return `Not allowed to read ${dir}`;
-  if (/ENOTDIR/.test(raw))
-    return `${dir} is a file, not a folder`;
-  return raw;
-}
-function splitForCompletion(typed) {
-  if (!typed.startsWith("/") && !typed.startsWith("~"))
-    return null;
-  if (typed === "~")
-    return { dir: "~", prefix: "" };
-  const i = typed.lastIndexOf("/");
-  if (i === -1)
-    return null;
-  return { dir: i === 0 ? "/" : typed.slice(0, i), prefix: typed.slice(i + 1) };
-}
-function AddPath({
-  listDir,
-  onAdd,
-  placeholder = "Add a file or folder by path…",
-  verb = "adds",
-  foldersOnly = false,
-  initialValue = "",
-  autoFocus = false,
-  onCancel,
-  className,
-  onPick,
-  openDown = false
-}) {
-  const [value, setValue] = import_react12.useState(initialValue);
-  const [listed, setListed] = import_react12.useState({
-    forValue: "",
-    entries: []
-  });
-  const suggestions = listed.forValue === value ? listed.entries : [];
-  const [error, setError] = import_react12.useState(null);
-  const [highlight, setHighlight] = import_react12.useState(-1);
-  const listId = import_react12.useId();
-  const seq = import_react12.useRef(0);
-  import_react12.useEffect(() => {
-    const split = splitForCompletion(value);
-    if (!split) {
-      setListed({ forValue: value, entries: [] });
-      setError(null);
-      return;
-    }
-    const mine = ++seq.current;
-    const t = setTimeout(async () => {
-      const listing = await listDir(split.dir);
-      if (mine !== seq.current)
-        return;
-      const p = split.prefix.toLowerCase();
-      setListed({
-        forValue: value,
-        entries: listing.entries.filter((e) => (!foldersOnly || e.dir) && e.name.toLowerCase().startsWith(p)).slice(0, MAX_SUGGESTIONS)
-      });
-      setError(listing.error && split.prefix === "" ? friendlyListError(listing.error, split.dir) : null);
-      setHighlight(-1);
-    }, 120);
-    return () => clearTimeout(t);
-  }, [value, listDir, foldersOnly]);
-  const complete = (e) => {
-    const dir = splitForCompletion(value)?.dir ?? "";
-    setValue(`${dir === "/" ? "" : dir}/${e.name}${e.dir ? "/" : ""}`);
-  };
-  const submit = (path2) => {
-    const p = path2.trim().replace(/\/+$/, "");
-    if (!p)
-      return;
-    onAdd(p);
-    setValue("");
-  };
-  return /* @__PURE__ */ jsx_runtime12.jsxs("div", {
-    className: cn("relative flex items-center gap-1 border-t border-edge p-2", className),
-    children: [
-      /* @__PURE__ */ jsx_runtime12.jsx(Input3, {
-        value,
-        onChange: (e) => setValue(e.target.value),
-        placeholder,
-        "aria-label": placeholder.replace(/…$/, ""),
-        autoFocus,
-        onBlur: () => {
-          if (onCancel && !suggestions.length)
-            onCancel();
-        },
-        role: "combobox",
-        "aria-autocomplete": "list",
-        "aria-expanded": suggestions.length > 0,
-        "aria-controls": listId,
-        "aria-activedescendant": highlight >= 0 ? `${listId}-${highlight}` : undefined,
-        spellCheck: false,
-        className: "h-8 min-w-0 flex-1 font-mono text-xs",
-        onKeyDown: (e) => {
-          if (e.key === "ArrowDown" && suggestions.length) {
-            e.preventDefault();
-            setHighlight((h) => (h + 1) % suggestions.length);
-          } else if (e.key === "ArrowUp" && suggestions.length) {
-            e.preventDefault();
-            setHighlight((h) => h <= 0 ? suggestions.length - 1 : h - 1);
-          } else if (e.key === "Tab" && suggestions.length) {
-            const pick = suggestions[highlight >= 0 ? highlight : 0];
-            if (pick) {
-              e.preventDefault();
-              complete(pick);
-            }
-          } else if (e.key === "Enter") {
-            e.preventDefault();
-            const pick = highlight >= 0 ? suggestions[highlight] : undefined;
-            submit(pick ? pick.path : value);
-          } else if (e.key === "Escape") {
-            if (suggestions.length || error) {
-              setListed({ forValue: "", entries: [] });
-              setError(null);
-            } else if (onCancel)
-              onCancel();
-            else
-              setValue("");
-          }
-        }
-      }),
-      onPick && !foldersOnly && /* @__PURE__ */ jsx_runtime12.jsx(Button3, {
-        variant: "ghost",
-        size: "icon-sm",
-        onClick: () => onPick("file"),
-        "aria-label": "Choose documents with the file picker",
-        title: "Choose documents with the file picker",
-        children: /* @__PURE__ */ jsx_runtime12.jsx(FileText, {})
-      }),
-      onPick && /* @__PURE__ */ jsx_runtime12.jsx(Button3, {
-        variant: "ghost",
-        size: "icon-sm",
-        onClick: () => onPick("folder"),
-        "aria-label": "Choose a folder with the file picker",
-        title: "Choose a folder with the file picker",
-        children: /* @__PURE__ */ jsx_runtime12.jsx(FolderOpen, {})
-      }),
-      (suggestions.length > 0 || error) && /* @__PURE__ */ jsx_runtime12.jsxs("div", {
-        className: cn("absolute right-2 left-2 z-10 rounded-md border border-edge bg-surface-raised p-1 shadow-lg", openDown ? "top-full mt-1" : "bottom-full mb-1"),
-        children: [
-          error && /* @__PURE__ */ jsx_runtime12.jsx("p", {
-            className: "px-2 py-1 text-xs text-attention",
-            children: error
-          }),
-          /* @__PURE__ */ jsx_runtime12.jsx("div", {
-            id: listId,
-            role: "listbox",
-            "aria-label": "Matching files and folders",
-            className: "max-h-64 overflow-auto",
-            children: suggestions.map((s, i) => /* @__PURE__ */ jsx_runtime12.jsxs("div", {
-              id: `${listId}-${i}`,
-              role: "option",
-              tabIndex: -1,
-              "aria-selected": i === highlight,
-              className: cn("flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1 font-mono text-xs text-ink-dim", i === highlight ? "bg-edge text-ink" : "hover:bg-edge/60"),
-              onMouseDown: (e) => {
-                e.preventDefault();
-                if (s.dir)
-                  complete(s);
-                else
-                  submit(s.path);
-              },
-              children: [
-                s.dir ? /* @__PURE__ */ jsx_runtime12.jsx(Folder, {
-                  "aria-hidden": true,
-                  className: "size-3.5 shrink-0"
-                }) : /* @__PURE__ */ jsx_runtime12.jsx(FileText, {
-                  "aria-hidden": true,
-                  className: "size-3.5 shrink-0"
-                }),
-                /* @__PURE__ */ jsx_runtime12.jsx("span", {
-                  className: "truncate",
-                  children: s.name
-                }),
-                s.dir && /* @__PURE__ */ jsx_runtime12.jsx("span", {
-                  className: "ml-auto text-ink-faint",
-                  children: "/"
-                })
-              ]
-            }, s.path))
-          }),
-          /* @__PURE__ */ jsx_runtime12.jsxs("p", {
-            className: "flex items-center gap-1 px-2 pt-1 text-[10px] text-ink-faint",
-            children: [
-              /* @__PURE__ */ jsx_runtime12.jsx(CornerDownLeft, {
-                "aria-hidden": true,
-                className: "size-3"
-              }),
-              " ",
-              verb,
-              " · Tab completes"
-            ]
-          })
-        ]
-      })
-    ]
   });
 }
 
@@ -35374,12 +35881,12 @@ var __spreadValues2 = (a, b) => {
 var __spreadProps2 = (a, b) => __defProps2(a, __getOwnPropDescs2(b));
 
 // node_modules/@headless-tree/react/dist/index.mjs
-var import_react13 = __toESM(require_react(), 1);
 var import_react14 = __toESM(require_react(), 1);
+var import_react15 = __toESM(require_react(), 1);
 var useTree = (config) => {
-  const [tree] = import_react14.useState(() => ({ current: createTree(config) }));
-  const [state, setState] = import_react14.useState(() => tree.current.getState());
-  import_react14.useEffect(() => {
+  const [tree] = import_react15.useState(() => ({ current: createTree(config) }));
+  const [state, setState] = import_react15.useState(() => tree.current.getState());
+  import_react15.useEffect(() => {
     tree.current.setMounted(true);
     tree.current.rebuildTree();
     return () => {
@@ -35398,16 +35905,16 @@ var useTree = (config) => {
 };
 
 // src/kit/context/EntryTree.tsx
-var import_react16 = __toESM(require_react(), 1);
+var import_react17 = __toESM(require_react(), 1);
 var import_react_dom4 = __toESM(require_react_dom(), 1);
 
 // src/kit/context/menus.tsx
-var jsx_runtime13 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime14 = __toESM(require_jsx_runtime(), 1);
 function MoveToItem({ onAsk }) {
-  return /* @__PURE__ */ jsx_runtime13.jsxs(ContextMenuItem, {
+  return /* @__PURE__ */ jsx_runtime14.jsxs(ContextMenuItem, {
     onClick: onAsk,
     children: [
-      /* @__PURE__ */ jsx_runtime13.jsx(FolderInput, {}),
+      /* @__PURE__ */ jsx_runtime14.jsx(FolderInput, {}),
       "Move to…"
     ]
   });
@@ -35415,10 +35922,10 @@ function MoveToItem({ onAsk }) {
 function AppMenuItems({ actions }) {
   if (actions.length === 0)
     return null;
-  return /* @__PURE__ */ jsx_runtime13.jsxs(jsx_runtime13.Fragment, {
+  return /* @__PURE__ */ jsx_runtime14.jsxs(jsx_runtime14.Fragment, {
     children: [
-      /* @__PURE__ */ jsx_runtime13.jsx(ContextMenuSeparator, {}),
-      actions.map((a) => /* @__PURE__ */ jsx_runtime13.jsxs(ContextMenuItem, {
+      /* @__PURE__ */ jsx_runtime14.jsx(ContextMenuSeparator, {}),
+      actions.map((a) => /* @__PURE__ */ jsx_runtime14.jsxs(ContextMenuItem, {
         disabled: a.disabled,
         variant: a.destructive ? "destructive" : "default",
         onClick: a.onSelect,
@@ -35456,293 +35963,28 @@ function dropNotice(skipped, folders, svg = []) {
 }
 var revealLabel = () => /Mac/i.test(navigator.userAgent) ? "Reveal in Finder" : "Show in file manager";
 function RevealItem({ onReveal }) {
-  return /* @__PURE__ */ jsx_runtime13.jsxs(ContextMenuItem, {
+  return /* @__PURE__ */ jsx_runtime14.jsxs(ContextMenuItem, {
     onClick: onReveal,
     children: [
-      /* @__PURE__ */ jsx_runtime13.jsx(FolderSearch, {}),
+      /* @__PURE__ */ jsx_runtime14.jsx(FolderSearch, {}),
       revealLabel()
     ]
   });
 }
 function DeleteItem({ onDelete }) {
-  return /* @__PURE__ */ jsx_runtime13.jsxs(jsx_runtime13.Fragment, {
+  return /* @__PURE__ */ jsx_runtime14.jsxs(jsx_runtime14.Fragment, {
     children: [
-      /* @__PURE__ */ jsx_runtime13.jsx(ContextMenuSeparator, {}),
-      /* @__PURE__ */ jsx_runtime13.jsxs(ContextMenuItem, {
+      /* @__PURE__ */ jsx_runtime14.jsx(ContextMenuSeparator, {}),
+      /* @__PURE__ */ jsx_runtime14.jsxs(ContextMenuItem, {
         variant: "destructive",
         onClick: onDelete,
         children: [
-          /* @__PURE__ */ jsx_runtime13.jsx(Trash2, {}),
+          /* @__PURE__ */ jsx_runtime14.jsx(Trash2, {}),
           "Move to Trash…"
         ]
       })
     ]
   });
-}
-
-// src/kit/lib/sidecar.ts
-var SIDECAR_SUFFIX = ".md";
-var SIDECAR_NAME = new RegExp(`(?:${IMAGE_EXTENSIONS.map((e) => e.replace(".", "\\.")).join("|")})\\.md$`, "i");
-function isSidecarName(name) {
-  return SIDECAR_NAME.test(name);
-}
-function imageOfSidecar(name) {
-  if (!isSidecarName(name))
-    return null;
-  const image = name.slice(0, -SIDECAR_SUFFIX.length);
-  return isImageName(image) ? image : null;
-}
-
-// src/kit/context/model.ts
-function baseName(rel) {
-  const i = rel.lastIndexOf("/");
-  return i === -1 ? rel : rel.slice(i + 1);
-}
-function nodeLabel(node) {
-  return node.kind === "bundle" ? bundleDisplayName(baseName(node.rel), node.title) : baseName(node.rel);
-}
-function docPathOf(root2, node) {
-  return joinPath(root2, node.kind === "bundle" ? `${node.rel}/${node.main}` : node.rel);
-}
-function joinPath(root2, rel) {
-  return root2.endsWith("/") ? `${root2}${rel}` : `${root2}/${rel}`;
-}
-function tildify(path2, home) {
-  if (!home)
-    return path2;
-  if (path2 === home)
-    return "~";
-  return path2.startsWith(`${home}/`) ? `~${path2.slice(home.length)}` : path2;
-}
-function shortPath(path2, home, keep = 2) {
-  const t = tildify(path2, home);
-  const parts = t.split("/");
-  const lead = t.startsWith("~") ? 1 : t.startsWith("/") ? 1 : 0;
-  if (parts.length - lead <= keep + 1)
-    return t;
-  return `…/${parts.slice(-keep).join("/")}`;
-}
-var collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
-function sortNodes(nodes) {
-  return [...nodes].sort((a, b) => {
-    const ag = a.kind === "group";
-    const bg = b.kind === "group";
-    if (ag !== bg)
-      return ag ? -1 : 1;
-    return collator.compare(nodeLabel(a), nodeLabel(b));
-  });
-}
-function docsIn(nodes) {
-  const out = [];
-  for (const n of nodes) {
-    if (n.kind === "doc" || n.kind === "bundle")
-      out.push(n);
-    else if (n.kind === "group")
-      out.push(...docsIn(n.children));
-  }
-  return out;
-}
-function imagesIn(nodes) {
-  const out = [];
-  for (const n of nodes) {
-    if (n.kind === "image")
-      out.push(n);
-    else if (n.kind === "group")
-      out.push(...imagesIn(n.children));
-  }
-  return out;
-}
-function foldSidecars(nodes) {
-  const sidecars = new Map;
-  const walk = (list2) => {
-    const images = new Set(list2.filter((n) => n.kind === "image").map((n) => n.rel));
-    const out = [];
-    for (const n of list2) {
-      if (n.kind === "group") {
-        out.push({ ...n, children: walk(n.children) });
-        continue;
-      }
-      if (n.kind === "bundle" && n.contents) {
-        out.push({ ...n, contents: walk(n.contents) });
-        continue;
-      }
-      const image = n.kind === "doc" && n.sidecar ? imageOfSidecar(n.rel) : null;
-      if (image !== null && images.has(image)) {
-        sidecars.set(image, n.rel);
-        continue;
-      }
-      out.push(n);
-    }
-    return out;
-  };
-  return { nodes: walk(nodes), sidecars };
-}
-function countEntry(nodes) {
-  const folded = foldSidecars(nodes).nodes;
-  return { docs: docsIn(folded).length, images: imagesIn(folded).length };
-}
-function foldListedSidecars(entries) {
-  const imageEntry = new Map;
-  for (const e of entries) {
-    const only = singleFile(e);
-    if (only?.kind === "image")
-      imageEntry.set(joinPath(e.root, only.rel), e.id);
-  }
-  const described = new Map;
-  const out = [];
-  for (const e of entries) {
-    const only = singleFile(e);
-    if (only?.kind === "doc" && only.sidecar) {
-      const path2 = joinPath(e.root, only.rel);
-      const image = imageOfSidecar(path2);
-      const id = image === null ? undefined : imageEntry.get(image);
-      if (id !== undefined) {
-        described.set(id, e);
-        continue;
-      }
-    }
-    out.push(e);
-  }
-  return { entries: out, described };
-}
-function countsInWords(docs, images) {
-  const d = `${docs} ${docs === 1 ? "document" : "documents"}`;
-  return images > 0 ? `${d}, ${images} ${images === 1 ? "image" : "images"}` : d;
-}
-function singleDoc(entry) {
-  if (entry.membership !== "listed")
-    return null;
-  const [only, ...rest] = entry.nodes;
-  return only && rest.length === 0 && only.kind === "doc" ? only : null;
-}
-function singleFile(entry) {
-  if (entry.membership !== "listed")
-    return null;
-  const [only, ...rest] = entry.nodes;
-  return only && rest.length === 0 && only.kind !== "group" ? only : null;
-}
-function entryPath(entry) {
-  const only = singleFile(entry);
-  return only ? joinPath(entry.root, only.rel) : entry.root;
-}
-var ROOT_ID = "/";
-function indexTree(all) {
-  const { nodes, sidecars } = foldSidecars(all);
-  const imageOf = new Map([...sidecars].map(([image, sidecar]) => [sidecar, image]));
-  const byId = new Map;
-  const children = new Map;
-  const bundleOf2 = new Map;
-  const walk = (parent, list2) => {
-    const sorted = sortNodes(list2);
-    children.set(parent, sorted.map((n) => n.rel));
-    for (const n of sorted) {
-      byId.set(n.rel, n);
-      if (n.kind === "group")
-        walk(n.rel, n.children);
-      else if (n.kind === "bundle") {
-        bundleOf2.set(`${n.rel}/${n.main}`, n.rel);
-        if (n.contents)
-          walk(n.rel, n.contents);
-      }
-    }
-  };
-  walk(ROOT_ID, nodes);
-  return { byId, children, sidecars, imageOf, bundleOf: bundleOf2 };
-}
-function rowHolds(node, activeRel) {
-  if (activeRel === null)
-    return false;
-  return node.kind === "bundle" ? activeRel === node.rel || activeRel === `${node.rel}/${node.main}` : activeRel === node.rel;
-}
-function ancestorsOf(rel) {
-  const parts = rel.split("/");
-  const out = [];
-  for (let i = 1;i < parts.length; i++)
-    out.push(parts.slice(0, i).join("/"));
-  return out;
-}
-function dirOf(path2) {
-  const i = path2.lastIndexOf("/");
-  return i <= 0 ? "/" : path2.slice(0, i);
-}
-function moveTargets(entries, item, workspace = null) {
-  const here = dirOf(item);
-  const out = [];
-  const offer = (t) => {
-    if (t.path === here || t.path === item || t.path.startsWith(`${item}/`))
-      return;
-    if (!out.some((o) => o.path === t.path))
-      out.push(t);
-  };
-  const wholeSet = entries.some((e) => e.membership === "mirrored" && e.root === item);
-  if (workspace && !wholeSet)
-    offer({ label: "Workspace", path: workspace, kind: "workspace" });
-  const folders = (e, nodes, at = e.label) => {
-    for (const n of nodes) {
-      if (n.kind === "bundle" && n.contents) {
-        const name = nodeLabel(n);
-        const inside = (rel) => rel.slice(n.rel.length + 1);
-        const members = (list2) => {
-          for (const m of list2) {
-            if (m.kind !== "group")
-              continue;
-            const path2 = joinPath(e.root, m.rel);
-            const place = bundlePlace(path2);
-            if (place !== "member" && place !== "member-folder")
-              continue;
-            const label = `${name}/${inside(m.rel)}`;
-            offer({ label: at ? `${at}/${label}` : label, path: path2, kind: "folder" });
-            members(m.children);
-          }
-        };
-        members(n.contents);
-      }
-      if (n.kind !== "group")
-        continue;
-      offer({ label: `${at}/${n.rel}`, path: joinPath(e.root, n.rel), kind: "folder" });
-      folders(e, n.children, at);
-    }
-  };
-  for (const e of entries) {
-    if (e.membership !== "mirrored") {
-      const only = singleFile(e);
-      if (only?.kind === "bundle" && only.contents)
-        folders(e, [only], "");
-      continue;
-    }
-    offer({ label: e.label, path: e.root, kind: "set" });
-    folders(e, e.nodes);
-  }
-  return out;
-}
-function filterMoveTargets(targets, query) {
-  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
-  if (words.length === 0)
-    return [...targets];
-  return targets.filter((t) => {
-    const label = t.label.toLowerCase();
-    return words.every((w) => label.includes(w));
-  });
-}
-function splitDropped(files) {
-  const docs = [];
-  const images = [];
-  const svg = [];
-  const skipped = [];
-  files.forEach((f, i) => {
-    if (isDocName(f.name))
-      docs.push(i);
-    else if (isImageName(f.name) || isHeicName(f.name))
-      images.push(i);
-    else if (isSvgName(f.name))
-      svg.push(f.name);
-    else
-      skipped.push(f.name);
-  });
-  return { docs, images, svg, skipped };
-}
-function docAt(docs, path2) {
-  return docs.find((d) => d.original === path2);
 }
 
 // src/kit/context/rowDrag.ts
@@ -35792,7 +36034,7 @@ function rowKindOf(node) {
 }
 
 // src/kit/context/EntryTree.tsx
-var jsx_runtime14 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime15 = __toESM(require_jsx_runtime(), 1);
 var INDENT_PX = 14;
 var NO_ROWS = [];
 var ROOT_NODE = { kind: "group", rel: ROOT_ID, children: [] };
@@ -35805,10 +36047,10 @@ function NewBundleItems({
   dir,
   onStructure
 }) {
-  return bundleTypes().map((t) => /* @__PURE__ */ jsx_runtime14.jsxs(ContextMenuItem, {
+  return bundleTypes().map((t) => /* @__PURE__ */ jsx_runtime15.jsxs(ContextMenuItem, {
     onClick: () => onStructure({ op: "bundle.create", dir, extension: t.extension }),
     children: [
-      /* @__PURE__ */ jsx_runtime14.jsx(BundleIcon, {
+      /* @__PURE__ */ jsx_runtime15.jsx(BundleIcon, {
         type: t
       }),
       "New ",
@@ -35817,10 +36059,10 @@ function NewBundleItems({
   }, t.extension));
 }
 function DuplicateItem({ onDuplicate }) {
-  return /* @__PURE__ */ jsx_runtime14.jsxs(ContextMenuItem, {
+  return /* @__PURE__ */ jsx_runtime15.jsxs(ContextMenuItem, {
     onClick: onDuplicate,
     children: [
-      /* @__PURE__ */ jsx_runtime14.jsx(CopyPlus, {}),
+      /* @__PURE__ */ jsx_runtime15.jsx(CopyPlus, {}),
       "Duplicate"
     ]
   });
@@ -35850,9 +36092,9 @@ function EntryTree({
   onSelect,
   onAddRef
 }) {
-  const index4 = import_react16.useMemo(() => indexTree(entry.nodes), [entry.nodes]);
+  const index4 = import_react17.useMemo(() => indexTree(entry.nodes), [entry.nodes]);
   const shownRel = activeRel === null ? null : activeRaw && index4.byId.get(activeRel)?.kind === "file" ? activeRel : index4.imageOf.get(activeRel) ?? index4.bundleOf.get(activeRel) ?? activeRel;
-  const indexRef = import_react16.useRef(index4);
+  const indexRef = import_react17.useRef(index4);
   indexRef.current = index4;
   const pathOf = (id) => id === ROOT_ID ? entry.root : joinPath(entry.root, id);
   const dirFor = (id) => {
@@ -35861,11 +36103,11 @@ function EntryTree({
     const node = indexRef.current.byId.get(id);
     return node ? dropDirOf(entry.root, node) : dirOf(joinPath(entry.root, id));
   };
-  const foreignHandled = import_react16.useRef(false);
-  const selectedIds = import_react16.useMemo(() => selected.filter((p) => p.startsWith(`${entry.root}/`)).map((p) => p.slice(entry.root.length + 1)).filter((id) => index4.byId.has(id)), [selected, entry.root, index4]);
-  const plainClick = import_react16.useRef(false);
-  const unreported = import_react16.useRef(false);
-  const selectedRef = import_react16.useRef(selected);
+  const foreignHandled = import_react17.useRef(false);
+  const selectedIds = import_react17.useMemo(() => selected.filter((p) => p.startsWith(`${entry.root}/`)).map((p) => p.slice(entry.root.length + 1)).filter((id) => index4.byId.has(id)), [selected, entry.root, index4]);
+  const plainClick = import_react17.useRef(false);
+  const unreported = import_react17.useRef(false);
+  const selectedRef = import_react17.useRef(selected);
   selectedRef.current = selected;
   const tree = useTree({
     rootItemId: ROOT_ID,
@@ -35938,10 +36180,10 @@ function EntryTree({
       renamingFeature
     ]
   });
-  import_react16.useEffect(() => {
+  import_react17.useEffect(() => {
     tree.rebuildTree();
   }, [index4, tree]);
-  import_react16.useEffect(() => {
+  import_react17.useEffect(() => {
     if (!focusPath?.startsWith(`${entry.root}/`))
       return;
     const rel = focusPath.slice(entry.root.length + 1);
@@ -35953,7 +36195,7 @@ function EntryTree({
     tree.updateDomFocus();
     onFocused?.();
   }, [focusPath, index4, entry.root, tree, onFocused]);
-  import_react16.useEffect(() => {
+  import_react17.useEffect(() => {
     if (!renamePath?.startsWith(`${entry.root}/`))
       return;
     const rel = renamePath.slice(entry.root.length + 1);
@@ -35964,9 +36206,9 @@ function EntryTree({
     tree.getItemInstance(rel)?.startRenaming();
     onRenameStarted();
   }, [renamePath, index4, entry.root, tree, onRenameStarted]);
-  const revealed = import_react16.useRef(null);
-  const [scrollTo, setScrollTo] = import_react16.useState(null);
-  import_react16.useEffect(() => {
+  const revealed = import_react17.useRef(null);
+  const [scrollTo, setScrollTo] = import_react17.useState(null);
+  import_react17.useEffect(() => {
     if (shownRel === revealed.current)
       return;
     if (shownRel !== null && !index4.byId.has(shownRel))
@@ -35981,7 +36223,7 @@ function EntryTree({
     }
     setScrollTo(shownRel);
   }, [shownRel, index4, tree]);
-  import_react16.useEffect(() => {
+  import_react17.useEffect(() => {
     if (scrollTo === null)
       return;
     let timer;
@@ -36019,8 +36261,8 @@ function EntryTree({
       watcher?.disconnect();
     };
   }, [scrollTo, tree]);
-  const [menuFor, setMenuFor] = import_react16.useState(null);
-  const [bgDrop, setBgDrop] = import_react16.useState(false);
+  const [menuFor, setMenuFor] = import_react17.useState(null);
+  const [bgDrop, setBgDrop] = import_react17.useState(false);
   const renameItem = (rel) => tree.getItemInstance(rel)?.startRenaming();
   const onBgDragOver = (e) => {
     if (e.target.closest('[role="treeitem"]'))
@@ -36058,27 +36300,27 @@ function EntryTree({
   const menuOpens = menuFor !== null && menuFor.kind !== "group" && (menuFor.kind !== "file" || isBundleMain(menuPath));
   const menuExpands = menuFor?.kind === "bundle" && menuFor.contents !== undefined;
   const menuItem = menuFor ? tree.getItemInstance(menuFor.rel) : undefined;
-  return /* @__PURE__ */ jsx_runtime14.jsxs(ContextMenu, {
+  return /* @__PURE__ */ jsx_runtime15.jsxs(ContextMenu, {
     onOpenChange: (open) => {
       if (!open)
         setMenuFor(null);
     },
     children: [
-      /* @__PURE__ */ jsx_runtime14.jsxs(ContextMenuTrigger3, {
-        render: /* @__PURE__ */ jsx_runtime14.jsx("div", {
+      /* @__PURE__ */ jsx_runtime15.jsxs(ContextMenuTrigger3, {
+        render: /* @__PURE__ */ jsx_runtime15.jsx("div", {
           onDragOver: onBgDragOver,
           onDragLeave: () => setBgDrop(false),
           onDrop: onBgDrop,
           className: cn("flex min-h-full flex-col rounded-md", bgDrop && "bg-brand/8 ring-1 ring-brand/40 ring-inset")
         }),
         children: [
-          items.length === 0 ? /* @__PURE__ */ jsx_runtime14.jsx("p", {
+          items.length === 0 ? /* @__PURE__ */ jsx_runtime15.jsx("p", {
             className: "px-3 py-4 text-xs text-ink-dim",
             children: "This folder has no documents yet. Right-click to make one, or drop files here."
-          }) : /* @__PURE__ */ jsx_runtime14.jsx("div", {
+          }) : /* @__PURE__ */ jsx_runtime15.jsx("div", {
             ...tree.getContainerProps(`${entry.label} documents`),
             className: "flex flex-col py-1 outline-none",
-            children: items.map((item) => /* @__PURE__ */ jsx_runtime14.jsx(Row2, {
+            children: items.map((item) => /* @__PURE__ */ jsx_runtime15.jsx(Row2, {
               item,
               stale: !index4.byId.has(item.getId()),
               badge: item.getItemData().kind === "group" ? folderBadgeFor(pathOf(item.getId())) : item.getItemData().kind === "file" ? null : badgeFor2(docPathOf(entry.root, item.getItemData())),
@@ -36093,89 +36335,89 @@ function EntryTree({
               thumb: thumbFor && item.getItemData().kind === "image" ? thumbFor(pathOf(item.getId())) : undefined
             }, item.getId()))
           }),
-          /* @__PURE__ */ jsx_runtime14.jsx("div", {
+          /* @__PURE__ */ jsx_runtime15.jsx("div", {
             className: "min-h-8 flex-1"
           })
         ]
       }),
-      /* @__PURE__ */ jsx_runtime14.jsxs(ContextMenuContent, {
+      /* @__PURE__ */ jsx_runtime15.jsxs(ContextMenuContent, {
         children: [
-          menuFor && menuOpens && /* @__PURE__ */ jsx_runtime14.jsxs(ContextMenuItem, {
+          menuFor && menuOpens && /* @__PURE__ */ jsx_runtime15.jsxs(ContextMenuItem, {
             onClick: () => onOpenDoc(menuFor.rel),
             children: [
-              menuFor.kind === "image" ? /* @__PURE__ */ jsx_runtime14.jsx(Image, {}) : menuFor.kind === "bundle" ? /* @__PURE__ */ jsx_runtime14.jsx(BundleIcon, {
+              menuFor.kind === "image" ? /* @__PURE__ */ jsx_runtime15.jsx(Image, {}) : menuFor.kind === "bundle" ? /* @__PURE__ */ jsx_runtime15.jsx(BundleIcon, {
                 type: bundleTypeOf(menuFor.rel)
-              }) : menuFor.kind === "file" ? /* @__PURE__ */ jsx_runtime14.jsx(FileBraces, {}) : /* @__PURE__ */ jsx_runtime14.jsx(FileText, {}),
+              }) : menuFor.kind === "file" ? /* @__PURE__ */ jsx_runtime15.jsx(FileBraces, {}) : /* @__PURE__ */ jsx_runtime15.jsx(FileText, {}),
               "Open"
             ]
           }),
-          menuExpands && menuItem && /* @__PURE__ */ jsx_runtime14.jsxs(ContextMenuItem, {
+          menuExpands && menuItem && /* @__PURE__ */ jsx_runtime15.jsxs(ContextMenuItem, {
             onClick: () => menuItem.isExpanded() ? menuItem.collapse() : menuItem.expand(),
             children: [
-              /* @__PURE__ */ jsx_runtime14.jsx(ChevronRight, {
+              /* @__PURE__ */ jsx_runtime15.jsx(ChevronRight, {
                 className: cn(menuItem.isExpanded() && "rotate-90")
               }),
               menuItem.isExpanded() ? "Hide contents" : "Show contents"
             ]
           }),
-          menuFor && onAddRef && menuOpens && menuFor.kind !== "file" && /* @__PURE__ */ jsx_runtime14.jsx(AddRefItem, {
+          menuFor && onAddRef && menuOpens && menuFor.kind !== "file" && /* @__PURE__ */ jsx_runtime15.jsx(AddRefItem, {
             onAdd: () => onAddRef(docPathOf(entry.root, menuFor), nodeLabel(menuFor))
           }),
-          menuFor?.kind === "image" && /* @__PURE__ */ jsx_runtime14.jsx(DescriptionItem, {
+          menuFor?.kind === "image" && /* @__PURE__ */ jsx_runtime15.jsx(DescriptionItem, {
             sidecar: menuSidecar,
             onEdit: (rel) => onOpenDoc(rel),
             onAsk: onAskDescribe ? () => onAskDescribe(menuPath) : undefined
           }),
-          menuMakes && /* @__PURE__ */ jsx_runtime14.jsxs(jsx_runtime14.Fragment, {
+          menuMakes && /* @__PURE__ */ jsx_runtime15.jsxs(jsx_runtime15.Fragment, {
             children: [
-              /* @__PURE__ */ jsx_runtime14.jsxs(ContextMenuItem, {
+              /* @__PURE__ */ jsx_runtime15.jsxs(ContextMenuItem, {
                 onClick: () => onStructure({ op: "doc.create", dir: menuDir }),
                 children: [
-                  /* @__PURE__ */ jsx_runtime14.jsx(FilePlus, {}),
+                  /* @__PURE__ */ jsx_runtime15.jsx(FilePlus, {}),
                   "New document"
                 ]
               }),
-              /* @__PURE__ */ jsx_runtime14.jsxs(ContextMenuItem, {
+              /* @__PURE__ */ jsx_runtime15.jsxs(ContextMenuItem, {
                 onClick: () => onStructure({ op: "folder.create", dir: menuDir }),
                 children: [
-                  /* @__PURE__ */ jsx_runtime14.jsx(FolderPlus, {}),
+                  /* @__PURE__ */ jsx_runtime15.jsx(FolderPlus, {}),
                   "New folder"
                 ]
               }),
-              menuPlace === null && /* @__PURE__ */ jsx_runtime14.jsx(NewBundleItems, {
+              menuPlace === null && /* @__PURE__ */ jsx_runtime15.jsx(NewBundleItems, {
                 dir: menuDir,
                 onStructure
               })
             ]
           }),
-          menuFor && menuActs && /* @__PURE__ */ jsx_runtime14.jsxs(jsx_runtime14.Fragment, {
+          menuFor && menuActs && /* @__PURE__ */ jsx_runtime15.jsxs(jsx_runtime15.Fragment, {
             children: [
-              /* @__PURE__ */ jsx_runtime14.jsx(ContextMenuSeparator, {}),
-              /* @__PURE__ */ jsx_runtime14.jsxs(ContextMenuItem, {
+              /* @__PURE__ */ jsx_runtime15.jsx(ContextMenuSeparator, {}),
+              /* @__PURE__ */ jsx_runtime15.jsxs(ContextMenuItem, {
                 onClick: () => renameItem(menuFor.rel),
                 children: [
-                  /* @__PURE__ */ jsx_runtime14.jsx(Pencil, {}),
+                  /* @__PURE__ */ jsx_runtime15.jsx(Pencil, {}),
                   "Rename",
-                  /* @__PURE__ */ jsx_runtime14.jsx(ContextMenuShortcut, {
+                  /* @__PURE__ */ jsx_runtime15.jsx(ContextMenuShortcut, {
                     children: "F2"
                   })
                 ]
               }),
-              (menuFor.kind === "doc" || menuFor.kind === "bundle") && /* @__PURE__ */ jsx_runtime14.jsx(DuplicateItem, {
+              (menuFor.kind === "doc" || menuFor.kind === "bundle") && /* @__PURE__ */ jsx_runtime15.jsx(DuplicateItem, {
                 onDuplicate: () => onStructure({ op: "duplicate", path: menuPath })
               }),
-              /* @__PURE__ */ jsx_runtime14.jsx(MoveToItem, {
+              /* @__PURE__ */ jsx_runtime15.jsx(MoveToItem, {
                 onAsk: () => onAskMove(menuPath)
               })
             ]
           }),
-          /* @__PURE__ */ jsx_runtime14.jsx(RevealItem, {
+          /* @__PURE__ */ jsx_runtime15.jsx(RevealItem, {
             onReveal: () => onReveal(menuPath)
           }),
-          !(menuFor?.kind === "group" && menuPlace === "own") && /* @__PURE__ */ jsx_runtime14.jsx(AppMenuItems, {
+          !(menuFor?.kind === "group" && menuPlace === "own") && /* @__PURE__ */ jsx_runtime15.jsx(AppMenuItems, {
             actions: appActionsFor({ kind: menuKind, path: menuPath, entry })
           }),
-          menuFor && menuActs && onDelete && /* @__PURE__ */ jsx_runtime14.jsx(DeleteItem, {
+          menuFor && menuActs && onDelete && /* @__PURE__ */ jsx_runtime15.jsx(DeleteItem, {
             onDelete: () => onDelete(menuPath)
           })
         ]
@@ -36184,10 +36426,10 @@ function EntryTree({
   });
 }
 function AddRefItem({ onAdd }) {
-  return /* @__PURE__ */ jsx_runtime14.jsxs(ContextMenuItem, {
+  return /* @__PURE__ */ jsx_runtime15.jsxs(ContextMenuItem, {
     onClick: onAdd,
     children: [
-      /* @__PURE__ */ jsx_runtime14.jsx(BookmarkPlus, {}),
+      /* @__PURE__ */ jsx_runtime15.jsx(BookmarkPlus, {}),
       "Add as reference"
     ]
   });
@@ -36198,34 +36440,34 @@ function DescriptionItem({
   onAsk
 }) {
   if (sidecar !== undefined)
-    return /* @__PURE__ */ jsx_runtime14.jsxs(ContextMenuItem, {
+    return /* @__PURE__ */ jsx_runtime15.jsxs(ContextMenuItem, {
       onClick: () => onEdit(sidecar),
       children: [
-        /* @__PURE__ */ jsx_runtime14.jsx(FilePenLine, {}),
+        /* @__PURE__ */ jsx_runtime15.jsx(FilePenLine, {}),
         "Edit description"
       ]
     });
   if (!onAsk)
     return null;
-  return /* @__PURE__ */ jsx_runtime14.jsxs(ContextMenuItem, {
+  return /* @__PURE__ */ jsx_runtime15.jsxs(ContextMenuItem, {
     onClick: onAsk,
     children: [
-      /* @__PURE__ */ jsx_runtime14.jsx(MessageSquareText, {}),
+      /* @__PURE__ */ jsx_runtime15.jsx(MessageSquareText, {}),
       "Ask the agent to describe"
     ]
   });
 }
 function DescribedMark() {
-  return /* @__PURE__ */ jsx_runtime14.jsxs("span", {
+  return /* @__PURE__ */ jsx_runtime15.jsxs("span", {
     "data-slot": "described-mark",
     title: "Has a description",
     className: "flex shrink-0 items-center text-ink-faint",
     children: [
-      /* @__PURE__ */ jsx_runtime14.jsx(TextQuote, {
+      /* @__PURE__ */ jsx_runtime15.jsx(TextQuote, {
         "aria-hidden": true,
         className: "size-3"
       }),
-      /* @__PURE__ */ jsx_runtime14.jsx("span", {
+      /* @__PURE__ */ jsx_runtime15.jsx("span", {
         className: "sr-only",
         children: ", has a description"
       })
@@ -36237,12 +36479,12 @@ function BundleIcon({
   className
 }) {
   if (!type?.icon)
-    return /* @__PURE__ */ jsx_runtime14.jsx(Package, {
+    return /* @__PURE__ */ jsx_runtime15.jsx(Package, {
       "aria-hidden": true,
       "data-format": "bundle",
       className
     });
-  return /* @__PURE__ */ jsx_runtime14.jsx("span", {
+  return /* @__PURE__ */ jsx_runtime15.jsx("span", {
     "aria-hidden": true,
     "data-format": "bundle",
     "data-bundle": type.type,
@@ -36253,21 +36495,21 @@ function BundleIcon({
 function DocIcon({ name, className }) {
   const bundle = bundleTypeOf(name);
   if (bundle)
-    return /* @__PURE__ */ jsx_runtime14.jsx(BundleIcon, {
+    return /* @__PURE__ */ jsx_runtime15.jsx(BundleIcon, {
       type: bundle,
       className
     });
   if (isImageName(name))
-    return /* @__PURE__ */ jsx_runtime14.jsx(Image, {
+    return /* @__PURE__ */ jsx_runtime15.jsx(Image, {
       "aria-hidden": true,
       "data-format": "image",
       className
     });
-  return docFormat(name) === "json" ? /* @__PURE__ */ jsx_runtime14.jsx(FileBraces, {
+  return docFormat(name) === "json" ? /* @__PURE__ */ jsx_runtime15.jsx(FileBraces, {
     "aria-hidden": true,
     "data-format": "json",
     className
-  }) : /* @__PURE__ */ jsx_runtime14.jsx(FileText, {
+  }) : /* @__PURE__ */ jsx_runtime15.jsx(FileText, {
     "aria-hidden": true,
     className
   });
@@ -36300,23 +36542,23 @@ function Row2({
   const tone = item.isDragTarget() ? "bg-brand/15 text-ink ring-1 ring-brand/50 ring-inset" : isActive ? "bg-selected/15 font-medium text-ink" : refSelected ? "bg-brand/10 text-ink" : item.isSelected() ? "bg-surface-raised text-ink" : cn(item.isFocused() && "bg-surface-raised/60", node.kind === "file" && node.convention ? "text-ink-faint" : "text-ink-dim");
   const rowClass = cn("flex h-7 w-full min-w-0 items-center gap-1.5 rounded-sm pr-2 text-left text-sm outline-none", "hover:bg-surface-raised hover:text-ink", "focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset", tone);
   const toggle = () => item.isExpanded() ? item.collapse() : item.expand();
-  const icon = isGroup ? /* @__PURE__ */ jsx_runtime14.jsxs(jsx_runtime14.Fragment, {
+  const icon = isGroup ? /* @__PURE__ */ jsx_runtime15.jsxs(jsx_runtime15.Fragment, {
     children: [
-      /* @__PURE__ */ jsx_runtime14.jsx(ChevronRight, {
+      /* @__PURE__ */ jsx_runtime15.jsx(ChevronRight, {
         "aria-hidden": true,
         className: cn("size-3.5 shrink-0 text-ink-faint transition-transform", item.isExpanded() && "rotate-90")
       }),
-      item.isExpanded() ? /* @__PURE__ */ jsx_runtime14.jsx(FolderOpen, {
+      item.isExpanded() ? /* @__PURE__ */ jsx_runtime15.jsx(FolderOpen, {
         "aria-hidden": true,
         className: "size-4 shrink-0 text-ink-faint"
-      }) : /* @__PURE__ */ jsx_runtime14.jsx(Folder, {
+      }) : /* @__PURE__ */ jsx_runtime15.jsx(Folder, {
         "aria-hidden": true,
         className: "size-4 shrink-0 text-ink-faint"
       })
     ]
-  }) : /* @__PURE__ */ jsx_runtime14.jsxs(jsx_runtime14.Fragment, {
+  }) : /* @__PURE__ */ jsx_runtime15.jsxs(jsx_runtime15.Fragment, {
     children: [
-      expandable ? /* @__PURE__ */ jsx_runtime14.jsx("span", {
+      expandable ? /* @__PURE__ */ jsx_runtime15.jsx("span", {
         "data-slot": "bundle-chevron",
         title: item.isExpanded() ? "Hide contents" : "Show contents",
         onClick: (e) => {
@@ -36324,18 +36566,18 @@ function Row2({
           toggle();
         },
         className: "flex size-3.5 shrink-0 items-center justify-center rounded-sm hover:bg-surface-raised",
-        children: /* @__PURE__ */ jsx_runtime14.jsx(ChevronRight, {
+        children: /* @__PURE__ */ jsx_runtime15.jsx(ChevronRight, {
           "aria-hidden": true,
           className: cn("size-3.5 text-ink-faint transition-transform", item.isExpanded() && "rotate-90")
         })
-      }) : /* @__PURE__ */ jsx_runtime14.jsx("span", {
+      }) : /* @__PURE__ */ jsx_runtime15.jsx("span", {
         "aria-hidden": true,
         className: "size-3.5 shrink-0"
       }),
-      isFile && !isDocName(node.rel) ? /* @__PURE__ */ jsx_runtime14.jsx(File, {
+      isFile && !isDocName(node.rel) ? /* @__PURE__ */ jsx_runtime15.jsx(File, {
         "aria-hidden": true,
         className: "size-4 shrink-0 text-ink-faint"
-      }) : /* @__PURE__ */ jsx_runtime14.jsx(DocIcon, {
+      }) : /* @__PURE__ */ jsx_runtime15.jsx(DocIcon, {
         name: node.rel,
         className: cn("size-4 shrink-0", isActive ? "text-selected" : "text-ink-faint")
       })
@@ -36344,12 +36586,12 @@ function Row2({
   const style2 = { paddingLeft: `${8 + level * INDENT_PX}px` };
   if (item.isRenaming()) {
     const input = item.getRenameInputProps();
-    return /* @__PURE__ */ jsx_runtime14.jsxs("div", {
+    return /* @__PURE__ */ jsx_runtime15.jsxs("div", {
       style: style2,
       className: rowClass,
       children: [
         icon,
-        /* @__PURE__ */ jsx_runtime14.jsx("input", {
+        /* @__PURE__ */ jsx_runtime15.jsx("input", {
           ...input,
           autoFocus: true,
           onFocus: (e) => selectStem(e.currentTarget, node.kind === "bundle"),
@@ -36360,7 +36602,7 @@ function Row2({
       ]
     });
   }
-  return /* @__PURE__ */ jsx_runtime14.jsxs("button", {
+  return /* @__PURE__ */ jsx_runtime15.jsxs("button", {
     ...props,
     type: "button",
     onClick: (e) => {
@@ -36404,24 +36646,24 @@ function Row2({
     className: rowClass,
     children: [
       icon,
-      /* @__PURE__ */ jsx_runtime14.jsx("span", {
+      /* @__PURE__ */ jsx_runtime15.jsx("span", {
         className: "truncate",
         children: item.getItemName()
       }),
-      described && /* @__PURE__ */ jsx_runtime14.jsx(DescribedMark, {}),
-      node.kind === "bundle" && node.warnings && node.warnings.length > 0 && /* @__PURE__ */ jsx_runtime14.jsx(WarningsMark, {
+      described && /* @__PURE__ */ jsx_runtime15.jsx(DescribedMark, {}),
+      node.kind === "bundle" && node.warnings && node.warnings.length > 0 && /* @__PURE__ */ jsx_runtime15.jsx(WarningsMark, {
         warnings: node.warnings
       }),
-      node.kind === "bundle" && node.truncated && /* @__PURE__ */ jsx_runtime14.jsx(PartialMark, {}),
-      badge && /* @__PURE__ */ jsx_runtime14.jsx("span", {
+      node.kind === "bundle" && node.truncated && /* @__PURE__ */ jsx_runtime15.jsx(PartialMark, {}),
+      badge && /* @__PURE__ */ jsx_runtime15.jsx("span", {
         className: "ml-auto flex shrink-0 items-center",
         children: badge
       }),
-      !badge && node.kind === "file" && node.size !== undefined && /* @__PURE__ */ jsx_runtime14.jsx("span", {
+      !badge && node.kind === "file" && node.size !== undefined && /* @__PURE__ */ jsx_runtime15.jsx("span", {
         className: "ml-auto shrink-0 font-mono text-[10px] text-ink-faint",
         children: fileSize(node.size)
       }),
-      thumb && /* @__PURE__ */ jsx_runtime14.jsx(ImagePeek, {
+      thumb && /* @__PURE__ */ jsx_runtime15.jsx(ImagePeek, {
         src: thumb
       })
     ]
@@ -36429,18 +36671,18 @@ function Row2({
 }
 function WarningsMark({ warnings }) {
   const n = warnings.length;
-  return /* @__PURE__ */ jsx_runtime14.jsxs("span", {
+  return /* @__PURE__ */ jsx_runtime15.jsxs("span", {
     "data-slot": "bundle-warnings",
     title: warnings.map((w) => w.message).join(`
 `),
     className: "flex shrink-0 items-center gap-0.5 text-[11px] text-attention",
     children: [
-      /* @__PURE__ */ jsx_runtime14.jsx(TriangleAlert, {
+      /* @__PURE__ */ jsx_runtime15.jsx(TriangleAlert, {
         "aria-hidden": true,
         className: "size-3"
       }),
       n,
-      /* @__PURE__ */ jsx_runtime14.jsxs("span", {
+      /* @__PURE__ */ jsx_runtime15.jsxs("span", {
         className: "sr-only",
         children: [
           ", ",
@@ -36453,7 +36695,7 @@ function WarningsMark({ warnings }) {
   });
 }
 function PartialMark() {
-  return /* @__PURE__ */ jsx_runtime14.jsx("span", {
+  return /* @__PURE__ */ jsx_runtime15.jsx("span", {
     "data-slot": "bundle-partial",
     title: "This holds more files than the sidebar lists: the read stopped at its cap.",
     className: "shrink-0 rounded-sm bg-attention/15 px-1 font-sans text-[10px] font-medium text-attention",
@@ -36494,11 +36736,11 @@ function isFolderNode(node) {
 }
 var PEEK_DELAY_MS = 450;
 function ImagePeek({ src }) {
-  const anchor = import_react16.useRef(null);
-  const [at, setAt] = import_react16.useState(null);
-  const [failed, setFailed] = import_react16.useState(false);
-  import_react16.useEffect(() => setFailed(false), [src]);
-  import_react16.useEffect(() => {
+  const anchor = import_react17.useRef(null);
+  const [at, setAt] = import_react17.useState(null);
+  const [failed, setFailed] = import_react17.useState(false);
+  import_react17.useEffect(() => setFailed(false), [src]);
+  import_react17.useEffect(() => {
     const row = anchor.current?.parentElement;
     if (!row)
       return;
@@ -36526,14 +36768,14 @@ function ImagePeek({ src }) {
       row.removeEventListener("dragstart", hide5);
     };
   }, []);
-  return /* @__PURE__ */ jsx_runtime14.jsx("span", {
+  return /* @__PURE__ */ jsx_runtime15.jsx("span", {
     ref: anchor,
     hidden: true,
-    children: at && !failed && import_react_dom4.createPortal(/* @__PURE__ */ jsx_runtime14.jsx("div", {
+    children: at && !failed && import_react_dom4.createPortal(/* @__PURE__ */ jsx_runtime15.jsx("div", {
       "data-slot": "image-peek",
       className: "pointer-events-none fixed z-50 rounded-md border border-edge bg-surface p-1 shadow-lg",
       style: { left: at.left, top: at.top },
-      children: /* @__PURE__ */ jsx_runtime14.jsx("img", {
+      children: /* @__PURE__ */ jsx_runtime15.jsx("img", {
         src,
         alt: "",
         onError: () => setFailed(true),
@@ -36543,32 +36785,9 @@ function ImagePeek({ src }) {
   });
 }
 
-// node_modules/@base-ui/react/dialog/index.parts.mjs
-var exports_index_parts5 = {};
-__export(exports_index_parts5, {
-  Backdrop: () => DialogBackdrop,
-  Close: () => DialogClose,
-  Description: () => DialogDescription,
-  Handle: () => DialogHandle,
-  Popup: () => DialogPopup,
-  Portal: () => DialogPortal,
-  Root: () => DialogRoot,
-  Title: () => DialogTitle,
-  Trigger: () => DialogTrigger,
-  Viewport: () => DialogViewport,
-  createHandle: () => createDialogHandle
-});
-
-// node_modules/@base-ui/react/dialog/root/DialogRoot.mjs
-var React122 = __toESM(require_react(), 1);
-"use client";
-function DialogRoot(props) {
-  const mode = React122.useContext(IsDrawerContext) ? "drawer" : "dialog";
-  return useRenderDialogRoot(props, mode);
-}
 // src/kit/context/MoveToDialog.tsx
-var import_react17 = __toESM(require_react(), 1);
-var jsx_runtime15 = __toESM(require_jsx_runtime(), 1);
+var import_react18 = __toESM(require_react(), 1);
+var jsx_runtime16 = __toESM(require_jsx_runtime(), 1);
 function MoveToDialog({
   path: path2,
   targets,
@@ -36576,13 +36795,13 @@ function MoveToDialog({
   onMove,
   onClose
 }) {
-  const [query, setQuery] = import_react17.useState("");
-  const [at, setAt] = import_react17.useState(-1);
-  const shown = import_react17.useMemo(() => filterMoveTargets(targets, query), [targets, query]);
-  const listId = import_react17.useId();
-  const listRef = import_react17.useRef(null);
-  import_react17.useEffect(() => setAt(query.trim() === "" ? -1 : 0), [query]);
-  import_react17.useEffect(() => {
+  const [query, setQuery] = import_react18.useState("");
+  const [at, setAt] = import_react18.useState(-1);
+  const shown = import_react18.useMemo(() => filterMoveTargets(targets, query), [targets, query]);
+  const listId = import_react18.useId();
+  const listRef = import_react18.useRef(null);
+  import_react18.useEffect(() => setAt(query.trim() === "" ? -1 : 0), [query]);
+  import_react18.useEffect(() => {
     listRef.current?.querySelector(`[data-index="${at}"]`)?.scrollIntoView?.({ block: "nearest" });
   }, [at]);
   const choose = (t) => {
@@ -36603,22 +36822,22 @@ function MoveToDialog({
       choose(shown[at]);
     }
   };
-  return /* @__PURE__ */ jsx_runtime15.jsx(exports_index_parts5.Root, {
+  return /* @__PURE__ */ jsx_runtime16.jsx(exports_index_parts2.Root, {
     open: true,
     onOpenChange: (open) => {
       if (!open)
         onClose();
     },
-    children: /* @__PURE__ */ jsx_runtime15.jsxs(exports_index_parts5.Portal, {
+    children: /* @__PURE__ */ jsx_runtime16.jsxs(exports_index_parts2.Portal, {
       children: [
-        /* @__PURE__ */ jsx_runtime15.jsx(exports_index_parts5.Backdrop, {
+        /* @__PURE__ */ jsx_runtime16.jsx(exports_index_parts2.Backdrop, {
           className: "fixed inset-0 isolate z-50 bg-black/30 duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0"
         }),
-        /* @__PURE__ */ jsx_runtime15.jsxs(exports_index_parts5.Popup, {
+        /* @__PURE__ */ jsx_runtime16.jsxs(exports_index_parts2.Popup, {
           "data-slot": "move-to-dialog",
           className: "fixed top-1/2 left-1/2 z-50 flex max-h-[70vh] w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 flex-col gap-2 rounded-xl border border-edge bg-surface p-3 text-ink shadow-lg duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           children: [
-            /* @__PURE__ */ jsx_runtime15.jsxs(exports_index_parts5.Title, {
+            /* @__PURE__ */ jsx_runtime16.jsxs(exports_index_parts2.Title, {
               className: "truncate text-sm font-semibold text-ink",
               children: [
                 "Move ",
@@ -36626,7 +36845,7 @@ function MoveToDialog({
                 " to"
               ]
             }),
-            /* @__PURE__ */ jsx_runtime15.jsx("input", {
+            /* @__PURE__ */ jsx_runtime16.jsx("input", {
               value: query,
               onChange: (e) => setQuery(e.target.value),
               onKeyDown: onKey,
@@ -36640,10 +36859,10 @@ function MoveToDialog({
               spellCheck: false,
               className: "h-8 w-full min-w-0 rounded-md border border-edge bg-bg px-2 text-sm text-ink outline-none placeholder:text-ink-faint focus-visible:ring-2 focus-visible:ring-ring/60"
             }),
-            shown.length === 0 ? /* @__PURE__ */ jsx_runtime15.jsx("p", {
+            shown.length === 0 ? /* @__PURE__ */ jsx_runtime16.jsx("p", {
               className: "px-1 py-2 text-xs text-ink-faint",
               children: targets.length === 0 ? "There is no other set to move this into." : "No set or folder matches."
-            }) : /* @__PURE__ */ jsx_runtime15.jsx("div", {
+            }) : /* @__PURE__ */ jsx_runtime16.jsx("div", {
               ref: listRef,
               id: listId,
               role: "listbox",
@@ -36651,7 +36870,7 @@ function MoveToDialog({
               className: "flex min-h-0 flex-1 flex-col gap-0.5 overflow-auto",
               children: shown.map((t, i) => {
                 const Icon2 = t.kind === "workspace" ? House : t.kind === "set" ? FolderTree : Folder;
-                return /* @__PURE__ */ jsx_runtime15.jsxs("div", {
+                return /* @__PURE__ */ jsx_runtime16.jsxs("div", {
                   id: `${listId}-${i}`,
                   "data-index": i,
                   role: "option",
@@ -36663,18 +36882,18 @@ function MoveToDialog({
                   onClick: () => choose(t),
                   className: cn("flex cursor-default items-center gap-2 rounded-md px-2 py-1.5", i === at && "bg-surface-raised"),
                   children: [
-                    /* @__PURE__ */ jsx_runtime15.jsx(Icon2, {
+                    /* @__PURE__ */ jsx_runtime16.jsx(Icon2, {
                       "aria-hidden": true,
                       className: "size-4 shrink-0 text-ink-faint"
                     }),
-                    /* @__PURE__ */ jsx_runtime15.jsxs("span", {
+                    /* @__PURE__ */ jsx_runtime16.jsxs("span", {
                       className: "flex min-w-0 flex-1 flex-col",
                       children: [
-                        /* @__PURE__ */ jsx_runtime15.jsx("span", {
+                        /* @__PURE__ */ jsx_runtime16.jsx("span", {
                           className: "truncate text-sm",
                           children: t.label
                         }),
-                        t.kind === "workspace" && /* @__PURE__ */ jsx_runtime15.jsx("span", {
+                        t.kind === "workspace" && /* @__PURE__ */ jsx_runtime16.jsx("span", {
                           className: "truncate font-mono text-[11px] text-ink-dim",
                           children: shortPath(t.path, userHome)
                         })
@@ -36762,10 +36981,10 @@ function trashDialog(p) {
 }
 
 // src/kit/context/ContextSidebar.tsx
-var jsx_runtime16 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime17 = __toESM(require_jsx_runtime(), 1);
 var SPRING_MS = 600;
 function TruncatedBadge() {
-  return /* @__PURE__ */ jsx_runtime16.jsx("span", {
+  return /* @__PURE__ */ jsx_runtime17.jsx("span", {
     className: "shrink-0 rounded-sm bg-attention/15 px-1 font-sans text-[10px] font-medium text-attention",
     title: "This folder has more files than the sidebar lists: the scan stopped at its cap.",
     children: "partial"
@@ -36798,6 +37017,7 @@ function ContextSidebar({
   onPick,
   workspace,
   onSetWorkspace,
+  askLocation,
   listDir,
   badgeFor: badgeFor2 = noBadge,
   folderBadgeFor = noBadge,
@@ -36818,17 +37038,17 @@ function ContextSidebar({
   beforeMoveTimeoutMs,
   uncheckedMoveNote
 }) {
-  const [drilled, setDrilled] = import_react18.useState(null);
+  const [drilled, setDrilled] = import_react19.useState(null);
   const drilledEntry = drilled ? entries.find((e) => e.id === drilled) : undefined;
-  const [renamePath, setRenamePath] = import_react18.useState(null);
-  const [localNotice, setLocalNotice] = import_react18.useState(null);
-  import_react18.useEffect(() => {
+  const [renamePath, setRenamePath] = import_react19.useState(null);
+  const [localNotice, setLocalNotice] = import_react19.useState(null);
+  import_react19.useEffect(() => {
     if (drilled && !drilledEntry)
       setDrilled(null);
   }, [drilled, drilledEntry]);
-  const entriesRef = import_react18.useRef(entries);
+  const entriesRef = import_react19.useRef(entries);
   entriesRef.current = entries;
-  import_react18.useEffect(() => {
+  import_react19.useEffect(() => {
     if (!created)
       return;
     const all = entriesRef.current;
@@ -36839,9 +37059,9 @@ function ContextSidebar({
       setDrilled(inSet.id);
     setRenamePath(created.path);
   }, [created]);
-  const renameStarted = import_react18.useCallback(() => setRenamePath(null), []);
-  const lastActive = import_react18.useRef(activeDoc ? `${activeDoc.entryId}/${activeDoc.rel}` : null);
-  import_react18.useEffect(() => {
+  const renameStarted = import_react19.useCallback(() => setRenamePath(null), []);
+  const lastActive = import_react19.useRef(activeDoc ? `${activeDoc.entryId}/${activeDoc.rel}` : null);
+  import_react19.useEffect(() => {
     const key = activeDoc ? `${activeDoc.entryId}/${activeDoc.rel}` : null;
     if (key === lastActive.current)
       return;
@@ -36852,18 +37072,18 @@ function ContextSidebar({
     if (holder?.membership === "mirrored")
       setDrilled(holder.id);
   }, [activeDoc, drilled]);
-  const [moving, setMoving] = import_react18.useState(null);
-  const onAskMove = import_react18.useCallback((path2) => setMoving(path2), []);
-  const [focusPath, setFocusPath] = import_react18.useState(null);
-  const focused = import_react18.useCallback(() => setFocusPath(null), []);
-  const expectMove = import_react18.useRef(null);
-  import_react18.useEffect(() => {
+  const [moving, setMoving] = import_react19.useState(null);
+  const onAskMove = import_react19.useCallback((path2) => setMoving(path2), []);
+  const [focusPath, setFocusPath] = import_react19.useState(null);
+  const focused = import_react19.useCallback(() => setFocusPath(null), []);
+  const expectMove = import_react19.useRef(null);
+  import_react19.useEffect(() => {
     if (!moved || moved.path !== expectMove.current)
       return;
     expectMove.current = null;
     setFocusPath(moved.path);
   }, [moved]);
-  import_react18.useEffect(() => {
+  import_react19.useEffect(() => {
     if (!focusPath)
       return;
     if (entries.some((e) => entryPath(e) === focusPath))
@@ -36873,8 +37093,8 @@ function ContextSidebar({
       setDrilled(holder.id);
   }, [focusPath, entries]);
   const { confirm, dialog } = useConfirm();
-  const moves = import_react18.useRef(Promise.resolve());
-  const move = import_react18.useCallback((path2, into) => {
+  const moves = import_react19.useRef(Promise.resolve());
+  const move = import_react19.useCallback((path2, into) => {
     if (!beforeMove) {
       onStructure({ op: "move", path: path2, into });
       return true;
@@ -36890,7 +37110,7 @@ function ContextSidebar({
     moves.current = asked.catch(() => {});
     return asked;
   }, [onStructure, beforeMove, beforeMoveTimeoutMs, uncheckedMoveNote, confirm]);
-  const moveToWorkspace = import_react18.useCallback((rows) => {
+  const moveToWorkspace = import_react19.useCallback((rows) => {
     if (!workspace)
       return;
     for (const r2 of rows) {
@@ -36901,7 +37121,7 @@ function ContextSidebar({
         move(r2.path, workspace);
     }
   }, [workspace, move]);
-  const importOneImage = import_react18.useCallback(async (f, into) => {
+  const importOneImage = import_react19.useCallback(async (f, into) => {
     if (!importImage)
       return `${f.name}: this app does not take images.`;
     const dir = into ? { dir: into } : {};
@@ -36921,8 +37141,7 @@ function ContextSidebar({
       return r2.kept && r2.note ? `${f.name} was ${r2.note}.` : null;
     return `${f.name} was not brought in: ${r2.error}`;
   }, [importImage, confirm]);
-  const importFiles = import_react18.useCallback((dt, into) => {
-    const { files, folders } = droppedFiles(dt);
+  const importDropped = import_react19.useCallback(({ files, folders }, into) => {
     const { docs, images, svg, skipped } = splitDropped(files);
     for (const i of docs) {
       const f = files[i];
@@ -36941,7 +37160,38 @@ function ContextSidebar({
           setLocalNotice(refused.join(" "));
       })();
   }, [onStructure, importOneImage]);
-  const askDelete = import_react18.useCallback(async (path2) => {
+  const importFiles = import_react19.useCallback((dt, into) => importDropped(droppedFiles(dt), into), [importDropped]);
+  const asks = !workspace && askLocation ? askLocation : undefined;
+  const askAndCreate = import_react19.useCallback(async (what, extension, label) => {
+    if (!asks)
+      return;
+    const name = what === "bundle" ? label ?? "bundle" : what;
+    const dir = await asks({ what, title: `Where should the new ${name} go?` });
+    if (!dir)
+      return;
+    if (what === "document")
+      onStructure({ op: "doc.create", dir });
+    else if (what === "folder")
+      onStructure({ op: "folder.create", dir });
+    else
+      onStructure({ op: "bundle.create", dir, ...extension ? { extension } : {} });
+  }, [asks, onStructure]);
+  const importOnList = import_react19.useCallback((dt, into) => {
+    if (into || !asks)
+      return importFiles(dt, into);
+    const dropped = droppedFiles(dt);
+    const { docs, images } = splitDropped(dropped.files);
+    const n = docs.length + images.length;
+    if (n === 0)
+      return importDropped(dropped);
+    const one = dropped.files[docs[0] ?? images[0]];
+    const title = n === 1 ? `Where should ${one.name} be copied?` : `Where should these ${n} files be copied?`;
+    asks({ what: "files", title }).then((dir) => {
+      if (dir)
+        importDropped(dropped, dir);
+    });
+  }, [asks, importFiles, importDropped]);
+  const askDelete = import_react19.useCallback(async (path2) => {
     if (!trashPreview || !onTrash)
       return;
     let pre;
@@ -36970,10 +37220,10 @@ function ContextSidebar({
     else
       onDismissNotice?.();
   };
-  return /* @__PURE__ */ jsx_runtime16.jsxs("div", {
+  return /* @__PURE__ */ jsx_runtime17.jsxs("div", {
     className: "flex min-h-0 flex-1 flex-col",
     children: [
-      drilledEntry ? /* @__PURE__ */ jsx_runtime16.jsx(SetView, {
+      drilledEntry ? /* @__PURE__ */ jsx_runtime17.jsx(SetView, {
         entry: drilledEntry,
         activeRel: activeDoc?.entryId === drilledEntry.id ? activeDoc.rel : null,
         activeRaw: activeDoc?.raw === true,
@@ -36999,7 +37249,7 @@ function ContextSidebar({
         selected,
         onSelect,
         onAddRef
-      }) : /* @__PURE__ */ jsx_runtime16.jsx(ListView, {
+      }) : /* @__PURE__ */ jsx_runtime17.jsx(ListView, {
         entries,
         activeDoc,
         userHome,
@@ -37007,7 +37257,8 @@ function ContextSidebar({
         onDrill: (e) => setDrilled(e.id),
         onStructure,
         onRemoveEntry,
-        onImportFiles: importFiles,
+        onImportFiles: importOnList,
+        onAskCreate: asks ? askAndCreate : undefined,
         onAskMove,
         focusPath,
         onFocused: focused,
@@ -37029,7 +37280,7 @@ function ContextSidebar({
         onAddRef
       }),
       dialog,
-      moving && /* @__PURE__ */ jsx_runtime16.jsx(MoveToDialog, {
+      moving && /* @__PURE__ */ jsx_runtime17.jsx(MoveToDialog, {
         path: moving,
         targets: moveTargets(entries, moving, workspace ?? null),
         userHome,
@@ -37043,26 +37294,26 @@ function ContextSidebar({
         },
         onClose: () => setMoving(null)
       }),
-      shown && /* @__PURE__ */ jsx_runtime16.jsxs("div", {
+      shown && /* @__PURE__ */ jsx_runtime17.jsxs("div", {
         role: "alert",
         className: "mx-2 mb-1 flex items-start gap-2 rounded-md border border-danger/40 bg-danger/10 px-2 py-1.5 text-xs text-ink",
         children: [
-          /* @__PURE__ */ jsx_runtime16.jsx("span", {
+          /* @__PURE__ */ jsx_runtime17.jsx("span", {
             className: "min-w-0 flex-1 break-words",
             children: shown
           }),
-          /* @__PURE__ */ jsx_runtime16.jsx("button", {
+          /* @__PURE__ */ jsx_runtime17.jsx("button", {
             type: "button",
             onClick: dismiss,
             "aria-label": "Dismiss",
             className: "shrink-0 text-ink-dim hover:text-ink",
-            children: /* @__PURE__ */ jsx_runtime16.jsx(X, {
+            children: /* @__PURE__ */ jsx_runtime17.jsx(X, {
               className: "size-3.5"
             })
           })
         ]
       }),
-      /* @__PURE__ */ jsx_runtime16.jsx(AddPath, {
+      /* @__PURE__ */ jsx_runtime17.jsx(AddPath, {
         listDir,
         onAdd: onAddPath,
         onPick: (kind) => onPick(kind === "file" ? "context-file" : "context-folder")
@@ -37075,7 +37326,7 @@ function ToolButton({
   onClick,
   children
 }) {
-  return /* @__PURE__ */ jsx_runtime16.jsx(Button3, {
+  return /* @__PURE__ */ jsx_runtime17.jsx(Button3, {
     variant: "ghost",
     size: "icon-sm",
     onClick,
@@ -37089,10 +37340,10 @@ function NewBundleButtons({
   where,
   onStructure
 }) {
-  return bundleTypes().map((t) => /* @__PURE__ */ jsx_runtime16.jsx(ToolButton, {
+  return bundleTypes().map((t) => /* @__PURE__ */ jsx_runtime17.jsx(ToolButton, {
     label: `New ${t.label}${where ?? ""}`,
     onClick: () => onStructure({ op: "bundle.create", dir, extension: t.extension }),
-    children: /* @__PURE__ */ jsx_runtime16.jsx(BundleIcon, {
+    children: /* @__PURE__ */ jsx_runtime17.jsx(BundleIcon, {
       type: t
     })
   }, t.extension));
@@ -37104,49 +37355,49 @@ function WorkspaceRow({
   onSetWorkspace,
   onStructure
 }) {
-  const [editing, setEditing] = import_react18.useState(false);
-  return /* @__PURE__ */ jsx_runtime16.jsxs("div", {
+  const [editing, setEditing] = import_react19.useState(false);
+  return /* @__PURE__ */ jsx_runtime17.jsxs("div", {
     className: "shrink-0 border-b border-edge px-1.5 py-1",
     children: [
-      /* @__PURE__ */ jsx_runtime16.jsxs("div", {
+      /* @__PURE__ */ jsx_runtime17.jsxs("div", {
         className: "flex items-center gap-1",
         children: [
-          /* @__PURE__ */ jsx_runtime16.jsxs("div", {
+          /* @__PURE__ */ jsx_runtime17.jsxs("div", {
             className: "flex min-w-0 flex-1 flex-col px-1",
             title: workspace,
             children: [
-              /* @__PURE__ */ jsx_runtime16.jsx("span", {
+              /* @__PURE__ */ jsx_runtime17.jsx("span", {
                 className: "text-[11px] text-ink-faint",
                 children: "Workspace"
               }),
-              /* @__PURE__ */ jsx_runtime16.jsx("span", {
+              /* @__PURE__ */ jsx_runtime17.jsx("span", {
                 className: "truncate font-mono text-[11px] text-ink-dim",
                 children: shortPath(workspace, userHome)
               })
             ]
           }),
-          onSetWorkspace && /* @__PURE__ */ jsx_runtime16.jsx(ToolButton, {
+          onSetWorkspace && /* @__PURE__ */ jsx_runtime17.jsx(ToolButton, {
             label: "Change the workspace folder",
             onClick: () => setEditing((v) => !v),
-            children: /* @__PURE__ */ jsx_runtime16.jsx(Pencil, {})
+            children: /* @__PURE__ */ jsx_runtime17.jsx(Pencil, {})
           }),
-          /* @__PURE__ */ jsx_runtime16.jsx(ToolButton, {
+          /* @__PURE__ */ jsx_runtime17.jsx(ToolButton, {
             label: "New document",
             onClick: () => onStructure({ op: "doc.create", dir: workspace }),
-            children: /* @__PURE__ */ jsx_runtime16.jsx(FilePlus, {})
+            children: /* @__PURE__ */ jsx_runtime17.jsx(FilePlus, {})
           }),
-          /* @__PURE__ */ jsx_runtime16.jsx(ToolButton, {
+          /* @__PURE__ */ jsx_runtime17.jsx(ToolButton, {
             label: "New set",
             onClick: () => onStructure({ op: "folder.create", dir: workspace }),
-            children: /* @__PURE__ */ jsx_runtime16.jsx(FolderPlus, {})
+            children: /* @__PURE__ */ jsx_runtime17.jsx(FolderPlus, {})
           }),
-          /* @__PURE__ */ jsx_runtime16.jsx(NewBundleButtons, {
+          /* @__PURE__ */ jsx_runtime17.jsx(NewBundleButtons, {
             dir: workspace,
             onStructure
           })
         ]
       }),
-      editing && onSetWorkspace && /* @__PURE__ */ jsx_runtime16.jsx(AddPath, {
+      editing && onSetWorkspace && /* @__PURE__ */ jsx_runtime17.jsx(AddPath, {
         listDir,
         foldersOnly: true,
         autoFocus: true,
@@ -37169,8 +37420,8 @@ function RenameBox({
   whole = false,
   onDone
 }) {
-  const [value, setValue] = import_react18.useState(initial2);
-  return /* @__PURE__ */ jsx_runtime16.jsx("input", {
+  const [value, setValue] = import_react19.useState(initial2);
+  return /* @__PURE__ */ jsx_runtime17.jsx("input", {
     value,
     onChange: (e) => setValue(e.target.value),
     autoFocus: true,
@@ -37218,14 +37469,15 @@ function ListView({
   onAskDescribe,
   onAddRef,
   focusPath,
-  onFocused
+  onFocused,
+  onAskCreate
 }) {
-  const [menuFor, setMenuFor] = import_react18.useState(null);
+  const [menuFor, setMenuFor] = import_react19.useState(null);
   const { entries: rows, described } = foldListedSidecars(entries);
-  const [renaming, setRenaming] = import_react18.useState(null);
-  const [dropOn, setDropOn] = import_react18.useState(null);
-  const listRef = import_react18.useRef(null);
-  import_react18.useEffect(() => {
+  const [renaming, setRenaming] = import_react19.useState(null);
+  const [dropOn, setDropOn] = import_react19.useState(null);
+  const listRef = import_react19.useRef(null);
+  import_react19.useEffect(() => {
     if (!focusPath)
       return;
     const row = [...listRef.current?.querySelectorAll("[data-row-path]") ?? []].find((b) => b.dataset.rowPath === focusPath);
@@ -37234,7 +37486,7 @@ function ListView({
     row.focus();
     onFocused();
   }, [focusPath, entries, onFocused]);
-  import_react18.useEffect(() => {
+  import_react19.useEffect(() => {
     if (!renamePath)
       return;
     if (entries.some((e) => entryPath(e) === renamePath)) {
@@ -37259,23 +37511,23 @@ function ListView({
   const single = menuFor ? singleFile(menuFor) : null;
   const menuPath = menuFor ? entryPath(menuFor) : "";
   const menuSidecar = menuFor ? described.get(menuFor.id) : undefined;
-  const menu = /* @__PURE__ */ jsx_runtime16.jsxs(ContextMenuContent, {
+  const menu = /* @__PURE__ */ jsx_runtime17.jsxs(ContextMenuContent, {
     children: [
-      menuFor && single ? /* @__PURE__ */ jsx_runtime16.jsxs(jsx_runtime16.Fragment, {
+      menuFor && single ? /* @__PURE__ */ jsx_runtime17.jsxs(jsx_runtime17.Fragment, {
         children: [
-          /* @__PURE__ */ jsx_runtime16.jsxs(ContextMenuItem, {
+          /* @__PURE__ */ jsx_runtime17.jsxs(ContextMenuItem, {
             onClick: () => onOpenDoc(menuFor, single.rel),
             children: [
-              single.kind === "image" ? /* @__PURE__ */ jsx_runtime16.jsx(Image, {}) : single.kind === "bundle" ? /* @__PURE__ */ jsx_runtime16.jsx(BundleIcon, {
+              single.kind === "image" ? /* @__PURE__ */ jsx_runtime17.jsx(Image, {}) : single.kind === "bundle" ? /* @__PURE__ */ jsx_runtime17.jsx(BundleIcon, {
                 type: bundleTypeOf(single.rel)
-              }) : /* @__PURE__ */ jsx_runtime16.jsx(FileText, {}),
+              }) : /* @__PURE__ */ jsx_runtime17.jsx(FileText, {}),
               "Open"
             ]
           }),
-          onAddRef && /* @__PURE__ */ jsx_runtime16.jsx(AddRefItem, {
+          onAddRef && /* @__PURE__ */ jsx_runtime17.jsx(AddRefItem, {
             onAdd: () => onAddRef(docPathOf(menuFor.root, single), nodeLabel(single))
           }),
-          single.kind === "image" && /* @__PURE__ */ jsx_runtime16.jsx(DescriptionItem, {
+          single.kind === "image" && /* @__PURE__ */ jsx_runtime17.jsx(DescriptionItem, {
             sidecar: menuSidecar?.id,
             onEdit: () => {
               const doc = menuSidecar ? singleFile(menuSidecar) : null;
@@ -37284,112 +37536,131 @@ function ListView({
             },
             onAsk: onAskDescribe ? () => onAskDescribe(menuPath) : undefined
           }),
-          /* @__PURE__ */ jsx_runtime16.jsxs(ContextMenuItem, {
+          /* @__PURE__ */ jsx_runtime17.jsxs(ContextMenuItem, {
             onClick: () => setRenaming(menuPath),
             children: [
-              /* @__PURE__ */ jsx_runtime16.jsx(Pencil, {}),
+              /* @__PURE__ */ jsx_runtime17.jsx(Pencil, {}),
               "Rename"
             ]
           }),
-          (single.kind === "doc" || single.kind === "bundle") && /* @__PURE__ */ jsx_runtime16.jsx(DuplicateItem, {
+          (single.kind === "doc" || single.kind === "bundle") && /* @__PURE__ */ jsx_runtime17.jsx(DuplicateItem, {
             onDuplicate: () => onStructure({ op: "duplicate", path: menuPath })
           }),
-          /* @__PURE__ */ jsx_runtime16.jsx(MoveToItem, {
+          /* @__PURE__ */ jsx_runtime17.jsx(MoveToItem, {
             onAsk: () => onAskMove(menuPath)
           })
         ]
-      }) : menuFor ? /* @__PURE__ */ jsx_runtime16.jsxs(jsx_runtime16.Fragment, {
+      }) : menuFor ? /* @__PURE__ */ jsx_runtime17.jsxs(jsx_runtime17.Fragment, {
         children: [
-          /* @__PURE__ */ jsx_runtime16.jsxs(ContextMenuItem, {
+          /* @__PURE__ */ jsx_runtime17.jsxs(ContextMenuItem, {
             onClick: () => onDrill(menuFor),
             children: [
-              /* @__PURE__ */ jsx_runtime16.jsx(FolderTree, {}),
+              /* @__PURE__ */ jsx_runtime17.jsx(FolderTree, {}),
               "Open set"
             ]
           }),
-          menuFor.membership === "mirrored" && /* @__PURE__ */ jsx_runtime16.jsxs(jsx_runtime16.Fragment, {
+          menuFor.membership === "mirrored" && /* @__PURE__ */ jsx_runtime17.jsxs(jsx_runtime17.Fragment, {
             children: [
-              /* @__PURE__ */ jsx_runtime16.jsxs(ContextMenuItem, {
+              /* @__PURE__ */ jsx_runtime17.jsxs(ContextMenuItem, {
                 onClick: () => onStructure({ op: "doc.create", dir: menuFor.root }),
                 children: [
-                  /* @__PURE__ */ jsx_runtime16.jsx(FilePlus, {}),
+                  /* @__PURE__ */ jsx_runtime17.jsx(FilePlus, {}),
                   "New document"
                 ]
               }),
-              /* @__PURE__ */ jsx_runtime16.jsxs(ContextMenuItem, {
+              /* @__PURE__ */ jsx_runtime17.jsxs(ContextMenuItem, {
                 onClick: () => onStructure({ op: "folder.create", dir: menuFor.root }),
                 children: [
-                  /* @__PURE__ */ jsx_runtime16.jsx(FolderPlus, {}),
+                  /* @__PURE__ */ jsx_runtime17.jsx(FolderPlus, {}),
                   "New folder"
                 ]
               }),
-              /* @__PURE__ */ jsx_runtime16.jsx(NewBundleItems, {
+              /* @__PURE__ */ jsx_runtime17.jsx(NewBundleItems, {
                 dir: menuFor.root,
                 onStructure
               })
             ]
           }),
-          /* @__PURE__ */ jsx_runtime16.jsxs(ContextMenuItem, {
+          /* @__PURE__ */ jsx_runtime17.jsxs(ContextMenuItem, {
             onClick: () => setRenaming(menuPath),
             children: [
-              /* @__PURE__ */ jsx_runtime16.jsx(Pencil, {}),
+              /* @__PURE__ */ jsx_runtime17.jsx(Pencil, {}),
               "Rename"
             ]
           }),
-          /* @__PURE__ */ jsx_runtime16.jsx(MoveToItem, {
+          /* @__PURE__ */ jsx_runtime17.jsx(MoveToItem, {
             onAsk: () => onAskMove(menuPath)
           })
         ]
-      }) : /* @__PURE__ */ jsx_runtime16.jsxs(jsx_runtime16.Fragment, {
+      }) : /* @__PURE__ */ jsx_runtime17.jsxs(jsx_runtime17.Fragment, {
         children: [
-          /* @__PURE__ */ jsx_runtime16.jsxs(ContextMenuItem, {
+          onAskCreate && /* @__PURE__ */ jsx_runtime17.jsxs(jsx_runtime17.Fragment, {
+            children: [
+              /* @__PURE__ */ jsx_runtime17.jsxs(ContextMenuItem, {
+                onClick: () => onAskCreate("document"),
+                children: [
+                  /* @__PURE__ */ jsx_runtime17.jsx(FilePlus, {}),
+                  "New document…"
+                ]
+              }),
+              /* @__PURE__ */ jsx_runtime17.jsxs(ContextMenuItem, {
+                onClick: () => onAskCreate("folder"),
+                children: [
+                  /* @__PURE__ */ jsx_runtime17.jsx(FolderPlus, {}),
+                  "New folder…"
+                ]
+              }),
+              /* @__PURE__ */ jsx_runtime17.jsx(ContextMenuSeparator, {})
+            ]
+          }),
+          /* @__PURE__ */ jsx_runtime17.jsxs(ContextMenuItem, {
             onClick: () => onPick("context-file"),
             children: [
-              /* @__PURE__ */ jsx_runtime16.jsx(FilePlus, {}),
+              /* @__PURE__ */ jsx_runtime17.jsx(FilePlus, {}),
               "Add documents…"
             ]
           }),
-          /* @__PURE__ */ jsx_runtime16.jsxs(ContextMenuItem, {
+          /* @__PURE__ */ jsx_runtime17.jsxs(ContextMenuItem, {
             onClick: () => onPick("context-folder"),
             children: [
-              /* @__PURE__ */ jsx_runtime16.jsx(FolderPlus, {}),
+              /* @__PURE__ */ jsx_runtime17.jsx(FolderPlus, {}),
               "Add a folder…"
             ]
           })
         ]
       }),
-      menuFor && /* @__PURE__ */ jsx_runtime16.jsx(RevealItem, {
+      menuFor && /* @__PURE__ */ jsx_runtime17.jsx(RevealItem, {
         onReveal: () => onReveal(menuPath)
       }),
-      /* @__PURE__ */ jsx_runtime16.jsx(AppMenuItems, {
+      /* @__PURE__ */ jsx_runtime17.jsx(AppMenuItems, {
         actions: appActionsFor(menuFor ? { kind: "entry", path: menuPath, entry: menuFor } : { kind: "background", path: "" })
       }),
-      menuFor && /* @__PURE__ */ jsx_runtime16.jsxs(jsx_runtime16.Fragment, {
+      menuFor && /* @__PURE__ */ jsx_runtime17.jsxs(jsx_runtime17.Fragment, {
         children: [
-          /* @__PURE__ */ jsx_runtime16.jsx(ContextMenuSeparator, {}),
-          /* @__PURE__ */ jsx_runtime16.jsxs(ContextMenuItem, {
+          /* @__PURE__ */ jsx_runtime17.jsx(ContextMenuSeparator, {}),
+          /* @__PURE__ */ jsx_runtime17.jsxs(ContextMenuItem, {
             variant: "destructive",
             onClick: () => onRemoveEntry(menuFor.id),
             children: [
-              /* @__PURE__ */ jsx_runtime16.jsx(X, {}),
+              /* @__PURE__ */ jsx_runtime17.jsx(X, {}),
               "Remove from context"
             ]
           })
         ]
       }),
-      menuFor && single && onDelete && /* @__PURE__ */ jsx_runtime16.jsx(DeleteItem, {
+      menuFor && single && onDelete && /* @__PURE__ */ jsx_runtime17.jsx(DeleteItem, {
         onDelete: () => onDelete(menuPath)
       })
     ]
   });
-  return /* @__PURE__ */ jsx_runtime16.jsxs(ContextMenu, {
+  return /* @__PURE__ */ jsx_runtime17.jsxs(ContextMenu, {
     onOpenChange: (open) => {
       if (!open)
         setMenuFor(null);
     },
     children: [
-      /* @__PURE__ */ jsx_runtime16.jsxs(ContextMenuTrigger3, {
-        render: /* @__PURE__ */ jsx_runtime16.jsx("div", {
+      /* @__PURE__ */ jsx_runtime17.jsxs(ContextMenuTrigger3, {
+        render: /* @__PURE__ */ jsx_runtime17.jsx("div", {
           onDragOver: (e) => {
             if (!acceptsDrag(e))
               return;
@@ -37404,37 +37675,60 @@ function ListView({
           className: cn("flex min-h-0 flex-1 flex-col", dropOn === "" && "bg-brand/8 ring-1 ring-brand/40 ring-inset")
         }),
         children: [
-          workspace !== null && /* @__PURE__ */ jsx_runtime16.jsx(WorkspaceRow, {
+          workspace !== null && /* @__PURE__ */ jsx_runtime17.jsx(WorkspaceRow, {
             workspace,
             userHome,
             listDir,
             onSetWorkspace,
             onStructure
           }),
-          /* @__PURE__ */ jsx_runtime16.jsx("div", {
+          /* @__PURE__ */ jsx_runtime17.jsxs("div", {
             className: "flex shrink-0 items-center gap-0.5 px-1.5 pt-1",
-            children: /* @__PURE__ */ jsx_runtime16.jsx("span", {
-              className: "flex-1 truncate px-1 text-[11px] text-ink-faint",
-              children: workspace !== null ? "Drop documents or images here to copy them into the workspace" : "Drop documents or images here to copy them in"
-            })
+            children: [
+              /* @__PURE__ */ jsx_runtime17.jsx("span", {
+                className: "flex-1 truncate px-1 text-[11px] text-ink-faint",
+                children: workspace !== null ? "Drop documents or images here to copy them into the workspace" : onAskCreate ? "Drop documents or images, then choose a set" : "Drop documents or images here to copy them in"
+              }),
+              onAskCreate && /* @__PURE__ */ jsx_runtime17.jsxs(jsx_runtime17.Fragment, {
+                children: [
+                  /* @__PURE__ */ jsx_runtime17.jsx(ToolButton, {
+                    label: "New document…",
+                    onClick: () => onAskCreate("document"),
+                    children: /* @__PURE__ */ jsx_runtime17.jsx(FilePlus, {})
+                  }),
+                  /* @__PURE__ */ jsx_runtime17.jsx(ToolButton, {
+                    label: "New folder…",
+                    onClick: () => onAskCreate("folder"),
+                    children: /* @__PURE__ */ jsx_runtime17.jsx(FolderPlus, {})
+                  }),
+                  bundleTypes().map((t) => /* @__PURE__ */ jsx_runtime17.jsx(ToolButton, {
+                    label: `New ${t.label}…`,
+                    onClick: () => onAskCreate("bundle", t.extension, t.label),
+                    children: /* @__PURE__ */ jsx_runtime17.jsx(BundleIcon, {
+                      type: t
+                    })
+                  }, t.extension))
+                ]
+              })
+            ]
           }),
-          rows.length === 0 ? /* @__PURE__ */ jsx_runtime16.jsx(Empty, {
+          rows.length === 0 ? /* @__PURE__ */ jsx_runtime17.jsx(Empty, {
             className: "flex-1",
-            children: /* @__PURE__ */ jsx_runtime16.jsxs(EmptyHeader, {
+            children: /* @__PURE__ */ jsx_runtime17.jsxs(EmptyHeader, {
               children: [
-                /* @__PURE__ */ jsx_runtime16.jsx(EmptyMedia, {
+                /* @__PURE__ */ jsx_runtime17.jsx(EmptyMedia, {
                   variant: "icon",
-                  children: /* @__PURE__ */ jsx_runtime16.jsx(FolderTree, {})
+                  children: /* @__PURE__ */ jsx_runtime17.jsx(FolderTree, {})
                 }),
-                /* @__PURE__ */ jsx_runtime16.jsx(EmptyTitle, {
+                /* @__PURE__ */ jsx_runtime17.jsx(EmptyTitle, {
                   children: "No context yet"
                 }),
-                /* @__PURE__ */ jsx_runtime16.jsx(EmptyDescription, {
-                  children: "Add a markdown file, an image or a folder by path below, drop documents or images here to copy them in, or ask the agent to add one."
+                /* @__PURE__ */ jsx_runtime17.jsx(EmptyDescription, {
+                  children: onAskCreate ? "Add a markdown file, an image or a folder by path below, or ask the agent to add one. A document or image dropped here is copied into a set you choose." : "Add a markdown file, an image or a folder by path below, drop documents or images here to copy them in, or ask the agent to add one."
                 })
               ]
             })
-          }) : /* @__PURE__ */ jsx_runtime16.jsx("ul", {
+          }) : /* @__PURE__ */ jsx_runtime17.jsx("ul", {
             ref: listRef,
             className: "flex min-h-0 flex-1 flex-col gap-0.5 overflow-auto p-1.5",
             "aria-label": "Context",
@@ -37450,19 +37744,19 @@ function ListView({
               const where = shortPath(entry.root, userHome);
               const name = only ? nodeLabel(only) : entry.label;
               const badge = only ? badgeFor2(docPathOf(entry.root, only)) : folderBadgeFor(entryPath(entry));
-              const icon = only ? /* @__PURE__ */ jsx_runtime16.jsx(DocIcon, {
+              const icon = only ? /* @__PURE__ */ jsx_runtime17.jsx(DocIcon, {
                 name: only.rel,
                 className: cn("size-4 shrink-0", isActiveDoc ? "text-selected" : "text-ink-faint")
-              }) : /* @__PURE__ */ jsx_runtime16.jsx(FolderTree, {
+              }) : /* @__PURE__ */ jsx_runtime17.jsx(FolderTree, {
                 "aria-hidden": true,
                 className: cn("size-4 shrink-0", holdsActive ? "text-selected" : "text-ink-faint")
               });
               if (renaming === full) {
-                return /* @__PURE__ */ jsx_runtime16.jsxs("li", {
+                return /* @__PURE__ */ jsx_runtime17.jsxs("li", {
                   className: "flex items-center gap-2 rounded-md bg-surface-raised px-2 py-1.5",
                   children: [
                     icon,
-                    /* @__PURE__ */ jsx_runtime16.jsx(RenameBox, {
+                    /* @__PURE__ */ jsx_runtime17.jsx(RenameBox, {
                       initial: name,
                       whole: only?.kind === "bundle",
                       onDone: (next) => {
@@ -37474,8 +37768,8 @@ function ListView({
                   ]
                 }, entry.id);
               }
-              return /* @__PURE__ */ jsx_runtime16.jsx("li", {
-                children: /* @__PURE__ */ jsx_runtime16.jsxs("button", {
+              return /* @__PURE__ */ jsx_runtime17.jsx("li", {
+                children: /* @__PURE__ */ jsx_runtime17.jsxs("button", {
                   type: "button",
                   "data-row-path": full,
                   draggable: true,
@@ -37510,56 +37804,56 @@ function ListView({
                   className: cn("flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left outline-none", "hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring/60", (isActiveDoc || holdsActive && !only) && "bg-selected/15", dropOn === entry.id && "bg-brand/15 ring-1 ring-brand/50 ring-inset"),
                   children: [
                     icon,
-                    /* @__PURE__ */ jsx_runtime16.jsxs("span", {
+                    /* @__PURE__ */ jsx_runtime17.jsxs("span", {
                       className: "flex min-w-0 flex-1 flex-col",
                       children: [
-                        /* @__PURE__ */ jsx_runtime16.jsx("span", {
+                        /* @__PURE__ */ jsx_runtime17.jsx("span", {
                           className: cn("truncate text-sm", isActiveDoc ? "font-medium text-ink" : "text-ink"),
                           children: name
                         }),
-                        /* @__PURE__ */ jsx_runtime16.jsxs("span", {
+                        /* @__PURE__ */ jsx_runtime17.jsxs("span", {
                           className: "flex min-w-0 items-center gap-1.5 font-mono text-[11px] text-ink-dim",
                           children: [
-                            sidecar && /* @__PURE__ */ jsx_runtime16.jsx(DescribedMark, {}),
-                            entry.truncated && /* @__PURE__ */ jsx_runtime16.jsx(TruncatedBadge, {}),
-                            !only && /* @__PURE__ */ jsx_runtime16.jsxs("span", {
+                            sidecar && /* @__PURE__ */ jsx_runtime17.jsx(DescribedMark, {}),
+                            entry.truncated && /* @__PURE__ */ jsx_runtime17.jsx(TruncatedBadge, {}),
+                            !only && /* @__PURE__ */ jsx_runtime17.jsxs("span", {
                               "data-slot": "set-counts",
                               title: countsInWords(docCount, imageCount),
                               className: "flex shrink-0 items-center gap-1.5",
                               children: [
-                                /* @__PURE__ */ jsx_runtime16.jsx("span", {
+                                /* @__PURE__ */ jsx_runtime17.jsx("span", {
                                   className: "sr-only",
                                   children: countsInWords(docCount, imageCount)
                                 }),
-                                /* @__PURE__ */ jsx_runtime16.jsxs("span", {
+                                /* @__PURE__ */ jsx_runtime17.jsxs("span", {
                                   "aria-hidden": true,
                                   className: "flex items-center gap-0.5",
                                   children: [
-                                    /* @__PURE__ */ jsx_runtime16.jsx(FileText, {
+                                    /* @__PURE__ */ jsx_runtime17.jsx(FileText, {
                                       "aria-hidden": true,
                                       className: "size-3"
                                     }),
                                     docCount
                                   ]
                                 }),
-                                imageCount > 0 && /* @__PURE__ */ jsx_runtime16.jsxs("span", {
+                                imageCount > 0 && /* @__PURE__ */ jsx_runtime17.jsxs("span", {
                                   "aria-hidden": true,
                                   className: "flex items-center gap-0.5",
                                   children: [
-                                    /* @__PURE__ */ jsx_runtime16.jsx(Image, {
+                                    /* @__PURE__ */ jsx_runtime17.jsx(Image, {
                                       "aria-hidden": true,
                                       className: "size-3"
                                     }),
                                     imageCount
                                   ]
                                 }),
-                                /* @__PURE__ */ jsx_runtime16.jsx("span", {
+                                /* @__PURE__ */ jsx_runtime17.jsx("span", {
                                   "aria-hidden": true,
                                   children: "·"
                                 })
                               ]
                             }),
-                            /* @__PURE__ */ jsx_runtime16.jsx("span", {
+                            /* @__PURE__ */ jsx_runtime17.jsx("span", {
                               className: "truncate",
                               children: where
                             })
@@ -37567,11 +37861,11 @@ function ListView({
                         })
                       ]
                     }),
-                    badge && /* @__PURE__ */ jsx_runtime16.jsx("span", {
+                    badge && /* @__PURE__ */ jsx_runtime17.jsx("span", {
                       className: "flex shrink-0 items-center",
                       children: badge
                     }),
-                    only?.kind === "image" && thumbFor && /* @__PURE__ */ jsx_runtime16.jsx(ImagePeek, {
+                    only?.kind === "image" && thumbFor && /* @__PURE__ */ jsx_runtime17.jsx(ImagePeek, {
                       src: thumbFor(full)
                     })
                   ]
@@ -37612,24 +37906,24 @@ function SetView({
   onSelect,
   onAddRef
 }) {
-  const [backDrop, setBackDrop] = import_react18.useState(false);
-  const spring = import_react18.useRef(null);
+  const [backDrop, setBackDrop] = import_react19.useState(false);
+  const spring = import_react19.useRef(null);
   const unspring = () => {
     if (spring.current)
       clearTimeout(spring.current);
     spring.current = null;
   };
-  import_react18.useEffect(() => () => {
+  import_react19.useEffect(() => () => {
     if (spring.current)
       clearTimeout(spring.current);
   }, []);
-  return /* @__PURE__ */ jsx_runtime16.jsxs("div", {
+  return /* @__PURE__ */ jsx_runtime17.jsxs("div", {
     className: "flex min-h-0 flex-1 flex-col",
     children: [
-      /* @__PURE__ */ jsx_runtime16.jsxs("div", {
+      /* @__PURE__ */ jsx_runtime17.jsxs("div", {
         className: "flex shrink-0 items-center gap-1 border-b border-edge px-1.5 py-1",
         children: [
-          /* @__PURE__ */ jsx_runtime16.jsx(Button3, {
+          /* @__PURE__ */ jsx_runtime17.jsx(Button3, {
             variant: "ghost",
             size: "icon-sm",
             onClick: onBack,
@@ -37658,46 +37952,46 @@ function SetView({
               onMoveToWorkspace(readRowDrag(e.dataTransfer) ?? []);
             },
             className: cn(backDrop && "bg-brand/15 ring-1 ring-brand/50 ring-inset"),
-            children: /* @__PURE__ */ jsx_runtime16.jsx(ArrowLeft, {})
+            children: /* @__PURE__ */ jsx_runtime17.jsx(ArrowLeft, {})
           }),
-          /* @__PURE__ */ jsx_runtime16.jsxs("div", {
+          /* @__PURE__ */ jsx_runtime17.jsxs("div", {
             className: "flex min-w-0 flex-1 flex-col",
             children: [
-              /* @__PURE__ */ jsx_runtime16.jsx("span", {
+              /* @__PURE__ */ jsx_runtime17.jsx("span", {
                 className: "truncate text-sm font-medium text-ink",
                 children: entry.label
               }),
-              /* @__PURE__ */ jsx_runtime16.jsxs("span", {
+              /* @__PURE__ */ jsx_runtime17.jsxs("span", {
                 className: "flex min-w-0 items-center gap-1.5 truncate font-mono text-[11px] text-ink-dim",
                 title: entry.root,
                 children: [
-                  entry.truncated && /* @__PURE__ */ jsx_runtime16.jsx(TruncatedBadge, {}),
+                  entry.truncated && /* @__PURE__ */ jsx_runtime17.jsx(TruncatedBadge, {}),
                   shortPath(entry.root, userHome)
                 ]
               })
             ]
           }),
           folderBadgeFor(entryPath(entry)),
-          /* @__PURE__ */ jsx_runtime16.jsx(ToolButton, {
+          /* @__PURE__ */ jsx_runtime17.jsx(ToolButton, {
             label: "New document in this set",
             onClick: () => onStructure({ op: "doc.create", dir: entry.root }),
-            children: /* @__PURE__ */ jsx_runtime16.jsx(FilePlus, {})
+            children: /* @__PURE__ */ jsx_runtime17.jsx(FilePlus, {})
           }),
-          /* @__PURE__ */ jsx_runtime16.jsx(ToolButton, {
+          /* @__PURE__ */ jsx_runtime17.jsx(ToolButton, {
             label: "New folder in this set",
             onClick: () => onStructure({ op: "folder.create", dir: entry.root }),
-            children: /* @__PURE__ */ jsx_runtime16.jsx(FolderPlus, {})
+            children: /* @__PURE__ */ jsx_runtime17.jsx(FolderPlus, {})
           }),
-          /* @__PURE__ */ jsx_runtime16.jsx(NewBundleButtons, {
+          /* @__PURE__ */ jsx_runtime17.jsx(NewBundleButtons, {
             dir: entry.root,
             where: " in this set",
             onStructure
           })
         ]
       }),
-      /* @__PURE__ */ jsx_runtime16.jsx("div", {
+      /* @__PURE__ */ jsx_runtime17.jsx("div", {
         className: "flex min-h-0 flex-1 flex-col overflow-auto px-1",
-        children: /* @__PURE__ */ jsx_runtime16.jsx(EntryTree, {
+        children: /* @__PURE__ */ jsx_runtime17.jsx(EntryTree, {
           entry,
           activeRel,
           activeRaw,
@@ -37744,15 +38038,15 @@ var safeStorage = {
 };
 
 // src/scriptorium/surface/kit/movePlan.tsx
-var jsx_runtime17 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime18 = __toESM(require_jsx_runtime(), 1);
 var LISTED = 6;
 var plural2 = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 function listed(items, line) {
   const more = items.length - LISTED;
-  return /* @__PURE__ */ jsx_runtime17.jsxs(jsx_runtime17.Fragment, {
+  return /* @__PURE__ */ jsx_runtime18.jsxs(jsx_runtime18.Fragment, {
     children: [
       items.slice(0, LISTED).map(line),
-      more > 0 && /* @__PURE__ */ jsx_runtime17.jsxs("span", {
+      more > 0 && /* @__PURE__ */ jsx_runtime18.jsxs("span", {
         className: "block pl-2",
         children: [
           "and ",
@@ -37769,9 +38063,9 @@ function movePrompt(plan, userHome) {
   if (!plan.folder && !plan.leavesRepo && breaks === 0)
     return null;
   const short = (p) => shortPath(p, userHome, 2);
-  const message = /* @__PURE__ */ jsx_runtime17.jsxs(jsx_runtime17.Fragment, {
+  const message = /* @__PURE__ */ jsx_runtime18.jsxs(jsx_runtime18.Fragment, {
     children: [
-      /* @__PURE__ */ jsx_runtime17.jsxs("span", {
+      /* @__PURE__ */ jsx_runtime18.jsxs("span", {
         className: "block",
         children: [
           plural2(plan.docs, "document"),
@@ -37782,11 +38076,11 @@ function movePrompt(plan, userHome) {
           "."
         ]
       }),
-      breaks === 0 && /* @__PURE__ */ jsx_runtime17.jsx("span", {
+      breaks === 0 && /* @__PURE__ */ jsx_runtime18.jsx("span", {
         className: "mt-1 block",
         children: "It breaks no links."
       }),
-      fixes > 0 && /* @__PURE__ */ jsx_runtime17.jsxs("span", {
+      fixes > 0 && /* @__PURE__ */ jsx_runtime18.jsxs("span", {
         className: "mt-2 block",
         children: [
           "It breaks ",
@@ -37794,7 +38088,7 @@ function movePrompt(plan, userHome) {
           " in ",
           plural2(plan.links.length, "document"),
           ". They are left as they are; after the move, the chat names the links still pointing at the old place. Each is listed with the rewrite that would land it again.",
-          listed(plan.links.flatMap((d) => d.fixes.map((f) => ({ d, f }))), ({ d, f }, i) => /* @__PURE__ */ jsx_runtime17.jsxs("span", {
+          listed(plan.links.flatMap((d) => d.fixes.map((f) => ({ d, f }))), ({ d, f }, i) => /* @__PURE__ */ jsx_runtime18.jsxs("span", {
             className: "block pl-2 font-mono text-xs",
             children: [
               short(d.path),
@@ -37807,7 +38101,7 @@ function movePrompt(plan, userHome) {
           }, `l${i}`))
         ]
       }),
-      plan.wiki.length > 0 && /* @__PURE__ */ jsx_runtime17.jsxs("span", {
+      plan.wiki.length > 0 && /* @__PURE__ */ jsx_runtime18.jsxs("span", {
         className: "mt-2 block",
         children: [
           plural2(plan.wiki.length, "wiki link"),
@@ -37815,7 +38109,7 @@ function movePrompt(plan, userHome) {
           " ",
           plan.wiki.length === 1 ? "its page" : "their pages",
           ". A wiki link names a page, so it is never rewritten.",
-          listed(plan.wiki, (w, i) => /* @__PURE__ */ jsx_runtime17.jsxs("span", {
+          listed(plan.wiki, (w, i) => /* @__PURE__ */ jsx_runtime18.jsxs("span", {
             className: "block pl-2 font-mono text-xs",
             children: [
               short(w.path),
@@ -37827,12 +38121,12 @@ function movePrompt(plan, userHome) {
           }, `w${i}`))
         ]
       }),
-      plan.edges.length > 0 && /* @__PURE__ */ jsx_runtime17.jsxs("span", {
+      plan.edges.length > 0 && /* @__PURE__ */ jsx_runtime18.jsxs("span", {
         className: "mt-2 block",
         children: [
           plural2(plan.edges.length, "frontmatter reference"),
           " would point elsewhere. These are reported, never rewritten.",
-          listed(plan.edges, (e, i) => /* @__PURE__ */ jsx_runtime17.jsxs("span", {
+          listed(plan.edges, (e, i) => /* @__PURE__ */ jsx_runtime18.jsxs("span", {
             className: "block pl-2 font-mono text-xs",
             children: [
               short(e.source),
@@ -37848,10 +38142,10 @@ function movePrompt(plan, userHome) {
   return {
     title: `Move “${plan.name}” into “${baseName(plan.into)}”?`,
     message,
-    warning: plan.leavesRepo ? /* @__PURE__ */ jsx_runtime17.jsxs(jsx_runtime17.Fragment, {
+    warning: plan.leavesRepo ? /* @__PURE__ */ jsx_runtime18.jsxs(jsx_runtime18.Fragment, {
       children: [
         "This takes it ",
-        /* @__PURE__ */ jsx_runtime17.jsx("strong", {
+        /* @__PURE__ */ jsx_runtime18.jsx("strong", {
           className: "font-semibold",
           children: "out of the git repository"
         }),
@@ -37866,13 +38160,13 @@ function movePrompt(plan, userHome) {
     confirmClassName: "bg-rubric text-on-rubric hover:bg-rubric/90"
   };
 }
-var scriptoriumUncheckedMoveNote = () => /* @__PURE__ */ jsx_runtime17.jsxs(jsx_runtime17.Fragment, {
+var scriptoriumUncheckedMoveNote = () => /* @__PURE__ */ jsx_runtime18.jsxs(jsx_runtime18.Fragment, {
   children: [
-    /* @__PURE__ */ jsx_runtime17.jsx("span", {
+    /* @__PURE__ */ jsx_runtime18.jsx("span", {
       className: "block",
       children: "The links into and out of what moves were not checked. Any it breaks are named in the chat after the move."
     }),
-    /* @__PURE__ */ jsx_runtime17.jsx("span", {
+    /* @__PURE__ */ jsx_runtime18.jsx("span", {
       className: "mt-1 block",
       children: "Nor was whether it leaves a git repository: if it does, git will see the files as deleted there until the move is committed."
     })
@@ -37897,7 +38191,9 @@ function scriptoriumBeforeMove(daemon, opts = {}) {
 }
 
 // src/scriptorium/surface/kit/Frame.tsx
-var jsx_runtime18 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime19 = __toESM(require_jsx_runtime(), 1);
+var NO_ENTRIES = [];
+var MAKE_ROOM = "A document listed on its own can take new files beside it once it is a set: Turn into a set, in its row's menu.";
 var THEME_KEY = "scriptorium:theme";
 var hiddenOf = (state) => state.appState?.hidden ?? {};
 function scriptoriumMenuActions(send, hidden) {
@@ -37910,7 +38206,7 @@ function scriptoriumMenuActions(send, hidden) {
       actions.push({
         id: "scriptorium.make-set",
         label: "Turn into a set",
-        icon: /* @__PURE__ */ jsx_runtime18.jsx(FolderTree, {}),
+        icon: /* @__PURE__ */ jsx_runtime19.jsx(FolderTree, {}),
         onSelect: () => send({ op: "set.make", path: entryPath(entry) })
       });
     const n = hidden[entry.id]?.length ?? 0;
@@ -37918,14 +38214,29 @@ function scriptoriumMenuActions(send, hidden) {
       actions.push({
         id: "scriptorium.unhide",
         label: `Show ${n} hidden ${n === 1 ? "item" : "items"}`,
-        icon: /* @__PURE__ */ jsx_runtime18.jsx(Eye, {}),
+        icon: /* @__PURE__ */ jsx_runtime19.jsx(Eye, {}),
         onSelect: () => send({ op: "scriptorium.unhide", entry: entry.id })
       });
+    const beside = (kind === "doc" || kind === "image" || kind === "bundle") && bundlePlace(path2) !== "own";
+    if (beside) {
+      const dir = dirOf(path2);
+      actions.push({
+        id: "scriptorium.new-doc-beside",
+        label: "New document beside it",
+        icon: /* @__PURE__ */ jsx_runtime19.jsx(FilePlus, {}),
+        onSelect: () => send({ op: "doc.create", dir })
+      }, {
+        id: "scriptorium.new-folder-beside",
+        label: "New folder beside it",
+        icon: /* @__PURE__ */ jsx_runtime19.jsx(FolderPlus, {}),
+        onSelect: () => send({ op: "folder.create", dir })
+      });
+    }
     if (kind !== "entry")
       actions.push({
         id: "scriptorium.hide",
         label: "Hide from Scriptorium",
-        icon: /* @__PURE__ */ jsx_runtime18.jsx(EyeOff, {}),
+        icon: /* @__PURE__ */ jsx_runtime19.jsx(EyeOff, {}),
         onSelect: () => send({ op: "scriptorium.hide", path: path2 })
       });
     return actions;
@@ -37933,14 +38244,14 @@ function scriptoriumMenuActions(send, hidden) {
 }
 function Frame({ daemon }) {
   const { state, send } = daemon;
-  const [tab, setTab] = import_react19.useState("chat");
-  const [theme, setTheme] = import_react19.useState(() => document.documentElement.dataset.theme === "light" ? "light" : "dark");
-  import_react19.useEffect(() => {
+  const [tab, setTab] = import_react20.useState("chat");
+  const [theme, setTheme] = import_react20.useState(() => document.documentElement.dataset.theme === "light" ? "light" : "dark");
+  import_react20.useEffect(() => {
     document.documentElement.dataset.theme = theme;
     safeStorage.setItem(THEME_KEY, theme);
   }, [theme]);
   const savedTheme = state?.prefs.theme;
-  import_react19.useEffect(() => {
+  import_react20.useEffect(() => {
     if (savedTheme === "dark" || savedTheme === "light")
       setTheme(savedTheme);
   }, [savedTheme]);
@@ -37949,59 +38260,67 @@ function Frame({ daemon }) {
     setTheme(next);
     send({ op: "prefs.set", key: "theme", value: next });
   };
-  const hints = import_react19.useRef(new Map);
-  import_react19.useEffect(() => daemon.onFrame((f) => {
+  const hints = import_react20.useRef(new Map);
+  import_react20.useEffect(() => daemon.onFrame((f) => {
     if (f.op === "error" && typeof f.hint === "string" && typeof f.message === "string")
       hints.current.set(f.message, f.hint);
   }), [daemon.onFrame]);
   const userHome = state?.userHome || null;
-  const beforeMove = import_react19.useMemo(() => scriptoriumBeforeMove(daemon, { userHome }), [daemon.request, userHome]);
+  const beforeMove = import_react20.useMemo(() => scriptoriumBeforeMove(daemon, { userHome }), [daemon.request, userHome]);
+  const ask = useAskLocation({
+    entries: state?.context ?? NO_ENTRIES,
+    userHome,
+    listDir: daemon.listDir,
+    addFolder: (path2) => daemon.request({ op: "folder.add", path: path2 }),
+    hint: MAKE_ROOM
+  });
+  const done = daemon.done;
+  const created = import_react20.useMemo(() => done && ["doc.create", "folder.create", "bundle.create"].includes(done.of) ? { path: done.path, seq: done.seq } : null, [done]);
+  const moved = import_react20.useMemo(() => done?.of === "move" ? { path: done.path, seq: done.seq } : null, [done]);
   if (!state)
-    return /* @__PURE__ */ jsx_runtime18.jsx("div", {
+    return /* @__PURE__ */ jsx_runtime19.jsx("div", {
       className: "flex h-full items-center justify-center text-ink-dim",
       children: daemon.connection === "ended" ? "The session has ended." : "Connecting to Scriptorium…"
     });
   const openDoc = state.openDoc ? state.docs.find((d) => d.slug === state.openDoc) : undefined;
   const notice = daemon.lastError ? [daemon.lastError, hints.current.get(daemon.lastError)].filter(Boolean).join(". To go on: ") : null;
-  const done = daemon.done;
-  const created = done && ["doc.create", "folder.create", "bundle.create"].includes(done.of) ? { path: done.path, seq: done.seq } : null;
   const docName = (slug) => state.docs.find((d) => d.slug === slug)?.name ?? slug;
   const tabs = { chat: "Chat", notes: "Notes", tasks: "Tasks" };
-  return /* @__PURE__ */ jsx_runtime18.jsxs("div", {
+  return /* @__PURE__ */ jsx_runtime19.jsxs("div", {
     "data-slot": "interim-frame",
     className: "flex h-full flex-col",
     children: [
-      /* @__PURE__ */ jsx_runtime18.jsxs("header", {
+      /* @__PURE__ */ jsx_runtime19.jsxs("header", {
         className: "flex h-9 shrink-0 items-center gap-3 border-b border-edge px-3 text-xs",
         children: [
-          /* @__PURE__ */ jsx_runtime18.jsx("span", {
+          /* @__PURE__ */ jsx_runtime19.jsx("span", {
             className: "font-manuscript text-sm text-rubric",
             children: "Scriptorium"
           }),
-          /* @__PURE__ */ jsx_runtime18.jsx("span", {
+          /* @__PURE__ */ jsx_runtime19.jsx("span", {
             className: "text-ink-faint",
             children: state.sessionId
           }),
-          /* @__PURE__ */ jsx_runtime18.jsx("span", {
+          /* @__PURE__ */ jsx_runtime19.jsx("span", {
             className: "ml-auto text-ink-dim",
             children: daemon.connection
           }),
-          /* @__PURE__ */ jsx_runtime18.jsx("button", {
+          /* @__PURE__ */ jsx_runtime19.jsx("button", {
             type: "button",
             "aria-label": "Switch theme",
             className: "text-ink-faint hover:text-ink [&_svg]:size-3.5",
             onClick: toggleTheme,
-            children: theme === "light" ? /* @__PURE__ */ jsx_runtime18.jsx(Moon, {}) : /* @__PURE__ */ jsx_runtime18.jsx(Sun, {})
+            children: theme === "light" ? /* @__PURE__ */ jsx_runtime19.jsx(Moon, {}) : /* @__PURE__ */ jsx_runtime19.jsx(Sun, {})
           })
         ]
       }),
-      /* @__PURE__ */ jsx_runtime18.jsxs("div", {
+      /* @__PURE__ */ jsx_runtime19.jsxs("div", {
         className: "flex min-h-0 flex-1",
         children: [
-          /* @__PURE__ */ jsx_runtime18.jsx("aside", {
+          /* @__PURE__ */ jsx_runtime19.jsx("aside", {
             "data-pane": "context",
             className: "flex w-80 shrink-0 flex-col",
-            children: /* @__PURE__ */ jsx_runtime18.jsx(ContextSidebar, {
+            children: /* @__PURE__ */ jsx_runtime19.jsx(ContextSidebar, {
               entries: state.context,
               activeDoc: openDoc?.entryId && openDoc.rel ? { entryId: openDoc.entryId, rel: openDoc.rel } : null,
               userHome,
@@ -38014,42 +38333,43 @@ function Frame({ daemon }) {
               listDir: daemon.listDir,
               appActionsFor: (t) => scriptoriumMenuActions(send, hiddenOf(state))({ ...t, doc: docAt(state.docs, t.path) }),
               created,
-              moved: done?.of === "move" ? { path: done.path, seq: done.seq } : null,
+              moved,
               notice,
               onDismissNotice: daemon.clearError,
               importImage: daemon.importImage,
+              askLocation: ask.askLocation,
               beforeMove,
               uncheckedMoveNote: scriptoriumUncheckedMoveNote
             })
           }),
-          /* @__PURE__ */ jsx_runtime18.jsx("main", {
+          /* @__PURE__ */ jsx_runtime19.jsx("main", {
             "data-pane": "centre",
             className: "flex flex-1 items-center justify-center border-l border-edge p-6",
-            children: /* @__PURE__ */ jsx_runtime18.jsx("div", {
+            children: /* @__PURE__ */ jsx_runtime19.jsx("div", {
               className: "max-w-md text-center text-ink-dim",
-              children: openDoc ? /* @__PURE__ */ jsx_runtime18.jsxs("p", {
+              children: openDoc ? /* @__PURE__ */ jsx_runtime19.jsxs("p", {
                 role: "status",
                 children: [
-                  /* @__PURE__ */ jsx_runtime18.jsx("span", {
+                  /* @__PURE__ */ jsx_runtime19.jsx("span", {
                     className: "text-ink",
                     children: openDoc.name
                   }),
                   " is open in this session. This surface cannot show it yet: the document pane arrives in the next cycle. The agent can read it, and you can talk about it in the chat."
                 ]
-              }) : /* @__PURE__ */ jsx_runtime18.jsx("p", {
+              }) : /* @__PURE__ */ jsx_runtime19.jsx("p", {
                 role: "status",
                 children: "The document pane arrives in the next cycle. Until then, manage the sets on the left and talk with the agent on the right."
               })
             })
           }),
-          /* @__PURE__ */ jsx_runtime18.jsxs("aside", {
+          /* @__PURE__ */ jsx_runtime19.jsxs("aside", {
             "data-pane": "chat",
             className: "flex w-80 shrink-0 flex-col border-l border-edge",
             children: [
-              /* @__PURE__ */ jsx_runtime18.jsx("div", {
+              /* @__PURE__ */ jsx_runtime19.jsx("div", {
                 role: "tablist",
                 className: "flex h-9 shrink-0 border-b border-edge text-xs",
-                children: Object.keys(tabs).map((id) => /* @__PURE__ */ jsx_runtime18.jsx("button", {
+                children: Object.keys(tabs).map((id) => /* @__PURE__ */ jsx_runtime19.jsx("button", {
                   type: "button",
                   role: "tab",
                   "aria-selected": tab === id,
@@ -38058,7 +38378,7 @@ function Frame({ daemon }) {
                   children: tabs[id]
                 }, id))
               }),
-              tab === "chat" && /* @__PURE__ */ jsx_runtime18.jsx(ChatSidebar, {
+              tab === "chat" && /* @__PURE__ */ jsx_runtime19.jsx(ChatSidebar, {
                 messages: state.chat,
                 waiting: state.waiting,
                 agentListening: state.agentListening !== false,
@@ -38069,7 +38389,7 @@ function Frame({ daemon }) {
                 onSend: (text4) => send({ op: "say", text: text4, withSelection: false, via: "chat" }),
                 onDropSelection: () => {}
               }),
-              tab === "notes" && /* @__PURE__ */ jsx_runtime18.jsx(NotesPanel, {
+              tab === "notes" && /* @__PURE__ */ jsx_runtime19.jsx(NotesPanel, {
                 notes: openDoc?.notes ?? [],
                 focusedId: null,
                 selection: null,
@@ -38080,7 +38400,7 @@ function Frame({ daemon }) {
                 onResolve: (id, resolved) => openDoc && send({ op: "note.resolve", doc: openDoc.slug, id, resolved }),
                 onRemove: (id) => openDoc && send({ op: "note.remove", doc: openDoc.slug, id })
               }),
-              tab === "tasks" && /* @__PURE__ */ jsx_runtime18.jsx(TasksPanel, {
+              tab === "tasks" && /* @__PURE__ */ jsx_runtime19.jsx(TasksPanel, {
                 tasks: state.tasks,
                 onCancel: (id) => send({ op: "task.cancel", id }),
                 onRemove: (id) => send({ op: "task.remove", id }),
@@ -38090,18 +38410,19 @@ function Frame({ daemon }) {
             ]
           })
         ]
-      })
+      }),
+      ask.dialog
     ]
   });
 }
 
 // src/scriptorium/surface/kit/main.tsx
-var jsx_runtime19 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime20 = __toESM(require_jsx_runtime(), 1);
 function FramePage() {
-  return /* @__PURE__ */ jsx_runtime19.jsx(Frame, {
+  return /* @__PURE__ */ jsx_runtime20.jsx(Frame, {
     daemon: useDaemon()
   });
 }
 var el = document.getElementById("root");
 if (el)
-  import_client.createRoot(el).render(/* @__PURE__ */ jsx_runtime19.jsx(FramePage, {}));
+  import_client.createRoot(el).render(/* @__PURE__ */ jsx_runtime20.jsx(FramePage, {}));

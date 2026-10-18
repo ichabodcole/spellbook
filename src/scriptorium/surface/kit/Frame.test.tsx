@@ -3,10 +3,14 @@
 // reaches the daemon, a set is added, hide and unhide and make-set go through
 // the menu, a move asks with the plan, opening a document says why nothing
 // shows, a refusal's hint is the notice, and the daemon serves the built frame.
+// Where a create goes: with a selection beside or inside it, unasked; with
+// nothing selected, or a drop on the list itself, the location dialog. Every
+// test is watched: a create, import or drop that reaches the daemon without a
+// `dir` fails the test it happened in (`placeless`).
 
 import "../../../kit/lib/registerDom.ts";
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Daemon } from "../../../kit/context/daemonClient";
 import { useDaemon } from "../../../kit/context/useDaemon";
@@ -20,6 +24,7 @@ import {
   typeInto,
   waitFor,
 } from "../../../kit/lib/testDom";
+import { GIF_1PX } from "../../../kit/lib/testImages";
 import type { ContextEntry } from "../../../kit/workspace/protocol";
 import type { WorkspaceDaemon } from "../../../kit/workspace/server";
 import { tempRoot } from "../../../kit/workspace/testing";
@@ -52,6 +57,11 @@ beforeAll(async () => {
   await daemon.start();
 });
 afterEach(cleanup);
+// No test may let the frame send a create, import or drop that names no place.
+afterEach(() => {
+  const seen = placeless.splice(0);
+  expect(seen).toEqual([]);
+});
 afterAll(async () => {
   await daemon?.stop().catch(() => {});
   // Awaited: the next file's `installDom` must not find this DOM still leaving.
@@ -60,6 +70,39 @@ afterAll(async () => {
   else process.env.SCRIPTORIUM_HOME = savedHome;
   rmSync(root, { recursive: true, force: true });
 });
+
+/** The ops that must name their place, by the field that names it. */
+const PLACED = new Set(["doc.create", "folder.create", "bundle.create", "import"]);
+/** What the frame sent the daemon that names no place: must stay empty. */
+const placeless: unknown[] = [];
+/** Every create and import the frame sent, in order, with the place it named. */
+const placed: { op: string; dir?: unknown }[] = [];
+const names = (dir: unknown) => typeof dir === "string" && dir.startsWith("/");
+
+/** The client the frame is given, with every op and image it sends checked for a place. */
+function watched(d: Daemon): Daemon {
+  const check = (op: { op: string; dir?: unknown }) => {
+    if (!PLACED.has(op.op)) return;
+    placed.push({ op: op.op, dir: op.dir });
+    if (!names(op.dir)) placeless.push(op);
+  };
+  return {
+    ...d,
+    send: (op) => {
+      check(op as { op: string; dir?: unknown });
+      return d.send(op);
+    },
+    request: (op, o) => {
+      check(op as { op: string; dir?: unknown });
+      return d.request(op, o);
+    },
+    importImage: (f, o) => {
+      placed.push({ op: "image", dir: o.dir });
+      if (!names(o.dir) && !o.doc && !o.bundle) placeless.push({ image: f.name, ...o });
+      return d.importImage(f, o);
+    },
+  };
+}
 
 function Host() {
   const d = useDaemon({
@@ -71,7 +114,7 @@ function Host() {
   client = d;
   return (
     <div style={{ width: 1200, height: 700 }}>
-      <Frame daemon={d} />
+      <Frame daemon={watched(d)} />
     </div>
   );
 }
@@ -284,6 +327,184 @@ describe("the interim frame on a real kit daemon", () => {
   });
 });
 
+const where = () => document.querySelector<HTMLElement>('[data-slot="location-dialog"]');
+const places = () =>
+  all('[data-slot="location-dialog"] [role="option"]').map((e) => (e.textContent ?? "").trim());
+const chosen = () =>
+  all('[data-slot="location-dialog"] [role="option"][aria-selected="true"]').map((e) =>
+    (e.textContent ?? "").trim(),
+  );
+const place = (text: string) =>
+  all('[data-slot="location-dialog"] [role="option"]').find(
+    (e) => (e.textContent ?? "").trim() === text,
+  ) ?? null;
+const key = (el: Element | null, k: string) =>
+  settle(() => {
+    if (!el) throw new Error("no element for the key");
+    el.dispatchEvent(new window.KeyboardEvent("keydown", { key: k, bubbles: true }));
+  });
+const search = () =>
+  document.querySelector(
+    '[data-slot="location-dialog"] input[aria-label="Search sets and folders"]',
+  );
+const byLabel = (l: string) => document.querySelector(`[aria-label="${l}"]`);
+const backToList = async () => {
+  const back = byLabel("Back to the context list");
+  if (back) await click(back);
+  await waitFor(() => byLabel("New document…") !== null, "the list");
+};
+const filesIn = (dir: string) => (existsSync(dir) ? readdirSync(dir).sort() : []);
+async function dropFiles(target: Element, files: File[]) {
+  await settle(() => {
+    const ev = new window.Event("drop", { bubbles: true, cancelable: true });
+    Object.defineProperty(ev, "dataTransfer", {
+      value: {
+        types: ["Files"],
+        files,
+        items: files.map(() => ({ webkitGetAsEntry: () => ({ isDirectory: false }) })),
+        getData: () => "",
+      },
+    });
+    target.dispatchEvent(ev);
+  });
+}
+
+describe("where a new file goes (no default workspace)", () => {
+  test("the list says a drop asks, and never that it lands somewhere unseen", async () => {
+    const m = await open();
+    const pane = document.querySelector('[data-pane="context"]')?.textContent ?? "";
+    expect(pane).not.toContain("here to copy them in");
+    expect(pane).toContain("Drop documents or images, then choose a set");
+    await m.unmount();
+  });
+
+  test("with nothing selected New document asks; a folder made at a path is preselected, and the next is one Enter", async () => {
+    const fresh = join(root, "made", "fresh");
+    mkdirSync(join(root, "made"), { recursive: true });
+    const m = await open();
+    await click(byLabel("New document…"));
+    await waitFor(() => where() !== null, "the location dialog");
+    expect(where()?.textContent).toContain("Where should the new document go?");
+    // The pointer to make-set, in Scriptorium's words.
+    expect(where()?.textContent).toContain("Turn into a set");
+    // Making room: a new folder at a path, the daemon's folder.add, a set.
+    const box = document.querySelector<HTMLInputElement>(
+      '[data-slot="location-dialog"] input[aria-label="New folder at a path"]',
+    );
+    await typeInto(box as HTMLInputElement, fresh);
+    await key(box, "Enter");
+    await waitFor(() => chosen().join() === "fresh", "the new set, preselected");
+    expect(entry(fresh)?.membership).toBe("mirrored");
+    const was = client?.done?.seq;
+    await key(search(), "Enter");
+    await waitFor(() => filesIn(fresh).includes("Untitled.md"), "the document in the new set");
+    await waitFor(() => where() === null, "the dialog closed");
+    // The new document opens, and the sidebar shows it in its set.
+    await waitFor(
+      () => client?.done?.seq !== was && byLabel("New document in this set") !== null,
+      "the new document shown in its set",
+    );
+    // The last place is remembered: the next ask preselects it, and Enter is all it takes.
+    await backToList();
+    await click(byLabel("New folder…"));
+    await waitFor(() => where() !== null, "the dialog again");
+    expect(chosen()).toEqual(["fresh"]);
+    await key(search(), "Enter");
+    await waitFor(() => filesIn(fresh).includes("New folder"), "the folder in the new set");
+    expect(placed.slice(-2)).toEqual([
+      { op: "doc.create", dir: fresh },
+      { op: "folder.create", dir: fresh },
+    ]);
+    // Gone from the context: nothing is preselected, and Enter does nothing.
+    // (Taken out by the daemon directly: the list's Remove is held above.)
+    await settle(() => {
+      client?.send({ op: "context.remove", id: entry(fresh)?.id as string });
+    });
+    await waitFor(() => entry(fresh) === undefined, "the set gone");
+    await waitFor(() => byLabel("New document…") !== null, "the list");
+    await click(byLabel("New document…"));
+    await waitFor(() => where() !== null, "the dialog");
+    expect(places()).not.toContain("fresh");
+    expect(chosen()).toEqual([]);
+    const before = placed.length;
+    await key(search(), "Enter");
+    expect(where()).not.toBeNull();
+    await key(search(), "Escape");
+    await waitFor(() => where() === null, "backed out");
+    await Bun.sleep(100);
+    expect(placed.length).toBe(before);
+    await m.unmount();
+  });
+
+  test("a drop on the list itself asks, and the files are copied into the set chosen", async () => {
+    const m = await open(set);
+    await waitFor(() => listRow("set") !== null, "the set's row");
+    const list = document.querySelector('[data-pane="context"] ul[aria-label="Context"]')
+      ?.parentElement as Element;
+    await dropFiles(list, [
+      new File(["# Dropped\n"], "dropped.md"),
+      new File([GIF_1PX], "fox.gif", { type: "image/gif" }),
+    ]);
+    await waitFor(() => where() !== null, "the location dialog");
+    expect(where()?.textContent).toContain("Where should these 2 files be copied?");
+    await click(place("set"));
+    await waitFor(() => existsSync(join(set, "dropped.md")), "the document copied in");
+    await waitFor(() => filesIn(set).some((f) => f.startsWith("fox.")), "the image copied in");
+    expect(placed.slice(-2).map((p) => p.dir)).toEqual([set, set]);
+    await m.unmount();
+  });
+
+  test("after a create, the list the human went back to stays when the next snapshot comes", async () => {
+    const m = await open(set);
+    if (!byLabel("New document in this set")) await click(listRow("set"));
+    await waitFor(() => byLabel("New document in this set") !== null, "the set");
+    const was = client?.done?.seq;
+    await click(byLabel("New document in this set"));
+    await waitFor(() => client?.done?.seq !== was, "the document made");
+    await settle();
+    await backToList();
+    await settle(() => {
+      client?.send({ op: "say", text: "a snapshot after the create", withSelection: false });
+    });
+    await waitFor(
+      () => client?.state?.chat.some((c) => c.text === "a snapshot after the create") ?? false,
+      "the next snapshot",
+    );
+    await settle();
+    expect(byLabel("Back to the context list")).toBeNull();
+    expect(byLabel("New document…")).not.toBeNull();
+    await m.unmount();
+  });
+
+  test("with a selection New document and New folder go beside or inside it, unasked", async () => {
+    const m = await open(set);
+    // The set's own row in the list: inside the set.
+    await rightClick(listRow("set"));
+    await waitFor(() => menuItem("New folder") !== null, "the set's menu");
+    await click(menuItem("New folder"));
+    await waitFor(() => placed.at(-1)?.op === "folder.create", "the folder");
+    expect(placed.at(-1)).toEqual({ op: "folder.create", dir: set });
+    // Drilled in: beside a document, inside a folder, and the header's in this set.
+    if (!treeRow("aside.md")) await click(listRow("set"));
+    await waitFor(() => treeRow("aside.md") !== null, "the set's tree");
+    await rightClick(treeRow("aside.md"));
+    await waitFor(() => menuItem("New document beside it") !== null, "the document's menu");
+    await click(menuItem("New document beside it"));
+    await waitFor(() => placed.at(-1)?.op === "doc.create", "beside the document");
+    expect(placed.at(-1)).toEqual({ op: "doc.create", dir: set });
+    await waitFor(() => treeRow("part") !== null, "the folder row");
+    await rightClick(treeRow("part"));
+    await waitFor(() => menuItem("New document") !== null, "the folder's menu");
+    await click(menuItem("New document"));
+    await waitFor(() => placed.at(-1)?.dir === join(set, "part"), "inside the folder");
+    await click(byLabel("New document in this set"));
+    await waitFor(() => placed.at(-1)?.dir === set, "in the set");
+    expect(where()).toBeNull();
+    await waitFor(() => existsSync(join(set, "part", "Untitled.md")), "on disk");
+    await m.unmount();
+  });
+});
+
 describe("scriptoriumMenuActions", () => {
   const sent: unknown[] = [];
   const send = (op: unknown) => {
@@ -310,6 +531,12 @@ describe("scriptoriumMenuActions", () => {
       "scriptorium.unhide",
     ]);
     expect(ids(acts({ kind: "doc", path: "/s/b.md", entry: mirrored }))).toEqual([
+      "scriptorium.new-doc-beside",
+      "scriptorium.new-folder-beside",
+      "scriptorium.hide",
+    ]);
+    // A folder makes inside itself with the kit's own items: nothing beside it here.
+    expect(ids(acts({ kind: "group", path: "/s/part", entry: mirrored }))).toEqual([
       "scriptorium.hide",
     ]);
     for (const a of acts({ kind: "entry", path: "/s/a.md", entry: listed })) a.onSelect();

@@ -10,24 +10,42 @@
  *
  * Scriptorium's own verbs reach the panes through their slots: hide, unhide
  * and make-set through `menuActions` (`scriptoriumMenuActions`), the move plan
- * through the pre-move slot (`./movePlan.tsx`). Every create the panes send
- * names its folder (`dir`); a drop with no folder under it (there is no
- * workspace) is refused by the daemon, and its hint is the sidebar's notice.
+ * through the pre-move slot (`./movePlan.tsx`). Every create, import and drop
+ * the panes send names its folder (`dir`): Scriptorium has no workspace, so
+ * what has no set or folder under it (New document or New folder with nothing
+ * selected, a drop on the list itself) asks where, through the sidebar's
+ * `askLocation` slot (`useAskLocation`), the place chosen last preselected.
  */
 
-import { EyeIcon, EyeOffIcon, FolderTreeIcon, MoonIcon, SunIcon } from "lucide-react";
+import {
+  EyeIcon,
+  EyeOffIcon,
+  FilePlusIcon,
+  FolderPlusIcon,
+  FolderTreeIcon,
+  MoonIcon,
+  SunIcon,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChatSidebar } from "../../../kit/chat/ChatSidebar";
 import { NotesPanel } from "../../../kit/chat/NotesPanel";
 import { TasksPanel } from "../../../kit/chat/TasksPanel";
+import { useAskLocation } from "../../../kit/context/AskLocation";
 import { ContextSidebar } from "../../../kit/context/ContextSidebar";
 import type { Daemon } from "../../../kit/context/daemonClient";
 import type { MenuActions } from "../../../kit/context/menuActions";
-import { docAt, entryPath, joinPath, singleDoc } from "../../../kit/context/model";
+import { dirOf, docAt, entryPath, joinPath, singleDoc } from "../../../kit/context/model";
+import { bundlePlace } from "../../../kit/lib/bundles";
 import { cn } from "../../../kit/lib/cn";
 import { safeStorage } from "../../../kit/lib/storage";
 import type { PublicState } from "../../../kit/workspace/protocol";
 import { scriptoriumBeforeMove, scriptoriumUncheckedMoveNote } from "./movePlan";
+
+const NO_ENTRIES: PublicState["context"] = [];
+
+/** Under the location dialog: the other way to make room for new files. */
+const MAKE_ROOM =
+  "A document listed on its own can take new files beside it once it is a set: Turn into a set, in its row's menu.";
 
 /**
  * The browser's copy of the theme, read by the page's pre-paint script so a
@@ -47,7 +65,10 @@ const hiddenOf = (state: PublicState): Record<string, string[]> =>
 
 /**
  * Scriptorium's menu actions: Hide on anything inside a set, Show hidden on a set that hides something, and Turn into a set on a
- * document listed on its own (the shipped surface's words for all three).
+ * document listed on its own (the shipped surface's words for all three). On a
+ * document or image inside a set, New document and New folder beside it: the
+ * kit's own are on a folder's row, a set's and the tree's background, and a
+ * selected document is a place too, so making one there never asks.
  */
 export function scriptoriumMenuActions(
   send: Daemon["send"],
@@ -72,6 +93,25 @@ export function scriptoriumMenuActions(
         icon: <EyeIcon />,
         onSelect: () => send({ op: "scriptorium.unhide", entry: entry.id }),
       });
+    const beside =
+      (kind === "doc" || kind === "image" || kind === "bundle") && bundlePlace(path) !== "own";
+    if (beside) {
+      const dir = dirOf(path);
+      actions.push(
+        {
+          id: "scriptorium.new-doc-beside",
+          label: "New document beside it",
+          icon: <FilePlusIcon />,
+          onSelect: () => send({ op: "doc.create", dir }),
+        },
+        {
+          id: "scriptorium.new-folder-beside",
+          label: "New folder beside it",
+          icon: <FolderPlusIcon />,
+          onSelect: () => send({ op: "folder.create", dir }),
+        },
+      );
+    }
     // A row in the list is taken out by the kit's own Remove; Hide is for what is inside.
     if (kind !== "entry")
       actions.push({
@@ -120,6 +160,30 @@ export function Frame({ daemon }: { daemon: Daemon }) {
     () => scriptoriumBeforeMove(daemon, { userHome }),
     [daemon.request, userHome],
   );
+  // Where to create when nothing is selected. The place chosen last is held by
+  // the hook for as long as this page lives, which is this session's surface.
+  const ask = useAskLocation({
+    entries: state?.context ?? NO_ENTRIES,
+    userHome,
+    listDir: daemon.listDir,
+    addFolder: (path) => daemon.request({ op: "folder.add", path }),
+    hint: MAKE_ROOM,
+  });
+  // One object per `done`, not per render: the sidebar acts on a new one (it
+  // shows the row and starts its rename), so a fresh object on every snapshot
+  // pulled the view back into the set after the human had left it.
+  const done = daemon.done;
+  const created = useMemo(
+    () =>
+      done && ["doc.create", "folder.create", "bundle.create"].includes(done.of)
+        ? { path: done.path, seq: done.seq }
+        : null,
+    [done],
+  );
+  const moved = useMemo(
+    () => (done?.of === "move" ? { path: done.path, seq: done.seq } : null),
+    [done],
+  );
   if (!state)
     return (
       <div className="flex h-full items-center justify-center text-ink-dim">
@@ -130,11 +194,6 @@ export function Frame({ daemon }: { daemon: Daemon }) {
   const notice = daemon.lastError
     ? [daemon.lastError, hints.current.get(daemon.lastError)].filter(Boolean).join(". To go on: ")
     : null;
-  const done = daemon.done;
-  const created =
-    done && ["doc.create", "folder.create", "bundle.create"].includes(done.of)
-      ? { path: done.path, seq: done.seq }
-      : null;
   const docName = (slug: string) => state.docs.find((d) => d.slug === slug)?.name ?? slug;
   const tabs = { chat: "Chat", notes: "Notes", tasks: "Tasks" } as const;
   return (
@@ -176,10 +235,11 @@ export function Frame({ daemon }: { daemon: Daemon }) {
               )({ ...t, doc: docAt(state.docs, t.path) })
             }
             created={created}
-            moved={done?.of === "move" ? { path: done.path, seq: done.seq } : null}
+            moved={moved}
             notice={notice}
             onDismissNotice={daemon.clearError}
             importImage={daemon.importImage}
+            askLocation={ask.askLocation}
             beforeMove={beforeMove}
             uncheckedMoveNote={scriptoriumUncheckedMoveNote}
           />
@@ -261,6 +321,7 @@ export function Frame({ daemon }: { daemon: Daemon }) {
           )}
         </aside>
       </div>
+      {ask.dialog}
     </div>
   );
 }
