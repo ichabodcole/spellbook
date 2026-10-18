@@ -666,6 +666,95 @@ describe("writeText", () => {
     client.close();
   });
 
+  // kit-read-reply-reverts-sent-edit: a text read before an edit this client has
+  // already SENT (not one still waiting) used to replace the client's copy, and
+  // the next keystroke sent the old text back, losing what was typed. A request
+  // answered after the stale reply is the fence: one socket, in order.
+  test("an edit sent in the same tick as a re-open keeps its text: the open's older reply is not taken", async () => {
+    daemon = await boot();
+    const c = await connect(daemon);
+    const { slug, path } = await openSolo(c);
+    await c.getSnapshot().request({ op: "open", path: join(docs, "sibling.md") });
+    // Back to solo: its text is held, so a surface shows it at once and the
+    // human types; the open's reply is still on its way.
+    c.getSnapshot().send({ op: "open", path: join(docs, "solo.md") });
+    const doc = docOf(c, slug) as NonNullable<ReturnType<typeof docOf>>;
+    expect(c.getSnapshot().writeText(doc, doc.active, "# Solo, typed\n")).toBe(true);
+    c.getSnapshot().flushText(slug);
+    await c.getSnapshot().listDir(docs);
+    expect(readFileSync(path, "utf8")).toBe("# Solo, typed\n");
+    expect(c.getSnapshot().texts.get(textKey(slug, doc.active))).toBe("# Solo, typed\n");
+  });
+
+  test("an edit sent while a `read` is in flight keeps its text: the read's older reply is not taken", async () => {
+    daemon = await boot();
+    const c = await connect(daemon);
+    const { slug, path } = await openSolo(c);
+    const doc = docOf(c, slug) as NonNullable<ReturnType<typeof docOf>>;
+    // The pane asks for the text it does not have yet; the human types first.
+    c.getSnapshot().send({ op: "read", doc: slug, version: doc.active });
+    c.getSnapshot().writeText(doc, doc.active, "# Solo, typed\n");
+    c.getSnapshot().flushText(slug);
+    await c.getSnapshot().listDir(docs);
+    expect(readFileSync(path, "utf8")).toBe("# Solo, typed\n");
+    expect(c.getSnapshot().texts.get(textKey(slug, doc.active))).toBe("# Solo, typed\n");
+    // A read sent after the edit is answered with the edit in it, and taken.
+    await c.getSnapshot().request({ op: "read", doc: slug, version: doc.active });
+    expect(c.getSnapshot().texts.get(textKey(slug, doc.active))).toBe("# Solo, typed\n");
+  });
+
+  test("only a reply to a request sent before the edit, for that version, is passed over", async () => {
+    class FakeSocket {
+      static last: FakeSocket;
+      readyState = 1;
+      sent: string[] = [];
+      onopen: (() => void) | null = null;
+      onmessage: ((e: { data: string }) => void) | null = null;
+      onclose: (() => void) | null = null;
+      constructor(readonly url: string) {
+        FakeSocket.last = this;
+        queueMicrotask(() => this.onopen?.());
+      }
+      send(data: string) {
+        this.sent.push(data);
+      }
+      close() {}
+      deliver(frame: Record<string, unknown>) {
+        this.onmessage?.({ data: JSON.stringify(frame) });
+      }
+    }
+    const client = createDaemonClient({
+      url: "http://127.0.0.1:1/ws",
+      WebSocket: FakeSocket as unknown as typeof WebSocket,
+    });
+    client.connect();
+    await Bun.sleep(5);
+    const sock = FakeSocket.last;
+    const doc = { slug: "solo", active: 1 };
+    sock.deliver({ op: "state", state: { sessionId: "s", docs: [doc] } });
+    const text = (v = 1) => client.getSnapshot().texts.get(textKey("solo", v));
+    const asked = client.getSnapshot().send({ op: "read", doc: "solo", version: 1 }) as number;
+    client.getSnapshot().writeText(doc, 1, "typed");
+    client.getSnapshot().flushText("solo");
+    const edit = JSON.parse(sock.sent.at(-1) as string) as { op: string; rid: number };
+    expect(edit.op).toBe("edit");
+    expect(asked).toBeLessThan(edit.rid);
+    const reply = { op: "version.text", doc: "solo", version: 1, origin: "load" };
+    // Asked before the edit: read before the daemon took it. Passed over.
+    sock.deliver({ ...reply, text: "older", requestId: asked });
+    expect(text()).toBe("typed");
+    // Another version is not the one typed in: taken.
+    sock.deliver({ ...reply, version: 2, text: "v2", requestId: asked });
+    expect(text(2)).toBe("v2");
+    // The daemon's own news answers no request: taken.
+    sock.deliver({ ...reply, text: "from disk", origin: "remote" });
+    expect(text()).toBe("from disk");
+    // Asked after the edit: the edit is in it. Taken.
+    sock.deliver({ ...reply, text: "re-read", requestId: edit.rid + 1 });
+    expect(text()).toBe("re-read");
+    client.close();
+  });
+
   test("an edit carries the newest rewritten text it took as its base, and a dropped one is not taken", async () => {
     class FakeSocket {
       static last: FakeSocket;
