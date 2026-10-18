@@ -8,7 +8,7 @@
 // hands the answers back; each span then gets either the image, in a button
 // that opens the viewer, or a quiet placeholder that says why not. The
 // placeholder's words are attributes the stylesheet draws (`.md-embed` in
-// `theme/base.css`), never text, so the view's selection and notes still line
+// `theme/document.css`), never text, so the view's selection and notes still line
 // up with the source, as they do around an image's alt text.
 
 import { useLayoutEffect, useState } from "react";

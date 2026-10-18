@@ -58,7 +58,7 @@ beforeEach(async () => {
   client = null;
   opened = [];
   selections = [];
-  // The seeded folder is the workspace, so its set is in the context from the start.
+  // The seeded folder is the session's workspace folder; the set inside it is added below.
   daemon = fixtureDaemon({ tmp: join(root, "tmp"), workspace: docs });
   await daemon.start();
   daemon.session.addContext(join(docs, "set"));
@@ -156,7 +156,7 @@ describe("a typed link's relations", () => {
   });
 
   test("the stylesheet draws the attribute after the link, muted, in both themes", () => {
-    const css = readFileSync(join(import.meta.dir, "..", "theme", "base.css"), "utf8");
+    const css = readFileSync(join(import.meta.dir, "..", "theme", "document.css"), "utf8");
     const rule = css.slice(css.indexOf(".md-prose a[data-rel]::after"));
     const body = rule.slice(0, rule.indexOf("}"));
     expect(body).toContain("content: attr(data-rel)");

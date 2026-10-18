@@ -31,8 +31,12 @@
      • the dark variant: Story Studio keys it on the theme attribute, and a
        spell on the default variant (digestify follows the OS) would lose its
        dark arms. A spell that adopts the primitives declares its own;
-     • the rendered-markdown, highlight, flash and scrollbar rules: they
-       belong to the chat, document and shell modules, and land with them.
+     • the rendered-markdown, highlight and flash rules: they are in
+       document.css beside this file, which a page with the kit's chat or
+       document pane imports after this one. Scriptorium imports this file
+       and writes its own prose rules under the same class, so here they
+       would change its shipped view;
+     • the scrollbar rules: they belong to the shell, and land with it.
    ────────────────────────────────────────────────────────────────────────── */
 
 /* The enter and exit animations the primitives use. Their presence is keyed on

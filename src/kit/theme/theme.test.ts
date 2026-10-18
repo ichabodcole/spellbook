@@ -7,6 +7,8 @@ import {
   applyTheme,
   BASE_CSS_PATH,
   BASE_CSS_SPECIFIER,
+  DOCUMENT_CSS_PATH,
+  DOCUMENT_CSS_SPECIFIER,
   readAppliedTheme,
   resolveInitialTheme,
   THEME_LAYERS,
@@ -113,6 +115,51 @@ describe("the base stylesheet", () => {
   test("keeps its L1 aliases out of the light block", () => {
     const lightBlock = /\[data-theme="light"\]\s*\{([\s\S]*?)\n\}/.exec(css)?.[1] ?? "";
     expect(lightBlock).not.toContain("--color-popover");
+  });
+});
+
+describe("the rendered-markdown sheet", () => {
+  const doc = readFileSync(DOCUMENT_CSS_PATH, "utf8");
+  const kit = join(import.meta.dir, "..");
+  /** Every highlight name a kit module paints with (`const X_HL = "name"`). */
+  const paintedNames = () =>
+    ["document/MarkdownView.tsx", "document/FindBar.tsx"].flatMap((f) =>
+      [...readFileSync(join(kit, f), "utf8").matchAll(/_HL = "([\w-]+)"/g)].map((m) => m[1]),
+    );
+
+  test("is where the theme says it is, and the specifier reaches it from a spell's surface", () => {
+    expect(existsSync(DOCUMENT_CSS_PATH)).toBe(true);
+    const surface = join(import.meta.dir, "..", "..", "scriptorium", "surface");
+    expect(resolve(surface, DOCUMENT_CSS_SPECIFIER)).toBe(resolve(DOCUMENT_CSS_PATH));
+  });
+
+  test("styles every highlight the panes paint, the flash, embeds and relation chips", () => {
+    const names = paintedNames();
+    expect(names.sort()).toEqual([
+      "doc-flash",
+      "doc-note",
+      "doc-note-focus",
+      "doc-note-pending",
+      "find-current",
+      "find-match",
+    ]);
+    for (const n of names) expect(doc, `::highlight(${n})`).toContain(`::highlight(${n}) {`);
+    expect(doc).toContain('[data-flash="on"] {');
+    expect(doc).toContain(".md-prose .md-embed {");
+    expect(doc).toContain(".md-prose a[data-rel]::after {");
+    expect(doc).toContain(".md-prose a[data-blocked-link] {");
+  });
+
+  test("stays out of the base sheet, so a spell with prose rules of its own is unchanged", () => {
+    expect(css).not.toContain(".md-prose");
+    expect(css).not.toContain("::highlight(");
+    expect(css).not.toContain("data-flash");
+  });
+
+  test("uses the kit's tokens, never a fixed colour", () => {
+    const body = doc.replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(body).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+    expect(body).toContain("var(--color-");
   });
 });
 

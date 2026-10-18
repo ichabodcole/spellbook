@@ -38,7 +38,7 @@ import {
 } from "./find.ts";
 import { clearHighlight, paintHighlight } from "./highlight.ts";
 
-/** The highlight registry's names, styled in the theme (`base.css`). */
+/** The highlight registry's names, styled in the theme (`document.css`). */
 export const FIND_MATCH_HL = "find-match";
 export const FIND_CURRENT_HL = "find-current";
 

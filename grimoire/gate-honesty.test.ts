@@ -341,6 +341,18 @@ import { join } from "node:path";
 // from its own folder used the real home. No comment rides with them: the
 // reason lives in grimoire/kit-scratch-home-ward.test.ts, which the gate runs
 // and which reds on a bunfig without the preload.
+//
+// ⛔ RE-DECLARED 2026-10-18 — 30/2,592 -> 31/2,866, from the object's own sum.
+// MEMBERSHIP GREW BY ONE, and one entry grew:
+//     +270  src/kit/theme/document.css   (new)
+//     +4    src/kit/theme/base.css       218 -> 222
+// the document-pane port (kit-port-document): Story Studio's rendered-markdown,
+// note, find and flash rules, in a sheet of their own because the shipped
+// Scriptorium imports base.css and writes its own prose rules under the same
+// class. base.css grew only by the note that says where they went.
+// src/kit/theme/theme.test.ts, which the gate runs, holds that the new sheet
+// styles every highlight name the panes paint and that base.css carries none
+// of it; the rest of the file is read by nothing.
 const DECLARED_BLIND: Record<string, number> = {
   "src/digestify/surface/styles.css": 515,
   "src/digestify/surface/index.html": 26,
@@ -352,7 +364,8 @@ const DECLARED_BLIND: Record<string, number> = {
   "src/magpie/surface/styles.css": 186,
   "src/imago/surface/styles.css": 167,
   "plugins/spellbook/skills/magpie/scripts/remove.py": 145,
-  "src/kit/theme/base.css": 218,
+  "src/kit/theme/base.css": 222,
+  "src/kit/theme/document.css": 270,
   "src/astrolabe/surface/styles.css": 104,
   "src/astrolabe/surface/index.html": 35,
   "src/mind-mapper/surface/index.html": 52,
