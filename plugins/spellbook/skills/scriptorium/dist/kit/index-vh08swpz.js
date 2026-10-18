@@ -11374,6 +11374,7 @@ function createDaemonClient(options2 = {}) {
     set({ texts: next });
   }
   const seenRev = new Map;
+  const sentEdit = new Map;
   const writes = new Map;
   function fireWrite(slug) {
     const w = writes.get(slug);
@@ -11391,17 +11392,19 @@ function createDaemonClient(options2 = {}) {
     }
     const text = typeof w.text === "function" ? w.text() : w.text;
     const base = seenRev.get(slug);
-    if (send({
+    const id = send({
       op: "edit",
       doc: slug,
       version: w.version,
       text,
       ...base !== undefined ? { base } : {}
-    }) === null) {
+    });
+    if (id === null) {
       w.timer = setTimeout(() => fireWrite(slug), EDIT_RETRY_MS);
       return false;
     }
     writes.delete(slug);
+    sentEdit.set(textKey(slug, w.version), id);
     noteText(slug, w.version, text);
     return true;
   }
@@ -11548,6 +11551,9 @@ function createDaemonClient(options2 = {}) {
       case "version.text": {
         const f = frame;
         if (writes.get(f.doc)?.version === f.version)
+          break;
+        const sent = sentEdit.get(textKey(f.doc, f.version));
+        if (typeof rid === "number" && typeof sent === "number" && rid < sent)
           break;
         if (f.rev !== undefined)
           seenRev.set(f.doc, Math.max(seenRev.get(f.doc) ?? 0, f.rev));
