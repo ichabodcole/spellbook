@@ -286,6 +286,32 @@ export type DocumentPaneSlots = {
    * that format opens.
    */
   formatViews?: Readonly<Record<string, FormatView>>;
+  /**
+   * An offer of text for the top of the document, shown as a line under the
+   * header (Scriptorium: a frontmatter block for a document that has none).
+   * Asked with the open document and its active version's text on each render;
+   * null offers nothing. Taking it writes into the active version as the
+   * human's own edit, unsaved: the file changes only when they Save. Not asked
+   * for a JSON document, nor while the app's own view is showing.
+   */
+  textOffer?: (doc: DocView, text: string) => TextOffer | null;
+};
+
+/** One offer under the pane's header (`DocumentPaneSlots.textOffer`). */
+export type TextOffer = {
+  /** A stable name, for the line's `data-offer`. */
+  id: string;
+  /** What the line says before the button. */
+  message: ReactNode;
+  /** The button's label. */
+  label: string;
+  /**
+   * The text to put at the top of the active version, fetched when the human
+   * takes the offer; null puts nothing. A throw is announced with its message.
+   * Before writing, the pane asks `textOffer` again with the text as it is
+   * then, and writes nothing if the offer has gone (the text changed under it).
+   */
+  take: () => string | null | Promise<string | null>;
 };
 
 /** What a bundle's format view is given (`DocumentPaneSlots.formatViews`). */
@@ -362,6 +388,7 @@ export function DocumentPane({
   linkedFromAction,
   appView,
   formatViews,
+  textOffer,
 }: {
   showDiff?: ShowDiff | null;
   /** The editor's handle, for the app's toolbar (insert at the caret, the selection). */
@@ -1087,6 +1114,50 @@ export function DocumentPane({
         : { slug: doc.slug, base: now, changes: [change] };
   };
 
+  // ── an app's offer of text for the top (`textOffer`) ─────────────────────
+  // Taken, the text goes in as the human's own edit: through the editor when
+  // it is mounted (one undo step, the caret after it), otherwise through
+  // `writeText` as the rendered view's links are, kept for the editor's undo.
+  // Never to the file: Save puts it there.
+  const [taking, setTaking] = useState(false);
+  /** What the answer is checked against when it arrives, a render or more later. */
+  const offerNow = useRef({ doc, editorMounted, textOffer });
+  offerNow.current = { doc, editorMounted, textOffer };
+  const takeOffer = (offer: TextOffer) => {
+    if (!doc || taking) return;
+    const at = { slug: doc.slug, active: doc.active };
+    setTaking(true);
+    void (async () => {
+      let insert: string | null;
+      try {
+        insert = await offer.take();
+      } catch (e) {
+        w.announce(`Not done: ${offer.label}`, e instanceof Error ? e.message : String(e));
+        return;
+      } finally {
+        setTaking(false);
+      }
+      const { doc: now, editorMounted: mounted, textOffer: ask } = offerNow.current;
+      if (!insert || !now || now.slug !== at.slug || now.active !== at.active) return;
+      const ed = mounted ? editorHandle.current : null;
+      const before = ed ? ed.text() : shownBefore.current;
+      // The text may have changed while the offer was fetched: asked again, it still stands.
+      if (before === undefined || ask?.(now, before)?.id !== offer.id) return;
+      if (ed) {
+        if (!ed.replaceRange(0, 0, insert)) return;
+      } else {
+        const change = { from: 0, to: 0, insert };
+        if (!writeText(now, now.active, applyChanges(before, [change]))) return;
+        const r = replay.current;
+        replay.current =
+          r && r.slug === now.slug && applyChanges(r.base, r.changes) === before
+            ? { ...r, changes: [...r.changes, change] }
+            : { slug: now.slug, base: before, changes: [change] };
+      }
+      flushText(now.slug);
+    })();
+  };
+
   // ── images pasted or dropped in (kit-image-paste) ────────────────────────
   // Each file is sent to the daemon, which writes it into `images/` beside the
   // document and answers with the path to embed. The embeds then go in at the
@@ -1398,6 +1469,8 @@ export function DocumentPane({
     </button>
   );
   const appActive = !!appView?.active;
+  const offer =
+    textOffer && doc && !isJson && !appActive && shown !== undefined ? textOffer(doc, shown) : null;
   // Only where the raw editor is drawn and numbers would be its choice: not in
   // the rendered view (no source lines), not for JSON (always numbered), not
   // over an app's own view.
@@ -1642,6 +1715,23 @@ export function DocumentPane({
         )}
         {!doc && readerToggle}
       </div>
+      {offer && (
+        <div
+          data-slot="text-offer"
+          data-offer={offer.id}
+          className="flex shrink-0 items-center gap-2 border-b border-edge bg-surface-raised/60 px-3 py-1.5 text-xs text-ink-dim"
+        >
+          <span>{offer.message}</span>
+          <button
+            type="button"
+            onClick={() => takeOffer(offer)}
+            disabled={taking || daemon.connection === "ended"}
+            className="rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:no-underline"
+          >
+            {offer.label}
+          </button>
+        </div>
+      )}
       {!appActive && doc?.missing && (
         <div
           role="alert"
