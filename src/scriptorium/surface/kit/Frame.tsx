@@ -62,6 +62,7 @@ import type { DocSummary } from "../../backend/protocol";
 import { statusMark } from "../components/context/model";
 import { useFrameWorkspace } from "./frameWorkspace";
 import { scriptoriumBeforeMove, scriptoriumUncheckedMoveNote } from "./movePlan";
+import { useMapView } from "./useMapView";
 
 const NO_ENTRIES: PublicState["context"] = [];
 
@@ -282,6 +283,7 @@ export function Frame({ daemon }: { daemon: Daemon }) {
   // One marker per docMeta, not per render: the sidebar memoises on it.
   const docMeta = docMetaOf(state);
   const rowMarker = useMemo(() => scriptoriumRowMarker(docMeta), [docMeta]);
+  const map = useMapView(daemon, docMeta);
   const { workspace, openDoc, heldHere, collapsed } = ws;
   if (!state || !workspace)
     return (
@@ -348,12 +350,13 @@ export function Frame({ daemon }: { daemon: Daemon }) {
               onPick={(want) => send({ op: "pick", want })}
               listDir={daemon.listDir}
               rowMarker={rowMarker}
-              appActionsFor={(t) =>
-                scriptoriumMenuActions(
+              appActionsFor={(t) => [
+                ...scriptoriumMenuActions(
                   send,
                   hiddenOf(state),
-                )({ ...t, doc: docAt(state.docs, t.path) })
-              }
+                )({ ...t, doc: docAt(state.docs, t.path) }),
+                ...map.menuActions(t),
+              ]}
               created={created}
               moved={moved}
               notice={notice}
@@ -378,6 +381,7 @@ export function Frame({ daemon }: { daemon: Daemon }) {
               splitView
               frontmatterTrust
               frontmatterChips={CHIPS}
+              appView={map.appView}
             />
             <Toasts store={toasts} />
           </main>
