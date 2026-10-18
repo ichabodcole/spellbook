@@ -66,11 +66,16 @@ pane in Scriptorium is
       pass.
 - [x] Nothing in it refers to Story Studio's copy-in model or plugin host.
       `testWorkspace` only makes a folder.
-- [ ] The kit's stylesheet carries the document rules, so notes, find marks,
-      embeds and relation chips are styled in a kit page. _(Open: the rules are
-      in `src/kit/theme/document.css` and a scratch Tailwind page that imports
-      it emits every one, but no kit page imports it yet. The document-centre
-      item wires it in.)_
+- [x] The kit's stylesheet carries the document rules, so notes, find marks,
+      embeds and relation chips are styled in a kit page. _(Closed by
+      [scriptorium-kit-document-centre](scriptorium-kit-document-centre.md),
+      `e650fbf2`. The flagged frame's own sheet, `surface/kit/styles.css`,
+      imports the shipped sheet and then `document.css`. The built frame sheet
+      carries every `::highlight` rule: `doc-note`, `doc-note-focus`,
+      `doc-note-pending`, `doc-flash`, `find-match` and `find-current`. In a
+      real browser the chosen note's paint and the "Linked from" relation chip
+      showed. Find marks and embeds were not driven there. The shipped sheet is
+      byte-identical.)_
 - [x] Every package the document module imports is declared at the root, at the
       version Story Studio pins.
 - [x] The kit's wards pass with the document module in the tree. The chat test's
