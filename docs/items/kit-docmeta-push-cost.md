@@ -6,7 +6,7 @@ description:
   doubles each frame (76 KB to 159 KB on 2,000 documents); send it only when it
   changes, or on request.
 status: stable
-lifecycle: review
+lifecycle: done
 id: 01a1486e-3a72-755d-ae24-fcfc18a8e5ee
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-16 }

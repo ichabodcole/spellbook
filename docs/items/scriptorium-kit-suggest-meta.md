@@ -5,7 +5,7 @@ description:
   "Bring E35 to the kit path: a verb returns a suggested frontmatter block and
   the pane offers it into the buffer, as the shipped meta.suggest does."
 status: stable
-lifecycle: review
+lifecycle: done
 id: 01a14dc5-70c3-7762-8b0a-db667fbc47c8
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-17 }
@@ -35,7 +35,7 @@ it into the editor unsaved.
       the file is untouched until Save.
 - [x] The suggested block matches what the shipped app suggests for the same
       document.
-- [ ] Any kit change is a generic slot, offered back on kit-parity. (The slot is
+- [x] Any kit change is a generic slot, offered back on kit-parity. (The slot is
       generic, with port-back notes below; the kit-parity offer is the lead's.)
 
 ## Done and verified

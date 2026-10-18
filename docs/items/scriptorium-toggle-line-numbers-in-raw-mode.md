@@ -7,7 +7,7 @@ description:
   by eye.
 tags: [scriptorium, editor, ux]
 status: stable
-lifecycle: review
+lifecycle: done
 id: 01a0d4b7-de98-724e-8498-d806a64b6369
 kind: task
 generated: { by: claude-opus-5.5, at: 2026-09-24 }
@@ -74,7 +74,7 @@ document-pane cycle, so it is built once in the kit, not in the shipped surface.
       [kit-reader-mode-covers-raw](kit-reader-mode-covers-raw.md).)_
 - [x] In split view only the raw half shows the gutter. The rendered half is
       unchanged.
-- [ ] The change is offered on kit-parity.
+- [x] The change is offered on kit-parity.
 
 ## Done and verified
 

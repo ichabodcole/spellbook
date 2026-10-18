@@ -7,7 +7,7 @@ description:
   tree shows draft, stale, deprecated and unreadable marks from docMeta, as the
   shipped tree does.
 status: stable
-lifecycle: review
+lifecycle: done
 id: 01a14dc5-6efd-75c7-aaed-1b2bec2cdc3a
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-17 }

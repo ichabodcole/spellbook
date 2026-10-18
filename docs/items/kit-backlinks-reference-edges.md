@@ -6,7 +6,7 @@ description:
   would drop the frontmatter references the wiki layer added; render them and
   offer it back.
 status: stable
-lifecycle: review
+lifecycle: done
 id: 01a14dc5-6e65-725d-911e-4c7631081b09
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-17 }
@@ -36,7 +36,9 @@ their `develop` (`b6d5956`) has no `edges`, `edgeCount`, `EdgeBacklinkView` or
       frontmatter, and says that it is a reference, not a body link.
 - [x] With no edge slot registered, "Linked from" is unchanged, and a test pins
       both cases.
-- [ ] The change is offered to Story Studio on kit-parity.
+- [ ] The change is offered to Story Studio on kit-parity. _(Not yet: it depends
+      on `kit-link-edges-slot` reaching Story Studio first. kit-parity message
+      45 says so, and the two go back together.)_
 
 ## Done and verified
 

@@ -6,7 +6,7 @@ description:
   context, wire the held selection to chat and notes, and fill Scriptorium's
   slots: trust, stale, split view."
 status: stable
-lifecycle: review
+lifecycle: done
 id: 01a14dc5-6f94-7529-ac57-306dea4e021a
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-17 }
@@ -72,8 +72,9 @@ it is offered back. **Find** is the kit's find bar.
       [scriptorium-a-coalesced-scroll-is-lost-in-one-ordering](scriptorium-a-coalesced-scroll-is-lost-in-one-ordering.md)
       are checked against the kit's code. Each is closed, or re-aimed at the
       kit. _(Checked: see "The three older items" below. Closing or re-aiming
-      them is the lead's to take to Cole.)_
-- [ ] The outside-change toast offers "See the difference", which opens compare
+      them is the lead's to take to Cole.)_ _(Checked and proposed in this file.
+      Closing or re-aiming the three items waits for Cole.)_
+- [x] The outside-change toast offers "See the difference", which opens compare
       against the file on disk. The change is offered on kit-parity. _(Added
       after Cole's ruling of 2026-10-18. The toast and the frame's wiring are
       done and verified; the kit-parity offer is the lead's.)_

@@ -6,7 +6,7 @@ description:
   with the map as its app view: the fourth of five workspace-stack cycles."
 tags: [kit, scriptorium, story-studio]
 status: stable
-lifecycle: active
+lifecycle: closed
 started: 2026-10-18
 appetite:
   Stop when the flagged Scriptorium opens, edits, versions, compares and notes a
@@ -14,6 +14,7 @@ appetite:
   the shell and the cutover wait for cycle 5.
 after: []
 generated: { by: claude-opus-5-5, at: 2026-10-17 }
+closed: 2026-10-18
 ---
 
 # The document pane
@@ -173,4 +174,4 @@ Cole took the recommendation on each of the first three questions.
 
 ## Sessions
 
-- cycle/document-pane (open)
+- cycle/document-pane (landed 2026-10-18)

@@ -6,7 +6,7 @@ description:
   client's copy; the next keystroke then sends the old text and the earlier
   typing is gone. Kit path only; the shipped client sends no second read.
 status: stable
-lifecycle: review
+lifecycle: done
 id: 01a14eb6-f99c-750f-953b-69dcc00f60f6
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-18 }
@@ -54,7 +54,7 @@ typing, because its client sends no second `read` on open.
       the fix.
 - [x] Typing right after opening a document survives a slow daemon in a real
       browser.
-- [ ] The fix is generic, and it is offered on kit-parity with the repro,
+- [x] The fix is generic, and it is offered on kit-parity with the repro,
       because Story Studio's kit has the same code.
 
 ## Done and verified

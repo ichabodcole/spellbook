@@ -6,7 +6,7 @@ description:
   appView, fed from the kit's LinkGraph joined with docMeta, opened from a set's
   menu.
 status: stable
-lifecycle: review
+lifecycle: done
 id: 01a14dc5-7029-765d-aac9-d090db989e62
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-17 }
