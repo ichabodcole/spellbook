@@ -65,9 +65,12 @@ const hiddenOf = (state: PublicState): Record<string, string[]> =>
     string[]
   >;
 
+const NO_META: Record<string, DocSummary> = {};
+
 /** Each document's frontmatter, by absolute path (the kit daemon's `appState.docMeta`). */
-const docMetaOf = (state: PublicState): Record<string, DocSummary> =>
-  (state.appState as { docMeta?: Record<string, DocSummary> } | null)?.docMeta ?? {};
+const docMetaOf = (state: PublicState | null): Record<string, DocSummary> =>
+  (state?.appState as { docMeta?: Record<string, DocSummary> } | null | undefined)?.docMeta ??
+  NO_META;
 
 /**
  * The sidebar's `rowMarker`: the shipped tree's status dot (draft, stale,
@@ -215,6 +218,9 @@ export function Frame({ daemon }: { daemon: Daemon }) {
     () => (done?.of === "move" ? { path: done.path, seq: done.seq } : null),
     [done],
   );
+  // One marker per docMeta, not per render: the sidebar memoises on it.
+  const docMeta = docMetaOf(state);
+  const rowMarker = useMemo(() => scriptoriumRowMarker(docMeta), [docMeta]);
   if (!state)
     return (
       <div className="flex h-full items-center justify-center text-ink-dim">
@@ -259,7 +265,7 @@ export function Frame({ daemon }: { daemon: Daemon }) {
             onReveal={(path) => send({ op: "reveal", path })}
             onPick={(want) => send({ op: "pick", want })}
             listDir={daemon.listDir}
-            rowMarker={scriptoriumRowMarker(docMetaOf(state))}
+            rowMarker={rowMarker}
             appActionsFor={(t) =>
               scriptoriumMenuActions(
                 send,

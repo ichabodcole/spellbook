@@ -156,9 +156,9 @@ export type ContextSidebarProps = {
   /**
    * A mark at the trailing edge of any tree row, open or not: a document, an
    * image or a bundle, by the row's own absolute path (a bundle's folder, not
-   * its main file). After the row's badge. Story Studio's `WorkspaceShell` prop
-   * of this name and shape, held here so an app that composes the sidebar
-   * without a shell can mark rows too.
+   * its main file). After the row's badge. Held on the sidebar, so an app shell
+   * that composes the sidebar passes it through, and an app with no shell can
+   * mark rows too.
    */
   rowMarker?: (path: string) => ReactNode;
   /** The folder badge slot: what an app shows on a set's row and on each folder inside it, by absolute path. */
@@ -230,8 +230,8 @@ const noBadge = () => null;
 /**
  * A row's badge with the app's row mark after it. The badge is asked by the
  * row's document path (a bundle's main file); the mark by the row's own path,
- * so a bundle's by its folder. Story Studio's `WorkspaceShell` does this inline
- * in the `badgeFor` it hands its sidebar.
+ * so a bundle's by its folder. Exported for an app shell that composes the
+ * sidebar and builds its own `badgeFor`.
  */
 export function withRowMarker(
   badgeFor: (path: string) => ReactNode,

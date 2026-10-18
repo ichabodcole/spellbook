@@ -2,8 +2,10 @@
 type: item
 title: Tree rows carry an app's status mark
 description:
-  A rowMarker slot on ContextSidebar so Scriptorium's tree shows draft, stale,
-  deprecated and unreadable marks from docMeta, as the shipped tree does.
+  A rowMarker slot on ContextSidebar (Story Studio's WorkspaceShell prop from
+  1dd40cc, held on the sidebar because our kit has no shell), so Scriptorium's
+  tree shows draft, stale, deprecated and unreadable marks from docMeta, as the
+  shipped tree does.
 status: stable
 lifecycle: active
 id: 01a14dc5-6efd-75c7-aaed-1b2bec2cdc3a
@@ -19,12 +21,14 @@ cycle: 2026-10-document-pane
 The shipped Scriptorium marks tree rows from each document's frontmatter: draft,
 stale, deprecated and unreadable (`statusMark` in
 `surface/components/context/model.ts`, drawn by `EntryTree.tsx`). The kit's
-`ContextSidebar` has no way to do that. Story Studio added a `rowMarker` prop to
-its sidebar in `3d029f0`, the plugin-host commit we left out of context.
+`ContextSidebar` has no way to do that. Story Studio has a `rowMarker` prop on
+its `WorkspaceShell`, introduced in `1dd40cc` with Atlas's canvas row marks. The
+shell composes it into the badge it hands its sidebar. Our kit has no shell yet,
+so the prop goes on `ContextSidebar`.
 
-We take only the prop, not the plugin host. The flagged Scriptorium fills it
-from `appState.docMeta`, which already carries `status`, `lifecycle`, `stale`
-and `error` for each document.
+We take only the prop, not the plugin host that `3d029f0` carried it through.
+The flagged Scriptorium fills it from `appState.docMeta`, which already carries
+`status`, `lifecycle`, `stale` and `error` for each document.
 
 ## Definition of done
 

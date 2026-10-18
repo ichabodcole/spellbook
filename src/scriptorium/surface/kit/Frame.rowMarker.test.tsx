@@ -6,7 +6,7 @@
 
 import "../../../kit/lib/registerDom.ts";
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "bun:test";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { Daemon } from "../../../kit/context/daemonClient";
@@ -75,6 +75,32 @@ describe("scriptoriumRowMarker", () => {
       "/d/broken.md": "unreadable",
       "/d/archived.md": null,
     });
+  });
+
+  test("each tone's dot carries the shipped StatusDot's colour for it", () => {
+    // The shipped tree's colour per tone (`StatusDot` in EntryTree.tsx).
+    const colour: Record<string, string> = {
+      draft: "data-[tone=draft]:bg-attention",
+      stale: "data-[tone=stale]:bg-attention/70",
+      deprecated: "data-[tone=deprecated]:bg-danger",
+      unreadable: "data-[tone=unreadable]:bg-ink-faint",
+    };
+    const shipped = readFileSync(
+      join(import.meta.dir, "../components/context/EntryTree.tsx"),
+      "utf8",
+    );
+    const seen: string[] = [];
+    for (const path of Object.keys(cases)) {
+      const drawn = marker(path);
+      if (!drawn) continue;
+      const html = renderToStaticMarkup(drawn);
+      const tone = html.match(/data-tone="([a-z]+)"/)?.[1] as string;
+      const classes = html.match(/class="([^"]*)"/)?.[1]?.split(" ") ?? [];
+      expect(shipped).toContain(colour[tone] as string);
+      expect(classes).toContain(colour[tone] as string);
+      seen.push(tone);
+    }
+    expect(seen.sort()).toEqual(["deprecated", "draft", "stale", "unreadable"]);
   });
 
   test("a path the metadata does not hold has no mark", () => {

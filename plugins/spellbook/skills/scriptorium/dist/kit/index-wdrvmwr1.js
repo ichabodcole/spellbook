@@ -38302,7 +38302,8 @@ var NO_ENTRIES = [];
 var MAKE_ROOM = "A document listed on its own can take new files beside it once it is a set: Turn into a set, in its row's menu.";
 var THEME_KEY = "scriptorium:theme";
 var hiddenOf = (state) => state.appState?.hidden ?? {};
-var docMetaOf = (state) => state.appState?.docMeta ?? {};
+var NO_META = {};
+var docMetaOf = (state) => state?.appState?.docMeta ?? NO_META;
 function scriptoriumRowMarker(docMeta) {
   return (path2) => {
     const mark = statusMark(docMeta[path2]);
@@ -38396,6 +38397,8 @@ function Frame({ daemon }) {
   const done = daemon.done;
   const created = import_react20.useMemo(() => done && ["doc.create", "folder.create", "bundle.create"].includes(done.of) ? { path: done.path, seq: done.seq } : null, [done]);
   const moved = import_react20.useMemo(() => done?.of === "move" ? { path: done.path, seq: done.seq } : null, [done]);
+  const docMeta = docMetaOf(state);
+  const rowMarker = import_react20.useMemo(() => scriptoriumRowMarker(docMeta), [docMeta]);
   if (!state)
     return /* @__PURE__ */ jsx_runtime19.jsx("div", {
       className: "flex h-full items-center justify-center text-ink-dim",
@@ -38450,7 +38453,7 @@ function Frame({ daemon }) {
               onReveal: (path2) => send({ op: "reveal", path: path2 }),
               onPick: (want) => send({ op: "pick", want }),
               listDir: daemon.listDir,
-              rowMarker: scriptoriumRowMarker(docMetaOf(state)),
+              rowMarker,
               appActionsFor: (t) => scriptoriumMenuActions(send, hiddenOf(state))({ ...t, doc: docAt(state.docs, t.path) }),
               created,
               moved,
