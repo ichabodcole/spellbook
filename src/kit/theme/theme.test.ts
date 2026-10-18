@@ -192,6 +192,13 @@ describe("the rendered-markdown sheet", () => {
     expect(css).not.toContain("data-flash");
   });
 
+  test("the flash's animation names keyframes the sheet defines", () => {
+    const rule = /\[data-flash="on"\]\s*\{([^}]*)\}/.exec(doc)?.[1] ?? "";
+    const name = /animation:\s*([\w-]+)/.exec(rule)?.[1];
+    expect(name).toBeDefined();
+    expect(doc).toContain(`@keyframes ${name} {`);
+  });
+
   test("uses the kit's tokens, never a fixed colour", () => {
     const body = doc.replace(/\/\*[\s\S]*?\*\//g, "");
     expect(body).not.toMatch(/#[0-9a-f]{3,8}\b/i);
