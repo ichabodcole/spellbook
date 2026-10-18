@@ -353,6 +353,16 @@ import { join } from "node:path";
 // src/kit/theme/theme.test.ts, which the gate runs, holds that the new sheet
 // styles every highlight name the panes paint and that base.css carries none
 // of it; the rest of the file is read by nothing.
+//
+// ⛔ RE-DECLARED 2026-10-18, SAME ITEM — 31/2,866 -> 31/2,902, from the
+// object's own sum. MEMBERSHIP DID NOT MOVE; two entries grew:
+//     +29  src/kit/theme/base.css       222 -> 251
+//     +7   src/kit/theme/document.css   270 -> 277
+// base.css now scans the kit's shared markup modules by name, and leaves the
+// document pane and document.css out; document.css scans the pane itself.
+// Scanned from base.css, the pane's utilities had grown every themed spell's
+// stylesheet by about a tenth. With this, every spell's rebuilt stylesheet is
+// byte-identical to the cycle base's. theme.test.ts holds the scan split.
 const DECLARED_BLIND: Record<string, number> = {
   "src/digestify/surface/styles.css": 515,
   "src/digestify/surface/index.html": 26,
@@ -364,8 +374,8 @@ const DECLARED_BLIND: Record<string, number> = {
   "src/magpie/surface/styles.css": 186,
   "src/imago/surface/styles.css": 167,
   "plugins/spellbook/skills/magpie/scripts/remove.py": 145,
-  "src/kit/theme/base.css": 222,
-  "src/kit/theme/document.css": 270,
+  "src/kit/theme/base.css": 251,
+  "src/kit/theme/document.css": 277,
   "src/astrolabe/surface/styles.css": 104,
   "src/astrolabe/surface/index.html": 35,
   "src/mind-mapper/surface/index.html": 52,

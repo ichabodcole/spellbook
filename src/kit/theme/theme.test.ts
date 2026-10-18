@@ -1,7 +1,7 @@
 import "../lib/registerDom.ts";
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from "bun:test";
-import { existsSync, readFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import { installDom, removeDom } from "../lib/registerDom.ts";
 import {
   applyTheme,
@@ -99,17 +99,53 @@ describe("the base stylesheet", () => {
     }
   });
 
-  test("scans the kit for its markup, and not its CLI, workspace, lib or test files", () => {
+  test("scans the kit's shared markup modules by name, and not its CLI, workspace, lib or test files", () => {
     const sources = [...css.matchAll(/^@source (not )?"([^"]+)";/gm)].map((m) =>
       `${m[1] ?? ""}${m[2]}`.trim(),
     );
     expect(sources).toEqual([
-      "../",
+      "../chat",
+      "../context",
+      "../theme",
+      "../ui",
+      "../wire",
       "not ../cli",
       "not ../workspace",
       "not ../lib",
+      "not ./document.css",
       "not ../**/*.test.*",
     ]);
+  });
+
+  test("scans every kit module with markup, the document pane's through its own sheet only", () => {
+    // A module holding .tsx is markup; one nobody scans ships its components
+    // with none of their utilities, silently. So each is scanned by one of the
+    // two sheets, and the document pane never by the base sheet, which every
+    // themed spell imports: its utilities would ship to all of them.
+    const kit = join(import.meta.dir, "..");
+    const scans = (path: string) =>
+      [...readFileSync(path, "utf8").matchAll(/^@source "([^"]+)";/gm)].map((m) =>
+        resolve(dirname(path), m[1] as string),
+      );
+    const base = scans(BASE_CSS_PATH);
+    const docs = scans(DOCUMENT_CSS_PATH);
+    const reaches = (roots: string[], dir: string) =>
+      roots.some((r) => dir === r || dir.startsWith(`${r}/`));
+    const markup = readdirSync(kit, { withFileTypes: true })
+      .filter((e) => e.isDirectory())
+      .map((e) => join(kit, e.name))
+      .filter((d) => readdirSync(d).some((f) => f.endsWith(".tsx") && !f.includes(".test.")));
+    const documentPane = join(kit, "document");
+    expect(markup).toContain(documentPane);
+    expect(markup.length).toBeGreaterThan(1);
+    for (const dir of markup) {
+      if (dir === documentPane) {
+        expect(reaches(base, dir), "the base sheet reaches the document pane").toBe(false);
+        expect(reaches(docs, dir), "document.css scans the document pane").toBe(true);
+      } else {
+        expect(reaches(base, dir), `the base sheet scans ${dir}`).toBe(true);
+      }
+    }
   });
 
   test("keeps its L1 aliases out of the light block", () => {

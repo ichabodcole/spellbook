@@ -101,8 +101,30 @@
    `none`), so importing a kit COMPONENT brings its markup and none of its
    utilities. A spell adopts the kit by importing THIS STYLESHEET; importing
    Dot.tsx alone is not adoption. grimoire/kit-styling-ward.test.ts fails on
-   both halves of that now — see its amendment. */
-@source "../";
+   both halves of that now — see its amendment.
+
+   ⛔ AMENDED 2026-10-18 (kit-port-document): THE SCAN NAMES THE KIT'S MARKUP
+   MODULES ONE BY ONE, where it used to be the whole of src/kit/ ("../") with
+   exclusions. The document pane is markup only some spells need, and its
+   utilities had joined every importing spell's stylesheet (about a tenth more
+   CSS each, none of it used). An exclusion cannot keep it out: Tailwind
+   v4.3's `@source not` is GLOBAL to the build, so a `not` here also cancelled
+   document.css's own scan of the folder for the pages that do want it
+   (measured: neither a directory, a glob nor an absolute path in document.css
+   got past it). So a module is scanned here only when every spell that
+   imports this file may carry its classes, and src/kit/document/ is scanned
+   by document.css. A NEW MARKUP MODULE IS NOT SCANNED UNTIL IT IS LISTED
+   (or its own sheet scans it), and its utilities silently do not ship:
+   src/kit/theme/theme.test.ts pins this list. */
+@source "../chat";
+@source "../context";
+@source "../theme";
+@source "../ui";
+@source "../wire";
+
+/* The three exclusions after this note predate the list above and no longer
+   change what it scans. They stay so that a return to a whole-folder scan
+   stays safe, and because each records a measured leak. */
 
 /* ⛔ BUT NOT src/kit/cli/, WHICH IS A CLI MODULE WITH NO MARKUP IN IT. The scan
    above reads every word of every scanned file as a candidate class, so
@@ -125,6 +147,13 @@
    committed one. Nothing under either may ever need a class. */
 @source not "../workspace";
 @source not "../lib";
+
+/* ⛔ NOR document.css BESIDE THIS FILE. A stylesheet's text emits no class,
+   but it does mark a theme variable as used: that sheet's one reference to
+   the pointed colour put the variable into every importing spell's stylesheet
+   (measured 2026-10-18 by moving the file out and rebuilding). A page that
+   wants it imports the sheet, which is what brings its rules. */
+@source not "./document.css";
 
 /* ⛔ NOR ANY TEST FILE UNDER src/kit/. A test's example class strings are
    test data, not styling, and they shipped in every importing spell's

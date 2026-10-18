@@ -16,6 +16,13 @@
    Studio's sheet belong to the shell and come with it.
    ────────────────────────────────────────────────────────────────────────── */
 
+/* The document pane's markup, scanned here and only here: base.css leaves
+   src/kit/document/ out, so a spell without the pane gains none of its
+   utilities. Resolved relative to this file. Its tests stay out, as they do
+   for the rest of the kit. */
+@source "../document";
+@source not "../document/**/*.test.*";
+
 /* A rendered markdown body (a chat message), as element rules under one class:
    the renderer's output is plain semantic HTML with no classes on it. Sized for
    a narrow side panel; anything wider than the panel scrolls inside itself, and
