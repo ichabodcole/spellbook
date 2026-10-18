@@ -56,6 +56,31 @@ sha:
   three-line `Frame.tsx` edit), with a frame test against a real flagged daemon.
 - `08a16ece`: the dist rebuild. Only the kit page and `server.js` changed.
 
+After the verifier ("Ready, with fixes"), three more commits:
+
+- `e51a0f08`: the offer follows the daemon's shared answer.
+  - Before this, a stale second tab still offered, and taking it there wiped the
+    first tab's later typing (the verifier's `twotab2` repro). That tab had
+    decided "no block" from its own copy of the text, and a tab never hears
+    another tab's edits.
+  - The shipped header reads `doc.meta` from the shared snapshot. The kit path
+    now has the same thing: `appState.noFrontmatter`, the open documents whose
+    active version has no block.
+    - It applies the shipped `splitFrontmatter` to the whole version file.
+    - It is cached by path, mtime and size.
+    - An edit's broadcast refreshes it, within about 250 ms.
+  - The tab's own text is still asked, so the offer goes at once in the tab that
+    took it. The pane's re-ask guard stays as a second line of defence.
+  - Tested with two real clients and frames on one flagged daemon, and on the
+    list directly.
+  - The repro, rerun in a real browser against the fix, ended with tab two's
+    offer gone, "MORE FROM TAB ONE" kept, and the file untouched until Save.
+- `08976a51`: four tests for rules the verifier's mutations survived: no offer
+  while the app's view shows; nothing written once another version is active;
+  the take is sent at once (flushed); and a rendered-view take is undone by one
+  undo in raw. The `textOffer` doc comment no longer names an app.
+- `80c9f27c`: the dist rebuild.
+
 Deliberate choices:
 
 - **Surface-only, no CLI command.** The agent's half of E35 is `meta-init`,
