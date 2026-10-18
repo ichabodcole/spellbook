@@ -81,6 +81,9 @@ const THEME_KEY = "scriptorium:theme";
 /** Where the pane keeps raw, rendered or split: this page's own origin, under Scriptorium's name. */
 export const VIEW_MODE_KEY = "scriptorium:view-mode";
 
+/** Where the raw editor's line-number toggle is remembered, beside the view mode. */
+export const LINE_NUMBERS_KEY = "scriptorium:line-numbers";
+
 /** The stale chip's hover text: the tree's dot says the same (`statusMark`). */
 const STALE_TITLE = "Past its stale_after date";
 
@@ -370,6 +373,8 @@ export function Frame({ daemon }: { daemon: Daemon }) {
             <DocumentPane
               showDiff={ws.showDiff}
               viewModeKey={VIEW_MODE_KEY}
+              lineNumbers
+              lineNumbersKey={LINE_NUMBERS_KEY}
               splitView
               frontmatterTrust
               frontmatterChips={CHIPS}
