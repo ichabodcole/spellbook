@@ -125,6 +125,7 @@ import type {
   Selection,
   ServerOp,
   ShowTarget,
+  StateFrame,
   StructureOp,
   WikiBreak,
 } from "./protocol";
@@ -1112,21 +1113,14 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     // An app's own view can depend on the text (an app that hashes the active
     // version), and the kit only broadcasts an edit when the dirty flag flips, so a
     // daemon with an `appState` hook also broadcasts after a pause in typing.
-    // Only when the app's view changed, though: that pause broadcast exists for
-    // the app's view alone, and an app's view can be large (a frontmatter index
-    // of every document), so an unchanged one is not sent again on each pause.
-    // An app without the hook never had this pause, so nothing of the kit's own
-    // waits on it (a document's `hash` moves on the next broadcast; compare's
-    // merge broadcasts its own). `sentAppState` is the app's view as the last broadcast carried it.
+    // The frame carries the documents' hashes as well; an unchanged view rides
+    // it marked, not whole (`sendState`).
     let editTimer: ReturnType<typeof setTimeout> | null = null;
-    let sentAppState: string | null = null;
     const scheduleEditBroadcast = () => {
       if (editTimer) return;
       editTimer = setTimeout(() => {
         editTimer = null;
-        if (closed) return;
-        if (JSON.stringify(opts.appState?.(appCtx()) ?? null) === sentAppState) return;
-        broadcastState();
+        if (!closed) broadcastState();
       }, 250);
     };
     const engine = new TaskEngine(session, opts.runners ?? {}, {
@@ -1194,14 +1188,13 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       if (same) {
         if (frames.same === undefined) {
           const { appState: _, ...rest } = state;
-          frames.same = JSON.stringify({
-            op: "state",
-            state: { ...rest, appStateUnchanged: true },
-          });
+          const marked: StateFrame = { ...rest, appStateUnchanged: true };
+          frames.same = JSON.stringify({ op: "state", state: marked } satisfies ServerOp);
         }
         text = frames.same;
       } else {
-        frames.full ??= JSON.stringify({ op: "state", state });
+        const whole: StateFrame = state;
+        frames.full ??= JSON.stringify({ op: "state", state: whole } satisfies ServerOp);
         text = frames.full;
       }
       try {
@@ -1216,7 +1209,6 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       presenceShown = agentListening();
       const state = viewState();
       const view = opts.appState ? JSON.stringify(state.appState) : null;
-      sentAppState = view;
       const frames = {};
       for (const ws of sockets) sendState(ws, state, view, frames);
     };
@@ -4619,8 +4611,8 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         open(ws) {
           sockets.add(ws);
           touch();
-          // A new connection (a reconnect too) starts with the app's view whole.
-          viewSent.delete(ws);
+          // A new connection (a reconnect too) is a new key in `viewSent`, so
+          // its first frame carries the app's view whole.
           const state = viewState();
           sendState(ws, state, opts.appState ? JSON.stringify(state.appState) : null, {});
         },
