@@ -82,17 +82,12 @@ describe("what the viewer is told", () => {
     expect(d.page).toBeUndefined();
   });
 
-  test("a generated image's lists and numbers read as text; an unknown origin is said", () => {
-    const d = describeSidecar(
-      "/p",
-      { source: "generated", seed: 42, "cost-usd": 0.03, refs: ["a.png", "b.png"] },
-      "",
-    );
-    expect(d.provenance).toEqual([
-      { field: "seed", value: "42" },
-      { field: "refs", value: "a.png, b.png" },
-      { field: "cost-usd", value: "0.03" },
-    ]);
+  test("an unknown origin is said, with no fields listed", () => {
+    // Spellbook: the kit knows no generated origin, so one is kept as written.
+    const gen = describeSidecar("/p", { source: "generated", seed: 42 }, "");
+    expect(gen.source).toBeNull();
+    expect(gen.sourceWritten).toBe("generated");
+    expect(gen.provenance).toEqual([]);
     const odd = describeSidecar("/p", { source: "dream" }, "");
     expect(odd.source).toBeNull();
     expect(odd.sourceWritten).toBe("dream");
@@ -127,9 +122,6 @@ describe("the skeleton", () => {
     const w = sidecarSkeleton("fox.png", "web", at);
     expect(w).toContain('licence: "unknown"\n');
     expect(w).toContain('url: ""\n');
-    const g = sidecarSkeleton("fox.png", "generated", at);
-    for (const f of ["provider", "model", "prompt", "seed", "made-from", "job", "cost-usd"])
-      expect(g).toContain(`${f}: ""\n`);
   });
 
   test("the ask names the image and where its description goes", () => {
