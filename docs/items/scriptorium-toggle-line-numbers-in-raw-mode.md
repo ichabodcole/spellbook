@@ -54,11 +54,16 @@ document-pane cycle, so it is built once in the kit, not in the shipped surface.
 
 ## Definition of done
 
-- [ ] With `SCRIPTORIUM_KIT=1`, the raw and split views offer a line-number
+- [x] With `SCRIPTORIUM_KIT=1`, the raw and split views offer a line-number
       toggle. Turning it on shows a gutter whose numbers match the source lines
-      the chip and notes name. _(The kit pane offers it with `lineNumbers`; the
-      flagged frame does not mount the kit pane yet, so it still has to pass
-      that prop.)_
+      the chip and notes name. _(The flagged frame passes `lineNumbers`, kept
+      under `scriptorium:line-numbers`, in
+      [scriptorium-kit-document-centre](scriptorium-kit-document-centre.md)'s
+      `404373f4`. In a real browser, `SCRIPTORIUM_KIT=1`, on a scratch home: the
+      toggle numbered the raw editor 1–6, and a selection on gutter line 4 put
+      "line 4" on the chat's chip. In split, only the raw half had a gutter, and
+      the choice survived a reload. `Frame.document.test.tsx` pins the prop and
+      the key.)_
 - [x] Toggling keeps the editor's scroll, selection and undo history, and a test
       pins that.
 - [x] The choice survives a reload.

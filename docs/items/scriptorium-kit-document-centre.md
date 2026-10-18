@@ -82,19 +82,24 @@ it is offered back. **Find** is the kit's find bar.
 ## Done and verified
 
 Commits on `impl/scriptorium-kit-document-centre`, on `cycle/document-pane` at
-`f69fb362`:
+`42394bd7`, which has the line-number toggle and the reference edges:
 
-- `19a4bd3d`: the kit's outside-change toast offers "See the difference". The
+- `5548697b`: the kit's outside-change toast offers "See the difference". The
   pane's `ShowDiff` can name the file on disk.
-- `e650fbf2`: the frame's centre is `DocumentPane`, with a small workspace
+- `66bf891d`: the frame's centre is `DocumentPane`, with a small workspace
   (`frameWorkspace.ts`), the held selection wired to chat and Notes, and
   Scriptorium's slots. It also gets the frame's own stylesheet.
-- `0b87d6f4`: the rebuilt `dist/kit`.
-- `c45f7992`: gate honesty re-declares the frame's new sheet (31/2,902 →
+- `f6a27165`: the rebuilt `dist/kit`.
+- `ff8439ef`: gate honesty re-declares the frame's new sheet (31/2,902 →
   32/2,916).
-- `5f574bde`: a marked TODO at the `<DocumentPane>` call for `lineNumbers`. The
-  line-number toggle's prop is on another branch. The lead fills it when the two
-  are combined.
+- `c9facc09`: a TODO for `lineNumbers`, which `404373f4` fills.
+- `9b2e9a71` and `cb900bb4`: this doc.
+- After the verifier's ruling ("Ready, with fixes (tests only)"):
+  - `404373f4`: the frame passes `lineNumbers`, kept under
+    `scriptorium:line-numbers`. The pane already wires the reference edges in
+    "Linked from" (`onOpenEdge`) itself.
+  - `5a0a35de`: a cell for each mutation the verifier found surviving (below).
+  - `ca198a83`: the rebuilt `dist/kit`.
 
 The workspace follows Story Studio's shell at `b6d5956` wherever the pane can
 tell the difference. It has:
@@ -136,6 +141,27 @@ Quiet mode changes nothing, because the frame's chrome is one thin header.
   back.
 - **The chat's subject** is left to the daemon, as in the shell when nothing is
   pointed at. `say` sends `withSelection` from the composer.
+- **A selection's `path` is the active version's file, not the original. This is
+  a contract change at the cutover.**
+  - **Shipped:** the shipped surface sends `select` with `path: original`, the
+    file on disk (`surface/App.tsx`). The daemon stores each message with
+    `selection` (that path) and, beside it, `activePath`, the version's file.
+  - **Kit:** the kit daemon takes the `select` path as it comes. It checks only
+    `doc` and `version` (`selectionOnScreen`). It then puts the path in the
+    message's one `about.path`. The kit protocol defines that field as "Absolute
+    path of the version's file … so the agent knows what to read". With no
+    selection, the daemon fills it with the active version's file itself
+    (`activeOf`).
+  - **Why the version's file:** sending the original would make `about.path`
+    mean two things, depending on whether a selection rode along. It would also
+    point `fromLine` and `toLine` at a file whose lines they do not count while
+    the version differs from the file on disk.
+  - **What the agent loses:** after the cutover, an agent reading a human
+    message gets the version's file and no longer the original beside it. It can
+    still find the original through `state` (`docs[].original`).
+  - Pinned in `frameWorkspace.test.tsx` and in `Frame.document.test.tsx`, which
+    checks the stored message's `about.path` against the version's file and
+    against the original.
 
 **Tests:** `Frame.document.test.tsx` (8 cells, on a real flagged daemon) covers
 these:
@@ -162,6 +188,36 @@ cell for the toast's new button.
 - going to a note without choosing it;
 - `frontmatterTrust={false}`;
 - "See the difference" aimed at v1 instead of the file.
+
+**After the verifier's ruling.** Its 19 mutations left 11 alive. Each now has a
+cell. `frameWorkspace.test.tsx` (8 cells) drives the hook over a hand-made
+daemon whose `send` stays the same across renders, as the real client's does. A
+fresh function per render had hidden the reconnect mutation.
+`Frame.document.test.tsx` gains 4 cells (13 in all): line numbers, reader mode,
+the new-version toast's "Show diff", and `about.path`. Its view-mode cell now
+asserts the literal `"scriptorium:view-mode"`. A scripted run planted 16
+mutations, one at a time, and every one went red:
+
+- **The held selection:**
+  - the `shown` event no longer clears it (E66);
+  - `select` not sent again on a reconnect;
+  - `select` sent while disconnected;
+  - `heldHere` ignoring the version;
+- **The chosen note:**
+  - kept across a version switch;
+  - a second click that does not let go;
+  - a resolved note that stays chosen;
+  - going to a note without revealing it;
+  - `letGoOfNote` doing nothing;
+- **The `select` path:**
+  - the original's path (2 cells red);
+  - the first version's file;
+- **`Frame.tsx`:**
+  - the new-version toast's "Show diff" aimed at the file;
+  - the chat column not hidden in reader mode;
+  - the view-mode key changed;
+  - `lineNumbers` not passed;
+  - the line-number key changed.
 
 **Real browser** (Playwright, on `127.0.0.1` only). The session ran on a scratch
 home with `SCRIPTORIUM_KIT=1` and `open` stubbed, against the built `dist/kit`.
@@ -199,17 +255,30 @@ There was no console warning or error. What happened:
 
 Screenshots are in the implementer's scratchpad (`centre-live/01…09`).
 
-**The gate** at `5f574bde` exited 1: 6,485 pass and 2 fail, in files this item
-does not touch. One is the shipped `backend/cli-contract.test.ts` ("a daemon
-refusal with HTTP 500 …"), which also failed in the run before. The other is
-`kit/workspace/diskGuard.test.ts` ("hard links: …"). Run alone, all three of
-those files passed every time: 62/62 three times and 154/154 twice. So they look
-like failures under load. Whether they also fail on the cycle base under the
-full gate was not checked. **The shipped Scriptorium:** before and after, its
-`--help`, `--version`, `open --no-open`, `state` and `close` on a scratch home
-match. The only differences are the entry id (a hash of the scratch path) and
-the epoch. Its built `index-x7h9dpmj.css`, `index-w940m06p.js`, `cli.js` and
-`server.js` are byte-identical. The branch changes only `dist/kit`.
+**A second browser check, after the rebase** (session `2858b113`, the same
+setup, no console warning or error):
+
+- **Line numbers:**
+  - The raw view offered the toggle, off at first. On, the gutter numbered 1–6.
+  - The choice was stored as `scriptorium:line-numbers=on`, and nothing was
+    stored under `spellbook:line-numbers`.
+  - A selection on gutter line 4 put "lantern.md · v1 · line 4" on the chip.
+  - In split, only the raw half had a gutter.
+  - The choice survived a reload.
+- **"Linked from" on `lantern.md`:** it listed "1 reference", headed
+  "frontmatter: references, not links in the text". The entry was `keeper` with
+  `related: ./lantern.md`. Clicking it opened `keeper`.
+
+**The gate** at `ca198a83`, after the rebase, exited 0, with 6,525 passing
+across 437 files. It ran under a scratch HOME, SCRIPTORIUM_HOME and TMPDIR. An
+earlier run, before the rebase, exited 1 with two failures in files this item
+does not touch: the shipped `backend/cli-contract.test.ts` and
+`kit/workspace/diskGuard.test.ts`. Each of those passed when run alone, and the
+verifier's two gates had neither failure. **The shipped Scriptorium:** before
+and after, its `--help`, `--version`, `open --no-open`, `state` and `close` on a
+scratch home match. The only differences are the entry id (a hash of the scratch
+path) and the epoch. Its built `index-x7h9dpmj.css`, `index-w940m06p.js`,
+`cli.js` and `server.js` are byte-identical. The branch changes only `dist/kit`.
 
 ## The three older items, checked against the kit
 
