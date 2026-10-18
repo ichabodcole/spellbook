@@ -97,6 +97,23 @@ Cole took the recommendation on each of the first three questions.
      joins, on the kit's editor.
    - [kit-mdx-documents](../items/kit-mdx-documents.md) is skipped for now.
 
+**Mid-cycle rulings (Cole, 2026-10-18):**
+
+5. **The typing race joins this cycle.** A verifier found that typing right
+   after opening a document can be lost on the kit path when the daemon is slow.
+   [kit-read-reply-reverts-sent-edit](../items/kit-read-reply-reverts-sent-edit.md)
+   was approved as written, and it is fixed before landing. Not taken: landing
+   now and fixing it before the cutover.
+6. **Broken links must be visible to the human.** The kit map drops the shipped
+   header's "leaving" and "dangling" numbers, and lands as it is. A visible sign
+   with an act attached is filed as
+   [kit-broken-links-visible](../items/kit-broken-links-visible.md). Not taken:
+   restoring the map's numbers now, or leaving it to the agent's verbs.
+7. **Reader mode should cover the raw editor too.** That is filed as
+   [kit-reader-mode-covers-raw](../items/kit-reader-mode-covers-raw.md). Until
+   it lands, the line-number gutter's fade is built but cannot be seen. Not
+   taken: keeping reader mode rendered-only.
+
 ## Outcome
 
 _Written at close, not before._

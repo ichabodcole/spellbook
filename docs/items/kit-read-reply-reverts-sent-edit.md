@@ -5,14 +5,15 @@ description:
   The pane's open-time read reply can land after an edit was sent and revert the
   client's copy; the next keystroke then sends the old text and the earlier
   typing is gone. Kit path only; the shipped client sends no second read.
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: active
 id: 01a14eb6-f99c-750f-953b-69dcc00f60f6
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-18 }
 tags: [kit, document, data-loss]
 parent: feature/workspace-kit
 from: 01a14dc5-70c3-7762-8b0a-db667fbc47c8
+cycle: 2026-10-document-pane
 ---
 
 # Typing right after opening a document can be lost on the kit path
