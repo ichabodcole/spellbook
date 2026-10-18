@@ -760,6 +760,14 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
       // bunfig (Contract 5), and the ward resolves the five-level climb from
       // the EMITTED `dist/cli.js` onto exactly that directory.
       "plugins/spellbook/skills/scriptorium/dist/cli.js -> src/scriptorium",
+      // scriptorium's kit path: the interim frame's SOURCE page, for dev mode
+      // (`FRAME_DEV_ENTRY` in `src/scriptorium/backend/kit/server.ts`). The
+      // shipped daemon names its dev page by a literal `import(...)`, which the
+      // build leaves external; the frame's is a computed path, so the bundler
+      // never follows it, and that makes it a pin this ward resolves. Outside a
+      // checkout the file is absent and the daemon serves no dev page; release
+      // reads `dist/kit/`, which is inside the skill.
+      "plugins/spellbook/skills/scriptorium/dist/server.js -> src/scriptorium/surface/kit/index.html",
     ]);
   });
 
@@ -772,12 +780,14 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
    *
    * - scriptorium's kit path (`SCRIPTORIUM_KIT=1`, 2026-10-14), the first app
    *   bundling the kit's workspace daemon (`src/kit/workspace/server.ts`). Its
-   *   `distDir` is the APP's `surface.distDir` option, so no anchor exists in
-   *   the emitted text to follow. The kit path passes no surface: `mode` is
-   *   `"dev"` whenever `distDir` is absent, and this call sits behind
-   *   `mode === "release" && distDir`, so it never runs. When the kit path gets
-   *   a surface (the chat cycle), its `surface.distDir` becomes this read's
-   *   anchor and the row is re-ruled.
+   *   `distDir` is the APP's `surface.distDir` option, so the kit's call has no
+   *   anchor of its own in the emitted text to follow.
+   *   ⚠ RE-RULED 2026-10-17 (scriptorium-kit-interim-frame): the kit path has a
+   *   surface now, and this read RUNS. Its argument is the app's `FRAME_DIST`,
+   *   `join(HERE, "kit")` on the bundle's own `import.meta.dir`, which this
+   *   ward reads as a literal pin and resolves to the skill's `dist/kit/` (so
+   *   a frame built anywhere else reddens the pin cell). The call itself stays
+   *   opaque: the kit receives the folder as a parameter.
    */
   const OPAQUE_FAMILY_CALLS: readonly { file: string; call: string }[] = [
     {

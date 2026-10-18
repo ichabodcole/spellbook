@@ -88,7 +88,7 @@ export function scriptoriumKitCli(deps: KitCliDeps): WorkspaceCli {
       },
     ],
     helpFooter:
-      "  This is the kit path (SCRIPTORIUM_KIT=1). Its sessions live under\n  $SCRIPTORIUM_HOME/kit/sessions, apart from the shipped Scriptorium's. It has no\n  surface yet: run open with --no-open, and work through these verbs.",
+      "  This is the kit path (SCRIPTORIUM_KIT=1). Its sessions live under\n  $SCRIPTORIUM_HOME/kit/sessions, apart from the shipped Scriptorium's. Its surface\n  is an interim frame (sets, chat, notes, tasks): it shows no document yet, so\n  read and write documents through these verbs.",
   });
 }
 

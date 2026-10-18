@@ -5,9 +5,9 @@
  * `SCRIPTORIUM_KIT=1`; the launcher (`scripts/server.ts`) and the artifact it
  * imports (`dist/server.js`) are the shipped ones.
  *
- * What it does not have yet: a surface, a later cycle's. `GET /` answers with
- * a short page saying so, so a browser that `open` started shows a sentence and
- * not a JSON 404.
+ * Its surface is the interim frame (`src/scriptorium/surface/kit/`, built into
+ * the skill's `dist/kit/`): the kit's context and chat panes, until cycle 5's
+ * shell replaces it. See `frameSurface` below for where it is found.
  *
  * The wiki layer is here: `hide` and `unhide` (`./hide.ts`), frontmatter
  * references and wiki forms (`./links.ts`), and meta, find, forget, the move
@@ -19,6 +19,8 @@
  * the caller points.
  */
 
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import {
   createWorkspaceDaemon,
   runWorkspaceDaemon,
@@ -51,16 +53,50 @@ export const migratingApp: AppDeclaration = {
   migrateWriteRefusal: (at) => kitMigrateWriteRefusal(at),
 };
 
-/** What a browser shows at the session's URL while the kit path has no surface. */
-export const NO_SURFACE_PAGE = `<!doctype html>
-<meta charset="utf-8">
-<title>Scriptorium (kit path)</title>
-<body style="font: 16px/1.5 system-ui, sans-serif; max-width: 36rem; margin: 3rem auto; padding: 0 1rem">
-<h1 style="font-size: 1.25rem">Scriptorium, kit path</h1>
-<p>This session is running on the workspace kit (<code>SCRIPTORIUM_KIT=1</code>). It has no
-surface yet: the agent works with it through the CLI, and you can follow along in its chat.</p>
-</body>
-`;
+/**
+ * The daemon's own folder: the skill's `dist/` once bundled into
+ * `dist/server.js` (the launcher's, and a published plugin's).
+ */
+const HERE = import.meta.dir;
+/** The built frame (`src/build.ts` builds `surface/kit/` into `dist/kit/`): release mode. */
+const FRAME_DIST = join(HERE, "kit");
+/**
+ * The frame's source page, for dev mode (`SPELLBOOK_SURFACE_MODE=dev`, or no
+ * built frame): from `dist/`, five levels up is the repository. Imported by a
+ * computed path, so the backend build does not follow it into the surface's
+ * `.tsx` and Tailwind graph (the shipped daemon's literal import is left out by
+ * `src/build.ts`'s `external` instead, which matches only `surface/index.html`).
+ */
+const FRAME_DEV_ENTRY = join(
+  HERE,
+  "..",
+  "..",
+  "..",
+  "..",
+  "..",
+  "src",
+  "scriptorium",
+  "surface",
+  "kit",
+  "index.html",
+);
+
+/**
+ * Where the interim frame is, as the kit daemon's `surface` option.
+ *
+ * ⚠ BOTH PATHS ARE TRUE ONLY IN THE BUNDLE (`grimoire/spawn-path-ward.test.ts`
+ * resolves them from the emitted `dist/server.js`). Run from source, as the
+ * tests run it, `HERE` is this folder: there is no built frame beside it, so
+ * the daemon is in dev mode, and no source page five levels up, so it serves
+ * no page. A test that wants the page passes the committed build as `distDir`.
+ */
+export function frameSurface(): { distDir: string; devIndex: () => Promise<unknown> } {
+  return {
+    distDir: FRAME_DIST,
+    devIndex: async () =>
+      existsSync(FRAME_DEV_ENTRY) ? (await import(FRAME_DEV_ENTRY)).default : undefined,
+  };
+}
 
 export function kitDaemonOptions(
   overrides: Partial<WorkspaceDaemonOptions> = {},
@@ -77,12 +113,8 @@ export function kitDaemonOptions(
     appState: (ctx) => ({ hidden: liveHiddenLists(ctx.session), ...docMeta(ctx.session) }),
     // Frontmatter references as edges, and the wiki forms as a resolver (kit-link-edges-slot).
     links: scriptoriumLinkSlot(),
-    http: (req, url) =>
-      req.method === "GET" && url.pathname === "/"
-        ? new Response(NO_SURFACE_PAGE, {
-            headers: { "content-type": "text/html; charset=utf-8" },
-          })
-        : undefined,
+    // The interim frame at `/` (release: `dist/kit/`, and its chunks beside it).
+    surface: frameSurface(),
     ...overrides,
   };
 }
