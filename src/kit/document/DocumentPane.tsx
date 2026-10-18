@@ -1905,6 +1905,9 @@ export function DocumentPane({
                       onOpenBundle={(b) =>
                         w.openAt ? w.openAt(b.source) : send({ op: "open", path: b.source })
                       }
+                      onOpenEdge={(e) =>
+                        w.openAt ? w.openAt(e.source) : send({ op: "open", path: e.source })
+                      }
                       {...(linkedFromAction
                         ? {
                             action: {

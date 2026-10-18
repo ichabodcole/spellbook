@@ -16,6 +16,7 @@ import type {
   Backlinks as BacklinksData,
   BacklinkView,
   DocView,
+  EdgeBacklinkView,
   ReferenceBacklinkView,
 } from "../workspace/protocol";
 import { groupBacklinks, snippetParts } from "./backlinks.ts";
@@ -88,6 +89,97 @@ function Entry({ b, onOpen }: { b: BacklinkView; onOpen: (b: BacklinkView) => vo
   );
 }
 
+/**
+ * An app's edges that land on the document (kit-link-edges-slot), grouped by
+ * kind, in the order given: one group per kind, as the daemon sent them.
+ */
+export function groupEdges(
+  edges: readonly EdgeBacklinkView[],
+): { kind: string; edges: EdgeBacklinkView[] }[] {
+  const by = new Map<string, EdgeBacklinkView[]>();
+  for (const e of edges) {
+    const list = by.get(e.edge);
+    if (list) list.push(e);
+    else by.set(e.edge, [e]);
+  }
+  return [...by].map(([kind, list]) => ({ kind, edges: list }));
+}
+
+/** What an edge's second line says: what carries it and its target as written ("related: ruin"). */
+export function edgeLine(e: EdgeBacklinkView): string {
+  return e.key ? `${e.key}: ${e.raw}` : e.raw;
+}
+
+/**
+ * One document that refers to this one by an app's edge: a reference (a
+ * frontmatter key, say), not a link in its text, so it has no line to quote.
+ * Its kind is the app's word, and the entry says it.
+ */
+function EdgeEntry({
+  e,
+  onOpen,
+  asOf,
+}: {
+  e: EdgeBacklinkView;
+  onOpen: (e: EdgeBacklinkView) => void;
+  asOf: ReadonlyMap<string, string>;
+}) {
+  const lineId = useId();
+  const name = e.name.replace(/\.(md|markdown|txt)$/i, "");
+  return (
+    <li>
+      <button
+        type="button"
+        aria-label={`${name}, a ${e.edge} reference, not a link in its text`}
+        aria-describedby={lineId}
+        data-slot="backlink-reference"
+        data-source={e.source}
+        data-edge={e.edge}
+        {...(e.key !== undefined ? { "data-key": e.key } : {})}
+        {...(e.line !== undefined ? { "data-line": e.line } : {})}
+        onClick={() => onOpen(e)}
+        title={`Open ${e.shown}`}
+        className="group/backlink w-full rounded-md px-2 py-1.5 text-left outline-none hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring/60"
+      >
+        <span className="flex items-baseline gap-1.5 text-[13px]">
+          <span className="truncate font-medium text-ink group-hover/backlink:text-brand">
+            {name}
+          </span>
+          {folderOf(e.shown) && (
+            <span className="truncate text-[11px] text-ink-faint">{folderOf(e.shown)}</span>
+          )}
+          {e.line !== undefined && (
+            <span className="ml-auto shrink-0 font-mono text-[10px] text-ink-faint">
+              line {e.line}
+            </span>
+          )}
+        </span>
+        <span
+          id={lineId}
+          className="mt-0.5 block text-[12px] leading-snug text-ink-dim"
+          data-slot="reference-line"
+        >
+          <span className="font-mono">{edgeLine(e)}</span>
+          {e.rel.length > 0 && (
+            <span className="text-ink-faint">
+              {" "}
+              · {e.rel.map((r) => asOf.get(r) ?? r).join(", ")}
+            </span>
+          )}
+        </span>
+      </button>
+    </li>
+  );
+}
+
+/** The heading's count: "3 links", and with an app's edges "3 links, 1 reference". */
+function countText(links: number, references: number): string {
+  const said: string[] = [];
+  if (links > 0 || references === 0) said.push(`${links} ${links === 1 ? "link" : "links"}`);
+  if (references > 0) said.push(`${references} ${references === 1 ? "reference" : "references"}`);
+  return said.join(", ");
+}
+
 /** The cards on a board that point at the document, as the entry's second line says them. */
 export function placesOn(b: ReferenceBacklinkView): string {
   const names = b.refs.map((r) => {
@@ -155,17 +247,29 @@ export function Backlinks({
   data,
   onOpen,
   onOpenBundle,
+  onOpenEdge,
   action,
 }: {
   data: BacklinksData | null;
   onOpen: (b: BacklinkView) => void;
+  /**
+   * Open a document that refers to this one by an app's edge (a frontmatter
+   * reference: kit-link-edges-slot). Absent: the edges are not listed, as
+   * bundles are not without `onOpenBundle`.
+   */
+  onOpenEdge?: (e: EdgeBacklinkView) => void;
   /** Open a bundle the document is on (a board). Absent: the bundles are not listed. */
   onOpenBundle?: (b: ReferenceBacklinkView) => void;
   /** An app's button in the heading, already bound to the document. */
   action?: { label: string; onSelect: () => void };
 }) {
   const bundles = onOpenBundle ? (data?.bundles ?? []) : [];
-  if (!data || (data.count === 0 && bundles.length === 0)) return null;
+  // An app's edges (kit-link-edges-slot): present only when the app adds them.
+  // A document that refers here only from its frontmatter is still "Linked
+  // from", said as a reference rather than a link in the text.
+  const edges = onOpenEdge ? (data?.edges ?? []) : [];
+  const edgeCount = edges.length > 0 ? (data?.edgeCount ?? edges.length) : 0;
+  if (!data || (data.count === 0 && edges.length === 0 && bundles.length === 0)) return null;
   const groups = groupBacklinks(data.backlinks);
   // How each relation reads from this end, when the world's vocabulary says
   // (kit-picker-relation-meanings): `grounded-in` written there reads "grounds"
@@ -177,12 +281,12 @@ export function Backlinks({
       data-slot="backlinks"
       className="mx-auto max-w-[76ch] px-8 pb-16"
     >
-      {data.count > 0 && (
+      {(data.count > 0 || edges.length > 0) && (
         <>
           <h2 className={HEADING}>
             Linked from
             <span className="font-normal text-ink-faint normal-case tracking-normal">
-              {data.count} {data.count === 1 ? "link" : "links"}
+              {countText(data.count, edgeCount)}
             </span>
             {action && (
               <button
@@ -224,9 +328,42 @@ export function Backlinks({
               </div>
             ))}
           </div>
-          {data.truncated && (
+          {edges.length > 0 && onOpenEdge && (
+            <div className={groups.length > 0 ? "mt-3 flex flex-col gap-3" : "flex flex-col gap-3"}>
+              {groupEdges(edges).map((g) => (
+                <div key={g.kind} data-slot="backlink-references" data-edge={g.kind}>
+                  <h3 className="mb-0.5 flex items-center gap-1.5 px-2 text-[11px] text-ink-faint">
+                    <span
+                      data-slot="backlink-edge-kind"
+                      className="rounded-full border border-edge bg-surface-raised px-1.5 leading-[1.45] font-medium text-ink-dim"
+                    >
+                      {g.kind}
+                    </span>
+                    <span className="text-ink-dim">references, not links in the text</span>
+                    <span>{g.edges.length}</span>
+                  </h3>
+                  <ul className="flex flex-col">
+                    {g.edges.map((e) => (
+                      <EdgeEntry
+                        key={`${e.source}:${e.key ?? ""}:${e.raw}`}
+                        e={e}
+                        onOpen={onOpenEdge}
+                        asOf={asOf}
+                      />
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
+          {data.truncated && data.backlinks.length < data.count && (
             <p className="mt-2 px-2 text-[11px] text-ink-faint">
               Showing the first {data.backlinks.length} of {data.count}.
+            </p>
+          )}
+          {edges.length < edgeCount && (
+            <p data-slot="references-cut" className="mt-2 px-2 text-[11px] text-ink-faint">
+              Showing the first {edges.length} of {edgeCount} references.
             </p>
           )}
         </>
