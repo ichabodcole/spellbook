@@ -56,15 +56,83 @@ document-pane cycle, so it is built once in the kit, not in the shipped surface.
 
 - [ ] With `SCRIPTORIUM_KIT=1`, the raw and split views offer a line-number
       toggle. Turning it on shows a gutter whose numbers match the source lines
-      the chip and notes name.
-- [ ] Toggling keeps the editor's scroll, selection and undo history, and a test
+      the chip and notes name. _(The kit pane offers it with `lineNumbers`; the
+      flagged frame does not mount the kit pane yet, so it still has to pass
+      that prop.)_
+- [x] Toggling keeps the editor's scroll, selection and undo history, and a test
       pins that.
-- [ ] The choice survives a reload.
+- [x] The choice survives a reload.
 - [ ] In reader mode the gutter fades with the rest of the chrome, and stays
-      visible.
-- [ ] In split view only the raw half shows the gutter. The rendered half is
+      visible. _(Left unticked. In the kit, reader mode is always the rendered
+      view, so the gutter can never be on screen there today. The fade is built
+      (40%, never hidden) and waits for reader mode to cover raw. Cole rules
+      whether it ever should.)_
+- [x] In split view only the raw half shows the gutter. The rendered half is
       unchanged.
 - [ ] The change is offered on kit-parity.
+
+## Done and verified
+
+Built on `impl/scriptorium-toggle-line-numbers-in-raw-mode` from
+`cycle/document-pane` at `bcc3fd89`, in `992813f0` (the editor: compartments for
+the gutter and its fade), `35bd21d4` (the pane's toggle and its remembered
+choice) and `9a7b6fae` (a fixup for `992813f0`). The work is new to the kit, so
+there is no Story Studio sha to port from. Its `develop` (`b6d5956`) has no
+line-number toggle, only JSON's gutter, which is always on.
+
+- `DocumentView` takes `lineNumbers` and `quiet`, and holds each in a CodeMirror
+  compartment. A change reconfigures the editor in place, so the editor is the
+  same one and keeps its scroll, selection and undo history.
+- `DocumentPane` takes `lineNumbers` (offer the toggle, off by default) and
+  `lineNumbersKey` (default `spellbook:line-numbers`, beside `viewModeKey`).
+- The toggle is shown in raw and split only. It is not shown in rendered, for
+  JSON (always numbered), or over an app's own view.
+- **Reader mode.** In the kit, reader mode is always the rendered view
+  (`reader.ts`: rendered with both columns shut), so the gutter can never be on
+  screen there today. The fade is built and waits for reader mode to cover raw:
+  the pane passes `quiet={reader}`, and the editor fades the gutter to
+  `QUIET_FADE`'s 40%, never hidden, full again under the pointer. Cole rules
+  whether reader mode should ever cover raw.
+- **Focus.** A pointer press on the toggle is `preventDefault`ed on mousedown,
+  so focus and the caret stay in the editor and the next key types there. The
+  keyboard still reaches it by Tab and works it with Enter or Space.
+- Checked in a real browser (Chromium via Playwright) on a temporary page that
+  mounted the kit pane on the fixture daemon, never the frame. The page was
+  removed afterwards. The checks were:
+  - typing, selecting and scrolling, then clicking the toggle, kept the same
+    editor element, the scroll (1528 px), the selection, and a Mod-Z undo;
+  - the number beside an edited line matched its source line (87);
+  - the choice survived a reload;
+  - in split, only the raw half had a gutter;
+  - with the quiet class on, the gutter's computed opacity was 0.4 and its
+    display stayed flex;
+  - after clicking the toggle with the caret in a line, focus stayed in the
+    editor and the next key landed there; focused by keyboard, Enter toggled it.
+
+## Port-back notes
+
+- `jsonMode.ts`: the gutter and its theme moved into an exported
+  `numberedLines()`, which `jsonHighlighting()` now uses. JSON looks the same.
+- `DocumentView.tsx`:
+  - new props `lineNumbers` and `quiet`, two compartments, and two effects that
+    reconfigure them;
+  - an exported `QUIET_GUTTER_CLASS` (`cm-quiet`), and two theme rules that fade
+    the gutter.
+  - CodeMirror holds the gutter once, so turning numbers on for JSON adds no
+    second gutter, and turning them off leaves JSON's gutter.
+- `DocumentPane.tsx`:
+  - new props `lineNumbers` and `lineNumbersKey`, an exported
+    `LINE_NUMBERS_LABEL`, and the header toggle
+    (`data-slot="line-numbers-toggle"`, between the view modes and the reader
+    toggle), whose mousedown is prevented so a pointer press keeps focus in the
+    editor;
+  - it passes `lineNumbers` and `quiet={reader}` to `DocumentView`.
+- `pane.ts`: `DEFAULT_LINE_NUMBERS_KEY`, `readLineNumbers` and
+  `storedLineNumbers`. Story Studio would rename the key to its own prefix.
+- **Opt-in by a prop, not on by default.** Story Studio's pane gains nothing it
+  did not ask for: no new button, and no gutter. This is the same precedent as
+  `splitView`. An app that offers it still starts with the gutter off, until the
+  human turns it on.
 
 ## References
 
