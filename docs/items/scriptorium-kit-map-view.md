@@ -5,7 +5,7 @@ description:
   Move Scriptorium's map (MapOverlay and forceLayout) into DocumentPane's
   appView, fed from the kit's LinkGraph joined with docMeta, opened from a set's
   menu.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a14dc5-7029-765d-aac9-d090db989e62
 kind: task

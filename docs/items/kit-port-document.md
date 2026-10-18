@@ -5,7 +5,7 @@ description:
   Port packages/kit/src/document from Story Studio's develop whole into
   src/kit/document, with its stylesheet rules and dependencies, on Spellbook's
   names.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a14dc5-6dcd-72df-91e6-9e9de1d19629
 kind: task

@@ -5,7 +5,7 @@ description:
   "Port the kit's document pane and put it in the flagged Scriptorium's centre,
   with the map as its app view: the fourth of five workspace-stack cycles."
 tags: [kit, scriptorium, story-studio]
-status: draft
+status: stable
 lifecycle: planned
 started: 2026-10-17
 appetite:
@@ -58,10 +58,12 @@ Scriptorium items come last, on top.
 - **[item/scriptorium-kit-map-view](../items/scriptorium-kit-map-view.md)**: the
   map as the pane's app view, fed from the kit's `LinkGraph`.
 - **[item/scriptorium-kit-suggest-meta](../items/scriptorium-kit-suggest-meta.md)**:
-  E35's "Add a block" on the kit path, if Cole keeps it (below).
+  E35's "Add a block" on the kit path.
 - **[item/kit-docmeta-push-cost](../items/kit-docmeta-push-cost.md)**: the pane
   makes typing constant, and the tree and map make the surface `docMeta`'s first
   real reader.
+- **[item/scriptorium-toggle-line-numbers-in-raw-mode](../items/scriptorium-toggle-line-numbers-in-raw-mode.md)**:
+  a line-number gutter on the kit's raw editor, toggled.
 
 Out of scope, deliberately:
 
@@ -75,35 +77,25 @@ Out of scope, deliberately:
 - **Profile schemas anywhere but the set** (below).
 - **The shipped Scriptorium.** It stays as it is until the cutover.
 
-## Rulings wanted before convene
+## Rulings (Cole, 2026-10-18, in Scriptorium)
 
-1. **Where profile schemas live.** The kit reads `_meta/profiles/` inside a set,
-   nearest folder first, and never above the set. The options:
-   - **(a) Keep that convention.** No code, and both kits stay the same.
-   - **(b) Add an app-level fallback root**, such as `~/.scriptorium/profiles/`.
-     This needs a new kit slot, and it breaks "never above the set".
-   - **(c) Ship profiles with the spell**, for pdocs' own types.
-   - **(d) Cut profiles and relations** (about 2.3k lines).
+Cole took the recommendation on each of the first three questions.
 
-   Recommended: (a) for this cycle. The shipped app has no profiles, so nothing
-   regresses, and (b) or (c) can be filed for later.
-
-2. **E35's "Add a block".** Bring it across (`scriptorium-kit-suggest-meta`), or
-   let it go and leave frontmatter to the agent's `meta-init`? Recommended:
-   bring it across. It is small, and it is the human's only path to frontmatter
-   without the agent.
-3. **An outside change** is a Reload/Keep toast in the kit
-   (`chat/OutsideChangeToasts.tsx`). It has no diff. The shipped app shows a
-   banner with "See the difference" (E54). Recommended: add "See the difference"
-   to the kit's toast, opening compare against the file on disk. It's generic,
-   so it can be offered back, and a warning needs an act that answers it.
+1. **Profile schemas live in the set,** in `_meta/profiles/`, as the kit reads
+   them now. An app-level fallback root, profiles shipped with the spell, and
+   cutting profiles were not taken. Any of them can be filed later.
+2. **"Add a block" (E35) comes across,** as
+   [scriptorium-kit-suggest-meta](../items/scriptorium-kit-suggest-meta.md). Not
+   taken: leaving frontmatter to the agent's `meta-init`.
+3. **The kit's outside-change toast gains "See the difference",** which opens
+   compare against the file on disk. It is generic, and offered back. This rides
+   with
+   [scriptorium-kit-document-centre](../items/scriptorium-kit-document-centre.md).
+   Not taken: keeping the toast as it is.
 4. **Candidates:**
    - [scriptorium-toggle-line-numbers-in-raw-mode](../items/scriptorium-toggle-line-numbers-in-raw-mode.md)
-     (neither editor has line numbers);
-   - [kit-mdx-documents](../items/kit-mdx-documents.md) (`.mdx` files vanish on
-     the kit path).
-
-   Take either, or leave them?
+     joins, on the kit's editor.
+   - [kit-mdx-documents](../items/kit-mdx-documents.md) is skipped for now.
 
 ## Outcome
 

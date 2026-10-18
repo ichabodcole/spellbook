@@ -5,7 +5,7 @@ description:
   "Put DocumentPane in the interim frame's centre with a minimal workspace
   context, wire the held selection to chat and notes, and fill Scriptorium's
   slots: trust, stale, split view."
-status: draft
+status: stable
 lifecycle: triage
 id: 01a14dc5-6f94-7529-ac57-306dea4e021a
 kind: task
@@ -45,11 +45,11 @@ Notes can add, go to and focus a note. All three are no-ops in the frame today.
 - split view offered;
 - the view-mode key on Spellbook's name.
 
-**What the shipped centre has that this does differently, kept as the kit does
-it:**
-
-- An outside change is a Reload/Keep toast, not a banner (E54).
-- Find is the kit's find bar.
+**An outside change** is the kit's Reload/Keep toast, not the shipped banner.
+Following Cole's ruling of 2026-10-18 (cycle doc, ruling 3), the toast gains
+"See the difference", which opens compare against the file on disk, so the
+warning keeps the act that answers it (E54). This is a generic kit change, and
+it is offered back. **Find** is the kit's find bar.
 
 **What it gains:** heading anchors, images and embeds, and "Linked from".
 
@@ -71,4 +71,7 @@ it:**
       [scriptorium-a-coalesced-scroll-is-lost-in-one-ordering](scriptorium-a-coalesced-scroll-is-lost-in-one-ordering.md)
       are checked against the kit's code. Each is closed, or re-aimed at the
       kit.
+- [ ] The outside-change toast offers "See the difference", which opens compare
+      against the file on disk. The change is offered on kit-parity. _(Added
+      after Cole's ruling of 2026-10-18.)_
 - [ ] The shipped Scriptorium is unchanged.

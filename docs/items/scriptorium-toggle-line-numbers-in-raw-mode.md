@@ -1,9 +1,10 @@
 ---
 type: item
-title: "Backlog — Scriptorium: toggle line numbers in raw mode"
+title: "Toggle line numbers in the raw editor"
 description:
-  A viewer toggle for a line-number gutter in the raw (edit) pane, remembered in
-  the home's prefs like the view mode
+  A viewer toggle for a line-number gutter in the kit document pane's raw
+  editor, remembered like the view mode, so the human can check a line reference
+  by eye.
 tags: [scriptorium, editor, ux]
 status: draft
 lifecycle: backlog
@@ -12,7 +13,7 @@ kind: task
 generated: { by: claude-opus-5.5, at: 2026-09-24 }
 ---
 
-# Scriptorium: toggle line numbers in raw mode
+# Toggle line numbers in the raw editor
 
 ## Asked
 
@@ -27,13 +28,19 @@ instead of counting or asking.
 
 ## Shape
 
-- A toggle in the document heading, raw and split only. The rendered view has no
-  source lines to number.
-- Off or on is a viewer preference, kept in the home's prefs like `doc:view`
-  (`src/scriptorium/surface/App.tsx`, `VIEW_PREF`), so it survives a reload.
-- The raw pane is CodeMirror, whose `lineNumbers()` extension provides the
-  gutter. Toggle it through a compartment, so the editor is not rebuilt and
-  keeps its scroll position, selection and undo history.
+Re-aimed on 2026-10-18 at the kit's document pane: Cole took it into the
+document-pane cycle, so it is built once in the kit, not in the shipped surface.
+
+- A toggle in the document heading, shown in raw and split only. The rendered
+  view has no source lines to number.
+- On or off is a viewer preference, remembered as the kit remembers the view
+  mode (`viewModeKey`), so it survives a reload.
+- The raw editor is CodeMirror (`src/kit/document/DocumentView.tsx` once
+  ported), and its `lineNumbers()` extension draws the gutter. It is toggled
+  through a compartment, so the editor is not rebuilt and keeps its scroll,
+  selection and undo history. The `rawExtensions` slot is read only when the
+  editor is built, so it cannot carry the toggle.
+- It is a kit change, offered back on kit-parity.
 
 ## Open points
 
@@ -42,7 +49,20 @@ instead of counting or asking.
 - Whether split's rendered half needs anything so the two halves still line up
   at a glance.
 
+## Definition of done
+
+- [ ] With `SCRIPTORIUM_KIT=1`, the raw and split views offer a line-number
+      toggle. Turning it on shows a gutter whose numbers match the source lines
+      the chip and notes name.
+- [ ] Toggling keeps the editor's scroll, selection and undo history, and a test
+      pins that.
+- [ ] The choice survives a reload.
+- [ ] The two open points above are answered in this file.
+- [ ] The change is offered on kit-parity.
+
 ## References
 
-- `src/scriptorium/surface/components/DocumentView.tsx` (the raw editor)
-- `src/scriptorium/surface/App.tsx` (`VIEW_PREF`, prefs)
+- `src/kit/document/DocumentView.tsx` (the kit's raw editor, once ported)
+- The shipped equivalent, for comparison:
+  `src/scriptorium/surface/components/DocumentView.tsx` and `App.tsx`
+  (`VIEW_PREF`).

@@ -5,7 +5,7 @@ description:
   The kit broadcasts appState on each typing pause, and Scriptorium's docMeta
   doubles each frame (76 KB to 159 KB on 2,000 documents); send it only when it
   changes, or on request.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a1486e-3a72-755d-ae24-fcfc18a8e5ee
 kind: task

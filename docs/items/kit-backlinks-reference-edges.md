@@ -5,7 +5,7 @@ description:
   Story Studio's Backlinks view ignores BacklinkView's edges, so the ported pane
   would drop the frontmatter references the wiki layer added; render them and
   offer it back.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a14dc5-6e65-725d-911e-4c7631081b09
 kind: task
