@@ -40,7 +40,8 @@ files), so it is built here and offered back.
 - [x] The flagged Scriptorium fills the slot from `move.plan`, so a drag or menu
       move shows the links it breaks and fixes before it happens.
 - [x] Cancel leaves the disk and the tree as they were, and a test shows it.
-- [ ] The slot is offered to Story Studio on kit-parity.
+- [x] The slot is offered to Story Studio on kit-parity (message 44,
+      2026-10-17).
 
 ## Done and verified
 
