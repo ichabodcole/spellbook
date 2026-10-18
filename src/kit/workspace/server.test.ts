@@ -1691,6 +1691,36 @@ describe("guards the review asked for", () => {
     );
   });
 
+  test("a pause in typing sends no state when the app's view did not change, and does when it did", async () => {
+    // The app's view is the active version's first line, read from disk, as a
+    // frontmatter index is: typing in the body leaves it alone. The attention
+    // sweep is slowed out of the way, so every state frame here is the edit's.
+    const { s } = await start({
+      attentionMs: 60_000,
+      appState: (ctx) => {
+        const path = ctx.session.findDoc("a") ? ctx.session.activePath("a") : null;
+        return { head: path ? readFileSync(path, "utf8").split("\n")[0] : null };
+      },
+    });
+    s.send({ op: "context.add", path: docs });
+    s.send({ op: "open", path: inSet("a.md") });
+    await s.waitFor((m) => m.op === "version.text");
+    s.send({ op: "edit", doc: "a", version: 1, text: "# A\n\nfirst\n" });
+    await waitUntil("dirty flip", () => s.state.docs[0]?.dirty === true);
+    const states = () => s.frames.filter((f) => f.op === "state").length;
+    const before = states();
+    s.send({ op: "edit", doc: "a", version: 1, text: "# A\n\nsecond\n" });
+    s.send({ op: "edit", doc: "a", version: 1, text: "# A\n\nthird\n" });
+    await Bun.sleep(600); // two pauses' worth
+    expect(states()).toBe(before);
+    s.send({ op: "edit", doc: "a", version: 1, text: "# Renamed\n\nthird\n" });
+    await waitUntil(
+      "the changed view, after a pause",
+      () => (s.state.appState as { head: string }).head === "# Renamed",
+    );
+    expect(states()).toBe(before + 1);
+  });
+
   test("an app can ask for a save dialog through the context, one at a time", async () => {
     let release: (r: { paths: string[]; cancelled: boolean }) => void = () => {};
     const asked: unknown[][] = [];

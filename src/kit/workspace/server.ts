@@ -1112,12 +1112,21 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     // An app's own view can depend on the text (an app that hashes the active
     // version), and the kit only broadcasts an edit when the dirty flag flips, so a
     // daemon with an `appState` hook also broadcasts after a pause in typing.
+    // Only when the app's view changed, though: that pause broadcast exists for
+    // the app's view alone, and an app's view can be large (a frontmatter index
+    // of every document), so an unchanged one is not sent again on each pause.
+    // An app without the hook never had this pause, so nothing of the kit's own
+    // waits on it (a document's `hash` moves on the next broadcast; compare's
+    // merge broadcasts its own). `sentAppState` is the app's view as the last broadcast carried it.
     let editTimer: ReturnType<typeof setTimeout> | null = null;
+    let sentAppState: string | null = null;
     const scheduleEditBroadcast = () => {
       if (editTimer) return;
       editTimer = setTimeout(() => {
         editTimer = null;
-        if (!closed) broadcastState();
+        if (closed) return;
+        if (JSON.stringify(opts.appState?.(appCtx()) ?? null) === sentAppState) return;
+        broadcastState();
       }, 250);
     };
     const engine = new TaskEngine(session, opts.runners ?? {}, {
@@ -1165,7 +1174,9 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     };
     broadcastState = () => {
       presenceShown = agentListening();
-      send({ op: "state", state: viewState() });
+      const state = viewState();
+      if (opts.appState) sentAppState = JSON.stringify(state.appState);
+      send({ op: "state", state });
     };
 
     /** A line in the chat. */
