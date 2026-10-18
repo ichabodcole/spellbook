@@ -159,6 +159,12 @@ describe("the interim frame on a real kit daemon", () => {
     const m = await open(set);
     await waitFor(() => listRow("set") !== null, "the set's row");
     expect(entry(set)?.membership).toBe("mirrored");
+    // And taken out again by the list row's own Remove: nothing leaves the disk.
+    await rightClick(listRow("set"));
+    await waitFor(() => menuItem("Remove from context") !== null, "the menu");
+    await click(menuItem("Remove from context"));
+    await waitFor(() => entry(set) === undefined, "the set gone from the context");
+    expect(existsSync(join(set, "index.md"))).toBe(true);
     await m.unmount();
   });
 
