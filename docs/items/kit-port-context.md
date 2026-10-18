@@ -6,7 +6,7 @@ description:
   the context halves of bbc54fd, ae08f10 and 4e6d4d4, leaving out the copy-in
   commits, so sets are still added from where they live.
 status: stable
-lifecycle: review
+lifecycle: done
 id: 01a14bca-14ab-7119-bc8a-05b2b7dcd676
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-17 }

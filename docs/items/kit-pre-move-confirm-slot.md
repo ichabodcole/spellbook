@@ -8,7 +8,7 @@ description:
   the move would change; Scriptorium's move.plan (links a move would break)
   fills it, so a move waits for the human's confirm.
 status: stable
-lifecycle: review
+lifecycle: done
 id: 01a14bca-15aa-7799-ac7c-13940a5dd463
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-17 }

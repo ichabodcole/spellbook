@@ -5,7 +5,7 @@ description:
   "One change to the kit's protocol and chat, written to port both ways: a via
   channel on every message and an optional refs list beside the one subject."
 status: stable
-lifecycle: review
+lifecycle: done
 id: 01a136e5-9834-7106-b8d1-f3d40eb4ea4c
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-13 }

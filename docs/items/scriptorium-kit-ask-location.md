@@ -7,7 +7,7 @@ description:
   selected ask for a location among the session's sets, with the last one used
   preselected, and offer a new folder at a path."
 status: stable
-lifecycle: review
+lifecycle: done
 id: 01a14bca-18cc-72b3-8890-08d709c255a9
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-17 }
