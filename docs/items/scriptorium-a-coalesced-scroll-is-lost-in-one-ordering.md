@@ -12,6 +12,7 @@ lifecycle: backlog
 id: 01a0cb4a-3810-7bfb-8bbd-1ad94998a78a
 kind: task
 generated: { by: claude-opus-5, at: 2026-09-22 }
+parent: feature/workspace-kit
 ---
 
 # Scriptorium: a coalesced scroll is lost in two sub-frame windows
@@ -20,6 +21,12 @@ generated: { by: claude-opus-5, at: 2026-09-22 }
 cited from `place.ts`, from E63 in the decision log and from a commit message,
 and a link that rots is worse than a name that is out of date. The title is the
 corrected one.
+
+**Re-aimed at the kit (Cole, 2026-10-19).** The document-pane cycle found both
+windows still hold in the kit's `src/kit/document/place.ts`, which replaces the
+shipped surface's at the cutover. Its `place.test.ts` carries the same two
+`PINNED` cells. The fix is kit work, made there and offered on kit-parity. The
+paths below are the shipped surface's, as they were found.
 
 E63 replaced the split's 150 ms settle window with an exact guard: a drive arms
 the pane it moves, the first scroll event after a drive IS that drive, and a
@@ -125,6 +132,7 @@ follower's own event stops matching it. Whoever picks this up starts there.
 
 ## References
 
+- On the kit: `src/kit/document/place.ts` and `src/kit/document/place.test.ts`
 - `src/scriptorium/surface/state/place.ts` — `createPlace`, the armed branch of
   `report` and the `afterFrame` that records `left`
 - `src/scriptorium/surface/state/place.test.ts` — the two pinning cells

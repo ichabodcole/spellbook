@@ -16,6 +16,7 @@ lifecycle: backlog
 id: 01a0ca78-3e28-71ec-9061-a7e02d777b05
 kind: task
 generated: { by: claude-opus-5, at: 2026-09-22 }
+parent: feature/workspace-kit
 ---
 
 # Scriptorium: selection edges the reviews found and the fixes left alone
@@ -58,6 +59,21 @@ moves the open document. The list is in E66.
 None of edges 1–4 fell to the same act. Each is about a selection within one
 document.
 
+## Re-aimed at the kit (Cole, 2026-10-19)
+
+The document-pane cycle re-checked every edge against the kit's document pane
+(`scriptorium-kit-document-centre`, 2026-10-18), and Cole ruled on the result:
+
+- **Edges 4 and 7 are gone on the kit path.** They close at the cutover, when
+  the shipped surface they live in is deleted. Nothing more is done for them.
+- **Edges 1, 2, 3, 5 and 6 still hold on the kit.** They are now kit work, to be
+  fixed there and offered on kit-parity. The rules are in
+  `src/kit/context/selection.ts` (`renderedSelectionAct`, `selectionOnScreen`),
+  the context press is in `src/kit/document/MarkdownView.tsx` (edge 2), and the
+  daemon's `select` is in `src/kit/workspace/server.ts` (edge 5).
+
+The file paths in each edge below are the shipped surface's, as they were found.
+
 ## 1. An unplaceable selection keeps the previous passage on the chip
 
 `renderedSelectionAct` returns `"ignore"` when a rendered selection is ours, not
@@ -90,7 +106,7 @@ to act on. Escape fires `keydown`, which spends the context press, but no
 already erased until the next selection event. Cosmetic residual of a deliberate
 trade.
 
-## 4. A note added from the Notes panel does not consume the selection
+## 4. A note added from the Notes panel does not consume the selection (gone on the kit; closes at the cutover)
 
 Found by the no-stake verifier of `feat/scriptorium-note-in-progress`
 (2026-09-22). It predates that branch. E57 says a note consumes the selection.
@@ -142,7 +158,7 @@ Found by the same verifier. It predates the branch.
 The same shape as edge 3: a press outside the pane empties the paint and nothing
 reports it.
 
-## 7. After following a link, the context tree still highlights the previous document
+## 7. After following a link, the context tree still highlights the previous document (gone on the kit; closes at the cutover)
 
 Found by the same verifier. It predates the branch, and it is not a selection
 edge but lives here because the same drive found it.
@@ -156,7 +172,11 @@ edge but lives here because the same drive found it.
 
 ## References
 
-- `src/scriptorium/surface/state/selection.ts` (`renderedSelectionAct`)
-- `src/scriptorium/surface/components/MarkdownView.tsx`
+- On the kit: `src/kit/context/selection.ts` (`renderedSelectionAct`,
+  `selectionOnScreen`), `src/kit/document/MarkdownView.tsx`,
+  `src/kit/workspace/server.ts`
+- As found, on the shipped surface: `src/scriptorium/surface/state/selection.ts`
+  (`renderedSelectionAct`),
+  `src/scriptorium/surface/components/MarkdownView.tsx`
 - Session:
   [the chip and the lines it pointed at](_archive/scriptorium/sessions/2026-09-22-the-chip-and-the-lines-it-pointed-at.md)

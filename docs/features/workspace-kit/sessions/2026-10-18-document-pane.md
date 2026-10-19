@@ -181,8 +181,11 @@ shipped Scriptorium's parity harnesses and acc were identical across every item.
   - `kit-second-tab-misses-edits`
   - `kit-broken-links-visible` (Cole's ruling 6)
   - `kit-reader-mode-covers-raw` (Cole's ruling 7)
-- **For Cole, the three older items the centre item re-checked against the
-  kit:**
+- **Cole approved all four on 2026-10-19.** They stay in triage until he moves
+  them.
+- **The three older items the centre item re-checked against the kit.** Cole
+  ruled on 2026-10-19 as proposed below, and each item is now re-aimed at the
+  kit, under `feature/workspace-kit`:
   - `scriptorium-selection-edges-the-review-found`. Edges 4 and 7 are gone on
     the kit path; close them at the cutover. Edges 1, 2, 3, 5 and 6 still hold;
     re-aim them at the kit's `selection.ts`, `MarkdownView.tsx` and `select`.

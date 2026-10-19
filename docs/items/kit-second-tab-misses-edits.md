@@ -5,7 +5,7 @@ description:
   On the kit daemon, an edit in one tab never reaches another tab on the same
   session (editActive sends no version.text to other sockets); the shipped
   Scriptorium shows it within 500 ms.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a14e5f-1882-73d8-95fd-3bf540bd4a9f
 kind: bug

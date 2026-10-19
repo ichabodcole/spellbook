@@ -65,15 +65,15 @@ it is offered back. **Find** is the kit's find bar.
       document shows a stale chip.
 - [x] The frame's tests no longer say the document pane is coming. A real
       browser check edits, saves and notes a document.
-- [ ] After the port, the open edges in
+- [x] After the port, the open edges in
       [scriptorium-selection-edges-the-review-found](scriptorium-selection-edges-the-review-found.md),
       [scriptorium-selection-hygiene-duplication-and-cost](scriptorium-selection-hygiene-duplication-and-cost.md)
       and
       [scriptorium-a-coalesced-scroll-is-lost-in-one-ordering](scriptorium-a-coalesced-scroll-is-lost-in-one-ordering.md)
       are checked against the kit's code. Each is closed, or re-aimed at the
-      kit. _(Checked: see "The three older items" below. Closing or re-aiming
-      them is the lead's to take to Cole.)_ _(Checked and proposed in this file.
-      Closing or re-aiming the three items waits for Cole.)_
+      kit. _(Checked: see "The three older items" below. Cole ruled on
+      2026-10-19: edges 4 and 7 close at the cutover, and the rest of the three
+      items are re-aimed at the kit.)_
 - [x] The outside-change toast offers "See the difference", which opens compare
       against the file on disk. The change is offered on kit-parity. _(Added
       after Cole's ruling of 2026-10-18. The toast and the frame's wiring are

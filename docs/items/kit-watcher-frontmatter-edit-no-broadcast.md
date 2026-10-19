@@ -6,7 +6,7 @@ description:
   On the flagged backend, editing an unopened document's frontmatter on disk
   sends no state frame, so tree marks and docMeta lag until the next unrelated
   broadcast; the agent's state is fresh.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a14e0e-a6b6-7237-9ab1-28c625941f8d
 kind: bug

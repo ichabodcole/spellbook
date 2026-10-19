@@ -5,7 +5,7 @@ description:
   Let the kit's reader mode apply in raw and split, not only rendered, so its
   quieter chrome (and the line-number gutter's fade) applies where the human
   edits.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a15029-f6b9-778f-83af-74c5e0b855f2
 kind: task

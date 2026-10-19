@@ -5,7 +5,7 @@ description:
   On the kit path nothing in the human surface shows dangling or outbound links
   since the map dropped its header numbers; give the human a visible sign with
   an act attached.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a15029-f5a7-7569-868c-047b2a7a562a
 kind: task
