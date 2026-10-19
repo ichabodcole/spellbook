@@ -29,7 +29,7 @@ import {
   parseBundleInfo,
 } from "../lib/bundles.ts";
 import {
-  DOC_EXTENSIONS,
+  docExtensions,
   IMAGE_EXTENSIONS,
   isDocName,
   isHeicName,
@@ -43,7 +43,7 @@ import type { ContextEntry, ContextNode, FsListEntry } from "./protocol";
 
 // What the workspace admits as a document, and how it reads each: one list,
 // in `lib/docFormat.ts`, shared with the surface. Everything else is not shown.
-export { DOC_EXTENSIONS, isDocName } from "../lib/docFormat.ts";
+export { DOC_EXTENSIONS, docExtensions, isDocName } from "../lib/docFormat.ts";
 
 /** How much of a possible sidecar is read to find its `type`: a frontmatter block, not a document. */
 const SIDECAR_HEAD_BYTES = 8 * 1024;
@@ -585,7 +585,7 @@ export function entryForPath(
   const image = st.isFile() && isImageName(abs);
   if (!isDocName(abs) && !image) {
     throw new PathError(
-      `not a document or image the workspace opens (${[...DOC_EXTENSIONS, ...IMAGE_EXTENSIONS].join(" ")}): ${abs}`,
+      `not a document or image the workspace opens (${[...docExtensions(), ...IMAGE_EXTENSIONS].join(" ")}): ${abs}`,
       "not-a-doc",
     );
   }

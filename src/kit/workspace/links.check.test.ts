@@ -3,7 +3,8 @@
 // line), which use a scheme nothing opens, and which documents share a name,
 // with a rename for each. Resolution and the disk are injected.
 import { describe, expect, test } from "bun:test";
-import { DOC_NAME } from "../lib/linkTarget.ts";
+import { registerDocExtension, withKitDocKindsOnly } from "../lib/docFormat.ts";
+import { linkScheme } from "../lib/linkTarget.ts";
 import {
   danglingLinks,
   duplicateNames,
@@ -11,14 +12,28 @@ import {
   type LinkIndex,
   type LinkKind,
   type LinkSource,
+  landingName,
   type NameIndex,
   resolveTarget,
 } from "./links";
 import { DOC_EXTENSIONS } from "./tree";
 
-test("lib's document-name rule names exactly the workspace's document types", () => {
-  for (const ext of DOC_EXTENSIONS) expect(DOC_NAME.test(`a${ext}`)).toBe(true);
-  expect(String(DOC_NAME)).toBe(`/\\.(?:${DOC_EXTENSIONS.map((e) => e.slice(1)).join("|")})$/i`);
+test("a colon before a document's name is a path, for the kit's kinds and an app's", () => {
+  for (const ext of DOC_EXTENSIONS) expect(linkScheme(`Chapter2:a${ext}`)).toBeUndefined();
+  withKitDocKindsOnly(() => {
+    expect(linkScheme("Chapter2:a.mdx")).toBe("chapter2");
+    registerDocExtension(".mdx");
+    expect(linkScheme("Chapter2:a.mdx")).toBeUndefined();
+  });
+});
+
+test("a registered kind sifts by its stem, as the kit's own do: `thing` and `thing.mdx` are one landing name", () => {
+  withKitDocKindsOnly(() => {
+    expect(landingName("/w/Thing.md")).toBe("thing");
+    expect(landingName("/w/Thing.mdx")).toBe("thing.mdx");
+    registerDocExtension(".mdx");
+    expect(landingName("/w/Thing.mdx")).toBe("thing");
+  });
 });
 
 /** A world on paper: these documents are in the context, and nothing else exists. */

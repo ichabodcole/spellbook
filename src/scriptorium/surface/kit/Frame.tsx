@@ -60,6 +60,8 @@ import type { PublicState } from "../../../kit/workspace/protocol";
 import { isStale } from "../../backend/frontmatter";
 import type { DocSummary } from "../../backend/protocol";
 import { statusMark } from "../components/context/model";
+// Scriptorium's document kinds (`.mdx`), as the daemon registers them, so the tree reads them alike.
+import "../../backend/kit/docKinds";
 import { useFrameWorkspace } from "./frameWorkspace";
 import { scriptoriumBeforeMove, scriptoriumUncheckedMoveNote } from "./movePlan";
 import { noFrontmatterOf, scriptoriumTextOffer } from "./suggestMeta";

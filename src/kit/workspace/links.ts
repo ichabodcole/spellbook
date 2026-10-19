@@ -56,7 +56,7 @@ import {
   resolve,
   sep,
 } from "node:path";
-import { DOC_EXTENSIONS, isImageName, isSvgName } from "../lib/docFormat.ts";
+import { docExtensions, isImageName, isSvgName } from "../lib/docFormat.ts";
 import { splitFrontmatter } from "../lib/frontmatter.ts";
 import {
   decodePath,
@@ -890,9 +890,7 @@ export function landingName(path: string): string {
     .normalize("NFC")
     .toLowerCase();
   const ext = extname(name);
-  return ext !== "" && (DOC_EXTENSIONS as readonly string[]).includes(ext)
-    ? name.slice(0, -ext.length)
-    : name;
+  return ext !== "" && docExtensions().includes(ext) ? name.slice(0, -ext.length) : name;
 }
 
 /**

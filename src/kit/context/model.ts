@@ -309,7 +309,7 @@ export function ancestorsOf(rel: string): string[] {
 
 // What the workspace opens as a document: the one list in `lib/docFormat.ts`,
 // which the daemon's `workspace/tree.ts` re-exports too.
-export { DOC_EXTENSIONS, isDocName } from "../lib/docFormat.ts";
+export { DOC_EXTENSIONS, docExtensions, isDocName } from "../lib/docFormat.ts";
 
 /** The parent of a POSIX-relative path: "" for the top level. */
 export function parentRel(rel: string): string {

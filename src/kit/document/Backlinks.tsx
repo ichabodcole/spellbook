@@ -12,6 +12,7 @@
 // same answer.
 
 import { useId } from "react";
+import { withoutDocExtension } from "../lib/docFormat.ts";
 import type {
   Backlinks as BacklinksData,
   BacklinkView,
@@ -40,7 +41,7 @@ function folderOf(shown: string): string {
 
 function Entry({ b, onOpen }: { b: BacklinkView; onOpen: (b: BacklinkView) => void }) {
   const snippetId = useId();
-  const name = b.name.replace(/\.(md|markdown|txt)$/i, "");
+  const name = withoutDocExtension(b.name);
   return (
     <li>
       {/* Named by its source and line, described by the quoted line: read out
@@ -126,7 +127,7 @@ function EdgeEntry({
   asOf: ReadonlyMap<string, string>;
 }) {
   const lineId = useId();
-  const name = e.name.replace(/\.(md|markdown|txt)$/i, "");
+  const name = withoutDocExtension(e.name);
   return (
     <li>
       <button

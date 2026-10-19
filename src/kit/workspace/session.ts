@@ -76,6 +76,7 @@ import {
   type PixelSize,
   SVG_REFUSED,
   sniffImage,
+  withoutDocExtension,
 } from "../lib/docFormat.ts";
 import { splitFrontmatter } from "../lib/frontmatter.ts";
 import {
@@ -243,7 +244,7 @@ import { type Candidate, DEFAULT_LIMIT, searchDocuments } from "./search";
 import {
   bundleNode,
   bundlesIn,
-  DOC_EXTENSIONS,
+  docExtensions,
   docNode,
   docPaths,
   entryForPath,
@@ -1943,9 +1944,7 @@ export class WorkspaceSession {
       return { slug: existing.slug, created: false };
     }
     if (!isDocName(abs) && !isBundleMain(abs))
-      throw new SessionError(`not a document the workspace opens: ${abs}`, 400, [
-        ...DOC_EXTENSIONS,
-      ]);
+      throw new SessionError(`not a document the workspace opens: ${abs}`, 400, docExtensions());
     const at = locate(this.m.context, abs);
     if (!at)
       throw new SessionError(
@@ -1962,8 +1961,7 @@ export class WorkspaceSession {
     const lower = extname(abs).toLowerCase();
     // A bundle's main file keeps its own extension in its versions (`v1.canvas`).
     const ext =
-      (DOC_EXTENSIONS as readonly string[]).includes(lower) ||
-      (isBundleMain(abs) && /^\.[a-z0-9]+$/.test(lower))
+      docExtensions().includes(lower) || (isBundleMain(abs) && /^\.[a-z0-9]+$/.test(lower))
         ? lower
         : ".md";
     const d: Doc = {
@@ -5636,9 +5634,9 @@ export class WorkspaceSession {
     const file = this.nameOrDie(name);
     if (!isDocName(file))
       throw new SessionError(
-        `not a document the workspace opens (${DOC_EXTENSIONS.join(" ")}): ${file}`,
+        `not a document the workspace opens (${docExtensions().join(" ")}): ${file}`,
         400,
-        [...DOC_EXTENSIONS],
+        docExtensions(),
         "a folder cannot be dropped: add it with the file picker, or `add <folder>`",
       );
     if (Buffer.byteLength(text) > WorkspaceSession.IMPORT_MAX_BYTES)
@@ -7270,7 +7268,7 @@ export class WorkspaceSession {
       }
     const title = (path: string) => {
       const f = facts.get(path) ?? NO_FACTS;
-      return f.title ?? f.heading ?? basename(path).replace(/\.(md|markdown|txt)$/i, "");
+      return f.title ?? f.heading ?? withoutDocExtension(basename(path));
     };
     const symmetry = oneWaySymmetric(
       edges,
@@ -7564,7 +7562,7 @@ export class WorkspaceSession {
         path: n.path,
         name,
         shown: entry ? toPosix(relative(entry.root, n.path)) : name,
-        title: f.title ?? f.heading ?? name.replace(/\.(md|markdown|txt)$/i, ""),
+        title: f.title ?? f.heading ?? withoutDocExtension(name),
         kind: n.kind,
         label: n.kind === null ? null : (n.label ?? n.kind),
         canon: n.canon ?? true,
@@ -7841,7 +7839,7 @@ export class WorkspaceSession {
         path: own,
         name,
         shown: entry ? toPosix(relative(entry.root, own)) : name,
-        title: facts.title ?? facts.heading ?? name.replace(/\.(md|markdown|txt)$/i, ""),
+        title: facts.title ?? facts.heading ?? withoutDocExtension(name),
         kind: k.kind,
         label: k.kind === null ? null : (k.label ?? k.kind),
         canon: k.canon,

@@ -118,6 +118,7 @@ export {
 } from "./tasks";
 export {
   DOC_EXTENSIONS,
+  docExtensions,
   docPaths,
   entryForPath,
   findNode,

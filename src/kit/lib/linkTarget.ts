@@ -4,6 +4,8 @@
 // the same rule the daemon counts them by. `workspace/links.ts` re-exports these;
 // resolving a target against the disk stays there.
 
+import { isDocName } from "./docFormat.ts";
+
 /**
  * Percent-decoding, which a markdown link target carries whenever the file it
  * names has a space in it: `Maren's%20Bakery.md`.
@@ -59,8 +61,6 @@ export function splitTarget(raw: string): { path: string; query?: string; anchor
 
 /** Anything that starts like a scheme: letters, then `:`. */
 const SCHEME_LIKE = /^[a-z][a-z0-9+.-]*:/i;
-/** A document's name: the workspace's DOC_EXTENSIONS (tree.ts), held equal by a test. */
-export const DOC_NAME = /\.(?:md|markdown|txt|json)$/i;
 /** Schemes that are always schemes, whatever follows: the ones a browser would run or load. */
 const ALWAYS_A_SCHEME = /^(?:javascript|vbscript|data|file|blob|about):/i;
 
@@ -78,7 +78,7 @@ export function linkScheme(raw: string): string | undefined {
   const m = SCHEME_LIKE.exec(raw);
   if (!m) return undefined;
   const rest = raw.slice(m[0].length).split(/[?#]/)[0] ?? "";
-  if (!ALWAYS_A_SCHEME.test(raw) && !rest.includes("/") && DOC_NAME.test(rest)) return undefined;
+  if (!ALWAYS_A_SCHEME.test(raw) && !rest.includes("/") && isDocName(rest)) return undefined;
   return m[0].slice(0, -1).toLowerCase();
 }
 

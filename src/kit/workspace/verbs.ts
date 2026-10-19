@@ -66,7 +66,7 @@ import {
 } from "./heartbeat";
 import { type HomeDeclaration, hasHomeWorkspace, locationHint, notAddedWhole } from "./noHome";
 import type { DiffSide } from "./protocol";
-import { DOC_EXTENSIONS, isDocName } from "./tree";
+import { docExtensions, isDocName } from "./tree";
 
 /** The flags every workspace CLI knows. An app adds its own beside them. */
 export const KIT_OPTIONS = {
@@ -272,7 +272,7 @@ export function contextPaths(pos: string[]): string[] {
     if (!st.isDirectory() && !isDocName(p) && !isImageName(p))
       die(`not a document or image the workspace opens: ${p}`, "usage", {
         hint: "add a folder, or a file with one of these extensions",
-        choices: [...DOC_EXTENSIONS, ...IMAGE_EXTENSIONS],
+        choices: [...docExtensions(), ...IMAGE_EXTENSIONS],
       });
   }
   return paths;
@@ -790,7 +790,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
         hint: "add it with `add <folder>` instead",
       });
     if (!st.isFile() || !isDocName(abs))
-      die(`not a document the workspace opens: ${abs}`, "usage", { choices: [...DOC_EXTENSIONS] });
+      die(`not a document the workspace opens: ${abs}`, "usage", { choices: docExtensions() });
     printJson(
       await postCmd(session, {
         op: "import",

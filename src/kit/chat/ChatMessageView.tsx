@@ -22,6 +22,7 @@ import { CheckCircle2Icon } from "lucide-react";
 import { type ReactNode, useMemo } from "react";
 import { bundleDisplayName, bundleOf, isBundleMember } from "../lib/bundles.ts";
 import { cn } from "../lib/cn.ts";
+import { withoutDocExtension } from "../lib/docFormat.ts";
 import { EMBED_IN_CHAT, renderMarkdown } from "../lib/markdown.ts";
 import { oneLine } from "../lib/oneLine.ts";
 import { appAboutParts, isPlainObject } from "../workspace/messageParts";
@@ -46,7 +47,7 @@ export const pathLabel = (path: string): string => {
   const b = bundleOf(path);
   if (b && !isBundleMember(path))
     return bundleDisplayName(b.root.split("/").pop() ?? b.root, undefined);
-  return (path.split("/").pop() ?? path).replace(/\.(md|markdown|txt)$/i, "");
+  return withoutDocExtension(path.split("/").pop() ?? path);
 };
 
 /** Pointed-at documents, as a chip reads them: up to three names, else a count. */

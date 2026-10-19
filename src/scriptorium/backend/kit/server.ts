@@ -37,6 +37,8 @@ import {
   scriptoriumHome,
 } from "./app";
 import { convertShippedManifest } from "./convert";
+// Scriptorium's document kinds (`.mdx`), registered before any tree is read.
+import "./docKinds";
 import { hideVerbs, liveHiddenLists } from "./hide";
 import { scriptoriumLinkSlot } from "./links";
 import { mapVerbs } from "./map";

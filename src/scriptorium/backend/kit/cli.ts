@@ -30,6 +30,8 @@ import {
   scriptoriumHome,
 } from "./app";
 import { scriptoriumKitCommands } from "./commands";
+// Scriptorium's document kinds (`.mdx`), registered before any name is judged.
+import "./docKinds";
 import { scriptoriumWikiCommands, WIKI_OPTIONS } from "./wikiCommands";
 
 export type KitCliDeps = {
