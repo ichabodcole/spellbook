@@ -4,7 +4,7 @@
 
 import "../lib/registerDom.ts";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from "bun:test";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { useEffect } from "react";
 import { useDaemon } from "../context/useDaemon.ts";
@@ -20,7 +20,6 @@ import {
 } from "../lib/testDom.ts";
 import { type LaidOut, laidOut } from "../lib/testLayout.ts";
 import { fixtureDaemon } from "../workspace/fixtures/app";
-import { testWorkspace } from "../workspace/fixtures/harness";
 import type { WorkspaceDaemon } from "../workspace/server";
 import { seedDocs, tempRoot } from "../workspace/testing";
 import { type ShellPanel, WorkspaceShell, type WorkspaceShellProps } from "./WorkspaceShell.tsx";
@@ -31,8 +30,6 @@ afterAll(removeDom);
 
 let root: string;
 let docs: string;
-/** The session's workspace: empty at the start, so the context is too. */
-let wsDir: string;
 let daemon: WorkspaceDaemon;
 
 beforeEach(async () => {
@@ -41,8 +38,7 @@ beforeEach(async () => {
   process.env.KIT_FIXTURE_HOME = join(root, "home");
   docs = seedDocs(root);
   localStorage.clear();
-  wsDir = testWorkspace(root, "ws");
-  daemon = fixtureDaemon({ tmp: join(root, "tmp"), workspace: wsDir });
+  daemon = fixtureDaemon({ tmp: join(root, "tmp") });
   await daemon.start();
 });
 afterEach(async () => {
@@ -266,7 +262,7 @@ describe("the shell", () => {
     await click(toggle);
     expect(q('[data-slot="workspace-shell"]')?.getAttribute("data-theme")).toBe("light");
     expect(document.documentElement.dataset.theme).toBe("light");
-    expect(localStorage.getItem("story-studio:theme")).toBe("light");
+    expect(localStorage.getItem("spellbook:theme")).toBe("light");
     await m.unmount();
   });
 
@@ -275,7 +271,7 @@ describe("the shell", () => {
     // A DOM has no layout, so the panels cannot be dragged here; the browser
     // hand test covers the writing half.
     localStorage.setItem(
-      "story-studio:react-resizable-panels:panes:context:centre:chat",
+      "spellbook:react-resizable-panels:panes:context:centre:chat",
       JSON.stringify({ context: 0, centre: 72, chat: 28 }),
     );
     const m = await mount(<Host />);
@@ -381,7 +377,7 @@ describe("the columns and the quiet the centre asks for", () => {
     // A DOM has no layout, so the library cannot resize a panel here and the acts
     // themselves (collapse, expand) are the browser hand test's.
     localStorage.setItem(
-      "story-studio:react-resizable-panels:panes:context:centre:chat",
+      "spellbook:react-resizable-panels:panes:context:centre:chat",
       JSON.stringify({ context: 0, centre: 72, chat: 0 }),
     );
     seen = null;
@@ -497,7 +493,7 @@ describe("the top bar", () => {
 
   test("a shut column's way back is on its rail, never in the centre's row", async () => {
     localStorage.setItem(
-      "story-studio:react-resizable-panels:panes:context:centre:chat",
+      "spellbook:react-resizable-panels:panes:context:centre:chat",
       JSON.stringify({ context: 22, centre: 75, chat: 3 }),
     );
     const m = await mount(<Host extra={{ toolbar: <button type="button">Tool</button> }} />);
@@ -514,7 +510,7 @@ describe("the top bar", () => {
 
 describe("the chat rail's mark", () => {
   const SHUT = JSON.stringify({ context: 22, centre: 75, chat: 3 });
-  const KEY = "story-studio:react-resizable-panels:panes:context:centre:chat";
+  const KEY = "spellbook:react-resizable-panels:panes:context:centre:chat";
   const mark = () => q("[data-slot=chat-unseen]");
   const reopen = () => q('[data-column-control="chat-reopen"]');
   const agentSays = (text: string) =>
@@ -645,13 +641,10 @@ describe("the chat rail's mark", () => {
     await settle(() => {
       ws().daemon.send({ op: "say", text: "A note to self." });
     });
-    // A revert is the human's own act, reported as a system line. The
-    // document is made in the workspace, so it is opened where it is.
-    const solo = join(wsDir, "solo.md");
-    writeFileSync(solo, "# Solo\n");
-    daemon.session.addContext(solo);
+    // A revert is the human's own act, reported as a system line.
+    daemon.session.addContext(join(docs, "solo.md"));
     await settle(() => {
-      ws().daemon.send({ op: "open", path: solo });
+      ws().daemon.send({ op: "open", path: join(docs, "solo.md") });
     });
     await waitFor(() => ws().openDoc !== null, "the document open");
     await settle(() => {
@@ -670,7 +663,7 @@ describe("the chat rail's mark", () => {
   });
 
   test("pressing the mark opens the conversation on its Chat tab, and the mark goes", async () => {
-    localStorage.setItem("story-studio:tab", "tasks");
+    localStorage.setItem("spellbook:tab", "tasks");
     localStorage.setItem(KEY, SHUT);
     const m = await mount(<Host extra={{ centre: <Centre /> }} />);
     await waitFor(() => !!reopen(), "the chat rail");
@@ -786,7 +779,7 @@ describe("the columns as the window changes", () => {
     // the library's pointer and key handling need a layout a DOM does not have.
     await m.unmount();
     localStorage.setItem(
-      "story-studio:react-resizable-panels:panes:context:centre:chat",
+      "spellbook:react-resizable-panels:panes:context:centre:chat",
       JSON.stringify({ context: 30, centre: 42, chat: 28 }),
     );
     const again = await mount(<Host extra={{ centre: <Centre /> }} />);
@@ -822,7 +815,7 @@ describe("the columns as the window changes", () => {
   test("Ctrl+] with focus on the chat rail's mark hands focus on, not to the page", async () => {
     stub = laidOut(1200);
     localStorage.setItem(
-      "story-studio:react-resizable-panels:panes:context:centre:chat",
+      "spellbook:react-resizable-panels:panes:context:centre:chat",
       JSON.stringify({ context: 22, centre: 75, chat: 3 }),
     );
     const m = await mount(<Host extra={{ centre: <Centre /> }} />);

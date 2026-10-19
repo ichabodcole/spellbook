@@ -16,12 +16,12 @@ import {
   installDom,
   mount,
   nativeGlobal,
-  pngBytes,
   removeDom,
   settle,
   typeInto,
   waitFor,
 } from "../lib/testDom.ts";
+import { pngBytes } from "../lib/testImages.ts";
 import { fixtureDaemon } from "../workspace/fixtures/app";
 import { testWorkspace } from "../workspace/fixtures/harness";
 import type { Message } from "../workspace/protocol";

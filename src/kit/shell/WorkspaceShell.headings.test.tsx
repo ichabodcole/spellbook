@@ -38,8 +38,7 @@ beforeEach(async () => {
   writeFileSync(join(docs, "set", "part", "b.md"), B);
   localStorage.clear();
   client = null;
-  // The docs folder is the workspace, so the seeded set is in it where it is.
-  daemon = fixtureDaemon({ tmp: join(root, "tmp"), workspace: docs });
+  daemon = fixtureDaemon({ tmp: join(root, "tmp") });
   await daemon.start();
   daemon.session.addContext(join(docs, "set"));
 });

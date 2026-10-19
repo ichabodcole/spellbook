@@ -64,7 +64,7 @@ import { TaskToasts } from "../chat/TaskToasts.tsx";
 import { badgeFor, WaitingDot } from "../chat/WaitingBadge.tsx";
 import { ContextSidebar } from "../context/ContextSidebar.tsx";
 import { CentreDockContext } from "../context/centreDock.tsx";
-import { type CopyInWhat, copyInVia, type Daemon, SESSION_ENDED } from "../context/daemonClient.ts";
+import { type Daemon, SESSION_ENDED } from "../context/daemonClient.ts";
 import { HistoryArrows } from "../context/HistoryArrows.tsx";
 import type { MenuActions } from "../context/menuActions.ts";
 import {
@@ -98,7 +98,6 @@ import { cn } from "../lib/cn.ts";
 import { askDescribeText } from "../lib/sidecar.ts";
 import { safeStorage } from "../lib/storage.ts";
 import { applyTheme, readAppliedTheme, type Theme } from "../theme/mode.ts";
-import { useConfirm } from "../ui/ConfirmDialog.tsx";
 import {
   Dot,
   Empty,
@@ -152,8 +151,6 @@ import { lastMessageId, unseenFromAgent } from "./rail.ts";
 import { SearchBox } from "./SearchBox.tsx";
 import { EndedChip, type EndPhase, SessionEndDialog } from "./SessionEnd.tsx";
 import { SettingsDialog } from "./SettingsDialog.tsx";
-import { WorkspacePrompt } from "./WorkspacePrompt.tsx";
-import { workspaceChangeDialog } from "./workspaceChange.ts";
 
 /** A tab an app adds to the right column. */
 export type ShellPanel = { id: string; label: string; node: ReactNode };
@@ -186,7 +183,7 @@ export type WorkspaceShellProps = {
   folderBadges?: (docs: readonly DocView[], total: number) => ReactNode;
   /** What "Show diff" on a new-version toast does. Absent: the toast offers Activate only. */
   onShowDiff?: (doc: DocView, version: number) => void;
-  /** Prefix for what the shell keeps in localStorage. Default "story-studio". */
+  /** Prefix for what the shell keeps in localStorage. Default "spellbook". */
   storageKey?: string;
   /** An app's own actions under a chat message, or nothing (`ChatSidebar`'s `messageActions`). */
   messageActions?: (message: Message) => ReactNode;
@@ -366,7 +363,7 @@ function ShellBody({
   rowMarker,
   folderBadges,
   onShowDiff,
-  storageKey = "story-studio",
+  storageKey = "spellbook",
   messageActions,
 }: WorkspaceShellProps & { state: PublicState }) {
   const { send } = daemon;
@@ -965,24 +962,6 @@ function ShellBody({
       }),
     [onDaemonFrame, announceToast],
   );
-  // What the human chose in the OS picker: the sidebar brings each path in,
-  // asking about a taken name, as it does a typed one.
-  const [picked, setPicked] = useState<{ paths: string[]; seq: number } | null>(null);
-  useEffect(
-    () =>
-      onDaemonFrame((frame) => {
-        if (frame.op !== "picked") return;
-        const { paths } = frame as Extract<ServerOp, { op: "picked" }>;
-        setPicked((was) => ({ paths, seq: (was?.seq ?? 0) + 1 }));
-      }),
-    [onDaemonFrame],
-  );
-  const { request: daemonRequest } = daemon;
-  const copyIn = useCallback(
-    (what: CopyInWhat, o: { into?: string; onTaken: "ask" | "replace" | "keep-both" }) =>
-      copyInVia(daemonRequest, what, o),
-    [daemonRequest],
-  );
 
   // ── where the open image is used ────────────────────────────────────────
   // The open image's backlinks (its embeds and the links to it), for the
@@ -1021,22 +1000,15 @@ function ShellBody({
   useEffect(() => {
     if (lastError) setPendingShow(null);
   }, [lastError]);
-  /**
-   * The last refusal while the workspace prompt is up (a folder from the picker
-   * the daemon would not take): said in the prompt, which covers the toasts.
-   */
-  const [promptRefusal, setPromptRefusal] = useState<string | null>(null);
-  const noWorkspace = state.workspace === null;
   useEffect(() => {
     if (!lastError) return;
-    if (noWorkspace) setPromptRefusal(lastError);
     if (lastError === SESSION_ENDED) {
       // One toast per burst: a held key or a double click is one answer, not five.
       if (Date.now() - endedToastAt.current > 2500) toasts.announce("Session ended", lastError);
       endedToastAt.current = Date.now();
     } else toasts.announce(lastErrorTitle ?? "The workspace refused that", lastError);
     clearError();
-  }, [lastError, lastErrorTitle, clearError, toasts, noWorkspace]);
+  }, [lastError, lastErrorTitle, clearError, toasts]);
   // A new document or folder this viewer made arrives in rename mode; a new
   // document also opens.
   // A move this viewer made, once the daemon has done it: the sidebar puts the
@@ -1175,80 +1147,6 @@ function ShellBody({
     });
   }, [contextEntries]);
 
-  // Changing the workspace asks first: the tree then shows the new folder's
-  // contents and none of what it shows now (the user, 2026-10-13). The
-  // question names the documents with unsaved edits that leave the tree.
-  const { confirm, dialog: confirmDialog, cancel: cancelQuestion } = useConfirm();
-  const workspaceNow = state.workspace;
-  const docsNow = state.docs;
-  /** The human's own change-of-workspace question is on screen: an agent's ask waits behind it. */
-  const [ownQuestion, setOwnQuestion] = useState(false);
-  const changeWorkspace = useCallback(
-    async (path: string) => {
-      if (workspaceNow === null) return void send({ op: "workspace.set", path });
-      const typed = path.replace(/\/+$/, "");
-      if (typed === workspaceNow || typed === tildify(workspaceNow, userHome)) return;
-      // The daemon hears that the human's own question is open, so an agent's
-      // ask meanwhile is refused rather than put over it; one already on its
-      // way is held here until the question closes.
-      send({ op: "workspace.choosing", open: true });
-      setOwnQuestion(true);
-      let ok = false;
-      try {
-        ok = await confirm(
-          workspaceChangeDialog({ to: typed, docs: docsNow, by: "human", home: userHome }),
-        );
-        // Their yes settles it: an ask held behind their question is answered
-        // by their change (the daemon tells the agent), never shown after it.
-        if (ok && askNow.current) askedFor.current = askNow.current;
-      } finally {
-        setOwnQuestion(false);
-        send({ op: "workspace.choosing", open: false });
-      }
-      if (ok) send({ op: "workspace.set", path: typed });
-    },
-    [confirm, send, workspaceNow, userHome, docsNow],
-  );
-  // The agent's change of workspace waits on the same question, naming the
-  // agent; the answer goes back to the daemon, which tells the agent. A newer
-  // ask replaces the one on screen, which is then not answered: the daemon
-  // already dropped it. While the human's own question is open, an ask is not
-  // shown: the daemon refuses new ones (`workspace.choosing`), and one that
-  // raced it here is held until the question closes, never put over it. If the
-  // human changes the workspace meanwhile, the daemon drops the ask and tells
-  // the agent.
-  const ask = state.workspaceAsk ?? null;
-  const askNow = useRef<string | null>(null);
-  askNow.current = ask?.id ?? null;
-  const askedFor = useRef<string | null>(null);
-  /** The agent's ask whose question is on screen, if one is. */
-  const askShown = useRef<string | null>(null);
-  // An ask the daemon dropped (answered elsewhere, replaced, the workspace set
-  // meanwhile) takes its question with it: nothing on screen sends into nothing.
-  useEffect(() => {
-    if (askShown.current !== null && askShown.current !== (ask?.id ?? null)) {
-      askShown.current = null;
-      cancelQuestion();
-    }
-  }, [ask?.id, cancelQuestion]);
-  useEffect(() => {
-    if (!ask || ownQuestion || askedFor.current === ask.id) return;
-    askedFor.current = ask.id;
-    askShown.current = ask.id;
-    void confirm(
-      workspaceChangeDialog({
-        to: ask.path,
-        shown: tildify(ask.path, userHome),
-        docs: docsNow,
-        by: "agent",
-        home: userHome,
-      }),
-    ).then((accept) => {
-      if (askShown.current === ask.id) askShown.current = null;
-      if (askNow.current === ask.id) send({ op: "workspace.answer", id: ask.id, accept });
-    });
-  }, [ask, ownQuestion, confirm, send, userHome, docsNow]);
-
   const contextBody = (
     <ContextSidebar
       entries={state.context}
@@ -1261,14 +1159,11 @@ function ShellBody({
         setRawMain(isBundleMain(path) ? path : null);
         send({ op: "open", path });
       }}
-      copyIn={copyIn}
-      picked={picked}
+      onAddPath={(path) => send({ op: "context.add", path })}
       onStructure={(op) => send(op)}
       onRemoveEntry={(id) => send({ op: "context.remove", id })}
       onReveal={(path) => send({ op: "reveal", path })}
       onPick={(want) => send({ op: "pick", want })}
-      workspace={state.workspace}
-      onSetWorkspace={changeWorkspace}
       listDir={daemon.listDir}
       badgeFor={(path) => {
         const doc = docAt(state.docs, path);
@@ -2086,23 +1981,6 @@ function ShellBody({
           />
         </footer>
       </div>
-      {confirmDialog}
-      {noWorkspace && daemon.connection === "open" && (
-        <WorkspacePrompt
-          appTitle={state.appTitle ?? state.app}
-          listDir={daemon.listDir}
-          onSet={(path) => {
-            setPromptRefusal(null);
-            return daemon.request({ op: "workspace.set", path });
-          }}
-          onPick={() => {
-            setPromptRefusal(null);
-            send({ op: "pick", want: "workspace" });
-          }}
-          refusal={promptRefusal}
-          onChoosing={(open) => send({ op: "workspace.choosing", open })}
-        />
-      )}
       <SettingsDialog
         open={settingsOpen}
         onOpenChange={setSettingsOpen}

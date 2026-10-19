@@ -6,7 +6,7 @@
 
 import "../lib/registerDom.ts";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from "bun:test";
-import { mkdirSync, renameSync, rmSync } from "node:fs";
+import { mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import type { Daemon } from "../context/daemonClient.ts";
 import { useDaemon } from "../context/useDaemon.ts";
@@ -20,7 +20,6 @@ import {
   waitFor,
 } from "../lib/testDom.ts";
 import { fixtureDaemon } from "../workspace/fixtures/app";
-import { testWorkspace } from "../workspace/fixtures/harness";
 import type { WorkspaceDaemon } from "../workspace/server";
 import { seedDocs, tempRoot } from "../workspace/testing";
 import { WorkspaceShell } from "./WorkspaceShell.tsx";
@@ -33,8 +32,6 @@ afterAll(async () => {
 
 let root: string;
 let docs: string;
-/** The seeded set, moved into the workspace: the one thing in the context. */
-let set: string;
 let daemon: WorkspaceDaemon;
 /** Every frame the page sent. */
 let sent: { op?: string; [k: string]: unknown }[];
@@ -45,17 +42,13 @@ beforeEach(async () => {
   mkdirSync(join(root, "tmp"), { recursive: true });
   process.env.KIT_FIXTURE_HOME = join(root, "home");
   docs = seedDocs(root);
-  // Only the set is in the workspace, so in the context: `solo.md`, left
-  // behind in `docs`, is outside.
-  const ws = testWorkspace(root, "ws");
-  set = join(ws, "set");
-  renameSync(join(docs, "set"), set);
   localStorage.clear();
   sent = [];
   client = null;
-  daemon = fixtureDaemon({ tmp: join(root, "tmp"), workspace: ws });
+  daemon = fixtureDaemon({ tmp: join(root, "tmp") });
   await daemon.start();
-  daemon.session.addContext(set);
+  // Only the set is in the context: `solo.md` beside it is outside.
+  daemon.session.addContext(join(docs, "set"));
 });
 afterEach(async () => {
   await daemon.stop().catch(() => {});
@@ -117,7 +110,7 @@ async function openA() {
   const m = await mount(<Host />);
   await waitFor(() => client?.connection === "open", "the connection");
   await settle(() => {
-    client?.send({ op: "open", path: join(set, "a.md") });
+    client?.send({ op: "open", path: join(docs, "set", "a.md") });
   });
   await waitFor(() => openName() === "a.md", "a.md open");
   return m;
@@ -166,7 +159,7 @@ describe("the context sidebar follows a followed link", () => {
     // The body stays mounted, hidden and inert, which is what lets a script
     // drill in and open `a.md` while it is shut.
     localStorage.setItem(
-      "story-studio:react-resizable-panels:panes:context:centre:chat",
+      "spellbook:react-resizable-panels:panes:context:centre:chat",
       JSON.stringify({ context: 0, centre: 72, chat: 28 }),
     );
     const m = await drilledOnA();
@@ -200,7 +193,7 @@ describe("following a link in a chat message", () => {
     const m = await mount(<Host />);
     await waitFor(() => client?.connection === "open", "the connection");
     await settle(() => {
-      client?.send({ op: "open", path: join(set, "part", "b.md") });
+      client?.send({ op: "open", path: join(docs, "set", "part", "b.md") });
     });
     await waitFor(() => openName() === "b.md", "b.md open");
     // The agent means the context: from `part/` alone this would be `part/a.md`.
@@ -212,16 +205,16 @@ describe("following a link in a chat message", () => {
     await m.unmount();
   });
 
-  test("an absolute path outside the context is toasted under its own title, with where it is", async () => {
+  test("an absolute path outside the context is toasted under its own title, with the folder to add", async () => {
     const m = await openA();
     await say(`Compare [solo](${join(docs, "solo.md")}?rel=sister-of).`);
     await waitFor(() => chatLink("solo") !== null, "the chat link");
     await click(chatLink("solo"));
-    await waitFor(() => text().includes("is outside this workspace"), "the toast");
+    await waitFor(() => text().includes("is outside this session's context"), "the toast");
     expect(text()).toContain("That link didn't open");
     expect(text()).not.toContain("The workspace refused that");
     expect(text()).toContain(
-      `${join(docs, "solo.md")} is outside this workspace, in ${docs}. Copy it in (add) to open the copy here.`,
+      `${join(docs, "solo.md")} is outside this session's context. Add its folder, ${docs}, to open it here.`,
     );
     expect(text()).not.toContain("rel=sister-of");
     expect(openName()).toBe("a.md");

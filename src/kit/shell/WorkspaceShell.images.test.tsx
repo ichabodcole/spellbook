@@ -19,7 +19,7 @@ import {
 } from "../lib/testDom.ts";
 import { pngBytes } from "../lib/testImages.ts";
 import { fixtureDaemon } from "../workspace/fixtures/app";
-import { cmd, testWorkspace } from "../workspace/fixtures/harness";
+import { cmd } from "../workspace/fixtures/harness";
 import type { WorkspaceDaemon } from "../workspace/server";
 import { tempRoot } from "../workspace/testing";
 import { WorkspaceShell } from "./WorkspaceShell.tsx";
@@ -36,16 +36,14 @@ beforeEach(async () => {
   root = tempRoot("shell-images");
   mkdirSync(join(root, "tmp"), { recursive: true });
   process.env.KIT_FIXTURE_HOME = join(root, "home");
-  // The world folder is made in the workspace, so it is in the context from the start.
-  const ws = testWorkspace(root, "ws");
-  world = join(ws, "world");
+  world = join(root, "world");
   mkdirSync(world, { recursive: true });
   writeFileSync(join(world, "fox.md"), "# The fox\n");
   writeFileSync(join(world, "fox.png"), pngBytes(16, 12));
   // Where fox.png is used, and an image nothing uses.
   writeFileSync(join(world, "den.md"), "# The den\n\n![The fox](fox.png)\n\nSee [it](fox.png).\n");
   writeFileSync(join(world, "owl.png"), pngBytes(4, 4));
-  daemon = fixtureDaemon({ tmp: join(root, "tmp"), workspace: ws });
+  daemon = fixtureDaemon({ tmp: join(root, "tmp") });
   await daemon.start();
   await cmd(daemon.url, { op: "context.add", paths: [world] });
 });

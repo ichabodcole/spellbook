@@ -51,8 +51,7 @@ beforeEach(async () => {
   process.env.KIT_FIXTURE_HOME = join(root, "home");
   docs = seedDocs(root);
   localStorage.clear();
-  // The docs folder is the workspace, so the seeded set is in it where it is.
-  daemon = fixtureDaemon({ tmp: join(root, "tmp"), workspace: docs });
+  daemon = fixtureDaemon({ tmp: join(root, "tmp") });
   await daemon.start();
 });
 afterEach(async () => {

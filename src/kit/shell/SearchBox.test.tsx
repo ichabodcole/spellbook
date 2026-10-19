@@ -40,8 +40,7 @@ beforeEach(async () => {
   writeFileSync(join(docs, "set", "keeper.md"), "# Keeper\n\nline two\nthe lantern is lit\n");
   writeFileSync(join(docs, "set", "lamp.md"), "# Lamp\n\nanother lantern, unlit\n");
   localStorage.clear();
-  // The docs folder is the workspace, so the seeded set is in it where it is.
-  daemon = fixtureDaemon({ tmp: join(root, "tmp"), workspace: docs });
+  daemon = fixtureDaemon({ tmp: join(root, "tmp") });
   await daemon.start();
 });
 afterEach(async () => {

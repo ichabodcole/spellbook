@@ -48,7 +48,7 @@ const atMinimum = (side: Side, size: number) => size <= MIN_SIZE[side] + 0.5;
 
 /**
  * Where the reopen widths live, beside the library's layout. A bare key: the
- * shell's storage adds its own prefix (`storageKey`, "story-studio" by default).
+ * shell's storage adds its own prefix (`storageKey`, "spellbook" by default).
  */
 export const OPEN_KEY = "panes:open";
 

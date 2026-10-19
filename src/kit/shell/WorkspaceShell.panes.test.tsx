@@ -40,8 +40,7 @@ beforeEach(async () => {
   process.env.KIT_FIXTURE_STEP_MS = "250";
   docs = seedDocs(root);
   localStorage.clear();
-  // The docs folder is the workspace: each document in it is in the context where it is.
-  daemon = fixtureDaemon({ tmp: join(root, "tmp"), workspace: docs });
+  daemon = fixtureDaemon({ tmp: join(root, "tmp") });
   await daemon.start();
 });
 afterEach(async () => {
@@ -168,7 +167,7 @@ describe("the tab list", () => {
       );
     });
     expect(qa('[role="tab"]')[1]?.getAttribute("aria-selected")).toBe("true");
-    expect(tabs[0]?.id.startsWith("story-studio-tab-")).toBe(true);
+    expect(tabs[0]?.id.startsWith("spellbook-tab-")).toBe(true);
     expect(q('[role="tabpanel"]')?.getAttribute("aria-labelledby")).toBe(tabs[1]?.id);
     await m.unmount();
   });
@@ -352,7 +351,7 @@ describe("the conversation", () => {
     await daemon.stop();
     await waitFor(() => ws?.daemon.connection === "closed", "closed");
     // The restored session holds no selection (it is not in the manifest)...
-    daemon = fixtureDaemon({ tmp: join(root, "tmp"), workspace: docs, port, restore: sessionId });
+    daemon = fixtureDaemon({ tmp: join(root, "tmp"), port, restore: sessionId });
     await daemon.start();
     await waitFor(() => ws?.daemon.connection === "open", "open again");
     // ...so the chip on screen is told to the daemon once more.

@@ -75,7 +75,7 @@ function Host() {
 }
 
 /** The library's own key for the shell's layout, and a layout with the chat shut. */
-const LAYOUT_KEY = "story-studio:react-resizable-panels:panes:context:centre:chat";
+const LAYOUT_KEY = "spellbook:react-resizable-panels:panes:context:centre:chat";
 const CHAT_SHUT = JSON.stringify({ context: 22, centre: 75, chat: 3 });
 
 const q = (sel: string) => document.querySelector(sel);
@@ -378,12 +378,12 @@ describe("closing the float", () => {
     for (const [route, reopen] of routes) {
       localStorage.clear();
       localStorage.setItem(LAYOUT_KEY, CHAT_SHUT);
-      localStorage.setItem("story-studio:panes:float", "closed");
+      localStorage.setItem("spellbook:panes:float", "closed");
       const m = await mountShell();
       await waitFor(() => !!showIcon(), `the closed float (${route})`);
       await reopen();
       await waitFor(() => !ws().columns.collapsed.chat, `the chat open (${route})`);
-      expect(localStorage.getItem("story-studio:panes:float")).toBe("open");
+      expect(localStorage.getItem("spellbook:panes:float")).toBe("open");
       await m.unmount();
     }
   });
@@ -400,7 +400,7 @@ describe("closing the float", () => {
       await waitFor(() => !!showIcon(), `the rail's chat icon after reload ${n}`);
       expect(ws().columns.collapsed.chat).toBe(true);
       expect(float()).toBeNull();
-      expect(localStorage.getItem("story-studio:panes:float")).toBe("closed");
+      expect(localStorage.getItem("spellbook:panes:float")).toBe("closed");
       await again.unmount();
     }
   });
@@ -572,12 +572,12 @@ describe("what the float sends and shows", () => {
 describe("the closed state stored by an earlier build", () => {
   test("is read from its older, doubly prefixed key, and written back bare", async () => {
     localStorage.setItem(LAYOUT_KEY, CHAT_SHUT);
-    localStorage.setItem("story-studio:story-studio:panes:float", "closed");
+    localStorage.setItem("spellbook:story-studio:panes:float", "closed");
     const m = await mountShell();
     await waitFor(() => !!showIcon(), "the rail's chat icon");
     expect(float()).toBeNull();
     await click(showIcon());
-    expect(localStorage.getItem("story-studio:panes:float")).toBe("open");
+    expect(localStorage.getItem("spellbook:panes:float")).toBe("open");
     await m.unmount();
   });
 });

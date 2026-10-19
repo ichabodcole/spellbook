@@ -101,6 +101,12 @@ async function collapseChat() {
   await waitFor(() => float() !== null, "the float");
 }
 async function openSolo() {
+  // Spellbook: the workspace folder is not in the context by itself (no copy-in
+  // model), so the document is added where it lives before it is opened.
+  await settle(() => {
+    ws().daemon.send({ op: "context.add", path: join(docs, "solo.md") });
+  });
+  await waitFor(() => ws().state.context.length > 0, "the document in the context");
   await settle(() => {
     ws().daemon.send({ op: "open", path: join(docs, "solo.md") });
   });
