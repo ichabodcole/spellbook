@@ -17,6 +17,10 @@ describe("splitting", () => {
       "Prose first\n---\nnot: frontmatter\n---\n",
       "---\r\ntype: x\r\n---\r\ncrlf body\r\n",
       "---\ntype: unterminated\n",
+      // A byte-order mark before the block (meta-set-byte-safety): both see it.
+      "\uFEFF---\ntype: bom\n---\n# Bom\n",
+      "\uFEFF# Bom, no block\n",
+      "\uFEFF---\r\ntype: bom\r\n---\r\ncrlf body\r\n",
     ]) {
       const mine = splitFrontmatter(text);
       const theirs = splitInSurface(text);

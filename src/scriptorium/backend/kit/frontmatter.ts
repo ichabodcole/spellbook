@@ -58,8 +58,16 @@ export type DocSummary = {
 /** The most documents one frontmatter scan reads. */
 export const META_SCAN_CAP = 500;
 
-/** A frontmatter block: `---` on its own first line, to the next `---` line. */
-const BLOCK = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
+/**
+ * A frontmatter block: `---` on its own first line, to the next `---` line.
+ * A byte-order mark before the fence is part of the file, not of the first
+ * line (meta-set-byte-safety): without it here a BOM hid the block from every
+ * reader and writer, so `meta-init` stacked a second block above the first.
+ */
+const BLOCK = /^\uFEFF?---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
+
+/** A file's byte-order mark, which stays first whatever is written after it. */
+const BOM = "\uFEFF";
 
 /**
  * Split a document into its raw frontmatter block and the body beneath it.
@@ -310,7 +318,8 @@ export function buildBlock(meta: NewMeta): string {
  * block that adds one would show as a diff on every document it touches.
  */
 export function withBlock(text: string, block: string): string {
-  return `${block}${text}`;
+  // A byte-order mark stays the file's first character, before the block.
+  return text.startsWith(BOM) ? `${BOM}${block}${text.slice(BOM.length)}` : `${block}${text}`;
 }
 
 /**
@@ -318,22 +327,48 @@ export function withBlock(text: string, block: string): string {
  * where it exists and appended before the closing `---` where it does not.
  * Everything else — order, comments, spacing, keys this spell never heard of —
  * survives byte for byte.
+ *
+ * ⛔ THE FIVE WAYS THIS ONCE WROTE MORE THAN ONE KEY (meta-set-byte-safety,
+ * found on both paths by the wiki-verbs verifier, 2026-10-17), each a test:
+ * - the block is spliced back BY POSITION, never with `String.replace`, whose
+ *   replacement string reads `$&`, `$'` and `` $` `` in a value as patterns
+ *   and pasted the block into the title;
+ * - so an EMPTY block (`---\n\n---`, whose raw text is "") gets its key inside
+ *   the fences, not before the opening one (where `replace("", …)` put it);
+ * - a CRLF block gets CRLF lines: the written line takes the line ending the
+ *   line it replaces had, and an appended one the opening fence's;
+ * - a key written quoted (`"status": draft`, `'status': draft`) is the same
+ *   key, replaced as written rather than appended a second time;
+ * - a block after a byte-order mark is a block (`BLOCK`).
+ * And a key named twice (`"status": a` then `status: b`, or two bare lines)
+ * has its LAST line set, the one YAML reads, so the set takes effect.
  */
 export function setKey(text: string, key: string, value: string): string {
-  const { raw } = splitFrontmatter(text);
-  if (raw === null) throw new Error("this document has no frontmatter block");
-  const line = `${key}: ${scalar(value)}`;
-  const keyLine = new RegExp(`^${key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*:`);
+  const m = BLOCK.exec(text);
+  if (!m) throw new Error("this document has no frontmatter block");
+  const raw = m[1] ?? "";
+  // The block's text starts after the opening fence's line break.
+  const start = m[0].indexOf("\n") + 1;
+  const cr = m[0].slice(0, start).endsWith("\r\n") ? "\r" : "";
+  const name = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const keyLine = new RegExp(`^(${name}|"${name}"|'${name}')\\s*:`);
+  const written = (spelled: string) => `${spelled}: ${scalar(value)}`;
   const lines = raw.split("\n");
-  const at = lines.findIndex((l) => keyLine.test(l));
-  if (at === -1) lines.push(line);
-  else {
+  // The LAST line that names the key: a block that names it twice means the
+  // last one to YAML (last wins), so that is the one a set must change.
+  const at = lines.findLastIndex((l) => keyLine.test(l));
+  if (at === -1) {
+    // The new line goes last; the line that was last now ends as the block's lines do.
+    lines[lines.length - 1] += cr;
+    lines.push(written(key));
+  } else {
+    const spelled = (keyLine.exec(lines[at] ?? "") as RegExpExecArray)[1] as string;
     // A multi-line value (a folded description, a nested mapping) is the
     // key's line PLUS every indented line under it; all of them go.
     let end = at + 1;
     while (end < lines.length && /^\s+\S/.test(lines[end] ?? "")) end++;
-    lines.splice(at, end - at, line);
+    const ending = (lines[end - 1] ?? "").endsWith("\r") ? "\r" : "";
+    lines.splice(at, end - at, `${written(spelled)}${ending}`);
   }
-  const rebuilt = lines.join("\n");
-  return text.replace(raw, rebuilt);
+  return text.slice(0, start) + lines.join("\n") + text.slice(start + raw.length);
 }

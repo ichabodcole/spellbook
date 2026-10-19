@@ -69,6 +69,22 @@ describe("splitFrontmatter", () => {
     expect(splitFrontmatter("---\r\na: 1\r\n---\r\nBody\r\n").body).toBe("Body\r\n");
     expect(splitFrontmatter("---\na: 1\n---").body).toBe("");
   });
+
+  test("a first key written quoted is still a key: the block is frontmatter", () => {
+    for (const q of ['"', "'"]) {
+      const text = `---\n${q}status${q}: draft\ntitle: T\n---\n# T\n`;
+      expect(splitFrontmatter(text).raw).toBe(`${q}status${q}: draft\ntitle: T`);
+      expect(readFrontmatter(text)?.fields).toEqual({ status: "draft", title: "T" });
+    }
+    // A quote that does not close round a key is not one: prose stays prose.
+    expect(splitFrontmatter('---\n"Hello: she said\n---\n').raw).toBeNull();
+  });
+
+  test("a byte-order mark before the block: still the block, and bodyStart counts the mark", () => {
+    const text = "\uFEFF---\na: 1\n---\nBody\n";
+    expect(splitFrontmatter(text)).toEqual({ raw: "a: 1", body: "Body\n", bodyStart: 14 });
+    expect(readFrontmatter(text)?.fields).toEqual({ a: 1 });
+  });
 });
 
 describe("readFrontmatter", () => {

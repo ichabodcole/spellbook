@@ -30,9 +30,10 @@ import { gfm, gfmHtml } from "micromark-extension-gfm";
  * A frontmatter block: `---` on its own first line, to the next `---` line.
  * The SAME rule the daemon's reader uses — `backend/frontmatter.test.ts` holds
  * the two splitters equal over one set of fixtures, because a disagreement
- * would show as frontmatter leaking into the rendered body.
+ * would show as frontmatter leaking into the rendered body. A byte-order mark
+ * before the fence is allowed, as the daemon allows it (meta-set-byte-safety).
  */
-const FRONTMATTER_BLOCK = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
+const FRONTMATTER_BLOCK = /^\uFEFF?---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
 
 /** Split a document into its raw frontmatter block and the body beneath it. */
 export function splitFrontmatter(text: string): { raw: string | null; body: string } {

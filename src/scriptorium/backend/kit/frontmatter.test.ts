@@ -1,6 +1,7 @@
 // The frontmatter reader, and the temper the spec asks for: a consumer MUST NOT
 // reject a document, and SHOULD preserve what it does not understand.
 import { describe, expect, test } from "bun:test";
+import { BOM_NO_BLOCK, BOM_WITH_BLOCK, META_SET_CASES } from "./fixtures/metaSetCases";
 import {
   bodyLineOffset,
   buildBlock,
@@ -276,5 +277,28 @@ describe("bodyLineOffset", () => {
     for (let bodyLine = 1; bodyLine <= body.length; bodyLine++) {
       expect(file[bodyLine + off - 1]).toBe(body[bodyLine - 1]);
     }
+  });
+});
+
+describe("meta-set-byte-safety: setKey changes the named key and nothing else", () => {
+  for (const c of META_SET_CASES)
+    test(c.name, () => {
+      expect(setKey(c.before, c.key, c.value)).toBe(c.after);
+    });
+
+  test("a key named twice: after the set, the reader sees the new value", () => {
+    for (const c of META_SET_CASES.filter((x) => x.name.startsWith("a key named twice")))
+      expect(readMeta(setKey(c.before, c.key, c.value))?.status).toBe("c");
+  });
+
+  test("a byte-order mark hides no block from the readers", () => {
+    expect(splitFrontmatter(BOM_WITH_BLOCK)).toEqual({ raw: "title: Bom", body: "# Bom\n" });
+    expect(readMeta(BOM_WITH_BLOCK)?.title).toBe("Bom");
+  });
+
+  test("a new block goes after a byte-order mark, which stays first", () => {
+    const block = buildBlock({ type: "note", at: "2026-10-19" });
+    expect(withBlock(BOM_NO_BLOCK, block)).toBe(`\uFEFF${block}# Bombare\n`);
+    expect(withBlock("# Plain\n", block)).toBe(`${block}# Plain\n`);
   });
 });

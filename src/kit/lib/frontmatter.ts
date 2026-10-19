@@ -9,12 +9,15 @@
 /**
  * A frontmatter block: `---` on its own first line (trailing spaces allowed), to
  * the next `---` line. It counts only when its first non-empty line looks like a
- * YAML key (`key:`), so prose between two scene-break rules at the top of a story
- * stays prose. A block that opens with a key line and then breaks is still
+ * YAML key (`key:`, or the key quoted: `"key":`, `'key':`), so prose between
+ * two scene-break rules at the top of a story stays prose. A block that opens with a key line and then breaks is still
  * frontmatter, just malformed; one that never closes is not frontmatter at all.
+ * A byte-order mark before the opening `---` belongs to the file, not to the
+ * first line: the block after it is still the block, and `bodyStart` counts the
+ * mark, so body offsets stay whole-text offsets.
  */
 export const FRONTMATTER_BLOCK =
-  /^---[ \t]*\r?\n(?=(?:[ \t]*\r?\n)*[A-Za-z_][\w-]*[ \t]*:)([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
+  /^\uFEFF?---[ \t]*\r?\n(?=(?:[ \t]*\r?\n)*(?:"[A-Za-z_][\w-]*"|'[A-Za-z_][\w-]*'|[A-Za-z_][\w-]*)[ \t]*:)([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
 
 /**
  * Split a document into its frontmatter block and the body beneath it. `raw` is
