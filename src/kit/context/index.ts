@@ -4,6 +4,7 @@
 export * from "./AddPath.tsx";
 export * from "./AskLocation.tsx";
 export * from "./ContextSidebar.tsx";
+export * from "./centreDock.tsx";
 export * from "./columns.ts";
 export * from "./daemonClient.ts";
 export * from "./EntryTree.tsx";

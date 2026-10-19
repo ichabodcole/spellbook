@@ -45,6 +45,7 @@ import {
 } from "react";
 import { type At, NoteAtSelection } from "../chat/NoteAtSelection.tsx";
 import { badgeFor } from "../chat/WaitingBadge.tsx";
+import { CentreDock } from "../context/centreDock.tsx";
 import { textKey } from "../context/daemonClient.ts";
 import { carriesRows, readRowDrag } from "../context/rowDrag.ts";
 import { useWorkspace } from "../context/workspace.ts";
@@ -2018,6 +2019,9 @@ export function DocumentPane({
           </div>
         </ViewBoundary>
       )}
+      {/* The floating composer, when the shell has one, docks here: under the
+          document in the flow, so it covers none of it, and above the strip. */}
+      {doc && !appActive && <CentreDock />}
       {doc && !appActive && (
         <div className={cn("shrink-0 border-t border-edge px-3 py-1", reader && QUIET_GROUP)}>
           <StatusStrip segments={segments} fade={fade} />
