@@ -374,6 +374,18 @@ import { join } from "node:path";
 // Scriptorium. The rules it pulls in are held where they live (theme.test.ts);
 // the frame's tests and the browser check are what read this file's effect.
 // Thrown away with the frame at the shell cycle.
+//
+// ⛔ RE-DECLARED 2026-10-19 — 32/2,916 -> 33/2,975, from the object's own sum.
+// MEMBERSHIP GREW BY ONE, and one entry grew:
+//     +53  src/kit/theme/shell.css   (new)
+//     +6   src/kit/theme/base.css    251 -> 257
+// the shell port (kit-port-shell): the shell's own sheet, which scans
+// src/kit/shell and carries Story Studio's scrollbar rules. Scanned from
+// base.css, the shell's utilities grew every themed spell's stylesheet, so it
+// has a sheet of its own, as the document pane does. base.css grew by its
+// `@source not` for the new sheet and the note on where the scrollbars went.
+// theme.test.ts holds the scan split; every spell's rebuilt stylesheet is
+// byte-identical to the cycle base's.
 const DECLARED_BLIND: Record<string, number> = {
   "src/digestify/surface/styles.css": 515,
   "src/digestify/surface/index.html": 26,
@@ -385,8 +397,9 @@ const DECLARED_BLIND: Record<string, number> = {
   "src/magpie/surface/styles.css": 186,
   "src/imago/surface/styles.css": 167,
   "plugins/spellbook/skills/magpie/scripts/remove.py": 145,
-  "src/kit/theme/base.css": 251,
+  "src/kit/theme/base.css": 257,
   "src/kit/theme/document.css": 277,
+  "src/kit/theme/shell.css": 53,
   "src/astrolabe/surface/styles.css": 104,
   "src/astrolabe/surface/index.html": 35,
   "src/mind-mapper/surface/index.html": 52,

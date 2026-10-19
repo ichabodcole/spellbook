@@ -104,8 +104,6 @@ import {
   EmptyDescription,
   EmptyHeader,
   EmptyTitle,
-  ImageDescriptionPanel,
-  ImageViewer,
   QUIET_FADE,
   QUIET_GROUP,
   ResizableHandle,
@@ -144,7 +142,9 @@ import {
   reopenSize,
   type Side,
 } from "./columns.ts";
+import { ImageDescriptionPanel } from "./ImageDescription.tsx";
 import { ImageLinkedFrom } from "./ImageLinkedFrom.tsx";
+import { ImageViewer } from "./ImageViewer.tsx";
 import { LinkCheck } from "./LinkCheck.tsx";
 import { messageParts } from "./messageRefs.ts";
 import { lastMessageId, unseenFromAgent } from "./rail.ts";

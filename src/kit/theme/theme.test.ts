@@ -11,6 +11,8 @@ import {
   DOCUMENT_CSS_SPECIFIER,
   readAppliedTheme,
   resolveInitialTheme,
+  SHELL_CSS_PATH,
+  SHELL_CSS_SPECIFIER,
   THEME_LAYERS,
   THEME_PREPAINT,
   THEME_STORAGE_KEY,
@@ -113,15 +115,16 @@ describe("the base stylesheet", () => {
       "not ../workspace",
       "not ../lib",
       "not ./document.css",
+      "not ./shell.css",
       "not ../**/*.test.*",
     ]);
   });
 
-  test("scans every kit module with markup, the document pane's through its own sheet only", () => {
+  test("scans every kit module with markup, the document pane's and the shell's through their own sheets only", () => {
     // A module holding .tsx is markup; one nobody scans ships its components
     // with none of their utilities, silently. So each is scanned by one of the
-    // two sheets, and the document pane never by the base sheet, which every
-    // themed spell imports: its utilities would ship to all of them.
+    // sheets, and the document pane and the shell never by the base sheet,
+    // which every themed spell imports: their utilities would ship to all of them.
     const kit = join(import.meta.dir, "..");
     const scans = (path: string) =>
       [...readFileSync(path, "utf8").matchAll(/^@source "([^"]+)";/gm)].map((m) =>
@@ -129,6 +132,7 @@ describe("the base stylesheet", () => {
       );
     const base = scans(BASE_CSS_PATH);
     const docs = scans(DOCUMENT_CSS_PATH);
+    const shellSheet = scans(SHELL_CSS_PATH);
     const reaches = (roots: string[], dir: string) =>
       roots.some((r) => dir === r || dir.startsWith(`${r}/`));
     const markup = readdirSync(kit, { withFileTypes: true })
@@ -136,12 +140,17 @@ describe("the base stylesheet", () => {
       .map((e) => join(kit, e.name))
       .filter((d) => readdirSync(d).some((f) => f.endsWith(".tsx") && !f.includes(".test.")));
     const documentPane = join(kit, "document");
+    const shell = join(kit, "shell");
     expect(markup).toContain(documentPane);
+    expect(markup).toContain(shell);
     expect(markup.length).toBeGreaterThan(1);
     for (const dir of markup) {
       if (dir === documentPane) {
         expect(reaches(base, dir), "the base sheet reaches the document pane").toBe(false);
         expect(reaches(docs, dir), "document.css scans the document pane").toBe(true);
+      } else if (dir === shell) {
+        expect(reaches(base, dir), "the base sheet reaches the shell").toBe(false);
+        expect(reaches(shellSheet, dir), "shell.css scans the shell").toBe(true);
       } else {
         expect(reaches(base, dir), `the base sheet scans ${dir}`).toBe(true);
       }
@@ -201,6 +210,54 @@ describe("the rendered-markdown sheet", () => {
 
   test("uses the kit's tokens, never a fixed colour", () => {
     const body = doc.replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(body).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+    expect(body).toContain("var(--color-");
+  });
+});
+
+describe("the shell sheet", () => {
+  const sheet = readFileSync(SHELL_CSS_PATH, "utf8");
+  const body = sheet.replace(/\/\*[\s\S]*?\*\//g, "");
+
+  test("is where the theme says it is, and the specifier reaches it from a spell's surface", () => {
+    expect(existsSync(SHELL_CSS_PATH)).toBe(true);
+    const surface = join(import.meta.dir, "..", "..", "scriptorium", "surface");
+    expect(resolve(surface, SHELL_CSS_SPECIFIER)).toBe(resolve(SHELL_CSS_PATH));
+  });
+
+  test("scans the shell and not its tests", () => {
+    const sources = [...sheet.matchAll(/^@source (not )?"([^"]+)";/gm)].map((m) =>
+      `${m[1] ?? ""}${m[2]}`.trim(),
+    );
+    expect(sources).toEqual(["../shell", "not ../shell/**/*.test.*"]);
+  });
+
+  test("themes every scroller: the WebKit parts, and the standard properties for the rest", () => {
+    const layer = /@layer base\s*\{([\s\S]*)\}\s*$/.exec(body.trim())?.[1] ?? "";
+    for (const sel of [
+      "::-webkit-scrollbar {",
+      "::-webkit-scrollbar-track {",
+      "::-webkit-scrollbar-thumb {",
+      "::-webkit-scrollbar-thumb:hover {",
+      "::-webkit-scrollbar-corner {",
+      "@supports not selector(::-webkit-scrollbar) {",
+    ])
+      expect(layer, sel).toContain(sel);
+    const thumb = /::-webkit-scrollbar-thumb \{([^}]*)\}/.exec(layer)?.[1] ?? "";
+    expect(thumb).toContain("var(--color-ink-faint)");
+    const standard = /@supports not selector\(::-webkit-scrollbar\) \{([\s\S]*?)\}\s*\}/.exec(
+      layer,
+    )?.[1];
+    expect(standard).toContain("scrollbar-width: thin;");
+    expect(standard).toContain("scrollbar-color:");
+  });
+
+  test("stays out of the base sheet, so a spell without the shell keeps its scrollbars", () => {
+    expect(css).not.toContain("::-webkit-scrollbar");
+    expect(css).not.toContain("scrollbar-color");
+  });
+
+  test("uses the kit's tokens, never a fixed colour", () => {
     expect(body).not.toMatch(/#[0-9a-f]{3,8}\b/i);
     expect(body).toContain("var(--color-");
   });

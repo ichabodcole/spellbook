@@ -22,7 +22,7 @@ import {
   LICENCE_UNKNOWN,
   SOURCE_LABEL,
 } from "../lib/sidecar.ts";
-import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "./popover.tsx";
+import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "../ui/popover.tsx";
 
 const ICON = { user: UploadIcon, web: GlobeIcon } as const;
 
