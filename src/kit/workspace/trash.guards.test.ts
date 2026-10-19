@@ -91,8 +91,10 @@ describe("what the Trash may not take", () => {
     const s = WorkspaceSession.restore(sessions, testApp, made.id);
     expect(s.context.map((e) => e.root)).toEqual([docs]);
     expect(refusal(() => s.trashPreview(sessions)).message).toMatch(/session/);
-    expect(refusal(() => s.trashPreview(join(sessions, made.id))).message).toContain(
-      "among the sessions' own folders",
+    // The restore narrows the set (kit-legacy-sets-show-sessions), so the
+    // session's folder is not even shown now; refused either way.
+    expect(refusal(() => s.trashPreview(join(sessions, made.id))).message).toMatch(
+      /among the sessions' own folders|is not shown in this session's context/,
     );
   });
 });

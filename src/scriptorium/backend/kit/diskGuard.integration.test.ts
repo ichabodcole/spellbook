@@ -134,8 +134,14 @@ beforeAll(async () => {
   m.context.push({ id: "c-legacy", label: "sh", root: SH, membership: "mirrored", nodes: [] });
   writeFileSync(at, JSON.stringify(m));
   await open("--restore", X);
-  // Not vacuous: X does show V's files.
-  expect(JSON.stringify((await state(X)).context)).toContain(V);
+  // Since kit-legacy-sets-show-sessions, the restore drops that set (its root
+  // is the app home) and says so, so X no longer shows V's files. Each hole
+  // below is now closed twice (not shown, then the write guard); every one
+  // still writes nothing.
+  const restored = await state(X);
+  expect(restored.context.map((e) => e.label)).not.toContain("sh");
+  expect(JSON.stringify(restored.context)).not.toContain(V);
+  expect(restored.chat.some((c) => c.text.startsWith("sh is no longer in the context"))).toBe(true);
 }, 60_000);
 
 afterAll(async () => {
@@ -151,7 +157,7 @@ describe("hole 1: meta-set and meta-init write nothing in another session", () =
     const c = readFileSync(cV1, "utf8");
     const set = await cli("meta-set", "--session", X, aV1, "status=PWNED");
     expect(set.code).not.toBe(0);
-    expect(set.err).toContain("among the sessions' own folders");
+    expect(set.err).toMatch(/among the sessions' own folders|not shown in this session/);
     const init = await cli("meta-init", "--session", X, cV1);
     expect(init.code).not.toBe(0);
     expect(readFileSync(aV1, "utf8")).toBe(a);
@@ -176,11 +182,51 @@ describe("hole 1: meta-set and meta-init write nothing in another session", () =
   }, 30_000);
 });
 
+describe("after the scan: only the write guard stands between a shown path and another session", () => {
+  // The scan hides the sessions now (kit-legacy-sets-show-sessions), so the
+  // holes above are refused before any write. A link the scan saw leading
+  // elsewhere, retargeted afterwards, is the write guard's alone. The chain
+  // runs through a folder no set shows (`outside`), so no watcher sees the
+  // retarget and rescans first: the cell is deterministic.
+  test("meta-set and image.describe through a link retargeted into another session are refused by the write guard", async () => {
+    const set = join(root, "linked");
+    mkdirSync(set, { recursive: true });
+    const hop = join(outside, "hop.md");
+    const picHop = join(outside, "hop-pics");
+    writeFileSync(join(outside, "real.md"), "---\ntype: note\n---\n# Real\n");
+    mkdirSync(join(outside, "real-pics"));
+    writeFileSync(join(outside, "real-pics", "pic.png"), PNG);
+    symlinkSync(join(outside, "real.md"), hop);
+    symlinkSync(join(outside, "real-pics"), picHop);
+    symlinkSync(hop, join(set, "t.md"));
+    symlinkSync(picHop, join(set, "pics"));
+    const Q = await open(set);
+    const shown = JSON.stringify((await state(Q)).context);
+    expect(shown).toContain('"t.md"');
+    expect(shown).toContain('"pics/pic.png"');
+    const a = readFileSync(aV1, "utf8");
+    const pic = join(dirname(aV1), "pic.png");
+    rmSync(hop);
+    symlinkSync(aV1, hop);
+    rmSync(picHop);
+    symlinkSync(dirname(aV1), picHop);
+    const set1 = await cli("meta-set", "--session", Q, join(set, "t.md"), "status=PWNED");
+    expect(set1.code).not.toBe(0);
+    expect(set1.err).toContain("among the sessions' own folders");
+    expect(readFileSync(aV1, "utf8")).toBe(a);
+    const d = await post(Q, { op: "image.describe", image: join(set, "pics", "pic.png") });
+    expect(d.status).toBe(409);
+    expect(String(d.body.error)).toContain("among the sessions' own folders");
+    expect(existsSync(`${pic}.md`)).toBe(false);
+    await stop(Q);
+  }, 30_000);
+});
+
 describe("hole 2: image.describe writes no sidecar in another session", () => {
   test("refused on /cmd, and no sidecar is made", async () => {
     const pic = join(dirname(aV1), "pic.png");
     const r = await post(X, { op: "image.describe", image: pic });
-    expect(r.status).toBe(409);
+    expect([400, 404, 409]).toContain(r.status);
     expect(existsSync(`${pic}.md`)).toBe(false);
   });
 });

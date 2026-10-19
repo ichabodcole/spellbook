@@ -301,11 +301,14 @@ describe("the one set guard, on every route that makes a set", () => {
       },
       noHomeApp,
     );
+    // The old manifest's entry is dropped at restore (kit-legacy-sets-show-sessions),
+    // so make-set finds nothing to make a set of; it is refused all the same.
+    expect(s.context.find((x) => x.id === "c-old002")).toBeUndefined();
+    expect(s.restoreReport.ownPlaceSets?.map((o) => o.outcome)).toEqual(["dropped"]);
     const e = refusal(() => s.makeSet(stray));
-    expect(e.status).toBe(409);
+    expect([404, 409]).toContain(e.status);
     expect(existsSync(join(dirname(stray), "stray"))).toBe(false);
     expect(readFileSync(stray, "utf8")).toBe("# stray\n");
-    expect(s.context.find((x) => x.id === "c-old002")?.membership).toBe("listed");
   });
 });
 
@@ -327,9 +330,12 @@ describe("the structure backstop: nothing is written among the sessions, whateve
       ["move the app home", () => s.move(appHome, docs)],
       ["import into the session", () => s.importText("evil.md", "# evil\n", own)],
     ];
+    // The set is narrowed at restore (kit-legacy-sets-show-sessions), so a
+    // act there may now be refused as no location (400) or as not shown (404)
+    // before the backstop's 409; either way, nothing is written.
     for (const [what, act] of refusals) {
       const e = refusal(act);
-      expect([what, e.status]).toEqual([what, 409]);
+      expect([what, [400, 404, 409].includes(e.status)]).toEqual([what, true]);
     }
     expect(readdirSync(own).sort()).toEqual(before);
     expect(existsSync(join(docs, "docs"))).toBe(false);
@@ -347,5 +353,106 @@ describe("the structure backstop: nothing is written among the sessions, whateve
   test("a SessionError, never a raw error, names the refusal", () => {
     const s = session();
     expect(refusal(() => s.addContext(sessions))).toBeInstanceOf(SessionError);
+  });
+});
+
+describe("no set shows the app's own places, from an older manifest or through a link (kit-legacy-sets-show-sessions)", () => {
+  type Node = { kind: string; rel: string; children?: Node[] };
+  /** Every rel under an entry's nodes. */
+  const rels = (nodes: readonly Node[]): string[] =>
+    nodes.flatMap((n) => (n.kind === "group" ? [n.rel, ...rels(n.children ?? [])] : [n.rel]));
+  /** An older manifest's edit, restored with the app home named, as the daemon restores. */
+  const restoredHome = (s: WorkspaceSession, edit: (m: Saved) => void, app = noHomeApp) => {
+    const m = JSON.parse(readFileSync(manifestOf(s), "utf8"));
+    edit(m);
+    writeFileSync(manifestOf(s), JSON.stringify(m));
+    return WorkspaceSession.restore(sessions, app, s.id, { appHome });
+  };
+
+  test("restore drops a set among the sessions, a set in the app home and a document listed there, and says so", () => {
+    const other = WorkspaceSession.create(sessions, noHomeApp);
+    mkdirSync(join(appHome, "logs"), { recursive: true });
+    writeFileSync(join(appHome, "prefs.md"), "# prefs\n");
+    const made = session(noHomeApp);
+    made.addContext(join(docs, "set"));
+    const s = restoredHome(made, (m) => {
+      m.context.push(
+        { id: "c-old101", label: "other", root: other.dir, membership: "mirrored", nodes: [] },
+        {
+          id: "c-old102",
+          label: "logs",
+          root: join(appHome, "logs"),
+          membership: "mirrored",
+          nodes: [],
+        },
+        {
+          id: "c-old103",
+          label: "prefs.md",
+          root: appHome,
+          membership: "listed",
+          nodes: [{ kind: "doc", rel: "prefs.md" }],
+        },
+      );
+    });
+    expect(s.context.map((e) => e.label)).toEqual(["set"]);
+    expect(s.restoreReport.ownPlaceSets?.map((o) => [o.label, o.outcome])).toEqual([
+      ["other", "dropped"],
+      ["logs", "dropped"],
+      ["prefs.md", "dropped"],
+    ]);
+    // Written back: the next restore has nothing to say.
+    const again = WorkspaceSession.restore(sessions, noHomeApp, s.id, { appHome });
+    expect(again.restoreReport.ownPlaceSets).toBeUndefined();
+  });
+
+  test("restore keeps a set that holds the app home in plain sight, narrowed: its tree leaves the app home out", () => {
+    writeFileSync(join(root, "top.md"), "# Top\n");
+    const s = restoredHome(session(noHomeApp), (m) => {
+      m.context.push({ id: "c-old104", label: "root", root, membership: "mirrored", nodes: [] });
+    });
+    const entry = s.context.find((e) => e.id === "c-old104");
+    expect(entry).toBeDefined();
+    const shown = rels((entry?.nodes ?? []) as Node[]);
+    expect(shown).toContain("top.md");
+    expect(shown).toContain("docs/set/a.md");
+    expect(shown.some((r) => r === "app" || r.startsWith("app/"))).toBe(false);
+    expect(s.restoreReport.ownPlaceSets).toEqual([
+      expect.objectContaining({ label: "root", outcome: "narrowed", why: appHome }),
+    ]);
+  });
+
+  test("the add ~ case: a set whose sessions hide behind a dot-folder never shows them through a link inside it", () => {
+    const home = join(root, "home");
+    const dotApp = join(home, ".app");
+    const hidden = join(dotApp, "sessions");
+    mkdirSync(join(home, "notes"), { recursive: true });
+    writeFileSync(join(home, "notes", "n.md"), "# N\n");
+    const s = WorkspaceSession.create(hidden, noHomeApp);
+    s.setAppHome(dotApp);
+    const other = WorkspaceSession.create(hidden, noHomeApp);
+    // Links into the sessions, into one session, to a manifest and to the app
+    // home, all left out; and one to a folder elsewhere, shown.
+    symlinkSync(hidden, join(home, "peek"));
+    symlinkSync(other.dir, join(home, "notes", "theirs"));
+    symlinkSync(join(other.dir, "manifest.json"), join(home, "notes", "their.json"));
+    symlinkSync(dotApp, join(home, "app-home"));
+    symlinkSync(join(docs, "set"), join(home, "elsewhere"));
+    const { entry } = s.addContext(home);
+    const expected = [
+      "elsewhere",
+      "elsewhere/a.md",
+      "elsewhere/part",
+      "elsewhere/part/b.md",
+      "elsewhere/skip.png",
+      "notes",
+      "notes/n.md",
+    ];
+    expect(rels(entry.nodes as Node[]).sort()).toEqual(expected);
+    // A rescan keeps them out, and so a read through the link finds nothing.
+    s.rescan(entry.id);
+    expect(rels((s.context[0]?.nodes ?? []) as Node[]).sort()).toEqual(expected);
+    expect(
+      refusal(() => s.openPath(join(home, "notes", "their.json"))).status,
+    ).toBeGreaterThanOrEqual(400);
   });
 });

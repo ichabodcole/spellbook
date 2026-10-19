@@ -382,7 +382,7 @@ type FolderMode = "set" | "member" | "own";
  * `later`, a bundle met in a set has its own files put off there, for the
  * scan to read once the set is read (`finishOwnContents`).
  */
-function folderWalker(cap: number, later?: PendingBundle[], skip?: ScanSkip) {
+function folderWalker(cap: number, later?: PendingBundle[], skip?: ScanSkip, guard?: ScanGuard) {
   let count = 0;
   let truncated = false;
   const walk = (
@@ -393,8 +393,19 @@ function folderWalker(cap: number, later?: PendingBundle[], skip?: ScanSkip) {
     modeOf?: (name: string, isDir: boolean) => FolderMode | null,
   ): ContextNode[] => {
     let names: string[];
+    // With a guard: which names are links, and where this folder really is,
+    // so each entry is judged where the disk puts it, at one call a folder.
+    const links = new Set<string>();
+    let realDir = dir;
     try {
-      names = readdirSync(dir);
+      if (guard) {
+        realDir = realpathSync(dir);
+        names = [];
+        for (const d of readdirSync(dir, { withFileTypes: true })) {
+          names.push(d.name);
+          if (d.isSymbolicLink()) links.add(d.name);
+        }
+      } else names = readdirSync(dir);
     } catch {
       return [];
     }
@@ -413,6 +424,18 @@ function folderWalker(cap: number, later?: PendingBundle[], skip?: ScanSkip) {
         st = statSync(abs);
       } catch {
         continue;
+      }
+      // ⛔ THE APP'S OWN PLACES ARE NEVER SHOWN (`ScanGuard`): a link into
+      // the sessions, or the sessions folder met in plain sight, is left out
+      // whole, as if it were not there.
+      if (guard) {
+        let real: string;
+        try {
+          real = links.has(name) ? realpathSync(abs) : join(realDir, name);
+        } catch {
+          continue;
+        }
+        if (guard(real)) continue;
       }
       const rel = relDir === "" ? name : `${relDir}/${name}`;
       const here = modeOf ? modeOf(name, st.isDirectory()) : mode;
@@ -480,6 +503,16 @@ function folderWalker(cap: number, later?: PendingBundle[], skip?: ScanSkip) {
 export type ScanSkip = (rel: string, isDir: boolean) => boolean;
 
 /**
+ * The kit's say over what a set's scan may show, by where a path really is
+ * (its realpath, absolute): true leaves it out. The session passes its own
+ * places (`ownPlaceGuard` in `./noHome.ts`), so a link inside a set that leads
+ * into the sessions or the app home, or the sessions folder itself under a set
+ * that holds it, is never mirrored: not in the tree, so not in search, `meta`,
+ * links or the graph. Asked of a set's own files and folders, and of its root.
+ */
+export type ScanGuard = (real: string) => boolean;
+
+/**
  * Mirror `root` into a sorted node tree: groups first, then docs, by name.
  * Noise directories and dotfiles are skipped, and so is whatever `skip` says.
  */
@@ -487,12 +520,18 @@ export function scanTree(
   root: string,
   cap = MIRROR_NODE_CAP,
   skip?: ScanSkip,
+  guard?: ScanGuard,
 ): { nodes: ContextNode[]; truncated: boolean } {
+  // A root that is itself among the app's own places shows nothing. Defence
+  // in depth, deliberately untested: every route that makes a set refuses
+  // such a root (`notASet`), and restore drops one (`settleOwnPlaceSets`),
+  // so no scan should meet one. This holds if a new route forgets to ask.
+  if (guard?.(realOf(root))) return { nodes: [], truncated: false };
   // Two passes: the set's documents, bundles and their member folders first,
   // then the bundles' own files (`audio/…`) from what is left, so a stage's
   // renders never push a document out of the tree.
   const later: PendingBundle[] = [];
-  const walker = folderWalker(cap, later, skip);
+  const walker = folderWalker(cap, later, skip, guard);
   const nodes = walker.walk(root, "", "set");
   finishOwnContents(later, cap - walker.count());
   return { nodes, truncated: walker.truncated() };
@@ -540,6 +579,7 @@ export function entryForPath(
   rawAbs: string,
   id: string,
   skipFor?: (root: string) => ScanSkip | undefined,
+  guard?: ScanGuard,
 ): ContextEntry {
   // Anything inside a bundle stands for the bundle: its insides are never an
   // entry of their own (a set of its `assets/`, a listed `info.json`), as named
@@ -565,7 +605,7 @@ export function entryForPath(
       realRoot: realOf(dirname(abs)),
     };
   if (st.isDirectory()) {
-    const { nodes, truncated } = scanTree(abs, MIRROR_NODE_CAP, skipFor?.(abs));
+    const { nodes, truncated } = scanTree(abs, MIRROR_NODE_CAP, skipFor?.(abs), guard);
     return {
       id,
       label: basename(abs) || abs,

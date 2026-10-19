@@ -260,6 +260,19 @@ export function inOwnPlaces(path: string, own: OwnPlaces): string | null {
   return null;
 }
 
+/**
+ * The tree scan's guard (`ScanGuard` in `./tree.ts`): whether a path, as the
+ * disk resolves it, lies among the app's own places (the sessions root or the
+ * app home, each as written and as resolved), outside the one exception. Its
+ * places are resolved once, when the guard is made, so a scan of two thousand
+ * nodes asks the disk nothing more than the walk already does.
+ */
+export function ownPlaceGuard(own: OwnPlaces): (real: string) => boolean {
+  const roots = ownRoots(own).flatMap((r) => [resolve(r), onDisk(r)]);
+  const exc = exceptionOf(own);
+  return (real) => roots.some((r) => within(real, r)) && !(exc !== null && within(real, exc.real));
+}
+
 /** Why `path` holds the app's sessions root or app home (a folder above one), or null. */
 export function holdsOwnPlaces(path: string, own: OwnPlaces): string | null {
   const at = [resolve(path), onDisk(path)];

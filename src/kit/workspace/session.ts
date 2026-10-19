@@ -158,6 +158,7 @@ import {
   notASet,
   noWorkspaceToSet,
   type OwnPlaces,
+  ownPlaceGuard,
   within,
 } from "./noHome";
 import {
@@ -256,6 +257,7 @@ import {
   MIRROR_NODE_CAP,
   PathError,
   readBundleInfo,
+  type ScanGuard,
   type ScanSkip,
   scanTree,
   sidecarFile,
@@ -775,6 +777,13 @@ export type RestoreReport = {
    * workspace, dropped and added as a set because it holds files.
    */
   workspaceAdded?: string;
+  /**
+   * Entries the manifest held that showed the app's own places (the sessions
+   * or the app home): `dropped`, one that lay among them, `why` saying so;
+   * `narrowed`, a set that holds them in plain sight, kept with them left out
+   * of its scan, `why` the own folder left out (the outermost it holds).
+   */
+  ownPlaceSets?: { label: string; root: string; outcome: "dropped" | "narrowed"; why: string }[];
 };
 
 /** The legal task transitions. Everything else is a conflict. */
@@ -950,7 +959,12 @@ export class WorkspaceSession {
   }
 
   /** Reload a session from its manifest (`open --restore <id>`). */
-  static restore(sessionsRoot: string, app: AppDeclaration, sessionId: string): WorkspaceSession {
+  static restore(
+    sessionsRoot: string,
+    app: AppDeclaration,
+    sessionId: string,
+    opts: { appHome?: string } = {},
+  ): WorkspaceSession {
     checkApp(app);
     checkSessionId(sessionId);
     const path = join(sessionsRoot, sessionId, "manifest.json");
@@ -1038,8 +1052,14 @@ export class WorkspaceSession {
     }
     const s = new WorkspaceSession(sessionsRoot, app, m);
     s.restoreReport = report;
+    s.setAppHome(opts.appHome);
     s.own.mkdir(join(s.dir, "docs"), { recursive: true });
     s.pinDir();
+    // ⛔ A SET FROM AN OLDER MANIFEST NEVER SHOWS THE APP'S OWN PLACES. One
+    // that lies among the sessions or in the app home is dropped; one that
+    // holds them in plain sight is kept, narrowed by the scan's guard, which
+    // leaves them out of it. Said in the chat either way.
+    s.settleOwnPlaceSets(report);
     // Mirrors are re-read, not trusted: the folder may have changed while no
     // daemon was watching it.
     for (const e of s.m.context) if (e.membership === "mirrored") s.rescan(e.id);
@@ -1100,6 +1120,7 @@ export class WorkspaceSession {
       report.tasks.length > 0 ||
       report.workspaceDefaulted ||
       droppedWorkspace ||
+      (report.ownPlaceSets?.length ?? 0) > 0 ||
       report.slotMigratedFrom !== undefined ||
       report.manifestMigrated
     ) {
@@ -1161,7 +1182,12 @@ export class WorkspaceSession {
     // As `addContext` does, but unpersisted: the restore writes the manifest
     // once, after it keeps any pre-migrate copy.
     const id = `c-${randHex(3)}`;
-    const entry = entryForPath(resolve(folder), id, (root) => this.scanSkip(id, root));
+    const entry = entryForPath(
+      resolve(folder),
+      id,
+      (root) => this.scanSkip(id, root),
+      this.scanGuard(),
+    );
     if (entry.membership !== "mirrored") return undefined;
     this.m.context.push(entry);
     this.relink();
@@ -1458,6 +1484,44 @@ export class WorkspaceSession {
     throw gone ? new GoneError(message, 409) : new SessionError(message, 409);
   }
 
+  /**
+   * At restore, before any scan: drop each entry that lies among the app's
+   * own places (a set's root, or a listed file, as written or as the disk
+   * resolves it), and note each set that holds them in plain sight, which the
+   * scan's guard narrows. Older manifests could hold either; `add` refuses
+   * both now (`notASet`).
+   */
+  private settleOwnPlaceSets(report: RestoreReport): void {
+    const own = this.ownPlaces;
+    const out: NonNullable<RestoreReport["ownPlaceSets"]> = [];
+    this.m.context = this.m.context.filter((e) => {
+      const paths =
+        e.membership === "mirrored"
+          ? [e.root]
+          : [e.root, ...e.nodes.map((n) => join(e.root, n.rel))];
+      const inside = paths.map((p) => inOwnPlaces(p, own)).find((w) => w !== null);
+      if (inside) {
+        out.push({ label: e.label, root: e.root, outcome: "dropped", why: inside });
+        return false;
+      }
+      if (e.membership === "mirrored" && holdsOwnPlaces(e.root, own) !== null) {
+        // Said only when the scan would have shown them (`notASet`'s rule);
+        // the line names what is left out, the outermost own folder it holds.
+        if (notASet(e.root, own) !== null) {
+          const holds = (r: string) => holdsOwnPlaces(e.root, { sessionsRoot: r }) !== null;
+          const left =
+            own.appHome !== undefined && holds(own.appHome) ? own.appHome : own.sessionsRoot;
+          out.push({ label: e.label, root: e.root, outcome: "narrowed", why: left });
+        }
+      }
+      return true;
+    });
+    if (out.length > 0) {
+      report.ownPlaceSets = out;
+      this.closeOrphanedOpenDoc();
+    }
+  }
+
   /** Take the session folder's realpath, once: called as a session is made or restored. */
   private pinDir(): void {
     if (this.realDir === undefined) this.realDir = realpathSync(this.dir);
@@ -1555,7 +1619,7 @@ export class WorkspaceSession {
     this.mayBeASetOrDie(abs);
     const id = `c-${randHex(3)}`;
     // The app's filter sees a new set from its first scan.
-    const probe = entryForPath(abs, id, (root) => this.scanSkip(id, root));
+    const probe = entryForPath(abs, id, (root) => this.scanSkip(id, root), this.scanGuard());
     const same = this.m.context.find(
       (e) =>
         e.root === probe.root &&
@@ -1630,7 +1694,12 @@ export class WorkspaceSession {
     this.mayBeASetOrDie(path, true);
     let fresh: ContextEntry;
     try {
-      fresh = entryForPath(path, entry.id, (root) => this.scanSkip(entry.id, root));
+      fresh = entryForPath(
+        path,
+        entry.id,
+        (root) => this.scanSkip(entry.id, root),
+        this.scanGuard(),
+      );
     } catch (e) {
       if (e instanceof PathError)
         throw new GoneError(`${tilde(path)} cannot come back: ${e.message}`, 409);
@@ -1678,7 +1747,12 @@ export class WorkspaceSession {
   rescan(entryId: string): boolean {
     const e = this.m.context.find((x) => x.id === entryId);
     if (e?.membership !== "mirrored") return false;
-    const { nodes, truncated } = scanTree(e.root, MIRROR_NODE_CAP, this.scanSkip(e.id, e.root));
+    const { nodes, truncated } = scanTree(
+      e.root,
+      MIRROR_NODE_CAP,
+      this.scanSkip(e.id, e.root),
+      this.scanGuard(),
+    );
     const changed =
       JSON.stringify(nodes) !== JSON.stringify(e.nodes) || !!truncated !== !!e.truncated;
     e.nodes = nodes;
@@ -1686,6 +1760,14 @@ export class WorkspaceSession {
     else delete e.truncated;
     if (changed) this.relink();
     return changed;
+  }
+
+  /**
+   * The kit's guard on every scan: the app's own places are never mirrored,
+   * whatever a set holds or a link inside one leads to (`ownPlaceGuard`).
+   */
+  private scanGuard(): ScanGuard {
+    return ownPlaceGuard(this.ownPlaces);
   }
 
   /** The app's filter for a set's scan (`AppDeclaration.scan`), as the slot is now. */
@@ -4258,7 +4340,9 @@ export class WorkspaceSession {
       // takes the one set guard.
       this.mayBeASetOrDie(abs);
       const id = `c-${randHex(3)}`;
-      this.m.context.push(entryForPath(abs, id, (root) => this.scanSkip(id, root)));
+      this.m.context.push(
+        entryForPath(abs, id, (root) => this.scanSkip(id, root), this.scanGuard()),
+      );
     }
     this.relink();
   }

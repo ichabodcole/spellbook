@@ -920,7 +920,9 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     const routes = (devIndex ? { "/": devIndex } : {}) as Record<string, never>;
 
     const session = opts.restore
-      ? WorkspaceSession.restore(opts.sessionsRoot, app, opts.restore)
+      ? WorkspaceSession.restore(opts.sessionsRoot, app, opts.restore, {
+          ...(opts.appHome !== undefined ? { appHome: opts.appHome } : {}),
+        })
       : WorkspaceSession.create(opts.sessionsRoot, app, sessionId, opts.workspace);
     if (opts.links) session.setLinkSlot(opts.links);
     if (opts.appHome !== undefined) session.setAppHome(opts.appHome);
@@ -4751,6 +4753,13 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       announce(
         `This session was saved with ${report.workspaceAdded} as its workspace folder. ${app.name} has no default folder now, so it is a set in the sidebar: its files are still here, and a new file goes where you point.`,
         { fact: "workspace.added", path: report.workspaceAdded },
+      );
+    for (const o of report.ownPlaceSets ?? [])
+      announce(
+        o.outcome === "dropped"
+          ? `${o.label} is no longer in the context: ${o.why}, which no set shows. Its files stay where they are.`
+          : `${o.label} stays a set, but ${app.name}'s own folder inside it (${o.why}), where its sessions live, is left out of its tree, search and links.`,
+        { fact: `set.${o.outcome}`, path: o.root },
       );
     // A session from before the overlap block still opens, and says what to
     // change: once, not at every restore (`doctor` keeps listing it).
