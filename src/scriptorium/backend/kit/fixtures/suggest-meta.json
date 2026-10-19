@@ -1,0 +1,74 @@
+{
+  "answers": {
+    "notes/bare.md": {
+      "human": {
+        "path": "@DOCS@/notes/bare.md",
+        "type": "decision",
+        "block": "---\ntype: decision\ntitle: The bare one\ndescription: \ntags: []\nstatus: draft\ngenerated: { by: human, at: @TODAY@ }\n---\n"
+      },
+      "unknown": {
+        "path": "@DOCS@/notes/bare.md",
+        "type": "decision",
+        "block": "---\ntype: decision\ntitle: The bare one\ndescription: \ntags: []\nstatus: draft\ngenerated: { by: unknown, at: @TODAY@ }\n---\n"
+      }
+    },
+    "stories/tale.md": {
+      "human": {
+        "path": "@DOCS@/stories/tale.md",
+        "type": "story",
+        "block": "---\ntype: story\ntitle: \"\"\ndescription: \ntags: []\nstatus: draft\ngenerated: { by: human, at: @TODAY@ }\n---\n"
+      },
+      "unknown": {
+        "path": "@DOCS@/stories/tale.md",
+        "type": "story",
+        "block": "---\ntype: story\ntitle: \"\"\ndescription: \ntags: []\nstatus: draft\ngenerated: { by: unknown, at: @TODAY@ }\n---\n"
+      }
+    },
+    "categories/one.md": {
+      "human": {
+        "path": "@DOCS@/categories/one.md",
+        "type": "category",
+        "block": "---\ntype: category\ntitle: \"One: a title that needs quoting\"\ndescription: \ntags: []\nstatus: draft\ngenerated: { by: human, at: @TODAY@ }\n---\n"
+      },
+      "unknown": {
+        "path": "@DOCS@/categories/one.md",
+        "type": "category",
+        "block": "---\ntype: category\ntitle: \"One: a title that needs quoting\"\ndescription: \ntags: []\nstatus: draft\ngenerated: { by: unknown, at: @TODAY@ }\n---\n"
+      }
+    },
+    "tie/z.md": {
+      "human": {
+        "path": "@DOCS@/tie/z.md",
+        "type": "alpha",
+        "block": "---\ntype: alpha\ntitle: Zed\ndescription: \ntags: []\nstatus: draft\ngenerated: { by: human, at: @TODAY@ }\n---\n"
+      },
+      "unknown": {
+        "path": "@DOCS@/tie/z.md",
+        "type": "alpha",
+        "block": "---\ntype: alpha\ntitle: Zed\ndescription: \ntags: []\nstatus: draft\ngenerated: { by: unknown, at: @TODAY@ }\n---\n"
+      }
+    },
+    "solo.md": {
+      "human": {
+        "path": "@DOCS@/solo.md",
+        "type": "doc",
+        "block": "---\ntype: doc\ntitle: Solo\ndescription: \ntags: []\nstatus: draft\ngenerated: { by: human, at: @TODAY@ }\n---\n"
+      },
+      "unknown": {
+        "path": "@DOCS@/solo.md",
+        "type": "doc",
+        "block": "---\ntype: doc\ntitle: Solo\ndescription: \ntags: []\nstatus: draft\ngenerated: { by: unknown, at: @TODAY@ }\n---\n"
+      }
+    }
+  },
+  "refusals": {
+    "notes/has.md": {
+      "status": 409,
+      "message": "has.md already has frontmatter"
+    },
+    "notes/bad.md": {
+      "status": 409,
+      "message": "bad.md already has frontmatter"
+    }
+  }
+}

@@ -1,0 +1,123 @@
+{
+  "format": 1,
+  "sessionId": "today",
+  "createdAt": 1792450262353,
+  "context": [
+    {
+      "id": "c-e58869",
+      "label": "set",
+      "root": "@ROOT@/docs/set",
+      "membership": "mirrored",
+      "nodes": [],
+      "hidden": ["a.md"]
+    },
+    {
+      "id": "c-13475f",
+      "label": "solo.md",
+      "root": "@ROOT@/docs",
+      "membership": "listed",
+      "nodes": [
+        {
+          "kind": "doc",
+          "rel": "solo.md"
+        }
+      ]
+    }
+  ],
+  "docs": [
+    {
+      "slug": "solo",
+      "name": "solo.md",
+      "original": "@ROOT@/docs/solo.md",
+      "entryId": "c-13475f",
+      "rel": "solo.md",
+      "ext": ".md",
+      "versions": [
+        {
+          "n": 1,
+          "author": "human",
+          "createdAt": 1792450262354
+        },
+        {
+          "n": 2,
+          "author": "agent",
+          "from": 1,
+          "createdAt": 1792450262355,
+          "label": "longer"
+        }
+      ],
+      "active": 1,
+      "originalHash": "17cbf5684b3ff932",
+      "outsideChanged": false,
+      "admitted": true,
+      "nextVersion": 3,
+      "notes": [
+        {
+          "id": "nmvfulu1fep2n",
+          "version": 1,
+          "quote": "Solo",
+          "before": "# ",
+          "after": "\n",
+          "at": 2,
+          "body": "why more?",
+          "who": "human",
+          "createdAt": 1792450262355,
+          "resolved": false,
+          "editedAt": 1792450262355,
+          "editedBy": "human",
+          "reopenedAt": 1792450262357,
+          "reopenedBy": "human"
+        }
+      ]
+    }
+  ],
+  "openDoc": "solo",
+  "chat": [
+    {
+      "id": "m-a87beb28",
+      "who": "human",
+      "text": "about this",
+      "ts": 1792450262357,
+      "note": {
+        "doc": "solo",
+        "id": "nmvfulu1fep2n"
+      }
+    },
+    {
+      "id": "m-a145421d",
+      "who": "agent",
+      "text": "read the set",
+      "ts": 1792450262358
+    },
+    {
+      "id": "m-fac82a2b",
+      "who": "agent",
+      "text": "tidy",
+      "ts": 1792450262358
+    }
+  ],
+  "workspace": "@ROOT@/ws",
+  "tasks": [
+    {
+      "id": "t-9136e4c2",
+      "text": "read the set",
+      "who": "agent",
+      "createdAt": 1792450262358,
+      "messageId": "m-a145421d",
+      "status": "halfway"
+    },
+    {
+      "id": "t-09d83891",
+      "text": "tidy",
+      "who": "agent",
+      "createdAt": 1792450262359,
+      "messageId": "m-fac82a2b",
+      "doneAt": 1792450262359,
+      "outcome": "tidied"
+    }
+  ],
+  "ended": {
+    "by": "agent",
+    "at": 1792450262361
+  }
+}

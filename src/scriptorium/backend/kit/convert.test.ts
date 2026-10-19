@@ -1,7 +1,10 @@
 // The shipped Scriptorium's sessions, converted for the kit path, and restored
 // by the kit: one test per manifest shape the shipped writer has put on disk
-// (from `git log -p` on ../session.ts and ../protocol.ts), and one manifest the
-// shipped writer itself writes today, driven through its own `Session`.
+// (from `git log -p` on ../session.ts and ../protocol.ts), and one session the
+// shipped writer itself wrote, driven through its own `Session` and CAPTURED
+// (`fixtures/shipped-today/`, written by `../kitFixtures.capture.ts` over
+// `fixtures/worlds.ts`'s `CONVERT_WORLD`), so this path imports no shipped code
+// (scriptorium-kit-keepers).
 // Everything lives under a temp folder; the real home is never read.
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import {
@@ -14,7 +17,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { homeDir } from "../../../kit/lib/home";
 import { PRE_MIGRATE_FILE } from "../../../kit/workspace/manifestMigrate";
 import {
@@ -22,9 +25,9 @@ import {
   SessionError,
   WorkspaceSession,
 } from "../../../kit/workspace/session";
-import { Session as ShippedSession } from "../session";
 import { scriptoriumApp } from "./app";
 import { convertShippedManifest, isShippedManifest, WORKSPACE_ENTRY_ID } from "./convert";
+import { CONVERT_WORLD } from "./fixtures/worlds";
 
 const app: AppDeclaration = { ...scriptoriumApp, migrateManifest: convertShippedManifest };
 
@@ -39,11 +42,10 @@ beforeEach(() => {
   home = join(root, "home");
   sessions = join(home, "sessions");
   docs = join(root, "docs");
-  mkdirSync(join(docs, "set"), { recursive: true });
-  writeFileSync(join(docs, "set", "a.md"), "# A\n\none\n");
-  writeFileSync(join(docs, "solo.md"), "# Solo\n");
-  mkdirSync(join(root, "ws"), { recursive: true });
-  writeFileSync(join(root, "ws", "w.md"), "# W\n");
+  for (const [rel, text] of Object.entries(CONVERT_WORLD)) {
+    mkdirSync(dirname(join(root, rel)), { recursive: true });
+    writeFileSync(join(root, rel), text);
+  }
 });
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 
@@ -412,24 +414,30 @@ describe("every shape the shipped writer has written", () => {
 
 describe("the shipped writer, as it writes today", () => {
   test("a session it made and used converts whole, and the kit restores it", () => {
-    const ws = join(root, "ws");
-    const s = ShippedSession.create(home, "today", ws);
-    s.addContext(join(docs, "set"));
-    s.addContext(join(docs, "solo.md"));
-    const { slug } = s.openPath(join(docs, "solo.md"));
-    s.newVersion({ doc: slug, text: "# Solo\n\nmore\n", author: "agent", label: "longer" });
-    const { note } = s.addNote({ doc: slug, body: "why?", who: "human", quote: "Solo" });
-    s.editNote({ doc: slug, id: note.id, body: "why more?", who: "human" });
-    s.resolveNote({ doc: slug, id: note.id, resolved: true, who: "agent" });
-    s.resolveNote({ doc: slug, id: note.id, resolved: false, who: "human" });
-    s.addMessage("human", "about this", { note: { doc: slug, id: note.id } });
-    const t = s.startTask("read the set", "agent");
-    s.setTaskStatus(t.id, "halfway");
-    const done = s.startTask("tidy", "agent");
-    s.finishTask(done.id, "tidied");
-    s.hide(join(docs, "set", "a.md"));
-    s.markEnded("agent");
-    s.persist();
+    // What the shipped writer left on disk: created in `ws`, the set and
+    // solo.md added, solo opened, a second version, a note edited, resolved and
+    // reopened, a message about it, two tasks (one done), a.md hidden, ended by
+    // the agent. Captured once, and placed here under this test's root.
+    const fixtures = join(import.meta.dir, "fixtures");
+    const { slug, noteId } = JSON.parse(
+      readFileSync(join(fixtures, "shipped-today.json"), "utf8"),
+    ) as { slug: string; noteId: string };
+    const note = { id: noteId };
+    const from = join(fixtures, "shipped-today");
+    const place = (rel: string) => {
+      for (const e of readdirSync(join(from, rel), { withFileTypes: true })) {
+        const r = join(rel, e.name);
+        if (e.isDirectory()) place(r);
+        else {
+          mkdirSync(dirname(join(sessions, "today", r)), { recursive: true });
+          writeFileSync(
+            join(sessions, "today", r),
+            readFileSync(join(from, r), "utf8").replaceAll("@ROOT@", root),
+          );
+        }
+      }
+    };
+    place("");
     const before = readFileSync(join(sessions, "today", "manifest.json"), "utf8");
     const versionFiles = readdirSync(join(sessions, "today", "docs", slug)).sort();
 
