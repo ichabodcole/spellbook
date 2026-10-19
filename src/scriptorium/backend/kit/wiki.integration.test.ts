@@ -23,7 +23,7 @@ import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { FakeSurface, pointerPid, waitForExit } from "../../../kit/workspace/fixtures/harness";
 import type { PublicState } from "../../../kit/workspace/protocol";
-import type { DocSummary } from "../protocol";
+import type { DocSummary } from "./frontmatter";
 
 const KIT_DIR = dirname(fileURLToPath(import.meta.url));
 const CLI = join(

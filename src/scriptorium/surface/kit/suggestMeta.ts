@@ -16,7 +16,7 @@
  * tab takes it, before the daemon's next broadcast says so.
  *
  * What counts as "no block" in either is the shipped reader's rule
- * (`splitFrontmatter` in `../../backend/frontmatter.ts`), so a block that is
+ * (`splitFrontmatter` in `../../backend/kit/frontmatter.ts`), so a block that is
  * there but cannot be read is not offered a second one: the header shows it as
  * written and says why, as the shipped header does.
  *
@@ -27,7 +27,7 @@
 import type { Daemon } from "../../../kit/context/daemonClient";
 import type { DocumentPaneSlots, TextOffer } from "../../../kit/document/DocumentPane";
 import type { PublicState } from "../../../kit/workspace/protocol";
-import { splitFrontmatter } from "../../backend/frontmatter";
+import { splitFrontmatter } from "../../backend/kit/frontmatter";
 
 /** The shipped header's words (`components/DocumentPane.tsx`). */
 export const NO_FRONTMATTER = "This document has no frontmatter.";

@@ -3,7 +3,7 @@
  * frontmatter references as edges of kind `frontmatter`, and its wiki forms as
  * a resolver tried after the kit's.
  *
- * - **Edges.** `fieldRefs` (`../links.ts`) reads references out of any
+ * - **Edges.** `fieldRefs` (`./fieldRefs.ts`) reads references out of any
  *   frontmatter key by their shape (`related`, `supersedes`,
  *   `sources[].resource`, …), exactly as the shipped `buildGraph` does. Each is
  *   one edge, its key the frontmatter key that carries it. The shipped
@@ -29,7 +29,7 @@ import type {
   LinkSlot,
   ResolvableDocument,
 } from "../../../kit/workspace/linkEdges";
-import { fieldRefs } from "../links";
+import { fieldRefs } from "./fieldRefs";
 
 /** The edge kind Scriptorium's frontmatter references take. */
 export const FRONTMATTER_EDGE = "frontmatter";

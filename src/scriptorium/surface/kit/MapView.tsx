@@ -35,7 +35,7 @@ import {
   useState,
 } from "react";
 import { cn } from "../../../kit/lib/cn";
-import { bodyRadius, useForceLayout } from "../components/context/forceLayout";
+import { bodyRadius, useForceLayout } from "./forceLayout";
 import type { MapEdge, MapGraph, MapNode } from "./mapGraph";
 
 const NODE_W = 168;

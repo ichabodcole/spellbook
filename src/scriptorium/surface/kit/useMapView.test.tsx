@@ -8,7 +8,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, test } from "bun:test
 import type { Daemon } from "../../../kit/context/daemonClient";
 import { cleanup, installDom, mount, removeDom, settle } from "../../../kit/lib/testDom";
 import type { ContextEntry, LinkGraph, PublicState } from "../../../kit/workspace/protocol";
-import type { DocSummary } from "../../backend/protocol";
+import type { DocSummary } from "../../backend/kit/frontmatter";
 import { useMapView } from "./useMapView";
 
 beforeAll(installDom);

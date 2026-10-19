@@ -3,7 +3,7 @@
 
 import { describe, expect, test } from "bun:test";
 import type { GraphEdgeView, GraphNodeView, LinkGraph } from "../../../kit/workspace/protocol";
-import type { DocSummary } from "../../backend/protocol";
+import type { DocSummary } from "../../backend/kit/frontmatter";
 import { mapGraph } from "./mapGraph";
 
 const node = (path: string, extra: Partial<GraphNodeView> = {}): GraphNodeView => ({

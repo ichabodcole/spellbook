@@ -6,7 +6,7 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { WorkspaceSession } from "../../../kit/workspace/session";
 import { tempRoot, testApp } from "../../../kit/workspace/testing";
-import { META_SCAN_CAP } from "../session";
+import { META_SCAN_CAP } from "./frontmatter";
 import { docMeta } from "./wiki";
 
 let root: string;

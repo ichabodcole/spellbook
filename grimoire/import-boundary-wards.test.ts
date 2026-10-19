@@ -1603,6 +1603,12 @@ describe("the import scanner agrees with Bun's parser on every value import in t
         erased: true,
       },
       { file: "src/magpie/backend/server.ts", spec: "./reduce", erased: false },
+      // scriptorium, the shell cycle (scriptorium-kit-keepers): what the kit
+      // path kept moved under `backend/kit/`, and the shipped modules re-export
+      // it until the cutover deletes them. One helper on both paths.
+      { file: "src/scriptorium/backend/frontmatter.ts", spec: "./kit/frontmatter", erased: false },
+      { file: "src/scriptorium/backend/links.ts", spec: "./kit/fieldRefs", erased: false },
+      { file: "src/scriptorium/backend/protocol.ts", spec: "./kit/frontmatter", erased: true },
     ]);
   });
 

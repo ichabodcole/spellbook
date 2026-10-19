@@ -57,13 +57,12 @@ import { safeStorage } from "../../../kit/lib/storage";
 import type { Theme } from "../../../kit/theme/mode";
 import { Toasts, useToastStore } from "../../../kit/ui/toast";
 import type { PublicState } from "../../../kit/workspace/protocol";
-import { isStale } from "../../backend/frontmatter";
-import type { DocSummary } from "../../backend/protocol";
-import { statusMark } from "../components/context/model";
+import { type DocSummary, isStale } from "../../backend/kit/frontmatter";
 // Scriptorium's document kinds (`.mdx`), as the daemon registers them, so the tree reads them alike.
 import "../../backend/kit/docKinds";
 import { useFrameWorkspace } from "./frameWorkspace";
 import { scriptoriumBeforeMove, scriptoriumUncheckedMoveNote } from "./movePlan";
+import { statusMark } from "./statusMark";
 import { noFrontmatterOf, scriptoriumTextOffer } from "./suggestMeta";
 import { useMapView } from "./useMapView";
 

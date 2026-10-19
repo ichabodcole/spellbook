@@ -6,7 +6,7 @@
 
 import "../../../kit/lib/registerDom.ts";
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "bun:test";
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { Daemon } from "../../../kit/context/daemonClient";
@@ -22,10 +22,10 @@ import {
 } from "../../../kit/lib/testDom";
 import type { WorkspaceDaemon } from "../../../kit/workspace/server";
 import { tempRoot } from "../../../kit/workspace/testing";
+import type { DocSummary } from "../../backend/kit/frontmatter";
 import { kitDaemon } from "../../backend/kit/server";
-import type { DocSummary } from "../../backend/protocol";
-import { statusMark } from "../components/context/model";
 import { Frame, scriptoriumRowMarker } from "./Frame";
+import { statusMark } from "./statusMark";
 
 const summary = (over: Partial<DocSummary>): DocSummary => ({
   status: "stable",
@@ -78,17 +78,16 @@ describe("scriptoriumRowMarker", () => {
   });
 
   test("each tone's dot carries the shipped StatusDot's colour for it", () => {
-    // The shipped tree's colour per tone (`StatusDot` in EntryTree.tsx).
+    // The shipped tree's colour per tone, captured from `StatusDot` in the
+    // shipped `components/context/EntryTree.tsx` at cycle/shell 401beb8d. This
+    // test read that file until scriptorium-kit-keepers; the kit path no
+    // longer reads the shipped code, so the table is the record.
     const colour: Record<string, string> = {
       draft: "data-[tone=draft]:bg-attention",
       stale: "data-[tone=stale]:bg-attention/70",
       deprecated: "data-[tone=deprecated]:bg-danger",
       unreadable: "data-[tone=unreadable]:bg-ink-faint",
     };
-    const shipped = readFileSync(
-      join(import.meta.dir, "../components/context/EntryTree.tsx"),
-      "utf8",
-    );
     const seen: string[] = [];
     for (const path of Object.keys(cases)) {
       const drawn = marker(path);
@@ -96,7 +95,6 @@ describe("scriptoriumRowMarker", () => {
       const html = renderToStaticMarkup(drawn);
       const tone = html.match(/data-tone="([a-z]+)"/)?.[1] as string;
       const classes = html.match(/class="([^"]*)"/)?.[1]?.split(" ") ?? [];
-      expect(shipped).toContain(colour[tone] as string);
       expect(classes).toContain(colour[tone] as string);
       seen.push(tone);
     }

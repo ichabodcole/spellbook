@@ -28,7 +28,7 @@ import type { MenuActions } from "../../../kit/context/menuActions";
 import { singleDoc } from "../../../kit/context/model";
 import type { AppView } from "../../../kit/document/DocumentPane";
 import type { ContextEntry, LinkGraph } from "../../../kit/workspace/protocol";
-import type { DocSummary } from "../../backend/protocol";
+import type { DocSummary } from "../../backend/kit/frontmatter";
 import { type MapMode, MapView } from "./MapView";
 import { type MapGraph, mapGraph } from "./mapGraph";
 

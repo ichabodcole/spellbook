@@ -52,46 +52,11 @@ export type ContextEntry = {
   hidden?: string[];
 };
 
-/** OKF 0.2 §6's tiers, DERIVED from `verified` on read and never stored. */
-export type TrustTier = "unverified" | "machine-confirmed" | "human-reviewed";
+// TrustTier, DocMeta and DocSummary live with the reader that makes them, on
+// the kit path (scriptorium-kit-keepers), so the cutover can delete this file.
+import type { DocMeta, DocSummary } from "./kit/frontmatter";
 
-/**
- * A document's frontmatter, read (E32). `fields` carries EVERY key, known or
- * not — the spec requires a consumer to preserve what it does not understand,
- * and the surface shows the rest as labelled values.
- */
-export type DocMeta = {
-  /** The block as written, so a writer can round-trip what it did not parse. */
-  raw: string;
-  fields: Record<string, unknown>;
-  /** OKF's one REQUIRED field — absent is a fact to show, not an error. */
-  type?: string;
-  title?: string;
-  description?: string;
-  /** `draft | stable | deprecated` in practice; any string in principle. Defaults to `stable`. */
-  status: string;
-  tags: string[];
-  /** A house extension (pdocs), shown and filterable, never validated. */
-  lifecycle?: string;
-  trust: TrustTier;
-  stale: boolean;
-  /** `generated.at` as an ISO date, for `find --since`. */
-  date: string | null;
-  /** The frontmatter would not parse. The document is still a document. */
-  error?: string;
-};
-
-/** What the sidebar needs for every context document — small, because it rides every snapshot. */
-export type DocSummary = {
-  type?: string;
-  title?: string;
-  status: string;
-  tags: string[];
-  lifecycle?: string;
-  trust: TrustTier;
-  stale: boolean;
-  error?: string;
-};
+export type { DocMeta, DocSummary, TrustTier } from "./kit/frontmatter";
 
 // ── comparing and merging (E36) ───────────────────────────────────────────────
 //

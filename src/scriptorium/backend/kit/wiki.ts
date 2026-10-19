@@ -7,7 +7,7 @@
  * agent's `appState`.
  *
  * ⛔ THE SAME ANSWERS FOR THE SAME WORLD. The frontmatter is read by the
- * shipped reader (`../frontmatter.ts`: `readMeta`, `summarize`,
+ * shipped reader, kept on this path (`./frontmatter.ts`: `readMeta`, `summarize`,
  * `matchesFilter`, `trustTier`, `isStale`), not the kit's, from the first
  * 8 KB of the file on disk, as the shipped verbs read it. Writes are the
  * shipped text edits (`buildBlock`, `withBlock`, `setKey`): a new block is
@@ -19,13 +19,16 @@
 
 import { closeSync, openSync, readFileSync, readSync, statSync } from "node:fs";
 import { basename, dirname } from "node:path";
+import { quoteLabel } from "../../../kit/workspace/anchors";
 import type { VerbHandler } from "../../../kit/workspace/server";
 import { SessionError, type WorkspaceSession } from "../../../kit/workspace/session";
 import { docPaths } from "../../../kit/workspace/tree";
-import { quoteLabel } from "../anchors";
 import {
   buildBlock,
+  type DocMeta,
+  type DocSummary,
   guessType,
+  META_SCAN_CAP,
   type MetaFilter,
   matchesFilter,
   readMeta,
@@ -34,9 +37,8 @@ import {
   summarize,
   titleFromBody,
   withBlock,
-} from "../frontmatter";
-import type { DocMeta, DocSummary } from "../protocol";
-import { gitRootOf, META_SCAN_CAP } from "../session";
+} from "./frontmatter";
+import { gitRootOf } from "./gitRoot";
 import { fullPathOrDie } from "./hide";
 
 /** A frontmatter block lives at the top of a file; this is how much is read to find it (the shipped size). */
