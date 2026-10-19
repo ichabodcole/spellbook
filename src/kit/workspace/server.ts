@@ -3141,14 +3141,60 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     void everyClientOpListed;
     const CLIENT_OPS: readonly string[] = [...SURFACE_OPS, ...STRUCTURE_OPS];
 
+    /** The `rid` of the newest `edit` each surface sent that the daemon has answered, taken or refused (`editSeen`). */
+    const editTaken = new WeakMap<import("bun").ServerWebSocket<unknown>, string | number>();
+
     /**
-     * The human's text reaches the active version: the editor's `edit`, and an
-     * app writing what it holds (`ctx.edit`). `rev`: the edit was rebased onto a
-     * link rewrite, and every editor is told the text kept.
+     * The text a surface's edit left, to every other surface: a second tab on
+     * the version shows what the first typed. The typing surface is not sent
+     * its own text back, unless it was rebased onto a rewrite (`rev`), which it
+     * must take. Each frame carries what the daemon had taken from its
+     * receiver (`editSeen`), so a surface whose own edit is still on its way
+     * keeps its text: that edit is taken next and sent on in turn.
      */
-    const editActive = (doc: string, version: number, text: string, rev?: number) => {
+    const relayEdit = (
+      from: import("bun").ServerWebSocket<unknown>,
+      doc: string,
+      version: number,
+      text: string,
+      rev: number | undefined,
+    ) => {
+      const frame = {
+        op: "version.text",
+        doc,
+        version,
+        text,
+        origin: "remote",
+        ...(rev !== undefined ? { rev } : {}),
+      } satisfies ServerOp;
+      // The text is serialized once; only the stamp differs per surface.
+      const head = JSON.stringify(frame).slice(0, -1);
+      for (const ws of sockets) {
+        if (ws === from && rev === undefined) continue;
+        try {
+          ws.send(`${head},"editSeen":${JSON.stringify(editTaken.get(ws) ?? null)}}`);
+        } catch {
+          /* socket closed */
+        }
+      }
+    };
+
+    /**
+     * The human's text reaches the active version: the editor's `edit` (`from`,
+     * the surface that typed it), and an app writing what it holds (`ctx.edit`,
+     * which tells the surfaces itself). `rev`: the edit was rebased onto a link
+     * rewrite, and every editor is told the text kept.
+     */
+    const editActive = (
+      doc: string,
+      version: number,
+      text: string,
+      rev?: number,
+      from?: import("bun").ServerWebSocket<unknown>,
+    ) => {
       const r = session.edit(doc, version, text);
-      if (rev !== undefined)
+      if (from) relayEdit(from, doc, version, text, rev);
+      else if (rev !== undefined)
         send({ op: "version.text", doc, version, text, origin: "remote", rev });
       if (r.preserved) {
         const d = session.doc(doc);
@@ -3325,6 +3371,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
             msg.version,
             followed.text,
             followed.rev !== null ? followed.rev : undefined,
+            ws,
           );
           return;
         }
@@ -4682,6 +4729,12 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           }
           const idOf = (msg as { rid?: unknown } | null)?.rid;
           rid = typeof idOf === "string" || typeof idOf === "number" ? idOf : undefined;
+          // An edit is the daemon's to answer from here, taken or refused (an
+          // app's `beforeKitAct`, a non-active version): the stamp on what this
+          // surface is sent next (`relayEdit`). Set before anything can refuse
+          // it, or the surface would wait on it, passing over every relay.
+          if (rid !== undefined && (msg as { op?: unknown } | null)?.op === "edit")
+            editTaken.set(ws, rid);
           try {
             const name = (msg as { op?: unknown } | null)?.op;
             if (typeof name === "string" && verbs.has(name)) {

@@ -1976,6 +1976,7 @@ export function DocumentPane({
               >
                 <MarkdownView
                   text={shown}
+                  textKey={`${doc.slug}@${doc.active}`}
                   notes={paintedNotes}
                   focusedNote={focusedNote ?? null}
                   pendingNote={pendingNote}

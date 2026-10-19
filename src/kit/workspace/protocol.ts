@@ -1831,6 +1831,12 @@ export type ServerOp =
    * `rev`: on a text the daemon rewrote (a link update after a rename or
    * move), its revision. The surface sends the newest it took as an edit's
    * `base`, so a late edit typed over the older text is rebased, not taken.
+   *
+   * `editSeen`: on a text a surface's `edit` left, sent to every other surface
+   * (and to the typing one too after a rewrite), the `rid` of the newest
+   * `edit` the daemon had answered (taken or refused) from the receiving
+   * surface when it sent this frame, or null for none. A surface whose own edit to that version is newer
+   * passes over the frame: the daemon takes that edit next and sends it on.
    */
   | {
       op: "version.text";
@@ -1839,6 +1845,7 @@ export type ServerOp =
       text: string;
       origin: "load" | "remote";
       rev?: number;
+      editSeen?: string | number | null;
     }
   | ({ op: "diff" } & DiffPayload)
   | ({ op: "search.results" } & SearchReport)
