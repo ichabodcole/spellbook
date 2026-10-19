@@ -1629,7 +1629,7 @@ function ShellBody({
             // listening on the window: the editor's own undo must stay the
             // editor's, and a global listener would have to guess which was meant.
             // A deleting undo is not offered to the keyboard: a reflex that removes
-            // a file is the one thing this must not grow into.
+            // a file is the one thing this must not turn into.
             onKeyDown={(e) => {
               if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== "z") return;
               if ((e.target as HTMLElement).matches("input, textarea")) return;

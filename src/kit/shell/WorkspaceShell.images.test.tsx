@@ -133,6 +133,10 @@ test("the viewer says where an image is used, and opens a document that uses it"
   await waitFor(() => !!q('[data-slot="image-linked-from"]'), "linked from");
   expect(q('[data-slot="image-linked-from"]')?.textContent).toContain("Linked from 2 places");
   // Opened, it lists each one; choosing one opens its document.
+  // Spellbook: the footer mounts when the backlinks arrive, outside act; one
+  // settle runs its effects first, or the menu trigger can miss the click
+  // (about one run in two under @base-ui/react 1.6).
+  await settle(() => {});
   await click(q('[data-slot="image-linked-from"]'));
   await waitFor(
     () => document.querySelectorAll('[data-slot="image-backlink"]').length === 2,
