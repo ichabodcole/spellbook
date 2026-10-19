@@ -432,9 +432,13 @@ const DECLARED_BLIND: Record<string, number> = {
   // under a second title. Thrown away with the frame at the shell cycle.
   "src/scriptorium/surface/kit/index.html": 41,
   // The frame's own sheet (scriptorium-kit-document-centre): the shipped one,
-  // then the kit's document.css.
-  "src/scriptorium/surface/kit/styles.css": 14,
-  "src/scriptorium/surface/styles.css": 389,
+  // then the kit's document.css. 14 -> 15 and theme.css 395
+  // (scriptorium-kit-keepers): the page's palette and theme, a copy of the
+  // shipped sheet re-rooted to scan only surface/kit/, in place of importing
+  // it; the shipped sheet 389 -> 392 for its `@source not "./kit"`.
+  "src/scriptorium/surface/kit/styles.css": 15,
+  "src/scriptorium/surface/kit/theme.css": 395,
+  "src/scriptorium/surface/styles.css": 392,
 };
 
 type BlindReport = {
