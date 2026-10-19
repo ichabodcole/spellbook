@@ -6,13 +6,14 @@ description:
   folder named ~ in the caller's directory, while the surface's new folder at a
   path refuses the same input; expand a leading ~ the way the surface does, or
   refuse it.
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: ready
 id: 01a14cb0-b4b0-7668-b41a-d2b31887f5ed
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-17 }
 parent: feature/workspace-kit
 from: features/workspace-kit/sessions/2026-10-17-panes.md
+cycle: 2026-10-shell
 ---
 
 # The kit CLI's add-folder makes a folder literally named ~

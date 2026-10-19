@@ -5,13 +5,14 @@ description:
   On the kit path, state or say on a session the human ended answers no running
   session with a hint naming a different session id, where the shipped app says
   the human ended it on purpose.
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: ready
 id: 01a1486e-3c60-7055-b105-5f9dcffcbdd5
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-16 }
 tags: [kit, scriptorium]
 parent: feature/workspace-kit
+cycle: 2026-10-shell
 ---
 
 # The kit path answers an ended session with another session's hint

@@ -5,13 +5,14 @@ description:
   Scriptorium's frontmatter setKey mangles a value holding $& or $', writes
   before the opening fence of an empty block, mixes line endings in CRLF files,
   duplicates quoted keys, and misses a block after a BOM; shipped and kit alike.
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: ready
 id: 01a1486e-39d2-74bc-9309-fbcd4276f813
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-16 }
 tags: [kit, scriptorium]
 parent: feature/workspace-kit
+cycle: 2026-10-shell
 ---
 
 # meta-set and meta-init corrupt some files, on both paths

@@ -6,13 +6,14 @@ description:
   restore it, even while that daemon runs; and tail --once prints a non-JSON
   keepalive comment line.
 status: stable
-lifecycle: triage
+lifecycle: ready
 id: 01a13c0d-b24c-75b2-af4d-ac78fa192dec
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-14 }
 tags: [kit, cli]
 parent: feature/workspace-kit
 from: items/scriptorium-on-kit-daemon.md
+cycle: 2026-10-shell
 ---
 
 # The kit CLI's hints for an unknown session and the tail keepalive

@@ -11,6 +11,7 @@ kind: research
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
 tags: [kit, scriptorium, atlas]
 parent: feature/workspace-kit
+cycle: 2026-10-shell
 ---
 
 # What still differs from Atlas after the shell port

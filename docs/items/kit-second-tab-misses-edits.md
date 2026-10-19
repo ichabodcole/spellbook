@@ -6,13 +6,14 @@ description:
   session (editActive sends no version.text to other sockets); the shipped
   Scriptorium shows it within 500 ms.
 status: stable
-lifecycle: triage
+lifecycle: ready
 id: 01a14e5f-1882-73d8-95fd-3bf540bd4a9f
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-18 }
 tags: [kit, scriptorium]
 parent: feature/workspace-kit
 from: 01a14dc5-6f94-7529-ac57-306dea4e021a
+cycle: 2026-10-shell
 ---
 
 # A second tab doesn't see edits typed in the first

@@ -5,13 +5,14 @@ description:
   Restore keeps a set whose root shows the sessions folder (or add ~ with a link
   into it), so the agent can read other sessions' files through it; every write
   through such a set is refused.
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: ready
 id: 01a14911-a3e4-77de-8b03-11407216f2de
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-17 }
 tags: [kit, security]
 parent: feature/workspace-kit
+cycle: 2026-10-shell
 ---
 
 # A set restored from an older manifest can still show the sessions folder

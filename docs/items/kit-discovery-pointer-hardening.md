@@ -6,13 +6,14 @@ description:
   0 or -1 as alive, does not match a file name to its session_id, and writes a
   predictable temp name in a shared tmpdir on Linux.
 status: stable
-lifecycle: triage
+lifecycle: ready
 id: 01a138c6-ae85-761c-a3f1-6a7bd4aa7385
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
 tags: [kit, wire]
 parent: feature/workspace-kit
 from: features/workspace-kit/sessions/2026-10-13-kit-foundation.md
+cycle: 2026-10-shell
 ---
 
 # Harden the kit's session-pointer API before a spell adopts it

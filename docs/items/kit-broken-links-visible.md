@@ -6,13 +6,14 @@ description:
   since the map dropped its header numbers; give the human a visible sign with
   an act attached.
 status: stable
-lifecycle: triage
+lifecycle: ready
 id: 01a15029-f5a7-7569-868c-047b2a7a562a
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-18 }
 tags: [kit, scriptorium]
 parent: feature/workspace-kit
 from: cycle/2026-10-document-pane
+cycle: 2026-10-shell
 ---
 
 # The human can see that a set has broken links
