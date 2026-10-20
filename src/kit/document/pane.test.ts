@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
   DEFAULT_LINE_NUMBERS_KEY,
   hasEditor,
+  isSplitLayout,
   pointedRange,
   readLineNumbers,
   readViewMode,
@@ -86,5 +87,15 @@ describe("pointedRange: a passage the agent pointed at, in the text on screen no
 
   test("nothing when the quote is gone, so the pane can say so", () => {
     expect(pointedRange(p, 2, "the lamp is out")).toBeNull();
+  });
+});
+
+describe("the split's kept width", () => {
+  test("only a layout with both halves is the split's", () => {
+    expect(isSplitLayout({ "doc-raw": 30, "doc-rendered": 70 })).toBe(true);
+    // Raw or rendered alone: the group one panel wide.
+    expect(isSplitLayout({ "doc-raw": 100 })).toBe(false);
+    expect(isSplitLayout({ "doc-rendered": 100 })).toBe(false);
+    expect(isSplitLayout({})).toBe(false);
   });
 });

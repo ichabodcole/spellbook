@@ -12,12 +12,14 @@ import "../lib/registerDom.ts";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from "bun:test";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { undoDepth } from "@codemirror/commands";
 import { EditorView } from "@codemirror/view";
 import { createRef, type Ref, useMemo, useState } from "react";
 import type { Collapsed } from "../context/columns.ts";
 import type { Daemon } from "../context/daemonClient.ts";
 import { useDaemon } from "../context/useDaemon.ts";
 import { type Workspace, WorkspaceContext } from "../context/workspace.ts";
+import type { KeptStorage } from "../lib/storage.ts";
 import {
   cleanup,
   installDom,
@@ -79,6 +81,7 @@ beforeEach(async () => {
   sentFrames = [];
   reported = [];
   quietSaid = [];
+  paneStorage = undefined;
   daemon = fixtureDaemon({ tmp: join(root, "tmp"), workspace: ws });
   await daemon.start();
 });
@@ -117,6 +120,9 @@ function Recording(url: string, protocols?: string | string[]) {
   };
   return ws;
 }
+
+/** The app's own store for a viewer's choices (the workspace's `storage`), when a test gives one. */
+let paneStorage: KeptStorage | undefined;
 
 /** The pane's own options, beside its slots. */
 type PaneOptions = { splitView?: boolean; viewModeKey?: string; mode?: ViewMode };
@@ -170,6 +176,7 @@ function Host({
     setQuiet: (quiet) => {
       quietSaid.push(quiet);
     },
+    ...(paneStorage ? { storage: paneStorage } : {}),
   };
   return (
     <WorkspaceContext.Provider value={workspace}>
@@ -516,13 +523,22 @@ describe("the pane's slots", () => {
 function paneWidth(width: number): () => void {
   const g = globalThis as { ResizeObserver?: unknown };
   const was = g.ResizeObserver;
+  // A whole entry, as a browser's is: the split's layout library reads its target
+  // and border box, and an entry without them is not one it can place.
+  type Entry = {
+    target: Element;
+    contentRect: { width: number };
+    borderBoxSize: { inlineSize: number; blockSize: number }[];
+  };
   g.ResizeObserver = class {
-    cb: (entries: { contentRect: { width: number } }[]) => void;
-    constructor(cb: (entries: { contentRect: { width: number } }[]) => void) {
+    cb: (entries: Entry[]) => void;
+    constructor(cb: (entries: Entry[]) => void) {
       this.cb = cb;
     }
-    observe() {
-      this.cb([{ contentRect: { width } }]);
+    observe(target: Element) {
+      this.cb([
+        { target, contentRect: { width }, borderBoxSize: [{ inlineSize: width, blockSize: 700 }] },
+      ]);
     }
     unobserve() {}
     disconnect() {}
@@ -533,6 +549,68 @@ function paneWidth(width: number): () => void {
 }
 
 const SPLIT = 'button[aria-label="Raw and rendered side by side"]';
+
+/**
+ * Lay the split's row out, as a browser's layout does: each panel `width` wide and
+ * the divider one pixel, left to right. The layout library sizes its group from
+ * its panels' `offsetWidth` (happy-dom leaves it 0, and an unsized group never
+ * commits a layout), orders the row by `offsetLeft`, and finds which halves the
+ * divider sits between by their rects (its keyboard needs that). Returns the undo.
+ */
+function panelsLaidOut(width: number): () => void {
+  const proto = window.HTMLElement.prototype;
+  const inRow = (el: HTMLElement) =>
+    el.hasAttribute("data-panel") || el.getAttribute("role") === "separator";
+  const sizeOf = (el: Element) => (el.hasAttribute("data-panel") ? width : 1);
+  const leftOf = (el: HTMLElement) => {
+    let left = 0;
+    for (const sib of el.parentElement?.children ?? []) {
+      if (sib === el) break;
+      left += sizeOf(sib);
+    }
+    return left;
+  };
+  const was = {
+    offsetWidth: Object.getOwnPropertyDescriptor(proto, "offsetWidth"),
+    offsetLeft: Object.getOwnPropertyDescriptor(proto, "offsetLeft"),
+  };
+  Object.defineProperty(proto, "offsetWidth", {
+    configurable: true,
+    get(this: HTMLElement) {
+      return inRow(this) ? sizeOf(this) : 0;
+    },
+  });
+  Object.defineProperty(proto, "offsetLeft", {
+    configurable: true,
+    get(this: HTMLElement) {
+      return inRow(this) ? leftOf(this) : 0;
+    },
+  });
+  // happy-dom has no ARIA reflection, and the library reads `ariaDisabled` (null when
+  // the attribute is absent) to skip a disabled divider: undefined reads as disabled.
+  const ariaWas = Object.getOwnPropertyDescriptor(proto, "ariaDisabled");
+  if (!ariaWas)
+    Object.defineProperty(proto, "ariaDisabled", {
+      configurable: true,
+      get(this: HTMLElement) {
+        return this.getAttribute("aria-disabled");
+      },
+    });
+  const rectWas = proto.getBoundingClientRect;
+  proto.getBoundingClientRect = function (this: HTMLElement) {
+    if (!inRow(this) || !this.parentElement) return rectWas.call(this);
+    return new window.DOMRect(leftOf(this), 0, sizeOf(this), 700) as unknown as DOMRect;
+  };
+  return () => {
+    for (const key of ["offsetWidth", "offsetLeft"] as const) {
+      const d = was[key];
+      if (d) Object.defineProperty(proto, key, d);
+      else delete (proto as unknown as Record<string, unknown>)[key];
+    }
+    proto.getBoundingClientRect = rectWas;
+    if (!ariaWas) delete (proto as unknown as Record<string, unknown>).ariaDisabled;
+  };
+}
 
 describe("split, raw and rendered side by side", () => {
   test("off by default: the view switch offers no split", async () => {
@@ -607,6 +685,135 @@ describe("split, raw and rendered side by side", () => {
       expect(q('button[aria-label="Raw text"]')?.getAttribute("aria-pressed")).toBe("true");
       // The choice is kept, so a wider pane brings split back.
       expect(localStorage.getItem("spellbook:view-mode")).toBe("split");
+    } finally {
+      undo();
+    }
+  });
+
+  test("the divider: drawn only in split, a keyboard separator between the two halves", async () => {
+    await openStory(undefined, undefined, { splitView: true });
+    expect(q("[data-panel] ~ [role=separator]")).toBeNull();
+    await click(q(SPLIT));
+    await waitFor(() => q("[data-slot=split-view] .md-prose p") !== null, "the rendered half");
+    const halves = [...document.querySelectorAll("[data-slot=split-view] > [data-panel]")];
+    expect(halves.map((h) => h.id)).toEqual(["doc-raw", "doc-rendered"]);
+    const divider = q("[data-slot=split-view] > [role=separator]") as HTMLElement;
+    expect(divider).not.toBeNull();
+    expect(divider.getAttribute("aria-label")).toBe("Resize raw and rendered");
+    expect(divider.tabIndex).toBe(0);
+    // Between the halves, not beside them.
+    expect(divider.previousElementSibling?.id).toBe("doc-raw");
+    expect(divider.nextElementSibling?.id).toBe("doc-rendered");
+    await click(q('button[aria-label="Raw text"]'));
+    expect(q("[data-panel] ~ [role=separator]")).toBeNull();
+  });
+
+  test("raw to split and back keeps the one editor: its view, its text and its undo history", async () => {
+    await openStory(undefined, undefined, { splitView: true });
+    const editorEl = q(".cm-editor");
+    const view = viewOf();
+    await settle(() => view.dispatch({ changes: { from: 0, insert: "Now. " } }));
+    await click(q(SPLIT));
+    await waitFor(() => q("[data-slot=split-view] .md-prose p") !== null, "the rendered half");
+    expect(q(".cm-editor")).toBe(editorEl);
+    expect(viewOf()).toBe(view);
+    await click(q('button[aria-label="Raw text"]'));
+    expect(q(".cm-editor")).toBe(editorEl);
+    expect(viewOf()).toBe(view);
+    // The edit made before the switches is still the editor's to undo.
+    expect(undoDepth(view.state)).toBeGreaterThan(0);
+    expect(editorText().startsWith("Now. First line.")).toBe(true);
+  });
+
+  test("the width is kept in the workspace's storage, and raw or rendered never overwrite it", async () => {
+    const kept = new Map<string, string>();
+    paneStorage = {
+      getItem: (k) => kept.get(k) ?? null,
+      setItem: (k, v) => {
+        kept.set(k, v);
+      },
+    };
+    const KEY = "react-resizable-panels:doc-split:doc-raw:doc-rendered";
+    const sizes = () => JSON.parse(kept.get(KEY) ?? "null") as Record<string, number> | null;
+    kept.set(KEY, JSON.stringify({ "doc-raw": 30, "doc-rendered": 70 }));
+    kept.set("spellbook:view-mode", "split");
+    const undo = panelsLaidOut(450);
+    try {
+      await openStory(undefined, undefined, { splitView: true });
+      await waitFor(() => q("[data-slot=split-view] .md-prose p") !== null, "the rendered half");
+      // The kept width is the one drawn.
+      const grow = (id: string) => Number((q(`#${id}`) as HTMLElement).style.flexGrow);
+      expect([grow("doc-raw"), grow("doc-rendered")]).toEqual([30, 70]);
+
+      // Raw and rendered draw the group one panel wide, and the group commits that
+      // layout. It is not the split's: the kept width stands, and no one-panel
+      // layout is kept beside it (each would be one more write to the app's store).
+      // A drag and the keyboard are driven in a browser: happy-dom has no geometry
+      // for the library to find the divider's halves by.
+      await click(q('button[aria-label="Raw text"]'));
+      await click(q('button[aria-label="Rendered"]'));
+      await settle(() => new Promise((r) => setTimeout(r, 250)));
+      expect(sizes()).toEqual({ "doc-raw": 30, "doc-rendered": 70 });
+      expect([...kept.keys()].filter((k) => k.startsWith("react-resizable-panels:"))).toEqual([
+        KEY,
+      ]);
+      await click(q(SPLIT));
+      await waitFor(() => q("[data-slot=split-view] .md-prose p") !== null, "the rendered half");
+      expect([grow("doc-raw"), grow("doc-rendered")]).toEqual([30, 70]);
+
+      // A new page on the same store (the next session) opens at the kept width,
+      // even one that opens in raw first.
+      await cleanup();
+      kept.set("spellbook:view-mode", "raw");
+      await mount(<Host pane={{ splitView: true }} />);
+      await waitFor(() => editorText().length > 0, "the text in the editor");
+      await settle(() => new Promise((r) => setTimeout(r, 250)));
+      expect(sizes()).toEqual({ "doc-raw": 30, "doc-rendered": 70 });
+      await click(q(SPLIT));
+      await waitFor(() => q("[data-slot=split-view] .md-prose p") !== null, "the rendered half");
+      expect([grow("doc-raw"), grow("doc-rendered")]).toEqual([30, 70]);
+      // Kept in the workspace's store only, not the browser's.
+      expect(localStorage.getItem(KEY)).toBeNull();
+    } finally {
+      undo();
+    }
+  });
+
+  test("a first split opens half and half, each half at least a quarter, and a move by the keyboard is kept", async () => {
+    const kept = new Map<string, string>();
+    paneStorage = {
+      getItem: (k) => kept.get(k) ?? null,
+      setItem: (k, v) => {
+        kept.set(k, v);
+      },
+    };
+    const KEY = "react-resizable-panels:doc-split:doc-raw:doc-rendered";
+    const sizes = () => JSON.parse(kept.get(KEY) ?? "null") as Record<string, number> | null;
+    const undo = panelsLaidOut(450);
+    try {
+      await openStory(undefined, undefined, { splitView: true });
+      await click(q(SPLIT));
+      await waitFor(() => q("[data-slot=split-view] .md-prose p") !== null, "the rendered half");
+      const grow = (id: string) => Number((q(`#${id}`) as HTMLElement).style.flexGrow);
+      // Nothing kept yet: half and half, as the shipped split opens.
+      expect([grow("doc-raw"), grow("doc-rendered")]).toEqual([50, 50]);
+      const divider = q("[data-slot=split-view] > [role=separator]") as HTMLElement;
+      await waitFor(() => divider.getAttribute("aria-valuenow") !== null, "the divider's value");
+      expect(divider.getAttribute("aria-valuenow")).toBe("50");
+      // Neither half narrower than a quarter, as the shipped split.
+      expect(divider.getAttribute("aria-valuemin")).toBe("25");
+      expect(divider.getAttribute("aria-valuemax")).toBe("75");
+
+      // The divider's keyboard moves it, and the move is kept in the app's store.
+      await settle(() => divider.focus());
+      await settle(() => {
+        divider.dispatchEvent(
+          new window.KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }),
+        );
+      });
+      await waitFor(() => sizes()?.["doc-raw"] === 55, "the moved width, kept");
+      expect(sizes()).toEqual({ "doc-raw": 55, "doc-rendered": 45 });
+      expect(grow("doc-raw")).toBe(55);
     } finally {
       undo();
     }

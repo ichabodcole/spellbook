@@ -70,6 +70,34 @@ export function storedLineNumbers(on: boolean): "on" | "off" {
   return on ? "on" : "off";
 }
 
+/**
+ * The split's two halves, as the layout library knows them, and the id their sizes
+ * are kept under, in the workspace's `storage` as
+ * `react-resizable-panels:doc-split:doc-raw:doc-rendered`. Renaming one forgets a
+ * viewer's width.
+ */
+export const SPLIT_LAYOUT_ID = "doc-split";
+export const SPLIT_PANES = ["doc-raw", "doc-rendered"] as const;
+
+/**
+ * Where the split opens (the raw half's share; the rendered half takes the rest),
+ * and the narrowest either half may be, in percent of the pane.
+ */
+export const SPLIT_DEFAULT_SIZE = 50;
+export const SPLIT_MIN_SIZE = 25;
+
+/**
+ * Whether a layout the split's group reports is the split's own, both halves in it.
+ * The group outlives the split: raw and rendered are drawn in it too, one panel
+ * wide, so moving between them and split keeps the editor mounted. The layout
+ * hook keeps each layout under its own panels' ids, so a one-panel layout would be
+ * a key of its own (`…:doc-split:doc-raw`), a write to the app's store on every
+ * switch that nothing reads.
+ */
+export function isSplitLayout(layout: Readonly<Record<string, number>>): boolean {
+  return SPLIT_PANES.every((id) => typeof layout[id] === "number");
+}
+
 /** Whether a mode shows the raw editor, so there is a caret to insert at. */
 export function hasEditor(mode: ViewMode): boolean {
   return mode === "raw" || mode === "split";
