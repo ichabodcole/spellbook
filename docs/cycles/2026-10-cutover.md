@@ -6,8 +6,8 @@ description:
   delete the shipped Scriptorium after Cole has used the flipped build: the
   second half of the last workspace-stack cycle."
 tags: [kit, scriptorium]
-status: draft
-lifecycle: planned
+status: stable
+lifecycle: active
 started: 2026-10-20
 appetite:
   Stop when the kit path is Scriptorium's only path, every one of Cole's
@@ -99,16 +99,15 @@ Out of scope, deliberately:
 
 ## Rulings
 
-_None yet. Two questions are open for Cole:_
-
-1. **When is the escape hatch refused?** Recommended: once any session in the
-   home is in the kit's shape, whether it converted or was started on the
-   flipped build. The alternative refuses it only once a session has a
-   `manifest.pre-migrate.json`, which leaves the shipped app reachable after a
-   new kit session, though it can't open that session.
-2. **Where does the trial run?** On the real `~/.scriptorium`, where each
-   session converts as it opens (the original manifest is kept, and the dry run
-   converted all 64). Or first on a copy, with `SCRIPTORIUM_HOME` pointed at it.
+1. **The trial runs on the real `~/.scriptorium` (Cole, 2026-10-20).** Each
+   session converts as it opens. Cole uses Scriptorium for short review sessions
+   and rarely returns to an old one once its scope is done, so losing an old
+   session's data is not a concern. Not taken: a trial on a copy first.
+2. **The escape hatch is refused once any session in the home is in the kit's
+   shape,** converted or started on the flipped build (the lead's
+   recommendation, taken under ruling 1: Cole is not concerned about old session
+   data). Not taken: refusing only once a session has a
+   `manifest.pre-migrate.json`.
 
 ## Outcome
 

@@ -5,7 +5,7 @@ description:
   Rewrite the SKILL to the kit's verbs, flags, events and refusals, so an agent
   reading only the SKILL drives a session on the flipped build; lands before
   Cole's trial.
-status: draft
+status: stable
 lifecycle: backlog
 id: 01a15b3a-27c0-706a-8a19-5ca5ca424431
 kind: task

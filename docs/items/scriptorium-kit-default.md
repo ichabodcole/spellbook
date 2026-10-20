@@ -6,7 +6,7 @@ description:
   convert as they open, prefs are shared, the flag goes, an escape hatch keeps
   the shipped app reachable until the deletion, and acc's census and the CLI
   golden move with it."
-status: draft
+status: stable
 lifecycle: backlog
 id: 01a15b3a-2716-70a6-872a-d30f3aad2a2c
 kind: task
@@ -34,10 +34,10 @@ change at about 120 lines of source, mostly removals in
   outside-root checks stay.
 - **The escape hatch (ruling 6).** `SCRIPTORIUM_SHIPPED=1` runs the shipped path
   until the deletion. It is refused, with a usage error and a hint, once a
-  session in the home is in the kit's shape (the open question in the cycle).
-  The shipped tests that drive the launcher (`daemon.integration`,
-  `cli-contract`, `tail-handoff.integration`, `dev-styled` and
-  `migrate.integration`'s shipped arm) take the variable.
+  session in the home is in the kit's shape (ruling 2 of the cycle). The shipped
+  tests that drive the launcher (`daemon.integration`, `cli-contract`,
+  `tail-handoff.integration`, `dev-styled` and `migrate.integration`'s shipped
+  arm) take the variable.
 - **acc and the golden move in the same commit.** At the flip the golden goes
   red (45 verbs become 56), and acc against the shipped census stays green
   though two of its verbs are gone and 13 are uncovered (measured). So the

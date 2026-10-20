@@ -5,7 +5,7 @@ description:
   open --timeout abc exits 0 and starts a daemon whose idle timeout is NaN, so
   it never closes (seen with both the shipped and the kit CLI by the panes
   cycle's verifiers); refuse a non-numeric timeout with a usage error.
-status: draft
+status: stable
 lifecycle: ready
 id: 01a14cb0-995b-70d4-9698-bfc2b0682bd2
 kind: bug

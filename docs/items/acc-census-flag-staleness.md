@@ -5,7 +5,7 @@ description:
   acc stays conformant when a census record lists a flag that no longer exists,
   or misses an output change on an existing verb; only added or removed verbs
   fail the gate. Applies to Scriptorium's default and kit censuses alike.
-status: draft
+status: stable
 lifecycle: ready
 id: 01a13c0d-a2e8-7086-8455-9aad6109461c
 kind: chore
