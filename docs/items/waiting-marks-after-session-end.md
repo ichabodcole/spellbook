@@ -18,11 +18,15 @@ from: cycle/2026-10-shell
 
 Seen by the Atlas comparison on 2026-10-20 in both the shipped Scriptorium and
 the kit path: after End session, the waiting marks on messages and notes still
-read "may be stuck". Once the session has ended nothing can answer, so the mark
-should say the session ended instead.
+read "may be stuck". The `kit-composer-closed-waiting-mark` verifier
+(2026-10-20) found the worse case on the kit path: with an agent `tail` running
+at the end, the rail dot and the float's line keep pulsing "working on this…"
+after the session ended. Once the session has ended nothing can answer, so the
+mark should say the session ended instead.
 
 ## Definition of done
 
-- [ ] After End session, a waiting mark says the session has ended, not that the
-      agent may be stuck.
+- [ ] After End session, no waiting mark claims work or a stuck agent: not the
+      message badge, the note badge, the float's line, or the closed composer's
+      rail dot. Each says the session has ended, or goes.
 - [ ] Tested on the kit path.
