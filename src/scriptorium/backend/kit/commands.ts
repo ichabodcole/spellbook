@@ -6,6 +6,8 @@
  * - `make-set <path>`: the shipped `make-set` (E22) on the kit's `set.make`. A
  *   document listed on its own becomes a set: a folder named for it beside it,
  *   the document moved in, the same entry (by id) now mirroring the folder.
+ *   Links the move breaks come back as `broken`, with `relink` named as the
+ *   act that updates them, as a move's do.
  * - `add-folder <path>`: a new, empty folder at a path the caller names, on the
  *   kit's `folder.add`. Outside every set it is a new set in the context; where
  *   a set shows folders, a folder there. This is how a new place for files is
@@ -24,7 +26,7 @@ export function scriptoriumKitCommands(h: CliHelpers): readonly CommandSpec<stri
       flags: [...h.SESSION],
       positionals: [{ name: "path", required: true }],
       describe:
-        "turn a document listed on its own into a set: a folder named for it beside it, the document moved in, the same entry; prints `broken`, the links the move broke, which it does not rewrite",
+        "turn a document listed on its own into a set: a folder named for it beside it, the document moved in, the same entry; prints `broken`, the links the move broke (wiki links under `wiki`, never rewritten), which `relink` updates as part of the act",
       run: async (inv) => {
         h.printJson(
           await h.postCmd(h.sessionOf(inv), {

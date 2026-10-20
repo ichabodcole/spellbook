@@ -296,6 +296,34 @@ describe("the flagged Scriptorium in the shell, on a real kit daemon", () => {
     await m.unmount();
   });
 
+  test("Turn into a set that breaks links offers to update them; Update rewrites them on disk", async () => {
+    const docs = join(root, "docs");
+    const fable = join(docs, "fable.md");
+    const linker = join(docs, "linker.md");
+    writeFileSync(fable, "# Fable\n\nSee [the linker](./linker.md).\n");
+    writeFileSync(linker, "# Linker\n\n[Fable](./fable.md)\n");
+    const m = await open(fable, linker);
+    await waitFor(() => listRow("fable.md") !== null, "the document's row");
+    await rightClick(listRow("fable.md"));
+    await waitFor(() => menuItem("Turn into a set") !== null, "the menu");
+    await click(menuItem("Turn into a set"));
+    await waitFor(() => existsSync(join(docs, "fable", "fable.md")), "the set on disk");
+    // The offer, in the shell's relink bar: the fix beside the report.
+    const bar = () => document.querySelector('[data-slot="relink-bar"]');
+    await waitFor(() => bar() !== null, "the relink bar");
+    expect(bar()?.textContent).toContain(
+      "2 links in 2 documents still point at where fable.md was",
+    );
+    await click(document.querySelector('[data-action="relink-update"]'));
+    await waitFor(
+      () => readFileSync(linker, "utf8").includes("(./fable/fable.md)"),
+      "the link into it rewritten",
+    );
+    expect(readFileSync(join(docs, "fable", "fable.md"), "utf8")).toContain("(../linker.md)");
+    await waitFor(() => bar() === null, "the bar gone once answered");
+    await m.unmount();
+  });
+
   test("a move through the menu waits on the plan; Cancel sends nothing", async () => {
     const m = await open(set);
     await click(listRow("set"));
