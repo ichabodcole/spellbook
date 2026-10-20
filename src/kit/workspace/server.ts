@@ -43,7 +43,12 @@ import {
 import { describeJsonProblem } from "../lib/json.ts";
 import { decodePath, splitTarget } from "../lib/linkTarget.ts";
 import { IMAGE_SOURCES } from "../lib/sidecar.ts";
-import { publishPointer, removePointer, writeFileAtomic } from "../wire/discovery.ts";
+import {
+  publishPointer,
+  recordLastOpened,
+  removePointer,
+  writeFileAtomic,
+} from "../wire/discovery.ts";
 import { createEventLog } from "../wire/eventLog.ts";
 import { drainAndStop, startHousekeeping } from "../wire/housekeeping.ts";
 import { refuseForeignOrigin } from "../wire/origin.ts";
@@ -4699,6 +4704,13 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       );
     } catch {
       /* discovery is best-effort */
+    }
+    // The newest session, for every CLI verb with no --session: this one,
+    // started new or restored. It outlives this daemon, unlike the pointer.
+    try {
+      recordLastOpened(dirname(opts.sessionsRoot), sessionId);
+    } catch {
+      /* best-effort: the CLI then says the newest session is unknown */
     }
 
     syncWatchers();

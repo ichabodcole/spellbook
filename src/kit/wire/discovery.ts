@@ -32,8 +32,10 @@
  * moving one onto this API changes the path its CLI looks for.
  */
 
+import { randomBytes } from "node:crypto";
 import {
   existsSync,
+  lstatSync,
   readdirSync,
   readFileSync,
   renameSync,
@@ -87,6 +89,79 @@ export function publishPointer(
 }
 
 /**
+ * `writeFileAtomic` for a pointer, which lives in a directory others may write
+ * (a shared `/tmp`). The temp name gains random bytes, so nobody can guess it
+ * ahead of the write, and it is opened exclusively (`wx`, which never follows a
+ * symlink) and readable by this user only: a file or symlink planted at that
+ * name fails the write rather than redirecting it. Then renamed into place, as
+ * `writeFileAtomic` does, and removed on a failed write.
+ */
+function writePointerFile(target: string, text: string): void {
+  const tmp = `${target}.${process.pid}.${randomBytes(6).toString("hex")}.tmp`;
+  try {
+    writeFileSync(tmp, text, { flag: "wx", mode: 0o600 });
+    renameSync(tmp, target);
+  } catch (err) {
+    try {
+      rmSync(tmp, { force: true });
+    } catch {
+      /* the temp file is already gone, or was never created */
+    }
+    throw err;
+  }
+}
+
+// ── the record of the session last started ──────────────────────────────────
+
+/** The record's file name, in the folder that holds an app's sessions folder. */
+export const LAST_OPENED = "last-opened.json";
+
+const SESSION_ID = /^[A-Za-z0-9_-][A-Za-z0-9_.-]*$/;
+
+/**
+ * Record `sessionId` as the newest session, in `dir` (the folder holding the
+ * sessions folder): a daemon calls it when it starts, a new session or a
+ * restored one. Unlike a pointer it is not removed at exit, so it still names
+ * the newest session after that session ended or crashed. Written as a pointer
+ * is (`writePointerFile`): a symlink planted at its path is replaced, never
+ * written through, and the file is readable by this user only.
+ */
+export function recordLastOpened(dir: string, sessionId: string): void {
+  if (!SESSION_ID.test(sessionId)) throw new Error(`invalid session id: ${sessionId}`);
+  writePointerFile(
+    join(dir, LAST_OPENED),
+    `${JSON.stringify({ session_id: sessionId, at: new Date().toISOString() })}\n`,
+  );
+}
+
+/**
+ * The record `recordLastOpened` left in `dir`: none (no file), the session id
+ * it names, or why it cannot be trusted (not a plain file of this user's, not
+ * JSON, no session id). Never throws.
+ */
+export function readLastOpened(
+  dir: string,
+): { kind: "none" } | { kind: "ok"; id: string } | { kind: "untrusted"; why: string } {
+  const path = join(dir, LAST_OPENED);
+  try {
+    const st = lstatSync(path);
+    if (!st.isFile()) return { kind: "untrusted", why: "it is not a plain file" };
+    if (!ownedByMe(path)) return { kind: "untrusted", why: "it is another user's" };
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === "ENOENT") return { kind: "none" };
+    return { kind: "untrusted", why: "it cannot be read" };
+  }
+  try {
+    const id = (JSON.parse(readFileSync(path, "utf8")) as { session_id?: unknown } | null)
+      ?.session_id;
+    if (typeof id === "string" && SESSION_ID.test(id)) return { kind: "ok", id };
+    return { kind: "untrusted", why: "it names no session" };
+  } catch {
+    return { kind: "untrusted", why: "it is not valid JSON" };
+  }
+}
+
+/**
  * Read a session's pointer, or the spell's latest when `id` is omitted. `null`
  * means there is no such pointer, and nothing else does.
  */
@@ -117,12 +192,23 @@ export function readPointer(
 }
 
 /** Whether a process is alive: signal 0 only checks. EPERM means it exists and is not ours. */
-function pidAlive(pid: number): boolean {
+export function pidAlive(pid: number): boolean {
   try {
     process.kill(pid, 0);
     return true;
   } catch (e) {
     return (e as NodeJS.ErrnoException).code === "EPERM";
+  }
+}
+
+/** Whether this user owns the file. Where there are no uids (Windows), every file is. */
+function ownedByMe(path: string): boolean {
+  const uid = process.getuid?.();
+  if (uid === undefined) return true;
+  try {
+    return statSync(path).uid === uid;
+  } catch {
+    return false;
   }
 }
 

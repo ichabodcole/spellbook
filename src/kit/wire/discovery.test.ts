@@ -1,11 +1,24 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  lstatSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+  LAST_OPENED,
   pointerPath,
   publishPointer,
+  readLastOpened,
   readPointer,
+  recordLastOpened,
   removePointer,
   unlinkIfMatches,
   writeFileAtomic,
@@ -41,6 +54,44 @@ describe("writeFileAtomic", () => {
     const target = join(dir, "missing", "daemon.port");
     expect(() => writeFileAtomic(target, "x")).toThrow();
     expect(readdirSync(dir)).toEqual([]);
+  });
+});
+
+describe("the record of the session last started", () => {
+  test("written and read back; absent is none", () => {
+    expect(readLastOpened(dir)).toEqual({ kind: "none" });
+    recordLastOpened(dir, "s1");
+    expect(readLastOpened(dir)).toEqual({ kind: "ok", id: "s1" });
+    recordLastOpened(dir, "s2");
+    expect(readLastOpened(dir)).toEqual({ kind: "ok", id: "s2" });
+    expect(statSync(join(dir, LAST_OPENED)).mode & 0o777).toBe(0o600);
+    expect(readdirSync(dir)).toEqual([LAST_OPENED]);
+  });
+
+  test("a symlink planted at its path is replaced, never written through", () => {
+    const victim = join(dir, "victim.txt");
+    writeFileSync(victim, "untouched");
+    symlinkSync(victim, join(dir, LAST_OPENED));
+    // A planted link is not a record to trust...
+    expect(readLastOpened(dir)).toEqual({ kind: "untrusted", why: "it is not a plain file" });
+    recordLastOpened(dir, "s1");
+    // ...and writing the record replaces the link: the file it pointed at is untouched.
+    expect(readFileSync(victim, "utf8")).toBe("untouched");
+    expect(lstatSync(join(dir, LAST_OPENED)).isSymbolicLink()).toBe(false);
+    expect(readLastOpened(dir)).toEqual({ kind: "ok", id: "s1" });
+  });
+
+  test("a corrupt record, or one naming no session, is untrusted, never none", () => {
+    for (const [body, why] of [
+      ["{not json", "it is not valid JSON"],
+      ["null", "it names no session"],
+      ['{"session_id":"../x"}', "it names no session"],
+      ['{"session_id":7}', "it names no session"],
+    ]) {
+      writeFileSync(join(dir, LAST_OPENED), body as string);
+      expect(readLastOpened(dir)).toEqual({ kind: "untrusted", why: why as string });
+    }
+    expect(() => recordLastOpened(dir, "../x")).toThrow(/invalid session id/);
   });
 });
 

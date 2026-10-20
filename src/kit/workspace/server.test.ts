@@ -4,9 +4,9 @@
 // routes, frames, events, tasks and runners, reveal, import, restore, waiting,
 // teardown.
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { readPointer } from "../wire/discovery";
+import { LAST_OPENED, readLastOpened, readPointer } from "../wire/discovery";
 import { KIT_EVENTS } from "./events";
 import { fixtureDaemon } from "./fixtures/app";
 import {
@@ -97,6 +97,26 @@ describe("the daemon's surface", () => {
       dir: d.dir,
     });
     expect(readPointer("kit-fixture", undefined, { tmp })?.session_id).toBe(d.sessionId);
+  });
+
+  test("start records the session as the newest, new or restored, in a file only this user reads", async () => {
+    const home = join(root, "home");
+    const first = fixtureDaemon({ tmp });
+    await first.start();
+    const firstId = first.sessionId;
+    await first.stop();
+    const { d } = await start({}, { connect: false, listen: false });
+    const record = join(home, LAST_OPENED);
+    expect(readLastOpened(home)).toEqual({ kind: "ok", id: d.sessionId });
+    const body = JSON.parse(readFileSync(record, "utf8")) as { session_id: string; at: string };
+    expect(body.session_id).toBe(d.sessionId);
+    expect(Number.isNaN(Date.parse(body.at))).toBe(false);
+    expect(statSync(record).mode & 0o777).toBe(0o600);
+    // A restore is a start too: the restored session is the newest now.
+    await d.stop();
+    daemon = fixtureDaemon({ tmp, restore: firstId });
+    await daemon.start();
+    expect(readLastOpened(home)).toEqual({ kind: "ok", id: firstId });
   });
 
   test("it will not start twice, and its address is not available before it starts", async () => {

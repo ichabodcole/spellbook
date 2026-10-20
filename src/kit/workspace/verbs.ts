@@ -47,8 +47,15 @@ import {
 import { homeDir } from "../lib/home.ts";
 import { printJson } from "../lib/printJson";
 import { startDaemon } from "../wire/detach";
-import { type DiscoveryOptions, readPointer, type SessionPointer } from "../wire/discovery";
-import { CliError, die, type ErrKind, reportCliError } from "../wire/errors";
+import {
+  type DiscoveryOptions,
+  LAST_OPENED,
+  pidAlive,
+  readLastOpened,
+  readPointer,
+  type SessionPointer,
+} from "../wire/discovery";
+import { CliError, die, type ErrExtra, type ErrKind, reportCliError } from "../wire/errors";
 import { stdinWaiting } from "../wire/stdinPeek";
 import {
   commandLine,
@@ -481,19 +488,6 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
     }
   }
 
-  /** What to say when no daemon answers, including the way back when there is one. */
-  function noSessionHint(): { hint: string; choices?: string[] } {
-    const ids = restorable();
-    const newest = ids[0];
-    if (newest === undefined) return { hint: "no session has been opened yet: run `open <path>`" };
-    return {
-      // The command, with the id already in it. A hint that says "you can
-      // restore a session" leaves the reader to find the id and guess the flag.
-      hint: `no daemon is running, but the work is on disk: bring it back with \`open --restore ${newest}\``,
-      choices: ids.slice(0, 10),
-    };
-  }
-
   /** Who ended a saved session, read from its manifest (which outlives the daemon). */
   function endedBy(id: string): string | undefined {
     try {
@@ -508,22 +502,110 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
     }
   }
 
+  /**
+   * The newest session: the one a daemon last started (new or restored), as
+   * its record beside the sessions folder says (`recordLastOpened`), which
+   * outlives the daemon and its pointer. A home with no record at all (none of
+   * its daemons has started since the record existed) falls back to the newest
+   * manifest.
+   *
+   * One rule for every verb with no `--session`, live or not. A verb never
+   * reaches past the newest session to an older one that happens to be live:
+   * the newest ended, or crashed, is said, by name. The temp directory's
+   * `latest` pointer is not consulted: a clean exit removes it, and the scan
+   * that stands in for it picks whatever is still live.
+   *
+   * A record that cannot be trusted (corrupt, not a plain file of this user's,
+   * or naming a session no longer saved here) is refused, never replaced by a
+   * guess: guessing is how a verb reaches a sibling.
+   */
+  function newestSession(): string | undefined {
+    const r = readLastOpened(dirname(opts.sessionsRoot()));
+    if (r.kind === "none") return restorable()[0];
+    const why =
+      r.kind === "untrusted"
+        ? r.why
+        : existsSync(join(opts.sessionsRoot(), r.id, "manifest.json"))
+          ? null
+          : `it names session ${r.id}, which is no longer saved here`;
+    if (why === null && r.kind === "ok") return r.id;
+    const ids = restorable();
+    return die(
+      `the newest ${app} session is unknown: the record of the last one started (${join(dirname(opts.sessionsRoot()), LAST_OPENED)}) cannot be trusted: ${why}`,
+      "not_found",
+      {
+        hint:
+          ids.length === 0
+            ? "no session is saved here: run `open <path>`"
+            : "name one with --session (the saved sessions are the choices); opening or restoring a session records it again",
+        choices: ids.slice(0, 10),
+      },
+    );
+  }
+
   /** Null means "no session", and nothing else: ENOENT is the only absence. */
   function readSession(session?: string): SessionPointer | null {
     if (session !== undefined && !/^[A-Za-z0-9_-][A-Za-z0-9_.-]*$/.test(session))
       die(`"${session}" is not a session id`, "usage", {
         hint: "a session id is the session_id that `open` printed",
       });
+    const id = session ?? newestSession();
+    if (id === undefined) return null;
     try {
-      return readPointer(app, session, opts.discovery);
+      return readPointer(app, id, opts.discovery);
     } catch (e) {
       return die(e instanceof Error ? e.message : String(e), "internal");
     }
   }
 
+  /**
+   * What to say when no daemon answers: about the session asked about
+   * (`--session`), or the newest saved one when none was named.
+   *
+   * A named session is the one the hint names. Offering the newest saved
+   * session whatever was asked sent `close --session a` to "bring it back with
+   * `open --restore b`", another session.
+   *
+   * A human end is routed on the manifest's `ended.by`, not on prose: the human
+   * ended it on purpose, so the refusal says so, names that session, and offers
+   * no reopen as the next act (`choices` would invite one too).
+   */
+  function noSession(session?: string): { message: string; extra: ErrExtra } {
+    const ids = restorable();
+    const id = session ?? newestSession();
+    if (id === undefined)
+      return {
+        message: `no running ${app} session`,
+        extra: { hint: "no session has been opened yet: run `open <path>`" },
+      };
+    if (endedBy(id) === "human")
+      return {
+        message: `the human ended session ${id}`,
+        extra: {
+          hint: `the human ended this session on purpose; do not reopen it unless they ask. If they ask: \`open --restore ${id}\``,
+        },
+      };
+    return {
+      message: `no running ${app} session ${id}`,
+      extra: {
+        // The command, with the id already in it. A hint that says "you can
+        // restore a session" leaves the reader to find the id and guess the flag.
+        hint: `no daemon is running for session ${id}, but its work is on disk: bring it back with \`open --restore ${id}\``,
+        choices: ids.slice(0, 10),
+      },
+    };
+  }
+
   function requireSession(session?: string): SessionPointer {
-    const s = readSession(session);
-    if (!s) die(`no running ${app} session`, "not_found", noSessionHint());
+    const found = readSession(session);
+    // A pointer whose daemon is gone (a crash, a kill -9) names a session that
+    // is not running: said as such, with its own way back, rather than a
+    // transport failure on its port.
+    const s = found !== null && pidAlive(found.pid) ? found : null;
+    if (!s) {
+      const { message, extra } = noSession(session);
+      die(message, "not_found", extra);
+    }
     return s;
   }
 

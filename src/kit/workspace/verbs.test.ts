@@ -12,6 +12,7 @@ import {
   readdirSync,
   realpathSync,
   rmSync,
+  utimesSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -52,14 +53,24 @@ afterAll(() => {
 const EMPTY_TMP = mkdtempSync(join(tmpdir(), "workspace-contract-"));
 const EMPTY_HOME = mkdtempSync(join(tmpdir(), "workspace-contract-home-"));
 
-function run(args: string[], tmp = EMPTY_TMP): { code: number; stdout: string; stderr: string } {
+// A home holding one saved session, s1: the newest, which a verb with no
+// --session reads the pointer of (`kit-fixture.s1.json`).
+const S1_HOME = mkdtempSync(join(tmpdir(), "workspace-contract-s1-"));
+mkdirSync(join(S1_HOME, "sessions", "s1"), { recursive: true });
+writeFileSync(join(S1_HOME, "sessions", "s1", "manifest.json"), '{"sessionId":"s1"}');
+
+function run(
+  args: string[],
+  tmp = EMPTY_TMP,
+  home = EMPTY_HOME,
+): { code: number; stdout: string; stderr: string } {
   // Bun strips a bare `--` placed right after the script path; the added `--` is
   // the one it consumes, so the CLI receives exactly `args`.
   const p = Bun.spawnSync(["bun", CLI, "--", ...args], {
     stdout: "pipe",
     stderr: "pipe",
     stdin: new Uint8Array(0),
-    env: { ...process.env, TMPDIR: tmp, KIT_FIXTURE_HOME: EMPTY_HOME },
+    env: { ...process.env, TMPDIR: tmp, KIT_FIXTURE_HOME: home },
   });
   return {
     code: p.exitCode,
@@ -445,13 +456,14 @@ test.each([
   });
   const dir = mkdtempSync(join(tmpdir(), "workspace-stub-"));
   writeFileSync(
-    join(dir, "kit-fixture.latest.json"),
+    join(dir, "kit-fixture.s1.json"),
     JSON.stringify({
       url: `http://127.0.0.1:${server.port}`,
       port: server.port,
       session_id: "s1",
       dir: "/x",
-      pid: 1,
+      // This process: alive and ours (a `latest` is read only while its pid lives).
+      pid: process.pid,
     }),
   );
   try {
@@ -461,7 +473,7 @@ test.each([
           stdout: "pipe",
           stderr: "pipe",
           stdin: "ignore",
-          env: { ...process.env, TMPDIR: dir, KIT_FIXTURE_HOME: EMPTY_HOME },
+          env: { ...process.env, TMPDIR: dir, KIT_FIXTURE_HOME: S1_HOME },
         });
         const [out, err, exit] = await Promise.all([
           new Response(p.stdout).text(),
@@ -491,16 +503,16 @@ test.each([
 
 test("a session pointer that cannot be read is internal/1, not not_found/5", () => {
   const dir = mkdtempSync(join(tmpdir(), "workspace-unreadable-"));
-  mkdirSync(join(dir, "kit-fixture.latest.json"));
-  const r = run(["state"], dir);
+  mkdirSync(join(dir, "kit-fixture.s1.json"));
+  const r = run(["state"], dir, S1_HOME);
   expect(r.code).toBe(1);
   expect((JSON.parse(r.stderr) as Envelope).error.kind).toBe("internal");
 });
 
 test("a corrupt session pointer is internal/1", () => {
   const dir = mkdtempSync(join(tmpdir(), "workspace-corrupt-"));
-  writeFileSync(join(dir, "kit-fixture.latest.json"), '{"url":');
-  const r = run(["state"], dir);
+  writeFileSync(join(dir, "kit-fixture.s1.json"), '{"url":');
+  const r = run(["state"], dir, S1_HOME);
   expect(r.code).toBe(1);
   expect((JSON.parse(r.stderr) as Envelope).error.message).toContain("not valid JSON");
 });
@@ -508,10 +520,16 @@ test("a corrupt session pointer is internal/1", () => {
 test("close against a dead port is a transport failure, not a success", () => {
   const dir = mkdtempSync(join(tmpdir(), "workspace-dead-"));
   writeFileSync(
-    join(dir, "kit-fixture.latest.json"),
-    JSON.stringify({ url: "http://127.0.0.1:1", port: 1, session_id: "s1", dir: "/x", pid: 1 }),
+    join(dir, "kit-fixture.s1.json"),
+    JSON.stringify({
+      url: "http://127.0.0.1:1",
+      port: 1,
+      session_id: "s1",
+      dir: "/x",
+      pid: process.pid,
+    }),
   );
-  const r = run(["close"], dir);
+  const r = run(["close"], dir, S1_HOME);
   expect(r.stdout).toBe("");
   expect(r.code).toBe(1);
   expect((JSON.parse(r.stderr) as Envelope).error.kind).toBe("internal");
@@ -526,6 +544,152 @@ test("another app's pointer is not found: discovery is per app", () => {
   const r = run(["state"], dir);
   expect(r.code).toBe(5);
 });
+
+// ── after the end: the refusal names the session asked about ─────────
+
+/** A home holding saved sessions, each manifest as given (`ended` or not); the last is the newest. */
+function homeWith(sessions: { id: string; ended?: { by: string; at: string } }[]): string {
+  const home = mkdtempSync(join(tmpdir(), "workspace-ended-home-"));
+  for (const [i, s] of sessions.entries()) {
+    mkdirSync(join(home, "sessions", s.id), { recursive: true });
+    const path = join(home, "sessions", s.id, "manifest.json");
+    writeFileSync(
+      path,
+      JSON.stringify({ sessionId: s.id, ...(s.ended ? { ended: s.ended } : {}) }),
+    );
+    const t = new Date(Date.now() - (sessions.length - i) * 60_000);
+    utimesSync(path, t, t);
+  }
+  return home;
+}
+
+test("a session the HUMAN ended: every verb says so, names it, and does not invite a reopen", () => {
+  // The newest saved session is another one: the hint must not name it.
+  const home = homeWith([
+    { id: "aaaa1111", ended: { by: "human", at: "2026-10-19T00:00:00.000Z" } },
+    { id: "bbbb2222", ended: { by: "agent", at: "2026-10-19T00:00:01.000Z" } },
+  ]);
+  for (const args of [
+    ["state", "--session", "aaaa1111"],
+    ["say", "hello", "--session", "aaaa1111"],
+    ["close", "--session", "aaaa1111"],
+  ]) {
+    const r = run(args, EMPTY_TMP, home);
+    expect(r.code).toBe(5);
+    expect(r.stdout).toBe("");
+    const doc = JSON.parse(r.stderr) as Envelope;
+    expect(doc.ok).toBe(false);
+    expect(doc.error.kind).toBe("not_found");
+    expect(doc.error.message).toBe("the human ended session aaaa1111");
+    expect(doc.error.hint).toBe(
+      "the human ended this session on purpose; do not reopen it unless they ask. If they ask: `open --restore aaaa1111`",
+    );
+    expect(doc.error.choices).toBeUndefined();
+  }
+});
+
+test("no --session: the newest saved session is the one asked about, and a human end routes the same way", () => {
+  const home = homeWith([{ id: "aaaa1111" }, { id: "bbbb2222", ended: { by: "human", at: "x" } }]);
+  const doc = JSON.parse(run(["state"], EMPTY_TMP, home).stderr) as Envelope;
+  expect(doc.error.message).toBe("the human ended session bbbb2222");
+});
+
+// ── no --session: the newest session, live or not, and never an older one ──
+
+/** A pid that is certainly dead: a child this test started, which has exited and been reaped. */
+function deadPid(): number {
+  const p = Bun.spawnSync(["true"], { env: process.env });
+  return p.pid;
+}
+
+/** A pointer for `id` in `tmp`; port 1 refuses, so a verb that reaches it fails as transport (exit 1). */
+function pointerIn(tmp: string, id: string, pid: number): void {
+  writeFileSync(
+    join(tmp, `kit-fixture.${id}.json`),
+    JSON.stringify({ url: "http://127.0.0.1:1", port: 1, session_id: id, dir: "/x", pid }),
+  );
+}
+
+/** A then B, B the one `open` last started; A's manifest written last (A is the busy one). */
+function siblings(b: { ended?: { by: string; at: string } } = {}): { home: string; tmp: string } {
+  const home = homeWith([{ id: "bbbb2222", ...b }, { id: "aaaa1111" }]);
+  writeFileSync(join(home, "last-opened.json"), JSON.stringify({ session_id: "bbbb2222" }));
+  const tmp = mkdtempSync(join(tmpdir(), "workspace-siblings-"));
+  // A is live (this process's own pid), and a verb that reached it would fail on its port.
+  pointerIn(tmp, "aaaa1111", process.pid);
+  return { home, tmp };
+}
+
+test("no --session, the newest crashed while an older one is live: refused, naming the newest, never reaching the older", () => {
+  const { home, tmp } = siblings();
+  pointerIn(tmp, "bbbb2222", deadPid());
+  for (const args of [["state"], ["say", "hello"], ["close"]]) {
+    const r = run(args, tmp, home);
+    expect(r.code).toBe(5);
+    const doc = JSON.parse(r.stderr) as Envelope;
+    expect(doc.error.message).toBe("no running kit-fixture session bbbb2222");
+    expect(doc.error.hint).toContain("`open --restore bbbb2222`");
+  }
+  // With nothing live at all, the same: B's manifest is the older one, B is still the newest.
+  rmSync(join(tmp, "kit-fixture.aaaa1111.json"));
+  const doc = JSON.parse(run(["state"], tmp, home).stderr) as Envelope;
+  expect(doc.error.message).toBe("no running kit-fixture session bbbb2222");
+});
+
+test("no --session, the human ended the newest while an older one is live: the shipped refusal, never the older", () => {
+  const { home, tmp } = siblings({ ended: { by: "human", at: "2026-10-19T00:00:00.000Z" } });
+  for (const args of [["state"], ["say", "hello"], ["close"]]) {
+    const r = run(args, tmp, home);
+    expect(r.code).toBe(5);
+    const doc = JSON.parse(r.stderr) as Envelope;
+    expect(doc.error.message).toBe("the human ended session bbbb2222");
+    expect(doc.error.choices).toBeUndefined();
+  }
+});
+
+test("no --session, a record naming a session no longer saved, or a corrupt one: refused, never a sibling", () => {
+  for (const body of ['{"session_id":"cccc3333"}', "{not json"]) {
+    const { home, tmp } = siblings();
+    writeFileSync(join(home, "last-opened.json"), body);
+    for (const args of [["state"], ["say", "hello"], ["close"], ["tail", "--once"]]) {
+      const r = run(args, tmp, home);
+      expect(r.code).toBe(5);
+      expect(r.stdout).toBe("");
+      const doc = JSON.parse(r.stderr) as Envelope;
+      expect(doc.error.message).toContain("the newest kit-fixture session is unknown");
+      expect(doc.error.message).toContain(
+        body.startsWith("{not") ? "it is not valid JSON" : "it names session cccc3333",
+      );
+      expect(doc.error.hint).toContain("--session");
+      expect(doc.error.choices).toEqual(["aaaa1111", "bbbb2222"]);
+    }
+    // A named session is not the record's business.
+    const named = run(["state", "--session", "aaaa1111"], tmp, home);
+    expect(named.code).toBe(1); // A's pointer: port 1, a transport failure, so it was reached
+  }
+});
+
+test("no --session, the newest crashed: tail grounds on it, then says tail.lost, never the older live one", async () => {
+  const { home, tmp } = siblings();
+  pointerIn(tmp, "bbbb2222", deadPid());
+  const p = Bun.spawn(["bun", CLI, "--", "tail"], {
+    stdout: "pipe",
+    stderr: "pipe",
+    stdin: "ignore",
+    env: { ...process.env, TMPDIR: tmp, KIT_FIXTURE_HOME: home },
+  });
+  const timer = setTimeout(() => p.kill(), 30_000);
+  const [out] = await Promise.all([new Response(p.stdout).text(), p.exited]);
+  clearTimeout(timer);
+  const lines = out
+    .split("\n")
+    .filter((l) => l !== "")
+    .map((l) => JSON.parse(l) as { type: string; session_id?: string; command?: string });
+  expect(lines[0]).toMatchObject({ type: "grounding", session_id: "bbbb2222" });
+  expect(lines.at(-1)?.type).toBe("tail.lost");
+  expect(lines.at(-1)?.command).toContain("bbbb2222");
+  expect(out).not.toContain("aaaa1111");
+}, 40_000);
 
 // ── 5. admission before any daemon exists ───────────────────────────
 

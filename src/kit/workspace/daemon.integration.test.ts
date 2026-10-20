@@ -1028,6 +1028,18 @@ describe("hardening, through the launchers", () => {
     expect(readdirSync(logs).length).toBe(before - 1);
   }, 60_000);
 
+  test("open records the session it started as the newest: its id, and when", async () => {
+    const record = join(root, "home", "last-opened.json");
+    rmSync(record, { force: true });
+    const r = await cli("open", "--no-open");
+    const sid = json<{ session_id: string }>(r).session_id;
+    // Written by its daemon at start, for every verb with no --session.
+    const last = JSON.parse(readFileSync(record, "utf8")) as { session_id: string; at: string };
+    expect(last.session_id).toBe(sid);
+    expect(Date.now() - Date.parse(last.at)).toBeLessThan(60_000);
+    expect((await cli("close", "--session", sid)).code).toBe(0);
+  }, 60_000);
+
   test("open --restore of a session that does not exist is not_found with the saved ones as choices", async () => {
     const r = await cli("open", "--no-open", "--restore", "nope");
     expect(r.code).toBe(5);

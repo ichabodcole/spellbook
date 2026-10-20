@@ -163,6 +163,7 @@ const OTHER_WRITERS = new Set([
   "unlinkIfMatches",
   "pruneDeadRuns",
   "startDaemon",
+  "recordLastOpened",
 ]);
 /**
  * Members off `Bun` (or a chain that starts at it, or a name bound to it) that
@@ -186,6 +187,10 @@ const ALLOWED: Record<string, { uses: number; why: string }> = {
   "src/kit/workspace/server.ts::unlinkSync": {
     uses: 1,
     why: "the daemon's own empty log at a clean close, the `--log` path its own `open` gave it",
+  },
+  "src/kit/workspace/server.ts::recordLastOpened": {
+    uses: 1,
+    why: "the record of the newest session, `<sessions root>/../last-opened.json` (`src/kit/wire/discovery.ts`): a path fixed at boot beside prefs.json, its content this daemon's own session id; written to a temp opened exclusively (mode 600) and renamed over it, so a planted symlink is replaced, never written through",
   },
   "src/kit/workspace/server.ts::publishPointer": {
     uses: 1,
