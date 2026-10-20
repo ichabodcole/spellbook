@@ -29,10 +29,13 @@ const CLI = join(
 );
 
 const root = mkdtempSync(join(tmpdir(), "scriptorium-handoff-"));
+// The earlier Scriptorium is reached only through the hatch since the cutover
+// (`SCRIPTORIUM_SHIPPED=1`, `./hatch.ts`); this file tests it, so it sets it.
 const env = {
   ...process.env,
   SCRIPTORIUM_HOME: join(root, "home"),
   TMPDIR: `${join(root, "tmp")}/`,
+  SCRIPTORIUM_SHIPPED: "1",
 };
 mkdirSync(join(root, "tmp"), { recursive: true });
 const doc = join(root, "a.md");

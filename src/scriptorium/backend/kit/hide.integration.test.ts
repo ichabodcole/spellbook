@@ -1,5 +1,5 @@
 // `hide` and `unhide` on the kit path, driven through Scriptorium's own
-// LAUNCHERS with `SCRIPTORIUM_KIT=1` (build first: `scripts/server.ts` runs the
+// LAUNCHERS (build first: `scripts/server.ts` runs the
 // built `dist/server.js`). A hidden folder is out of the tree, search, the
 // graph and backlinks; it stays hidden across an outside change the watcher
 // rescans and across a close and restore. Everything runs under a temp
@@ -42,7 +42,6 @@ const env: Record<string, string | undefined> = {
   SCRIPTORIUM_HOME: join(root, "home"),
   TMPDIR: `${join(root, "tmp")}/`,
   NODE_ENV: "test",
-  SCRIPTORIUM_KIT: "1",
 };
 mkdirSync(join(root, "tmp"), { recursive: true });
 const set = join(root, "docs", "set");

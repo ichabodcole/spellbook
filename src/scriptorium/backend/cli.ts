@@ -62,7 +62,14 @@ import { homedir, tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { type CommandSpec, defineCli, type Invocation } from "../../kit/cli/registry";
 import { printJson } from "../../kit/lib/printJson";
-import { CliError, die, type ErrExtra, type ErrKind, reportCliError } from "../../kit/wire/errors";
+import {
+  CliError,
+  die,
+  type ErrExtra,
+  type ErrKind,
+  errorEnvelope,
+  reportCliError,
+} from "../../kit/wire/errors";
 import {
   commandLine,
   readSince,
@@ -70,8 +77,8 @@ import {
   tailWithHandoff,
   WINDOW_HELP,
 } from "../../kit/wire/tailHandoff";
+import { shippedHatchOn, shippedHatchRefusal } from "./hatch";
 import { TAIL_IDLE_MS } from "./heartbeat";
-import { kitPathOn } from "./kit/app";
 import { runKitCli } from "./kit/cli";
 import { DOC_EXTENSIONS, isDocName } from "./tree";
 
@@ -116,7 +123,7 @@ export function daemonCwd(): string {
 }
 
 /**
- * The kit path's daemon cwd (`SCRIPTORIUM_KIT=1`): Contract 5's rule on the
+ * The current Scriptorium's daemon cwd: Contract 5's rule on the
  * kit page's built shell (`dist/kit/`). A dev page is bundled from
  * `src/scriptorium/surface/kit/` by Bun's dev server, which loads the Tailwind
  * plugin only from the bunfig in its cwd.
@@ -1532,16 +1539,25 @@ async function main(argv: string[]): Promise<number> {
  * (the command line belongs to the file that parses it).
  */
 export async function run(): Promise<number> {
-  // The kit path (`SCRIPTORIUM_KIT=1`): a second Scriptorium on the workspace
-  // kit, beside this one until the cutover. Its daemon is spawned through the
-  // same launcher, so the path is handed over from here (`./kit/cli.ts`).
-  if (kitPathOn())
-    return await runKitCli(process.argv.slice(2), {
-      serverScript: SERVER_SCRIPT,
-      daemonCwd: kitDaemonCwd,
-      version: versionInfo,
-    });
-  return await main(process.argv.slice(2));
+  // The earlier Scriptorium, this file's `main`, only behind the hatch
+  // (`SCRIPTORIUM_SHIPPED=1`, `./hatch.ts`), and refused before any verb runs
+  // once a session in the home is in the kit's shape. Its daemon inherits the
+  // variable (`env: process.env`) and asks again.
+  if (shippedHatchOn()) {
+    const refused = shippedHatchRefusal(scriptoriumHome());
+    if (refused !== null) {
+      process.stderr.write(errorEnvelope("usage", refused.message, { hint: refused.hint }));
+      return 2;
+    }
+    return await main(process.argv.slice(2));
+  }
+  // Scriptorium on the workspace kit (`./kit/cli.ts`). Its daemon is spawned
+  // through the same launcher, so the path is handed over from here.
+  return await runKitCli(process.argv.slice(2), {
+    serverScript: SERVER_SCRIPT,
+    daemonCwd: kitDaemonCwd,
+    version: versionInfo,
+  });
 }
 
 export { main };

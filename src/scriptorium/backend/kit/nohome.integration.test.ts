@@ -42,9 +42,7 @@ const env: Record<string, string | undefined> = {
   SCRIPTORIUM_HOME: join(root, "home"),
   TMPDIR: `${join(root, "tmp")}/`,
   NODE_ENV: "test",
-  SCRIPTORIUM_KIT: "1",
 };
-delete env.SCRIPTORIUM_KIT_MIGRATE;
 mkdirSync(join(root, "tmp"), { recursive: true });
 /** The folder the agent runs `open` in: a project with one document. */
 const project = join(root, "project");

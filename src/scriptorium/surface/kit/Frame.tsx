@@ -1,6 +1,5 @@
 /**
- * The flagged Scriptorium's surface (`SCRIPTORIUM_KIT=1` only): the kit's
- * `WorkspaceShell` (the context sidebar, the conversation column with Chat,
+ * Scriptorium's surface: the kit's `WorkspaceShell` (the context sidebar, the conversation column with Chat,
  * Notes and Tasks, resizable columns with rails, the floating composer, search,
  * End session and the theme) around the kit's document pane, filled with what is
  * Scriptorium's own. It replaced the interim frame (a fixed three-column layout

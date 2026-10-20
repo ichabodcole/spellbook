@@ -46,6 +46,9 @@ const SKILL_ROOT = join(
   "scriptorium",
 );
 const CLI = join(SKILL_ROOT, "scripts", "cli.ts");
+// The earlier Scriptorium is reached only through the hatch since the cutover
+// (`SCRIPTORIUM_SHIPPED=1`, `./hatch.ts`); this file tests it, so it sets it.
+const SHIPPED = { SCRIPTORIUM_SHIPPED: "1" };
 
 // Every temp dir a cell makes is removed after the file — the contract cells
 // must not litter the machine's temp directory with pointer stubs.
@@ -75,7 +78,7 @@ function run(
     stdout: "pipe",
     stderr: "pipe",
     stdin: new Uint8Array(0),
-    env: { ...process.env, TMPDIR: tmp, SCRIPTORIUM_HOME: home },
+    env: { ...process.env, ...SHIPPED, TMPDIR: tmp, SCRIPTORIUM_HOME: home },
   });
   return {
     code: p.exitCode,
@@ -395,7 +398,7 @@ test("acc check against the emitted declaration finds zero disagreements", () =>
       stdout: "pipe",
       stderr: "pipe",
       stdin: new Uint8Array(0),
-      env: { ...process.env, TMPDIR: EMPTY_TMP, SCRIPTORIUM_HOME: EMPTY_HOME },
+      env: { ...process.env, ...SHIPPED, TMPDIR: EMPTY_TMP, SCRIPTORIUM_HOME: EMPTY_HOME },
     },
   );
   const report = JSON.parse(new TextDecoder().decode(p.stdout)) as {
@@ -451,7 +454,7 @@ test.each([
         stdout: "pipe",
         stderr: "pipe",
         stdin: "ignore",
-        env: { ...process.env, TMPDIR: dir },
+        env: { ...process.env, ...SHIPPED, TMPDIR: dir },
       });
       const [out, err, exit] = await Promise.all([
         new Response(p.stdout).text(),
@@ -478,9 +481,16 @@ function homeWith(sessions: { id: string; ended?: { by: string; at: number } }[]
   for (const [i, s] of sessions.entries()) {
     mkdirSync(join(home, "sessions", s.id), { recursive: true });
     const path = join(home, "sessions", s.id, "manifest.json");
+    // A shipped manifest's shape (a millisecond `createdAt`): the hatch is
+    // refused in a home holding any session in the kit's shape (`./hatch.ts`).
     writeFileSync(
       path,
-      JSON.stringify({ format: 1, sessionId: s.id, ...(s.ended ? { ended: s.ended } : {}) }),
+      JSON.stringify({
+        format: 1,
+        sessionId: s.id,
+        createdAt: Date.now(),
+        ...(s.ended ? { ended: s.ended } : {}),
+      }),
     );
     // The LAST one written is the newest — the session a "most recent" lookup would name.
     const t = new Date(Date.now() - (sessions.length - i) * 60_000);

@@ -1,6 +1,6 @@
 // Test support for the kit page's tests: the daemon's prefs, written before the
-// daemon starts, where the kit path keeps them (`$SCRIPTORIUM_HOME/kit/prefs.json`,
-// beside `kit/sessions`). Imported by tests only.
+// daemon starts, where Scriptorium keeps them (`$SCRIPTORIUM_HOME/prefs.json`,
+// beside `sessions/`). Imported by tests only.
 
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -12,8 +12,8 @@ import { join } from "node:path";
  * starts there without a click.
  */
 export function seedPrefs(home: string, prefs: Record<string, string>): void {
-  mkdirSync(join(home, "kit"), { recursive: true });
-  writeFileSync(join(home, "kit", "prefs.json"), `${JSON.stringify(prefs, null, 2)}\n`);
+  mkdirSync(home, { recursive: true });
+  writeFileSync(join(home, "prefs.json"), `${JSON.stringify(prefs, null, 2)}\n`);
 }
 
 /**
@@ -30,7 +30,7 @@ export async function reseedPrefs(home: string, prefs: Record<string, string>): 
 /** The prefs as the daemon keeps them on disk. */
 export function keptPrefs(home: string): Record<string, string> {
   try {
-    return JSON.parse(readFileSync(join(home, "kit", "prefs.json"), "utf8"));
+    return JSON.parse(readFileSync(join(home, "prefs.json"), "utf8"));
   } catch {
     return {};
   }

@@ -1,5 +1,5 @@
 // The wiki verbs on the kit path (scriptorium-kit-wiki-verbs), driven through
-// Scriptorium's own LAUNCHERS with `SCRIPTORIUM_KIT=1` (build first:
+// Scriptorium's own LAUNCHERS (build first:
 // `scripts/server.ts` runs the built `dist/server.js`). Ported from the
 // shipped suites: `frontmatter.test.ts` (find's filters, the line edit),
 // `session.test.ts` ("forget", E61) and `structure.test.ts` ("movePlan", E26),
@@ -46,7 +46,6 @@ const env: Record<string, string | undefined> = {
   SCRIPTORIUM_HOME: join(root, "home"),
   TMPDIR: `${join(root, "tmp")}/`,
   NODE_ENV: "test",
-  SCRIPTORIUM_KIT: "1",
 };
 mkdirSync(join(root, "tmp"), { recursive: true });
 const set = join(root, "docs", "set");

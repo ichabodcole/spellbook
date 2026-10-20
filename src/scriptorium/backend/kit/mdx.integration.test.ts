@@ -3,7 +3,7 @@
 // shows in the tree, `meta`, `find`, search and the link check, and versions
 // and compares as any document does. Its imports and components are text: the
 // file is never compiled or run, so nothing here needs it to be valid MDX.
-// Driven through Scriptorium's own launcher with `SCRIPTORIUM_KIT=1` (build
+// Driven through Scriptorium's own launcher (build
 // first: `scripts/server.ts` runs the built `dist/server.js`), under a temp
 // SCRIPTORIUM_HOME and TMPDIR; the daemon this file starts it stops, by its own
 // session id.
@@ -36,7 +36,6 @@ const env: Record<string, string | undefined> = {
   SCRIPTORIUM_HOME: join(root, "home"),
   TMPDIR: `${join(root, "tmp")}/`,
   NODE_ENV: "test",
-  SCRIPTORIUM_KIT: "1",
 };
 mkdirSync(join(root, "tmp"), { recursive: true });
 const set = join(root, "docs", "set");

@@ -1,17 +1,16 @@
 /**
- * The kit path's CLI: the kit's workspace verbs under Scriptorium's name.
+ * Scriptorium's CLI: the kit's workspace verbs under Scriptorium's name.
  *
- * Reached only through `../cli.ts`'s `run()`, which hands off here when
- * `SCRIPTORIUM_KIT=1`. The launcher (`scripts/cli.ts`) is the shipped one,
- * unchanged, and so is the built artifact it imports (`dist/cli.js`): this
- * module is bundled into it.
+ * Reached through `../cli.ts`'s `run()`, which hands off here unless the
+ * earlier Scriptorium is asked for (`SCRIPTORIUM_SHIPPED=1`, `../hatch.ts`).
+ * The launcher (`scripts/cli.ts`) imports the built artifact (`dist/cli.js`):
+ * this module is bundled into it.
  *
- * ⛔ THE DAEMON IS SPAWNED THROUGH THE SAME LAUNCHER AS THE SHIPPED ONE
+ * ⛔ THE DAEMON IS SPAWNED THROUGH THE SKILL'S LAUNCHER
  * (`scripts/server.ts` → `dist/server.js`), and the caller passes that path in.
  * It is computed in `../cli.ts`, where `import.meta.url` is the bundle's own
  * address; a path computed here would be right in the source tree and wrong in
- * `dist/`, or the other way round. The flag rides the daemon's environment, so
- * its `run()` takes the same turn.
+ * `dist/`, or the other way round.
  *
  * `open` prints the handshake and, without `--no-open`, opens a browser on the
  * kit page: the workspace shell around the document pane (`./server.ts`,
@@ -20,16 +19,8 @@
  */
 
 import { resolve } from "node:path";
-import { errorEnvelope } from "../../../kit/wire/errors";
 import { createWorkspaceCli, type WorkspaceCli } from "../../../kit/workspace/verbs";
-import {
-  KIT_FLAG,
-  kitMigrateRefusal,
-  kitSessionsRoot,
-  MIGRATE_FLAG,
-  scriptoriumApp,
-  scriptoriumHome,
-} from "./app";
+import { scriptoriumApp, scriptoriumHome, sessionsRoot } from "./app";
 import { scriptoriumKitCommands } from "./commands";
 // Scriptorium's document kinds (`.mdx`), registered before any name is judged.
 import "./docKinds";
@@ -47,20 +38,20 @@ export type KitCliDeps = {
 export function scriptoriumKitCli(deps: KitCliDeps): WorkspaceCli {
   return createWorkspaceCli({
     app: scriptoriumApp,
-    summary:
-      "a co-present markdown editor on the workspace kit (SCRIPTORIUM_KIT=1): the human edits, you write new versions.",
+    summary: "a co-present markdown editor: the human edits, you write new versions.",
     daemon: {
       command: "bun",
       args: ["run", deps.serverScript],
       cwd: deps.daemonCwd(),
-      // Explicit, not inherited by accident: the daemon must take the kit path too.
-      env: { ...process.env, [KIT_FLAG]: "1" },
+      // The CLI's own environment: `SCRIPTORIUM_HOME` rides along, and the
+      // hatch variable is never `1` here (`../cli.ts` would not have come here).
+      env: { ...process.env },
     },
-    sessionsRoot: () => kitSessionsRoot(),
+    sessionsRoot: () => sessionsRoot(),
     // `open` run in `$SCRIPTORIUM_HOME`, or a folder in it (the shipped
     // `sessions/`), adds no set that would mirror a session's own files.
     appHome: () => scriptoriumHome(),
-    version: () => ({ ...deps.version(), path: "kit" }),
+    version: deps.version,
     // The shipped verbs, with the shipped words: the kit path keeps the hidden
     // lists in its app slot (`./hide.ts`), not on the kit's entries.
     options: WIKI_OPTIONS,
@@ -94,21 +85,11 @@ export function scriptoriumKitCli(deps: KitCliDeps): WorkspaceCli {
       },
     ],
     helpFooter:
-      "  This is the kit path (SCRIPTORIUM_KIT=1). Its sessions live under\n  $SCRIPTORIUM_HOME/kit/sessions, apart from the shipped Scriptorium's. Its surface\n  is the kit's workspace shell: the sets, the open document (raw, rendered or\n  split, with versions and compare), and chat, notes and tasks, where the human\n  reads and edits while you work through these verbs.",
+      "  Sessions live under $SCRIPTORIUM_HOME/sessions. A session the earlier\n  Scriptorium saved is converted the first time it is restored; its old\n  manifest is kept beside it as manifest.pre-migrate.json. The surface\n  is the kit's workspace shell: the sets, the open document (raw, rendered or\n  split, with versions and compare), and chat, notes and tasks, where the human\n  reads and edits while you work through these verbs.",
   });
 }
 
 /** The hand-off `../cli.ts` makes. Returns the exit code, as the shipped `run()` does. */
 export async function runKitCli(argv: string[], deps: KitCliDeps): Promise<number> {
-  // The conversion dry run on the real home is refused before any verb runs.
-  const refused = kitMigrateRefusal();
-  if (refused !== null) {
-    process.stderr.write(
-      errorEnvelope("usage", refused, {
-        hint: `unset ${MIGRATE_FLAG}, or set SCRIPTORIUM_HOME to a scratch copy of the sessions`,
-      }),
-    );
-    return 2;
-  }
   return await scriptoriumKitCli(deps).run(argv);
 }

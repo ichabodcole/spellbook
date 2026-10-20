@@ -1,4 +1,4 @@
-// The restore command's launcher (`kitLauncher`): the flag and `bun` on the
+// The restore command's launcher (`kitLauncher`): `bun` on the
 // skill's CLI launcher beside the daemon's bundle, with the session's home when
 // one was given; none where no launcher sits beside the daemon.
 
@@ -21,25 +21,21 @@ function skill(name: string) {
 }
 
 describe("kitLauncher", () => {
-  test("the flag, then bun on the CLI launcher beside the bundle", () => {
+  test("bun on the CLI launcher beside the bundle, with no variable", () => {
     const at = skill("plain");
-    expect(kitLauncher(join(at, "dist"), {})).toBe(
-      `SCRIPTORIUM_KIT=1 bun ${join(at, "scripts", "cli.ts")}`,
-    );
+    expect(kitLauncher(join(at, "dist"), {})).toBe(`bun ${join(at, "scripts", "cli.ts")}`);
   });
 
   test("a SCRIPTORIUM_HOME the daemon was given rides along, resolved", () => {
     const at = skill("homed");
     expect(kitLauncher(join(at, "dist"), { SCRIPTORIUM_HOME: "/tmp/x/../scratch" })).toBe(
-      `SCRIPTORIUM_HOME=/tmp/scratch SCRIPTORIUM_KIT=1 bun ${join(at, "scripts", "cli.ts")}`,
+      `SCRIPTORIUM_HOME=/tmp/scratch bun ${join(at, "scripts", "cli.ts")}`,
     );
   });
 
   test("a path the shell would split is quoted", () => {
     const at = skill("with space");
-    expect(kitLauncher(join(at, "dist"), {})).toBe(
-      `SCRIPTORIUM_KIT=1 bun '${join(at, "scripts", "cli.ts")}'`,
-    );
+    expect(kitLauncher(join(at, "dist"), {})).toBe(`bun '${join(at, "scripts", "cli.ts")}'`);
   });
 
   test("none where no launcher sits beside the daemon, as when run from source", () => {

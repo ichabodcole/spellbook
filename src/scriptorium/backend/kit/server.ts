@@ -1,9 +1,10 @@
 /**
- * The kit path's daemon: the kit's workspace daemon under Scriptorium's name.
+ * Scriptorium's daemon: the kit's workspace daemon under Scriptorium's name.
  *
- * Reached only through `../server.ts`'s `run()`, which hands off here when
- * `SCRIPTORIUM_KIT=1`; the launcher (`scripts/server.ts`) and the artifact it
- * imports (`dist/server.js`) are the shipped ones.
+ * Reached through `../server.ts`'s `run()`, which hands off here unless the
+ * earlier Scriptorium is asked for (`SCRIPTORIUM_SHIPPED=1`, `../hatch.ts`).
+ * The launcher (`scripts/server.ts`) imports the built artifact
+ * (`dist/server.js`): this module is bundled into it.
  *
  * Its surface is the kit's shell around the kit's document pane
  * (`src/scriptorium/surface/kit/`, built into the skill's `dist/kit/`). See
@@ -30,15 +31,7 @@ import {
   type WorkspaceDaemonOptions,
 } from "../../../kit/workspace/server";
 import type { AppDeclaration } from "../../../kit/workspace/session";
-import {
-  KIT_FLAG,
-  kitMigrateOn,
-  kitMigrateRefusal,
-  kitMigrateWriteRefusal,
-  kitSessionsRoot,
-  scriptoriumApp,
-  scriptoriumHome,
-} from "./app";
+import { migrateWriteRefusal, scriptoriumApp, scriptoriumHome, sessionsRoot } from "./app";
 import { convertShippedManifest } from "./convert";
 // Scriptorium's document kinds (`.mdx`), registered before any tree is read.
 import "./docKinds";
@@ -48,15 +41,15 @@ import { mapVerbs } from "./map";
 import { docMeta, noFrontmatter, wikiVerbs } from "./wiki";
 
 /**
- * The app in the conversion dry run (`SCRIPTORIUM_KIT_MIGRATE=1`): the kit
- * path's own, with the converter for the shipped Scriptorium's sessions. Only
- * the daemon restores, so only the daemon carries it.
+ * The app as the daemon runs it: Scriptorium's, with the converter for the
+ * sessions the earlier Scriptorium saved in the same root. Only the daemon
+ * restores, so only the daemon carries it (the CLI's bundle need not).
  */
-export const migratingApp: AppDeclaration = {
+export const daemonApp: AppDeclaration = {
   ...scriptoriumApp,
   migrateManifest: convertShippedManifest,
-  // Asked again where the conversion is written, not only at boot.
-  migrateWriteRefusal: (at) => kitMigrateWriteRefusal(at),
+  // Asked where the conversion is written, on the paths as they are then.
+  migrateWriteRefusal: (at) => migrateWriteRefusal(at),
 };
 
 /**
@@ -67,11 +60,10 @@ const HERE = import.meta.dir;
 
 /**
  * How the human runs this Scriptorium's CLI, as the surface prints it in the
- * ended dialog's restore command (`AppDeclaration.launcher`): the flag, then
- * `bun` on the skill's CLI launcher, `<skill>/scripts/cli.ts`, found from the
- * bundle's `dist/`. Without the flag the command would reach the shipped
- * Scriptorium, which refuses a kit-path session. A `SCRIPTORIUM_HOME` the
- * daemon was given rides along too, since the session lives under it.
+ * ended dialog's restore command (`AppDeclaration.launcher`): `bun` on the
+ * skill's CLI launcher, `<skill>/scripts/cli.ts`, found from the bundle's
+ * `dist/`. A `SCRIPTORIUM_HOME` the daemon was given rides along, since the
+ * session lives under it.
  *
  * Undefined where no launcher sits beside the daemon (run from source, as the
  * tests run it): the surface then prints the bare verb, as it always has.
@@ -83,7 +75,7 @@ export function kitLauncher(
   const cli = join(here, "..", "scripts", "cli.ts");
   if (!existsSync(cli)) return undefined;
   const home = env.SCRIPTORIUM_HOME ? [`SCRIPTORIUM_HOME=${scriptoriumHome(env)}`] : [];
-  return commandLine([...home, `${KIT_FLAG}=1`, "bun", cli]);
+  return commandLine([...home, "bun", cli]);
 }
 
 /** The app as the daemon declares it: with its launcher, where there is one. */
@@ -136,9 +128,9 @@ export function kitDaemonOptions(
   overrides: Partial<WorkspaceDaemonOptions> = {},
 ): WorkspaceDaemonOptions {
   return {
-    app: withLauncher(kitMigrateOn() ? migratingApp : scriptoriumApp),
-    sessionsRoot: kitSessionsRoot(),
-    // $SCRIPTORIUM_HOME: the shipped sessions, the kit path's, logs and prefs.
+    app: withLauncher(daemonApp),
+    sessionsRoot: sessionsRoot(),
+    // $SCRIPTORIUM_HOME: the sessions, the logs and the prefs.
     // No set shows it and nothing is written in it from a structure op.
     appHome: scriptoriumHome(),
     verbs: { ...hideVerbs, ...wikiVerbs, ...mapVerbs },
@@ -165,11 +157,5 @@ export const kitDaemon = (overrides: Partial<WorkspaceDaemonOptions> = {}): Work
 
 /** The hand-off `../server.ts` makes: parse the daemon's flags, boot, handshake, wait. */
 export async function runKitDaemon(argv: string[]): Promise<number> {
-  // The dry-run flag on the real home is refused before anything boots.
-  const refused = kitMigrateRefusal();
-  if (refused !== null) {
-    process.stderr.write(`scriptorium: ${refused}\n`);
-    return 2;
-  }
   return await runWorkspaceDaemon(argv, (flags) => kitDaemon({ ...flags }), "scriptorium");
 }

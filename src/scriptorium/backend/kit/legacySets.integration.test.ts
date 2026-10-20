@@ -1,7 +1,7 @@
 // A set restored from an older manifest, or one with a link inside it, never
 // shows the sessions or Scriptorium's home on the kit path
 // (kit-legacy-sets-show-sessions). Driven through Scriptorium's own launcher
-// with `SCRIPTORIUM_KIT=1` (build first: `scripts/server.ts` runs the built
+// (build first: `scripts/server.ts` runs the built
 // `dist/server.js`), under a temp SCRIPTORIUM_HOME and TMPDIR; every daemon
 // this file starts it stops, by its own session id.
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
@@ -38,13 +38,12 @@ const CLI = join(
 // The root holds Scriptorium's home in plain sight, as a scratch home does.
 const root = realpathSync(mkdtempSync(join(tmpdir(), "scriptorium-kit-legacy-")));
 const home = join(root, "home");
-const sessions = join(home, "kit", "sessions");
+const sessions = join(home, "sessions");
 const env: Record<string, string | undefined> = {
   ...process.env,
   SCRIPTORIUM_HOME: home,
   TMPDIR: `${join(root, "tmp")}/`,
   NODE_ENV: "test",
-  SCRIPTORIUM_KIT: "1",
 };
 mkdirSync(join(root, "tmp"), { recursive: true });
 const notes = join(root, "notes");

@@ -17,7 +17,12 @@
 //     the census runs in the gate and not only the root probes. acc.config.json
 //     has no key for this (its vocabulary is rules / knownFailures /
 //     defaultOutput), hence the sidecar convention. The census passes or fails
-//     nothing in acc; this ward asserts only that the batch was READ.
+//     nothing in acc, so this ward asserts that the batch was READ, and that
+//     its verbs are the CLI's: none the CLI does not advertise
+//     (`recordedNotAdvertised`) and none it advertises left out
+//     (`notCoveredByBatch`). Without the second, a census recorded on another
+//     CLI passes conformant (measured at the scriptorium cutover: the shipped
+//     census against the kit CLI exited 0 with two gone verbs and 13 uncovered).
 //
 // DEBT, NOT WAIVERS. Today's failures sit in each spell's `knownFailures`, each
 // with a reason that points at the spell's item
@@ -34,7 +39,9 @@
 //      level; a verb that accepts an unknown flag is invisible to it.
 //   2. L0 ONLY. `conformant` means no core rule was VIOLATED, not that every
 //      rule was established — B3 stays unverified on every spell today.
-//   3. A STALE RECORDED BATCH is still read. Re-record when the surface changes.
+//   3. A STALE RECORDED BATCH is still read. A verb added or removed fails the
+//      coverage cell; a changed flag or output does not (acc-census-flag-staleness).
+//      Re-record when the surface changes.
 import { beforeAll, describe, expect, test } from "bun:test";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -62,6 +69,14 @@ const EXPECTED_MIN_SPELLS = 9;
 const LAUNCHERS = ["scripts/cli.ts", "scripts/review.ts"];
 
 const RECORDED_SURFACES = "acc.recorded-surfaces.json";
+
+/**
+ * Spells whose CLI advertises no verb list, so acc has nothing to compare a
+ * census's verbs against (`advertisedVerbs.status: "not-asserted"`). Every
+ * other spell with a census must compare. digestify: one entry, `review.ts`,
+ * with no subcommands.
+ */
+const NO_VERB_LIST = new Set(["digestify"]);
 
 type Spell = { spell: string; dir: string; launcher: string | null };
 
@@ -108,6 +123,11 @@ type Report = {
     staleExpectations: unknown[];
     inertExpectations: unknown[];
     recordedSurfaces?: { records: number };
+    advertisedVerbs?: {
+      status: string;
+      recordedNotAdvertised: string[];
+      notCoveredByBatch: string[];
+    };
   };
 };
 type Run = { exitCode: number; report: Report | null; stderr: string; ms: number };
@@ -256,6 +276,23 @@ describe("acc conformance ward", () => {
           return;
         }
         expect(d.recordedSurfaces?.records ?? 0).toBeGreaterThan(0);
+      });
+
+      test("a recorded-surfaces batch, where present, covers every verb the CLI advertises and no other", () => {
+        const d = runs.get(s.spell)?.report?.data;
+        if (!d) throw new Error(`${s.spell}: no report`);
+        if (!existsSync(join(s.dir, RECORDED_SURFACES))) return;
+        // Compared, or the two lists below are empty because nothing was looked
+        // at. Only a CLI that advertises no verb list may be anything else.
+        expect([s.spell, d.advertisedVerbs?.status]).toEqual([
+          s.spell,
+          NO_VERB_LIST.has(s.spell) ? "not-asserted" : "compared",
+        ]);
+        if (NO_VERB_LIST.has(s.spell)) return;
+        expect({
+          recordedNotAdvertised: d.advertisedVerbs?.recordedNotAdvertised,
+          notCoveredByBatch: d.advertisedVerbs?.notCoveredByBatch,
+        }).toEqual({ recordedNotAdvertised: [], notCoveredByBatch: [] });
       });
     });
   }

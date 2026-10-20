@@ -1,6 +1,5 @@
-// The re-verifier's holes, through Scriptorium's own LAUNCHERS with
-// `SCRIPTORIUM_KIT=1` (build first: `scripts/server.ts` runs the built
-// `dist/server.js`): a session whose set shows the sessions (restored from an
+// The re-verifier's holes, through Scriptorium's own LAUNCHERS (build first:
+// `scripts/server.ts` runs the built `dist/server.js`): a session whose set shows the sessions (restored from an
 // old manifest, or `add ~` with a link in it to the sessions) wrote into
 // ANOTHER live session's folder through `meta-set`, `meta-init`,
 // `image.describe` and `relink`, and `version-delete` followed a version
@@ -40,7 +39,6 @@ const env: Record<string, string | undefined> = {
   SCRIPTORIUM_HOME: SH,
   TMPDIR: `${join(root, "tmp")}/`,
   NODE_ENV: "test",
-  SCRIPTORIUM_KIT: "1",
 };
 mkdirSync(join(root, "tmp"), { recursive: true });
 const W = join(root, "world");
@@ -50,7 +48,7 @@ writeFileSync(join(W, "c.md"), "# C\n");
 writeFileSync(join(W, "b.md"), "# B\n");
 const outside = join(root, "outside");
 mkdirSync(outside);
-const kitSessions = join(SH, "kit", "sessions");
+const kitSessions = join(SH, "sessions");
 /** A folder in the scratch home, with a link in it to the sessions (`add ~`, then `~/peek`). */
 const homeDocs = join(HOME, `disk-guard-${process.pid}`);
 mkdirSync(homeDocs, { recursive: true });

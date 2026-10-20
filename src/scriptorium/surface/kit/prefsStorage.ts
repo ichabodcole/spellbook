@@ -1,10 +1,10 @@
 /**
  * The shell's storage, backed by the daemon's prefs (`state.prefs`, written with
- * `prefs.set`): the flagged Scriptorium's `ShellStorage`.
+ * `prefs.set`): Scriptorium's `ShellStorage`.
  *
  * Every session is a new port, so a new origin, and the browser's storage starts
- * empty each time. The daemon's prefs outlive the session (the kit path keeps
- * them in `$SCRIPTORIUM_HOME/kit/prefs.json`), so the layout, the reopen widths,
+ * empty each time. The daemon's prefs outlive the session (Scriptorium keeps
+ * them in `$SCRIPTORIUM_HOME/prefs.json`), so the layout, the reopen widths,
  * the closed float, the tab, the theme, and the document pane's view mode and
  * line numbers all come back in the next session, as the shipped app's do.
  *
@@ -33,11 +33,9 @@ export const PREF_DEBOUNCE_MS = 250;
 
 /**
  * Where the pane keeps raw, rendered or split: the shipped app's own pref name
- * (`VIEW_PREF` in `../App.tsx`). While the flag is on, the kit path keeps its
- * prefs apart (`$SCRIPTORIUM_HOME/kit/prefs.json`), so a choice the shipped
- * app kept is not read yet. At the cutover the sessions root moves to
- * `$SCRIPTORIUM_HOME/sessions` and the prefs land on the shipped `prefs.json`,
- * where the same name finds it; the cutover cycle checks that it does.
+ * (`VIEW_PREF` in `../App.tsx`). Since the cutover both apps keep their prefs
+ * in the one `$SCRIPTORIUM_HOME/prefs.json`, so the same name finds a choice
+ * the shipped app kept (its `compare` reads as rendered, below).
  */
 export const VIEW_MODE_KEY = "doc:view";
 

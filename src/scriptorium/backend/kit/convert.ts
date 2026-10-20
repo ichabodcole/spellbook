@@ -2,10 +2,10 @@
  * The shipped Scriptorium's sessions, converted for the kit path: the app's
  * whole-manifest migrate (`AppDeclaration.migrateManifest`).
  *
- * ⛔ OFF UNTIL THE CUTOVER. Only `migratingApp()` (`./app.ts`) carries it, and
- * only the dry-run flag asks for that app (`kitMigrateOn`, `./app.ts`). The kit
- * path's ordinary app has no converter, so a shipped manifest is still refused
- * there (`refuseScriptorium`).
+ * Only the daemon's app carries it (`daemonApp`, `./server.ts`): only the
+ * daemon restores, so the CLI's bundle need not. Every session a daemon
+ * restores from `$SCRIPTORIUM_HOME/sessions` passes through it, and a manifest
+ * already in the kit's shape passes through untouched.
  *
  * Every shape the shipped writer has put on disk (read from `git log -p` on
  * `../session.ts` and `../protocol.ts`, 2026-09-11 to 2026-10-01) is one

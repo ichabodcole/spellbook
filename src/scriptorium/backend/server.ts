@@ -66,9 +66,9 @@ import { type SseClients, sseResponse } from "../../kit/wire/sse.ts";
 import { quoteLabel } from "./anchors";
 import { unified } from "./diff";
 import { summary } from "./doctor";
+import { shippedHatchOn, shippedHatchRefusal } from "./hatch";
 import { IDLE_TIMEOUT_SEC, SSE_HEARTBEAT_MS } from "./heartbeat";
 import { type Act, type After, type Before, History, type Inverse, planInverse } from "./history";
-import { kitPathOn } from "./kit/app";
 import { runKitDaemon } from "./kit/server";
 import { type PickKind, parsePickerOutput, pickerCommand, wasCancelled } from "./picker";
 import type {
@@ -1891,8 +1891,17 @@ export async function main(argv: string[]): Promise<number> {
  * command line belongs to the file that parses it.
  */
 export async function run(): Promise<number> {
-  // The kit path (`SCRIPTORIUM_KIT=1`, set by the kit CLI's `open`): the
-  // workspace kit's daemon under Scriptorium's name (`./kit/server.ts`).
-  if (kitPathOn()) return await runKitDaemon(process.argv.slice(2));
-  return await main(process.argv.slice(2));
+  // The earlier Scriptorium's daemon, this file's `main`, only behind the hatch
+  // (`SCRIPTORIUM_SHIPPED=1`, `./hatch.ts`), asked again here so a hand-run
+  // launcher cannot pass it once a session is in the kit's shape.
+  if (shippedHatchOn()) {
+    const refused = shippedHatchRefusal(scriptoriumHome());
+    if (refused !== null) {
+      process.stderr.write(`scriptorium: ${refused.message}. ${refused.hint}\n`);
+      return 2;
+    }
+    return await main(process.argv.slice(2));
+  }
+  // The workspace kit's daemon under Scriptorium's name (`./kit/server.ts`).
+  return await runKitDaemon(process.argv.slice(2));
 }
