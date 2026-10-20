@@ -417,18 +417,18 @@ export function DocumentPane({
   const w = useWorkspace();
   const { daemon, openDoc: doc } = w;
   const { send, writeText, flushText } = daemon;
+  /** Where the view mode and line numbers are kept: the app's store, else the browser's. */
+  const kept = w.storage ?? safeStorage;
 
   const [ownMode, setOwnMode] = useState<ViewMode>(() =>
-    readViewMode(safeStorage.getItem(viewModeKey), { split: splitView }),
+    readViewMode(kept.getItem(viewModeKey), { split: splitView }),
   );
   const mode = modeProp ?? ownMode;
   // The line-number gutter: a viewer preference, remembered as the view mode is.
-  const [numbered, setNumbered] = useState(() =>
-    readLineNumbers(safeStorage.getItem(lineNumbersKey)),
-  );
+  const [numbered, setNumbered] = useState(() => readLineNumbers(kept.getItem(lineNumbersKey)));
   const toggleNumbered = () => {
     const next = !numbered;
-    safeStorage.setItem(lineNumbersKey, storedLineNumbers(next));
+    kept.setItem(lineNumbersKey, storedLineNumbers(next));
     setNumbered(next);
   };
   const rootRef = useRef<HTMLDivElement>(null);
@@ -496,9 +496,9 @@ export function DocumentPane({
     // is stored, so the next markdown document opens as it was last read.
     const m =
       isJson && picked === "raw"
-        ? readViewMode(safeStorage.getItem(viewModeKey), { split: splitView })
+        ? readViewMode(kept.getItem(viewModeKey), { split: splitView })
         : picked;
-    if (m !== "compare" && !isJson) safeStorage.setItem(viewModeKey, m);
+    if (m !== "compare" && !isJson) kept.setItem(viewModeKey, m);
     setOwnMode(m);
     onMode?.(m);
   };
@@ -630,7 +630,7 @@ export function DocumentPane({
   // biome-ignore lint/correctness/useExhaustiveDependencies: a different document is the trigger.
   useEffect(() => {
     if (mode === "compare") {
-      const m = readViewMode(safeStorage.getItem(viewModeKey), { split: splitView });
+      const m = readViewMode(kept.getItem(viewModeKey), { split: splitView });
       setOwnMode(m);
       onMode?.(m);
     }

@@ -8,6 +8,7 @@
 // shell.
 
 import { createContext, useContext } from "react";
+import type { KeptStorage } from "../lib/storage.ts";
 import type { Theme } from "../theme/mode.ts";
 import type { ToastStore } from "../ui/toast-store.ts";
 import type { DocView, ImageView, MessageRef, PublicState } from "../workspace/protocol";
@@ -134,6 +135,13 @@ export type Workspace = {
    * opened from its own row or another document is. Null or absent: none.
    */
   rawMain?: string | null;
+  /**
+   * The app's own store for a viewer's choices (the shell's `storage` prop), for
+   * the panes to keep theirs beside the shell's: the document pane's view mode
+   * and line numbers, under the pane's own keys. Absent: the browser's
+   * localStorage, as a pane standing alone keeps them.
+   */
+  storage?: KeptStorage;
 };
 
 /** Documents pointed at as a whole, and which view pointed at them. */

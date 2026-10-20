@@ -96,7 +96,6 @@ import {
 import { bundleOf, isBundleMain } from "../lib/bundles.ts";
 import { cn } from "../lib/cn.ts";
 import { askDescribeText } from "../lib/sidecar.ts";
-import { safeStorage } from "../lib/storage.ts";
 import { applyTheme, readAppliedTheme, type Theme } from "../theme/mode.ts";
 import {
   Dot,
@@ -151,6 +150,7 @@ import { lastMessageId, unseenFromAgent } from "./rail.ts";
 import { SearchBox } from "./SearchBox.tsx";
 import { EndedChip, type EndPhase, SessionEndDialog } from "./SessionEnd.tsx";
 import { SettingsDialog } from "./SettingsDialog.tsx";
+import { keptTheme, localShellStorage, type ShellStorage, THEME_KEY } from "./storage.ts";
 
 /** A tab an app adds to the right column. */
 export type ShellPanel = { id: string; label: string; node: ReactNode };
@@ -185,6 +185,16 @@ export type WorkspaceShellProps = {
   onShowDiff?: (doc: DocView, version: number) => void;
   /** Prefix for what the shell keeps in localStorage. Default "spellbook". */
   storageKey?: string;
+  /**
+   * Where the shell keeps the layout, the reopen widths, the closed float, the
+   * tab and the theme, by bare key (`storage.ts`). Default: localStorage under
+   * `storageKey`, with the theme left to `theme/mode.ts`. Read once on mount, so
+   * an asynchronous store is hydrated before the shell mounts: mounted before,
+   * the default layout is written over the saved one (`useDefaultLayout`
+   * persists every commit). The theme alone is followed while mounted. Passed
+   * on to the panes as the workspace's `storage`.
+   */
+  storage?: ShellStorage;
   /** An app's own actions under a chat message, or nothing (`ChatSidebar`'s `messageActions`). */
   messageActions?: (message: Message) => ReactNode;
 };
@@ -364,6 +374,7 @@ function ShellBody({
   folderBadges,
   onShowDiff,
   storageKey = "spellbook",
+  storage: storageProp,
   messageActions,
 }: WorkspaceShellProps & { state: PublicState }) {
   const { send } = daemon;
@@ -403,10 +414,24 @@ function ShellBody({
   /** The app's settings dialog, from the top bar. */
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [theme, setThemeState] = useState<Theme>(() => readAppliedTheme());
-  const setTheme = useCallback((next: Theme) => {
-    applyTheme(next);
-    setThemeState(next);
-  }, []);
+  const setTheme = useCallback(
+    (next: Theme) => {
+      // The browser copy too: the pre-paint script reads only that.
+      applyTheme(next);
+      setThemeState(next);
+      storageProp?.setItem(THEME_KEY, next);
+    },
+    [storageProp],
+  );
+  // An app's own storage holds the theme across origins: followed when it
+  // arrives or changes (another session's choice), and never written back.
+  const themeKept = keptTheme(storageProp?.getItem(THEME_KEY));
+  useEffect(() => {
+    if (themeKept && themeKept !== readAppliedTheme()) {
+      applyTheme(themeKept);
+      setThemeState(themeKept);
+    }
+  }, [themeKept]);
 
   // ── the side columns ────────────────────────────────────────────────────
   // Collapsed is the library's (`columns.ts`): a collapsed column is a panel at its
@@ -414,11 +439,8 @@ function ShellBody({
   // The panels are asked on every layout change, so the button, a drag shut and a
   // reload all agree by construction.
   const storage = useMemo(
-    () => ({
-      getItem: (key: string) => safeStorage.getItem(`${storageKey}:${key}`),
-      setItem: (key: string, value: string) => safeStorage.setItem(`${storageKey}:${key}`, value),
-    }),
-    [storageKey],
+    () => storageProp ?? localShellStorage(storageKey),
+    [storageProp, storageKey],
   );
   const layout = useDefaultLayout({ id: "panes", panelIds: [...PANES], storage });
   // Set from the library's own callback and never written back. Before the panels
@@ -1066,6 +1088,7 @@ function ShellBody({
       addRef,
       removeRef,
       clearRefs,
+      storage: storageProp,
     }),
     [
       daemon,
@@ -1095,6 +1118,7 @@ function ShellBody({
       addRef,
       removeRef,
       clearRefs,
+      storageProp,
     ],
   );
 

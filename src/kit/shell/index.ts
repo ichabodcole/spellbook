@@ -2,4 +2,5 @@
 // around an app's centre. Imports `lib`, `theme`, `ui`, `context`, `chat` and the
 // workspace's wire types.
 
+export * from "./storage.ts";
 export * from "./WorkspaceShell.tsx";
