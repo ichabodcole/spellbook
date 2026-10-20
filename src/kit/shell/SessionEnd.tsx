@@ -128,6 +128,7 @@ export function SessionEndDialog({
   by,
   connected,
   notice,
+  warning,
   finalFocus,
 }: {
   /** Null is closed. */
@@ -141,6 +142,12 @@ export function SessionEndDialog({
   connected: boolean;
   /** Why the last confirm did not end it, shown under the question. */
   notice?: string | null;
+  /**
+   * What ending would leave out of the files on disk (an app's unsaved
+   * documents), shown under the question while it is asked. Ending is still
+   * allowed: a warning, not a refusal. Absent or null, none.
+   */
+  warning?: string | null;
   /** Where focus goes when the dialog closes: it has no trigger of its own. */
   finalFocus?: () => HTMLElement | boolean | null;
 }) {
@@ -170,6 +177,14 @@ export function SessionEndDialog({
               The daemon stops and the agent is told you ended it. The session stays on disk, so it
               can be reopened with {command}.
             </DialogDescription>
+            {warning && (
+              <p
+                data-slot="end-warning"
+                className="rounded-md border border-attention/40 bg-attention/10 px-2.5 py-2 text-xs leading-relaxed text-ink"
+              >
+                {warning}
+              </p>
+            )}
             {notice && (
               <p
                 role="alert"

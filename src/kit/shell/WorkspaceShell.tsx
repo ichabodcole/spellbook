@@ -23,6 +23,7 @@
 //     difference" (as `onShowOutsideDiff`). Given `notice`, the app shows the
 //     daemon's refusals there, and the shell toasts them only while the
 //     context column is collapsed and the notice is out of sight.
+//   - `endWarning`: what End session warns of while it asks (unsaved documents).
 //
 // Over everything is the top bar: the app's title (its declaration's `title`), the
 // session id, search over the session's documents, End session and the theme.
@@ -245,6 +246,12 @@ export type WorkspaceShellProps = {
    * document with its file on disk. Absent, the toast offers Reload and Keep only.
    */
   onShowOutsideDiff?: (doc: DocView) => void;
+  /**
+   * End session's warning, read while it asks: what ending would leave out of
+   * the files on disk (an app's unsaved documents, say), or null for
+   * nothing. Ending is still allowed. Absent, End session asks without one.
+   */
+  endWarning?: (state: PublicState) => string | null;
 };
 
 /** The pane ids are the persisted layout's keys: renaming one forgets a viewer's sizes. */
@@ -432,6 +439,7 @@ function ShellBody({
   onDismissNotice,
   notesAddUnavailable,
   onShowOutsideDiff,
+  endWarning,
 }: WorkspaceShellProps & { state: PublicState }) {
   const { send } = daemon;
   const toasts = useToastStore();
@@ -2130,6 +2138,7 @@ function ShellBody({
         }}
         connected={daemon.connection === "open"}
         notice={endNotice}
+        warning={endPhase === "confirm" || endPhase === "ending" ? endWarning?.(state) : null}
         // The dialog has no trigger: on close, focus goes to the Ended chip, or back
         // to End session when the session goes on.
         finalFocus={() =>

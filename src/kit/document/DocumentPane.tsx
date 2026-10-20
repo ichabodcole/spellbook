@@ -622,13 +622,22 @@ export function DocumentPane({
   // Asked for whenever the document, its active version, its text or the chosen side
   // changes, so a merge refreshes what is left to take.
   const hash = doc?.hash;
+  /**
+   * The document the comparison's state (the mode and the side, `against`)
+   * belongs to. On the render another document arrives, that state is still the
+   * last one's until the reset below runs, and effects run in order: asked then,
+   * the diff named the new document with the old side ("beta has no v3").
+   */
+  const compareSlug = useRef(slug);
   // biome-ignore lint/correctness/useExhaustiveDependencies: the active version and the text hash are triggers, not inputs.
   useEffect(() => {
+    if (compareSlug.current !== slug) return;
     if (mode === "compare" && slug !== undefined) send({ op: "diff", doc: slug, against });
   }, [mode, slug, active, hash, against, send]);
   // Leaving the document leaves the comparison.
   // biome-ignore lint/correctness/useExhaustiveDependencies: a different document is the trigger.
   useEffect(() => {
+    compareSlug.current = slug;
     if (mode === "compare") {
       const m = readViewMode(kept.getItem(viewModeKey), { split: splitView });
       setOwnMode(m);
@@ -716,6 +725,27 @@ export function DocumentPane({
     if (refuseJson()) return;
     send({ op: "save", doc: doc.slug, recreate: doc.missing });
   };
+  // ⌘S belongs to the pane, not to the editor's focus: in the rendered view, and
+  // with focus anywhere else on the page, no editor is there to claim it, and the
+  // browser's own Save Page dialog opened. The raw editor keeps its own binding
+  // (it flushes its buffer first) and marks the key as taken, so one press is
+  // one save. Here it saves what the Save button would: a document with
+  // unsaved changes, while the session is live.
+  const saveKey = useRef(onSave);
+  saveKey.current = onSave;
+  const dirtyNow = useRef(false);
+  dirtyNow.current = !!doc?.dirty && daemon.connection !== "ended";
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== "s" || !(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey)
+        return;
+      if (e.defaultPrevented) return;
+      e.preventDefault();
+      if (dirtyNow.current) saveKey.current();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   const onClose = () => doc && send({ op: "doc.close", doc: doc.slug });
   const onSelect = (s: SelectionReport) => {
     if (!doc) return;

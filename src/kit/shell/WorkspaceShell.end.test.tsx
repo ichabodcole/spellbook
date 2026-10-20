@@ -21,6 +21,7 @@ import {
   waitFor,
 } from "../lib/testDom.ts";
 import { fixtureDaemon } from "../workspace/fixtures/app";
+import type { PublicState } from "../workspace/protocol";
 import type { WorkspaceDaemon } from "../workspace/server";
 import { seedDocs, tempRoot } from "../workspace/testing";
 import { WorkspaceShell } from "./WorkspaceShell.tsx";
@@ -107,10 +108,16 @@ function Host() {
   client = d;
   return (
     <div style={{ width: 1200, height: 700 }}>
-      <WorkspaceShell daemon={d} centre={<Probe />} />
+      <WorkspaceShell daemon={d} centre={<Probe />} {...(endWarning ? { endWarning } : {})} />
     </div>
   );
 }
+
+/** The app's End-session warning, for the tests that give one; reset before each. */
+let endWarning: ((state: PublicState) => string | null) | null = null;
+beforeEach(() => {
+  endWarning = null;
+});
 
 const q = (sel: string) => document.querySelector(sel);
 const control = () => q('[data-column-control="end-session"]') as HTMLButtonElement | null;
@@ -150,6 +157,42 @@ describe("End session", () => {
     await click(dialogButton("End session"));
     await waitFor(() => closes() === 1, "the close frame");
     await m.unmount();
+  });
+
+  test("an app's warning shows under the question, read from the state, and ending is still allowed", async () => {
+    const seen: string[] = [];
+    endWarning = (state) => {
+      seen.push(state.sessionId);
+      return `2 unsaved in ${state.sessionId}`;
+    };
+    const m = await mount(<Host />);
+    await waitFor(() => control() !== null && !control()?.disabled, "the control");
+    // Read only while End session asks, never on the way.
+    expect(seen).toEqual([]);
+    await askToEnd();
+    const id = client?.state?.sessionId ?? "";
+    expect(q(`${DIALOG} [data-slot="end-warning"]`)?.textContent).toBe(`2 unsaved in ${id}`);
+    await click(dialogButton("End session"));
+    await waitFor(() => closes() === 1, "the close frame");
+    await waitFor(() => dialog()?.getAttribute("data-phase") === "ended", "the ended state");
+    // The ended state is not asking: the warning is gone with the question.
+    expect(q(`${DIALOG} [data-slot="end-warning"]`)).toBeNull();
+    await m.unmount();
+  });
+
+  test("a warning of null, or none given, shows nothing", async () => {
+    endWarning = () => null;
+    const m = await mount(<Host />);
+    await askToEnd();
+    expect(q(`${DIALOG} [data-slot="end-warning"]`)).toBeNull();
+    await click(dialogButton("Cancel"));
+    await waitFor(() => dialog() === null, "the dialog gone");
+    await m.unmount();
+    endWarning = null;
+    const m2 = await mount(<Host />);
+    await askToEnd();
+    expect(q(`${DIALOG} [data-slot="end-warning"]`)).toBeNull();
+    await m2.unmount();
   });
 
   test("cancelling sends nothing", async () => {
