@@ -5,7 +5,7 @@ description:
   Test stubs called Bun.serve with no hostname, which listens on the IPv6
   wildcard, so a real daemon holding 127.0.0.1 on the same port answered the
   test, including a write.
-status: draft
+status: stable
 lifecycle: done
 id: 01a156d6-5358-7479-89d3-0df6ad1f9c1e
 kind: bug
