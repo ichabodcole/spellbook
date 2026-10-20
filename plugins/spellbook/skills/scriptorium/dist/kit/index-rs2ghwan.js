@@ -11901,22 +11901,35 @@ var __iconNode6 = [
   ]
 ];
 var House = createLucideIcon("house", __iconNode6);
-// node_modules/lucide-react/dist/esm/icons/panel-left-close.mjs
+// node_modules/lucide-react/dist/esm/icons/message-circle-question-mark.mjs
 var __iconNode7 = [
+  [
+    "path",
+    {
+      d: "M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719",
+      key: "1sd12s"
+    }
+  ],
+  ["path", { d: "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3", key: "1u773s" }],
+  ["path", { d: "M12 17h.01", key: "p32p05" }]
+];
+var MessageCircleQuestionMark = createLucideIcon("message-circle-question-mark", __iconNode7);
+// node_modules/lucide-react/dist/esm/icons/panel-left-close.mjs
+var __iconNode8 = [
   ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
   ["path", { d: "M9 3v18", key: "fh3hqa" }],
   ["path", { d: "m16 15-3-3 3-3", key: "14y99z" }]
 ];
-var PanelLeftClose = createLucideIcon("panel-left-close", __iconNode7);
+var PanelLeftClose = createLucideIcon("panel-left-close", __iconNode8);
 // node_modules/lucide-react/dist/esm/icons/panel-left-open.mjs
-var __iconNode8 = [
+var __iconNode9 = [
   ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
   ["path", { d: "M9 3v18", key: "fh3hqa" }],
   ["path", { d: "m14 9 3 3-3 3", key: "8010ee" }]
 ];
-var PanelLeftOpen = createLucideIcon("panel-left-open", __iconNode8);
+var PanelLeftOpen = createLucideIcon("panel-left-open", __iconNode9);
 // node_modules/lucide-react/dist/esm/icons/sparkles.mjs
-var __iconNode9 = [
+var __iconNode10 = [
   [
     "path",
     {
@@ -11928,9 +11941,9 @@ var __iconNode9 = [
   ["path", { d: "M22 4h-4", key: "gwowj6" }],
   ["circle", { cx: "4", cy: "20", r: "2", key: "6kqj1y" }]
 ];
-var Sparkles = createLucideIcon("sparkles", __iconNode9);
+var Sparkles = createLucideIcon("sparkles", __iconNode10);
 // node_modules/lucide-react/dist/esm/icons/triangle-alert.mjs
-var __iconNode10 = [
+var __iconNode11 = [
   [
     "path",
     {
@@ -11941,21 +11954,21 @@ var __iconNode10 = [
   ["path", { d: "M12 9v4", key: "juzpu7" }],
   ["path", { d: "M12 17h.01", key: "p32p05" }]
 ];
-var TriangleAlert = createLucideIcon("triangle-alert", __iconNode10);
+var TriangleAlert = createLucideIcon("triangle-alert", __iconNode11);
 // node_modules/lucide-react/dist/esm/icons/arrow-left.mjs
-var __iconNode11 = [
+var __iconNode12 = [
   ["path", { d: "m12 19-7-7 7-7", key: "1l729n" }],
   ["path", { d: "M19 12H5", key: "x3x0zl" }]
 ];
-var ArrowLeft = createLucideIcon("arrow-left", __iconNode11);
+var ArrowLeft = createLucideIcon("arrow-left", __iconNode12);
 // node_modules/lucide-react/dist/esm/icons/ban.mjs
-var __iconNode12 = [
+var __iconNode13 = [
   ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
   ["path", { d: "M4.929 4.929 19.07 19.071", key: "196cmz" }]
 ];
-var Ban = createLucideIcon("ban", __iconNode12);
+var Ban = createLucideIcon("ban", __iconNode13);
 // node_modules/lucide-react/dist/esm/icons/book-open.mjs
-var __iconNode13 = [
+var __iconNode14 = [
   ["path", { d: "M12 7v14", key: "1akyts" }],
   [
     "path",
@@ -11965,9 +11978,9 @@ var __iconNode13 = [
     }
   ]
 ];
-var BookOpen = createLucideIcon("book-open", __iconNode13);
+var BookOpen = createLucideIcon("book-open", __iconNode14);
 // node_modules/lucide-react/dist/esm/icons/bookmark-plus.mjs
-var __iconNode14 = [
+var __iconNode15 = [
   ["path", { d: "M12 7v6", key: "lw1j43" }],
   ["path", { d: "M15 10H9", key: "o6yqo3" }],
   [
@@ -11978,24 +11991,24 @@ var __iconNode14 = [
     }
   ]
 ];
-var BookmarkPlus = createLucideIcon("bookmark-plus", __iconNode14);
+var BookmarkPlus = createLucideIcon("bookmark-plus", __iconNode15);
 // node_modules/lucide-react/dist/esm/icons/check.mjs
-var __iconNode15 = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
-var Check = createLucideIcon("check", __iconNode15);
+var __iconNode16 = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
+var Check = createLucideIcon("check", __iconNode16);
 // node_modules/lucide-react/dist/esm/icons/chevron-down.mjs
-var __iconNode16 = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
-var ChevronDown = createLucideIcon("chevron-down", __iconNode16);
+var __iconNode17 = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
+var ChevronDown = createLucideIcon("chevron-down", __iconNode17);
 // node_modules/lucide-react/dist/esm/icons/chevron-left.mjs
-var __iconNode17 = [["path", { d: "m15 18-6-6 6-6", key: "1wnfg3" }]];
-var ChevronLeft = createLucideIcon("chevron-left", __iconNode17);
+var __iconNode18 = [["path", { d: "m15 18-6-6 6-6", key: "1wnfg3" }]];
+var ChevronLeft = createLucideIcon("chevron-left", __iconNode18);
 // node_modules/lucide-react/dist/esm/icons/chevron-right.mjs
-var __iconNode18 = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
-var ChevronRight = createLucideIcon("chevron-right", __iconNode18);
+var __iconNode19 = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
+var ChevronRight = createLucideIcon("chevron-right", __iconNode19);
 // node_modules/lucide-react/dist/esm/icons/chevron-up.mjs
-var __iconNode19 = [["path", { d: "m18 15-6-6-6 6", key: "153udz" }]];
-var ChevronUp = createLucideIcon("chevron-up", __iconNode19);
+var __iconNode20 = [["path", { d: "m18 15-6-6-6 6", key: "153udz" }]];
+var ChevronUp = createLucideIcon("chevron-up", __iconNode20);
 // node_modules/lucide-react/dist/esm/icons/circle-dashed.mjs
-var __iconNode20 = [
+var __iconNode21 = [
   ["path", { d: "M10.1 2.182a10 10 0 0 1 3.8 0", key: "5ilxe3" }],
   ["path", { d: "M13.9 21.818a10 10 0 0 1-3.8 0", key: "11zvb9" }],
   ["path", { d: "M17.609 3.721a10 10 0 0 1 2.69 2.7", key: "1iw5b2" }],
@@ -12005,41 +12018,41 @@ var __iconNode20 = [
   ["path", { d: "M3.721 6.391a10 10 0 0 1 2.7-2.69", key: "1mcia2" }],
   ["path", { d: "M6.391 20.279a10 10 0 0 1-2.69-2.7", key: "1fvljs" }]
 ];
-var CircleDashed = createLucideIcon("circle-dashed", __iconNode20);
+var CircleDashed = createLucideIcon("circle-dashed", __iconNode21);
 // node_modules/lucide-react/dist/esm/icons/clock.mjs
-var __iconNode21 = [
+var __iconNode22 = [
   ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
   ["path", { d: "M12 6v6l4 2", key: "mmk7yg" }]
 ];
-var Clock = createLucideIcon("clock", __iconNode21);
+var Clock = createLucideIcon("clock", __iconNode22);
 // node_modules/lucide-react/dist/esm/icons/copy-plus.mjs
-var __iconNode22 = [
+var __iconNode23 = [
   ["line", { x1: "15", x2: "15", y1: "12", y2: "18", key: "1p7wdc" }],
   ["line", { x1: "12", x2: "18", y1: "15", y2: "15", key: "1nscbv" }],
   ["rect", { width: "14", height: "14", x: "8", y: "8", rx: "2", ry: "2", key: "17jyea" }],
   ["path", { d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2", key: "zix9uf" }]
 ];
-var CopyPlus = createLucideIcon("copy-plus", __iconNode22);
+var CopyPlus = createLucideIcon("copy-plus", __iconNode23);
 // node_modules/lucide-react/dist/esm/icons/copy.mjs
-var __iconNode23 = [
+var __iconNode24 = [
   ["rect", { width: "14", height: "14", x: "8", y: "8", rx: "2", ry: "2", key: "17jyea" }],
   ["path", { d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2", key: "zix9uf" }]
 ];
-var Copy = createLucideIcon("copy", __iconNode23);
+var Copy = createLucideIcon("copy", __iconNode24);
 // node_modules/lucide-react/dist/esm/icons/corner-down-left.mjs
-var __iconNode24 = [
+var __iconNode25 = [
   ["path", { d: "M20 4v7a4 4 0 0 1-4 4H4", key: "6o5b7l" }],
   ["path", { d: "m9 10-5 5 5 5", key: "1kshq7" }]
 ];
-var CornerDownLeft = createLucideIcon("corner-down-left", __iconNode24);
+var CornerDownLeft = createLucideIcon("corner-down-left", __iconNode25);
 // node_modules/lucide-react/dist/esm/icons/corner-down-right.mjs
-var __iconNode25 = [
+var __iconNode26 = [
   ["path", { d: "m15 10 5 5-5 5", key: "qqa56n" }],
   ["path", { d: "M4 4v7a4 4 0 0 0 4 4h12", key: "z08zvw" }]
 ];
-var CornerDownRight = createLucideIcon("corner-down-right", __iconNode25);
+var CornerDownRight = createLucideIcon("corner-down-right", __iconNode26);
 // node_modules/lucide-react/dist/esm/icons/eye-off.mjs
-var __iconNode26 = [
+var __iconNode27 = [
   [
     "path",
     {
@@ -12057,9 +12070,9 @@ var __iconNode26 = [
   ],
   ["path", { d: "m2 2 20 20", key: "1ooewy" }]
 ];
-var EyeOff = createLucideIcon("eye-off", __iconNode26);
+var EyeOff = createLucideIcon("eye-off", __iconNode27);
 // node_modules/lucide-react/dist/esm/icons/eye.mjs
-var __iconNode27 = [
+var __iconNode28 = [
   [
     "path",
     {
@@ -12069,9 +12082,9 @@ var __iconNode27 = [
   ],
   ["circle", { cx: "12", cy: "12", r: "3", key: "1v7zrd" }]
 ];
-var Eye = createLucideIcon("eye", __iconNode27);
+var Eye = createLucideIcon("eye", __iconNode28);
 // node_modules/lucide-react/dist/esm/icons/file-code.mjs
-var __iconNode28 = [
+var __iconNode29 = [
   [
     "path",
     {
@@ -12083,9 +12096,9 @@ var __iconNode28 = [
   ["path", { d: "M10 12.5 8 15l2 2.5", key: "1tg20x" }],
   ["path", { d: "m14 12.5 2 2.5-2 2.5", key: "yinavb" }]
 ];
-var FileCode = createLucideIcon("file-code", __iconNode28);
+var FileCode = createLucideIcon("file-code", __iconNode29);
 // node_modules/lucide-react/dist/esm/icons/file-plus.mjs
-var __iconNode29 = [
+var __iconNode30 = [
   [
     "path",
     {
@@ -12097,9 +12110,9 @@ var __iconNode29 = [
   ["path", { d: "M9 15h6", key: "cctwl0" }],
   ["path", { d: "M12 18v-6", key: "17g6i2" }]
 ];
-var FilePlus = createLucideIcon("file-plus", __iconNode29);
+var FilePlus = createLucideIcon("file-plus", __iconNode30);
 // node_modules/lucide-react/dist/esm/icons/file-text.mjs
-var __iconNode30 = [
+var __iconNode31 = [
   [
     "path",
     {
@@ -12112,9 +12125,9 @@ var __iconNode30 = [
   ["path", { d: "M16 13H8", key: "t4e002" }],
   ["path", { d: "M16 17H8", key: "z1uh3a" }]
 ];
-var FileText = createLucideIcon("file-text", __iconNode30);
+var FileText = createLucideIcon("file-text", __iconNode31);
 // node_modules/lucide-react/dist/esm/icons/file.mjs
-var __iconNode31 = [
+var __iconNode32 = [
   [
     "path",
     {
@@ -12124,9 +12137,9 @@ var __iconNode31 = [
   ],
   ["path", { d: "M14 2v5a1 1 0 0 0 1 1h5", key: "wfsgrz" }]
 ];
-var File = createLucideIcon("file", __iconNode31);
+var File = createLucideIcon("file", __iconNode32);
 // node_modules/lucide-react/dist/esm/icons/folder-input.mjs
-var __iconNode32 = [
+var __iconNode33 = [
   [
     "path",
     {
@@ -12137,9 +12150,9 @@ var __iconNode32 = [
   ["path", { d: "M2 13h10", key: "pgb2dq" }],
   ["path", { d: "m9 16 3-3-3-3", key: "6m91ic" }]
 ];
-var FolderInput = createLucideIcon("folder-input", __iconNode32);
+var FolderInput = createLucideIcon("folder-input", __iconNode33);
 // node_modules/lucide-react/dist/esm/icons/folder-open.mjs
-var __iconNode33 = [
+var __iconNode34 = [
   [
     "path",
     {
@@ -12148,9 +12161,9 @@ var __iconNode33 = [
     }
   ]
 ];
-var FolderOpen = createLucideIcon("folder-open", __iconNode33);
+var FolderOpen = createLucideIcon("folder-open", __iconNode34);
 // node_modules/lucide-react/dist/esm/icons/folder-plus.mjs
-var __iconNode34 = [
+var __iconNode35 = [
   ["path", { d: "M12 10v6", key: "1bos4e" }],
   ["path", { d: "M9 13h6", key: "1uhe8q" }],
   [
@@ -12161,9 +12174,9 @@ var __iconNode34 = [
     }
   ]
 ];
-var FolderPlus = createLucideIcon("folder-plus", __iconNode34);
+var FolderPlus = createLucideIcon("folder-plus", __iconNode35);
 // node_modules/lucide-react/dist/esm/icons/folder-search.mjs
-var __iconNode35 = [
+var __iconNode36 = [
   [
     "path",
     {
@@ -12174,9 +12187,9 @@ var __iconNode35 = [
   ["path", { d: "m21 21-1.9-1.9", key: "1g2n9r" }],
   ["circle", { cx: "17", cy: "17", r: "3", key: "18b49y" }]
 ];
-var FolderSearch = createLucideIcon("folder-search", __iconNode35);
+var FolderSearch = createLucideIcon("folder-search", __iconNode36);
 // node_modules/lucide-react/dist/esm/icons/folder-tree.mjs
-var __iconNode36 = [
+var __iconNode37 = [
   [
     "path",
     {
@@ -12194,9 +12207,9 @@ var __iconNode36 = [
   ["path", { d: "M3 5a2 2 0 0 0 2 2h3", key: "f2jnh7" }],
   ["path", { d: "M3 3v13a2 2 0 0 0 2 2h3", key: "k8epm1" }]
 ];
-var FolderTree = createLucideIcon("folder-tree", __iconNode36);
+var FolderTree = createLucideIcon("folder-tree", __iconNode37);
 // node_modules/lucide-react/dist/esm/icons/folder.mjs
-var __iconNode37 = [
+var __iconNode38 = [
   [
     "path",
     {
@@ -12205,76 +12218,76 @@ var __iconNode37 = [
     }
   ]
 ];
-var Folder = createLucideIcon("folder", __iconNode37);
+var Folder = createLucideIcon("folder", __iconNode38);
 // node_modules/lucide-react/dist/esm/icons/git-branch.mjs
-var __iconNode38 = [
+var __iconNode39 = [
   ["path", { d: "M15 6a9 9 0 0 0-9 9V3", key: "1cii5b" }],
   ["circle", { cx: "18", cy: "6", r: "3", key: "1h7g24" }],
   ["circle", { cx: "6", cy: "18", r: "3", key: "fqmcym" }]
 ];
-var GitBranch = createLucideIcon("git-branch", __iconNode38);
+var GitBranch = createLucideIcon("git-branch", __iconNode39);
 // node_modules/lucide-react/dist/esm/icons/git-compare.mjs
-var __iconNode39 = [
+var __iconNode40 = [
   ["circle", { cx: "18", cy: "18", r: "3", key: "1xkwt0" }],
   ["circle", { cx: "6", cy: "6", r: "3", key: "1lh9wr" }],
   ["path", { d: "M13 6h3a2 2 0 0 1 2 2v7", key: "1yeb86" }],
   ["path", { d: "M11 18H8a2 2 0 0 1-2-2V9", key: "19pyzm" }]
 ];
-var GitCompare = createLucideIcon("git-compare", __iconNode39);
+var GitCompare = createLucideIcon("git-compare", __iconNode40);
 // node_modules/lucide-react/dist/esm/icons/glasses.mjs
-var __iconNode40 = [
+var __iconNode41 = [
   ["circle", { cx: "6", cy: "15", r: "4", key: "vux9w4" }],
   ["circle", { cx: "18", cy: "15", r: "4", key: "18o8ve" }],
   ["path", { d: "M14 15a2 2 0 0 0-2-2 2 2 0 0 0-2 2", key: "1ag4bs" }],
   ["path", { d: "M2.5 13 5 7c.7-1.3 1.4-2 3-2", key: "1hm1gs" }],
   ["path", { d: "M21.5 13 19 7c-.7-1.3-1.5-2-3-2", key: "1r31ai" }]
 ];
-var Glasses = createLucideIcon("glasses", __iconNode40);
+var Glasses = createLucideIcon("glasses", __iconNode41);
 // node_modules/lucide-react/dist/esm/icons/globe.mjs
-var __iconNode41 = [
+var __iconNode42 = [
   ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
   ["path", { d: "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20", key: "13o1zl" }],
   ["path", { d: "M2 12h20", key: "9i4pu4" }]
 ];
-var Globe = createLucideIcon("globe", __iconNode41);
+var Globe = createLucideIcon("globe", __iconNode42);
 // node_modules/lucide-react/dist/esm/icons/hash.mjs
-var __iconNode42 = [
+var __iconNode43 = [
   ["line", { x1: "4", x2: "20", y1: "9", y2: "9", key: "4lhtct" }],
   ["line", { x1: "4", x2: "20", y1: "15", y2: "15", key: "vyu0kd" }],
   ["line", { x1: "10", x2: "8", y1: "3", y2: "21", key: "1ggp8o" }],
   ["line", { x1: "16", x2: "14", y1: "3", y2: "21", key: "weycgp" }]
 ];
-var Hash = createLucideIcon("hash", __iconNode42);
+var Hash = createLucideIcon("hash", __iconNode43);
 // node_modules/lucide-react/dist/esm/icons/image.mjs
-var __iconNode43 = [
+var __iconNode44 = [
   ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", ry: "2", key: "1m3agn" }],
   ["circle", { cx: "9", cy: "9", r: "2", key: "af1f0g" }],
   ["path", { d: "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21", key: "1xmnt7" }]
 ];
-var Image = createLucideIcon("image", __iconNode43);
+var Image = createLucideIcon("image", __iconNode44);
 // node_modules/lucide-react/dist/esm/icons/info.mjs
-var __iconNode44 = [
+var __iconNode45 = [
   ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
   ["path", { d: "M12 16v-4", key: "1dtifu" }],
   ["path", { d: "M12 8h.01", key: "e9boi3" }]
 ];
-var Info = createLucideIcon("info", __iconNode44);
+var Info = createLucideIcon("info", __iconNode45);
 // node_modules/lucide-react/dist/esm/icons/link-2-off.mjs
-var __iconNode45 = [
+var __iconNode46 = [
   ["path", { d: "M9 17H7A5 5 0 0 1 7 7", key: "10o201" }],
   ["path", { d: "M15 7h2a5 5 0 0 1 4 8", key: "1d3206" }],
   ["line", { x1: "8", x2: "12", y1: "12", y2: "12", key: "rvw6j4" }],
   ["line", { x1: "2", x2: "22", y1: "2", y2: "22", key: "a6p6uj" }]
 ];
-var Link2Off = createLucideIcon("link-2-off", __iconNode45);
+var Link2Off = createLucideIcon("link-2-off", __iconNode46);
 // node_modules/lucide-react/dist/esm/icons/link.mjs
-var __iconNode46 = [
+var __iconNode47 = [
   ["path", { d: "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71", key: "1cjeqo" }],
   ["path", { d: "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71", key: "19qd67" }]
 ];
-var Link = createLucideIcon("link", __iconNode46);
+var Link = createLucideIcon("link", __iconNode47);
 // node_modules/lucide-react/dist/esm/icons/list-ordered.mjs
-var __iconNode47 = [
+var __iconNode48 = [
   ["path", { d: "M11 5h10", key: "1cz7ny" }],
   ["path", { d: "M11 12h10", key: "1438ji" }],
   ["path", { d: "M11 19h10", key: "11t30w" }],
@@ -12282,18 +12295,18 @@ var __iconNode47 = [
   ["path", { d: "M4 9h2", key: "r1h2o0" }],
   ["path", { d: "M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02", key: "xtkcd5" }]
 ];
-var ListOrdered = createLucideIcon("list-ordered", __iconNode47);
+var ListOrdered = createLucideIcon("list-ordered", __iconNode48);
 // node_modules/lucide-react/dist/esm/icons/list-tree.mjs
-var __iconNode48 = [
+var __iconNode49 = [
   ["path", { d: "M8 5h13", key: "1pao27" }],
   ["path", { d: "M13 12h8", key: "h98zly" }],
   ["path", { d: "M13 19h8", key: "c3s6r1" }],
   ["path", { d: "M3 10a2 2 0 0 0 2 2h3", key: "1npucw" }],
   ["path", { d: "M3 5v12a2 2 0 0 0 2 2h3", key: "x1gjn2" }]
 ];
-var ListTree = createLucideIcon("list-tree", __iconNode48);
+var ListTree = createLucideIcon("list-tree", __iconNode49);
 // node_modules/lucide-react/dist/esm/icons/loader.mjs
-var __iconNode49 = [
+var __iconNode50 = [
   ["path", { d: "M12 2v4", key: "3427ic" }],
   ["path", { d: "m16.2 7.8 2.9-2.9", key: "r700ao" }],
   ["path", { d: "M18 12h4", key: "wj9ykh" }],
@@ -12303,9 +12316,9 @@ var __iconNode49 = [
   ["path", { d: "M2 12h4", key: "j09sii" }],
   ["path", { d: "m4.9 4.9 2.9 2.9", key: "giyufr" }]
 ];
-var Loader = createLucideIcon("loader", __iconNode49);
+var Loader = createLucideIcon("loader", __iconNode50);
 // node_modules/lucide-react/dist/esm/icons/message-square-plus.mjs
-var __iconNode50 = [
+var __iconNode51 = [
   [
     "path",
     {
@@ -12316,9 +12329,9 @@ var __iconNode50 = [
   ["path", { d: "M12 8v6", key: "1ib9pf" }],
   ["path", { d: "M9 11h6", key: "1fldmi" }]
 ];
-var MessageSquarePlus = createLucideIcon("message-square-plus", __iconNode50);
+var MessageSquarePlus = createLucideIcon("message-square-plus", __iconNode51);
 // node_modules/lucide-react/dist/esm/icons/message-square-text.mjs
-var __iconNode51 = [
+var __iconNode52 = [
   [
     "path",
     {
@@ -12330,9 +12343,9 @@ var __iconNode51 = [
   ["path", { d: "M7 15h6", key: "d9of3u" }],
   ["path", { d: "M7 7h8", key: "af5zfr" }]
 ];
-var MessageSquareText = createLucideIcon("message-square-text", __iconNode51);
+var MessageSquareText = createLucideIcon("message-square-text", __iconNode52);
 // node_modules/lucide-react/dist/esm/icons/message-square.mjs
-var __iconNode52 = [
+var __iconNode53 = [
   [
     "path",
     {
@@ -12341,9 +12354,9 @@ var __iconNode52 = [
     }
   ]
 ];
-var MessageSquare = createLucideIcon("message-square", __iconNode52);
+var MessageSquare = createLucideIcon("message-square", __iconNode53);
 // node_modules/lucide-react/dist/esm/icons/messages-square.mjs
-var __iconNode53 = [
+var __iconNode54 = [
   [
     "path",
     {
@@ -12359,9 +12372,9 @@ var __iconNode53 = [
     }
   ]
 ];
-var MessagesSquare = createLucideIcon("messages-square", __iconNode53);
+var MessagesSquare = createLucideIcon("messages-square", __iconNode54);
 // node_modules/lucide-react/dist/esm/icons/moon.mjs
-var __iconNode54 = [
+var __iconNode55 = [
   [
     "path",
     {
@@ -12370,18 +12383,18 @@ var __iconNode54 = [
     }
   ]
 ];
-var Moon = createLucideIcon("moon", __iconNode54);
+var Moon = createLucideIcon("moon", __iconNode55);
 // node_modules/lucide-react/dist/esm/icons/network.mjs
-var __iconNode55 = [
+var __iconNode56 = [
   ["rect", { x: "16", y: "16", width: "6", height: "6", rx: "1", key: "4q2zg0" }],
   ["rect", { x: "2", y: "16", width: "6", height: "6", rx: "1", key: "8cvhb9" }],
   ["rect", { x: "9", y: "2", width: "6", height: "6", rx: "1", key: "1egb70" }],
   ["path", { d: "M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3", key: "1jsf9p" }],
   ["path", { d: "M12 12V8", key: "2874zd" }]
 ];
-var Network = createLucideIcon("network", __iconNode55);
+var Network = createLucideIcon("network", __iconNode56);
 // node_modules/lucide-react/dist/esm/icons/package.mjs
-var __iconNode56 = [
+var __iconNode57 = [
   [
     "path",
     {
@@ -12393,23 +12406,23 @@ var __iconNode56 = [
   ["polyline", { points: "3.29 7 12 12 20.71 7", key: "ousv84" }],
   ["path", { d: "m7.5 4.27 9 5.15", key: "1c824w" }]
 ];
-var Package = createLucideIcon("package", __iconNode56);
+var Package = createLucideIcon("package", __iconNode57);
 // node_modules/lucide-react/dist/esm/icons/panel-right-close.mjs
-var __iconNode57 = [
+var __iconNode58 = [
   ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
   ["path", { d: "M15 3v18", key: "14nvp0" }],
   ["path", { d: "m8 9 3 3-3 3", key: "12hl5m" }]
 ];
-var PanelRightClose = createLucideIcon("panel-right-close", __iconNode57);
+var PanelRightClose = createLucideIcon("panel-right-close", __iconNode58);
 // node_modules/lucide-react/dist/esm/icons/panel-right-open.mjs
-var __iconNode58 = [
+var __iconNode59 = [
   ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
   ["path", { d: "M15 3v18", key: "14nvp0" }],
   ["path", { d: "m10 15-3-3 3-3", key: "1pgupc" }]
 ];
-var PanelRightOpen = createLucideIcon("panel-right-open", __iconNode58);
+var PanelRightOpen = createLucideIcon("panel-right-open", __iconNode59);
 // node_modules/lucide-react/dist/esm/icons/pencil.mjs
-var __iconNode59 = [
+var __iconNode60 = [
   [
     "path",
     {
@@ -12419,27 +12432,27 @@ var __iconNode59 = [
   ],
   ["path", { d: "m15 5 4 4", key: "1mk7zo" }]
 ];
-var Pencil = createLucideIcon("pencil", __iconNode59);
+var Pencil = createLucideIcon("pencil", __iconNode60);
 // node_modules/lucide-react/dist/esm/icons/plus.mjs
-var __iconNode60 = [
+var __iconNode61 = [
   ["path", { d: "M5 12h14", key: "1ays0h" }],
   ["path", { d: "M12 5v14", key: "s699le" }]
 ];
-var Plus = createLucideIcon("plus", __iconNode60);
+var Plus = createLucideIcon("plus", __iconNode61);
 // node_modules/lucide-react/dist/esm/icons/power.mjs
-var __iconNode61 = [
+var __iconNode62 = [
   ["path", { d: "M12 2v10", key: "mnfbl" }],
   ["path", { d: "M18.4 6.6a9 9 0 1 1-12.77.04", key: "obofu9" }]
 ];
-var Power = createLucideIcon("power", __iconNode61);
+var Power = createLucideIcon("power", __iconNode62);
 // node_modules/lucide-react/dist/esm/icons/redo-2.mjs
-var __iconNode62 = [
+var __iconNode63 = [
   ["path", { d: "m15 14 5-5-5-5", key: "12vg1m" }],
   ["path", { d: "M20 9H9.5A5.5 5.5 0 0 0 4 14.5A5.5 5.5 0 0 0 9.5 20H13", key: "6uklza" }]
 ];
-var Redo2 = createLucideIcon("redo-2", __iconNode62);
+var Redo2 = createLucideIcon("redo-2", __iconNode63);
 // node_modules/lucide-react/dist/esm/icons/save.mjs
-var __iconNode63 = [
+var __iconNode64 = [
   [
     "path",
     {
@@ -12450,15 +12463,15 @@ var __iconNode63 = [
   ["path", { d: "M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7", key: "1ydtos" }],
   ["path", { d: "M7 3v4a1 1 0 0 0 1 1h7", key: "t51u73" }]
 ];
-var Save = createLucideIcon("save", __iconNode63);
+var Save = createLucideIcon("save", __iconNode64);
 // node_modules/lucide-react/dist/esm/icons/search.mjs
-var __iconNode64 = [
+var __iconNode65 = [
   ["path", { d: "m21 21-4.34-4.34", key: "14j7rj" }],
   ["circle", { cx: "11", cy: "11", r: "8", key: "4ej97u" }]
 ];
-var Search = createLucideIcon("search", __iconNode64);
+var Search = createLucideIcon("search", __iconNode65);
 // node_modules/lucide-react/dist/esm/icons/settings.mjs
-var __iconNode65 = [
+var __iconNode66 = [
   [
     "path",
     {
@@ -12468,9 +12481,9 @@ var __iconNode65 = [
   ],
   ["circle", { cx: "12", cy: "12", r: "3", key: "1v7zrd" }]
 ];
-var Settings = createLucideIcon("settings", __iconNode65);
+var Settings = createLucideIcon("settings", __iconNode66);
 // node_modules/lucide-react/dist/esm/icons/sun.mjs
-var __iconNode66 = [
+var __iconNode67 = [
   ["circle", { cx: "12", cy: "12", r: "4", key: "4exip2" }],
   ["path", { d: "M12 2v2", key: "tus03m" }],
   ["path", { d: "M12 20v2", key: "1lh1kg" }],
@@ -12481,63 +12494,63 @@ var __iconNode66 = [
   ["path", { d: "m6.34 17.66-1.41 1.41", key: "1m8zz5" }],
   ["path", { d: "m19.07 4.93-1.41 1.41", key: "1shlcs" }]
 ];
-var Sun = createLucideIcon("sun", __iconNode66);
+var Sun = createLucideIcon("sun", __iconNode67);
 // node_modules/lucide-react/dist/esm/icons/text-quote.mjs
-var __iconNode67 = [
+var __iconNode68 = [
   ["path", { d: "M17 5H3", key: "1cn7zz" }],
   ["path", { d: "M21 12H8", key: "scolzb" }],
   ["path", { d: "M21 19H8", key: "13qgcb" }],
   ["path", { d: "M3 12v7", key: "1ri8j3" }]
 ];
-var TextQuote = createLucideIcon("text-quote", __iconNode67);
+var TextQuote = createLucideIcon("text-quote", __iconNode68);
 // node_modules/lucide-react/dist/esm/icons/trash-2.mjs
-var __iconNode68 = [
+var __iconNode69 = [
   ["path", { d: "M10 11v6", key: "nco0om" }],
   ["path", { d: "M14 11v6", key: "outv1u" }],
   ["path", { d: "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6", key: "miytrc" }],
   ["path", { d: "M3 6h18", key: "d0wm0j" }],
   ["path", { d: "M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2", key: "e791ji" }]
 ];
-var Trash2 = createLucideIcon("trash-2", __iconNode68);
+var Trash2 = createLucideIcon("trash-2", __iconNode69);
 // node_modules/lucide-react/dist/esm/icons/undo-2.mjs
-var __iconNode69 = [
+var __iconNode70 = [
   ["path", { d: "M9 14 4 9l5-5", key: "102s5s" }],
   ["path", { d: "M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11", key: "f3b9sd" }]
 ];
-var Undo2 = createLucideIcon("undo-2", __iconNode69);
+var Undo2 = createLucideIcon("undo-2", __iconNode70);
 // node_modules/lucide-react/dist/esm/icons/undo-dot.mjs
-var __iconNode70 = [
+var __iconNode71 = [
   ["path", { d: "M21 17a9 9 0 0 0-15-6.7L3 13", key: "8mp6z9" }],
   ["path", { d: "M3 7v6h6", key: "1v2h90" }],
   ["circle", { cx: "12", cy: "17", r: "1", key: "1ixnty" }]
 ];
-var UndoDot = createLucideIcon("undo-dot", __iconNode70);
+var UndoDot = createLucideIcon("undo-dot", __iconNode71);
 // node_modules/lucide-react/dist/esm/icons/upload.mjs
-var __iconNode71 = [
+var __iconNode72 = [
   ["path", { d: "M12 3v12", key: "1x0j5s" }],
   ["path", { d: "m17 8-5-5-5 5", key: "7q97r8" }],
   ["path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", key: "ih7n3h" }]
 ];
-var Upload = createLucideIcon("upload", __iconNode71);
+var Upload = createLucideIcon("upload", __iconNode72);
 // node_modules/lucide-react/dist/esm/icons/user-check.mjs
-var __iconNode72 = [
+var __iconNode73 = [
   ["path", { d: "m16 11 2 2 4-4", key: "9rsbq5" }],
   ["path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", key: "1yyitq" }],
   ["circle", { cx: "9", cy: "7", r: "4", key: "nufk8" }]
 ];
-var UserCheck = createLucideIcon("user-check", __iconNode72);
+var UserCheck = createLucideIcon("user-check", __iconNode73);
 // node_modules/lucide-react/dist/esm/icons/user.mjs
-var __iconNode73 = [
+var __iconNode74 = [
   ["path", { d: "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2", key: "975kel" }],
   ["circle", { cx: "12", cy: "7", r: "4", key: "17ys0d" }]
 ];
-var User = createLucideIcon("user", __iconNode73);
+var User = createLucideIcon("user", __iconNode74);
 // node_modules/lucide-react/dist/esm/icons/x.mjs
-var __iconNode74 = [
+var __iconNode75 = [
   ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
   ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
 ];
-var X = createLucideIcon("x", __iconNode74);
+var X = createLucideIcon("x", __iconNode75);
 // src/scriptorium/surface/kit/Frame.tsx
 var import_react56 = __toESM(require_react(), 1);
 
@@ -23804,11 +23817,21 @@ var NOTE_WAITING_LABEL = {
   working: "with the agent...",
   stalled: "no word from the agent; may be stuck"
 };
+var ASKED_LABEL = {
+  working: "asked in the conversation...",
+  stalled: "asked, and still no word; may be stuck"
+};
 var UNHEARD_LABEL = "no agent is listening yet; this waits until one is";
+var LABELS = {
+  message: WAITING_LABEL,
+  note: NOTE_WAITING_LABEL,
+  asked: ASKED_LABEL
+};
 function badgeFor(waiting, agentListening) {
   return agentListening || waiting.acknowledged ? waiting.badge : "unheard";
 }
-var labelOf = (badge, of = "message") => badge === "unheard" ? UNHEARD_LABEL : (of === "note" ? NOTE_WAITING_LABEL : WAITING_LABEL)[badge];
+var ASKED_UNHEARD_LABEL = "asked; no agent is listening yet";
+var labelOf = (badge, of = "message") => badge === "unheard" ? of === "asked" ? ASKED_UNHEARD_LABEL : UNHEARD_LABEL : LABELS[of][badge];
 function WaitingBadge({
   badge,
   of = "message",
@@ -71962,8 +71985,8 @@ function latestAgentLine(messages) {
   const text4 = messages.findLast((m) => m.from === "agent")?.text;
   return text4 === undefined ? null : plainLine(text4) || null;
 }
-function floatNote(notesWaiting, docs) {
-  const first = notesWaiting[0];
+function floatNote(notesWaiting, docs, asked = new Set) {
+  const first = notesWaiting.find((n) => !asked.has(n.noteId)) ?? notesWaiting[0];
   if (!first)
     return null;
   const doc2 = docs.find((d) => d.slug === first.doc);
@@ -71985,12 +72008,16 @@ function FloatingComposer({
   docs = [],
   openDoc = null,
   agentListening = true,
+  asked,
+  onAskNote,
   onOpen,
   onClose,
   children
 }) {
   const line = waiting ? null : latestAgentLine(messages);
-  const owed = floatNote(notesWaiting, docs);
+  const owed = floatNote(notesWaiting, docs, asked);
+  const owedAsked = owed !== null && asked?.has(owed.waiting.noteId) === true;
+  const owedBadge = owed ? badgeFor(owed.waiting, agentListening) : null;
   return /* @__PURE__ */ jsx_runtime36.jsxs("div", {
     "data-slot": "floating-composer",
     className: "mx-auto flex w-full max-w-2xl flex-col gap-1",
@@ -72026,9 +72053,18 @@ function FloatingComposer({
             className: "shrink-0",
             children: /* @__PURE__ */ jsx_runtime36.jsx(WaitingBadge, {
               flush: true,
-              of: "note",
-              badge: badgeFor(owed.waiting, agentListening)
+              of: owedAsked ? "asked" : "note",
+              badge: owedBadge ?? "working"
             })
+          }),
+          onAskNote && !owedAsked && owedBadge === "stalled" && /* @__PURE__ */ jsx_runtime36.jsx(Button3, {
+            type: "button",
+            variant: "ghost",
+            size: "xs",
+            "data-action": "float-note-ask",
+            title: "Send this note to the agent as a message in the conversation",
+            onClick: () => onAskNote(owed.waiting),
+            children: "Ask the agent"
           })
         ]
       }),
@@ -72146,6 +72182,7 @@ function NewVersionToasts({
 var import_react33 = __toESM(require_react(), 1);
 var jsx_runtime37 = __toESM(require_jsx_runtime(), 1);
 var NONE_WAITING = new Map;
+var NONE_ASKED = new Set;
 var UNCERTAIN = {
   nearest: {
     label: "moved?",
@@ -72161,12 +72198,15 @@ function Note({
   focused,
   waiting,
   agentListening,
+  asked,
+  onAsk,
   onGoTo,
   onEdit,
   onResolve,
   onRemove
 }) {
   const uncertain = UNCERTAIN[note.how];
+  const shownBadge = waiting ? badgeFor(waiting, agentListening) : null;
   const anchored = note.from !== null;
   const [draft, setDraft] = import_react33.useState(null);
   const replaced = note.editedBy === "agent" ? note.replacedBody : undefined;
@@ -72254,9 +72294,28 @@ function Note({
           })
         ]
       }),
-      waiting && /* @__PURE__ */ jsx_runtime37.jsx(WaitingBadge, {
-        of: "note",
-        badge: badgeFor(waiting, agentListening)
+      waiting && /* @__PURE__ */ jsx_runtime37.jsxs("div", {
+        className: "flex flex-wrap items-center gap-x-2",
+        children: [
+          /* @__PURE__ */ jsx_runtime37.jsx(WaitingBadge, {
+            of: asked ? "asked" : "note",
+            badge: shownBadge ?? "working"
+          }),
+          onAsk && !asked && shownBadge === "stalled" && /* @__PURE__ */ jsx_runtime37.jsxs("button", {
+            type: "button",
+            "data-action": "note-ask",
+            onClick: () => onAsk(note),
+            title: "Send this note to the agent as a message in the conversation",
+            className: "mt-1 flex items-center gap-1 rounded-sm text-[11px] text-ink-dim underline-offset-2 hover:text-ink hover:underline",
+            children: [
+              /* @__PURE__ */ jsx_runtime37.jsx(MessageCircleQuestionMark, {
+                "aria-hidden": true,
+                className: "size-3"
+              }),
+              "Ask the agent"
+            ]
+          })
+        ]
       }),
       replaced !== undefined && showReplaced && /* @__PURE__ */ jsx_runtime37.jsxs("div", {
         "data-slot": "note-replaced",
@@ -72364,6 +72423,8 @@ function NotesPanel({
   waiting = NONE_WAITING,
   others = [],
   agentListening = true,
+  asked = NONE_ASKED,
+  onAsk,
   onOpenDoc,
   focusedId,
   onLetGo,
@@ -72442,6 +72503,8 @@ function NotesPanel({
               focused: n.id === focusedId,
               waiting: waiting.get(n.id),
               agentListening,
+              asked: asked.has(n.id),
+              onAsk,
               onGoTo,
               onEdit,
               onResolve,
@@ -72513,7 +72576,48 @@ function NotesPanel({
   });
 }
 
+// src/kit/workspace/waiting.ts
+function askOutstanding(note, chat) {
+  if (note.resolved)
+    return false;
+  let askedAt = Number.NaN;
+  for (let i2 = chat.length - 1;i2 >= 0; i2--) {
+    const m = chat[i2];
+    if (m?.from === "human" && m.via === "ask" && m.about?.noteId === note.id) {
+      askedAt = Date.parse(m.ts);
+      break;
+    }
+  }
+  if (!Number.isFinite(askedAt))
+    return false;
+  for (const w of [note.editedAt, note.reopenedAt])
+    if (w !== undefined && Date.parse(w) > askedAt)
+      return false;
+  for (let i2 = chat.length - 1;i2 >= 0; i2--) {
+    const m = chat[i2];
+    if (m?.from === "agent" && Date.parse(m.ts) > askedAt)
+      return false;
+  }
+  return true;
+}
+
 // src/kit/chat/noteWaiting.ts
+function askedAbout(waiting, docs, chat) {
+  const out = new Set;
+  for (const w of waiting) {
+    const note = docs.find((d) => d.slug === w.doc)?.notes.find((n) => n.id === w.noteId);
+    if (note && askOutstanding(note, chat))
+      out.add(w.noteId);
+  }
+  return out;
+}
+function excerpt(text4, max2) {
+  const flat = [...text4.replace(/\s+/gu, " ").trim()];
+  return flat.length <= max2 ? flat.join("") : `${flat.slice(0, max2 - 1).join("").trimEnd()}…`;
+}
+function askAboutNoteText(note, docName) {
+  return `About my note on “${excerpt(note.quote, 60)}” in ${docName}: “${excerpt(note.body, 120)}”`;
+}
 function badgesOn(waiting, doc2) {
   const out = new Map;
   for (const n of waiting)
@@ -79244,6 +79348,7 @@ function ShellBody({
   notice,
   onDismissNotice,
   notesAddUnavailable,
+  askAboutNotes,
   onShowOutsideDiff,
   endWarning
 }) {
@@ -79845,7 +79950,31 @@ function ShellBody({
   const pathName = import_react52.useCallback((path2) => bundleLabelAt(state.context, path2) ?? pathLabel(path2), [state.context]);
   const heldHere = selection && openDoc && selection.doc === openDoc.slug && selection.version === openDoc.active ? selection : null;
   const agentListening = state.agentListening !== false;
-  const notesWaiting = state.notesWaiting ?? [];
+  const owedNotes = state.notesWaiting ?? [];
+  const [askPressed, setAskPressed] = import_react52.useState(() => new Map);
+  const notesAsked = askedAbout(owedNotes, state.docs, state.chat);
+  if (daemon.connection === "open") {
+    for (const [id, at2] of askPressed)
+      if (at2 === state.chat.length)
+        notesAsked.add(id);
+  }
+  const notesWaiting = notesAsked.size === 0 ? owedNotes : owedNotes.map((n) => notesAsked.has(n.noteId) && state.waiting ? {
+    ...n,
+    badge: state.waiting.badge,
+    ...state.waiting.acknowledged ? { acknowledged: true } : {}
+  } : n);
+  const askNote = askAboutNotes ? (doc2, noteId) => {
+    if (notesAsked.has(noteId))
+      return;
+    const note = state.docs.find((d) => d.slug === doc2)?.notes.find((n) => n.id === noteId);
+    if (!note)
+      return;
+    const name2 = docName(doc2);
+    const text4 = typeof askAboutNotes === "function" ? askAboutNotes(note, name2) : askAboutNoteText(note, name2);
+    const sent = send({ op: "say", text: text4, withSelection: false, via: "ask", about: { noteId } });
+    if (sent !== null)
+      setAskPressed((p) => new Map(p).set(noteId, state.chat.length));
+  } : undefined;
   const noteBadges = badgesOn(notesWaiting, openDoc?.slug ?? null);
   const notesElsewhere = elsewhere(notesWaiting, openDoc?.slug ?? null).map((o) => ({
     ...o,
@@ -79941,6 +80070,8 @@ function ShellBody({
     waiting: noteBadges,
     others: notesElsewhere,
     agentListening,
+    asked: notesAsked,
+    ...askNote ? { onAsk: (n) => openDoc && askNote(openDoc.slug, n.id) } : {},
     onOpenDoc: (doc2) => send({ op: "open.doc", doc: doc2 }),
     focusedId: focusedNote,
     onLetGo: () => setPointedAt(null),
@@ -80042,6 +80173,8 @@ function ShellBody({
       docs: state.docs,
       openDoc: openDoc?.slug ?? null,
       agentListening,
+      asked: notesAsked,
+      ...askNote ? { onAskNote: (w) => askNote(w.doc, w.noteId) } : {},
       onOpen: () => {
         setPanelId("chat");
         toggleFrom("chat", "expand", COLUMN_INPUT);
@@ -82578,6 +82711,7 @@ function Frame({ daemon }) {
     onShowDiff: (doc2, version3) => requestDiff(doc2.slug, version3),
     onShowOutsideDiff: (doc2) => requestDiff(doc2.slug, "original"),
     endWarning: scriptoriumEndWarning,
+    askAboutNotes: true,
     centre: /* @__PURE__ */ jsx_runtime56.jsxs(jsx_runtime56.Fragment, {
       children: [
         /* @__PURE__ */ jsx_runtime56.jsx(DocumentPane, {
