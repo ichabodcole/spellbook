@@ -1123,8 +1123,8 @@ export type CheckedEdgeView = Omit<EdgeBacklinkView, "rel"> & {
 /**
  * A link or an app edge that lands on a file outside the set it is written in:
  * a document in another set, or a file in no set at all. Not a problem (a set
- * may well point beyond itself), but the human should know the set is not
- * self-contained, as the shipped Scriptorium map said "N leaving the set".
+ * may well point beyond itself), but it says the set is not self-contained.
+ * Reported only for an app that asks (`LinkCheckOptions.leaving`).
  */
 export type LeavingLinkView = {
   /** The document it is written in, absolute. */
@@ -1385,12 +1385,27 @@ export type LinkCheck = {
    * `edge` filter applies as it does to the other sections.
    */
   leaving?: { count: number; links: LeavingLinkView[] };
+  /** The app's word for a set (`LinkCheckOptions.noun`), when it gives one: what a list calls them. */
+  noun?: string;
   /**
    * The session's sets, in the context's order: each entry above names its
    * set by `set`, and a list grouped by set titles each group from here.
    */
-  sets?: { id: string; label: string }[];
+  sets?: {
+    id: string;
+    label: string;
+    /** Everything the set's group lists, before any list is cut (shared names, the session's, apart). */
+    total: number;
+  }[];
   truncated?: true;
+};
+
+/** What an app asks of the link check beyond the kit's own (`WorkspaceDaemonOptions.linkCheck`). */
+export type LinkCheckOptions = {
+  /** Report the links and app edges leaving their set (`LinkCheck.leaving`). Off by default. */
+  leaving?: boolean;
+  /** The app's word for a set (`set`), said in the answer as `noun`. */
+  noun?: string;
 };
 
 /** A link to a heading the check reports. */

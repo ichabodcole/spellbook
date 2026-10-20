@@ -13,6 +13,7 @@ import {
   scriptoriumLinkSlot,
   wikiFormsResolver,
 } from "./links";
+import { kitDaemonOptions } from "./server";
 
 describe("wikiFormsResolver", () => {
   const docs = [
@@ -186,4 +187,9 @@ describe("on a kit session", () => {
       path: join(root, "repo", "src", "lint.md"),
     });
   });
+});
+
+test("Scriptorium asks the kit's link check for the links leaving a set, in its own word", () => {
+  // The shipped map said "N leaving the set"; the kit reports it only for an app that asks.
+  expect(kitDaemonOptions().linkCheck).toEqual({ leaving: true, noun: "set" });
 });

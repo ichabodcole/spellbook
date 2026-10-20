@@ -25,7 +25,13 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "../ui/popover.tsx";
-import type { CheckedLinkView, ClientOp, LinkCheck as LinkCheckData } from "../workspace/protocol";
+import type {
+  CheckedEdgeView,
+  CheckedLinkView,
+  ClientOp,
+  LeavingLinkView,
+  LinkCheck as LinkCheckData,
+} from "../workspace/protocol";
 
 /**
  * The pause after a cue before asking: a burst of cues (typing, a snapshot per
@@ -43,11 +49,26 @@ export const LINK_CHECK_FALLBACK_MS = 300_000;
 
 /**
  * Everything the list has to show: the link problems (`count`), the images
- * nothing links to or embeds, and the symmetric relations written one way,
- * which the daemon counts apart because neither is a broken link.
+ * nothing links to or embeds, the symmetric relations written one way, and the
+ * links leaving their set, which the daemon counts apart because none of them
+ * is a broken link.
  */
 export const linkCheckTotal = (d: LinkCheckData): number =>
-  d.count + d.unusedImages.count + d.symmetry.count + d.ambiguousHeadings.count;
+  d.count +
+  d.unusedImages.count +
+  d.symmetry.count +
+  d.ambiguousHeadings.count +
+  (d.leaving?.count ?? 0);
+
+/**
+ * The app's word for a set (`LinkCheck.noun`, from `WorkspaceDaemonOptions.linkCheck`),
+ * else `folder`: the kit names none of its own.
+ */
+const nounOf = (d: LinkCheckData) => d.noun ?? "folder";
+
+/** "frontmatter reference", or "reference" for edges of more than one kind. */
+const edgeNoun = (kinds: readonly string[]) =>
+  kinds.length === 1 ? `${kinds[0]} reference` : "reference";
 
 /** "1 shared name", "12 unsupported links": both forms written out. */
 const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
@@ -63,10 +84,16 @@ export function linkCheckLabel(d: LinkCheckData): string {
   if (d.dangling.count > 0) parts.push(count(d.dangling.count, "broken link", "broken links"));
   if (d.references.count > 0)
     parts.push(count(d.references.count, "broken reference", "broken references"));
+  if (d.edges && d.edges.count > 0) {
+    const noun = edgeNoun(d.edges.kinds);
+    parts.push(count(d.edges.count, `broken ${noun}`, `broken ${noun}s`));
+  }
   if (d.unsupported.count > 0)
     parts.push(count(d.unsupported.count, "unsupported link", "unsupported links"));
   if (d.headings.count > 0)
     parts.push(count(d.headings.count, "link to a missing heading", "links to a missing heading"));
+  // Only for an app that asks for them, in its word: "1 leaving the set".
+  if (d.leaving && d.leaving.count > 0) parts.push(`${d.leaving.count} leaving the ${nounOf(d)}`);
   if (d.unusedImages.count > 0)
     parts.push(
       count(
@@ -123,6 +150,96 @@ function LinkEntry({
   );
 }
 
+/** A broken app edge (a frontmatter reference): opens its source where it is written. */
+function EdgeEntry({
+  edge,
+  onOpen,
+}: {
+  edge: CheckedEdgeView;
+  onOpen: (path: string, at?: { from: number; to: number }) => void;
+}) {
+  const at =
+    edge.from !== undefined && edge.to !== undefined ? { from: edge.from, to: edge.to } : undefined;
+  return (
+    <li>
+      <button
+        type="button"
+        data-slot="link-check-entry"
+        data-edge={edge.edge}
+        data-source={edge.source}
+        data-line={edge.line}
+        onClick={() => onOpen(edge.source, at)}
+        title={edge.line ? `Open ${edge.shown} at line ${edge.line}` : `Open ${edge.shown}`}
+        className={ENTRY}
+      >
+        <span className="flex items-baseline gap-1.5 text-[12px]">
+          <span className="truncate text-ink group-hover/entry:text-brand">{edge.shown}</span>
+          {edge.line !== undefined && (
+            <span className="ml-auto shrink-0 font-mono text-[10px] text-ink-faint">
+              line {edge.line}
+            </span>
+          )}
+        </span>
+        <span className="block truncate font-mono text-[11px] text-ink-dim" data-slot="raw">
+          {edge.key ? `${edge.key}: ` : ""}
+          {edge.raw}
+        </span>
+        {edge.tried.length > 0 && (
+          <span className="block truncate text-[10px] text-ink-faint">
+            nothing at {edge.tried.join(", ")}
+          </span>
+        )}
+      </button>
+    </li>
+  );
+}
+
+/** A link leaving its set: opens its source at the link, and says where it lands. */
+function LeavingEntry({
+  link,
+  noun,
+  onOpen,
+}: {
+  link: LeavingLinkView;
+  noun: string;
+  onOpen: (path: string, at?: { from: number; to: number }) => void;
+}) {
+  const at =
+    link.from !== undefined && link.to !== undefined ? { from: link.from, to: link.to } : undefined;
+  return (
+    <li>
+      <button
+        type="button"
+        data-slot="link-check-entry"
+        data-leaving=""
+        data-source={link.source}
+        data-line={link.line}
+        onClick={() => onOpen(link.source, at)}
+        title={link.line ? `Open ${link.shown} at line ${link.line}` : `Open ${link.shown}`}
+        className={ENTRY}
+      >
+        <span className="flex items-baseline gap-1.5 text-[12px]">
+          <span className="truncate text-ink group-hover/entry:text-brand">{link.shown}</span>
+          {link.line !== undefined && (
+            <span className="ml-auto shrink-0 font-mono text-[10px] text-ink-faint">
+              line {link.line}
+            </span>
+          )}
+        </span>
+        <span className="block truncate font-mono text-[11px] text-ink-dim" data-slot="raw">
+          {link.key ? `${link.key}: ` : ""}
+          {link.raw}
+        </span>
+        <span className="block truncate text-[10px] text-ink-faint" data-slot="lands">
+          {link.targetSet
+            ? `lands in ${link.targetSet}: ${link.targetShown}`
+            : `lands outside every ${noun}: ${link.targetShown}`}
+        </span>
+      </button>
+    </li>
+  );
+}
+
 function Section({
   title,
   note,
@@ -162,12 +279,86 @@ function Section({
   );
 }
 
+/** Keep the entries whose set passes `keep`, each section counted from what is kept. */
+function onlySet(d: LinkCheckData, keep: (set: string | undefined) => boolean): LinkCheckData {
+  function pick<T extends { set?: string }>(list: readonly T[]): T[] {
+    return list.filter((x) => keep(x.set));
+  }
+  const dangling = pick(d.dangling.links);
+  const unsupported = pick(d.unsupported.links);
+  const headings = pick(d.headings.links);
+  const references = pick(d.references.links);
+  const edges = d.edges ? pick(d.edges.links) : undefined;
+  const images = pick(d.unusedImages.images);
+  const symmetry = pick(d.symmetry.hints);
+  const ambiguous = pick(d.ambiguousHeadings.hints);
+  const leaving = d.leaving ? pick(d.leaving.links) : undefined;
+  return {
+    count:
+      dangling.length +
+      unsupported.length +
+      headings.length +
+      references.length +
+      (edges?.length ?? 0),
+    dangling: { count: dangling.length, links: dangling },
+    unsupported: {
+      count: unsupported.length,
+      schemes: [...new Set(unsupported.map((l) => l.scheme))].sort(),
+      links: unsupported,
+    },
+    // Shared names are the session's, listed once above the sets.
+    duplicates: { count: 0, names: [] },
+    unusedImages: { count: images.length, images },
+    symmetry: { count: symmetry.length, hints: symmetry },
+    headings: { count: headings.length, links: headings },
+    ambiguousHeadings: { count: ambiguous.length, hints: ambiguous },
+    references: { count: references.length, links: references },
+    ...(d.edges && edges
+      ? {
+          edges: {
+            count: edges.length,
+            kinds: [...new Set(edges.map((e) => e.edge))].sort(),
+            links: edges,
+          },
+        }
+      : {}),
+    ...(leaving ? { leaving: { count: leaving.length, links: leaving } } : {}),
+    ...(d.noun !== undefined ? { noun: d.noun } : {}),
+  };
+}
+
 /**
- * The list behind the mark: shared names first (a rename is the bigger, rarer
- * decision, and a short list), then broken links, then unsupported ones, then
- * images nothing links to or embeds. Each entry opens its source (an image, in the viewer).
+ * The sets the list groups by, in the daemon's order, each with what it has to
+ * show; entries in no set the answer names come last, under no set's name.
  */
-export function LinkCheckList({
+export function linkCheckGroups(
+  d: LinkCheckData,
+): { id: string | null; label: string | null; total?: number; data: LinkCheckData }[] {
+  const sets = d.sets ?? [];
+  const known = new Set(sets.map((x) => x.id));
+  const groups: { id: string | null; label: string | null; total?: number; data: LinkCheckData }[] =
+    sets.map((x) => ({
+      id: x.id,
+      label: x.label,
+      total: x.total,
+      data: onlySet(d, (set) => set === x.id),
+    }));
+  groups.push({
+    id: null,
+    label: null,
+    data: onlySet(d, (set) => set === undefined || !known.has(set)),
+  });
+  return groups.filter((g) => linkCheckTotal(g.data) > 0);
+}
+
+/**
+ * One set's sections (or, from a daemon that names no sets, the session's):
+ * broken links, then broken references of each sort, unsupported links and
+ * links to a missing heading; then the links leaving the set; then the
+ * images nothing uses, and the two hints. Each entry opens its source (an
+ * image, in the viewer), at the link where the daemon says where it is.
+ */
+function KindSections({
   data,
   onOpen,
 }: {
@@ -175,48 +366,9 @@ export function LinkCheckList({
   onOpen: (path: string, at?: { from: number; to: number }) => void;
 }) {
   const openLink = (l: CheckedLinkView) => onOpen(l.source, { from: l.from, to: l.to });
-  if (linkCheckTotal(data) === 0)
-    return (
-      <p data-slot="link-check-list" className="pt-2 text-[12px] text-ink-dim">
-        Nothing to report now: every link answers, and no two documents share a name.
-      </p>
-    );
   const schemes = data.unsupported.schemes.map((s) => `${s}:`).join(", ");
   return (
-    <div data-slot="link-check-list" className="-mx-2 flex max-h-[60vh] flex-col overflow-y-auto">
-      <Section
-        title="Shared file names"
-        note="A link to the name may open the other file. Each could be renamed as shown."
-        total={data.duplicates.count}
-        shown={data.duplicates.names.length}
-      >
-        {data.duplicates.names.map((d) => (
-          <li key={d.name} data-slot="link-check-name" className="flex flex-col">
-            <span className="px-2 pt-1 font-mono text-[11px] text-ink-dim">{d.name}</span>
-            <ul className="flex flex-col">
-              {d.files.map((f) => (
-                <li key={f.path}>
-                  <button
-                    type="button"
-                    data-slot="link-check-entry"
-                    data-source={f.path}
-                    onClick={() => onOpen(f.path)}
-                    title={`Open ${f.shown}`}
-                    className={ENTRY}
-                  >
-                    <span className="block truncate text-[12px] text-ink group-hover/entry:text-brand">
-                      {f.shown}
-                    </span>
-                    <span className="block truncate text-[10px] text-ink-faint" data-slot="suggest">
-                      could be {f.suggest}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </li>
-        ))}
-      </Section>
+    <>
       <Section title="Broken links" total={data.dangling.count} shown={data.dangling.links.length}>
         {data.dangling.links.map((l) => (
           <LinkEntry
@@ -227,6 +379,22 @@ export function LinkCheckList({
           />
         ))}
       </Section>
+      {data.edges && (
+        <Section
+          title={`Broken ${edgeNoun(data.edges.kinds)}s`}
+          note="References the app reads beside the links, and nothing answers them."
+          total={data.edges.count}
+          shown={data.edges.links.length}
+        >
+          {data.edges.links.map((e) => (
+            <EdgeEntry
+              key={`${e.source}:${e.key ?? ""}:${e.raw}:${e.from ?? ""}`}
+              edge={e}
+              onOpen={onOpen}
+            />
+          ))}
+        </Section>
+      )}
       <Section
         title="Broken references"
         total={data.references.count}
@@ -281,6 +449,23 @@ export function LinkCheckList({
           />
         ))}
       </Section>
+      {data.leaving && (
+        <Section
+          title={`Leaving the ${nounOf(data)}`}
+          note={`Not broken: these land on a file in another ${nounOf(data)}, or in none. The ${nounOf(data)} is not self-contained.`}
+          total={data.leaving.count}
+          shown={data.leaving.links.length}
+        >
+          {data.leaving.links.map((l) => (
+            <LeavingEntry
+              key={`${l.source}:${l.edge ?? "link"}:${l.from ?? l.raw}:${l.key ?? ""}`}
+              link={l}
+              noun={nounOf(data)}
+              onOpen={onOpen}
+            />
+          ))}
+        </Section>
+      )}
       <Section
         title="Images nothing links to or embeds"
         note="In an images folder beside a document, and no link or embed reaches them (an undone paste leaves its file). Open one to look, then embed it or move it to the Trash."
@@ -334,6 +519,97 @@ export function LinkCheckList({
           />
         ))}
       </Section>
+    </>
+  );
+}
+
+/**
+ * The list behind the mark: shared names first, for the whole session (a
+ * rename is the bigger, rarer decision, a short list, and a name may be
+ * shared across sets); then each set with something to report, in the
+ * context's order, its sections beneath its name. A daemon that names no sets
+ * gets one list, as before the grouping.
+ */
+export function LinkCheckList({
+  data,
+  onOpen,
+}: {
+  data: LinkCheckData;
+  onOpen: (path: string, at?: { from: number; to: number }) => void;
+}) {
+  if (linkCheckTotal(data) === 0)
+    return (
+      <p data-slot="link-check-list" className="pt-2 text-[12px] text-ink-dim">
+        Nothing to report now: every link answers, and no two documents share a name.
+      </p>
+    );
+  const groups = data.sets ? linkCheckGroups(data) : null;
+  /** The group of entries in no set the answer names (rare: a document opened by path). */
+  const elsewhere = data.noun ? `In no ${data.noun}` : "Elsewhere";
+  return (
+    <div data-slot="link-check-list" className="-mx-2 flex max-h-[60vh] flex-col overflow-y-auto">
+      <Section
+        title="Shared file names"
+        note="A link to the name may open the other file. Each could be renamed as shown."
+        total={data.duplicates.count}
+        shown={data.duplicates.names.length}
+      >
+        {data.duplicates.names.map((d) => (
+          <li key={d.name} data-slot="link-check-name" className="flex flex-col">
+            <span className="px-2 pt-1 font-mono text-[11px] text-ink-dim">{d.name}</span>
+            <ul className="flex flex-col">
+              {d.files.map((f) => (
+                <li key={f.path}>
+                  <button
+                    type="button"
+                    data-slot="link-check-entry"
+                    data-source={f.path}
+                    onClick={() => onOpen(f.path)}
+                    title={`Open ${f.shown}`}
+                    className={ENTRY}
+                  >
+                    <span className="block truncate text-[12px] text-ink group-hover/entry:text-brand">
+                      {f.shown}
+                    </span>
+                    <span className="block truncate text-[10px] text-ink-faint" data-slot="suggest">
+                      could be {f.suggest}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </li>
+        ))}
+      </Section>
+      {groups === null ? (
+        <KindSections data={data} onOpen={onOpen} />
+      ) : (
+        groups.map((g) => (
+          <section
+            key={g.id ?? ""}
+            data-slot="link-check-set"
+            data-set={g.id ?? undefined}
+            aria-label={g.label ? `In ${g.label}` : elsewhere}
+            className="flex flex-col"
+          >
+            <h3 className="mx-2 mt-3 flex items-baseline gap-1.5 border-b border-edge pb-0.5 text-[12px] font-medium text-ink">
+              <span className="truncate">{g.label ?? elsewhere}</span>
+              <span className="font-normal text-ink-faint" data-slot="set-total">
+                {g.total !== undefined && g.total > linkCheckTotal(g.data)
+                  ? `${linkCheckTotal(g.data)} of ${g.total}`
+                  : linkCheckTotal(g.data)}
+              </span>
+            </h3>
+            <KindSections data={g.data} onOpen={onOpen} />
+          </section>
+        ))
+      )}
+      {groups !== null && data.truncated && (
+        <p className="px-2 pt-2 text-[10px] text-ink-faint">
+          Each list was cut at its first entries, and a group shows only what was kept of it (“N of
+          M”); the status bar's counts are the whole.
+        </p>
+      )}
     </div>
   );
 }

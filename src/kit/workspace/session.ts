@@ -202,6 +202,7 @@ import type {
   ImageView,
   LeavingLinkView,
   LinkCheck,
+  LinkCheckOptions,
   LinkGraph,
   LinkHeadings,
   LinkTarget,
@@ -882,6 +883,8 @@ export class WorkspaceSession {
   >();
   /** The app's part of the link layer: its edges and its resolver (`setLinkSlot`). */
   private linkSlot: LinkSlot = {};
+  /** What the app asks of the link check beyond the kit's own (`setLinkCheck`). */
+  private linkCheckOpts: LinkCheckOptions = {};
   /** The documents the app's resolver may land on, built once per context index. */
   private resolvable = new WeakMap<ContextIndex, readonly ResolvableDocument[]>();
   /**
@@ -919,6 +922,15 @@ export class WorkspaceSession {
   setLinkSlot(slot: LinkSlot | undefined): void {
     this.linkSlot = checkLinkSlot(slot);
     this.linkCache.clear();
+  }
+
+  /**
+   * What the app asks of the link check (`WorkspaceDaemonOptions.linkCheck`):
+   * the links leaving their set, and its word for a set. Set once, as the
+   * daemon boots; without it the check is the kit's own.
+   */
+  setLinkCheck(opts: LinkCheckOptions | undefined): void {
+    this.linkCheckOpts = { ...(opts ?? {}) };
   }
 
   /** Whether the app adds edges of its own: what decides that the answers carry them. */
@@ -7218,8 +7230,24 @@ export class WorkspaceSession {
     const all = this.markdownCandidates();
     const read = new Set<string>();
     const entryOf = this.entryFinder(index);
+    // ⛔ THE INNERMOST SET WINS for which set a file is in: with `world` and
+    // `world/inner` both in the context, `inner/deep.md` is `inner`'s, as the
+    // shipped map counted it (whichever was added first). Resolving still goes
+    // through `entryOf`, so the check follows a link as a click does.
+    const setEntry = (path: string): ContextEntry | undefined => {
+      let best = entryOf(path);
+      for (const e of this.m.context)
+        if (
+          e.membership === "mirrored" &&
+          path.startsWith(e.root + sep) &&
+          (best === undefined || e.root.length > best.root.length)
+        )
+          best = e;
+      return best;
+    };
+    // From the root of the set it is grouped under (`setEntry`, below).
     const shown = (path: string) => {
-      const entry = entryOf(path);
+      const entry = setEntry(path);
       return entry ? toPosix(relative(entry.root, path)) : basename(path);
     };
     // Every image a link or an embed reaches, seen on the way: the unused-images
@@ -7241,23 +7269,33 @@ export class WorkspaceSession {
       };
     });
     // Links and edges that land outside the set they are written in
-    // (kit-broken-links-visible): the shipped map's "N leaving the set".
+    // (kit-broken-links-visible), for an app that asks (`linkCheck.leaving`).
     const leavingLinks: LeavingLinkView[] = [];
-    const setOf = (path: string) => entryOf(path)?.id;
+    // Only for an app that asks for it (`linkCheck.leaving`).
+    const wantLeaving = this.linkCheckOpts.leaving === true;
+    const setOf = (path: string) => setEntry(path)?.id;
     /** Where a link from `from` lands, when that is outside `from`'s set; else null. */
     const leaves = (r: Resolution, from: string): { target: string } | null => {
       if (r.state !== "in-context" && r.state !== "outside" && r.state !== "not-a-doc") return null;
-      const own = entryOf(from);
+      const own = setEntry(from);
       if (own === undefined) return null;
-      // A document or image the session holds: in another set, or none.
-      if (r.state === "in-context")
-        return entryOf(r.path)?.id === own.id ? null : { target: r.path };
-      // A file the session does not hold: leaving unless it sits in the set's folder.
+      // ⛔ A LISTED ENTRY (documents added on their own) HAS NO FOLDER OF ITS
+      // OWN: its root is its document's folder, so the folder rule would take
+      // every sibling, and any set below, as inside it. A link from one leaves
+      // unless the entry itself holds the target, as the shipped map counted it.
+      if (own.membership === "listed")
+        return r.state === "in-context" && setEntry(r.path)?.id === own.id
+          ? null
+          : { target: r.path };
+      // A mirrored set: LEAVING IS ABOUT ITS FOLDER, as the shipped map counted
+      // it. Anything under the folder is inside, a document of a set nested in
+      // it included (`world -> ./inner/deep.md` stays in `world`), and anything
+      // else leaves (`inner/deep.md -> ../ruin.md` leaves `inner`).
       return r.path.startsWith(own.root + sep) ? null : { target: r.path };
     };
     const leavingView = (from: string, target: string) => {
-      const there = entryOf(target);
-      const own = entryOf(from);
+      const there = setEntry(target);
+      const own = setEntry(from);
       return {
         source: from,
         name: basename(from),
@@ -7286,7 +7324,7 @@ export class WorkspaceSession {
         if (r.state !== "missing") continue;
         const v = this.referenceView(c.path, ref, entryOf);
         const called = ref.label ?? basename(ref.raw);
-        const set = entryOf(c.path)?.id;
+        const set = setOf(c.path);
         references.push({
           ...v,
           ...(set !== undefined ? { set } : {}),
@@ -7326,7 +7364,7 @@ export class WorkspaceSession {
           const line = e.line ?? spot?.line;
           const at = spot ? { from: spot.from, to: spot.to } : {};
           const set = setOf(s.path);
-          const out = leaves(r, s.path);
+          const out = wantLeaving ? leaves(r, s.path) : null;
           if (out)
             leavingLinks.push({
               ...leavingView(s.path, out.target),
@@ -7357,7 +7395,7 @@ export class WorkspaceSession {
         a.shown.localeCompare(b.shown, undefined, { numeric: true }) ||
         (a.line ?? 0) - (b.line ?? 0),
     );
-    if (keep(BODY_LINKS))
+    if (wantLeaving && keep(BODY_LINKS))
       for (const s of sources)
         for (const link of s.links) {
           if (link.scheme !== undefined) continue;
@@ -7536,12 +7574,24 @@ export class WorkspaceSession {
       symmetry.length > LINK_CHECK_CAP ||
       references.length > LINK_CHECK_CAP ||
       leavingLinks.length > LINK_CHECK_CAP;
+    // Each set's whole, before any list is cut: what a group says it shows
+    // part of when the check is truncated. Shared names are the session's.
+    const totals = new Map<string, number>();
+    for (const list of [
+      dangling,
+      unsupported,
+      missingHeadings,
+      ambiguous,
+      symmetry,
+      references,
+      danglingEdges,
+      leavingLinks,
+      unusedImages,
+    ] as { set?: string }[][])
+      for (const x of list)
+        if (x.set !== undefined) totals.set(x.set, (totals.get(x.set) ?? 0) + 1);
     const named = new Set<string | undefined>([
-      ...[dangling, unsupported, missingHeadings, ambiguous, symmetry, references, danglingEdges]
-        .flatMap((l) => cut<{ set?: string }>(l))
-        .map((x) => x.set),
-      ...cut(leavingLinks).map((x) => x.set),
-      ...cut(unusedImages).map((x) => x.set),
+      ...totals.keys(),
       ...cut(names).flatMap((n) => n.files.map((f) => f.set)),
     ]);
     return {
@@ -7573,11 +7623,12 @@ export class WorkspaceSession {
             },
           }
         : {}),
-      leaving: { count: leavingLinks.length, links: cut(leavingLinks) },
+      ...(wantLeaving ? { leaving: { count: leavingLinks.length, links: cut(leavingLinks) } } : {}),
+      ...(this.linkCheckOpts.noun !== undefined ? { noun: this.linkCheckOpts.noun } : {}),
       // Only the sets the answer names, in the context's order.
       sets: this.m.context
         .filter((e) => named.has(e.id))
-        .map((e) => ({ id: e.id, label: e.label })),
+        .map((e) => ({ id: e.id, label: e.label, total: totals.get(e.id) ?? 0 })),
       ...(truncated ? { truncated: true as const } : {}),
     };
   }

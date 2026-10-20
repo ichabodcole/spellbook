@@ -152,6 +152,8 @@ export function kitDaemonOptions(
     }),
     // Frontmatter references as edges, and the wiki forms as a resolver (kit-link-edges-slot).
     links: scriptoriumLinkSlot(),
+    // The shipped map said "N leaving the set": the link check lists them, in Scriptorium's word.
+    linkCheck: { leaving: true, noun: "set" },
     // The kit page at `/` (release: `dist/kit/`, and its chunks beside it).
     surface: frameSurface(),
     ...overrides,

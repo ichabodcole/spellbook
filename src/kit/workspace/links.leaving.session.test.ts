@@ -7,7 +7,7 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AppEdge, LinkSlot } from "./linkEdges";
 import { locateEdges } from "./linkEdges";
-import type { WorkspaceSession } from "./session";
+import { LINK_CHECK_CAP, type WorkspaceSession } from "./session";
 import { inContext, tempRoot } from "./testing";
 
 let root: string;
@@ -53,6 +53,8 @@ beforeEach(() => {
   s = inContext(join(root, "sessions"), world);
   s.addContext(lore);
   s.setLinkSlot({ edges: related });
+  // As Scriptorium declares it: the kit reports leaving links only when asked.
+  s.setLinkCheck({ leaving: true, noun: "set" });
 });
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 
@@ -112,10 +114,12 @@ describe("grouped by set", () => {
   test("each entry names its set, and `sets` lists those named, in the context's order", () => {
     const c = s.linkCheck();
     const { world: w, lore: l } = ids();
+    // Each with its whole: world's broken link, broken reference and three leaving.
     expect(c.sets).toEqual([
-      { id: w as string, label: "world" },
-      { id: l as string, label: "lore" },
+      { id: w as string, label: "world", total: 5 },
+      { id: l as string, label: "lore", total: 1 },
     ]);
+    expect(c.noun).toBe("set");
     expect(c.dangling.links[0]?.set).toBe(w);
     expect(c.edges?.links[0]?.set).toBe(w);
   });
@@ -123,6 +127,111 @@ describe("grouped by set", () => {
   test("a set with nothing to report is not listed", () => {
     writeFileSync(join(lore, "myth.md"), "# The Myth\n");
     expect(s.linkCheck().sets?.map((x) => x.label)).toEqual(["world"]);
+  });
+});
+
+describe("leaving is the app's to ask for", () => {
+  test("without the option there is no leaving section and no noun; count is the same", () => {
+    const asked = s.linkCheck();
+    s.setLinkCheck(undefined);
+    const c = s.linkCheck();
+    expect("leaving" in c).toBe(false);
+    expect("noun" in c).toBe(false);
+    expect(c.count).toBe(asked.count);
+    expect(c.sets?.map((x) => [x.label, x.total])).toEqual([["world", 2]]);
+  });
+});
+
+describe("the edges of a set", () => {
+  test("a sibling folder whose name starts with the set's is outside it", () => {
+    mkdirSync(join(root, "world-old"), { recursive: true });
+    writeFileSync(join(root, "world-old", "data.csv"), "a\n");
+    writeFileSync(join(world, "old.md"), "# Old\n\n[the old data](../world-old/data.csv)\n");
+    s.rescan(ids().world ?? "");
+    const raws = s.linkCheck().leaving?.links.map((x) => x.raw) ?? [];
+    expect(raws).toContain("../world-old/data.csv");
+  });
+
+  test("the innermost set wins for grouping; leaving is judged by the source set's folder, both ways", () => {
+    const inner = join(world, "inner");
+    mkdirSync(inner, { recursive: true });
+    writeFileSync(
+      join(inner, "deep.md"),
+      "# Deep\n\n[the ruin](../ruin.md) and [the gap](./gap.md)\n",
+    );
+    writeFileSync(join(inner, "notes.csv"), "a\n");
+    // The other way: from `world` into the set nested in it, which is under its folder.
+    writeFileSync(
+      join(world, "ruin.md"),
+      "# The Ruin\n\n[deep](./inner/deep.md) and [the notes](./inner/notes.csv)\n",
+    );
+    s.addContext(inner);
+    // `world` lists `inner/deep.md` too (it was added first): the first entry to
+    // list a file is the one a click resolves from, and the innermost set still wins.
+    s.rescan(ids().world ?? "");
+    const innerId = s.context[2]?.id;
+    const c = s.linkCheck();
+    const deep = c.leaving?.links.filter((x) => x.source === join(inner, "deep.md"));
+    expect(deep?.map((x) => [x.shown, x.raw, x.targetSet, x.set])).toEqual([
+      ["deep.md", "../ruin.md", "world", innerId],
+    ]);
+    expect(c.dangling.links.find((x) => x.raw === "./gap.md")?.set).toBe(innerId);
+    // As the shipped map counted it: what is under `world`'s folder never leaves `world`,
+    // a document of the nested set and a file no set holds alike.
+    const fromRuin = c.leaving?.links.filter((x) => x.source === join(world, "ruin.md"));
+    expect(fromRuin).toEqual([]);
+  });
+
+  test("documents added on their own: a sibling and a set below their folder both leave", () => {
+    const loose = join(root, "loose");
+    mkdirSync(join(loose, "world2"), { recursive: true });
+    writeFileSync(
+      join(loose, "solo.md"),
+      "# Solo\n\n[sib](./sib.md) and [w](./world2/w.md); [me](./solo.md)\n",
+    );
+    writeFileSync(join(loose, "sib.md"), "# Sib\n");
+    writeFileSync(join(loose, "world2", "w.md"), "# W\n");
+    s.addContext(join(loose, "solo.md"));
+    s.addContext(join(loose, "sib.md"));
+    s.addContext(join(loose, "world2"));
+    const solo = s.context.find(
+      (e) => e.membership === "listed" && e.nodes.some((n) => "rel" in n && n.rel === "solo.md"),
+    );
+    expect(solo).toBeDefined();
+    const fromSolo = s
+      .linkCheck()
+      .leaving?.links.filter((x) => x.source === join(loose, "solo.md"));
+    // As the shipped map counted it: an entry added on its own holds only itself,
+    // so a link to itself stays and its siblings leave.
+    expect(fromSolo?.map((x) => [x.raw, x.targetSet])).toEqual([
+      ["./sib.md", expect.any(String)],
+      ["./world2/w.md", "world2"],
+    ]);
+  });
+
+  test("an unused image keeps its set", () => {
+    writeFileSync(join(world, "images", "unused.png"), "png");
+    s.rescan(ids().world ?? "");
+    const c = s.linkCheck();
+    expect(c.unusedImages.images.map((x) => [x.shown, x.set])).toEqual([
+      ["images/unused.png", ids().world],
+    ]);
+  });
+
+  test("a leaving list past the cap marks the check truncated, its count whole", () => {
+    const many = Array.from({ length: LINK_CHECK_CAP + 1 }, (_, i) => `[m${i}](../lore/myth.md)`);
+    writeFileSync(join(world, "many.md"), `# Many\n\n${many.join("\n")}\n`);
+    // The rest of the world cut down, so leaving alone passes the cap.
+    writeFileSync(join(world, "glade.md"), "# The Glade\n");
+    writeFileSync(join(lore, "myth.md"), "# The Myth\n");
+    s.rescan(ids().world ?? "");
+    const c = s.linkCheck();
+    expect(c.leaving?.count).toBe(LINK_CHECK_CAP + 1);
+    expect(c.leaving?.links).toHaveLength(LINK_CHECK_CAP);
+    expect(c.truncated).toBe(true);
+    // The set says its whole, so a list can say how much of it shows.
+    // (and the map, which the cut-down glade no longer embeds: an unused image).
+    expect(c.sets?.[0]?.total).toBe(LINK_CHECK_CAP + 2);
   });
 });
 

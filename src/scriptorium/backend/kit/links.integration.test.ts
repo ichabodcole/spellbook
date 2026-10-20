@@ -113,6 +113,9 @@ describe("frontmatter references on the kit path", () => {
     const c = json<LinkCheck>(await cli("link-check", "--session", sessionId));
     expect(c.edges?.links.map((e) => [e.raw, e.key])).toEqual([["./gone.md", "related"]]);
     expect(c.dangling.count).toBe(0);
+    // Scriptorium asks for the links leaving a set, in its word (kit-broken-links-visible).
+    expect(c.noun).toBe("set");
+    expect(c.leaving).toEqual({ count: 0, links: [] });
     expect(c.count).toBe(1);
     const links = json<LinkCheck>(
       await cli("link-check", "--session", sessionId, "--edge", "link"),

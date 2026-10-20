@@ -120,6 +120,7 @@ import type {
   DocView,
   GraphOptions,
   HeadingLanding,
+  LinkCheckOptions,
   Message,
   MessageAbout,
   MessageAboutOnTail,
@@ -661,6 +662,14 @@ export type WorkspaceDaemonOptions = {
    * `backlinks` and `link-check` carry the edges and filter by kind.
    */
   links?: LinkSlot;
+  /**
+   * What the app asks of the link check beyond the kit's own
+   * (kit-broken-links-visible): `leaving` adds the links and edges that land
+   * outside the set they are written in (off by default), and `noun` is the
+   * app's word for a set, which the status bar's list uses ("leaving the
+   * set"). Without it, `link-check` and the list are the kit's own.
+   */
+  linkCheck?: LinkCheckOptions;
   /** Hooks an app may set to take part in an act the kit performs. */
   hooks?: {
     /**
@@ -936,6 +945,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         })
       : WorkspaceSession.create(opts.sessionsRoot, app, sessionId, opts.workspace);
     if (opts.links) session.setLinkSlot(opts.links);
+    if (opts.linkCheck) session.setLinkCheck(opts.linkCheck);
     if (opts.appHome !== undefined) session.setAppHome(opts.appHome);
 
     let selection: Selection | null = null;

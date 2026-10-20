@@ -107,6 +107,22 @@ const flashField = StateField.define<DecorationSet>({
 /** How long a pointed-at passage stays marked. */
 export const FLASH_MARK_MS = 1600;
 
+/**
+ * An offset into `text` as the daemon counts it, as a position in the editor's
+ * document. ⛔ CODEMIRROR HOLDS ONE CHARACTER FOR EACH `\r\n`, and the daemon
+ * (links, search, the link check) counts two, so in a CRLF file every reveal
+ * landed a character later per line above it. Each `\r\n` before the offset
+ * counts once; an offset between the `\r` and the `\n` is the line's end. A
+ * lone `\r` and a BOM are one character on both sides.
+ */
+export function editorOffset(text: string, offset: number): number {
+  if (!text.includes("\r")) return offset;
+  let n = 0;
+  const end = Math.min(offset, text.length);
+  for (let i = text.indexOf("\r\n"); i >= 0 && i < end; i = text.indexOf("\r\n", i + 2)) n++;
+  return offset - n;
+}
+
 const noteField = StateField.define<DecorationSet>({
   create: () => Decoration.none,
   update(marks, tr) {
@@ -924,6 +940,9 @@ export function DocumentView({
     };
   }, [place, docKey, editable]);
 
+  /** The text the daemon's offsets count in: what reveals and flashes map from. */
+  const textRef = useRef(text);
+  textRef.current = text;
   // Clicking a note's quote brings it into view and selects it.
   const revealed = useRef(onRevealed);
   revealed.current = onRevealed;
@@ -932,9 +951,12 @@ export function DocumentView({
   useEffect(() => {
     const v = view.current;
     if (!v || !reveal) return;
-    const end = Math.min(reveal.to, v.state.doc.length);
-    const start = Math.min(reveal.from, end);
-    const mark = reveal.heading;
+    // The daemon's offsets, in the editor's document (CRLF counted once).
+    const at = (o: number) => editorOffset(textRef.current, o);
+    const end = Math.min(at(reveal.to), v.state.doc.length);
+    const start = Math.min(at(reveal.from), end);
+    const heading = reveal.heading;
+    const mark = heading ? { from: at(heading.from), to: at(heading.to) } : undefined;
     const len = v.state.doc.length;
     v.dispatch({
       selection: { anchor: start, head: end },
@@ -965,8 +987,8 @@ export function DocumentView({
   useEffect(() => {
     const v = view.current;
     if (!v || !flash) return;
-    const end = Math.min(flash.to, v.state.doc.length);
-    const start = Math.min(flash.from, end);
+    const end = Math.min(editorOffset(textRef.current, flash.to), v.state.doc.length);
+    const start = Math.min(editorOffset(textRef.current, flash.from), end);
     v.dispatch({
       effects: [
         setFlash.of({ from: start, to: end }),
