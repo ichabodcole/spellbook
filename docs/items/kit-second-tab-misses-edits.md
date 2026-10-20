@@ -6,7 +6,7 @@ description:
   session (editActive sends no version.text to other sockets); the shipped
   Scriptorium shows it within 500 ms.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a14e5f-1882-73d8-95fd-3bf540bd4a9f
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-18 }
@@ -33,8 +33,9 @@ though, and it should be fixed before the cutover.
 
 - [x] An edit typed in one tab reaches every other tab on the session that shows
       that version, and a test pins it.
-- [x] A tab doesn't receive its own edit back as an outside change.
-- [ ] The change is generic, and it is offered on kit-parity. (Generic: yes. The
+- [x] A tab doesn't receive its own edit back as an outside change. _(Offered on
+      kit-parity, message 46, 2026-10-20.)_
+- [x] The change is generic, and it is offered on kit-parity. (Generic: yes. The
       Port-back notes below are written; offering them on kit-parity is the
       coordinator's step.)
 

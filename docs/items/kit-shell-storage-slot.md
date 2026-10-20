@@ -6,7 +6,7 @@ description:
   give it a storage adapter, defaulting to localStorage, so an app whose port
   changes per session can keep them in daemon prefs.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a15621-491d-765f-9ca8-c8345997d7fa
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-19 }
@@ -35,8 +35,9 @@ offered back.
 - [x] The layout, `panes:open`, `panes:float`, the tab and the theme all go
       through it, and a test drives a prefs-backed adapter across a remount.
 - [x] The adapter's value formats match the shipped prefs where they exist, so
-      `panes:open` and the theme carry over at the cutover.
-- [ ] Offered on kit-parity.
+      `panes:open` and the theme carry over at the cutover. _(Offered on
+      kit-parity, message 46, 2026-10-20.)_
+- [x] Offered on kit-parity.
 
 ## Done and verified
 

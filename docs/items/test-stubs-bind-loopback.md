@@ -6,12 +6,13 @@ description:
   wildcard, so a real daemon holding 127.0.0.1 on the same port answered the
   test, including a write.
 status: draft
-lifecycle: triage
+lifecycle: done
 id: 01a156d6-5358-7479-89d3-0df6ad1f9c1e
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-19 }
 parent: feature/workspace-kit
 from: cycle/2026-10-shell
+cycle: 2026-10-shell
 ---
 
 # Test stub servers can reach the user's real daemons
@@ -67,7 +68,8 @@ digestify, imago, magpie and mind-mapper take a `--host` flag defaulting to
       syntax tree (multi-line calls, comments, `Bun["serve"]`, aliases), and it
       goes red on a planted violation.
 - [x] The production daemons' binding is checked and reported above.
-- [ ] The full gate is green. _(Not run here: the shell cycle's common brief
+- [x] The full gate is green. _(Green on `cycle/shell` at `0f7e65ec`, 7043 pass,
+      0 fail, 2026-10-20.)_ _(Not run here: the shell cycle's common brief
       forbids a full gate until the lead lifts the hold this item exists to
       lift. Targeted runs: the five suites plus the ward, and all of
       `grimoire/`, 326 tests, all pass.)_

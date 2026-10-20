@@ -6,7 +6,7 @@ description:
   before the opening fence of an empty block, mixes line endings in CRLF files,
   duplicates quoted keys, and misses a block after a BOM; shipped and kit alike.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a1486e-39d2-74bc-9309-fbcd4276f813
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-16 }

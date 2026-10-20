@@ -6,7 +6,7 @@ description:
   since the map dropped its header numbers; give the human a visible sign with
   an act attached.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a15029-f5a7-7569-868c-047b2a7a562a
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-18 }

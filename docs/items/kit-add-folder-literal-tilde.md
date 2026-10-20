@@ -7,7 +7,7 @@ description:
   path refuses the same input; expand a leading ~ the way the surface does, or
   refuse it.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a14cb0-b4b0-7668-b41a-d2b31887f5ed
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-17 }

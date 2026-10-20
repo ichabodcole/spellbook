@@ -5,7 +5,7 @@ description:
   make-set lists the links its move breaks but, unlike move, offers no relink; a
   warning needs an action.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a1486e-3bb8-74b7-b965-0ad8d262f898
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-16 }

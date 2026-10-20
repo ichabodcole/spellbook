@@ -5,7 +5,7 @@ description:
   When the human closes the floating composer, the chat rail shows no waiting
   mark, so E53's sign that a message is waiting on the agent is lost.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a157b8-baa0-701e-a5b1-51a0667b4fbe
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-19 }
@@ -26,7 +26,8 @@ port must not lose.
 
 - [x] With the composer closed, the chat rail shows a waiting mark while a
       message waits on the agent, and its "may be stuck" state after 30 s.
-- [ ] Tested, and offered on kit-parity.
+      _(Offered on kit-parity, message 46, 2026-10-20.)_
+- [x] Tested, and offered on kit-parity.
 
 ## Done and verified
 

@@ -6,7 +6,7 @@ description:
   (frontmatter, types, forceLayout, the palette and more) under the kit path, so
   the cutover can delete the shipped code.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a15621-5424-749c-9c04-eb67f886b279
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-19 }

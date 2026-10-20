@@ -6,7 +6,7 @@ description:
   Scriptorium's chips, map, menu actions and prefs-backed storage, and closes
   the shipped app's parity gap the shell brings.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a15621-4f51-77a4-9731-794a964b465e
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-19 }

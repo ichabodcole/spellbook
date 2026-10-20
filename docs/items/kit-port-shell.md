@@ -7,7 +7,7 @@ description:
   src/kit/shell, cutting the plugin host, copy-in and the single-workspace UX,
   on Spellbook's names.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a15621-4526-739e-9a62-6a499cfa8561
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-19 }

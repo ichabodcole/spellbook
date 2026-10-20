@@ -6,7 +6,7 @@ description:
   note waiting on the agent but offers no Ask the agent, which the shipped app
   does."
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a157b8-bb40-77b6-a35c-5f67234ee539
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-19 }
@@ -26,8 +26,9 @@ E65 is one of the shipped behaviours the port must not lose.
 ## Definition of done
 
 - [x] A stalled note in the Notes panel offers Ask the agent, which sends the
-      ask as the shipped app does (`via: "ask"`, `about.noteId`).
-- [ ] Tested over a real daemon, and offered on kit-parity. (Tested over a real
+      ask as the shipped app does (`via: "ask"`, `about.noteId`). _(Offered on
+      kit-parity, message 46, 2026-10-20.)_
+- [x] Tested over a real daemon, and offered on kit-parity. (Tested over a real
       daemon: done. Offering it on kit-parity is the lead's.)
 
 **Done and verified (2026-10-20).** Commits `c0ba45c3` (kit), `a1e829bc`

@@ -5,7 +5,7 @@ description:
   After Scriptorium is on the kit's shell, run it beside Atlas, list what still
   differs, and decide each difference.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a13706-9597-7581-b770-897b4bbb4706
 kind: research
 generated: { by: claude-opus-5-5, at: 2026-10-13 }

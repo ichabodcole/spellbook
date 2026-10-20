@@ -6,7 +6,7 @@ description:
   session with a hint naming a different session id, where the shipped app says
   the human ended it on purpose.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a1486e-3c60-7055-b105-5f9dcffcbdd5
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-16 }

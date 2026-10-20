@@ -6,7 +6,7 @@ description:
   into it), so the agent can read other sessions' files through it; every write
   through such a set is refused.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a14911-a3e4-77de-8b03-11407216f2de
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-17 }

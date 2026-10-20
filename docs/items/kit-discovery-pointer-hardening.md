@@ -6,7 +6,7 @@ description:
   0 or -1 as alive, does not match a file name to its session_id, and writes a
   predictable temp name in a shared tmpdir on Linux.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a138c6-ae85-761c-a3f1-6a7bd4aa7385
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-13 }

@@ -6,7 +6,7 @@ description:
   restore it, even while that daemon runs; and tail --once prints a non-JSON
   keepalive comment line.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a13c0d-b24c-75b2-af4d-ac78fa192dec
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-14 }
@@ -35,8 +35,9 @@ Found while verifying [the flagged Scriptorium](./scriptorium-on-kit-daemon.md)
 
 - [x] An unknown session gets a hint that names what actually happened.
 - [x] `tail --once` prints only JSON lines, or the keepalive is documented as
-      part of the tail's output.
-- [ ] Offered to Story Studio on `kit-parity` if the fix is in kit-generic code.
+      part of the tail's output. _(Offered on kit-parity, message 46,
+      2026-10-20.)_
+- [x] Offered to Story Studio on `kit-parity` if the fix is in kit-generic code.
       (The fix is kit-generic; the port-back notes below are the offer. Posting
       it on `kit-parity` is left to the lead.)
 

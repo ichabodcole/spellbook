@@ -6,7 +6,7 @@ description:
   refusal hint and Notes' addUnavailable to the panes, so an app on the shell
   keeps the slots the panes cycle added.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a15621-4cbc-7631-993b-c7f56626f53c
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-19 }
@@ -29,9 +29,10 @@ every one: it has no home workspace, and its move plan confirms through
 
 - [x] `WorkspaceShell` takes each slot as an optional prop and hands it to the
       pane, unchanged.
-- [x] A test shows each one reaching its pane through the shell.
+- [x] A test shows each one reaching its pane through the shell. _(Offered on
+      kit-parity, message 46, 2026-10-20.)_
 - [x] Without them, the shell behaves as Story Studio's does.
-- [ ] Offered on kit-parity together with the slots themselves.
+- [x] Offered on kit-parity together with the slots themselves.
 
 ## Done and verified
 

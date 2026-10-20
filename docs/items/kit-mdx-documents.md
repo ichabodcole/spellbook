@@ -6,7 +6,7 @@ description:
   Scriptorium's kit path drop .mdx files the shipped app shows; decide whether
   the kit counts them.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a1486e-3b17-70ac-bb92-06ee1694742a
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-16 }
