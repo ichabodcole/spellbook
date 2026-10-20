@@ -59565,6 +59565,17 @@ var flashField = StateField.define({
   provide: (f) => EditorView.decorations.from(f)
 });
 var FLASH_MARK_MS = 1600;
+function editorOffset(text4, offset4) {
+  if (!text4.includes("\r"))
+    return offset4;
+  let n = 0;
+  const end = Math.min(offset4, text4.length);
+  for (let i2 = text4.indexOf(`\r
+`);i2 >= 0 && i2 < end; i2 = text4.indexOf(`\r
+`, i2 + 2))
+    n++;
+  return offset4 - n;
+}
 var noteField = StateField.define({
   create: () => Decoration.none,
   update(marks2, tr) {
@@ -60066,6 +60077,8 @@ function DocumentView({
       leave();
     };
   }, [place, docKey, editable2]);
+  const textRef = import_react20.useRef(text4);
+  textRef.current = text4;
   const revealed = import_react20.useRef(onRevealed);
   revealed.current = onRevealed;
   const headingMarkTimer = import_react20.useRef(undefined);
@@ -60073,9 +60086,11 @@ function DocumentView({
     const v = view.current;
     if (!v || !reveal)
       return;
-    const end = Math.min(reveal.to, v.state.doc.length);
-    const start = Math.min(reveal.from, end);
-    const mark = reveal.heading;
+    const at2 = (o) => editorOffset(textRef.current, o);
+    const end = Math.min(at2(reveal.to), v.state.doc.length);
+    const start = Math.min(at2(reveal.from), end);
+    const heading2 = reveal.heading;
+    const mark = heading2 ? { from: at2(heading2.from), to: at2(heading2.to) } : undefined;
     const len = v.state.doc.length;
     v.dispatch({
       selection: { anchor: start, head: end },
@@ -60097,8 +60112,8 @@ function DocumentView({
     const v = view.current;
     if (!v || !flash)
       return;
-    const end = Math.min(flash.to, v.state.doc.length);
-    const start = Math.min(flash.from, end);
+    const end = Math.min(editorOffset(textRef.current, flash.to), v.state.doc.length);
+    const start = Math.min(editorOffset(textRef.current, flash.from), end);
     v.dispatch({
       effects: [
         setFlash.of({ from: start, to: end }),
@@ -77567,7 +77582,9 @@ var import_react48 = __toESM(require_react(), 1);
 var jsx_runtime48 = __toESM(require_jsx_runtime(), 1);
 var LINK_CHECK_PAUSE_MS = 1200;
 var LINK_CHECK_FALLBACK_MS = 300000;
-var linkCheckTotal = (d) => d.count + d.unusedImages.count + d.symmetry.count + d.ambiguousHeadings.count;
+var linkCheckTotal = (d) => d.count + d.unusedImages.count + d.symmetry.count + d.ambiguousHeadings.count + (d.leaving?.count ?? 0);
+var nounOf = (d) => d.noun ?? "folder";
+var edgeNoun = (kinds) => kinds.length === 1 ? `${kinds[0]} reference` : "reference";
 var count = (n, one2, many) => `${n} ${n === 1 ? one2 : many}`;
 function linkCheckLabel(d) {
   const parts = [];
@@ -77577,10 +77594,16 @@ function linkCheckLabel(d) {
     parts.push(count(d.dangling.count, "broken link", "broken links"));
   if (d.references.count > 0)
     parts.push(count(d.references.count, "broken reference", "broken references"));
+  if (d.edges && d.edges.count > 0) {
+    const noun = edgeNoun(d.edges.kinds);
+    parts.push(count(d.edges.count, `broken ${noun}`, `broken ${noun}s`));
+  }
   if (d.unsupported.count > 0)
     parts.push(count(d.unsupported.count, "unsupported link", "unsupported links"));
   if (d.headings.count > 0)
     parts.push(count(d.headings.count, "link to a missing heading", "links to a missing heading"));
+  if (d.leaving && d.leaving.count > 0)
+    parts.push(`${d.leaving.count} leaving the ${nounOf(d)}`);
   if (d.unusedImages.count > 0)
     parts.push(count(d.unusedImages.count, "image nothing links to or embeds", "images nothing links to or embeds"));
   if (d.symmetry.count > 0)
@@ -77629,6 +77652,107 @@ function LinkEntry({
         note && /* @__PURE__ */ jsx_runtime48.jsx("span", {
           className: "block truncate text-[10px] text-ink-faint",
           children: note
+        })
+      ]
+    })
+  });
+}
+function EdgeEntry2({
+  edge,
+  onOpen
+}) {
+  const at2 = edge.from !== undefined && edge.to !== undefined ? { from: edge.from, to: edge.to } : undefined;
+  return /* @__PURE__ */ jsx_runtime48.jsx("li", {
+    children: /* @__PURE__ */ jsx_runtime48.jsxs("button", {
+      type: "button",
+      "data-slot": "link-check-entry",
+      "data-edge": edge.edge,
+      "data-source": edge.source,
+      "data-line": edge.line,
+      onClick: () => onOpen(edge.source, at2),
+      title: edge.line ? `Open ${edge.shown} at line ${edge.line}` : `Open ${edge.shown}`,
+      className: ENTRY,
+      children: [
+        /* @__PURE__ */ jsx_runtime48.jsxs("span", {
+          className: "flex items-baseline gap-1.5 text-[12px]",
+          children: [
+            /* @__PURE__ */ jsx_runtime48.jsx("span", {
+              className: "truncate text-ink group-hover/entry:text-brand",
+              children: edge.shown
+            }),
+            edge.line !== undefined && /* @__PURE__ */ jsx_runtime48.jsxs("span", {
+              className: "ml-auto shrink-0 font-mono text-[10px] text-ink-faint",
+              children: [
+                "line ",
+                edge.line
+              ]
+            })
+          ]
+        }),
+        /* @__PURE__ */ jsx_runtime48.jsxs("span", {
+          className: "block truncate font-mono text-[11px] text-ink-dim",
+          "data-slot": "raw",
+          children: [
+            edge.key ? `${edge.key}: ` : "",
+            edge.raw
+          ]
+        }),
+        edge.tried.length > 0 && /* @__PURE__ */ jsx_runtime48.jsxs("span", {
+          className: "block truncate text-[10px] text-ink-faint",
+          children: [
+            "nothing at ",
+            edge.tried.join(", ")
+          ]
+        })
+      ]
+    })
+  });
+}
+function LeavingEntry({
+  link,
+  noun,
+  onOpen
+}) {
+  const at2 = link.from !== undefined && link.to !== undefined ? { from: link.from, to: link.to } : undefined;
+  return /* @__PURE__ */ jsx_runtime48.jsx("li", {
+    children: /* @__PURE__ */ jsx_runtime48.jsxs("button", {
+      type: "button",
+      "data-slot": "link-check-entry",
+      "data-leaving": "",
+      "data-source": link.source,
+      "data-line": link.line,
+      onClick: () => onOpen(link.source, at2),
+      title: link.line ? `Open ${link.shown} at line ${link.line}` : `Open ${link.shown}`,
+      className: ENTRY,
+      children: [
+        /* @__PURE__ */ jsx_runtime48.jsxs("span", {
+          className: "flex items-baseline gap-1.5 text-[12px]",
+          children: [
+            /* @__PURE__ */ jsx_runtime48.jsx("span", {
+              className: "truncate text-ink group-hover/entry:text-brand",
+              children: link.shown
+            }),
+            link.line !== undefined && /* @__PURE__ */ jsx_runtime48.jsxs("span", {
+              className: "ml-auto shrink-0 font-mono text-[10px] text-ink-faint",
+              children: [
+                "line ",
+                link.line
+              ]
+            })
+          ]
+        }),
+        /* @__PURE__ */ jsx_runtime48.jsxs("span", {
+          className: "block truncate font-mono text-[11px] text-ink-dim",
+          "data-slot": "raw",
+          children: [
+            link.key ? `${link.key}: ` : "",
+            link.raw
+          ]
+        }),
+        /* @__PURE__ */ jsx_runtime48.jsx("span", {
+          className: "block truncate text-[10px] text-ink-faint",
+          "data-slot": "lands",
+          children: link.targetSet ? `lands in ${link.targetSet}: ${link.targetShown}` : `lands outside every ${noun}: ${link.targetShown}`
         })
       ]
     })
@@ -77685,65 +77809,68 @@ function Section({
     ]
   });
 }
-function LinkCheckList({
+function onlySet(d, keep) {
+  function pick2(list2) {
+    return list2.filter((x) => keep(x.set));
+  }
+  const dangling = pick2(d.dangling.links);
+  const unsupported = pick2(d.unsupported.links);
+  const headings = pick2(d.headings.links);
+  const references = pick2(d.references.links);
+  const edges = d.edges ? pick2(d.edges.links) : undefined;
+  const images = pick2(d.unusedImages.images);
+  const symmetry = pick2(d.symmetry.hints);
+  const ambiguous = pick2(d.ambiguousHeadings.hints);
+  const leaving = d.leaving ? pick2(d.leaving.links) : undefined;
+  return {
+    count: dangling.length + unsupported.length + headings.length + references.length + (edges?.length ?? 0),
+    dangling: { count: dangling.length, links: dangling },
+    unsupported: {
+      count: unsupported.length,
+      schemes: [...new Set(unsupported.map((l) => l.scheme))].sort(),
+      links: unsupported
+    },
+    duplicates: { count: 0, names: [] },
+    unusedImages: { count: images.length, images },
+    symmetry: { count: symmetry.length, hints: symmetry },
+    headings: { count: headings.length, links: headings },
+    ambiguousHeadings: { count: ambiguous.length, hints: ambiguous },
+    references: { count: references.length, links: references },
+    ...d.edges && edges ? {
+      edges: {
+        count: edges.length,
+        kinds: [...new Set(edges.map((e) => e.edge))].sort(),
+        links: edges
+      }
+    } : {},
+    ...leaving ? { leaving: { count: leaving.length, links: leaving } } : {},
+    ...d.noun !== undefined ? { noun: d.noun } : {}
+  };
+}
+function linkCheckGroups(d) {
+  const sets = d.sets ?? [];
+  const known = new Set(sets.map((x) => x.id));
+  const groups = sets.map((x) => ({
+    id: x.id,
+    label: x.label,
+    total: x.total,
+    data: onlySet(d, (set2) => set2 === x.id)
+  }));
+  groups.push({
+    id: null,
+    label: null,
+    data: onlySet(d, (set2) => set2 === undefined || !known.has(set2))
+  });
+  return groups.filter((g) => linkCheckTotal(g.data) > 0);
+}
+function KindSections({
   data,
   onOpen
 }) {
   const openLink = (l) => onOpen(l.source, { from: l.from, to: l.to });
-  if (linkCheckTotal(data) === 0)
-    return /* @__PURE__ */ jsx_runtime48.jsx("p", {
-      "data-slot": "link-check-list",
-      className: "pt-2 text-[12px] text-ink-dim",
-      children: "Nothing to report now: every link answers, and no two documents share a name."
-    });
   const schemes = data.unsupported.schemes.map((s) => `${s}:`).join(", ");
-  return /* @__PURE__ */ jsx_runtime48.jsxs("div", {
-    "data-slot": "link-check-list",
-    className: "-mx-2 flex max-h-[60vh] flex-col overflow-y-auto",
+  return /* @__PURE__ */ jsx_runtime48.jsxs(jsx_runtime48.Fragment, {
     children: [
-      /* @__PURE__ */ jsx_runtime48.jsx(Section, {
-        title: "Shared file names",
-        note: "A link to the name may open the other file. Each could be renamed as shown.",
-        total: data.duplicates.count,
-        shown: data.duplicates.names.length,
-        children: data.duplicates.names.map((d) => /* @__PURE__ */ jsx_runtime48.jsxs("li", {
-          "data-slot": "link-check-name",
-          className: "flex flex-col",
-          children: [
-            /* @__PURE__ */ jsx_runtime48.jsx("span", {
-              className: "px-2 pt-1 font-mono text-[11px] text-ink-dim",
-              children: d.name
-            }),
-            /* @__PURE__ */ jsx_runtime48.jsx("ul", {
-              className: "flex flex-col",
-              children: d.files.map((f) => /* @__PURE__ */ jsx_runtime48.jsx("li", {
-                children: /* @__PURE__ */ jsx_runtime48.jsxs("button", {
-                  type: "button",
-                  "data-slot": "link-check-entry",
-                  "data-source": f.path,
-                  onClick: () => onOpen(f.path),
-                  title: `Open ${f.shown}`,
-                  className: ENTRY,
-                  children: [
-                    /* @__PURE__ */ jsx_runtime48.jsx("span", {
-                      className: "block truncate text-[12px] text-ink group-hover/entry:text-brand",
-                      children: f.shown
-                    }),
-                    /* @__PURE__ */ jsx_runtime48.jsxs("span", {
-                      className: "block truncate text-[10px] text-ink-faint",
-                      "data-slot": "suggest",
-                      children: [
-                        "could be ",
-                        f.suggest
-                      ]
-                    })
-                  ]
-                })
-              }, f.path))
-            })
-          ]
-        }, d.name))
-      }),
       /* @__PURE__ */ jsx_runtime48.jsx(Section, {
         title: "Broken links",
         total: data.dangling.count,
@@ -77753,6 +77880,16 @@ function LinkCheckList({
           note: l.tried.length > 0 ? `nothing at ${l.tried.join(", ")}` : undefined,
           onOpen: openLink
         }, `${l.source}:${l.from}`))
+      }),
+      data.edges && /* @__PURE__ */ jsx_runtime48.jsx(Section, {
+        title: `Broken ${edgeNoun(data.edges.kinds)}s`,
+        note: "References the app reads beside the links, and nothing answers them.",
+        total: data.edges.count,
+        shown: data.edges.links.length,
+        children: data.edges.links.map((e) => /* @__PURE__ */ jsx_runtime48.jsx(EdgeEntry2, {
+          edge: e,
+          onOpen
+        }, `${e.source}:${e.key ?? ""}:${e.raw}:${e.from ?? ""}`))
       }),
       /* @__PURE__ */ jsx_runtime48.jsx(Section, {
         title: "Broken references",
@@ -77814,6 +77951,17 @@ function LinkCheckList({
           onOpen: openLink
         }, `${l.source}:${l.from}`))
       }),
+      data.leaving && /* @__PURE__ */ jsx_runtime48.jsx(Section, {
+        title: `Leaving the ${nounOf(data)}`,
+        note: `Not broken: these land on a file in another ${nounOf(data)}, or in none. The ${nounOf(data)} is not self-contained.`,
+        total: data.leaving.count,
+        shown: data.leaving.links.length,
+        children: data.leaving.links.map((l) => /* @__PURE__ */ jsx_runtime48.jsx(LeavingEntry, {
+          link: l,
+          noun: nounOf(data),
+          onOpen
+        }, `${l.source}:${l.edge ?? "link"}:${l.from ?? l.raw}:${l.key ?? ""}`))
+      }),
       /* @__PURE__ */ jsx_runtime48.jsx(Section, {
         title: "Images nothing links to or embeds",
         note: "In an images folder beside a document, and no link or embed reaches them (an undone paste leaves its file). Open one to look, then embed it or move it to the Trash.",
@@ -77855,6 +78003,101 @@ function LinkCheckList({
           note: `“${l.heading}” is repeated in ${l.targetShown}`,
           onOpen: openLink
         }, `${l.source}:${l.from}`))
+      })
+    ]
+  });
+}
+function LinkCheckList({
+  data,
+  onOpen
+}) {
+  if (linkCheckTotal(data) === 0)
+    return /* @__PURE__ */ jsx_runtime48.jsx("p", {
+      "data-slot": "link-check-list",
+      className: "pt-2 text-[12px] text-ink-dim",
+      children: "Nothing to report now: every link answers, and no two documents share a name."
+    });
+  const groups = data.sets ? linkCheckGroups(data) : null;
+  const elsewhere2 = data.noun ? `In no ${data.noun}` : "Elsewhere";
+  return /* @__PURE__ */ jsx_runtime48.jsxs("div", {
+    "data-slot": "link-check-list",
+    className: "-mx-2 flex max-h-[60vh] flex-col overflow-y-auto",
+    children: [
+      /* @__PURE__ */ jsx_runtime48.jsx(Section, {
+        title: "Shared file names",
+        note: "A link to the name may open the other file. Each could be renamed as shown.",
+        total: data.duplicates.count,
+        shown: data.duplicates.names.length,
+        children: data.duplicates.names.map((d) => /* @__PURE__ */ jsx_runtime48.jsxs("li", {
+          "data-slot": "link-check-name",
+          className: "flex flex-col",
+          children: [
+            /* @__PURE__ */ jsx_runtime48.jsx("span", {
+              className: "px-2 pt-1 font-mono text-[11px] text-ink-dim",
+              children: d.name
+            }),
+            /* @__PURE__ */ jsx_runtime48.jsx("ul", {
+              className: "flex flex-col",
+              children: d.files.map((f) => /* @__PURE__ */ jsx_runtime48.jsx("li", {
+                children: /* @__PURE__ */ jsx_runtime48.jsxs("button", {
+                  type: "button",
+                  "data-slot": "link-check-entry",
+                  "data-source": f.path,
+                  onClick: () => onOpen(f.path),
+                  title: `Open ${f.shown}`,
+                  className: ENTRY,
+                  children: [
+                    /* @__PURE__ */ jsx_runtime48.jsx("span", {
+                      className: "block truncate text-[12px] text-ink group-hover/entry:text-brand",
+                      children: f.shown
+                    }),
+                    /* @__PURE__ */ jsx_runtime48.jsxs("span", {
+                      className: "block truncate text-[10px] text-ink-faint",
+                      "data-slot": "suggest",
+                      children: [
+                        "could be ",
+                        f.suggest
+                      ]
+                    })
+                  ]
+                })
+              }, f.path))
+            })
+          ]
+        }, d.name))
+      }),
+      groups === null ? /* @__PURE__ */ jsx_runtime48.jsx(KindSections, {
+        data,
+        onOpen
+      }) : groups.map((g) => /* @__PURE__ */ jsx_runtime48.jsxs("section", {
+        "data-slot": "link-check-set",
+        "data-set": g.id ?? undefined,
+        "aria-label": g.label ? `In ${g.label}` : elsewhere2,
+        className: "flex flex-col",
+        children: [
+          /* @__PURE__ */ jsx_runtime48.jsxs("h3", {
+            className: "mx-2 mt-3 flex items-baseline gap-1.5 border-b border-edge pb-0.5 text-[12px] font-medium text-ink",
+            children: [
+              /* @__PURE__ */ jsx_runtime48.jsx("span", {
+                className: "truncate",
+                children: g.label ?? elsewhere2
+              }),
+              /* @__PURE__ */ jsx_runtime48.jsx("span", {
+                className: "font-normal text-ink-faint",
+                "data-slot": "set-total",
+                children: g.total !== undefined && g.total > linkCheckTotal(g.data) ? `${linkCheckTotal(g.data)} of ${g.total}` : linkCheckTotal(g.data)
+              })
+            ]
+          }),
+          /* @__PURE__ */ jsx_runtime48.jsx(KindSections, {
+            data: g.data,
+            onOpen
+          })
+        ]
+      }, g.id ?? "")),
+      groups !== null && data.truncated && /* @__PURE__ */ jsx_runtime48.jsx("p", {
+        className: "px-2 pt-2 text-[10px] text-ink-faint",
+        children: "Each list was cut at its first entries, and a group shows only what was kept of it (“N of M”); the status bar's counts are the whole."
       })
     ]
   });
