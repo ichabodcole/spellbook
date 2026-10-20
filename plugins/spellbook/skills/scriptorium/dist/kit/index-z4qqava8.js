@@ -74690,12 +74690,13 @@ function DocumentPane({
   const w = useWorkspace();
   const { daemon, openDoc: doc2 } = w;
   const { send, writeText, flushText } = daemon;
-  const [ownMode, setOwnMode] = import_react40.useState(() => readViewMode(safeStorage.getItem(viewModeKey), { split: splitView }));
+  const kept = w.storage ?? safeStorage;
+  const [ownMode, setOwnMode] = import_react40.useState(() => readViewMode(kept.getItem(viewModeKey), { split: splitView }));
   const mode = modeProp ?? ownMode;
-  const [numbered, setNumbered] = import_react40.useState(() => readLineNumbers(safeStorage.getItem(lineNumbersKey)));
+  const [numbered, setNumbered] = import_react40.useState(() => readLineNumbers(kept.getItem(lineNumbersKey)));
   const toggleNumbered = () => {
     const next = !numbered;
-    safeStorage.setItem(lineNumbersKey, storedLineNumbers(next));
+    kept.setItem(lineNumbersKey, storedLineNumbers(next));
     setNumbered(next);
   };
   const rootRef = import_react40.useRef(null);
@@ -74727,9 +74728,9 @@ function DocumentPane({
   const shownMode = shownViewMode(mode, { split: splitView, width });
   const showing = isJson && shownMode !== "compare" ? "raw" : shownMode;
   const setMode = (picked) => {
-    const m = isJson && picked === "raw" ? readViewMode(safeStorage.getItem(viewModeKey), { split: splitView }) : picked;
+    const m = isJson && picked === "raw" ? readViewMode(kept.getItem(viewModeKey), { split: splitView }) : picked;
     if (m !== "compare" && !isJson)
-      safeStorage.setItem(viewModeKey, m);
+      kept.setItem(viewModeKey, m);
     setOwnMode(m);
     onMode?.(m);
   };
@@ -74806,7 +74807,7 @@ function DocumentPane({
   }, [mode, slug, active, hash, against, send]);
   import_react40.useEffect(() => {
     if (mode === "compare") {
-      const m = readViewMode(safeStorage.getItem(viewModeKey), { split: splitView });
+      const m = readViewMode(kept.getItem(viewModeKey), { split: splitView });
       setOwnMode(m);
       onMode?.(m);
     }
