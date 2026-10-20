@@ -11177,15 +11177,42 @@ function bundleDisplayName(folderName, title) {
 
 // src/kit/lib/docFormat.ts
 var DOC_EXTENSIONS = [".md", ".markdown", ".txt", ".json"];
+var appKinds = new Map;
+function registerDocExtension(extension, format = "markdown") {
+  const ext = extension.toLowerCase();
+  if (!/^\.[a-z0-9]+$/.test(ext))
+    throw new Error(`a document extension is a dot and letters or digits: ${extension}`);
+  if (DOC_EXTENSIONS.includes(ext) || isImageName(`x${ext}`))
+    throw new Error(`${ext} already has its meaning in the kit`);
+  appKinds.set(ext, format);
+}
+function docExtensions() {
+  return [...DOC_EXTENSIONS, ...appKinds.keys()];
+}
+function withoutDocExtension(name) {
+  const lower = name.toLowerCase();
+  const kinds = [
+    ".md",
+    ".markdown",
+    ".txt",
+    ...[...appKinds].filter(([, f]) => f === "markdown").map(([e]) => e)
+  ];
+  const ext = kinds.find((e) => lower.endsWith(e) && lower.length > e.length);
+  return ext === undefined ? name : name.slice(0, -ext.length);
+}
 function isDocName(name) {
   const lower = name.toLowerCase();
-  return DOC_EXTENSIONS.some((ext) => lower.endsWith(ext));
+  return docExtensions().some((ext) => lower.endsWith(ext));
 }
 function docFormat(name) {
   const main = bundleTypeOfMain(name);
   if (main)
     return main.format;
-  return name.toLowerCase().endsWith(".json") ? "json" : "markdown";
+  const lower = name.toLowerCase();
+  for (const [ext, format] of appKinds)
+    if (lower.endsWith(ext))
+      return format;
+  return lower.endsWith(".json") ? "json" : "markdown";
 }
 var IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif"];
 function isImageName(name) {
@@ -19394,14 +19421,13 @@ function splitTarget(raw) {
   };
 }
 var SCHEME_LIKE = /^[a-z][a-z0-9+.-]*:/i;
-var DOC_NAME = /\.(?:md|markdown|txt|json)$/i;
 var ALWAYS_A_SCHEME = /^(?:javascript|vbscript|data|file|blob|about):/i;
 function linkScheme(raw) {
   const m = SCHEME_LIKE.exec(raw);
   if (!m)
     return;
   const rest = raw.slice(m[0].length).split(/[?#]/)[0] ?? "";
-  if (!ALWAYS_A_SCHEME.test(raw) && !rest.includes("/") && DOC_NAME.test(rest))
+  if (!ALWAYS_A_SCHEME.test(raw) && !rest.includes("/") && isDocName(rest))
     return;
   return m[0].slice(0, -1).toLowerCase();
 }
@@ -19729,7 +19755,7 @@ var pathLabel = (path2) => {
   const b = bundleOf(path2);
   if (b && !isBundleMember(path2))
     return bundleDisplayName(b.root.split("/").pop() ?? b.root, undefined);
-  return (path2.split("/").pop() ?? path2).replace(/\.(md|markdown|txt)$/i, "");
+  return withoutDocExtension(path2.split("/").pop() ?? path2);
 };
 function pointedLabel(names) {
   if (names.length <= 3)
@@ -43844,7 +43870,7 @@ function folderOf2(shown2) {
 }
 function Entry({ b, onOpen }) {
   const snippetId = import_react29.useId();
-  const name = b.name.replace(/\.(md|markdown|txt)$/i, "");
+  const name = withoutDocExtension(b.name);
   return /* @__PURE__ */ jsx_runtime27.jsx("li", {
     children: /* @__PURE__ */ jsx_runtime27.jsxs("button", {
       type: "button",
@@ -43912,7 +43938,7 @@ function EdgeEntry({
   asOf
 }) {
   const lineId = import_react29.useId();
-  const name = e.name.replace(/\.(md|markdown|txt)$/i, "");
+  const name = withoutDocExtension(e.name);
   return /* @__PURE__ */ jsx_runtime27.jsx("li", {
     children: /* @__PURE__ */ jsx_runtime27.jsxs("button", {
       type: "button",
@@ -75914,6 +75940,11 @@ function statusMark(summary) {
     return { tone: "deprecated", title: "status: deprecated" };
   return null;
 }
+
+// src/scriptorium/backend/kit/docKinds.ts
+var SCRIPTORIUM_DOC_EXTENSIONS = [".mdx"];
+for (const ext of SCRIPTORIUM_DOC_EXTENSIONS)
+  registerDocExtension(ext);
 
 // src/scriptorium/surface/kit/frameWorkspace.ts
 var import_react41 = __toESM(require_react(), 1);
