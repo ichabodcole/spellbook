@@ -156,7 +156,7 @@ import { ImageLinkedFrom } from "./ImageLinkedFrom.tsx";
 import { ImageViewer } from "./ImageViewer.tsx";
 import { LinkCheck } from "./LinkCheck.tsx";
 import { messageParts } from "./messageRefs.ts";
-import { lastMessageId, unseenFromAgent } from "./rail.ts";
+import { lastMessageId, unseenFromAgent, waitingOnAgent } from "./rail.ts";
 import { SearchBox } from "./SearchBox.tsx";
 import { EndedChip, type EndPhase, SessionEndDialog } from "./SessionEnd.tsx";
 import { SettingsDialog } from "./SettingsDialog.tsx";
@@ -1359,6 +1359,8 @@ function ShellBody({
     name: docName(o.doc),
   }));
   const notesOwed = owedSummary(notesWaiting, agentListening);
+  /** Everything waiting on the agent, as one mark: the closed composer's rail button. */
+  const composerWaiting = waitingOnAgent(state.waiting, notesWaiting, agentListening);
   const attachable: Attachable | null = heldHere
     ? {
         doc: heldHere.doc,
@@ -1932,17 +1934,41 @@ function ShellBody({
                     <div className="flex flex-col items-center">
                       {/* The float closed: this brings it back. Idle, so it fades. */}
                       {floatIcon && (
-                        <ColumnButton
-                          label="Show the composer"
-                          control="chat-float-show"
-                          onClick={() => {
-                            setFloatClosed(false);
-                            focusNext.current = FLOAT_INPUT;
-                          }}
-                          className={fade}
-                        >
-                          <MessageSquareIcon aria-hidden />
-                        </ColumnButton>
+                        <span className="relative flex">
+                          <ColumnButton
+                            label={
+                              composerWaiting
+                                ? `Show the composer (${composerWaiting.label})`
+                                : "Show the composer"
+                            }
+                            control="chat-float-show"
+                            onClick={() => {
+                              setFloatClosed(false);
+                              focusNext.current = FLOAT_INPUT;
+                            }}
+                            className={fade}
+                          >
+                            <MessageSquareIcon aria-hidden />
+                          </ColumnButton>
+                          {/* E53's waiting mark, which the closed float would
+                          otherwise take with it: on the composer's own button,
+                          since an answer lands in the composer's line. Its words
+                          are the button's name; it never fades, as a stuck wait
+                          asks for attention. Not the unseen mark below: that one
+                          is the agent's news, this one the human's question. */}
+                          {composerWaiting && (
+                            <span
+                              aria-hidden
+                              data-slot="chat-rail-waiting"
+                              className="pointer-events-none absolute top-0.5 right-0.5 flex"
+                            >
+                              <WaitingDot
+                                badge={composerWaiting.badge}
+                                label={composerWaiting.label}
+                              />
+                            </span>
+                          )}
+                        </span>
                       )}
                       {/* Asks for attention, so it never fades with the rail. A button
                       of its own: the 8 px dot sits centred in a 24 px target, which
