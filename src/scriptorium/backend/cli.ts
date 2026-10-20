@@ -117,7 +117,7 @@ export function daemonCwd(): string {
 
 /**
  * The kit path's daemon cwd (`SCRIPTORIUM_KIT=1`): Contract 5's rule on the
- * interim frame's built page (`dist/kit/`). A dev frame is bundled from
+ * kit page's built shell (`dist/kit/`). A dev page is bundled from
  * `src/scriptorium/surface/kit/` by Bun's dev server, which loads the Tailwind
  * plugin only from the bunfig in its cwd.
  */
