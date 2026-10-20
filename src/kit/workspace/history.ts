@@ -73,6 +73,10 @@ export type Inverse =
    * after that (absent: no redo). `creates`: what the act brought into
    * existence, each by its hash then; running this removes them too, to the
    * Trash and only while unchanged, after `undo`, and asks first.
+   *
+   * `links`: links rewritten as part of the act (an accepted `relink` after
+   * `set.make`, which moves a document), put back after `undo` as a move's
+   * are; `what` names what moved, as the chat does.
    */
   | {
       kind: "app";
@@ -80,6 +84,7 @@ export type Inverse =
       undo: () => void | Promise<void>;
       redo?: () => void | Promise<void>;
       creates?: Created[];
+      links?: { edits: LinkEdit[]; what: string };
     };
 
 /** Something an app's act made, to be removed by its undo: its hash then (`treeHash` for a folder). */

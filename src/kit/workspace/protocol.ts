@@ -602,8 +602,8 @@ export type DocLinkFixes = { path: string; was: string; fixes: LinkFix[]; noun?:
 export type WikiBreak = { path: string; line: number; raw: string };
 
 /**
- * The links the last rename or move broke, offered for updating in one act
- * (`relink`). It lasts until the next change to the context's shape (another
+ * The links the last rename, move or `set.make` broke, offered for updating in
+ * one act (`relink`). It lasts until the next change to the context's shape (another
  * structure act, an undo or a redo), or until either party answers it.
  */
 export type RelinkOffer = {
@@ -662,7 +662,7 @@ export type PublicState = {
   notesWaiting?: NoteWaiting[];
   /** What the context's undo arrows should show. Not the editor's undo. */
   history: HistoryView;
-  /** Links the last rename or move broke, offered for updating; absent when there are none. */
+  /** Links the last rename, move or `set.make` broke, offered for updating; absent when there are none. */
   relink?: RelinkOffer;
   /** Per-viewer conveniences kept beside the sessions, so a new port does not reset them. */
   prefs: Record<string, string>;
@@ -789,6 +789,8 @@ export type StructureOp =
   /**
    * A document listed on its own becomes a set: a folder named for it beside
    * it, the document moved in, the same entry (by id) now mirroring the folder.
+   * Links the move breaks are reported (`broken`) and offered, as a move's are
+   * (`relink`).
    */
   | { op: "set.make"; path: string }
   /**
@@ -1753,7 +1755,7 @@ export type ClientOp =
    * no agent command for it. Answered with `trash.done`.
    */
   | { op: "trash"; path: string }
-  /** Update the links the last rename or move broke (the `relink` offer), as one act with its undo. */
+  /** Update the links the last rename, move or `set.make` broke (the `relink` offer), as one act with its undo. */
   | { op: "relink" }
   /** Leave them: the offer goes, and the link check lists them as before. */
   | { op: "relink.leave" }
@@ -2000,7 +2002,7 @@ export type AgentCmd =
    * of it for the agent to write the description into.
    */
   | { op: "image.describe"; image: string; source?: ImageSource; label?: string }
-  /** Update the links the last rename or move broke (the `relink` offer), as one act with its undo. */
+  /** Update the links the last rename, move or `set.make` broke (the `relink` offer), as one act with its undo. */
   | { op: "relink" }
   /**
    * The app's image import settings (`lib/imageImport.ts`): read them, or set

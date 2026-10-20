@@ -1034,7 +1034,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     /** The context's undo history, in memory on purpose (see `history.ts`). */
     const history = new History();
     /**
-     * Links the last rename or move broke, offered for updating (`relink`): good
+     * Links the last rename, move or `set.make` broke, offered for updating (`relink`): good
      * while that act is still the top of the undo stack and nothing has changed
      * the context's shape since.
      */
@@ -2102,19 +2102,18 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
      * (`unmakeSet`, `makeSet`), following where the document is after each.
      */
     type AppInverse = Extract<Inverse, { kind: "app" }>;
-    /** What a set made from a document says of the links it broke: no verb rewrites them. */
-    const SET_MAKE_LINKS_HINT =
-      "Turning a document into a set does not rewrite links: write each one as its `to`, or leave it for the link check. Wiki links are never rewritten.";
     const setMakeInverse = (from: string, at: string): AppInverse => {
       let now = at;
       const undo = () => {
         now = session.unmakeSet(now).path;
       };
-      // Made again, it breaks the links the first make did: said as that make said them.
+      // Made again, it breaks the links the first make did: said and offered as
+      // that make's were. (One that carried its links rewrites them instead:
+      // `applyInverse` follows them after this and drops what this noted.)
       const redo = () => {
         const m = session.makeSet(now, { links: true });
         now = m.path;
-        noteRedoBroke(m, "redo", SET_MAKE_LINKS_HINT);
+        noteRedoBroke(m, "redo");
       };
       return { kind: "app", label: `turned ${basename(from)} into a set`, undo, redo };
     };
@@ -2132,8 +2131,8 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       let names: { from?: string; to?: string } | undefined;
       // A folder creation made a set (a folder with its own entry), for its words.
       let madeSet = false;
-      // An act whose way back the session holds (`set.make`), and its links fact.
-      let own: { inverse: AppInverse; fact?: Record<string, unknown> } | undefined;
+      // An act whose way back the session holds (`set.make`).
+      let own: { inverse: AppInverse } | undefined;
       switch (op.op) {
         case "doc.create":
           r = session.createDoc(op.dir, op.name, {
@@ -2154,21 +2153,14 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           text = `${who} created the ${madeSet ? "set" : "folder"} ${shown(r.path as string)}.`;
           break;
         case "set.make": {
+          // The move into the folder can break links into and out of the
+          // document: said and offered for updating (`relink`), as a move's are.
           const { links, wiki: w, ...m } = session.makeSet(op.path, { links: true });
+          fixes = links ?? [];
+          wiki = w ?? [];
           r = m;
           text = `${who} turned ${basename(m.from)} into a set: ${shown(m.folder)}.`;
           own = { inverse: setMakeInverse(m.from, m.path) };
-          // The links the move into the folder broke: said, never rewritten.
-          // There is no `relink` offer for this act; the link check lists them.
-          if ((links?.length ?? 0) > 0 || (w?.length ?? 0) > 0) {
-            text += ` ${brokenText(links ?? [], w ?? [], basename(m.from))}`;
-            own.fact = {
-              broken: {
-                ...brokenFact(links ?? [], w ?? []),
-                hint: SET_MAKE_LINKS_HINT,
-              },
-            };
-          }
           break;
         }
         case "bundle.create": {
@@ -2266,18 +2258,14 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       });
       if (follow && (act?.inverse.kind === "move" || act?.inverse.kind === "rename"))
         act.inverse.follow = follow;
-      let linkFact: Record<string, unknown> = own?.fact ?? {};
-      if (
-        (fixes.length > 0 || wiki.length > 0) &&
-        act &&
-        (act.inverse.kind === "move" || act.inverse.kind === "rename")
-      ) {
+      let linkFact: Record<string, unknown> = {};
+      if ((fixes.length > 0 || wiki.length > 0) && act && carriesLinks(act.inverse)) {
         const what = names?.from ?? basename(r.from as string);
         if (fixes.length > 0 && "updateLinks" in op && op.updateLinks) {
           // Asked for in the same act: rewritten now, and the undo takes both back.
           const edits = linkEditsOf(fixes);
           const done = applyLinkEdits(edits, what);
-          act.inverse.links = reverseLinkEdits(edits);
+          carryLinks(act.inverse, reverseLinkEdits(edits), what);
           act.label += `, updating ${plural(done.count, "link")}`;
           text = `${text.slice(0, -1)}, updating ${linksDone(done)}.${wikiNote(wiki, what)}`;
           linkFact = {
@@ -2302,6 +2290,16 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     // until the next change to the context's shape. Accepting rewrites them as
     // part of that act: its undo entry grows to cover them, so one undo puts the
     // file and its links back. `move --update-links` does both at once.
+    // `set.make` moves a document into its new folder, and offers the same.
+
+    /** An act whose way back can carry link edits: a move, a rename, or `set.make`'s own. */
+    const carriesLinks = (inv: Inverse): boolean =>
+      inv.kind === "move" || inv.kind === "rename" || inv.kind === "app";
+    /** Link edits (already reversed) for the act's way back to put back after it. */
+    const carryLinks = (inv: Inverse, back: LinkEdit[], what: string): void => {
+      if (inv.kind === "move" || inv.kind === "rename") inv.links = back;
+      else if (inv.kind === "app") inv.links = { edits: back, what };
+    };
     const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
     const points = (n: number) => (n === 1 ? "points" : "point");
     const linkCount = (fixes: readonly DocLinkFixes[]) =>
@@ -2498,7 +2496,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       ...(done.skipped.length > 0 ? { skipped: done.skipped } : {}),
     });
 
-    /** Accept the offer: the links the last rename or move broke, rewritten as part of that act. */
+    /** Accept the offer: the links the last rename, move or `set.make` broke, rewritten as part of that act. */
     const relink = (by: "human" | "agent"): Record<string, unknown> => {
       const offer = relinkOffer;
       relinkOffer = null;
@@ -2508,11 +2506,10 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           409,
         );
       const inverse = offer.act.inverse;
-      if (inverse.kind !== "move" && inverse.kind !== "rename")
-        throw new SessionError("no links to update", 409);
+      if (!carriesLinks(inverse)) throw new SessionError("no links to update", 409);
       const edits = linkEditsOf(offer.fixes);
       const done = applyLinkEdits(edits, offer.what);
-      inverse.links = reverseLinkEdits(edits);
+      carryLinks(inverse, reverseLinkEdits(edits), offer.what);
       offer.act.label += `, updating ${plural(done.count, "link")}`;
       const who = by === "agent" ? "Agent" : "You";
       const fact = linksFactOf(done, offer.fixes);
@@ -2541,12 +2538,10 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
      */
     let linkNote = "";
     /** A redo of an act that carried no link edits found links it broke: offered afresh. */
-    // `hint`: an act with no `relink` offer (`set.make`) says its own words instead.
     let redoBroke: {
       fixes: DocLinkFixes[];
       wiki: WikiBreak[];
       what: string;
-      hint?: string;
     } | null = null;
     const redoBrokeNow = () => redoBroke;
 
@@ -2561,14 +2556,13 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     const noteRedoBroke = (
       m: { from: string; links?: DocLinkFixes[]; wiki?: WikiBreak[] },
       dir: "undo" | "redo",
-      hint?: string,
     ) => {
       if (dir !== "redo") return;
       const fixes = m.links ?? [];
       const wiki = m.wiki ?? [];
       if (fixes.length === 0 && wiki.length === 0) return;
       const what = basename(m.from);
-      redoBroke = { fixes, wiki, what, ...(hint ? { hint } : {}) };
+      redoBroke = { fixes, wiki, what };
       linkNote = ` ${brokenText(fixes, wiki, what)}`;
     };
 
@@ -2667,6 +2661,11 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           if (made.length > 0 && trashing)
             throw new SessionError("a move to the Trash is already running", 409);
           await inv.undo();
+          // Links rewritten with the act (an accepted `relink` after `set.make`):
+          // put as they were with it, as a move's are. They are the whole account
+          // of its links, so what its own run noted as broken is dropped.
+          const links = inv.links ? followLinks(inv.links.edits, inv.links.what) : null;
+          if (links) redoBroke = null;
           // Past this point the world has changed: a failure is reported with
           // what was done, and the step comes off the list (a GoneError), since
           // it can never be undone as a whole again.
@@ -2693,8 +2692,16 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           // Put back the other way: the label stays the act's own.
           return inv.redo && made.length === 0
             ? {
-                label: inv.label,
-                inverse: { kind: "app", label: inv.label, undo: inv.redo, redo: inv.undo },
+                label: `${inv.label}${links?.label ?? ""}`,
+                inverse: {
+                  kind: "app",
+                  label: inv.label,
+                  undo: inv.redo,
+                  redo: inv.undo,
+                  ...(links && inv.links
+                    ? { links: { edits: links.back, what: inv.links.what } }
+                    : {}),
+                },
               }
             : null;
         }
@@ -3431,19 +3438,12 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
             relinkOffer = null;
             // Read through a call: set inside `applyInverse`, which the compiler cannot see.
             const broke = redoBrokeNow();
-            if (broke && back && broke.fixes.length > 0 && !broke.hint)
+            if (broke && back && broke.fixes.length > 0)
               relinkOffer = { act: back, ...broke, by: "human" };
             syncWatchers();
             announce(`You redid: ${withoutLinkCount(act.label)}.${linkNote}`, {
               fact: "history.redo",
-              ...(broke
-                ? {
-                    broken: {
-                      ...brokenFact(broke.fixes, broke.wiki),
-                      ...(broke.hint ? { hint: broke.hint } : {}),
-                    },
-                  }
-                : {}),
+              ...(broke ? { broken: brokenFact(broke.fixes, broke.wiki) } : {}),
             });
             broadcastState();
           } catch (e) {

@@ -1523,7 +1523,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
       flags: SESSION,
       positionals: [],
       describe:
-        "update the links the last rename or move broke (its `broken`), each rewritten from its own document with its label, ?rel= and #anchor kept, as part of that act: one undo puts back both. Refused once anything else has changed the context's shape. A document open with unsaved edits keeps them, unsaved",
+        "update the links the last rename, move or set made from a document broke (its `broken`), each rewritten from its own document with its label, ?rel= and #anchor kept, as part of that act: one undo puts back both. Refused once anything else has changed the context's shape. A document open with unsaved edits keeps them, unsaved",
       run: async (_pos, _flags, session) => {
         printJson(await postCmd(session, { op: "relink" }));
       },

@@ -1,6 +1,7 @@
 // `set.make` and `folder.add` through a real daemon: the chat line and the
 // fact on the agent's tail, the entry's id kept, the new folder watched, the
-// links the move broke said and not rewritten, and the context's undo and redo.
+// links the move broke said and offered for updating (`relink`), as a move's
+// are, and the context's undo and redo.
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -20,7 +21,9 @@ beforeEach(() => {
   mkdirSync(join(root, "tmp"), { recursive: true });
   process.env.KIT_FIXTURE_HOME = join(root, "home");
   docs = seedDocs(root);
+  // A link out of the document and one into it: the move into its folder breaks both.
   writeFileSync(join(docs, "solo.md"), "# Solo\n\nSee [the sibling](sibling.md).\n");
+  writeFileSync(join(docs, "sibling.md"), "# Sibling\n\nSee [solo](solo.md).\n");
 });
 
 afterEach(async () => {
@@ -55,27 +58,97 @@ async function start() {
 }
 
 describe("set.make through the daemon", () => {
-  test("said in the chat and on the tail, the entry kept, the broken links named and left", async () => {
+  test("said in the chat and on the tail, the entry kept, the broken links named and offered", async () => {
     const { s, t, d } = await start();
     const id = s.state.context.find((e) => e.label === "solo.md")?.id ?? "";
     const r = await cmd(d.url, { op: "set.make", path: join(docs, "solo.md") });
     expect(r.status).toBe(200);
     const folder = join(docs, "solo");
     expect(r.body).toMatchObject({ folder, path: join(folder, "solo.md"), entry: id });
+    // The agent's reply names the act that fixes them: `relink`.
     const broken = (r.body as { broken?: { count: number; hint: string } }).broken;
-    expect(broken?.count).toBe(1);
+    expect(broken?.count).toBe(2);
     expect(broken?.hint).toBe(
-      "Turning a document into a set does not rewrite links: write each one as its `to`, or leave it for the link check. Wiki links are never rewritten.",
+      "`relink` updates them all in one act (one undo); the human may update or leave them from the context sidebar. Left, the link check lists them. Wiki links are never rewritten.",
     );
+    // Offered, not yet rewritten.
     expect(readFileSync(join(folder, "solo.md"), "utf8")).toContain("(sibling.md)");
+    expect(readFileSync(join(docs, "sibling.md"), "utf8")).toContain("(solo.md)");
+    // And the human is offered the same fix in the surface (the relink bar).
+    const offer = await waitUntil("the offer", () => s.state.relink);
+    expect(offer).toMatchObject({ what: "solo.md", by: "agent", count: 2 });
     await waitUntil("mirrored", () =>
       s.state.context.some((e) => e.id === id && e.membership === "mirrored" && e.root === folder),
     );
     expect(
       s.state.chat.some((m) => m.text.startsWith("Agent turned solo.md into a set: solo.")),
     ).toBe(true);
-    await t.waitFor((e) => e.type === "system" && e.fact === "set.make" && e.entry === id);
+    await t.waitFor(
+      (e) =>
+        e.type === "system" &&
+        e.fact === "set.make" &&
+        e.entry === id &&
+        (e.broken as { count?: number } | undefined)?.count === 2,
+    );
+    expect(
+      s.state.chat.some((m) =>
+        m.text.includes("2 links in 2 documents still point at where solo.md was"),
+      ),
+    ).toBe(true);
     expect(s.state.history.undoLabel).toBe("turned solo.md into a set");
+  });
+
+  test("the human accepts the offer: the links are rewritten, and one undo puts back the set and the links", async () => {
+    const { s, t, d } = await start();
+    const folder = join(docs, "solo");
+    await cmd(d.url, { op: "set.make", path: join(docs, "solo.md") });
+    await waitUntil("the offer", () => s.state.relink);
+    s.send({ op: "relink" });
+    await t.waitFor((e) => e.type === "system" && e.fact === "relink" && e.count === 2);
+    await waitUntil("offer gone", () => !s.state.relink);
+    // Rewritten on disk: out of the document from its new place, and into it.
+    expect(readFileSync(join(folder, "solo.md"), "utf8")).toContain("(../sibling.md)");
+    expect(readFileSync(join(docs, "sibling.md"), "utf8")).toContain("(./solo/solo.md)");
+    expect(s.state.chat.some((m) => m.text.startsWith("You updated 2 links in 2 documents"))).toBe(
+      true,
+    );
+    expect(s.state.history.undoLabel).toBe("turned solo.md into a set, updating 2 links");
+    // One undo: the document back, and its links as they were.
+    s.send({ op: "history.undo" });
+    await waitUntil("undone", () => existsSync(join(docs, "solo.md")));
+    await waitUntil("links back", () =>
+      readFileSync(join(docs, "sibling.md"), "utf8").includes("(solo.md)"),
+    );
+    expect(readFileSync(join(docs, "solo.md"), "utf8")).toContain("(sibling.md)");
+    expect(existsSync(folder)).toBe(false);
+    // Redo: the set and the rewritten links again, and nothing reported broken.
+    s.send({ op: "history.redo" });
+    await waitUntil("redone", () => existsSync(join(folder, "solo.md")));
+    const redone = await t.waitFor((e) => e.type === "system" && e.fact === "history.redo");
+    expect(redone.broken).toBeUndefined();
+    await waitUntil("links again", () =>
+      readFileSync(join(docs, "sibling.md"), "utf8").includes("(./solo/solo.md)"),
+    );
+    expect(readFileSync(join(folder, "solo.md"), "utf8")).toContain("(../sibling.md)");
+    expect(s.state.relink).toBeUndefined();
+    // And back once more, links and all.
+    s.send({ op: "history.undo" });
+    await waitUntil("undone again", () => existsSync(join(docs, "solo.md")));
+    await waitUntil("links back again", () =>
+      readFileSync(join(docs, "sibling.md"), "utf8").includes("(solo.md)"),
+    );
+  });
+
+  test("the agent takes the offer with `relink`, the verb its reply named", async () => {
+    const { s, d } = await start();
+    const folder = join(docs, "solo");
+    await cmd(d.url, { op: "set.make", path: join(docs, "solo.md") });
+    const r = await cmd(d.url, { op: "relink" });
+    expect(r.status).toBe(200);
+    expect(r.body).toMatchObject({ count: 2 });
+    expect(readFileSync(join(folder, "solo.md"), "utf8")).toContain("(../sibling.md)");
+    expect(readFileSync(join(docs, "sibling.md"), "utf8")).toContain("(./solo/solo.md)");
+    await waitUntil("offer gone", () => !s.state.relink);
   });
 
   test("the new folder is watched: a document made there by another program reaches the tree", async () => {
@@ -109,22 +182,23 @@ describe("set.make through the daemon", () => {
     await waitUntil("mirrored again", () =>
       s.state.context.some((e) => e.id === id && e.membership === "mirrored"),
     );
-    // The redo breaks the link the make broke, and says so as the make did.
+    // The redo breaks the links the make broke, and says and offers them as the make did.
     await t.waitFor(
       (e) =>
         e.type === "system" &&
         e.fact === "history.redo" &&
-        (e.broken as { count?: number } | undefined)?.count === 1 &&
-        (e.broken as { hint?: string } | undefined)?.hint?.startsWith(
-          "Turning a document into a set does not rewrite links",
-        ) === true,
+        (e.broken as { count?: number } | undefined)?.count === 2 &&
+        (e.broken as { hint?: string } | undefined)?.hint?.startsWith("`relink` updates them") ===
+          true,
     );
     expect(
       s.state.chat.some(
         (m) =>
-          m.text.startsWith("You redid: turned solo.md into a set.") && m.text.includes("1 link"),
+          m.text.startsWith("You redid: turned solo.md into a set.") && m.text.includes("2 links"),
       ),
     ).toBe(true);
+    const offer = await waitUntil("offered again", () => s.state.relink);
+    expect(offer).toMatchObject({ what: "solo.md", count: 2 });
     // And back once more: the redo's own undo follows where the document is.
     s.send({ op: "history.undo" });
     await waitUntil("undone again", () => existsSync(join(docs, "solo.md")));
