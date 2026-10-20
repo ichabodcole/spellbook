@@ -46,9 +46,58 @@ is actually running.
 
 ## Definition of done
 
-- [ ] Every passage in the survey's list is rewritten, and every verb and flag
+- [x] Every passage in the survey's list is rewritten, and every verb and flag
       the SKILL names exists in the CLI's `schema`.
-- [ ] `tail-rule-parity` and `shipped-skill-references` are green.
-- [ ] A cold agent given only the SKILL drives a scratch session end to end:
+- [x] `tail-rule-parity` and `shipped-skill-references` are green.
+- [x] A cold agent given only the SKILL drives a scratch session end to end:
       open, tail, answer a message with a version, resolve a note, `link-check`,
       relink after a move, and close.
+
+## Done and verified
+
+Commits on `impl/scriptorium-skill-cutover`: the SKILL rewrite with the coupled
+ward and golden (`docs(scriptorium): the SKILL describes the kit's contract`),
+and this record.
+
+- **Checked against the CLI as it runs by default**, not the survey alone:
+  `help`, `schema`, and a scratch session driven over the websocket (a typed
+  message, a selection, a note, Ask the agent, a human rewrite, the racy
+  two-step into `active.outside`, a move, `relink`, `link-check`, the `~`
+  refusal, `reveal`, newest-session routing past an older live session, and the
+  ended-by-human refusal). Three survey rows read differently on the running
+  build and the SKILL follows the build: `state.active` is
+  `{doc, version, path}`, not a slug; a message's selection is
+  `fromLine`/`toLine`, not `lines`; and the `--doc` refusal's `choices` are open
+  slugs, not paths.
+- **Every verb and flag the SKILL names is in `schema`**: a scratch checker
+  (every `--flag`, each verb+flag pair on a command line or span, and every span
+  that opens with a verb-shaped word, against a reviewed list of fields and
+  event names) passes on the new SKILL and fails on the old one (`--entry`,
+  `workspace`). The flat list is the kit's 47 flags.
+- **The flag ward moved with the SKILL** (`grimoire/flag-invariant.test.ts`).
+  Its source scan reads the `defineCli` in `backend/cli.ts`, which after the
+  flip is the earlier Scriptorium behind the hatch; the default's flags come
+  from the kit's options table, which a text scan cannot follow. The ward now
+  takes Scriptorium's table from the kit CLI itself (`DEFAULT_TABLE`), as its
+  kit-registry cell already does for imports. It goes with the shipped CLI.
+- **The documented golden follows the SKILL**: regenerated from the SKILL's
+  commands at their lines (prose mentions of a bare verb, the `version` field,
+  `diff --context` and `task-status` excluded with reasons), and the golden
+  re-captured: 198 to 206 invocations, no recorded behaviour changed;
+  `workspace` and `workspace <dir>` are gone, `link-check`, `graph`,
+  `backlinks`, `new-doc`, `new-folder`, `import --into`, `add-folder`,
+  `make-set` and `add` are in.
+- **Cold read**: a fresh agent given only the SKILL drove a scratch session end
+  to end (tail, a version answering the selected passage, a note acted on and
+  resolved, `move`, `relink`, `link-check` at 0, `close` with `by: "agent"`).
+  Its stumbles, each fixed in the SKILL: `relink` and `link-check` read only
+  active versions, so a version proposed before a move keeps the old link (now a
+  warning); the hints' `say "<reply>"` against rule 4; the `grounding` line,
+  sparse ids and `state` as the backlog; `sets` empty when nothing is broken; a
+  tail started after the end prints only `tail.closed`. No re-read was run.
+- **Deliberately left out**: `SCRIPTORIUM_SHIPPED` (a temporary hatch), and the
+  survey's extras on symlinked notes and `meta-set` in `$SCRIPTORIUM_HOME`.
+
+**Found, not fixed here**: a proposed version is not relinked by a move, and
+nothing flags it (above); and the kit's `workspace.overlap` doctor fix still
+names a `workspace <dir>` verb Scriptorium does not have.
