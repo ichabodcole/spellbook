@@ -1,4 +1,4 @@
-// The interim frame's row marks: the shipped tree's status dot (draft, stale,
+// The kit page's row marks: the shipped tree's status dot (draft, stale,
 // deprecated, unreadable) on the kit sidebar's rows, from the flagged daemon's
 // `appState.docMeta`. The marks are the shipped `statusMark`'s, for the same
 // documents: checked on a table of summaries, then end to end against a REAL

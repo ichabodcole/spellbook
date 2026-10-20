@@ -1,4 +1,4 @@
-// The interim frame's wiring against a REAL flagged daemon (`kitDaemon`, in
+// The flagged Scriptorium's shell wiring against a REAL flagged daemon (`kitDaemon`, in
 // this process, under a scratch SCRIPTORIUM_HOME), mounted in happy-dom: chat
 // reaches the daemon, a set is added, hide and unhide and make-set go through
 // the menu, a move asks with the plan, opening a document shows it in the
@@ -12,7 +12,7 @@
 
 import "../../../kit/lib/registerDom.ts";
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Daemon } from "../../../kit/context/daemonClient";
 import { useDaemon } from "../../../kit/context/useDaemon";
@@ -27,11 +27,14 @@ import {
   waitFor,
 } from "../../../kit/lib/testDom";
 import { GIF_1PX } from "../../../kit/lib/testImages";
+import { type LaidOut, laidOut } from "../../../kit/lib/testLayout";
+import { THEME_STORAGE_KEY } from "../../../kit/theme/mode";
 import type { ContextEntry } from "../../../kit/workspace/protocol";
 import type { WorkspaceDaemon } from "../../../kit/workspace/server";
 import { tempRoot } from "../../../kit/workspace/testing";
 import { frameSurface, kitDaemon } from "../../backend/kit/server";
 import { Frame, scriptoriumMenuActions } from "./Frame";
+import { reseedPrefs, seedPrefs } from "./testPrefs";
 
 const root = tempRoot("scriptorium-frame");
 const set = join(root, "docs", "set");
@@ -40,9 +43,15 @@ const savedHome = process.env.SCRIPTORIUM_HOME;
 let daemon: WorkspaceDaemon;
 let client: Daemon | null = null;
 
+/** The panels laid out as a browser would, so the shell's columns are open and can collapse. */
+let layout: LaidOut | null = null;
+
 beforeAll(async () => {
   installDom();
+  layout = laidOut(1400);
   process.env.SCRIPTORIUM_HOME = join(root, "home");
+  // These tests read the raw editor: they start there (`./testPrefs.ts`).
+  seedPrefs(join(root, "home"), { "doc:view": "raw" });
   mkdirSync(join(root, "tmp"), { recursive: true });
   mkdirSync(join(set, "part"), { recursive: true });
   writeFileSync(join(set, "index.md"), "# Index\n\n[C](./part/c.md)\n");
@@ -59,12 +68,14 @@ beforeAll(async () => {
   await daemon.start();
 });
 afterEach(cleanup);
+afterEach(() => reseedPrefs(join(root, "home"), { "doc:view": "raw" }));
 // No test may let the frame send a create, import or drop that names no place.
 afterEach(() => {
   const seen = placeless.splice(0);
   expect(seen).toEqual([]);
 });
 afterAll(async () => {
+  layout?.undo();
   await daemon?.stop().catch(() => {});
   // Awaited: the next file's `installDom` must not find this DOM still leaving.
   await removeDom();
@@ -167,7 +178,7 @@ async function open(...paths: string[]) {
   return m;
 }
 
-describe("the interim frame on a real kit daemon", () => {
+describe("the flagged Scriptorium in the shell, on a real kit daemon", () => {
   test("it shows the context, the chat with its composer, Notes and Tasks, and the document pane", async () => {
     const m = await open();
     // An empty context: the sidebar's own empty state, offering to add.
@@ -203,9 +214,13 @@ describe("the interim frame on a real kit daemon", () => {
     const m = await open();
     const before = document.documentElement.dataset.theme;
     const next = before === "light" ? "dark" : "light";
-    await click(document.querySelector('[aria-label="Switch theme"]'));
+    await click(document.querySelector('[aria-label^="Switch to the"]'));
     await waitFor(() => client?.state?.prefs.theme === next, "the theme in the prefs");
     expect(document.documentElement.dataset.theme).toBe(next);
+    // The browser copy the page's pre-paint script reads, under the key it reads.
+    expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe(next);
+    const page = readFileSync(join(import.meta.dir, "index.html"), "utf8");
+    expect(page).toContain(`localStorage.getItem("${THEME_STORAGE_KEY}")`);
     // Another session (another port, another origin) chose the other one.
     await settle(() => {
       client?.send({ op: "prefs.set", key: "theme", value: before === "light" ? "light" : "dark" });
@@ -488,6 +503,16 @@ describe("where a new file goes (no default workspace)", () => {
     const was = client?.done?.seq;
     await click(byLabel("New document in this set"));
     await waitFor(() => client?.done?.seq !== was, "the document made");
+    // The shell opens what it is told was made: wait for that open to land
+    // (the snapshot that carries it, and the pane drawing it) before going back,
+    // or the open arriving after the click is a race this test is not about.
+    const made = client?.done?.path;
+    await waitFor(
+      () =>
+        client?.state?.docs.find((d) => d.slug === client?.state?.openDoc)?.original === made &&
+        document.querySelector('[data-pane="centre"] .cm-editor') !== null,
+      "the new document open",
+    );
     await settle();
     await backToList();
     await settle(() => {
@@ -505,12 +530,30 @@ describe("where a new file goes (no default workspace)", () => {
 
   test("with a selection New document and New folder go beside or inside it, unasked", async () => {
     const m = await open(set);
+    // Each create is let land before the next step: the daemon's `done`, and
+    // for a document the shell's open of it (the editor mounts), which would
+    // otherwise race the next right-click.
+    let seen = client?.done?.seq;
+    const landed = async (doc: boolean) => {
+      await waitFor(() => client?.done != null && client.done.seq !== seen, "the create done");
+      seen = client?.done?.seq;
+      const made = client?.done?.path;
+      if (doc)
+        await waitFor(
+          () =>
+            client?.state?.docs.find((d) => d.slug === client?.state?.openDoc)?.original === made &&
+            document.querySelector('[data-pane="centre"] .cm-editor') !== null,
+          "the new document open",
+        );
+      await settle();
+    };
     // The set's own row in the list: inside the set.
     await rightClick(listRow("set"));
     await waitFor(() => menuItem("New folder") !== null, "the set's menu");
     await click(menuItem("New folder"));
     await waitFor(() => placed.at(-1)?.op === "folder.create", "the folder");
     expect(placed.at(-1)).toEqual({ op: "folder.create", dir: set });
+    await landed(false);
     // Drilled in: beside a document, inside a folder, and the header's in this set.
     if (!treeRow("aside.md")) await click(listRow("set"));
     await waitFor(() => treeRow("aside.md") !== null, "the set's tree");
@@ -519,17 +562,22 @@ describe("where a new file goes (no default workspace)", () => {
     await click(menuItem("New document beside it"));
     await waitFor(() => placed.at(-1)?.op === "doc.create", "beside the document");
     expect(placed.at(-1)).toEqual({ op: "doc.create", dir: set });
+    await landed(true);
     await waitFor(() => treeRow("part") !== null, "the folder row");
     await rightClick(treeRow("part"));
     await waitFor(() => menuItem("New document") !== null, "the folder's menu");
     await click(menuItem("New document"));
     await waitFor(() => placed.at(-1)?.dir === join(set, "part"), "inside the folder");
+    await landed(true);
     await click(byLabel("New document in this set"));
     await waitFor(() => placed.at(-1)?.dir === set, "in the set");
     expect(where()).toBeNull();
     await waitFor(() => existsSync(join(set, "part", "Untitled.md")), "on disk");
     await m.unmount();
-  });
+    // Longer than the default 5 s: the shell opens each new document it is told
+    // was made (the editor mounts three times here), which under the full gate's
+    // load took this past 5 s; alone it passes well inside it.
+  }, 20_000);
 });
 
 describe("scriptoriumMenuActions", () => {

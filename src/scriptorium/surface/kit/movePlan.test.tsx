@@ -82,7 +82,7 @@ afterAll(async () => {
   rmSync(root, { recursive: true, force: true });
 });
 
-/** The thin part of the interim frame this item needs: the sidebar on a live daemon, the slot filled. */
+/** The thin part of the kit page this item needs: the sidebar on a live daemon, the slot filled. */
 function Frame({ url }: { url: string }) {
   const d = useDaemon({
     url,

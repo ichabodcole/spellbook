@@ -5,9 +5,10 @@
  * `SCRIPTORIUM_KIT=1`; the launcher (`scripts/server.ts`) and the artifact it
  * imports (`dist/server.js`) are the shipped ones.
  *
- * Its surface is the interim frame (`src/scriptorium/surface/kit/`, built into
- * the skill's `dist/kit/`): the kit's context and chat panes, until cycle 5's
- * shell replaces it. See `frameSurface` below for where it is found.
+ * Its surface is the kit's shell around the kit's document pane
+ * (`src/scriptorium/surface/kit/`, built into the skill's `dist/kit/`). See
+ * `frameSurface` below for where it is found, and `kitLauncher` for the
+ * restore command the surface prints.
  *
  * The wiki layer is here: `hide` and `unhide` (`./hide.ts`), frontmatter
  * references and wiki forms (`./links.ts`), and meta, find, forget, the move
@@ -21,6 +22,7 @@
 
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import { commandLine } from "../../../kit/wire/tailHandoff";
 import {
   createWorkspaceDaemon,
   runWorkspaceDaemon,
@@ -29,6 +31,7 @@ import {
 } from "../../../kit/workspace/server";
 import type { AppDeclaration } from "../../../kit/workspace/session";
 import {
+  KIT_FLAG,
   kitMigrateOn,
   kitMigrateRefusal,
   kitMigrateWriteRefusal,
@@ -61,6 +64,34 @@ export const migratingApp: AppDeclaration = {
  * `dist/server.js` (the launcher's, and a published plugin's).
  */
 const HERE = import.meta.dir;
+
+/**
+ * How the human runs this Scriptorium's CLI, as the surface prints it in the
+ * ended dialog's restore command (`AppDeclaration.launcher`): the flag, then
+ * `bun` on the skill's CLI launcher, `<skill>/scripts/cli.ts`, found from the
+ * bundle's `dist/`. Without the flag the command would reach the shipped
+ * Scriptorium, which refuses a kit-path session. A `SCRIPTORIUM_HOME` the
+ * daemon was given rides along too, since the session lives under it.
+ *
+ * Undefined where no launcher sits beside the daemon (run from source, as the
+ * tests run it): the surface then prints the bare verb, as it always has.
+ */
+export function kitLauncher(
+  here: string = HERE,
+  env: NodeJS.ProcessEnv = process.env,
+): string | undefined {
+  const cli = join(here, "..", "scripts", "cli.ts");
+  if (!existsSync(cli)) return undefined;
+  const home = env.SCRIPTORIUM_HOME ? [`SCRIPTORIUM_HOME=${scriptoriumHome(env)}`] : [];
+  return commandLine([...home, `${KIT_FLAG}=1`, "bun", cli]);
+}
+
+/** The app as the daemon declares it: with its launcher, where there is one. */
+function withLauncher(app: AppDeclaration): AppDeclaration {
+  const launcher = kitLauncher();
+  return launcher ? { ...app, launcher } : app;
+}
+
 /** The built frame (`src/build.ts` builds `surface/kit/` into `dist/kit/`): release mode. */
 const FRAME_DIST = join(HERE, "kit");
 /**
@@ -85,7 +116,7 @@ const FRAME_DEV_ENTRY = join(
 );
 
 /**
- * Where the interim frame is, as the kit daemon's `surface` option.
+ * Where the kit page is (the shell, `surface/kit/`), as the kit daemon's `surface` option.
  *
  * ⚠ BOTH PATHS ARE TRUE ONLY IN THE BUNDLE (`grimoire/spawn-path-ward.test.ts`
  * resolves them from the emitted `dist/server.js`). Run from source, as the
@@ -105,7 +136,7 @@ export function kitDaemonOptions(
   overrides: Partial<WorkspaceDaemonOptions> = {},
 ): WorkspaceDaemonOptions {
   return {
-    app: kitMigrateOn() ? migratingApp : scriptoriumApp,
+    app: withLauncher(kitMigrateOn() ? migratingApp : scriptoriumApp),
     sessionsRoot: kitSessionsRoot(),
     // $SCRIPTORIUM_HOME: the shipped sessions, the kit path's, logs and prefs.
     // No set shows it and nothing is written in it from a structure op.
@@ -121,7 +152,7 @@ export function kitDaemonOptions(
     }),
     // Frontmatter references as edges, and the wiki forms as a resolver (kit-link-edges-slot).
     links: scriptoriumLinkSlot(),
-    // The interim frame at `/` (release: `dist/kit/`, and its chunks beside it).
+    // The kit page at `/` (release: `dist/kit/`, and its chunks beside it).
     surface: frameSurface(),
     ...overrides,
   };

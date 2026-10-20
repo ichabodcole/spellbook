@@ -27,6 +27,7 @@ import { tempRoot } from "../../../kit/workspace/testing";
 import { kitDaemon } from "../../backend/kit/server";
 import { Frame } from "./Frame";
 import { ADD_A_BLOCK, NO_FRONTMATTER, noFrontmatterOf, scriptoriumTextOffer } from "./suggestMeta";
+import { reseedPrefs, seedPrefs } from "./testPrefs";
 
 const root = tempRoot("scriptorium-frame-suggest");
 const docs = join(root, "docs");
@@ -46,6 +47,8 @@ beforeAll(async () => {
   el.getClientRects = el.getClientRects ?? (() => []);
   (document as unknown as Record<string, unknown>).elementFromPoint ??= () => null;
   process.env.SCRIPTORIUM_HOME = join(root, "home");
+  // These tests type into the raw editor: they start there (`./testPrefs.ts`).
+  seedPrefs(join(root, "home"), { "doc:view": "raw" });
   mkdirSync(join(root, "tmp"), { recursive: true });
   mkdirSync(notes, { recursive: true });
   // A neighbour that says its type, so the suggestion has one to take.
@@ -62,6 +65,7 @@ beforeAll(async () => {
 afterEach(async () => {
   await cleanup();
   localStorage.clear();
+  await reseedPrefs(join(root, "home"), { "doc:view": "raw" });
 });
 afterAll(async () => {
   await daemon?.stop().catch(() => {});
@@ -151,7 +155,7 @@ describe("Add a block (E35): offered, put in the buffer, written by Save", () =>
   });
 
   test("rendered: the same, with no editor mounted", async () => {
-    localStorage.setItem("scriptorium:view-mode", "rendered");
+    seedPrefs(join(root, "home"), { "doc:view": "rendered" });
     const path = join(notes, "seen.md");
     const original = "# Seen\n\nRead here.\n";
     const m = await openFile(path, original, "Read here.");
@@ -181,7 +185,7 @@ describe("Add a block (E35): offered, put in the buffer, written by Save", () =>
   });
 
   test("a block that cannot be read is offered nothing: the header shows it as written", async () => {
-    localStorage.setItem("scriptorium:view-mode", "rendered");
+    seedPrefs(join(root, "home"), { "doc:view": "rendered" });
     const m = await openFile(
       join(notes, "bad.md"),
       "---\ntype: [unclosed\n---\n# Bad\n\nStill.\n",

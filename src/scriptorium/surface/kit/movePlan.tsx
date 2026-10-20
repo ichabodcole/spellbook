@@ -9,7 +9,7 @@
  * what happens now, the chat line naming what still points at the old place.
  *
  * Kit path only (`SCRIPTORIUM_KIT=1`). The shipped surface does not import this
- * file; the interim frame (scriptorium-kit-interim-frame) passes it to
+ * file; the kit page (`./Frame.tsx`) passes it to the shell, which hands it to
  * `ContextSidebar` as `beforeMove={scriptoriumBeforeMove(daemon, { userHome })}`.
  *
  * What it answers, the shipped surface's rule widened by the links:

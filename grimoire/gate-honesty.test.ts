@@ -386,6 +386,16 @@ import { join } from "node:path";
 // `@source not` for the new sheet and the note on where the scrollbars went.
 // theme.test.ts holds the scan split; every spell's rebuilt stylesheet is
 // byte-identical to the cycle base's.
+//
+// ⛔ RE-DECLARED 2026-10-19 — 34/3,374 -> 34/3,379, from the object's own sum.
+// MEMBERSHIP DID NOT MOVE; two entries grew:
+//     +3  src/scriptorium/surface/kit/styles.css   15 -> 18
+//     +2  src/scriptorium/surface/kit/index.html   41 -> 43
+// the flagged Scriptorium on the shell (scriptorium-kit-shell): the kit page's
+// sheet imports shell.css after document.css, and its pre-paint theme script
+// reads the kit's THEME_STORAGE_KEY (which `applyTheme` writes) in place of a
+// key nothing wrote any more. Frame.test.tsx holds the pre-paint key; the
+// browser check and devFrame.integration.test.ts read the sheet's effect.
 const DECLARED_BLIND: Record<string, number> = {
   "src/digestify/surface/styles.css": 515,
   "src/digestify/surface/index.html": 26,
@@ -430,13 +440,13 @@ const DECLARED_BLIND: Record<string, number> = {
   // The kit path's interim frame (scriptorium-kit-interim-frame, 2026-10-17):
   // its own entry page, the shipped one's pre-paint theme script and favicon
   // under a second title. Thrown away with the frame at the shell cycle.
-  "src/scriptorium/surface/kit/index.html": 41,
+  "src/scriptorium/surface/kit/index.html": 43,
   // The frame's own sheet (scriptorium-kit-document-centre): the shipped one,
   // then the kit's document.css. 14 -> 15 and theme.css 395
   // (scriptorium-kit-keepers): the page's palette and theme, a copy of the
   // shipped sheet re-rooted to scan only surface/kit/, in place of importing
   // it; the shipped sheet 389 -> 392 for its `@source not "./kit"`.
-  "src/scriptorium/surface/kit/styles.css": 15,
+  "src/scriptorium/surface/kit/styles.css": 18,
   "src/scriptorium/surface/kit/theme.css": 395,
   "src/scriptorium/surface/styles.css": 392,
 };
