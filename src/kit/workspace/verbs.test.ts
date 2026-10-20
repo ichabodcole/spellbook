@@ -241,6 +241,28 @@ test.each([
   ["no session for reveal", ["reveal", "/tmp"], 5, "not_found"],
   ["no session for the app's own verb", ["ping"], 5, "not_found"],
   [
+    "open with a timeout that is not a number",
+    ["open", "--no-open", "--timeout", "abc"],
+    2,
+    "usage",
+  ],
+  ["open with an empty timeout", ["open", "--no-open", "--timeout="], 2, "usage"],
+  ["open with an Infinity timeout", ["open", "--no-open", "--timeout", "Infinity"], 2, "usage"],
+  ["open with a negative timeout", ["open", "--no-open", "--timeout=-5"], 2, "usage"],
+  [
+    "open with a start timeout that is not a number",
+    ["open", "--no-open", "--start-timeout", "abc"],
+    2,
+    "usage",
+  ],
+  ["open with an empty start timeout", ["open", "--no-open", "--start-timeout="], 2, "usage"],
+  [
+    "open with a start timeout longer than one timer holds",
+    ["open", "--no-open", "--start-timeout", "2147484"],
+    2,
+    "usage",
+  ],
+  [
     "open a path that does not exist",
     ["open", "--no-open", "/definitely/not/here.md"],
     5,
@@ -292,6 +314,27 @@ test("restoring an unknown session names the saved sessions as choices: empty, a
   const doc = JSON.parse(run(["open", "--no-open", "--restore", "nope"]).stderr) as Envelope;
   expect(doc.error.choices).toEqual([]);
   expect(doc.error.hint).toContain("no saved sessions");
+});
+
+test("open refuses a timeout that is not a number before any daemon starts", () => {
+  // The daemon's log is made right before the spawn (`cmdOpen`), so a home
+  // with no logs folder is a home no daemon was started for.
+  for (const flag of ["--timeout", "--start-timeout"])
+    for (const value of ["abc", "", "NaN"]) {
+      const home = mkdtempSync(join(tmpdir(), "workspace-contract-timeout-"));
+      const r = run(["open", "--no-open", `${flag}=${value}`], EMPTY_TMP, home);
+      expect(r.code).toBe(2);
+      const doc = JSON.parse(r.stderr) as Envelope;
+      expect(doc.error.kind).toBe("usage");
+      expect(doc.error.message).toContain(`open ${flag}:`);
+      expect(doc.error.hint).toBeString();
+      expect(readdirSync(home)).not.toContain("logs");
+    }
+  // Read first: refused as usage even where a restore would be not_found.
+  const doc = JSON.parse(
+    run(["open", "--no-open", "--restore", "nope", "--timeout", "abc"]).stderr,
+  ) as Envelope;
+  expect(doc.error.kind).toBe("usage");
 });
 
 test("a recognized flag at the wrong verb is misplaced, and lists the verb's own flags", () => {

@@ -50,7 +50,7 @@ import {
   writeFileAtomic,
 } from "../wire/discovery.ts";
 import { createEventLog } from "../wire/eventLog.ts";
-import { drainAndStop, startHousekeeping } from "../wire/housekeeping.ts";
+import { drainAndStop, readSeconds, startHousekeeping } from "../wire/housekeeping.ts";
 import { refuseForeignOrigin } from "../wire/origin.ts";
 import { resolveMode, serveFromDist } from "../wire/serveDist.ts";
 import { type SseClients, sseResponse } from "../wire/sse.ts";
@@ -5068,12 +5068,23 @@ export async function runWorkspaceDaemon(
     );
     return 2;
   }
+  // Not a number is refused, never handed on as NaN (which never idle-closes):
+  // the CLI refuses it first, and a daemon started directly refuses it here.
+  let timeoutS: number | undefined;
+  if (flags.timeout !== undefined) {
+    const r = readSeconds(flags.timeout);
+    if (!r.ok) {
+      process.stderr.write(`${name}: --timeout: ${r.message}; 0 stands until closed\n`);
+      return 2;
+    }
+    timeoutS = r.seconds;
+  }
   let d: WorkspaceDaemon;
   try {
     d = build({
       port: flags.port ? Number(flags.port) : 0,
       ...(flags.restore ? { restore: flags.restore } : {}),
-      ...(flags.timeout ? { timeoutS: Number(flags.timeout) } : {}),
+      ...(timeoutS !== undefined ? { timeoutS } : {}),
       ...(flags.workspace ? { workspace: flags.workspace } : {}),
     });
     await d.start();

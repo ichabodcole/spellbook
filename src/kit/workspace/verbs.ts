@@ -56,6 +56,7 @@ import {
   type SessionPointer,
 } from "../wire/discovery";
 import { CliError, die, type ErrExtra, type ErrKind, reportCliError } from "../wire/errors";
+import { readSeconds, TIMER_MAX_S } from "../wire/housekeeping";
 import { stdinWaiting } from "../wire/stdinPeek";
 import {
   commandLine,
@@ -211,6 +212,30 @@ export function parseCount(token: string, what: string): number {
   const t = token.trim();
   if (!/^\d+$/.test(t)) die(`${what}: "${token}" is not a whole number`, "usage");
   return Number(t);
+}
+
+/**
+ * A seconds flag on `open` (`--timeout`, `--start-timeout`), read before any
+ * daemon starts: absent is undefined, anything that is not a number of
+ * seconds is a `usage` refusal (`readSeconds`), never a NaN handed on. `max`,
+ * when given, is refused above too (a wait that becomes one timer).
+ */
+export function flagSeconds(
+  v: FlagValue | undefined,
+  flag: string,
+  hint: string,
+  max?: number,
+): number | undefined {
+  if (v === undefined) return undefined;
+  if (typeof v !== "string")
+    die(`open ${flag}: give it once, as a number of seconds`, "usage", { hint });
+  const r = readSeconds(v);
+  if (!r.ok) die(`open ${flag}: ${r.message}`, "usage", { hint });
+  if (max !== undefined && r.seconds > max)
+    die(`open ${flag}: ${r.seconds} seconds is longer than the longest wait (${max})`, "usage", {
+      hint,
+    });
+  return r.seconds;
 }
 
 /**
@@ -733,6 +758,20 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
   // ── the verbs ───────────────────────────────────────────────────────────
 
   async function cmdOpen(pos: string[], flags: Flags): Promise<void> {
+    // Read before anything starts: a value that is not a number is refused
+    // here, so no daemon is ever spawned on it (`readSeconds`).
+    const timeoutS = flagSeconds(
+      flags.timeout,
+      "--timeout",
+      "seconds idle before the session closes (default 1800); 0 stands until closed",
+    );
+    const startTimeoutS = flagSeconds(
+      flags["start-timeout"],
+      "--start-timeout",
+      `seconds to wait for the daemon to start (at least 5, at most ${TIMER_MAX_S})`,
+      // One `setTimeout` (`startDaemon`); `--timeout` has no such ceiling.
+      TIMER_MAX_S,
+    );
     const root = opts.sessionsRoot();
     // No home workspace: a new session opened on nothing shows the folder it
     // was opened in, as an ordinary entry (a set) the human sees and can
@@ -770,7 +809,9 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
     }
 
     const daemonArgs = [...opts.daemon.args];
-    if (typeof flags.timeout === "string") daemonArgs.push("--timeout", flags.timeout);
+    // The token as given (trimmed), not `String(n)`: a large count prints as
+    // `1e+21`, which the daemon's own read would refuse.
+    if (timeoutS !== undefined) daemonArgs.push("--timeout", String(flags.timeout).trim());
     if (typeof flags.restore === "string") daemonArgs.push("--restore", flags.restore);
     // A new session's workspace is the folder holding the one folder it was
     // given, else where `open` ran, never a set's folder (`defaultWorkspace`).
@@ -798,9 +839,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
     daemonArgs.push("--log", logFile);
 
     const startTimeoutMs =
-      typeof flags["start-timeout"] === "string"
-        ? Math.max(5000, Number.parseInt(flags["start-timeout"], 10) * 1000)
-        : 45000;
+      startTimeoutS !== undefined ? Math.max(5000, Math.round(startTimeoutS * 1000)) : 45000;
 
     type Handshake = {
       url: string;

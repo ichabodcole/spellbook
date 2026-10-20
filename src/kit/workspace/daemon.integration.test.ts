@@ -1265,3 +1265,51 @@ describe("a daemon whose start fails after binding", () => {
     expect(readdirSync(tmp).filter((n) => n.startsWith("kit-fixture."))).toEqual([]);
   }, 30_000);
 });
+
+describe("open's timeouts reach the daemon", () => {
+  /** Open with these flags; the session's id and pid, for the caller to close. */
+  const openWith = async (...flags: string[]) => {
+    const r = await cli("open", "--no-open", ...flags, join(docs, "solo.md"));
+    const sid = r.code === 0 ? json<{ session_id: string }>(r).session_id : null;
+    return { r, sid, pid: sid ? pointerPid(pointerFile(sid)) : null };
+  };
+  const closeIt = async (sid: string | null, pid: number | null) => {
+    if (sid === null || pid === null || pointerPid(pointerFile(sid)) === null) return;
+    await cli("close", "--session", sid);
+    await waitForExit(pid);
+  };
+
+  test("--timeout is handed on: a one-second session closes on its own", async () => {
+    const { r, sid, pid } = await openWith("--timeout", "1");
+    expect(r.code).toBe(0);
+    expect(pid).not.toBeNull();
+    try {
+      // Nobody connected: it idle-closes about a second after open's own add.
+      await waitForExit(pid as number, 10_000);
+    } finally {
+      await closeIt(sid, pid);
+    }
+  }, 30_000);
+
+  test("the token goes on as given: a 24-place count is not re-printed as 1e+23", async () => {
+    const { r, sid, pid } = await openWith("--timeout", "100000000000000000000000");
+    try {
+      expect(r.err).toBe("");
+      expect(r.code).toBe(0);
+    } finally {
+      await closeIt(sid, pid);
+    }
+  }, 30_000);
+
+  test("--start-timeout keeps its 5 s floor, and its ceiling is accepted", async () => {
+    for (const s of ["0", "2147483"]) {
+      const { r, sid, pid } = await openWith("--start-timeout", s);
+      try {
+        expect(r.err, s).toBe("");
+        expect(r.code, s).toBe(0);
+      } finally {
+        await closeIt(sid, pid);
+      }
+    }
+  }, 60_000);
+});
