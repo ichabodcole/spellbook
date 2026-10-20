@@ -453,6 +453,10 @@
     top: calc(var(--spacing) * 0);
   }
 
+  .top-0\.5 {
+    top: calc(var(--spacing) * .5);
+  }
+
   .top-1\/2 {
     top: 50%;
   }
@@ -463,6 +467,10 @@
 
   .top-full {
     top: 100%;
+  }
+
+  .right-0\.5 {
+    right: calc(var(--spacing) * .5);
   }
 
   .right-1 {

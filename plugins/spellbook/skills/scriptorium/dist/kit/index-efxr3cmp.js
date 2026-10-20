@@ -78270,6 +78270,17 @@ function unseenFromAgent(chat, seen) {
   const from = seen === null ? 0 : chat.findIndex((m) => m.id === seen) + 1;
   return chat.slice(from).some((m) => m.from === "agent");
 }
+function waitingOnAgent(waiting, notes, agentListening) {
+  const message = waiting ? badgeFor(waiting, agentListening) : null;
+  const owed = owedSummary(notes, agentListening);
+  const badges = [message, owed?.badge].filter((b) => b != null);
+  if (badges.length === 0)
+    return null;
+  const badge = LOUDNESS.find((b) => badges.includes(b));
+  const label = [message && `your message: ${labelOf(message)}`, owed?.label].filter(Boolean).join("; ");
+  return { badge, label };
+}
+var LOUDNESS = ["stalled", "unheard", "working"];
 
 // src/kit/shell/SearchBox.tsx
 var import_react49 = __toESM(require_react(), 1);
@@ -79841,6 +79852,7 @@ function ShellBody({
     name: docName(o.doc)
   }));
   const notesOwed = owedSummary(notesWaiting, agentListening);
+  const composerWaiting = waitingOnAgent(state.waiting, notesWaiting, agentListening);
   const attachable = heldHere ? {
     doc: heldHere.doc,
     name: docName(heldHere.doc),
@@ -80330,17 +80342,31 @@ function ShellBody({
                     below: (floatIcon || chatUnseen) && /* @__PURE__ */ jsx_runtime52.jsxs("div", {
                       className: "flex flex-col items-center",
                       children: [
-                        floatIcon && /* @__PURE__ */ jsx_runtime52.jsx(ColumnButton, {
-                          label: "Show the composer",
-                          control: "chat-float-show",
-                          onClick: () => {
-                            setFloatClosed(false);
-                            focusNext.current = FLOAT_INPUT;
-                          },
-                          className: fade,
-                          children: /* @__PURE__ */ jsx_runtime52.jsx(MessageSquare, {
-                            "aria-hidden": true
-                          })
+                        floatIcon && /* @__PURE__ */ jsx_runtime52.jsxs("span", {
+                          className: "relative flex",
+                          children: [
+                            /* @__PURE__ */ jsx_runtime52.jsx(ColumnButton, {
+                              label: composerWaiting ? `Show the composer (${composerWaiting.label})` : "Show the composer",
+                              control: "chat-float-show",
+                              onClick: () => {
+                                setFloatClosed(false);
+                                focusNext.current = FLOAT_INPUT;
+                              },
+                              className: fade,
+                              children: /* @__PURE__ */ jsx_runtime52.jsx(MessageSquare, {
+                                "aria-hidden": true
+                              })
+                            }),
+                            composerWaiting && /* @__PURE__ */ jsx_runtime52.jsx("span", {
+                              "aria-hidden": true,
+                              "data-slot": "chat-rail-waiting",
+                              className: "pointer-events-none absolute top-0.5 right-0.5 flex",
+                              children: /* @__PURE__ */ jsx_runtime52.jsx(WaitingDot, {
+                                badge: composerWaiting.badge,
+                                label: composerWaiting.label
+                              })
+                            })
+                          ]
                         }),
                         chatUnseen && /* @__PURE__ */ jsx_runtime52.jsx("button", {
                           type: "button",
