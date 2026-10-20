@@ -873,7 +873,7 @@ test(
   "open --port N binds the daemon to N (forwarded through ensureDaemon)",
   async () => {
     // Grab a free port by opening an ephemeral server, reading its port, closing.
-    const probe = Bun.serve({ port: 0, fetch: () => new Response("ok") });
+    const probe = Bun.serve({ port: 0, hostname: "127.0.0.1", fetch: () => new Response("ok") });
     const wanted = probe.port; // Bun.serve().port is number | undefined — narrow once
     probe.stop(true);
     if (wanted === undefined) throw new Error("probe server did not report a port");

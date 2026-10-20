@@ -435,7 +435,11 @@ test.each([
   [500, "internal", 1],
 ])("a daemon refusal with HTTP %i maps to %s / exit %i; body under server, its set lifted into choices", async (status, kind, code) => {
   const body = { ok: false, error: "stubbed", choices: ["notes", "solo"] };
-  const server = Bun.serve({ port: 0, fetch: () => Response.json(body, { status }) });
+  const server = Bun.serve({
+    port: 0,
+    hostname: "127.0.0.1",
+    fetch: () => Response.json(body, { status }),
+  });
   const dir = mkdtempSync(join(tmpdir(), "scriptorium-stub-"));
   writeFileSync(
     join(dir, "scriptorium-latest.json"),

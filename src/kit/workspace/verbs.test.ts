@@ -438,7 +438,11 @@ test.each([
     choices: ["notes", "solo"],
     hint: "try the other one",
   };
-  const server = Bun.serve({ port: 0, fetch: () => Response.json(body, { status }) });
+  const server = Bun.serve({
+    port: 0,
+    hostname: "127.0.0.1",
+    fetch: () => Response.json(body, { status }),
+  });
   const dir = mkdtempSync(join(tmpdir(), "workspace-stub-"));
   writeFileSync(
     join(dir, "kit-fixture.latest.json"),

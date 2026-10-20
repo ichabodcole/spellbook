@@ -329,7 +329,11 @@ test.each([
   // against a real HTTP round trip. Async spawn, because a sync one blocks the
   // loop the stub answers on.
   const body = { error: "stubbed", status };
-  const server = Bun.serve({ port: 0, fetch: () => Response.json(body, { status }) });
+  const server = Bun.serve({
+    port: 0,
+    hostname: "127.0.0.1",
+    fetch: () => Response.json(body, { status }),
+  });
   const dir = mkdtempSync(join(tmpdir(), "glamour-daemon-"));
   writeFileSync(
     join(dir, "glamour-latest.json"),
