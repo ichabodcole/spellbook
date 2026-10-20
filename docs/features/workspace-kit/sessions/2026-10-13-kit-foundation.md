@@ -192,7 +192,7 @@ Also filed during the cycle:
 - [declare-micromark-gfm](../../../items/declare-micromark-gfm.md).
 
 Next cycle is the workspace stack. The Atlas comparison
-([kit-atlas-scriptorium-comparison](../../../items/kit-atlas-scriptorium-comparison.md))
+([kit-atlas-scriptorium-comparison](../../../items/kit-atlas-scriptorium-comparison/item.md))
 follows the shell port.
 
 ---
