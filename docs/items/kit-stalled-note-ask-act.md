@@ -5,14 +5,15 @@ description:
   "E65's stalled-note act is missing on the kit path: the Notes panel shows a
   note waiting on the agent but offers no Ask the agent, which the shipped app
   does."
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: ready
 id: 01a157b8-bb40-77b6-a35c-5f67234ee539
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-19 }
 tags: [kit, scriptorium]
 parent: feature/workspace-kit
 from: cycle/2026-10-shell
+cycle: 2026-10-shell
 ---
 
 # A note waiting on the agent has no Ask the agent act

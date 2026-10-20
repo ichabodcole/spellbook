@@ -44,7 +44,14 @@ it arrived.
 - [x] A write-up with screenshots of both apps, area by area, listing each
       remaining difference with a call: keep Atlas's, keep Scriptorium's, or
       take both
-- [ ] Cole has ruled on each call, and the ones that need work are filed
+- [x] Cole has ruled on each call, and the ones that need work are filed _(Cole
+      took every recommendation, 2026-10-20. C6 and C7 joined the shell cycle as
+      [kit-composer-closed-waiting-mark](../kit-composer-closed-waiting-mark.md)
+      and [kit-stalled-note-ask-act](../kit-stalled-note-ask-act.md); D5 is
+      [kit-split-divider](../kit-split-divider.md); the shared finding is
+      [waiting-marks-after-session-end](../waiting-marks-after-session-end.md);
+      the rest is
+      [kit-atlas-comparison-follow-ups](../kit-atlas-comparison-follow-ups.md).)_
 
 ## Done and verified
 

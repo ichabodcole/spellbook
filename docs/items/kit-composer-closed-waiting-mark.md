@@ -4,14 +4,15 @@ title: With the composer closed, nothing shows a message is waiting
 description:
   When the human closes the floating composer, the chat rail shows no waiting
   mark, so E53's sign that a message is waiting on the agent is lost.
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: ready
 id: 01a157b8-baa0-701e-a5b1-51a0667b4fbe
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-19 }
 tags: [kit, scriptorium]
 parent: feature/workspace-kit
 from: cycle/2026-10-shell
+cycle: 2026-10-shell
 ---
 
 # With the composer closed, nothing shows a message is waiting

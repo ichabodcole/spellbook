@@ -4,7 +4,7 @@ title: Waiting marks still say may be stuck after End session
 description:
   After the human ends a session, its waiting marks still read may be stuck, in
   both the shipped and the kit Scriptorium, though nothing can answer any more.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a157b8-bbe1-751b-a8f4-cf55657df90c
 kind: bug
