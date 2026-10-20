@@ -313,6 +313,8 @@ export function Frame({ daemon }: { daemon: Daemon }) {
       onShowDiff={(doc, version) => requestDiff(doc.slug, version)}
       onShowOutsideDiff={(doc) => requestDiff(doc.slug, "original")}
       endWarning={scriptoriumEndWarning}
+      // E65: a note that may be stuck carries its act, as the shipped app's does.
+      askAboutNotes
       centre={
         <>
           <DocumentPane
