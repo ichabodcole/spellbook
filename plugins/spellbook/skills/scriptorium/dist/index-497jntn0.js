@@ -30055,7 +30055,7 @@ function gfmHtml(options2) {
 }
 
 // src/scriptorium/surface/state/markdown.ts
-var FRONTMATTER_BLOCK = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
+var FRONTMATTER_BLOCK = /^\uFEFF?---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
 function splitFrontmatter(text4) {
   const m = FRONTMATTER_BLOCK.exec(text4);
   if (!m)

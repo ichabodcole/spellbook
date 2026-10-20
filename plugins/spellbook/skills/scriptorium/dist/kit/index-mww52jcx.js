@@ -39372,7 +39372,7 @@ function lineRange(text4, line) {
 }
 
 // src/kit/lib/frontmatter.ts
-var FRONTMATTER_BLOCK = /^---[ \t]*\r?\n(?=(?:[ \t]*\r?\n)*[A-Za-z_][\w-]*[ \t]*:)([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
+var FRONTMATTER_BLOCK = /^\uFEFF?---[ \t]*\r?\n(?=(?:[ \t]*\r?\n)*(?:"[A-Za-z_][\w-]*"|'[A-Za-z_][\w-]*'|[A-Za-z_][\w-]*)[ \t]*:)([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
 function splitFrontmatter(text4) {
   const m = FRONTMATTER_BLOCK.exec(text4);
   if (!m)
@@ -75911,8 +75911,8 @@ function DocumentPane({
   });
 }
 
-// src/scriptorium/backend/frontmatter.ts
-var BLOCK = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
+// src/scriptorium/backend/kit/frontmatter.ts
+var BLOCK = /^\uFEFF?---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
 function splitFrontmatter2(text4) {
   const m = BLOCK.exec(text4);
   if (!m)
@@ -75923,22 +75923,6 @@ function isStale(fields, now2) {
   const at2 = fields.stale_after;
   const t2 = at2 instanceof Date ? at2.getTime() : typeof at2 === "string" ? Date.parse(at2) : Number.NaN;
   return Number.isFinite(t2) && now2 >= t2;
-}
-
-// src/scriptorium/surface/components/context/model.ts
-var collator2 = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
-function statusMark(summary) {
-  if (!summary)
-    return null;
-  if (summary.error)
-    return { tone: "unreadable", title: `Frontmatter unreadable: ${summary.error}` };
-  if (summary.stale)
-    return { tone: "stale", title: "Past its stale_after date" };
-  if (summary.status === "draft")
-    return { tone: "draft", title: "status: draft" };
-  if (summary.status === "deprecated")
-    return { tone: "deprecated", title: "status: deprecated" };
-  return null;
 }
 
 // src/scriptorium/backend/kit/docKinds.ts
@@ -76320,6 +76304,21 @@ function scriptoriumBeforeMove(daemon, opts = {}) {
       throw new Error("the daemon's answer carried no plan");
     return movePrompt(plan, opts.userHome ?? null);
   };
+}
+
+// src/scriptorium/surface/kit/statusMark.ts
+function statusMark(summary) {
+  if (!summary)
+    return null;
+  if (summary.error)
+    return { tone: "unreadable", title: `Frontmatter unreadable: ${summary.error}` };
+  if (summary.stale)
+    return { tone: "stale", title: "Past its stale_after date" };
+  if (summary.status === "draft")
+    return { tone: "draft", title: "status: draft" };
+  if (summary.status === "deprecated")
+    return { tone: "deprecated", title: "status: deprecated" };
+  return null;
 }
 
 // src/scriptorium/surface/kit/suggestMeta.ts
@@ -77321,7 +77320,7 @@ function manyBody_default() {
   };
   return force;
 }
-// src/scriptorium/surface/components/context/forceLayout.ts
+// src/scriptorium/surface/kit/forceLayout.ts
 var import_react42 = __toESM(require_react(), 1);
 var bodyRadius = (linksIn) => 5 + Math.min(11, Math.sqrt(linksIn) * 2.4);
 function useForceLayout(nodes, edges, size4, enabled) {
