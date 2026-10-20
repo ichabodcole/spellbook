@@ -5,13 +5,14 @@ description:
   The kit's split view is a fixed 50/50 with no divider, where the shipped
   Scriptorium lets the human drag it and keeps its width across sessions.
 status: stable
-lifecycle: triage
+lifecycle: ready
 id: 01a157b8-b9f8-73ee-af86-5ebf6388782f
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-19 }
 tags: [kit, scriptorium]
 parent: feature/workspace-kit
 from: cycle/2026-10-shell
+cycle: 2026-10-cutover
 ---
 
 # The split view's divider can't be moved or kept

@@ -6,13 +6,14 @@ description:
   turning to may be stuck is not read out to a screen reader; the shipped app
   announces it through its always-shown float.
 status: stable
-lifecycle: triage
+lifecycle: ready
 id: 01a1582d-f1a0-700c-b718-059a1a707047
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-20 }
 tags: [kit, accessibility]
 parent: feature/workspace-kit
 from: cycle/2026-10-shell
+cycle: 2026-10-cutover
 ---
 
 # A change in a wait isn't announced while the composer is closed
