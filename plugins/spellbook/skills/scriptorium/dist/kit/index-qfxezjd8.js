@@ -12374,7 +12374,7 @@ var __iconNode59 = [
 ];
 var X = createLucideIcon("x", __iconNode59);
 // src/scriptorium/surface/kit/Frame.tsx
-var import_react44 = __toESM(require_react(), 1);
+var import_react45 = __toESM(require_react(), 1);
 
 // src/kit/chat/ChatSidebar.tsx
 var import_react7 = __toESM(require_react(), 1);
@@ -38961,7 +38961,7 @@ function useWorkspace() {
 }
 
 // src/kit/document/DocumentPane.tsx
-var import_react39 = __toESM(require_react(), 1);
+var import_react40 = __toESM(require_react(), 1);
 
 // src/kit/chat/NoteAtSelection.tsx
 var import_react23 = __toESM(require_react(), 1);
@@ -39165,6 +39165,21 @@ function NoteAtSelection({
         })
       ]
     })
+  });
+}
+
+// src/kit/context/centreDock.tsx
+var import_react24 = __toESM(require_react(), 1);
+var jsx_runtime19 = __toESM(require_jsx_runtime(), 1);
+var CentreDockContext = import_react24.createContext(null);
+function CentreDock() {
+  const claim = import_react24.useContext(CentreDockContext);
+  if (!claim)
+    return null;
+  return /* @__PURE__ */ jsx_runtime19.jsx("div", {
+    "data-slot": "centre-dock",
+    ref: claim,
+    className: "flex shrink-0 flex-col"
   });
 }
 
@@ -39613,22 +39628,22 @@ var safeStorage = {
 // src/kit/ui/combobox.tsx
 var React125 = __toESM(require_react(), 1);
 // src/kit/ui/dialog.tsx
-var jsx_runtime19 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime20 = __toESM(require_jsx_runtime(), 1);
 "use client";
 function Dialog({ ...props }) {
-  return /* @__PURE__ */ jsx_runtime19.jsx(exports_index_parts2.Root, {
+  return /* @__PURE__ */ jsx_runtime20.jsx(exports_index_parts2.Root, {
     "data-slot": "dialog",
     ...props
   });
 }
 function DialogPortal3({ ...props }) {
-  return /* @__PURE__ */ jsx_runtime19.jsx(exports_index_parts2.Portal, {
+  return /* @__PURE__ */ jsx_runtime20.jsx(exports_index_parts2.Portal, {
     "data-slot": "dialog-portal",
     ...props
   });
 }
 function DialogOverlay({ className, ...props }) {
-  return /* @__PURE__ */ jsx_runtime19.jsx(exports_index_parts2.Backdrop, {
+  return /* @__PURE__ */ jsx_runtime20.jsx(exports_index_parts2.Backdrop, {
     "data-slot": "dialog-overlay",
     className: cn("fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0", className),
     ...props
@@ -39641,26 +39656,26 @@ function DialogContent({
   size: size4 = "default",
   ...props
 }) {
-  return /* @__PURE__ */ jsx_runtime19.jsxs(DialogPortal3, {
+  return /* @__PURE__ */ jsx_runtime20.jsxs(DialogPortal3, {
     children: [
-      /* @__PURE__ */ jsx_runtime19.jsx(DialogOverlay, {}),
-      /* @__PURE__ */ jsx_runtime19.jsxs(exports_index_parts2.Popup, {
+      /* @__PURE__ */ jsx_runtime20.jsx(DialogOverlay, {}),
+      /* @__PURE__ */ jsx_runtime20.jsxs(exports_index_parts2.Popup, {
         "data-slot": "dialog-content",
         "data-size": size4,
         className: cn("fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-[size=md]:sm:max-w-md data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className),
         ...props,
         children: [
           children,
-          showCloseButton && /* @__PURE__ */ jsx_runtime19.jsxs(exports_index_parts2.Close, {
+          showCloseButton && /* @__PURE__ */ jsx_runtime20.jsxs(exports_index_parts2.Close, {
             "data-slot": "dialog-close",
-            render: /* @__PURE__ */ jsx_runtime19.jsx(Button3, {
+            render: /* @__PURE__ */ jsx_runtime20.jsx(Button3, {
               variant: "ghost",
               className: "absolute top-2 right-2",
               size: "icon-sm"
             }),
             children: [
-              /* @__PURE__ */ jsx_runtime19.jsx(X, {}),
-              /* @__PURE__ */ jsx_runtime19.jsx("span", {
+              /* @__PURE__ */ jsx_runtime20.jsx(X, {}),
+              /* @__PURE__ */ jsx_runtime20.jsx("span", {
                 className: "sr-only",
                 children: "Close"
               })
@@ -39672,7 +39687,7 @@ function DialogContent({
   });
 }
 function DialogHeader({ className, ...props }) {
-  return /* @__PURE__ */ jsx_runtime19.jsx("div", {
+  return /* @__PURE__ */ jsx_runtime20.jsx("div", {
     "data-slot": "dialog-header",
     className: cn("flex flex-col gap-2", className),
     ...props
@@ -39684,14 +39699,14 @@ function DialogFooter({
   children,
   ...props
 }) {
-  return /* @__PURE__ */ jsx_runtime19.jsxs("div", {
+  return /* @__PURE__ */ jsx_runtime20.jsxs("div", {
     "data-slot": "dialog-footer",
     className: cn("-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end", className),
     ...props,
     children: [
       children,
-      showCloseButton && /* @__PURE__ */ jsx_runtime19.jsx(exports_index_parts2.Close, {
-        render: /* @__PURE__ */ jsx_runtime19.jsx(Button3, {
+      showCloseButton && /* @__PURE__ */ jsx_runtime20.jsx(exports_index_parts2.Close, {
+        render: /* @__PURE__ */ jsx_runtime20.jsx(Button3, {
           variant: "outline"
         }),
         children: "Close"
@@ -39700,29 +39715,29 @@ function DialogFooter({
   });
 }
 function DialogTitle3({ className, ...props }) {
-  return /* @__PURE__ */ jsx_runtime19.jsx(exports_index_parts2.Title, {
+  return /* @__PURE__ */ jsx_runtime20.jsx(exports_index_parts2.Title, {
     "data-slot": "dialog-title",
     className: cn("text-base leading-none font-medium", className),
     ...props
   });
 }
 function DialogDescription3({ className, ...props }) {
-  return /* @__PURE__ */ jsx_runtime19.jsx(exports_index_parts2.Description, {
+  return /* @__PURE__ */ jsx_runtime20.jsx(exports_index_parts2.Description, {
     "data-slot": "dialog-description",
     className: cn("text-sm text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground", className),
     ...props
   });
 }
 // src/kit/ui/dropdown-menu.tsx
-var jsx_runtime20 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime21 = __toESM(require_jsx_runtime(), 1);
 function DropdownMenu({ ...props }) {
-  return /* @__PURE__ */ jsx_runtime20.jsx(exports_index_parts4.Root, {
+  return /* @__PURE__ */ jsx_runtime21.jsx(exports_index_parts4.Root, {
     "data-slot": "dropdown-menu",
     ...props
   });
 }
 function DropdownMenuTrigger({ ...props }) {
-  return /* @__PURE__ */ jsx_runtime20.jsx(exports_index_parts4.Trigger, {
+  return /* @__PURE__ */ jsx_runtime21.jsx(exports_index_parts4.Trigger, {
     "data-slot": "dropdown-menu-trigger",
     ...props
   });
@@ -39736,14 +39751,14 @@ function DropdownMenuContent({
   className,
   ...props
 }) {
-  return /* @__PURE__ */ jsx_runtime20.jsx(exports_index_parts4.Portal, {
-    children: /* @__PURE__ */ jsx_runtime20.jsx(exports_index_parts4.Positioner, {
+  return /* @__PURE__ */ jsx_runtime21.jsx(exports_index_parts4.Portal, {
+    children: /* @__PURE__ */ jsx_runtime21.jsx(exports_index_parts4.Positioner, {
       className: "isolate z-50 outline-none",
       align,
       alignOffset,
       side,
       sideOffset,
-      children: /* @__PURE__ */ jsx_runtime20.jsx(exports_index_parts4.Popup, {
+      children: /* @__PURE__ */ jsx_runtime21.jsx(exports_index_parts4.Popup, {
         "data-slot": "dropdown-menu-content",
         "data-size": size4,
         className: cn("z-50 max-h-(--available-height) w-(--anchor-width) min-w-32 data-[size=md]:w-80 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 outline-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:overflow-hidden data-closed:fade-out-0 data-closed:zoom-out-95", className),
@@ -39759,7 +39774,7 @@ function DropdownMenuItem({
   variant = "default",
   ...props
 }) {
-  return /* @__PURE__ */ jsx_runtime20.jsx(exports_index_parts4.Item, {
+  return /* @__PURE__ */ jsx_runtime21.jsx(exports_index_parts4.Item, {
     "data-slot": "dropdown-menu-item",
     "data-inset": inset,
     "data-stacked": stacked || undefined,
@@ -39769,7 +39784,7 @@ function DropdownMenuItem({
   });
 }
 function DropdownMenuSeparator({ className, ...props }) {
-  return /* @__PURE__ */ jsx_runtime20.jsx(exports_index_parts4.Separator, {
+  return /* @__PURE__ */ jsx_runtime21.jsx(exports_index_parts4.Separator, {
     "data-slot": "dropdown-menu-separator",
     className: cn("-mx-1 my-1 h-px bg-border", className),
     ...props
@@ -40720,16 +40735,16 @@ function createPopoverHandle() {
   return new PopoverHandle;
 }
 // src/kit/ui/popover.tsx
-var jsx_runtime21 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime22 = __toESM(require_jsx_runtime(), 1);
 "use client";
 function Popover({ ...props }) {
-  return /* @__PURE__ */ jsx_runtime21.jsx(exports_index_parts6.Root, {
+  return /* @__PURE__ */ jsx_runtime22.jsx(exports_index_parts6.Root, {
     "data-slot": "popover",
     ...props
   });
 }
 function PopoverTrigger3({ ...props }) {
-  return /* @__PURE__ */ jsx_runtime21.jsx(exports_index_parts6.Trigger, {
+  return /* @__PURE__ */ jsx_runtime22.jsx(exports_index_parts6.Trigger, {
     "data-slot": "popover-trigger",
     ...props
   });
@@ -40741,13 +40756,13 @@ function PopoverContent({
   sideOffset = 6,
   ...props
 }) {
-  return /* @__PURE__ */ jsx_runtime21.jsx(exports_index_parts6.Portal, {
-    children: /* @__PURE__ */ jsx_runtime21.jsx(exports_index_parts6.Positioner, {
+  return /* @__PURE__ */ jsx_runtime22.jsx(exports_index_parts6.Portal, {
+    children: /* @__PURE__ */ jsx_runtime22.jsx(exports_index_parts6.Positioner, {
       className: "isolate z-50 outline-none",
       side,
       align,
       sideOffset,
-      children: /* @__PURE__ */ jsx_runtime21.jsx(exports_index_parts6.Popup, {
+      children: /* @__PURE__ */ jsx_runtime22.jsx(exports_index_parts6.Popup, {
         "data-slot": "popover-content",
         className: cn("w-[min(26rem,calc(100vw-1rem))] origin-(--transform-origin) rounded-lg border border-edge bg-surface p-3 text-ink shadow-lg outline-none duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className),
         ...props
@@ -40756,14 +40771,14 @@ function PopoverContent({
   });
 }
 function PopoverTitle3({ className, ...props }) {
-  return /* @__PURE__ */ jsx_runtime21.jsx(exports_index_parts6.Title, {
+  return /* @__PURE__ */ jsx_runtime22.jsx(exports_index_parts6.Title, {
     "data-slot": "popover-title",
     className: cn("text-sm font-semibold text-ink", className),
     ...props
   });
 }
 function PopoverDescription3({ className, ...props }) {
-  return /* @__PURE__ */ jsx_runtime21.jsx(exports_index_parts6.Description, {
+  return /* @__PURE__ */ jsx_runtime22.jsx(exports_index_parts6.Description, {
     "data-slot": "popover-description",
     className: cn("text-sm leading-relaxed text-ink-dim", className),
     ...props
@@ -40774,7 +40789,7 @@ var QUIET_GROUP = "group/chrome";
 var QUIET_FADE = "opacity-40 transition-opacity duration-300 group-hover/chrome:opacity-100 group-has-[:focus-visible]/chrome:opacity-100";
 // node_modules/react-resizable-panels/dist/react-resizable-panels.js
 var import_jsx_runtime35 = __toESM(require_jsx_runtime(), 1);
-var import_react24 = __toESM(require_react(), 1);
+var import_react25 = __toESM(require_react(), 1);
 "use client";
 function St(e, t) {
   const n = getComputedStyle(e), o = parseFloat(n.fontSize);
@@ -42176,19 +42191,19 @@ function Wt(e) {
   };
 }
 function Kt() {
-  const [e, t] = import_react24.useState({}), n = import_react24.useCallback(() => t({}), []);
+  const [e, t] = import_react25.useState({}), n = import_react25.useCallback(() => t({}), []);
   return [e, n];
 }
 function Ce(e) {
-  const t = import_react24.useId();
+  const t = import_react25.useId();
   return `${e ?? t}`;
 }
-var q = typeof window < "u" ? import_react24.useLayoutEffect : import_react24.useEffect;
+var q = typeof window < "u" ? import_react25.useLayoutEffect : import_react25.useEffect;
 function re(e) {
-  const t = import_react24.useRef(e);
+  const t = import_react25.useRef(e);
   return q(() => {
     t.current = e;
-  }, [e]), import_react24.useCallback((...n) => t.current?.(...n), [t]);
+  }, [e]), import_react25.useCallback((...n) => t.current?.(...n), [t]);
 }
 function Re(...e) {
   return re((t) => {
@@ -42208,19 +42223,19 @@ function Re(...e) {
   });
 }
 function Ee(e) {
-  const t = import_react24.useRef({ ...e });
+  const t = import_react25.useRef({ ...e });
   return q(() => {
     for (const n in e)
       t.current[n] = e[n];
   }, [e]), t.current;
 }
-var ct = import_react24.createContext(null);
+var ct = import_react25.createContext(null);
 function Xt(e, t) {
-  const n = import_react24.useRef({
+  const n = import_react25.useRef({
     getLayout: () => ({}),
     setLayout: Mt
   });
-  import_react24.useImperativeHandle(t, () => n.current, []), q(() => {
+  import_react25.useImperativeHandle(t, () => n.current, []), q(() => {
     Object.assign(n.current, lt({ groupId: e }));
   });
 }
@@ -42243,14 +42258,14 @@ function qt({
   style: p,
   ...S
 }) {
-  const z = import_react24.useRef({
+  const z = import_react25.useRef({
     onLayoutChange: {},
     onLayoutChanged: {}
   }), f = re((x) => {
     K(z.current.onLayoutChange, x) || (z.current.onLayoutChange = x, r2?.(x));
   }), d = re((x, P) => {
     K(z.current.onLayoutChanged, x) || (z.current.onLayoutChanged = x, l?.(x, { isUserInteraction: P }));
-  }), h = Ce(a), y = import_react24.useRef(null), [b, v] = Kt(), g = import_react24.useRef({
+  }), h = Ce(a), y = import_react25.useRef(null), [b, v] = Kt(), g = import_react25.useRef({
     lastExpandedPanelSizes: {},
     layouts: {},
     panels: [],
@@ -42280,7 +42295,7 @@ function qt({
   }), L = Ee({
     defaultLayout: n,
     disableCursor: o
-  }), G = import_react24.useMemo(() => ({
+  }), G = import_react25.useMemo(() => ({
     get disableCursor() {
       return !!L.disableCursor;
     },
@@ -42321,7 +42336,7 @@ function qt({
       const M = g.current.separators.find((k) => k.id === x);
       M && (M.disabled = P, M.disableDoubleClick = I);
     }
-  }), [E, h, v, c, L]), N = import_react24.useRef(null);
+  }), [E, h, v, c, L]), N = import_react25.useRef(null);
   return q(() => {
     const x = y.current;
     if (x === null)
@@ -42381,7 +42396,7 @@ function qt({
     c,
     b,
     L
-  ]), import_react24.useEffect(() => {
+  ]), import_react25.useEffect(() => {
     const x = N.current;
     x && (x.mutableState.defaultLayout = n, x.mutableState.disableCursor = !!o);
   }), /* @__PURE__ */ import_jsx_runtime35.jsx(ct.Provider, { value: G, children: /* @__PURE__ */ import_jsx_runtime35.jsx("div", {
@@ -42406,11 +42421,11 @@ function qt({
 }
 qt.displayName = "Group";
 function Me() {
-  const e = import_react24.useContext(ct);
+  const e = import_react25.useContext(ct);
   return C(e, "Group Context not found; did you render a Panel or Separator outside of a Group?"), e;
 }
 function Zt(e, t) {
-  const { id: n } = Me(), o = import_react24.useRef({
+  const { id: n } = Me(), o = import_react25.useRef({
     collapse: Se,
     expand: Se,
     getSize: () => ({
@@ -42420,7 +42435,7 @@ function Zt(e, t) {
     isCollapsed: () => false,
     resize: Se
   });
-  import_react24.useImperativeHandle(t, () => o.current, []), q(() => {
+  import_react25.useImperativeHandle(t, () => o.current, []), q(() => {
     Object.assign(o.current, at({ groupId: n, panelId: e }));
   });
 }
@@ -42443,7 +42458,7 @@ function Qt({
 }) {
   const f = !!r2, d = Ce(r2), h = Ee({
     disabled: s
-  }), y = import_react24.useRef(null), b = Re(y, u), {
+  }), y = import_react25.useRef(null), b = Re(y, u), {
     getPanelStyles: v,
     id: g,
     orientation: w,
@@ -42489,14 +42504,14 @@ function Qt({
     N,
     E,
     h
-  ]), import_react24.useEffect(() => {
+  ]), import_react25.useEffect(() => {
     L(d, { disabled: s });
   }, [s, d, L]), Zt(d, p);
   const x = () => {
     const R = v(g, d);
     if (R)
       return JSON.stringify(R);
-  }, P = import_react24.useSyncExternalStore((R) => we(g, R), x, x);
+  }, P = import_react25.useSyncExternalStore((R) => we(g, R), x, x);
   let I;
   return P ? I = JSON.parse(P) : i !== undefined ? I = {
     flexGrow: undefined,
@@ -42594,7 +42609,7 @@ function nn({
   const r2 = Ce(s), l = Ee({
     disabled: n,
     disableDoubleClick: o
-  }), [c, m] = import_react24.useState({}), [p, S] = import_react24.useState("inactive"), [z, f] = import_react24.useState(false), d = import_react24.useRef(null), h = Re(d, i), {
+  }), [c, m] = import_react25.useState({}), [p, S] = import_react25.useState("inactive"), [z, f] = import_react25.useState(false), d = import_react25.useRef(null), h = Re(d, i), {
     disableCursor: y,
     id: b,
     orientation: v,
@@ -42627,7 +42642,7 @@ function nn({
         I(), R(), P();
       };
     }
-  }, [b, r2, g, l]), import_react24.useEffect(() => {
+  }, [b, r2, g, l]), import_react25.useEffect(() => {
     w(r2, { disabled: n, disableDoubleClick: o });
   }, [n, o, r2, w]);
   let L;
@@ -42674,12 +42689,12 @@ function nn({
 }
 nn.displayName = "Separator";
 // src/kit/ui/StatusStrip.tsx
-var import_react25 = __toESM(require_react(), 1);
+var import_react26 = __toESM(require_react(), 1);
 
 // src/kit/ui/separator.tsx
-var jsx_runtime22 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime23 = __toESM(require_jsx_runtime(), 1);
 function Separator2({ className, orientation = "horizontal", ...props }) {
-  return /* @__PURE__ */ jsx_runtime22.jsx(Separator, {
+  return /* @__PURE__ */ jsx_runtime23.jsx(Separator, {
     "data-slot": "separator",
     orientation,
     className: cn("shrink-0 bg-border data-horizontal:h-px data-horizontal:w-full data-vertical:w-px data-vertical:self-stretch", className),
@@ -42688,30 +42703,30 @@ function Separator2({ className, orientation = "horizontal", ...props }) {
 }
 
 // src/kit/ui/StatusStrip.tsx
-var jsx_runtime23 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime24 = __toESM(require_jsx_runtime(), 1);
 function StatusStrip({
   segments,
   fade
 }) {
-  return /* @__PURE__ */ jsx_runtime23.jsx("div", {
+  return /* @__PURE__ */ jsx_runtime24.jsx("div", {
     "data-slot": "status-strip",
     className: "@container flex min-w-0 items-center gap-2.5 overflow-hidden text-xs whitespace-nowrap text-ink-dim",
-    children: segments.map((s, i) => /* @__PURE__ */ jsx_runtime23.jsxs(import_react25.Fragment, {
+    children: segments.map((s, i) => /* @__PURE__ */ jsx_runtime24.jsxs(import_react26.Fragment, {
       children: [
-        i > 0 && /* @__PURE__ */ jsx_runtime23.jsx(Separator2, {
+        i > 0 && /* @__PURE__ */ jsx_runtime24.jsx(Separator2, {
           orientation: "vertical",
           className: cn("my-1.5 h-3", s.priority === "low" && "hidden @[44rem]:block", fade)
         }),
-        /* @__PURE__ */ jsx_runtime23.jsxs("span", {
+        /* @__PURE__ */ jsx_runtime24.jsxs("span", {
           className: cn("items-baseline gap-1", s.priority === "low" ? "hidden @[44rem]:flex" : "flex", !s.loud && fade),
           children: [
-            s.label && /* @__PURE__ */ jsx_runtime23.jsxs("span", {
+            s.label && /* @__PURE__ */ jsx_runtime24.jsxs("span", {
               children: [
                 s.label,
                 ":"
               ]
             }),
-            /* @__PURE__ */ jsx_runtime23.jsx("span", {
+            /* @__PURE__ */ jsx_runtime24.jsx("span", {
               className: "text-ink tabular-nums",
               children: s.value
             })
@@ -42739,7 +42754,7 @@ function relativeTime(ts, now2) {
   return new Date(ts).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 // src/kit/ui/toast.tsx
-var import_react26 = __toESM(require_react(), 1);
+var import_react27 = __toESM(require_react(), 1);
 
 // src/kit/ui/toast-store.ts
 var TOAST_MS = 6000;
@@ -42820,35 +42835,35 @@ function createToastStore(timers = realTimers) {
 }
 
 // src/kit/ui/toast.tsx
-var jsx_runtime24 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime25 = __toESM(require_jsx_runtime(), 1);
 function useToastStore() {
-  const store = import_react26.useMemo(() => createToastStore(), []);
-  import_react26.useEffect(() => () => store.dispose(), [store]);
+  const store = import_react27.useMemo(() => createToastStore(), []);
+  import_react27.useEffect(() => () => store.dispose(), [store]);
   return store;
 }
 function useToastList(store) {
-  return import_react26.useSyncExternalStore(store.subscribe, store.snapshot, store.snapshot);
+  return import_react27.useSyncExternalStore(store.subscribe, store.snapshot, store.snapshot);
 }
 function Toasts({ store, className }) {
   const toasts = useToastList(store);
   if (toasts.length === 0)
     return null;
-  return /* @__PURE__ */ jsx_runtime24.jsx("div", {
+  return /* @__PURE__ */ jsx_runtime25.jsx("div", {
     role: "status",
     "aria-live": "polite",
     "data-slot": "toasts",
     className: cn("pointer-events-none absolute right-3 bottom-3 z-50 flex w-80 max-w-[calc(100%-1.5rem)] flex-col gap-2", className),
-    children: toasts.map((t) => /* @__PURE__ */ jsx_runtime24.jsx(ToastCard, {
+    children: toasts.map((t) => /* @__PURE__ */ jsx_runtime25.jsx(ToastCard, {
       toast: t,
       store
     }, t.id))
   });
 }
 function ToastCard({ toast: t, store }) {
-  const pointer2 = import_react26.useRef(false);
-  const focus = import_react26.useRef(false);
+  const pointer2 = import_react27.useRef(false);
+  const focus = import_react27.useRef(false);
   const update2 = () => store.hold(t.id, pointer2.current || focus.current);
-  return /* @__PURE__ */ jsx_runtime24.jsxs("article", {
+  return /* @__PURE__ */ jsx_runtime25.jsxs("article", {
     "aria-label": t.title,
     onPointerEnter: () => {
       pointer2.current = true;
@@ -42870,20 +42885,20 @@ function ToastCard({ toast: t, store }) {
     },
     className: "pointer-events-auto flex items-start gap-2 rounded-md border border-edge bg-surface-raised px-3 py-2 text-sm text-ink shadow-lg",
     children: [
-      /* @__PURE__ */ jsx_runtime24.jsxs("div", {
+      /* @__PURE__ */ jsx_runtime25.jsxs("div", {
         className: "min-w-0 flex-1",
         children: [
-          /* @__PURE__ */ jsx_runtime24.jsx("p", {
+          /* @__PURE__ */ jsx_runtime25.jsx("p", {
             className: "font-medium",
             children: t.title
           }),
-          t.description && /* @__PURE__ */ jsx_runtime24.jsx("p", {
+          t.description && /* @__PURE__ */ jsx_runtime25.jsx("p", {
             className: "mt-0.5 text-xs text-ink-dim",
             children: t.description
           }),
-          t.actions && /* @__PURE__ */ jsx_runtime24.jsx("div", {
+          t.actions && /* @__PURE__ */ jsx_runtime25.jsx("div", {
             className: "mt-2 flex flex-wrap gap-2",
-            children: t.actions.map((a) => /* @__PURE__ */ jsx_runtime24.jsx("button", {
+            children: t.actions.map((a) => /* @__PURE__ */ jsx_runtime25.jsx("button", {
               type: "button",
               "aria-label": a.ariaLabel ?? a.label,
               onClick: () => {
@@ -42896,12 +42911,12 @@ function ToastCard({ toast: t, store }) {
           })
         ]
       }),
-      /* @__PURE__ */ jsx_runtime24.jsx("button", {
+      /* @__PURE__ */ jsx_runtime25.jsx("button", {
         type: "button",
         onClick: () => store.dismiss(t.id),
         "aria-label": "Dismiss",
         className: "shrink-0 rounded-sm p-0.5 text-ink-faint hover:text-ink",
-        children: /* @__PURE__ */ jsx_runtime24.jsx(X, {
+        children: /* @__PURE__ */ jsx_runtime25.jsx(X, {
           "aria-hidden": true,
           className: "size-3.5"
         })
@@ -43724,23 +43739,23 @@ function createTooltipHandle() {
   return new TooltipHandle;
 }
 // src/kit/ui/tooltip.tsx
-var jsx_runtime25 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime26 = __toESM(require_jsx_runtime(), 1);
 "use client";
 function TooltipProvider3({ delay = 0, ...props }) {
-  return /* @__PURE__ */ jsx_runtime25.jsx(exports_index_parts7.Provider, {
+  return /* @__PURE__ */ jsx_runtime26.jsx(exports_index_parts7.Provider, {
     "data-slot": "tooltip-provider",
     delay,
     ...props
   });
 }
 // src/kit/document/ActiveVersionToast.tsx
-var import_react27 = __toESM(require_react(), 1);
+var import_react28 = __toESM(require_react(), 1);
 function ActiveVersionToast({
   doc,
   announce
 }) {
-  const seen = import_react27.useRef(new Map);
-  import_react27.useEffect(() => {
+  const seen = import_react28.useRef(new Map);
+  import_react28.useEffect(() => {
     if (!doc)
       return;
     const was = seen.current.get(doc.slug);
@@ -43753,7 +43768,7 @@ function ActiveVersionToast({
 }
 
 // src/kit/document/Backlinks.tsx
-var import_react28 = __toESM(require_react(), 1);
+var import_react29 = __toESM(require_react(), 1);
 
 // src/kit/document/backlinks.ts
 function groupBacklinks(links) {
@@ -43822,16 +43837,16 @@ function snippetParts(b) {
 }
 
 // src/kit/document/Backlinks.tsx
-var jsx_runtime26 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime27 = __toESM(require_jsx_runtime(), 1);
 function folderOf2(shown2) {
   const slash = shown2.lastIndexOf("/");
   return slash === -1 ? "" : shown2.slice(0, slash + 1);
 }
 function Entry({ b, onOpen }) {
-  const snippetId = import_react28.useId();
+  const snippetId = import_react29.useId();
   const name = b.name.replace(/\.(md|markdown|txt)$/i, "");
-  return /* @__PURE__ */ jsx_runtime26.jsx("li", {
-    children: /* @__PURE__ */ jsx_runtime26.jsxs("button", {
+  return /* @__PURE__ */ jsx_runtime27.jsx("li", {
+    children: /* @__PURE__ */ jsx_runtime27.jsxs("button", {
       type: "button",
       "aria-label": `${name}, line ${b.line}`,
       "aria-describedby": snippetId,
@@ -43842,18 +43857,18 @@ function Entry({ b, onOpen }) {
       title: `Open ${b.shown} at line ${b.line}`,
       className: "group/backlink w-full rounded-md px-2 py-1.5 text-left outline-none hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring/60",
       children: [
-        /* @__PURE__ */ jsx_runtime26.jsxs("span", {
+        /* @__PURE__ */ jsx_runtime27.jsxs("span", {
           className: "flex items-baseline gap-1.5 text-[13px]",
           children: [
-            /* @__PURE__ */ jsx_runtime26.jsx("span", {
+            /* @__PURE__ */ jsx_runtime27.jsx("span", {
               className: "truncate font-medium text-ink group-hover/backlink:text-brand",
               children: name
             }),
-            folderOf2(b.shown) && /* @__PURE__ */ jsx_runtime26.jsx("span", {
+            folderOf2(b.shown) && /* @__PURE__ */ jsx_runtime27.jsx("span", {
               className: "truncate text-[11px] text-ink-faint",
               children: folderOf2(b.shown)
             }),
-            /* @__PURE__ */ jsx_runtime26.jsxs("span", {
+            /* @__PURE__ */ jsx_runtime27.jsxs("span", {
               className: "ml-auto shrink-0 font-mono text-[10px] text-ink-faint",
               children: [
                 "line ",
@@ -43862,14 +43877,14 @@ function Entry({ b, onOpen }) {
             })
           ]
         }),
-        /* @__PURE__ */ jsx_runtime26.jsx("span", {
+        /* @__PURE__ */ jsx_runtime27.jsx("span", {
           id: snippetId,
           className: "mt-0.5 block text-[12px] leading-snug text-ink-dim",
           "data-slot": "snippet",
-          children: snippetParts(b).map((p, i) => p.mark ? /* @__PURE__ */ jsx_runtime26.jsx("mark", {
+          children: snippetParts(b).map((p, i) => p.mark ? /* @__PURE__ */ jsx_runtime27.jsx("mark", {
             className: "rounded-sm bg-brand/15 px-0.5 text-ink",
             children: p.text
-          }, i) : /* @__PURE__ */ jsx_runtime26.jsx("span", {
+          }, i) : /* @__PURE__ */ jsx_runtime27.jsx("span", {
             children: p.text
           }, i))
         })
@@ -43896,10 +43911,10 @@ function EdgeEntry({
   onOpen,
   asOf
 }) {
-  const lineId = import_react28.useId();
+  const lineId = import_react29.useId();
   const name = e.name.replace(/\.(md|markdown|txt)$/i, "");
-  return /* @__PURE__ */ jsx_runtime26.jsx("li", {
-    children: /* @__PURE__ */ jsx_runtime26.jsxs("button", {
+  return /* @__PURE__ */ jsx_runtime27.jsx("li", {
+    children: /* @__PURE__ */ jsx_runtime27.jsxs("button", {
       type: "button",
       "aria-label": `${name}: reference (${e.edge}), not a link in its text`,
       "aria-describedby": lineId,
@@ -43911,29 +43926,29 @@ function EdgeEntry({
       title: `Open ${e.shown}`,
       className: "group/backlink w-full rounded-md px-2 py-1.5 text-left outline-none hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring/60",
       children: [
-        /* @__PURE__ */ jsx_runtime26.jsxs("span", {
+        /* @__PURE__ */ jsx_runtime27.jsxs("span", {
           className: "flex items-baseline gap-1.5 text-[13px]",
           children: [
-            /* @__PURE__ */ jsx_runtime26.jsx("span", {
+            /* @__PURE__ */ jsx_runtime27.jsx("span", {
               className: "truncate font-medium text-ink group-hover/backlink:text-brand",
               children: name
             }),
-            folderOf2(e.shown) && /* @__PURE__ */ jsx_runtime26.jsx("span", {
+            folderOf2(e.shown) && /* @__PURE__ */ jsx_runtime27.jsx("span", {
               className: "truncate text-[11px] text-ink-faint",
               children: folderOf2(e.shown)
             })
           ]
         }),
-        /* @__PURE__ */ jsx_runtime26.jsxs("span", {
+        /* @__PURE__ */ jsx_runtime27.jsxs("span", {
           id: lineId,
           className: "mt-0.5 block text-[12px] leading-snug text-ink-dim",
           "data-slot": "reference-line",
           children: [
-            /* @__PURE__ */ jsx_runtime26.jsx("span", {
+            /* @__PURE__ */ jsx_runtime27.jsx("span", {
               className: "font-mono",
               children: edgeLine(e)
             }),
-            e.rel.length > 0 && /* @__PURE__ */ jsx_runtime26.jsxs("span", {
+            e.rel.length > 0 && /* @__PURE__ */ jsx_runtime27.jsxs("span", {
               className: "text-ink-faint",
               children: [
                 " ",
@@ -43972,11 +43987,11 @@ function OnBundles({
   bundles,
   onOpen
 }) {
-  return /* @__PURE__ */ jsx_runtime26.jsx("ul", {
+  return /* @__PURE__ */ jsx_runtime27.jsx("ul", {
     "data-slot": "backlink-bundles",
     className: "flex flex-col",
-    children: bundles.map((b) => /* @__PURE__ */ jsx_runtime26.jsx("li", {
-      children: /* @__PURE__ */ jsx_runtime26.jsxs("button", {
+    children: bundles.map((b) => /* @__PURE__ */ jsx_runtime27.jsx("li", {
+      children: /* @__PURE__ */ jsx_runtime27.jsxs("button", {
         type: "button",
         "data-slot": "backlink-bundle",
         "data-source": b.source,
@@ -43984,28 +43999,28 @@ function OnBundles({
         title: `Open the ${b.noun} ${b.name}`,
         className: "group/backlink w-full rounded-md px-2 py-1.5 text-left outline-none hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring/60",
         children: [
-          /* @__PURE__ */ jsx_runtime26.jsxs("span", {
+          /* @__PURE__ */ jsx_runtime27.jsxs("span", {
             className: "flex items-baseline gap-1.5 text-[13px]",
             children: [
-              /* @__PURE__ */ jsx_runtime26.jsxs("span", {
+              /* @__PURE__ */ jsx_runtime27.jsxs("span", {
                 className: "truncate text-ink group-hover/backlink:text-brand",
                 children: [
                   "On the ",
                   b.noun,
                   " ",
-                  /* @__PURE__ */ jsx_runtime26.jsx("span", {
+                  /* @__PURE__ */ jsx_runtime27.jsx("span", {
                     className: "font-medium",
                     children: b.name
                   })
                 ]
               }),
-              folderOf2(b.shown) && /* @__PURE__ */ jsx_runtime26.jsx("span", {
+              folderOf2(b.shown) && /* @__PURE__ */ jsx_runtime27.jsx("span", {
                 className: "truncate text-[11px] text-ink-faint",
                 children: folderOf2(b.shown)
               })
             ]
           }),
-          /* @__PURE__ */ jsx_runtime26.jsx("span", {
+          /* @__PURE__ */ jsx_runtime27.jsx("span", {
             className: "mt-0.5 block text-[12px] leading-snug text-ink-dim",
             children: placesOn(b)
           })
@@ -44029,22 +44044,22 @@ function Backlinks({
     return null;
   const groups = groupBacklinks(data.backlinks);
   const asOf = new Map(data.relations.flatMap((r2) => r2.as ? [[r2.rel, r2.as]] : []));
-  return /* @__PURE__ */ jsx_runtime26.jsxs("section", {
+  return /* @__PURE__ */ jsx_runtime27.jsxs("section", {
     "aria-label": "Linked from",
     "data-slot": "backlinks",
     className: "mx-auto max-w-[76ch] px-8 pb-16",
     children: [
-      (data.count > 0 || edges.length > 0) && /* @__PURE__ */ jsx_runtime26.jsxs(jsx_runtime26.Fragment, {
+      (data.count > 0 || edges.length > 0) && /* @__PURE__ */ jsx_runtime27.jsxs(jsx_runtime27.Fragment, {
         children: [
-          /* @__PURE__ */ jsx_runtime26.jsxs("h2", {
+          /* @__PURE__ */ jsx_runtime27.jsxs("h2", {
             className: HEADING,
             children: [
               "Linked from",
-              /* @__PURE__ */ jsx_runtime26.jsx("span", {
+              /* @__PURE__ */ jsx_runtime27.jsx("span", {
                 className: "font-normal text-ink-faint normal-case tracking-normal",
                 children: countText(data.count, edgeCount)
               }),
-              action && /* @__PURE__ */ jsx_runtime26.jsx("button", {
+              action && /* @__PURE__ */ jsx_runtime27.jsx("button", {
                 type: "button",
                 "data-slot": "linked-from-action",
                 onClick: action.onSelect,
@@ -44053,32 +44068,32 @@ function Backlinks({
               })
             ]
           }),
-          /* @__PURE__ */ jsx_runtime26.jsx("div", {
+          /* @__PURE__ */ jsx_runtime27.jsx("div", {
             className: "flex flex-col gap-3",
-            children: groups.map((g) => /* @__PURE__ */ jsx_runtime26.jsxs("div", {
+            children: groups.map((g) => /* @__PURE__ */ jsx_runtime27.jsxs("div", {
               "data-slot": "backlink-group",
               "data-rel": g.rel ?? "",
               children: [
-                /* @__PURE__ */ jsx_runtime26.jsxs("h3", {
+                /* @__PURE__ */ jsx_runtime27.jsxs("h3", {
                   className: "mb-0.5 flex items-center gap-1.5 px-2 text-[11px] text-ink-faint",
                   children: [
-                    g.rel ? /* @__PURE__ */ jsx_runtime26.jsx("span", {
+                    g.rel ? /* @__PURE__ */ jsx_runtime27.jsx("span", {
                       "data-slot": "backlink-relation",
                       title: asOf.has(g.rel) ? `Written ${g.rel} in the documents below; read from here, ${asOf.get(g.rel)}` : undefined,
                       className: "rounded-full border border-edge bg-surface-raised px-1.5 leading-[1.45] font-medium text-ink-dim",
                       children: asOf.get(g.rel) ?? g.rel
-                    }) : /* @__PURE__ */ jsx_runtime26.jsx("span", {
+                    }) : /* @__PURE__ */ jsx_runtime27.jsx("span", {
                       className: "text-ink-dim",
                       children: "no relation"
                     }),
-                    /* @__PURE__ */ jsx_runtime26.jsx("span", {
+                    /* @__PURE__ */ jsx_runtime27.jsx("span", {
                       children: g.links.length
                     })
                   ]
                 }),
-                /* @__PURE__ */ jsx_runtime26.jsx("ul", {
+                /* @__PURE__ */ jsx_runtime27.jsx("ul", {
                   className: "flex flex-col",
-                  children: g.links.map((b) => /* @__PURE__ */ jsx_runtime26.jsx(Entry, {
+                  children: g.links.map((b) => /* @__PURE__ */ jsx_runtime27.jsx(Entry, {
                     b,
                     onOpen
                   }, `${b.source}:${b.from}`))
@@ -44086,7 +44101,7 @@ function Backlinks({
               ]
             }, g.rel ?? ""))
           }),
-          data.truncated && data.backlinks.length < data.count && /* @__PURE__ */ jsx_runtime26.jsxs("p", {
+          data.truncated && data.backlinks.length < data.count && /* @__PURE__ */ jsx_runtime27.jsxs("p", {
             className: "mt-2 px-2 text-[11px] text-ink-faint",
             children: [
               "Showing the first ",
@@ -44096,32 +44111,32 @@ function Backlinks({
               "."
             ]
           }),
-          edges.length > 0 && onOpenEdge && /* @__PURE__ */ jsx_runtime26.jsx("div", {
+          edges.length > 0 && onOpenEdge && /* @__PURE__ */ jsx_runtime27.jsx("div", {
             className: groups.length > 0 ? "mt-3 flex flex-col gap-3" : "flex flex-col gap-3",
-            children: groupEdges(edges).map((g) => /* @__PURE__ */ jsx_runtime26.jsxs("div", {
+            children: groupEdges(edges).map((g) => /* @__PURE__ */ jsx_runtime27.jsxs("div", {
               "data-slot": "backlink-references",
               "data-edge": g.kind,
               children: [
-                /* @__PURE__ */ jsx_runtime26.jsxs("h3", {
+                /* @__PURE__ */ jsx_runtime27.jsxs("h3", {
                   className: "mb-0.5 flex items-center gap-1.5 px-2 text-[11px] text-ink-faint",
                   children: [
-                    /* @__PURE__ */ jsx_runtime26.jsx("span", {
+                    /* @__PURE__ */ jsx_runtime27.jsx("span", {
                       "data-slot": "backlink-edge-kind",
                       className: "rounded-full border border-edge bg-surface-raised px-1.5 leading-[1.45] font-medium text-ink-dim",
                       children: g.kind
                     }),
-                    /* @__PURE__ */ jsx_runtime26.jsx("span", {
+                    /* @__PURE__ */ jsx_runtime27.jsx("span", {
                       className: "text-ink-dim",
                       children: "references, not links in the text"
                     }),
-                    /* @__PURE__ */ jsx_runtime26.jsx("span", {
+                    /* @__PURE__ */ jsx_runtime27.jsx("span", {
                       children: g.edges.length
                     })
                   ]
                 }),
-                /* @__PURE__ */ jsx_runtime26.jsx("ul", {
+                /* @__PURE__ */ jsx_runtime27.jsx("ul", {
                   className: "flex flex-col",
-                  children: g.edges.map((e, i) => /* @__PURE__ */ jsx_runtime26.jsx(EdgeEntry, {
+                  children: g.edges.map((e, i) => /* @__PURE__ */ jsx_runtime27.jsx(EdgeEntry, {
                     e,
                     onOpen: onOpenEdge,
                     asOf
@@ -44130,7 +44145,7 @@ function Backlinks({
               ]
             }, g.kind))
           }),
-          edges.length < edgeCount && /* @__PURE__ */ jsx_runtime26.jsxs("p", {
+          edges.length < edgeCount && /* @__PURE__ */ jsx_runtime27.jsxs("p", {
             "data-slot": "references-cut",
             className: "mt-2 px-2 text-[11px] text-ink-faint",
             children: [
@@ -44143,21 +44158,21 @@ function Backlinks({
           })
         ]
       }),
-      bundles.length > 0 && onOpenBundle && /* @__PURE__ */ jsx_runtime26.jsxs("div", {
+      bundles.length > 0 && onOpenBundle && /* @__PURE__ */ jsx_runtime27.jsxs("div", {
         "data-slot": "backlinks-on",
         className: data.count > 0 ? "mt-4" : "",
         children: [
-          /* @__PURE__ */ jsx_runtime26.jsxs("h2", {
+          /* @__PURE__ */ jsx_runtime27.jsxs("h2", {
             className: HEADING,
             children: [
               onHeading(bundles),
-              /* @__PURE__ */ jsx_runtime26.jsx("span", {
+              /* @__PURE__ */ jsx_runtime27.jsx("span", {
                 className: "font-normal text-ink-faint normal-case tracking-normal",
                 children: "not canon"
               })
             ]
           }),
-          /* @__PURE__ */ jsx_runtime26.jsx(OnBundles, {
+          /* @__PURE__ */ jsx_runtime27.jsx(OnBundles, {
             bundles,
             onOpen: onOpenBundle
           })
@@ -44168,7 +44183,7 @@ function Backlinks({
 }
 
 // src/kit/document/CompareView.tsx
-var import_react30 = __toESM(require_react(), 1);
+var import_react31 = __toESM(require_react(), 1);
 
 // src/kit/document/compareNav.ts
 function hunkSpans(rows) {
@@ -44227,7 +44242,7 @@ function markPlace(span, total, measured, minPct = 0.6) {
 }
 
 // src/kit/document/FindBar.tsx
-var import_react29 = __toESM(require_react(), 1);
+var import_react30 = __toESM(require_react(), 1);
 
 // src/kit/document/find.ts
 function findMatches(segments, query, opts = {}) {
@@ -44322,7 +44337,7 @@ function clearHighlight(...names) {
 }
 
 // src/kit/document/FindBar.tsx
-var jsx_runtime27 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime28 = __toESM(require_jsx_runtime(), 1);
 var FIND_MATCH_HL = "find-match";
 var FIND_CURRENT_HL = "find-current";
 var SEGMENT = "p,li,h1,h2,h3,h4,h5,h6,td,th,pre,blockquote,dt,dd,figcaption,summary,[data-find-segment]";
@@ -44397,32 +44412,32 @@ function useFind({
   watch,
   sides: sides2
 }) {
-  const [open, setOpen] = import_react29.useState(false);
-  const [query, setQuery] = import_react29.useState("");
-  const [matchCase, setMatchCase] = import_react29.useState(false);
-  const [side, setSide] = import_react29.useState("both");
-  const [index4, setIndex] = import_react29.useState(-1);
-  const [count, setCount] = import_react29.useState(0);
-  const input2 = import_react29.useRef(null);
-  const bar = import_react29.useRef(null);
-  const found = import_react29.useRef({ segs: [], matches: [] });
-  const returnTo = import_react29.useRef(null);
-  const reveal = import_react29.useRef(null);
-  const [redrawn, setRedrawn] = import_react29.useState(0);
-  const [focusAsk, setFocusAsk] = import_react29.useState(0);
-  const indexRef = import_react29.useRef(index4);
+  const [open, setOpen] = import_react30.useState(false);
+  const [query, setQuery] = import_react30.useState("");
+  const [matchCase, setMatchCase] = import_react30.useState(false);
+  const [side, setSide] = import_react30.useState("both");
+  const [index4, setIndex] = import_react30.useState(-1);
+  const [count, setCount] = import_react30.useState(0);
+  const input2 = import_react30.useRef(null);
+  const bar = import_react30.useRef(null);
+  const found = import_react30.useRef({ segs: [], matches: [] });
+  const returnTo = import_react30.useRef(null);
+  const reveal = import_react30.useRef(null);
+  const [redrawn, setRedrawn] = import_react30.useState(0);
+  const [focusAsk, setFocusAsk] = import_react30.useState(0);
+  const indexRef = import_react30.useRef(index4);
   indexRef.current = index4;
-  import_react29.useEffect(() => {
+  import_react30.useEffect(() => {
     if (side !== "both" && !(sides2 ?? []).some((s) => s.value === side))
       setSide("both");
   }, [side, sides2]);
-  const rangeAt = import_react29.useCallback((i) => {
+  const rangeAt = import_react30.useCallback((i) => {
     const { segs, matches } = found.current;
     const m = matches[i];
     return m ? rangeOf(segs, m) : null;
   }, []);
-  const painted = import_react29.useRef([0, 0]);
-  const paint = import_react29.useCallback((i, around = i) => {
+  const painted = import_react30.useRef([0, 0]);
+  const paint = import_react30.useCallback((i, around = i) => {
     const n = found.current.matches.length;
     const [from, to] = paintWindow(around, n);
     painted.current = [from, to];
@@ -44439,7 +44454,7 @@ function useFind({
     paintHighlight(FIND_CURRENT_HL, current ? [current] : []);
     return current;
   }, [rangeAt]);
-  import_react29.useLayoutEffect(() => {
+  import_react30.useLayoutEffect(() => {
     const r2 = root2.current;
     if (!open || !r2) {
       found.current = { segs: [], matches: [] };
@@ -44464,7 +44479,7 @@ function useFind({
     if (current && want)
       scrollToRange(r2, current);
   }, [open, query, matchCase, side, watch, redrawn, root2]);
-  import_react29.useEffect(() => {
+  import_react30.useEffect(() => {
     const r2 = root2.current;
     if (!open || !r2)
       return;
@@ -44488,8 +44503,8 @@ function useFind({
       r2.removeEventListener("scroll", onScroll);
     };
   }, [open, root2, rangeAt, paint]);
-  import_react29.useEffect(() => () => clearHighlight(FIND_MATCH_HL, FIND_CURRENT_HL), []);
-  import_react29.useEffect(() => {
+  import_react30.useEffect(() => () => clearHighlight(FIND_MATCH_HL, FIND_CURRENT_HL), []);
+  import_react30.useEffect(() => {
     const r2 = root2.current;
     if (!open || !r2 || typeof MutationObserver === "undefined")
       return;
@@ -44504,7 +44519,7 @@ function useFind({
       mo.disconnect();
     };
   }, [open, root2]);
-  const step = import_react29.useCallback((dir) => {
+  const step = import_react30.useCallback((dir) => {
     const n = found.current.matches.length;
     if (n === 0)
       return;
@@ -44515,7 +44530,7 @@ function useFind({
     if (current && root2.current)
       scrollToRange(root2.current, current);
   }, [paint, root2]);
-  const openBar = import_react29.useCallback(() => {
+  const openBar = import_react30.useCallback(() => {
     const active = document.activeElement;
     if (!bar.current?.contains(active))
       returnTo.current = active;
@@ -44535,13 +44550,13 @@ function useFind({
     setOpen(true);
     setFocusAsk((n) => n + 1);
   }, [root2, open]);
-  import_react29.useLayoutEffect(() => {
+  import_react30.useLayoutEffect(() => {
     if (focusAsk === 0)
       return;
     input2.current?.focus();
     input2.current?.select();
   }, [focusAsk]);
-  const close = import_react29.useCallback(() => {
+  const close = import_react30.useCallback(() => {
     setOpen(false);
     const back = returnTo.current;
     returnTo.current = null;
@@ -44550,7 +44565,7 @@ function useFind({
     else
       root2.current?.focus({ preventScroll: true });
   }, [root2]);
-  import_react29.useEffect(() => {
+  import_react30.useEffect(() => {
     const onKey = (e) => {
       if (e.defaultPrevented)
         return;
@@ -44584,13 +44599,13 @@ function useFind({
   const field = cn("h-6 rounded-md border border-edge bg-bg px-[7px] font-mono text-[12px] text-ink outline-none", "placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/45");
   const control = cn("flex h-6 items-center gap-1 rounded-md border border-edge px-2 text-[12px] text-ink-dim outline-none", "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60 disabled:opacity-40");
   const choices = sides2?.length ? [{ value: "both", label: "both", title: "Both sides" }, ...sides2] : [];
-  const node = open ? /* @__PURE__ */ jsx_runtime27.jsxs("search", {
+  const node = open ? /* @__PURE__ */ jsx_runtime28.jsxs("search", {
     ref: bar,
     "aria-label": "Find in this view",
     "data-slot": "find-bar",
     className: "flex shrink-0 flex-wrap items-center gap-1.5 border-b border-edge bg-surface-raised px-2.5 py-1.5 font-sans text-[12px] text-ink",
     children: [
-      /* @__PURE__ */ jsx_runtime27.jsx("input", {
+      /* @__PURE__ */ jsx_runtime28.jsx("input", {
         ref: input2,
         type: "text",
         value: query,
@@ -44616,44 +44631,44 @@ function useFind({
           }
         }
       }),
-      /* @__PURE__ */ jsx_runtime27.jsx("span", {
+      /* @__PURE__ */ jsx_runtime28.jsx("span", {
         "aria-live": "polite",
         "data-slot": "find-count",
         className: "min-w-16 text-ink-faint tabular-nums",
         children: countLabel(index4, count, query)
       }),
-      /* @__PURE__ */ jsx_runtime27.jsxs("button", {
+      /* @__PURE__ */ jsx_runtime28.jsxs("button", {
         type: "button",
         className: control,
         onClick: () => step(1),
         disabled: count === 0,
         title: "Next match (Enter)",
         children: [
-          /* @__PURE__ */ jsx_runtime27.jsx(ChevronDown, {
+          /* @__PURE__ */ jsx_runtime28.jsx(ChevronDown, {
             "aria-hidden": true,
             className: "size-3"
           }),
           "next"
         ]
       }),
-      /* @__PURE__ */ jsx_runtime27.jsxs("button", {
+      /* @__PURE__ */ jsx_runtime28.jsxs("button", {
         type: "button",
         className: control,
         onClick: () => step(-1),
         disabled: count === 0,
         title: "Previous match (Shift-Enter)",
         children: [
-          /* @__PURE__ */ jsx_runtime27.jsx(ChevronUp, {
+          /* @__PURE__ */ jsx_runtime28.jsx(ChevronUp, {
             "aria-hidden": true,
             className: "size-3"
           }),
           "previous"
         ]
       }),
-      /* @__PURE__ */ jsx_runtime27.jsxs("label", {
+      /* @__PURE__ */ jsx_runtime28.jsxs("label", {
         className: "inline-flex items-center gap-1 text-ink-dim",
         children: [
-          /* @__PURE__ */ jsx_runtime27.jsx("input", {
+          /* @__PURE__ */ jsx_runtime28.jsx("input", {
             type: "checkbox",
             checked: matchCase,
             onChange: (e) => {
@@ -44664,7 +44679,7 @@ function useFind({
           "match case"
         ]
       }),
-      choices.length > 0 && /* @__PURE__ */ jsx_runtime27.jsx("div", {
+      choices.length > 0 && /* @__PURE__ */ jsx_runtime28.jsx("div", {
         role: "radiogroup",
         "aria-label": "Search in",
         className: "flex items-center gap-0.5 rounded-md border border-edge p-0.5",
@@ -44681,7 +44696,7 @@ function useFind({
           setSide(next.value);
           e.currentTarget.querySelector(`[data-value="${next.value}"]`)?.focus();
         },
-        children: choices.map((s) => /* @__PURE__ */ jsx_runtime27.jsx("button", {
+        children: choices.map((s) => /* @__PURE__ */ jsx_runtime28.jsx("button", {
           type: "button",
           role: "radio",
           "data-value": s.value,
@@ -44696,13 +44711,13 @@ function useFind({
           children: s.label
         }, s.value))
       }),
-      /* @__PURE__ */ jsx_runtime27.jsx("button", {
+      /* @__PURE__ */ jsx_runtime28.jsx("button", {
         type: "button",
         "aria-label": "Close find",
         title: "Close (Escape)",
         onClick: close,
         className: "ml-auto px-1 text-[16px] leading-none text-ink-dim outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60",
-        children: /* @__PURE__ */ jsx_runtime27.jsx(X, {
+        children: /* @__PURE__ */ jsx_runtime28.jsx(X, {
           "aria-hidden": true,
           className: "size-3.5"
         })
@@ -44713,7 +44728,7 @@ function useFind({
 }
 
 // src/kit/document/CompareView.tsx
-var jsx_runtime28 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime29 = __toESM(require_jsx_runtime(), 1);
 function fileLabel(name, max2 = 22) {
   if (name.length <= max2)
     return name;
@@ -44728,11 +44743,11 @@ function nothingToCompare(doc) {
   return doc.versions.length < 2 && !doc.dirty && !doc.outsideChanged;
 }
 function NothingToCompare() {
-  return /* @__PURE__ */ jsx_runtime28.jsxs("div", {
+  return /* @__PURE__ */ jsx_runtime29.jsxs("div", {
     role: "status",
     className: "flex flex-1 items-center justify-center gap-2 text-sm text-ink-faint",
     children: [
-      /* @__PURE__ */ jsx_runtime28.jsx(GitCompare, {
+      /* @__PURE__ */ jsx_runtime29.jsx(GitCompare, {
         "aria-hidden": true,
         className: "size-4"
       }),
@@ -44775,18 +44790,18 @@ function Spans({ line, tone }) {
   if (!line)
     return null;
   if (!line.spans)
-    return /* @__PURE__ */ jsx_runtime28.jsx(jsx_runtime28.Fragment, {
+    return /* @__PURE__ */ jsx_runtime29.jsx(jsx_runtime29.Fragment, {
       children: line.text
     });
-  return /* @__PURE__ */ jsx_runtime28.jsx(jsx_runtime28.Fragment, {
-    children: line.spans.map((s, i) => /* @__PURE__ */ jsx_runtime28.jsx("span", {
+  return /* @__PURE__ */ jsx_runtime29.jsx(jsx_runtime29.Fragment, {
+    children: line.spans.map((s, i) => /* @__PURE__ */ jsx_runtime29.jsx("span", {
       className: cn(s.changed && "rounded-[2px]", s.changed && (tone === "del" ? "bg-removed/28" : "bg-added/28")),
       children: s.text
     }, `${i}-${s.text}`))
   });
 }
 function Gutter({ n }) {
-  return /* @__PURE__ */ jsx_runtime28.jsx("span", {
+  return /* @__PURE__ */ jsx_runtime29.jsx("span", {
     "data-find-skip": true,
     className: "inline-block w-10 shrink-0 select-none pr-3 text-right text-ink-faint",
     children: n === undefined ? "" : n + 1
@@ -44801,7 +44816,7 @@ function Cell({
   dup,
   reserve
 }) {
-  return /* @__PURE__ */ jsx_runtime28.jsxs("div", {
+  return /* @__PURE__ */ jsx_runtime29.jsxs("div", {
     "data-row": side === "a" ? row : undefined,
     "data-flash": flash ? "on" : undefined,
     "data-find-segment": true,
@@ -44809,12 +44824,12 @@ function Cell({
     "data-find-dup": dup || undefined,
     className: cn("flex min-w-0 whitespace-pre-wrap border-edge px-2 py-px", side === "b" && "border-l", reserve && "pr-16", tone === "del" && "bg-removed/10", tone === "add" && "bg-added/12", !line && tone !== "same" && "bg-surface-raised/40"),
     children: [
-      /* @__PURE__ */ jsx_runtime28.jsx(Gutter, {
+      /* @__PURE__ */ jsx_runtime29.jsx(Gutter, {
         n: line?.[side]
       }),
-      /* @__PURE__ */ jsx_runtime28.jsx("span", {
+      /* @__PURE__ */ jsx_runtime29.jsx("span", {
         className: "min-w-0 flex-1 break-words",
-        children: tone === "same" ? line?.text : /* @__PURE__ */ jsx_runtime28.jsx(Spans, {
+        children: tone === "same" ? line?.text : /* @__PURE__ */ jsx_runtime29.jsx(Spans, {
           line,
           tone: tone === "del" ? "del" : "add"
         })
@@ -44827,11 +44842,11 @@ function changesLabel(n) {
   return `${n} change${n === 1 ? "" : "s"}`;
 }
 function ChangePicker({ hunks, onPick }) {
-  const [open, setOpen] = import_react30.useState(false);
+  const [open, setOpen] = import_react31.useState(false);
   const trigger = cn("flex h-6 items-center gap-1 rounded-sm px-1.5 text-ink-dim outline-none", "hover:bg-surface-raised hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60");
   const only = hunks.length === 1 ? hunks[0] : undefined;
   if (only)
-    return /* @__PURE__ */ jsx_runtime28.jsx("button", {
+    return /* @__PURE__ */ jsx_runtime29.jsx("button", {
       type: "button",
       className: trigger,
       onClick: () => onPick(only.id),
@@ -44840,45 +44855,45 @@ function ChangePicker({ hunks, onPick }) {
       "data-slot": "change-picker",
       children: changesLabel(1)
     });
-  return /* @__PURE__ */ jsx_runtime28.jsxs(DropdownMenu, {
+  return /* @__PURE__ */ jsx_runtime29.jsxs(DropdownMenu, {
     open,
     onOpenChange: setOpen,
     children: [
-      /* @__PURE__ */ jsx_runtime28.jsxs(DropdownMenuTrigger, {
+      /* @__PURE__ */ jsx_runtime29.jsxs(DropdownMenuTrigger, {
         className: trigger,
         "aria-label": `${changesLabel(hunks.length)}: go to one`,
         "data-slot": "change-picker",
         children: [
           changesLabel(hunks.length),
-          /* @__PURE__ */ jsx_runtime28.jsx(ChevronDown, {
+          /* @__PURE__ */ jsx_runtime29.jsx(ChevronDown, {
             "aria-hidden": true,
             className: "size-3 shrink-0 text-ink-faint"
           })
         ]
       }),
-      /* @__PURE__ */ jsx_runtime28.jsx(DropdownMenuContent, {
+      /* @__PURE__ */ jsx_runtime29.jsx(DropdownMenuContent, {
         align: "end",
         className: "w-72",
-        children: /* @__PURE__ */ jsx_runtime28.jsx("div", {
+        children: /* @__PURE__ */ jsx_runtime29.jsx("div", {
           className: "max-h-72 overflow-y-auto py-0.5",
-          children: hunks.map((h, i) => /* @__PURE__ */ jsx_runtime28.jsxs(DropdownMenuItem, {
+          children: hunks.map((h, i) => /* @__PURE__ */ jsx_runtime29.jsxs(DropdownMenuItem, {
             onClick: () => {
               setOpen(false);
               onPick(h.id);
             },
             className: "flex-col items-start gap-0 py-1",
             children: [
-              /* @__PURE__ */ jsx_runtime28.jsxs("span", {
+              /* @__PURE__ */ jsx_runtime29.jsxs("span", {
                 className: "flex w-full items-baseline gap-2 text-xs",
                 children: [
-                  /* @__PURE__ */ jsx_runtime28.jsxs("span", {
+                  /* @__PURE__ */ jsx_runtime29.jsxs("span", {
                     className: "font-medium text-ink",
                     children: [
                       "Change ",
                       i + 1
                     ]
                   }),
-                  /* @__PURE__ */ jsx_runtime28.jsxs("span", {
+                  /* @__PURE__ */ jsx_runtime29.jsxs("span", {
                     className: "ml-auto shrink-0 text-ink-faint tabular-nums",
                     children: [
                       "line ",
@@ -44887,7 +44902,7 @@ function ChangePicker({ hunks, onPick }) {
                   })
                 ]
               }),
-              /* @__PURE__ */ jsx_runtime28.jsx("span", {
+              /* @__PURE__ */ jsx_runtime29.jsx("span", {
                 className: "w-full truncate font-mono text-[11px] text-ink-faint",
                 children: hunkSummary(h)
               })
@@ -44905,7 +44920,7 @@ function Minimap({
   measured,
   onPick
 }) {
-  return /* @__PURE__ */ jsx_runtime28.jsx("nav", {
+  return /* @__PURE__ */ jsx_runtime29.jsx("nav", {
     "aria-label": "Changes",
     "data-slot": "change-minimap",
     className: "relative w-3.5 shrink-0 border-l border-edge bg-surface-raised/40",
@@ -44914,14 +44929,14 @@ function Minimap({
       if (!span)
         return null;
       const at2 = markPlace(span, total, measured);
-      return /* @__PURE__ */ jsx_runtime28.jsx("button", {
+      return /* @__PURE__ */ jsx_runtime29.jsx("button", {
         type: "button",
         onClick: () => onPick(h.id),
         "aria-label": `Change ${i + 1} of ${hunks.length}, line ${hunkLine(h)}`,
         title: `Change ${i + 1}: ${hunkSummary(h)}`,
         style: { top: `${at2.top}%`, height: `${at2.height}%` },
         className: cn("group absolute inset-x-0 -my-1.5 box-content min-h-1 py-1.5 outline-none", "focus-visible:ring-2 focus-visible:ring-ring/60"),
-        children: /* @__PURE__ */ jsx_runtime28.jsx("span", {
+        children: /* @__PURE__ */ jsx_runtime29.jsx("span", {
           "aria-hidden": true,
           className: "mx-0.5 block h-full min-h-1 rounded-[1px] bg-brand/65 group-hover:bg-brand"
         })
@@ -44940,14 +44955,14 @@ function CompareView({
   onFocused
 }) {
   const { diff, active, against } = payload;
-  const rows = import_react30.useMemo(() => rowsOf(diff.lines, diff.hunks.map((h) => h.id)), [diff]);
-  const spans = import_react30.useMemo(() => hunkSpans(rows), [rows]);
+  const rows = import_react31.useMemo(() => rowsOf(diff.lines, diff.hunks.map((h) => h.id)), [diff]);
+  const spans = import_react31.useMemo(() => hunkSpans(rows), [rows]);
   const sides2 = ["original", ...versions.map((v) => v.n).filter((n) => n !== active)];
-  const scroller = import_react30.useRef(null);
-  const grid = import_react30.useRef(null);
-  const [flash, setFlash] = import_react30.useState(null);
-  const flashSeq = import_react30.useRef(0);
-  import_react30.useEffect(() => {
+  const scroller = import_react31.useRef(null);
+  const grid = import_react31.useRef(null);
+  const [flash, setFlash] = import_react31.useState(null);
+  const flashSeq = import_react31.useRef(0);
+  import_react31.useEffect(() => {
     if (!flash)
       return;
     const t = setTimeout(() => setFlash(null), FLASH_MS);
@@ -44972,9 +44987,9 @@ function CompareView({
     return true;
   };
   const comparison = `${payload.doc}\x00${String(against)}`;
-  const landedOn = import_react30.useRef(null);
-  const focusedSeq = import_react30.useRef(0);
-  import_react30.useLayoutEffect(() => {
+  const landedOn = import_react31.useRef(null);
+  const focusedSeq = import_react31.useRef(0);
+  import_react31.useLayoutEffect(() => {
     if (focus && focus.seq !== focusedSeq.current) {
       if ("hunk" in focus) {
         if (focus.against !== undefined && focus.against !== against)
@@ -45000,8 +45015,8 @@ function CompareView({
     if (first)
       goToHunk(first.id, false);
   }, [comparison, rows, focus]);
-  const [measured, setMeasured] = import_react30.useState(null);
-  import_react30.useLayoutEffect(() => {
+  const [measured, setMeasured] = import_react31.useState(null);
+  import_react31.useLayoutEffect(() => {
     const g = grid.current;
     if (!g)
       return;
@@ -45022,8 +45037,8 @@ function CompareView({
     ro.observe(g);
     return () => ro.disconnect();
   }, [rows]);
-  const view = import_react30.useRef(null);
-  const findSides = import_react30.useMemo(() => [
+  const view = import_react31.useRef(null);
+  const findSides = import_react31.useMemo(() => [
     { value: "a", label: `v${active}`, title: `Only v${active}, the left side` },
     {
       value: "b",
@@ -45033,36 +45048,36 @@ function CompareView({
   ], [active, against, file]);
   const { bar: findBar } = useFind({ root: scroller, scope: view, watch: diff, sides: findSides });
   if (diff.same && sides2.length < 2)
-    return /* @__PURE__ */ jsx_runtime28.jsx(NothingToCompare, {});
+    return /* @__PURE__ */ jsx_runtime29.jsx(NothingToCompare, {});
   const flashing = (i) => !!flash && i >= flash.start && i < flash.end;
-  return /* @__PURE__ */ jsx_runtime28.jsxs("div", {
+  return /* @__PURE__ */ jsx_runtime29.jsxs("div", {
     ref: view,
     className: "flex min-h-0 flex-1 flex-col",
     children: [
-      /* @__PURE__ */ jsx_runtime28.jsxs("div", {
+      /* @__PURE__ */ jsx_runtime29.jsxs("div", {
         className: "flex shrink-0 flex-wrap items-center gap-2 border-b border-edge px-3 py-1.5 text-xs",
         children: [
-          /* @__PURE__ */ jsx_runtime28.jsx(GitCompare, {
+          /* @__PURE__ */ jsx_runtime29.jsx(GitCompare, {
             "aria-hidden": true,
             className: "size-3.5 shrink-0 text-ink-faint"
           }),
-          /* @__PURE__ */ jsx_runtime28.jsxs("span", {
+          /* @__PURE__ */ jsx_runtime29.jsxs("span", {
             className: "text-ink-dim",
             children: [
               "v",
               active,
               " ",
-              /* @__PURE__ */ jsx_runtime28.jsx("span", {
+              /* @__PURE__ */ jsx_runtime29.jsx("span", {
                 className: "text-ink-faint",
                 children: "compared with"
               })
             ]
           }),
-          /* @__PURE__ */ jsx_runtime28.jsx("div", {
+          /* @__PURE__ */ jsx_runtime29.jsx("div", {
             role: "toolbar",
             "aria-label": "Compare against",
             className: "flex flex-wrap items-center gap-1",
-            children: sides2.map((s) => /* @__PURE__ */ jsx_runtime28.jsx("button", {
+            children: sides2.map((s) => /* @__PURE__ */ jsx_runtime29.jsx("button", {
               type: "button",
               onClick: () => onAgainst(s),
               "aria-pressed": s === against,
@@ -45071,14 +45086,14 @@ function CompareView({
               children: sideLabel(s, file)
             }, String(s)))
           }),
-          /* @__PURE__ */ jsx_runtime28.jsxs("span", {
+          /* @__PURE__ */ jsx_runtime29.jsxs("span", {
             className: "ml-auto flex items-center gap-2 text-ink-faint",
             children: [
-              diff.same ? "identical" : /* @__PURE__ */ jsx_runtime28.jsx(ChangePicker, {
+              diff.same ? "identical" : /* @__PURE__ */ jsx_runtime29.jsx(ChangePicker, {
                 hunks: diff.hunks,
                 onPick: goToHunk
               }),
-              !diff.same && /* @__PURE__ */ jsx_runtime28.jsx(Button3, {
+              !diff.same && /* @__PURE__ */ jsx_runtime29.jsx(Button3, {
                 variant: "ghost",
                 size: "sm",
                 disabled: busy,
@@ -45092,45 +45107,45 @@ function CompareView({
         ]
       }),
       findBar,
-      diff.coarse && /* @__PURE__ */ jsx_runtime28.jsx("p", {
+      diff.coarse && /* @__PURE__ */ jsx_runtime29.jsx("p", {
         role: "status",
         className: "shrink-0 border-b border-attention/40 bg-attention/10 px-3 py-1.5 text-xs text-ink",
         children: "These two are too different to walk change by change, so the whole document is offered as one: take it or leave it."
       }),
-      diff.same ? /* @__PURE__ */ jsx_runtime28.jsxs("div", {
+      diff.same ? /* @__PURE__ */ jsx_runtime29.jsxs("div", {
         className: "flex flex-1 items-center justify-center gap-2 text-sm text-ink-faint",
         children: [
-          /* @__PURE__ */ jsx_runtime28.jsx(Check, {
+          /* @__PURE__ */ jsx_runtime29.jsx(Check, {
             "aria-hidden": true,
             className: "size-4"
           }),
           "These two versions are identical."
         ]
-      }) : /* @__PURE__ */ jsx_runtime28.jsxs("div", {
+      }) : /* @__PURE__ */ jsx_runtime29.jsxs("div", {
         className: "flex min-h-0 flex-1",
         children: [
-          /* @__PURE__ */ jsx_runtime28.jsx("div", {
+          /* @__PURE__ */ jsx_runtime29.jsx("div", {
             ref: scroller,
             tabIndex: -1,
             "data-slot": "compare-scroller",
             className: "min-h-0 flex-1 overflow-auto font-mono text-[13px] leading-[1.65] outline-none",
-            children: /* @__PURE__ */ jsx_runtime28.jsx("div", {
+            children: /* @__PURE__ */ jsx_runtime29.jsx("div", {
               ref: grid,
               className: "grid min-w-fit grid-cols-2 items-stretch",
               children: rows.map((row, i) => {
                 const key = `${i}-${row.kind}`;
                 const lit = flashing(i);
                 if (row.kind === "same")
-                  return /* @__PURE__ */ jsx_runtime28.jsxs(import_react30.Fragment, {
+                  return /* @__PURE__ */ jsx_runtime29.jsxs(import_react31.Fragment, {
                     children: [
-                      /* @__PURE__ */ jsx_runtime28.jsx(Cell, {
+                      /* @__PURE__ */ jsx_runtime29.jsx(Cell, {
                         line: row.line,
                         tone: "same",
                         side: "a",
                         row: i,
                         flash: lit
                       }),
-                      /* @__PURE__ */ jsx_runtime28.jsx(Cell, {
+                      /* @__PURE__ */ jsx_runtime29.jsx(Cell, {
                         line: row.line,
                         tone: "same",
                         side: "b",
@@ -45140,19 +45155,19 @@ function CompareView({
                       })
                     ]
                   }, key);
-                return /* @__PURE__ */ jsx_runtime28.jsxs(import_react30.Fragment, {
+                return /* @__PURE__ */ jsx_runtime29.jsxs(import_react31.Fragment, {
                   children: [
-                    /* @__PURE__ */ jsx_runtime28.jsx(Cell, {
+                    /* @__PURE__ */ jsx_runtime29.jsx(Cell, {
                       line: row.del,
                       tone: "del",
                       side: "a",
                       row: i,
                       flash: lit
                     }),
-                    /* @__PURE__ */ jsx_runtime28.jsxs("div", {
+                    /* @__PURE__ */ jsx_runtime29.jsxs("div", {
                       className: "relative",
                       children: [
-                        /* @__PURE__ */ jsx_runtime28.jsx(Cell, {
+                        /* @__PURE__ */ jsx_runtime29.jsx(Cell, {
                           line: row.add,
                           tone: "add",
                           side: "b",
@@ -45160,7 +45175,7 @@ function CompareView({
                           flash: lit,
                           reserve: row.first
                         }),
-                        row.first && /* @__PURE__ */ jsx_runtime28.jsx(Button3, {
+                        row.first && /* @__PURE__ */ jsx_runtime29.jsx(Button3, {
                           variant: "ghost",
                           size: "sm",
                           disabled: busy,
@@ -45176,7 +45191,7 @@ function CompareView({
               })
             })
           }),
-          /* @__PURE__ */ jsx_runtime28.jsx(Minimap, {
+          /* @__PURE__ */ jsx_runtime29.jsx(Minimap, {
             hunks: diff.hunks,
             spans,
             total: rows.length,
@@ -62148,7 +62163,7 @@ var searchExtensions = [
 ];
 
 // src/kit/document/DocumentView.tsx
-var import_react31 = __toESM(require_react(), 1);
+var import_react32 = __toESM(require_react(), 1);
 
 // src/kit/lib/relationUse.ts
 function normaliseRelation(typed) {
@@ -64100,7 +64115,7 @@ function minimalChange(a, b) {
 }
 
 // src/kit/document/DocumentView.tsx
-var jsx_runtime29 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime30 = __toESM(require_jsx_runtime(), 1);
 var remote = Annotation.define();
 var setNotes = StateEffect.define();
 var setPending = StateEffect.define();
@@ -64299,11 +64314,11 @@ function DocumentView({
   lineNumbers: lineNumbers2 = false,
   quiet: quiet2 = false
 }) {
-  const host = import_react31.useRef(null);
-  const view = import_react31.useRef(null);
-  const initial2 = import_react31.useRef(text4);
+  const host = import_react32.useRef(null);
+  const view = import_react32.useRef(null);
+  const initial2 = import_react32.useRef(text4);
   initial2.current = text4;
-  const handlers2 = import_react31.useRef({
+  const handlers2 = import_react32.useRef({
     onChange,
     onFlush,
     onSave,
@@ -64327,20 +64342,20 @@ function DocumentView({
     onRows,
     onReplayed
   };
-  const replayRef = import_react31.useRef(replay);
+  const replayRef = import_react32.useRef(replay);
   replayRef.current = replay;
-  const lastRemote = import_react31.useRef(text4);
-  const lastWritten = import_react31.useRef(null);
-  const notesRef = import_react31.useRef(notes);
+  const lastRemote = import_react32.useRef(text4);
+  const lastWritten = import_react32.useRef(null);
+  const notesRef = import_react32.useRef(notes);
   notesRef.current = notes;
-  const focusedRef = import_react31.useRef(focusedNote);
+  const focusedRef = import_react32.useRef(focusedNote);
   focusedRef.current = focusedNote;
-  const additions = import_react31.useRef({ extensions, tokens });
+  const additions = import_react32.useRef({ extensions, tokens });
   additions.current = { extensions, tokens };
-  const gutter2 = import_react31.useRef({ numbers: new Compartment, quiet: new Compartment });
-  const gutterNow = import_react31.useRef({ lineNumbers: lineNumbers2, quiet: quiet2 });
+  const gutter2 = import_react32.useRef({ numbers: new Compartment, quiet: new Compartment });
+  const gutterNow = import_react32.useRef({ lineNumbers: lineNumbers2, quiet: quiet2 });
   gutterNow.current = { lineNumbers: lineNumbers2, quiet: quiet2 };
-  const trackers = import_react31.useRef(new Set);
+  const trackers = import_react32.useRef(new Set);
   const follow = (from, to, fromAssoc, toAssoc) => {
     const t2 = { from, to, fromAssoc, toAssoc, alive: true };
     trackers.current.add(t2);
@@ -64352,10 +64367,10 @@ function DocumentView({
     };
   };
   const track2 = (kind, from, to) => follow(from, to, kind === "complete" ? -1 : 1, kind === "wrap" ? -1 : 1);
-  const trackRef = import_react31.useRef(track2);
-  const followRef = import_react31.useRef(follow);
+  const trackRef = import_react32.useRef(track2);
+  const followRef = import_react32.useRef(follow);
   followRef.current = follow;
-  import_react31.useImperativeHandle(handle, () => ({
+  import_react32.useImperativeHandle(handle, () => ({
     focus: () => view.current?.focus(),
     insertAtCaret: (what) => {
       const v = view.current;
@@ -64396,7 +64411,7 @@ function DocumentView({
     },
     track: (kind, from, to) => trackRef.current(kind, from, to)
   }), []);
-  import_react31.useEffect(() => {
+  import_react32.useEffect(() => {
     if (!host.current)
       return;
     const extensions2 = [
@@ -64601,13 +64616,13 @@ function DocumentView({
       view.current = null;
     };
   }, [docKey, editable2, format]);
-  import_react31.useEffect(() => {
+  import_react32.useEffect(() => {
     view.current?.dispatch({ effects: gutter2.current.numbers.reconfigure(gutterFor(lineNumbers2)) });
   }, [lineNumbers2]);
-  import_react31.useEffect(() => {
+  import_react32.useEffect(() => {
     view.current?.dispatch({ effects: gutter2.current.quiet.reconfigure(quietFor(quiet2)) });
   }, [quiet2]);
-  import_react31.useEffect(() => {
+  import_react32.useEffect(() => {
     const v = view.current;
     if (!v || !place)
       return;
@@ -64633,10 +64648,10 @@ function DocumentView({
       leave();
     };
   }, [place, docKey, editable2]);
-  const revealed = import_react31.useRef(onRevealed);
+  const revealed = import_react32.useRef(onRevealed);
   revealed.current = onRevealed;
-  const headingMarkTimer = import_react31.useRef(undefined);
-  import_react31.useEffect(() => {
+  const headingMarkTimer = import_react32.useRef(undefined);
+  import_react32.useEffect(() => {
     const v = view.current;
     if (!v || !reveal)
       return;
@@ -64658,9 +64673,9 @@ function DocumentView({
     clearTimeout(headingMarkTimer.current);
     headingMarkTimer.current = setTimeout(() => view.current?.dispatch({ effects: setFlash.of(null) }), FLASH_MARK_MS);
   }, [reveal]);
-  import_react31.useEffect(() => () => clearTimeout(headingMarkTimer.current), []);
+  import_react32.useEffect(() => () => clearTimeout(headingMarkTimer.current), []);
   const flashSeq = flash?.seq;
-  import_react31.useEffect(() => {
+  import_react32.useEffect(() => {
     const v = view.current;
     if (!v || !flash)
       return;
@@ -64675,8 +64690,8 @@ function DocumentView({
     const t2 = setTimeout(() => view.current?.dispatch({ effects: setFlash.of(null) }), FLASH_MARK_MS);
     return () => clearTimeout(t2);
   }, [flashSeq]);
-  const unpainted = import_react31.useRef(clearSeq);
-  import_react31.useEffect(() => {
+  const unpainted = import_react32.useRef(clearSeq);
+  import_react32.useEffect(() => {
     const v = view.current;
     if (!v || clearSeq === undefined || clearSeq === unpainted.current)
       return;
@@ -64688,13 +64703,13 @@ function DocumentView({
     if (sel && sel.rangeCount > 0 && v.dom.contains(sel.getRangeAt(0).commonAncestorContainer))
       sel.removeAllRanges();
   }, [clearSeq]);
-  import_react31.useEffect(() => {
+  import_react32.useEffect(() => {
     view.current?.dispatch({ effects: setPending.of(pendingNote ?? null) });
   }, [pendingNote]);
-  import_react31.useEffect(() => {
+  import_react32.useEffect(() => {
     view.current?.dispatch({ effects: setNotes.of({ notes: notes ?? [], focused: focusedNote }) });
   }, [notes, focusedNote]);
-  import_react31.useEffect(() => {
+  import_react32.useEffect(() => {
     const v = view.current;
     if (!v)
       return;
@@ -64718,7 +64733,7 @@ function DocumentView({
       }
     });
   }, [text4]);
-  return /* @__PURE__ */ jsx_runtime29.jsx("div", {
+  return /* @__PURE__ */ jsx_runtime30.jsx("div", {
     ref: host,
     className: "min-h-0 flex-1 overflow-hidden",
     "data-slot": "document-view"
@@ -64726,8 +64741,8 @@ function DocumentView({
 }
 
 // src/kit/document/LinkPicker.tsx
-var import_react32 = __toESM(require_react(), 1);
-var jsx_runtime30 = __toESM(require_jsx_runtime(), 1);
+var import_react33 = __toESM(require_react(), 1);
+var jsx_runtime31 = __toESM(require_jsx_runtime(), 1);
 var CARD_W2 = 320;
 var SUGGESTIONS = 12;
 function LinkPicker({
@@ -64744,23 +64759,23 @@ function LinkPicker({
   onChoose,
   onClose
 }) {
-  const [query, setQuery] = import_react32.useState(initialQuery);
-  const queryRef = import_react32.useRef(query);
+  const [query, setQuery] = import_react33.useState(initialQuery);
+  const queryRef = import_react33.useRef(query);
   queryRef.current = query;
-  const [active, setActive] = import_react32.useState(0);
-  const [chosen, setChosen] = import_react32.useState([]);
-  const [relText, setRelText] = import_react32.useState("");
-  const card = import_react32.useRef(null);
-  const field = import_react32.useRef(null);
-  const [pos, setPos] = import_react32.useState(null);
-  const listId = import_react32.useId();
-  const ranked = import_react32.useMemo(() => rankTargets(targets ?? [], query), [targets, query]);
-  const [step, setStep] = import_react32.useState(null);
-  const rankedHeadings = import_react32.useMemo(() => step?.headings ? rankHeadings(step.headings, query) : [], [step, query]);
-  import_react32.useEffect(() => setActive(0), [query]);
+  const [active, setActive] = import_react33.useState(0);
+  const [chosen, setChosen] = import_react33.useState([]);
+  const [relText, setRelText] = import_react33.useState("");
+  const card = import_react33.useRef(null);
+  const field = import_react33.useRef(null);
+  const [pos, setPos] = import_react33.useState(null);
+  const listId = import_react33.useId();
+  const ranked = import_react33.useMemo(() => rankTargets(targets ?? [], query), [targets, query]);
+  const [step, setStep] = import_react33.useState(null);
+  const rankedHeadings = import_react33.useMemo(() => step?.headings ? rankHeadings(step.headings, query) : [], [step, query]);
+  import_react33.useEffect(() => setActive(0), [query]);
   const loaded = targets !== null;
   const hasRelations = relations.length > 0;
-  import_react32.useLayoutEffect(() => {
+  import_react33.useLayoutEffect(() => {
     if (!card.current)
       return;
     setPos(placeCard(at2, card.current.offsetHeight, {
@@ -64768,12 +64783,12 @@ function LinkPicker({
       height: window.innerHeight
     }));
   }, [at2, loaded, hasRelations]);
-  import_react32.useEffect(() => {
+  import_react33.useEffect(() => {
     const f = field.current;
     f?.focus();
     f?.setSelectionRange(f.value.length, f.value.length);
   }, []);
-  import_react32.useEffect(() => {
+  import_react33.useEffect(() => {
     const onDown = (e) => {
       if (card.current && !card.current.contains(e.target))
         onClose(queryRef.current);
@@ -64781,7 +64796,7 @@ function LinkPicker({
     window.addEventListener("mousedown", onDown);
     return () => window.removeEventListener("mousedown", onDown);
   }, [onClose]);
-  import_react32.useEffect(() => {
+  import_react33.useEffect(() => {
     document.getElementById(`${listId}-${active}`)?.scrollIntoView?.({ block: "nearest" });
   }, [active, listId]);
   const addRelation = (typed) => {
@@ -64823,7 +64838,7 @@ function LinkPicker({
   const listShown = step ? step.headings !== null && rankedHeadings.length > 0 : !failure && targets !== null && ranked.length > 0;
   const rows = step ? rankedHeadings.length : ranked.length;
   const targetKind = step ? step.target.kind : listShown ? ranked[active]?.kind : undefined;
-  const ordered = import_react32.useMemo(() => rankRelations(relations, byKind, targetKind), [relations, byKind, targetKind]);
+  const ordered = import_react33.useMemo(() => rankRelations(relations, byKind, targetKind), [relations, byKind, targetKind]);
   const suggestions = suggestRelations(ordered, chosen, relText, SUGGESTIONS);
   const onCardKey = (e) => {
     if (e.key === "Tab") {
@@ -64889,7 +64904,7 @@ function LinkPicker({
     }
   };
   const shownQuote = quote.replace(/\s+/gu, " ").trim();
-  return /* @__PURE__ */ jsx_runtime30.jsxs("div", {
+  return /* @__PURE__ */ jsx_runtime31.jsxs("div", {
     ref: card,
     "data-slot": "link-picker",
     role: "dialog",
@@ -64898,14 +64913,14 @@ function LinkPicker({
     style: { left: pos?.left ?? at2.x, top: pos?.top ?? at2.y, width: CARD_W2 },
     className: cn("fixed z-50 flex flex-col rounded-md border border-edge bg-surface-raised text-ink shadow-lg", pos ? "opacity-100" : "opacity-0"),
     children: [
-      /* @__PURE__ */ jsx_runtime30.jsxs("div", {
+      /* @__PURE__ */ jsx_runtime31.jsxs("div", {
         className: "flex items-center gap-1.5 border-b border-edge px-2 py-1.5",
         children: [
-          /* @__PURE__ */ jsx_runtime30.jsx(Link, {
+          /* @__PURE__ */ jsx_runtime31.jsx(Link, {
             "aria-hidden": true,
             className: "size-3.5 shrink-0 text-ink-faint"
           }),
-          /* @__PURE__ */ jsx_runtime30.jsx("input", {
+          /* @__PURE__ */ jsx_runtime31.jsx("input", {
             ref: field,
             value: query,
             onChange: (e) => setQuery(e.target.value),
@@ -64923,10 +64938,10 @@ function LinkPicker({
           })
         ]
       }),
-      /* @__PURE__ */ jsx_runtime30.jsx("div", {
+      /* @__PURE__ */ jsx_runtime31.jsx("div", {
         tabIndex: -1,
         className: "max-h-60 overflow-auto p-1",
-        children: step ? /* @__PURE__ */ jsx_runtime30.jsx(HeadingStep, {
+        children: step ? /* @__PURE__ */ jsx_runtime31.jsx(HeadingStep, {
           listId,
           name: stem(step.target.name),
           headings: step.headings,
@@ -64936,23 +64951,23 @@ function LinkPicker({
           onActive: setActive,
           onBack: leaveHeadings,
           onChoose: chooseHeading
-        }) : failure ? /* @__PURE__ */ jsx_runtime30.jsxs("p", {
+        }) : failure ? /* @__PURE__ */ jsx_runtime31.jsxs("p", {
           className: "px-2 py-1.5 text-xs text-ink-dim",
           children: [
             "The documents could not be listed: ",
             failure
           ]
-        }) : targets === null ? /* @__PURE__ */ jsx_runtime30.jsx("p", {
+        }) : targets === null ? /* @__PURE__ */ jsx_runtime31.jsx("p", {
           className: "px-2 py-1.5 text-xs text-ink-faint",
           children: "Listing documents…"
-        }) : ranked.length === 0 ? /* @__PURE__ */ jsx_runtime30.jsx("p", {
+        }) : ranked.length === 0 ? /* @__PURE__ */ jsx_runtime31.jsx("p", {
           className: "px-2 py-1.5 text-xs text-ink-dim",
           children: targets.length === 0 ? "No other documents or images in this session." : "Nothing matches."
-        }) : /* @__PURE__ */ jsx_runtime30.jsx("div", {
+        }) : /* @__PURE__ */ jsx_runtime31.jsx("div", {
           role: "listbox",
           id: listId,
           "aria-label": "Documents and images",
-          children: ranked.map((t2, i2) => /* @__PURE__ */ jsx_runtime30.jsxs("div", {
+          children: ranked.map((t2, i2) => /* @__PURE__ */ jsx_runtime31.jsxs("div", {
             id: `${listId}-${i2}`,
             role: "option",
             tabIndex: -1,
@@ -64963,27 +64978,27 @@ function LinkPicker({
             onClick: () => choose(t2),
             className: cn("flex cursor-pointer items-baseline gap-2 rounded-sm px-2 py-1 text-xs", i2 === active && "bg-bg"),
             children: [
-              t2.image ? /* @__PURE__ */ jsx_runtime30.jsx(Image, {
+              t2.image ? /* @__PURE__ */ jsx_runtime31.jsx(Image, {
                 "aria-hidden": true,
                 "data-kind": "image",
                 className: "size-3.5 shrink-0 translate-y-0.5 text-ink-faint"
-              }) : /* @__PURE__ */ jsx_runtime30.jsx(FileText, {
+              }) : /* @__PURE__ */ jsx_runtime31.jsx(FileText, {
                 "aria-hidden": true,
                 className: "size-3.5 shrink-0 translate-y-0.5 text-ink-faint"
               }),
-              /* @__PURE__ */ jsx_runtime30.jsxs("span", {
+              /* @__PURE__ */ jsx_runtime31.jsxs("span", {
                 className: "min-w-0 flex-1",
                 children: [
-                  /* @__PURE__ */ jsx_runtime30.jsx("span", {
+                  /* @__PURE__ */ jsx_runtime31.jsx("span", {
                     className: "block truncate text-ink",
                     children: stem(t2.name)
                   }),
-                  t2.description && /* @__PURE__ */ jsx_runtime30.jsx("span", {
+                  t2.description && /* @__PURE__ */ jsx_runtime31.jsx("span", {
                     "data-slot": "picker-description",
                     className: "block truncate text-[11px] text-ink-dim",
                     children: t2.description
                   }),
-                  /* @__PURE__ */ jsx_runtime30.jsx("span", {
+                  /* @__PURE__ */ jsx_runtime31.jsx("span", {
                     className: "block truncate font-mono text-[10px] text-ink-faint",
                     children: t2.shown
                   })
@@ -64993,30 +65008,30 @@ function LinkPicker({
           }, t2.path))
         })
       }),
-      /* @__PURE__ */ jsx_runtime30.jsxs("div", {
+      /* @__PURE__ */ jsx_runtime31.jsxs("div", {
         className: "flex flex-col gap-1 border-t border-edge px-2 py-1.5",
         children: [
-          /* @__PURE__ */ jsx_runtime30.jsxs("div", {
+          /* @__PURE__ */ jsx_runtime31.jsxs("div", {
             className: "flex flex-wrap items-center gap-1",
             children: [
-              chosen.map((r2) => /* @__PURE__ */ jsx_runtime30.jsxs("span", {
+              chosen.map((r2) => /* @__PURE__ */ jsx_runtime31.jsxs("span", {
                 "data-slot": "link-relation",
                 className: "inline-flex items-center gap-0.5 rounded-sm bg-bg px-1.5 py-0.5 font-mono text-[11px] text-ink",
                 children: [
                   r2,
-                  /* @__PURE__ */ jsx_runtime30.jsx("button", {
+                  /* @__PURE__ */ jsx_runtime31.jsx("button", {
                     type: "button",
                     "aria-label": `Remove the relation ${r2}`,
                     onClick: () => setChosen((c) => c.filter((x) => x !== r2)),
                     className: "rounded-sm text-ink-faint hover:text-ink",
-                    children: /* @__PURE__ */ jsx_runtime30.jsx(X, {
+                    children: /* @__PURE__ */ jsx_runtime31.jsx(X, {
                       "aria-hidden": true,
                       className: "size-3"
                     })
                   })
                 ]
               }, r2)),
-              /* @__PURE__ */ jsx_runtime30.jsx("input", {
+              /* @__PURE__ */ jsx_runtime31.jsx("input", {
                 value: relText,
                 onChange: (e) => setRelText(e.target.value),
                 onKeyDown: onRelationKey,
@@ -65028,16 +65043,16 @@ function LinkPicker({
               })
             ]
           }),
-          suggestions.length > 0 && /* @__PURE__ */ jsx_runtime30.jsx("div", {
+          suggestions.length > 0 && /* @__PURE__ */ jsx_runtime31.jsx("div", {
             className: "-mx-1 flex max-h-36 flex-col overflow-y-auto",
             "data-slot": "link-relations-in-use",
-            children: suggestions.map((r2) => /* @__PURE__ */ jsx_runtime30.jsx(RelationRow, {
+            children: suggestions.map((r2) => /* @__PURE__ */ jsx_runtime31.jsx(RelationRow, {
               r: r2,
               vocabulary,
               onAdd: () => addRelation(r2.rel)
             }, r2.rel))
           }),
-          /* @__PURE__ */ jsx_runtime30.jsx("span", {
+          /* @__PURE__ */ jsx_runtime31.jsx("span", {
             className: "text-[10px] text-ink-faint",
             children: step ? "↵ to link · ⌫ for documents · tab for a relation · esc to close" : "↵ to link · # for headings · tab for a relation · esc to close"
           })
@@ -65061,9 +65076,9 @@ function HeadingStep({
   onBack,
   onChoose
 }) {
-  return /* @__PURE__ */ jsx_runtime30.jsxs(jsx_runtime30.Fragment, {
+  return /* @__PURE__ */ jsx_runtime31.jsxs(jsx_runtime31.Fragment, {
     children: [
-      /* @__PURE__ */ jsx_runtime30.jsxs("button", {
+      /* @__PURE__ */ jsx_runtime31.jsxs("button", {
         type: "button",
         tabIndex: -1,
         "data-slot": "picker-headings-back",
@@ -65071,33 +65086,33 @@ function HeadingStep({
         onClick: onBack,
         className: "flex w-full items-center gap-1 rounded-sm px-2 py-1 text-left text-[11px] text-ink-dim hover:bg-bg",
         children: [
-          /* @__PURE__ */ jsx_runtime30.jsx(ChevronLeft, {
+          /* @__PURE__ */ jsx_runtime31.jsx(ChevronLeft, {
             "aria-hidden": true,
             className: "size-3 shrink-0"
           }),
-          /* @__PURE__ */ jsx_runtime30.jsx("span", {
+          /* @__PURE__ */ jsx_runtime31.jsx("span", {
             className: "truncate",
             children: name2
           })
         ]
       }),
-      failure ? /* @__PURE__ */ jsx_runtime30.jsxs("p", {
+      failure ? /* @__PURE__ */ jsx_runtime31.jsxs("p", {
         className: "px-2 py-1.5 text-xs text-ink-dim",
         children: [
           "The headings could not be listed: ",
           failure
         ]
-      }) : headings === null ? /* @__PURE__ */ jsx_runtime30.jsx("p", {
+      }) : headings === null ? /* @__PURE__ */ jsx_runtime31.jsx("p", {
         className: "px-2 py-1.5 text-xs text-ink-faint",
         children: "Listing headings…"
-      }) : ranked.length === 0 ? /* @__PURE__ */ jsx_runtime30.jsx("p", {
+      }) : ranked.length === 0 ? /* @__PURE__ */ jsx_runtime31.jsx("p", {
         className: "px-2 py-1.5 text-xs text-ink-dim",
         children: headings.length === 0 ? "No headings in this document." : "Nothing matches."
-      }) : /* @__PURE__ */ jsx_runtime30.jsx("div", {
+      }) : /* @__PURE__ */ jsx_runtime31.jsx("div", {
         role: "listbox",
         id: listId,
         "aria-label": "Headings",
-        children: ranked.map((h, i2) => /* @__PURE__ */ jsx_runtime30.jsxs("div", {
+        children: ranked.map((h, i2) => /* @__PURE__ */ jsx_runtime31.jsxs("div", {
           id: `${listId}-${i2}`,
           role: "option",
           tabIndex: -1,
@@ -65109,15 +65124,15 @@ function HeadingStep({
           style: { paddingLeft: `${8 + (Math.min(h.level, 6) - 1) * 10}px` },
           className: cn("flex cursor-pointer items-baseline gap-1.5 rounded-sm py-1 pr-2 text-xs", i2 === active && "bg-bg"),
           children: [
-            /* @__PURE__ */ jsx_runtime30.jsx(Hash, {
+            /* @__PURE__ */ jsx_runtime31.jsx(Hash, {
               "aria-hidden": true,
               className: "size-3 shrink-0 translate-y-0.5 text-ink-faint"
             }),
-            /* @__PURE__ */ jsx_runtime30.jsx("span", {
+            /* @__PURE__ */ jsx_runtime31.jsx("span", {
               className: "min-w-0 flex-1 truncate text-ink",
               children: h.text
             }),
-            parentOf(h) && /* @__PURE__ */ jsx_runtime30.jsx("span", {
+            parentOf(h) && /* @__PURE__ */ jsx_runtime31.jsx("span", {
               "data-slot": "heading-parent",
               title: `Under ${parentOf(h)}`,
               className: "max-w-[45%] shrink-0 truncate text-[10px] text-ink-faint",
@@ -65142,7 +65157,7 @@ function RelationRow({
     r2.into > r2.here ? `${links(r2.into)} into this kind` : "",
     `${links(r2.count)} in all`
   ].filter(Boolean);
-  return /* @__PURE__ */ jsx_runtime30.jsxs("button", {
+  return /* @__PURE__ */ jsx_runtime31.jsxs("button", {
     type: "button",
     "data-relation": r2.rel,
     "data-declared": r2.declared ? "" : undefined,
@@ -65152,30 +65167,30 @@ function RelationRow({
     onClick: onAdd,
     className: "flex w-full flex-col rounded-sm px-1.5 py-0.5 text-left outline-none hover:bg-bg focus-visible:ring-2 focus-visible:ring-ring/60",
     children: [
-      /* @__PURE__ */ jsx_runtime30.jsxs("span", {
+      /* @__PURE__ */ jsx_runtime31.jsxs("span", {
         className: "flex w-full items-baseline gap-1.5",
         children: [
-          /* @__PURE__ */ jsx_runtime30.jsx("span", {
+          /* @__PURE__ */ jsx_runtime31.jsx("span", {
             className: "shrink-0 font-mono text-[11px] text-ink",
             children: r2.rel
           }),
-          r2.declared && r2.label && r2.label !== r2.rel && /* @__PURE__ */ jsx_runtime30.jsx("span", {
+          r2.declared && r2.label && r2.label !== r2.rel && /* @__PURE__ */ jsx_runtime31.jsx("span", {
             className: "truncate text-[11px] text-ink-dim",
             children: r2.label
           }),
-          undeclared && /* @__PURE__ */ jsx_runtime30.jsx("span", {
+          undeclared && /* @__PURE__ */ jsx_runtime31.jsx("span", {
             "data-slot": "relation-undeclared",
             className: "shrink-0 text-[10px] text-attention",
             children: "used, not declared"
           }),
-          usual && /* @__PURE__ */ jsx_runtime30.jsx("span", {
+          usual && /* @__PURE__ */ jsx_runtime31.jsx("span", {
             "data-slot": "relation-usual",
             className: "ml-auto shrink-0 text-[10px] text-ink-faint",
             children: "usual here"
           })
         ]
       }),
-      r2.means && /* @__PURE__ */ jsx_runtime30.jsx("span", {
+      r2.means && /* @__PURE__ */ jsx_runtime31.jsx("span", {
         "data-slot": "relation-means",
         title: r2.means,
         className: "block w-full truncate text-[10px] text-ink-faint",
@@ -65186,7 +65201,7 @@ function RelationRow({
 }
 
 // src/kit/document/MarkdownView.tsx
-var import_react35 = __toESM(require_react(), 1);
+var import_react36 = __toESM(require_react(), 1);
 var import_react_dom5 = __toESM(require_react_dom(), 1);
 
 // src/kit/context/selection.ts
@@ -65237,8 +65252,8 @@ function revealAfter(reveal, event) {
 }
 
 // src/kit/document/embeds.tsx
-var import_react33 = __toESM(require_react(), 1);
-var jsx_runtime31 = __toESM(require_jsx_runtime(), 1);
+var import_react34 = __toESM(require_react(), 1);
+var jsx_runtime32 = __toESM(require_jsx_runtime(), 1);
 var EMBED_FAILED = "Could not be shown: this browser cannot read it, or the file is damaged.";
 function pendingEmbeds(root2) {
   return [...root2.querySelectorAll('.md-embed[data-embed-state="pending"]')].map((el) => ({ el, target: el.getAttribute("data-embed") ?? "" }));
@@ -65267,11 +65282,11 @@ function Embed({
   onFollowLink
 }) {
   const alt = el.getAttribute("data-alt") ?? "";
-  const [failed, setFailed] = import_react33.useState(null);
+  const [failed, setFailed] = import_react34.useState(null);
   const shown2 = view?.state === "shown" ? view : null;
   const src = shown2 ? source.src(shown2) : null;
-  import_react33.useLayoutEffect(() => setFailed(null), [src]);
-  import_react33.useLayoutEffect(() => {
+  import_react34.useLayoutEffect(() => setFailed(null), [src]);
+  import_react34.useLayoutEffect(() => {
     if (!view)
       mark(el, "pending", alt, null);
     else if (view.state === "not-shown")
@@ -65283,7 +65298,7 @@ function Embed({
   }, [el, view, failed, alt]);
   if (!shown2 || !src || failed)
     return null;
-  return /* @__PURE__ */ jsx_runtime31.jsx("button", {
+  return /* @__PURE__ */ jsx_runtime32.jsx("button", {
     type: "button",
     "data-slot": "embed-open",
     "aria-label": `Open ${alt || shown2.path.split("/").pop()} in the viewer`,
@@ -65297,7 +65312,7 @@ function Embed({
       e.preventDefault();
       source.open(shown2.path);
     },
-    children: /* @__PURE__ */ jsx_runtime31.jsx("img", {
+    children: /* @__PURE__ */ jsx_runtime32.jsx("img", {
       src,
       alt,
       loading: "lazy",
@@ -71485,7 +71500,7 @@ function generatedAt(fields) {
 }
 
 // src/kit/document/ProfileChip.tsx
-var import_react34 = __toESM(require_react(), 1);
+var import_react35 = __toESM(require_react(), 1);
 
 // src/kit/document/profileHeader.ts
 function profileFits(profile, fields) {
@@ -71550,10 +71565,10 @@ function askBrokenText(profile) {
 }
 
 // src/kit/document/ProfileChip.tsx
-var jsx_runtime32 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime33 = __toESM(require_jsx_runtime(), 1);
 var CHIP = "inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-[11px] font-medium";
 function AskButton({ onAsk, label, asked }) {
-  return /* @__PURE__ */ jsx_runtime32.jsx("button", {
+  return /* @__PURE__ */ jsx_runtime33.jsx("button", {
     type: "button",
     "data-slot": "profile-ask",
     "aria-label": asked ? `Asked the agent: ${label}` : `Ask the agent to fix: ${label}`,
@@ -71561,9 +71576,9 @@ function AskButton({ onAsk, label, asked }) {
     onMouseDown: (e) => e.preventDefault(),
     onClick: asked ? undefined : onAsk,
     className: cn("inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] outline-none focus-visible:ring-2 focus-visible:ring-ring/60", asked ? "text-ink-faint" : "text-brand hover:bg-brand/10"),
-    children: asked ? /* @__PURE__ */ jsx_runtime32.jsxs(jsx_runtime32.Fragment, {
+    children: asked ? /* @__PURE__ */ jsx_runtime33.jsxs(jsx_runtime33.Fragment, {
       children: [
-        /* @__PURE__ */ jsx_runtime32.jsx(Check, {
+        /* @__PURE__ */ jsx_runtime33.jsx(Check, {
           "aria-hidden": true,
           className: "size-3"
         }),
@@ -71576,8 +71591,8 @@ function ProfileChip({
   profile,
   onAsk
 }) {
-  const [open, setOpen] = import_react34.useState(false);
-  const [asked, setAsked] = import_react34.useState(new Set);
+  const [open, setOpen] = import_react35.useState(false);
+  const [asked, setAsked] = import_react35.useState(new Set);
   const ask = (text4) => {
     onAsk?.(text4, profile);
     setAsked((was) => new Set(was).add(text4));
@@ -71587,57 +71602,57 @@ function ProfileChip({
   if (!broken && (profile.match !== "matched" || n === 0))
     return null;
   const label = broken ? "profile broken" : warningCountLabel(n);
-  return /* @__PURE__ */ jsx_runtime32.jsxs(Popover, {
+  return /* @__PURE__ */ jsx_runtime33.jsxs(Popover, {
     open,
     onOpenChange: setOpen,
     children: [
-      /* @__PURE__ */ jsx_runtime32.jsxs(PopoverTrigger3, {
+      /* @__PURE__ */ jsx_runtime33.jsxs(PopoverTrigger3, {
         "data-slot": "profile-chip",
         "data-state": broken ? "broken" : "warnings",
         "aria-label": broken ? "Profile broken: show why" : `${label}: show them`,
         title: broken ? "This kind's profile file cannot be used" : label,
         className: cn(CHIP, "outline-none focus-visible:ring-2 focus-visible:ring-ring/60", broken ? "bg-surface-raised text-ink-dim hover:text-ink" : "bg-attention/15 text-attention ring-1 ring-attention/30 ring-inset hover:bg-attention/25"),
         children: [
-          /* @__PURE__ */ jsx_runtime32.jsx(TriangleAlert, {
+          /* @__PURE__ */ jsx_runtime33.jsx(TriangleAlert, {
             "aria-hidden": true,
             className: "size-3"
           }),
           label
         ]
       }),
-      /* @__PURE__ */ jsx_runtime32.jsx(PopoverContent, {
+      /* @__PURE__ */ jsx_runtime33.jsx(PopoverContent, {
         side: "bottom",
         align: "start",
         "data-slot": "profile-popover",
         className: "flex max-h-[min(var(--available-height,32rem),32rem)] w-[min(28rem,calc(100vw-1rem))] flex-col",
-        children: broken ? /* @__PURE__ */ jsx_runtime32.jsxs(jsx_runtime32.Fragment, {
+        children: broken ? /* @__PURE__ */ jsx_runtime33.jsxs(jsx_runtime33.Fragment, {
           children: [
-            /* @__PURE__ */ jsx_runtime32.jsx(PopoverTitle3, {
+            /* @__PURE__ */ jsx_runtime33.jsx(PopoverTitle3, {
               children: "Profile broken"
             }),
-            /* @__PURE__ */ jsx_runtime32.jsx(PopoverDescription3, {
+            /* @__PURE__ */ jsx_runtime33.jsx(PopoverDescription3, {
               className: "text-[12px]",
               children: "This document's kind matches nothing until its profile file is fixed, so it is not checked. Saving is never blocked."
             }),
-            /* @__PURE__ */ jsx_runtime32.jsxs("div", {
+            /* @__PURE__ */ jsx_runtime33.jsxs("div", {
               className: "mt-2 flex flex-col gap-1 rounded-md bg-surface-raised px-2 py-1.5",
               children: [
-                /* @__PURE__ */ jsx_runtime32.jsx("span", {
+                /* @__PURE__ */ jsx_runtime33.jsx("span", {
                   "data-slot": "profile-reason",
                   className: "text-[12px] text-ink",
                   children: profileSentence(profile.reason ?? "the file cannot be used")
                 }),
-                /* @__PURE__ */ jsx_runtime32.jsxs("span", {
+                /* @__PURE__ */ jsx_runtime33.jsxs("span", {
                   className: "flex items-center gap-2",
                   children: [
-                    /* @__PURE__ */ jsx_runtime32.jsx("span", {
+                    /* @__PURE__ */ jsx_runtime33.jsx("span", {
                       "data-slot": "profile-broken-file",
                       className: "truncate font-mono text-[10px] text-ink-faint",
                       children: brokenFileShown(profile)
                     }),
-                    onAsk && /* @__PURE__ */ jsx_runtime32.jsx("span", {
+                    onAsk && /* @__PURE__ */ jsx_runtime33.jsx("span", {
                       className: "ml-auto",
-                      children: /* @__PURE__ */ jsx_runtime32.jsx(AskButton, {
+                      children: /* @__PURE__ */ jsx_runtime33.jsx(AskButton, {
                         label: brokenFileShown(profile),
                         asked: asked.has(askBrokenText(profile)),
                         onAsk: () => ask(askBrokenText(profile))
@@ -71648,12 +71663,12 @@ function ProfileChip({
               ]
             })
           ]
-        }) : /* @__PURE__ */ jsx_runtime32.jsxs(jsx_runtime32.Fragment, {
+        }) : /* @__PURE__ */ jsx_runtime33.jsxs(jsx_runtime33.Fragment, {
           children: [
-            /* @__PURE__ */ jsx_runtime32.jsx(PopoverTitle3, {
+            /* @__PURE__ */ jsx_runtime33.jsx(PopoverTitle3, {
               children: warningCountLabel(n)
             }),
-            /* @__PURE__ */ jsx_runtime32.jsxs(PopoverDescription3, {
+            /* @__PURE__ */ jsx_runtime33.jsxs(PopoverDescription3, {
               className: "text-[12px]",
               children: [
                 "Warnings against the ",
@@ -71661,31 +71676,31 @@ function ProfileChip({
                 " profile, not errors: saving is never blocked."
               ]
             }),
-            /* @__PURE__ */ jsx_runtime32.jsx("ul", {
+            /* @__PURE__ */ jsx_runtime33.jsx("ul", {
               "data-slot": "profile-warnings",
               className: "mt-2 flex min-h-0 flex-col gap-1.5 overflow-y-auto overscroll-contain",
               title: profileSourceTitle(profile),
-              children: profile.warnings.map((w, i2) => /* @__PURE__ */ jsx_runtime32.jsxs("li", {
+              children: profile.warnings.map((w, i2) => /* @__PURE__ */ jsx_runtime33.jsxs("li", {
                 "data-slot": "profile-warning",
                 "data-field": w.field,
                 "data-rule": w.rule,
                 className: "flex shrink-0 flex-col gap-0.5 rounded-md bg-surface-raised px-2 py-1.5",
                 children: [
-                  /* @__PURE__ */ jsx_runtime32.jsx("span", {
+                  /* @__PURE__ */ jsx_runtime33.jsx("span", {
                     className: "text-[12px] text-ink",
                     children: warningSentence(w)
                   }),
-                  /* @__PURE__ */ jsx_runtime32.jsxs("span", {
+                  /* @__PURE__ */ jsx_runtime33.jsxs("span", {
                     className: "flex items-center gap-2",
                     children: [
-                      /* @__PURE__ */ jsx_runtime32.jsx("span", {
+                      /* @__PURE__ */ jsx_runtime33.jsx("span", {
                         "data-slot": "profile-warning-file",
                         className: "truncate font-mono text-[10px] text-ink-faint",
                         children: w.fileShown ?? profile.sourceShown
                       }),
-                      onAsk && /* @__PURE__ */ jsx_runtime32.jsx("span", {
+                      onAsk && /* @__PURE__ */ jsx_runtime33.jsx("span", {
                         className: "ml-auto",
-                        children: /* @__PURE__ */ jsx_runtime32.jsx(AskButton, {
+                        children: /* @__PURE__ */ jsx_runtime33.jsx(AskButton, {
                           label: w.message,
                           asked: asked.has(askFixText(profile, w)),
                           onAsk: () => ask(askFixText(profile, w))
@@ -71704,7 +71719,7 @@ function ProfileChip({
 }
 
 // src/kit/document/FrontmatterHeader.tsx
-var jsx_runtime33 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime34 = __toESM(require_jsx_runtime(), 1);
 var TONE = {
   plain: "px-1.5 font-medium bg-surface-raised text-ink",
   dim: "px-1.5 font-medium bg-surface-raised text-ink-dim",
@@ -71741,12 +71756,12 @@ function defaultChips(fields, { trust: showTrust = true } = {}) {
       key: "verified",
       title: "Derived from the verified key",
       tone: "dim",
-      label: /* @__PURE__ */ jsx_runtime33.jsxs(jsx_runtime33.Fragment, {
+      label: /* @__PURE__ */ jsx_runtime34.jsxs(jsx_runtime34.Fragment, {
         children: [
-          trust === "human-reviewed" ? /* @__PURE__ */ jsx_runtime33.jsx(UserCheck, {
+          trust === "human-reviewed" ? /* @__PURE__ */ jsx_runtime34.jsx(UserCheck, {
             "aria-hidden": true,
             className: "size-3"
-          }) : trust === "machine-confirmed" ? /* @__PURE__ */ jsx_runtime33.jsx(BadgeCheck, {
+          }) : trust === "machine-confirmed" ? /* @__PURE__ */ jsx_runtime34.jsx(BadgeCheck, {
             "aria-hidden": true,
             className: "size-3"
           }) : null,
@@ -71776,7 +71791,7 @@ function unclaimed(fields, claimed) {
   return rows;
 }
 function Chip({ chip }) {
-  return /* @__PURE__ */ jsx_runtime33.jsx("span", {
+  return /* @__PURE__ */ jsx_runtime34.jsx("span", {
     "data-chip": chip.key,
     title: chip.title,
     className: cn("inline-flex items-center gap-1 rounded-sm py-0.5 text-[11px]", TONE[chip.tone ?? "dim"], chip.className),
@@ -71792,23 +71807,23 @@ function FrontmatterHeader({
 }) {
   const { fields, error, raw } = frontmatter;
   if (error)
-    return /* @__PURE__ */ jsx_runtime33.jsxs("header", {
+    return /* @__PURE__ */ jsx_runtime34.jsxs("header", {
       "data-slot": "frontmatter-header",
       "data-invalid": "",
       className: "mb-6 flex flex-col gap-2 border-b border-edge pb-4 text-sm",
       children: [
-        /* @__PURE__ */ jsx_runtime33.jsx("pre", {
+        /* @__PURE__ */ jsx_runtime34.jsx("pre", {
           className: "overflow-x-auto rounded-md bg-surface-raised px-3 py-2 font-mono text-xs text-ink-dim",
           children: raw
         }),
-        /* @__PURE__ */ jsx_runtime33.jsxs("p", {
+        /* @__PURE__ */ jsx_runtime34.jsxs("p", {
           className: "flex items-start gap-1.5 text-xs text-ink-faint",
           children: [
-            /* @__PURE__ */ jsx_runtime33.jsx(TriangleAlert, {
+            /* @__PURE__ */ jsx_runtime34.jsx(TriangleAlert, {
               "aria-hidden": true,
               className: "mt-0.5 size-3 shrink-0 text-attention"
             }),
-            /* @__PURE__ */ jsx_runtime33.jsxs("span", {
+            /* @__PURE__ */ jsx_runtime34.jsxs("span", {
               children: [
                 "The frontmatter could not be read, so it is shown as written: ",
                 error
@@ -71821,7 +71836,7 @@ function FrontmatterHeader({
   const fits = profileFits(profile, fields) ? profile : null;
   const base2 = withProfileLabel(defaultChips(fields, { trust }), fits);
   const chips = chipSlot ? chipSlot(fields, base2) : base2;
-  const profileChip = fits ? /* @__PURE__ */ jsx_runtime33.jsx(ProfileChip, {
+  const profileChip = fits ? /* @__PURE__ */ jsx_runtime34.jsx(ProfileChip, {
     profile: fits,
     onAsk: onAskProfileFix
   }) : null;
@@ -71829,39 +71844,39 @@ function FrontmatterHeader({
   const description = stringField(fields, "description");
   const tags2 = [...new Set(listField(fields, "tags"))];
   const others = unclaimed(fields, claimed);
-  return /* @__PURE__ */ jsx_runtime33.jsxs("header", {
+  return /* @__PURE__ */ jsx_runtime34.jsxs("header", {
     "data-slot": "frontmatter-header",
     className: "mb-6 flex flex-col gap-2 border-b border-edge pb-4 text-sm",
     children: [
-      (chips.length > 0 || profileChip) && /* @__PURE__ */ jsx_runtime33.jsxs("div", {
+      (chips.length > 0 || profileChip) && /* @__PURE__ */ jsx_runtime34.jsxs("div", {
         className: "flex flex-wrap items-center gap-1.5",
         children: [
-          chips.map((c, i2) => /* @__PURE__ */ jsx_runtime33.jsx(Chip, {
+          chips.map((c, i2) => /* @__PURE__ */ jsx_runtime34.jsx(Chip, {
             chip: c
           }, i2)),
           profileChip
         ]
       }),
-      description && /* @__PURE__ */ jsx_runtime33.jsx("p", {
+      description && /* @__PURE__ */ jsx_runtime34.jsx("p", {
         className: "text-ink-dim",
         children: description
       }),
-      tags2.length > 0 && /* @__PURE__ */ jsx_runtime33.jsx("div", {
+      tags2.length > 0 && /* @__PURE__ */ jsx_runtime34.jsx("div", {
         className: "flex flex-wrap items-center gap-1",
-        children: tags2.map((t2) => /* @__PURE__ */ jsx_runtime33.jsx(Chip, {
+        children: tags2.map((t2) => /* @__PURE__ */ jsx_runtime34.jsx(Chip, {
           chip: { label: `#${t2}`, tone: "outline" }
         }, t2))
       }),
-      others.length > 0 && /* @__PURE__ */ jsx_runtime33.jsx("dl", {
+      others.length > 0 && /* @__PURE__ */ jsx_runtime34.jsx("dl", {
         className: "mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs",
-        children: others.map(([k, v]) => /* @__PURE__ */ jsx_runtime33.jsxs("div", {
+        children: others.map(([k, v]) => /* @__PURE__ */ jsx_runtime34.jsxs("div", {
           className: "contents",
           children: [
-            /* @__PURE__ */ jsx_runtime33.jsx("dt", {
+            /* @__PURE__ */ jsx_runtime34.jsx("dt", {
               className: "font-mono text-ink-faint",
               children: k
             }),
-            /* @__PURE__ */ jsx_runtime33.jsx("dd", {
+            /* @__PURE__ */ jsx_runtime34.jsx("dd", {
               className: "min-w-0 break-words text-ink-dim",
               children: showValue(v)
             })
@@ -73773,7 +73788,7 @@ function lineAnchors(root2, scroller, p, text4) {
 }
 
 // src/kit/document/MarkdownView.tsx
-var jsx_runtime34 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime35 = __toESM(require_jsx_runtime(), 1);
 var NO_WIDGETS = [];
 var NOTE_HL = "doc-note";
 var FOCUS_HL = "doc-note-focus";
@@ -73823,13 +73838,13 @@ function MarkdownView({
   embeds,
   onEmbedTargets
 }) {
-  const frontmatter = import_react35.useMemo(() => readFrontmatter(text4), [text4]);
-  const html = import_react35.useMemo(() => renderDocument(text4, widgets), [text4, widgets]);
-  const htmlProp = import_react35.useMemo(() => ({ __html: html }), [html]);
-  const projection = import_react35.useMemo(() => project(text4), [text4]);
-  const body = import_react35.useRef(null);
-  const [widgetSpans, setWidgetSpans] = import_react35.useState([]);
-  import_react35.useLayoutEffect(() => {
+  const frontmatter = import_react36.useMemo(() => readFrontmatter(text4), [text4]);
+  const html = import_react36.useMemo(() => renderDocument(text4, widgets), [text4, widgets]);
+  const htmlProp = import_react36.useMemo(() => ({ __html: html }), [html]);
+  const projection = import_react36.useMemo(() => project(text4), [text4]);
+  const body = import_react36.useRef(null);
+  const [widgetSpans, setWidgetSpans] = import_react36.useState([]);
+  import_react36.useLayoutEffect(() => {
     const found = [];
     for (const w of widgets) {
       for (const el of body.current?.getElementsByClassName(w.className) ?? []) {
@@ -73840,20 +73855,20 @@ function MarkdownView({
     }
     setWidgetSpans(found);
   }, [html]);
-  const [embedSpans2, setEmbedSpans] = import_react35.useState([]);
-  const onEmbedTargetsRef = import_react35.useRef(onEmbedTargets);
+  const [embedSpans2, setEmbedSpans] = import_react36.useState([]);
+  const onEmbedTargetsRef = import_react36.useRef(onEmbedTargets);
   onEmbedTargetsRef.current = onEmbedTargets;
-  import_react35.useLayoutEffect(() => {
+  import_react36.useLayoutEffect(() => {
     const found = body.current ? pendingEmbeds(body.current) : [];
     setEmbedSpans(found);
     onEmbedTargetsRef.current?.([...new Set(found.map((e) => e.target))]);
   }, [html]);
-  const lastRange = import_react35.useRef(null);
-  const scroller = import_react35.useRef(null);
-  const measureRef = import_react35.useRef(() => []);
-  const measureFrom = import_react35.useRef({ projection, text: text4 });
+  const lastRange = import_react36.useRef(null);
+  const scroller = import_react36.useRef(null);
+  const measureRef = import_react36.useRef(() => []);
+  const measureFrom = import_react36.useRef({ projection, text: text4 });
   measureFrom.current = { projection, text: text4 };
-  const anchors = import_react35.useRef(null);
+  const anchors = import_react36.useRef(null);
   if (!anchors.current)
     anchors.current = anchorCache(() => {
       const root2 = body.current;
@@ -73863,7 +73878,7 @@ function MarkdownView({
       return lineAnchors(root2, sc, measureFrom.current.projection, measureFrom.current.text);
     }, () => scroller.current?.clientWidth ?? 0);
   measureRef.current = () => body.current && scroller.current ? anchors.current?.get() ?? [] : [];
-  import_react35.useEffect(() => {
+  import_react36.useEffect(() => {
     anchors.current?.clear();
     const sc = scroller.current;
     if (!sc || typeof ResizeObserver === "undefined")
@@ -73876,7 +73891,7 @@ function MarkdownView({
       ro.observe(body.current);
     return () => ro.disconnect();
   }, [html, projection]);
-  import_react35.useEffect(() => {
+  import_react36.useEffect(() => {
     const sc = scroller.current;
     if (!sc || !place)
       return;
@@ -73893,7 +73908,7 @@ function MarkdownView({
       leave();
     };
   }, [place]);
-  const inBody = import_react35.useCallback((range) => {
+  const inBody = import_react36.useCallback((range) => {
     const root2 = body.current;
     const pane = scroller.current;
     if (!root2 || !pane)
@@ -73921,7 +73936,7 @@ function MarkdownView({
       r2.setEnd(last2, last2.data.length);
     return r2.collapsed ? null : r2;
   }, []);
-  const selectedRange = import_react35.useCallback(() => {
+  const selectedRange = import_react36.useCallback(() => {
     const root2 = body.current;
     const sel = window.getSelection();
     if (!root2 || !sel || sel.rangeCount === 0 || sel.isCollapsed)
@@ -73929,9 +73944,9 @@ function MarkdownView({
     const range = inBody(sel.getRangeAt(0));
     return range ? resolveRange(root2, projection, range) : null;
   }, [projection, inBody]);
-  const contextPress = import_react35.useRef(false);
-  const pressedHere = import_react35.useRef(false);
-  import_react35.useEffect(() => {
+  const contextPress = import_react36.useRef(false);
+  const pressedHere = import_react36.useRef(false);
+  import_react36.useEffect(() => {
     if (!onSelect)
       return;
     const handler = () => {
@@ -73979,8 +73994,8 @@ function MarkdownView({
       document.removeEventListener("pointerdown", pressed, true);
     };
   }, [onSelect, selectedRange, inBody, text4]);
-  const unpainted = import_react35.useRef(clearSeq);
-  import_react35.useEffect(() => {
+  const unpainted = import_react36.useRef(clearSeq);
+  import_react36.useEffect(() => {
     if (clearSeq === undefined || clearSeq === unpainted.current)
       return;
     unpainted.current = clearSeq;
@@ -73992,7 +74007,7 @@ function MarkdownView({
     if (root2.contains(sel.getRangeAt(0).commonAncestorContainer))
       sel.removeAllRanges();
   }, [clearSeq]);
-  import_react35.useEffect(() => {
+  import_react36.useEffect(() => {
     const reg = highlightRegistry();
     const root2 = body.current;
     if (!reg || !root2)
@@ -74024,7 +74039,7 @@ function MarkdownView({
     };
   }, [notes, projection, focusedNote, pendingNote, html]);
   const flashSeq = flash?.seq;
-  import_react35.useEffect(() => {
+  import_react36.useEffect(() => {
     const reg = highlightRegistry();
     const root2 = body.current;
     if (!reg || !root2 || !flash || flash.from >= flash.to)
@@ -74040,22 +74055,22 @@ function MarkdownView({
       reg.delete(FLASH_HL);
     };
   }, [flashSeq]);
-  const view = import_react35.useRef(null);
+  const view = import_react36.useRef(null);
   const { bar } = useFind({ root: scroller, scope: view, watch: html });
-  return /* @__PURE__ */ jsx_runtime34.jsxs("div", {
+  return /* @__PURE__ */ jsx_runtime35.jsxs("div", {
     ref: view,
     className: "flex min-h-0 min-w-0 flex-1 flex-col",
     children: [
       bar,
-      /* @__PURE__ */ jsx_runtime34.jsxs("div", {
+      /* @__PURE__ */ jsx_runtime35.jsxs("div", {
         ref: scroller,
         tabIndex: -1,
         className: "min-h-0 flex-1 overflow-auto outline-none",
         "data-slot": "markdown-view",
         children: [
-          frontmatter && /* @__PURE__ */ jsx_runtime34.jsx("div", {
+          frontmatter && /* @__PURE__ */ jsx_runtime35.jsx("div", {
             className: "mx-auto max-w-[76ch] px-8 pt-7",
-            children: /* @__PURE__ */ jsx_runtime34.jsx(FrontmatterHeader, {
+            children: /* @__PURE__ */ jsx_runtime35.jsx(FrontmatterHeader, {
               frontmatter,
               chips: frontmatterChips,
               trust: frontmatterTrust,
@@ -74063,7 +74078,7 @@ function MarkdownView({
               onAskProfileFix
             })
           }),
-          /* @__PURE__ */ jsx_runtime34.jsx("div", {
+          /* @__PURE__ */ jsx_runtime35.jsx("div", {
             ref: body,
             className: frontmatter ? "md-prose mx-auto max-w-[76ch] px-8 pb-16" : "md-prose mx-auto max-w-[76ch] px-8 pt-7 pb-16",
             onClick: (e) => onRenderedLinkClick(e, onFollowLink, onFollowHeading),
@@ -74099,11 +74114,11 @@ function MarkdownView({
             dangerouslySetInnerHTML: htmlProp
           }),
           footer,
-          /* @__PURE__ */ jsx_runtime34.jsx(TooltipProvider3, {
+          /* @__PURE__ */ jsx_runtime35.jsx(TooltipProvider3, {
             delay: 200,
             children: widgetSpans.map(({ el, node: node2 }, i2) => import_react_dom5.createPortal(node2, el, `widget-${i2}`))
           }),
-          embeds && embedSpans2.map(({ el, target }, i2) => import_react_dom5.createPortal(/* @__PURE__ */ jsx_runtime34.jsx(Embed, {
+          embeds && embedSpans2.map(({ el, target }, i2) => import_react_dom5.createPortal(/* @__PURE__ */ jsx_runtime35.jsx(Embed, {
             el,
             view: embeds.views.get(target),
             source: embeds,
@@ -74116,8 +74131,8 @@ function MarkdownView({
 }
 
 // src/kit/document/NewVersionDialog.tsx
-var import_react36 = __toESM(require_react(), 1);
-var jsx_runtime35 = __toESM(require_jsx_runtime(), 1);
+var import_react37 = __toESM(require_react(), 1);
+var jsx_runtime36 = __toESM(require_jsx_runtime(), 1);
 function NewVersionDialog({
   open,
   intent,
@@ -74127,9 +74142,9 @@ function NewVersionDialog({
   onCreate
 }) {
   const branching = intent === "branch";
-  const [label, setLabel] = import_react36.useState("");
-  const field = import_react36.useRef(null);
-  import_react36.useEffect(() => {
+  const [label, setLabel] = import_react37.useState("");
+  const field = import_react37.useRef(null);
+  import_react37.useEffect(() => {
     if (open)
       setLabel("");
   }, [open]);
@@ -74138,31 +74153,31 @@ function NewVersionDialog({
     onCreate(label.trim());
     onOpenChange(false);
   };
-  return /* @__PURE__ */ jsx_runtime35.jsx(Dialog, {
+  return /* @__PURE__ */ jsx_runtime36.jsx(Dialog, {
     open,
     onOpenChange,
-    children: /* @__PURE__ */ jsx_runtime35.jsx(DialogContent, {
+    children: /* @__PURE__ */ jsx_runtime36.jsx(DialogContent, {
       className: "sm:max-w-md",
-      children: /* @__PURE__ */ jsx_runtime35.jsxs("form", {
+      children: /* @__PURE__ */ jsx_runtime36.jsxs("form", {
         onSubmit: submit,
         className: "flex flex-col gap-6",
         children: [
-          /* @__PURE__ */ jsx_runtime35.jsxs(DialogHeader, {
+          /* @__PURE__ */ jsx_runtime36.jsxs(DialogHeader, {
             children: [
-              /* @__PURE__ */ jsx_runtime35.jsxs(DialogTitle3, {
+              /* @__PURE__ */ jsx_runtime36.jsxs(DialogTitle3, {
                 children: [
                   "New version from v",
                   from
                 ]
               }),
-              /* @__PURE__ */ jsx_runtime35.jsx(DialogDescription3, {
-                children: branching ? /* @__PURE__ */ jsx_runtime35.jsxs(jsx_runtime35.Fragment, {
+              /* @__PURE__ */ jsx_runtime36.jsx(DialogDescription3, {
+                children: branching ? /* @__PURE__ */ jsx_runtime36.jsxs(jsx_runtime36.Fragment, {
                   children: [
                     "A copy of v",
                     from,
                     " to work in.",
                     " ",
-                    /* @__PURE__ */ jsx_runtime35.jsxs("strong", {
+                    /* @__PURE__ */ jsx_runtime36.jsxs("strong", {
                       className: "font-semibold text-ink",
                       children: [
                         "You will be editing v",
@@ -74174,7 +74189,7 @@ function NewVersionDialog({
                     from,
                     " stays exactly as it is now."
                   ]
-                }) : /* @__PURE__ */ jsx_runtime35.jsxs(jsx_runtime35.Fragment, {
+                }) : /* @__PURE__ */ jsx_runtime36.jsxs(jsx_runtime36.Fragment, {
                   children: [
                     "A copy of v",
                     from,
@@ -74182,7 +74197,7 @@ function NewVersionDialog({
                     next,
                     ".",
                     " ",
-                    /* @__PURE__ */ jsx_runtime35.jsxs("strong", {
+                    /* @__PURE__ */ jsx_runtime36.jsxs("strong", {
                       className: "font-semibold text-ink",
                       children: [
                         "You carry on editing v",
@@ -74195,15 +74210,15 @@ function NewVersionDialog({
               })
             ]
           }),
-          /* @__PURE__ */ jsx_runtime35.jsxs("div", {
+          /* @__PURE__ */ jsx_runtime36.jsxs("div", {
             className: "flex flex-col gap-2",
             children: [
-              /* @__PURE__ */ jsx_runtime35.jsx("label", {
+              /* @__PURE__ */ jsx_runtime36.jsx("label", {
                 htmlFor: "version-label",
                 className: "text-sm font-medium text-ink",
                 children: "Name"
               }),
-              /* @__PURE__ */ jsx_runtime35.jsx(Input3, {
+              /* @__PURE__ */ jsx_runtime36.jsx(Input3, {
                 id: "version-label",
                 ref: field,
                 value: label,
@@ -74211,7 +74226,7 @@ function NewVersionDialog({
                 placeholder: `v${next}`,
                 onChange: (e) => setLabel(e.target.value)
               }),
-              /* @__PURE__ */ jsx_runtime35.jsxs("p", {
+              /* @__PURE__ */ jsx_runtime36.jsxs("p", {
                 className: "text-xs text-ink-faint",
                 children: [
                   branching ? "Say what you are about to do: “slower induction”, “rewrite the opening”." : "Say what it preserves: “before the agent's pass”, “end of Tuesday”.",
@@ -74221,16 +74236,16 @@ function NewVersionDialog({
               })
             ]
           }),
-          /* @__PURE__ */ jsx_runtime35.jsxs(DialogFooter, {
+          /* @__PURE__ */ jsx_runtime36.jsxs(DialogFooter, {
             className: "gap-2",
             children: [
-              /* @__PURE__ */ jsx_runtime35.jsx(Button3, {
+              /* @__PURE__ */ jsx_runtime36.jsx(Button3, {
                 type: "button",
                 variant: "secondary",
                 onClick: () => onOpenChange(false),
                 children: "Cancel"
               }),
-              /* @__PURE__ */ jsx_runtime35.jsx(Button3, {
+              /* @__PURE__ */ jsx_runtime36.jsx(Button3, {
                 type: "submit",
                 children: branching ? `Make v${next} and edit it` : `Snapshot as v${next}`
               })
@@ -74311,8 +74326,8 @@ function readerStaysLoud(part, doc2) {
 }
 
 // src/kit/document/VersionMenu.tsx
-var import_react37 = __toESM(require_react(), 1);
-var jsx_runtime36 = __toESM(require_jsx_runtime(), 1);
+var import_react38 = __toESM(require_react(), 1);
+var jsx_runtime37 = __toESM(require_jsx_runtime(), 1);
 function versionLabel(v) {
   const label = v.label?.trim();
   return label && label.length > 0 ? label : `v${v.n}`;
@@ -74349,70 +74364,70 @@ function VersionMenu({
 }) {
   const rows = ordered(versions, active);
   const current = versions.find((v) => v.n === active);
-  const [open, setOpen] = import_react37.useState(false);
-  return /* @__PURE__ */ jsx_runtime36.jsxs(DropdownMenu, {
+  const [open, setOpen] = import_react38.useState(false);
+  return /* @__PURE__ */ jsx_runtime37.jsxs(DropdownMenu, {
     open,
     onOpenChange: setOpen,
     children: [
-      /* @__PURE__ */ jsx_runtime36.jsxs(DropdownMenuTrigger, {
+      /* @__PURE__ */ jsx_runtime37.jsxs(DropdownMenuTrigger, {
         className: cn("flex h-7 shrink-0 items-center gap-1 rounded-md border border-edge px-2", "text-xs text-ink outline-none hover:bg-surface-raised", "focus-visible:ring-2 focus-visible:ring-ring/60"),
         "aria-label": `Version ${active}${current?.label ? `: ${current.label}` : ""}, ${versions.length} version${versions.length === 1 ? "" : "s"}`,
         children: [
-          /* @__PURE__ */ jsx_runtime36.jsxs("span", {
+          /* @__PURE__ */ jsx_runtime37.jsxs("span", {
             className: "font-medium tabular-nums",
             children: [
               "v",
               active
             ]
           }),
-          /* @__PURE__ */ jsx_runtime36.jsx(ChevronDown, {
+          /* @__PURE__ */ jsx_runtime37.jsx(ChevronDown, {
             "aria-hidden": true,
             className: "size-3 shrink-0 text-ink-faint"
           })
         ]
       }),
-      /* @__PURE__ */ jsx_runtime36.jsxs(DropdownMenuContent, {
+      /* @__PURE__ */ jsx_runtime37.jsxs(DropdownMenuContent, {
         align: "start",
         className: "w-80",
         children: [
-          /* @__PURE__ */ jsx_runtime36.jsxs("div", {
+          /* @__PURE__ */ jsx_runtime37.jsxs("div", {
             className: "border-b border-edge px-2 py-1.5",
             children: [
-              /* @__PURE__ */ jsx_runtime36.jsx("p", {
+              /* @__PURE__ */ jsx_runtime37.jsx("p", {
                 className: "text-sm font-medium text-ink",
                 children: "Versions"
               }),
-              /* @__PURE__ */ jsx_runtime36.jsx("p", {
+              /* @__PURE__ */ jsx_runtime37.jsx("p", {
                 className: "text-xs text-ink-faint",
                 children: "Choosing one makes it the version you edit and Save writes."
               })
             ]
           }),
-          /* @__PURE__ */ jsx_runtime36.jsx("div", {
+          /* @__PURE__ */ jsx_runtime37.jsx("div", {
             className: "max-h-64 overflow-y-auto py-1",
-            children: rows.map((v, i2) => /* @__PURE__ */ jsx_runtime36.jsxs(import_react37.Fragment, {
+            children: rows.map((v, i2) => /* @__PURE__ */ jsx_runtime37.jsxs(import_react38.Fragment, {
               children: [
-                i2 > 0 && /* @__PURE__ */ jsx_runtime36.jsx(DropdownMenuSeparator, {}),
-                /* @__PURE__ */ jsx_runtime36.jsxs(DropdownMenuItem, {
+                i2 > 0 && /* @__PURE__ */ jsx_runtime37.jsx(DropdownMenuSeparator, {}),
+                /* @__PURE__ */ jsx_runtime37.jsxs(DropdownMenuItem, {
                   onClick: () => v.n !== active && onActivate(v.n),
                   "aria-current": v.n === active ? "true" : undefined,
                   className: cn("flex-col items-start gap-0.5 py-1.5", v.n === active && "bg-selected/14 ring-1 ring-selected/30"),
                   children: [
-                    /* @__PURE__ */ jsx_runtime36.jsxs("span", {
+                    /* @__PURE__ */ jsx_runtime37.jsxs("span", {
                       className: "flex w-full items-center gap-1.5",
                       children: [
-                        v.n === active ? /* @__PURE__ */ jsx_runtime36.jsx(BadgeCheck, {
+                        v.n === active ? /* @__PURE__ */ jsx_runtime37.jsx(BadgeCheck, {
                           "aria-hidden": true,
                           className: "size-3.5 shrink-0 text-selected"
-                        }) : /* @__PURE__ */ jsx_runtime36.jsx("span", {
+                        }) : /* @__PURE__ */ jsx_runtime37.jsx("span", {
                           "aria-hidden": true,
                           className: "size-3.5 shrink-0"
                         }),
-                        /* @__PURE__ */ jsx_runtime36.jsx("span", {
+                        /* @__PURE__ */ jsx_runtime37.jsx("span", {
                           className: "min-w-0 flex-1 truncate font-medium text-ink",
                           children: versionLabel(v)
                         }),
-                        v.label && /* @__PURE__ */ jsx_runtime36.jsxs("span", {
+                        v.label && /* @__PURE__ */ jsx_runtime37.jsxs("span", {
                           className: "shrink-0 text-[11px] text-ink-faint",
                           children: [
                             "v",
@@ -74421,17 +74436,17 @@ function VersionMenu({
                         })
                       ]
                     }),
-                    /* @__PURE__ */ jsx_runtime36.jsxs("span", {
+                    /* @__PURE__ */ jsx_runtime37.jsxs("span", {
                       className: "flex w-full items-center gap-1.5 pl-5 text-xs text-ink-faint",
                       children: [
-                        v.by === "agent" ? /* @__PURE__ */ jsx_runtime36.jsx(Sparkles, {
+                        v.by === "agent" ? /* @__PURE__ */ jsx_runtime37.jsx(Sparkles, {
                           "aria-hidden": true,
                           className: "size-3 shrink-0"
-                        }) : /* @__PURE__ */ jsx_runtime36.jsx(User, {
+                        }) : /* @__PURE__ */ jsx_runtime37.jsx(User, {
                           "aria-hidden": true,
                           className: "size-3 shrink-0"
                         }),
-                        /* @__PURE__ */ jsx_runtime36.jsxs("span", {
+                        /* @__PURE__ */ jsx_runtime37.jsxs("span", {
                           className: "whitespace-nowrap",
                           children: [
                             authorLabel(v),
@@ -74439,7 +74454,7 @@ function VersionMenu({
                             when2(v.createdAt)
                           ]
                         }),
-                        /* @__PURE__ */ jsx_runtime36.jsx("button", {
+                        /* @__PURE__ */ jsx_runtime37.jsx("button", {
                           type: "button",
                           onClick: (e) => {
                             e.stopPropagation();
@@ -74449,12 +74464,12 @@ function VersionMenu({
                           "aria-label": `Show ${versionLabel(v)} in the file manager`,
                           title: `Show v${v.n}.md in the file manager`,
                           className: cn("flex items-center rounded-sm px-1 py-0.5 text-ink-dim hover:bg-bg hover:text-ink", v.n === active && "ml-auto"),
-                          children: /* @__PURE__ */ jsx_runtime36.jsx(FolderOpen, {
+                          children: /* @__PURE__ */ jsx_runtime37.jsx(FolderOpen, {
                             "aria-hidden": true,
                             className: "size-3"
                           })
                         }),
-                        v.n !== active && /* @__PURE__ */ jsx_runtime36.jsxs("button", {
+                        v.n !== active && /* @__PURE__ */ jsx_runtime37.jsxs("button", {
                           type: "button",
                           onClick: (e) => {
                             e.stopPropagation();
@@ -74463,14 +74478,14 @@ function VersionMenu({
                           },
                           className: "flex items-center gap-1 rounded-sm px-1 py-0.5 text-ink-dim hover:bg-bg hover:text-ink",
                           children: [
-                            /* @__PURE__ */ jsx_runtime36.jsx(GitCompare, {
+                            /* @__PURE__ */ jsx_runtime37.jsx(GitCompare, {
                               "aria-hidden": true,
                               className: "size-3"
                             }),
                             "Compare"
                           ]
                         }),
-                        v.n !== active && /* @__PURE__ */ jsx_runtime36.jsx("button", {
+                        v.n !== active && /* @__PURE__ */ jsx_runtime37.jsx("button", {
                           type: "button",
                           onClick: (e) => {
                             e.stopPropagation();
@@ -74480,7 +74495,7 @@ function VersionMenu({
                           "aria-label": `Delete ${versionLabel(v)}`,
                           title: `Delete ${versionLabel(v)}`,
                           className: "flex items-center rounded-sm px-1 py-0.5 text-ink-faint hover:bg-bg hover:text-danger",
-                          children: /* @__PURE__ */ jsx_runtime36.jsx(Trash2, {
+                          children: /* @__PURE__ */ jsx_runtime37.jsx(Trash2, {
                             "aria-hidden": true,
                             className: "size-3"
                           })
@@ -74492,14 +74507,14 @@ function VersionMenu({
               ]
             }, v.n))
           }),
-          /* @__PURE__ */ jsx_runtime36.jsx(DropdownMenuSeparator, {}),
-          /* @__PURE__ */ jsx_runtime36.jsxs(DropdownMenuItem, {
+          /* @__PURE__ */ jsx_runtime37.jsx(DropdownMenuSeparator, {}),
+          /* @__PURE__ */ jsx_runtime37.jsxs(DropdownMenuItem, {
             onClick: () => {
               setOpen(false);
               onNewVersion("branch");
             },
             children: [
-              /* @__PURE__ */ jsx_runtime36.jsx(GitBranch, {
+              /* @__PURE__ */ jsx_runtime37.jsx(GitBranch, {
                 "aria-hidden": true,
                 className: "size-3.5"
               }),
@@ -74508,13 +74523,13 @@ function VersionMenu({
               " and edit it…"
             ]
           }),
-          /* @__PURE__ */ jsx_runtime36.jsxs(DropdownMenuItem, {
+          /* @__PURE__ */ jsx_runtime37.jsxs(DropdownMenuItem, {
             onClick: () => {
               setOpen(false);
               onNewVersion("snapshot");
             },
             children: [
-              /* @__PURE__ */ jsx_runtime36.jsx(BookmarkPlus, {
+              /* @__PURE__ */ jsx_runtime37.jsx(BookmarkPlus, {
                 "aria-hidden": true,
                 className: "size-3.5"
               }),
@@ -74530,10 +74545,10 @@ function VersionMenu({
 }
 
 // src/kit/document/ViewBoundary.tsx
-var import_react38 = __toESM(require_react(), 1);
-var jsx_runtime37 = __toESM(require_jsx_runtime(), 1);
+var import_react39 = __toESM(require_react(), 1);
+var jsx_runtime38 = __toESM(require_jsx_runtime(), 1);
 
-class ViewBoundary extends import_react38.Component {
+class ViewBoundary extends import_react39.Component {
   state = { error: null };
   static getDerivedStateFromError(error) {
     return { error: error instanceof Error ? error : new Error(String(error)) };
@@ -74545,22 +74560,22 @@ class ViewBoundary extends import_react38.Component {
     const { error } = this.state;
     if (!error)
       return this.props.children;
-    return /* @__PURE__ */ jsx_runtime37.jsxs("div", {
+    return /* @__PURE__ */ jsx_runtime38.jsxs("div", {
       role: "alert",
       "data-slot": "view-failed",
       className: "flex flex-1 flex-col items-center justify-center gap-2 p-6 text-sm text-ink-dim",
       children: [
-        /* @__PURE__ */ jsx_runtime37.jsx(TriangleAlert, {
+        /* @__PURE__ */ jsx_runtime38.jsx(TriangleAlert, {
           "aria-hidden": true,
           className: "size-4 text-attention"
         }),
-        /* @__PURE__ */ jsx_runtime37.jsxs("p", {
+        /* @__PURE__ */ jsx_runtime38.jsxs("p", {
           children: [
             "This view could not be drawn: ",
             error.message
           ]
         }),
-        /* @__PURE__ */ jsx_runtime37.jsx("button", {
+        /* @__PURE__ */ jsx_runtime38.jsx("button", {
           type: "button",
           onClick: () => this.setState({ error: null }),
           className: "rounded-md border border-edge px-2 py-1 text-xs text-ink hover:bg-surface-raised",
@@ -74572,7 +74587,7 @@ class ViewBoundary extends import_react38.Component {
 }
 
 // src/kit/document/DocumentPane.tsx
-var jsx_runtime38 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime39 = __toESM(require_jsx_runtime(), 1);
 function mapThrough(pos, c, assoc) {
   if (pos < c.from)
     return pos;
@@ -74596,8 +74611,8 @@ var READER_LABEL = {
 };
 var SPLIT_TOO_NARROW = `Raw and rendered side by side: the pane is too narrow (split needs ${SPLIT_MIN_PX} px)`;
 function usePaneWidth(ref) {
-  const [width, setWidth] = import_react39.useState(0);
-  import_react39.useLayoutEffect(() => {
+  const [width, setWidth] = import_react40.useState(0);
+  import_react40.useLayoutEffect(() => {
     const el = ref.current;
     if (!el)
       return;
@@ -74611,16 +74626,16 @@ function usePaneWidth(ref) {
   return width;
 }
 function useDebouncedStats(text4, ms = 300) {
-  const [stats2, setStats] = import_react39.useState(() => contentStats(text4 ?? ""));
-  import_react39.useEffect(() => {
+  const [stats2, setStats] = import_react40.useState(() => contentStats(text4 ?? ""));
+  import_react40.useEffect(() => {
     const t2 = setTimeout(() => setStats(contentStats(text4 ?? "")), ms);
     return () => clearTimeout(t2);
   }, [text4, ms]);
   return stats2;
 }
 function useNow(everyMs = 30000) {
-  const [now2, setNow] = import_react39.useState(() => Date.now());
-  import_react39.useEffect(() => {
+  const [now2, setNow] = import_react40.useState(() => Date.now());
+  import_react40.useEffect(() => {
     const t2 = setInterval(() => setNow(Date.now()), everyMs);
     return () => clearInterval(t2);
   }, [everyMs]);
@@ -74649,15 +74664,15 @@ function DocumentPane({
   const w = useWorkspace();
   const { daemon, openDoc: doc2 } = w;
   const { send, writeText, flushText } = daemon;
-  const [ownMode, setOwnMode] = import_react39.useState(() => readViewMode(safeStorage.getItem(viewModeKey), { split: splitView }));
+  const [ownMode, setOwnMode] = import_react40.useState(() => readViewMode(safeStorage.getItem(viewModeKey), { split: splitView }));
   const mode = modeProp ?? ownMode;
-  const [numbered, setNumbered] = import_react39.useState(() => readLineNumbers(safeStorage.getItem(lineNumbersKey)));
+  const [numbered, setNumbered] = import_react40.useState(() => readLineNumbers(safeStorage.getItem(lineNumbersKey)));
   const toggleNumbered = () => {
     const next = !numbered;
     safeStorage.setItem(lineNumbersKey, storedLineNumbers(next));
     setNumbered(next);
   };
-  const rootRef = import_react39.useRef(null);
+  const rootRef = import_react40.useRef(null);
   const width = usePaneWidth(rootRef);
   const splitRoom = splitFits(width);
   const isJson = !!doc2 && docFormat(doc2.original) === "json";
@@ -74666,17 +74681,17 @@ function DocumentPane({
   const formatView = bundle && bundle.inner === bundle.type.main && !raw ? formatViews?.[bundle.type.type] : undefined;
   const bundleRoot = formatView ? bundle?.root : undefined;
   const { onFrame } = daemon;
-  const prepareSave = import_react39.useRef(null);
-  import_react39.useEffect(() => {
+  const prepareSave = import_react40.useRef(null);
+  import_react40.useEffect(() => {
     prepareSave.current = null;
   }, [doc2?.slug]);
-  const beforeSave = import_react39.useCallback((prepare) => {
+  const beforeSave = import_react40.useCallback((prepare) => {
     prepareSave.current = prepare;
   }, []);
-  const [viewStatus, setViewStatus] = import_react39.useState(null);
+  const [viewStatus, setViewStatus] = import_react40.useState(null);
   const viewSlug = formatView ? doc2?.slug : undefined;
-  const setStatus = import_react39.useCallback((segments2) => setViewStatus(segments2 && viewSlug !== undefined ? { slug: viewSlug, segments: segments2 } : null), [viewSlug]);
-  const onBundleChange = import_react39.useCallback((listener) => onFrame((frame) => {
+  const setStatus = import_react40.useCallback((segments2) => setViewStatus(segments2 && viewSlug !== undefined ? { slug: viewSlug, segments: segments2 } : null), [viewSlug]);
+  const onBundleChange = import_react40.useCallback((listener) => onFrame((frame) => {
     if (frame.op !== "bundle.changed" || bundleRoot === undefined)
       return;
     const f = frame;
@@ -74703,34 +74718,34 @@ function DocumentPane({
     for (const side of act.expand)
       columns.expand(side);
   };
-  import_react39.useLayoutEffect(() => {
+  import_react40.useLayoutEffect(() => {
     setQuiet(reader);
   }, [reader, setQuiet]);
-  import_react39.useLayoutEffect(() => () => setQuiet(false), [setQuiet]);
+  import_react40.useLayoutEffect(() => () => setQuiet(false), [setQuiet]);
   const fade = reader ? QUIET_FADE : undefined;
-  const [against, setAgainst] = import_react39.useState("original");
-  const [compareFocus, setCompareFocus] = import_react39.useState(null);
+  const [against, setAgainst] = import_react40.useState("original");
+  const [compareFocus, setCompareFocus] = import_react40.useState(null);
   const chooseSide = (side) => {
     setCompareFocus(null);
     setAgainst(side);
   };
-  const [naming, setNaming] = import_react39.useState(null);
-  const [noteAt, setNoteAt] = import_react39.useState(null);
-  const [linking, setLinking] = import_react39.useState(null);
-  const [linkTargets, setLinkTargets] = import_react39.useState(null);
-  const [linkFailure, setLinkFailure] = import_react39.useState(null);
-  const [jsonRefused, setJsonRefused] = import_react39.useState(null);
+  const [naming, setNaming] = import_react40.useState(null);
+  const [noteAt, setNoteAt] = import_react40.useState(null);
+  const [linking, setLinking] = import_react40.useState(null);
+  const [linkTargets, setLinkTargets] = import_react40.useState(null);
+  const [linkFailure, setLinkFailure] = import_react40.useState(null);
+  const [jsonRefused, setJsonRefused] = import_react40.useState(null);
   const { confirm, dialog: dialog2 } = useConfirm();
   const text4 = doc2 ? daemon.texts.get(textKey(doc2.slug, doc2.active)) : undefined;
-  const lastShown = import_react39.useRef(null);
+  const lastShown = import_react40.useRef(null);
   if (doc2 && text4 !== undefined)
     lastShown.current = { slug: doc2.slug, text: text4 };
   const shown2 = doc2 ? textToShow(doc2.slug, text4, lastShown.current) : undefined;
   const slug = doc2?.slug;
   const active = doc2?.active;
-  const jsonNow = import_react39.useMemo(() => isJson && shown2 !== undefined ? jsonProblem(shown2) : null, [isJson, shown2]);
-  const jsonChecked = import_react39.useRef(null);
-  import_react39.useEffect(() => {
+  const jsonNow = import_react40.useMemo(() => isJson && shown2 !== undefined ? jsonProblem(shown2) : null, [isJson, shown2]);
+  const jsonChecked = import_react40.useRef(null);
+  import_react40.useEffect(() => {
     if (slug === undefined || active === undefined)
       return;
     const key = `${slug}@${active}`;
@@ -74749,21 +74764,21 @@ function DocumentPane({
   }, [isJson, slug, active, text4]);
   const jsonMine = jsonRefused !== null && jsonRefused.slug === slug ? jsonRefused : null;
   const jsonShown = jsonMine ? shown2 === jsonMine.seen ? jsonMine.problem : jsonNow : null;
-  import_react39.useEffect(() => {
+  import_react40.useEffect(() => {
     if (jsonMine && shown2 !== undefined && shown2 !== jsonMine.seen && !jsonNow)
       setJsonRefused(null);
   }, [jsonMine, shown2, jsonNow]);
-  import_react39.useEffect(() => {
+  import_react40.useEffect(() => {
     if (slug !== undefined && active !== undefined && text4 === undefined)
       send({ op: "read", doc: slug, version: active });
   }, [slug, active, text4, send]);
-  const place = import_react39.useMemo(() => createPlace(), [slug]);
+  const place = import_react40.useMemo(() => createPlace(), [slug]);
   const hash = doc2?.hash;
-  import_react39.useEffect(() => {
+  import_react40.useEffect(() => {
     if (mode === "compare" && slug !== undefined)
       send({ op: "diff", doc: slug, against });
   }, [mode, slug, active, hash, against, send]);
-  import_react39.useEffect(() => {
+  import_react40.useEffect(() => {
     if (mode === "compare") {
       const m = readViewMode(safeStorage.getItem(viewModeKey), { split: splitView });
       setOwnMode(m);
@@ -74774,8 +74789,8 @@ function DocumentPane({
     setLinking(null);
     setCompareFocus(null);
   }, [slug]);
-  const lastShowDiff = import_react39.useRef(0);
-  import_react39.useEffect(() => {
+  const lastShowDiff = import_react40.useRef(0);
+  import_react40.useEffect(() => {
     if (!showDiff || showDiff.seq === lastShowDiff.current)
       return;
     lastShowDiff.current = showDiff.seq;
@@ -74785,7 +74800,7 @@ function DocumentPane({
     setOwnMode("compare");
     onMode?.("compare");
   }, [showDiff, slug, onMode]);
-  const editorHandle = import_react39.useRef(null);
+  const editorHandle = import_react40.useRef(null);
   const setEditor = (h) => {
     editorHandle.current = h;
     if (typeof editor === "function")
@@ -74793,7 +74808,7 @@ function DocumentPane({
     else if (editor)
       editor.current = h;
   };
-  import_react39.useEffect(() => {
+  import_react40.useEffect(() => {
     const pane = rootRef.current?.closest('[data-pane="centre"]');
     if (!pane)
       return;
@@ -74853,9 +74868,9 @@ function DocumentPane({
   };
   const canLink = !!doc2 && !isJson && daemon.connection !== "ended" && showing !== "compare";
   const editorMounted = showing === "raw" || showing === "split";
-  const renderedTrackers = import_react39.useRef(new Set);
-  const shownBefore = import_react39.useRef(shown2);
-  import_react39.useEffect(() => {
+  const renderedTrackers = import_react40.useRef(new Set);
+  const shownBefore = import_react40.useRef(shown2);
+  import_react40.useEffect(() => {
     const prev = shownBefore.current;
     shownBefore.current = shown2;
     if (prev === undefined || shown2 === undefined)
@@ -74878,7 +74893,7 @@ function DocumentPane({
       }
     };
   };
-  const replay = import_react39.useRef(null);
+  const replay = import_react40.useRef(null);
   const askLink = (r2, via = "editor") => {
     if (!canLink) {
       r2.track.release();
@@ -74915,10 +74930,10 @@ function DocumentPane({
       track: trackRendered(at2.from, at2.to)
     }, "rendered");
   };
-  import_react39.useEffect(() => () => linking?.track.release(), [linking]);
+  import_react40.useEffect(() => () => linking?.track.release(), [linking]);
   const { request } = daemon;
   const linkingOpen = linking !== null;
-  import_react39.useEffect(() => {
+  import_react40.useEffect(() => {
     if (!linkingOpen || slug === undefined)
       return;
     let current2 = true;
@@ -74935,12 +74950,12 @@ function DocumentPane({
       current2 = false;
     };
   }, [linkingOpen, slug, request]);
-  const [backlinks, setBacklinks] = import_react39.useState(null);
-  const lastBacklinks = import_react39.useRef("");
+  const [backlinks, setBacklinks] = import_react40.useState(null);
+  const lastBacklinks = import_react40.useRef("");
   const readingRendered = showing !== "raw";
   const live = daemon.connection === "open";
   const snapshot = w.state;
-  import_react39.useEffect(() => {
+  import_react40.useEffect(() => {
     if (slug === undefined || !readingRendered || !live)
       return;
     let current2 = true;
@@ -74965,17 +74980,17 @@ function DocumentPane({
       clearTimeout(t2);
     };
   }, [slug, readingRendered, live, request, snapshot]);
-  const [embedTargets, setEmbedTargets] = import_react39.useState([]);
+  const [embedTargets, setEmbedTargets] = import_react40.useState([]);
   const embedKey = embedTargets.join(`
 `);
-  const onEmbedTargets = import_react39.useCallback((targets) => {
+  const onEmbedTargets = import_react40.useCallback((targets) => {
     setEmbedTargets((was) => was.join(`
 `) === targets.join(`
 `) ? was : targets);
   }, []);
-  const [embedViews, setEmbedViews] = import_react39.useState(null);
-  const lastEmbeds = import_react39.useRef("");
-  import_react39.useEffect(() => {
+  const [embedViews, setEmbedViews] = import_react40.useState(null);
+  const lastEmbeds = import_react40.useRef("");
+  import_react40.useEffect(() => {
     if (slug === undefined || !readingRendered || !live || embedKey === "")
       return;
     let current2 = true;
@@ -74998,21 +75013,21 @@ function DocumentPane({
     };
   }, [slug, readingRendered, live, request, snapshot, embedKey]);
   const { imageUrl } = daemon;
-  const embeds = import_react39.useMemo(() => ({
+  const embeds = import_react40.useMemo(() => ({
     views: embedViews && embedViews.doc === slug ? embedViews.views : NO_EMBEDS,
     src: (v) => v.type === "image/gif" ? imageUrl(v.path, { stamp: v.stamp }) : imageUrl(v.path, { stamp: v.stamp, thumb: 1024 }),
     open: (path2) => send({ op: "open", path: path2 })
   }), [embedViews, slug, imageUrl, send]);
-  const [profile, setProfile] = import_react39.useState(null);
-  const lastProfile = import_react39.useRef("");
-  const [diskChanged, setDiskChanged] = import_react39.useState(0);
+  const [profile, setProfile] = import_react40.useState(null);
+  const lastProfile = import_react40.useRef("");
+  const [diskChanged, setDiskChanged] = import_react40.useState(0);
   const onDaemonFrame = daemon.onFrame;
-  import_react39.useEffect(() => onDaemonFrame((f) => {
+  import_react40.useEffect(() => onDaemonFrame((f) => {
     if (f.op === "context.changed")
       setDiskChanged((n) => n + 1);
   }), [onDaemonFrame]);
   const edits = daemon.texts;
-  import_react39.useEffect(() => {
+  import_react40.useEffect(() => {
     if (slug === undefined || isJson || !readingRendered || !live)
       return;
     let current2 = true;
@@ -75087,7 +75102,7 @@ function DocumentPane({
       send({ op: "open", path: b.source });
   };
   const linkVia = linking?.via;
-  import_react39.useEffect(() => {
+  import_react40.useEffect(() => {
     if (!canLink || linkVia === "editor" && !editorMounted || linkVia === "rendered" && editorMounted)
       setLinking(null);
   }, [canLink, linkVia, editorMounted]);
@@ -75134,8 +75149,8 @@ function DocumentPane({
     const r2 = replay.current;
     replay.current = r2 && r2.slug === doc2.slug && applyChanges(r2.base, r2.changes) === now3 ? { ...r2, changes: [...r2.changes, change] } : { slug: doc2.slug, base: now3, changes: [change] };
   };
-  const [taking, setTaking] = import_react39.useState(false);
-  const offerNow = import_react39.useRef({ doc: doc2, editorMounted, textOffer });
+  const [taking, setTaking] = import_react40.useState(false);
+  const offerNow = import_react40.useRef({ doc: doc2, editorMounted, textOffer });
   offerNow.current = { doc: doc2, editorMounted, textOffer };
   const takeOffer = (offer2) => {
     if (!doc2 || taking)
@@ -75291,7 +75306,7 @@ function DocumentPane({
   const pendingNote = noteAt && noteAt.from < noteAt.to ? noteAt : null;
   const { focusedNote, showResolvedNotes } = w;
   const docNotes = doc2?.notes;
-  const paintedNotes = import_react39.useMemo(() => showResolvedNotes || !docNotes ? docNotes : docNotes.filter((n) => !n.resolved || n.id === focusedNote), [docNotes, showResolvedNotes, focusedNote]);
+  const paintedNotes = import_react40.useMemo(() => showResolvedNotes || !docNotes ? docNotes : docNotes.filter((n) => !n.resolved || n.id === focusedNote), [docNotes, showResolvedNotes, focusedNote]);
   const revealHere = doc2 && w.reveal && w.reveal.doc === doc2.slug && w.reveal.version === doc2.active ? {
     from: w.reveal.from,
     to: w.reveal.to,
@@ -75299,9 +75314,9 @@ function DocumentPane({
     ...w.reveal.heading ? { heading: w.reveal.heading } : {}
   } : null;
   const { revealApplied } = w;
-  const [flash, setFlash2] = import_react39.useState(null);
-  const flashSeq = import_react39.useRef(0);
-  import_react39.useEffect(() => {
+  const [flash, setFlash2] = import_react40.useState(null);
+  const flashSeq = import_react40.useRef(0);
+  import_react40.useEffect(() => {
     if (showing !== "rendered" || !revealHere || shown2 === undefined)
       return;
     place.report("reveal", lineAt(shown2, revealHere.from));
@@ -75309,22 +75324,22 @@ function DocumentPane({
     setFlash2({ from: mark2.from, to: mark2.to, seq: ++flashSeq.current });
     revealApplied(revealHere.seq);
   }, [showing, revealHere, shown2, place, revealApplied]);
-  import_react39.useEffect(() => {
+  import_react40.useEffect(() => {
     if (!flash)
       return;
     const t2 = setTimeout(() => setFlash2(null), FLASH_MS);
     return () => clearTimeout(t2);
   }, [flash]);
-  const [pointed, setPointed] = import_react39.useState(null);
-  const pointSeq = import_react39.useRef(0);
-  import_react39.useEffect(() => onFrame((frame) => {
+  const [pointed, setPointed] = import_react40.useState(null);
+  const pointSeq = import_react40.useRef(0);
+  import_react40.useEffect(() => onFrame((frame) => {
     if (frame.op !== "show")
       return;
     const { op: _op, ...target } = frame;
     setPointed({ ...target, seq: ++pointSeq.current });
   }), [onFrame]);
   const { announce } = w;
-  import_react39.useEffect(() => {
+  import_react40.useEffect(() => {
     if (!pointed || slug !== pointed.doc)
       return;
     if ("hunk" in pointed) {
@@ -75352,7 +75367,7 @@ function DocumentPane({
       place.report("reveal", lineAt(text4, from));
     setFlash2({ from, to, seq: ++flashSeq.current, agent: true });
   }, [pointed, slug, active, text4, showing, onMode, announce, place]);
-  const readerToggle = /* @__PURE__ */ jsx_runtime38.jsx("button", {
+  const readerToggle = /* @__PURE__ */ jsx_runtime39.jsx("button", {
     type: "button",
     onClick: toggleReader,
     "aria-pressed": reader,
@@ -75360,14 +75375,14 @@ function DocumentPane({
     title: READER_LABEL[reader ? "leave" : "enter"],
     "data-slot": "reader-toggle",
     className: cn("flex size-6 shrink-0 items-center justify-center rounded-sm outline-none", "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", !doc2 && "ml-auto", reader ? "bg-surface-raised text-ink" : "text-ink-faint", fade),
-    children: /* @__PURE__ */ jsx_runtime38.jsx(Glasses, {
+    children: /* @__PURE__ */ jsx_runtime39.jsx(Glasses, {
       "aria-hidden": true,
       className: "size-3.5"
     })
   });
   const appActive = !!appView?.active;
   const offer = textOffer && doc2 && !isJson && !appActive && shown2 !== undefined ? textOffer(doc2, shown2) : null;
-  const numbersToggle = lineNumbers2 && doc2 && !isJson && !formatView && !appActive && hasEditor(showing) ? /* @__PURE__ */ jsx_runtime38.jsx("button", {
+  const numbersToggle = lineNumbers2 && doc2 && !isJson && !formatView && !appActive && hasEditor(showing) ? /* @__PURE__ */ jsx_runtime39.jsx("button", {
     type: "button",
     onMouseDown: (e) => e.preventDefault(),
     onClick: toggleNumbered,
@@ -75376,12 +75391,12 @@ function DocumentPane({
     title: numbered ? `${LINE_NUMBERS_LABEL}: on` : `${LINE_NUMBERS_LABEL}: off`,
     "data-slot": "line-numbers-toggle",
     className: cn("flex size-6 shrink-0 items-center justify-center rounded-sm outline-none", "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", numbered ? "bg-surface-raised text-ink" : "text-ink-faint", fade),
-    children: /* @__PURE__ */ jsx_runtime38.jsx(ListOrdered, {
+    children: /* @__PURE__ */ jsx_runtime39.jsx(ListOrdered, {
       "aria-hidden": true,
       className: "size-3.5"
     })
   }) : null;
-  const appViewButton = appView ? /* @__PURE__ */ jsx_runtime38.jsx("button", {
+  const appViewButton = appView ? /* @__PURE__ */ jsx_runtime39.jsx("button", {
     type: "button",
     onClick: () => appView.onActive(!appActive),
     "aria-pressed": appActive,
@@ -75391,24 +75406,24 @@ function DocumentPane({
     className: cn("flex size-6 items-center justify-center rounded-sm text-ink-faint outline-none", "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", appActive && "bg-bg text-ink shadow-sm"),
     children: appView.icon
   }) : null;
-  return /* @__PURE__ */ jsx_runtime38.jsxs("div", {
+  return /* @__PURE__ */ jsx_runtime39.jsxs("div", {
     ref: rootRef,
     "data-reader": reader || undefined,
     className: "flex min-h-0 flex-1 flex-col",
     children: [
-      /* @__PURE__ */ jsx_runtime38.jsx(ActiveVersionToast, {
+      /* @__PURE__ */ jsx_runtime39.jsx(ActiveVersionToast, {
         doc: doc2,
         announce: w.announce
       }),
-      /* @__PURE__ */ jsx_runtime38.jsxs("div", {
+      /* @__PURE__ */ jsx_runtime39.jsxs("div", {
         className: cn("flex min-h-9 shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b px-3 py-1", reader ? `${QUIET_GROUP} border-transparent` : "border-edge"),
         children: [
-          doc2 ? /* @__PURE__ */ jsx_runtime38.jsxs(jsx_runtime38.Fragment, {
+          doc2 ? /* @__PURE__ */ jsx_runtime39.jsxs(jsx_runtime39.Fragment, {
             children: [
-              /* @__PURE__ */ jsx_runtime38.jsxs("div", {
+              /* @__PURE__ */ jsx_runtime39.jsxs("div", {
                 className: cn("flex min-w-0 items-center gap-2", fade),
                 children: [
-                  /* @__PURE__ */ jsx_runtime38.jsx(VersionMenu, {
+                  /* @__PURE__ */ jsx_runtime39.jsx(VersionMenu, {
                     versions: doc2.versions,
                     active: doc2.active,
                     onActivate: (n) => {
@@ -75438,38 +75453,38 @@ function DocumentPane({
                         send({ op: "version.delete", doc: doc2.slug, version: n });
                     }
                   }),
-                  /* @__PURE__ */ jsx_runtime38.jsx(Separator2, {
+                  /* @__PURE__ */ jsx_runtime39.jsx(Separator2, {
                     orientation: "vertical",
                     className: "my-2 shrink-0"
                   }),
-                  formatView && bundle?.type.icon ? /* @__PURE__ */ jsx_runtime38.jsx("span", {
+                  formatView && bundle?.type.icon ? /* @__PURE__ */ jsx_runtime39.jsx("span", {
                     "aria-hidden": true,
                     "data-slot": "format-icon",
                     className: "flex size-3.5 shrink-0 items-center justify-center [&>svg]:size-3.5",
                     children: bundle.type.icon
-                  }) : isJson ? /* @__PURE__ */ jsx_runtime38.jsx(FileBraces, {
+                  }) : isJson ? /* @__PURE__ */ jsx_runtime39.jsx(FileBraces, {
                     "aria-hidden": true,
                     className: "size-3.5 shrink-0 text-ink-faint"
-                  }) : /* @__PURE__ */ jsx_runtime38.jsx(FileText, {
+                  }) : /* @__PURE__ */ jsx_runtime39.jsx(FileText, {
                     "aria-hidden": true,
                     className: "size-3.5 shrink-0 text-ink-faint"
                   }),
-                  /* @__PURE__ */ jsx_runtime38.jsx("span", {
+                  /* @__PURE__ */ jsx_runtime39.jsx("span", {
                     className: "truncate text-sm text-ink",
                     title: doc2.original,
                     children: doc2.name
                   }),
-                  formatView && bundle && /* @__PURE__ */ jsx_runtime38.jsx("span", {
+                  formatView && bundle && /* @__PURE__ */ jsx_runtime39.jsx("span", {
                     "data-slot": "format-chip",
                     className: "shrink-0 rounded-sm bg-surface-raised px-1.5 py-px font-mono text-[10.5px] text-ink-dim",
                     children: bundle.type.label
                   })
                 ]
               }),
-              /* @__PURE__ */ jsx_runtime38.jsxs("div", {
+              /* @__PURE__ */ jsx_runtime39.jsxs("div", {
                 className: "ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1",
                 children: [
-                  /* @__PURE__ */ jsx_runtime38.jsxs(Button3, {
+                  /* @__PURE__ */ jsx_runtime39.jsxs(Button3, {
                     variant: "ghost",
                     size: "sm",
                     onClick: onRevert,
@@ -75477,13 +75492,13 @@ function DocumentPane({
                     title: "Take the file on disk back over your edits",
                     className: cn("h-7 gap-1.5 px-2 text-xs", fade),
                     children: [
-                      /* @__PURE__ */ jsx_runtime38.jsx(UndoDot, {
+                      /* @__PURE__ */ jsx_runtime39.jsx(UndoDot, {
                         className: "size-3.5"
                       }),
                       "Revert"
                     ]
                   }),
-                  /* @__PURE__ */ jsx_runtime38.jsxs(Button3, {
+                  /* @__PURE__ */ jsx_runtime39.jsxs(Button3, {
                     variant: "ghost",
                     size: "sm",
                     onClick: onSave,
@@ -75491,13 +75506,13 @@ function DocumentPane({
                     title: `Save v${doc2.active} to ${doc2.name}, the file in your folder (⌘S)`,
                     className: cn("h-7 gap-1.5 px-2 text-xs", !readerStaysLoud("save", doc2) && fade),
                     children: [
-                      /* @__PURE__ */ jsx_runtime38.jsx(Save, {
+                      /* @__PURE__ */ jsx_runtime39.jsx(Save, {
                         className: "size-3.5"
                       }),
                       "Save"
                     ]
                   }),
-                  /* @__PURE__ */ jsx_runtime38.jsxs("div", {
+                  /* @__PURE__ */ jsx_runtime39.jsxs("div", {
                     role: "toolbar",
                     "aria-label": "How to show this document",
                     className: cn("flex items-center gap-0.5 rounded-md bg-surface-raised p-0.5", fade),
@@ -75508,7 +75523,7 @@ function DocumentPane({
                         const noRoom = m === "split" && !splitRoom;
                         const ended = m === "compare" && daemon.connection === "ended";
                         const noCompare = m === "compare" && nothingToCompare(doc2);
-                        return /* @__PURE__ */ jsx_runtime38.jsx("button", {
+                        return /* @__PURE__ */ jsx_runtime39.jsx("button", {
                           type: "button",
                           onClick: () => {
                             if (appActive)
@@ -75520,11 +75535,11 @@ function DocumentPane({
                           "aria-label": label,
                           title: noRoom ? SPLIT_TOO_NARROW : ended ? "The session has ended, so there is nothing to compare" : noCompare ? NOTHING_TO_COMPARE : label,
                           className: cn("flex size-6 items-center justify-center rounded-sm text-ink-faint outline-none", "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", "disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-ink-faint", !appActive && showing === m && "bg-bg text-ink shadow-sm"),
-                          children: ownView?.icon ? /* @__PURE__ */ jsx_runtime38.jsx("span", {
+                          children: ownView?.icon ? /* @__PURE__ */ jsx_runtime39.jsx("span", {
                             "aria-hidden": true,
                             className: "flex size-3.5 items-center justify-center [&>svg]:size-3.5",
                             children: ownView.icon
-                          }) : /* @__PURE__ */ jsx_runtime38.jsx(Icon2, {
+                          }) : /* @__PURE__ */ jsx_runtime39.jsx(Icon2, {
                             "aria-hidden": true,
                             className: "size-3.5"
                           })
@@ -75538,11 +75553,11 @@ function DocumentPane({
                 ]
               })
             ]
-          }) : /* @__PURE__ */ jsx_runtime38.jsx("span", {
+          }) : /* @__PURE__ */ jsx_runtime39.jsx("span", {
             className: cn("text-xs font-medium tracking-wide text-ink-dim uppercase", fade),
             children: "Document"
           }),
-          !doc2 && appViewButton && /* @__PURE__ */ jsx_runtime38.jsx("div", {
+          !doc2 && appViewButton && /* @__PURE__ */ jsx_runtime39.jsx("div", {
             role: "toolbar",
             "aria-label": "How to show the centre",
             className: cn("ml-auto flex items-center gap-0.5 rounded-md bg-surface-raised p-0.5", fade),
@@ -75551,15 +75566,15 @@ function DocumentPane({
           !doc2 && readerToggle
         ]
       }),
-      offer && /* @__PURE__ */ jsx_runtime38.jsxs("div", {
+      offer && /* @__PURE__ */ jsx_runtime39.jsxs("div", {
         "data-slot": "text-offer",
         "data-offer": offer.id,
         className: "flex shrink-0 items-center gap-2 border-b border-edge bg-surface-raised/60 px-3 py-1.5 text-xs text-ink-dim",
         children: [
-          /* @__PURE__ */ jsx_runtime38.jsx("span", {
+          /* @__PURE__ */ jsx_runtime39.jsx("span", {
             children: offer.message
           }),
-          /* @__PURE__ */ jsx_runtime38.jsx("button", {
+          /* @__PURE__ */ jsx_runtime39.jsx("button", {
             type: "button",
             onClick: () => takeOffer(offer),
             disabled: taking || daemon.connection === "ended",
@@ -75568,23 +75583,23 @@ function DocumentPane({
           })
         ]
       }),
-      !appActive && doc2?.missing && /* @__PURE__ */ jsx_runtime38.jsxs("div", {
+      !appActive && doc2?.missing && /* @__PURE__ */ jsx_runtime39.jsxs("div", {
         role: "alert",
         "data-slot": "file-gone",
         className: "flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-attention/40 bg-attention/10 px-3 py-1.5 text-xs text-ink",
         children: [
-          /* @__PURE__ */ jsx_runtime38.jsx("span", {
+          /* @__PURE__ */ jsx_runtime39.jsx("span", {
             className: "min-w-0 flex-1",
             children: doc2.missing === "folder" ? "This file and its folder are gone from disk. Your text and its versions are still here." : "This file is gone from disk. Your text and its versions are still here."
           }),
-          /* @__PURE__ */ jsx_runtime38.jsx("button", {
+          /* @__PURE__ */ jsx_runtime39.jsx("button", {
             type: "button",
             onClick: onRecreate,
             disabled: daemon.connection === "ended",
             className: "rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline disabled:opacity-50",
             children: doc2.missing === "folder" ? "Save, making the folder again" : "Save to recreate it"
           }),
-          /* @__PURE__ */ jsx_runtime38.jsx("button", {
+          /* @__PURE__ */ jsx_runtime39.jsx("button", {
             type: "button",
             onClick: onClose,
             disabled: daemon.connection === "ended",
@@ -75593,15 +75608,15 @@ function DocumentPane({
           })
         ]
       }),
-      !appActive && doc2?.outsideChanged && !doc2.missing && /* @__PURE__ */ jsx_runtime38.jsxs("div", {
+      !appActive && doc2?.outsideChanged && !doc2.missing && /* @__PURE__ */ jsx_runtime39.jsxs("div", {
         role: "alert",
         className: "flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-attention/40 bg-attention/10 px-3 py-1.5 text-xs text-ink",
         children: [
-          /* @__PURE__ */ jsx_runtime38.jsx("span", {
+          /* @__PURE__ */ jsx_runtime39.jsx("span", {
             className: "min-w-0 flex-1",
             children: doc2.dirty ? "This file changed on disk while you have unsaved edits." : "This file changed on disk since this version was made."
           }),
-          /* @__PURE__ */ jsx_runtime38.jsx("button", {
+          /* @__PURE__ */ jsx_runtime39.jsx("button", {
             type: "button",
             onClick: () => {
               chooseSide("original");
@@ -75610,13 +75625,13 @@ function DocumentPane({
             className: "rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline",
             children: "See the difference"
           }),
-          /* @__PURE__ */ jsx_runtime38.jsx("button", {
+          /* @__PURE__ */ jsx_runtime39.jsx("button", {
             type: "button",
             onClick: onSave,
             className: "rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline",
             children: "Keep mine"
           }),
-          /* @__PURE__ */ jsx_runtime38.jsx("button", {
+          /* @__PURE__ */ jsx_runtime39.jsx("button", {
             type: "button",
             onClick: onRevert,
             className: "rounded-sm px-1.5 py-0.5 font-medium text-ink underline-offset-2 hover:underline",
@@ -75624,12 +75639,12 @@ function DocumentPane({
           })
         ]
       }),
-      !appActive && doc2 && jsonShown && /* @__PURE__ */ jsx_runtime38.jsxs("div", {
+      !appActive && doc2 && jsonShown && /* @__PURE__ */ jsx_runtime39.jsxs("div", {
         role: "alert",
         "data-slot": "json-refused",
         className: "flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-danger/40 bg-danger/10 px-3 py-1.5 text-xs text-ink",
         children: [
-          /* @__PURE__ */ jsx_runtime38.jsxs("span", {
+          /* @__PURE__ */ jsx_runtime39.jsxs("span", {
             className: "min-w-0 flex-1",
             children: [
               jsonMine?.why === "loaded" ? `v${doc2.active} is not valid JSON, so it will not save until it parses.` : "Not saved: this is not valid JSON.",
@@ -75643,7 +75658,7 @@ function DocumentPane({
               jsonMine?.why === "loaded" ? "" : " Your text is kept here."
             ]
           }),
-          showing === "raw" && /* @__PURE__ */ jsx_runtime38.jsx("button", {
+          showing === "raw" && /* @__PURE__ */ jsx_runtime39.jsx("button", {
             type: "button",
             onClick: () => w.requestReveal({
               doc: doc2.slug,
@@ -75656,33 +75671,33 @@ function DocumentPane({
           })
         ]
       }),
-      appView && appActive ? /* @__PURE__ */ jsx_runtime38.jsx("div", {
+      appView && appActive ? /* @__PURE__ */ jsx_runtime39.jsx("div", {
         "data-slot": "app-view",
         "data-view": appView.id,
         className: "flex min-h-0 flex-1 flex-col",
         children: appView.render()
-      }) : !doc2 ? /* @__PURE__ */ jsx_runtime38.jsx(Empty, {
+      }) : !doc2 ? /* @__PURE__ */ jsx_runtime39.jsx(Empty, {
         className: "flex-1",
-        children: /* @__PURE__ */ jsx_runtime38.jsxs(EmptyHeader, {
+        children: /* @__PURE__ */ jsx_runtime39.jsxs(EmptyHeader, {
           children: [
-            /* @__PURE__ */ jsx_runtime38.jsx(EmptyMedia, {
+            /* @__PURE__ */ jsx_runtime39.jsx(EmptyMedia, {
               variant: "icon",
-              children: /* @__PURE__ */ jsx_runtime38.jsx(FileText, {})
+              children: /* @__PURE__ */ jsx_runtime39.jsx(FileText, {})
             }),
-            /* @__PURE__ */ jsx_runtime38.jsx(EmptyTitle, {
+            /* @__PURE__ */ jsx_runtime39.jsx(EmptyTitle, {
               children: "No document open"
             }),
-            /* @__PURE__ */ jsx_runtime38.jsx(EmptyDescription, {
+            /* @__PURE__ */ jsx_runtime39.jsx(EmptyDescription, {
               children: "Add a document to the context on the left, or drag one in, and open it to edit it here."
             })
           ]
         })
-      }) : shown2 === undefined ? /* @__PURE__ */ jsx_runtime38.jsx("div", {
+      }) : shown2 === undefined ? /* @__PURE__ */ jsx_runtime39.jsx("div", {
         className: "flex-1",
         "aria-busy": "true"
-      }) : showing === "compare" ? nothingToCompare(doc2) ? /* @__PURE__ */ jsx_runtime38.jsx(NothingToCompare, {}) : daemon.diff && daemon.diff.doc === doc2.slug ? /* @__PURE__ */ jsx_runtime38.jsx(ViewBoundary, {
+      }) : showing === "compare" ? nothingToCompare(doc2) ? /* @__PURE__ */ jsx_runtime39.jsx(NothingToCompare, {}) : daemon.diff && daemon.diff.doc === doc2.slug ? /* @__PURE__ */ jsx_runtime39.jsx(ViewBoundary, {
         resetKey: `compare:${doc2.slug}`,
-        children: /* @__PURE__ */ jsx_runtime38.jsx(CompareView, {
+        children: /* @__PURE__ */ jsx_runtime39.jsx(CompareView, {
           payload: daemon.diff,
           file: doc2.name,
           versions: doc2.versions,
@@ -75696,16 +75711,16 @@ function DocumentPane({
           focus: compareFocus,
           onFocused: () => setCompareFocus(null)
         })
-      }) : /* @__PURE__ */ jsx_runtime38.jsx("div", {
+      }) : /* @__PURE__ */ jsx_runtime39.jsx("div", {
         className: "flex-1",
         "aria-busy": "true"
-      }) : formatView && bundle ? /* @__PURE__ */ jsx_runtime38.jsx(ViewBoundary, {
+      }) : formatView && bundle ? /* @__PURE__ */ jsx_runtime39.jsx(ViewBoundary, {
         resetKey: `format:${doc2.slug}`,
-        children: /* @__PURE__ */ jsx_runtime38.jsx("div", {
+        children: /* @__PURE__ */ jsx_runtime39.jsx("div", {
           "data-slot": "format-view",
           "data-bundle": bundle.type.type,
           className: "flex min-h-0 flex-1 flex-col",
-          children: import_react39.createElement(formatView, {
+          children: import_react40.createElement(formatView, {
             key: doc2.slug,
             doc: doc2,
             bundle: bundle.root,
@@ -75720,15 +75735,15 @@ function DocumentPane({
             beforeSave
           })
         })
-      }) : /* @__PURE__ */ jsx_runtime38.jsx(ViewBoundary, {
+      }) : /* @__PURE__ */ jsx_runtime39.jsx(ViewBoundary, {
         resetKey: `${doc2.slug}:${showing}`,
-        children: /* @__PURE__ */ jsx_runtime38.jsxs("div", {
+        children: /* @__PURE__ */ jsx_runtime39.jsxs("div", {
           className: "flex min-h-0 flex-1",
           "data-slot": showing === "split" ? "split-view" : undefined,
           children: [
-            showing !== "rendered" && /* @__PURE__ */ jsx_runtime38.jsx("div", {
+            showing !== "rendered" && /* @__PURE__ */ jsx_runtime39.jsx("div", {
               className: "flex min-h-0 min-w-0 flex-1 flex-col",
-              children: /* @__PURE__ */ jsx_runtime38.jsx(DocumentView, {
+              children: /* @__PURE__ */ jsx_runtime39.jsx(DocumentView, {
                 docKey: doc2.slug,
                 text: shown2,
                 editable: daemon.connection !== "ended",
@@ -75761,10 +75776,10 @@ function DocumentPane({
                 quiet: reader
               })
             }, "raw"),
-            showing !== "raw" && /* @__PURE__ */ jsx_runtime38.jsx("div", {
+            showing !== "raw" && /* @__PURE__ */ jsx_runtime39.jsx("div", {
               className: cn("flex min-h-0 min-w-0 flex-1 flex-col", showing === "split" && "border-l border-edge"),
               ...renderedImageEvents,
-              children: /* @__PURE__ */ jsx_runtime38.jsx(MarkdownView, {
+              children: /* @__PURE__ */ jsx_runtime39.jsx(MarkdownView, {
                 text: shown2,
                 notes: paintedNotes,
                 focusedNote: focusedNote ?? null,
@@ -75783,7 +75798,7 @@ function DocumentPane({
                 flash,
                 embeds,
                 onEmbedTargets,
-                footer: /* @__PURE__ */ jsx_runtime38.jsx(Backlinks, {
+                footer: /* @__PURE__ */ jsx_runtime39.jsx(Backlinks, {
                   data: backlinks?.doc === doc2.slug ? backlinks : null,
                   onOpen: openBacklink,
                   onOpenBundle: (b) => w.openAt ? w.openAt(b.source) : send({ op: "open", path: b.source }),
@@ -75800,15 +75815,16 @@ function DocumentPane({
           ]
         })
       }),
-      doc2 && !appActive && /* @__PURE__ */ jsx_runtime38.jsx("div", {
+      doc2 && !appActive && /* @__PURE__ */ jsx_runtime39.jsx(CentreDock, {}),
+      doc2 && !appActive && /* @__PURE__ */ jsx_runtime39.jsx("div", {
         className: cn("shrink-0 border-t border-edge px-3 py-1", reader && QUIET_GROUP),
-        children: /* @__PURE__ */ jsx_runtime38.jsx(StatusStrip, {
+        children: /* @__PURE__ */ jsx_runtime39.jsx(StatusStrip, {
           segments,
           fade
         })
       }),
       dialog2,
-      /* @__PURE__ */ jsx_runtime38.jsx(NoteAtSelection, {
+      /* @__PURE__ */ jsx_runtime39.jsx(NoteAtSelection, {
         at: noteAt,
         quote: noteAt && shown2 !== undefined ? shown2.slice(noteAt.from, noteAt.to) : "",
         existing: (noteAt?.noteIds ?? []).flatMap((id) => {
@@ -75832,7 +75848,7 @@ function DocumentPane({
         onDeleteNote: (id) => doc2 && send({ op: "note.remove", doc: doc2.slug, id }),
         onAddLink: canLink ? (at2) => askLinkAt({ from: at2.from, to: at2.to, x: at2.x, y: at2.y }) : undefined
       }),
-      linking && canLink && /* @__PURE__ */ jsx_runtime38.jsx(LinkPicker, {
+      linking && canLink && /* @__PURE__ */ jsx_runtime39.jsx(LinkPicker, {
         at: linking,
         kind: linking.kind,
         quote: linking.quote,
@@ -75846,7 +75862,7 @@ function DocumentPane({
         onHeadings: (target) => headingsFor(target.path),
         onChoose: (target, relations, heading2) => chooseLink(linking.kind, linking.quote, linkInsertion(linking.kind, linking.quote, target, relations, heading2), linking)
       }),
-      doc2 && /* @__PURE__ */ jsx_runtime38.jsx(NewVersionDialog, {
+      doc2 && /* @__PURE__ */ jsx_runtime39.jsx(NewVersionDialog, {
         open: naming !== null,
         intent: naming ?? "branch",
         from: doc2.active,
@@ -75900,7 +75916,7 @@ function statusMark(summary) {
 }
 
 // src/scriptorium/surface/kit/frameWorkspace.ts
-var import_react40 = __toESM(require_react(), 1);
+var import_react41 = __toESM(require_react(), 1);
 var baseName2 = (path2) => path2.split("/").filter(Boolean).at(-1) ?? path2;
 function useFrameWorkspace({
   daemon,
@@ -75911,14 +75927,14 @@ function useFrameWorkspace({
   const { state, send } = daemon;
   const docs = state?.docs;
   const openSlug = state?.openDoc ?? null;
-  const openDoc = import_react40.useMemo(() => docs?.find((d) => d.slug === openSlug) ?? null, [docs, openSlug]);
-  const [selection, setSelection] = import_react40.useState(null);
-  const [clearSeq, setClearSeq] = import_react40.useState(0);
-  const [reveal, setReveal] = import_react40.useState(null);
-  const revealSeq = import_react40.useRef(0);
-  const selectionRef = import_react40.useRef(selection);
+  const openDoc = import_react41.useMemo(() => docs?.find((d) => d.slug === openSlug) ?? null, [docs, openSlug]);
+  const [selection, setSelection] = import_react41.useState(null);
+  const [clearSeq, setClearSeq] = import_react41.useState(0);
+  const [reveal, setReveal] = import_react41.useState(null);
+  const revealSeq = import_react41.useRef(0);
+  const selectionRef = import_react41.useRef(selection);
   selectionRef.current = selection;
-  const onSelectionEvent = import_react40.useCallback((event) => {
+  const onSelectionEvent = import_react41.useCallback((event) => {
     const { held, clearPaint } = applySelectionEvent(selectionRef.current, event);
     selectionRef.current = held;
     setSelection(held);
@@ -75931,15 +75947,15 @@ function useFrameWorkspace({
   }, []);
   const shownDoc = openDoc?.slug ?? null;
   const shownVersion = openDoc?.active ?? null;
-  import_react40.useEffect(() => {
+  import_react41.useEffect(() => {
     onSelectionEvent({ type: "shown", doc: shownDoc, version: shownVersion });
   }, [shownDoc, shownVersion, onSelectionEvent]);
-  const reportSelection = import_react40.useCallback((s) => onSelectionEvent({ type: "report", selection: s }), [onSelectionEvent]);
-  const dropSelection = import_react40.useCallback(() => onSelectionEvent({ type: "drop" }), [onSelectionEvent]);
+  const reportSelection = import_react41.useCallback((s) => onSelectionEvent({ type: "report", selection: s }), [onSelectionEvent]);
+  const dropSelection = import_react41.useCallback(() => onSelectionEvent({ type: "drop" }), [onSelectionEvent]);
   const connected = daemon.connection === "open";
-  const docsRef = import_react40.useRef(docs);
+  const docsRef = import_react41.useRef(docs);
   docsRef.current = docs;
-  import_react40.useEffect(() => {
+  import_react41.useEffect(() => {
     if (!connected)
       return;
     if (!selection) {
@@ -75962,14 +75978,14 @@ function useFrameWorkspace({
       }
     });
   }, [selection, send, connected]);
-  const requestReveal = import_react40.useCallback((target) => {
+  const requestReveal = import_react41.useCallback((target) => {
     setReveal({ ...target, seq: ++revealSeq.current });
   }, []);
-  const revealApplied = import_react40.useCallback((seq2) => setReveal((r2) => revealAfter(r2, { type: "applied", seq: seq2 })), []);
-  const [pointedAt, setPointedAt] = import_react40.useState(null);
+  const revealApplied = import_react41.useCallback((seq2) => setReveal((r2) => revealAfter(r2, { type: "applied", seq: seq2 })), []);
+  const [pointedAt, setPointedAt] = import_react41.useState(null);
   const focusedNote = pointedAt && pointedAt.doc === shownDoc && pointedAt.version === shownVersion ? pointedAt.id : null;
   const pickedState = focusedNote === null ? undefined : openDoc?.notes.find((n) => n.id === focusedNote)?.resolved;
-  import_react40.useEffect(() => {
+  import_react41.useEffect(() => {
     if (!pointedAt || pickedState === undefined)
       return;
     if (pickedState && !pointedAt.resolved)
@@ -75977,7 +75993,7 @@ function useFrameWorkspace({
     else if (!pickedState && pointedAt.resolved)
       setPointedAt({ ...pointedAt, resolved: false });
   }, [pickedState, pointedAt]);
-  const [showResolvedNotes, setShowResolvedNotes] = import_react40.useState(false);
+  const [showResolvedNotes, setShowResolvedNotes] = import_react41.useState(false);
   const goToNote = (n) => {
     if (!openDoc)
       return;
@@ -75995,8 +76011,8 @@ function useFrameWorkspace({
     send({ op: "note.add", doc: openDoc.slug, from, to, body });
     dropSelection();
   };
-  const [pendingShow, setPendingShow] = import_react40.useState(null);
-  const openAt = import_react40.useCallback((path2, at2) => {
+  const [pendingShow, setPendingShow] = import_react41.useState(null);
+  const openAt = import_react41.useCallback((path2, at2) => {
     if (openDoc && openDoc.original === path2) {
       setPendingShow(null);
       if (at2)
@@ -76006,7 +76022,7 @@ function useFrameWorkspace({
     setPendingShow(at2 ? { path: path2, from: at2.from, to: at2.to, since: openDoc?.original ?? null } : null);
     send({ op: "open", path: path2 });
   }, [send, requestReveal, openDoc]);
-  import_react40.useEffect(() => {
+  import_react41.useEffect(() => {
     if (!pendingShow)
       return;
     if (openDoc?.original !== pendingShow.path) {
@@ -76023,11 +76039,11 @@ function useFrameWorkspace({
       ...pendingShow.heading ? { heading: pendingShow.heading } : {}
     });
   }, [pendingShow, openDoc, requestReveal]);
-  const openDocRef = import_react40.useRef(openDoc);
+  const openDocRef = import_react41.useRef(openDoc);
   openDocRef.current = openDoc;
   const { onFrame } = daemon;
   const { announce } = toasts;
-  import_react40.useEffect(() => onFrame((frame) => {
+  import_react41.useEffect(() => onFrame((frame) => {
     if (frame.op !== "link.target")
       return;
     const f = frame;
@@ -76045,23 +76061,23 @@ function useFrameWorkspace({
     });
   }), [onFrame, announce]);
   const { lastError } = daemon;
-  import_react40.useEffect(() => {
+  import_react41.useEffect(() => {
     if (lastError)
       setPendingShow(null);
   }, [lastError]);
-  const [showDiff, setShowDiff] = import_react40.useState(null);
-  const requestDiff = import_react40.useCallback((doc2, against) => setShowDiff((was) => ({ doc: doc2, version: against, seq: (was?.seq ?? 0) + 1 })), []);
-  const [collapsed, setCollapsed] = import_react40.useState({ context: false, chat: false });
-  const columns = import_react40.useMemo(() => ({
+  const [showDiff, setShowDiff] = import_react41.useState(null);
+  const requestDiff = import_react41.useCallback((doc2, against) => setShowDiff((was) => ({ doc: doc2, version: against, seq: (was?.seq ?? 0) + 1 })), []);
+  const [collapsed, setCollapsed] = import_react41.useState({ context: false, chat: false });
+  const columns = import_react41.useMemo(() => ({
     collapsed,
     collapse: (side) => setCollapsed((c) => ({ ...c, [side]: true })),
     expand: (side) => setCollapsed((c) => ({ ...c, [side]: false }))
   }), [collapsed]);
-  const focusPane = import_react40.useCallback((pane) => {
+  const focusPane = import_react41.useCallback((pane) => {
     document.querySelector(`[data-pane="${pane}"]`)?.focus();
   }, []);
-  const setQuiet = import_react40.useCallback((_quiet) => {}, []);
-  const workspace = import_react40.useMemo(() => state ? {
+  const setQuiet = import_react41.useCallback((_quiet) => {}, []);
+  const workspace = import_react41.useMemo(() => state ? {
     daemon,
     state,
     openDoc,
@@ -76123,15 +76139,15 @@ function useFrameWorkspace({
 }
 
 // src/scriptorium/surface/kit/movePlan.tsx
-var jsx_runtime39 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime40 = __toESM(require_jsx_runtime(), 1);
 var LISTED = 6;
 var plural2 = (n, one2, many = `${one2}s`) => `${n} ${n === 1 ? one2 : many}`;
 function listed(items, line) {
   const more = items.length - LISTED;
-  return /* @__PURE__ */ jsx_runtime39.jsxs(jsx_runtime39.Fragment, {
+  return /* @__PURE__ */ jsx_runtime40.jsxs(jsx_runtime40.Fragment, {
     children: [
       items.slice(0, LISTED).map(line),
-      more > 0 && /* @__PURE__ */ jsx_runtime39.jsxs("span", {
+      more > 0 && /* @__PURE__ */ jsx_runtime40.jsxs("span", {
         className: "block pl-2",
         children: [
           "and ",
@@ -76148,9 +76164,9 @@ function movePrompt(plan, userHome) {
   if (!plan.folder && !plan.leavesRepo && breaks === 0)
     return null;
   const short = (p) => shortPath(p, userHome, 2);
-  const message = /* @__PURE__ */ jsx_runtime39.jsxs(jsx_runtime39.Fragment, {
+  const message = /* @__PURE__ */ jsx_runtime40.jsxs(jsx_runtime40.Fragment, {
     children: [
-      /* @__PURE__ */ jsx_runtime39.jsxs("span", {
+      /* @__PURE__ */ jsx_runtime40.jsxs("span", {
         className: "block",
         children: [
           plural2(plan.docs, "document"),
@@ -76161,11 +76177,11 @@ function movePrompt(plan, userHome) {
           "."
         ]
       }),
-      breaks === 0 && /* @__PURE__ */ jsx_runtime39.jsx("span", {
+      breaks === 0 && /* @__PURE__ */ jsx_runtime40.jsx("span", {
         className: "mt-1 block",
         children: "It breaks no links."
       }),
-      fixes > 0 && /* @__PURE__ */ jsx_runtime39.jsxs("span", {
+      fixes > 0 && /* @__PURE__ */ jsx_runtime40.jsxs("span", {
         className: "mt-2 block",
         children: [
           "It breaks ",
@@ -76173,7 +76189,7 @@ function movePrompt(plan, userHome) {
           " in ",
           plural2(plan.links.length, "document"),
           ". They are left as they are; after the move, the chat says how many still point at the old place. They are these, each with the rewrite that would land it again.",
-          listed(plan.links.flatMap((d) => d.fixes.map((f) => ({ d, f }))), ({ d, f }, i2) => /* @__PURE__ */ jsx_runtime39.jsxs("span", {
+          listed(plan.links.flatMap((d) => d.fixes.map((f) => ({ d, f }))), ({ d, f }, i2) => /* @__PURE__ */ jsx_runtime40.jsxs("span", {
             className: "block pl-2 font-mono text-xs",
             children: [
               short(d.path),
@@ -76186,7 +76202,7 @@ function movePrompt(plan, userHome) {
           }, `l${i2}`))
         ]
       }),
-      plan.wiki.length > 0 && /* @__PURE__ */ jsx_runtime39.jsxs("span", {
+      plan.wiki.length > 0 && /* @__PURE__ */ jsx_runtime40.jsxs("span", {
         className: "mt-2 block",
         children: [
           plural2(plan.wiki.length, "wiki link"),
@@ -76194,7 +76210,7 @@ function movePrompt(plan, userHome) {
           " ",
           plan.wiki.length === 1 ? "its page" : "their pages",
           ". A wiki link names a page, so it is never rewritten.",
-          listed(plan.wiki, (w, i2) => /* @__PURE__ */ jsx_runtime39.jsxs("span", {
+          listed(plan.wiki, (w, i2) => /* @__PURE__ */ jsx_runtime40.jsxs("span", {
             className: "block pl-2 font-mono text-xs",
             children: [
               short(w.path),
@@ -76206,12 +76222,12 @@ function movePrompt(plan, userHome) {
           }, `w${i2}`))
         ]
       }),
-      plan.edges.length > 0 && /* @__PURE__ */ jsx_runtime39.jsxs("span", {
+      plan.edges.length > 0 && /* @__PURE__ */ jsx_runtime40.jsxs("span", {
         className: "mt-2 block",
         children: [
           plural2(plan.edges.length, "frontmatter reference"),
           " would point elsewhere. These are reported, never rewritten.",
-          listed(plan.edges, (e, i2) => /* @__PURE__ */ jsx_runtime39.jsxs("span", {
+          listed(plan.edges, (e, i2) => /* @__PURE__ */ jsx_runtime40.jsxs("span", {
             className: "block pl-2 font-mono text-xs",
             children: [
               short(e.source),
@@ -76227,10 +76243,10 @@ function movePrompt(plan, userHome) {
   return {
     title: `Move “${plan.name}” into “${baseName(plan.into)}”?`,
     message,
-    warning: plan.leavesRepo ? /* @__PURE__ */ jsx_runtime39.jsxs(jsx_runtime39.Fragment, {
+    warning: plan.leavesRepo ? /* @__PURE__ */ jsx_runtime40.jsxs(jsx_runtime40.Fragment, {
       children: [
         "This takes it ",
-        /* @__PURE__ */ jsx_runtime39.jsx("strong", {
+        /* @__PURE__ */ jsx_runtime40.jsx("strong", {
           className: "font-semibold",
           children: "out of the git repository"
         }),
@@ -76245,13 +76261,13 @@ function movePrompt(plan, userHome) {
     confirmClassName: "bg-rubric text-on-rubric hover:bg-rubric/90"
   };
 }
-var scriptoriumUncheckedMoveNote = () => /* @__PURE__ */ jsx_runtime39.jsxs(jsx_runtime39.Fragment, {
+var scriptoriumUncheckedMoveNote = () => /* @__PURE__ */ jsx_runtime40.jsxs(jsx_runtime40.Fragment, {
   children: [
-    /* @__PURE__ */ jsx_runtime39.jsx("span", {
+    /* @__PURE__ */ jsx_runtime40.jsx("span", {
       className: "block",
       children: "The links into and out of what moves were not checked. Any it breaks are named in the chat after the move."
     }),
-    /* @__PURE__ */ jsx_runtime39.jsx("span", {
+    /* @__PURE__ */ jsx_runtime40.jsx("span", {
       className: "mt-1 block",
       children: "Nor was whether it leaves a git repository: if it does, git will see the files as deleted there until the move is committed."
     })
@@ -76298,10 +76314,10 @@ function scriptoriumTextOffer(daemon, noFrontmatter) {
 }
 
 // src/scriptorium/surface/kit/useMapView.tsx
-var import_react43 = __toESM(require_react(), 1);
+var import_react44 = __toESM(require_react(), 1);
 
 // src/scriptorium/surface/kit/MapView.tsx
-var import_react42 = __toESM(require_react(), 1);
+var import_react43 = __toESM(require_react(), 1);
 
 // node_modules/d3-force/src/center.js
 function center_default(x, y) {
@@ -77275,14 +77291,14 @@ function manyBody_default() {
   return force;
 }
 // src/scriptorium/surface/components/context/forceLayout.ts
-var import_react41 = __toESM(require_react(), 1);
+var import_react42 = __toESM(require_react(), 1);
 var bodyRadius = (linksIn) => 5 + Math.min(11, Math.sqrt(linksIn) * 2.4);
 function useForceLayout(nodes, edges, size4, enabled) {
-  const [positions, setPositions] = import_react41.useState(new Map);
-  const sim = import_react41.useRef(null);
-  const bodies = import_react41.useRef(new Map);
-  const [dragging, setDragging] = import_react41.useState(null);
-  import_react41.useEffect(() => {
+  const [positions, setPositions] = import_react42.useState(new Map);
+  const sim = import_react42.useRef(null);
+  const bodies = import_react42.useRef(new Map);
+  const [dragging, setDragging] = import_react42.useState(null);
+  import_react42.useEffect(() => {
     if (!enabled || nodes.length === 0) {
       sim.current?.stop();
       sim.current = null;
@@ -77305,7 +77321,7 @@ function useForceLayout(nodes, edges, size4, enabled) {
       simulation.stop();
     };
   }, [nodes, edges, size4.width, size4.height, enabled]);
-  const onDragStart = import_react41.useCallback((path2, at2) => {
+  const onDragStart = import_react42.useCallback((path2, at2) => {
     const body = bodies.current.get(path2);
     if (!body)
       return;
@@ -77314,7 +77330,7 @@ function useForceLayout(nodes, edges, size4, enabled) {
     body.fy = at2.y;
     sim.current?.alphaTarget(0.3).restart();
   }, []);
-  const onDragMove = import_react41.useCallback((at2) => {
+  const onDragMove = import_react42.useCallback((at2) => {
     if (!dragging)
       return;
     const body = bodies.current.get(dragging);
@@ -77323,7 +77339,7 @@ function useForceLayout(nodes, edges, size4, enabled) {
     body.fx = at2.x;
     body.fy = at2.y;
   }, [dragging]);
-  const onDragEnd = import_react41.useCallback(() => {
+  const onDragEnd = import_react42.useCallback(() => {
     if (!dragging)
       return;
     const body = bodies.current.get(dragging);
@@ -77338,7 +77354,7 @@ function useForceLayout(nodes, edges, size4, enabled) {
 }
 
 // src/scriptorium/surface/kit/MapView.tsx
-var jsx_runtime40 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime41 = __toESM(require_jsx_runtime(), 1);
 var NODE_W = 168;
 var NODE_H = 34;
 var COL_GAP = 96;
@@ -77399,10 +77415,10 @@ function MapView({
   onOpenDoc,
   onClose
 }) {
-  const root2 = import_react42.useRef(null);
-  const close = import_react42.useRef(onClose);
+  const root2 = import_react43.useRef(null);
+  const close = import_react43.useRef(onClose);
   close.current = onClose;
-  import_react42.useEffect(() => {
+  import_react43.useEffect(() => {
     const onKey = (e) => {
       if (e.key !== "Escape" || e.defaultPrevented)
         return;
@@ -77417,15 +77433,15 @@ function MapView({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
-  const [hover, setHover] = import_react42.useState(null);
-  const [alwaysEdges, setAlwaysEdges] = import_react42.useState(null);
-  const { placed, width, height, headings } = import_react42.useMemo(() => graph ? layout(graph.nodes) : { placed: [], width: 0, height: 0, headings: new Map }, [graph]);
-  const at2 = import_react42.useMemo(() => new Map(placed.map((p) => [p.path, p])), [placed]);
-  const drawn = import_react42.useMemo(() => (graph?.edges ?? []).filter((e) => at2.has(e.from) && at2.has(e.to)), [graph, at2]);
+  const [hover, setHover] = import_react43.useState(null);
+  const [alwaysEdges, setAlwaysEdges] = import_react43.useState(null);
+  const { placed, width, height, headings } = import_react43.useMemo(() => graph ? layout(graph.nodes) : { placed: [], width: 0, height: 0, headings: new Map }, [graph]);
+  const at2 = import_react43.useMemo(() => new Map(placed.map((p) => [p.path, p])), [placed]);
+  const drawn = import_react43.useMemo(() => (graph?.edges ?? []).filter((e) => at2.has(e.from) && at2.has(e.to)), [graph, at2]);
   const links2 = drawn.reduce((sum, e) => sum + e.count, 0);
   const dense = links2 > DENSE_EDGES;
   const showAll = alwaysEdges ?? !dense;
-  const connected = import_react42.useMemo(() => {
+  const connected = import_react43.useMemo(() => {
     if (!hover)
       return null;
     const set3 = new Set([hover]);
@@ -77439,23 +77455,23 @@ function MapView({
   }, [hover, drawn]);
   const lit = (path2) => connected === null || connected.has(path2);
   const forceSize = { width: 1500, height: 1000 };
-  const force = useForceLayout(import_react42.useMemo(() => (graph?.nodes ?? []).map((n) => ({ path: n.path, linksIn: n.linksIn })), [graph]), import_react42.useMemo(() => drawn.map((e) => ({ from: e.from, to: e.to })), [drawn]), forceSize, mode === "force");
-  return /* @__PURE__ */ jsx_runtime40.jsxs("div", {
+  const force = useForceLayout(import_react43.useMemo(() => (graph?.nodes ?? []).map((n) => ({ path: n.path, linksIn: n.linksIn })), [graph]), import_react43.useMemo(() => drawn.map((e) => ({ from: e.from, to: e.to })), [drawn]), forceSize, mode === "force");
+  return /* @__PURE__ */ jsx_runtime41.jsxs("div", {
     ref: root2,
     "data-slot": "map",
     className: "flex min-h-0 flex-1 flex-col overflow-hidden bg-surface",
     children: [
-      /* @__PURE__ */ jsx_runtime40.jsxs("div", {
+      /* @__PURE__ */ jsx_runtime41.jsxs("div", {
         className: "flex shrink-0 items-center gap-3 border-b border-edge px-4 py-2.5",
         children: [
-          /* @__PURE__ */ jsx_runtime40.jsxs("h2", {
+          /* @__PURE__ */ jsx_runtime41.jsxs("h2", {
             className: "text-sm font-medium text-ink",
             children: [
               "Map of ",
               label
             ]
           }),
-          graph && /* @__PURE__ */ jsx_runtime40.jsxs("span", {
+          graph && /* @__PURE__ */ jsx_runtime41.jsxs("span", {
             "data-slot": "map-summary",
             className: "text-xs text-ink-dim",
             children: [
@@ -77467,11 +77483,11 @@ function MapView({
               graph.nodes.length > DRAW_CAP && ` · drawing the ${DRAW_CAP} best-connected`
             ]
           }),
-          /* @__PURE__ */ jsx_runtime40.jsx("div", {
+          /* @__PURE__ */ jsx_runtime41.jsx("div", {
             role: "toolbar",
             "aria-label": "How to lay the map out",
             className: "ml-auto flex items-center gap-0.5 rounded-md bg-surface-raised p-0.5",
-            children: ["columns", "force"].map((m2) => /* @__PURE__ */ jsx_runtime40.jsx("button", {
+            children: ["columns", "force"].map((m2) => /* @__PURE__ */ jsx_runtime41.jsx("button", {
               type: "button",
               onClick: () => onMode(m2),
               "aria-pressed": mode === m2,
@@ -77479,27 +77495,27 @@ function MapView({
               children: m2 === "columns" ? "columns" : "physics"
             }, m2))
           }),
-          /* @__PURE__ */ jsx_runtime40.jsx("button", {
+          /* @__PURE__ */ jsx_runtime41.jsx("button", {
             type: "button",
             "aria-label": "Back to the document",
             title: "Back to the document",
             onClick: onClose,
             className: "rounded-md p-1 text-ink-dim hover:bg-surface-raised hover:text-ink",
-            children: /* @__PURE__ */ jsx_runtime40.jsx(X, {
+            children: /* @__PURE__ */ jsx_runtime41.jsx(X, {
               className: "size-4"
             })
           })
         ]
       }),
-      /* @__PURE__ */ jsx_runtime40.jsx("div", {
+      /* @__PURE__ */ jsx_runtime41.jsx("div", {
         className: "min-h-0 flex-1 overflow-auto p-2",
-        children: !graph ? /* @__PURE__ */ jsx_runtime40.jsx("p", {
+        children: !graph ? /* @__PURE__ */ jsx_runtime41.jsx("p", {
           className: "p-6 text-sm text-ink-dim",
           children: error ?? "Reading the set…"
-        }) : graph.nodes.length === 0 ? /* @__PURE__ */ jsx_runtime40.jsx("p", {
+        }) : graph.nodes.length === 0 ? /* @__PURE__ */ jsx_runtime41.jsx("p", {
           className: "p-6 text-sm text-ink-dim",
           children: "This set has no documents to map."
-        }) : mode === "force" ? /* @__PURE__ */ jsx_runtime40.jsx(ForceCanvas, {
+        }) : mode === "force" ? /* @__PURE__ */ jsx_runtime41.jsx(ForceCanvas, {
           nodes: graph.nodes,
           edges: drawn,
           size: forceSize,
@@ -77509,14 +77525,14 @@ function MapView({
           lit,
           showAll,
           onOpen: onOpenDoc
-        }) : /* @__PURE__ */ jsx_runtime40.jsxs("svg", {
+        }) : /* @__PURE__ */ jsx_runtime41.jsxs("svg", {
           "data-slot": "map-columns",
           width,
           height,
           role: "img",
           "aria-label": `${graph.nodes.length} documents and ${links2} links`,
           children: [
-            /* @__PURE__ */ jsx_runtime40.jsxs("title", {
+            /* @__PURE__ */ jsx_runtime41.jsxs("title", {
               children: [
                 graph.nodes.length,
                 " documents, ",
@@ -77533,7 +77549,7 @@ function MapView({
               const lit2 = touching || showAll && hover === null;
               if (!lit2 && !showAll)
                 return null;
-              return /* @__PURE__ */ jsx_runtime40.jsx("path", {
+              return /* @__PURE__ */ jsx_runtime41.jsx("path", {
                 "data-source": e.source,
                 d: edgePath(a2, b),
                 fill: "none",
@@ -77547,14 +77563,14 @@ function MapView({
               const first = placed.find((p) => p.column === type);
               if (!first)
                 return null;
-              return /* @__PURE__ */ jsx_runtime40.jsx("text", {
+              return /* @__PURE__ */ jsx_runtime41.jsx("text", {
                 x: first.x,
                 y: PAD + 12,
                 className: "fill-ink-faint text-[11px] font-medium",
                 children: headings.get(type) ?? type
               }, type);
             }),
-            placed.map((n) => /* @__PURE__ */ jsx_runtime40.jsxs("g", {
+            placed.map((n) => /* @__PURE__ */ jsx_runtime41.jsxs("g", {
               "data-path": n.path,
               transform: `translate(${n.x}, ${n.y})`,
               onMouseEnter: () => setHover(n.path),
@@ -77574,7 +77590,7 @@ function MapView({
               opacity: lit(n.path) ? 1 : 0.22,
               className: "cursor-pointer outline-none transition-opacity focus-visible:[&>rect]:stroke-rubric",
               children: [
-                /* @__PURE__ */ jsx_runtime40.jsxs("title", {
+                /* @__PURE__ */ jsx_runtime41.jsxs("title", {
                   children: [
                     n.rel,
                     n.status ? ` · ${n.status}` : "",
@@ -77587,20 +77603,20 @@ function MapView({
                     n.tags.length ? ` · ${n.tags.join(", ")}` : ""
                   ]
                 }),
-                /* @__PURE__ */ jsx_runtime40.jsx("rect", {
+                /* @__PURE__ */ jsx_runtime41.jsx("rect", {
                   width: NODE_W,
                   height: NODE_H,
                   rx: 6,
                   className: cn("fill-bg stroke-edge", hover === n.path && "fill-surface-raised stroke-rubric"),
                   strokeWidth: 1
                 }),
-                /* @__PURE__ */ jsx_runtime40.jsx("circle", {
+                /* @__PURE__ */ jsx_runtime41.jsx("circle", {
                   cx: 12,
                   cy: NODE_H / 2,
                   r: 3,
                   className: dotTone(n, "fill-ink-faint")
                 }),
-                /* @__PURE__ */ jsx_runtime40.jsx("text", {
+                /* @__PURE__ */ jsx_runtime41.jsx("text", {
                   x: 24,
                   y: NODE_H / 2 + 4,
                   className: "fill-ink text-[11px]",
@@ -77613,22 +77629,22 @@ function MapView({
           ]
         })
       }),
-      /* @__PURE__ */ jsx_runtime40.jsxs("div", {
+      /* @__PURE__ */ jsx_runtime41.jsxs("div", {
         className: "flex shrink-0 items-center gap-4 border-t border-edge px-4 py-2 text-[11px] text-ink-dim",
         children: [
-          /* @__PURE__ */ jsx_runtime40.jsxs("span", {
+          /* @__PURE__ */ jsx_runtime41.jsxs("span", {
             className: "flex items-center gap-1.5",
             children: [
-              /* @__PURE__ */ jsx_runtime40.jsxs("svg", {
+              /* @__PURE__ */ jsx_runtime41.jsxs("svg", {
                 width: "22",
                 height: "6",
                 "aria-hidden": true,
                 role: "img",
                 children: [
-                  /* @__PURE__ */ jsx_runtime40.jsx("title", {
+                  /* @__PURE__ */ jsx_runtime41.jsx("title", {
                     children: "a solid line"
                   }),
-                  /* @__PURE__ */ jsx_runtime40.jsx("line", {
+                  /* @__PURE__ */ jsx_runtime41.jsx("line", {
                     x1: "0",
                     y1: "3",
                     x2: "22",
@@ -77641,19 +77657,19 @@ function MapView({
               "a link in the prose"
             ]
           }),
-          /* @__PURE__ */ jsx_runtime40.jsxs("span", {
+          /* @__PURE__ */ jsx_runtime41.jsxs("span", {
             className: "flex items-center gap-1.5",
             children: [
-              /* @__PURE__ */ jsx_runtime40.jsxs("svg", {
+              /* @__PURE__ */ jsx_runtime41.jsxs("svg", {
                 width: "22",
                 height: "6",
                 "aria-hidden": true,
                 role: "img",
                 children: [
-                  /* @__PURE__ */ jsx_runtime40.jsx("title", {
+                  /* @__PURE__ */ jsx_runtime41.jsx("title", {
                     children: "a dashed line"
                   }),
-                  /* @__PURE__ */ jsx_runtime40.jsx("line", {
+                  /* @__PURE__ */ jsx_runtime41.jsx("line", {
                     x1: "0",
                     y1: "3",
                     x2: "22",
@@ -77667,10 +77683,10 @@ function MapView({
               "a frontmatter reference"
             ]
           }),
-          /* @__PURE__ */ jsx_runtime40.jsxs("label", {
+          /* @__PURE__ */ jsx_runtime41.jsxs("label", {
             className: "flex cursor-pointer items-center gap-1.5",
             children: [
-              /* @__PURE__ */ jsx_runtime40.jsx("input", {
+              /* @__PURE__ */ jsx_runtime41.jsx("input", {
                 type: "checkbox",
                 checked: showAll,
                 onChange: (e) => setAlwaysEdges(e.target.checked),
@@ -77680,7 +77696,7 @@ function MapView({
               dense && !showAll ? " (hover a document to see its own)" : ""
             ]
           }),
-          /* @__PURE__ */ jsx_runtime40.jsx("span", {
+          /* @__PURE__ */ jsx_runtime41.jsx("span", {
             className: "ml-auto",
             children: "click a document to open it"
           })
@@ -77700,13 +77716,13 @@ function ForceCanvas({
   showAll,
   onOpen
 }) {
-  const svg = import_react42.useRef(null);
+  const svg = import_react43.useRef(null);
   const { positions, onDragStart, onDragMove, onDragEnd, dragging } = force;
   const at2 = (e) => {
     const box = svg.current?.getBoundingClientRect();
     return { x: e.clientX - (box?.left ?? 0), y: e.clientY - (box?.top ?? 0) };
   };
-  return /* @__PURE__ */ jsx_runtime40.jsxs("svg", {
+  return /* @__PURE__ */ jsx_runtime41.jsxs("svg", {
     ref: svg,
     "data-slot": "map-force",
     width: size4.width,
@@ -77718,7 +77734,7 @@ function ForceCanvas({
     onPointerLeave: onDragEnd,
     className: dragging ? "cursor-grabbing" : undefined,
     children: [
-      /* @__PURE__ */ jsx_runtime40.jsxs("title", {
+      /* @__PURE__ */ jsx_runtime41.jsxs("title", {
         children: [
           nodes.length,
           " documents, arranged by their links"
@@ -77732,7 +77748,7 @@ function ForceCanvas({
         const touching = hover === e.from || hover === e.to;
         if (!touching && !showAll)
           return null;
-        return /* @__PURE__ */ jsx_runtime40.jsx("line", {
+        return /* @__PURE__ */ jsx_runtime41.jsx("line", {
           x1: a2.x,
           y1: a2.y,
           x2: b.x,
@@ -77748,7 +77764,7 @@ function ForceCanvas({
         if (!p)
           return null;
         const r2 = bodyRadius(n.linksIn);
-        return /* @__PURE__ */ jsx_runtime40.jsxs("g", {
+        return /* @__PURE__ */ jsx_runtime41.jsxs("g", {
           "data-path": n.path,
           transform: `translate(${p.x}, ${p.y})`,
           role: "button",
@@ -77772,7 +77788,7 @@ function ForceCanvas({
           },
           className: "cursor-grab outline-none transition-opacity",
           children: [
-            /* @__PURE__ */ jsx_runtime40.jsxs("title", {
+            /* @__PURE__ */ jsx_runtime41.jsxs("title", {
               children: [
                 n.rel,
                 n.status ? ` · ${n.status}` : "",
@@ -77784,12 +77800,12 @@ function ForceCanvas({
                 " out"
               ]
             }),
-            /* @__PURE__ */ jsx_runtime40.jsx("circle", {
+            /* @__PURE__ */ jsx_runtime41.jsx("circle", {
               r: r2,
               className: cn("stroke-edge", dotTone(n, hover === n.path ? "fill-rubric" : "fill-ink-faint")),
               strokeWidth: hover === n.path ? 2 : 1
             }),
-            /* @__PURE__ */ jsx_runtime40.jsx("text", {
+            /* @__PURE__ */ jsx_runtime41.jsx("text", {
               x: r2 + 5,
               y: 4,
               className: cn("text-[11px]", hover === n.path ? "fill-ink" : "fill-ink-dim"),
@@ -77843,17 +77859,17 @@ function mapGraph(graph, docMeta) {
 }
 
 // src/scriptorium/surface/kit/useMapView.tsx
-var jsx_runtime41 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime42 = __toESM(require_jsx_runtime(), 1);
 var MAP_VIEW = "scriptorium.map";
 var MAP_LABEL = "Show the map of this set";
 var messageOf = (e) => e instanceof Error ? e.message : String(e);
 function useMapView(daemon) {
-  const [showing, setShowing] = import_react43.useState(null);
-  const [active, setActive] = import_react43.useState(false);
-  const [mode, setMode] = import_react43.useState("columns");
+  const [showing, setShowing] = import_react44.useState(null);
+  const [active, setActive] = import_react44.useState(false);
+  const [mode, setMode] = import_react44.useState("columns");
   const { request, send, state } = daemon;
-  const asked = import_react43.useRef(0);
-  const fetch2 = import_react43.useCallback((entry2) => {
+  const asked = import_react44.useRef(0);
+  const fetch2 = import_react44.useCallback((entry2) => {
     const seq2 = ++asked.current;
     setShowing({ entryId: entry2.id, graph: null });
     const keep = (next) => {
@@ -77867,24 +77883,24 @@ function useMapView(daemon) {
   }, [request]);
   const entry = showing ? state?.context.find((e) => e.id === showing.entryId) : undefined;
   const gone = showing !== null && state !== null && entry === undefined;
-  import_react43.useEffect(() => {
+  import_react44.useEffect(() => {
     if (!gone)
       return;
     asked.current++;
     setShowing(null);
     setActive(false);
   }, [gone]);
-  const show = import_react43.useCallback((e) => {
+  const show = import_react44.useCallback((e) => {
     fetch2(e);
     setActive(true);
   }, [fetch2]);
-  const appView = import_react43.useMemo(() => {
+  const appView = import_react44.useMemo(() => {
     if (!showing || !entry)
       return;
     return {
       id: MAP_VIEW,
       label: `Map of ${entry.label}`,
-      icon: /* @__PURE__ */ jsx_runtime41.jsx(Network, {
+      icon: /* @__PURE__ */ jsx_runtime42.jsx(Network, {
         "aria-hidden": true,
         className: "size-3.5"
       }),
@@ -77894,7 +77910,7 @@ function useMapView(daemon) {
           fetch2(entry);
         setActive(next);
       },
-      render: () => /* @__PURE__ */ jsx_runtime41.jsx(MapView, {
+      render: () => /* @__PURE__ */ jsx_runtime42.jsx(MapView, {
         graph: showing.graph,
         ...showing.error !== undefined ? { error: showing.error } : {},
         label: entry.label,
@@ -77908,12 +77924,12 @@ function useMapView(daemon) {
       })
     };
   }, [showing, entry, active, mode, fetch2, send]);
-  const menuActions = import_react43.useCallback(({ kind, entry: entry2 }) => kind === "entry" && entry2 && !singleDoc(entry2) ? [{ id: MAP_VIEW, label: MAP_LABEL, icon: /* @__PURE__ */ jsx_runtime41.jsx(Network, {}), onSelect: () => show(entry2) }] : [], [show]);
+  const menuActions = import_react44.useCallback(({ kind, entry: entry2 }) => kind === "entry" && entry2 && !singleDoc(entry2) ? [{ id: MAP_VIEW, label: MAP_LABEL, icon: /* @__PURE__ */ jsx_runtime42.jsx(Network, {}), onSelect: () => show(entry2) }] : [], [show]);
   return { appView, menuActions };
 }
 
 // src/scriptorium/surface/kit/Frame.tsx
-var jsx_runtime42 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime43 = __toESM(require_jsx_runtime(), 1);
 var NO_ENTRIES = [];
 var MAKE_ROOM = "A document listed on its own can take new files beside it once it is a set: Turn into a set, in its row's menu.";
 var THEME_KEY = "scriptorium:theme";
@@ -77926,9 +77942,9 @@ function scriptoriumChips(now3 = Date.now) {
     {
       tone: "attention",
       title: STALE_TITLE,
-      label: /* @__PURE__ */ jsx_runtime42.jsxs(jsx_runtime42.Fragment, {
+      label: /* @__PURE__ */ jsx_runtime43.jsxs(jsx_runtime43.Fragment, {
         children: [
-          /* @__PURE__ */ jsx_runtime42.jsx(Clock, {
+          /* @__PURE__ */ jsx_runtime43.jsx(Clock, {
             "aria-hidden": true,
             className: "size-3"
           }),
@@ -77947,7 +77963,7 @@ function scriptoriumRowMarker(docMeta) {
     const mark2 = statusMark(docMeta[path2]);
     if (!mark2)
       return null;
-    return /* @__PURE__ */ jsx_runtime42.jsx("span", {
+    return /* @__PURE__ */ jsx_runtime43.jsx("span", {
       title: mark2.title,
       "data-tone": mark2.tone,
       className: cn("size-1.5 shrink-0 rounded-full", "data-[tone=draft]:bg-attention data-[tone=stale]:bg-attention/70", "data-[tone=deprecated]:bg-danger data-[tone=unreadable]:bg-ink-faint")
@@ -77964,7 +77980,7 @@ function scriptoriumMenuActions(send, hidden) {
       actions.push({
         id: "scriptorium.make-set",
         label: "Turn into a set",
-        icon: /* @__PURE__ */ jsx_runtime42.jsx(FolderTree, {}),
+        icon: /* @__PURE__ */ jsx_runtime43.jsx(FolderTree, {}),
         onSelect: () => send({ op: "set.make", path: entryPath(entry) })
       });
     const n = hidden[entry.id]?.length ?? 0;
@@ -77972,7 +77988,7 @@ function scriptoriumMenuActions(send, hidden) {
       actions.push({
         id: "scriptorium.unhide",
         label: `Show ${n} hidden ${n === 1 ? "item" : "items"}`,
-        icon: /* @__PURE__ */ jsx_runtime42.jsx(Eye, {}),
+        icon: /* @__PURE__ */ jsx_runtime43.jsx(Eye, {}),
         onSelect: () => send({ op: "scriptorium.unhide", entry: entry.id })
       });
     const beside = (kind === "doc" || kind === "image" || kind === "bundle") && bundlePlace(path2) !== "own";
@@ -77981,12 +77997,12 @@ function scriptoriumMenuActions(send, hidden) {
       actions.push({
         id: "scriptorium.new-doc-beside",
         label: "New document beside it",
-        icon: /* @__PURE__ */ jsx_runtime42.jsx(FilePlus, {}),
+        icon: /* @__PURE__ */ jsx_runtime43.jsx(FilePlus, {}),
         onSelect: () => send({ op: "doc.create", dir })
       }, {
         id: "scriptorium.new-folder-beside",
         label: "New folder beside it",
-        icon: /* @__PURE__ */ jsx_runtime42.jsx(FolderPlus, {}),
+        icon: /* @__PURE__ */ jsx_runtime43.jsx(FolderPlus, {}),
         onSelect: () => send({ op: "folder.create", dir })
       });
     }
@@ -77994,7 +78010,7 @@ function scriptoriumMenuActions(send, hidden) {
       actions.push({
         id: "scriptorium.hide",
         label: "Hide from Scriptorium",
-        icon: /* @__PURE__ */ jsx_runtime42.jsx(EyeOff, {}),
+        icon: /* @__PURE__ */ jsx_runtime43.jsx(EyeOff, {}),
         onSelect: () => send({ op: "scriptorium.hide", path: path2 })
       });
     return actions;
@@ -78002,33 +78018,33 @@ function scriptoriumMenuActions(send, hidden) {
 }
 function Frame({ daemon }) {
   const { state, send } = daemon;
-  const [tab, setTab] = import_react44.useState("chat");
-  const [theme2, setTheme] = import_react44.useState(() => document.documentElement.dataset.theme === "light" ? "light" : "dark");
-  import_react44.useEffect(() => {
+  const [tab, setTab] = import_react45.useState("chat");
+  const [theme2, setTheme] = import_react45.useState(() => document.documentElement.dataset.theme === "light" ? "light" : "dark");
+  import_react45.useEffect(() => {
     document.documentElement.dataset.theme = theme2;
     safeStorage.setItem(THEME_KEY, theme2);
   }, [theme2]);
   const savedTheme = state?.prefs.theme;
-  import_react44.useEffect(() => {
+  import_react45.useEffect(() => {
     if (savedTheme === "dark" || savedTheme === "light")
       setTheme(savedTheme);
   }, [savedTheme]);
-  const chooseTheme = import_react44.useCallback((next) => {
+  const chooseTheme = import_react45.useCallback((next) => {
     setTheme(next);
     send({ op: "prefs.set", key: "theme", value: next });
   }, [send]);
   const toggleTheme = () => chooseTheme(theme2 === "light" ? "dark" : "light");
   const toasts = useToastStore();
   const ws = useFrameWorkspace({ daemon, toasts, theme: theme2, setTheme: chooseTheme });
-  const hints = import_react44.useRef(new Map);
-  import_react44.useEffect(() => daemon.onFrame((f) => {
+  const hints = import_react45.useRef(new Map);
+  import_react45.useEffect(() => daemon.onFrame((f) => {
     if (f.op === "error" && typeof f.hint === "string" && typeof f.message === "string")
       hints.current.set(f.message, f.hint);
   }), [daemon.onFrame]);
   const userHome = state?.userHome || null;
-  const beforeMove = import_react44.useMemo(() => scriptoriumBeforeMove(daemon, { userHome }), [daemon.request, userHome]);
+  const beforeMove = import_react45.useMemo(() => scriptoriumBeforeMove(daemon, { userHome }), [daemon.request, userHome]);
   const noBlock = noFrontmatterOf(state);
-  const textOffer = import_react44.useMemo(() => scriptoriumTextOffer(daemon, noBlock), [daemon.request, noBlock]);
+  const textOffer = import_react45.useMemo(() => scriptoriumTextOffer(daemon, noBlock), [daemon.request, noBlock]);
   const ask = useAskLocation({
     entries: state?.context ?? NO_ENTRIES,
     userHome,
@@ -78037,31 +78053,31 @@ function Frame({ daemon }) {
     hint: MAKE_ROOM
   });
   const done = daemon.done;
-  const created = import_react44.useMemo(() => done && ["doc.create", "folder.create", "bundle.create"].includes(done.of) ? { path: done.path, seq: done.seq } : null, [done]);
-  const moved = import_react44.useMemo(() => done?.of === "move" ? { path: done.path, seq: done.seq } : null, [done]);
+  const created = import_react45.useMemo(() => done && ["doc.create", "folder.create", "bundle.create"].includes(done.of) ? { path: done.path, seq: done.seq } : null, [done]);
+  const moved = import_react45.useMemo(() => done?.of === "move" ? { path: done.path, seq: done.seq } : null, [done]);
   const docMeta = docMetaOf(state);
-  const rowMarker = import_react44.useMemo(() => scriptoriumRowMarker(docMeta), [docMeta]);
+  const rowMarker = import_react45.useMemo(() => scriptoriumRowMarker(docMeta), [docMeta]);
   const map2 = useMapView(daemon);
   const { workspace, openDoc, heldHere, collapsed } = ws;
   if (!state || !workspace)
-    return /* @__PURE__ */ jsx_runtime42.jsx("div", {
+    return /* @__PURE__ */ jsx_runtime43.jsx("div", {
       className: "flex h-full items-center justify-center text-ink-dim",
       children: daemon.connection === "ended" ? "The session has ended." : "Connecting to Scriptorium…"
     });
   const notice = daemon.lastError ? [daemon.lastError, hints.current.get(daemon.lastError)].filter(Boolean).join(". To go on: ") : null;
   const docName = (slug) => state.docs.find((d) => d.slug === slug)?.name ?? slug;
   const tabs = { chat: "Chat", notes: "Notes", tasks: "Tasks" };
-  return /* @__PURE__ */ jsx_runtime42.jsxs(WorkspaceContext.Provider, {
+  return /* @__PURE__ */ jsx_runtime43.jsxs(WorkspaceContext.Provider, {
     value: workspace,
     children: [
-      /* @__PURE__ */ jsx_runtime42.jsx(OutsideChangeToasts, {
+      /* @__PURE__ */ jsx_runtime43.jsx(OutsideChangeToasts, {
         doc: openDoc,
         announce: toasts.announce,
         dismiss: toasts.dismiss,
         onReload: (doc2) => send({ op: "revert", doc: doc2 }),
         onShowDiff: (doc2) => ws.requestDiff(doc2, "original")
       }),
-      /* @__PURE__ */ jsx_runtime42.jsx(NewVersionToasts, {
+      /* @__PURE__ */ jsx_runtime43.jsx(NewVersionToasts, {
         doc: openDoc,
         connected: daemon.connection === "open",
         announce: toasts.announce,
@@ -78069,43 +78085,43 @@ function Frame({ daemon }) {
         onActivate: (doc2, version3) => send({ op: "activate", doc: doc2, version: version3 }),
         onShowDiff: (doc2, version3) => ws.requestDiff(doc2, version3)
       }),
-      /* @__PURE__ */ jsx_runtime42.jsxs("div", {
+      /* @__PURE__ */ jsx_runtime43.jsxs("div", {
         "data-slot": "interim-frame",
         className: "flex h-full flex-col",
         children: [
-          /* @__PURE__ */ jsx_runtime42.jsxs("header", {
+          /* @__PURE__ */ jsx_runtime43.jsxs("header", {
             className: "flex h-9 shrink-0 items-center gap-3 border-b border-edge px-3 text-xs",
             children: [
-              /* @__PURE__ */ jsx_runtime42.jsx("span", {
+              /* @__PURE__ */ jsx_runtime43.jsx("span", {
                 className: "font-manuscript text-sm text-rubric",
                 children: "Scriptorium"
               }),
-              /* @__PURE__ */ jsx_runtime42.jsx("span", {
+              /* @__PURE__ */ jsx_runtime43.jsx("span", {
                 className: "text-ink-faint",
                 children: state.sessionId
               }),
-              /* @__PURE__ */ jsx_runtime42.jsx("span", {
+              /* @__PURE__ */ jsx_runtime43.jsx("span", {
                 className: "ml-auto text-ink-dim",
                 children: daemon.connection
               }),
-              /* @__PURE__ */ jsx_runtime42.jsx("button", {
+              /* @__PURE__ */ jsx_runtime43.jsx("button", {
                 type: "button",
                 "aria-label": "Switch theme",
                 className: "text-ink-faint hover:text-ink [&_svg]:size-3.5",
                 onClick: toggleTheme,
-                children: theme2 === "light" ? /* @__PURE__ */ jsx_runtime42.jsx(Moon, {}) : /* @__PURE__ */ jsx_runtime42.jsx(Sun, {})
+                children: theme2 === "light" ? /* @__PURE__ */ jsx_runtime43.jsx(Moon, {}) : /* @__PURE__ */ jsx_runtime43.jsx(Sun, {})
               })
             ]
           }),
-          /* @__PURE__ */ jsx_runtime42.jsxs("div", {
+          /* @__PURE__ */ jsx_runtime43.jsxs("div", {
             className: "flex min-h-0 flex-1",
             children: [
-              /* @__PURE__ */ jsx_runtime42.jsx("aside", {
+              /* @__PURE__ */ jsx_runtime43.jsx("aside", {
                 "data-pane": "context",
                 tabIndex: -1,
                 hidden: collapsed.context,
                 className: "flex w-80 shrink-0 flex-col",
-                children: /* @__PURE__ */ jsx_runtime42.jsx(ContextSidebar, {
+                children: /* @__PURE__ */ jsx_runtime43.jsx(ContextSidebar, {
                   entries: state.context,
                   activeDoc: openDoc?.entryId && openDoc.rel ? { entryId: openDoc.entryId, rel: openDoc.rel } : null,
                   userHome,
@@ -78131,12 +78147,12 @@ function Frame({ daemon }) {
                   uncheckedMoveNote: scriptoriumUncheckedMoveNote
                 })
               }),
-              /* @__PURE__ */ jsx_runtime42.jsxs("main", {
+              /* @__PURE__ */ jsx_runtime43.jsxs("main", {
                 "data-pane": "centre",
                 tabIndex: -1,
                 className: "relative flex min-w-0 flex-1 flex-col border-l border-edge",
                 children: [
-                  /* @__PURE__ */ jsx_runtime42.jsx(DocumentPane, {
+                  /* @__PURE__ */ jsx_runtime43.jsx(DocumentPane, {
                     showDiff: ws.showDiff,
                     viewModeKey: VIEW_MODE_KEY,
                     lineNumbers: true,
@@ -78147,21 +78163,21 @@ function Frame({ daemon }) {
                     appView: map2.appView,
                     textOffer
                   }),
-                  /* @__PURE__ */ jsx_runtime42.jsx(Toasts, {
+                  /* @__PURE__ */ jsx_runtime43.jsx(Toasts, {
                     store: toasts
                   })
                 ]
               }),
-              /* @__PURE__ */ jsx_runtime42.jsxs("aside", {
+              /* @__PURE__ */ jsx_runtime43.jsxs("aside", {
                 "data-pane": "chat",
                 tabIndex: -1,
                 hidden: collapsed.chat,
                 className: "flex w-80 shrink-0 flex-col border-l border-edge",
                 children: [
-                  /* @__PURE__ */ jsx_runtime42.jsx("div", {
+                  /* @__PURE__ */ jsx_runtime43.jsx("div", {
                     role: "tablist",
                     className: "flex h-9 shrink-0 border-b border-edge text-xs",
-                    children: Object.keys(tabs).map((id) => /* @__PURE__ */ jsx_runtime42.jsx("button", {
+                    children: Object.keys(tabs).map((id) => /* @__PURE__ */ jsx_runtime43.jsx("button", {
                       type: "button",
                       role: "tab",
                       "aria-selected": tab === id,
@@ -78170,7 +78186,7 @@ function Frame({ daemon }) {
                       children: tabs[id]
                     }, id))
                   }),
-                  tab === "chat" && /* @__PURE__ */ jsx_runtime42.jsx(ChatSidebar, {
+                  tab === "chat" && /* @__PURE__ */ jsx_runtime43.jsx(ChatSidebar, {
                     messages: state.chat,
                     waiting: state.waiting,
                     agentListening: state.agentListening !== false,
@@ -78188,7 +78204,7 @@ function Frame({ daemon }) {
                     onSend: (text4, withSelection) => send({ op: "say", text: text4, withSelection, via: "chat" }),
                     onDropSelection: ws.dropSelection
                   }),
-                  tab === "notes" && /* @__PURE__ */ jsx_runtime42.jsx(NotesPanel, {
+                  tab === "notes" && /* @__PURE__ */ jsx_runtime43.jsx(NotesPanel, {
                     notes: openDoc?.notes ?? [],
                     waiting: badgesOn(state.notesWaiting ?? [], openDoc?.slug ?? null),
                     agentListening: state.agentListening !== false,
@@ -78203,7 +78219,7 @@ function Frame({ daemon }) {
                     onResolve: (id, resolved) => openDoc && send({ op: "note.resolve", doc: openDoc.slug, id, resolved }),
                     onRemove: (id) => openDoc && send({ op: "note.remove", doc: openDoc.slug, id })
                   }),
-                  tab === "tasks" && /* @__PURE__ */ jsx_runtime42.jsx(TasksPanel, {
+                  tab === "tasks" && /* @__PURE__ */ jsx_runtime43.jsx(TasksPanel, {
                     tasks: state.tasks,
                     onCancel: (id) => send({ op: "task.cancel", id }),
                     onRemove: (id) => send({ op: "task.remove", id }),
@@ -78222,12 +78238,12 @@ function Frame({ daemon }) {
 }
 
 // src/scriptorium/surface/kit/main.tsx
-var jsx_runtime43 = __toESM(require_jsx_runtime(), 1);
+var jsx_runtime44 = __toESM(require_jsx_runtime(), 1);
 function FramePage() {
-  return /* @__PURE__ */ jsx_runtime43.jsx(Frame, {
+  return /* @__PURE__ */ jsx_runtime44.jsx(Frame, {
     daemon: useDaemon()
   });
 }
 var el = document.getElementById("root");
 if (el)
-  import_client.createRoot(el).render(/* @__PURE__ */ jsx_runtime43.jsx(FramePage, {}));
+  import_client.createRoot(el).render(/* @__PURE__ */ jsx_runtime44.jsx(FramePage, {}));
