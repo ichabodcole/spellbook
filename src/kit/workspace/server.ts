@@ -387,6 +387,12 @@ const MISSING_RECHECK_MS = 400;
 export const CONTEXT_CHANGED_SETTLE_MS = 400;
 
 /**
+ * The longest `context.changed` (and the app view's refresh) waits while
+ * watcher events keep arriving: a steady trickle never settles.
+ */
+export const CONTEXT_CHANGED_MAX_WAIT_MS = 2000;
+
+/**
  * Is a watcher's relative name under a dot-folder or a dot-file (`.git/…`,
  * `.DS_Store`, `.obsidian/…`)? Those churn on their own (a commit, Finder, an
  * editor's state) and hold no documents the context lists, so they never cue
@@ -1141,7 +1147,8 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     });
 
     const appCtx = (): WorkspaceContext => ctx;
-    const viewState = (): PublicState => {
+    /** The snapshot; `pre` is the app's view when the caller already asked for it. */
+    const viewState = (pre?: { appState: unknown }): PublicState => {
       const base = session.view();
       return {
         app: app.name,
@@ -1170,7 +1177,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         prefs: readPrefs(),
         userHome,
         ...(app.launcher ? { launcher: app.launcher } : {}),
-        appState: opts.appState?.(appCtx()) ?? null,
+        appState: pre ? pre.appState : (opts.appState?.(appCtx()) ?? null),
       };
     };
     /**
@@ -1216,6 +1223,32 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       presenceShown = agentListening();
       const state = viewState();
       const view = opts.appState ? JSON.stringify(state.appState) : null;
+      const frames = {};
+      for (const ws of sockets) sendState(ws, state, view, frames);
+    };
+    /**
+     * The app's view asked for again, and broadcast only if some connection
+     * holds a different copy. An app's view can read files the session does not
+     * hold (an unopened document's frontmatter), and a change to one on disk
+     * sends no other state frame. Called once a burst of watcher events settles,
+     * so a `git checkout` of hundreds of files is one evaluation and at most one
+     * frame, and a view that did not change sends nothing.
+     */
+    const refreshAppView = () => {
+      if (!opts.appState || sockets.size === 0) return;
+      let appState: unknown;
+      try {
+        appState = opts.appState(appCtx()) ?? null;
+      } catch (e) {
+        process.stderr.write(`${app.name}: appState: ${e}\n`);
+        return;
+      }
+      const view = JSON.stringify(appState);
+      let stale = false;
+      for (const ws of sockets) if (viewSent.get(ws) !== view) stale = true;
+      if (!stale) return;
+      presenceShown = agentListening();
+      const state = viewState({ appState });
       const frames = {};
       for (const ws of sockets) sendState(ws, state, view, frames);
     };
@@ -1327,17 +1360,29 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     // settles, so a view of the whole context (the link check) can ask again. A
     // change to a document the session does not hold sends no snapshot, so
     // without this such a view would go stale. Carries nothing; it is a cue.
+    // The app's view is asked for again at the same moment (`refreshAppView`),
+    // and a state frame goes out only if it changed.
     // The session's own version files are not the context: an edit's write
     // lands there, and the surface that sent the edit already knows of it.
+    // The settle is trailing, with a cap: a steady trickle of writes (one every
+    // few hundred ms) never settles, so while events keep coming the cue fires
+    // at least every `CONTEXT_CHANGED_MAX_WAIT_MS`.
     let contextChanged: ReturnType<typeof setTimeout> | null = null;
+    let contextChangedSince = 0;
     const cueContextChanged = () => {
       if (contextChanged) clearTimeout(contextChanged);
-      contextChanged = setTimeout(() => {
-        contextChanged = null;
-        if (closed) return;
-        send({ op: "context.changed" });
-        pruneImageThumbs();
-      }, CONTEXT_CHANGED_SETTLE_MS);
+      else contextChangedSince = performance.now();
+      const capLeft = contextChangedSince + CONTEXT_CHANGED_MAX_WAIT_MS - performance.now();
+      contextChanged = setTimeout(
+        () => {
+          contextChanged = null;
+          if (closed) return;
+          send({ op: "context.changed" });
+          pruneImageThumbs();
+          refreshAppView();
+        },
+        Math.max(0, Math.min(CONTEXT_CHANGED_SETTLE_MS, capLeft)),
+      );
       contextChanged.unref?.();
     };
     /**

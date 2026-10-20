@@ -17,7 +17,12 @@ import {
   waitUntil,
   writeUntilSeen,
 } from "./fixtures/harness";
-import { createWorkspaceDaemon, type WorkspaceDaemon } from "./server";
+import {
+  CONTEXT_CHANGED_MAX_WAIT_MS,
+  CONTEXT_CHANGED_SETTLE_MS,
+  createWorkspaceDaemon,
+  type WorkspaceDaemon,
+} from "./server";
 import { WorkspaceSession } from "./session";
 import { seedDocs, tempRoot } from "./testing";
 
@@ -1802,6 +1807,141 @@ describe("guards the review asked for", () => {
     const st = (await (await fetch(`${base}/state`)).json()) as Record<string, unknown>;
     expect(st.appState).toEqual({ view: "changed" });
     expect("appStateUnchanged" in st).toBe(false);
+  });
+
+  test("an outside edit to an unopened document reaches the app's view once the watcher settles; an edit that leaves the view alone sends no frame, and a burst sends one", async () => {
+    // The app's view reads a file the session does not hold, as a frontmatter
+    // index does. Nothing else broadcasts here: the sweep is slowed away.
+    const b = inSet("part/b.md");
+    let calls = 0;
+    const { s } = await start({
+      attentionMs: 60_000,
+      appState: () => {
+        calls++;
+        return { head: readFileSync(b, "utf8").split("\n")[0] };
+      },
+    });
+    const many = Array.from({ length: 200 }, (_, i) => inSet(`m${i}.md`));
+    for (const p of many) writeFileSync(p, "# M\n");
+    s.send({ op: "context.add", path: docs });
+    await waitUntil("the set listed", () => s.state.context.length > 0);
+    await Bun.sleep(CONTEXT_CHANGED_SETTLE_MS + 300); // the add's own cue settles
+    const states = () => s.frames.filter((f) => f.op === "state");
+    const cues = () => s.frames.filter((f) => f.op === "context.changed").length;
+    expect(s.state.appState).toEqual({ head: "# B" });
+
+    // The head changes on disk: the surface hears it within the settle.
+    let before = states().length;
+    let cued = cues();
+    const called = calls;
+    const t0 = performance.now();
+    writeFileSync(b, "# B, renamed\n");
+    await waitUntil(
+      "the new view",
+      () => (s.state.appState as { head: string }).head === "# B, renamed",
+    );
+    expect(performance.now() - t0).toBeLessThan(CONTEXT_CHANGED_SETTLE_MS + 1500);
+    expect(states().length - before).toBe(1);
+    await Bun.sleep(CONTEXT_CHANGED_SETTLE_MS + 200); // any cue still in flight
+    // The hook runs once per settle: the frame reuses the view the refresh read.
+    expect(calls - called).toBe(cues() - cued);
+
+    // A body edit leaves the view as it was: the cue goes, no state frame.
+    before = states().length;
+    cued = cues();
+    writeFileSync(b, "# B, renamed\n\nmore body\n");
+    await waitUntil("the cue", () => cues() > cued);
+    await Bun.sleep(150);
+    expect(states().length).toBe(before);
+
+    // Two hundred files rewritten at once, the head among them: one frame.
+    before = states().length;
+    cued = cues();
+    for (const p of many) writeFileSync(p, "# M\n\nchanged\n");
+    writeFileSync(b, "# B, again\n");
+    await waitUntil(
+      "the burst's view",
+      () => (s.state.appState as { head: string }).head === "# B, again",
+    );
+    await Bun.sleep(CONTEXT_CHANGED_SETTLE_MS + 300);
+    // The view changed once, so one frame, however the watcher split the burst.
+    expect(states().length - before).toBe(1);
+    expect(cues() - cued).toBeGreaterThanOrEqual(1);
+  });
+
+  test("a steady trickle of outside writes still reaches the surface: the settle fires at least every CONTEXT_CHANGED_MAX_WAIT_MS", async () => {
+    const b = inSet("part/b.md");
+    const { s } = await start({
+      attentionMs: 60_000,
+      appState: () => ({ head: readFileSync(b, "utf8").split("\n")[0] }),
+    });
+    s.send({ op: "context.add", path: docs });
+    await waitUntil("the set listed", () => s.state.context.length > 0);
+    await Bun.sleep(CONTEXT_CHANGED_SETTLE_MS + 300);
+    const cues = () => s.frames.filter((f) => f.op === "context.changed").length;
+    const heads: string[] = [];
+    const cued = cues();
+    // A write every 250 ms never lets a 400 ms trailing settle fire.
+    const t0 = performance.now();
+    for (let i = 0; i < 24; i++) {
+      writeFileSync(b, `# B ${i}\n`);
+      await Bun.sleep(250);
+      heads.push((s.state.appState as { head: string }).head);
+    }
+    const span = performance.now() - t0;
+    // About 6 s of trickle: the cap fires about every 2 s, so at least twice.
+    expect(cues() - cued).toBeGreaterThanOrEqual(
+      Math.floor(span / CONTEXT_CHANGED_MAX_WAIT_MS) - 1,
+    );
+    expect(cues() - cued).toBeGreaterThanOrEqual(2);
+    // The surface's view moved during the trickle, not only after it stopped.
+    expect(new Set(heads.filter((h) => h !== "# B")).size).toBeGreaterThanOrEqual(2);
+    // And it lands on the last write once the trickle stops.
+    await waitUntil(
+      "the last write",
+      () => (s.state.appState as { head: string }).head === "# B 23",
+    );
+  }, 15_000);
+
+  test("an app view that throws when the watcher settles is logged, and the daemon keeps serving", async () => {
+    const b = inSet("part/b.md");
+    let fail = false;
+    const { s, base } = await start({
+      attentionMs: 60_000,
+      appState: () => {
+        if (fail) throw new Error("the view broke");
+        return { head: readFileSync(b, "utf8").split("\n")[0] };
+      },
+    });
+    s.send({ op: "context.add", path: docs });
+    await waitUntil("the set listed", () => s.state.context.length > 0);
+    await Bun.sleep(CONTEXT_CHANGED_SETTLE_MS + 300);
+    const cues = () => s.frames.filter((f) => f.op === "context.changed").length;
+    const logged: string[] = [];
+    const realWrite = process.stderr.write.bind(process.stderr);
+    process.stderr.write = ((chunk: string | Uint8Array, ...rest: unknown[]) => {
+      logged.push(String(chunk));
+      return realWrite(chunk as never, ...(rest as []));
+    }) as typeof process.stderr.write;
+    try {
+      fail = true;
+      const cued = cues();
+      writeFileSync(b, "# B, while broken\n");
+      await waitUntil("the cue", () => cues() > cued);
+      await Bun.sleep(50);
+    } finally {
+      process.stderr.write = realWrite;
+      fail = false;
+    }
+    expect(logged.some((l) => l.includes("appState: Error: the view broke"))).toBe(true);
+    // Still serving: the agent's read, and the surface's next frame.
+    const st = (await (await fetch(`${base}/state`)).json()) as { appState: unknown };
+    expect(st.appState).toEqual({ head: "# B, while broken" });
+    writeFileSync(b, "# B, mended\n");
+    await waitUntil(
+      "the mended view",
+      () => (s.state.appState as { head: string }).head === "# B, mended",
+    );
   });
 
   test("an app without an appState hook sends appState: null on every frame, as before", async () => {
