@@ -66,27 +66,117 @@
   },
   "excludedInvocations": [
     {
+      "argv": ["open"],
+      "doc": "SKILL.md:20",
+      "reason": "starts a daemon (and may open a browser)"
+    },
+    {
+      "argv": ["task"],
+      "doc": "SKILL.md:50",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["say"],
+      "doc": "SKILL.md:54",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["note"],
+      "doc": "SKILL.md:56",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
       "argv": ["open", "golden.md", "golden.md"],
-      "doc": "SKILL.md:85",
+      "doc": "SKILL.md:116",
       "reason": "starts a daemon (and may open a browser)"
     },
     {
       "argv": ["tail"],
-      "doc": "SKILL.md:86",
+      "doc": "SKILL.md:117",
       "reason": "a long-running stream (tail); never ends on its own within the run"
     },
     {
       "argv": ["tail", "--since", "12"],
-      "doc": "SKILL.md:95",
+      "doc": "SKILL.md:128",
       "reason": "a long-running stream (tail); never ends on its own within the run"
     },
     {
-      "argv": ["task-status", "item1"],
-      "doc": "SKILL.md:259",
+      "argv": ["tail", "--all"],
+      "doc": "SKILL.md:153",
+      "reason": "a long-running stream (tail); never ends on its own within the run"
+    },
+    {
+      "argv": ["version"],
+      "doc": "SKILL.md:159",
+      "reason": "prose, not an invocation: the line names the version field a messages about carries"
+    },
+    {
+      "argv": ["move"],
+      "doc": "SKILL.md:230",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["rename"],
+      "doc": "SKILL.md:230",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["import"],
+      "doc": "SKILL.md:231",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["open", "--restore", "item1"],
+      "doc": "SKILL.md:247",
+      "reason": "starts a daemon (and may open a browser)"
+    },
+    {
+      "argv": ["note-edit"],
+      "doc": "SKILL.md:272",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["note-resolve"],
+      "doc": "SKILL.md:276",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["make-set"],
+      "doc": "SKILL.md:287",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["add"],
+      "doc": "SKILL.md:301",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["hide"],
+      "doc": "SKILL.md:302",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["diff", "--context"],
+      "doc": "SKILL.md:305",
+      "reason": "prose, not an invocation: the line says --context is a diff flag meaning lines of surrounding text (it takes a count)"
+    },
+    {
+      "argv": ["add-folder"],
+      "doc": "SKILL.md:314",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["move-plan"],
+      "doc": "SKILL.md:339",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["task-status"],
+      "doc": "SKILL.md:381",
       "reason": "prose, not an invocation: the line says task-status takes a positional (its status is required too)"
     }
   ],
-  "invocationCount": 198,
+  "invocationCount": 206,
   "invocations": [
     {
       "argv": [],
@@ -350,7 +440,7 @@
     },
     {
       "argv": ["help"],
-      "doc": "SKILL.md:251",
+      "doc": "SKILL.md:22",
       "exit": 0,
       "verdict": "accepted",
       "stream": "stdout",
@@ -478,7 +568,7 @@
     },
     {
       "argv": ["schema"],
-      "doc": "SKILL.md:251",
+      "doc": "SKILL.md:373",
       "exit": 0,
       "verdict": "accepted",
       "stream": "stdout",
@@ -3278,6 +3368,7 @@
     },
     {
       "argv": ["state"],
+      "doc": "SKILL.md:67",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3302,6 +3393,7 @@
     },
     {
       "argv": ["say", "hello"],
+      "doc": "SKILL.md:94",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3319,7 +3411,7 @@
     },
     {
       "argv": ["say", "--body-file", "golden.md"],
-      "doc": "SKILL.md:127",
+      "doc": "SKILL.md:91",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3537,6 +3629,7 @@
     },
     {
       "argv": ["relink"],
+      "doc": "SKILL.md:337",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3545,6 +3638,7 @@
     },
     {
       "argv": ["reveal", "golden.md"],
+      "doc": "SKILL.md:347",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3613,7 +3707,7 @@
     },
     {
       "argv": ["doctor"],
-      "doc": "SKILL.md:174",
+      "doc": "SKILL.md:235",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3742,6 +3836,7 @@
     },
     {
       "argv": ["close"],
+      "doc": "SKILL.md:244",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3793,8 +3888,26 @@
       "kind": "not_found"
     },
     {
+      "argv": ["version-new", "--body-file", "golden.md", "--label", "hello"],
+      "doc": "SKILL.md:69",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["version-new"],
+      "doc": "SKILL.md:79",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
       "argv": ["note", "--quote", "hello", "--body-file", "golden.md"],
-      "doc": "SKILL.md:77",
+      "doc": "SKILL.md:94",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3802,35 +3915,8 @@
       "kind": "not_found"
     },
     {
-      "argv": ["version-new", "--doc", "golden.md", "--label", "golden"],
-      "doc": "SKILL.md:125",
-      "exit": 5,
-      "verdict": "accepted",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "not_found"
-    },
-    {
-      "argv": ["version-new", "--doc", "golden.md"],
-      "doc": "SKILL.md:141",
-      "exit": 5,
-      "verdict": "accepted",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "not_found"
-    },
-    {
-      "argv": ["notes", "--doc", "golden.md"],
-      "doc": "SKILL.md:166",
-      "exit": 5,
-      "verdict": "accepted",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "not_found"
-    },
-    {
-      "argv": ["note-resolve", "item1"],
-      "doc": "SKILL.md:168",
+      "argv": ["version-new", "--doc", "golden.md", "--body-file", "golden.md", "--label", "hello"],
+      "doc": "SKILL.md:184",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3839,7 +3925,7 @@
     },
     {
       "argv": ["working"],
-      "doc": "SKILL.md:189",
+      "doc": "SKILL.md:208",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3848,7 +3934,7 @@
     },
     {
       "argv": ["working", "--for", "5"],
-      "doc": "SKILL.md:189",
+      "doc": "SKILL.md:208",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3856,142 +3942,107 @@
       "kind": "not_found"
     },
     {
-      "argv": ["workspace"],
-      "doc": "SKILL.md:215",
-      "exit": 2,
-      "verdict": "rejected",
+      "argv": ["notes", "--doc", "golden.md"],
+      "doc": "SKILL.md:212",
+      "exit": 5,
+      "verdict": "accepted",
       "stream": "stderr",
       "ok": false,
-      "kind": "usage",
-      "choices": [
-        "open",
-        "add",
-        "import",
-        "state",
-        "tail",
-        "say",
-        "working",
-        "version-new",
-        "activate",
-        "diff",
-        "merge",
-        "show",
-        "version-delete",
-        "note",
-        "notes",
-        "note-edit",
-        "note-resolve",
-        "task",
-        "task-status",
-        "task-done",
-        "task-cancel",
-        "new-doc",
-        "new-folder",
-        "rename",
-        "move",
-        "relink",
-        "describe-image",
-        "image-settings",
-        "search",
-        "backlinks",
-        "link-check",
-        "graph",
-        "profiles",
-        "profile",
-        "profile-check",
-        "relations",
-        "reveal",
-        "doctor",
-        "close",
-        "make-set",
-        "add-folder",
-        "meta",
-        "find",
-        "meta-init",
-        "meta-set",
-        "forget",
-        "move-plan",
-        "note-remove",
-        "task-remove",
-        "tasks-clear",
-        "info",
-        "hide",
-        "unhide",
-        "version",
-        "schema",
-        "help"
-      ]
+      "kind": "not_found"
     },
     {
-      "argv": ["workspace", "golden.md"],
-      "doc": "SKILL.md:216",
-      "exit": 2,
-      "verdict": "rejected",
+      "argv": ["note-resolve", "item1"],
+      "doc": "SKILL.md:213",
+      "exit": 5,
+      "verdict": "accepted",
       "stream": "stderr",
       "ok": false,
-      "kind": "usage",
-      "choices": [
-        "open",
-        "add",
-        "import",
-        "state",
-        "tail",
-        "say",
-        "working",
-        "version-new",
-        "activate",
-        "diff",
-        "merge",
-        "show",
-        "version-delete",
-        "note",
-        "notes",
-        "note-edit",
-        "note-resolve",
-        "task",
-        "task-status",
-        "task-done",
-        "task-cancel",
-        "new-doc",
-        "new-folder",
-        "rename",
-        "move",
-        "relink",
-        "describe-image",
-        "image-settings",
-        "search",
-        "backlinks",
-        "link-check",
-        "graph",
-        "profiles",
-        "profile",
-        "profile-check",
-        "relations",
-        "reveal",
-        "doctor",
-        "close",
-        "make-set",
-        "add-folder",
-        "meta",
-        "find",
-        "meta-init",
-        "meta-set",
-        "forget",
-        "move-plan",
-        "note-remove",
-        "task-remove",
-        "tasks-clear",
-        "info",
-        "hide",
-        "unhide",
-        "version",
-        "schema",
-        "help"
-      ]
+      "kind": "not_found"
+    },
+    {
+      "argv": ["link-check"],
+      "doc": "SKILL.md:289",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["graph"],
+      "doc": "SKILL.md:302",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["backlinks"],
+      "doc": "SKILL.md:302",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["new-doc", "golden.md"],
+      "doc": "SKILL.md:308",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["new-folder", "golden.md"],
+      "doc": "SKILL.md:308",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["import", "golden.md", "--into", "golden.md"],
+      "doc": "SKILL.md:309",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["add-folder", "golden.md"],
+      "doc": "SKILL.md:312",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["make-set", "golden.md"],
+      "doc": "SKILL.md:313",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["add", "golden.md"],
+      "doc": "SKILL.md:314",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
     },
     {
       "argv": ["search", "hello"],
-      "doc": "SKILL.md:239",
+      "doc": "SKILL.md:352",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3999,8 +4050,8 @@
       "kind": "not_found"
     },
     {
-      "argv": ["find", "--status", "hello"],
-      "doc": "SKILL.md:259",
+      "argv": ["find"],
+      "doc": "SKILL.md:382",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",

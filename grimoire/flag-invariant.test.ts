@@ -129,6 +129,30 @@ const FOREIGN: Record<string, string> = {
 };
 const isForeign = (spell: string, flag: string) => FOREIGN[`${spell}:${flag}`] !== undefined;
 
+// The table a spell's DEFAULT path runs, where the source scan reads another.
+// scriptorium (the cutover, 2026-10-20): the `defineCli` in `backend/cli.ts`
+// is the earlier Scriptorium, reached only behind the temporary
+// `SCRIPTORIUM_SHIPPED=1` hatch. The default is the kit's workspace CLI
+// (`backend/kit/cli.ts`), whose flags come from the kit's options table, which
+// the scan cannot follow, so it is read from the table itself, as the
+// kit-registry cell below does. SKILL.md describes the default; a flag only the
+// hatch knows (`--entry`) is deliberately undocumented. This entry goes with
+// the shipped CLI.
+const DEFAULT_TABLE: Record<string, readonly string[]> = {
+  scriptorium: (
+    (await import(join(BACKEND_SRC_DIR, "scriptorium/backend/kit/cli.ts"))) as {
+      scriptoriumKitCli: (deps: {
+        serverScript: string;
+        daemonCwd: () => string;
+        version: () => Record<string, unknown>;
+      }) => { recognizedFlags: readonly string[] };
+    }
+  )
+    // Building the table spawns nothing: the deps are read only when a verb runs.
+    .scriptoriumKitCli({ serverScript: "", daemonCwd: () => "", version: () => ({}) })
+    .recognizedFlags.map((f) => f.replace(/^--/, "")),
+};
+
 const parsing = argParsingEntryPoints();
 
 describe("ward — every SKILL.md flag is recognized, and every recognized flag is documented", () => {
@@ -255,6 +279,13 @@ describe("ward — every SKILL.md flag is recognized, and every recognized flag 
         spell,
         unresolvedEntryPoints: [],
       });
+      // The default path's own table replaces what the scan read (see `DEFAULT_TABLE`).
+      const table = DEFAULT_TABLE[spell];
+      if (table) {
+        caller.splice(0, caller.length, ...table);
+        all.clear();
+        for (const f of table) all.add(f);
+      }
 
       const documented = new Set(
         // ⛔ FIXED AT THE ROOT, WHICH IS WHY ONE EDIT CLOSES TWO ERRORS. The

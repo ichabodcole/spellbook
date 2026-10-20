@@ -79,9 +79,11 @@ and their cursor was in there.
 The older two-step form still works and is **racy**: plain `version-new` copies
 a version and prints its path for you to edit, but the toast offers that copy at
 once. If they activate it before you write, your write lands on the active
-version. The safeguard keeps your text as yet another version and says so
-(`active.outside` with `activatedBeforeWritten: true`). **Do not make another
-version then**: tell them which version holds your draft.
+version. The safeguard puts their text back in the active version, keeps yours
+as yet another version, and says so: a `system` event with
+`fact: "active.outside"`, whose `preservedAs` is the version that now holds your
+text (`preservedPath` its file). **Do not make another version then**: tell them
+that version holds your draft.
 
 **3 · Save and Revert are theirs.** There is no verb for either, deliberately.
 Your work exists as versions until they accept it.
@@ -89,7 +91,8 @@ Your work exists as versions until they accept it.
 **4 · Prose goes through a file.** `say --body-file <path>` or `--stdin` from a
 quoted heredoc, never as shell arguments — an unquoted heredoc eats backticks
 before the CLI sees them. Same for `task`, `version-new`, and
-`note --quote '<exact text>'`.
+`note --quote '<exact text>'`. An event's `hint` writes `say "<reply>"` as
+shorthand for the verb; the reply still goes through a file.
 
 **Write `say` in markdown; it renders.** The conversation shows your message
 rendered (headings, lists, code blocks, tables, links), not as raw `**` and
@@ -100,10 +103,11 @@ beside the document they have open first, then from that document's set root
 set: `[the glade](./locations/the-glade.md)` opens the set's glade, unless the
 open document's own folder holds a `locations/the-glade.md` of its own. A path
 opens any document in their context, in any set, but a bare name (`the-glade`)
-or a `type/slug` key (`location/the-glade`) looks only in the link's own set. A
-file outside the context, or one that does not exist, is reported to them
-instead. Raw HTML shows as text, and any other link scheme is struck through and
-does nothing.
+or a `type/slug` key (`location/the-glade`) looks only in the link's own set. An
+absolute path (`/Users/…/the-glade.md`) is tried under the set root, then as
+written. A file outside the context, or one that does not exist, is reported to
+them instead. Raw HTML shows as text, and any other link scheme is struck
+through and does nothing.
 
 ## The loop
 
@@ -112,6 +116,8 @@ S=<this skill's directory>
 bun $S/scripts/cli.ts open ~/notes/chapter-3.md ~/notes/research/
 bun $S/scripts/cli.ts tail        # wrap with Monitor, timeout_ms 1800000
 ```
+
+`open` with no paths adds the folder you ran it from, as a set.
 
 **Keep watching past Monitor's 30-minute cap.** Arm the tail with Monitor at
 `timeout_ms: 1800000`. It ends itself just before the cap, and its last line
@@ -141,12 +147,22 @@ handled. If the launcher refuses a `command` with a usage error, its message
 names the forms it accepts; fix the arguments to match.
 
 **⚠ Not every line is JSON. Ignore any line beginning with `:`** — those are
-keepalives (`: scriptorium-keepalive`), and a loop that parses every line will
-throw on the first one. Everything else is one event per line.
+keepalives (`: scriptorium-keepalive`, on stderr while the stream is quiet), and
+a loop that parses both streams will throw on the first one. Everything else is
+one event per line, after a first `grounding` line naming the session. Event
+`id`s skip the events that stay off your tail (`tail --all` shows them); nothing
+was lost. Joining a session late, `state` holds the whole backlog at once
+(`chat`, `waiting`, `notesWaiting`).
 
-Every human message arrives on the tail carrying **what they were looking at** —
-the selected passage with its document, version and line numbers, and the path
-of the active version. Read it; do not ask what "this" means. Then:
+Every human message arrives on the tail as a `message` carrying `about`: **what
+they were looking at**. With a passage selected, that is the passage (`text`,
+`fromLine`, `toLine`) with its `doc`, `version` and the `path` of that version's
+file; with none, the document they have open; `refs` lists anything else they
+pointed at. Read it; do not ask what "this" means. It also carries `via`, the
+gesture it came through: `chat` is typed in the composer, and anything else is a
+button that spoke for them in a few words (`ask`: a note's **Ask the agent**,
+see below; `describe`: describe an image; `fix`: fix a profile warning). Answer
+the act the button stands for, not its wording. Then:
 
 ```bash
 bun $S/scripts/cli.ts version-new --doc <slug, or a PATH if not open yet> --label "tighter opening" --body-file /tmp/draft.md
@@ -175,8 +191,8 @@ edit, which is the racy two-step form.
 **⚠ `--doc` accepts a slug or a unique filename only for a document that is
 ALREADY open.** For anything else it must be an absolute path — a filename gets
 you `no document "keeper.md" in this session`. `state` lists what is open
-(`docs[].slug`) and what is merely in the context. A refusal names the paths you
-could have used.
+(`docs[].slug`, each with its `original` path) and what is merely in the
+context. The refusal's `choices` are the open documents' slugs.
 
 **The path `version-new` prints is never the active one when it is made** — but
 the human can activate it a moment later, which is why the one-step
@@ -186,7 +202,8 @@ the human can activate it a moment later, which is why the one-step
 
 Facts, not chatter. The ones worth acting on:
 
-- **`message`** — they said something. Answer it.
+- **`message`** — they said something, or pressed a button that says it for them
+  (`via`). Answer it.
 - **`waiting`** — they have been waiting 30 seconds with no reply from you. It
   carries the text they are waiting on. Answer, or `working` to say you are
   still on it (see below).
@@ -196,23 +213,44 @@ Facts, not chatter. The ones worth acting on:
   it or propose a version, then **resolve it** (`note-resolve <id>`): resolving
   is what tells them it is dealt with, and the event's `hint` names the exact
   command. If the passage is no longer in the active version, the event says
-  `passage: "gone"` instead of giving `lines`. A `note.edited` or
-  `note.reopened` from them is owed an answer in the same way.
+  `passage: "gone"` instead of giving `lines`. Their rewrite of a note arrives
+  as a `system` event with `fact: "note.edited"` carrying what it now says, and
+  their reopen as `note.resolved` with `resolved: false`: both are owed an
+  answer in the same way. `fact: "note.removed"` means they deleted it.
+- **`version.created`, `activated`, `reverted`, `merged`** — what is on offer,
+  or which version is active, changed. `activated` matters most: it moves the
+  version rule 2 is about.
+- **`saved`** — on your tail only when their save may overtake your work in
+  flight; `because` says which (`version`, `task`, `note`, or `findings` for a
+  profile file).
+- **`task.created`** and the other `task.*` events — a task they asked for (pick
+  it up), or one in flight that moved.
+- **`system`** — a fact about the files or the session, in `fact`, with `text`
+  (what the chat said) and, where it matters, `by`. The structural ones are
+  `move`, `rename`, `set.make` (a document made a set), `folder.add`,
+  `doc.create`, `import` and `trash`; `original.missing`, `original.back` and
+  `original.conflict` say their file went, came back or changed on disk;
+  `active.outside` is rule 2's safeguard; `manifest.migrated` is under **Older
+  sessions**.
 - **`doctor`** — at startup, anything worth looking at in the session, each
   finding carrying the verb that fixes it. Offer; do not silently repair. **It
   says nothing when there is nothing wrong**, so its absence is good news rather
-  than a broken tail. Run the `doctor` verb any time to ask directly.
-- **`saved`, `activated`, `system`** — they changed what is where. `system`
-  announcements carry a `fact` and, for structure changes, who did it.
+  than a broken tail. Run the `doctor` verb any time to ask directly. Its
+  findings' `kind`s: `original.missing`, `context.ghost`, `names.shared`,
+  `links.dangling`, `links.unsupported`, `links.heading`, `profiles.*` and
+  `relations.*`, and `workspace.overlap` on an older session.
 - **`closed`** — the session ended. The tail follows it with `tail.closed` and
   exits 0. The event and the line carry `by`: `human` (their End session
-  button), `agent` (your `close`), or `timeout` (the idle close). A daemon that
+  button), `agent` (your `close`), or `timeout` (the idle close); a tail started
+  after the end prints only the `tail.closed` line, `by` and all. A daemon that
   dies without `closed` (a crash, a `kill -9`) ends the tail with `tail.lost`
   instead, on stdout, so you hear it. Both name `open --restore <id>` as the way
   back.
 - **`by: "human"` means they ended it on purpose.** It is not a crash to repair.
   Stop watching, and do not reopen it unless they ask; wrap up in the terminal
-  if there is anything to say. Route on `by`, not on the hint's wording.
+  if there is anything to say. Route on `by`, not on the hint's wording. A verb
+  you run on that session afterwards is refused (`not_found`) as "the human
+  ended session …", with no `choices`, for the same reason.
 
 **When they say they are done in the chat** ("we're done", "that's all"), run
 `close` yourself. The button is a shortcut for saying it; saying it still works.
@@ -233,44 +271,56 @@ genuinely need longer; use `say` when you have something to tell them.
 **A note of theirs shows the same thing** — a pulse on the note until you say
 something in the app, resolve it, or rewrite it (`note-edit`), then "may be
 stuck" after 30 seconds. `working` covers notes too. There is no nudge for a
-note. When one looks stuck, they have a button that asks you about it, and it
-arrives as an ordinary `message` carrying the note's id (`note`) and `doc`, so
-you can `note-resolve` it directly once it is dealt with.
+note. When one looks stuck, they have an **Ask the agent** button on it, and it
+arrives as a `message` with `via: "ask"` and the note's id in `about.noteId`
+(its `doc` beside it), so you can `note-resolve` it directly once it is dealt
+with; the `hint` names the command. The note then shows it is with you until you
+reply, resolve it or `note-edit` it. If they rewrite it, it is owed again.
 
-## The four words that mean something specific
+## The words that mean something specific
 
 You will meet these in `state` and `help`. Two of them are the kind you can act
 wrongly on precisely because you already know the ordinary English word.
 
 - **A SET is a structural unit, not a loose grouping.** It is a top-level folder
-  in the context, with an id (`--entry`), its own link graph, and rules about
-  what may be created inside it. `make-set` is not cosmetic: it makes a folder
-  named for a document and moves the document into it. `dangling --entry <id>`
-  lists the set's links that answer nothing (`links`, each with its file `line`
-  and what the document `wrote`) and, apart and not in `count`, links with a
-  scheme nothing here opens, such as `op:doc/…` (`unsupported`, with `scheme`).
-  Neither is an error. A link to a folder is a `folder` edge, not a dangling
-  one, and links inside code or HTML comments are not links. `dangling`'s `line`
-  is the file's line, but a `graph` edge's `line` counts from the start of the
-  body, below the frontmatter. **⚠ If `graph`, `dangling` or `backlinks` carries
-  `truncated`, it covers part of the set:** `{read, of}` documents, with `of`
-  null when the set lists only part of its folder (a very large folder). Their
-  `hint` says what to do: `add` a sub-folder as a set of its own, or `hide`
-  folders that do not belong. The `doctor` reports it as `links.partial`.
+  in the context, with an id (`context[].id` in `state`), its own link graph,
+  and rules about what may be created inside it. `make-set` is not cosmetic: it
+  makes a folder named for a document and moves the document into it.
+  `link-check` checks every link in the session, in sections. The two you will
+  meet most are its `dangling` section, links that answer nothing (each with its
+  source, `line`, the link as written, `raw`, and where it looked, `tried`), and
+  `unsupported`, links with a scheme nothing here opens, such as `op:doc/…`.
+  Neither is an error: a world points at things not written yet. `count` counts
+  problems only; hint sections such as `symmetry`, `unusedImages` and `leaving`
+  stay out of it. Every entry carries `set`, and `sets` lists the sets that have
+  entries, in the order the human's broken-links list groups them (empty when
+  nothing is broken). A link to a folder is not dangling, and links inside code
+  or HTML comments are not links. A `line` is the line in the text it was read
+  from, the active version for an open document. **⚠ If a context entry in
+  `state` carries `truncated`, its folder was too big to list whole, and every
+  answer about links covers part of it:** `add` a sub-folder as a set of its
+  own, or `hide` folders that do not belong. (`graph` and `backlinks` also say
+  `truncated` when their own list was cut at its cap.)
 - **The CONTEXT is what is in their sidebar** — the documents and sets they
   chose for this session. (Unrelated to `diff --context`, which means lines of
   surrounding text. Same word, two meanings, one of them a flag.)
-- **The WORKSPACE is where new things land** — a `new-doc` outside a set goes
-  there. `open` over exactly ONE folder (named twice is still one) makes that
-  folder the workspace; over several entries, or a single file, it is the
-  directory you ran `open` from, and a `--restore`d session keeps its own. **⚠
-  Read `workspace` in `open`'s output** before creating; `workspace` prints it
-  later, `workspace <dir>` moves it.
+- **There is no workspace: a new file goes where you name it.**
+  `new-doc <folder>/<name>.md`, `new-folder <folder>/<name>` and
+  `import <file> --into <folder>` (`--into` is required) each take a place
+  inside a set, or a folder in one; name the folder of the document under
+  discussion unless they said otherwise. Anywhere else is refused, and the
+  refusal names the ways to make a place: `add-folder <path>` (a new empty
+  folder anywhere its parent exists, as a new set), `make-set <doc>`, or
+  `add <folder>` for one that exists. **⚠ `add-folder` refuses a literal `~`**,
+  which arrives unexpanded when quoted or passed from a script: write the full
+  path.
 - **ACTIVE means two different things in `state`.** `docs[].active` is a version
-  number, and it is the one rule 2 is about. `state.active` (beside `openDoc`)
-  is which document their VIEW is on, and is `null` before they open anything.
-  Reading the wrong one under a rule that says "never write the active version"
-  is the expensive mistake here.
+  number, every document's own, and it is the one rule 2 is about.
+  `state.active` (beside `openDoc`) is which document their VIEW is on,
+  `{doc, version, path}`, and is `null` before they open anything. A document
+  they are not looking at still has an active version; reading `state.active` as
+  the only one, under a rule that says "never write the active version", is the
+  expensive mistake here.
 
 ## Their half, and yours
 
@@ -281,8 +331,21 @@ exactly as they can — but **do the structural things through the verbs, not
 through `mv`**: the verbs announce what you did in the conversation, and a moved
 document keeps its versions. A plain `mv` is silent and loses the thread.
 
-Two things are theirs alone, and that is by design rather than omission: the
-system file picker, and Reveal in Finder. You already have the paths.
+**A move breaks links, and fixing them is part of the move.** `rename`, `move`
+and `make-set` print `broken`: the links in other documents that pointed at the
+old place, each with its `line`, `from` (as written) and `to` (as it would be
+rewritten). Offer to update them, and run `relink` when they agree: it rewrites
+them all as part of that same act, so one undo puts back both. `--update-links`
+on `rename` or `move` does it in one step; `move-plan` shows what a move would
+break before you make it. `relink` is refused once anything else has changed the
+context's shape, so offer it straight away. Left alone, the links are listed by
+`link-check`, and the human sees the same offer in their sidebar. Wiki links are
+never rewritten. **⚠ `relink` and `link-check` read each document's ACTIVE
+version:** a version you proposed before the move keeps the old link and nothing
+flags it. Make the move first, or propose that version again afterwards.
+
+`reveal <path>` shows a file in their file manager, for when they ask where
+something is. The system file picker is theirs alone, by design.
 
 ## Finding things
 
@@ -291,6 +354,15 @@ exact in the text. **It searches what they are LOOKING at**, which is the active
 version of an open document, not necessarily the file on disk. `grep` over their
 folder will miss an edit they made two minutes ago; this will not. For one
 document you already have, read it or grep it — that is what it is for.
+
+## Older sessions
+
+A session an earlier Scriptorium saved is converted the first time it is
+restored (`open --restore <id>`). The first thing on its tail after `ready` is a
+`system` event with `fact: "manifest.migrated"`, whose `kept` is the old
+manifest, left beside the new one; the chat tells the human the same. A `doctor`
+often follows, naming files that went missing while it was closed. Nothing about
+how you work with it changes.
 
 ## When something is wrong
 
@@ -309,13 +381,19 @@ as a claim about what they do and gets it wrong — `--status` looks like it
 belongs to `task-status`, and it does not; `task-status` takes a positional and
 `--status` is a `find` filter.
 
-`--body-file` `--by` `--context` `--doc` `--entry` `--for` `--from` `--full`
-`--hunks` `--into` `--label` `--lifecycle` `--limit` `--no-open` `--patch`
-`--once` `--quote` `--reopen` `--restore` `--session` `--since`
-`--start-timeout` `--status` `--stdin` `--tag` `--timeout` `--type`
+`--against` `--all` `--body-file` `--bundles` `--by` `--context` `--doc`
+`--edge` `--failed` `--focus` `--for` `--format` `--from` `--full` `--heading`
+`--hops` `--hunk` `--hunks` `--into` `--kind` `--kindless` `--label`
+`--lifecycle` `--limit` `--max-side` `--no-open` `--once` `--parent` `--patch`
+`--quality` `--quote` `--rel` `--reopen` `--restore` `--session` `--since`
+`--source` `--start-timeout` `--status` `--stdin` `--tag` `--timeout` `--type`
+`--untyped` `--update-links` `--via` `--within`
 
-`--session` works with every verb and targets a session other than the most
-recent.
+`--session <id>` works with every verb that talks to a session. Without it, a
+verb goes to the **newest** session, the one a daemon last started (new or
+restored), and only to it: never past it to an older one that happens to still
+be running. If the newest has ended or crashed, the refusal says so by name;
+pass `--session` for the one you meant.
 
 Every flag goes to the LEFT of a bare `--`; after it, a flag is text. (`help`
 and the version are verbs of their own, not flags.)
