@@ -691,6 +691,101 @@ test("no --session, the newest crashed: tail grounds on it, then says tail.lost,
   expect(out).not.toContain("aaaa1111");
 }, 40_000);
 
+test("a named session with no daemon: the hint names THAT session, not the newest", () => {
+  const home = homeWith([{ id: "aaaa1111" }, { id: "bbbb2222" }]);
+  for (const verb of ["state", "close"]) {
+    const r = run([verb, "--session", "aaaa1111"], EMPTY_TMP, home);
+    expect(r.code).toBe(5);
+    const doc = JSON.parse(r.stderr) as Envelope;
+    expect(doc.error.message).toBe("no running kit-fixture session aaaa1111");
+    expect(doc.error.hint).toBe(
+      "no daemon is running for session aaaa1111, but its work is on disk: bring it back with `open --restore aaaa1111`",
+    );
+    expect(doc.error.choices).toEqual(["bbbb2222", "aaaa1111"]);
+  }
+});
+
+test("an ended session the agent or the idle timeout closed still offers the way back", () => {
+  for (const by of ["agent", "timeout"]) {
+    const home = homeWith([{ id: "aaaa1111", ended: { by, at: "x" } }]);
+    const doc = JSON.parse(
+      run(["state", "--session", "aaaa1111"], EMPTY_TMP, home).stderr,
+    ) as Envelope;
+    expect(doc.error.hint).toContain("bring it back with `open --restore aaaa1111`");
+  }
+});
+
+test("an unknown --session is not saved here: the saved ones are choices, and it is not told to restore itself", () => {
+  const home = homeWith([{ id: "aaaa1111" }]);
+  const r = run(["state", "--session", "zzzz9999"], EMPTY_TMP, home);
+  expect(r.code).toBe(5);
+  const doc = JSON.parse(r.stderr) as Envelope;
+  expect(doc.error.message).toBe(
+    `no kit-fixture session zzzz9999 is saved here (${join(home, "sessions")})`,
+  );
+  expect(doc.error.hint).toBe(
+    "pass --session one of the saved sessions, or drop it for the most recent",
+  );
+  expect(doc.error.choices).toEqual(["aaaa1111"]);
+  expect(doc.error.hint).not.toContain("open --restore");
+  // With nothing saved at all, it says so.
+  const none = JSON.parse(run(["state", "--session", "zzzz9999"]).stderr) as Envelope;
+  expect(none.error.hint).toBe("no session has been saved here yet: run `open <path>`");
+  expect(none.error.choices).toEqual([]);
+});
+
+test("tail's stdout is JSON lines only; the keepalive goes to stderr, as the help says", async () => {
+  // A stub daemon: a keepalive comment, then one event on the log.
+  const enc = new TextEncoder();
+  const server = Bun.serve({
+    port: 0,
+    hostname: "127.0.0.1",
+    fetch: () =>
+      new Response(
+        new ReadableStream({
+          start(c) {
+            c.enqueue(enc.encode(": hb\n\n"));
+            setTimeout(() => {
+              c.enqueue(enc.encode('id: 1\ndata: {"id":1,"epoch":"e1","type":"message"}\n\n'));
+            }, 100);
+          },
+        }),
+        { headers: { "content-type": "text/event-stream" } },
+      ),
+  });
+  const dir = mkdtempSync(join(tmpdir(), "workspace-keepalive-"));
+  // This process's own pid: alive, and nobody else's.
+  const pointer = {
+    url: `http://127.0.0.1:${server.port}`,
+    port: server.port,
+    session_id: "s1",
+    dir: "/x",
+    pid: process.pid,
+  };
+  writeFileSync(join(dir, "kit-fixture.s1.json"), JSON.stringify(pointer));
+  try {
+    const p = Bun.spawn(["bun", CLI, "--", "tail", "--once", "--session", "s1"], {
+      stdout: "pipe",
+      stderr: "pipe",
+      stdin: "ignore",
+      env: { ...process.env, TMPDIR: dir, KIT_FIXTURE_HOME: EMPTY_HOME },
+    });
+    const [out, err, exit] = await Promise.all([
+      new Response(p.stdout).text(),
+      new Response(p.stderr).text(),
+      p.exited,
+    ]);
+    expect(exit).toBe(0);
+    const lines = out.split("\n").filter((l) => l !== "");
+    const types = lines.map((l) => (JSON.parse(l) as { type: string }).type);
+    expect(types).toEqual(["grounding", "message", "tail.woke"]);
+    expect(err.split("\n")).toContain(": kit-fixture-keepalive");
+    expect(run(["help"]).stdout).toContain("`: kit-fixture-keepalive`");
+  } finally {
+    server.stop(true);
+  }
+}, 20_000);
+
 // ── 5. admission before any daemon exists ───────────────────────────
 
 test("open with a path that is no document or image fails before a daemon exists: no pointer, usage, the extensions as choices", () => {

@@ -1046,12 +1046,13 @@ describe("hardening, through the launchers", () => {
     expect(JSON.parse(r.err).error.choices).toContain(sid0);
   });
 
-  test("a verb with no session running says how to bring the work back", async () => {
+  test("a verb naming a session that is not saved here says so, with the saved ones as choices", async () => {
     const r = await cli("state", "--session", "no-such-id");
     expect(r.code).toBe(5);
     const err = JSON.parse(r.err).error;
-    expect(err.message).toContain("no running kit-fixture session");
-    expect(err.hint).toContain("open --restore");
+    expect(err.message).toContain("no kit-fixture session no-such-id is saved here");
+    expect(err.hint).not.toContain("open --restore");
+    expect(err.choices).toContain(sid0);
   });
 });
 

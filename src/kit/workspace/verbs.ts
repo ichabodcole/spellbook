@@ -564,7 +564,9 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
    *
    * A named session is the one the hint names. Offering the newest saved
    * session whatever was asked sent `close --session a` to "bring it back with
-   * `open --restore b`", another session.
+   * `open --restore b`", another session. An id that is not saved here (a typo,
+   * another app's id, or a session of another home) is said to be not here,
+   * with the saved ones as `choices`, not told to restore itself.
    *
    * A human end is routed on the manifest's `ended.by`, not on prose: the human
    * ended it on purpose, so the refusal says so, names that session, and offers
@@ -577,6 +579,17 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
       return {
         message: `no running ${app} session`,
         extra: { hint: "no session has been opened yet: run `open <path>`" },
+      };
+    if (!ids.includes(id))
+      return {
+        message: `no ${app} session ${id} is saved here (${opts.sessionsRoot()})`,
+        extra: {
+          hint:
+            ids.length === 0
+              ? "no session has been saved here yet: run `open <path>`"
+              : "pass --session one of the saved sessions, or drop it for the most recent",
+          choices: ids.slice(0, 10),
+        },
       };
     if (endedBy(id) === "human")
       return {
@@ -1724,7 +1737,9 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
   Each verb accepts only the flags on its row.
 
   Output: JSON on stdout, one document per answer, except tail (one JSON line
-  per event) and help (prose). Failures: one JSON envelope on stderr, exit
+  per event) and help (prose). tail's stderr also carries \`: ${app}-keepalive\`
+  lines while the stream is quiet: not JSON, so a reader of both streams
+  skips any line starting with \`:\`. Failures: one JSON envelope on stderr, exit
   2 = usage, 1 = internal, 5 = not found, 6 = conflict. tail waits for a
   session rather than failing, and ends 0 when its session closes. tail
   ${WINDOW_HELP}.${opts.helpFooter ? `\n\n${opts.helpFooter}` : ""}`,
