@@ -16,6 +16,13 @@
 //   - `folderBadges`: what shows at the trailing edge of a set's row and of each
 //     folder inside it, given the open documents under that folder and the number
 //     of documents there in all (so one never opened still counts).
+//   - the panes' own slots, handed to them unchanged: the context sidebar's
+//     `askLocation`, `beforeMove` (with `beforeMoveTimeoutMs` and
+//     `uncheckedMoveNote`) and refusal `notice`; Notes' `addUnavailable` (as
+//     `notesAddUnavailable`); and the outside-change toast's "See the
+//     difference" (as `onShowOutsideDiff`). Given `notice`, the app shows the
+//     daemon's refusals there, and the shell toasts them only while the
+//     context column is collapsed and the notice is out of sight.
 //
 // Over everything is the top bar: the app's title (its declaration's `title`), the
 // session id, search over the session's documents, End session and the theme.
@@ -62,6 +69,7 @@ import { OutsideChangeToasts } from "../chat/OutsideChangeToasts.tsx";
 import { isFinishedStatus, Spinner, TasksPanel } from "../chat/TasksPanel.tsx";
 import { TaskToasts } from "../chat/TaskToasts.tsx";
 import { badgeFor, WaitingDot } from "../chat/WaitingBadge.tsx";
+import type { AskLocation } from "../context/AskLocation.tsx";
 import { ContextSidebar } from "../context/ContextSidebar.tsx";
 import { CentreDockContext } from "../context/centreDock.tsx";
 import { type Daemon, SESSION_ENDED } from "../context/daemonClient.ts";
@@ -78,6 +86,7 @@ import {
   shortPath,
   tildify,
 } from "../context/model.ts";
+import type { BeforeMove, UncheckedMoveNote } from "../context/preMove.ts";
 import { RelinkBar } from "../context/RelinkBar.tsx";
 import {
   applySelectionEvent,
@@ -197,6 +206,45 @@ export type WorkspaceShellProps = {
   storage?: ShellStorage;
   /** An app's own actions under a chat message, or nothing (`ChatSidebar`'s `messageActions`). */
   messageActions?: (message: Message) => ReactNode;
+
+  // ── the panes' own slots, handed to them unchanged ──────────────────────
+  /**
+   * The context sidebar's `askLocation`: for an app with no workspace, ask the
+   * human where a new document, a new folder or a drop on the list goes
+   * (`useAskLocation` answers it). Absent, nothing asks. The app renders the
+   * hook's `dialog` itself; it portals, so anywhere does, `centre` included.
+   */
+  askLocation?: AskLocation;
+  /** The context sidebar's pre-move slot (`context/preMove.ts`). Absent, every move is sent at once. */
+  beforeMove?: BeforeMove;
+  /** How long a move waits for `beforeMove` before asking without it. Absent, the sidebar's default. */
+  beforeMoveTimeoutMs?: number;
+  /** What a move that `beforeMove` could not check names as unchecked, in its dialog. */
+  uncheckedMoveNote?: UncheckedMoveNote;
+  /**
+   * The refusal shown at the head of the context sidebar (an app adds its
+   * "To go on: …" hint here), or null when there is none. Given, even as null,
+   * the app owns the daemon's refusals: the shell does not clear `lastError`,
+   * and does not toast a refusal while the context column is open, so a
+   * refusal is shown once; `onDismissNotice` (usually `daemon.clearError`)
+   * lets it go. While the column is collapsed, the notice is out of sight, so
+   * the shell toasts the refusal too, under its title. A session that has
+   * ended is still the shell's to say. Absent, the shell toasts each refusal,
+   * as it always has.
+   *
+   * The notice is a string alone: a refusal's title (`daemon.lastErrorTitle`,
+   * "That link didn't open") is for the app to read off the daemon, if it
+   * wants it in the notice.
+   */
+  notice?: string | null;
+  onDismissNotice?: () => void;
+  /** Notes' `addUnavailable`: why no note can be added here, shown in place of the form. */
+  notesAddUnavailable?: string;
+  /**
+   * What the outside-change toast's "See the difference" does: compare the
+   * document with its file on disk. Absent, the toast offers Reload and Keep only.
+   */
+  onShowOutsideDiff?: (doc: DocView) => void;
 };
 
 /** The pane ids are the persisted layout's keys: renaming one forgets a viewer's sizes. */
@@ -376,6 +424,14 @@ function ShellBody({
   storageKey = "spellbook",
   storage: storageProp,
   messageActions,
+  askLocation,
+  beforeMove,
+  beforeMoveTimeoutMs,
+  uncheckedMoveNote,
+  notice,
+  onDismissNotice,
+  notesAddUnavailable,
+  onShowOutsideDiff,
 }: WorkspaceShellProps & { state: PublicState }) {
   const { send } = daemon;
   const toasts = useToastStore();
@@ -1022,15 +1078,43 @@ function ShellBody({
   useEffect(() => {
     if (lastError) setPendingShow(null);
   }, [lastError]);
+  // An app that shows refusals in the sidebar's notice keeps them there: one
+  // place per refusal, cleared when the human dismisses it. While the context
+  // column is collapsed its notice is out of sight, so the refusal is toasted
+  // as well, and left for the app to clear: the human always sees a refusal.
+  const noticeOwned = notice !== undefined;
+  /** The toast standing in for the notice while the column is collapsed. */
+  const ownedToast = useRef<number | null>(null);
+  const { dismiss: dismissToast } = toasts;
+  const letOwnedToastGo = useCallback(() => {
+    if (ownedToast.current === null) return;
+    dismissToast(ownedToast.current);
+    ownedToast.current = null;
+  }, [dismissToast]);
   useEffect(() => {
     if (!lastError) return;
+    if (noticeOwned && lastError !== SESSION_ENDED) {
+      if (collapsedRef.current.context) {
+        letOwnedToastGo();
+        ownedToast.current = toasts.announce(
+          lastErrorTitle ?? "The workspace refused that",
+          lastError,
+        );
+      }
+      return;
+    }
     if (lastError === SESSION_ENDED) {
       // One toast per burst: a held key or a double click is one answer, not five.
       if (Date.now() - endedToastAt.current > 2500) toasts.announce("Session ended", lastError);
       endedToastAt.current = Date.now();
     } else toasts.announce(lastErrorTitle ?? "The workspace refused that", lastError);
     clearError();
-  }, [lastError, lastErrorTitle, clearError, toasts]);
+  }, [lastError, lastErrorTitle, clearError, toasts, noticeOwned, letOwnedToastGo]);
+  // The stand-in goes once the notice is in sight (the column reopened) or the
+  // refusal is let go: a refusal is never shown twice at once.
+  useEffect(() => {
+    if (!lastError || !collapsed.context) letOwnedToastGo();
+  }, [lastError, collapsed.context, letOwnedToastGo]);
   // A new document or folder this viewer made arrives in rename mode; a new
   // document also opens.
   // A move this viewer made, once the daemon has done it: the sidebar puts the
@@ -1226,6 +1310,12 @@ function ShellBody({
       selected={treeSelected}
       onSelect={setTreeSelected}
       onAddRef={(path, name) => addRef({ path, label: name })}
+      askLocation={askLocation}
+      beforeMove={beforeMove}
+      beforeMoveTimeoutMs={beforeMoveTimeoutMs}
+      uncheckedMoveNote={uncheckedMoveNote}
+      notice={notice}
+      onDismissNotice={onDismissNotice}
     />
   );
 
@@ -1409,6 +1499,7 @@ function ShellBody({
         openDoc && send({ op: "note.resolve", doc: openDoc.slug, id, resolved })
       }
       onRemove={(id) => openDoc && send({ op: "note.remove", doc: openDoc.slug, id })}
+      addUnavailable={notesAddUnavailable}
     />
   );
   const tasksPanel_ = (
@@ -1527,6 +1618,14 @@ function ShellBody({
         announce={toasts.announce}
         dismiss={toasts.dismiss}
         onReload={(doc) => send({ op: "revert", doc })}
+        onShowDiff={
+          onShowOutsideDiff
+            ? (doc) => {
+                const d = state.docs.find((x) => x.slug === doc);
+                if (d) onShowOutsideDiff(d);
+              }
+            : undefined
+        }
       />
       <NewVersionToasts
         doc={openDoc}
