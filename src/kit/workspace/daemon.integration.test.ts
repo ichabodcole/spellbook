@@ -1227,7 +1227,7 @@ describe("open --restore of a session the kit did not write", () => {
 describe("a daemon whose start fails after binding", () => {
   test("stops listening, leaves no pointer, and exits", async () => {
     // A port known to be free a moment ago, so the test can knock on it after.
-    const probe = Bun.serve({ port: 0, fetch: () => new Response("") });
+    const probe = Bun.serve({ port: 0, hostname: "127.0.0.1", fetch: () => new Response("") });
     const port = probe.port as number;
     probe.stop(true);
     const tmp = join(root, "tmp-failed-start");
