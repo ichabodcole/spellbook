@@ -5,8 +5,51 @@
 // list in every snapshot. Everything here only reads that list: the notes
 // panel, its tab, the floating composer and the note menu in the text all draw
 // the same entry, so none of them can disagree about a note.
-import type { NoteWaiting, Waiting } from "../workspace/protocol";
+import type { Message, NoteWaiting, Waiting } from "../workspace/protocol";
+import { askOutstanding, type NoteFacts } from "../workspace/waiting.ts";
 import { type BadgeKind, badgeFor, UNHEARD_LABEL } from "./WaitingBadge.tsx";
+
+/**
+ * The owed notes the human has already asked about ("Ask the agent") with no
+ * answer yet, by note id. The daemon's own one-ask rule (`askOutstanding`),
+ * read off the same conversation, so the act is not offered again while the
+ * daemon would refuse it, and the note says it was asked.
+ */
+export function askedAbout(
+  waiting: readonly NoteWaiting[],
+  docs: readonly { slug: string; notes: readonly NoteFacts[] }[],
+  chat: readonly Pick<Message, "from" | "ts" | "via" | "about">[],
+): Set<string> {
+  const out = new Set<string>();
+  for (const w of waiting) {
+    const note = docs.find((d) => d.slug === w.doc)?.notes.find((n) => n.id === w.noteId);
+    if (note && askOutstanding(note, chat)) out.add(w.noteId);
+  }
+  return out;
+}
+
+/** A one-line excerpt, cut at a character boundary rather than mid-emoji. */
+function excerpt(text: string, max: number): string {
+  const flat = [...text.replace(/\s+/gu, " ").trim()];
+  return flat.length <= max
+    ? flat.join("")
+    : `${flat
+        .slice(0, max - 1)
+        .join("")
+        .trimEnd()}…`;
+}
+
+/**
+ * What "Ask the agent" says about a note that may be stuck: a message in the
+ * human's own conversation, so it gets everything a message gets (its badge,
+ * its one nudge), and the agent's answer to it answers the note too. An
+ * excerpt, not the note: the message carries the note's id (`about.noteId`),
+ * which is how the agent finds it whole; the words are for the human reading
+ * the conversation back.
+ */
+export function askAboutNoteText(note: { quote: string; body: string }, docName: string): string {
+  return `About my note on “${excerpt(note.quote, 60)}” in ${docName}: “${excerpt(note.body, 120)}”`;
+}
 
 type Badge = Waiting["badge"];
 

@@ -27,15 +27,17 @@ export function latestAgentLine(
 }
 
 /**
- * The note the float names: the oldest owed an answer, with its document and
- * how many more there are, or null when none is owed (or the oldest is not in
- * `docs`, as for a moment while a snapshot catches up).
+ * The note the float names: the oldest owed an answer that the human can still
+ * act on (not yet asked about, by `asked`), else the oldest, with its document
+ * and how many more there are, or null when none is owed (or that note is not
+ * in `docs`, as for a moment while a snapshot catches up).
  */
 export function floatNote(
   notesWaiting: readonly NoteWaiting[],
   docs: readonly Pick<DocView, "slug" | "name" | "notes">[],
+  asked: ReadonlySet<string> = new Set(),
 ): { waiting: NoteWaiting; body: string; docName: string; doc: string; more: number } | null {
-  const first = notesWaiting[0];
+  const first = notesWaiting.find((n) => !asked.has(n.noteId)) ?? notesWaiting[0];
   if (!first) return null;
   const doc = docs.find((d) => d.slug === first.doc);
   const note = doc?.notes.find((n) => n.id === first.noteId);
@@ -56,6 +58,8 @@ export function FloatingComposer({
   docs = [],
   openDoc = null,
   agentListening = true,
+  asked,
+  onAskNote,
   onOpen,
   onClose,
   children,
@@ -73,6 +77,13 @@ export function FloatingComposer({
   /** The open document: a note on it needs no document named. */
   openDoc?: string | null;
   agentListening?: boolean;
+  /** The waiting notes already asked about, unanswered, by id (`askedAbout`). */
+  asked?: ReadonlySet<string>;
+  /**
+   * "Ask the agent", on the named note when it may be stuck: the host sends the
+   * ask (`via: "ask"`, `about.noteId`). Absent, not offered.
+   */
+  onAskNote?: (waiting: NoteWaiting) => void;
   /** Open the conversation: reopen the column on its Chat tab. */
   onOpen: () => void;
   /** Close the float; the collapsed rail brings it back. */
@@ -81,7 +92,9 @@ export function FloatingComposer({
   children: ReactNode;
 }) {
   const line = waiting ? null : latestAgentLine(messages);
-  const owed = floatNote(notesWaiting, docs);
+  const owed = floatNote(notesWaiting, docs, asked);
+  const owedAsked = owed !== null && asked?.has(owed.waiting.noteId) === true;
+  const owedBadge = owed ? badgeFor(owed.waiting, agentListening) : null;
   return (
     <div data-slot="floating-composer" className="mx-auto flex w-full max-w-2xl flex-col gap-1">
       {/* A note with the agent, on a row of its own above the conversation's
@@ -102,8 +115,20 @@ export function FloatingComposer({
           </p>
           {owed.more > 0 && <span className="shrink-0 text-ink-faint">+{owed.more} more</span>}
           <span className="shrink-0">
-            <WaitingBadge flush of="note" badge={badgeFor(owed.waiting, agentListening)} />
+            <WaitingBadge flush of={owedAsked ? "asked" : "note"} badge={owedBadge ?? "working"} />
           </span>
+          {onAskNote && !owedAsked && owedBadge === "stalled" && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              data-action="float-note-ask"
+              title="Send this note to the agent as a message in the conversation"
+              onClick={() => onAskNote(owed.waiting)}
+            >
+              Ask the agent
+            </Button>
+          )}
         </div>
       )}
       <div className="flex min-h-6 items-center gap-1 pl-1 text-[11px] text-ink-dim">

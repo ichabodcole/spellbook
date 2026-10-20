@@ -65,7 +65,13 @@ import { ChatSidebar } from "../chat/ChatSidebar.tsx";
 import { FloatingComposer } from "../chat/FloatingComposer.tsx";
 import { NewVersionToasts } from "../chat/NewVersionToasts.tsx";
 import { NotesPanel } from "../chat/NotesPanel.tsx";
-import { badgesOn, elsewhere, owedSummary } from "../chat/noteWaiting.ts";
+import {
+  askAboutNoteText,
+  askedAbout,
+  badgesOn,
+  elsewhere,
+  owedSummary,
+} from "../chat/noteWaiting.ts";
 import { OutsideChangeToasts } from "../chat/OutsideChangeToasts.tsx";
 import { isFinishedStatus, Spinner, TasksPanel } from "../chat/TasksPanel.tsx";
 import { TaskToasts } from "../chat/TaskToasts.tsx";
@@ -241,6 +247,14 @@ export type WorkspaceShellProps = {
   onDismissNotice?: () => void;
   /** Notes' `addUnavailable`: why no note can be added here, shown in place of the form. */
   notesAddUnavailable?: string;
+  /**
+   * "Ask the agent" on a note that may be stuck, in the Notes panel and the
+   * floating composer's note line: a message in the conversation with
+   * `via: "ask"` and `about.noteId`, sent once while the note is owed an
+   * answer. `true` says it in the kit's words (`askAboutNoteText`); a function
+   * says it in the app's. Absent, not offered.
+   */
+  askAboutNotes?: boolean | ((note: { quote: string; body: string }, docName: string) => string);
   /**
    * What the outside-change toast's "See the difference" does: compare the
    * document with its file on disk. Absent, the toast offers Reload and Keep only.
@@ -438,6 +452,7 @@ function ShellBody({
   notice,
   onDismissNotice,
   notesAddUnavailable,
+  askAboutNotes,
   onShowOutsideDiff,
   endWarning,
 }: WorkspaceShellProps & { state: PublicState }) {
@@ -1352,7 +1367,45 @@ function ShellBody({
   // floating composer and the panel's pointer read every owed note, so one on
   // another document shows without collapsing a column. Only the panel's list
   // is the open document's, and it points at the rest.
-  const notesWaiting = state.notesWaiting ?? [];
+  const owedNotes = state.notesWaiting ?? [];
+  // "Ask the agent": the notes asked about and not answered, read off the
+  // conversation by the daemon's own one-ask rule, plus those pressed here
+  // whose message the snapshot has not brought yet (the conversation is as
+  // long as it was at the press), so a second press before it arrives sends
+  // nothing. An asked note waits on its message, so it shows the message's
+  // badge, as the conversation does.
+  const [askPressed, setAskPressed] = useState<ReadonlyMap<string, number>>(() => new Map());
+  const notesAsked = askedAbout(owedNotes, state.docs, state.chat);
+  if (daemon.connection === "open")
+    for (const [id, at] of askPressed) if (at === state.chat.length) notesAsked.add(id);
+  const notesWaiting =
+    notesAsked.size === 0
+      ? owedNotes
+      : owedNotes.map((n) =>
+          notesAsked.has(n.noteId) && state.waiting
+            ? {
+                ...n,
+                badge: state.waiting.badge,
+                ...(state.waiting.acknowledged ? { acknowledged: true as const } : {}),
+              }
+            : n,
+        );
+  const askNote = askAboutNotes
+    ? (doc: string, noteId: string) => {
+        if (notesAsked.has(noteId)) return;
+        const note = state.docs.find((d) => d.slug === doc)?.notes.find((n) => n.id === noteId);
+        if (!note) return;
+        const name = docName(doc);
+        const text =
+          typeof askAboutNotes === "function"
+            ? askAboutNotes(note, name)
+            : askAboutNoteText(note, name);
+        // The kit's button, not the composer: no held refs ride along, and
+        // nothing else moves. The note's badge says it was asked.
+        const sent = send({ op: "say", text, withSelection: false, via: "ask", about: { noteId } });
+        if (sent !== null) setAskPressed((p) => new Map(p).set(noteId, state.chat.length));
+      }
+    : undefined;
   const noteBadges = badgesOn(notesWaiting, openDoc?.slug ?? null);
   const notesElsewhere = elsewhere(notesWaiting, openDoc?.slug ?? null).map((o) => ({
     ...o,
@@ -1476,6 +1529,8 @@ function ShellBody({
       waiting={noteBadges}
       others={notesElsewhere}
       agentListening={agentListening}
+      asked={notesAsked}
+      {...(askNote ? { onAsk: (n) => openDoc && askNote(openDoc.slug, n.id) } : {})}
       onOpenDoc={(doc) => send({ op: "open.doc", doc })}
       focusedId={focusedNote}
       onLetGo={() => setPointedAt(null)}
@@ -1583,6 +1638,8 @@ function ShellBody({
         docs={state.docs}
         openDoc={openDoc?.slug ?? null}
         agentListening={agentListening}
+        asked={notesAsked}
+        {...(askNote ? { onAskNote: (w) => askNote(w.doc, w.noteId) } : {})}
         onOpen={() => {
           setPanelId("chat");
           toggleFrom("chat", "expand", COLUMN_INPUT);

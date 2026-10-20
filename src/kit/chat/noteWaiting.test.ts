@@ -1,6 +1,14 @@
 // A note owed an answer, as the surface reads it.
 import { describe, expect, test } from "bun:test";
-import { badgesOn, elsewhere, loudest, owedLabel, owedSummary } from "./noteWaiting.ts";
+import {
+  askAboutNoteText,
+  askedAbout,
+  badgesOn,
+  elsewhere,
+  loudest,
+  owedLabel,
+  owedSummary,
+} from "./noteWaiting.ts";
 
 const iso = (ms: number) => new Date(ms).toISOString();
 const w = (doc: string, noteId: string, badge: "working" | "stalled", since = 0) => ({
@@ -90,5 +98,50 @@ describe("owedSummary: one mark for the session's owed notes", () => {
     expect(
       owedSummary([{ ...w("a", "n1", "working"), acknowledged: true as const }], false)?.badge,
     ).toBe("working");
+  });
+});
+
+describe("askedAbout: the owed notes already asked about", () => {
+  const note = (id: string, more: Record<string, unknown> = {}) => ({
+    id,
+    by: "human" as const,
+    createdAt: iso(0),
+    resolved: false,
+    ...more,
+  });
+  const ask = (noteId: string, at: number, via = "ask") => ({
+    from: "human" as const,
+    ts: iso(at),
+    via,
+    about: { noteId },
+  });
+  const docs = [{ slug: "a", notes: [note("n1"), note("n2")] }];
+  const owed = [w("a", "n1", "stalled"), w("a", "n2", "stalled")];
+  test("an ask through the button, unanswered, marks its note alone", () => {
+    expect([...askedAbout(owed, docs, [ask("n1", 10)])]).toEqual(["n1"]);
+  });
+  test("a typed message naming the note is not an ask", () => {
+    expect(askedAbout(owed, docs, [ask("n1", 10, "chat")]).size).toBe(0);
+  });
+  test("the agent speaking after the ask answers it", () => {
+    const chat = [ask("n1", 10), { from: "agent" as const, ts: iso(20), via: "chat" }];
+    expect(askedAbout(owed, docs, chat).size).toBe(0);
+  });
+  test("a human rewrite after the ask is a new question, not yet asked", () => {
+    const rewritten = [
+      { slug: "a", notes: [note("n1", { editedAt: iso(20), editedBy: "human" })] },
+    ];
+    expect(askedAbout(owed, rewritten, [ask("n1", 10)]).size).toBe(0);
+  });
+});
+
+describe("askAboutNoteText", () => {
+  test("names the passage and the note, cut to an excerpt", () => {
+    expect(askAboutNoteText({ quote: "Solo", body: "is this right?" }, "solo.md")).toBe(
+      "About my note on “Solo” in solo.md: “is this right?”",
+    );
+    const long = askAboutNoteText({ quote: "q", body: "x".repeat(300) }, "d.md");
+    expect(long.length).toBeLessThan(160);
+    expect(long).toContain("…");
   });
 });
