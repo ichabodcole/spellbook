@@ -27,6 +27,22 @@
  * goes through `unlinkIfMatches`, so a newer daemon's pointer is never taken
  * down by an older one exiting late.
  *
+ * Trust (kit-discovery-pointer-hardening). The temp directory may be shared
+ * (Linux's `/tmp`), so a pointer is a claim to check, not a fact:
+ * - a pointer's pid is a whole number above 0 (`process.kill(0 or -1, 0)`
+ *   signals a process group, and reads as alive);
+ * - a session's pointer names its own session (`<app>.<id>.json` holds
+ *   `session_id: id`);
+ * - a pointer another user owns is not this user's daemon;
+ * - a `latest` that fails any check above is passed over for the scan of live
+ *   session pointers, as a missing one is. A well-formed `latest` naming a dead
+ *   pid is returned as it is, like a session's own pointer: it says the newest
+ *   session is not running (a crash), which is the caller's to say, never a
+ *   reason to reach an older live one instead.
+ * - `publishPointer` writes through a temp file opened exclusively, under a
+ *   name nobody can guess, so a planted file or symlink there makes the write
+ *   fail, never redirects it.
+ *
  * ⚠ NO SPELL IS ON IT YET. The per-session spells still name their own files
  * (`<spell>-<id>.json`, a dash where this uses a dot, and no `latest`), so
  * moving one onto this API changes the path its CLI looks for.
@@ -83,8 +99,8 @@ export function publishPointer(
   const session = pointerPath(spell, pointer.session_id, opts);
   const latest = pointerPath(spell, undefined, opts);
   const text = JSON.stringify(pointer);
-  writeFileAtomic(session, text);
-  writeFileAtomic(latest, text);
+  writePointerFile(session, text);
+  writePointerFile(latest, text);
   return { session, latest };
 }
 
@@ -163,7 +179,10 @@ export function readLastOpened(
 
 /**
  * Read a session's pointer, or the spell's latest when `id` is omitted. `null`
- * means there is no such pointer, and nothing else does.
+ * means there is no such pointer, and nothing else does. A `latest` that cannot
+ * be trusted falls back to the newest live session pointer; one naming a dead
+ * pid is returned (its session crashed). A session's own pointer that cannot be
+ * trusted throws.
  */
 export function readPointer(
   spell: string,
@@ -187,12 +206,28 @@ export function readPointer(
   } catch {
     throw new Error(`the ${spell} pointer is not valid JSON: ${path}`);
   }
+  if (id === undefined) {
+    // One it cannot vouch for is passed over, not trusted. A dead pid is not a
+    // trust failure: the newest session crashed, and the caller says so.
+    if (isPointer(parsed) && ownedByMe(path)) return parsed;
+    if (!isPointerShape(parsed))
+      throw new Error(`the ${spell} pointer has the wrong shape: ${path}`);
+    return newestLivePointer(spell, opts);
+  }
   if (!isPointer(parsed)) throw new Error(`the ${spell} pointer has the wrong shape: ${path}`);
+  if (parsed.session_id !== id)
+    throw new Error(`the ${spell} pointer for ${id} names another session: ${path}`);
+  if (!ownedByMe(path)) throw new Error(`the ${spell} pointer is another user's: ${path}`);
   return parsed;
 }
 
-/** Whether a process is alive: signal 0 only checks. EPERM means it exists and is not ours. */
+/**
+ * Whether a process is alive: signal 0 only checks. EPERM means it exists and is
+ * not ours. A pid of 0 or below is never alive: signal 0 to it reaches a process
+ * group, which always answers.
+ */
 export function pidAlive(pid: number): boolean {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
   try {
     process.kill(pid, 0);
     return true;
@@ -214,8 +249,9 @@ function ownedByMe(path: string): boolean {
 
 /**
  * The newest session pointer of `spell` whose daemon is still alive, or null. A pointer
- * that cannot be read or parsed, or names a dead pid, is not a candidate: this is a
- * fallback for a missing `latest`, so it never throws.
+ * that cannot be read or parsed, names a dead pid, is filed under another session's
+ * name or belongs to another user is not a candidate: this is a fallback for a
+ * missing or untrusted `latest`, so it never throws.
  */
 function newestLivePointer(spell: string, opts: DiscoveryOptions): SessionPointer | null {
   const dir = opts.tmp ?? tmpdir();
@@ -232,7 +268,8 @@ function newestLivePointer(spell: string, opts: DiscoveryOptions): SessionPointe
     const path = join(dir, name);
     try {
       const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
-      if (!isPointer(parsed) || !pidAlive(parsed.pid)) continue;
+      if (!isPointer(parsed) || name !== `${spell}.${parsed.session_id}.json`) continue;
+      if (!ownedByMe(path) || !pidAlive(parsed.pid)) continue;
       const at = statSync(path).mtimeMs;
       if (!best || at > best.at) best = { pointer: parsed, at };
     } catch {
@@ -242,7 +279,8 @@ function newestLivePointer(spell: string, opts: DiscoveryOptions): SessionPointe
   return best?.pointer ?? null;
 }
 
-function isPointer(v: unknown): v is SessionPointer {
+/** The pointer's fields, with any number as its pid. */
+function isPointerShape(v: unknown): v is SessionPointer {
   if (typeof v !== "object" || v === null) return false;
   const p = v as Record<string, unknown>;
   return (
@@ -252,6 +290,11 @@ function isPointer(v: unknown): v is SessionPointer {
     typeof p.dir === "string" &&
     typeof p.pid === "number"
   );
+}
+
+/** A pointer: its fields, and a pid that can name one process (a whole number above 0). */
+function isPointer(v: unknown): v is SessionPointer {
+  return isPointerShape(v) && Number.isInteger(v.pid) && v.pid > 0;
 }
 
 /** Remove a session's pointer, and the latest one only when it names this session. */
