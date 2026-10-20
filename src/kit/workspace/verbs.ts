@@ -253,6 +253,33 @@ export function docArg(token: string): string {
 }
 
 /**
+ * A path argument made absolute against the caller's cwd, with a literal `~`
+ * refused. A shell expands an unquoted leading `~` before the CLI runs, so a
+ * `~` that arrives (quoted, or from a script) was not meant as a folder named
+ * `~`: resolving it against the cwd made `add-folder "~"` create one there.
+ * It is refused, as a path the caller did not mean, with the expanded path in
+ * the hint; nothing is resolved or created. A `~` later in a path is a name.
+ */
+export function pathArg(token: string, verb: string): string {
+  if (token === "~" || token.startsWith("~/")) {
+    const meant = token === "~" ? homeDir() : join(homeDir(), token.slice(2));
+    // A file or folder really named `~` here is reached as `./~`: said when
+    // there is one, since that may be what was meant.
+    const here = existsSync(resolve(token))
+      ? `; for the ${resolve(token)} here, write ./${token}`
+      : "";
+    die(
+      `${verb}: "${token}" arrived with its ~ unexpanded (quoted, or from a script): nothing was done`,
+      "usage",
+      {
+        hint: `write the full path (${meant}), or leave the ~ unquoted for the shell to expand${here}`,
+      },
+    );
+  }
+  return resolve(token);
+}
+
+/**
  * Every path is checked here, before any daemon exists. `open doc.md pic.png`
  * used to spawn a session, then fail on the second path inside it, leaving a
  * running daemon and a live pointer behind a failed command. A folder, a
@@ -261,8 +288,8 @@ export function docArg(token: string): string {
  * reason, and any other file is usage with the accepted extensions as
  * `choices`.
  */
-export function contextPaths(pos: string[]): string[] {
-  const paths = pos.map((p) => resolve(p));
+export function contextPaths(pos: string[], verb = "add"): string[] {
+  const paths = pos.map((p) => pathArg(p, verb));
   for (const p of paths) {
     let st: ReturnType<typeof statSync>;
     try {
@@ -412,6 +439,8 @@ export type CliHelpers = {
   /** Prose from exactly one of: the arguments, `--stdin`, `--body-file`. */
   readBody(pos: string[], flags: Flags, verb: string): Promise<string>;
   docArg: typeof docArg;
+  /** A path argument made absolute, a literal `~` refused (`pathArg`). */
+  pathArg: typeof pathArg;
   printJson: typeof printJson;
 };
 
@@ -712,7 +741,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
       noHome && pos.length === 0 && typeof flags.restore !== "string"
         ? openingFolder(process.cwd(), root, opts.appHome?.())
         : null;
-    const paths = opening && "path" in opening ? [opening.path] : contextPaths(pos);
+    const paths = opening && "path" in opening ? [opening.path] : contextPaths(pos, "open");
 
     if (typeof flags.restore === "string") {
       const id = flags.restore;
@@ -1014,6 +1043,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
     requireSession,
     readBody,
     docArg,
+    pathArg,
     printJson,
   };
 
@@ -1050,7 +1080,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
       describe:
         "add files or folders to the context list (a document, an image, or a folder shown as a set)",
       run: async (pos, _flags, session) => {
-        printJson(await postCmd(session, { op: "context.add", paths: contextPaths(pos) }));
+        printJson(await postCmd(session, { op: "context.add", paths: contextPaths(pos, "add") }));
       },
     },
     noHome
@@ -1428,7 +1458,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
         ? "create an empty document at <path> (its folder must be a set or a folder in one)"
         : "create an empty document (its folder must be a set, a folder in one, or the workspace)",
       run: async (pos, _flags, session) => {
-        const abs = resolve(pos[0] as string);
+        const abs = pathArg(pos[0] as string, "new-doc");
         printJson(
           await postCmd(session, { op: "doc.create", dir: dirname(abs), name: basename(abs) }),
         );
@@ -1442,7 +1472,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
         ? "create a folder at <path> inside a set or a folder in one"
         : "create a folder inside a set, or in the workspace as a new set",
       run: async (pos, _flags, session) => {
-        const abs = resolve(pos[0] as string);
+        const abs = pathArg(pos[0] as string, "new-folder");
         printJson(
           await postCmd(session, { op: "folder.create", dir: dirname(abs), name: basename(abs) }),
         );

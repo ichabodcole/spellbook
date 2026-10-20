@@ -30,6 +30,7 @@ import {
   parseSide,
   parseTailSince,
   parseVersion,
+  pathArg,
 } from "./verbs";
 
 const CLI = join(dirname(fileURLToPath(import.meta.url)), "fixtures", "cli.ts");
@@ -402,6 +403,80 @@ test("tail --since is a bookmark: an integer, with an optional epoch; anything e
   expect(parseTailSince("4@e-1")).toEqual({ since: 4, epoch: "e-1" });
   expect(() => parseTailSince("1.5")).toThrow();
   expect(() => parseTailSince("4@")).toThrow();
+});
+
+test("a literal ~ is refused, never resolved against the cwd; a ~ later in a path is a name", () => {
+  for (const token of ["~", "~/x", "~/a/b.md"]) {
+    let caught: unknown;
+    try {
+      pathArg(token, "add-folder");
+    } catch (e) {
+      caught = e;
+    }
+    const err = caught as { kind?: string; message?: string; extra?: { hint?: string } };
+    expect(err.kind).toBe("usage");
+    expect(err.message).toContain(`"${token}" arrived with its ~ unexpanded`);
+    const meant = token === "~" ? homeDir() : join(homeDir(), token.slice(2));
+    expect(err.extra?.hint).toBe(
+      `write the full path (${meant}), or leave the ~ unquoted for the shell to expand`,
+    );
+  }
+  expect(pathArg("notes/~", "add-folder")).toBe(resolve("notes/~"));
+  expect(pathArg("~notes", "add-folder")).toBe(resolve("~notes"));
+  expect(pathArg("/abs/x", "add-folder")).toBe("/abs/x");
+});
+
+test("a literal ~ where a real ./~ exists: the hint names ./~", () => {
+  const cwd = mkdtempSync(join(tmpdir(), "workspace-tilde-here-"));
+  mkdirSync(join(cwd, "~", "x"), { recursive: true });
+  for (const token of ["~", "~/x"]) {
+    const p = Bun.spawnSync(["bun", CLI, "--", "open", "--no-open", token], {
+      cwd,
+      stdout: "pipe",
+      stderr: "pipe",
+      stdin: new Uint8Array(0),
+      env: { ...process.env, TMPDIR: EMPTY_TMP, KIT_FIXTURE_HOME: EMPTY_HOME },
+    });
+    expect(p.exitCode).toBe(2);
+    const doc = JSON.parse(new TextDecoder().decode(p.stderr)) as Envelope;
+    expect(doc.error.hint).toContain(`; for the ${join(cwd, token)} here, write ./${token}`);
+  }
+  // With no ./~, the hint does not mention one.
+  const none = mkdtempSync(join(tmpdir(), "workspace-tilde-none-"));
+  const p = Bun.spawnSync(["bun", CLI, "--", "open", "--no-open", "~"], {
+    cwd: none,
+    stdout: "pipe",
+    stderr: "pipe",
+    stdin: new Uint8Array(0),
+    env: { ...process.env, TMPDIR: EMPTY_TMP, KIT_FIXTURE_HOME: EMPTY_HOME },
+  });
+  expect((JSON.parse(new TextDecoder().decode(p.stderr)) as Envelope).error.hint).not.toContain(
+    "./~",
+  );
+});
+
+test("the kit's path verbs refuse a literal ~ before any daemon call, and make nothing", () => {
+  const cwd = mkdtempSync(join(tmpdir(), "workspace-tilde-"));
+  for (const args of [
+    ["new-folder", "~"],
+    ["new-folder", "~/x"],
+    ["new-doc", "~/x.md"],
+    ["add", "~"],
+    ["open", "--no-open", "~/x"],
+  ]) {
+    const p = Bun.spawnSync(["bun", CLI, "--", ...args], {
+      cwd,
+      stdout: "pipe",
+      stderr: "pipe",
+      stdin: new Uint8Array(0),
+      env: { ...process.env, TMPDIR: EMPTY_TMP, KIT_FIXTURE_HOME: EMPTY_HOME },
+    });
+    expect(p.exitCode).toBe(2);
+    expect(new TextDecoder().decode(p.stdout)).toBe("");
+    const doc = JSON.parse(new TextDecoder().decode(p.stderr)) as Envelope;
+    expect(doc.error.message).toContain("arrived with its ~ unexpanded");
+  }
+  expect(readdirSync(cwd)).toEqual([]);
 });
 
 test("--doc paths resolve against the CLI's own cwd; slugs and bare names pass through", () => {

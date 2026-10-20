@@ -182,6 +182,27 @@ describe("open with no paths", () => {
     expect((await s("new-doc", join(place, "first.md"))).code).toBe(0);
     expect(existsSync(join(place, "first.md"))).toBe(true);
   });
+
+  test("a ~ that arrives unexpanded (quoted) is refused, and no folder named ~ is made", async () => {
+    // What the shell expands arrives as a full path, as above; a quoted `~`
+    // arrives as it is, and is never resolved against the caller's cwd.
+    for (const [verb, token] of [
+      ["add-folder", "~"],
+      ["add-folder", "~/x"],
+      ["make-set", "~"],
+      ["make-set", "~/x.md"],
+    ] as const) {
+      const r = await cli(outside, verb, token, "--session", id);
+      expect(r.code).toBe(2);
+      expect(r.out).toBe("");
+      const e = envelope(r);
+      expect(e.kind).toBe("usage");
+      expect(e.message).toContain(`"${token}" arrived with its ~ unexpanded`);
+      expect(e.hint).toContain("write the full path (");
+    }
+    expect(readdirSync(outside)).toEqual(["place"]);
+    expect(existsSync(join(project, "~"))).toBe(false);
+  });
 });
 
 describe("open in the app's own folders", () => {

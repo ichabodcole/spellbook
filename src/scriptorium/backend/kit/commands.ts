@@ -14,7 +14,6 @@
  * ⛔ Shared by the CLI's bundle: no daemon code here.
  */
 
-import { resolve } from "node:path";
 import type { CommandSpec } from "../../../kit/cli/registry";
 import type { CliHelpers } from "../../../kit/workspace/verbs";
 
@@ -30,7 +29,7 @@ export function scriptoriumKitCommands(h: CliHelpers): readonly CommandSpec<stri
         h.printJson(
           await h.postCmd(h.sessionOf(inv), {
             op: "set.make",
-            path: resolve(inv.pos[0] as string),
+            path: h.pathArg(inv.pos[0] as string, "make-set"),
           }),
         );
       },
@@ -45,7 +44,7 @@ export function scriptoriumKitCommands(h: CliHelpers): readonly CommandSpec<stri
         h.printJson(
           await h.postCmd(h.sessionOf(inv), {
             op: "folder.add",
-            path: resolve(inv.pos[0] as string),
+            path: h.pathArg(inv.pos[0] as string, "add-folder"),
           }),
         );
       },
