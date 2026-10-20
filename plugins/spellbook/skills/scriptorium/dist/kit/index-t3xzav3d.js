@@ -80337,7 +80337,7 @@ function movePrompt(plan, userHome) {
           plural3(fixes, "link"),
           " in ",
           plural3(plan.links.length, "document"),
-          ". They are left as they are; after the move, the chat says how many still point at the old place. They are these, each with the rewrite that would land it again.",
+          ". The move leaves them as they are; after it, the context column offers to update them. They are these, each with the rewrite that would land it again.",
           listed2(plan.links.flatMap((d) => d.fixes.map((f) => ({ d, f }))), ({ d, f }, i2) => /* @__PURE__ */ jsx_runtime53.jsxs("span", {
             className: "block pl-2 font-mono text-xs",
             children: [
@@ -80414,7 +80414,7 @@ var scriptoriumUncheckedMoveNote = () => /* @__PURE__ */ jsx_runtime53.jsxs(jsx_
   children: [
     /* @__PURE__ */ jsx_runtime53.jsx("span", {
       className: "block",
-      children: "The links into and out of what moves were not checked. Any it breaks are named in the chat after the move."
+      children: "The links into and out of what moves were not checked. Any it breaks are named in the chat after the move, and the context column offers to update them."
     }),
     /* @__PURE__ */ jsx_runtime53.jsx("span", {
       className: "mt-1 block",
