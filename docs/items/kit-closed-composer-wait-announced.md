@@ -5,7 +5,7 @@ description:
   With the floating composer closed, the kit page has no live region, so a wait
   turning to may be stuck is not read out to a screen reader; the shipped app
   announces it through its always-shown float.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a1582d-f1a0-700c-b718-059a1a707047
 kind: bug
