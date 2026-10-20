@@ -80498,6 +80498,13 @@ function ShellBody({
                                 badge: composerWaiting.badge,
                                 label: composerWaiting.label
                               })
+                            }),
+                            /* @__PURE__ */ jsx_runtime52.jsx("span", {
+                              "aria-live": "polite",
+                              "aria-atomic": "true",
+                              "data-slot": "chat-rail-waiting-live",
+                              className: "sr-only",
+                              children: composerWaiting?.label ?? ""
                             })
                           ]
                         }),

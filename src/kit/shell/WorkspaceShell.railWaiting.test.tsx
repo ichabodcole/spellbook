@@ -120,6 +120,22 @@ const showIcon = () => q('[data-column-control="chat-float-show"]');
 /** The waiting mark on the rail: its dot, or null. */
 const railMark = () => q('[data-slot="chat-rail-waiting"] [data-badge]');
 const unseen = () => q("[data-slot=chat-unseen]");
+/** The rail's live region: the mark's words, read out as they change. */
+const railLive = () => q('[data-slot="chat-rail-waiting-live"]');
+/** In the page and not inside a hidden, inert or `aria-hidden` subtree: in the accessibility tree. */
+const audible = (el: Element | null) =>
+  !!el && el.isConnected && !el.closest('[hidden], [inert], [aria-hidden="true"]');
+/**
+ * Which polite live regions a screen reader can hear say `text`, by
+ * `data-slot` (or the badge's `data-badge`): names, not elements, so a failure
+ * prints short. One inside a hidden or inert subtree (the collapsed column's
+ * conversation) is out of the accessibility tree, so it is not counted.
+ */
+const speaking = (text: string) =>
+  qa('[aria-live="polite"]')
+    .filter(audible)
+    .filter((el) => (el.textContent ?? "").includes(text))
+    .map((el) => el.getAttribute("data-slot") ?? `badge:${el.getAttribute("data-badge")}`);
 const agentSays = (text: string) =>
   nativeGlobal<typeof fetch>("fetch")(`${daemon.url}/cmd`, {
     method: "POST",
@@ -173,6 +189,11 @@ describe("the closed composer's rail shows what waits on the agent", () => {
     await waitFor(() => railMark() === null, "the mark gone");
     await waitFor(() => unseen() !== null, "the unseen mark");
     expect(showIcon()?.getAttribute("aria-label")).toBe("Show the composer");
+    // The live region stays, silent, so the next wait is a change it reads out.
+    // Silent by being empty, not by leaving the accessibility tree: a hidden
+    // region would arrive with its words, which is not a change read out.
+    expect(railLive()?.textContent).toBe("");
+    expect(audible(railLive())).toBe(true);
     await m.unmount();
   });
 
@@ -188,6 +209,45 @@ describe("the closed composer's rail shows what waits on the agent", () => {
       `Show the composer (your message: ${WAITING_LABEL.stalled})`,
     );
     expect(showIcon()?.getAttribute("aria-label")).toContain("may be stuck");
+    await m.unmount();
+  });
+
+  test("a change in the wait is read out once: by the rail while the float is closed, by the float while open", async () => {
+    await daemon.stop();
+    await startDaemon({ stallMs: 600, attentionMs: 40 });
+    letGo = await agentTail();
+    const m = await mountShell();
+    await sendThenClose("anyone?");
+    // Closed: the rail's region carries the mark's words, politely, as one utterance.
+    await waitFor(() => railMark()?.getAttribute("data-badge") === "working", "working");
+    expect(railLive()?.getAttribute("aria-live")).toBe("polite");
+    expect(railLive()?.getAttribute("aria-atomic")).toBe("true");
+    expect(railLive()?.textContent).toBe(`your message: ${WAITING_LABEL.working}`);
+    // Seen by a screen reader, not by the eye: the dot is the visible mark.
+    expect(railLive()?.classList.contains("sr-only")).toBe(true);
+    expect(audible(railLive())).toBe(true);
+    const atWorking = railLive();
+    // The wait goes quiet while the float is closed: the change is in the live
+    // region, and in no other, so it is read out once.
+    await waitFor(() => railMark()?.getAttribute("data-badge") === "stalled", "stalled", 4000);
+    expect(railLive()?.textContent).toBe(`your message: ${WAITING_LABEL.stalled}`);
+    // The same node, its words changed in place: a region remounted with new
+    // words is a new region, which a screen reader need not read.
+    expect(railLive() === atWorking).toBe(true);
+    expect(speaking("may be stuck")).toEqual(["chat-rail-waiting-live"]);
+    // Open: the float's badge speaks, and the rail's region is gone with the rail
+    // button, so the two never say it together.
+    await click(showIcon());
+    await waitFor(() => float() !== null, "the float");
+    expect(railLive()).toBeNull();
+    const badge = q('[data-slot="floating-composer"] [aria-live="polite"]');
+    expect(badge?.textContent).toContain(WAITING_LABEL.stalled);
+    expect(badge?.getAttribute("data-badge")).toBe("stalled");
+    expect(speaking("may be stuck")).toEqual(["badge:stalled"]);
+    // Closed again: the rail speaks again, and only the rail.
+    await click(q('[data-slot="floating-composer"] [data-action="float-close"]'));
+    await waitFor(() => railLive() !== null, "the rail's region again");
+    expect(speaking("may be stuck")).toEqual(["chat-rail-waiting-live"]);
     await m.unmount();
   });
 
