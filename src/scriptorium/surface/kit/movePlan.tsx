@@ -4,12 +4,12 @@
  * ask the kit daemon for its move plan (`scriptorium.move.plan`, built last
  * cycle in `../../backend/kit/wiki.ts`) and put it to the human: what moves,
  * whether it leaves its git working tree, and the links it would break, each
- * with the rewrite that would land it again. Nothing is rewritten: the frame
- * shows no relink offer yet (set-make-relink-offer), so the words promise only
- * what happens now, the chat line naming what still points at the old place.
+ * with the rewrite that would land it again. Nothing is rewritten by the move
+ * itself: after it, the shell's relink bar (`kit/context/RelinkBar.tsx`, under
+ * the context's undo arrows) offers to update them, as one act with the move.
  *
  * Kit path only (`SCRIPTORIUM_KIT=1`). The shipped surface does not import this
- * file; the interim frame (scriptorium-kit-interim-frame) passes it to
+ * file; the kit page (`./Frame.tsx`) passes it to the shell, which hands it to
  * `ContextSidebar` as `beforeMove={scriptoriumBeforeMove(daemon, { userHome })}`.
  *
  * What it answers, the shipped surface's rule widened by the links:
@@ -73,9 +73,9 @@ export function movePrompt(
       {breaks === 0 && <span className="mt-1 block">It breaks no links.</span>}
       {fixes > 0 && (
         <span className="mt-2 block">
-          It breaks {plural(fixes, "link")} in {plural(plan.links.length, "document")}. They are
-          left as they are; after the move, the chat says how many still point at the old place.
-          They are these, each with the rewrite that would land it again.
+          It breaks {plural(fixes, "link")} in {plural(plan.links.length, "document")}. The move
+          leaves them as they are; after it, the context column offers to update them. They are
+          these, each with the rewrite that would land it again.
           {listed(
             plan.links.flatMap((d) => d.fixes.map((f) => ({ d, f }))),
             ({ d, f }, i) => (
@@ -137,7 +137,7 @@ export const scriptoriumUncheckedMoveNote: UncheckedMoveNote = () => (
   <>
     <span className="block">
       The links into and out of what moves were not checked. Any it breaks are named in the chat
-      after the move.
+      after the move, and the context column offers to update them.
     </span>
     <span className="mt-1 block">
       Nor was whether it leaves a git repository: if it does, git will see the files as deleted

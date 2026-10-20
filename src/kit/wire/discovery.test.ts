@@ -1,11 +1,25 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  lstatSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+  LAST_OPENED,
+  pidAlive,
   pointerPath,
   publishPointer,
+  readLastOpened,
   readPointer,
+  recordLastOpened,
   removePointer,
   unlinkIfMatches,
   writeFileAtomic,
@@ -41,6 +55,44 @@ describe("writeFileAtomic", () => {
     const target = join(dir, "missing", "daemon.port");
     expect(() => writeFileAtomic(target, "x")).toThrow();
     expect(readdirSync(dir)).toEqual([]);
+  });
+});
+
+describe("the record of the session last started", () => {
+  test("written and read back; absent is none", () => {
+    expect(readLastOpened(dir)).toEqual({ kind: "none" });
+    recordLastOpened(dir, "s1");
+    expect(readLastOpened(dir)).toEqual({ kind: "ok", id: "s1" });
+    recordLastOpened(dir, "s2");
+    expect(readLastOpened(dir)).toEqual({ kind: "ok", id: "s2" });
+    expect(statSync(join(dir, LAST_OPENED)).mode & 0o777).toBe(0o600);
+    expect(readdirSync(dir)).toEqual([LAST_OPENED]);
+  });
+
+  test("a symlink planted at its path is replaced, never written through", () => {
+    const victim = join(dir, "victim.txt");
+    writeFileSync(victim, "untouched");
+    symlinkSync(victim, join(dir, LAST_OPENED));
+    // A planted link is not a record to trust...
+    expect(readLastOpened(dir)).toEqual({ kind: "untrusted", why: "it is not a plain file" });
+    recordLastOpened(dir, "s1");
+    // ...and writing the record replaces the link: the file it pointed at is untouched.
+    expect(readFileSync(victim, "utf8")).toBe("untouched");
+    expect(lstatSync(join(dir, LAST_OPENED)).isSymbolicLink()).toBe(false);
+    expect(readLastOpened(dir)).toEqual({ kind: "ok", id: "s1" });
+  });
+
+  test("a corrupt record, or one naming no session, is untrusted, never none", () => {
+    for (const [body, why] of [
+      ["{not json", "it is not valid JSON"],
+      ["null", "it names no session"],
+      ['{"session_id":"../x"}', "it names no session"],
+      ['{"session_id":7}', "it names no session"],
+    ]) {
+      writeFileSync(join(dir, LAST_OPENED), body as string);
+      expect(readLastOpened(dir)).toEqual({ kind: "untrusted", why: why as string });
+    }
+    expect(() => recordLastOpened(dir, "../x")).toThrow(/invalid session id/);
   });
 });
 
@@ -93,7 +145,9 @@ describe("per-spell pointers", () => {
     port,
     session_id: id,
     dir: `/spellbook/sessions/${id}`,
-    pid: 4242,
+    // This process: alive, and ours. A made-up pid could be anyone's, and
+    // reading `latest` checks its pid.
+    pid: process.pid,
   });
 
   test("the files are <spell>.<id>.json and <spell>.latest.json in the temp directory", () => {
@@ -176,6 +230,96 @@ describe("per-spell pointers", () => {
   test("a spell whose name ends where another's id begins does not collide", () => {
     const dir = mkdtempSync(join(tmpdir(), "disc-"));
     expect(pointerPath("a-b", "c", { tmp: dir })).not.toBe(pointerPath("a", "b-c", { tmp: dir }));
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  /** A pid that is certainly dead: a child this test started, which has exited and been reaped. */
+  const deadPid = (): number => {
+    const p = Bun.spawnSync(["true"], { env: process.env });
+    expect(p.exitCode).toBe(0);
+    return p.pid;
+  };
+
+  test("a `latest` naming a dead daemon is the newest session, crashed: returned, never an older live one", () => {
+    const dir = mkdtempSync(join(tmpdir(), "disc-"));
+    publishPointer("magpie", pointer("s1", 4100), { tmp: dir });
+    // The newest session crashed: its pointers stayed, naming a dead pid.
+    const dead = deadPid();
+    publishPointer("magpie", { ...pointer("s2", 4101), pid: dead }, { tmp: dir });
+    expect(readPointer("magpie", undefined, { tmp: dir })).toMatchObject({
+      session_id: "s2",
+      pid: dead,
+    });
+    expect(pidAlive(dead)).toBe(false);
+    // Its own pointer is read as it is too: the crash is the caller's to say.
+    expect(readPointer("magpie", "s2", { tmp: dir })?.session_id).toBe("s2");
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  test("a pid of 0 or below is never alive: skipped in `latest` and the scan, and a session's own pointer throws", () => {
+    const dir = mkdtempSync(join(tmpdir(), "disc-"));
+    publishPointer("magpie", pointer("s1", 4100), { tmp: dir });
+    for (const pid of [0, -1, 1.5]) {
+      // A newer session pointer and `latest` both carry the bad pid.
+      writeFileSync(
+        pointerPath("magpie", "bad", { tmp: dir }),
+        JSON.stringify({ ...pointer("bad", 4199), pid }),
+      );
+      writeFileSync(
+        pointerPath("magpie", undefined, { tmp: dir }),
+        JSON.stringify({ ...pointer("bad", 4199), pid }),
+      );
+      expect(readPointer("magpie", undefined, { tmp: dir })?.session_id).toBe("s1");
+      expect(() => readPointer("magpie", "bad", { tmp: dir })).toThrow(/wrong shape/);
+    }
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  test("a session pointer filed under another session's name is skipped in the scan, and throws when read by name", () => {
+    const dir = mkdtempSync(join(tmpdir(), "disc-"));
+    publishPointer("magpie", pointer("s1", 4100), { tmp: dir });
+    rmSync(pointerPath("magpie", undefined, { tmp: dir }));
+    // A newer file whose name says s9 but whose body says s1, at another port.
+    writeFileSync(pointerPath("magpie", "s9", { tmp: dir }), JSON.stringify(pointer("s1", 4999)));
+    expect(readPointer("magpie", undefined, { tmp: dir })?.port).toBe(4100);
+    expect(() => readPointer("magpie", "s9", { tmp: dir })).toThrow(/names another session/);
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  test("a pointer another user owns is not this user's daemon", () => {
+    const dir = mkdtempSync(join(tmpdir(), "disc-"));
+    publishPointer("magpie", pointer("s1", 4100), { tmp: dir });
+    const getuid = process.getuid;
+    if (getuid === undefined) return; // no uids here: every file is the user's
+    // Every file now reads as someone else's: the files are this user's, the
+    // reader is told it is another.
+    const me = getuid();
+    process.getuid = () => me + 1;
+    try {
+      expect(readPointer("magpie", undefined, { tmp: dir })).toBeNull();
+      expect(() => readPointer("magpie", "s1", { tmp: dir })).toThrow(/another user's/);
+    } finally {
+      process.getuid = getuid;
+    }
+    expect(readPointer("magpie", undefined, { tmp: dir })?.session_id).toBe("s1");
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  test("a pointer is written through an unguessable temp opened exclusively: a planted symlink redirects nothing", () => {
+    const dir = mkdtempSync(join(tmpdir(), "disc-"));
+    const victim = join(dir, "victim.txt");
+    writeFileSync(victim, "untouched");
+    // The old, predictable temp name, planted ahead of the write.
+    const target = pointerPath("magpie", "s1", { tmp: dir });
+    symlinkSync(victim, `${target}.${process.pid}.tmp`);
+    publishPointer("magpie", pointer("s1"), { tmp: dir });
+    expect(readFileSync(victim, "utf8")).toBe("untouched");
+    expect(readPointer("magpie", "s1", { tmp: dir })?.session_id).toBe("s1");
+    // Readable by this user only, and no temp of ours left behind.
+    expect(statSync(target).mode & 0o777).toBe(0o600);
+    expect(readdirSync(dir).filter((n) => n.endsWith(".tmp"))).toEqual([
+      `magpie.s1.json.${process.pid}.tmp`,
+    ]);
     rmSync(dir, { recursive: true, force: true });
   });
 

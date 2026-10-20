@@ -42,6 +42,7 @@ import { onRenderedLinkClick } from "../chat/renderedLink.ts";
 import { contextPressAfter, renderedSelectionAct } from "../context/selection.ts";
 import { TooltipProvider } from "../ui/tooltip.tsx";
 import type { DocumentProfile, PlacedNote } from "../workspace/protocol";
+import { useCoalescedText } from "./coalesce.ts";
 import type { SelectionReport } from "./DocumentView.tsx";
 import { Embed, type EmbedSource, pendingEmbeds } from "./embeds.tsx";
 import { useFind } from "./FindBar.tsx";
@@ -53,6 +54,7 @@ import { type Anchor, anchorCache, lineAtTop, type Place, topForLine } from "./p
 import { lineAt, project } from "./projection.ts";
 import { type InlineWidget, renderDocument } from "./rendered.ts";
 import { align, lineAnchors, paintRange, resolveRange } from "./renderedRange.ts";
+import { invertChange, lineThrough, minimalChange, rangeThrough } from "./text.ts";
 
 /** No widgets: one array, so the rendering is not redone on every render. */
 const NO_WIDGETS: readonly InlineWidget[] = [];
@@ -98,10 +100,11 @@ function pointOffset(
 }
 
 export function MarkdownView({
-  text,
-  notes,
+  text: textIn,
+  textKey = "",
+  notes: notesIn,
   focusedNote,
-  pendingNote,
+  pendingNote: pendingIn,
   onFollowLink,
   onFollowHeading,
   onSelect,
@@ -114,11 +117,17 @@ export function MarkdownView({
   profile,
   onAskProfileFix,
   footer,
-  flash,
+  flash: flashIn,
   embeds,
   onEmbedTargets,
 }: {
   text: string;
+  /**
+   * What `text` is the text of (a document and version). A large document's text
+   * that changes again while the last one is still being drawn is coalesced
+   * (`useCoalescedText`); a new key is drawn at once.
+   */
+  textKey?: string;
   /** The document's notes, already placed by the daemon. */
   notes?: PlacedNote[];
   /** The note the panel has focused: painted differently. */
@@ -176,6 +185,57 @@ export function MarkdownView({
   /** The distinct embed targets in this rendering, said once per rendering: what to ask the daemon. */
   onEmbedTargets?: (targets: string[]) => void;
 }) {
+  // Everything below reads the text drawn, which trails `textIn` only while a
+  // costly redraw's pause runs. Every position crossing between this view and
+  // the pane is mapped between the two: what the pane hands in (notes, the
+  // pending note, a flash) is in `textIn` and is painted on the drawn text, and
+  // what this view reports (a selection, a context menu) is measured on the
+  // drawn text and reported in `textIn`. A position inside what changed means
+  // nothing in the other text, so it is dropped, never guessed.
+  const text = useCoalescedText(textIn, textKey);
+  const toShown = useMemo(() => minimalChange(text, textIn), [text, textIn]);
+  const toDrawn = useMemo(() => (toShown ? invertChange(toShown, text) : null), [toShown, text]);
+  const notes = useMemo(
+    () =>
+      !toDrawn || !notesIn
+        ? notesIn
+        : notesIn.flatMap((n) => {
+            if (n.from === null || n.to === null) return [n];
+            const m = rangeThrough({ from: n.from, to: n.to }, toDrawn);
+            return m ? [{ ...n, ...m }] : [];
+          }),
+    [notesIn, toDrawn],
+  );
+  const pendingNote = useMemo(
+    () => (pendingIn && toDrawn ? rangeThrough(pendingIn, toDrawn) : pendingIn),
+    [pendingIn, toDrawn],
+  );
+  const flash = useMemo(() => {
+    if (!flashIn || !toDrawn) return flashIn;
+    const m = rangeThrough(flashIn, toDrawn);
+    return m ? { ...m, seq: flashIn.seq } : null;
+  }, [flashIn, toDrawn]);
+  /** A range measured on the drawn text, in `textIn`; null when it cannot be mapped. */
+  const reportable = useRef<
+    (r: { from: number; to: number }) => { from: number; to: number } | null
+  >((r) => r);
+  reportable.current = (r) => rangeThrough(r, toShown);
+  const currentText = useRef(textIn);
+  currentText.current = textIn;
+  /**
+   * The shared place speaks lines of the pane's text: a line asked for is moved
+   * onto the drawn text, and the line at the top is said in the pane's. A line
+   * inside what changed goes to the nearer edge of the change, so a reveal still
+   * scrolls.
+   */
+  const placeLines = useRef({
+    toDrawn: (line: number) => line,
+    toShown: (line: number) => line,
+  });
+  placeLines.current = {
+    toDrawn: (line) => lineThrough(line, textIn, text, toDrawn),
+    toShown: (line) => lineThrough(line, text, textIn, toShown),
+  };
   const frontmatter = useMemo(() => readFrontmatter(text), [text]);
   const html = useMemo(() => renderDocument(text, widgets), [text, widgets]);
   // Memoised, and everything about selection depends on it. React compares the
@@ -269,11 +329,15 @@ export function MarkdownView({
   useEffect(() => {
     const sc = scroller.current;
     if (!sc || !place) return;
-    const onScroll = () => place.report("rendered", lineAtTop(measureRef.current(), sc.scrollTop));
+    const onScroll = () =>
+      place.report(
+        "rendered",
+        placeLines.current.toShown(lineAtTop(measureRef.current(), sc.scrollTop)),
+      );
     sc.addEventListener("scroll", onScroll, { passive: true });
     const leave = place.join("rendered", {
       to: (line) => {
-        sc.scrollTop = topForLine(measureRef.current(), line);
+        sc.scrollTop = topForLine(measureRef.current(), placeLines.current.toDrawn(line));
       },
       at: () => sc.scrollTop,
     });
@@ -366,16 +430,20 @@ export function MarkdownView({
         contextClick: contextPress.current,
         pressedHere: pressedHere.current,
       });
-      if (act === "report" && r) {
+      // Measured on the drawn text, reported in the pane's: a selection whose ends
+      // fall in what changed since is cleared, never sent with the wrong lines.
+      const m = act === "report" && r ? reportable.current(r) : null;
+      if (act === "report" && r && m) {
         lastRange.current = r;
+        const now = currentText.current;
         onSelect({
-          from: r.from,
-          to: r.to,
-          fromLine: lineAt(text, r.from),
-          toLine: lineAt(text, r.to),
-          text: text.slice(r.from, r.to),
+          from: m.from,
+          to: m.to,
+          fromLine: lineAt(now, m.from),
+          toLine: lineAt(now, m.to),
+          text: now.slice(m.from, m.to),
         });
-      } else if (act === "clear") {
+      } else if (act === "clear" || (act === "report" && r)) {
         lastRange.current = null;
         onSelect({ from: 0, to: 0, fromLine: 1, toLine: 1, text: "" });
       }
@@ -399,7 +467,7 @@ export function MarkdownView({
       document.removeEventListener("keydown", keyed, true);
       document.removeEventListener("pointerdown", pressed, true);
     };
-  }, [onSelect, selectedRange, inBody, text]);
+  }, [onSelect, selectedRange, inBody]);
 
   // A clear clears the highlight too: dropping the chip is clearing the selection, so
   // the browser's own must not stay painted over a passage nothing is holding.
@@ -548,13 +616,15 @@ export function MarkdownView({
                         point <= (n.to as number),
                     )
                     .map((n) => n.id);
-            if (!r && noteIds.length === 0) return;
+            // In the pane's text; a selection in what changed since offers nothing.
+            const m = r ? reportable.current(r) : null;
+            if (!m && noteIds.length === 0) return;
             e.preventDefault();
             onContextMenu({
               x: e.clientX,
               y: e.clientY,
-              from: r?.from ?? 0,
-              to: r?.to ?? 0,
+              from: m?.from ?? 0,
+              to: m?.to ?? 0,
               noteIds,
             });
           }}

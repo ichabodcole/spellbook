@@ -5,12 +5,12 @@
 // `send` is patched to drop one chosen frame; it is its own file because the
 // patch is process-wide.
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { mkdirSync, rmSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { createDaemonClient, type DaemonClient } from "../context/daemonClient";
 import { fixtureDaemon } from "./fixtures/app";
 import { FakeSurface, waitUntil } from "./fixtures/harness";
-import type { WorkspaceDaemon } from "./server";
+import { CONTEXT_CHANGED_SETTLE_MS, type WorkspaceDaemon } from "./server";
 import { seedDocs, tempRoot } from "./testing";
 
 // Bun's ServerWebSocket prototype, from a throwaway server.
@@ -117,6 +117,41 @@ describe("a dropped state frame", () => {
       () => viewOf(c.getSnapshot().state?.appState) === "v2" && viewOf(s.state.appState) === "v2",
       3000,
     );
+  });
+
+  test("the watcher's refresh sends the view to the one connection that missed it, though the other holds it already", async () => {
+    // The view reads a file in the context the session does not hold.
+    const b = join(root, "docs", "set", "part", "b.md");
+    const d = await boot(() => ({ view: readFileSync(b, "utf8").split("\n")[0] }));
+    const s1 = new FakeSurface();
+    const s2 = new FakeSurface();
+    surface = s1;
+    try {
+      await s1.connect(d.port);
+      await s2.connect(d.port);
+      s1.send({ op: "context.add", path: join(root, "docs") });
+      await waitUntil("the set listed", () => s2.state?.context.length > 0);
+      await Bun.sleep(CONTEXT_CHANGED_SETTLE_MS + 300);
+      // One copy of the refresh's frame is dropped: one connection is stale.
+      dropNext = (t) => t.includes('"view":"# v2"');
+      writeFileSync(b, "# v2\n");
+      await waitUntil("the drop", () => dropNext === null, 3000);
+      await waitUntil("the other copy", () =>
+        [viewOf(s1.state.appState), viewOf(s2.state.appState)].includes("# v2"),
+      );
+      await Bun.sleep(50);
+      expect([viewOf(s1.state.appState), viewOf(s2.state.appState)]).toContain("# B");
+      // Another file changes; the view does not. The one that missed it is
+      // stale, so the refresh must still send to it.
+      writeFileSync(join(root, "docs", "set", "a.md"), "# A\n\nchanged\n");
+      await waitUntil(
+        "both converge",
+        () => viewOf(s1.state.appState) === "# v2" && viewOf(s2.state.appState) === "# v2",
+        3000,
+      );
+    } finally {
+      s2.close();
+    }
   });
 
   test("a dropped marked frame changes nothing the connection holds, and the next frame is whole", async () => {

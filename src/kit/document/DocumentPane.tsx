@@ -45,6 +45,7 @@ import {
 } from "react";
 import { type At, NoteAtSelection } from "../chat/NoteAtSelection.tsx";
 import { badgeFor } from "../chat/WaitingBadge.tsx";
+import { CentreDock } from "../context/centreDock.tsx";
 import { textKey } from "../context/daemonClient.ts";
 import { carriesRows, readRowDrag } from "../context/rowDrag.ts";
 import { useWorkspace } from "../context/workspace.ts";
@@ -416,18 +417,18 @@ export function DocumentPane({
   const w = useWorkspace();
   const { daemon, openDoc: doc } = w;
   const { send, writeText, flushText } = daemon;
+  /** Where the view mode and line numbers are kept: the app's store, else the browser's. */
+  const kept = w.storage ?? safeStorage;
 
   const [ownMode, setOwnMode] = useState<ViewMode>(() =>
-    readViewMode(safeStorage.getItem(viewModeKey), { split: splitView }),
+    readViewMode(kept.getItem(viewModeKey), { split: splitView }),
   );
   const mode = modeProp ?? ownMode;
   // The line-number gutter: a viewer preference, remembered as the view mode is.
-  const [numbered, setNumbered] = useState(() =>
-    readLineNumbers(safeStorage.getItem(lineNumbersKey)),
-  );
+  const [numbered, setNumbered] = useState(() => readLineNumbers(kept.getItem(lineNumbersKey)));
   const toggleNumbered = () => {
     const next = !numbered;
-    safeStorage.setItem(lineNumbersKey, storedLineNumbers(next));
+    kept.setItem(lineNumbersKey, storedLineNumbers(next));
     setNumbered(next);
   };
   const rootRef = useRef<HTMLDivElement>(null);
@@ -495,9 +496,9 @@ export function DocumentPane({
     // is stored, so the next markdown document opens as it was last read.
     const m =
       isJson && picked === "raw"
-        ? readViewMode(safeStorage.getItem(viewModeKey), { split: splitView })
+        ? readViewMode(kept.getItem(viewModeKey), { split: splitView })
         : picked;
-    if (m !== "compare" && !isJson) safeStorage.setItem(viewModeKey, m);
+    if (m !== "compare" && !isJson) kept.setItem(viewModeKey, m);
     setOwnMode(m);
     onMode?.(m);
   };
@@ -621,15 +622,24 @@ export function DocumentPane({
   // Asked for whenever the document, its active version, its text or the chosen side
   // changes, so a merge refreshes what is left to take.
   const hash = doc?.hash;
+  /**
+   * The document the comparison's state (the mode and the side, `against`)
+   * belongs to. On the render another document arrives, that state is still the
+   * last one's until the reset below runs, and effects run in order: asked then,
+   * the diff named the new document with the old side ("beta has no v3").
+   */
+  const compareSlug = useRef(slug);
   // biome-ignore lint/correctness/useExhaustiveDependencies: the active version and the text hash are triggers, not inputs.
   useEffect(() => {
+    if (compareSlug.current !== slug) return;
     if (mode === "compare" && slug !== undefined) send({ op: "diff", doc: slug, against });
   }, [mode, slug, active, hash, against, send]);
   // Leaving the document leaves the comparison.
   // biome-ignore lint/correctness/useExhaustiveDependencies: a different document is the trigger.
   useEffect(() => {
+    compareSlug.current = slug;
     if (mode === "compare") {
-      const m = readViewMode(safeStorage.getItem(viewModeKey), { split: splitView });
+      const m = readViewMode(kept.getItem(viewModeKey), { split: splitView });
       setOwnMode(m);
       onMode?.(m);
     }
@@ -715,6 +725,27 @@ export function DocumentPane({
     if (refuseJson()) return;
     send({ op: "save", doc: doc.slug, recreate: doc.missing });
   };
+  // ⌘S belongs to the pane, not to the editor's focus: in the rendered view, and
+  // with focus anywhere else on the page, no editor is there to claim it, and the
+  // browser's own Save Page dialog opened. The raw editor keeps its own binding
+  // (it flushes its buffer first) and marks the key as taken, so one press is
+  // one save. Here it saves what the Save button would: a document with
+  // unsaved changes, while the session is live.
+  const saveKey = useRef(onSave);
+  saveKey.current = onSave;
+  const dirtyNow = useRef(false);
+  dirtyNow.current = !!doc?.dirty && daemon.connection !== "ended";
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== "s" || !(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey)
+        return;
+      if (e.defaultPrevented) return;
+      e.preventDefault();
+      if (dirtyNow.current) saveKey.current();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   const onClose = () => doc && send({ op: "doc.close", doc: doc.slug });
   const onSelect = (s: SelectionReport) => {
     if (!doc) return;
@@ -1975,6 +2006,7 @@ export function DocumentPane({
               >
                 <MarkdownView
                   text={shown}
+                  textKey={`${doc.slug}@${doc.active}`}
                   notes={paintedNotes}
                   focusedNote={focusedNote ?? null}
                   pendingNote={pendingNote}
@@ -2018,6 +2050,9 @@ export function DocumentPane({
           </div>
         </ViewBoundary>
       )}
+      {/* The floating composer, when the shell has one, docks here: under the
+          document in the flow, so it covers none of it, and above the strip. */}
+      {doc && !appActive && <CentreDock />}
       {doc && !appActive && (
         <div className={cn("shrink-0 border-t border-edge px-3 py-1", reader && QUIET_GROUP)}>
           <StatusStrip segments={segments} fade={fade} />

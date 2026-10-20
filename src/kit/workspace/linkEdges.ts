@@ -207,3 +207,86 @@ export function edgeBacklinksTo(
   }
   return out;
 }
+
+/** Where an edge is written in its document's text: a 1-based line and offsets. */
+export type EdgeSpot = { line: number; from: number; to: number };
+
+/** The frontmatter block's end in `text` (after its closing fence), or 0 when it has none. */
+function frontmatterEnd(text: string): number {
+  const open = /^---\r?\n/.exec(text);
+  if (!open) return 0;
+  const close = /^(?:---|\.\.\.)[ \t]*(?:\r?\n|$)/m;
+  const rest = text.slice(open[0].length);
+  const m = close.exec(rest);
+  return m ? open[0].length + m.index + m[0].length : 0;
+}
+
+/** A character that continues a name or a path: the target must not sit inside a longer one. */
+const NAME_CHAR = /[\p{L}\p{N}_./-]/u;
+
+/** The first place `target` is written whole in `text`, from `at` up to `end`, or -1. */
+function findWhole(text: string, target: string, at: number, end: number): number {
+  for (let i = text.indexOf(target, at); i >= 0 && i < end; i = text.indexOf(target, i + 1)) {
+    const before = text[i - 1] ?? "";
+    const after = text[i + target.length] ?? "";
+    if (!NAME_CHAR.test(before) && !NAME_CHAR.test(after)) return i;
+  }
+  return -1;
+}
+
+/**
+ * Where the line of frontmatter key `key` starts in `text` before `end`, by its
+ * first name (`sources` for `sources.resource`, `concepts` for `concepts[1]`);
+ * 0 when there is no key or no such line.
+ */
+function keyStart(text: string, key: string | undefined, end: number): number {
+  const name = key?.split(/[.[]/)[0];
+  if (!name) return 0;
+  const esc = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const m = new RegExp(`^[ \\t]*["']?${esc}["']?[ \\t]*:`, "m").exec(text.slice(0, end));
+  return m ? m.index : 0;
+}
+
+/**
+ * Where each of `edges` is written in `text`, so a report can open it at its
+ * place (kit-broken-links-visible): on the app's `line` when it gives one,
+ * else the first place its target is written in the frontmatter (or anywhere,
+ * for a document with none) from the line of its key (`e.key`), each edge with
+ * the same key and target taking the next place. Undefined for an edge whose target is not found as written (an app
+ * that reads a key into a path, say); the report then opens the document.
+ */
+export function locateEdges(text: string, edges: readonly AppEdge[]): (EdgeSpot | undefined)[] {
+  const end = frontmatterEnd(text) || text.length;
+  const starts: number[] = [0];
+  for (let i = 0; i < text.length; i++) if (text.charCodeAt(i) === 10) starts.push(i + 1);
+  const lineAt = (offset: number) => {
+    let lo = 0;
+    let hi = starts.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      if ((starts[mid] as number) <= offset) lo = mid;
+      else hi = mid - 1;
+    }
+    return lo + 1;
+  };
+  const cursor = new Map<string, number>();
+  return edges.map((e) => {
+    if (e.line !== undefined) {
+      const ls = starts[e.line - 1];
+      if (ls === undefined) return undefined;
+      const le = starts[e.line] ?? text.length;
+      const i = text.slice(ls, le).indexOf(e.target);
+      return i < 0
+        ? { line: e.line, from: ls, to: ls }
+        : { line: e.line, from: ls + i, to: ls + i + e.target.length };
+    }
+    // From the line of its own key, when the app names one: a target also
+    // written in an earlier field (`summary: Moved from notes/ghost.md`) is not
+    // the edge's place.
+    const slot = `${e.key ?? ""}\0${e.target}`;
+    const from = findWhole(text, e.target, cursor.get(slot) ?? keyStart(text, e.key, end), end);
+    if (from < 0) return undefined;
+    cursor.set(slot, from + e.target.length);
+    return { line: lineAt(from), from, to: from + e.target.length };
+  });
+}

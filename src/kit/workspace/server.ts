@@ -43,7 +43,12 @@ import {
 import { describeJsonProblem } from "../lib/json.ts";
 import { decodePath, splitTarget } from "../lib/linkTarget.ts";
 import { IMAGE_SOURCES } from "../lib/sidecar.ts";
-import { publishPointer, removePointer, writeFileAtomic } from "../wire/discovery.ts";
+import {
+  publishPointer,
+  recordLastOpened,
+  removePointer,
+  writeFileAtomic,
+} from "../wire/discovery.ts";
 import { createEventLog } from "../wire/eventLog.ts";
 import { drainAndStop, startHousekeeping } from "../wire/housekeeping.ts";
 import { refuseForeignOrigin } from "../wire/origin.ts";
@@ -115,6 +120,7 @@ import type {
   DocView,
   GraphOptions,
   HeadingLanding,
+  LinkCheckOptions,
   Message,
   MessageAbout,
   MessageAboutOnTail,
@@ -380,6 +386,12 @@ const MISSING_RECHECK_MS = 400;
  * goes out: a save, a `git checkout` or an export is one frame, not hundreds.
  */
 export const CONTEXT_CHANGED_SETTLE_MS = 400;
+
+/**
+ * The longest `context.changed` (and the app view's refresh) waits while
+ * watcher events keep arriving: a steady trickle never settles.
+ */
+export const CONTEXT_CHANGED_MAX_WAIT_MS = 2000;
 
 /**
  * Is a watcher's relative name under a dot-folder or a dot-file (`.git/…`,
@@ -650,6 +662,14 @@ export type WorkspaceDaemonOptions = {
    * `backlinks` and `link-check` carry the edges and filter by kind.
    */
   links?: LinkSlot;
+  /**
+   * What the app asks of the link check beyond the kit's own
+   * (kit-broken-links-visible): `leaving` adds the links and edges that land
+   * outside the set they are written in (off by default), and `noun` is the
+   * app's word for a set, which the status bar's list uses ("leaving the
+   * set"). Without it, `link-check` and the list are the kit's own.
+   */
+  linkCheck?: LinkCheckOptions;
   /** Hooks an app may set to take part in an act the kit performs. */
   hooks?: {
     /**
@@ -920,9 +940,12 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     const routes = (devIndex ? { "/": devIndex } : {}) as Record<string, never>;
 
     const session = opts.restore
-      ? WorkspaceSession.restore(opts.sessionsRoot, app, opts.restore)
+      ? WorkspaceSession.restore(opts.sessionsRoot, app, opts.restore, {
+          ...(opts.appHome !== undefined ? { appHome: opts.appHome } : {}),
+        })
       : WorkspaceSession.create(opts.sessionsRoot, app, sessionId, opts.workspace);
     if (opts.links) session.setLinkSlot(opts.links);
+    if (opts.linkCheck) session.setLinkCheck(opts.linkCheck);
     if (opts.appHome !== undefined) session.setAppHome(opts.appHome);
 
     let selection: Selection | null = null;
@@ -1021,7 +1044,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     /** The context's undo history, in memory on purpose (see `history.ts`). */
     const history = new History();
     /**
-     * Links the last rename or move broke, offered for updating (`relink`): good
+     * Links the last rename, move or `set.make` broke, offered for updating (`relink`): good
      * while that act is still the top of the undo stack and nothing has changed
      * the context's shape since.
      */
@@ -1134,7 +1157,8 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     });
 
     const appCtx = (): WorkspaceContext => ctx;
-    const viewState = (): PublicState => {
+    /** The snapshot; `pre` is the app's view when the caller already asked for it. */
+    const viewState = (pre?: { appState: unknown }): PublicState => {
       const base = session.view();
       return {
         app: app.name,
@@ -1163,7 +1187,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         prefs: readPrefs(),
         userHome,
         ...(app.launcher ? { launcher: app.launcher } : {}),
-        appState: opts.appState?.(appCtx()) ?? null,
+        appState: pre ? pre.appState : (opts.appState?.(appCtx()) ?? null),
       };
     };
     /**
@@ -1209,6 +1233,32 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       presenceShown = agentListening();
       const state = viewState();
       const view = opts.appState ? JSON.stringify(state.appState) : null;
+      const frames = {};
+      for (const ws of sockets) sendState(ws, state, view, frames);
+    };
+    /**
+     * The app's view asked for again, and broadcast only if some connection
+     * holds a different copy. An app's view can read files the session does not
+     * hold (an unopened document's frontmatter), and a change to one on disk
+     * sends no other state frame. Called once a burst of watcher events settles,
+     * so a `git checkout` of hundreds of files is one evaluation and at most one
+     * frame, and a view that did not change sends nothing.
+     */
+    const refreshAppView = () => {
+      if (!opts.appState || sockets.size === 0) return;
+      let appState: unknown;
+      try {
+        appState = opts.appState(appCtx()) ?? null;
+      } catch (e) {
+        process.stderr.write(`${app.name}: appState: ${e}\n`);
+        return;
+      }
+      const view = JSON.stringify(appState);
+      let stale = false;
+      for (const ws of sockets) if (viewSent.get(ws) !== view) stale = true;
+      if (!stale) return;
+      presenceShown = agentListening();
+      const state = viewState({ appState });
       const frames = {};
       for (const ws of sockets) sendState(ws, state, view, frames);
     };
@@ -1320,17 +1370,29 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     // settles, so a view of the whole context (the link check) can ask again. A
     // change to a document the session does not hold sends no snapshot, so
     // without this such a view would go stale. Carries nothing; it is a cue.
+    // The app's view is asked for again at the same moment (`refreshAppView`),
+    // and a state frame goes out only if it changed.
     // The session's own version files are not the context: an edit's write
     // lands there, and the surface that sent the edit already knows of it.
+    // The settle is trailing, with a cap: a steady trickle of writes (one every
+    // few hundred ms) never settles, so while events keep coming the cue fires
+    // at least every `CONTEXT_CHANGED_MAX_WAIT_MS`.
     let contextChanged: ReturnType<typeof setTimeout> | null = null;
+    let contextChangedSince = 0;
     const cueContextChanged = () => {
       if (contextChanged) clearTimeout(contextChanged);
-      contextChanged = setTimeout(() => {
-        contextChanged = null;
-        if (closed) return;
-        send({ op: "context.changed" });
-        pruneImageThumbs();
-      }, CONTEXT_CHANGED_SETTLE_MS);
+      else contextChangedSince = performance.now();
+      const capLeft = contextChangedSince + CONTEXT_CHANGED_MAX_WAIT_MS - performance.now();
+      contextChanged = setTimeout(
+        () => {
+          contextChanged = null;
+          if (closed) return;
+          send({ op: "context.changed" });
+          pruneImageThumbs();
+          refreshAppView();
+        },
+        Math.max(0, Math.min(CONTEXT_CHANGED_SETTLE_MS, capLeft)),
+      );
       contextChanged.unref?.();
     };
     /**
@@ -2050,19 +2112,18 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
      * (`unmakeSet`, `makeSet`), following where the document is after each.
      */
     type AppInverse = Extract<Inverse, { kind: "app" }>;
-    /** What a set made from a document says of the links it broke: no verb rewrites them. */
-    const SET_MAKE_LINKS_HINT =
-      "Turning a document into a set does not rewrite links: write each one as its `to`, or leave it for the link check. Wiki links are never rewritten.";
     const setMakeInverse = (from: string, at: string): AppInverse => {
       let now = at;
       const undo = () => {
         now = session.unmakeSet(now).path;
       };
-      // Made again, it breaks the links the first make did: said as that make said them.
+      // Made again, it breaks the links the first make did: said and offered as
+      // that make's were. (One that carried its links rewrites them instead:
+      // `applyInverse` follows them after this and drops what this noted.)
       const redo = () => {
         const m = session.makeSet(now, { links: true });
         now = m.path;
-        noteRedoBroke(m, "redo", SET_MAKE_LINKS_HINT);
+        noteRedoBroke(m, "redo");
       };
       return { kind: "app", label: `turned ${basename(from)} into a set`, undo, redo };
     };
@@ -2080,8 +2141,8 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       let names: { from?: string; to?: string } | undefined;
       // A folder creation made a set (a folder with its own entry), for its words.
       let madeSet = false;
-      // An act whose way back the session holds (`set.make`), and its links fact.
-      let own: { inverse: AppInverse; fact?: Record<string, unknown> } | undefined;
+      // An act whose way back the session holds (`set.make`).
+      let own: { inverse: AppInverse } | undefined;
       switch (op.op) {
         case "doc.create":
           r = session.createDoc(op.dir, op.name, {
@@ -2102,21 +2163,14 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           text = `${who} created the ${madeSet ? "set" : "folder"} ${shown(r.path as string)}.`;
           break;
         case "set.make": {
+          // The move into the folder can break links into and out of the
+          // document: said and offered for updating (`relink`), as a move's are.
           const { links, wiki: w, ...m } = session.makeSet(op.path, { links: true });
+          fixes = links ?? [];
+          wiki = w ?? [];
           r = m;
           text = `${who} turned ${basename(m.from)} into a set: ${shown(m.folder)}.`;
           own = { inverse: setMakeInverse(m.from, m.path) };
-          // The links the move into the folder broke: said, never rewritten.
-          // There is no `relink` offer for this act; the link check lists them.
-          if ((links?.length ?? 0) > 0 || (w?.length ?? 0) > 0) {
-            text += ` ${brokenText(links ?? [], w ?? [], basename(m.from))}`;
-            own.fact = {
-              broken: {
-                ...brokenFact(links ?? [], w ?? []),
-                hint: SET_MAKE_LINKS_HINT,
-              },
-            };
-          }
           break;
         }
         case "bundle.create": {
@@ -2214,18 +2268,14 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       });
       if (follow && (act?.inverse.kind === "move" || act?.inverse.kind === "rename"))
         act.inverse.follow = follow;
-      let linkFact: Record<string, unknown> = own?.fact ?? {};
-      if (
-        (fixes.length > 0 || wiki.length > 0) &&
-        act &&
-        (act.inverse.kind === "move" || act.inverse.kind === "rename")
-      ) {
+      let linkFact: Record<string, unknown> = {};
+      if ((fixes.length > 0 || wiki.length > 0) && act && carriesLinks(act.inverse)) {
         const what = names?.from ?? basename(r.from as string);
         if (fixes.length > 0 && "updateLinks" in op && op.updateLinks) {
           // Asked for in the same act: rewritten now, and the undo takes both back.
           const edits = linkEditsOf(fixes);
           const done = applyLinkEdits(edits, what);
-          act.inverse.links = reverseLinkEdits(edits);
+          carryLinks(act.inverse, reverseLinkEdits(edits), what);
           act.label += `, updating ${plural(done.count, "link")}`;
           text = `${text.slice(0, -1)}, updating ${linksDone(done)}.${wikiNote(wiki, what)}`;
           linkFact = {
@@ -2250,6 +2300,16 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     // until the next change to the context's shape. Accepting rewrites them as
     // part of that act: its undo entry grows to cover them, so one undo puts the
     // file and its links back. `move --update-links` does both at once.
+    // `set.make` moves a document into its new folder, and offers the same.
+
+    /** An act whose way back can carry link edits: a move, a rename, or `set.make`'s own. */
+    const carriesLinks = (inv: Inverse): boolean =>
+      inv.kind === "move" || inv.kind === "rename" || inv.kind === "app";
+    /** Link edits (already reversed) for the act's way back to put back after it. */
+    const carryLinks = (inv: Inverse, back: LinkEdit[], what: string): void => {
+      if (inv.kind === "move" || inv.kind === "rename") inv.links = back;
+      else if (inv.kind === "app") inv.links = { edits: back, what };
+    };
     const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
     const points = (n: number) => (n === 1 ? "points" : "point");
     const linkCount = (fixes: readonly DocLinkFixes[]) =>
@@ -2446,7 +2506,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       ...(done.skipped.length > 0 ? { skipped: done.skipped } : {}),
     });
 
-    /** Accept the offer: the links the last rename or move broke, rewritten as part of that act. */
+    /** Accept the offer: the links the last rename, move or `set.make` broke, rewritten as part of that act. */
     const relink = (by: "human" | "agent"): Record<string, unknown> => {
       const offer = relinkOffer;
       relinkOffer = null;
@@ -2456,11 +2516,10 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           409,
         );
       const inverse = offer.act.inverse;
-      if (inverse.kind !== "move" && inverse.kind !== "rename")
-        throw new SessionError("no links to update", 409);
+      if (!carriesLinks(inverse)) throw new SessionError("no links to update", 409);
       const edits = linkEditsOf(offer.fixes);
       const done = applyLinkEdits(edits, offer.what);
-      inverse.links = reverseLinkEdits(edits);
+      carryLinks(inverse, reverseLinkEdits(edits), offer.what);
       offer.act.label += `, updating ${plural(done.count, "link")}`;
       const who = by === "agent" ? "Agent" : "You";
       const fact = linksFactOf(done, offer.fixes);
@@ -2489,12 +2548,10 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
      */
     let linkNote = "";
     /** A redo of an act that carried no link edits found links it broke: offered afresh. */
-    // `hint`: an act with no `relink` offer (`set.make`) says its own words instead.
     let redoBroke: {
       fixes: DocLinkFixes[];
       wiki: WikiBreak[];
       what: string;
-      hint?: string;
     } | null = null;
     const redoBrokeNow = () => redoBroke;
 
@@ -2509,14 +2566,13 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     const noteRedoBroke = (
       m: { from: string; links?: DocLinkFixes[]; wiki?: WikiBreak[] },
       dir: "undo" | "redo",
-      hint?: string,
     ) => {
       if (dir !== "redo") return;
       const fixes = m.links ?? [];
       const wiki = m.wiki ?? [];
       if (fixes.length === 0 && wiki.length === 0) return;
       const what = basename(m.from);
-      redoBroke = { fixes, wiki, what, ...(hint ? { hint } : {}) };
+      redoBroke = { fixes, wiki, what };
       linkNote = ` ${brokenText(fixes, wiki, what)}`;
     };
 
@@ -2615,6 +2671,11 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           if (made.length > 0 && trashing)
             throw new SessionError("a move to the Trash is already running", 409);
           await inv.undo();
+          // Links rewritten with the act (an accepted `relink` after `set.make`):
+          // put as they were with it, as a move's are. They are the whole account
+          // of its links, so what its own run noted as broken is dropped.
+          const links = inv.links ? followLinks(inv.links.edits, inv.links.what) : null;
+          if (links) redoBroke = null;
           // Past this point the world has changed: a failure is reported with
           // what was done, and the step comes off the list (a GoneError), since
           // it can never be undone as a whole again.
@@ -2641,8 +2702,16 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           // Put back the other way: the label stays the act's own.
           return inv.redo && made.length === 0
             ? {
-                label: inv.label,
-                inverse: { kind: "app", label: inv.label, undo: inv.redo, redo: inv.undo },
+                label: `${inv.label}${links?.label ?? ""}`,
+                inverse: {
+                  kind: "app",
+                  label: inv.label,
+                  undo: inv.redo,
+                  redo: inv.undo,
+                  ...(links && inv.links
+                    ? { links: { edits: links.back, what: inv.links.what } }
+                    : {}),
+                },
               }
             : null;
         }
@@ -3089,14 +3158,60 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     void everyClientOpListed;
     const CLIENT_OPS: readonly string[] = [...SURFACE_OPS, ...STRUCTURE_OPS];
 
+    /** The `rid` of the newest `edit` each surface sent that the daemon has answered, taken or refused (`editSeen`). */
+    const editTaken = new WeakMap<import("bun").ServerWebSocket<unknown>, string | number>();
+
     /**
-     * The human's text reaches the active version: the editor's `edit`, and an
-     * app writing what it holds (`ctx.edit`). `rev`: the edit was rebased onto a
-     * link rewrite, and every editor is told the text kept.
+     * The text a surface's edit left, to every other surface: a second tab on
+     * the version shows what the first typed. The typing surface is not sent
+     * its own text back, unless it was rebased onto a rewrite (`rev`), which it
+     * must take. Each frame carries what the daemon had taken from its
+     * receiver (`editSeen`), so a surface whose own edit is still on its way
+     * keeps its text: that edit is taken next and sent on in turn.
      */
-    const editActive = (doc: string, version: number, text: string, rev?: number) => {
+    const relayEdit = (
+      from: import("bun").ServerWebSocket<unknown>,
+      doc: string,
+      version: number,
+      text: string,
+      rev: number | undefined,
+    ) => {
+      const frame = {
+        op: "version.text",
+        doc,
+        version,
+        text,
+        origin: "remote",
+        ...(rev !== undefined ? { rev } : {}),
+      } satisfies ServerOp;
+      // The text is serialized once; only the stamp differs per surface.
+      const head = JSON.stringify(frame).slice(0, -1);
+      for (const ws of sockets) {
+        if (ws === from && rev === undefined) continue;
+        try {
+          ws.send(`${head},"editSeen":${JSON.stringify(editTaken.get(ws) ?? null)}}`);
+        } catch {
+          /* socket closed */
+        }
+      }
+    };
+
+    /**
+     * The human's text reaches the active version: the editor's `edit` (`from`,
+     * the surface that typed it), and an app writing what it holds (`ctx.edit`,
+     * which tells the surfaces itself). `rev`: the edit was rebased onto a link
+     * rewrite, and every editor is told the text kept.
+     */
+    const editActive = (
+      doc: string,
+      version: number,
+      text: string,
+      rev?: number,
+      from?: import("bun").ServerWebSocket<unknown>,
+    ) => {
       const r = session.edit(doc, version, text);
-      if (rev !== undefined)
+      if (from) relayEdit(from, doc, version, text, rev);
+      else if (rev !== undefined)
         send({ op: "version.text", doc, version, text, origin: "remote", rev });
       if (r.preserved) {
         const d = session.doc(doc);
@@ -3273,6 +3388,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
             msg.version,
             followed.text,
             followed.rev !== null ? followed.rev : undefined,
+            ws,
           );
           return;
         }
@@ -3332,19 +3448,12 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
             relinkOffer = null;
             // Read through a call: set inside `applyInverse`, which the compiler cannot see.
             const broke = redoBrokeNow();
-            if (broke && back && broke.fixes.length > 0 && !broke.hint)
+            if (broke && back && broke.fixes.length > 0)
               relinkOffer = { act: back, ...broke, by: "human" };
             syncWatchers();
             announce(`You redid: ${withoutLinkCount(act.label)}.${linkNote}`, {
               fact: "history.redo",
-              ...(broke
-                ? {
-                    broken: {
-                      ...brokenFact(broke.fixes, broke.wiki),
-                      ...(broke.hint ? { hint: broke.hint } : {}),
-                    },
-                  }
-                : {}),
+              ...(broke ? { broken: brokenFact(broke.fixes, broke.wiki) } : {}),
             });
             broadcastState();
           } catch (e) {
@@ -4630,6 +4739,12 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           }
           const idOf = (msg as { rid?: unknown } | null)?.rid;
           rid = typeof idOf === "string" || typeof idOf === "number" ? idOf : undefined;
+          // An edit is the daemon's to answer from here, taken or refused (an
+          // app's `beforeKitAct`, a non-active version): the stamp on what this
+          // surface is sent next (`relayEdit`). Set before anything can refuse
+          // it, or the surface would wait on it, passing over every relay.
+          if (rid !== undefined && (msg as { op?: unknown } | null)?.op === "edit")
+            editTaken.set(ws, rid);
           try {
             const name = (msg as { op?: unknown } | null)?.op;
             if (typeof name === "string" && verbs.has(name)) {
@@ -4698,6 +4813,13 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     } catch {
       /* discovery is best-effort */
     }
+    // The newest session, for every CLI verb with no --session: this one,
+    // started new or restored. It outlives this daemon, unlike the pointer.
+    try {
+      recordLastOpened(dirname(opts.sessionsRoot), sessionId);
+    } catch {
+      /* best-effort: the CLI then says the newest session is unknown */
+    }
 
     syncWatchers();
     // The session says what its own timeout is. `--timeout 0` has always meant
@@ -4751,6 +4873,13 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       announce(
         `This session was saved with ${report.workspaceAdded} as its workspace folder. ${app.name} has no default folder now, so it is a set in the sidebar: its files are still here, and a new file goes where you point.`,
         { fact: "workspace.added", path: report.workspaceAdded },
+      );
+    for (const o of report.ownPlaceSets ?? [])
+      announce(
+        o.outcome === "dropped"
+          ? `${o.label} is no longer in the context: ${o.why}, which no set shows. Its files stay where they are.`
+          : `${o.label} stays a set, but ${app.name}'s own folder inside it (${o.why}), where its sessions live, is left out of its tree, search and links.`,
+        { fact: `set.${o.outcome}`, path: o.root },
       );
     // A session from before the overlap block still opens, and says what to
     // change: once, not at every restore (`doctor` keeps listing it).

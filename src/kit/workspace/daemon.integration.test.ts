@@ -1028,18 +1028,31 @@ describe("hardening, through the launchers", () => {
     expect(readdirSync(logs).length).toBe(before - 1);
   }, 60_000);
 
+  test("open records the session it started as the newest: its id, and when", async () => {
+    const record = join(root, "home", "last-opened.json");
+    rmSync(record, { force: true });
+    const r = await cli("open", "--no-open");
+    const sid = json<{ session_id: string }>(r).session_id;
+    // Written by its daemon at start, for every verb with no --session.
+    const last = JSON.parse(readFileSync(record, "utf8")) as { session_id: string; at: string };
+    expect(last.session_id).toBe(sid);
+    expect(Date.now() - Date.parse(last.at)).toBeLessThan(60_000);
+    expect((await cli("close", "--session", sid)).code).toBe(0);
+  }, 60_000);
+
   test("open --restore of a session that does not exist is not_found with the saved ones as choices", async () => {
     const r = await cli("open", "--no-open", "--restore", "nope");
     expect(r.code).toBe(5);
     expect(JSON.parse(r.err).error.choices).toContain(sid0);
   });
 
-  test("a verb with no session running says how to bring the work back", async () => {
+  test("a verb naming a session that is not saved here says so, with the saved ones as choices", async () => {
     const r = await cli("state", "--session", "no-such-id");
     expect(r.code).toBe(5);
     const err = JSON.parse(r.err).error;
-    expect(err.message).toContain("no running kit-fixture session");
-    expect(err.hint).toContain("open --restore");
+    expect(err.message).toContain("no kit-fixture session no-such-id is saved here");
+    expect(err.hint).not.toContain("open --restore");
+    expect(err.choices).toContain(sid0);
   });
 });
 

@@ -10,6 +10,9 @@ import { APP_RESOLVE_CAP, type AppEdge, BODY_LINKS, type LinkSlot, readEdges } f
 import { BACKLINK_CAP, type WorkspaceSession } from "./session";
 import { inContext, tempRoot } from "./testing";
 
+const GLADE =
+  "---\ntitle: The Glade\nconcepts: [./ruin.md, ./gone.md]\n---\n# The Glade\n\nSee [the ruin](./ruin.md?rel=near).\n";
+
 let root: string;
 let world: string;
 let s: WorkspaceSession;
@@ -30,10 +33,7 @@ beforeEach(() => {
   root = tempRoot("link-edges");
   world = join(root, "world");
   mkdirSync(join(world, "aliases"), { recursive: true });
-  writeFileSync(
-    join(world, "glade.md"),
-    "---\ntitle: The Glade\nconcepts: [./ruin.md, ./gone.md]\n---\n# The Glade\n\nSee [the ruin](./ruin.md?rel=near).\n",
-  );
+  writeFileSync(join(world, "glade.md"), GLADE);
   writeFileSync(join(world, "ruin.md"), "---\ntitle: The Ruin\n---\n# The Ruin\n");
   writeFileSync(join(world, "notes.md"), "# Notes\n\n[[@well]] and [glade](./glade.md).\n");
   writeFileSync(join(world, "aliases", "@well.md"), "# The Well\n");
@@ -138,7 +138,12 @@ describe("app edges with a kind", () => {
           edge: "concept",
           raw: "./gone.md",
           key: "concepts[1]",
+          // Found where it is written (kit-broken-links-visible): line 3 of the file.
+          line: 3,
           tried: [at("gone.md")],
+          from: GLADE.indexOf("./gone.md"),
+          to: GLADE.indexOf("./gone.md") + "./gone.md".length,
+          set: s.context[0]?.id,
         },
       ],
     });

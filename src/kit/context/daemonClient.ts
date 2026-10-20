@@ -455,6 +455,14 @@ export function createDaemonClient(options: DaemonOptions = {}): DaemonClient {
    */
   const sentEdit = new Map<string, RequestId>();
 
+  /**
+   * The request id of the newest edit sent on THIS socket, by `doc@version`,
+   * until a frame says the daemon has taken it (`version.text`'s `editSeen`).
+   * Emptied on every open: a new socket's frames are built after the daemon
+   * was done with the old one.
+   */
+  const unconfirmed = new Map<string, RequestId>();
+
   /** Writes waiting out their pause, by document slug. */
   const writes = new Map<
     string,
@@ -494,6 +502,7 @@ export function createDaemonClient(options: DaemonOptions = {}): DaemonClient {
     }
     writes.delete(slug);
     sentEdit.set(textKey(slug, w.version), id);
+    unconfirmed.set(textKey(slug, w.version), id);
     noteText(slug, w.version, text);
     return true;
   }
@@ -681,6 +690,18 @@ export function createDaemonClient(options: DaemonOptions = {}): DaemonClient {
         // (a rewrite, a revert, a change on disk) is the daemon's news: taken.
         const sent = sentEdit.get(textKey(f.doc, f.version));
         if (typeof rid === "number" && typeof sent === "number" && rid < sent) break;
+        // Another surface's edit, relayed (`editSeen`): when the daemon sent it, it
+        // had not yet taken this client's own newer edit to this version, which
+        // it takes next and sends on in turn. Taken, it would put the other
+        // text over what was typed here, and the next keystroke would send it.
+        if (f.editSeen !== undefined) {
+          const key = textKey(f.doc, f.version);
+          const mine = unconfirmed.get(key);
+          if (typeof mine === "number") {
+            if (typeof f.editSeen !== "number" || f.editSeen < mine) break;
+            unconfirmed.delete(key);
+          }
+        }
         // Taken: the next edit is typed over this text (see the daemon's `linkFollow`).
         if (f.rev !== undefined) seenRev.set(f.doc, Math.max(seenRev.get(f.doc) ?? 0, f.rev));
         noteText(f.doc, f.version, f.text);
@@ -733,6 +754,7 @@ export function createDaemonClient(options: DaemonOptions = {}): DaemonClient {
     ws.onopen = () => {
       if (socket !== ws) return;
       delay = minDelay;
+      unconfirmed.clear();
       // A reconnect may land on a daemon whose files changed while the socket was
       // down, so what was loaded is dropped and asked for again.
       // The daemon there may be a new one, counting rewritten texts from 1 again.

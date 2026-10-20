@@ -602,8 +602,8 @@ export type DocLinkFixes = { path: string; was: string; fixes: LinkFix[]; noun?:
 export type WikiBreak = { path: string; line: number; raw: string };
 
 /**
- * The links the last rename or move broke, offered for updating in one act
- * (`relink`). It lasts until the next change to the context's shape (another
+ * The links the last rename, move or `set.make` broke, offered for updating in
+ * one act (`relink`). It lasts until the next change to the context's shape (another
  * structure act, an undo or a redo), or until either party answers it.
  */
 export type RelinkOffer = {
@@ -662,7 +662,7 @@ export type PublicState = {
   notesWaiting?: NoteWaiting[];
   /** What the context's undo arrows should show. Not the editor's undo. */
   history: HistoryView;
-  /** Links the last rename or move broke, offered for updating; absent when there are none. */
+  /** Links the last rename, move or `set.make` broke, offered for updating; absent when there are none. */
   relink?: RelinkOffer;
   /** Per-viewer conveniences kept beside the sessions, so a new port does not reset them. */
   prefs: Record<string, string>;
@@ -789,6 +789,8 @@ export type StructureOp =
   /**
    * A document listed on its own becomes a set: a folder named for it beside
    * it, the document moved in, the same entry (by id) now mirroring the folder.
+   * Links the move breaks are reported (`broken`) and offered, as a move's are
+   * (`relink`).
    */
   | { op: "set.make"; path: string }
   /**
@@ -1105,7 +1107,51 @@ export type EdgeBacklinkView = {
 };
 
 /** An app's edge that nothing answers: `tried` is every place the resolver looked. */
-export type CheckedEdgeView = Omit<EdgeBacklinkView, "rel"> & { tried: string[] };
+export type CheckedEdgeView = Omit<EdgeBacklinkView, "rel"> & {
+  tried: string[];
+  /**
+   * Where the edge is written in the source's active text, as offsets: the
+   * app's line when it gives one, else the first place its target is written
+   * in the frontmatter (`line` is filled from it). Absent when neither finds it.
+   */
+  from?: number;
+  to?: number;
+  /** The id of the set (context entry) the source is in. */
+  set?: string;
+};
+
+/**
+ * A link or an app edge that lands on a file outside the set it is written in:
+ * a document in another set, or a file in no set at all. Not a problem (a set
+ * may well point beyond itself), but it says the set is not self-contained.
+ * Reported only for an app that asks (`LinkCheckOptions.leaving`).
+ */
+export type LeavingLinkView = {
+  /** The document it is written in, absolute. */
+  source: string;
+  name: string;
+  /** Its path from the root of its set. */
+  shown: string;
+  /** The 1-based line of the source file, when known. */
+  line?: number;
+  /** The target exactly as written. */
+  raw: string;
+  label?: string;
+  /** Where it is written, as offsets, when known: what opening it reveals. */
+  from?: number;
+  to?: number;
+  /** The file it lands on, absolute. */
+  target: string;
+  /** The file as a person reads it: its path in its own set, else from the source's set root. */
+  targetShown: string;
+  /** The label of the set the target is in; absent for a file in no set. */
+  targetSet?: string;
+  /** An app edge's kind (`frontmatter`); absent for a body link. */
+  edge?: string;
+  key?: string;
+  /** The id of the set the source is in. */
+  set?: string;
+};
 
 /** A bundle that references a document: the boards a document is on, each with the cards that point at it. */
 export type ReferenceBacklinkView = {
@@ -1146,6 +1192,8 @@ export type ReferenceView = {
  */
 export type CheckedReferenceView = ReferenceView & {
   source: string;
+  /** The id of the set (context entry) the source is in. */
+  set?: string;
   bundle: string;
   name: string;
   shown: string;
@@ -1255,6 +1303,8 @@ export type CheckedLinkView = {
   /** Where the link sits in the source's active text, as offsets. */
   from: number;
   to: number;
+  /** The id of the set (context entry) the source is in: what the list groups by. */
+  set?: string;
 };
 
 /** A document sharing its file name with another, and the name it could take. */
@@ -1264,6 +1314,8 @@ export type SharedNameFile = {
   shown: string;
   /** A suggested new name, free in its folder and in the session. Never applied. */
   suggest: string;
+  /** The id of the set (context entry) the file is in. */
+  set?: string;
 };
 
 /**
@@ -1293,7 +1345,7 @@ export type LinkCheck = {
    * else (a mood board, references) needs no embed to belong. Not in `count`,
    * which counts problems with links: an unused image is not a broken link.
    */
-  unusedImages: { count: number; images: { path: string; shown: string }[] };
+  unusedImages: { count: number; images: { path: string; shown: string; set?: string }[] };
   /**
    * Links carrying a relation the vocabulary declares symmetric, written one
    * way only: the document linked to writes no link with that relation back.
@@ -1327,7 +1379,33 @@ export type LinkCheck = {
    * adds edges; `kinds` is every edge kind among them. Counted in `count`.
    */
   edges?: { count: number; kinds: string[]; links: CheckedEdgeView[] };
+  /**
+   * Links and app edges that land outside the set they are written in
+   * (`LeavingLinkView`). Not in `count`: leaving the set is not broken. The
+   * `edge` filter applies as it does to the other sections.
+   */
+  leaving?: { count: number; links: LeavingLinkView[] };
+  /** The app's word for a set (`LinkCheckOptions.noun`), when it gives one: what a list calls them. */
+  noun?: string;
+  /**
+   * The session's sets, in the context's order: each entry above names its
+   * set by `set`, and a list grouped by set titles each group from here.
+   */
+  sets?: {
+    id: string;
+    label: string;
+    /** Everything the set's group lists, before any list is cut (shared names, the session's, apart). */
+    total: number;
+  }[];
   truncated?: true;
+};
+
+/** What an app asks of the link check beyond the kit's own (`WorkspaceDaemonOptions.linkCheck`). */
+export type LinkCheckOptions = {
+  /** Report the links and app edges leaving their set (`LinkCheck.leaving`). Off by default. */
+  leaving?: boolean;
+  /** The app's word for a set (`set`), said in the answer as `noun`. */
+  noun?: string;
 };
 
 /** A link to a heading the check reports. */
@@ -1753,7 +1831,7 @@ export type ClientOp =
    * no agent command for it. Answered with `trash.done`.
    */
   | { op: "trash"; path: string }
-  /** Update the links the last rename or move broke (the `relink` offer), as one act with its undo. */
+  /** Update the links the last rename, move or `set.make` broke (the `relink` offer), as one act with its undo. */
   | { op: "relink" }
   /** Leave them: the offer goes, and the link check lists them as before. */
   | { op: "relink.leave" }
@@ -1831,6 +1909,12 @@ export type ServerOp =
    * `rev`: on a text the daemon rewrote (a link update after a rename or
    * move), its revision. The surface sends the newest it took as an edit's
    * `base`, so a late edit typed over the older text is rebased, not taken.
+   *
+   * `editSeen`: on a text a surface's `edit` left, sent to every other surface
+   * (and to the typing one too after a rewrite), the `rid` of the newest
+   * `edit` the daemon had answered (taken or refused) from the receiving
+   * surface when it sent this frame, or null for none. A surface whose own edit to that version is newer
+   * passes over the frame: the daemon takes that edit next and sends it on.
    */
   | {
       op: "version.text";
@@ -1839,6 +1923,7 @@ export type ServerOp =
       text: string;
       origin: "load" | "remote";
       rev?: number;
+      editSeen?: string | number | null;
     }
   | ({ op: "diff" } & DiffPayload)
   | ({ op: "search.results" } & SearchReport)
@@ -1993,7 +2078,7 @@ export type AgentCmd =
    * of it for the agent to write the description into.
    */
   | { op: "image.describe"; image: string; source?: ImageSource; label?: string }
-  /** Update the links the last rename or move broke (the `relink` offer), as one act with its undo. */
+  /** Update the links the last rename, move or `set.make` broke (the `relink` offer), as one act with its undo. */
   | { op: "relink" }
   /**
    * The app's image import settings (`lib/imageImport.ts`): read them, or set

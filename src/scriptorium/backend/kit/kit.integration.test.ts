@@ -176,7 +176,13 @@ describe("the kit path, end to end through Scriptorium's launchers", () => {
     await waitTail((l) => l.type === "ready");
   });
 
-  test("the session's URL is the interim frame, built, with the scroll-text favicon; only its own files are served", async () => {
+  test("the state names the launcher, so the ended dialog's restore command reaches this Scriptorium", async () => {
+    // The flag (without it the shipped Scriptorium refuses a kit-path session),
+    // the home the session lives under, and bun on the skill's CLI launcher.
+    expect((await state()).launcher).toBe(`SCRIPTORIUM_HOME=${home} SCRIPTORIUM_KIT=1 bun ${CLI}`);
+  });
+
+  test("the session's URL is the kit page, built, with the scroll-text favicon; only its own files are served", async () => {
     const res = await fetch(`http://127.0.0.1:${port}/`);
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toContain("text/html");

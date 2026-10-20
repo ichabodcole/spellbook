@@ -16,7 +16,7 @@
 
 import type { VerbHandler } from "../../../kit/workspace/server";
 import { SessionError } from "../../../kit/workspace/session";
-import type { DocSummary } from "../protocol";
+import type { DocSummary } from "./frontmatter";
 import { docMeta } from "./wiki";
 
 export const mapVerbs: Record<string, VerbHandler> = {

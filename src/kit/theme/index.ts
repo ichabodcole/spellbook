@@ -27,6 +27,17 @@ export const DOCUMENT_CSS_PATH = `${import.meta.dir}/document.css`;
 export const DOCUMENT_CSS_SPECIFIER = "../../kit/theme/document.css";
 
 /**
+ * The kit's shell sheet: the scan of the shell's markup (its image viewer with
+ * it) and the themed scrollbars. Kept out of the base sheet, which every themed
+ * spell imports, so a spell without the shell gains none of its utilities. A
+ * page that adopts the shell imports it after the base sheet.
+ */
+export const SHELL_CSS_PATH = `${import.meta.dir}/shell.css`;
+
+/** What a spell writes in its own stylesheet to take the kit's shell sheet. */
+export const SHELL_CSS_SPECIFIER = "../../kit/theme/shell.css";
+
+/**
  * The four layers a surface's tokens come from, lowest first. Later layers win,
  * so a spell overrides a kit token by redeclaring it in its own `@theme` (L2) and
  * again in its mode block (L3).

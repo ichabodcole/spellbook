@@ -36,7 +36,8 @@
        document pane imports after this one. Scriptorium imports this file
        and writes its own prose rules under the same class, so here they
        would change its shipped view;
-     • the scrollbar rules: they belong to the shell, and land with it.
+     • the scrollbar rules: they belong to the shell, and are in shell.css
+       beside this file, with the scan of the shell's markup.
    ────────────────────────────────────────────────────────────────────────── */
 
 /* The enter and exit animations the primitives use. Their presence is keyed on
@@ -113,7 +114,7 @@
    (measured: neither a directory, a glob nor an absolute path in document.css
    got past it). So a module is scanned here only when every spell that
    imports this file may carry its classes, and src/kit/document/ is scanned
-   by document.css. A NEW MARKUP MODULE IS NOT SCANNED UNTIL IT IS LISTED
+   by document.css; src/kit/shell/ likewise by shell.css. A NEW MARKUP MODULE IS NOT SCANNED UNTIL IT IS LISTED
    (or its own sheet scans it), and its utilities silently do not ship:
    src/kit/theme/theme.test.ts pins this list. */
 @source "../chat";
@@ -154,6 +155,11 @@
    (measured 2026-10-18 by moving the file out and rebuilding). A page that
    wants it imports the sheet, which is what brings its rules. */
 @source not "./document.css";
+
+/* ⛔ NOR shell.css, FOR THE SAME REASON: its scrollbar rules read a theme
+   variable, which a scan of the sheet would mark as used in every importing
+   spell. */
+@source not "./shell.css";
 
 /* ⛔ NOR ANY TEST FILE UNDER src/kit/. A test's example class strings are
    test data, not styling, and they shipped in every importing spell's

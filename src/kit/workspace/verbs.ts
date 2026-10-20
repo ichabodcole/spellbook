@@ -47,8 +47,15 @@ import {
 import { homeDir } from "../lib/home.ts";
 import { printJson } from "../lib/printJson";
 import { startDaemon } from "../wire/detach";
-import { type DiscoveryOptions, readPointer, type SessionPointer } from "../wire/discovery";
-import { CliError, die, type ErrKind, reportCliError } from "../wire/errors";
+import {
+  type DiscoveryOptions,
+  LAST_OPENED,
+  pidAlive,
+  readLastOpened,
+  readPointer,
+  type SessionPointer,
+} from "../wire/discovery";
+import { CliError, die, type ErrExtra, type ErrKind, reportCliError } from "../wire/errors";
 import { stdinWaiting } from "../wire/stdinPeek";
 import {
   commandLine,
@@ -66,7 +73,7 @@ import {
 } from "./heartbeat";
 import { type HomeDeclaration, hasHomeWorkspace, locationHint, notAddedWhole } from "./noHome";
 import type { DiffSide } from "./protocol";
-import { DOC_EXTENSIONS, isDocName } from "./tree";
+import { docExtensions, isDocName } from "./tree";
 
 /** The flags every workspace CLI knows. An app adds its own beside them. */
 export const KIT_OPTIONS = {
@@ -246,6 +253,33 @@ export function docArg(token: string): string {
 }
 
 /**
+ * A path argument made absolute against the caller's cwd, with a literal `~`
+ * refused. A shell expands an unquoted leading `~` before the CLI runs, so a
+ * `~` that arrives (quoted, or from a script) was not meant as a folder named
+ * `~`: resolving it against the cwd made `add-folder "~"` create one there.
+ * It is refused, as a path the caller did not mean, with the expanded path in
+ * the hint; nothing is resolved or created. A `~` later in a path is a name.
+ */
+export function pathArg(token: string, verb: string): string {
+  if (token === "~" || token.startsWith("~/")) {
+    const meant = token === "~" ? homeDir() : join(homeDir(), token.slice(2));
+    // A file or folder really named `~` here is reached as `./~`: said when
+    // there is one, since that may be what was meant.
+    const here = existsSync(resolve(token))
+      ? `; for the ${resolve(token)} here, write ./${token}`
+      : "";
+    die(
+      `${verb}: "${token}" arrived with its ~ unexpanded (quoted, or from a script): nothing was done`,
+      "usage",
+      {
+        hint: `write the full path (${meant}), or leave the ~ unquoted for the shell to expand${here}`,
+      },
+    );
+  }
+  return resolve(token);
+}
+
+/**
  * Every path is checked here, before any daemon exists. `open doc.md pic.png`
  * used to spawn a session, then fail on the second path inside it, leaving a
  * running daemon and a live pointer behind a failed command. A folder, a
@@ -254,8 +288,8 @@ export function docArg(token: string): string {
  * reason, and any other file is usage with the accepted extensions as
  * `choices`.
  */
-export function contextPaths(pos: string[]): string[] {
-  const paths = pos.map((p) => resolve(p));
+export function contextPaths(pos: string[], verb = "add"): string[] {
+  const paths = pos.map((p) => pathArg(p, verb));
   for (const p of paths) {
     let st: ReturnType<typeof statSync>;
     try {
@@ -272,7 +306,7 @@ export function contextPaths(pos: string[]): string[] {
     if (!st.isDirectory() && !isDocName(p) && !isImageName(p))
       die(`not a document or image the workspace opens: ${p}`, "usage", {
         hint: "add a folder, or a file with one of these extensions",
-        choices: [...DOC_EXTENSIONS, ...IMAGE_EXTENSIONS],
+        choices: [...docExtensions(), ...IMAGE_EXTENSIONS],
       });
   }
   return paths;
@@ -405,6 +439,8 @@ export type CliHelpers = {
   /** Prose from exactly one of: the arguments, `--stdin`, `--body-file`. */
   readBody(pos: string[], flags: Flags, verb: string): Promise<string>;
   docArg: typeof docArg;
+  /** A path argument made absolute, a literal `~` refused (`pathArg`). */
+  pathArg: typeof pathArg;
   printJson: typeof printJson;
 };
 
@@ -481,19 +517,6 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
     }
   }
 
-  /** What to say when no daemon answers, including the way back when there is one. */
-  function noSessionHint(): { hint: string; choices?: string[] } {
-    const ids = restorable();
-    const newest = ids[0];
-    if (newest === undefined) return { hint: "no session has been opened yet: run `open <path>`" };
-    return {
-      // The command, with the id already in it. A hint that says "you can
-      // restore a session" leaves the reader to find the id and guess the flag.
-      hint: `no daemon is running, but the work is on disk: bring it back with \`open --restore ${newest}\``,
-      choices: ids.slice(0, 10),
-    };
-  }
-
   /** Who ended a saved session, read from its manifest (which outlives the daemon). */
   function endedBy(id: string): string | undefined {
     try {
@@ -508,22 +531,123 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
     }
   }
 
+  /**
+   * The newest session: the one a daemon last started (new or restored), as
+   * its record beside the sessions folder says (`recordLastOpened`), which
+   * outlives the daemon and its pointer. A home with no record at all (none of
+   * its daemons has started since the record existed) falls back to the newest
+   * manifest.
+   *
+   * One rule for every verb with no `--session`, live or not. A verb never
+   * reaches past the newest session to an older one that happens to be live:
+   * the newest ended, or crashed, is said, by name. The temp directory's
+   * `latest` pointer is not consulted: a clean exit removes it, and the scan
+   * that stands in for it picks whatever is still live.
+   *
+   * A record that cannot be trusted (corrupt, not a plain file of this user's,
+   * or naming a session no longer saved here) is refused, never replaced by a
+   * guess: guessing is how a verb reaches a sibling.
+   */
+  function newestSession(): string | undefined {
+    const r = readLastOpened(dirname(opts.sessionsRoot()));
+    if (r.kind === "none") return restorable()[0];
+    const why =
+      r.kind === "untrusted"
+        ? r.why
+        : existsSync(join(opts.sessionsRoot(), r.id, "manifest.json"))
+          ? null
+          : `it names session ${r.id}, which is no longer saved here`;
+    if (why === null && r.kind === "ok") return r.id;
+    const ids = restorable();
+    return die(
+      `the newest ${app} session is unknown: the record of the last one started (${join(dirname(opts.sessionsRoot()), LAST_OPENED)}) cannot be trusted: ${why}`,
+      "not_found",
+      {
+        hint:
+          ids.length === 0
+            ? "no session is saved here: run `open <path>`"
+            : "name one with --session (the saved sessions are the choices); opening or restoring a session records it again",
+        choices: ids.slice(0, 10),
+      },
+    );
+  }
+
   /** Null means "no session", and nothing else: ENOENT is the only absence. */
   function readSession(session?: string): SessionPointer | null {
     if (session !== undefined && !/^[A-Za-z0-9_-][A-Za-z0-9_.-]*$/.test(session))
       die(`"${session}" is not a session id`, "usage", {
         hint: "a session id is the session_id that `open` printed",
       });
+    const id = session ?? newestSession();
+    if (id === undefined) return null;
     try {
-      return readPointer(app, session, opts.discovery);
+      return readPointer(app, id, opts.discovery);
     } catch (e) {
       return die(e instanceof Error ? e.message : String(e), "internal");
     }
   }
 
+  /**
+   * What to say when no daemon answers: about the session asked about
+   * (`--session`), or the newest saved one when none was named.
+   *
+   * A named session is the one the hint names. Offering the newest saved
+   * session whatever was asked sent `close --session a` to "bring it back with
+   * `open --restore b`", another session. An id that is not saved here (a typo,
+   * another app's id, or a session of another home) is said to be not here,
+   * with the saved ones as `choices`, not told to restore itself.
+   *
+   * A human end is routed on the manifest's `ended.by`, not on prose: the human
+   * ended it on purpose, so the refusal says so, names that session, and offers
+   * no reopen as the next act (`choices` would invite one too).
+   */
+  function noSession(session?: string): { message: string; extra: ErrExtra } {
+    const ids = restorable();
+    const id = session ?? newestSession();
+    if (id === undefined)
+      return {
+        message: `no running ${app} session`,
+        extra: { hint: "no session has been opened yet: run `open <path>`" },
+      };
+    if (!ids.includes(id))
+      return {
+        message: `no ${app} session ${id} is saved here (${opts.sessionsRoot()})`,
+        extra: {
+          hint:
+            ids.length === 0
+              ? "no session has been saved here yet: run `open <path>`"
+              : "pass --session one of the saved sessions, or drop it for the most recent",
+          choices: ids.slice(0, 10),
+        },
+      };
+    if (endedBy(id) === "human")
+      return {
+        message: `the human ended session ${id}`,
+        extra: {
+          hint: `the human ended this session on purpose; do not reopen it unless they ask. If they ask: \`open --restore ${id}\``,
+        },
+      };
+    return {
+      message: `no running ${app} session ${id}`,
+      extra: {
+        // The command, with the id already in it. A hint that says "you can
+        // restore a session" leaves the reader to find the id and guess the flag.
+        hint: `no daemon is running for session ${id}, but its work is on disk: bring it back with \`open --restore ${id}\``,
+        choices: ids.slice(0, 10),
+      },
+    };
+  }
+
   function requireSession(session?: string): SessionPointer {
-    const s = readSession(session);
-    if (!s) die(`no running ${app} session`, "not_found", noSessionHint());
+    const found = readSession(session);
+    // A pointer whose daemon is gone (a crash, a kill -9) names a session that
+    // is not running: said as such, with its own way back, rather than a
+    // transport failure on its port.
+    const s = found !== null && pidAlive(found.pid) ? found : null;
+    if (!s) {
+      const { message, extra } = noSession(session);
+      die(message, "not_found", extra);
+    }
     return s;
   }
 
@@ -617,7 +741,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
       noHome && pos.length === 0 && typeof flags.restore !== "string"
         ? openingFolder(process.cwd(), root, opts.appHome?.())
         : null;
-    const paths = opening && "path" in opening ? [opening.path] : contextPaths(pos);
+    const paths = opening && "path" in opening ? [opening.path] : contextPaths(pos, "open");
 
     if (typeof flags.restore === "string") {
       const id = flags.restore;
@@ -790,7 +914,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
         hint: "add it with `add <folder>` instead",
       });
     if (!st.isFile() || !isDocName(abs))
-      die(`not a document the workspace opens: ${abs}`, "usage", { choices: [...DOC_EXTENSIONS] });
+      die(`not a document the workspace opens: ${abs}`, "usage", { choices: docExtensions() });
     printJson(
       await postCmd(session, {
         op: "import",
@@ -919,6 +1043,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
     requireSession,
     readBody,
     docArg,
+    pathArg,
     printJson,
   };
 
@@ -955,7 +1080,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
       describe:
         "add files or folders to the context list (a document, an image, or a folder shown as a set)",
       run: async (pos, _flags, session) => {
-        printJson(await postCmd(session, { op: "context.add", paths: contextPaths(pos) }));
+        printJson(await postCmd(session, { op: "context.add", paths: contextPaths(pos, "add") }));
       },
     },
     noHome
@@ -1333,7 +1458,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
         ? "create an empty document at <path> (its folder must be a set or a folder in one)"
         : "create an empty document (its folder must be a set, a folder in one, or the workspace)",
       run: async (pos, _flags, session) => {
-        const abs = resolve(pos[0] as string);
+        const abs = pathArg(pos[0] as string, "new-doc");
         printJson(
           await postCmd(session, { op: "doc.create", dir: dirname(abs), name: basename(abs) }),
         );
@@ -1347,7 +1472,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
         ? "create a folder at <path> inside a set or a folder in one"
         : "create a folder inside a set, or in the workspace as a new set",
       run: async (pos, _flags, session) => {
-        const abs = resolve(pos[0] as string);
+        const abs = pathArg(pos[0] as string, "new-folder");
         printJson(
           await postCmd(session, { op: "folder.create", dir: dirname(abs), name: basename(abs) }),
         );
@@ -1398,7 +1523,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
       flags: SESSION,
       positionals: [],
       describe:
-        "update the links the last rename or move broke (its `broken`), each rewritten from its own document with its label, ?rel= and #anchor kept, as part of that act: one undo puts back both. Refused once anything else has changed the context's shape. A document open with unsaved edits keeps them, unsaved",
+        "update the links the last rename, move or set made from a document broke (its `broken`), each rewritten from its own document with its label, ?rel= and #anchor kept, as part of that act: one undo puts back both. Refused once anything else has changed the context's shape. A document open with unsaved edits keeps them, unsaved",
       run: async (_pos, _flags, session) => {
         printJson(await postCmd(session, { op: "relink" }));
       },
@@ -1476,7 +1601,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
       flags: [...SESSION, "edge"],
       positionals: [],
       describe:
-        "check the session's links, in sections: dangling (file, line, the link as written, where it looked), unsupported (a scheme nothing here opens, like op:), duplicates (shared file names, each with a suggested rename, never applied), unusedImages (images in an images/ folder that no link or embed reaches, as an undone paste leaves them; never deleted), symmetry (hints: a relation the world's _relations.json declares symmetric, written one way only, the document linked to not linking back; never a problem), headings (links whose document opens but whose #anchor names no heading in it, a link that is only #heading read against its own document, each with the anchor decoded, the target and the nearest remaining heading, often the heading reworded; counted as problems), and ambiguousHeadings (hints: a bare #anchor naming a repeated heading, which lands on the first; write Parent#Child to name one); references (a bundle's references whose file is gone, an app's board cards: the bundle, the card's id, line, path as written, where it looked, and a sentence saying so; counted as problems); edges (the app's own edges that nothing answers, when it adds any: the edge's kind, the target as written, the key that carries it, where it looked; counted as problems); unusedImages, symmetry and ambiguousHeadings are kept out of count, which counts link problems only; --edge a,b keeps those edge kinds only (link: the body links' sections); reports, exits 0",
+        "check the session's links, in sections: dangling (file, line, the link as written, where it looked), unsupported (a scheme nothing here opens, like op:), duplicates (shared file names, each with a suggested rename, never applied), unusedImages (images in an images/ folder that no link or embed reaches, as an undone paste leaves them; never deleted), symmetry (hints: a relation the world's _relations.json declares symmetric, written one way only, the document linked to not linking back; never a problem), headings (links whose document opens but whose #anchor names no heading in it, a link that is only #heading read against its own document, each with the anchor decoded, the target and the nearest remaining heading, often the heading reworded; counted as problems), and ambiguousHeadings (hints: a bare #anchor naming a repeated heading, which lands on the first; write Parent#Child to name one); references (a bundle's references whose file is gone, an app's board cards: the bundle, the card's id, line, path as written, where it looked, and a sentence saying so; counted as problems); edges (the app's own edges that nothing answers, when it adds any: the edge's kind, the target as written, the key that carries it, where it looked, and its line, from and to when found); leaving (only when the app turns it on: the answer then has a leaving section, absent otherwise; links and edges that land on a file in another set or in no set: the source, line, the link as written, edge for an app edge, the target, targetShown and targetSet, the target's set label; not a problem); every entry carries set, the id of the set its source is in (the innermost, when sets nest), and sets lists those sets in the context's order with their label and total, what the human's list groups by; noun, when present, is the app's word for a set; unusedImages, symmetry, ambiguousHeadings and leaving are kept out of count, which counts link problems only; --edge a,b keeps those edge kinds only (link: the body links' sections); reports, exits 0",
       run: async (_pos, flags, session) => {
         const edge = edgeList(flags.edge, "link-check");
         printJson(await postCmd(session, { op: "link.check", ...(edge ? { edge } : {}) }));
@@ -1642,7 +1767,9 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
   Each verb accepts only the flags on its row.
 
   Output: JSON on stdout, one document per answer, except tail (one JSON line
-  per event) and help (prose). Failures: one JSON envelope on stderr, exit
+  per event) and help (prose). tail's stderr also carries \`: ${app}-keepalive\`
+  lines while the stream is quiet: not JSON, so a reader of both streams
+  skips any line starting with \`:\`. Failures: one JSON envelope on stderr, exit
   2 = usage, 1 = internal, 5 = not found, 6 = conflict. tail waits for a
   session rather than failing, and ends 0 when its session closes. tail
   ${WINDOW_HELP}.${opts.helpFooter ? `\n\n${opts.helpFooter}` : ""}`,

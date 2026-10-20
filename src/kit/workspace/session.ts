@@ -76,6 +76,7 @@ import {
   type PixelSize,
   SVG_REFUSED,
   sniffImage,
+  withoutDocExtension,
 } from "../lib/docFormat.ts";
 import { splitFrontmatter } from "../lib/frontmatter.ts";
 import {
@@ -110,9 +111,11 @@ import {
   type AppEdge,
   BODY_LINKS,
   checkLinkSlot,
+  type EdgeSpot,
   edgeBacklinksTo,
   edgeKeeps,
   type LinkSlot,
+  locateEdges,
   type ResolvableDocument,
   readEdges,
 } from "./linkEdges";
@@ -157,6 +160,7 @@ import {
   notASet,
   noWorkspaceToSet,
   type OwnPlaces,
+  ownPlaceGuard,
   within,
 } from "./noHome";
 import {
@@ -196,7 +200,9 @@ import type {
   HeadingOffer,
   HeadingProblem,
   ImageView,
+  LeavingLinkView,
   LinkCheck,
+  LinkCheckOptions,
   LinkGraph,
   LinkHeadings,
   LinkTarget,
@@ -243,7 +249,7 @@ import { type Candidate, DEFAULT_LIMIT, searchDocuments } from "./search";
 import {
   bundleNode,
   bundlesIn,
-  DOC_EXTENSIONS,
+  docExtensions,
   docNode,
   docPaths,
   entryForPath,
@@ -255,6 +261,7 @@ import {
   MIRROR_NODE_CAP,
   PathError,
   readBundleInfo,
+  type ScanGuard,
   type ScanSkip,
   scanTree,
   sidecarFile,
@@ -774,6 +781,13 @@ export type RestoreReport = {
    * workspace, dropped and added as a set because it holds files.
    */
   workspaceAdded?: string;
+  /**
+   * Entries the manifest held that showed the app's own places (the sessions
+   * or the app home): `dropped`, one that lay among them, `why` saying so;
+   * `narrowed`, a set that holds them in plain sight, kept with them left out
+   * of its scan, `why` the own folder left out (the outermost it holds).
+   */
+  ownPlaceSets?: { label: string; root: string; outcome: "dropped" | "narrowed"; why: string }[];
 };
 
 /** The legal task transitions. Everything else is a conflict. */
@@ -863,10 +877,14 @@ export class WorkspaceSession {
       refs: BundleReference[];
       /** The app's edges from it (kit-link-edges-slot), read from the same text. */
       edges: AppEdge[];
+      /** Where each of `edges` is written, in order (`locateEdges`): what the link check opens. */
+      edgeAt?: (EdgeSpot | undefined)[];
     }
   >();
   /** The app's part of the link layer: its edges and its resolver (`setLinkSlot`). */
   private linkSlot: LinkSlot = {};
+  /** What the app asks of the link check beyond the kit's own (`setLinkCheck`). */
+  private linkCheckOpts: LinkCheckOptions = {};
   /** The documents the app's resolver may land on, built once per context index. */
   private resolvable = new WeakMap<ContextIndex, readonly ResolvableDocument[]>();
   /**
@@ -904,6 +922,15 @@ export class WorkspaceSession {
   setLinkSlot(slot: LinkSlot | undefined): void {
     this.linkSlot = checkLinkSlot(slot);
     this.linkCache.clear();
+  }
+
+  /**
+   * What the app asks of the link check (`WorkspaceDaemonOptions.linkCheck`):
+   * the links leaving their set, and its word for a set. Set once, as the
+   * daemon boots; without it the check is the kit's own.
+   */
+  setLinkCheck(opts: LinkCheckOptions | undefined): void {
+    this.linkCheckOpts = { ...(opts ?? {}) };
   }
 
   /** Whether the app adds edges of its own: what decides that the answers carry them. */
@@ -949,7 +976,12 @@ export class WorkspaceSession {
   }
 
   /** Reload a session from its manifest (`open --restore <id>`). */
-  static restore(sessionsRoot: string, app: AppDeclaration, sessionId: string): WorkspaceSession {
+  static restore(
+    sessionsRoot: string,
+    app: AppDeclaration,
+    sessionId: string,
+    opts: { appHome?: string } = {},
+  ): WorkspaceSession {
     checkApp(app);
     checkSessionId(sessionId);
     const path = join(sessionsRoot, sessionId, "manifest.json");
@@ -1037,8 +1069,14 @@ export class WorkspaceSession {
     }
     const s = new WorkspaceSession(sessionsRoot, app, m);
     s.restoreReport = report;
+    s.setAppHome(opts.appHome);
     s.own.mkdir(join(s.dir, "docs"), { recursive: true });
     s.pinDir();
+    // ⛔ A SET FROM AN OLDER MANIFEST NEVER SHOWS THE APP'S OWN PLACES. One
+    // that lies among the sessions or in the app home is dropped; one that
+    // holds them in plain sight is kept, narrowed by the scan's guard, which
+    // leaves them out of it. Said in the chat either way.
+    s.settleOwnPlaceSets(report);
     // Mirrors are re-read, not trusted: the folder may have changed while no
     // daemon was watching it.
     for (const e of s.m.context) if (e.membership === "mirrored") s.rescan(e.id);
@@ -1099,6 +1137,7 @@ export class WorkspaceSession {
       report.tasks.length > 0 ||
       report.workspaceDefaulted ||
       droppedWorkspace ||
+      (report.ownPlaceSets?.length ?? 0) > 0 ||
       report.slotMigratedFrom !== undefined ||
       report.manifestMigrated
     ) {
@@ -1160,7 +1199,12 @@ export class WorkspaceSession {
     // As `addContext` does, but unpersisted: the restore writes the manifest
     // once, after it keeps any pre-migrate copy.
     const id = `c-${randHex(3)}`;
-    const entry = entryForPath(resolve(folder), id, (root) => this.scanSkip(id, root));
+    const entry = entryForPath(
+      resolve(folder),
+      id,
+      (root) => this.scanSkip(id, root),
+      this.scanGuard(),
+    );
     if (entry.membership !== "mirrored") return undefined;
     this.m.context.push(entry);
     this.relink();
@@ -1457,6 +1501,44 @@ export class WorkspaceSession {
     throw gone ? new GoneError(message, 409) : new SessionError(message, 409);
   }
 
+  /**
+   * At restore, before any scan: drop each entry that lies among the app's
+   * own places (a set's root, or a listed file, as written or as the disk
+   * resolves it), and note each set that holds them in plain sight, which the
+   * scan's guard narrows. Older manifests could hold either; `add` refuses
+   * both now (`notASet`).
+   */
+  private settleOwnPlaceSets(report: RestoreReport): void {
+    const own = this.ownPlaces;
+    const out: NonNullable<RestoreReport["ownPlaceSets"]> = [];
+    this.m.context = this.m.context.filter((e) => {
+      const paths =
+        e.membership === "mirrored"
+          ? [e.root]
+          : [e.root, ...e.nodes.map((n) => join(e.root, n.rel))];
+      const inside = paths.map((p) => inOwnPlaces(p, own)).find((w) => w !== null);
+      if (inside) {
+        out.push({ label: e.label, root: e.root, outcome: "dropped", why: inside });
+        return false;
+      }
+      if (e.membership === "mirrored" && holdsOwnPlaces(e.root, own) !== null) {
+        // Said only when the scan would have shown them (`notASet`'s rule);
+        // the line names what is left out, the outermost own folder it holds.
+        if (notASet(e.root, own) !== null) {
+          const holds = (r: string) => holdsOwnPlaces(e.root, { sessionsRoot: r }) !== null;
+          const left =
+            own.appHome !== undefined && holds(own.appHome) ? own.appHome : own.sessionsRoot;
+          out.push({ label: e.label, root: e.root, outcome: "narrowed", why: left });
+        }
+      }
+      return true;
+    });
+    if (out.length > 0) {
+      report.ownPlaceSets = out;
+      this.closeOrphanedOpenDoc();
+    }
+  }
+
   /** Take the session folder's realpath, once: called as a session is made or restored. */
   private pinDir(): void {
     if (this.realDir === undefined) this.realDir = realpathSync(this.dir);
@@ -1554,7 +1636,7 @@ export class WorkspaceSession {
     this.mayBeASetOrDie(abs);
     const id = `c-${randHex(3)}`;
     // The app's filter sees a new set from its first scan.
-    const probe = entryForPath(abs, id, (root) => this.scanSkip(id, root));
+    const probe = entryForPath(abs, id, (root) => this.scanSkip(id, root), this.scanGuard());
     const same = this.m.context.find(
       (e) =>
         e.root === probe.root &&
@@ -1629,7 +1711,12 @@ export class WorkspaceSession {
     this.mayBeASetOrDie(path, true);
     let fresh: ContextEntry;
     try {
-      fresh = entryForPath(path, entry.id, (root) => this.scanSkip(entry.id, root));
+      fresh = entryForPath(
+        path,
+        entry.id,
+        (root) => this.scanSkip(entry.id, root),
+        this.scanGuard(),
+      );
     } catch (e) {
       if (e instanceof PathError)
         throw new GoneError(`${tilde(path)} cannot come back: ${e.message}`, 409);
@@ -1677,7 +1764,12 @@ export class WorkspaceSession {
   rescan(entryId: string): boolean {
     const e = this.m.context.find((x) => x.id === entryId);
     if (e?.membership !== "mirrored") return false;
-    const { nodes, truncated } = scanTree(e.root, MIRROR_NODE_CAP, this.scanSkip(e.id, e.root));
+    const { nodes, truncated } = scanTree(
+      e.root,
+      MIRROR_NODE_CAP,
+      this.scanSkip(e.id, e.root),
+      this.scanGuard(),
+    );
     const changed =
       JSON.stringify(nodes) !== JSON.stringify(e.nodes) || !!truncated !== !!e.truncated;
     e.nodes = nodes;
@@ -1685,6 +1777,14 @@ export class WorkspaceSession {
     else delete e.truncated;
     if (changed) this.relink();
     return changed;
+  }
+
+  /**
+   * The kit's guard on every scan: the app's own places are never mirrored,
+   * whatever a set holds or a link inside one leads to (`ownPlaceGuard`).
+   */
+  private scanGuard(): ScanGuard {
+    return ownPlaceGuard(this.ownPlaces);
   }
 
   /** The app's filter for a set's scan (`AppDeclaration.scan`), as the slot is now. */
@@ -1943,9 +2043,7 @@ export class WorkspaceSession {
       return { slug: existing.slug, created: false };
     }
     if (!isDocName(abs) && !isBundleMain(abs))
-      throw new SessionError(`not a document the workspace opens: ${abs}`, 400, [
-        ...DOC_EXTENSIONS,
-      ]);
+      throw new SessionError(`not a document the workspace opens: ${abs}`, 400, docExtensions());
     const at = locate(this.m.context, abs);
     if (!at)
       throw new SessionError(
@@ -1962,8 +2060,7 @@ export class WorkspaceSession {
     const lower = extname(abs).toLowerCase();
     // A bundle's main file keeps its own extension in its versions (`v1.canvas`).
     const ext =
-      (DOC_EXTENSIONS as readonly string[]).includes(lower) ||
-      (isBundleMain(abs) && /^\.[a-z0-9]+$/.test(lower))
+      docExtensions().includes(lower) || (isBundleMain(abs) && /^\.[a-z0-9]+$/.test(lower))
         ? lower
         : ".md";
     const d: Doc = {
@@ -4260,7 +4357,9 @@ export class WorkspaceSession {
       // takes the one set guard.
       this.mayBeASetOrDie(abs);
       const id = `c-${randHex(3)}`;
-      this.m.context.push(entryForPath(abs, id, (root) => this.scanSkip(id, root)));
+      this.m.context.push(
+        entryForPath(abs, id, (root) => this.scanSkip(id, root), this.scanGuard()),
+      );
     }
     this.relink();
   }
@@ -5636,9 +5735,9 @@ export class WorkspaceSession {
     const file = this.nameOrDie(name);
     if (!isDocName(file))
       throw new SessionError(
-        `not a document the workspace opens (${DOC_EXTENSIONS.join(" ")}): ${file}`,
+        `not a document the workspace opens (${docExtensions().join(" ")}): ${file}`,
         400,
-        [...DOC_EXTENSIONS],
+        docExtensions(),
         "a folder cannot be dropped: add it with the file picker, or `add <folder>`",
       );
     if (Buffer.byteLength(text) > WorkspaceSession.IMPORT_MAX_BYTES)
@@ -6626,6 +6725,7 @@ export class WorkspaceSession {
     facts: DocFacts;
     refs: BundleReference[];
     edges: AppEdge[];
+    edgeAt?: (EdgeSpot | undefined)[];
   } | null {
     const d = c.slug === null ? undefined : this.m.docs.find((x) => x.slug === c.slug);
     const file = d ? this.versionPath(d, d.active) : c.path;
@@ -6654,6 +6754,7 @@ export class WorkspaceSession {
       facts: DocFacts;
       refs: BundleReference[];
       edges: AppEdge[];
+      edgeAt?: (EdgeSpot | undefined)[];
     };
     if (bundle) {
       try {
@@ -6672,15 +6773,17 @@ export class WorkspaceSession {
       // for the link check's headings; nothing that resolves paths sees them.
       const all = extractLinks(text, { schemes: true, fragments: true });
       const facts = docFacts(text);
+      // The app's edges, from the same read and kept under the same stamp,
+      // so a save or an edit on disk re-reads them with the links.
+      const edges = readEdges(this.linkSlot, { path: c.path, text, frontmatter: facts.fields });
       entry = {
         stamp,
         links: all.filter((l) => !l.fragment),
         fragments: all.filter((l) => l.fragment),
         facts,
         refs: [],
-        // The app's edges, from the same read and kept under the same stamp,
-        // so a save or an edit on disk re-reads them with the links.
-        edges: readEdges(this.linkSlot, { path: c.path, text, frontmatter: facts.fields }),
+        edges,
+        ...(edges.length > 0 ? { edgeAt: locateEdges(text, edges) } : {}),
       };
     } catch {
       return null;
@@ -7127,8 +7230,24 @@ export class WorkspaceSession {
     const all = this.markdownCandidates();
     const read = new Set<string>();
     const entryOf = this.entryFinder(index);
+    // ⛔ THE INNERMOST SET WINS for which set a file is in: with `world` and
+    // `world/inner` both in the context, `inner/deep.md` is `inner`'s, as the
+    // shipped map counted it (whichever was added first). Resolving still goes
+    // through `entryOf`, so the check follows a link as a click does.
+    const setEntry = (path: string): ContextEntry | undefined => {
+      let best = entryOf(path);
+      for (const e of this.m.context)
+        if (
+          e.membership === "mirrored" &&
+          path.startsWith(e.root + sep) &&
+          (best === undefined || e.root.length > best.root.length)
+        )
+          best = e;
+      return best;
+    };
+    // From the root of the set it is grouped under (`setEntry`, below).
     const shown = (path: string) => {
-      const entry = entryOf(path);
+      const entry = setEntry(path);
       return entry ? toPosix(relative(entry.root, path)) : basename(path);
     };
     // Every image a link or an embed reaches, seen on the way: the unused-images
@@ -7146,8 +7265,54 @@ export class WorkspaceSession {
         links: got?.links ?? [],
         fragments: got?.fragments ?? [],
         edges: got?.edges ?? [],
+        edgeAt: got?.edgeAt ?? [],
       };
     });
+    // Links and edges that land outside the set they are written in
+    // (kit-broken-links-visible), for an app that asks (`linkCheck.leaving`).
+    const leavingLinks: LeavingLinkView[] = [];
+    // Only for an app that asks for it (`linkCheck.leaving`).
+    const wantLeaving = this.linkCheckOpts.leaving === true;
+    const setOf = (path: string) => setEntry(path)?.id;
+    /** Where a link from `from` lands, when that is outside `from`'s set; else null. */
+    const leaves = (r: Resolution, from: string): { target: string } | null => {
+      if (r.state !== "in-context" && r.state !== "outside" && r.state !== "not-a-doc") return null;
+      const own = setEntry(from);
+      if (own === undefined) return null;
+      // ⛔ A LISTED ENTRY (documents added on their own) HAS NO FOLDER OF ITS
+      // OWN: its root is its document's folder, so the folder rule would take
+      // every sibling, and any set below, as inside it. A link from one leaves
+      // unless the entry itself holds the target, as the shipped map counted it.
+      if (own.membership === "listed")
+        return r.state === "in-context" && setEntry(r.path)?.id === own.id
+          ? null
+          : { target: r.path };
+      // A mirrored set: LEAVING IS ABOUT ITS FOLDER, as the shipped map counted
+      // it. Anything under the folder is inside, a document of a set nested in
+      // it included (`world -> ./inner/deep.md` stays in `world`), and anything
+      // else leaves (`inner/deep.md -> ../ruin.md` leaves `inner`).
+      return r.path.startsWith(own.root + sep) ? null : { target: r.path };
+    };
+    const leavingView = (from: string, target: string) => {
+      const there = setEntry(target);
+      const own = setEntry(from);
+      return {
+        source: from,
+        name: basename(from),
+        shown: shown(from),
+        target,
+        targetShown: there
+          ? toPosix(relative(there.root, target))
+          : own
+            ? toPosix(relative(own.root, target))
+            : target,
+        ...(there ? { targetSet: there.label } : {}),
+        ...(own ? { set: own.id } : {}),
+      };
+    };
+    // The body links that resolve, kept by how they were written, so the
+    // leaving list below needs no second resolve.
+    const resolvedLinks = new Map<string, Resolution>();
     // A bundle's references whose file nothing answers, beside the documents'
     // dangling links ("card 'The Glade' points at …, which is missing"). Each
     // one that lands on an image counts as that image's use.
@@ -7159,8 +7324,10 @@ export class WorkspaceSession {
         if (r.state !== "missing") continue;
         const v = this.referenceView(c.path, ref, entryOf);
         const called = ref.label ?? basename(ref.raw);
+        const set = setOf(c.path);
         references.push({
           ...v,
+          ...(set !== undefined ? { set } : {}),
           tried: r.tried,
           text: `${v.part} '${called}' points at \`${ref.raw}\`, which is missing`,
         });
@@ -7180,6 +7347,7 @@ export class WorkspaceSession {
           if (index.images.has(r.path)) used.add(r.path);
           landed.set(`${from}\0${kind}\0${raw}`, r.path);
         }
+        resolvedLinks.set(`${from}\0${kind}\0${raw}`, r);
         return r;
       },
     );
@@ -7189,10 +7357,25 @@ export class WorkspaceSession {
     const danglingEdges: CheckedEdgeView[] = [];
     if (this.appEdges)
       for (const s of sources)
-        for (const e of s.edges) {
-          if (!keep(e.kind)) continue;
+        s.edges.forEach((e, i) => {
+          if (!keep(e.kind)) return;
           const r = this.resolveFrom(e.target, s.path, entryOf(s.path), "document", index);
-          if (r.state !== "missing") continue;
+          const spot = s.edgeAt[i];
+          const line = e.line ?? spot?.line;
+          const at = spot ? { from: spot.from, to: spot.to } : {};
+          const set = setOf(s.path);
+          const out = wantLeaving ? leaves(r, s.path) : null;
+          if (out)
+            leavingLinks.push({
+              ...leavingView(s.path, out.target),
+              raw: e.target,
+              ...(line !== undefined ? { line } : {}),
+              ...(e.label !== undefined ? { label: e.label } : {}),
+              ...at,
+              edge: e.kind,
+              ...(e.key !== undefined ? { key: e.key } : {}),
+            });
+          if (r.state !== "missing") return;
           danglingEdges.push({
             source: s.path,
             name: basename(s.path),
@@ -7200,15 +7383,39 @@ export class WorkspaceSession {
             edge: e.kind,
             raw: e.target,
             ...(e.key !== undefined ? { key: e.key } : {}),
-            ...(e.line !== undefined ? { line: e.line } : {}),
+            ...(line !== undefined ? { line } : {}),
             ...(e.label !== undefined ? { label: e.label } : {}),
             tried: r.tried,
+            ...at,
+            ...(set !== undefined ? { set } : {}),
           });
-        }
+        });
     danglingEdges.sort(
       (a, b) =>
         a.shown.localeCompare(b.shown, undefined, { numeric: true }) ||
         (a.line ?? 0) - (b.line ?? 0),
+    );
+    if (wantLeaving && keep(BODY_LINKS))
+      for (const s of sources)
+        for (const link of s.links) {
+          if (link.scheme !== undefined) continue;
+          const r = resolvedLinks.get(`${s.path}\0${link.kind}\0${link.raw}`);
+          const out = r && leaves(r, s.path);
+          if (!out) continue;
+          leavingLinks.push({
+            ...leavingView(s.path, out.target),
+            raw: link.raw,
+            line: link.line,
+            ...(link.label !== undefined ? { label: link.label } : {}),
+            from: link.from,
+            to: link.to,
+          });
+        }
+    leavingLinks.sort(
+      (a, b) =>
+        a.shown.localeCompare(b.shown, undefined, { numeric: true }) ||
+        (a.line ?? 0) - (b.line ?? 0) ||
+        (a.from ?? 0) - (b.from ?? 0),
     );
     this.pruneLinkCache(read);
     const view = (l: Omit<DanglingLink, "tried"> | SchemeLink): CheckedLinkView => ({
@@ -7223,6 +7430,7 @@ export class WorkspaceSession {
       context: l.context,
       from: l.from,
       to: l.to,
+      ...(setOf(l.source) !== undefined ? { set: setOf(l.source) } : {}),
     });
     const order = (a: CheckedLinkView, b: CheckedLinkView) =>
       a.shown.localeCompare(b.shown, undefined, { numeric: true }) ||
@@ -7249,11 +7457,20 @@ export class WorkspaceSession {
       },
     ).map((d) => ({
       name: d.name,
-      files: d.files.map((f) => ({ path: f.path, shown: shown(f.path), suggest: f.suggest })),
+      files: d.files.map((f) => ({
+        path: f.path,
+        shown: shown(f.path),
+        suggest: f.suggest,
+        ...(setOf(f.path) !== undefined ? { set: setOf(f.path) } : {}),
+      })),
     }));
     const unusedImages = [...index.images]
       .filter((p) => basename(dirname(p)) === IMAGES_DIR && !used.has(p))
-      .map((path) => ({ path, shown: shown(path) }))
+      .map((path) => ({
+        path,
+        shown: shown(path),
+        ...(setOf(path) !== undefined ? { set: setOf(path) } : {}),
+      }))
       .sort((a, b) => a.shown.localeCompare(b.shown, undefined, { numeric: true }));
     // Symmetric relations written one way (kit-link-check-symmetry): which
     // relations are symmetric comes from the vocabulary in force for the
@@ -7270,7 +7487,7 @@ export class WorkspaceSession {
       }
     const title = (path: string) => {
       const f = facts.get(path) ?? NO_FACTS;
-      return f.title ?? f.heading ?? basename(path).replace(/\.(md|markdown|txt)$/i, "");
+      return f.title ?? f.heading ?? withoutDocExtension(basename(path));
     };
     const symmetry = oneWaySymmetric(
       edges,
@@ -7339,6 +7556,7 @@ export class WorkspaceSession {
     }
     // An `edge` filter without `link` keeps no body link's section.
     if (!keep(BODY_LINKS)) {
+      // (The leaving list kept only the edges the filter names already.)
       dangling.length = 0;
       unsupported.length = 0;
       missingHeadings.length = 0;
@@ -7354,7 +7572,28 @@ export class WorkspaceSession {
       names.length > LINK_CHECK_CAP ||
       unusedImages.length > LINK_CHECK_CAP ||
       symmetry.length > LINK_CHECK_CAP ||
-      references.length > LINK_CHECK_CAP;
+      references.length > LINK_CHECK_CAP ||
+      leavingLinks.length > LINK_CHECK_CAP;
+    // Each set's whole, before any list is cut: what a group says it shows
+    // part of when the check is truncated. Shared names are the session's.
+    const totals = new Map<string, number>();
+    for (const list of [
+      dangling,
+      unsupported,
+      missingHeadings,
+      ambiguous,
+      symmetry,
+      references,
+      danglingEdges,
+      leavingLinks,
+      unusedImages,
+    ] as { set?: string }[][])
+      for (const x of list)
+        if (x.set !== undefined) totals.set(x.set, (totals.get(x.set) ?? 0) + 1);
+    const named = new Set<string | undefined>([
+      ...totals.keys(),
+      ...cut(names).flatMap((n) => n.files.map((f) => f.set)),
+    ]);
     return {
       count:
         dangling.length +
@@ -7384,6 +7623,12 @@ export class WorkspaceSession {
             },
           }
         : {}),
+      ...(wantLeaving ? { leaving: { count: leavingLinks.length, links: cut(leavingLinks) } } : {}),
+      ...(this.linkCheckOpts.noun !== undefined ? { noun: this.linkCheckOpts.noun } : {}),
+      // Only the sets the answer names, in the context's order.
+      sets: this.m.context
+        .filter((e) => named.has(e.id))
+        .map((e) => ({ id: e.id, label: e.label, total: totals.get(e.id) ?? 0 })),
       ...(truncated ? { truncated: true as const } : {}),
     };
   }
@@ -7564,7 +7809,7 @@ export class WorkspaceSession {
         path: n.path,
         name,
         shown: entry ? toPosix(relative(entry.root, n.path)) : name,
-        title: f.title ?? f.heading ?? name.replace(/\.(md|markdown|txt)$/i, ""),
+        title: f.title ?? f.heading ?? withoutDocExtension(name),
         kind: n.kind,
         label: n.kind === null ? null : (n.label ?? n.kind),
         canon: n.canon ?? true,
@@ -7841,7 +8086,7 @@ export class WorkspaceSession {
         path: own,
         name,
         shown: entry ? toPosix(relative(entry.root, own)) : name,
-        title: facts.title ?? facts.heading ?? name.replace(/\.(md|markdown|txt)$/i, ""),
+        title: facts.title ?? facts.heading ?? withoutDocExtension(name),
         kind: k.kind,
         label: k.kind === null ? null : (k.label ?? k.kind),
         canon: k.canon,

@@ -1,29 +1,35 @@
 /**
- * The flagged Scriptorium's interim frame (`SCRIPTORIUM_KIT=1` only): the kit's
- * context sidebar, chat, Notes and Tasks around the kit's document pane. Cycle
- * 5's shell replaces this file whole, so it stays thin: no resizing, no
- * persisted layout, no search.
+ * The flagged Scriptorium's surface (`SCRIPTORIUM_KIT=1` only): the kit's
+ * `WorkspaceShell` (the context sidebar, the conversation column with Chat,
+ * Notes and Tasks, resizable columns with rails, the floating composer, search,
+ * End session and the theme) around the kit's document pane, filled with what is
+ * Scriptorium's own. It replaced the interim frame (a fixed three-column layout
+ * and a small workspace of its own, `frameWorkspace.ts`) whole.
  *
- * The pane reads a workspace the shell would provide; `./frameWorkspace.ts`
- * builds a small one (one held selection, reveal, the chosen note, toasts), and
- * the chat and Notes read the same selection, so `say` and a note made in the
- * panel are about the passage the pane holds. Scriptorium's own slots: the
- * trust chip on (E69), a stale chip (`scriptoriumChips`), split view, and the
- * view mode kept under Scriptorium's name.
+ * Scriptorium's own, passed into the shell's and the pane's slots:
+ * - the tree's status dot (`rowMarker`), and the menu actions: hide, unhide,
+ *   make-set, New beside it, and the map's entry (`menuActions`);
+ * - the move plan (`beforeMove`, `uncheckedMoveNote`, `./movePlan.tsx`);
+ * - where a new file goes when nothing is selected (`askLocation`, its dialog
+ *   rendered in the centre: it portals);
+ * - the refusal notice, with the daemon's hint read off its frame;
+ * - the centre `DocumentPane`: the trust and stale chips, split view, line
+ *   numbers, the map as its app view, "Add a block" (`textOffer`), and the view
+ *   mode under the shipped pref `doc:view`;
+ * - a comparison asked for from a toast: the new version's, and the outside
+ *   change's against the file on disk;
+ * - End session's unsaved warning (`scriptoriumEndWarning`);
+ * - the shell's storage, backed by the daemon's prefs (`./prefsStorage.ts`), so
+ *   the layout, the float, the tab, the theme, the view mode and line numbers
+ *   come back in the next session, whose port (and origin) is new.
  *
- * ⚠ Its classes are ones the shipped surface already uses: the shipped
- * stylesheet scans all of `surface/` (`@source "./"`), this folder included, so
- * a class new here would be compiled into the shipped Scriptorium's CSS too.
- * The frame's own sheet (`./styles.css`) is the shipped one plus the kit's
- * document rules, which only this page carries.
+ * Every create, import and drop the panes send names its folder (`dir`):
+ * Scriptorium has no workspace, so what has no set or folder under it (New
+ * document or New folder with nothing selected, a drop on the list itself) asks
+ * where, the place chosen last preselected.
  *
- * Scriptorium's own verbs reach the panes through their slots: hide, unhide
- * and make-set through `menuActions` (`scriptoriumMenuActions`), the move plan
- * through the pre-move slot (`./movePlan.tsx`). Every create, import and drop
- * the panes send names its folder (`dir`): Scriptorium has no workspace, so
- * what has no set or folder under it (New document or New folder with nothing
- * selected, a drop on the list itself) asks where, through the sidebar's
- * `askLocation` slot (`useAskLocation`), the place chosen last preselected.
+ * The page's stylesheet (`./styles.css`) is its own: the kit's base, then the
+ * document's rules, then the shell's.
  */
 
 import {
@@ -33,58 +39,35 @@ import {
   FilePlusIcon,
   FolderPlusIcon,
   FolderTreeIcon,
-  MoonIcon,
-  SunIcon,
 } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChatSidebar } from "../../../kit/chat/ChatSidebar";
-import { NewVersionToasts } from "../../../kit/chat/NewVersionToasts";
-import { NotesPanel } from "../../../kit/chat/NotesPanel";
-import { badgesOn } from "../../../kit/chat/noteWaiting";
-import { OutsideChangeToasts } from "../../../kit/chat/OutsideChangeToasts";
-import { TasksPanel } from "../../../kit/chat/TasksPanel";
 import { useAskLocation } from "../../../kit/context/AskLocation";
-import { ContextSidebar } from "../../../kit/context/ContextSidebar";
 import type { Daemon } from "../../../kit/context/daemonClient";
 import type { MenuActions } from "../../../kit/context/menuActions";
-import { dirOf, docAt, entryPath, joinPath, singleDoc } from "../../../kit/context/model";
-import { WorkspaceContext } from "../../../kit/context/workspace";
-import { DocumentPane } from "../../../kit/document/DocumentPane";
+import { dirOf, entryPath, singleDoc } from "../../../kit/context/model";
+import { DocumentPane, type ShowDiff } from "../../../kit/document/DocumentPane";
 import type { FrontmatterChips } from "../../../kit/document/FrontmatterHeader";
 import { bundlePlace } from "../../../kit/lib/bundles";
 import { cn } from "../../../kit/lib/cn";
-import { safeStorage } from "../../../kit/lib/storage";
-import type { Theme } from "../../../kit/theme/mode";
-import { Toasts, useToastStore } from "../../../kit/ui/toast";
-import type { PublicState } from "../../../kit/workspace/protocol";
-import { isStale } from "../../backend/frontmatter";
-import type { DocSummary } from "../../backend/protocol";
-import { statusMark } from "../components/context/model";
-import { useFrameWorkspace } from "./frameWorkspace";
+import { WorkspaceShell } from "../../../kit/shell/WorkspaceShell";
+import type { DiffSide, DocView, PublicState } from "../../../kit/workspace/protocol";
+import { type DocSummary, isStale } from "../../backend/kit/frontmatter";
+// Scriptorium's document kinds (`.mdx`), as the daemon registers them, so the tree reads them alike.
+import "../../backend/kit/docKinds";
 import { scriptoriumBeforeMove, scriptoriumUncheckedMoveNote } from "./movePlan";
+import { LINE_NUMBERS_KEY, prefsStorage, VIEW_MODE_KEY } from "./prefsStorage";
+import { statusMark } from "./statusMark";
 import { noFrontmatterOf, scriptoriumTextOffer } from "./suggestMeta";
 import { useMapView } from "./useMapView";
 
+export { LINE_NUMBERS_KEY, VIEW_MODE_KEY };
+
 const NO_ENTRIES: PublicState["context"] = [];
+const NO_PREFS: Readonly<Record<string, string>> = {};
 
 /** Under the location dialog: the other way to make room for new files. */
 const MAKE_ROOM =
   "A document listed on its own can take new files beside it once it is a set: Turn into a set, in its row's menu.";
-
-/**
- * The browser's copy of the theme, read by the page's pre-paint script so a
- * load does not flash. Each session has its own port, so its own origin and
- * storage: this copy is not shared between sessions, nor with the shipped
- * surface. What carries the choice is the daemon's prefs (`theme`, kept in the
- * kit path's `prefs.json`), as the shipped surface keeps its own.
- */
-const THEME_KEY = "scriptorium:theme";
-
-/** Where the pane keeps raw, rendered or split: this page's own origin, under Scriptorium's name. */
-export const VIEW_MODE_KEY = "scriptorium:view-mode";
-
-/** Where the raw editor's line-number toggle is remembered, beside the view mode. */
-export const LINE_NUMBERS_KEY = "scriptorium:line-numbers";
 
 /** The stale chip's hover text: the tree's dot says the same (`statusMark`). */
 const STALE_TITLE = "Past its stale_after date";
@@ -216,31 +199,59 @@ export function scriptoriumMenuActions(
   };
 }
 
+/**
+ * End session's warning when ending would leave edits out of the files on
+ * disk: the shipped app's (`unsavedWarning` in `../state/ending.ts`), in its
+ * words, written again here because the kit path borrows nothing from the
+ * shipped code. Every unsaved document counts, the open one named first,
+ * because it is the one on screen. Nothing is lost (the session keeps its
+ * versions), which is why ending is still allowed.
+ */
+export function scriptoriumEndWarning(
+  state: Pick<PublicState, "openDoc"> & {
+    docs: readonly Pick<DocView, "slug" | "name" | "active" | "dirty">[];
+  },
+): string | null {
+  const dirty = state.docs
+    .filter((d) => d.dirty)
+    .sort((a, b) => Number(b.slug === state.openDoc) - Number(a.slug === state.openDoc));
+  const first = dirty[0];
+  if (!first) return null;
+  const kept =
+    "They stay in this session (the agent can bring it back with open --restore), but they won't be in your";
+  if (dirty.length === 1)
+    return `v${first.active} of ${first.name} has unsaved changes. ${kept} file.`;
+  return `${dirty.length} documents have unsaved changes (${dirty.map((d) => d.name).join(", ")}). ${kept} files.`;
+}
+
 export function Frame({ daemon }: { daemon: Daemon }) {
   const { state, send } = daemon;
-  const [tab, setTab] = useState<"chat" | "notes" | "tasks">("chat");
-  const [theme, setTheme] = useState<Theme>(() =>
-    document.documentElement.dataset.theme === "light" ? "light" : "dark",
+  // The shell's storage over the daemon's prefs. Read through refs, so the one
+  // adapter lives as long as the page: the shell keys its layout on it.
+  const prefs = useRef(state?.prefs ?? NO_PREFS);
+  prefs.current = state?.prefs ?? NO_PREFS;
+  const connection = useRef(daemon.connection);
+  connection.current = daemon.connection;
+  const sendRef = useRef(send);
+  sendRef.current = send;
+  const storage = useMemo(
+    () =>
+      prefsStorage({
+        read: () => prefs.current,
+        write: (key, value) => sendRef.current({ op: "prefs.set", key, value }),
+        ended: () => connection.current === "ended",
+      }),
+    [],
   );
+  // What is still in its pause is sent as the page goes away.
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    safeStorage.setItem(THEME_KEY, theme);
-  }, [theme]);
-  // One theme for every kit-path session, last choice wins: the prefs carry it.
-  const savedTheme = state?.prefs.theme;
-  useEffect(() => {
-    if (savedTheme === "dark" || savedTheme === "light") setTheme(savedTheme);
-  }, [savedTheme]);
-  const chooseTheme = useCallback(
-    (next: Theme) => {
-      setTheme(next);
-      send({ op: "prefs.set", key: "theme", value: next });
-    },
-    [send],
-  );
-  const toggleTheme = () => chooseTheme(theme === "light" ? "dark" : "light");
-  const toasts = useToastStore();
-  const ws = useFrameWorkspace({ daemon, toasts, theme, setTheme: chooseTheme });
+    const flush = () => storage.flush();
+    window.addEventListener("pagehide", flush);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      flush();
+    };
+  }, [storage]);
   // The client keeps a refusal's message only; the daemon's hint (what to do
   // instead, as for a create with no folder) is read off the frame here.
   const hints = useRef(new Map<string, string>());
@@ -269,210 +280,57 @@ export function Frame({ daemon }: { daemon: Daemon }) {
     addFolder: (path) => daemon.request({ op: "folder.add", path }),
     hint: MAKE_ROOM,
   });
-  // One object per `done`, not per render: the sidebar acts on a new one (it
-  // shows the row and starts its rename), so a fresh object on every snapshot
-  // pulled the view back into the set after the human had left it.
-  const done = daemon.done;
-  const created = useMemo(
-    () =>
-      done && ["doc.create", "folder.create", "bundle.create"].includes(done.of)
-        ? { path: done.path, seq: done.seq }
-        : null,
-    [done],
-  );
-  const moved = useMemo(
-    () => (done?.of === "move" ? { path: done.path, seq: done.seq } : null),
-    [done],
-  );
   // One marker per docMeta, not per render: the sidebar memoises on it.
   const docMeta = docMetaOf(state);
   const rowMarker = useMemo(() => scriptoriumRowMarker(docMeta), [docMeta]);
   const map = useMapView(daemon);
-  const { workspace, openDoc, heldHere, collapsed } = ws;
-  if (!state || !workspace)
-    return (
-      <div className="flex h-full items-center justify-center text-ink-dim">
-        {daemon.connection === "ended" ? "The session has ended." : "Connecting to Scriptorium…"}
-      </div>
-    );
+  const hidden = state ? hiddenOf(state) : null;
+  const menuActions = useCallback<MenuActions>(
+    (t) => [...scriptoriumMenuActions(send, hidden ?? {})(t), ...map.menuActions(t)],
+    [send, hidden, map.menuActions],
+  );
+  // A comparison asked for from outside the pane: a toast's.
+  const [showDiff, setShowDiff] = useState<ShowDiff | null>(null);
+  const requestDiff = useCallback(
+    (doc: string, against: DiffSide) =>
+      setShowDiff((was) => ({ doc, version: against, seq: (was?.seq ?? 0) + 1 })),
+    [],
+  );
   const notice = daemon.lastError
     ? [daemon.lastError, hints.current.get(daemon.lastError)].filter(Boolean).join(". To go on: ")
     : null;
-  const docName = (slug: string) => state.docs.find((d) => d.slug === slug)?.name ?? slug;
-  const tabs = { chat: "Chat", notes: "Notes", tasks: "Tasks" } as const;
   return (
-    <WorkspaceContext.Provider value={workspace}>
-      <OutsideChangeToasts
-        doc={openDoc}
-        announce={toasts.announce}
-        dismiss={toasts.dismiss}
-        onReload={(doc) => send({ op: "revert", doc })}
-        onShowDiff={(doc) => ws.requestDiff(doc, "original")}
-      />
-      <NewVersionToasts
-        doc={openDoc}
-        connected={daemon.connection === "open"}
-        announce={toasts.announce}
-        dismiss={toasts.dismiss}
-        onActivate={(doc, version) => send({ op: "activate", doc, version })}
-        onShowDiff={(doc, version) => ws.requestDiff(doc, version)}
-      />
-      <div data-slot="interim-frame" className="flex h-full flex-col">
-        <header className="flex h-9 shrink-0 items-center gap-3 border-b border-edge px-3 text-xs">
-          <span className="font-manuscript text-sm text-rubric">Scriptorium</span>
-          <span className="text-ink-faint">{state.sessionId}</span>
-          <span className="ml-auto text-ink-dim">{daemon.connection}</span>
-          <button
-            type="button"
-            aria-label="Switch theme"
-            className="text-ink-faint hover:text-ink [&_svg]:size-3.5"
-            onClick={toggleTheme}
-          >
-            {theme === "light" ? <MoonIcon /> : <SunIcon />}
-          </button>
-        </header>
-        <div className="flex min-h-0 flex-1">
-          <aside
-            data-pane="context"
-            tabIndex={-1}
-            hidden={collapsed.context}
-            className="flex w-80 shrink-0 flex-col"
-          >
-            <ContextSidebar
-              entries={state.context}
-              activeDoc={
-                openDoc?.entryId && openDoc.rel
-                  ? { entryId: openDoc.entryId, rel: openDoc.rel }
-                  : null
-              }
-              userHome={userHome}
-              onOpenDoc={(entry, rel) => send({ op: "open", path: joinPath(entry.root, rel) })}
-              onAddPath={(path) => send({ op: "context.add", path })}
-              onStructure={(op) => send(op)}
-              onRemoveEntry={(id) => send({ op: "context.remove", id })}
-              onReveal={(path) => send({ op: "reveal", path })}
-              onPick={(want) => send({ op: "pick", want })}
-              listDir={daemon.listDir}
-              rowMarker={rowMarker}
-              appActionsFor={(t) => [
-                ...scriptoriumMenuActions(
-                  send,
-                  hiddenOf(state),
-                )({ ...t, doc: docAt(state.docs, t.path) }),
-                ...map.menuActions(t),
-              ]}
-              created={created}
-              moved={moved}
-              notice={notice}
-              onDismissNotice={daemon.clearError}
-              importImage={daemon.importImage}
-              askLocation={ask.askLocation}
-              beforeMove={beforeMove}
-              uncheckedMoveNote={scriptoriumUncheckedMoveNote}
-            />
-          </aside>
-          {/* Focusable by script, as the shell's centre is: the pane forwards that focus to its editor. */}
-          <main
-            data-pane="centre"
-            tabIndex={-1}
-            className="relative flex min-w-0 flex-1 flex-col border-l border-edge"
-          >
-            <DocumentPane
-              showDiff={ws.showDiff}
-              viewModeKey={VIEW_MODE_KEY}
-              lineNumbers
-              lineNumbersKey={LINE_NUMBERS_KEY}
-              splitView
-              frontmatterTrust
-              frontmatterChips={CHIPS}
-              appView={map.appView}
-              textOffer={textOffer}
-            />
-            <Toasts store={toasts} />
-          </main>
-          <aside
-            data-pane="chat"
-            tabIndex={-1}
-            hidden={collapsed.chat}
-            className="flex w-80 shrink-0 flex-col border-l border-edge"
-          >
-            <div role="tablist" className="flex h-9 shrink-0 border-b border-edge text-xs">
-              {(Object.keys(tabs) as (keyof typeof tabs)[]).map((id) => (
-                <button
-                  key={id}
-                  type="button"
-                  role="tab"
-                  aria-selected={tab === id}
-                  onClick={() => setTab(id)}
-                  className={cn("px-3", tab === id ? "text-ink" : "text-ink-faint hover:text-ink")}
-                >
-                  {tabs[id]}
-                </button>
-              ))}
-            </div>
-            {tab === "chat" && (
-              <ChatSidebar
-                messages={state.chat}
-                waiting={state.waiting}
-                agentListening={state.agentListening !== false}
-                docName={docName}
-                attachable={
-                  heldHere
-                    ? {
-                        doc: heldHere.doc,
-                        name: docName(heldHere.doc),
-                        version: heldHere.version,
-                        fromLine: heldHere.fromLine,
-                        toLine: heldHere.toLine,
-                        text: heldHere.text,
-                      }
-                    : null
-                }
-                connected={daemon.connection === "open"}
-                ended={daemon.connection === "ended"}
-                // The subject is left to the daemon, which attaches the selection it holds.
-                onSend={(text, withSelection) =>
-                  send({ op: "say", text, withSelection, via: "chat" })
-                }
-                onDropSelection={ws.dropSelection}
-              />
-            )}
-            {tab === "notes" && (
-              <NotesPanel
-                notes={openDoc?.notes ?? []}
-                waiting={badgesOn(state.notesWaiting ?? [], openDoc?.slug ?? null)}
-                agentListening={state.agentListening !== false}
-                focusedId={ws.focusedNote}
-                onLetGo={ws.letGoOfNote}
-                showResolved={ws.showResolvedNotes}
-                onShowResolved={ws.setShowResolvedNotes}
-                selection={
-                  heldHere ? { from: heldHere.from, to: heldHere.to, text: heldHere.text } : null
-                }
-                onAdd={ws.addNote}
-                onGoTo={ws.goToNote}
-                onEdit={(id, body) =>
-                  openDoc && send({ op: "note.edit", doc: openDoc.slug, id, body })
-                }
-                onResolve={(id, resolved) =>
-                  openDoc && send({ op: "note.resolve", doc: openDoc.slug, id, resolved })
-                }
-                onRemove={(id) => openDoc && send({ op: "note.remove", doc: openDoc.slug, id })}
-              />
-            )}
-            {tab === "tasks" && (
-              <TasksPanel
-                tasks={state.tasks}
-                onCancel={(id) => send({ op: "task.cancel", id })}
-                onRemove={(id) => send({ op: "task.remove", id })}
-                onClear={() => send({ op: "tasks.clear" })}
-                onCreate={(title) => send({ op: "task.create", title })}
-              />
-            )}
-          </aside>
-        </div>
-        {ask.dialog}
-      </div>
-    </WorkspaceContext.Provider>
+    <WorkspaceShell
+      daemon={daemon}
+      storage={storage}
+      rowMarker={rowMarker}
+      menuActions={menuActions}
+      askLocation={ask.askLocation}
+      beforeMove={beforeMove}
+      uncheckedMoveNote={scriptoriumUncheckedMoveNote}
+      notice={notice}
+      onDismissNotice={daemon.clearError}
+      onShowDiff={(doc, version) => requestDiff(doc.slug, version)}
+      onShowOutsideDiff={(doc) => requestDiff(doc.slug, "original")}
+      endWarning={scriptoriumEndWarning}
+      // E65: a note that may be stuck carries its act, as the shipped app's does.
+      askAboutNotes
+      centre={
+        <>
+          <DocumentPane
+            showDiff={showDiff}
+            viewModeKey={VIEW_MODE_KEY}
+            lineNumbers
+            lineNumbersKey={LINE_NUMBERS_KEY}
+            splitView
+            frontmatterTrust
+            frontmatterChips={CHIPS}
+            appView={map.appView}
+            textOffer={textOffer}
+          />
+          {ask.dialog}
+        </>
+      }
+    />
   );
 }

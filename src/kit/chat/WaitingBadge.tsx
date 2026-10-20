@@ -28,6 +28,15 @@ export const NOTE_WAITING_LABEL: Record<Waiting["badge"], string> = {
 };
 
 /**
+ * A note the human has asked about ("Ask the agent"): it now waits on that
+ * message, so it reads the message's badge, in words that say it was asked.
+ */
+export const ASKED_LABEL: Record<Waiting["badge"], string> = {
+  working: "asked in the conversation...",
+  stalled: "asked, and still no word; may be stuck",
+};
+
+/**
  * What the badge says while no agent is listening: the surface's own reading of
  * the daemon's `agentListening`, so it is not one of the daemon's badges. "Working"
  * would be a claim nobody is there to make, so this one does not pulse either.
@@ -37,8 +46,17 @@ export const UNHEARD_LABEL = "no agent is listening yet; this waits until one is
 /** A badge as the surface shows it: the daemon's two, or `unheard` (`UNHEARD_LABEL`). */
 export type BadgeKind = Waiting["badge"] | "unheard";
 
-/** What is waiting: a message or a note. The same rule, each in its own words. */
-export type WaitingOf = "message" | "note";
+/**
+ * What is waiting: a message, a note, or a note asked about in the
+ * conversation. The same rule, each in its own words.
+ */
+export type WaitingOf = "message" | "note" | "asked";
+
+const LABELS: Record<WaitingOf, Record<Waiting["badge"], string>> = {
+  message: WAITING_LABEL,
+  note: NOTE_WAITING_LABEL,
+  asked: ASKED_LABEL,
+};
 
 /**
  * The badge to show: `unheard` over the daemon's while no agent listens, except
@@ -52,8 +70,14 @@ export function badgeFor(
   return agentListening || waiting.acknowledged ? waiting.badge : "unheard";
 }
 
+/**
+ * A note already asked about, while no agent listens: it still says it was
+ * asked, so the human does not ask again into the void.
+ */
+export const ASKED_UNHEARD_LABEL = "asked; no agent is listening yet";
+
 export const labelOf = (badge: BadgeKind, of: WaitingOf = "message"): string =>
-  badge === "unheard" ? UNHEARD_LABEL : (of === "note" ? NOTE_WAITING_LABEL : WAITING_LABEL)[badge];
+  badge === "unheard" ? (of === "asked" ? ASKED_UNHEARD_LABEL : UNHEARD_LABEL) : LABELS[of][badge];
 
 export function WaitingBadge({
   badge,
@@ -62,7 +86,7 @@ export function WaitingBadge({
   className,
 }: {
   badge: BadgeKind;
-  /** What is waiting: a message, or a note. */
+  /** What is waiting: a message, a note, or a note asked about. */
   of?: WaitingOf;
   /** No space above it: on a line of its own rather than under a message. */
   flush?: boolean;

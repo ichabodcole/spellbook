@@ -56,6 +56,7 @@ import {
   bodyLineOffset,
   buildBlock,
   guessType,
+  META_SCAN_CAP,
   matchesFilter,
   readMeta,
   setKey,
@@ -64,6 +65,7 @@ import {
   titleFromBody,
   withBlock,
 } from "./frontmatter";
+import { gitRootOf } from "./kit/gitRoot";
 import { type BundleIndex, buildGraph, LinkCache, type Resolution, resolveTarget } from "./links";
 import type {
   ChatMessage,
@@ -110,8 +112,10 @@ export const MANIFEST_FORMAT = 1;
  */
 const CHAT_ORIGIN = "\u0000chat";
 
-/** The most documents one frontmatter scan reads. */
-export const META_SCAN_CAP = 500;
+// Kept on the kit path (scriptorium-kit-keepers); re-exported for the shipped
+// callers and tests that import them from here.
+export { gitRootOf, META_SCAN_CAP };
+
 /** A frontmatter block lives at the top of a file; this is how much we read to find it. */
 const META_HEAD_BYTES = 8192;
 
@@ -2537,20 +2541,6 @@ export class Session {
       chat: this.m.chat,
       tasks: this.tasks(),
     };
-  }
-}
-
-/**
- * The git working tree `dir` is in, or null. A `.git` ENTRY, not a directory
- * test: a worktree and a submodule both have `.git` as a FILE.
- */
-export function gitRootOf(dir: string): string | null {
-  let at = dir;
-  for (;;) {
-    if (existsSync(join(at, ".git"))) return at;
-    const up = dirname(at);
-    if (up === at) return null;
-    at = up;
   }
 }
 

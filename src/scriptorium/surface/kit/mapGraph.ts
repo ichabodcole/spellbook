@@ -33,7 +33,7 @@
  */
 
 import type { LinkGraph } from "../../../kit/workspace/protocol";
-import type { DocSummary } from "../../backend/protocol";
+import type { DocSummary } from "../../backend/kit/frontmatter";
 
 /** One document on the map. */
 export type MapNode = {

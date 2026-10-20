@@ -290,7 +290,8 @@ describe("an image nothing links to or embeds", () => {
     // The embed undone: the file stays on disk, and the check says so.
     writeFileSync(doc, "# Story\n");
     const after = await check();
-    expect(after.unusedImages).toEqual({
+    // `toMatchObject`: each image also names its set (kit-broken-links-visible).
+    expect(after.unusedImages).toMatchObject({
       count: 1,
       images: [{ path: r.body.path as string, shown: "images/pasted-2026-10-05-110000.png" }],
     });

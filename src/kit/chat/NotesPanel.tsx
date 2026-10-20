@@ -12,6 +12,7 @@
 // list, marked, still readable, still deletable.
 import {
   CheckIcon,
+  MessageCircleQuestionIcon,
   MessageSquarePlusIcon,
   PencilIcon,
   Trash2Icon,
@@ -25,6 +26,7 @@ import type { NoteWaiting, PlacedNote, Waiting } from "../workspace/protocol";
 import { badgeFor, WaitingBadge, WaitingDot } from "./WaitingBadge.tsx";
 
 const NONE_WAITING: ReadonlyMap<string, NoteWaiting> = new Map();
+const NONE_ASKED: ReadonlySet<string> = new Set();
 
 /** How a note found its place, said plainly, or nothing when it is certain. */
 const UNCERTAIN: Partial<Record<PlacedNote["how"], { label: string; title: string }>> = {
@@ -44,6 +46,8 @@ function Note({
   focused,
   waiting,
   agentListening,
+  asked,
+  onAsk,
   onGoTo,
   onEdit,
   onResolve,
@@ -55,12 +59,16 @@ function Note({
   /** Owed an answer, and how long: absent when it is not. */
   waiting: NoteWaiting | undefined;
   agentListening: boolean;
+  /** Asked about in the conversation, and not answered yet. */
+  asked: boolean;
+  onAsk: ((n: PlacedNote) => void) | undefined;
   onGoTo: (n: PlacedNote) => void;
   onEdit: (id: string, body: string) => void;
   onResolve: (id: string, resolved: boolean) => void;
   onRemove: (id: string) => void;
 }) {
   const uncertain = UNCERTAIN[note.how];
+  const shownBadge = waiting ? badgeFor(waiting, agentListening) : null;
   const anchored = note.from !== null;
   // EDITING CHANGES WHAT A NOTE SAYS, NEVER WHAT IT IS ABOUT. The quote stays
   // put: a note you rewrote is still about the passage you made it on, and
@@ -165,7 +173,26 @@ function Note({
           note is with the agent, a static "may be stuck" once it has waited as
           long as a message would. Resolving (the check below) is the human's
           own way out. */}
-      {waiting && <WaitingBadge of="note" badge={badgeFor(waiting, agentListening)} />}
+      {waiting && (
+        <div className="flex flex-wrap items-center gap-x-2">
+          <WaitingBadge of={asked ? "asked" : "note"} badge={shownBadge ?? "working"} />
+          {/* "May be stuck" carries its act: ask the agent in the conversation,
+              where the answer lands. Once asked, not offered again: the note
+              then waits on that message and says so. */}
+          {onAsk && !asked && shownBadge === "stalled" && (
+            <button
+              type="button"
+              data-action="note-ask"
+              onClick={() => onAsk(note)}
+              title="Send this note to the agent as a message in the conversation"
+              className="mt-1 flex items-center gap-1 rounded-sm text-[11px] text-ink-dim underline-offset-2 hover:text-ink hover:underline"
+            >
+              <MessageCircleQuestionIcon aria-hidden className="size-3" />
+              Ask the agent
+            </button>
+          )}
+        </div>
+      )}
       {/* What the agent's rewrite replaced, on asking: the human's words are
           never lost to it, and putting them back is one act (the human's own
           rewrite, so it asks the agent again). */}
@@ -257,6 +284,8 @@ export function NotesPanel({
   waiting = NONE_WAITING,
   others = [],
   agentListening = true,
+  asked = NONE_ASKED,
+  onAsk,
   onOpenDoc,
   focusedId,
   onLetGo,
@@ -287,6 +316,18 @@ export function NotesPanel({
     acknowledged?: true;
   }[];
   agentListening?: boolean;
+  /**
+   * The waiting notes already asked about in the conversation, unanswered, by
+   * id (`askedAbout`): their badge says so, and Ask the agent is not offered
+   * again.
+   */
+  asked?: ReadonlySet<string>;
+  /**
+   * "Ask the agent", on a note that may be stuck: the host sends the ask
+   * (`via: "ask"`, `about.noteId`). Absent, not offered, and resolving the note
+   * is the way out.
+   */
+  onAsk?: (n: PlacedNote) => void;
   /** Open a document named in `others`. */
   onOpenDoc?: (doc: string) => void;
   /** The note the document pointed at, if any. */
@@ -384,6 +425,8 @@ export function NotesPanel({
                 focused={n.id === focusedId}
                 waiting={waiting.get(n.id)}
                 agentListening={agentListening}
+                asked={asked.has(n.id)}
+                onAsk={onAsk}
                 onGoTo={onGoTo}
                 onEdit={onEdit}
                 onResolve={onResolve}

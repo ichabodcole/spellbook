@@ -13,9 +13,10 @@
  * `dist/`, or the other way round. The flag rides the daemon's environment, so
  * its `run()` takes the same turn.
  *
- * No surface yet: `open` prints the handshake and, without `--no-open`, opens a
- * browser on a page that says so (`./server.ts`). The verbs that differ from the
- * shipped CLI are the kit's; the item records the delta.
+ * `open` prints the handshake and, without `--no-open`, opens a browser on the
+ * kit page: the workspace shell around the document pane (`./server.ts`,
+ * `surface/kit/`). The verbs that differ from the shipped CLI are the kit's;
+ * the item records the delta.
  */
 
 import { resolve } from "node:path";
@@ -30,6 +31,8 @@ import {
   scriptoriumHome,
 } from "./app";
 import { scriptoriumKitCommands } from "./commands";
+// Scriptorium's document kinds (`.mdx`), registered before any name is judged.
+import "./docKinds";
 import { scriptoriumWikiCommands, WIKI_OPTIONS } from "./wikiCommands";
 
 export type KitCliDeps = {
@@ -91,7 +94,7 @@ export function scriptoriumKitCli(deps: KitCliDeps): WorkspaceCli {
       },
     ],
     helpFooter:
-      "  This is the kit path (SCRIPTORIUM_KIT=1). Its sessions live under\n  $SCRIPTORIUM_HOME/kit/sessions, apart from the shipped Scriptorium's. Its surface\n  is an interim frame (sets, chat, notes, tasks): it shows no document yet, so\n  read and write documents through these verbs.",
+      "  This is the kit path (SCRIPTORIUM_KIT=1). Its sessions live under\n  $SCRIPTORIUM_HOME/kit/sessions, apart from the shipped Scriptorium's. Its surface\n  is the kit's workspace shell: the sets, the open document (raw, rendered or\n  split, with versions and compare), and chat, notes and tasks, where the human\n  reads and edits while you work through these verbs.",
   });
 }
 

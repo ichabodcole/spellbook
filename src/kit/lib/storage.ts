@@ -3,7 +3,17 @@
 // data THROWS from the accessor itself. A surface must render correctly with
 // nothing stored.
 
-export const safeStorage = {
+/**
+ * A key-value store of strings, as `localStorage` is: what an app passes when the
+ * browser's storage is the wrong place (an app whose daemon keeps prefs, on a new
+ * origin every session). `safeStorage` is one.
+ */
+export type KeptStorage = {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+};
+
+export const safeStorage: KeptStorage = {
   getItem(key: string): string | null {
     try {
       return localStorage.getItem(key);

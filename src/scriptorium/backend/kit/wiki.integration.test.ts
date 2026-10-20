@@ -23,7 +23,7 @@ import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { FakeSurface, pointerPid, waitForExit } from "../../../kit/workspace/fixtures/harness";
 import type { PublicState } from "../../../kit/workspace/protocol";
-import type { DocSummary } from "../protocol";
+import type { DocSummary } from "./frontmatter";
 
 const KIT_DIR = dirname(fileURLToPath(import.meta.url));
 const CLI = join(
@@ -653,6 +653,47 @@ describe("docMeta on the wire: sent only when it changed (kit-docmeta-push-cost)
       ).toBe(true);
       // And the agent reads it too.
       expect((await appState()).docMeta[t]?.status).toBe("stable");
+    } finally {
+      surface.close();
+    }
+  }, 20_000);
+
+  test("an outside edit to an unopened document's frontmatter reaches the surface's docMeta within the watcher's settle (kit-watcher-frontmatter-edit-no-broadcast)", async () => {
+    const u = join(set, "unopened.md");
+    writeFileSync(u, "---\ntype: note\nstatus: draft\n---\n# Unopened\n");
+    await until(
+      async () => (await appState()).docMeta[u]?.status === "draft",
+      "unopened.md in docMeta",
+    );
+    const port = (JSON.parse(readFileSync(pointer(sessionId), "utf8")) as { port: number }).port;
+    const surface = new FakeSurface();
+    await surface.connect(port);
+    try {
+      await until(
+        async () => (surface.state?.appState as AppState | undefined)?.docMeta[u] !== undefined,
+        "the surface's first docMeta",
+      );
+      expect(surface.state.docs.some((d) => d.original === u)).toBe(false); // not open
+      // Quiet first: the session is shared, and an unrelated broadcast (the
+      // attention sweep's badge, presence) would carry docMeta and hide the bug.
+      const stateCount = () => surface.frames.filter((f) => f.op === "state").length;
+      let quiet = false;
+      for (let seen = stateCount(), i = 0; i < 8 && !quiet; i++) {
+        await Bun.sleep(1_200);
+        quiet = stateCount() === seen;
+        seen = stateCount();
+      }
+      expect(quiet).toBe(true); // otherwise the frame below proves nothing
+      const quietAt = stateCount();
+      const t0 = performance.now();
+      writeFileSync(u, "---\ntype: note\nstatus: stable\n---\n# Unopened\n");
+      await until(
+        async () => (surface.state.appState as AppState).docMeta[u]?.status === "stable",
+        "the surface to hear the outside frontmatter edit",
+      );
+      // The context settle (400 ms) plus the watcher's own, with room for a slow host.
+      expect(performance.now() - t0).toBeLessThan(2_000);
+      expect(stateCount() - quietAt).toBe(1); // the refresh's frame, and only it
     } finally {
       surface.close();
     }

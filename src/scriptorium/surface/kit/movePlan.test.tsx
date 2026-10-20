@@ -82,7 +82,7 @@ afterAll(async () => {
   rmSync(root, { recursive: true, force: true });
 });
 
-/** The thin part of the interim frame this item needs: the sidebar on a live daemon, the slot filled. */
+/** The thin part of the kit page this item needs: the sidebar on a live daemon, the slot filled. */
 function Frame({ url }: { url: string }) {
   const d = useDaemon({
     url,
@@ -214,12 +214,11 @@ describe("the move plan through the kit's pre-move slot, on a real kit daemon", 
     expect(text).toContain("1 document moved on disk");
     expect(text).toContain("It breaks 1 link in 1 document.");
     expect(text).toContain("./part/c.md → ./lore/c.md");
-    // What happens now, not a relink offer the frame does not show yet.
-    // The chat only counts the links left behind; the dialog is what names them.
-    expect(text).toContain("the chat says how many still point at the old place");
+    // The move leaves them; the shell's relink bar offers the update after it.
+    // The dialog is what names them, each with its rewrite.
+    expect(text).toContain("after it, the context column offers to update them");
     expect(text).toContain("They are these, each with the rewrite");
     expect(text).not.toContain("the chat names");
-    expect(text).not.toMatch(/offer/i);
     await click(buttonWith("Cancel", dialog() as ParentNode));
     await waitFor(() => dialog() === null, "the dialog to close");
     // Give a stray move every chance to land before looking.
@@ -424,9 +423,9 @@ describe("when the plan cannot be fetched", () => {
     expect(text).toContain("The links into and out of what moves were not checked.");
     expect(text).toContain("Nor was whether it leaves a git repository");
     expect(text).toContain("git will see the files as deleted");
-    expect(text).toContain("Any it breaks are named in the chat after the move.");
-    // The frame shows no relink offer yet: nothing may promise one.
-    expect(text).not.toMatch(/offer/i);
+    expect(text).toContain(
+      "Any it breaks are named in the chat after the move, and the context column offers to update them.",
+    );
     await m.unmount();
   });
 

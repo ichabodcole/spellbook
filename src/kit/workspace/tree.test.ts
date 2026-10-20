@@ -2,6 +2,7 @@ import { afterAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { withKitDocKindsOnly } from "../lib/docFormat.ts";
 import {
   DOC_EXTENSIONS,
   docPaths,
@@ -34,8 +35,8 @@ afterAll(() => rmSync(root, { recursive: true, force: true }));
 test("documents are recognised by extension, case-insensitively", () => {
   expect(["a.md", "B.MD", "c.markdown", "e.txt", "g.json", "H.JSON"].every(isDocName)).toBe(true);
   expect(isDocName("f.png")).toBe(false);
-  // `.mdx` is not admitted: the workspace opens prose, not components.
-  expect(isDocName("d.mdx")).toBe(false);
+  // `.mdx` is not one of the kit's own kinds: an app adds it (Scriptorium does).
+  withKitDocKindsOnly(() => expect(isDocName("d.mdx")).toBe(false));
   expect([...DOC_EXTENSIONS]).toEqual([".md", ".markdown", ".txt", ".json"]);
 });
 

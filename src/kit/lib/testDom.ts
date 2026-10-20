@@ -4,7 +4,7 @@
 
 import "./registerDom.ts";
 import { act, type ReactNode } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import type { Root } from "react-dom/client";
 import { lastLook, probed } from "./afterIo.ts";
 
 export { installDom, nativeGlobal, removeDom } from "./registerDom.ts";
@@ -28,6 +28,12 @@ export async function cleanup(): Promise<void> {
 export async function mount(node: ReactNode): Promise<Mounted> {
   const container = document.createElement("div");
   document.body.appendChild(container);
+  // Loaded here, not imported at the top. `react-dom/client` is CommonJS, which
+  // Bun evaluates while this module links, before `registerDom.ts` has put a DOM
+  // in place: React then decides once that it has no DOM, and handles text input
+  // through its old-browser fallback, which ignores a lone `input` event (a
+  // paste, an autofill, Playwright's `fill`). A browser takes the `input` path.
+  const { createRoot } = require("react-dom/client") as typeof import("react-dom/client");
   const root: Root = createRoot(container);
   const render = async (n: ReactNode) => {
     await inAct(async () => {

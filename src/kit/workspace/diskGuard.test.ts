@@ -72,7 +72,13 @@ function victim(): { v: WorkspaceSession; slug: string; v1: string; folder: stri
   return { v, slug, v1: join(folder, "v1.md"), folder };
 }
 
-/** The attacker: a session restored from a manifest with an old set rooted at `root`, which shows the sessions. */
+/**
+ * The attacker: a session restored from a manifest with an old set rooted at
+ * `root`, which held the sessions in plain sight. Since
+ * kit-legacy-sets-show-sessions the restore narrows that set, so it no longer
+ * shows them: each hole below is closed twice (not shown, then the write
+ * guard), and is held to writing nothing, whichever refuses first.
+ */
 function seesTheSessions(app: AppDeclaration = testApp): WorkspaceSession {
   const s = session(app);
   const at = join(s.dir, "manifest.json");
@@ -92,8 +98,7 @@ describe("the holes: no route writes into another session's folder", () => {
     const x = seesTheSessions();
     x.rescan("c-old100");
     const e = refusal(() => x.describeImage(pic));
-    expect(e.status).toBe(409);
-    expect(e.message).toContain("among the sessions' own folders");
+    expect([400, 404, 409]).toContain(e.status);
     expect(existsSync(`${pic}.md`)).toBe(false);
   });
 
@@ -115,7 +120,8 @@ describe("the holes: no route writes into another session's folder", () => {
     writeFileSync(v1, `${before}[b](./b.md)\n`);
     const x = seesTheSessions();
     x.rescan("c-old100");
-    x.openPath(v1);
+    // Not shown any more, so it does not open; the rewrite is refused besides.
+    expect(refusal(() => x.openPath(v1)).status).toBeGreaterThanOrEqual(400);
     const r = x.rewriteLinks([{ path: v1, swaps: [["./b.md", "./sub/b.md"]] }]);
     expect(r.count).toBe(0);
     expect(readFileSync(v1, "utf8")).toBe(`${before}[b](./b.md)\n`);
@@ -126,10 +132,10 @@ describe("the holes: no route writes into another session's folder", () => {
     const before = readFileSync(v1, "utf8");
     const x = seesTheSessions();
     x.rescan("c-old100");
-    // Shown, so the app's own check passes: the write is what refuses.
-    expect(x.shownAt(v1).abs).toBe(v1);
+    // Not shown any more (the app's own check refuses first); the write is refused either way.
+    expect(refusal(() => x.shownAt(v1)).status).toBeGreaterThanOrEqual(400);
     const e = refusal(() => x.writeShown(v1, "---\nstatus: PWNED\n---\n"));
-    expect(e.status).toBe(409);
+    expect([400, 404, 409]).toContain(e.status);
     expect(readFileSync(v1, "utf8")).toBe(before);
   });
 
@@ -142,8 +148,65 @@ describe("the holes: no route writes into another session's folder", () => {
     const z = session();
     z.addContext(home);
     const viaPeek = join(home, "peek", v.id, "docs", "a", "v1.md");
-    expect(refusal(() => z.writeShown(viaPeek, "PEEKED\n")).status).toBe(409);
+    expect([400, 404, 409]).toContain(refusal(() => z.writeShown(viaPeek, "PEEKED\n")).status);
     expect(readFileSync(v1, "utf8")).toBe(before);
+  });
+
+  // Since kit-legacy-sets-show-sessions the scan never shows the sessions, so
+  // the holes above are refused before the write. What only the write guard
+  // still catches is a path swapped for a link AFTER the scan showed it: these
+  // reach `worldDisk` itself, and go red without its target check.
+  describe("after the scan: a shown path swapped for a link into another session", () => {
+    /** A session whose set (`<root>/other`) shows `t.md`, `sub/t.md` and `pics/pic.png`. */
+    function shows(): { x: WorkspaceSession; set: string } {
+      const set = join(root, "other");
+      mkdirSync(join(set, "sub"), { recursive: true });
+      mkdirSync(join(set, "pics"), { recursive: true });
+      writeFileSync(join(set, "t.md"), "# T\n");
+      writeFileSync(join(set, "sub", "t.md"), "# T\n");
+      writeFileSync(join(set, "pics", "pic.png"), PNG);
+      const x = session();
+      x.addContext(set);
+      return { x, set };
+    }
+
+    test("hole 1: a shown document swapped for a link to another session's version: writeShown is refused", () => {
+      const { v1 } = victim();
+      const before = readFileSync(v1, "utf8");
+      const { x, set } = shows();
+      const t = join(set, "t.md");
+      expect(x.shownAt(t).abs).toBe(t);
+      rmSync(t);
+      symlinkSync(v1, t);
+      const e = refusal(() => x.writeShown(t, "---\nstatus: PWNED\n---\n"));
+      expect(e.status).toBe(409);
+      expect(e.message).toContain("among the sessions' own folders");
+      expect(readFileSync(v1, "utf8")).toBe(before);
+    });
+
+    test("hole 1 by a link: a shown folder swapped for a link into another session's folder: nothing is made there", () => {
+      const { folder } = victim();
+      const { x, set } = shows();
+      const t = join(set, "sub", "t.md");
+      expect(x.shownAt(t).abs).toBe(t);
+      rmSync(join(set, "sub"), { recursive: true });
+      symlinkSync(folder, join(set, "sub"));
+      const e = refusal(() => x.writeShown(t, "PEEKED\n"));
+      expect(e.status).toBe(409);
+      expect(existsSync(join(folder, "t.md"))).toBe(false);
+    });
+
+    test("hole 2: a shown image's folder swapped for a link into another session's folder: no sidecar is written", () => {
+      const { folder } = victim();
+      writeFileSync(join(folder, "pic.png"), PNG);
+      const { x, set } = shows();
+      rmSync(join(set, "pics"), { recursive: true });
+      symlinkSync(folder, join(set, "pics"));
+      const e = refusal(() => x.describeImage(join(set, "pics", "pic.png")));
+      expect(e.status).toBe(409);
+      expect(e.message).toContain("among the sessions' own folders");
+      expect(existsSync(join(folder, "pic.png.md"))).toBe(false);
+    });
   });
 
   test("hole 4: version-delete through a version folder swapped for a link deletes nothing outside", () => {

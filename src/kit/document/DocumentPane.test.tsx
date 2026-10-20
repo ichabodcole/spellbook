@@ -76,6 +76,7 @@ beforeEach(async () => {
   writeFileSync(story, "First line.\n\nSecond line.\n");
   localStorage.clear();
   announced = [];
+  sentFrames = [];
   reported = [];
   quietSaid = [];
   daemon = fixtureDaemon({ tmp: join(root, "tmp"), workspace: ws });
@@ -100,6 +101,23 @@ let quietSaid: boolean[] = [];
 /** The host's columns, so a test can shut one the way a drag or a button would. */
 let setColumns: ((c: Collapsed) => void) | null = null;
 
+/** Every frame the page sent, newest last. */
+let sentFrames: { op?: string; [k: string]: unknown }[] = [];
+/** The real WebSocket, with what it sends recorded. */
+function Recording(url: string, protocols?: string | string[]) {
+  const ws = new (nativeGlobal<typeof WebSocket>("WebSocket"))(url, protocols);
+  const send = ws.send.bind(ws);
+  ws.send = (data) => {
+    try {
+      sentFrames.push(JSON.parse(String(data)));
+    } catch {
+      /* not a frame */
+    }
+    send(data);
+  };
+  return ws;
+}
+
 /** The pane's own options, beside its slots. */
 type PaneOptions = { splitView?: boolean; viewModeKey?: string; mode?: ViewMode };
 
@@ -114,7 +132,7 @@ function Host({
 }) {
   const d = useDaemon({
     url: `${daemon.url}/ws`,
-    WebSocket: nativeGlobal<typeof WebSocket>("WebSocket"),
+    WebSocket: Recording as unknown as typeof WebSocket,
     minDelayMs: 20,
     maxDelayMs: 60,
   });
@@ -292,6 +310,135 @@ describe("the document pane with no slots filled", () => {
     );
     await click(confirm ?? null);
     await waitFor(() => daemon.session.doc("story").versions.length === 1, "v2 deleted");
+  });
+});
+
+describe("compare, then another document", () => {
+  test("the diff never names the new document with the last one's side", async () => {
+    await openStory();
+    // The story gets v2 and v3; compared against v3, while v1 is active.
+    for (const label of ["two", "three"]) {
+      await cmd({ op: "version.new", doc: "story", label });
+    }
+    await waitFor(() => daemon.session.doc("story").versions.length === 3, "v2 and v3 made");
+    await cmd({ op: "activate", doc: "story", version: 1 });
+    await waitFor(() => active() === 1, "v1 active");
+    await click(q('button[aria-label="Compare with another version"]'));
+    await waitFor(() => q('[aria-label="Compare against"]') !== null, "the compare view");
+    const v3 = [...document.querySelectorAll('[aria-label="Compare against"] button')].find(
+      (b) => b.textContent === "v3",
+    );
+    await click(v3 ?? null);
+    await waitFor(
+      () => sentFrames.some((f) => f.op === "diff" && f.doc === "story" && f.against === 3),
+      "the diff against v3",
+    );
+    // Another document, with one version only.
+    const beta = join(ws, "beta.md");
+    writeFileSync(beta, "Beta.\n");
+    await cmd({ op: "context.add", paths: [beta] });
+    const from = sentFrames.length;
+    await settle(() => {
+      client?.send({ op: "open", path: beta });
+    });
+    await waitFor(() => client?.state?.openDoc === "beta", "beta open");
+    await new Promise<void>((r) => setTimeout(r, 200));
+    const asked = sentFrames.slice(from).filter((f) => f.op === "diff");
+    expect(asked.filter((f) => f.doc === "beta" && f.against !== "original")).toEqual([]);
+    expect(client?.lastError ?? null).toBeNull();
+  });
+});
+
+describe("Mod-S saves in every view", () => {
+  /** A Mod-S pressed on `target`, as the browser sends it: bubbling, and cancelable. */
+  const modS = async (target: EventTarget) => {
+    const e = new window.KeyboardEvent("keydown", {
+      key: "s",
+      code: "KeyS",
+      metaKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    await settle(() => {
+      target.dispatchEvent(e);
+    });
+    return e;
+  };
+  const saves = () =>
+    (client?.state?.chat ?? []).filter((m) => (m.text ?? "").startsWith("Saved v")).length;
+
+  test("in the rendered view, with no editor to claim it, the key saves and the browser's Save Page is stopped", async () => {
+    await openStory();
+    await settle(() => viewOf().dispatch({ changes: { from: 0, insert: "Now. " } }));
+    await waitFor(() => document.body.textContent?.includes("Unsaved") === true, "Unsaved");
+    await click(q('button[aria-label="Rendered"]'));
+    await waitFor(() => q(".md-prose p") !== null, "the rendered view");
+    expect(q(".cm-editor")).toBeNull();
+    const e = await modS(document.body);
+    expect(e.defaultPrevented).toBe(true);
+    await waitFor(() => readFileSync(story, "utf8").startsWith("Now. First line."), "saved");
+    await waitFor(() => saves() === 1, "one save");
+  });
+
+  test("with nothing unsaved the key saves nothing, and still keeps the browser's dialog shut", async () => {
+    await openStory();
+    await click(q('button[aria-label="Rendered"]'));
+    await waitFor(() => q(".md-prose p") !== null, "the rendered view");
+    const e = await modS(document.body);
+    expect(e.defaultPrevented).toBe(true);
+    await new Promise<void>((r) => setTimeout(r, 150));
+    expect(saves()).toBe(0);
+  });
+
+  test("Mod-Shift-S is not Save: nothing is saved, and the browser keeps the key", async () => {
+    await openStory();
+    await settle(() => viewOf().dispatch({ changes: { from: 0, insert: "Now. " } }));
+    await waitFor(() => document.body.textContent?.includes("Unsaved") === true, "Unsaved");
+    await click(q('button[aria-label="Rendered"]'));
+    await waitFor(() => q(".md-prose p") !== null, "the rendered view");
+    const e = new window.KeyboardEvent("keydown", {
+      key: "S",
+      code: "KeyS",
+      metaKey: true,
+      shiftKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    await settle(() => {
+      document.body.dispatchEvent(e);
+    });
+    expect(e.defaultPrevented).toBe(false);
+    await new Promise<void>((r) => setTimeout(r, 150));
+    expect(sentFrames.filter((f) => f.op === "save")).toEqual([]);
+    expect(readFileSync(story, "utf8")).toBe("First line.\n\nSecond line.\n");
+  });
+
+  test("after the session has ended the key saves nothing, and still keeps the browser's dialog shut", async () => {
+    await openStory();
+    await settle(() => viewOf().dispatch({ changes: { from: 0, insert: "Now. " } }));
+    await waitFor(() => document.body.textContent?.includes("Unsaved") === true, "Unsaved");
+    await click(q('button[aria-label="Rendered"]'));
+    await waitFor(() => q(".md-prose p") !== null, "the rendered view");
+    await cmd({ op: "close" });
+    await waitFor(() => client?.connection === "ended", "the session ended");
+    const e = await modS(document.body);
+    expect(e.defaultPrevented).toBe(true);
+    await new Promise<void>((r) => setTimeout(r, 150));
+    expect(sentFrames.filter((f) => f.op === "save")).toEqual([]);
+    // Not even tried: a save the client refuses would say "The session has ended".
+    expect(client?.lastError ?? null).toBeNull();
+    expect(readFileSync(story, "utf8")).toBe("First line.\n\nSecond line.\n");
+  });
+
+  test("in the raw editor the editor's own binding saves, once", async () => {
+    await openStory();
+    await settle(() => viewOf().dispatch({ changes: { from: 0, insert: "Now. " } }));
+    await waitFor(() => document.body.textContent?.includes("Unsaved") === true, "Unsaved");
+    const e = await modS(q(".cm-content") as HTMLElement);
+    expect(e.defaultPrevented).toBe(true);
+    await waitFor(() => readFileSync(story, "utf8").startsWith("Now. First line."), "saved");
+    await new Promise<void>((r) => setTimeout(r, 150));
+    expect(saves()).toBe(1);
   });
 });
 

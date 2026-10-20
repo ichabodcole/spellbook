@@ -91,11 +91,13 @@ describe("linkCheck", () => {
               path: join(world, "00-overview.md"),
               shown: "00-overview.md",
               suggest: "bible-overview.md",
+              set: s.context[0]?.id,
             },
             {
               path: join(world, "locations", "00-overview.md"),
               shown: "locations/00-overview.md",
               suggest: "locations-overview.md",
+              set: s.context[0]?.id,
             },
           ],
         },

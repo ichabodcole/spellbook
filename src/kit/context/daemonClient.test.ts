@@ -911,6 +911,137 @@ describe("writeText", () => {
   });
 });
 
+describe("an edit typed in another tab (`editSeen`)", () => {
+  /** A second client on the same daemon, closed with the test. */
+  const others: DaemonClient[] = [];
+  afterEach(() => {
+    for (const o of others.splice(0)) o.close();
+  });
+  async function second(d: WorkspaceDaemon) {
+    const o = createDaemonClient({ url: `${d.url}/ws`, minDelayMs: 20, maxDelayMs: 60 });
+    others.push(o);
+    o.connect();
+    await waitUntil("the second hello", () => o.getSnapshot().state);
+    return o;
+  }
+  /** Two tabs with solo.md open in both, as a human opens it in each. */
+  async function twoTabs() {
+    daemon = await boot();
+    const a = await connect(daemon);
+    const b = await second(daemon);
+    a.getSnapshot().send({ op: "context.add", path: docs });
+    await waitUntil("context", () => a.getSnapshot().state?.context.length);
+    const frame = await a.getSnapshot().request({ op: "open", path: join(docs, "solo.md") });
+    const slug = (frame as unknown as { doc: string }).doc;
+    await b.getSnapshot().request({ op: "open", path: join(docs, "solo.md") });
+    const doc = await waitUntil("the doc", () =>
+      a.getSnapshot().state?.docs.find((d) => d.slug === slug),
+    );
+    const path = doc.versions.find((v) => v.n === doc.active)?.path as string;
+    const text = (c: DaemonClient) => c.getSnapshot().texts.get(textKey(slug, doc.active));
+    await waitUntil("b holds the text", () => text(b) === "# Solo\n");
+    return { a, b, slug, doc, path, text };
+  }
+
+  test("against the real daemon: the other tab takes the edit, and the typing tab keeps its own", async () => {
+    const { a, b, slug, doc, path, text } = await twoTabs();
+    a.getSnapshot().writeText(doc, doc.active, "# Solo, typed in a\n");
+    a.getSnapshot().flushText(slug);
+    await waitUntil("b shows a's edit", () => text(b) === "# Solo, typed in a\n");
+    expect(text(a)).toBe("# Solo, typed in a\n");
+    expect(readFileSync(path, "utf8")).toBe("# Solo, typed in a\n");
+    // And back the other way, after b has typed: each sees the other's.
+    b.getSnapshot().writeText(doc, doc.active, "# Solo, then b\n");
+    b.getSnapshot().flushText(slug);
+    await waitUntil("a shows b's edit", () => text(a) === "# Solo, then b\n");
+    expect(text(b)).toBe("# Solo, then b\n");
+  });
+
+  test("against the real daemon: two tabs typing at once end on the same text, the last the daemon took", async () => {
+    const { a, b, slug, doc, path, text } = await twoTabs();
+    // Both send in the same tick: each one's edit is on its way when the other's arrives.
+    a.getSnapshot().writeText(doc, doc.active, "# from a\n");
+    b.getSnapshot().writeText(doc, doc.active, "# from b\n");
+    a.getSnapshot().flushText(slug);
+    b.getSnapshot().flushText(slug);
+    await a.getSnapshot().listDir(docs);
+    await b.getSnapshot().listDir(docs);
+    const kept = readFileSync(path, "utf8");
+    expect(["# from a\n", "# from b\n"]).toContain(kept);
+    await waitUntil("both tabs on the kept text", () => text(a) === kept && text(b) === kept);
+  });
+
+  test("a relayed text older than this tab's own edit in flight is passed over; one after it is taken", async () => {
+    class FakeSocket {
+      static last: FakeSocket;
+      readyState = 1;
+      sent: string[] = [];
+      onopen: (() => void) | null = null;
+      onmessage: ((e: { data: string }) => void) | null = null;
+      onclose: (() => void) | null = null;
+      constructor(readonly url: string) {
+        FakeSocket.last = this;
+        queueMicrotask(() => this.onopen?.());
+      }
+      send(data: string) {
+        this.sent.push(data);
+      }
+      close() {}
+      deliver(frame: Record<string, unknown>) {
+        this.onmessage?.({ data: JSON.stringify(frame) });
+      }
+    }
+    const client = createDaemonClient({
+      url: "http://127.0.0.1:1/ws",
+      WebSocket: FakeSocket as unknown as typeof WebSocket,
+      minDelayMs: 1,
+    });
+    client.connect();
+    await Bun.sleep(5);
+    let sock = FakeSocket.last;
+    const doc = { slug: "solo", active: 1 };
+    sock.deliver({ op: "state", state: { sessionId: "s", docs: [doc] } });
+    const text = (v = 1) => client.getSnapshot().texts.get(textKey("solo", v));
+    const relay = { op: "version.text", doc: "solo", version: 1, origin: "remote" };
+    // No edit sent from here: another tab's text is taken, whatever its stamp.
+    sock.deliver({ ...relay, text: "other one", editSeen: null });
+    expect(text()).toBe("other one");
+    client.getSnapshot().writeText(doc, 1, "mine");
+    client.getSnapshot().flushText("solo");
+    const edit = JSON.parse(sock.sent.at(-1) as string) as { op: string; rid: number };
+    expect(edit.op).toBe("edit");
+    // Sent before the daemon took this tab's edit: passed over, never put over the typing.
+    sock.deliver({ ...relay, text: "other two", editSeen: null });
+    expect(text()).toBe("mine");
+    sock.deliver({ ...relay, text: "other three", editSeen: edit.rid - 1 });
+    expect(text()).toBe("mine");
+    // Another version is not the one typed in: taken.
+    sock.deliver({ ...relay, version: 2, text: "v2", editSeen: null });
+    expect(text(2)).toBe("v2");
+    // The daemon's own news carries no stamp: taken, as before.
+    sock.deliver({ ...relay, text: "from disk" });
+    expect(text()).toBe("from disk");
+    // Sent after the daemon took the edit: the other tab typed later, and wins.
+    sock.deliver({ ...relay, text: "other four", editSeen: edit.rid });
+    expect(text()).toBe("other four");
+    // Confirmed once is confirmed: an older-stamped frame is not held back now.
+    sock.deliver({ ...relay, text: "other five", editSeen: null });
+    expect(text()).toBe("other five");
+    // An edit sent on a socket that then dropped: the new socket knows nothing of it,
+    // and its frames are all built after the daemon was done with the old one.
+    client.getSnapshot().writeText(doc, 1, "mine again");
+    client.getSnapshot().flushText("solo");
+    sock.onclose?.();
+    await waitUntil("reconnected", () => FakeSocket.last !== sock);
+    sock = FakeSocket.last;
+    await Bun.sleep(5);
+    sock.deliver({ op: "state", state: { sessionId: "s", docs: [doc] } });
+    sock.deliver({ ...relay, text: "other on the new socket", editSeen: null });
+    expect(text()).toBe("other on the new socket");
+    client.close();
+  });
+});
+
 describe("the app's view, marked unchanged (StateFrame)", () => {
   test("against the real daemon: a broadcast that leaves the view alone keeps it, and a changed one replaces it", async () => {
     // The pair under test: this daemon marks an unchanged view, and this client

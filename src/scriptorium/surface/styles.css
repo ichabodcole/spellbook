@@ -7,6 +7,9 @@
    surface's ONLY content source. The kit sheet brings its own, which scans
    src/kit/ui. grimoire/spell-css-scope-ward.test.ts runs each claim red. */
 @source "./";
+/* The kit page (`./kit/`) has its own sheet and its own scan; its classes do
+   not belong in this one (scriptorium-kit-keepers). */
+@source not "./kit";
 
 /* L2 — scriptorium's palette: a warm paper-and-ink manuscript room. Semantic
    names only (house theming convention: no raw palette in markup); the dark

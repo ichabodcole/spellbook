@@ -354,8 +354,19 @@ export type SystemFactPayload =
   | { fact: "doc.create" | "folder.create" | "import" | "bundle.create"; path: string }
   /** A new folder where the caller named it; `set` when it is a new set in the context. */
   | { fact: "folder.add"; path: string; entry: string; set: boolean }
-  /** A document became a set: its folder, where the document is now, the entry (same id). */
-  | { fact: "set.make"; path: string; from: string; folder: string; entry: string }
+  /**
+   * A document became a set: its folder, where the document is now, the entry
+   * (same id). `broken`: links the move into the folder broke, offered for
+   * updating (`relink`), as a move's are.
+   */
+  | {
+      fact: "set.make";
+      path: string;
+      from: string;
+      folder: string;
+      entry: string;
+      broken?: { count: number; docs: LinkFactDoc[]; hint: string };
+    }
   /** A copy of a document or a whole bundle, beside it; `dir` for a bundle's. */
   | { fact: "duplicate"; path: string; from: string; dir?: true }
   /**
@@ -395,7 +406,7 @@ export type SystemFactPayload =
       broken?: { count: number; docs: LinkFactDoc[]; hint: string };
       links?: LinksFact;
     }
-  /** The links the last rename or move broke, updated as part of it. */
+  /** The links the last rename, move or `set.make` broke, updated as part of it. */
   | ({ fact: "relink" } & LinksFact)
   /** The human left them; the link check lists them. */
   | { fact: "relink.left"; count: number }

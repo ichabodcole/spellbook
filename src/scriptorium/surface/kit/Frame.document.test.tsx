@@ -26,11 +26,13 @@ import {
   typeInto,
   waitFor,
 } from "../../../kit/lib/testDom";
-import type { DocView } from "../../../kit/workspace/protocol";
+import { type LaidOut, laidOut } from "../../../kit/lib/testLayout";
+import type { DocView, PublicState } from "../../../kit/workspace/protocol";
 import type { WorkspaceDaemon } from "../../../kit/workspace/server";
 import { tempRoot } from "../../../kit/workspace/testing";
 import { kitDaemon } from "../../backend/kit/server";
-import { Frame, scriptoriumChips } from "./Frame";
+import { Frame, scriptoriumChips, scriptoriumEndWarning } from "./Frame";
+import { keptPrefs, reseedPrefs, seedPrefs } from "./testPrefs";
 
 const root = tempRoot("scriptorium-frame-document");
 const docs = join(root, "docs");
@@ -40,8 +42,12 @@ const savedHome = process.env.SCRIPTORIUM_HOME;
 let daemon: WorkspaceDaemon;
 let client: Daemon | null = null;
 
+/** The panels laid out as a browser would, so the shell's columns can collapse (reader mode). */
+let layout: LaidOut | null = null;
+
 beforeAll(async () => {
   installDom();
+  layout = laidOut(1400);
   // CodeMirror measures text with ranges and rects, which happy-dom does not lay out.
   const proto = window.Range.prototype as unknown as Record<string, unknown>;
   const rect = { x: 0, y: 0, width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0 };
@@ -51,6 +57,8 @@ beforeAll(async () => {
   el.getClientRects = el.getClientRects ?? (() => []);
   (document as unknown as Record<string, unknown>).elementFromPoint ??= () => null;
   process.env.SCRIPTORIUM_HOME = join(root, "home");
+  // These tests type into the raw editor: they start there (`./testPrefs.ts`).
+  seedPrefs(join(root, "home"), { "doc:view": "raw" });
   mkdirSync(join(root, "tmp"), { recursive: true });
   mkdirSync(docs, { recursive: true });
   daemon = kitDaemon({
@@ -65,8 +73,10 @@ beforeAll(async () => {
 afterEach(async () => {
   await cleanup();
   localStorage.clear();
+  await reseedPrefs(join(root, "home"), { "doc:view": "raw" });
 });
 afterAll(async () => {
+  layout?.undo();
   await daemon?.stop().catch(() => {});
   await removeDom();
   if (savedHome === undefined) delete process.env.SCRIPTORIUM_HOME;
@@ -74,7 +84,10 @@ afterAll(async () => {
   rmSync(root, { recursive: true, force: true });
 });
 
-function Host() {
+/** An op the page sends, as `watch` sees it. */
+type SentOp = { op: string; key?: string };
+
+function Host({ watch }: { watch?: (op: SentOp) => void }) {
   const d = useDaemon({
     url: `${daemon.url}/ws`,
     WebSocket: nativeGlobal<typeof WebSocket>("WebSocket"),
@@ -82,9 +95,18 @@ function Host() {
     maxDelayMs: 60,
   });
   client = d;
+  const seen: Daemon = watch
+    ? {
+        ...d,
+        send: (op) => {
+          watch(op as SentOp);
+          return d.send(op);
+        },
+      }
+    : d;
   return (
     <div style={{ width: 1400, height: 800 }}>
-      <Frame daemon={d} />
+      <Frame daemon={seen} />
     </div>
   );
 }
@@ -107,9 +129,9 @@ const openDoc = (): DocView | null =>
 const tab = (name: string) => click(withText('[role="tab"]', name));
 
 /** A fresh document at `path` with `text`, open in the frame's centre. */
-async function openFile(path: string, text: string) {
+async function openFile(path: string, text: string, watch?: (op: SentOp) => void) {
   writeFileSync(path, text);
-  const m = await mount(<Host />);
+  const m = await mount(<Host watch={watch} />);
   await waitFor(() => client?.connection === "open" && client.state !== null, "the hello");
   await settle(() => {
     client?.send({ op: "context.add", path });
@@ -181,24 +203,89 @@ describe("the frame's centre is the kit's document pane", () => {
     await m.unmount();
   });
 
-  test("split is offered, and the view mode is kept under Scriptorium's name", async () => {
+  test("split is offered, and the view mode is kept in the daemon's prefs under the shipped name", async () => {
     const m = await openFile(join(docs, "split.md"), "# Split\n\nBody.\n");
     const split = q('button[aria-label="Raw and rendered side by side"]') as HTMLButtonElement;
     expect(split).not.toBeNull();
     await click(q('button[aria-label="Rendered"]'));
-    expect(localStorage.getItem("scriptorium:view-mode")).toBe("rendered");
-    expect(localStorage.getItem("spellbook:view-mode")).toBeNull();
+    await waitFor(() => client?.state?.prefs["doc:view"] === "rendered", "the mode in the prefs");
+    expect(keptPrefs(join(root, "home"))["doc:view"]).toBe("rendered");
+    // Nothing in the browser: a new session is a new origin.
+    expect(localStorage.length).toBe(0);
     await m.unmount();
   });
 
-  test("raw offers line numbers, and the choice is kept under Scriptorium's name", async () => {
+  test("raw offers line numbers, and the choice is kept in the daemon's prefs", async () => {
     const m = await openFile(join(docs, "numbers.md"), "One.\nTwo.\n");
     const toggle = q('[data-slot="line-numbers-toggle"]');
     expect(toggle).not.toBeNull();
     await click(toggle);
     await waitFor(() => q(".cm-lineNumbers") !== null, "the gutter");
-    expect(localStorage.getItem("scriptorium:line-numbers")).toBe("on");
-    expect(localStorage.getItem("spellbook:line-numbers")).toBeNull();
+    await waitFor(
+      () => client?.state?.prefs["doc:line-numbers"] === "on",
+      "line numbers in the prefs",
+    );
+    expect(localStorage.length).toBe(0);
+    await m.unmount();
+  });
+
+  test("mounting writes neither the view mode nor line numbers: only the human's choice does", async () => {
+    // Nothing kept: what the pane reads (rendered, numbers off) is not in the
+    // prefs, so a write on mount would be sent, not skipped as already held.
+    seedPrefs(join(root, "home"), {});
+    const sent: { op: string; key?: string }[] = [];
+    const m = await openFile(join(docs, "quiet.md"), "# Quiet\n\nStill.\n", (op) => sent.push(op));
+    // Another document on screen re-reads the mode, which must not write it either.
+    const other = join(docs, "quiet-two.md");
+    writeFileSync(other, "# Two\n");
+    await settle(() => {
+      client?.send({ op: "context.add", path: other });
+    });
+    await settle(() => {
+      client?.send({ op: "open", path: other });
+    });
+    await waitFor(() => openDoc()?.original.endsWith("quiet-two.md") === true, "the second one");
+    // Well past the adapter's pause.
+    await Bun.sleep(400);
+    const keys = sent.filter((o) => o.op === "prefs.set").map((o) => o.key);
+    expect(keys).not.toContain("doc:view");
+    expect(keys).not.toContain("doc:line-numbers");
+    await m.unmount();
+  });
+
+  test("a choice still in its pause is sent when the page goes away: on pagehide, and on unmount", async () => {
+    const sent: { op: string; key?: string; value?: string }[] = [];
+    const m = await mount(<Host watch={(op) => sent.push(op)} />);
+    await waitFor(() => q('[data-pane="chat"] [role="tab"]') !== null, "the shell");
+    const tabSets = () => sent.filter((o) => o.op === "prefs.set" && o.key === "tab");
+    await tab("Tasks");
+    // Well inside the adapter's 250 ms pause: nothing yet, until the page hides.
+    expect(tabSets()).toEqual([]);
+    await settle(() => {
+      window.dispatchEvent(new window.Event("pagehide"));
+    });
+    expect(tabSets().map((o) => o.value)).toEqual(["tasks"]);
+    await tab("Notes");
+    expect(tabSets().length).toBe(1);
+    await m.unmount();
+    expect(tabSets().map((o) => o.value)).toEqual(["tasks", "notes"]);
+  });
+
+  test("first use, with no mode kept, opens rendered, as the shipped app does", async () => {
+    seedPrefs(join(root, "home"), {});
+    const path = join(docs, "first.md");
+    writeFileSync(path, "# First\n\nRendered.\n");
+    const m = await mount(<Host />);
+    await waitFor(() => client?.connection === "open" && client.state !== null, "the hello");
+    await settle(() => {
+      client?.send({ op: "context.add", path });
+    });
+    await settle(() => {
+      client?.send({ op: "open", path });
+    });
+    await waitFor(() => q(".md-prose") !== null, "the rendered view");
+    expect(q(".cm-editor")).toBeNull();
+    expect(q('button[aria-label="Rendered"]')?.getAttribute("aria-pressed")).toBe("true");
     await m.unmount();
   });
 
@@ -361,5 +448,56 @@ describe("an outside change", () => {
     expect(openDoc()?.dirty).toBe(true);
     expect(readFileSync(plain, "utf8")).toBe("Theirs.\n");
     await m.unmount();
+  });
+});
+
+describe("End session", () => {
+  test("it warns of the unsaved document, in the shipped words, and ending is still offered", async () => {
+    const path = join(docs, "unsaved.md");
+    const m = await openFile(path, "Draft.\n");
+    await settle(() => viewOf().dispatch({ changes: { from: 0, insert: "More. " } }));
+    await waitFor(() => openDoc()?.dirty === true, "unsaved");
+    await click(q('[data-column-control="end-session"]'));
+    await waitFor(() => q('[data-slot="session-end-dialog"]') !== null, "the confirm");
+    // The session outlives each test, so an earlier test's unsaved edit counts
+    // too: the warning is the rule's, with the open document named first.
+    const warned = q('[data-slot="end-warning"]')?.textContent ?? "";
+    expect(warned).toBe(scriptoriumEndWarning(client?.state as PublicState) as string);
+    expect(warned).toMatch(
+      /^(v1 of unsaved\.md has|\d+ documents have unsaved changes \(unsaved\.md)/,
+    );
+    expect(warned).toContain("They stay in this session");
+    const end = withText('[data-slot="session-end-dialog"] button', "End session");
+    expect((end as HTMLButtonElement | null)?.disabled).toBe(false);
+    await click(withText('[data-slot="session-end-dialog"] button', "Cancel"));
+    await waitFor(() => q('[data-slot="session-end-dialog"]') === null, "the dialog closed");
+    // Saved, it is no longer warned of; with nothing unsaved at all, nothing is.
+    await click(q('button[aria-label^="Save"]') ?? withText("button", "Save"));
+    await waitFor(() => openDoc()?.dirty === false, "saved");
+    await click(q('[data-column-control="end-session"]'));
+    await waitFor(() => q('[data-slot="session-end-dialog"]') !== null, "the confirm again");
+    expect(q('[data-slot="end-warning"]')?.textContent ?? "").not.toContain("unsaved.md");
+    if (!client?.state?.docs.some((d) => d.dirty))
+      expect(q('[data-slot="end-warning"]')).toBeNull();
+    await click(withText('[data-slot="session-end-dialog"] button', "Cancel"));
+    await m.unmount();
+  });
+
+  test("every unsaved document counts, the open one named first", () => {
+    const docOf = (slug: string, name: string, dirty: boolean) => ({
+      slug,
+      name,
+      active: 2,
+      dirty,
+    });
+    expect(scriptoriumEndWarning({ openDoc: "a", docs: [docOf("a", "a.md", false)] })).toBeNull();
+    expect(
+      scriptoriumEndWarning({
+        openDoc: "c",
+        docs: [docOf("a", "a.md", true), docOf("b", "b.md", false), docOf("c", "c.md", true)],
+      }),
+    ).toBe(
+      "2 documents have unsaved changes (c.md, a.md). They stay in this session (the agent can bring it back with open --restore), but they won't be in your files.",
+    );
   });
 });

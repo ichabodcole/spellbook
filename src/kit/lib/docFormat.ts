@@ -6,8 +6,9 @@
  *
  * Two formats of DOCUMENT, which is text:
  *
- * - **markdown**: `.md`, `.markdown` and `.txt`. Rendered, linked, searched,
- *   indexed for links and drawn on the map.
+ * - **markdown**: `.md`, `.markdown` and `.txt`, and any kind an app adds
+ *   (`registerDocExtension`). Rendered, linked, searched, indexed for links
+ *   and drawn on the map.
  * - **json**: `.json`. Edited raw in JSON mode and checked to parse before a
  *   save, never read as markdown: no rendered view, no frontmatter, no links,
  *   not on the map. A world's profile files (`_meta/profiles/*.json`) are the
@@ -26,16 +27,86 @@
 
 import { bundleTypeOfMain } from "./bundles.ts";
 
-/** What the workspace admits as a document. Everything else is not shown. */
+/**
+ * The kit's own document kinds, which every app admits. An app adds kinds of
+ * its own with `registerDocExtension`; ask `docExtensions()` for the whole
+ * list, never this one.
+ */
 export const DOC_EXTENSIONS = [".md", ".markdown", ".txt", ".json"] as const;
-
-export function isDocName(name: string): boolean {
-  const lower = name.toLowerCase();
-  return DOC_EXTENSIONS.some((ext) => lower.endsWith(ext));
-}
 
 /** How a document is edited and read. */
 export type DocFormat = "markdown" | "json";
+
+/** The kinds an app added (`registerDocExtension`), by extension, lower case. */
+const appKinds = new Map<string, DocFormat>();
+
+/**
+ * Admit one more kind of file as a document, read as `format` (markdown by
+ * default): Scriptorium's `.mdx`, shown and edited as text and rendered as
+ * plain markdown, its imports and components never compiled or run.
+ *
+ * As `registerBundleType`: one registry per process, filled by the same app
+ * module in its daemon, its CLI and its surface, before any of them reads a
+ * tree. A kit extension, or an image's, is refused: those have their meaning.
+ */
+export function registerDocExtension(extension: string, format: DocFormat = "markdown"): void {
+  const ext = extension.toLowerCase();
+  if (!/^\.[a-z0-9]+$/.test(ext))
+    throw new Error(`a document extension is a dot and letters or digits: ${extension}`);
+  if ((DOC_EXTENSIONS as readonly string[]).includes(ext) || isImageName(`x${ext}`))
+    throw new Error(`${ext} already has its meaning in the kit`);
+  appKinds.set(ext, format);
+}
+
+/** Forget a registered kind: for tests that register one of their own. */
+export function unregisterDocExtension(extension: string): void {
+  appKinds.delete(extension.toLowerCase());
+}
+
+/**
+ * Run `fn` with only the kit's own kinds admitted, then put back what the
+ * app registered: for a test that holds the kit's list, in a test run whose
+ * other files may have loaded an app's registration.
+ */
+export function withKitDocKindsOnly<T>(fn: () => T): T {
+  const saved = new Map(appKinds);
+  appKinds.clear();
+  try {
+    return fn();
+  } finally {
+    appKinds.clear();
+    for (const [ext, format] of saved) appKinds.set(ext, format);
+  }
+}
+
+/** Every extension the workspace admits as a document: the kit's, then the app's, in the order registered. */
+export function docExtensions(): string[] {
+  return [...DOC_EXTENSIONS, ...appKinds.keys()];
+}
+
+/**
+ * A name without its markdown document extension (`.md`, `.markdown`, `.txt`,
+ * or a markdown kind an app added, such as `.mdx`): what a title falls back to
+ * when a document has no title or heading. Any other name, a `.json` included,
+ * is returned as it is.
+ */
+export function withoutDocExtension(name: string): string {
+  const lower = name.toLowerCase();
+  const kinds = [
+    ".md",
+    ".markdown",
+    ".txt",
+    ...[...appKinds].filter(([, f]) => f === "markdown").map(([e]) => e),
+  ];
+  const ext = kinds.find((e) => lower.endsWith(e) && lower.length > e.length);
+  return ext === undefined ? name : name.slice(0, -ext.length);
+}
+
+/** What the workspace admits as a document. Everything else is not shown. */
+export function isDocName(name: string): boolean {
+  const lower = name.toLowerCase();
+  return docExtensions().some((ext) => lower.endsWith(ext));
+}
 
 /**
  * ⛔ THE ONE PLACE a document's format is decided, from its name or path. Ask
@@ -48,7 +119,9 @@ export function docFormat(name: string): DocFormat {
   // path.
   const main = bundleTypeOfMain(name);
   if (main) return main.format;
-  return name.toLowerCase().endsWith(".json") ? "json" : "markdown";
+  const lower = name.toLowerCase();
+  for (const [ext, format] of appKinds) if (lower.endsWith(ext)) return format;
+  return lower.endsWith(".json") ? "json" : "markdown";
 }
 
 // ── images ─────────────────────────────────────────────────────────────────

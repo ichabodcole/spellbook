@@ -26,8 +26,11 @@ const env: Record<string, string | undefined> = {
   SCRIPTORIUM_KIT: "1",
   SPELLBOOK_SURFACE_MODE: "dev",
 };
-// Assembled, so no class scanner counts this file as a use.
-const UTIL = ["font", "manuscript"].join("-");
+// A utility only the page's own folder uses (the tree's status dot, in
+// `surface/kit/Frame.tsx`), as the built sheet escapes it. Assembled, so no
+// class scanner counts this file as a use. (It was the interim frame's
+// `font-manuscript` title, which the shell's top bar replaced.)
+const UTIL = ["data-\\[tone\\=unreadable\\]\\:bg", "ink", "faint"].join("-");
 
 async function cli(...args: string[]) {
   const p = Bun.spawn(["bun", CLI, ...args], {

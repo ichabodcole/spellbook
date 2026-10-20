@@ -24,3 +24,55 @@ export function minimalChange(a: string, b: string): TextChange | null {
   }
   return { from: start, to: endA, insert: b.slice(start, endB) };
 }
+
+/**
+ * `r` in the text `c` turns it into: null when either end falls inside what `c`
+ * replaced, where no position means the same thing in both texts. A start at the
+ * very point of an insertion moves past it (the text it began with follows the
+ * insertion); an end there stays (the text it ended with comes before it).
+ */
+export function rangeThrough(
+  r: { from: number; to: number },
+  c: TextChange | null,
+): { from: number; to: number } | null {
+  if (!c) return r;
+  const delta = c.insert.length - (c.to - c.from);
+  const from = r.from < c.from ? r.from : r.from >= c.to ? r.from + delta : null;
+  const to = r.to <= c.from ? r.to : r.to > c.to ? r.to + delta : null;
+  if (from === null || to === null) return null;
+  // A collapsed range at an insertion point: both ends name the same place.
+  return from <= to ? { from, to } : { from: to, to };
+}
+
+/** The change that undoes `c`, made to `a` (the text `c` was made to). */
+export function invertChange(c: TextChange, a: string): TextChange {
+  return { from: c.from, to: c.from + c.insert.length, insert: a.slice(c.from, c.to) };
+}
+
+/** The 1-based line holding `offset` in `text`. */
+function lineOf(text: string, offset: number): number {
+  let line = 1;
+  const end = Math.max(0, Math.min(offset, text.length));
+  for (let i = 0; i < end; i++) if (text.charCodeAt(i) === 10) line++;
+  return line;
+}
+
+/**
+ * Line `line` of `a`, as a line of `b`, the text `c` made of `a`. A line that
+ * begins inside what `c` replaced has no counterpart, so it goes to the nearer
+ * edge of the change: a scroll to it still lands next to the passage, never
+ * nowhere. Past the last line, the last.
+ */
+export function lineThrough(line: number, a: string, b: string, c: TextChange | null): number {
+  if (!c) return line;
+  let at = 0;
+  for (let n = 1; n < line; n++) {
+    const i = a.indexOf("\n", at);
+    if (i === -1) break;
+    at = i + 1;
+  }
+  const delta = c.insert.length - (c.to - c.from);
+  const p =
+    at < c.from ? at : at >= c.to ? at + delta : at - c.from <= c.to - at ? c.from : c.to + delta;
+  return lineOf(b, p);
+}
