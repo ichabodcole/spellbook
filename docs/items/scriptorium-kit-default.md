@@ -52,17 +52,51 @@ are left behind, which is the one-time reset of pane sizes.
 
 ## Definition of done
 
-- [ ] With no variable set, `open` runs the kit Scriptorium on
+- [x] With no variable set, `open` runs the kit Scriptorium on
       `$SCRIPTORIUM_HOME/sessions`, and nothing the human or the agent sees
       names `SCRIPTORIUM_KIT` or `path:"kit"`.
-- [ ] A dry run on a fresh copy of the real home, on the final code, converts
+- [x] A dry run on a fresh copy of the real home, on the final code, converts
       and restores every session, and keeps every original manifest byte for
       byte.
-- [ ] In a real browser, on a copy, a converted session keeps the theme, the
+- [x] In a real browser, on a copy, a converted session keeps the theme, the
       view mode and the open columns, and the pane sizes reset.
-- [ ] The hatch works on an unconverted home and is refused (exit 2, with a
+- [x] The hatch works on an unconverted home and is refused (exit 2, with a
       hint) once a session is in the kit's shape.
-- [ ] acc runs on the re-recorded census, the house ward fails a census that
+- [x] acc runs on the re-recorded census, the house ward fails a census that
       misses or invents a verb, and the CLI golden is re-captured.
-- [ ] The flip is one commit; reverting it on a scratch branch restores the
+- [x] The flip is one commit; reverting it on a scratch branch restores the
       shipped default with the gate green.
+
+## Done and verified
+
+The flip is `60ef6f8f` (source, tests, census, ward and golden), with the
+rebuilt `dist` in `50c3afa3`.
+
+- **The hatch** is `src/scriptorium/backend/hatch.ts`, asked by both entries.
+  "In the kit's shape" is the shipped reader's own test (`appName`, or a
+  `createdAt` that is not a number), read from each `manifest.json`, so a
+  session started on the flipped build closes the hatch as a converted one does
+  (ruling 2). Unreadable manifests are not counted.
+- **The dry run**, on a copy of `~/.scriptorium` taken at 14:45 (65 sessions):
+  in process, 65 of 65 converted and restored again without a migrate; through
+  the launchers, 65 opened, 65 closed cleanly by their own id, none killed,
+  every chat carries the conversion line. Every `manifest.pre-migrate.json` is
+  byte-identical to its original, and nothing else changed. The hatch was then
+  refused on that copy (exit 2), and worked on a fresh unconverted one.
+- **The browser check**, on a copy: the converted session opened dark (the
+  browser preferred light), with Rendered pressed and both columns open; the
+  layout was the kit's default 22/50/28 rather than the shipped 25.6/48.8/25.5,
+  and a collapsed context column reopened at 25.6%, the carried `panes:open`.
+- **acc**: the census was re-recorded on the flipped CLI into the skill folder
+  (56 records, identical to the kit census it replaces). The house ward now
+  fails a census whose verbs are not the CLI's; digestify, which advertises no
+  verb list, is named as the one exception. `backend/kit/acc.test.ts` is gone.
+- **The golden**: re-captured (56 verbs), with `dangling` and `workspace`
+  dropped from the hand corpus and a row added for each kit-only verb. The
+  documented fixture follows the SKILL item.
+- **Choices**: the page title loses "(kit path)", since the tab is what the
+  human sees. A `kit/sessions` folder left by the flag is not read or moved; the
+  real home has none. The kit's `refuseScriptorium` field is left for the
+  deletion.
+- **The revert**: `git revert 60ef6f8f` plus a rebuild gives a tree
+  byte-identical to `23dd202c`, and the gate is green on it.
