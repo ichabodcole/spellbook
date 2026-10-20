@@ -111,9 +111,11 @@ import {
   type AppEdge,
   BODY_LINKS,
   checkLinkSlot,
+  type EdgeSpot,
   edgeBacklinksTo,
   edgeKeeps,
   type LinkSlot,
+  locateEdges,
   type ResolvableDocument,
   readEdges,
 } from "./linkEdges";
@@ -198,6 +200,7 @@ import type {
   HeadingOffer,
   HeadingProblem,
   ImageView,
+  LeavingLinkView,
   LinkCheck,
   LinkGraph,
   LinkHeadings,
@@ -873,6 +876,8 @@ export class WorkspaceSession {
       refs: BundleReference[];
       /** The app's edges from it (kit-link-edges-slot), read from the same text. */
       edges: AppEdge[];
+      /** Where each of `edges` is written, in order (`locateEdges`): what the link check opens. */
+      edgeAt?: (EdgeSpot | undefined)[];
     }
   >();
   /** The app's part of the link layer: its edges and its resolver (`setLinkSlot`). */
@@ -6708,6 +6713,7 @@ export class WorkspaceSession {
     facts: DocFacts;
     refs: BundleReference[];
     edges: AppEdge[];
+    edgeAt?: (EdgeSpot | undefined)[];
   } | null {
     const d = c.slug === null ? undefined : this.m.docs.find((x) => x.slug === c.slug);
     const file = d ? this.versionPath(d, d.active) : c.path;
@@ -6736,6 +6742,7 @@ export class WorkspaceSession {
       facts: DocFacts;
       refs: BundleReference[];
       edges: AppEdge[];
+      edgeAt?: (EdgeSpot | undefined)[];
     };
     if (bundle) {
       try {
@@ -6754,15 +6761,17 @@ export class WorkspaceSession {
       // for the link check's headings; nothing that resolves paths sees them.
       const all = extractLinks(text, { schemes: true, fragments: true });
       const facts = docFacts(text);
+      // The app's edges, from the same read and kept under the same stamp,
+      // so a save or an edit on disk re-reads them with the links.
+      const edges = readEdges(this.linkSlot, { path: c.path, text, frontmatter: facts.fields });
       entry = {
         stamp,
         links: all.filter((l) => !l.fragment),
         fragments: all.filter((l) => l.fragment),
         facts,
         refs: [],
-        // The app's edges, from the same read and kept under the same stamp,
-        // so a save or an edit on disk re-reads them with the links.
-        edges: readEdges(this.linkSlot, { path: c.path, text, frontmatter: facts.fields }),
+        edges,
+        ...(edges.length > 0 ? { edgeAt: locateEdges(text, edges) } : {}),
       };
     } catch {
       return null;
@@ -7228,8 +7237,44 @@ export class WorkspaceSession {
         links: got?.links ?? [],
         fragments: got?.fragments ?? [],
         edges: got?.edges ?? [],
+        edgeAt: got?.edgeAt ?? [],
       };
     });
+    // Links and edges that land outside the set they are written in
+    // (kit-broken-links-visible): the shipped map's "N leaving the set".
+    const leavingLinks: LeavingLinkView[] = [];
+    const setOf = (path: string) => entryOf(path)?.id;
+    /** Where a link from `from` lands, when that is outside `from`'s set; else null. */
+    const leaves = (r: Resolution, from: string): { target: string } | null => {
+      if (r.state !== "in-context" && r.state !== "outside" && r.state !== "not-a-doc") return null;
+      const own = entryOf(from);
+      if (own === undefined) return null;
+      // A document or image the session holds: in another set, or none.
+      if (r.state === "in-context")
+        return entryOf(r.path)?.id === own.id ? null : { target: r.path };
+      // A file the session does not hold: leaving unless it sits in the set's folder.
+      return r.path.startsWith(own.root + sep) ? null : { target: r.path };
+    };
+    const leavingView = (from: string, target: string) => {
+      const there = entryOf(target);
+      const own = entryOf(from);
+      return {
+        source: from,
+        name: basename(from),
+        shown: shown(from),
+        target,
+        targetShown: there
+          ? toPosix(relative(there.root, target))
+          : own
+            ? toPosix(relative(own.root, target))
+            : target,
+        ...(there ? { targetSet: there.label } : {}),
+        ...(own ? { set: own.id } : {}),
+      };
+    };
+    // The body links that resolve, kept by how they were written, so the
+    // leaving list below needs no second resolve.
+    const resolvedLinks = new Map<string, Resolution>();
     // A bundle's references whose file nothing answers, beside the documents'
     // dangling links ("card 'The Glade' points at …, which is missing"). Each
     // one that lands on an image counts as that image's use.
@@ -7241,8 +7286,10 @@ export class WorkspaceSession {
         if (r.state !== "missing") continue;
         const v = this.referenceView(c.path, ref, entryOf);
         const called = ref.label ?? basename(ref.raw);
+        const set = entryOf(c.path)?.id;
         references.push({
           ...v,
+          ...(set !== undefined ? { set } : {}),
           tried: r.tried,
           text: `${v.part} '${called}' points at \`${ref.raw}\`, which is missing`,
         });
@@ -7262,6 +7309,7 @@ export class WorkspaceSession {
           if (index.images.has(r.path)) used.add(r.path);
           landed.set(`${from}\0${kind}\0${raw}`, r.path);
         }
+        resolvedLinks.set(`${from}\0${kind}\0${raw}`, r);
         return r;
       },
     );
@@ -7271,10 +7319,25 @@ export class WorkspaceSession {
     const danglingEdges: CheckedEdgeView[] = [];
     if (this.appEdges)
       for (const s of sources)
-        for (const e of s.edges) {
-          if (!keep(e.kind)) continue;
+        s.edges.forEach((e, i) => {
+          if (!keep(e.kind)) return;
           const r = this.resolveFrom(e.target, s.path, entryOf(s.path), "document", index);
-          if (r.state !== "missing") continue;
+          const spot = s.edgeAt[i];
+          const line = e.line ?? spot?.line;
+          const at = spot ? { from: spot.from, to: spot.to } : {};
+          const set = setOf(s.path);
+          const out = leaves(r, s.path);
+          if (out)
+            leavingLinks.push({
+              ...leavingView(s.path, out.target),
+              raw: e.target,
+              ...(line !== undefined ? { line } : {}),
+              ...(e.label !== undefined ? { label: e.label } : {}),
+              ...at,
+              edge: e.kind,
+              ...(e.key !== undefined ? { key: e.key } : {}),
+            });
+          if (r.state !== "missing") return;
           danglingEdges.push({
             source: s.path,
             name: basename(s.path),
@@ -7282,15 +7345,39 @@ export class WorkspaceSession {
             edge: e.kind,
             raw: e.target,
             ...(e.key !== undefined ? { key: e.key } : {}),
-            ...(e.line !== undefined ? { line: e.line } : {}),
+            ...(line !== undefined ? { line } : {}),
             ...(e.label !== undefined ? { label: e.label } : {}),
             tried: r.tried,
+            ...at,
+            ...(set !== undefined ? { set } : {}),
           });
-        }
+        });
     danglingEdges.sort(
       (a, b) =>
         a.shown.localeCompare(b.shown, undefined, { numeric: true }) ||
         (a.line ?? 0) - (b.line ?? 0),
+    );
+    if (keep(BODY_LINKS))
+      for (const s of sources)
+        for (const link of s.links) {
+          if (link.scheme !== undefined) continue;
+          const r = resolvedLinks.get(`${s.path}\0${link.kind}\0${link.raw}`);
+          const out = r && leaves(r, s.path);
+          if (!out) continue;
+          leavingLinks.push({
+            ...leavingView(s.path, out.target),
+            raw: link.raw,
+            line: link.line,
+            ...(link.label !== undefined ? { label: link.label } : {}),
+            from: link.from,
+            to: link.to,
+          });
+        }
+    leavingLinks.sort(
+      (a, b) =>
+        a.shown.localeCompare(b.shown, undefined, { numeric: true }) ||
+        (a.line ?? 0) - (b.line ?? 0) ||
+        (a.from ?? 0) - (b.from ?? 0),
     );
     this.pruneLinkCache(read);
     const view = (l: Omit<DanglingLink, "tried"> | SchemeLink): CheckedLinkView => ({
@@ -7305,6 +7392,7 @@ export class WorkspaceSession {
       context: l.context,
       from: l.from,
       to: l.to,
+      ...(setOf(l.source) !== undefined ? { set: setOf(l.source) } : {}),
     });
     const order = (a: CheckedLinkView, b: CheckedLinkView) =>
       a.shown.localeCompare(b.shown, undefined, { numeric: true }) ||
@@ -7331,11 +7419,20 @@ export class WorkspaceSession {
       },
     ).map((d) => ({
       name: d.name,
-      files: d.files.map((f) => ({ path: f.path, shown: shown(f.path), suggest: f.suggest })),
+      files: d.files.map((f) => ({
+        path: f.path,
+        shown: shown(f.path),
+        suggest: f.suggest,
+        ...(setOf(f.path) !== undefined ? { set: setOf(f.path) } : {}),
+      })),
     }));
     const unusedImages = [...index.images]
       .filter((p) => basename(dirname(p)) === IMAGES_DIR && !used.has(p))
-      .map((path) => ({ path, shown: shown(path) }))
+      .map((path) => ({
+        path,
+        shown: shown(path),
+        ...(setOf(path) !== undefined ? { set: setOf(path) } : {}),
+      }))
       .sort((a, b) => a.shown.localeCompare(b.shown, undefined, { numeric: true }));
     // Symmetric relations written one way (kit-link-check-symmetry): which
     // relations are symmetric comes from the vocabulary in force for the
@@ -7421,6 +7518,7 @@ export class WorkspaceSession {
     }
     // An `edge` filter without `link` keeps no body link's section.
     if (!keep(BODY_LINKS)) {
+      // (The leaving list kept only the edges the filter names already.)
       dangling.length = 0;
       unsupported.length = 0;
       missingHeadings.length = 0;
@@ -7436,7 +7534,16 @@ export class WorkspaceSession {
       names.length > LINK_CHECK_CAP ||
       unusedImages.length > LINK_CHECK_CAP ||
       symmetry.length > LINK_CHECK_CAP ||
-      references.length > LINK_CHECK_CAP;
+      references.length > LINK_CHECK_CAP ||
+      leavingLinks.length > LINK_CHECK_CAP;
+    const named = new Set<string | undefined>([
+      ...[dangling, unsupported, missingHeadings, ambiguous, symmetry, references, danglingEdges]
+        .flatMap((l) => cut<{ set?: string }>(l))
+        .map((x) => x.set),
+      ...cut(leavingLinks).map((x) => x.set),
+      ...cut(unusedImages).map((x) => x.set),
+      ...cut(names).flatMap((n) => n.files.map((f) => f.set)),
+    ]);
     return {
       count:
         dangling.length +
@@ -7466,6 +7573,11 @@ export class WorkspaceSession {
             },
           }
         : {}),
+      leaving: { count: leavingLinks.length, links: cut(leavingLinks) },
+      // Only the sets the answer names, in the context's order.
+      sets: this.m.context
+        .filter((e) => named.has(e.id))
+        .map((e) => ({ id: e.id, label: e.label })),
       ...(truncated ? { truncated: true as const } : {}),
     };
   }

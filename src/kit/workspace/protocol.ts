@@ -1107,7 +1107,51 @@ export type EdgeBacklinkView = {
 };
 
 /** An app's edge that nothing answers: `tried` is every place the resolver looked. */
-export type CheckedEdgeView = Omit<EdgeBacklinkView, "rel"> & { tried: string[] };
+export type CheckedEdgeView = Omit<EdgeBacklinkView, "rel"> & {
+  tried: string[];
+  /**
+   * Where the edge is written in the source's active text, as offsets: the
+   * app's line when it gives one, else the first place its target is written
+   * in the frontmatter (`line` is filled from it). Absent when neither finds it.
+   */
+  from?: number;
+  to?: number;
+  /** The id of the set (context entry) the source is in. */
+  set?: string;
+};
+
+/**
+ * A link or an app edge that lands on a file outside the set it is written in:
+ * a document in another set, or a file in no set at all. Not a problem (a set
+ * may well point beyond itself), but the human should know the set is not
+ * self-contained, as the shipped Scriptorium map said "N leaving the set".
+ */
+export type LeavingLinkView = {
+  /** The document it is written in, absolute. */
+  source: string;
+  name: string;
+  /** Its path from the root of its set. */
+  shown: string;
+  /** The 1-based line of the source file, when known. */
+  line?: number;
+  /** The target exactly as written. */
+  raw: string;
+  label?: string;
+  /** Where it is written, as offsets, when known: what opening it reveals. */
+  from?: number;
+  to?: number;
+  /** The file it lands on, absolute. */
+  target: string;
+  /** The file as a person reads it: its path in its own set, else from the source's set root. */
+  targetShown: string;
+  /** The label of the set the target is in; absent for a file in no set. */
+  targetSet?: string;
+  /** An app edge's kind (`frontmatter`); absent for a body link. */
+  edge?: string;
+  key?: string;
+  /** The id of the set the source is in. */
+  set?: string;
+};
 
 /** A bundle that references a document: the boards a document is on, each with the cards that point at it. */
 export type ReferenceBacklinkView = {
@@ -1148,6 +1192,8 @@ export type ReferenceView = {
  */
 export type CheckedReferenceView = ReferenceView & {
   source: string;
+  /** The id of the set (context entry) the source is in. */
+  set?: string;
   bundle: string;
   name: string;
   shown: string;
@@ -1257,6 +1303,8 @@ export type CheckedLinkView = {
   /** Where the link sits in the source's active text, as offsets. */
   from: number;
   to: number;
+  /** The id of the set (context entry) the source is in: what the list groups by. */
+  set?: string;
 };
 
 /** A document sharing its file name with another, and the name it could take. */
@@ -1266,6 +1314,8 @@ export type SharedNameFile = {
   shown: string;
   /** A suggested new name, free in its folder and in the session. Never applied. */
   suggest: string;
+  /** The id of the set (context entry) the file is in. */
+  set?: string;
 };
 
 /**
@@ -1295,7 +1345,7 @@ export type LinkCheck = {
    * else (a mood board, references) needs no embed to belong. Not in `count`,
    * which counts problems with links: an unused image is not a broken link.
    */
-  unusedImages: { count: number; images: { path: string; shown: string }[] };
+  unusedImages: { count: number; images: { path: string; shown: string; set?: string }[] };
   /**
    * Links carrying a relation the vocabulary declares symmetric, written one
    * way only: the document linked to writes no link with that relation back.
@@ -1329,6 +1379,17 @@ export type LinkCheck = {
    * adds edges; `kinds` is every edge kind among them. Counted in `count`.
    */
   edges?: { count: number; kinds: string[]; links: CheckedEdgeView[] };
+  /**
+   * Links and app edges that land outside the set they are written in
+   * (`LeavingLinkView`). Not in `count`: leaving the set is not broken. The
+   * `edge` filter applies as it does to the other sections.
+   */
+  leaving?: { count: number; links: LeavingLinkView[] };
+  /**
+   * The session's sets, in the context's order: each entry above names its
+   * set by `set`, and a list grouped by set titles each group from here.
+   */
+  sets?: { id: string; label: string }[];
   truncated?: true;
 };
 
