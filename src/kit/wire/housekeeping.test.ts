@@ -1,5 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { drainAndStop, shouldIdleClose, startHousekeeping } from "./housekeeping.ts";
+import {
+  drainAndStop,
+  readSeconds,
+  shouldIdleClose,
+  startHousekeeping,
+  TIMER_MAX_S,
+} from "./housekeeping.ts";
 import type { SseClients } from "./sse.ts";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -22,6 +28,50 @@ describe("shouldIdleClose", () => {
   test("the floor is inclusive and not crossed early", () => {
     expect(shouldIdleClose(0, 4_999, 5_000)).toBe(false);
     expect(shouldIdleClose(0, 5_000, 5_000)).toBe(true);
+  });
+});
+
+describe("readSeconds", () => {
+  test("a plain count of seconds reads, 0 (stands until closed) and fractions included", () => {
+    expect(readSeconds("0")).toEqual({ ok: true, seconds: 0 });
+    expect(readSeconds("1800")).toEqual({ ok: true, seconds: 1800 });
+    expect(readSeconds("0.6")).toEqual({ ok: true, seconds: 0.6 });
+    expect(readSeconds(" 30 ")).toEqual({ ok: true, seconds: 30 });
+  });
+
+  test("⛔ anything else is refused, never coerced to NaN (which never idle-closes)", () => {
+    const huge = "9".repeat(400); // matches the pattern, and is still Infinity
+    for (const t of [
+      "",
+      " ",
+      "abc",
+      "NaN",
+      "Infinity",
+      "-5",
+      "+5",
+      "1e3",
+      "0x10",
+      "5s",
+      ".5",
+      huge,
+    ]) {
+      const r = readSeconds(t);
+      expect(r.ok, t).toBe(false);
+      if (!r.ok) expect(r.message).toContain("is not a number of seconds");
+    }
+  });
+
+  test("the refusal names the valid form, which `.5` and `5.` are not", () => {
+    for (const t of [".5", "5."]) {
+      const r = readSeconds(t);
+      expect(r.ok, t).toBe(false);
+      if (!r.ok) expect(r.message).toContain("such as 90 or 0.5");
+    }
+  });
+
+  test("TIMER_MAX_S is the longest wait one setTimeout holds, in whole seconds", () => {
+    expect(TIMER_MAX_S * 1000).toBeLessThanOrEqual(2 ** 31 - 1);
+    expect((TIMER_MAX_S + 1) * 1000).toBeGreaterThan(2 ** 31 - 1);
   });
 });
 

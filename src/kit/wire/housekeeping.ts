@@ -79,6 +79,41 @@ export function shouldIdleClose(
   return idleMs >= timeoutMs;
 }
 
+/**
+ * A count of seconds from a command line (`--timeout`, `--start-timeout`):
+ * a plain non-negative decimal, `0` included, fractions allowed.
+ *
+ * ⛔ Refused rather than coerced. `Number("abc")` is `NaN`, which compares
+ * false against every threshold, so a daemon given `--timeout abc` never idle-
+ * closed, and `Math.max(5000, NaN)` is `NaN`. Empty, signs, exponents, hex and
+ * `Infinity` are refused too: `0` is the one way to say "stands until closed"
+ * (`shouldIdleClose`), so `Infinity` and a negative would be second spellings
+ * of it.
+ *
+ * No upper bound here: the idle sweep compares on an interval, so any finite
+ * count works. A count that becomes ONE `setTimeout` delay has a ceiling, which
+ * is `TIMER_MAX_S`.
+ */
+export function readSeconds(
+  token: string,
+): { ok: true; seconds: number } | { ok: false; message: string } {
+  const t = token.trim();
+  // `isFinite` too: four hundred digits match, and are still `Infinity`.
+  if (!/^\d+(\.\d+)?$/.test(t) || !Number.isFinite(Number(t)))
+    return {
+      ok: false,
+      message: `"${token}" is not a number of seconds: write one such as 90 or 0.5 (0 or more, no sign or exponent)`,
+    };
+  return { ok: true, seconds: Number(t) };
+}
+
+/**
+ * The longest single `setTimeout` delay, in whole seconds. Past 2^31 - 1 ms the
+ * runtime sets the delay to 1 ms (a `TimeoutOverflowWarning`), so a longer wait
+ * fires at once: `open --start-timeout 9999999` failed as `internal`.
+ */
+export const TIMER_MAX_S = Math.floor((2 ** 31 - 1) / 1000);
+
 export interface HousekeepingOptions {
   /** ⛔ REQUIRED. See `shouldIdleClose` — this is what closes L1. */
   subscriberCount: () => number;

@@ -56,6 +56,7 @@ import {
   type SessionPointer,
 } from "../wire/discovery";
 import { CliError, die, type ErrExtra, type ErrKind, reportCliError } from "../wire/errors";
+import { readSeconds, TIMER_MAX_S } from "../wire/housekeeping";
 import { stdinWaiting } from "../wire/stdinPeek";
 import {
   commandLine,
@@ -211,6 +212,30 @@ export function parseCount(token: string, what: string): number {
   const t = token.trim();
   if (!/^\d+$/.test(t)) die(`${what}: "${token}" is not a whole number`, "usage");
   return Number(t);
+}
+
+/**
+ * A seconds flag on `open` (`--timeout`, `--start-timeout`), read before any
+ * daemon starts: absent is undefined, anything that is not a number of
+ * seconds is a `usage` refusal (`readSeconds`), never a NaN handed on. `max`,
+ * when given, is refused above too (a wait that becomes one timer).
+ */
+export function flagSeconds(
+  v: FlagValue | undefined,
+  flag: string,
+  hint: string,
+  max?: number,
+): number | undefined {
+  if (v === undefined) return undefined;
+  if (typeof v !== "string")
+    die(`open ${flag}: give it once, as a number of seconds`, "usage", { hint });
+  const r = readSeconds(v);
+  if (!r.ok) die(`open ${flag}: ${r.message}`, "usage", { hint });
+  if (max !== undefined && r.seconds > max)
+    die(`open ${flag}: ${r.seconds} seconds is longer than the longest wait (${max})`, "usage", {
+      hint,
+    });
+  return r.seconds;
 }
 
 /**
@@ -475,18 +500,30 @@ export type WorkspaceCliOptions = {
   helpFooter?: string;
   /** Where discovery pointers are read from; default the OS temp directory. */
   discovery?: DiscoveryOptions;
+  /**
+   * How long a bare `tail` keeps waiting on a newest session that has ended
+   * before it says `tail.closed` about it. Default `open`'s start timeout: a
+   * daemon `open` is starting records itself as the newest only once it is up.
+   */
+  tailEndedGraceMs?: number;
 };
 
 export type WorkspaceCli = Cli & {
   /** Runs the CLI, triaging a thrown non-`CliError` the way the kit does. */
   run(argv: string[]): Promise<number>;
+  /** How long a bare `tail` waits out an ended newest session (`tailEndedGraceMs`, else the default). */
+  tailEndedGraceMs: number;
 };
 
 /** Every flag rejection's hint: the one repair for prose in which a word happens to start with `--`. */
 const DASH_HINT = "for free text containing dashes, put it after a bare --";
 
+/** How long `open` waits for its daemon by default, and so how long a bare tail waits on an ended newest session. */
+export const DEFAULT_START_TIMEOUT_MS = 45_000;
+
 export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
   const app = opts.app.name;
+  const endedGraceMs = opts.tailEndedGraceMs ?? DEFAULT_START_TIMEOUT_MS;
   /** The app has no home workspace: nothing is written where the caller did not point. */
   const noHome = !hasHomeWorkspace(opts.app);
   const options = {
@@ -733,6 +770,20 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
   // ── the verbs ───────────────────────────────────────────────────────────
 
   async function cmdOpen(pos: string[], flags: Flags): Promise<void> {
+    // Read before anything starts: a value that is not a number is refused
+    // here, so no daemon is ever spawned on it (`readSeconds`).
+    const timeoutS = flagSeconds(
+      flags.timeout,
+      "--timeout",
+      "seconds idle before the session closes (default 1800); 0 stands until closed",
+    );
+    const startTimeoutS = flagSeconds(
+      flags["start-timeout"],
+      "--start-timeout",
+      `seconds to wait for the daemon to start (at least 5, at most ${TIMER_MAX_S})`,
+      // One `setTimeout` (`startDaemon`); `--timeout` has no such ceiling.
+      TIMER_MAX_S,
+    );
     const root = opts.sessionsRoot();
     // No home workspace: a new session opened on nothing shows the folder it
     // was opened in, as an ordinary entry (a set) the human sees and can
@@ -770,7 +821,9 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
     }
 
     const daemonArgs = [...opts.daemon.args];
-    if (typeof flags.timeout === "string") daemonArgs.push("--timeout", flags.timeout);
+    // The token as given (trimmed), not `String(n)`: a large count prints as
+    // `1e+21`, which the daemon's own read would refuse.
+    if (timeoutS !== undefined) daemonArgs.push("--timeout", String(flags.timeout).trim());
     if (typeof flags.restore === "string") daemonArgs.push("--restore", flags.restore);
     // A new session's workspace is the folder holding the one folder it was
     // given, else where `open` ran, never a set's folder (`defaultWorkspace`).
@@ -798,9 +851,9 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
     daemonArgs.push("--log", logFile);
 
     const startTimeoutMs =
-      typeof flags["start-timeout"] === "string"
-        ? Math.max(5000, Number.parseInt(flags["start-timeout"], 10) * 1000)
-        : 45000;
+      startTimeoutS !== undefined
+        ? Math.max(5000, Math.round(startTimeoutS * 1000))
+        : DEFAULT_START_TIMEOUT_MS;
 
     type Handshake = {
       url: string;
@@ -946,6 +999,8 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
   ): Promise<number> {
     let boundId = session;
     const reArm = session !== undefined || o.sinceGiven;
+    /** The ended newest session a bare tail is waiting out, and since when. */
+    let endedSeen: { id: string; at: number } | undefined;
     let grounded = o.sinceGiven;
     // `--all` rides every re-arm: a tail asked for the quiet events keeps asking.
     const pin = () => [
@@ -971,6 +1026,42 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
           // session, so not finding it means it closed (in the gap, say): the
           // handoff says `tail.closed`, never a silent retry-forever.
           if (everResolved || reArm) return "stop";
+          // A bare tail routes as every other verb does: to the newest session
+          // only, re-read on every retry, so a session that comes up binds.
+          //
+          // ⚠ AN ENDED NEWEST SESSION MAY BE ABOUT TO BE REPLACED. A daemon
+          // that `open` is starting (new, or restoring this one) records itself
+          // as the newest only once it is up (`recordLastOpened`, after its
+          // pointer), and an agent often arms the tail and runs `open` in the
+          // same breath. So the end must hold through the grace window
+          // (`open`'s start timeout) before the tail says `tail.closed` about
+          // it, with its `by`, rather than waiting forever for a daemon that
+          // will not come back. A newest session with no end recorded, or none
+          // at all, is waited on as before.
+          //
+          // An end `by: "agent"` stops at once: the agent closed it itself, and
+          // is the one who would be opening the next.
+          const newest = newestSession();
+          const by = newest !== undefined ? endedBy(newest) : undefined;
+          if (newest !== undefined && by === "agent") {
+            boundId = newest;
+            return "stop";
+          }
+          if (newest !== undefined && by !== undefined) {
+            const now = Date.now();
+            if (endedSeen?.id !== newest) {
+              endedSeen = { id: newest, at: now };
+              process.stderr.write(
+                `# session ${newest} was ended (by ${by}); waiting ${Math.round(endedGraceMs / 1000)}s for a new one before stopping...\n`,
+              );
+            }
+            if (now - endedSeen.at >= endedGraceMs) {
+              boundId = newest;
+              return "stop";
+            }
+            return "retry";
+          }
+          endedSeen = undefined;
           process.stderr.write("# no session yet, retrying...\n");
           return "retry";
         },
@@ -1768,10 +1859,14 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
 
   Output: JSON on stdout, one document per answer, except tail (one JSON line
   per event) and help (prose). tail's stderr also carries \`: ${app}-keepalive\`
-  lines while the stream is quiet: not JSON, so a reader of both streams
-  skips any line starting with \`:\`. Failures: one JSON envelope on stderr, exit
-  2 = usage, 1 = internal, 5 = not found, 6 = conflict. tail waits for a
-  session rather than failing, and ends 0 when its session closes. tail
+  lines while the stream is quiet, and \`# \` status lines while it waits: not
+  JSON, so a reader of both streams skips any line starting with \`:\` or \`#\`.
+  Failures: one JSON envelope on stderr, exit 2 = usage, 1 = internal, 5 = not
+  found, 6 = conflict. tail waits for a session rather than failing, and ends 0
+  when its session closes; with no --session, it follows the newest session,
+  and if the human or the idle timeout ended it and no new one comes up within
+  open's default start timeout (${DEFAULT_START_TIMEOUT_MS / 1000} s), it ends 0 with tail.closed saying who
+  ended it; ended by the agent, it ends at once. tail
   ${WINDOW_HELP}.${opts.helpFooter ? `\n\n${opts.helpFooter}` : ""}`,
   });
 
@@ -1792,5 +1887,5 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
     }
   }
 
-  return Object.assign(cli, { run });
+  return Object.assign(cli, { run, tailEndedGraceMs: endedGraceMs });
 }

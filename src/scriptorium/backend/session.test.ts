@@ -539,8 +539,8 @@ describe("the manifest survives a restart (--restore)", () => {
     const before = readFileSync(path);
     const e = refusal(() => Session.restore(home, kit.id));
     expect(e.status).toBe(409);
-    expect(e.message).toContain("SCRIPTORIUM_KIT=1");
-    expect(e.hint).toContain("kit/sessions");
+    expect(e.message).toContain("SCRIPTORIUM_SHIPPED=1");
+    expect(e.hint).toContain("unset SCRIPTORIUM_SHIPPED");
     expect(readFileSync(path).equals(before)).toBe(true);
   });
 

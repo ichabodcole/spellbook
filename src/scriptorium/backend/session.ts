@@ -358,10 +358,10 @@ export class Session {
     // written, so the file is left as it was.
     if ("appName" in m || typeof m.createdAt !== "number")
       throw new SessionError(
-        `session ${sessionId} was not written by this Scriptorium: its manifest is the workspace kit's (open it with SCRIPTORIUM_KIT=1)`,
+        `session ${sessionId} was converted for the current Scriptorium, or started on it: the earlier one (SCRIPTORIUM_SHIPPED=1) cannot read it`,
         409,
         undefined,
-        "a kit-path session lives under $SCRIPTORIUM_HOME/kit/sessions and opens with SCRIPTORIUM_KIT=1",
+        "unset SCRIPTORIUM_SHIPPED and open it again: a converted session's old manifest is kept beside it as manifest.pre-migrate.json",
       );
     const s = new Session(home, m);
     mkdirSync(join(s.dir, "docs"), { recursive: true });

@@ -2025,6 +2025,21 @@ function ShellBody({
                               />
                             </span>
                           )}
+                          {/* The mark's words, read out when they change: the
+                          open float's badge is a live region, and closing it
+                          must not make a wait going quiet ("may be stuck")
+                          silent. Polite, as that badge is. Here only while the
+                          float is closed, so the two never speak at once; it
+                          stays while nothing waits, so the next wait is a
+                          change it can announce. */}
+                          <span
+                            aria-live="polite"
+                            aria-atomic="true"
+                            data-slot="chat-rail-waiting-live"
+                            className="sr-only"
+                          >
+                            {composerWaiting?.label ?? ""}
+                          </span>
                         </span>
                       )}
                       {/* Asks for attention, so it never fades with the rail. A button

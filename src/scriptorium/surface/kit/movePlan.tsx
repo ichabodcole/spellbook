@@ -8,7 +8,7 @@
  * itself: after it, the shell's relink bar (`kit/context/RelinkBar.tsx`, under
  * the context's undo arrows) offers to update them, as one act with the move.
  *
- * Kit path only (`SCRIPTORIUM_KIT=1`). The shipped surface does not import this
+ * Kit page only. The shipped surface does not import this
  * file; the kit page (`./Frame.tsx`) passes it to the shell, which hands it to
  * `ContextSidebar` as `beforeMove={scriptoriumBeforeMove(daemon, { userHome })}`.
  *

@@ -1,11 +1,11 @@
-// The conversion dry run (`SCRIPTORIUM_KIT_MIGRATE=1`), driven through
-// Scriptorium's own LAUNCHERS (build first): a session the shipped Scriptorium
-// wrote is restored by the kit path, converted as it is read. Everything runs
-// under a temp SCRIPTORIUM_HOME and TMPDIR, with the preload's scratch HOME;
-// every daemon this file starts, it stops by its own session id.
+// The conversion, driven through Scriptorium's own LAUNCHERS (build first): a
+// session the earlier Scriptorium wrote (through the hatch,
+// `SCRIPTORIUM_SHIPPED=1`) is restored by the current one with no variable,
+// converted as it is read. Everything runs under a temp SCRIPTORIUM_HOME and
+// TMPDIR, with the preload's scratch HOME; every daemon this file starts, it
+// stops by its own session id.
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import {
-  existsSync,
   mkdirSync,
   mkdtempSync,
   readdirSync,
@@ -45,10 +45,10 @@ const base = {
   TMPDIR: `${join(root, "tmp")}/`,
   NODE_ENV: "test",
 };
-delete (base as Record<string, string | undefined>).SCRIPTORIUM_KIT;
-delete (base as Record<string, string | undefined>).SCRIPTORIUM_KIT_MIGRATE;
-const shippedEnv = base;
-const migrateEnv = { ...base, SCRIPTORIUM_KIT: "1", SCRIPTORIUM_KIT_MIGRATE: "1" };
+delete (base as Record<string, string | undefined>).SCRIPTORIUM_SHIPPED;
+/** The earlier Scriptorium, through the hatch; and the default, with no variable. */
+const shippedEnv = { ...base, SCRIPTORIUM_SHIPPED: "1" };
+const migrateEnv = base;
 mkdirSync(join(root, "tmp"), { recursive: true });
 const docs = join(root, "docs");
 mkdirSync(docs, { recursive: true });
@@ -108,35 +108,9 @@ afterAll(async () => {
   rmSync(root, { recursive: true, force: true });
 });
 
-describe("the conversion dry run is off for real use", () => {
-  test("refused without SCRIPTORIUM_HOME, and on the default ~/.scriptorium, before anything runs", async () => {
-    const before = manifestText();
-    const unset: Record<string, string | undefined> = { ...migrateEnv };
-    delete unset.SCRIPTORIUM_HOME;
-    for (const env of [
-      unset,
-      { ...migrateEnv, SCRIPTORIUM_HOME: join(String(process.env.HOME), ".scriptorium") },
-    ]) {
-      const r = await run(env, "open", "--no-open", "--restore", id);
-      expect(r.code).toBe(2);
-      expect(r.out).toBe("");
-      const e = envelope(r);
-      expect(e.kind).toBe("usage");
-      expect(e.message).toContain("SCRIPTORIUM_KIT_MIGRATE=1");
-      expect(e.hint).toContain("scratch copy");
-    }
-    expect(manifestText()).toBe(before);
-    expect(existsSync(join(String(process.env.HOME), ".scriptorium"))).toBe(false);
-  });
-
-  test("without SCRIPTORIUM_KIT the flag means nothing: the shipped Scriptorium restores its own session as ever", async () => {
-    const r = await run(
-      { ...shippedEnv, SCRIPTORIUM_KIT_MIGRATE: "1" },
-      "open",
-      "--no-open",
-      "--restore",
-      id,
-    );
+describe("before any conversion, the hatch runs the earlier Scriptorium", () => {
+  test("it restores its own session as ever, and converts nothing", async () => {
+    const r = await run(shippedEnv, "open", "--no-open", "--restore", id);
     expect(r.code).toBe(0);
     await closeById(shippedEnv, id, shippedPointer(id));
     const m = JSON.parse(manifestText()) as Record<string, unknown>;
@@ -146,7 +120,7 @@ describe("the conversion dry run is off for real use", () => {
   }, 30_000);
 });
 
-describe("the kit path, with the dry-run flag, restores a shipped session converted", () => {
+describe("with no variable, Scriptorium restores an earlier session converted", () => {
   let original = "";
   let versionFiles: string[] = [];
 
@@ -193,10 +167,14 @@ describe("the kit path, with the dry-run flag, restores a shipped session conver
     );
   });
 
-  test("once converted, the shipped Scriptorium refuses it: why the dry run runs only on a copy", async () => {
+  test("once converted, the hatch is refused before any verb runs (exit 2, with a hint)", async () => {
     await closeById(migrateEnv, id, kitPointer(id));
     const r = await run(shippedEnv, "open", "--no-open", "--restore", id);
-    expect(r.code).toBe(6);
-    expect(envelope(r).message).toContain("SCRIPTORIUM_KIT=1");
+    expect(r.code).toBe(2);
+    expect(r.out).toBe("");
+    const e = envelope(r);
+    expect(e.kind).toBe("usage");
+    expect(e.message).toContain("SCRIPTORIUM_SHIPPED=1 is closed");
+    expect(e.hint).toContain("unset SCRIPTORIUM_SHIPPED");
   }, 30_000);
 });

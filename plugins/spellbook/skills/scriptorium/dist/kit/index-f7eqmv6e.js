@@ -23796,8 +23796,2008 @@ function useAskLocation({
 // src/kit/document/DocumentPane.tsx
 var import_react29 = __toESM(require_react(), 1);
 
-// src/kit/chat/NoteAtSelection.tsx
+// node_modules/react-resizable-panels/dist/react-resizable-panels.js
+var import_jsx_runtime16 = __toESM(require_jsx_runtime(), 1);
 var import_react9 = __toESM(require_react(), 1);
+"use client";
+function St(e, t) {
+  const n = getComputedStyle(e), o = parseFloat(n.fontSize);
+  return t * o;
+}
+function vt(e, t) {
+  const n = getComputedStyle(e.ownerDocument.documentElement), o = parseFloat(n.fontSize);
+  return t * o;
+}
+function bt(e) {
+  return e / 100 * window.innerHeight;
+}
+function zt(e) {
+  return e / 100 * window.innerWidth;
+}
+function xt(e) {
+  switch (typeof e) {
+    case "number":
+      return [e, "px"];
+    case "string": {
+      const t = parseFloat(e);
+      return e.endsWith("%") ? [t, "%"] : e.endsWith("px") ? [t, "px"] : e.endsWith("rem") ? [t, "rem"] : e.endsWith("em") ? [t, "em"] : e.endsWith("vh") ? [t, "vh"] : e.endsWith("vw") ? [t, "vw"] : [t, "%"];
+    }
+  }
+}
+function oe({
+  groupSize: e,
+  panelElement: t,
+  styleProp: n
+}) {
+  let o;
+  const [i, s] = xt(n);
+  switch (s) {
+    case "%": {
+      o = i / 100 * e;
+      break;
+    }
+    case "px": {
+      o = i;
+      break;
+    }
+    case "rem": {
+      o = vt(t, i);
+      break;
+    }
+    case "em": {
+      o = St(t, i);
+      break;
+    }
+    case "vh": {
+      o = bt(i);
+      break;
+    }
+    case "vw": {
+      o = zt(i);
+      break;
+    }
+  }
+  return o;
+}
+function T(e) {
+  return parseFloat(e.toFixed(3));
+}
+function ne({
+  group: e
+}) {
+  const { orientation: t, panels: n } = e;
+  return n.reduce((o, i) => (o += t === "horizontal" ? i.element.offsetWidth : i.element.offsetHeight, o), 0);
+}
+function be(e) {
+  const { panels: t } = e, n = ne({ group: e });
+  return n === 0 ? t.map((o) => ({
+    groupResizeBehavior: o.panelConstraints.groupResizeBehavior,
+    collapsedSize: 0,
+    collapsible: o.panelConstraints.collapsible === true,
+    defaultSize: undefined,
+    disabled: o.panelConstraints.disabled,
+    minSize: 0,
+    maxSize: 100,
+    panelId: o.id
+  })) : t.map((o) => {
+    const { element: i, panelConstraints: s } = o;
+    let u = 0;
+    if (s.collapsedSize !== undefined) {
+      const c = oe({
+        groupSize: n,
+        panelElement: i,
+        styleProp: s.collapsedSize
+      });
+      u = T(c / n * 100);
+    }
+    let a;
+    if (s.defaultSize !== undefined) {
+      const c = oe({
+        groupSize: n,
+        panelElement: i,
+        styleProp: s.defaultSize
+      });
+      a = T(c / n * 100);
+    }
+    let r2 = 0;
+    if (s.minSize !== undefined) {
+      const c = oe({
+        groupSize: n,
+        panelElement: i,
+        styleProp: s.minSize
+      });
+      r2 = T(c / n * 100);
+    }
+    let l = 100;
+    if (s.maxSize !== undefined) {
+      const c = oe({
+        groupSize: n,
+        panelElement: i,
+        styleProp: s.maxSize
+      });
+      l = T(c / n * 100);
+    }
+    return {
+      groupResizeBehavior: s.groupResizeBehavior,
+      collapsedSize: u,
+      collapsible: s.collapsible === true,
+      defaultSize: a,
+      disabled: s.disabled,
+      minSize: r2,
+      maxSize: l,
+      panelId: o.id
+    };
+  });
+}
+function C(e, t = "Assertion error") {
+  if (!e)
+    throw Error(t);
+}
+function ze(e, t) {
+  return Array.from(t).sort(e === "horizontal" ? Pt : wt);
+}
+function Pt(e, t) {
+  const n = e.element.offsetLeft - t.element.offsetLeft;
+  return n !== 0 ? n : e.element.offsetWidth - t.element.offsetWidth;
+}
+function wt(e, t) {
+  const n = e.element.offsetTop - t.element.offsetTop;
+  return n !== 0 ? n : e.element.offsetHeight - t.element.offsetHeight;
+}
+function Ye(e) {
+  return e !== null && typeof e == "object" && "nodeType" in e && e.nodeType === Node.ELEMENT_NODE;
+}
+function Je(e, t) {
+  return {
+    x: e.x >= t.left && e.x <= t.right ? 0 : Math.min(Math.abs(e.x - t.left), Math.abs(e.x - t.right)),
+    y: e.y >= t.top && e.y <= t.bottom ? 0 : Math.min(Math.abs(e.y - t.top), Math.abs(e.y - t.bottom))
+  };
+}
+function Lt({
+  orientation: e,
+  rects: t,
+  targetRect: n
+}) {
+  const o = {
+    x: n.x + n.width / 2,
+    y: n.y + n.height / 2
+  };
+  let i, s = Number.MAX_VALUE;
+  for (const u of t) {
+    const { x: a, y: r2 } = Je(o, u), l = e === "horizontal" ? a : r2;
+    l < s && (s = l, i = u);
+  }
+  return C(i, "No rect found"), i;
+}
+var de;
+function Ct() {
+  return de === undefined && (typeof matchMedia == "function" ? de = !!matchMedia("(pointer:coarse)").matches : de = false), de;
+}
+function Ze(e) {
+  const { element: t, orientation: n, panels: o, separators: i } = e, s = ze(n, Array.from(t.children).filter(Ye).map((z) => ({ element: z }))).map(({ element: z }) => z), u = [];
+  let a = false, r2 = false, l = -1, c = -1, m = 0, p, S = [];
+  {
+    let z = -1;
+    for (const f of s)
+      f.hasAttribute("data-panel") && (z++, f.hasAttribute("data-disabled") || (m++, l === -1 && (l = z), c = z));
+  }
+  if (m > 1) {
+    let z = -1;
+    for (const f of s)
+      if (f.hasAttribute("data-panel")) {
+        z++;
+        const d = o.find((h) => h.element === f);
+        if (d) {
+          if (p) {
+            const h = p.element.getBoundingClientRect(), y = f.getBoundingClientRect();
+            let b;
+            if (r2) {
+              const v = n === "horizontal" ? new DOMRect(h.right, h.top, 0, h.height) : new DOMRect(h.left, h.bottom, h.width, 0), g = n === "horizontal" ? new DOMRect(y.left, y.top, 0, y.height) : new DOMRect(y.left, y.top, y.width, 0);
+              switch (S.length) {
+                case 0: {
+                  b = [
+                    v,
+                    g
+                  ];
+                  break;
+                }
+                case 1: {
+                  const w = S[0], E = Lt({
+                    orientation: n,
+                    rects: [h, y],
+                    targetRect: w.element.getBoundingClientRect()
+                  });
+                  b = [
+                    w,
+                    E === h ? g : v
+                  ];
+                  break;
+                }
+                default: {
+                  b = S;
+                  break;
+                }
+              }
+            } else
+              S.length ? b = S : b = [
+                n === "horizontal" ? new DOMRect(h.right, y.top, y.left - h.right, y.height) : new DOMRect(y.left, h.bottom, y.width, y.top - h.bottom)
+              ];
+            for (const v of b) {
+              let g = "width" in v ? v : v.element.getBoundingClientRect();
+              const w = Ct() ? e.resizeTargetMinimumSize.coarse : e.resizeTargetMinimumSize.fine;
+              if (g.width < w) {
+                const L = w - g.width;
+                g = new DOMRect(g.x - L / 2, g.y, g.width + L, g.height);
+              }
+              if (g.height < w) {
+                const L = w - g.height;
+                g = new DOMRect(g.x, g.y - L / 2, g.width, g.height + L);
+              }
+              const E = z <= l || z > c;
+              !a && !E && u.push({
+                group: e,
+                groupSize: ne({ group: e }),
+                panels: [p, d],
+                separator: "width" in v ? undefined : v,
+                rect: g
+              }), a = false;
+            }
+          }
+          r2 = false, p = d, S = [];
+        }
+      } else if (f.hasAttribute("data-separator")) {
+        f.ariaDisabled !== null && (a = true);
+        const d = i.find((h) => h.element === f);
+        d ? S.push(d) : (p = undefined, S = []);
+      } else
+        r2 = true;
+  }
+  return u;
+}
+
+class Qe {
+  #e = {};
+  addListener(t, n) {
+    const o = this.#e[t];
+    return o === undefined ? this.#e[t] = [n] : o.includes(n) || o.push(n), () => {
+      this.removeListener(t, n);
+    };
+  }
+  emit(t, n) {
+    const o = this.#e[t];
+    if (o !== undefined)
+      if (o.length === 1)
+        o[0].call(null, n);
+      else {
+        let i = false, s = null;
+        const u = Array.from(o);
+        for (let a = 0;a < u.length; a++) {
+          const r2 = u[a];
+          try {
+            r2.call(null, n);
+          } catch (l) {
+            s === null && (i = true, s = l);
+          }
+        }
+        if (i)
+          throw s;
+      }
+  }
+  removeAllListeners() {
+    this.#e = {};
+  }
+  removeListener(t, n) {
+    const o = this.#e[t];
+    if (o !== undefined) {
+      const i = o.indexOf(n);
+      i >= 0 && o.splice(i, 1);
+    }
+  }
+}
+var ee = {
+  cursorFlags: 0,
+  state: "inactive"
+};
+var xe = new Qe;
+function W() {
+  return ee;
+}
+function Rt(e) {
+  return xe.addListener("change", e);
+}
+function Et(e) {
+  const t = ee, n = { ...ee };
+  n.cursorFlags = e, ee = n, xe.emit("change", {
+    prev: t,
+    next: n
+  });
+}
+function te(e) {
+  const t = ee;
+  ee = e, xe.emit("change", {
+    prev: t,
+    next: e
+  });
+}
+var Mt = (e) => e;
+var Se = () => {};
+var et = 1;
+var tt = 2;
+var nt = 4;
+var ot = 8;
+var Ie = 3;
+var ke = 12;
+var pe;
+function De() {
+  return pe === undefined && (pe = false, typeof window < "u" && (window.navigator.userAgent.includes("Chrome") || window.navigator.userAgent.includes("Firefox")) && (pe = true)), pe;
+}
+function It({
+  cursorFlags: e,
+  groups: t,
+  state: n
+}) {
+  let o = 0, i = 0;
+  switch (n) {
+    case "active":
+    case "hover":
+      t.forEach((s) => {
+        if (!s.mutableState.disableCursor)
+          switch (s.orientation) {
+            case "horizontal": {
+              o++;
+              break;
+            }
+            case "vertical": {
+              i++;
+              break;
+            }
+          }
+      });
+  }
+  if (!(o === 0 && i === 0)) {
+    switch (n) {
+      case "active": {
+        if (e && De()) {
+          const s = (e & et) !== 0, u = (e & tt) !== 0, a = (e & nt) !== 0, r2 = (e & ot) !== 0;
+          if (s)
+            return a ? "se-resize" : r2 ? "ne-resize" : "e-resize";
+          if (u)
+            return a ? "sw-resize" : r2 ? "nw-resize" : "w-resize";
+          if (a)
+            return "s-resize";
+          if (r2)
+            return "n-resize";
+        }
+        break;
+      }
+    }
+    return De() ? o > 0 && i > 0 ? "move" : o > 0 ? "ew-resize" : "ns-resize" : o > 0 && i > 0 ? "grab" : o > 0 ? "col-resize" : "row-resize";
+  }
+}
+var Te = /* @__PURE__ */ new WeakMap;
+function Pe(e) {
+  if (!e.defaultView || !e.adoptedStyleSheets)
+    return;
+  let { prevStyle: t, styleSheet: n } = Te.get(e) ?? {};
+  n === undefined && (n = new e.defaultView.CSSStyleSheet, e.adoptedStyleSheets && (Object.isExtensible(e.adoptedStyleSheets) ? e.adoptedStyleSheets.push(n) : e.adoptedStyleSheets = [
+    ...e.adoptedStyleSheets,
+    n
+  ]));
+  const o = W();
+  switch (o.state) {
+    case "active":
+    case "hover": {
+      const i = It({
+        cursorFlags: o.cursorFlags,
+        groups: o.hitRegions.map((u) => u.group),
+        state: o.state
+      }), s = `*, *:hover {cursor: ${i} !important; }`;
+      if (t === s)
+        return;
+      t = s, i ? n.cssRules.length === 0 ? n.insertRule(s) : n.replaceSync(s) : n.cssRules.length === 1 && n.deleteRule(0);
+      break;
+    }
+    case "inactive": {
+      t = undefined, n.cssRules.length === 1 && n.deleteRule(0);
+      break;
+    }
+  }
+  Te.set(e, {
+    prevStyle: t,
+    styleSheet: n
+  });
+}
+var F = /* @__PURE__ */ new Map;
+var it = new Qe;
+function kt(e) {
+  F = new Map(F), F.delete(e);
+}
+function Oe(e, t) {
+  for (const [n] of F)
+    if (n.id === e)
+      return n;
+}
+function H(e, t) {
+  for (const [n, o] of F)
+    if (n.id === e)
+      return o;
+  if (t)
+    throw Error(`Could not find data for Group with id ${e}`);
+}
+function V() {
+  return F;
+}
+function we(e, t) {
+  return it.addListener("groupChange", (n) => {
+    n.group.id === e && t(n);
+  });
+}
+function j(e, t, n) {
+  const o = F.get(e);
+  F = new Map(F), F.set(e, t), it.emit("groupChange", {
+    group: e,
+    isUserInteraction: n?.isUserInteraction === true,
+    prev: o,
+    next: t
+  });
+}
+function rt(e) {
+  const t = W(), n = V();
+  let o = false;
+  switch (t.state) {
+    case "active":
+      te({
+        cursorFlags: 0,
+        state: "inactive"
+      }), t.hitRegions.length > 0 && (Pe(e), o = true, t.hitRegions.forEach((i) => {
+        if (!n.has(i.group))
+          return;
+        const s = H(i.group.id, true);
+        j(i.group, s, {
+          isUserInteraction: true
+        });
+      }));
+  }
+  return o;
+}
+function Ge(e) {
+  e.defaultPrevented || rt(e.currentTarget);
+}
+function Dt(e, t, n) {
+  let o, i = {
+    x: 1 / 0,
+    y: 1 / 0
+  };
+  for (const s of t) {
+    const u = Je(n, s.rect);
+    switch (e) {
+      case "horizontal": {
+        u.x <= i.x && (o = s, i = u);
+        break;
+      }
+      case "vertical": {
+        u.y <= i.y && (o = s, i = u);
+        break;
+      }
+    }
+  }
+  return o ? {
+    distance: i,
+    hitRegion: o
+  } : undefined;
+}
+function Tt(e) {
+  return e !== null && typeof e == "object" && "nodeType" in e && e.nodeType === Node.DOCUMENT_FRAGMENT_NODE;
+}
+function Ot(e, t) {
+  if (e === t)
+    throw new Error("Cannot compare node with itself");
+  const n = {
+    a: Ne(e),
+    b: Ne(t)
+  };
+  let o;
+  for (;n.a.at(-1) === n.b.at(-1); )
+    o = n.a.pop(), n.b.pop();
+  C(o, "Stacking order can only be calculated for elements with a common ancestor");
+  const i = {
+    a: Fe(Ae(n.a)),
+    b: Fe(Ae(n.b))
+  };
+  if (i.a === i.b) {
+    const s = o.childNodes, u = {
+      a: n.a.at(-1),
+      b: n.b.at(-1)
+    };
+    let a = s.length;
+    for (;a--; ) {
+      const r2 = s[a];
+      if (r2 === u.a)
+        return 1;
+      if (r2 === u.b)
+        return -1;
+    }
+  }
+  return Math.sign(i.a - i.b);
+}
+var Gt = /\b(?:position|zIndex|opacity|transform|webkitTransform|mixBlendMode|filter|webkitFilter|isolation)\b/;
+function At(e) {
+  const t = getComputedStyle(st(e) ?? e).display;
+  return t === "flex" || t === "inline-flex";
+}
+function Ft(e) {
+  const t = getComputedStyle(e);
+  return !!(t.position === "fixed" || t.zIndex !== "auto" && (t.position !== "static" || At(e)) || +t.opacity < 1 || ("transform" in t) && t.transform !== "none" || ("webkitTransform" in t) && t.webkitTransform !== "none" || ("mixBlendMode" in t) && t.mixBlendMode !== "normal" || ("filter" in t) && t.filter !== "none" || ("webkitFilter" in t) && t.webkitFilter !== "none" || ("isolation" in t) && t.isolation === "isolate" || Gt.test(t.willChange) || t.webkitOverflowScrolling === "touch");
+}
+function Ae(e) {
+  let t = e.length;
+  for (;t--; ) {
+    const n = e[t];
+    if (C(n, "Missing node"), Ft(n))
+      return n;
+  }
+  return null;
+}
+function Fe(e) {
+  return e && Number(getComputedStyle(e).zIndex) || 0;
+}
+function Ne(e) {
+  const t = [];
+  for (;e; )
+    t.push(e), e = st(e);
+  return t;
+}
+function st(e) {
+  const { parentNode: t } = e;
+  return Tt(t) ? t.host : t;
+}
+function Nt(e, t) {
+  return e.x < t.x + t.width && e.x + e.width > t.x && e.y < t.y + t.height && e.y + e.height > t.y;
+}
+function _t({
+  groupElement: e,
+  hitRegion: t,
+  pointerEventTarget: n
+}) {
+  if (!Ye(n) || n.contains(e) || e.contains(n))
+    return true;
+  if (Ot(n, e) > 0) {
+    let o = n;
+    for (;o; ) {
+      if (o.contains(e))
+        return true;
+      if (Nt(o.getBoundingClientRect(), t))
+        return false;
+      o = o.parentElement;
+    }
+  }
+  return true;
+}
+function Le(e, t) {
+  const n = [];
+  return t.forEach((o, i) => {
+    if (i.disabled)
+      return;
+    const s = Ze(i), u = Dt(i.orientation, s, {
+      x: e.clientX,
+      y: e.clientY
+    });
+    u && u.distance.x <= 0 && u.distance.y <= 0 && _t({
+      groupElement: i.element,
+      hitRegion: u.hitRegion.rect,
+      pointerEventTarget: e.target
+    }) && n.push(u.hitRegion);
+  }), n;
+}
+function $t(e, t) {
+  if (e.length !== t.length)
+    return false;
+  for (let n = 0;n < e.length; n++)
+    if (e[n] != t[n])
+      return false;
+  return true;
+}
+function D(e, t, n = 0) {
+  return Math.abs(T(e) - T(t)) <= n;
+}
+function A(e, t) {
+  return D(e, t) ? 0 : e > t ? 1 : -1;
+}
+function Z({
+  overrideDisabledPanels: e,
+  panelConstraints: t,
+  prevSize: n,
+  size: o
+}) {
+  const {
+    collapsedSize: i = 0,
+    collapsible: s,
+    disabled: u,
+    maxSize: a = 100,
+    minSize: r2 = 0
+  } = t;
+  if (u && !e)
+    return n;
+  if (A(o, r2) < 0)
+    if (s) {
+      const l = (i + r2) / 2;
+      A(o, l) < 0 ? o = i : o = r2;
+    } else
+      o = r2;
+  return o = Math.min(a, o), o = T(o), o;
+}
+function ae({
+  delta: e,
+  initialLayout: t,
+  panelConstraints: n,
+  pivotIndices: o,
+  prevLayout: i,
+  trigger: s
+}) {
+  if (D(e, 0))
+    return t;
+  const u = s === "imperative-api", a = Object.values(t), r2 = Object.values(i), l = [...a], [c, m] = o;
+  C(c != null, "Invalid first pivot index"), C(m != null, "Invalid second pivot index");
+  let p = 0;
+  switch (s) {
+    case "keyboard": {
+      {
+        const f = e < 0 ? m : c, d = n[f];
+        C(d, `Panel constraints not found for index ${f}`);
+        const {
+          collapsedSize: h = 0,
+          collapsible: y,
+          minSize: b = 0
+        } = d;
+        if (y) {
+          const v = a[f];
+          if (C(v != null, `Previous layout not found for panel index ${f}`), D(v, h)) {
+            const g = b - v;
+            A(g, Math.abs(e)) > 0 && (e = e < 0 ? 0 - g : g);
+          }
+        }
+      }
+      {
+        const f = e < 0 ? c : m, d = n[f];
+        C(d, `No panel constraints found for index ${f}`);
+        const {
+          collapsedSize: h = 0,
+          collapsible: y,
+          minSize: b = 0
+        } = d;
+        if (y) {
+          const v = a[f];
+          if (C(v != null, `Previous layout not found for panel index ${f}`), D(v, b)) {
+            const g = v - h;
+            A(g, Math.abs(e)) > 0 && (e = e < 0 ? 0 - g : g);
+          }
+        }
+      }
+      break;
+    }
+    default: {
+      const f = e < 0 ? m : c, d = n[f];
+      C(d, `Panel constraints not found for index ${f}`);
+      const h = a[f], { collapsible: y, collapsedSize: b, minSize: v } = d;
+      if (y && A(h, v) < 0)
+        if (e > 0) {
+          const g = v - b, w = g / 2, E = h + e;
+          A(E, v) < 0 && (e = A(e, w) <= 0 ? 0 : g);
+        } else {
+          const g = v - b, w = 100 - g / 2, E = h - e;
+          A(E, v) < 0 && (e = A(100 + e, w) > 0 ? 0 : -g);
+        }
+      break;
+    }
+  }
+  {
+    const f = e < 0 ? 1 : -1;
+    let d = e < 0 ? m : c, h = 0;
+    for (;; ) {
+      const b = a[d];
+      C(b != null, `Previous layout not found for panel index ${d}`);
+      const g = Z({
+        overrideDisabledPanels: u,
+        panelConstraints: n[d],
+        prevSize: b,
+        size: 100
+      }) - b;
+      if (h += g, d += f, d < 0 || d >= n.length)
+        break;
+    }
+    const y = Math.min(Math.abs(e), Math.abs(h));
+    e = e < 0 ? 0 - y : y;
+  }
+  {
+    let d = e < 0 ? c : m;
+    for (;d >= 0 && d < n.length; ) {
+      const h = Math.abs(e) - Math.abs(p), y = a[d];
+      C(y != null, `Previous layout not found for panel index ${d}`);
+      const b = y - h, v = Z({
+        overrideDisabledPanels: u,
+        panelConstraints: n[d],
+        prevSize: y,
+        size: b
+      });
+      if (!D(y, v) && (p += y - v, l[d] = v, p.toFixed(3).localeCompare(Math.abs(e).toFixed(3), undefined, {
+        numeric: true
+      }) >= 0))
+        break;
+      e < 0 ? d-- : d++;
+    }
+  }
+  if ($t(r2, l))
+    return i;
+  {
+    const f = e < 0 ? m : c, d = a[f];
+    C(d != null, `Previous layout not found for panel index ${f}`);
+    const h = d + p, y = Z({
+      overrideDisabledPanels: u,
+      panelConstraints: n[f],
+      prevSize: d,
+      size: h
+    });
+    if (l[f] = y, !D(y, h)) {
+      let b = h - y, g = e < 0 ? m : c;
+      for (;g >= 0 && g < n.length; ) {
+        const w = l[g];
+        C(w != null, `Previous layout not found for panel index ${g}`);
+        const E = w + b, L = Z({
+          overrideDisabledPanels: u,
+          panelConstraints: n[g],
+          prevSize: w,
+          size: E
+        });
+        if (D(w, L) || (b -= L - w, l[g] = L), D(b, 0))
+          break;
+        e > 0 ? g-- : g++;
+      }
+    }
+  }
+  const S = Object.values(l).reduce((f, d) => d + f, 0);
+  if (!D(S, 100, 0.1))
+    return i;
+  const z = Object.keys(i);
+  return l.reduce((f, d, h) => (f[z[h]] = d, f), {});
+}
+function K(e, t) {
+  if (Object.keys(e).length !== Object.keys(t).length)
+    return false;
+  for (const n in e)
+    if (t[n] === undefined || A(e[n], t[n]) !== 0)
+      return false;
+  return true;
+}
+function X2({
+  layout: e,
+  panelConstraints: t
+}) {
+  const n = Object.values(e), o = [...n], i = o.reduce((a, r2) => a + r2, 0);
+  if (o.length !== t.length)
+    throw Error(`Invalid ${t.length} panel layout: ${o.map((a) => `${a}%`).join(", ")}`);
+  if (!D(i, 100) && o.length > 0)
+    for (let a = 0;a < t.length; a++) {
+      const r2 = o[a];
+      C(r2 != null, `No layout data found for index ${a}`);
+      const l = 100 / i * r2;
+      o[a] = l;
+    }
+  let s = 0;
+  for (let a = 0;a < t.length; a++) {
+    const r2 = n[a];
+    C(r2 != null, `No layout data found for index ${a}`);
+    const l = o[a];
+    C(l != null, `No layout data found for index ${a}`);
+    const c = Z({
+      overrideDisabledPanels: true,
+      panelConstraints: t[a],
+      prevSize: r2,
+      size: l
+    });
+    l != c && (s += l - c, o[a] = c);
+  }
+  if (!D(s, 0))
+    for (let a = 0;a < t.length; a++) {
+      const r2 = o[a];
+      C(r2 != null, `No layout data found for index ${a}`);
+      const l = r2 + s, c = Z({
+        overrideDisabledPanels: true,
+        panelConstraints: t[a],
+        prevSize: r2,
+        size: l
+      });
+      if (r2 !== c && (s -= c - r2, o[a] = c, D(s, 0)))
+        break;
+    }
+  const u = Object.keys(e);
+  return o.reduce((a, r2, l) => (a[u[l]] = r2, a), {});
+}
+function at({
+  groupId: e,
+  panelId: t
+}) {
+  const n = () => {
+    const r2 = V();
+    for (const [
+      l,
+      {
+        defaultLayoutDeferred: c,
+        derivedPanelConstraints: m,
+        layout: p,
+        groupSize: S,
+        separatorToPanels: z
+      }
+    ] of r2)
+      if (l.id === e)
+        return {
+          defaultLayoutDeferred: c,
+          derivedPanelConstraints: m,
+          group: l,
+          groupSize: S,
+          layout: p,
+          separatorToPanels: z
+        };
+    throw Error(`Group ${e} not found`);
+  }, o = () => {
+    const r2 = n().derivedPanelConstraints.find((l) => l.panelId === t);
+    if (r2 !== undefined)
+      return r2;
+    throw Error(`Panel constraints not found for Panel ${t}`);
+  }, i = () => {
+    const r2 = n().group.panels.find((l) => l.id === t);
+    if (r2 !== undefined)
+      return r2;
+    throw Error(`Layout not found for Panel ${t}`);
+  }, s = () => {
+    const r2 = n().layout[t];
+    if (r2 !== undefined)
+      return r2;
+    throw Error(`Layout not found for Panel ${t}`);
+  }, u = ({
+    nextSize: r2,
+    panels: l,
+    prevLayout: c,
+    derivedPanelConstraints: m
+  }) => {
+    const p = s(), S = l.findIndex((h) => h.id === t), z = S === 0, f = S === l.length - 1;
+    if (f && r2 < p && (z || l.slice(0, S).every((h, y) => {
+      const b = m[y];
+      return b?.collapsible && D(b.collapsedSize, c[b.panelId]);
+    }))) {
+      const h = l.slice(0, S).reduce((y, b) => y + c[b.id], 0);
+      return {
+        ...c,
+        [t]: T(100 - h)
+      };
+    }
+    return ae({
+      delta: f ? p - r2 : r2 - p,
+      initialLayout: c,
+      panelConstraints: m,
+      pivotIndices: f ? [S - 1, S] : [S, S + 1],
+      prevLayout: c,
+      trigger: "imperative-api"
+    });
+  }, a = (r2) => {
+    const l = s();
+    if (r2 === l)
+      return;
+    const {
+      defaultLayoutDeferred: c,
+      derivedPanelConstraints: m,
+      group: p,
+      groupSize: S,
+      layout: z,
+      separatorToPanels: f
+    } = n(), d = u({
+      nextSize: r2,
+      panels: p.panels,
+      prevLayout: z,
+      derivedPanelConstraints: m
+    }), h = X2({
+      layout: d,
+      panelConstraints: m
+    });
+    K(z, h) || j(p, {
+      defaultLayoutDeferred: c,
+      derivedPanelConstraints: m,
+      groupSize: S,
+      layout: h,
+      separatorToPanels: f
+    });
+  };
+  return {
+    collapse: () => {
+      const { collapsible: r2, collapsedSize: l } = o(), { mutableValues: c } = i(), m = s();
+      r2 && m !== l && (c.expandToSize = m, a(l));
+    },
+    expand: () => {
+      const { collapsible: r2, collapsedSize: l, minSize: c } = o(), { mutableValues: m } = i(), p = s();
+      if (r2 && p === l) {
+        let S = m.expandToSize ?? c;
+        S === 0 && (S = 1), a(S);
+      }
+    },
+    getSize: () => {
+      const { group: r2 } = n(), l = s(), { element: c } = i(), m = r2.orientation === "horizontal" ? c.offsetWidth : c.offsetHeight;
+      return {
+        asPercentage: l,
+        inPixels: m
+      };
+    },
+    isCollapsed: () => {
+      const { collapsible: r2, collapsedSize: l } = o(), c = s();
+      return r2 && D(l, c);
+    },
+    resize: (r2) => {
+      const { group: l } = n(), { element: c } = i(), m = ne({ group: l }), p = oe({
+        groupSize: m,
+        panelElement: c,
+        styleProp: r2
+      }), S = T(p / m * 100);
+      a(S);
+    }
+  };
+}
+function _e(e) {
+  if (e.defaultPrevented)
+    return;
+  const t = V();
+  Le(e, t).forEach((o) => {
+    if (o.separator && !o.separator.disableDoubleClick) {
+      const i = o.panels.find((s) => s.panelConstraints.defaultSize !== undefined);
+      if (i) {
+        const s = i.panelConstraints.defaultSize, u = at({
+          groupId: o.group.id,
+          panelId: i.id
+        });
+        u && s !== undefined && (u.resize(s), e.preventDefault());
+      }
+    }
+  });
+}
+function he(e) {
+  const t = V();
+  for (const [n] of t)
+    if (n.separators.some((o) => o.element === e))
+      return n;
+  throw Error("Could not find parent Group for separator element");
+}
+function lt({
+  groupId: e
+}) {
+  const t = () => {
+    const n = V();
+    for (const [o, i] of n)
+      if (o.id === e)
+        return { group: o, ...i };
+    throw Error(`Could not find Group with id "${e}"`);
+  };
+  return {
+    getLayout() {
+      const { defaultLayoutDeferred: n, layout: o } = t();
+      return n ? {} : o;
+    },
+    setLayout(n) {
+      const {
+        defaultLayoutDeferred: o,
+        derivedPanelConstraints: i,
+        group: s,
+        groupSize: u,
+        layout: a,
+        separatorToPanels: r2
+      } = t(), l = X2({
+        layout: n,
+        panelConstraints: i
+      });
+      return o ? a : (K(a, l) || j(s, {
+        defaultLayoutDeferred: o,
+        derivedPanelConstraints: i,
+        groupSize: u,
+        layout: l,
+        separatorToPanels: r2
+      }), l);
+    }
+  };
+}
+function B(e, t) {
+  const n = he(e), o = H(n.id, true), i = n.separators.find((m) => m.element === e);
+  C(i, "Matching separator not found");
+  const s = o.separatorToPanels.get(i);
+  C(s, "Matching panels not found");
+  const u = s.map((m) => n.panels.indexOf(m)), r2 = lt({ groupId: n.id }).getLayout(), l = ae({
+    delta: t,
+    initialLayout: r2,
+    panelConstraints: o.derivedPanelConstraints,
+    pivotIndices: u,
+    prevLayout: r2,
+    trigger: "keyboard"
+  }), c = X2({
+    layout: l,
+    panelConstraints: o.derivedPanelConstraints
+  });
+  K(r2, c) || j(n, {
+    defaultLayoutDeferred: o.defaultLayoutDeferred,
+    derivedPanelConstraints: o.derivedPanelConstraints,
+    groupSize: o.groupSize,
+    layout: c,
+    separatorToPanels: o.separatorToPanels
+  }, { isUserInteraction: true });
+}
+function $e(e) {
+  if (e.defaultPrevented)
+    return;
+  const t = e.currentTarget, n = he(t);
+  if (!n.disabled)
+    switch (e.key) {
+      case "ArrowDown": {
+        e.preventDefault(), n.orientation === "vertical" && B(t, 5);
+        break;
+      }
+      case "ArrowLeft": {
+        e.preventDefault(), n.orientation === "horizontal" && B(t, -5);
+        break;
+      }
+      case "ArrowRight": {
+        e.preventDefault(), n.orientation === "horizontal" && B(t, 5);
+        break;
+      }
+      case "ArrowUp": {
+        e.preventDefault(), n.orientation === "vertical" && B(t, -5);
+        break;
+      }
+      case "End": {
+        e.preventDefault(), B(t, 100);
+        break;
+      }
+      case "Enter": {
+        e.preventDefault();
+        const o = he(t), i = H(o.id, true), { derivedPanelConstraints: s, layout: u, separatorToPanels: a } = i, r2 = o.separators.find((p) => p.element === t);
+        C(r2, "Matching separator not found");
+        const l = a.get(r2);
+        C(l, "Matching panels not found");
+        const c = l[0], m = s.find((p) => p.panelId === c.id);
+        if (C(m, "Panel metadata not found"), m.collapsible) {
+          const p = u[c.id], S = m.collapsedSize === p ? o.mutableState.expandedPanelSizes[c.id] ?? m.minSize : m.collapsedSize;
+          B(t, S - p);
+        }
+        break;
+      }
+      case "F6": {
+        e.preventDefault();
+        const i = he(t).separators.map((r2) => r2.element), s = Array.from(i).findIndex((r2) => r2 === e.currentTarget);
+        C(s !== null, "Index not found");
+        const u = e.shiftKey ? s > 0 ? s - 1 : i.length - 1 : s + 1 < i.length ? s + 1 : 0;
+        i[u].focus({
+          preventScroll: true
+        });
+        break;
+      }
+      case "Home": {
+        e.preventDefault(), B(t, -100);
+        break;
+      }
+    }
+}
+function je(e) {
+  if (e.defaultPrevented)
+    return;
+  if (e.pointerType === "mouse" && e.button > 0)
+    return;
+  const t = V(), n = Le(e, t), o = /* @__PURE__ */ new Map;
+  let i = false;
+  n.forEach((s) => {
+    s.separator && (i || (i = true, s.separator.element.focus({
+      focusVisible: false,
+      preventScroll: true
+    })));
+    const u = t.get(s.group);
+    u && o.set(s.group, u.layout);
+  }), te({
+    cursorFlags: 0,
+    hitRegions: n,
+    initialLayoutMap: o,
+    pointerDownAtPoint: { x: e.clientX, y: e.clientY },
+    state: "active"
+  }), n.length && e.preventDefault();
+}
+function ut({
+  document: e,
+  event: t,
+  hitRegions: n,
+  initialLayoutMap: o,
+  mountedGroups: i,
+  pointerDownAtPoint: s,
+  prevCursorFlags: u
+}) {
+  let a = 0;
+  n.forEach((l) => {
+    const { group: c, groupSize: m } = l, { orientation: p, panels: S } = c, { disableCursor: z } = c.mutableState;
+    let f = 0;
+    s ? p === "horizontal" ? f = (t.clientX - s.x) / m * 100 : f = (t.clientY - s.y) / m * 100 : p === "horizontal" ? f = t.clientX < 0 ? -100 : 100 : f = t.clientY < 0 ? -100 : 100;
+    const d = o.get(c), h = i.get(c);
+    if (!d || !h)
+      return;
+    const {
+      defaultLayoutDeferred: y,
+      derivedPanelConstraints: b,
+      groupSize: v,
+      layout: g,
+      separatorToPanels: w
+    } = h;
+    if (b && g && w) {
+      const E = ae({
+        delta: f,
+        initialLayout: d,
+        panelConstraints: b,
+        pivotIndices: l.panels.map((L) => S.indexOf(L)),
+        prevLayout: g,
+        trigger: "mouse-or-touch"
+      });
+      if (K(E, g)) {
+        if (f !== 0 && !z)
+          switch (p) {
+            case "horizontal": {
+              a |= f < 0 ? et : tt;
+              break;
+            }
+            case "vertical": {
+              a |= f < 0 ? nt : ot;
+              break;
+            }
+          }
+      } else
+        j(l.group, {
+          defaultLayoutDeferred: y,
+          derivedPanelConstraints: b,
+          groupSize: v,
+          layout: E,
+          separatorToPanels: w
+        });
+    }
+  });
+  let r2 = 0;
+  t.movementX === 0 ? r2 |= u & Ie : r2 |= a & Ie, t.movementY === 0 ? r2 |= u & ke : r2 |= a & ke, Et(r2), Pe(e);
+}
+function He(e) {
+  const t = V(), n = W();
+  switch (n.state) {
+    case "active":
+      ut({
+        document: e.currentTarget,
+        event: e,
+        hitRegions: n.hitRegions,
+        initialLayoutMap: n.initialLayoutMap,
+        mountedGroups: t,
+        prevCursorFlags: n.cursorFlags
+      });
+  }
+}
+function Ve(e) {
+  if (e.defaultPrevented)
+    return;
+  const t = W(), n = V();
+  switch (t.state) {
+    case "active": {
+      if (e.buttons === 0) {
+        te({
+          cursorFlags: 0,
+          state: "inactive"
+        }), t.hitRegions.forEach((o) => {
+          if (!n.has(o.group))
+            return;
+          const i = H(o.group.id, true);
+          j(o.group, i, {
+            isUserInteraction: true
+          });
+        });
+        return;
+      }
+      for (const o of t.hitRegions)
+        if (o.separator) {
+          const { element: i } = o.separator;
+          i.isConnected && !i.hasPointerCapture?.(e.pointerId) && i.setPointerCapture?.(e.pointerId);
+        }
+      ut({
+        document: e.currentTarget,
+        event: e,
+        hitRegions: t.hitRegions,
+        initialLayoutMap: t.initialLayoutMap,
+        mountedGroups: n,
+        pointerDownAtPoint: t.pointerDownAtPoint,
+        prevCursorFlags: t.cursorFlags
+      });
+      break;
+    }
+    default: {
+      const o = Le(e, n);
+      o.length === 0 ? t.state !== "inactive" && te({
+        cursorFlags: 0,
+        state: "inactive"
+      }) : te({
+        cursorFlags: 0,
+        hitRegions: o,
+        state: "hover"
+      }), Pe(e.currentTarget);
+      break;
+    }
+  }
+}
+function Ue(e) {
+  if (e.relatedTarget instanceof HTMLIFrameElement)
+    switch (W().state) {
+      case "hover":
+        te({
+          cursorFlags: 0,
+          state: "inactive"
+        });
+    }
+}
+function Be(e) {
+  if (e.defaultPrevented)
+    return;
+  if (e.pointerType === "mouse" && e.button > 0)
+    return;
+  rt(e.currentTarget) && e.preventDefault();
+}
+function We(e) {
+  let t = 0, n = 0;
+  const o = {};
+  for (const s of e)
+    if (s.defaultSize !== undefined) {
+      t++;
+      const u = T(s.defaultSize);
+      n += u, o[s.panelId] = u;
+    } else
+      o[s.panelId] = undefined;
+  const i = e.length - t;
+  if (i !== 0) {
+    const s = T((100 - n) / i);
+    for (const u of e)
+      u.defaultSize === undefined && (o[u.panelId] = s);
+  }
+  return o;
+}
+function jt(e, t, n) {
+  if (!n[0])
+    return;
+  const i = e.panels.find((l) => l.element === t);
+  if (!i || !i.onResize)
+    return;
+  const s = ne({ group: e }), u = e.orientation === "horizontal" ? i.element.offsetWidth : i.element.offsetHeight, a = i.mutableValues.prevSize, r2 = {
+    asPercentage: T(u / s * 100),
+    inPixels: u
+  };
+  i.mutableValues.prevSize = r2, i.onResize(r2, i.id, a);
+}
+function Ht(e, t) {
+  if (Object.keys(e).length !== Object.keys(t).length)
+    return false;
+  for (const o in e)
+    if (e[o] !== t[o])
+      return false;
+  return true;
+}
+function Vt(e, t) {
+  return e.length !== t.length ? false : e.every((n, o) => Ht(n, t[o]));
+}
+function Ut({
+  group: e,
+  nextGroupSize: t,
+  prevGroupSize: n,
+  prevLayout: o
+}) {
+  if (n <= 0 || t <= 0 || n === t)
+    return o;
+  let i = 0, s = 0, u = false;
+  const a = /* @__PURE__ */ new Map, r2 = [];
+  for (const m of e.panels) {
+    const p = o[m.id] ?? 0;
+    switch (m.panelConstraints.groupResizeBehavior) {
+      case "preserve-pixel-size": {
+        u = true;
+        const S = p / 100 * n, z = T(S / t * 100);
+        a.set(m.id, z), i += z;
+        break;
+      }
+      case "preserve-relative-size":
+      default: {
+        r2.push(m.id), s += p;
+        break;
+      }
+    }
+  }
+  if (!u || r2.length === 0)
+    return o;
+  const l = 100 - i, c = { ...o };
+  if (a.forEach((m, p) => {
+    c[p] = m;
+  }), s > 0)
+    for (const m of r2) {
+      const p = o[m] ?? 0;
+      c[m] = T(p / s * l);
+    }
+  else {
+    const m = T(l / r2.length);
+    for (const p of r2)
+      c[p] = m;
+  }
+  return c;
+}
+function Bt(e, t) {
+  const n = e.map((i) => i.id), o = Object.keys(t);
+  if (n.length !== o.length)
+    return false;
+  for (const i of n)
+    if (!o.includes(i))
+      return false;
+  return true;
+}
+var J = /* @__PURE__ */ new Map;
+function Wt(e) {
+  let t = true;
+  C(e.element.ownerDocument.defaultView, "Cannot register an unmounted Group");
+  const n = e.element.ownerDocument.defaultView.ResizeObserver, o = /* @__PURE__ */ new Set, i = /* @__PURE__ */ new Set, s = new n((f) => {
+    for (const d of f) {
+      const { borderBoxSize: h, target: y } = d;
+      if (y === e.element) {
+        if (t) {
+          const b = ne({ group: e });
+          if (b === 0)
+            return;
+          const v = H(e.id);
+          if (!v)
+            return;
+          const g = be(e), w = v.defaultLayoutDeferred ? We(g) : v.layout, E = Ut({
+            group: e,
+            nextGroupSize: b,
+            prevGroupSize: v.groupSize,
+            prevLayout: w
+          }), L = X2({
+            layout: E,
+            panelConstraints: g
+          });
+          if (!v.defaultLayoutDeferred && K(v.layout, L) && Vt(v.derivedPanelConstraints, g) && v.groupSize === b)
+            continue;
+          j(e, {
+            defaultLayoutDeferred: false,
+            derivedPanelConstraints: g,
+            groupSize: b,
+            layout: L,
+            separatorToPanels: v.separatorToPanels
+          });
+        }
+      } else
+        jt(e, y, h);
+    }
+  });
+  s.observe(e.element), e.panels.forEach((f) => {
+    C(!o.has(f.id), `Panel ids must be unique; id "${f.id}" was used more than once`), o.add(f.id), f.onResize && s.observe(f.element);
+  });
+  const u = ne({ group: e }), a = be(e), r2 = e.panels.map(({ id: f }) => f).join(",");
+  let l = e.mutableState.defaultLayout;
+  l && (Bt(e.panels, l) || (l = undefined));
+  const c = e.mutableState.layouts[r2] ?? l ?? We(a), m = X2({
+    layout: c,
+    panelConstraints: a
+  }), p = e.element.ownerDocument;
+  J.set(p, (J.get(p) ?? 0) + 1);
+  const S = /* @__PURE__ */ new Map;
+  return Ze(e).forEach((f) => {
+    f.separator && S.set(f.separator, f.panels);
+  }), j(e, {
+    defaultLayoutDeferred: u === 0,
+    derivedPanelConstraints: a,
+    groupSize: u,
+    layout: m,
+    separatorToPanels: S
+  }), e.separators.forEach((f) => {
+    C(!i.has(f.id), `Separator ids must be unique; id "${f.id}" was used more than once`), i.add(f.id), f.element.addEventListener("keydown", $e);
+  }), J.get(p) === 1 && (p.addEventListener("contextmenu", Ge, true), p.addEventListener("dblclick", _e, true), p.addEventListener("pointerdown", je, true), p.addEventListener("pointerleave", He), p.addEventListener("pointermove", Ve), p.addEventListener("pointerout", Ue), p.addEventListener("pointerup", Be, true)), function() {
+    t = false, J.set(p, Math.max(0, (J.get(p) ?? 0) - 1)), kt(e), e.separators.forEach((d) => {
+      d.element.removeEventListener("keydown", $e);
+    }), J.get(p) || (p.removeEventListener("contextmenu", Ge, true), p.removeEventListener("dblclick", _e, true), p.removeEventListener("pointerdown", je, true), p.removeEventListener("pointerleave", He), p.removeEventListener("pointermove", Ve), p.removeEventListener("pointerout", Ue), p.removeEventListener("pointerup", Be, true)), s.disconnect();
+  };
+}
+function Kt() {
+  const [e, t] = import_react9.useState({}), n = import_react9.useCallback(() => t({}), []);
+  return [e, n];
+}
+function Ce(e) {
+  const t = import_react9.useId();
+  return `${e ?? t}`;
+}
+var q = typeof window < "u" ? import_react9.useLayoutEffect : import_react9.useEffect;
+function re(e) {
+  const t = import_react9.useRef(e);
+  return q(() => {
+    t.current = e;
+  }, [e]), import_react9.useCallback((...n) => t.current?.(...n), [t]);
+}
+function Re(...e) {
+  return re((t) => {
+    e.forEach((n) => {
+      if (n)
+        switch (typeof n) {
+          case "function": {
+            n(t);
+            break;
+          }
+          case "object": {
+            n.current = t;
+            break;
+          }
+        }
+    });
+  });
+}
+function Ee(e) {
+  const t = import_react9.useRef({ ...e });
+  return q(() => {
+    for (const n in e)
+      t.current[n] = e[n];
+  }, [e]), t.current;
+}
+var ct = import_react9.createContext(null);
+function Xt(e, t) {
+  const n = import_react9.useRef({
+    getLayout: () => ({}),
+    setLayout: Mt
+  });
+  import_react9.useImperativeHandle(t, () => n.current, []), q(() => {
+    Object.assign(n.current, lt({ groupId: e }));
+  });
+}
+function qt({
+  children: e,
+  className: t,
+  defaultLayout: n,
+  disableCursor: o,
+  disabled: i,
+  elementRef: s,
+  groupRef: u,
+  id: a,
+  onLayoutChange: r2,
+  onLayoutChanged: l,
+  orientation: c = "horizontal",
+  resizeTargetMinimumSize: m = {
+    coarse: 20,
+    fine: 10
+  },
+  style: p,
+  ...S
+}) {
+  const z = import_react9.useRef({
+    onLayoutChange: {},
+    onLayoutChanged: {}
+  }), f = re((x) => {
+    K(z.current.onLayoutChange, x) || (z.current.onLayoutChange = x, r2?.(x));
+  }), d = re((x, P) => {
+    K(z.current.onLayoutChanged, x) || (z.current.onLayoutChanged = x, l?.(x, { isUserInteraction: P }));
+  }), h = Ce(a), y = import_react9.useRef(null), [b, v] = Kt(), g = import_react9.useRef({
+    lastExpandedPanelSizes: {},
+    layouts: {},
+    panels: [],
+    resizeTargetMinimumSize: m,
+    separators: []
+  }), w = Re(y, s);
+  Xt(h, u);
+  const E = re((x, P) => {
+    const I = W(), R = Oe(x), M = H(x);
+    if (M) {
+      let k = false;
+      switch (I.state) {
+        case "active": {
+          k = I.hitRegions.some((U) => U.group === R);
+          break;
+        }
+      }
+      return {
+        flexGrow: M.layout[P] ?? 1,
+        pointerEvents: k ? "none" : undefined
+      };
+    }
+    if (n?.[P])
+      return {
+        flexGrow: n?.[P]
+      };
+  }), L = Ee({
+    defaultLayout: n,
+    disableCursor: o
+  }), G = import_react9.useMemo(() => ({
+    get disableCursor() {
+      return !!L.disableCursor;
+    },
+    getPanelStyles: E,
+    id: h,
+    orientation: c,
+    registerPanel: (x) => {
+      const P = g.current;
+      return P.panels = ze(c, [
+        ...P.panels,
+        x
+      ]), v(), () => {
+        P.panels = P.panels.filter((I) => I !== x), v();
+      };
+    },
+    registerSeparator: (x) => {
+      const P = g.current;
+      return P.separators = ze(c, [
+        ...P.separators,
+        x
+      ]), v(), () => {
+        P.separators = P.separators.filter((I) => I !== x), v();
+      };
+    },
+    updatePanelProps: (x, { disabled: P }) => {
+      const R = g.current.panels.find((U) => U.id === x);
+      R && (R.panelConstraints.disabled = P);
+      const M = Oe(h), k = H(h);
+      M && k && j(M, {
+        ...k,
+        derivedPanelConstraints: be(M)
+      });
+    },
+    updateSeparatorProps: (x, {
+      disabled: P,
+      disableDoubleClick: I
+    }) => {
+      const M = g.current.separators.find((k) => k.id === x);
+      M && (M.disabled = P, M.disableDoubleClick = I);
+    }
+  }), [E, h, v, c, L]), N = import_react9.useRef(null);
+  return q(() => {
+    const x = y.current;
+    if (x === null)
+      return;
+    const P = g.current;
+    let I;
+    if (L.defaultLayout !== undefined && Object.keys(L.defaultLayout).length === P.panels.length) {
+      I = {};
+      for (const _ of P.panels) {
+        const Y = L.defaultLayout[_.id];
+        Y !== undefined && (I[_.id] = Y);
+      }
+    }
+    const R = {
+      disabled: !!i,
+      element: x,
+      id: h,
+      mutableState: {
+        defaultLayout: I,
+        disableCursor: !!L.disableCursor,
+        expandedPanelSizes: g.current.lastExpandedPanelSizes,
+        layouts: g.current.layouts
+      },
+      orientation: c,
+      panels: P.panels,
+      resizeTargetMinimumSize: P.resizeTargetMinimumSize,
+      separators: P.separators
+    };
+    N.current = R;
+    const M = Wt(R), { defaultLayoutDeferred: k, derivedPanelConstraints: U, layout: le } = H(R.id, true);
+    !k && U.length > 0 && (f(le), d(le, false));
+    const ue = we(h, (_) => {
+      const { defaultLayoutDeferred: Y, derivedPanelConstraints: ce, layout: fe } = _.next;
+      if (Y || ce.length === 0)
+        return;
+      const ft = R.panels.map(({ id: $ }) => $).join(",");
+      R.mutableState.layouts[ft] = fe, ce.forEach(($) => {
+        if ($.collapsible) {
+          const { layout: ye } = _.prev ?? {};
+          if (ye) {
+            const pt = D($.collapsedSize, fe[$.panelId]), ht = D($.collapsedSize, ye[$.panelId]);
+            pt && !ht && (R.mutableState.expandedPanelSizes[$.panelId] = ye[$.panelId]);
+          }
+        }
+      });
+      const dt = W().state !== "active";
+      f(fe), dt && d(fe, _.isUserInteraction);
+    });
+    return () => {
+      N.current = null, M(), ue();
+    };
+  }, [
+    i,
+    h,
+    d,
+    f,
+    c,
+    b,
+    L
+  ]), import_react9.useEffect(() => {
+    const x = N.current;
+    x && (x.mutableState.defaultLayout = n, x.mutableState.disableCursor = !!o);
+  }), /* @__PURE__ */ import_jsx_runtime16.jsx(ct.Provider, { value: G, children: /* @__PURE__ */ import_jsx_runtime16.jsx("div", {
+    ...S,
+    className: t,
+    "data-group": true,
+    "data-testid": h,
+    id: h,
+    ref: w,
+    style: {
+      height: "100%",
+      width: "100%",
+      overflow: "hidden",
+      ...p,
+      display: "flex",
+      flexDirection: c === "horizontal" ? "row" : "column",
+      flexWrap: "nowrap",
+      touchAction: c === "horizontal" ? "pan-y" : "pan-x"
+    },
+    children: e
+  }) });
+}
+qt.displayName = "Group";
+function me(e, t) {
+  return `react-resizable-panels:${[e, ...t].join(":")}`;
+}
+function Yt({
+  id: e,
+  panelIds: t,
+  storage: n
+}) {
+  const o = me(e, []), i = n.getItem(o);
+  if (i)
+    try {
+      const s = JSON.parse(i);
+      if (t) {
+        const u = t.join(","), a = s[u];
+        if (a && Array.isArray(a.layout) && t.length === a.layout.length) {
+          const r2 = {};
+          for (let l = 0;l < t.length; l++)
+            r2[t[l]] = a.layout[l];
+          return r2;
+        }
+      } else {
+        const u = Object.keys(s);
+        if (u.length === 1) {
+          const a = s[u[0]];
+          if (a && Array.isArray(a.layout)) {
+            const r2 = u[0].split(",");
+            if (r2.length === a.layout.length) {
+              const l = {};
+              for (let c = 0;c < r2.length; c++)
+                l[r2[c]] = a.layout[c];
+              return l;
+            }
+          }
+        }
+      }
+    } catch {}
+}
+function an({
+  debounceSaveMs: e = 100,
+  onlySaveAfterUserInteractions: t,
+  panelIds: n,
+  storage: o = localStorage,
+  ...i
+}) {
+  const s = n !== undefined, u = "id" in i ? i.id : i.groupId, a = me(u, n ?? []), r2 = import_react9.useSyncExternalStore(Jt, () => o.getItem(a), () => o.getItem(a)), l = import_react9.useMemo(() => {
+    if (r2) {
+      const d = JSON.parse(r2), h = Object.values(d);
+      if (Array.from(h).every((y) => typeof y == "number"))
+        return d;
+    }
+  }, [r2]), c = import_react9.useMemo(() => {
+    if (!l)
+      return Yt({
+        id: u,
+        panelIds: n,
+        storage: o
+      });
+  }, [l, u, n, o]), m = l ?? c, p = import_react9.useRef(null), S = import_react9.useCallback(() => {
+    const d = p.current;
+    d && (p.current = null, clearTimeout(d));
+  }, []);
+  import_react9.useLayoutEffect(() => () => {
+    S();
+  }, [S]);
+  const z = import_react9.useCallback((d, h) => {
+    if (t && !h.isUserInteraction)
+      return;
+    S();
+    let y;
+    s ? y = me(u, Object.keys(d)) : y = me(u, []);
+    try {
+      o.setItem(y, JSON.stringify(d));
+    } catch (b) {
+      console.error(b);
+    }
+  }, [
+    S,
+    s,
+    u,
+    t,
+    o
+  ]), f = import_react9.useCallback((d) => {
+    S(), e === 0 ? z(d, { isUserInteraction: false }) : p.current = setTimeout(() => {
+      z(d, { isUserInteraction: false });
+    }, e);
+  }, [S, e, z]);
+  return {
+    defaultLayout: m,
+    onLayoutChange: f,
+    onLayoutChanged: z
+  };
+}
+function Jt() {
+  return function() {};
+}
+function Me() {
+  const e = import_react9.useContext(ct);
+  return C(e, "Group Context not found; did you render a Panel or Separator outside of a Group?"), e;
+}
+function Zt(e, t) {
+  const { id: n } = Me(), o = import_react9.useRef({
+    collapse: Se,
+    expand: Se,
+    getSize: () => ({
+      asPercentage: 0,
+      inPixels: 0
+    }),
+    isCollapsed: () => false,
+    resize: Se
+  });
+  import_react9.useImperativeHandle(t, () => o.current, []), q(() => {
+    Object.assign(o.current, at({ groupId: n, panelId: e }));
+  });
+}
+function Qt({
+  children: e,
+  className: t,
+  collapsedSize: n = "0%",
+  collapsible: o = false,
+  defaultSize: i,
+  disabled: s,
+  elementRef: u,
+  groupResizeBehavior: a = "preserve-relative-size",
+  id: r2,
+  maxSize: l = "100%",
+  minSize: c = "0%",
+  onResize: m,
+  panelRef: p,
+  style: S,
+  ...z
+}) {
+  const f = !!r2, d = Ce(r2), h = Ee({
+    disabled: s
+  }), y = import_react9.useRef(null), b = Re(y, u), {
+    getPanelStyles: v,
+    id: g,
+    orientation: w,
+    registerPanel: E,
+    updatePanelProps: L
+  } = Me(), G = m !== null, N = re((R, M, k) => {
+    m?.(R, r2, k);
+  });
+  q(() => {
+    const R = y.current;
+    if (R !== null) {
+      const M = {
+        element: R,
+        id: d,
+        idIsStable: f,
+        mutableValues: {
+          expandToSize: undefined,
+          prevSize: undefined
+        },
+        onResize: G ? N : undefined,
+        panelConstraints: {
+          groupResizeBehavior: a,
+          collapsedSize: n,
+          collapsible: o,
+          defaultSize: i,
+          disabled: h.disabled,
+          maxSize: l,
+          minSize: c
+        }
+      };
+      return E(M);
+    }
+  }, [
+    a,
+    n,
+    o,
+    i,
+    G,
+    d,
+    f,
+    l,
+    c,
+    N,
+    E,
+    h
+  ]), import_react9.useEffect(() => {
+    L(d, { disabled: s });
+  }, [s, d, L]), Zt(d, p);
+  const x = () => {
+    const R = v(g, d);
+    if (R)
+      return JSON.stringify(R);
+  }, P = import_react9.useSyncExternalStore((R) => we(g, R), x, x);
+  let I;
+  return P ? I = JSON.parse(P) : i !== undefined ? I = {
+    flexGrow: undefined,
+    flexShrink: undefined,
+    flexBasis: i
+  } : I = { flexGrow: 1 }, /* @__PURE__ */ import_jsx_runtime16.jsx("div", {
+    ...z,
+    "data-disabled": s || undefined,
+    "data-panel": true,
+    "data-testid": d,
+    id: d,
+    ref: b,
+    style: {
+      ...en,
+      display: "flex",
+      flexBasis: 0,
+      flexShrink: 1,
+      overflow: "visible",
+      ...I
+    },
+    children: /* @__PURE__ */ import_jsx_runtime16.jsx("div", {
+      className: t,
+      style: {
+        maxHeight: "100%",
+        maxWidth: "100%",
+        flexGrow: 1,
+        overflow: "auto",
+        ...S,
+        touchAction: w === "horizontal" ? "pan-y" : "pan-x"
+      },
+      children: e
+    })
+  });
+}
+Qt.displayName = "Panel";
+var en = {
+  minHeight: 0,
+  maxHeight: "100%",
+  height: "auto",
+  minWidth: 0,
+  maxWidth: "100%",
+  width: "auto",
+  border: "none",
+  borderWidth: 0,
+  padding: 0,
+  margin: 0
+};
+function fn() {
+  return import_react9.useRef(null);
+}
+function tn({
+  layout: e,
+  panelConstraints: t,
+  panelId: n,
+  panelIndex: o
+}) {
+  let i, s;
+  const u = e[n], a = t.find((r2) => r2.panelId === n);
+  if (a) {
+    const r2 = a.maxSize, l = a.collapsible ? a.collapsedSize : a.minSize, c = [o, o + 1];
+    s = X2({
+      layout: ae({
+        delta: l - u,
+        initialLayout: e,
+        panelConstraints: t,
+        pivotIndices: c,
+        prevLayout: e
+      }),
+      panelConstraints: t
+    })[n], i = X2({
+      layout: ae({
+        delta: r2 - u,
+        initialLayout: e,
+        panelConstraints: t,
+        pivotIndices: c,
+        prevLayout: e
+      }),
+      panelConstraints: t
+    })[n];
+  }
+  return {
+    valueControls: n,
+    valueMax: i,
+    valueMin: s,
+    valueNow: u
+  };
+}
+function nn({
+  children: e,
+  className: t,
+  disabled: n,
+  disableDoubleClick: o,
+  elementRef: i,
+  id: s,
+  style: u,
+  ...a
+}) {
+  const r2 = Ce(s), l = Ee({
+    disabled: n,
+    disableDoubleClick: o
+  }), [c, m] = import_react9.useState({}), [p, S] = import_react9.useState("inactive"), [z, f] = import_react9.useState(false), d = import_react9.useRef(null), h = Re(d, i), {
+    disableCursor: y,
+    id: b,
+    orientation: v,
+    registerSeparator: g,
+    updateSeparatorProps: w
+  } = Me(), E = v === "horizontal" ? "vertical" : "horizontal";
+  q(() => {
+    const N = d.current;
+    if (N !== null) {
+      const x = {
+        disabled: l.disabled,
+        disableDoubleClick: l.disableDoubleClick,
+        element: N,
+        id: r2
+      }, P = g(x), I = Rt((M) => {
+        S(M.next.state !== "inactive" && M.next.hitRegions.some((k) => k.separator === x) ? M.next.state : "inactive");
+      }), R = we(b, (M) => {
+        const { derivedPanelConstraints: k, layout: U, separatorToPanels: le } = M.next, ue = le.get(x);
+        if (ue) {
+          const _ = ue[0], Y = k.findIndex((ce) => ce.panelId === _.id);
+          m(tn({
+            layout: U,
+            panelConstraints: k,
+            panelId: _.id,
+            panelIndex: Y
+          }));
+        }
+      });
+      return () => {
+        I(), R(), P();
+      };
+    }
+  }, [b, r2, g, l]), import_react9.useEffect(() => {
+    w(r2, { disabled: n, disableDoubleClick: o });
+  }, [n, o, r2, w]);
+  let L;
+  n && !y && (L = "not-allowed");
+  let G;
+  if (n)
+    G = "disabled";
+  else
+    switch (p) {
+      case "active": {
+        G = "active";
+        break;
+      }
+      default:
+        z ? G = "focus" : G = p;
+    }
+  return /* @__PURE__ */ import_jsx_runtime16.jsx("div", {
+    ...a,
+    "aria-controls": c.valueControls,
+    "aria-disabled": n || undefined,
+    "aria-orientation": E,
+    "aria-valuemax": c.valueMax,
+    "aria-valuemin": c.valueMin,
+    "aria-valuenow": c.valueNow,
+    children: e,
+    className: t,
+    "data-separator": G,
+    "data-testid": r2,
+    id: r2,
+    onBlur: () => f(false),
+    onFocus: () => f(true),
+    ref: h,
+    role: "separator",
+    style: {
+      flexBasis: "auto",
+      cursor: L,
+      ...u,
+      flexGrow: 0,
+      flexShrink: 0,
+      touchAction: "none"
+    },
+    tabIndex: n ? undefined : 0
+  });
+}
+nn.displayName = "Separator";
+
+// src/kit/chat/NoteAtSelection.tsx
+var import_react10 = __toESM(require_react(), 1);
 
 // src/kit/lib/platform.ts
 function onMac() {
@@ -23873,14 +25873,14 @@ function WaitingDot({
 var jsx_runtime6 = __toESM(require_jsx_runtime(), 1);
 var CARD_W = 320;
 var MARGIN = 12;
-function placeCard(at, height, viewport) {
-  const left = Math.min(Math.max(MARGIN, at.x), viewport.width - CARD_W - MARGIN);
-  const below = at.y + MARGIN;
-  const top = below + height + MARGIN < viewport.height ? below : at.y - height - MARGIN;
+function placeCard(at2, height, viewport) {
+  const left = Math.min(Math.max(MARGIN, at2.x), viewport.width - CARD_W - MARGIN);
+  const below = at2.y + MARGIN;
+  const top = below + height + MARGIN < viewport.height ? below : at2.y - height - MARGIN;
   return { left, top: Math.max(MARGIN, top) };
 }
 function NoteAtSelection({
-  at,
+  at: at2,
   quote,
   existing,
   onClose,
@@ -23889,31 +25889,31 @@ function NoteAtSelection({
   onDeleteNote,
   onAddLink
 }) {
-  const [writing, setWriting] = import_react9.useState(false);
-  const [body, setBody] = import_react9.useState("");
-  const card = import_react9.useRef(null);
-  const field = import_react9.useRef(null);
-  const [pos, setPos] = import_react9.useState(null);
-  import_react9.useEffect(() => {
-    if (!at) {
+  const [writing, setWriting] = import_react10.useState(false);
+  const [body, setBody] = import_react10.useState("");
+  const card = import_react10.useRef(null);
+  const field = import_react10.useRef(null);
+  const [pos, setPos] = import_react10.useState(null);
+  import_react10.useEffect(() => {
+    if (!at2) {
       setWriting(false);
       setBody("");
     }
-  }, [at]);
-  import_react9.useLayoutEffect(() => {
-    if (!at || !card.current)
+  }, [at2]);
+  import_react10.useLayoutEffect(() => {
+    if (!at2 || !card.current)
       return;
-    setPos(placeCard(at, card.current.offsetHeight, {
+    setPos(placeCard(at2, card.current.offsetHeight, {
       width: window.innerWidth,
       height: window.innerHeight
     }));
-  }, [at]);
-  import_react9.useEffect(() => {
+  }, [at2]);
+  import_react10.useEffect(() => {
     if (writing)
       field.current?.focus();
   }, [writing]);
-  import_react9.useEffect(() => {
-    if (!at)
+  import_react10.useEffect(() => {
+    if (!at2)
       return;
     const onKey = (e) => e.key === "Escape" && onClose();
     const onDown = (e) => {
@@ -23926,20 +25926,20 @@ function NoteAtSelection({
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("mousedown", onDown);
     };
-  }, [at, onClose]);
-  if (!at)
+  }, [at2, onClose]);
+  if (!at2)
     return null;
   const submit = (e) => {
     e.preventDefault();
     if (!body.trim())
       return;
-    onAdd(at.from, at.to, body);
+    onAdd(at2.from, at2.to, body);
     onClose();
   };
   return /* @__PURE__ */ jsx_runtime6.jsx("div", {
     ref: card,
     "data-slot": "note-at-selection",
-    style: { left: pos?.left ?? at.x, top: pos?.top ?? at.y, width: CARD_W },
+    style: { left: pos?.left ?? at2.x, top: pos?.top ?? at2.y, width: CARD_W },
     className: cn("fixed z-50 rounded-md border border-edge bg-surface-raised shadow-lg", pos ? "opacity-100" : "opacity-0"),
     children: writing ? /* @__PURE__ */ jsx_runtime6.jsxs("form", {
       onSubmit: submit,
@@ -24023,11 +26023,11 @@ function NoteAtSelection({
             })
           ]
         }, n.id)),
-        existing.length > 0 && at.from < at.to && /* @__PURE__ */ jsx_runtime6.jsx("div", {
+        existing.length > 0 && at2.from < at2.to && /* @__PURE__ */ jsx_runtime6.jsx("div", {
           className: "my-1 h-px bg-edge",
           "aria-hidden": true
         }),
-        at.from < at.to && /* @__PURE__ */ jsx_runtime6.jsxs("button", {
+        at2.from < at2.to && /* @__PURE__ */ jsx_runtime6.jsxs("button", {
           type: "button",
           onClick: () => setWriting(true),
           className: cn("flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-ink", "hover:bg-bg focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"),
@@ -24039,10 +26039,10 @@ function NoteAtSelection({
             "Add note"
           ]
         }),
-        at.from < at.to && onAddLink && /* @__PURE__ */ jsx_runtime6.jsxs("button", {
+        at2.from < at2.to && onAddLink && /* @__PURE__ */ jsx_runtime6.jsxs("button", {
           type: "button",
           onClick: () => {
-            onAddLink(at);
+            onAddLink(at2);
             onClose();
           },
           className: cn("flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-ink", "hover:bg-bg focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"),
@@ -24064,11 +26064,11 @@ function NoteAtSelection({
 }
 
 // src/kit/context/centreDock.tsx
-var import_react10 = __toESM(require_react(), 1);
+var import_react11 = __toESM(require_react(), 1);
 var jsx_runtime7 = __toESM(require_jsx_runtime(), 1);
-var CentreDockContext = import_react10.createContext(null);
+var CentreDockContext = import_react11.createContext(null);
 function CentreDock() {
-  const claim = import_react10.useContext(CentreDockContext);
+  const claim = import_react11.useContext(CentreDockContext);
   if (!claim)
     return null;
   return /* @__PURE__ */ jsx_runtime7.jsx("div", {
@@ -24125,10 +26125,10 @@ function rowKindOf(node) {
 }
 
 // src/kit/context/workspace.ts
-var import_react11 = __toESM(require_react(), 1);
-var WorkspaceContext = import_react11.createContext(null);
+var import_react12 = __toESM(require_react(), 1);
+var WorkspaceContext = import_react12.createContext(null);
 function useWorkspace() {
-  const w = import_react11.useContext(WorkspaceContext);
+  const w = import_react12.useContext(WorkspaceContext);
   if (!w)
     throw new Error("useWorkspace must be used inside a WorkspaceShell");
   return w;
@@ -24150,17 +26150,17 @@ function isBoundary(ch) {
   return ch === " " || ch === "-" || ch === "_" || ch === "/" || ch === "." || ch === "'";
 }
 function scoreName(name, query) {
-  const q = fold(query.trim()).replace(/\s+/g, " ");
-  if (q === "")
+  const q2 = fold(query.trim()).replace(/\s+/g, " ");
+  if (q2 === "")
     return null;
   const hay = fold(name);
   const matches = (ch, c) => ch === " " ? isBoundary(c) : ch === c;
   let score = 0;
-  let at = 0;
+  let at2 = 0;
   let run = 0;
-  for (const ch of q) {
+  for (const ch of q2) {
     let found = -1;
-    for (let i = at;i < hay.length; i++) {
+    for (let i = at2;i < hay.length; i++) {
       if (matches(ch, hay[i])) {
         found = i;
         break;
@@ -24168,17 +26168,17 @@ function scoreName(name, query) {
     }
     if (found === -1)
       return null;
-    run = found === at && at > 0 ? run + 1 : 0;
+    run = found === at2 && at2 > 0 ? run + 1 : 0;
     score += 10 + run * 12;
     if (found === 0 || isBoundary(hay[found - 1]))
       score += 14;
-    score -= Math.min(found - at, 12);
-    at = found + 1;
+    score -= Math.min(found - at2, 12);
+    at2 = found + 1;
   }
   const spaced = [...hay].map((c) => isBoundary(c) ? " " : c).join("");
-  if (hay.includes(q) || spaced.includes(q))
+  if (hay.includes(q2) || spaced.includes(q2))
     score += 40;
-  if (hay.startsWith(q) || spaced.startsWith(q))
+  if (hay.startsWith(q2) || spaced.startsWith(q2))
     score += 25;
   score -= Math.min(name.length, 40) / 4;
   return score;
@@ -24198,10 +26198,10 @@ function splitTarget(raw) {
   const hash = raw.indexOf("#");
   const withoutAnchor = hash === -1 ? raw : raw.slice(0, hash);
   const anchor = hash === -1 ? undefined : raw.slice(hash + 1);
-  const q = withoutAnchor.indexOf("?");
+  const q2 = withoutAnchor.indexOf("?");
   return {
-    path: decodePath((q === -1 ? withoutAnchor : withoutAnchor.slice(0, q)).trim()),
-    ...q === -1 ? {} : { query: withoutAnchor.slice(q + 1) },
+    path: decodePath((q2 === -1 ? withoutAnchor : withoutAnchor.slice(0, q2)).trim()),
+    ...q2 === -1 ? {} : { query: withoutAnchor.slice(q2 + 1) },
     ...anchor ? { anchor } : {}
   };
 }
@@ -29813,19 +31813,19 @@ class EditMap {
     this.index.clear();
   }
 }
-function addImplementation(editMap, at, remove, add) {
+function addImplementation(editMap, at2, remove, add) {
   if (remove === 0 && add.length === 0) {
     return;
   }
-  const existing = editMap.index.get(at);
+  const existing = editMap.index.get(at2);
   if (existing) {
     existing[1] += remove;
     existing[2].push(...add);
     return;
   }
-  const change = [at, remove, add];
+  const change = [at2, remove, add];
   editMap.map.push(change);
-  editMap.index.set(at, change);
+  editMap.index.set(at2, change);
 }
 
 // node_modules/micromark-extension-gfm-table/lib/infer.js
@@ -30378,9 +32378,9 @@ var BLANK = /^\s*$/;
 var QUOTE = /^ {0,3}(?:> ?)+/;
 var FENCE_ANY = /^\s*(`{3,}|~{3,})/;
 function fenceOf(line, nested) {
-  const q = QUOTE.exec(line);
-  const body = q ? line.slice(q[0].length) : line;
-  const m = (q || nested ? FENCE_ANY : FENCE).exec(body);
+  const q2 = QUOTE.exec(line);
+  const body = q2 ? line.slice(q2[0].length) : line;
+  const m = (q2 || nested ? FENCE_ANY : FENCE).exec(body);
   return m ? { marker: m[1], rest: body.slice(m[0].length) } : null;
 }
 function codeBlockLines(lines) {
@@ -30457,14 +32457,14 @@ function maskCode(text4, opts = {}) {
   if (!html && !MAY_OPEN_CODE.test(text4))
     return text4;
   let out = "";
-  let at = 0;
+  let at2 = 0;
   for (const [from, to] of codeRanges(text4, html)) {
-    if (from < at)
+    if (from < at2)
       continue;
-    out += text4.slice(at, from) + text4.slice(from, to).replace(/[^\r\n]/g, " ");
-    at = to;
+    out += text4.slice(at2, from) + text4.slice(from, to).replace(/[^\r\n]/g, " ");
+    at2 = to;
   }
-  return out + text4.slice(at);
+  return out + text4.slice(at2);
 }
 function caretInCode(before) {
   const lines = before.split(`
@@ -30529,9 +32529,9 @@ function headingsOf(text4) {
 class Stop extends Error {
   at;
   problem;
-  constructor(at, problem) {
+  constructor(at2, problem) {
     super(problem);
-    this.at = at;
+    this.at = at2;
     this.problem = problem;
   }
 }
@@ -30790,7 +32790,7 @@ function createAlertDialogHandle() {
   return new AlertDialogHandle;
 }
 // src/kit/ui/ConfirmDialog.tsx
-var import_react12 = __toESM(require_react(), 1);
+var import_react13 = __toESM(require_react(), 1);
 var jsx_runtime8 = __toESM(require_jsx_runtime(), 1);
 var BUTTON = "inline-flex h-8 items-center justify-center rounded-md px-3 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ink-faint disabled:opacity-50";
 function ConfirmDialog({
@@ -30855,15 +32855,15 @@ function ConfirmDialog({
   });
 }
 function useConfirm() {
-  const [pending, setPending] = import_react12.useState(null);
-  const answer = import_react12.useRef(null);
-  const settle = import_react12.useCallback((ok) => {
+  const [pending, setPending] = import_react13.useState(null);
+  const answer = import_react13.useRef(null);
+  const settle = import_react13.useCallback((ok) => {
     const reply = answer.current;
     answer.current = null;
     setPending(null);
     reply?.(ok);
   }, []);
-  const confirm = import_react12.useCallback((request) => new Promise((resolve) => {
+  const confirm = import_react13.useCallback((request) => new Promise((resolve) => {
     answer.current?.(false);
     answer.current = resolve;
     setPending(request);
@@ -30945,7 +32945,7 @@ function useCompositeListContext() {
 }
 
 // node_modules/@base-ui/react/internals/composite/list/CompositeList.mjs
-var import_jsx_runtime16 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime17 = __toESM(require_jsx_runtime(), 1);
 "use client";
 function CompositeList(props) {
   const {
@@ -31035,10 +33035,10 @@ function CompositeList(props) {
       }
     };
   }, [labelsRef]);
-  const subscribeMapChange = useStableCallback((fn) => {
-    listeners.add(fn);
+  const subscribeMapChange = useStableCallback((fn2) => {
+    listeners.add(fn2);
     return () => {
-      listeners.delete(fn);
+      listeners.delete(fn2);
     };
   });
   useIsoLayoutEffect(() => {
@@ -31052,7 +33052,7 @@ function CompositeList(props) {
     labelsRef,
     nextIndexRef
   }), [register2, unregister, subscribeMapChange, elementsRef, labelsRef, nextIndexRef]);
-  return /* @__PURE__ */ import_jsx_runtime16.jsx(CompositeListContext.Provider, {
+  return /* @__PURE__ */ import_jsx_runtime17.jsx(CompositeListContext.Provider, {
     value: contextValue,
     children
   });
@@ -32099,7 +34099,7 @@ var itemMapping = {
 };
 
 // node_modules/@base-ui/react/menu/checkbox-item/MenuCheckboxItem.mjs
-var import_jsx_runtime17 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime18 = __toESM(require_jsx_runtime(), 1);
 "use client";
 var MenuCheckboxItem = /* @__PURE__ */ React92.forwardRef(function MenuCheckboxItem2(componentProps, forwardedRef) {
   const {
@@ -32170,7 +34170,7 @@ var MenuCheckboxItem = /* @__PURE__ */ React92.forwardRef(function MenuCheckboxI
     }, elementProps, getItemProps],
     ref: [itemRef, forwardedRef, listItem.ref]
   });
-  return /* @__PURE__ */ import_jsx_runtime17.jsx(MenuCheckboxItemContext.Provider, {
+  return /* @__PURE__ */ import_jsx_runtime18.jsx(MenuCheckboxItemContext.Provider, {
     value: state,
     children: element2
   });
@@ -32241,7 +34241,7 @@ function useMenuGroupRootContext() {
 }
 
 // node_modules/@base-ui/react/menu/group/MenuGroup.mjs
-var import_jsx_runtime18 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime19 = __toESM(require_jsx_runtime(), 1);
 "use client";
 var MenuGroup = /* @__PURE__ */ React95.forwardRef(function MenuGroup2(componentProps, forwardedRef) {
   const {
@@ -32259,7 +34259,7 @@ var MenuGroup = /* @__PURE__ */ React95.forwardRef(function MenuGroup2(component
       ...elementProps
     }
   });
-  return /* @__PURE__ */ import_jsx_runtime18.jsx(MenuGroupContext.Provider, {
+  return /* @__PURE__ */ import_jsx_runtime19.jsx(MenuGroupContext.Provider, {
     value: setLabelId,
     children: element2
   });
@@ -32420,7 +34420,7 @@ function useToolbarRootContext(optional) {
 }
 
 // node_modules/@base-ui/react/menu/popup/MenuPopup.mjs
-var import_jsx_runtime19 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime20 = __toESM(require_jsx_runtime(), 1);
 "use client";
 var stateAttributesMapping6 = {
   ...popupStateMapping,
@@ -32510,7 +34510,7 @@ var MenuPopup = /* @__PURE__ */ React100.forwardRef(function MenuPopup2(componen
   if (triggerElement || parent.type === "menubar" && lastOpenChangeReason !== exports_reason_parts.outsidePress) {
     returnFocus = true;
   }
-  return /* @__PURE__ */ import_jsx_runtime19.jsx(FloatingFocusManager, {
+  return /* @__PURE__ */ import_jsx_runtime20.jsx(FloatingFocusManager, {
     context: floatingContext,
     openInteractionType: openMethod,
     modal: isContextMenu,
@@ -32545,7 +34545,7 @@ function useMenuPortalContext() {
 }
 
 // node_modules/@base-ui/react/menu/portal/MenuPortal.mjs
-var import_jsx_runtime20 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime21 = __toESM(require_jsx_runtime(), 1);
 "use client";
 var MenuPortal = /* @__PURE__ */ React102.forwardRef(function MenuPortal2(props, forwardedRef) {
   const {
@@ -32560,9 +34560,9 @@ var MenuPortal = /* @__PURE__ */ React102.forwardRef(function MenuPortal2(props,
   if (!shouldRender) {
     return null;
   }
-  return /* @__PURE__ */ import_jsx_runtime20.jsx(MenuPortalContext.Provider, {
+  return /* @__PURE__ */ import_jsx_runtime21.jsx(MenuPortalContext.Provider, {
     value: keepMounted,
-    children: /* @__PURE__ */ import_jsx_runtime20.jsx(FloatingPortal, {
+    children: /* @__PURE__ */ import_jsx_runtime21.jsx(FloatingPortal, {
       ref: forwardedRef,
       ...portalProps
     })
@@ -32572,7 +34572,7 @@ if (false)
   ;
 // node_modules/@base-ui/react/menu/positioner/MenuPositioner.mjs
 var React103 = __toESM(require_react(), 1);
-var import_jsx_runtime21 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime22 = __toESM(require_jsx_runtime(), 1);
 "use client";
 var MenuPositioner = /* @__PURE__ */ React103.forwardRef(function MenuPositioner2(componentProps, forwardedRef) {
   const {
@@ -32777,15 +34777,15 @@ var MenuPositioner = /* @__PURE__ */ React103.forwardRef(function MenuPositioner
   } else if (parent.type === undefined) {
     backdropCutout = triggerElement;
   }
-  return /* @__PURE__ */ import_jsx_runtime21.jsxs(MenuPositionerContext.Provider, {
+  return /* @__PURE__ */ import_jsx_runtime22.jsxs(MenuPositionerContext.Provider, {
     value: positioner,
-    children: [shouldRenderBackdrop && /* @__PURE__ */ import_jsx_runtime21.jsx(InternalBackdrop, {
+    children: [shouldRenderBackdrop && /* @__PURE__ */ import_jsx_runtime22.jsx(InternalBackdrop, {
       ref: parent.type === "context-menu" || parent.type === "nested-context-menu" ? parent.context.internalBackdropRef : null,
       inert: inertValue(!open),
       cutout: backdropCutout
-    }), /* @__PURE__ */ import_jsx_runtime21.jsx(FloatingNode, {
+    }), /* @__PURE__ */ import_jsx_runtime22.jsx(FloatingNode, {
       id: floatingNodeId,
-      children: /* @__PURE__ */ import_jsx_runtime21.jsx(CompositeList, {
+      children: /* @__PURE__ */ import_jsx_runtime22.jsx(CompositeList, {
         elementsRef: store.context.itemDomElements,
         labelsRef: store.context.itemLabels,
         children: element2
@@ -32813,7 +34813,7 @@ function useMenuRadioGroupContext() {
 }
 
 // node_modules/@base-ui/react/menu/radio-group/MenuRadioGroup.mjs
-var import_jsx_runtime22 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime23 = __toESM(require_jsx_runtime(), 1);
 "use client";
 var MenuRadioGroup = /* @__PURE__ */ React105.memo(/* @__PURE__ */ React105.forwardRef(function MenuRadioGroup2(componentProps, forwardedRef) {
   const {
@@ -32858,9 +34858,9 @@ var MenuRadioGroup = /* @__PURE__ */ React105.memo(/* @__PURE__ */ React105.forw
     setValue,
     disabled: disabled2
   }), [value, setValue, disabled2]);
-  return /* @__PURE__ */ import_jsx_runtime22.jsx(MenuGroupContext.Provider, {
+  return /* @__PURE__ */ import_jsx_runtime23.jsx(MenuGroupContext.Provider, {
     value: setLabelId,
-    children: /* @__PURE__ */ import_jsx_runtime22.jsx(MenuRadioGroupContext.Provider, {
+    children: /* @__PURE__ */ import_jsx_runtime23.jsx(MenuRadioGroupContext.Provider, {
       value: context,
       children: element2
     })
@@ -32886,7 +34886,7 @@ function useMenuRadioItemContext() {
 }
 
 // node_modules/@base-ui/react/menu/radio-item/MenuRadioItem.mjs
-var import_jsx_runtime23 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime24 = __toESM(require_jsx_runtime(), 1);
 "use client";
 var MenuRadioItem = /* @__PURE__ */ React107.forwardRef(function MenuRadioItem2(componentProps, forwardedRef) {
   const {
@@ -32952,7 +34952,7 @@ var MenuRadioItem = /* @__PURE__ */ React107.forwardRef(function MenuRadioItem2(
     }, elementProps, getItemProps],
     ref: [itemRef, forwardedRef, listItem.ref]
   });
-  return /* @__PURE__ */ import_jsx_runtime23.jsx(MenuRadioItemContext.Provider, {
+  return /* @__PURE__ */ import_jsx_runtime24.jsx(MenuRadioItemContext.Provider, {
     value: state,
     children: element2
   });
@@ -33170,7 +35170,7 @@ function useMenuSubmenuRootContext() {
 }
 
 // node_modules/@base-ui/react/menu/root/MenuRoot.mjs
-var import_jsx_runtime24 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime25 = __toESM(require_jsx_runtime(), 1);
 "use client";
 var MenuRoot = fastComponent(function MenuRoot2(props) {
   const {
@@ -33485,14 +35485,14 @@ var MenuRoot = fastComponent(function MenuRoot2(props) {
     store,
     parent: parentFromContext
   }), [store, parentFromContext]);
-  const content3 = /* @__PURE__ */ import_jsx_runtime24.jsx(MenuRootContext.Provider, {
+  const content3 = /* @__PURE__ */ import_jsx_runtime25.jsx(MenuRootContext.Provider, {
     value: context,
     children: typeof children === "function" ? children({
       payload
     }) : children
   });
   if (parent.type === undefined || parent.type === "context-menu") {
-    return /* @__PURE__ */ import_jsx_runtime24.jsx(FloatingTree, {
+    return /* @__PURE__ */ import_jsx_runtime25.jsx(FloatingTree, {
       externalTree: floatingTreeRoot,
       children: content3
     });
@@ -33503,16 +35503,16 @@ if (false)
   ;
 // node_modules/@base-ui/react/menu/submenu-root/MenuSubmenuRoot.mjs
 var React113 = __toESM(require_react(), 1);
-var import_jsx_runtime25 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime26 = __toESM(require_jsx_runtime(), 1);
 "use client";
 function MenuSubmenuRoot(props) {
   const parentMenu = useMenuRootContext().store;
   const contextValue = React113.useMemo(() => ({
     parentMenu
   }), [parentMenu]);
-  return /* @__PURE__ */ import_jsx_runtime25.jsx(MenuSubmenuRootContext.Provider, {
+  return /* @__PURE__ */ import_jsx_runtime26.jsx(MenuSubmenuRootContext.Provider, {
     value: contextValue,
-    children: /* @__PURE__ */ import_jsx_runtime25.jsx(MenuRoot, {
+    children: /* @__PURE__ */ import_jsx_runtime26.jsx(MenuRoot, {
       ...props
     })
   });
@@ -33674,7 +35674,7 @@ function useMixedToggleClickHandler(params) {
 }
 
 // node_modules/@base-ui/react/menu/trigger/MenuTrigger.mjs
-var import_jsx_runtime26 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime27 = __toESM(require_jsx_runtime(), 1);
 "use client";
 var BOUNDARY_OFFSET = 2;
 var MenuTrigger = fastComponentRef(function MenuTrigger2(componentProps, forwardedRef) {
@@ -33843,7 +35843,7 @@ var MenuTrigger = fastComponentRef(function MenuTrigger2(componentProps, forward
     props
   });
   if (isInMenubar) {
-    return /* @__PURE__ */ import_jsx_runtime26.jsx(CompositeItem, {
+    return /* @__PURE__ */ import_jsx_runtime27.jsx(CompositeItem, {
       tag: "button",
       render,
       className,
@@ -33855,19 +35855,19 @@ var MenuTrigger = fastComponentRef(function MenuTrigger2(componentProps, forward
     });
   }
   if (isOpenedByThisTrigger) {
-    return /* @__PURE__ */ import_jsx_runtime26.jsxs(React117.Fragment, {
-      children: [/* @__PURE__ */ import_jsx_runtime26.jsx(FocusGuard, {
+    return /* @__PURE__ */ import_jsx_runtime27.jsxs(React117.Fragment, {
+      children: [/* @__PURE__ */ import_jsx_runtime27.jsx(FocusGuard, {
         ref: preFocusGuardRef,
         onFocus: handlePreFocusGuardFocus
-      }, `${thisTriggerId}-pre-focus-guard`), /* @__PURE__ */ import_jsx_runtime26.jsx(React117.Fragment, {
+      }, `${thisTriggerId}-pre-focus-guard`), /* @__PURE__ */ import_jsx_runtime27.jsx(React117.Fragment, {
         children: element2
-      }, thisTriggerId), /* @__PURE__ */ import_jsx_runtime26.jsx(FocusGuard, {
+      }, thisTriggerId), /* @__PURE__ */ import_jsx_runtime27.jsx(FocusGuard, {
         ref: store.context.triggerFocusTargetRef,
         onFocus: handleFocusTargetFocus
       }, `${thisTriggerId}-post-focus-guard`)]
     });
   }
-  return /* @__PURE__ */ import_jsx_runtime26.jsx(React117.Fragment, {
+  return /* @__PURE__ */ import_jsx_runtime27.jsx(React117.Fragment, {
     children: element2
   }, thisTriggerId);
 });
@@ -34089,7 +36089,7 @@ function setPositionerCssSize(positionerElement, size4) {
   positionerElement.style.setProperty("--positioner-height", height);
 }
 // node_modules/@base-ui/react/utils/usePopupViewport.mjs
-var import_jsx_runtime27 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime28 = __toESM(require_jsx_runtime(), 1);
 "use client";
 function usePopupViewport(parameters) {
   const {
@@ -34175,14 +36175,14 @@ function usePopupViewport(parameters) {
   const isTransitioning = previousContentNode != null;
   let childrenToRender;
   if (!isTransitioning) {
-    childrenToRender = /* @__PURE__ */ import_jsx_runtime27.jsx("div", {
+    childrenToRender = /* @__PURE__ */ import_jsx_runtime28.jsx("div", {
       "data-current": true,
       ref: currentContainerRef,
       children
     }, currentContentKey);
   } else {
-    childrenToRender = /* @__PURE__ */ import_jsx_runtime27.jsxs(React120.Fragment, {
-      children: [/* @__PURE__ */ import_jsx_runtime27.jsx("div", {
+    childrenToRender = /* @__PURE__ */ import_jsx_runtime28.jsxs(React120.Fragment, {
+      children: [/* @__PURE__ */ import_jsx_runtime28.jsx("div", {
         "data-previous": true,
         inert: inertValue(true),
         ref: previousContainerRef,
@@ -34194,7 +36194,7 @@ function usePopupViewport(parameters) {
           position: "absolute"
         },
         "data-ending-style": showStartingStyleAttribute ? undefined : ""
-      }, "previous"), /* @__PURE__ */ import_jsx_runtime27.jsx("div", {
+      }, "previous"), /* @__PURE__ */ import_jsx_runtime28.jsx("div", {
         "data-current": true,
         ref: currentContainerRef,
         "data-starting-style": showStartingStyleAttribute ? "" : undefined,
@@ -34490,7 +36490,7 @@ function createMenuHandle() {
   return new MenuHandle;
 }
 // node_modules/@base-ui/react/context-menu/root/ContextMenuRoot.mjs
-var import_jsx_runtime28 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime29 = __toESM(require_jsx_runtime(), 1);
 "use client";
 function ContextMenuRoot(props) {
   const [anchor, setAnchor] = React123.useState({
@@ -34521,11 +36521,11 @@ function ContextMenuRoot(props) {
     initialCursorPointRef,
     rootId: id
   }), [anchor, id]);
-  return /* @__PURE__ */ import_jsx_runtime28.jsx(ContextMenuRootContext.Provider, {
+  return /* @__PURE__ */ import_jsx_runtime29.jsx(ContextMenuRootContext.Provider, {
     value: contextValue,
-    children: /* @__PURE__ */ import_jsx_runtime28.jsx(MenuRootContext.Provider, {
+    children: /* @__PURE__ */ import_jsx_runtime29.jsx(MenuRootContext.Provider, {
       value: undefined,
-      children: /* @__PURE__ */ import_jsx_runtime28.jsx(exports_index_parts4.Root, {
+      children: /* @__PURE__ */ import_jsx_runtime29.jsx(exports_index_parts4.Root, {
         ...props
       })
     })
@@ -35130,7 +37130,7 @@ class PopoverStore extends ReactStore {
 }
 
 // node_modules/@base-ui/react/popover/root/PopoverRoot.mjs
-var import_jsx_runtime29 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime30 = __toESM(require_jsx_runtime(), 1);
 "use client";
 function PopoverRootComponent({
   props
@@ -35192,9 +37192,9 @@ function PopoverRootComponent({
   const popoverContext = React127.useMemo(() => ({
     store
   }), [store]);
-  return /* @__PURE__ */ import_jsx_runtime29.jsxs(PopoverRootContext.Provider, {
+  return /* @__PURE__ */ import_jsx_runtime30.jsxs(PopoverRootContext.Provider, {
     value: popoverContext,
-    children: [shouldRenderInteractions && /* @__PURE__ */ import_jsx_runtime29.jsx(PopoverInteractions, {
+    children: [shouldRenderInteractions && /* @__PURE__ */ import_jsx_runtime30.jsx(PopoverInteractions, {
       store,
       modal
     }), typeof children === "function" ? children({
@@ -35204,12 +37204,12 @@ function PopoverRootComponent({
 }
 function PopoverRoot(props) {
   if (usePopoverRootContext(true)) {
-    return /* @__PURE__ */ import_jsx_runtime29.jsx(PopoverRootComponent, {
+    return /* @__PURE__ */ import_jsx_runtime30.jsx(PopoverRootComponent, {
       props
     });
   }
-  return /* @__PURE__ */ import_jsx_runtime29.jsx(FloatingTree, {
-    children: /* @__PURE__ */ import_jsx_runtime29.jsx(PopoverRootComponent, {
+  return /* @__PURE__ */ import_jsx_runtime30.jsx(FloatingTree, {
+    children: /* @__PURE__ */ import_jsx_runtime30.jsx(PopoverRootComponent, {
       props
     })
   });
@@ -35242,7 +37242,7 @@ var React128 = __toESM(require_react(), 1);
 var OPEN_DELAY = 300;
 
 // node_modules/@base-ui/react/popover/trigger/PopoverTrigger.mjs
-var import_jsx_runtime30 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime31 = __toESM(require_jsx_runtime(), 1);
 "use client";
 var PopoverTrigger = /* @__PURE__ */ React128.forwardRef(function PopoverTrigger2(componentProps, forwardedRef) {
   const {
@@ -35341,19 +37341,19 @@ var PopoverTrigger = /* @__PURE__ */ React128.forwardRef(function PopoverTrigger
     stateAttributesMapping: stateAttributesMapping8
   });
   if (isMountedByThisTrigger && !focusManagerModal) {
-    return /* @__PURE__ */ import_jsx_runtime30.jsxs(React128.Fragment, {
-      children: [/* @__PURE__ */ import_jsx_runtime30.jsx(FocusGuard, {
+    return /* @__PURE__ */ import_jsx_runtime31.jsxs(React128.Fragment, {
+      children: [/* @__PURE__ */ import_jsx_runtime31.jsx(FocusGuard, {
         ref: preFocusGuardRef,
         onFocus: handlePreFocusGuardFocus
-      }), /* @__PURE__ */ import_jsx_runtime30.jsx(React128.Fragment, {
+      }), /* @__PURE__ */ import_jsx_runtime31.jsx(React128.Fragment, {
         children: element2
-      }, thisTriggerId), /* @__PURE__ */ import_jsx_runtime30.jsx(FocusGuard, {
+      }, thisTriggerId), /* @__PURE__ */ import_jsx_runtime31.jsx(FocusGuard, {
         ref: store.context.triggerFocusTargetRef,
         onFocus: handleFocusTargetFocus
       })]
     });
   }
-  return /* @__PURE__ */ import_jsx_runtime30.jsx(React128.Fragment, {
+  return /* @__PURE__ */ import_jsx_runtime31.jsx(React128.Fragment, {
     children: element2
   }, thisTriggerId);
 });
@@ -35377,7 +37377,7 @@ function usePopoverPortalContext() {
 }
 
 // node_modules/@base-ui/react/popover/portal/PopoverPortal.mjs
-var import_jsx_runtime31 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime32 = __toESM(require_jsx_runtime(), 1);
 "use client";
 var PopoverPortal = /* @__PURE__ */ React130.forwardRef(function PopoverPortal2(props, forwardedRef) {
   const {
@@ -35392,9 +37392,9 @@ var PopoverPortal = /* @__PURE__ */ React130.forwardRef(function PopoverPortal2(
   if (!shouldRender) {
     return null;
   }
-  return /* @__PURE__ */ import_jsx_runtime31.jsx(PopoverPortalContext.Provider, {
+  return /* @__PURE__ */ import_jsx_runtime32.jsx(PopoverPortalContext.Provider, {
     value: keepMounted,
-    children: /* @__PURE__ */ import_jsx_runtime31.jsx(FloatingPortal, {
+    children: /* @__PURE__ */ import_jsx_runtime32.jsx(FloatingPortal, {
       ref: forwardedRef,
       ...portalProps
     })
@@ -35420,7 +37420,7 @@ function usePopoverPositionerContext() {
 }
 
 // node_modules/@base-ui/react/popover/positioner/PopoverPositioner.mjs
-var import_jsx_runtime32 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime33 = __toESM(require_jsx_runtime(), 1);
 "use client";
 var PopoverPositioner = /* @__PURE__ */ React132.forwardRef(function PopoverPositioner2(componentProps, forwardedRef) {
   const {
@@ -35516,13 +37516,13 @@ var PopoverPositioner = /* @__PURE__ */ React132.forwardRef(function PopoverPosi
     hidden: !mounted,
     inert: !open
   });
-  return /* @__PURE__ */ import_jsx_runtime32.jsxs(PopoverPositionerContext.Provider, {
+  return /* @__PURE__ */ import_jsx_runtime33.jsxs(PopoverPositionerContext.Provider, {
     value: positioning,
-    children: [mounted && modal === true && openReason !== exports_reason_parts.triggerHover && /* @__PURE__ */ import_jsx_runtime32.jsx(InternalBackdrop, {
+    children: [mounted && modal === true && openReason !== exports_reason_parts.triggerHover && /* @__PURE__ */ import_jsx_runtime33.jsx(InternalBackdrop, {
       ref: store.context.internalBackdropRef,
       inert: inertValue(!open),
       cutout: triggerElement
-    }), /* @__PURE__ */ import_jsx_runtime32.jsx(FloatingNode, {
+    }), /* @__PURE__ */ import_jsx_runtime33.jsx(FloatingNode, {
       id: nodeId,
       children: element2
     })]
@@ -35535,7 +37535,7 @@ var React134 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/utils/closePart.mjs
 var React133 = __toESM(require_react(), 1);
-var import_jsx_runtime33 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime34 = __toESM(require_jsx_runtime(), 1);
 "use client";
 var ClosePartContext = /* @__PURE__ */ React133.createContext(undefined);
 if (false)
@@ -35561,7 +37561,7 @@ function ClosePartProvider(props) {
     value,
     children
   } = props;
-  return /* @__PURE__ */ import_jsx_runtime33.jsx(ClosePartContext.Provider, {
+  return /* @__PURE__ */ import_jsx_runtime34.jsx(ClosePartContext.Provider, {
     value,
     children
   });
@@ -35574,7 +37574,7 @@ function useClosePartRegistration() {
 }
 
 // node_modules/@base-ui/react/popover/popup/PopoverPopup.mjs
-var import_jsx_runtime34 = __toESM(require_jsx_runtime(), 1);
+var import_jsx_runtime35 = __toESM(require_jsx_runtime(), 1);
 "use client";
 var stateAttributesMapping8 = {
   ...popupStateMapping,
@@ -35658,7 +37658,7 @@ var PopoverPopup = /* @__PURE__ */ React134.forwardRef(function PopoverPopup2(co
     }, getDisabledMountTransitionStyles(transitionStatus), elementProps],
     stateAttributesMapping: stateAttributesMapping8
   });
-  return /* @__PURE__ */ import_jsx_runtime34.jsx(FloatingFocusManager, {
+  return /* @__PURE__ */ import_jsx_runtime35.jsx(FloatingFocusManager, {
     context: floatingContext,
     openInteractionType: openMethod,
     modal: focusManagerModal,
@@ -35669,7 +37669,7 @@ var PopoverPopup = /* @__PURE__ */ React134.forwardRef(function PopoverPopup2(co
     previousFocusableElement: isHTMLElement(activeTriggerElement) ? activeTriggerElement : undefined,
     nextFocusableElement: store.context.triggerFocusTargetRef,
     beforeContentFocusGuardRef: store.context.beforeContentFocusGuardRef,
-    children: /* @__PURE__ */ import_jsx_runtime34.jsx(ClosePartProvider, {
+    children: /* @__PURE__ */ import_jsx_runtime35.jsx(ClosePartProvider, {
       value: closePartContext,
       children: element2
     })
@@ -35978,2006 +37978,6 @@ function PopoverDescription3({ className, ...props }) {
 // src/kit/ui/quiet.ts
 var QUIET_GROUP = "group/chrome";
 var QUIET_FADE = "opacity-40 transition-opacity duration-300 group-hover/chrome:opacity-100 group-has-[:focus-visible]/chrome:opacity-100";
-// node_modules/react-resizable-panels/dist/react-resizable-panels.js
-var import_jsx_runtime35 = __toESM(require_jsx_runtime(), 1);
-var import_react13 = __toESM(require_react(), 1);
-"use client";
-function St(e, t) {
-  const n = getComputedStyle(e), o = parseFloat(n.fontSize);
-  return t * o;
-}
-function vt(e, t) {
-  const n = getComputedStyle(e.ownerDocument.documentElement), o = parseFloat(n.fontSize);
-  return t * o;
-}
-function bt(e) {
-  return e / 100 * window.innerHeight;
-}
-function zt(e) {
-  return e / 100 * window.innerWidth;
-}
-function xt(e) {
-  switch (typeof e) {
-    case "number":
-      return [e, "px"];
-    case "string": {
-      const t = parseFloat(e);
-      return e.endsWith("%") ? [t, "%"] : e.endsWith("px") ? [t, "px"] : e.endsWith("rem") ? [t, "rem"] : e.endsWith("em") ? [t, "em"] : e.endsWith("vh") ? [t, "vh"] : e.endsWith("vw") ? [t, "vw"] : [t, "%"];
-    }
-  }
-}
-function oe({
-  groupSize: e,
-  panelElement: t,
-  styleProp: n
-}) {
-  let o;
-  const [i, s] = xt(n);
-  switch (s) {
-    case "%": {
-      o = i / 100 * e;
-      break;
-    }
-    case "px": {
-      o = i;
-      break;
-    }
-    case "rem": {
-      o = vt(t, i);
-      break;
-    }
-    case "em": {
-      o = St(t, i);
-      break;
-    }
-    case "vh": {
-      o = bt(i);
-      break;
-    }
-    case "vw": {
-      o = zt(i);
-      break;
-    }
-  }
-  return o;
-}
-function T(e) {
-  return parseFloat(e.toFixed(3));
-}
-function ne({
-  group: e
-}) {
-  const { orientation: t, panels: n } = e;
-  return n.reduce((o, i) => (o += t === "horizontal" ? i.element.offsetWidth : i.element.offsetHeight, o), 0);
-}
-function be(e) {
-  const { panels: t } = e, n = ne({ group: e });
-  return n === 0 ? t.map((o) => ({
-    groupResizeBehavior: o.panelConstraints.groupResizeBehavior,
-    collapsedSize: 0,
-    collapsible: o.panelConstraints.collapsible === true,
-    defaultSize: undefined,
-    disabled: o.panelConstraints.disabled,
-    minSize: 0,
-    maxSize: 100,
-    panelId: o.id
-  })) : t.map((o) => {
-    const { element: i, panelConstraints: s } = o;
-    let u = 0;
-    if (s.collapsedSize !== undefined) {
-      const c = oe({
-        groupSize: n,
-        panelElement: i,
-        styleProp: s.collapsedSize
-      });
-      u = T(c / n * 100);
-    }
-    let a;
-    if (s.defaultSize !== undefined) {
-      const c = oe({
-        groupSize: n,
-        panelElement: i,
-        styleProp: s.defaultSize
-      });
-      a = T(c / n * 100);
-    }
-    let r2 = 0;
-    if (s.minSize !== undefined) {
-      const c = oe({
-        groupSize: n,
-        panelElement: i,
-        styleProp: s.minSize
-      });
-      r2 = T(c / n * 100);
-    }
-    let l = 100;
-    if (s.maxSize !== undefined) {
-      const c = oe({
-        groupSize: n,
-        panelElement: i,
-        styleProp: s.maxSize
-      });
-      l = T(c / n * 100);
-    }
-    return {
-      groupResizeBehavior: s.groupResizeBehavior,
-      collapsedSize: u,
-      collapsible: s.collapsible === true,
-      defaultSize: a,
-      disabled: s.disabled,
-      minSize: r2,
-      maxSize: l,
-      panelId: o.id
-    };
-  });
-}
-function C(e, t = "Assertion error") {
-  if (!e)
-    throw Error(t);
-}
-function ze(e, t) {
-  return Array.from(t).sort(e === "horizontal" ? Pt : wt);
-}
-function Pt(e, t) {
-  const n = e.element.offsetLeft - t.element.offsetLeft;
-  return n !== 0 ? n : e.element.offsetWidth - t.element.offsetWidth;
-}
-function wt(e, t) {
-  const n = e.element.offsetTop - t.element.offsetTop;
-  return n !== 0 ? n : e.element.offsetHeight - t.element.offsetHeight;
-}
-function Ye(e) {
-  return e !== null && typeof e == "object" && "nodeType" in e && e.nodeType === Node.ELEMENT_NODE;
-}
-function Je(e, t) {
-  return {
-    x: e.x >= t.left && e.x <= t.right ? 0 : Math.min(Math.abs(e.x - t.left), Math.abs(e.x - t.right)),
-    y: e.y >= t.top && e.y <= t.bottom ? 0 : Math.min(Math.abs(e.y - t.top), Math.abs(e.y - t.bottom))
-  };
-}
-function Lt({
-  orientation: e,
-  rects: t,
-  targetRect: n
-}) {
-  const o = {
-    x: n.x + n.width / 2,
-    y: n.y + n.height / 2
-  };
-  let i, s = Number.MAX_VALUE;
-  for (const u of t) {
-    const { x: a, y: r2 } = Je(o, u), l = e === "horizontal" ? a : r2;
-    l < s && (s = l, i = u);
-  }
-  return C(i, "No rect found"), i;
-}
-var de;
-function Ct() {
-  return de === undefined && (typeof matchMedia == "function" ? de = !!matchMedia("(pointer:coarse)").matches : de = false), de;
-}
-function Ze(e) {
-  const { element: t, orientation: n, panels: o, separators: i } = e, s = ze(n, Array.from(t.children).filter(Ye).map((z) => ({ element: z }))).map(({ element: z }) => z), u = [];
-  let a = false, r2 = false, l = -1, c = -1, m = 0, p, S = [];
-  {
-    let z = -1;
-    for (const f of s)
-      f.hasAttribute("data-panel") && (z++, f.hasAttribute("data-disabled") || (m++, l === -1 && (l = z), c = z));
-  }
-  if (m > 1) {
-    let z = -1;
-    for (const f of s)
-      if (f.hasAttribute("data-panel")) {
-        z++;
-        const d = o.find((h) => h.element === f);
-        if (d) {
-          if (p) {
-            const h = p.element.getBoundingClientRect(), y = f.getBoundingClientRect();
-            let b;
-            if (r2) {
-              const v = n === "horizontal" ? new DOMRect(h.right, h.top, 0, h.height) : new DOMRect(h.left, h.bottom, h.width, 0), g = n === "horizontal" ? new DOMRect(y.left, y.top, 0, y.height) : new DOMRect(y.left, y.top, y.width, 0);
-              switch (S.length) {
-                case 0: {
-                  b = [
-                    v,
-                    g
-                  ];
-                  break;
-                }
-                case 1: {
-                  const w = S[0], E = Lt({
-                    orientation: n,
-                    rects: [h, y],
-                    targetRect: w.element.getBoundingClientRect()
-                  });
-                  b = [
-                    w,
-                    E === h ? g : v
-                  ];
-                  break;
-                }
-                default: {
-                  b = S;
-                  break;
-                }
-              }
-            } else
-              S.length ? b = S : b = [
-                n === "horizontal" ? new DOMRect(h.right, y.top, y.left - h.right, y.height) : new DOMRect(y.left, h.bottom, y.width, y.top - h.bottom)
-              ];
-            for (const v of b) {
-              let g = "width" in v ? v : v.element.getBoundingClientRect();
-              const w = Ct() ? e.resizeTargetMinimumSize.coarse : e.resizeTargetMinimumSize.fine;
-              if (g.width < w) {
-                const L = w - g.width;
-                g = new DOMRect(g.x - L / 2, g.y, g.width + L, g.height);
-              }
-              if (g.height < w) {
-                const L = w - g.height;
-                g = new DOMRect(g.x, g.y - L / 2, g.width, g.height + L);
-              }
-              const E = z <= l || z > c;
-              !a && !E && u.push({
-                group: e,
-                groupSize: ne({ group: e }),
-                panels: [p, d],
-                separator: "width" in v ? undefined : v,
-                rect: g
-              }), a = false;
-            }
-          }
-          r2 = false, p = d, S = [];
-        }
-      } else if (f.hasAttribute("data-separator")) {
-        f.ariaDisabled !== null && (a = true);
-        const d = i.find((h) => h.element === f);
-        d ? S.push(d) : (p = undefined, S = []);
-      } else
-        r2 = true;
-  }
-  return u;
-}
-
-class Qe {
-  #e = {};
-  addListener(t, n) {
-    const o = this.#e[t];
-    return o === undefined ? this.#e[t] = [n] : o.includes(n) || o.push(n), () => {
-      this.removeListener(t, n);
-    };
-  }
-  emit(t, n) {
-    const o = this.#e[t];
-    if (o !== undefined)
-      if (o.length === 1)
-        o[0].call(null, n);
-      else {
-        let i = false, s = null;
-        const u = Array.from(o);
-        for (let a = 0;a < u.length; a++) {
-          const r2 = u[a];
-          try {
-            r2.call(null, n);
-          } catch (l) {
-            s === null && (i = true, s = l);
-          }
-        }
-        if (i)
-          throw s;
-      }
-  }
-  removeAllListeners() {
-    this.#e = {};
-  }
-  removeListener(t, n) {
-    const o = this.#e[t];
-    if (o !== undefined) {
-      const i = o.indexOf(n);
-      i >= 0 && o.splice(i, 1);
-    }
-  }
-}
-var ee = {
-  cursorFlags: 0,
-  state: "inactive"
-};
-var xe = new Qe;
-function W() {
-  return ee;
-}
-function Rt(e) {
-  return xe.addListener("change", e);
-}
-function Et(e) {
-  const t = ee, n = { ...ee };
-  n.cursorFlags = e, ee = n, xe.emit("change", {
-    prev: t,
-    next: n
-  });
-}
-function te(e) {
-  const t = ee;
-  ee = e, xe.emit("change", {
-    prev: t,
-    next: e
-  });
-}
-var Mt = (e) => e;
-var Se = () => {};
-var et = 1;
-var tt = 2;
-var nt = 4;
-var ot = 8;
-var Ie = 3;
-var ke = 12;
-var pe;
-function De() {
-  return pe === undefined && (pe = false, typeof window < "u" && (window.navigator.userAgent.includes("Chrome") || window.navigator.userAgent.includes("Firefox")) && (pe = true)), pe;
-}
-function It({
-  cursorFlags: e,
-  groups: t,
-  state: n
-}) {
-  let o = 0, i = 0;
-  switch (n) {
-    case "active":
-    case "hover":
-      t.forEach((s) => {
-        if (!s.mutableState.disableCursor)
-          switch (s.orientation) {
-            case "horizontal": {
-              o++;
-              break;
-            }
-            case "vertical": {
-              i++;
-              break;
-            }
-          }
-      });
-  }
-  if (!(o === 0 && i === 0)) {
-    switch (n) {
-      case "active": {
-        if (e && De()) {
-          const s = (e & et) !== 0, u = (e & tt) !== 0, a = (e & nt) !== 0, r2 = (e & ot) !== 0;
-          if (s)
-            return a ? "se-resize" : r2 ? "ne-resize" : "e-resize";
-          if (u)
-            return a ? "sw-resize" : r2 ? "nw-resize" : "w-resize";
-          if (a)
-            return "s-resize";
-          if (r2)
-            return "n-resize";
-        }
-        break;
-      }
-    }
-    return De() ? o > 0 && i > 0 ? "move" : o > 0 ? "ew-resize" : "ns-resize" : o > 0 && i > 0 ? "grab" : o > 0 ? "col-resize" : "row-resize";
-  }
-}
-var Te = /* @__PURE__ */ new WeakMap;
-function Pe(e) {
-  if (!e.defaultView || !e.adoptedStyleSheets)
-    return;
-  let { prevStyle: t, styleSheet: n } = Te.get(e) ?? {};
-  n === undefined && (n = new e.defaultView.CSSStyleSheet, e.adoptedStyleSheets && (Object.isExtensible(e.adoptedStyleSheets) ? e.adoptedStyleSheets.push(n) : e.adoptedStyleSheets = [
-    ...e.adoptedStyleSheets,
-    n
-  ]));
-  const o = W();
-  switch (o.state) {
-    case "active":
-    case "hover": {
-      const i = It({
-        cursorFlags: o.cursorFlags,
-        groups: o.hitRegions.map((u) => u.group),
-        state: o.state
-      }), s = `*, *:hover {cursor: ${i} !important; }`;
-      if (t === s)
-        return;
-      t = s, i ? n.cssRules.length === 0 ? n.insertRule(s) : n.replaceSync(s) : n.cssRules.length === 1 && n.deleteRule(0);
-      break;
-    }
-    case "inactive": {
-      t = undefined, n.cssRules.length === 1 && n.deleteRule(0);
-      break;
-    }
-  }
-  Te.set(e, {
-    prevStyle: t,
-    styleSheet: n
-  });
-}
-var F = /* @__PURE__ */ new Map;
-var it = new Qe;
-function kt(e) {
-  F = new Map(F), F.delete(e);
-}
-function Oe(e, t) {
-  for (const [n] of F)
-    if (n.id === e)
-      return n;
-}
-function H(e, t) {
-  for (const [n, o] of F)
-    if (n.id === e)
-      return o;
-  if (t)
-    throw Error(`Could not find data for Group with id ${e}`);
-}
-function V() {
-  return F;
-}
-function we(e, t) {
-  return it.addListener("groupChange", (n) => {
-    n.group.id === e && t(n);
-  });
-}
-function j(e, t, n) {
-  const o = F.get(e);
-  F = new Map(F), F.set(e, t), it.emit("groupChange", {
-    group: e,
-    isUserInteraction: n?.isUserInteraction === true,
-    prev: o,
-    next: t
-  });
-}
-function rt(e) {
-  const t = W(), n = V();
-  let o = false;
-  switch (t.state) {
-    case "active":
-      te({
-        cursorFlags: 0,
-        state: "inactive"
-      }), t.hitRegions.length > 0 && (Pe(e), o = true, t.hitRegions.forEach((i) => {
-        if (!n.has(i.group))
-          return;
-        const s = H(i.group.id, true);
-        j(i.group, s, {
-          isUserInteraction: true
-        });
-      }));
-  }
-  return o;
-}
-function Ge(e) {
-  e.defaultPrevented || rt(e.currentTarget);
-}
-function Dt(e, t, n) {
-  let o, i = {
-    x: 1 / 0,
-    y: 1 / 0
-  };
-  for (const s of t) {
-    const u = Je(n, s.rect);
-    switch (e) {
-      case "horizontal": {
-        u.x <= i.x && (o = s, i = u);
-        break;
-      }
-      case "vertical": {
-        u.y <= i.y && (o = s, i = u);
-        break;
-      }
-    }
-  }
-  return o ? {
-    distance: i,
-    hitRegion: o
-  } : undefined;
-}
-function Tt(e) {
-  return e !== null && typeof e == "object" && "nodeType" in e && e.nodeType === Node.DOCUMENT_FRAGMENT_NODE;
-}
-function Ot(e, t) {
-  if (e === t)
-    throw new Error("Cannot compare node with itself");
-  const n = {
-    a: Ne(e),
-    b: Ne(t)
-  };
-  let o;
-  for (;n.a.at(-1) === n.b.at(-1); )
-    o = n.a.pop(), n.b.pop();
-  C(o, "Stacking order can only be calculated for elements with a common ancestor");
-  const i = {
-    a: Fe(Ae(n.a)),
-    b: Fe(Ae(n.b))
-  };
-  if (i.a === i.b) {
-    const s = o.childNodes, u = {
-      a: n.a.at(-1),
-      b: n.b.at(-1)
-    };
-    let a = s.length;
-    for (;a--; ) {
-      const r2 = s[a];
-      if (r2 === u.a)
-        return 1;
-      if (r2 === u.b)
-        return -1;
-    }
-  }
-  return Math.sign(i.a - i.b);
-}
-var Gt = /\b(?:position|zIndex|opacity|transform|webkitTransform|mixBlendMode|filter|webkitFilter|isolation)\b/;
-function At(e) {
-  const t = getComputedStyle(st(e) ?? e).display;
-  return t === "flex" || t === "inline-flex";
-}
-function Ft(e) {
-  const t = getComputedStyle(e);
-  return !!(t.position === "fixed" || t.zIndex !== "auto" && (t.position !== "static" || At(e)) || +t.opacity < 1 || ("transform" in t) && t.transform !== "none" || ("webkitTransform" in t) && t.webkitTransform !== "none" || ("mixBlendMode" in t) && t.mixBlendMode !== "normal" || ("filter" in t) && t.filter !== "none" || ("webkitFilter" in t) && t.webkitFilter !== "none" || ("isolation" in t) && t.isolation === "isolate" || Gt.test(t.willChange) || t.webkitOverflowScrolling === "touch");
-}
-function Ae(e) {
-  let t = e.length;
-  for (;t--; ) {
-    const n = e[t];
-    if (C(n, "Missing node"), Ft(n))
-      return n;
-  }
-  return null;
-}
-function Fe(e) {
-  return e && Number(getComputedStyle(e).zIndex) || 0;
-}
-function Ne(e) {
-  const t = [];
-  for (;e; )
-    t.push(e), e = st(e);
-  return t;
-}
-function st(e) {
-  const { parentNode: t } = e;
-  return Tt(t) ? t.host : t;
-}
-function Nt(e, t) {
-  return e.x < t.x + t.width && e.x + e.width > t.x && e.y < t.y + t.height && e.y + e.height > t.y;
-}
-function _t({
-  groupElement: e,
-  hitRegion: t,
-  pointerEventTarget: n
-}) {
-  if (!Ye(n) || n.contains(e) || e.contains(n))
-    return true;
-  if (Ot(n, e) > 0) {
-    let o = n;
-    for (;o; ) {
-      if (o.contains(e))
-        return true;
-      if (Nt(o.getBoundingClientRect(), t))
-        return false;
-      o = o.parentElement;
-    }
-  }
-  return true;
-}
-function Le(e, t) {
-  const n = [];
-  return t.forEach((o, i) => {
-    if (i.disabled)
-      return;
-    const s = Ze(i), u = Dt(i.orientation, s, {
-      x: e.clientX,
-      y: e.clientY
-    });
-    u && u.distance.x <= 0 && u.distance.y <= 0 && _t({
-      groupElement: i.element,
-      hitRegion: u.hitRegion.rect,
-      pointerEventTarget: e.target
-    }) && n.push(u.hitRegion);
-  }), n;
-}
-function $t(e, t) {
-  if (e.length !== t.length)
-    return false;
-  for (let n = 0;n < e.length; n++)
-    if (e[n] != t[n])
-      return false;
-  return true;
-}
-function D(e, t, n = 0) {
-  return Math.abs(T(e) - T(t)) <= n;
-}
-function A(e, t) {
-  return D(e, t) ? 0 : e > t ? 1 : -1;
-}
-function Z({
-  overrideDisabledPanels: e,
-  panelConstraints: t,
-  prevSize: n,
-  size: o
-}) {
-  const {
-    collapsedSize: i = 0,
-    collapsible: s,
-    disabled: u,
-    maxSize: a = 100,
-    minSize: r2 = 0
-  } = t;
-  if (u && !e)
-    return n;
-  if (A(o, r2) < 0)
-    if (s) {
-      const l = (i + r2) / 2;
-      A(o, l) < 0 ? o = i : o = r2;
-    } else
-      o = r2;
-  return o = Math.min(a, o), o = T(o), o;
-}
-function ae({
-  delta: e,
-  initialLayout: t,
-  panelConstraints: n,
-  pivotIndices: o,
-  prevLayout: i,
-  trigger: s
-}) {
-  if (D(e, 0))
-    return t;
-  const u = s === "imperative-api", a = Object.values(t), r2 = Object.values(i), l = [...a], [c, m] = o;
-  C(c != null, "Invalid first pivot index"), C(m != null, "Invalid second pivot index");
-  let p = 0;
-  switch (s) {
-    case "keyboard": {
-      {
-        const f = e < 0 ? m : c, d = n[f];
-        C(d, `Panel constraints not found for index ${f}`);
-        const {
-          collapsedSize: h = 0,
-          collapsible: y,
-          minSize: b = 0
-        } = d;
-        if (y) {
-          const v = a[f];
-          if (C(v != null, `Previous layout not found for panel index ${f}`), D(v, h)) {
-            const g = b - v;
-            A(g, Math.abs(e)) > 0 && (e = e < 0 ? 0 - g : g);
-          }
-        }
-      }
-      {
-        const f = e < 0 ? c : m, d = n[f];
-        C(d, `No panel constraints found for index ${f}`);
-        const {
-          collapsedSize: h = 0,
-          collapsible: y,
-          minSize: b = 0
-        } = d;
-        if (y) {
-          const v = a[f];
-          if (C(v != null, `Previous layout not found for panel index ${f}`), D(v, b)) {
-            const g = v - h;
-            A(g, Math.abs(e)) > 0 && (e = e < 0 ? 0 - g : g);
-          }
-        }
-      }
-      break;
-    }
-    default: {
-      const f = e < 0 ? m : c, d = n[f];
-      C(d, `Panel constraints not found for index ${f}`);
-      const h = a[f], { collapsible: y, collapsedSize: b, minSize: v } = d;
-      if (y && A(h, v) < 0)
-        if (e > 0) {
-          const g = v - b, w = g / 2, E = h + e;
-          A(E, v) < 0 && (e = A(e, w) <= 0 ? 0 : g);
-        } else {
-          const g = v - b, w = 100 - g / 2, E = h - e;
-          A(E, v) < 0 && (e = A(100 + e, w) > 0 ? 0 : -g);
-        }
-      break;
-    }
-  }
-  {
-    const f = e < 0 ? 1 : -1;
-    let d = e < 0 ? m : c, h = 0;
-    for (;; ) {
-      const b = a[d];
-      C(b != null, `Previous layout not found for panel index ${d}`);
-      const g = Z({
-        overrideDisabledPanels: u,
-        panelConstraints: n[d],
-        prevSize: b,
-        size: 100
-      }) - b;
-      if (h += g, d += f, d < 0 || d >= n.length)
-        break;
-    }
-    const y = Math.min(Math.abs(e), Math.abs(h));
-    e = e < 0 ? 0 - y : y;
-  }
-  {
-    let d = e < 0 ? c : m;
-    for (;d >= 0 && d < n.length; ) {
-      const h = Math.abs(e) - Math.abs(p), y = a[d];
-      C(y != null, `Previous layout not found for panel index ${d}`);
-      const b = y - h, v = Z({
-        overrideDisabledPanels: u,
-        panelConstraints: n[d],
-        prevSize: y,
-        size: b
-      });
-      if (!D(y, v) && (p += y - v, l[d] = v, p.toFixed(3).localeCompare(Math.abs(e).toFixed(3), undefined, {
-        numeric: true
-      }) >= 0))
-        break;
-      e < 0 ? d-- : d++;
-    }
-  }
-  if ($t(r2, l))
-    return i;
-  {
-    const f = e < 0 ? m : c, d = a[f];
-    C(d != null, `Previous layout not found for panel index ${f}`);
-    const h = d + p, y = Z({
-      overrideDisabledPanels: u,
-      panelConstraints: n[f],
-      prevSize: d,
-      size: h
-    });
-    if (l[f] = y, !D(y, h)) {
-      let b = h - y, g = e < 0 ? m : c;
-      for (;g >= 0 && g < n.length; ) {
-        const w = l[g];
-        C(w != null, `Previous layout not found for panel index ${g}`);
-        const E = w + b, L = Z({
-          overrideDisabledPanels: u,
-          panelConstraints: n[g],
-          prevSize: w,
-          size: E
-        });
-        if (D(w, L) || (b -= L - w, l[g] = L), D(b, 0))
-          break;
-        e > 0 ? g-- : g++;
-      }
-    }
-  }
-  const S = Object.values(l).reduce((f, d) => d + f, 0);
-  if (!D(S, 100, 0.1))
-    return i;
-  const z = Object.keys(i);
-  return l.reduce((f, d, h) => (f[z[h]] = d, f), {});
-}
-function K(e, t) {
-  if (Object.keys(e).length !== Object.keys(t).length)
-    return false;
-  for (const n in e)
-    if (t[n] === undefined || A(e[n], t[n]) !== 0)
-      return false;
-  return true;
-}
-function X2({
-  layout: e,
-  panelConstraints: t
-}) {
-  const n = Object.values(e), o = [...n], i = o.reduce((a, r2) => a + r2, 0);
-  if (o.length !== t.length)
-    throw Error(`Invalid ${t.length} panel layout: ${o.map((a) => `${a}%`).join(", ")}`);
-  if (!D(i, 100) && o.length > 0)
-    for (let a = 0;a < t.length; a++) {
-      const r2 = o[a];
-      C(r2 != null, `No layout data found for index ${a}`);
-      const l = 100 / i * r2;
-      o[a] = l;
-    }
-  let s = 0;
-  for (let a = 0;a < t.length; a++) {
-    const r2 = n[a];
-    C(r2 != null, `No layout data found for index ${a}`);
-    const l = o[a];
-    C(l != null, `No layout data found for index ${a}`);
-    const c = Z({
-      overrideDisabledPanels: true,
-      panelConstraints: t[a],
-      prevSize: r2,
-      size: l
-    });
-    l != c && (s += l - c, o[a] = c);
-  }
-  if (!D(s, 0))
-    for (let a = 0;a < t.length; a++) {
-      const r2 = o[a];
-      C(r2 != null, `No layout data found for index ${a}`);
-      const l = r2 + s, c = Z({
-        overrideDisabledPanels: true,
-        panelConstraints: t[a],
-        prevSize: r2,
-        size: l
-      });
-      if (r2 !== c && (s -= c - r2, o[a] = c, D(s, 0)))
-        break;
-    }
-  const u = Object.keys(e);
-  return o.reduce((a, r2, l) => (a[u[l]] = r2, a), {});
-}
-function at({
-  groupId: e,
-  panelId: t
-}) {
-  const n = () => {
-    const r2 = V();
-    for (const [
-      l,
-      {
-        defaultLayoutDeferred: c,
-        derivedPanelConstraints: m,
-        layout: p,
-        groupSize: S,
-        separatorToPanels: z
-      }
-    ] of r2)
-      if (l.id === e)
-        return {
-          defaultLayoutDeferred: c,
-          derivedPanelConstraints: m,
-          group: l,
-          groupSize: S,
-          layout: p,
-          separatorToPanels: z
-        };
-    throw Error(`Group ${e} not found`);
-  }, o = () => {
-    const r2 = n().derivedPanelConstraints.find((l) => l.panelId === t);
-    if (r2 !== undefined)
-      return r2;
-    throw Error(`Panel constraints not found for Panel ${t}`);
-  }, i = () => {
-    const r2 = n().group.panels.find((l) => l.id === t);
-    if (r2 !== undefined)
-      return r2;
-    throw Error(`Layout not found for Panel ${t}`);
-  }, s = () => {
-    const r2 = n().layout[t];
-    if (r2 !== undefined)
-      return r2;
-    throw Error(`Layout not found for Panel ${t}`);
-  }, u = ({
-    nextSize: r2,
-    panels: l,
-    prevLayout: c,
-    derivedPanelConstraints: m
-  }) => {
-    const p = s(), S = l.findIndex((h) => h.id === t), z = S === 0, f = S === l.length - 1;
-    if (f && r2 < p && (z || l.slice(0, S).every((h, y) => {
-      const b = m[y];
-      return b?.collapsible && D(b.collapsedSize, c[b.panelId]);
-    }))) {
-      const h = l.slice(0, S).reduce((y, b) => y + c[b.id], 0);
-      return {
-        ...c,
-        [t]: T(100 - h)
-      };
-    }
-    return ae({
-      delta: f ? p - r2 : r2 - p,
-      initialLayout: c,
-      panelConstraints: m,
-      pivotIndices: f ? [S - 1, S] : [S, S + 1],
-      prevLayout: c,
-      trigger: "imperative-api"
-    });
-  }, a = (r2) => {
-    const l = s();
-    if (r2 === l)
-      return;
-    const {
-      defaultLayoutDeferred: c,
-      derivedPanelConstraints: m,
-      group: p,
-      groupSize: S,
-      layout: z,
-      separatorToPanels: f
-    } = n(), d = u({
-      nextSize: r2,
-      panels: p.panels,
-      prevLayout: z,
-      derivedPanelConstraints: m
-    }), h = X2({
-      layout: d,
-      panelConstraints: m
-    });
-    K(z, h) || j(p, {
-      defaultLayoutDeferred: c,
-      derivedPanelConstraints: m,
-      groupSize: S,
-      layout: h,
-      separatorToPanels: f
-    });
-  };
-  return {
-    collapse: () => {
-      const { collapsible: r2, collapsedSize: l } = o(), { mutableValues: c } = i(), m = s();
-      r2 && m !== l && (c.expandToSize = m, a(l));
-    },
-    expand: () => {
-      const { collapsible: r2, collapsedSize: l, minSize: c } = o(), { mutableValues: m } = i(), p = s();
-      if (r2 && p === l) {
-        let S = m.expandToSize ?? c;
-        S === 0 && (S = 1), a(S);
-      }
-    },
-    getSize: () => {
-      const { group: r2 } = n(), l = s(), { element: c } = i(), m = r2.orientation === "horizontal" ? c.offsetWidth : c.offsetHeight;
-      return {
-        asPercentage: l,
-        inPixels: m
-      };
-    },
-    isCollapsed: () => {
-      const { collapsible: r2, collapsedSize: l } = o(), c = s();
-      return r2 && D(l, c);
-    },
-    resize: (r2) => {
-      const { group: l } = n(), { element: c } = i(), m = ne({ group: l }), p = oe({
-        groupSize: m,
-        panelElement: c,
-        styleProp: r2
-      }), S = T(p / m * 100);
-      a(S);
-    }
-  };
-}
-function _e(e) {
-  if (e.defaultPrevented)
-    return;
-  const t = V();
-  Le(e, t).forEach((o) => {
-    if (o.separator && !o.separator.disableDoubleClick) {
-      const i = o.panels.find((s) => s.panelConstraints.defaultSize !== undefined);
-      if (i) {
-        const s = i.panelConstraints.defaultSize, u = at({
-          groupId: o.group.id,
-          panelId: i.id
-        });
-        u && s !== undefined && (u.resize(s), e.preventDefault());
-      }
-    }
-  });
-}
-function he(e) {
-  const t = V();
-  for (const [n] of t)
-    if (n.separators.some((o) => o.element === e))
-      return n;
-  throw Error("Could not find parent Group for separator element");
-}
-function lt({
-  groupId: e
-}) {
-  const t = () => {
-    const n = V();
-    for (const [o, i] of n)
-      if (o.id === e)
-        return { group: o, ...i };
-    throw Error(`Could not find Group with id "${e}"`);
-  };
-  return {
-    getLayout() {
-      const { defaultLayoutDeferred: n, layout: o } = t();
-      return n ? {} : o;
-    },
-    setLayout(n) {
-      const {
-        defaultLayoutDeferred: o,
-        derivedPanelConstraints: i,
-        group: s,
-        groupSize: u,
-        layout: a,
-        separatorToPanels: r2
-      } = t(), l = X2({
-        layout: n,
-        panelConstraints: i
-      });
-      return o ? a : (K(a, l) || j(s, {
-        defaultLayoutDeferred: o,
-        derivedPanelConstraints: i,
-        groupSize: u,
-        layout: l,
-        separatorToPanels: r2
-      }), l);
-    }
-  };
-}
-function B(e, t) {
-  const n = he(e), o = H(n.id, true), i = n.separators.find((m) => m.element === e);
-  C(i, "Matching separator not found");
-  const s = o.separatorToPanels.get(i);
-  C(s, "Matching panels not found");
-  const u = s.map((m) => n.panels.indexOf(m)), r2 = lt({ groupId: n.id }).getLayout(), l = ae({
-    delta: t,
-    initialLayout: r2,
-    panelConstraints: o.derivedPanelConstraints,
-    pivotIndices: u,
-    prevLayout: r2,
-    trigger: "keyboard"
-  }), c = X2({
-    layout: l,
-    panelConstraints: o.derivedPanelConstraints
-  });
-  K(r2, c) || j(n, {
-    defaultLayoutDeferred: o.defaultLayoutDeferred,
-    derivedPanelConstraints: o.derivedPanelConstraints,
-    groupSize: o.groupSize,
-    layout: c,
-    separatorToPanels: o.separatorToPanels
-  }, { isUserInteraction: true });
-}
-function $e(e) {
-  if (e.defaultPrevented)
-    return;
-  const t = e.currentTarget, n = he(t);
-  if (!n.disabled)
-    switch (e.key) {
-      case "ArrowDown": {
-        e.preventDefault(), n.orientation === "vertical" && B(t, 5);
-        break;
-      }
-      case "ArrowLeft": {
-        e.preventDefault(), n.orientation === "horizontal" && B(t, -5);
-        break;
-      }
-      case "ArrowRight": {
-        e.preventDefault(), n.orientation === "horizontal" && B(t, 5);
-        break;
-      }
-      case "ArrowUp": {
-        e.preventDefault(), n.orientation === "vertical" && B(t, -5);
-        break;
-      }
-      case "End": {
-        e.preventDefault(), B(t, 100);
-        break;
-      }
-      case "Enter": {
-        e.preventDefault();
-        const o = he(t), i = H(o.id, true), { derivedPanelConstraints: s, layout: u, separatorToPanels: a } = i, r2 = o.separators.find((p) => p.element === t);
-        C(r2, "Matching separator not found");
-        const l = a.get(r2);
-        C(l, "Matching panels not found");
-        const c = l[0], m = s.find((p) => p.panelId === c.id);
-        if (C(m, "Panel metadata not found"), m.collapsible) {
-          const p = u[c.id], S = m.collapsedSize === p ? o.mutableState.expandedPanelSizes[c.id] ?? m.minSize : m.collapsedSize;
-          B(t, S - p);
-        }
-        break;
-      }
-      case "F6": {
-        e.preventDefault();
-        const i = he(t).separators.map((r2) => r2.element), s = Array.from(i).findIndex((r2) => r2 === e.currentTarget);
-        C(s !== null, "Index not found");
-        const u = e.shiftKey ? s > 0 ? s - 1 : i.length - 1 : s + 1 < i.length ? s + 1 : 0;
-        i[u].focus({
-          preventScroll: true
-        });
-        break;
-      }
-      case "Home": {
-        e.preventDefault(), B(t, -100);
-        break;
-      }
-    }
-}
-function je(e) {
-  if (e.defaultPrevented)
-    return;
-  if (e.pointerType === "mouse" && e.button > 0)
-    return;
-  const t = V(), n = Le(e, t), o = /* @__PURE__ */ new Map;
-  let i = false;
-  n.forEach((s) => {
-    s.separator && (i || (i = true, s.separator.element.focus({
-      focusVisible: false,
-      preventScroll: true
-    })));
-    const u = t.get(s.group);
-    u && o.set(s.group, u.layout);
-  }), te({
-    cursorFlags: 0,
-    hitRegions: n,
-    initialLayoutMap: o,
-    pointerDownAtPoint: { x: e.clientX, y: e.clientY },
-    state: "active"
-  }), n.length && e.preventDefault();
-}
-function ut({
-  document: e,
-  event: t,
-  hitRegions: n,
-  initialLayoutMap: o,
-  mountedGroups: i,
-  pointerDownAtPoint: s,
-  prevCursorFlags: u
-}) {
-  let a = 0;
-  n.forEach((l) => {
-    const { group: c, groupSize: m } = l, { orientation: p, panels: S } = c, { disableCursor: z } = c.mutableState;
-    let f = 0;
-    s ? p === "horizontal" ? f = (t.clientX - s.x) / m * 100 : f = (t.clientY - s.y) / m * 100 : p === "horizontal" ? f = t.clientX < 0 ? -100 : 100 : f = t.clientY < 0 ? -100 : 100;
-    const d = o.get(c), h = i.get(c);
-    if (!d || !h)
-      return;
-    const {
-      defaultLayoutDeferred: y,
-      derivedPanelConstraints: b,
-      groupSize: v,
-      layout: g,
-      separatorToPanels: w
-    } = h;
-    if (b && g && w) {
-      const E = ae({
-        delta: f,
-        initialLayout: d,
-        panelConstraints: b,
-        pivotIndices: l.panels.map((L) => S.indexOf(L)),
-        prevLayout: g,
-        trigger: "mouse-or-touch"
-      });
-      if (K(E, g)) {
-        if (f !== 0 && !z)
-          switch (p) {
-            case "horizontal": {
-              a |= f < 0 ? et : tt;
-              break;
-            }
-            case "vertical": {
-              a |= f < 0 ? nt : ot;
-              break;
-            }
-          }
-      } else
-        j(l.group, {
-          defaultLayoutDeferred: y,
-          derivedPanelConstraints: b,
-          groupSize: v,
-          layout: E,
-          separatorToPanels: w
-        });
-    }
-  });
-  let r2 = 0;
-  t.movementX === 0 ? r2 |= u & Ie : r2 |= a & Ie, t.movementY === 0 ? r2 |= u & ke : r2 |= a & ke, Et(r2), Pe(e);
-}
-function He(e) {
-  const t = V(), n = W();
-  switch (n.state) {
-    case "active":
-      ut({
-        document: e.currentTarget,
-        event: e,
-        hitRegions: n.hitRegions,
-        initialLayoutMap: n.initialLayoutMap,
-        mountedGroups: t,
-        prevCursorFlags: n.cursorFlags
-      });
-  }
-}
-function Ve(e) {
-  if (e.defaultPrevented)
-    return;
-  const t = W(), n = V();
-  switch (t.state) {
-    case "active": {
-      if (e.buttons === 0) {
-        te({
-          cursorFlags: 0,
-          state: "inactive"
-        }), t.hitRegions.forEach((o) => {
-          if (!n.has(o.group))
-            return;
-          const i = H(o.group.id, true);
-          j(o.group, i, {
-            isUserInteraction: true
-          });
-        });
-        return;
-      }
-      for (const o of t.hitRegions)
-        if (o.separator) {
-          const { element: i } = o.separator;
-          i.isConnected && !i.hasPointerCapture?.(e.pointerId) && i.setPointerCapture?.(e.pointerId);
-        }
-      ut({
-        document: e.currentTarget,
-        event: e,
-        hitRegions: t.hitRegions,
-        initialLayoutMap: t.initialLayoutMap,
-        mountedGroups: n,
-        pointerDownAtPoint: t.pointerDownAtPoint,
-        prevCursorFlags: t.cursorFlags
-      });
-      break;
-    }
-    default: {
-      const o = Le(e, n);
-      o.length === 0 ? t.state !== "inactive" && te({
-        cursorFlags: 0,
-        state: "inactive"
-      }) : te({
-        cursorFlags: 0,
-        hitRegions: o,
-        state: "hover"
-      }), Pe(e.currentTarget);
-      break;
-    }
-  }
-}
-function Ue(e) {
-  if (e.relatedTarget instanceof HTMLIFrameElement)
-    switch (W().state) {
-      case "hover":
-        te({
-          cursorFlags: 0,
-          state: "inactive"
-        });
-    }
-}
-function Be(e) {
-  if (e.defaultPrevented)
-    return;
-  if (e.pointerType === "mouse" && e.button > 0)
-    return;
-  rt(e.currentTarget) && e.preventDefault();
-}
-function We(e) {
-  let t = 0, n = 0;
-  const o = {};
-  for (const s of e)
-    if (s.defaultSize !== undefined) {
-      t++;
-      const u = T(s.defaultSize);
-      n += u, o[s.panelId] = u;
-    } else
-      o[s.panelId] = undefined;
-  const i = e.length - t;
-  if (i !== 0) {
-    const s = T((100 - n) / i);
-    for (const u of e)
-      u.defaultSize === undefined && (o[u.panelId] = s);
-  }
-  return o;
-}
-function jt(e, t, n) {
-  if (!n[0])
-    return;
-  const i = e.panels.find((l) => l.element === t);
-  if (!i || !i.onResize)
-    return;
-  const s = ne({ group: e }), u = e.orientation === "horizontal" ? i.element.offsetWidth : i.element.offsetHeight, a = i.mutableValues.prevSize, r2 = {
-    asPercentage: T(u / s * 100),
-    inPixels: u
-  };
-  i.mutableValues.prevSize = r2, i.onResize(r2, i.id, a);
-}
-function Ht(e, t) {
-  if (Object.keys(e).length !== Object.keys(t).length)
-    return false;
-  for (const o in e)
-    if (e[o] !== t[o])
-      return false;
-  return true;
-}
-function Vt(e, t) {
-  return e.length !== t.length ? false : e.every((n, o) => Ht(n, t[o]));
-}
-function Ut({
-  group: e,
-  nextGroupSize: t,
-  prevGroupSize: n,
-  prevLayout: o
-}) {
-  if (n <= 0 || t <= 0 || n === t)
-    return o;
-  let i = 0, s = 0, u = false;
-  const a = /* @__PURE__ */ new Map, r2 = [];
-  for (const m of e.panels) {
-    const p = o[m.id] ?? 0;
-    switch (m.panelConstraints.groupResizeBehavior) {
-      case "preserve-pixel-size": {
-        u = true;
-        const S = p / 100 * n, z = T(S / t * 100);
-        a.set(m.id, z), i += z;
-        break;
-      }
-      case "preserve-relative-size":
-      default: {
-        r2.push(m.id), s += p;
-        break;
-      }
-    }
-  }
-  if (!u || r2.length === 0)
-    return o;
-  const l = 100 - i, c = { ...o };
-  if (a.forEach((m, p) => {
-    c[p] = m;
-  }), s > 0)
-    for (const m of r2) {
-      const p = o[m] ?? 0;
-      c[m] = T(p / s * l);
-    }
-  else {
-    const m = T(l / r2.length);
-    for (const p of r2)
-      c[p] = m;
-  }
-  return c;
-}
-function Bt(e, t) {
-  const n = e.map((i) => i.id), o = Object.keys(t);
-  if (n.length !== o.length)
-    return false;
-  for (const i of n)
-    if (!o.includes(i))
-      return false;
-  return true;
-}
-var J = /* @__PURE__ */ new Map;
-function Wt(e) {
-  let t = true;
-  C(e.element.ownerDocument.defaultView, "Cannot register an unmounted Group");
-  const n = e.element.ownerDocument.defaultView.ResizeObserver, o = /* @__PURE__ */ new Set, i = /* @__PURE__ */ new Set, s = new n((f) => {
-    for (const d of f) {
-      const { borderBoxSize: h, target: y } = d;
-      if (y === e.element) {
-        if (t) {
-          const b = ne({ group: e });
-          if (b === 0)
-            return;
-          const v = H(e.id);
-          if (!v)
-            return;
-          const g = be(e), w = v.defaultLayoutDeferred ? We(g) : v.layout, E = Ut({
-            group: e,
-            nextGroupSize: b,
-            prevGroupSize: v.groupSize,
-            prevLayout: w
-          }), L = X2({
-            layout: E,
-            panelConstraints: g
-          });
-          if (!v.defaultLayoutDeferred && K(v.layout, L) && Vt(v.derivedPanelConstraints, g) && v.groupSize === b)
-            continue;
-          j(e, {
-            defaultLayoutDeferred: false,
-            derivedPanelConstraints: g,
-            groupSize: b,
-            layout: L,
-            separatorToPanels: v.separatorToPanels
-          });
-        }
-      } else
-        jt(e, y, h);
-    }
-  });
-  s.observe(e.element), e.panels.forEach((f) => {
-    C(!o.has(f.id), `Panel ids must be unique; id "${f.id}" was used more than once`), o.add(f.id), f.onResize && s.observe(f.element);
-  });
-  const u = ne({ group: e }), a = be(e), r2 = e.panels.map(({ id: f }) => f).join(",");
-  let l = e.mutableState.defaultLayout;
-  l && (Bt(e.panels, l) || (l = undefined));
-  const c = e.mutableState.layouts[r2] ?? l ?? We(a), m = X2({
-    layout: c,
-    panelConstraints: a
-  }), p = e.element.ownerDocument;
-  J.set(p, (J.get(p) ?? 0) + 1);
-  const S = /* @__PURE__ */ new Map;
-  return Ze(e).forEach((f) => {
-    f.separator && S.set(f.separator, f.panels);
-  }), j(e, {
-    defaultLayoutDeferred: u === 0,
-    derivedPanelConstraints: a,
-    groupSize: u,
-    layout: m,
-    separatorToPanels: S
-  }), e.separators.forEach((f) => {
-    C(!i.has(f.id), `Separator ids must be unique; id "${f.id}" was used more than once`), i.add(f.id), f.element.addEventListener("keydown", $e);
-  }), J.get(p) === 1 && (p.addEventListener("contextmenu", Ge, true), p.addEventListener("dblclick", _e, true), p.addEventListener("pointerdown", je, true), p.addEventListener("pointerleave", He), p.addEventListener("pointermove", Ve), p.addEventListener("pointerout", Ue), p.addEventListener("pointerup", Be, true)), function() {
-    t = false, J.set(p, Math.max(0, (J.get(p) ?? 0) - 1)), kt(e), e.separators.forEach((d) => {
-      d.element.removeEventListener("keydown", $e);
-    }), J.get(p) || (p.removeEventListener("contextmenu", Ge, true), p.removeEventListener("dblclick", _e, true), p.removeEventListener("pointerdown", je, true), p.removeEventListener("pointerleave", He), p.removeEventListener("pointermove", Ve), p.removeEventListener("pointerout", Ue), p.removeEventListener("pointerup", Be, true)), s.disconnect();
-  };
-}
-function Kt() {
-  const [e, t] = import_react13.useState({}), n = import_react13.useCallback(() => t({}), []);
-  return [e, n];
-}
-function Ce(e) {
-  const t = import_react13.useId();
-  return `${e ?? t}`;
-}
-var q = typeof window < "u" ? import_react13.useLayoutEffect : import_react13.useEffect;
-function re(e) {
-  const t = import_react13.useRef(e);
-  return q(() => {
-    t.current = e;
-  }, [e]), import_react13.useCallback((...n) => t.current?.(...n), [t]);
-}
-function Re(...e) {
-  return re((t) => {
-    e.forEach((n) => {
-      if (n)
-        switch (typeof n) {
-          case "function": {
-            n(t);
-            break;
-          }
-          case "object": {
-            n.current = t;
-            break;
-          }
-        }
-    });
-  });
-}
-function Ee(e) {
-  const t = import_react13.useRef({ ...e });
-  return q(() => {
-    for (const n in e)
-      t.current[n] = e[n];
-  }, [e]), t.current;
-}
-var ct = import_react13.createContext(null);
-function Xt(e, t) {
-  const n = import_react13.useRef({
-    getLayout: () => ({}),
-    setLayout: Mt
-  });
-  import_react13.useImperativeHandle(t, () => n.current, []), q(() => {
-    Object.assign(n.current, lt({ groupId: e }));
-  });
-}
-function qt({
-  children: e,
-  className: t,
-  defaultLayout: n,
-  disableCursor: o,
-  disabled: i,
-  elementRef: s,
-  groupRef: u,
-  id: a,
-  onLayoutChange: r2,
-  onLayoutChanged: l,
-  orientation: c = "horizontal",
-  resizeTargetMinimumSize: m = {
-    coarse: 20,
-    fine: 10
-  },
-  style: p,
-  ...S
-}) {
-  const z = import_react13.useRef({
-    onLayoutChange: {},
-    onLayoutChanged: {}
-  }), f = re((x) => {
-    K(z.current.onLayoutChange, x) || (z.current.onLayoutChange = x, r2?.(x));
-  }), d = re((x, P) => {
-    K(z.current.onLayoutChanged, x) || (z.current.onLayoutChanged = x, l?.(x, { isUserInteraction: P }));
-  }), h = Ce(a), y = import_react13.useRef(null), [b, v] = Kt(), g = import_react13.useRef({
-    lastExpandedPanelSizes: {},
-    layouts: {},
-    panels: [],
-    resizeTargetMinimumSize: m,
-    separators: []
-  }), w = Re(y, s);
-  Xt(h, u);
-  const E = re((x, P) => {
-    const I = W(), R = Oe(x), M = H(x);
-    if (M) {
-      let k = false;
-      switch (I.state) {
-        case "active": {
-          k = I.hitRegions.some((U) => U.group === R);
-          break;
-        }
-      }
-      return {
-        flexGrow: M.layout[P] ?? 1,
-        pointerEvents: k ? "none" : undefined
-      };
-    }
-    if (n?.[P])
-      return {
-        flexGrow: n?.[P]
-      };
-  }), L = Ee({
-    defaultLayout: n,
-    disableCursor: o
-  }), G = import_react13.useMemo(() => ({
-    get disableCursor() {
-      return !!L.disableCursor;
-    },
-    getPanelStyles: E,
-    id: h,
-    orientation: c,
-    registerPanel: (x) => {
-      const P = g.current;
-      return P.panels = ze(c, [
-        ...P.panels,
-        x
-      ]), v(), () => {
-        P.panels = P.panels.filter((I) => I !== x), v();
-      };
-    },
-    registerSeparator: (x) => {
-      const P = g.current;
-      return P.separators = ze(c, [
-        ...P.separators,
-        x
-      ]), v(), () => {
-        P.separators = P.separators.filter((I) => I !== x), v();
-      };
-    },
-    updatePanelProps: (x, { disabled: P }) => {
-      const R = g.current.panels.find((U) => U.id === x);
-      R && (R.panelConstraints.disabled = P);
-      const M = Oe(h), k = H(h);
-      M && k && j(M, {
-        ...k,
-        derivedPanelConstraints: be(M)
-      });
-    },
-    updateSeparatorProps: (x, {
-      disabled: P,
-      disableDoubleClick: I
-    }) => {
-      const M = g.current.separators.find((k) => k.id === x);
-      M && (M.disabled = P, M.disableDoubleClick = I);
-    }
-  }), [E, h, v, c, L]), N = import_react13.useRef(null);
-  return q(() => {
-    const x = y.current;
-    if (x === null)
-      return;
-    const P = g.current;
-    let I;
-    if (L.defaultLayout !== undefined && Object.keys(L.defaultLayout).length === P.panels.length) {
-      I = {};
-      for (const _ of P.panels) {
-        const Y = L.defaultLayout[_.id];
-        Y !== undefined && (I[_.id] = Y);
-      }
-    }
-    const R = {
-      disabled: !!i,
-      element: x,
-      id: h,
-      mutableState: {
-        defaultLayout: I,
-        disableCursor: !!L.disableCursor,
-        expandedPanelSizes: g.current.lastExpandedPanelSizes,
-        layouts: g.current.layouts
-      },
-      orientation: c,
-      panels: P.panels,
-      resizeTargetMinimumSize: P.resizeTargetMinimumSize,
-      separators: P.separators
-    };
-    N.current = R;
-    const M = Wt(R), { defaultLayoutDeferred: k, derivedPanelConstraints: U, layout: le } = H(R.id, true);
-    !k && U.length > 0 && (f(le), d(le, false));
-    const ue = we(h, (_) => {
-      const { defaultLayoutDeferred: Y, derivedPanelConstraints: ce, layout: fe } = _.next;
-      if (Y || ce.length === 0)
-        return;
-      const ft = R.panels.map(({ id: $ }) => $).join(",");
-      R.mutableState.layouts[ft] = fe, ce.forEach(($) => {
-        if ($.collapsible) {
-          const { layout: ye } = _.prev ?? {};
-          if (ye) {
-            const pt = D($.collapsedSize, fe[$.panelId]), ht = D($.collapsedSize, ye[$.panelId]);
-            pt && !ht && (R.mutableState.expandedPanelSizes[$.panelId] = ye[$.panelId]);
-          }
-        }
-      });
-      const dt = W().state !== "active";
-      f(fe), dt && d(fe, _.isUserInteraction);
-    });
-    return () => {
-      N.current = null, M(), ue();
-    };
-  }, [
-    i,
-    h,
-    d,
-    f,
-    c,
-    b,
-    L
-  ]), import_react13.useEffect(() => {
-    const x = N.current;
-    x && (x.mutableState.defaultLayout = n, x.mutableState.disableCursor = !!o);
-  }), /* @__PURE__ */ import_jsx_runtime35.jsx(ct.Provider, { value: G, children: /* @__PURE__ */ import_jsx_runtime35.jsx("div", {
-    ...S,
-    className: t,
-    "data-group": true,
-    "data-testid": h,
-    id: h,
-    ref: w,
-    style: {
-      height: "100%",
-      width: "100%",
-      overflow: "hidden",
-      ...p,
-      display: "flex",
-      flexDirection: c === "horizontal" ? "row" : "column",
-      flexWrap: "nowrap",
-      touchAction: c === "horizontal" ? "pan-y" : "pan-x"
-    },
-    children: e
-  }) });
-}
-qt.displayName = "Group";
-function me(e, t) {
-  return `react-resizable-panels:${[e, ...t].join(":")}`;
-}
-function Yt({
-  id: e,
-  panelIds: t,
-  storage: n
-}) {
-  const o = me(e, []), i = n.getItem(o);
-  if (i)
-    try {
-      const s = JSON.parse(i);
-      if (t) {
-        const u = t.join(","), a = s[u];
-        if (a && Array.isArray(a.layout) && t.length === a.layout.length) {
-          const r2 = {};
-          for (let l = 0;l < t.length; l++)
-            r2[t[l]] = a.layout[l];
-          return r2;
-        }
-      } else {
-        const u = Object.keys(s);
-        if (u.length === 1) {
-          const a = s[u[0]];
-          if (a && Array.isArray(a.layout)) {
-            const r2 = u[0].split(",");
-            if (r2.length === a.layout.length) {
-              const l = {};
-              for (let c = 0;c < r2.length; c++)
-                l[r2[c]] = a.layout[c];
-              return l;
-            }
-          }
-        }
-      }
-    } catch {}
-}
-function an({
-  debounceSaveMs: e = 100,
-  onlySaveAfterUserInteractions: t,
-  panelIds: n,
-  storage: o = localStorage,
-  ...i
-}) {
-  const s = n !== undefined, u = "id" in i ? i.id : i.groupId, a = me(u, n ?? []), r2 = import_react13.useSyncExternalStore(Jt, () => o.getItem(a), () => o.getItem(a)), l = import_react13.useMemo(() => {
-    if (r2) {
-      const d = JSON.parse(r2), h = Object.values(d);
-      if (Array.from(h).every((y) => typeof y == "number"))
-        return d;
-    }
-  }, [r2]), c = import_react13.useMemo(() => {
-    if (!l)
-      return Yt({
-        id: u,
-        panelIds: n,
-        storage: o
-      });
-  }, [l, u, n, o]), m = l ?? c, p = import_react13.useRef(null), S = import_react13.useCallback(() => {
-    const d = p.current;
-    d && (p.current = null, clearTimeout(d));
-  }, []);
-  import_react13.useLayoutEffect(() => () => {
-    S();
-  }, [S]);
-  const z = import_react13.useCallback((d, h) => {
-    if (t && !h.isUserInteraction)
-      return;
-    S();
-    let y;
-    s ? y = me(u, Object.keys(d)) : y = me(u, []);
-    try {
-      o.setItem(y, JSON.stringify(d));
-    } catch (b) {
-      console.error(b);
-    }
-  }, [
-    S,
-    s,
-    u,
-    t,
-    o
-  ]), f = import_react13.useCallback((d) => {
-    S(), e === 0 ? z(d, { isUserInteraction: false }) : p.current = setTimeout(() => {
-      z(d, { isUserInteraction: false });
-    }, e);
-  }, [S, e, z]);
-  return {
-    defaultLayout: m,
-    onLayoutChange: f,
-    onLayoutChanged: z
-  };
-}
-function Jt() {
-  return function() {};
-}
-function Me() {
-  const e = import_react13.useContext(ct);
-  return C(e, "Group Context not found; did you render a Panel or Separator outside of a Group?"), e;
-}
-function Zt(e, t) {
-  const { id: n } = Me(), o = import_react13.useRef({
-    collapse: Se,
-    expand: Se,
-    getSize: () => ({
-      asPercentage: 0,
-      inPixels: 0
-    }),
-    isCollapsed: () => false,
-    resize: Se
-  });
-  import_react13.useImperativeHandle(t, () => o.current, []), q(() => {
-    Object.assign(o.current, at({ groupId: n, panelId: e }));
-  });
-}
-function Qt({
-  children: e,
-  className: t,
-  collapsedSize: n = "0%",
-  collapsible: o = false,
-  defaultSize: i,
-  disabled: s,
-  elementRef: u,
-  groupResizeBehavior: a = "preserve-relative-size",
-  id: r2,
-  maxSize: l = "100%",
-  minSize: c = "0%",
-  onResize: m,
-  panelRef: p,
-  style: S,
-  ...z
-}) {
-  const f = !!r2, d = Ce(r2), h = Ee({
-    disabled: s
-  }), y = import_react13.useRef(null), b = Re(y, u), {
-    getPanelStyles: v,
-    id: g,
-    orientation: w,
-    registerPanel: E,
-    updatePanelProps: L
-  } = Me(), G = m !== null, N = re((R, M, k) => {
-    m?.(R, r2, k);
-  });
-  q(() => {
-    const R = y.current;
-    if (R !== null) {
-      const M = {
-        element: R,
-        id: d,
-        idIsStable: f,
-        mutableValues: {
-          expandToSize: undefined,
-          prevSize: undefined
-        },
-        onResize: G ? N : undefined,
-        panelConstraints: {
-          groupResizeBehavior: a,
-          collapsedSize: n,
-          collapsible: o,
-          defaultSize: i,
-          disabled: h.disabled,
-          maxSize: l,
-          minSize: c
-        }
-      };
-      return E(M);
-    }
-  }, [
-    a,
-    n,
-    o,
-    i,
-    G,
-    d,
-    f,
-    l,
-    c,
-    N,
-    E,
-    h
-  ]), import_react13.useEffect(() => {
-    L(d, { disabled: s });
-  }, [s, d, L]), Zt(d, p);
-  const x = () => {
-    const R = v(g, d);
-    if (R)
-      return JSON.stringify(R);
-  }, P = import_react13.useSyncExternalStore((R) => we(g, R), x, x);
-  let I;
-  return P ? I = JSON.parse(P) : i !== undefined ? I = {
-    flexGrow: undefined,
-    flexShrink: undefined,
-    flexBasis: i
-  } : I = { flexGrow: 1 }, /* @__PURE__ */ import_jsx_runtime35.jsx("div", {
-    ...z,
-    "data-disabled": s || undefined,
-    "data-panel": true,
-    "data-testid": d,
-    id: d,
-    ref: b,
-    style: {
-      ...en,
-      display: "flex",
-      flexBasis: 0,
-      flexShrink: 1,
-      overflow: "visible",
-      ...I
-    },
-    children: /* @__PURE__ */ import_jsx_runtime35.jsx("div", {
-      className: t,
-      style: {
-        maxHeight: "100%",
-        maxWidth: "100%",
-        flexGrow: 1,
-        overflow: "auto",
-        ...S,
-        touchAction: w === "horizontal" ? "pan-y" : "pan-x"
-      },
-      children: e
-    })
-  });
-}
-Qt.displayName = "Panel";
-var en = {
-  minHeight: 0,
-  maxHeight: "100%",
-  height: "auto",
-  minWidth: 0,
-  maxWidth: "100%",
-  width: "auto",
-  border: "none",
-  borderWidth: 0,
-  padding: 0,
-  margin: 0
-};
-function fn() {
-  return import_react13.useRef(null);
-}
-function tn({
-  layout: e,
-  panelConstraints: t,
-  panelId: n,
-  panelIndex: o
-}) {
-  let i, s;
-  const u = e[n], a = t.find((r2) => r2.panelId === n);
-  if (a) {
-    const r2 = a.maxSize, l = a.collapsible ? a.collapsedSize : a.minSize, c = [o, o + 1];
-    s = X2({
-      layout: ae({
-        delta: l - u,
-        initialLayout: e,
-        panelConstraints: t,
-        pivotIndices: c,
-        prevLayout: e
-      }),
-      panelConstraints: t
-    })[n], i = X2({
-      layout: ae({
-        delta: r2 - u,
-        initialLayout: e,
-        panelConstraints: t,
-        pivotIndices: c,
-        prevLayout: e
-      }),
-      panelConstraints: t
-    })[n];
-  }
-  return {
-    valueControls: n,
-    valueMax: i,
-    valueMin: s,
-    valueNow: u
-  };
-}
-function nn({
-  children: e,
-  className: t,
-  disabled: n,
-  disableDoubleClick: o,
-  elementRef: i,
-  id: s,
-  style: u,
-  ...a
-}) {
-  const r2 = Ce(s), l = Ee({
-    disabled: n,
-    disableDoubleClick: o
-  }), [c, m] = import_react13.useState({}), [p, S] = import_react13.useState("inactive"), [z, f] = import_react13.useState(false), d = import_react13.useRef(null), h = Re(d, i), {
-    disableCursor: y,
-    id: b,
-    orientation: v,
-    registerSeparator: g,
-    updateSeparatorProps: w
-  } = Me(), E = v === "horizontal" ? "vertical" : "horizontal";
-  q(() => {
-    const N = d.current;
-    if (N !== null) {
-      const x = {
-        disabled: l.disabled,
-        disableDoubleClick: l.disableDoubleClick,
-        element: N,
-        id: r2
-      }, P = g(x), I = Rt((M) => {
-        S(M.next.state !== "inactive" && M.next.hitRegions.some((k) => k.separator === x) ? M.next.state : "inactive");
-      }), R = we(b, (M) => {
-        const { derivedPanelConstraints: k, layout: U, separatorToPanels: le } = M.next, ue = le.get(x);
-        if (ue) {
-          const _ = ue[0], Y = k.findIndex((ce) => ce.panelId === _.id);
-          m(tn({
-            layout: U,
-            panelConstraints: k,
-            panelId: _.id,
-            panelIndex: Y
-          }));
-        }
-      });
-      return () => {
-        I(), R(), P();
-      };
-    }
-  }, [b, r2, g, l]), import_react13.useEffect(() => {
-    w(r2, { disabled: n, disableDoubleClick: o });
-  }, [n, o, r2, w]);
-  let L;
-  n && !y && (L = "not-allowed");
-  let G;
-  if (n)
-    G = "disabled";
-  else
-    switch (p) {
-      case "active": {
-        G = "active";
-        break;
-      }
-      default:
-        z ? G = "focus" : G = p;
-    }
-  return /* @__PURE__ */ import_jsx_runtime35.jsx("div", {
-    ...a,
-    "aria-controls": c.valueControls,
-    "aria-disabled": n || undefined,
-    "aria-orientation": E,
-    "aria-valuemax": c.valueMax,
-    "aria-valuemin": c.valueMin,
-    "aria-valuenow": c.valueNow,
-    children: e,
-    className: t,
-    "data-separator": G,
-    "data-testid": r2,
-    id: r2,
-    onBlur: () => f(false),
-    onFocus: () => f(true),
-    ref: h,
-    role: "separator",
-    style: {
-      flexBasis: "auto",
-      cursor: L,
-      ...u,
-      flexGrow: 0,
-      flexShrink: 0,
-      touchAction: "none"
-    },
-    tabIndex: n ? undefined : 0
-  });
-}
-nn.displayName = "Separator";
-
 // src/kit/ui/resizable.tsx
 var jsx_runtime15 = __toESM(require_jsx_runtime(), 1);
 function ResizablePanelGroup({ className, ...props }) {
@@ -69874,6 +69874,13 @@ function readLineNumbers(stored) {
 function storedLineNumbers(on) {
   return on ? "on" : "off";
 }
+var SPLIT_LAYOUT_ID = "doc-split";
+var SPLIT_PANES = ["doc-raw", "doc-rendered"];
+var SPLIT_DEFAULT_SIZE = 50;
+var SPLIT_MIN_SIZE = 25;
+function isSplitLayout(layout) {
+  return SPLIT_PANES.every((id) => typeof layout[id] === "number");
+}
 function hasEditor(mode) {
   return mode === "raw" || mode === "split";
 }
@@ -70201,6 +70208,7 @@ var READER_LABEL = {
   enter: "Reader mode: rendered, with both columns out of the way",
   leave: "Leave reader mode and bring the columns back"
 };
+var SPLIT_PANEL_IDS = [...SPLIT_PANES];
 var SPLIT_TOO_NARROW = `Raw and rendered side by side: the pane is too narrow (split needs ${SPLIT_MIN_PX} px)`;
 function usePaneWidth(ref) {
   const [width, setWidth] = import_react29.useState(0);
@@ -70265,6 +70273,16 @@ function DocumentPane({
     kept.setItem(lineNumbersKey, storedLineNumbers(next));
     setNumbered(next);
   };
+  const splitLayout = an({
+    id: SPLIT_LAYOUT_ID,
+    panelIds: SPLIT_PANEL_IDS,
+    storage: kept
+  });
+  const keepSplit = splitLayout.onLayoutChanged;
+  const onSplitLayout = import_react29.useCallback((layout, meta2) => {
+    if (isSplitLayout(layout))
+      keepSplit(layout, meta2);
+  }, [keepSplit]);
   const rootRef = import_react29.useRef(null);
   const width = usePaneWidth(rootRef);
   const splitRoom = splitFits(width);
@@ -71351,12 +71369,18 @@ function DocumentPane({
         })
       }) : /* @__PURE__ */ jsx_runtime32.jsx(ViewBoundary, {
         resetKey: `${doc2.slug}:${showing}`,
-        children: /* @__PURE__ */ jsx_runtime32.jsxs("div", {
-          className: "flex min-h-0 flex-1",
-          "data-slot": showing === "split" ? "split-view" : undefined,
+        children: /* @__PURE__ */ jsx_runtime32.jsxs(ResizablePanelGroup, {
+          orientation: "horizontal",
+          className: "min-h-0 flex-1",
+          defaultLayout: splitLayout.defaultLayout,
+          onLayoutChanged: onSplitLayout,
+          ...showing === "split" ? { "data-slot": "split-view" } : {},
           children: [
-            showing !== "rendered" && /* @__PURE__ */ jsx_runtime32.jsx("div", {
-              className: "flex min-h-0 min-w-0 flex-1 flex-col",
+            showing !== "rendered" && /* @__PURE__ */ jsx_runtime32.jsx(ResizablePanel, {
+              id: "doc-raw",
+              defaultSize: `${SPLIT_DEFAULT_SIZE}`,
+              minSize: `${SPLIT_MIN_SIZE}`,
+              className: "flex min-h-0 min-w-0 flex-col",
               children: /* @__PURE__ */ jsx_runtime32.jsx(DocumentView, {
                 docKey: doc2.slug,
                 text: shown2,
@@ -71390,40 +71414,50 @@ function DocumentPane({
                 quiet: reader
               })
             }, "raw"),
-            showing !== "raw" && /* @__PURE__ */ jsx_runtime32.jsx("div", {
-              className: cn("flex min-h-0 min-w-0 flex-1 flex-col", showing === "split" && "border-l border-edge"),
-              ...renderedImageEvents,
-              children: /* @__PURE__ */ jsx_runtime32.jsx(MarkdownView, {
-                text: shown2,
-                textKey: `${doc2.slug}@${doc2.active}`,
-                notes: paintedNotes,
-                focusedNote: focusedNote ?? null,
-                pendingNote,
-                onFollowLink: followLink,
-                onFollowHeading: jumpToHeading,
-                onSelect,
-                clearSeq: w.clearSeq,
-                place,
-                onContextMenu: setNoteAt,
-                widgets: inlineWidgets,
-                frontmatterChips,
-                frontmatterTrust,
-                profile: profileFor(profile, doc2),
-                onAskProfileFix: askProfileFix,
-                flash,
-                embeds,
-                onEmbedTargets,
-                footer: /* @__PURE__ */ jsx_runtime32.jsx(Backlinks, {
-                  data: backlinks?.doc === doc2.slug ? backlinks : null,
-                  onOpen: openBacklink,
-                  onOpenBundle: (b) => w.openAt ? w.openAt(b.source) : send({ op: "open", path: b.source }),
-                  onOpenEdge: (e) => w.openAt ? w.openAt(e.source) : send({ op: "open", path: e.source }),
-                  ...linkedFromAction ? {
-                    action: {
-                      label: linkedFromAction.label,
-                      onSelect: () => linkedFromAction.onSelect(doc2)
-                    }
-                  } : {}
+            showing === "split" && /* @__PURE__ */ jsx_runtime32.jsx(ResizableHandle, {
+              withHandle: true,
+              "aria-label": "Resize raw and rendered"
+            }, "divider"),
+            showing !== "raw" && /* @__PURE__ */ jsx_runtime32.jsx(ResizablePanel, {
+              id: "doc-rendered",
+              defaultSize: `${100 - SPLIT_DEFAULT_SIZE}`,
+              minSize: `${SPLIT_MIN_SIZE}`,
+              className: "flex min-h-0 min-w-0 flex-col",
+              children: /* @__PURE__ */ jsx_runtime32.jsx("div", {
+                className: "flex min-h-0 min-w-0 flex-1 flex-col",
+                ...renderedImageEvents,
+                children: /* @__PURE__ */ jsx_runtime32.jsx(MarkdownView, {
+                  text: shown2,
+                  textKey: `${doc2.slug}@${doc2.active}`,
+                  notes: paintedNotes,
+                  focusedNote: focusedNote ?? null,
+                  pendingNote,
+                  onFollowLink: followLink,
+                  onFollowHeading: jumpToHeading,
+                  onSelect,
+                  clearSeq: w.clearSeq,
+                  place,
+                  onContextMenu: setNoteAt,
+                  widgets: inlineWidgets,
+                  frontmatterChips,
+                  frontmatterTrust,
+                  profile: profileFor(profile, doc2),
+                  onAskProfileFix: askProfileFix,
+                  flash,
+                  embeds,
+                  onEmbedTargets,
+                  footer: /* @__PURE__ */ jsx_runtime32.jsx(Backlinks, {
+                    data: backlinks?.doc === doc2.slug ? backlinks : null,
+                    onOpen: openBacklink,
+                    onOpenBundle: (b) => w.openAt ? w.openAt(b.source) : send({ op: "open", path: b.source }),
+                    onOpenEdge: (e) => w.openAt ? w.openAt(e.source) : send({ op: "open", path: e.source }),
+                    ...linkedFromAction ? {
+                      action: {
+                        label: linkedFromAction.label,
+                        onSelect: () => linkedFromAction.onSelect(doc2)
+                      }
+                    } : {}
+                  })
                 })
               })
             }, "rendered")
@@ -80498,6 +80532,13 @@ function ShellBody({
                                 badge: composerWaiting.badge,
                                 label: composerWaiting.label
                               })
+                            }),
+                            /* @__PURE__ */ jsx_runtime52.jsx("span", {
+                              "aria-live": "polite",
+                              "aria-atomic": "true",
+                              "data-slot": "chat-rail-waiting-live",
+                              className: "sr-only",
+                              children: composerWaiting?.label ?? ""
                             })
                           ]
                         }),

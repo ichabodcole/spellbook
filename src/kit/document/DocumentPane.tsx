@@ -43,6 +43,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { type Layout, type LayoutChangedMeta, useDefaultLayout } from "react-resizable-panels";
 import { type At, NoteAtSelection } from "../chat/NoteAtSelection.tsx";
 import { badgeFor } from "../chat/WaitingBadge.tsx";
 import { CentreDock } from "../context/centreDock.tsx";
@@ -67,6 +68,9 @@ import {
   EmptyTitle,
   QUIET_FADE,
   QUIET_GROUP,
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
   relativeTime,
   Separator,
   type StatusSegment,
@@ -131,11 +135,16 @@ import {
   DEFAULT_LINE_NUMBERS_KEY,
   DEFAULT_VIEW_MODE_KEY,
   hasEditor,
+  isSplitLayout,
   nextVersionNumber,
   pointedRange,
   readLineNumbers,
   readViewMode,
+  SPLIT_DEFAULT_SIZE,
+  SPLIT_LAYOUT_ID,
   SPLIT_MIN_PX,
+  SPLIT_MIN_SIZE,
+  SPLIT_PANES,
   saveState,
   shownViewMode,
   splitFits,
@@ -195,6 +204,9 @@ export const READER_LABEL = {
   enter: "Reader mode: rendered, with both columns out of the way",
   leave: "Leave reader mode and bring the columns back",
 } as const;
+
+/** The split's halves, one array for the life of the page (the layout hook memoises on it). */
+const SPLIT_PANEL_IDS: string[] = [...SPLIT_PANES];
 
 /** The disabled split button's tooltip: why it cannot be pressed, not only that it cannot. */
 export const SPLIT_TOO_NARROW = `Raw and rendered side by side: the pane is too narrow (split needs ${SPLIT_MIN_PX} px)`;
@@ -431,6 +443,21 @@ export function DocumentPane({
     kept.setItem(lineNumbersKey, storedLineNumbers(next));
     setNumbered(next);
   };
+  // The split's width, kept where the view mode is. The group it sizes is drawn in
+  // raw and rendered too (one panel wide), so only a layout with both halves is
+  // kept (`isSplitLayout`): a one-panel layout is a write nothing reads.
+  const splitLayout = useDefaultLayout({
+    id: SPLIT_LAYOUT_ID,
+    panelIds: SPLIT_PANEL_IDS,
+    storage: kept,
+  });
+  const keepSplit = splitLayout.onLayoutChanged;
+  const onSplitLayout = useCallback(
+    (layout: Layout, meta: LayoutChangedMeta) => {
+      if (isSplitLayout(layout)) keepSplit(layout, meta);
+    },
+    [keepSplit],
+  );
   const rootRef = useRef<HTMLDivElement>(null);
   const width = usePaneWidth(rootRef);
   const splitRoom = splitFits(width);
@@ -1954,13 +1981,25 @@ export function DocumentPane({
         // In split both read the same `shown` text: the rendered half follows an edit
         // when the client's debounced write lands, as the rendered view always has,
         // and both join the one `place`, so scrolling either moves the other.
+        // The row is the split's resizable group in every one of the three, one
+        // panel wide in raw and rendered: drawn only in split, a group would put
+        // the editor under a different parent and remount it on every switch.
         <ViewBoundary resetKey={`${doc.slug}:${showing}`}>
-          <div
-            className="flex min-h-0 flex-1"
-            data-slot={showing === "split" ? "split-view" : undefined}
+          <ResizablePanelGroup
+            orientation="horizontal"
+            className="min-h-0 flex-1"
+            defaultLayout={splitLayout.defaultLayout}
+            onLayoutChanged={onSplitLayout}
+            {...(showing === "split" ? { "data-slot": "split-view" } : {})}
           >
             {showing !== "rendered" && (
-              <div key="raw" className="flex min-h-0 min-w-0 flex-1 flex-col">
+              <ResizablePanel
+                key="raw"
+                id="doc-raw"
+                defaultSize={`${SPLIT_DEFAULT_SIZE}`}
+                minSize={`${SPLIT_MIN_SIZE}`}
+                className="flex min-h-0 min-w-0 flex-col"
+              >
                 <DocumentView
                   docKey={doc.slug}
                   text={shown}
@@ -1993,61 +2032,67 @@ export function DocumentPane({
                   lineNumbers={lineNumbers && numbered}
                   quiet={reader}
                 />
-              </div>
+              </ResizablePanel>
+            )}
+            {showing === "split" && (
+              // The library's keyboard: arrows move it 5%, Home and End to either
+              // half's minimum. It draws the line between the halves.
+              <ResizableHandle key="divider" withHandle aria-label="Resize raw and rendered" />
             )}
             {showing !== "raw" && (
-              <div
+              <ResizablePanel
                 key="rendered"
-                className={cn(
-                  "flex min-h-0 min-w-0 flex-1 flex-col",
-                  showing === "split" && "border-l border-edge",
-                )}
-                {...renderedImageEvents}
+                id="doc-rendered"
+                defaultSize={`${100 - SPLIT_DEFAULT_SIZE}`}
+                minSize={`${SPLIT_MIN_SIZE}`}
+                className="flex min-h-0 min-w-0 flex-col"
               >
-                <MarkdownView
-                  text={shown}
-                  textKey={`${doc.slug}@${doc.active}`}
-                  notes={paintedNotes}
-                  focusedNote={focusedNote ?? null}
-                  pendingNote={pendingNote}
-                  onFollowLink={followLink}
-                  onFollowHeading={jumpToHeading}
-                  onSelect={onSelect}
-                  clearSeq={w.clearSeq}
-                  place={place}
-                  onContextMenu={setNoteAt}
-                  widgets={inlineWidgets}
-                  frontmatterChips={frontmatterChips}
-                  frontmatterTrust={frontmatterTrust}
-                  profile={profileFor(profile, doc)}
-                  onAskProfileFix={askProfileFix}
-                  flash={flash}
-                  embeds={embeds}
-                  onEmbedTargets={onEmbedTargets}
-                  footer={
-                    <Backlinks
-                      data={backlinks?.doc === doc.slug ? backlinks : null}
-                      onOpen={openBacklink}
-                      onOpenBundle={(b) =>
-                        w.openAt ? w.openAt(b.source) : send({ op: "open", path: b.source })
-                      }
-                      onOpenEdge={(e) =>
-                        w.openAt ? w.openAt(e.source) : send({ op: "open", path: e.source })
-                      }
-                      {...(linkedFromAction
-                        ? {
-                            action: {
-                              label: linkedFromAction.label,
-                              onSelect: () => linkedFromAction.onSelect(doc),
-                            },
-                          }
-                        : {})}
-                    />
-                  }
-                />
-              </div>
+                <div className="flex min-h-0 min-w-0 flex-1 flex-col" {...renderedImageEvents}>
+                  <MarkdownView
+                    text={shown}
+                    textKey={`${doc.slug}@${doc.active}`}
+                    notes={paintedNotes}
+                    focusedNote={focusedNote ?? null}
+                    pendingNote={pendingNote}
+                    onFollowLink={followLink}
+                    onFollowHeading={jumpToHeading}
+                    onSelect={onSelect}
+                    clearSeq={w.clearSeq}
+                    place={place}
+                    onContextMenu={setNoteAt}
+                    widgets={inlineWidgets}
+                    frontmatterChips={frontmatterChips}
+                    frontmatterTrust={frontmatterTrust}
+                    profile={profileFor(profile, doc)}
+                    onAskProfileFix={askProfileFix}
+                    flash={flash}
+                    embeds={embeds}
+                    onEmbedTargets={onEmbedTargets}
+                    footer={
+                      <Backlinks
+                        data={backlinks?.doc === doc.slug ? backlinks : null}
+                        onOpen={openBacklink}
+                        onOpenBundle={(b) =>
+                          w.openAt ? w.openAt(b.source) : send({ op: "open", path: b.source })
+                        }
+                        onOpenEdge={(e) =>
+                          w.openAt ? w.openAt(e.source) : send({ op: "open", path: e.source })
+                        }
+                        {...(linkedFromAction
+                          ? {
+                              action: {
+                                label: linkedFromAction.label,
+                                onSelect: () => linkedFromAction.onSelect(doc),
+                              },
+                            }
+                          : {})}
+                      />
+                    }
+                  />
+                </div>
+              </ResizablePanel>
             )}
-          </div>
+          </ResizablePanelGroup>
         </ViewBoundary>
       )}
       {/* The floating composer, when the shell has one, docks here: under the

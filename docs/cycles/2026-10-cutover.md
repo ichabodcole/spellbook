@@ -114,3 +114,6 @@ Out of scope, deliberately:
 _Written at close._
 
 ## Sessions
+
+- cycle/cutover (first landing 2026-10-20: the flip, the SKILL and the small
+  items; the deletion follows Cole's trial)

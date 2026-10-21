@@ -1,15 +1,15 @@
-// The kit path (`SCRIPTORIUM_KIT=1`), driven through Scriptorium's own
-// LAUNCHERS: `scripts/cli.ts open` spawns `scripts/server.ts` (→ the BUILT
+// Scriptorium on the kit, driven through its own LAUNCHERS with no variable
+// set: `scripts/cli.ts open` spawns `scripts/server.ts` (→ the BUILT
 // `dist/server.js`; build first), each of which hands off to `./cli.ts` and
-// `./server.ts` because the flag is set. Everything runs under a temp
-// SCRIPTORIUM_HOME and a temp TMPDIR, with the preload's scratch HOME passed on
-// in `env`, so no real session or pointer is ever read or written.
+// `./server.ts`. The earlier Scriptorium is reached only through the hatch
+// (`SCRIPTORIUM_SHIPPED=1`, `../hatch.ts`), driven both ways at the end.
+// Everything runs under a temp SCRIPTORIUM_HOME and a temp TMPDIR, with the
+// preload's scratch HOME passed on in `env`, so no real session or pointer is
+// ever read or written.
 //
-// One flagged session per describe block, closed in afterAll by its own
-// session id: every daemon this file starts, it stops.
+// Every daemon this file starts, it stops, by its own session id.
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import {
-  cpSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -23,6 +23,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { FakeSurface, pointerPid, waitForExit } from "../../../kit/workspace/fixtures/harness";
+import { PRE_MIGRATE_FILE as PRE_MIGRATE } from "../../../kit/workspace/manifestMigrate";
 import type { PublicState } from "../../../kit/workspace/protocol";
 
 const KIT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -50,10 +51,9 @@ const base = {
   // refused, the real home refused) reads it.
   NODE_ENV: "test",
 };
-delete (base as Record<string, string | undefined>).SCRIPTORIUM_KIT;
-/** The flagged environment, and the shipped one (no flag at all). */
-const kitEnv = { ...base, SCRIPTORIUM_KIT: "1" };
-const shippedEnv = base;
+delete (base as Record<string, string | undefined>).SCRIPTORIUM_SHIPPED;
+/** The default environment (no variable at all). */
+const kitEnv = base;
 mkdirSync(join(root, "tmp"), { recursive: true });
 const docs = join(root, "docs");
 mkdirSync(join(docs, "set", "part"), { recursive: true });
@@ -78,7 +78,6 @@ async function run(env: Record<string, string | undefined>, ...args: string[]): 
   return { code, out, err };
 }
 const cli = (...args: string[]) => run(kitEnv, ...args);
-const shipped = (...args: string[]) => run(shippedEnv, ...args);
 const json = <T = Record<string, unknown>>(r: Run): T => {
   if (r.out.trim() === "")
     throw new Error(`the CLI printed nothing (exit ${r.code}); stderr: ${r.err || "(empty)"}`);
@@ -100,7 +99,7 @@ async function closeById(env: Record<string, string | undefined>, id: string, po
 
 afterAll(() => rmSync(root, { recursive: true, force: true }));
 
-describe("the kit path, end to end through Scriptorium's launchers", () => {
+describe("Scriptorium on the kit, end to end through its launchers, with no variable set", () => {
   let port = 0;
   let sessionId = "";
   const surface = new FakeSurface();
@@ -156,18 +155,18 @@ describe("the kit path, end to end through Scriptorium's launchers", () => {
   };
   const state = async () => json<PublicState>(await cli("state", "--session", sessionId));
 
-  test("open: the kit's daemon, named scriptorium, with its sessions under kit/sessions", async () => {
+  test("open: the kit's daemon, named scriptorium, with its sessions under $SCRIPTORIUM_HOME/sessions", async () => {
     const st = await state();
     expect(st.app).toBe("scriptorium");
     expect(st.context.map((e) => [e.label, e.membership])).toEqual([
       ["set", "mirrored"],
       ["solo.md", "listed"],
     ]);
-    // Its own root, apart from the shipped Scriptorium's `sessions/`.
-    const manifest = join(home, "kit", "sessions", sessionId, "manifest.json");
+    // The earlier Scriptorium's root, `sessions/`; no `kit/` folder any more.
+    const manifest = join(home, "sessions", sessionId, "manifest.json");
     expect(existsSync(manifest)).toBe(true);
     expect(JSON.parse(readFileSync(manifest, "utf8"))).toMatchObject({ appName: "scriptorium" });
-    expect(existsSync(join(home, "sessions"))).toBe(false);
+    expect(existsSync(join(home, "kit"))).toBe(false);
     // The pointer is the kit's, never the shipped one's name.
     expect(existsSync(kitPointer(sessionId))).toBe(true);
     expect(existsSync(shippedPointer(sessionId))).toBe(false);
@@ -177,9 +176,9 @@ describe("the kit path, end to end through Scriptorium's launchers", () => {
   });
 
   test("the state names the launcher, so the ended dialog's restore command reaches this Scriptorium", async () => {
-    // The flag (without it the shipped Scriptorium refuses a kit-path session),
-    // the home the session lives under, and bun on the skill's CLI launcher.
-    expect((await state()).launcher).toBe(`SCRIPTORIUM_HOME=${home} SCRIPTORIUM_KIT=1 bun ${CLI}`);
+    // The home the session lives under, and bun on the skill's CLI launcher;
+    // no variable, since the current Scriptorium is the default.
+    expect((await state()).launcher).toBe(`SCRIPTORIUM_HOME=${home} bun ${CLI}`);
   });
 
   test("the session's URL is the kit page, built, with the scroll-text favicon; only its own files are served", async () => {
@@ -187,7 +186,7 @@ describe("the kit path, end to end through Scriptorium's launchers", () => {
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toContain("text/html");
     const html = await res.text();
-    expect(html).toContain("<title>scriptorium (kit path)</title>");
+    expect(html).toContain("<title>scriptorium</title>");
     // Lucide `scroll-text`, as the shipped surface's tab carries it.
     expect(html).toContain('rel="icon"');
     expect(html).toContain("M15%2012h-5");
@@ -227,7 +226,7 @@ describe("the kit path, end to end through Scriptorium's launchers", () => {
     expect(v.code).toBe(0);
     const made = json<{ doc: string; version: number; path: string }>(v);
     expect(made).toMatchObject({ doc: "a", version: 2 });
-    expect(made.path.startsWith(join(home, "kit", "sessions", sessionId))).toBe(true);
+    expect(made.path.startsWith(join(home, "sessions", sessionId))).toBe(true);
     // The original is never written by a new version.
     expect(readFileSync(a, "utf8")).toBe("# A\n\nline two\nline three\n");
 
@@ -375,10 +374,11 @@ describe("the kit path, end to end through Scriptorium's launchers", () => {
     expect(envelope(nowhere).message).toContain("is not a folder on disk");
   });
 
-  test("--version names the kit path", async () => {
+  test("--version names scriptorium, and no path", async () => {
     const r = await cli("--version");
     expect(r.code).toBe(0);
-    expect(json(r)).toMatchObject({ name: "scriptorium", path: "kit" });
+    expect(json(r)).toMatchObject({ name: "scriptorium" });
+    expect(json(r)).not.toHaveProperty("path");
   });
 
   test("close ends the session: the tail closes, the daemon exits, the manifest stays", async () => {
@@ -390,74 +390,74 @@ describe("the kit path, end to end through Scriptorium's launchers", () => {
     await waitForExit(pid);
     await waitTail((l) => l.type === "tail.closed");
     expect(existsSync(kitPointer(sessionId))).toBe(false);
-    expect(existsSync(join(home, "kit", "sessions", sessionId, "manifest.json"))).toBe(true);
+    expect(existsSync(join(home, "sessions", sessionId, "manifest.json"))).toBe(true);
   });
 });
 
-describe("neither Scriptorium reads the other's sessions", () => {
+describe("the hatch (SCRIPTORIUM_SHIPPED=1), on a home of its own", () => {
+  const hatchHome = join(root, "hatch-home");
+  const now = { ...base, SCRIPTORIUM_HOME: hatchHome };
+  const hatch = { ...now, SCRIPTORIUM_SHIPPED: "1" };
   let shippedId = "";
-  let kitId = "";
 
-  beforeAll(async () => {
-    // A shipped session, made by the shipped Scriptorium's own writer, then closed.
-    const s = await shipped("open", "--no-open", join(docs, "solo.md"));
+  test("on a home with no session in the kit's shape, it runs the earlier Scriptorium", async () => {
+    const s = await run(hatch, "open", "--no-open", join(docs, "solo.md"));
+    expect(s.err).toBe("");
     expect(s.code).toBe(0);
     shippedId = json<{ session_id: string }>(s).session_id;
-    await closeById(shippedEnv, shippedId, shippedPointer(shippedId));
-    // A kit session, closed.
-    const k = await cli("open", "--no-open", join(docs, "solo.md"));
-    expect(k.code).toBe(0);
-    kitId = json<{ session_id: string }>(k).session_id;
-    await closeById(kitEnv, kitId, kitPointer(kitId));
+    // The earlier Scriptorium's own pointer name and manifest shape.
+    expect(existsSync(shippedPointer(shippedId))).toBe(true);
+    const m = JSON.parse(
+      readFileSync(join(hatchHome, "sessions", shippedId, "manifest.json"), "utf8"),
+    );
+    expect(typeof m.createdAt).toBe("number");
+    expect(m).not.toHaveProperty("appName");
+    await closeById(hatch, shippedId, shippedPointer(shippedId));
   }, 60_000);
 
-  test("each lists and restores only its own root", async () => {
-    expect(readdirSync(join(home, "sessions"))).toContain(shippedId);
-    expect(readdirSync(join(home, "sessions"))).not.toContain(kitId);
-    expect(readdirSync(join(home, "kit", "sessions"))).toContain(kitId);
-    expect(readdirSync(join(home, "kit", "sessions"))).not.toContain(shippedId);
+  test("with no variable, that session is converted as it is restored, its old manifest kept byte for byte", async () => {
+    const manifest = join(hatchHome, "sessions", shippedId, "manifest.json");
+    const before = readFileSync(manifest);
+    const r = await run(now, "open", "--no-open", "--restore", shippedId);
+    expect(r.code).toBe(0);
+    expect(JSON.parse(readFileSync(manifest, "utf8"))).toMatchObject({ appName: "scriptorium" });
+    expect(readFileSync(join(hatchHome, "sessions", shippedId, PRE_MIGRATE)).equals(before)).toBe(
+      true,
+    );
+    await closeById(now, shippedId, kitPointer(shippedId));
+  }, 60_000);
 
-    const kitAsksShipped = await cli("open", "--no-open", "--restore", shippedId);
-    expect(kitAsksShipped.code).toBe(5);
-    expect(envelope(kitAsksShipped).kind).toBe("not_found");
-
-    const shippedAsksKit = await shipped("open", "--no-open", "--restore", kitId);
-    expect(shippedAsksKit.code).toBe(5);
-    expect(envelope(shippedAsksKit).kind).toBe("not_found");
+  test("then the hatch is refused before any verb runs: exit 2, a usage envelope, a hint", async () => {
+    const sessionsBefore = readdirSync(join(hatchHome, "sessions")).sort();
+    for (const args of [["open", "--no-open", join(docs, "solo.md")], ["state"], ["--version"]]) {
+      const r = await run(hatch, ...args);
+      expect([args[0], r.code, r.out]).toEqual([args[0], 2, ""]);
+      const err = envelope(r);
+      expect(err.kind).toBe("usage");
+      expect(err.message).toContain("SCRIPTORIUM_SHIPPED=1 is closed: 1 session in");
+      expect(err.message).toContain(`(e.g. ${shippedId})`);
+      expect(err.hint).toContain("unset SCRIPTORIUM_SHIPPED");
+    }
+    // Nothing was started or written.
+    expect(readdirSync(join(hatchHome, "sessions")).sort()).toEqual(sessionsBefore);
   });
 
-  test("the kit refuses a shipped manifest put in its root, and leaves the file as it was", async () => {
-    const into = join(home, "kit", "sessions", shippedId);
-    cpSync(join(home, "sessions", shippedId), into, { recursive: true });
-    const manifest = join(into, "manifest.json");
-    const before = readFileSync(manifest);
-    const r = await cli("open", "--no-open", "--restore", shippedId);
-    expect(r.code).toBe(6);
-    const err = envelope(r);
-    expect(err.kind).toBe("conflict");
-    // The kit path's own words: which Scriptorium wrote it, and how to open it.
-    expect(err.message).toContain("is a shipped Scriptorium session");
-    expect(err.hint).toContain("without SCRIPTORIUM_KIT");
-    expect(err.hint).not.toContain("will not read it");
-    expect(readFileSync(manifest).equals(before)).toBe(true);
-    rmSync(into, { recursive: true, force: true });
-  });
-
-  test("the shipped Scriptorium refuses a kit manifest put in its root, and leaves the file as it was", async () => {
-    const into = join(home, "sessions", kitId);
-    cpSync(join(home, "kit", "sessions", kitId), into, { recursive: true });
-    const manifest = join(into, "manifest.json");
-    const before = readFileSync(manifest);
-    const r = await shipped("open", "--no-open", "--restore", kitId);
-    expect(r.code).toBe(6);
-    const err = envelope(r);
-    expect(err.kind).toBe("conflict");
-    expect(err.message).toContain("SCRIPTORIUM_KIT=1");
-    // The refusal's hint survives the boot handshake into the envelope.
-    expect(err.hint).toContain("$SCRIPTORIUM_HOME/kit/sessions");
-    expect(readFileSync(manifest).equals(before)).toBe(true);
-    // Refused at the restore, so no daemon and no pointer were left behind.
-    expect(existsSync(shippedPointer(kitId))).toBe(false);
-    rmSync(into, { recursive: true, force: true });
+  test("and a hand-run daemon launcher under the hatch is refused too, exit 2", async () => {
+    const p = Bun.spawn(["bun", join(SKILL_ROOT, "scripts", "server.ts")], {
+      stdout: "pipe",
+      stderr: "pipe",
+      stdin: "ignore",
+      env: hatch,
+      cwd: root,
+    });
+    const [out, err, code] = await Promise.all([
+      new Response(p.stdout).text(),
+      new Response(p.stderr).text(),
+      p.exited,
+    ]);
+    expect(code).toBe(2);
+    expect(out).toBe("");
+    expect(err).toContain("SCRIPTORIUM_SHIPPED=1 is closed");
+    expect(err).toContain("unset SCRIPTORIUM_SHIPPED");
   });
 });

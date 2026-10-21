@@ -23,7 +23,6 @@ const env: Record<string, string | undefined> = {
   SCRIPTORIUM_HOME: join(root, "home"),
   TMPDIR: `${join(root, "tmp")}/`,
   NODE_ENV: "test",
-  SCRIPTORIUM_KIT: "1",
   SPELLBOOK_SURFACE_MODE: "dev",
 };
 // A utility only the page's own folder uses (the tree's status dot, in
@@ -67,7 +66,7 @@ test("dev mode, opened from the repository root: the frame's page, script and st
   const page = await fetch(`${hs.url}/`, { signal: AbortSignal.timeout(30_000) });
   const html = await page.text();
   expect(page.status).toBe(200);
-  expect(html).toContain("scriptorium (kit path)");
+  expect(html).toContain("<title>scriptorium</title>");
   const script = /<script[^>]+src="([^"]+)"/.exec(html)?.[1];
   const css = /<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"/.exec(html)?.[1];
   expect(script).toBeDefined();

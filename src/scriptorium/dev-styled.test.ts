@@ -55,6 +55,9 @@ async function bootDev(cwd: string, label: string) {
     env: {
       ...process.env,
       SPELLBOOK_SURFACE_MODE: "dev",
+      // The earlier Scriptorium's daemon, which this cell tests, is reached
+      // only through the hatch since the cutover (`backend/hatch.ts`).
+      SCRIPTORIUM_SHIPPED: "1",
       SCRIPTORIUM_HOME: join(scratch, "home"),
       TMPDIR: `${scratch}/`,
     },

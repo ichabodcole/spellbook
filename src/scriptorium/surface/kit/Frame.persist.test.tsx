@@ -4,7 +4,7 @@
 // collapsed conversation with its float closed, raw and line numbers; the
 // session ends; a second session (a new daemon, a new port, so a new origin with
 // an empty localStorage) opens with every one of them, read from the daemon's
-// prefs (`$SCRIPTORIUM_HOME/kit/prefs.json`).
+// prefs (`$SCRIPTORIUM_HOME/prefs.json`).
 
 import "../../../kit/lib/registerDom.ts";
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "bun:test";

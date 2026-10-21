@@ -23,6 +23,7 @@ import { homeDir } from "../lib/home.ts";
 import { cli } from "./fixtures/cli";
 import { DOC_EXTENSIONS } from "./tree";
 import {
+  DEFAULT_START_TIMEOUT_MS,
   defaultWorkspace,
   docArg,
   KIT_OPTIONS,
@@ -241,6 +242,28 @@ test.each([
   ["no session for reveal", ["reveal", "/tmp"], 5, "not_found"],
   ["no session for the app's own verb", ["ping"], 5, "not_found"],
   [
+    "open with a timeout that is not a number",
+    ["open", "--no-open", "--timeout", "abc"],
+    2,
+    "usage",
+  ],
+  ["open with an empty timeout", ["open", "--no-open", "--timeout="], 2, "usage"],
+  ["open with an Infinity timeout", ["open", "--no-open", "--timeout", "Infinity"], 2, "usage"],
+  ["open with a negative timeout", ["open", "--no-open", "--timeout=-5"], 2, "usage"],
+  [
+    "open with a start timeout that is not a number",
+    ["open", "--no-open", "--start-timeout", "abc"],
+    2,
+    "usage",
+  ],
+  ["open with an empty start timeout", ["open", "--no-open", "--start-timeout="], 2, "usage"],
+  [
+    "open with a start timeout longer than one timer holds",
+    ["open", "--no-open", "--start-timeout", "2147484"],
+    2,
+    "usage",
+  ],
+  [
     "open a path that does not exist",
     ["open", "--no-open", "/definitely/not/here.md"],
     5,
@@ -292,6 +315,27 @@ test("restoring an unknown session names the saved sessions as choices: empty, a
   const doc = JSON.parse(run(["open", "--no-open", "--restore", "nope"]).stderr) as Envelope;
   expect(doc.error.choices).toEqual([]);
   expect(doc.error.hint).toContain("no saved sessions");
+});
+
+test("open refuses a timeout that is not a number before any daemon starts", () => {
+  // The daemon's log is made right before the spawn (`cmdOpen`), so a home
+  // with no logs folder is a home no daemon was started for.
+  for (const flag of ["--timeout", "--start-timeout"])
+    for (const value of ["abc", "", "NaN"]) {
+      const home = mkdtempSync(join(tmpdir(), "workspace-contract-timeout-"));
+      const r = run(["open", "--no-open", `${flag}=${value}`], EMPTY_TMP, home);
+      expect(r.code).toBe(2);
+      const doc = JSON.parse(r.stderr) as Envelope;
+      expect(doc.error.kind).toBe("usage");
+      expect(doc.error.message).toContain(`open ${flag}:`);
+      expect(doc.error.hint).toBeString();
+      expect(readdirSync(home)).not.toContain("logs");
+    }
+  // Read first: refused as usage even where a restore would be not_found.
+  const doc = JSON.parse(
+    run(["open", "--no-open", "--restore", "nope", "--timeout", "abc"]).stderr,
+  ) as Envelope;
+  expect(doc.error.kind).toBe("usage");
 });
 
 test("a recognized flag at the wrong verb is misplaced, and lists the verb's own flags", () => {
@@ -765,6 +809,213 @@ test("no --session, the newest crashed: tail grounds on it, then says tail.lost,
   expect(lines.at(-1)?.command).toContain("bbbb2222");
   expect(out).not.toContain("aaaa1111");
 }, 40_000);
+
+// ── a bare tail on an ended newest session: wait out open's start, then say so ──
+
+/** A bare `tail` in `tmp`/`home`, the ended-session grace shortened to `graceMs`. */
+function bareTail(tmp: string, home: string, graceMs: number) {
+  const started = Date.now();
+  const p = Bun.spawn(["bun", CLI, "--", "tail"], {
+    stdout: "pipe",
+    stderr: "pipe",
+    stdin: "ignore",
+    env: {
+      ...process.env,
+      TMPDIR: tmp,
+      KIT_FIXTURE_HOME: home,
+      KIT_FIXTURE_TAIL_GRACE_MS: String(graceMs),
+    },
+  });
+  let out = "";
+  let err = "";
+  const pump = async (s: ReadableStream<Uint8Array>, add: (t: string) => void) => {
+    const dec = new TextDecoder();
+    const reader = s.getReader();
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) return;
+      add(dec.decode(value));
+    }
+  };
+  const done = Promise.all([
+    pump(p.stdout, (t) => {
+      out += t;
+    }),
+    pump(p.stderr, (t) => {
+      err += t;
+    }),
+  ]);
+  return {
+    p,
+    started,
+    out: () => out,
+    err: () => err,
+    /**
+     * The first stdout line, once there is one (or the process ended). A
+     * `tail.*` line ends the tail, so its own exit is awaited (up to 5 s);
+     * anything else (a grounding) means it is watching, and it is stopped.
+     */
+    async first(
+      timeoutMs: number,
+    ): Promise<{ line: Record<string, unknown>; ms: number; code: number | null }> {
+      const end = Date.now() + timeoutMs;
+      while (!out.includes("\n") && p.exitCode === null && Date.now() < end) await Bun.sleep(25);
+      const ms = Date.now() - started;
+      if (/^\{[^\n]*"type":"tail\./.test(out)) {
+        const by = Date.now() + 5_000;
+        while (p.exitCode === null && Date.now() < by) await Bun.sleep(25);
+      }
+      const code = p.exitCode;
+      if (code === null) p.kill();
+      await p.exited;
+      await done;
+      const raw = out.split("\n")[0] ?? "";
+      return { line: raw ? (JSON.parse(raw) as Record<string, unknown>) : {}, ms, code };
+    },
+  };
+}
+
+/** What `open` leaves once its daemon is up: the manifest, the pointer, then the newest-session record. */
+function sessionComesUp(home: string, tmp: string, id: string): void {
+  mkdirSync(join(home, "sessions", id), { recursive: true });
+  writeFileSync(join(home, "sessions", id, "manifest.json"), JSON.stringify({ sessionId: id }));
+  pointerIn(tmp, id, process.pid);
+  writeFileSync(join(home, "last-opened.json"), JSON.stringify({ session_id: id }));
+}
+
+const HUMAN_END = { ended: { by: "human", at: "2026-10-19T00:00:00.000Z" } };
+
+test("no --session, the human ended the newest: after the grace window a bare tail says tail.closed by human, exits 0, never the older live one", async () => {
+  const { home, tmp } = siblings(HUMAN_END);
+  const t = bareTail(tmp, home, 1_500);
+  const r = await t.first(15_000);
+  expect(r.code).toBe(0);
+  expect(r.ms).toBeGreaterThanOrEqual(1_500);
+  expect(r.line).toMatchObject({ type: "tail.closed", by: "human", next: "stop" });
+  expect(String(r.line.command)).toContain("bbbb2222");
+  expect(t.out().trim().split("\n")).toHaveLength(1);
+  expect(t.out()).not.toContain("aaaa1111");
+  expect(t.err()).toContain("# session bbbb2222 was ended (by human)");
+}, 30_000);
+
+test("no --session, the idle timeout ended the newest: the same stop after the window, with that by", async () => {
+  const { home, tmp } = siblings({ ended: { by: "timeout", at: "x" } });
+  const t = bareTail(tmp, home, 1_000);
+  const r = await t.first(15_000);
+  // stderr rides along, so a failure says what the tail said instead.
+  expect({ code: r.code, line: r.line, err: t.err() }).toMatchObject({
+    code: 0,
+    line: { type: "tail.closed", by: "timeout", next: "stop" },
+  });
+  expect(r.ms).toBeGreaterThanOrEqual(1_000);
+}, 30_000);
+
+test("no --session, the AGENT ended the newest: the tail stops at once, with no window to wait out", async () => {
+  const { home, tmp } = siblings({ ended: { by: "agent", at: "x" } });
+  // A window far longer than the stop may take: an agent end does not wait it out.
+  const t = bareTail(tmp, home, 20_000);
+  const r = await t.first(15_000);
+  expect({ code: r.code, line: r.line, err: t.err() }).toMatchObject({
+    code: 0,
+    line: { type: "tail.closed", by: "agent", next: "stop" },
+  });
+  expect(r.ms).toBeLessThan(10_000);
+  expect(t.err()).not.toContain("waiting");
+}, 30_000);
+
+test("no --session: the window restarts when the newest session changes, and the stop names the new one", async () => {
+  const { home, tmp } = siblings(HUMAN_END);
+  // The retry backs off (0.25 s doubling to 5 s), so the window and the flip are
+  // long enough that a stop timed from the first sighting (7.75 s) lands well
+  // before one timed from the new session's own (no earlier than 10 s).
+  const t = bareTail(tmp, home, 6_000);
+  await Bun.sleep(4_000);
+  // Another session became the newest, and was ended by the human too.
+  mkdirSync(join(home, "sessions", "cccc3333"), { recursive: true });
+  writeFileSync(
+    join(home, "sessions", "cccc3333", "manifest.json"),
+    JSON.stringify({ sessionId: "cccc3333", ...HUMAN_END }),
+  );
+  writeFileSync(join(home, "last-opened.json"), JSON.stringify({ session_id: "cccc3333" }));
+  const r = await t.first(30_000);
+  expect(r.line).toMatchObject({ type: "tail.closed", by: "human" });
+  expect(String(r.line.command)).toContain("cccc3333");
+  // The new session's own window, from when it was seen, not the first one's.
+  expect(r.ms).toBeGreaterThanOrEqual(10_000);
+  expect(t.err()).toContain("# session cccc3333 was ended (by human)");
+}, 60_000);
+
+test("a bare tail's default window is open's default start timeout, never 0", () => {
+  // The fixture CLI here has no KIT_FIXTURE_TAIL_GRACE_MS: the default is in force.
+  expect(process.env.KIT_FIXTURE_TAIL_GRACE_MS).toBeUndefined();
+  expect(DEFAULT_START_TIMEOUT_MS).toBe(45_000);
+  expect(cli.tailEndedGraceMs).toBe(DEFAULT_START_TIMEOUT_MS);
+});
+
+test("no --session, the newest ended: a session that comes up inside the window is bound, whenever it comes", async () => {
+  for (const delay of [0, 300, 1_200, 2_500]) {
+    const { home, tmp } = siblings(HUMAN_END);
+    const t = bareTail(tmp, home, 4_000);
+    await Bun.sleep(delay);
+    sessionComesUp(home, tmp, "cccc3333");
+    const r = await t.first(15_000);
+    expect({ delay, line: r.line }).toMatchObject({
+      delay,
+      line: { type: "grounding", session_id: "cccc3333" },
+    });
+    expect(t.out()).not.toContain("tail.closed");
+  }
+}, 90_000);
+
+test("no --session, the newest ended and is restored inside the window: the tail binds it, never stops", async () => {
+  const { home, tmp } = siblings(HUMAN_END);
+  const t = bareTail(tmp, home, 4_000);
+  await Bun.sleep(800);
+  // A restore clears `ended`, then publishes the pointer and records it again.
+  writeFileSync(
+    join(home, "sessions", "bbbb2222", "manifest.json"),
+    JSON.stringify({ sessionId: "bbbb2222" }),
+  );
+  pointerIn(tmp, "bbbb2222", process.pid);
+  writeFileSync(join(home, "last-opened.json"), JSON.stringify({ session_id: "bbbb2222" }));
+  const r = await t.first(15_000);
+  expect(r.line).toMatchObject({ type: "grounding", session_id: "bbbb2222" });
+  expect(t.out()).not.toContain("tail.closed");
+}, 30_000);
+
+test("no --session: only the NEWEST session's end stops a tail; an older ended one beside a newer one with no end is waited on", async () => {
+  // A (older) was ended by the human; B, the newest, has no end and no daemon yet.
+  const home = homeWith([{ id: "aaaa1111", ...HUMAN_END }, { id: "bbbb2222" }]);
+  writeFileSync(join(home, "last-opened.json"), JSON.stringify({ session_id: "bbbb2222" }));
+  const tmp = mkdtempSync(join(tmpdir(), "workspace-newest-only-"));
+  const t = bareTail(tmp, home, 500);
+  await Bun.sleep(2_500);
+  const r = await t.first(1);
+  expect(r.code).toBeNull();
+  expect(t.out()).not.toContain("tail.closed");
+  expect(t.err()).toContain("# no session yet, retrying...");
+}, 20_000);
+
+test("no --session: a newest session with no end recorded is waited on, however long", async () => {
+  const home = homeWith([{ id: "aaaa1111" }]);
+  const tmp = mkdtempSync(join(tmpdir(), "workspace-no-end-"));
+  const t = bareTail(tmp, home, 500);
+  await Bun.sleep(2_500);
+  const r = await t.first(1);
+  expect(r.code).toBeNull();
+  expect(t.out()).not.toContain("tail.closed");
+  expect(t.err()).toContain("# no session yet, retrying...");
+}, 20_000);
+
+test("no session saved at all: a bare tail still waits, saying so on stderr", async () => {
+  const home = mkdtempSync(join(tmpdir(), "workspace-empty-home-"));
+  const t = bareTail(EMPTY_TMP, home, 500);
+  await Bun.sleep(2_500);
+  const r = await t.first(1);
+  expect(r.code).toBeNull();
+  expect(t.err()).toContain("# no session yet, retrying...");
+  expect(t.out()).not.toContain("tail.closed");
+}, 20_000);
 
 test("a named session with no daemon: the hint names THAT session, not the newest", () => {
   const home = homeWith([{ id: "aaaa1111" }, { id: "bbbb2222" }]);

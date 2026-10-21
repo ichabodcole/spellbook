@@ -20,7 +20,7 @@
  * there but cannot be read is not offered a second one: the header shows it as
  * written and says why, as the shipped header does.
  *
- * Kit path only (`SCRIPTORIUM_KIT=1`). The shipped surface does not import this
+ * Kit page only. The shipped surface does not import this
  * file.
  */
 

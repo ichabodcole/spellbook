@@ -1,5 +1,5 @@
 // The cycle security review's routes, driven through Scriptorium's own
-// LAUNCHERS with `SCRIPTORIUM_KIT=1` (build first: `scripts/server.ts` runs the
+// LAUNCHERS (build first: `scripts/server.ts` runs the
 // built `dist/server.js`): no `add` (CLI, `/cmd` or the socket) makes a set of
 // the sessions or the app home, the undo of a hide checks where the folder
 // leads now, and the app's own verbs refuse a relative path rather than read
@@ -35,7 +35,6 @@ const env: Record<string, string | undefined> = {
   SCRIPTORIUM_HOME: SH,
   TMPDIR: `${join(root, "tmp")}/`,
   NODE_ENV: "test",
-  SCRIPTORIUM_KIT: "1",
 };
 mkdirSync(join(root, "tmp"), { recursive: true });
 const set = join(root, "docs", "set");
@@ -70,7 +69,7 @@ const pointer = (id: string) => join(root, "tmp", `scriptorium.${id}.json`);
 let sessionId = "";
 let url = "";
 let surface: FakeSurface | null = null;
-const kitSessions = join(SH, "kit", "sessions");
+const kitSessions = join(SH, "sessions");
 
 const state = async () => json<PublicState>(await cli("state", "--session", sessionId));
 const roots = async () => (await state()).context.map((e) => e.root);
@@ -100,7 +99,7 @@ afterAll(async () => {
 });
 
 describe("no add makes a set of the sessions or the app home", () => {
-  test("add of $SH/kit/sessions, $SH, a session folder, and a link to either is refused on the CLI and /cmd", async () => {
+  test("add of $SH/sessions, $SH, a session folder, and a link to either is refused on the CLI and /cmd", async () => {
     symlinkSync(kitSessions, join(root, "to-sessions"));
     symlinkSync(SH, join(root, "to-shome"));
     const before = await roots();

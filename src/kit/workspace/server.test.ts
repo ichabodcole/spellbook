@@ -21,6 +21,7 @@ import {
   CONTEXT_CHANGED_MAX_WAIT_MS,
   CONTEXT_CHANGED_SETTLE_MS,
   createWorkspaceDaemon,
+  runWorkspaceDaemon,
   type WorkspaceDaemon,
 } from "./server";
 import { WorkspaceSession } from "./session";
@@ -2223,5 +2224,36 @@ describe("the workspace", () => {
       await t.waitFor((e) => e.type === "system" && e.fact === "workspace.defaulted"),
     ).toMatchObject({ path: chosen });
     expect(s.state.workspace).toBe(chosen);
+  });
+});
+
+describe("the daemon's own --timeout read", () => {
+  test("⛔ a timeout that is not a number is refused (exit 2) before anything is built", async () => {
+    // A daemon started directly, not through `open`, must not get to NaN either:
+    // NaN compares false against every threshold, so it never idle-closed.
+    for (const value of ["abc", "", "NaN", "Infinity"]) {
+      let built = false;
+      const code = await runWorkspaceDaemon(["--timeout", value], () => {
+        built = true;
+        throw new Error("built");
+      });
+      expect(code, value).toBe(2);
+      expect(built, value).toBe(false);
+    }
+  });
+
+  test("a number reaches the daemon as seconds, 0 (stands until closed) included", async () => {
+    for (const [value, want] of [
+      ["0", 0],
+      ["90", 90],
+      ["0.6", 0.6],
+    ] as const) {
+      let got: number | undefined;
+      await runWorkspaceDaemon(["--timeout", value], (f) => {
+        got = f.timeoutS;
+        throw new Error("stop here");
+      });
+      expect(got, value).toBe(want);
+    }
   });
 });
