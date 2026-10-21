@@ -86,19 +86,49 @@
       "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
     },
     {
+      "argv": ["move"],
+      "doc": "SKILL.md:64",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["rename"],
+      "doc": "SKILL.md:65",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["make-set"],
+      "doc": "SKILL.md:65",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["task-done"],
+      "doc": "SKILL.md:97",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["task-status"],
+      "doc": "SKILL.md:97",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
       "argv": ["open", "golden.md", "golden.md"],
-      "doc": "SKILL.md:116",
+      "doc": "SKILL.md:113",
       "reason": "starts a daemon (and may open a browser)"
     },
     {
       "argv": ["tail"],
-      "doc": "SKILL.md:117",
+      "doc": "SKILL.md:114",
       "reason": "a long-running stream (tail); never ends on its own within the run"
     },
     {
       "argv": ["tail", "--since", "12"],
-      "doc": "SKILL.md:128",
+      "doc": "SKILL.md:125",
       "reason": "a long-running stream (tail); never ends on its own within the run"
+    },
+    {
+      "argv": ["note-resolve"],
+      "doc": "SKILL.md:153",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
     },
     {
       "argv": ["tail", "--all"],
@@ -106,77 +136,62 @@
       "reason": "a long-running stream (tail); never ends on its own within the run"
     },
     {
+      "argv": ["tail", "--once"],
+      "doc": "SKILL.md:155",
+      "reason": "a long-running stream (tail); never ends on its own within the run"
+    },
+    {
       "argv": ["version"],
-      "doc": "SKILL.md:159",
-      "reason": "prose, not an invocation: the line names the version field a messages about carries"
-    },
-    {
-      "argv": ["move"],
-      "doc": "SKILL.md:230",
-      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
-    },
-    {
-      "argv": ["rename"],
-      "doc": "SKILL.md:230",
-      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+      "doc": "SKILL.md:165",
+      "reason": "prose, not an invocation: the line names the version field a message about carries"
     },
     {
       "argv": ["import"],
-      "doc": "SKILL.md:231",
+      "doc": "SKILL.md:237",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["reveal"],
+      "doc": "SKILL.md:237",
       "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
     },
     {
       "argv": ["open", "--restore", "item1"],
-      "doc": "SKILL.md:247",
+      "doc": "SKILL.md:261",
       "reason": "starts a daemon (and may open a browser)"
     },
     {
       "argv": ["note-edit"],
-      "doc": "SKILL.md:272",
-      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
-    },
-    {
-      "argv": ["note-resolve"],
-      "doc": "SKILL.md:276",
-      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
-    },
-    {
-      "argv": ["make-set"],
-      "doc": "SKILL.md:287",
+      "doc": "SKILL.md:285",
       "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
     },
     {
       "argv": ["add"],
-      "doc": "SKILL.md:301",
+      "doc": "SKILL.md:305",
       "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
     },
     {
       "argv": ["hide"],
-      "doc": "SKILL.md:302",
+      "doc": "SKILL.md:306",
       "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
     },
     {
       "argv": ["diff", "--context"],
-      "doc": "SKILL.md:305",
+      "doc": "SKILL.md:309",
       "reason": "prose, not an invocation: the line says --context is a diff flag meaning lines of surrounding text (it takes a count)"
     },
     {
       "argv": ["add-folder"],
-      "doc": "SKILL.md:314",
+      "doc": "SKILL.md:318",
       "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
     },
     {
       "argv": ["move-plan"],
-      "doc": "SKILL.md:339",
+      "doc": "SKILL.md:344",
       "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
-    },
-    {
-      "argv": ["task-status"],
-      "doc": "SKILL.md:381",
-      "reason": "prose, not an invocation: the line says task-status takes a positional (its status is required too)"
     }
   ],
-  "invocationCount": 206,
+  "invocationCount": 207,
   "invocations": [
     {
       "argv": [],
@@ -327,10 +342,14 @@
         "",
         "  Output: JSON on stdout, one document per answer, except tail (one JSON line",
         "  per event) and help (prose). tail's stderr also carries `: scriptorium-keepalive`",
-        "  lines while the stream is quiet: not JSON, so a reader of both streams",
-        "  skips any line starting with `:`. Failures: one JSON envelope on stderr, exit",
-        "  2 = usage, 1 = internal, 5 = not found, 6 = conflict. tail waits for a",
-        "  session rather than failing, and ends 0 when its session closes. tail",
+        "  lines while the stream is quiet, and `# ` status lines while it waits: not",
+        "  JSON, so a reader of both streams skips any line starting with `:` or `#`.",
+        "  Failures: one JSON envelope on stderr, exit 2 = usage, 1 = internal, 5 = not",
+        "  found, 6 = conflict. tail waits for a session rather than failing, and ends 0",
+        "  when its session closes; with no --session, it follows the newest session,",
+        "  and if the human or the idle timeout ended it and no new one comes up within",
+        "  open's default start timeout (45 s), it ends 0 with tail.closed saying who",
+        "  ended it; ended by the agent, it ends at once. tail",
         "  ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0.",
         "",
         "  Sessions live under $SCRIPTORIUM_HOME/sessions. A session the earlier",
@@ -424,10 +443,14 @@
         "",
         "  Output: JSON on stdout, one document per answer, except tail (one JSON line",
         "  per event) and help (prose). tail's stderr also carries `: scriptorium-keepalive`",
-        "  lines while the stream is quiet: not JSON, so a reader of both streams",
-        "  skips any line starting with `:`. Failures: one JSON envelope on stderr, exit",
-        "  2 = usage, 1 = internal, 5 = not found, 6 = conflict. tail waits for a",
-        "  session rather than failing, and ends 0 when its session closes. tail",
+        "  lines while the stream is quiet, and `# ` status lines while it waits: not",
+        "  JSON, so a reader of both streams skips any line starting with `:` or `#`.",
+        "  Failures: one JSON envelope on stderr, exit 2 = usage, 1 = internal, 5 = not",
+        "  found, 6 = conflict. tail waits for a session rather than failing, and ends 0",
+        "  when its session closes; with no --session, it follows the newest session,",
+        "  and if the human or the idle timeout ended it and no new one comes up within",
+        "  open's default start timeout (45 s), it ends 0 with tail.closed saying who",
+        "  ended it; ended by the agent, it ends at once. tail",
         "  ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0.",
         "",
         "  Sessions live under $SCRIPTORIUM_HOME/sessions. A session the earlier",
@@ -522,10 +545,14 @@
         "",
         "  Output: JSON on stdout, one document per answer, except tail (one JSON line",
         "  per event) and help (prose). tail's stderr also carries `: scriptorium-keepalive`",
-        "  lines while the stream is quiet: not JSON, so a reader of both streams",
-        "  skips any line starting with `:`. Failures: one JSON envelope on stderr, exit",
-        "  2 = usage, 1 = internal, 5 = not found, 6 = conflict. tail waits for a",
-        "  session rather than failing, and ends 0 when its session closes. tail",
+        "  lines while the stream is quiet, and `# ` status lines while it waits: not",
+        "  JSON, so a reader of both streams skips any line starting with `:` or `#`.",
+        "  Failures: one JSON envelope on stderr, exit 2 = usage, 1 = internal, 5 = not",
+        "  found, 6 = conflict. tail waits for a session rather than failing, and ends 0",
+        "  when its session closes; with no --session, it follows the newest session,",
+        "  and if the human or the idle timeout ended it and no new one comes up within",
+        "  open's default start timeout (45 s), it ends 0 with tail.closed saying who",
+        "  ended it; ended by the agent, it ends at once. tail",
         "  ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0.",
         "",
         "  Sessions live under $SCRIPTORIUM_HOME/sessions. A session the earlier",
@@ -568,7 +595,7 @@
     },
     {
       "argv": ["schema"],
-      "doc": "SKILL.md:373",
+      "doc": "SKILL.md:391",
       "exit": 0,
       "verdict": "accepted",
       "stream": "stdout",
@@ -3368,7 +3395,7 @@
     },
     {
       "argv": ["state"],
-      "doc": "SKILL.md:67",
+      "doc": "SKILL.md:69",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3393,7 +3420,7 @@
     },
     {
       "argv": ["say", "hello"],
-      "doc": "SKILL.md:94",
+      "doc": "SKILL.md:99",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3411,7 +3438,7 @@
     },
     {
       "argv": ["say", "--body-file", "golden.md"],
-      "doc": "SKILL.md:91",
+      "doc": "SKILL.md:93",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3629,7 +3656,7 @@
     },
     {
       "argv": ["relink"],
-      "doc": "SKILL.md:337",
+      "doc": "SKILL.md:65",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3638,7 +3665,7 @@
     },
     {
       "argv": ["reveal", "golden.md"],
-      "doc": "SKILL.md:347",
+      "doc": "SKILL.md:365",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3707,7 +3734,7 @@
     },
     {
       "argv": ["doctor"],
-      "doc": "SKILL.md:235",
+      "doc": "SKILL.md:243",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3836,7 +3863,7 @@
     },
     {
       "argv": ["close"],
-      "doc": "SKILL.md:244",
+      "doc": "SKILL.md:254",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3889,7 +3916,7 @@
     },
     {
       "argv": ["version-new", "--body-file", "golden.md", "--label", "hello"],
-      "doc": "SKILL.md:69",
+      "doc": "SKILL.md:71",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3898,7 +3925,7 @@
     },
     {
       "argv": ["version-new"],
-      "doc": "SKILL.md:79",
+      "doc": "SKILL.md:81",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3907,7 +3934,16 @@
     },
     {
       "argv": ["note", "--quote", "hello", "--body-file", "golden.md"],
-      "doc": "SKILL.md:94",
+      "doc": "SKILL.md:96",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["notes"],
+      "doc": "SKILL.md:159",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3916,7 +3952,7 @@
     },
     {
       "argv": ["version-new", "--doc", "golden.md", "--body-file", "golden.md", "--label", "hello"],
-      "doc": "SKILL.md:184",
+      "doc": "SKILL.md:190",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3925,7 +3961,7 @@
     },
     {
       "argv": ["working"],
-      "doc": "SKILL.md:208",
+      "doc": "SKILL.md:214",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3934,7 +3970,7 @@
     },
     {
       "argv": ["working", "--for", "5"],
-      "doc": "SKILL.md:208",
+      "doc": "SKILL.md:214",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3943,7 +3979,7 @@
     },
     {
       "argv": ["notes", "--doc", "golden.md"],
-      "doc": "SKILL.md:212",
+      "doc": "SKILL.md:218",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3952,16 +3988,7 @@
     },
     {
       "argv": ["note-resolve", "item1"],
-      "doc": "SKILL.md:213",
-      "exit": 5,
-      "verdict": "accepted",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "not_found"
-    },
-    {
-      "argv": ["link-check"],
-      "doc": "SKILL.md:289",
+      "doc": "SKILL.md:219",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3970,7 +3997,7 @@
     },
     {
       "argv": ["graph"],
-      "doc": "SKILL.md:302",
+      "doc": "SKILL.md:306",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3979,7 +4006,7 @@
     },
     {
       "argv": ["backlinks"],
-      "doc": "SKILL.md:302",
+      "doc": "SKILL.md:307",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -3988,33 +4015,6 @@
     },
     {
       "argv": ["new-doc", "golden.md"],
-      "doc": "SKILL.md:308",
-      "exit": 5,
-      "verdict": "accepted",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "not_found"
-    },
-    {
-      "argv": ["new-folder", "golden.md"],
-      "doc": "SKILL.md:308",
-      "exit": 5,
-      "verdict": "accepted",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "not_found"
-    },
-    {
-      "argv": ["import", "golden.md", "--into", "golden.md"],
-      "doc": "SKILL.md:309",
-      "exit": 5,
-      "verdict": "accepted",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "not_found"
-    },
-    {
-      "argv": ["add-folder", "golden.md"],
       "doc": "SKILL.md:312",
       "exit": 5,
       "verdict": "accepted",
@@ -4023,7 +4023,16 @@
       "kind": "not_found"
     },
     {
-      "argv": ["make-set", "golden.md"],
+      "argv": ["new-folder", "golden.md"],
+      "doc": "SKILL.md:312",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["import", "golden.md", "--into", "golden.md"],
       "doc": "SKILL.md:313",
       "exit": 5,
       "verdict": "accepted",
@@ -4032,8 +4041,35 @@
       "kind": "not_found"
     },
     {
+      "argv": ["add-folder", "golden.md"],
+      "doc": "SKILL.md:316",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["make-set", "golden.md"],
+      "doc": "SKILL.md:317",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
       "argv": ["add", "golden.md"],
-      "doc": "SKILL.md:314",
+      "doc": "SKILL.md:318",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["link-check"],
+      "doc": "SKILL.md:348",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -4042,7 +4078,7 @@
     },
     {
       "argv": ["search", "hello"],
-      "doc": "SKILL.md:352",
+      "doc": "SKILL.md:370",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -4051,7 +4087,7 @@
     },
     {
       "argv": ["find"],
-      "doc": "SKILL.md:382",
+      "doc": "SKILL.md:400",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",

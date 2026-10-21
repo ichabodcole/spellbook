@@ -31,196 +31,214 @@
     "exclude": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
   },
   {
-    "line": 67,
-    "argv": ["state"]
+    "line": 64,
+    "argv": ["move"],
+    "exclude": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+  },
+  {
+    "line": 65,
+    "argv": ["rename"],
+    "exclude": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+  },
+  {
+    "line": 65,
+    "argv": ["make-set"],
+    "exclude": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+  },
+  {
+    "line": 65,
+    "argv": ["relink"]
   },
   {
     "line": 69,
+    "argv": ["state"]
+  },
+  {
+    "line": 71,
     "argv": ["version-new", "--body-file", "golden.md", "--label", "hello"]
   },
   {
-    "line": 79,
+    "line": 81,
     "argv": ["version-new"]
   },
   {
-    "line": 91,
+    "line": 93,
     "argv": ["say", "--body-file", "golden.md"]
   },
   {
-    "line": 94,
+    "line": 96,
     "argv": ["note", "--quote", "hello", "--body-file", "golden.md"]
   },
   {
-    "line": 94,
+    "line": 97,
+    "argv": ["task-done"],
+    "exclude": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+  },
+  {
+    "line": 97,
+    "argv": ["task-status"],
+    "exclude": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+  },
+  {
+    "line": 99,
     "argv": ["say", "hello"]
   },
   {
-    "line": 116,
+    "line": 113,
     "argv": ["open", "golden.md", "golden.md"]
   },
   {
-    "line": 117,
+    "line": 114,
     "argv": ["tail"]
   },
   {
-    "line": 128,
+    "line": 125,
     "argv": ["tail", "--since", "12"]
+  },
+  {
+    "line": 153,
+    "argv": ["note-resolve"],
+    "exclude": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
   },
   {
     "line": 153,
     "argv": ["tail", "--all"]
   },
   {
-    "line": 159,
-    "argv": ["version"],
-    "exclude": "prose, not an invocation: the line names the version field a messages about carries"
+    "line": 155,
+    "argv": ["tail", "--once"]
   },
   {
-    "line": 184,
+    "line": 159,
+    "argv": ["notes"]
+  },
+  {
+    "line": 165,
+    "argv": ["version"],
+    "exclude": "prose, not an invocation: the line names the version field a message about carries"
+  },
+  {
+    "line": 190,
     "argv": ["version-new", "--doc", "golden.md", "--body-file", "golden.md", "--label", "hello"]
   },
   {
-    "line": 208,
+    "line": 214,
     "argv": ["working"]
   },
   {
-    "line": 208,
+    "line": 214,
     "argv": ["working", "--for", "5"]
   },
   {
-    "line": 212,
+    "line": 218,
     "argv": ["notes", "--doc", "golden.md"]
   },
   {
-    "line": 213,
+    "line": 219,
     "argv": ["note-resolve", "item1"]
   },
   {
-    "line": 230,
-    "argv": ["move"],
-    "exclude": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
-  },
-  {
-    "line": 230,
-    "argv": ["rename"],
-    "exclude": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
-  },
-  {
-    "line": 231,
+    "line": 237,
     "argv": ["import"],
     "exclude": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
   },
   {
-    "line": 235,
+    "line": 237,
+    "argv": ["reveal"],
+    "exclude": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+  },
+  {
+    "line": 243,
     "argv": ["doctor"]
   },
   {
-    "line": 244,
+    "line": 254,
     "argv": ["close"]
   },
   {
-    "line": 247,
+    "line": 261,
     "argv": ["open", "--restore", "item1"]
   },
   {
-    "line": 272,
+    "line": 285,
     "argv": ["note-edit"],
     "exclude": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
   },
   {
-    "line": 276,
-    "argv": ["note-resolve"],
-    "exclude": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
-  },
-  {
-    "line": 287,
-    "argv": ["make-set"],
-    "exclude": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
-  },
-  {
-    "line": 289,
-    "argv": ["link-check"]
-  },
-  {
-    "line": 301,
+    "line": 305,
     "argv": ["add"],
     "exclude": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
   },
   {
-    "line": 302,
+    "line": 306,
     "argv": ["hide"],
     "exclude": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
   },
   {
-    "line": 302,
+    "line": 306,
     "argv": ["graph"]
   },
   {
-    "line": 302,
+    "line": 307,
     "argv": ["backlinks"]
   },
   {
-    "line": 305,
+    "line": 309,
     "argv": ["diff", "--context"],
     "exclude": "prose, not an invocation: the line says --context is a diff flag meaning lines of surrounding text (it takes a count)"
   },
   {
-    "line": 308,
+    "line": 312,
     "argv": ["new-doc", "golden.md"]
   },
   {
-    "line": 308,
+    "line": 312,
     "argv": ["new-folder", "golden.md"]
   },
   {
-    "line": 309,
+    "line": 313,
     "argv": ["import", "golden.md", "--into", "golden.md"]
   },
   {
-    "line": 312,
+    "line": 316,
     "argv": ["add-folder", "golden.md"]
   },
   {
-    "line": 313,
+    "line": 317,
     "argv": ["make-set", "golden.md"]
   },
   {
-    "line": 314,
+    "line": 318,
     "argv": ["add", "golden.md"]
   },
   {
-    "line": 314,
+    "line": 318,
     "argv": ["add-folder"],
     "exclude": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
   },
   {
-    "line": 337,
-    "argv": ["relink"]
-  },
-  {
-    "line": 339,
+    "line": 344,
     "argv": ["move-plan"],
     "exclude": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
   },
   {
-    "line": 347,
+    "line": 348,
+    "argv": ["link-check"]
+  },
+  {
+    "line": 365,
     "argv": ["reveal", "golden.md"]
   },
   {
-    "line": 352,
+    "line": 370,
     "argv": ["search", "hello"]
   },
   {
-    "line": 373,
+    "line": 391,
     "argv": ["schema"]
   },
   {
-    "line": 381,
-    "argv": ["task-status"],
-    "exclude": "prose, not an invocation: the line says task-status takes a positional (its status is required too)"
-  },
-  {
-    "line": 382,
+    "line": 400,
     "argv": ["find"]
   }
 ]

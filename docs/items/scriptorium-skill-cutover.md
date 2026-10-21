@@ -100,4 +100,89 @@ and this record.
 
 **Found, not fixed here**: a proposed version is not relinked by a move, and
 nothing flags it (above); and the kit's `workspace.overlap` doctor fix still
-names a `workspace <dir>` verb Scriptorium does not have.
+names a `workspace <dir>` verb Scriptorium does not have (filed as
+`kit-doctor-overlap-fix-names-missing-verb`; the SKILL says to ignore that fix).
+
+**After the no-stake verify** (a second commit for the kit, a third for the
+SKILL): the verifier ran the SKILL's claims against the build and found ten
+wrong or missing. Each is fixed:
+
+- an Ask the agent message's `about.doc` is the OPEN document; the note's is the
+  `--doc` in the `hint`;
+- a bare `tail` after the human ended the newest session waited forever
+  (`# no session yet, retrying...`) while every other verb refused. Fixed in the
+  kit, below; the SKILL's stderr rule now covers `#` status lines;
+- `link-check`'s `sets` names every set its answer names, `leaving` included;
+- `broken` is absent when nothing broke, and also carries the moved document's
+  own relative links;
+- the `system` facts `relink`, `folder.create`, `reveal` and
+  `original.reloaded`;
+- `task-done` and `task-status` take their words as arguments only, and `task`'s
+  text is the title;
+- dangling and unsupported links count in `count`, and are still not errors;
+- `tail --once`, joining late from `state.cursor`/`epoch`, and the agent's own
+  `by: "agent"` events on the tail;
+- trims: the link-check paragraph moved beside the move paragraph, the link
+  paragraph shortened, the flag list labelled as a reference (the flag ward
+  needs every flag named), and rule 1 now true of `move`, `rename`, `make-set`
+  and `relink` writing to disk.
+
+The documented golden was regenerated for the moved lines (207 invocations; no
+recorded behaviour changed against the fixture before this item).
+
+## Port-back notes
+
+- **`src/kit/workspace/verbs.ts`, `cmdTail`'s `onUnresolved`:** a bare `tail`
+  (no `--session`, no `--since`) that finds no live daemon re-reads
+  `newestSession()` on every retry, the rule every other verb routes by, so a
+  session that comes up is bound. When the newest session's manifest records an
+  end (`ended.by`, any of human, agent or timeout), the tail waits that end out
+  through a grace window before it binds to it and stops; the handoff then
+  prints `tail.closed` with that `by` and the session's `open --restore`
+  command, exit 0, as `tail --session <id>` already did. **Why the window:** a
+  daemon `open` is starting (a new session, or a restore of the ended one)
+  records itself as the newest only once it is up (`recordLastOpened`, after
+  `publishPointer`), and an agent often arms the tail and runs `open` together.
+  The first cut of this fix (`c97b343b`) stopped at once and so stopped on the
+  old session in that race; a second verifier's harness reproduced it at every
+  offset from -1000 to +50 ms. The window is `open`'s default start timeout (45
+  s, `DEFAULT_START_TIMEOUT_MS`), configurable as `tailEndedGraceMs`; the window
+  restarts if the newest session changes, and a newest session with no end, or
+  none at all, is waited on as before (`# no session yet, retrying...`). A
+  status line says the wait once:
+  `# session <id> was ended (by <by>); waiting <n>s for a new one before stopping...`.
+  Story Studio's tail has the same `onUnresolved`; weigh it against its
+  single-project routing.
+- **The help footer** now says tail's stderr carries `#` status lines beside the
+  `:` keepalives (a reader skips both), and that a tail with no `--session`
+  follows the newest session and ends 0 with `tail.closed` once that one has
+  ended and no new one came up within `open`'s start timeout.
+- **Tests** (`verbs.test.ts`, on the fixture CLI with the window shortened): the
+  human-ended newest stops after the window, never the older live one; the
+  agent- and timeout-ended newest stop with that `by`; a session that comes up
+  0, 300, 1200 or 2500 ms after the tail is armed is bound; a restore of the
+  ended session inside the window is bound; an older ended session beside a
+  newer one with no end is waited on (newest only); a newest with no end is
+  waited on; an empty home is waited on. Mutations, each red then restored
+  byte-equal: no window; stop only on `human`; stop on any ended session; stop
+  on any newest session, ignoring `ended`.
+
+- **An end `by: "agent"` skips the window** (a third verifier's round): the
+  agent closed that session itself, so a bare tail stops on it at once; human
+  and timeout ends keep the window. `DEFAULT_START_TIMEOUT_MS` is exported, and
+  the CLI exposes its effective window as `cli.tailEndedGraceMs`, so a test pins
+  the default (45 s, never 0). The help footer says the window is `open`'s
+  DEFAULT start timeout, from the constant, and that an agent end stops at once.
+  More tests: the window restarts when the newest session changes, and the stop
+  names the new one (timed past the retry backoff, 0.25 s doubling to 5 s); the
+  agent end stops well inside a 20 s window; the timeout end waits its window.
+  Mutations, each red: no restart on a new newest; the newest read once and
+  cached; the window timed from the first sighting; a default window of 0; an
+  agent end that waits the window. **Weigh before porting:** an agent that runs
+  `close`, then `open` and a bare tail together, now gets `tail.closed` about
+  the session it closed rather than the new one; arming the tail after `open`
+  returns (or with `--session`) avoids it.
+
+**Left as it is, deliberately:** `tail --since N` with no `--session`, when the
+newest session has ended, prints `tail.closed` with no `by` (a re-arm never
+reached the session, so the handoff has no session to read the end from).

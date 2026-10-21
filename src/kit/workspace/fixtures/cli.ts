@@ -12,6 +12,10 @@ export const cli = createWorkspaceCli({
     args: ["run", join(dirname(fileURLToPath(import.meta.url)), "server.ts")],
   },
   sessionsRoot: fixtureSessionsRoot,
+  // Tests shorten the bare tail's wait on an ended newest session.
+  ...(process.env.KIT_FIXTURE_TAIL_GRACE_MS
+    ? { tailEndedGraceMs: Number(process.env.KIT_FIXTURE_TAIL_GRACE_MS) }
+    : {}),
   version: () => ({ name: "kit-fixture", version: "0.0.0" }),
   commands: (h) => [
     {
