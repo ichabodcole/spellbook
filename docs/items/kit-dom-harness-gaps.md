@@ -11,7 +11,7 @@ id: 01a13777-83bd-74c3-b0c9-9c0fe8d00e9f
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
 tags: [kit, testing]
-parent: feature/workspace-kit
+parent: feature/workspace-kit-follow-ups
 ---
 
 # Close the DOM test harness's remaining leak paths

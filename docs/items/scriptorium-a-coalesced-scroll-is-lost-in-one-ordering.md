@@ -12,7 +12,7 @@ lifecycle: backlog
 id: 01a0cb4a-3810-7bfb-8bbd-1ad94998a78a
 kind: task
 generated: { by: claude-opus-5, at: 2026-09-22 }
-parent: feature/workspace-kit
+parent: feature/workspace-kit-follow-ups
 ---
 
 # Scriptorium: a coalesced scroll is lost in two sub-frame windows

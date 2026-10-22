@@ -11,7 +11,7 @@ id: 01a13c65-0307-737d-bd5b-d00816a2d5cf
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-14 }
 tags: [kit, workspace]
-parent: feature/workspace-kit
+parent: feature/workspace-kit-follow-ups
 ---
 
 # Mirrored sets follow symlinks out of the workspace and through loops

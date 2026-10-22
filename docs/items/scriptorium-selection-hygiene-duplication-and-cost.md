@@ -12,7 +12,7 @@ lifecycle: backlog
 id: 01a0ca78-3e29-71c9-bd9c-a8f6dc4602ef
 kind: task
 generated: { by: claude-opus-5, at: 2026-09-22 }
-parent: feature/workspace-kit
+parent: feature/workspace-kit-follow-ups
 ---
 
 # Scriptorium: the duplicated edge-detect, and a full re-walk on every selectionchange

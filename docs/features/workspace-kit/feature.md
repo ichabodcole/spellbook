@@ -7,7 +7,7 @@ description:
   spell can build on.
 tags: [kit, scriptorium, story-studio, surfaces]
 status: stable
-lifecycle: active
+lifecycle: done
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
 ---
 

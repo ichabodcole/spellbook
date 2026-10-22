@@ -11,7 +11,7 @@ id: 01a14911-a352-7688-b85d-85a392b2be5b
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-17 }
 tags: [kit, security]
-parent: feature/workspace-kit
+parent: feature/workspace-kit-follow-ups
 ---
 
 # Kit writes check, then write: a concurrent link swap can slip between

@@ -11,7 +11,7 @@ id: 01a138c6-afb2-7406-a222-5672da0779f7
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
 tags: [kit, cli]
-parent: feature/workspace-kit
+parent: feature/workspace-kit-follow-ups
 from: features/workspace-kit/sessions/2026-10-13-kit-foundation.md
 ---
 

@@ -10,7 +10,7 @@ id: 01a157b8-bbe1-751b-a8f4-cf55657df90c
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-19 }
 tags: [kit, scriptorium]
-parent: feature/workspace-kit
+parent: feature/workspace-kit-follow-ups
 from: cycle/2026-10-shell
 ---
 

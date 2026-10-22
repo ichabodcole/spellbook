@@ -11,7 +11,7 @@ lifecycle: triage
 id: 01a14cb0-b41d-7721-9acb-193d48e34f40
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-17 }
-parent: feature/workspace-kit
+parent: feature/workspace-kit-follow-ups
 from: features/workspace-kit/sessions/2026-10-17-panes.md
 ---
 

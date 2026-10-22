@@ -11,7 +11,7 @@ id: 01a1376e-9fb0-7452-82e6-c1d987e38191
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
 tags: [kit, css]
-parent: feature/workspace-kit
+parent: feature/workspace-kit-follow-ups
 ---
 
 # Spells get the kit primitives' CSS only when they adopt them

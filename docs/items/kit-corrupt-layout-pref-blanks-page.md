@@ -11,7 +11,7 @@ id: 01a15b70-ecd3-71b1-9013-4d168783af30
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-20 }
 tags: [kit, shell]
-parent: feature/workspace-kit
+parent: feature/workspace-kit-follow-ups
 from: cycle/2026-10-cutover
 ---
 

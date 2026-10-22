@@ -12,7 +12,7 @@ id: 01a138c6-b08c-77d1-8103-208875f6d6bf
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
 tags: [kit, wards]
-parent: feature/workspace-kit
+parent: feature/workspace-kit-follow-ups
 from: features/workspace-kit/sessions/2026-10-13-kit-foundation.md
 ---
 

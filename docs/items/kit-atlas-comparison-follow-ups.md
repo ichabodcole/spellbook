@@ -11,7 +11,7 @@ id: 01a157fc-bd8d-74f5-b201-a7320f4f31bd
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-19 }
 tags: [kit, scriptorium]
-parent: feature/workspace-kit
+parent: feature/workspace-kit-follow-ups
 from: cycle/2026-10-shell
 ---
 

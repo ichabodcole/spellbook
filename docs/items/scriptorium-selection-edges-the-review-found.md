@@ -16,7 +16,7 @@ lifecycle: backlog
 id: 01a0ca78-3e28-71ec-9061-a7e02d777b05
 kind: task
 generated: { by: claude-opus-5, at: 2026-09-22 }
-parent: feature/workspace-kit
+parent: feature/workspace-kit-follow-ups
 ---
 
 # Scriptorium: selection edges the reviews found and the fixes left alone

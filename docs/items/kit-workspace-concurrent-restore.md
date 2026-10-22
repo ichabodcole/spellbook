@@ -11,7 +11,7 @@ id: 01a13c64-ca08-759c-8075-f36b83fd6430
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-14 }
 tags: [kit, workspace]
-parent: feature/workspace-kit
+parent: feature/workspace-kit-follow-ups
 ---
 
 # Two concurrent restores of one session start two daemons

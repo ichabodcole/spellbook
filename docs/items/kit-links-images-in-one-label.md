@@ -12,7 +12,7 @@ id: 01a13bdd-bafc-7333-ae73-072ea44abbda
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-14 }
 tags: [kit, links]
-parent: feature/workspace-kit
+parent: feature/workspace-kit-follow-ups
 ---
 
 # One link holding many images is still quadratic

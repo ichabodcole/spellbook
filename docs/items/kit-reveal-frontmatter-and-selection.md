@@ -13,7 +13,7 @@ id: 01a157b0-882a-76ca-a864-ff5e8a1e46d6
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-19 }
 tags: [kit, document]
-parent: feature/workspace-kit
+parent: feature/workspace-kit-follow-ups
 from: cycle/2026-10-shell
 ---
 
