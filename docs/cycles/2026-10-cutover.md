@@ -109,6 +109,12 @@ Out of scope, deliberately:
    data). Not taken: refusing only once a session has a
    `manifest.pre-migrate.json`.
 
+3. **Go for the deletion (Cole, 2026-10-22,** after his trial of the flipped
+   build in Scriptorium session `0ed79abd`): "I think we're ready to do the
+   cutover." The trial found no regression. It filed three items for triage: the
+   native folder picker in the location dialog, the kit's violet brand colour on
+   Scriptorium's warm themes, and the right-click menu with no selection.
+
 ## Outcome
 
 _Written at close._
