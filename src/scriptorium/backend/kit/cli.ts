@@ -1,10 +1,8 @@
 /**
  * Scriptorium's CLI: the kit's workspace verbs under Scriptorium's name.
  *
- * Reached through `../cli.ts`'s `run()`, which hands off here unless the
- * earlier Scriptorium is asked for (`SCRIPTORIUM_SHIPPED=1`, `../hatch.ts`).
- * The launcher (`scripts/cli.ts`) imports the built artifact (`dist/cli.js`):
- * this module is bundled into it.
+ * Reached through `../cli.ts`'s `run()`. The launcher (`scripts/cli.ts`)
+ * imports the built artifact (`dist/cli.js`): this module is bundled into it.
  *
  * ⛔ THE DAEMON IS SPAWNED THROUGH THE SKILL'S LAUNCHER
  * (`scripts/server.ts` → `dist/server.js`), and the caller passes that path in.
@@ -14,8 +12,8 @@
  *
  * `open` prints the handshake and, without `--no-open`, opens a browser on the
  * kit page: the workspace shell around the document pane (`./server.ts`,
- * `surface/kit/`). The verbs that differ from the shipped CLI are the kit's;
- * the item records the delta.
+ * `src/scriptorium/surface/`). The verbs that differ from the shipped CLI
+ * (deleted at the cutover) are the kit's; the item records the delta.
  */
 
 import { resolve } from "node:path";
@@ -43,8 +41,7 @@ export function scriptoriumKitCli(deps: KitCliDeps): WorkspaceCli {
       command: "bun",
       args: ["run", deps.serverScript],
       cwd: deps.daemonCwd(),
-      // The CLI's own environment: `SCRIPTORIUM_HOME` rides along, and the
-      // hatch variable is never `1` here (`../cli.ts` would not have come here).
+      // The CLI's own environment: `SCRIPTORIUM_HOME` rides along.
       env: { ...process.env },
     },
     sessionsRoot: () => sessionsRoot(),

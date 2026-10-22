@@ -1,9 +1,10 @@
 // The conversion, driven through Scriptorium's own LAUNCHERS (build first): a
-// session the earlier Scriptorium wrote (through the hatch,
-// `SCRIPTORIUM_SHIPPED=1`) is restored by the current one with no variable,
-// converted as it is read. Everything runs under a temp SCRIPTORIUM_HOME and
-// TMPDIR, with the preload's scratch HOME; every daemon this file starts, it
-// stops by its own session id.
+// session the earlier Scriptorium wrote is restored, converted as it is read.
+// The session is the one its own writer left on disk, captured before that
+// writer was deleted at the cutover (`fixtures/shipped-today/`, the same
+// capture `./convert.test.ts` reads), planted under a temp SCRIPTORIUM_HOME.
+// Everything runs under that home and a temp TMPDIR, with the preload's
+// scratch HOME; every daemon this file starts, it stops by its own session id.
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import {
   mkdirSync,
@@ -39,19 +40,18 @@ const CLI = join(
 
 const root = realpathSync(mkdtempSync(join(tmpdir(), "scriptorium-migrate-")));
 const home = join(root, "home");
-const base = {
+const migrateEnv = {
   ...process.env,
   SCRIPTORIUM_HOME: home,
   TMPDIR: `${join(root, "tmp")}/`,
   NODE_ENV: "test",
 };
-delete (base as Record<string, string | undefined>).SCRIPTORIUM_SHIPPED;
-/** The earlier Scriptorium, through the hatch; and the default, with no variable. */
-const shippedEnv = { ...base, SCRIPTORIUM_SHIPPED: "1" };
-const migrateEnv = base;
 mkdirSync(join(root, "tmp"), { recursive: true });
+// The folders the captured session names, under this file's root.
 const docs = join(root, "docs");
-mkdirSync(docs, { recursive: true });
+mkdirSync(join(docs, "set"), { recursive: true });
+mkdirSync(join(root, "ws"), { recursive: true });
+writeFileSync(join(docs, "set", "a.md"), "# A\n");
 writeFileSync(join(docs, "solo.md"), "# Solo\n");
 
 type Run = { code: number; out: string; err: string };
@@ -75,52 +75,56 @@ const json = <T = Record<string, unknown>>(r: Run): T => {
     throw new Error(`the CLI printed nothing (exit ${r.code}); stderr: ${r.err || "(empty)"}`);
   return JSON.parse(r.out) as T;
 };
-const envelope = (r: Run) =>
-  (JSON.parse(r.err) as { error: { kind: string; message: string; hint?: string } }).error;
 const kitPointer = (id: string) => join(root, "tmp", `scriptorium.${id}.json`);
-const shippedPointer = (id: string) => join(root, "tmp", `scriptorium-${id}.json`);
 
-async function closeById(env: Record<string, string | undefined>, id: string, pointer: string) {
-  const pid = pointerPid(pointer);
+async function closeById(id: string) {
+  const pid = pointerPid(kitPointer(id));
   if (pid === null) return;
-  await run(env, "close", "--session", id);
+  await run(migrateEnv, "close", "--session", id);
   await waitForExit(pid);
+}
+
+/** Place the captured session at `<home>/sessions/<id>`, its `@ROOT@` made this file's root. */
+function plantShipped(id: string): void {
+  const from = join(KIT_DIR, "fixtures", "shipped-today");
+  const place = (rel: string) => {
+    for (const e of readdirSync(join(from, rel), { withFileTypes: true })) {
+      const r = join(rel, e.name);
+      if (e.isDirectory()) place(r);
+      else {
+        const to = join(home, "sessions", id, r);
+        mkdirSync(dirname(to), { recursive: true });
+        const text = readFileSync(join(from, r), "utf8").replaceAll("@ROOT@", root);
+        writeFileSync(
+          to,
+          r === "manifest.json" ? text.replace('"today"', JSON.stringify(id)) : text,
+        );
+      }
+    }
+  };
+  place("");
 }
 
 let id = "";
 const dir = () => join(home, "sessions", id);
 const manifestText = () => readFileSync(join(dir(), "manifest.json"), "utf8");
 
-beforeAll(async () => {
-  // A session the shipped Scriptorium's own writer made, used, and closed.
-  const s = await run(shippedEnv, "open", "--no-open", join(docs, "solo.md"));
-  expect(s.code).toBe(0);
-  id = json<{ session_id: string }>(s).session_id;
-  expect((await run(shippedEnv, "say", "--session", id, "hello from the shipped one")).code).toBe(
-    0,
-  );
-  await closeById(shippedEnv, id, shippedPointer(id));
-}, 60_000);
+beforeAll(() => {
+  id = "shipped1";
+  plantShipped(id);
+  // The earlier Scriptorium's shape, as its writer left it.
+  const m = JSON.parse(manifestText()) as Record<string, unknown>;
+  expect(typeof m.createdAt).toBe("number");
+  expect("appName" in m).toBe(false);
+  expect(readdirSync(dir())).not.toContain(PRE_MIGRATE_FILE);
+});
 
 afterAll(async () => {
-  await closeById(migrateEnv, id, kitPointer(id));
-  await closeById(shippedEnv, id, shippedPointer(id));
+  await closeById(id);
   rmSync(root, { recursive: true, force: true });
 });
 
-describe("before any conversion, the hatch runs the earlier Scriptorium", () => {
-  test("it restores its own session as ever, and converts nothing", async () => {
-    const r = await run(shippedEnv, "open", "--no-open", "--restore", id);
-    expect(r.code).toBe(0);
-    await closeById(shippedEnv, id, shippedPointer(id));
-    const m = JSON.parse(manifestText()) as Record<string, unknown>;
-    expect(typeof m.createdAt).toBe("number");
-    expect("appName" in m).toBe(false);
-    expect(readdirSync(dir())).not.toContain(PRE_MIGRATE_FILE);
-  }, 30_000);
-});
-
-describe("with no variable, Scriptorium restores an earlier session converted", () => {
+describe("Scriptorium restores an earlier session converted", () => {
   let original = "";
   let versionFiles: string[] = [];
 
@@ -135,12 +139,16 @@ describe("with no variable, Scriptorium restores an earlier session converted", 
   test("the chat says it was converted, and the shipped messages read as the kit's", async () => {
     const st = json<PublicState>(await run(migrateEnv, "state", "--session", id));
     const texts = st.chat.map((m) => [m.from, m.type, m.text]);
-    expect(texts).toContainEqual(["agent", "message", "hello from the shipped one"]);
+    expect(texts).toContainEqual(["agent", "message", "read the set"]);
+    expect(texts).toContainEqual(["human", "message", "about this"]);
     const said = st.chat.find((m) => m.text.includes("converted from the shipped Scriptorium"));
     expect(said?.from).toBe("system");
     expect(said?.text).toContain(join(dir(), PRE_MIGRATE_FILE));
-    // The folder the shipped session opened in is now an ordinary added folder.
-    expect(st.context.map((e) => [e.root, e.membership])).toContainEqual([docs, "mirrored"]);
+    // The shipped session's workspace is now an ordinary added folder.
+    expect(st.context.map((e) => [e.root, e.membership])).toContainEqual([
+      join(root, "ws"),
+      "mirrored",
+    ]);
   });
 
   test("one line says it was converted, and no second line says the slot was brought forward", async () => {
@@ -166,15 +174,4 @@ describe("with no variable, Scriptorium restores an earlier session converted", 
       versionFiles,
     );
   });
-
-  test("once converted, the hatch is refused before any verb runs (exit 2, with a hint)", async () => {
-    await closeById(migrateEnv, id, kitPointer(id));
-    const r = await run(shippedEnv, "open", "--no-open", "--restore", id);
-    expect(r.code).toBe(2);
-    expect(r.out).toBe("");
-    const e = envelope(r);
-    expect(e.kind).toBe("usage");
-    expect(e.message).toContain("SCRIPTORIUM_SHIPPED=1 is closed");
-    expect(e.hint).toContain("unset SCRIPTORIUM_SHIPPED");
-  }, 30_000);
 });

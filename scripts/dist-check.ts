@@ -125,10 +125,11 @@ export function trackedBuildInputs(spell: string, root: string = REPO_ROOT): str
 export function diskDistFiles(spell: string, root: string = REPO_ROOT): string[] {
   const dir = join(root, distRoot(spell));
   if (!existsSync(dir)) return [];
-  // ⚠ RECURSIVE, AND FILES ONLY: a further surface builds into `dist/<sub>/`
-  // (`src/build.ts` `subSurfaceNames`, scriptorium's kit-path frame). A flat
-  // read listed `dist/kit` itself as one untracked "file" on every clean run,
-  // and never saw the files inside it.
+  // ⚠ RECURSIVE, AND FILES ONLY. Written when a further surface built into
+  // `dist/<sub>/` (scriptorium's kit-path frame, until the cutover): a flat
+  // read listed the folder itself as one untracked "file" and never saw the
+  // files inside it. The build emits no sub-folder now; the recursive read
+  // stays, because a stray folder in `dist/` is still one to look inside.
   return readdirSync(dir, { recursive: true, withFileTypes: true })
     .filter((e) => e.isFile())
     .map((e) => `${distRoot(spell)}/${relative(dir, join(e.parentPath, e.name))}`)

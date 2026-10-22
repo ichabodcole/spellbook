@@ -558,15 +558,6 @@ export type AppDeclaration = {
   /** How to run the app's CLI, absolute (`bun /path/to/scripts/cli.ts`), shown to the human to copy. */
   launcher?: string;
   /**
-   * The words for a restore refused because the manifest has Scriptorium's
-   * shape (the shipped Scriptorium's own sessions), in place of the kit's
-   * generic "Restore it with the app that wrote it". For an app whose name is
-   * the refused app's own, where the generic words name it twice: Scriptorium
-   * on the kit (`SCRIPTORIUM_KIT=1`). The status (409) and the rule are the
-   * kit's; only what the reader is told changes.
-   */
-  refuseScriptorium?: (sessionId: string) => { message: string; hint: string };
-  /**
    * The app's filter on the kit's tree scan: asked once per scan of a set (a
    * restore, a rescan, an outside change, an add), with the slot as it is
    * then. Keep what it reads in the app slot, so it survives a restart and
@@ -8397,10 +8388,6 @@ function refuseForeignManifest(
       `it looks like ${what}. Restore it with the app that wrote it; ${app.name} will not read it`,
     );
   };
-  if (looksLikeScriptorium(raw) && app.refuseScriptorium) {
-    const words = app.refuseScriptorium(sessionId);
-    throw new SessionError(words.message, 409, undefined, words.hint);
-  }
   if (looksLikeScriptorium(raw))
     refuse(
       "its manifest has Scriptorium's shape",

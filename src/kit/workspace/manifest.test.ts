@@ -467,27 +467,6 @@ describe("a manifest that is not this app's own", () => {
           expect(readdirSync(join(sessions, id))).toEqual(["manifest.json"]);
         });
 
-  test("an app that declares refuseScriptorium says its own words for a Scriptorium manifest, and leaves it alone", () => {
-    const id = "scr-own-words";
-    const path = plant(id, { ...(scriptoriumManifests().fresh ?? {}), sessionId: id });
-    const before = readFileSync(path, "utf8");
-    const app: AppDeclaration = {
-      ...testApp,
-      refuseScriptorium: (sid) => ({ message: `own message ${sid}`, hint: "own hint" }),
-    };
-    const e = refusal(() => WorkspaceSession.restore(sessions, app, id));
-    expect(e.status).toBe(409);
-    expect(e.message).toBe(`own message ${id}`);
-    expect(e.hint).toBe("own hint");
-    expect(readFileSync(path, "utf8")).toBe(before);
-    // Only that refusal: a manifest with no app slot keeps the kit's words.
-    const other = "no-slot";
-    plant(other, { format: 1, sessionId: other, createdAt: new Date().toISOString() });
-    expect(refusal(() => WorkspaceSession.restore(sessions, app, other)).hint).toContain(
-      "not one a workspace-kit app wrote",
-    );
-  });
-
   test("an unstamped manifest without the kit's ISO createdAt is refused", () => {
     const s = WorkspaceSession.create(sessions, testApp);
     const m = readManifest(s);

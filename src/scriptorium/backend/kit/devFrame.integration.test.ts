@@ -2,7 +2,7 @@
 // way an agent opens it: `scripts/cli.ts open` run from the REPOSITORY ROOT,
 // whose cwd has no bunfig.toml. Bun's dev server loads the Tailwind plugin only
 // from the bunfig in the DAEMON's cwd, so the kit CLI must spawn it in
-// `src/scriptorium/` (Contract 5, `kitDaemonCwd`); spawned anywhere else the
+// `src/scriptorium/` (Contract 5, `daemonCwd` in `../cli.ts`); spawned anywhere else the
 // page answers 500 "Build Failed". A named utility the frame uses is looked
 // for in the served stylesheet, never a byte count.
 //
@@ -26,7 +26,7 @@ const env: Record<string, string | undefined> = {
   SPELLBOOK_SURFACE_MODE: "dev",
 };
 // A utility only the page's own folder uses (the tree's status dot, in
-// `surface/kit/Frame.tsx`), as the built sheet escapes it. Assembled, so no
+// `surface/Frame.tsx`), as the built sheet escapes it. Assembled, so no
 // class scanner counts this file as a use. (It was the interim frame's
 // `font-manuscript` title, which the shell's top bar replaced.)
 const UTIL = ["data-\\[tone\\=unreadable\\]\\:bg", "ink", "faint"].join("-");

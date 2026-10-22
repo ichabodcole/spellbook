@@ -60,7 +60,13 @@ function code(text: string): string {
  */
 export function serverFiles(): string[] {
   const out: string[] = [];
-  for (const rel of new Glob("*/backend/**/*.ts").scanSync(SRC)) {
+  // ⚠ PLUS THE KIT'S WORKSPACE DAEMON, which is outside every `<spell>/backend/`
+  // and is Scriptorium's daemon since the cutover (scriptorium-delete-shipped):
+  // the shipped `src/scriptorium/backend/server.ts` that bound Scriptorium's
+  // port was deleted, and `backend/server.ts` now only hands off to the kit.
+  // Without this the population fell from nine to eight and Scriptorium's
+  // daemon left the sweep while still binding a port.
+  for (const rel of [...new Glob("*/backend/**/*.ts").scanSync(SRC), "kit/workspace/server.ts"]) {
     if (/\.test\.ts$/.test(rel)) continue;
     const abs = join(SRC, rel);
     if (code(readFileSync(abs, "utf8")).includes("Bun.serve")) out.push(abs);
@@ -111,10 +117,16 @@ describe("every daemon refuses a foreign origin", () => {
     // A local re-implementation is how the fifth copy of the error taxonomy
     // happened (register item, filed not fixed). One definition, or the next
     // widening reaches eight of nine again.
+    // The specifier is RESOLVED against the file, so the kit's own daemon
+    // (`../wire/origin.ts`) and a spell's (`../../kit/wire/origin.ts`) are held
+    // to the same one file.
+    const kitOrigin = join(SRC, "kit", "wire", "origin.ts");
     const local = files
       .filter((f) => {
         const c = code(readFileSync(f, "utf8"));
-        return !/from\s+["'][^"']*kit\/wire\/origin\.ts["']/.test(c);
+        return ![...c.matchAll(/from\s+["']([^"']*wire\/origin\.ts)["']/g)].some(
+          (m) => resolve(dirname(f), m[1] ?? "") === kitOrigin,
+        );
       })
       .map(show);
     expect(local).toEqual([]);

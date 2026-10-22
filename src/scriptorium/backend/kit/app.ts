@@ -10,9 +10,9 @@
  * Scriptorium's own root, with the logs and prefs beside them. A session the
  * earlier Scriptorium saved is converted to the kit's shape the first time the
  * daemon restores it (`./convert.ts`), and its old manifest is kept beside it
- * as `manifest.pre-migrate.json`. The earlier Scriptorium stays reachable
- * behind `SCRIPTORIUM_SHIPPED=1` until it is deleted (`../hatch.ts`), and that
- * is refused once any session in the home is in the kit's shape.
+ * as `manifest.pre-migrate.json`. The earlier Scriptorium itself was deleted
+ * at the cutover (scriptorium-delete-shipped); the converter is the only part
+ * of it that remains.
  */
 
 import { lstatSync } from "node:fs";
@@ -103,7 +103,7 @@ export const scriptoriumApp: AppDeclaration = {
   homeWorkspace: false,
   locationHint:
     "name a place inside a set (`state` lists them), such as the folder of the document under discussion: `new-doc <folder>/<name>.md`, `new-folder <folder>/<name>`, `import <file> --into <folder>`. To make a new place: `add-folder <path>` (anywhere, as a new set), `make-set <doc>`, or `add <folder>` for one that exists",
-  // No `refuseScriptorium`: the daemon converts a shipped manifest, so the
-  // only one it refuses is a hybrid the converter declines (`./convert.ts`),
-  // and the kit's generic words are right for that.
+  // No words of its own for a shipped manifest: the daemon converts one, so
+  // the only one it refuses is a hybrid the converter declines
+  // (`./convert.ts`), and the kit's generic words are right for that.
 };

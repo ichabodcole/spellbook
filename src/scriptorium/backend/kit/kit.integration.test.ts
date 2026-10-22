@@ -1,8 +1,8 @@
 // Scriptorium on the kit, driven through its own LAUNCHERS with no variable
 // set: `scripts/cli.ts open` spawns `scripts/server.ts` (→ the BUILT
 // `dist/server.js`; build first), each of which hands off to `./cli.ts` and
-// `./server.ts`. The earlier Scriptorium is reached only through the hatch
-// (`SCRIPTORIUM_SHIPPED=1`, `../hatch.ts`), driven both ways at the end.
+// `./server.ts`. (A session the earlier Scriptorium saved is converted through
+// the same launchers in `./migrate.integration.test.ts`.)
 // Everything runs under a temp SCRIPTORIUM_HOME and a temp TMPDIR, with the
 // preload's scratch HOME passed on in `env`, so no real session or pointer is
 // ever read or written.
@@ -13,7 +13,6 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
-  readdirSync,
   readFileSync,
   realpathSync,
   rmSync,
@@ -23,7 +22,6 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { FakeSurface, pointerPid, waitForExit } from "../../../kit/workspace/fixtures/harness";
-import { PRE_MIGRATE_FILE as PRE_MIGRATE } from "../../../kit/workspace/manifestMigrate";
 import type { PublicState } from "../../../kit/workspace/protocol";
 
 const KIT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -51,7 +49,6 @@ const base = {
   // refused, the real home refused) reads it.
   NODE_ENV: "test",
 };
-delete (base as Record<string, string | undefined>).SCRIPTORIUM_SHIPPED;
 /** The default environment (no variable at all). */
 const kitEnv = base;
 mkdirSync(join(root, "tmp"), { recursive: true });
@@ -391,73 +388,5 @@ describe("Scriptorium on the kit, end to end through its launchers, with no vari
     await waitTail((l) => l.type === "tail.closed");
     expect(existsSync(kitPointer(sessionId))).toBe(false);
     expect(existsSync(join(home, "sessions", sessionId, "manifest.json"))).toBe(true);
-  });
-});
-
-describe("the hatch (SCRIPTORIUM_SHIPPED=1), on a home of its own", () => {
-  const hatchHome = join(root, "hatch-home");
-  const now = { ...base, SCRIPTORIUM_HOME: hatchHome };
-  const hatch = { ...now, SCRIPTORIUM_SHIPPED: "1" };
-  let shippedId = "";
-
-  test("on a home with no session in the kit's shape, it runs the earlier Scriptorium", async () => {
-    const s = await run(hatch, "open", "--no-open", join(docs, "solo.md"));
-    expect(s.err).toBe("");
-    expect(s.code).toBe(0);
-    shippedId = json<{ session_id: string }>(s).session_id;
-    // The earlier Scriptorium's own pointer name and manifest shape.
-    expect(existsSync(shippedPointer(shippedId))).toBe(true);
-    const m = JSON.parse(
-      readFileSync(join(hatchHome, "sessions", shippedId, "manifest.json"), "utf8"),
-    );
-    expect(typeof m.createdAt).toBe("number");
-    expect(m).not.toHaveProperty("appName");
-    await closeById(hatch, shippedId, shippedPointer(shippedId));
-  }, 60_000);
-
-  test("with no variable, that session is converted as it is restored, its old manifest kept byte for byte", async () => {
-    const manifest = join(hatchHome, "sessions", shippedId, "manifest.json");
-    const before = readFileSync(manifest);
-    const r = await run(now, "open", "--no-open", "--restore", shippedId);
-    expect(r.code).toBe(0);
-    expect(JSON.parse(readFileSync(manifest, "utf8"))).toMatchObject({ appName: "scriptorium" });
-    expect(readFileSync(join(hatchHome, "sessions", shippedId, PRE_MIGRATE)).equals(before)).toBe(
-      true,
-    );
-    await closeById(now, shippedId, kitPointer(shippedId));
-  }, 60_000);
-
-  test("then the hatch is refused before any verb runs: exit 2, a usage envelope, a hint", async () => {
-    const sessionsBefore = readdirSync(join(hatchHome, "sessions")).sort();
-    for (const args of [["open", "--no-open", join(docs, "solo.md")], ["state"], ["--version"]]) {
-      const r = await run(hatch, ...args);
-      expect([args[0], r.code, r.out]).toEqual([args[0], 2, ""]);
-      const err = envelope(r);
-      expect(err.kind).toBe("usage");
-      expect(err.message).toContain("SCRIPTORIUM_SHIPPED=1 is closed: 1 session in");
-      expect(err.message).toContain(`(e.g. ${shippedId})`);
-      expect(err.hint).toContain("unset SCRIPTORIUM_SHIPPED");
-    }
-    // Nothing was started or written.
-    expect(readdirSync(join(hatchHome, "sessions")).sort()).toEqual(sessionsBefore);
-  });
-
-  test("and a hand-run daemon launcher under the hatch is refused too, exit 2", async () => {
-    const p = Bun.spawn(["bun", join(SKILL_ROOT, "scripts", "server.ts")], {
-      stdout: "pipe",
-      stderr: "pipe",
-      stdin: "ignore",
-      env: hatch,
-      cwd: root,
-    });
-    const [out, err, code] = await Promise.all([
-      new Response(p.stdout).text(),
-      new Response(p.stderr).text(),
-      p.exited,
-    ]);
-    expect(code).toBe(2);
-    expect(out).toBe("");
-    expect(err).toContain("SCRIPTORIUM_SHIPPED=1 is closed");
-    expect(err).toContain("unset SCRIPTORIUM_SHIPPED");
   });
 });

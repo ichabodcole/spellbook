@@ -54,14 +54,12 @@ const DEPLOY_ROOT = join(REPO_ROOT, "plugins", "spellbook", "skills");
  *  the source comment and any future consumer cannot drift apart. */
 const SURFACE_HTML_EXTERNAL = "*/surface/index.html";
 
-const entryFor = (spell: string, sub?: string) =>
-  join(SRC_DIR, spell, "surface", ...(sub ? [sub] : []), "index.html");
+const entryFor = (spell: string) => join(SRC_DIR, spell, "surface", "index.html");
 const backendDirFor = (spell: string) => join(SRC_DIR, spell, "backend");
 const backendEntryFor = (spell: string, name: string) => join(backendDirFor(spell), `${name}.ts`);
 const launcherFor = (spell: string, name: string) =>
   join(DEPLOY_ROOT, spell, "scripts", `${name}.ts`);
-const outDirFor = (spell: string, sub?: string) =>
-  join(DEPLOY_ROOT, spell, "dist", ...(sub ? [sub] : []));
+const outDirFor = (spell: string) => join(DEPLOY_ROOT, spell, "dist");
 
 /** Does this spell have SURFACE SOURCE — `src/<spell>/surface/index.html`?
  *
@@ -76,29 +74,6 @@ const outDirFor = (spell: string, sub?: string) =>
  *  source whose emitted entry is at the wrong address goes RED, and a
  *  backend-only daemon is enumerated rather than falsely reddened. */
 const hasSurface = (spell: string) => existsSync(entryFor(spell));
-
-/**
- * A spell's FURTHER surfaces: each `src/<spell>/surface/<sub>/index.html`,
- * built into `dist/<sub>/` beside the main one. Derived from the tree, as the
- * backend entries are.
- *
- * The one member is scriptorium's `kit`, the interim frame the flagged kit path
- * serves (`SCRIPTORIUM_KIT=1`, scriptorium-kit-interim-frame). It is a second
- * page with its own daemon, so it is a second, separate build: its own
- * `Bun.build` call (one call with two HTML entries would hoist what they share
- * into a common chunk and rewrite the main surface's bytes) and its own folder,
- * so the main surface's `index.html`, which `resolveMode` and `serveFromDist`'s
- * whitelist both key on, is untouched, and the main daemon's flat-only serve
- * never reaches it (a nested path is refused there).
- */
-function subSurfaceNames(spell: string): string[] {
-  const dir = join(SRC_DIR, spell, "surface");
-  if (!existsSync(dir)) return [];
-  return readdirSync(dir, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && existsSync(entryFor(spell, e.name)))
-    .map((e) => e.name)
-    .sort();
-}
 
 /**
  * **A backend entry is `src/<spell>/backend/X.ts` for which a launcher
@@ -284,9 +259,9 @@ async function buildBackendEntry(spell: string, name: string): Promise<number> {
 }
 
 /** Build one spell's surface into its ALREADY-CLEANED dist/. */
-async function buildSurface(spell: string, sub?: string): Promise<number> {
-  const entry = entryFor(spell, sub);
-  const outdir = outDirFor(spell, sub);
+async function buildSurface(spell: string): Promise<number> {
+  const entry = entryFor(spell);
+  const outdir = outDirFor(spell);
   const result = await Bun.build({
     entrypoints: [entry],
     outdir,
@@ -337,9 +312,7 @@ async function buildSurface(spell: string, sub?: string): Promise<number> {
   for (const artifact of result.outputs) {
     process.stdout.write(`${artifact.path.replace(`${outdir}/`, "")} (${artifact.kind})\n`);
   }
-  process.stdout.write(
-    `${spell}${sub ? `/${sub}` : ""}: built ${result.outputs.length} file(s) -> ${outdir}\n`,
-  );
+  process.stdout.write(`${spell}: built ${result.outputs.length} file(s) -> ${outdir}\n`);
   return 0;
 }
 
@@ -372,7 +345,6 @@ async function buildSpell(spell: string): Promise<number> {
   rmSync(outDirFor(spell), { recursive: true, force: true });
   let code = 0;
   if (hasSurface(spell)) code = (await buildSurface(spell)) || code;
-  for (const sub of subSurfaceNames(spell)) code = (await buildSurface(spell, sub)) || code;
   for (const name of entries) code = (await buildBackendEntry(spell, name)) || code;
   return code;
 }
@@ -406,5 +378,4 @@ export {
   hasSurface,
   launcherFor,
   main,
-  subSurfaceNames,
 };

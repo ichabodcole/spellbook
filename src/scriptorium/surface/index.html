@@ -4,13 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>scriptorium</title>
-    <!-- Pre-paint theme: stored choice > OS preference > dark. Mirrors
-         state/theme.ts resolveInitialTheme — keep the two in sync by hand. -->
+    <!-- Pre-paint theme: stored choice > OS preference > dark. The kit's
+         THEME_PREPAINT (src/kit/theme/mode.ts), whose `applyTheme` writes the
+         browser copy under THEME_STORAGE_KEY: the shell applies the daemon's
+         prefs through it, so this key must be that one. Keep the two in sync. -->
     <script>
       (() => {
         let t = null;
         try {
-          t = localStorage.getItem("scriptorium:theme");
+          t = localStorage.getItem("spellbook:theme");
         } catch {}
         if (t !== "light" && t !== "dark") {
           t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
