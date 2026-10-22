@@ -11102,7 +11102,7 @@ var require_with_selector = __commonJS(function(exports, module) {
   }
 });
 
-// src/scriptorium/surface/kit/main.tsx
+// src/scriptorium/surface/main.tsx
 var import_client = __toESM(require_client(), 1);
 
 // src/kit/context/useDaemon.ts
@@ -12551,7 +12551,7 @@ var __iconNode75 = [
   ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
 ];
 var X = createLucideIcon("x", __iconNode75);
-// src/scriptorium/surface/kit/Frame.tsx
+// src/scriptorium/surface/Frame.tsx
 var import_react56 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/dialog/index.parts.mjs
@@ -80730,7 +80730,7 @@ var SCRIPTORIUM_DOC_EXTENSIONS = [".mdx"];
 for (const ext of SCRIPTORIUM_DOC_EXTENSIONS)
   registerDocExtension(ext);
 
-// src/scriptorium/surface/kit/movePlan.tsx
+// src/scriptorium/surface/movePlan.tsx
 var jsx_runtime53 = __toESM(require_jsx_runtime(), 1);
 var LISTED = 6;
 var plural3 = (n, one2, many = `${one2}s`) => `${n} ${n === 1 ? one2 : many}`;
@@ -80883,7 +80883,7 @@ function scriptoriumBeforeMove(daemon, opts = {}) {
   };
 }
 
-// src/scriptorium/surface/kit/prefsStorage.ts
+// src/scriptorium/surface/prefsStorage.ts
 var PREF_DEBOUNCE_MS = 250;
 var VIEW_MODE_KEY = "doc:view";
 var LINE_NUMBERS_KEY = "doc:line-numbers";
@@ -80946,7 +80946,7 @@ function prefsStorage({
   };
 }
 
-// src/scriptorium/surface/kit/statusMark.ts
+// src/scriptorium/surface/statusMark.ts
 function statusMark(summary) {
   if (!summary)
     return null;
@@ -80961,7 +80961,7 @@ function statusMark(summary) {
   return null;
 }
 
-// src/scriptorium/surface/kit/suggestMeta.ts
+// src/scriptorium/surface/suggestMeta.ts
 var NO_FRONTMATTER = "This document has no frontmatter.";
 var ADD_A_BLOCK = "Add a block";
 var NONE = [];
@@ -80983,10 +80983,10 @@ function scriptoriumTextOffer(daemon, noFrontmatter) {
   };
 }
 
-// src/scriptorium/surface/kit/useMapView.tsx
+// src/scriptorium/surface/useMapView.tsx
 var import_react55 = __toESM(require_react(), 1);
 
-// src/scriptorium/surface/kit/MapView.tsx
+// src/scriptorium/surface/MapView.tsx
 var import_react54 = __toESM(require_react(), 1);
 
 // node_modules/d3-force/src/center.js
@@ -81960,7 +81960,7 @@ function manyBody_default() {
   };
   return force;
 }
-// src/scriptorium/surface/kit/forceLayout.ts
+// src/scriptorium/surface/forceLayout.ts
 var import_react53 = __toESM(require_react(), 1);
 var bodyRadius = (linksIn) => 5 + Math.min(11, Math.sqrt(linksIn) * 2.4);
 function useForceLayout(nodes, edges, size4, enabled) {
@@ -82023,7 +82023,7 @@ function useForceLayout(nodes, edges, size4, enabled) {
   return { positions, onDragStart, onDragMove, onDragEnd, dragging };
 }
 
-// src/scriptorium/surface/kit/MapView.tsx
+// src/scriptorium/surface/MapView.tsx
 var jsx_runtime54 = __toESM(require_jsx_runtime(), 1);
 var NODE_W = 168;
 var NODE_H = 34;
@@ -82488,7 +82488,7 @@ function ForceCanvas({
   });
 }
 
-// src/scriptorium/surface/kit/mapGraph.ts
+// src/scriptorium/surface/mapGraph.ts
 var FRONTMATTER = "frontmatter";
 function mapGraph(graph, docMeta) {
   const nodes = graph.nodes.filter((n) => !n.bundle).map((n) => {
@@ -82528,7 +82528,7 @@ function mapGraph(graph, docMeta) {
   };
 }
 
-// src/scriptorium/surface/kit/useMapView.tsx
+// src/scriptorium/surface/useMapView.tsx
 var jsx_runtime55 = __toESM(require_jsx_runtime(), 1);
 var MAP_VIEW = "scriptorium.map";
 var MAP_LABEL = "Show the map of this set";
@@ -82598,7 +82598,7 @@ function useMapView(daemon) {
   return { appView, menuActions };
 }
 
-// src/scriptorium/surface/kit/Frame.tsx
+// src/scriptorium/surface/Frame.tsx
 var jsx_runtime56 = __toESM(require_jsx_runtime(), 1);
 var NO_ENTRIES = [];
 var NO_PREFS = {};
@@ -82772,7 +82772,7 @@ function Frame({ daemon }) {
   });
 }
 
-// src/scriptorium/surface/kit/main.tsx
+// src/scriptorium/surface/main.tsx
 var jsx_runtime57 = __toESM(require_jsx_runtime(), 1);
 function FramePage() {
   return /* @__PURE__ */ jsx_runtime57.jsx(Frame, {
