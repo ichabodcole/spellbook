@@ -3,7 +3,7 @@
 // a terminal frame, and the wrapper that runs the window and `--once`.
 //
 // Unit cells over a scripted fake server. The same properties on a REAL daemon
-// through a real CLI are `src/scriptorium/backend/tail-handoff.integration.test.ts`.
+// through a real CLI are `../workspace/tail-handoff{,.closed,.restart}.integration.test.ts`.
 // No cell waits minutes: the window is injected in milliseconds.
 import { afterEach, describe, expect, test } from "bun:test";
 import { type Sink, tailEvents } from "./tailEvents";

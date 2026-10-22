@@ -6,7 +6,7 @@ description:
   turning to may be stuck is not read out to a screen reader; the shipped app
   announces it through its always-shown float.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a1582d-f1a0-700c-b718-059a1a707047
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-20 }
@@ -30,7 +30,8 @@ words, so they can be found, but the change happens silently.
 - [x] With the composer closed, a change in the waiting mark is announced
       politely to a screen reader, for example by a visually hidden live region
       beside the rail dot carrying its label.
-- [ ] Tested, and offered on kit-parity.
+- [x] Tested, and offered on kit-parity. _(Offered on kit-parity, message 47,
+      2026-10-22.)_
 
 ## Done and verified
 

@@ -6,6 +6,16 @@
 // it there is nothing to ask, so the ended dialog opens on its own. Once closed,
 // the top bar keeps a small "Ended" chip whose popover says the same again. No
 // banner: the read-only editor and the disabled controls already show it.
+//
+// ⛔ LONG TEXT WRAPS INSIDE. The restore command carries the CLI's full path, an
+// app's warning names documents, and a session id is the app's to choose: any of
+// them can be one long unbroken token. A grid's implicit column is as wide as its
+// widest child's minimum, so one such token once pushed the whole confirm dialog,
+// its buttons with it, past the edge of the screen. Each grid here has a
+// `minmax(0,1fr)` column (FIT), and every line of text wraps anywhere (WRAP).
+// Wrapped, the same text can make the dialog taller than a short window, so the
+// dialog is capped at the viewport's height and scrolls inside (TALL).
+// SessionEnd.test.tsx pins all three.
 
 import { CheckIcon, CopyIcon, InfoIcon } from "lucide-react";
 import { type Ref, type RefObject, useRef, useState } from "react";
@@ -24,6 +34,13 @@ import {
 
 /** Where the end dialog has got to: asking, waiting on the daemon, or ended. */
 export type EndPhase = "confirm" | "ending" | "ended";
+
+/** A grid's one column, held to the box's width whatever its children hold. */
+export const FIT = "grid-cols-[minmax(0,1fr)]";
+/** Text that breaks inside a long unbroken token (a path, an id) rather than overflow. */
+export const WRAP = "wrap-anywhere";
+/** A dialog no taller than the window (less the gutter it is centred in), scrolling inside. */
+export const TALL = "max-h-[calc(100dvh-2rem)] overflow-y-auto";
 
 const BUTTON =
   "inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-3 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/60 disabled:opacity-50";
@@ -49,7 +66,7 @@ export function EndedMessage({
 }) {
   return (
     <>
-      <p className="text-sm leading-relaxed text-ink-dim">
+      <p className={cn("text-sm leading-relaxed text-ink-dim", WRAP)}>
         {endedSentence(by)} What is on screen stays here to look at. To keep working, run
       </p>
       <code
@@ -111,7 +128,7 @@ export function CopyCommand({
 export function EndedDetails({ command, by }: { command: string; by: Daemon["endedBy"] }) {
   const codeRef = useRef<HTMLElement>(null);
   return (
-    <div data-slot="session-ended-details" className="grid gap-3">
+    <div data-slot="session-ended-details" className={cn("grid gap-3", FIT)}>
       <EndedMessage command={command} by={by} codeRef={codeRef} />
       <CopyCommand command={command} codeRef={codeRef} />
     </div>
@@ -158,29 +175,35 @@ export function SessionEndDialog({
         data-slot="session-end-dialog"
         data-phase={phase ?? undefined}
         finalFocus={finalFocus}
-        className="border border-edge bg-surface text-ink sm:max-w-md"
+        className={cn("border border-edge bg-surface text-ink sm:max-w-md", FIT, TALL)}
       >
         {phase === "ended" ? (
           <>
-            <DialogTitle className="text-sm font-semibold text-ink">Session ended</DialogTitle>
-            <DialogDescription render={<div />} className="grid gap-3 text-ink-dim">
+            <DialogTitle className={cn("text-sm font-semibold text-ink", WRAP)}>
+              Session ended
+            </DialogTitle>
+            <DialogDescription render={<div />} className={cn("grid gap-3 text-ink-dim", FIT)}>
               <EndedMessage command={command} by={by} codeRef={codeRef} />
             </DialogDescription>
             <CopyCommand command={command} codeRef={codeRef} />
           </>
         ) : (
           <>
-            <DialogTitle className="text-sm font-semibold text-ink">
+            {/* pr-6 keeps a long title clear of the close button in the corner. */}
+            <DialogTitle className={cn("pr-6 text-sm font-semibold text-ink", WRAP)}>
               End session {sessionId}?
             </DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed text-ink-dim">
+            <DialogDescription className={cn("text-sm leading-relaxed text-ink-dim", WRAP)}>
               The daemon stops and the agent is told you ended it. The session stays on disk, so it
               can be reopened with {command}.
             </DialogDescription>
             {warning && (
               <p
                 data-slot="end-warning"
-                className="rounded-md border border-attention/40 bg-attention/10 px-2.5 py-2 text-xs leading-relaxed text-ink"
+                className={cn(
+                  "rounded-md border border-attention/40 bg-attention/10 px-2.5 py-2 text-xs leading-relaxed text-ink",
+                  WRAP,
+                )}
               >
                 {warning}
               </p>
@@ -189,12 +212,15 @@ export function SessionEndDialog({
               <p
                 role="alert"
                 data-slot="end-notice"
-                className="rounded-md border border-attention/40 bg-attention/10 px-2.5 py-2 text-xs leading-relaxed text-ink"
+                className={cn(
+                  "rounded-md border border-attention/40 bg-attention/10 px-2.5 py-2 text-xs leading-relaxed text-ink",
+                  WRAP,
+                )}
               >
                 {notice}
               </p>
             )}
-            <div className="flex justify-end gap-2">
+            <div className="flex flex-wrap justify-end gap-2">
               <button
                 type="button"
                 onClick={() => onOpenChange(false)}
@@ -247,8 +273,8 @@ export function EndedChip({
         <InfoIcon aria-hidden className="size-3.5 text-ink-dim" />
         Ended
       </PopoverTrigger>
-      <PopoverContent data-slot="ended-popover" className="grid gap-2">
-        <PopoverTitle>Session ended</PopoverTitle>
+      <PopoverContent data-slot="ended-popover" className={cn("grid gap-2", FIT)}>
+        <PopoverTitle className={WRAP}>Session ended</PopoverTitle>
         <EndedDetails command={command} by={by} />
       </PopoverContent>
     </Popover>

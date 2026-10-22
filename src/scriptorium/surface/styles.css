@@ -1,15 +1,34 @@
+/* Scriptorium's page sheet: Tailwind, the kit's base (L0 tokens), this
+   page's palette and theme, then the kit's document rules (src/kit/theme/
+   document.css: the rendered view, notes, find and flash marks, embeds and
+   relation chips, and the scan of src/kit/document's utilities) and the kit's
+   shell (src/kit/theme/shell.css: the scan of src/kit/shell's markup, and the
+   themed scrollbars).
+
+   ⛔ ONE SHEET, FOLDED AT THE CUTOVER (scriptorium-delete-shipped). The page's
+   palette lived in a `theme.css` beside this file while the shipped
+   Scriptorium's sheet still sat here, and this file only imported it. They
+   are one file now, and the base.css import is in THIS file on purpose:
+   grimoire/kit-styling-ward.test.ts reads `surface/styles.css` directly,
+   comment-stripped and without following @import, to decide that the spell
+   consumes the kit's styling.
+
+   ⚠ THE LAST TWO @imports SIT AT THE END, AFTER THE PAGE'S OWN RULES, ON
+   PURPOSE: where both style `.md-prose`, the kit's document rules come later
+   and win, and a property only this sheet sets still applies. Tailwind
+   inlines an @import wherever it stands; the fold was measured to emit the
+   same stylesheet, byte for byte but its one path comment, as the two-file
+   form it replaced. Do not hoist them. */
 @import "tailwindcss" source(none);
 /* L0 shared tokens (src/kit/theme/base.css, Contract 21), imported BEFORE this
    surface's own @theme so every token below overrides the kit default. */
 @import "../../kit/theme/base.css";
 /* `source(none)` is load-bearing: automatic detection roots at the process cwd
    (the repo root under `bun run build`). This bare-directory @source is the
-   surface's ONLY content source. The kit sheet brings its own, which scans
-   src/kit/ui. grimoire/spell-css-scope-ward.test.ts runs each claim red. */
+   page's own content source, `surface/` and nothing above it. The kit's
+   sheets bring their own (base.css: src/kit/ui, chat, context, theme and
+   wire; document.css: src/kit/document; shell.css: src/kit/shell). */
 @source "./";
-/* The kit page (`./kit/`) has its own sheet and its own scan; its classes do
-   not belong in this one (scriptorium-kit-keepers). */
-@source not "./kit";
 
 /* L2 — scriptorium's palette: a warm paper-and-ink manuscript room. Semantic
    names only (house theming convention: no raw palette in markup); the dark
@@ -390,3 +409,5 @@
     }
   }
 }
+@import "../../kit/theme/document.css";
+@import "../../kit/theme/shell.css";

@@ -689,18 +689,28 @@ describe("ward — a flag demoted by `--` is warned about, on every registry ado
       // 10 since 2026-10-14: the kit workspace CLI joined, read through its
       // fixture (see `followersOf`), with 23 rows that take positionals (24
       // since `note-edit`, kit-workspace-e65-daemon).
-      adopters: 10,
+      // 10 -> 9 at the cutover (scriptorium-delete-shipped): the shipped
+      // Scriptorium's `defineCli` table (`scriptorium/backend/cli.ts`, 29 rows
+      // with positionals) was deleted, and that file now only hands the
+      // command line to the kit. Scriptorium's CLI is built by the kit's
+      // factory, which this ward reads through the fixture follower; its own
+      // builder (`scriptoriumKitCli(deps)` in `backend/kit/cli.ts`) exports a
+      // function, not a built `Cli`, so it is not a follower (`followersOf`).
+      // Every count below fell by the deleted table's share: rows 138 -> 109,
+      // cases 902 -> 761 (direct 367 -> 310, after-text 168 -> 141, =value
+      // 367 -> 310), quiet cases 139 -> 110.
+      adopters: 9,
       // Every row with ANY positional (required, optional or variadic), not
       // only c1's 43 variadic + 6 one-optional rows: a demoted token can fill
       // any positional slot. Measured 2026-09-27 on 41065365.
-      rowsWithPositionals: 138,
+      rowsWithPositionals: 109,
       // Per (row, spelling, accepted flag), globals included: one direct and
       // one =value case, plus one after-text case wherever the row has room.
       // Measured 2026-09-27: 311 direct cases before the alias spelling joined.
       // 902 since the kit's `say` took `--via` (kit-port-via-refs): one more
       // case in each form.
-      cases: 902,
-      byForm: { direct: 367, "after-text": 168, "=value": 367 },
+      cases: 761,
+      byForm: { direct: 310, "after-text": 141, "=value": 310 },
       // mind-mapper `message` -> `read`: direct and =value. `read` has one
       // non-variadic positional, so no after-text case.
       viaAlias: 2,
@@ -708,7 +718,7 @@ describe("ward — a flag demoted by `--` is warned about, on every registry ado
       // `prune` alias rows with no positionals, so they have no case here.
       aliasRows: ["mind-mapper/backend/cli.ts:read<-message"],
       // One per (row, spelling).
-      quietCases: 139,
+      quietCases: 110,
       perAdopter: {
         "astrolabe/backend/cli.ts": 6,
         "bounty/backend/cli.ts": 7,
@@ -720,7 +730,6 @@ describe("ward — a flag demoted by `--` is warned about, on every registry ado
         "kit/workspace/fixtures/cli.ts": 24,
         "magpie/backend/cli.ts": 6,
         "mind-mapper/backend/cli.ts": 26,
-        "scriptorium/backend/cli.ts": 29,
       },
     });
   });

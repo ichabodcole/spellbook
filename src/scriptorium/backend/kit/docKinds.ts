@@ -1,6 +1,6 @@
 /**
  * The kinds of document Scriptorium admits beyond the kit's own: `.mdx`, as
- * the shipped Scriptorium always has (`../tree.ts`).
+ * the shipped Scriptorium always had (its `tree.ts`, deleted at the cutover).
  *
  * ⛔ AN `.mdx` IS TEXT, NOTHING MORE (Cole, 2026-10-19, the shell cycle's
  * ruling 1). It shows in the tree, `meta` and `find`, opens, edits, versions,
@@ -11,8 +11,7 @@
  *
  * Registered at load, once per process, by every kit-path entry that reads a
  * tree or a name: the daemon (`./server.ts`), the CLI (`./cli.ts`) and the
- * surface (`../../surface/kit/Frame.tsx`). Pure, so the surface can bundle it.
- * Not imported by `./app.ts`, which the shipped entries load for the flag.
+ * surface (`../../surface/Frame.tsx`). Pure, so the surface can bundle it.
  */
 
 import { registerDocExtension } from "../../../kit/lib/docFormat";

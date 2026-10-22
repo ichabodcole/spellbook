@@ -1,13 +1,12 @@
 /**
  * Scriptorium's daemon: the kit's workspace daemon under Scriptorium's name.
  *
- * Reached through `../server.ts`'s `run()`, which hands off here unless the
- * earlier Scriptorium is asked for (`SCRIPTORIUM_SHIPPED=1`, `../hatch.ts`).
- * The launcher (`scripts/server.ts`) imports the built artifact
- * (`dist/server.js`): this module is bundled into it.
+ * Reached through `../server.ts`'s `run()`. The launcher (`scripts/server.ts`)
+ * imports the built artifact (`dist/server.js`): this module is bundled into
+ * it.
  *
  * Its surface is the kit's shell around the kit's document pane
- * (`src/scriptorium/surface/kit/`, built into the skill's `dist/kit/`). See
+ * (`src/scriptorium/surface/`, built into the skill's `dist/`). See
  * `frameSurface` below for where it is found, and `kitLauncher` for the
  * restore command the surface prints.
  *
@@ -84,43 +83,42 @@ function withLauncher(app: AppDeclaration): AppDeclaration {
   return launcher ? { ...app, launcher } : app;
 }
 
-/** The built frame (`src/build.ts` builds `surface/kit/` into `dist/kit/`): release mode. */
-const FRAME_DIST = join(HERE, "kit");
-/**
- * The frame's source page, for dev mode (`SPELLBOOK_SURFACE_MODE=dev`, or no
- * built frame): from `dist/`, five levels up is the repository. Imported by a
- * computed path, so the backend build does not follow it into the surface's
- * `.tsx` and Tailwind graph (the shipped daemon's literal import is left out by
- * `src/build.ts`'s `external` instead, which matches only `surface/index.html`).
- */
-const FRAME_DEV_ENTRY = join(
-  HERE,
-  "..",
-  "..",
-  "..",
-  "..",
-  "..",
-  "src",
-  "scriptorium",
-  "surface",
-  "kit",
-  "index.html",
-);
+/** The skill's `dist/`: see `frameSurface`. */
+const DIST_DIR = join(HERE, "..", "dist");
 
 /**
- * Where the kit page is (the shell, `surface/kit/`), as the kit daemon's `surface` option.
+ * Where Scriptorium's page is, as the kit daemon's `surface` option.
  *
- * ⚠ BOTH PATHS ARE TRUE ONLY IN THE BUNDLE (`grimoire/spawn-path-ward.test.ts`
- * resolves them from the emitted `dist/server.js`). Run from source, as the
- * tests run it, `HERE` is this folder: there is no built frame beside it, so
- * the daemon is in dev mode, and no source page five levels up, so it serves
- * no page. A test that wants the page passes the committed build as `distDir`.
+ * Release: the built page is in the skill's `dist/` (`src/build.ts` builds
+ * `src/scriptorium/surface/` there), named up and back down from this
+ * module's folder (`DIST_DIR`), which in the bundle (`dist/server.js`) is
+ * `dist/` itself. The house's spelling: `grimoire/spawn-path-ward.test.ts`
+ * reads the `join` as a directory pin and asserts it lands on a built page.
+ *
+ * Dev (`SPELLBOOK_SURFACE_MODE=dev`, or no built page): the source page, by
+ * the house's literal import, five levels up from `dist/` to the repository.
+ * `src/build.ts`'s `external` leaves that one specifier unresolved in the
+ * bundle, byte for byte, so it is resolved at runtime against `dist/`, and the
+ * backend build never follows it into the surface's `.tsx` and Tailwind graph
+ * (`grimoire/import-boundary-wards.test.ts` pins it).
+ *
+ * ⚠ BOTH ARE TRUE ONLY IN THE BUNDLE. Run from source, as the tests run it,
+ * `HERE` is this folder: there is no built page at `DIST_DIR`, so the daemon
+ * is in dev mode, and the specifier resolves to no file from here, so the import
+ * fails and it serves no page, as it did when the frame's path was computed.
+ * A test that wants the page passes the committed build as `distDir`.
  */
 export function frameSurface(): { distDir: string; devIndex: () => Promise<unknown> } {
   return {
-    distDir: FRAME_DIST,
-    devIndex: async () =>
-      existsSync(FRAME_DEV_ENTRY) ? (await import(FRAME_DEV_ENTRY)).default : undefined,
+    distDir: DIST_DIR,
+    devIndex: async () => {
+      try {
+        return (await import("../../../../../src/scriptorium/surface/index.html")).default;
+      } catch {
+        // No source page at that address: a published plugin, or the source tree.
+        return undefined;
+      }
+    },
   };
 }
 
@@ -146,7 +144,7 @@ export function kitDaemonOptions(
     links: scriptoriumLinkSlot(),
     // The shipped map said "N leaving the set": the link check lists them, in Scriptorium's word.
     linkCheck: { leaving: true, noun: "set" },
-    // The kit page at `/` (release: `dist/kit/`, and its chunks beside it).
+    // The page at `/` (release: `dist/`, and its chunks beside it).
     surface: frameSurface(),
     ...overrides,
   };

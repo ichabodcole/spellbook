@@ -6,13 +6,14 @@ description:
   second and gets as many results back, with or without a document open; the kit
   surface sends none.
 status: draft
-lifecycle: triage
+lifecycle: done
 id: 01a156a8-ccda-726a-822f-c5fd9bc0f945
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-19 }
 tags: [scriptorium]
 parent: feature/workspace-kit
 from: cycle/2026-10-shell
+cycle: 2026-10-cutover
 ---
 
 # The shipped surface floods search requests while idle
@@ -34,3 +35,9 @@ a real (headed) browser does it too.
       named.
 - [ ] Fixed in the shipped surface, or closed at the cutover with the reason, as
       Cole rules.
+
+## Closed at the cutover
+
+Closed by the deletion of the shipped Scriptorium (cycle 2026-10-cutover,
+2026-10-22). The flood lived only in the shipped surface; the kit surface sends
+no idle search ops.

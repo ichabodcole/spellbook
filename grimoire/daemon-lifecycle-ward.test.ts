@@ -197,6 +197,20 @@ function daemons(): Backend[] {
       code,
     });
   }
+  // ⚠ PLUS THE KIT'S WORKSPACE DAEMON, under the name `kit-workspace`: it is
+  // outside every `<spell>/backend/`, and since the cutover
+  // (scriptorium-delete-shipped) it is the only daemon Scriptorium runs. The
+  // shipped `src/scriptorium/backend/server.ts` that called `Bun.serve` was
+  // deleted, and that file now only hands off to the kit. Left out, the
+  // population would lose a per-session daemon that holds sockets and writes
+  // a pointer, and clause 1 (the one whose last violation was a real bug)
+  // would stop looking at Scriptorium's daemon.
+  const kitDaemon = join(srcRoot, "kit", "workspace", "server.ts");
+  out.push({
+    spell: "kit-workspace",
+    file: "src/kit/workspace/server.ts",
+    code: stripComments(readFileSync(kitDaemon, "utf8")),
+  });
   return out.sort((a, b) => a.file.localeCompare(b.file));
 }
 
@@ -309,6 +323,11 @@ describe("daemon lifecycle ward", () => {
       // +1 daemon and +2 CLI files: scriptorium (2026-09-11), the first spell
       // SCAFFOLDED onto the build — a per-session daemon, so it joins all three
       // clause lists below.
+      // ⚠ RE-PINNED AT THE CUTOVER (scriptorium-delete-shipped): `scriptorium`
+      // leaves the daemon lists and `kit-workspace` (the kit's workspace
+      // daemon, which Scriptorium now runs) takes its place, so the count stays
+      // 9. The CLI count stays 16: `backend/cli.ts` and `scripts/cli.ts` remain
+      // as Scriptorium's entry and launcher.
       daemons: 9,
       clis: 16,
       // clause 1 — the SSE/socket holders. digestify and mind-mapper are out.
@@ -318,8 +337,8 @@ describe("daemon lifecycle ward", () => {
         "glamour",
         "grapevine",
         "imago",
+        "kit-workspace",
         "magpie",
-        "scriptorium",
       ],
       // clause 2 — every pointer writer. All seven go through the kit today,
       // which is why the clause's OFFENDER list is empty (C9); the subjects are
@@ -331,13 +350,16 @@ describe("daemon lifecycle ward", () => {
         "glamour",
         "grapevine",
         "imago",
+        "kit-workspace",
         "magpie",
         "mind-mapper",
-        "scriptorium",
       ],
-      // clause 3 — the CLIs that still carry their own reader (scriptorium's is
-      // glamour's ENOENT-only shape, written at genesis).
-      readSession: ["bounty", "glamour", "imago", "magpie", "scriptorium"],
+      // clause 3 — the CLIs that still carry their own reader.
+      // ⚠ `scriptorium` LEFT AT THE CUTOVER (scriptorium-delete-shipped): its
+      // reader (glamour's ENOENT-only shape, written at genesis) was the
+      // shipped CLI's, deleted; the kit CLI finds its session through the
+      // kit's `readPointer`.
+      readSession: ["bounty", "glamour", "imago", "magpie"],
     });
   });
 

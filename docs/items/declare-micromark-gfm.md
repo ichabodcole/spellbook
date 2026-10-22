@@ -6,11 +6,12 @@ description:
   surface/state/markdown.ts, but package.json does not declare it; it resolves
   only transitively.
 status: draft
-lifecycle: triage
+lifecycle: done
 id: 01a1371b-0c3d-7137-b719-2313811b2630
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
 tags: [deps, scriptorium]
+cycle: 2026-10-cutover
 ---
 
 # Declare micromark-extension-gfm in package.json
@@ -29,3 +30,10 @@ for the kit-foundation cycle (2026-10-13).
 
 - [ ] `package.json` declares `micromark-extension-gfm` at the version now
       resolved, and the gate passes
+
+## Closed at the cutover
+
+Already satisfied, found by the cutover survey (2026-10-20): the root
+`package.json` and `src/scriptorium/package.json` declare
+`micromark-extension-gfm` ^3.0.0. It stays needed after the deletion: the kit's
+`document/projection.ts`, `lib/markdown.ts` and `lib/markdownCode.ts` import it.

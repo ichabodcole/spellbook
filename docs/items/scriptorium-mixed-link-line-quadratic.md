@@ -8,12 +8,13 @@ description:
   markdown and wiki links take 1.2-1.8 s; the kit's extractor is linear, so this
   goes away when Scriptorium moves onto it.
 status: stable
-lifecycle: triage
+lifecycle: done
 id: 01a139ee-790f-73bf-b84a-69ed0055a6b2
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-14 }
 tags: [scriptorium, links, performance]
 parent: feature/workspace-kit
+cycle: 2026-10-cutover
 ---
 
 # Scriptorium's link extractor is quadratic on lines mixing wiki and markdown links
@@ -38,3 +39,10 @@ cycle). Fix it here only if that's far off.
 
 - [ ] Scriptorium's extractor is linear on mixed dense lines (under 2 s at
       200k), or Scriptorium is on the kit's extractor
+
+## Closed at the cutover
+
+Closed by the deletion of the shipped Scriptorium (cycle 2026-10-cutover,
+2026-10-22). Scriptorium now runs only on the kit's extractor, which the cutover
+survey measured at 34–53 ms on 200k mixed characters, against this item's
+1.2–1.8 s.

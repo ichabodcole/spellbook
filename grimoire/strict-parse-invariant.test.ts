@@ -113,9 +113,13 @@ describe("ward — every parseArgs invocation refuses unknown flags", () => {
     // 11 → 12: the registry's per-verb help adds a strict try-parse
     // (`asksForHelp`: is the argv WITHOUT the `--help` token one the row
     // accepts?), 2026-10-13.
+    // 12 → 11: the cutover (scriptorium-delete-shipped) deleted the shipped
+    // Scriptorium's daemon, and with it its strict private-argv parse
+    // (`nodeParseArgs` in `backend/server.ts`). Scriptorium's daemon is the
+    // kit's workspace daemon now, whose flags `runWorkspaceDaemon` parses.
     expect({ notStrict, invocationsChecked: invocations.length }).toEqual({
       notStrict: [],
-      invocationsChecked: 12,
+      invocationsChecked: 11,
     });
   });
 

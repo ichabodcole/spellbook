@@ -7,7 +7,7 @@ description:
   second half of the last workspace-stack cycle."
 tags: [kit, scriptorium]
 status: stable
-lifecycle: active
+lifecycle: closed
 started: 2026-10-20
 appetite:
   Stop when the kit path is Scriptorium's only path, every one of Cole's
@@ -16,6 +16,7 @@ appetite:
   used the flipped build.
 after: []
 generated: { by: claude-opus-5-5, at: 2026-10-20 }
+closed: 2026-10-22
 ---
 
 # The cutover
@@ -120,7 +121,48 @@ Out of scope, deliberately:
 
 ## Outcome
 
-_Written at close._
+**What shipped:**
+
+- **The kit Scriptorium is Scriptorium.** The flip landed first as one
+  revertable commit. Shipped sessions convert the first time they are restored,
+  and the original manifest is kept. Theme, view mode and open columns carry
+  over; pane sizes reset once. Dry runs on copies of the real home converted all
+  65 sessions. Cole used the flipped build on his real sessions on 2026-10-22
+  and found no regression.
+- **The shipped Scriptorium is deleted:** about 20.4k lines of source and 10.8k
+  of tests, with the escape hatch. The command line's output is identical before
+  and after, verb by verb. Every ward that named the shipped code was
+  recalibrated with its reason.
+- **The SKILL describes the kit's contract.** Three no-stake passes ran it
+  against the build, two of them with cold-reading agents.
+- **acc can't go stale quietly.** The house ward fails a census whose verbs,
+  flags or output no longer match the CLI, for every spell.
+- **From the triage pile and the trial:** the split view's divider, a wait
+  announced while the composer is closed, `--timeout` refusing a non-number, and
+  the End session dialog fitting long paths and short windows.
+
+**What was cut, or changed scope:**
+
+- **The SKILL's cold reads found a contract bug, not just wording.** A bare
+  `tail` waited forever after the human ended the newest session. The first fix
+  regressed: a tail armed beside a fresh `open` stopped on the old session. The
+  final shape waits through `open`'s default start window before it stops.
+- **Left for triage:** five findings from Cole's trial (the native folder
+  picker, the kit's violet on the warm themes, the right-click menu with no
+  selection, session identity, and the dialog overflow, which joined), and the
+  ward blind spots the deletion's verifier found.
+
+**What was learned:**
+
+- **A cold reader finds what a schema check can't.** Every verb in the SKILL
+  existed, and the SKILL was still wrong about which document a note's ask
+  names, and about how a tail ends.
+- **A newest-session rule races with a daemon that is still starting.** Any "the
+  newest one has ended" decision needs a window, or a marker written before the
+  spawn.
+- **The trial was worth waiting for.** It found no regression, but it found what
+  the port had lost without anyone noticing: the workspace path had told Cole
+  which project a session belonged to.
 
 ## Sessions
 

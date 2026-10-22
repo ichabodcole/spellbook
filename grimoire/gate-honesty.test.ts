@@ -396,6 +396,21 @@ import { join } from "node:path";
 // reads the kit's THEME_STORAGE_KEY (which `applyTheme` writes) in place of a
 // key nothing wrote any more. Frame.test.tsx holds the pre-paint key; the
 // browser check and devFrame.integration.test.ts read the sheet's effect.
+//
+// ⛔ RE-DECLARED 2026-10-22 — 34/3,379 -> 31/2,946, from the object's own sum.
+// MEMBERSHIP SHRANK BY THREE; the cutover (scriptorium-delete-shipped):
+//     -41   src/scriptorium/surface/index.html      (the shipped page, deleted)
+//     -392  src/scriptorium/surface/styles.css      (the shipped sheet, deleted)
+//     -43   src/scriptorium/surface/kit/index.html  (moved: +43 at surface/index.html)
+//     -18   src/scriptorium/surface/kit/styles.css  } folded into one sheet,
+//     -395  src/scriptorium/surface/kit/theme.css   } +413 at surface/styles.css
+// The kit page moved up into surface/ and its two sheets became one, so
+// kit-styling-ward (which reads `surface/styles.css` without following
+// @import) still sees the kit base imported. The fold kept the cascade order;
+// the built stylesheet is byte-identical to the two-file form's but for its
+// path comment. styles.css grew by its 18-line header (395 -> 413), which
+// says why the last two @imports sit at the end. Nothing new became blind:
+// the page's tests and the browser check read the sheet's effect, as before.
 const DECLARED_BLIND: Record<string, number> = {
   "src/digestify/surface/styles.css": 515,
   "src/digestify/surface/index.html": 26,
@@ -436,19 +451,13 @@ const DECLARED_BLIND: Record<string, number> = {
   // 212 -> 254 (E30): scrollbars in the spell's colours, which are pseudo-element
   // rules and so unreachable from a utility as well.
   "src/scriptorium/bunfig.toml": 5,
-  "src/scriptorium/surface/index.html": 41,
-  // The kit path's interim frame (scriptorium-kit-interim-frame, 2026-10-17):
-  // its own entry page, the shipped one's pre-paint theme script and favicon
-  // under a second title. Thrown away with the frame at the shell cycle.
-  "src/scriptorium/surface/kit/index.html": 43,
-  // The frame's own sheet (scriptorium-kit-document-centre): the shipped one,
-  // then the kit's document.css. 14 -> 15 and theme.css 395
-  // (scriptorium-kit-keepers): the page's palette and theme, a copy of the
-  // shipped sheet re-rooted to scan only surface/kit/, in place of importing
-  // it; the shipped sheet 389 -> 392 for its `@source not "./kit"`.
-  "src/scriptorium/surface/kit/styles.css": 18,
-  "src/scriptorium/surface/kit/theme.css": 395,
-  "src/scriptorium/surface/styles.css": 392,
+  // The page (the kit page since the cutover, moved up from surface/kit/):
+  // its pre-paint theme script and favicon.
+  "src/scriptorium/surface/index.html": 43,
+  // The page's one sheet since the cutover: the kit page's palette and theme
+  // (a copy of the shipped sheet, scriptorium-kit-keepers) with the kit's
+  // document.css and shell.css imported at its end.
+  "src/scriptorium/surface/styles.css": 413,
 };
 
 type BlindReport = {

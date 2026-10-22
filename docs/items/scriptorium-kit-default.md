@@ -7,7 +7,7 @@ description:
   the shipped app reachable until the deletion, and acc's census and the CLI
   golden move with it."
 status: stable
-lifecycle: backlog
+lifecycle: done
 id: 01a15b3a-2716-70a6-872a-d30f3aad2a2c
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-20 }

@@ -6,13 +6,14 @@ description:
   components still use the npm cn (tailwind-merge); the surface dep cap says one
   semantics per spell and needs a ruling for spells on the kit.
 status: stable
-lifecycle: triage
+lifecycle: done
 id: 01a138c6-b13d-738a-be53-c5c299d80b4c
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
 tags: [scriptorium, kit, house-style]
 parent: feature/workspace-kit
 from: features/workspace-kit/sessions/2026-10-13-kit-foundation.md
+cycle: 2026-10-cutover
 ---
 
 # Settle Scriptorium's two cn semantics
@@ -33,3 +34,10 @@ The finalize review (2026-10-13) found no call site that conflicts today.
 ## Related Documents
 
 - [Kit foundation — 2026-10-13](../features/workspace-kit/sessions/2026-10-13-kit-foundation.md)
+
+## Closed at the cutover
+
+Closed by the deletion of the shipped Scriptorium (cycle 2026-10-cutover,
+2026-10-22). All 18 npm `cn` importers were shipped components; the dependency
+is removed, and no spell on the kit keeps tailwind-merge, so the surface dep cap
+needs no new ruling.

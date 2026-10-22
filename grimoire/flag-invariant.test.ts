@@ -129,15 +129,19 @@ const FOREIGN: Record<string, string> = {
 };
 const isForeign = (spell: string, flag: string) => FOREIGN[`${spell}:${flag}`] !== undefined;
 
-// The table a spell's DEFAULT path runs, where the source scan reads another.
-// scriptorium (the cutover, 2026-10-20): the `defineCli` in `backend/cli.ts`
-// is the earlier Scriptorium, reached only behind the temporary
-// `SCRIPTORIUM_SHIPPED=1` hatch. The default is the kit's workspace CLI
-// (`backend/kit/cli.ts`), whose flags come from the kit's options table, which
-// the scan cannot follow, so it is read from the table itself, as the
-// kit-registry cell below does. SKILL.md describes the default; a flag only the
-// hatch knows (`--entry`) is deliberately undocumented. This entry goes with
-// the shipped CLI.
+// The table a spell's CLI runs, where the source scan cannot read it.
+// scriptorium: its CLI is the kit's workspace CLI (`backend/kit/cli.ts`), whose
+// flags come from the kit's options table, which the scan cannot follow, so it
+// is read from the table itself, as the kit-registry cell below does.
+// ⚠ RE-RULED AT THE CUTOVER (scriptorium-delete-shipped). Until then this
+// entry overrode a table the scan DID read: the shipped `defineCli` in
+// `backend/cli.ts`, reachable only behind the `SCRIPTORIUM_SHIPPED=1` hatch.
+// The shipped CLI and the hatch are deleted, and `backend/cli.ts` and
+// `backend/server.ts` now only hand `process.argv` to the kit (`runKitCli`,
+// `runKitDaemon`): they read the argument vector, so they are arg-parsing
+// entry points, and they declare no table, so the scan resolves none. The
+// table is still needed, now as the ONLY source of Scriptorium's flags, and
+// the two hand-offs are named in `HANDS_OFF` below rather than excused.
 const DEFAULT_TABLE: Record<string, readonly string[]> = {
   scriptorium: (
     (await import(join(BACKEND_SRC_DIR, "scriptorium/backend/kit/cli.ts"))) as {
@@ -151,6 +155,13 @@ const DEFAULT_TABLE: Record<string, readonly string[]> = {
     // Building the table spawns nothing: the deps are read only when a verb runs.
     .scriptoriumKitCli({ serverScript: "", daemonCwd: () => "", version: () => ({}) })
     .recognizedFlags.map((f) => f.replace(/^--/, "")),
+};
+
+/** Entry points that read the argument vector only to hand it to a table in
+ *  `DEFAULT_TABLE`, so the scan resolves no set for them. Named, so a third
+ *  unresolved entry still reds. */
+const HANDS_OFF: Record<string, readonly string[]> = {
+  scriptorium: ["scriptorium/backend/cli.ts", "scriptorium/backend/server.ts"],
 };
 
 const parsing = argParsingEntryPoints();
@@ -277,7 +288,7 @@ describe("ward — every SKILL.md flag is recognized, and every recognized flag 
       }
       expect({ spell, unresolvedEntryPoints: unresolved }).toEqual({
         spell,
-        unresolvedEntryPoints: [],
+        unresolvedEntryPoints: [...(HANDS_OFF[spell] ?? [])],
       });
       // The default path's own table replaces what the scan read (see `DEFAULT_TABLE`).
       const table = DEFAULT_TABLE[spell];

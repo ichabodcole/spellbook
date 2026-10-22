@@ -556,6 +556,11 @@ const PINNED_DYNAMIC_ESCAPES: EscapeIdentity[] = [
   // scriptorium (2026-09-11) — the ninth, and the first written at genesis:
   // the daemon's dev-mode surface import, glamour's specifier with the spell
   // renamed, executed only on the dev branch and inert in release.
+  // ⚠ KEPT AT THE CUTOVER (scriptorium-delete-shipped), WITH A NEW WRITER: the
+  // shipped daemon that wrote it was deleted, and the kit daemon's page
+  // (`frameSurface` in `src/scriptorium/backend/kit/server.ts`) adopted the
+  // same literal in place of its computed `FRAME_DEV_ENTRY`, so the same
+  // specifier lands in `dist/server.js` and is resolved here as before.
   {
     file: "plugins/spellbook/skills/scriptorium/dist/server.js",
     spec: "../../../../../src/scriptorium/surface/index.html",
@@ -1603,12 +1608,10 @@ describe("the import scanner agrees with Bun's parser on every value import in t
         erased: true,
       },
       { file: "src/magpie/backend/server.ts", spec: "./reduce", erased: false },
-      // scriptorium, the shell cycle (scriptorium-kit-keepers): what the kit
-      // path kept moved under `backend/kit/`, and the shipped modules re-export
-      // it until the cutover deletes them. One helper on both paths.
-      { file: "src/scriptorium/backend/frontmatter.ts", spec: "./kit/frontmatter", erased: false },
-      { file: "src/scriptorium/backend/links.ts", spec: "./kit/fieldRefs", erased: false },
-      { file: "src/scriptorium/backend/protocol.ts", spec: "./kit/frontmatter", erased: true },
+      // ⚠ THREE scriptorium ROWS REMOVED AT THE CUTOVER (scriptorium-delete-
+      // shipped): the shipped `frontmatter.ts`, `links.ts` and `protocol.ts`
+      // re-exported what the kit path kept (`./kit/frontmatter`,
+      // `./kit/fieldRefs`) until the cutover, and were deleted with it.
     ]);
   });
 

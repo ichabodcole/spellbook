@@ -4,7 +4,7 @@
 import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
 import { homeDir } from "../../../kit/lib/home";
-import { scriptoriumApp, scriptoriumHome, sessionsRoot } from "./app";
+import { scriptoriumHome, sessionsRoot } from "./app";
 
 describe("the sessions root", () => {
   test("is $SCRIPTORIUM_HOME/sessions, with no kit/ folder between", () => {
@@ -14,9 +14,5 @@ describe("the sessions root", () => {
   test("defaults to ~/.scriptorium/sessions, read from the kit's home", () => {
     expect(scriptoriumHome({})).toBe(join(homeDir(), ".scriptorium"));
     expect(sessionsRoot({})).toBe(join(homeDir(), ".scriptorium", "sessions"));
-  });
-
-  test("the app declares no words of its own for a shipped manifest: the daemon converts it", () => {
-    expect(scriptoriumApp.refuseScriptorium).toBeUndefined();
   });
 });

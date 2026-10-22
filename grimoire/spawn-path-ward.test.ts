@@ -682,10 +682,10 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
   /**
    * ⛔ A DIRECTORY PIN INSIDE THE SKILL RESOLVES TOO. `isShippedFile` admits a
    * pin only when its last segment has an extension, so a folder the daemon
-   * reads (the kit path's interim frame, `FRAME_DIST = join(HERE, "kit")`,
-   * handed to the kit as `surface.distDir`) was outside the cell above: moved
-   * to a folder the build never writes, it stayed green here, and only a test
-   * that boots the built daemon could see it. This cell asserts every
+   * reads (Scriptorium's page folder, handed to the kit as `surface.distDir`)
+   * was outside the cell above: moved to a folder the build never writes, it
+   * stayed green here, and only a test that boots the built daemon could see
+   * it. This cell asserts every
    * extensionless literal pin INTO A SKILL'S `dist/` names an existing
    * directory: `dist/` is build output, so a folder pinned there is one the
    * build must have written. Folders elsewhere in the skill may be made at
@@ -711,10 +711,16 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
       }
     }
     expect(missing).toEqual([]);
-    // The kit path's frame is a served page in a folder of its own: its pin
-    // must land on one.
+    // Scriptorium's page folder is a PARAMETER to the kit's daemon
+    // (`surface.distDir`), so this pin is the only place the folder it serves
+    // is read: it must land on a built page.
+    // ⚠ RE-KEYED AT THE CUTOVER (scriptorium-delete-shipped): it was
+    // `dist/kit`, the kit path's own folder beside the shipped page. With the
+    // shipped page deleted the kit page builds at the dist root, and the pin
+    // is `DIST_DIR = join(HERE, "..", "dist")` in
+    // `src/scriptorium/backend/kit/server.ts`, the house's up-and-back-down.
     expect(pages).toContain(
-      "plugins/spellbook/skills/scriptorium/dist/server.js -> plugins/spellbook/skills/scriptorium/dist/kit",
+      "plugins/spellbook/skills/scriptorium/dist/server.js -> plugins/spellbook/skills/scriptorium/dist",
     );
   });
 
@@ -799,14 +805,13 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
       // bunfig (Contract 5), and the ward resolves the five-level climb from
       // the EMITTED `dist/cli.js` onto exactly that directory.
       "plugins/spellbook/skills/scriptorium/dist/cli.js -> src/scriptorium",
-      // scriptorium's kit path: the interim frame's SOURCE page, for dev mode
-      // (`FRAME_DEV_ENTRY` in `src/scriptorium/backend/kit/server.ts`). The
-      // shipped daemon names its dev page by a literal `import(...)`, which the
-      // build leaves external; the frame's is a computed path, so the bundler
-      // never follows it, and that makes it a pin this ward resolves. Outside a
-      // checkout the file is absent and the daemon serves no dev page; release
-      // reads `dist/kit/`, which is inside the skill.
-      "plugins/spellbook/skills/scriptorium/dist/server.js -> src/scriptorium/surface/kit/index.html",
+      // ⚠ ROW REMOVED AT THE CUTOVER (scriptorium-delete-shipped):
+      // `scriptorium/dist/server.js -> src/scriptorium/surface/kit/index.html`,
+      // the kit path's dev page by a COMPUTED path (`FRAME_DEV_ENTRY`). The
+      // daemon now names its dev page by the house's LITERAL import, which the
+      // build leaves external and `import-boundary-wards.test.ts` pins (its
+      // scriptorium row), as every other daemon's is; a literal import is not a
+      // `join`, so it is not an escape here.
     ]);
   });
 
@@ -817,24 +822,19 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
    * file and the call's exact text, never a line number, so a rebuild that
    * shifts lines keeps it and a change to the call itself reddens.
    *
-   * - scriptorium's kit path (`SCRIPTORIUM_KIT=1`, 2026-10-14), the first app
-   *   bundling the kit's workspace daemon (`src/kit/workspace/server.ts`). Its
-   *   `distDir` is the APP's `surface.distDir` option, so the kit's call has no
-   *   anchor of its own in the emitted text to follow.
-   *   ⚠ RE-RULED 2026-10-17 (scriptorium-kit-interim-frame): the kit path has a
-   *   surface now, and this read RUNS. Its argument is the app's `FRAME_DIST`,
-   *   `join(HERE, "kit")` on the bundle's own `import.meta.dir`, which this
-   *   ward reads as a literal DIRECTORY pin: the directory-pin cell above
-   *   asserts it lands on the skill's built `dist/kit/` (a frame folder moved
-   *   reddens there). The call itself stays opaque: the kit receives the
-   *   folder as a parameter.
+   * None today.
+   *
+   * ⚠ EMPTIED AT THE CUTOVER (scriptorium-delete-shipped). Its one row was the
+   * kit workspace daemon's `serveFromDist(distDir, …)` call inside
+   * `scriptorium/dist/server.js`, opaque because `distDir` is the app's
+   * `surface.distDir` option. The cell below scans only the artifacts of
+   * spells whose backend SOURCE imports the family (`familyImportsOf`), and
+   * Scriptorium's did only through the shipped daemon, now deleted, so the
+   * row matched no site. The folder the call reads is still asserted: it is
+   * the directory pin `DIST_DIR = join(HERE, "..", "dist")` that the
+   * directory-pin cell above holds to a built page.
    */
-  const OPAQUE_FAMILY_CALLS: readonly { file: string; call: string }[] = [
-    {
-      file: "plugins/spellbook/skills/scriptorium/dist/server.js",
-      call: 'const asset = serveFromDist(distDir, path2 === "/" ? "index.html" : path2.slice(1));',
-    },
-  ];
+  const OPAQUE_FAMILY_CALLS: readonly { file: string; call: string }[] = [];
 
   test("⛔ THE SHARED DIST FAMILY IS FOLLOWED TO ITS CALL SITE — the read behind a PARAMETER is a pin (C8)", () => {
     // ⛔ WHAT THIS CELL IS FOR. Until D98 this ward could not answer its own

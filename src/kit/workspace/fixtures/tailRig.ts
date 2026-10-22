@@ -1,5 +1,6 @@
 // The rig the tail handoff's integration files share (`../tail-handoff.*.integration.test.ts`):
-// the fixture app's launchers in a temp KIT_FIXTURE_HOME and TMPDIR, a tail
+// the fixture app's launchers (or an app's own, `RigLauncher`) in a temp home
+// and TMPDIR, a tail
 // process read as parsed lines, and the human played over the socket. The
 // cells are split across files so they run side by side; each file calls
 // `tailRig()` once, at its top, and every daemon it opens is stopped after it.
@@ -10,7 +11,15 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { FakeSurface, pointerPid, waitForExit } from "./harness";
 
-const CLI = join(dirname(fileURLToPath(import.meta.url)), "cli.ts");
+/** The fixture app's CLI launcher, the rig's default. */
+const FIXTURE_CLI = join(dirname(fileURLToPath(import.meta.url)), "cli.ts");
+
+/**
+ * An app's own launchers, for an app that drives the same cells through them:
+ * its CLI launcher, the variable that names its home, and its app name (its
+ * discovery pointers are `<app>.<id>.json`). The default is the fixture app's.
+ */
+export type RigLauncher = { cli: string; homeVar: string; app: string };
 
 export type Line = Record<string, unknown>;
 
@@ -19,11 +28,15 @@ export type Line = Record<string, unknown>;
  *  `bun <the launcher> <command>`. */
 export const cmd = (...args: string[]) => args.join(" ");
 
-export function tailRig(name: string) {
+export function tailRig(
+  name: string,
+  launcher: RigLauncher = { cli: FIXTURE_CLI, homeVar: "KIT_FIXTURE_HOME", app: "kit-fixture" },
+) {
+  const CLI = launcher.cli;
   const root = realpathSync(mkdtempSync(join(tmpdir(), `workspace-${name}-`)));
   const env = {
     ...process.env,
-    KIT_FIXTURE_HOME: join(root, "home"),
+    [launcher.homeVar]: join(root, "home"),
     TMPDIR: `${join(root, "tmp")}/`,
   };
   mkdirSync(join(root, "tmp"), { recursive: true });
@@ -32,7 +45,7 @@ export function tailRig(name: string) {
   /** Every session this file opens, so a failing cell cannot leak its daemon. */
   const opened: string[] = [];
   /** The pid a session's discovery pointer names, while it has one. */
-  const daemonPid = (id: string) => pointerPid(join(root, "tmp", `kit-fixture.${id}.json`));
+  const daemonPid = (id: string) => pointerPid(join(root, "tmp", `${launcher.app}.${id}.json`));
 
   async function cli(...args: string[]): Promise<{ code: number; out: string }> {
     const p = Bun.spawn(["bun", CLI, ...args], { stdout: "pipe", stderr: "pipe", env, cwd: root });
