@@ -32,7 +32,8 @@ passage. Not a regression: the shipped app behaves the same.
       both the label and the target (the link picker); "Add a note" is absent or
       disabled with a reason, since a note needs a passage.
 - [ ] With a selection, the menu is as it is today.
-- [ ] Copy and paste remain reachable from the menu or keyboard (decide which,
-      since the native menu no longer opens).
+- [ ] The menu carries the basic edits the native menu gave: Cut, Copy and Paste
+      (Cut and Copy only with a selection), and the keyboard shortcuts still
+      work (Cole, 2026-10-22).
 - [ ] Tested, checked in a real browser in raw, rendered and split; offered on
       kit-parity.
