@@ -4,7 +4,7 @@ title: Long text overflows the End session dialog
 description:
   When the human ends a session, the dialog's long content (the restore command
   with its CLI path) runs past the dialog's edge instead of wrapping inside it.
-status: draft
+status: stable
 lifecycle: ready
 id: 01a1658c-602a-7138-97cc-ea2c7c22cf0f
 kind: bug
