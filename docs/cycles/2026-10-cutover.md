@@ -78,6 +78,9 @@ on real sessions, findings are filed, and Cole says go.
 
 **Wave 3, after Cole's go:**
 
+- **[item/kit-session-end-dialog-overflow](../items/kit-session-end-dialog-overflow.md)**:
+  from the trial; joins beside the deletion (Cole, 2026-10-22).
+
 - **[item/scriptorium-delete-shipped](../items/scriptorium-delete-shipped.md)**:
   the shipped backend and surface deleted, the hatch removed, the wards
   recalibrated.
