@@ -6,7 +6,7 @@ description:
   or misses an output change on an existing verb; only added or removed verbs
   fail the gate. Applies to Scriptorium's default and kit censuses alike.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a13c0d-a2e8-7086-8455-9aad6109461c
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-14 }

@@ -6,7 +6,7 @@ description:
   surface, move the kit surface into place, remove the escape hatch, and
   recalibrate every ward that named the shipped code, in one commit."
 status: stable
-lifecycle: backlog
+lifecycle: done
 id: 01a15b3a-286c-7796-a786-03b475f24240
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-20 }

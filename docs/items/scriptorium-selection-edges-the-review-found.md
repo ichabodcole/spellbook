@@ -106,7 +106,7 @@ to act on. Escape fires `keydown`, which spends the context press, but no
 already erased until the next selection event. Cosmetic residual of a deliberate
 trade.
 
-## 4. A note added from the Notes panel does not consume the selection (gone on the kit; closes at the cutover)
+## 4. A note added from the Notes panel does not consume the selection (closed by the deletion, 2026-10-22)
 
 Found by the no-stake verifier of `feat/scriptorium-note-in-progress`
 (2026-09-22). It predates that branch. E57 says a note consumes the selection.
@@ -158,7 +158,7 @@ Found by the same verifier. It predates the branch.
 The same shape as edge 3: a press outside the pane empties the paint and nothing
 reports it.
 
-## 7. After following a link, the context tree still highlights the previous document (gone on the kit; closes at the cutover)
+## 7. After following a link, the context tree still highlights the previous document (closed by the deletion, 2026-10-22)
 
 Found by the same verifier. It predates the branch, and it is not a selection
 edge but lives here because the same drive found it.

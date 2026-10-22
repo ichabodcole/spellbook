@@ -5,7 +5,7 @@ description:
   The kit's split view is a fixed 50/50 with no divider, where the shipped
   Scriptorium lets the human drag it and keeps its width across sessions.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a157b8-b9f8-73ee-af86-5ebf6388782f
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-19 }
@@ -29,7 +29,7 @@ on 2026-10-20.
       keyboard.
 - [x] Its width is kept through the shell's storage slot, so it survives a new
       session.
-- [ ] Offered on kit-parity.
+- [x] Offered on kit-parity. _(Offered on kit-parity, message 47, 2026-10-22.)_
 
 ## Done and verified
 

@@ -5,7 +5,7 @@ description:
   When the human ends a session, the dialog's long content (the restore command
   with its CLI path) runs past the dialog's edge instead of wrapping inside it.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a1658c-602a-7138-97cc-ea2c7c22cf0f
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-22 }
@@ -33,7 +33,8 @@ fixing.
 - [x] With a very long restore command, session id and path, every part of the
       End session dialog stays inside the dialog, in both the confirm and the
       ended states, at desktop and narrow widths.
-- [ ] A test pins it, checked in a real browser; offered on kit-parity.
+- [x] A test pins it, checked in a real browser; offered on kit-parity.
+      _(Offered on kit-parity, message 47, 2026-10-22.)_
 
 ## Done and verified
 

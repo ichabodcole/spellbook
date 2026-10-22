@@ -6,7 +6,7 @@ description:
   reading only the SKILL drives a session on the flipped build; lands before
   Cole's trial.
 status: stable
-lifecycle: backlog
+lifecycle: done
 id: 01a15b3a-27c0-706a-8a19-5ca5ca424431
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-20 }
