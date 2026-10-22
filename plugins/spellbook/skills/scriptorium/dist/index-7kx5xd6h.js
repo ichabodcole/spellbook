@@ -78740,6 +78740,9 @@ function Highlighted({ text: text4, from, to }) {
 // src/kit/shell/SessionEnd.tsx
 var import_react50 = __toESM(require_react(), 1);
 var jsx_runtime50 = __toESM(require_jsx_runtime(), 1);
+var FIT = "grid-cols-[minmax(0,1fr)]";
+var WRAP = "wrap-anywhere";
+var TALL = "max-h-[calc(100dvh-2rem)] overflow-y-auto";
 var BUTTON2 = "inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-3 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/60 disabled:opacity-50";
 function endedSentence(by) {
   return by === "human" ? "You ended this session." : by === "timeout" ? "This session closed after it sat idle." : "The agent ended this session.";
@@ -78752,7 +78755,7 @@ function EndedMessage({
   return /* @__PURE__ */ jsx_runtime50.jsxs(jsx_runtime50.Fragment, {
     children: [
       /* @__PURE__ */ jsx_runtime50.jsxs("p", {
-        className: "text-sm leading-relaxed text-ink-dim",
+        className: cn("text-sm leading-relaxed text-ink-dim", WRAP),
         children: [
           endedSentence(by),
           " What is on screen stays here to look at. To keep working, run"
@@ -78810,7 +78813,7 @@ function EndedDetails({ command: command2, by }) {
   const codeRef = import_react50.useRef(null);
   return /* @__PURE__ */ jsx_runtime50.jsxs("div", {
     "data-slot": "session-ended-details",
-    className: "grid gap-3",
+    className: cn("grid gap-3", FIT),
     children: [
       /* @__PURE__ */ jsx_runtime50.jsx(EndedMessage, {
         command: command2,
@@ -78844,16 +78847,16 @@ function SessionEndDialog({
       "data-slot": "session-end-dialog",
       "data-phase": phase ?? undefined,
       finalFocus,
-      className: "border border-edge bg-surface text-ink sm:max-w-md",
+      className: cn("border border-edge bg-surface text-ink sm:max-w-md", FIT, TALL),
       children: phase === "ended" ? /* @__PURE__ */ jsx_runtime50.jsxs(jsx_runtime50.Fragment, {
         children: [
           /* @__PURE__ */ jsx_runtime50.jsx(DialogTitle3, {
-            className: "text-sm font-semibold text-ink",
+            className: cn("text-sm font-semibold text-ink", WRAP),
             children: "Session ended"
           }),
           /* @__PURE__ */ jsx_runtime50.jsx(DialogDescription3, {
             render: /* @__PURE__ */ jsx_runtime50.jsx("div", {}),
-            className: "grid gap-3 text-ink-dim",
+            className: cn("grid gap-3 text-ink-dim", FIT),
             children: /* @__PURE__ */ jsx_runtime50.jsx(EndedMessage, {
               command: command2,
               by,
@@ -78868,7 +78871,7 @@ function SessionEndDialog({
       }) : /* @__PURE__ */ jsx_runtime50.jsxs(jsx_runtime50.Fragment, {
         children: [
           /* @__PURE__ */ jsx_runtime50.jsxs(DialogTitle3, {
-            className: "text-sm font-semibold text-ink",
+            className: cn("pr-6 text-sm font-semibold text-ink", WRAP),
             children: [
               "End session ",
               sessionId,
@@ -78876,7 +78879,7 @@ function SessionEndDialog({
             ]
           }),
           /* @__PURE__ */ jsx_runtime50.jsxs(DialogDescription3, {
-            className: "text-sm leading-relaxed text-ink-dim",
+            className: cn("text-sm leading-relaxed text-ink-dim", WRAP),
             children: [
               "The daemon stops and the agent is told you ended it. The session stays on disk, so it can be reopened with ",
               command2,
@@ -78885,17 +78888,17 @@ function SessionEndDialog({
           }),
           warning && /* @__PURE__ */ jsx_runtime50.jsx("p", {
             "data-slot": "end-warning",
-            className: "rounded-md border border-attention/40 bg-attention/10 px-2.5 py-2 text-xs leading-relaxed text-ink",
+            className: cn("rounded-md border border-attention/40 bg-attention/10 px-2.5 py-2 text-xs leading-relaxed text-ink", WRAP),
             children: warning
           }),
           notice && /* @__PURE__ */ jsx_runtime50.jsx("p", {
             role: "alert",
             "data-slot": "end-notice",
-            className: "rounded-md border border-attention/40 bg-attention/10 px-2.5 py-2 text-xs leading-relaxed text-ink",
+            className: cn("rounded-md border border-attention/40 bg-attention/10 px-2.5 py-2 text-xs leading-relaxed text-ink", WRAP),
             children: notice
           }),
           /* @__PURE__ */ jsx_runtime50.jsxs("div", {
-            className: "flex justify-end gap-2",
+            className: "flex flex-wrap justify-end gap-2",
             children: [
               /* @__PURE__ */ jsx_runtime50.jsx("button", {
                 type: "button",
@@ -78940,9 +78943,10 @@ function EndedChip({
       }),
       /* @__PURE__ */ jsx_runtime50.jsxs(PopoverContent, {
         "data-slot": "ended-popover",
-        className: "grid gap-2",
+        className: cn("grid gap-2", FIT),
         children: [
           /* @__PURE__ */ jsx_runtime50.jsx(PopoverTitle3, {
+            className: WRAP,
             children: "Session ended"
           }),
           /* @__PURE__ */ jsx_runtime50.jsx(EndedDetails, {

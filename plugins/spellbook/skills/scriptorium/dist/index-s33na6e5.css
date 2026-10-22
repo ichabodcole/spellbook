@@ -842,6 +842,10 @@
     max-height: 70vh;
   }
 
+  .max-h-\[calc\(100dvh-2rem\)\] {
+    max-height: calc(100dvh - 2rem);
+  }
+
   .max-h-\[min\(var\(--available-height\,32rem\)\,32rem\)\] {
     max-height: min(var(--available-height, 32rem), 32rem);
   }
@@ -1134,6 +1138,10 @@
 
   .grid-cols-\[auto_1fr\] {
     grid-template-columns: auto 1fr;
+  }
+
+  .grid-cols-\[minmax\(0\,1fr\)\] {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .grid-cols-\[minmax\(max-content\,1fr\)_minmax\(0\,2fr\)_minmax\(max-content\,1fr\)\] {
@@ -1917,6 +1925,10 @@
     padding-right: calc(var(--spacing) * 3);
   }
 
+  .pr-6 {
+    padding-right: calc(var(--spacing) * 6);
+  }
+
   .pr-8 {
     padding-right: calc(var(--spacing) * 8);
   }
@@ -2109,6 +2121,10 @@
 
   .break-words {
     overflow-wrap: break-word;
+  }
+
+  .wrap-anywhere {
+    overflow-wrap: anywhere;
   }
 
   .break-all {
