@@ -246,9 +246,8 @@ Facts, not chatter. The ones worth acting on:
   than a broken tail. Run the `doctor` verb any time to ask directly. Its
   findings' `kind`s: `original.missing`, `context.ghost`, `names.shared`,
   `links.dangling`, `links.unsupported`, `links.heading`, `profiles.*` and
-  `relations.*`, and `workspace.overlap` on an older session. That last one's
-  fix names a `workspace` verb Scriptorium does not have: ignore the fix, and
-  tell the human what the finding says.
+  `relations.*`. Scriptorium has no workspace folder, so it never reports
+  `workspace.overlap`.
 - **`closed`** — the session ended. The tail follows it with `tail.closed` and
   exits 0. The event and the line carry `by`: `human` (their End session
   button), `agent` (your `close`), or `timeout` (the idle close). A tail started
