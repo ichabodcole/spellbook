@@ -777,8 +777,10 @@ function Row({
     : isActive
       ? "bg-selected/15 font-medium text-ink"
       : refSelected
-        ? // Selected and not the open one: it rides the next message as a ref.
-          "bg-brand/10 text-ink"
+        ? // Selected and not the open one: it rides the next message as a ref. A
+          // brand tint unless a theme sets the two hooks (the tint, and a bar at
+          // the row's left edge, unset and so unseen).
+          "bg-[color:var(--color-ref-row,color-mix(in_oklab,var(--color-brand)_10%,transparent))] shadow-[inset_2px_0_0_var(--color-ref-row-bar,transparent)] text-ink"
         : item.isSelected()
           ? // A folder chosen with the others (no ref): selected, so a drag takes it.
             "bg-surface-raised text-ink"

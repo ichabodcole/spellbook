@@ -175,7 +175,7 @@ describe("defaultChips", () => {
   test("status is coloured by its value", () => {
     const tone = (status: string) => defaultChips({ status }).find((c) => c.key === "status")?.tone;
     expect(tone("draft")).toBe("attention");
-    expect(tone("stable")).toBe("brand");
+    expect(tone("stable")).toBe("stable");
     expect(tone("deprecated")).toBe("danger");
     expect(tone("something else")).toBe("dim");
   });

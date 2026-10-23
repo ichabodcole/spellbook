@@ -76,5 +76,37 @@ export const THEME_TOKENS = [
 
 export type ThemeToken = (typeof THEME_TOKENS)[number];
 
+/**
+ * Optional hooks: colours a theme MAY set to restyle one use of a token without
+ * remapping the token everywhere. No kit sheet declares them, and every read has
+ * a fallback that draws what the kit drew before the hook existed, so a theme
+ * that sets none looks as it did. Each is a full colour (a mix included), set on
+ * `:root`.
+ */
+export const THEME_HOOKS = [
+  /** A rendered link's words (the brand), and the line under them (the words' colour). */
+  "link",
+  "link-underline",
+  /** The `stable` status chip's words (the brand) and its tint (the brand at 12%). */
+  "status-stable",
+  "status-stable-tint",
+  /** A tree row chosen to go with the next message (the brand at 10%), and a bar at its left edge (none). */
+  "ref-row",
+  "ref-row-bar",
+  /** The compare view's change marks (the brand at 65%), and one hovered (the brand). */
+  "change-tick",
+  "change-tick-hover",
+  /** Find's current match (pointed at 40%), and the line under it, or the raw view's frame (pointed). */
+  "find-current",
+  "find-current-mark",
+  /** The line under a flashed passage, or a flashed row's left bar (none). */
+  "flash-mark",
+  /** The human's chat message (the brand at 10%), and an edge around it (none). */
+  "human-bubble",
+  "human-bubble-edge",
+] as const;
+
+export type ThemeHook = (typeof THEME_HOOKS)[number];
+
 /** The attribute the light palette keys on; set on `<html>`. */
 export const THEME_ATTRIBUTE = "data-theme";

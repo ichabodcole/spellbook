@@ -40574,7 +40574,7 @@ function Minimap({
         className: cn("group absolute inset-x-0 -my-1.5 box-content min-h-1 py-1.5 outline-none", "focus-visible:ring-2 focus-visible:ring-ring/60"),
         children: /* @__PURE__ */ jsx_runtime22.jsx("span", {
           "aria-hidden": true,
-          className: "mx-0.5 block h-full min-h-1 rounded-[1px] bg-brand/65 group-hover:bg-brand"
+          className: "mx-0.5 block h-full min-h-1 rounded-[1px] bg-[color:var(--color-change-tick,color-mix(in_oklab,var(--color-brand)_65%,transparent))] group-hover:bg-[color:var(--color-change-tick-hover,var(--color-brand))]"
         })
       }, h.id);
     })
@@ -60007,11 +60007,12 @@ var editorTheme = EditorView.theme({
     backgroundColor: "color-mix(in srgb, var(--color-attention) 26%, transparent)"
   },
   ".cm-searchMatch.cm-searchMatch-selected": {
-    backgroundColor: "color-mix(in srgb, var(--color-pointed) 40%, transparent)",
-    outline: "1px solid var(--color-pointed)"
+    backgroundColor: "var(--color-find-current, color-mix(in srgb, var(--color-pointed) 40%, transparent))",
+    outline: "1px solid var(--color-find-current-mark, var(--color-pointed))"
   },
   ".cm-flash": {
-    backgroundColor: "color-mix(in srgb, var(--color-pointed) 34%, transparent)"
+    backgroundColor: "color-mix(in srgb, var(--color-pointed) 34%, transparent)",
+    textDecoration: "underline 2px var(--color-flash-mark, transparent)"
   },
   ".cm-selectionMatch": {
     backgroundColor: "color-mix(in srgb, var(--color-ink-faint) 18%, transparent)"
@@ -67591,13 +67592,14 @@ var TONE = {
   faint: "text-ink-faint",
   outline: "px-1.5 font-medium bg-bg text-ink-dim ring-1 ring-edge",
   brand: "px-1.5 font-medium bg-brand/12 text-brand",
+  stable: "px-1.5 font-medium bg-[color:var(--color-status-stable-tint,color-mix(in_oklab,var(--color-brand)_12%,transparent))] text-[color:var(--color-status-stable,var(--color-brand))]",
   attention: "px-1.5 font-medium bg-attention/15 text-attention",
   danger: "px-1.5 font-medium bg-danger/15 text-danger",
   none: ""
 };
 var STATUS_TONE = {
   draft: "attention",
-  stable: "brand",
+  stable: "stable",
   deprecated: "danger"
 };
 function hasField(fields, key) {
@@ -72147,7 +72149,7 @@ function ChatMessageView({
   return /* @__PURE__ */ jsx_runtime33.jsxs("div", {
     "data-from": m.from,
     "data-type": m.type,
-    className: cn("rounded-md px-2 py-1 text-xs leading-relaxed text-ink-dim", m.from === "agent" && "bg-surface-raised text-ink", m.from === "human" && "bg-brand/10 text-ink", m.type === "result" && "border-l-2 border-added"),
+    className: cn("rounded-md px-2 py-1 text-xs leading-relaxed text-ink-dim", m.from === "agent" && "bg-surface-raised text-ink", m.from === "human" && "bg-[color:var(--color-human-bubble,color-mix(in_oklab,var(--color-brand)_10%,transparent))] text-ink ring-1 ring-[color:var(--color-human-bubble-edge,transparent)] ring-inset", m.type === "result" && "border-l-2 border-added"),
     children: [
       plain2 ? /* @__PURE__ */ jsx_runtime33.jsxs(jsx_runtime33.Fragment, {
         children: [
@@ -75818,7 +75820,7 @@ function Row2({
   const isActive = !isGroup && node2.rel === activeRel;
   const refSelected = !isGroup && !isFile && !isActive && item.isSelected();
   const props = item.getProps();
-  const tone = item.isDragTarget() ? "bg-brand/15 text-ink ring-1 ring-brand/50 ring-inset" : isActive ? "bg-selected/15 font-medium text-ink" : refSelected ? "bg-brand/10 text-ink" : item.isSelected() ? "bg-surface-raised text-ink" : cn(item.isFocused() && "bg-surface-raised/60", node2.kind === "file" && node2.convention ? "text-ink-faint" : "text-ink-dim");
+  const tone = item.isDragTarget() ? "bg-brand/15 text-ink ring-1 ring-brand/50 ring-inset" : isActive ? "bg-selected/15 font-medium text-ink" : refSelected ? "bg-[color:var(--color-ref-row,color-mix(in_oklab,var(--color-brand)_10%,transparent))] shadow-[inset_2px_0_0_var(--color-ref-row-bar,transparent)] text-ink" : item.isSelected() ? "bg-surface-raised text-ink" : cn(item.isFocused() && "bg-surface-raised/60", node2.kind === "file" && node2.convention ? "text-ink-faint" : "text-ink-dim");
   const rowClass = cn("flex h-7 w-full min-w-0 items-center gap-1.5 rounded-sm pr-2 text-left text-sm outline-none", "hover:bg-surface-raised hover:text-ink", "focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset", tone);
   const toggle = () => item.isExpanded() ? item.collapse() : item.expand();
   const icon = isGroup ? /* @__PURE__ */ jsx_runtime40.jsxs(jsx_runtime40.Fragment, {

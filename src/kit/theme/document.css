@@ -261,13 +261,22 @@
 ::highlight(find-match) {
   background-color: color-mix(in srgb, var(--color-attention) 26%, transparent);
 }
+/* The current match: the pointed hue, unless a theme sets the two optional
+   hooks, declared by no kit sheet: `--color-find-current` (the wash) and
+   `--color-find-current-mark` (the line under it; the raw view's outline). */
 ::highlight(find-current) {
-  background-color: color-mix(in srgb, var(--color-pointed) 40%, transparent);
-  text-decoration: underline 2px var(--color-pointed);
+  background-color: var(
+    --color-find-current,
+    color-mix(in srgb, var(--color-pointed) 40%, transparent)
+  );
+  text-decoration: underline 2px var(--color-find-current-mark, var(--color-pointed));
 }
-/* A passage just brought into view (a reveal, or the agent pointing at it). */
+/* A passage just brought into view (a reveal, or the agent pointing at it). A
+   highlight takes no box-shadow, so the optional `--color-flash-mark` underlines
+   it where a row's flash draws a bar; unset, the line is transparent. */
 ::highlight(doc-flash) {
   background-color: color-mix(in srgb, var(--color-pointed) 34%, transparent);
+  text-decoration: underline 2px var(--color-flash-mark, transparent);
 }
 
 /* A change just brought into view in the compare view, or a frontmatter field a
@@ -275,23 +284,32 @@
    background, so the row's own tone stays under it.
    The tint is a property, not written in the keyframe: the build rewrites a
    `color-mix()` into a fallback plus an `@supports` copy, which a keyframe cannot
-   hold, and it dropped the whole tinted frame, so the flash never showed. */
+   hold, and it dropped the whole tinted frame, so the flash never showed.
+   A bar at the left edge comes with it, in `--color-flash-mark`: an optional
+   hook no kit sheet declares, transparent and unseen when unset. */
 [data-flash="on"] {
   --kit-flash-tint: color-mix(in srgb, var(--color-pointed) 26%, transparent);
+  --kit-flash-bar: var(--color-flash-mark, transparent);
   animation: kit-flash 1.6s ease-out both;
 }
 @keyframes kit-flash {
   0%,
   35% {
-    box-shadow: inset 0 0 0 100vmax var(--kit-flash-tint);
+    box-shadow:
+      inset 3px 0 0 var(--kit-flash-bar),
+      inset 0 0 0 100vmax var(--kit-flash-tint);
   }
   100% {
-    box-shadow: inset 0 0 0 100vmax transparent;
+    box-shadow:
+      inset 3px 0 0 transparent,
+      inset 0 0 0 100vmax transparent;
   }
 }
 @media (prefers-reduced-motion: reduce) {
   [data-flash="on"] {
     animation: none;
-    box-shadow: inset 0 0 0 100vmax color-mix(in srgb, var(--color-pointed) 20%, transparent);
+    box-shadow:
+      inset 3px 0 0 var(--kit-flash-bar),
+      inset 0 0 0 100vmax color-mix(in srgb, var(--color-pointed) 20%, transparent);
   }
 }

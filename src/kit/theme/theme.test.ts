@@ -13,6 +13,7 @@ import {
   resolveInitialTheme,
   SHELL_CSS_PATH,
   SHELL_CSS_SPECIFIER,
+  THEME_HOOKS,
   THEME_LAYERS,
   THEME_PREPAINT,
   THEME_STORAGE_KEY,
@@ -305,6 +306,76 @@ describe("the shell sheet", () => {
   test("uses the kit's tokens, never a fixed colour", () => {
     expect(body).not.toMatch(/#[0-9a-f]{3,8}\b/i);
     expect(body).toContain("var(--color-");
+  });
+});
+
+describe("the optional hooks", () => {
+  const kit = join(import.meta.dir, "..");
+  /** Every non-test .ts, .tsx and .css file under src/kit/, but the daemon's. */
+  const sources = (): string[] =>
+    (readdirSync(kit, { recursive: true }) as string[])
+      .filter((f) => /\.(tsx?|css)$/.test(f) && !/\.test\./.test(f) && !f.startsWith("workspace"))
+      .map((f) => join(kit, f));
+  const kitText = () => sources().map((f) => readFileSync(f, "utf8"));
+
+  test("no kit sheet declares one, so a theme that sets none looks as it did", () => {
+    for (const path of [BASE_CSS_PATH, DOCUMENT_CSS_PATH, SHELL_CSS_PATH]) {
+      const sheet = readFileSync(path, "utf8");
+      for (const h of THEME_HOOKS)
+        expect(sheet, `${path} --color-${h}`).not.toContain(`--color-${h}:`);
+    }
+  });
+
+  test("every hook is read, and every read falls back", () => {
+    const text = kitText().join("\n");
+    // `--color-link` is not `--color-link-underline`: the name ends at , or ),
+    // after any whitespace, and a read may break across lines (`var(\n  --x,`).
+    const readsOf = (src: string, h: string) => [
+      ...src.matchAll(new RegExp(`var\\(\\s*--color-${h}\\s*([,)])`, "g")),
+    ];
+    // The pattern sees a read broken across lines, as document.css writes one.
+    expect(readsOf(readFileSync(DOCUMENT_CSS_PATH, "utf8"), "find-current")).toHaveLength(1);
+    for (const h of THEME_HOOKS) {
+      const reads = readsOf(text, h);
+      expect(reads.length, `--color-${h} is read`).toBeGreaterThan(0);
+      for (const r of reads) expect(r[1], `--color-${h} falls back`).toBe(",");
+    }
+  });
+
+  test("each fallback is what the kit drew before the hook", () => {
+    const read = (f: string) => readFileSync(join(kit, f), "utf8");
+    // Utility arbitrary values: an underscore is a space.
+    const mix = (token: string, pct: number) =>
+      `color-mix(in_oklab,var(--color-${token})_${pct}%,transparent)`;
+    const expected: [string, string][] = [
+      ["theme/document.css", "var(--color-link, var(--color-brand))"],
+      ["theme/document.css", "var(--color-link-underline, currentColor)"],
+      ["document/FrontmatterHeader.tsx", "var(--color-status-stable,var(--color-brand))"],
+      ["document/FrontmatterHeader.tsx", `var(--color-status-stable-tint,${mix("brand", 12)})`],
+      ["context/EntryTree.tsx", `var(--color-ref-row,${mix("brand", 10)})`],
+      ["context/EntryTree.tsx", "var(--color-ref-row-bar,transparent)"],
+      ["document/CompareView.tsx", `var(--color-change-tick,${mix("brand", 65)})`],
+      ["document/CompareView.tsx", "var(--color-change-tick-hover,var(--color-brand))"],
+      [
+        "theme/document.css",
+        "--color-find-current,\n    color-mix(in srgb, var(--color-pointed) 40%, transparent)",
+      ],
+      ["theme/document.css", "var(--color-find-current-mark, var(--color-pointed))"],
+      ["theme/document.css", "var(--color-flash-mark, transparent)"],
+      ["chat/ChatMessageView.tsx", `var(--color-human-bubble,${mix("brand", 10)})`],
+      ["chat/ChatMessageView.tsx", "var(--color-human-bubble-edge,transparent)"],
+      // The raw view's current match and flash follow the rendered view's hooks.
+      [
+        "document/DocumentView.tsx",
+        "var(--color-find-current, color-mix(in srgb, var(--color-pointed) 40%, transparent))",
+      ],
+      ["document/DocumentView.tsx", "var(--color-find-current-mark, var(--color-pointed))"],
+      ["document/DocumentView.tsx", "var(--color-flash-mark, transparent)"],
+    ];
+    for (const [f, s] of expected) expect(read(f), f).toContain(s);
+    // Every hook's default is pinned above.
+    const pinned = new Set(expected.map(([, s]) => /--color-([\w-]+?),/.exec(s)?.[1]));
+    expect([...THEME_HOOKS].filter((h) => !pinned.has(h))).toEqual([]);
   });
 });
 

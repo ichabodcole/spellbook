@@ -42,6 +42,7 @@ export type ChipTone =
   | "faint"
   | "outline"
   | "brand"
+  | "stable"
   | "attention"
   | "danger"
   | "none";
@@ -78,6 +79,10 @@ const TONE: Record<ChipTone, string> = {
   faint: "text-ink-faint",
   outline: "px-1.5 font-medium bg-bg text-ink-dim ring-1 ring-edge",
   brand: "px-1.5 font-medium bg-brand/12 text-brand",
+  // A settled status: the brand chip unless a theme sets the two hooks (the words
+  // and the tint behind them), so a theme can keep its accent off a calm state.
+  stable:
+    "px-1.5 font-medium bg-[color:var(--color-status-stable-tint,color-mix(in_oklab,var(--color-brand)_12%,transparent))] text-[color:var(--color-status-stable,var(--color-brand))]",
   attention: "px-1.5 font-medium bg-attention/15 text-attention",
   danger: "px-1.5 font-medium bg-danger/15 text-danger",
   none: "",
@@ -86,7 +91,7 @@ const TONE: Record<ChipTone, string> = {
 /** The tone of a `status` value: the three common ones, and anything else plain. */
 const STATUS_TONE: Record<string, ChipTone> = {
   draft: "attention",
-  stable: "brand",
+  stable: "stable",
   deprecated: "danger",
 };
 

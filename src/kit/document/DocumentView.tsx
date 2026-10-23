@@ -269,13 +269,17 @@ const editorTheme = EditorView.theme({
     backgroundColor: "color-mix(in srgb, var(--color-attention) 26%, transparent)",
   },
   // The current match in the pointed-at hue, as the kit's find bar paints it,
-  // so it never reads as the selection.
+  // so it never reads as the selection. document.css's optional hooks recolour
+  // it here too (`--color-find-current`, `--color-find-current-mark`), and the
+  // flash's mark underlines a flashed passage as it does there.
   ".cm-searchMatch.cm-searchMatch-selected": {
-    backgroundColor: "color-mix(in srgb, var(--color-pointed) 40%, transparent)",
-    outline: "1px solid var(--color-pointed)",
+    backgroundColor:
+      "var(--color-find-current, color-mix(in srgb, var(--color-pointed) 40%, transparent))",
+    outline: "1px solid var(--color-find-current-mark, var(--color-pointed))",
   },
   ".cm-flash": {
     backgroundColor: "color-mix(in srgb, var(--color-pointed) 34%, transparent)",
+    textDecoration: "underline 2px var(--color-flash-mark, transparent)",
   },
   ".cm-selectionMatch": {
     backgroundColor: "color-mix(in srgb, var(--color-ink-faint) 18%, transparent)",
