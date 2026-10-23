@@ -45,6 +45,15 @@ function surfaceFiles(dir: string = SURFACE, out: string[] = []): string[] {
   return out;
 }
 
+/** The DOM's own string-to-HTML routes, each matched on the comment-stripped code. */
+const RAW_SINKS: readonly (readonly [string, RegExp])[] = [
+  ["innerHTML write", /\.innerHTML\s*\+?=(?!=)/],
+  ["outerHTML write", /\.outerHTML\s*\+?=(?!=)/],
+  ["insertAdjacentHTML", /\binsertAdjacentHTML\b/],
+  ["document.write", /\bdocument\.write(?:ln)?\b/],
+  ["createContextualFragment", /\bcreateContextualFragment\b/],
+];
+
 describe("Scriptorium's page and its HTML sinks", () => {
   test("its own surface writes no HTML sink and no `__html` key", () => {
     const files = surfaceFiles();
@@ -58,6 +67,35 @@ describe("Scriptorium's page and its HTML sinks", () => {
       if (/__html\s*:/.test(src)) found.push(`${rel}: __html`);
     }
     expect(found).toEqual([]);
+  });
+
+  test("…and no raw DOM route from a string to HTML: no innerHTML/outerHTML write, insertAdjacentHTML, document.write or createContextualFragment", () => {
+    // The cell above sees React's sink only. A raw `el.innerHTML = text` in a
+    // ref callback or an effect is the same hole by another door, and it passed
+    // here until 2026-10-22 (scriptorium-ward-blind-spots-after-deletion).
+    // READING `innerHTML` (a test's `expect(el.innerHTML)`) is not a sink, so
+    // only a write is matched: `=` or `+=`, never `==`.
+    const files = surfaceFiles();
+    expect(files.length).toBeGreaterThan(5);
+    const found: string[] = [];
+    for (const file of files) {
+      const src = code(readFileSync(file, "utf8"));
+      const rel = file.slice(SURFACE.length + 1);
+      for (const [name, re] of RAW_SINKS) if (re.test(src)) found.push(`${rel}: ${name}`);
+    }
+    expect(found).toEqual([]);
+  });
+
+  test("CALIBRATION: the raw-sink patterns catch a write and not a read", () => {
+    const hits = (src: string) => RAW_SINKS.filter(([, re]) => re.test(src)).map(([n]) => n);
+    expect(hits("el.innerHTML = text;")).toEqual(["innerHTML write"]);
+    expect(hits("ref.current!.innerHTML += more")).toEqual(["innerHTML write"]);
+    expect(hits("node.outerHTML = s")).toEqual(["outerHTML write"]);
+    expect(hits('el.insertAdjacentHTML("beforeend", s)')).toEqual(["insertAdjacentHTML"]);
+    expect(hits("document.writeln(s)")).toEqual(["document.write"]);
+    expect(hits("range.createContextualFragment(s)")).toEqual(["createContextualFragment"]);
+    expect(hits('expect(map()?.innerHTML).not.toContain("x")')).toEqual([]);
+    expect(hits("if (el.innerHTML === prev) return;")).toEqual([]);
   });
 
   test("the kit's renderer, which feeds the kit's sinks, never turns on raw HTML and checks every link target", () => {

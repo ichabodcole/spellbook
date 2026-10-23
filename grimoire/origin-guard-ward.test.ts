@@ -30,6 +30,14 @@
 // `daemon-lifecycle-ward`, whose own header forbids growing it ("adding a
 // fourth clause here is a signal to go do that instead").
 //
+// ⚠ WHAT THE SCAN STILL CANNOT SEE (2026-10-22). It now holds the call's SHAPE
+// tightly: the kit's guard by its own name, nothing else bound to that name,
+// and the answer bound and returned at once. It does not read control flow, so a guard inside a branch that never
+// runs, a `req` that is not the handler's own request, or a handler the server
+// never installs all pass here. The kit workspace daemon (Scriptorium's) has a
+// behaviour backstop named by the BACKSTOP cell (`src/kit/workspace/server.test.ts`);
+// the other harnessed spells' wire tests are listed above.
+//
 // ⛔ AND IT STRIPS COMMENTS FIRST, BECAUSE THAT DEFECT IS ON RECORD TWICE.
 // `fix/wards-that-pass-on-prose` landed for a clause a COMMENT could satisfy,
 // and `src/scriptorium/sinks.test.ts` hit the same trap a second time — this
@@ -74,6 +82,37 @@ export function serverFiles(): string[] {
   return out.sort();
 }
 
+/**
+ * What makes a SPELLED guard inert, read from a server's comment-stripped code:
+ *   - a call whose answer is not bound and returned at once
+ *     (`const r = refuseForeignOrigin(…); if (r) return r;`, nothing between);
+ *   - the name not imported, by that name, from the kit's `wire/origin.ts`;
+ *   - the name bound or assigned anywhere else in the file.
+ */
+function guardFindings(c: string): string[] {
+  const out: string[] = [];
+  const calls = [...c.matchAll(/\brefuseForeignOrigin\s*\(/g)].length;
+  const honoured = [
+    ...c.matchAll(
+      /\bconst\s+([A-Za-z_$][\w$]*)\s*=\s*refuseForeignOrigin\([^()]*\)\s*;?\s*if\s*\(\s*\1\s*\)\s*return\s+\1\s*;/g,
+    ),
+  ].length;
+  if (calls === 0) out.push("no call");
+  if (honoured !== calls)
+    out.push(`${calls - honoured} call(s) whose answer is not bound and returned at once`);
+  const imported = [
+    ...c.matchAll(/\bimport\s*\{([^}]*)\}\s*from\s*["']([^"']*wire\/origin\.ts)["']/g),
+  ].some((m) => (m[1] ?? "").split(",").some((s) => s.trim() === "refuseForeignOrigin"));
+  if (!imported) out.push("not imported by its own name from the kit's wire/origin.ts");
+  if (
+    /\bas\s+refuseForeignOrigin\b/.test(c) ||
+    /\b(?:function|const|let|var|class)\s+refuseForeignOrigin\b/.test(c) ||
+    /\brefuseForeignOrigin\s*=(?!=)/.test(c)
+  )
+    out.push("the name is bound to something other than the kit's guard");
+  return out;
+}
+
 describe("every daemon refuses a foreign origin", () => {
   const files = serverFiles();
   const show = (f: string) => relative(REPO_ROOT, f);
@@ -111,6 +150,50 @@ describe("every daemon refuses a foreign origin", () => {
       }
     }
     expect(wrong).toEqual([]);
+  });
+
+  test("⛔ EVERY CALL'S ANSWER IS RETURNED, and the name is the kit's own guard", () => {
+    // A guard whose call is still SPELLED passes every cell above while doing
+    // nothing: its result dropped, its `if` made dead, or the name rebound to a
+    // stub. The deletion's verifier showed a neutralised call kept its name and
+    // stayed green (scriptorium-ward-blind-spots-after-deletion, 2026-10-22).
+    const findings = files.flatMap((f) =>
+      guardFindings(code(readFileSync(f, "utf8"))).map((w) => `${show(f)} — ${w}`),
+    );
+    expect(findings).toEqual([]);
+  });
+
+  test("CALIBRATION: the shape checks catch the plants and pass the real call", () => {
+    const real = `import { refuseForeignOrigin } from "../../kit/wire/origin.ts";
+      {
+        const refused = refuseForeignOrigin(req, srv.port, srv.hostname);
+        if (refused) return refused;
+      }`;
+    expect(guardFindings(real)).toEqual([]);
+    const plants: Record<string, string> = {
+      "result dropped": real.replace("const refused = ", ""),
+      "if made dead": real.replace("if (refused) return", "if (refused && false) return"),
+      "a different value returned": real.replace("return refused;", "return undefined;"),
+      "aliased import": real.replace("{ refuseForeignOrigin }", "{ allow as refuseForeignOrigin }"),
+      "local stub": `${real}\nfunction refuseForeignOrigin() { return null; }`,
+      "rebound const": `${real}\nconst refuseForeignOrigin = () => null;`,
+      reassigned: `${real}\nrefuseForeignOrigin = () => null;`,
+      "no import": real.replace(/^import[^\n]*\n/, ""),
+    };
+    for (const [name, src] of Object.entries(plants))
+      expect(`${name}: ${guardFindings(src).length > 0}`).toBe(`${name}: true`);
+  });
+
+  test("BACKSTOP: Scriptorium's daemon is also held over a real socket", () => {
+    // The scan reads text; the kit workspace daemon (Scriptorium's) is the one
+    // the item asked to back with behaviour. These cells send a real foreign
+    // `Origin` and fail on a guard that is present but inert, whatever its
+    // spelling. If they are renamed or removed, this ward is the scan alone again.
+    const t = readFileSync(join(SRC, "kit", "workspace", "server.test.ts"), "utf8");
+    expect(t).toContain(
+      'test("a foreign Origin is refused on every path; the daemon\'s own page and a CLI are not"',
+    );
+    expect(t).toContain('test("a foreign page cannot open a WebSocket to it"');
   });
 
   test("⛔ AND IMPORTS IT FROM THE KIT RATHER THAN KEEPING A COPY", () => {
