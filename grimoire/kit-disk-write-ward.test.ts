@@ -60,10 +60,16 @@
 // MANY uses it may have, with the reason. A new use of an allowed function in
 // an allowed file still fails: the count no longer matches.
 //
+// ⛔ AND THE KIT'S BROWSER MODULES WRITE NOTHING AT ALL (2026-10-22,
+// kit-disk-write-ward-browser-code). `src/kit/{chat,context,document,shell,
+// theme,ui}` run in the page: the same matcher must find no write there, with
+// no allow-list, and no file may import `fs`, `fs/promises`, `child_process`
+// or `bun:sqlite` in any form (type imports included).
+//
 // What a green here does NOT mean: that the guard's rule is right (that is
 // `src/kit/workspace/diskGuard.test.ts` and `ownPlaces.test.ts`), or that a
-// write outside these two folders is guarded (`src/kit/wire`'s pointer files,
-// `src/kit/lib`, the shipped Scriptorium are not checked here).
+// write outside the scanned folders is guarded (`src/kit/wire`'s pointer files
+// and `src/kit/lib` are not checked here; `lib` is shared by both sides).
 
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
@@ -281,8 +287,52 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 
+// A `.tsx` file is parsed as TSX: read as plain TS, its JSX is a syntax error
+// and the tree after it is not the file's (the browser modules are `.tsx`).
 const parse = (src: string, name = "probe.ts"): ts.SourceFile =>
-  ts.createSourceFile(name, src, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  ts.createSourceFile(
+    name,
+    src,
+    ts.ScriptTarget.Latest,
+    true,
+    name.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+  );
+
+/**
+ * The kit's BROWSER modules: they run in the page, so they write nothing to
+ * disk and import no module that could. Added 2026-10-22
+ * (kit-disk-write-ward-browser-code): a raw `writeFileSync` planted in
+ * `src/kit/chat` left this ward green, because its scope was the daemon's two
+ * folders only.
+ */
+const BROWSER_SCOPES = ["chat", "context", "document", "shell", "theme", "ui"].map((d) =>
+  join(REPO_ROOT, "src", "kit", d),
+);
+
+/** Modules a browser file must not import at all: a write is one call away. */
+const NODE_ONLY = /^(?:node:)?(?:fs|fs\/promises|child_process)$|^bun:sqlite$/;
+
+/** Every static, dynamic or `require` import of a NODE_ONLY module in a file, with its line. */
+function nodeOnlyImports(src: string, name: string): string[] {
+  const sf = parse(src, name);
+  const out: string[] = [];
+  const hit = (spec: ts.Node | undefined, at: ts.Node) => {
+    if (spec && ts.isStringLiteralLike(spec) && NODE_ONLY.test(spec.text))
+      out.push(`${spec.text} at line ${lineOf(sf, at)}`);
+  };
+  visit(sf, (n) => {
+    if (ts.isImportDeclaration(n) || ts.isExportDeclaration(n)) hit(n.moduleSpecifier, n);
+    else if (ts.isImportEqualsDeclaration(n) && ts.isExternalModuleReference(n.moduleReference))
+      hit(n.moduleReference.expression, n);
+    else if (
+      ts.isCallExpression(n) &&
+      (n.expression.kind === ts.SyntaxKind.ImportKeyword ||
+        (ts.isIdentifier(n.expression) && n.expression.text === "require"))
+    )
+      hit(n.arguments[0], n);
+  });
+  return out;
+}
 
 function visit(node: ts.Node, fn: (n: ts.Node) => void): void {
   fn(node);
@@ -793,6 +843,39 @@ describe("kit disk-write ward", () => {
         .map((w) => `${rel(f)}:${w.line} ${w.fn}`),
     );
     expect(barrels).toEqual([]);
+  });
+
+  test("the kit's browser modules write nothing to disk and import no fs, child_process or bun:sqlite", () => {
+    const browser = BROWSER_SCOPES.flatMap((d) => walk(d));
+    // Not vacuous: every browser folder has files, chat and context among them.
+    for (const d of BROWSER_SCOPES)
+      expect([rel(d), browser.some((f) => f.startsWith(`${d}/`))]).toEqual([rel(d), true]);
+    expect(browser.length).toBeGreaterThan(40);
+    const offenders = browser.flatMap((f) => {
+      const src = readFileSync(f, "utf8");
+      return [
+        ...rawWrites(src, f).map((w) => `${rel(f)}:${w.line} a raw write (${w.fn})`),
+        ...nodeOnlyImports(src, f).map((i) => `${rel(f)}: imports ${i}`),
+      ];
+    });
+    expect(offenders).toEqual([]);
+  });
+
+  test("CALIBRATION: the browser cell's import check catches each form, in .tsx too", () => {
+    for (const planted of [
+      'import { writeFileSync } from "node:fs";',
+      'import type { Stats } from "fs";',
+      'export { readFileSync } from "node:fs";',
+      'const m = await import("node:fs/promises");',
+      'const cp = require("child_process");',
+      'import Database from "bun:sqlite";',
+    ])
+      expect([planted, nodeOnlyImports(planted, "probe.ts").length]).toEqual([planted, 1]);
+    const tsx =
+      'import { writeFileSync } from "node:fs";\nexport const C = () => <div>{writeFileSync("/x", "y")}</div>;';
+    expect(nodeOnlyImports(tsx, "probe.tsx")).toEqual(["node:fs at line 1"]);
+    expect(rawWrites(tsx, "probe.tsx").map((w) => w.fn)).toEqual(["writeFileSync"]);
+    expect(nodeOnlyImports('import { join } from "node:path";', "probe.ts")).toEqual([]);
   });
 
   test("every allow-list entry says why", () => {
