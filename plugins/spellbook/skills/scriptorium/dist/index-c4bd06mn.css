@@ -4115,6 +4115,13 @@
   }
 }
 
+[data-slot="app-title"] {
+  font-family: var(--font-manuscript);
+  text-transform: lowercase;
+  font-size: 1rem;
+  font-weight: 400;
+}
+
 @layer base {
   ::-webkit-scrollbar {
     width: 10px;
@@ -4192,6 +4199,10 @@
 
   .md-prose h1 {
     font-size: 1.2em;
+  }
+
+  .md-prose.md-document h1 {
+    font-size: 1.4em;
   }
 
   .md-prose p, .md-prose ul, .md-prose ol, .md-prose blockquote, .md-prose pre, .md-prose table {

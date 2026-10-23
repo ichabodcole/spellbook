@@ -23063,10 +23063,27 @@ function splitForCompletion(typed) {
     return null;
   return { dir: i === 0 ? "/" : typed.slice(0, i), prefix: typed.slice(i + 1) };
 }
+var ADD_PLACEHOLDER = "Type a path to add…";
+var ADD_PLACEHOLDER_SHORT = "Add a path…";
+function placeholderFor(full, short, fullWidth, room) {
+  if (short === undefined || fullWidth === null || room === null || room <= 0)
+    return full;
+  return fullWidth <= room ? full : short;
+}
+function measure(el, text) {
+  const ctx = document.createElement("canvas").getContext?.("2d");
+  if (!ctx || el.clientWidth === 0)
+    return null;
+  const cs = getComputedStyle(el);
+  ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+  const room = el.clientWidth - Number.parseFloat(cs.paddingLeft) - Number.parseFloat(cs.paddingRight);
+  return { width: ctx.measureText(text).width, room };
+}
 function AddPath({
   listDir,
   onAdd,
-  placeholder = "Add a file or folder by path…",
+  placeholder = ADD_PLACEHOLDER,
+  shortPlaceholder = placeholder === ADD_PLACEHOLDER ? ADD_PLACEHOLDER_SHORT : undefined,
   verb = "adds",
   foldersOnly = false,
   initialValue = "",
@@ -23086,6 +23103,21 @@ function AddPath({
   const [highlight, setHighlight] = import_react7.useState(-1);
   const listId = import_react7.useId();
   const seq = import_react7.useRef(0);
+  const field = import_react7.useRef(null);
+  const [shown, setShown] = import_react7.useState(placeholder);
+  import_react7.useEffect(() => {
+    const el = field.current;
+    const fit = () => {
+      const m = el ? measure(el, placeholder) : null;
+      setShown(placeholderFor(placeholder, shortPlaceholder, m?.width ?? null, m?.room ?? null));
+    };
+    fit();
+    if (!el || typeof ResizeObserver === "undefined")
+      return;
+    const watch = new ResizeObserver(fit);
+    watch.observe(el);
+    return () => watch.disconnect();
+  }, [placeholder, shortPlaceholder]);
   import_react7.useEffect(() => {
     const split = splitForCompletion(value);
     if (!split) {
@@ -23125,7 +23157,8 @@ function AddPath({
       /* @__PURE__ */ jsx_runtime3.jsx(Input3, {
         value,
         onChange: (e) => setValue(e.target.value),
-        placeholder,
+        ref: field,
+        placeholder: shown,
         "aria-label": placeholder.replace(/…$/, ""),
         autoFocus,
         onBlur: () => {
@@ -40623,7 +40656,7 @@ function CompareView({
     const g = grid.current;
     if (!g)
       return;
-    const measure = () => {
+    const measure2 = () => {
       const height = g.getBoundingClientRect().height;
       if (height <= 0) {
         setMeasured(null);
@@ -40633,10 +40666,10 @@ function CompareView({
       const tops = [...g.querySelectorAll("[data-row]")].map((el) => el.getBoundingClientRect().top - origin);
       setMeasured({ tops, height });
     };
-    measure();
+    measure2();
     if (typeof ResizeObserver === "undefined")
       return;
-    const ro = new ResizeObserver(measure);
+    const ro = new ResizeObserver(measure2);
     ro.observe(g);
     return () => ro.disconnect();
   }, [rows]);
@@ -69443,14 +69476,14 @@ function createPlace(opts = {}) {
     }
   };
 }
-function anchorCache(measure, width) {
+function anchorCache(measure2, width) {
   let anchors = null;
   let measuredAt = -1;
   return {
     get() {
       const w = width();
       if (!anchors || w !== measuredAt) {
-        anchors = measure();
+        anchors = measure2();
         measuredAt = w;
       }
       return anchors;
@@ -70038,7 +70071,7 @@ function MarkdownView({
           }),
           /* @__PURE__ */ jsx_runtime28.jsx("div", {
             ref: body,
-            className: frontmatter ? "md-prose mx-auto max-w-[76ch] px-8 pb-16" : "md-prose mx-auto max-w-[76ch] px-8 pt-7 pb-16",
+            className: frontmatter ? "md-prose md-document mx-auto max-w-[76ch] px-8 pb-16" : "md-prose md-document mx-auto max-w-[76ch] px-8 pt-7 pb-16",
             onClick: (e) => onRenderedLinkClick(e, onFollowLink, onFollowHeading),
             onPointerDown: (e) => {
               const isContext = e.button === 2 || e.button === 0 && e.ctrlKey;
@@ -72444,7 +72477,7 @@ function ChatSidebar(props) {
         className: "flex min-h-0 flex-1 flex-col gap-1.5 overflow-auto p-2",
         children: messages.length === 0 ? /* @__PURE__ */ jsx_runtime35.jsx("p", {
           className: "px-1 py-6 text-center text-xs text-ink-faint",
-          children: "Nothing said yet. Ask the agent something below, or wait for it to speak."
+          children: "Nothing said yet. Ask the agent something below, or wait for it to speak. Text you select goes with your message."
         }) : messages.map((m) => /* @__PURE__ */ jsx_runtime35.jsx(ChatMessageView, {
           message: m,
           badge: waiting?.messageId === m.id ? badgeFor(waiting, agentListening, sessionEnded) : null,
@@ -72478,6 +72511,12 @@ function latestAgentLine(messages) {
   const text4 = messages.findLast((m) => m.from === "agent")?.text;
   return text4 === undefined ? null : plainLine(text4) || null;
 }
+function waitingLine(messages, waiting) {
+  if (!waiting)
+    return null;
+  const text4 = messages.find((m) => m.id === waiting.messageId)?.text;
+  return text4 === undefined ? null : plainLine(text4) || null;
+}
 function floatNote(notesWaiting, docs, asked = new Set) {
   const first = notesWaiting.find((n) => !asked.has(n.noteId)) ?? notesWaiting[0];
   if (!first)
@@ -72509,6 +72548,7 @@ function FloatingComposer({
   children
 }) {
   const line = waiting ? null : latestAgentLine(messages);
+  const waitedOn = waitingLine(messages, waiting);
   const owed = floatNote(notesWaiting, docs, asked);
   const owedAsked = owed !== null && asked?.has(owed.waiting.noteId) === true;
   const owedBadge = owed ? badgeFor(owed.waiting, agentListening, sessionEnded) : null;
@@ -72568,9 +72608,29 @@ function FloatingComposer({
           /* @__PURE__ */ jsx_runtime36.jsx("div", {
             "data-slot": "float-line",
             className: "min-w-0 flex-1",
-            children: waiting ? /* @__PURE__ */ jsx_runtime36.jsx(WaitingBadge, {
-              flush: true,
-              badge: badgeFor(waiting, agentListening, sessionEnded)
+            children: waiting ? /* @__PURE__ */ jsx_runtime36.jsxs("div", {
+              "data-slot": "float-waiting",
+              className: "flex min-w-0 items-center gap-2",
+              children: [
+                waitedOn && /* @__PURE__ */ jsx_runtime36.jsxs("p", {
+                  className: "min-w-0 truncate",
+                  title: waitedOn,
+                  children: [
+                    /* @__PURE__ */ jsx_runtime36.jsx("span", {
+                      className: "mr-1.5 font-medium text-ink-faint",
+                      children: "You"
+                    }),
+                    waitedOn
+                  ]
+                }),
+                /* @__PURE__ */ jsx_runtime36.jsx("span", {
+                  className: "shrink-0",
+                  children: /* @__PURE__ */ jsx_runtime36.jsx(WaitingBadge, {
+                    flush: true,
+                    badge: badgeFor(waiting, agentListening, sessionEnded)
+                  })
+                })
+              ]
             }) : line ? /* @__PURE__ */ jsx_runtime36.jsxs("p", {
               className: "truncate",
               title: line,
@@ -76971,8 +77031,9 @@ function ListView({
             className: "flex shrink-0 items-center gap-0.5 px-1.5 pt-1",
             children: [
               /* @__PURE__ */ jsx_runtime42.jsx("span", {
-                className: "flex-1 truncate px-1 text-[11px] text-ink-faint",
-                children: workspace !== null ? "Drop documents or images here to copy them into the workspace" : onAskCreate ? "Drop documents or images, then choose a set" : "Drop documents or images here to copy them in"
+                "data-slot": "drop-hint",
+                className: "min-w-0 flex-1 px-1 text-[11px] text-ink-faint",
+                children: workspace !== null ? "Drop documents or images here to copy them into the workspace" : onAskCreate ? "Drop files, then choose where they go" : "Drop documents or images here to copy them in"
               }),
               onAskCreate && /* @__PURE__ */ jsx_runtime42.jsxs(jsx_runtime42.Fragment, {
                 children: [
@@ -77271,7 +77332,18 @@ function SetView({
             dir: entry.root,
             where: " in this set",
             onStructure
-          })
+          }),
+          appActionsFor({ kind: "entry", path: entryPath(entry), entry }).filter((a) => a.header && a.icon).map((a) => /* @__PURE__ */ jsx_runtime42.jsx(Button3, {
+            variant: a.destructive ? "destructive" : "ghost",
+            size: "icon-sm",
+            "data-action": a.id,
+            "data-variant": a.destructive ? "destructive" : undefined,
+            disabled: a.disabled,
+            onClick: a.onSelect,
+            "aria-label": a.label,
+            title: a.label,
+            children: a.icon
+          }, a.id))
         ]
       }),
       /* @__PURE__ */ jsx_runtime42.jsx("div", {
@@ -77958,18 +78030,18 @@ function usePaneSize(ref) {
     const el = ref.current;
     if (!el)
       return;
-    const measure = () => {
+    const measure2 = () => {
       const r2 = el.getBoundingClientRect();
       const next = r2.width > 0 && r2.height > 0 ? { w: Math.round(r2.width), h: Math.round(r2.height) } : FALLBACK_SIZE;
       setSize((s) => s.w === next.w && s.h === next.h ? s : next);
     };
-    measure();
-    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+    measure2();
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure2) : null;
     ro?.observe(el);
-    window.addEventListener("resize", measure);
+    window.addEventListener("resize", measure2);
     return () => {
       ro?.disconnect();
-      window.removeEventListener("resize", measure);
+      window.removeEventListener("resize", measure2);
     };
   }, [ref]);
   return size4;
@@ -78976,6 +79048,26 @@ function isSearchShortcut(e, mac3 = onMac()) {
     return false;
   return mac3 ? e.metaKey && !e.ctrlKey : e.ctrlKey && !e.metaKey;
 }
+function fileLabel2(r2) {
+  const imageName = r2.image ? r2.image.slice(r2.image.lastIndexOf("/") + 1) : null;
+  const name2 = imageName ? `${imageName} · description` : r2.bundle ? `in the ${r2.bundle.label} ${r2.bundle.name}` : r2.name;
+  return !imageName && r2.version !== null ? `${name2} · v${r2.version}` : name2;
+}
+function groupResults(results) {
+  const names = results.filter((r2) => r2.kind === "name");
+  const byFile = new Map;
+  for (const r2 of results) {
+    if (r2.kind !== "text")
+      continue;
+    const group = byFile.get(r2.path);
+    if (group)
+      group.hits.push(r2);
+    else
+      byFile.set(r2.path, { key: r2.path, label: fileLabel2(r2), hits: [r2] });
+  }
+  const files = [...byFile.values()];
+  return { names, files, ordered: [...names, ...files.flatMap((f) => f.hits)] };
+}
 function SearchBox({
   request,
   connected,
@@ -79046,7 +79138,8 @@ function SearchBox({
     };
   }, [q2, connected, request]);
   const fresh = report && report.query === q2 ? report : null;
-  const results = fresh?.results ?? [];
+  const grouped = groupResults(fresh?.results ?? []);
+  const results = grouped.ordered;
   const showing = open && q2 !== "";
   const choose = import_react49.useCallback((r2) => {
     setOpen(false);
@@ -79165,25 +79258,66 @@ function SearchBox({
             }),
             "."
           ]
-        }) : /* @__PURE__ */ jsx_runtime49.jsx("div", {
+        }) : /* @__PURE__ */ jsx_runtime49.jsxs("div", {
           role: "listbox",
           id: listId,
           "aria-label": "Search results",
-          children: results.map((r2, i2) => /* @__PURE__ */ jsx_runtime49.jsxs("div", {
-            children: [
-              r2.kind !== results[i2 - 1]?.kind && /* @__PURE__ */ jsx_runtime49.jsx("h2", {
-                className: "px-3 pt-2 pb-1 text-[10px] font-medium tracking-wide text-ink-faint uppercase",
-                children: r2.kind === "name" ? "Documents" : `In text${fresh.truncated ? " (more)" : ""}`
-              }),
-              /* @__PURE__ */ jsx_runtime49.jsx(Row3, {
-                id: `${listId}-${i2}`,
-                result: r2,
-                active: i2 === active,
-                onHover: () => setActive(i2),
-                onChoose: () => choose(r2)
-              })
-            ]
-          }, `${r2.kind}:${r2.path}:${r2.from ?? ""}`))
+          children: [
+            grouped.names.length > 0 && /* @__PURE__ */ jsx_runtime49.jsxs("div", {
+              children: [
+                /* @__PURE__ */ jsx_runtime49.jsx("h2", {
+                  className: "px-3 pt-2 pb-1 text-[10px] font-medium tracking-wide text-ink-faint uppercase",
+                  children: "Documents"
+                }),
+                grouped.names.map((r2, i2) => /* @__PURE__ */ jsx_runtime49.jsx(Row3, {
+                  id: `${listId}-${i2}`,
+                  result: r2,
+                  active: i2 === active,
+                  onHover: () => setActive(i2),
+                  onChoose: () => choose(r2)
+                }, `name:${r2.path}`))
+              ]
+            }),
+            grouped.files.length > 0 && /* @__PURE__ */ jsx_runtime49.jsxs("h2", {
+              className: "px-3 pt-2 pb-1 text-[10px] font-medium tracking-wide text-ink-faint uppercase",
+              children: [
+                "In text (",
+                results.length - grouped.names.length,
+                fresh.truncated ? ", and more" : "",
+                ")"
+              ]
+            }),
+            grouped.files.map((f) => /* @__PURE__ */ jsx_runtime49.jsxs("div", {
+              "data-slot": "search-file",
+              children: [
+                /* @__PURE__ */ jsx_runtime49.jsxs("div", {
+                  className: "flex items-baseline gap-2 px-3 pt-1 text-[11px]",
+                  children: [
+                    /* @__PURE__ */ jsx_runtime49.jsx("span", {
+                      className: "min-w-0 truncate text-ink",
+                      children: f.label
+                    }),
+                    /* @__PURE__ */ jsx_runtime49.jsx("span", {
+                      "data-slot": "search-file-count",
+                      className: "shrink-0 text-ink-faint",
+                      children: f.hits.length
+                    })
+                  ]
+                }),
+                f.hits.map((r2) => {
+                  const i2 = results.indexOf(r2);
+                  return /* @__PURE__ */ jsx_runtime49.jsx(Row3, {
+                    id: `${listId}-${i2}`,
+                    result: r2,
+                    fileLabel: f.label,
+                    active: i2 === active,
+                    onHover: () => setActive(i2),
+                    onChoose: () => choose(r2)
+                  }, `text:${r2.path}:${r2.from ?? ""}`);
+                })
+              ]
+            }, f.key))
+          ]
         })
       })
     ]
@@ -79192,6 +79326,7 @@ function SearchBox({
 function Row3({
   id,
   result: r2,
+  fileLabel: fileLabel3,
   active,
   onHover,
   onChoose
@@ -79242,21 +79377,18 @@ function Row3({
           children: r2.line
         }),
         /* @__PURE__ */ jsx_runtime49.jsxs("span", {
-          className: "min-w-0 flex-1",
+          className: "min-w-0 flex-1 truncate font-mono text-[11px] text-ink-dim",
           children: [
-            /* @__PURE__ */ jsx_runtime49.jsx("span", {
-              className: "block truncate font-mono text-[11px] text-ink-dim",
-              children: /* @__PURE__ */ jsx_runtime49.jsx(Highlighted, {
-                text: r2.snippet ?? "",
-                from: r2.snippetFrom,
-                to: r2.snippetTo
-              })
+            /* @__PURE__ */ jsx_runtime49.jsx(Highlighted, {
+              text: r2.snippet ?? "",
+              from: r2.snippetFrom,
+              to: r2.snippetTo
             }),
-            /* @__PURE__ */ jsx_runtime49.jsxs("span", {
-              className: "block truncate text-[10px] text-ink-faint",
+            fileLabel3 && /* @__PURE__ */ jsx_runtime49.jsxs("span", {
+              className: "sr-only",
               children: [
-                imageName ? `${imageName} · description` : r2.bundle ? `in the ${r2.bundle.label} ${r2.bundle.name}` : r2.name,
-                !imageName && r2.version !== null ? ` · v${r2.version}` : ""
+                ", in ",
+                fileLabel3
               ]
             })
           ]
@@ -79638,7 +79770,7 @@ function SettingsDialog({
         }),
         /* @__PURE__ */ jsx_runtime51.jsx(DialogDescription3, {
           className: "text-sm leading-relaxed text-ink-dim",
-          children: "For this app, the same in every world."
+          children: "For this app, the same in every session."
         }),
         /* @__PURE__ */ jsx_runtime51.jsxs("form", {
           className: "grid gap-3",
@@ -83149,7 +83281,15 @@ function useMapView(daemon) {
       })
     };
   }, [showing, entry, active, mode, fetch2, send]);
-  const menuActions = import_react55.useCallback(({ kind, entry: entry2 }) => kind === "entry" && entry2 && !singleDoc(entry2) ? [{ id: MAP_VIEW, label: MAP_LABEL, icon: /* @__PURE__ */ jsx_runtime55.jsx(Network, {}), onSelect: () => show(entry2) }] : [], [show]);
+  const menuActions = import_react55.useCallback(({ kind, entry: entry2 }) => kind === "entry" && entry2 && !singleDoc(entry2) ? [
+    {
+      id: MAP_VIEW,
+      label: MAP_LABEL,
+      icon: /* @__PURE__ */ jsx_runtime55.jsx(Network, {}),
+      onSelect: () => show(entry2),
+      header: true
+    }
+  ] : [], [show]);
   return { appView, menuActions };
 }
 
