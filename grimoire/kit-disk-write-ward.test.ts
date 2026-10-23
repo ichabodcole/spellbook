@@ -49,7 +49,9 @@
 //
 // ⛔ KNOWN LIMITS. A syntax-tree ward reads names, not values, so these still
 // pass it. Each needs code written to hide a write, which a review sees:
-// - a computed key (`fs[name]`, `fs["write" + "FileSync"]`, `Bun[k]`);
+// - a computed key (`fs[name]`, `fs["write" + "FileSync"]`, `Bun[k]`), and a
+//   computed module name (`import("node:" + "fs")`, `require(m)`): the browser
+//   cell's import check reads only a literal name too;
 // - `eval`, `new Function`, `process.binding`, a `Worker` running a script;
 // - `Bun.mmap` (a shared mapping writes through to its file);
 // - aliasing by assignment or by passing (`let g; g = fs`, `f(fs)`,
@@ -327,11 +329,24 @@ function nodeOnlyImports(src: string, name: string): string[] {
     else if (
       ts.isCallExpression(n) &&
       (n.expression.kind === ts.SyntaxKind.ImportKeyword ||
-        (ts.isIdentifier(n.expression) && n.expression.text === "require"))
+        (ts.isIdentifier(n.expression) && n.expression.text === "require") ||
+        isImportMetaRequire(n.expression) ||
+        (ts.isPropertyAccessExpression(n.expression) &&
+          n.expression.name.text === "getBuiltinModule"))
     )
       hit(n.arguments[0], n);
   });
   return out;
+}
+
+/** Bun's `import.meta.require(…)`: a `require` with no name to rebind. */
+function isImportMetaRequire(e: ts.Expression): boolean {
+  return (
+    ts.isPropertyAccessExpression(e) &&
+    e.name.text === "require" &&
+    ts.isMetaProperty(e.expression) &&
+    e.expression.keywordToken === ts.SyntaxKind.ImportKeyword
+  );
 }
 
 function visit(node: ts.Node, fn: (n: ts.Node) => void): void {
@@ -459,6 +474,7 @@ export function rawWrites(src: string, name?: string): { fn: string; line: numbe
     const x = unwrap(e);
     if (ts.isIdentifier(x)) return requireNames.has(x.text);
     if (ts.isCallExpression(x)) return isCreateRequire(x.expression);
+    if (isImportMetaRequire(x)) return true;
     return memberName(x) === "getBuiltinModule";
   }
   const req = (e: ts.Expression | undefined, mods: Set<string>): boolean =>
@@ -675,6 +691,9 @@ describe("kit disk-write ward", () => {
       'import fs from "fs"; fs["unlinkSync"]("/a");',
       'const { mkdirSync } = require("node:fs"); mkdirSync("/a");',
       'require("node:fs").cpSync("/a", "/b");',
+      // Bun's own require, which the round-2 verifier found unread.
+      'import.meta.require("node:fs").writeFileSync("/a", "b");',
+      'const { rmSync } = import.meta.require("fs"); rmSync("/a");',
       'import { writeFile } from "node:fs/promises"; await writeFile("/a", "b");',
       'import { writeFileAtomic } from "../wire/discovery.ts"; writeFileAtomic("/a", "b");',
       'await Bun.write("/a", "b");',
@@ -868,6 +887,8 @@ describe("kit disk-write ward", () => {
       'export { readFileSync } from "node:fs";',
       'const m = await import("node:fs/promises");',
       'const cp = require("child_process");',
+      'const fs = import.meta.require("node:fs");',
+      'const fs = process.getBuiltinModule("fs");',
       'import Database from "bun:sqlite";',
     ])
       expect([planted, nodeOnlyImports(planted, "probe.ts").length]).toEqual([planted, 1]);

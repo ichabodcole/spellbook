@@ -45,13 +45,25 @@ function surfaceFiles(dir: string = SURFACE, out: string[] = []): string[] {
   return out;
 }
 
+/** An assignment of any kind (`=`, `+=`, `||=`, `??=`, `&&=`), never a comparison. */
+const WRITE = String.raw`\s*(?:\+|\|\||\?\?|&&)?=(?!=)`;
+/** A property written by name: `.p`, or `["p"]` / `['p']` / `` [`p`] ``. */
+const prop = (p: string) => String.raw`(?:\.${p}|\[\s*["'\x60]${p}["'\x60]\s*\])`;
+
 /** The DOM's own string-to-HTML routes, each matched on the comment-stripped code. */
 const RAW_SINKS: readonly (readonly [string, RegExp])[] = [
-  ["innerHTML write", /\.innerHTML\s*\+?=(?!=)/],
-  ["outerHTML write", /\.outerHTML\s*\+?=(?!=)/],
+  ["innerHTML write", new RegExp(prop("innerHTML") + WRITE)],
+  ["outerHTML write", new RegExp(prop("outerHTML") + WRITE)],
+  ["srcdoc write", new RegExp(`${prop("srcdoc")}${WRITE}|\\bsrcDoc\\s*=`)],
   ["insertAdjacentHTML", /\binsertAdjacentHTML\b/],
   ["document.write", /\bdocument\.write(?:ln)?\b/],
   ["createContextualFragment", /\bcreateContextualFragment\b/],
+  ["setHTMLUnsafe / parseHTMLUnsafe", /\b(?:set|parse)HTMLUnsafe\b/],
+  // `Object.assign(el, { innerHTML: s })` writes the property with no `.innerHTML =`.
+  [
+    "Object.assign of an HTML property",
+    /\bObject\.assign\s*\([^;]*?\b(?:innerHTML|outerHTML|srcdoc)\b/,
+  ],
 ];
 
 describe("Scriptorium's page and its HTML sinks", () => {
@@ -69,12 +81,17 @@ describe("Scriptorium's page and its HTML sinks", () => {
     expect(found).toEqual([]);
   });
 
-  test("…and no raw DOM route from a string to HTML: no innerHTML/outerHTML write, insertAdjacentHTML, document.write or createContextualFragment", () => {
+  test("…and no raw DOM route from a string to HTML: no RAW_SINKS route (innerHTML, outerHTML, srcdoc, insertAdjacentHTML, document.write, createContextualFragment, setHTMLUnsafe, Object.assign)", () => {
     // The cell above sees React's sink only. A raw `el.innerHTML = text` in a
     // ref callback or an effect is the same hole by another door, and it passed
     // here until 2026-10-22 (scriptorium-ward-blind-spots-after-deletion).
     // READING `innerHTML` (a test's `expect(el.innerHTML)`) is not a sink, so
-    // only a write is matched: `=` or `+=`, never `==`.
+    // only a write is matched: `=`, `+=`, `||=`, `??=` or `&&=`, never `==`.
+    // ⚠ STILL UNSEEN: a computed key (`el["inner" + "HTML"]`, `el[k] = s`), a
+    // property written by a helper that takes its name as an argument
+    // (`Reflect.set`, `Object.defineProperty`), an `Object.assign` whose source
+    // object is built elsewhere, and any sink inside the kit's own modules,
+    // which the kit's sink cells hold.
     const files = surfaceFiles();
     expect(files.length).toBeGreaterThan(5);
     const found: string[] = [];
@@ -96,6 +113,21 @@ describe("Scriptorium's page and its HTML sinks", () => {
     expect(hits("range.createContextualFragment(s)")).toEqual(["createContextualFragment"]);
     expect(hits('expect(map()?.innerHTML).not.toContain("x")')).toEqual([]);
     expect(hits("if (el.innerHTML === prev) return;")).toEqual([]);
+    expect(hits("if (el.innerHTML == prev || el.innerHTML !== next) return;")).toEqual([]);
+    // Logical assignments, and the property by a string key.
+    for (const op of ["||=", "??=", "&&="])
+      expect(hits(`el.innerHTML ${op} s`)).toEqual(["innerHTML write"]);
+    expect(hits('el["innerHTML"] = s')).toEqual(["innerHTML write"]);
+    // The routes beyond innerHTML.
+    expect(hits("frame.srcdoc = s")).toEqual(["srcdoc write"]);
+    expect(hits("<iframe srcDoc={s} />")).toEqual(["srcdoc write"]);
+    expect(hits("el.setHTMLUnsafe(s)")).toEqual(["setHTMLUnsafe / parseHTMLUnsafe"]);
+    expect(hits("Document.parseHTMLUnsafe(s)")).toEqual(["setHTMLUnsafe / parseHTMLUnsafe"]);
+    expect(hits("Object.assign(el, { innerHTML: s })")).toEqual([
+      "Object.assign of an HTML property",
+    ]);
+    expect(hits("Object.assign(el, { innerHTML })")).toEqual(["Object.assign of an HTML property"]);
+    expect(hits("Object.assign(el.style, { width: w })")).toEqual([]);
   });
 
   test("the kit's renderer, which feeds the kit's sinks, never turns on raw HTML and checks every link target", () => {

@@ -865,8 +865,11 @@ describe("ward — a flag demoted by `--` is warned about, on every registry ado
       // 367 -> 310), quiet cases 139 -> 110.
       // 9 -> 10 (scriptorium-ward-blind-spots-after-deletion): builders are
       // now driven with stub deps (`BUILDER_ARGS`), so `scriptoriumKitCli`
-      // joined with 32 rows that take positionals: the kit's 24 plus
-      // Scriptorium's own 8. Rows 109 -> 141, cases 761 -> 928 (direct
+      // joined with 32 rows that take positionals: 22 of the kit's (the
+      // fixture's 24 less `workspace`, which an app with no home workspace
+      // does not get, and the fixture's own `demo`) plus Scriptorium's own 10
+      // (`add-folder`, `make-set`, `move-plan`, `note-remove`, `task-remove`,
+      // `meta`, `meta-init`, `meta-set`, `hide`, `unhide`). Rows 109 -> 141, cases 761 -> 928 (direct
       // 310 -> 377, after-text 141 -> 174, =value 310 -> 377), quiet cases
       // 110 -> 142.
       adopters: 10,
@@ -900,7 +903,7 @@ describe("ward — a flag demoted by `--` is warned about, on every registry ado
         "kit/workspace/fixtures/cli.ts": 24,
         "magpie/backend/cli.ts": 6,
         "mind-mapper/backend/cli.ts": 26,
-        // Built with stub deps: the kit's 24 rows plus Scriptorium's own 8.
+        // Built with stub deps: 22 kit rows plus Scriptorium's own 10.
         "scriptorium/backend/kit/cli.ts#scriptoriumKitCli": 32,
       },
     });

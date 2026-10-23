@@ -31,11 +31,14 @@
 // fourth clause here is a signal to go do that instead").
 //
 // ⚠ WHAT THE SCAN STILL CANNOT SEE (2026-10-22). It now holds the call's SHAPE
-// tightly: the kit's guard by its own name, nothing else bound to that name, the
-// port and hostname from one server object, and the answer bound and returned
-// at once. It does not read control flow, so a guard inside a branch that never
-// runs, a `req` that is not the handler's own request, or a handler the server
-// never installs all pass here. The kit workspace daemon (Scriptorium's) has a
+// tightly, read from the syntax tree: the kit's guard, imported by its own name
+// or called through a namespace import of the kit's module; nothing else bound
+// to that name (alias, variable, destructuring, parameter, function, class,
+// assignment); the port and hostname from one server object; and the answer
+// bound and returned at once. It does not read control flow or scope, so a
+// guard inside a branch that never runs, a `req` that is not the handler's own
+// request, a handler the server never installs, or a namespace NAME shadowed
+// in an inner scope (`(origin) => origin.refuseForeignOrigin(…)`) all pass here. The kit workspace daemon (Scriptorium's) has a
 // behaviour backstop named by the BACKSTOP cell (`src/kit/workspace/server.test.ts`);
 // the other harnessed spells' wire tests are listed above.
 //
@@ -50,6 +53,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Glob } from "bun";
+import ts from "typescript";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SRC = join(REPO_ROOT, "src");
@@ -94,34 +98,123 @@ function sameServerArgs(args: readonly string[]): boolean {
   return port !== null && host !== null && port[1] === host[1];
 }
 
+const GUARD_NAME = "refuseForeignOrigin";
+
 /**
- * What makes a SPELLED guard inert, read from a server's comment-stripped code:
+ * What makes a SPELLED guard inert, read from a server's SYNTAX TREE:
  *   - a call whose answer is not bound and returned at once
- *     (`const r = refuseForeignOrigin(…); if (r) return r;`, nothing between);
- *   - the name not imported, by that name, from the kit's `wire/origin.ts`;
- *   - the name bound or assigned anywhere else in the file.
+ *     (`const r = refuseForeignOrigin(…); if (r) return r;`, the next statement);
+ *   - a call that is not the kit's guard: the name must come from the kit's
+ *     `wire/origin.ts`, imported by its own name (`{ refuseForeignOrigin }`) or
+ *     reached through a namespace import of it (`origin.refuseForeignOrigin(…)`);
+ *   - the name bound anywhere else: an aliased import, a variable, a
+ *     destructured binding, a parameter, a function or class, or an assignment.
+ *
+ * Parsed rather than matched (round 2, 2026-10-22): the regex version let a
+ * destructured shadow (`const { refuseForeignOrigin } = …`) and a parameter of
+ * that name through, and refused the namespace form.
  */
 function guardFindings(c: string): string[] {
   const out: string[] = [];
-  const calls = [...c.matchAll(/\brefuseForeignOrigin\s*\(/g)].length;
-  const honoured = [
-    ...c.matchAll(
-      /\bconst\s+([A-Za-z_$][\w$]*)\s*=\s*refuseForeignOrigin\([^()]*\)\s*;?\s*if\s*\(\s*\1\s*\)\s*return\s+\1\s*;/g,
-    ),
-  ].length;
+  const sf = ts.createSourceFile("s.ts", c, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  let named = false;
+  const namespaces = new Set<string>();
+  /** The one import specifier allowed to bind the name. */
+  let allowed: ts.Node | undefined;
+  for (const s of sf.statements) {
+    if (!ts.isImportDeclaration(s) || !ts.isStringLiteral(s.moduleSpecifier)) continue;
+    if (!/(?:^|\/)wire\/origin\.ts$/.test(s.moduleSpecifier.text)) continue;
+    const nb = s.importClause?.namedBindings;
+    if (s.importClause?.isTypeOnly || !nb) continue;
+    if (ts.isNamespaceImport(nb)) namespaces.add(nb.name.text);
+    else
+      for (const el of nb.elements)
+        if (!el.isTypeOnly && !el.propertyName && el.name.text === GUARD_NAME) {
+          named = true;
+          allowed = el;
+        }
+  }
+  if (!named && namespaces.size === 0)
+    out.push("not imported from the kit's wire/origin.ts (by its own name or as a namespace)");
+
+  const isGuard = (e: ts.Expression): boolean =>
+    (ts.isIdentifier(e) && e.text === GUARD_NAME && named) ||
+    (ts.isPropertyAccessExpression(e) &&
+      e.name.text === GUARD_NAME &&
+      ts.isIdentifier(e.expression) &&
+      namespaces.has(e.expression.text));
+  const namesGuard = (e: ts.Expression): boolean =>
+    (ts.isIdentifier(e) && e.text === GUARD_NAME) ||
+    (ts.isPropertyAccessExpression(e) && e.name.text === GUARD_NAME);
+  /** `const r = <guard>(…);` immediately followed by `if (r) return r;`. */
+  const honoured = (call: ts.CallExpression): boolean => {
+    const decl = call.parent;
+    if (!ts.isVariableDeclaration(decl) || !ts.isIdentifier(decl.name)) return false;
+    const list = decl.parent;
+    if (!ts.isVariableDeclarationList(list) || !(list.flags & ts.NodeFlags.Const)) return false;
+    const stmt = list.parent;
+    if (!ts.isVariableStatement(stmt) || list.declarations.length !== 1) return false;
+    const block = stmt.parent;
+    if (!ts.isBlock(block) && !ts.isSourceFile(block)) return false;
+    const next = block.statements[block.statements.indexOf(stmt) + 1];
+    const r = decl.name.text;
+    if (!next || !ts.isIfStatement(next) || next.elseStatement) return false;
+    if (!ts.isIdentifier(next.expression) || next.expression.text !== r) return false;
+    const then = next.thenStatement;
+    const ret = ts.isBlock(then) && then.statements.length === 1 ? then.statements[0] : then;
+    return (
+      !!ret &&
+      ts.isReturnStatement(ret) &&
+      !!ret.expression &&
+      ts.isIdentifier(ret.expression) &&
+      ret.expression.text === r
+    );
+  };
+
+  let calls = 0;
+  let notKit = 0;
+  let dropped = 0;
+  let rebound = false;
+  const bindingName = (n: ts.Node): boolean =>
+    (ts.isVariableDeclaration(n) ||
+      ts.isBindingElement(n) ||
+      ts.isParameter(n) ||
+      ts.isFunctionDeclaration(n) ||
+      ts.isFunctionExpression(n) ||
+      ts.isClassDeclaration(n) ||
+      ts.isClassExpression(n) ||
+      ts.isImportSpecifier(n) ||
+      ts.isImportClause(n) ||
+      ts.isNamespaceImport(n) ||
+      ts.isImportEqualsDeclaration(n)) &&
+    n !== allowed;
+  const visit = (n: ts.Node): void => {
+    if (ts.isCallExpression(n) && namesGuard(n.expression)) {
+      calls++;
+      if (!isGuard(n.expression)) notKit++;
+      else if (!honoured(n)) dropped++;
+    }
+    // A declaration whose own name (or a destructured piece of it) is the guard's.
+    if (ts.isIdentifier(n) && n.text === GUARD_NAME && bindingName(n.parent)) {
+      const p = n.parent as ts.NamedDeclaration;
+      if (p.name === n || (ts.isImportSpecifier(p) && p.name === n)) rebound = true;
+    }
+    // Assigned, plainly or compounded, as a name or as a member.
+    if (
+      ts.isBinaryExpression(n) &&
+      n.operatorToken.kind >= ts.SyntaxKind.FirstAssignment &&
+      n.operatorToken.kind <= ts.SyntaxKind.LastAssignment &&
+      namesGuard(n.left)
+    )
+      rebound = true;
+    n.forEachChild(visit);
+  };
+  visit(sf);
+
   if (calls === 0) out.push("no call");
-  if (honoured !== calls)
-    out.push(`${calls - honoured} call(s) whose answer is not bound and returned at once`);
-  const imported = [
-    ...c.matchAll(/\bimport\s*\{([^}]*)\}\s*from\s*["']([^"']*wire\/origin\.ts)["']/g),
-  ].some((m) => (m[1] ?? "").split(",").some((s) => s.trim() === "refuseForeignOrigin"));
-  if (!imported) out.push("not imported by its own name from the kit's wire/origin.ts");
-  if (
-    /\bas\s+refuseForeignOrigin\b/.test(c) ||
-    /\b(?:function|const|let|var|class)\s+refuseForeignOrigin\b/.test(c) ||
-    /\brefuseForeignOrigin\s*=(?!=)/.test(c)
-  )
-    out.push("the name is bound to something other than the kit's guard");
+  if (notKit > 0) out.push(`${notKit} call(s) to a ${GUARD_NAME} that is not the kit's import`);
+  if (dropped > 0) out.push(`${dropped} call(s) whose answer is not bound and returned at once`);
+  if (rebound) out.push("the name is bound to something other than the kit's guard");
   return out;
 }
 
@@ -185,12 +278,47 @@ describe("every daemon refuses a foreign origin", () => {
     expect(sameServerArgs(["req", "8080", "srv.hostname"])).toBe(false);
 
     const real = `import { refuseForeignOrigin } from "../../kit/wire/origin.ts";
-      {
-        const refused = refuseForeignOrigin(req, srv.port, srv.hostname);
-        if (refused) return refused;
+      function fetch(req, srv) {
+        {
+          const refused = refuseForeignOrigin(req, srv.port, srv.hostname);
+          if (refused) return refused;
+        }
       }`;
     expect(guardFindings(real)).toEqual([]);
+    // The namespace form is the kit's guard too, and is held the same way.
+    const viaNamespace = real
+      .replace("{ refuseForeignOrigin }", "* as origin")
+      .replace("= refuseForeignOrigin(", "= origin.refuseForeignOrigin(");
+    expect(guardFindings(viaNamespace)).toEqual([]);
+    // A renamed import of the kit's guard is the guard, under another name:
+    // the scan cannot follow it, so it is refused rather than trusted.
+    expect(
+      guardFindings(
+        real
+          .replace("{ refuseForeignOrigin }", "{ refuseForeignOrigin as guard }")
+          .replace("= refuseForeignOrigin(", "= guard("),
+      ).length,
+    ).toBeGreaterThan(0);
     const plants: Record<string, string> = {
+      "destructured shadow": real.replace(
+        "{\n          const refused",
+        "{\n          const { refuseForeignOrigin } = { refuseForeignOrigin: () => null };\n          const refused",
+      ),
+      "a parameter of that name": real.replace(
+        "function fetch(req, srv)",
+        "function fetch(req, srv, refuseForeignOrigin)",
+      ),
+      "a destructured parameter": real.replace(
+        "function fetch(req, srv)",
+        "function fetch(req, { refuseForeignOrigin })",
+      ),
+      "namespace answer dropped": viaNamespace.replace("const refused = ", ""),
+      "another object's method": real.replace(
+        "= refuseForeignOrigin(",
+        "= other.refuseForeignOrigin(",
+      ),
+      "namespace member reassigned": `${viaNamespace}\norigin.refuseForeignOrigin = () => null;`,
+      "compound assignment": `${real}\nrefuseForeignOrigin ||= () => null;`,
       "result dropped": real.replace("const refused = ", ""),
       "if made dead": real.replace("if (refused) return", "if (refused && false) return"),
       "a different value returned": real.replace("return refused;", "return undefined;"),

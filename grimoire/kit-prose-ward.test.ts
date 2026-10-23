@@ -511,11 +511,17 @@ const BARE_UTILITIES = new Set([
  * a utility", so the stricter reading is the safe one (see `trimSentence`).
  * The CODE half keeps the plain reading: widening it would ADD to the set of
  * words prose may use (`arr.filter(` would admit "filter"), loosening the cell.
+ *
+ * ⚠ A WORD FOLLOWED BY `(` IS A CALL, NOT A CLASS, and does not count:
+ * `field.blur()` and `field.current?.blur();` in a comment emit no `blur`
+ * candidate from Tailwind's extractor (oxide; measured by the batch's
+ * verifier, 2026-10-22), and the first version of this reading flagged them.
  */
 function bareUtilities(text: string, prose = false): string[] {
   const out: string[] = [];
   const take = (raw: string) => {
     let t = trimSentence(raw);
+    if (prose && /^[a-z][a-z0-9]*\(/.test(t)) return;
     if (prose) t = t.replace(/[^a-z0-9]+$/, "");
     if (t !== "" && /^[a-z][a-z0-9]*$/.test(t) && BARE_UTILITIES.has(t)) out.push(t);
   };
@@ -786,6 +792,12 @@ describe("kit prose ward", () => {
       "invisible",
       "truncate",
     ]);
+    // A CALL is not a class: oxide emits no `blur` from these, so neither does
+    // this reading. The same word as a selector in a sentence stays red.
+    expect(bareUtilities("// field.blur() hands focus back", true)).toEqual([]);
+    expect(bareUtilities("// field.current?.blur(); then focus moves", true)).toEqual([]);
+    expect(bareUtilities("// call blur() on it", true)).toEqual([]);
+    expect(bareUtilities("// the .blur on the backdrop softens it", true)).toEqual(["blur"]);
     expect(bareUtilities("blurred: the frame was truncated.", true)).toEqual([]);
     expect(bareUtilities('buf.split("n").filter((l) => l.length > 0)', true)).toEqual([]);
 
