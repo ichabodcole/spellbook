@@ -239,6 +239,25 @@ describe("the rendered-markdown sheet", () => {
     const view = readFileSync(join(kit, "document", "MarkdownView.tsx"), "utf8");
     expect([...view.matchAll(/"md-prose md-document /g)].length).toBe(2);
   });
+
+  test("a chat message's h1 keeps the compact scale: no h1 rule outside the document's is enlarged", () => {
+    const body = doc.replace(/\/\*[\s\S]*?\*\//g, "");
+    const sizes: [string, number][] = [];
+    for (const [, selectors = "", block = ""] of body.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      const size = /font-size:\s*([\d.]+)em/.exec(block)?.[1];
+      if (size === undefined) continue;
+      for (const sel of selectors.split(",").map((x) => x.trim()))
+        if (sel.includes(".md-prose") && /\bh1\b/.test(sel) && !sel.includes("md-document"))
+          sizes.push([sel, Number(size)]);
+    }
+    // The shared rule and the h1's own compact step are there, and none is larger.
+    expect(sizes.length).toBeGreaterThanOrEqual(2);
+    for (const [sel, size] of sizes) expect(size, sel).toBeLessThanOrEqual(1.2);
+    // The chat's body carries no md-document, so the step cannot reach it.
+    const chat = readFileSync(join(kit, "chat", "ChatMessageView.tsx"), "utf8");
+    expect(chat).toContain('className="md-prose"');
+    expect(chat).not.toContain("md-document");
+  });
 });
 
 describe("the shell sheet", () => {

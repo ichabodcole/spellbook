@@ -1137,7 +1137,9 @@ function ListView({
           />
         )}
         <div className="flex shrink-0 items-center gap-0.5 px-1.5 pt-1">
-          <span className="flex-1 truncate px-1 text-[11px] text-ink-faint">
+          {/* The hint wraps rather than truncates: a hint cut off is not read,
+              and a narrow column has room for two lines, not for the words. */}
+          <span data-slot="drop-hint" className="min-w-0 flex-1 px-1 text-[11px] text-ink-faint">
             {workspace !== null
               ? "Drop documents or images here to copy them into the workspace"
               : onAskCreate
@@ -1468,11 +1470,14 @@ function SetView({
         {appActionsFor({ kind: "entry", path: entryPath(entry), entry })
           .filter((a) => a.header && a.icon)
           .map((a) => (
+            // Drawn as the menu draws it: disabled stays disabled, and a
+            // destructive action reads as one.
             <Button
               key={a.id}
-              variant="ghost"
+              variant={a.destructive ? "destructive" : "ghost"}
               size="icon-sm"
               data-action={a.id}
+              data-variant={a.destructive ? "destructive" : undefined}
               disabled={a.disabled}
               onClick={a.onSelect}
               aria-label={a.label}

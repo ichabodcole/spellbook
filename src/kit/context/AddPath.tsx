@@ -31,10 +31,42 @@ export function splitForCompletion(typed: string): { dir: string; prefix: string
   return { dir: i === 0 ? "/" : typed.slice(0, i), prefix: typed.slice(i + 1) };
 }
 
+/** The field's own words, and the ones a narrow field shows. */
+export const ADD_PLACEHOLDER = "Type a path to add…";
+export const ADD_PLACEHOLDER_SHORT = "Add a path…";
+
+/**
+ * Which placeholder the field shows: the full one while it fits the field's
+ * text box, else the short one, so a narrow column shows "Add a path…" whole
+ * rather than "Type a path t…". Widths in CSS pixels; a width not known yet
+ * (no layout, no canvas) keeps the full one.
+ */
+export function placeholderFor(
+  full: string,
+  short: string | undefined,
+  fullWidth: number | null,
+  room: number | null,
+): string {
+  if (short === undefined || fullWidth === null || room === null || room <= 0) return full;
+  return fullWidth <= room ? full : short;
+}
+
+/** The width `text` takes in `el`'s font, and the room its text box has; null without layout or canvas. */
+function measure(el: HTMLInputElement, text: string): { width: number; room: number } | null {
+  const ctx = document.createElement("canvas").getContext?.("2d");
+  if (!ctx || el.clientWidth === 0) return null;
+  const cs = getComputedStyle(el);
+  ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+  const room =
+    el.clientWidth - Number.parseFloat(cs.paddingLeft) - Number.parseFloat(cs.paddingRight);
+  return { width: ctx.measureText(text).width, room };
+}
+
 export function AddPath({
   listDir,
   onAdd,
-  placeholder = "Type a path to add…",
+  placeholder = ADD_PLACEHOLDER,
+  shortPlaceholder = placeholder === ADD_PLACEHOLDER ? ADD_PLACEHOLDER_SHORT : undefined,
   verb = "adds",
   foldersOnly = false,
   initialValue = "",
@@ -47,6 +79,11 @@ export function AddPath({
   listDir: (path: string) => Promise<Listing>;
   onAdd: (path: string) => void;
   placeholder?: string;
+  /**
+   * Shown instead while `placeholder` does not fit the field, as in a narrow
+   * column. The default placeholder has one; a caller's own has none unless given.
+   */
+  shortPlaceholder?: string;
   /** What Enter does, for the hint line ("adds", "sets"). */
   verb?: string;
   /** Offer folders only. */
@@ -77,6 +114,21 @@ export function AddPath({
   const [highlight, setHighlight] = useState(-1);
   const listId = useId();
   const seq = useRef(0);
+  const field = useRef<HTMLInputElement>(null);
+  // The placeholder that fits, read again whenever the field changes width.
+  const [shown, setShown] = useState(placeholder);
+  useEffect(() => {
+    const el = field.current;
+    const fit = () => {
+      const m = el ? measure(el, placeholder) : null;
+      setShown(placeholderFor(placeholder, shortPlaceholder, m?.width ?? null, m?.room ?? null));
+    };
+    fit();
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const watch = new ResizeObserver(fit);
+    watch.observe(el);
+    return () => watch.disconnect();
+  }, [placeholder, shortPlaceholder]);
 
   useEffect(() => {
     const split = splitForCompletion(value);
@@ -122,7 +174,9 @@ export function AddPath({
       <Input
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        placeholder={placeholder}
+        ref={field}
+        placeholder={shown}
+        // Named by the full placeholder whichever is shown.
         aria-label={placeholder.replace(/…$/, "")}
         // Autofocus only when opened by an explicit "Change" click, which asks for the box.
         autoFocus={autoFocus}
