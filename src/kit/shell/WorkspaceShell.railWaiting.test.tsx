@@ -9,7 +9,7 @@ import "../lib/registerDom.ts";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from "bun:test";
 import { mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { UNHEARD_LABEL, WAITING_LABEL } from "../chat/WaitingBadge.tsx";
+import { ENDED_LABEL, UNHEARD_LABEL, WAITING_LABEL } from "../chat/WaitingBadge.tsx";
 import { useDaemon } from "../context/useDaemon.ts";
 import { useWorkspace, type Workspace } from "../context/workspace.ts";
 import {
@@ -296,6 +296,55 @@ describe("the closed composer's rail shows what waits on the agent", () => {
     expect(showIcon()?.getAttribute("aria-label")).toBe(
       "Show the composer (1 note owed an answer)",
     );
+    await m.unmount();
+  });
+});
+
+describe("after End session, nothing claims the agent is working or stuck", () => {
+  /**
+   * Every waiting mark that pulses, by its words: strings, not elements, so a
+   * failure prints short (a DOM element's diff can take the runner minutes).
+   */
+  const pulsing = () =>
+    qa("[data-badge]")
+      .filter((el) => el.matches(".animate-pulse") || el.querySelector(".animate-pulse") !== null)
+      .map((el) => el.textContent || el.getAttribute("aria-label") || "?");
+
+  test("the rail, the float's line, the chat tab and the message say the session ended, and nothing pulses", async () => {
+    letGo = await agentTail();
+    const m = await mountShell();
+    await sendThenClose("one more thing");
+    await waitFor(() => railMark()?.getAttribute("data-badge") === "working", "working");
+    // The human ends the session, as End session does. The agent's tail stays
+    // open: it can answer nothing once the session is over.
+    await settle(() => {
+      ws().daemon.send({ op: "close" });
+    });
+    await waitFor(() => ws().daemon.connection === "ended", "the session ended");
+    await waitFor(() => railMark()?.getAttribute("data-badge") === "ended", "the rail's mark");
+    expect(railMark()?.className).not.toContain("animate-pulse");
+    expect(showIcon()?.getAttribute("aria-label")).toBe(
+      `Show the composer (your message: ${ENDED_LABEL.message})`,
+    );
+    expect(railLive()?.textContent).toBe(`your message: ${ENDED_LABEL.message}`);
+    expect(pulsing()).toEqual([]);
+    // The float's line, reopened.
+    await click(showIcon());
+    await waitFor(() => float() !== null, "the float");
+    const line = q('[data-slot="floating-composer"] [data-slot="float-line"] [data-badge]');
+    expect(line?.getAttribute("data-badge")).toBe("ended");
+    expect(line?.textContent).toBe(ENDED_LABEL.message);
+    expect(pulsing()).toEqual([]);
+    // The column reopened: the message's own badge and the Chat tab's dot.
+    await click(q('[data-column-control="chat-reopen"]'));
+    await waitFor(() => !ws().columns.collapsed.chat, "the column open");
+    const marks = qa('[data-pane="chat"] [data-badge]');
+    expect(marks.length).toBe(2);
+    expect(marks.map((el) => el.getAttribute("data-badge"))).toEqual(["ended", "ended"]);
+    expect(pulsing()).toEqual([]);
+    const said = marks.map((el) => `${el.textContent} ${el.getAttribute("aria-label")}`).join(" ");
+    expect(said).not.toContain("working");
+    expect(said).not.toContain("may be stuck");
     await m.unmount();
   });
 });

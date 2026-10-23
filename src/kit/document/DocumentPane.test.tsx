@@ -15,6 +15,7 @@ import { join } from "node:path";
 import { undoDepth } from "@codemirror/commands";
 import { EditorView } from "@codemirror/view";
 import { createRef, type Ref, useMemo, useState } from "react";
+import { ENDED_LABEL, NOTE_WAITING_LABEL } from "../chat/WaitingBadge.tsx";
 import type { Collapsed } from "../context/columns.ts";
 import type { Daemon } from "../context/daemonClient.ts";
 import { useDaemon } from "../context/useDaemon.ts";
@@ -825,6 +826,53 @@ describe("split, raw and rendered side by side", () => {
     expect(q(SPLIT)).toBeNull();
     expect(q(".md-prose")).toBeNull();
     expect(q('button[aria-label="Raw text"]')?.getAttribute("aria-pressed")).toBe("true");
+  });
+});
+
+describe("the note menu on the passage after the session has ended", () => {
+  test("a note still owed an answer says the session ended, not that it waits", async () => {
+    await openStory();
+    await settle(() => {
+      client?.send({ op: "note.add", doc: "story", from: 0, to: 5, body: "owed" });
+    });
+    await waitFor(() => (client?.state?.notesWaiting ?? []).length === 1, "the note owed");
+    // The rendered view: an ended session's raw view is read-only and offers no menu.
+    await click(q('button[aria-label="Rendered"]'));
+    await waitFor(() => q(".md-prose p") !== null, "the rendered text");
+    /** Right-click on the note: the badge on its row in the menu, by its words. */
+    const menuBadge = async () => {
+      // happy-dom lays nothing out, so the page is told where the pointer is: on the note.
+      const at = q(".md-prose p")?.firstChild as Node;
+      const doc = document as unknown as { caretRangeFromPoint?: unknown };
+      const was = doc.caretRangeFromPoint;
+      doc.caretRangeFromPoint = () => {
+        const r = document.createRange();
+        r.setStart(at, 2);
+        r.setEnd(at, 2);
+        return r;
+      };
+      try {
+        await settle(() => {
+          q(".md-prose p")?.dispatchEvent(
+            new window.MouseEvent("contextmenu", { bubbles: true, cancelable: true }),
+          );
+        });
+      } finally {
+        doc.caretRangeFromPoint = was;
+      }
+      const row = [...document.querySelectorAll('[data-slot="note-at-selection"] button')].find(
+        (b) => (b.textContent ?? "").includes("owed"),
+      );
+      const dot = row?.querySelector('[data-waiting-of="note"]');
+      return `${dot?.getAttribute("data-badge")}: ${dot?.getAttribute("aria-label")}`;
+    };
+    // Before the end: with the agent (this harness's snapshot does not say no agent listens).
+    expect(await menuBadge()).toBe(`working: ${NOTE_WAITING_LABEL.working}`);
+    await settle(() => {
+      client?.send({ op: "close" });
+    });
+    await waitFor(() => client?.connection === "ended", "the session ended");
+    expect(await menuBadge()).toBe(`ended: ${ENDED_LABEL.note}`);
   });
 });
 

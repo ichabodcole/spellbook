@@ -1411,9 +1411,9 @@ function ShellBody({
     ...o,
     name: docName(o.doc),
   }));
-  const notesOwed = owedSummary(notesWaiting, agentListening);
+  const notesOwed = owedSummary(notesWaiting, agentListening, ended);
   /** Everything waiting on the agent, as one mark: the closed composer's rail button. */
-  const composerWaiting = waitingOnAgent(state.waiting, notesWaiting, agentListening);
+  const composerWaiting = waitingOnAgent(state.waiting, notesWaiting, agentListening, ended);
   const attachable: Attachable | null = heldHere
     ? {
         doc: heldHere.doc,
@@ -1504,6 +1504,7 @@ function ShellBody({
       messages={state.chat}
       waiting={state.waiting}
       agentListening={agentListening}
+      sessionEnded={ended}
       // Drawn in one place at a time: here while the column is open, floating
       // at the foot of the centre while it is collapsed.
       composer={collapsed.chat ? null : <ChatComposer {...composerProps} />}
@@ -1529,6 +1530,7 @@ function ShellBody({
       waiting={noteBadges}
       others={notesElsewhere}
       agentListening={agentListening}
+      sessionEnded={ended}
       asked={notesAsked}
       {...(askNote ? { onAsk: (n) => openDoc && askNote(openDoc.slug, n.id) } : {})}
       onOpenDoc={(doc) => send({ op: "open.doc", doc })}
@@ -1582,7 +1584,7 @@ function ShellBody({
       label: (
         <span className="flex items-center gap-1">
           Chat
-          {state.waiting && <WaitingDot badge={badgeFor(state.waiting, agentListening)} />}
+          {state.waiting && <WaitingDot badge={badgeFor(state.waiting, agentListening, ended)} />}
         </span>
       ),
       node: chatPanel_,
@@ -1638,6 +1640,7 @@ function ShellBody({
         docs={state.docs}
         openDoc={openDoc?.slug ?? null}
         agentListening={agentListening}
+        sessionEnded={ended}
         asked={notesAsked}
         {...(askNote ? { onAskNote: (w) => askNote(w.doc, w.noteId) } : {})}
         onOpen={() => {

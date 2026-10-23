@@ -43,14 +43,28 @@ export const ASKED_LABEL: Record<Waiting["badge"], string> = {
  */
 export const UNHEARD_LABEL = "no agent is listening yet; this waits until one is";
 
-/** A badge as the surface shows it: the daemon's two, or `unheard` (`UNHEARD_LABEL`). */
-export type BadgeKind = Waiting["badge"] | "unheard";
+/**
+ * A badge as the surface shows it: the daemon's two, `unheard` (`UNHEARD_LABEL`),
+ * or `ended` (`ENDED_LABEL`).
+ */
+export type BadgeKind = Waiting["badge"] | "unheard" | "ended";
 
 /**
  * What is waiting: a message, a note, or a note asked about in the
  * conversation. The same rule, each in its own words.
  */
 export type WaitingOf = "message" | "note" | "asked";
+
+/**
+ * What a wait says once the session has ended: nothing can answer any more, so
+ * neither "working" nor "may be stuck" is true. The surface's own reading of
+ * the ended session, as `unheard` is of presence; it does not pulse.
+ */
+export const ENDED_LABEL: Record<WaitingOf, string> = {
+  message: "the session ended before an answer came",
+  note: "the session ended before the agent answered",
+  asked: "asked, but the session ended before an answer came",
+};
 
 const LABELS: Record<WaitingOf, Record<Waiting["badge"], string>> = {
   message: WAITING_LABEL,
@@ -62,11 +76,17 @@ const LABELS: Record<WaitingOf, Record<Waiting["badge"], string>> = {
  * The badge to show: `unheard` over the daemon's while no agent listens, except
  * while the agent's own "still working" holds, which is better evidence than
  * presence and must never be overruled by it. A message's wait or a note's.
+ *
+ * Once the session has ended (`ended`), `ended` over everything: the last
+ * snapshot's wait is a fact about a session nobody can answer any more, and an
+ * agent's tail still open, or its snooze, is no evidence of work.
  */
 export function badgeFor(
   waiting: Pick<Waiting, "badge" | "acknowledged">,
   agentListening: boolean,
+  ended = false,
 ): BadgeKind {
+  if (ended) return "ended";
   return agentListening || waiting.acknowledged ? waiting.badge : "unheard";
 }
 
@@ -77,7 +97,16 @@ export function badgeFor(
 export const ASKED_UNHEARD_LABEL = "asked; no agent is listening yet";
 
 export const labelOf = (badge: BadgeKind, of: WaitingOf = "message"): string =>
-  badge === "unheard" ? (of === "asked" ? ASKED_UNHEARD_LABEL : UNHEARD_LABEL) : LABELS[of][badge];
+  badge === "ended"
+    ? ENDED_LABEL[of]
+    : badge === "unheard"
+      ? of === "asked"
+        ? ASKED_UNHEARD_LABEL
+        : UNHEARD_LABEL
+      : LABELS[of][badge];
+
+/** Neither working nor stuck: a faint, still dot, and dim words. */
+const quiet = (badge: BadgeKind) => badge === "unheard" || badge === "ended";
 
 export function WaitingBadge({
   badge,
@@ -103,7 +132,7 @@ export function WaitingBadge({
       className={cn(
         "flex items-center gap-1.5 text-[11px]",
         !flush && "mt-1",
-        working || badge === "unheard" ? "text-ink-dim" : "text-attention",
+        working || quiet(badge) ? "text-ink-dim" : "text-attention",
         className,
       )}
     >
@@ -111,11 +140,7 @@ export function WaitingBadge({
         aria-hidden
         className={cn(
           "inline-block size-1.5 shrink-0 rounded-full",
-          working
-            ? "animate-pulse bg-brand"
-            : badge === "unheard"
-              ? "bg-ink-faint"
-              : "bg-attention",
+          working ? "animate-pulse bg-brand" : quiet(badge) ? "bg-ink-faint" : "bg-attention",
         )}
       />
       {labelOf(badge, of)}
@@ -147,7 +172,7 @@ export function WaitingDot({
       data-waiting-of={of}
       className={cn(
         "inline-block size-1.5 shrink-0 rounded-full",
-        working ? "animate-pulse bg-brand" : badge === "unheard" ? "bg-ink-faint" : "bg-attention",
+        working ? "animate-pulse bg-brand" : quiet(badge) ? "bg-ink-faint" : "bg-attention",
       )}
     />
   );

@@ -17,6 +17,11 @@ type ChatSidebarBase = {
    * unanswered message says it is waiting for one. Default true.
    */
   agentListening?: boolean;
+  /**
+   * The session has ended: an unanswered message's badge says so, instead of
+   * working or may be stuck. Default false.
+   */
+  sessionEnded?: boolean;
   /** A document's display name, from its slug. */
   docName?: (slug: string) => string;
   /** A path's display name, for a message's chip: a bundle by its title. */
@@ -68,6 +73,7 @@ export function ChatSidebar(props: ChatSidebarProps) {
     messages,
     waiting,
     agentListening = true,
+    sessionEnded = false,
     docName,
     pathName,
     aboutPart,
@@ -109,7 +115,9 @@ export function ChatSidebar(props: ChatSidebarProps) {
             <ChatMessageView
               key={m.id}
               message={m}
-              badge={waiting?.messageId === m.id ? badgeFor(waiting, agentListening) : null}
+              badge={
+                waiting?.messageId === m.id ? badgeFor(waiting, agentListening, sessionEnded) : null
+              }
               docName={docName}
               pathName={pathName}
               aboutPart={aboutPart}

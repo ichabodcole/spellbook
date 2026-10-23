@@ -7,7 +7,7 @@
 // the same entry, so none of them can disagree about a note.
 import type { Message, NoteWaiting, Waiting } from "../workspace/protocol";
 import { askOutstanding, type NoteFacts } from "../workspace/waiting.ts";
-import { type BadgeKind, badgeFor, UNHEARD_LABEL } from "./WaitingBadge.tsx";
+import { type BadgeKind, badgeFor, ENDED_LABEL, UNHEARD_LABEL } from "./WaitingBadge.tsx";
 
 /**
  * The owed notes the human has already asked about ("Ask the agent") with no
@@ -135,21 +135,29 @@ export function owedLabel(waiting: readonly NoteWaiting[]): string {
  * The one mark for every owed note in the session (the Notes tab's dot), or
  * null when nothing is owed. While no agent listens it reads `unheard`, as a
  * message's badge does, unless the agent's snooze holds: the snooze is one for
- * the session, so it holds for every note or none.
+ * the session, so it holds for every note or none. Once the session has ended
+ * (`ended`) it reads `ended`, whatever the notes' own badges were.
  */
 export function owedSummary(
   waiting: readonly NoteWaiting[],
   agentListening: boolean,
+  ended = false,
 ): { badge: BadgeKind; label: string } | null {
   const badge = loudest(waiting.map((n) => n.badge));
   if (!badge) return null;
   const shown = badgeFor(
     { badge, ...(waiting.every((n) => n.acknowledged) ? { acknowledged: true } : {}) },
     agentListening,
+    ended,
   );
   return {
     badge: shown,
-    label: shown === "unheard" ? `${owedCount(waiting)}; ${UNHEARD_LABEL}` : owedLabel(waiting),
+    label:
+      shown === "ended"
+        ? `${owedCount(waiting)}; ${ENDED_LABEL.note}`
+        : shown === "unheard"
+          ? `${owedCount(waiting)}; ${UNHEARD_LABEL}`
+          : owedLabel(waiting),
   };
 }
 

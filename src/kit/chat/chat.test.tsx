@@ -29,6 +29,7 @@ import { FINISHED_STATUSES, isFinishedStatus, TasksPanel } from "./TasksPanel.ts
 import { SHOW_TASKS_ACTION, TaskToasts } from "./TaskToasts.tsx";
 import {
   badgeFor,
+  ENDED_LABEL,
   UNHEARD_LABEL,
   WAITING_LABEL,
   WaitingBadge,
@@ -119,6 +120,40 @@ describe("WaitingBadge and WaitingDot", () => {
     expect(stalled?.innerHTML).not.toContain("animate-pulse");
     expect(stalled?.textContent).toContain("may be stuck");
     expect(q('span[role="img"]')?.getAttribute("aria-label")).toBe(WAITING_LABEL.stalled);
+    await m.unmount();
+  });
+
+  test("ended is still and faint, never the stuck colour, in each wait's own words", async () => {
+    const m = await mount(
+      <>
+        <WaitingBadge badge="ended" />
+        <WaitingBadge badge="ended" of="note" />
+        <WaitingBadge badge="ended" of="asked" />
+        <WaitingDot badge="ended" of="asked" />
+      </>,
+    );
+    const badges = qa("p[data-badge]");
+    expect(badges.map((b) => b.textContent)).toEqual([
+      ENDED_LABEL.message,
+      ENDED_LABEL.note,
+      ENDED_LABEL.asked,
+    ]);
+    // Three wordings, none of them another's.
+    expect(new Set(Object.values(ENDED_LABEL)).size).toBe(3);
+    for (const b of badges) {
+      expect(b.className).toContain("text-ink-dim");
+      expect(b.className).not.toContain("text-attention");
+      const dot = b.querySelector("span") as Element;
+      expect(dot.className).toContain("bg-ink-faint");
+      expect(dot.className).not.toContain("bg-attention");
+      expect(dot.className).not.toContain("animate-pulse");
+    }
+    const dot = q('span[role="img"]') as Element;
+    expect(dot.getAttribute("aria-label")).toBe(ENDED_LABEL.asked);
+    expect(dot.className).toContain("bg-ink-faint");
+    expect(dot.className).not.toContain("bg-attention");
+    // An asked note after the end reads the asked words, not the note's.
+    expect(badgeFor({ badge: "stalled" }, true, true)).toBe("ended");
     await m.unmount();
   });
 });

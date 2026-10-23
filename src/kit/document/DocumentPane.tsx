@@ -2118,7 +2118,9 @@ export function DocumentPane({
           const n = doc?.notes.find((x) => x.id === id);
           // Still owed an answer: the note menu on the passage says so too.
           const owed = w.state.notesWaiting?.find((o) => o.doc === doc?.slug && o.noteId === id);
-          const waiting = owed ? badgeFor(owed, w.state.agentListening !== false) : undefined;
+          const waiting = owed
+            ? badgeFor(owed, w.state.agentListening !== false, daemon.connection === "ended")
+            : undefined;
           return n ? [{ id, label: n.body, ...(waiting ? { waiting } : {}) }] : [];
         })}
         onClose={() => setNoteAt(null)}

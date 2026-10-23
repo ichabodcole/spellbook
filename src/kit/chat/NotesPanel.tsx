@@ -46,6 +46,7 @@ function Note({
   focused,
   waiting,
   agentListening,
+  sessionEnded,
   asked,
   onAsk,
   onGoTo,
@@ -59,6 +60,7 @@ function Note({
   /** Owed an answer, and how long: absent when it is not. */
   waiting: NoteWaiting | undefined;
   agentListening: boolean;
+  sessionEnded: boolean;
   /** Asked about in the conversation, and not answered yet. */
   asked: boolean;
   onAsk: ((n: PlacedNote) => void) | undefined;
@@ -68,7 +70,7 @@ function Note({
   onRemove: (id: string) => void;
 }) {
   const uncertain = UNCERTAIN[note.how];
-  const shownBadge = waiting ? badgeFor(waiting, agentListening) : null;
+  const shownBadge = waiting ? badgeFor(waiting, agentListening, sessionEnded) : null;
   const anchored = note.from !== null;
   // EDITING CHANGES WHAT A NOTE SAYS, NEVER WHAT IT IS ABOUT. The quote stays
   // put: a note you rewrote is still about the passage you made it on, and
@@ -284,6 +286,7 @@ export function NotesPanel({
   waiting = NONE_WAITING,
   others = [],
   agentListening = true,
+  sessionEnded = false,
   asked = NONE_ASKED,
   onAsk,
   onOpenDoc,
@@ -316,6 +319,11 @@ export function NotesPanel({
     acknowledged?: true;
   }[];
   agentListening?: boolean;
+  /**
+   * The session has ended: a note owed an answer says so, instead of working or
+   * may be stuck, and Ask the agent is not offered. Default false.
+   */
+  sessionEnded?: boolean;
   /**
    * The waiting notes already asked about in the conversation, unanswered, by
    * id (`askedAbout`): their badge says so, and Ask the agent is not offered
@@ -401,7 +409,7 @@ export function NotesPanel({
                 title={`Open ${o.name} to see its notes`}
                 className="flex items-center gap-1.5 rounded-sm text-left hover:text-ink hover:underline"
               >
-                <WaitingDot of="note" badge={badgeFor(o, agentListening)} />
+                <WaitingDot of="note" badge={badgeFor(o, agentListening, sessionEnded)} />
                 <span className="min-w-0 truncate">
                   {o.count === 1 ? "A note" : `${o.count} notes`} owed an answer on {o.name}
                 </span>
@@ -425,6 +433,7 @@ export function NotesPanel({
                 focused={n.id === focusedId}
                 waiting={waiting.get(n.id)}
                 agentListening={agentListening}
+                sessionEnded={sessionEnded}
                 asked={asked.has(n.id)}
                 onAsk={onAsk}
                 onGoTo={onGoTo}

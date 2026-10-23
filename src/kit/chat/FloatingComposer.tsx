@@ -58,6 +58,7 @@ export function FloatingComposer({
   docs = [],
   openDoc = null,
   agentListening = true,
+  sessionEnded = false,
   asked,
   onAskNote,
   onOpen,
@@ -77,6 +78,8 @@ export function FloatingComposer({
   /** The open document: a note on it needs no document named. */
   openDoc?: string | null;
   agentListening?: boolean;
+  /** The session has ended: a wait's badge says so, and nothing is offered to ask. */
+  sessionEnded?: boolean;
   /** The waiting notes already asked about, unanswered, by id (`askedAbout`). */
   asked?: ReadonlySet<string>;
   /**
@@ -94,7 +97,7 @@ export function FloatingComposer({
   const line = waiting ? null : latestAgentLine(messages);
   const owed = floatNote(notesWaiting, docs, asked);
   const owedAsked = owed !== null && asked?.has(owed.waiting.noteId) === true;
-  const owedBadge = owed ? badgeFor(owed.waiting, agentListening) : null;
+  const owedBadge = owed ? badgeFor(owed.waiting, agentListening, sessionEnded) : null;
   return (
     <div data-slot="floating-composer" className="mx-auto flex w-full max-w-2xl flex-col gap-1">
       {/* A note with the agent, on a row of its own above the conversation's
@@ -134,7 +137,7 @@ export function FloatingComposer({
       <div className="flex min-h-6 items-center gap-1 pl-1 text-[11px] text-ink-dim">
         <div data-slot="float-line" className="min-w-0 flex-1">
           {waiting ? (
-            <WaitingBadge flush badge={badgeFor(waiting, agentListening)} />
+            <WaitingBadge flush badge={badgeFor(waiting, agentListening, sessionEnded)} />
           ) : line ? (
             <p className="truncate" title={line}>
               <span className="mr-1.5 font-medium text-ink-faint">Agent</span>
