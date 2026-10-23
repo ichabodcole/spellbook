@@ -49,6 +49,34 @@ export function readFrontmatter(text: string): Frontmatter | null {
   }
 }
 
+/** A top-level key at the start of a line: bare, or quoted either way. */
+const KEY_LINE = /^(?:"([^"\n]+)"|'([^'\n]+)'|([A-Za-z_][\w-]*))[ \t]*:/;
+
+/**
+ * The top-level key whose entry holds `offset`, a whole-text offset: what a reveal
+ * in the frontmatter (a broken `related:` reference, say) points the header at,
+ * since the rendered view draws the block as a header, not as text. The entry
+ * runs from its key's line to the next key's, so an offset in a list under
+ * `related:` is `related`. `""` for an offset on the block's delimiters or before
+ * its first key, and null when it is not in a block at all.
+ */
+export function frontmatterKeyAt(text: string, offset: number): string | null {
+  const { raw, bodyStart } = splitFrontmatter(text);
+  if (raw === null || offset < 0 || offset >= bodyStart) return null;
+  // The content starts on the line after the opening `---`.
+  const start = text.indexOf("\n") + 1;
+  let key = "";
+  let at = start;
+  for (const line of raw.split("\n")) {
+    if (at > offset) break;
+    const m = KEY_LINE.exec(line);
+    if (m) key = m[1] ?? m[2] ?? m[3] ?? "";
+    at += line.length + 1;
+  }
+  // On the closing delimiter: no key's entry.
+  return offset >= start + raw.length ? "" : key;
+}
+
 /** A value from arbitrary YAML, as one line of text. */
 export function showValue(value: unknown): string {
   if (value === null || value === undefined) return "—";

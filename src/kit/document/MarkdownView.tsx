@@ -46,8 +46,12 @@ import { useCoalescedText } from "./coalesce.ts";
 import type { SelectionReport } from "./DocumentView.tsx";
 import { Embed, type EmbedSource, pendingEmbeds } from "./embeds.tsx";
 import { useFind } from "./FindBar.tsx";
-import { type FrontmatterChips, FrontmatterHeader } from "./FrontmatterHeader.tsx";
-import { readFrontmatter } from "./frontmatter.ts";
+import {
+  type FrontmatterChips,
+  FrontmatterHeader,
+  headerFieldElements,
+} from "./FrontmatterHeader.tsx";
+import { frontmatterKeyAt, readFrontmatter } from "./frontmatter.ts";
 import { highlightRegistry, makeHighlight } from "./highlight.ts";
 import type { AskProfileFix } from "./ProfileChip.tsx";
 import { type Anchor, anchorCache, lineAtTop, type Place, topForLine } from "./place.ts";
@@ -248,6 +252,8 @@ export function MarkdownView({
   // The same text, as the reader sees it, carrying where each part came from.
   const projection = useMemo(() => project(text), [text]);
   const body = useRef<HTMLDivElement>(null);
+  /** The frontmatter header's box: where a reveal in the frontmatter is marked. */
+  const headerBox = useRef<HTMLDivElement>(null);
   // Every widget's span in the current rendering, and the node drawn into it.
   // Collected after the HTML is in the DOM, and again whenever it is replaced (the old
   // spans are gone with it).
@@ -520,6 +526,22 @@ export function MarkdownView({
   const flashSeq = flash?.seq;
   // biome-ignore lint/correctness/useExhaustiveDependencies: the request's seq is the trigger; its offsets are read with it.
   useEffect(() => {
+    // In the frontmatter, which is drawn as the header and not as text: the field
+    // the range is in is marked instead, the way the compare view marks a row.
+    const key = flash ? frontmatterKeyAt(text, flash.from) : null;
+    const box = headerBox.current?.querySelector<HTMLElement>('[data-slot="frontmatter-header"]');
+    if (key !== null && box) {
+      const marked = headerFieldElements(box, key);
+      for (const el of marked) el.setAttribute("data-flash", "on");
+      marked[0]?.scrollIntoView?.({ block: "center" });
+      const t = setTimeout(() => {
+        for (const el of marked) el.removeAttribute("data-flash");
+      }, FLASH_PAINT_MS);
+      return () => {
+        clearTimeout(t);
+        for (const el of marked) el.removeAttribute("data-flash");
+      };
+    }
     const reg = highlightRegistry();
     const root = body.current;
     if (!reg || !root || !flash || flash.from >= flash.to) return;
@@ -553,7 +575,7 @@ export function MarkdownView({
         data-slot="markdown-view"
       >
         {frontmatter && (
-          <div className="mx-auto max-w-[76ch] px-8 pt-7">
+          <div ref={headerBox} className="mx-auto max-w-[76ch] px-8 pt-7">
             <FrontmatterHeader
               frontmatter={frontmatter}
               chips={frontmatterChips}

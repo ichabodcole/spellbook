@@ -979,6 +979,10 @@ export function DocumentView({
   revealed.current = onRevealed;
   /** When a followed heading's mark clears (see the reveal effect). */
   const headingMarkTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  /** The last clear this view has acted on (see the clear effect below). */
+  const unpainted = useRef(clearSeq);
+  const clearNow = useRef(clearSeq);
+  clearNow.current = clearSeq;
   useEffect(() => {
     const v = view.current;
     if (!v || !reveal) return;
@@ -999,6 +1003,12 @@ export function DocumentView({
         : EditorView.scrollIntoView(start, { y: "center" }),
     });
     v.focus();
+    // A clear that came with the reveal is spent by it. Opening another document
+    // at a place clears what was held in the one left, in the same render as the
+    // reveal; the clear, run after this, would collapse the range just selected
+    // to its end. The selection is about the text on screen now, which is the
+    // reveal's.
+    unpainted.current = clearNow.current;
     revealed.current?.(reveal.seq);
     if (!mark) return;
     // ⛔ NOT this effect's cleanup: spending the reveal (just above) re-renders
@@ -1037,7 +1047,6 @@ export function DocumentView({
   // what is chosen. Collapsing to the head fires the update listener, which reports
   // the empty range (the same path a click takes); nothing is held by then, so it
   // does not come round again.
-  const unpainted = useRef(clearSeq);
   useEffect(() => {
     const v = view.current;
     if (!v || clearSeq === undefined || clearSeq === unpainted.current) return;

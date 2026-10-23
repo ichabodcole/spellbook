@@ -224,4 +224,37 @@ describe("the header", () => {
     const listed = [...(header?.querySelectorAll("dt") ?? [])].map((d) => d.textContent);
     expect(listed).toEqual(["generated"]);
   });
+
+  // kit-reveal-frontmatter-and-selection: a broken `related:` reference opened at
+  // its place marked nothing, since the block is drawn as this header, not as text.
+  test("a reveal in the block marks the field it is in, not the body", async () => {
+    const DOC = FM + BODY;
+    const flash = (word: string, seq: number) => ({
+      from: DOC.indexOf(word),
+      to: DOC.indexOf(word) + word.length,
+      seq,
+    });
+    const marked = (c: HTMLElement) =>
+      [...c.querySelectorAll('[data-flash="on"]')].map(
+        (e) => `${e.tagName.toLowerCase()}:${e.textContent}`,
+      );
+    const m = await mount(<MarkdownView text={DOC} flash={flash("capital", 1)} />);
+    expect(marked(m.container)).toEqual(["dt:world_role", "dd:capital"]);
+    expect(highlights.has("doc-flash")).toBe(false);
+    // A key a chip shows; a key split between a dotted chip and its row, both.
+    await m.render(<MarkdownView text={DOC} flash={flash("draft", 2)} />);
+    expect(marked(m.container)).toEqual(["span:draft"]);
+    await m.render(<MarkdownView text={DOC} flash={flash("2026-10-01", 3)} />);
+    expect(marked(m.container)).toEqual(["span:2026-10-01", "dt:generated", "dd:by: an agent"]);
+    // On a delimiter, the header itself.
+    await m.render(<MarkdownView text={DOC} flash={{ from: 0, to: 3, seq: 4 }} />);
+    expect(m.container.querySelector('[data-flash="on"]')?.getAttribute("data-slot")).toBe(
+      "frontmatter-header",
+    );
+    // In the body, the text is painted as before and the header is left alone.
+    await m.render(<MarkdownView text={DOC} flash={flash("bakery", 5)} />);
+    expect(marked(m.container)).toEqual([]);
+    expect(highlights.get("doc-flash")?.ranges[0]?.toString()).toBe("bakery");
+    await m.unmount();
+  });
 });

@@ -6,7 +6,14 @@ import { describe, expect, test } from "bun:test";
 import { splitFrontmatter } from "../lib/frontmatter.ts";
 import { renderMarkdown } from "../lib/markdown.ts";
 import { defaultChips } from "./FrontmatterHeader.tsx";
-import { generatedAt, listField, readFrontmatter, showValue, trustTier } from "./frontmatter.ts";
+import {
+  frontmatterKeyAt,
+  generatedAt,
+  listField,
+  readFrontmatter,
+  showValue,
+  trustTier,
+} from "./frontmatter.ts";
 import { insertAt } from "./pane.ts";
 import { sourceLine } from "./place.ts";
 import { lineAt, project, toPlain, toSource } from "./projection.ts";
@@ -261,5 +268,32 @@ describe("the projection skips the block", () => {
 
   test("a block and nothing else projects to nothing", () => {
     expect(project(FM)).toEqual({ plain: "", segments: [] });
+  });
+});
+
+// A reveal in the frontmatter (a broken `related:` reference opened from the link
+// check) has no text to land on in the rendered view; the header marks the field.
+describe("the key a frontmatter offset is in", () => {
+  const LISTED =
+    '---\ntitle: D\nrelated:\n  - ./a.md\n  - ./ghost.md\n"quoted key": 1\n---\n\nBody.\n';
+  test("each key's whole entry, a list under it included, and a quoted key unquoted", () => {
+    expect(frontmatterKeyAt(DOC, DOC.indexOf("feature"))).toBe("type");
+    expect(frontmatterKeyAt(DOC, DOC.indexOf("2026-10-01"))).toBe("generated");
+    expect(frontmatterKeyAt(LISTED, LISTED.indexOf("./ghost.md"))).toBe("related");
+    expect(frontmatterKeyAt(LISTED, LISTED.indexOf("related"))).toBe("related");
+    expect(frontmatterKeyAt(LISTED, LISTED.indexOf(": 1"))).toBe("quoted key");
+  });
+
+  test("a delimiter is no key's; the body and a document with no block are not the block's", () => {
+    expect(frontmatterKeyAt(DOC, 0)).toBe("");
+    expect(frontmatterKeyAt(DOC, FM.lastIndexOf("---"))).toBe("");
+    expect(frontmatterKeyAt(DOC, DOC.indexOf("bakery"))).toBeNull();
+    expect(frontmatterKeyAt(BODY, 3)).toBeNull();
+  });
+
+  test("CRLF lines count their carriage return", () => {
+    const crlf = "---\r\ntitle: D\r\nrelated: [./ghost.md]\r\n---\r\n\r\nBody.\r\n";
+    expect(frontmatterKeyAt(crlf, crlf.indexOf("./ghost.md"))).toBe("related");
+    expect(frontmatterKeyAt(crlf, crlf.indexOf("D\r"))).toBe("title");
   });
 });

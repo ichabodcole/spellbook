@@ -208,6 +208,14 @@ describe("the rendered-markdown sheet", () => {
     expect(doc).toContain(`@keyframes ${name} {`);
   });
 
+  test("no keyframe writes a color-mix(), which the build drops the frame for", () => {
+    // The build adds an @supports copy for each color-mix(), which a keyframe
+    // cannot hold: it dropped kit-flash's tinted frame, and the flash showed nothing.
+    const frames = [...doc.matchAll(/@keyframes[^{]*\{([\s\S]*?)\n\}/g)].map((m) => m[1] ?? "");
+    expect(frames.length).toBeGreaterThan(0);
+    for (const f of frames) expect(f).not.toContain("color-mix(");
+  });
+
   test("uses the kit's tokens, never a fixed colour", () => {
     const body = doc.replace(/\/\*[\s\S]*?\*\//g, "");
     expect(body).not.toMatch(/#[0-9a-f]{3,8}\b/i);

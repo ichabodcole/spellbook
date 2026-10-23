@@ -188,6 +188,25 @@ function Chip({ chip }: { chip: FrontmatterChip }) {
   );
 }
 
+/**
+ * What in a drawn header shows `key` (`frontmatterKeyAt`'s answer): its chip, a
+ * chip on one of its entries (`generated.at` for `generated`), its paragraph, its
+ * tags, or its row. With none (an empty key, a block that would not parse, or a
+ * key the header shows nowhere, like `title`), the header itself, so a reveal in
+ * the frontmatter always marks something.
+ */
+export function headerFieldElements(header: HTMLElement, key: string): HTMLElement[] {
+  const hits =
+    key === ""
+      ? []
+      : [...header.querySelectorAll<HTMLElement>("[data-field], [data-chip]")].filter((el) => {
+          const field = el.getAttribute("data-field");
+          const chip = el.getAttribute("data-chip");
+          return field === key || chip === key || (chip?.startsWith(`${key}.`) ?? false);
+        });
+  return hits.length > 0 ? hits : [header];
+}
+
 export function FrontmatterHeader({
   frontmatter,
   chips: chipSlot,
@@ -251,10 +270,14 @@ export function FrontmatterHeader({
         </div>
       )}
 
-      {description && <p className="text-ink-dim">{description}</p>}
+      {description && (
+        <p data-field="description" className="text-ink-dim">
+          {description}
+        </p>
+      )}
 
       {tags.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1">
+        <div data-field="tags" className="flex flex-wrap items-center gap-1">
           {tags.map((t) => (
             <Chip key={t} chip={{ label: `#${t}`, tone: "outline" }} />
           ))}
@@ -265,8 +288,12 @@ export function FrontmatterHeader({
         <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
           {others.map(([k, v]) => (
             <div key={k} className="contents">
-              <dt className="font-mono text-ink-faint">{k}</dt>
-              <dd className="min-w-0 break-words text-ink-dim">{showValue(v)}</dd>
+              <dt data-field={k} className="font-mono text-ink-faint">
+                {k}
+              </dt>
+              <dd data-field={k} className="min-w-0 break-words text-ink-dim">
+                {showValue(v)}
+              </dd>
             </div>
           ))}
         </dl>

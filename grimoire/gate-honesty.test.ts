@@ -411,6 +411,12 @@ import { join } from "node:path";
 // path comment. styles.css grew by its 18-line header (395 -> 413), which
 // says why the last two @imports sit at the end. Nothing new became blind:
 // the page's tests and the browser check read the sheet's effect, as before.
+//
+//     +5    src/kit/theme/document.css   (277 -> 282)
+// kit-reveal-frontmatter-and-selection: the flash's tint moved out of its
+// keyframe into a custom property (the build dropped a keyframe holding a
+// color-mix), with a comment saying why. theme.test.ts now refuses a
+// color-mix in any keyframe, so the five lines are read by a test.
 const DECLARED_BLIND: Record<string, number> = {
   "src/digestify/surface/styles.css": 515,
   "src/digestify/surface/index.html": 26,
@@ -423,7 +429,7 @@ const DECLARED_BLIND: Record<string, number> = {
   "src/imago/surface/styles.css": 167,
   "plugins/spellbook/skills/magpie/scripts/remove.py": 145,
   "src/kit/theme/base.css": 257,
-  "src/kit/theme/document.css": 277,
+  "src/kit/theme/document.css": 282,
   "src/kit/theme/shell.css": 53,
   "src/astrolabe/surface/styles.css": 104,
   "src/astrolabe/surface/index.html": 35,
