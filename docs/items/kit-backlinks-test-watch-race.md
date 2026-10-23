@@ -33,6 +33,20 @@ once, then waits for the file watch to report it. The test harness has a
 write-until-seen helper for exactly this, whose comment records watch-arming
 writes lost under load, and this test doesn't use it.
 
+**Cause and fix (2026-10-23, `impl/watch-test-regression`, `8b4f2433`):** the
+cause is the one in
+[kit-watch-tests-unproven-watch](kit-watch-tests-unproven-watch.md): a write
+made straight after a watch is armed, before FSEvents delivers for it, is never
+reported. The cause was traced in `fileGone.test.ts`, not in this file. Here it
+is inferred from the same pattern and from the loop below. The test's `c.md` and
+`d.md` writes, and "dot-paths" final `b.md` write, now go through
+`writeUntilSeen`. No timeout was raised. In a short interleaved loop alone, with
+`fseventsd` saturated by other work, the base failed 5 of 11 runs (6 of them in
+the two backlinks cells, 2 in the `_meta/profiles` cell) and the fix failed 1
+of 11. That one was a process stall ("no state frame yet" in `beforeEach`), not
+a watch. The 50-run bar was not run: the machine was taking over a minute for
+each 6 s run.
+
 ## Definition of done
 
 - [ ] Confirm the cause, and fix it in the test (or the watch, if it really is
