@@ -49,7 +49,7 @@ reader for every convention that follows.
       sign's list, and is not counted in the sign.
 - [x] Links between the session's own documents don't count as "leaving", even
       when each was added as its own set.
-- [ ] In a session like the review above, the sign shows only links that are
+- [x] In a session like the review above, the sign shows only links that are
       really broken.
 - [x] A real broken link (a typo'd path, a deleted file) still shows, and its
       list still opens it at its line.
@@ -101,6 +101,56 @@ The third box is not ticked. Two things in that session are still on the sign:
 
 Whether the sign should show "leaving" at all is a question for Cole.
 
+## Follow-up (2026-10-23, Cole's rulings 4–5)
+
+The change is `c2ce61c1`, all in kit code.
+
+**Ruling 4: "leaving the set" is listed, not counted.** The sign's number and
+its words now count only what is broken. Links to files the session does not
+hold stay in the list under "Leaving the set", with a fainter header, and leave
+the number. The daemon's set `total`s leave them out too, so the group headers
+still add up to the sign, and a group with nothing counted shows no number.
+`count` already left them out. The agent's `link-check` still reports `leaving`
+in full, apart from the count, and the help and SKILL say to offer to add the
+files it lands on.
+
+- **Before and after, in a real browser,** on a copy of the review session (the
+  cycle doc and its 18 items, each added alone, one typo planted). Before, the
+  sign read "1 broken link, 3 broken frontmatter references, 11 leaving the set"
+  (15). After, it reads "1 broken link, 3 broken frontmatter references" (4).
+  Those 4 are broken under Ruling 3, so the third box is ticked.
+- **Only leaving links, nothing broken: a quiet mark.** The sign shows a plain
+  link icon and a small word in the same faint ink: "11 leaving", or "2
+  unresolved" when only unresolved references are listed, or "11 leaving, 2
+  unresolved" when both are (Cole, 2026-10-23). At narrow widths it shows the
+  icon and the number, as the sign already does. Its label says "nothing broken;
+  listed: links leaving the set", and a click opens the list. Leaving links stay
+  reachable, and the sign does not look like a problem. A session with only
+  unresolved references gets the same mark; before this, they had no way in. A
+  clean session still shows nothing. Not taken: hiding the sign, which would
+  leave the leaving links nowhere in the UI.
+- **Counted first (Cole, 2026-10-23).** When the list opens, every set with
+  something counted comes first, with only its counted sections. Then, under
+  each set's name again and with no number, come the "Unresolved references" and
+  "Leaving the set" sections. Hoisting was chosen over sorting groups, because a
+  sorted group still carries its own quiet sections. In the review session the
+  cycle doc's group alone lists a leaving link and several unresolved
+  references, which would push the next counted entry down. On the
+  review-session copy in a real browser, all 4 counted entries are on the first
+  screen. A list from a daemon that names no sets puts its counted sections
+  first in the same way.
+- **Tests:** `LinkCheck.sets.test.tsx` covers the quiet mark: its plain icon,
+  its faint weight, its word (and narrow number), its label for leaving and for
+  unresolved references, and the quiet section headers. It also covers counted
+  first, grouped and ungrouped. Each of these was planted and went red.
+
+**Ruling 5: a link between two folder sets opens the other document.** Checked
+in a real browser, with sets A and B and `A/alpha.md` linking `../B/beta.md`. A
+real mouse click in the rendered view opened `B/beta.md`, and Cmd-click on
+`../A/alpha.md` in the raw editor opened `A/alpha.md`. No fix was needed. A new
+test in `DocumentPane.links.test.tsx` clicks a link from one folder set into
+another and back.
+
 ## Port-back notes
 
 - **`linkEdges.ts`:** new export `pathShaped(target)`. Its extension must start
@@ -126,3 +176,18 @@ Whether the sign should show "leaving" at all is a question for Cole.
   - The "Leaving" note now reads "land on a file this session does not hold".
 - **Leaving tests rewritten:** `links.leaving.session.test.ts` and
   `LinkCheck.sets.test.tsx`.
+- **Follow-up (rulings 4–5):**
+  - `shell/LinkCheck.tsx`:
+    - `linkCheckTotal` no longer adds `leaving`, and `linkCheckListed` now does.
+    - `linkCheckLabel` no longer names leaving links.
+    - New `linkCheckQuietLabel` and `linkCheckQuietWord`.
+    - The mark shows whenever something is listed. With nothing counted, it is
+      quiet: `data-quiet`, `Link2Icon`, and a small faint word in place of the
+      label (narrow: the listed number).
+    - `KindSections` takes `part` (`counted` or `quiet`). `LinkCheckList`
+      renders every set's counted part first, then every set's quiet part.
+    - `Section` takes `quiet`, used for "Leaving" and "Unresolved".
+    - A group header with nothing counted shows no number.
+  - `session.ts` `linkCheck`: set `totals` leave out `leavingLinks`. A set with
+    only leaving links is still named, at 0.
+  - `protocol.ts` and the `link-check` help: docs only.
