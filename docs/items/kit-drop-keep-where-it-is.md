@@ -30,18 +30,32 @@ never its path (`src/kit/workspace/picker.ts`, header). So the page can't know
 where the dropped file lives, and copying it somewhere is all a plain drop can
 do. The daemon's native picker returns a real path (the "Choose..." act).
 
-**A likely shape (to confirm in design):** the drop dialog gets an "Add it from
-where it is…" act. It opens the native file picker, ideally starting in the
-folders a drop usually comes from (Desktop, Downloads). The chosen file is added
-as a listed document (no copy), or its folder as a set, which is the same as
-"Choose..." today. The copy-to-a-place path stays for when he wants a copy.
+**The shape (Cole, 2026-10-22):**
+
+- The drop dialog gets one more act: **add the original file**. It opens the
+  native **file** picker, where Cole selects the very file he dropped. That file
+  is added as a listed document where it lives, with no copy. It is never its
+  folder: choosing a file in Downloads adds that one file, not Downloads as a
+  set.
+- The picker opens wherever the OS opens it by default; no folder is
+  preselected. That keeps it the same on every platform.
+- The dialog doesn't explain the browser's limit; the act speaks for itself.
+- **Copying into a folder that already holds the file:** if the chosen
+  destination already has a file of that name, the dialog says so. If it holds
+  the same bytes, the dialog offers to add that existing file instead of making
+  a second copy, so dropping a file from Downloads and choosing Downloads ends
+  with the original added, not `name 2.png`.
+- **Platforms:** the native picker works on macOS (AppleScript) and Linux
+  (zenity) today. Windows has no picker yet (`picker.ts` returns none). There
+  the act is hidden, and the dialog offers the copy only.
 
 ## Definition of done
 
-- [ ] The drop dialog offers adding the original where it lives, and doing so
-      adds the real file (no copy) as a listed document, with an option to add
-      its folder as a set.
-- [ ] Copying into a chosen place still works.
-- [ ] The dialog says plainly why it asks (a browser can't see where a dropped
-      file lives).
+- [ ] The drop dialog offers adding the original file, through the native file
+      picker. The chosen file is added as a listed document where it lives, with
+      no copy and never its folder.
+- [ ] Copying into a chosen place still works. A destination that already holds
+      the same file offers to add that one instead of copying it again, and one
+      that holds a different file with that name says so before writing.
+- [ ] Where the platform has no native picker, the act is hidden.
 - [ ] Tested, checked in a real browser on macOS; offered on kit-parity.
