@@ -221,6 +221,24 @@ describe("the rendered-markdown sheet", () => {
     expect(body).not.toMatch(/#[0-9a-f]{3,8}\b/i);
     expect(body).toContain("var(--color-");
   });
+
+  test("the document's h1 is a step larger than its h2s, and the rendered view carries the class that says so", () => {
+    const body = doc.replace(/\/\*[\s\S]*?\*\//g, "");
+    const em = (selector: string) => {
+      const esc = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const rule = new RegExp(`(?:^|\\n)\\s*${esc}\\s*\\{([^}]*)\\}`).exec(body)?.[1] ?? "";
+      return Number(/font-size:\s*([\d.]+)em/.exec(rule)?.[1]);
+    };
+    // h2 takes the shared heading rule, the one that lists h2 to h6.
+    const shared = /\.md-prose h1,\s*\.md-prose h2,[^{]*\{([^}]*)\}/.exec(body)?.[1] ?? "";
+    const h2 = Number(/font-size:\s*([\d.]+)em/.exec(shared)?.[1]);
+    const h1 = em(".md-prose.md-document h1");
+    expect(h2).toBeGreaterThan(0);
+    expect(h1 - h2).toBeGreaterThanOrEqual(0.25);
+    // The class is on the rendered view's body, both with and without frontmatter.
+    const view = readFileSync(join(kit, "document", "MarkdownView.tsx"), "utf8");
+    expect([...view.matchAll(/"md-prose md-document /g)].length).toBe(2);
+  });
 });
 
 describe("the shell sheet", () => {

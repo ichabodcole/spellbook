@@ -202,7 +202,9 @@ describe("the header", () => {
   test("a document without a block has no header and keeps the body's own padding", async () => {
     const m = await mount(<MarkdownView text={BODY} />);
     expect(m.container.querySelector("[data-slot=frontmatter-header]")).toBeNull();
-    expect(body(m.container).className).toBe("md-prose mx-auto max-w-[76ch] px-8 pt-7 pb-16");
+    expect(body(m.container).className).toBe(
+      "md-prose md-document mx-auto max-w-[76ch] px-8 pt-7 pb-16",
+    );
   });
 
   test("a malformed block shows as written, with a quiet warning, above the body", async () => {

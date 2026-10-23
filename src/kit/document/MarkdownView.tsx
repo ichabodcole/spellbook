@@ -586,8 +586,8 @@ export function MarkdownView({
           ref={body}
           className={
             frontmatter
-              ? "md-prose mx-auto max-w-[76ch] px-8 pb-16"
-              : "md-prose mx-auto max-w-[76ch] px-8 pt-7 pb-16"
+              ? "md-prose md-document mx-auto max-w-[76ch] px-8 pb-16"
+              : "md-prose md-document mx-auto max-w-[76ch] px-8 pt-7 pb-16"
           }
           onClick={(e) => onRenderedLinkClick(e, onFollowLink, onFollowHeading)}
           onPointerDown={(e) => {

@@ -55,6 +55,13 @@
   .md-prose h1 {
     font-size: 1.2em;
   }
+  /* The document's rendered view (`md-document`): its h1 a step of its own
+     above the h2s, so the page's hierarchy reads at a glance. Atlas's density
+     is kept: the h2s and their spacing are as above. A chat message keeps the
+     compact scale. Spellbook's, not Story Studio's: offered back. */
+  .md-prose.md-document h1 {
+    font-size: 1.4em;
+  }
   .md-prose p,
   .md-prose ul,
   .md-prose ol,
