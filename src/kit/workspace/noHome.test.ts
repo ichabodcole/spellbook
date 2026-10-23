@@ -187,6 +187,35 @@ describe("a create that names its place goes there", () => {
   });
 });
 
+// `workspace.overlap` names `workspace <dir>` as its fix. An app with no home
+// workspace has no such verb, and no workspace to overlap a set, so the
+// finding never fires there: its act would be one the app does not have.
+describe("doctor names no `workspace` act on an app with none", () => {
+  const noOverlap = (s: WorkspaceSession) => {
+    expect(s.workspaceOverlap()).toBeNull();
+    expect(s.overlapToSay()).toBeNull();
+    const all = s.checkup();
+    expect(all.some((f) => f.kind === "workspace.overlap")).toBe(false);
+    expect(all.some((f) => f.fix.includes("`workspace"))).toBe(false);
+  };
+
+  test("a session saved with a workspace inside a set (an older manifest)", () => {
+    const s = noHome();
+    const file = join(s.dir, "manifest.json");
+    writeFileSync(file, JSON.stringify({ ...manifest(s), workspace: join(set, "part") }));
+    noOverlap(WorkspaceSession.restore(sessions, noHomeApp, s.id));
+    // The same manifest on a home app overlaps, and names the verb it has: unchanged.
+    const h = WorkspaceSession.create(sessions, testApp);
+    h.addContext(set);
+    const hf = join(h.dir, "manifest.json");
+    writeFileSync(hf, JSON.stringify({ ...manifest(h), workspace: join(set, "part") }));
+    const back = WorkspaceSession.restore(sessions, testApp, h.id);
+    expect(back.checkup().find((f) => f.kind === "workspace.overlap")?.fix).toContain(
+      "`workspace <dir>`",
+    );
+  });
+});
+
 describe("a home app is unchanged", () => {
   test("a drop and a create with no folder land in the workspace", () => {
     const h = WorkspaceSession.create(sessions, testApp, undefined, opened);
