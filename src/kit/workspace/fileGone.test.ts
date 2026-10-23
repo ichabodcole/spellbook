@@ -17,6 +17,16 @@ let daemon: WorkspaceDaemon | null;
 let surface: FakeSurface | null;
 let tail: ReturnType<typeof collectEvents> | null;
 
+/**
+ * A daemon test, with a budget for its file watches. Each waits on FSEvents
+ * twice or more: for its watch to come live (`addLive`) and for the delete or
+ * write it then makes. Neither is a race, but a busy machine delays both: with
+ * `fseventsd` saturated, a new watch took 0.1 to 3.3 s to report its first
+ * write (traced 2026-10-23), and bun's 5 s default ran out mid-test.
+ */
+const WATCH_BUDGET_MS = 20_000;
+const watched = (name: string, fn: () => Promise<void>) => test(name, fn, WATCH_BUDGET_MS);
+
 beforeEach(() => {
   root = tempRoot("workspace-file-gone");
   mkdirSync(join(root, "tmp"), { recursive: true });
@@ -118,31 +128,34 @@ async function removeUntilSeen(file: string, seen: () => unknown) {
 }
 
 describe("a deleted file", () => {
-  test("reads as missing, not dirty, on the tail and in state, and its versions stay", async () => {
-    const { s, t, base } = await start();
-    await openEdited(s);
-    await removeUntilSeen(join(docs, "set", "part", "b.md"), () =>
-      t.events.some((e) => e.type === "system" && e.fact === "original.missing"),
-    );
-    const ev = await t.waitFor((e) => e.type === "system" && e.fact === "original.missing");
-    expect(ev).toMatchObject({ doc: "b", folder: false });
-    expect(String(ev.text)).toContain("gone from disk");
-    await waitUntil("missing in state", () => docB(s)?.missing === "file");
-    expect(docB(s)?.dirty).toBe(false);
-    expect(docB(s)?.outsideChanged).toBe(false);
-    expect(s.state.openDoc).toBe("b");
+  watched(
+    "reads as missing, not dirty, on the tail and in state, and its versions stay",
+    async () => {
+      const { s, t, base } = await start();
+      await openEdited(s);
+      await removeUntilSeen(join(docs, "set", "part", "b.md"), () =>
+        t.events.some((e) => e.type === "system" && e.fact === "original.missing"),
+      );
+      const ev = await t.waitFor((e) => e.type === "system" && e.fact === "original.missing");
+      expect(ev).toMatchObject({ doc: "b", folder: false });
+      expect(String(ev.text)).toContain("gone from disk");
+      await waitUntil("missing in state", () => docB(s)?.missing === "file");
+      expect(docB(s)?.dirty).toBe(false);
+      expect(docB(s)?.outsideChanged).toBe(false);
+      expect(s.state.openDoc).toBe("b");
 
-    // The agent's `state` says so too.
-    const st = (await (await fetch(`${base}/state`)).json()) as {
-      docs: { slug: string; missing?: string }[];
-    };
-    expect(st.docs.find((d) => d.slug === "b")?.missing).toBe("file");
-    // The text is still the session's.
-    const v1 = docB(s)?.versions[0]?.path ?? "";
-    expect(readFileSync(v1, "utf8")).toBe("# B\n\nunsaved\n");
-  });
+      // The agent's `state` says so too.
+      const st = (await (await fetch(`${base}/state`)).json()) as {
+        docs: { slug: string; missing?: string }[];
+      };
+      expect(st.docs.find((d) => d.slug === "b")?.missing).toBe("file");
+      // The text is still the session's.
+      const v1 = docB(s)?.versions[0]?.path ?? "";
+      expect(readFileSync(v1, "utf8")).toBe("# B\n\nunsaved\n");
+    },
+  );
 
-  test("Save refuses without being asked, and recreates the file when asked", async () => {
+  watched("Save refuses without being asked, and recreates the file when asked", async () => {
     const { s, t } = await start();
     await openEdited(s);
     const file = join(docs, "set", "part", "b.md");
@@ -163,86 +176,100 @@ describe("a deleted file", () => {
     expect(docB(s)?.dirty).toBe(false);
   });
 
-  test("Close puts it away and keeps the record and its versions; opening it again finds them", async () => {
-    const { s } = await start();
-    await openEdited(s);
-    const file = join(docs, "set", "part", "b.md");
-    await removeUntilSeen(file, () => docB(s)?.missing === "file");
+  watched(
+    "Close puts it away and keeps the record and its versions; opening it again finds them",
+    async () => {
+      const { s } = await start();
+      await openEdited(s);
+      const file = join(docs, "set", "part", "b.md");
+      await removeUntilSeen(file, () => docB(s)?.missing === "file");
 
-    s.send({ op: "doc.close", doc: "b" });
-    await waitUntil("closed", () => s.state.openDoc === null);
-    expect(docB(s)?.versions).toHaveLength(1);
+      s.send({ op: "doc.close", doc: "b" });
+      await waitUntil("closed", () => s.state.openDoc === null);
+      expect(docB(s)?.versions).toHaveLength(1);
 
-    // Put back (from the Trash, say), as it was: it is simply back.
-    writeFileSync(file, "# B\n");
-    await waitUntil("back", () => docB(s)?.missing === undefined);
-    s.send({ op: "open", path: file });
-    await waitUntil("reopened", () => s.state.openDoc === "b");
-    expect(readFileSync(docB(s)?.versions[0]?.path ?? "", "utf8")).toBe("# B\n\nunsaved\n");
-  });
+      // Put back (from the Trash, say), as it was: it is simply back.
+      writeFileSync(file, "# B\n");
+      await waitUntil("back", () => docB(s)?.missing === undefined);
+      s.send({ op: "open", path: file });
+      await waitUntil("reopened", () => s.state.openDoc === "b");
+      expect(readFileSync(docB(s)?.versions[0]?.path ?? "", "utf8")).toBe("# B\n\nunsaved\n");
+    },
+  );
 
-  test("back with other text is asked about, never reloaded over the session's text", async () => {
-    const { s, t } = await start();
-    await addLive(s);
-    s.send({ op: "open", path: join(docs, "set", "a.md") });
-    await s.waitFor((m) => m.op === "version.text");
-    const file = join(docs, "set", "a.md");
-    await removeUntilSeen(file, () =>
-      t.events.some((e) => e.type === "system" && e.fact === "original.missing"),
-    );
-    writeFileSync(file, "a different file with the same name\n");
-    await t.waitFor((e) => e.type === "system" && e.fact === "original.conflict");
-    const a = s.state.docs.find((d) => d.slug === "a");
-    expect(a?.missing).toBeUndefined();
-    expect(readFileSync(a?.versions[0]?.path ?? "", "utf8")).toBe("# A\n\none\n");
-  });
+  watched(
+    "back with other text is asked about, never reloaded over the session's text",
+    async () => {
+      const { s, t } = await start();
+      await addLive(s);
+      s.send({ op: "open", path: join(docs, "set", "a.md") });
+      await s.waitFor((m) => m.op === "version.text");
+      const file = join(docs, "set", "a.md");
+      await removeUntilSeen(file, () =>
+        t.events.some((e) => e.type === "system" && e.fact === "original.missing"),
+      );
+      writeFileSync(file, "a different file with the same name\n");
+      await t.waitFor((e) => e.type === "system" && e.fact === "original.conflict");
+      const a = s.state.docs.find((d) => d.slug === "a");
+      expect(a?.missing).toBeUndefined();
+      expect(readFileSync(a?.versions[0]?.path ?? "", "utf8")).toBe("# A\n\none\n");
+    },
+  );
 });
 
 describe("a file gone only for a moment", () => {
-  test("is never called missing: an atomic save or a quick rename back does not flash", async () => {
-    const { s, t } = await start();
-    await openEdited(s);
-    const file = join(docs, "set", "part", "b.md");
-    const aside = join(docs, "set", "part", "b.md.tmp");
-    renameSync(file, aside);
-    // Past the watcher's settle, inside the re-check.
-    await Bun.sleep(150);
-    renameSync(aside, file);
-    await Bun.sleep(900);
-    expect(t.events.some((e) => e.type === "system" && e.fact === "original.missing")).toBe(false);
-    expect(docB(s)?.missing).toBeUndefined();
-  });
+  watched(
+    "is never called missing: an atomic save or a quick rename back does not flash",
+    async () => {
+      const { s, t } = await start();
+      await openEdited(s);
+      const file = join(docs, "set", "part", "b.md");
+      const aside = join(docs, "set", "part", "b.md.tmp");
+      renameSync(file, aside);
+      // Past the watcher's settle, inside the re-check.
+      await Bun.sleep(150);
+      renameSync(aside, file);
+      await Bun.sleep(900);
+      expect(t.events.some((e) => e.type === "system" && e.fact === "original.missing")).toBe(
+        false,
+      );
+      expect(docB(s)?.missing).toBeUndefined();
+    },
+  );
 });
 
 describe("a deleted parent folder", () => {
-  test("marks the document missing with its folder, and Save makes the folder only when asked", async () => {
-    const { s, t, base } = await start();
-    await openEdited(s);
-    const folder = join(docs, "set", "part");
-    rmSync(folder, { recursive: true });
+  watched(
+    "marks the document missing with its folder, and Save makes the folder only when asked",
+    async () => {
+      const { s, t, base } = await start();
+      await openEdited(s);
+      const folder = join(docs, "set", "part");
+      rmSync(folder, { recursive: true });
 
-    const ev = await t.waitFor((e) => e.type === "system" && e.fact === "original.missing");
-    expect(ev).toMatchObject({ doc: "b", folder: true });
-    await waitUntil("missing folder", () => docB(s)?.missing === "folder");
-    expect(docB(s)?.dirty).toBe(false);
-    // The sidebar dropped the folder.
-    await waitUntil("tree rescanned", () =>
-      s.state.context[0]?.nodes.every((n) => n.rel !== "set/part"),
-    );
+      const ev = await t.waitFor((e) => e.type === "system" && e.fact === "original.missing");
+      expect(ev).toMatchObject({ doc: "b", folder: true });
+      await waitUntil("missing folder", () => docB(s)?.missing === "folder");
+      expect(docB(s)?.dirty).toBe(false);
+      // The sidebar dropped the folder.
+      await waitUntil("tree rescanned", () =>
+        s.state.context[0]?.nodes.every((n) => n.rel !== "set/part"),
+      );
 
-    // Asked for the file only: still refused, because the folder would come back too.
-    s.send({ op: "save", doc: "b", recreate: "file", rid: 9 } as never);
-    const refused = await s.waitFor((m) => m.op === "error" && m.requestId === 9);
-    expect(refused.op === "error" && refused.message).toContain("its folder");
-    expect(existsSync(folder)).toBe(false);
+      // Asked for the file only: still refused, because the folder would come back too.
+      s.send({ op: "save", doc: "b", recreate: "file", rid: 9 } as never);
+      const refused = await s.waitFor((m) => m.op === "error" && m.requestId === 9);
+      expect(refused.op === "error" && refused.message).toContain("its folder");
+      expect(existsSync(folder)).toBe(false);
 
-    s.send({ op: "save", doc: "b", recreate: "folder" });
-    expect(await t.waitFor((e) => e.type === "saved")).toMatchObject({ recreated: "folder" });
-    expect(readFileSync(join(folder, "b.md"), "utf8")).toBe("# B\n\nunsaved\n");
-    // The agent cannot save at all: Save is the human's.
-    const agentSave = await cmd(base, { op: "save", doc: "b" });
-    expect(agentSave.status).not.toBe(200);
-  });
+      s.send({ op: "save", doc: "b", recreate: "folder" });
+      expect(await t.waitFor((e) => e.type === "saved")).toMatchObject({ recreated: "folder" });
+      expect(readFileSync(join(folder, "b.md"), "utf8")).toBe("# B\n\nunsaved\n");
+      // The agent cannot save at all: Save is the human's.
+      const agentSave = await cmd(base, { op: "save", doc: "b" });
+      expect(agentSave.status).not.toBe(200);
+    },
+  );
 });
 
 describe("the session, without a daemon", () => {
