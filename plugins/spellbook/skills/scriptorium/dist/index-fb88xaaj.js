@@ -77812,6 +77812,7 @@ var jsx_runtime48 = __toESM(require_jsx_runtime(), 1);
 var LINK_CHECK_PAUSE_MS = 1200;
 var LINK_CHECK_FALLBACK_MS = 300000;
 var linkCheckTotal = (d) => d.count + d.unusedImages.count + d.symmetry.count + d.ambiguousHeadings.count + (d.leaving?.count ?? 0);
+var linkCheckListed = (d) => linkCheckTotal(d) + (d.unresolved?.count ?? 0);
 var nounOf = (d) => d.noun ?? "folder";
 var edgeNoun = (kinds) => kinds.length === 1 ? `${kinds[0]} reference` : "reference";
 var count = (n, one2, many) => `${n} ${n === 1 ? one2 : many}`;
@@ -77821,6 +77822,8 @@ function linkCheckLabel(d) {
     parts.push(count(d.duplicates.count, "shared file name", "shared file names"));
   if (d.dangling.count > 0)
     parts.push(count(d.dangling.count, "broken link", "broken links"));
+  if (d.proposed && d.proposed.count > 0)
+    parts.push(count(d.proposed.count, "broken link in a proposed version", "broken links in proposed versions"));
   if (d.references.count > 0)
     parts.push(count(d.references.count, "broken reference", "broken references"));
   if (d.edges && d.edges.count > 0) {
@@ -77888,6 +77891,7 @@ function LinkEntry({
 }
 function EdgeEntry2({
   edge,
+  unresolved,
   onOpen
 }) {
   const at2 = edge.from !== undefined && edge.to !== undefined ? { from: edge.from, to: edge.to } : undefined;
@@ -77896,6 +77900,7 @@ function EdgeEntry2({
       type: "button",
       "data-slot": "link-check-entry",
       "data-edge": edge.edge,
+      "data-unresolved": unresolved ? "" : undefined,
       "data-source": edge.source,
       "data-line": edge.line,
       onClick: () => onOpen(edge.source, at2),
@@ -77926,7 +77931,7 @@ function EdgeEntry2({
             edge.raw
           ]
         }),
-        edge.tried.length > 0 && /* @__PURE__ */ jsx_runtime48.jsxs("span", {
+        !unresolved && edge.tried.length > 0 && /* @__PURE__ */ jsx_runtime48.jsxs("span", {
           className: "block truncate text-[10px] text-ink-faint",
           children: [
             "nothing at ",
@@ -78043,17 +78048,20 @@ function onlySet(d, keep) {
     return list2.filter((x) => keep(x.set));
   }
   const dangling = pick2(d.dangling.links);
+  const proposed = d.proposed ? pick2(d.proposed.links) : undefined;
   const unsupported = pick2(d.unsupported.links);
   const headings = pick2(d.headings.links);
   const references = pick2(d.references.links);
   const edges = d.edges ? pick2(d.edges.links) : undefined;
+  const unresolved = d.unresolved ? pick2(d.unresolved.links) : undefined;
   const images = pick2(d.unusedImages.images);
   const symmetry = pick2(d.symmetry.hints);
   const ambiguous = pick2(d.ambiguousHeadings.hints);
   const leaving = d.leaving ? pick2(d.leaving.links) : undefined;
   return {
-    count: dangling.length + unsupported.length + headings.length + references.length + (edges?.length ?? 0),
+    count: dangling.length + unsupported.length + headings.length + references.length + (edges?.length ?? 0) + (proposed?.length ?? 0),
     dangling: { count: dangling.length, links: dangling },
+    ...proposed ? { proposed: { count: proposed.length, links: proposed } } : {},
     unsupported: {
       count: unsupported.length,
       schemes: [...new Set(unsupported.map((l) => l.scheme))].sort(),
@@ -78070,6 +78078,13 @@ function onlySet(d, keep) {
         count: edges.length,
         kinds: [...new Set(edges.map((e) => e.edge))].sort(),
         links: edges
+      }
+    } : {},
+    ...unresolved ? {
+      unresolved: {
+        count: unresolved.length,
+        kinds: [...new Set(unresolved.map((e) => e.edge))].sort(),
+        links: unresolved
       }
     } : {},
     ...leaving ? { leaving: { count: leaving.length, links: leaving } } : {},
@@ -78090,7 +78105,7 @@ function linkCheckGroups(d) {
     label: null,
     data: onlySet(d, (set2) => set2 === undefined || !known.has(set2))
   });
-  return groups.filter((g) => linkCheckTotal(g.data) > 0);
+  return groups.filter((g) => linkCheckListed(g.data) > 0);
 }
 function KindSections({
   data,
@@ -78109,6 +78124,17 @@ function KindSections({
           note: l.tried.length > 0 ? `nothing at ${l.tried.join(", ")}` : undefined,
           onOpen: openLink
         }, `${l.source}:${l.from}`))
+      }),
+      data.proposed && /* @__PURE__ */ jsx_runtime48.jsx(Section, {
+        title: "Broken in a proposed version",
+        note: "A version the agent proposed, never made active, links to nothing here, often because a move updated only the active version. Activated as it is, the link is broken.",
+        total: data.proposed.count,
+        shown: data.proposed.links.length,
+        children: data.proposed.links.map((l) => /* @__PURE__ */ jsx_runtime48.jsx(LinkEntry, {
+          link: l,
+          note: `in v${l.version}${l.suggest ? `; its target moved to ${l.suggest}` : ""}`,
+          onOpen: (x) => onOpen(x.source)
+        }, `${l.source}:${l.version}:${l.from}`))
       }),
       data.edges && /* @__PURE__ */ jsx_runtime48.jsx(Section, {
         title: `Broken ${edgeNoun(data.edges.kinds)}s`,
@@ -78180,9 +78206,20 @@ function KindSections({
           onOpen: openLink
         }, `${l.source}:${l.from}`))
       }),
+      data.unresolved && /* @__PURE__ */ jsx_runtime48.jsx(Section, {
+        title: "Unresolved references",
+        note: "Not counted as broken: written as a name, not a path, and nothing here answers it. Another tool may know what it names.",
+        total: data.unresolved.count,
+        shown: data.unresolved.links.length,
+        children: data.unresolved.links.map((e) => /* @__PURE__ */ jsx_runtime48.jsx(EdgeEntry2, {
+          edge: e,
+          unresolved: true,
+          onOpen
+        }, `${e.source}:${e.key ?? ""}:${e.raw}:${e.from ?? ""}`))
+      }),
       data.leaving && /* @__PURE__ */ jsx_runtime48.jsx(Section, {
         title: `Leaving the ${nounOf(data)}`,
-        note: `Not broken: these land on a file in another ${nounOf(data)}, or in none. The ${nounOf(data)} is not self-contained.`,
+        note: `Not broken: these land on a file this session does not hold. The ${nounOf(data)} is not self-contained.`,
         total: data.leaving.count,
         shown: data.leaving.links.length,
         children: data.leaving.links.map((l) => /* @__PURE__ */ jsx_runtime48.jsx(LeavingEntry, {
@@ -78240,7 +78277,7 @@ function LinkCheckList({
   data,
   onOpen
 }) {
-  if (linkCheckTotal(data) === 0)
+  if (linkCheckListed(data) === 0)
     return /* @__PURE__ */ jsx_runtime48.jsx("p", {
       "data-slot": "link-check-list",
       className: "pt-2 text-[12px] text-ink-dim",
