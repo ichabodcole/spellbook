@@ -27,7 +27,8 @@ agent about it.
 
 ## Definition of done
 
-- [ ] A move's relink also reaches proposed versions, or `link-check` reports a
-      broken link in a proposed version and names it, with the act that fixes
-      it.
+- [ ] `link-check` reports a link a move or rename broke in a proposed (not
+      active) version: the document, the version, the line and the target as
+      written, with the act that fixes it (Cole's ruling, 2026-10-22). Relink
+      itself still rewrites only active versions.
 - [ ] Tested, and offered on kit-parity.
