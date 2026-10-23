@@ -43,7 +43,7 @@ import { contextPressAfter, renderedSelectionAct } from "../context/selection.ts
 import { TooltipProvider } from "../ui/tooltip.tsx";
 import type { DocumentProfile, PlacedNote } from "../workspace/protocol";
 import { useCoalescedText } from "./coalesce.ts";
-import type { SelectionReport } from "./DocumentView.tsx";
+import type { ContextMenuRequest, SelectionReport } from "./DocumentView.tsx";
 import { Embed, type EmbedSource, pendingEmbeds } from "./embeds.tsx";
 import { useFind } from "./FindBar.tsx";
 import {
@@ -69,7 +69,7 @@ const FOCUS_HL = "doc-note-focus";
 const PENDING_HL = "doc-note-pending";
 /** A passage just brought into view: painted for `FLASH_PAINT_MS`, then gone. */
 const FLASH_HL = "doc-flash";
-const FLASH_PAINT_MS = 1600;
+export const FLASH_PAINT_MS = 1600;
 
 /** The source offset under a point: what decides which notes were clicked. */
 function pointOffset(
@@ -154,13 +154,8 @@ export function MarkdownView({
   onSelect?: (s: SelectionReport) => void;
   /** Bumped when the held selection goes away: the highlight goes with it. */
   clearSeq?: number;
-  onContextMenu?: (at: {
-    x: number;
-    y: number;
-    from: number;
-    to: number;
-    noteIds: string[];
-  }) => void;
+  /** Right-click in the text, as the raw view's: see `ContextMenuRequest`. */
+  onContextMenu?: ContextMenuRequest;
   /** The source line at the top of this pane, shared with the raw one. */
   place?: Place;
   /** An app's inline widgets: spans of the text drawn as its own nodes. */
@@ -614,9 +609,13 @@ export function MarkdownView({
           }}
           onContextMenu={(e) => {
             if (!onContextMenu) return;
+            // A link's own entries (open in a new tab, copy the address) are the
+            // browser's, as an image's are; and a link written inside one would
+            // nest, which markdown forbids. So a right-click on a link is its.
+            if ((e.target as Element).closest?.("a")) return;
             const root = body.current;
-            // Over a selection OR over a note, the rule the raw view holds: with
-            // neither, the browser's own menu is left alone.
+            // Every right-click asks, as in the raw view. With no selection the
+            // rendered text has no caret, so the point clicked stands in for one.
             const point = root ? pointOffset(root, projection, e.clientX, e.clientY) : null;
             // The live selection if the click spared it, else the remembered one, but
             // only when the pointer is inside it.
@@ -640,15 +639,21 @@ export function MarkdownView({
                     .map((n) => n.id);
             // In the pane's text; a selection in what changed since offers nothing.
             const m = r ? reportable.current(r) : null;
-            if (!m && noteIds.length === 0) return;
-            e.preventDefault();
-            onContextMenu({
-              x: e.clientX,
-              y: e.clientY,
-              from: m?.from ?? 0,
-              to: m?.to ?? 0,
-              noteIds,
-            });
+            const caret = point === null ? null : reportable.current({ from: point, to: point });
+            const where = m ?? caret;
+            // Off the text altogether, and on no note: nothing to place an act at.
+            if (!where && noteIds.length === 0) return;
+            const taken = onContextMenu(
+              {
+                x: e.clientX,
+                y: e.clientY,
+                from: where?.from ?? 0,
+                to: where?.to ?? 0,
+                noteIds,
+              },
+              { shiftKey: e.shiftKey },
+            );
+            if (taken !== false) e.preventDefault();
           }}
           // THE ONE HTML SINK IN THIS SURFACE, and what makes it safe is upstream:
           // markdown renderer output only, so raw HTML in the document is encoded and

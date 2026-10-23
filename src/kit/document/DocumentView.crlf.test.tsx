@@ -194,7 +194,10 @@ test("a right-click in a CRLF file says the daemon's count, and finds the note u
       text={CRLF}
       editable
       notes={[placed(want)]}
-      onContextMenu={(a) => said.push(a)}
+      onContextMenu={(a) => {
+        said.push(a);
+        return true;
+      }}
     />,
   );
   const v = editor();

@@ -14,6 +14,11 @@
 // writes the link with the heading's anchor. Backspace on an empty search, or
 // the left arrow at its start, goes back to the documents.
 //
+// A LINK WITH NO SELECTION UNDER IT TAKES ITS TEXT HERE. Inserting a link at the
+// caret (the right-click menu's Insert a link, or the shortcut with nothing
+// selected) has no words to wrap, so the card asks for them; left empty, the
+// link reads as the document's name, as it always did.
+//
 // RELATIONS ARE OPTIONAL AND NEVER DEFAULTED. The vocabulary offered is what the
 // session's documents already write in `?rel=` (the world's own words, most used
 // first), and anything else can be typed. Choose none and the link is bare.
@@ -77,8 +82,16 @@ export function LinkPicker({
   failure: string | null;
   /** A document's headings, for the second step; absent, `#` is only a character. */
   onHeadings?: (target: LinkTarget) => Promise<HeadingOffer[]>;
-  /** A choice: the target, the relations, and the heading when one was chosen. */
-  onChoose: (target: LinkTarget, relations: string[], heading?: HeadingOffer) => void;
+  /**
+   * A choice: the target, the relations, the heading when one was chosen, and
+   * the link's text when one was typed (a link at the caret only).
+   */
+  onChoose: (
+    target: LinkTarget,
+    relations: string[],
+    heading?: HeadingOffer,
+    label?: string,
+  ) => void;
   /** Closed without a choice (Escape, a click outside), with what the search box held. */
   onClose: (query: string) => void;
 }) {
@@ -88,6 +101,9 @@ export function LinkPicker({
   const [active, setActive] = useState(0);
   const [chosen, setChosen] = useState<string[]>([]);
   const [relText, setRelText] = useState("");
+  /** The link's text, asked for only when there is no selection to be it. */
+  const labelled = kind === "wrap" && quote === "";
+  const [label, setLabel] = useState("");
   const card = useRef<HTMLDivElement>(null);
   const field = useRef<HTMLInputElement>(null);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
@@ -155,11 +171,12 @@ export function LinkPicker({
     return pending !== "" && !hasRelation(chosen, pending) ? [...chosen, pending] : chosen;
   };
 
+  const labelNow = () => (labelled && label.trim() !== "" ? label.trim() : undefined);
   const choose = (t: LinkTarget | undefined) => {
-    if (t) onChoose(t, relationsNow());
+    if (t) onChoose(t, relationsNow(), undefined, labelNow());
   };
   const chooseHeading = (h: HeadingOffer | undefined) => {
-    if (step && h) onChoose(step.target, relationsNow(), h);
+    if (step && h) onChoose(step.target, relationsNow(), h, labelNow());
   };
   /** Enter, or Enter in the relation field: the row in view, in whichever step. */
   const chooseActive = () =>
@@ -384,6 +401,22 @@ export function LinkPicker({
         )}
       </div>
       <div className="flex flex-col gap-1 border-t border-edge px-2 py-1.5">
+        {labelled && (
+          <input
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter") return;
+              e.preventDefault();
+              chooseActive();
+            }}
+            placeholder="Link text (the document's name if empty)"
+            aria-label="Link text"
+            autoComplete="off"
+            data-slot="link-label"
+            className="w-full bg-transparent text-[11px] text-ink outline-none placeholder:text-ink-faint"
+          />
+        )}
         <div className="flex flex-wrap items-center gap-1">
           {chosen.map((r) => (
             <span
@@ -430,8 +463,8 @@ export function LinkPicker({
         )}
         <span className="text-[10px] text-ink-faint">
           {step
-            ? "↵ to link · ⌫ for documents · tab for a relation · esc to close"
-            : "↵ to link · # for headings · tab for a relation · esc to close"}
+            ? `↵ to link · ⌫ for documents · tab for ${labelled ? "its text" : "a relation"} · esc to close`
+            : `↵ to link · # for headings · tab for ${labelled ? "its text" : "a relation"} · esc to close`}
         </span>
       </div>
     </div>

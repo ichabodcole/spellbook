@@ -12037,40 +12037,49 @@ var __iconNode21 = [
   ["path", { d: "M6.391 20.279a10 10 0 0 1-2.69-2.7", key: "1fvljs" }]
 ];
 var CircleDashed = createLucideIcon("circle-dashed", __iconNode21);
-// node_modules/lucide-react/dist/esm/icons/clock.mjs
+// node_modules/lucide-react/dist/esm/icons/clipboard-paste.mjs
 var __iconNode22 = [
+  ["path", { d: "M11 14h10", key: "1w8e9d" }],
+  ["path", { d: "M16 4h2a2 2 0 0 1 2 2v1.344", key: "1e62lh" }],
+  ["path", { d: "m17 18 4-4-4-4", key: "z2g111" }],
+  ["path", { d: "M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113", key: "bjbb7m" }],
+  ["rect", { x: "8", y: "2", width: "8", height: "4", rx: "1", key: "ublpy" }]
+];
+var ClipboardPaste = createLucideIcon("clipboard-paste", __iconNode22);
+// node_modules/lucide-react/dist/esm/icons/clock.mjs
+var __iconNode23 = [
   ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
   ["path", { d: "M12 6v6l4 2", key: "mmk7yg" }]
 ];
-var Clock = createLucideIcon("clock", __iconNode22);
+var Clock = createLucideIcon("clock", __iconNode23);
 // node_modules/lucide-react/dist/esm/icons/copy-plus.mjs
-var __iconNode23 = [
+var __iconNode24 = [
   ["line", { x1: "15", x2: "15", y1: "12", y2: "18", key: "1p7wdc" }],
   ["line", { x1: "12", x2: "18", y1: "15", y2: "15", key: "1nscbv" }],
   ["rect", { width: "14", height: "14", x: "8", y: "8", rx: "2", ry: "2", key: "17jyea" }],
   ["path", { d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2", key: "zix9uf" }]
 ];
-var CopyPlus = createLucideIcon("copy-plus", __iconNode23);
+var CopyPlus = createLucideIcon("copy-plus", __iconNode24);
 // node_modules/lucide-react/dist/esm/icons/copy.mjs
-var __iconNode24 = [
+var __iconNode25 = [
   ["rect", { width: "14", height: "14", x: "8", y: "8", rx: "2", ry: "2", key: "17jyea" }],
   ["path", { d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2", key: "zix9uf" }]
 ];
-var Copy = createLucideIcon("copy", __iconNode24);
+var Copy = createLucideIcon("copy", __iconNode25);
 // node_modules/lucide-react/dist/esm/icons/corner-down-left.mjs
-var __iconNode25 = [
+var __iconNode26 = [
   ["path", { d: "M20 4v7a4 4 0 0 1-4 4H4", key: "6o5b7l" }],
   ["path", { d: "m9 10-5 5 5 5", key: "1kshq7" }]
 ];
-var CornerDownLeft = createLucideIcon("corner-down-left", __iconNode25);
+var CornerDownLeft = createLucideIcon("corner-down-left", __iconNode26);
 // node_modules/lucide-react/dist/esm/icons/corner-down-right.mjs
-var __iconNode26 = [
+var __iconNode27 = [
   ["path", { d: "m15 10 5 5-5 5", key: "qqa56n" }],
   ["path", { d: "M4 4v7a4 4 0 0 0 4 4h12", key: "z08zvw" }]
 ];
-var CornerDownRight = createLucideIcon("corner-down-right", __iconNode26);
+var CornerDownRight = createLucideIcon("corner-down-right", __iconNode27);
 // node_modules/lucide-react/dist/esm/icons/eye-off.mjs
-var __iconNode27 = [
+var __iconNode28 = [
   [
     "path",
     {
@@ -12088,9 +12097,9 @@ var __iconNode27 = [
   ],
   ["path", { d: "m2 2 20 20", key: "1ooewy" }]
 ];
-var EyeOff = createLucideIcon("eye-off", __iconNode27);
+var EyeOff = createLucideIcon("eye-off", __iconNode28);
 // node_modules/lucide-react/dist/esm/icons/eye.mjs
-var __iconNode28 = [
+var __iconNode29 = [
   [
     "path",
     {
@@ -12100,9 +12109,9 @@ var __iconNode28 = [
   ],
   ["circle", { cx: "12", cy: "12", r: "3", key: "1v7zrd" }]
 ];
-var Eye = createLucideIcon("eye", __iconNode28);
+var Eye = createLucideIcon("eye", __iconNode29);
 // node_modules/lucide-react/dist/esm/icons/file-code.mjs
-var __iconNode29 = [
+var __iconNode30 = [
   [
     "path",
     {
@@ -12114,9 +12123,9 @@ var __iconNode29 = [
   ["path", { d: "M10 12.5 8 15l2 2.5", key: "1tg20x" }],
   ["path", { d: "m14 12.5 2 2.5-2 2.5", key: "yinavb" }]
 ];
-var FileCode = createLucideIcon("file-code", __iconNode29);
+var FileCode = createLucideIcon("file-code", __iconNode30);
 // node_modules/lucide-react/dist/esm/icons/file-plus.mjs
-var __iconNode30 = [
+var __iconNode31 = [
   [
     "path",
     {
@@ -12128,9 +12137,9 @@ var __iconNode30 = [
   ["path", { d: "M9 15h6", key: "cctwl0" }],
   ["path", { d: "M12 18v-6", key: "17g6i2" }]
 ];
-var FilePlus = createLucideIcon("file-plus", __iconNode30);
+var FilePlus = createLucideIcon("file-plus", __iconNode31);
 // node_modules/lucide-react/dist/esm/icons/file-text.mjs
-var __iconNode31 = [
+var __iconNode32 = [
   [
     "path",
     {
@@ -12143,9 +12152,9 @@ var __iconNode31 = [
   ["path", { d: "M16 13H8", key: "t4e002" }],
   ["path", { d: "M16 17H8", key: "z1uh3a" }]
 ];
-var FileText = createLucideIcon("file-text", __iconNode31);
+var FileText = createLucideIcon("file-text", __iconNode32);
 // node_modules/lucide-react/dist/esm/icons/file.mjs
-var __iconNode32 = [
+var __iconNode33 = [
   [
     "path",
     {
@@ -12155,9 +12164,9 @@ var __iconNode32 = [
   ],
   ["path", { d: "M14 2v5a1 1 0 0 0 1 1h5", key: "wfsgrz" }]
 ];
-var File = createLucideIcon("file", __iconNode32);
+var File = createLucideIcon("file", __iconNode33);
 // node_modules/lucide-react/dist/esm/icons/folder-input.mjs
-var __iconNode33 = [
+var __iconNode34 = [
   [
     "path",
     {
@@ -12168,9 +12177,9 @@ var __iconNode33 = [
   ["path", { d: "M2 13h10", key: "pgb2dq" }],
   ["path", { d: "m9 16 3-3-3-3", key: "6m91ic" }]
 ];
-var FolderInput = createLucideIcon("folder-input", __iconNode33);
+var FolderInput = createLucideIcon("folder-input", __iconNode34);
 // node_modules/lucide-react/dist/esm/icons/folder-open.mjs
-var __iconNode34 = [
+var __iconNode35 = [
   [
     "path",
     {
@@ -12179,9 +12188,9 @@ var __iconNode34 = [
     }
   ]
 ];
-var FolderOpen = createLucideIcon("folder-open", __iconNode34);
+var FolderOpen = createLucideIcon("folder-open", __iconNode35);
 // node_modules/lucide-react/dist/esm/icons/folder-plus.mjs
-var __iconNode35 = [
+var __iconNode36 = [
   ["path", { d: "M12 10v6", key: "1bos4e" }],
   ["path", { d: "M9 13h6", key: "1uhe8q" }],
   [
@@ -12192,9 +12201,9 @@ var __iconNode35 = [
     }
   ]
 ];
-var FolderPlus = createLucideIcon("folder-plus", __iconNode35);
+var FolderPlus = createLucideIcon("folder-plus", __iconNode36);
 // node_modules/lucide-react/dist/esm/icons/folder-search.mjs
-var __iconNode36 = [
+var __iconNode37 = [
   [
     "path",
     {
@@ -12205,9 +12214,9 @@ var __iconNode36 = [
   ["path", { d: "m21 21-1.9-1.9", key: "1g2n9r" }],
   ["circle", { cx: "17", cy: "17", r: "3", key: "18b49y" }]
 ];
-var FolderSearch = createLucideIcon("folder-search", __iconNode36);
+var FolderSearch = createLucideIcon("folder-search", __iconNode37);
 // node_modules/lucide-react/dist/esm/icons/folder-tree.mjs
-var __iconNode37 = [
+var __iconNode38 = [
   [
     "path",
     {
@@ -12225,9 +12234,9 @@ var __iconNode37 = [
   ["path", { d: "M3 5a2 2 0 0 0 2 2h3", key: "f2jnh7" }],
   ["path", { d: "M3 3v13a2 2 0 0 0 2 2h3", key: "k8epm1" }]
 ];
-var FolderTree = createLucideIcon("folder-tree", __iconNode37);
+var FolderTree = createLucideIcon("folder-tree", __iconNode38);
 // node_modules/lucide-react/dist/esm/icons/folder.mjs
-var __iconNode38 = [
+var __iconNode39 = [
   [
     "path",
     {
@@ -12236,76 +12245,76 @@ var __iconNode38 = [
     }
   ]
 ];
-var Folder = createLucideIcon("folder", __iconNode38);
+var Folder = createLucideIcon("folder", __iconNode39);
 // node_modules/lucide-react/dist/esm/icons/git-branch.mjs
-var __iconNode39 = [
+var __iconNode40 = [
   ["path", { d: "M15 6a9 9 0 0 0-9 9V3", key: "1cii5b" }],
   ["circle", { cx: "18", cy: "6", r: "3", key: "1h7g24" }],
   ["circle", { cx: "6", cy: "18", r: "3", key: "fqmcym" }]
 ];
-var GitBranch = createLucideIcon("git-branch", __iconNode39);
+var GitBranch = createLucideIcon("git-branch", __iconNode40);
 // node_modules/lucide-react/dist/esm/icons/git-compare.mjs
-var __iconNode40 = [
+var __iconNode41 = [
   ["circle", { cx: "18", cy: "18", r: "3", key: "1xkwt0" }],
   ["circle", { cx: "6", cy: "6", r: "3", key: "1lh9wr" }],
   ["path", { d: "M13 6h3a2 2 0 0 1 2 2v7", key: "1yeb86" }],
   ["path", { d: "M11 18H8a2 2 0 0 1-2-2V9", key: "19pyzm" }]
 ];
-var GitCompare = createLucideIcon("git-compare", __iconNode40);
+var GitCompare = createLucideIcon("git-compare", __iconNode41);
 // node_modules/lucide-react/dist/esm/icons/glasses.mjs
-var __iconNode41 = [
+var __iconNode42 = [
   ["circle", { cx: "6", cy: "15", r: "4", key: "vux9w4" }],
   ["circle", { cx: "18", cy: "15", r: "4", key: "18o8ve" }],
   ["path", { d: "M14 15a2 2 0 0 0-2-2 2 2 0 0 0-2 2", key: "1ag4bs" }],
   ["path", { d: "M2.5 13 5 7c.7-1.3 1.4-2 3-2", key: "1hm1gs" }],
   ["path", { d: "M21.5 13 19 7c-.7-1.3-1.5-2-3-2", key: "1r31ai" }]
 ];
-var Glasses = createLucideIcon("glasses", __iconNode41);
+var Glasses = createLucideIcon("glasses", __iconNode42);
 // node_modules/lucide-react/dist/esm/icons/globe.mjs
-var __iconNode42 = [
+var __iconNode43 = [
   ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
   ["path", { d: "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20", key: "13o1zl" }],
   ["path", { d: "M2 12h20", key: "9i4pu4" }]
 ];
-var Globe = createLucideIcon("globe", __iconNode42);
+var Globe = createLucideIcon("globe", __iconNode43);
 // node_modules/lucide-react/dist/esm/icons/hash.mjs
-var __iconNode43 = [
+var __iconNode44 = [
   ["line", { x1: "4", x2: "20", y1: "9", y2: "9", key: "4lhtct" }],
   ["line", { x1: "4", x2: "20", y1: "15", y2: "15", key: "vyu0kd" }],
   ["line", { x1: "10", x2: "8", y1: "3", y2: "21", key: "1ggp8o" }],
   ["line", { x1: "16", x2: "14", y1: "3", y2: "21", key: "weycgp" }]
 ];
-var Hash = createLucideIcon("hash", __iconNode43);
+var Hash = createLucideIcon("hash", __iconNode44);
 // node_modules/lucide-react/dist/esm/icons/image.mjs
-var __iconNode44 = [
+var __iconNode45 = [
   ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", ry: "2", key: "1m3agn" }],
   ["circle", { cx: "9", cy: "9", r: "2", key: "af1f0g" }],
   ["path", { d: "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21", key: "1xmnt7" }]
 ];
-var Image = createLucideIcon("image", __iconNode44);
+var Image = createLucideIcon("image", __iconNode45);
 // node_modules/lucide-react/dist/esm/icons/info.mjs
-var __iconNode45 = [
+var __iconNode46 = [
   ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
   ["path", { d: "M12 16v-4", key: "1dtifu" }],
   ["path", { d: "M12 8h.01", key: "e9boi3" }]
 ];
-var Info = createLucideIcon("info", __iconNode45);
+var Info = createLucideIcon("info", __iconNode46);
 // node_modules/lucide-react/dist/esm/icons/link-2-off.mjs
-var __iconNode46 = [
+var __iconNode47 = [
   ["path", { d: "M9 17H7A5 5 0 0 1 7 7", key: "10o201" }],
   ["path", { d: "M15 7h2a5 5 0 0 1 4 8", key: "1d3206" }],
   ["line", { x1: "8", x2: "12", y1: "12", y2: "12", key: "rvw6j4" }],
   ["line", { x1: "2", x2: "22", y1: "2", y2: "22", key: "a6p6uj" }]
 ];
-var Link2Off = createLucideIcon("link-2-off", __iconNode46);
+var Link2Off = createLucideIcon("link-2-off", __iconNode47);
 // node_modules/lucide-react/dist/esm/icons/link.mjs
-var __iconNode47 = [
+var __iconNode48 = [
   ["path", { d: "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71", key: "1cjeqo" }],
   ["path", { d: "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71", key: "19qd67" }]
 ];
-var Link = createLucideIcon("link", __iconNode47);
+var Link = createLucideIcon("link", __iconNode48);
 // node_modules/lucide-react/dist/esm/icons/list-ordered.mjs
-var __iconNode48 = [
+var __iconNode49 = [
   ["path", { d: "M11 5h10", key: "1cz7ny" }],
   ["path", { d: "M11 12h10", key: "1438ji" }],
   ["path", { d: "M11 19h10", key: "11t30w" }],
@@ -12313,18 +12322,18 @@ var __iconNode48 = [
   ["path", { d: "M4 9h2", key: "r1h2o0" }],
   ["path", { d: "M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02", key: "xtkcd5" }]
 ];
-var ListOrdered = createLucideIcon("list-ordered", __iconNode48);
+var ListOrdered = createLucideIcon("list-ordered", __iconNode49);
 // node_modules/lucide-react/dist/esm/icons/list-tree.mjs
-var __iconNode49 = [
+var __iconNode50 = [
   ["path", { d: "M8 5h13", key: "1pao27" }],
   ["path", { d: "M13 12h8", key: "h98zly" }],
   ["path", { d: "M13 19h8", key: "c3s6r1" }],
   ["path", { d: "M3 10a2 2 0 0 0 2 2h3", key: "1npucw" }],
   ["path", { d: "M3 5v12a2 2 0 0 0 2 2h3", key: "x1gjn2" }]
 ];
-var ListTree = createLucideIcon("list-tree", __iconNode49);
+var ListTree = createLucideIcon("list-tree", __iconNode50);
 // node_modules/lucide-react/dist/esm/icons/loader.mjs
-var __iconNode50 = [
+var __iconNode51 = [
   ["path", { d: "M12 2v4", key: "3427ic" }],
   ["path", { d: "m16.2 7.8 2.9-2.9", key: "r700ao" }],
   ["path", { d: "M18 12h4", key: "wj9ykh" }],
@@ -12334,9 +12343,9 @@ var __iconNode50 = [
   ["path", { d: "M2 12h4", key: "j09sii" }],
   ["path", { d: "m4.9 4.9 2.9 2.9", key: "giyufr" }]
 ];
-var Loader = createLucideIcon("loader", __iconNode50);
+var Loader = createLucideIcon("loader", __iconNode51);
 // node_modules/lucide-react/dist/esm/icons/message-square-plus.mjs
-var __iconNode51 = [
+var __iconNode52 = [
   [
     "path",
     {
@@ -12347,9 +12356,9 @@ var __iconNode51 = [
   ["path", { d: "M12 8v6", key: "1ib9pf" }],
   ["path", { d: "M9 11h6", key: "1fldmi" }]
 ];
-var MessageSquarePlus = createLucideIcon("message-square-plus", __iconNode51);
+var MessageSquarePlus = createLucideIcon("message-square-plus", __iconNode52);
 // node_modules/lucide-react/dist/esm/icons/message-square-text.mjs
-var __iconNode52 = [
+var __iconNode53 = [
   [
     "path",
     {
@@ -12361,9 +12370,9 @@ var __iconNode52 = [
   ["path", { d: "M7 15h6", key: "d9of3u" }],
   ["path", { d: "M7 7h8", key: "af5zfr" }]
 ];
-var MessageSquareText = createLucideIcon("message-square-text", __iconNode52);
+var MessageSquareText = createLucideIcon("message-square-text", __iconNode53);
 // node_modules/lucide-react/dist/esm/icons/message-square.mjs
-var __iconNode53 = [
+var __iconNode54 = [
   [
     "path",
     {
@@ -12372,9 +12381,9 @@ var __iconNode53 = [
     }
   ]
 ];
-var MessageSquare = createLucideIcon("message-square", __iconNode53);
+var MessageSquare = createLucideIcon("message-square", __iconNode54);
 // node_modules/lucide-react/dist/esm/icons/messages-square.mjs
-var __iconNode54 = [
+var __iconNode55 = [
   [
     "path",
     {
@@ -12390,9 +12399,9 @@ var __iconNode54 = [
     }
   ]
 ];
-var MessagesSquare = createLucideIcon("messages-square", __iconNode54);
+var MessagesSquare = createLucideIcon("messages-square", __iconNode55);
 // node_modules/lucide-react/dist/esm/icons/moon.mjs
-var __iconNode55 = [
+var __iconNode56 = [
   [
     "path",
     {
@@ -12401,18 +12410,18 @@ var __iconNode55 = [
     }
   ]
 ];
-var Moon = createLucideIcon("moon", __iconNode55);
+var Moon = createLucideIcon("moon", __iconNode56);
 // node_modules/lucide-react/dist/esm/icons/network.mjs
-var __iconNode56 = [
+var __iconNode57 = [
   ["rect", { x: "16", y: "16", width: "6", height: "6", rx: "1", key: "4q2zg0" }],
   ["rect", { x: "2", y: "16", width: "6", height: "6", rx: "1", key: "8cvhb9" }],
   ["rect", { x: "9", y: "2", width: "6", height: "6", rx: "1", key: "1egb70" }],
   ["path", { d: "M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3", key: "1jsf9p" }],
   ["path", { d: "M12 12V8", key: "2874zd" }]
 ];
-var Network = createLucideIcon("network", __iconNode56);
+var Network = createLucideIcon("network", __iconNode57);
 // node_modules/lucide-react/dist/esm/icons/package.mjs
-var __iconNode57 = [
+var __iconNode58 = [
   [
     "path",
     {
@@ -12424,23 +12433,23 @@ var __iconNode57 = [
   ["polyline", { points: "3.29 7 12 12 20.71 7", key: "ousv84" }],
   ["path", { d: "m7.5 4.27 9 5.15", key: "1c824w" }]
 ];
-var Package = createLucideIcon("package", __iconNode57);
+var Package = createLucideIcon("package", __iconNode58);
 // node_modules/lucide-react/dist/esm/icons/panel-right-close.mjs
-var __iconNode58 = [
+var __iconNode59 = [
   ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
   ["path", { d: "M15 3v18", key: "14nvp0" }],
   ["path", { d: "m8 9 3 3-3 3", key: "12hl5m" }]
 ];
-var PanelRightClose = createLucideIcon("panel-right-close", __iconNode58);
+var PanelRightClose = createLucideIcon("panel-right-close", __iconNode59);
 // node_modules/lucide-react/dist/esm/icons/panel-right-open.mjs
-var __iconNode59 = [
+var __iconNode60 = [
   ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
   ["path", { d: "M15 3v18", key: "14nvp0" }],
   ["path", { d: "m10 15-3-3 3-3", key: "1pgupc" }]
 ];
-var PanelRightOpen = createLucideIcon("panel-right-open", __iconNode59);
+var PanelRightOpen = createLucideIcon("panel-right-open", __iconNode60);
 // node_modules/lucide-react/dist/esm/icons/pencil.mjs
-var __iconNode60 = [
+var __iconNode61 = [
   [
     "path",
     {
@@ -12450,27 +12459,27 @@ var __iconNode60 = [
   ],
   ["path", { d: "m15 5 4 4", key: "1mk7zo" }]
 ];
-var Pencil = createLucideIcon("pencil", __iconNode60);
+var Pencil = createLucideIcon("pencil", __iconNode61);
 // node_modules/lucide-react/dist/esm/icons/plus.mjs
-var __iconNode61 = [
+var __iconNode62 = [
   ["path", { d: "M5 12h14", key: "1ays0h" }],
   ["path", { d: "M12 5v14", key: "s699le" }]
 ];
-var Plus = createLucideIcon("plus", __iconNode61);
+var Plus = createLucideIcon("plus", __iconNode62);
 // node_modules/lucide-react/dist/esm/icons/power.mjs
-var __iconNode62 = [
+var __iconNode63 = [
   ["path", { d: "M12 2v10", key: "mnfbl" }],
   ["path", { d: "M18.4 6.6a9 9 0 1 1-12.77.04", key: "obofu9" }]
 ];
-var Power = createLucideIcon("power", __iconNode62);
+var Power = createLucideIcon("power", __iconNode63);
 // node_modules/lucide-react/dist/esm/icons/redo-2.mjs
-var __iconNode63 = [
+var __iconNode64 = [
   ["path", { d: "m15 14 5-5-5-5", key: "12vg1m" }],
   ["path", { d: "M20 9H9.5A5.5 5.5 0 0 0 4 14.5A5.5 5.5 0 0 0 9.5 20H13", key: "6uklza" }]
 ];
-var Redo2 = createLucideIcon("redo-2", __iconNode63);
+var Redo2 = createLucideIcon("redo-2", __iconNode64);
 // node_modules/lucide-react/dist/esm/icons/save.mjs
-var __iconNode64 = [
+var __iconNode65 = [
   [
     "path",
     {
@@ -12481,15 +12490,24 @@ var __iconNode64 = [
   ["path", { d: "M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7", key: "1ydtos" }],
   ["path", { d: "M7 3v4a1 1 0 0 0 1 1h7", key: "t51u73" }]
 ];
-var Save = createLucideIcon("save", __iconNode64);
+var Save = createLucideIcon("save", __iconNode65);
+// node_modules/lucide-react/dist/esm/icons/scissors.mjs
+var __iconNode66 = [
+  ["circle", { cx: "6", cy: "6", r: "3", key: "1lh9wr" }],
+  ["path", { d: "M8.12 8.12 12 12", key: "1alkpv" }],
+  ["path", { d: "M20 4 8.12 15.88", key: "xgtan2" }],
+  ["circle", { cx: "6", cy: "18", r: "3", key: "fqmcym" }],
+  ["path", { d: "M14.8 14.8 20 20", key: "ptml3r" }]
+];
+var Scissors = createLucideIcon("scissors", __iconNode66);
 // node_modules/lucide-react/dist/esm/icons/search.mjs
-var __iconNode65 = [
+var __iconNode67 = [
   ["path", { d: "m21 21-4.34-4.34", key: "14j7rj" }],
   ["circle", { cx: "11", cy: "11", r: "8", key: "4ej97u" }]
 ];
-var Search = createLucideIcon("search", __iconNode65);
+var Search = createLucideIcon("search", __iconNode67);
 // node_modules/lucide-react/dist/esm/icons/settings.mjs
-var __iconNode66 = [
+var __iconNode68 = [
   [
     "path",
     {
@@ -12499,9 +12517,9 @@ var __iconNode66 = [
   ],
   ["circle", { cx: "12", cy: "12", r: "3", key: "1v7zrd" }]
 ];
-var Settings = createLucideIcon("settings", __iconNode66);
+var Settings = createLucideIcon("settings", __iconNode68);
 // node_modules/lucide-react/dist/esm/icons/sun.mjs
-var __iconNode67 = [
+var __iconNode69 = [
   ["circle", { cx: "12", cy: "12", r: "4", key: "4exip2" }],
   ["path", { d: "M12 2v2", key: "tus03m" }],
   ["path", { d: "M12 20v2", key: "1lh1kg" }],
@@ -12512,63 +12530,63 @@ var __iconNode67 = [
   ["path", { d: "m6.34 17.66-1.41 1.41", key: "1m8zz5" }],
   ["path", { d: "m19.07 4.93-1.41 1.41", key: "1shlcs" }]
 ];
-var Sun = createLucideIcon("sun", __iconNode67);
+var Sun = createLucideIcon("sun", __iconNode69);
 // node_modules/lucide-react/dist/esm/icons/text-quote.mjs
-var __iconNode68 = [
+var __iconNode70 = [
   ["path", { d: "M17 5H3", key: "1cn7zz" }],
   ["path", { d: "M21 12H8", key: "scolzb" }],
   ["path", { d: "M21 19H8", key: "13qgcb" }],
   ["path", { d: "M3 12v7", key: "1ri8j3" }]
 ];
-var TextQuote = createLucideIcon("text-quote", __iconNode68);
+var TextQuote = createLucideIcon("text-quote", __iconNode70);
 // node_modules/lucide-react/dist/esm/icons/trash-2.mjs
-var __iconNode69 = [
+var __iconNode71 = [
   ["path", { d: "M10 11v6", key: "nco0om" }],
   ["path", { d: "M14 11v6", key: "outv1u" }],
   ["path", { d: "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6", key: "miytrc" }],
   ["path", { d: "M3 6h18", key: "d0wm0j" }],
   ["path", { d: "M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2", key: "e791ji" }]
 ];
-var Trash2 = createLucideIcon("trash-2", __iconNode69);
+var Trash2 = createLucideIcon("trash-2", __iconNode71);
 // node_modules/lucide-react/dist/esm/icons/undo-2.mjs
-var __iconNode70 = [
+var __iconNode72 = [
   ["path", { d: "M9 14 4 9l5-5", key: "102s5s" }],
   ["path", { d: "M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11", key: "f3b9sd" }]
 ];
-var Undo2 = createLucideIcon("undo-2", __iconNode70);
+var Undo2 = createLucideIcon("undo-2", __iconNode72);
 // node_modules/lucide-react/dist/esm/icons/undo-dot.mjs
-var __iconNode71 = [
+var __iconNode73 = [
   ["path", { d: "M21 17a9 9 0 0 0-15-6.7L3 13", key: "8mp6z9" }],
   ["path", { d: "M3 7v6h6", key: "1v2h90" }],
   ["circle", { cx: "12", cy: "17", r: "1", key: "1ixnty" }]
 ];
-var UndoDot = createLucideIcon("undo-dot", __iconNode71);
+var UndoDot = createLucideIcon("undo-dot", __iconNode73);
 // node_modules/lucide-react/dist/esm/icons/upload.mjs
-var __iconNode72 = [
+var __iconNode74 = [
   ["path", { d: "M12 3v12", key: "1x0j5s" }],
   ["path", { d: "m17 8-5-5-5 5", key: "7q97r8" }],
   ["path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", key: "ih7n3h" }]
 ];
-var Upload = createLucideIcon("upload", __iconNode72);
+var Upload = createLucideIcon("upload", __iconNode74);
 // node_modules/lucide-react/dist/esm/icons/user-check.mjs
-var __iconNode73 = [
+var __iconNode75 = [
   ["path", { d: "m16 11 2 2 4-4", key: "9rsbq5" }],
   ["path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", key: "1yyitq" }],
   ["circle", { cx: "9", cy: "7", r: "4", key: "nufk8" }]
 ];
-var UserCheck = createLucideIcon("user-check", __iconNode73);
+var UserCheck = createLucideIcon("user-check", __iconNode75);
 // node_modules/lucide-react/dist/esm/icons/user.mjs
-var __iconNode74 = [
+var __iconNode76 = [
   ["path", { d: "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2", key: "975kel" }],
   ["circle", { cx: "12", cy: "7", r: "4", key: "17ys0d" }]
 ];
-var User = createLucideIcon("user", __iconNode74);
+var User = createLucideIcon("user", __iconNode76);
 // node_modules/lucide-react/dist/esm/icons/x.mjs
-var __iconNode75 = [
+var __iconNode77 = [
   ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
   ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
 ];
-var X = createLucideIcon("x", __iconNode75);
+var X = createLucideIcon("x", __iconNode77);
 // src/scriptorium/surface/Frame.tsx
 var import_react56 = __toESM(require_react(), 1);
 
@@ -26001,6 +26019,11 @@ function WaitingDot({
 
 // src/kit/chat/NoteAtSelection.tsx
 var jsx_runtime6 = __toESM(require_jsx_runtime(), 1);
+var NATIVE_MENU_HINT = "Right-click again for the browser menu";
+function editShortcut(key, mac2 = onMac()) {
+  return mac2 ? `⌘${key}` : `Ctrl ${key}`;
+}
+var ITEM = "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-ink hover:bg-bg focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none";
 var CARD_W = 320;
 var MARGIN = 12;
 function placeCard(at2, height, viewport) {
@@ -26017,7 +26040,10 @@ function NoteAtSelection({
   onAdd,
   onShowNote,
   onDeleteNote,
-  onAddLink
+  onAddLink,
+  edits,
+  linkRefusal: linkRefusal2,
+  noteRefusal
 }) {
   const [writing, setWriting] = import_react10.useState(false);
   const [body, setBody] = import_react10.useState("");
@@ -26059,6 +26085,12 @@ function NoteAtSelection({
   }, [at2, onClose]);
   if (!at2)
     return null;
+  const passage = at2.from < at2.to;
+  const editActs = [
+    edits?.cut && { label: "Cut", key: "X", icon: Scissors, run: edits.cut },
+    edits?.copy && { label: "Copy", key: "C", icon: Copy, run: edits.copy },
+    edits?.paste && { label: "Paste", key: "V", icon: ClipboardPaste, run: edits.paste }
+  ].filter((a) => !!a);
   const submit = (e) => {
     e.preventDefault();
     if (!body.trim())
@@ -26153,40 +26185,79 @@ function NoteAtSelection({
             })
           ]
         }, n.id)),
-        existing.length > 0 && at2.from < at2.to && /* @__PURE__ */ jsx_runtime6.jsx("div", {
+        existing.length > 0 && /* @__PURE__ */ jsx_runtime6.jsx("div", {
           className: "my-1 h-px bg-edge",
           "aria-hidden": true
         }),
-        at2.from < at2.to && /* @__PURE__ */ jsx_runtime6.jsxs("button", {
+        /* @__PURE__ */ jsx_runtime6.jsxs("button", {
           type: "button",
+          disabled: !passage || noteRefusal !== undefined,
+          title: !passage ? "A note is about a passage: select some text first" : noteRefusal,
           onClick: () => setWriting(true),
-          className: cn("flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-ink", "hover:bg-bg focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"),
+          className: cn(ITEM, "disabled:pointer-events-none disabled:text-ink-faint"),
           children: [
             /* @__PURE__ */ jsx_runtime6.jsx(MessageSquarePlus, {
               "aria-hidden": true,
               className: "size-3.5 text-ink-faint"
             }),
-            "Add note"
+            "Add note",
+            (!passage || noteRefusal !== undefined) && /* @__PURE__ */ jsx_runtime6.jsx("span", {
+              "data-slot": "why",
+              className: "ml-auto text-[10px] text-ink-faint",
+              children: passage ? "session ended" : "select text first"
+            })
           ]
         }),
-        at2.from < at2.to && onAddLink && /* @__PURE__ */ jsx_runtime6.jsxs("button", {
+        onAddLink && /* @__PURE__ */ jsx_runtime6.jsxs("button", {
           type: "button",
+          disabled: linkRefusal2 !== undefined,
+          title: linkRefusal2,
           onClick: () => {
             onAddLink(at2);
             onClose();
           },
-          className: cn("flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-ink", "hover:bg-bg focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"),
+          className: cn(ITEM, "disabled:pointer-events-none disabled:text-ink-faint"),
           children: [
             /* @__PURE__ */ jsx_runtime6.jsx(Link, {
               "aria-hidden": true,
               className: "size-3.5 text-ink-faint"
             }),
-            "Add link",
+            passage ? "Add link" : "Insert a link",
             /* @__PURE__ */ jsx_runtime6.jsx("span", {
+              "data-slot": linkRefusal2 ? "why" : undefined,
               className: "ml-auto text-[10px] text-ink-faint",
-              children: linkShortcutLabel()
+              children: linkRefusal2 ? "not here" : linkShortcutLabel()
             })
           ]
+        }),
+        editActs.length > 0 && /* @__PURE__ */ jsx_runtime6.jsx("div", {
+          className: "my-1 h-px bg-edge",
+          "aria-hidden": true
+        }),
+        editActs.map(({ label, key, icon: Icon2, run }) => /* @__PURE__ */ jsx_runtime6.jsxs("button", {
+          type: "button",
+          onClick: () => {
+            onClose();
+            run();
+          },
+          className: ITEM,
+          children: [
+            /* @__PURE__ */ jsx_runtime6.jsx(Icon2, {
+              "aria-hidden": true,
+              className: "size-3.5 text-ink-faint"
+            }),
+            label,
+            /* @__PURE__ */ jsx_runtime6.jsx("span", {
+              className: "ml-auto text-[10px] text-ink-faint",
+              children: editShortcut(key)
+            })
+          ]
+        }, label)),
+        /* @__PURE__ */ jsx_runtime6.jsx("p", {
+          "data-slot": "native-menu-hint",
+          title: "Shift-right-click opens the browser menu straight away",
+          className: "mt-1 border-t border-edge px-2 pt-1.5 pb-0.5 text-[10px] text-ink-faint",
+          children: NATIVE_MENU_HINT
         })
       ]
     })
@@ -57828,12 +57899,29 @@ function linkTextProblem(selected) {
     return "The selection starts or ends inside emphasis or code. Select the whole marked span, or only text inside it.";
   return null;
 }
-function linkInsertion(kind, selected, target, relations, heading2) {
+var INLINE_LINK = /!?\[(?:\\.|[^\\\]\n])*\]\((?:\\.|[^\\)\n])*\)/g;
+function insideLinkProblem(text4, from, to) {
+  const start = text4.lastIndexOf(`
+`, from - 1) + 1;
+  const endAt = text4.indexOf(`
+`, to);
+  const line = text4.slice(start, endAt === -1 ? text4.length : endAt);
+  for (const m of line.matchAll(INLINE_LINK)) {
+    const a = start + (m.index ?? 0);
+    const b = a + m[0].length;
+    const hit = from === to ? a < from && from < b : a < to && from < b;
+    if (hit)
+      return from === to ? "The caret is inside a link, and a link cannot hold another. Move it outside the link first." : "The selection is inside a link, and a link cannot hold another.";
+  }
+  return null;
+}
+function linkInsertion(kind, selected, target, relations, heading2, label) {
   const href = `${hrefWithRelations(target.href, relations)}${heading2 ? `#${heading2.anchor}` : ""}`;
   if (kind === "complete")
     return `${href})`;
   const words = kind === "wrap" && selected !== "";
-  const text4 = words ? escapeUnbalanced(selected) : escapeLinkText(heading2 ? heading2.text : stem(target.name));
+  const typed = !words && label !== undefined && label.trim() !== "" ? label.trim() : null;
+  const text4 = words ? escapeUnbalanced(selected) : escapeLinkText(typed ?? (heading2 ? heading2.text : stem(target.name)));
   return `${target.image && !words ? "!" : ""}[${text4}](${href})`;
 }
 function insertionGuard(kind, range, quote) {
@@ -60028,7 +60116,7 @@ function DocumentView({
       return main ? { from: main.from, to: main.to } : null;
     },
     text: () => view.current?.state.doc.toString() ?? initial2.current,
-    replaceRange: (from, to, insert2, guard) => {
+    replaceRange: (from, to, insert2, guard, userEvent = "input.link") => {
       const v = view.current;
       if (!v || v.state.readOnly)
         return false;
@@ -60041,7 +60129,7 @@ function DocumentView({
         changes: { from, to, insert: insert2 },
         selection: { anchor: from + insert2.length },
         scrollIntoView: true,
-        userEvent: "input.link",
+        userEvent,
         annotations: isolateHistory.of("full")
       });
       v.focus();
@@ -60209,27 +60297,30 @@ function DocumentView({
         blur: () => {
           handlers2.current.onFlush?.();
           return false;
-        },
-        contextmenu: (event, v2) => {
-          if (!handlers2.current.onContextMenu)
-            return false;
-          const { from, to } = v2.state.selection.main;
-          const at2 = v2.posAtCoords({ x: event.clientX, y: event.clientY });
-          const pos = at2 === null ? null : daemonOffset(textRef.current, at2);
-          const noteIds = pos === null ? [] : (notesRef.current ?? []).filter((n) => n.from !== null && n.to !== null && pos >= n.from && pos <= n.to).map((n) => n.id);
-          if (from === to && noteIds.length === 0)
-            return false;
-          event.preventDefault();
-          handlers2.current.onContextMenu({
-            x: event.clientX,
-            y: event.clientY,
-            from: daemonOffset(textRef.current, from),
-            to: daemonOffset(textRef.current, to),
-            noteIds
-          });
-          return true;
         }
       }));
+    extensions2.push(EditorView.domEventHandlers({
+      contextmenu: (event, v2) => {
+        const ask = handlers2.current.onContextMenu;
+        if (!ask)
+          return false;
+        const { from, to } = v2.state.selection.main;
+        const at2 = v2.posAtCoords({ x: event.clientX, y: event.clientY });
+        const pos = at2 === null ? null : daemonOffset(textRef.current, at2);
+        const noteIds = pos === null ? [] : (notesRef.current ?? []).filter((n) => n.from !== null && n.to !== null && pos >= n.from && pos <= n.to).map((n) => n.id);
+        const taken = ask({
+          x: event.clientX,
+          y: event.clientY,
+          from: daemonOffset(textRef.current, from),
+          to: daemonOffset(textRef.current, to),
+          noteIds
+        }, { shiftKey: event.shiftKey });
+        if (taken === false)
+          return false;
+        event.preventDefault();
+        return true;
+      }
+    }));
     extensions2.push(...additions.current.extensions ?? []);
     const pending = editable2 ? replayRef.current : null;
     const replaying = pending && applyChanges(pending.base, pending.changes) === initial2.current ? pending : null;
@@ -60293,6 +60384,9 @@ function DocumentView({
   const revealed = import_react20.useRef(onRevealed);
   revealed.current = onRevealed;
   const headingMarkTimer = import_react20.useRef(undefined);
+  const unpainted = import_react20.useRef(clearSeq);
+  const clearNow = import_react20.useRef(clearSeq);
+  clearNow.current = clearSeq;
   import_react20.useEffect(() => {
     const v = view.current;
     if (!v || !reveal)
@@ -60311,6 +60405,7 @@ function DocumentView({
       ] : EditorView.scrollIntoView(start, { y: "center" })
     });
     v.focus();
+    unpainted.current = clearNow.current;
     revealed.current?.(reveal.seq);
     if (!mark)
       return;
@@ -60334,7 +60429,6 @@ function DocumentView({
     const t2 = setTimeout(() => view.current?.dispatch({ effects: setFlash.of(null) }), FLASH_MARK_MS);
     return () => clearTimeout(t2);
   }, [flashSeq]);
-  const unpainted = import_react20.useRef(clearSeq);
   import_react20.useEffect(() => {
     const v = view.current;
     if (!v || clearSeq === undefined || clearSeq === unpainted.current)
@@ -60417,6 +60511,8 @@ function LinkPicker({
   const [active, setActive] = import_react21.useState(0);
   const [chosen, setChosen] = import_react21.useState([]);
   const [relText, setRelText] = import_react21.useState("");
+  const labelled = kind === "wrap" && quote === "";
+  const [label, setLabel] = import_react21.useState("");
   const card = import_react21.useRef(null);
   const field = import_react21.useRef(null);
   const [pos, setPos] = import_react21.useState(null);
@@ -60461,13 +60557,14 @@ function LinkPicker({
     const pending = normaliseRelation(relText);
     return pending !== "" && !hasRelation(chosen, pending) ? [...chosen, pending] : chosen;
   };
+  const labelNow = () => labelled && label.trim() !== "" ? label.trim() : undefined;
   const choose = (t2) => {
     if (t2)
-      onChoose(t2, relationsNow());
+      onChoose(t2, relationsNow(), undefined, labelNow());
   };
   const chooseHeading = (h) => {
     if (step && h)
-      onChoose(step.target, relationsNow(), h);
+      onChoose(step.target, relationsNow(), h, labelNow());
   };
   const chooseActive = () => step ? chooseHeading(rankedHeadings[active]) : choose(ranked[active]);
   const enterHeadings = () => {
@@ -60663,6 +60760,21 @@ function LinkPicker({
       /* @__PURE__ */ jsx_runtime24.jsxs("div", {
         className: "flex flex-col gap-1 border-t border-edge px-2 py-1.5",
         children: [
+          labelled && /* @__PURE__ */ jsx_runtime24.jsx("input", {
+            value: label,
+            onChange: (e) => setLabel(e.target.value),
+            onKeyDown: (e) => {
+              if (e.key !== "Enter")
+                return;
+              e.preventDefault();
+              chooseActive();
+            },
+            placeholder: "Link text (the document's name if empty)",
+            "aria-label": "Link text",
+            autoComplete: "off",
+            "data-slot": "link-label",
+            className: "w-full bg-transparent text-[11px] text-ink outline-none placeholder:text-ink-faint"
+          }),
           /* @__PURE__ */ jsx_runtime24.jsxs("div", {
             className: "flex flex-wrap items-center gap-1",
             children: [
@@ -60706,7 +60818,7 @@ function LinkPicker({
           }),
           /* @__PURE__ */ jsx_runtime24.jsx("span", {
             className: "text-[10px] text-ink-faint",
-            children: step ? "↵ to link · ⌫ for documents · tab for a relation · esc to close" : "↵ to link · # for headings · tab for a relation · esc to close"
+            children: step ? `↵ to link · ⌫ for documents · tab for ${labelled ? "its text" : "a relation"} · esc to close` : `↵ to link · # for headings · tab for ${labelled ? "its text" : "a relation"} · esc to close`
           })
         ]
       })
@@ -67156,6 +67268,26 @@ function readFrontmatter(text4) {
 `)[0] ?? message };
   }
 }
+var KEY_LINE = /^(?:"([^"\n]+)"|'([^'\n]+)'|([A-Za-z_][\w-]*))[ \t]*:/;
+function frontmatterKeyAt(text4, offset4) {
+  const { raw, bodyStart } = splitFrontmatter(text4);
+  if (raw === null || offset4 < 0 || offset4 >= bodyStart)
+    return null;
+  const start = text4.indexOf(`
+`) + 1;
+  let key = "";
+  let at2 = start;
+  for (const line of raw.split(`
+`)) {
+    if (at2 > offset4)
+      break;
+    const m = KEY_LINE.exec(line);
+    if (m)
+      key = m[1] ?? m[2] ?? m[3] ?? "";
+    at2 += line.length + 1;
+  }
+  return offset4 >= start + raw.length ? "" : key;
+}
 function showValue(value) {
   if (value === null || value === undefined)
     return "—";
@@ -67498,6 +67630,14 @@ function Chip({ chip }) {
     children: chip.label
   });
 }
+function headerFieldElements(header, key) {
+  const hits = key === "" ? [] : [...header.querySelectorAll("[data-field], [data-chip]")].filter((el) => {
+    const field = el.getAttribute("data-field");
+    const chip = el.getAttribute("data-chip");
+    return field === key || chip === key || (chip?.startsWith(`${key}.`) ?? false);
+  });
+  return hits.length > 0 ? hits : [header];
+}
 function FrontmatterHeader({
   frontmatter,
   chips: chipSlot,
@@ -67558,10 +67698,12 @@ function FrontmatterHeader({
         ]
       }),
       description && /* @__PURE__ */ jsx_runtime27.jsx("p", {
+        "data-field": "description",
         className: "text-ink-dim",
         children: description
       }),
       tags2.length > 0 && /* @__PURE__ */ jsx_runtime27.jsx("div", {
+        "data-field": "tags",
         className: "flex flex-wrap items-center gap-1",
         children: tags2.map((t2) => /* @__PURE__ */ jsx_runtime27.jsx(Chip, {
           chip: { label: `#${t2}`, tone: "outline" }
@@ -67573,10 +67715,12 @@ function FrontmatterHeader({
           className: "contents",
           children: [
             /* @__PURE__ */ jsx_runtime27.jsx("dt", {
+              "data-field": k,
               className: "font-mono text-ink-faint",
               children: k
             }),
             /* @__PURE__ */ jsx_runtime27.jsx("dd", {
+              "data-field": k,
               className: "min-w-0 break-words text-ink-dim",
               children: showValue(v)
             })
@@ -69636,6 +69780,7 @@ function MarkdownView({
   const htmlProp = import_react25.useMemo(() => ({ __html: html }), [html]);
   const projection = import_react25.useMemo(() => project(text4), [text4]);
   const body = import_react25.useRef(null);
+  const headerBox = import_react25.useRef(null);
   const [widgetSpans, setWidgetSpans] = import_react25.useState([]);
   import_react25.useLayoutEffect(() => {
     const found = [];
@@ -69835,6 +69980,23 @@ function MarkdownView({
   }, [notes, projection, focusedNote, pendingNote, html]);
   const flashSeq = flash?.seq;
   import_react25.useEffect(() => {
+    const key = flash ? frontmatterKeyAt(text4, flash.from) : null;
+    const box = headerBox.current?.querySelector('[data-slot="frontmatter-header"]');
+    if (key !== null && box) {
+      const marked = headerFieldElements(box, key);
+      for (const el of marked)
+        el.setAttribute("data-flash", "on");
+      marked[0]?.scrollIntoView?.({ block: "center" });
+      const t3 = setTimeout(() => {
+        for (const el of marked)
+          el.removeAttribute("data-flash");
+      }, FLASH_PAINT_MS);
+      return () => {
+        clearTimeout(t3);
+        for (const el of marked)
+          el.removeAttribute("data-flash");
+      };
+    }
     const reg = highlightRegistry();
     const root2 = body.current;
     if (!reg || !root2 || !flash || flash.from >= flash.to)
@@ -69864,6 +70026,7 @@ function MarkdownView({
         "data-slot": "markdown-view",
         children: [
           frontmatter && /* @__PURE__ */ jsx_runtime28.jsx("div", {
+            ref: headerBox,
             className: "mx-auto max-w-[76ch] px-8 pt-7",
             children: /* @__PURE__ */ jsx_runtime28.jsx(FrontmatterHeader, {
               frontmatter,
@@ -69890,22 +70053,27 @@ function MarkdownView({
             onContextMenu: (e) => {
               if (!onContextMenu)
                 return;
+              if (e.target.closest?.("a"))
+                return;
               const root2 = body.current;
               const point3 = root2 ? pointOffset(root2, projection, e.clientX, e.clientY) : null;
               const remembered = lastRange.current;
               const r2 = selectedRange() ?? (remembered && point3 !== null && point3 >= remembered.from && point3 <= remembered.to ? remembered : null);
               const noteIds = point3 === null ? [] : (notes ?? []).filter((n) => n.from !== null && n.to !== null && point3 >= n.from && point3 <= n.to).map((n) => n.id);
               const m = r2 ? reportable.current(r2) : null;
-              if (!m && noteIds.length === 0)
+              const caret = point3 === null ? null : reportable.current({ from: point3, to: point3 });
+              const where = m ?? caret;
+              if (!where && noteIds.length === 0)
                 return;
-              e.preventDefault();
-              onContextMenu({
+              const taken = onContextMenu({
                 x: e.clientX,
                 y: e.clientY,
-                from: m?.from ?? 0,
-                to: m?.to ?? 0,
+                from: where?.from ?? 0,
+                to: where?.to ?? 0,
                 noteIds
-              });
+              }, { shiftKey: e.shiftKey });
+              if (taken !== false)
+                e.preventDefault();
             },
             dangerouslySetInnerHTML: htmlProp
           }),
@@ -70731,15 +70899,19 @@ function DocumentPane({
     };
   };
   const replay = import_react29.useRef(null);
+  const linkPlaceProblem = (via, from, to) => {
+    const t2 = via === "rendered" ? shown2 : editorHandle.current?.text();
+    return t2 === undefined ? null : insideLinkProblem(t2, from, to);
+  };
   const askLink = (r2, via = "editor") => {
     if (!canLink) {
       r2.track.release();
       return;
     }
-    const problem = r2.kind === "wrap" ? linkTextProblem(r2.quote) : null;
+    const problem = r2.kind === "wrap" ? linkTextProblem(r2.quote) ?? linkPlaceProblem(via, r2.from, r2.to) : null;
     if (problem) {
       r2.track.release();
-      w.announce("Can't link this selection", problem);
+      w.announce(r2.from === r2.to ? "Can't link here" : "Can't link this selection", problem);
       return;
     }
     const range = r2.track.range();
@@ -70772,6 +70944,80 @@ function DocumentPane({
     }, "rendered");
   };
   import_react29.useEffect(() => () => linking?.track.release(), [linking]);
+  const menuOpen = import_react29.useRef(false);
+  menuOpen.current = noteAt !== null;
+  const nativeNext = import_react29.useRef(false);
+  import_react29.useEffect(() => {
+    const down = (e) => {
+      nativeNext.current = menuOpen.current && (e.button === 2 || e.button === 0 && e.ctrlKey);
+    };
+    const spent = () => {
+      nativeNext.current = false;
+    };
+    window.addEventListener("mousedown", down, true);
+    window.addEventListener("contextmenu", spent);
+    return () => {
+      window.removeEventListener("mousedown", down, true);
+      window.removeEventListener("contextmenu", spent);
+    };
+  }, []);
+  const openMenu = (via) => (at2, how) => {
+    const open = { ...at2, via };
+    if (how.shiftKey || nativeNext.current || !menuUsable(open)) {
+      nativeNext.current = false;
+      setNoteAt(null);
+      return false;
+    }
+    setNoteAt(open);
+    return true;
+  };
+  const noteRefusal = daemon.connection === "ended" ? "The session has ended, so no note can be added." : undefined;
+  const menuLinkRefusal = (at2) => {
+    if (shown2 === undefined)
+      return null;
+    const selected = at2.from < at2.to ? shown2.slice(at2.from, at2.to) : "";
+    return (selected ? linkTextProblem(selected) : null) ?? insideLinkProblem(shown2, at2.from, at2.to);
+  };
+  const menuUsable = (at2) => at2.noteIds.length > 0 || at2.from < at2.to && noteRefusal === undefined || canLink && menuLinkRefusal(at2) === null || Object.keys(menuEdits(at2)).length > 0;
+  const announceClipboard = (act) => {
+    const key = `${onMac() ? "⌘" : "Ctrl "}${act === "paste" ? "V" : act === "cut" ? "X" : "C"}`;
+    w.announce(act === "paste" ? "Couldn't paste" : act === "cut" ? "Couldn't cut" : "Couldn't copy", act === "paste" ? `The browser did not let the page read the clipboard. ${key} pastes as usual.` : `The browser did not let the page write to the clipboard. ${key} still works.`);
+  };
+  const menuEdits = (at2) => {
+    const clip2 = typeof navigator !== "undefined" ? navigator.clipboard : undefined;
+    const passage = at2.from < at2.to;
+    const ed = at2.via === "raw" ? editorHandle.current : null;
+    const writable = !!ed && daemon.connection !== "ended";
+    const from = ed && shown2 !== undefined ? editorOffset(shown2, at2.from) : at2.from;
+    const to = ed && shown2 !== undefined ? editorOffset(shown2, at2.to) : at2.to;
+    const quote = () => ed ? ed.text().slice(from, to) : window.getSelection()?.toString() || (shown2 ?? "").slice(at2.from, at2.to);
+    const write = (text5) => clip2 ? clip2.writeText(text5) : Promise.reject(new Error("no clipboard"));
+    return {
+      ...passage && {
+        copy: () => {
+          write(quote()).catch(() => announceClipboard("copy"));
+        }
+      },
+      ...passage && writable && {
+        cut: () => {
+          const text5 = quote();
+          write(text5).then(() => {
+            if (!ed?.replaceRange(from, to, "", { at: from, text: text5 }, "delete.cut"))
+              w.announce("Not cut", "The text changed under the menu. Select it and try again.");
+          }, () => announceClipboard("cut"));
+        }
+      },
+      ...writable && {
+        paste: () => {
+          const text5 = ed?.text().slice(from, to) ?? "";
+          (clip2 ? clip2.readText() : Promise.reject(new Error("no clipboard"))).then((pasted) => {
+            if (!ed?.replaceRange(from, to, pasted, { at: from, text: text5 }, "input.paste"))
+              w.announce("Not pasted", "The text changed under the menu. Try again.");
+          }, () => announceClipboard("paste"));
+        }
+      }
+    };
+  };
   const { request } = daemon;
   const linkingOpen = linking !== null;
   import_react29.useEffect(() => {
@@ -71606,7 +71852,7 @@ function DocumentPane({
                 clearSeq: w.clearSeq,
                 place,
                 pendingNote,
-                onContextMenu: setNoteAt,
+                onContextMenu: openMenu("raw"),
                 onLinkRequest: isJson ? undefined : askLink,
                 onFollowLink: isJson ? undefined : followLink,
                 onImages: isJson ? undefined : takeImages,
@@ -71646,7 +71892,7 @@ function DocumentPane({
                   onSelect,
                   clearSeq: w.clearSeq,
                   place,
-                  onContextMenu: setNoteAt,
+                  onContextMenu: openMenu("rendered"),
                   widgets: inlineWidgets,
                   frontmatterChips,
                   frontmatterTrust,
@@ -71704,7 +71950,10 @@ function DocumentPane({
             w.requestReveal({ doc: doc2.slug, version: doc2.active, from: n.from, to: n.to });
         },
         onDeleteNote: (id) => doc2 && send({ op: "note.remove", doc: doc2.slug, id }),
-        onAddLink: canLink ? (at2) => askLinkAt({ from: at2.from, to: at2.to, x: at2.x, y: at2.y }) : undefined
+        onAddLink: canLink ? (at2) => askLinkAt({ from: at2.from, to: at2.to, x: at2.x, y: at2.y }) : undefined,
+        edits: noteAt ? menuEdits(noteAt) : undefined,
+        linkRefusal: noteAt ? menuLinkRefusal(noteAt) ?? undefined : undefined,
+        noteRefusal
       }),
       linking && canLink && /* @__PURE__ */ jsx_runtime32.jsx(LinkPicker, {
         at: linking,
@@ -71718,7 +71967,7 @@ function DocumentPane({
         failure: linkFailure,
         onClose: closeLink,
         onHeadings: (target) => headingsFor(target.path),
-        onChoose: (target, relations, heading2) => chooseLink(linking.kind, linking.quote, linkInsertion(linking.kind, linking.quote, target, relations, heading2), linking)
+        onChoose: (target, relations, heading2, label) => chooseLink(linking.kind, linking.quote, linkInsertion(linking.kind, linking.quote, target, relations, heading2, label), linking)
       }),
       doc2 && /* @__PURE__ */ jsx_runtime32.jsx(NewVersionDialog, {
         open: naming !== null,

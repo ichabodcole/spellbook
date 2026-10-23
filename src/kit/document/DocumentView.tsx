@@ -333,6 +333,8 @@ export type EditorHandle = {
     to: number,
     insert: string,
     guard?: { at: number; text: string },
+    /** What CodeMirror records the edit as: a link (the default), a cut or a paste. */
+    userEvent?: string,
   ) => boolean;
   /**
    * Follow the range a link will replace through every change from now on (see
@@ -348,6 +350,17 @@ export type EditorHandle = {
  * drop landed on) while the files are sent; `quote` is the text that range held,
  * which must still stand there for the paste to replace it.
  */
+/**
+ * A right-click in the text: where, what is selected (the caret, `from === to`,
+ * when nothing is), which notes are under the pointer, and whether Shift was
+ * held. Every right-click asks; the answer `false` leaves the event to the
+ * browser, whose own menu then opens.
+ */
+export type ContextMenuRequest = (
+  at: { x: number; y: number; from: number; to: number; noteIds: string[] },
+  how: { shiftKey: boolean },
+) => boolean | undefined;
+
 export type ImageArrival = {
   files: File[];
   how: "paste" | "drop";
@@ -480,14 +493,8 @@ export function DocumentView({
   clearSeq?: number;
   /** The passage a note is being written about, painted while its composer is open. */
   pendingNote?: { from: number; to: number } | null;
-  /** Right-click in the text: where, what is selected, and which notes are under the pointer. */
-  onContextMenu?: (at: {
-    x: number;
-    y: number;
-    from: number;
-    to: number;
-    noteIds: string[];
-  }) => void;
+  /** Right-click in the text: see `ContextMenuRequest`. */
+  onContextMenu?: ContextMenuRequest;
   /** The source line at the top of this pane, shared with the rendered one. */
   place?: Place;
   handle?: Ref<EditorHandle>;
@@ -644,7 +651,7 @@ export function DocumentView({
         return main ? { from: main.from, to: main.to } : null;
       },
       text: () => view.current?.state.doc.toString() ?? initial.current,
-      replaceRange: (from, to, insert, guard) => {
+      replaceRange: (from, to, insert, guard, userEvent = "input.link") => {
         const v = view.current;
         if (!v || v.state.readOnly) return false;
         const len = v.state.doc.length;
@@ -658,7 +665,7 @@ export function DocumentView({
           changes: { from, to, insert },
           selection: { anchor: from + insert.length },
           scrollIntoView: true,
-          userEvent: "input.link",
+          userEvent,
           // One undo step of its own: a single Mod-Z takes the whole link back,
           // and the next key typed does not join it.
           annotations: isolateHistory.of("full"),
@@ -867,34 +874,45 @@ export function DocumentView({
             handlers.current.onFlush?.();
             return false;
           },
-          // Only over a selection or a note. With neither there is nothing of ours
-          // to offer, so the browser's own menu (spelling, copy, look up) is left
-          // alone rather than replaced with an empty one.
-          contextmenu: (event, v) => {
-            if (!handlers.current.onContextMenu) return false;
-            // In the daemon's count, as the notes are and as a note made here is anchored.
-            const { from, to } = v.state.selection.main;
-            const at = v.posAtCoords({ x: event.clientX, y: event.clientY });
-            const pos = at === null ? null : daemonOffset(textRef.current, at);
-            const noteIds =
-              pos === null
-                ? []
-                : (notesRef.current ?? [])
-                    .filter((n) => n.from !== null && n.to !== null && pos >= n.from && pos <= n.to)
-                    .map((n) => n.id);
-            if (from === to && noteIds.length === 0) return false;
-            event.preventDefault();
-            handlers.current.onContextMenu({
+        }),
+      );
+    extensions.push(
+      EditorView.domEventHandlers({
+        // In a read-only editor too (an ended session, a version not active):
+        // the raw and rendered views must agree on when the menu opens.
+        // Every right-click asks, with the selection or only the caret: which
+        // menu comes up must not depend on whether something is selected. The
+        // pane may answer `false` (Shift held, or a second right-click), and the
+        // browser's own menu then opens.
+        contextmenu: (event, v) => {
+          const ask = handlers.current.onContextMenu;
+          if (!ask) return false;
+          // In the daemon's count, as the notes are and as a note made here is anchored.
+          const { from, to } = v.state.selection.main;
+          const at = v.posAtCoords({ x: event.clientX, y: event.clientY });
+          const pos = at === null ? null : daemonOffset(textRef.current, at);
+          const noteIds =
+            pos === null
+              ? []
+              : (notesRef.current ?? [])
+                  .filter((n) => n.from !== null && n.to !== null && pos >= n.from && pos <= n.to)
+                  .map((n) => n.id);
+          const taken = ask(
+            {
               x: event.clientX,
               y: event.clientY,
               from: daemonOffset(textRef.current, from),
               to: daemonOffset(textRef.current, to),
               noteIds,
-            });
-            return true;
-          },
-        }),
-      );
+            },
+            { shiftKey: event.shiftKey },
+          );
+          if (taken === false) return false;
+          event.preventDefault();
+          return true;
+        },
+      }),
+    );
     extensions.push(...(additions.current.extensions ?? []));
     const pending = editable ? replayRef.current : null;
     const replaying =

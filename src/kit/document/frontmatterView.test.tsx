@@ -10,7 +10,7 @@ import { cleanup, installDom, mount, removeDom, settle } from "../lib/testDom.ts
 import type { PlacedNote } from "../workspace/protocol";
 import type { SelectionReport } from "./DocumentView.tsx";
 import type { FrontmatterChips } from "./FrontmatterHeader.tsx";
-import { MarkdownView } from "./MarkdownView.tsx";
+import { FLASH_PAINT_MS, MarkdownView } from "./MarkdownView.tsx";
 
 /** The CSS Custom Highlight API, which happy-dom lacks: a registry the test can read. */
 class FakeHighlight extends Set<Range> {
@@ -110,7 +110,14 @@ for (const [name, text] of [
     test("a context menu over a selection offers a note on that passage", async () => {
       const menus: { from: number; to: number }[] = [];
       const m = await mount(
-        <MarkdownView text={text} onSelect={() => {}} onContextMenu={(at) => menus.push(at)} />,
+        <MarkdownView
+          text={text}
+          onSelect={() => {}}
+          onContextMenu={(at) => {
+            menus.push(at);
+            return true;
+          }}
+        />,
       );
       await select(body(m.container), "dawn", "dawn");
       await settle(() => {
@@ -255,6 +262,16 @@ describe("the header", () => {
     await m.render(<MarkdownView text={DOC} flash={flash("bakery", 5)} />);
     expect(marked(m.container)).toEqual([]);
     expect(highlights.get("doc-flash")?.ranges[0]?.toString()).toBe("bakery");
+    await m.unmount();
+  });
+
+  test("the frontmatter mark goes when its moment is up", async () => {
+    const DOC = FM + BODY;
+    const at = DOC.indexOf("capital");
+    const m = await mount(<MarkdownView text={DOC} flash={{ from: at, to: at + 7, seq: 1 }} />);
+    expect(m.container.querySelectorAll('[data-flash="on"]').length).toBe(2);
+    await settle(() => new Promise((r) => setTimeout(r, FLASH_PAINT_MS + 100)));
+    expect(m.container.querySelectorAll("[data-flash]").length).toBe(0);
     await m.unmount();
   });
 });

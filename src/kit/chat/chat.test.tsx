@@ -22,7 +22,7 @@ import { WAITING_LABEL as DAEMON_LABEL } from "../workspace/waiting";
 import { type Attachable, ChatComposer, NO_AGENT_NOTICE } from "./ChatComposer.tsx";
 import { ChatSidebar } from "./ChatSidebar.tsx";
 import { NewVersionToasts } from "./NewVersionToasts.tsx";
-import { NoteAtSelection, placeCard } from "./NoteAtSelection.tsx";
+import { type At, NATIVE_MENU_HINT, NoteAtSelection, placeCard } from "./NoteAtSelection.tsx";
 import { NotesPanel } from "./NotesPanel.tsx";
 import { OutsideChangeToasts } from "./OutsideChangeToasts.tsx";
 import { FINISHED_STATUSES, isFinishedStatus, TasksPanel } from "./TasksPanel.tsx";
@@ -587,11 +587,62 @@ describe("NoteAtSelection", () => {
         onDeleteNote={(id) => deleted.push(id)}
       />,
     );
-    expect(button("Add note")).toBeNull();
+    // There, so it can be found, but disabled with the reason: a note needs a passage.
+    expect((button("Add note") as HTMLButtonElement | null)?.disabled).toBe(true);
+    expect(button("Add note")?.textContent).toContain("select text first");
     await click(button("what about it"));
     await click(q('[aria-label^="Delete note"]'));
     expect(shown).toEqual(["n1"]);
     expect(deleted).toEqual(["n1"]);
+    await m.unmount();
+  });
+
+  test("with no selection: Insert a link, the edits it is given, and the way to the browser's menu", async () => {
+    const asked: At[] = [];
+    const ran: string[] = [];
+    let closed = 0;
+    const at = { x: 100, y: 100, from: 4, to: 4, noteIds: [] };
+    const m = await mount(
+      <NoteAtSelection
+        at={at}
+        quote=""
+        existing={[]}
+        onClose={() => closed++}
+        onAdd={() => {}}
+        onShowNote={() => {}}
+        onDeleteNote={() => {}}
+        onAddLink={(a) => asked.push(a)}
+        edits={{ paste: () => ran.push("paste") }}
+      />,
+    );
+    expect(button("Add link")).toBeNull();
+    expect(button("Cut")).toBeNull();
+    expect(button("Copy")).toBeNull();
+    expect(q('[data-slot="native-menu-hint"]')?.textContent).toBe(NATIVE_MENU_HINT);
+    await click(button("Paste"));
+    expect(ran).toEqual(["paste"]);
+    await click(button("Insert a link"));
+    expect(asked).toEqual([at]);
+    expect(closed).toBe(2);
+    await m.render(
+      <NoteAtSelection
+        at={{ ...at, to: 9 }}
+        quote="words"
+        existing={[]}
+        onClose={() => {}}
+        onAdd={() => {}}
+        onShowNote={() => {}}
+        onDeleteNote={() => {}}
+        onAddLink={() => {}}
+        edits={{ cut: () => {}, copy: () => {}, paste: () => {} }}
+      />,
+    );
+    expect(button("Insert a link")).toBeNull();
+    expect(
+      [...document.querySelectorAll('[data-slot="note-at-selection"] button')].map(
+        (b) => (b.textContent ?? "").split(/⌘|Ctrl/u)[0],
+      ),
+    ).toEqual(["Add note", "Add link", "Cut", "Copy", "Paste"]);
     await m.unmount();
   });
 
