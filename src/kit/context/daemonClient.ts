@@ -126,25 +126,31 @@ export async function pickPaths(
   want: PickAnswerWant,
 ): Promise<string[]> {
   const frame = await request({ op: "pick", want }, { timeoutMs: PICK_WAIT_MS });
-  if (frame.op !== "pick") throw new Error("the workspace did not say what was chosen");
-  return (frame as Extract<ServerOp, { op: "pick" }>).paths;
+  if (frame.op !== "chosen") throw new Error("the workspace did not say what was chosen");
+  return (frame as Extract<ServerOp, { op: "chosen" }>).paths;
 }
 
-/** What is already at a path a file would be copied to (`fs.same`). */
+/** What is already in a folder under the name a file would be copied as (`fs.same`). */
 export type AlreadyThere = { exists: boolean; same: boolean };
 
+/** A file's bytes as a hex SHA-256, hashed in the page. */
+export async function sha256Hex(file: Blob): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 /**
- * Whether a file of `file`'s bytes is already at `path`, asked of the daemon
- * (`fs.same`) by size and SHA-256, so the bytes never cross the socket twice.
+ * Whether a file of `file`'s bytes is already named `file.name` in `dir` (a
+ * folder the session shows), asked of the daemon (`fs.same`) by size and
+ * SHA-256, so the bytes never cross the socket twice.
  */
 export async function fileAlreadyAt(
   request: Daemon["request"],
-  path: string,
-  file: Blob,
+  dir: string,
+  file: File,
 ): Promise<AlreadyThere> {
-  const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
-  const sha256 = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
-  const frame = await request({ op: "fs.same", path, size: file.size, sha256 });
+  const sha256 = await sha256Hex(file);
+  const frame = await request({ op: "fs.same", dir, name: file.name, size: file.size, sha256 });
   if (frame.op !== "fs.same") throw new Error("the workspace did not say what is there");
   const r = frame as Extract<ServerOp, { op: "fs.same" }>;
   return { exists: r.exists, same: r.same };

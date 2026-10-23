@@ -279,7 +279,7 @@ export function Frame({ daemon }: { daemon: Daemon }) {
     addFolder: (path) => daemon.request({ op: "folder.add", path }),
     // The OS's own folder dialog, where the system has one.
     pick: state?.picker ? (want) => pickPaths(daemon.request, want) : undefined,
-    addPlace: (path) => send({ op: "context.add", path }),
+    addPlace: (path) => daemon.request({ op: "context.add", path }),
     hint: MAKE_ROOM,
   });
   // One marker per docMeta, not per render: the sidebar memoises on it.

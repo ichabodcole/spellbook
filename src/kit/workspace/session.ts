@@ -4087,6 +4087,14 @@ export class WorkspaceSession {
     return abs === home ? "~" : abs.startsWith(home + sep) ? `~${abs.slice(home.length)}` : abs;
   }
 
+  /**
+   * A folder things may be copied into (`destinationOrDie`): a set, a folder
+   * the tree shows in one, or the workspace. Throws the refusal otherwise.
+   */
+  shownFolderOrDie(dir: string): string {
+    return this.destinationOrDie(dir);
+  }
+
   /** `path` named the way the context names it (`contextForm`), for a path from outside: the picker's. */
   namedAsContext(path: string): string {
     return this.contextForm(resolve(path));

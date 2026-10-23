@@ -1335,7 +1335,7 @@ function ShellBody({
       }}
       onTrash={(path) => send({ op: "trash", path })}
       importImage={daemon.importImage}
-      fileAt={(path, file) => fileAlreadyAt(daemon.request, path, file)}
+      fileAt={(dir, file) => fileAlreadyAt(daemon.request, dir, file)}
       thumbFor={(path) => daemon.imageUrl(path, { thumb: 256 })}
       onAskDescribe={askDescribe}
       selected={treeSelected}

@@ -197,7 +197,7 @@ export type ContextSidebarProps = {
    * file is offered instead of a second copy, and a different one is said
    * before anything is written. Absent, a copy is written as before.
    */
-  fileAt?: (path: string, file: File) => Promise<AlreadyThere>;
+  fileAt?: (dir: string, file: File) => Promise<AlreadyThere>;
   /** Where an image's small thumbnail is served, for its row's hover preview. Absent, no preview. */
   thumbFor?: (path: string) => string;
   /**
@@ -491,7 +491,7 @@ export function ContextSidebar({
       const there = joinPath(into, f.name);
       let at: AlreadyThere;
       try {
-        at = await fileAt(there, f);
+        at = await fileAt(into, f);
       } catch {
         return "copy";
       }

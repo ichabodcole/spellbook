@@ -122,8 +122,11 @@ export function LocationDialog({
    * system with none), no button.
    */
   pick?: PickPaths;
-  /** Add a folder outside every set to the context, as a set. Absent, not offered. */
-  addPlace?: (path: string) => void;
+  /**
+   * Add a folder outside every set to the context, as a set; rejects with the
+   * refusal, which the dialog shows. Absent, not offered.
+   */
+  addPlace?: (path: string) => Promise<unknown>;
   /** The ask's `original`: offered as "Add the original file…" when there is a picker. */
   original?: LocationAsk["original"];
   /** The app's own words under the list: how else to make room. */
@@ -192,12 +195,13 @@ export function LocationDialog({
   // context shows is highlighted, so Enter (or a click) puts it there.
   const browse = () => {
     if (!pick || picking) return;
-    setPicking("folder");
-    pick("folder").then(
+    setPicking("choose-folder");
+    pick("choose-folder").then(
       (paths) => {
         setPicking(null);
         const p = paths[0];
-        if (p === undefined) return;
+        // Dismissed: nothing changes, and the keyboard is back where it was.
+        if (p === undefined) return searchRef.current?.focus();
         setRefusal(null);
         const at = targets.find((t) => t.path === p);
         if (at) {
@@ -217,8 +221,8 @@ export function LocationDialog({
   // live and the ask ends; a dismissed dialog leaves the ask as it was.
   const addOriginal = () => {
     if (!pick || !original || picking) return;
-    setPicking("file");
-    pick("file").then(
+    setPicking("choose-file");
+    pick("choose-file").then(
       (paths) => {
         setPicking(null);
         if (paths.length === 0) return;
@@ -234,9 +238,18 @@ export function LocationDialog({
   const bringIn = (path: string) => {
     if (!addPlace) return;
     setOutside(null);
+    setRefusal(null);
     setMakingSay("Adding");
-    setMaking([path]);
-    addPlace(path);
+    const names = [path];
+    setMaking(names);
+    addPlace(path).then(
+      () => {},
+      (e: unknown) => {
+        // Still this ask: the line that waited on it goes, and the reason shows.
+        setMaking((cur) => (cur === names ? null : cur));
+        setRefusal(e instanceof Error ? e.message : String(e));
+      },
+    );
   };
   const make = (typed: string) => {
     if (!addFolder) return;
@@ -283,7 +296,7 @@ export function LocationDialog({
               onClick={addOriginal}
             >
               <FileIcon />
-              {picking === "file"
+              {picking === "choose-file"
                 ? "Choosing…"
                 : original.files > 1
                   ? "Add the original files…"
@@ -315,7 +328,7 @@ export function LocationDialog({
               onClick={browse}
             >
               <FolderOpenIcon />
-              {picking === "folder" ? "Choosing a folder…" : "Choose a folder…"}
+              {picking === "choose-folder" ? "Choosing a folder…" : "Choose a folder…"}
             </Button>
           )}
           {outside && (
@@ -420,8 +433,8 @@ export function useAskLocation({
   addFolder?: (path: string) => Promise<unknown>;
   /** The OS's own picker; absent where the system has none, and its button with it. */
   pick?: PickPaths;
-  /** Add a folder the picker chose, outside every set, to the context as a set. */
-  addPlace?: (path: string) => void;
+  /** Add a folder the picker chose, outside every set, to the context as a set; rejects with the refusal. */
+  addPlace?: (path: string) => Promise<unknown>;
   hint?: ReactNode;
 }): { askLocation: AskLocation; dialog: ReactNode; last: string | null } {
   const [asking, setAsking] = useState<{

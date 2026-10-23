@@ -98,7 +98,7 @@ type Seen = {
 function harness(
   initial: ContextEntry[],
   over: Partial<ContextSidebarProps> = {},
-  hook: { pick?: PickPaths; addPlace?: (path: string) => void } = {},
+  hook: { pick?: PickPaths; addPlace?: (path: string) => Promise<unknown> } = {},
 ) {
   const seen: Seen = { structure: [], images: [], asks: [], added: [] };
   let setEntries: (e: ContextEntry[]) => void = () => {};
@@ -527,7 +527,7 @@ describe("the OS's own folder dialog", () => {
     expect(places()).toEqual(["drafts", "drafts/part", "world"]);
     await click(dialogButton("Choose a folder"));
     await waitFor(() => chosen().length === 1, "the highlight");
-    expect(p.asked).toEqual(["folder"]);
+    expect(p.asked).toEqual(["choose-folder"]);
     expect(chosen()).toEqual(["drafts/part"]);
     expect(document.activeElement).toBe(search());
     await key(search(), "Enter");
@@ -544,9 +544,13 @@ describe("the OS's own folder dialog", () => {
     await waitFor(() => dialogEl() !== null, "the dialog");
     await typeInto(search() as HTMLInputElement, "wor");
     expect(chosen()).toEqual(["world"]);
-    await click(dialogButton("Choose a folder"));
+    const button = dialogButton("Choose a folder") as HTMLElement;
+    button.focus();
+    await click(button);
     await waitFor(() => p.asked.length === 1, "the ask");
     await settle(() => {});
+    // The keyboard is back in the search, so typing goes on where it was.
+    expect(document.activeElement).toBe(search());
     expect(search()?.value).toBe("wor");
     expect(chosen()).toEqual(["world"]);
     expect(dialogEl()).not.toBeNull();
@@ -557,7 +561,16 @@ describe("the OS's own folder dialog", () => {
   test("a folder outside every set is named with the act that adds it, then highlighted once it shows", async () => {
     const p = picker(() => ["/h/elsewhere"]);
     const placed: string[] = [];
-    const h = harness([drafts], {}, { pick: p.pick, addPlace: (path) => placed.push(path) });
+    const h = harness(
+      [drafts],
+      {},
+      {
+        pick: p.pick,
+        addPlace: async (path) => {
+          placed.push(path);
+        },
+      },
+    );
     const m = await h.mountIt();
     await click(byLabel("New document…"));
     await waitFor(() => dialogEl() !== null, "the dialog");
@@ -572,6 +585,29 @@ describe("the OS's own folder dialog", () => {
       { ...world, id: "c-else", label: "elsewhere", root: "/h/elsewhere" },
     ]);
     expect(chosen()).toEqual(["elsewhere"]);
+    await m.unmount();
+  });
+
+  test("a refused add says why in the dialog, and nothing is left waiting", async () => {
+    const p = picker(() => ["/"]);
+    const h = harness(
+      [drafts],
+      {},
+      {
+        pick: p.pick,
+        addPlace: async () => {
+          throw new Error("/ cannot be a set: it holds the whole disk");
+        },
+      },
+    );
+    const m = await h.mountIt();
+    await click(byLabel("New document…"));
+    await waitFor(() => dialogEl() !== null, "the dialog");
+    await click(dialogButton("Choose a folder"));
+    await waitFor(() => dialogButton("Add it as a set") !== null, "the offer");
+    await click(dialogButton("Add it as a set"));
+    await waitFor(() => (dialogEl()?.textContent ?? "").includes("cannot be a set"), "the refusal");
+    expect(dialogEl()?.textContent).not.toContain("Adding");
     await m.unmount();
   });
 
@@ -620,7 +656,7 @@ describe("a drop can add the original file where it lives", () => {
     await waitFor(() => dialogEl() !== null, "the dialog");
     await click(dialogButton("Add the original file"));
     await waitFor(() => dialogEl() === null, "closed");
-    expect(p.asked).toEqual(["file"]);
+    expect(p.asked).toEqual(["choose-file"]);
     expect(a.added).toEqual(["/h/Downloads/shot.png"]);
     // Nothing was copied anywhere.
     await Bun.sleep(20);
@@ -695,7 +731,8 @@ describe("a copy into a place that already holds that name", () => {
   /** `fileAt` over a pretend disk: path to the text there. */
   function disk(files: Record<string, string>) {
     const asked: string[] = [];
-    const fileAt = async (path: string, f: File) => {
+    const fileAt = async (dir: string, f: File) => {
+      const path = `${dir}/${f.name}`;
       asked.push(path);
       const there = files[path];
       if (there === undefined) return { exists: false, same: false };

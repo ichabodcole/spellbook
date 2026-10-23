@@ -1826,7 +1826,14 @@ export type ProfileCheck = {
 /** What a `pick` asks for: to add to the context, or only to answer with the paths chosen. */
 export type PickWant = "context-file" | "context-folder" | PickAnswerWant;
 /** A `pick` that adds nothing: the asker is answered with what was chosen. */
-export type PickAnswerWant = "folder" | "file";
+export type PickAnswerWant = "choose-folder" | "choose-file";
+/** Every `want` a `pick` takes; any other is refused before a dialog opens. */
+export const PICK_WANTS = [
+  "context-file",
+  "context-folder",
+  "choose-folder",
+  "choose-file",
+] as const satisfies readonly PickWant[];
 
 /** Surface to daemon, over the WebSocket. An app adds `<app>.<name>` frames. */
 export type ClientOp =
@@ -1911,10 +1918,12 @@ export type ClientOp =
   | { op: "context.remove"; id: string }
   | { op: "fs.list"; path: string }
   /**
-   * Is a file of these bytes (`size`, hex SHA-256) already at `path`? Answered
-   * with `fs.same`. What a copy into a folder asks before writing.
+   * Is a file of these bytes (`size`, hex SHA-256) already named `name` in
+   * `dir`? Answered with `fs.same`. What a copy into a folder asks before
+   * writing; `dir` must be a folder the session shows (a set, a folder in one,
+   * the workspace), and anything else is refused.
    */
-  | { op: "fs.same"; path: string; size: number; sha256: string }
+  | { op: "fs.same"; dir: string; name: string; size: number; sha256: string }
   /** Load a version's text into the surface (answered with `version.text`, origin "load"). */
   | { op: "read"; doc: string; version: number }
   | { op: "diff"; doc?: string; against: DiffSide }
@@ -1926,8 +1935,8 @@ export type ClientOp =
   | { op: "reveal.version"; doc: string; version: number }
   /**
    * Open the OS file picker. `context-file` and `context-folder` add what
-   * comes back to the context; `folder` and `file` only answer the asker with what was
-   * chosen (a `pick` frame), adding nothing.
+   * comes back to the context; `choose-folder` and `choose-file` only answer
+   * the asker with what was chosen (a `chosen` frame), adding nothing.
    */
   | { op: "pick"; want: PickWant }
   /** Search the context; answered with `search.results`. */
@@ -2049,12 +2058,16 @@ export type ServerOp =
   | ({ op: "show" } & ShowTarget)
   | { op: "fs.list"; path: string; entries: FsListEntry[]; error?: string }
   /**
-   * To the asker only: the paths a `pick` for `folder` or `file` chose (never a folder for `file`), each named as the
-   * context names it; none, and `cancelled`, when the dialog was dismissed.
+   * To the asker only: the paths a `choose-folder` or `choose-file` pick chose
+   * (never a folder for a file), each named as the context names it; none,
+   * and `cancelled`, when the dialog was dismissed. Its own frame, not
+   * Story Studio's `picked`, whose paths a shell brings into the context.
    */
-  | { op: "pick"; want: PickAnswerWant; paths: string[]; cancelled: boolean }
+  | { op: "chosen"; paths: string[]; cancelled?: boolean }
+  /** To the asker only: a `context.add` it sent landed; a refusal is an `error` instead. */
+  | { op: "context.added"; ids: string[] }
   /** To the asker only: whether anything is at `path`, and whether it is a file of the same bytes. */
-  | { op: "fs.same"; path: string; exists: boolean; same: boolean }
+  | { op: "fs.same"; dir: string; name: string; exists: boolean; same: boolean }
   /** To the sender only: what a move to the Trash would take. */
   | ({ op: "trash.preview" } & TrashPreview)
   /** To the sender only: `path` is in the Trash. */

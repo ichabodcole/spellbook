@@ -220,7 +220,7 @@ describe("the daemon's surface", () => {
       expect("type" in f).toBe(false);
     }
     expect(new Set(s.frames.map((f) => f.op))).toEqual(
-      new Set(["state", "version.text", "fs.list"]),
+      new Set(["state", "context.added", "version.text", "fs.list"]),
     );
   });
 
@@ -1241,7 +1241,7 @@ describe("files, prefs, and the native picker", () => {
     expect(s.state.context).toHaveLength(1);
   });
 
-  test("a pick for a folder answers the asker with the folder, named as the context names it, and adds nothing", async () => {
+  test("a pick to choose a folder answers the asker (chosen), named as the context names it, and adds nothing", async () => {
     const asked: string[] = [];
     let answer: string[] = [];
     const { s } = await start({
@@ -1257,75 +1257,160 @@ describe("files, prefs, and the native picker", () => {
     const link = join(root, "link");
     symlinkSync(docs, link);
     answer = [join(link, "set")];
-    s.send({ op: "pick", want: "folder", rid: "p1" });
+    s.send({ op: "pick", want: "choose-folder", rid: "p1" });
     const r = await s.waitFor(
-      (m) => m.op === "pick" && (m as { requestId?: unknown }).requestId === "p1",
+      (m) => m.op === "chosen" && (m as { requestId?: unknown }).requestId === "p1",
     );
-    expect(r).toMatchObject({
-      op: "pick",
-      want: "folder",
-      paths: [join(docs, "set")],
-      cancelled: false,
-    });
+    expect(r).toMatchObject({ op: "chosen", paths: [join(docs, "set")], cancelled: false });
     expect(asked).toEqual(["folder"]);
     // A dismissed dialog says so, and nothing is added either way.
     answer = [];
-    s.send({ op: "pick", want: "folder", rid: "p2" });
+    s.send({ op: "pick", want: "choose-folder", rid: "p2" });
     const c = await s.waitFor(
-      (m) => m.op === "pick" && (m as { requestId?: unknown }).requestId === "p2",
+      (m) => m.op === "chosen" && (m as { requestId?: unknown }).requestId === "p2",
     );
     expect(c).toMatchObject({ paths: [], cancelled: true });
     await Bun.sleep(30);
     expect(s.state.context).toHaveLength(1);
   });
 
-  test("a pick for a file answers with files only, never a folder; adding one lists it where it lives, with no copy", async () => {
+  test("a pick to choose a file answers with files only; a folder alone is refused in words", async () => {
     const outside = join(root, "Downloads");
     mkdirSync(outside, { recursive: true });
     const shot = join(outside, "shot.md");
     writeFileSync(shot, "# Shot\n");
+    let answer: string[] = [outside, shot];
     const { s } = await start({
-      pick: async (kind) => ({
-        // Whatever the dialog lets through, a folder is not a file.
-        paths: kind === "file" ? [outside, shot] : [],
-        cancelled: false,
-      }),
+      pick: async (kind) => ({ paths: kind === "file" ? answer : [], cancelled: false }),
     });
-    s.send({ op: "pick", want: "file", rid: "f1" });
+    s.send({ op: "pick", want: "choose-file", rid: "f1" });
     const r = await s.waitFor(
-      (m) => m.op === "pick" && (m as { requestId?: unknown }).requestId === "f1",
+      (m) => m.op === "chosen" && (m as { requestId?: unknown }).requestId === "f1",
     );
-    expect(r).toMatchObject({ op: "pick", want: "file", paths: [shot], cancelled: false });
+    // Whatever the dialog lets through, a folder is not a file.
+    expect(r).toMatchObject({ op: "chosen", paths: [shot], cancelled: false });
+    answer = [outside];
+    s.send({ op: "pick", want: "choose-file", rid: "f2" });
+    const e = await s.waitFor(
+      (m) => m.op === "error" && (m as { requestId?: unknown }).requestId === "f2",
+    );
+    expect(e.op === "error" && e.message).toContain("is a folder, not a file");
     expect(s.state.context).toEqual([]);
-    // The surface then adds it by path: one listed file, its folder no set.
-    s.send({ op: "context.add", path: shot });
-    await waitUntil("listed", () => s.state.context.length === 1);
+    // The surface then adds it by path: one listed file, its folder no set,
+    // and the asker is told it landed.
+    s.send({ op: "context.add", path: shot, rid: "a1" });
+    const added = await s.waitFor(
+      (m) => m.op === "context.added" && (m as { requestId?: unknown }).requestId === "a1",
+    );
+    expect(added.op === "context.added" && added.ids).toHaveLength(1);
     const [entry] = s.state.context;
     expect(entry).toMatchObject({ membership: "listed", root: outside });
     expect(entry?.nodes.map((n) => n.rel)).toEqual(["shot.md"]);
     expect(readdirSync(outside)).toEqual(["shot.md"]);
+    // A refused add is an error to the asker, not silence.
+    s.send({ op: "context.add", path: "/", rid: "a2" });
+    const no = await s.waitFor(
+      (m) => m.op === "error" && (m as { requestId?: unknown }).requestId === "a2",
+    );
+    expect(no.op === "error" && no.message.length).toBeGreaterThan(0);
   });
 
-  test("fs.same says whether these bytes are already at a path", async () => {
+  test("fs.same answers for a name in a folder the session shows, and refuses any other path", async () => {
     const { s } = await start();
-    const at = join(root, "there.md");
-    writeFileSync(at, "# There\n");
+    s.send({ op: "context.add", path: docs });
+    await waitUntil("the set", () => s.state.context.length === 1);
+    const set = join(docs, "set");
+    writeFileSync(join(set, "there.md"), "# There\n");
     const sha = (text: string) => new Bun.CryptoHasher("sha256").update(text).digest("hex");
-    const ask = async (path: string, text: string, rid: string) => {
-      s.send({ op: "fs.same", path, size: Buffer.byteLength(text), sha256: sha(text), rid });
+    let n = 0;
+    const ask = async (frame: Record<string, unknown>) => {
+      const rid = `s${++n}`;
+      s.send({ op: "fs.same", ...frame, rid });
       return s.waitFor(
-        (m) => m.op === "fs.same" && (m as { requestId?: unknown }).requestId === rid,
+        (m) =>
+          (m.op === "fs.same" || m.op === "error") &&
+          (m as { requestId?: unknown }).requestId === rid,
       );
     };
-    expect(await ask(at, "# There\n", "a")).toMatchObject({ exists: true, same: true });
-    expect(await ask(at, "# Elsewhere\n", "b")).toMatchObject({ exists: true, same: false });
+    const of = (dir: string, name: string, text: string) => ({
+      dir,
+      name,
+      size: Buffer.byteLength(text),
+      sha256: sha(text),
+    });
+    expect(await ask(of(set, "there.md", "# There\n"))).toMatchObject({
+      op: "fs.same",
+      exists: true,
+      same: true,
+    });
+    expect(await ask(of(set, "there.md", "# Elsewhere\n"))).toMatchObject({ same: false });
     // The same size is not enough.
-    expect(await ask(at, "# Thera\n", "c")).toMatchObject({ exists: true, same: false });
-    expect(await ask(join(root, "none.md"), "x", "d")).toMatchObject({
-      exists: false,
+    expect(await ask(of(set, "there.md", "# Thera\n"))).toMatchObject({
+      exists: true,
       same: false,
     });
-    expect(await ask(root, "x", "e")).toMatchObject({ exists: true, same: false });
+    expect(await ask(of(set, "none.md", "x"))).toMatchObject({ exists: false, same: false });
+    // A folder of that name is there, and is not the file.
+    expect(await ask(of(docs, "set", "x"))).toMatchObject({ exists: true, same: false });
+    // Anywhere the session does not show is refused: no answer about it at all.
+    const secret = join(root, "secret.txt");
+    writeFileSync(secret, "hush");
+    const refused = await ask(of(root, "secret.txt", "hush"));
+    expect(refused.op).toBe("error");
+    expect(JSON.stringify(refused)).not.toContain('"same"');
+    expect((await ask(of("/etc", "passwd", "x"))).op).toBe("error");
+    // A name that climbs out, or a frame of the wrong shape, is refused in words.
+    expect((await ask(of(set, "../secret.txt", "hush"))).op).toBe("error");
+    const bad = await ask({ ...of(set, "there.md", "x"), dir: 7 });
+    expect(bad.op === "error" && bad.message).toContain("fs.same takes");
+    const badHash = await ask({ ...of(set, "there.md", "x"), sha256: 42 });
+    expect(badHash.op === "error" && badHash.message).toContain("fs.same takes");
+    const negative = await ask({ ...of(set, "there.md", "# There\n"), size: -1 });
+    expect(negative.op === "error" && negative.message).toContain("fs.same takes");
+    const shortHash = await ask({ ...of(set, "there.md", "# There\n"), sha256: "abc123" });
+    expect(shortHash.op === "error" && shortHash.message).toContain("fs.same takes");
+    // A link in a shown folder that leads out is not followed, even with the right bytes.
+    symlinkSync(secret, join(set, "link.txt"));
+    expect(await ask(of(set, "link.txt", "hush"))).toMatchObject({
+      op: "fs.same",
+      exists: true,
+      same: false,
+    });
+    // Over the cap: refused unread.
+    const huge = await ask({ ...of(set, "there.md", "x"), size: 2 ** 30 + 1 });
+    expect(huge.op === "error" && huge.message).toContain("not compared");
+  });
+
+  test("pick refuses a want it does not know, naming the ones it takes, and opens no dialog", async () => {
+    const asked: string[] = [];
+    const { s } = await start({
+      pick: async (kind) => {
+        asked.push(kind);
+        return { paths: [docs], cancelled: false };
+      },
+    });
+    for (const want of ["folder", "file", "bogus", 7]) {
+      const rid = `w-${want}`;
+      s.send({ op: "pick", want, rid });
+      const e = await s.waitFor(
+        (m) => m.op === "error" && (m as { requestId?: unknown }).requestId === rid,
+      );
+      expect(e.op === "error" && e.message).toContain(
+        "context-file, context-folder, choose-folder, choose-file",
+      );
+    }
+    await Bun.sleep(30);
+    expect(asked).toEqual([]);
+    expect(s.state.context).toEqual([]);
+  });
+
+  test("context.add with a path that is not text is refused in words", async () => {
+    const { s } = await start();
+    s.send({ op: "context.add", path: 42, rid: "c1" });
+    const e = await s.waitFor(
+      (m) => m.op === "error" && (m as { requestId?: unknown }).requestId === "c1",
+    );
+    expect(e.op === "error" && e.message).toBe("context.add takes { path }: a full path, as text");
   });
 
   test("the state says whether a native picker can open: none on Windows, one on macOS", async () => {
