@@ -4,7 +4,8 @@
 // Two groups, because there are two kinds of answer. "Documents" is fuzzy on
 // names, the jump list for when you know what the thing is called. "In text" is
 // an exact phrase with its line, the find list for when you remember what you
-// wrote and not where.
+// wrote and not where. Its hits are grouped under their file, with a count, so
+// many hits in one file read as one place and not as a list of the same name.
 //
 // The daemon answers; this does not search. That is what lets a result come from
 // a document's ACTIVE VERSION, including an edit not saved yet, rather than from
@@ -36,6 +37,43 @@ export function isSearchShortcut(
 ): boolean {
   if (e.key.toLowerCase() !== "k" || e.shiftKey || e.altKey) return false;
   return mac ? e.metaKey && !e.ctrlKey : e.ctrlKey && !e.metaKey;
+}
+
+/** One file's text hits, under the name the list shows for it. */
+export type TextGroup = { key: string; label: string; hits: SearchResult[] };
+
+/** What the file's heading says: an image's description, a bundle, or the document's name. */
+function fileLabel(r: SearchResult): string {
+  const imageName = r.image ? r.image.slice(r.image.lastIndexOf("/") + 1) : null;
+  const name = imageName
+    ? `${imageName} · description`
+    : r.bundle
+      ? `in the ${r.bundle.label} ${r.bundle.name}`
+      : r.name;
+  return !imageName && r.version !== null ? `${name} · v${r.version}` : name;
+}
+
+/**
+ * The results as the list draws them: the name matches as they came, then the
+ * text hits grouped by file, each file where its first hit was and its hits in
+ * the order they came. `ordered` is the same results in drawn order, which is
+ * the order the arrows walk.
+ */
+export function groupResults(results: readonly SearchResult[]): {
+  names: SearchResult[];
+  files: TextGroup[];
+  ordered: SearchResult[];
+} {
+  const names = results.filter((r) => r.kind === "name");
+  const byFile = new Map<string, TextGroup>();
+  for (const r of results) {
+    if (r.kind !== "text") continue;
+    const group = byFile.get(r.path);
+    if (group) group.hits.push(r);
+    else byFile.set(r.path, { key: r.path, label: fileLabel(r), hits: [r] });
+  }
+  const files = [...byFile.values()];
+  return { names, files, ordered: [...names, ...files.flatMap((f) => f.hits)] };
 }
 
 export function SearchBox({
@@ -123,7 +161,8 @@ export function SearchBox({
   }, [q, connected, request]);
 
   const fresh = report && report.query === q ? report : null;
-  const results = fresh?.results ?? [];
+  const grouped = groupResults(fresh?.results ?? []);
+  const results = grouped.ordered;
   const showing = open && q !== "";
 
   const choose = useCallback(
@@ -245,22 +284,51 @@ export function SearchBox({
             </p>
           ) : (
             <div role="listbox" id={listId} aria-label="Search results">
-              {results.map((r, i) => (
-                <div key={`${r.kind}:${r.path}:${r.from ?? ""}`}>
-                  {r.kind !== results[i - 1]?.kind && (
-                    <h2 className="px-3 pt-2 pb-1 text-[10px] font-medium tracking-wide text-ink-faint uppercase">
-                      {r.kind === "name"
-                        ? "Documents"
-                        : `In text${fresh.truncated ? " (more)" : ""}`}
-                    </h2>
-                  )}
-                  <Row
-                    id={`${listId}-${i}`}
-                    result={r}
-                    active={i === active}
-                    onHover={() => setActive(i)}
-                    onChoose={() => choose(r)}
-                  />
+              {grouped.names.length > 0 && (
+                <div>
+                  <h2 className="px-3 pt-2 pb-1 text-[10px] font-medium tracking-wide text-ink-faint uppercase">
+                    Documents
+                  </h2>
+                  {grouped.names.map((r, i) => (
+                    <Row
+                      key={`name:${r.path}`}
+                      id={`${listId}-${i}`}
+                      result={r}
+                      active={i === active}
+                      onHover={() => setActive(i)}
+                      onChoose={() => choose(r)}
+                    />
+                  ))}
+                </div>
+              )}
+              {grouped.files.length > 0 && (
+                <h2 className="px-3 pt-2 pb-1 text-[10px] font-medium tracking-wide text-ink-faint uppercase">
+                  In text ({results.length - grouped.names.length}
+                  {fresh.truncated ? ", and more" : ""})
+                </h2>
+              )}
+              {grouped.files.map((f) => (
+                <div key={f.key} data-slot="search-file">
+                  <div className="flex items-baseline gap-2 px-3 pt-1 text-[11px]">
+                    <span className="min-w-0 truncate text-ink">{f.label}</span>
+                    <span data-slot="search-file-count" className="shrink-0 text-ink-faint">
+                      {f.hits.length}
+                    </span>
+                  </div>
+                  {f.hits.map((r) => {
+                    const i = results.indexOf(r);
+                    return (
+                      <Row
+                        key={`text:${r.path}:${r.from ?? ""}`}
+                        id={`${listId}-${i}`}
+                        result={r}
+                        fileLabel={f.label}
+                        active={i === active}
+                        onHover={() => setActive(i)}
+                        onChoose={() => choose(r)}
+                      />
+                    );
+                  })}
                 </div>
               ))}
             </div>
@@ -274,12 +342,15 @@ export function SearchBox({
 function Row({
   id,
   result: r,
+  fileLabel,
   active,
   onHover,
   onChoose,
 }: {
   id: string;
   result: SearchResult;
+  /** A text hit's file, drawn as the group's heading above it: here only for a screen reader. */
+  fileLabel?: string;
   active: boolean;
   onHover: () => void;
   onChoose: () => void;
@@ -329,18 +400,9 @@ function Row({
           <span className="w-7 shrink-0 text-right font-mono text-[10px] text-ink-faint">
             {r.line}
           </span>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate font-mono text-[11px] text-ink-dim">
-              <Highlighted text={r.snippet ?? ""} from={r.snippetFrom} to={r.snippetTo} />
-            </span>
-            <span className="block truncate text-[10px] text-ink-faint">
-              {imageName
-                ? `${imageName} · description`
-                : r.bundle
-                  ? `in the ${r.bundle.label} ${r.bundle.name}`
-                  : r.name}
-              {!imageName && r.version !== null ? ` · v${r.version}` : ""}
-            </span>
+          <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-ink-dim">
+            <Highlighted text={r.snippet ?? ""} from={r.snippetFrom} to={r.snippetTo} />
+            {fileLabel && <span className="sr-only">, in {fileLabel}</span>}
           </span>
         </>
       )}
