@@ -28,10 +28,20 @@ thread tier). Scriptorium's `surface/kit/theme.css` maps `--color-primary` and
 directly for links, drop targets and drop cursors, backlink hovers, the compare
 gutter, chips and more. The shipped Scriptorium had no violet.
 
+**The mockups** (2026-10-22, `link-colours.html` in the lead's scratchpad)
+compared verdigris, bronze, olive, faded indigo, the rubric, and ink with a
+rubric underline. Cole chose the last: the most manuscript-like and the least
+loud, easier on the eyes over time, and still readable. The reference screenshot
+of the violet is `~/Downloads/marker-mage-1792714983173.png`.
+
 ## Definition of done
 
-- [ ] No violet shows on Scriptorium's kit surface in either theme: links, drag
-      and drop targets, and every other `brand` use take a colour that belongs
-      to the warm palette (Cole picks it).
+- [ ] No violet shows on Scriptorium's kit surface in either theme.
+- [ ] Rendered links are in the text's own ink with a scribe-red (rubric)
+      underline (Cole's pick, 2026-10-22, from mockups), in light and dark. A
+      hover thickens the underline.
+- [ ] Every other `brand` use (drag-and-drop targets, the "agent listening" dot,
+      backlink hovers, chips) takes the rubric or a neutral ink tint, whichever
+      reads right in a browser, with no new colour added.
 - [ ] Every other spell's `dist` and look are unchanged.
 - [ ] Checked in a real browser, light and dark, beside screenshots of before.
