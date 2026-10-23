@@ -41,7 +41,7 @@ import {
 } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAskLocation } from "../../kit/context/AskLocation";
-import type { Daemon } from "../../kit/context/daemonClient";
+import { type Daemon, pickPaths } from "../../kit/context/daemonClient";
 import type { MenuActions } from "../../kit/context/menuActions";
 import { dirOf, entryPath, singleDoc } from "../../kit/context/model";
 import { DocumentPane, type ShowDiff } from "../../kit/document/DocumentPane";
@@ -277,6 +277,9 @@ export function Frame({ daemon }: { daemon: Daemon }) {
     userHome,
     listDir: daemon.listDir,
     addFolder: (path) => daemon.request({ op: "folder.add", path }),
+    // The OS's own folder dialog, where the system has one.
+    pick: state?.picker ? (want) => pickPaths(daemon.request, want) : undefined,
+    addPlace: (path) => send({ op: "context.add", path }),
     hint: MAKE_ROOM,
   });
   // One marker per docMeta, not per render: the sidebar memoises on it.

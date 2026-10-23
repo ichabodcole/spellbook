@@ -4,7 +4,15 @@
 // routes, frames, events, tasks and runners, reveal, import, restore, waiting,
 // teardown.
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import { LAST_OPENED, readLastOpened, readPointer } from "../wire/discovery";
 import { KIT_EVENTS } from "./events";
@@ -169,6 +177,7 @@ describe("the daemon's surface", () => {
         "notesWaiting",
         "openDoc",
         "openImage",
+        "picker",
         "prefs",
         "selection",
         "sessionId",
@@ -1229,6 +1238,54 @@ describe("files, prefs, and the native picker", () => {
     await Bun.sleep(60);
     expect(s.frames.slice(before).filter((f) => f.op === "error")).toHaveLength(0);
     expect(s.state.context).toHaveLength(1);
+  });
+
+  test("a pick for a folder answers the asker with the folder, named as the context names it, and adds nothing", async () => {
+    const asked: string[] = [];
+    let answer: string[] = [];
+    const { s } = await start({
+      pick: async (kind) => {
+        asked.push(kind);
+        return { paths: answer, cancelled: answer.length === 0 };
+      },
+    });
+    s.send({ op: "context.add", path: docs });
+    await waitUntil("the set", () => s.state.context.length === 1);
+    // The dialog answers by another name for the same place (a symlink, as
+    // /tmp is for /private/tmp): the context's name is the one sent back.
+    const link = join(root, "link");
+    symlinkSync(docs, link);
+    answer = [join(link, "set")];
+    s.send({ op: "pick", want: "folder", rid: "p1" });
+    const r = await s.waitFor(
+      (m) => m.op === "pick" && (m as { requestId?: unknown }).requestId === "p1",
+    );
+    expect(r).toMatchObject({
+      op: "pick",
+      want: "folder",
+      paths: [join(docs, "set")],
+      cancelled: false,
+    });
+    expect(asked).toEqual(["folder"]);
+    // A dismissed dialog says so, and nothing is added either way.
+    answer = [];
+    s.send({ op: "pick", want: "folder", rid: "p2" });
+    const c = await s.waitFor(
+      (m) => m.op === "pick" && (m as { requestId?: unknown }).requestId === "p2",
+    );
+    expect(c).toMatchObject({ paths: [], cancelled: true });
+    await Bun.sleep(30);
+    expect(s.state.context).toHaveLength(1);
+  });
+
+  test("the state says whether a native picker can open: none on Windows, one on macOS", async () => {
+    const mac = await start();
+    expect(mac.s.state.picker).toBe(true);
+    surface?.close();
+    await tail?.stop();
+    await daemon?.stop();
+    const win = await start({ platform: "win32" });
+    expect(win.s.state.picker).toBe(false);
   });
 });
 

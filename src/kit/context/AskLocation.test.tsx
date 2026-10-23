@@ -20,7 +20,13 @@ import {
   waitFor,
 } from "../lib/testDom.ts";
 import type { ContextEntry, StructureOp } from "../workspace/protocol";
-import { type LocationAsk, locationTargets, placePath, useAskLocation } from "./AskLocation.tsx";
+import {
+  type LocationAsk,
+  locationTargets,
+  type PickPaths,
+  placePath,
+  useAskLocation,
+} from "./AskLocation.tsx";
 import { ContextSidebar, type ContextSidebarProps } from "./ContextSidebar.tsx";
 import type { ImageImportOptions } from "./daemonClient.ts";
 
@@ -89,7 +95,11 @@ type Seen = {
  * The sidebar with no workspace, its slot filled by `useAskLocation`, over a
  * context the test can change (`setEntries`), as a daemon's snapshot would.
  */
-function harness(initial: ContextEntry[], over: Partial<ContextSidebarProps> = {}) {
+function harness(
+  initial: ContextEntry[],
+  over: Partial<ContextSidebarProps> = {},
+  hook: { pick?: PickPaths; addPlace?: (path: string) => void } = {},
+) {
   const seen: Seen = { structure: [], images: [], asks: [], added: [] };
   let setEntries: (e: ContextEntry[]) => void = () => {};
   let refuseAdd: string | null = null;
@@ -107,6 +117,7 @@ function harness(initial: ContextEntry[], over: Partial<ContextSidebarProps> = {
         return replyPath ? { op: "structure.done", of: "folder.add", path: replyPath } : undefined;
       },
       hint: "Turn a document into a set to make room beside it.",
+      ...hook,
     });
     return (
       <div style={{ width: 300, height: 600, display: "flex" }}>
@@ -485,6 +496,102 @@ describe("making room from the dialog", () => {
     await key(pathBox(), "Enter");
     await h.setEntries([{ ...world, id: "c-fresh", label: "fresh", root: "/real/h/fresh" }]);
     expect(chosen()).toEqual(["fresh"]);
+    await m.unmount();
+  });
+});
+
+describe("the OS's own folder dialog", () => {
+  const dialogButton = (text: string) =>
+    [...document.querySelectorAll('[data-slot="location-dialog"] button')].find((b) =>
+      (b.textContent ?? "").includes(text),
+    ) ?? null;
+  /** A picker that answers with what the test says, and records each ask. */
+  function picker(answer: () => string[] | Error) {
+    const asked: string[] = [];
+    const pick: PickPaths = async (want) => {
+      asked.push(want);
+      const a = answer();
+      if (a instanceof Error) throw a;
+      return a;
+    };
+    return { asked, pick };
+  }
+
+  test("the folder chosen is highlighted, and Enter makes it there; the list and the path box stay", async () => {
+    const p = picker(() => ["/h/drafts/part"]);
+    const h = harness([drafts, world], {}, { pick: p.pick });
+    const m = await h.mountIt();
+    await click(byLabel("New document…"));
+    await waitFor(() => dialogEl() !== null, "the dialog");
+    expect(pathBox()).not.toBeNull();
+    expect(places()).toEqual(["drafts", "drafts/part", "world"]);
+    await click(dialogButton("Choose a folder"));
+    await waitFor(() => chosen().length === 1, "the highlight");
+    expect(p.asked).toEqual(["folder"]);
+    expect(chosen()).toEqual(["drafts/part"]);
+    expect(document.activeElement).toBe(search());
+    await key(search(), "Enter");
+    await waitFor(() => h.seen.structure.length === 1, "the create");
+    expect(h.seen.structure).toEqual([{ op: "doc.create", dir: "/h/drafts/part" }]);
+    await m.unmount();
+  });
+
+  test("a dismissed dialog changes nothing: the search, the highlight and the list stay", async () => {
+    const p = picker(() => []);
+    const h = harness([drafts, world], {}, { pick: p.pick });
+    const m = await h.mountIt();
+    await click(byLabel("New document…"));
+    await waitFor(() => dialogEl() !== null, "the dialog");
+    await typeInto(search() as HTMLInputElement, "wor");
+    expect(chosen()).toEqual(["world"]);
+    await click(dialogButton("Choose a folder"));
+    await waitFor(() => p.asked.length === 1, "the ask");
+    await settle(() => {});
+    expect(search()?.value).toBe("wor");
+    expect(chosen()).toEqual(["world"]);
+    expect(dialogEl()).not.toBeNull();
+    expect(h.seen.structure).toEqual([]);
+    await m.unmount();
+  });
+
+  test("a folder outside every set is named with the act that adds it, then highlighted once it shows", async () => {
+    const p = picker(() => ["/h/elsewhere"]);
+    const placed: string[] = [];
+    const h = harness([drafts], {}, { pick: p.pick, addPlace: (path) => placed.push(path) });
+    const m = await h.mountIt();
+    await click(byLabel("New document…"));
+    await waitFor(() => dialogEl() !== null, "the dialog");
+    await click(dialogButton("Choose a folder"));
+    await waitFor(() => (dialogEl()?.textContent ?? "").includes("not in a set"), "the offer");
+    expect(dialogEl()?.textContent).toContain("~/elsewhere is not in a set yet.");
+    expect(h.seen.structure).toEqual([]);
+    await click(dialogButton("Add it as a set"));
+    expect(placed).toEqual(["/h/elsewhere"]);
+    await h.setEntries([
+      drafts,
+      { ...world, id: "c-else", label: "elsewhere", root: "/h/elsewhere" },
+    ]);
+    expect(chosen()).toEqual(["elsewhere"]);
+    await m.unmount();
+  });
+
+  test("a refused dialog says why, in the dialog", async () => {
+    const p = picker(() => new Error("a file picker is already open"));
+    const h = harness([drafts], {}, { pick: p.pick });
+    const m = await h.mountIt();
+    await click(byLabel("New document…"));
+    await waitFor(() => dialogEl() !== null, "the dialog");
+    await click(dialogButton("Choose a folder"));
+    await waitFor(() => (dialogEl()?.textContent ?? "").includes("already open"), "the refusal");
+    await m.unmount();
+  });
+
+  test("where the system has no picker, there is no button", async () => {
+    const h = harness([drafts]);
+    const m = await h.mountIt();
+    await click(byLabel("New document…"));
+    await waitFor(() => dialogEl() !== null, "the dialog");
+    expect(dialogButton("Choose a folder")).toBeNull();
     await m.unmount();
   });
 });

@@ -4087,6 +4087,11 @@ export class WorkspaceSession {
     return abs === home ? "~" : abs.startsWith(home + sep) ? `~${abs.slice(home.length)}` : abs;
   }
 
+  /** `path` named the way the context names it (`contextForm`), for a path from outside: the picker's. */
+  namedAsContext(path: string): string {
+    return this.contextForm(resolve(path));
+  }
+
   /**
    * `abs` named the way the context names it. A caller whose cwd is a
    * realpath (/private/var/... for /var/..., a symlinked folder) names the same

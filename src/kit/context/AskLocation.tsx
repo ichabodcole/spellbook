@@ -11,8 +11,11 @@
 // keyed by origin is needed, and a place that left the context is simply not
 // highlighted. With `addFolder` it can also make room: a new folder at a full
 // path (the daemon's `folder.add`), highlighted once the context shows it.
+// With `pick` it also offers the OS's own folder dialog (the daemon opens it):
+// the folder chosen is highlighted when the context shows it, and one outside
+// every set is named with the act that brings it in (`addPlace`).
 import { Dialog } from "@base-ui/react/dialog";
-import { FolderIcon, FolderTreeIcon } from "lucide-react";
+import { FolderIcon, FolderOpenIcon, FolderTreeIcon } from "lucide-react";
 import {
   type KeyboardEvent,
   type ReactNode,
@@ -25,10 +28,11 @@ import {
 } from "react";
 import { bundlePlace } from "../lib/bundles.ts";
 import { cn } from "../lib/cn.ts";
-import type { ContextEntry } from "../workspace/protocol";
+import { Button } from "../ui/button.tsx";
+import type { ContextEntry, PickAnswerWant } from "../workspace/protocol";
 import { AddPath } from "./AddPath.tsx";
 import type { Listing } from "./daemonClient.ts";
-import { filterMoveTargets, joinPath, type MoveTarget, moveTargets } from "./model.ts";
+import { filterMoveTargets, joinPath, type MoveTarget, moveTargets, tildify } from "./model.ts";
 
 /** One ask: what is being made or brought in, and the question the dialog puts. */
 export type LocationAsk = {
@@ -43,6 +47,13 @@ export type LocationAsk = {
  * (a full path the context shows), or null when they backed out.
  */
 export type AskLocation = (ask: LocationAsk) => Promise<string | null>;
+
+/**
+ * Open the OS's own picker (the daemon does it) and resolve with the paths
+ * chosen, none when the dialog was dismissed; rejects with the refusal.
+ * `pickPaths` in `./daemonClient.ts`, over the daemon's `request`.
+ */
+export type PickPaths = (want: PickAnswerWant) => Promise<string[]>;
 
 /** Every place something can be created in or copied into: each set, then its folders. */
 export function locationTargets(
@@ -77,6 +88,8 @@ export function LocationDialog({
   userHome,
   listDir,
   addFolder,
+  pick,
+  addPlace,
   hint,
   onChoose,
   onClose,
@@ -93,6 +106,13 @@ export function LocationDialog({
    * too. Absent, not offered.
    */
   addFolder?: (path: string) => Promise<unknown>;
+  /**
+   * The OS's own picker. Given, a button opens its folder dialog; absent (a
+   * system with none), no button.
+   */
+  pick?: PickPaths;
+  /** Add a folder outside every set to the context, as a set. Absent, not offered. */
+  addPlace?: (path: string) => void;
   /** The app's own words under the list: how else to make room. */
   hint?: ReactNode;
   onChoose: (path: string) => void;
@@ -109,7 +129,11 @@ export function LocationDialog({
   // A folder asked for by path, by every name it may show under: highlighted
   // once the context shows it.
   const [making, setMaking] = useState<readonly string[] | null>(null);
+  const [makingSay, setMakingSay] = useState("Making");
   const [refusal, setRefusal] = useState<string | null>(null);
+  // A folder the picker chose that no set shows: named, with the act that adds it.
+  const [outside, setOutside] = useState<string | null>(null);
+  const [picking, setPicking] = useState(false);
   const listId = useId();
   const listRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -150,12 +174,45 @@ export function LocationDialog({
       choose(shown[at]);
     }
   };
+  // The OS's folder dialog. A dismissed one changes nothing; a folder the
+  // context shows is highlighted, so Enter (or a click) puts it there.
+  const browse = () => {
+    if (!pick || picking) return;
+    setPicking(true);
+    pick("folder").then(
+      (paths) => {
+        setPicking(false);
+        const p = paths[0];
+        if (p === undefined) return;
+        setRefusal(null);
+        const at = targets.find((t) => t.path === p);
+        if (at) {
+          setOutside(null);
+          setQuery("");
+          setAtPath(at.path);
+        } else setOutside(p);
+        searchRef.current?.focus();
+      },
+      (e: unknown) => {
+        setPicking(false);
+        setRefusal(e instanceof Error ? e.message : String(e));
+      },
+    );
+  };
+  const bringIn = (path: string) => {
+    if (!addPlace) return;
+    setOutside(null);
+    setMakingSay("Adding");
+    setMaking([path]);
+    addPlace(path);
+  };
   const make = (typed: string) => {
     if (!addFolder) return;
     const full = placePath(typed, userHome);
     const names = [full];
     setRefusal(null);
     setQuery("");
+    setMakingSay("Making");
     setMaking(names);
     addFolder(typed).then(
       (r) => {
@@ -201,6 +258,33 @@ export function LocationDialog({
             spellCheck={false}
             className="h-8 w-full min-w-0 rounded-md border border-edge bg-bg px-2 text-sm text-ink outline-none placeholder:text-ink-faint focus-visible:ring-2 focus-visible:ring-ring/60"
           />
+          {pick && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="justify-start"
+              disabled={picking}
+              onClick={browse}
+            >
+              <FolderOpenIcon />
+              {picking ? "Choosing a folder…" : "Choose a folder…"}
+            </Button>
+          )}
+          {outside && (
+            <div className="flex flex-col gap-1 px-1 text-xs text-ink-faint">
+              <p>{tildify(outside, userHome)} is not in a set yet.</p>
+              {addPlace && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="self-start"
+                  onClick={() => bringIn(outside)}
+                >
+                  Add it as a set
+                </Button>
+              )}
+            </div>
+          )}
           {shown.length === 0 ? (
             <p className="px-1 py-2 text-xs text-ink-faint">
               {targets.length > 0
@@ -258,7 +342,7 @@ export function LocationDialog({
           )}
           {making && (
             <p role="status" className="px-1 py-2 text-xs text-ink-faint">
-              Making {making[0]}…
+              {makingSay} {making[0]}…
             </p>
           )}
           {refusal && <p className="px-2 py-1 text-xs text-attention">{refusal}</p>}
@@ -278,12 +362,18 @@ export function useAskLocation({
   userHome,
   listDir,
   addFolder,
+  pick,
+  addPlace,
   hint,
 }: {
   entries: readonly ContextEntry[];
   userHome: string | null;
   listDir: (path: string) => Promise<Listing>;
   addFolder?: (path: string) => Promise<unknown>;
+  /** The OS's own picker; absent where the system has none, and its button with it. */
+  pick?: PickPaths;
+  /** Add a folder the picker chose, outside every set, to the context as a set. */
+  addPlace?: (path: string) => void;
   hint?: ReactNode;
 }): { askLocation: AskLocation; dialog: ReactNode; last: string | null } {
   const [asking, setAsking] = useState<{
@@ -326,6 +416,8 @@ export function useAskLocation({
       userHome={userHome}
       listDir={listDir}
       addFolder={addFolder}
+      pick={pick}
+      addPlace={addPlace}
       hint={hint}
       onChoose={(dir) => {
         setLast(dir);

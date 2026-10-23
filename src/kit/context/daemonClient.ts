@@ -29,6 +29,7 @@ import type {
   DiffPayload,
   DocView,
   FsListEntry,
+  PickAnswerWant,
   PublicState,
   ServerOp,
   StateSnapshot,
@@ -108,6 +109,26 @@ const EDIT_RETRY_MS = 1000;
 export type RequestId = string | number;
 
 export type Listing = { entries: FsListEntry[]; error?: string };
+
+/**
+ * How long a `pick` waits for its answer: a human at the OS's dialog may take
+ * a while, and the daemon answers once it closes.
+ */
+export const PICK_WAIT_MS = 60 * 60_000;
+
+/**
+ * Open the OS's own picker through the daemon and resolve with what was
+ * chosen, named as the context names it; none when the dialog was dismissed.
+ * Rejects with the refusal (one already open, no picker on this system).
+ */
+export async function pickPaths(
+  request: Daemon["request"],
+  want: PickAnswerWant,
+): Promise<string[]> {
+  const frame = await request({ op: "pick", want }, { timeoutMs: PICK_WAIT_MS });
+  if (frame.op !== "pick") throw new Error("the workspace did not say what was chosen");
+  return (frame as Extract<ServerOp, { op: "pick" }>).paths;
+}
 
 /** The last structure op THIS viewer sent that landed. `seq` makes a repeat a new value. */
 export type Done = {

@@ -126,6 +126,7 @@ import type {
   MessageAboutOnTail,
   MessageRef,
   Note,
+  PickWant,
   PublicState,
   RelinkOffer,
   Selection,
@@ -1026,6 +1027,10 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       return true;
     };
     const userHome = homeDir();
+    /** Where a Linux zenity is; whether there is a native picker at all is said in the state. */
+    const zenity = platform === "linux" ? Bun.which("zenity") : null;
+    const hasPicker =
+      opts.pick !== undefined || pickerCommand(platform, "folder", "", zenity) !== null;
 
     /**
      * The snooze the agent asked for, and the messages already nudged.
@@ -1186,6 +1191,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         ...((offer) => (offer ? { relink: offer } : {}))(relinkView()),
         prefs: readPrefs(),
         userHome,
+        picker: hasPicker,
         ...(app.launcher ? { launcher: app.launcher } : {}),
         appState: pre ? pre.appState : (opts.appState?.(appCtx()) ?? null),
       };
@@ -2738,7 +2744,6 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     // first cannot be seen or dismissed, so a request while one is open is
     // refused in words rather than queued.
     let pickerOpen = false;
-    const zenity = platform === "linux" ? Bun.which("zenity") : null;
     const nativePick = async (
       kind: PickKind,
       prompt: string,
@@ -2775,7 +2780,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     };
     const openPicker = async (
       ws: import("bun").ServerWebSocket<unknown>,
-      want: "context-file" | "context-folder",
+      want: PickWant,
       rid: string | number | undefined,
     ) => {
       const reply = (w: import("bun").ServerWebSocket<unknown>, f: ServerOp | { op: string }) =>
@@ -2788,11 +2793,20 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       const prompt =
         want === "context-folder"
           ? `Choose a folder to add to ${app.name}`
-          : `Choose documents to add to ${app.name}`;
+          : want === "folder"
+            ? "Choose a folder"
+            : `Choose documents to add to ${app.name}`;
       pickerOpen = true;
       try {
         const { paths } = await (opts.pick ?? nativePick)(kind, prompt);
         touch(); // a human stood at a dialog; the session is not idle
+        if (want === "folder") {
+          // Only the asker learns what was chosen, named as the context names
+          // it (a realpath of a place it shows is that place); nothing is added.
+          const named = paths.map((p) => session.namedAsContext(p));
+          reply(ws, { op: "pick", want, paths: named, cancelled: named.length === 0 });
+          return;
+        }
         // Nothing chosen is a cancelled dialog: nothing said.
         if (paths.length > 0) addPaths(paths);
       } catch (e) {

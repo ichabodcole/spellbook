@@ -681,6 +681,12 @@ export type PublicState = {
   /** The user's home directory, so the surface can show `~/notes` for a path. */
   userHome: string;
   /**
+   * Whether this system has a native file picker the daemon can open (`pick`).
+   * Where it has none (Windows, a Linux without zenity) the surface hides the
+   * acts that open it. Optional so an older snapshot still reads; absent means none.
+   */
+  picker?: boolean;
+  /**
    * How to run the app's CLI (`bun /abs/path/scripts/cli.ts`), when the app
    * declared one: what the surface prints in a command the human can copy.
    */
@@ -1817,6 +1823,11 @@ export type ProfileCheck = {
 
 // ── surface to daemon ─────────────────────────────────────────────────────
 
+/** What a `pick` asks for: to add to the context, or only to answer with the paths chosen. */
+export type PickWant = "context-file" | "context-folder" | PickAnswerWant;
+/** A `pick` that adds nothing: the asker is answered with what was chosen. */
+export type PickAnswerWant = "folder";
+
 /** Surface to daemon, over the WebSocket. An app adds `<app>.<name>` frames. */
 export type ClientOp =
   /** Open a document, or an image in the viewer: the daemon tells them apart by name. */
@@ -1908,8 +1919,12 @@ export type ClientOp =
   | { op: "reveal"; path: string }
   /** Show a version's file. The daemon resolves it, so the surface names no path. */
   | { op: "reveal.version"; doc: string; version: number }
-  /** Open the OS file picker and add what comes back to the context. */
-  | { op: "pick"; want: "context-file" | "context-folder" }
+  /**
+   * Open the OS file picker. `context-file` and `context-folder` add what
+   * comes back to the context; `folder` only answers the asker with what was
+   * chosen (a `pick` frame), adding nothing.
+   */
+  | { op: "pick"; want: PickWant }
   /** Search the context; answered with `search.results`. */
   | { op: "search"; query: string; limit?: number }
   /**
@@ -2028,6 +2043,11 @@ export type ServerOp =
    */
   | ({ op: "show" } & ShowTarget)
   | { op: "fs.list"; path: string; entries: FsListEntry[]; error?: string }
+  /**
+   * To the asker only: the paths a `pick` for `folder` chose, each named as the
+   * context names it; none, and `cancelled`, when the dialog was dismissed.
+   */
+  | { op: "pick"; want: PickAnswerWant; paths: string[]; cancelled: boolean }
   /** To the sender only: what a move to the Trash would take. */
   | ({ op: "trash.preview" } & TrashPreview)
   /** To the sender only: `path` is in the Trash. */
