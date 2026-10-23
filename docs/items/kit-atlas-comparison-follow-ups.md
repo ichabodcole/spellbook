@@ -5,14 +5,15 @@ description:
   "The calls Cole took from the shell cycle's Atlas comparison that need small
   work: the float's waiting echo, a visible map entry, three wordings, search
   grouped by file, a heading scale, the wordmark, and Atlas's sort."
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: ready
 id: 01a157fc-bd8d-74f5-b201-a7320f4f31bd
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-19 }
 tags: [kit, scriptorium]
 parent: feature/workspace-kit-follow-ups
 from: cycle/2026-10-shell
+cycle: 2026-10-polish
 ---
 
 # Smaller follow-ups from the Atlas comparison

@@ -4,14 +4,15 @@ title: doctor's workspace.overlap fix names a verb Scriptorium lacks
 description:
   The kit's workspace.overlap finding offers 'workspace <dir>' as its fix, but
   Scriptorium has no workspace verb, so the finding's act cannot be taken.
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: ready
 id: 01a15bca-2bc2-741a-b014-7e9cc72a385b
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-20 }
 tags: [kit, scriptorium]
 parent: feature/workspace-kit-follow-ups
 from: cycle/2026-10-cutover
+cycle: 2026-10-polish
 ---
 
 # doctor's workspace.overlap fix names a verb Scriptorium lacks

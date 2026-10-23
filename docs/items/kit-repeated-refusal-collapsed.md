@@ -5,14 +5,15 @@ description:
   With the context column collapsed and the app owning refusals, an identical
   refusal repeated after its toast expired shows nothing, because the daemon
   client keeps a refusal as its text alone.
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: ready
 id: 01a15842-5868-758e-8f18-f8f05d1ca130
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-20 }
 tags: [kit]
 parent: feature/workspace-kit-follow-ups
 from: cycle/2026-10-shell
+cycle: 2026-10-polish
 ---
 
 # A repeated refusal shows nothing while the context column is collapsed

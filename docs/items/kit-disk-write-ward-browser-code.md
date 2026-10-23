@@ -6,13 +6,14 @@ description:
   Scriptorium's backend only; a raw node:fs write planted in src/kit/chat or
   src/kit/context stays green. Widen its scope, or add a ward that browser-side
   kit code imports no node:fs at all.
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: ready
 id: 01a14cb0-b41d-7721-9acb-193d48e34f40
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-17 }
 parent: feature/workspace-kit-follow-ups
 from: features/workspace-kit/sessions/2026-10-17-panes.md
+cycle: 2026-10-polish
 ---
 
 # The disk-write ward does not scan the kit's browser code

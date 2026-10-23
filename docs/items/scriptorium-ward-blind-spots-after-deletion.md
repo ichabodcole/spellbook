@@ -5,14 +5,15 @@ description:
   After the shipped Scriptorium's deletion, the terminator ward sweeps none of
   Scriptorium's own CLI rows, sinks.test misses a raw innerHTML, origin-guard is
   a text scan, and the kit server swallows a failed dev-page import.
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: ready
 id: 01a165d9-ee76-7551-9678-1fb5230e8475
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-22 }
 tags: [scriptorium, grimoire]
 parent: feature/workspace-kit-follow-ups
 from: cycle/2026-10-cutover
+cycle: 2026-10-polish
 ---
 
 # Ward blind spots the deletion's verifier found

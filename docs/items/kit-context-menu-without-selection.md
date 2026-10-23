@@ -6,14 +6,15 @@ description:
   caret it falls through to the browser's native menu. Open the kit's menu
   either way, and with no selection offer inserting a link (label and target) at
   the caret.
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: ready
 id: 01a16587-e5ec-7297-90ba-61a8a49eb7d6
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-22 }
 tags: [kit, scriptorium]
 parent: feature/workspace-kit-follow-ups
 from: cycle/2026-10-cutover
+cycle: 2026-10-polish
 ---
 
 # Right-click with no selection opens our menu, with Insert a link

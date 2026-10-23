@@ -5,14 +5,15 @@ description:
   When a new document or folder asks where it goes, the human can pick a folder
   in the tree or type a path, but not browse with the OS's own folder dialog,
   which the daemon can already open.
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: ready
 id: 01a16581-e023-765d-9eec-11f717383451
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-22 }
 tags: [kit, scriptorium]
 parent: feature/workspace-kit-follow-ups
 from: cycle/2026-10-cutover
+cycle: 2026-10-polish
 ---
 
 # The location dialog offers the native folder picker

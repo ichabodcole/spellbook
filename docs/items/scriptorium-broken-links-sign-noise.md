@@ -8,14 +8,15 @@ description:
   frontmatter references, 26 leaving the set': typed references like
   feature/<slug> and cycle/<file> are resolved as relative paths, and every link
   from one listed document to another counts as leaving."
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: ready
 id: 01a1662a-a793-762c-aa2e-5a5ac8f9a347
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-22 }
 tags: [kit, scriptorium, links]
 parent: feature/workspace-kit-follow-ups
 from: cycle/2026-10-polish
+cycle: 2026-10-polish
 ---
 
 # The broken-links sign counts project-docs references and listed documents as broken

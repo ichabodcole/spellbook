@@ -5,14 +5,15 @@ description:
   The kit's brand token is violet, and Scriptorium's theme maps primary to its
   rubric but not brand, so rendered links, drag-and-drop overlays and other
   brand uses show violet against the cream and dark-brown themes.
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: ready
 id: 01a16581-e0c9-70fe-a9a0-7525d5ef8f23
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-22 }
 tags: [kit, scriptorium]
 parent: feature/workspace-kit-follow-ups
 from: cycle/2026-10-cutover
+cycle: 2026-10-polish
 ---
 
 # Links and drop highlights are violet on Scriptorium's warm themes

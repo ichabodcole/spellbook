@@ -5,13 +5,14 @@ description:
   After the human ends a session, its waiting marks still read may be stuck, in
   both the shipped and the kit Scriptorium, though nothing can answer any more.
 status: stable
-lifecycle: triage
+lifecycle: ready
 id: 01a157b8-bbe1-751b-a8f4-cf55657df90c
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-19 }
 tags: [kit, scriptorium]
 parent: feature/workspace-kit-follow-ups
 from: cycle/2026-10-shell
+cycle: 2026-10-polish
 ---
 
 # Waiting marks still say may be stuck after End session
