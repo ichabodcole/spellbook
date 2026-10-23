@@ -31,8 +31,9 @@
 // fourth clause here is a signal to go do that instead").
 //
 // ⚠ WHAT THE SCAN STILL CANNOT SEE (2026-10-22). It now holds the call's SHAPE
-// tightly: the kit's guard by its own name, nothing else bound to that name,
-// and the answer bound and returned at once. It does not read control flow, so a guard inside a branch that never
+// tightly: the kit's guard by its own name, nothing else bound to that name, the
+// port and hostname from one server object, and the answer bound and returned
+// at once. It does not read control flow, so a guard inside a branch that never
 // runs, a `req` that is not the handler's own request, or a handler the server
 // never installs all pass here. The kit workspace daemon (Scriptorium's) has a
 // behaviour backstop named by the BACKSTOP cell (`src/kit/workspace/server.test.ts`);
@@ -80,6 +81,17 @@ export function serverFiles(): string[] {
     if (code(readFileSync(abs, "utf8")).includes("Bun.serve")) out.push(abs);
   }
   return out.sort();
+}
+
+/**
+ * The port and the bound hostname come from the SAME server object
+ * (`srv.port, srv.hostname`, or `srv?.…`): the request first, then both.
+ */
+function sameServerArgs(args: readonly string[]): boolean {
+  if (args.length !== 3) return false;
+  const port = /^([A-Za-z_$][\w$]*)\??\.port$/.exec(args[1] ?? "");
+  const host = /^([A-Za-z_$][\w$]*)\??\.hostname$/.exec(args[2] ?? "");
+  return port !== null && host !== null && port[1] === host[1];
 }
 
 /**
@@ -136,7 +148,9 @@ describe("every daemon refuses a foreign origin", () => {
     // with a non-loopback `--host` refuses its own CLI (whose `Host` is the bound
     // address). The argument is the server's own `hostname` (`srv.hostname`, or
     // `srv?.hostname` where the server is optional), so the shape is checked:
-    // a call with two arguments, or with something else third, is a miss.
+    // a call with two arguments, or with something else third, is a miss. The
+    // hostname's object must be the port's (origin-ward-same-server): a port
+    // from `srv` beside `other.hostname` is a miss too.
     const wrong: string[] = [];
     for (const f of files) {
       const c = code(readFileSync(f, "utf8"));
@@ -145,8 +159,7 @@ describe("every daemon refuses a foreign origin", () => {
           .split(",")
           .map((a) => a.trim())
           .filter((a) => a !== "");
-        if (args.length !== 3 || !/^[A-Za-z_$][\w$]*\??\.hostname$/.test(args[2] ?? ""))
-          wrong.push(`${show(f)} — refuseForeignOrigin(${m[1]})`);
+        if (!sameServerArgs(args)) wrong.push(`${show(f)} — refuseForeignOrigin(${m[1]})`);
       }
     }
     expect(wrong).toEqual([]);
@@ -164,6 +177,13 @@ describe("every daemon refuses a foreign origin", () => {
   });
 
   test("CALIBRATION: the shape checks catch the plants and pass the real call", () => {
+    expect(sameServerArgs(["req", "srv.port", "srv.hostname"])).toBe(true);
+    expect(sameServerArgs(["req", "srv?.port", "srv?.hostname"])).toBe(true);
+    // The port from one server, the hostname from another (origin-ward-same-server).
+    expect(sameServerArgs(["req", "srv.port", "other.hostname"])).toBe(false);
+    expect(sameServerArgs(["req", "srv.port"])).toBe(false);
+    expect(sameServerArgs(["req", "8080", "srv.hostname"])).toBe(false);
+
     const real = `import { refuseForeignOrigin } from "../../kit/wire/origin.ts";
       {
         const refused = refuseForeignOrigin(req, srv.port, srv.hostname);
