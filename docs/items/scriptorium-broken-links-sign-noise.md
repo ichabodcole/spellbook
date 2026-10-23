@@ -38,21 +38,25 @@ frontmatter references, 26 leaving the set". Almost none of them is broken.
 
 ## Definition of done
 
-- [ ] Decide, with Cole, what the sign should count (options below). Then
-      implement it.
+The ruling (Cole, 2026-10-22): Scriptorium learns nothing about project-docs.
+`.project-docs.json` is another tool's file, and reading it would mean adding a
+reader for every convention that follows.
+
+- [ ] A frontmatter value counts as broken only if it looks like a path (it has
+      an extension, or starts `./`, `../` or `/`) and misses. Any other value
+      that doesn't resolve, such as `feature/workspace-kit-follow-ups`, is an
+      **unresolved reference**: it is listed as such in `link-check` and the
+      sign's list, and is not counted in the sign.
+- [ ] Links between the session's own documents don't count as "leaving", even
+      when each was added as its own set.
 - [ ] In a session like the review above, the sign shows only links that are
       really broken.
 - [ ] A real broken link (a typo'd path, a deleted file) still shows, and its
       list still opens it at its line.
 
-**Options to weigh:**
+**Not taken, and why:**
 
-- **Resolve project-docs references** when the document's tree has a
-  `.project-docs.json`, using its `docsRoot`. Scriptorium is mostly used on
-  project docs, so this makes `parent:`, `from:` and `blocked_by` (ids) real
-  edges in the map too. It is app-side, through the kit's link resolver slot.
-- **Not count an unresolvable frontmatter value as broken** unless it looks like
-  a path (has an extension or `./`). It is smaller, but it loses real typos.
-- **Not count links between the session's own documents as "leaving",** when
-  sets were added one document at a time. Or show "leaving" only as a hint,
-  never in the sign.
+- **Reading `.project-docs.json`:** it couples Scriptorium to one tool.
+- **Searching by name:** a wrong guess is worse than no answer.
+- **A Scriptorium-owned rules file:** only if the agent-taught rules in
+  [scriptorium-link-rules](scriptorium-link-rules.md) get repetitive.
