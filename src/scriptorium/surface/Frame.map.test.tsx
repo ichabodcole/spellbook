@@ -284,6 +284,24 @@ describe("the map as the document pane's app view", () => {
     await m.unmount();
   });
 
+  test("the open set's header has the map too, a button that shows it as the menu does", async () => {
+    const m = await open(set);
+    await waitFor(() => listRow("set") !== null, "set's row");
+    // Not in the list: the header is the open set's.
+    expect(document.querySelector('[data-action="scriptorium.map"]')).toBeNull();
+    await click(listRow("set"));
+    const button = () =>
+      document.querySelector<HTMLButtonElement>('[data-action="scriptorium.map"]');
+    await waitFor(() => button() !== null, "the header's map button");
+    expect(button()?.getAttribute("aria-label")).toBe("Show the map of this set");
+    expect(button()?.closest('[data-pane="context"]')).not.toBeNull();
+    await click(button());
+    await waitFor(() => map() !== null, "the map in the centre");
+    await waitFor(() => columnNodes().length === 4, "four documents drawn");
+    expect(map()?.textContent).toContain("Map of set");
+    await m.unmount();
+  });
+
   test("a document listed on its own has no set to map", async () => {
     const m = await open(lone);
     await waitFor(() => listRow("lone.md") !== null, "the row");

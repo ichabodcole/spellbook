@@ -727,6 +727,41 @@ describe("right-click menus", () => {
     await m.unmount();
   });
 
+  test("an app action marked header is a button in the open set's header too; the rest stay in the menu", async () => {
+    const shown: string[] = [];
+    const actions = (t: MenuTarget): MenuAction[] =>
+      t.kind === "entry" && t.entry?.id === "c-set"
+        ? [
+            {
+              id: "app.map",
+              label: "Show the map",
+              icon: <svg aria-hidden />,
+              header: true,
+              onSelect: () => shown.push(t.path),
+            },
+            {
+              id: "app.quiet",
+              label: "Render this",
+              icon: <svg aria-hidden />,
+              onSelect: () => {},
+            },
+            { id: "app.bare", label: "No icon", header: true, onSelect: () => {} },
+          ]
+        : [];
+    const { props } = harness({ appActionsFor: actions });
+    const m = await mountSidebar(<ContextSidebar {...props} />);
+    expect(document.querySelector('[data-action="app.map"]')).toBeNull();
+    await click(buttonWith("drafts"));
+    const header = document.querySelector('[aria-label="Back to the context list"]')?.parentElement;
+    const button = header?.querySelector('[data-action="app.map"]') ?? null;
+    expect(button?.getAttribute("aria-label")).toBe("Show the map");
+    expect(header?.querySelector('[data-action="app.quiet"]')).toBeNull();
+    expect(header?.querySelector('[data-action="app.bare"]')).toBeNull();
+    await click(button);
+    expect(shown).toEqual(["/w/drafts"]);
+    await m.unmount();
+  });
+
   test("a destructive app action is drawn as one", async () => {
     const actions: MenuAction[] = [
       { id: "x", label: "Discard renders", onSelect: () => {}, destructive: true },

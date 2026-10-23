@@ -1465,6 +1465,22 @@ function SetView({
           <FolderPlusIcon />
         </ToolButton>
         <NewBundleButtons dir={entry.root} where=" in this set" onStructure={onStructure} />
+        {appActionsFor({ kind: "entry", path: entryPath(entry), entry })
+          .filter((a) => a.header && a.icon)
+          .map((a) => (
+            <Button
+              key={a.id}
+              variant="ghost"
+              size="icon-sm"
+              data-action={a.id}
+              disabled={a.disabled}
+              onClick={a.onSelect}
+              aria-label={a.label}
+              title={a.label}
+            >
+              {a.icon}
+            </Button>
+          ))}
       </div>
       <div className="flex min-h-0 flex-1 flex-col overflow-auto px-1">
         <EntryTree
