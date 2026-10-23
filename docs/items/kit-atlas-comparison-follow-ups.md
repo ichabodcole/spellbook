@@ -35,8 +35,9 @@ is small, and gathered here. The call's id points into the write-up.
       has, and keeps its row-menu entry.
 - [ ] **H5:** the kit's settings dialog and `image-settings`' help no longer say
       Story Studio's "world": an app noun or neutral wording, offered back.
-- [ ] **L4:** the context pane's drop hint fits the default width without being
-      cut off.
+- [ ] **L4:** the context pane's drop hint ("Drop documents or images, then
+      choo…") and the add-path field's placeholder ("Add a file or folder by…")
+      fit the default width without being cut off (Cole, 2026-10-22).
 - [ ] **C2:** the empty chat's line also says that selected text goes with a
       message.
 - [ ] **F1:** search results group text hits under each file with a count, and
