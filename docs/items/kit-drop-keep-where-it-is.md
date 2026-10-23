@@ -6,7 +6,7 @@ description:
   offer to add the original where it lives instead (as a listed document, or its
   folder as a set), which a browser drop can't name, so through the native
   picker preselected for that file.
-status: draft
+status: stable
 lifecycle: ready
 id: 01a16627-61ce-7244-baf2-627b2b9340b6
 kind: task
