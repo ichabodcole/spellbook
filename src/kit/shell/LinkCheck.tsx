@@ -851,8 +851,9 @@ export function LinkCheck({
   // While the list is open it stays, even when a fresh answer has emptied it.
   if (!data || (linkCheckListed(data) === 0 && !open)) return null;
   // Nothing counted, something listed (links leaving the set, unresolved
-  // references): a quiet mark, a plain link with no number, that still opens
-  // the list. Not a problem, so it does not look like one.
+  // references): a quiet mark, a plain link and a faint word ("11 leaving"), or
+  // just a number when narrow, that still opens the list. Not a problem, so it
+  // does not look like one.
   const quiet = linkCheckTotal(data) === 0;
   const label = quiet ? linkCheckQuietLabel(data) : linkCheckLabel(data);
   const Icon = quiet ? Link2Icon : Link2OffIcon;

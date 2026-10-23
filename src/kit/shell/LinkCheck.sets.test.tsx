@@ -519,7 +519,7 @@ describe("the sign counts only what is broken (Cole, 2026-10-23)", () => {
     await m.unmount();
   });
 
-  test("with only leaving links, a quiet mark: no number, no problem, and it opens the list", async () => {
+  test("with only leaving links, a quiet mark: a faint word, no problem, and it opens the list", async () => {
     expect(linkCheckTotal(leavingOnly)).toBe(0);
     const m = await sign(leavingOnly);
     await waitFor(() => mark() !== null, "the quiet mark");
