@@ -279,6 +279,32 @@ describe("End session", () => {
     await m.unmount();
   });
 
+  test("after an earlier refusal, a write after the end still toasts Session ended, once", async () => {
+    const m = await mount(<Host />);
+    await waitFor(() => control() !== null && !control()?.disabled, "the control");
+    // A refusal before the end, toasted and let go: a refusal the shell has
+    // already answered must not swallow the end's.
+    await settle(() => {
+      client?.send({ op: "open", path: join(root, "nope.md") });
+    });
+    await waitFor(() => (client?.lastErrorSeq ?? 0) > 0, "the first refusal");
+    await waitFor(() => client?.lastError === null, "the shell to let it go");
+    await askToEnd();
+    await click(dialogButton("End session"));
+    await waitFor(() => chip() !== null, "the ended state");
+    await closeDialog();
+    const endedToasts = () =>
+      document.querySelectorAll('[data-slot="toasts"] [aria-label="Session ended"]').length;
+    expect(endedToasts()).toBe(0);
+    // Two writes in a burst (a double click): one answer.
+    await click(q('[data-testid="probe"]'));
+    await click(q('[data-testid="probe"]'));
+    await waitFor(() => endedToasts() > 0, "the Session ended toast");
+    await new Promise((r) => setTimeout(r, 60));
+    expect(endedToasts()).toBe(1);
+    await m.unmount();
+  });
+
   test("with the daemon gone between opening and confirming, End session waits rather than hangs", async () => {
     const m = await mount(<Host />);
     await askToEnd();

@@ -397,6 +397,26 @@ describe("the refusal rule's edges", () => {
     }
   });
 
+  test("the same refusal again after its toast has gone is toasted again", async () => {
+    daemon.session.addContext(join(docs, "set"));
+    collapseContext();
+    const m = await mount(<Host ownNotice />);
+    await shellUp();
+    const refusal = await toastedWhileCollapsed();
+    const first = seen?.lastErrorSeq ?? 0;
+    // The toast goes (as it does when it expires); the notice still holds the refusal.
+    await click(q('[data-slot="toasts"] [aria-label="Dismiss"]'));
+    await waitFor(() => !toastsText().includes(refusal), "the toast gone");
+    expect(seen?.lastError).toBe(refusal);
+    // The same link, refused word for word: a new refusal, so a new toast.
+    await refuseLink();
+    await waitFor(() => (seen?.lastErrorSeq ?? 0) > first, "the second refusal");
+    expect(seen?.lastError).toBe(refusal);
+    await waitFor(() => toastsText().includes(refusal), "the toast again");
+    expect(count(toastsText(), refusal)).toBe(1);
+    await m.unmount();
+  });
+
   test("the refusal let go while collapsed, its toast goes with it", async () => {
     daemon.session.addContext(join(docs, "set"));
     collapseContext();

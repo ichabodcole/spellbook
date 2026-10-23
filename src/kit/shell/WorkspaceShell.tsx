@@ -1095,7 +1095,7 @@ function ShellBody({
   }, [openImagePath, request, state]);
 
   // ── what the daemon said ────────────────────────────────────────────────
-  const { lastError, lastErrorTitle, clearError, done } = daemon;
+  const { lastError, lastErrorTitle, lastErrorSeq, clearError, done } = daemon;
   const endedToastAt = useRef(0);
   // A refusal (the open failed) cancels a reveal that was waiting on it.
   useEffect(() => {
@@ -1114,6 +1114,9 @@ function ShellBody({
     dismissToast(ownedToast.current);
     ownedToast.current = null;
   }, [dismissToast]);
+  // Keyed on `lastErrorSeq` as well as the words: a refusal repeated word for word
+  // is a new one, so this runs again (its toast may have expired).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lastErrorSeq is the refusal's identity, and a repeat must re-run this
   useEffect(() => {
     if (!lastError) return;
     if (noticeOwned && lastError !== SESSION_ENDED) {
@@ -1132,7 +1135,7 @@ function ShellBody({
       endedToastAt.current = Date.now();
     } else toasts.announce(lastErrorTitle ?? "The workspace refused that", lastError);
     clearError();
-  }, [lastError, lastErrorTitle, clearError, toasts, noticeOwned, letOwnedToastGo]);
+  }, [lastError, lastErrorSeq, lastErrorTitle, clearError, toasts, noticeOwned, letOwnedToastGo]);
   // The stand-in goes once the notice is in sight (the column reopened) or the
   // refusal is let go: a refusal is never shown twice at once.
   useEffect(() => {

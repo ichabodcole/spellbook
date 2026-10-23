@@ -164,6 +164,12 @@ export type DaemonView = {
    * did not open); null for the daemon's ordinary refusals.
    */
   lastErrorTitle: string | null;
+  /**
+   * Which refusal `lastError` is: one more for every refusal set, so a refusal
+   * repeated word for word is still news (a toast that expired shows again).
+   * Unchanged by `clearError`; 0 before the first.
+   */
+  lastErrorSeq: number;
   /** Version texts, keyed `doc@version`: loaded on ask, or pushed by a merge. */
   texts: ReadonlyMap<string, string>;
   done: Done | null;
@@ -311,6 +317,7 @@ export function createDaemonClient(options: DaemonOptions = {}): DaemonClient {
     endedBy: null,
     lastError: null,
     lastErrorTitle: null,
+    lastErrorSeq: 0,
     texts: new Map(),
     done: null,
     diff: null,
@@ -361,6 +368,9 @@ export function createDaemonClient(options: DaemonOptions = {}): DaemonClient {
     snapshot = build();
     for (const l of [...listeners]) l();
   };
+  /** A refusal that belongs to no request: `lastError`, under a new `lastErrorSeq`. */
+  const refuse = (message: string, title: string | null) =>
+    set({ lastError: message, lastErrorTitle: title, lastErrorSeq: view.lastErrorSeq + 1 });
 
   const settle = (id: RequestId) => {
     const p = pending.get(id);
@@ -391,7 +401,7 @@ export function createDaemonClient(options: DaemonOptions = {}): DaemonClient {
 
   function send(op: ClientOp | AppOp): RequestId | null {
     if (view.endedBy) {
-      if (!AMBIENT.has(op.op)) set({ lastError: SESSION_ENDED, lastErrorTitle: null });
+      if (!AMBIENT.has(op.op)) refuse(SESSION_ENDED, null);
       return null;
     }
     const ws = socket;
@@ -671,11 +681,7 @@ export function createDaemonClient(options: DaemonOptions = {}): DaemonClient {
         break;
       case "error":
         // A refusal that answers a request is that request's to show.
-        if (!waiting)
-          set({
-            lastError: (frame as Extract<ServerOp, { op: "error" }>).message,
-            lastErrorTitle: null,
-          });
+        if (!waiting) refuse((frame as Extract<ServerOp, { op: "error" }>).message, null);
         break;
       case "version.text": {
         const f = frame as Extract<ServerOp, { op: "version.text" }>;
@@ -720,7 +726,7 @@ export function createDaemonClient(options: DaemonOptions = {}): DaemonClient {
       }
       case "link.target": {
         const said = linkRefusal(frame as Extract<ServerOp, { op: "link.target" }>);
-        if (said && !waiting) set({ lastError: said, lastErrorTitle: LINK_REFUSED });
+        if (said && !waiting) refuse(said, LINK_REFUSED);
         break;
       }
       case "structure.done": {

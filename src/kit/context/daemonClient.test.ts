@@ -172,6 +172,22 @@ describe("requests", () => {
     expect(c.getSnapshot().lastError).toBeNull();
   });
 
+  test("each refusal has its own lastErrorSeq, so a repeat word for word is still news", async () => {
+    daemon = await boot();
+    const c = await connect(daemon);
+    expect(c.getSnapshot().lastErrorSeq).toBe(0);
+    c.getSnapshot().send({ op: "open", path: join(docs, "nope.md") });
+    await waitUntil("the first refusal", () => c.getSnapshot().lastErrorSeq === 1);
+    const said = c.getSnapshot().lastError;
+    // Not cleared: the same refusal again is a new one all the same.
+    c.getSnapshot().send({ op: "open", path: join(docs, "nope.md") });
+    await waitUntil("the second refusal", () => c.getSnapshot().lastErrorSeq === 2);
+    expect(c.getSnapshot().lastError).toBe(said);
+    // Clearing lets the refusal go and keeps the count.
+    c.getSnapshot().clearError();
+    expect(c.getSnapshot().lastErrorSeq).toBe(2);
+  });
+
   test("opening a document loads its text into texts, keyed by doc and version", async () => {
     daemon = await boot();
     const c = await connect(daemon);
@@ -412,8 +428,13 @@ describe("writeText", () => {
     // Ambient traffic is dropped quietly; a human's act says why it did nothing.
     expect(c.getSnapshot().send({ op: "select", selection: null })).toBeNull();
     expect(c.getSnapshot().lastError).toBeNull();
+    const seq = c.getSnapshot().lastErrorSeq;
     expect(c.getSnapshot().send({ op: "say", text: "hi" })).toBeNull();
     expect(c.getSnapshot().lastError).toBe("The session has ended");
+    // Each act after the end is a refusal of its own, even word for word.
+    expect(c.getSnapshot().lastErrorSeq).toBe(seq + 1);
+    c.getSnapshot().send({ op: "say", text: "again" });
+    expect(c.getSnapshot().lastErrorSeq).toBe(seq + 2);
     await expect(c.getSnapshot().request({ op: "open", path })).rejects.toThrow("has ended");
   }, 15_000);
 
