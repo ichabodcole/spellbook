@@ -59599,6 +59599,21 @@ function editorOffset(text4, offset4) {
     n++;
   return offset4 - n;
 }
+function daemonOffset(text4, pos) {
+  if (!text4.includes("\r"))
+    return pos;
+  let n = 0;
+  for (let i2 = text4.indexOf(`\r
+`);i2 >= 0 && i2 - n < pos; i2 = text4.indexOf(`\r
+`, i2 + 2))
+    n++;
+  return pos + n;
+}
+function notesInEditor(text4, notes) {
+  if (!text4.includes("\r"))
+    return notes;
+  return notes.map((n) => n.from === null || n.to === null ? n : { ...n, from: editorOffset(text4, n.from), to: editorOffset(text4, n.to) });
+}
 var noteField = StateField.define({
   create: () => Decoration.none,
   update(marks2, tr) {
@@ -59800,6 +59815,8 @@ function DocumentView({
   const lastWritten = import_react20.useRef(null);
   const notesRef = import_react20.useRef(notes);
   notesRef.current = notes;
+  const textRef = import_react20.useRef(text4);
+  textRef.current = text4;
   const focusedRef = import_react20.useRef(focusedNote);
   focusedRef.current = focusedNote;
   const additions = import_react20.useRef({ extensions, tokens });
@@ -59895,8 +59912,8 @@ function DocumentView({
           return;
         const { from, to } = update2.state.selection.main;
         handlers2.current.onSelect?.({
-          from,
-          to,
+          from: daemonOffset(textRef.current, from),
+          to: daemonOffset(textRef.current, to),
           fromLine: update2.state.doc.lineAt(from).number,
           toLine: update2.state.doc.lineAt(to).number,
           text: update2.state.sliceDoc(from, to)
@@ -60028,7 +60045,8 @@ function DocumentView({
           if (!handlers2.current.onContextMenu)
             return false;
           const { from, to } = v2.state.selection.main;
-          const pos = v2.posAtCoords({ x: event.clientX, y: event.clientY });
+          const at2 = v2.posAtCoords({ x: event.clientX, y: event.clientY });
+          const pos = at2 === null ? null : daemonOffset(textRef.current, at2);
           const noteIds = pos === null ? [] : (notesRef.current ?? []).filter((n) => n.from !== null && n.to !== null && pos >= n.from && pos <= n.to).map((n) => n.id);
           if (from === to && noteIds.length === 0)
             return false;
@@ -60036,8 +60054,8 @@ function DocumentView({
           handlers2.current.onContextMenu({
             x: event.clientX,
             y: event.clientY,
-            from,
-            to,
+            from: daemonOffset(textRef.current, from),
+            to: daemonOffset(textRef.current, to),
             noteIds
           });
           return true;
@@ -60053,7 +60071,10 @@ function DocumentView({
     });
     view.current = v;
     v.dispatch({
-      effects: setNotes.of({ notes: notesRef.current ?? [], focused: focusedRef.current })
+      effects: setNotes.of({
+        notes: notesInEditor(textRef.current, notesRef.current ?? []),
+        focused: focusedRef.current
+      })
     });
     for (const c of replaying?.changes ?? [])
       v.dispatch({ changes: c, annotations: [remote.of(true), isolateHistory.of("full")] });
@@ -60100,8 +60121,6 @@ function DocumentView({
       leave();
     };
   }, [place, docKey, editable2]);
-  const textRef = import_react20.useRef(text4);
-  textRef.current = text4;
   const revealed = import_react20.useRef(onRevealed);
   revealed.current = onRevealed;
   const headingMarkTimer = import_react20.useRef(undefined);
@@ -60160,10 +60179,18 @@ function DocumentView({
       sel.removeAllRanges();
   }, [clearSeq]);
   import_react20.useEffect(() => {
-    view.current?.dispatch({ effects: setPending.of(pendingNote ?? null) });
+    const at2 = (o) => editorOffset(textRef.current, o);
+    view.current?.dispatch({
+      effects: setPending.of(pendingNote ? { from: at2(pendingNote.from), to: at2(pendingNote.to) } : null)
+    });
   }, [pendingNote]);
   import_react20.useEffect(() => {
-    view.current?.dispatch({ effects: setNotes.of({ notes: notes ?? [], focused: focusedNote }) });
+    view.current?.dispatch({
+      effects: setNotes.of({
+        notes: notesInEditor(textRef.current, notes ?? []),
+        focused: focusedNote
+      })
+    });
   }, [notes, focusedNote]);
   import_react20.useEffect(() => {
     const v = view.current;
@@ -68808,9 +68835,13 @@ function projectBody(text4) {
     });
     plain2 += sep;
   };
-  const emit = (value, node2) => {
-    if (value === "")
+  const emit = (raw, node2) => {
+    if (raw === "")
       return;
+    const value = raw.includes(`\r
+`) ? raw.replaceAll(`\r
+`, `
+`) : raw;
     flushBoundary();
     const s = node2.position?.start.offset;
     const e = node2.position?.end.offset;
@@ -68825,7 +68856,11 @@ function projectBody(text4) {
     });
     plain2 += value;
   };
-  const emitText = (value, node2) => {
+  const emitText = (raw, node2) => {
+    const value = raw.includes(`\r
+`) ? raw.replaceAll(`\r
+`, `
+`) : raw;
     const s = node2.position?.start.offset;
     const e = node2.position?.end.offset;
     if (s === undefined || e === undefined || e - s === value.length || !value.includes(`
@@ -70545,11 +70580,15 @@ function DocumentPane({
   const askLinkAt = (at2) => {
     const ed = editorMounted ? editorHandle.current : null;
     if (ed) {
+      const from = shown2 === undefined ? at2.from : editorOffset(shown2, at2.from);
+      const to = shown2 === undefined ? at2.to : editorOffset(shown2, at2.to);
       askLink({
         kind: "wrap",
         ...at2,
-        quote: ed.text().slice(at2.from, at2.to),
-        track: ed.track("wrap", at2.from, at2.to)
+        from,
+        to,
+        quote: ed.text().slice(from, to),
+        track: ed.track("wrap", from, to)
       });
       return;
     }
