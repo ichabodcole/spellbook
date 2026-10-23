@@ -111,6 +111,7 @@ import {
 } from "../context/workspace.ts";
 import { bundleOf, isBundleMain } from "../lib/bundles.ts";
 import { cn } from "../lib/cn.ts";
+import { guardedLayoutStorage } from "../lib/layoutStorage.ts";
 import { askDescribeText } from "../lib/sidecar.ts";
 import { applyTheme, readAppliedTheme, type Theme } from "../theme/mode.ts";
 import {
@@ -521,7 +522,10 @@ function ShellBody({
     () => storageProp ?? localShellStorage(storageKey),
     [storageProp, storageKey],
   );
-  const layout = useDefaultLayout({ id: "panes", panelIds: [...PANES], storage });
+  // The library parses the saved layout during render, unguarded: read through the
+  // guard, so a corrupt one opens the default layout rather than a blank page.
+  const layoutStorage = useMemo(() => guardedLayoutStorage(storage, "panes", PANES), [storage]);
+  const layout = useDefaultLayout({ id: "panes", panelIds: [...PANES], storage: layoutStorage });
   // Set from the library's own callback and never written back. Before the panels
   // exist (the first render) it is the saved layout's guess.
   const [collapsed, setCollapsed] = useState<Collapsed>(() => collapsedSides(layout.defaultLayout));

@@ -18,7 +18,7 @@ import {
   settle,
   waitFor,
 } from "../lib/testDom.ts";
-import { type LaidOut, laidOut } from "../lib/testLayout.ts";
+import { BAD_LAYOUTS, type LaidOut, laidOut } from "../lib/testLayout.ts";
 import { fixtureDaemon } from "../workspace/fixtures/app";
 import type { WorkspaceDaemon } from "../workspace/server";
 import { seedDocs, tempRoot } from "../workspace/testing";
@@ -306,6 +306,49 @@ describe("the shell", () => {
     await m.unmount();
   });
 
+  test("a corrupt or wrongly shaped saved layout is ignored: the default layout opens", async () => {
+    // What a hand edit, a crash mid-write or an older build can leave under the
+    // shell's columns. The layout library parses it during render, unguarded.
+    const KEY = "spellbook:react-resizable-panels:panes:context:centre:chat";
+    for (const bad of BAD_LAYOUTS) {
+      localStorage.clear();
+      localStorage.setItem(KEY, bad.value);
+      const m = await mount(<Host />);
+      await waitFor(() => !!q('[data-pane="centre"]'), `the shell, over ${bad.what}`);
+      // The default: both columns open, neither a rail.
+      expect(q('[aria-label="Reopen the context column"]')).toBeNull();
+      expect(q('[aria-label="Reopen the conversation column"]')).toBeNull();
+      await m.unmount();
+    }
+  });
+
+  test("a saved layout whose sizes do not sum to 100 is ignored: the default sizes open", async () => {
+    const KEY = "spellbook:react-resizable-panels:panes:context:centre:chat";
+    const sizes = () =>
+      ["context", "centre", "chat"].map(
+        (id) => (document.getElementById(id) as HTMLElement)?.style.flexGrow,
+      );
+    localStorage.clear();
+    const first = await mount(<Host />);
+    await waitFor(() => !!q('[data-pane="centre"]'), "the shell, with nothing saved");
+    const defaults = sizes();
+    await first.unmount();
+    for (const [what, value] of [
+      ["sizes summing to 300", { context: 100, centre: 100, chat: 100 }],
+      ["sizes summing to 60", { context: 20, centre: 20, chat: 20 }],
+      ["every size zero", { context: 0, centre: 0, chat: 0 }],
+    ] as const) {
+      localStorage.clear();
+      localStorage.setItem(KEY, JSON.stringify(value));
+      const m = await mount(<Host />);
+      await waitFor(() => !!q('[data-pane="centre"]'), `the shell, over ${what}`);
+      expect([what, ...sizes()]).toEqual([what, ...defaults]);
+      expect(q('[aria-label="Reopen the context column"]')).toBeNull();
+      expect(q('[aria-label="Reopen the conversation column"]')).toBeNull();
+      await m.unmount();
+    }
+  });
+
   test("Ctrl+1, 2 and 3 move focus between the panes", async () => {
     const m = await mount(<Host />);
     await waitFor(() => !!q('[data-pane="centre"]'), "the shell");
@@ -378,7 +421,7 @@ describe("the columns and the quiet the centre asks for", () => {
     // themselves (collapse, expand) are the browser hand test's.
     localStorage.setItem(
       "spellbook:react-resizable-panels:panes:context:centre:chat",
-      JSON.stringify({ context: 0, centre: 72, chat: 0 }),
+      JSON.stringify({ context: 0, centre: 100, chat: 0 }),
     );
     seen = null;
     const m = await mountWith();

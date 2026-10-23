@@ -56,6 +56,7 @@ import { docFormat } from "../lib/docFormat.ts";
 import { findHeading, lineRange } from "../lib/headingAnchor.ts";
 import { headingsOf } from "../lib/headings.ts";
 import { type JsonProblem, jsonProblem } from "../lib/json.ts";
+import { guardedLayoutStorage } from "../lib/layoutStorage.ts";
 import { decodePath } from "../lib/linkTarget.ts";
 import { safeStorage } from "../lib/storage.ts";
 import {
@@ -447,10 +448,15 @@ export function DocumentPane({
   // The split's width, kept where the view mode is. The group it sizes is drawn in
   // raw and rendered too (one panel wide), so only a layout with both halves is
   // kept (`isSplitLayout`): a one-panel layout is a write nothing reads.
+  // Read through the guard: a corrupt kept width opens half and half, never a blank page.
+  const splitStorage = useMemo(
+    () => guardedLayoutStorage(kept, SPLIT_LAYOUT_ID, SPLIT_PANEL_IDS),
+    [kept],
+  );
   const splitLayout = useDefaultLayout({
     id: SPLIT_LAYOUT_ID,
     panelIds: SPLIT_PANEL_IDS,
-    storage: kept,
+    storage: splitStorage,
   });
   const keepSplit = splitLayout.onLayoutChanged;
   const onSplitLayout = useCallback(

@@ -31,6 +31,7 @@ import {
   typeInto,
   waitFor,
 } from "../lib/testDom.ts";
+import { BAD_LAYOUTS } from "../lib/testLayout.ts";
 import { createToastStore } from "../ui/toast-store.ts";
 import { fixtureDaemon } from "../workspace/fixtures/app";
 import { testWorkspace } from "../workspace/fixtures/harness";
@@ -815,6 +816,41 @@ describe("split, raw and rendered side by side", () => {
       await waitFor(() => sizes()?.["doc-raw"] === 55, "the moved width, kept");
       expect(sizes()).toEqual({ "doc-raw": 55, "doc-rendered": 45 });
       expect(grow("doc-raw")).toBe(55);
+    } finally {
+      undo();
+    }
+  });
+
+  test("a corrupt or wrongly shaped kept width is ignored: the split opens half and half", async () => {
+    const kept = new Map<string, string>();
+    paneStorage = {
+      getItem: (k) => kept.get(k) ?? null,
+      setItem: (k, v) => {
+        kept.set(k, v);
+      },
+    };
+    const KEY = "react-resizable-panels:doc-split:doc-raw:doc-rendered";
+    const undo = panelsLaidOut(450);
+    try {
+      // The document open in the daemon; each page below is a new one on it.
+      await openStory(undefined, undefined, { splitView: true });
+      for (const bad of [
+        ...BAD_LAYOUTS,
+        { what: "one half only", value: '{"doc-raw": 30}' },
+        { what: "a half out of range", value: '{"doc-raw": -20, "doc-rendered": 120}' },
+      ]) {
+        await cleanup();
+        kept.clear();
+        kept.set(KEY, bad.value);
+        kept.set("spellbook:view-mode", "split");
+        await mount(<Host pane={{ splitView: true }} />);
+        await waitFor(
+          () => q("[data-slot=split-view] .md-prose p") !== null,
+          `the split, over ${bad.what}`,
+        );
+        const grow = (id: string) => Number((q(`#${id}`) as HTMLElement).style.flexGrow);
+        expect([grow("doc-raw"), grow("doc-rendered")]).toEqual([50, 50]);
+      }
     } finally {
       undo();
     }

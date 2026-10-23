@@ -67,3 +67,19 @@ export function laidOut(width = 1200): LaidOut {
       }),
   };
 }
+
+/**
+ * Stored layouts the layout library cannot use: what a hand edit, a crash mid-write
+ * or an older build can leave under a `react-resizable-panels:` key. Each must be
+ * ignored, and the default layout opened.
+ */
+export const BAD_LAYOUTS: readonly { what: string; value: string }[] = [
+  { what: "text that is not JSON", value: "{not json" },
+  { what: "null", value: "null" },
+  { what: "a number", value: "5" },
+  { what: "a string", value: '"wide"' },
+  { what: "an array of numbers", value: "[30, 70]" },
+  { what: "an empty object", value: "{}" },
+  { what: "sizes that are not numbers", value: '{"a": "wide", "b": null}' },
+  { what: "sizes for panels that are not there", value: '{"elsewhere": 40, "other": 60}' },
+];
