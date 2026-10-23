@@ -49,7 +49,9 @@ passage. Not a regression: the shipped app behaves the same.
 ## Done and verified
 
 `feat(kit): right-click always opens the document's menu, with Insert a link and the basic edits`
-(deb0f493), on `impl/kit-document-pane-menu-reveal`.
+(d6d02ee3), on `impl/kit-document-pane-menu-rebased`, one commit over
+`cycle/polish` that folds in the verifier's round below and keeps implementer
+E's CRLF conversions.
 
 Deliberate choices:
 
@@ -102,6 +104,86 @@ scratch Scriptorium):
 Each new test was mutation-checked: six planted regressions, all turned red, all
 restored byte-equal.
 
+### After the verifier's round
+
+The no-stake verifier confirmed the item and found two gaps. Both fixes are
+folded into the same commit.
+
+- **A right-click on a link in the rendered view now goes to the browser's
+  menu.** That keeps the browser's link entries (open in a new tab, copy the
+  address), as images already did. Before, "Insert a link" there wrote one link
+  inside another (`[link t[x](…)o b](…)`).
+- **Raw view, caret or selection inside an existing link.** "Insert a link" or
+  "Add link" is disabled, with the reason on hover ("not here").
+  - The ⌘⇧K shortcut refuses the same way, with a "Can't link here" toast. The
+    shortcut nested on base too.
+  - A caret at either edge of a link is outside it.
+  - The check is `insideLinkProblem`.
+- **A menu with nothing usable now leaves the event to the browser.** In an
+  ended session with only a caret, both views now give the browser's menu.
+  - The raw editor now asks on right-click when read-only, too. Before, its
+    context-menu handler was registered only when editable, so the two views
+    disagreed.
+  - Over a selection in an ended session, the menu shows Copy and a disabled Add
+    note ("session ended"). Base enabled Add note there.
+- New tests for the four mutations that survived:
+  - Paste and Cut record `input.paste` and `delete.cut`.
+  - A second Ctrl-click lets the browser's menu through.
+  - The Link text field is absent over a selection.
+  - The frontmatter mark clears after its moment.
+- Re-checked in a real browser:
+  - A right-click on the rendered link was left to the browser.
+  - In raw, inside `[the bakery]`, the link act is disabled with its reason, and
+    ⌘⇧K shows the toast and leaves the text alone.
+  - In an ended session with a caret, both views leave the event to the browser.
+    Over a selection, both show Copy and a disabled Add note.
+  - The round-one checks still pass.
+
+Not done: the verifier's nit that the build's `--kit-flash-tint` fallback is the
+dark hex in both themes. The fallback is only used by a browser without
+`color-mix()`; every modern one takes the `@supports` copy, which follows the
+theme. A light-only fallback would mean a fixed colour in `document.css`, which
+the theme test forbids. Every other `color-mix()` in the kit's sheets has the
+same dark-only fallback.
+
+### Rebased onto the CRLF fix
+
+Implementer E's CRLF fix landed first on `cycle/polish`. It converts the raw
+view's right-click and selection offsets to the daemon's count, which counts
+each `\r\n` as two characters (`daemonOffset`).
+
+The rebased menu keeps those conversions at the view's edge:
+
+- The menu's offsets are in the daemon's count from both views.
+- Cut and Paste convert them to the editor's count with `editorOffset` before
+  touching the editor.
+- The link check (`insideLinkProblem`) reads them against `shown`, the daemon's
+  text, so the offsets and the text share one count.
+- E's `DocumentView.crlf.test.tsx` passes unchanged except for one callback,
+  which now returns a boolean to match the new `ContextMenuRequest` type.
+
+New tests on a CRLF file:
+
+- "Insert a link" at a caret after a CRLF line lands at the caret.
+- Cut and Paste across a CRLF line take out and put back exactly the selection.
+- Add note over a selection spanning a CRLF line anchors on the words selected.
+- A caret inside a link after CRLF lines turns the link act off; a caret just
+  past the link leaves it on.
+
+Three mutants each turned red: skipping the edits' conversion, reading the link
+check in the editor's count, and reporting editor offsets from the raw view.
+
+Real-browser check on `c-crlf.md` (CRLF) and `a.md` (LF):
+
+- Insert a link, Cut, and Paste back all land where they should.
+- In the untouched CRLF file, a note across the line break is stored at daemon
+  offsets 11–26, which read `line here.\r\nAno` in the file.
+- A caret inside `[crlf ghost]` turns the link act off.
+
+One thing seen, not fixed here, and probably one of E's filed line-ending
+findings: after the first edit through the raw editor, the CRLF file's text
+comes back with LF endings.
+
 ## Port-back notes
 
 - `chat/NoteAtSelection.tsx`:
@@ -122,6 +204,11 @@ restored byte-equal.
     recorded in the capture phase while the menu is open.
   - `menuEdits` builds the edits on the clipboard API, with toasts when the
     clipboard is refused.
+- `document/linkInsert.ts`: new `insideLinkProblem(text, from, to)`, used by the
+  pane for the shortcut, the menu and the rendered view. `MarkdownView` leaves a
+  right-click on a link to the browser. The raw view's context-menu handler is
+  registered whether or not the editor is editable. `NoteAtSelection` takes
+  `linkRefusal` and `noteRefusal`. The pane opens no menu without a usable act.
 - `document/LinkPicker.tsx`: a "Link text" field when `kind === "wrap"` and
   there is no quote. `onChoose` gains a fourth `label` argument.
 - `document/linkInsert.ts`: `linkInsertion` takes an optional `label`, which

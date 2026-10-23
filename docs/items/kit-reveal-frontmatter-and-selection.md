@@ -43,7 +43,8 @@ Scriptorium. Neither is caused by that item; both sit in the pane's general
 ## Done and verified
 
 `fix(kit): opening a link's place marks a frontmatter field and keeps the selection`
-(7b13433d), on `impl/kit-document-pane-menu-reveal`.
+(7afc8dcc on `cycle/polish`; first made as 7b13433d on
+`impl/kit-document-pane-menu-reveal`).
 
 Reproduced first, in a real browser (Playwright Chromium) on a scratch
 Scriptorium, through the link check's list:
