@@ -103,6 +103,7 @@ import {
 import {
   DocumentView,
   type EditorHandle,
+  editorOffset,
   type ImageArrival,
   type RowArrival,
   type SelectionReport,
@@ -846,11 +847,17 @@ export function DocumentPane({
   const askLinkAt = (at: { from: number; to: number; x: number; y: number }) => {
     const ed = editorMounted ? editorHandle.current : null;
     if (ed) {
+      // Both views' right-clicks say the daemon's count; the editor holds each
+      // CRLF once.
+      const from = shown === undefined ? at.from : editorOffset(shown, at.from);
+      const to = shown === undefined ? at.to : editorOffset(shown, at.to);
       askLink({
         kind: "wrap",
         ...at,
-        quote: ed.text().slice(at.from, at.to),
-        track: ed.track("wrap", at.from, at.to),
+        from,
+        to,
+        quote: ed.text().slice(from, to),
+        track: ed.track("wrap", from, to),
       });
       return;
     }

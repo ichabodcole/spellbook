@@ -123,6 +123,31 @@ export function editorOffset(text: string, offset: number): number {
   return offset - n;
 }
 
+/**
+ * A position in the editor's document as an offset into `text` as the daemon
+ * counts it: `editorOffset` the other way. A selection and a right-click leave
+ * this view in the daemon's count, as notes and reveals arrive in it, so a note
+ * the human writes in the raw view of a CRLF file anchors on the words they
+ * chose. A position at a line's end is before its `\r`.
+ */
+export function daemonOffset(text: string, pos: number): number {
+  if (!text.includes("\r")) return pos;
+  let n = 0;
+  // The editor's position of each `\r\n` is its daemon index less those before it.
+  for (let i = text.indexOf("\r\n"); i >= 0 && i - n < pos; i = text.indexOf("\r\n", i + 2)) n++;
+  return pos + n;
+}
+
+/** Notes placed by the daemon, in the editor's document (CRLF counted once). */
+function notesInEditor(text: string, notes: PlacedNote[]): PlacedNote[] {
+  if (!text.includes("\r")) return notes;
+  return notes.map((n) =>
+    n.from === null || n.to === null
+      ? n
+      : { ...n, from: editorOffset(text, n.from), to: editorOffset(text, n.to) },
+  );
+}
+
 const noteField = StateField.define<DecorationSet>({
   create: () => Decoration.none,
   update(marks, tr) {
@@ -424,8 +449,8 @@ export function DocumentView({
   /** The note the panel has focused: marked stronger than the rest. */
   focusedNote?: string | null;
   /**
-   * The selection: offsets for notes, and LINE NUMBERS for the wire's selection,
-   * which is what the agent reads. A character offset is neither party's language.
+   * The selection: offsets for notes (in the daemon's count, as `text` holds
+   * it), and LINE NUMBERS for the wire's selection, which is what the agent reads. A character offset is neither party's language.
    */
   onSelect?: (s: SelectionReport) => void;
   /**
@@ -555,6 +580,9 @@ export function DocumentView({
   const lastWritten = useRef<string | null>(null);
   const notesRef = useRef(notes);
   notesRef.current = notes;
+  /** The text the daemon's offsets count in: what reveals, flashes and notes map from. */
+  const textRef = useRef(text);
+  textRef.current = text;
   const focusedRef = useRef(focusedNote);
   focusedRef.current = focusedNote;
   const additions = useRef({ extensions, tokens });
@@ -680,8 +708,9 @@ export function DocumentView({
         if (!update.selectionSet) return;
         const { from, to } = update.state.selection.main;
         handlers.current.onSelect?.({
-          from,
-          to,
+          // In the daemon's count, as a note made from it is anchored.
+          from: daemonOffset(textRef.current, from),
+          to: daemonOffset(textRef.current, to),
           fromLine: update.state.doc.lineAt(from).number,
           toLine: update.state.doc.lineAt(to).number,
           text: update.state.sliceDoc(from, to),
@@ -843,8 +872,10 @@ export function DocumentView({
           // alone rather than replaced with an empty one.
           contextmenu: (event, v) => {
             if (!handlers.current.onContextMenu) return false;
+            // In the daemon's count, as the notes are and as a note made here is anchored.
             const { from, to } = v.state.selection.main;
-            const pos = v.posAtCoords({ x: event.clientX, y: event.clientY });
+            const at = v.posAtCoords({ x: event.clientX, y: event.clientY });
+            const pos = at === null ? null : daemonOffset(textRef.current, at);
             const noteIds =
               pos === null
                 ? []
@@ -856,8 +887,8 @@ export function DocumentView({
             handlers.current.onContextMenu({
               x: event.clientX,
               y: event.clientY,
-              from,
-              to,
+              from: daemonOffset(textRef.current, from),
+              to: daemonOffset(textRef.current, to),
               noteIds,
             });
             return true;
@@ -875,7 +906,10 @@ export function DocumentView({
     });
     view.current = v;
     v.dispatch({
-      effects: setNotes.of({ notes: notesRef.current ?? [], focused: focusedRef.current }),
+      effects: setNotes.of({
+        notes: notesInEditor(textRef.current, notesRef.current ?? []),
+        focused: focusedRef.current,
+      }),
     });
     // Each step is undoable, and marked remote: it is already in the daemon's text.
     for (const c of replaying?.changes ?? [])
@@ -940,9 +974,6 @@ export function DocumentView({
     };
   }, [place, docKey, editable]);
 
-  /** The text the daemon's offsets count in: what reveals and flashes map from. */
-  const textRef = useRef(text);
-  textRef.current = text;
   // Clicking a note's quote brings it into view and selects it.
   const revealed = useRef(onRevealed);
   revealed.current = onRevealed;
@@ -1027,13 +1058,25 @@ export function DocumentView({
   }, [clearSeq]);
 
   useEffect(() => {
-    view.current?.dispatch({ effects: setPending.of(pendingNote ?? null) });
+    // The pane's passage is in the daemon's count; the editor holds each CRLF once.
+    const at = (o: number) => editorOffset(textRef.current, o);
+    view.current?.dispatch({
+      effects: setPending.of(
+        pendingNote ? { from: at(pendingNote.from), to: at(pendingNote.to) } : null,
+      ),
+    });
   }, [pendingNote]);
 
   // Notes arrive already placed; push them in whenever the daemon re-places them,
   // or the panel focuses another.
   useEffect(() => {
-    view.current?.dispatch({ effects: setNotes.of({ notes: notes ?? [], focused: focusedNote }) });
+    // Placed in the daemon's count, painted in the editor's (CRLF counted once).
+    view.current?.dispatch({
+      effects: setNotes.of({
+        notes: notesInEditor(textRef.current, notes ?? []),
+        focused: focusedNote,
+      }),
+    });
   }, [notes, focusedNote]);
 
   // The text changed UNDER us (a version made active, the file reloaded).

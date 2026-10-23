@@ -429,3 +429,35 @@ describe("lineAt", () => {
     expect(lineAt("a\nb", 999)).toBe(2);
   });
 });
+
+// kit-crlf-note-offsets: the page holds one character for each `\r\n` (HTML
+// parsing makes it `\n`), so the projection must too, or a note after a line
+// break inside a paragraph is painted nowhere (the runs no longer align).
+describe("a CRLF file", () => {
+  const LF =
+    "title\n\nThe first has words.\nA third holds the target here.\n\n```\na\nb\n```\n\nEnd.\n";
+  const CRLF = LF.replaceAll("\n", "\r\n");
+
+  test("the plain text is the LF file's, and the page's runs align with it", () => {
+    const p = project(CRLF);
+    expect(p.plain).toBe(project(LF).plain);
+    // What the browser holds: the renderer's HTML with each CRLF read as one `\n`.
+    const runs = domRuns(renderMarkdown(CRLF).replaceAll("\r\n", "\n"));
+    const placed = alignRuns(p.plain, runs);
+    // Every run with words on it is placed, as in the LF file.
+    expect(runs.filter((r, i) => r.trim() !== "" && placed[i] === null)).toEqual([]);
+    expect(placed).toEqual(alignRuns(project(LF).plain, domRuns(renderMarkdown(LF))));
+  });
+
+  test("a passage after a soft line break maps to its own source, both ways", () => {
+    const p = project(CRLF);
+    const from = CRLF.indexOf("the target");
+    const plain = toPlain(p, from, from + "the target".length);
+    expect(plain && p.plain.slice(plain.from, plain.to)).toBe("the target");
+    const back = plain && toSource(p, plain.from, plain.to);
+    expect(back && CRLF.slice(back.from, back.to)).toBe("the target");
+    const end = CRLF.indexOf("End.");
+    const last = toPlain(p, end, end + 4);
+    expect(last && p.plain.slice(last.from, last.to)).toBe("End.");
+  });
+});
