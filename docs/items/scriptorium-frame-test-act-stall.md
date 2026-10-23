@@ -7,13 +7,14 @@ description:
   backToList takes 4–5 s, driven by state the file's shared daemon builds up,
   not by load."
 status: draft
-lifecycle: triage
+lifecycle: ready
 id: 01a166f9-5e4f-7550-b298-8900ed914b7b
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-22 }
 tags: [scriptorium, tests]
 parent: feature/workspace-kit-follow-ups
 from: cycle/2026-10-polish
+cycle: 2026-10-polish
 ---
 
 # Frame.test's 'after a create' cell stalls in act() for seconds
