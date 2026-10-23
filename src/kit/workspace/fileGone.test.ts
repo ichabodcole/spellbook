@@ -52,12 +52,31 @@ async function start(restore?: string) {
  * armed by `context.add` and is not live at once (FSEvents on macOS): a delete
  * made in its first milliseconds is never reported, which a parallel run makes
  * likely. A file made until the tree shows it says the watch is live.
+ *
+ * ⛔ Only once the docs are listed: the first write lands before the daemon
+ * reads `context.add`, so the listing's own scan would show it, and the tree
+ * would say "live" without the watch having seen anything (traced 2026-10-23:
+ * 61 of 62 such probes passed that way, and a delete made 30 ms later was lost).
  */
 async function addLive(s: FakeSurface) {
+  const listed = () => {
+    try {
+      return s.state.context.length === 1;
+    } catch {
+      return false; // no state frame yet
+    }
+  };
   s.send({ op: "context.add", path: docs });
+  await waitUntil("the docs listed", listed);
   await writeUntilSeen(
     "the context's watch",
-    () => writeFileSync(join(docs, "watch-live.md"), "# Live\n"),
+    () => {
+      if (!listed())
+        throw new Error(
+          "the watch's probe was written before the docs were listed: their scan would show it",
+        );
+      writeFileSync(join(docs, "watch-live.md"), "# Live\n");
+    },
     () =>
       s.frames.some(
         (f) => f.op === "state" && JSON.stringify(f.state.context).includes("watch-live.md"),

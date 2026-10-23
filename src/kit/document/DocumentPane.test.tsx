@@ -34,7 +34,7 @@ import {
 import { BAD_LAYOUTS } from "../lib/testLayout.ts";
 import { createToastStore } from "../ui/toast-store.ts";
 import { fixtureDaemon } from "../workspace/fixtures/app";
-import { testWorkspace } from "../workspace/fixtures/harness";
+import { testWorkspace, writeUntilSeen } from "../workspace/fixtures/harness";
 import type { WorkspaceDaemon } from "../workspace/server";
 import { tempRoot } from "../workspace/testing";
 import { NOTHING_TO_COMPARE } from "./CompareView.tsx";
@@ -1007,7 +1007,13 @@ describe("reader mode, rendered with both columns out of the way", () => {
     // Unsaved edits first: a clean version simply follows its file.
     await settle(() => viewOf().dispatch({ changes: { from: 0, insert: "Now. " } }));
     await waitFor(() => readFileSync(versionFile(1), "utf8").startsWith("Now. "), "the edit in v1");
-    writeFileSync(story, "Changed outside.\n");
+    // Written until the daemon has seen it: the story's watch was armed by
+    // the open a moment ago, and a write in its first moments is never reported.
+    await writeUntilSeen(
+      "the change on disk",
+      () => writeFileSync(story, "Changed outside.\n"),
+      () => daemon.session.doc("story").outsideChanged,
+    );
     await waitFor(
       () => document.body.textContent?.includes("Changed on disk") === true,
       "the change on disk",
@@ -1096,7 +1102,13 @@ describe("reader mode, rendered with both columns out of the way", () => {
     test("one version whose file changed on disk can still be compared", async () => {
       await openStory();
       await edit();
-      writeFileSync(story, "Changed outside.\n");
+      // Written until the daemon has seen it: the story's watch was armed by
+      // the open a moment ago, and a write in its first moments is never reported.
+      await writeUntilSeen(
+        "the outside change",
+        () => writeFileSync(story, "Changed outside.\n"),
+        () => daemon.session.doc("story").outsideChanged,
+      );
       await waitFor(() => doc()?.outsideChanged === true, "the outside change");
       expect(compareButton().disabled).toBe(false);
     });

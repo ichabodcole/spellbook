@@ -177,21 +177,27 @@ describe("link.backlinks", () => {
   };
 
   test("the links that land, read as the documents write them", async () => {
-    writeFileSync(
-      join(docs, "set", "part", "c.md"),
-      [
-        "---",
-        "title: C",
-        "---",
-        "",
-        "Builds on [A](../a.md?rel=extends).",
-        // From part/, `./a.md` names part/a.md: broken where it is written,
-        // though the chat's fallback to the root would land it.
-        "Not [this](./a.md).",
-      ].join("\n"),
-    );
     writeFileSync(join(docs, "set", "a.md"), "# A\n\nMe: [here](./a.md#top)\n");
-    await waitUntil("c listed", () => JSON.stringify(surface.state.context).includes("c.md"));
+    // Written until listed: the set's watch was armed a moment ago, by
+    // context.add, and a write in its first moments is never reported.
+    await writeUntilSeen(
+      "c listed",
+      () =>
+        writeFileSync(
+          join(docs, "set", "part", "c.md"),
+          [
+            "---",
+            "title: C",
+            "---",
+            "",
+            "Builds on [A](../a.md?rel=extends).",
+            // From part/, `./a.md` names part/a.md: broken where it is written,
+            // though the chat's fallback to the root would land it.
+            "Not [this](./a.md).",
+          ].join("\n"),
+        ),
+      () => JSON.stringify(surface.state.context).includes("c.md"),
+    );
     const r = await backlinks("a");
     expect(r).toMatchObject({ doc: "a", path: join(docs, "set", "a.md"), count: 1, bare: 0 });
     expect(r.backlinks).toEqual([
@@ -223,8 +229,11 @@ describe("link.backlinks", () => {
 
     // A document the session does not hold is read from disk, and read again
     // when it changes (the cache is keyed by the file's stamp).
-    writeFileSync(join(docs, "set", "part", "d.md"), "[A](../a.md?rel=sister-of)\n");
-    await waitUntil("d listed", () => JSON.stringify(surface.state.context).includes("d.md"));
+    await writeUntilSeen(
+      "d listed",
+      () => writeFileSync(join(docs, "set", "part", "d.md"), "[A](../a.md?rel=sister-of)\n"),
+      () => JSON.stringify(surface.state.context).includes("d.md"),
+    );
     expect((await backlinks("a")).count).toBe(2);
     writeFileSync(join(docs, "set", "part", "d.md"), "no link now, and a longer line\n");
     expect((await backlinks("a")).count).toBe(1);
@@ -288,8 +297,11 @@ describe("link.check", () => {
     await Bun.sleep(CONTEXT_CHANGED_SETTLE_MS + 500);
     expect(pushed()).toBe(0);
     // A document's change still does, so the watcher was listening all along.
-    writeFileSync(join(docs, "set", "part", "b.md"), "# B, changed outside\n");
-    await waitUntil("a push", () => pushed() > 0);
+    await writeUntilSeen(
+      "a push",
+      () => writeFileSync(join(docs, "set", "part", "b.md"), "# B, changed outside\n"),
+      () => pushed() > 0,
+    );
   });
 
   test("a listed document's _meta/profiles made after the session started is watched", async () => {
