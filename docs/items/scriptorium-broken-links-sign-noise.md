@@ -42,16 +42,16 @@ The ruling (Cole, 2026-10-22): Scriptorium learns nothing about project-docs.
 `.project-docs.json` is another tool's file, and reading it would mean adding a
 reader for every convention that follows.
 
-- [ ] A frontmatter value counts as broken only if it looks like a path (it has
+- [x] A frontmatter value counts as broken only if it looks like a path (it has
       an extension, or starts `./`, `../` or `/`) and misses. Any other value
       that doesn't resolve, such as `feature/workspace-kit-follow-ups`, is an
       **unresolved reference**: it is listed as such in `link-check` and the
       sign's list, and is not counted in the sign.
-- [ ] Links between the session's own documents don't count as "leaving", even
+- [x] Links between the session's own documents don't count as "leaving", even
       when each was added as its own set.
 - [ ] In a session like the review above, the sign shows only links that are
       really broken.
-- [ ] A real broken link (a typo'd path, a deleted file) still shows, and its
+- [x] A real broken link (a typo'd path, a deleted file) still shows, and its
       list still opens it at its line.
 
 **Not taken, and why:**
@@ -60,3 +60,69 @@ reader for every convention that follows.
 - **Searching by name:** a wrong guess is worse than no answer.
 - **A Scriptorium-owned rules file:** only if the agent-taught rules in
   [scriptorium-link-rules](scriptorium-link-rules.md) get repetitive.
+
+## Done and verified
+
+The fix is `373dfd22`. It is all kit code: `src/kit/workspace` (`linkEdges.ts`,
+`session.ts`, `protocol.ts`, `verbs.ts`) and the shell's `LinkCheck.tsx`.
+Scriptorium's own code is unchanged; it already reads its frontmatter references
+as edges.
+
+- **Unresolved references.** `pathShaped(target)` says whether an edge's target
+  is written as a path: it has an extension, or starts `/`, `./` or `../`. A
+  path-shaped edge that misses is still in `edges` and counted. Any other edge
+  that misses goes in a new `unresolved` section (same fields as `edges`). It is
+  not in `count`, and the sign does not count it. The sign's list shows it under
+  "Unresolved references", without the "nothing at" line, because that reference
+  was never meant as a path. Body links are unchanged: a body link that answers
+  nothing is still `dangling`.
+- **Leaving.** A link or edge to any of the session's own documents never
+  leaves, in whichever set either one is. `leaving` now lists only links to
+  files the session does not hold. `targetSet` names only a set whose folder
+  holds the target. **Deliberate:** this applies to sets added as folders too.
+  Before, a link from one set's folder to another set's document counted as
+  leaving. The ruling says "the session's own documents", so it is no longer
+  counted.
+- **Reproduced first,** on scratch homes. The cycle doc and its 17 items were
+  added one by one, with the whole `docs/` tree on disk and one typo'd link
+  planted. The sign went from **64** ("1 broken link, 34 broken frontmatter
+  references, 29 leaving the set") to **15** ("1 broken link, 3 broken
+  frontmatter references, 11 leaving the set"). A real browser was driven with
+  real mouse clicks: clicking the typo'd link in the list opened its document
+  with the link revealed.
+
+The third box is not ticked. Two things in that session are still on the sign:
+
+- The 3 broken frontmatter references are path-shaped and written from the
+  `docs/` root (`features/workspace-kit/sessions/….md`). Under the ruling they
+  are broken.
+- The 11 "leaving the set" are links to files on disk that the session does not
+  hold. They are not counted as broken, but they are on the sign.
+
+Whether the sign should show "leaving" at all is a question for Cole.
+
+## Port-back notes
+
+- **`linkEdges.ts`:** new export `pathShaped(target)`. Its extension must start
+  with a letter and run to ten characters at most, so `feature/kit-v1.2` is not
+  a path (`ffd43d09`).
+- **`session.ts` `linkCheck`:**
+  - An app edge that misses goes to `edges` if `pathShaped`, else to the new
+    `unresolved`.
+  - `leaves()` returns null for any `in-context` target.
+  - `leavingView`'s `targetSet` is only a mirrored set whose folder holds the
+    target.
+  - Set totals count what the sign counts: `unresolved` is left out, and a set
+    with only unresolved references is still named (`ffd43d09`).
+- **`protocol.ts`:**
+  - `LinkCheck.unresolved?: { count, kinds, links: CheckedEdgeView[] }`, present
+    when `edges` is.
+  - `LeavingLinkView` docs are updated.
+- **`shell/LinkCheck.tsx`:**
+  - New `linkCheckListed(d)`, which is the sign's total plus `unresolved`. It
+    decides whether the list and a group show at all. The group headers count as
+    the sign does (`linkCheckTotal`), so they add up to it (`ffd43d09`).
+  - New "Unresolved references" section. `EdgeEntry` takes `unresolved`.
+  - The "Leaving" note now reads "land on a file this session does not hold".
+- **Leaving tests rewritten:** `links.leaving.session.test.ts` and
+  `LinkCheck.sets.test.tsx`.
