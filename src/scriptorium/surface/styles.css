@@ -368,6 +368,22 @@
   }
 }
 
+/* ─── The wordmark ────────────────────────────────────────────────────────────
+   The shell's title is the kit's (`data-slot="app-title"`, its text the app's
+   declared title); how it looks is the spell's identity, so it is set here in
+   the theme, and the kit carries no app's wordmark. Scriptorium's is the
+   shipped one: lowercase, in the manuscript serif.
+
+   ⚠ UNLAYERED ON PURPOSE. The kit's utilities on the title (`text-sm`,
+   `font-medium`) sit in Tailwind's utilities layer, and only a rule outside
+   every layer outranks a layer. */
+[data-slot="app-title"] {
+  font-family: var(--font-manuscript);
+  font-size: 1rem;
+  font-weight: 400;
+  text-transform: lowercase;
+}
+
 /* ─── Scrollbars, in the spell's own colours ──────────────────────────────────
    Cole asked for shadcn's look rather than the OS bar. Done in CSS, NOT with
    `ScrollArea`, for one reason that decides it: `ScrollArea` replaces a native

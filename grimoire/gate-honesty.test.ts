@@ -425,6 +425,14 @@ import { join } from "node:path";
 // its h2s (`.md-prose.md-document h1`), with the comment saying why.
 // theme.test.ts holds the step against the shared heading rule; the browser
 // check measured it (16.8 -> 19.6 px, the h2s 15.4 px as before).
+//
+// ⛔ RE-DECLARED 2026-10-22 — 31/2,958 -> 31/2,974, from the object's own sum.
+// MEMBERSHIP DID NOT MOVE; one entry grew:
+//     +16  src/scriptorium/surface/styles.css   413 -> 429
+// kit-atlas-comparison-follow-ups, H1: Scriptorium's wordmark on the kit's
+// title slot, with the comment saying why it sits outside every layer.
+// src/scriptorium/wordmark.test.ts holds the rule and that it is unlayered;
+// the browser check read its effect (the manuscript serif, lowercase).
 const DECLARED_BLIND: Record<string, number> = {
   "src/digestify/surface/styles.css": 515,
   "src/digestify/surface/index.html": 26,
@@ -471,7 +479,7 @@ const DECLARED_BLIND: Record<string, number> = {
   // The page's one sheet since the cutover: the kit page's palette and theme
   // (a copy of the shipped sheet, scriptorium-kit-keepers) with the kit's
   // document.css and shell.css imported at its end.
-  "src/scriptorium/surface/styles.css": 413,
+  "src/scriptorium/surface/styles.css": 429,
 };
 
 type BlindReport = {
