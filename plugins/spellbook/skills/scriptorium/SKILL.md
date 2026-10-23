@@ -365,11 +365,14 @@ as a path (an extension, or a leading `/`, `./` or `../`); any other, such as
 does not know the convention it was written in, and does not guess. Hint
 sections such as `symmetry`, `unusedImages`, `unresolved` and `leaving` stay out
 of `count`; `leaving` lists links to files the session does not hold, never a
-link between two of its own documents. Every entry carries `set`, and `sets`
+link between two of its own documents. The human's sign lists `leaving` under
+its own heading but never counts it, so when they ask what links out, read it
+and offer to add the files it lands on. Every entry carries `set`, and `sets`
 lists the sets the entries come from, `leaving`'s included, in the order the
-human's broken-links list groups them. A link to a folder is not dangling, and
-links inside code or HTML comments are not links. A `line` is the line in the
-text it was read from, the active version for an open document.
+human's broken-links list groups them; each set's `total` is what the sign
+counts of it, without `leaving` or `unresolved`. A link to a folder is not
+dangling, and links inside code or HTML comments are not links. A `line` is the
+line in the text it was read from, the active version for an open document.
 
 `reveal <path>` shows a file in their file manager, for when they ask where
 something is. The system file picker is theirs alone, by design.

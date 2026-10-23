@@ -12307,14 +12307,21 @@ var __iconNode47 = [
   ["line", { x1: "2", x2: "22", y1: "2", y2: "22", key: "a6p6uj" }]
 ];
 var Link2Off = createLucideIcon("link-2-off", __iconNode47);
-// node_modules/lucide-react/dist/esm/icons/link.mjs
+// node_modules/lucide-react/dist/esm/icons/link-2.mjs
 var __iconNode48 = [
+  ["path", { d: "M9 17H7A5 5 0 0 1 7 7h2", key: "8i5ue5" }],
+  ["path", { d: "M15 7h2a5 5 0 1 1 0 10h-2", key: "1b9ql8" }],
+  ["line", { x1: "8", x2: "16", y1: "12", y2: "12", key: "1jonct" }]
+];
+var Link2 = createLucideIcon("link-2", __iconNode48);
+// node_modules/lucide-react/dist/esm/icons/link.mjs
+var __iconNode49 = [
   ["path", { d: "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71", key: "1cjeqo" }],
   ["path", { d: "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71", key: "19qd67" }]
 ];
-var Link = createLucideIcon("link", __iconNode48);
+var Link = createLucideIcon("link", __iconNode49);
 // node_modules/lucide-react/dist/esm/icons/list-ordered.mjs
-var __iconNode49 = [
+var __iconNode50 = [
   ["path", { d: "M11 5h10", key: "1cz7ny" }],
   ["path", { d: "M11 12h10", key: "1438ji" }],
   ["path", { d: "M11 19h10", key: "11t30w" }],
@@ -12322,18 +12329,18 @@ var __iconNode49 = [
   ["path", { d: "M4 9h2", key: "r1h2o0" }],
   ["path", { d: "M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02", key: "xtkcd5" }]
 ];
-var ListOrdered = createLucideIcon("list-ordered", __iconNode49);
+var ListOrdered = createLucideIcon("list-ordered", __iconNode50);
 // node_modules/lucide-react/dist/esm/icons/list-tree.mjs
-var __iconNode50 = [
+var __iconNode51 = [
   ["path", { d: "M8 5h13", key: "1pao27" }],
   ["path", { d: "M13 12h8", key: "h98zly" }],
   ["path", { d: "M13 19h8", key: "c3s6r1" }],
   ["path", { d: "M3 10a2 2 0 0 0 2 2h3", key: "1npucw" }],
   ["path", { d: "M3 5v12a2 2 0 0 0 2 2h3", key: "x1gjn2" }]
 ];
-var ListTree = createLucideIcon("list-tree", __iconNode50);
+var ListTree = createLucideIcon("list-tree", __iconNode51);
 // node_modules/lucide-react/dist/esm/icons/loader.mjs
-var __iconNode51 = [
+var __iconNode52 = [
   ["path", { d: "M12 2v4", key: "3427ic" }],
   ["path", { d: "m16.2 7.8 2.9-2.9", key: "r700ao" }],
   ["path", { d: "M18 12h4", key: "wj9ykh" }],
@@ -12343,9 +12350,9 @@ var __iconNode51 = [
   ["path", { d: "M2 12h4", key: "j09sii" }],
   ["path", { d: "m4.9 4.9 2.9 2.9", key: "giyufr" }]
 ];
-var Loader = createLucideIcon("loader", __iconNode51);
+var Loader = createLucideIcon("loader", __iconNode52);
 // node_modules/lucide-react/dist/esm/icons/message-square-plus.mjs
-var __iconNode52 = [
+var __iconNode53 = [
   [
     "path",
     {
@@ -12356,9 +12363,9 @@ var __iconNode52 = [
   ["path", { d: "M12 8v6", key: "1ib9pf" }],
   ["path", { d: "M9 11h6", key: "1fldmi" }]
 ];
-var MessageSquarePlus = createLucideIcon("message-square-plus", __iconNode52);
+var MessageSquarePlus = createLucideIcon("message-square-plus", __iconNode53);
 // node_modules/lucide-react/dist/esm/icons/message-square-text.mjs
-var __iconNode53 = [
+var __iconNode54 = [
   [
     "path",
     {
@@ -12370,9 +12377,9 @@ var __iconNode53 = [
   ["path", { d: "M7 15h6", key: "d9of3u" }],
   ["path", { d: "M7 7h8", key: "af5zfr" }]
 ];
-var MessageSquareText = createLucideIcon("message-square-text", __iconNode53);
+var MessageSquareText = createLucideIcon("message-square-text", __iconNode54);
 // node_modules/lucide-react/dist/esm/icons/message-square.mjs
-var __iconNode54 = [
+var __iconNode55 = [
   [
     "path",
     {
@@ -12381,9 +12388,9 @@ var __iconNode54 = [
     }
   ]
 ];
-var MessageSquare = createLucideIcon("message-square", __iconNode54);
+var MessageSquare = createLucideIcon("message-square", __iconNode55);
 // node_modules/lucide-react/dist/esm/icons/messages-square.mjs
-var __iconNode55 = [
+var __iconNode56 = [
   [
     "path",
     {
@@ -12399,9 +12406,9 @@ var __iconNode55 = [
     }
   ]
 ];
-var MessagesSquare = createLucideIcon("messages-square", __iconNode55);
+var MessagesSquare = createLucideIcon("messages-square", __iconNode56);
 // node_modules/lucide-react/dist/esm/icons/moon.mjs
-var __iconNode56 = [
+var __iconNode57 = [
   [
     "path",
     {
@@ -12410,18 +12417,18 @@ var __iconNode56 = [
     }
   ]
 ];
-var Moon = createLucideIcon("moon", __iconNode56);
+var Moon = createLucideIcon("moon", __iconNode57);
 // node_modules/lucide-react/dist/esm/icons/network.mjs
-var __iconNode57 = [
+var __iconNode58 = [
   ["rect", { x: "16", y: "16", width: "6", height: "6", rx: "1", key: "4q2zg0" }],
   ["rect", { x: "2", y: "16", width: "6", height: "6", rx: "1", key: "8cvhb9" }],
   ["rect", { x: "9", y: "2", width: "6", height: "6", rx: "1", key: "1egb70" }],
   ["path", { d: "M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3", key: "1jsf9p" }],
   ["path", { d: "M12 12V8", key: "2874zd" }]
 ];
-var Network = createLucideIcon("network", __iconNode57);
+var Network = createLucideIcon("network", __iconNode58);
 // node_modules/lucide-react/dist/esm/icons/package.mjs
-var __iconNode58 = [
+var __iconNode59 = [
   [
     "path",
     {
@@ -12433,23 +12440,23 @@ var __iconNode58 = [
   ["polyline", { points: "3.29 7 12 12 20.71 7", key: "ousv84" }],
   ["path", { d: "m7.5 4.27 9 5.15", key: "1c824w" }]
 ];
-var Package = createLucideIcon("package", __iconNode58);
+var Package = createLucideIcon("package", __iconNode59);
 // node_modules/lucide-react/dist/esm/icons/panel-right-close.mjs
-var __iconNode59 = [
+var __iconNode60 = [
   ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
   ["path", { d: "M15 3v18", key: "14nvp0" }],
   ["path", { d: "m8 9 3 3-3 3", key: "12hl5m" }]
 ];
-var PanelRightClose = createLucideIcon("panel-right-close", __iconNode59);
+var PanelRightClose = createLucideIcon("panel-right-close", __iconNode60);
 // node_modules/lucide-react/dist/esm/icons/panel-right-open.mjs
-var __iconNode60 = [
+var __iconNode61 = [
   ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
   ["path", { d: "M15 3v18", key: "14nvp0" }],
   ["path", { d: "m10 15-3-3 3-3", key: "1pgupc" }]
 ];
-var PanelRightOpen = createLucideIcon("panel-right-open", __iconNode60);
+var PanelRightOpen = createLucideIcon("panel-right-open", __iconNode61);
 // node_modules/lucide-react/dist/esm/icons/pencil.mjs
-var __iconNode61 = [
+var __iconNode62 = [
   [
     "path",
     {
@@ -12459,27 +12466,27 @@ var __iconNode61 = [
   ],
   ["path", { d: "m15 5 4 4", key: "1mk7zo" }]
 ];
-var Pencil = createLucideIcon("pencil", __iconNode61);
+var Pencil = createLucideIcon("pencil", __iconNode62);
 // node_modules/lucide-react/dist/esm/icons/plus.mjs
-var __iconNode62 = [
+var __iconNode63 = [
   ["path", { d: "M5 12h14", key: "1ays0h" }],
   ["path", { d: "M12 5v14", key: "s699le" }]
 ];
-var Plus = createLucideIcon("plus", __iconNode62);
+var Plus = createLucideIcon("plus", __iconNode63);
 // node_modules/lucide-react/dist/esm/icons/power.mjs
-var __iconNode63 = [
+var __iconNode64 = [
   ["path", { d: "M12 2v10", key: "mnfbl" }],
   ["path", { d: "M18.4 6.6a9 9 0 1 1-12.77.04", key: "obofu9" }]
 ];
-var Power = createLucideIcon("power", __iconNode63);
+var Power = createLucideIcon("power", __iconNode64);
 // node_modules/lucide-react/dist/esm/icons/redo-2.mjs
-var __iconNode64 = [
+var __iconNode65 = [
   ["path", { d: "m15 14 5-5-5-5", key: "12vg1m" }],
   ["path", { d: "M20 9H9.5A5.5 5.5 0 0 0 4 14.5A5.5 5.5 0 0 0 9.5 20H13", key: "6uklza" }]
 ];
-var Redo2 = createLucideIcon("redo-2", __iconNode64);
+var Redo2 = createLucideIcon("redo-2", __iconNode65);
 // node_modules/lucide-react/dist/esm/icons/save.mjs
-var __iconNode65 = [
+var __iconNode66 = [
   [
     "path",
     {
@@ -12490,24 +12497,24 @@ var __iconNode65 = [
   ["path", { d: "M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7", key: "1ydtos" }],
   ["path", { d: "M7 3v4a1 1 0 0 0 1 1h7", key: "t51u73" }]
 ];
-var Save = createLucideIcon("save", __iconNode65);
+var Save = createLucideIcon("save", __iconNode66);
 // node_modules/lucide-react/dist/esm/icons/scissors.mjs
-var __iconNode66 = [
+var __iconNode67 = [
   ["circle", { cx: "6", cy: "6", r: "3", key: "1lh9wr" }],
   ["path", { d: "M8.12 8.12 12 12", key: "1alkpv" }],
   ["path", { d: "M20 4 8.12 15.88", key: "xgtan2" }],
   ["circle", { cx: "6", cy: "18", r: "3", key: "fqmcym" }],
   ["path", { d: "M14.8 14.8 20 20", key: "ptml3r" }]
 ];
-var Scissors = createLucideIcon("scissors", __iconNode66);
+var Scissors = createLucideIcon("scissors", __iconNode67);
 // node_modules/lucide-react/dist/esm/icons/search.mjs
-var __iconNode67 = [
+var __iconNode68 = [
   ["path", { d: "m21 21-4.34-4.34", key: "14j7rj" }],
   ["circle", { cx: "11", cy: "11", r: "8", key: "4ej97u" }]
 ];
-var Search = createLucideIcon("search", __iconNode67);
+var Search = createLucideIcon("search", __iconNode68);
 // node_modules/lucide-react/dist/esm/icons/settings.mjs
-var __iconNode68 = [
+var __iconNode69 = [
   [
     "path",
     {
@@ -12517,9 +12524,9 @@ var __iconNode68 = [
   ],
   ["circle", { cx: "12", cy: "12", r: "3", key: "1v7zrd" }]
 ];
-var Settings = createLucideIcon("settings", __iconNode68);
+var Settings = createLucideIcon("settings", __iconNode69);
 // node_modules/lucide-react/dist/esm/icons/sun.mjs
-var __iconNode69 = [
+var __iconNode70 = [
   ["circle", { cx: "12", cy: "12", r: "4", key: "4exip2" }],
   ["path", { d: "M12 2v2", key: "tus03m" }],
   ["path", { d: "M12 20v2", key: "1lh1kg" }],
@@ -12530,63 +12537,63 @@ var __iconNode69 = [
   ["path", { d: "m6.34 17.66-1.41 1.41", key: "1m8zz5" }],
   ["path", { d: "m19.07 4.93-1.41 1.41", key: "1shlcs" }]
 ];
-var Sun = createLucideIcon("sun", __iconNode69);
+var Sun = createLucideIcon("sun", __iconNode70);
 // node_modules/lucide-react/dist/esm/icons/text-quote.mjs
-var __iconNode70 = [
+var __iconNode71 = [
   ["path", { d: "M17 5H3", key: "1cn7zz" }],
   ["path", { d: "M21 12H8", key: "scolzb" }],
   ["path", { d: "M21 19H8", key: "13qgcb" }],
   ["path", { d: "M3 12v7", key: "1ri8j3" }]
 ];
-var TextQuote = createLucideIcon("text-quote", __iconNode70);
+var TextQuote = createLucideIcon("text-quote", __iconNode71);
 // node_modules/lucide-react/dist/esm/icons/trash-2.mjs
-var __iconNode71 = [
+var __iconNode72 = [
   ["path", { d: "M10 11v6", key: "nco0om" }],
   ["path", { d: "M14 11v6", key: "outv1u" }],
   ["path", { d: "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6", key: "miytrc" }],
   ["path", { d: "M3 6h18", key: "d0wm0j" }],
   ["path", { d: "M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2", key: "e791ji" }]
 ];
-var Trash2 = createLucideIcon("trash-2", __iconNode71);
+var Trash2 = createLucideIcon("trash-2", __iconNode72);
 // node_modules/lucide-react/dist/esm/icons/undo-2.mjs
-var __iconNode72 = [
+var __iconNode73 = [
   ["path", { d: "M9 14 4 9l5-5", key: "102s5s" }],
   ["path", { d: "M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11", key: "f3b9sd" }]
 ];
-var Undo2 = createLucideIcon("undo-2", __iconNode72);
+var Undo2 = createLucideIcon("undo-2", __iconNode73);
 // node_modules/lucide-react/dist/esm/icons/undo-dot.mjs
-var __iconNode73 = [
+var __iconNode74 = [
   ["path", { d: "M21 17a9 9 0 0 0-15-6.7L3 13", key: "8mp6z9" }],
   ["path", { d: "M3 7v6h6", key: "1v2h90" }],
   ["circle", { cx: "12", cy: "17", r: "1", key: "1ixnty" }]
 ];
-var UndoDot = createLucideIcon("undo-dot", __iconNode73);
+var UndoDot = createLucideIcon("undo-dot", __iconNode74);
 // node_modules/lucide-react/dist/esm/icons/upload.mjs
-var __iconNode74 = [
+var __iconNode75 = [
   ["path", { d: "M12 3v12", key: "1x0j5s" }],
   ["path", { d: "m17 8-5-5-5 5", key: "7q97r8" }],
   ["path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", key: "ih7n3h" }]
 ];
-var Upload = createLucideIcon("upload", __iconNode74);
+var Upload = createLucideIcon("upload", __iconNode75);
 // node_modules/lucide-react/dist/esm/icons/user-check.mjs
-var __iconNode75 = [
+var __iconNode76 = [
   ["path", { d: "m16 11 2 2 4-4", key: "9rsbq5" }],
   ["path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", key: "1yyitq" }],
   ["circle", { cx: "9", cy: "7", r: "4", key: "nufk8" }]
 ];
-var UserCheck = createLucideIcon("user-check", __iconNode75);
+var UserCheck = createLucideIcon("user-check", __iconNode76);
 // node_modules/lucide-react/dist/esm/icons/user.mjs
-var __iconNode76 = [
+var __iconNode77 = [
   ["path", { d: "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2", key: "975kel" }],
   ["circle", { cx: "12", cy: "7", r: "4", key: "17ys0d" }]
 ];
-var User = createLucideIcon("user", __iconNode76);
+var User = createLucideIcon("user", __iconNode77);
 // node_modules/lucide-react/dist/esm/icons/x.mjs
-var __iconNode77 = [
+var __iconNode78 = [
   ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
   ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
 ];
-var X = createLucideIcon("x", __iconNode77);
+var X = createLucideIcon("x", __iconNode78);
 // src/scriptorium/surface/Frame.tsx
 var import_react56 = __toESM(require_react(), 1);
 
@@ -78303,8 +78310,24 @@ var import_react48 = __toESM(require_react(), 1);
 var jsx_runtime48 = __toESM(require_jsx_runtime(), 1);
 var LINK_CHECK_PAUSE_MS = 1200;
 var LINK_CHECK_FALLBACK_MS = 300000;
-var linkCheckTotal = (d) => d.count + d.unusedImages.count + d.symmetry.count + d.ambiguousHeadings.count + (d.leaving?.count ?? 0);
-var linkCheckListed = (d) => linkCheckTotal(d) + (d.unresolved?.count ?? 0);
+var linkCheckTotal = (d) => d.count + d.unusedImages.count + d.symmetry.count + d.ambiguousHeadings.count;
+var linkCheckListed = (d) => linkCheckTotal(d) + (d.unresolved?.count ?? 0) + (d.leaving?.count ?? 0);
+function linkCheckQuietLabel(d) {
+  const listed2 = [];
+  if (d.leaving && d.leaving.count > 0)
+    listed2.push(`links leaving the ${nounOf(d)}`);
+  if (d.unresolved && d.unresolved.count > 0)
+    listed2.push("unresolved references");
+  return listed2.length > 0 ? `nothing broken; listed: ${listed2.join(" and ")}` : "nothing to report";
+}
+function linkCheckQuietWord(d) {
+  const words = [];
+  if (d.leaving && d.leaving.count > 0)
+    words.push(`${d.leaving.count} leaving`);
+  if (d.unresolved && d.unresolved.count > 0)
+    words.push(`${d.unresolved.count} unresolved`);
+  return words.join(", ");
+}
 var nounOf = (d) => d.noun ?? "folder";
 var edgeNoun = (kinds) => kinds.length === 1 ? `${kinds[0]} reference` : "reference";
 var count = (n, one2, many) => `${n} ${n === 1 ? one2 : many}`;
@@ -78326,8 +78349,6 @@ function linkCheckLabel(d) {
     parts.push(count(d.unsupported.count, "unsupported link", "unsupported links"));
   if (d.headings.count > 0)
     parts.push(count(d.headings.count, "link to a missing heading", "links to a missing heading"));
-  if (d.leaving && d.leaving.count > 0)
-    parts.push(`${d.leaving.count} leaving the ${nounOf(d)}`);
   if (d.unusedImages.count > 0)
     parts.push(count(d.unusedImages.count, "image nothing links to or embeds", "images nothing links to or embeds"));
   if (d.symmetry.count > 0)
@@ -78489,6 +78510,7 @@ function Section({
   note,
   total,
   shown: shown2,
+  quiet: quiet3,
   children
 }) {
   if (total === 0)
@@ -78496,13 +78518,14 @@ function Section({
   return /* @__PURE__ */ jsx_runtime48.jsxs("section", {
     "aria-label": title,
     "data-slot": "link-check-section",
+    "data-quiet": quiet3 ? "" : undefined,
     className: "flex flex-col",
     children: [
       /* @__PURE__ */ jsx_runtime48.jsxs("h3", {
         className: "sticky top-0 z-10 bg-surface px-2 pt-2 pb-0.5",
         children: [
           /* @__PURE__ */ jsx_runtime48.jsxs("span", {
-            className: "flex items-baseline gap-1.5 text-[11px] font-medium tracking-wide text-ink-dim uppercase",
+            className: cn("flex items-baseline gap-1.5 text-[11px] tracking-wide uppercase", quiet3 ? "font-normal text-ink-faint" : "font-medium text-ink-dim"),
             children: [
               title,
               /* @__PURE__ */ jsx_runtime48.jsx("span", {
@@ -78599,10 +78622,41 @@ function linkCheckGroups(d) {
   });
   return groups.filter((g) => linkCheckListed(g.data) > 0);
 }
+var quietCount = (d) => (d.unresolved?.count ?? 0) + (d.leaving?.count ?? 0);
 function KindSections({
   data,
+  part,
   onOpen
 }) {
+  if (part === "quiet")
+    return /* @__PURE__ */ jsx_runtime48.jsxs(jsx_runtime48.Fragment, {
+      children: [
+        data.unresolved && /* @__PURE__ */ jsx_runtime48.jsx(Section, {
+          title: "Unresolved references",
+          note: "Not counted as broken: written as a name, not a path, and nothing here answers it. Another tool may know what it names.",
+          total: data.unresolved.count,
+          shown: data.unresolved.links.length,
+          quiet: true,
+          children: data.unresolved.links.map((e) => /* @__PURE__ */ jsx_runtime48.jsx(EdgeEntry2, {
+            edge: e,
+            unresolved: true,
+            onOpen
+          }, `${e.source}:${e.key ?? ""}:${e.raw}:${e.from ?? ""}`))
+        }),
+        data.leaving && /* @__PURE__ */ jsx_runtime48.jsx(Section, {
+          title: `Leaving the ${nounOf(data)}`,
+          note: `Not broken, and not counted: these land on a file this session does not hold. The ${nounOf(data)} is not self-contained.`,
+          total: data.leaving.count,
+          shown: data.leaving.links.length,
+          quiet: true,
+          children: data.leaving.links.map((l) => /* @__PURE__ */ jsx_runtime48.jsx(LeavingEntry, {
+            link: l,
+            noun: nounOf(data),
+            onOpen
+          }, `${l.source}:${l.edge ?? "link"}:${l.from ?? l.raw}:${l.key ?? ""}`))
+        })
+      ]
+    });
   const openLink = (l) => onOpen(l.source, { from: l.from, to: l.to });
   const schemes = data.unsupported.schemes.map((s) => `${s}:`).join(", ");
   return /* @__PURE__ */ jsx_runtime48.jsxs(jsx_runtime48.Fragment, {
@@ -78697,28 +78751,6 @@ function KindSections({
           note: `no “${l.heading}” in ${l.targetShown}${l.nearest ? `; nearest: “${l.nearest}”` : ""}`,
           onOpen: openLink
         }, `${l.source}:${l.from}`))
-      }),
-      data.unresolved && /* @__PURE__ */ jsx_runtime48.jsx(Section, {
-        title: "Unresolved references",
-        note: "Not counted as broken: written as a name, not a path, and nothing here answers it. Another tool may know what it names.",
-        total: data.unresolved.count,
-        shown: data.unresolved.links.length,
-        children: data.unresolved.links.map((e) => /* @__PURE__ */ jsx_runtime48.jsx(EdgeEntry2, {
-          edge: e,
-          unresolved: true,
-          onOpen
-        }, `${e.source}:${e.key ?? ""}:${e.raw}:${e.from ?? ""}`))
-      }),
-      data.leaving && /* @__PURE__ */ jsx_runtime48.jsx(Section, {
-        title: `Leaving the ${nounOf(data)}`,
-        note: `Not broken: these land on a file this session does not hold. The ${nounOf(data)} is not self-contained.`,
-        total: data.leaving.count,
-        shown: data.leaving.links.length,
-        children: data.leaving.links.map((l) => /* @__PURE__ */ jsx_runtime48.jsx(LeavingEntry, {
-          link: l,
-          noun: nounOf(data),
-          onOpen
-        }, `${l.source}:${l.edge ?? "link"}:${l.from ?? l.raw}:${l.key ?? ""}`))
       }),
       /* @__PURE__ */ jsx_runtime48.jsx(Section, {
         title: "Images nothing links to or embeds",
@@ -78824,35 +78856,72 @@ function LinkCheckList({
           ]
         }, d.name))
       }),
-      groups === null ? /* @__PURE__ */ jsx_runtime48.jsx(KindSections, {
-        data,
-        onOpen
-      }) : groups.map((g) => /* @__PURE__ */ jsx_runtime48.jsxs("section", {
-        "data-slot": "link-check-set",
-        "data-set": g.id ?? undefined,
-        "aria-label": g.label ? `In ${g.label}` : elsewhere2,
-        className: "flex flex-col",
+      groups === null ? /* @__PURE__ */ jsx_runtime48.jsxs(jsx_runtime48.Fragment, {
         children: [
-          /* @__PURE__ */ jsx_runtime48.jsxs("h3", {
-            className: "mx-2 mt-3 flex items-baseline gap-1.5 border-b border-edge pb-0.5 text-[12px] font-medium text-ink",
-            children: [
-              /* @__PURE__ */ jsx_runtime48.jsx("span", {
-                className: "truncate",
-                children: g.label ?? elsewhere2
-              }),
-              /* @__PURE__ */ jsx_runtime48.jsx("span", {
-                className: "font-normal text-ink-faint",
-                "data-slot": "set-total",
-                children: g.total !== undefined && g.total > linkCheckTotal(g.data) ? `${linkCheckTotal(g.data)} of ${g.total}` : linkCheckTotal(g.data)
-              })
-            ]
+          /* @__PURE__ */ jsx_runtime48.jsx(KindSections, {
+            data,
+            part: "counted",
+            onOpen
           }),
           /* @__PURE__ */ jsx_runtime48.jsx(KindSections, {
-            data: g.data,
+            data,
+            part: "quiet",
             onOpen
           })
         ]
-      }, g.id ?? "")),
+      }) : /* @__PURE__ */ jsx_runtime48.jsxs(jsx_runtime48.Fragment, {
+        children: [
+          groups.filter((g) => linkCheckTotal(g.data) > 0).map((g) => /* @__PURE__ */ jsx_runtime48.jsxs("section", {
+            "data-slot": "link-check-set",
+            "data-part": "counted",
+            "data-set": g.id ?? undefined,
+            "aria-label": g.label ? `In ${g.label}` : elsewhere2,
+            className: "flex flex-col",
+            children: [
+              /* @__PURE__ */ jsx_runtime48.jsxs("h3", {
+                className: "mx-2 mt-3 flex items-baseline gap-1.5 border-b border-edge pb-0.5 text-[12px] font-medium text-ink",
+                children: [
+                  /* @__PURE__ */ jsx_runtime48.jsx("span", {
+                    className: "truncate",
+                    children: g.label ?? elsewhere2
+                  }),
+                  /* @__PURE__ */ jsx_runtime48.jsx("span", {
+                    className: "font-normal text-ink-faint",
+                    "data-slot": "set-total",
+                    children: g.total !== undefined && g.total > linkCheckTotal(g.data) ? `${linkCheckTotal(g.data)} of ${g.total}` : linkCheckTotal(g.data)
+                  })
+                ]
+              }),
+              /* @__PURE__ */ jsx_runtime48.jsx(KindSections, {
+                data: g.data,
+                part: "counted",
+                onOpen
+              })
+            ]
+          }, g.id ?? "")),
+          groups.filter((g) => quietCount(g.data) > 0).map((g) => /* @__PURE__ */ jsx_runtime48.jsxs("section", {
+            "data-slot": "link-check-set",
+            "data-part": "quiet",
+            "data-set": g.id ?? undefined,
+            "aria-label": `${g.label ? `In ${g.label}` : elsewhere2}, listed, not counted`,
+            className: "flex flex-col",
+            children: [
+              /* @__PURE__ */ jsx_runtime48.jsx("h3", {
+                className: "mx-2 mt-3 flex items-baseline gap-1.5 border-b border-edge pb-0.5 text-[12px] font-normal text-ink-dim",
+                children: /* @__PURE__ */ jsx_runtime48.jsx("span", {
+                  className: "truncate",
+                  children: g.label ?? elsewhere2
+                })
+              }),
+              /* @__PURE__ */ jsx_runtime48.jsx(KindSections, {
+                data: g.data,
+                part: "quiet",
+                onOpen
+              })
+            ]
+          }, `quiet:${g.id ?? ""}`))
+        ]
+      }),
       groups !== null && data.truncated && /* @__PURE__ */ jsx_runtime48.jsx("p", {
         className: "px-2 pt-2 text-[10px] text-ink-faint",
         children: "Each list was cut at its first entries, and a group shows only what was kept of it (“N of M”); the status bar's counts are the whole."
@@ -78909,34 +78978,56 @@ function LinkCheck({
       clearTimeout(t2);
     };
   }, [connected, request, snapshot, edits, pushed, open, tick]);
-  if (!data || linkCheckTotal(data) === 0 && !open)
+  if (!data || linkCheckListed(data) === 0 && !open)
     return null;
-  const label = linkCheckLabel(data);
+  const quiet3 = linkCheckTotal(data) === 0;
+  const label = quiet3 ? linkCheckQuietLabel(data) : linkCheckLabel(data);
+  const Icon2 = quiet3 ? Link2 : Link2Off;
   return /* @__PURE__ */ jsx_runtime48.jsxs(Popover, {
     open,
     onOpenChange: setOpen,
     children: [
       /* @__PURE__ */ jsx_runtime48.jsxs(PopoverTrigger3, {
         "data-slot": "link-check",
+        "data-quiet": quiet3 ? "" : undefined,
         "aria-label": `Link check: ${label}`,
         title: label,
-        className: cn("flex min-w-0 shrink items-center gap-1 rounded px-1 text-ink-dim outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", className),
+        className: cn("flex min-w-0 shrink items-center gap-1 rounded px-1 outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", quiet3 ? "text-ink-faint" : "text-ink-dim", className),
         children: [
-          /* @__PURE__ */ jsx_runtime48.jsx(Link2Off, {
+          /* @__PURE__ */ jsx_runtime48.jsx(Icon2, {
             "aria-hidden": true,
             className: "size-3.5 shrink-0"
           }),
-          /* @__PURE__ */ jsx_runtime48.jsx("span", {
-            "data-slot": "link-check-total",
-            "aria-hidden": true,
-            className: "sm:hidden",
-            children: linkCheckTotal(data)
-          }),
-          /* @__PURE__ */ jsx_runtime48.jsx("span", {
-            "data-slot": "link-check-label",
-            "aria-hidden": true,
-            className: "hidden truncate sm:inline",
-            children: label
+          quiet3 ? /* @__PURE__ */ jsx_runtime48.jsxs(jsx_runtime48.Fragment, {
+            children: [
+              /* @__PURE__ */ jsx_runtime48.jsx("span", {
+                "data-slot": "link-check-quiet-total",
+                "aria-hidden": true,
+                className: "text-[11px] sm:hidden",
+                children: quietCount(data)
+              }),
+              /* @__PURE__ */ jsx_runtime48.jsx("span", {
+                "data-slot": "link-check-quiet-word",
+                "aria-hidden": true,
+                className: "hidden truncate text-[11px] sm:inline",
+                children: linkCheckQuietWord(data)
+              })
+            ]
+          }) : /* @__PURE__ */ jsx_runtime48.jsxs(jsx_runtime48.Fragment, {
+            children: [
+              /* @__PURE__ */ jsx_runtime48.jsx("span", {
+                "data-slot": "link-check-total",
+                "aria-hidden": true,
+                className: "sm:hidden",
+                children: linkCheckTotal(data)
+              }),
+              /* @__PURE__ */ jsx_runtime48.jsx("span", {
+                "data-slot": "link-check-label",
+                "aria-hidden": true,
+                className: "hidden truncate sm:inline",
+                children: label
+              })
+            ]
           })
         ]
       }),

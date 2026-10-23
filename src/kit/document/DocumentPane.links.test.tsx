@@ -175,6 +175,35 @@ describe("following a link in the rendered document", () => {
     await m.unmount();
   });
 
+  test("a link into another folder set of the session opens that set's document, and back", async () => {
+    // Two folder sets, A (`set`) and B (`lore`): a relative link between them
+    // is not leaving the session (Cole, 2026-10-23), so the click must open it.
+    mkdirSync(join(docs, "lore"), { recursive: true });
+    writeFileSync(join(docs, "set", "cross.md"), "# Cross\n\n[the myth](../lore/myth.md)\n");
+    writeFileSync(join(docs, "lore", "myth.md"), "# Myth\n\n[home](../set/cross.md)\n");
+    // `set` was scanned before cross.md was written.
+    daemon.session.rescan(daemon.session.context[0]?.id ?? "");
+    daemon.session.addContext(join(docs, "lore"));
+    const m = await mount(<Host />);
+    await waitFor(() => client?.connection === "open", "the connection");
+    await settle(() => {
+      client?.send({ op: "open", path: join(docs, "set", "cross.md") });
+    });
+    await waitFor(() => link("the myth") !== null, "cross's rendered link");
+    await click(link("the myth"));
+    await waitFor(() => openName() === "myth.md", "myth.md, in the other set, open");
+    expect(client?.state?.docs.find((d) => d.name === "myth.md")?.original).toBe(
+      join(docs, "lore", "myth.md"),
+    );
+    await waitFor(() => link("home") !== null, "myth's rendered link");
+    await click(link("home"));
+    await waitFor(() => openName() === "cross.md", "cross.md open again");
+    // Following added nothing to the context, and nothing was refused.
+    expect(client?.state?.context).toHaveLength(2);
+    expect(refused).toEqual([]);
+    await m.unmount();
+  });
+
   test("a target outside the context is refused by name, with the folder to add, and adds nothing", async () => {
     const m = await openA();
     await click(link("outside"));

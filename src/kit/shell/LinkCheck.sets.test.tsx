@@ -28,9 +28,13 @@ import type { WorkspaceDaemon } from "../workspace/server";
 import { seedDocs, tempRoot } from "../workspace/testing";
 import {
   LINK_CHECK_PAUSE_MS,
+  LinkCheck,
   LinkCheckList,
   linkCheckGroups,
   linkCheckLabel,
+  linkCheckListed,
+  linkCheckQuietLabel,
+  linkCheckQuietWord,
   linkCheckTotal,
 } from "./LinkCheck.tsx";
 import { WorkspaceShell } from "./WorkspaceShell.tsx";
@@ -140,7 +144,7 @@ describe("the mark against the agent's link-check", () => {
     await waitFor(() => !!q('[data-pane="context"]'), "the shell");
     await addSets();
     await waitFor(
-      () => (mark()?.getAttribute("aria-label") ?? "").includes("leaving"),
+      () => (mark()?.getAttribute("aria-label") ?? "").includes("broken frontmatter"),
       "the mark",
       SETTLE,
     );
@@ -158,22 +162,36 @@ describe("the mark against the agent's link-check", () => {
     expect(verb.count).toBe(2);
 
     expect(mark()?.getAttribute("aria-label")).toBe(`Link check: ${linkCheckLabel(verb)}`);
-    expect(linkCheckLabel(verb)).toBe(
-      "1 broken link, 1 broken frontmatter reference, 2 leaving the set",
-    );
+    // Only what is broken heads the sign: leaving is listed, never counted (Cole, 2026-10-23).
+    expect(linkCheckLabel(verb)).toBe("1 broken link, 1 broken frontmatter reference");
     expect(q('[data-slot="link-check-total"]')?.textContent).toBe(String(linkCheckTotal(verb)));
-    // The unresolved reference is not in the sign's count.
-    expect(linkCheckTotal(verb)).toBe(4);
+    // Neither the unresolved reference nor the two leaving links are in the sign's count.
+    expect(linkCheckTotal(verb)).toBe(2);
+    expect(linkCheckListed(verb)).toBe(5);
+    expect(mark()?.hasAttribute("data-quiet")).toBe(false);
 
     // The list: grouped by set, in the context's order, adding up to the mark.
     await click(mark() as HTMLElement);
-    await waitFor(() => qa('[data-slot="link-check-set"]').length === 2, "two sets");
+    await waitFor(() => qa('[data-slot="link-check-set"]').length === 3, "the groups");
     const sets = qa('[data-slot="link-check-set"]');
-    expect(sets.map((x) => x.getAttribute("aria-label"))).toEqual(["In set", "In lore"]);
-    const totals = sets.map((x) => Number(x.querySelector('[data-slot="set-total"]')?.textContent));
-    expect(totals).toEqual([3, 1]);
-    // The headers add up to the sign: the unresolved reference is listed, not counted.
-    expect(totals.reduce((a, b) => a + b, 0)).toBe(linkCheckTotal(verb));
+    // Counted first (Cole, 2026-10-23): the set with something broken, then
+    // each set's listed-not-counted part, set by set, under no number.
+    expect(sets.map((x) => [x.getAttribute("aria-label"), x.dataset.part])).toEqual([
+      ["In set", "counted"],
+      ["In set, listed, not counted", "quiet"],
+      ["In lore, listed, not counted", "quiet"],
+    ]);
+    const totals = sets.map((x) => x.querySelector('[data-slot="set-total"]')?.textContent ?? null);
+    expect(totals).toEqual(["2", null, null]);
+    // The headers add up to the sign: the unresolved reference and the leaving links are listed, not counted.
+    expect(totals.reduce((a, b) => a + Number(b ?? 0), 0)).toBe(linkCheckTotal(verb));
+    // Listed under their own heading, quieter than the broken ones.
+    const leavingHeads = qa('[data-slot="link-check-section"][aria-label="Leaving the set"]');
+    expect(leavingHeads).toHaveLength(2);
+    expect(leavingHeads.every((x) => x.hasAttribute("data-quiet"))).toBe(true);
+    expect(
+      q('[data-slot="link-check-section"][aria-label="Broken links"]')?.hasAttribute("data-quiet"),
+    ).toBe(false);
     const sections = (x: HTMLElement) =>
       [...x.querySelectorAll('[data-slot="link-check-section"]')].map((s) =>
         s.getAttribute("aria-label"),
@@ -181,11 +199,19 @@ describe("the mark against the agent's link-check", () => {
     expect(sections(sets[0] as HTMLElement)).toEqual([
       "Broken links",
       "Broken frontmatter references",
-      "Unresolved references",
-      "Leaving the set",
     ]);
-    expect(sections(sets[1] as HTMLElement)).toEqual(["Leaving the set"]);
-    expect(sets[1]?.textContent).toContain("lands outside every set: ../sibling.md");
+    expect(sections(sets[1] as HTMLElement)).toEqual(["Unresolved references", "Leaving the set"]);
+    expect(sections(sets[2] as HTMLElement)).toEqual(["Leaving the set"]);
+    expect(sets[2]?.textContent).toContain("lands outside every set: ../sibling.md");
+    // Every counted entry comes before every listed one in the list.
+    const entries = qa('[data-slot="link-check-entry"]');
+    const lastCounted = entries.findLastIndex(
+      (e) => !e.hasAttribute("data-leaving") && !e.hasAttribute("data-unresolved"),
+    );
+    const firstQuiet = entries.findIndex(
+      (e) => e.hasAttribute("data-leaving") || e.hasAttribute("data-unresolved"),
+    );
+    expect(lastCounted).toBeLessThan(firstQuiet);
     // An unresolved reference says nothing of where it looked: it was never a path.
     const unresolved = qa("[data-unresolved]");
     expect(unresolved.map((e) => e.querySelector('[data-slot="raw"]')?.textContent)).toEqual([
@@ -254,7 +280,7 @@ describe("grouping, alone", () => {
       ],
     };
     // No set's entry, and one in a set the answer does not name, both land last.
-    expect(linkCheckGroups(d).map((g) => [g.label, linkCheckTotal(g.data)])).toEqual([
+    expect(linkCheckGroups(d).map((g) => [g.label, linkCheckListed(g.data)])).toEqual([
       ["A", 1],
       [null, 2],
     ]);
@@ -284,14 +310,29 @@ describe("grouping, alone", () => {
     const order = [...list.children].map(
       (c) => c.getAttribute("aria-label") ?? c.getAttribute("data-slot"),
     );
-    expect(order).toEqual(["Shared file names", "In A"]);
+    expect(order).toEqual(["Shared file names", "In A, listed, not counted"]);
     await m.unmount();
   });
 
   test("a group cut short says how much of it shows: N of M", async () => {
+    const broken = (source: string) => ({
+      source,
+      name: "x.md",
+      shown: "x.md",
+      line: 1,
+      raw: "./gone.md",
+      kind: "markdown" as const,
+      label: "gone",
+      context: "[gone](./gone.md)",
+      from: 0,
+      to: 17,
+      set: "a",
+      tried: ["/a/gone.md"],
+    });
     const d: LinkCheckData = {
       ...base,
-      leaving: { count: 9, links: [leaving("/a/x.md", "a"), leaving("/a/y.md", "a")] },
+      count: 9,
+      dangling: { count: 9, links: [broken("/a/x.md"), broken("/a/y.md")] },
       sets: [{ id: "a", label: "A", total: 9 }],
       truncated: true,
     };
@@ -365,7 +406,8 @@ describe("grouping, alone", () => {
     expect(text).toContain("Unresolved references");
     expect(text).toContain("parent: feature/some-slug");
     expect(text).not.toContain("nothing at");
-    expect(q('[data-slot="set-total"]')?.textContent).toBe("0");
+    // Listed, not counted: the group says no number.
+    expect(q('[data-slot="set-total"]')).toBeNull();
     await m.unmount();
   });
 
@@ -375,13 +417,195 @@ describe("grouping, alone", () => {
       leaving: { count: 2, links: [leaving("/a/x.md", "a"), leaving("/z/x.md")] },
       sets: [{ id: "a", label: "A", total: 1 }],
     };
-    expect(linkCheckLabel(d)).toBe("2 leaving the folder");
+    // Leaving is never in the headline; the quiet mark names it without a number.
+    expect(linkCheckLabel(d)).toBe("");
+    expect(linkCheckQuietLabel(d)).toBe("nothing broken; listed: links leaving the folder");
     const m = await mount(<LinkCheckList data={d} onOpen={() => {}} />);
     const text = q('[data-slot="link-check-list"]')?.textContent ?? "";
     expect(text).not.toMatch(/\bset\b/);
     expect(text).toContain("Leaving the folder");
     expect(text).toContain("Elsewhere");
     await m.unmount();
-    expect(linkCheckLabel({ ...d, noun: "set" })).toBe("2 leaving the set");
+    expect(linkCheckQuietLabel({ ...d, noun: "set" })).toBe(
+      "nothing broken; listed: links leaving the set",
+    );
+  });
+});
+
+describe("the sign counts only what is broken (Cole, 2026-10-23)", () => {
+  const base: LinkCheckData = {
+    count: 0,
+    dangling: { count: 0, links: [] },
+    unsupported: { count: 0, schemes: [], links: [] },
+    duplicates: { count: 0, names: [] },
+    unusedImages: { count: 0, images: [] },
+    symmetry: { count: 0, hints: [] },
+    headings: { count: 0, links: [] },
+    ambiguousHeadings: { count: 0, hints: [] },
+    references: { count: 0, links: [] },
+    noun: "set",
+  };
+  const out = (i: number) => ({
+    source: "/a/x.md",
+    name: "x.md",
+    shown: "x.md",
+    line: i + 1,
+    raw: `../y${i}.md`,
+    target: `/y${i}.md`,
+    targetShown: `../y${i}.md`,
+    from: i * 10,
+    to: i * 10 + 8,
+    set: "a",
+  });
+  const gone = {
+    source: "/a/x.md",
+    name: "x.md",
+    shown: "x.md",
+    line: 9,
+    raw: "./gone.md",
+    kind: "markdown" as const,
+    label: "gone",
+    context: "[gone](./gone.md)",
+    from: 90,
+    to: 107,
+    set: "a",
+    tried: ["/a/gone.md"],
+  };
+  const leavingOnly: LinkCheckData = {
+    ...base,
+    leaving: { count: 11, links: Array.from({ length: 11 }, (_, i) => out(i)) },
+    sets: [{ id: "a", label: "A", total: 0 }],
+  };
+
+  /** Which lucide icon the mark draws: the plain link, or the broken one. */
+  const icon = () => {
+    const c = mark()?.querySelector("svg")?.getAttribute("class") ?? "";
+    return { plain: /\blucide-link-2\b(?!-off)/.test(c), off: /\blucide-link-2-off\b/.test(c) };
+  };
+
+  /** The sign alone, over a daemon that answers `data`. */
+  async function sign(data: LinkCheckData) {
+    return mount(
+      <LinkCheck
+        request={async () => ({ op: "link.check", ...data }) as never}
+        onFrame={() => () => {}}
+        connected
+        snapshot={0}
+        edits={0}
+        onOpen={() => {}}
+      />,
+    );
+  }
+
+  test("with something broken, the number and the words leave the leaving links out", async () => {
+    const d: LinkCheckData = {
+      ...leavingOnly,
+      count: 1,
+      dangling: { count: 1, links: [gone] },
+      sets: [{ id: "a", label: "A", total: 1 }],
+    };
+    const m = await sign(d);
+    await waitFor(() => mark() !== null, "the mark");
+    expect(mark()?.getAttribute("aria-label")).toBe("Link check: 1 broken link");
+    expect(q('[data-slot="link-check-total"]')?.textContent).toBe("1");
+    expect(mark()?.hasAttribute("data-quiet")).toBe(false);
+    // The broken-link icon, at the sign's usual weight.
+    expect(icon()).toEqual({ plain: false, off: true });
+    expect(mark()?.classList.contains("text-ink-dim")).toBe(true);
+    expect(mark()?.classList.contains("text-ink-faint")).toBe(false);
+    // Still in the list, under their own heading.
+    await click(mark() as HTMLElement);
+    await waitFor(() => qa("[data-leaving]").length === 11, "the leaving links listed");
+    await m.unmount();
+  });
+
+  test("with only leaving links, a quiet mark: no number, no problem, and it opens the list", async () => {
+    expect(linkCheckTotal(leavingOnly)).toBe(0);
+    const m = await sign(leavingOnly);
+    await waitFor(() => mark() !== null, "the quiet mark");
+    expect(mark()?.hasAttribute("data-quiet")).toBe(true);
+    expect(mark()?.getAttribute("aria-label")).toBe(
+      "Link check: nothing broken; listed: links leaving the set",
+    );
+    // No number anywhere on it, and not the broken-link icon's words.
+    expect(q('[data-slot="link-check-total"]')).toBeNull();
+    expect(q('[data-slot="link-check-label"]')).toBeNull();
+    // A small faint word says what it lists (Cole, 2026-10-23); narrow, the number alone, as the sign does.
+    expect(linkCheckQuietWord(leavingOnly)).toBe("11 leaving");
+    const word = q('[data-slot="link-check-quiet-word"]');
+    expect(word?.textContent).toBe("11 leaving");
+    expect(word?.classList.contains("text-[11px]")).toBe(true);
+    expect(word?.classList.contains("sm:inline")).toBe(true);
+    const narrow = q('[data-slot="link-check-quiet-total"]');
+    expect(narrow?.textContent).toBe("11");
+    expect(narrow?.classList.contains("sm:hidden")).toBe(true);
+    // A plain link, not the broken one, and faint.
+    expect(icon()).toEqual({ plain: true, off: false });
+    expect(mark()?.classList.contains("text-ink-faint")).toBe(true);
+    expect(mark()?.classList.contains("text-ink-dim")).toBe(false);
+    await click(mark() as HTMLElement);
+    await waitFor(() => qa("[data-leaving]").length === 11, "the leaving links listed");
+    expect(q('[data-slot="set-total"]')).toBeNull();
+    await m.unmount();
+  });
+
+  test("with only unresolved references, the same quiet mark, saying so; their section is quiet", async () => {
+    const ref = {
+      source: "/a/x.md",
+      name: "x.md",
+      shown: "x.md",
+      edge: "frontmatter",
+      raw: "feature/some-slug",
+      key: "parent",
+      line: 2,
+      tried: ["/a/feature/some-slug.md"],
+      set: "a",
+    };
+    const d: LinkCheckData = {
+      ...base,
+      edges: { count: 0, kinds: [], links: [] },
+      unresolved: { count: 1, kinds: ["frontmatter"], links: [ref] },
+      sets: [{ id: "a", label: "A", total: 0 }],
+    };
+    expect(linkCheckQuietLabel(d)).toBe("nothing broken; listed: unresolved references");
+    const m = await sign(d);
+    await waitFor(() => mark() !== null, "the quiet mark");
+    expect(mark()?.hasAttribute("data-quiet")).toBe(true);
+    expect(mark()?.getAttribute("aria-label")).toBe(
+      "Link check: nothing broken; listed: unresolved references",
+    );
+    expect(q('[data-slot="link-check-quiet-word"]')?.textContent).toBe("1 unresolved");
+    expect(linkCheckQuietWord({ ...d, leaving: leavingOnly.leaving })).toBe(
+      "11 leaving, 1 unresolved",
+    );
+    expect(icon()).toEqual({ plain: true, off: false });
+    await click(mark() as HTMLElement);
+    await waitFor(() => qa("[data-unresolved]").length === 1, "the unresolved reference listed");
+    const section = q('[data-slot="link-check-section"][aria-label="Unresolved references"]');
+    expect(section?.hasAttribute("data-quiet")).toBe(true);
+    await m.unmount();
+  });
+
+  test("from a daemon that names no sets, the counted sections still come first", async () => {
+    const d: LinkCheckData = {
+      ...base,
+      count: 1,
+      dangling: { count: 1, links: [gone] },
+      unusedImages: { count: 1, images: [{ path: "/a/images/x.png", shown: "x.png" }] },
+      leaving: { count: 1, links: [out(0)] },
+      // No `sets`: one list, not grouped.
+    };
+    const m = await mount(<LinkCheckList data={d} onOpen={() => {}} />);
+    expect(qa('[data-slot="link-check-section"]').map((x) => x.getAttribute("aria-label"))).toEqual(
+      ["Broken links", "Images nothing links to or embeds", "Leaving the set"],
+    );
+    await m.unmount();
+  });
+
+  test("a clean session still shows nothing", async () => {
+    const m = await sign({ ...base, sets: [] });
+    await Bun.sleep(50);
+    expect(mark()).toBeNull();
+    await m.unmount();
   });
 });

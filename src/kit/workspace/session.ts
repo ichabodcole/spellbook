@@ -7756,8 +7756,9 @@ export class WorkspaceSession {
       leavingLinks.length > LINK_CHECK_CAP;
     // Each set's whole, before any list is cut: what a group says it shows
     // part of when the check is truncated. Shared names are the session's.
-    // Unresolved references are listed but not counted, as the sign counts:
-    // a set with only those is still named, with a total of 0.
+    // Unresolved references and links leaving the set are listed but not
+    // counted, as the sign counts: a set with only those is still named, with
+    // a total of 0.
     const totals = new Map<string, number>();
     for (const list of [
       dangling,
@@ -7768,7 +7769,6 @@ export class WorkspaceSession {
       references,
       danglingEdges,
       proposed,
-      leavingLinks,
       unusedImages,
     ] as { set?: string }[][])
       for (const x of list)
@@ -7776,6 +7776,7 @@ export class WorkspaceSession {
     const named = new Set<string | undefined>([
       ...totals.keys(),
       ...cut(unresolvedEdges).map((e) => e.set),
+      ...cut(leavingLinks).map((e) => e.set),
       ...cut(names).flatMap((n) => n.files.map((f) => f.set)),
     ]);
     return {

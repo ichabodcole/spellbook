@@ -125,11 +125,14 @@ describe("grouped by set", () => {
   test("each entry names its set, and `sets` lists those named, in the context's order", () => {
     const c = s.linkCheck();
     const { world: w, lore: l } = ids();
-    // Each with its whole: world's broken link, broken reference and two leaving.
+    // Each with what the sign counts of it: world's broken link and broken
+    // reference. Leaving is listed, never counted (Cole, 2026-10-23): lore,
+    // with only a link leaving, is still named, at 0.
     expect(c.sets).toEqual([
-      { id: w as string, label: "world", total: 4 },
-      { id: l as string, label: "lore", total: 1 },
+      { id: w as string, label: "world", total: 2 },
+      { id: l as string, label: "lore", total: 0 },
     ]);
+    expect(c.leaving?.links.filter((x) => x.set === l)).toHaveLength(1);
     expect(c.noun).toBe("set");
     expect(c.dangling.links[0]?.set).toBe(w);
     expect(c.edges?.links[0]?.set).toBe(w);
@@ -240,9 +243,11 @@ describe("the edges of a set", () => {
     expect(c.leaving?.count).toBe(LINK_CHECK_CAP + 1);
     expect(c.leaving?.links).toHaveLength(LINK_CHECK_CAP);
     expect(c.truncated).toBe(true);
-    // The set says its whole, so a list can say how much of it shows.
-    // (and the map, which the cut-down glade no longer embeds: an unused image).
-    expect(c.sets?.[0]?.total).toBe(LINK_CHECK_CAP + 2);
+    // The set's total is what the sign counts: the map, which the cut-down
+    // glade no longer embeds (an unused image). The leaving links, past the
+    // cap as they are, are listed and never counted.
+    expect(c.sets?.[0]?.total).toBe(1);
+    expect(c.count).toBe(0);
   });
 });
 

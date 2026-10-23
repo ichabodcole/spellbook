@@ -1447,8 +1447,9 @@ export type LinkCheck = {
   unresolved?: { count: number; kinds: string[]; links: CheckedEdgeView[] };
   /**
    * Links and app edges that land outside the set they are written in
-   * (`LeavingLinkView`). Not in `count`: leaving the set is not broken. The
-   * `edge` filter applies as it does to the other sections.
+   * (`LeavingLinkView`). Not in `count`, nor in a set's `total`: leaving the
+   * set is not broken, so it is listed, never counted. The `edge` filter
+   * applies as it does to the other sections.
    */
   leaving?: { count: number; links: LeavingLinkView[] };
   /** The app's word for a set (`LinkCheckOptions.noun`), when it gives one: what a list calls them. */
@@ -1460,7 +1461,7 @@ export type LinkCheck = {
   sets?: {
     id: string;
     label: string;
-    /** What the sign counts of the set, before any list is cut (shared names, the session's, and unresolved references apart). */
+    /** What the sign counts of the set, before any list is cut (shared names, the session's, unresolved references and leaving links apart). */
     total: number;
   }[];
   truncated?: true;
