@@ -63,6 +63,8 @@ describe("pathShaped", () => {
       "notes/thing.md",
       "a.md#Heading",
       "x/y.png?rel=z",
+      "notes.markdown",
+      "clip.mp4",
     ])
       expect([t, pathShaped(t)]).toEqual([t, true]);
   });
@@ -73,6 +75,11 @@ describe("pathShaped", () => {
       "name",
       ".hidden",
       "a.",
+      // A version number is no extension.
+      "feature/kit-v1.2",
+      // What follows a `#` or a `?` is no part of the name.
+      "notes/page#sec.tion",
+      "page?at=a.b",
     ])
       expect([t, pathShaped(t)]).toEqual([t, false]);
   });
@@ -103,8 +110,8 @@ describe("the link check", () => {
     // Only the broken ones count; a name the app answers is neither.
     expect(c.count).toBe(4);
     expect(JSON.stringify(c)).not.toContain('"known-name"');
-    // The set's whole is what its group lists: the unresolved ones included.
-    expect(c.sets?.[0]?.total).toBe(7);
+    // The set's whole is what the sign counts of it: the unresolved ones apart.
+    expect(c.sets?.[0]?.total).toBe(4);
   });
 
   test("an app that adds no edges has no unresolved section", () => {

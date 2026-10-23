@@ -218,6 +218,7 @@ import type {
   ProfileCheck,
   ProfilesReport,
   ProfileWarningView,
+  ProposedLinkView,
   ReferenceBacklinkView,
   ReferenceView,
   RelationsAt,
@@ -297,6 +298,17 @@ const OUTWARD = new Set(["http", "https", "mailto"]);
 
 /** How many distinct embeds one `embeds` answer resolves: a document with more shows the rest as placeholders. */
 export const EMBED_CAP = 200;
+
+/** How many moves the session keeps for the link check's `proposed` (`moves`). */
+const MOVES_KEPT = 500;
+
+/**
+ * A version kept from an outside write to the active one (`preserveOutside`):
+ * the agent's by its record, but no proposal. `Version.outside` marks it; one
+ * kept before that field, by its label.
+ */
+const keptOutside = (v: Version): boolean =>
+  v.outside === true || /^outside write to v\d+$/.test(v.label ?? "");
 
 /** How many entries each section of one link check carries; its `count` is the whole. */
 export const LINK_CHECK_CAP = 500;
@@ -873,6 +885,13 @@ export class WorkspaceSession {
       edgeAt?: (EdgeSpot | undefined)[];
     }
   >();
+  /**
+   * Every move and rename this daemon made (`followMove`), oldest first, an
+   * undo's way back included: what the link check's `proposed` reads to say
+   * where a proposal's old target went. Memory only, so a restart forgets it
+   * and a proposal's broken link is then reported with no `suggest`.
+   */
+  private moves: [from: string, to: string][] = [];
   /** The app's part of the link layer: its edges and its resolver (`setLinkSlot`). */
   private linkSlot: LinkSlot = {};
   /** What the app asks of the link check beyond the kit's own (`setLinkCheck`). */
@@ -1609,6 +1628,9 @@ export class WorkspaceSession {
       fromVersion: d.active,
       createdAt: nowIso(),
       label: `outside write to v${d.active}`,
+      // Kept from a write the agent did not make through the kit: not a
+      // proposal the link check reads (`Version.outside`).
+      outside: true,
     };
     d.versions.push(rec);
     this.writeVersion(this.versionPath(d, n), text);
@@ -2347,6 +2369,9 @@ export class WorkspaceSession {
         "activated",
       );
     const previous = d.active;
+    // Both have now been active (`Version.activated`): neither is a proposal
+    // the link check reads, whoever wrote it.
+    for (const v of d.versions) if (v.n === previous || v.n === opts.version) v.activated = true;
     d.active = opts.version;
     // The new active version's text as it is now is the baseline the next
     // check-before-write compares against.
@@ -4275,6 +4300,9 @@ export class WorkspaceSession {
    * that now sits inside another set is dropped: the set shows it already.
    */
   private followMove(from: string, to: string): void {
+    // Kept for the link check's `proposed`: where a proposal's old target went.
+    this.moves.push([from, to]);
+    if (this.moves.length > MOVES_KEPT) this.moves.splice(0, this.moves.length - MOVES_KEPT);
     const moved = (p: string): string | null =>
       p === from ? to : p.startsWith(from + sep) ? to + p.slice(from.length) : null;
     for (const d of this.m.docs) {
@@ -6706,11 +6734,13 @@ export class WorkspaceSession {
   /**
    * A candidate's links and facts (`linksOf`'s cache): read once per change of
    * the file they came from, both from the same read. Null for a document gone
-   * from disk.
+   * from disk. `version` reads one of a held document's other versions
+   * instead of its active one (the link check's `proposed`).
    */
   private readOf(
     c: Candidate,
     read: Set<string>,
+    version?: number,
   ): {
     links: LinkRef[];
     fragments: LinkRef[];
@@ -6720,7 +6750,7 @@ export class WorkspaceSession {
     edgeAt?: (EdgeSpot | undefined)[];
   } | null {
     const d = c.slug === null ? undefined : this.m.docs.find((x) => x.slug === c.slug);
-    const file = d ? this.versionPath(d, d.active) : c.path;
+    const file = d ? this.versionPath(d, version ?? d.active) : c.path;
     read.add(file);
     let stamp: string;
     try {
@@ -7197,6 +7227,62 @@ export class WorkspaceSession {
     };
   }
 
+  /** Where `path` is now, after the moves this daemon made, in order. */
+  private movedTo(path: string): string {
+    let p = path;
+    for (const [from, to] of this.moves)
+      if (p === from) p = to;
+      else if (p.startsWith(from + sep)) p = to + p.slice(from.length);
+    return p;
+  }
+
+  /** Where `path` was before the moves this daemon made: `movedTo` run back. */
+  private movedFrom(path: string): string {
+    let p = path;
+    for (let i = this.moves.length - 1; i >= 0; i--) {
+      const [from, to] = this.moves[i] as [string, string];
+      if (p === to) p = from;
+      else if (p.startsWith(to + sep)) p = from + p.slice(to.length);
+    }
+    return p;
+  }
+
+  /**
+   * A broken link's target as a move left it: each place the link was looked
+   * for (`tried`, and the same places from where its document was, `wasAt`),
+   * followed through the moves this daemon made; the first that moved (or
+   * whose document did) and lands, rewritten from where the document is now
+   * as relink writes it. Undefined when no move explains it: no guess.
+   */
+  private movedTarget(
+    raw: string,
+    src: string,
+    wasAt: string,
+    tried: readonly string[],
+    entry: ContextEntry | undefined,
+    index: ContextIndex,
+  ): string | undefined {
+    if (this.moves.length === 0) return undefined;
+    // Every place in `tried` is missing, so one that exists once followed
+    // through the moves is one a move explains. From where the document was,
+    // the same places (a relative link only) explain a move of the document.
+    const looked = [...tried];
+    if (wasAt !== src && !raw.startsWith("/"))
+      for (const t of tried) looked.push(join(dirname(wasAt), relative(dirname(src), t)));
+    for (const at of looked) {
+      const now = this.movedTo(at);
+      if (!existsSync(now)) continue;
+      const written = retarget(raw, src, now, entry?.root ?? null);
+      // ⛔ Offered only when it is sure to land, as relink's own offer is,
+      // and lands as what it named: a link to a file never lands on a folder
+      // (a file moved away and a folder made in its place).
+      const r = this.resolveFrom(written, src, entry, "document", index, "markdown");
+      const folderLink = splitTarget(raw).path.endsWith("/");
+      if (r.state !== "missing" && (folderLink || r.state !== "folder")) return written;
+    }
+    return undefined;
+  }
+
   /**
    * Forget what was read for documents the session no longer has (or for a
    * version no longer active), so the cache is bounded by the context, not by
@@ -7416,6 +7502,86 @@ export class WorkspaceSession {
         (a.line ?? 0) - (b.line ?? 0) ||
         (a.from ?? 0) - (b.from ?? 0),
     );
+    // Links broken in a version the agent PROPOSED (kit-relink-misses-proposed-
+    // versions, Cole's ruling 2026-10-22): written by the agent and never
+    // active (`Version.activated`). A move's relink rewrites only the active
+    // version, so a proposal made before the move keeps the old target.
+    // Reported, never rewritten. A version the human has had active, theirs
+    // or one they took from the agent, is history, not a proposal: not read.
+    // A link the active version also has broken, as written, is reported
+    // there once, not again per version.
+    const activeMissing = new Set(found.missing.map((l) => `${l.source}\0${l.raw}`));
+    const proposed: ProposedLinkView[] = [];
+    if (keep(BODY_LINKS))
+      for (const c of all) {
+        const d = c.slug === null ? undefined : this.m.docs.find((x) => x.slug === c.slug);
+        if (!d || d.versions.length < 2) continue;
+        const entry = entryOf(c.path);
+        // Where the document was before the moves this daemon made: a link
+        // written there reads from there.
+        const wasAt = this.movedFrom(c.path);
+        for (const v of d.versions) {
+          if (v.n === d.active || v.by !== "agent" || v.activated || keptOutside(v)) continue;
+          const got = this.readOf(c, read, v.n);
+          if (!got) continue;
+          // Every broken link of this version, then one act for them all: the
+          // fix is ONE new version, so each entry's act names the whole of it.
+          const mine: Omit<ProposedLinkView, "act">[] = [];
+          for (const link of got.links) {
+            if (link.scheme !== undefined) continue;
+            if (activeMissing.has(`${c.path}\0${link.raw}`)) continue;
+            const r = this.resolveFrom(link.raw, c.path, entry, "document", index, link.kind);
+            if (r.state !== "missing") continue;
+            const suggest =
+              link.kind === "markdown"
+                ? this.movedTarget(link.raw, c.path, wasAt, r.tried, entry, index)
+                : undefined;
+            mine.push({
+              source: c.path,
+              name: basename(c.path),
+              shown: shown(c.path),
+              line: link.line,
+              raw: link.raw,
+              kind: link.kind,
+              ...(link.label !== undefined ? { label: link.label } : {}),
+              ...(link.embed ? { embed: true as const } : {}),
+              context: link.context,
+              from: link.from,
+              to: link.to,
+              ...(setOf(c.path) !== undefined ? { set: setOf(c.path) } : {}),
+              doc: d.slug,
+              version: v.n,
+              tried: r.tried,
+              ...(suggest !== undefined ? { suggest } : {}),
+            });
+          }
+          const label = v.label !== undefined ? ` --label ${JSON.stringify(v.label)}` : "";
+          const make = `version-new --doc ${d.slug} --from v${v.n}${label} --stdin`;
+          const drop = `version-delete v${v.n} --doc ${d.slug}`;
+          const all =
+            mine.length === 1 ? "its broken link" : `all ${mine.length} of its broken links`;
+          for (const l of mine)
+            proposed.push({
+              ...l,
+              act: `Your proposal v${v.n} links \`${l.raw}\` (line ${l.line}), ${
+                l.suggest ? `which moved to \`${l.suggest}\`` : "which is missing"
+              }${
+                mine.length > 1
+                  ? `, one of ${mine.length} broken links in v${v.n} (every \`proposed\` entry with version ${v.n})`
+                  : ""
+              }. Fix ${all} in ONE new version (\`${make}\`, v${v.n}'s text with each fixed${
+                mine.some((x) => x.suggest) ? ", written as `suggest` says where it is given" : ""
+              }), then delete v${v.n}, your unactivated proposal it replaces (\`${drop}\`).`,
+            });
+        }
+      }
+    proposed.sort(
+      (a, b) =>
+        a.shown.localeCompare(b.shown, undefined, { numeric: true }) ||
+        a.version - b.version ||
+        a.line - b.line ||
+        a.from - b.from,
+    );
     this.pruneLinkCache(read);
     const view = (l: Omit<DanglingLink, "tried"> | SchemeLink): CheckedLinkView => ({
       source: l.source,
@@ -7572,10 +7738,13 @@ export class WorkspaceSession {
       unusedImages.length > LINK_CHECK_CAP ||
       symmetry.length > LINK_CHECK_CAP ||
       references.length > LINK_CHECK_CAP ||
+      proposed.length > LINK_CHECK_CAP ||
       unresolvedEdges.length > LINK_CHECK_CAP ||
       leavingLinks.length > LINK_CHECK_CAP;
     // Each set's whole, before any list is cut: what a group says it shows
     // part of when the check is truncated. Shared names are the session's.
+    // Unresolved references are listed but not counted, as the sign counts:
+    // a set with only those is still named, with a total of 0.
     const totals = new Map<string, number>();
     for (const list of [
       dangling,
@@ -7585,7 +7754,7 @@ export class WorkspaceSession {
       symmetry,
       references,
       danglingEdges,
-      unresolvedEdges,
+      proposed,
       leavingLinks,
       unusedImages,
     ] as { set?: string }[][])
@@ -7593,6 +7762,7 @@ export class WorkspaceSession {
         if (x.set !== undefined) totals.set(x.set, (totals.get(x.set) ?? 0) + 1);
     const named = new Set<string | undefined>([
       ...totals.keys(),
+      ...cut(unresolvedEdges).map((e) => e.set),
       ...cut(names).flatMap((n) => n.files.map((f) => f.set)),
     ]);
     return {
@@ -7602,8 +7772,10 @@ export class WorkspaceSession {
         names.length +
         missingHeadings.length +
         references.length +
-        danglingEdges.length,
+        danglingEdges.length +
+        proposed.length,
       dangling: { count: dangling.length, links: cut(dangling) },
+      proposed: { count: proposed.length, links: cut(proposed) },
       unsupported: {
         count: unsupported.length,
         schemes: [...new Set(unsupported.map((l) => l.scheme))].sort(),
@@ -8246,6 +8418,7 @@ export class WorkspaceSession {
         schemes: check.unsupported.schemes,
         duplicates: check.duplicates.count,
         headings: check.headings.count,
+        proposed: check.proposed?.count ?? 0,
       },
       docs: this.m.docs.map((d) => ({
         slug: d.slug,

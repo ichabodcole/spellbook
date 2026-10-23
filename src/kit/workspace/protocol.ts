@@ -201,6 +201,18 @@ export type Version = {
   /** The version it was copied from (absent for v1, which comes from the original). */
   fromVersion?: number;
   createdAt: string;
+  /**
+   * Set once it has been the active version (activated, or the active one
+   * when another was activated). Absent for a version never active since the
+   * kit began recording it: what makes an agent's version a PROPOSAL the link
+   * check reads (`LinkCheck.proposed`).
+   */
+  activated?: true;
+  /**
+   * Kept from an outside write to the active version (a write the kit did not
+   * make), filed as the agent's: not a proposal the link check reads.
+   */
+  outside?: true;
 };
 
 /** How a note found its place in the current text; see `anchors.ts`. */
@@ -1309,6 +1321,35 @@ export type CheckedLinkView = {
   set?: string;
 };
 
+/**
+ * A link broken in a version that is not active (kit-relink-misses-proposed-
+ * versions): a move's relink rewrites only the active version, so a version
+ * proposed before the move keeps the old target. `line`, `from`, `to` and
+ * `context` are in THAT version's text, not the active one's. Reported, never
+ * rewritten.
+ */
+export type ProposedLinkView = CheckedLinkView & {
+  /** The document's slug (`--doc`). */
+  doc: string;
+  /** The version the link is written in. */
+  version: number;
+  /** Every place the resolver looked. */
+  tried: string[];
+  /**
+   * Where the target went, written from the document as relink writes it:
+   * only when a move or rename this daemon made explains the break (the
+   * target moved, or the document did) and the rewritten link lands. Absent
+   * otherwise, and after a restart: never a guess.
+   */
+  suggest?: string;
+  /**
+   * The act that fixes it, said to the agent: propose the version again with
+   * the link fixed (`version-new --from vN`), then delete the old proposal
+   * (`version-delete vN`), which was the agent's own and never active.
+   */
+  act: string;
+};
+
 /** A document sharing its file name with another, and the name it could take. */
 export type SharedNameFile = {
   path: string;
@@ -1323,14 +1364,23 @@ export type SharedNameFile = {
 /**
  * The link check, in three sections. Each section's `count` is the whole, and
  * its list is cut at a cap (`truncated` says one was). Read from each document's
- * ACTIVE VERSION, so an unsaved edit counts. A dangling link is reported, never
- * an error.
+ * ACTIVE VERSION, so an unsaved edit counts; `proposed` alone reads the other
+ * versions. A dangling link is reported, never an error.
  */
 export type LinkCheck = {
   /** The link problems found: dangling links, unsupported links and shared names (never `unusedImages`). */
   count: number;
   /** Links that resolve to nothing: `tried` is every place the resolver looked. */
   dangling: { count: number; links: (CheckedLinkView & { tried: string[] })[] };
+  /**
+   * Links broken in a version the agent proposed: written by the agent and
+   * never active (`Version.activated`), so a version the human has had active
+   * is not read (`ProposedLinkView`), each with the act that fixes it. A link the active
+   * version has broken too, as written, is in `dangling` alone. Counted in
+   * `count`: activated, it is a broken link. Always sent by this daemon; optional
+   * for a list built by hand.
+   */
+  proposed?: { count: number; links: ProposedLinkView[] };
   /** Links with a scheme nothing here opens (`op:doc/…`): `scheme` is `op`. */
   unsupported: {
     count: number;
@@ -1404,7 +1454,7 @@ export type LinkCheck = {
   sets?: {
     id: string;
     label: string;
-    /** Everything the set's group lists, before any list is cut (shared names, the session's, apart). */
+    /** What the sign counts of the set, before any list is cut (shared names, the session's, and unresolved references apart). */
     total: number;
   }[];
   truncated?: true;

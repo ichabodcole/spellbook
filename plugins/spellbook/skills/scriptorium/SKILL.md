@@ -344,9 +344,14 @@ both. `--update-links` on `rename` or `move` does it in one step; `move-plan`
 shows what a move would break before you make it. `relink` is refused once
 anything else has changed the context's shape, so offer it straight away. Left
 alone, the human sees the same offer in their sidebar. Wiki links are never
-rewritten. **⚠ `relink` and `link-check` read each document's ACTIVE version:**
-a version you proposed before the move keeps the old link and nothing flags it.
-Make the move first, or propose that version again afterwards.
+rewritten. **⚠ `relink` rewrites only each document's ACTIVE version:** a
+version you proposed before the move, and the human never made active, keeps the
+old link. `link-check` lists it under `proposed` (the document, `version`,
+`line`, the link as written, and `suggest`, where the target went when a move
+explains it), each with its `act`. The fix is one per version: fix every
+`proposed` link of that version in ONE new version (`version-new --from vN`,
+keeping its `--label`), then delete the old proposal (`version-delete vN`), so
+the human is never offered the broken one.
 
 **`link-check` checks every link in the session**, in sections. The two you will
 meet most are `dangling`, links that answer nothing (each with its source,

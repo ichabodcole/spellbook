@@ -30,6 +30,7 @@ export type Finding = {
     | "links.dangling"
     | "links.unsupported"
     | "links.heading"
+    | "links.proposed"
     | "names.shared"
     | "profiles.broken"
     | "profiles.warnings"
@@ -70,6 +71,8 @@ export type Checkup = {
     duplicates: number;
     /** Links whose document resolves but whose heading anchor names no heading. */
     headings?: number;
+    /** Links broken in a version the agent proposed and the human never had active. */
+    proposed?: number;
   };
   /** The profile check's counts. Absent: not checked, and nothing said about profiles. */
   profiles?: {
@@ -216,6 +219,18 @@ export function findings(c: Checkup): Finding[] {
     });
   }
 
+  if (l?.proposed) {
+    out.push({
+      kind: "links.proposed",
+      subject: LINK_CHECK_VERB,
+      message: `${plural(l.proposed, "broken link in a version you proposed:", "broken links in versions you proposed:")} activated as ${
+        l.proposed === 1 ? "it is, it points" : "they are, they point"
+      } at nothing, often because a move updated only the active version.`,
+      fix: `run \`${LINK_CHECK_VERB}\` for each one's \`proposed\` entry and its \`act\`: propose that version again with the link fixed (\`version-new --from vN\`), then delete the old proposal (\`version-delete vN\`)`,
+      count: l.proposed,
+    });
+  }
+
   // A broken profile file is a contract nobody can read: every document of its
   // kind beneath it is unchecked until it is fixed, so it is said at startup.
   const p = c.profiles;
@@ -317,6 +332,7 @@ export function findings(c: Checkup): Finding[] {
 export const SUMMARY_LEAVES_OUT: readonly Finding["kind"][] = [
   "links.dangling",
   "links.unsupported",
+  "links.proposed",
   "names.shared",
   "profiles.warnings",
   "relations.warnings",

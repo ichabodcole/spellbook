@@ -199,7 +199,9 @@ export function pathShaped(target: string): boolean {
   const path = t.split(/[?#]/, 1)[0] ?? "";
   const name = path.slice(path.lastIndexOf("/") + 1);
   const dot = name.lastIndexOf(".");
-  return dot > 0 && dot < name.length - 1;
+  // An extension is a letter and up to nine more letters or digits (`md`,
+  // `mp4`, `markdown`): `kit-v1.2` names a version, not a file type.
+  return dot > 0 && /^[A-Za-z][A-Za-z0-9]{0,9}$/.test(name.slice(dot + 1));
 }
 
 /** An app edge as a report shows it, from document `source`. */

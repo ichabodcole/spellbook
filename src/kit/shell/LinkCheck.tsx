@@ -91,6 +91,14 @@ export function linkCheckLabel(d: LinkCheckData): string {
   if (d.duplicates.count > 0)
     parts.push(count(d.duplicates.count, "shared file name", "shared file names"));
   if (d.dangling.count > 0) parts.push(count(d.dangling.count, "broken link", "broken links"));
+  if (d.proposed && d.proposed.count > 0)
+    parts.push(
+      count(
+        d.proposed.count,
+        "broken link in a proposed version",
+        "broken links in proposed versions",
+      ),
+    );
   if (d.references.count > 0)
     parts.push(count(d.references.count, "broken reference", "broken references"));
   if (d.edges && d.edges.count > 0) {
@@ -299,6 +307,7 @@ function onlySet(d: LinkCheckData, keep: (set: string | undefined) => boolean): 
     return list.filter((x) => keep(x.set));
   }
   const dangling = pick(d.dangling.links);
+  const proposed = d.proposed ? pick(d.proposed.links) : undefined;
   const unsupported = pick(d.unsupported.links);
   const headings = pick(d.headings.links);
   const references = pick(d.references.links);
@@ -314,8 +323,10 @@ function onlySet(d: LinkCheckData, keep: (set: string | undefined) => boolean): 
       unsupported.length +
       headings.length +
       references.length +
-      (edges?.length ?? 0),
+      (edges?.length ?? 0) +
+      (proposed?.length ?? 0),
     dangling: { count: dangling.length, links: dangling },
+    ...(proposed ? { proposed: { count: proposed.length, links: proposed } } : {}),
     unsupported: {
       count: unsupported.length,
       schemes: [...new Set(unsupported.map((l) => l.scheme))].sort(),
@@ -403,6 +414,24 @@ function KindSections({
           />
         ))}
       </Section>
+      {data.proposed && (
+        <Section
+          title="Broken in a proposed version"
+          note="A version the agent proposed, never made active, links to nothing here, often because a move updated only the active version. Activated as it is, the link is broken."
+          total={data.proposed.count}
+          shown={data.proposed.links.length}
+        >
+          {data.proposed.links.map((l) => (
+            <LinkEntry
+              key={`${l.source}:${l.version}:${l.from}`}
+              link={l}
+              note={`in v${l.version}${l.suggest ? `; its target moved to ${l.suggest}` : ""}`}
+              // Its place is in that version's text, not the active one's: open the document.
+              onOpen={(x) => onOpen(x.source)}
+            />
+          ))}
+        </Section>
+      )}
       {data.edges && (
         <Section
           title={`Broken ${edgeNoun(data.edges.kinds)}s`}
@@ -636,9 +665,10 @@ export function LinkCheckList({
             <h3 className="mx-2 mt-3 flex items-baseline gap-1.5 border-b border-edge pb-0.5 text-[12px] font-medium text-ink">
               <span className="truncate">{g.label ?? elsewhere}</span>
               <span className="font-normal text-ink-faint" data-slot="set-total">
-                {g.total !== undefined && g.total > linkCheckListed(g.data)
-                  ? `${linkCheckListed(g.data)} of ${g.total}`
-                  : linkCheckListed(g.data)}
+                {/* What the sign counts, so the groups add up to it (unresolved references are listed, not counted). */}
+                {g.total !== undefined && g.total > linkCheckTotal(g.data)
+                  ? `${linkCheckTotal(g.data)} of ${g.total}`
+                  : linkCheckTotal(g.data)}
               </span>
             </h3>
             <KindSections data={g.data} onOpen={onOpen} />

@@ -171,9 +171,9 @@ describe("the mark against the agent's link-check", () => {
     const sets = qa('[data-slot="link-check-set"]');
     expect(sets.map((x) => x.getAttribute("aria-label"))).toEqual(["In set", "In lore"]);
     const totals = sets.map((x) => Number(x.querySelector('[data-slot="set-total"]')?.textContent));
-    expect(totals).toEqual([4, 1]);
-    // The list holds the unresolved reference too, beside what the sign counts.
-    expect(totals.reduce((a, b) => a + b, 0)).toBe(linkCheckTotal(verb) + 1);
+    expect(totals).toEqual([3, 1]);
+    // The headers add up to the sign: the unresolved reference is listed, not counted.
+    expect(totals.reduce((a, b) => a + b, 0)).toBe(linkCheckTotal(verb));
     const sections = (x: HTMLElement) =>
       [...x.querySelectorAll('[data-slot="link-check-section"]')].map((s) =>
         s.getAttribute("aria-label"),
@@ -300,6 +300,45 @@ describe("grouping, alone", () => {
     await m.unmount();
   });
 
+  test("a link broken in a proposed version is counted, and opens its document", async () => {
+    const link = {
+      source: "/a/keeper.md",
+      name: "keeper.md",
+      shown: "keeper.md",
+      line: 3,
+      raw: "./places/glade.md",
+      kind: "markdown" as const,
+      label: "the Glade",
+      context: "Lives by [the Glade](./places/glade.md).",
+      from: 10,
+      to: 40,
+      set: "a",
+      doc: "keeper",
+      version: 2,
+      tried: ["/a/places/glade.md"],
+      suggest: "./wilds/glade.md",
+      act: "…",
+    };
+    const d: LinkCheckData = {
+      ...base,
+      count: 1,
+      proposed: { count: 1, links: [link] },
+      sets: [{ id: "a", label: "A", total: 1 }],
+    };
+    expect(linkCheckTotal(d)).toBe(1);
+    expect(linkCheckLabel(d)).toBe("1 broken link in a proposed version");
+    expect(linkCheckGroups(d).map((g) => [g.label, linkCheckTotal(g.data)])).toEqual([["A", 1]]);
+    const opened: unknown[][] = [];
+    const m = await mount(<LinkCheckList data={d} onOpen={(...a) => opened.push(a)} />);
+    const text = q('[data-slot="link-check-list"]')?.textContent ?? "";
+    expect(text).toContain("Broken in a proposed version");
+    expect(text).toContain("in v2; its target moved to ./wilds/glade.md");
+    await click(q('[data-slot="link-check-entry"]') as HTMLElement);
+    // Its offsets are in v2's text, not the active one's: the document opens, at no place.
+    expect(opened).toEqual([["/a/keeper.md"]]);
+    await m.unmount();
+  });
+
   test("unresolved references are listed, never counted in the sign", async () => {
     const ref = {
       source: "/a/x.md",
@@ -316,7 +355,7 @@ describe("grouping, alone", () => {
       ...base,
       edges: { count: 0, kinds: [], links: [] },
       unresolved: { count: 1, kinds: ["frontmatter"], links: [ref] },
-      sets: [{ id: "a", label: "A", total: 1 }],
+      sets: [{ id: "a", label: "A", total: 0 }],
     };
     expect(linkCheckTotal(d)).toBe(0);
     expect(linkCheckLabel(d)).toBe("");
@@ -326,7 +365,7 @@ describe("grouping, alone", () => {
     expect(text).toContain("Unresolved references");
     expect(text).toContain("parent: feature/some-slug");
     expect(text).not.toContain("nothing at");
-    expect(q('[data-slot="set-total"]')?.textContent).toBe("1");
+    expect(q('[data-slot="set-total"]')?.textContent).toBe("0");
     await m.unmount();
   });
 
