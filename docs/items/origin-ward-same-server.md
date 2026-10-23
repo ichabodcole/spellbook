@@ -27,9 +27,21 @@ any identifier, so `other.hostname` passes, even though the port comes from
 
 ## Definition of done
 
-- [ ] The ward requires the hostname's object to be the same one the port comes
+- [x] The ward requires the hostname's object to be the same one the port comes
       from, and a planted `other.hostname` fails it
 
 ## Related Documents
 
 - [Kit foundation — 2026-10-13](../features/workspace-kit/sessions/2026-10-13-kit-foundation.md)
+
+## Done and verified
+
+`9ba3a9fd` on `impl/ward-gaps` (2026-10-22). The third-argument cell now
+requires the port and the hostname from one server object
+(`srv.port, srv.hostname`, or `srv?.` on both), with calibration
+(`other.hostname`, a literal port, two arguments). Planted `other.hostname` in
+astrolabe's server: red, naming the call. All nine call sites pass. The same
+batch tightened the scan further (a dropped or dead answer, a rebound name), in
+[scriptorium-ward-blind-spots-after-deletion](scriptorium-ward-blind-spots-after-deletion.md).
+Still unseen: a server object that is not the one the handler runs on (the scan
+checks only that both arguments name the same identifier).
