@@ -6,7 +6,7 @@ description:
   went back to stays…' times out (5 s) about one run in five: one act() after
   backToList takes 4–5 s, driven by state the file's shared daemon builds up,
   not by load."
-status: draft
+status: stable
 lifecycle: ready
 id: 01a166f9-5e4f-7550-b298-8900ed914b7b
 kind: bug
