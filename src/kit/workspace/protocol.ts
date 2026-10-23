@@ -1121,10 +1121,12 @@ export type CheckedEdgeView = Omit<EdgeBacklinkView, "rel"> & {
 };
 
 /**
- * A link or an app edge that lands on a file outside the set it is written in:
- * a document in another set, or a file in no set at all. Not a problem (a set
- * may well point beyond itself), but it says the set is not self-contained.
- * Reported only for an app that asks (`LinkCheckOptions.leaving`).
+ * A link or an app edge that lands on a file the session does not hold: a
+ * file beside a listed document, or outside a set's folder. A link to one of
+ * the session's own documents never leaves, whichever set either is in. Not a
+ * problem (a set may well point beyond itself), but it says the session is
+ * not self-contained. Reported only for an app that asks
+ * (`LinkCheckOptions.leaving`).
  */
 export type LeavingLinkView = {
   /** The document it is written in, absolute. */
@@ -1144,7 +1146,7 @@ export type LeavingLinkView = {
   target: string;
   /** The file as a person reads it: its path in its own set, else from the source's set root. */
   targetShown: string;
-  /** The label of the set the target is in; absent for a file in no set. */
+  /** The label of the set whose folder holds the target (a file there that is not a document); absent for a file in no set. */
   targetSet?: string;
   /** An app edge's kind (`frontmatter`); absent for a body link. */
   edge?: string;
@@ -1379,6 +1381,14 @@ export type LinkCheck = {
    * adds edges; `kinds` is every edge kind among them. Counted in `count`.
    */
   edges?: { count: number; kinds: string[]; links: CheckedEdgeView[] };
+  /**
+   * The app's edges that nothing answers and that are NOT written as a path
+   * (`pathShaped`: no extension, no leading `/`, `./` or `../`), such as
+   * `feature/some-slug`: a reference in a convention the kit does not know.
+   * Listed, never counted in `count`: the kit cannot tell a broken one from
+   * one another tool resolves. Present when `edges` is.
+   */
+  unresolved?: { count: number; kinds: string[]; links: CheckedEdgeView[] };
   /**
    * Links and app edges that land outside the set they are written in
    * (`LeavingLinkView`). Not in `count`: leaving the set is not broken. The

@@ -61,6 +61,15 @@ export const linkCheckTotal = (d: LinkCheckData): number =>
   (d.leaving?.count ?? 0);
 
 /**
+ * Everything the list shows: the sign's total, and the app's references
+ * nothing answers that are not written as paths (`LinkCheck.unresolved`),
+ * which the sign does not count: the kit cannot tell a broken one from one
+ * another tool resolves.
+ */
+export const linkCheckListed = (d: LinkCheckData): number =>
+  linkCheckTotal(d) + (d.unresolved?.count ?? 0);
+
+/**
  * The app's word for a set (`LinkCheck.noun`, from `WorkspaceDaemonOptions.linkCheck`),
  * else `folder`: the kit names none of its own.
  */
@@ -153,9 +162,12 @@ function LinkEntry({
 /** A broken app edge (a frontmatter reference): opens its source where it is written. */
 function EdgeEntry({
   edge,
+  unresolved,
   onOpen,
 }: {
   edge: CheckedEdgeView;
+  /** Not written as a path: listed, not broken (`LinkCheck.unresolved`). */
+  unresolved?: boolean;
   onOpen: (path: string, at?: { from: number; to: number }) => void;
 }) {
   const at =
@@ -166,6 +178,7 @@ function EdgeEntry({
         type="button"
         data-slot="link-check-entry"
         data-edge={edge.edge}
+        data-unresolved={unresolved ? "" : undefined}
         data-source={edge.source}
         data-line={edge.line}
         onClick={() => onOpen(edge.source, at)}
@@ -184,7 +197,8 @@ function EdgeEntry({
           {edge.key ? `${edge.key}: ` : ""}
           {edge.raw}
         </span>
-        {edge.tried.length > 0 && (
+        {/* An unresolved reference was never meant as a path: where it looked says nothing. */}
+        {!unresolved && edge.tried.length > 0 && (
           <span className="block truncate text-[10px] text-ink-faint">
             nothing at {edge.tried.join(", ")}
           </span>
@@ -289,6 +303,7 @@ function onlySet(d: LinkCheckData, keep: (set: string | undefined) => boolean): 
   const headings = pick(d.headings.links);
   const references = pick(d.references.links);
   const edges = d.edges ? pick(d.edges.links) : undefined;
+  const unresolved = d.unresolved ? pick(d.unresolved.links) : undefined;
   const images = pick(d.unusedImages.images);
   const symmetry = pick(d.symmetry.hints);
   const ambiguous = pick(d.ambiguousHeadings.hints);
@@ -322,6 +337,15 @@ function onlySet(d: LinkCheckData, keep: (set: string | undefined) => boolean): 
           },
         }
       : {}),
+    ...(unresolved
+      ? {
+          unresolved: {
+            count: unresolved.length,
+            kinds: [...new Set(unresolved.map((e) => e.edge))].sort(),
+            links: unresolved,
+          },
+        }
+      : {}),
     ...(leaving ? { leaving: { count: leaving.length, links: leaving } } : {}),
     ...(d.noun !== undefined ? { noun: d.noun } : {}),
   };
@@ -348,7 +372,7 @@ export function linkCheckGroups(
     label: null,
     data: onlySet(d, (set) => set === undefined || !known.has(set)),
   });
-  return groups.filter((g) => linkCheckTotal(g.data) > 0);
+  return groups.filter((g) => linkCheckListed(g.data) > 0);
 }
 
 /**
@@ -449,10 +473,27 @@ function KindSections({
           />
         ))}
       </Section>
+      {data.unresolved && (
+        <Section
+          title="Unresolved references"
+          note="Not counted as broken: written as a name, not a path, and nothing here answers it. Another tool may know what it names."
+          total={data.unresolved.count}
+          shown={data.unresolved.links.length}
+        >
+          {data.unresolved.links.map((e) => (
+            <EdgeEntry
+              key={`${e.source}:${e.key ?? ""}:${e.raw}:${e.from ?? ""}`}
+              edge={e}
+              unresolved
+              onOpen={onOpen}
+            />
+          ))}
+        </Section>
+      )}
       {data.leaving && (
         <Section
           title={`Leaving the ${nounOf(data)}`}
-          note={`Not broken: these land on a file in another ${nounOf(data)}, or in none. The ${nounOf(data)} is not self-contained.`}
+          note={`Not broken: these land on a file this session does not hold. The ${nounOf(data)} is not self-contained.`}
           total={data.leaving.count}
           shown={data.leaving.links.length}
         >
@@ -537,7 +578,7 @@ export function LinkCheckList({
   data: LinkCheckData;
   onOpen: (path: string, at?: { from: number; to: number }) => void;
 }) {
-  if (linkCheckTotal(data) === 0)
+  if (linkCheckListed(data) === 0)
     return (
       <p data-slot="link-check-list" className="pt-2 text-[12px] text-ink-dim">
         Nothing to report now: every link answers, and no two documents share a name.
@@ -595,9 +636,9 @@ export function LinkCheckList({
             <h3 className="mx-2 mt-3 flex items-baseline gap-1.5 border-b border-edge pb-0.5 text-[12px] font-medium text-ink">
               <span className="truncate">{g.label ?? elsewhere}</span>
               <span className="font-normal text-ink-faint" data-slot="set-total">
-                {g.total !== undefined && g.total > linkCheckTotal(g.data)
-                  ? `${linkCheckTotal(g.data)} of ${g.total}`
-                  : linkCheckTotal(g.data)}
+                {g.total !== undefined && g.total > linkCheckListed(g.data)
+                  ? `${linkCheckListed(g.data)} of ${g.total}`
+                  : linkCheckListed(g.data)}
               </span>
             </h3>
             <KindSections data={g.data} onOpen={onOpen} />

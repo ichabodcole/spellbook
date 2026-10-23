@@ -185,6 +185,23 @@ export function edgeKeeps(filter: readonly string[] | undefined): (kind: string)
   return (kind) => set.has(kind);
 }
 
+/**
+ * Is an edge's target written as a path (scriptorium-broken-links-sign-noise)?
+ * One anchored (`/`, `./`, `../`) or with an extension is: when nothing
+ * answers it, it is broken. Anything else (`feature/some-slug`, a bare name)
+ * is a reference in some convention the kit does not know, and one nothing
+ * answers is UNRESOLVED, not broken: the link check lists it apart and keeps
+ * it out of `count`. The kit learns no convention from it, and guesses none.
+ */
+export function pathShaped(target: string): boolean {
+  const t = target.trim();
+  if (t.startsWith("/") || t.startsWith("./") || t.startsWith("../")) return true;
+  const path = t.split(/[?#]/, 1)[0] ?? "";
+  const name = path.slice(path.lastIndexOf("/") + 1);
+  const dot = name.lastIndexOf(".");
+  return dot > 0 && dot < name.length - 1;
+}
+
 /** An app edge as a report shows it, from document `source`. */
 export type SourcedEdge = AppEdge & { source: string };
 

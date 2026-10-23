@@ -353,13 +353,18 @@ meet most are `dangling`, links that answer nothing (each with its source,
 `line`, the link as written, `raw`, and where it looked, `tried`), and
 `unsupported`, links with a scheme nothing here opens, such as `op:doc/…`. Both
 count as problems in `count`, but neither is an error: a world points at things
-not written yet, so fix or keep each as the human prefers. Hint sections such as
-`symmetry`, `unusedImages` and `leaving` stay out of `count`. Every entry
-carries `set`, and `sets` lists the sets the entries come from, `leaving`'s
-included, in the order the human's broken-links list groups them. A link to a
-folder is not dangling, and links inside code or HTML comments are not links. A
-`line` is the line in the text it was read from, the active version for an open
-document.
+not written yet, so fix or keep each as the human prefers. A frontmatter
+reference that answers nothing is in `edges`, counted, only when it is written
+as a path (an extension, or a leading `/`, `./` or `../`); any other, such as
+`feature/some-slug`, is in `unresolved`, listed and not counted: Scriptorium
+does not know the convention it was written in, and does not guess. Hint
+sections such as `symmetry`, `unusedImages`, `unresolved` and `leaving` stay out
+of `count`; `leaving` lists links to files the session does not hold, never a
+link between two of its own documents. Every entry carries `set`, and `sets`
+lists the sets the entries come from, `leaving`'s included, in the order the
+human's broken-links list groups them. A link to a folder is not dangling, and
+links inside code or HTML comments are not links. A `line` is the line in the
+text it was read from, the active version for an open document.
 
 `reveal <path>` shows a file in their file manager, for when they ask where
 something is. The system file picker is theirs alone, by design.

@@ -116,6 +116,7 @@ import {
   edgeKeeps,
   type LinkSlot,
   locateEdges,
+  pathShaped,
   type ResolvableDocument,
   readEdges,
 } from "./linkEdges";
@@ -7267,25 +7268,30 @@ export class WorkspaceSession {
     const setOf = (path: string) => setEntry(path)?.id;
     /** Where a link from `from` lands, when that is outside `from`'s set; else null. */
     const leaves = (r: Resolution, from: string): { target: string } | null => {
-      if (r.state !== "in-context" && r.state !== "outside" && r.state !== "not-a-doc") return null;
+      // ⛔ A LINK TO ONE OF THE SESSION'S OWN DOCUMENTS NEVER LEAVES
+      // (scriptorium-broken-links-sign-noise, Cole's ruling 2026-10-22): the
+      // session is what the human gathered, so a link between two of its
+      // documents stays inside it, whichever sets they are in. Documents added
+      // one by one are a set each, and counting every link between them as
+      // leaving made the sign say little else.
+      if (r.state !== "outside" && r.state !== "not-a-doc") return null;
       const own = setEntry(from);
       if (own === undefined) return null;
       // ⛔ A LISTED ENTRY (documents added on their own) HAS NO FOLDER OF ITS
       // OWN: its root is its document's folder, so the folder rule would take
-      // every sibling, and any set below, as inside it. A link from one leaves
-      // unless the entry itself holds the target, as the shipped map counted it.
-      if (own.membership === "listed")
-        return r.state === "in-context" && setEntry(r.path)?.id === own.id
-          ? null
-          : { target: r.path };
-      // A mirrored set: LEAVING IS ABOUT ITS FOLDER, as the shipped map counted
-      // it. Anything under the folder is inside, a document of a set nested in
-      // it included (`world -> ./inner/deep.md` stays in `world`), and anything
-      // else leaves (`inner/deep.md -> ../ruin.md` leaves `inner`).
+      // every sibling on disk as inside it. A link from one to a file the
+      // session does not hold leaves.
+      if (own.membership === "listed") return { target: r.path };
+      // A mirrored set: a file in its folder that is not a document (a CSV
+      // beside the pages) is inside it; anything else leaves.
       return r.path.startsWith(own.root + sep) ? null : { target: r.path };
     };
     const leavingView = (from: string, target: string) => {
-      const there = setEntry(target);
+      // The set whose FOLDER holds the target: a listed entry holds only its
+      // documents, and a leaving target is none of the session's documents.
+      const near = setEntry(target);
+      const there =
+        near?.membership === "mirrored" && target.startsWith(near.root + sep) ? near : undefined;
       const own = setEntry(from);
       return {
         source: from,
@@ -7346,6 +7352,9 @@ export class WorkspaceSession {
     // the body links: a frontmatter reference to a page not written yet.
     const keep = edgeKeeps(opts.edge);
     const danglingEdges: CheckedEdgeView[] = [];
+    // The edges nothing answers that are not written as paths (`pathShaped`):
+    // a reference in a convention the kit does not know, listed, not counted.
+    const unresolvedEdges: CheckedEdgeView[] = [];
     if (this.appEdges)
       for (const s of sources)
         s.edges.forEach((e, i) => {
@@ -7367,7 +7376,7 @@ export class WorkspaceSession {
               ...(e.key !== undefined ? { key: e.key } : {}),
             });
           if (r.state !== "missing") return;
-          danglingEdges.push({
+          (pathShaped(e.target) ? danglingEdges : unresolvedEdges).push({
             source: s.path,
             name: basename(s.path),
             shown: shown(s.path),
@@ -7381,11 +7390,10 @@ export class WorkspaceSession {
             ...(set !== undefined ? { set } : {}),
           });
         });
-    danglingEdges.sort(
-      (a, b) =>
-        a.shown.localeCompare(b.shown, undefined, { numeric: true }) ||
-        (a.line ?? 0) - (b.line ?? 0),
-    );
+    const edgeOrder = (a: CheckedEdgeView, b: CheckedEdgeView) =>
+      a.shown.localeCompare(b.shown, undefined, { numeric: true }) || (a.line ?? 0) - (b.line ?? 0);
+    danglingEdges.sort(edgeOrder);
+    unresolvedEdges.sort(edgeOrder);
     if (wantLeaving && keep(BODY_LINKS))
       for (const s of sources)
         for (const link of s.links) {
@@ -7564,6 +7572,7 @@ export class WorkspaceSession {
       unusedImages.length > LINK_CHECK_CAP ||
       symmetry.length > LINK_CHECK_CAP ||
       references.length > LINK_CHECK_CAP ||
+      unresolvedEdges.length > LINK_CHECK_CAP ||
       leavingLinks.length > LINK_CHECK_CAP;
     // Each set's whole, before any list is cut: what a group says it shows
     // part of when the check is truncated. Shared names are the session's.
@@ -7576,6 +7585,7 @@ export class WorkspaceSession {
       symmetry,
       references,
       danglingEdges,
+      unresolvedEdges,
       leavingLinks,
       unusedImages,
     ] as { set?: string }[][])
@@ -7611,6 +7621,11 @@ export class WorkspaceSession {
               count: danglingEdges.length,
               kinds: [...new Set(danglingEdges.map((e) => e.edge))].sort(),
               links: cut(danglingEdges),
+            },
+            unresolved: {
+              count: unresolvedEdges.length,
+              kinds: [...new Set(unresolvedEdges.map((e) => e.edge))].sort(),
+              links: cut(unresolvedEdges),
             },
           }
         : {}),

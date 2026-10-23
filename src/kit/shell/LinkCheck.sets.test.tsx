@@ -1,6 +1,7 @@
 // The link check grouped by set (kit-broken-links-visible), in the real shell
 // over a real daemon with an app's edges: a broken body link, a broken
-// frontmatter `related:` and links leaving their set. The mark says exactly
+// frontmatter `related:`, an unresolved one (not a path, so not counted), and
+// links to files the session does not hold. The mark says exactly
 // what the agent's `link-check` answers for the same session, the list groups
 // it by set, and each entry opens its source at the link.
 
@@ -51,14 +52,14 @@ const related: NonNullable<LinkSlot["edges"]> = ({ frontmatter }) => {
 const NOTES = [
   "---",
   "title: Notes",
-  "related: [./ghost.md, ../lore/myth.md]",
+  "related: [./ghost.md, ../lore/myth.md, feature/some-slug]",
   "---",
   "# Notes",
   "",
-  "See [the cave](./cave.md) and [the myth](../lore/myth.md).",
+  "See [the cave](./cave.md), [the myth](../lore/myth.md) and [solo](../solo.md).",
   "",
 ].join("\n");
-const MYTH = "# The Myth\n\nBack to [A](../set/a.md).\n";
+const MYTH = "# The Myth\n\nBack to [A](../set/a.md), beside [the sibling](../sibling.md).\n";
 const SETTLE = LINK_CHECK_PAUSE_MS + 3000;
 
 let root: string;
@@ -150,15 +151,19 @@ describe("the mark against the agent's link-check", () => {
     const { ok: _ok, ...verb } = asked.body as unknown as LinkCheckData & { ok: true };
     expect(verb.dangling.count).toBe(1);
     expect(verb.edges?.count).toBe(1);
-    expect(verb.leaving?.count).toBe(3);
+    expect(verb.unresolved?.links.map((e) => e.raw)).toEqual(["feature/some-slug"]);
+    // Links to another set's document stay inside the session: only the two
+    // to files no set holds leave.
+    expect(verb.leaving?.count).toBe(2);
     expect(verb.count).toBe(2);
 
     expect(mark()?.getAttribute("aria-label")).toBe(`Link check: ${linkCheckLabel(verb)}`);
     expect(linkCheckLabel(verb)).toBe(
-      "1 broken link, 1 broken frontmatter reference, 3 leaving the set",
+      "1 broken link, 1 broken frontmatter reference, 2 leaving the set",
     );
     expect(q('[data-slot="link-check-total"]')?.textContent).toBe(String(linkCheckTotal(verb)));
-    expect(linkCheckTotal(verb)).toBe(5);
+    // The unresolved reference is not in the sign's count.
+    expect(linkCheckTotal(verb)).toBe(4);
 
     // The list: grouped by set, in the context's order, adding up to the mark.
     await click(mark() as HTMLElement);
@@ -167,7 +172,8 @@ describe("the mark against the agent's link-check", () => {
     expect(sets.map((x) => x.getAttribute("aria-label"))).toEqual(["In set", "In lore"]);
     const totals = sets.map((x) => Number(x.querySelector('[data-slot="set-total"]')?.textContent));
     expect(totals).toEqual([4, 1]);
-    expect(totals.reduce((a, b) => a + b, 0)).toBe(linkCheckTotal(verb));
+    // The list holds the unresolved reference too, beside what the sign counts.
+    expect(totals.reduce((a, b) => a + b, 0)).toBe(linkCheckTotal(verb) + 1);
     const sections = (x: HTMLElement) =>
       [...x.querySelectorAll('[data-slot="link-check-section"]')].map((s) =>
         s.getAttribute("aria-label"),
@@ -175,10 +181,17 @@ describe("the mark against the agent's link-check", () => {
     expect(sections(sets[0] as HTMLElement)).toEqual([
       "Broken links",
       "Broken frontmatter references",
+      "Unresolved references",
       "Leaving the set",
     ]);
     expect(sections(sets[1] as HTMLElement)).toEqual(["Leaving the set"]);
-    expect(sets[1]?.textContent).toContain("lands in set: a.md");
+    expect(sets[1]?.textContent).toContain("lands outside every set: ../sibling.md");
+    // An unresolved reference says nothing of where it looked: it was never a path.
+    const unresolved = qa("[data-unresolved]");
+    expect(unresolved.map((e) => e.querySelector('[data-slot="raw"]')?.textContent)).toEqual([
+      "related: feature/some-slug",
+    ]);
+    expect(unresolved[0]?.textContent).not.toContain("nothing at");
 
     // The broken `related:` opens at its line, on the reference itself.
     const ref = qa('[data-edge="frontmatter"]')[0] as HTMLElement;
@@ -192,7 +205,7 @@ describe("the mark against the agent's link-check", () => {
 
     // A link leaving the set opens at the link.
     await click(mark() as HTMLElement);
-    await waitFor(() => qa("[data-leaving]").length === 3, "the list again");
+    await waitFor(() => qa("[data-leaving]").length === 2, "the list again");
     const out = qa("[data-leaving]").find(
       (e) => e.getAttribute("data-source") === join(docs, "lore", "myth.md"),
     ) as HTMLElement;
@@ -201,7 +214,7 @@ describe("the mark against the agent's link-check", () => {
       () => probe().open === join(docs, "lore", "myth.md") && probe().reveal !== null,
       "myth.md open at the link",
     );
-    expect(MYTH.slice(probe().reveal.from, probe().reveal.to)).toBe("[A](../set/a.md)");
+    expect(MYTH.slice(probe().reveal.from, probe().reveal.to)).toBe("[the sibling](../sibling.md)");
     await m.unmount();
   }, 25_000);
 });
@@ -284,6 +297,36 @@ describe("grouping, alone", () => {
     };
     const m = await mount(<LinkCheckList data={d} onOpen={() => {}} />);
     expect(q('[data-slot="set-total"]')?.textContent).toBe("2 of 9");
+    await m.unmount();
+  });
+
+  test("unresolved references are listed, never counted in the sign", async () => {
+    const ref = {
+      source: "/a/x.md",
+      name: "x.md",
+      shown: "x.md",
+      edge: "frontmatter",
+      raw: "feature/some-slug",
+      key: "parent",
+      line: 2,
+      tried: ["/a/feature/some-slug.md"],
+      set: "a",
+    };
+    const d: LinkCheckData = {
+      ...base,
+      edges: { count: 0, kinds: [], links: [] },
+      unresolved: { count: 1, kinds: ["frontmatter"], links: [ref] },
+      sets: [{ id: "a", label: "A", total: 1 }],
+    };
+    expect(linkCheckTotal(d)).toBe(0);
+    expect(linkCheckLabel(d)).toBe("");
+    expect(linkCheckGroups(d).map((g) => g.label)).toEqual(["A"]);
+    const m = await mount(<LinkCheckList data={d} onOpen={() => {}} />);
+    const text = q('[data-slot="link-check-list"]')?.textContent ?? "";
+    expect(text).toContain("Unresolved references");
+    expect(text).toContain("parent: feature/some-slug");
+    expect(text).not.toContain("nothing at");
+    expect(q('[data-slot="set-total"]')?.textContent).toBe("1");
     await m.unmount();
   });
 
