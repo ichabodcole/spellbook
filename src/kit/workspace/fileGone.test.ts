@@ -188,9 +188,13 @@ describe("a deleted file", () => {
       await waitUntil("closed", () => s.state.openDoc === null);
       expect(docB(s)?.versions).toHaveLength(1);
 
-      // Put back (from the Trash, say), as it was: it is simply back.
-      writeFileSync(file, "# B\n");
-      await waitUntil("back", () => docB(s)?.missing === undefined);
+      // Put back (from the Trash, say), as it was: it is simply back. Written
+      // until seen: a busy fseventsd can hold or drop the one write's event.
+      await writeUntilSeen(
+        "back",
+        () => writeFileSync(file, "# B\n"),
+        () => docB(s)?.missing === undefined,
+      );
       s.send({ op: "open", path: file });
       await waitUntil("reopened", () => s.state.openDoc === "b");
       expect(readFileSync(docB(s)?.versions[0]?.path ?? "", "utf8")).toBe("# B\n\nunsaved\n");
@@ -208,8 +212,11 @@ describe("a deleted file", () => {
       await removeUntilSeen(file, () =>
         t.events.some((e) => e.type === "system" && e.fact === "original.missing"),
       );
-      writeFileSync(file, "a different file with the same name\n");
-      await t.waitFor((e) => e.type === "system" && e.fact === "original.conflict");
+      await writeUntilSeen(
+        "the conflict",
+        () => writeFileSync(file, "a different file with the same name\n"),
+        () => t.events.some((e) => e.type === "system" && e.fact === "original.conflict"),
+      );
       const a = s.state.docs.find((d) => d.slug === "a");
       expect(a?.missing).toBeUndefined();
       expect(readFileSync(a?.versions[0]?.path ?? "", "utf8")).toBe("# A\n\none\n");
