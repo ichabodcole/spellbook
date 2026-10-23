@@ -86,9 +86,17 @@
   .md-prose li > p {
     margin: 0;
   }
+  /*
+   * A link: the brand, underlined in its own colour, unless a theme says
+   * otherwise. Two optional hooks, neither declared by the kit: `--color-link`
+   * (the words) and `--color-link-underline` (the line under them), so a theme
+   * can set a link in the text's own ink and mark it with an accent underline.
+   * Unset, both fall back to what this rule always drew.
+   */
   .md-prose a {
-    color: var(--color-brand);
+    color: var(--color-link, var(--color-brand));
     text-decoration: underline;
+    text-decoration-color: var(--color-link-underline, currentColor);
     text-underline-offset: 2px;
   }
   /*

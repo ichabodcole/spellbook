@@ -445,7 +445,7 @@ const DECLARED_BLIND: Record<string, number> = {
   "src/imago/surface/styles.css": 167,
   "plugins/spellbook/skills/magpie/scripts/remove.py": 145,
   "src/kit/theme/base.css": 257,
-  "src/kit/theme/document.css": 289,
+  "src/kit/theme/document.css": 297,
   "src/kit/theme/shell.css": 53,
   "src/astrolabe/surface/styles.css": 104,
   "src/astrolabe/surface/index.html": 35,
@@ -479,7 +479,7 @@ const DECLARED_BLIND: Record<string, number> = {
   // The page's one sheet since the cutover: the kit page's palette and theme
   // (a copy of the shipped sheet, scriptorium-kit-keepers) with the kit's
   // document.css and shell.css imported at its end.
-  "src/scriptorium/surface/styles.css": 429,
+  "src/scriptorium/surface/styles.css": 453,
 };
 
 type BlindReport = {

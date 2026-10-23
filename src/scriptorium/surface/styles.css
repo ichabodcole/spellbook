@@ -85,6 +85,22 @@
   --color-border: var(--color-edge);
   --color-input: var(--color-edge);
   --color-ring: var(--color-rubric);
+  /* ⛔ THE KIT'S BRAND IS VIOLET, AND NOTHING HERE IS (item
+     scriptorium-violet-brand-off-theme). The kit paints links, drop targets,
+     the "agent listening" dot, backlink hovers, the compare gutter, the
+     `stable` chip, the caret and the drop cursor straight from
+     `--color-brand`, so this page maps it onto the rubric, as the shipped
+     Scriptorium drew all of those. No new colour: the light block below maps
+     it again, because base.css's own light block is unlayered and would put
+     the violet back. */
+  --color-brand: var(--color-rubric);
+  --color-on-brand: var(--color-on-rubric);
+  /* A rendered link is in the text's own ink, marked by a rubric underline
+     (Cole's pick from mockups, 2026-10-22: the most manuscript-like, the least
+     loud). The kit's document.css reads these two hooks; a hover thickens the
+     underline (`.md-prose a:hover`, below). */
+  --color-link: var(--color-ink);
+  --color-link-underline: var(--color-rubric);
   /* Menus and popovers (context-menu) — without these the popup rendered with
      NO background, transparent over the page (Cole, 2026-09-11). */
   --color-popover: var(--color-surface-raised);
@@ -110,6 +126,9 @@
   --color-added: #4e7040;
   --color-removed: #a8432a;
   --color-selected: #3f5f8f;
+  /* Again here, after base.css's light block, which sets the kit's violet. */
+  --color-brand: var(--color-rubric);
+  --color-on-brand: var(--color-on-rubric);
 }
 
 /* The recipes' `dark:` arms follow the THEME ATTRIBUTE, not the OS — so a
@@ -214,9 +233,14 @@
     accent-color: var(--color-rubric);
   }
   .md-prose a {
-    color: var(--color-rubric);
+    color: var(--color-link);
     text-decoration: underline;
+    text-decoration-color: var(--color-link-underline);
     text-underline-offset: 2px;
+  }
+  /* The kit's link rule says nothing about hover, so this one stands. */
+  .md-prose a:hover {
+    text-decoration-thickness: 2px;
   }
   /* A link whose target the renderer refused: the words stay, the link does not. */
   .md-prose a[data-blocked-link] {

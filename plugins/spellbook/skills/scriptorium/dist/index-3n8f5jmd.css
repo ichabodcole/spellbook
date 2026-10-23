@@ -47,8 +47,8 @@
     --color-ink-dim: #a39b88;
     --color-edge: #363126;
     --color-ink-faint: #6f6858;
-    --color-brand: #a78bfa;
-    --color-on-brand: #020617;
+    --color-brand: var(--color-rubric);
+    --color-on-brand: var(--color-on-rubric);
     --color-attention: #e2a94b;
     --color-danger: #e5675a;
     --color-added: #7f9c6a;
@@ -74,6 +74,8 @@
     --color-rubric: #d0704f;
     --color-on-rubric: #1a120e;
     --font-manuscript: "Iowan Old Style", Palatino, Georgia, serif;
+    --color-link: var(--color-ink);
+    --color-link-underline: var(--color-rubric);
   }
 }
 
@@ -1544,7 +1546,7 @@
   }
 
   .bg-brand\/8 {
-    background-color: #a78bfa14;
+    background-color: #d0704f14;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -1554,7 +1556,7 @@
   }
 
   .bg-brand\/10 {
-    background-color: #a78bfa1a;
+    background-color: #d0704f1a;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -1564,7 +1566,7 @@
   }
 
   .bg-brand\/12 {
-    background-color: #a78bfa1f;
+    background-color: #d0704f1f;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -1574,7 +1576,7 @@
   }
 
   .bg-brand\/15 {
-    background-color: #a78bfa26;
+    background-color: #d0704f26;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -1584,7 +1586,7 @@
   }
 
   .bg-brand\/65 {
-    background-color: #a78bfaa6;
+    background-color: #d0704fa6;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -2316,7 +2318,7 @@
   }
 
   .ring-brand\/40 {
-    --tw-ring-color: #a78bfa66;
+    --tw-ring-color: #d0704f66;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -2326,7 +2328,7 @@
   }
 
   .ring-brand\/50 {
-    --tw-ring-color: #a78bfa80;
+    --tw-ring-color: #d0704f80;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -2666,7 +2668,7 @@
 
   @media (hover: hover) {
     .hover\:bg-brand\/10:hover {
-      background-color: #a78bfa1a;
+      background-color: #d0704f1a;
     }
 
     @supports (color: color-mix(in lab, red, red)) {
@@ -2808,7 +2810,7 @@
   }
 
   .focus\:ring-brand\/45:focus {
-    --tw-ring-color: #a78bfa73;
+    --tw-ring-color: #d0704f73;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -3860,6 +3862,8 @@
   --color-added: #4e7040;
   --color-removed: #a8432a;
   --color-selected: #3f5f8f;
+  --color-brand: var(--color-rubric);
+  --color-on-brand: var(--color-on-rubric);
 }
 
 @layer components {
@@ -3961,9 +3965,14 @@
   }
 
   .md-prose a {
-    color: var(--color-rubric);
+    color: var(--color-link);
     text-decoration: underline;
+    text-decoration-color: var(--color-link-underline);
     text-underline-offset: 2px;
+  }
+
+  .md-prose a:hover {
+    text-decoration-thickness: 2px;
   }
 
   .md-prose a[data-blocked-link] {
@@ -4230,8 +4239,9 @@
   }
 
   .md-prose a {
-    color: var(--color-brand);
+    color: var(--color-link, var(--color-brand));
     text-decoration: underline;
+    text-decoration-color: var(--color-link-underline, currentColor);
     text-underline-offset: 2px;
   }
 
@@ -4408,7 +4418,7 @@
 }
 
 ::highlight(doc-note-pending) {
-  background-color: #a78bfa3d;
+  background-color: #d0704f3d;
 }
 
 @supports (color: color-mix(in lab, red, red)) {
