@@ -11278,6 +11278,25 @@ var AMBIENT = new Set(["prefs.set", "select", "read", "diff", "edit"]);
 var FLUSH_FIRST = new Set(["activate", "version.new", "merge"]);
 var EDIT_DEBOUNCE_MS = 250;
 var EDIT_RETRY_MS = 1000;
+var PICK_WAIT_MS = 60 * 60000;
+async function pickPaths(request, want) {
+  const frame = await request({ op: "pick", want }, { timeoutMs: PICK_WAIT_MS });
+  if (frame.op !== "chosen")
+    throw new Error("the workspace did not say what was chosen");
+  return frame.paths;
+}
+async function sha256Hex(file) {
+  const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+async function fileAlreadyAt(request, dir, file) {
+  const sha256 = await sha256Hex(file);
+  const frame = await request({ op: "fs.same", dir, name: file.name, size: file.size, sha256 });
+  if (frame.op !== "fs.same")
+    throw new Error("the workspace did not say what is there");
+  const r = frame;
+  return { exists: r.exists, same: r.same };
+}
 
 class DaemonError extends Error {
   choices;
@@ -21479,9 +21498,6 @@ function cn(...inputs) {
   return inputs.some((i) => typeof i === "function") ? (state) => join(state) : join();
 }
 
-// src/kit/context/AddPath.tsx
-var import_react7 = __toESM(require_react(), 1);
-
 // node_modules/@base-ui/react/button/Button.mjs
 var React55 = __toESM(require_react(), 1);
 "use client";
@@ -21622,6 +21638,9 @@ function Button3({
     ...props
   });
 }
+
+// src/kit/context/AddPath.tsx
+var import_react7 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/input/Input.mjs
 var React75 = __toESM(require_react(), 1);
@@ -23586,6 +23605,9 @@ function LocationDialog({
   userHome,
   listDir,
   addFolder,
+  pick,
+  addPlace,
+  original,
   hint,
   onChoose,
   onClose
@@ -23595,7 +23617,10 @@ function LocationDialog({
   const [atPath, setAtPath] = import_react8.useState(() => preselect && targets.some((t) => t.path === preselect) ? preselect : null);
   const at = atPath === null ? -1 : shown.findIndex((t) => t.path === atPath);
   const [making, setMaking] = import_react8.useState(null);
+  const [makingSay, setMakingSay] = import_react8.useState("Making");
   const [refusal, setRefusal] = import_react8.useState(null);
+  const [outside, setOutside] = import_react8.useState(null);
+  const [picking, setPicking] = import_react8.useState(null);
   const listId = import_react8.useId();
   const listRef = import_react8.useRef(null);
   const searchRef = import_react8.useRef(null);
@@ -23631,6 +23656,57 @@ function LocationDialog({
       choose(shown[at]);
     }
   };
+  const browse = () => {
+    if (!pick || picking)
+      return;
+    setPicking("choose-folder");
+    pick("choose-folder").then((paths) => {
+      setPicking(null);
+      const p = paths[0];
+      if (p === undefined)
+        return searchRef.current?.focus();
+      setRefusal(null);
+      const at2 = targets.find((t) => t.path === p);
+      if (at2) {
+        setOutside(null);
+        setQuery("");
+        setAtPath(at2.path);
+      } else
+        setOutside(p);
+      searchRef.current?.focus();
+    }, (e) => {
+      setPicking(null);
+      setRefusal(e instanceof Error ? e.message : String(e));
+    });
+  };
+  const addOriginal = () => {
+    if (!pick || !original || picking)
+      return;
+    setPicking("choose-file");
+    pick("choose-file").then((paths) => {
+      setPicking(null);
+      if (paths.length === 0)
+        return;
+      original.add(paths);
+      onClose();
+    }, (e) => {
+      setPicking(null);
+      setRefusal(e instanceof Error ? e.message : String(e));
+    });
+  };
+  const bringIn = (path) => {
+    if (!addPlace)
+      return;
+    setOutside(null);
+    setRefusal(null);
+    setMakingSay("Adding");
+    const names = [path];
+    setMaking(names);
+    addPlace(path).then(() => {}, (e) => {
+      setMaking((cur) => cur === names ? null : cur);
+      setRefusal(e instanceof Error ? e.message : String(e));
+    });
+  };
   const make = (typed) => {
     if (!addFolder)
       return;
@@ -23638,6 +23714,7 @@ function LocationDialog({
     const names = [full];
     setRefusal(null);
     setQuery("");
+    setMakingSay("Making");
     setMaking(names);
     addFolder(typed).then((r2) => {
       const said = r2?.path;
@@ -23667,6 +23744,17 @@ function LocationDialog({
               className: "truncate text-sm font-semibold text-ink",
               children: title
             }),
+            pick && original && /* @__PURE__ */ jsx_runtime4.jsxs(Button3, {
+              variant: "outline",
+              size: "sm",
+              className: "justify-start",
+              disabled: picking !== null,
+              onClick: addOriginal,
+              children: [
+                /* @__PURE__ */ jsx_runtime4.jsx(File, {}),
+                picking === "choose-file" ? "Choosing…" : original.files > 1 ? "Add the original files…" : "Add the original file…"
+              ]
+            }),
             /* @__PURE__ */ jsx_runtime4.jsx("input", {
               value: query,
               onChange: (e) => search(e.target.value),
@@ -23681,6 +23769,35 @@ function LocationDialog({
               "aria-activedescendant": shown[at] ? `${listId}-${at}` : undefined,
               spellCheck: false,
               className: "h-8 w-full min-w-0 rounded-md border border-edge bg-bg px-2 text-sm text-ink outline-none placeholder:text-ink-faint focus-visible:ring-2 focus-visible:ring-ring/60"
+            }),
+            pick && /* @__PURE__ */ jsx_runtime4.jsxs(Button3, {
+              variant: "ghost",
+              size: "sm",
+              className: "justify-start",
+              disabled: picking !== null,
+              onClick: browse,
+              children: [
+                /* @__PURE__ */ jsx_runtime4.jsx(FolderOpen, {}),
+                picking === "choose-folder" ? "Choosing a folder…" : "Choose a folder…"
+              ]
+            }),
+            outside && /* @__PURE__ */ jsx_runtime4.jsxs("div", {
+              className: "flex flex-col gap-1 px-1 text-xs text-ink-faint",
+              children: [
+                /* @__PURE__ */ jsx_runtime4.jsxs("p", {
+                  children: [
+                    tildify(outside, userHome),
+                    " is not in a set yet."
+                  ]
+                }),
+                addPlace && /* @__PURE__ */ jsx_runtime4.jsx(Button3, {
+                  variant: "outline",
+                  size: "sm",
+                  className: "self-start",
+                  onClick: () => bringIn(outside),
+                  children: "Add it as a set"
+                })
+              ]
             }),
             shown.length === 0 ? /* @__PURE__ */ jsx_runtime4.jsx("p", {
               className: "px-1 py-2 text-xs text-ink-faint",
@@ -23731,7 +23848,8 @@ function LocationDialog({
               role: "status",
               className: "px-1 py-2 text-xs text-ink-faint",
               children: [
-                "Making ",
+                makingSay,
+                " ",
                 making[0],
                 "…"
               ]
@@ -23755,6 +23873,8 @@ function useAskLocation({
   userHome,
   listDir,
   addFolder,
+  pick,
+  addPlace,
   hint
 }) {
   const [asking, setAsking] = import_react8.useState(null);
@@ -23782,6 +23902,9 @@ function useAskLocation({
     userHome,
     listDir,
     addFolder,
+    pick,
+    addPlace,
+    original: asking.ask.original,
     hint,
     onChoose: (dir) => {
       setLast(dir);
@@ -75895,6 +76018,7 @@ function ContextSidebar({
   trashPreview,
   onTrash,
   importImage,
+  fileAt,
   thumbFor,
   onAskDescribe,
   selected,
@@ -76008,25 +76132,69 @@ function ContextSidebar({
       return r2.kept && r2.note ? `${f.name} was ${r2.note}.` : null;
     return `${f.name} was not brought in: ${r2.error}`;
   }, [importImage, confirm]);
+  const addWhereItLives = import_react42.useCallback((path2) => {
+    if (rowsShown(entriesRef.current, [path2]).length > 0)
+      onSelect?.([path2]);
+    else
+      onAddPath(path2);
+  }, [onAddPath, onSelect]);
+  const beforeCopy = import_react42.useCallback(async (f, into, image) => {
+    if (!fileAt)
+      return "copy";
+    const there = joinPath(into, f.name);
+    let at2;
+    try {
+      at2 = await fileAt(into, f);
+    } catch {
+      return "copy";
+    }
+    if (!at2.exists)
+      return "copy";
+    const place = tildify(into, userHome);
+    if (at2.same) {
+      const use2 = await confirm({
+        title: `${f.name} is already in ${place}`,
+        message: `The file there is this same file. Add that one instead of copying it again?`,
+        confirmLabel: "Add the one there",
+        cancelLabel: "Don't copy"
+      });
+      if (use2)
+        addWhereItLives(there);
+      return "skip";
+    }
+    if (image)
+      return "copy";
+    const copy = await confirm({
+      title: `A different ${f.name} is in ${place}`,
+      message: `A file of that name is already there, and it is not this one. Copy this one in under a new name?`,
+      confirmLabel: "Copy under a new name",
+      cancelLabel: "Don't copy"
+    });
+    return copy ? "copy" : "skip";
+  }, [fileAt, userHome, confirm, addWhereItLives]);
   const importDropped = import_react42.useCallback(({ files, folders }, into) => {
     const { docs, images, svg, skipped } = splitDropped(files);
-    for (const i2 of docs) {
-      const f = files[i2];
-      f.text().then((text4) => onStructure({ op: "import", name: f.name, text: text4, ...into ? { dir: into } : {} }), () => setLocalNotice(`Could not read ${f.name}.`));
-    }
     setLocalNotice(dropNotice(skipped, folders, svg));
-    if (images.length > 0)
-      (async () => {
-        const refused = [];
-        for (const i2 of images) {
-          const why2 = await importOneImage(files[i2], into);
-          if (why2)
-            refused.push(why2);
-        }
-        if (refused.length)
-          setLocalNotice(refused.join(" "));
-      })();
-  }, [onStructure, importOneImage]);
+    (async () => {
+      for (const i2 of docs) {
+        const f = files[i2];
+        if (into && await beforeCopy(f, into, false) === "skip")
+          continue;
+        f.text().then((text4) => onStructure({ op: "import", name: f.name, text: text4, ...into ? { dir: into } : {} }), () => setLocalNotice(`Could not read ${f.name}.`));
+      }
+      const refused = [];
+      for (const i2 of images) {
+        const f = files[i2];
+        if (into && await beforeCopy(f, into, true) === "skip")
+          continue;
+        const why2 = await importOneImage(f, into);
+        if (why2)
+          refused.push(why2);
+      }
+      if (refused.length)
+        setLocalNotice(refused.join(" "));
+    })();
+  }, [onStructure, importOneImage, beforeCopy]);
   const importFiles = import_react42.useCallback((dt, into) => importDropped(droppedFiles(dt), into), [importDropped]);
   const asks = !workspace && askLocation ? askLocation : undefined;
   const askAndCreate = import_react42.useCallback(async (what, extension2, label) => {
@@ -76053,11 +76221,12 @@ function ContextSidebar({
       return importDropped(dropped);
     const one2 = dropped.files[docs[0] ?? images[0]];
     const title = n === 1 ? `Where should ${one2.name} be copied?` : `Where should these ${n} files be copied?`;
-    asks({ what: "files", title }).then((dir) => {
+    const original = { files: n, add: (paths) => paths.forEach(addWhereItLives) };
+    asks({ what: "files", title, original }).then((dir) => {
       if (dir)
         importDropped(dropped, dir);
     });
-  }, [asks, importFiles, importDropped]);
+  }, [asks, importFiles, importDropped, addWhereItLives]);
   const askDelete = import_react42.useCallback(async (path2) => {
     if (!trashPreview || !onTrash)
       return;
@@ -80097,6 +80266,7 @@ function ShellBody({
     },
     onTrash: (path2) => send({ op: "trash", path: path2 }),
     importImage: daemon.importImage,
+    fileAt: (dir, file) => fileAlreadyAt(daemon.request, dir, file),
     thumbFor: (path2) => daemon.imageUrl(path2, { thumb: 256 }),
     onAskDescribe: askDescribe,
     selected: treeSelected,
@@ -82865,6 +83035,8 @@ function Frame({ daemon }) {
     userHome,
     listDir: daemon.listDir,
     addFolder: (path2) => daemon.request({ op: "folder.add", path: path2 }),
+    pick: state?.picker ? (want) => pickPaths(daemon.request, want) : undefined,
+    addPlace: (path2) => daemon.request({ op: "context.add", path: path2 }),
     hint: MAKE_ROOM
   });
   const docMeta = docMetaOf(state);
