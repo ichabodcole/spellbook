@@ -108,7 +108,8 @@ export function ChatSidebar(props: ChatSidebarProps) {
       >
         {messages.length === 0 ? (
           <p className="px-1 py-6 text-center text-xs text-ink-faint">
-            Nothing said yet. Ask the agent something below, or wait for it to speak.
+            Nothing said yet. Ask the agent something below, or wait for it to speak. Text you
+            select goes with your message.
           </p>
         ) : (
           messages.map((m) => (

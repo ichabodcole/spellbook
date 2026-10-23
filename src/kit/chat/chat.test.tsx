@@ -313,6 +313,8 @@ describe("ChatSidebar", () => {
       />,
     );
     expect(q('[role="log"]')?.textContent).toContain("Nothing said yet");
+    // The one thing a newcomer would not guess: a selection rides along.
+    expect(q('[role="log"]')?.textContent).toContain("Text you select goes with your message.");
     await typeInto(q("textarea") as HTMLTextAreaElement, "hi");
     await click(button("Send"));
     expect(sent).toEqual([["hi", false]]);

@@ -1641,7 +1641,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
       flags: [...SESSION, "format", "quality", "max-side"],
       positionals: [],
       describe:
-        "the app's image import settings, the same for every world: how an image the user drops or pastes in is written. With no flags, prints them; --format keep|webp, --quality 1-100 (WebP, and a JPEG made smaller), --max-side <px>|none (the longest side, never enlarged) set the ones given. The user's preference: change it only when they ask; the change is said in their chat",
+        "the app's image import settings, the same for every session: how an image the user drops or pastes in is written. With no flags, prints them; --format keep|webp, --quality 1-100 (WebP, and a JPEG made smaller), --max-side <px>|none (the longest side, never enlarged) set the ones given. The user's preference: change it only when they ask; the change is said in their chat",
       run: async (_pos, flags, session) => {
         printJson(
           await postCmd(session, {

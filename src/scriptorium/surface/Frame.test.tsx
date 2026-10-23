@@ -427,7 +427,7 @@ describe("where a new file goes (no default workspace)", () => {
     const m = await open();
     const pane = document.querySelector('[data-pane="context"]')?.textContent ?? "";
     expect(pane).not.toContain("here to copy them in");
-    expect(pane).toContain("Drop documents or images, then choose a set");
+    expect(pane).toContain("Drop files, then choose where they go");
     await m.unmount();
   });
 

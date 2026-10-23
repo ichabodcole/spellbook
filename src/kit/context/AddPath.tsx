@@ -34,7 +34,7 @@ export function splitForCompletion(typed: string): { dir: string; prefix: string
 export function AddPath({
   listDir,
   onAdd,
-  placeholder = "Add a file or folder by path…",
+  placeholder = "Type a path to add…",
   verb = "adds",
   foldersOnly = false,
   initialValue = "",

@@ -267,7 +267,7 @@ describe("with nothing selected, the list asks where", () => {
     expect(text).not.toContain("here to copy them in");
     expect(text).toContain("copied into a set you choose");
     await h.setEntries([drafts]);
-    expect(document.body.textContent).toContain("Drop documents or images, then choose a set");
+    expect(document.body.textContent).toContain("Drop files, then choose where they go");
     await m.unmount();
   });
 

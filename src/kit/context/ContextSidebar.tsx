@@ -1141,7 +1141,7 @@ function ListView({
             {workspace !== null
               ? "Drop documents or images here to copy them into the workspace"
               : onAskCreate
-                ? "Drop documents or images, then choose a set"
+                ? "Drop files, then choose where they go"
                 : "Drop documents or images here to copy them in"}
           </span>
           {onAskCreate && (
