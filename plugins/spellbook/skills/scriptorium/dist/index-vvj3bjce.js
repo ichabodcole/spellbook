@@ -11301,6 +11301,7 @@ function createDaemonClient(options2 = {}) {
     endedBy: null,
     lastError: null,
     lastErrorTitle: null,
+    lastErrorSeq: 0,
     texts: new Map,
     done: null,
     diff: null
@@ -11339,6 +11340,7 @@ function createDaemonClient(options2 = {}) {
     for (const l of [...listeners])
       l();
   };
+  const refuse = (message, title) => set({ lastError: message, lastErrorTitle: title, lastErrorSeq: view.lastErrorSeq + 1 });
   const settle = (id) => {
     const p = pending.get(id);
     if (p)
@@ -11364,7 +11366,7 @@ function createDaemonClient(options2 = {}) {
   function send(op) {
     if (view.endedBy) {
       if (!AMBIENT.has(op.op))
-        set({ lastError: SESSION_ENDED, lastErrorTitle: null });
+        refuse(SESSION_ENDED, null);
       return null;
     }
     const ws = socket;
@@ -11588,10 +11590,7 @@ function createDaemonClient(options2 = {}) {
         break;
       case "error":
         if (!waiting)
-          set({
-            lastError: frame.message,
-            lastErrorTitle: null
-          });
+          refuse(frame.message, null);
         break;
       case "version.text": {
         const f = frame;
@@ -11626,7 +11625,7 @@ function createDaemonClient(options2 = {}) {
       case "link.target": {
         const said = linkRefusal(frame);
         if (said && !waiting)
-          set({ lastError: said, lastErrorTitle: LINK_REFUSED });
+          refuse(said, LINK_REFUSED);
         break;
       }
       case "structure.done": {
@@ -25822,16 +25821,24 @@ var ASKED_LABEL = {
   stalled: "asked, and still no word; may be stuck"
 };
 var UNHEARD_LABEL = "no agent is listening yet; this waits until one is";
+var ENDED_LABEL = {
+  message: "the session ended before an answer came",
+  note: "the session ended before the agent answered",
+  asked: "asked, but the session ended before an answer came"
+};
 var LABELS = {
   message: WAITING_LABEL,
   note: NOTE_WAITING_LABEL,
   asked: ASKED_LABEL
 };
-function badgeFor(waiting, agentListening) {
+function badgeFor(waiting, agentListening, ended = false) {
+  if (ended)
+    return "ended";
   return agentListening || waiting.acknowledged ? waiting.badge : "unheard";
 }
 var ASKED_UNHEARD_LABEL = "asked; no agent is listening yet";
-var labelOf = (badge, of = "message") => badge === "unheard" ? of === "asked" ? ASKED_UNHEARD_LABEL : UNHEARD_LABEL : LABELS[of][badge];
+var labelOf = (badge, of = "message") => badge === "ended" ? ENDED_LABEL[of] : badge === "unheard" ? of === "asked" ? ASKED_UNHEARD_LABEL : UNHEARD_LABEL : LABELS[of][badge];
+var quiet = (badge) => badge === "unheard" || badge === "ended";
 function WaitingBadge({
   badge,
   of = "message",
@@ -25843,11 +25850,11 @@ function WaitingBadge({
     "aria-live": "polite",
     "data-badge": badge,
     "data-waiting-of": of,
-    className: cn("flex items-center gap-1.5 text-[11px]", !flush && "mt-1", working || badge === "unheard" ? "text-ink-dim" : "text-attention", className),
+    className: cn("flex items-center gap-1.5 text-[11px]", !flush && "mt-1", working || quiet(badge) ? "text-ink-dim" : "text-attention", className),
     children: [
       /* @__PURE__ */ jsx_runtime5.jsx("span", {
         "aria-hidden": true,
-        className: cn("inline-block size-1.5 shrink-0 rounded-full", working ? "animate-pulse bg-brand" : badge === "unheard" ? "bg-ink-faint" : "bg-attention")
+        className: cn("inline-block size-1.5 shrink-0 rounded-full", working ? "animate-pulse bg-brand" : quiet(badge) ? "bg-ink-faint" : "bg-attention")
       }),
       labelOf(badge, of)
     ]
@@ -25865,7 +25872,7 @@ function WaitingDot({
     title: label ?? labelOf(badge, of),
     "data-badge": badge,
     "data-waiting-of": of,
-    className: cn("inline-block size-1.5 shrink-0 rounded-full", working ? "animate-pulse bg-brand" : badge === "unheard" ? "bg-ink-faint" : "bg-attention")
+    className: cn("inline-block size-1.5 shrink-0 rounded-full", working ? "animate-pulse bg-brand" : quiet(badge) ? "bg-ink-faint" : "bg-attention")
   });
 }
 
@@ -32729,6 +32736,45 @@ function jsonProblem(text4) {
     const offset4 = Math.min(e.at, text4.length);
     return { ...placeOf(text4, offset4), offset: offset4, problem: e.problem };
   }
+}
+
+// src/kit/lib/layoutStorage.ts
+function layoutKey(id, panelIds) {
+  return `react-resizable-panels:${[id, ...panelIds].join(":")}`;
+}
+var LAYOUT_SUM_SLACK = 0.5;
+function isStoredLayout(raw, panelIds) {
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return false;
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed))
+    return false;
+  const sizes = parsed;
+  if (Object.keys(sizes).length !== panelIds.length)
+    return false;
+  let sum = 0;
+  for (const id of panelIds) {
+    const size4 = sizes[id];
+    if (typeof size4 !== "number" || !Number.isFinite(size4) || size4 < 0 || size4 > 100)
+      return false;
+    sum += size4;
+  }
+  return Math.abs(sum - 100) <= LAYOUT_SUM_SLACK;
+}
+function guardedLayoutStorage(storage, id, panelIds) {
+  const key = layoutKey(id, panelIds);
+  return {
+    getItem: (k) => {
+      const raw = storage.getItem(k);
+      if (k !== key || raw === null)
+        return raw;
+      return isStoredLayout(raw, panelIds) ? raw : null;
+    },
+    setItem: (k, v) => storage.setItem(k, v)
+  };
 }
 
 // src/kit/lib/storage.ts
@@ -59733,8 +59779,8 @@ var QUIET_GUTTER_CLASS = "cm-quiet";
 function gutterFor(on) {
   return on ? numberedLines() : [];
 }
-function quietFor(quiet2) {
-  return quiet2 ? EditorView.editorAttributes.of({ class: QUIET_GUTTER_CLASS }) : [];
+function quietFor(quiet3) {
+  return quiet3 ? EditorView.editorAttributes.of({ class: QUIET_GUTTER_CLASS }) : [];
 }
 function dropPoint(v, event) {
   try {
@@ -59779,7 +59825,7 @@ function DocumentView({
   replay,
   onReplayed,
   lineNumbers: lineNumbers2 = false,
-  quiet: quiet2 = false
+  quiet: quiet3 = false
 }) {
   const host = import_react20.useRef(null);
   const view = import_react20.useRef(null);
@@ -59822,8 +59868,8 @@ function DocumentView({
   const additions = import_react20.useRef({ extensions, tokens });
   additions.current = { extensions, tokens };
   const gutter2 = import_react20.useRef({ numbers: new Compartment, quiet: new Compartment });
-  const gutterNow = import_react20.useRef({ lineNumbers: lineNumbers2, quiet: quiet2 });
-  gutterNow.current = { lineNumbers: lineNumbers2, quiet: quiet2 };
+  const gutterNow = import_react20.useRef({ lineNumbers: lineNumbers2, quiet: quiet3 });
+  gutterNow.current = { lineNumbers: lineNumbers2, quiet: quiet3 };
   const trackers = import_react20.useRef(new Set);
   const follow = (from, to, fromAssoc, toAssoc) => {
     const t2 = { from, to, fromAssoc, toAssoc, alive: true };
@@ -60093,8 +60139,8 @@ function DocumentView({
     view.current?.dispatch({ effects: gutter2.current.numbers.reconfigure(gutterFor(lineNumbers2)) });
   }, [lineNumbers2]);
   import_react20.useEffect(() => {
-    view.current?.dispatch({ effects: gutter2.current.quiet.reconfigure(quietFor(quiet2)) });
-  }, [quiet2]);
+    view.current?.dispatch({ effects: gutter2.current.quiet.reconfigure(quietFor(quiet3)) });
+  }, [quiet3]);
   import_react20.useEffect(() => {
     const v = view.current;
     if (!v || !place)
@@ -60753,8 +60799,8 @@ function useCoalescedText(text4, key, {
     arrived.current = { text: text4, at: t2 };
   const costly = last2.current.cost >= longMs;
   const pause = costly ? last2.current.cost : 0;
-  const quiet2 = costly ? Math.max(quietMs, pause / 2) : 0;
-  const waited = t2 - last2.current.at >= pause || t2 - arrived.current.at >= quiet2;
+  const quiet3 = costly ? Math.max(quietMs, pause / 2) : 0;
+  const waited = t2 - last2.current.at >= pause || t2 - arrived.current.at >= quiet3;
   let h = held.current;
   if (h === null || h.key !== key || h.text !== text4 && waited) {
     if (h === null || h.text !== text4 || h.key !== key)
@@ -60775,7 +60821,7 @@ function useCoalescedText(text4, key, {
     if (!behind)
       return;
     const at2 = now2();
-    const wait = Math.min(pause - (at2 - last2.current.at), quiet2 - (at2 - arrived.current.at));
+    const wait = Math.min(pause - (at2 - last2.current.at), quiet3 - (at2 - arrived.current.at));
     const timer = setTimeout(wake, Math.max(0, wait));
     return () => clearTimeout(timer);
   });
@@ -70308,10 +70354,11 @@ function DocumentPane({
     kept.setItem(lineNumbersKey, storedLineNumbers(next));
     setNumbered(next);
   };
+  const splitStorage = import_react29.useMemo(() => guardedLayoutStorage(kept, SPLIT_LAYOUT_ID, SPLIT_PANEL_IDS), [kept]);
   const splitLayout = an({
     id: SPLIT_LAYOUT_ID,
     panelIds: SPLIT_PANEL_IDS,
-    storage: kept
+    storage: splitStorage
   });
   const keepSplit = splitLayout.onLayoutChanged;
   const onSplitLayout = import_react29.useCallback((layout, meta2) => {
@@ -71518,7 +71565,7 @@ function DocumentPane({
         existing: (noteAt?.noteIds ?? []).flatMap((id) => {
           const n = doc2?.notes.find((x) => x.id === id);
           const owed = w.state.notesWaiting?.find((o) => o.doc === doc2?.slug && o.noteId === id);
-          const waiting = owed ? badgeFor(owed, w.state.agentListening !== false) : undefined;
+          const waiting = owed ? badgeFor(owed, w.state.agentListening !== false, daemon.connection === "ended") : undefined;
           return n ? [{ id, label: n.body, ...waiting ? { waiting } : {} }] : [];
         }),
         onClose: () => setNoteAt(null),
@@ -71995,6 +72042,7 @@ function ChatSidebar(props) {
     messages,
     waiting,
     agentListening = true,
+    sessionEnded = false,
     docName,
     pathName,
     aboutPart,
@@ -72027,7 +72075,7 @@ function ChatSidebar(props) {
           children: "Nothing said yet. Ask the agent something below, or wait for it to speak."
         }) : messages.map((m) => /* @__PURE__ */ jsx_runtime35.jsx(ChatMessageView, {
           message: m,
-          badge: waiting?.messageId === m.id ? badgeFor(waiting, agentListening) : null,
+          badge: waiting?.messageId === m.id ? badgeFor(waiting, agentListening, sessionEnded) : null,
           docName,
           pathName,
           aboutPart,
@@ -72081,6 +72129,7 @@ function FloatingComposer({
   docs = [],
   openDoc = null,
   agentListening = true,
+  sessionEnded = false,
   asked,
   onAskNote,
   onOpen,
@@ -72090,7 +72139,7 @@ function FloatingComposer({
   const line = waiting ? null : latestAgentLine(messages);
   const owed = floatNote(notesWaiting, docs, asked);
   const owedAsked = owed !== null && asked?.has(owed.waiting.noteId) === true;
-  const owedBadge = owed ? badgeFor(owed.waiting, agentListening) : null;
+  const owedBadge = owed ? badgeFor(owed.waiting, agentListening, sessionEnded) : null;
   return /* @__PURE__ */ jsx_runtime36.jsxs("div", {
     "data-slot": "floating-composer",
     className: "mx-auto flex w-full max-w-2xl flex-col gap-1",
@@ -72149,7 +72198,7 @@ function FloatingComposer({
             className: "min-w-0 flex-1",
             children: waiting ? /* @__PURE__ */ jsx_runtime36.jsx(WaitingBadge, {
               flush: true,
-              badge: badgeFor(waiting, agentListening)
+              badge: badgeFor(waiting, agentListening, sessionEnded)
             }) : line ? /* @__PURE__ */ jsx_runtime36.jsxs("p", {
               className: "truncate",
               title: line,
@@ -72271,6 +72320,7 @@ function Note({
   focused,
   waiting,
   agentListening,
+  sessionEnded,
   asked,
   onAsk,
   onGoTo,
@@ -72279,7 +72329,7 @@ function Note({
   onRemove
 }) {
   const uncertain = UNCERTAIN[note.how];
-  const shownBadge = waiting ? badgeFor(waiting, agentListening) : null;
+  const shownBadge = waiting ? badgeFor(waiting, agentListening, sessionEnded) : null;
   const anchored = note.from !== null;
   const [draft, setDraft] = import_react33.useState(null);
   const replaced = note.editedBy === "agent" ? note.replacedBody : undefined;
@@ -72496,6 +72546,7 @@ function NotesPanel({
   waiting = NONE_WAITING,
   others = [],
   agentListening = true,
+  sessionEnded = false,
   asked = NONE_ASKED,
   onAsk,
   onOpenDoc,
@@ -72553,7 +72604,7 @@ function NotesPanel({
               children: [
                 /* @__PURE__ */ jsx_runtime37.jsx(WaitingDot, {
                   of: "note",
-                  badge: badgeFor(o, agentListening)
+                  badge: badgeFor(o, agentListening, sessionEnded)
                 }),
                 /* @__PURE__ */ jsx_runtime37.jsxs("span", {
                   className: "min-w-0 truncate",
@@ -72576,6 +72627,7 @@ function NotesPanel({
               focused: n.id === focusedId,
               waiting: waiting.get(n.id),
               agentListening,
+              sessionEnded,
               asked: asked.has(n.id),
               onAsk,
               onGoTo,
@@ -72745,14 +72797,14 @@ function owedLabel(waiting) {
     return `${owed}; it may be stuck`;
   return `${owed}; ${stuck} may be stuck`;
 }
-function owedSummary(waiting, agentListening) {
+function owedSummary(waiting, agentListening, ended = false) {
   const badge = loudest(waiting.map((n) => n.badge));
   if (!badge)
     return null;
-  const shown2 = badgeFor({ badge, ...waiting.every((n) => n.acknowledged) ? { acknowledged: true } : {} }, agentListening);
+  const shown2 = badgeFor({ badge, ...waiting.every((n) => n.acknowledged) ? { acknowledged: true } : {} }, agentListening, ended);
   return {
     badge: shown2,
-    label: shown2 === "unheard" ? `${owedCount(waiting)}; ${UNHEARD_LABEL}` : owedLabel(waiting)
+    label: shown2 === "ended" ? `${owedCount(waiting)}; ${ENDED_LABEL.note}` : shown2 === "unheard" ? `${owedCount(waiting)}; ${UNHEARD_LABEL}` : owedLabel(waiting)
   };
 }
 var owedCount = (waiting) => `${waiting.length} ${waiting.length === 1 ? "note" : "notes"} owed an answer`;
@@ -78447,9 +78499,9 @@ function unseenFromAgent(chat, seen) {
   const from = seen === null ? 0 : chat.findIndex((m) => m.id === seen) + 1;
   return chat.slice(from).some((m) => m.from === "agent");
 }
-function waitingOnAgent(waiting, notes, agentListening) {
-  const message = waiting ? badgeFor(waiting, agentListening) : null;
-  const owed = owedSummary(notes, agentListening);
+function waitingOnAgent(waiting, notes, agentListening, ended = false) {
+  const message = waiting ? badgeFor(waiting, agentListening, ended) : null;
+  const owed = owedSummary(notes, agentListening, ended);
   const badges = [message, owed?.badge].filter((b) => b != null);
   if (badges.length === 0)
     return null;
@@ -78457,7 +78509,7 @@ function waitingOnAgent(waiting, notes, agentListening) {
   const label = [message && `your message: ${labelOf(message)}`, owed?.label].filter(Boolean).join("; ");
   return { badge, label };
 }
-var LOUDNESS = ["stalled", "unheard", "working"];
+var LOUDNESS = ["stalled", "unheard", "working", "ended"];
 
 // src/kit/shell/SearchBox.tsx
 var import_react49 = __toESM(require_react(), 1);
@@ -79336,7 +79388,7 @@ function ColumnButton({
   });
 }
 function Rail({
-  quiet: quiet2,
+  quiet: quiet3,
   below,
   children
 }) {
@@ -79345,7 +79397,7 @@ function Rail({
     className: "flex min-h-0 flex-1 flex-col",
     children: [
       /* @__PURE__ */ jsx_runtime52.jsx("div", {
-        className: cn("flex h-9 shrink-0 items-center justify-center border-b", quiet2 ? `${QUIET_GROUP} border-transparent` : "border-edge"),
+        className: cn("flex h-9 shrink-0 items-center justify-center border-b", quiet3 ? `${QUIET_GROUP} border-transparent` : "border-edge"),
         children
       }),
       below && /* @__PURE__ */ jsx_runtime52.jsx("div", {
@@ -79463,7 +79515,8 @@ function ShellBody({
     }
   }, [themeKept]);
   const storage = import_react52.useMemo(() => storageProp ?? localShellStorage(storageKey), [storageProp, storageKey]);
-  const layout = an({ id: "panes", panelIds: [...PANES], storage });
+  const layoutStorage = import_react52.useMemo(() => guardedLayoutStorage(storage, "panes", PANES), [storage]);
+  const layout = an({ id: "panes", panelIds: [...PANES], storage: layoutStorage });
   const [collapsed, setCollapsed] = import_react52.useState(() => collapsedSides(layout.defaultLayout));
   const collapsedRef = import_react52.useRef(collapsed);
   collapsedRef.current = collapsed;
@@ -79565,8 +79618,8 @@ function ShellBody({
     expand: (side) => void expand(side)
   }), [collapsed.context, collapsed.chat, collapse, expand]);
   const [quietWanted, setQuiet] = import_react52.useState(false);
-  const quiet2 = quietWanted && !state.openImage;
-  const fade = quiet2 ? QUIET_FADE : undefined;
+  const quiet3 = quietWanted && !state.openImage;
+  const fade = quiet3 ? QUIET_FADE : undefined;
   const newestMessage = lastMessageId(state.chat);
   const [seenMessage, setSeenMessage] = import_react52.useState(newestMessage);
   import_react52.useEffect(() => {
@@ -79826,7 +79879,7 @@ function ShellBody({
       clearTimeout(t2);
     };
   }, [openImagePath, request, state]);
-  const { lastError, lastErrorTitle, clearError, done } = daemon;
+  const { lastError, lastErrorTitle, lastErrorSeq, clearError, done } = daemon;
   const endedToastAt = import_react52.useRef(0);
   import_react52.useEffect(() => {
     if (lastError)
@@ -79858,7 +79911,7 @@ function ShellBody({
     } else
       toasts.announce(lastErrorTitle ?? "The workspace refused that", lastError);
     clearError();
-  }, [lastError, lastErrorTitle, clearError, toasts, noticeOwned, letOwnedToastGo]);
+  }, [lastError, lastErrorSeq, lastErrorTitle, clearError, toasts, noticeOwned, letOwnedToastGo]);
   import_react52.useEffect(() => {
     if (!lastError || !collapsed.context)
       letOwnedToastGo();
@@ -80057,8 +80110,8 @@ function ShellBody({
     ...o,
     name: docName(o.doc)
   }));
-  const notesOwed = owedSummary(notesWaiting, agentListening);
-  const composerWaiting = waitingOnAgent(state.waiting, notesWaiting, agentListening);
+  const notesOwed = owedSummary(notesWaiting, agentListening, ended);
+  const composerWaiting = waitingOnAgent(state.waiting, notesWaiting, agentListening, ended);
   const attachable = heldHere ? {
     doc: heldHere.doc,
     name: docName(heldHere.doc),
@@ -80129,6 +80182,7 @@ function ShellBody({
     messages: state.chat,
     waiting: state.waiting,
     agentListening,
+    sessionEnded: ended,
     composer: collapsed.chat ? null : /* @__PURE__ */ jsx_runtime52.jsx(ChatComposer, {
       ...composerProps
     }),
@@ -80147,6 +80201,7 @@ function ShellBody({
     waiting: noteBadges,
     others: notesElsewhere,
     agentListening,
+    sessionEnded: ended,
     asked: notesAsked,
     ...askNote ? { onAsk: (n) => openDoc && askNote(openDoc.slug, n.id) } : {},
     onOpenDoc: (doc2) => send({ op: "open.doc", doc: doc2 }),
@@ -80197,7 +80252,7 @@ function ShellBody({
         children: [
           "Chat",
           state.waiting && /* @__PURE__ */ jsx_runtime52.jsx(WaitingDot, {
-            badge: badgeFor(state.waiting, agentListening)
+            badge: badgeFor(state.waiting, agentListening, ended)
           })
         ]
       }),
@@ -80250,6 +80305,7 @@ function ShellBody({
       docs: state.docs,
       openDoc: openDoc?.slug ?? null,
       agentListening,
+      sessionEnded: ended,
       asked: notesAsked,
       ...askNote ? { onAskNote: (w) => askNote(w.doc, w.noteId) } : {},
       onOpen: () => {
@@ -80323,7 +80379,7 @@ function ShellBody({
         children: [
           /* @__PURE__ */ jsx_runtime52.jsxs("header", {
             "data-slot": "shell-top-bar",
-            className: cn("@container grid h-10 shrink-0 grid-cols-[minmax(max-content,1fr)_minmax(0,2fr)_minmax(max-content,1fr)] items-center gap-3 border-b bg-surface px-3", quiet2 ? `${QUIET_GROUP} border-transparent` : "border-edge"),
+            className: cn("@container grid h-10 shrink-0 grid-cols-[minmax(max-content,1fr)_minmax(0,2fr)_minmax(max-content,1fr)] items-center gap-3 border-b bg-surface px-3", quiet3 ? `${QUIET_GROUP} border-transparent` : "border-edge"),
             children: [
               /* @__PURE__ */ jsx_runtime52.jsxs("div", {
                 className: "flex min-w-0 items-baseline gap-2",
@@ -80427,7 +80483,7 @@ function ShellBody({
                 },
                 children: [
                   collapsed.context && /* @__PURE__ */ jsx_runtime52.jsx(Rail, {
-                    quiet: quiet2,
+                    quiet: quiet3,
                     children: /* @__PURE__ */ jsx_runtime52.jsx(ColumnButton, {
                       label: "Reopen the context column",
                       control: "context-reopen",
@@ -80486,7 +80542,7 @@ function ShellBody({
                 children: [
                   toolbar && !openImage && /* @__PURE__ */ jsx_runtime52.jsx("div", {
                     "data-slot": "shell-toolbar-row",
-                    className: cn("flex min-h-9 shrink-0 flex-wrap items-center gap-1 border-b px-2 py-0.5", quiet2 ? `${QUIET_GROUP} border-transparent` : "border-edge"),
+                    className: cn("flex min-h-9 shrink-0 flex-wrap items-center gap-1 border-b px-2 py-0.5", quiet3 ? `${QUIET_GROUP} border-transparent` : "border-edge"),
                     children: /* @__PURE__ */ jsx_runtime52.jsx("div", {
                       "data-slot": "shell-toolbar",
                       className: cn("flex shrink-0 items-center gap-1", fade),
@@ -80548,7 +80604,7 @@ function ShellBody({
                 className: "flex flex-col bg-surface",
                 children: [
                   collapsed.chat && /* @__PURE__ */ jsx_runtime52.jsx(Rail, {
-                    quiet: quiet2,
+                    quiet: quiet3,
                     below: (floatIcon || chatUnseen) && /* @__PURE__ */ jsx_runtime52.jsxs("div", {
                       className: "flex flex-col items-center",
                       children: [
@@ -80675,7 +80731,7 @@ function ShellBody({
           }),
           /* @__PURE__ */ jsx_runtime52.jsxs("footer", {
             "data-slot": "shell-status",
-            className: cn("flex h-7 shrink-0 items-center gap-3 border-t border-edge bg-surface px-3 text-xs text-ink-dim", quiet2 && QUIET_GROUP),
+            className: cn("flex h-7 shrink-0 items-center gap-3 border-t border-edge bg-surface px-3 text-xs text-ink-dim", quiet3 && QUIET_GROUP),
             children: [
               /* @__PURE__ */ jsx_runtime52.jsxs("span", {
                 className: cn("flex shrink-0 items-center gap-1.5", daemon.connection === "open" && fade),
