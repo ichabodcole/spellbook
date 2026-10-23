@@ -152,7 +152,7 @@ import {
 } from "./session";
 import { type Actor, TaskEngine, type TaskRunner } from "./tasks";
 import { systemTrash, type TrashFn } from "./trash";
-import { listDir, PathError } from "./tree";
+import { listDir, PathError, sameFileAt } from "./tree";
 
 import {
   askOutstanding,
@@ -2778,6 +2778,13 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         pickerOpen = false;
       }
     };
+    const isDirectory = (p: string) => {
+      try {
+        return statSync(p).isDirectory();
+      } catch {
+        return false;
+      }
+    };
     const openPicker = async (
       ws: import("bun").ServerWebSocket<unknown>,
       want: PickWant,
@@ -2789,21 +2796,26 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         reply(ws, { op: "error", message: "a file picker is already open" });
         return;
       }
-      const kind: PickKind = want === "context-file" ? "file" : "folder";
+      const kind: PickKind = want === "context-file" || want === "file" ? "file" : "folder";
       const prompt =
         want === "context-folder"
           ? `Choose a folder to add to ${app.name}`
           : want === "folder"
             ? "Choose a folder"
-            : `Choose documents to add to ${app.name}`;
+            : want === "file"
+              ? "Choose the file to add where it is"
+              : `Choose documents to add to ${app.name}`;
       pickerOpen = true;
       try {
         const { paths } = await (opts.pick ?? nativePick)(kind, prompt);
         touch(); // a human stood at a dialog; the session is not idle
-        if (want === "folder") {
+        if (want === "folder" || want === "file") {
           // Only the asker learns what was chosen, named as the context names
           // it (a realpath of a place it shows is that place); nothing is added.
-          const named = paths.map((p) => session.namedAsContext(p));
+          // A file asked for is never a folder, whatever the dialog let through.
+          const named = paths
+            .filter((p) => want === "folder" || !isDirectory(p))
+            .map((p) => session.namedAsContext(p));
           reply(ws, { op: "pick", want, paths: named, cancelled: named.length === 0 });
           return;
         }
@@ -3137,6 +3149,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       "context.add",
       "context.remove",
       "fs.list",
+      "fs.same",
       "read",
       "diff",
       "merge",
@@ -3909,6 +3922,13 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           }
           return;
         }
+        case "fs.same":
+          reply(ws, {
+            op: "fs.same",
+            path: msg.path,
+            ...sameFileAt(surfacePath(msg.path), msg.size, msg.sha256),
+          });
+          return;
         default: {
           // Named, with what would have been accepted, like `/cmd` does: a frame
           // the daemon does not know must not vanish without a word.

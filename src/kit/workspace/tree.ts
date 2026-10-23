@@ -12,6 +12,7 @@ import {
   lstatSync,
   openSync,
   readdirSync,
+  readFileSync,
   readSync,
   realpathSync,
   statSync,
@@ -757,4 +758,27 @@ export function listDir(dir: string): FsListEntry[] {
     if (isDir || isDocName(name) || isImageName(name)) out.push({ name, path: abs, dir: isDir });
   }
   return out.sort((a, b) => (a.dir === b.dir ? a.name.localeCompare(b.name) : a.dir ? -1 : 1));
+}
+
+/**
+ * Whether a file of these bytes is already at `path` (`fs.same`): what a copy
+ * into a folder asks before writing, so a file already there is offered
+ * instead of a second copy, and a different one of that name is said. `exists`
+ * is anything at all there; `same` only a file of the same size and SHA-256.
+ */
+export function sameFileAt(
+  path: string,
+  size: number,
+  sha256: string,
+): { exists: boolean; same: boolean } {
+  let st: ReturnType<typeof statSync>;
+  try {
+    st = statSync(path);
+  } catch {
+    return { exists: false, same: false };
+  }
+  if (!st.isFile() || st.size !== size) return { exists: true, same: false };
+  const hasher = new Bun.CryptoHasher("sha256");
+  hasher.update(readFileSync(path));
+  return { exists: true, same: hasher.digest("hex") === sha256.toLowerCase() };
 }

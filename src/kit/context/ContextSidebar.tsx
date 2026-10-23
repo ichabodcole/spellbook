@@ -56,7 +56,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "..
 import type { ContextEntry, StructureOp, TrashPreview } from "../workspace/protocol";
 import { AddPath } from "./AddPath.tsx";
 import type { AskLocation } from "./AskLocation.tsx";
-import type { Daemon, Listing } from "./daemonClient.ts";
+import type { AlreadyThere, Daemon, Listing } from "./daemonClient.ts";
 import {
   AddRefItem,
   BundleIcon,
@@ -91,6 +91,7 @@ import {
   moveTargets,
   nodeLabel,
   rowHolds,
+  rowsShown,
   shortPath,
   singleFile,
   splitDropped,
@@ -189,6 +190,14 @@ export type ContextSidebarProps = {
    * file the workspace does not show.
    */
   importImage?: Daemon["importImage"];
+  /**
+   * What is already at the path a dropped file would be copied to (the
+   * daemon's `fs.same`, `fileAlreadyAt` in the daemon client). Given, a copy
+   * into a chosen set or folder asks first when the name is taken: the same
+   * file is offered instead of a second copy, and a different one is said
+   * before anything is written. Absent, a copy is written as before.
+   */
+  fileAt?: (path: string, file: File) => Promise<AlreadyThere>;
   /** Where an image's small thumbnail is served, for its row's hover preview. Absent, no preview. */
   thumbFor?: (path: string) => string;
   /**
@@ -292,6 +301,7 @@ export function ContextSidebar({
   trashPreview,
   onTrash,
   importImage,
+  fileAt,
   thumbFor,
   onAskDescribe,
   selected,
@@ -455,30 +465,86 @@ export function ContextSidebar({
     [importImage, confirm],
   );
 
+  /**
+   * A file where it lives, into the context: one a set already shows is
+   * selected rather than listed a second time; any other is listed on its own.
+   */
+  const addWhereItLives = useCallback(
+    (path: string) => {
+      if (rowsShown(entriesRef.current, [path]).length > 0) onSelect?.([path]);
+      else onAddPath(path);
+    },
+    [onAddPath, onSelect],
+  );
+
+  /**
+   * Before a dropped file is copied into `into`: is its name taken there? The
+   * same bytes are offered instead of a second copy (`added`: nothing is
+   * written); a different document of that name is said first, and copied
+   * under a free name only if the human says so. A different image goes on to
+   * the import's own ask (replace, or keep both). With no `fileAt`, or when it
+   * cannot say, the copy goes ahead as before.
+   */
+  const beforeCopy = useCallback(
+    async (f: File, into: string, image: boolean): Promise<"copy" | "skip"> => {
+      if (!fileAt) return "copy";
+      const there = joinPath(into, f.name);
+      let at: AlreadyThere;
+      try {
+        at = await fileAt(there, f);
+      } catch {
+        return "copy";
+      }
+      if (!at.exists) return "copy";
+      const place = tildify(into, userHome);
+      if (at.same) {
+        const use = await confirm({
+          title: `${f.name} is already in ${place}`,
+          message: `The file there is this same file. Add that one instead of copying it again?`,
+          confirmLabel: "Add the one there",
+          cancelLabel: "Don't copy",
+        });
+        if (use) addWhereItLives(there);
+        return "skip";
+      }
+      if (image) return "copy";
+      const copy = await confirm({
+        title: `A different ${f.name} is in ${place}`,
+        message: `A file of that name is already there, and it is not this one. Copy this one in under a new name?`,
+        confirmLabel: "Copy under a new name",
+        cancelLabel: "Don't copy",
+      });
+      return copy ? "copy" : "skip";
+    },
+    [fileAt, userHome, confirm, addWhereItLives],
+  );
+
   const importDropped = useCallback(
     ({ files, folders }: { files: File[]; folders: string[] }, into?: string) => {
       const { docs, images, svg, skipped } = splitDropped(files);
-      for (const i of docs) {
-        const f = files[i] as File;
-        f.text().then(
-          (text) =>
-            onStructure({ op: "import", name: f.name, text, ...(into ? { dir: into } : {}) }),
-          () => setLocalNotice(`Could not read ${f.name}.`),
-        );
-      }
       setLocalNotice(dropNotice(skipped, folders, svg));
       // One at a time, so two taken names ask one after the other.
-      if (images.length > 0)
-        void (async () => {
-          const refused: string[] = [];
-          for (const i of images) {
-            const why = await importOneImage(files[i] as File, into);
-            if (why) refused.push(why);
-          }
-          if (refused.length) setLocalNotice(refused.join(" "));
-        })();
+      void (async () => {
+        for (const i of docs) {
+          const f = files[i] as File;
+          if (into && (await beforeCopy(f, into, false)) === "skip") continue;
+          f.text().then(
+            (text) =>
+              onStructure({ op: "import", name: f.name, text, ...(into ? { dir: into } : {}) }),
+            () => setLocalNotice(`Could not read ${f.name}.`),
+          );
+        }
+        const refused: string[] = [];
+        for (const i of images) {
+          const f = files[i] as File;
+          if (into && (await beforeCopy(f, into, true)) === "skip") continue;
+          const why = await importOneImage(f, into);
+          if (why) refused.push(why);
+        }
+        if (refused.length) setLocalNotice(refused.join(" "));
+      })();
     },
-    [onStructure, importOneImage],
+    [onStructure, importOneImage, beforeCopy],
   );
   const importFiles = useCallback(
     (dt: DataTransfer, into?: string) => importDropped(droppedFiles(dt), into),
@@ -514,11 +580,14 @@ export function ContextSidebar({
         n === 1
           ? `Where should ${one.name} be copied?`
           : `Where should these ${n} files be copied?`;
-      void asks({ what: "files", title }).then((dir) => {
+      // The other way in: the original file, where it lives (the dialog
+      // offers it where the OS has a picker).
+      const original = { files: n, add: (paths: string[]) => paths.forEach(addWhereItLives) };
+      void asks({ what: "files", title, original }).then((dir) => {
         if (dir) importDropped(dropped, dir);
       });
     },
-    [asks, importFiles, importDropped],
+    [asks, importFiles, importDropped, addWhereItLives],
   );
   // Delete: ask the daemon what would go, name it in a dialog, and only then
   // move it to the Trash. A refusal (a whole set, a path that is gone) is the

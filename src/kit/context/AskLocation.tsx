@@ -13,9 +13,11 @@
 // path (the daemon's `folder.add`), highlighted once the context shows it.
 // With `pick` it also offers the OS's own folder dialog (the daemon opens it):
 // the folder chosen is highlighted when the context shows it, and one outside
-// every set is named with the act that brings it in (`addPlace`).
+// every set is named with the act that brings it in (`addPlace`). A drop's ask
+// may carry `original`: the dialog then also offers the OS's file dialog, and
+// the file chosen there is added where it lives instead of copied.
 import { Dialog } from "@base-ui/react/dialog";
-import { FolderIcon, FolderOpenIcon, FolderTreeIcon } from "lucide-react";
+import { FileIcon, FolderIcon, FolderOpenIcon, FolderTreeIcon } from "lucide-react";
 import {
   type KeyboardEvent,
   type ReactNode,
@@ -40,6 +42,14 @@ export type LocationAsk = {
   what: "document" | "folder" | "bundle" | "files";
   /** The dialog's title, in the sidebar's words ("Where should the new document go?"). */
   title: string;
+  /**
+   * For dropped files: the other way in, adding the original file where it
+   * lives rather than copying it. A drop never names its file's path, so the
+   * human picks it in the OS's file dialog; `add` takes the files chosen, and
+   * the ask is then answered with null (nothing to copy). Offered only where
+   * the dialog has a picker.
+   */
+  original?: { files: number; add: (paths: string[]) => void };
 };
 
 /**
@@ -90,6 +100,7 @@ export function LocationDialog({
   addFolder,
   pick,
   addPlace,
+  original,
   hint,
   onChoose,
   onClose,
@@ -113,6 +124,8 @@ export function LocationDialog({
   pick?: PickPaths;
   /** Add a folder outside every set to the context, as a set. Absent, not offered. */
   addPlace?: (path: string) => void;
+  /** The ask's `original`: offered as "Add the original file…" when there is a picker. */
+  original?: LocationAsk["original"];
   /** The app's own words under the list: how else to make room. */
   hint?: ReactNode;
   onChoose: (path: string) => void;
@@ -133,7 +146,8 @@ export function LocationDialog({
   const [refusal, setRefusal] = useState<string | null>(null);
   // A folder the picker chose that no set shows: named, with the act that adds it.
   const [outside, setOutside] = useState<string | null>(null);
-  const [picking, setPicking] = useState(false);
+  // Which OS dialog is open, if one is: a second is not asked for meanwhile.
+  const [picking, setPicking] = useState<PickAnswerWant | null>(null);
   const listId = useId();
   const listRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -178,10 +192,10 @@ export function LocationDialog({
   // context shows is highlighted, so Enter (or a click) puts it there.
   const browse = () => {
     if (!pick || picking) return;
-    setPicking(true);
+    setPicking("folder");
     pick("folder").then(
       (paths) => {
-        setPicking(false);
+        setPicking(null);
         const p = paths[0];
         if (p === undefined) return;
         setRefusal(null);
@@ -194,7 +208,25 @@ export function LocationDialog({
         searchRef.current?.focus();
       },
       (e: unknown) => {
-        setPicking(false);
+        setPicking(null);
+        setRefusal(e instanceof Error ? e.message : String(e));
+      },
+    );
+  };
+  // The OS's file dialog, for a drop: the files chosen are added where they
+  // live and the ask ends; a dismissed dialog leaves the ask as it was.
+  const addOriginal = () => {
+    if (!pick || !original || picking) return;
+    setPicking("file");
+    pick("file").then(
+      (paths) => {
+        setPicking(null);
+        if (paths.length === 0) return;
+        original.add(paths);
+        onClose();
+      },
+      (e: unknown) => {
+        setPicking(null);
         setRefusal(e instanceof Error ? e.message : String(e));
       },
     );
@@ -242,6 +274,22 @@ export function LocationDialog({
           className="fixed top-1/2 left-1/2 z-50 flex max-h-[70vh] w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 flex-col gap-2 rounded-xl border border-edge bg-surface p-3 text-ink shadow-lg duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
         >
           <Dialog.Title className="truncate text-sm font-semibold text-ink">{title}</Dialog.Title>
+          {pick && original && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="justify-start"
+              disabled={picking !== null}
+              onClick={addOriginal}
+            >
+              <FileIcon />
+              {picking === "file"
+                ? "Choosing…"
+                : original.files > 1
+                  ? "Add the original files…"
+                  : "Add the original file…"}
+            </Button>
+          )}
           <input
             value={query}
             onChange={(e) => search(e.target.value)}
@@ -263,11 +311,11 @@ export function LocationDialog({
               variant="ghost"
               size="sm"
               className="justify-start"
-              disabled={picking}
+              disabled={picking !== null}
               onClick={browse}
             >
               <FolderOpenIcon />
-              {picking ? "Choosing a folder…" : "Choose a folder…"}
+              {picking === "folder" ? "Choosing a folder…" : "Choose a folder…"}
             </Button>
           )}
           {outside && (
@@ -418,6 +466,7 @@ export function useAskLocation({
       addFolder={addFolder}
       pick={pick}
       addPlace={addPlace}
+      original={asking.ask.original}
       hint={hint}
       onChoose={(dir) => {
         setLast(dir);

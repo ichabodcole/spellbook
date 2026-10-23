@@ -1826,7 +1826,7 @@ export type ProfileCheck = {
 /** What a `pick` asks for: to add to the context, or only to answer with the paths chosen. */
 export type PickWant = "context-file" | "context-folder" | PickAnswerWant;
 /** A `pick` that adds nothing: the asker is answered with what was chosen. */
-export type PickAnswerWant = "folder";
+export type PickAnswerWant = "folder" | "file";
 
 /** Surface to daemon, over the WebSocket. An app adds `<app>.<name>` frames. */
 export type ClientOp =
@@ -1910,6 +1910,11 @@ export type ClientOp =
   | { op: "context.add"; path: string }
   | { op: "context.remove"; id: string }
   | { op: "fs.list"; path: string }
+  /**
+   * Is a file of these bytes (`size`, hex SHA-256) already at `path`? Answered
+   * with `fs.same`. What a copy into a folder asks before writing.
+   */
+  | { op: "fs.same"; path: string; size: number; sha256: string }
   /** Load a version's text into the surface (answered with `version.text`, origin "load"). */
   | { op: "read"; doc: string; version: number }
   | { op: "diff"; doc?: string; against: DiffSide }
@@ -1921,7 +1926,7 @@ export type ClientOp =
   | { op: "reveal.version"; doc: string; version: number }
   /**
    * Open the OS file picker. `context-file` and `context-folder` add what
-   * comes back to the context; `folder` only answers the asker with what was
+   * comes back to the context; `folder` and `file` only answer the asker with what was
    * chosen (a `pick` frame), adding nothing.
    */
   | { op: "pick"; want: PickWant }
@@ -2044,10 +2049,12 @@ export type ServerOp =
   | ({ op: "show" } & ShowTarget)
   | { op: "fs.list"; path: string; entries: FsListEntry[]; error?: string }
   /**
-   * To the asker only: the paths a `pick` for `folder` chose, each named as the
+   * To the asker only: the paths a `pick` for `folder` or `file` chose (never a folder for `file`), each named as the
    * context names it; none, and `cancelled`, when the dialog was dismissed.
    */
   | { op: "pick"; want: PickAnswerWant; paths: string[]; cancelled: boolean }
+  /** To the asker only: whether anything is at `path`, and whether it is a file of the same bytes. */
+  | { op: "fs.same"; path: string; exists: boolean; same: boolean }
   /** To the sender only: what a move to the Trash would take. */
   | ({ op: "trash.preview" } & TrashPreview)
   /** To the sender only: `path` is in the Trash. */

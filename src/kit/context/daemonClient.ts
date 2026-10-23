@@ -130,6 +130,26 @@ export async function pickPaths(
   return (frame as Extract<ServerOp, { op: "pick" }>).paths;
 }
 
+/** What is already at a path a file would be copied to (`fs.same`). */
+export type AlreadyThere = { exists: boolean; same: boolean };
+
+/**
+ * Whether a file of `file`'s bytes is already at `path`, asked of the daemon
+ * (`fs.same`) by size and SHA-256, so the bytes never cross the socket twice.
+ */
+export async function fileAlreadyAt(
+  request: Daemon["request"],
+  path: string,
+  file: Blob,
+): Promise<AlreadyThere> {
+  const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+  const sha256 = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  const frame = await request({ op: "fs.same", path, size: file.size, sha256 });
+  if (frame.op !== "fs.same") throw new Error("the workspace did not say what is there");
+  const r = frame as Extract<ServerOp, { op: "fs.same" }>;
+  return { exists: r.exists, same: r.same };
+}
+
 /** The last structure op THIS viewer sent that landed. `seq` makes a repeat a new value. */
 export type Done = {
   of: StructureOpName;

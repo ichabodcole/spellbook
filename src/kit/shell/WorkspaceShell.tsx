@@ -79,7 +79,7 @@ import { badgeFor, WaitingDot } from "../chat/WaitingBadge.tsx";
 import type { AskLocation } from "../context/AskLocation.tsx";
 import { ContextSidebar } from "../context/ContextSidebar.tsx";
 import { CentreDockContext } from "../context/centreDock.tsx";
-import { type Daemon, SESSION_ENDED } from "../context/daemonClient.ts";
+import { type Daemon, fileAlreadyAt, SESSION_ENDED } from "../context/daemonClient.ts";
 import { HistoryArrows } from "../context/HistoryArrows.tsx";
 import type { MenuActions } from "../context/menuActions.ts";
 import {
@@ -1335,6 +1335,7 @@ function ShellBody({
       }}
       onTrash={(path) => send({ op: "trash", path })}
       importImage={daemon.importImage}
+      fileAt={(path, file) => fileAlreadyAt(daemon.request, path, file)}
       thumbFor={(path) => daemon.imageUrl(path, { thumb: 256 })}
       onAskDescribe={askDescribe}
       selected={treeSelected}

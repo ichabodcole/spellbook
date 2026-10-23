@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import {
   existsSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
   rmSync,
   statSync,
@@ -1276,6 +1277,55 @@ describe("files, prefs, and the native picker", () => {
     expect(c).toMatchObject({ paths: [], cancelled: true });
     await Bun.sleep(30);
     expect(s.state.context).toHaveLength(1);
+  });
+
+  test("a pick for a file answers with files only, never a folder; adding one lists it where it lives, with no copy", async () => {
+    const outside = join(root, "Downloads");
+    mkdirSync(outside, { recursive: true });
+    const shot = join(outside, "shot.md");
+    writeFileSync(shot, "# Shot\n");
+    const { s } = await start({
+      pick: async (kind) => ({
+        // Whatever the dialog lets through, a folder is not a file.
+        paths: kind === "file" ? [outside, shot] : [],
+        cancelled: false,
+      }),
+    });
+    s.send({ op: "pick", want: "file", rid: "f1" });
+    const r = await s.waitFor(
+      (m) => m.op === "pick" && (m as { requestId?: unknown }).requestId === "f1",
+    );
+    expect(r).toMatchObject({ op: "pick", want: "file", paths: [shot], cancelled: false });
+    expect(s.state.context).toEqual([]);
+    // The surface then adds it by path: one listed file, its folder no set.
+    s.send({ op: "context.add", path: shot });
+    await waitUntil("listed", () => s.state.context.length === 1);
+    const [entry] = s.state.context;
+    expect(entry).toMatchObject({ membership: "listed", root: outside });
+    expect(entry?.nodes.map((n) => n.rel)).toEqual(["shot.md"]);
+    expect(readdirSync(outside)).toEqual(["shot.md"]);
+  });
+
+  test("fs.same says whether these bytes are already at a path", async () => {
+    const { s } = await start();
+    const at = join(root, "there.md");
+    writeFileSync(at, "# There\n");
+    const sha = (text: string) => new Bun.CryptoHasher("sha256").update(text).digest("hex");
+    const ask = async (path: string, text: string, rid: string) => {
+      s.send({ op: "fs.same", path, size: Buffer.byteLength(text), sha256: sha(text), rid });
+      return s.waitFor(
+        (m) => m.op === "fs.same" && (m as { requestId?: unknown }).requestId === rid,
+      );
+    };
+    expect(await ask(at, "# There\n", "a")).toMatchObject({ exists: true, same: true });
+    expect(await ask(at, "# Elsewhere\n", "b")).toMatchObject({ exists: true, same: false });
+    // The same size is not enough.
+    expect(await ask(at, "# Thera\n", "c")).toMatchObject({ exists: true, same: false });
+    expect(await ask(join(root, "none.md"), "x", "d")).toMatchObject({
+      exists: false,
+      same: false,
+    });
+    expect(await ask(root, "x", "e")).toMatchObject({ exists: true, same: false });
   });
 
   test("the state says whether a native picker can open: none on Windows, one on macOS", async () => {
