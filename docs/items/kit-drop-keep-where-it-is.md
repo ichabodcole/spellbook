@@ -7,13 +7,14 @@ description:
   folder as a set), which a browser drop can't name, so through the native
   picker preselected for that file.
 status: draft
-lifecycle: triage
+lifecycle: ready
 id: 01a16627-61ce-7244-baf2-627b2b9340b6
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-22 }
 tags: [kit, scriptorium]
 parent: feature/workspace-kit-follow-ups
 from: cycle/2026-10-polish
+cycle: 2026-10-polish
 ---
 
 # A dropped file can be added where it already lives
