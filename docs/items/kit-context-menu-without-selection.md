@@ -35,5 +35,11 @@ passage. Not a regression: the shipped app behaves the same.
 - [ ] The menu carries the basic edits the native menu gave: Cut, Copy and Paste
       (Cut and Copy only with a selection), and the keyboard shortcuts still
       work (Cole, 2026-10-22).
+- [ ] The native menu stays one gesture away (Cole, 2026-10-22: spell-check,
+      translate and the OS's other entries matter). A page cannot open the
+      native menu itself, so the native menu comes through two paths:
+      right-clicking again while our menu is open, and Shift+right-click (or the
+      platform's usual modifier). Our menu shows a footer line naming the
+      gesture, such as "Right-click again for the browser menu".
 - [ ] Tested, checked in a real browser in raw, rendered and split; offered on
       kit-parity.
