@@ -5,7 +5,7 @@ description:
   open --restore of a corrupt snapshot or a directory starts an empty board at
   exit 0; init --replace with every entry invalid empties the board at exit 0.
 status: draft
-lifecycle: triage
+lifecycle: backlog
 id: 01a0e711-eecd-77c1-9022-7389c7dfeeed
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-09-28 }

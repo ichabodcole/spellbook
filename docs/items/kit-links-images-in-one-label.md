@@ -7,7 +7,7 @@ description:
   both kits. Story Studio filed it as kit-links-images-in-one-label; whoever
   fixes it first posts the commit."
 status: stable
-lifecycle: triage
+lifecycle: backlog
 id: 01a13bdd-bafc-7333-ae73-072ea44abbda
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-14 }

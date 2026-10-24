@@ -6,7 +6,7 @@ description:
   quieter chrome (and the line-number gutter's fade) applies where the human
   edits.
 status: stable
-lifecycle: triage
+lifecycle: backlog
 id: 01a15029-f6b9-778f-83af-74c5e0b855f2
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-18 }

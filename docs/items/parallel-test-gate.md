@@ -5,7 +5,7 @@ description:
   Whether Spellbook's daemons can share a parallel bun test run, and the
   test-speed playbook if so.
 status: draft
-lifecycle: backlog
+lifecycle: dropped
 id: 01a13647-9270-73d4-8b90-318f67c0d67d
 kind: research
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
@@ -30,3 +30,6 @@ whether Spellbook's daemons can share a parallel run (temp discovery pointers).
 ## Related Documents
 
 - [What to take back from Story Studio](./_archive/story-studio-port-back/write-up.md)
+
+Dropped at triage, 2026-10-24: a duplicate. Its question is answered, and
+`spellbook-parallel-tests` carries the work.

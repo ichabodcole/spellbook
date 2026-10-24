@@ -2,7 +2,7 @@
 type: item
 title: A Project Roadmap / Planning Surface
 status: stable
-lifecycle: triage
+lifecycle: backlog
 id: 019fd36e-15f8-7c2d-a32a-47234eeeabb9
 kind: task
 description:

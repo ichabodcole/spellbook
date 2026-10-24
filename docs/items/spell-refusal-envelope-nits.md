@@ -7,7 +7,7 @@ description:
   carry, an ok:true nested in bounty's conflict envelope, retry comments that
   claim a board never existed, a repeated restoreDropped.
 status: stable
-lifecycle: triage
+lifecycle: backlog
 id: 01a0e711-f00a-77cf-b43b-5b2e10d34c46
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-09-28 }

@@ -6,7 +6,7 @@ description:
   <verb>, required flags are not marked in schema, a required flag with a
   default can never be missing, and no spell supplies flagHelp or examples yet.
 status: stable
-lifecycle: triage
+lifecycle: backlog
 id: 01a138c6-afb2-7406-a222-5672da0779f7
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-13 }

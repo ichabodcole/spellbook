@@ -6,7 +6,7 @@ description:
   attacker with raw disk access racing a link swap between the two can redirect
   it; out of scope for the wiki-layer cycle by Cole's call, recorded here.
 status: stable
-lifecycle: triage
+lifecycle: backlog
 id: 01a14911-a352-7688-b85d-85a392b2be5b
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-17 }

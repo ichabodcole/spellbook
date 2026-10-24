@@ -6,7 +6,7 @@ description:
   restarted/rolled verb echoes, and reap's parallel arrays have not moved to
   outcome nouns."
 status: stable
-lifecycle: triage
+lifecycle: backlog
 id: 01a0e73e-84ae-7600-95c9-3bc26f0a1c0d
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-09-28 }

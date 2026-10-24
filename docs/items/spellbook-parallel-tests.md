@@ -6,12 +6,14 @@ description:
   21 min loaded); Story Studio's bun test --parallel with a timings file took
   its gate from about 180 s to 22 s after fixing the watch tests that flaked in
   parallel. Follow its playbook here.
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: ready
 id: 01a16c35-50b1-717e-a321-c3a963386a97
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-23 }
 from: cycle/2026-10-polish
+priority: high
+cycle: 2026-10-release-6
 ---
 
 # Run the test suite in parallel, as Story Studio does

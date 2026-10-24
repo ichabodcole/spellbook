@@ -7,13 +7,14 @@ description:
   context list), so a one-off screenshot reaches the agent without becoming a
   document.
 status: stable
-lifecycle: triage
+lifecycle: backlog
 id: 01a16627-6435-72c8-b7d6-9cc5c05034b9
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-22 }
 tags: [kit, scriptorium]
 parent: feature/workspace-kit-follow-ups
 from: cycle/2026-10-polish
+priority: high
 ---
 
 # An image can be dropped into the chat for the agent

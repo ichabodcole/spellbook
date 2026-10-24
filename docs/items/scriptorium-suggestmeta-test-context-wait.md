@@ -9,12 +9,14 @@ description:
   waiting for the document in the context', ~2 s) on a busy machine: develop 5
   of 12, cycle/polish 3 of 12, interleaved (2026-10-23)."
 status: stable
-lifecycle: triage
+lifecycle: ready
 id: 01a16b64-a4fc-7280-ba2c-e3db0ff0cfcb
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-23 }
 parent: feature/workspace-kit-follow-ups
 from: cycle/2026-10-polish
+priority: high
+cycle: 2026-10-release-6
 ---
 
 # Frame.suggestMeta's 'Add a block' cell times out waiting for the document in the context

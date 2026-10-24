@@ -7,12 +7,14 @@ description:
   or dropped by a saturated fseventsd) is overwritten silently, with no 'Changed
   on disk' banner.
 status: stable
-lifecycle: triage
+lifecycle: ready
 id: 01a16b3f-7b43-75d4-a4b5-db63b7063d23
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-23 }
 parent: feature/workspace-kit-follow-ups
 from: items/kit-watch-tests-unproven-watch.md
+priority: urgent
+cycle: 2026-10-release-6
 ---
 
 # Save can overwrite an outside change the file watch never reported

@@ -6,7 +6,7 @@ description:
   not --declaration, so a batch that disagrees with the CLI's own schema passes;
   bounty's was two flags stale for a cycle.
 status: draft
-lifecycle: triage
+lifecycle: backlog
 id: 01a0e71f-2ec2-7145-b25d-cdf9369b4759
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-09-28 }

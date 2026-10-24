@@ -12,6 +12,7 @@ kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-17 }
 tags: [kit, scriptorium, sessions]
 parent: feature/workspace-kit-follow-ups
+priority: high
 ---
 
 # Scriptorium: see old sessions and delete the ones you're done with

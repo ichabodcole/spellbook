@@ -5,10 +5,12 @@ status: stable
 description:
   Review bounty and grapevine skills for integration completeness and
   correctness
-lifecycle: backlog
+lifecycle: ready
 id: 019f4ac0-85d8-7803-82b4-b9dcecee4e52
 kind: task
 generated: { by: unknown, at: 2026-07-09 }
+priority: medium
+cycle: 2026-10-release-6
 ---
 
 # Review bounty + grapevine SKILL.md for accuracy and usefulness

@@ -6,7 +6,7 @@ description:
   open comes up from the older snapshot without pointing at the dump that holds
   the newer tasks.
 status: draft
-lifecycle: triage
+lifecycle: backlog
 id: 01a0fdcd-fe1d-7058-bb1f-53a0174ddcfa
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-02 }

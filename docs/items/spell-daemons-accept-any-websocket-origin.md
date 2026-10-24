@@ -6,7 +6,7 @@ status: stable
 description:
   Spell daemons on 127.0.0.1 accept WebSocket connections and POSTs from any web
   page in the browser, bypassing CORS and trusting any origin
-lifecycle: backlog
+lifecycle: dropped
 id: 01a091ad-beb0-7e5c-a0fa-006558f51b11
 kind: task
 generated: { by: unknown, at: 2026-09-11 }
@@ -78,3 +78,6 @@ that every daemon's `upgrade(` and POST handler sit behind it — the same
 
 Not fixed in the scriptorium branch on purpose: it touches eight spells' wire
 behaviour, and each needs its own drive.
+
+Dropped at triage, 2026-10-24: already done. All nine daemons call
+`refuseForeignOrigin` (`src/kit/wire/origin.ts`).

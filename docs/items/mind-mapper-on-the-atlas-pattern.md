@@ -5,7 +5,7 @@ description:
   Whether mind-mapper should move from per-project SQLite to Atlas's shape (file
   tree, local files, JSON canvas) as a second app on the workspace kit.
 status: draft
-lifecycle: triage
+lifecycle: backlog
 id: 01a13647-8eba-7218-b8b2-2fe204b3233a
 kind: research
 generated: { by: claude-opus-5-5, at: 2026-10-13 }

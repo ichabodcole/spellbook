@@ -6,7 +6,7 @@ description:
   unbounded daemon requests, orphaned daemons, open races, init --stdin-tasks
   dropping data quietly, and notices for overridden flags."
 status: draft
-lifecycle: triage
+lifecycle: backlog
 id: 01a14bc3-07ba-7202-837c-bce36602d259
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-17 }

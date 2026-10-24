@@ -6,7 +6,7 @@ description:
   stays in the editor (Tab types a tab); Shift+F10 and the ContextMenu key don't
   open it on macOS Chromium. Present on base too.
 status: stable
-lifecycle: triage
+lifecycle: backlog
 id: 01a166b3-254a-77dd-905c-cbbe0d281b6e
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-22 }

@@ -6,7 +6,7 @@ description:
   rendered view (and the shipped app's), so a second tab or split view falls
   behind on every typing pause.
 status: stable
-lifecycle: triage
+lifecycle: backlog
 id: 01a15711-af4d-71ff-bed6-e04e39add9e0
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-19 }

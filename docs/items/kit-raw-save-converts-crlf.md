@@ -6,13 +6,15 @@ description:
   LF endings throughout, because CodeMirror's doc joins lines with \n; a
   rendered-only edit keeps CRLF.
 status: stable
-lifecycle: triage
+lifecycle: ready
 id: 01a16682-c980-74c1-9c75-f2092e214ed9
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-22 }
 tags: [kit, document]
 parent: feature/workspace-kit-follow-ups
 from: cycle/2026-10-polish
+priority: high
+cycle: 2026-10-release-6
 ---
 
 # Saving after a raw edit turns a CRLF file into LF

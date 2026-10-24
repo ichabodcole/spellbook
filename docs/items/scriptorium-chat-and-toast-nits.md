@@ -6,11 +6,13 @@ description:
   toast nits, the kit modal's focus trap, crash-path refusals with no restore
   hint, a bare tail that retries after an end, same-named documents, a double
   saved on ⌘S, phone width."
-status: draft
-lifecycle: backlog
+status: stable
+lifecycle: ready
 id: 01a0eab2-ed0c-7292-8381-bc4a228e93da
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-09-28 }
+priority: medium
+cycle: 2026-10-release-6
 ---
 
 # Scriptorium: small chat and toast leftovers
@@ -141,3 +143,11 @@ cycle:**
 - The frontmatter summary cache (`metaCache` in `session.ts`) keys on mtime only
   (since 2026-09-11), so an edit that restores the exact mtime can leave the
   sidebar's summary stale. The links cache now also keys on ctime and inode.
+
+## Definition of done
+
+Approved by Cole at triage, 2026-10-24.
+
+- [ ] Each bullet re-checked against the kit Scriptorium, then marked fixed
+      (with a commit), fixed in this cycle, or moved to its own item. None is
+      left unchecked.

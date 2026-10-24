@@ -4,7 +4,7 @@ title: "`bounty list` shows a board's old title after `init --title`"
 description:
   list keeps the title a board opened with; state and sessions show the new one.
 status: draft
-lifecycle: triage
+lifecycle: backlog
 id: 01a0e711-ef68-701d-a5a3-6a8fa03bc7e0
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-09-28 }

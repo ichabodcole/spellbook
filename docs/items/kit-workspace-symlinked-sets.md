@@ -6,12 +6,14 @@ description:
   mirrored set, and symlink loops are walked until the 2000-entry cap, listing
   alias paths as separate documents. Inherited from Story Studio's tree.ts.
 status: stable
-lifecycle: triage
+lifecycle: ready
 id: 01a13c65-0307-737d-bd5b-d00816a2d5cf
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-14 }
 tags: [kit, workspace]
 parent: feature/workspace-kit-follow-ups
+priority: medium
+cycle: 2026-10-release-6
 ---
 
 # Mirrored sets follow symlinks out of the workspace and through loops

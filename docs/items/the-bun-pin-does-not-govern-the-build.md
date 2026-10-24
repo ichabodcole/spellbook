@@ -7,7 +7,7 @@ status: stable
 description:
   .bun-version pins the CLI's Bun version, but each spell's dist is built by
   whatever Bun version is installed, creating undeclared transitive dependencies
-lifecycle: backlog
+lifecycle: dropped
 id: 01a065eb-cb7a-7c30-8bfd-abe0cf343c15
 kind: task
 generated: { by: unknown, at: 2026-09-02 }
@@ -71,3 +71,6 @@ at `5274385`. **The pin does not govern the build.**
 ⚠ **Whichever is chosen, the committed `dist/` was built by 1.3.14.** Changing
 the effective Bun rebuilds every artifact in the repo. That is a release-shaped
 change, not a tooling tidy-up.
+
+Dropped at triage, 2026-10-24: already done. `bun` 1.4.0 is a devDependency, and
+`node_modules/.bin/bun` matches `.bun-version`.

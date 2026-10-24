@@ -7,12 +7,14 @@ description:
   on a busy machine (1 of 50 alone, 4 of 50 beside a busy suite, 2026-10-23),
   the second even though it already writes until seen.
 status: stable
-lifecycle: triage
+lifecycle: ready
 id: 01a16b4e-ad20-7428-8cdc-0883057bcb84
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-23 }
 parent: feature/workspace-kit-follow-ups
 from: items/kit-backlinks-test-watch-race.md
+priority: high
+cycle: 2026-10-release-6
 ---
 
 # Two link.check watch cells time out under load

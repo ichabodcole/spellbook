@@ -6,7 +6,7 @@ description:
   regex-parses bounty sessions; switch both together so acc B5 is checked and
   the anthill#43 guard keeps working.
 status: draft
-lifecycle: triage # triage | backlog | ready | active | review | done | dropped
+lifecycle: backlog
 id: 01a0e0b7-1845-7476-8f6a-5c54862aea60
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-09-26 }
