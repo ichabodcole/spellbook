@@ -52,5 +52,7 @@ each 6 s run.
 
 - [x] Confirm the cause, and fix it in the test (or the watch, if it really is
       the watch's bug), without raising a timeout.
-- [ ] The whole file passes 50 runs in a row, alone and beside a busy
-      `bun test src/kit`.
+- [x] The backlinks cells pass 50 runs in a row, alone and beside a busy
+      `bun test src/kit` (2026-10-23: 0 failures in 100). Narrowed by Cole from
+      "the whole file": two other cells still time out under load, filed as
+      `kit-links-check-watch-cells-timeout`.
