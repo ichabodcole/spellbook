@@ -105,7 +105,9 @@
 //   • A single-word utility (`flex`, `underline`) has no structural marker and
 //     is not candidate-shaped by (1). Inherited from the sibling ward
 //     deliberately: the two must agree, or "class" means two things in one
-//     directory.
+//     directory. (The BARE cell covers the closed set it lists, in prose, with
+//     any trailing punctuation and in its `.word` selector spelling since
+//     2026-10-22. A utility missing from BARE_UTILITIES is still unseen.)
 //   • Validity is NOT checked, and must not be. `bg-popover` emits in
 //     mind-mapper (which defines `--color-popover`) and emits NOTHING in imago
 //     (which does not) — measured. Validity is a property of the RECEIVING
@@ -498,12 +500,34 @@ const BARE_UTILITIES = new Set([
  * candidate charset, so `.filter((l) => …)` in CODE is one long span and emits
  * nothing, while the word "filter" in a SENTENCE is a candidate on its own.
  * That asymmetry is why prose and code must be judged by the same extractor.
+ *
+ * ⚠ READ AS PROSE (`prose: true`), TWO MORE SPELLINGS COUNT, and only there
+ * (kit-prose-ward-colon-blindspot, 2026-10-22). A word with ANY trailing
+ * punctuation the span keeps (`blur:`, `grow!`, `truncate-`) is the word, and
+ * a word in its selector spelling (`.invisible`, `a.truncate`) is the word: a
+ * `.` restarts a candidate, as the table on BOUNDARY measured. Before, `blur:`
+ * failed the bare-word shape and passed the cell. Whether Tailwind emits
+ * `.blur` from `blur:` was NOT measured; the rule is "kit prose does not spell
+ * a utility", so the stricter reading is the safe one (see `trimSentence`).
+ * The CODE half keeps the plain reading: widening it would ADD to the set of
+ * words prose may use (`arr.filter(` would admit "filter"), loosening the cell.
+ *
+ * ⚠ A WORD FOLLOWED BY `(` IS A CALL, NOT A CLASS, and does not count:
+ * `field.blur()` and `field.current?.blur();` in a comment emit no `blur`
+ * candidate from Tailwind's extractor (oxide; measured by the batch's
+ * verifier, 2026-10-22), and the first version of this reading flagged them.
  */
-function bareUtilities(text: string): string[] {
+function bareUtilities(text: string, prose = false): string[] {
   const out: string[] = [];
-  for (const span of text.split(BOUNDARY)) {
-    const t = trimSentence(span);
+  const take = (raw: string) => {
+    let t = trimSentence(raw);
+    if (prose && /^[a-z][a-z0-9]*\(/.test(t)) return;
+    if (prose) t = t.replace(/[^a-z0-9]+$/, "");
     if (t !== "" && /^[a-z][a-z0-9]*$/.test(t) && BARE_UTILITIES.has(t)) out.push(t);
+  };
+  for (const span of text.split(BOUNDARY)) {
+    take(span);
+    if (prose) for (let i = 0; i < span.length; i++) if (span[i] === ".") take(span.slice(i + 1));
   }
   return out;
 }
@@ -717,7 +741,7 @@ describe("kit prose ward", () => {
 
     const offenders: string[] = [];
     for (const f of files) {
-      const leaked = [...new Set(bareUtilities(f.prose))].filter((t) => !code.has(t)).sort();
+      const leaked = [...new Set(bareUtilities(f.prose, true))].filter((t) => !code.has(t)).sort();
       if (leaked.length > 0) {
         offenders.push(
           `${rel(f.path)}: prose names ${leaked.join(", ")} — no kit code uses ` +
@@ -755,6 +779,27 @@ describe("kit prose ward", () => {
     // Sentence punctuation is stripped here exactly as in the structural half,
     // so a leak cannot hide behind a full stop.
     expect(bareUtilities("the card is invisible.")).toEqual(["invisible"]);
+    // Read as prose, trailing punctuation the span keeps and the selector
+    // spelling are the word too (kit-prose-ward-colon-blindspot). The plain
+    // (code) reading is unchanged, so the set prose may use does not grow.
+    expect(bareUtilities("// blur: how far the backdrop softens", true)).toEqual(["blur"]);
+    expect(bareUtilities("// blur: how far the backdrop softens")).toEqual([]);
+    expect(bareUtilities("grow! and truncate- and sticky:hover", true)).toEqual([
+      "grow",
+      "truncate",
+    ]);
+    expect(bareUtilities("a .invisible card, a span.truncate", true)).toEqual([
+      "invisible",
+      "truncate",
+    ]);
+    // A CALL is not a class: oxide emits no `blur` from these, so neither does
+    // this reading. The same word as a selector in a sentence stays red.
+    expect(bareUtilities("// field.blur() hands focus back", true)).toEqual([]);
+    expect(bareUtilities("// field.current?.blur(); then focus moves", true)).toEqual([]);
+    expect(bareUtilities("// call blur() on it", true)).toEqual([]);
+    expect(bareUtilities("// the .blur on the backdrop softens it", true)).toEqual(["blur"]);
+    expect(bareUtilities("blurred: the frame was truncated.", true)).toEqual([]);
+    expect(bareUtilities('buf.split("n").filter((l) => l.length > 0)', true)).toEqual([]);
 
     // The set is not vacuous, and it holds the shapes the header names.
     expect(BARE_UTILITIES.size).toBeGreaterThan(30);

@@ -43,11 +43,15 @@ import { contextPressAfter, renderedSelectionAct } from "../context/selection.ts
 import { TooltipProvider } from "../ui/tooltip.tsx";
 import type { DocumentProfile, PlacedNote } from "../workspace/protocol";
 import { useCoalescedText } from "./coalesce.ts";
-import type { SelectionReport } from "./DocumentView.tsx";
+import type { ContextMenuRequest, SelectionReport } from "./DocumentView.tsx";
 import { Embed, type EmbedSource, pendingEmbeds } from "./embeds.tsx";
 import { useFind } from "./FindBar.tsx";
-import { type FrontmatterChips, FrontmatterHeader } from "./FrontmatterHeader.tsx";
-import { readFrontmatter } from "./frontmatter.ts";
+import {
+  type FrontmatterChips,
+  FrontmatterHeader,
+  headerFieldElements,
+} from "./FrontmatterHeader.tsx";
+import { frontmatterKeyAt, readFrontmatter } from "./frontmatter.ts";
 import { highlightRegistry, makeHighlight } from "./highlight.ts";
 import type { AskProfileFix } from "./ProfileChip.tsx";
 import { type Anchor, anchorCache, lineAtTop, type Place, topForLine } from "./place.ts";
@@ -65,7 +69,7 @@ const FOCUS_HL = "doc-note-focus";
 const PENDING_HL = "doc-note-pending";
 /** A passage just brought into view: painted for `FLASH_PAINT_MS`, then gone. */
 const FLASH_HL = "doc-flash";
-const FLASH_PAINT_MS = 1600;
+export const FLASH_PAINT_MS = 1600;
 
 /** The source offset under a point: what decides which notes were clicked. */
 function pointOffset(
@@ -150,13 +154,8 @@ export function MarkdownView({
   onSelect?: (s: SelectionReport) => void;
   /** Bumped when the held selection goes away: the highlight goes with it. */
   clearSeq?: number;
-  onContextMenu?: (at: {
-    x: number;
-    y: number;
-    from: number;
-    to: number;
-    noteIds: string[];
-  }) => void;
+  /** Right-click in the text, as the raw view's: see `ContextMenuRequest`. */
+  onContextMenu?: ContextMenuRequest;
   /** The source line at the top of this pane, shared with the raw one. */
   place?: Place;
   /** An app's inline widgets: spans of the text drawn as its own nodes. */
@@ -248,6 +247,8 @@ export function MarkdownView({
   // The same text, as the reader sees it, carrying where each part came from.
   const projection = useMemo(() => project(text), [text]);
   const body = useRef<HTMLDivElement>(null);
+  /** The frontmatter header's box: where a reveal in the frontmatter is marked. */
+  const headerBox = useRef<HTMLDivElement>(null);
   // Every widget's span in the current rendering, and the node drawn into it.
   // Collected after the HTML is in the DOM, and again whenever it is replaced (the old
   // spans are gone with it).
@@ -520,6 +521,22 @@ export function MarkdownView({
   const flashSeq = flash?.seq;
   // biome-ignore lint/correctness/useExhaustiveDependencies: the request's seq is the trigger; its offsets are read with it.
   useEffect(() => {
+    // In the frontmatter, which is drawn as the header and not as text: the field
+    // the range is in is marked instead, the way the compare view marks a row.
+    const key = flash ? frontmatterKeyAt(text, flash.from) : null;
+    const box = headerBox.current?.querySelector<HTMLElement>('[data-slot="frontmatter-header"]');
+    if (key !== null && box) {
+      const marked = headerFieldElements(box, key);
+      for (const el of marked) el.setAttribute("data-flash", "on");
+      marked[0]?.scrollIntoView?.({ block: "center" });
+      const t = setTimeout(() => {
+        for (const el of marked) el.removeAttribute("data-flash");
+      }, FLASH_PAINT_MS);
+      return () => {
+        clearTimeout(t);
+        for (const el of marked) el.removeAttribute("data-flash");
+      };
+    }
     const reg = highlightRegistry();
     const root = body.current;
     if (!reg || !root || !flash || flash.from >= flash.to) return;
@@ -553,7 +570,7 @@ export function MarkdownView({
         data-slot="markdown-view"
       >
         {frontmatter && (
-          <div className="mx-auto max-w-[76ch] px-8 pt-7">
+          <div ref={headerBox} className="mx-auto max-w-[76ch] px-8 pt-7">
             <FrontmatterHeader
               frontmatter={frontmatter}
               chips={frontmatterChips}
@@ -569,8 +586,8 @@ export function MarkdownView({
           ref={body}
           className={
             frontmatter
-              ? "md-prose mx-auto max-w-[76ch] px-8 pb-16"
-              : "md-prose mx-auto max-w-[76ch] px-8 pt-7 pb-16"
+              ? "md-prose md-document mx-auto max-w-[76ch] px-8 pb-16"
+              : "md-prose md-document mx-auto max-w-[76ch] px-8 pt-7 pb-16"
           }
           onClick={(e) => onRenderedLinkClick(e, onFollowLink, onFollowHeading)}
           onPointerDown={(e) => {
@@ -592,9 +609,13 @@ export function MarkdownView({
           }}
           onContextMenu={(e) => {
             if (!onContextMenu) return;
+            // A link's own entries (open in a new tab, copy the address) are the
+            // browser's, as an image's are; and a link written inside one would
+            // nest, which markdown forbids. So a right-click on a link is its.
+            if ((e.target as Element).closest?.("a")) return;
             const root = body.current;
-            // Over a selection OR over a note, the rule the raw view holds: with
-            // neither, the browser's own menu is left alone.
+            // Every right-click asks, as in the raw view. With no selection the
+            // rendered text has no caret, so the point clicked stands in for one.
             const point = root ? pointOffset(root, projection, e.clientX, e.clientY) : null;
             // The live selection if the click spared it, else the remembered one, but
             // only when the pointer is inside it.
@@ -618,15 +639,21 @@ export function MarkdownView({
                     .map((n) => n.id);
             // In the pane's text; a selection in what changed since offers nothing.
             const m = r ? reportable.current(r) : null;
-            if (!m && noteIds.length === 0) return;
-            e.preventDefault();
-            onContextMenu({
-              x: e.clientX,
-              y: e.clientY,
-              from: m?.from ?? 0,
-              to: m?.to ?? 0,
-              noteIds,
-            });
+            const caret = point === null ? null : reportable.current({ from: point, to: point });
+            const where = m ?? caret;
+            // Off the text altogether, and on no note: nothing to place an act at.
+            if (!where && noteIds.length === 0) return;
+            const taken = onContextMenu(
+              {
+                x: e.clientX,
+                y: e.clientY,
+                from: where?.from ?? 0,
+                to: where?.to ?? 0,
+                noteIds,
+              },
+              { shiftKey: e.shiftKey },
+            );
+            if (taken !== false) e.preventDefault();
           }}
           // THE ONE HTML SINK IN THIS SURFACE, and what makes it safe is upstream:
           // markdown renderer output only, so raw HTML in the document is encoded and

@@ -123,6 +123,31 @@ export function editorOffset(text: string, offset: number): number {
   return offset - n;
 }
 
+/**
+ * A position in the editor's document as an offset into `text` as the daemon
+ * counts it: `editorOffset` the other way. A selection and a right-click leave
+ * this view in the daemon's count, as notes and reveals arrive in it, so a note
+ * the human writes in the raw view of a CRLF file anchors on the words they
+ * chose. A position at a line's end is before its `\r`.
+ */
+export function daemonOffset(text: string, pos: number): number {
+  if (!text.includes("\r")) return pos;
+  let n = 0;
+  // The editor's position of each `\r\n` is its daemon index less those before it.
+  for (let i = text.indexOf("\r\n"); i >= 0 && i - n < pos; i = text.indexOf("\r\n", i + 2)) n++;
+  return pos + n;
+}
+
+/** Notes placed by the daemon, in the editor's document (CRLF counted once). */
+function notesInEditor(text: string, notes: PlacedNote[]): PlacedNote[] {
+  if (!text.includes("\r")) return notes;
+  return notes.map((n) =>
+    n.from === null || n.to === null
+      ? n
+      : { ...n, from: editorOffset(text, n.from), to: editorOffset(text, n.to) },
+  );
+}
+
 const noteField = StateField.define<DecorationSet>({
   create: () => Decoration.none,
   update(marks, tr) {
@@ -244,13 +269,17 @@ const editorTheme = EditorView.theme({
     backgroundColor: "color-mix(in srgb, var(--color-attention) 26%, transparent)",
   },
   // The current match in the pointed-at hue, as the kit's find bar paints it,
-  // so it never reads as the selection.
+  // so it never reads as the selection. document.css's optional hooks recolour
+  // it here too (`--color-find-current`, `--color-find-current-mark`), and the
+  // flash's mark underlines a flashed passage as it does there.
   ".cm-searchMatch.cm-searchMatch-selected": {
-    backgroundColor: "color-mix(in srgb, var(--color-pointed) 40%, transparent)",
-    outline: "1px solid var(--color-pointed)",
+    backgroundColor:
+      "var(--color-find-current, color-mix(in srgb, var(--color-pointed) 40%, transparent))",
+    outline: "1px solid var(--color-find-current-mark, var(--color-pointed))",
   },
   ".cm-flash": {
     backgroundColor: "color-mix(in srgb, var(--color-pointed) 34%, transparent)",
+    textDecoration: "underline 2px var(--color-flash-mark, transparent)",
   },
   ".cm-selectionMatch": {
     backgroundColor: "color-mix(in srgb, var(--color-ink-faint) 18%, transparent)",
@@ -308,6 +337,8 @@ export type EditorHandle = {
     to: number,
     insert: string,
     guard?: { at: number; text: string },
+    /** What CodeMirror records the edit as: a link (the default), a cut or a paste. */
+    userEvent?: string,
   ) => boolean;
   /**
    * Follow the range a link will replace through every change from now on (see
@@ -323,6 +354,17 @@ export type EditorHandle = {
  * drop landed on) while the files are sent; `quote` is the text that range held,
  * which must still stand there for the paste to replace it.
  */
+/**
+ * A right-click in the text: where, what is selected (the caret, `from === to`,
+ * when nothing is), which notes are under the pointer, and whether Shift was
+ * held. Every right-click asks; the answer `false` leaves the event to the
+ * browser, whose own menu then opens.
+ */
+export type ContextMenuRequest = (
+  at: { x: number; y: number; from: number; to: number; noteIds: string[] },
+  how: { shiftKey: boolean },
+) => boolean | undefined;
+
 export type ImageArrival = {
   files: File[];
   how: "paste" | "drop";
@@ -424,8 +466,8 @@ export function DocumentView({
   /** The note the panel has focused: marked stronger than the rest. */
   focusedNote?: string | null;
   /**
-   * The selection: offsets for notes, and LINE NUMBERS for the wire's selection,
-   * which is what the agent reads. A character offset is neither party's language.
+   * The selection: offsets for notes (in the daemon's count, as `text` holds
+   * it), and LINE NUMBERS for the wire's selection, which is what the agent reads. A character offset is neither party's language.
    */
   onSelect?: (s: SelectionReport) => void;
   /**
@@ -455,14 +497,8 @@ export function DocumentView({
   clearSeq?: number;
   /** The passage a note is being written about, painted while its composer is open. */
   pendingNote?: { from: number; to: number } | null;
-  /** Right-click in the text: where, what is selected, and which notes are under the pointer. */
-  onContextMenu?: (at: {
-    x: number;
-    y: number;
-    from: number;
-    to: number;
-    noteIds: string[];
-  }) => void;
+  /** Right-click in the text: see `ContextMenuRequest`. */
+  onContextMenu?: ContextMenuRequest;
   /** The source line at the top of this pane, shared with the rendered one. */
   place?: Place;
   handle?: Ref<EditorHandle>;
@@ -555,6 +591,9 @@ export function DocumentView({
   const lastWritten = useRef<string | null>(null);
   const notesRef = useRef(notes);
   notesRef.current = notes;
+  /** The text the daemon's offsets count in: what reveals, flashes and notes map from. */
+  const textRef = useRef(text);
+  textRef.current = text;
   const focusedRef = useRef(focusedNote);
   focusedRef.current = focusedNote;
   const additions = useRef({ extensions, tokens });
@@ -616,7 +655,7 @@ export function DocumentView({
         return main ? { from: main.from, to: main.to } : null;
       },
       text: () => view.current?.state.doc.toString() ?? initial.current,
-      replaceRange: (from, to, insert, guard) => {
+      replaceRange: (from, to, insert, guard, userEvent = "input.link") => {
         const v = view.current;
         if (!v || v.state.readOnly) return false;
         const len = v.state.doc.length;
@@ -630,7 +669,7 @@ export function DocumentView({
           changes: { from, to, insert },
           selection: { anchor: from + insert.length },
           scrollIntoView: true,
-          userEvent: "input.link",
+          userEvent,
           // One undo step of its own: a single Mod-Z takes the whole link back,
           // and the next key typed does not join it.
           annotations: isolateHistory.of("full"),
@@ -680,8 +719,9 @@ export function DocumentView({
         if (!update.selectionSet) return;
         const { from, to } = update.state.selection.main;
         handlers.current.onSelect?.({
-          from,
-          to,
+          // In the daemon's count, as a note made from it is anchored.
+          from: daemonOffset(textRef.current, from),
+          to: daemonOffset(textRef.current, to),
           fromLine: update.state.doc.lineAt(from).number,
           toLine: update.state.doc.lineAt(to).number,
           text: update.state.sliceDoc(from, to),
@@ -838,32 +878,45 @@ export function DocumentView({
             handlers.current.onFlush?.();
             return false;
           },
-          // Only over a selection or a note. With neither there is nothing of ours
-          // to offer, so the browser's own menu (spelling, copy, look up) is left
-          // alone rather than replaced with an empty one.
-          contextmenu: (event, v) => {
-            if (!handlers.current.onContextMenu) return false;
-            const { from, to } = v.state.selection.main;
-            const pos = v.posAtCoords({ x: event.clientX, y: event.clientY });
-            const noteIds =
-              pos === null
-                ? []
-                : (notesRef.current ?? [])
-                    .filter((n) => n.from !== null && n.to !== null && pos >= n.from && pos <= n.to)
-                    .map((n) => n.id);
-            if (from === to && noteIds.length === 0) return false;
-            event.preventDefault();
-            handlers.current.onContextMenu({
-              x: event.clientX,
-              y: event.clientY,
-              from,
-              to,
-              noteIds,
-            });
-            return true;
-          },
         }),
       );
+    extensions.push(
+      EditorView.domEventHandlers({
+        // In a read-only editor too (an ended session, a version not active):
+        // the raw and rendered views must agree on when the menu opens.
+        // Every right-click asks, with the selection or only the caret: which
+        // menu comes up must not depend on whether something is selected. The
+        // pane may answer `false` (Shift held, or a second right-click), and the
+        // browser's own menu then opens.
+        contextmenu: (event, v) => {
+          const ask = handlers.current.onContextMenu;
+          if (!ask) return false;
+          // In the daemon's count, as the notes are and as a note made here is anchored.
+          const { from, to } = v.state.selection.main;
+          const at = v.posAtCoords({ x: event.clientX, y: event.clientY });
+          const pos = at === null ? null : daemonOffset(textRef.current, at);
+          const noteIds =
+            pos === null
+              ? []
+              : (notesRef.current ?? [])
+                  .filter((n) => n.from !== null && n.to !== null && pos >= n.from && pos <= n.to)
+                  .map((n) => n.id);
+          const taken = ask(
+            {
+              x: event.clientX,
+              y: event.clientY,
+              from: daemonOffset(textRef.current, from),
+              to: daemonOffset(textRef.current, to),
+              noteIds,
+            },
+            { shiftKey: event.shiftKey },
+          );
+          if (taken === false) return false;
+          event.preventDefault();
+          return true;
+        },
+      }),
+    );
     extensions.push(...(additions.current.extensions ?? []));
     const pending = editable ? replayRef.current : null;
     const replaying =
@@ -875,7 +928,10 @@ export function DocumentView({
     });
     view.current = v;
     v.dispatch({
-      effects: setNotes.of({ notes: notesRef.current ?? [], focused: focusedRef.current }),
+      effects: setNotes.of({
+        notes: notesInEditor(textRef.current, notesRef.current ?? []),
+        focused: focusedRef.current,
+      }),
     });
     // Each step is undoable, and marked remote: it is already in the daemon's text.
     for (const c of replaying?.changes ?? [])
@@ -940,14 +996,15 @@ export function DocumentView({
     };
   }, [place, docKey, editable]);
 
-  /** The text the daemon's offsets count in: what reveals and flashes map from. */
-  const textRef = useRef(text);
-  textRef.current = text;
   // Clicking a note's quote brings it into view and selects it.
   const revealed = useRef(onRevealed);
   revealed.current = onRevealed;
   /** When a followed heading's mark clears (see the reveal effect). */
   const headingMarkTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  /** The last clear this view has acted on (see the clear effect below). */
+  const unpainted = useRef(clearSeq);
+  const clearNow = useRef(clearSeq);
+  clearNow.current = clearSeq;
   useEffect(() => {
     const v = view.current;
     if (!v || !reveal) return;
@@ -968,6 +1025,12 @@ export function DocumentView({
         : EditorView.scrollIntoView(start, { y: "center" }),
     });
     v.focus();
+    // A clear that came with the reveal is spent by it. Opening another document
+    // at a place clears what was held in the one left, in the same render as the
+    // reveal; the clear, run after this, would collapse the range just selected
+    // to its end. The selection is about the text on screen now, which is the
+    // reveal's.
+    unpainted.current = clearNow.current;
     revealed.current?.(reveal.seq);
     if (!mark) return;
     // ⛔ NOT this effect's cleanup: spending the reveal (just above) re-renders
@@ -1006,7 +1069,6 @@ export function DocumentView({
   // what is chosen. Collapsing to the head fires the update listener, which reports
   // the empty range (the same path a click takes); nothing is held by then, so it
   // does not come round again.
-  const unpainted = useRef(clearSeq);
   useEffect(() => {
     const v = view.current;
     if (!v || clearSeq === undefined || clearSeq === unpainted.current) return;
@@ -1027,13 +1089,25 @@ export function DocumentView({
   }, [clearSeq]);
 
   useEffect(() => {
-    view.current?.dispatch({ effects: setPending.of(pendingNote ?? null) });
+    // The pane's passage is in the daemon's count; the editor holds each CRLF once.
+    const at = (o: number) => editorOffset(textRef.current, o);
+    view.current?.dispatch({
+      effects: setPending.of(
+        pendingNote ? { from: at(pendingNote.from), to: at(pendingNote.to) } : null,
+      ),
+    });
   }, [pendingNote]);
 
   // Notes arrive already placed; push them in whenever the daemon re-places them,
   // or the panel focuses another.
   useEffect(() => {
-    view.current?.dispatch({ effects: setNotes.of({ notes: notes ?? [], focused: focusedNote }) });
+    // Placed in the daemon's count, painted in the editor's (CRLF counted once).
+    view.current?.dispatch({
+      effects: setNotes.of({
+        notes: notesInEditor(textRef.current, notes ?? []),
+        focused: focusedNote,
+      }),
+    });
   }, [notes, focusedNote]);
 
   // The text changed UNDER us (a version made active, the file reloaded).

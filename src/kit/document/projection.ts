@@ -129,8 +129,12 @@ function projectBody(text: string): Projection {
     plain += sep;
   };
 
-  const emit = (value: string, node: Node) => {
-    if (value === "") return;
+  const emit = (raw: string, node: Node) => {
+    if (raw === "") return;
+    // The page holds one character for each `\r\n` (HTML parsing makes it `\n`),
+    // so the plain text does too, or every character after one is misaligned.
+    // Shorter than its source, the run is then not exact.
+    const value = raw.includes("\r\n") ? raw.replaceAll("\r\n", "\n") : raw;
     flushBoundary();
     const s = node.position?.start.offset;
     const e = node.position?.end.offset;
@@ -155,7 +159,10 @@ function projectBody(text: string): Projection {
    * turn and emitted exactly, the line break with it; if any line cannot be found
    * (an escape, an entity), the node falls back to one non-exact run.
    */
-  const emitText = (value: string, node: Node) => {
+  const emitText = (raw: string, node: Node) => {
+    // A CRLF file's prose: each `\r\n` is one `\n` on the page, and the lines
+    // between are found and emitted exactly, as a wrapped list item's are.
+    const value = raw.includes("\r\n") ? raw.replaceAll("\r\n", "\n") : raw;
     const s = node.position?.start.offset;
     const e = node.position?.end.offset;
     if (s === undefined || e === undefined || e - s === value.length || !value.includes("\n")) {

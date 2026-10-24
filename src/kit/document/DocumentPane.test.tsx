@@ -15,6 +15,7 @@ import { join } from "node:path";
 import { undoDepth } from "@codemirror/commands";
 import { EditorView } from "@codemirror/view";
 import { createRef, type Ref, useMemo, useState } from "react";
+import { ENDED_LABEL, NOTE_WAITING_LABEL } from "../chat/WaitingBadge.tsx";
 import type { Collapsed } from "../context/columns.ts";
 import type { Daemon } from "../context/daemonClient.ts";
 import { useDaemon } from "../context/useDaemon.ts";
@@ -30,9 +31,10 @@ import {
   typeInto,
   waitFor,
 } from "../lib/testDom.ts";
+import { BAD_LAYOUTS } from "../lib/testLayout.ts";
 import { createToastStore } from "../ui/toast-store.ts";
 import { fixtureDaemon } from "../workspace/fixtures/app";
-import { testWorkspace } from "../workspace/fixtures/harness";
+import { testWorkspace, writeUntilSeen } from "../workspace/fixtures/harness";
 import type { WorkspaceDaemon } from "../workspace/server";
 import { tempRoot } from "../workspace/testing";
 import { NOTHING_TO_COMPARE } from "./CompareView.tsx";
@@ -819,12 +821,94 @@ describe("split, raw and rendered side by side", () => {
     }
   });
 
+  test("a corrupt or wrongly shaped kept width is ignored: the split opens half and half", async () => {
+    const kept = new Map<string, string>();
+    paneStorage = {
+      getItem: (k) => kept.get(k) ?? null,
+      setItem: (k, v) => {
+        kept.set(k, v);
+      },
+    };
+    const KEY = "react-resizable-panels:doc-split:doc-raw:doc-rendered";
+    const undo = panelsLaidOut(450);
+    try {
+      // The document open in the daemon; each page below is a new one on it.
+      await openStory(undefined, undefined, { splitView: true });
+      for (const bad of [
+        ...BAD_LAYOUTS,
+        { what: "one half only", value: '{"doc-raw": 30}' },
+        { what: "a half out of range", value: '{"doc-raw": -20, "doc-rendered": 120}' },
+      ]) {
+        await cleanup();
+        kept.clear();
+        kept.set(KEY, bad.value);
+        kept.set("spellbook:view-mode", "split");
+        await mount(<Host pane={{ splitView: true }} />);
+        await waitFor(
+          () => q("[data-slot=split-view] .md-prose p") !== null,
+          `the split, over ${bad.what}`,
+        );
+        const grow = (id: string) => Number((q(`#${id}`) as HTMLElement).style.flexGrow);
+        expect([grow("doc-raw"), grow("doc-rendered")]).toEqual([50, 50]);
+      }
+    } finally {
+      undo();
+    }
+  });
+
   test("a stored split in an app with split off falls back to raw", async () => {
     localStorage.setItem("spellbook:view-mode", "split");
     await openStory();
     expect(q(SPLIT)).toBeNull();
     expect(q(".md-prose")).toBeNull();
     expect(q('button[aria-label="Raw text"]')?.getAttribute("aria-pressed")).toBe("true");
+  });
+});
+
+describe("the note menu on the passage after the session has ended", () => {
+  test("a note still owed an answer says the session ended, not that it waits", async () => {
+    await openStory();
+    await settle(() => {
+      client?.send({ op: "note.add", doc: "story", from: 0, to: 5, body: "owed" });
+    });
+    await waitFor(() => (client?.state?.notesWaiting ?? []).length === 1, "the note owed");
+    // The rendered view: an ended session's raw view is read-only and offers no menu.
+    await click(q('button[aria-label="Rendered"]'));
+    await waitFor(() => q(".md-prose p") !== null, "the rendered text");
+    /** Right-click on the note: the badge on its row in the menu, by its words. */
+    const menuBadge = async () => {
+      // happy-dom lays nothing out, so the page is told where the pointer is: on the note.
+      const at = q(".md-prose p")?.firstChild as Node;
+      const doc = document as unknown as { caretRangeFromPoint?: unknown };
+      const was = doc.caretRangeFromPoint;
+      doc.caretRangeFromPoint = () => {
+        const r = document.createRange();
+        r.setStart(at, 2);
+        r.setEnd(at, 2);
+        return r;
+      };
+      try {
+        await settle(() => {
+          q(".md-prose p")?.dispatchEvent(
+            new window.MouseEvent("contextmenu", { bubbles: true, cancelable: true }),
+          );
+        });
+      } finally {
+        doc.caretRangeFromPoint = was;
+      }
+      const row = [...document.querySelectorAll('[data-slot="note-at-selection"] button')].find(
+        (b) => (b.textContent ?? "").includes("owed"),
+      );
+      const dot = row?.querySelector('[data-waiting-of="note"]');
+      return `${dot?.getAttribute("data-badge")}: ${dot?.getAttribute("aria-label")}`;
+    };
+    // Before the end: with the agent (this harness's snapshot does not say no agent listens).
+    expect(await menuBadge()).toBe(`working: ${NOTE_WAITING_LABEL.working}`);
+    await settle(() => {
+      client?.send({ op: "close" });
+    });
+    await waitFor(() => client?.connection === "ended", "the session ended");
+    expect(await menuBadge()).toBe(`ended: ${ENDED_LABEL.note}`);
   });
 });
 
@@ -923,7 +1007,13 @@ describe("reader mode, rendered with both columns out of the way", () => {
     // Unsaved edits first: a clean version simply follows its file.
     await settle(() => viewOf().dispatch({ changes: { from: 0, insert: "Now. " } }));
     await waitFor(() => readFileSync(versionFile(1), "utf8").startsWith("Now. "), "the edit in v1");
-    writeFileSync(story, "Changed outside.\n");
+    // Written until the daemon has seen it: the story's watch was armed by
+    // the open a moment ago, and a write in its first moments is never reported.
+    await writeUntilSeen(
+      "the change on disk",
+      () => writeFileSync(story, "Changed outside.\n"),
+      () => daemon.session.doc("story").outsideChanged,
+    );
     await waitFor(
       () => document.body.textContent?.includes("Changed on disk") === true,
       "the change on disk",
@@ -1012,7 +1102,13 @@ describe("reader mode, rendered with both columns out of the way", () => {
     test("one version whose file changed on disk can still be compared", async () => {
       await openStory();
       await edit();
-      writeFileSync(story, "Changed outside.\n");
+      // Written until the daemon has seen it: the story's watch was armed by
+      // the open a moment ago, and a write in its first moments is never reported.
+      await writeUntilSeen(
+        "the outside change",
+        () => writeFileSync(story, "Changed outside.\n"),
+        () => daemon.session.doc("story").outsideChanged,
+      );
       await waitFor(() => doc()?.outsideChanged === true, "the outside change");
       expect(compareButton().disabled).toBe(false);
     });

@@ -1,6 +1,7 @@
 /**
  * The map's wiring into the flagged frame: "Show the map of this set" in a
- * set's menu (a `menuActions` entry, the shipped words), which chooses the set
+ * set's menu and in the open set's header (a `menuActions` entry marked
+ * `header`, the shipped words), which chooses the set
  * and makes the document pane's app view (`appView`) active; the graph, asked
  * for every time the view is shown; and a node's click, which opens its
  * document and leaves the map, since the map is a way IN, not a place to stay.
@@ -126,7 +127,17 @@ export function useMapView(daemon: Pick<Daemon, "request" | "send" | "state">): 
     ({ kind, entry }) =>
       // A set's row: a document listed on its own has no set to map.
       kind === "entry" && entry && !singleDoc(entry)
-        ? [{ id: MAP_VIEW, label: MAP_LABEL, icon: <NetworkIcon />, onSelect: () => show(entry) }]
+        ? [
+            {
+              id: MAP_VIEW,
+              label: MAP_LABEL,
+              icon: <NetworkIcon />,
+              onSelect: () => show(entry),
+              // In the open set's header too, as the shipped app had it: a map
+              // behind a right-click is a map nobody finds.
+              header: true,
+            },
+          ]
         : [],
     [show],
   );

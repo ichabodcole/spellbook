@@ -29,6 +29,7 @@ import type {
   DiffPayload,
   DocView,
   FsListEntry,
+  PickAnswerWant,
   PublicState,
   ServerOp,
   StateSnapshot,
@@ -109,6 +110,52 @@ export type RequestId = string | number;
 
 export type Listing = { entries: FsListEntry[]; error?: string };
 
+/**
+ * How long a `pick` waits for its answer: a human at the OS's dialog may take
+ * a while, and the daemon answers once it closes.
+ */
+export const PICK_WAIT_MS = 60 * 60_000;
+
+/**
+ * Open the OS's own picker through the daemon and resolve with what was
+ * chosen, named as the context names it; none when the dialog was dismissed.
+ * Rejects with the refusal (one already open, no picker on this system).
+ */
+export async function pickPaths(
+  request: Daemon["request"],
+  want: PickAnswerWant,
+): Promise<string[]> {
+  const frame = await request({ op: "pick", want }, { timeoutMs: PICK_WAIT_MS });
+  if (frame.op !== "chosen") throw new Error("the workspace did not say what was chosen");
+  return (frame as Extract<ServerOp, { op: "chosen" }>).paths;
+}
+
+/** What is already in a folder under the name a file would be copied as (`fs.same`). */
+export type AlreadyThere = { exists: boolean; same: boolean };
+
+/** A file's bytes as a hex SHA-256, hashed in the page. */
+export async function sha256Hex(file: Blob): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * Whether a file of `file`'s bytes is already named `file.name` in `dir` (a
+ * folder the session shows), asked of the daemon (`fs.same`) by size and
+ * SHA-256, so the bytes never cross the socket twice.
+ */
+export async function fileAlreadyAt(
+  request: Daemon["request"],
+  dir: string,
+  file: File,
+): Promise<AlreadyThere> {
+  const sha256 = await sha256Hex(file);
+  const frame = await request({ op: "fs.same", dir, name: file.name, size: file.size, sha256 });
+  if (frame.op !== "fs.same") throw new Error("the workspace did not say what is there");
+  const r = frame as Extract<ServerOp, { op: "fs.same" }>;
+  return { exists: r.exists, same: r.same };
+}
+
 /** The last structure op THIS viewer sent that landed. `seq` makes a repeat a new value. */
 export type Done = {
   of: StructureOpName;
@@ -164,6 +211,12 @@ export type DaemonView = {
    * did not open); null for the daemon's ordinary refusals.
    */
   lastErrorTitle: string | null;
+  /**
+   * Which refusal `lastError` is: one more for every refusal set, so a refusal
+   * repeated word for word is still news (a toast that expired shows again).
+   * Unchanged by `clearError`; 0 before the first.
+   */
+  lastErrorSeq: number;
   /** Version texts, keyed `doc@version`: loaded on ask, or pushed by a merge. */
   texts: ReadonlyMap<string, string>;
   done: Done | null;
@@ -311,6 +364,7 @@ export function createDaemonClient(options: DaemonOptions = {}): DaemonClient {
     endedBy: null,
     lastError: null,
     lastErrorTitle: null,
+    lastErrorSeq: 0,
     texts: new Map(),
     done: null,
     diff: null,
@@ -361,6 +415,9 @@ export function createDaemonClient(options: DaemonOptions = {}): DaemonClient {
     snapshot = build();
     for (const l of [...listeners]) l();
   };
+  /** A refusal that belongs to no request: `lastError`, under a new `lastErrorSeq`. */
+  const refuse = (message: string, title: string | null) =>
+    set({ lastError: message, lastErrorTitle: title, lastErrorSeq: view.lastErrorSeq + 1 });
 
   const settle = (id: RequestId) => {
     const p = pending.get(id);
@@ -391,7 +448,7 @@ export function createDaemonClient(options: DaemonOptions = {}): DaemonClient {
 
   function send(op: ClientOp | AppOp): RequestId | null {
     if (view.endedBy) {
-      if (!AMBIENT.has(op.op)) set({ lastError: SESSION_ENDED, lastErrorTitle: null });
+      if (!AMBIENT.has(op.op)) refuse(SESSION_ENDED, null);
       return null;
     }
     const ws = socket;
@@ -671,11 +728,7 @@ export function createDaemonClient(options: DaemonOptions = {}): DaemonClient {
         break;
       case "error":
         // A refusal that answers a request is that request's to show.
-        if (!waiting)
-          set({
-            lastError: (frame as Extract<ServerOp, { op: "error" }>).message,
-            lastErrorTitle: null,
-          });
+        if (!waiting) refuse((frame as Extract<ServerOp, { op: "error" }>).message, null);
         break;
       case "version.text": {
         const f = frame as Extract<ServerOp, { op: "version.text" }>;
@@ -720,7 +773,7 @@ export function createDaemonClient(options: DaemonOptions = {}): DaemonClient {
       }
       case "link.target": {
         const said = linkRefusal(frame as Extract<ServerOp, { op: "link.target" }>);
-        if (said && !waiting) set({ lastError: said, lastErrorTitle: LINK_REFUSED });
+        if (said && !waiting) refuse(said, LINK_REFUSED);
         break;
       }
       case "structure.done": {

@@ -1,6 +1,6 @@
 // The app's settings, from the top bar: for now how images brought in are
-// written (kit-image-import-settings). App preferences, the same for every world
-// and every session of the app: the daemon keeps them in the app's `prefs.json`
+// written (kit-image-import-settings). App preferences, the same for every
+// session of the app, whatever it holds: the daemon keeps them in the app's `prefs.json`
 // and applies them itself, so the dialog only shows them and sends a change.
 
 import { useEffect, useId, useState } from "react";
@@ -110,7 +110,7 @@ export function SettingsDialog({
       >
         <DialogTitle className="text-sm font-semibold text-ink">Settings</DialogTitle>
         <DialogDescription className="text-sm leading-relaxed text-ink-dim">
-          For this app, the same in every world.
+          For this app, the same in every session.
         </DialogDescription>
         <form
           className="grid gap-3"

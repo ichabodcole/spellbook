@@ -120,6 +120,13 @@ test("the help surface advertises every verb on its own line", () => {
   expect(r.stdout).toContain("SPELLBOOK_TAIL_WINDOW_MS");
 });
 
+test("image-settings' help says the app's settings hold in every session, in no app's own noun", () => {
+  const r = run(["help"]);
+  const entry = r.stdout.slice(r.stdout.search(/^\s*image-settings\s/m)).split(/\n\s{2}\S/)[0];
+  expect(entry).toContain("the same for every session");
+  expect(entry).not.toMatch(/\bworlds?\b/i);
+});
+
 test("the kit's verb roster is the resolution's, and an app adds its own to the same table", () => {
   const kit = [
     "open",

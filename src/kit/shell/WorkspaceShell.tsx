@@ -79,7 +79,7 @@ import { badgeFor, WaitingDot } from "../chat/WaitingBadge.tsx";
 import type { AskLocation } from "../context/AskLocation.tsx";
 import { ContextSidebar } from "../context/ContextSidebar.tsx";
 import { CentreDockContext } from "../context/centreDock.tsx";
-import { type Daemon, SESSION_ENDED } from "../context/daemonClient.ts";
+import { type Daemon, fileAlreadyAt, SESSION_ENDED } from "../context/daemonClient.ts";
 import { HistoryArrows } from "../context/HistoryArrows.tsx";
 import type { MenuActions } from "../context/menuActions.ts";
 import {
@@ -111,6 +111,7 @@ import {
 } from "../context/workspace.ts";
 import { bundleOf, isBundleMain } from "../lib/bundles.ts";
 import { cn } from "../lib/cn.ts";
+import { guardedLayoutStorage } from "../lib/layoutStorage.ts";
 import { askDescribeText } from "../lib/sidecar.ts";
 import { applyTheme, readAppliedTheme, type Theme } from "../theme/mode.ts";
 import {
@@ -521,7 +522,10 @@ function ShellBody({
     () => storageProp ?? localShellStorage(storageKey),
     [storageProp, storageKey],
   );
-  const layout = useDefaultLayout({ id: "panes", panelIds: [...PANES], storage });
+  // The library parses the saved layout during render, unguarded: read through the
+  // guard, so a corrupt one opens the default layout rather than a blank page.
+  const layoutStorage = useMemo(() => guardedLayoutStorage(storage, "panes", PANES), [storage]);
+  const layout = useDefaultLayout({ id: "panes", panelIds: [...PANES], storage: layoutStorage });
   // Set from the library's own callback and never written back. Before the panels
   // exist (the first render) it is the saved layout's guess.
   const [collapsed, setCollapsed] = useState<Collapsed>(() => collapsedSides(layout.defaultLayout));
@@ -1095,7 +1099,7 @@ function ShellBody({
   }, [openImagePath, request, state]);
 
   // ── what the daemon said ────────────────────────────────────────────────
-  const { lastError, lastErrorTitle, clearError, done } = daemon;
+  const { lastError, lastErrorTitle, lastErrorSeq, clearError, done } = daemon;
   const endedToastAt = useRef(0);
   // A refusal (the open failed) cancels a reveal that was waiting on it.
   useEffect(() => {
@@ -1114,6 +1118,9 @@ function ShellBody({
     dismissToast(ownedToast.current);
     ownedToast.current = null;
   }, [dismissToast]);
+  // Keyed on `lastErrorSeq` as well as the words: a refusal repeated word for word
+  // is a new one, so this runs again (its toast may have expired).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lastErrorSeq is the refusal's identity, and a repeat must re-run this
   useEffect(() => {
     if (!lastError) return;
     if (noticeOwned && lastError !== SESSION_ENDED) {
@@ -1132,7 +1139,7 @@ function ShellBody({
       endedToastAt.current = Date.now();
     } else toasts.announce(lastErrorTitle ?? "The workspace refused that", lastError);
     clearError();
-  }, [lastError, lastErrorTitle, clearError, toasts, noticeOwned, letOwnedToastGo]);
+  }, [lastError, lastErrorSeq, lastErrorTitle, clearError, toasts, noticeOwned, letOwnedToastGo]);
   // The stand-in goes once the notice is in sight (the column reopened) or the
   // refusal is let go: a refusal is never shown twice at once.
   useEffect(() => {
@@ -1328,6 +1335,7 @@ function ShellBody({
       }}
       onTrash={(path) => send({ op: "trash", path })}
       importImage={daemon.importImage}
+      fileAt={(dir, file) => fileAlreadyAt(daemon.request, dir, file)}
       thumbFor={(path) => daemon.imageUrl(path, { thumb: 256 })}
       onAskDescribe={askDescribe}
       selected={treeSelected}
@@ -1411,9 +1419,9 @@ function ShellBody({
     ...o,
     name: docName(o.doc),
   }));
-  const notesOwed = owedSummary(notesWaiting, agentListening);
+  const notesOwed = owedSummary(notesWaiting, agentListening, ended);
   /** Everything waiting on the agent, as one mark: the closed composer's rail button. */
-  const composerWaiting = waitingOnAgent(state.waiting, notesWaiting, agentListening);
+  const composerWaiting = waitingOnAgent(state.waiting, notesWaiting, agentListening, ended);
   const attachable: Attachable | null = heldHere
     ? {
         doc: heldHere.doc,
@@ -1504,6 +1512,7 @@ function ShellBody({
       messages={state.chat}
       waiting={state.waiting}
       agentListening={agentListening}
+      sessionEnded={ended}
       // Drawn in one place at a time: here while the column is open, floating
       // at the foot of the centre while it is collapsed.
       composer={collapsed.chat ? null : <ChatComposer {...composerProps} />}
@@ -1529,6 +1538,7 @@ function ShellBody({
       waiting={noteBadges}
       others={notesElsewhere}
       agentListening={agentListening}
+      sessionEnded={ended}
       asked={notesAsked}
       {...(askNote ? { onAsk: (n) => openDoc && askNote(openDoc.slug, n.id) } : {})}
       onOpenDoc={(doc) => send({ op: "open.doc", doc })}
@@ -1582,7 +1592,7 @@ function ShellBody({
       label: (
         <span className="flex items-center gap-1">
           Chat
-          {state.waiting && <WaitingDot badge={badgeFor(state.waiting, agentListening)} />}
+          {state.waiting && <WaitingDot badge={badgeFor(state.waiting, agentListening, ended)} />}
         </span>
       ),
       node: chatPanel_,
@@ -1638,6 +1648,7 @@ function ShellBody({
         docs={state.docs}
         openDoc={openDoc?.slug ?? null}
         agentListening={agentListening}
+        sessionEnded={ended}
         asked={notesAsked}
         {...(askNote ? { onAskNote: (w) => askNote(w.doc, w.noteId) } : {})}
         onOpen={() => {

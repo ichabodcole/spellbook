@@ -1,7 +1,8 @@
 // The link check's "leaving the set" (kit-broken-links-visible): links and app
-// edges that land outside the set they are written in, apart from the broken
-// ones and out of `count`; and every entry naming its set, so the human's list
-// can group by set.
+// edges that land on a file the session does not hold, apart from the broken
+// ones and out of `count`; a link between two of the session's documents never
+// leaves, whichever sets they are in (scriptorium-broken-links-sign-noise); and
+// every entry naming its set, so the human's list can group by set.
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -26,7 +27,7 @@ const related: NonNullable<LinkSlot["edges"]> = ({ frontmatter }) => {
 const GLADE = [
   "---",
   "title: The Glade",
-  "related: [./ruin.md, ./ghost.md, ../lore/myth.md]",
+  "related: [./ruin.md, ./ghost.md, ../lore/myth.md, ../loose.md]",
   "---",
   "# The Glade",
   "",
@@ -48,8 +49,13 @@ beforeEach(() => {
   writeFileSync(join(world, "images", "map.png"), "png");
   // A file no document view opens, in the set's own folder: it does not leave.
   writeFileSync(join(world, "data.csv"), "a,b\n");
-  writeFileSync(join(lore, "myth.md"), "# The Myth\n\nBack to [the glade](../world/glade.md).\n");
+  writeFileSync(
+    join(lore, "myth.md"),
+    "# The Myth\n\nBack to [the glade](../world/glade.md), and [the code](../src/tool.ts).\n",
+  );
   writeFileSync(join(root, "src", "tool.ts"), "export {};\n");
+  // A document on disk that no set holds.
+  writeFileSync(join(root, "loose.md"), "# Loose\n");
   s = inContext(join(root, "sessions"), world);
   s.addContext(lore);
   s.setLinkSlot({ edges: related });
@@ -61,26 +67,31 @@ afterEach(() => rmSync(root, { recursive: true, force: true }));
 const ids = () => ({ world: s.context[0]?.id, lore: s.context[1]?.id });
 
 describe("leaving the set", () => {
-  test("lists links and edges that land in another set or in none, each opening at its place", () => {
+  test("lists links and edges that land on a file the session does not hold, each opening at its place", () => {
     const c = s.linkCheck();
     const { world: w, lore: l } = ids();
-    expect(c.leaving?.count).toBe(4);
+    expect(c.leaving?.count).toBe(3);
     expect(
       c.leaving?.links.map((x) => [x.shown, x.raw, x.edge ?? "link", x.targetShown, x.targetSet]),
     ).toEqual([
-      ["glade.md", "../lore/myth.md", "frontmatter", "myth.md", "lore"],
-      ["glade.md", "../lore/myth.md", "link", "myth.md", "lore"],
+      ["glade.md", "../loose.md", "frontmatter", "../loose.md", undefined],
       ["glade.md", "../src/tool.ts", "link", "../src/tool.ts", undefined],
-      ["myth.md", "../world/glade.md", "link", "glade.md", "world"],
+      ["myth.md", "../src/tool.ts", "link", "../src/tool.ts", undefined],
     ]);
     // Each names the set it is written in, and where it is written.
-    expect(c.leaving?.links.map((x) => x.set)).toEqual([w, w, w, l]);
+    expect(c.leaving?.links.map((x) => x.set)).toEqual([w, w, l]);
     const edge = c.leaving?.links[0];
     expect(edge?.line).toBe(3);
-    expect(edge && GLADE.slice(edge.from ?? 0, edge.to ?? 0)).toBe("../lore/myth.md");
+    expect(edge && GLADE.slice(edge.from ?? 0, edge.to ?? 0)).toBe("../loose.md");
     const body = c.leaving?.links[1];
     expect(body?.line).toBe(7);
-    expect(body && GLADE.slice(body.from ?? 0, body.to ?? 0)).toBe("[the myth](../lore/myth.md)");
+    expect(body && GLADE.slice(body.from ?? 0, body.to ?? 0)).toBe("[the code](../src/tool.ts)");
+  });
+
+  test("a link or an edge to another set's document stays inside the session", () => {
+    const raws = s.linkCheck().leaving?.links.map((x) => x.raw) ?? [];
+    expect(raws).not.toContain("../lore/myth.md");
+    expect(raws).not.toContain("../world/glade.md");
   });
 
   test("not counted as a problem, and an image, a folder or a link inside the set never leaves", () => {
@@ -114,11 +125,14 @@ describe("grouped by set", () => {
   test("each entry names its set, and `sets` lists those named, in the context's order", () => {
     const c = s.linkCheck();
     const { world: w, lore: l } = ids();
-    // Each with its whole: world's broken link, broken reference and three leaving.
+    // Each with what the sign counts of it: world's broken link and broken
+    // reference. Leaving is listed, never counted (Cole, 2026-10-23): lore,
+    // with only a link leaving, is still named, at 0.
     expect(c.sets).toEqual([
-      { id: w as string, label: "world", total: 5 },
-      { id: l as string, label: "lore", total: 1 },
+      { id: w as string, label: "world", total: 2 },
+      { id: l as string, label: "lore", total: 0 },
     ]);
+    expect(c.leaving?.links.filter((x) => x.set === l)).toHaveLength(1);
     expect(c.noun).toBe("set");
     expect(c.dangling.links[0]?.set).toBe(w);
     expect(c.edges?.links[0]?.set).toBe(w);
@@ -152,12 +166,12 @@ describe("the edges of a set", () => {
     expect(raws).toContain("../world-old/data.csv");
   });
 
-  test("the innermost set wins for grouping; leaving is judged by the source set's folder, both ways", () => {
+  test("the innermost set wins for grouping; a file that is not a document leaves by the source set's folder", () => {
     const inner = join(world, "inner");
     mkdirSync(inner, { recursive: true });
     writeFileSync(
       join(inner, "deep.md"),
-      "# Deep\n\n[the ruin](../ruin.md) and [the gap](./gap.md)\n",
+      "# Deep\n\n[the ruin](../ruin.md), [the data](../data.csv) and [the gap](./gap.md)\n",
     );
     writeFileSync(join(inner, "notes.csv"), "a\n");
     // The other way: from `world` into the set nested in it, which is under its folder.
@@ -172,8 +186,10 @@ describe("the edges of a set", () => {
     const innerId = s.context[2]?.id;
     const c = s.linkCheck();
     const deep = c.leaving?.links.filter((x) => x.source === join(inner, "deep.md"));
+    // `../ruin.md` is a session document: it stays. `../data.csv` is not, and
+    // it is outside `inner`'s folder: it leaves, into `world`'s folder.
     expect(deep?.map((x) => [x.shown, x.raw, x.targetSet, x.set])).toEqual([
-      ["deep.md", "../ruin.md", "world", innerId],
+      ["deep.md", "../data.csv", "world", innerId],
     ]);
     expect(c.dangling.links.find((x) => x.raw === "./gap.md")?.set).toBe(innerId);
     // As the shipped map counted it: what is under `world`'s folder never leaves `world`,
@@ -182,14 +198,15 @@ describe("the edges of a set", () => {
     expect(fromRuin).toEqual([]);
   });
 
-  test("documents added on their own: a sibling and a set below their folder both leave", () => {
+  test("documents added on their own: the session's documents stay, a sibling it does not hold leaves", () => {
     const loose = join(root, "loose");
     mkdirSync(join(loose, "world2"), { recursive: true });
     writeFileSync(
       join(loose, "solo.md"),
-      "# Solo\n\n[sib](./sib.md) and [w](./world2/w.md); [me](./solo.md)\n",
+      "# Solo\n\n[sib](./sib.md) and [w](./world2/w.md); [me](./solo.md); [stray](./stray.md)\n",
     );
     writeFileSync(join(loose, "sib.md"), "# Sib\n");
+    writeFileSync(join(loose, "stray.md"), "# Stray\n");
     writeFileSync(join(loose, "world2", "w.md"), "# W\n");
     s.addContext(join(loose, "solo.md"));
     s.addContext(join(loose, "sib.md"));
@@ -201,12 +218,9 @@ describe("the edges of a set", () => {
     const fromSolo = s
       .linkCheck()
       .leaving?.links.filter((x) => x.source === join(loose, "solo.md"));
-    // As the shipped map counted it: an entry added on its own holds only itself,
-    // so a link to itself stays and its siblings leave.
-    expect(fromSolo?.map((x) => [x.raw, x.targetSet])).toEqual([
-      ["./sib.md", expect.any(String)],
-      ["./world2/w.md", "world2"],
-    ]);
+    // Each added on its own is a set of its own, and still a link to another
+    // of them, or to a set below, stays: only the sibling no set holds leaves.
+    expect(fromSolo?.map((x) => [x.raw, x.targetSet])).toEqual([["./stray.md", undefined]]);
   });
 
   test("an unused image keeps its set", () => {
@@ -219,7 +233,7 @@ describe("the edges of a set", () => {
   });
 
   test("a leaving list past the cap marks the check truncated, its count whole", () => {
-    const many = Array.from({ length: LINK_CHECK_CAP + 1 }, (_, i) => `[m${i}](../lore/myth.md)`);
+    const many = Array.from({ length: LINK_CHECK_CAP + 1 }, (_, i) => `[m${i}](../src/tool.ts)`);
     writeFileSync(join(world, "many.md"), `# Many\n\n${many.join("\n")}\n`);
     // The rest of the world cut down, so leaving alone passes the cap.
     writeFileSync(join(world, "glade.md"), "# The Glade\n");
@@ -229,9 +243,11 @@ describe("the edges of a set", () => {
     expect(c.leaving?.count).toBe(LINK_CHECK_CAP + 1);
     expect(c.leaving?.links).toHaveLength(LINK_CHECK_CAP);
     expect(c.truncated).toBe(true);
-    // The set says its whole, so a list can say how much of it shows.
-    // (and the map, which the cut-down glade no longer embeds: an unused image).
-    expect(c.sets?.[0]?.total).toBe(LINK_CHECK_CAP + 2);
+    // The set's total is what the sign counts: the map, which the cut-down
+    // glade no longer embeds (an unused image). The leaving links, past the
+    // cap as they are, are listed and never counted.
+    expect(c.sets?.[0]?.total).toBe(1);
+    expect(c.count).toBe(0);
   });
 });
 

@@ -307,7 +307,7 @@ describe("the file tree's multi-select", () => {
     await click(treeRow("c.md"), { metaKey: true });
     const cls = treeRow("c.md")?.className ?? "";
     // One background and one text colour: the focused row's tint is not lost to another.
-    expect(cls).toContain("bg-brand/10");
+    expect(cls).toContain("bg-[color:var(--color-ref-row,");
     expect(cls).not.toContain("bg-surface-raised/60");
     expect(cls).not.toContain("text-ink-dim");
     const active = treeRow("a.md")?.className ?? "";

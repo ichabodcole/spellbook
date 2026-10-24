@@ -201,6 +201,18 @@ export type Version = {
   /** The version it was copied from (absent for v1, which comes from the original). */
   fromVersion?: number;
   createdAt: string;
+  /**
+   * Set once it has been the active version (activated, or the active one
+   * when another was activated). Absent for a version never active since the
+   * kit began recording it: what makes an agent's version a PROPOSAL the link
+   * check reads (`LinkCheck.proposed`).
+   */
+  activated?: true;
+  /**
+   * Kept from an outside write to the active version (a write the kit did not
+   * make), filed as the agent's: not a proposal the link check reads.
+   */
+  outside?: true;
 };
 
 /** How a note found its place in the current text; see `anchors.ts`. */
@@ -669,6 +681,12 @@ export type PublicState = {
   /** The user's home directory, so the surface can show `~/notes` for a path. */
   userHome: string;
   /**
+   * Whether this system has a native file picker the daemon can open (`pick`).
+   * Where it has none (Windows, a Linux without zenity) the surface hides the
+   * acts that open it. Optional so an older snapshot still reads; absent means none.
+   */
+  picker?: boolean;
+  /**
    * How to run the app's CLI (`bun /abs/path/scripts/cli.ts`), when the app
    * declared one: what the surface prints in a command the human can copy.
    */
@@ -1121,10 +1139,12 @@ export type CheckedEdgeView = Omit<EdgeBacklinkView, "rel"> & {
 };
 
 /**
- * A link or an app edge that lands on a file outside the set it is written in:
- * a document in another set, or a file in no set at all. Not a problem (a set
- * may well point beyond itself), but it says the set is not self-contained.
- * Reported only for an app that asks (`LinkCheckOptions.leaving`).
+ * A link or an app edge that lands on a file the session does not hold: a
+ * file beside a listed document, or outside a set's folder. A link to one of
+ * the session's own documents never leaves, whichever set either is in. Not a
+ * problem (a set may well point beyond itself), but it says the session is
+ * not self-contained. Reported only for an app that asks
+ * (`LinkCheckOptions.leaving`).
  */
 export type LeavingLinkView = {
   /** The document it is written in, absolute. */
@@ -1144,7 +1164,7 @@ export type LeavingLinkView = {
   target: string;
   /** The file as a person reads it: its path in its own set, else from the source's set root. */
   targetShown: string;
-  /** The label of the set the target is in; absent for a file in no set. */
+  /** The label of the set whose folder holds the target (a file there that is not a document); absent for a file in no set. */
   targetSet?: string;
   /** An app edge's kind (`frontmatter`); absent for a body link. */
   edge?: string;
@@ -1307,6 +1327,35 @@ export type CheckedLinkView = {
   set?: string;
 };
 
+/**
+ * A link broken in a version that is not active (kit-relink-misses-proposed-
+ * versions): a move's relink rewrites only the active version, so a version
+ * proposed before the move keeps the old target. `line`, `from`, `to` and
+ * `context` are in THAT version's text, not the active one's. Reported, never
+ * rewritten.
+ */
+export type ProposedLinkView = CheckedLinkView & {
+  /** The document's slug (`--doc`). */
+  doc: string;
+  /** The version the link is written in. */
+  version: number;
+  /** Every place the resolver looked. */
+  tried: string[];
+  /**
+   * Where the target went, written from the document as relink writes it:
+   * only when a move or rename this daemon made explains the break (the
+   * target moved, or the document did) and the rewritten link lands. Absent
+   * otherwise, and after a restart: never a guess.
+   */
+  suggest?: string;
+  /**
+   * The act that fixes it, said to the agent: propose the version again with
+   * the link fixed (`version-new --from vN`), then delete the old proposal
+   * (`version-delete vN`), which was the agent's own and never active.
+   */
+  act: string;
+};
+
 /** A document sharing its file name with another, and the name it could take. */
 export type SharedNameFile = {
   path: string;
@@ -1321,14 +1370,23 @@ export type SharedNameFile = {
 /**
  * The link check, in three sections. Each section's `count` is the whole, and
  * its list is cut at a cap (`truncated` says one was). Read from each document's
- * ACTIVE VERSION, so an unsaved edit counts. A dangling link is reported, never
- * an error.
+ * ACTIVE VERSION, so an unsaved edit counts; `proposed` alone reads the other
+ * versions. A dangling link is reported, never an error.
  */
 export type LinkCheck = {
   /** The link problems found: dangling links, unsupported links and shared names (never `unusedImages`). */
   count: number;
   /** Links that resolve to nothing: `tried` is every place the resolver looked. */
   dangling: { count: number; links: (CheckedLinkView & { tried: string[] })[] };
+  /**
+   * Links broken in a version the agent proposed: written by the agent and
+   * never active (`Version.activated`), so a version the human has had active
+   * is not read (`ProposedLinkView`), each with the act that fixes it. A link the active
+   * version has broken too, as written, is in `dangling` alone. Counted in
+   * `count`: activated, it is a broken link. Always sent by this daemon; optional
+   * for a list built by hand.
+   */
+  proposed?: { count: number; links: ProposedLinkView[] };
   /** Links with a scheme nothing here opens (`op:doc/…`): `scheme` is `op`. */
   unsupported: {
     count: number;
@@ -1380,9 +1438,18 @@ export type LinkCheck = {
    */
   edges?: { count: number; kinds: string[]; links: CheckedEdgeView[] };
   /**
+   * The app's edges that nothing answers and that are NOT written as a path
+   * (`pathShaped`: no extension, no leading `/`, `./` or `../`), such as
+   * `feature/some-slug`: a reference in a convention the kit does not know.
+   * Listed, never counted in `count`: the kit cannot tell a broken one from
+   * one another tool resolves. Present when `edges` is.
+   */
+  unresolved?: { count: number; kinds: string[]; links: CheckedEdgeView[] };
+  /**
    * Links and app edges that land outside the set they are written in
-   * (`LeavingLinkView`). Not in `count`: leaving the set is not broken. The
-   * `edge` filter applies as it does to the other sections.
+   * (`LeavingLinkView`). Not in `count`, nor in a set's `total`: leaving the
+   * set is not broken, so it is listed, never counted. The `edge` filter
+   * applies as it does to the other sections.
    */
   leaving?: { count: number; links: LeavingLinkView[] };
   /** The app's word for a set (`LinkCheckOptions.noun`), when it gives one: what a list calls them. */
@@ -1394,7 +1461,7 @@ export type LinkCheck = {
   sets?: {
     id: string;
     label: string;
-    /** Everything the set's group lists, before any list is cut (shared names, the session's, apart). */
+    /** What the sign counts of the set, before any list is cut (shared names, the session's, unresolved references and leaving links apart). */
     total: number;
   }[];
   truncated?: true;
@@ -1757,6 +1824,18 @@ export type ProfileCheck = {
 
 // ── surface to daemon ─────────────────────────────────────────────────────
 
+/** What a `pick` asks for: to add to the context, or only to answer with the paths chosen. */
+export type PickWant = "context-file" | "context-folder" | PickAnswerWant;
+/** A `pick` that adds nothing: the asker is answered with what was chosen. */
+export type PickAnswerWant = "choose-folder" | "choose-file";
+/** Every `want` a `pick` takes; any other is refused before a dialog opens. */
+export const PICK_WANTS = [
+  "context-file",
+  "context-folder",
+  "choose-folder",
+  "choose-file",
+] as const satisfies readonly PickWant[];
+
 /** Surface to daemon, over the WebSocket. An app adds `<app>.<name>` frames. */
 export type ClientOp =
   /** Open a document, or an image in the viewer: the daemon tells them apart by name. */
@@ -1839,6 +1918,13 @@ export type ClientOp =
   | { op: "context.add"; path: string }
   | { op: "context.remove"; id: string }
   | { op: "fs.list"; path: string }
+  /**
+   * Is a file of these bytes (`size`, hex SHA-256) already named `name` in
+   * `dir`? Answered with `fs.same`. What a copy into a folder asks before
+   * writing; `dir` must be a folder the session shows (a set, a folder in one,
+   * the workspace), and anything else is refused.
+   */
+  | { op: "fs.same"; dir: string; name: string; size: number; sha256: string }
   /** Load a version's text into the surface (answered with `version.text`, origin "load"). */
   | { op: "read"; doc: string; version: number }
   | { op: "diff"; doc?: string; against: DiffSide }
@@ -1848,8 +1934,12 @@ export type ClientOp =
   | { op: "reveal"; path: string }
   /** Show a version's file. The daemon resolves it, so the surface names no path. */
   | { op: "reveal.version"; doc: string; version: number }
-  /** Open the OS file picker and add what comes back to the context. */
-  | { op: "pick"; want: "context-file" | "context-folder" }
+  /**
+   * Open the OS file picker. `context-file` and `context-folder` add what
+   * comes back to the context; `choose-folder` and `choose-file` only answer
+   * the asker with what was chosen (a `chosen` frame), adding nothing.
+   */
+  | { op: "pick"; want: PickWant }
   /** Search the context; answered with `search.results`. */
   | { op: "search"; query: string; limit?: number }
   /**
@@ -1968,6 +2058,17 @@ export type ServerOp =
    */
   | ({ op: "show" } & ShowTarget)
   | { op: "fs.list"; path: string; entries: FsListEntry[]; error?: string }
+  /**
+   * To the asker only: the paths a `choose-folder` or `choose-file` pick chose
+   * (never a folder for a file), each named as the context names it; none,
+   * and `cancelled`, when the dialog was dismissed. Its own frame, not
+   * Story Studio's `picked`, whose paths a shell brings into the context.
+   */
+  | { op: "chosen"; paths: string[]; cancelled?: boolean }
+  /** To the asker only: a `context.add` it sent landed; a refusal is an `error` instead. */
+  | { op: "context.added"; ids: string[] }
+  /** To the asker only: whether anything is at `path`, and whether it is a file of the same bytes. */
+  | { op: "fs.same"; dir: string; name: string; exists: boolean; same: boolean }
   /** To the sender only: what a move to the Trash would take. */
   | ({ op: "trash.preview" } & TrashPreview)
   /** To the sender only: `path` is in the Trash. */

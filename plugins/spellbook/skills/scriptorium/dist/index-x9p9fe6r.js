@@ -11278,6 +11278,25 @@ var AMBIENT = new Set(["prefs.set", "select", "read", "diff", "edit"]);
 var FLUSH_FIRST = new Set(["activate", "version.new", "merge"]);
 var EDIT_DEBOUNCE_MS = 250;
 var EDIT_RETRY_MS = 1000;
+var PICK_WAIT_MS = 60 * 60000;
+async function pickPaths(request, want) {
+  const frame = await request({ op: "pick", want }, { timeoutMs: PICK_WAIT_MS });
+  if (frame.op !== "chosen")
+    throw new Error("the workspace did not say what was chosen");
+  return frame.paths;
+}
+async function sha256Hex(file) {
+  const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+async function fileAlreadyAt(request, dir, file) {
+  const sha256 = await sha256Hex(file);
+  const frame = await request({ op: "fs.same", dir, name: file.name, size: file.size, sha256 });
+  if (frame.op !== "fs.same")
+    throw new Error("the workspace did not say what is there");
+  const r = frame;
+  return { exists: r.exists, same: r.same };
+}
 
 class DaemonError extends Error {
   choices;
@@ -11301,6 +11320,7 @@ function createDaemonClient(options2 = {}) {
     endedBy: null,
     lastError: null,
     lastErrorTitle: null,
+    lastErrorSeq: 0,
     texts: new Map,
     done: null,
     diff: null
@@ -11339,6 +11359,7 @@ function createDaemonClient(options2 = {}) {
     for (const l of [...listeners])
       l();
   };
+  const refuse = (message, title) => set({ lastError: message, lastErrorTitle: title, lastErrorSeq: view.lastErrorSeq + 1 });
   const settle = (id) => {
     const p = pending.get(id);
     if (p)
@@ -11364,7 +11385,7 @@ function createDaemonClient(options2 = {}) {
   function send(op) {
     if (view.endedBy) {
       if (!AMBIENT.has(op.op))
-        set({ lastError: SESSION_ENDED, lastErrorTitle: null });
+        refuse(SESSION_ENDED, null);
       return null;
     }
     const ws = socket;
@@ -11588,10 +11609,7 @@ function createDaemonClient(options2 = {}) {
         break;
       case "error":
         if (!waiting)
-          set({
-            lastError: frame.message,
-            lastErrorTitle: null
-          });
+          refuse(frame.message, null);
         break;
       case "version.text": {
         const f = frame;
@@ -11626,7 +11644,7 @@ function createDaemonClient(options2 = {}) {
       case "link.target": {
         const said = linkRefusal(frame);
         if (said && !waiting)
-          set({ lastError: said, lastErrorTitle: LINK_REFUSED });
+          refuse(said, LINK_REFUSED);
         break;
       }
       case "structure.done": {
@@ -12019,40 +12037,49 @@ var __iconNode21 = [
   ["path", { d: "M6.391 20.279a10 10 0 0 1-2.69-2.7", key: "1fvljs" }]
 ];
 var CircleDashed = createLucideIcon("circle-dashed", __iconNode21);
-// node_modules/lucide-react/dist/esm/icons/clock.mjs
+// node_modules/lucide-react/dist/esm/icons/clipboard-paste.mjs
 var __iconNode22 = [
+  ["path", { d: "M11 14h10", key: "1w8e9d" }],
+  ["path", { d: "M16 4h2a2 2 0 0 1 2 2v1.344", key: "1e62lh" }],
+  ["path", { d: "m17 18 4-4-4-4", key: "z2g111" }],
+  ["path", { d: "M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113", key: "bjbb7m" }],
+  ["rect", { x: "8", y: "2", width: "8", height: "4", rx: "1", key: "ublpy" }]
+];
+var ClipboardPaste = createLucideIcon("clipboard-paste", __iconNode22);
+// node_modules/lucide-react/dist/esm/icons/clock.mjs
+var __iconNode23 = [
   ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
   ["path", { d: "M12 6v6l4 2", key: "mmk7yg" }]
 ];
-var Clock = createLucideIcon("clock", __iconNode22);
+var Clock = createLucideIcon("clock", __iconNode23);
 // node_modules/lucide-react/dist/esm/icons/copy-plus.mjs
-var __iconNode23 = [
+var __iconNode24 = [
   ["line", { x1: "15", x2: "15", y1: "12", y2: "18", key: "1p7wdc" }],
   ["line", { x1: "12", x2: "18", y1: "15", y2: "15", key: "1nscbv" }],
   ["rect", { width: "14", height: "14", x: "8", y: "8", rx: "2", ry: "2", key: "17jyea" }],
   ["path", { d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2", key: "zix9uf" }]
 ];
-var CopyPlus = createLucideIcon("copy-plus", __iconNode23);
+var CopyPlus = createLucideIcon("copy-plus", __iconNode24);
 // node_modules/lucide-react/dist/esm/icons/copy.mjs
-var __iconNode24 = [
+var __iconNode25 = [
   ["rect", { width: "14", height: "14", x: "8", y: "8", rx: "2", ry: "2", key: "17jyea" }],
   ["path", { d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2", key: "zix9uf" }]
 ];
-var Copy = createLucideIcon("copy", __iconNode24);
+var Copy = createLucideIcon("copy", __iconNode25);
 // node_modules/lucide-react/dist/esm/icons/corner-down-left.mjs
-var __iconNode25 = [
+var __iconNode26 = [
   ["path", { d: "M20 4v7a4 4 0 0 1-4 4H4", key: "6o5b7l" }],
   ["path", { d: "m9 10-5 5 5 5", key: "1kshq7" }]
 ];
-var CornerDownLeft = createLucideIcon("corner-down-left", __iconNode25);
+var CornerDownLeft = createLucideIcon("corner-down-left", __iconNode26);
 // node_modules/lucide-react/dist/esm/icons/corner-down-right.mjs
-var __iconNode26 = [
+var __iconNode27 = [
   ["path", { d: "m15 10 5 5-5 5", key: "qqa56n" }],
   ["path", { d: "M4 4v7a4 4 0 0 0 4 4h12", key: "z08zvw" }]
 ];
-var CornerDownRight = createLucideIcon("corner-down-right", __iconNode26);
+var CornerDownRight = createLucideIcon("corner-down-right", __iconNode27);
 // node_modules/lucide-react/dist/esm/icons/eye-off.mjs
-var __iconNode27 = [
+var __iconNode28 = [
   [
     "path",
     {
@@ -12070,9 +12097,9 @@ var __iconNode27 = [
   ],
   ["path", { d: "m2 2 20 20", key: "1ooewy" }]
 ];
-var EyeOff = createLucideIcon("eye-off", __iconNode27);
+var EyeOff = createLucideIcon("eye-off", __iconNode28);
 // node_modules/lucide-react/dist/esm/icons/eye.mjs
-var __iconNode28 = [
+var __iconNode29 = [
   [
     "path",
     {
@@ -12082,9 +12109,9 @@ var __iconNode28 = [
   ],
   ["circle", { cx: "12", cy: "12", r: "3", key: "1v7zrd" }]
 ];
-var Eye = createLucideIcon("eye", __iconNode28);
+var Eye = createLucideIcon("eye", __iconNode29);
 // node_modules/lucide-react/dist/esm/icons/file-code.mjs
-var __iconNode29 = [
+var __iconNode30 = [
   [
     "path",
     {
@@ -12096,9 +12123,9 @@ var __iconNode29 = [
   ["path", { d: "M10 12.5 8 15l2 2.5", key: "1tg20x" }],
   ["path", { d: "m14 12.5 2 2.5-2 2.5", key: "yinavb" }]
 ];
-var FileCode = createLucideIcon("file-code", __iconNode29);
+var FileCode = createLucideIcon("file-code", __iconNode30);
 // node_modules/lucide-react/dist/esm/icons/file-plus.mjs
-var __iconNode30 = [
+var __iconNode31 = [
   [
     "path",
     {
@@ -12110,9 +12137,9 @@ var __iconNode30 = [
   ["path", { d: "M9 15h6", key: "cctwl0" }],
   ["path", { d: "M12 18v-6", key: "17g6i2" }]
 ];
-var FilePlus = createLucideIcon("file-plus", __iconNode30);
+var FilePlus = createLucideIcon("file-plus", __iconNode31);
 // node_modules/lucide-react/dist/esm/icons/file-text.mjs
-var __iconNode31 = [
+var __iconNode32 = [
   [
     "path",
     {
@@ -12125,9 +12152,9 @@ var __iconNode31 = [
   ["path", { d: "M16 13H8", key: "t4e002" }],
   ["path", { d: "M16 17H8", key: "z1uh3a" }]
 ];
-var FileText = createLucideIcon("file-text", __iconNode31);
+var FileText = createLucideIcon("file-text", __iconNode32);
 // node_modules/lucide-react/dist/esm/icons/file.mjs
-var __iconNode32 = [
+var __iconNode33 = [
   [
     "path",
     {
@@ -12137,9 +12164,9 @@ var __iconNode32 = [
   ],
   ["path", { d: "M14 2v5a1 1 0 0 0 1 1h5", key: "wfsgrz" }]
 ];
-var File = createLucideIcon("file", __iconNode32);
+var File = createLucideIcon("file", __iconNode33);
 // node_modules/lucide-react/dist/esm/icons/folder-input.mjs
-var __iconNode33 = [
+var __iconNode34 = [
   [
     "path",
     {
@@ -12150,9 +12177,9 @@ var __iconNode33 = [
   ["path", { d: "M2 13h10", key: "pgb2dq" }],
   ["path", { d: "m9 16 3-3-3-3", key: "6m91ic" }]
 ];
-var FolderInput = createLucideIcon("folder-input", __iconNode33);
+var FolderInput = createLucideIcon("folder-input", __iconNode34);
 // node_modules/lucide-react/dist/esm/icons/folder-open.mjs
-var __iconNode34 = [
+var __iconNode35 = [
   [
     "path",
     {
@@ -12161,9 +12188,9 @@ var __iconNode34 = [
     }
   ]
 ];
-var FolderOpen = createLucideIcon("folder-open", __iconNode34);
+var FolderOpen = createLucideIcon("folder-open", __iconNode35);
 // node_modules/lucide-react/dist/esm/icons/folder-plus.mjs
-var __iconNode35 = [
+var __iconNode36 = [
   ["path", { d: "M12 10v6", key: "1bos4e" }],
   ["path", { d: "M9 13h6", key: "1uhe8q" }],
   [
@@ -12174,9 +12201,9 @@ var __iconNode35 = [
     }
   ]
 ];
-var FolderPlus = createLucideIcon("folder-plus", __iconNode35);
+var FolderPlus = createLucideIcon("folder-plus", __iconNode36);
 // node_modules/lucide-react/dist/esm/icons/folder-search.mjs
-var __iconNode36 = [
+var __iconNode37 = [
   [
     "path",
     {
@@ -12187,9 +12214,9 @@ var __iconNode36 = [
   ["path", { d: "m21 21-1.9-1.9", key: "1g2n9r" }],
   ["circle", { cx: "17", cy: "17", r: "3", key: "18b49y" }]
 ];
-var FolderSearch = createLucideIcon("folder-search", __iconNode36);
+var FolderSearch = createLucideIcon("folder-search", __iconNode37);
 // node_modules/lucide-react/dist/esm/icons/folder-tree.mjs
-var __iconNode37 = [
+var __iconNode38 = [
   [
     "path",
     {
@@ -12207,9 +12234,9 @@ var __iconNode37 = [
   ["path", { d: "M3 5a2 2 0 0 0 2 2h3", key: "f2jnh7" }],
   ["path", { d: "M3 3v13a2 2 0 0 0 2 2h3", key: "k8epm1" }]
 ];
-var FolderTree = createLucideIcon("folder-tree", __iconNode37);
+var FolderTree = createLucideIcon("folder-tree", __iconNode38);
 // node_modules/lucide-react/dist/esm/icons/folder.mjs
-var __iconNode38 = [
+var __iconNode39 = [
   [
     "path",
     {
@@ -12218,76 +12245,83 @@ var __iconNode38 = [
     }
   ]
 ];
-var Folder = createLucideIcon("folder", __iconNode38);
+var Folder = createLucideIcon("folder", __iconNode39);
 // node_modules/lucide-react/dist/esm/icons/git-branch.mjs
-var __iconNode39 = [
+var __iconNode40 = [
   ["path", { d: "M15 6a9 9 0 0 0-9 9V3", key: "1cii5b" }],
   ["circle", { cx: "18", cy: "6", r: "3", key: "1h7g24" }],
   ["circle", { cx: "6", cy: "18", r: "3", key: "fqmcym" }]
 ];
-var GitBranch = createLucideIcon("git-branch", __iconNode39);
+var GitBranch = createLucideIcon("git-branch", __iconNode40);
 // node_modules/lucide-react/dist/esm/icons/git-compare.mjs
-var __iconNode40 = [
+var __iconNode41 = [
   ["circle", { cx: "18", cy: "18", r: "3", key: "1xkwt0" }],
   ["circle", { cx: "6", cy: "6", r: "3", key: "1lh9wr" }],
   ["path", { d: "M13 6h3a2 2 0 0 1 2 2v7", key: "1yeb86" }],
   ["path", { d: "M11 18H8a2 2 0 0 1-2-2V9", key: "19pyzm" }]
 ];
-var GitCompare = createLucideIcon("git-compare", __iconNode40);
+var GitCompare = createLucideIcon("git-compare", __iconNode41);
 // node_modules/lucide-react/dist/esm/icons/glasses.mjs
-var __iconNode41 = [
+var __iconNode42 = [
   ["circle", { cx: "6", cy: "15", r: "4", key: "vux9w4" }],
   ["circle", { cx: "18", cy: "15", r: "4", key: "18o8ve" }],
   ["path", { d: "M14 15a2 2 0 0 0-2-2 2 2 0 0 0-2 2", key: "1ag4bs" }],
   ["path", { d: "M2.5 13 5 7c.7-1.3 1.4-2 3-2", key: "1hm1gs" }],
   ["path", { d: "M21.5 13 19 7c-.7-1.3-1.5-2-3-2", key: "1r31ai" }]
 ];
-var Glasses = createLucideIcon("glasses", __iconNode41);
+var Glasses = createLucideIcon("glasses", __iconNode42);
 // node_modules/lucide-react/dist/esm/icons/globe.mjs
-var __iconNode42 = [
+var __iconNode43 = [
   ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
   ["path", { d: "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20", key: "13o1zl" }],
   ["path", { d: "M2 12h20", key: "9i4pu4" }]
 ];
-var Globe = createLucideIcon("globe", __iconNode42);
+var Globe = createLucideIcon("globe", __iconNode43);
 // node_modules/lucide-react/dist/esm/icons/hash.mjs
-var __iconNode43 = [
+var __iconNode44 = [
   ["line", { x1: "4", x2: "20", y1: "9", y2: "9", key: "4lhtct" }],
   ["line", { x1: "4", x2: "20", y1: "15", y2: "15", key: "vyu0kd" }],
   ["line", { x1: "10", x2: "8", y1: "3", y2: "21", key: "1ggp8o" }],
   ["line", { x1: "16", x2: "14", y1: "3", y2: "21", key: "weycgp" }]
 ];
-var Hash = createLucideIcon("hash", __iconNode43);
+var Hash = createLucideIcon("hash", __iconNode44);
 // node_modules/lucide-react/dist/esm/icons/image.mjs
-var __iconNode44 = [
+var __iconNode45 = [
   ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", ry: "2", key: "1m3agn" }],
   ["circle", { cx: "9", cy: "9", r: "2", key: "af1f0g" }],
   ["path", { d: "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21", key: "1xmnt7" }]
 ];
-var Image = createLucideIcon("image", __iconNode44);
+var Image = createLucideIcon("image", __iconNode45);
 // node_modules/lucide-react/dist/esm/icons/info.mjs
-var __iconNode45 = [
+var __iconNode46 = [
   ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
   ["path", { d: "M12 16v-4", key: "1dtifu" }],
   ["path", { d: "M12 8h.01", key: "e9boi3" }]
 ];
-var Info = createLucideIcon("info", __iconNode45);
+var Info = createLucideIcon("info", __iconNode46);
 // node_modules/lucide-react/dist/esm/icons/link-2-off.mjs
-var __iconNode46 = [
+var __iconNode47 = [
   ["path", { d: "M9 17H7A5 5 0 0 1 7 7", key: "10o201" }],
   ["path", { d: "M15 7h2a5 5 0 0 1 4 8", key: "1d3206" }],
   ["line", { x1: "8", x2: "12", y1: "12", y2: "12", key: "rvw6j4" }],
   ["line", { x1: "2", x2: "22", y1: "2", y2: "22", key: "a6p6uj" }]
 ];
-var Link2Off = createLucideIcon("link-2-off", __iconNode46);
+var Link2Off = createLucideIcon("link-2-off", __iconNode47);
+// node_modules/lucide-react/dist/esm/icons/link-2.mjs
+var __iconNode48 = [
+  ["path", { d: "M9 17H7A5 5 0 0 1 7 7h2", key: "8i5ue5" }],
+  ["path", { d: "M15 7h2a5 5 0 1 1 0 10h-2", key: "1b9ql8" }],
+  ["line", { x1: "8", x2: "16", y1: "12", y2: "12", key: "1jonct" }]
+];
+var Link2 = createLucideIcon("link-2", __iconNode48);
 // node_modules/lucide-react/dist/esm/icons/link.mjs
-var __iconNode47 = [
+var __iconNode49 = [
   ["path", { d: "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71", key: "1cjeqo" }],
   ["path", { d: "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71", key: "19qd67" }]
 ];
-var Link = createLucideIcon("link", __iconNode47);
+var Link = createLucideIcon("link", __iconNode49);
 // node_modules/lucide-react/dist/esm/icons/list-ordered.mjs
-var __iconNode48 = [
+var __iconNode50 = [
   ["path", { d: "M11 5h10", key: "1cz7ny" }],
   ["path", { d: "M11 12h10", key: "1438ji" }],
   ["path", { d: "M11 19h10", key: "11t30w" }],
@@ -12295,18 +12329,18 @@ var __iconNode48 = [
   ["path", { d: "M4 9h2", key: "r1h2o0" }],
   ["path", { d: "M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02", key: "xtkcd5" }]
 ];
-var ListOrdered = createLucideIcon("list-ordered", __iconNode48);
+var ListOrdered = createLucideIcon("list-ordered", __iconNode50);
 // node_modules/lucide-react/dist/esm/icons/list-tree.mjs
-var __iconNode49 = [
+var __iconNode51 = [
   ["path", { d: "M8 5h13", key: "1pao27" }],
   ["path", { d: "M13 12h8", key: "h98zly" }],
   ["path", { d: "M13 19h8", key: "c3s6r1" }],
   ["path", { d: "M3 10a2 2 0 0 0 2 2h3", key: "1npucw" }],
   ["path", { d: "M3 5v12a2 2 0 0 0 2 2h3", key: "x1gjn2" }]
 ];
-var ListTree = createLucideIcon("list-tree", __iconNode49);
+var ListTree = createLucideIcon("list-tree", __iconNode51);
 // node_modules/lucide-react/dist/esm/icons/loader.mjs
-var __iconNode50 = [
+var __iconNode52 = [
   ["path", { d: "M12 2v4", key: "3427ic" }],
   ["path", { d: "m16.2 7.8 2.9-2.9", key: "r700ao" }],
   ["path", { d: "M18 12h4", key: "wj9ykh" }],
@@ -12316,9 +12350,9 @@ var __iconNode50 = [
   ["path", { d: "M2 12h4", key: "j09sii" }],
   ["path", { d: "m4.9 4.9 2.9 2.9", key: "giyufr" }]
 ];
-var Loader = createLucideIcon("loader", __iconNode50);
+var Loader = createLucideIcon("loader", __iconNode52);
 // node_modules/lucide-react/dist/esm/icons/message-square-plus.mjs
-var __iconNode51 = [
+var __iconNode53 = [
   [
     "path",
     {
@@ -12329,9 +12363,9 @@ var __iconNode51 = [
   ["path", { d: "M12 8v6", key: "1ib9pf" }],
   ["path", { d: "M9 11h6", key: "1fldmi" }]
 ];
-var MessageSquarePlus = createLucideIcon("message-square-plus", __iconNode51);
+var MessageSquarePlus = createLucideIcon("message-square-plus", __iconNode53);
 // node_modules/lucide-react/dist/esm/icons/message-square-text.mjs
-var __iconNode52 = [
+var __iconNode54 = [
   [
     "path",
     {
@@ -12343,9 +12377,9 @@ var __iconNode52 = [
   ["path", { d: "M7 15h6", key: "d9of3u" }],
   ["path", { d: "M7 7h8", key: "af5zfr" }]
 ];
-var MessageSquareText = createLucideIcon("message-square-text", __iconNode52);
+var MessageSquareText = createLucideIcon("message-square-text", __iconNode54);
 // node_modules/lucide-react/dist/esm/icons/message-square.mjs
-var __iconNode53 = [
+var __iconNode55 = [
   [
     "path",
     {
@@ -12354,9 +12388,9 @@ var __iconNode53 = [
     }
   ]
 ];
-var MessageSquare = createLucideIcon("message-square", __iconNode53);
+var MessageSquare = createLucideIcon("message-square", __iconNode55);
 // node_modules/lucide-react/dist/esm/icons/messages-square.mjs
-var __iconNode54 = [
+var __iconNode56 = [
   [
     "path",
     {
@@ -12372,9 +12406,9 @@ var __iconNode54 = [
     }
   ]
 ];
-var MessagesSquare = createLucideIcon("messages-square", __iconNode54);
+var MessagesSquare = createLucideIcon("messages-square", __iconNode56);
 // node_modules/lucide-react/dist/esm/icons/moon.mjs
-var __iconNode55 = [
+var __iconNode57 = [
   [
     "path",
     {
@@ -12383,18 +12417,18 @@ var __iconNode55 = [
     }
   ]
 ];
-var Moon = createLucideIcon("moon", __iconNode55);
+var Moon = createLucideIcon("moon", __iconNode57);
 // node_modules/lucide-react/dist/esm/icons/network.mjs
-var __iconNode56 = [
+var __iconNode58 = [
   ["rect", { x: "16", y: "16", width: "6", height: "6", rx: "1", key: "4q2zg0" }],
   ["rect", { x: "2", y: "16", width: "6", height: "6", rx: "1", key: "8cvhb9" }],
   ["rect", { x: "9", y: "2", width: "6", height: "6", rx: "1", key: "1egb70" }],
   ["path", { d: "M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3", key: "1jsf9p" }],
   ["path", { d: "M12 12V8", key: "2874zd" }]
 ];
-var Network = createLucideIcon("network", __iconNode56);
+var Network = createLucideIcon("network", __iconNode58);
 // node_modules/lucide-react/dist/esm/icons/package.mjs
-var __iconNode57 = [
+var __iconNode59 = [
   [
     "path",
     {
@@ -12406,23 +12440,23 @@ var __iconNode57 = [
   ["polyline", { points: "3.29 7 12 12 20.71 7", key: "ousv84" }],
   ["path", { d: "m7.5 4.27 9 5.15", key: "1c824w" }]
 ];
-var Package = createLucideIcon("package", __iconNode57);
+var Package = createLucideIcon("package", __iconNode59);
 // node_modules/lucide-react/dist/esm/icons/panel-right-close.mjs
-var __iconNode58 = [
+var __iconNode60 = [
   ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
   ["path", { d: "M15 3v18", key: "14nvp0" }],
   ["path", { d: "m8 9 3 3-3 3", key: "12hl5m" }]
 ];
-var PanelRightClose = createLucideIcon("panel-right-close", __iconNode58);
+var PanelRightClose = createLucideIcon("panel-right-close", __iconNode60);
 // node_modules/lucide-react/dist/esm/icons/panel-right-open.mjs
-var __iconNode59 = [
+var __iconNode61 = [
   ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
   ["path", { d: "M15 3v18", key: "14nvp0" }],
   ["path", { d: "m10 15-3-3 3-3", key: "1pgupc" }]
 ];
-var PanelRightOpen = createLucideIcon("panel-right-open", __iconNode59);
+var PanelRightOpen = createLucideIcon("panel-right-open", __iconNode61);
 // node_modules/lucide-react/dist/esm/icons/pencil.mjs
-var __iconNode60 = [
+var __iconNode62 = [
   [
     "path",
     {
@@ -12432,27 +12466,27 @@ var __iconNode60 = [
   ],
   ["path", { d: "m15 5 4 4", key: "1mk7zo" }]
 ];
-var Pencil = createLucideIcon("pencil", __iconNode60);
+var Pencil = createLucideIcon("pencil", __iconNode62);
 // node_modules/lucide-react/dist/esm/icons/plus.mjs
-var __iconNode61 = [
+var __iconNode63 = [
   ["path", { d: "M5 12h14", key: "1ays0h" }],
   ["path", { d: "M12 5v14", key: "s699le" }]
 ];
-var Plus = createLucideIcon("plus", __iconNode61);
+var Plus = createLucideIcon("plus", __iconNode63);
 // node_modules/lucide-react/dist/esm/icons/power.mjs
-var __iconNode62 = [
+var __iconNode64 = [
   ["path", { d: "M12 2v10", key: "mnfbl" }],
   ["path", { d: "M18.4 6.6a9 9 0 1 1-12.77.04", key: "obofu9" }]
 ];
-var Power = createLucideIcon("power", __iconNode62);
+var Power = createLucideIcon("power", __iconNode64);
 // node_modules/lucide-react/dist/esm/icons/redo-2.mjs
-var __iconNode63 = [
+var __iconNode65 = [
   ["path", { d: "m15 14 5-5-5-5", key: "12vg1m" }],
   ["path", { d: "M20 9H9.5A5.5 5.5 0 0 0 4 14.5A5.5 5.5 0 0 0 9.5 20H13", key: "6uklza" }]
 ];
-var Redo2 = createLucideIcon("redo-2", __iconNode63);
+var Redo2 = createLucideIcon("redo-2", __iconNode65);
 // node_modules/lucide-react/dist/esm/icons/save.mjs
-var __iconNode64 = [
+var __iconNode66 = [
   [
     "path",
     {
@@ -12463,15 +12497,24 @@ var __iconNode64 = [
   ["path", { d: "M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7", key: "1ydtos" }],
   ["path", { d: "M7 3v4a1 1 0 0 0 1 1h7", key: "t51u73" }]
 ];
-var Save = createLucideIcon("save", __iconNode64);
+var Save = createLucideIcon("save", __iconNode66);
+// node_modules/lucide-react/dist/esm/icons/scissors.mjs
+var __iconNode67 = [
+  ["circle", { cx: "6", cy: "6", r: "3", key: "1lh9wr" }],
+  ["path", { d: "M8.12 8.12 12 12", key: "1alkpv" }],
+  ["path", { d: "M20 4 8.12 15.88", key: "xgtan2" }],
+  ["circle", { cx: "6", cy: "18", r: "3", key: "fqmcym" }],
+  ["path", { d: "M14.8 14.8 20 20", key: "ptml3r" }]
+];
+var Scissors = createLucideIcon("scissors", __iconNode67);
 // node_modules/lucide-react/dist/esm/icons/search.mjs
-var __iconNode65 = [
+var __iconNode68 = [
   ["path", { d: "m21 21-4.34-4.34", key: "14j7rj" }],
   ["circle", { cx: "11", cy: "11", r: "8", key: "4ej97u" }]
 ];
-var Search = createLucideIcon("search", __iconNode65);
+var Search = createLucideIcon("search", __iconNode68);
 // node_modules/lucide-react/dist/esm/icons/settings.mjs
-var __iconNode66 = [
+var __iconNode69 = [
   [
     "path",
     {
@@ -12481,9 +12524,9 @@ var __iconNode66 = [
   ],
   ["circle", { cx: "12", cy: "12", r: "3", key: "1v7zrd" }]
 ];
-var Settings = createLucideIcon("settings", __iconNode66);
+var Settings = createLucideIcon("settings", __iconNode69);
 // node_modules/lucide-react/dist/esm/icons/sun.mjs
-var __iconNode67 = [
+var __iconNode70 = [
   ["circle", { cx: "12", cy: "12", r: "4", key: "4exip2" }],
   ["path", { d: "M12 2v2", key: "tus03m" }],
   ["path", { d: "M12 20v2", key: "1lh1kg" }],
@@ -12494,63 +12537,63 @@ var __iconNode67 = [
   ["path", { d: "m6.34 17.66-1.41 1.41", key: "1m8zz5" }],
   ["path", { d: "m19.07 4.93-1.41 1.41", key: "1shlcs" }]
 ];
-var Sun = createLucideIcon("sun", __iconNode67);
+var Sun = createLucideIcon("sun", __iconNode70);
 // node_modules/lucide-react/dist/esm/icons/text-quote.mjs
-var __iconNode68 = [
+var __iconNode71 = [
   ["path", { d: "M17 5H3", key: "1cn7zz" }],
   ["path", { d: "M21 12H8", key: "scolzb" }],
   ["path", { d: "M21 19H8", key: "13qgcb" }],
   ["path", { d: "M3 12v7", key: "1ri8j3" }]
 ];
-var TextQuote = createLucideIcon("text-quote", __iconNode68);
+var TextQuote = createLucideIcon("text-quote", __iconNode71);
 // node_modules/lucide-react/dist/esm/icons/trash-2.mjs
-var __iconNode69 = [
+var __iconNode72 = [
   ["path", { d: "M10 11v6", key: "nco0om" }],
   ["path", { d: "M14 11v6", key: "outv1u" }],
   ["path", { d: "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6", key: "miytrc" }],
   ["path", { d: "M3 6h18", key: "d0wm0j" }],
   ["path", { d: "M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2", key: "e791ji" }]
 ];
-var Trash2 = createLucideIcon("trash-2", __iconNode69);
+var Trash2 = createLucideIcon("trash-2", __iconNode72);
 // node_modules/lucide-react/dist/esm/icons/undo-2.mjs
-var __iconNode70 = [
+var __iconNode73 = [
   ["path", { d: "M9 14 4 9l5-5", key: "102s5s" }],
   ["path", { d: "M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11", key: "f3b9sd" }]
 ];
-var Undo2 = createLucideIcon("undo-2", __iconNode70);
+var Undo2 = createLucideIcon("undo-2", __iconNode73);
 // node_modules/lucide-react/dist/esm/icons/undo-dot.mjs
-var __iconNode71 = [
+var __iconNode74 = [
   ["path", { d: "M21 17a9 9 0 0 0-15-6.7L3 13", key: "8mp6z9" }],
   ["path", { d: "M3 7v6h6", key: "1v2h90" }],
   ["circle", { cx: "12", cy: "17", r: "1", key: "1ixnty" }]
 ];
-var UndoDot = createLucideIcon("undo-dot", __iconNode71);
+var UndoDot = createLucideIcon("undo-dot", __iconNode74);
 // node_modules/lucide-react/dist/esm/icons/upload.mjs
-var __iconNode72 = [
+var __iconNode75 = [
   ["path", { d: "M12 3v12", key: "1x0j5s" }],
   ["path", { d: "m17 8-5-5-5 5", key: "7q97r8" }],
   ["path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", key: "ih7n3h" }]
 ];
-var Upload = createLucideIcon("upload", __iconNode72);
+var Upload = createLucideIcon("upload", __iconNode75);
 // node_modules/lucide-react/dist/esm/icons/user-check.mjs
-var __iconNode73 = [
+var __iconNode76 = [
   ["path", { d: "m16 11 2 2 4-4", key: "9rsbq5" }],
   ["path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", key: "1yyitq" }],
   ["circle", { cx: "9", cy: "7", r: "4", key: "nufk8" }]
 ];
-var UserCheck = createLucideIcon("user-check", __iconNode73);
+var UserCheck = createLucideIcon("user-check", __iconNode76);
 // node_modules/lucide-react/dist/esm/icons/user.mjs
-var __iconNode74 = [
+var __iconNode77 = [
   ["path", { d: "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2", key: "975kel" }],
   ["circle", { cx: "12", cy: "7", r: "4", key: "17ys0d" }]
 ];
-var User = createLucideIcon("user", __iconNode74);
+var User = createLucideIcon("user", __iconNode77);
 // node_modules/lucide-react/dist/esm/icons/x.mjs
-var __iconNode75 = [
+var __iconNode78 = [
   ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
   ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
 ];
-var X = createLucideIcon("x", __iconNode75);
+var X = createLucideIcon("x", __iconNode78);
 // src/scriptorium/surface/Frame.tsx
 var import_react56 = __toESM(require_react(), 1);
 
@@ -21480,9 +21523,6 @@ function cn(...inputs) {
   return inputs.some((i) => typeof i === "function") ? (state) => join(state) : join();
 }
 
-// src/kit/context/AddPath.tsx
-var import_react7 = __toESM(require_react(), 1);
-
 // node_modules/@base-ui/react/button/Button.mjs
 var React55 = __toESM(require_react(), 1);
 "use client";
@@ -21623,6 +21663,9 @@ function Button3({
     ...props
   });
 }
+
+// src/kit/context/AddPath.tsx
+var import_react7 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/input/Input.mjs
 var React75 = __toESM(require_react(), 1);
@@ -23027,10 +23070,27 @@ function splitForCompletion(typed) {
     return null;
   return { dir: i === 0 ? "/" : typed.slice(0, i), prefix: typed.slice(i + 1) };
 }
+var ADD_PLACEHOLDER = "Type a path to add…";
+var ADD_PLACEHOLDER_SHORT = "Add a path…";
+function placeholderFor(full, short, fullWidth, room) {
+  if (short === undefined || fullWidth === null || room === null || room <= 0)
+    return full;
+  return fullWidth <= room ? full : short;
+}
+function measure(el, text) {
+  const ctx = document.createElement("canvas").getContext?.("2d");
+  if (!ctx || el.clientWidth === 0)
+    return null;
+  const cs = getComputedStyle(el);
+  ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+  const room = el.clientWidth - Number.parseFloat(cs.paddingLeft) - Number.parseFloat(cs.paddingRight);
+  return { width: ctx.measureText(text).width, room };
+}
 function AddPath({
   listDir,
   onAdd,
-  placeholder = "Add a file or folder by path…",
+  placeholder = ADD_PLACEHOLDER,
+  shortPlaceholder = placeholder === ADD_PLACEHOLDER ? ADD_PLACEHOLDER_SHORT : undefined,
   verb = "adds",
   foldersOnly = false,
   initialValue = "",
@@ -23050,6 +23110,21 @@ function AddPath({
   const [highlight, setHighlight] = import_react7.useState(-1);
   const listId = import_react7.useId();
   const seq = import_react7.useRef(0);
+  const field = import_react7.useRef(null);
+  const [shown, setShown] = import_react7.useState(placeholder);
+  import_react7.useEffect(() => {
+    const el = field.current;
+    const fit = () => {
+      const m = el ? measure(el, placeholder) : null;
+      setShown(placeholderFor(placeholder, shortPlaceholder, m?.width ?? null, m?.room ?? null));
+    };
+    fit();
+    if (!el || typeof ResizeObserver === "undefined")
+      return;
+    const watch = new ResizeObserver(fit);
+    watch.observe(el);
+    return () => watch.disconnect();
+  }, [placeholder, shortPlaceholder]);
   import_react7.useEffect(() => {
     const split = splitForCompletion(value);
     if (!split) {
@@ -23089,7 +23164,8 @@ function AddPath({
       /* @__PURE__ */ jsx_runtime3.jsx(Input3, {
         value,
         onChange: (e) => setValue(e.target.value),
-        placeholder,
+        ref: field,
+        placeholder: shown,
         "aria-label": placeholder.replace(/…$/, ""),
         autoFocus,
         onBlur: () => {
@@ -23587,6 +23663,9 @@ function LocationDialog({
   userHome,
   listDir,
   addFolder,
+  pick,
+  addPlace,
+  original,
   hint,
   onChoose,
   onClose
@@ -23596,7 +23675,10 @@ function LocationDialog({
   const [atPath, setAtPath] = import_react8.useState(() => preselect && targets.some((t) => t.path === preselect) ? preselect : null);
   const at = atPath === null ? -1 : shown.findIndex((t) => t.path === atPath);
   const [making, setMaking] = import_react8.useState(null);
+  const [makingSay, setMakingSay] = import_react8.useState("Making");
   const [refusal, setRefusal] = import_react8.useState(null);
+  const [outside, setOutside] = import_react8.useState(null);
+  const [picking, setPicking] = import_react8.useState(null);
   const listId = import_react8.useId();
   const listRef = import_react8.useRef(null);
   const searchRef = import_react8.useRef(null);
@@ -23632,6 +23714,57 @@ function LocationDialog({
       choose(shown[at]);
     }
   };
+  const browse = () => {
+    if (!pick || picking)
+      return;
+    setPicking("choose-folder");
+    pick("choose-folder").then((paths) => {
+      setPicking(null);
+      const p = paths[0];
+      if (p === undefined)
+        return searchRef.current?.focus();
+      setRefusal(null);
+      const at2 = targets.find((t) => t.path === p);
+      if (at2) {
+        setOutside(null);
+        setQuery("");
+        setAtPath(at2.path);
+      } else
+        setOutside(p);
+      searchRef.current?.focus();
+    }, (e) => {
+      setPicking(null);
+      setRefusal(e instanceof Error ? e.message : String(e));
+    });
+  };
+  const addOriginal = () => {
+    if (!pick || !original || picking)
+      return;
+    setPicking("choose-file");
+    pick("choose-file").then((paths) => {
+      setPicking(null);
+      if (paths.length === 0)
+        return;
+      original.add(paths);
+      onClose();
+    }, (e) => {
+      setPicking(null);
+      setRefusal(e instanceof Error ? e.message : String(e));
+    });
+  };
+  const bringIn = (path) => {
+    if (!addPlace)
+      return;
+    setOutside(null);
+    setRefusal(null);
+    setMakingSay("Adding");
+    const names = [path];
+    setMaking(names);
+    addPlace(path).then(() => {}, (e) => {
+      setMaking((cur) => cur === names ? null : cur);
+      setRefusal(e instanceof Error ? e.message : String(e));
+    });
+  };
   const make = (typed) => {
     if (!addFolder)
       return;
@@ -23639,6 +23772,7 @@ function LocationDialog({
     const names = [full];
     setRefusal(null);
     setQuery("");
+    setMakingSay("Making");
     setMaking(names);
     addFolder(typed).then((r2) => {
       const said = r2?.path;
@@ -23668,6 +23802,17 @@ function LocationDialog({
               className: "truncate text-sm font-semibold text-ink",
               children: title
             }),
+            pick && original && /* @__PURE__ */ jsx_runtime4.jsxs(Button3, {
+              variant: "outline",
+              size: "sm",
+              className: "justify-start",
+              disabled: picking !== null,
+              onClick: addOriginal,
+              children: [
+                /* @__PURE__ */ jsx_runtime4.jsx(File, {}),
+                picking === "choose-file" ? "Choosing…" : original.files > 1 ? "Add the original files…" : "Add the original file…"
+              ]
+            }),
             /* @__PURE__ */ jsx_runtime4.jsx("input", {
               value: query,
               onChange: (e) => search(e.target.value),
@@ -23682,6 +23827,35 @@ function LocationDialog({
               "aria-activedescendant": shown[at] ? `${listId}-${at}` : undefined,
               spellCheck: false,
               className: "h-8 w-full min-w-0 rounded-md border border-edge bg-bg px-2 text-sm text-ink outline-none placeholder:text-ink-faint focus-visible:ring-2 focus-visible:ring-ring/60"
+            }),
+            pick && /* @__PURE__ */ jsx_runtime4.jsxs(Button3, {
+              variant: "ghost",
+              size: "sm",
+              className: "justify-start",
+              disabled: picking !== null,
+              onClick: browse,
+              children: [
+                /* @__PURE__ */ jsx_runtime4.jsx(FolderOpen, {}),
+                picking === "choose-folder" ? "Choosing a folder…" : "Choose a folder…"
+              ]
+            }),
+            outside && /* @__PURE__ */ jsx_runtime4.jsxs("div", {
+              className: "flex flex-col gap-1 px-1 text-xs text-ink-faint",
+              children: [
+                /* @__PURE__ */ jsx_runtime4.jsxs("p", {
+                  children: [
+                    tildify(outside, userHome),
+                    " is not in a set yet."
+                  ]
+                }),
+                addPlace && /* @__PURE__ */ jsx_runtime4.jsx(Button3, {
+                  variant: "outline",
+                  size: "sm",
+                  className: "self-start",
+                  onClick: () => bringIn(outside),
+                  children: "Add it as a set"
+                })
+              ]
             }),
             shown.length === 0 ? /* @__PURE__ */ jsx_runtime4.jsx("p", {
               className: "px-1 py-2 text-xs text-ink-faint",
@@ -23732,7 +23906,8 @@ function LocationDialog({
               role: "status",
               className: "px-1 py-2 text-xs text-ink-faint",
               children: [
-                "Making ",
+                makingSay,
+                " ",
                 making[0],
                 "…"
               ]
@@ -23756,6 +23931,8 @@ function useAskLocation({
   userHome,
   listDir,
   addFolder,
+  pick,
+  addPlace,
   hint
 }) {
   const [asking, setAsking] = import_react8.useState(null);
@@ -23783,6 +23960,9 @@ function useAskLocation({
     userHome,
     listDir,
     addFolder,
+    pick,
+    addPlace,
+    original: asking.ask.original,
     hint,
     onChoose: (dir) => {
       setLast(dir);
@@ -25822,16 +26002,24 @@ var ASKED_LABEL = {
   stalled: "asked, and still no word; may be stuck"
 };
 var UNHEARD_LABEL = "no agent is listening yet; this waits until one is";
+var ENDED_LABEL = {
+  message: "the session ended before an answer came",
+  note: "the session ended before the agent answered",
+  asked: "asked, but the session ended before an answer came"
+};
 var LABELS = {
   message: WAITING_LABEL,
   note: NOTE_WAITING_LABEL,
   asked: ASKED_LABEL
 };
-function badgeFor(waiting, agentListening) {
+function badgeFor(waiting, agentListening, ended = false) {
+  if (ended)
+    return "ended";
   return agentListening || waiting.acknowledged ? waiting.badge : "unheard";
 }
 var ASKED_UNHEARD_LABEL = "asked; no agent is listening yet";
-var labelOf = (badge, of = "message") => badge === "unheard" ? of === "asked" ? ASKED_UNHEARD_LABEL : UNHEARD_LABEL : LABELS[of][badge];
+var labelOf = (badge, of = "message") => badge === "ended" ? ENDED_LABEL[of] : badge === "unheard" ? of === "asked" ? ASKED_UNHEARD_LABEL : UNHEARD_LABEL : LABELS[of][badge];
+var quiet = (badge) => badge === "unheard" || badge === "ended";
 function WaitingBadge({
   badge,
   of = "message",
@@ -25843,11 +26031,11 @@ function WaitingBadge({
     "aria-live": "polite",
     "data-badge": badge,
     "data-waiting-of": of,
-    className: cn("flex items-center gap-1.5 text-[11px]", !flush && "mt-1", working || badge === "unheard" ? "text-ink-dim" : "text-attention", className),
+    className: cn("flex items-center gap-1.5 text-[11px]", !flush && "mt-1", working || quiet(badge) ? "text-ink-dim" : "text-attention", className),
     children: [
       /* @__PURE__ */ jsx_runtime5.jsx("span", {
         "aria-hidden": true,
-        className: cn("inline-block size-1.5 shrink-0 rounded-full", working ? "animate-pulse bg-brand" : badge === "unheard" ? "bg-ink-faint" : "bg-attention")
+        className: cn("inline-block size-1.5 shrink-0 rounded-full", working ? "animate-pulse bg-brand" : quiet(badge) ? "bg-ink-faint" : "bg-attention")
       }),
       labelOf(badge, of)
     ]
@@ -25865,12 +26053,17 @@ function WaitingDot({
     title: label ?? labelOf(badge, of),
     "data-badge": badge,
     "data-waiting-of": of,
-    className: cn("inline-block size-1.5 shrink-0 rounded-full", working ? "animate-pulse bg-brand" : badge === "unheard" ? "bg-ink-faint" : "bg-attention")
+    className: cn("inline-block size-1.5 shrink-0 rounded-full", working ? "animate-pulse bg-brand" : quiet(badge) ? "bg-ink-faint" : "bg-attention")
   });
 }
 
 // src/kit/chat/NoteAtSelection.tsx
 var jsx_runtime6 = __toESM(require_jsx_runtime(), 1);
+var NATIVE_MENU_HINT = "Right-click again for the browser menu";
+function editShortcut(key, mac2 = onMac()) {
+  return mac2 ? `⌘${key}` : `Ctrl ${key}`;
+}
+var ITEM = "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-ink hover:bg-bg focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none";
 var CARD_W = 320;
 var MARGIN = 12;
 function placeCard(at2, height, viewport) {
@@ -25887,7 +26080,10 @@ function NoteAtSelection({
   onAdd,
   onShowNote,
   onDeleteNote,
-  onAddLink
+  onAddLink,
+  edits,
+  linkRefusal: linkRefusal2,
+  noteRefusal
 }) {
   const [writing, setWriting] = import_react10.useState(false);
   const [body, setBody] = import_react10.useState("");
@@ -25929,6 +26125,12 @@ function NoteAtSelection({
   }, [at2, onClose]);
   if (!at2)
     return null;
+  const passage = at2.from < at2.to;
+  const editActs = [
+    edits?.cut && { label: "Cut", key: "X", icon: Scissors, run: edits.cut },
+    edits?.copy && { label: "Copy", key: "C", icon: Copy, run: edits.copy },
+    edits?.paste && { label: "Paste", key: "V", icon: ClipboardPaste, run: edits.paste }
+  ].filter((a) => !!a);
   const submit = (e) => {
     e.preventDefault();
     if (!body.trim())
@@ -26023,40 +26225,79 @@ function NoteAtSelection({
             })
           ]
         }, n.id)),
-        existing.length > 0 && at2.from < at2.to && /* @__PURE__ */ jsx_runtime6.jsx("div", {
+        existing.length > 0 && /* @__PURE__ */ jsx_runtime6.jsx("div", {
           className: "my-1 h-px bg-edge",
           "aria-hidden": true
         }),
-        at2.from < at2.to && /* @__PURE__ */ jsx_runtime6.jsxs("button", {
+        /* @__PURE__ */ jsx_runtime6.jsxs("button", {
           type: "button",
+          disabled: !passage || noteRefusal !== undefined,
+          title: !passage ? "A note is about a passage: select some text first" : noteRefusal,
           onClick: () => setWriting(true),
-          className: cn("flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-ink", "hover:bg-bg focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"),
+          className: cn(ITEM, "disabled:pointer-events-none disabled:text-ink-faint"),
           children: [
             /* @__PURE__ */ jsx_runtime6.jsx(MessageSquarePlus, {
               "aria-hidden": true,
               className: "size-3.5 text-ink-faint"
             }),
-            "Add note"
+            "Add note",
+            (!passage || noteRefusal !== undefined) && /* @__PURE__ */ jsx_runtime6.jsx("span", {
+              "data-slot": "why",
+              className: "ml-auto text-[10px] text-ink-faint",
+              children: passage ? "session ended" : "select text first"
+            })
           ]
         }),
-        at2.from < at2.to && onAddLink && /* @__PURE__ */ jsx_runtime6.jsxs("button", {
+        onAddLink && /* @__PURE__ */ jsx_runtime6.jsxs("button", {
           type: "button",
+          disabled: linkRefusal2 !== undefined,
+          title: linkRefusal2,
           onClick: () => {
             onAddLink(at2);
             onClose();
           },
-          className: cn("flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-ink", "hover:bg-bg focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"),
+          className: cn(ITEM, "disabled:pointer-events-none disabled:text-ink-faint"),
           children: [
             /* @__PURE__ */ jsx_runtime6.jsx(Link, {
               "aria-hidden": true,
               className: "size-3.5 text-ink-faint"
             }),
-            "Add link",
+            passage ? "Add link" : "Insert a link",
             /* @__PURE__ */ jsx_runtime6.jsx("span", {
+              "data-slot": linkRefusal2 ? "why" : undefined,
               className: "ml-auto text-[10px] text-ink-faint",
-              children: linkShortcutLabel()
+              children: linkRefusal2 ? "not here" : linkShortcutLabel()
             })
           ]
+        }),
+        editActs.length > 0 && /* @__PURE__ */ jsx_runtime6.jsx("div", {
+          className: "my-1 h-px bg-edge",
+          "aria-hidden": true
+        }),
+        editActs.map(({ label, key, icon: Icon2, run }) => /* @__PURE__ */ jsx_runtime6.jsxs("button", {
+          type: "button",
+          onClick: () => {
+            onClose();
+            run();
+          },
+          className: ITEM,
+          children: [
+            /* @__PURE__ */ jsx_runtime6.jsx(Icon2, {
+              "aria-hidden": true,
+              className: "size-3.5 text-ink-faint"
+            }),
+            label,
+            /* @__PURE__ */ jsx_runtime6.jsx("span", {
+              className: "ml-auto text-[10px] text-ink-faint",
+              children: editShortcut(key)
+            })
+          ]
+        }, label)),
+        /* @__PURE__ */ jsx_runtime6.jsx("p", {
+          "data-slot": "native-menu-hint",
+          title: "Shift-right-click opens the browser menu straight away",
+          className: "mt-1 border-t border-edge px-2 pt-1.5 pb-0.5 text-[10px] text-ink-faint",
+          children: NATIVE_MENU_HINT
         })
       ]
     })
@@ -32729,6 +32970,45 @@ function jsonProblem(text4) {
     const offset4 = Math.min(e.at, text4.length);
     return { ...placeOf(text4, offset4), offset: offset4, problem: e.problem };
   }
+}
+
+// src/kit/lib/layoutStorage.ts
+function layoutKey(id, panelIds) {
+  return `react-resizable-panels:${[id, ...panelIds].join(":")}`;
+}
+var LAYOUT_SUM_SLACK = 0.5;
+function isStoredLayout(raw, panelIds) {
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return false;
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed))
+    return false;
+  const sizes = parsed;
+  if (Object.keys(sizes).length !== panelIds.length)
+    return false;
+  let sum = 0;
+  for (const id of panelIds) {
+    const size4 = sizes[id];
+    if (typeof size4 !== "number" || !Number.isFinite(size4) || size4 < 0 || size4 > 100)
+      return false;
+    sum += size4;
+  }
+  return Math.abs(sum - 100) <= LAYOUT_SUM_SLACK;
+}
+function guardedLayoutStorage(storage, id, panelIds) {
+  const key = layoutKey(id, panelIds);
+  return {
+    getItem: (k) => {
+      const raw = storage.getItem(k);
+      if (k !== key || raw === null)
+        return raw;
+      return isStoredLayout(raw, panelIds) ? raw : null;
+    },
+    setItem: (k, v) => storage.setItem(k, v)
+  };
 }
 
 // src/kit/lib/storage.ts
@@ -40301,7 +40581,7 @@ function Minimap({
         className: cn("group absolute inset-x-0 -my-1.5 box-content min-h-1 py-1.5 outline-none", "focus-visible:ring-2 focus-visible:ring-ring/60"),
         children: /* @__PURE__ */ jsx_runtime22.jsx("span", {
           "aria-hidden": true,
-          className: "mx-0.5 block h-full min-h-1 rounded-[1px] bg-brand/65 group-hover:bg-brand"
+          className: "mx-0.5 block h-full min-h-1 rounded-[1px] bg-[color:var(--color-change-tick,color-mix(in_oklab,var(--color-brand)_65%,transparent))] group-hover:bg-[color:var(--color-change-tick-hover,var(--color-brand))]"
         })
       }, h.id);
     })
@@ -40383,7 +40663,7 @@ function CompareView({
     const g = grid.current;
     if (!g)
       return;
-    const measure = () => {
+    const measure2 = () => {
       const height = g.getBoundingClientRect().height;
       if (height <= 0) {
         setMeasured(null);
@@ -40393,10 +40673,10 @@ function CompareView({
       const tops = [...g.querySelectorAll("[data-row]")].map((el) => el.getBoundingClientRect().top - origin);
       setMeasured({ tops, height });
     };
-    measure();
+    measure2();
     if (typeof ResizeObserver === "undefined")
       return;
-    const ro = new ResizeObserver(measure);
+    const ro = new ResizeObserver(measure2);
     ro.observe(g);
     return () => ro.disconnect();
   }, [rows]);
@@ -57659,12 +57939,29 @@ function linkTextProblem(selected) {
     return "The selection starts or ends inside emphasis or code. Select the whole marked span, or only text inside it.";
   return null;
 }
-function linkInsertion(kind, selected, target, relations, heading2) {
+var INLINE_LINK = /!?\[(?:\\.|[^\\\]\n])*\]\((?:\\.|[^\\)\n])*\)/g;
+function insideLinkProblem(text4, from, to) {
+  const start = text4.lastIndexOf(`
+`, from - 1) + 1;
+  const endAt = text4.indexOf(`
+`, to);
+  const line = text4.slice(start, endAt === -1 ? text4.length : endAt);
+  for (const m of line.matchAll(INLINE_LINK)) {
+    const a = start + (m.index ?? 0);
+    const b = a + m[0].length;
+    const hit = from === to ? a < from && from < b : a < to && from < b;
+    if (hit)
+      return from === to ? "The caret is inside a link, and a link cannot hold another. Move it outside the link first." : "The selection is inside a link, and a link cannot hold another.";
+  }
+  return null;
+}
+function linkInsertion(kind, selected, target, relations, heading2, label) {
   const href = `${hrefWithRelations(target.href, relations)}${heading2 ? `#${heading2.anchor}` : ""}`;
   if (kind === "complete")
     return `${href})`;
   const words = kind === "wrap" && selected !== "";
-  const text4 = words ? escapeUnbalanced(selected) : escapeLinkText(heading2 ? heading2.text : stem(target.name));
+  const typed = !words && label !== undefined && label.trim() !== "" ? label.trim() : null;
+  const text4 = words ? escapeUnbalanced(selected) : escapeLinkText(typed ?? (heading2 ? heading2.text : stem(target.name)));
   return `${target.image && !words ? "!" : ""}[${text4}](${href})`;
 }
 function insertionGuard(kind, range, quote) {
@@ -59599,6 +59896,21 @@ function editorOffset(text4, offset4) {
     n++;
   return offset4 - n;
 }
+function daemonOffset(text4, pos) {
+  if (!text4.includes("\r"))
+    return pos;
+  let n = 0;
+  for (let i2 = text4.indexOf(`\r
+`);i2 >= 0 && i2 - n < pos; i2 = text4.indexOf(`\r
+`, i2 + 2))
+    n++;
+  return pos + n;
+}
+function notesInEditor(text4, notes) {
+  if (!text4.includes("\r"))
+    return notes;
+  return notes.map((n) => n.from === null || n.to === null ? n : { ...n, from: editorOffset(text4, n.from), to: editorOffset(text4, n.to) });
+}
 var noteField = StateField.define({
   create: () => Decoration.none,
   update(marks2, tr) {
@@ -59702,11 +60014,12 @@ var editorTheme = EditorView.theme({
     backgroundColor: "color-mix(in srgb, var(--color-attention) 26%, transparent)"
   },
   ".cm-searchMatch.cm-searchMatch-selected": {
-    backgroundColor: "color-mix(in srgb, var(--color-pointed) 40%, transparent)",
-    outline: "1px solid var(--color-pointed)"
+    backgroundColor: "var(--color-find-current, color-mix(in srgb, var(--color-pointed) 40%, transparent))",
+    outline: "1px solid var(--color-find-current-mark, var(--color-pointed))"
   },
   ".cm-flash": {
-    backgroundColor: "color-mix(in srgb, var(--color-pointed) 34%, transparent)"
+    backgroundColor: "color-mix(in srgb, var(--color-pointed) 34%, transparent)",
+    textDecoration: "underline 2px var(--color-flash-mark, transparent)"
   },
   ".cm-selectionMatch": {
     backgroundColor: "color-mix(in srgb, var(--color-ink-faint) 18%, transparent)"
@@ -59718,8 +60031,8 @@ var QUIET_GUTTER_CLASS = "cm-quiet";
 function gutterFor(on) {
   return on ? numberedLines() : [];
 }
-function quietFor(quiet2) {
-  return quiet2 ? EditorView.editorAttributes.of({ class: QUIET_GUTTER_CLASS }) : [];
+function quietFor(quiet3) {
+  return quiet3 ? EditorView.editorAttributes.of({ class: QUIET_GUTTER_CLASS }) : [];
 }
 function dropPoint(v, event) {
   try {
@@ -59764,7 +60077,7 @@ function DocumentView({
   replay,
   onReplayed,
   lineNumbers: lineNumbers2 = false,
-  quiet: quiet2 = false
+  quiet: quiet3 = false
 }) {
   const host = import_react20.useRef(null);
   const view = import_react20.useRef(null);
@@ -59800,13 +60113,15 @@ function DocumentView({
   const lastWritten = import_react20.useRef(null);
   const notesRef = import_react20.useRef(notes);
   notesRef.current = notes;
+  const textRef = import_react20.useRef(text4);
+  textRef.current = text4;
   const focusedRef = import_react20.useRef(focusedNote);
   focusedRef.current = focusedNote;
   const additions = import_react20.useRef({ extensions, tokens });
   additions.current = { extensions, tokens };
   const gutter2 = import_react20.useRef({ numbers: new Compartment, quiet: new Compartment });
-  const gutterNow = import_react20.useRef({ lineNumbers: lineNumbers2, quiet: quiet2 });
-  gutterNow.current = { lineNumbers: lineNumbers2, quiet: quiet2 };
+  const gutterNow = import_react20.useRef({ lineNumbers: lineNumbers2, quiet: quiet3 });
+  gutterNow.current = { lineNumbers: lineNumbers2, quiet: quiet3 };
   const trackers = import_react20.useRef(new Set);
   const follow = (from, to, fromAssoc, toAssoc) => {
     const t2 = { from, to, fromAssoc, toAssoc, alive: true };
@@ -59842,7 +60157,7 @@ function DocumentView({
       return main ? { from: main.from, to: main.to } : null;
     },
     text: () => view.current?.state.doc.toString() ?? initial2.current,
-    replaceRange: (from, to, insert2, guard) => {
+    replaceRange: (from, to, insert2, guard, userEvent = "input.link") => {
       const v = view.current;
       if (!v || v.state.readOnly)
         return false;
@@ -59855,7 +60170,7 @@ function DocumentView({
         changes: { from, to, insert: insert2 },
         selection: { anchor: from + insert2.length },
         scrollIntoView: true,
-        userEvent: "input.link",
+        userEvent,
         annotations: isolateHistory.of("full")
       });
       v.focus();
@@ -59895,8 +60210,8 @@ function DocumentView({
           return;
         const { from, to } = update2.state.selection.main;
         handlers2.current.onSelect?.({
-          from,
-          to,
+          from: daemonOffset(textRef.current, from),
+          to: daemonOffset(textRef.current, to),
           fromLine: update2.state.doc.lineAt(from).number,
           toLine: update2.state.doc.lineAt(to).number,
           text: update2.state.sliceDoc(from, to)
@@ -60023,26 +60338,30 @@ function DocumentView({
         blur: () => {
           handlers2.current.onFlush?.();
           return false;
-        },
-        contextmenu: (event, v2) => {
-          if (!handlers2.current.onContextMenu)
-            return false;
-          const { from, to } = v2.state.selection.main;
-          const pos = v2.posAtCoords({ x: event.clientX, y: event.clientY });
-          const noteIds = pos === null ? [] : (notesRef.current ?? []).filter((n) => n.from !== null && n.to !== null && pos >= n.from && pos <= n.to).map((n) => n.id);
-          if (from === to && noteIds.length === 0)
-            return false;
-          event.preventDefault();
-          handlers2.current.onContextMenu({
-            x: event.clientX,
-            y: event.clientY,
-            from,
-            to,
-            noteIds
-          });
-          return true;
         }
       }));
+    extensions2.push(EditorView.domEventHandlers({
+      contextmenu: (event, v2) => {
+        const ask = handlers2.current.onContextMenu;
+        if (!ask)
+          return false;
+        const { from, to } = v2.state.selection.main;
+        const at2 = v2.posAtCoords({ x: event.clientX, y: event.clientY });
+        const pos = at2 === null ? null : daemonOffset(textRef.current, at2);
+        const noteIds = pos === null ? [] : (notesRef.current ?? []).filter((n) => n.from !== null && n.to !== null && pos >= n.from && pos <= n.to).map((n) => n.id);
+        const taken = ask({
+          x: event.clientX,
+          y: event.clientY,
+          from: daemonOffset(textRef.current, from),
+          to: daemonOffset(textRef.current, to),
+          noteIds
+        }, { shiftKey: event.shiftKey });
+        if (taken === false)
+          return false;
+        event.preventDefault();
+        return true;
+      }
+    }));
     extensions2.push(...additions.current.extensions ?? []);
     const pending = editable2 ? replayRef.current : null;
     const replaying = pending && applyChanges(pending.base, pending.changes) === initial2.current ? pending : null;
@@ -60053,7 +60372,10 @@ function DocumentView({
     });
     view.current = v;
     v.dispatch({
-      effects: setNotes.of({ notes: notesRef.current ?? [], focused: focusedRef.current })
+      effects: setNotes.of({
+        notes: notesInEditor(textRef.current, notesRef.current ?? []),
+        focused: focusedRef.current
+      })
     });
     for (const c of replaying?.changes ?? [])
       v.dispatch({ changes: c, annotations: [remote.of(true), isolateHistory.of("full")] });
@@ -60072,8 +60394,8 @@ function DocumentView({
     view.current?.dispatch({ effects: gutter2.current.numbers.reconfigure(gutterFor(lineNumbers2)) });
   }, [lineNumbers2]);
   import_react20.useEffect(() => {
-    view.current?.dispatch({ effects: gutter2.current.quiet.reconfigure(quietFor(quiet2)) });
-  }, [quiet2]);
+    view.current?.dispatch({ effects: gutter2.current.quiet.reconfigure(quietFor(quiet3)) });
+  }, [quiet3]);
   import_react20.useEffect(() => {
     const v = view.current;
     if (!v || !place)
@@ -60100,11 +60422,12 @@ function DocumentView({
       leave();
     };
   }, [place, docKey, editable2]);
-  const textRef = import_react20.useRef(text4);
-  textRef.current = text4;
   const revealed = import_react20.useRef(onRevealed);
   revealed.current = onRevealed;
   const headingMarkTimer = import_react20.useRef(undefined);
+  const unpainted = import_react20.useRef(clearSeq);
+  const clearNow = import_react20.useRef(clearSeq);
+  clearNow.current = clearSeq;
   import_react20.useEffect(() => {
     const v = view.current;
     if (!v || !reveal)
@@ -60123,6 +60446,7 @@ function DocumentView({
       ] : EditorView.scrollIntoView(start, { y: "center" })
     });
     v.focus();
+    unpainted.current = clearNow.current;
     revealed.current?.(reveal.seq);
     if (!mark)
       return;
@@ -60146,7 +60470,6 @@ function DocumentView({
     const t2 = setTimeout(() => view.current?.dispatch({ effects: setFlash.of(null) }), FLASH_MARK_MS);
     return () => clearTimeout(t2);
   }, [flashSeq]);
-  const unpainted = import_react20.useRef(clearSeq);
   import_react20.useEffect(() => {
     const v = view.current;
     if (!v || clearSeq === undefined || clearSeq === unpainted.current)
@@ -60160,10 +60483,18 @@ function DocumentView({
       sel.removeAllRanges();
   }, [clearSeq]);
   import_react20.useEffect(() => {
-    view.current?.dispatch({ effects: setPending.of(pendingNote ?? null) });
+    const at2 = (o) => editorOffset(textRef.current, o);
+    view.current?.dispatch({
+      effects: setPending.of(pendingNote ? { from: at2(pendingNote.from), to: at2(pendingNote.to) } : null)
+    });
   }, [pendingNote]);
   import_react20.useEffect(() => {
-    view.current?.dispatch({ effects: setNotes.of({ notes: notes ?? [], focused: focusedNote }) });
+    view.current?.dispatch({
+      effects: setNotes.of({
+        notes: notesInEditor(textRef.current, notes ?? []),
+        focused: focusedNote
+      })
+    });
   }, [notes, focusedNote]);
   import_react20.useEffect(() => {
     const v = view.current;
@@ -60221,6 +60552,8 @@ function LinkPicker({
   const [active, setActive] = import_react21.useState(0);
   const [chosen, setChosen] = import_react21.useState([]);
   const [relText, setRelText] = import_react21.useState("");
+  const labelled = kind === "wrap" && quote === "";
+  const [label, setLabel] = import_react21.useState("");
   const card = import_react21.useRef(null);
   const field = import_react21.useRef(null);
   const [pos, setPos] = import_react21.useState(null);
@@ -60265,13 +60598,14 @@ function LinkPicker({
     const pending = normaliseRelation(relText);
     return pending !== "" && !hasRelation(chosen, pending) ? [...chosen, pending] : chosen;
   };
+  const labelNow = () => labelled && label.trim() !== "" ? label.trim() : undefined;
   const choose = (t2) => {
     if (t2)
-      onChoose(t2, relationsNow());
+      onChoose(t2, relationsNow(), undefined, labelNow());
   };
   const chooseHeading = (h) => {
     if (step && h)
-      onChoose(step.target, relationsNow(), h);
+      onChoose(step.target, relationsNow(), h, labelNow());
   };
   const chooseActive = () => step ? chooseHeading(rankedHeadings[active]) : choose(ranked[active]);
   const enterHeadings = () => {
@@ -60467,6 +60801,21 @@ function LinkPicker({
       /* @__PURE__ */ jsx_runtime24.jsxs("div", {
         className: "flex flex-col gap-1 border-t border-edge px-2 py-1.5",
         children: [
+          labelled && /* @__PURE__ */ jsx_runtime24.jsx("input", {
+            value: label,
+            onChange: (e) => setLabel(e.target.value),
+            onKeyDown: (e) => {
+              if (e.key !== "Enter")
+                return;
+              e.preventDefault();
+              chooseActive();
+            },
+            placeholder: "Link text (the document's name if empty)",
+            "aria-label": "Link text",
+            autoComplete: "off",
+            "data-slot": "link-label",
+            className: "w-full bg-transparent text-[11px] text-ink outline-none placeholder:text-ink-faint"
+          }),
           /* @__PURE__ */ jsx_runtime24.jsxs("div", {
             className: "flex flex-wrap items-center gap-1",
             children: [
@@ -60510,7 +60859,7 @@ function LinkPicker({
           }),
           /* @__PURE__ */ jsx_runtime24.jsx("span", {
             className: "text-[10px] text-ink-faint",
-            children: step ? "↵ to link · ⌫ for documents · tab for a relation · esc to close" : "↵ to link · # for headings · tab for a relation · esc to close"
+            children: step ? `↵ to link · ⌫ for documents · tab for ${labelled ? "its text" : "a relation"} · esc to close` : `↵ to link · # for headings · tab for ${labelled ? "its text" : "a relation"} · esc to close`
           })
         ]
       })
@@ -60726,8 +61075,8 @@ function useCoalescedText(text4, key, {
     arrived.current = { text: text4, at: t2 };
   const costly = last2.current.cost >= longMs;
   const pause = costly ? last2.current.cost : 0;
-  const quiet2 = costly ? Math.max(quietMs, pause / 2) : 0;
-  const waited = t2 - last2.current.at >= pause || t2 - arrived.current.at >= quiet2;
+  const quiet3 = costly ? Math.max(quietMs, pause / 2) : 0;
+  const waited = t2 - last2.current.at >= pause || t2 - arrived.current.at >= quiet3;
   let h = held.current;
   if (h === null || h.key !== key || h.text !== text4 && waited) {
     if (h === null || h.text !== text4 || h.key !== key)
@@ -60748,7 +61097,7 @@ function useCoalescedText(text4, key, {
     if (!behind)
       return;
     const at2 = now2();
-    const wait = Math.min(pause - (at2 - last2.current.at), quiet2 - (at2 - arrived.current.at));
+    const wait = Math.min(pause - (at2 - last2.current.at), quiet3 - (at2 - arrived.current.at));
     const timer = setTimeout(wake, Math.max(0, wait));
     return () => clearTimeout(timer);
   });
@@ -66960,6 +67309,26 @@ function readFrontmatter(text4) {
 `)[0] ?? message };
   }
 }
+var KEY_LINE = /^(?:"([^"\n]+)"|'([^'\n]+)'|([A-Za-z_][\w-]*))[ \t]*:/;
+function frontmatterKeyAt(text4, offset4) {
+  const { raw, bodyStart } = splitFrontmatter(text4);
+  if (raw === null || offset4 < 0 || offset4 >= bodyStart)
+    return null;
+  const start = text4.indexOf(`
+`) + 1;
+  let key = "";
+  let at2 = start;
+  for (const line of raw.split(`
+`)) {
+    if (at2 > offset4)
+      break;
+    const m = KEY_LINE.exec(line);
+    if (m)
+      key = m[1] ?? m[2] ?? m[3] ?? "";
+    at2 += line.length + 1;
+  }
+  return offset4 >= start + raw.length ? "" : key;
+}
 function showValue(value) {
   if (value === null || value === undefined)
     return "—";
@@ -67230,13 +67599,14 @@ var TONE = {
   faint: "text-ink-faint",
   outline: "px-1.5 font-medium bg-bg text-ink-dim ring-1 ring-edge",
   brand: "px-1.5 font-medium bg-brand/12 text-brand",
+  stable: "px-1.5 font-medium bg-[color:var(--color-status-stable-tint,color-mix(in_oklab,var(--color-brand)_12%,transparent))] text-[color:var(--color-status-stable,var(--color-brand))]",
   attention: "px-1.5 font-medium bg-attention/15 text-attention",
   danger: "px-1.5 font-medium bg-danger/15 text-danger",
   none: ""
 };
 var STATUS_TONE = {
   draft: "attention",
-  stable: "brand",
+  stable: "stable",
   deprecated: "danger"
 };
 function hasField(fields, key) {
@@ -67302,6 +67672,14 @@ function Chip({ chip }) {
     children: chip.label
   });
 }
+function headerFieldElements(header, key) {
+  const hits = key === "" ? [] : [...header.querySelectorAll("[data-field], [data-chip]")].filter((el) => {
+    const field = el.getAttribute("data-field");
+    const chip = el.getAttribute("data-chip");
+    return field === key || chip === key || (chip?.startsWith(`${key}.`) ?? false);
+  });
+  return hits.length > 0 ? hits : [header];
+}
 function FrontmatterHeader({
   frontmatter,
   chips: chipSlot,
@@ -67362,10 +67740,12 @@ function FrontmatterHeader({
         ]
       }),
       description && /* @__PURE__ */ jsx_runtime27.jsx("p", {
+        "data-field": "description",
         className: "text-ink-dim",
         children: description
       }),
       tags2.length > 0 && /* @__PURE__ */ jsx_runtime27.jsx("div", {
+        "data-field": "tags",
         className: "flex flex-wrap items-center gap-1",
         children: tags2.map((t2) => /* @__PURE__ */ jsx_runtime27.jsx(Chip, {
           chip: { label: `#${t2}`, tone: "outline" }
@@ -67377,10 +67757,12 @@ function FrontmatterHeader({
           className: "contents",
           children: [
             /* @__PURE__ */ jsx_runtime27.jsx("dt", {
+              "data-field": k,
               className: "font-mono text-ink-faint",
               children: k
             }),
             /* @__PURE__ */ jsx_runtime27.jsx("dd", {
+              "data-field": k,
               className: "min-w-0 break-words text-ink-dim",
               children: showValue(v)
             })
@@ -68808,9 +69190,13 @@ function projectBody(text4) {
     });
     plain2 += sep;
   };
-  const emit = (value, node2) => {
-    if (value === "")
+  const emit = (raw, node2) => {
+    if (raw === "")
       return;
+    const value = raw.includes(`\r
+`) ? raw.replaceAll(`\r
+`, `
+`) : raw;
     flushBoundary();
     const s = node2.position?.start.offset;
     const e = node2.position?.end.offset;
@@ -68825,7 +69211,11 @@ function projectBody(text4) {
     });
     plain2 += value;
   };
-  const emitText = (value, node2) => {
+  const emitText = (raw, node2) => {
+    const value = raw.includes(`\r
+`) ? raw.replaceAll(`\r
+`, `
+`) : raw;
     const s = node2.position?.start.offset;
     const e = node2.position?.end.offset;
     if (s === undefined || e === undefined || e - s === value.length || !value.includes(`
@@ -69095,14 +69485,14 @@ function createPlace(opts = {}) {
     }
   };
 }
-function anchorCache(measure, width) {
+function anchorCache(measure2, width) {
   let anchors = null;
   let measuredAt = -1;
   return {
     get() {
       const w = width();
       if (!anchors || w !== measuredAt) {
-        anchors = measure();
+        anchors = measure2();
         measuredAt = w;
       }
       return anchors;
@@ -69432,6 +69822,7 @@ function MarkdownView({
   const htmlProp = import_react25.useMemo(() => ({ __html: html }), [html]);
   const projection = import_react25.useMemo(() => project(text4), [text4]);
   const body = import_react25.useRef(null);
+  const headerBox = import_react25.useRef(null);
   const [widgetSpans, setWidgetSpans] = import_react25.useState([]);
   import_react25.useLayoutEffect(() => {
     const found = [];
@@ -69631,6 +70022,23 @@ function MarkdownView({
   }, [notes, projection, focusedNote, pendingNote, html]);
   const flashSeq = flash?.seq;
   import_react25.useEffect(() => {
+    const key = flash ? frontmatterKeyAt(text4, flash.from) : null;
+    const box = headerBox.current?.querySelector('[data-slot="frontmatter-header"]');
+    if (key !== null && box) {
+      const marked = headerFieldElements(box, key);
+      for (const el of marked)
+        el.setAttribute("data-flash", "on");
+      marked[0]?.scrollIntoView?.({ block: "center" });
+      const t3 = setTimeout(() => {
+        for (const el of marked)
+          el.removeAttribute("data-flash");
+      }, FLASH_PAINT_MS);
+      return () => {
+        clearTimeout(t3);
+        for (const el of marked)
+          el.removeAttribute("data-flash");
+      };
+    }
     const reg = highlightRegistry();
     const root2 = body.current;
     if (!reg || !root2 || !flash || flash.from >= flash.to)
@@ -69660,6 +70068,7 @@ function MarkdownView({
         "data-slot": "markdown-view",
         children: [
           frontmatter && /* @__PURE__ */ jsx_runtime28.jsx("div", {
+            ref: headerBox,
             className: "mx-auto max-w-[76ch] px-8 pt-7",
             children: /* @__PURE__ */ jsx_runtime28.jsx(FrontmatterHeader, {
               frontmatter,
@@ -69671,7 +70080,7 @@ function MarkdownView({
           }),
           /* @__PURE__ */ jsx_runtime28.jsx("div", {
             ref: body,
-            className: frontmatter ? "md-prose mx-auto max-w-[76ch] px-8 pb-16" : "md-prose mx-auto max-w-[76ch] px-8 pt-7 pb-16",
+            className: frontmatter ? "md-prose md-document mx-auto max-w-[76ch] px-8 pb-16" : "md-prose md-document mx-auto max-w-[76ch] px-8 pt-7 pb-16",
             onClick: (e) => onRenderedLinkClick(e, onFollowLink, onFollowHeading),
             onPointerDown: (e) => {
               const isContext = e.button === 2 || e.button === 0 && e.ctrlKey;
@@ -69686,22 +70095,27 @@ function MarkdownView({
             onContextMenu: (e) => {
               if (!onContextMenu)
                 return;
+              if (e.target.closest?.("a"))
+                return;
               const root2 = body.current;
               const point3 = root2 ? pointOffset(root2, projection, e.clientX, e.clientY) : null;
               const remembered = lastRange.current;
               const r2 = selectedRange() ?? (remembered && point3 !== null && point3 >= remembered.from && point3 <= remembered.to ? remembered : null);
               const noteIds = point3 === null ? [] : (notes ?? []).filter((n) => n.from !== null && n.to !== null && point3 >= n.from && point3 <= n.to).map((n) => n.id);
               const m = r2 ? reportable.current(r2) : null;
-              if (!m && noteIds.length === 0)
+              const caret = point3 === null ? null : reportable.current({ from: point3, to: point3 });
+              const where = m ?? caret;
+              if (!where && noteIds.length === 0)
                 return;
-              e.preventDefault();
-              onContextMenu({
+              const taken = onContextMenu({
                 x: e.clientX,
                 y: e.clientY,
-                from: m?.from ?? 0,
-                to: m?.to ?? 0,
+                from: where?.from ?? 0,
+                to: where?.to ?? 0,
                 noteIds
-              });
+              }, { shiftKey: e.shiftKey });
+              if (taken !== false)
+                e.preventDefault();
             },
             dangerouslySetInnerHTML: htmlProp
           }),
@@ -70273,10 +70687,11 @@ function DocumentPane({
     kept.setItem(lineNumbersKey, storedLineNumbers(next));
     setNumbered(next);
   };
+  const splitStorage = import_react29.useMemo(() => guardedLayoutStorage(kept, SPLIT_LAYOUT_ID, SPLIT_PANEL_IDS), [kept]);
   const splitLayout = an({
     id: SPLIT_LAYOUT_ID,
     panelIds: SPLIT_PANEL_IDS,
-    storage: kept
+    storage: splitStorage
   });
   const keepSplit = splitLayout.onLayoutChanged;
   const onSplitLayout = import_react29.useCallback((layout, meta2) => {
@@ -70526,15 +70941,19 @@ function DocumentPane({
     };
   };
   const replay = import_react29.useRef(null);
+  const linkPlaceProblem = (via, from, to) => {
+    const t2 = via === "rendered" ? shown2 : editorHandle.current?.text();
+    return t2 === undefined ? null : insideLinkProblem(t2, from, to);
+  };
   const askLink = (r2, via = "editor") => {
     if (!canLink) {
       r2.track.release();
       return;
     }
-    const problem = r2.kind === "wrap" ? linkTextProblem(r2.quote) : null;
+    const problem = r2.kind === "wrap" ? linkTextProblem(r2.quote) ?? linkPlaceProblem(via, r2.from, r2.to) : null;
     if (problem) {
       r2.track.release();
-      w.announce("Can't link this selection", problem);
+      w.announce(r2.from === r2.to ? "Can't link here" : "Can't link this selection", problem);
       return;
     }
     const range = r2.track.range();
@@ -70545,11 +70964,15 @@ function DocumentPane({
   const askLinkAt = (at2) => {
     const ed = editorMounted ? editorHandle.current : null;
     if (ed) {
+      const from = shown2 === undefined ? at2.from : editorOffset(shown2, at2.from);
+      const to = shown2 === undefined ? at2.to : editorOffset(shown2, at2.to);
       askLink({
         kind: "wrap",
         ...at2,
-        quote: ed.text().slice(at2.from, at2.to),
-        track: ed.track("wrap", at2.from, at2.to)
+        from,
+        to,
+        quote: ed.text().slice(from, to),
+        track: ed.track("wrap", from, to)
       });
       return;
     }
@@ -70563,6 +70986,80 @@ function DocumentPane({
     }, "rendered");
   };
   import_react29.useEffect(() => () => linking?.track.release(), [linking]);
+  const menuOpen = import_react29.useRef(false);
+  menuOpen.current = noteAt !== null;
+  const nativeNext = import_react29.useRef(false);
+  import_react29.useEffect(() => {
+    const down = (e) => {
+      nativeNext.current = menuOpen.current && (e.button === 2 || e.button === 0 && e.ctrlKey);
+    };
+    const spent = () => {
+      nativeNext.current = false;
+    };
+    window.addEventListener("mousedown", down, true);
+    window.addEventListener("contextmenu", spent);
+    return () => {
+      window.removeEventListener("mousedown", down, true);
+      window.removeEventListener("contextmenu", spent);
+    };
+  }, []);
+  const openMenu = (via) => (at2, how) => {
+    const open = { ...at2, via };
+    if (how.shiftKey || nativeNext.current || !menuUsable(open)) {
+      nativeNext.current = false;
+      setNoteAt(null);
+      return false;
+    }
+    setNoteAt(open);
+    return true;
+  };
+  const noteRefusal = daemon.connection === "ended" ? "The session has ended, so no note can be added." : undefined;
+  const menuLinkRefusal = (at2) => {
+    if (shown2 === undefined)
+      return null;
+    const selected = at2.from < at2.to ? shown2.slice(at2.from, at2.to) : "";
+    return (selected ? linkTextProblem(selected) : null) ?? insideLinkProblem(shown2, at2.from, at2.to);
+  };
+  const menuUsable = (at2) => at2.noteIds.length > 0 || at2.from < at2.to && noteRefusal === undefined || canLink && menuLinkRefusal(at2) === null || Object.keys(menuEdits(at2)).length > 0;
+  const announceClipboard = (act) => {
+    const key = `${onMac() ? "⌘" : "Ctrl "}${act === "paste" ? "V" : act === "cut" ? "X" : "C"}`;
+    w.announce(act === "paste" ? "Couldn't paste" : act === "cut" ? "Couldn't cut" : "Couldn't copy", act === "paste" ? `The browser did not let the page read the clipboard. ${key} pastes as usual.` : `The browser did not let the page write to the clipboard. ${key} still works.`);
+  };
+  const menuEdits = (at2) => {
+    const clip2 = typeof navigator !== "undefined" ? navigator.clipboard : undefined;
+    const passage = at2.from < at2.to;
+    const ed = at2.via === "raw" ? editorHandle.current : null;
+    const writable = !!ed && daemon.connection !== "ended";
+    const from = ed && shown2 !== undefined ? editorOffset(shown2, at2.from) : at2.from;
+    const to = ed && shown2 !== undefined ? editorOffset(shown2, at2.to) : at2.to;
+    const quote = () => ed ? ed.text().slice(from, to) : window.getSelection()?.toString() || (shown2 ?? "").slice(at2.from, at2.to);
+    const write = (text5) => clip2 ? clip2.writeText(text5) : Promise.reject(new Error("no clipboard"));
+    return {
+      ...passage && {
+        copy: () => {
+          write(quote()).catch(() => announceClipboard("copy"));
+        }
+      },
+      ...passage && writable && {
+        cut: () => {
+          const text5 = quote();
+          write(text5).then(() => {
+            if (!ed?.replaceRange(from, to, "", { at: from, text: text5 }, "delete.cut"))
+              w.announce("Not cut", "The text changed under the menu. Select it and try again.");
+          }, () => announceClipboard("cut"));
+        }
+      },
+      ...writable && {
+        paste: () => {
+          const text5 = ed?.text().slice(from, to) ?? "";
+          (clip2 ? clip2.readText() : Promise.reject(new Error("no clipboard"))).then((pasted) => {
+            if (!ed?.replaceRange(from, to, pasted, { at: from, text: text5 }, "input.paste"))
+              w.announce("Not pasted", "The text changed under the menu. Try again.");
+          }, () => announceClipboard("paste"));
+        }
+      }
+    };
+  };
   const { request } = daemon;
   const linkingOpen = linking !== null;
   import_react29.useEffect(() => {
@@ -71397,7 +71894,7 @@ function DocumentPane({
                 clearSeq: w.clearSeq,
                 place,
                 pendingNote,
-                onContextMenu: setNoteAt,
+                onContextMenu: openMenu("raw"),
                 onLinkRequest: isJson ? undefined : askLink,
                 onFollowLink: isJson ? undefined : followLink,
                 onImages: isJson ? undefined : takeImages,
@@ -71437,7 +71934,7 @@ function DocumentPane({
                   onSelect,
                   clearSeq: w.clearSeq,
                   place,
-                  onContextMenu: setNoteAt,
+                  onContextMenu: openMenu("rendered"),
                   widgets: inlineWidgets,
                   frontmatterChips,
                   frontmatterTrust,
@@ -71479,7 +71976,7 @@ function DocumentPane({
         existing: (noteAt?.noteIds ?? []).flatMap((id) => {
           const n = doc2?.notes.find((x) => x.id === id);
           const owed = w.state.notesWaiting?.find((o) => o.doc === doc2?.slug && o.noteId === id);
-          const waiting = owed ? badgeFor(owed, w.state.agentListening !== false) : undefined;
+          const waiting = owed ? badgeFor(owed, w.state.agentListening !== false, daemon.connection === "ended") : undefined;
           return n ? [{ id, label: n.body, ...waiting ? { waiting } : {} }] : [];
         }),
         onClose: () => setNoteAt(null),
@@ -71495,7 +71992,10 @@ function DocumentPane({
             w.requestReveal({ doc: doc2.slug, version: doc2.active, from: n.from, to: n.to });
         },
         onDeleteNote: (id) => doc2 && send({ op: "note.remove", doc: doc2.slug, id }),
-        onAddLink: canLink ? (at2) => askLinkAt({ from: at2.from, to: at2.to, x: at2.x, y: at2.y }) : undefined
+        onAddLink: canLink ? (at2) => askLinkAt({ from: at2.from, to: at2.to, x: at2.x, y: at2.y }) : undefined,
+        edits: noteAt ? menuEdits(noteAt) : undefined,
+        linkRefusal: noteAt ? menuLinkRefusal(noteAt) ?? undefined : undefined,
+        noteRefusal
       }),
       linking && canLink && /* @__PURE__ */ jsx_runtime32.jsx(LinkPicker, {
         at: linking,
@@ -71509,7 +72009,7 @@ function DocumentPane({
         failure: linkFailure,
         onClose: closeLink,
         onHeadings: (target) => headingsFor(target.path),
-        onChoose: (target, relations, heading2) => chooseLink(linking.kind, linking.quote, linkInsertion(linking.kind, linking.quote, target, relations, heading2), linking)
+        onChoose: (target, relations, heading2, label) => chooseLink(linking.kind, linking.quote, linkInsertion(linking.kind, linking.quote, target, relations, heading2, label), linking)
       }),
       doc2 && /* @__PURE__ */ jsx_runtime32.jsx(NewVersionDialog, {
         open: naming !== null,
@@ -71656,7 +72156,7 @@ function ChatMessageView({
   return /* @__PURE__ */ jsx_runtime33.jsxs("div", {
     "data-from": m.from,
     "data-type": m.type,
-    className: cn("rounded-md px-2 py-1 text-xs leading-relaxed text-ink-dim", m.from === "agent" && "bg-surface-raised text-ink", m.from === "human" && "bg-brand/10 text-ink", m.type === "result" && "border-l-2 border-added"),
+    className: cn("rounded-md px-2 py-1 text-xs leading-relaxed text-ink-dim", m.from === "agent" && "bg-surface-raised text-ink", m.from === "human" && "bg-[color:var(--color-human-bubble,color-mix(in_oklab,var(--color-brand)_10%,transparent))] text-ink ring-1 ring-[color:var(--color-human-bubble-edge,transparent)] ring-inset", m.type === "result" && "border-l-2 border-added"),
     children: [
       plain2 ? /* @__PURE__ */ jsx_runtime33.jsxs(jsx_runtime33.Fragment, {
         children: [
@@ -71956,6 +72456,7 @@ function ChatSidebar(props) {
     messages,
     waiting,
     agentListening = true,
+    sessionEnded = false,
     docName,
     pathName,
     aboutPart,
@@ -71985,10 +72486,10 @@ function ChatSidebar(props) {
         className: "flex min-h-0 flex-1 flex-col gap-1.5 overflow-auto p-2",
         children: messages.length === 0 ? /* @__PURE__ */ jsx_runtime35.jsx("p", {
           className: "px-1 py-6 text-center text-xs text-ink-faint",
-          children: "Nothing said yet. Ask the agent something below, or wait for it to speak."
+          children: "Nothing said yet. Ask the agent something below, or wait for it to speak. Text you select goes with your message."
         }) : messages.map((m) => /* @__PURE__ */ jsx_runtime35.jsx(ChatMessageView, {
           message: m,
-          badge: waiting?.messageId === m.id ? badgeFor(waiting, agentListening) : null,
+          badge: waiting?.messageId === m.id ? badgeFor(waiting, agentListening, sessionEnded) : null,
           docName,
           pathName,
           aboutPart,
@@ -72019,6 +72520,12 @@ function latestAgentLine(messages) {
   const text4 = messages.findLast((m) => m.from === "agent")?.text;
   return text4 === undefined ? null : plainLine(text4) || null;
 }
+function waitingLine(messages, waiting) {
+  if (!waiting)
+    return null;
+  const text4 = messages.find((m) => m.id === waiting.messageId)?.text;
+  return text4 === undefined ? null : plainLine(text4) || null;
+}
 function floatNote(notesWaiting, docs, asked = new Set) {
   const first = notesWaiting.find((n) => !asked.has(n.noteId)) ?? notesWaiting[0];
   if (!first)
@@ -72042,6 +72549,7 @@ function FloatingComposer({
   docs = [],
   openDoc = null,
   agentListening = true,
+  sessionEnded = false,
   asked,
   onAskNote,
   onOpen,
@@ -72049,9 +72557,10 @@ function FloatingComposer({
   children
 }) {
   const line = waiting ? null : latestAgentLine(messages);
+  const waitedOn = waitingLine(messages, waiting);
   const owed = floatNote(notesWaiting, docs, asked);
   const owedAsked = owed !== null && asked?.has(owed.waiting.noteId) === true;
-  const owedBadge = owed ? badgeFor(owed.waiting, agentListening) : null;
+  const owedBadge = owed ? badgeFor(owed.waiting, agentListening, sessionEnded) : null;
   return /* @__PURE__ */ jsx_runtime36.jsxs("div", {
     "data-slot": "floating-composer",
     className: "mx-auto flex w-full max-w-2xl flex-col gap-1",
@@ -72108,9 +72617,29 @@ function FloatingComposer({
           /* @__PURE__ */ jsx_runtime36.jsx("div", {
             "data-slot": "float-line",
             className: "min-w-0 flex-1",
-            children: waiting ? /* @__PURE__ */ jsx_runtime36.jsx(WaitingBadge, {
-              flush: true,
-              badge: badgeFor(waiting, agentListening)
+            children: waiting ? /* @__PURE__ */ jsx_runtime36.jsxs("div", {
+              "data-slot": "float-waiting",
+              className: "flex min-w-0 items-center gap-2",
+              children: [
+                waitedOn && /* @__PURE__ */ jsx_runtime36.jsxs("p", {
+                  className: "min-w-0 truncate",
+                  title: waitedOn,
+                  children: [
+                    /* @__PURE__ */ jsx_runtime36.jsx("span", {
+                      className: "mr-1.5 font-medium text-ink-faint",
+                      children: "You"
+                    }),
+                    waitedOn
+                  ]
+                }),
+                /* @__PURE__ */ jsx_runtime36.jsx("span", {
+                  className: "shrink-0",
+                  children: /* @__PURE__ */ jsx_runtime36.jsx(WaitingBadge, {
+                    flush: true,
+                    badge: badgeFor(waiting, agentListening, sessionEnded)
+                  })
+                })
+              ]
             }) : line ? /* @__PURE__ */ jsx_runtime36.jsxs("p", {
               className: "truncate",
               title: line,
@@ -72232,6 +72761,7 @@ function Note({
   focused,
   waiting,
   agentListening,
+  sessionEnded,
   asked,
   onAsk,
   onGoTo,
@@ -72240,7 +72770,7 @@ function Note({
   onRemove
 }) {
   const uncertain = UNCERTAIN[note.how];
-  const shownBadge = waiting ? badgeFor(waiting, agentListening) : null;
+  const shownBadge = waiting ? badgeFor(waiting, agentListening, sessionEnded) : null;
   const anchored = note.from !== null;
   const [draft, setDraft] = import_react33.useState(null);
   const replaced = note.editedBy === "agent" ? note.replacedBody : undefined;
@@ -72457,6 +72987,7 @@ function NotesPanel({
   waiting = NONE_WAITING,
   others = [],
   agentListening = true,
+  sessionEnded = false,
   asked = NONE_ASKED,
   onAsk,
   onOpenDoc,
@@ -72514,7 +73045,7 @@ function NotesPanel({
               children: [
                 /* @__PURE__ */ jsx_runtime37.jsx(WaitingDot, {
                   of: "note",
-                  badge: badgeFor(o, agentListening)
+                  badge: badgeFor(o, agentListening, sessionEnded)
                 }),
                 /* @__PURE__ */ jsx_runtime37.jsxs("span", {
                   className: "min-w-0 truncate",
@@ -72537,6 +73068,7 @@ function NotesPanel({
               focused: n.id === focusedId,
               waiting: waiting.get(n.id),
               agentListening,
+              sessionEnded,
               asked: asked.has(n.id),
               onAsk,
               onGoTo,
@@ -72706,14 +73238,14 @@ function owedLabel(waiting) {
     return `${owed}; it may be stuck`;
   return `${owed}; ${stuck} may be stuck`;
 }
-function owedSummary(waiting, agentListening) {
+function owedSummary(waiting, agentListening, ended = false) {
   const badge = loudest(waiting.map((n) => n.badge));
   if (!badge)
     return null;
-  const shown2 = badgeFor({ badge, ...waiting.every((n) => n.acknowledged) ? { acknowledged: true } : {} }, agentListening);
+  const shown2 = badgeFor({ badge, ...waiting.every((n) => n.acknowledged) ? { acknowledged: true } : {} }, agentListening, ended);
   return {
     badge: shown2,
-    label: shown2 === "unheard" ? `${owedCount(waiting)}; ${UNHEARD_LABEL}` : owedLabel(waiting)
+    label: shown2 === "ended" ? `${owedCount(waiting)}; ${ENDED_LABEL.note}` : shown2 === "unheard" ? `${owedCount(waiting)}; ${UNHEARD_LABEL}` : owedLabel(waiting)
   };
 }
 var owedCount = (waiting) => `${waiting.length} ${waiting.length === 1 ? "note" : "notes"} owed an answer`;
@@ -75295,7 +75827,7 @@ function Row2({
   const isActive = !isGroup && node2.rel === activeRel;
   const refSelected = !isGroup && !isFile && !isActive && item.isSelected();
   const props = item.getProps();
-  const tone = item.isDragTarget() ? "bg-brand/15 text-ink ring-1 ring-brand/50 ring-inset" : isActive ? "bg-selected/15 font-medium text-ink" : refSelected ? "bg-brand/10 text-ink" : item.isSelected() ? "bg-surface-raised text-ink" : cn(item.isFocused() && "bg-surface-raised/60", node2.kind === "file" && node2.convention ? "text-ink-faint" : "text-ink-dim");
+  const tone = item.isDragTarget() ? "bg-brand/15 text-ink ring-1 ring-brand/50 ring-inset" : isActive ? "bg-selected/15 font-medium text-ink" : refSelected ? "bg-[color:var(--color-ref-row,color-mix(in_oklab,var(--color-brand)_10%,transparent))] shadow-[inset_2px_0_0_var(--color-ref-row-bar,transparent)] text-ink" : item.isSelected() ? "bg-surface-raised text-ink" : cn(item.isFocused() && "bg-surface-raised/60", node2.kind === "file" && node2.convention ? "text-ink-faint" : "text-ink-dim");
   const rowClass = cn("flex h-7 w-full min-w-0 items-center gap-1.5 rounded-sm pr-2 text-left text-sm outline-none", "hover:bg-surface-raised hover:text-ink", "focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset", tone);
   const toggle = () => item.isExpanded() ? item.collapse() : item.expand();
   const icon = isGroup ? /* @__PURE__ */ jsx_runtime40.jsxs(jsx_runtime40.Fragment, {
@@ -75804,6 +76336,7 @@ function ContextSidebar({
   trashPreview,
   onTrash,
   importImage,
+  fileAt,
   thumbFor,
   onAskDescribe,
   selected,
@@ -75917,25 +76450,69 @@ function ContextSidebar({
       return r2.kept && r2.note ? `${f.name} was ${r2.note}.` : null;
     return `${f.name} was not brought in: ${r2.error}`;
   }, [importImage, confirm]);
+  const addWhereItLives = import_react42.useCallback((path2) => {
+    if (rowsShown(entriesRef.current, [path2]).length > 0)
+      onSelect?.([path2]);
+    else
+      onAddPath(path2);
+  }, [onAddPath, onSelect]);
+  const beforeCopy = import_react42.useCallback(async (f, into, image) => {
+    if (!fileAt)
+      return "copy";
+    const there = joinPath(into, f.name);
+    let at2;
+    try {
+      at2 = await fileAt(into, f);
+    } catch {
+      return "copy";
+    }
+    if (!at2.exists)
+      return "copy";
+    const place = tildify(into, userHome);
+    if (at2.same) {
+      const use2 = await confirm({
+        title: `${f.name} is already in ${place}`,
+        message: `The file there is this same file. Add that one instead of copying it again?`,
+        confirmLabel: "Add the one there",
+        cancelLabel: "Don't copy"
+      });
+      if (use2)
+        addWhereItLives(there);
+      return "skip";
+    }
+    if (image)
+      return "copy";
+    const copy = await confirm({
+      title: `A different ${f.name} is in ${place}`,
+      message: `A file of that name is already there, and it is not this one. Copy this one in under a new name?`,
+      confirmLabel: "Copy under a new name",
+      cancelLabel: "Don't copy"
+    });
+    return copy ? "copy" : "skip";
+  }, [fileAt, userHome, confirm, addWhereItLives]);
   const importDropped = import_react42.useCallback(({ files, folders }, into) => {
     const { docs, images, svg, skipped } = splitDropped(files);
-    for (const i2 of docs) {
-      const f = files[i2];
-      f.text().then((text4) => onStructure({ op: "import", name: f.name, text: text4, ...into ? { dir: into } : {} }), () => setLocalNotice(`Could not read ${f.name}.`));
-    }
     setLocalNotice(dropNotice(skipped, folders, svg));
-    if (images.length > 0)
-      (async () => {
-        const refused = [];
-        for (const i2 of images) {
-          const why2 = await importOneImage(files[i2], into);
-          if (why2)
-            refused.push(why2);
-        }
-        if (refused.length)
-          setLocalNotice(refused.join(" "));
-      })();
-  }, [onStructure, importOneImage]);
+    (async () => {
+      for (const i2 of docs) {
+        const f = files[i2];
+        if (into && await beforeCopy(f, into, false) === "skip")
+          continue;
+        f.text().then((text4) => onStructure({ op: "import", name: f.name, text: text4, ...into ? { dir: into } : {} }), () => setLocalNotice(`Could not read ${f.name}.`));
+      }
+      const refused = [];
+      for (const i2 of images) {
+        const f = files[i2];
+        if (into && await beforeCopy(f, into, true) === "skip")
+          continue;
+        const why2 = await importOneImage(f, into);
+        if (why2)
+          refused.push(why2);
+      }
+      if (refused.length)
+        setLocalNotice(refused.join(" "));
+    })();
+  }, [onStructure, importOneImage, beforeCopy]);
   const importFiles = import_react42.useCallback((dt, into) => importDropped(droppedFiles(dt), into), [importDropped]);
   const asks = !workspace && askLocation ? askLocation : undefined;
   const askAndCreate = import_react42.useCallback(async (what, extension2, label) => {
@@ -75962,11 +76539,12 @@ function ContextSidebar({
       return importDropped(dropped);
     const one2 = dropped.files[docs[0] ?? images[0]];
     const title = n === 1 ? `Where should ${one2.name} be copied?` : `Where should these ${n} files be copied?`;
-    asks({ what: "files", title }).then((dir) => {
+    const original = { files: n, add: (paths) => paths.forEach(addWhereItLives) };
+    asks({ what: "files", title, original }).then((dir) => {
       if (dir)
         importDropped(dropped, dir);
     });
-  }, [asks, importFiles, importDropped]);
+  }, [asks, importFiles, importDropped, addWhereItLives]);
   const askDelete = import_react42.useCallback(async (path2) => {
     if (!trashPreview || !onTrash)
       return;
@@ -76462,8 +77040,9 @@ function ListView({
             className: "flex shrink-0 items-center gap-0.5 px-1.5 pt-1",
             children: [
               /* @__PURE__ */ jsx_runtime42.jsx("span", {
-                className: "flex-1 truncate px-1 text-[11px] text-ink-faint",
-                children: workspace !== null ? "Drop documents or images here to copy them into the workspace" : onAskCreate ? "Drop documents or images, then choose a set" : "Drop documents or images here to copy them in"
+                "data-slot": "drop-hint",
+                className: "min-w-0 flex-1 px-1 text-[11px] text-ink-faint",
+                children: workspace !== null ? "Drop documents or images here to copy them into the workspace" : onAskCreate ? "Drop files, then choose where they go" : "Drop documents or images here to copy them in"
               }),
               onAskCreate && /* @__PURE__ */ jsx_runtime42.jsxs(jsx_runtime42.Fragment, {
                 children: [
@@ -76762,7 +77341,18 @@ function SetView({
             dir: entry.root,
             where: " in this set",
             onStructure
-          })
+          }),
+          appActionsFor({ kind: "entry", path: entryPath(entry), entry }).filter((a) => a.header && a.icon).map((a) => /* @__PURE__ */ jsx_runtime42.jsx(Button3, {
+            variant: a.destructive ? "destructive" : "ghost",
+            size: "icon-sm",
+            "data-action": a.id,
+            "data-variant": a.destructive ? "destructive" : undefined,
+            disabled: a.disabled,
+            onClick: a.onSelect,
+            "aria-label": a.label,
+            title: a.label,
+            children: a.icon
+          }, a.id))
         ]
       }),
       /* @__PURE__ */ jsx_runtime42.jsx("div", {
@@ -77449,18 +78039,18 @@ function usePaneSize(ref) {
     const el = ref.current;
     if (!el)
       return;
-    const measure = () => {
+    const measure2 = () => {
       const r2 = el.getBoundingClientRect();
       const next = r2.width > 0 && r2.height > 0 ? { w: Math.round(r2.width), h: Math.round(r2.height) } : FALLBACK_SIZE;
       setSize((s) => s.w === next.w && s.h === next.h ? s : next);
     };
-    measure();
-    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+    measure2();
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure2) : null;
     ro?.observe(el);
-    window.addEventListener("resize", measure);
+    window.addEventListener("resize", measure2);
     return () => {
       ro?.disconnect();
-      window.removeEventListener("resize", measure);
+      window.removeEventListener("resize", measure2);
     };
   }, [ref]);
   return size4;
@@ -77720,7 +78310,24 @@ var import_react48 = __toESM(require_react(), 1);
 var jsx_runtime48 = __toESM(require_jsx_runtime(), 1);
 var LINK_CHECK_PAUSE_MS = 1200;
 var LINK_CHECK_FALLBACK_MS = 300000;
-var linkCheckTotal = (d) => d.count + d.unusedImages.count + d.symmetry.count + d.ambiguousHeadings.count + (d.leaving?.count ?? 0);
+var linkCheckTotal = (d) => d.count + d.unusedImages.count + d.symmetry.count + d.ambiguousHeadings.count;
+var linkCheckListed = (d) => linkCheckTotal(d) + (d.unresolved?.count ?? 0) + (d.leaving?.count ?? 0);
+function linkCheckQuietLabel(d) {
+  const listed2 = [];
+  if (d.leaving && d.leaving.count > 0)
+    listed2.push(`links leaving the ${nounOf(d)}`);
+  if (d.unresolved && d.unresolved.count > 0)
+    listed2.push("unresolved references");
+  return listed2.length > 0 ? `nothing broken; listed: ${listed2.join(" and ")}` : "nothing to report";
+}
+function linkCheckQuietWord(d) {
+  const words = [];
+  if (d.leaving && d.leaving.count > 0)
+    words.push(`${d.leaving.count} leaving`);
+  if (d.unresolved && d.unresolved.count > 0)
+    words.push(`${d.unresolved.count} unresolved`);
+  return words.join(", ");
+}
 var nounOf = (d) => d.noun ?? "folder";
 var edgeNoun = (kinds) => kinds.length === 1 ? `${kinds[0]} reference` : "reference";
 var count = (n, one2, many) => `${n} ${n === 1 ? one2 : many}`;
@@ -77730,6 +78337,8 @@ function linkCheckLabel(d) {
     parts.push(count(d.duplicates.count, "shared file name", "shared file names"));
   if (d.dangling.count > 0)
     parts.push(count(d.dangling.count, "broken link", "broken links"));
+  if (d.proposed && d.proposed.count > 0)
+    parts.push(count(d.proposed.count, "broken link in a proposed version", "broken links in proposed versions"));
   if (d.references.count > 0)
     parts.push(count(d.references.count, "broken reference", "broken references"));
   if (d.edges && d.edges.count > 0) {
@@ -77740,8 +78349,6 @@ function linkCheckLabel(d) {
     parts.push(count(d.unsupported.count, "unsupported link", "unsupported links"));
   if (d.headings.count > 0)
     parts.push(count(d.headings.count, "link to a missing heading", "links to a missing heading"));
-  if (d.leaving && d.leaving.count > 0)
-    parts.push(`${d.leaving.count} leaving the ${nounOf(d)}`);
   if (d.unusedImages.count > 0)
     parts.push(count(d.unusedImages.count, "image nothing links to or embeds", "images nothing links to or embeds"));
   if (d.symmetry.count > 0)
@@ -77797,6 +78404,7 @@ function LinkEntry({
 }
 function EdgeEntry2({
   edge,
+  unresolved,
   onOpen
 }) {
   const at2 = edge.from !== undefined && edge.to !== undefined ? { from: edge.from, to: edge.to } : undefined;
@@ -77805,6 +78413,7 @@ function EdgeEntry2({
       type: "button",
       "data-slot": "link-check-entry",
       "data-edge": edge.edge,
+      "data-unresolved": unresolved ? "" : undefined,
       "data-source": edge.source,
       "data-line": edge.line,
       onClick: () => onOpen(edge.source, at2),
@@ -77835,7 +78444,7 @@ function EdgeEntry2({
             edge.raw
           ]
         }),
-        edge.tried.length > 0 && /* @__PURE__ */ jsx_runtime48.jsxs("span", {
+        !unresolved && edge.tried.length > 0 && /* @__PURE__ */ jsx_runtime48.jsxs("span", {
           className: "block truncate text-[10px] text-ink-faint",
           children: [
             "nothing at ",
@@ -77901,6 +78510,7 @@ function Section({
   note,
   total,
   shown: shown2,
+  quiet: quiet3,
   children
 }) {
   if (total === 0)
@@ -77908,13 +78518,14 @@ function Section({
   return /* @__PURE__ */ jsx_runtime48.jsxs("section", {
     "aria-label": title,
     "data-slot": "link-check-section",
+    "data-quiet": quiet3 ? "" : undefined,
     className: "flex flex-col",
     children: [
       /* @__PURE__ */ jsx_runtime48.jsxs("h3", {
         className: "sticky top-0 z-10 bg-surface px-2 pt-2 pb-0.5",
         children: [
           /* @__PURE__ */ jsx_runtime48.jsxs("span", {
-            className: "flex items-baseline gap-1.5 text-[11px] font-medium tracking-wide text-ink-dim uppercase",
+            className: cn("flex items-baseline gap-1.5 text-[11px] tracking-wide uppercase", quiet3 ? "font-normal text-ink-faint" : "font-medium text-ink-dim"),
             children: [
               title,
               /* @__PURE__ */ jsx_runtime48.jsx("span", {
@@ -77952,17 +78563,20 @@ function onlySet(d, keep) {
     return list2.filter((x) => keep(x.set));
   }
   const dangling = pick2(d.dangling.links);
+  const proposed = d.proposed ? pick2(d.proposed.links) : undefined;
   const unsupported = pick2(d.unsupported.links);
   const headings = pick2(d.headings.links);
   const references = pick2(d.references.links);
   const edges = d.edges ? pick2(d.edges.links) : undefined;
+  const unresolved = d.unresolved ? pick2(d.unresolved.links) : undefined;
   const images = pick2(d.unusedImages.images);
   const symmetry = pick2(d.symmetry.hints);
   const ambiguous = pick2(d.ambiguousHeadings.hints);
   const leaving = d.leaving ? pick2(d.leaving.links) : undefined;
   return {
-    count: dangling.length + unsupported.length + headings.length + references.length + (edges?.length ?? 0),
+    count: dangling.length + unsupported.length + headings.length + references.length + (edges?.length ?? 0) + (proposed?.length ?? 0),
     dangling: { count: dangling.length, links: dangling },
+    ...proposed ? { proposed: { count: proposed.length, links: proposed } } : {},
     unsupported: {
       count: unsupported.length,
       schemes: [...new Set(unsupported.map((l) => l.scheme))].sort(),
@@ -77979,6 +78593,13 @@ function onlySet(d, keep) {
         count: edges.length,
         kinds: [...new Set(edges.map((e) => e.edge))].sort(),
         links: edges
+      }
+    } : {},
+    ...unresolved ? {
+      unresolved: {
+        count: unresolved.length,
+        kinds: [...new Set(unresolved.map((e) => e.edge))].sort(),
+        links: unresolved
       }
     } : {},
     ...leaving ? { leaving: { count: leaving.length, links: leaving } } : {},
@@ -77999,12 +78620,43 @@ function linkCheckGroups(d) {
     label: null,
     data: onlySet(d, (set2) => set2 === undefined || !known.has(set2))
   });
-  return groups.filter((g) => linkCheckTotal(g.data) > 0);
+  return groups.filter((g) => linkCheckListed(g.data) > 0);
 }
+var quietCount = (d) => (d.unresolved?.count ?? 0) + (d.leaving?.count ?? 0);
 function KindSections({
   data,
+  part,
   onOpen
 }) {
+  if (part === "quiet")
+    return /* @__PURE__ */ jsx_runtime48.jsxs(jsx_runtime48.Fragment, {
+      children: [
+        data.unresolved && /* @__PURE__ */ jsx_runtime48.jsx(Section, {
+          title: "Unresolved references",
+          note: "Not counted as broken: written as a name, not a path, and nothing here answers it. Another tool may know what it names.",
+          total: data.unresolved.count,
+          shown: data.unresolved.links.length,
+          quiet: true,
+          children: data.unresolved.links.map((e) => /* @__PURE__ */ jsx_runtime48.jsx(EdgeEntry2, {
+            edge: e,
+            unresolved: true,
+            onOpen
+          }, `${e.source}:${e.key ?? ""}:${e.raw}:${e.from ?? ""}`))
+        }),
+        data.leaving && /* @__PURE__ */ jsx_runtime48.jsx(Section, {
+          title: `Leaving the ${nounOf(data)}`,
+          note: `Not broken, and not counted: these land on a file this session does not hold. The ${nounOf(data)} is not self-contained.`,
+          total: data.leaving.count,
+          shown: data.leaving.links.length,
+          quiet: true,
+          children: data.leaving.links.map((l) => /* @__PURE__ */ jsx_runtime48.jsx(LeavingEntry, {
+            link: l,
+            noun: nounOf(data),
+            onOpen
+          }, `${l.source}:${l.edge ?? "link"}:${l.from ?? l.raw}:${l.key ?? ""}`))
+        })
+      ]
+    });
   const openLink = (l) => onOpen(l.source, { from: l.from, to: l.to });
   const schemes = data.unsupported.schemes.map((s) => `${s}:`).join(", ");
   return /* @__PURE__ */ jsx_runtime48.jsxs(jsx_runtime48.Fragment, {
@@ -78018,6 +78670,17 @@ function KindSections({
           note: l.tried.length > 0 ? `nothing at ${l.tried.join(", ")}` : undefined,
           onOpen: openLink
         }, `${l.source}:${l.from}`))
+      }),
+      data.proposed && /* @__PURE__ */ jsx_runtime48.jsx(Section, {
+        title: "Broken in a proposed version",
+        note: "A version the agent proposed, never made active, links to nothing here, often because a move updated only the active version. Activated as it is, the link is broken.",
+        total: data.proposed.count,
+        shown: data.proposed.links.length,
+        children: data.proposed.links.map((l) => /* @__PURE__ */ jsx_runtime48.jsx(LinkEntry, {
+          link: l,
+          note: `in v${l.version}${l.suggest ? `; its target moved to ${l.suggest}` : ""}`,
+          onOpen: (x) => onOpen(x.source)
+        }, `${l.source}:${l.version}:${l.from}`))
       }),
       data.edges && /* @__PURE__ */ jsx_runtime48.jsx(Section, {
         title: `Broken ${edgeNoun(data.edges.kinds)}s`,
@@ -78089,17 +78752,6 @@ function KindSections({
           onOpen: openLink
         }, `${l.source}:${l.from}`))
       }),
-      data.leaving && /* @__PURE__ */ jsx_runtime48.jsx(Section, {
-        title: `Leaving the ${nounOf(data)}`,
-        note: `Not broken: these land on a file in another ${nounOf(data)}, or in none. The ${nounOf(data)} is not self-contained.`,
-        total: data.leaving.count,
-        shown: data.leaving.links.length,
-        children: data.leaving.links.map((l) => /* @__PURE__ */ jsx_runtime48.jsx(LeavingEntry, {
-          link: l,
-          noun: nounOf(data),
-          onOpen
-        }, `${l.source}:${l.edge ?? "link"}:${l.from ?? l.raw}:${l.key ?? ""}`))
-      }),
       /* @__PURE__ */ jsx_runtime48.jsx(Section, {
         title: "Images nothing links to or embeds",
         note: "In an images folder beside a document, and no link or embed reaches them (an undone paste leaves its file). Open one to look, then embed it or move it to the Trash.",
@@ -78149,7 +78801,7 @@ function LinkCheckList({
   data,
   onOpen
 }) {
-  if (linkCheckTotal(data) === 0)
+  if (linkCheckListed(data) === 0)
     return /* @__PURE__ */ jsx_runtime48.jsx("p", {
       "data-slot": "link-check-list",
       className: "pt-2 text-[12px] text-ink-dim",
@@ -78204,35 +78856,72 @@ function LinkCheckList({
           ]
         }, d.name))
       }),
-      groups === null ? /* @__PURE__ */ jsx_runtime48.jsx(KindSections, {
-        data,
-        onOpen
-      }) : groups.map((g) => /* @__PURE__ */ jsx_runtime48.jsxs("section", {
-        "data-slot": "link-check-set",
-        "data-set": g.id ?? undefined,
-        "aria-label": g.label ? `In ${g.label}` : elsewhere2,
-        className: "flex flex-col",
+      groups === null ? /* @__PURE__ */ jsx_runtime48.jsxs(jsx_runtime48.Fragment, {
         children: [
-          /* @__PURE__ */ jsx_runtime48.jsxs("h3", {
-            className: "mx-2 mt-3 flex items-baseline gap-1.5 border-b border-edge pb-0.5 text-[12px] font-medium text-ink",
-            children: [
-              /* @__PURE__ */ jsx_runtime48.jsx("span", {
-                className: "truncate",
-                children: g.label ?? elsewhere2
-              }),
-              /* @__PURE__ */ jsx_runtime48.jsx("span", {
-                className: "font-normal text-ink-faint",
-                "data-slot": "set-total",
-                children: g.total !== undefined && g.total > linkCheckTotal(g.data) ? `${linkCheckTotal(g.data)} of ${g.total}` : linkCheckTotal(g.data)
-              })
-            ]
+          /* @__PURE__ */ jsx_runtime48.jsx(KindSections, {
+            data,
+            part: "counted",
+            onOpen
           }),
           /* @__PURE__ */ jsx_runtime48.jsx(KindSections, {
-            data: g.data,
+            data,
+            part: "quiet",
             onOpen
           })
         ]
-      }, g.id ?? "")),
+      }) : /* @__PURE__ */ jsx_runtime48.jsxs(jsx_runtime48.Fragment, {
+        children: [
+          groups.filter((g) => linkCheckTotal(g.data) > 0).map((g) => /* @__PURE__ */ jsx_runtime48.jsxs("section", {
+            "data-slot": "link-check-set",
+            "data-part": "counted",
+            "data-set": g.id ?? undefined,
+            "aria-label": g.label ? `In ${g.label}` : elsewhere2,
+            className: "flex flex-col",
+            children: [
+              /* @__PURE__ */ jsx_runtime48.jsxs("h3", {
+                className: "mx-2 mt-3 flex items-baseline gap-1.5 border-b border-edge pb-0.5 text-[12px] font-medium text-ink",
+                children: [
+                  /* @__PURE__ */ jsx_runtime48.jsx("span", {
+                    className: "truncate",
+                    children: g.label ?? elsewhere2
+                  }),
+                  /* @__PURE__ */ jsx_runtime48.jsx("span", {
+                    className: "font-normal text-ink-faint",
+                    "data-slot": "set-total",
+                    children: g.total !== undefined && g.total > linkCheckTotal(g.data) ? `${linkCheckTotal(g.data)} of ${g.total}` : linkCheckTotal(g.data)
+                  })
+                ]
+              }),
+              /* @__PURE__ */ jsx_runtime48.jsx(KindSections, {
+                data: g.data,
+                part: "counted",
+                onOpen
+              })
+            ]
+          }, g.id ?? "")),
+          groups.filter((g) => quietCount(g.data) > 0).map((g) => /* @__PURE__ */ jsx_runtime48.jsxs("section", {
+            "data-slot": "link-check-set",
+            "data-part": "quiet",
+            "data-set": g.id ?? undefined,
+            "aria-label": `${g.label ? `In ${g.label}` : elsewhere2}, listed, not counted`,
+            className: "flex flex-col",
+            children: [
+              /* @__PURE__ */ jsx_runtime48.jsx("h3", {
+                className: "mx-2 mt-3 flex items-baseline gap-1.5 border-b border-edge pb-0.5 text-[12px] font-normal text-ink-dim",
+                children: /* @__PURE__ */ jsx_runtime48.jsx("span", {
+                  className: "truncate",
+                  children: g.label ?? elsewhere2
+                })
+              }),
+              /* @__PURE__ */ jsx_runtime48.jsx(KindSections, {
+                data: g.data,
+                part: "quiet",
+                onOpen
+              })
+            ]
+          }, `quiet:${g.id ?? ""}`))
+        ]
+      }),
       groups !== null && data.truncated && /* @__PURE__ */ jsx_runtime48.jsx("p", {
         className: "px-2 pt-2 text-[10px] text-ink-faint",
         children: "Each list was cut at its first entries, and a group shows only what was kept of it (“N of M”); the status bar's counts are the whole."
@@ -78289,34 +78978,56 @@ function LinkCheck({
       clearTimeout(t2);
     };
   }, [connected, request, snapshot, edits, pushed, open, tick]);
-  if (!data || linkCheckTotal(data) === 0 && !open)
+  if (!data || linkCheckListed(data) === 0 && !open)
     return null;
-  const label = linkCheckLabel(data);
+  const quiet3 = linkCheckTotal(data) === 0;
+  const label = quiet3 ? linkCheckQuietLabel(data) : linkCheckLabel(data);
+  const Icon2 = quiet3 ? Link2 : Link2Off;
   return /* @__PURE__ */ jsx_runtime48.jsxs(Popover, {
     open,
     onOpenChange: setOpen,
     children: [
       /* @__PURE__ */ jsx_runtime48.jsxs(PopoverTrigger3, {
         "data-slot": "link-check",
+        "data-quiet": quiet3 ? "" : undefined,
         "aria-label": `Link check: ${label}`,
         title: label,
-        className: cn("flex min-w-0 shrink items-center gap-1 rounded px-1 text-ink-dim outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", className),
+        className: cn("flex min-w-0 shrink items-center gap-1 rounded px-1 outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60", quiet3 ? "text-ink-faint" : "text-ink-dim", className),
         children: [
-          /* @__PURE__ */ jsx_runtime48.jsx(Link2Off, {
+          /* @__PURE__ */ jsx_runtime48.jsx(Icon2, {
             "aria-hidden": true,
             className: "size-3.5 shrink-0"
           }),
-          /* @__PURE__ */ jsx_runtime48.jsx("span", {
-            "data-slot": "link-check-total",
-            "aria-hidden": true,
-            className: "sm:hidden",
-            children: linkCheckTotal(data)
-          }),
-          /* @__PURE__ */ jsx_runtime48.jsx("span", {
-            "data-slot": "link-check-label",
-            "aria-hidden": true,
-            className: "hidden truncate sm:inline",
-            children: label
+          quiet3 ? /* @__PURE__ */ jsx_runtime48.jsxs(jsx_runtime48.Fragment, {
+            children: [
+              /* @__PURE__ */ jsx_runtime48.jsx("span", {
+                "data-slot": "link-check-quiet-total",
+                "aria-hidden": true,
+                className: "text-[11px] sm:hidden",
+                children: quietCount(data)
+              }),
+              /* @__PURE__ */ jsx_runtime48.jsx("span", {
+                "data-slot": "link-check-quiet-word",
+                "aria-hidden": true,
+                className: "hidden truncate text-[11px] sm:inline",
+                children: linkCheckQuietWord(data)
+              })
+            ]
+          }) : /* @__PURE__ */ jsx_runtime48.jsxs(jsx_runtime48.Fragment, {
+            children: [
+              /* @__PURE__ */ jsx_runtime48.jsx("span", {
+                "data-slot": "link-check-total",
+                "aria-hidden": true,
+                className: "sm:hidden",
+                children: linkCheckTotal(data)
+              }),
+              /* @__PURE__ */ jsx_runtime48.jsx("span", {
+                "data-slot": "link-check-label",
+                "aria-hidden": true,
+                className: "hidden truncate sm:inline",
+                children: label
+              })
+            ]
           })
         ]
       }),
@@ -78408,9 +79119,9 @@ function unseenFromAgent(chat, seen) {
   const from = seen === null ? 0 : chat.findIndex((m) => m.id === seen) + 1;
   return chat.slice(from).some((m) => m.from === "agent");
 }
-function waitingOnAgent(waiting, notes, agentListening) {
-  const message = waiting ? badgeFor(waiting, agentListening) : null;
-  const owed = owedSummary(notes, agentListening);
+function waitingOnAgent(waiting, notes, agentListening, ended = false) {
+  const message = waiting ? badgeFor(waiting, agentListening, ended) : null;
+  const owed = owedSummary(notes, agentListening, ended);
   const badges = [message, owed?.badge].filter((b) => b != null);
   if (badges.length === 0)
     return null;
@@ -78418,7 +79129,7 @@ function waitingOnAgent(waiting, notes, agentListening) {
   const label = [message && `your message: ${labelOf(message)}`, owed?.label].filter(Boolean).join("; ");
   return { badge, label };
 }
-var LOUDNESS = ["stalled", "unheard", "working"];
+var LOUDNESS = ["stalled", "unheard", "working", "ended"];
 
 // src/kit/shell/SearchBox.tsx
 var import_react49 = __toESM(require_react(), 1);
@@ -78429,6 +79140,26 @@ function isSearchShortcut(e, mac3 = onMac()) {
   if (e.key.toLowerCase() !== "k" || e.shiftKey || e.altKey)
     return false;
   return mac3 ? e.metaKey && !e.ctrlKey : e.ctrlKey && !e.metaKey;
+}
+function fileLabel2(r2) {
+  const imageName = r2.image ? r2.image.slice(r2.image.lastIndexOf("/") + 1) : null;
+  const name2 = imageName ? `${imageName} · description` : r2.bundle ? `in the ${r2.bundle.label} ${r2.bundle.name}` : r2.name;
+  return !imageName && r2.version !== null ? `${name2} · v${r2.version}` : name2;
+}
+function groupResults(results) {
+  const names = results.filter((r2) => r2.kind === "name");
+  const byFile = new Map;
+  for (const r2 of results) {
+    if (r2.kind !== "text")
+      continue;
+    const group = byFile.get(r2.path);
+    if (group)
+      group.hits.push(r2);
+    else
+      byFile.set(r2.path, { key: r2.path, label: fileLabel2(r2), hits: [r2] });
+  }
+  const files = [...byFile.values()];
+  return { names, files, ordered: [...names, ...files.flatMap((f) => f.hits)] };
 }
 function SearchBox({
   request,
@@ -78500,7 +79231,8 @@ function SearchBox({
     };
   }, [q2, connected, request]);
   const fresh = report && report.query === q2 ? report : null;
-  const results = fresh?.results ?? [];
+  const grouped = groupResults(fresh?.results ?? []);
+  const results = grouped.ordered;
   const showing = open && q2 !== "";
   const choose = import_react49.useCallback((r2) => {
     setOpen(false);
@@ -78619,25 +79351,66 @@ function SearchBox({
             }),
             "."
           ]
-        }) : /* @__PURE__ */ jsx_runtime49.jsx("div", {
+        }) : /* @__PURE__ */ jsx_runtime49.jsxs("div", {
           role: "listbox",
           id: listId,
           "aria-label": "Search results",
-          children: results.map((r2, i2) => /* @__PURE__ */ jsx_runtime49.jsxs("div", {
-            children: [
-              r2.kind !== results[i2 - 1]?.kind && /* @__PURE__ */ jsx_runtime49.jsx("h2", {
-                className: "px-3 pt-2 pb-1 text-[10px] font-medium tracking-wide text-ink-faint uppercase",
-                children: r2.kind === "name" ? "Documents" : `In text${fresh.truncated ? " (more)" : ""}`
-              }),
-              /* @__PURE__ */ jsx_runtime49.jsx(Row3, {
-                id: `${listId}-${i2}`,
-                result: r2,
-                active: i2 === active,
-                onHover: () => setActive(i2),
-                onChoose: () => choose(r2)
-              })
-            ]
-          }, `${r2.kind}:${r2.path}:${r2.from ?? ""}`))
+          children: [
+            grouped.names.length > 0 && /* @__PURE__ */ jsx_runtime49.jsxs("div", {
+              children: [
+                /* @__PURE__ */ jsx_runtime49.jsx("h2", {
+                  className: "px-3 pt-2 pb-1 text-[10px] font-medium tracking-wide text-ink-faint uppercase",
+                  children: "Documents"
+                }),
+                grouped.names.map((r2, i2) => /* @__PURE__ */ jsx_runtime49.jsx(Row3, {
+                  id: `${listId}-${i2}`,
+                  result: r2,
+                  active: i2 === active,
+                  onHover: () => setActive(i2),
+                  onChoose: () => choose(r2)
+                }, `name:${r2.path}`))
+              ]
+            }),
+            grouped.files.length > 0 && /* @__PURE__ */ jsx_runtime49.jsxs("h2", {
+              className: "px-3 pt-2 pb-1 text-[10px] font-medium tracking-wide text-ink-faint uppercase",
+              children: [
+                "In text (",
+                results.length - grouped.names.length,
+                fresh.truncated ? ", and more" : "",
+                ")"
+              ]
+            }),
+            grouped.files.map((f) => /* @__PURE__ */ jsx_runtime49.jsxs("div", {
+              "data-slot": "search-file",
+              children: [
+                /* @__PURE__ */ jsx_runtime49.jsxs("div", {
+                  className: "flex items-baseline gap-2 px-3 pt-1 text-[11px]",
+                  children: [
+                    /* @__PURE__ */ jsx_runtime49.jsx("span", {
+                      className: "min-w-0 truncate text-ink",
+                      children: f.label
+                    }),
+                    /* @__PURE__ */ jsx_runtime49.jsx("span", {
+                      "data-slot": "search-file-count",
+                      className: "shrink-0 text-ink-faint",
+                      children: f.hits.length
+                    })
+                  ]
+                }),
+                f.hits.map((r2) => {
+                  const i2 = results.indexOf(r2);
+                  return /* @__PURE__ */ jsx_runtime49.jsx(Row3, {
+                    id: `${listId}-${i2}`,
+                    result: r2,
+                    fileLabel: f.label,
+                    active: i2 === active,
+                    onHover: () => setActive(i2),
+                    onChoose: () => choose(r2)
+                  }, `text:${r2.path}:${r2.from ?? ""}`);
+                })
+              ]
+            }, f.key))
+          ]
         })
       })
     ]
@@ -78646,6 +79419,7 @@ function SearchBox({
 function Row3({
   id,
   result: r2,
+  fileLabel: fileLabel3,
   active,
   onHover,
   onChoose
@@ -78696,21 +79470,18 @@ function Row3({
           children: r2.line
         }),
         /* @__PURE__ */ jsx_runtime49.jsxs("span", {
-          className: "min-w-0 flex-1",
+          className: "min-w-0 flex-1 truncate font-mono text-[11px] text-ink-dim",
           children: [
-            /* @__PURE__ */ jsx_runtime49.jsx("span", {
-              className: "block truncate font-mono text-[11px] text-ink-dim",
-              children: /* @__PURE__ */ jsx_runtime49.jsx(Highlighted, {
-                text: r2.snippet ?? "",
-                from: r2.snippetFrom,
-                to: r2.snippetTo
-              })
+            /* @__PURE__ */ jsx_runtime49.jsx(Highlighted, {
+              text: r2.snippet ?? "",
+              from: r2.snippetFrom,
+              to: r2.snippetTo
             }),
-            /* @__PURE__ */ jsx_runtime49.jsxs("span", {
-              className: "block truncate text-[10px] text-ink-faint",
+            fileLabel3 && /* @__PURE__ */ jsx_runtime49.jsxs("span", {
+              className: "sr-only",
               children: [
-                imageName ? `${imageName} · description` : r2.bundle ? `in the ${r2.bundle.label} ${r2.bundle.name}` : r2.name,
-                !imageName && r2.version !== null ? ` · v${r2.version}` : ""
+                ", in ",
+                fileLabel3
               ]
             })
           ]
@@ -79092,7 +79863,7 @@ function SettingsDialog({
         }),
         /* @__PURE__ */ jsx_runtime51.jsx(DialogDescription3, {
           className: "text-sm leading-relaxed text-ink-dim",
-          children: "For this app, the same in every world."
+          children: "For this app, the same in every session."
         }),
         /* @__PURE__ */ jsx_runtime51.jsxs("form", {
           className: "grid gap-3",
@@ -79297,7 +80068,7 @@ function ColumnButton({
   });
 }
 function Rail({
-  quiet: quiet2,
+  quiet: quiet3,
   below,
   children
 }) {
@@ -79306,7 +80077,7 @@ function Rail({
     className: "flex min-h-0 flex-1 flex-col",
     children: [
       /* @__PURE__ */ jsx_runtime52.jsx("div", {
-        className: cn("flex h-9 shrink-0 items-center justify-center border-b", quiet2 ? `${QUIET_GROUP} border-transparent` : "border-edge"),
+        className: cn("flex h-9 shrink-0 items-center justify-center border-b", quiet3 ? `${QUIET_GROUP} border-transparent` : "border-edge"),
         children
       }),
       below && /* @__PURE__ */ jsx_runtime52.jsx("div", {
@@ -79424,7 +80195,8 @@ function ShellBody({
     }
   }, [themeKept]);
   const storage = import_react52.useMemo(() => storageProp ?? localShellStorage(storageKey), [storageProp, storageKey]);
-  const layout = an({ id: "panes", panelIds: [...PANES], storage });
+  const layoutStorage = import_react52.useMemo(() => guardedLayoutStorage(storage, "panes", PANES), [storage]);
+  const layout = an({ id: "panes", panelIds: [...PANES], storage: layoutStorage });
   const [collapsed, setCollapsed] = import_react52.useState(() => collapsedSides(layout.defaultLayout));
   const collapsedRef = import_react52.useRef(collapsed);
   collapsedRef.current = collapsed;
@@ -79526,8 +80298,8 @@ function ShellBody({
     expand: (side) => void expand(side)
   }), [collapsed.context, collapsed.chat, collapse, expand]);
   const [quietWanted, setQuiet] = import_react52.useState(false);
-  const quiet2 = quietWanted && !state.openImage;
-  const fade = quiet2 ? QUIET_FADE : undefined;
+  const quiet3 = quietWanted && !state.openImage;
+  const fade = quiet3 ? QUIET_FADE : undefined;
   const newestMessage = lastMessageId(state.chat);
   const [seenMessage, setSeenMessage] = import_react52.useState(newestMessage);
   import_react52.useEffect(() => {
@@ -79787,7 +80559,7 @@ function ShellBody({
       clearTimeout(t2);
     };
   }, [openImagePath, request, state]);
-  const { lastError, lastErrorTitle, clearError, done } = daemon;
+  const { lastError, lastErrorTitle, lastErrorSeq, clearError, done } = daemon;
   const endedToastAt = import_react52.useRef(0);
   import_react52.useEffect(() => {
     if (lastError)
@@ -79819,7 +80591,7 @@ function ShellBody({
     } else
       toasts.announce(lastErrorTitle ?? "The workspace refused that", lastError);
     clearError();
-  }, [lastError, lastErrorTitle, clearError, toasts, noticeOwned, letOwnedToastGo]);
+  }, [lastError, lastErrorSeq, lastErrorTitle, clearError, toasts, noticeOwned, letOwnedToastGo]);
   import_react52.useEffect(() => {
     if (!lastError || !collapsed.context)
       letOwnedToastGo();
@@ -79968,6 +80740,7 @@ function ShellBody({
     },
     onTrash: (path2) => send({ op: "trash", path: path2 }),
     importImage: daemon.importImage,
+    fileAt: (dir, file) => fileAlreadyAt(daemon.request, dir, file),
     thumbFor: (path2) => daemon.imageUrl(path2, { thumb: 256 }),
     onAskDescribe: askDescribe,
     selected: treeSelected,
@@ -80018,8 +80791,8 @@ function ShellBody({
     ...o,
     name: docName(o.doc)
   }));
-  const notesOwed = owedSummary(notesWaiting, agentListening);
-  const composerWaiting = waitingOnAgent(state.waiting, notesWaiting, agentListening);
+  const notesOwed = owedSummary(notesWaiting, agentListening, ended);
+  const composerWaiting = waitingOnAgent(state.waiting, notesWaiting, agentListening, ended);
   const attachable = heldHere ? {
     doc: heldHere.doc,
     name: docName(heldHere.doc),
@@ -80090,6 +80863,7 @@ function ShellBody({
     messages: state.chat,
     waiting: state.waiting,
     agentListening,
+    sessionEnded: ended,
     composer: collapsed.chat ? null : /* @__PURE__ */ jsx_runtime52.jsx(ChatComposer, {
       ...composerProps
     }),
@@ -80108,6 +80882,7 @@ function ShellBody({
     waiting: noteBadges,
     others: notesElsewhere,
     agentListening,
+    sessionEnded: ended,
     asked: notesAsked,
     ...askNote ? { onAsk: (n) => openDoc && askNote(openDoc.slug, n.id) } : {},
     onOpenDoc: (doc2) => send({ op: "open.doc", doc: doc2 }),
@@ -80158,7 +80933,7 @@ function ShellBody({
         children: [
           "Chat",
           state.waiting && /* @__PURE__ */ jsx_runtime52.jsx(WaitingDot, {
-            badge: badgeFor(state.waiting, agentListening)
+            badge: badgeFor(state.waiting, agentListening, ended)
           })
         ]
       }),
@@ -80211,6 +80986,7 @@ function ShellBody({
       docs: state.docs,
       openDoc: openDoc?.slug ?? null,
       agentListening,
+      sessionEnded: ended,
       asked: notesAsked,
       ...askNote ? { onAskNote: (w) => askNote(w.doc, w.noteId) } : {},
       onOpen: () => {
@@ -80284,7 +81060,7 @@ function ShellBody({
         children: [
           /* @__PURE__ */ jsx_runtime52.jsxs("header", {
             "data-slot": "shell-top-bar",
-            className: cn("@container grid h-10 shrink-0 grid-cols-[minmax(max-content,1fr)_minmax(0,2fr)_minmax(max-content,1fr)] items-center gap-3 border-b bg-surface px-3", quiet2 ? `${QUIET_GROUP} border-transparent` : "border-edge"),
+            className: cn("@container grid h-10 shrink-0 grid-cols-[minmax(max-content,1fr)_minmax(0,2fr)_minmax(max-content,1fr)] items-center gap-3 border-b bg-surface px-3", quiet3 ? `${QUIET_GROUP} border-transparent` : "border-edge"),
             children: [
               /* @__PURE__ */ jsx_runtime52.jsxs("div", {
                 className: "flex min-w-0 items-baseline gap-2",
@@ -80388,7 +81164,7 @@ function ShellBody({
                 },
                 children: [
                   collapsed.context && /* @__PURE__ */ jsx_runtime52.jsx(Rail, {
-                    quiet: quiet2,
+                    quiet: quiet3,
                     children: /* @__PURE__ */ jsx_runtime52.jsx(ColumnButton, {
                       label: "Reopen the context column",
                       control: "context-reopen",
@@ -80447,7 +81223,7 @@ function ShellBody({
                 children: [
                   toolbar && !openImage && /* @__PURE__ */ jsx_runtime52.jsx("div", {
                     "data-slot": "shell-toolbar-row",
-                    className: cn("flex min-h-9 shrink-0 flex-wrap items-center gap-1 border-b px-2 py-0.5", quiet2 ? `${QUIET_GROUP} border-transparent` : "border-edge"),
+                    className: cn("flex min-h-9 shrink-0 flex-wrap items-center gap-1 border-b px-2 py-0.5", quiet3 ? `${QUIET_GROUP} border-transparent` : "border-edge"),
                     children: /* @__PURE__ */ jsx_runtime52.jsx("div", {
                       "data-slot": "shell-toolbar",
                       className: cn("flex shrink-0 items-center gap-1", fade),
@@ -80509,7 +81285,7 @@ function ShellBody({
                 className: "flex flex-col bg-surface",
                 children: [
                   collapsed.chat && /* @__PURE__ */ jsx_runtime52.jsx(Rail, {
-                    quiet: quiet2,
+                    quiet: quiet3,
                     below: (floatIcon || chatUnseen) && /* @__PURE__ */ jsx_runtime52.jsxs("div", {
                       className: "flex flex-col items-center",
                       children: [
@@ -80636,7 +81412,7 @@ function ShellBody({
           }),
           /* @__PURE__ */ jsx_runtime52.jsxs("footer", {
             "data-slot": "shell-status",
-            className: cn("flex h-7 shrink-0 items-center gap-3 border-t border-edge bg-surface px-3 text-xs text-ink-dim", quiet2 && QUIET_GROUP),
+            className: cn("flex h-7 shrink-0 items-center gap-3 border-t border-edge bg-surface px-3 text-xs text-ink-dim", quiet3 && QUIET_GROUP),
             children: [
               /* @__PURE__ */ jsx_runtime52.jsxs("span", {
                 className: cn("flex shrink-0 items-center gap-1.5", daemon.connection === "open" && fade),
@@ -82598,7 +83374,15 @@ function useMapView(daemon) {
       })
     };
   }, [showing, entry, active, mode, fetch2, send]);
-  const menuActions = import_react55.useCallback(({ kind, entry: entry2 }) => kind === "entry" && entry2 && !singleDoc(entry2) ? [{ id: MAP_VIEW, label: MAP_LABEL, icon: /* @__PURE__ */ jsx_runtime55.jsx(Network, {}), onSelect: () => show(entry2) }] : [], [show]);
+  const menuActions = import_react55.useCallback(({ kind, entry: entry2 }) => kind === "entry" && entry2 && !singleDoc(entry2) ? [
+    {
+      id: MAP_VIEW,
+      label: MAP_LABEL,
+      icon: /* @__PURE__ */ jsx_runtime55.jsx(Network, {}),
+      onSelect: () => show(entry2),
+      header: true
+    }
+  ] : [], [show]);
   return { appView, menuActions };
 }
 
@@ -82733,6 +83517,8 @@ function Frame({ daemon }) {
     userHome,
     listDir: daemon.listDir,
     addFolder: (path2) => daemon.request({ op: "folder.add", path: path2 }),
+    pick: state?.picker ? (want) => pickPaths(daemon.request, want) : undefined,
+    addPlace: (path2) => daemon.request({ op: "context.add", path: path2 }),
     hint: MAKE_ROOM
   });
   const docMeta = docMetaOf(state);

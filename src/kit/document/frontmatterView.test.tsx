@@ -10,7 +10,7 @@ import { cleanup, installDom, mount, removeDom, settle } from "../lib/testDom.ts
 import type { PlacedNote } from "../workspace/protocol";
 import type { SelectionReport } from "./DocumentView.tsx";
 import type { FrontmatterChips } from "./FrontmatterHeader.tsx";
-import { MarkdownView } from "./MarkdownView.tsx";
+import { FLASH_PAINT_MS, MarkdownView } from "./MarkdownView.tsx";
 
 /** The CSS Custom Highlight API, which happy-dom lacks: a registry the test can read. */
 class FakeHighlight extends Set<Range> {
@@ -110,7 +110,14 @@ for (const [name, text] of [
     test("a context menu over a selection offers a note on that passage", async () => {
       const menus: { from: number; to: number }[] = [];
       const m = await mount(
-        <MarkdownView text={text} onSelect={() => {}} onContextMenu={(at) => menus.push(at)} />,
+        <MarkdownView
+          text={text}
+          onSelect={() => {}}
+          onContextMenu={(at) => {
+            menus.push(at);
+            return true;
+          }}
+        />,
       );
       await select(body(m.container), "dawn", "dawn");
       await settle(() => {
@@ -195,7 +202,9 @@ describe("the header", () => {
   test("a document without a block has no header and keeps the body's own padding", async () => {
     const m = await mount(<MarkdownView text={BODY} />);
     expect(m.container.querySelector("[data-slot=frontmatter-header]")).toBeNull();
-    expect(body(m.container).className).toBe("md-prose mx-auto max-w-[76ch] px-8 pt-7 pb-16");
+    expect(body(m.container).className).toBe(
+      "md-prose md-document mx-auto max-w-[76ch] px-8 pt-7 pb-16",
+    );
   });
 
   test("a malformed block shows as written, with a quiet warning, above the body", async () => {
@@ -223,5 +232,48 @@ describe("the header", () => {
     expect(header?.querySelector("[data-chip=world_role]")?.textContent).toBe("role: capital");
     const listed = [...(header?.querySelectorAll("dt") ?? [])].map((d) => d.textContent);
     expect(listed).toEqual(["generated"]);
+  });
+
+  // kit-reveal-frontmatter-and-selection: a broken `related:` reference opened at
+  // its place marked nothing, since the block is drawn as this header, not as text.
+  test("a reveal in the block marks the field it is in, not the body", async () => {
+    const DOC = FM + BODY;
+    const flash = (word: string, seq: number) => ({
+      from: DOC.indexOf(word),
+      to: DOC.indexOf(word) + word.length,
+      seq,
+    });
+    const marked = (c: HTMLElement) =>
+      [...c.querySelectorAll('[data-flash="on"]')].map(
+        (e) => `${e.tagName.toLowerCase()}:${e.textContent}`,
+      );
+    const m = await mount(<MarkdownView text={DOC} flash={flash("capital", 1)} />);
+    expect(marked(m.container)).toEqual(["dt:world_role", "dd:capital"]);
+    expect(highlights.has("doc-flash")).toBe(false);
+    // A key a chip shows; a key split between a dotted chip and its row, both.
+    await m.render(<MarkdownView text={DOC} flash={flash("draft", 2)} />);
+    expect(marked(m.container)).toEqual(["span:draft"]);
+    await m.render(<MarkdownView text={DOC} flash={flash("2026-10-01", 3)} />);
+    expect(marked(m.container)).toEqual(["span:2026-10-01", "dt:generated", "dd:by: an agent"]);
+    // On a delimiter, the header itself.
+    await m.render(<MarkdownView text={DOC} flash={{ from: 0, to: 3, seq: 4 }} />);
+    expect(m.container.querySelector('[data-flash="on"]')?.getAttribute("data-slot")).toBe(
+      "frontmatter-header",
+    );
+    // In the body, the text is painted as before and the header is left alone.
+    await m.render(<MarkdownView text={DOC} flash={flash("bakery", 5)} />);
+    expect(marked(m.container)).toEqual([]);
+    expect(highlights.get("doc-flash")?.ranges[0]?.toString()).toBe("bakery");
+    await m.unmount();
+  });
+
+  test("the frontmatter mark goes when its moment is up", async () => {
+    const DOC = FM + BODY;
+    const at = DOC.indexOf("capital");
+    const m = await mount(<MarkdownView text={DOC} flash={{ from: at, to: at + 7, seq: 1 }} />);
+    expect(m.container.querySelectorAll('[data-flash="on"]').length).toBe(2);
+    await settle(() => new Promise((r) => setTimeout(r, FLASH_PAINT_MS + 100)));
+    expect(m.container.querySelectorAll("[data-flash]").length).toBe(0);
+    await m.unmount();
   });
 });

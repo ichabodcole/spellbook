@@ -14,6 +14,7 @@ import {
   waitFor,
 } from "../lib/testDom.ts";
 import type { ContextEntry, StructureOp } from "../workspace/protocol";
+import { ADD_PLACEHOLDER, ADD_PLACEHOLDER_SHORT, placeholderFor } from "./AddPath.tsx";
 import { ContextSidebar, type ContextSidebarProps } from "./ContextSidebar.tsx";
 import type { MenuAction, MenuTarget } from "./menuActions.ts";
 import { type DraggedRow, encodeRowDrag, ROW_DRAG_MIME } from "./rowDrag.ts";
@@ -727,6 +728,67 @@ describe("right-click menus", () => {
     await m.unmount();
   });
 
+  test("an app action marked header is a button in the open set's header too; the rest stay in the menu", async () => {
+    const shown: string[] = [];
+    const actions = (t: MenuTarget): MenuAction[] =>
+      t.kind === "entry" && t.entry?.id === "c-set"
+        ? [
+            {
+              id: "app.map",
+              label: "Show the map",
+              icon: <svg aria-hidden />,
+              header: true,
+              onSelect: () => shown.push(t.path),
+            },
+            {
+              id: "app.quiet",
+              label: "Render this",
+              icon: <svg aria-hidden />,
+              onSelect: () => {},
+            },
+            { id: "app.bare", label: "No icon", header: true, onSelect: () => {} },
+            {
+              id: "app.off",
+              label: "Not now",
+              icon: <svg aria-hidden />,
+              header: true,
+              disabled: true,
+              onSelect: () => shown.push("disabled"),
+            },
+            {
+              id: "app.wipe",
+              label: "Discard renders",
+              icon: <svg aria-hidden />,
+              header: true,
+              destructive: true,
+              onSelect: () => {},
+            },
+          ]
+        : [];
+    const { props } = harness({ appActionsFor: actions });
+    const m = await mountSidebar(<ContextSidebar {...props} />);
+    expect(document.querySelector('[data-action="app.map"]')).toBeNull();
+    await click(buttonWith("drafts"));
+    const header = document.querySelector('[aria-label="Back to the context list"]')?.parentElement;
+    const button = header?.querySelector('[data-action="app.map"]') ?? null;
+    expect(button?.getAttribute("aria-label")).toBe("Show the map");
+    expect(header?.querySelector('[data-action="app.quiet"]')).toBeNull();
+    expect(header?.querySelector('[data-action="app.bare"]')).toBeNull();
+    // A disabled action is a disabled button, and a click does nothing.
+    const off = header?.querySelector<HTMLButtonElement>('[data-action="app.off"]');
+    expect(off?.disabled).toBe(true);
+    await click(off ?? null);
+    // A destructive one is drawn as one, as the menu draws it.
+    const wipe = header?.querySelector('[data-action="app.wipe"]');
+    expect(wipe?.getAttribute("data-variant")).toBe("destructive");
+    expect(header?.querySelector('[data-action="app.map"]')?.hasAttribute("data-variant")).toBe(
+      false,
+    );
+    await click(button);
+    expect(shown).toEqual(["/w/drafts"]);
+    await m.unmount();
+  });
+
   test("a destructive app action is drawn as one", async () => {
     const actions: MenuAction[] = [
       { id: "x", label: "Discard renders", onSelect: () => {}, destructive: true },
@@ -1133,5 +1195,30 @@ describe("a drop onto a set", () => {
       "two.md",
     ]);
     await m.unmount();
+  });
+});
+
+describe("the hint and the path field in a narrow column", () => {
+  test("the drop hint wraps rather than cuts off", async () => {
+    const { props } = harness();
+    const m = await mountSidebar(<ContextSidebar {...props} />);
+    const hint = document.querySelector('[data-slot="drop-hint"]');
+    expect(hint?.textContent).toStartWith("Drop ");
+    const classes = hint?.className.split(/\s+/) ?? [];
+    for (const cut of ["truncate", "whitespace-nowrap", "text-ellipsis", "line-clamp-1"])
+      expect(classes, cut).not.toContain(cut);
+    await m.unmount();
+  });
+
+  test("the path field shows its short words while the full ones do not fit", () => {
+    // The short words fit a 225 px column's field (123 px at 8.4 px a character).
+    expect(ADD_PLACEHOLDER_SHORT.length).toBeLessThanOrEqual(12);
+    expect(placeholderFor(ADD_PLACEHOLDER, ADD_PLACEHOLDER_SHORT, 160, 214)).toBe(ADD_PLACEHOLDER);
+    expect(placeholderFor(ADD_PLACEHOLDER, ADD_PLACEHOLDER_SHORT, 160, 123)).toBe(
+      ADD_PLACEHOLDER_SHORT,
+    );
+    // Not measured yet, or no short words: the full ones.
+    expect(placeholderFor(ADD_PLACEHOLDER, ADD_PLACEHOLDER_SHORT, null, 123)).toBe(ADD_PLACEHOLDER);
+    expect(placeholderFor("Workspace folder…", undefined, 300, 100)).toBe("Workspace folder…");
   });
 });

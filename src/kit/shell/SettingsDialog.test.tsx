@@ -55,6 +55,13 @@ describe("the settings dialog", () => {
     expect(field("max-side")?.disabled).toBe(true);
   });
 
+  test("its words name no app's own noun: every session, not every world", async () => {
+    await open({}, []);
+    const said = document.querySelector('[data-slot="settings-dialog"]')?.textContent ?? "";
+    expect(said).toContain("For this app, the same in every session.");
+    expect(said).not.toMatch(/\bworlds?\b/i);
+  });
+
   test("Save sends only what changed, and closes", async () => {
     const sent: Sent[] = [];
     const closed: boolean[] = [];

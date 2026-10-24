@@ -331,9 +331,10 @@ function Minimap({
               "focus-visible:ring-2 focus-visible:ring-ring/60",
             )}
           >
+            {/* The brand unless a theme sets the two hooks (the tick, and the tick hovered). */}
             <span
               aria-hidden
-              className="mx-0.5 block h-full min-h-1 rounded-[1px] bg-brand/65 group-hover:bg-brand"
+              className="mx-0.5 block h-full min-h-1 rounded-[1px] bg-[color:var(--color-change-tick,color-mix(in_oklab,var(--color-brand)_65%,transparent))] group-hover:bg-[color:var(--color-change-tick-hover,var(--color-brand))]"
             />
           </button>
         );

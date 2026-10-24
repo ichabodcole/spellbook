@@ -27,6 +27,14 @@ export type MenuAction = {
   disabled?: boolean;
   /** Drawn as a destructive choice. */
   destructive?: boolean;
+  /**
+   * Also a button in the set's header, while the set is open, for an action on
+   * a set (a target of kind `entry`): a way in that does not hide behind a
+   * right-click. Its `icon` is the button and its `label` the tooltip; the
+   * row's menu keeps it too. Without an icon it stays in the menu alone. The
+   * button honours `disabled` and draws `destructive` as the menu does.
+   */
+  header?: boolean;
 };
 
 /** What an app supplies: the actions for one target. Return none for no extras. */

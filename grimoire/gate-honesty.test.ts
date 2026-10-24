@@ -411,6 +411,28 @@ import { join } from "node:path";
 // path comment. styles.css grew by its 18-line header (395 -> 413), which
 // says why the last two @imports sit at the end. Nothing new became blind:
 // the page's tests and the browser check read the sheet's effect, as before.
+//
+//     +5    src/kit/theme/document.css   (277 -> 282)
+// kit-reveal-frontmatter-and-selection: the flash's tint moved out of its
+// keyframe into a custom property (the build dropped a keyframe holding a
+// color-mix), with a comment saying why. theme.test.ts now refuses a
+// color-mix in any keyframe, so the five lines are read by a test.
+//
+// ⛔ RE-DECLARED 2026-10-22 — 31/2,951 -> 31/2,958, from the object's own sum.
+// MEMBERSHIP DID NOT MOVE; one entry grew:
+//     +7   src/kit/theme/document.css   282 -> 289
+// kit-atlas-comparison-follow-ups, D4: the rendered document's h1 a step above
+// its h2s (`.md-prose.md-document h1`), with the comment saying why.
+// theme.test.ts holds the step against the shared heading rule; the browser
+// check measured it (16.8 -> 19.6 px, the h2s 15.4 px as before).
+//
+// ⛔ RE-DECLARED 2026-10-22 — 31/2,958 -> 31/2,974, from the object's own sum.
+// MEMBERSHIP DID NOT MOVE; one entry grew:
+//     +16  src/scriptorium/surface/styles.css   413 -> 429
+// kit-atlas-comparison-follow-ups, H1: Scriptorium's wordmark on the kit's
+// title slot, with the comment saying why it sits outside every layer.
+// src/scriptorium/wordmark.test.ts holds the rule and that it is unlayered;
+// the browser check read its effect (the manuscript serif, lowercase).
 const DECLARED_BLIND: Record<string, number> = {
   "src/digestify/surface/styles.css": 515,
   "src/digestify/surface/index.html": 26,
@@ -423,7 +445,7 @@ const DECLARED_BLIND: Record<string, number> = {
   "src/imago/surface/styles.css": 167,
   "plugins/spellbook/skills/magpie/scripts/remove.py": 145,
   "src/kit/theme/base.css": 257,
-  "src/kit/theme/document.css": 277,
+  "src/kit/theme/document.css": 315,
   "src/kit/theme/shell.css": 53,
   "src/astrolabe/surface/styles.css": 104,
   "src/astrolabe/surface/index.html": 35,
@@ -457,7 +479,7 @@ const DECLARED_BLIND: Record<string, number> = {
   // The page's one sheet since the cutover: the kit page's palette and theme
   // (a copy of the shipped sheet, scriptorium-kit-keepers) with the kit's
   // document.css and shell.css imported at its end.
-  "src/scriptorium/surface/styles.css": 413,
+  "src/scriptorium/surface/styles.css": 507,
 };
 
 type BlindReport = {

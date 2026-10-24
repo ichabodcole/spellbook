@@ -6,6 +6,7 @@ import {
   escapeUnbalanced,
   hrefWithRelations,
   insertionGuard,
+  insideLinkProblem,
   linkInsertion,
   linkTextProblem,
   linkTrigger,
@@ -74,6 +75,23 @@ describe("what a choice writes", () => {
     expect(linkInsertion("wrap", "", mill, [])).toBe("[the-old-mill](./locations/the-old-mill.md)");
     expect(linkInsertion("wiki", "", { name: "[draft].md", href: "./%5Bdraft%5D.md" }, [])).toBe(
       "[\\[draft\\]](./%5Bdraft%5D.md)",
+    );
+  });
+
+  test("with no selection, a typed text beats the name and a heading's text, escaped; blank, it does not", () => {
+    const h = { text: "The Wheel", anchor: "the-wheel" };
+    expect(linkInsertion("wrap", "", mill, [], undefined, " by the [river] ")).toBe(
+      "[by the \\[river\\]](./locations/the-old-mill.md)",
+    );
+    expect(linkInsertion("wrap", "", mill, [], h, "turning")).toBe(
+      "[turning](./locations/the-old-mill.md#the-wheel)",
+    );
+    expect(linkInsertion("wrap", "", mill, [], h, "  ")).toBe(
+      "[The Wheel](./locations/the-old-mill.md#the-wheel)",
+    );
+    // A selection is the text, whatever was typed.
+    expect(linkInsertion("wrap", "the mill", mill, [], undefined, "other")).toBe(
+      "[the mill](./locations/the-old-mill.md)",
     );
   });
 
@@ -340,5 +358,21 @@ describe("a link to a heading", () => {
     expect(rankHeadings(hs, "").map((h) => h.line)).toEqual([48, 70, 87]);
     expect(rankHeadings(hs, "stack").map((h) => h.line)).toEqual([70]);
     expect(rankHeadings(hs, "zzz")).toEqual([]);
+  });
+});
+
+describe("an existing link in the way", () => {
+  const T = "Plain [link to b](./b.md) after\n![fox](./fox.png) end";
+  test("a caret inside a link's text or target, or a range overlapping one, is refused", () => {
+    expect(insideLinkProblem(T, T.indexOf("to b"), T.indexOf("to b"))).toContain("caret");
+    expect(insideLinkProblem(T, T.indexOf("./b.md"), T.indexOf("./b.md"))).toContain("caret");
+    expect(insideLinkProblem(T, T.indexOf("to"), T.indexOf("to") + 2)).toContain("selection");
+    expect(insideLinkProblem(T, T.indexOf("fox"), T.indexOf("fox"))).not.toBeNull();
+  });
+  test("at a link's edges, and on other lines, the caret is outside it", () => {
+    expect(insideLinkProblem(T, T.indexOf("[link"), T.indexOf("[link"))).toBeNull();
+    expect(insideLinkProblem(T, T.indexOf(" after"), T.indexOf(" after"))).toBeNull();
+    expect(insideLinkProblem(T, 2, 2)).toBeNull();
+    expect(insideLinkProblem(T, T.indexOf("end"), T.indexOf("end") + 3)).toBeNull();
   });
 });

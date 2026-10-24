@@ -112,8 +112,9 @@
  * ── THE VERIFIER'S DEFECTS, FIXED ON THE SAME BRANCH (2026-09-23) ──────────
  *
  * The no-stake verifier ran every spell's real tail and found four ways the
- * loop broke. Each has a cell in `tailHandoff.test.ts`; D1 and D2 also have a
- * real-daemon cell in `src/scriptorium/backend/tail-handoff.integration.test.ts`.
+ * loop broke. Each has a cell in `tailHandoff.test.ts`; D1 and D2 also have
+ * real-daemon cells, in `src/kit/workspace/tail-handoff.closed.integration.test.ts`
+ * (D1) and `tail-handoff.restart.integration.test.ts` (D2) beside it.
  *
  * D1 · A RE-ARM AT A SESSION THAT CLOSED IN THE GAP ENDS `tail.closed`. The
  *      trigger is ordinary: the human presses Close while the agent handles

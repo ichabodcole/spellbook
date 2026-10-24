@@ -42,15 +42,17 @@ export function unseenFromAgent(
  * One mark for both, so it says the most urgent: stuck if either is, then
  * unheard, then working. A pulse beside a stuck or unheard wait would be the
  * false liveness the static badges exist to refuse. Its words name each wait,
- * so "may be stuck" is never said of the wrong one.
+ * so "may be stuck" is never said of the wrong one. Once the session has ended
+ * (`ended`) every wait reads `ended`: nothing can answer, so nothing pulses.
  */
 export function waitingOnAgent(
   waiting: Pick<Waiting, "badge" | "acknowledged"> | null | undefined,
   notes: readonly NoteWaiting[],
   agentListening: boolean,
+  ended = false,
 ): { badge: BadgeKind; label: string } | null {
-  const message = waiting ? badgeFor(waiting, agentListening) : null;
-  const owed = owedSummary(notes, agentListening);
+  const message = waiting ? badgeFor(waiting, agentListening, ended) : null;
+  const owed = owedSummary(notes, agentListening, ended);
   const badges = [message, owed?.badge].filter((b): b is BadgeKind => b != null);
   if (badges.length === 0) return null;
   const badge = LOUDNESS.find((b) => badges.includes(b)) as BadgeKind;
@@ -60,4 +62,4 @@ export function waitingOnAgent(
   return { badge, label };
 }
 
-const LOUDNESS: readonly BadgeKind[] = ["stalled", "unheard", "working"];
+const LOUDNESS: readonly BadgeKind[] = ["stalled", "unheard", "working", "ended"];

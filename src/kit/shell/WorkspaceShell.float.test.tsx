@@ -205,6 +205,10 @@ describe("the floating composer", () => {
         null,
     );
     await waitFor(() => !!q('[data-slot="floating-composer"] [data-badge]'), "the waiting badge");
+    // With the column shut, the line echoes which message waits, before its badge.
+    const waitingRow = q('[data-slot="float-waiting"]');
+    expect(waitingRow?.querySelector("p")?.textContent).toBe("Youand the rivers?");
+    expect(waitingRow?.lastElementChild?.querySelector("[data-badge]")).not.toBeNull();
     await m.unmount();
   });
 

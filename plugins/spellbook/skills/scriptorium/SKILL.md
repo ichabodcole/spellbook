@@ -246,9 +246,8 @@ Facts, not chatter. The ones worth acting on:
   than a broken tail. Run the `doctor` verb any time to ask directly. Its
   findings' `kind`s: `original.missing`, `context.ghost`, `names.shared`,
   `links.dangling`, `links.unsupported`, `links.heading`, `profiles.*` and
-  `relations.*`, and `workspace.overlap` on an older session. That last one's
-  fix names a `workspace` verb Scriptorium does not have: ignore the fix, and
-  tell the human what the finding says.
+  `relations.*`. Scriptorium has no workspace folder, so it never reports
+  `workspace.overlap`.
 - **`closed`** — the session ended. The tail follows it with `tail.closed` and
   exits 0. The event and the line carry `by`: `human` (their End session
   button), `agent` (your `close`), or `timeout` (the idle close). A tail started
@@ -345,22 +344,35 @@ both. `--update-links` on `rename` or `move` does it in one step; `move-plan`
 shows what a move would break before you make it. `relink` is refused once
 anything else has changed the context's shape, so offer it straight away. Left
 alone, the human sees the same offer in their sidebar. Wiki links are never
-rewritten. **⚠ `relink` and `link-check` read each document's ACTIVE version:**
-a version you proposed before the move keeps the old link and nothing flags it.
-Make the move first, or propose that version again afterwards.
+rewritten. **⚠ `relink` rewrites only each document's ACTIVE version:** a
+version you proposed before the move, and the human never made active, keeps the
+old link. `link-check` lists it under `proposed` (the document, `version`,
+`line`, the link as written, and `suggest`, where the target went when a move
+explains it), each with its `act`. The fix is one per version: fix every
+`proposed` link of that version in ONE new version (`version-new --from vN`,
+keeping its `--label`), then delete the old proposal (`version-delete vN`), so
+the human is never offered the broken one.
 
 **`link-check` checks every link in the session**, in sections. The two you will
 meet most are `dangling`, links that answer nothing (each with its source,
 `line`, the link as written, `raw`, and where it looked, `tried`), and
 `unsupported`, links with a scheme nothing here opens, such as `op:doc/…`. Both
 count as problems in `count`, but neither is an error: a world points at things
-not written yet, so fix or keep each as the human prefers. Hint sections such as
-`symmetry`, `unusedImages` and `leaving` stay out of `count`. Every entry
-carries `set`, and `sets` lists the sets the entries come from, `leaving`'s
-included, in the order the human's broken-links list groups them. A link to a
-folder is not dangling, and links inside code or HTML comments are not links. A
-`line` is the line in the text it was read from, the active version for an open
-document.
+not written yet, so fix or keep each as the human prefers. A frontmatter
+reference that answers nothing is in `edges`, counted, only when it is written
+as a path (an extension, or a leading `/`, `./` or `../`); any other, such as
+`feature/some-slug`, is in `unresolved`, listed and not counted: Scriptorium
+does not know the convention it was written in, and does not guess. Hint
+sections such as `symmetry`, `unusedImages`, `unresolved` and `leaving` stay out
+of `count`; `leaving` lists links to files the session does not hold, never a
+link between two of its own documents. The human's sign lists `leaving` under
+its own heading but never counts it, so when they ask what links out, read it
+and offer to add the files it lands on. Every entry carries `set`, and `sets`
+lists the sets the entries come from, `leaving`'s included, in the order the
+human's broken-links list groups them; each set's `total` is what the sign
+counts of it, without `leaving` or `unresolved`. A link to a folder is not
+dangling, and links inside code or HTML comments are not links. A `line` is the
+line in the text it was read from, the active version for an open document.
 
 `reveal <path>` shows a file in their file manager, for when they ask where
 something is. The system file picker is theirs alone, by design.

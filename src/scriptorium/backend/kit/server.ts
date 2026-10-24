@@ -86,6 +86,9 @@ function withLauncher(app: AppDeclaration): AppDeclaration {
 /** The skill's `dist/`: see `frameSurface`. */
 const DIST_DIR = join(HERE, "..", "dist");
 
+/** This module run from its source folder (the tests), not from the bundle in `dist/`. */
+const FROM_SOURCE = HERE.endsWith(join("src", "scriptorium", "backend", "kit"));
+
 /**
  * Where Scriptorium's page is, as the kit daemon's `surface` option.
  *
@@ -104,19 +107,26 @@ const DIST_DIR = join(HERE, "..", "dist");
  *
  * ⚠ BOTH ARE TRUE ONLY IN THE BUNDLE. Run from source, as the tests run it,
  * `HERE` is this folder: there is no built page at `DIST_DIR`, so the daemon
- * is in dev mode, and the specifier resolves to no file from here, so the import
- * fails and it serves no page, as it did when the frame's path was computed.
- * A test that wants the page passes the committed build as `distDir`.
+ * is in dev mode, and the specifier resolves to no file from here, so it is not
+ * imported (`FROM_SOURCE`) and the daemon serves no page. A test that wants the
+ * page passes the committed build as `distDir`. From the bundle, a dev page that
+ * does not import stops the daemon, naming it (`release-serve.test.ts`).
  */
 export function frameSurface(): { distDir: string; devIndex: () => Promise<unknown> } {
   return {
     distDir: DIST_DIR,
     devIndex: async () => {
+      // Run from source (the tests), the specifier names no file: no page, by
+      // design. Anywhere else (the bundle) a failed import is the daemon's death,
+      // by name, as every other spell's is: before 2026-10-22 it was caught and
+      // the daemon booted in dev serving no page at all.
+      if (FROM_SOURCE) return undefined;
       try {
         return (await import("../../../../../src/scriptorium/surface/index.html")).default;
-      } catch {
-        // No source page at that address: a published plugin, or the source tree.
-        return undefined;
+      } catch (e) {
+        throw new Error(
+          `the dev page src/scriptorium/surface/index.html did not import (dev mode needs the repository's source; unset SPELLBOOK_SURFACE_MODE or build the page): ${e instanceof Error ? e.message : String(e)}`,
+        );
       }
     },
   };

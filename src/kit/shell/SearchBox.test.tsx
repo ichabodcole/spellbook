@@ -244,6 +244,43 @@ describe("the search box in the top bar", () => {
     expect(q('[data-slot="search-match"]')?.textContent?.toLowerCase()).toBe("lit");
     await m.unmount();
   });
+
+  test("text hits are grouped under their file with a count, each still marked, and the arrows walk them in that order", async () => {
+    writeFileSync(
+      join(docs, "set", "keeper.md"),
+      "# Keeper\n\nthe lantern is lit\nline\nthe lantern again\nand a third lantern\n",
+    );
+    const m = await mount(<Host />);
+    await waitFor(() => !!q('[data-pane="context"]'), "the shell");
+    await addContext();
+    await typeInto(input(), "lantern");
+    await waitFor(() => options().length === 4, "four text results");
+    const files = [...document.querySelectorAll('[data-slot="search-file"]')];
+    const said = files.map((f) => ({
+      name: f.firstElementChild?.firstElementChild?.textContent,
+      count: f.querySelector('[data-slot="search-file-count"]')?.textContent,
+      hits: f.querySelectorAll('[role="option"]').length,
+    }));
+    expect(said.sort((a, b) => String(a.name).localeCompare(String(b.name)))).toEqual([
+      { name: "keeper.md", count: "3", hits: 3 },
+      { name: "lamp.md", count: "1", hits: 1 },
+    ]);
+    expect(q('[role="listbox"]')?.textContent).toContain("In text (4)");
+    // Every hit keeps its match marked, and names its file for a screen reader.
+    expect(
+      [...document.querySelectorAll('[data-slot="search-match"]')].map((e) => e.textContent),
+    ).toEqual(["lantern", "lantern", "lantern", "lantern"]);
+    expect(options().every((o) => /, in (keeper|lamp)\.md$/.test(o.textContent ?? ""))).toBe(true);
+    // The arrows walk the options as drawn, top to bottom.
+    const ids = options().map((o) => o.id);
+    const walked: (string | null)[] = [input().getAttribute("aria-activedescendant")];
+    for (let i = 1; i < ids.length; i++) {
+      await key(input(), { key: "ArrowDown" });
+      walked.push(input().getAttribute("aria-activedescendant"));
+    }
+    expect(walked).toEqual(ids);
+    await m.unmount();
+  });
 });
 
 describe("a result whose document will not open", () => {

@@ -271,6 +271,29 @@ describe("Add link on a selection", () => {
     await m.unmount();
   });
 
+  test("in a CRLF file the right-click's link wraps the words selected (kit-crlf-note-offsets)", async () => {
+    // The right-click says the daemon's count (each CRLF two), and the editor holds one.
+    writeFileSync(join(set, "crlf.md"), "# C\r\n\r\nline\r\n\r\nsee the bakery here\r\n");
+    for (const e of daemon.session.context) daemon.session.rescan(e.id);
+    const m = await start("crlf.md");
+    await select("the bakery");
+    await settle(() => {
+      view().contentDOM.dispatchEvent(
+        new window.MouseEvent("contextmenu", { bubbles: true, cancelable: true }),
+      );
+    });
+    const add = [...document.querySelectorAll('[data-slot="note-at-selection"] button')].find((b) =>
+      (b.textContent ?? "").includes("Add link"),
+    );
+    await click(add ?? null);
+    await pickerReady();
+    expect(docField()?.placeholder).toBe("Link “the bakery” to…");
+    await typeInto(docField() as HTMLInputElement, "mbak");
+    await key(docField(), "Enter");
+    expect(text()).toContain("see [the bakery](./Maren's%20Bakery.md) here");
+    await m.unmount();
+  });
+
   test("Mod-Shift-K links up to a parent with relations from the vocabulary and typed", async () => {
     const m = await start("part/b.md");
     await select("back to a");

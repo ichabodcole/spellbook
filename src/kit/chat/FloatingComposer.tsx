@@ -27,6 +27,20 @@ export function latestAgentLine(
 }
 
 /**
+ * The message the human is waiting on, as plain text on one row: with the
+ * column shut, its echo is the only way to tell which message waits. Null when
+ * it is not in `messages` (as for a moment while a snapshot catches up).
+ */
+export function waitingLine(
+  messages: readonly Pick<Message, "id" | "text">[],
+  waiting: Pick<Waiting, "messageId"> | null,
+): string | null {
+  if (!waiting) return null;
+  const text = messages.find((m) => m.id === waiting.messageId)?.text;
+  return text === undefined ? null : plainLine(text) || null;
+}
+
+/**
  * The note the float names: the oldest owed an answer that the human can still
  * act on (not yet asked about, by `asked`), else the oldest, with its document
  * and how many more there are, or null when none is owed (or that note is not
@@ -58,6 +72,7 @@ export function FloatingComposer({
   docs = [],
   openDoc = null,
   agentListening = true,
+  sessionEnded = false,
   asked,
   onAskNote,
   onOpen,
@@ -77,6 +92,8 @@ export function FloatingComposer({
   /** The open document: a note on it needs no document named. */
   openDoc?: string | null;
   agentListening?: boolean;
+  /** The session has ended: a wait's badge says so, and nothing is offered to ask. */
+  sessionEnded?: boolean;
   /** The waiting notes already asked about, unanswered, by id (`askedAbout`). */
   asked?: ReadonlySet<string>;
   /**
@@ -92,9 +109,10 @@ export function FloatingComposer({
   children: ReactNode;
 }) {
   const line = waiting ? null : latestAgentLine(messages);
+  const waitedOn = waitingLine(messages, waiting);
   const owed = floatNote(notesWaiting, docs, asked);
   const owedAsked = owed !== null && asked?.has(owed.waiting.noteId) === true;
-  const owedBadge = owed ? badgeFor(owed.waiting, agentListening) : null;
+  const owedBadge = owed ? badgeFor(owed.waiting, agentListening, sessionEnded) : null;
   return (
     <div data-slot="floating-composer" className="mx-auto flex w-full max-w-2xl flex-col gap-1">
       {/* A note with the agent, on a row of its own above the conversation's
@@ -134,7 +152,19 @@ export function FloatingComposer({
       <div className="flex min-h-6 items-center gap-1 pl-1 text-[11px] text-ink-dim">
         <div data-slot="float-line" className="min-w-0 flex-1">
           {waiting ? (
-            <WaitingBadge flush badge={badgeFor(waiting, agentListening)} />
+            // The message waited on, echoed before its badge as a note is,
+            // its badge kept out of the truncated text so it never clips.
+            <div data-slot="float-waiting" className="flex min-w-0 items-center gap-2">
+              {waitedOn && (
+                <p className="min-w-0 truncate" title={waitedOn}>
+                  <span className="mr-1.5 font-medium text-ink-faint">You</span>
+                  {waitedOn}
+                </p>
+              )}
+              <span className="shrink-0">
+                <WaitingBadge flush badge={badgeFor(waiting, agentListening, sessionEnded)} />
+              </span>
+            </div>
           ) : line ? (
             <p className="truncate" title={line}>
               <span className="mr-1.5 font-medium text-ink-faint">Agent</span>

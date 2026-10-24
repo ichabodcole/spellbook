@@ -151,7 +151,10 @@ export function ChatMessageView({
       className={cn(
         "rounded-md px-2 py-1 text-xs leading-relaxed text-ink-dim",
         m.from === "agent" && "bg-surface-raised text-ink",
-        m.from === "human" && "bg-brand/10 text-ink",
+        // The human's words: a brand tint unless a theme sets the two hooks (the
+        // bubble, and an edge around it, unset and so unseen).
+        m.from === "human" &&
+          "bg-[color:var(--color-human-bubble,color-mix(in_oklab,var(--color-brand)_10%,transparent))] text-ink ring-1 ring-[color:var(--color-human-bubble-edge,transparent)] ring-inset",
         m.type === "result" && "border-l-2 border-added",
       )}
     >

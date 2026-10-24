@@ -304,12 +304,40 @@ export function linkTextProblem(selected: string): string | null {
   return null;
 }
 
+/** An inline link or embed, `[text](target)`, on one line. */
+const INLINE_LINK = /!?\[(?:\\.|[^\\\]\n])*\]\((?:\\.|[^\\)\n])*\)/g;
+
+/**
+ * Why a link cannot be written at `from`..`to` in `text` because an existing
+ * link is in the way, or null. A caret strictly inside a link (its text or its
+ * target), or a range overlapping one, would put a link inside a link, which
+ * markdown forbids: `[link t[x](./x.md)o b](./b.md)`. A caret at either edge
+ * of a link is outside it, and a link written there sits beside it.
+ */
+export function insideLinkProblem(text: string, from: number, to: number): string | null {
+  const start = text.lastIndexOf("\n", from - 1) + 1;
+  const endAt = text.indexOf("\n", to);
+  const line = text.slice(start, endAt === -1 ? text.length : endAt);
+  for (const m of line.matchAll(INLINE_LINK)) {
+    const a = start + (m.index ?? 0);
+    const b = a + m[0].length;
+    const hit = from === to ? a < from && from < b : a < to && from < b;
+    if (hit)
+      return from === to
+        ? "The caret is inside a link, and a link cannot hold another. Move it outside the link first."
+        : "The selection is inside a link, and a link cannot hold another.";
+  }
+  return null;
+}
+
 /**
  * What a choice writes. `selected` is the text the request covers (the
  * selection, for `wrap`), with its unbalanced brackets escaped; a name the
  * picker supplies is escaped in full. With a `heading` (the picker's second
  * step), its anchor follows the path and any `?rel=`, and its text, not the
- * document's name, is the label the picker supplies.
+ * document's name, is the label the picker supplies. A `label` typed in the
+ * picker (a link at the caret, with no selection to be its text) beats both,
+ * escaped in full like them.
  */
 export function linkInsertion(
   kind: LinkKind,
@@ -317,13 +345,15 @@ export function linkInsertion(
   target: Pick<LinkTarget, "name" | "href" | "image">,
   relations: readonly string[],
   heading?: Pick<HeadingOffer, "text" | "anchor">,
+  label?: string,
 ): string {
   const href = `${hrefWithRelations(target.href, relations)}${heading ? `#${heading.anchor}` : ""}`;
   if (kind === "complete") return `${href})`;
   const words = kind === "wrap" && selected !== "";
+  const typed = !words && label !== undefined && label.trim() !== "" ? label.trim() : null;
   const text = words
     ? escapeUnbalanced(selected)
-    : escapeLinkText(heading ? heading.text : stem(target.name));
+    : escapeLinkText(typed ?? (heading ? heading.text : stem(target.name)));
   return `${target.image && !words ? "!" : ""}[${text}](${href})`;
 }
 

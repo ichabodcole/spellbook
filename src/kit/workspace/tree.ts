@@ -758,3 +758,38 @@ export function listDir(dir: string): FsListEntry[] {
   }
   return out.sort((a, b) => (a.dir === b.dir ? a.name.localeCompare(b.name) : a.dir ? -1 : 1));
 }
+
+/** The largest file `fs.same` will hash: 1 GB. Above it the question is refused, unread. */
+export const SAME_FILE_MAX_BYTES = 2 ** 30;
+
+/**
+ * Whether a file of these bytes is already at `path` (`fs.same`): what a copy
+ * into a folder asks before writing, so a file already there is offered
+ * instead of a second copy, and a different one of that name is said. `exists`
+ * is anything at all there; `same` only a plain file (not a link) of the same
+ * size and SHA-256. A size that differs is answered without reading; one that
+ * matches is hashed as a stream (`open`, a test seam), so a large file is
+ * never held whole, and above `SAME_FILE_MAX_BYTES` it is refused unread.
+ */
+export async function sameFileAt(
+  path: string,
+  size: number,
+  sha256: string,
+  open: (path: string) => ReadableStream<Uint8Array> = (p) => Bun.file(p).stream(),
+): Promise<{ exists: boolean; same: boolean }> {
+  if (size > SAME_FILE_MAX_BYTES)
+    throw new Error(
+      `a file over ${SAME_FILE_MAX_BYTES / 2 ** 30} GB is not compared: copy it, or add it by path`,
+    );
+  let st: ReturnType<typeof lstatSync>;
+  try {
+    st = lstatSync(path);
+  } catch {
+    return { exists: false, same: false };
+  }
+  if (!st.isFile() || st.size !== size) return { exists: true, same: false };
+  const hasher = new Bun.CryptoHasher("sha256");
+  const reader = open(path).getReader();
+  for (let r = await reader.read(); !r.done; r = await reader.read()) hasher.update(r.value);
+  return { exists: true, same: hasher.digest("hex") === sha256.toLowerCase() };
+}

@@ -44,7 +44,7 @@ import {
   useState,
 } from "react";
 import { type Layout, type LayoutChangedMeta, useDefaultLayout } from "react-resizable-panels";
-import { type At, NoteAtSelection } from "../chat/NoteAtSelection.tsx";
+import { type At, type MenuEdits, NoteAtSelection } from "../chat/NoteAtSelection.tsx";
 import { badgeFor } from "../chat/WaitingBadge.tsx";
 import { CentreDock } from "../context/centreDock.tsx";
 import { textKey } from "../context/daemonClient.ts";
@@ -56,7 +56,9 @@ import { docFormat } from "../lib/docFormat.ts";
 import { findHeading, lineRange } from "../lib/headingAnchor.ts";
 import { headingsOf } from "../lib/headings.ts";
 import { type JsonProblem, jsonProblem } from "../lib/json.ts";
+import { guardedLayoutStorage } from "../lib/layoutStorage.ts";
 import { decodePath } from "../lib/linkTarget.ts";
+import { onMac } from "../lib/platform.ts";
 import { safeStorage } from "../lib/storage.ts";
 import {
   Button,
@@ -103,6 +105,7 @@ import {
 import {
   DocumentView,
   type EditorHandle,
+  editorOffset,
   type ImageArrival,
   type RowArrival,
   type SelectionReport,
@@ -121,6 +124,7 @@ import { LinkPicker } from "./LinkPicker.tsx";
 import { rawLinkAct } from "./linkClick.ts";
 import {
   insertionGuard,
+  insideLinkProblem,
   type LinkKind,
   type LinkRequest,
   type LinkTracker,
@@ -446,10 +450,15 @@ export function DocumentPane({
   // The split's width, kept where the view mode is. The group it sizes is drawn in
   // raw and rendered too (one panel wide), so only a layout with both halves is
   // kept (`isSplitLayout`): a one-panel layout is a write nothing reads.
+  // Read through the guard: a corrupt kept width opens half and half, never a blank page.
+  const splitStorage = useMemo(
+    () => guardedLayoutStorage(kept, SPLIT_LAYOUT_ID, SPLIT_PANEL_IDS),
+    [kept],
+  );
   const splitLayout = useDefaultLayout({
     id: SPLIT_LAYOUT_ID,
     panelIds: SPLIT_PANEL_IDS,
-    storage: kept,
+    storage: splitStorage,
   });
   const keepSplit = splitLayout.onLayoutChanged;
   const onSplitLayout = useCallback(
@@ -567,7 +576,8 @@ export function DocumentPane({
     setAgainst(side);
   };
   const [naming, setNaming] = useState<VersionIntent | null>(null);
-  const [noteAt, setNoteAt] = useState<At | null>(null);
+  /** The right-click menu, open at a point, and which view it was opened in. */
+  const [noteAt, setNoteAt] = useState<(At & { via: "raw" | "rendered" }) | null>(null);
   /** The link being written, while its picker is open, with the text it covers. */
   const [linking, setLinking] = useState<
     (LinkRequest & { initialQuery: string; via: LinkVia }) | null
@@ -816,17 +826,25 @@ export function DocumentPane({
   /** Links written in the rendered view since the raw editor last mounted, for its undo. */
   const replay = useRef<{ slug: string; base: string; changes: TextChange[] } | null>(null);
 
+  /** An existing link in the way of one written at `from`..`to`: see `insideLinkProblem`. */
+  const linkPlaceProblem = (via: LinkVia, from: number, to: number): string | null => {
+    const t = via === "rendered" ? shown : editorHandle.current?.text();
+    return t === undefined ? null : insideLinkProblem(t, from, to);
+  };
   const askLink = (r: LinkRequest, via: LinkVia = "editor") => {
     if (!canLink) {
       r.track.release();
       return;
     }
     // A selection that cannot be one link is refused before the picker opens,
-    // rather than written as markdown that does not render as a link.
-    const problem = r.kind === "wrap" ? linkTextProblem(r.quote) : null;
+    // rather than written as markdown that does not render as a link; so is a
+    // caret or a selection inside an existing link, which would nest one link
+    // in another.
+    const problem =
+      r.kind === "wrap" ? (linkTextProblem(r.quote) ?? linkPlaceProblem(via, r.from, r.to)) : null;
     if (problem) {
       r.track.release();
-      w.announce("Can't link this selection", problem);
+      w.announce(r.from === r.to ? "Can't link here" : "Can't link this selection", problem);
       return;
     }
     // Keys typed after `](` or `[[` before the picker opened are its first query.
@@ -846,11 +864,17 @@ export function DocumentPane({
   const askLinkAt = (at: { from: number; to: number; x: number; y: number }) => {
     const ed = editorMounted ? editorHandle.current : null;
     if (ed) {
+      // Both views' right-clicks say the daemon's count; the editor holds each
+      // CRLF once.
+      const from = shown === undefined ? at.from : editorOffset(shown, at.from);
+      const to = shown === undefined ? at.to : editorOffset(shown, at.to);
       askLink({
         kind: "wrap",
         ...at,
-        quote: ed.text().slice(at.from, at.to),
-        track: ed.track("wrap", at.from, at.to),
+        from,
+        to,
+        quote: ed.text().slice(from, to),
+        track: ed.track("wrap", from, to),
       });
       return;
     }
@@ -868,6 +892,133 @@ export function DocumentPane({
   // Whatever ends the picker (a choice, a close, another document, the session
   // ending) stops its range being tracked.
   useEffect(() => () => linking?.track.release(), [linking]);
+
+  // ── the right-click menu ───────────────────────────────────────────────
+  // Every right-click in the text opens it (see `NoteAtSelection`), and the
+  // browser's own menu stays one gesture away. A page cannot open that menu
+  // itself; it can only not cancel the event. So a right-click while ours is
+  // open, or with Shift held, is left to the browser.
+  const menuOpen = useRef(false);
+  menuOpen.current = noteAt !== null;
+  /** The press under way is a context press made while our menu was open. */
+  const nativeNext = useRef(false);
+  useEffect(() => {
+    // Capture: ahead of the menu's own outside-press, which closes it.
+    const down = (e: MouseEvent) => {
+      nativeNext.current = menuOpen.current && (e.button === 2 || (e.button === 0 && e.ctrlKey));
+    };
+    // After every view's handler has asked: the press is spent either way.
+    const spent = () => {
+      nativeNext.current = false;
+    };
+    window.addEventListener("mousedown", down, true);
+    window.addEventListener("contextmenu", spent);
+    return () => {
+      window.removeEventListener("mousedown", down, true);
+      window.removeEventListener("contextmenu", spent);
+    };
+  }, []);
+  const openMenu =
+    (via: "raw" | "rendered") =>
+    (at: At, how: { shiftKey: boolean }): boolean => {
+      const open = { ...at, via };
+      // A menu with nothing usable in it (an ended session, a caret only) is
+      // no menu: the browser's own is more use than an empty one.
+      if (how.shiftKey || nativeNext.current || !menuUsable(open)) {
+        nativeNext.current = false;
+        setNoteAt(null);
+        return false;
+      }
+      setNoteAt(open);
+      return true;
+    };
+  /** Why Add note is off over a passage, when it is. */
+  const noteRefusal =
+    daemon.connection === "ended" ? "The session has ended, so no note can be added." : undefined;
+  /** Why the link act is off, when an existing link is in the way. */
+  // The menu's offsets are in the daemon's count from either view (a CRLF
+  // counted twice), so they are read against the text in that count: `shown`.
+  const menuLinkRefusal = (at: At & { via: "raw" | "rendered" }): string | null => {
+    if (shown === undefined) return null;
+    const selected = at.from < at.to ? shown.slice(at.from, at.to) : "";
+    return (
+      (selected ? linkTextProblem(selected) : null) ?? insideLinkProblem(shown, at.from, at.to)
+    );
+  };
+  /** Whether the menu at `at` would hold one act that can be taken. */
+  const menuUsable = (at: At & { via: "raw" | "rendered" }): boolean =>
+    at.noteIds.length > 0 ||
+    (at.from < at.to && noteRefusal === undefined) ||
+    (canLink && menuLinkRefusal(at) === null) ||
+    Object.keys(menuEdits(at)).length > 0;
+  const announceClipboard = (act: "copy" | "cut" | "paste") => {
+    const key = `${onMac() ? "⌘" : "Ctrl "}${act === "paste" ? "V" : act === "cut" ? "X" : "C"}`;
+    w.announce(
+      act === "paste" ? "Couldn't paste" : act === "cut" ? "Couldn't cut" : "Couldn't copy",
+      act === "paste"
+        ? `The browser did not let the page read the clipboard. ${key} pastes as usual.`
+        : `The browser did not let the page write to the clipboard. ${key} still works.`,
+    );
+  };
+  /**
+   * Cut, Copy and Paste for the menu, as the browser's menu offered them: Cut
+   * and Copy over a selection, Cut and Paste where the text can be edited (the
+   * raw editor, while the session is live). The rendered view is read, not
+   * typed in, so it offers Copy alone, as the browser's menu did there. Through
+   * the clipboard API: a paste needs the browser's permission, and a refusal
+   * says so and names the shortcut, which needs none.
+   */
+  const menuEdits = (at: At & { via: "raw" | "rendered" }): MenuEdits => {
+    const clip = typeof navigator !== "undefined" ? navigator.clipboard : undefined;
+    const passage = at.from < at.to;
+    const ed = at.via === "raw" ? editorHandle.current : null;
+    const writable = !!ed && daemon.connection !== "ended";
+    // The menu speaks the daemon's count; the editor holds each CRLF once.
+    const from = ed && shown !== undefined ? editorOffset(shown, at.from) : at.from;
+    const to = ed && shown !== undefined ? editorOffset(shown, at.to) : at.to;
+    const quote = () =>
+      ed
+        ? ed.text().slice(from, to)
+        : // What the reader sees, when the browser still holds it; else the source.
+          window.getSelection()?.toString() || (shown ?? "").slice(at.from, at.to);
+    const write = (text: string) =>
+      clip ? clip.writeText(text) : Promise.reject(new Error("no clipboard"));
+    return {
+      ...(passage && {
+        copy: () => {
+          write(quote()).catch(() => announceClipboard("copy"));
+        },
+      }),
+      ...(passage &&
+        writable && {
+          cut: () => {
+            const text = quote();
+            write(text).then(
+              () => {
+                if (!ed?.replaceRange(from, to, "", { at: from, text }, "delete.cut"))
+                  w.announce(
+                    "Not cut",
+                    "The text changed under the menu. Select it and try again.",
+                  );
+              },
+              () => announceClipboard("cut"),
+            );
+          },
+        }),
+      ...(writable && {
+        paste: () => {
+          const text = ed?.text().slice(from, to) ?? "";
+          (clip ? clip.readText() : Promise.reject(new Error("no clipboard"))).then(
+            (pasted) => {
+              if (!ed?.replaceRange(from, to, pasted, { at: from, text }, "input.paste"))
+                w.announce("Not pasted", "The text changed under the menu. Try again.");
+            },
+            () => announceClipboard("paste"),
+          );
+        },
+      }),
+    };
+  };
   // The targets are asked for each time the picker opens, so a document added a
   // moment ago is there and the relations are the ones in use now.
   const { request } = daemon;
@@ -2016,7 +2167,7 @@ export function DocumentPane({
                   clearSeq={w.clearSeq}
                   place={place}
                   pendingNote={pendingNote}
-                  onContextMenu={setNoteAt}
+                  onContextMenu={openMenu("raw")}
                   onLinkRequest={isJson ? undefined : askLink}
                   onFollowLink={isJson ? undefined : followLink}
                   onImages={isJson ? undefined : takeImages}
@@ -2059,7 +2210,7 @@ export function DocumentPane({
                     onSelect={onSelect}
                     clearSeq={w.clearSeq}
                     place={place}
-                    onContextMenu={setNoteAt}
+                    onContextMenu={openMenu("rendered")}
                     widgets={inlineWidgets}
                     frontmatterChips={frontmatterChips}
                     frontmatterTrust={frontmatterTrust}
@@ -2111,7 +2262,9 @@ export function DocumentPane({
           const n = doc?.notes.find((x) => x.id === id);
           // Still owed an answer: the note menu on the passage says so too.
           const owed = w.state.notesWaiting?.find((o) => o.doc === doc?.slug && o.noteId === id);
-          const waiting = owed ? badgeFor(owed, w.state.agentListening !== false) : undefined;
+          const waiting = owed
+            ? badgeFor(owed, w.state.agentListening !== false, daemon.connection === "ended")
+            : undefined;
           return n ? [{ id, label: n.body, ...(waiting ? { waiting } : {}) }] : [];
         })}
         onClose={() => setNoteAt(null)}
@@ -2130,6 +2283,9 @@ export function DocumentPane({
         onAddLink={
           canLink ? (at) => askLinkAt({ from: at.from, to: at.to, x: at.x, y: at.y }) : undefined
         }
+        edits={noteAt ? menuEdits(noteAt) : undefined}
+        linkRefusal={noteAt ? (menuLinkRefusal(noteAt) ?? undefined) : undefined}
+        noteRefusal={noteRefusal}
       />
       {linking && canLink && (
         <LinkPicker
@@ -2144,11 +2300,11 @@ export function DocumentPane({
           failure={linkFailure}
           onClose={closeLink}
           onHeadings={(target) => headingsFor(target.path)}
-          onChoose={(target, relations, heading) =>
+          onChoose={(target, relations, heading, label) =>
             chooseLink(
               linking.kind,
               linking.quote,
-              linkInsertion(linking.kind, linking.quote, target, relations, heading),
+              linkInsertion(linking.kind, linking.quote, target, relations, heading, label),
               linking,
             )
           }

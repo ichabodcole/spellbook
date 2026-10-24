@@ -92,28 +92,51 @@ const placeless: unknown[] = [];
 const placed: { op: string; dir?: unknown }[] = [];
 const names = (dir: unknown) => typeof dir === "string" && dir.startsWith("/");
 
-/** The client the frame is given, with every op and image it sends checked for a place. */
+/** Every path the frame sent an `open` for, in order. */
+const opened: string[] = [];
+
+const check = (op: { op: string; dir?: unknown; path?: unknown }) => {
+  if (op.op === "open" && typeof op.path === "string") opened.push(op.path);
+  if (!PLACED.has(op.op)) return;
+  placed.push({ op: op.op, dir: op.dir });
+  if (!names(op.dir)) placeless.push(op);
+};
+
+/** Each client function's watched stand-in, made once, keyed by the function it stands in for. */
+const stand = new WeakMap<object, unknown>();
+function once<F extends object>(fn: F, make: (fn: F) => F): F {
+  let w = stand.get(fn) as F | undefined;
+  if (!w) {
+    w = make(fn);
+    stand.set(fn, w);
+  }
+  return w;
+}
+
+/**
+ * The client the frame is given, with every op and image it sends checked for a
+ * place. Its functions stay the same from one snapshot to the next, as
+ * `useDaemon` promises: the shell keys effects on `send` (a made document's
+ * open, the selection), and a fresh `send` on every snapshot re-ran them on
+ * every snapshot. The re-sent `open` drew another snapshot, so page and daemon
+ * volleyed until unmount, and an `act` that caught the volley never settled.
+ */
 function watched(d: Daemon): Daemon {
-  const check = (op: { op: string; dir?: unknown }) => {
-    if (!PLACED.has(op.op)) return;
-    placed.push({ op: op.op, dir: op.dir });
-    if (!names(op.dir)) placeless.push(op);
-  };
   return {
     ...d,
-    send: (op) => {
+    send: once(d.send, (send) => (op) => {
       check(op as { op: string; dir?: unknown });
-      return d.send(op);
-    },
-    request: (op, o) => {
+      return send(op);
+    }),
+    request: once(d.request, (request) => (op, o) => {
       check(op as { op: string; dir?: unknown });
-      return d.request(op, o);
-    },
-    importImage: (f, o) => {
+      return request(op, o);
+    }),
+    importImage: once(d.importImage, (importImage) => (f, o) => {
       placed.push({ op: "image", dir: o.dir });
       if (!names(o.dir) && !o.doc && !o.bundle) placeless.push({ image: f.name, ...o });
-      return d.importImage(f, o);
-    },
+      return importImage(f, o);
+    }),
   };
 }
 
@@ -427,7 +450,7 @@ describe("where a new file goes (no default workspace)", () => {
     const m = await open();
     const pane = document.querySelector('[data-pane="context"]')?.textContent ?? "";
     expect(pane).not.toContain("here to copy them in");
-    expect(pane).toContain("Drop documents or images, then choose a set");
+    expect(pane).toContain("Drop files, then choose where they go");
     await m.unmount();
   });
 
@@ -553,6 +576,8 @@ describe("where a new file goes (no default workspace)", () => {
     await settle();
     expect(byLabel("Back to the context list")).toBeNull();
     expect(byLabel("New document…")).not.toBeNull();
+    // What was made is opened once, not again on every snapshot after it.
+    expect(opened.filter((p) => p === made)).toEqual([made as string]);
     await m.unmount();
   });
 
@@ -602,10 +627,7 @@ describe("where a new file goes (no default workspace)", () => {
     expect(where()).toBeNull();
     await waitFor(() => existsSync(join(set, "part", "Untitled.md")), "on disk");
     await m.unmount();
-    // Longer than the default 5 s: the shell opens each new document it is told
-    // was made (the editor mounts three times here), which under the full gate's
-    // load took this past 5 s; alone it passes well inside it.
-  }, 20_000);
+  });
 });
 
 describe("scriptoriumMenuActions", () => {

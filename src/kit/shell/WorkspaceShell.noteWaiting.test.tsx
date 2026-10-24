@@ -9,7 +9,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } fr
 import { mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { NoteAtSelection } from "../chat/NoteAtSelection.tsx";
-import { NOTE_WAITING_LABEL } from "../chat/WaitingBadge.tsx";
+import { ENDED_LABEL, NOTE_WAITING_LABEL } from "../chat/WaitingBadge.tsx";
 import { useDaemon } from "../context/useDaemon.ts";
 import { useWorkspace, type Workspace } from "../context/workspace.ts";
 import {
@@ -228,6 +228,33 @@ describe("a note the human leaves shows that it is with the agent", () => {
     expect(mark.querySelector(".animate-pulse")).toBeNull();
     expect(tabDot()?.getAttribute("data-badge")).toBe("stalled");
     expect(tabDot()?.getAttribute("aria-label")).toBe("1 note owed an answer; it may be stuck");
+    await m.unmount();
+  });
+
+  test("after End session a stuck note says the session ended instead: on the note, the tab and the float", async () => {
+    await stopDaemon();
+    await startDaemon({ stallMs: 300, attentionMs: 40 });
+    const { m, slug } = await openSolo();
+    await humanNote(slug, "still owed");
+    await waitFor(
+      () => markOn("still owed")?.getAttribute("data-badge") === "stalled",
+      "the stuck mark",
+      4000,
+    );
+    await settle(() => {
+      ws().daemon.send({ op: "close" });
+    });
+    await waitFor(() => ws().daemon.connection === "ended", "the session ended");
+    await waitFor(() => markOn("still owed")?.getAttribute("data-badge") === "ended", "ended");
+    expect(markOn("still owed")?.textContent).toBe(ENDED_LABEL.note);
+    expect(markOn("still owed")?.querySelector(".animate-pulse") === null).toBe(true);
+    expect(tabDot()?.getAttribute("data-badge")).toBe("ended");
+    expect(tabDot()?.getAttribute("aria-label")).toBe(`1 note owed an answer; ${ENDED_LABEL.note}`);
+    // The float's note row, with the column collapsed.
+    await click(q('[data-column-control="chat-collapse"]'));
+    await waitFor(() => floatNote() !== null, "the float's note");
+    expect(floatNote()?.querySelector("[data-badge]")?.getAttribute("data-badge")).toBe("ended");
+    expect(floatNote()?.textContent ?? "").not.toContain("may be stuck");
     await m.unmount();
   });
 

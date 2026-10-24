@@ -2,7 +2,7 @@
 // and whether anything of the human's still waits on the agent.
 
 import { describe, expect, test } from "bun:test";
-import { UNHEARD_LABEL, WAITING_LABEL } from "../chat/WaitingBadge.tsx";
+import { ENDED_LABEL, UNHEARD_LABEL, WAITING_LABEL } from "../chat/WaitingBadge.tsx";
 import type { NoteWaiting } from "../workspace/protocol";
 import { lastMessageId, unseenFromAgent, waitingOnAgent } from "./rail.ts";
 
@@ -92,5 +92,22 @@ describe("the chat rail's waiting mark", () => {
     expect(
       waitingOnAgent({ badge: "stalled", acknowledged: true }, [note("working")], false)?.badge,
     ).toBe("stalled");
+  });
+
+  test("once the session has ended, every wait says so: never working, unheard or stuck", () => {
+    expect(waitingOnAgent({ badge: "working" }, [note("stalled")], true, true)).toEqual({
+      badge: "ended",
+      label: `your message: ${ENDED_LABEL.message}; 1 note owed an answer; ${ENDED_LABEL.note}`,
+    });
+    // Not even the agent's snooze, nor a tail still open, is work after the end.
+    expect(waitingOnAgent({ badge: "working", acknowledged: true }, [], false, true)?.badge).toBe(
+      "ended",
+    );
+    expect(waitingOnAgent(null, [note("working"), note("working")], true, true)).toEqual({
+      badge: "ended",
+      label: `2 notes owed an answer; ${ENDED_LABEL.note}`,
+    });
+    // Nothing waiting is still no mark.
+    expect(waitingOnAgent(null, [], true, true)).toBeNull();
   });
 });

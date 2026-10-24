@@ -14,7 +14,7 @@
 // `openAt` path search results and backlinks use. Nothing here renames: a shared
 // name shows the name it could take, and the rename stays the human's.
 
-import { Link2OffIcon } from "lucide-react";
+import { Link2Icon, Link2OffIcon } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import type { ServerFrame } from "../context/daemonClient.ts";
 import { cn } from "../lib/cn.ts";
@@ -48,17 +48,49 @@ export const LINK_CHECK_PAUSE_MS = 1200;
 export const LINK_CHECK_FALLBACK_MS = 300_000;
 
 /**
- * Everything the list has to show: the link problems (`count`), the images
- * nothing links to or embeds, the symmetric relations written one way, and the
- * links leaving their set, which the daemon counts apart because none of them
- * is a broken link.
+ * What the sign counts, its headline: the link problems (`count`), the images
+ * nothing links to or embeds, the symmetric relations written one way, and
+ * the links to a repeated heading. Links leaving their set are not in it: a
+ * link to a file the session does not hold is a fact, not a problem, so it is
+ * listed and never counted.
  */
 export const linkCheckTotal = (d: LinkCheckData): number =>
-  d.count +
-  d.unusedImages.count +
-  d.symmetry.count +
-  d.ambiguousHeadings.count +
-  (d.leaving?.count ?? 0);
+  d.count + d.unusedImages.count + d.symmetry.count + d.ambiguousHeadings.count;
+
+/**
+ * Everything the list shows: the sign's total, and what it lists without
+ * counting: the app's references nothing answers that are not written as
+ * paths (`LinkCheck.unresolved`), since the kit cannot tell a broken one from
+ * one another tool resolves, and the links leaving their set.
+ */
+export const linkCheckListed = (d: LinkCheckData): number =>
+  linkCheckTotal(d) + (d.unresolved?.count ?? 0) + (d.leaving?.count ?? 0);
+
+/**
+ * What the sign says when it counts nothing but lists something (links
+ * leaving the set, unresolved references): no number, and no problem.
+ */
+export function linkCheckQuietLabel(d: LinkCheckData): string {
+  const listed: string[] = [];
+  if (d.leaving && d.leaving.count > 0) listed.push(`links leaving the ${nounOf(d)}`);
+  if (d.unresolved && d.unresolved.count > 0) listed.push("unresolved references");
+  // Empty only while the list is held open over a fresh, clean answer.
+  return listed.length > 0
+    ? `nothing broken; listed: ${listed.join(" and ")}`
+    : "nothing to report";
+}
+
+/**
+ * The quiet mark's word, beside its icon: what is listed, in short and in
+ * the same faint ink ("11 leaving", "2 unresolved"; both: "11 leaving, 2
+ * unresolved"). Empty when nothing is listed.
+ */
+export function linkCheckQuietWord(d: LinkCheckData): string {
+  const words: string[] = [];
+  if (d.leaving && d.leaving.count > 0) words.push(`${d.leaving.count} leaving`);
+  if (d.unresolved && d.unresolved.count > 0) words.push(`${d.unresolved.count} unresolved`);
+  return words.join(", ");
+}
 
 /**
  * The app's word for a set (`LinkCheck.noun`, from `WorkspaceDaemonOptions.linkCheck`),
@@ -82,6 +114,14 @@ export function linkCheckLabel(d: LinkCheckData): string {
   if (d.duplicates.count > 0)
     parts.push(count(d.duplicates.count, "shared file name", "shared file names"));
   if (d.dangling.count > 0) parts.push(count(d.dangling.count, "broken link", "broken links"));
+  if (d.proposed && d.proposed.count > 0)
+    parts.push(
+      count(
+        d.proposed.count,
+        "broken link in a proposed version",
+        "broken links in proposed versions",
+      ),
+    );
   if (d.references.count > 0)
     parts.push(count(d.references.count, "broken reference", "broken references"));
   if (d.edges && d.edges.count > 0) {
@@ -92,8 +132,6 @@ export function linkCheckLabel(d: LinkCheckData): string {
     parts.push(count(d.unsupported.count, "unsupported link", "unsupported links"));
   if (d.headings.count > 0)
     parts.push(count(d.headings.count, "link to a missing heading", "links to a missing heading"));
-  // Only for an app that asks for them, in its word: "1 leaving the set".
-  if (d.leaving && d.leaving.count > 0) parts.push(`${d.leaving.count} leaving the ${nounOf(d)}`);
   if (d.unusedImages.count > 0)
     parts.push(
       count(
@@ -153,9 +191,12 @@ function LinkEntry({
 /** A broken app edge (a frontmatter reference): opens its source where it is written. */
 function EdgeEntry({
   edge,
+  unresolved,
   onOpen,
 }: {
   edge: CheckedEdgeView;
+  /** Not written as a path: listed, not broken (`LinkCheck.unresolved`). */
+  unresolved?: boolean;
   onOpen: (path: string, at?: { from: number; to: number }) => void;
 }) {
   const at =
@@ -166,6 +207,7 @@ function EdgeEntry({
         type="button"
         data-slot="link-check-entry"
         data-edge={edge.edge}
+        data-unresolved={unresolved ? "" : undefined}
         data-source={edge.source}
         data-line={edge.line}
         onClick={() => onOpen(edge.source, at)}
@@ -184,7 +226,8 @@ function EdgeEntry({
           {edge.key ? `${edge.key}: ` : ""}
           {edge.raw}
         </span>
-        {edge.tried.length > 0 && (
+        {/* An unresolved reference was never meant as a path: where it looked says nothing. */}
+        {!unresolved && edge.tried.length > 0 && (
           <span className="block truncate text-[10px] text-ink-faint">
             nothing at {edge.tried.join(", ")}
           </span>
@@ -245,6 +288,7 @@ function Section({
   note,
   total,
   shown,
+  quiet,
   children,
 }: {
   title: string;
@@ -252,14 +296,26 @@ function Section({
   note?: string;
   total: number;
   shown: number;
+  /** Listed, not counted: a fainter header, so it does not read as a problem. */
+  quiet?: boolean;
   children: ReactNode;
 }) {
   if (total === 0) return null;
   return (
-    <section aria-label={title} data-slot="link-check-section" className="flex flex-col">
+    <section
+      aria-label={title}
+      data-slot="link-check-section"
+      data-quiet={quiet ? "" : undefined}
+      className="flex flex-col"
+    >
       {/* Sticky, so a long section still says what it is while it scrolls. */}
       <h3 className="sticky top-0 z-10 bg-surface px-2 pt-2 pb-0.5">
-        <span className="flex items-baseline gap-1.5 text-[11px] font-medium tracking-wide text-ink-dim uppercase">
+        <span
+          className={cn(
+            "flex items-baseline gap-1.5 text-[11px] tracking-wide uppercase",
+            quiet ? "font-normal text-ink-faint" : "font-medium text-ink-dim",
+          )}
+        >
           {title}
           <span className="font-normal text-ink-faint normal-case tracking-normal">{total}</span>
         </span>
@@ -285,10 +341,12 @@ function onlySet(d: LinkCheckData, keep: (set: string | undefined) => boolean): 
     return list.filter((x) => keep(x.set));
   }
   const dangling = pick(d.dangling.links);
+  const proposed = d.proposed ? pick(d.proposed.links) : undefined;
   const unsupported = pick(d.unsupported.links);
   const headings = pick(d.headings.links);
   const references = pick(d.references.links);
   const edges = d.edges ? pick(d.edges.links) : undefined;
+  const unresolved = d.unresolved ? pick(d.unresolved.links) : undefined;
   const images = pick(d.unusedImages.images);
   const symmetry = pick(d.symmetry.hints);
   const ambiguous = pick(d.ambiguousHeadings.hints);
@@ -299,8 +357,10 @@ function onlySet(d: LinkCheckData, keep: (set: string | undefined) => boolean): 
       unsupported.length +
       headings.length +
       references.length +
-      (edges?.length ?? 0),
+      (edges?.length ?? 0) +
+      (proposed?.length ?? 0),
     dangling: { count: dangling.length, links: dangling },
+    ...(proposed ? { proposed: { count: proposed.length, links: proposed } } : {}),
     unsupported: {
       count: unsupported.length,
       schemes: [...new Set(unsupported.map((l) => l.scheme))].sort(),
@@ -319,6 +379,15 @@ function onlySet(d: LinkCheckData, keep: (set: string | undefined) => boolean): 
             count: edges.length,
             kinds: [...new Set(edges.map((e) => e.edge))].sort(),
             links: edges,
+          },
+        }
+      : {}),
+    ...(unresolved
+      ? {
+          unresolved: {
+            count: unresolved.length,
+            kinds: [...new Set(unresolved.map((e) => e.edge))].sort(),
+            links: unresolved,
           },
         }
       : {}),
@@ -348,23 +417,75 @@ export function linkCheckGroups(
     label: null,
     data: onlySet(d, (set) => set === undefined || !known.has(set)),
   });
-  return groups.filter((g) => linkCheckTotal(g.data) > 0);
+  return groups.filter((g) => linkCheckListed(g.data) > 0);
 }
 
 /**
- * One set's sections (or, from a daemon that names no sets, the session's):
- * broken links, then broken references of each sort, unsupported links and
- * links to a missing heading; then the links leaving the set; then the
- * images nothing uses, and the two hints. Each entry opens its source (an
- * image, in the viewer), at the link where the daemon says where it is.
+ * What the sign counts in `d`, and what it only lists: the two parts the
+ * list shows in turn, counted first.
+ */
+const quietCount = (d: LinkCheckData): number =>
+  (d.unresolved?.count ?? 0) + (d.leaving?.count ?? 0);
+
+/**
+ * One set's sections (or, from a daemon that names no sets, the session's),
+ * in one of two parts. `counted`: broken links, then broken references of
+ * each sort, unsupported links and links to a missing heading, then the
+ * images nothing uses and the two hints, all of which the sign counts.
+ * `quiet`: what it lists without counting, the unresolved references and the
+ * links leaving the set. Each entry opens its source (an image, in the
+ * viewer), at the link where the daemon says where it is.
  */
 function KindSections({
   data,
+  part,
   onOpen,
 }: {
   data: LinkCheckData;
+  part: "counted" | "quiet";
   onOpen: (path: string, at?: { from: number; to: number }) => void;
 }) {
+  if (part === "quiet")
+    return (
+      <>
+        {data.unresolved && (
+          <Section
+            title="Unresolved references"
+            note="Not counted as broken: written as a name, not a path, and nothing here answers it. Another tool may know what it names."
+            total={data.unresolved.count}
+            shown={data.unresolved.links.length}
+            quiet
+          >
+            {data.unresolved.links.map((e) => (
+              <EdgeEntry
+                key={`${e.source}:${e.key ?? ""}:${e.raw}:${e.from ?? ""}`}
+                edge={e}
+                unresolved
+                onOpen={onOpen}
+              />
+            ))}
+          </Section>
+        )}
+        {data.leaving && (
+          <Section
+            title={`Leaving the ${nounOf(data)}`}
+            note={`Not broken, and not counted: these land on a file this session does not hold. The ${nounOf(data)} is not self-contained.`}
+            total={data.leaving.count}
+            shown={data.leaving.links.length}
+            quiet
+          >
+            {data.leaving.links.map((l) => (
+              <LeavingEntry
+                key={`${l.source}:${l.edge ?? "link"}:${l.from ?? l.raw}:${l.key ?? ""}`}
+                link={l}
+                noun={nounOf(data)}
+                onOpen={onOpen}
+              />
+            ))}
+          </Section>
+        )}
+      </>
+    );
   const openLink = (l: CheckedLinkView) => onOpen(l.source, { from: l.from, to: l.to });
   const schemes = data.unsupported.schemes.map((s) => `${s}:`).join(", ");
   return (
@@ -379,6 +500,24 @@ function KindSections({
           />
         ))}
       </Section>
+      {data.proposed && (
+        <Section
+          title="Broken in a proposed version"
+          note="A version the agent proposed, never made active, links to nothing here, often because a move updated only the active version. Activated as it is, the link is broken."
+          total={data.proposed.count}
+          shown={data.proposed.links.length}
+        >
+          {data.proposed.links.map((l) => (
+            <LinkEntry
+              key={`${l.source}:${l.version}:${l.from}`}
+              link={l}
+              note={`in v${l.version}${l.suggest ? `; its target moved to ${l.suggest}` : ""}`}
+              // Its place is in that version's text, not the active one's: open the document.
+              onOpen={(x) => onOpen(x.source)}
+            />
+          ))}
+        </Section>
+      )}
       {data.edges && (
         <Section
           title={`Broken ${edgeNoun(data.edges.kinds)}s`}
@@ -449,23 +588,6 @@ function KindSections({
           />
         ))}
       </Section>
-      {data.leaving && (
-        <Section
-          title={`Leaving the ${nounOf(data)}`}
-          note={`Not broken: these land on a file in another ${nounOf(data)}, or in none. The ${nounOf(data)} is not self-contained.`}
-          total={data.leaving.count}
-          shown={data.leaving.links.length}
-        >
-          {data.leaving.links.map((l) => (
-            <LeavingEntry
-              key={`${l.source}:${l.edge ?? "link"}:${l.from ?? l.raw}:${l.key ?? ""}`}
-              link={l}
-              noun={nounOf(data)}
-              onOpen={onOpen}
-            />
-          ))}
-        </Section>
-      )}
       <Section
         title="Images nothing links to or embeds"
         note="In an images folder beside a document, and no link or embed reaches them (an undone paste leaves its file). Open one to look, then embed it or move it to the Trash."
@@ -526,9 +648,12 @@ function KindSections({
 /**
  * The list behind the mark: shared names first, for the whole session (a
  * rename is the bigger, rarer decision, a short list, and a name may be
- * shared across sets); then each set with something to report, in the
- * context's order, its sections beneath its name. A daemon that names no sets
- * gets one list, as before the grouping.
+ * shared across sets); then each set with something the sign counts, in the
+ * context's order, its sections beneath its name; then, hoisted below them
+ * all, each set with something listed and not counted (unresolved
+ * references, links leaving the set), under its name again and no number
+ * (Cole, 2026-10-23: counted first). A daemon that names no sets gets one
+ * list, counted first in the same way.
  */
 export function LinkCheckList({
   data,
@@ -537,7 +662,7 @@ export function LinkCheckList({
   data: LinkCheckData;
   onOpen: (path: string, at?: { from: number; to: number }) => void;
 }) {
-  if (linkCheckTotal(data) === 0)
+  if (linkCheckListed(data) === 0)
     return (
       <p data-slot="link-check-list" className="pt-2 text-[12px] text-ink-dim">
         Nothing to report now: every link answers, and no two documents share a name.
@@ -582,27 +707,55 @@ export function LinkCheckList({
         ))}
       </Section>
       {groups === null ? (
-        <KindSections data={data} onOpen={onOpen} />
+        <>
+          <KindSections data={data} part="counted" onOpen={onOpen} />
+          <KindSections data={data} part="quiet" onOpen={onOpen} />
+        </>
       ) : (
-        groups.map((g) => (
-          <section
-            key={g.id ?? ""}
-            data-slot="link-check-set"
-            data-set={g.id ?? undefined}
-            aria-label={g.label ? `In ${g.label}` : elsewhere}
-            className="flex flex-col"
-          >
-            <h3 className="mx-2 mt-3 flex items-baseline gap-1.5 border-b border-edge pb-0.5 text-[12px] font-medium text-ink">
-              <span className="truncate">{g.label ?? elsewhere}</span>
-              <span className="font-normal text-ink-faint" data-slot="set-total">
-                {g.total !== undefined && g.total > linkCheckTotal(g.data)
-                  ? `${linkCheckTotal(g.data)} of ${g.total}`
-                  : linkCheckTotal(g.data)}
-              </span>
-            </h3>
-            <KindSections data={g.data} onOpen={onOpen} />
-          </section>
-        ))
+        <>
+          {/* Counted first: what the sign's number counts, set by set, so it is on the first screen however many sets only list something. */}
+          {groups
+            .filter((g) => linkCheckTotal(g.data) > 0)
+            .map((g) => (
+              <section
+                key={g.id ?? ""}
+                data-slot="link-check-set"
+                data-part="counted"
+                data-set={g.id ?? undefined}
+                aria-label={g.label ? `In ${g.label}` : elsewhere}
+                className="flex flex-col"
+              >
+                <h3 className="mx-2 mt-3 flex items-baseline gap-1.5 border-b border-edge pb-0.5 text-[12px] font-medium text-ink">
+                  <span className="truncate">{g.label ?? elsewhere}</span>
+                  {/* What the sign counts, so the groups add up to it. */}
+                  <span className="font-normal text-ink-faint" data-slot="set-total">
+                    {g.total !== undefined && g.total > linkCheckTotal(g.data)
+                      ? `${linkCheckTotal(g.data)} of ${g.total}`
+                      : linkCheckTotal(g.data)}
+                  </span>
+                </h3>
+                <KindSections data={g.data} part="counted" onOpen={onOpen} />
+              </section>
+            ))}
+          {/* Then what it lists without counting, set by set again, under no number. */}
+          {groups
+            .filter((g) => quietCount(g.data) > 0)
+            .map((g) => (
+              <section
+                key={`quiet:${g.id ?? ""}`}
+                data-slot="link-check-set"
+                data-part="quiet"
+                data-set={g.id ?? undefined}
+                aria-label={`${g.label ? `In ${g.label}` : elsewhere}, listed, not counted`}
+                className="flex flex-col"
+              >
+                <h3 className="mx-2 mt-3 flex items-baseline gap-1.5 border-b border-edge pb-0.5 text-[12px] font-normal text-ink-dim">
+                  <span className="truncate">{g.label ?? elsewhere}</span>
+                </h3>
+                <KindSections data={g.data} part="quiet" onOpen={onOpen} />
+              </section>
+            ))}
+        </>
       )}
       {groups !== null && data.truncated && (
         <p className="px-2 pt-2 text-[10px] text-ink-faint">
@@ -696,27 +849,52 @@ export function LinkCheck({
   }, [connected, request, snapshot, edits, pushed, open, tick]);
 
   // While the list is open it stays, even when a fresh answer has emptied it.
-  if (!data || (linkCheckTotal(data) === 0 && !open)) return null;
-  const label = linkCheckLabel(data);
+  if (!data || (linkCheckListed(data) === 0 && !open)) return null;
+  // Nothing counted, something listed (links leaving the set, unresolved
+  // references): a quiet mark, a plain link and a faint word ("11 leaving"), or
+  // just a number when narrow, that still opens the list. Not a problem, so it
+  // does not look like one.
+  const quiet = linkCheckTotal(data) === 0;
+  const label = quiet ? linkCheckQuietLabel(data) : linkCheckLabel(data);
+  const Icon = quiet ? Link2Icon : Link2OffIcon;
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         data-slot="link-check"
+        data-quiet={quiet ? "" : undefined}
         aria-label={`Link check: ${label}`}
         title={label}
         className={cn(
-          "flex min-w-0 shrink items-center gap-1 rounded px-1 text-ink-dim outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60",
+          "flex min-w-0 shrink items-center gap-1 rounded px-1 outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60",
+          quiet ? "text-ink-faint" : "text-ink-dim",
           className,
         )}
       >
-        <Link2OffIcon aria-hidden className="size-3.5 shrink-0" />
-        {/* Narrow: the icon and the total. The words are in the label either way. */}
-        <span data-slot="link-check-total" aria-hidden className="sm:hidden">
-          {linkCheckTotal(data)}
-        </span>
-        <span data-slot="link-check-label" aria-hidden className="hidden truncate sm:inline">
-          {label}
-        </span>
+        <Icon aria-hidden className="size-3.5 shrink-0" />
+        {/* Narrow: the icon and the total. The words are in the label either way. The quiet mark does the same in small faint type: what it lists, never a count of problems. */}
+        {quiet ? (
+          <>
+            <span data-slot="link-check-quiet-total" aria-hidden className="text-[11px] sm:hidden">
+              {quietCount(data)}
+            </span>
+            <span
+              data-slot="link-check-quiet-word"
+              aria-hidden
+              className="hidden truncate text-[11px] sm:inline"
+            >
+              {linkCheckQuietWord(data)}
+            </span>
+          </>
+        ) : (
+          <>
+            <span data-slot="link-check-total" aria-hidden className="sm:hidden">
+              {linkCheckTotal(data)}
+            </span>
+            <span data-slot="link-check-label" aria-hidden className="hidden truncate sm:inline">
+              {label}
+            </span>
+          </>
+        )}
       </PopoverTrigger>
       <PopoverContent side="top" align="end" className="w-[min(30rem,calc(100vw-1rem))]">
         <PopoverTitle>Link check</PopoverTitle>

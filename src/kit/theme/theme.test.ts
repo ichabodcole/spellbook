@@ -13,6 +13,7 @@ import {
   resolveInitialTheme,
   SHELL_CSS_PATH,
   SHELL_CSS_SPECIFIER,
+  THEME_HOOKS,
   THEME_LAYERS,
   THEME_PREPAINT,
   THEME_STORAGE_KEY,
@@ -208,10 +209,55 @@ describe("the rendered-markdown sheet", () => {
     expect(doc).toContain(`@keyframes ${name} {`);
   });
 
+  test("no keyframe writes a color-mix(), which the build drops the frame for", () => {
+    // The build adds an @supports copy for each color-mix(), which a keyframe
+    // cannot hold: it dropped kit-flash's tinted frame, and the flash showed nothing.
+    const frames = [...doc.matchAll(/@keyframes[^{]*\{([\s\S]*?)\n\}/g)].map((m) => m[1] ?? "");
+    expect(frames.length).toBeGreaterThan(0);
+    for (const f of frames) expect(f).not.toContain("color-mix(");
+  });
+
   test("uses the kit's tokens, never a fixed colour", () => {
     const body = doc.replace(/\/\*[\s\S]*?\*\//g, "");
     expect(body).not.toMatch(/#[0-9a-f]{3,8}\b/i);
     expect(body).toContain("var(--color-");
+  });
+
+  test("the document's h1 is a step larger than its h2s, and the rendered view carries the class that says so", () => {
+    const body = doc.replace(/\/\*[\s\S]*?\*\//g, "");
+    const em = (selector: string) => {
+      const esc = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const rule = new RegExp(`(?:^|\\n)\\s*${esc}\\s*\\{([^}]*)\\}`).exec(body)?.[1] ?? "";
+      return Number(/font-size:\s*([\d.]+)em/.exec(rule)?.[1]);
+    };
+    // h2 takes the shared heading rule, the one that lists h2 to h6.
+    const shared = /\.md-prose h1,\s*\.md-prose h2,[^{]*\{([^}]*)\}/.exec(body)?.[1] ?? "";
+    const h2 = Number(/font-size:\s*([\d.]+)em/.exec(shared)?.[1]);
+    const h1 = em(".md-prose.md-document h1");
+    expect(h2).toBeGreaterThan(0);
+    expect(h1 - h2).toBeGreaterThanOrEqual(0.25);
+    // The class is on the rendered view's body, both with and without frontmatter.
+    const view = readFileSync(join(kit, "document", "MarkdownView.tsx"), "utf8");
+    expect([...view.matchAll(/"md-prose md-document /g)].length).toBe(2);
+  });
+
+  test("a chat message's h1 keeps the compact scale: no h1 rule outside the document's is enlarged", () => {
+    const body = doc.replace(/\/\*[\s\S]*?\*\//g, "");
+    const sizes: [string, number][] = [];
+    for (const [, selectors = "", block = ""] of body.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      const size = /font-size:\s*([\d.]+)em/.exec(block)?.[1];
+      if (size === undefined) continue;
+      for (const sel of selectors.split(",").map((x) => x.trim()))
+        if (sel.includes(".md-prose") && /\bh1\b/.test(sel) && !sel.includes("md-document"))
+          sizes.push([sel, Number(size)]);
+    }
+    // The shared rule and the h1's own compact step are there, and none is larger.
+    expect(sizes.length).toBeGreaterThanOrEqual(2);
+    for (const [sel, size] of sizes) expect(size, sel).toBeLessThanOrEqual(1.2);
+    // The chat's body carries no md-document, so the step cannot reach it.
+    const chat = readFileSync(join(kit, "chat", "ChatMessageView.tsx"), "utf8");
+    expect(chat).toContain('className="md-prose"');
+    expect(chat).not.toContain("md-document");
   });
 });
 
@@ -260,6 +306,76 @@ describe("the shell sheet", () => {
   test("uses the kit's tokens, never a fixed colour", () => {
     expect(body).not.toMatch(/#[0-9a-f]{3,8}\b/i);
     expect(body).toContain("var(--color-");
+  });
+});
+
+describe("the optional hooks", () => {
+  const kit = join(import.meta.dir, "..");
+  /** Every non-test .ts, .tsx and .css file under src/kit/, but the daemon's. */
+  const sources = (): string[] =>
+    (readdirSync(kit, { recursive: true }) as string[])
+      .filter((f) => /\.(tsx?|css)$/.test(f) && !/\.test\./.test(f) && !f.startsWith("workspace"))
+      .map((f) => join(kit, f));
+  const kitText = () => sources().map((f) => readFileSync(f, "utf8"));
+
+  test("no kit sheet declares one, so a theme that sets none looks as it did", () => {
+    for (const path of [BASE_CSS_PATH, DOCUMENT_CSS_PATH, SHELL_CSS_PATH]) {
+      const sheet = readFileSync(path, "utf8");
+      for (const h of THEME_HOOKS)
+        expect(sheet, `${path} --color-${h}`).not.toContain(`--color-${h}:`);
+    }
+  });
+
+  test("every hook is read, and every read falls back", () => {
+    const text = kitText().join("\n");
+    // `--color-link` is not `--color-link-underline`: the name ends at , or ),
+    // after any whitespace, and a read may break across lines (`var(\n  --x,`).
+    const readsOf = (src: string, h: string) => [
+      ...src.matchAll(new RegExp(`var\\(\\s*--color-${h}\\s*([,)])`, "g")),
+    ];
+    // The pattern sees a read broken across lines, as document.css writes one.
+    expect(readsOf(readFileSync(DOCUMENT_CSS_PATH, "utf8"), "find-current")).toHaveLength(1);
+    for (const h of THEME_HOOKS) {
+      const reads = readsOf(text, h);
+      expect(reads.length, `--color-${h} is read`).toBeGreaterThan(0);
+      for (const r of reads) expect(r[1], `--color-${h} falls back`).toBe(",");
+    }
+  });
+
+  test("each fallback is what the kit drew before the hook", () => {
+    const read = (f: string) => readFileSync(join(kit, f), "utf8");
+    // Utility arbitrary values: an underscore is a space.
+    const mix = (token: string, pct: number) =>
+      `color-mix(in_oklab,var(--color-${token})_${pct}%,transparent)`;
+    const expected: [string, string][] = [
+      ["theme/document.css", "var(--color-link, var(--color-brand))"],
+      ["theme/document.css", "var(--color-link-underline, currentColor)"],
+      ["document/FrontmatterHeader.tsx", "var(--color-status-stable,var(--color-brand))"],
+      ["document/FrontmatterHeader.tsx", `var(--color-status-stable-tint,${mix("brand", 12)})`],
+      ["context/EntryTree.tsx", `var(--color-ref-row,${mix("brand", 10)})`],
+      ["context/EntryTree.tsx", "var(--color-ref-row-bar,transparent)"],
+      ["document/CompareView.tsx", `var(--color-change-tick,${mix("brand", 65)})`],
+      ["document/CompareView.tsx", "var(--color-change-tick-hover,var(--color-brand))"],
+      [
+        "theme/document.css",
+        "--color-find-current,\n    color-mix(in srgb, var(--color-pointed) 40%, transparent)",
+      ],
+      ["theme/document.css", "var(--color-find-current-mark, var(--color-pointed))"],
+      ["theme/document.css", "var(--color-flash-mark, transparent)"],
+      ["chat/ChatMessageView.tsx", `var(--color-human-bubble,${mix("brand", 10)})`],
+      ["chat/ChatMessageView.tsx", "var(--color-human-bubble-edge,transparent)"],
+      // The raw view's current match and flash follow the rendered view's hooks.
+      [
+        "document/DocumentView.tsx",
+        "var(--color-find-current, color-mix(in srgb, var(--color-pointed) 40%, transparent))",
+      ],
+      ["document/DocumentView.tsx", "var(--color-find-current-mark, var(--color-pointed))"],
+      ["document/DocumentView.tsx", "var(--color-flash-mark, transparent)"],
+    ];
+    for (const [f, s] of expected) expect(read(f), f).toContain(s);
+    // Every hook's default is pinned above.
+    const pinned = new Set(expected.map(([, s]) => /--color-([\w-]+?),/.exec(s)?.[1]));
+    expect([...THEME_HOOKS].filter((h) => !pinned.has(h))).toEqual([]);
   });
 });
 

@@ -96,7 +96,10 @@ test("a selection made on the held text is reported in the newer one, with its l
       textKey="doc@1"
       onEmbedTargets={costly}
       onSelect={(s) => reports.push(s)}
-      onContextMenu={(at) => menus.push(at)}
+      onContextMenu={(at) => {
+        menus.push(at);
+        return true;
+      }}
     />
   );
   const m = await mount(view(OLD));
