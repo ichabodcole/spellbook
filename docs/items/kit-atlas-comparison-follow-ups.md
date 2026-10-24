@@ -46,9 +46,9 @@ is small, and gathered here. The call's id points into the write-up.
 - [x] **D4:** the rendered view's h1 is a step larger than its h2s.
 - [x] **H1:** the shell's title takes Scriptorium's wordmark through the theme,
       not through kit code.
-- [ ] **L5:** Atlas's context sort is ported at the next sync with Story Studio.
-      Not done in this cycle, on purpose: its "folder order" depends on Story
-      Studio's `.order` files, so it waits for that sync.
+- [x] **L5:** moved to its own item, `kit-atlas-context-sort` (2026-10-23). Not
+      done in this cycle, on purpose: its "folder order" depends on Story
+      Studio's `.order` files, so it waits for the next sync.
 
 ## Done and verified
 
