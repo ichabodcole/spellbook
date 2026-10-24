@@ -7,7 +7,7 @@ description:
   Workspace Kit feature closed at the cutover."
 tags: [kit, scriptorium]
 status: draft
-lifecycle: backlog
+lifecycle: active
 generated: { by: claude-opus-5-5, at: 2026-10-22 }
 ---
 
