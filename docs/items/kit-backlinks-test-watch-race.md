@@ -50,7 +50,7 @@ each 6 s run.
 
 ## Definition of done
 
-- [ ] Confirm the cause, and fix it in the test (or the watch, if it really is
+- [x] Confirm the cause, and fix it in the test (or the watch, if it really is
       the watch's bug), without raising a timeout.
 - [ ] The whole file passes 50 runs in a row, alone and beside a busy
       `bun test src/kit`.

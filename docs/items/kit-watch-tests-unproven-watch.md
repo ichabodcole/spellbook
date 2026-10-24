@@ -116,11 +116,14 @@ still proving the watch, which `1d56cd6e` does not change. On a machine whose
 
 ## Definition of done
 
+_Cole kept all three commits, the 20 s budget included (2026-10-23): on a
+saturated machine, proving a new watch live can take up to about 3 s._
+
 - [x] The cycle/develop gap measured fairly: not real.
 - [x] The cause confirmed by a trace, and fixed in the tests.
 - [x] The probe's guard goes red when the listing wait is removed (6 of 6 daemon
       tests), and the file was restored byte-equal.
-- [ ] Cole rules on keeping `a5e51669` (the watch budget).
+- [x] Cole rules on keeping `a5e51669` (the watch budget).
 
 ## Related Documents
 
