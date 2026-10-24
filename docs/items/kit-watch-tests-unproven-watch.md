@@ -127,5 +127,5 @@ saturated machine, proving a new watch live can take up to about 3 s._
 
 ## Related Documents
 
-- [Polish before the release](../cycles/2026-10-polish.md)
+- [Polish before the release](../cycles/_archive/2026-10-polish.md)
 - [The backlinks test's watch race](kit-backlinks-test-watch-race.md)
