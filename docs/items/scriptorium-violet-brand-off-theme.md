@@ -6,7 +6,7 @@ description:
   rubric but not brand, so rendered links, drag-and-drop overlays and other
   brand uses show violet against the cream and dark-brown themes.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a16581-e0c9-70fe-a9a0-7525d5ef8f23
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-22 }

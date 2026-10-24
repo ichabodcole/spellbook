@@ -6,7 +6,7 @@ description:
   in the tree or type a path, but not browse with the OS's own folder dialog,
   which the daemon can already open.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a16581-e023-765d-9eec-11f717383451
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-22 }
@@ -33,8 +33,9 @@ which returns a real path. The location dialog
 - [x] The location dialog has a button that opens the native folder picker, and
       the folder chosen fills in the location; cancelling changes nothing.
 - [x] Typing a path and choosing from the tree still work.
-- [ ] Tested, and checked in a real browser on macOS; offered on kit-parity.
-      (Tested and browser-checked; the kit-parity offer is the lead's.)
+- [x] Tested, and checked in a real browser on macOS; offered on kit-parity.
+      (Tested and browser-checked; the kit-parity offer is the lead's.) Offered
+      on kit-parity, message 48 (2026-10-23).
 
 ## Done and verified
 

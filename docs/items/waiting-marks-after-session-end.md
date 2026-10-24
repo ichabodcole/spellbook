@@ -5,7 +5,7 @@ description:
   After the human ends a session, its waiting marks still read may be stuck, in
   both the shipped and the kit Scriptorium, though nothing can answer any more.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a157b8-bbe1-751b-a8f4-cf55657df90c
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-19 }

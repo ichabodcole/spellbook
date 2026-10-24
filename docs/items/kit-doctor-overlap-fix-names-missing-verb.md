@@ -5,7 +5,7 @@ description:
   The kit's workspace.overlap finding offers 'workspace <dir>' as its fix, but
   Scriptorium has no workspace verb, so the finding's act cannot be taken.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a15bca-2bc2-741a-b014-7e9cc72a385b
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-20 }
@@ -26,8 +26,9 @@ A finding needs an act that works.
 
 - [x] On an app with no home workspace, `workspace.overlap` either does not fire
       or names an act the app has. _(It does not fire.)_
-- [ ] Tested, and offered on kit-parity. _(Tested. Not offered: the lead offers
+- [x] Tested, and offered on kit-parity. _(Tested. Not offered: the lead offers
       on kit-parity; there is no kit code change to offer, only a test.)_
+      Offered on kit-parity, message 48 (2026-10-23).
 
 ## Done and verified
 

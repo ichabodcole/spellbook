@@ -7,7 +7,7 @@ description:
   either way, and with no selection offer inserting a link (label and target) at
   the caret.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a16587-e5ec-7297-90ba-61a8a49eb7d6
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-22 }
@@ -42,9 +42,9 @@ passage. Not a regression: the shipped app behaves the same.
       right-clicking again while our menu is open, and Shift+right-click (or the
       platform's usual modifier). Our menu shows a footer line naming the
       gesture, such as "Right-click again for the browser menu".
-- [ ] Tested, checked in a real browser in raw, rendered and split; offered on
+- [x] Tested, checked in a real browser in raw, rendered and split; offered on
       kit-parity. (Tested and checked; the offer is the lead's, from the
-      port-back notes below.)
+      port-back notes below.) Offered on kit-parity, message 48 (2026-10-23).
 
 ## Done and verified
 

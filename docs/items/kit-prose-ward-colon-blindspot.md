@@ -6,7 +6,7 @@ description:
   (blur, columns) but not one written with a trailing colon (blur:); make the
   match ignore trailing punctuation.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a14cb0-b547-778d-978a-72411d231258
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-17 }

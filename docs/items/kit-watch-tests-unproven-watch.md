@@ -6,7 +6,7 @@ description:
   scan, so a delete made 30 ms later could fall before the FSEvents watch was
   live and go unreported; the cycle and develop gap was noise.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a16aa1-d5e1-707b-a92f-2e11f7e4aff9
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-23 }

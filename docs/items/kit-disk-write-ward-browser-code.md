@@ -7,7 +7,7 @@ description:
   src/kit/context stays green. Widen its scope, or add a ward that browser-side
   kit code imports no node:fs at all.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a14cb0-b41d-7721-9acb-193d48e34f40
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-17 }

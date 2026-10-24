@@ -7,7 +7,7 @@ description:
   refuseForeignOrigin's third argument, so passing a different object's hostname
   would pass.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a138c6-b08c-77d1-8103-208875f6d6bf
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-13 }

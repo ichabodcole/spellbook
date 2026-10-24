@@ -6,7 +6,7 @@ description:
   agent proposed before a move keeps the old link and nothing reports it when
   the human later activates it.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a15bca-2b17-722c-ace0-957826510f24
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-20 }
@@ -31,7 +31,8 @@ agent about it.
       active) version: the document, the version, the line and the target as
       written, with the act that fixes it (Cole's ruling, 2026-10-22). Relink
       itself still rewrites only active versions.
-- [ ] Tested, and offered on kit-parity.
+- [x] Tested, and offered on kit-parity. Offered on kit-parity, message 48
+      (2026-10-23).
 
 ## Done and verified
 

@@ -9,7 +9,7 @@ description:
   and it times out (base: 5 in 120 runs). The harness's write-until-seen helper
   exists for this."
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a16a5b-db51-7050-abd1-c921b47c0dad
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-23 }

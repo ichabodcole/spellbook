@@ -6,7 +6,7 @@ description:
   Scriptorium's own CLI rows, sinks.test misses a raw innerHTML, origin-guard is
   a text scan, and the kit server swallows a failed dev-page import.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a165d9-ee76-7551-9678-1fb5230e8475
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-22 }

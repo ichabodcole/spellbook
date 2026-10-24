@@ -6,7 +6,7 @@ description:
   work: the float's waiting echo, a visible map entry, three wordings, search
   grouped by file, a heading scale, the wordmark, and Atlas's sort."
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a157fc-bd8d-74f5-b201-a7320f4f31bd
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-19 }

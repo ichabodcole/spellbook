@@ -6,7 +6,7 @@ description:
   editor counts one, as reveals did before the broken-links item fixed them, so
   a note may paint late in a CRLF file.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a15842-5761-741a-abc6-23aa8c229bda
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-20 }
@@ -26,9 +26,9 @@ the daemon places use the same daemon offsets, and were not checked.
 
 - [x] A note placed by the agent in a CRLF file paints on its own words in raw,
       rendered and split views, with a test.
-- [ ] Offered on kit-parity if the fix is in the kit. _(The fix is in the kit.
+- [x] Offered on kit-parity if the fix is in the kit. _(The fix is in the kit.
       Not offered yet: the lead offers on kit-parity. The Port-back notes below
-      are what to offer.)_
+      are what to offer.)_ Offered on kit-parity, message 48 (2026-10-23).
 
 ## Done and verified
 

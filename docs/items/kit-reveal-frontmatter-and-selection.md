@@ -8,7 +8,7 @@ description:
   rendered view, and a cross-document open collapses the selection to the link's
   end in raw and split.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a157b0-882a-76ca-a864-ff5e8a1e46d6
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-19 }
@@ -37,8 +37,9 @@ Scriptorium. Neither is caused by that item; both sit in the pane's general
 - [x] In rendered view, opening a frontmatter reference highlights its field in
       the header strip.
 - [x] A cross-document open selects the link's whole range in raw and split.
-- [ ] Both are tested, and offered on kit-parity. (Tested; the offer is the
-      lead's, from the port-back notes below.)
+- [x] Both are tested, and offered on kit-parity. (Tested; the offer is the
+      lead's, from the port-back notes below.) Offered on kit-parity, message 48
+      (2026-10-23).
 
 ## Done and verified
 

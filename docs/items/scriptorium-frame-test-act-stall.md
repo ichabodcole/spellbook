@@ -7,7 +7,7 @@ description:
   backToList takes 4–5 s, driven by state the file's shared daemon builds up,
   not by load."
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a166f9-5e4f-7550-b298-8900ed914b7b
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-22 }

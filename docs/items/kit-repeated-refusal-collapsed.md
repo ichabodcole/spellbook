@@ -6,7 +6,7 @@ description:
   refusal repeated after its toast expired shows nothing, because the daemon
   client keeps a refusal as its text alone.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a15842-5868-758e-8f18-f8f05d1ca130
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-20 }
@@ -28,8 +28,9 @@ reopening the column shows it.
 
 - [x] Each refusal carries a sequence or request id the shell can see, and a
       repeat while collapsed toasts again.
-- [ ] Tested, and offered on kit-parity. _(Tested; the kit-parity offer is the
-      lead's, with the port-back notes below.)_
+- [x] Tested, and offered on kit-parity. _(Tested; the kit-parity offer is the
+      lead's, with the port-back notes below.)_ Offered on kit-parity, message
+      48 (2026-10-23).
 
 ## Done and verified
 

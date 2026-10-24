@@ -7,7 +7,7 @@ description:
   never its folder. A browser drop can't name the file's path, so the human
   picks it in the native file picker.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a16627-61ce-7244-baf2-627b2b9340b6
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-22 }
@@ -58,8 +58,9 @@ do. The daemon's native picker returns a real path (the "Choose..." act).
       the same file offers to add that one instead of copying it again, and one
       that holds a different file with that name says so before writing.
 - [x] Where the platform has no native picker, the act is hidden.
-- [ ] Tested, checked in a real browser on macOS; offered on kit-parity. (Tested
-      and browser-checked; the kit-parity offer is the lead's.)
+- [x] Tested, checked in a real browser on macOS; offered on kit-parity. (Tested
+      and browser-checked; the kit-parity offer is the lead's.) Offered on
+      kit-parity, message 48 (2026-10-23).
 
 ## Done and verified
 

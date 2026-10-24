@@ -6,7 +6,7 @@ description:
   JSON.parse during render and no guard, so one corrupt panes: pref (the shell's
   columns, or the split's width) leaves the kit page empty with a SyntaxError."
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a15b70-ecd3-71b1-9013-4d168783af30
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-20 }
@@ -34,8 +34,8 @@ same hook.
       guarded storage wrapper.
 - [x] A test plants a corrupt value for the shell's columns and the split, and
       the page renders.
-- [ ] Offered on kit-parity. _(The offer is the lead's, with the port-back notes
-      below.)_
+- [x] Offered on kit-parity. _(The offer is the lead's, with the port-back notes
+      below.)_ Offered on kit-parity, message 48 (2026-10-23).
 
 ## Done and verified
 
