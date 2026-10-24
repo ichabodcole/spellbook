@@ -24,6 +24,12 @@ Scriptorium's, so it waits for the next sync with Story Studio. It should be
 judged then against Scriptorium's model: many sets, no single project, and no
 copy-in.
 
+**Deferred, Cole 2026-10-24.** There's no signal yet that Scriptorium needs a
+manual order. Ordering matters in Story Studio, whose projects are long-lived
+stories with an explicit order not taken from titles; Scriptorium's uses differ.
+It stays on the back burner. If it is ever ported, it uses the Atlas and Story
+Studio `.order` conventions.
+
 ## Definition of done
 
 - [ ] At the next Story Studio sync, read how Atlas sorts the context list and

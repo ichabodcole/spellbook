@@ -5,7 +5,7 @@ description:
   Every guarded kit write checks its target and then calls the syscall, so an
   attacker with raw disk access racing a link swap between the two can redirect
   it; out of scope for the wiki-layer cycle by Cole's call, recorded here.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a14911-a352-7688-b85d-85a392b2be5b
 kind: task

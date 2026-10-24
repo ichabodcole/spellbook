@@ -6,7 +6,7 @@ description:
   'docs/features/{slug}/feature.md' in a session, so a project's own reference
   convention resolves (and shows on the map) without Scriptorium knowing any one
   tool's config.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a16652-46da-730d-ad93-949798608954
 kind: task

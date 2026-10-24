@@ -6,7 +6,7 @@ description:
   originalHash, so an outside change the watch missed (just after a watch arms,
   or dropped by a saturated fseventsd) is overwritten silently, with no 'Changed
   on disk' banner.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a16b3f-7b43-75d4-a4b5-db63b7063d23
 kind: bug

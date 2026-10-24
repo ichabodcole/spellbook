@@ -6,7 +6,7 @@ description:
   '_meta/profiles made after the session started…' time out at bun's 5 s default
   on a busy machine (1 of 50 alone, 4 of 50 beside a busy suite, 2026-10-23),
   the second even though it already writes until seen.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a16b4e-ad20-7428-8cdc-0883057bcb84
 kind: bug

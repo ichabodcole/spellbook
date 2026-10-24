@@ -6,7 +6,7 @@ description:
   give a session a title and description (and its project), set by the agent at
   open and editable by the human, and show them in the page so the human can
   tell sessions apart.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a165a8-0926-73e9-b7c5-b5b593e6c0b7
 kind: task

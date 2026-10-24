@@ -5,7 +5,7 @@ description:
   With old-Mac \r-only line endings, the rendered view paints no notes, offers
   no Add note, and a selection stores a note over the whole body without
   warning, on base and fix alike.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a16682-ca6f-702a-abc7-6f9d9bcfb2a9
 kind: bug

@@ -8,7 +8,7 @@ description:
   rendered: the same, with no editor mounted' times out in openFile ('timed out
   waiting for the document in the context', ~2 s) on a busy machine: develop 5
   of 12, cycle/polish 3 of 12, interleaved (2026-10-23)."
-status: draft
+status: stable
 lifecycle: triage
 id: 01a16b64-a4fc-7280-ba2c-e3db0ff0cfcb
 kind: bug

@@ -5,7 +5,7 @@ description:
   Typing in the raw editor and saving rewrites a CRLF or mixed-ending file with
   LF endings throughout, because CodeMirror's doc joins lines with \n; a
   rendered-only edit keeps CRLF.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a16682-c980-74c1-9c75-f2092e214ed9
 kind: bug

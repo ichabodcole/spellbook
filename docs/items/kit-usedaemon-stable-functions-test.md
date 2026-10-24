@@ -5,7 +5,7 @@ description:
   useDaemon promises send, request and importImage keep their identity, and the
   shell's effects depend on it; nothing in the kit tests it, so a regression
   only shows as a Scriptorium test's open/state volley.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a1681a-6652-7029-a5ec-f1a5f47845f5
 kind: task

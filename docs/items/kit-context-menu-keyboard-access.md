@@ -5,7 +5,7 @@ description:
   The kit's right-click menu has no role=menu, takes no arrow keys, and focus
   stays in the editor (Tab types a tab); Shift+F10 and the ContextMenu key don't
   open it on macOS Chromium. Present on base too.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a166b3-254a-77dd-905c-cbbe0d281b6e
 kind: bug

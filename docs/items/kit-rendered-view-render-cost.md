@@ -5,7 +5,7 @@ description:
   One render of a 5k-line document with many links takes about 5 s in the kit's
   rendered view (and the shipped app's), so a second tab or split view falls
   behind on every typing pause.
-status: draft
+status: stable
 lifecycle: triage
 id: 01a15711-af4d-71ff-bed6-e04e39add9e0
 kind: task
