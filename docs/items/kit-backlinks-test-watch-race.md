@@ -8,13 +8,14 @@ description:
   c.md once and waits 5 s for the watch to see it; under load the write is lost
   and it times out (base: 5 in 120 runs). The harness's write-until-seen helper
   exists for this."
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: ready
 id: 01a16a5b-db51-7050-abd1-c921b47c0dad
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-23 }
 parent: feature/workspace-kit-follow-ups
 from: cycle/2026-10-polish
+cycle: 2026-10-polish
 ---
 
 # link.backlinks integration test waits on a file watch that can miss its one write

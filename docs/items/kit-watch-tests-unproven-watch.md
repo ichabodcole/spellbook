@@ -5,13 +5,14 @@ description:
   The fileGone probe that says the watch is live was answered by the listing
   scan, so a delete made 30 ms later could fall before the FSEvents watch was
   live and go unreported; the cycle and develop gap was noise.
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: ready
 id: 01a16aa1-d5e1-707b-a92f-2e11f7e4aff9
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-23 }
 parent: feature/workspace-kit-follow-ups
 from: cycle/2026-10-polish
+cycle: 2026-10-polish
 ---
 
 # Kit watch tests lean on a file watch they never proved live
@@ -51,13 +52,17 @@ servers. Once the probe was fixed, a new watch took 0.1 to 3.3 s to report its
 first write (traced, 40 probes), against 13 ms when the probe passed through the
 scan.
 
-**Users are not affected.** The window is from arming a watch (adding a folder
-or opening a file) until FSEvents starts delivering for it: milliseconds, or a
-few seconds on a saturated machine. A folder deleted in that window would leave
-its document not marked missing until a later event there. A person can't
-realistically delete something within a second of adding it. The daemon's
-missing-folder detection (`originalsUnder`, the 400 ms recheck) worked every
-time its event arrived.
+**Users are rarely affected, but not never (the verifier, 2026-10-23).** The
+window is from arming a watch (adding a folder, opening a document outside a
+recursive root, or a daemon restart) until FSEvents starts delivering for it:
+milliseconds, or a few seconds on a saturated machine. A person won't delete
+something that fast, but an agent can write to a file it has just opened.
+Nothing catches up a missed event: no re-stat runs after a watch arms, and the
+`originalsUnder` 400 ms recheck runs only after an event. So a missed delete
+leaves the document not marked missing until another event lands there, and a
+missed outside change can be overwritten by Save, which checks that the file
+exists but not its hash. That product gap is filed as
+`kit-save-overwrites-unseen-change`; this item fixes only the tests.
 
 ## The fix (tests only)
 
