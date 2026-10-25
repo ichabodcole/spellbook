@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fixtureDaemon } from "./fixtures/app";
-import { cmd } from "./fixtures/harness";
+import { cmd, writeUntilSeen } from "./fixtures/harness";
 import type { LinkCheck } from "./protocol";
 import type { WorkspaceDaemon } from "./server";
 import { tempRoot } from "./testing";
@@ -202,17 +202,30 @@ describe("where the target went", () => {
     await propose(base, ONE);
     await moveGlade(base);
     // The moved file gone, and a folder of the same name made where it went.
-    unlinkSync(at("wilds/glade.md"));
-    mkdirSync(at("wilds/glade.md"));
     // Once the daemon has seen the file go (its watcher), there is no suggest:
     // the place the link names is a folder now.
+    //
+    // ⚠ The context's watch was armed by `context.add` moments before, and a
+    // macOS watch is not live at once: under a parallel run the change was
+    // lost, not late (1 in 100 beside a looping suite, still unseen 15 s on,
+    // 2026-10-24). A removal is not repeatable as it stands, so each retry puts
+    // the file back and makes the change again, which a daemon that missed the
+    // first reads the same way.
     const want = JSON.stringify([[2, 3, "./places/glade.md", null]]);
-    let got = "";
-    for (let i = 0; i < 100 && got !== want; i++) {
-      got = JSON.stringify(rows(await check(base)));
-      if (got !== want) await Bun.sleep(30);
-    }
-    expect(got).toBe(want);
+    const moved = at("wilds/glade.md");
+    let tries = 0;
+    await writeUntilSeen(
+      "the file gone and a folder in its place",
+      () => {
+        if (tries++ > 0) {
+          rmSync(moved, { recursive: true, force: true });
+          writeFileSync(moved, "# The Glade\n");
+        }
+        unlinkSync(moved);
+        mkdirSync(moved);
+      },
+      async () => JSON.stringify(rows(await check(base))) === want,
+    );
   });
 
   test("the act keeps the proposal's label on the version that replaces it", async () => {
