@@ -37,6 +37,7 @@ import { caretInCode } from "../lib/markdownCode.ts";
 import type { PlacedNote } from "../workspace/protocol";
 import { clipboardImages, isImageLike } from "./imagePaste.ts";
 import { jsonHighlighting, numberedLines } from "./jsonMode.ts";
+import { editorText, endingsOf, lineEndings, setEndings, textWithEndings } from "./lineEndings.ts";
 import { modClickFollowsLinks } from "./linkClick.ts";
 import { type LinkKind, type LinkRequest, type LinkTracker, linkTrigger } from "./linkInsert.ts";
 import { type InlineToken, markdownHighlighting } from "./markdownMode.ts";
@@ -724,7 +725,8 @@ export function DocumentView({
           to: daemonOffset(textRef.current, to),
           fromLine: update.state.doc.lineAt(from).number,
           toLine: update.state.doc.lineAt(to).number,
-          text: update.state.sliceDoc(from, to),
+          // As the file has it: a quote across a break keeps the file's ending.
+          text: textWithEndings(update.state, from, to),
         });
       }),
       editorTheme,
@@ -791,7 +793,8 @@ export function DocumentView({
           if (!update.docChanged) return;
           if (update.transactions.some((t) => t.annotation(remote))) return;
           handlers.current.onChange?.(() => {
-            const now = update.view.state.doc.toString();
+            // With the file's own line endings, not CodeMirror's `\n` throughout.
+            const now = textWithEndings(update.view.state);
             lastWritten.current = now;
             return now;
           });
@@ -922,6 +925,7 @@ export function DocumentView({
     const replaying =
       pending && applyChanges(pending.base, pending.changes) === initial.current ? pending : null;
     const start = replaying ? replaying.base : initial.current;
+    extensions.push(lineEndings(start));
     const v = new EditorView({
       parent: host.current,
       state: EditorState.create({ doc: start, extensions }),
@@ -934,8 +938,23 @@ export function DocumentView({
       }),
     });
     // Each step is undoable, and marked remote: it is already in the daemon's text.
-    for (const c of replaying?.changes ?? [])
-      v.dispatch({ changes: c, annotations: [remote.of(true), isolateHistory.of("full")] });
+    // The steps were taken in the rendered view, in the daemon's count (a CRLF is
+    // two characters), so each is moved into the editor's against the text it
+    // was taken in.
+    let before = replaying?.base ?? "";
+    for (const c of replaying?.changes ?? []) {
+      v.dispatch({
+        changes: {
+          from: editorOffset(before, c.from),
+          to: editorOffset(before, c.to),
+          insert: c.insert,
+        },
+        annotations: [remote.of(true), isolateHistory.of("full")],
+      });
+      before = applyChanges(before, [c]);
+    }
+    // The endings are the text's own, whatever breaks the steps wrote.
+    if (replaying) v.dispatch({ effects: setEndings.of(endingsOf(initial.current)) });
     if (pending) handlers.current.onReplayed?.();
     return () => {
       handlers.current.onFlush?.();
@@ -1131,10 +1150,16 @@ export function DocumentView({
     // switch, `kit-agent-activate-pending-edit`), and the same text arriving
     // later (switching back to that version) must then be applied, not skipped.
     lastWritten.current = null;
-    const change = minimalChange(v.state.doc.toString(), text);
-    if (!change) return;
+    // Compared as the editor holds it (each break one `\n`), so the change is in
+    // the editor's count; the text's own endings replace the ones held.
+    const change = minimalChange(v.state.doc.toString(), editorText(text));
+    const endings = setEndings.of(endingsOf(text));
+    if (!change) {
+      v.dispatch({ effects: endings });
+      return;
+    }
     const top = v.scrollDOM.scrollTop;
-    v.dispatch({ changes: change, annotations: remote.of(true) });
+    v.dispatch({ changes: change, effects: endings, annotations: remote.of(true) });
     v.requestMeasure({
       read: () => null,
       write: () => {

@@ -59559,6 +59559,94 @@ function jsonHighlighting2() {
   return [json(), syntaxHighlighting(JSON_STYLE), numberedLines()];
 }
 
+// src/kit/document/lineEndings.ts
+class EndingMark extends RangeValue {
+  ending;
+  constructor(ending) {
+    super();
+    this.ending = ending;
+  }
+  startSide = 1;
+  endSide = -1;
+  eq(other) {
+    return other instanceof EndingMark && other.ending === this.ending;
+  }
+}
+var MARKS = {
+  "\r\n": new EndingMark(`\r
+`),
+  "\n": new EndingMark(`
+`),
+  "\r": new EndingMark("\r")
+};
+var LF_ONLY = { fallback: `
+`, marks: RangeSet.empty };
+var BREAK2 = /\r\n|\r|\n/g;
+function endingsOf(text4) {
+  if (!text4.includes("\r"))
+    return LF_ONLY;
+  const found = [];
+  const count = { "\r\n": 0, "\n": 0, "\r": 0 };
+  let removed = 0;
+  for (const m of text4.matchAll(BREAK2)) {
+    const ending = m[0];
+    count[ending]++;
+    found.push({ ending, at: m.index - removed });
+    removed += ending.length - 1;
+  }
+  let fallback = found[0]?.ending ?? `
+`;
+  for (const { ending } of found)
+    if (count[ending] > count[fallback])
+      fallback = ending;
+  const marks2 = found.flatMap(({ ending, at: at2 }) => ending === fallback ? [] : [MARKS[ending].range(at2, at2 + 1)]);
+  return { fallback, marks: RangeSet.of(marks2) };
+}
+function editorText(text4) {
+  return text4.includes("\r") ? text4.replace(/\r\n?/g, `
+`) : text4;
+}
+var setEndings = StateEffect.define();
+function lineEndings(initial2) {
+  return endingsField.init(() => endingsOf(initial2));
+}
+var endingsField = StateField.define({
+  create: () => LF_ONLY,
+  update(value, tr) {
+    for (const e of tr.effects)
+      if (e.is(setEndings))
+        return e.value;
+    if (!tr.docChanged || value.marks.size === 0)
+      return value;
+    return { fallback: value.fallback, marks: value.marks.map(tr.changes) };
+  }
+});
+function textWithEndings(state, from = 0, to = state.doc.length) {
+  const endings = state.field(endingsField, false) ?? LF_ONLY;
+  if (endings.fallback === `
+` && endings.marks.size === 0)
+    return state.sliceDoc(from, to);
+  return joinLines(state.doc, endings, from, to);
+}
+function joinLines(doc2, { fallback, marks: marks2 }, from, to) {
+  const out = [];
+  const mark = marks2.iter(from);
+  let pos = from;
+  const lines = doc2.iterRange(from, to);
+  while (!lines.next().done) {
+    if (!lines.lineBreak) {
+      out.push(lines.value);
+      pos += lines.value.length;
+      continue;
+    }
+    while (mark.value && mark.from < pos)
+      mark.next();
+    out.push(mark.value && mark.from === pos ? mark.value.ending : fallback);
+    pos++;
+  }
+  return out.join("");
+}
+
 // src/kit/chat/renderedLink.ts
 var OPENS_OUTWARD = /^(https?:|mailto:)/i;
 function fragmentId(raw) {
@@ -60214,7 +60302,7 @@ function DocumentView({
           to: daemonOffset(textRef.current, to),
           fromLine: update2.state.doc.lineAt(from).number,
           toLine: update2.state.doc.lineAt(to).number,
-          text: update2.state.sliceDoc(from, to)
+          text: textWithEndings(update2.state, from, to)
         });
       }),
       editorTheme,
@@ -60264,7 +60352,7 @@ function DocumentView({
         if (update2.transactions.some((t2) => t2.annotation(remote)))
           return;
         handlers2.current.onChange?.(() => {
-          const now2 = update2.view.state.doc.toString();
+          const now2 = textWithEndings(update2.view.state);
           lastWritten.current = now2;
           return now2;
         });
@@ -60366,6 +60454,7 @@ function DocumentView({
     const pending = editable2 ? replayRef.current : null;
     const replaying = pending && applyChanges(pending.base, pending.changes) === initial2.current ? pending : null;
     const start = replaying ? replaying.base : initial2.current;
+    extensions2.push(lineEndings(start));
     const v = new EditorView({
       parent: host.current,
       state: EditorState.create({ doc: start, extensions: extensions2 })
@@ -60377,8 +60466,20 @@ function DocumentView({
         focused: focusedRef.current
       })
     });
-    for (const c of replaying?.changes ?? [])
-      v.dispatch({ changes: c, annotations: [remote.of(true), isolateHistory.of("full")] });
+    let before = replaying?.base ?? "";
+    for (const c of replaying?.changes ?? []) {
+      v.dispatch({
+        changes: {
+          from: editorOffset(before, c.from),
+          to: editorOffset(before, c.to),
+          insert: c.insert
+        },
+        annotations: [remote.of(true), isolateHistory.of("full")]
+      });
+      before = applyChanges(before, [c]);
+    }
+    if (replaying)
+      v.dispatch({ effects: setEndings.of(endingsOf(initial2.current)) });
     if (pending)
       handlers2.current.onReplayed?.();
     return () => {
@@ -60508,11 +60609,14 @@ function DocumentView({
       return;
     }
     lastWritten.current = null;
-    const change = minimalChange(v.state.doc.toString(), text4);
-    if (!change)
+    const change = minimalChange(v.state.doc.toString(), editorText(text4));
+    const endings = setEndings.of(endingsOf(text4));
+    if (!change) {
+      v.dispatch({ effects: endings });
       return;
+    }
     const top2 = v.scrollDOM.scrollTop;
-    v.dispatch({ changes: change, annotations: remote.of(true) });
+    v.dispatch({ changes: change, effects: endings, annotations: remote.of(true) });
     v.requestMeasure({
       read: () => null,
       write: () => {
@@ -61215,7 +61319,7 @@ function isNode2(node) {
 var hasAnchor = (node) => (isScalar(node) || isCollection(node)) && !!node.anchor;
 
 // node_modules/yaml/browser/dist/visit.js
-var BREAK2 = Symbol("break visit");
+var BREAK3 = Symbol("break visit");
 var SKIP2 = Symbol("skip children");
 var REMOVE = Symbol("remove node");
 function visit(node, visitor) {
@@ -61227,7 +61331,7 @@ function visit(node, visitor) {
   } else
     visit_(null, node, visitor_, Object.freeze([]));
 }
-visit.BREAK = BREAK2;
+visit.BREAK = BREAK3;
 visit.SKIP = SKIP2;
 visit.REMOVE = REMOVE;
 function visit_(key, node, visitor, path2) {
@@ -61243,8 +61347,8 @@ function visit_(key, node, visitor, path2) {
         const ci = visit_(i2, node.items[i2], visitor, path2);
         if (typeof ci === "number")
           i2 = ci - 1;
-        else if (ci === BREAK2)
-          return BREAK2;
+        else if (ci === BREAK3)
+          return BREAK3;
         else if (ci === REMOVE) {
           node.items.splice(i2, 1);
           i2 -= 1;
@@ -61253,13 +61357,13 @@ function visit_(key, node, visitor, path2) {
     } else if (isPair(node)) {
       path2 = Object.freeze(path2.concat(node));
       const ck = visit_("key", node.key, visitor, path2);
-      if (ck === BREAK2)
-        return BREAK2;
+      if (ck === BREAK3)
+        return BREAK3;
       else if (ck === REMOVE)
         node.key = null;
       const cv = visit_("value", node.value, visitor, path2);
-      if (cv === BREAK2)
-        return BREAK2;
+      if (cv === BREAK3)
+        return BREAK3;
       else if (cv === REMOVE)
         node.value = null;
     }
@@ -61275,7 +61379,7 @@ async function visitAsync(node, visitor) {
   } else
     await visitAsync_(null, node, visitor_, Object.freeze([]));
 }
-visitAsync.BREAK = BREAK2;
+visitAsync.BREAK = BREAK3;
 visitAsync.SKIP = SKIP2;
 visitAsync.REMOVE = REMOVE;
 async function visitAsync_(key, node, visitor, path2) {
@@ -61291,8 +61395,8 @@ async function visitAsync_(key, node, visitor, path2) {
         const ci = await visitAsync_(i2, node.items[i2], visitor, path2);
         if (typeof ci === "number")
           i2 = ci - 1;
-        else if (ci === BREAK2)
-          return BREAK2;
+        else if (ci === BREAK3)
+          return BREAK3;
         else if (ci === REMOVE) {
           node.items.splice(i2, 1);
           i2 -= 1;
@@ -61301,13 +61405,13 @@ async function visitAsync_(key, node, visitor, path2) {
     } else if (isPair(node)) {
       path2 = Object.freeze(path2.concat(node));
       const ck = await visitAsync_("key", node.key, visitor, path2);
-      if (ck === BREAK2)
-        return BREAK2;
+      if (ck === BREAK3)
+        return BREAK3;
       else if (ck === REMOVE)
         node.key = null;
       const cv = await visitAsync_("value", node.value, visitor, path2);
-      if (cv === BREAK2)
-        return BREAK2;
+      if (cv === BREAK3)
+        return BREAK3;
       else if (cv === REMOVE)
         node.value = null;
     }
@@ -65676,7 +65780,7 @@ ${end.comment}` : end.comment;
   }
 }
 // node_modules/yaml/browser/dist/parse/cst-visit.js
-var BREAK3 = Symbol("break visit");
+var BREAK4 = Symbol("break visit");
 var SKIP3 = Symbol("skip children");
 var REMOVE2 = Symbol("remove item");
 function visit2(cst, visitor) {
@@ -65684,7 +65788,7 @@ function visit2(cst, visitor) {
     cst = { start: cst.start, value: cst.value };
   _visit(Object.freeze([]), cst, visitor);
 }
-visit2.BREAK = BREAK3;
+visit2.BREAK = BREAK4;
 visit2.SKIP = SKIP3;
 visit2.REMOVE = REMOVE2;
 visit2.itemAtPath = (cst, path2) => {
@@ -65717,8 +65821,8 @@ function _visit(path2, item, visitor) {
         const ci = _visit(Object.freeze(path2.concat([[field, i2]])), token.items[i2], visitor);
         if (typeof ci === "number")
           i2 = ci - 1;
-        else if (ci === BREAK3)
-          return BREAK3;
+        else if (ci === BREAK4)
+          return BREAK4;
         else if (ci === REMOVE2) {
           token.items.splice(i2, 1);
           i2 -= 1;

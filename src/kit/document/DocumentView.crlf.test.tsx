@@ -7,9 +7,16 @@
 import "../lib/registerDom.ts";
 import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
 import { EditorView } from "@codemirror/view";
+import { createRef } from "react";
 import { cleanup, installDom, mount, removeDom } from "../lib/testDom.ts";
 import type { PlacedNote } from "../workspace/protocol";
-import { DocumentView, daemonOffset, editorOffset, type SelectionReport } from "./DocumentView.tsx";
+import {
+  DocumentView,
+  daemonOffset,
+  type EditorHandle,
+  editorOffset,
+  type SelectionReport,
+} from "./DocumentView.tsx";
 
 beforeAll(() => {
   installDom();
@@ -215,5 +222,130 @@ test("a right-click in a CRLF file says the daemon's count, and finds the note u
   const a = said.at(-1);
   expect(a && CRLF.slice(a.from, a.to)).toBe(want);
   expect(a?.noteIds).toEqual(["n1"]);
+  await m.unmount();
+});
+
+// kit-raw-save-converts-crlf: what the editor hands out to be written keeps the
+// file's line endings. CodeMirror joins its lines with `\n`, so a raw edit and
+// Save turned a CRLF file into LF.
+const hex = (t: string | undefined) => Buffer.from(t ?? "").toString("hex");
+
+/** A view of `text`, and what it last handed out to be written. */
+const writer = () => {
+  const w = {
+    read: null as (() => string) | null,
+    view: (text: string) => (
+      <DocumentView
+        docKey="d"
+        text={text}
+        editable
+        handle={handle}
+        onChange={(r) => {
+          w.read = r;
+        }}
+      />
+    ),
+    written: () => w.read?.(),
+  };
+  return w;
+};
+const handle = createRef<EditorHandle>();
+
+test("typing in a CRLF file writes CRLF, byte for byte", async () => {
+  const w = writer();
+  const m = await mount(w.view(CRLF));
+  const v = editor();
+  const end = v.state.doc.line(5).to; // `# Crlf`
+  v.dispatch({ changes: { from: end, insert: " X" }, userEvent: "input.type" });
+  expect(hex(w.written())).toBe(hex(CRLF.replace("# Crlf", "# Crlf X")));
+  // Enter, as the keymap inserts it.
+  v.dispatch({ changes: { from: end, insert: "\n" }, userEvent: "input" });
+  expect(hex(w.written())).toBe(hex(CRLF.replace("# Crlf", "# Crlf\r\n X")));
+  await m.unmount();
+});
+
+test("a link written through the editor in a CRLF file keeps CRLF", async () => {
+  const w = writer();
+  const m = await mount(w.view(CRLF));
+  const at = editor().state.doc.toString().indexOf("Crlf\n\n");
+  expect(handle.current?.replaceRange(at, at + 4, "[Crlf](./c.md)")).toBe(true);
+  expect(hex(w.written())).toBe(hex(CRLF.replace("# Crlf", "# [Crlf](./c.md)")));
+  await m.unmount();
+});
+
+test("a mixed file keeps each line's ending; an LF file stays LF", async () => {
+  const MIXED = "one\r\ntwo\nthree\r\n";
+  const LF = CRLF.replaceAll("\r\n", "\n");
+  for (const text of [MIXED, LF]) {
+    const w = writer();
+    const m = await mount(w.view(text));
+    editor().dispatch({ changes: { from: 0, insert: "X" }, userEvent: "input.type" });
+    expect(hex(w.written())).toBe(hex(`X${text}`));
+    await m.unmount();
+  }
+});
+
+test("new text from the daemon brings its own endings, in the editor's count", async () => {
+  const w = writer();
+  const m = await mount(w.view("a\nb\n"));
+  // An agent's edit lands as CRLF: applied as one change, its endings kept.
+  const next = "a\r\nb and more\r\n";
+  await m.render(w.view(next));
+  const v = editor();
+  expect(v.state.doc.toString()).toBe("a\nb and more\n");
+  v.dispatch({ changes: { from: 0, insert: "Z" }, userEvent: "input.type" });
+  const mine = w.written() ?? "";
+  expect(hex(mine)).toBe(hex(`Z${next}`));
+  // Its own text coming back is not news: nothing moves.
+  await m.render(w.view(mine));
+  expect(editor().state.doc.toString()).toBe("Za\nb and more\n");
+  // The same characters with other endings (the file converted on disk): the
+  // endings change, with nothing to apply to the characters.
+  const lf = mine.replaceAll("\r\n", "\n");
+  await m.render(w.view(lf));
+  editor().dispatch({ changes: { from: 0, insert: "Y" }, userEvent: "input.type" });
+  expect(hex(w.written())).toBe(hex(`Y${lf}`));
+  await m.unmount();
+});
+
+test("links written in the rendered view of a CRLF file replay onto their own words", async () => {
+  // In the daemon's count, as the rendered view takes them: the second after the first.
+  const a = CRLF.indexOf("gone]");
+  const first = { from: a, to: a + 4, insert: "GONE\r\nnow" };
+  const mid = CRLF.slice(0, a) + first.insert + CRLF.slice(a + 4);
+  const b = mid.indexOf("Crlf\r\n\r\n");
+  const second = { from: b, to: b + 4, insert: "[Crlf](./c.md)" };
+  const text = mid.slice(0, b) + second.insert + mid.slice(b + 4);
+  const w = writer();
+  const m = await mount(
+    <DocumentView
+      docKey="d"
+      text={text}
+      editable
+      replay={{ base: CRLF, changes: [first, second] }}
+      onChange={(r) => {
+        w.read = r;
+      }}
+    />,
+  );
+  expect(editor().state.doc.toString()).toBe(text.replaceAll("\r\n", "\n"));
+  // And the next key typed writes the text with the file's endings.
+  editor().dispatch({ changes: { from: 0, insert: "X" }, userEvent: "input.type" });
+  expect(hex(w.written())).toBe(hex(`X${text}`));
+  await m.unmount();
+});
+
+test("a selection across a break quotes the file's ending", async () => {
+  const seen: SelectionReport[] = [];
+  const m = await mount(
+    <DocumentView docKey="d" text={CRLF} editable onSelect={(s) => seen.push(s)} />,
+  );
+  const want = "Crlf\r\n\r\nSee";
+  const v = editor();
+  const at = v.state.doc.toString().indexOf("Crlf\n\nSee");
+  v.dispatch({ selection: { anchor: at, head: at + 9 } });
+  const s = seen.at(-1);
+  expect(s?.text).toBe(want);
+  expect(s && CRLF.slice(s.from, s.to)).toBe(want);
   await m.unmount();
 });
