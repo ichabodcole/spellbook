@@ -9,7 +9,7 @@ description:
   waiting for the document in the context', ~2 s) on a busy machine: develop 5
   of 12, cycle/polish 3 of 12, interleaved (2026-10-23)."
 status: stable
-lifecycle: ready
+lifecycle: dropped
 id: 01a16b64-a4fc-7280-ba2c-e3db0ff0cfcb
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-23 }
@@ -42,3 +42,7 @@ a saturated machine. Unconfirmed.
       budget only where the wait is the OS's own.
 - [ ] The whole file passes 50 runs in a row, alone and beside a busy
       `bun test src/kit`.
+
+Dropped by Cole, 2026-10-25: no longer reproduces. It never failed in about 100
+full parallel runs and 50 reruns of the file beside a looping suite during
+[spellbook-parallel-tests](spellbook-parallel-tests.md).

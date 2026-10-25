@@ -7,7 +7,7 @@ description:
   on a busy machine (1 of 50 alone, 4 of 50 beside a busy suite, 2026-10-23),
   the second even though it already writes until seen.
 status: stable
-lifecycle: ready
+lifecycle: dropped
 id: 01a16b4e-ad20-7428-8cdc-0883057bcb84
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-23 }
@@ -43,3 +43,7 @@ can take up to about 3 s on a saturated machine, which leaves too little of the
       write until seen), with a budget only where the wait is the OS's own.
 - [ ] The whole file passes 50 runs in a row, alone and beside a busy
       `bun test src/kit`.
+
+Dropped by Cole, 2026-10-25: no longer reproduces. It never failed in about 100
+full parallel runs and 50 reruns of the file beside a looping suite during
+[spellbook-parallel-tests](spellbook-parallel-tests.md).

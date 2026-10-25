@@ -7,7 +7,7 @@ description:
   its gate from about 180 s to 22 s after fixing the watch tests that flaked in
   parallel. Follow its playbook here.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a16c35-50b1-717e-a321-c3a963386a97
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-23 }
@@ -124,3 +124,8 @@ give up 13 to 35 s a run. The default stays.
   `relink.proposed.server.test.ts`, `server.test.ts` (appState hook cell) and
   `images.paste.test.ts`: test-only fixes, generic, each with its reason in a
   comment.
+
+Closed by Cole, 2026-10-25, with box 2 not fully met: the profiles.integration
+timeout is unconfirmed, so it is filed as
+[kit-profiles-watch-test-timeout](kit-profiles-watch-test-timeout.md) instead of
+fixed here.
