@@ -390,6 +390,19 @@ async function readDaemonPort(): Promise<number | null> {
   return null;
 }
 
+/**
+ * Wait, up to 5 s, until no daemon answers on the port file: a daemon told to
+ * stop unlinks its port and pid files as it shuts down. For stop, restart and
+ * roll alike.
+ */
+async function untilDaemonGone(): Promise<void> {
+  const deadline = Date.now() + 5000;
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 50));
+    if ((await readDaemonPort()) === null) return;
+  }
+}
+
 function holdActive(): number | null {
   try {
     if (!existsSync(HOLD_FILE)) return null;
@@ -1359,6 +1372,10 @@ async function cmdStop(opts: { holdSeconds?: number } = {}) {
   try {
     await api(port, "DELETE", "/");
   } catch {}
+  // The daemon answers, then shuts down. Return once it has gone, so the next
+  // verb finds no daemon (and, under --hold, sees the hold) rather than the
+  // dying one still answering.
+  await untilDaemonGone();
   printJson({
     ok: true,
     stopped: true,
@@ -1429,11 +1446,7 @@ async function cmdRestart(opts: { force?: boolean }) {
   try {
     await api(port, "DELETE", "/");
   } catch {}
-  const deadline = Date.now() + 5000;
-  while (Date.now() < deadline) {
-    await new Promise((r) => setTimeout(r, 50));
-    if ((await readDaemonPort()) === null) break;
-  }
+  await untilDaemonGone();
   const fresh = await ensureDaemon();
   printJson({ ok: true, restarted: true, port: fresh, previous_pid: previousPid });
 }
@@ -1522,11 +1535,7 @@ async function cmdRoll(opts: { force?: boolean }) {
   try {
     await api(port, "DELETE", "/");
   } catch {}
-  const deadline = Date.now() + 5000;
-  while (Date.now() < deadline) {
-    await new Promise((r) => setTimeout(r, 50));
-    if ((await readDaemonPort()) === null) break;
-  }
+  await untilDaemonGone();
   releaseHold(); // our turn to spawn the new version
   const fresh = await ensureDaemon();
   let pid: number | null = null;
