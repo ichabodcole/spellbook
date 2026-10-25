@@ -88,10 +88,33 @@ process.env.TMPDIR = tmp;
 // refused, the real Trash refused) as a plain run. Set here, it holds in this
 // process and in every child that inherits the environment (`home.ts`).
 process.env.NODE_ENV = "test";
+// ⚠ UNDER `--rerun-each` THE afterAll FIRES AFTER EVERY RERUN, while this
+// preload runs once, so the second rerun found its TMPDIR gone and any file
+// making a temp folder as it loads died with ENOENT before a test ran
+// (measured on Bun 1.4.0 with links.integration.test.ts). So under that flag
+// the two folders are made again, empty, after each removal; the last rerun
+// leaves them, and the next run prunes them as a dead run's. Bun keeps its own
+// flags out of `process.argv`, so the flag is read from the process's command
+// line; where `ps` cannot answer, the folder is removed as before.
+function underRerunEach(): boolean {
+  try {
+    const ps = Bun.spawnSync(["ps", "-o", "args=", "-p", String(process.pid)], {
+      stdout: "pipe",
+      stderr: "ignore",
+    });
+    return /(^|\s)--rerun-each(=|\s)/.test(ps.stdout.toString());
+  } catch {
+    return false;
+  }
+}
 afterAll(() => {
   try {
     rmSync(scratch, { recursive: true, force: true });
   } catch {
     // A folder a child still holds open is pruned by the next run.
+  }
+  if (underRerunEach()) {
+    mkdirSync(home, { recursive: true });
+    mkdirSync(tmp, { recursive: true });
   }
 });

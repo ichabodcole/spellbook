@@ -155,7 +155,14 @@ describe("set.make through the daemon", () => {
     const { s, d } = await start();
     await cmd(d.url, { op: "set.make", path: join(docs, "solo.md") });
     const folder = join(docs, "solo");
-    const id = s.state.context.find((e) => e.root === folder)?.id;
+    // `cmd` answers over HTTP; the surface learns of the new entry from a frame
+    // on its WebSocket, which can come later. Read straight after `cmd` under a
+    // parallel run, the entry was missing 2 times in 50, its id undefined, and
+    // the wait below could never match (2026-10-24). So wait for the entry.
+    const id = await waitUntil(
+      "the set's entry",
+      () => s.state.context.find((e) => e.root === folder)?.id,
+    );
     await writeUntilSeen(
       "the new document",
       () => writeFileSync(join(folder, "later.md"), "# Later\n"),

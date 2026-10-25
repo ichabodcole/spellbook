@@ -216,8 +216,12 @@ const runsIn = (tmp: string): string[] => {
 };
 
 /** One `bun test` of a fixture from the repo root, with `TMPDIR` set to `tmp`. */
-function runFixture(file: string, tmp: string): { code: number | null; out: string } {
-  const p = Bun.spawnSync([process.execPath, "test", join(FIXTURES, file)], {
+function runFixture(
+  file: string,
+  tmp: string,
+  flags: string[] = [],
+): { code: number | null; out: string } {
+  const p = Bun.spawnSync([process.execPath, "test", ...flags, join(FIXTURES, file)], {
     cwd: REPO_ROOT,
     env: { ...process.env, TMPDIR: tmp },
     stdout: "pipe",
@@ -504,6 +508,25 @@ describe("kit scratch-home ward", () => {
       expect(crashed.code).not.toBe(0);
       expect(runsIn(tmp)).toHaveLength(1);
       // …and the next run removes it, since its process is gone.
+      const next = runFixture("noop.ts", tmp);
+      expect(next.code, next.out).toBe(0);
+      expect(runsIn(tmp)).toEqual([]);
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
+  }, 60_000);
+
+  test("under --rerun-each, every rerun finds its temp folder, and the next run prunes what is left", () => {
+    // The preload's cleanup fires after each rerun while the preload runs once:
+    // without the folders made again, rerun 2 of a file that makes a temp folder
+    // as it loads dies with ENOENT. `--rerun-each=50` is how a parallel-only
+    // flake is proven fixed (the test-speed playbook), so it must work here.
+    const tmp = realpathSync(mkdtempSync(join(tmpdir(), "scratch-rerun-")));
+    try {
+      const r = runFixture("loadTemp.ts", tmp, ["--rerun-each=3"]);
+      expect(r.code, r.out).toBe(0);
+      expect(r.out).toContain(" 3 pass");
+      expect(runsIn(tmp).length).toBeLessThanOrEqual(1);
       const next = runFixture("noop.ts", tmp);
       expect(next.code, next.out).toBe(0);
       expect(runsIn(tmp)).toEqual([]);
