@@ -105,6 +105,7 @@ export {
   type ScanRule,
   SessionError,
   sideName,
+  UnseenChangeError,
   WorkspaceSession,
 } from "./session";
 export {

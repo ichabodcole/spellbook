@@ -641,6 +641,23 @@ export class SessionError extends Error {
  */
 export class GoneError extends SessionError {}
 
+/**
+ * Save refused: the original changed on disk and the watcher never said so (a
+ * change just as a watch armed, or an event a busy fseventsd dropped). `event`
+ * is what the watcher would have said, classified now that Save has seen the
+ * change: the daemon passes it on, so the human lands where a delivered event
+ * would have put them ("Changed on disk", or the file's text reloaded).
+ */
+export class UnseenChangeError extends SessionError {
+  constructor(
+    message: string,
+    readonly event: FileEvent | null,
+    hint: string,
+  ) {
+    super(message, 409, undefined, hint);
+  }
+}
+
 export const contentHash = (text: string): string => Bun.hash(text).toString(16);
 
 const randHex = (n: number) =>
@@ -2701,6 +2718,26 @@ export class WorkspaceSession {
     // A JSON document is a contract other things read: one that does not parse
     // never reaches the file. The text stays in the version, to be fixed there.
     this.refuseInvalidJson(d, d.active, text, "saved");
+    // The file's text is asked of the disk too, not of the watcher: a change it
+    // never reported would be overwritten unseen. Once the flag is up the human
+    // has been asked, and Save is their "Keep mine", a deliberate overwrite.
+    if (fileThere && !d.outsideChanged) {
+      const disk = readFileSync(d.original, "utf8");
+      if (contentHash(disk) !== d.originalHash && disk !== text) {
+        const event = this.onFileEvent(d.original);
+        if (event?.kind === "original.reloaded")
+          throw new UnseenChangeError(
+            `${d.name} changed on disk and you had no unsaved edits, so its text was loaded and Save wrote nothing`,
+            event,
+            "the file's new text is in the active version now: edit it and Save again to change the file",
+          );
+        throw new UnseenChangeError(
+          `${d.name} changed on disk since it was last read, so Save waits and wrote nothing: choose in the document's banner`,
+          event,
+          `"See the difference" compares the file with yours; "Keep mine" saves yours over it; "Take the file's" loads it`,
+        );
+      }
+    }
     // The bytes on disk are already the text: a save that changes nothing, which
     // the daemon never wakes the agent for. Still written, as the human asked.
     const unchanged = fileThere && readFileSync(d.original).equals(Buffer.from(text, "utf8"));

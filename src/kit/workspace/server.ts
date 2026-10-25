@@ -150,6 +150,7 @@ import {
   sideName,
   tilde,
   treeHash,
+  UnseenChangeError,
   WorkspaceSession,
 } from "./session";
 import { type Actor, TaskEngine, type TaskRunner } from "./tasks";
@@ -779,6 +780,16 @@ export type WorkspaceDaemonOptions = {
    * `bun test` (NODE_ENV=test) the real Trash is refused outright.
    */
   trash?: TrashFn;
+  /**
+   * How a folder is watched; absent, `fs.watch`. A test seam: a watch that
+   * never reports stands for a change the real one missed (a write just as it
+   * armed, or an event a busy fseventsd dropped).
+   */
+  watch?: (
+    path: string,
+    options: { recursive: boolean },
+    listener: (event: string, name: string | Buffer | null) => void,
+  ) => FSWatcher;
   pick?: (
     kind: PickKind,
     prompt: string,
@@ -1475,7 +1486,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         try {
           const inContext = r.path !== session.docsDir;
           // Watched at the realpath, reported under the stored path form.
-          const w = watch(r.watch, { recursive: r.recursive }, (_event, name) => {
+          const w = (opts.watch ?? watch)(r.watch, { recursive: r.recursive }, (_event, name) => {
             // A listed document's folder is watched alone, and its
             // `_meta/profiles/` beside it only once it exists (`watchRoots`):
             // a `_meta` appearing there is a cue to look again.
@@ -3769,7 +3780,9 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
                 : {},
             );
           } catch (e) {
-            // A refused Save may have found the file gone and marked it: show that.
+            // A refused Save may have found the file gone and marked it, or
+            // changed unseen and said what the watcher would have: show that.
+            if (e instanceof UnseenChangeError && e.event) handleFileEvent(e.event);
             broadcastState();
             throw e;
           }
