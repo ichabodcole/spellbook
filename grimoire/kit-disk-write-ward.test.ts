@@ -161,7 +161,8 @@ const FS_MODULES = new Set(["fs", "node:fs", "fs/promises", "node:fs/promises"])
 const CHILD_MODULES = new Set(["child_process", "node:child_process"]);
 /**
  * Helpers from other folders that write a file (or start a process that
- * does): `src/kit/wire`'s pointer files and atomic write, its daemon start.
+ * does): `src/kit/wire`'s pointer files and atomic write, its daemon start,
+ * its per-session daemon lock.
  * Counted under their own name however they are imported.
  */
 const OTHER_WRITERS = new Set([
@@ -172,6 +173,8 @@ const OTHER_WRITERS = new Set([
   "pruneDeadRuns",
   "startDaemon",
   "recordLastOpened",
+  "takeDaemonLock",
+  "releaseDaemonLock",
 ]);
 /**
  * Members off `Bun` (or a chain that starts at it, or a name bound to it) that
@@ -207,6 +210,14 @@ const ALLOWED: Record<string, { uses: number; why: string }> = {
   "src/kit/workspace/server.ts::removePointer": {
     uses: 2,
     why: "the same pointer removed at close, and only while it still names this daemon (`unlinkIfMatches`)",
+  },
+  "src/kit/workspace/server.ts::takeDaemonLock": {
+    uses: 1,
+    why: "the session's one-daemon lock, `<session>/daemon.lock` (`src/kit/wire/daemonLock.ts`): a fixed name in the session folder this daemon was started on, published by a hard link from a temp file opened exclusively, so a planted file or symlink there makes the take fail, never redirects it",
+  },
+  "src/kit/workspace/server.ts::releaseDaemonLock": {
+    uses: 1,
+    why: "the same lock removed at teardown, and only while it still carries this daemon's nonce",
   },
   "src/kit/workspace/server.ts::Bun…spawn": {
     uses: 2,

@@ -20,13 +20,22 @@
  *
  * Teardown order, fixed: stop housekeeping, clear the attention timer, close the
  * watchers, abort the runners, persist the manifest, unlink discovery, emit
- * `closed`, drain. Discovery goes before the `closed` frame so a tail that sees
- * `closed` and a CLI verb that runs right after it both find no pointer to a
+ * `closed`, drain, release the session's lock. Discovery goes before the
+ * `closed` frame so a tail that sees `closed` and a CLI verb that runs right
+ * after it both find no pointer to a
  * daemon that is leaving; the other order leaves a window in which a verb
  * resolves a session that will refuse it.
  */
 
-import { closeSync, type FSWatcher, readFileSync, statSync, unlinkSync, watch } from "node:fs";
+import {
+  closeSync,
+  existsSync,
+  type FSWatcher,
+  readFileSync,
+  statSync,
+  unlinkSync,
+  watch,
+} from "node:fs";
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { parseArgs as nodeParseArgs } from "node:util";
 import { bundleDisplayName, bundleOf, bundleTypeOf, linkPlacesText } from "../lib/bundles.ts";
@@ -43,6 +52,7 @@ import {
 import { describeJsonProblem } from "../lib/json.ts";
 import { decodePath, splitTarget } from "../lib/linkTarget.ts";
 import { IMAGE_SOURCES } from "../lib/sidecar.ts";
+import { type DaemonLock, releaseDaemonLock, takeDaemonLock } from "../wire/daemonLock.ts";
 import {
   publishPointer,
   recordLastOpened,
@@ -175,6 +185,26 @@ class ImageTakenError extends SessionError {
     readonly takenName: string,
   ) {
     super(e.message, e.status, e.choices, e.hint);
+  }
+}
+
+/**
+ * Another daemon holds this session's lock (`../wire/daemonLock.ts`): `pid` is
+ * that daemon's, which rides the handshake as `locked_by` so `open` can wait
+ * for it and name it.
+ */
+export class SessionLockedError extends SessionError {
+  constructor(
+    sessionId: string,
+    readonly pid: number,
+    lockPath: string,
+  ) {
+    super(
+      `session ${sessionId} is already running in another daemon (pid ${pid})`,
+      409,
+      undefined,
+      `use it: state --session ${sessionId}. If no daemon is running, the lock is stale: ${lockPath}`,
+    );
   }
 }
 
@@ -904,6 +934,22 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
   let run: { port: number; session: WorkspaceSession; ctx: WorkspaceContext } | null = null;
   /** While `boot` runs past binding: what a throw must undo. Cleared once it returns. */
   let unwindBoot: (() => void) | null = null;
+  /** This session's daemon lock, held from before the session is read until teardown. */
+  let lock: DaemonLock | null = null;
+  const unlock = () => {
+    if (lock) releaseDaemonLock(lock);
+    lock = null;
+  };
+  /**
+   * ⛔ ONE DAEMON PER SESSION. Taken before the session is read or written and
+   * before a port is bound, so a second daemon on it (two `open --restore` at
+   * once, which the CLI's check alone cannot stop) refuses here.
+   */
+  const lockOrRefuse = () => {
+    const r = takeDaemonLock(dir);
+    if (!r.ok) throw new SessionLockedError(sessionId, r.holder.pid, r.path);
+    lock = r.lock;
+  };
 
   // A function, not a generic arrow: `<T>(` reads as JSX to a tsx parser,
   // and the import-boundary ward audits every file with one.
@@ -921,6 +967,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         // A start that failed after binding leaves nothing behind: no port
         // still listening, no pointer naming it for `close` to get a 500 from.
         unwindBoot?.();
+        unlock();
         throw e;
       } finally {
         unwindBoot = null;
@@ -954,11 +1001,16 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
     const devIndex = mode === "dev" ? await opts.surface?.devIndex?.() : undefined;
     const routes = (devIndex ? { "/": devIndex } : {}) as Record<string, never>;
 
+    // A saved session is locked before it is read. A new one's folder is made
+    // by `create`, under an id minted here that nobody else can name yet, and
+    // locked straight after. No folder: `restore` refuses it (404).
+    if (opts.restore && existsSync(dir)) lockOrRefuse();
     const session = opts.restore
       ? WorkspaceSession.restore(opts.sessionsRoot, app, opts.restore, {
           ...(opts.appHome !== undefined ? { appHome: opts.appHome } : {}),
         })
       : WorkspaceSession.create(opts.sessionsRoot, app, sessionId, opts.workspace);
+    if (!opts.restore) lockOrRefuse();
     if (opts.links) session.setLinkSlot(opts.links);
     if (opts.linkCheck) session.setLinkCheck(opts.linkCheck);
     if (opts.appHome !== undefined) session.setAppHome(opts.appHome);
@@ -5134,6 +5186,8 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         sockets,
         ...(opts.drainGraceMs !== undefined ? { graceMs: opts.drainGraceMs } : {}),
       });
+      // Last: nothing of this daemon writes the session after the drain.
+      unlock();
       resolveShutdown();
     };
     void done.then((v) => close(v.by, v.reason !== "stop"));
@@ -5208,8 +5262,10 @@ export async function runWorkspaceDaemon(
     const status = e instanceof SessionError ? e.status : 500;
     // The refusal's hint rides along: `open` forwards it to the envelope.
     const hint = e instanceof SessionError && e.hint ? { hint: e.hint } : {};
+    // Who holds the session, for `open` to wait on and name.
+    const lockedBy = e instanceof SessionLockedError ? { locked_by: e.pid } : {};
     process.stdout.write(
-      `${JSON.stringify({ ok: false, status, error: messageOf(e), ...hint })}\n`,
+      `${JSON.stringify({ ok: false, status, error: messageOf(e), ...hint, ...lockedBy })}\n`,
     );
     return status === 404 ? 5 : status === 409 ? 6 : 1;
   }

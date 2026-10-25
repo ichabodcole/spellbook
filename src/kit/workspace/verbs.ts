@@ -769,6 +769,47 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
 
   // ── the verbs ───────────────────────────────────────────────────────────
 
+  /** Whether the daemon a pointer names answers. */
+  const answers = (p: SessionPointer): Promise<boolean> =>
+    api(p.port, "GET", "/state").then(
+      (r) => r.status === 200,
+      () => false,
+    );
+
+  function alreadyRunning(id: string, url: string): never {
+    return die(`session ${id} is already running at ${url}`, "conflict", {
+      hint: `use it: state --session ${id}`,
+    });
+  }
+
+  /**
+   * The daemon `open --restore` started refused: another daemon holds the
+   * session's lock (two restores at once, both past the check above). The
+   * loser gets the same refusal a restore of a running session gets, naming
+   * the winner's URL, whatever the timing: an agent reads one outcome for one
+   * state. The winner may not be listening yet, so this waits for it (as long
+   * as `open` waits for its own) and says plainly if it never came up.
+   */
+  async function refuseLockedRestore(id: string, pid: number, waitMs: number): Promise<never> {
+    const deadline = Date.now() + waitMs;
+    while (Date.now() < deadline && pidAlive(pid)) {
+      const p = readSession(id);
+      if (p && p.pid === pid && (await answers(p))) alreadyRunning(id, p.url);
+      await Bun.sleep(100);
+    }
+    return die(
+      pidAlive(pid)
+        ? `session ${id} is being started by another daemon (pid ${pid}), which has not come up after ${Math.round(waitMs / 1000)}s`
+        : `session ${id} was being started by another daemon (pid ${pid}), which stopped before it came up`,
+      "conflict",
+      {
+        hint: pidAlive(pid)
+          ? `wait for it: state --session ${id}`
+          : `bring it back: open --restore ${id}`,
+      },
+    );
+  }
+
   async function cmdOpen(pos: string[], flags: Flags): Promise<void> {
     // Read before anything starts: a value that is not a number is refused
     // here, so no daemon is ever spawned on it (`readSeconds`).
@@ -808,16 +849,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
         });
       }
       const live = readSession(id);
-      if (live) {
-        const alive = await api(live.port, "GET", "/state").then(
-          (r) => r.status === 200,
-          () => false,
-        );
-        if (alive)
-          die(`session ${id} is already running at ${live.url}`, "conflict", {
-            hint: `use it: state --session ${id}`,
-          });
-      }
+      if (live && (await answers(live))) alreadyRunning(id, live.url);
     }
 
     const daemonArgs = [...opts.daemon.args];
@@ -866,6 +898,8 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
       ok?: boolean;
       status?: number;
       error?: string;
+      /** The pid of the daemon that holds the session's lock, when this one refused for it. */
+      locked_by?: number;
     };
     let hs: Handshake;
     try {
@@ -884,6 +918,8 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
         { hint: `daemon log: ${logFile}` },
       );
     }
+    if (hs.ok === false && typeof hs.locked_by === "number" && typeof flags.restore === "string")
+      await refuseLockedRestore(flags.restore, hs.locked_by, startTimeoutMs);
     if (hs.ok === false) daemonRefused("open", hs.status ?? 500, hs);
 
     let entries: unknown[] = [];
