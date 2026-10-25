@@ -152,9 +152,14 @@ const item = (label: string) =>
   [...document.querySelectorAll<HTMLButtonElement>('[data-slot="note-at-selection"] button')].find(
     (b) => (b.textContent ?? "").startsWith(label),
   ) ?? null;
+/**
+ * Each item's text without its shortcut hint, which is the platform's own: one
+ * word on a Mac ("⌘V", "⌘⇧K"), and "Ctrl" plus one or more words elsewhere
+ * ("Ctrl V", "Ctrl Shift K").
+ */
 const items = () =>
   [...document.querySelectorAll('[data-slot="note-at-selection"] button')].map((b) =>
-    (b.textContent ?? "").replace(/(⌘|Ctrl ?)\S*$/u, "").trim(),
+    (b.textContent ?? "").replace(/(⌘\S*|Ctrl(?: \S+)+)$/u, "").trim(),
   );
 const picker = () => q('[data-slot="link-picker"]');
 const options = () => [...document.querySelectorAll('[data-slot="link-picker"] [role="option"]')];
