@@ -47,7 +47,8 @@ jobs:
       - run: bun install --frozen-lockfile
 
       # The same gate every seat runs locally (`gate` in .anthill/config.json):
-      # bun run build && bun run check && bun test.
+      # bun run build && bun run check && bun run test, where `test` runs the
+      # files in parallel, slowest first by the checked-in test-timings.json.
       - name: gate
         run: bun run gate
 

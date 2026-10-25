@@ -21,7 +21,9 @@
     "prepare": "husky",
     "land-check": "bun scripts/land-check.ts",
     "prune-branches": "git branch --merged | grep -vE '^[*+]|main$|develop$' | xargs -r git branch -d",
-    "gate": "bun run build && bun run check && bun test"
+    "test": "bun test --parallel --timings=test-timings.json",
+    "test:timings": "rm -f test-timings.json && bun test --parallel --timings=test-timings.json --update-timings",
+    "gate": "bun run build && bun run check && bun run test"
   },
   "lint-staged": {
     "*.{ts,tsx,json,jsonc}": [
