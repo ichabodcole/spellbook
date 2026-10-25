@@ -1,19 +1,21 @@
-// Base UI loaded first by a file with no DOM, as a backend-style test file that
-// imports a component module does (mind-mapper's `GraphCanvas.test.ts` did). Base
-// UI decides once, when its modules load, whether there is a DOM, so with no DOM
-// at that moment every later component test in the process lost its popups. That
+// Base UI loaded first by a file with no DOM, the way mind-mapper's
+// `GraphCanvas.test.ts` did: through a context menu, and nothing else. Base UI
+// decides once, when its modules load, whether there is a DOM, so with no DOM at
+// that moment every later component test in the process lost its popups. That
 // was CI's red on Linux, where such a file ran first. Run only by
 // `registerDom.loadOrder.test.ts`.
 //
 // One file, its tests in order, so the order holds on every filesystem: the
-// first test loads Base UI with no DOM of its own, the second checks the backend
-// half still has no DOM, and the third is the later component test.
+// first test loads Base UI's context menu with no DOM of its own, the second
+// checks the backend half still has no DOM, and the third is the later
+// component test, opening a dialog: an entry the first never loaded, over the
+// modules it shares with the context menu.
 
 import { expect, test } from "bun:test";
 
-test("a file with no DOM loads Base UI", async () => {
+test("a file with no DOM loads Base UI's context menu", async () => {
   expect(typeof document).toBe("undefined");
-  await import("../../../ui/index.ts");
+  await import("@base-ui/react/context-menu");
 });
 
 test("its next test still sees no DOM", () => {

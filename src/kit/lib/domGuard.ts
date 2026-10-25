@@ -15,27 +15,40 @@
 //    or `testDom.ts`, before any module of that file evaluates, and registers
 //    the DOM when it is absent. Like the import-time registration, this is not
 //    a claim: the file claims the DOM in `beforeAll(installDom)`.
-// 2. Clean up after a file that throws while it loads. It reaches neither hook,
-//    and its DOM would stay registered for every later file in the process:
-//    the backend tests would see a `window` and happy-dom's network globals.
-//    Before each test, a DOM nobody claimed is removed.
+// 2. Remove a DOM nobody claimed, before each test and after each test. A file
+//    that throws while it loads reaches neither of its own hooks, and its DOM
+//    would stay registered for every later file in the process: the backend
+//    tests would see a `window` and happy-dom's network globals. Point 3 leaves
+//    an unclaimed DOM too.
 // 3. Give Base UI a DOM while it loads, whoever loads it. A file with no DOM
 //    that imports a component module (mind-mapper's `GraphCanvas.test.ts` does,
 //    for its layout functions) loads Base UI with none, and Base UI keeps what
 //    it decided then for the rest of the process: its layout effects become
 //    no-ops, and no later component test's popup opens. In a serial run that was
 //    every component test after it (CI's red on Linux, whose filesystem order
-//    put that file first; item `ci-red-on-linux`). So an import of `@base-ui/`
-//    registers the DOM when it is absent, loading `registerDom.ts` if no file
-//    has yet. Not a claim either: point 2 removes it before that file's next
-//    test, so its own tests still run with no DOM.
+//    put that file first; item `ci-red-on-linux`). So loading Base UI's ES
+//    modules registers the DOM when it is absent, loading `registerDom.ts` if
+//    no file has yet. Not a claim either, so point 2 removes it.
+//
+//    ⚠ WHAT A FILE WITH NO DOM STILL SEES. Bun runs a preload's `beforeAll`
+//    and `afterAll` once for the whole run, not per file (measured on Bun
+//    1.4.0), so the removal can only sit around each test. A file that imports
+//    Base UI at its top sees the DOM from that import through the rest of its
+//    module body, its `describe` bodies and its `beforeAll` hooks, until its
+//    first test starts. One that imports Base UI inside a test sees it until
+//    that test ends. Its tests, its `afterAll` hooks and every later file's
+//    load see none. `registerDom.loadOrder.test.ts` pins both edges.
+//
+//    ⚠ ES MODULES ONLY. A `require` of Base UI loads its CommonJS build, a
+//    separate copy that no component here uses, and a load hook did not hand
+//    that build back intact (it came back as `{}`), so the hook leaves it be.
 //
 // It never imports `registerDom.ts` up front (that would register a DOM in
 // every run); it reads the handle that module leaves on a global symbol. Until
 // a component test or a Base UI import has loaded there is no handle, and the
 // first import of `registerDom.ts` registers the DOM itself.
 
-import { beforeEach } from "bun:test";
+import { afterEach, beforeEach } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { plugin } from "bun";
@@ -66,7 +79,7 @@ plugin({
     // (measured on Bun 1.4.0). A load hook must hand back the source, so it
     // reads the file as Bun would have. It runs before any module of the graph
     // evaluates, so Base UI finds the DOM in place.
-    build.onLoad({ filter: /[\\/]node_modules[\\/]@base-ui[\\/].*\.m?js$/ }, (args) => {
+    build.onLoad({ filter: /[\\/]node_modules[\\/]@base-ui[\\/].*\.mjs$/ }, (args) => {
       const h = handle();
       // Evaluating `registerDom.ts` registers the DOM; once it has, the handle
       // registers it again whenever a file removed it.
@@ -77,7 +90,11 @@ plugin({
   },
 });
 
-beforeEach(async () => {
+/** Remove the DOM if it is registered and no file has claimed it. */
+async function removeStale(): Promise<void> {
   const h = handle();
   if (h?.stale()) await h.remove();
-});
+}
+
+beforeEach(removeStale);
+afterEach(removeStale);
