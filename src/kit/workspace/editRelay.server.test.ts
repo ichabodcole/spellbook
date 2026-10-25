@@ -57,7 +57,9 @@ async function twoOnSolo() {
   a.send({ op: "context.add", path: docs });
   a.send({ op: "open", path: join(docs, "solo.md") });
   await waitUntil("solo open in b", () => b.state.docs.find((d) => d.slug === "solo"));
-  const doc = a.state.docs.find((d) => d.slug === "solo");
+  // Each surface learns of the open from its own frame: b's having come says
+  // nothing about a's, so a's is waited for too, not read.
+  const doc = await waitUntil("solo open in a", () => a.state.docs.find((d) => d.slug === "solo"));
   const path = doc?.versions.find((v) => v.n === doc.active)?.path as string;
   return { a, b, version: doc?.active as number, path };
 }
