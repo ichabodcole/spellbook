@@ -51,8 +51,17 @@ afterEach(async () => {
   rmSync(root, { recursive: true, force: true });
 });
 
-async function start() {
-  daemon = fixtureDaemon({ tmp: join(root, "tmp"), workspace: ws, imageArrivalMs: 60 });
+/**
+ * The window arrivals in one document gather in before one fact. Short, so a
+ * cell with one image is told at once; a cell that makes a burst of several,
+ * one upload after another, passes `BURST_MS`: under a loaded parallel run the
+ * gap between two uploads passed 60 ms and the burst came out as two facts
+ * (2026-10-24, "once per burst" told only a.png).
+ */
+const BURST_MS = 1000;
+
+async function start(imageArrivalMs = 60) {
+  daemon = fixtureDaemon({ tmp: join(root, "tmp"), workspace: ws, imageArrivalMs });
   await daemon.start();
   surface = new FakeSurface();
   await surface.connect(daemon.port);
@@ -170,7 +179,7 @@ describe("an image dropped into a document", () => {
 
 describe("the agent is told", () => {
   test("once per burst: several images are one image.pasted fact naming the document and each image", async () => {
-    const { base } = await start();
+    const { base } = await start(BURST_MS);
     const tail = collectEvents(base);
     try {
       const doc = join(world, "story.md");
@@ -197,7 +206,7 @@ describe("the agent is told", () => {
 
 describe("the fact's words", () => {
   test("a burst of a paste and a drop says both, and names each image from the document's folder", async () => {
-    const { base } = await start();
+    const { base } = await start(BURST_MS);
     const tail = collectEvents(base);
     try {
       const doc = join(world, "story.md");

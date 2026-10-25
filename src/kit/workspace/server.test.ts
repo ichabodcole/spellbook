@@ -1912,7 +1912,15 @@ describe("guards the review asked for", () => {
     await waitUntil("a debounced broadcast", () => hash() !== before);
     await Bun.sleep(300); // nothing left in flight
     // One hook call per state frame: the hello and each broadcast, no more.
-    expect(calls).toBe(s.frames.filter((f) => f.op === "state").length);
+    // The hook runs before its frame is sent, and under a loaded parallel run a
+    // frame was still on its way 300 ms on (7 calls, 6 frames; 2026-10-24), so
+    // the frames are waited for. A call with no frame never catches up, and
+    // still fails here.
+    const stateFrames = () => s.frames.filter((f) => f.op === "state").length;
+    await waitUntil("a state frame for each hook call", () => calls === stateFrames(), 3000).catch(
+      () => {},
+    );
+    expect(calls).toBe(stateFrames());
   });
 
   test("a pause in typing sends the new hash with the app's view marked unchanged, and the view whole when it changed", async () => {
