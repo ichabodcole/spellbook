@@ -351,8 +351,12 @@ describe("rename, move and duplicate act on the whole folder", () => {
     mkdirSync(elsewhere);
     const real = writeBundle(elsewhere, "Real", { version: 1, type: "board", title: "Real" });
     const before = readFileSync(join(real, "info.json"), "utf8");
-    symlinkSync(real, join(set, "Linked.boardbundle"));
+    // Shown as a bundle, then swapped for a link before a rescan (a scan never
+    // reads a link as a bundle: it is a link's row, which is not duplicated).
+    writeBundle(set, "Linked", { version: 1, type: "board", title: "Linked" });
     const s = session();
+    rmSync(join(set, "Linked.boardbundle"), { recursive: true });
+    symlinkSync(real, join(set, "Linked.boardbundle"));
     const e = refusal(() => s.duplicate(join(set, "Linked.boardbundle")));
     expect(e.status).toBe(409);
     expect(e.message).toContain("is a link");

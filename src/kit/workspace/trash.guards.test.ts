@@ -32,11 +32,21 @@ describe("what the Trash may not take", () => {
     const outside = join(root, "outside");
     mkdirSync(outside);
     writeFileSync(join(outside, "precious.md"), "# Not the set's\n");
-    symlinkSync(outside, join(docs, "set", "home"));
+    const home = join(docs, "set", "home");
+    const precious = join(home, "precious.md");
+    // A scan never enters a linked folder, so nothing under one is shown: refused.
+    symlinkSync(outside, home);
     const s = inContext(join(root, "sessions"), docs);
-    expect(
-      refusal(() => s.trashPreview(join(docs, "set", "home", "precious.md"))).message,
-    ).toContain("outside");
+    expect(refusal(() => s.trashPreview(precious)).message).toContain("is not shown");
+    // A real folder, shown, then swapped for a link before a rescan: the
+    // Trash's own check still finds where it leads.
+    rmSync(home);
+    mkdirSync(home);
+    writeFileSync(precious, "# The set's\n");
+    const t = inContext(join(root, "sessions"), docs);
+    rmSync(home, { recursive: true });
+    symlinkSync(outside, home);
+    expect(refusal(() => t.trashPreview(precious)).message).toContain("outside");
   });
 
   test("the link itself may go, and says it is a link", () => {

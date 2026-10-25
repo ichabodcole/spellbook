@@ -431,22 +431,15 @@ describe("no set shows the app's own places, from an older manifest or through a
     s.setAppHome(dotApp);
     const other = WorkspaceSession.create(hidden, noHomeApp);
     // Links into the sessions, into one session, to a manifest and to the app
-    // home, all left out; and one to a folder elsewhere, shown.
+    // home, all left out; and one to a folder elsewhere, shown as a link's
+    // row, never entered (`kit-workspace-symlinked-sets`).
     symlinkSync(hidden, join(home, "peek"));
     symlinkSync(other.dir, join(home, "notes", "theirs"));
     symlinkSync(join(other.dir, "manifest.json"), join(home, "notes", "their.json"));
     symlinkSync(dotApp, join(home, "app-home"));
     symlinkSync(join(docs, "set"), join(home, "elsewhere"));
     const { entry } = s.addContext(home);
-    const expected = [
-      "elsewhere",
-      "elsewhere/a.md",
-      "elsewhere/part",
-      "elsewhere/part/b.md",
-      "elsewhere/skip.png",
-      "notes",
-      "notes/n.md",
-    ];
+    const expected = ["elsewhere", "notes", "notes/n.md"];
     expect(rels(entry.nodes as Node[]).sort()).toEqual(expected);
     // A rescan keeps them out, and so a read through the link finds nothing.
     s.rescan(entry.id);

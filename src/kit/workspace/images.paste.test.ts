@@ -22,8 +22,8 @@ import { cmd, collectEvents, FakeSurface, waitUntil } from "./fixtures/harness";
 import { IMAGE_MAX_BYTES } from "./images";
 import type { ContextEntry, ContextNode } from "./protocol";
 import type { WorkspaceDaemon } from "./server";
-import { fitName, NAME_MAX_BYTES } from "./session";
-import { tempRoot } from "./testing";
+import { fitName, NAME_MAX_BYTES, WorkspaceSession } from "./session";
+import { refusal, tempRoot, testApp } from "./testing";
 
 let root: string;
 let ws: string;
@@ -350,9 +350,33 @@ describe("refusals write nothing", () => {
     writeFileSync(join(out, "r.md"), "# R\n");
     symlinkSync(out, join(world, "linkedsub"));
     const { base } = await start();
+    // A scan never enters a linked folder: the document is not the set's.
     const r = await into(base, join(world, "linkedsub", "r.md"), "pasted-x.png", pngBytes(4, 4));
-    expect(r.status).toBe(400);
-    expect(r.body.error).toContain("leads outside");
+    expect(r.status).toBe(404);
+    expect(r.body.error).toContain("is not shown");
+    expect(existsSync(join(out, "images"))).toBe(false);
+  });
+
+  test("a shown folder swapped for a link leading out of the set before a rescan makes nothing outside it", () => {
+    const out = join(root, "out", "realsub");
+    mkdirSync(out, { recursive: true });
+    writeFileSync(join(out, "r.md"), "# R\n");
+    mkdirSync(join(world, "linkedsub"));
+    writeFileSync(join(world, "linkedsub", "r.md"), "# R\n");
+    const s = WorkspaceSession.create(join(root, "sessions"), testApp, undefined, ws);
+    s.addContext(world);
+    rmSync(join(world, "linkedsub"), { recursive: true });
+    symlinkSync(out, join(world, "linkedsub"));
+    const e = refusal(() =>
+      s.importImageBeside(
+        join(world, "linkedsub", "r.md"),
+        "pasted-x.png",
+        pngBytes(4, 4),
+        "paste",
+      ),
+    );
+    expect(e.status).toBe(400);
+    expect(e.message).toContain("leads outside");
     expect(existsSync(join(out, "images"))).toBe(false);
   });
 

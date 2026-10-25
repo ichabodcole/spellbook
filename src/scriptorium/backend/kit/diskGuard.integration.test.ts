@@ -185,7 +185,9 @@ describe("after the scan: only the write guard stands between a shown path and a
   // holes above are refused before any write. A link the scan saw leading
   // elsewhere, retargeted afterwards, is the write guard's alone. The chain
   // runs through a folder no set shows (`outside`), so no watcher sees the
-  // retarget and rescans first: the cell is deterministic.
+  // retarget and rescans first: the cell is deterministic. A scan never
+  // enters a linked folder (kit-workspace-symlinked-sets), so the image's
+  // chain is a set of its own, rooted at a link: a root is read through it.
   test("meta-set and image.describe through a link retargeted into another session are refused by the write guard", async () => {
     const set = join(root, "linked");
     mkdirSync(set, { recursive: true });
@@ -197,11 +199,12 @@ describe("after the scan: only the write guard stands between a shown path and a
     symlinkSync(join(outside, "real.md"), hop);
     symlinkSync(join(outside, "real-pics"), picHop);
     symlinkSync(hop, join(set, "t.md"));
-    symlinkSync(picHop, join(set, "pics"));
-    const Q = await open(set);
+    const pics = join(root, "linked-pics");
+    symlinkSync(picHop, pics);
+    const Q = await open(set, pics);
     const shown = JSON.stringify((await state(Q)).context);
     expect(shown).toContain('"t.md"');
-    expect(shown).toContain('"pics/pic.png"');
+    expect(shown).toContain('"pic.png"');
     const a = readFileSync(aV1, "utf8");
     const pic = join(dirname(aV1), "pic.png");
     rmSync(hop);
@@ -212,7 +215,7 @@ describe("after the scan: only the write guard stands between a shown path and a
     expect(set1.code).not.toBe(0);
     expect(set1.err).toContain("among the sessions' own folders");
     expect(readFileSync(aV1, "utf8")).toBe(a);
-    const d = await post(Q, { op: "image.describe", image: join(set, "pics", "pic.png") });
+    const d = await post(Q, { op: "image.describe", image: join(pics, "pic.png") });
     expect(d.status).toBe(409);
     expect(String(d.body.error)).toContain("among the sessions' own folders");
     expect(existsSync(`${pic}.md`)).toBe(false);

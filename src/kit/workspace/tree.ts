@@ -451,6 +451,16 @@ function folderWalker(cap: number, later?: PendingBundle[], skip?: ScanSkip, gua
       if (st.isDirectory()) {
         if (here === "set" && SKIP_DIRS.has(name)) continue;
         count++;
+        // A LINK TO A FOLDER IS SHOWN, NEVER ENTERED: one leading out would
+        // show files that are not the set's, one leading in shows them twice,
+        // and `self -> .` or `up -> ..` is a loop. Its row stays, so the link
+        // itself can be renamed, moved or put in the Trash; every folder a scan
+        // reads is a real one, read once. A link named like a bundle is no
+        // bundle here: its `info.json` and main file are not the set's either.
+        if (isLink(abs)) {
+          groups.push({ kind: "group", rel, children: [] });
+          continue;
+        }
         // A bundle is one item: its node, never a group. Its insides are its
         // own `contents`, read only for a type that expands.
         const bundle = here === "set" ? bundleTypeOf(name) : null;
@@ -535,6 +545,18 @@ export function scanTree(
   const nodes = walker.walk(root, "", "set");
   finishOwnContents(later, cap - walker.count());
   return { nodes, truncated: walker.truncated() };
+}
+
+/**
+ * Whether `abs` is itself a symbolic link (not what it leads to). One that
+ * cannot be asked (gone since its `stat`) counts as a link: not entered.
+ */
+function isLink(abs: string): boolean {
+  try {
+    return lstatSync(abs).isSymbolicLink();
+  } catch {
+    return true;
+  }
 }
 
 /** Nothing in it but dotfiles (a `.DS_Store` does not make a folder full). */
