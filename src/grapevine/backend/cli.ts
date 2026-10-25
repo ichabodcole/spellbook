@@ -393,14 +393,32 @@ async function readDaemonPort(): Promise<number | null> {
 /**
  * Wait, up to 5 s, until no daemon answers on the port file: a daemon told to
  * stop unlinks its port and pid files as it shuts down. For stop, restart and
- * roll alike.
+ * roll alike. A daemon still answering after that is a failure, not a stop:
+ * the verb refuses, names the daemon's pid, and points at `doctor`, which
+ * reports it. (`reap` never kills the authoritative daemon, so it is not the
+ * answer here.)
  */
-async function untilDaemonGone(): Promise<void> {
+async function untilDaemonGone(verb: "stop" | "restart" | "roll"): Promise<void> {
   const deadline = Date.now() + 5000;
   while (Date.now() < deadline) {
     await new Promise((r) => setTimeout(r, 50));
     if ((await readDaemonPort()) === null) return;
   }
+  let pid: number | null = null;
+  try {
+    pid = Number.parseInt(readFileSync(PID_FILE, "utf-8").trim(), 10) || null;
+  } catch {}
+  const prefix = invocationPrefix();
+  die(
+    `${verb}: the daemon${pid ? ` (pid ${pid})` : ""} was told to stop and still answers after 5 s, ` +
+      `so ${verb === "stop" ? "it was not stopped" : "no new daemon was started"}. ` +
+      `Stop it by its pid${pid ? ` (kill ${pid})` : ""}, then run ${verb} again.`,
+    "internal",
+    {
+      token: "daemon_still_running",
+      hint: prefix ? `try: ${prefix} doctor` : "try the `doctor` verb",
+    },
+  );
 }
 
 function holdActive(): number | null {
@@ -1375,7 +1393,7 @@ async function cmdStop(opts: { holdSeconds?: number } = {}) {
   // The daemon answers, then shuts down. Return once it has gone, so the next
   // verb finds no daemon (and, under --hold, sees the hold) rather than the
   // dying one still answering.
-  await untilDaemonGone();
+  await untilDaemonGone("stop");
   printJson({
     ok: true,
     stopped: true,
@@ -1446,7 +1464,7 @@ async function cmdRestart(opts: { force?: boolean }) {
   try {
     await api(port, "DELETE", "/");
   } catch {}
-  await untilDaemonGone();
+  await untilDaemonGone("restart");
   const fresh = await ensureDaemon();
   printJson({ ok: true, restarted: true, port: fresh, previous_pid: previousPid });
 }
@@ -1535,8 +1553,11 @@ async function cmdRoll(opts: { force?: boolean }) {
   try {
     await api(port, "DELETE", "/");
   } catch {}
-  await untilDaemonGone();
-  releaseHold(); // our turn to spawn the new version
+  try {
+    await untilDaemonGone("roll");
+  } finally {
+    releaseHold(); // our turn to spawn the new version, or nobody's
+  }
   const fresh = await ensureDaemon();
   let pid: number | null = null;
   try {

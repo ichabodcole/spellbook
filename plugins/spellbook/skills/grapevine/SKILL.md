@@ -507,6 +507,13 @@ or `roll` releases it as part of its own respawn. While a hold is active, verbs
 that would auto-spawn a daemon (and `start`) report the held state instead of
 starting one — so nothing races a daemon back up during the window.
 
+`stop`, `restart` and `roll` return only once the old daemon has gone, so the
+next verb never meets the dying one. A daemon that still answers 5 s after it
+was told to stop is a failure, not a stop: the verb refuses (`internal`, exit
+`1`, token `daemon_still_running`), names the daemon's pid to kill, and its
+`hint` is `doctor`, which reports the daemon. `restart` and `roll` start nothing
+in that case.
+
 **`roll [--force]`** — the recommended one-command deploy step after a release.
 Performs a coordinated `stop --hold` + respawn + version verify in sequence,
 ensuring the new binary is running before returning. Guards against a live fleet

@@ -181,8 +181,11 @@ const EXPECTED: Record<
   // census does not walk. The rejections still carry `choices`: arm 2 drives
   // them through each spell's process, and the registry's own tests pin them.
   // glamour 27/9 -> 20/3, grapevine 59/5 -> 52/1: that move.
+  // grapevine 52 -> 53 (2026-10-25, item ci-red-on-linux): stop, restart and
+  // roll refuse a daemon that still answers 5 s after it was told to stop
+  // (`daemon_still_running`). No closed set there, so no `choices`.
   glamour: { sites: 20, choices: 3, verbRoster: true, flagMap: true },
-  grapevine: { sites: 52, choices: 1, verbRoster: true, flagMap: true },
+  grapevine: { sites: 53, choices: 1, verbRoster: true, flagMap: true },
   // imago 25/3 -> 14/2 (2026-09-26): the move onto the kit registry, as
   // glamour's — its parse, unknown-verb and per-verb arity raises left for the
   // kit. The enumerated `context <kind>` and `--link` rejections stay here.
