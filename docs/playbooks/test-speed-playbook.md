@@ -105,7 +105,11 @@ at 6,235 tests in 470 files, on a 14-core Mac.
      when its failing run shows the cause outright (the values it printed), say
      in the commit that it did not reproduce, and record the rest as a finding.
 8. Keep file-level parallelism only: no `--concurrent`, since tests within a
-   file share a daemon and a temp root.
+   file share a daemon and a temp root. Before lowering the worker count to cut
+   flakes, measure it: here `--parallel=8` took 90 s and `--parallel=10` 69 s
+   against 56 s at the default 14, and 20 green runs at fewer workers did not
+   outweigh that. A worker's memory grows across the files it runs (up to about
+   1.7 GB); watch it with `ps` during a run.
 9. Commit `test-timings.json`, refreshed with `bun run test:timings` (which
    rebuilds it from empty, so no row outlives its file). Rerun it after adding,
    splitting or much slowing a test file.

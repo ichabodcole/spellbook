@@ -52,7 +52,7 @@ under `NODE_ENV=test`), and the wards, which scan the whole tree.
       every test that failed only in parallel fixed at its cause (no longer
       sleeps, no skips), each proven with `--rerun-each=50` beside a looping
       suite.
-- [ ] The gate passes 20 runs in a row, and its time is recorded before and
+- [x] The gate passes 20 runs in a row, and its time is recorded before and
       after.
 - [x] The repo's own test-speed playbook, adapted from Story Studio's, with this
       project's numbers.
@@ -78,26 +78,32 @@ On `impl/spellbook-parallel-tests` (2026-10-24, Bun 1.4.0, 14-core Mac):
 
 Failures found in parallel, and what happened to each:
 
-| Test                                                             | Rate seen                   | Cause                                                                                                                  | Status                                              |
-| ---------------------------------------------------------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| setPromotion "the new folder is watched"                         | 2 / 50 under load           | read the surface's state before its frame (trace: id undefined in both)                                                | fixed; 0 / 150 under load                           |
-| relink.proposed "a link to a file is never offered a folder"     | 1 / 100 under load          | delete made inside the watch's arm window: lost, not late (trace: 15 s on)                                             | fixed; 0 / 200 under load                           |
-| server.test "an app that has an appState hook … once a frame"    | 1 in a soak; 0 / 300 reruns | a frame still in flight after a fixed 300 ms (7 calls, 6 frames)                                                       | fixed from the failing run's values; not reproduced |
-| images.paste "once per burst"                                    | 1 in a soak; 0 / 100 reruns | three serial uploads outgrew the 60 ms window (fact named only a.png)                                                  | fixed from the failing run's values; not reproduced |
-| editRelay "each frame carries the newest edit …"                 | 2 in 20 soak runs; 0 / 600  | a 5 s test timeout; which wait hung is not known                                                                       | open                                                |
-| profiles.integration "a profile file changed on disk pushes …"   | 1 in 20 soak runs           | a 5 s test timeout, not investigated                                                                                   | open                                                |
-| diskGuard "hard links: the session writer never writes into one" | 1 in 20 soak runs; 0 / 300  | `onDisk` (realpath) of the twin resolved outside the session folder; probably macOS answering a hard link's other name | open; a kit decision                                |
+| Test                                                             | Rate seen                        | Cause                                                                                        | Status                                                                                                               |
+| ---------------------------------------------------------------- | -------------------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| setPromotion "the new folder is watched"                         | 2 / 50 under load                | read the surface's state before its frame (trace: id undefined in both)                      | fixed; 0 / 150 under load                                                                                            |
+| relink.proposed "a link to a file is never offered a folder"     | 1 / 100 under load               | delete made inside the watch's arm window: lost, not late (trace: 15 s on)                   | fixed; 0 / 200 under load                                                                                            |
+| server.test "an app that has an appState hook … once a frame"    | 1 in a soak; 0 / 300 reruns      | a frame still in flight after a fixed 300 ms (7 calls, 6 frames)                             | fixed from the failing run's values; not reproduced                                                                  |
+| images.paste "once per burst"                                    | 1 in a soak; 0 / 100 reruns      | three serial uploads outgrew the 60 ms window (fact named only a.png)                        | fixed from the failing run's values; not reproduced                                                                  |
+| editRelay "each frame carries the newest edit …"                 | 2 in 20 soak runs; 0 / 600 alone | a 5 s test timeout; in 30 instrumented full runs no kit wait passed 1.5 s and none failed    | twoOnSolo now waits for each surface's own open frame (same shape as setPromotion); cause of the timeout unconfirmed |
+| profiles.integration "a profile file changed on disk pushes …"   | 1 in 20 soak runs                | a 5 s test timeout; did not recur in 30 instrumented runs                                    | open, unconfirmed; candidate: a profile write moments after `context.add` armed the watch                            |
+| diskGuard "hard links: the session writer never writes into one" | 1 in 20 soak runs; 0 / 300       | `onDisk` resolved the twin with realpath, which on macOS can answer a hard link's other name | fixed in the kit (`onDisk`: a file is its folder's realpath and its own name), pinned by a case-insensitivity cell   |
 
 `kit-links-check-watch-cells-timeout` and
 `scriptorium-suggestmeta-test-context-wait` did not fail in any parallel run
 (about 100 full runs), nor in 50 reruns each beside a looping suite.
 
-Not met: the gate has not passed 20 runs in a row. The soaks after the last
-fixes ran 18 of 20 green (`final20d`); the rest of the record is in the
-scratchpad logs named in the session report. The open rows above fail only
-inside a full parallel run and not alone under load, which points at something
-the full run adds (a worker's accumulated heap, or another file's leftovers in
-the same worker) rather than at each test; that is unconfirmed.
+Round 2 (2026-10-24): after the kit's `onDisk` fix and the editRelay wait, a
+fresh soak ran **20 of 20 green** (`r2soak`, 55 to 56 s a run, load average 10
+to 16, `fseventsd` 0 to 35% from other sessions). The full gate passed once
+unpiped after it.
+
+Worker count, measured with 10 full runs each: `--parallel=8` took 89 to 90 s,
+`--parallel=10` 68 to 69 s, both 20 of 20 green; the default 14 takes 55 to 56
+s, with about 6 failures in the 80 soak runs before round 2's fixes and none in
+the 20 after. Workers grow during a run (RSS sampled every 5 s: the largest
+reached 1.5 to 1.7 GB, others stay near 50 MB), which fits the
+worker-accumulation idea, but 20 green runs at fewer workers against a 1-in-13
+rate is not evidence enough to give up 13 to 35 s a run. The default stays.
 
 ## Port-back notes
 
@@ -106,7 +112,14 @@ the same worker) rather than at each test; that is unconfirmed.
   removal (the flag is read from `ps`, as Bun keeps it out of `process.argv`). A
   normal run is unchanged. Story Studio's preload, if it removes its folder the
   same way, has the same break.
-- `src/kit/workspace/setPromotion.server.test.ts`,
+- `src/kit/workspace/noHome.ts` (`onDisk`): a plain file (not a folder, not a
+  link) is resolved as its folder's place on disk joined with the name written,
+  at the top and for a file met on the walk; folders and links resolve as
+  before. A hard link has no one real path, and macOS's realpath can answer
+  either name. `notInSession`, `inOwnPlaces`, `holdsOwnPlaces` and `notASet`
+  read through it. One visible difference on a case-insensitive disk: a file
+  named in another case keeps the case written. Pinned in `diskGuard.test.ts`.
+- `src/kit/workspace/setPromotion.server.test.ts`, `editRelay.server.test.ts`,
   `relink.proposed.server.test.ts`, `server.test.ts` (appState hook cell) and
   `images.paste.test.ts`: test-only fixes, generic, each with its reason in a
   comment.
