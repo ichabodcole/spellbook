@@ -46,7 +46,7 @@ under `NODE_ENV=test`), and the wards, which scan the whole tree.
 
 ## Definition of done
 
-- [ ] Per-file timings measured, and the slowest files (the floor of a parallel
+- [x] Per-file timings measured, and the slowest files (the floor of a parallel
       run) split where that helps.
 - [ ] `bun test --parallel` with a checked-in timings file in the gate, and
       every test that failed only in parallel fixed at its cause (no longer
@@ -54,5 +54,59 @@ under `NODE_ENV=test`), and the wards, which scan the whole tree.
       suite.
 - [ ] The gate passes 20 runs in a row, and its time is recorded before and
       after.
-- [ ] The repo's own test-speed playbook, adapted from Story Studio's, with this
+- [x] The repo's own test-speed playbook, adapted from Story Studio's, with this
       project's numbers.
+
+## Done and verified
+
+On `impl/spellbook-parallel-tests` (2026-10-24, Bun 1.4.0, 14-core Mac):
+
+- `7e89dbbd` splits the two files that floored a parallel run: bounty's
+  `server.test.ts` (128 s alone) into `server.test.ts` plus five
+  `server.*.test.ts` siblings, and grapevine's `cli.test.ts` (62 s) into four,
+  each harness moved verbatim into `fixtures/`. Test and `expect()` counts match
+  (318 + 1 new, 152). The bounty P0e source scans now read every file of the
+  split suite, with a population pin.
+- `2412760d` puts `bun run test`
+  (`bun test --parallel --timings=test-timings.json`) in the gate, and so in CI,
+  with `test:timings` to rebuild the checked-in timings file from empty.
+- `4c31ddec`, `8e2cd6a6` and `fb2bc83b` fix the failures the soaks found (see
+  below), and make `--rerun-each` work under the scratch-home preload.
+- The test step went from about 624 s serially and 130 s in a first parallel
+  run, to 55 to 56 s (66 runs measured; up to 66 s when other suites loaded the
+  machine). The gate's build and check add about 10 s.
+
+Failures found in parallel, and what happened to each:
+
+| Test                                                             | Rate seen                   | Cause                                                                                                                  | Status                                              |
+| ---------------------------------------------------------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| setPromotion "the new folder is watched"                         | 2 / 50 under load           | read the surface's state before its frame (trace: id undefined in both)                                                | fixed; 0 / 150 under load                           |
+| relink.proposed "a link to a file is never offered a folder"     | 1 / 100 under load          | delete made inside the watch's arm window: lost, not late (trace: 15 s on)                                             | fixed; 0 / 200 under load                           |
+| server.test "an app that has an appState hook … once a frame"    | 1 in a soak; 0 / 300 reruns | a frame still in flight after a fixed 300 ms (7 calls, 6 frames)                                                       | fixed from the failing run's values; not reproduced |
+| images.paste "once per burst"                                    | 1 in a soak; 0 / 100 reruns | three serial uploads outgrew the 60 ms window (fact named only a.png)                                                  | fixed from the failing run's values; not reproduced |
+| editRelay "each frame carries the newest edit …"                 | 2 in 20 soak runs; 0 / 600  | a 5 s test timeout; which wait hung is not known                                                                       | open                                                |
+| profiles.integration "a profile file changed on disk pushes …"   | 1 in 20 soak runs           | a 5 s test timeout, not investigated                                                                                   | open                                                |
+| diskGuard "hard links: the session writer never writes into one" | 1 in 20 soak runs; 0 / 300  | `onDisk` (realpath) of the twin resolved outside the session folder; probably macOS answering a hard link's other name | open; a kit decision                                |
+
+`kit-links-check-watch-cells-timeout` and
+`scriptorium-suggestmeta-test-context-wait` did not fail in any parallel run
+(about 100 full runs), nor in 50 reruns each beside a looping suite.
+
+Not met: the gate has not passed 20 runs in a row. The soaks after the last
+fixes ran 18 of 20 green (`final20d`); the rest of the record is in the
+scratchpad logs named in the session report. The open rows above fail only
+inside a full parallel run and not alone under load, which points at something
+the full run adds (a worker's accumulated heap, or another file's leftovers in
+the same worker) rather than at each test; that is unconfirmed.
+
+## Port-back notes
+
+- `src/kit/lib/scratchHome.ts`: under `bun test --rerun-each` the preload's
+  afterAll fires after every rerun, so the folders are made again after each
+  removal (the flag is read from `ps`, as Bun keeps it out of `process.argv`). A
+  normal run is unchanged. Story Studio's preload, if it removes its folder the
+  same way, has the same break.
+- `src/kit/workspace/setPromotion.server.test.ts`,
+  `relink.proposed.server.test.ts`, `server.test.ts` (appState hook cell) and
+  `images.paste.test.ts`: test-only fixes, generic, each with its reason in a
+  comment.
