@@ -6,7 +6,7 @@ description:
   takes no lock, so two simultaneous open --restore calls both start and one
   daemon's writes are lost. Inherited from Story Studio 027d7a3.
 status: stable
-lifecycle: ready
+lifecycle: active
 id: 01a13c64-ca08-759c-8075-f36b83fd6430
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-14 }

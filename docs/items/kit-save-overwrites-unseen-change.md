@@ -7,7 +7,7 @@ description:
   or dropped by a saturated fseventsd) is overwritten silently, with no 'Changed
   on disk' banner.
 status: stable
-lifecycle: ready
+lifecycle: active
 id: 01a16b3f-7b43-75d4-a4b5-db63b7063d23
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-23 }

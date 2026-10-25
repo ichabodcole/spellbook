@@ -6,7 +6,7 @@ description:
   and its help line says it answers the note as a reply does; replies must sit
   beside the note, and an agent must not rewrite a human's text.
 status: stable
-lifecycle: ready
+lifecycle: active
 id: 01a17017-1a17-750a-95c5-bc307f6d078c
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-24 }
