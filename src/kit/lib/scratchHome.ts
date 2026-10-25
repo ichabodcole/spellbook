@@ -101,6 +101,7 @@ function underRerunEach(): boolean {
     const ps = Bun.spawnSync(["ps", "-o", "args=", "-p", String(process.pid)], {
       stdout: "pipe",
       stderr: "ignore",
+      timeout: 2000,
     });
     return /(^|\s)--rerun-each(=|\s)/.test(ps.stdout.toString());
   } catch {

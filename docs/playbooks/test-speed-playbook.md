@@ -24,8 +24,9 @@ Image Farm's), read with `git -C <story-studio> show` only. The steps keep its
 order, by payoff: parallelism first, then waits, then value cuts. The numbers
 and hazards are this project's. Here (October 2026, item
 [spellbook-parallel-tests](../items/spellbook-parallel-tests.md)) the test step
-went from about 624 s serial, and 130 s in a first parallel run, to about 56 s
-at 6,235 tests in 470 files, on a 14-core Mac.
+went from a 624 s serial gate (the polish cycle's last gate, 2026-10-23, build
+and check included), and 130 s in a first parallel run, to about 56 s at 6,235
+tests in 470 files, on a 14-core Mac.
 
 ## Steps
 

@@ -72,9 +72,10 @@ On `impl/spellbook-parallel-tests` (2026-10-24, Bun 1.4.0, 14-core Mac):
   with `test:timings` to rebuild the checked-in timings file from empty.
 - `4c31ddec`, `8e2cd6a6` and `fb2bc83b` fix the failures the soaks found (see
   below), and make `--rerun-each` work under the scratch-home preload.
-- The test step went from about 624 s serially and 130 s in a first parallel
-  run, to 55 to 56 s (66 runs measured; up to 66 s when other suites loaded the
-  machine). The gate's build and check add about 10 s.
+- The test step went from a 624 s serial gate (the polish cycle's last gate,
+  2026-10-23, build and check included) and 130 s in a first parallel run, to 55
+  to 56 s (66 runs measured; up to 66 s when other suites loaded the machine).
+  The gate's build and check add about 10 s.
 
 Failures found in parallel, and what happened to each:
 
@@ -98,12 +99,12 @@ to 16, `fseventsd` 0 to 35% from other sessions). The full gate passed once
 unpiped after it.
 
 Worker count, measured with 10 full runs each: `--parallel=8` took 89 to 90 s,
-`--parallel=10` 68 to 69 s, both 20 of 20 green; the default 14 takes 55 to 56
-s, with about 6 failures in the 80 soak runs before round 2's fixes and none in
-the 20 after. Workers grow during a run (RSS sampled every 5 s: the largest
-reached 1.5 to 1.7 GB, others stay near 50 MB), which fits the
-worker-accumulation idea, but 20 green runs at fewer workers against a 1-in-13
-rate is not evidence enough to give up 13 to 35 s a run. The default stays.
+`--parallel=10` 68 to 69 s, each 10 of 10 green; the default 14 takes 55 to 56
+s, with 7 failures in the 80 soak runs before round 2's fixes and none in the 20
+after. Workers grow during a run (RSS sampled every 5 s: the largest reached 1.5
+to 1.7 GB, others stay near 50 MB), which fits the worker-accumulation idea, but
+20 green runs at fewer workers against a 1-in-11 rate is not evidence enough to
+give up 13 to 35 s a run. The default stays.
 
 ## Port-back notes
 
