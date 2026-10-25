@@ -95,6 +95,16 @@ const realOr = (p: string): string => {
   }
 };
 
+/** Whether `p` names something there that is neither a folder nor a link. */
+const isPlainFile = (p: string): boolean => {
+  try {
+    const st = lstatSync(p);
+    return !st.isDirectory() && !st.isSymbolicLink();
+  } catch {
+    return false;
+  }
+};
+
 /**
  * Why a folder is no place to mirror whole as a set the human did not pick, or
  * null when it is one: the home folder or one above it, the top of the disk, a
@@ -148,6 +158,14 @@ const MAX_LINKS = 40;
  */
 export function onDisk(p: string): string {
   const raw = isAbsolute(p) ? p : `${process.cwd()}${sep}${p}`;
+  // ⛔ A FILE IS ITS FOLDER'S REALPATH JOINED WITH ITS OWN NAME, never the
+  // file's own realpath. A file with a second name (a hard link) has no one
+  // real path, and macOS's realpath can answer either name: a session's twin
+  // of a file outside was once resolved to the outside name, and refused as
+  // "not inside this session's folder" (a 1-in-20 gate flake, 2026-10-24).
+  // Only a folder or a link is resolved whole; a hard link's other names are
+  // the `inPlace` checks' concern (`disk.ts`).
+  if (isPlainFile(raw)) return join(onDisk(dirname(raw)), basename(raw));
   try {
     return realpathSync(raw);
   } catch {
@@ -172,7 +190,8 @@ export function onDisk(p: string): string {
       return join(next, ...todo);
     }
     if (!link) {
-      at = realOr(next);
+      // A file on the way is kept by its name, as above; a folder is resolved.
+      at = isPlainFile(next) ? next : realOr(next);
       continue;
     }
     if (++hops > MAX_LINKS) return join(next, ...todo);

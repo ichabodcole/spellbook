@@ -506,6 +506,29 @@ describe("planted links and twins", () => {
     expect(readFileSync(join(outside, "w.md"), "utf8")).toBe("world\n");
   });
 
+  test("a file's place on disk is its folder's realpath and its own name: a hard link resolves by the name written", () => {
+    const s = WorkspaceSession.create(sessions, testApp);
+    writeFileSync(join(outside, "w.md"), "world\n");
+    linkSync(join(outside, "w.md"), join(s.dir, "twin.md"));
+    expect(onDisk(join(s.dir, "twin.md"))).toBe(join(realpathSync(s.dir), "twin.md"));
+    expect(onDisk(join(outside, "w.md"))).toBe(join(realpathSync(outside), "w.md"));
+    expect(notInSession(join(s.dir, "twin.md"), { dir: s.dir, realDir: realpathSync(s.dir) })).toBe(
+      null,
+    );
+  });
+
+  test("a file's place never comes from the file's own realpath, which may answer another name", () => {
+    // Which name macOS's realpath answers for a hard link cannot be forced, so
+    // this pins the rule with the one other name realpath answers for certain:
+    // on a case-insensitive disk (macOS's default) it gives the file's stored
+    // case, not the case written. A file resolved by its own realpath comes
+    // back as `twin.md`; by its folder and its name, as `TWIN.md`. On a
+    // case-sensitive disk `TWIN.md` is not there, and both rules agree.
+    const s = WorkspaceSession.create(sessions, testApp);
+    writeFileSync(join(s.dir, "twin.md"), "mine\n");
+    expect(onDisk(join(s.dir, "TWIN.md"))).toBe(join(realpathSync(s.dir), "TWIN.md"));
+  });
+
   test("hard links: the world writer refuses one on the sessions' disk, and writes one on another", () => {
     const { v1 } = victim();
     const before = readFileSync(v1, "utf8");
