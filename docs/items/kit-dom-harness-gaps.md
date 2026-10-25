@@ -28,11 +28,16 @@ test, the preload removes a DOM that no file has claimed. The no-stake verifier
     loaded Base UI first (mind-mapper's `GraphCanvas.test.ts`) left it without a
     DOM for the rest of the process, and every later component test's popup
     failed. That was CI's red on Linux, where the filesystem order ran that file
-    first. The preload now registers the DOM while any `@base-ui/` module loads
-    and removes it before that file's next test
-    (`registerDom.loadOrder.test.ts`). The parallel gate runs each file
-    isolated, so there it only bites a serial `bun test`. Other libraries that
-    read the DOM once at load are not covered.
+    first. The preload now registers the DOM while Base UI's ES modules load,
+    and removes a DOM nobody claimed before and after each test. What a file
+    with no DOM still sees: from a top-level Base UI import, the DOM through the
+    rest of its module body, its `describe` bodies and its `beforeAll` hooks (a
+    preload's `beforeAll` runs once per run, not per file); from an import
+    inside a test, the DOM until that test ends. Its tests, its `afterAll` hooks
+    and the next file's load see none (`registerDom.loadOrder.test.ts` pins both
+    edges). The parallel gate runs each file isolated, so there it only bites a
+    serial `bun test`. Not covered: other libraries that read the DOM once at
+    load, and a `require` of Base UI's CommonJS build.
 - **A forgotten `removeDom`:** a file that calls `installDom` and never
   `removeDom` keeps its claim, so the guard leaves its DOM in place.
 - **Outside the root:** Bun reads `bunfig.toml` from the cwd only, so `bun test`

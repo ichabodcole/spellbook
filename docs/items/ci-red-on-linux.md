@@ -59,13 +59,16 @@ container, each reproduced and fixed (2026-10-25, `852e1d16`, `509ac1a0`,
   `@base-ui/react/context-menu`, then `movePlan.test.tsx` (5 pass, 6 fail);
   `react-dom` or `@xyflow/react` alone in its place stays green. The serial run
   of develop (`cef0343a`) in the container failed 177, every CI failure among
-  them. Fixed in the preload (`domGuard.ts`): any `@base-ui/` module loads with
-  a DOM registered, which the guard removes before that file's next test.
-  `registerDom.loadOrder.test.ts` runs a one-file fixture with and without the
-  preload; the control fails as CI did. Nothing changed between the green run
-  (10-12) and the red one but the DOM harness and the component tests arriving
-  (`82bdc971` on); happy-dom 20.14.5 and Bun 1.4.0 (`34cbb9a40`) are the same in
-  the lockfile, on CI and in the container.
+  them. Fixed in the preload (`domGuard.ts`): Base UI's ES modules load with a
+  DOM registered, which the guard removes before and after each test. A file
+  with no DOM still sees it from a top-level Base UI import until its first
+  test, and from an import inside a test until that test ends; nowhere else.
+  `registerDom.loadOrder.test.ts` runs one-file fixtures with and without the
+  preload (the control fails as CI did, loading only the context menu, as
+  GraphCanvas does) and pins both edges of that window. Nothing changed between
+  the green run (10-12) and the red one but the DOM harness and the component
+  tests arriving (`82bdc971` on); happy-dom 20.14.5 and Bun 1.4.0 (`34cbb9a40`)
+  are the same in the lockfile, on CI and in the container.
 - **Three right-click menu cells, on any non-Mac.** The test helper that strips
   a shortcut hint missed "Ctrl Shift K". They were in CI's red too, and were the
   only DOM failures left in the container's run of the cycle's parallel gate.
@@ -75,7 +78,20 @@ container, each reproduced and fixed (2026-10-25, `852e1d16`, `509ac1a0`,
   `stop --hold 3` found the dying daemon still answering instead of the hold,
   and 13 cells of `cli.daemon.test.ts` failed behind it. With the daemon's
   shutdown delayed to 400 ms the cell fails the same way on a Mac; `stop` now
-  waits for the daemon to go, as `restart` and `roll` already did.
+  waits for the daemon to go, as `restart` and `roll` already did. A daemon
+  still answering after 5 s is now a refusal from all three (`internal`, exit 1,
+  token `daemon_still_running`, its pid in the message, `doctor` as the hint),
+  where `stop` had printed `stopped: true` and `restart` and `roll` had reported
+  the old daemon as the new one. `cli.stop.test.ts` drives a stand-in daemon
+  served from the test process (the real one has no shutdown seam): it goes red
+  with the wait removed, and with the refusal removed.
+
+Round two (the no-stake verifier's findings, same day): the guard also removes
+its DOM after each test, so a Base UI import in a file's last test no longer
+reaches its `afterAll` or the next file's load; the load hook takes `.mjs` only,
+since a `require` of Base UI's CommonJS build came back as `{}` through it (a
+cell now requires it); and the fixture loads only the context menu, so a filter
+narrowed to the dialog entry goes red.
 
 The cycle's parallel gate runs each file in a fresh module registry
 (`--parallel=1` on the same pair is green), so the first cause cannot reach it;
@@ -102,7 +118,8 @@ in both red CI runs. Filed, not fixed here. Before the fixes, the cycle's
 parallel gate (`cdf8412e`) failed 10 in the container: the three menu cells,
 five for want of `lsof` and the same two. A serial `bun test` of `096c8116`,
 with `GraphCanvas.test.ts` again ahead of every component file, failed only
-those two, against 177 on develop.
+those two, against 177 on develop. After round two, on `2d1dbb23`: dist-check
+clean, 6,241 pass, the same 2 fail, 3 skipped.
 
 **For Cole (box 3):** on the next push of develop with this branch merged, the
 gate job should go green; the test step runs in parallel and takes a few minutes
@@ -110,15 +127,23 @@ on the runner's 4 cores (about 190 s in the 4-CPU container).
 
 ## Port-back notes
 
-- `src/kit/lib/domGuard.ts`: a load hook (`build.onLoad`, filtered to
-  `node_modules/@base-ui/**.{js,mjs}`) registers the DOM while Base UI loads,
-  requiring `registerDom.ts` if nothing has yet, and hands the file back as
-  read. Unclaimed, so the existing stale-DOM `beforeEach` removes it. A resolve
-  hook would not do: Bun 1.4.0 does not run a preload's resolve hook for a bare
-  package specifier. Story Studio's harness has the same exposure whenever a
-  no-DOM test imports a component module.
-- `src/kit/lib/registerDom.loadOrder.test.ts` and
-  `fixtures/domLoadOrder/baseUiFirst.tsx`: the regression, one file so the order
-  holds on every filesystem.
+- **Story Studio has no `domGuard.ts`.** Its kit has `registerDom.ts`, and its
+  only preload (`tests/preload.ts`) makes a temp folder. So the port-back is the
+  whole guard, not this change to it: the re-registration hook for later DOM
+  files, the stale-DOM removal around each test, and now the Base UI load hook,
+  with their tests (`domGuard.test.ts`, `registerDom.reregister.test.ts`,
+  `registerDom.order.test.ts`, `registerDom.loadOrder.test.ts` and their
+  fixtures). Its exposure is the same whenever a no-DOM test imports a component
+  module in a serial run.
+- `src/kit/lib/domGuard.ts`, this item's part: a load hook (`build.onLoad`,
+  filtered to `node_modules/@base-ui/**.mjs`) registers the DOM while Base UI
+  loads, requiring `registerDom.ts` if nothing has yet, and hands the file back
+  as read; the stale-DOM removal now runs after each test as well as before. A
+  resolve hook would not do: Bun 1.4.0 does not run a preload's resolve hook for
+  a bare package specifier. A `.js` filter breaks `require` of Base UI's
+  CommonJS build.
+- `src/kit/lib/registerDom.loadOrder.test.ts` and `fixtures/domLoadOrder/`
+  (`baseUiFirst.tsx`, `topLevel.ts`, `lazyLast.ts`): the regression and the
+  window it leaves, one file per process so the order holds on every filesystem.
 - `src/kit/document/DocumentPane.contextMenu.test.tsx`: `items()` strips a
   multi-word "Ctrl …" hint. Test-only.
