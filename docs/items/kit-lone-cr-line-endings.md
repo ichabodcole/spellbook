@@ -6,7 +6,7 @@ description:
   no Add note, and a selection stores a note over the whole body without
   warning, on base and fix alike.
 status: stable
-lifecycle: ready
+lifecycle: active
 id: 01a16682-ca6f-702a-abc7-6f9d9bcfb2a9
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-22 }
