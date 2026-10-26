@@ -6,7 +6,7 @@ description:
   SKILL.md) ships in the plugin today; Cole ruled it stays out of 6.0.0 while
   its app experience is unfinished, without losing the build for development.
 status: stable
-lifecycle: active
+lifecycle: done
 id: 01a17017-0787-7167-b9c2-28362c500eb8
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-24 }
