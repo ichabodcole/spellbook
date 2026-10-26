@@ -105,12 +105,13 @@ bugs, whose planned cycle was abandoned the same day.
 
 ## Decision log
 
-| #   | Date       | Decision                                                                                   | Options not taken                                    |
-| --- | ---------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
-| 1   | 2026-10-26 | Cole: tick-tock. This cycle is bugs only; features come next.                              | Mix the Scriptorium follow-ups in as a second track. |
-| 2   | 2026-10-26 | Cole: research the module split now, build it at the start of the next cycle.              | Refactor during this cycle; leave it.                |
-| 3   | 2026-10-26 | Cole: leave the three bounty data-safety bugs out.                                         | Include them.                                        |
-| 4   | 2026-10-26 | Cole: his triage approval reviews the ready items' definitions of done (`status: stable`). | Review each item when it starts.                     |
+| #   | Date       | Decision                                                                                                                                                           | Options not taken                                    |
+| --- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
+| 1   | 2026-10-26 | Cole: tick-tock. This cycle is bugs only; features come next.                                                                                                      | Mix the Scriptorium follow-ups in as a second track. |
+| 2   | 2026-10-26 | Cole: research the module split now, build it at the start of the next cycle.                                                                                      | Refactor during this cycle; leave it.                |
+| 3   | 2026-10-26 | Cole: leave the three bounty data-safety bugs out.                                                                                                                 | Include them.                                        |
+| 4   | 2026-10-26 | Cole: his triage approval reviews the ready items' definitions of done (`status: stable`).                                                                         | Review each item when it starts.                     |
+| 5   | 2026-10-26 | Cole: a file symlink leaving its set is treated like a folder link (a link row; no search, meta or graph through it; Save refused). Can loosen to read-only later. | Hide it; show it read-only.                          |
 
 ## Outcome
 

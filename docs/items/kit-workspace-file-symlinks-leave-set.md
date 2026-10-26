@@ -30,11 +30,27 @@ Smaller than the folder case, since it can't loop or list a tree, and someone
 made the link on purpose. But it is the same kind of leak, and Cole ruled on
 2026-10-25 that it gets its own item.
 
+## Policy
+
+Cole ruled on 2026-10-26: **a file link that leaves its set is treated like a
+folder link** (option B). It shows in the tree as a link row, not a document.
+Opening it offers to add the target as a set of its own. Search, meta and graph
+don't read through it, and Save refuses to write through it. A file link whose
+target is inside the same set is unaffected and stays an ordinary document. This
+matches the folder-link rule from
+[kit-workspace-symlinked-sets](./_archive/kit-workspace-symlinked-sets.md) and
+Story Studio's kit.
+
+Options not taken: hide the link (A), which also hides that it exists; and show
+it read-only (C), which reads outside the set without anyone choosing to. C may
+come later if Cole's own work turns out to rely on shared files linked into
+several projects.
+
 ## Definition of done
 
-- [ ] Decide the policy for file symlinks that leave the set (hide, show as a
+- [x] Decide the policy for file symlinks that leave the set (hide, show as a
       link the human can open as its own set, or allow read-only), and say it in
-      the item.
+      the item. _(Ruled 2026-10-26: see Policy.)_
 - [ ] Search, meta, graph and Save follow the policy; tested with an outward
       file link and an inward one.
 - [ ] Offered on kit-parity.
