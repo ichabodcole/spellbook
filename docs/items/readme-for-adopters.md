@@ -62,3 +62,11 @@ removing the root `DEV_KICKOFF.md` and `index.ts` waits for Cole's yes (nothing
 needs either file; the one live mention is `"module": "index.ts"` in
 `package.json`, which goes with it), and the fresh-reader test wants a reader
 with no repo context, which the implementer is not.
+
+A cold reader then read only the README, and a second commit answers what it
+tripped on. Repo jargon is gone from the adopter part, and the closing epigraph
+is cut. The README now says plainly that `/spellbook:<spell>` always casts a
+spell, names a first spell to try, and gives one Bun minimum: 1.3.14, which
+glamour's image code needs. A new paragraph says when each spell stops and where
+its state lives. Its figures come from the SKILLs and the servers' defaults
+(1800 s; bounty 7200 s; no idle close for grapevine or astrolabe by default).
