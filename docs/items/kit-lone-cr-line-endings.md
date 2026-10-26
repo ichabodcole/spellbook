@@ -15,6 +15,7 @@ parent: feature/workspace-kit-follow-ups
 from: cycle/2026-10-polish
 priority: high
 cycle: 2026-10-release-6
+released_in: 6.0.0
 ---
 
 # A file with lone CR line endings breaks the rendered view

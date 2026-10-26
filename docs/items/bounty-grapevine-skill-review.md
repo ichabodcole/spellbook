@@ -11,6 +11,7 @@ kind: task
 generated: { by: unknown, at: 2026-07-09 }
 priority: medium
 cycle: 2026-10-release-6
+released_in: 6.0.0
 ---
 
 # Review bounty + grapevine SKILL.md for accuracy and usefulness

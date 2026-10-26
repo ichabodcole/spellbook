@@ -15,6 +15,7 @@ parent: feature/workspace-kit-follow-ups
 from: items/kit-watch-tests-unproven-watch.md
 priority: urgent
 cycle: 2026-10-release-6
+released_in: 6.0.0
 ---
 
 # Save can overwrite an outside change the file watch never reported

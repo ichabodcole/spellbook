@@ -14,6 +14,7 @@ cycle: 2026-10-release-6
 parent: feature/workspace-kit-follow-ups
 priority: medium
 from: cycle/2026-10-release-6
+released_in: 6.0.0
 ---
 
 # An agent's reply to a note can't overwrite the human's note

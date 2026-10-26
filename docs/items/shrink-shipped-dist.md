@@ -14,6 +14,7 @@ tags: [build, dist]
 from: architecture/house-conformance-register.md
 priority: high
 cycle: 2026-10-release-6
+released_in: 6.0.0
 ---
 
 # Ship smaller bundles: no inline source maps, then minify

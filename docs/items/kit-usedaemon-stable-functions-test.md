@@ -14,6 +14,7 @@ parent: feature/workspace-kit-follow-ups
 from: items/scriptorium-frame-test-act-stall.md
 priority: medium
 cycle: 2026-10-release-6
+released_in: 6.0.0
 ---
 
 # Kit: a test that useDaemon's functions stay the same across snapshots

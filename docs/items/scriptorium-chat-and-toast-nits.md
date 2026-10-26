@@ -13,6 +13,7 @@ kind: bug
 generated: { by: claude-opus-5-5, at: 2026-09-28 }
 priority: medium
 cycle: 2026-10-release-6
+released_in: 6.0.0
 ---
 
 # Scriptorium: small chat and toast leftovers

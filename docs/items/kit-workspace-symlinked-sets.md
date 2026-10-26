@@ -14,6 +14,7 @@ tags: [kit, workspace]
 parent: feature/workspace-kit-follow-ups
 priority: medium
 cycle: 2026-10-release-6
+released_in: 6.0.0
 ---
 
 # Mirrored sets follow symlinks out of the workspace and through loops

@@ -13,6 +13,7 @@ generated: { by: claude-opus-5-5, at: 2026-10-24 }
 cycle: 2026-10-release-6
 priority: high
 from: cycle/2026-10-release-6
+released_in: 6.0.0
 ---
 
 # Mark 6.0.0 as a breaking release, with an upgrade note

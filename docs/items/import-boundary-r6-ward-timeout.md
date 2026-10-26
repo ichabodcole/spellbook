@@ -13,6 +13,7 @@ generated: { by: claude-opus-5-5, at: 2026-10-25 }
 from: cycles/2026-10-release-6.md
 cycle: 2026-10-release-6
 priority: high
+released_in: 6.0.0
 ---
 
 # import-boundary-wards' R6 1b tests time out under load

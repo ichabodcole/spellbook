@@ -14,6 +14,7 @@ generated: { by: claude-opus-5-5, at: 2026-10-23 }
 from: cycle/2026-10-polish
 priority: high
 cycle: 2026-10-release-6
+released_in: 6.0.0
 ---
 
 # Run the test suite in parallel, as Story Studio does
