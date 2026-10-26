@@ -51,9 +51,16 @@ differences from a shipped spell:
    `grimoire/import-boundary-wards.test.ts`, `DECLARED_EMITTED_ROOTS` and
    `PINNED_DYNAMIC_ESCAPES` (keep file order); in
    `grimoire/spawn-path-ward.test.ts`, the escape list.
-6. Re-record its golden:
+6. Remove its pin in `grimoire/flag-invariant.test.ts`
+   (`SPELLS_WITHOUT_SKILL_MD`) once its `SKILL.md` exists, and replace the
+   "unreleased" wording that names its address: the path comments in
+   `src/mind-mapper/backend/{cli,server,paths}.ts`, `AGENTS.md`,
+   `docs/PROJECT-SUMMARY.md`, `docs/architecture/spell-backend-architecture.md`,
+   `grimoire/trigger-registry.md`, `plugins/spellbook/skills/README.md` and
+   `docs/features/mind-mapper/casting-draft.md`.
+7. Re-record its golden:
    `GOLDEN_UPDATE=1 bun test grimoire/cli-golden.test.ts -t <spell>`. Its
    version goes from `unknown` back to `<VERSION>`.
-7. `bun run build`, `bun scripts/dist-check.ts`, then the gate.
-8. Delete this README's mention of the spell. If no spell is left here, the
+8. `bun run build`, `bun scripts/dist-check.ts`, then the gate.
+9. Delete this README's mention of the spell. If no spell is left here, the
    empty root is fine: every reader treats a missing folder as holding none.
