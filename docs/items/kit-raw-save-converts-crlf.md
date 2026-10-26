@@ -81,6 +81,11 @@ of these edges changes anything.
   - A file only gets here when a lone-CR break and an LF break meet: a line
     between them was emptied, or a break was typed at the start of the line
     after the `\r`.
+  - The rewritten CRLF is saved. In a small file mixing lone CR and LF, the next
+    load can count it toward a different default: `"a\rb\nc\rd"` with `b`
+    deleted saves `"a\r\n\nc\rd"`, whose default is then CRLF, so Enter writes
+    CRLF after a reopen. Undo in the same session restores the bytes. The rest
+    is left to `kit-lone-cr-line-endings`.
 - **The dominant ending counts the whole file, frontmatter included.** If a
   file's frontmatter has more CRLF breaks than its body has LF breaks, CRLF
   becomes the default. Enter in the LF body then writes CRLF.

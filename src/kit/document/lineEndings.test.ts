@@ -23,7 +23,18 @@ const endOf = (s: EditorState, n: number) => s.doc.line(n).to;
 const hex = (t: string) => Buffer.from(t).toString("hex");
 
 test("each file reads back byte-exact before any edit", () => {
-  for (const text of [CRLF, LF, MIXED, "", "no break", "\r\n", "a\r", "﻿bom\r\nline"])
+  for (const text of [
+    CRLF,
+    LF,
+    MIXED,
+    "",
+    "no break",
+    "\r\n",
+    "a\r",
+    "\r\r",
+    "a\rb\rc\r",
+    "﻿bom\r\nline",
+  ])
     expect(hex(textWithEndings(open(text)))).toBe(hex(text));
 });
 
@@ -156,6 +167,10 @@ test("a slice is quoted with the file's endings", () => {
   const to = s.doc.line(4).to;
   expect(textWithEndings(s, from, to)).toBe("two\nthree\r\nfour");
   expect(textWithEndings(s, s.doc.line(5).from, s.doc.line(6).from)).toBe("five\r");
+  // Only a CR before an LF is written as CRLF: a slice ending on a CR that
+  // another CR follows keeps it as it is.
+  const cr = open("a\r\rb");
+  expect(textWithEndings(cr, 0, cr.doc.line(2).from)).toBe("a\r");
 });
 
 test("new text from the daemon brings its own endings", () => {
