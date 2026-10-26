@@ -564,8 +564,12 @@ export type WorkspaceContext = {
   emit(type: string, fields?: Record<string, unknown>, opts?: EmitOptions): void;
   /** A line in the chat (from `system`, type `info`, unless told otherwise). */
   line(text: string, about?: MessageAbout): Message;
-  /** A line in the chat and a `system` event, for a fact the agent must know. */
-  announce(text: string, fact?: Record<string, unknown>): void;
+  /**
+   * A line in the chat and a `system` event, for a fact the agent must know.
+   * `agentText` is the event's sentence when it must differ from the chat's: a
+   * document named by its absolute path or slug, not as the sidebar shows it.
+   */
+  announce(text: string, fact?: Record<string, unknown>, agentText?: string): void;
   /** Send a frame to every connected surface (an app's own frames are `<app>.<name>`). */
   send(frame: { op: string; [key: string]: unknown }): void;
   /** The state changed: push a new snapshot to every surface. */
@@ -1371,9 +1375,14 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       if (r) throw new SessionError(r.message, 400, undefined, r.hint);
     };
 
-    const announce = (text: string, fact: Record<string, unknown> = {}) => {
+    /**
+     * `agentText`, when given, is the event's sentence, where the chat line's
+     * names a document as the human sees it (`docName`): the agent's sentence
+     * keeps the absolute path or the slug, the names it can pass back to `--doc`.
+     */
+    const announce = (text: string, fact: Record<string, unknown> = {}, agentText = text) => {
       const m = session.addMessage({ from: "system", type: "info", text });
-      emit("system", { text, ts: m.ts, ...fact });
+      emit("system", { text: agentText, ts: m.ts, ...fact });
       broadcastState();
     };
 
@@ -1603,6 +1612,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       announce(
         `v${version} of ${docName(doc)} is the active version and was written from outside the editor. That text is kept as v${preservedAs}; the active version keeps your text. Agent edits belong in a new version (version-new).`,
         { fact: "active.outside", doc, version, path, preservedAs, preservedPath },
+        `v${version} of ${doc} is the active version and was written from outside the editor. That text is kept as v${preservedAs}; the active version keeps your text. Agent edits belong in a new version (version-new).`,
       );
     };
 
@@ -1687,12 +1697,14 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
               fact: "original.reloaded",
               doc: ev.doc,
             },
+            `${ev.original} changed on disk: reloaded (you had no unsaved edits).`,
           );
           return;
         case "original.conflict":
           announce(
             `${session.display(ev.original)} changed on disk while you have unsaved edits. Save overwrites it with yours; Revert takes the file's version.`,
             { fact: "original.conflict", doc: ev.doc },
+            `${ev.original} changed on disk while you have unsaved edits. Save overwrites it with yours; Revert takes the file's version.`,
           );
           return;
         case "original.missing":
@@ -3254,6 +3266,8 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       } catch (e) {
         announce(
           `Deleted v${version} of ${docName(slug)}, but tidying up after it failed: ${messageOf(e)}`,
+          {},
+          `Deleted v${version} of ${slug}, but tidying up after it failed: ${messageOf(e)}`,
         );
       }
     };

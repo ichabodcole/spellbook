@@ -21,7 +21,12 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
-import { FakeSurface, pointerPid, waitForExit } from "../../../kit/workspace/fixtures/harness";
+import {
+  collectEvents,
+  FakeSurface,
+  pointerPid,
+  waitForExit,
+} from "../../../kit/workspace/fixtures/harness";
 import type { PublicState } from "../../../kit/workspace/protocol";
 import type { DocSummary } from "./frontmatter";
 
@@ -557,12 +562,18 @@ describe("the remove verbs, and info", () => {
   test("note-remove deletes a note and says so in the shipped words; a second is not found", async () => {
     const c = join(set, "part", "c.md");
     const n = json<{ note: string }>(await run("note", "--doc", c, "--quote", "Back", "a", "note"));
+    const { port } = JSON.parse(readFileSync(pointer(sessionId), "utf8")) as { port: number };
+    const t = collectEvents(`http://127.0.0.1:${port}`);
     const r = await run("note-remove", n.note, "--doc", c);
     expect(json(r)).toMatchObject({ ok: true, doc: "c", note: n.note });
     // Named as the sidebar shows it (the set, then the path), not by its slug.
     expect((await state()).chat.at(-1)?.text).toBe(
       "Agent removed a note on set/part/c.md: “Back”.",
     );
+    // The agent's event keeps the slug, a name it can pass back to --doc.
+    const ev = await t.waitFor((e) => e.type === "system" && e.fact === "note.removed");
+    expect(ev.text).toBe("Agent removed a note on c: “Back”.");
+    await t.stop();
     const again = await run("note-remove", n.note, "--doc", c);
     expect(again.code).toBe(5);
   });

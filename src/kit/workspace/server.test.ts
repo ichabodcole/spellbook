@@ -388,15 +388,26 @@ describe("documents: open, edit, version, save", () => {
     s.send({ op: "open", path: inSet("a.md") });
     await s.waitFor((m) => m.op === "version.text");
     // The set's watch was armed a moment ago, by context.add.
-    await writeUntilSeen(
+    const reloaded = await writeUntilSeen(
       "original.reloaded",
       () => writeFileSync(inSet("a.md"), "# A changed elsewhere\n"),
       () => t.events.find((e) => e.type === "system" && e.fact === "original.reloaded"),
     );
+    // The agent's sentence names the file by its absolute path, a name it can
+    // pass back to --doc; the human's chat line names it as the sidebar does.
+    expect(reloaded.text).toBe(
+      `${inSet("a.md")} changed on disk: reloaded (you had no unsaved edits).`,
+    );
+    await waitUntil("the chat line", () =>
+      s.state.chat.some(
+        (m) => m.text === "docs/set/a.md changed on disk: reloaded (you had no unsaved edits).",
+      ),
+    );
     s.send({ op: "edit", doc: "a", version: 1, text: "my unsaved edit\n" });
     await waitUntil("dirty", () => s.state.docs[0]?.dirty);
     writeFileSync(inSet("a.md"), "# changed again\n");
-    await t.waitFor((e) => e.type === "system" && e.fact === "original.conflict");
+    const conflict = await t.waitFor((e) => e.type === "system" && e.fact === "original.conflict");
+    expect(String(conflict.text).startsWith(`${inSet("a.md")} changed on disk while`)).toBe(true);
     await waitUntil("outsideChanged", () => s.state.docs[0]?.outsideChanged);
   });
 

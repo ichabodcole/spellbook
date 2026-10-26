@@ -7,7 +7,7 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fixtureDaemon } from "./fixtures/app";
-import { cmd, FakeSurface, waitUntil } from "./fixtures/harness";
+import { cmd, collectEvents, FakeSurface, waitUntil, writeUntilSeen } from "./fixtures/harness";
 import type { WorkspaceDaemon } from "./server";
 import { tempRoot } from "./testing";
 
@@ -62,4 +62,22 @@ test("two documents with one file name: the chat names each by its set and path,
   );
   // No human line names a document by the agent's slug.
   expect(chat(s).some((t) => t.includes("beta-2"))).toBe(false);
+
+  // An outside write to the active version: the human reads the sidebar's
+  // name, the agent's event keeps the slug it can pass back to --doc.
+  const t = collectEvents(daemon.url);
+  try {
+    const active = s.state.docs.find((d) => d.slug === "beta-2")?.versions[1]?.path ?? "";
+    const ev = await writeUntilSeen(
+      "active.outside",
+      () => writeFileSync(active, "# Written from outside\n"),
+      () => t.events.find((e) => e.type === "system" && e.fact === "active.outside"),
+    );
+    expect(String(ev.text).startsWith("v2 of beta-2 is the active version")).toBe(true);
+    await waitUntil("the chat line", () =>
+      chat(s).some((x) => x.startsWith("v2 of other/beta.md is the active version")),
+    );
+  } finally {
+    await t.stop();
+  }
 });
