@@ -208,6 +208,11 @@ describe("two sides that are the same", () => {
     expect(body()).not.toContain("These two versions are identical");
   });
 
+  test("picked, and nothing differs: one line says every version matches", async () => {
+    await mount(<View p={{ ...same("original"), picked: true, everyMatches: true }} />);
+    expect(body()).toContain("v1 matches the file on disk, and so does every other version.");
+  });
+
   test("against another version: the two versions are identical", async () => {
     await mount(<View p={same(2)} />);
     expect(body()).toContain("These two versions are identical.");

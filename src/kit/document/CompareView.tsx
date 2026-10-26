@@ -68,23 +68,15 @@ export function nothingToCompare(doc: Pick<DocView, "versions" | "dirty" | "outs
   return doc.versions.length < 2 && !doc.dirty && !doc.outsideChanged;
 }
 
-/**
- * The side a comparison opens against. The file on disk, unless the active
- * version IS the file (no unsaved edits, the file there): compared with it,
- * the view could only say they match, so it opens against the newest other
- * version instead. With no other version it stays the file, and the view says
- * the version matches it.
- */
-export function defaultSide(
-  doc: Pick<DocView, "versions" | "active" | "dirty" | "missing">,
-): DiffSide {
-  if (doc.dirty || doc.missing) return "original";
-  const others = doc.versions.map((v) => v.n).filter((n) => n !== doc.active);
-  return others.length > 0 ? Math.max(...others) : "original";
-}
-
 /** What the compare view says when the active version and the file on disk are the same. */
 export const matchesFile = (active: number) => `v${active} matches the file on disk.`;
+
+/**
+ * What it says when the daemon looked for a side that differs and found none
+ * (`everyMatches`): the file and every other version are the active one's text.
+ */
+export const everyVersionMatches = (active: number) =>
+  `v${active} matches the file on disk, and so does every other version.`;
 
 /** Where the compare view would be, when there is nothing to put in it. */
 export function NothingToCompare({ active }: { active?: number }) {
@@ -573,7 +565,11 @@ export function CompareView({
         <div className="flex flex-1 items-center justify-center gap-2 text-sm text-ink-faint">
           <CheckIcon aria-hidden className="size-4" />
           {/* The file is not a version: said as itself. */}
-          {against === "original" ? matchesFile(active) : "These two versions are identical."}
+          {payload.everyMatches
+            ? everyVersionMatches(active)
+            : against === "original"
+              ? matchesFile(active)
+              : "These two versions are identical."}
         </div>
       ) : (
         <div className="flex min-h-0 flex-1">

@@ -178,6 +178,10 @@ export type DiffPayload = {
   active: number;
   against: DiffSide;
   diff: Diff;
+  /** The daemon chose `against` (the request asked it to `pick`). */
+  picked?: true;
+  /** Picked, and no side differs: the file and every other version match the active one. */
+  everyMatches?: true;
 };
 
 /**
@@ -1940,7 +1944,12 @@ export type ClientOp =
   | { op: "fs.same"; dir: string; name: string; size: number; sha256: string }
   /** Load a version's text into the surface (answered with `version.text`, origin "load"). */
   | { op: "read"; doc: string; version: number }
-  | { op: "diff"; doc?: string; against: DiffSide }
+  /**
+   * `pick`: the daemon chooses the side, one whose text differs from the
+   * active version's (`WorkspaceSession.compare`), and says so (`picked`).
+   * `against` is then the side to use if none differs.
+   */
+  | { op: "diff"; doc?: string; against: DiffSide; pick?: boolean }
   | { op: "merge"; doc?: string; against: DiffSide; hunks: number[] }
   | { op: "prefs.set"; key: string; value: string }
   /** Show a path in the file manager. Only paths the session knows are accepted. */

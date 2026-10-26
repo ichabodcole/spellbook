@@ -2476,20 +2476,54 @@ export class WorkspaceSession {
     return readFileSync(this.versionPath(d, side), "utf8");
   }
 
-  /** Compare the active version (left) against another side (right). */
-  compare(opts: { doc?: string; against: DiffSide }): DiffPayload {
+  /**
+   * Compare the active version (left) against another side (right).
+   *
+   * With `pick`, the side is the first whose text differs from the active
+   * version's: the file on disk, then the other versions, newest first. A
+   * comparison opened on a side that matches could only say "identical" (the
+   * agent's `version-new` without a body is an untouched copy). When none
+   * differs it is `against`, and the payload says `everyMatches`.
+   */
+  compare(opts: { doc?: string; against: DiffSide; pick?: boolean }): DiffPayload {
     const d = this.docOrDie(opts.doc);
+    const left = readFileSync(this.versionPath(d, d.active), "utf8");
+    if (opts.pick) {
+      const sides: DiffSide[] = [
+        "original",
+        ...d.versions
+          .map((v) => v.n)
+          .filter((n) => n !== d.active)
+          .sort((a, b) => b - a),
+      ];
+      for (const side of sides) {
+        let right: string;
+        try {
+          right = this.sideText(d, side);
+        } catch {
+          continue; // a file gone from disk is no side to open on
+        }
+        if (right !== left)
+          return {
+            doc: d.slug,
+            active: d.active,
+            against: side,
+            diff: diffText(left, right),
+            picked: true,
+          };
+      }
+    }
     if (opts.against === d.active)
       throw new SessionError(
         `v${d.active} is the active version of ${d.slug}: comparing it with itself says nothing`,
         400,
       );
-    const left = readFileSync(this.versionPath(d, d.active), "utf8");
     return {
       doc: d.slug,
       active: d.active,
       against: opts.against,
       diff: diffText(left, this.sideText(d, opts.against)),
+      ...(opts.pick ? { picked: true as const, everyMatches: true as const } : {}),
     };
   }
 

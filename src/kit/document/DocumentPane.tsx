@@ -101,7 +101,6 @@ import { Backlinks, type LinkedFromAction } from "./Backlinks.tsx";
 import {
   type CompareFocus,
   CompareView,
-  defaultSide,
   FLASH_MS,
   NOTHING_TO_COMPARE,
   NothingToCompare,
@@ -572,6 +571,12 @@ export function DocumentPane({
   const fade = reader ? QUIET_FADE : undefined;
 
   const [against, setAgainst] = useState<DiffSide>("original");
+  /**
+   * The daemon is to choose the side: one whose text differs from the active
+   * version's (the diff op's `pick`). Set when a comparison opens with no side
+   * asked for; spent when the picked answer arrives, or when a side is chosen.
+   */
+  const [pick, setPick] = useState(true);
   /** What the comparison is asked to bring into view (the agent's `show`). */
   const [compareFocus, setCompareFocus] = useState<CompareFocus | null>(null);
   /**
@@ -580,6 +585,7 @@ export function DocumentPane({
    */
   const chooseSide = (side: DiffSide) => {
     setCompareFocus(null);
+    setPick(false);
     setAgainst(side);
   };
   const [naming, setNaming] = useState<VersionIntent | null>(null);
@@ -673,11 +679,30 @@ export function DocumentPane({
    * the diff named the new document with the old side ("beta has no v3").
    */
   const compareSlug = useRef(slug);
+  /**
+   * Set when the daemon's picked answer is taken: that answer already IS the
+   * comparison of the side it names, so it is not asked for again (asked, the
+   * plain answer would drop what the picked one said, `everyMatches`).
+   */
+  const pickTaken = useRef(false);
   // biome-ignore lint/correctness/useExhaustiveDependencies: the active version and the text hash are triggers, not inputs.
   useEffect(() => {
     if (compareSlug.current !== slug) return;
-    if (mode === "compare" && slug !== undefined) send({ op: "diff", doc: slug, against });
-  }, [mode, slug, active, hash, against, send]);
+    if (pickTaken.current) {
+      pickTaken.current = false;
+      return;
+    }
+    if (mode === "compare" && slug !== undefined)
+      send({ op: "diff", doc: slug, against, ...(pick ? { pick: true } : {}) });
+  }, [mode, slug, active, hash, against, pick, send]);
+  // The daemon's pick, once it answers: from then on that side is asked for.
+  const picked = daemon.diff?.picked === true && daemon.diff.doc === slug ? daemon.diff : null;
+  useEffect(() => {
+    if (!pick || !picked) return;
+    pickTaken.current = true;
+    setPick(false);
+    setAgainst(picked.against);
+  }, [pick, picked]);
   // Leaving the document leaves the comparison.
   // biome-ignore lint/correctness/useExhaustiveDependencies: a different document is the trigger.
   useEffect(() => {
@@ -687,7 +712,8 @@ export function DocumentPane({
       setOwnMode(m);
       onMode?.(m);
     }
-    setAgainst(doc ? defaultSide(doc) : "original");
+    setAgainst("original");
+    setPick(true);
     setNoteAt(null);
     setLinking(null);
     setCompareFocus(null);
@@ -698,6 +724,7 @@ export function DocumentPane({
     if (!showDiff || showDiff.seq === lastShowDiff.current) return;
     lastShowDiff.current = showDiff.seq;
     if (showDiff.doc !== slug) return;
+    setPick(false);
     setAgainst(showDiff.version);
     setOwnMode("compare");
     onMode?.("compare");
@@ -1639,6 +1666,7 @@ export function DocumentPane({
     if (!pointed || slug !== pointed.doc) return;
     if ("hunk" in pointed) {
       setPointed(null);
+      setPick(false);
       setAgainst(pointed.against);
       setOwnMode("compare");
       onMode?.("compare");
@@ -1889,10 +1917,12 @@ export function DocumentPane({
                         onClick={() => {
                           if (why) return;
                           if (appActive) appView?.onActive(false);
-                          // Opened by the human, a comparison starts on the side
-                          // with something to show (`defaultSide`).
-                          if (m === "compare" && showing !== "compare")
-                            chooseSide(defaultSide(doc));
+                          // Opened by the human, a comparison starts on a side
+                          // with something to show: the daemon picks it.
+                          if (m === "compare" && showing !== "compare") {
+                            setCompareFocus(null);
+                            setPick(true);
+                          }
                           setMode(m);
                         }}
                         {...disabledReasonProps(why, whyId)}

@@ -37,7 +37,7 @@ import { fixtureDaemon } from "../workspace/fixtures/app";
 import { testWorkspace, writeUntilSeen } from "../workspace/fixtures/harness";
 import type { WorkspaceDaemon } from "../workspace/server";
 import { tempRoot } from "../workspace/testing";
-import { NOTHING_TO_COMPARE, nothingButTheFile } from "./CompareView.tsx";
+import { everyVersionMatches, NOTHING_TO_COMPARE, nothingButTheFile } from "./CompareView.tsx";
 import { DocumentPane, type DocumentPaneSlots } from "./DocumentPane.tsx";
 import type { EditorHandle } from "./DocumentView.tsx";
 import type { ViewMode } from "./pane.ts";
@@ -1142,19 +1142,34 @@ describe("reader mode, rendered with both columns out of the way", () => {
       expect(off(compareButton())).toBe(false);
     });
 
-    test("the active version is the file: Compare opens against the newest other version", async () => {
+    const pressed = () =>
+      [...document.querySelectorAll('[aria-label="Compare against"] button')].find(
+        (b) => b.getAttribute("aria-pressed") === "true",
+      )?.textContent;
+
+    test("the active version is the file: Compare opens on the newest side that differs, not an untouched copy", async () => {
       await openStory();
-      await cmd({ op: "version.new", doc: "story", label: "other" });
-      await cmd({ op: "version.new", doc: "story", label: "third", body: "Third.\n" });
+      await cmd({ op: "version.new", doc: "story", label: "second", body: "Second.\n" });
+      // The agent's usual first step: a copy, not yet written.
+      await cmd({ op: "version.new", doc: "story", label: "copy" });
       await waitFor(() => doc()?.versions.length === 3, "v2 and v3 made");
       expect(doc()?.dirty).toBe(false);
       await click(compareButton());
-      const pressed = () =>
-        [...document.querySelectorAll('[aria-label="Compare against"] button')].find(
-          (b) => b.getAttribute("aria-pressed") === "true",
-        )?.textContent;
-      await waitFor(() => pressed() === "v3", "the comparison against v3");
+      await waitFor(() => pressed() === "v2", "the comparison against v2");
       expect(document.body.textContent).not.toContain("identical");
+    });
+
+    test("no side differs: it opens on the file and says every version matches", async () => {
+      await openStory();
+      await cmd({ op: "version.new", doc: "story", label: "copy" });
+      await waitFor(() => doc()?.versions.length === 2, "v2 made");
+      await click(compareButton());
+      await waitFor(
+        () => document.body.textContent?.includes(everyVersionMatches(1)) === true,
+        "the message",
+      );
+      expect(pressed()).toBe("story.md");
+      expect(document.body.textContent).not.toContain("These two versions are identical");
     });
 
     test("a saved compare mode shows the message, not an empty comparison", async () => {

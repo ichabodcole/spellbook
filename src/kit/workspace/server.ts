@@ -3992,7 +3992,14 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           });
           return;
         case "diff":
-          reply(ws, { op: "diff", ...session.compare({ doc: msg.doc, against: msg.against }) });
+          reply(ws, {
+            op: "diff",
+            ...session.compare({
+              doc: msg.doc,
+              against: msg.against,
+              ...(msg.pick ? { pick: true } : {}),
+            }),
+          });
           return;
         case "merge": {
           const r = session.merge({ doc: msg.doc, against: msg.against, hunks: msg.hunks });

@@ -192,6 +192,35 @@ describe("documents and versions", () => {
     expect(noVersion.choices).toEqual(["v1"]);
   });
 
+  test("compare with pick: the first side that differs, the file, then the newest other version", () => {
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    // v2 differs, v3 is an untouched copy of v1: v1 is the file.
+    const v2 = s.newVersion({ doc: slug, by: "agent", body: "# Solo, changed\n" });
+    s.newVersion({ doc: slug, from: 1, by: "agent" });
+    const p = s.compare({ doc: slug, against: "original", pick: true });
+    expect([p.against, p.picked, p.everyMatches]).toEqual([v2.version.n, true, undefined]);
+    expect(p.diff.same).toBe(false);
+    // The active version differing from the file: the file comes first.
+    s.edit(slug, 1, "# Solo, edited\n");
+    expect(s.compare({ doc: slug, against: "original", pick: true }).against).toBe("original");
+    // Without pick, the side asked for, whatever it holds.
+    expect(s.compare({ doc: slug, against: 3 }).against).toBe(3);
+  });
+
+  test("compare with pick, nothing differing: the side asked for, and everyMatches", () => {
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    s.newVersion({ doc: slug, by: "agent" });
+    const p = s.compare({ doc: slug, against: "original", pick: true });
+    expect([p.against, p.picked, p.everyMatches, p.diff.same]).toEqual([
+      "original",
+      true,
+      true,
+      true,
+    ]);
+  });
+
   test("a filename naming a context document that is not open: the hint names its path; a verb that takes a path offers it", () => {
     const s = inContext();
     const { slug } = s.openPath(join(docs, "solo.md"));
