@@ -1340,6 +1340,18 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       for (const ws of sockets) sendState(ws, state, view, frames);
     };
 
+    /**
+     * A document as a chat line names it for the human: where the sidebar
+     * shows it (`set/rel`, `session.display`), never the agent's slug. Two
+     * documents with one file name (`docs/beta.md`, `other/beta.md`) are told
+     * apart this way; the slug (`beta-2`) is the agent's handle, kept for the
+     * event's own fields.
+     */
+    const docName = (slug: string): string => {
+      const d = session.findDoc(slug);
+      return d ? session.display(d.original) : slug;
+    };
+
     /** A line in the chat. */
     const line = (text: string, about?: MessageAbout): Message => {
       const m = session.addMessage({
@@ -1589,7 +1601,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         preserved: true,
       });
       announce(
-        `v${version} of ${doc} is the active version and was written from outside the editor. That text is kept as v${preservedAs}; the active version keeps your text. Agent edits belong in a new version (version-new).`,
+        `v${version} of ${docName(doc)} is the active version and was written from outside the editor. That text is kept as v${preservedAs}; the active version keeps your text. Agent edits belong in a new version (version-new).`,
         { fact: "active.outside", doc, version, path, preservedAs, preservedPath },
       );
     };
@@ -1648,8 +1660,8 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           });
           line(
             ev.renamedFrom !== undefined
-              ? `A file written directly as v${ev.renamedFrom} of ${ev.doc} reused a number that was already taken, so it is kept as v${ev.version} (${ev.path}).`
-              : `v${ev.version} of ${ev.doc} appeared (written directly to ${ev.path})`,
+              ? `A file written directly as v${ev.renamedFrom} of ${docName(ev.doc)} reused a number that was already taken, so it is kept as v${ev.version} (${ev.path}).`
+              : `v${ev.version} of ${docName(ev.doc)} appeared (written directly to ${ev.path})`,
           );
           tellInvalidJson(ev.doc, ev.version);
           return;
@@ -1669,14 +1681,17 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
             text: ev.text,
             origin: "remote",
           });
-          announce(`${ev.original} changed on disk: reloaded (you had no unsaved edits).`, {
-            fact: "original.reloaded",
-            doc: ev.doc,
-          });
+          announce(
+            `${session.display(ev.original)} changed on disk: reloaded (you had no unsaved edits).`,
+            {
+              fact: "original.reloaded",
+              doc: ev.doc,
+            },
+          );
           return;
         case "original.conflict":
           announce(
-            `${ev.original} changed on disk while you have unsaved edits. Save overwrites it with yours; Revert takes the file's version.`,
+            `${session.display(ev.original)} changed on disk while you have unsaved edits. Save overwrites it with yours; Revert takes the file's version.`,
             { fact: "original.conflict", doc: ev.doc },
           );
           return;
@@ -2136,7 +2151,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       const m = session.addMessage({
         from: "system",
         type: "info",
-        text: `${by === "agent" ? "Agent" : "You"} made v${version} of ${r.slug} active (was v${r.previous}).`,
+        text: `${by === "agent" ? "Agent" : "You"} made v${version} of ${docName(r.slug)} active (was v${r.previous}).`,
       });
       emit("activated", { by, doc: r.slug, version, previous: r.previous, path, ts: m.ts });
       broadcastState();
@@ -3237,7 +3252,9 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       try {
         await opts.hooks?.afterVersionDelete?.(slug, version, ctx, { by });
       } catch (e) {
-        announce(`Deleted v${version} of ${slug}, but tidying up after it failed: ${messageOf(e)}`);
+        announce(
+          `Deleted v${version} of ${docName(slug)}, but tidying up after it failed: ${messageOf(e)}`,
+        );
       }
     };
 
@@ -3382,7 +3399,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       const r = session.editLeft(doc, version, text);
       const d = session.findDoc(doc);
       if (!d) return;
-      const name = `v${version} of ${d.slug}`;
+      const name = `v${version} of ${session.display(d.original)}`;
       const why = r.kept === "changed" ? "changed" : "was deleted";
       // The human's own switch (a key typed after the click, before the switch
       // was seen) is said as theirs; the agent's names the agent.
@@ -3792,7 +3809,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           const m = session.addMessage({
             from: "system",
             type: "info",
-            text: `Deleted v${r.version} of ${r.slug}${r.label ? `: ${r.label}` : ""}.`,
+            text: `Deleted v${r.version} of ${docName(r.slug)}${r.label ? `: ${r.label}` : ""}.`,
           });
           emit("version.deleted", { doc: r.slug, version: r.version, by: "human", ts: m.ts });
           broadcastState();
@@ -3816,7 +3833,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
             from: "system",
             type: "info",
             text:
-              `Made v${r.version.n} of ${r.slug} from v${r.version.fromVersion}${msg.label ? `: ${msg.label}` : ""}. ` +
+              `Made v${r.version.n} of ${docName(r.slug)} from v${r.version.fromVersion}${msg.label ? `: ${msg.label}` : ""}. ` +
               (msg.activate
                 ? `You are now editing v${r.version.n}.`
                 : `You are still editing v${r.version.fromVersion}.`),
@@ -3919,7 +3936,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           const m = session.addMessage({
             from: "system",
             type: "info",
-            text: `Reverted v${r.version} of ${msg.doc} to the saved file.`,
+            text: `Reverted v${r.version} of ${docName(msg.doc)} to the saved file.`,
           });
           emit("reverted", { doc: msg.doc, version: r.version, by: "human", ts: m.ts });
           broadcastState();
@@ -3991,7 +4008,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           const m = session.addMessage({
             from: "system",
             type: "info",
-            text: `Took ${r.applied} change${r.applied === 1 ? "" : "s"} from ${sideName(msg.against, session.doc(r.slug).name)} into v${r.version} of ${r.slug}.`,
+            text: `Took ${r.applied} change${r.applied === 1 ? "" : "s"} from ${sideName(msg.against, session.doc(r.slug).name)} into v${r.version} of ${docName(r.slug)}.`,
           });
           emit("merged", {
             doc: r.slug,
@@ -4179,7 +4196,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           );
         const h = hunks[i] as DiffHunk;
         target = { doc: d.slug, version: d.active, hunk: h.id, against };
-        said = `Agent is showing you change ${i + 1} of ${hunks.length} in ${d.name}, v${d.active} compared with ${side}.`;
+        said = `Agent is showing you change ${i + 1} of ${hunks.length} in ${docName(d.slug)}, v${d.active} compared with ${side}.`;
         answer = { hunk: h.id, of: hunks.length, against, line: h.aFrom + 1 };
       } else if (byHeading) {
         // A heading is pointed at as its whole line: the passage path the
@@ -4190,7 +4207,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         const quote = text.slice(from, to);
         const name = headingPlainText(m.heading.text);
         target = { doc: d.slug, version: d.active, from, to, quote };
-        said = `Agent is showing you the heading "${quoteLabel(name)}" in ${d.name}.`;
+        said = `Agent is showing you the heading "${quoteLabel(name)}" in ${docName(d.slug)}.`;
         answer = {
           heading: name,
           from,
@@ -4208,7 +4225,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
             404,
           );
         target = { doc: d.slug, version: d.active, from: at, to: at + quote.length, quote };
-        said = `Agent is showing you "${quoteLabel(quote)}" in ${d.name}.`;
+        said = `Agent is showing you "${quoteLabel(quote)}" in ${docName(d.slug)}.`;
         answer = { quote, from: at, to: at + quote.length, line: linesOf(text, at, at + 1).from };
       }
 
@@ -4316,7 +4333,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           const label = cmd.label ?? "Description";
           const v = session.newVersion({ doc: o.slug, label, by: "agent" });
           line(
-            `Agent created v${v.version.n} of ${v.slug} from v${v.version.fromVersion}: ${label}.`,
+            `Agent created v${v.version.n} of ${docName(v.slug)} from v${v.version.fromVersion}: ${label}.`,
           );
           emit("version.created", {
             doc: v.slug,
@@ -4345,7 +4362,9 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           await mayDeleteVersion(cmd.doc, cmd.version, "agent");
           const r = session.deleteVersion({ doc: cmd.doc, version: cmd.version });
           await afterDelete(r.slug, r.version, "agent");
-          line(`Agent deleted v${r.version} of ${r.slug}${r.label ? `: ${r.label}` : ""}.`);
+          line(
+            `Agent deleted v${r.version} of ${docName(r.slug)}${r.label ? `: ${r.label}` : ""}.`,
+          );
           emit("version.deleted", { doc: r.slug, version: r.version, by: "agent" });
           return { doc: r.slug, version: r.version, remaining: r.remaining };
         }
@@ -4356,7 +4375,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
             by: "agent",
             quote: cmd.quote,
           });
-          line(`Agent noted "${quoteLabel(r.note.quote)}" on ${r.slug}.`);
+          line(`Agent noted "${quoteLabel(r.note.quote)}" on ${docName(r.slug)}.`);
           // The agent's own acts on notes stay on the log and off its tail: it
           // knows what it just did, and its reply already says it.
           emit("note.added", { doc: r.slug, note: r.note.id, by: "agent" }, { wake: false });
@@ -4380,7 +4399,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           const r = session.editNote({ doc: cmd.doc, id: cmd.id, body: cmd.body, by: "agent" });
           if (!r.changed)
             return { doc: r.slug, note: r.note.id, body: r.note.body, unchanged: true };
-          line(`Agent rewrote a note on ${r.slug}: "${quoteLabel(r.note.quote)}".`);
+          line(`Agent rewrote a note on ${docName(r.slug)}: "${quoteLabel(r.note.quote)}".`);
           emit(
             "system",
             { fact: "note.edited", doc: r.slug, note: r.note.id, by: "agent" },
@@ -4396,7 +4415,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
             by: "agent",
           });
           line(
-            `Agent ${cmd.resolved ? "resolved" : "reopened"} a note on ${r.slug}: "${quoteLabel(r.note.quote)}".`,
+            `Agent ${cmd.resolved ? "resolved" : "reopened"} a note on ${docName(r.slug)}: "${quoteLabel(r.note.quote)}".`,
           );
           emit(
             "note.resolved",
@@ -4494,7 +4513,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
             origin: "remote",
           });
           line(
-            `Agent took ${r.applied} change${r.applied === 1 ? "" : "s"} from ${sideName(cmd.against, session.doc(r.slug).name)} into v${r.version} of ${r.slug}.`,
+            `Agent took ${r.applied} change${r.applied === 1 ? "" : "s"} from ${sideName(cmd.against, session.doc(r.slug).name)} into v${r.version} of ${docName(r.slug)}.`,
           );
           emit("merged", {
             doc: r.slug,
@@ -4533,7 +4552,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
             by: "agent",
           });
           line(
-            `Agent created v${r.version.n} of ${r.slug} from v${r.version.fromVersion}${cmd.label ? `: ${cmd.label}` : ""}.`,
+            `Agent created v${r.version.n} of ${docName(r.slug)} from v${r.version.fromVersion}${cmd.label ? `: ${cmd.label}` : ""}.`,
           );
           // Written in the same act, so no file event carries it: say here what
           // the watcher says of a JSON version that does not parse.

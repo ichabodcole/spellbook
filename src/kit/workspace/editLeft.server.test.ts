@@ -89,7 +89,7 @@ describe("an edit to the version a switch just left", () => {
     expect((await cmd(d.url, { op: "activate", doc: "solo", version: 2 })).status).toBe(200);
     edit(s, 1, "# Typed in v1\n", "e1");
     await waitUntil("the chat line", () =>
-      chat(s).includes("Your last edit was saved to v1 of solo; the agent made v2 active."),
+      chat(s).includes("Your last edit was saved to v1 of docs/solo.md; the agent made v2 active."),
     );
     expect(readFileSync(v1, "utf8")).toBe("# Typed in v1\n");
     expect(readFileSync(v2, "utf8")).toBe("# Version two\n");
@@ -132,7 +132,7 @@ describe("an edit to the version a switch just left", () => {
     expect(docOf(s, "solo")?.active).toBe(2);
     await waitUntil("the chat line", () =>
       chat(s).includes(
-        "Your last edit to v1 of solo was kept as v3, because v1 changed after the switch; the agent made v2 active.",
+        "Your last edit to v1 of docs/solo.md was kept as v3, because v1 changed after the switch; the agent made v2 active.",
       ),
     );
   });
@@ -150,7 +150,7 @@ describe("an edit to the version a switch just left", () => {
     expect(kept).toMatchObject({ by: "human", fromVersion: 2 });
     await waitUntil("the chat line", () =>
       chat(s).includes(
-        "Your last edit to v1 of solo was kept as v3, because v1 was deleted after the switch; the agent made v2 active.",
+        "Your last edit to v1 of docs/solo.md was kept as v3, because v1 was deleted after the switch; the agent made v2 active.",
       ),
     );
   });
@@ -162,7 +162,7 @@ describe("an edit to the version a switch just left", () => {
     edit(s, 1, "# Typed in v1\n");
     await waitUntil("the edit in v1", () => readFileSync(v1, "utf8") === "# Typed in v1\n");
     await waitUntil("the chat line", () =>
-      chat(s).includes("Your last edit was saved to v1 of solo before you switched to v2."),
+      chat(s).includes("Your last edit was saved to v1 of docs/solo.md before you switched to v2."),
     );
   });
 
@@ -174,7 +174,7 @@ describe("an edit to the version a switch just left", () => {
     edit(s, 1, "# Typed in v1\n");
     await waitUntil("the edit in v1", () => readFileSync(v1, "utf8") === "# Typed in v1\n");
     await waitUntil("the chat line", () =>
-      chat(s).includes("Your last edit was saved to v1 of solo before you switched to v3."),
+      chat(s).includes("Your last edit was saved to v1 of docs/solo.md before you switched to v3."),
     );
   });
 });

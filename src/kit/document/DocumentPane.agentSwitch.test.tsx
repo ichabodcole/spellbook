@@ -130,7 +130,7 @@ const editorText = () => q(".cm-content")?.textContent ?? "";
 const viewOf = () => EditorView.findFromDOM(q(".cm-editor") as HTMLElement) as EditorView;
 const versionFile = (n: number) => join(daemon.dir, "docs", "story", `v${n}.md`);
 const chat = () => (client?.state?.chat ?? []).map((m) => m.text);
-const SAVED = "Your last edit was saved to v1 of story; the agent made v2 active.";
+const SAVED = "Your last edit was saved to v1 of story.md; the agent made v2 active.";
 
 /** Open the story, with a second version the agent wrote; v1 stays active. */
 async function openStory() {

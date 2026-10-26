@@ -120,7 +120,7 @@ describe("the agent activates another version while an edit waits", () => {
     expect(c.getSnapshot().texts.get(textKey(slug, 1))).toBe("# Typed in v1\n");
     await waitUntil("the chat line", () =>
       chat(c).find(
-        (t) => t === `Your last edit was saved to v1 of ${slug}; the agent made v2 active.`,
+        (t) => t === `Your last edit was saved to v1 of docs/solo.md; the agent made v2 active.`,
       ),
     );
     // Past the pause: nothing more is sent, and the agent heard only its switch.
@@ -149,7 +149,7 @@ describe("the agent activates another version while an edit waits", () => {
     await waitUntil("v2 active here", () => docOf(c, slug)?.active === 2);
     await waitUntil("the chat line", () =>
       chat(c).find(
-        (t) => t === `Your last edit was saved to v1 of ${slug}; the agent made v2 active.`,
+        (t) => t === `Your last edit was saved to v1 of docs/solo.md; the agent made v2 active.`,
       ),
     );
   });
@@ -220,7 +220,7 @@ describe("the agent activates another version while an edit waits", () => {
       chat(c).find(
         (t) =>
           t ===
-          `Your last edit to v1 of ${slug} was kept as v3, because v1 changed after the switch; the agent made v2 active.`,
+          `Your last edit to v1 of docs/solo.md was kept as v3, because v1 changed after the switch; the agent made v2 active.`,
       ),
     );
   });
@@ -246,7 +246,7 @@ describe("the agent activates another version while an edit waits", () => {
       chat(c).find(
         (t) =>
           t ===
-          `Your last edit to v1 of ${slug} was kept as v3, because v1 was deleted after the switch; the agent made v2 active.`,
+          `Your last edit to v1 of docs/solo.md was kept as v3, because v1 was deleted after the switch; the agent made v2 active.`,
       ),
     );
   });
@@ -352,7 +352,7 @@ describe("only an edit a switch just overtook is taken late", () => {
     expect(c.getSnapshot().lastError).toBeNull();
     await waitUntil("the chat line", () =>
       chat(c).find(
-        (t) => t === `Your last edit was saved to v1 of ${slug} before you switched to v2.`,
+        (t) => t === `Your last edit was saved to v1 of docs/solo.md before you switched to v2.`,
       ),
     );
   });

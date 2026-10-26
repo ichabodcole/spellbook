@@ -478,7 +478,9 @@ export const wikiVerbs: Record<string, VerbHandler> = {
       ...(doc ? { doc } : {}),
       id: str(args, "id", "note-remove"),
     });
-    ctx.announce(`${who(call.from)} removed a note on ${r.slug}: “${quoteLabel(r.note.quote)}”.`, {
+    const held = ctx.session.findDoc(r.slug);
+    const name = held ? ctx.session.display(held.original) : r.slug;
+    ctx.announce(`${who(call.from)} removed a note on ${name}: “${quoteLabel(r.note.quote)}”.`, {
       fact: "note.removed",
       doc: r.slug,
       note: r.note.id,

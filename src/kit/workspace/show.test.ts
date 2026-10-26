@@ -70,7 +70,9 @@ describe("show", () => {
     });
     const f = await s.waitFor((m) => m.op === "show");
     expect(f).toMatchObject({ op: "show", doc: "a", version: 1, hunk: 2, against: 2 });
-    await waitUntil("the chat line", () => chatSays(s, "showing you change 2 of 2 in a.md"));
+    await waitUntil("the chat line", () =>
+      chatSays(s, "showing you change 2 of 2 in docs/set/a.md"),
+    );
   });
 
   test("a change against the saved file is the default side", async () => {
@@ -88,7 +90,7 @@ describe("show", () => {
     expect(r.body).toMatchObject({ doc: "a", version: 1, from: 10, to: 16, line: 5 });
     const f = await s.waitFor((m) => m.op === "show");
     expect(f).toMatchObject({ doc: "a", version: 1, from: 10, to: 16, quote: "middle" });
-    await waitUntil("the chat line", () => chatSays(s, 'showing you "middle" in a.md'));
+    await waitUntil("the chat line", () => chatSays(s, 'showing you "middle" in docs/set/a.md'));
   });
 
   test("a document not on screen is opened for the human first", async () => {
