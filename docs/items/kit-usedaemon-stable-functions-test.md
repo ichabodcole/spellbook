@@ -39,8 +39,26 @@ compare mode. They do if one ever does.
 
 ## Definition of done
 
-- [ ] A kit test shows that `send`, `request` and `importImage` are the same
+- [x] A kit test shows that `send`, `request` and `importImage` are the same
       functions across several snapshots and a reconnect, and the planted
       `build()` regression turns it red.
-- [ ] `WorkspaceShell.refs.test.tsx` and `Frame.document.test.tsx` give the
+- [x] `WorkspaceShell.refs.test.tsx` and `Frame.document.test.tsx` give the
       shell stable functions, as `Frame.test.tsx` now does.
+
+## Done and verified
+
+`5cd7090e` adds the test to `src/kit/context/useDaemon.test.tsx`. Over a real
+fixture daemon, it collects every distinct snapshot through the hello, a context
+change, the daemon stopping and a reconnect (at least four). It checks that all
+of them share one `send`, `request` and `importImage`. Wrapping each one in
+`build()` turns the test red, one at a time: `send: (op) => send(op)`,
+`request: (op, o) => request(op, o)` and
+`importImage: (f, o) => importImage(f, o)`. `daemonClient.ts` was restored
+byte-equal (`cmp`). `974b8d26` keeps each host's wrapper in a `useCallback`
+keyed on the client's own `send`. In `Frame.document.test.tsx`, the `watch` prop
+is read through a ref, so a new `watch` closure doesn't make a new `send`.
+
+## Port-back notes
+
+- `useDaemon.test.tsx` gains one test. It changes no kit code. Story Studio has
+  the same client, so the same test protects its copy.
