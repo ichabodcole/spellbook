@@ -7,6 +7,7 @@
 
 import { afterAll, expect, test } from "bun:test";
 import {
+  chmodSync,
   mkdirSync,
   mkdtempSync as mkdtempRaw,
   readdirSync,
@@ -318,6 +319,24 @@ test("the message-source disjunction is choices, not prose", () => {
   for (const verb of ["say", "task"]) {
     const doc = JSON.parse(run([verb]).stderr) as Envelope;
     expect(doc.error.choices).toEqual(["--stdin", "--body-file"]);
+  }
+});
+
+test("a --body-file that is missing or unreadable is the caller's: usage (exit 2), not internal", () => {
+  const dir = mkdtempSync(join(tmpdir(), "workspace-body-"));
+  const locked = join(dir, "locked.md");
+  writeFileSync(locked, "hello");
+  chmodSync(locked, 0o000);
+  try {
+    for (const file of [join(dir, "nope.md"), locked]) {
+      const r = run(["say", "--body-file", file]);
+      expect(r.code).toBe(2);
+      const doc = JSON.parse(r.stderr) as Envelope;
+      expect(doc.error.kind).toBe("usage");
+      expect(doc.error.message).toContain(file);
+    }
+  } finally {
+    chmodSync(locked, 0o600);
   }
 });
 
@@ -758,6 +777,8 @@ test("no --session, the newest crashed while an older one is live: refused, nami
     const doc = JSON.parse(r.stderr) as Envelope;
     expect(doc.error.message).toBe("no running kit-fixture session bbbb2222");
     expect(doc.error.hint).toContain("`open --restore bbbb2222`");
+    // The live sibling is never offered: `close` would reach the wrong session.
+    expect(doc.error.choices).toEqual(["bbbb2222"]);
   }
   // With nothing live at all, the same: B's manifest is the older one, B is still the newest.
   rmSync(join(tmp, "kit-fixture.aaaa1111.json"));
@@ -1037,7 +1058,8 @@ test("a named session with no daemon: the hint names THAT session, not the newes
     expect(doc.error.hint).toBe(
       "no daemon is running for session aaaa1111, but its work is on disk: bring it back with `open --restore aaaa1111`",
     );
-    expect(doc.error.choices).toEqual(["bbbb2222", "aaaa1111"]);
+    // Only the session named: another saved one is not a way to restore this.
+    expect(doc.error.choices).toEqual(["aaaa1111"]);
   }
 });
 

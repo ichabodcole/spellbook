@@ -684,7 +684,9 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
         // The command, with the id already in it. A hint that says "you can
         // restore a session" leaves the reader to find the id and guess the flag.
         hint: `no daemon is running for session ${id}, but its work is on disk: bring it back with \`open --restore ${id}\``,
-        choices: ids.slice(0, 10),
+        // Only this session: the act on offer is restoring it, and another
+        // saved session (perhaps a live one) is not a way to do that.
+        choices: [id],
       },
     };
   }
@@ -1999,8 +2001,8 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
   });
 
   // `dispatch`, not the registry's `main`: the kit does not triage a
-  // non-CliError; this does. A named file that is not there (--body-file) is the
-  // caller's; everything else is ours.
+  // non-CliError; this does. A named file that is not there or cannot be read
+  // (--body-file: ENOENT, EACCES) is the caller's; everything else is ours.
   async function run(argv: string[]): Promise<number> {
     try {
       return await cli.dispatch(argv);
@@ -2010,7 +2012,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
       const code =
         e && typeof e === "object" && "code" in e ? String((e as { code: unknown }).code) : "";
       const msg = e instanceof Error ? e.message : String(e);
-      if (code === "ENOENT") return reportCliError(new UsageError(msg)) ?? 2;
+      if (code === "ENOENT" || code === "EACCES") return reportCliError(new UsageError(msg)) ?? 2;
       return reportCliError(new CliError("internal", msg)) ?? 1;
     }
   }
