@@ -1,21 +1,21 @@
 ---
 name: bounty
 description:
-  Bounty is a duplex agent↔user task board in the browser. Agent posts tasks;
-  user drags between todo/doing/review/done columns, edits titles inline, adds
-  or deletes tasks, or closes the board to end the session. The Review column is
-  a soft verification gate — the agent parks finished work there (rather than
-  Done) when it needs a second set of eyes (human or agent) a passing test can't
-  give. The agent drives the board through a thin `cli.ts` over a persistent
-  daemon — `open` to spawn it, `state` to read back, `tail` (wrapped with
-  Monitor) to react to user actions live. Multiple agents can share one board
-  via join.ts. HOST trigger phrases — "open a task board", "spin up a bounty",
-  "give me a board to track this", or obvious variants. JOIN trigger phrases —
-  "join my bounty", "connect to the bounty", "the board is at <URL or id>", or
-  obvious variants. Also propose when the agent has produced 5+ discrete TODOs
-  the user might want as a workspace. Do NOT use for single tasks, narrative
-  todos that aren't trackable, or anything the user wants in chat. Requires Bun
-  on PATH.
+  Bounty is a duplex agent↔user task board in the browser. The agent posts
+  tasks; the user drags them between todo/doing/review/done, edits titles
+  inline, adds or deletes tasks, or closes the board. Review is a soft
+  verification gate — park finished work there when it needs a second set of
+  eyes (human or agent) that a passing test can't give. The agent drives the
+  board through a thin `cli.ts` over a persistent daemon — `open` to spawn it,
+  `state` to read it back, `tail` (wrapped with Monitor) to react to user
+  actions live — and several agents can share one board. HOST trigger phrases —
+  "open a task board", "spin up a bounty", "give me a board to track this", or
+  obvious variants. JOIN trigger phrases — "join my bounty", "connect to the
+  bounty", "the board is at <URL or id>", or obvious variants. Also propose it
+  when the agent has produced 5+ discrete TODOs the user will want to
+  manipulate. Do NOT use for single tasks, narrative todos that aren't
+  trackable, a list the user only needs to read, or anything the user wants in
+  chat. Requires Bun on PATH.
 ---
 
 # Bounty Board
@@ -23,115 +23,66 @@ description:
 A duplex agent ↔ user surface — woolly mammoth mascot, warm brown + ice blue
 palette. Woolly mammoth puns are welcome where they fit naturally.
 
-An agent posts a list of tasks into a browser board; the user interacts with it
-(drags tasks between columns, edits titles inline, adds, deletes, closes the
-board) and both sides receive updates in real time.
+An agent posts tasks into a browser board; the user drags, edits, adds, deletes
+and closes; both sides see every change live. Bounty follows the house
+agent-interface pattern shared with grapevine: a **persistent daemon** holds the
+canonical board, and the agent drives it through a thin, stateless **`cli.ts`**
+over HTTP. The browser talks to the same daemon over WebSocket, and a second
+agent can join with `join.ts`.
 
-Bounty follows the **house agent-interface pattern** shared with grapevine and
-imago: a **persistent daemon** holds the canonical state, and the agent drives
-it through a thin **`cli.ts`** over HTTP —
+## When to use
 
-- `cli.ts open` spawns the daemon (it survives the CLI process) and opens the
-  user's browser to the board,
-- `cli.ts state` reads the board back (`{ state, cursor, snapshotBackedUp }`) —
-  confirm a command applied without parsing HTML,
-- `cli.ts tail` streams user actions as JSONL (wrap with the **Monitor** tool to
-  react live, in a fresh turn per event),
-- `cli.ts add` / `update` / `remove` / `message` / `init` / `close` drive it.
+**Host mode** — "task board", "bounty", "open a board", "spin up a board to
+track this", or any obvious variant.
 
-The browser talks to the daemon over WebSocket; a second agent can join the same
-board with `join.ts`. Same canonical state under all of them.
+**Join mode** — "join my bounty", "connect to the bounty", "the board is at
+<URL>", "the session id is <id>". Another terminal or agent opened the board.
 
-## The columns — and the review gate
-
-The board has four columns: **To do → Doing → Review → Done**. Review is a
-verification gate, and the principle is simply: **get a second set of eyes on
-work before it counts as done.** _Who_ reviews — and _whether_ a task needs a
-review at all — is a judgment call you make per task:
-
-- **Park a finished task in Review** (not Done) when it wants another look first
-  — UI/UX changes, anything that needs a manual smoke test, behavior that
-  passing tests don't fully capture, or simply work that someone other than the
-  author should confirm. The reviewer drags it to Done, or back to Doing if it
-  needs more work.
-- **The reviewer can be a human _or_ an agent.** Sometimes a human is the right
-  judge ("does this UX feel right?"); sometimes the managing/lead agent
-  merge-verifies; sometimes you assign a peer agent — or yourself — to review.
-  Decide per task who's best placed to catch what a passing test can't. You can
-  **assign the review explicitly with `--owner`** (hand it to the human, a peer
-  agent, or yourself), so "you've been asked to review this" is itself a board
-  signal that lands in the reviewer's lane.
-- **Move straight to Done** when automated checks already cover it — pure
-  functional changes or refactors where green tests are sufficient evidence. Not
-  everything needs a review pass; routing trivially-verified work through Review
-  just adds friction.
-
-The gate is a **convention, not enforced** — the daemon accepts any status
-transition from any participant. Let the task guide you: if it wants a human's
-eye or a peer's review, route through Review and (optionally) assign the
-reviewer; if green tests settle it, Done is fine. When genuinely unsure, prefer
-Review — a cheap second look beats a missed regression. A `message` toast is a
-good way to flag what you've put up for review and why.
-
-## When to Use
-
-**Host mode** — fire on phrases like "task board", "bounty", "open a board",
-"spin up a board to track this", or any obvious variant.
-
-**Join mode** — fire on phrases like "join my bounty", "join the bounty",
-"connect to the bounty", "the board is at <URL>", "the session id is <id>", or
-any obvious variant. The user is in a separate terminal / agent session from the
-one that opened the board.
-
-Drive the board live or one-shot — same daemon either way. The board is a
-conjuration: it **stands until dismissed**. You see every change live (via
-`tail`) or read `state` whenever you want — there's no "submit to flush" step.
-If the user will finish in one sitting, `open` it, let them work, and read
-`state` when they're done. If the board is long-lived and you want to react as
-the user works, wrap `cli.ts tail` with Monitor so each action wakes a fresh
-turn. When in doubt, propose: _"want a quick board, or one I'll keep watching as
-you work?"_
-
-**Heads up:** the daemon stays alive **even if the user closes the browser
-tab.** Sessions end only when the human clicks **Close board**, you
-`cli.ts close`, or the idle timeout fires (default 30 min). Agent activity
-(`cli.ts state`/writes) resets the idle timer, so a board you're actively
-driving won't expire mid-work — but a board you opened and walked away from sits
-until the timer fires. Closing is non-destructive: canonical state is
-snapshotted, so a closed board reopens with `cli.ts open --restore`.
-
-Suggested invocation (propose first, don't fire): the agent has produced 5+
-discrete TODOs **AND** the user is going to actually manipulate them (reorder,
-prioritize, mark done as they work, add their own). Example:
+**Propose, don't fire**, when you have 5+ discrete TODOs **and** the user will
+actually manipulate them (reorder, prioritise, mark done, add their own):
 
 > "I've got six discrete tasks from this session. Want me to spin up a bounty so
 > you can drag them around as you work through them?"
 
-**Don't propose bounty for memory-aid TODOs the user just needs to see listed**
-— the chat-native TODO tracker is better for that. The bar is "the user wants a
-workspace they manipulate," not "the agent has a list."
+Don't use it for:
 
-Don't use for:
+- a single task or a short narrative todo — chat is fine;
+- one big amorphous "task" — break it down first, then maybe a board;
+- a list the user will only read — the chat-native TODO tracker is better;
+- anything the user said they want in chat.
 
-- A single task or short narrative todo — chat is fine.
-- "Tasks" that are really one big amorphous thing (e.g. "refactor everything") —
-  break it down first, then maybe a board.
-- A passive list the user will only read, not edit — chat or memory is fine.
-- Anything the user explicitly said they want in chat.
+The board is a conjuration: it **stands until dismissed**, and there is no
+"submit" step. For a one-sitting job, `open` it, let the user work, and read
+`state` when they're done. For a long-lived board you react to, wrap `tail` with
+Monitor. When unsure, ask: _"want a quick board, or one I'll keep watching as
+you work?"_
+
+## The columns — and the review gate
+
+**To do → Doing → Review → Done.** Review means _get a second set of eyes before
+it counts as done_; who reviews, and whether a task needs it, is your call per
+task:
+
+- **Park it in Review** when it wants another look — UI/UX, a manual smoke test,
+  behaviour tests don't capture, or work someone other than the author should
+  confirm. The reviewer moves it to Done, or back to Doing for rework.
+- **The reviewer can be a human or an agent** — the user, the lead agent, a
+  peer, or you. Assign the review with `--owner` so it lands in that reviewer's
+  lane.
+- **Go straight to Done** when green tests are sufficient evidence (pure
+  refactors, functional changes the suite covers).
+
+The gate is a convention: the daemon accepts any transition from anyone. When
+genuinely unsure, prefer Review, and post a `message` toast saying what you
+parked and how to verify it.
 
 ## Prerequisite
 
-`server.ts` (the daemon) and `cli.ts` run under [Bun](https://bun.sh) — assume
-the user has `bun` on their PATH (it's the runtime this skill commits to). If
-`bun` is missing, the Bash call fails fast with `command not found: bun`;
-surface that to the user and stop. Don't try to install Bun for them.
+`cli.ts`, the daemon and `join.ts` run under [Bun](https://bun.sh). If `bun` is
+missing the call fails with `command not found: bun`; tell the user and stop.
+Don't install Bun for them.
 
-## Host Mode — Drive the Board with `cli.ts`
-
-The agent never talks to the daemon directly — it drives through `cli.ts`, a
-thin, stateless wrapper. `open` spawns a detached daemon that holds the
-canonical state and outlives the CLI process; every other verb is a one-shot
-HTTP round-trip against it.
+## Host mode — drive the board with `cli.ts`
 
 ```bash
 CLI=${CLAUDE_PLUGIN_ROOT}/skills/bounty/scripts/cli.ts
@@ -141,300 +92,144 @@ bun $CLI state                                           # read board back
 bun $CLI close                                           # end the session (exit 0)
 ```
 
-`open` prints the session JSON (`{url, port, session_id, title}`) and writes
-discovery files to `<tmpdir>/bounty-<session_id>.json` + `bounty-latest.json`,
-so joiners and later verbs find the board. Every verb targets the most recent
-session by default; pass `--session <id>` to target a specific one.
+> If `$CLAUDE_PLUGIN_ROOT` is unset in your shell, use the absolute path to this
+> skill's own `scripts/cli.ts` (it sits next to this `SKILL.md`). An empty value
+> turns `${VAR}/skills/...` into `/skills/...`, and `bun` fails with "module not
+> found".
 
-> **Pin the board when more than one may be open (multi-team / multi-project).**
-> The "most recent session" default means that if a _second_ board opens on the
-> machine (another project's team), your un-pinned verbs silently retarget to it
-> — cards land on the wrong board with no error. To bind a team's verbs to its
-> own board, use one of (highest precedence first): `--session-key <key>` on the
-> verb · `--session <id>` on the verb · `$BOUNTY_SESSION_KEY=<key>` in the env ·
-> `$BOUNTY_SESSION=<id>` in the env · a `.bounty-session` file (containing the
-> id) discovered by walking up from the cwd. `open --pin` writes
-> `.bounty-session` into the cwd for you, so a project directory auto-pins every
-> later verb. When any pin is set, the `latest` pointer is never consulted.
+`open` prints the session JSON (`url`, `port`, `session_id`, `title`, plus the
+restore and backup fields below) and writes `<tmpdir>/bounty-<session_id>.json`
+and `bounty-latest.json`, which joiners and later verbs use to find the board.
 
-> **Caller-owned session keys — deterministic binding for a coordinator (#69).**
-> A `--session <id>` targets a board by its _daemon-minted_ id, which the caller
-> has to discover and carry (and which goes stale). A `--session-key <key>` is a
-> handle **you** choose: it derives a **stable, project-scoped board id**
-> (`k-<slug>-<hash-of-repo-root>`), so a coordinating tool binds every command
-> to _its_ board by construction — no `latest`, no discovery, no stored id.
->
-> - `open --session-key K` is **idempotent**: a live board for K is **attached
->   to** (nothing new spawned), a dead/absent one is **(re)spawned** under the
->   same id. Re-running it, or reusing K after a crash, converges on one board.
->   `open --session-key K --fresh` tears down any live board for K and starts
->   clean (for reusing a key across sessions).
-> - **One daemon per key, even under a race.** Each board id has a lock,
->   `$BOUNTY_HOME/locks/<id>.lock` (`{pid, port}`), which the daemon takes at
->   boot before it writes anything. Several `open --session-key K` at once all
->   exit 0 and all report the same board. Every daemon but the first exits
->   without touching the snapshot. (Before, two could run under one id, and the
->   one no verb could reach later wrote its stale board over newer work.) A lock
->   whose pid is dead, or is running something other than this board's daemon,
->   is stale and is taken over. A daemon that is shutting down marks its lock
->   `closing`, so an `open` right after `close` waits for it instead of failing.
->   If `open` ever reports that a board is held by a daemon that is not
->   answering, resume that pid if it was stopped (`kill -CONT`), or kill it
->   (`open` names it, and its hint gives both) and open again. `open` and
->   `close` wait at most 2 s for any one answer from a daemon, so a stopped
->   daemon gets that refusal (exit 1) instead of a hang; `close` against one
->   exits 1 naming the pid.
-> - **If liveness cannot be checked, `open` refuses.** Telling a live holder
->   from a reused pid needs `ps`. With no `ps` on PATH, or a `ps` that fails,
->   `open` exits **6** (`conflict`) with one envelope on stderr naming the lock
->   file, the holder pid and why, and starts nothing. The daemon refuses the
->   same way if it gets that far, and writes a `lockLivenessUnknown` line to
->   `daemon.log`. To recover, put a working `ps` on PATH, or check that pid is
->   not this board's daemon and remove the lock (the hint gives both).
-> - **`open --session-key K --fresh --restore <K's own id>`** resets a live
->   board to its snapshot. `open` copies the snapshot to
->   `<id>.pre-fresh-<ts>.bak.json` **before** the teardown's `close` writes the
->   live board over it, then restores from the copy. The copy is kept and named
->   in `snapshotBackups`. (It used to restore the teardown's own write, so the
->   snapshot's board was lost.) If that copy cannot be made (a read-only
->   `snapshots/`), `open` exits **6** (`conflict`) with an envelope on stderr,
->   before the teardown: the live board keeps running and nothing is restored.
->   Make `snapshots/` writable and run the same `open` again.
-> - The id is **project-scoped** (hashed with the repo root): the same key in
->   two different repos is two independent boards; the same key in the _same_
->   repo (even from a subdirectory) is the _same_ board — an intended share,
->   never a silent hijack.
-> - Every verb accepts `--session-key K` (or read it from
->   `$BOUNTY_SESSION_KEY`), re-deriving the same id each time.
->   `open --pin --session-key K` persists the derived id to `.bounty-session`.
-> - `--title`, `--timeout` and `--restore` configure a daemon **at spawn time**,
->   so on the attach path they cannot take effect. `open` **refuses** (exit `2`)
->   rather than attaching and discarding them — ⚠ this is the ONE refusal that
->   is not the JSON failure envelope, because it hands you the live board's
->   coordinates on stdout instead; see the Exit Code Contract — and every `open`
->   envelope carries `restoreSkipped` — `null` when nothing was skipped,
->   `{requested, reason}` when an **explicit** `--restore` could not be honoured
->   (a keyed respawn restores by default and never populates this field). The
->   same refusal (exit `2`, `restoreSkipped` on stdout) answers an `open` that
->   **lost a race**: no board was live when it looked, but another `open` for
->   the key started one first, so the daemon this `open` spawned exited and its
->   `--restore`/`--title`/`--timeout` never took effect. (It used to exit 0 with
->   `restoreSkipped: null` over the other open's board.)
-> - **`restoreSkipped` and `restoreFailed` are different situations and call for
->   different fixes.** `restoreSkipped` means the restore was **never
->   attempted** — fix your invocation. `restoreFailed` —
->   `{path, reason} | null`, on the `open` envelope and on the daemon's boot log
->   — means it **was** attempted and the snapshot could not be read; the board
->   comes up **empty** and your snapshot is the damaged thing. A restore that
->   fails is not a restore that was skipped, and a caller that treats them alike
->   will "fix" a healthy command line and leave a corrupt snapshot in place.
-> - **A `--restore` naming a snapshot that does not exist starts nothing.** It
->   exits **5** (`not_found`) with an envelope on stderr, and no board or daemon
->   is spawned. `sessions` lists what can be restored. (It used to exit 0 with
->   `restoreFailed: ENOENT…` and leave an unrelated empty board running.)
->   `restoreFailed` is now for a snapshot that exists and could not be read. An
->   **empty** `--restore ""` is a usage error (exit 2) and starts nothing
->   either; drop the flag for a fresh board. A snapshot `open` **cannot see** (a
->   `snapshots/` at mode 000) is not "absent": the restore is attempted, so a
->   keyed respawn there reports `restoreFailed` (`EACCES`) instead of coming up
->   empty with `restoreFailed: null`.
-> - **`restoreDropped` names each task a restore could not keep.** Every `open`
->   envelope carries it, **present and `[]`** when nothing was dropped (also on
->   `state` and on the browser's `init` frame). Each entry is
->   `{ index, id, reason }`: the task's place in the snapshot's `tasks`, its id
->   (`null` if it has none) and why this build rejects it (the same rules as
->   `add`: a status or `notes` shape from another bounty version, say). A
->   **duplicate id** keeps the first **valid** entry, as `add` and `init` would;
->   each later one is dropped with the reason
->   `duplicate id (index N already has it)`. The rest of the board restores.
->   When the restored file was the board's **own** snapshot, the file is first
->   kept byte-for-byte as a `partial-restore` backup in `snapshotBackups`, so
->   the dropped task is never written over. If that copy cannot be made (a
->   read-only `snapshots/`), `open` still exits 0 but says so in
->   **`snapshotBackupFailed`**: `{ kind: "partial-restore", path, error, fix }`
->   (`path` is the snapshot that was not copied; the copy's own path is in
->   `error`), **present and `null`** on every other `open`, plus a `bounty:`
->   line on stderr. The file is not written over until a copy can be made (see
->   the ownership rule under Durability): do what `fix` says.
->
-> A team coordinator (e.g. anthill) can therefore run
-> `open --session-key <team-channel>` at start and pass
-> `--session-key <team-channel>` on every seat command — one key it owns, no
-> wrong-board writes.
+### Which board a verb targets
 
-> **Heads up on `$CLAUDE_PLUGIN_ROOT`.** It resolves to the plugin's install
-> path in Claude Code. If it's unset in your shell (some harnesses leave it
-> empty), substitute the absolute path
-> `plugins/spellbook/skills/bounty/scripts/...` relative to the repo root. An
-> empty value silently turns `${VAR}/skills/...` into `/skills/...` and
-> `bun run` fails with a confusing "module not found."
+By default a verb targets the **most recently opened** board. When more than one
+board may be open on the machine (another project, another team), pin it, or
+your verbs silently land on the other board. Precedence, highest first:
+
+`--session-key <key>` · `--session <id>` · `$BOUNTY_SESSION_KEY` ·
+`$BOUNTY_SESSION` · a `.bounty-session` file found by walking up from the cwd ·
+the latest board.
+
+- `open --pin` writes `.bounty-session` into the cwd, so every later verb run
+  from that directory tree targets this board.
+- **`--session-key <key>` is a handle you choose.** It derives a stable,
+  project-scoped id (`k-<key>-<hash of the repo root>`): the same key in the
+  same repo (any subdirectory) is the same board, and in another repo a
+  different one. Every verb re-derives it, so nothing has to be stored.
+  - `open --session-key K` is **idempotent**: it attaches to K's live board, or
+    respawns a dead one under the same id with its snapshot restored. Racing
+    `open`s converge on one daemon. `--fresh` tears K's board down and starts
+    clean.
+  - A team coordinator runs `open --session-key <team>` once and passes
+    `--session-key <team>` on every seat's command — no wrong-board writes.
+  - `--title`, `--timeout` and `--restore` only take effect when a daemon is
+    spawned. On the attach path `open` **refuses with exit 2** rather than
+    dropping them, printing the live board's JSON on **stdout** with
+    `restoreSkipped: {requested, reason}`. It is the one refusal that is not an
+    error envelope, because the payload answers "then where is my board?".
 
 ### Verbs
 
-> **`--` ends flag parsing — and every flag must come BEFORE it.** Use it when
-> free text would otherwise be read as a flag:
-> `add -- "fix the --stdin handler later"`. **Anything after `--` is a
-> positional, including something that looks like a flag.** On `add` and
-> `message` it becomes part of the text, at exit 0, and when it spells a flag
-> that verb accepts stderr carries one `# warning:` line naming it and the fix
-> (stdout and the exit code do not change); on a verb whose positionals are
-> already full (`update t1 -- --session-key K`) it is refused, exit 2, naming
-> the token.
->
-> **⚠ For this spell that matters: a `--session-key` placed after `--` on `add`
-> is TEXT — it lands in the card's title, and the write lands on whatever board
-> the ambient environment resolves to.** The only sign is the `# warning:` line
-> on stderr. The invocation looks isolated and is not. **Correct:
-> `bounty add --session-key K -- "text"`. Never
-> `bounty add -- --session-key K "text"`.**
->
-> **Each verb accepts only the flags in its row below** (plus `--session <id>`
-> and `--session-key <key>` on every verb that talks to a board, and
-> `--as <name>` on those that act on it). A flag from another verb is refused,
-> exit 2, with the verb's accepted set in `error.choices`. A flag before the
-> verb is refused too: the verb comes first.
+**Each verb accepts only the flags on its row**, plus `--session <id>` and
+`--session-key <key>` on every verb that talks to a board and `--as <name>` on
+those that act on it. A flag from another verb, or a flag before the verb, is
+refused (exit 2) with the accepted set in `error.choices`.
+`bun $CLI help <verb>` shows one verb in full.
 
-| Verb                                                                                                                                    | Does                                                                                                                                                                                                                            |
-| --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `open [--title T] [--timeout S] [--no-open] [--restore <id>] [--pin] [--session-key <key> [--fresh]]`                                   | spawn the daemon (or resume a saved session); print session JSON. `--session-key` binds it to a caller-owned key, idempotently (#69)                                                                                            |
-| `state [--owner <name> \| --mine] [--as <name>]`                                                                                        | read-back `{ state, cursor, snapshotBackedUp, readMode }` — confirm a command applied; scope like `tail`. The read is FULL; `--full` is accepted for compatibility and is now the default (b6)                                  |
-| `tail [--since N] [--once] [--owner <name> \| --mine] [--as <name>]`                                                                    | stream board events as JSONL (wrap with Monitor); scope to an owner; resumes `--since`                                                                                                                                          |
-| `add <title…> [--status S] [--notes N] [--owner N] [--tag a,b] [--size S\|M\|L] [--expect <min>] [--id ID] [--stdin]`                   | add a task (optionally assigned / labelled / sized)                                                                                                                                                                             |
-| `update <id> [--status S] [--title T] [--notes N \| --clear-notes] [--owner N] [--tag a,b] [--size S\|M\|L] [--expect <min>] [--stdin]` | patch a task (`--owner` assigns/reassigns; `--tag` sets labels, `--size`/`--expect` set the heartbeat threshold; `--clear-notes` clears the notes). Prints `{ok, updated, fields, valuesIgnored}`; `fields` names what it wrote |
-| `claim <id> [--as <name>]`                                                                                                              | self-claim an **unowned** task (rejected if owned by another)                                                                                                                                                                   |
-| `block <id> --on <id>[,…]` / `unblock <id> --on <id>[,…]`                                                                               | add / remove blocker edges (block is cycle-guarded; rejection is visible)                                                                                                                                                       |
-| `remove <id>`                                                                                                                           | delete a task                                                                                                                                                                                                                   |
-| `message <text…> [--stdin]`                                                                                                             | transient toast on the board                                                                                                                                                                                                    |
-| `init [--title T] [--stdin-tasks [--replace]]`                                                                                          | seed the board (tasks = JSON array on stdin); over a board that already has tasks it is refused (exit 6) unless `--replace`                                                                                                     |
-| `list`                                                                                                                                  | list currently-**running** boards (id · tasks · url · title) — distinct from `sessions` (saved snapshots)                                                                                                                       |
-| `close` / `info` / `sessions` / `help`                                                                                                  | end session / show session / list snapshots / usage                                                                                                                                                                             |
-| `version` / `schema`                                                                                                                    | `{name, version}` as JSON (also `--version`, `-V`) / the machine-readable interface (acc declaration v0)                                                                                                                        |
+| Verb                                                                                                                  | Does                                                                                                                          |
+| --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `open [--title T] [--timeout S] [--no-open] [--restore <id>] [--pin] [--session-key <key> [--fresh]]`                 | spawn the daemon (or resume a saved board) and print the session JSON                                                         |
+| `state [--owner <name> \| --mine]`                                                                                    | read the board back (see Read-back); `--full` is accepted but is already the default                                          |
+| `tail [--since N] [--once] [--owner <name> \| --mine]`                                                                | stream board events as JSONL — wrap with Monitor                                                                              |
+| `add <title…> [--status S] [--notes N] [--owner N] [--tag a,b] [--size S\|M\|L] [--expect <min>] [--id ID] [--stdin]` | add a task; the id is minted unless you give `--id`                                                                           |
+| `update <id> [--status S] [--title T] [--notes N \| --clear-notes] [--owner N] [--tag a,b] [--size …] [--expect …]`   | patch a task (also `--stdin` for the title); `--owner` reassigns, `--tag ""` clears the tags                                  |
+| `claim <id>`                                                                                                          | take an **unowned** task as `--as <name>`                                                                                     |
+| `block <id> --on <id>[,…]` / `unblock <id> --on <id>[,…]`                                                             | add / remove blocker edges (see Dependencies)                                                                                 |
+| `remove <id>`                                                                                                         | delete a task                                                                                                                 |
+| `message <text…> [--stdin]`                                                                                           | a transient toast on the board                                                                                                |
+| `init [--title T] [--stdin-tasks [--replace]]`                                                                        | seed the board from a JSON array on stdin; each task needs `id`, `title` and `status`                                         |
+| `close` / `info`                                                                                                      | end the board (its snapshot is kept) / show the resolved board's session JSON                                                 |
+| `list` / `sessions`                                                                                                   | prose lists: the **running** boards / the saved **snapshots** you can restore (closed boards and backups included)            |
+| `version` / `schema` / `help [verb]`                                                                                  | `{name, version}` (also `--version`, `-V`) / the machine-readable interface (acc declaration v0) / usage, or one verb in full |
 
-A bare `bounty` with no verb is a usage error — one JSON envelope on stderr,
-exit 2, the verbs in `error.choices` — not help. `list` and `sessions` print
-prose lines; every other verb prints one JSON document (`tail`: one per event).
+Every verb but `list`, `sessions` and `help` prints one JSON document on stdout
+(`tail`: one per event). A bare `bounty` is a usage error, not help.
 
-`--status` on `add` and `update` takes only `todo`, `doing`, `review` or `done`.
-Any other value is refused before anything is written — exit 2, the valid
-statuses in `error.choices` — so `update`'s `fields` never names a status it did
-not write. (A bad `--size`/`--expect` is different: it is ignored and reported
-in `valuesIgnored`.)
+`--status` takes only `todo`, `doing`, `review` or `done`; anything else is
+refused before anything is written. A bad `--size` or `--expect` is different:
+it is ignored and reported in the reply's `valuesIgnored` (and on stderr), so a
+typo can't set a bogus size.
 
-**`--stdin` defeats shell quoting.** For any free text with apostrophes, quotes,
-`&`, `<`, `>`, or `$`, pipe it through `--stdin` instead of putting it on the
-command line — the shell will otherwise mangle it:
+**Free text with shell metacharacters goes through `--stdin`.** Apostrophes,
+quotes, `&`, `<`, `>` and `$` get mangled on the command line:
 
 ```bash
 printf "it's a \"quoted\" & <urgent> task" | bun $CLI add --stdin --status doing
 ```
 
-**The rule: `--stdin` REPLACES THE VERB'S POSITIONAL ARGUMENT.** It is not a
-"body" flag — it stands in for whatever that verb takes on the command line.
-`add <title…>` → the **title**. `message <text…>` → the **text**. So `add` takes
-a title **or** `--stdin`, never both: `add x --stdin` is refused at exit 2
-(`usage`) and adds nothing. It used to keep stdin and silently drop `x`.
-`message` is the same: `message x --stdin` is refused at exit 2 and sends
-nothing.
+`--stdin` **replaces the verb's positional argument**: the title on `add`, the
+text on `message` — and on `update`, whose only positional is `<id>`, the new
+**title**, never the notes. Passing both a positional and `--stdin` is refused.
+For notes with metacharacters, build the value in a variable or a quoted heredoc
+and pass `--notes "$NOTES"`.
 
-**On `update`, whose only positional is `<id>`, `--stdin` reads the new TITLE**
-(as on `add`), never the notes. For notes, use `--notes`; if the prose has
-metacharacters, build it in a variable or a quoted heredoc. `update` never
-blanks a field you did not ask it to (`s5-9`, `s5-5`); each of these is refused
-at exit 2 (`usage`), writes nothing, and names the recovery in its message:
-
-| Refused                           | Why, and what to do instead                                                   |
-| --------------------------------- | ----------------------------------------------------------------------------- |
-| `--stdin` together with `--title` | both set the title; pass one                                                  |
-| `--stdin` with empty stdin        | a title is never cleared; pipe the new title                                  |
-| `--title ""`                      | as `add` refuses an empty title                                               |
-| `--notes ""` (or `--notes=`)      | cannot be told from a substitution that produced nothing; use `--clear-notes` |
-| `--clear-notes` with `--notes`    | pass one: `--notes <text>` replaces, `--clear-notes` alone clears             |
-
-The success envelope names what it wrote, so check it against what you meant:
+`update` never blanks a field you didn't ask it to. An empty `--title`, an empty
+`--notes` (it can't be told from a substitution that produced nothing) and an
+empty `--stdin` are all refused; clear notes on purpose with `--clear-notes`.
+Each refusal names its fix. The reply names what it wrote, so check it:
 
 ```bash
 bun $CLI update t-abc --notes "$(cat notes.md)"   # {"ok":true,"updated":"t-abc","fields":["notes"],"valuesIgnored":null}
-bun $CLI update t-abc --clear-notes               # clears the notes on purpose
 ```
 
-A no-op (the task already held those values) answers `noop: true` with
-`fields: []`.
+A no-op answers `noop: true` with `fields: []`.
 
-`init --stdin-tasks` seeds a whole board the same way — pipe a JSON array of
-tasks on stdin (no shell-escaping, no inline-script seed dance):
+**`--` ends flag parsing, and every flag must come before it.** Anything after
+`--` is text, even if it looks like a flag: `add -- "fix the --stdin handler"`.
+On `add` and `message` a flag-shaped word after `--` becomes part of the text,
+with a `# warning:` line on stderr. **So `add -- --session-key K "text"` writes
+to whatever board the environment resolves to, with `--session-key K` in the
+title.** Write `add --session-key K -- "text"`.
+
+**Seeding.** `init --stdin-tasks` replaces the board's tasks, so over a board
+that already has tasks it is refused (exit 6) unless you add `--replace`; the
+reply then counts what it discarded as `tasksReplaced`. Entries it could not
+seed are listed in `tasksDropped`. To add to a live board, use `add`; don't
+re-`init` mid-session over the user's edits.
 
 ```bash
 echo '[{"id":"t1","title":"first","status":"todo"}]' | bun $CLI init --title Sprint --stdin-tasks
 ```
 
-Seeding **replaces** the board's tasks, so over a board that already has tasks
-`init --stdin-tasks` is refused: exit **6** (`conflict`), the board unchanged,
-and the envelope's `hint` names the opt-in. To replace them on purpose, add
-`--replace`; the reply then counts the tasks it discarded as
-`tasksReplaced: <n>` (a number, `0` on an empty board). That is a different fact
-from `tasksDropped`, which reports the entries of **your input** the daemon
-rejected (`{requested, dropped:[{index, reason}]}`, or `null` when it seeded
-them all). To put tasks on a board without replacing it, use `add`.
-
 ### Read-back, not inference
 
-`cli.ts state` returns `{ state, cursor, snapshotBackedUp }` — the canonical
-board, the current event cursor, and whether this daemon has rotated a snapshot
-aside. You never have to render HTML or infer from the event stream. `cursor` is
-the resume point you hand to `tail --since <cursor>`.
+`state` returns `{ state, cursor, … }`: the canonical board and the event cursor
+(the resume point for `tail --since`). You never render HTML or replay events to
+know the board.
 
-**`snapshotBackedUp` is `{ path, taskCount, reason } | null`, and it is
-PRESENT-AND-NULL, never absent.** `null` means this daemon has not rotated
-anything; a non-null value means it copied the on-disk snapshot aside before a
-shrinking write, and names the file. See **Durability** for when that fires.
-`state` also carries `snapshotSaveFailed`, present-and-null unless the latest
-snapshot write failed (see **Durability**).
+- **A write confirms itself.** `add`, `update`, `claim`, `block`/`unblock`,
+  `remove`, `message` and `close` exit 0 with their result on stdout, or refuse
+  with exit 5/6 and an envelope on stderr whose `error.server` carries the
+  daemon's own `applied: false` reply. You don't need `state` to check that a
+  write landed.
+- **Scope it like `tail`.** On a shared board, `state --mine --as <you>` (or
+  `--owner <name>`) returns your tasks plus the unowned, claimable ones.
+- **Blocked-ness is computed for you.** Each task carries `blocked` and
+  `liveBlockers` (`[{id, title, status}]` for blockers not yet done), even when
+  the blocker itself is filtered out of a scoped read.
+- `snapshotBackedUp`, `restoreFailed`, `restoreDropped` and `snapshotSaveFailed`
+  are always present, and `null` or `[]` when nothing happened. See Durability.
 
-> **Why it lives here and not only on the event stream.** An event is _absent_
-> when nothing happened, so "no rotation" and "a daemon too old to report one"
-> are byte-identical to a consumer. A readable blank distinguishes them, and
-> `state` is readable at any time — including after the page refresh or tail
-> restart that loses an event.
-
-**A write confirms itself** — the verb reports the daemon's `applied` verdict
-(on a refusal: exit `5`/`6` and a failure envelope on stderr whose
-`error.server` carries the daemon's `applied: false` and its reason), so `state`
-is for **reading the board**, not for checking whether your last write landed.
-
-**`add` and `update` also report what they THREW AWAY.** A bad `--size` or
-`--expect` value is deliberately ignored rather than fatal (a typo must not set
-a bogus size), but the drop is no longer silent: the envelope carries
-`valuesIgnored: [{ flag, value, reason }] | null` — again present-and-null — and
-each drop is mirrored to stderr. `update <id> --size bogus` with no other flag
-refuses, and the refusal now names the ignored value as its own cause rather
-than reporting an empty patch.
-
-**Scope it like `tail`.** On a shared board, `state --mine --as <you>` (or
-`--owner <name>`) filters the read-back to your own + claimable tasks — the
-snapshot path scopes the same way the live path does, so orienting isn't a
-firehose.
-
-**Each task carries computed blocked-ness.** The `state` response adds derived,
-read-only fields per task: `blocked` (bool) and `liveBlockers` — the not-done
-blockers as `[{id, title, status}]`. So you see the same `⛔` signal the human's
-surface shows, and a task that's been filtered down by `--mine` stays
-**actionable**: its blocker may be owned by someone else (and thus absent from
-your filtered view), but `liveBlockers` still tells you what you're waiting on
-and its status — no unfiltered re-query. (These are derived at read time; the
-stored task only carries the raw `blockedBy` ids.)
-
-**Tip: use `message` toasts liberally.** A `cli.ts message "…"` renders a
-transient toast on the board — good for acknowledging user actions ("nice — that
-one's done"), signaling what you're doing ("starting on this now"), or flagging
-what you parked in Review and why. Toasts don't mutate state; keep them to one
-short sentence (they auto-dismiss).
+**Use `message` toasts liberally** — one short sentence to acknowledge an action
+("nice — that one's done"), say what you're starting, or flag what you parked in
+Review. They change no state and auto-dismiss.
 
 ### Live boards — wrap `tail` with Monitor
 
-For a long-lived board you react to as the user works, wrap `cli.ts tail` with
-the **Monitor** tool. Each user action arrives as a JSONL line on stdout that
-wakes you into a fresh turn; the keepalive tick + diagnostics ride **stderr** —
-don't merge them (`2>&1`), or every keepalive becomes a spurious notification.
+Each user action arrives as one JSONL line on stdout and wakes you into a fresh
+turn. The keepalive tick and diagnostics ride **stderr**: don't merge them with
+`2>&1`, or every keepalive becomes a notification.
 
 ```
 Monitor({
@@ -444,15 +239,11 @@ Monitor({
 })
 ```
 
-(`timeout_ms` is capped at 1800000, so a bigger number buys nothing, and Monitor
-has no `persistent` option that lifts the cap. Give `--since` only when you are
-resuming from an id you have seen: `--since 0` replays the whole board.)
-
-`tail` reconnects automatically on a transient drop and resumes from the last
-event id, so nothing is missed across the gap. When a notification arrives,
-react by issuing a `cli.ts update` / `message` (or nothing if it's not
-interesting), then end the turn — the Monitor stays armed. The `closed` frame
-ends the tail (exit 0), and with it the Monitor.
+A fresh `tail` replays the board's event log from the start; `--since <id>`
+resumes after an id you've already handled. `tail` reconnects by itself after a
+transient drop. When a notification arrives, react (`update`, `message`, or
+nothing) and end the turn; the Monitor stays armed. The `closed` frame ends the
+tail with exit 0.
 
 **Keep watching past Monitor's 30-minute cap.** Arm the tail with Monitor at
 `timeout_ms: 1800000`. It ends itself just before the cap, and its last line
@@ -481,54 +272,27 @@ If Monitor expires before that line arrives, re-arm silently with
 handled. If the launcher refuses a `command` with a usage error, its message
 names the forms it accepts; fix the arguments to match.
 
-**Pin a long-lived tail to its session.** On a host that may run more than one
-board, pass `--session <id>` so the Monitor's `tail` locks to _that_ board. An
-unpinned `tail` auto-pins the **first** session it resolves — it prints a
-`# pinned to session <id>` line on stderr and never consults the global `latest`
-pointer again, so a board opened later can't silently hijack the stream. (Before
-this guard, an unpinned long-lived tail re-resolved `latest` on every reconnect
-and could hop to another project's board mid-session.) Pinning explicitly is
-still clearer, and it also survives the no-board-yet startup window.
+**Pin a long-lived tail.** Pass `--session <id>` (or `--session-key`). An
+unpinned tail pins itself to the first board it resolves
+(`# pinned to session <id>` on stderr), so a board opened later can't hijack it.
 
-**While the board is not up, the tail says what it is looking for.** Each retry
-line on stderr names the session id and where that id came from, for example
-`# no session yet for k-team-1a2b3c4d (derived from --session-key 'team' + cwd /path/to/repo) — retrying…`.
-A key's id is derived from the repo you run in, so the same key from another
-directory looks for another board; that line is how you spot it. What happens
-next depends on whether you named the board:
-
-- **Unnamed** (no `--session` or `--session-key` on the command line, including
-  a key from `$BOUNTY_SESSION_KEY` or a `.bounty-session` file): the tail keeps
-  waiting for the board to come up.
-- **Named** (`--session <id>` or `--session-key <key>`): after a few seconds
-  (about 8) the tail gives up with exit **5** (`not_found`) and an error
-  envelope on stderr. The envelope repeats what it looked for, and its `hint`
-  says only what the CLI knows (no board is running for it and none left a close
-  snapshot, not that it was never opened here) and names the fix: check the key
-  and the directory you ran from, or the id, or open it
-  (`open --session-key <key> --no-open`). Nothing is printed on stdout. Start
-  the tail once the board is up, or check its id with `list`.
-- **Named, and the board existed here and has closed** (its snapshot is on
-  disk): a `--session` or `--session-key` tail ends at once with `tail.closed`
-  (exit 0), as above. A keyed board's `tail.closed` names
-  `open --session-key <key> --no-open` as the way back.
+**When the board isn't up yet**, each retry line on stderr names the id it is
+looking for and where the id came from (a key's id depends on the directory you
+run in, so this is how you spot the wrong cwd). A tail you named with
+`--session` or `--session-key` gives up after about 8 s with exit 5; an unnamed
+one keeps waiting. A named tail for a board that has already closed here ends at
+once with `tail.closed`, whose `command` brings it back.
 
 ### Event frames
 
-Each `tail` frame is `{ id, type, …, by }`:
-
-- `id` — monotonic event cursor (the resume point for `--since`).
-- `by` — the actor: `"user"` (browser action), an agent's `--as` identity (a
-  `cli.ts` write; `"agent"` if none given), `"system"` (lifecycle). Cooperative
-  attribution, not auth.
-- task-bearing frames carry the task identifier as **`taskId`** (the envelope
-  `id` is the cursor, so the task id can't be named `id`) and the task's
-  **`owner`** at the moment of the event (for client-side scope filtering);
-  `task.add` nests the full `task` object.
+Each frame is `{ id, type, …, by }`. `id` is the cursor; `by` is `"user"` (the
+browser), an agent's `--as` name (`"agent"` if none), or `"system"`. Task frames
+carry the task as `taskId` plus its `owner` at that moment; `task.add` nests the
+whole `task`.
 
 ```
 {id, type:"ready",        url, port, session_id, by:"system"}
-{     type:"connected" | "disconnected", by:"user"}   // LIVE ONLY — no id, never replayed
+{     type:"connected" | "disconnected", by:"user"}   // live only — no id, never replayed
 {id, type:"task.toggle",  taskId, status, by, owner}     // pill click
 {id, type:"task.move",    taskId, status, index, by, owner}  // drag-drop
 {id, type:"task.edit",    taskId, title, by, owner}      // inline title edit
@@ -536,599 +300,212 @@ Each `tail` frame is `{ id, type, …, by }`:
 {id, type:"task.update",  taskId, patch, by, owner}      // agent patch
 {id, type:"task.remove",  taskId, by, owner}             // task deleted
 {id, type:"unblocked",    taskId, owner, by:"system"}    // last blocker cleared (owner-scoped)
-{id, type:"heartbeat",    taskId, owner, overdueByMs, expectedMinutes, by:"system"}  // doing task overran its size/expect (owner-scoped; re-pokes per period)
+{id, type:"heartbeat",    taskId, owner, overdueByMs, expectedMinutes, by:"system"}  // Doing task overran (owner-scoped)
 {id, type:"closed",       reason, by:"system"}           // session ended (reason: user|timeout|close)
 ```
 
-The board mutations + `closed` are the actionable ones; `ready` / `connected` /
-`disconnected` are lifecycle noise you can usually ignore.
-
-⚠ **`connected` / `disconnected` carry NO `id` and are never replayed.** They go
-to tails that are open at the moment they happen, and nowhere else. Presence is
-a fact about _now_ — a replayed "someone connected" is false by the time you
-read it — and buffering them meant a tail resuming from `--since 0` waded
-through the whole browser-presence history of the session, with each replayed
-frame advancing its cursor. Every other frame in the table above still carries
-an `id` and is still replayable.
-
-Events are **not commands** — by the time you see one, the daemon has already
-applied it; you're being informed. Read `cli.ts state` when you want the full
-truth.
+The task frames and `closed` are the actionable ones. **Events are not
+commands**: the daemon has already applied what you see. Read `state` when you
+want the whole truth.
 
 ### Task shape
 
 ```ts
 type Task = {
-  id: string; // any unique string (you choose the scheme; cli.ts auto-generates if omitted)
+  id: string; // unique; `add` mints one if you don't pass --id
   title: string;
   status: "todo" | "doing" | "review" | "done";
-  notes?: string; // optional; shown under the title (clamped on the card, editable in the detail modal)
-  owner?: string; // optional assignee — shown as an @name badge; drives scoped tails
-  tags?: string[]; // optional labels — neutral chips on the card (set via --tag; trimmed, deduped, case preserved)
-  size?: "S" | "M" | "L"; // optional T-shirt size → expected minutes (S=5, M=10, L=20); drives the heartbeat poke
-  expect?: number; // optional explicit expected minutes — overrides size's default
-  blockedBy?: string[]; // ids this task waits on (set via block/unblock); drives the blocked cue + unblocked event
-  // substrate (server-stamped, read-only): when it entered its current status + a capped visit log.
-  // Powers heartbeat; reused by the card-aging / metrics / leaderboard backlog.
-  enteredStatusAt?: number;
-  statusHistory?: { status: string; at: number }[];
+  notes?: string; // shown under the title, editable in the detail modal
+  owner?: string; // assignee — an @name badge; drives scoped tails
+  tags?: string[]; // labels (set with --tag)
+  size?: "S" | "M" | "L"; // expected 5 / 10 / 20 minutes; drives the heartbeat
+  expect?: number; // explicit expected minutes; overrides size
+  blockedBy?: string[]; // set only through block/unblock
+  enteredStatusAt?: number; // server-stamped, read-only
+  statusHistory?: { status: string; at: number }[]; // server-stamped, read-only
 };
 ```
 
-### Flags (`open`)
+## Lifetime and durability
 
-- `--title TEXT` — board/tab title (default `"Bounty Board"`)
-- `--timeout SECONDS` — idle timeout (default `7200` / 2 h). It's how long the
-  board lingers **after the last subscriber leaves**, not a cap on a live
-  session: a board with ≥1 live subscriber — a browser tab _or_ an agent's SSE
-  tail — never idle-closes, and the countdown only starts once the last one
-  disconnects. Any agent or browser activity also resets it.
-- `--no-open` — don't auto-open the browser; useful in headless / SSH setups.
-- `--port N` — bind specific port (default: random free port).
-- `--host HOST` — bind host (default `127.0.0.1`).
-- `--id SLUG` — stable session id. Auto-generated as `bounty-<rand>-p<port>` if
-  omitted (the `-p<port>` suffix encodes the bound port for session-recovery
-  semantics matching digestify).
-- `--restore <id>` — resume a saved board (see Durability below).
-- `--pin` — write `.bounty-session` (this board's id) into the cwd so every
-  later verb run from this directory tree auto-targets **this** board, not
-  merely the most-recent one (see the pin note above — matters when multiple
-  boards may be open on the machine).
+- **`--timeout SECONDS`** (default `7200`, two hours) is how long the board
+  lingers **after its last subscriber leaves** — a browser tab or a tail keeps
+  it open, and any agent verb resets the countdown.
+- **Closing the browser tab doesn't end the board.** Only the user's **Close
+  board**, your `close`, or the idle timeout does.
+- **Nothing is lost on close.** The daemon snapshots the board to
+  `$BOUNTY_HOME/snapshots/<session_id>.json` (`$BOUNTY_HOME` defaults to
+  `~/.bounty`) about a second after each change and on close. `sessions` lists
+  what can be restored; `open --restore <id>` brings a board back under a new id
+  (a keyed board keeps its key's id). A `--restore` naming no snapshot is
+  refused, exit 5, and starts nothing.
+- **A task the restore can't keep** (a shape from another bounty version, a
+  duplicate id) is dropped and named in `restoreDropped`; the rest of the board
+  restores. `restoreFailed: {path, reason}` means the snapshot exists but can't
+  be read: the board comes up empty and the snapshot is the damaged thing.
+  `restoreSkipped` is different — the restore was never attempted (see the
+  attach refusal) and your command line is what to fix.
 
-### Durability
+**Backups are named on the act that made them.** Before the daemon writes a
+smaller board over a bigger snapshot, or over a file it didn't fully read, it
+copies the snapshot aside. Every `open` and `close` reply carries
+`snapshotBackups`: `[]` when nothing was backed up, otherwise
+`[{ kind, path, taskCount, reason, restore }]`, where `restore` is the command
+that brings that copy back (`null` for a copy that needs repair, or a dump that
+a later save superseded). Run it with your launcher, like any printed command.
+The copies also show in `sessions`.
 
-The daemon debounce-snapshots the board to
-`$BOUNTY_HOME/snapshots/<session_id>.json` (default `$BOUNTY_HOME` is
-`~/.bounty`) ~1s after any change, and writes a final snapshot on close — kept,
-not deleted, so it's a resume point. Combined with idle-touch (every `cli.ts`
-verb resets the idle timer) and keep-alive-while-watched (a live tab or tail
-holds the board open — see `--timeout`), a board you're actively driving _or_
-just watching survives long stretches and a restart.
+> **⚠ Recover from the backup with the highest `taskCount`, not the newest
+> timestamp.** Backups are never pruned, so a later empty one can sit beside the
+> good one.
 
-- `cli.ts sessions` lists saved snapshots (id · task count · title) —
-  **including any `<id>.pre-<ts>.bak` rotation backups**, which appear there by
-  name.
-- `cli.ts open --restore <id>` brings a saved board back. The snapshot is merged
-  over defaults (old snapshots gain new fields cleanly) and its tasks are run
-  through the same `validateTask` boundary, so a malformed or legacy entry is
-  dropped rather than fatal — the rest of the board restores, and `open`'s
-  `restoreDropped` names each entry dropped. An `<id>` with no snapshot is
-  refused, exit 5 (`not_found`), and starts no board.
+**If the snapshot can't be written**, the board is never dropped: each failed
+write dumps it to an `<id>.unsaved-<ts>.json` file, and `state` reports
+`snapshotSaveFailed` with the real error and a `fix`. `close` then exits 6 with
+the dump's path and its `open --restore` command. If nothing at all is writable,
+the board refuses to end (your `close`, the user's Close board and the idle
+timeout are all held) until a save succeeds. A SIGTERM or SIGINT still stops it.
 
-An unkeyed restore gets a **new** session id; a keyed one keeps the key's id.
-Either way the snapshot you restored from is left intact, and a board restored
-from any file other than its own snapshot writes its own snapshot on the first
-debounce tick, not at its first change. A snapshot is written atomically (temp
-file, then rename), so a death mid-write leaves the previous one.
+## Multi-agent boards
 
-**A daemon writes over its own snapshot only if it owns it:** the board holds
-everything in that file (a keyed respawn that restored all of it), or it wrote
-the file itself since, or it has just copied it aside. A board with no snapshot
-yet owns it. Reading the file is not enough: a restore that dropped a task (see
-`restoreDropped`, a later duplicate id among them) or changed one (a field from
-another bounty version) keeps the file as a `partial-restore` copy at boot,
-once; after its first write the file is the board's own. Its `reason` names the
-drops, each changed task with the fields that differ
-(`changed: t-3 (priority, size)`) and any board field that differs
-(`a board field (owner)`). Key order is not a difference, nor is an empty list
-versus a missing one for `tags` and `statusHistory`, the two fields a restore
-normalises away when empty. Any other field present in the file and absent from
-the board, even one holding `[]`, is a difference. Any other board (started
-`--fresh`, restored from another file, or one whose read or copy failed at boot,
-say a mode-000 file or a read-only `snapshots/`) first copies the file to
-`<id>.unread-<ts>.bak.json` before its first write. If that copy fails, nothing
-is written over the file: the board goes to the `unsaved` dump below, and
-`snapshotSaveFailed.error` says the file could not be copied aside. The next
-write tries again, so once the disk heals the old board is kept and the write
-goes ahead. A normal open, add and close, or a keyed respawn and close, makes no
-copy. A copy made at boot (`unreadable`, `pre-restore`, `partial-restore`) or by
-the shrink rotation counts, so the file is never copied twice.
-
-- **A snapshot that exists but cannot be read** (truncated JSON, not an object,
-  `tasks` missing or not an array) makes a restore fail with
-  `restoreFailed: {path, reason}`. The board comes up empty. The file is never
-  written over: it is copied byte-for-byte to `<id>.unreadable-<ts>.bak.json`
-  first, at boot for a keyed board, and otherwise before the first write. The
-  copy is kept for repair; it cannot be restored as it stands.
-- **A snapshot that cannot be written** (the path is a directory, the file or
-  its folder is not writable, the disk is full) never loses the board. Each
-  failed write dumps the board to `<id>.unsaved-<ts>.json` in `snapshots/`, or
-  in `$BOUNTY_HOME` if `snapshots/` is the problem (one file per daemon,
-  rewritten on each failure). Mid-session, `state.snapshotSaveFailed` is
-  `{ path, error, unsaved, taskCount, held, fix }` (present-and-null once a
-  write succeeds), a `snapshotSaveFailed` event reaches a live tail, and
-  `daemon.log` gets a line. `error` is the real cause (`EISDIR`, `EACCES`, …),
-  and `fix` names the path that is actually wrong: the snapshot, or `snapshots/`
-  itself when that is a file. **`close` exits 6 (`conflict`)**, stdout empty:
-  the board is down, but the save `close` owed did not happen. Its envelope
-  names the snapshot path and the dump, its hint gives `fix` and then the
-  printed `open … --restore <dump>`, and `error.server` carries the daemon's
-  reply (`snapshotSaveFailed`, `snapshotBackups`). If nothing at all can be
-  written, the board holds the only copy, so **no request ends it**: `close`
-  refuses (exit 6, its hint saying what to make writable and the `close` to run
-  again), the human's **Close board** is refused with a message on the board,
-  and the **idle timeout is held**. A held timeout is logged (`idleCloseHeld` in
-  `daemon.log`) and shown on `state` as `snapshotSaveFailed.held`; each time the
-  timeout comes round the save is retried, and the first one that works ends the
-  board as a normal timeout (124).
-- **A signal is not guarded.** SIGTERM or SIGINT is an order to stop: the daemon
-  runs its teardown, whose final save is its last attempt, and exits whether or
-  not that save found somewhere to write. With nothing writable in
-  `$BOUNTY_HOME`, a signal loses what is not on disk. That is accepted: a daemon
-  that ignored a stop order would be killed harder, and a SIGKILL saves nothing
-  at all. Fix the disk and `close` instead, when you can.
-
-#### Snapshot rotation — the guard against writing a smaller board over a bigger one
-
-The final write on close is **unconditional** (it is the resume point). What
-protects it is a rotation in front of every write: **before the first write of
-this daemon's life that would SHRINK the on-disk task count**, the existing
-snapshot is copied to `<session_id>.pre-<ts>.bak.json`.
-
-- **The predicate is shrinkage, not emptiness.** A respawn over a dead board
-  starts empty and writes 0 over N — but draining a board card-by-card produces
-  one shrinking write per card, and loses just as much. `next < prior` covers
-  both; `next === 0` covers only the first.
-- **It fires once per daemon session**, not per write. Rotating per write with
-  any retention bound N means rotation N+1 evicts the pre-drain snapshot — the
-  guard eats what it protects. A restart re-arms it.
-- **It announces itself** on four surfaces, because they fail differently: the
-  daemon log survives the daemon's death, a `snapshotBackedUp` event reaches a
-  live tail, stderr reaches whoever is watching the process, and
-  `state.snapshotBackedUp` is readable at any time.
-- **Recovery needs no new verb** — the `.bak.json` suffix is chosen so
-  `sessions` lists it and `open --restore <id>.pre-<ts>.bak` resolves it.
-
-#### `snapshotBackups` — the backup is named on the act that made it
-
-Every `open` and `close` success carries `snapshotBackups`: a list, **present
-and `[]`** when nothing was backed up. Each entry is
-`{ kind, path, taskCount, reason, restore }`:
-
-| `kind`            | Made by                                                                                                                                                                    | `taskCount` | `restore`                 |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ------------------------- |
-| `shrink`          | the daemon, before its first shrinking write (the rotation above)                                                                                                          | the copy's  | the act                   |
-| `unreadable`      | the daemon, before writing over a file it cannot read                                                                                                                      | `null`      | `null` (repair)           |
-| `pre-fresh`       | `open`, before a `--fresh --restore <own id>` teardown writes the snapshot                                                                                                 | the copy's  | the act                   |
-| `pre-restore`     | the daemon, at boot, when a board restored from ANOTHER file would be written over its own snapshot, and that snapshot holds a task or a title the restored board does not | the copy's  | the act                   |
-| `partial-restore` | the daemon, at boot, when it restored its own snapshot but could not hold all of it (a task dropped, named in `restoreDropped`, or changed); `reason` names what differs   | the copy's  | the act                   |
-| `unread`          | the daemon, before its first write over its own snapshot, when it never read that file and no copy above kept it (the ownership rule above)                                | the copy's  | the act                   |
-| `unsaved`         | the daemon, when the snapshot could not be written (the board, dumped)                                                                                                     | the board's | the act, until superseded |
-
-**A superseded `unsaved` dump is not an act.** Once a snapshot write succeeds
-after the dump, the snapshot holds the newer board, and restoring the dump would
-roll the board back. The entry stays in the list (the file is kept on disk;
-deleting it is your call), with `restore: null` and a `superseded` note saying
-why. There is nothing to do about it. Only a write the ownership rule allowed
-can supersede a dump, so if that write replaced a snapshot this daemon never
-read, the old board is in an `unread` copy listed beside it, with its restore.
-
-`restore` is the command that brings the copy back:
-`open --session-key K --fresh --restore <id>.pre-….bak --no-open` for a keyed
-board (it works whether the board is live or not), and
-`open --restore <bak> --no-open` otherwise. Run it with your launcher, as with
-every printed command. `close` lists every backup its daemon made in its
-lifetime, because a debounced flush that rotated earlier has no reply of its
-own. `open` lists the pre-fresh copy, the torn-down board's backups, and the new
-daemon's boot copy. The exit stays 0: it is a success with a notice. Each backup
-is also written as one line on stderr.
-
-> **⚠ RECOVER FROM THE BACKUP WITH THE HIGHEST `taskCount`, NOT THE NEWEST
-> TIMESTAMP.** There is deliberately no retention policy (bounding it re-creates
-> the bug above), so backups accumulate. Two consecutive boot-empty-then-close
-> cycles leave a good backup from the first daemon and an **empty** one from the
-> second. Nothing is lost — but _"restore the latest backup"_ recovers nothing.
-
-### Ownership & scoping (multi-agent)
-
-When several agents share a board (a lead + workers), `owner` + scoped tails
-keep each worker's wake-set small instead of every event waking everyone.
+When several agents share a board, ownership and scoped tails keep each worker's
+wake-set small.
 
 - **Identity.** Pass `--as <name>` (or set `$BOUNTY_AS`) on your verbs. It
-  stamps the event `by`, and drives `claim` + `--mine`. It's cooperative
-  attribution, **not** auth — agents self-assert it; don't treat `by`/`owner` as
-  a security boundary.
-- **Assign (lead).** `cli.ts add <title> --owner <name>` or
-  `cli.ts update <id> --owner <name>`. Assignment-first is the primary path;
-  `update --owner` is also the **reassignment** path and always wins.
-- **Self-claim (worker).** `cli.ts claim <id> --as <name>` takes an **unowned**
-  task. A claim on a task someone else owns is **rejected** — a `conflict`
-  envelope on stderr at exit **`6`**, never a silent steal; claiming your own
-  task is a no-op success. (Reassignment is the lead's job via
-  `update --owner`.)
-- **Scoped tail.** `cli.ts tail --owner <name>` wakes only on that owner's
-  tasks; `cli.ts tail --mine --as <name>` wakes on your own **plus claimable
-  (unowned)** tasks. Lifecycle frames (`ready`/`closed`/…) always pass.
-  Filtering is client-side in the CLI — the `# scoped to …` notice rides
-  **stderr**.
-- **Self-echo suppression.** A scoped tail drops frames your own `--as` identity
-  caused, so you don't wake on your own writes (applied after the scope filter).
-- **`review` is the handoff cue.** Moving a task to **Review** is a status
-  change on an owned task — whoever's reviewing sees it: the human on the
-  **surface** (the Review column), the lead on an **unfiltered** tail, and an
-  assigned reviewer on their **scoped** tail (assign the review with `--owner`
-  and it lands in their lane). No special event; the board _is_ the signal
-  (board = state, chat = substance).
+  stamps `by`, and drives `claim` and `--mine`. It is cooperative attribution,
+  not auth.
+- **Assign** with `add … --owner <name>` or `update <id> --owner <name>` (also
+  the reassignment path). **Self-claim** an unowned task with
+  `claim <id> --as <name>`; a claim on someone else's task is refused (exit 6),
+  never a silent steal.
+- **Scoped tail.** `tail --owner <name>` wakes only on that owner's tasks;
+  `tail --mine --as <name>` on yours plus the unowned ones. Lifecycle frames
+  always pass, and a tail run with `--as` drops the frames you caused. A frame
+  carries the owner **after** the change, so on a reassignment only the new
+  owner wakes; tell the previous owner over chat.
 
-> **Ownership-transfer wake (by design).** An event frame carries the task's
-> owner **at the moment it happened** (post-change). So when a task is
-> reassigned A→B (or a worker claims an unowned task), only the **new** owner's
-> scoped tail wakes — the **previous** owner A is _not_ board-woken that the
-> task left their lane. That's intentional: the board reflects new state, A sees
-> it on their next `cli.ts state`, and the reassigning lead conveys the _why_
-> over chat. Don't rely on the board to notify a former owner.
+**The doer owns task-state.**
 
-### Multi-agent task-state ownership — who moves a card when
+- **Lead = dispatcher + reviewer.** Create the task, set `--owner`, leave it in
+  To do, and hand it off over the back-channel (chat, grapevine). Don't move it
+  to Doing for the worker — that records your guess, not their start.
+- **Owner moves its own card**: To do → Doing when it actually starts, Doing →
+  Review when it's done and green, with a note on how to verify.
+- **Reviewer closes**: Review → Done, or back to Doing for rework.
 
-Ownership (above) says _which_ tasks are yours; this is the _lifecycle_ — who
-slides a card across columns, and when. The rule that holds up under real
-multi-agent load: **the doer owns task-state.**
+### Dependencies
 
-- **Lead = dispatcher + reviewer.** Create the task, set `--owner`, and **leave
-  it in To do** — then hand it off over the back-channel (chat / grapevine).
-  Don't move it to Doing _for_ the worker: that records only _your_ intent (you
-  assume someone's on it), not whether anyone actually picked it up, so the
-  board fills with "Doing" cards nobody's working and you end up babysitting it.
-- **Owner moves its own card.** When you _actually start_, move your card **To
-  do → Doing** — that's the "I've taken this" signal the lead sees on `tail`.
-  When it's done and green, move it **Doing → Review** and post what you
-  parked + how to verify.
-- **Reviewer closes.** Review means a second set of eyes — a human glance, the
-  lead's merge-verify, or a peer agent you assign the review to (`--owner`).
-  Whoever reviews moves **Review → Done**, or bounces it back to **Doing** for
-  rework — the owner sees the bounce and picks it up.
+- `block <id> --on <id>[,…]` adds blockers; `unblock` removes them. `blockedBy`
+  changes only through these, so the cycle guard always runs: a self-reference
+  or a cycle is refused (exit 6), and a `--on` naming a task the board doesn't
+  have is refused (exit 5).
+- When a task's last live blocker clears, its owner gets one `unblocked` event.
+  **A blocker must reach Done, not Review**, to unblock its dependents; if you
+  park a blocker in Review, flag it to the reviewer.
+- The board shows `⛔ blocked by N` and de-emphasises the card, but anyone can
+  still move it.
 
-Why it holds: **Doing** becomes a trustworthy "genuinely being worked" signal
-instead of the lead's guess, the lead stops puppeteering the board, and the
-owner stays in the loop on acceptance vs. rework. It layers on the Review-gate +
-ownership/scoping above — those say _where the gate is_ and _whose lane it is_;
-this says _who slides the card_. (Validated across a long multi-agent build —
-the workers adopted it cleanly, even self-creating cards for work they picked
-up.)
+### Heartbeat — a nudge when a Doing task overruns
 
-### Dependencies (blocking)
+- **Opt in per task** with `--size S|M|L` (5 / 10 / 20 minutes) or
+  `--expect <minutes>`. An unsized task is not watched. There is no XL on
+  purpose: a task you'd size bigger should be broken down.
+- When a Doing task overruns, its owner gets a `heartbeat` event and the board
+  shows a toast; it re-pokes once per expected period until the card leaves
+  Doing. An unowned task gets the toast only.
+- **A blocked card is never poked.** If you're waiting on a peer, model it as
+  `block <id> --on <peer-task>` and the nag goes quiet until the peer is done.
+- Size long work honestly (`--size L` or a real `--expect`), or leave it
+  unsized.
+- **You only hear it if you're tailing.** Keep a standing `tail --mine` on your
+  board; a worker living only on grapevine is board-blind.
 
-A task can declare what it's **blocked on** — the board's one real edge over a
-flat list.
+### What the human sees
 
-- **Set edges:** `cli.ts block <id> --on <id>[,<id>…]` adds blockers;
-  `cli.ts unblock <id> --on <id>[,…]` removes them. (`blockedBy` is mutated
-  **only** through these — a raw `update` can't set it, so the cycle guard
-  always runs.)
-- **Cycle guard:** a `block` that would create a self-reference or a cycle
-  (direct or transitive) is **rejected** — a `conflict` envelope on stderr at
-  exit **`6`**, like a rejected claim — so the board can't wedge. A `--on` that
-  names a task the board does not have is a different refusal: `not_found`, exit
-  **`5`**, and nothing is blocked.
-- **`unblocked` event:** when a task's **last** live blocker clears — the last
-  blocker reaches `done`, _or_ its last blocking edge is removed — the daemon
-  fires `{type:"unblocked", taskId, owner}` to the task's owner. It's in the
-  wake-set (owner-scoped, so an `--owner`/`--mine` tail catches it), fires
-  **once** on the blocked→unblocked transition, and never fires for a task
-  that's already `done`. A blocker is "live" only if it still exists and isn't
-  done — a deleted or done blocker doesn't block.
-  - **A blocker must reach `done` — not `review` — to unblock dependents.**
-    Review is the verification gate (the blocker isn't finished yet), so a
-    blocker parked in Review keeps its dependents blocked until a reviewer moves
-    it to Done. If you park a blocker in Review and its dependent stays stuck,
-    that's why — flag the review for whoever's reviewing (`message`) rather than
-    waiting.
-- **Surface cue:** a blocked task shows `⛔ blocked by N` and is visually
-  de-emphasized. It's a **convention, not a lock** — the board still lets anyone
-  move a blocked task (same soft-gate spirit as Review). The cue counts down
-  live as blockers clear.
+The board also shows, with no verb involved: a dimming "⏱ Doing Nm · over" badge
+on an overrunning card; a soft "wrap one before pulling more" nudge when one
+owner has 2+ cards in Doing; and a per-browser filter bar by tag and owner.
 
-### Heartbeat — nudge an owner when a Doing task overruns
+## Exit codes
 
-A task can declare how long it's expected to take, and the daemon pokes its
-owner if it sits in **Doing** past that — the safety net for an agent that
-silently stalls mid-task.
+Every `cli.ts` failure is **one JSON envelope on stderr**, with stdout empty:
+`{"ok":false,"error":{"kind","exit_code","retryable","message",…},"meta":{"command"}}`.
+Route on the exit code and `error.kind`, not the message. Where the daemon
+refused, its reply is under `error.server`.
 
-- **Opt in per task.** Set a **T-shirt size** — `--size S|M|L` → **5 / 10 / 20
-  minutes** — or an explicit `--expect <minutes>` (which overrides the size's
-  default) on `add`/`update`. A task with neither is **not watched**; heartbeat
-  is opt-in, not a global timer.
-- **Three sizes by design — no XL.** Agents are fast; a code change rarely runs
-  past ~20 minutes. The absence of a "huge" size is deliberate: a task you'd
-  expect to take days is a signal to **break it down further**, not size it up.
-- **The poke.** When a Doing task overruns its expected time, the daemon fires
-  an owner-scoped `heartbeat` event (same wake-set as `unblocked` — only the
-  owner's `--owner`/`--mine` tail wakes) **plus a board toast** so the human
-  sees the staleness too. An _unowned_ overdue task gets the toast only.
-- **Re-pokes, proportionately.** It pokes once on overrun, then re-pokes **once
-  per expected-period** (so a big task isn't spammed and a small one still gets
-  timely nudges) until the card leaves Doing — at which point it auto-resets.
-- **A blocked card is never poked.** A Doing task with a live blocker (see
-  Dependencies) is legitimately waiting on a peer, not stalled, so the heartbeat
-  (and the surface's "stale" cue) skip it. This is why you should **model a
-  lockstep / serialize wait as a block edge**: when you park a card in Doing to
-  wait on a peer's gate, `block <id> --on <peer>` and the nag goes quiet for
-  free (and clears itself when the peer reaches `done`). An informal "I'll wait"
-  that never becomes a block edge will still get poked.
-- **Size long-by-nature work realistically.** A task that's genuinely long (e.g.
-  a real-browser verify) should carry `--size L` or an honest `--expect <min>`,
-  not a small size it's bound to overrun. If you can't predict the duration up
-  front, leaving it unsized (unwatched) is better than under-sizing it.
-- **You only hear it if you're tailing.** The `heartbeat` event lands on the
-  board's event stream, so it reaches you only while you hold an owner-scoped
-  tail (`tail --mine`/`--owner`, Monitor-wrapped). A worker that lives on a
-  side-channel (e.g. grapevine) but isn't tailing the board is **board-blind**:
-  the toast still shows for the human, but the owner-wake never arrives. Keep a
-  **standing `--mine` tail on your board** so `heartbeat` (and `unblocked`)
-  actually reach you — re-arm it if the board restarts on a new session id.
-- Built on the per-transition timestamp substrate (`enteredStatusAt`), the same
-  data the card-aging / metrics / leaderboard backlog will reuse.
+| Code | `kind`      | Means                         | Typical cause                                                                                                                                                                                      |
+| ---- | ----------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | —           | success                       | `tail` also exits 0 on the `closed` frame                                                                                                                                                          |
+| 2    | `usage`     | fix the command               | a bad or misplaced flag, a missing argument, an empty `update`, a bad `--status`                                                                                                                   |
+| 5    | `not_found` | the named thing doesn't exist | no running board; a task id the board doesn't have; a named `tail` whose board never came up; `open --restore` of a missing snapshot                                                               |
+| 6    | `conflict`  | a precondition failed         | a duplicate `--id`; `claim` on another's task; a `block` cycle; `init` over tasks without `--replace`; `close` whose final save failed; `open` that can't check or back up a board's lock/snapshot |
+| 1    | `internal`  | the spell broke               | the daemon answered with an error, or isn't answering (`open` and `close` wait about 2 s)                                                                                                          |
 
-### Surface cues — what the human sees
+A 5 or 6 means "the daemon refused this", not "you called it wrong": read
+`error.message` and `error.hint`, adjust, and don't retry verbatim. The one
+exception to the envelope is `open`'s attach refusal (exit 2, live board's JSON
+on stdout).
 
-These are browser-surface signals for the human watching the board. They change
-no state and need no verb; the agent's equivalents are the events + `--mine`.
-Each has its own visual language so they don't blur together.
+How the **session** ended reaches you as the `closed` frame's `reason`: `user`
+(Close board), `close` (your verb) or `timeout` (idle; the daemon exits 124).
+Every ending is restorable.
 
-- **Card aging.** A Doing card past its expected time (`--size`/`--expect`) dims
-  and grows a "⏱ Doing Nm · over" badge, updating live — the visual half of
-  `heartbeat`, the human's eye on a stalling card.
-- **WIP cue.** When one owner has **2+ cards in Doing**, those cards show a soft
-  "N in Doing — wrap one before pulling more" nudge. Per-owner (parallel owners
-  each on one don't trip it) and non-blocking — a focus whisper, never a lock,
-  the surface kin of the doer-owns-state model.
-- **View filter.** A filter bar narrows the human's _view_ by tag/owner (tag
-  chips + `@owner` pills, toggle to filter, hide non-matching, counts track the
-  visible set) — the surface equivalent of the agent's `--mine`/`--owner`/
-  `--tag`. View-only and per-browser; nothing leaves the tab.
+## Join mode — connect to an existing board
 
-## Exit Code Contract
+Another agent is hosting the board and the user wants you on it. Run `join.ts`;
+it opens a WebSocket to the daemon and bridges it to stdio.
 
-| Code | Reason (the `closed` event's `reason` field) | What to do                                                                            |
-| ---- | -------------------------------------------- | ------------------------------------------------------------------------------------- |
-| 0    | `user`                                       | The human clicked **Close board**. Clean dismiss — state is snapshotted (restorable). |
-| 0    | `close`                                      | You sent `cli.ts close` — clean shutdown you initiated.                               |
-| 2    | (no reason — fails before session starts)    | Bad CLI args or port bind failure. stderr explains; fix args and retry.               |
-| 124  | `timeout`                                    | Idle timeout fired. Tell the user the session expired; offer to relaunch/restore.     |
+```bash
+bun ${CLAUDE_PLUGIN_ROOT}/skills/bounty/scripts/join.ts --id <session_id>   # or --url <url>, or no args for the latest board
+```
 
-A board dismiss is always a **clean exit 0** — there's no "discard" path anymore
-(the old `cancel`/130). The board holds canonical state and snapshots it, so any
-ending is non-destructive and reopenable with `cli.ts open --restore`.
+1. **Find the board**: `--id <session_id>` if you were given an id,
+   `--url <url>` for a URL, neither for the latest board
+   (`<tmpdir>/bounty-latest.json`). If none is found it exits 5 with the same
+   envelope as `cli.ts`; ask the user for an explicit `--url` or `--id`.
+2. **Wait for the `joined` line** on stdout: the title and current tasks.
+3. **Write one JSON line per action to stdin**; read everyone's actions from
+   stdout.
+4. **Disconnect** with `{"type":"close"}`, or wait for the host to end it.
 
-The session-ending outcome (a clean exit 0, or 124 on idle timeout) belongs to
-the **daemon** and surfaces to the agent via the `closed` event's `reason` on
-the tail. That family is the table above and the taxonomy does not govern it.
-
-**`cli.ts`'s own exits are the house taxonomy**, and every one of them prints
-ONE JSON envelope on **stderr** with stdout left empty:
-
-| Code | `kind`      | What it means                  | Typical cause                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| ---- | ----------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 0    | —           | The verb succeeded             | `tail` also exits 0 on the `closed` frame                                                                                                                                                                                                                                                                                                                                                                                                        |
-| 2    | `usage`     | Fix it by changing the command | A bad flag, a missing verb, a missing required argument, an empty `update` patch                                                                                                                                                                                                                                                                                                                                                                 |
-| 5    | `not_found` | The named thing does not exist | No running session; a stale session pointer; a task id that is not on this board; a `tail --session`/`--session-key` whose board never came up; `open --restore` of a snapshot that does not exist                                                                                                                                                                                                                                               |
-| 6    | `conflict`  | A precondition failed          | A duplicate `--id`; `claim` on an other-owned task; a `block` that forms a cycle; `init --stdin-tasks` over a board that has tasks, without `--replace`; `open` when the board's lock holder cannot be checked (no working `ps`); `open --fresh --restore <own id>` whose snapshot could not be copied aside before the teardown (the live board is kept); `close` whose final snapshot write failed (the board was dumped to an `unsaved` file) |
-| 1    | `internal`  | The spell broke                | The daemon answered a command with a non-200; a daemon that is not answering (`open`, `close`)                                                                                                                                                                                                                                                                                                                                                   |
-
-⚠ **This changed in 2026-09, twice, and a script may be pinned to either old
-shape.** Before the port every failure was prose at exit **2**. The port then
-moved most failures onto the taxonomy but left the **cooperative refusals** —
-the ones above at 5 and 6 — writing prose to stderr, a legacy
-`{"ok":false,"applied":false,…}` document to **stdout**, and exiting **1**. Both
-are gone. A script testing `exit == 2` for "no session" must test **5**; one
-testing `exit == 1` for "the daemon refused my claim" must test **6**, and must
-read the refusal from **stderr**, not stdout.
-
-So `claim`/`block` exiting **6** means "the daemon refused this," not "you
-called it wrong" (2) and not "the spell broke" (1) — read `error.message`,
-adjust, and do not retry verbatim.
-
-**One refusal is deliberately NOT an envelope: `open`'s attach refusal**
-(`--title`/`--timeout`/`--restore` against a board that is already running, or
-that another `open` started first while this one was spawning). It exits `2` and
-prints the live board's discovery JSON — `url`, `port`, `session_id` plus
-`restoreSkipped` — on **stdout**, because that payload is the answer to "then
-where IS my board", and the house envelope has no field for a refusal that
-carries data. Recognise it by the `restoreSkipped.requested` array; every other
-refusal is an envelope on stderr.
-
-## Join Mode — Connect to an Existing Board
-
-Another agent is already hosting a board (browser tab is open somewhere) and the
-user wants you to participate. You'll spawn `join.ts` instead of `server.ts`; it
-opens a WebSocket to the daemon and bridges it to its own stdio.
-
-### How it works
-
-1. **Find the board.** Three discovery paths, in order of explicitness:
-   - User gave you a session id → `--id <session_id>`
-   - User gave you a full URL → `--url <url>`
-   - User said "just join the latest one" or didn't specify → omit both;
-     `join.ts` reads `<tmpdir>/bounty-latest.json`.
-
-   If discovery fails — no discovery file, an `--id` with no session file, or
-   nothing listening at the URL — `join.ts` exits **5** (`not_found`) with the
-   same JSON failure envelope `cli.ts` prints, on stderr. Surface it to the user
-   and ask for an explicit `--url` or `--id`. A bad flag is **2** (`usage`).
-
-2. **Spawn the joiner.** It opens the WebSocket and stays connected.
-
-   ```bash
-   bun run ${CLAUDE_PLUGIN_ROOT}/skills/bounty/scripts/join.ts \
-     --id <session_id>          # or --url <url>, or no args for "latest"
-   ```
-
-3. **Wait for the `joined` event** on stdout — that's the handshake, with the
-   current title and tasks.
-
-4. **Write task.add / task.move / task.edit / task.remove to stdin** to act on
-   the shared board. Read `event` lines from stdout to see everyone else's
-   actions (host agent, user, other joiners). The board state stays in sync
-   across all participants automatically.
-
-5. **Disconnect by sending `{"type":"close"}`** on stdin, or just let the host
-   close the session (you'll get a `disconnected` event with reason
-   `server_closed`).
-
-### Join protocol — Agent → join.ts (stdin, one JSON line per message)
+Agent → `join.ts` (stdin). These are the browser's WebSocket messages; there is
+no `task.update`, toast or `init` over the socket:
 
 ```
-{"type":"task.add",    "task": Task}              // append a new task
-{"type":"task.toggle", "id": "...", "status": "todo|doing|review|done"}  // change status
-{"type":"task.move",   "id": "...", "status": "...", "index": N}  // status + position
-{"type":"task.edit",   "id": "...", "title?": "...", "notes?": "..."}   // edit title and/or notes (notes "" clears)
+{"type":"task.add",    "task": Task}
+{"type":"task.toggle", "id": "...", "status": "todo|doing|review|done"}
+{"type":"task.move",   "id": "...", "status": "...", "index": N}
+{"type":"task.edit",   "id": "...", "title?": "...", "notes?": "..."}   // notes "" clears
 {"type":"task.remove", "id": "..."}
-{"type":"close"}                                  // disconnect cleanly
+{"type":"close"}
 ```
 
-These are the **WebSocket** verbs (the same ones the browser sends) — a joiner
-is a browser-equivalent participant. Note there's no `task.update` over WS: use
-the granular `task.toggle` (status) / `task.edit` (title/notes) / `task.move`
-(drag) instead. Joiners also CAN'T push toasts (`message`) or reset state
-(`init`) — those are agent-`/cmd`-only; the daemon ignores them over WS.
-
-### Join protocol — join.ts → agent (stdout, one JSON line per message)
-
-> **⚠ Wrapping asymmetry.** The joiner's stdout wraps every incoming broadcast
-> as `{"type":"event", "payload":{...}}`. Only the bookend handshakes (`joined`,
-> `disconnected`) are bare. If you're copying handler logic from the
-> `cli.ts tail` side, you'll need an unwrap step:
->
-> ```ts
-> if (line.type === "event")
->   handle(line.payload); // joiner side
-> else if (line.type === "task.toggle") handle(line); // tail side
-> ```
+`join.ts` → agent (stdout). **Every broadcast is wrapped** as
+`{"type":"event","payload":{…}}`; only `joined` and `disconnected` are bare.
+That differs from `cli.ts tail`, so unwrap `payload` before reusing tail-side
+handlers. You also see echoes of your own actions.
 
 ```
-{"type":"joined",       "url":"...", "session_id":"...", "title":"...",
-                        "tasks": Task[]}          // initial handshake
-{"type":"event",        "payload": {...}}         // any WS broadcast:
-                                                  //   init | task.add |
-                                                  //   task.update |
-                                                  //   task.remove |
-                                                  //   message
+{"type":"joined",       "url":"...", "session_id":"...", "title":"...", "tasks": Task[]}
+{"type":"event",        "payload": {...}}   // init | task.add | task.update | task.remove | message
 {"type":"disconnected", "reason":"server_closed|stdin_close|timeout|error"}
 ```
 
-**Session end is uniform.** When the board ends (the human dismisses it, the
-host agent closes it, or the idle timer fires), every participant — joiners
-included — receives a `message` payload of `session ended: <reason>` and then a
-`disconnected` as the daemon tears down. There's no separate submit/cancel
-signal anymore: the daemon held canonical state live the whole time (and
-snapshotted it), so there's no "final state" to flush or "discard" to honor.
-Treat `disconnected` as the end; the board is restorable via
-`cli.ts open --restore` regardless of who ended it.
+When the board ends, every participant gets a `session ended: <reason>` message
+and then `disconnected`. `join.ts` exits 0 on a clean disconnect, 2 on a bad
+flag (an envelope) **or** when the socket errors mid-session (a `disconnected`
+frame with `reason:"error"`, no envelope), and 5 when it can't find the board.
 
-### Join exit codes
+## Common pitfalls
 
-**Two families, and the channel tells them apart.** A STARTUP failure prints the
-house envelope on stderr and nothing on stdout. A session ENDING prints a
-`disconnected` frame on stdout and no envelope — it is an outcome, not a
-refusal, and it belongs with the host daemon's own 0 / 124.
-
-| Code | Family  | Meaning                                                                          | What to do                                    |
-| ---- | ------- | -------------------------------------------------------------------------------- | --------------------------------------------- |
-| 0    | ending  | Clean disconnect (server closed, or agent closed)                                | Normal — tell the user the session is done    |
-| 2    | startup | `usage` — a bad flag                                                             | Fix the command line                          |
-| 5    | startup | `not_found` — no discovery file, unknown `--id`, or nothing listening at the URL | Ask the user for an explicit `--url`/`--id`   |
-| 2    | ending  | The socket errored mid-session (`disconnected` frame with `reason:"error"`)      | The board may be gone; re-discover and rejoin |
-
-⚠ **`2` is the one number both families use.** They are distinguished by the
-channel, never by the code: an ending always emits the `disconnected` frame on
-stdout and never an envelope; a startup failure is the reverse.
-
-### Join example
-
-```bash
-# User: "join my bounty"
-# You (in a second terminal / agent session):
-bun run ${CLAUDE_PLUGIN_ROOT}/skills/bounty/scripts/join.ts
-# → reads <tmpdir>/bounty-latest.json
-# → emits {"type":"joined", "session_id":"bounty-abc...", "tasks":[...]}
-# Now write JSON-lines to its stdin to act on the board.
-```
-
-## Pattern Notes
-
-- **The daemon is source of truth.** It holds the canonical task list and
-  broadcasts updates to all WS clients (browser + joiners). Conflicting
-  concurrent edits resolve to whoever's message arrived first.
-- **Events are not commands.** When you receive a `tail` frame (host) or an
-  `event` with a `task.*` payload (joiner), the daemon has already applied it.
-  You're just being informed — read `cli.ts state` for the authoritative board.
-- **`init` resets the list.** Use `add` / `update` / `remove` for incremental
-  changes once the board is live; don't re-`init` mid-session or you'll blow
-  away the user's in-progress edits.
-- **`message` is a toast, not a chat replacement** — host-only, use sparingly.
-- **Joiners are downstream.** They see every broadcast — including echoes of
-  their own actions. Filter those out if duplicates would be a problem (match on
-  the id of an action you just sent).
-
-## Common Pitfalls
-
-- **Use `--stdin` for any free text with shell metacharacters** — but know which
-  field it lands on. Text containing apostrophes, quotes, `&`, `<`, `>`, or `$`
-  gets mangled (or refused) by the shell if passed as a positional argument.
-  `--stdin` reads it verbatim, defeating the quoting problem that used to
-  require an inline-script seed dance. ⛔ **It replaces the verb's POSITIONAL
-  argument, not its "body"** — so on `update`, whose only positional is `<id>`,
-  it overwrites the **title** at `ok:true`. See the `--stdin` note under Verbs
-  before using it on `update`.
-- **A failure is ONE JSON document on stderr, and stdout stays empty.** Every
-  refusal prints
-  `{"ok":false,"error":{"kind","exit_code","retryable","message",…},"meta":{"command"}}`
-  and exits on the taxonomy: **2** usage (you can fix it by changing the
-  command), **1** internal (the spell broke), **5** not_found (the named thing
-  does not exist — most often "no running bounty session", and also a task id
-  this board has never had), **6** conflict (a precondition failed — a duplicate
-  `--id`, a claim on someone else's task, a `block` that would form a cycle). ⚠
-  **This changed in 2026-09:** every failure used to print prose
-  (`bounty: <msg>`) and exit **2**, so "that board is gone" and "you typed it
-  wrong" were the same number; the cooperative refusals then spent one release
-  writing prose plus a stdout document at exit **1**. A script that tested
-  `exit == 2` for "no session" must test `5`, and one that tested `exit == 1`
-  for a refused write must test `5`/`6`. Where the daemon itself refused, its
-  own reply is carried verbatim under `error.server` — that is where
-  `applied: false` now lives. **The one exception is `open`'s attach refusal**,
-  which exits `2` with the live board's discovery JSON on stdout because the
-  payload IS the answer; see the Exit Code Contract.
-- **A write verb tells you whether it took.** Every write (`add`, `update`,
-  `claim`, `block`/`unblock`, `remove`, `message`, `close`) reports the daemon's
-  `applied` verdict: on success it exits `0` with its result on stdout; on a
-  refusal it exits `5` (a ghost id) or `6` (a duplicate `--id`, an other-owned
-  claim, a cycle) with the failure envelope on **stderr** and nothing on stdout.
-  The daemon's own reply — `applied: false` and its sentence — rides
-  `error.server` inside that envelope. A duplicate `--id` is a refusal: the
-  board is left unchanged and the existing task keeps its id. **You no longer
-  need a follow-up `state` to find out whether a write landed;** read the exit
-  code. `state` remains the way to read the board, not the way to confirm a
-  write.
-- **Don't merge tail's stderr into stdout.** Monitor notifies on every stdout
-  line; the keepalive tick + diagnostics ride stderr by design. `2>&1` turns
-  every keepalive into a spurious notification. Leave them split.
-- **The watch ends with the session.** On `closed` the tail prints `tail.closed`
-  and exits, which ends its Monitor; there is nothing to `TaskStop`. Stop a
-  background `--once` you no longer need with `TaskStop`.
-- **The daemon outlives the browser tab.** Closing the tab doesn't end the
-  session — only the human's **Close board**, your `cli.ts close`, or the idle
-  timeout does. If you opened a board and the user wandered off, it sits until
-  the timer fires.
+- **`--stdin` on `update` sets the title**, not the notes.
+- **Flags after `--` are text.** Put `--session-key` and every other flag before
+  it.
+- **Don't merge `tail`'s stderr into stdout** under Monitor.
+- **Pin the board** (`--session-key`, `--session` or `open --pin`) whenever
+  another board might be open on the machine.
+- **The daemon outlives the tab**, and an abandoned board sits until its idle
+  timeout.
 
 ## Feedback touchpoint
 
@@ -1142,10 +519,7 @@ friction so the tool improves:
   "anything about bounty itself feel off or worth improving?" Route what they
   say to the same issues.
 
-This is feedback about the **tool**, not the work on the cards.
-
-> **Worth asking about specifically:** anything the _agent_ was told that the
-> _board_ never showed, or the reverse. Bounty's surface is a hand-written
-> mirror of the daemon's state, so the two channels drift silently — a whole
-> release shipped with the daemon reporting a failed restore that the board
-> never rendered.
+This is feedback about the **tool**, not the work on the cards. Worth asking
+about specifically: anything the agent was told that the board never showed, or
+the reverse — the surface is a hand-written mirror of the daemon's state, and
+the two can drift.
