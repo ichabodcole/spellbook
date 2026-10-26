@@ -382,6 +382,19 @@ committed, or release mode has nothing to serve.
 
 _Ruled by Cole (the identity half) and by the Slice 2 ratify round (the location half). Owner: prospero._
 
+> ⛔ **RE-RULED 2026-10-14 — THE MAPS NO LONGER SHIP.** Cole: _"the source is in the repo, so it
+> doesn't need to ship inside the skills."_ Every bundle is now built with `sourcemap: "none"` and no
+> external `.map` is written (item `shrink-shipped-dist`, built 2026-10-26). So "source-free by
+> construction" is back to meaning **no source bytes in the subtree** — no source FILES, and no
+> embedded `sourcesContent` either. Measured at the change: the inline maps were **10.39 MB of the
+> 23.19 MB of shipped JS (44.8%)**. `grimoire/no-shipped-sourcemap-ward.test.ts` reds on any
+> `sourceMappingURL` directive or `.map` file in a deployed `dist/`. A stack trace from an installed
+> skill points at `dist/X.js` line:column of the unminified bundle, whose `// src/<path>.ts`
+> module-boundary comments name the source; for TypeScript lines, run the entry from `src/`. A side
+> effect: a comment-only edit under `src/` no longer dirties any committed bundle (Bun's bundler
+> drops ordinary comments; the map was what carried them). **The rest of this amendment is the
+> history of the inline-map ruling; its location half still stands.**
+
 **"Source-free by construction" now means: no source FILES — nothing a consumer edits, nothing the
 bundler reads, nothing that requires an install.** It does **not** mean "no source bytes".
 
@@ -1306,7 +1319,7 @@ second root.
 
 _Owner: circe. Ratified 2026-08-31 from Slice 3, where the phase's own exit criterion turned out to carry zero information._
 
-**Half one — you cannot establish "no source reached the artifact" by grepping the artifact's text.** Un-minified bundles embed their module paths as **per-module boundary comments** — measured: **82** in one mind-mapper chunk, and `// src/kit/lib/cn.ts` is in both shipped surface bundles right now. Surface bundles carry **no sourcemap at all**; backend bundles carry an inline one, base64, whose plaintext is unsearchable. **So the text of `dist/` proves nothing either way.**
+**Half one — you cannot establish "no source reached the artifact" by grepping the artifact's text.** Un-minified bundles embed their module paths as **per-module boundary comments** — measured: **82** in one mind-mapper chunk, and `// src/kit/lib/cn.ts` is in both shipped surface bundles right now. Surface bundles carry **no sourcemap at all**; backend bundles carried an inline one, base64, whose plaintext is unsearchable (⚠ none since the 2026-10-14 re-ruling — see Contract 4's amendment — but the boundary comments remain). **So the text of `dist/` proves nothing either way.**
 
 **The invariant lives in the deployed folder's FILE LIST**, which is what Contract 4's identity sentence means post-amendment: no `surface/`, no stray sources, nothing a consumer edits or a bundler reads.
 

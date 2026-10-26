@@ -184,21 +184,26 @@ test("the backend still works in release mode — fresh store 409s needs-project
 // artifact must be ON DISK in the served tree and still refused, and the
 // surface cells above must still be answering, or a whitelist that refused
 // EVERYTHING would look like a working defence.
+// ⚠ SINCE shrink-shipped-dist (2026-10-26) NO BUNDLE CARRIES A SOURCE MAP, so a
+// leak no longer hands out the TypeScript verbatim — but the bundle is still the
+// whole backend implementation, so the refusal stands. The subject marker moved
+// with it: the map was the old proof "this is the real artifact"; the bundler's
+// module-boundary comment for a backend module (`// src/<spell>/backend/…`) is
+// the new one.
+const BUNDLED_BACKEND_MODULE = /^\/\/ src\/[^\n]*\/backend\//m;
 test("⛔ the backend bundles in dist/ are REFUSED — and they are really there", async () => {
   const present = readdirSync(join(skillRoot, "dist")).filter((f) => BACKEND_ARTIFACTS.includes(f));
   expect(present.sort()).toEqual([...BACKEND_ARTIFACTS].sort());
   for (const name of present) {
     // The subject: the bundle is in the served directory, and it is the REAL
-    // artifact — its inline sourcemap is the thing that must not reach a browser.
+    // artifact — the bundled backend implementation is what must not reach a browser.
     const onDisk = readFileSync(join(skillRoot, "dist", name), "utf8");
-    expect(`${name}:${onDisk.includes("sourceMappingURL=data:application/json;base64,")}`).toBe(
-      `${name}:true`,
-    );
+    expect(`${name}:${BUNDLED_BACKEND_MODULE.test(onDisk)}`).toBe(`${name}:true`);
     const res = await fetch(`${url}/${name}`);
     expect(`${name}:${res.status}`).toBe(`${name}:404`);
     const body = await res.text();
     expect(body.length).toBeLessThan(1_000);
-    expect(body).not.toContain("sourceMappingURL");
+    expect(BUNDLED_BACKEND_MODULE.test(body)).toBe(false);
   }
 });
 

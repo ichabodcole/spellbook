@@ -171,10 +171,27 @@ function buildableSpells(): string[] {
  * 18), while a bundle at scripts/cli.js is green and BLIND (three behavioural
  * wards stop seeing the CLI, and a shrunk population is not a red cell).
  *
- * sourcemap:"inline" IS A RULING (Cole), made knowing it embeds the complete
- * original TypeScript - astrolabe 13,733 bytes of source becomes roughly
- * 60,000 emitted. Contract 4's "source-free by construction" was redefined in
- * the same ruling to mean no source FILES.
+ * ⛔ NO SOURCE MAP SHIPS, INLINE OR LINKED (Cole, 2026-10-14: "the source is in
+ * the repo, so it doesn't need to ship inside the skills"; item
+ * shrink-shipped-dist). This REVERSES the 2026-08-31 ruling that set
+ * sourcemap:"inline" knowing it embedded the complete original TypeScript -
+ * 10.39 MB of the 23.19 MB of shipped JS (44.8%) was map, measured at the
+ * change. Contract 4's "source-free by construction" is back to meaning no
+ * source bytes in the subtree, not only no source FILES.
+ *
+ * No external `.map` is written either, gitignored or not. A `.map` beside the
+ * bundle would sit in the served `dist/`, in the dist-check roster's disk walk
+ * and one `.gitignore` line away from shipping, to serve a debugging need the
+ * source already serves: run the entry from `src/<spell>/backend/X.ts` and Bun
+ * reports TypeScript lines natively. What a stack trace from an INSTALLED skill
+ * points at now is `dist/X.js` line:column of an UNMINIFIED bundle, whose
+ * `// src/<path>.ts` module-boundary comments name the source file each region
+ * came from - readable, and one search away from the repo line.
+ * `grimoire/no-shipped-sourcemap-ward.test.ts` fails if a map comes back.
+ *
+ * A side effect worth knowing: the map was the only thing that carried source
+ * COMMENTS into the bundle (Bun's bundler drops ordinary comments), so a
+ * comment-only edit under `src/` no longer dirties a committed bundle.
  *
  * ⚠ CORRECTED 2026-09-08 (Phase 1b, D6). This block read "CLIs ONLY. A server
  * does bundle, but drags the entire surface graph into the backend artifact;
@@ -219,7 +236,7 @@ async function buildBackendEntry(spell: string, name: string): Promise<number> {
     entrypoints: [backendEntryFor(spell, name)],
     outdir,
     target: "bun",
-    sourcemap: "inline",
+    sourcemap: "none",
     external: [SURFACE_HTML_EXTERNAL],
     // ⛔ PIN NODE_ENV, OR A DEPENDENCY RESOLVES TO ITS DEVELOPMENT BUILD AND THE
     // DAEMON RUNS SLOW. Unset, Bun.build resolves the `development` export
@@ -267,6 +284,9 @@ async function buildSurface(spell: string): Promise<number> {
     entrypoints: [entry],
     outdir,
     plugins: [tailwind],
+    // Spelled out though it is Bun's default: no map ships from either build
+    // (see the ruling above `buildBackendEntry`).
+    sourcemap: "none",
     // ⛔ PIN NODE_ENV, OR REACT RESOLVES TO ITS DEVELOPMENT BUILD AND THE
     // SURFACE CRASHES ON A TIMER. Unset, React's export conditions pick the
     // development entry, which carries the Performance Track instrumentation:

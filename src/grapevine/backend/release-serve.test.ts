@@ -206,7 +206,9 @@ test("⛔ the backend artifacts are ON DISK in the served dist/ — the precondi
     const file = join(skillRoot, "dist", name);
     expect(existsSync(file)).toBe(true);
     // A stub would satisfy `existsSync`; the thing being refused is a bundle.
-    expect(statSync(file).size).toBeGreaterThan(50_000);
+    // 20_000, not the 50_000 it was: the bundles lost their inline source maps
+    // (shrink-shipped-dist), and daemon.js is ~33 KB without one.
+    expect(statSync(file).size).toBeGreaterThan(20_000);
   }
 });
 

@@ -144,7 +144,7 @@ plugins/spellbook/skills/<spell>/
     cli.ts                  # LAUNCHER: 3–4 code lines, import { run } from "../dist/cli.js"
     server.ts               # LAUNCHER
   dist/                     # GENERATED *and* COMMITTED
-    cli.js                  # backend bundle: kit inlined, inline sourcemap
+    cli.js                  # backend bundle: kit inlined, no source map
     server.js               # backend bundle
     index.html              # surface entry, UNHASHED on purpose (§6, release mode)
     index-<hash>.js, .css   # surface chunks, content-hashed
@@ -470,11 +470,13 @@ shape a spell's backend, stated by what they make you do:
   deployed skill folder. Source stays the default for a backend that shares
   nothing, and today no such backend exists.
 - **The plugin subtree holds no source files** (Contract 4 and its amendment).
-  Surface source lives in `src/`. Built backends carry an inline sourcemap, and
-  that is allowed: "source-free" means no source **files** — nothing a consumer
-  edits, nothing a resolver reads — not no source bytes. Contract 20 adds that
-  you cannot prove this by grepping the artifact's text. The invariant lives in
-  the folder's file list.
+  Surface source lives in `src/`. No built bundle carries a source map, inline
+  or linked (Cole, 2026-10-14, reversing the 2026-08-31 inline-map ruling: the
+  source is in the repo, so it does not ship inside the skills);
+  `grimoire/no-shipped-sourcemap-ward.test.ts` reds if one comes back. Contract
+  20 still holds that you cannot prove "no source reached the artifact" by
+  grepping its text — unminified bundles keep their `// src/…` module-boundary
+  comments. The invariant lives in the folder's file list.
 - **Dev mode needs the cwd pinned to `src/<spell>/`** (Contract 5), and routes
   bake at boot: a daemon change is not served until the daemon restarts.
 - **A CLI failure is one JSON document on stderr, with stdout empty** (Contract
