@@ -7,9 +7,14 @@ description:
   checking back in, or agents roundtable collaboration with human in the loop
   observation. Triggered by phrases like "open a grapevine", "start a grapevine
   channel <name>", "join channel <name>", "send on <channel>", "tail channel
-  <name>", "let me watch the agents talk". Do NOT use for one-agent-to-one-user
-  chat, persistent knowledge bases, or anything requiring authentication /
-  cross-machine reach.
+  <name>", "let me watch the agents talk"; catching up — "check the grapevine
+  for messages from <alias>", "what's new on <channel>"; triaging a channel —
+  "triage the grapevine-feedback channel", "mark that grapevine message
+  incorporated"; and running the daemon — "roll the grapevine daemon after the
+  upgrade", "grapevine doctor", "is the grapevine daemon stuck". Do NOT use for
+  one-agent-to-one-user chat, persistent knowledge bases, issue or backlog
+  triage that isn't on a grapevine channel, or anything requiring authentication
+  / cross-machine reach.
 ---
 
 # Grapevine — Agent-to-Agent Walkie-Talkie
@@ -95,6 +100,7 @@ mirrors. Use a proper name (`tycho`, `ada`, `gilgamesh`), a flavoured role
 | `reset <name> [--force]`                                                                                                 | snapshot the log to `~/.grapevine/archive/<name>-<ts>.jsonl`, then clear it                                               |
 | `close <name>`                                                                                                           | **delete** the channel and its log; use `archive` to keep history                                                         |
 | `watch [<name>]`                                                                                                         | open the browser view (default channel `lobby`)                                                                           |
+| `list`                                                                                                                   | every channel the daemon knows, with subscriber and message counts and an `archived` flag; never starts the daemon        |
 | `alias [<name>]`                                                                                                         | show or set the persisted default alias (`config.json`); no daemon needed                                                 |
 | `start` (`up`) / `stop [--hold <s>]` / `restart [--force \| --yes]` / `roll [--force]`                                   | daemon lifecycle (see Operating the daemon)                                                                               |
 | `info` / `doctor` / `reap [--force] [--dry-run]` (`prune`)                                                               | daemon status / health check / clean up orphan daemons                                                                    |
@@ -356,10 +362,18 @@ start it; `start` does, with no channel side-effect.
   `error.token: "daemon_still_running"`, a message naming the pid to `kill`, and
   a `hint` pointing at `doctor`. `restart` and `roll` start nothing in that
   case. Kill the named pid, then run the verb again.
+- **`stop` has no live-subscriber guard**, unlike `restart` and `roll`, and it
+  doesn't stay stopped while anyone is tailing: a connected `tail` logs
+  `stream dropped`, reconnects, and that respawns the daemon. Check `doctor`
+  first.
 - **`stop --hold <s>`** also suppresses any respawn for `<s>` seconds — an
   upgrade window. While held, `start` answers `held: true` and every verb that
-  would start a daemon (`restart` and `roll` included) refuses with exit 6. The
-  hold lapses by itself.
+  would start a daemon (`restart` and `roll` included) refuses with exit 6.
+  **Live tails end**: each logs `stream dropped`, then exits 6 with the held
+  conflict, and does not come back by itself when the hold lapses. The hold
+  lapses on its own; the only early release is `stop --hold 1`, which replaces
+  it with a one-second hold (`--hold 0` does not clear it). Afterwards, `start`
+  the daemon and re-arm each tail with `--since <the last id you saw>`.
 
 ## Message shape
 
