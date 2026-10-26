@@ -25,6 +25,7 @@ import { fromMarkdown } from "mdast-util-from-markdown";
 import { gfmFromMarkdown } from "mdast-util-gfm";
 import { gfm } from "micromark-extension-gfm";
 import { splitFrontmatter } from "../lib/frontmatter.ts";
+import { lineAt as lineNumberAt } from "../lib/lineBreaks.ts";
 
 /**
  * One run of rendered text and the source it came from. `exact` says whether the
@@ -131,10 +132,11 @@ function projectBody(text: string): Projection {
 
   const emit = (raw: string, node: Node) => {
     if (raw === "") return;
-    // The page holds one character for each `\r\n` (HTML parsing makes it `\n`),
-    // so the plain text does too, or every character after one is misaligned.
-    // Shorter than its source, the run is then not exact.
-    const value = raw.includes("\r\n") ? raw.replaceAll("\r\n", "\n") : raw;
+    // The page holds `\n` for each `\r\n` and each lone `\r` (HTML parsing
+    // makes both `\n`), so the plain text does too, or the runs stop aligning.
+    // Shorter than its source, a run with a `\r\n` is then not exact; a lone
+    // `\r` is one character either way.
+    const value = lf(raw);
     flushBoundary();
     const s = node.position?.start.offset;
     const e = node.position?.end.offset;
@@ -160,9 +162,9 @@ function projectBody(text: string): Projection {
    * (an escape, an entity), the node falls back to one non-exact run.
    */
   const emitText = (raw: string, node: Node) => {
-    // A CRLF file's prose: each `\r\n` is one `\n` on the page, and the lines
-    // between are found and emitted exactly, as a wrapped list item's are.
-    const value = raw.includes("\r\n") ? raw.replaceAll("\r\n", "\n") : raw;
+    // A CRLF or lone-CR file's prose: each break is one `\n` on the page, and
+    // the lines between are found and emitted exactly, as a wrapped list item's are.
+    const value = lf(raw);
     const s = node.position?.start.offset;
     const e = node.position?.end.offset;
     if (s === undefined || e === undefined || e - s === value.length || !value.includes("\n")) {
@@ -182,7 +184,7 @@ function projectBody(text: string): Projection {
       if (line !== "") pieces.push({ value: line, at });
       cursor = at + line.length;
       if (i < lines.length - 1) {
-        const nl = text.indexOf("\n", cursor);
+        const nl = nextBreak(text, cursor);
         if (nl === -1 || nl >= e) {
           emit(value, node);
           return;
@@ -368,10 +370,25 @@ function confirmed(plain: string, end: number, cores: readonly string[], i: numb
   return plain.startsWith(next, k);
 }
 
-/** The 1-based line a source offset is on: what the wire's selection carries. */
-export function lineAt(text: string, offset: number): number {
-  const at = Math.max(0, Math.min(offset, text.length));
-  let line = 1;
-  for (let i = 0; i < at; i++) if (text.charCodeAt(i) === 10) line++;
-  return line;
+/**
+ * The 1-based line a source offset is on: what the wire's selection carries. It
+ * counts lines as the raw editor does (a lone `\r` is a break), so the rendered
+ * and raw views agree on a line.
+ */
+export const lineAt = lineNumberAt;
+
+/** `raw` with each `\r\n` and each lone `\r` written `\n`, as the page holds it. */
+function lf(raw: string): string {
+  return raw.includes("\r") ? raw.replace(/\r\n?/g, "\n") : raw;
+}
+
+/**
+ * Where the next line break at or after `from` is, as one character: the `\n` of
+ * a `\r\n`, or a lone `\r` or `\n`. -1 when there is none.
+ */
+function nextBreak(text: string, from: number): number {
+  const nl = text.indexOf("\n", from);
+  const cr = text.indexOf("\r", from);
+  if (cr === -1 || (nl !== -1 && nl <= cr + 1)) return nl;
+  return cr;
 }

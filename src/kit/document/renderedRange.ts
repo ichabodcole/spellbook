@@ -98,7 +98,14 @@ export function resolveRange(
   const lo = plainAt(a, range.startContainer, range.startOffset, "start");
   const hi = plainAt(a, range.endContainer, range.endOffset, "end");
   if (lo === null || hi === null) return null;
-  const { from, to } = toSource(p, Math.min(lo, hi), Math.max(lo, hi));
+  // ⛔ A START PAST ITS END IS A SELECTION THE PROJECTION CANNOT PLACE, never one
+  // to turn round. A DOM range runs forwards, so the two cross only when both
+  // ends fell in text with no place (a run that did not align) and each borrowed
+  // its neighbour: the start the next placed run, the end the previous one.
+  // Swapped, that covered everything between those neighbours, and "alpha"
+  // became a note over the whole body (kit-lone-cr-line-endings).
+  if (lo > hi) return null;
+  const { from, to } = toSource(p, lo, hi);
   return from === to ? null : { from, to };
 }
 

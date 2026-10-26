@@ -1,4 +1,5 @@
 // Small pure rules about the text in the editor.
+import { lineAt } from "../lib/lineBreaks.ts";
 
 /** One replacement in a text: `from`..`to` becomes `insert`. */
 export type TextChange = { from: number; to: number; insert: string };
@@ -49,14 +50,6 @@ export function invertChange(c: TextChange, a: string): TextChange {
   return { from: c.from, to: c.from + c.insert.length, insert: a.slice(c.from, c.to) };
 }
 
-/** The 1-based line holding `offset` in `text`. */
-function lineOf(text: string, offset: number): number {
-  let line = 1;
-  const end = Math.max(0, Math.min(offset, text.length));
-  for (let i = 0; i < end; i++) if (text.charCodeAt(i) === 10) line++;
-  return line;
-}
-
 /**
  * Line `line` of `a`, as a line of `b`, the text `c` made of `a`. A line that
  * begins inside what `c` replaced has no counterpart, so it goes to the nearer
@@ -65,14 +58,17 @@ function lineOf(text: string, offset: number): number {
  */
 export function lineThrough(line: number, a: string, b: string, c: TextChange | null): number {
   if (!c) return line;
+  // Lines as the raw editor counts them (a lone `\r` ends one); past the last, the last.
   let at = 0;
+  const br = /\r\n?|\n/g;
   for (let n = 1; n < line; n++) {
-    const i = a.indexOf("\n", at);
-    if (i === -1) break;
-    at = i + 1;
+    br.lastIndex = at;
+    const m = br.exec(a);
+    if (!m) break;
+    at = m.index + m[0].length;
   }
   const delta = c.insert.length - (c.to - c.from);
   const p =
     at < c.from ? at : at >= c.to ? at + delta : at - c.from <= c.to - at ? c.from : c.to + delta;
-  return lineOf(b, p);
+  return lineAt(b, p);
 }

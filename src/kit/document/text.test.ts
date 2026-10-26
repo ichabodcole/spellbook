@@ -98,4 +98,15 @@ describe("lineThrough: a line of one text, in the text a change made of it", () 
   test("no change, no move", () => {
     expect(lineThrough(7, "a\n", "a\n", null)).toBe(7);
   });
+
+  test("lines are counted as the raw editor counts them: a lone CR ends one, a CRLF is one break", () => {
+    // kit-lone-cr-line-endings: counting `\n` alone put a lone-CR file on line 1.
+    for (const nl of ["\r", "\r\n"]) {
+      const a = ["l1", "l2", "l3", ""].join(nl);
+      const b = ["new", "more", "l1", "l2", "l3", ""].join(nl);
+      const c = minimalChange(a, b);
+      expect(lineThrough(1, a, b, c)).toBe(3);
+      expect(lineThrough(3, a, b, c)).toBe(5);
+    }
+  });
 });

@@ -461,3 +461,78 @@ describe("a CRLF file", () => {
     expect(last && p.plain.slice(last.from, last.to)).toBe("End.");
   });
 });
+
+// kit-lone-cr-line-endings: a file whose lines end in a lone `\r` (old Mac
+// endings). The browser reads each lone `\r` as `\n` too, so the projection must,
+// or no run with a break in it aligns: no note paints, the right-click finds no
+// passage, and a selection borrows its neighbours and covers the whole body.
+describe("a lone-CR file, and files mixing it with LF or CRLF", () => {
+  const LF =
+    "# Title\n\nFirst line alpha\nsecond line beta.\n\n- item one\n  wraps here\n- item two\n\n> quoted\n> more\n\n```\na\nb\n```\n\nEnd.\n";
+  /**
+   * Each break of `LF` written in turn as the endings given: the mixed files. A
+   * `\n` straight after a lone `\r` would make one CRLF of two breaks, so a lone
+   * `\r` is written there instead.
+   */
+  const withEndings = (endings: string[]) => {
+    let i = 0;
+    let prev = { at: -2, e: "" };
+    return LF.replace(/\n/g, (_, at: number) => {
+      let e = endings[i++ % endings.length] as string;
+      if (e === "\n" && prev.at === at - 1 && prev.e === "\r") e = "\r";
+      prev = { at, e };
+      return e;
+    });
+  };
+  const FILES: [string, string][] = [
+    ["lone CR", withEndings(["\r"])],
+    ["lone CR and LF", withEndings(["\r", "\n"])],
+    ["lone CR and CRLF", withEndings(["\r", "\r\n"])],
+    ["all three", withEndings(["\r", "\r\n", "\n"])],
+  ];
+  /** What the browser holds: HTML parsing reads `\r\n` and a lone `\r` as `\n`. */
+  const pageRuns = (text: string) => domRuns(renderMarkdown(text).replace(/\r\n?/g, "\n"));
+
+  for (const [name, text] of FILES) {
+    test(`${name}: the plain text is the LF file's, and every run with words aligns`, () => {
+      const p = project(text);
+      expect(p.plain).toBe(project(LF).plain);
+      const runs = pageRuns(text);
+      const placed = alignRuns(p.plain, runs);
+      expect(runs.filter((r, i) => r.trim() !== "" && placed[i] === null)).toEqual([]);
+      expect(placed).toEqual(alignRuns(project(LF).plain, domRuns(renderMarkdown(LF))));
+    });
+
+    test(`${name}: each passage maps to its own source, both ways`, () => {
+      const p = project(text);
+      for (const want of ["alpha", "second line", "wraps here", "item two", "more", "End."]) {
+        const from = text.indexOf(want);
+        const plain = toPlain(p, from, from + want.length);
+        expect(plain && p.plain.slice(plain.from, plain.to)).toBe(want);
+        const back = plain && toSource(p, plain.from, plain.to);
+        expect(back && text.slice(back.from, back.to)).toBe(want);
+      }
+    });
+
+    test(`${name}: lines are counted as the raw editor counts them`, () => {
+      // CodeMirror breaks at `\r\n`, a lone `\r` and `\n`: the LF file's lines.
+      for (const want of ["alpha", "second line", "wraps here", "End."])
+        expect(lineAt(text, text.indexOf(want))).toBe(lineAt(LF, LF.indexOf(want)));
+    });
+  }
+
+  test("a lone CR is one character either side, so a prose run stays exact", () => {
+    const p = project("one\rtwo\r");
+    expect(p.plain).toBe("one\ntwo");
+    expect(p.segments.every((s) => s.exact)).toBe(true);
+  });
+});
+
+describe("lineAt with every line ending", () => {
+  test("a lone CR breaks a line, and a CRLF is one break", () => {
+    const t = "a\rb\r\nc\nd";
+    expect([0, 2, 5, 7].map((i) => lineAt(t, i))).toEqual([1, 2, 3, 4]);
+    // Between the `\r` and the `\n` of a CRLF is still the line it ends.
+    expect(lineAt(t, 4)).toBe(2);
+  });
+});

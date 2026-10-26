@@ -9,6 +9,7 @@
 // And it says when it has lost. The fourth outcome is orphaned: the quote is
 // gone and the note is shown detached rather than pinned somewhere plausible.
 // Visible-and-wrong beats invisible-and-wrong.
+import { lineAt } from "../lib/lineBreaks.ts";
 
 /** How much text either side is kept, to tell identical quotes apart. */
 export const CONTEXT_CHARS = 48;
@@ -107,10 +108,6 @@ export function quoteLabel(quote: string, max = 60): string {
  * that ends just after a newline ends on the line it finished, not the next.
  */
 export function linesOf(text: string, from: number, to: number): { from: number; to: number } {
-  const lineAt = (i: number) => {
-    let n = 1;
-    for (let k = text.indexOf("\n"); k !== -1 && k < i; k = text.indexOf("\n", k + 1)) n++;
-    return n;
-  };
-  return { from: lineAt(from), to: lineAt(Math.max(from, to - 1)) };
+  // Counted as the raw editor counts them: a lone `\r` ends a line too.
+  return { from: lineAt(text, from), to: lineAt(text, Math.max(from, to - 1)) };
 }

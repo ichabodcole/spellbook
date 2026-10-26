@@ -142,6 +142,11 @@ describe("linesOf: the lines a note covers, as a human counts them", () => {
     // has none of the note's text.
     expect(linesOf(text, 4, 8)).toEqual({ from: 2, to: 2 });
   });
+  test("a lone CR ends a line, and a CRLF is one break (kit-lone-cr-line-endings)", () => {
+    // As the raw editor counts them, so the lines a note reports match its gutter.
+    expect(linesOf("one\rtwo\rthree\r", 4, 7)).toEqual({ from: 2, to: 2 });
+    expect(linesOf("one\rtwo\r\nthree\n", 10, 15)).toEqual({ from: 3, to: 3 });
+  });
   test("the first character is line 1", () => {
     expect(linesOf(text, 0, 1)).toEqual({ from: 1, to: 1 });
   });
