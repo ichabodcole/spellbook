@@ -158,3 +158,9 @@ cause; it was fixed under
 [import-boundary-r6-ward-timeout](import-boundary-r6-ward-timeout.md). Run
 `40386264178` on `7fe61c01`, the push carrying that fix, is green: 6446 tests, 0
 failures. The count restarts there; the third box waits for the next push.
+
+**Third red, then the default raised (lead, 2026-10-26).** Run `40389281731` on
+`330d92ff` failed on one test, kit-adoption TRANSITIVE at bun's 5 s default (6.6
+s), the same load class as the R6 ward. Cole chose to raise the suite's default
+to 15 s (`426a68ed`). Run `40392926588` on `da286fae` is green: 6446 tests, 0
+failures. One more green push closes the third box.
