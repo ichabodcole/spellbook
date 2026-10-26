@@ -162,6 +162,13 @@ async function openSolo() {
 }
 
 /** The human leaves a note on "Solo" (the panel's own way), and its id. */
+/** A note the agent makes, on the same passage: not owed, since the human did not write it. */
+async function agentNote(slug: string, body: string): Promise<string> {
+  const r = await post({ op: "note.add", doc: slug, quote: "Solo", body });
+  expect(r.ok).toBe(true);
+  return String(((await r.json()) as { note: string }).note);
+}
+
 async function humanNote(slug: string, body: string): Promise<string> {
   await settle(() =>
     ws().reportSelection({
@@ -399,24 +406,51 @@ describe("the mark clears on exactly three things", () => {
     await m.unmount();
   });
 
-  test("the agent rewriting the note", async () => {
+  // note-reply-cannot-overwrite: the agent answers the human's note beside it.
+  // A rewrite of it is refused, and the note keeps the human's words.
+  test("the agent replying to the note: the reply shows with it, the note's words unchanged", async () => {
     const { m, slug } = await openSolo();
-    const id = await humanNote(slug, "rewrite me");
-    await waitFor(() => markOn("rewrite me") !== null, "the mark");
-    const r = await post({ op: "note.edit", doc: slug, id, body: "rewritten by the agent" });
+    const id = await humanNote(slug, "reply to me");
+    await waitFor(() => markOn("reply to me") !== null, "the mark");
+    expect(
+      (await post({ op: "note.edit", doc: slug, id, body: "rewritten by the agent" })).status,
+    ).toBe(409);
+    const r = await post({ op: "note.reply", doc: slug, id, body: "replied by the agent" });
     expect(r.ok).toBe(true);
-    await waitFor(() => noteRow("rewritten by the agent") !== null, "the rewrite");
-    expect(markOn("rewritten by the agent")).toBeNull();
+    await waitFor(
+      () => !!noteRow("reply to me")?.querySelector('[data-slot="note-reply"]'),
+      "the reply on the note",
+    );
+    const row = noteRow("reply to me");
+    expect(row?.querySelector('[data-slot="note-body"]')?.textContent).toBe("reply to me");
+    expect(row?.querySelector('[data-slot="note-reply"]')?.textContent).toContain(
+      "replied by the agent",
+    );
+    expect(row?.querySelector('[data-slot="note-edited"]')).toBeNull();
+    expect(markOn("reply to me")).toBeNull();
     expect(tabDot()).toBeNull();
     await m.unmount();
   });
 
-  test("a note the agent rewrote stays answered after a daemon restart", async () => {
+  test("the agent rewriting its own note", async () => {
+    const { m, slug } = await openSolo();
+    const id = await agentNote(slug, "the agent's first try");
+    const r = await post({ op: "note.edit", doc: slug, id, body: "the agent's second try" });
+    expect(r.ok).toBe(true);
+    await waitFor(() => noteRow("the agent's second try") !== null, "the rewrite");
+    expect(markOn("the agent's second try")).toBeNull();
+    await m.unmount();
+  });
+
+  test("a note the agent replied to stays answered after a daemon restart, its reply still shown", async () => {
     const first = await openSolo();
     const id = await humanNote(first.slug, "before the restart");
-    await post({ op: "note.edit", doc: first.slug, id, body: "answered by a rewrite" });
-    await waitFor(() => noteRow("answered by a rewrite") !== null, "the rewrite");
-    expect(markOn("answered by a rewrite")).toBeNull();
+    await post({ op: "note.reply", doc: first.slug, id, body: "answered by a reply" });
+    await waitFor(
+      () => !!noteRow("before the restart")?.querySelector('[data-slot="note-reply"]'),
+      "the reply",
+    );
+    expect(markOn("before the restart")).toBeNull();
     await first.m.unmount();
     const port = daemon.port;
     const sessionId = daemon.sessionId;
@@ -424,8 +458,15 @@ describe("the mark clears on exactly three things", () => {
     await startDaemon({ port, restore: sessionId });
     const again = await mountShell();
     await click(tab(/Notes/));
-    await waitFor(() => noteRow("answered by a rewrite") !== null, "the note after a restart");
-    expect(markOn("answered by a rewrite")).toBeNull();
+    await waitFor(
+      () =>
+        (
+          noteRow("before the restart")?.querySelector('[data-slot="note-reply"]')?.textContent ??
+          ""
+        ).includes("answered by a reply"),
+      "the note and its reply after a restart",
+    );
+    expect(markOn("before the restart")).toBeNull();
     expect(tabDot()).toBeNull();
     await again.unmount();
   });
@@ -434,7 +475,8 @@ describe("the mark clears on exactly three things", () => {
 describe("a rewrite shows on the note", () => {
   test("the agent's says so, keeps what it replaced, and puts it back in one act that asks again", async () => {
     const { m, slug } = await openSolo();
-    const id = await humanNote(slug, "my own words");
+    // The agent's own note: the human's it may not rewrite.
+    const id = await agentNote(slug, "my own words");
     await post({ op: "note.edit", doc: slug, id, body: "the agent's words" });
     await waitFor(() => noteRow("the agent's words") !== null, "the rewrite");
     const row = () => noteRow("the agent's words") ?? noteRow("my own words");
@@ -451,7 +493,7 @@ describe("a rewrite shows on the note", () => {
     await click(row()?.querySelector('[data-action="note-restore"]') ?? null);
     await waitFor(
       () =>
-        (noteRow("my own words")?.querySelector("p.whitespace-pre-wrap")?.textContent ?? "") ===
+        (noteRow("my own words")?.querySelector('[data-slot="note-body"]')?.textContent ?? "") ===
         "my own words",
       "the words put back",
     );
@@ -469,9 +511,9 @@ describe("a rewrite shows on the note", () => {
     await m.unmount();
   });
 
-  test("the agent rewriting it back to the human's words reads as plain edited, with nothing to put back", async () => {
+  test("the agent rewriting its note back to the words it replaced reads as plain edited, with nothing to put back", async () => {
     const { m, slug } = await openSolo();
-    const id = await humanNote(slug, "back again");
+    const id = await agentNote(slug, "back again");
     await post({ op: "note.edit", doc: slug, id, body: "a detour" });
     await waitFor(() => noteRow("a detour") !== null, "the rewrite");
     await post({ op: "note.edit", doc: slug, id, body: "back again" });
@@ -481,7 +523,6 @@ describe("a rewrite shows on the note", () => {
       "plain edited",
     );
     expect(noteRow("back again")?.querySelector('[data-action="note-show-replaced"]')).toBeNull();
-    // Still the agent's act on it: answered.
     expect(markOn("back again")).toBeNull();
     await m.unmount();
   });
@@ -565,7 +606,7 @@ describe("and on nothing else", () => {
   test("not the agent rewriting a different note", async () => {
     const { m, slug } = await openSolo();
     await humanNote(slug, "this one");
-    const other = await humanNote(slug, "that one");
+    const other = await agentNote(slug, "that one");
     const r = await post({ op: "note.edit", doc: slug, id: other, body: "that one, rewritten" });
     expect(r.ok).toBe(true);
     await waitFor(() => noteRow("that one, rewritten") !== null, "the other rewrite");

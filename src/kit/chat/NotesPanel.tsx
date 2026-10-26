@@ -22,11 +22,36 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "../lib/cn.ts";
 import { oneLine } from "../lib/oneLine.ts";
 import { Button } from "../ui/button.tsx";
-import type { NoteWaiting, PlacedNote, Waiting } from "../workspace/protocol";
+import type { Message, NoteWaiting, PlacedNote, Waiting } from "../workspace/protocol";
 import { badgeFor, WaitingBadge, WaitingDot } from "./WaitingBadge.tsx";
 
 const NONE_WAITING: ReadonlyMap<string, NoteWaiting> = new Map();
 const NONE_ASKED: ReadonlySet<string> = new Set();
+const NONE_REPLIED: ReadonlyMap<string, readonly NoteReply[]> = new Map();
+const NO_REPLIES: readonly NoteReply[] = [];
+
+/** An answer to a note, as the panel shows it: the agent's message about it. */
+export type NoteReply = Pick<Message, "id" | "text" | "ts">;
+
+/**
+ * The agent's answers to notes, by note id, oldest first: each agent message in
+ * the conversation whose `about.noteId` names the note. That message IS the
+ * reply (`note-reply` stores it, and so does a `say` that names the note), so
+ * the panel reads the conversation and stores nothing of its own.
+ */
+export function repliesByNote(
+  chat: readonly Pick<Message, "id" | "from" | "text" | "ts" | "about">[],
+): ReadonlyMap<string, readonly NoteReply[]> {
+  const out = new Map<string, NoteReply[]>();
+  for (const m of chat) {
+    const noteId = m.about?.noteId;
+    if (m.from !== "agent" || typeof noteId !== "string" || !noteId) continue;
+    const list = out.get(noteId) ?? [];
+    list.push({ id: m.id, text: m.text, ts: m.ts });
+    out.set(noteId, list);
+  }
+  return out;
+}
 
 /** How a note found its place, said plainly, or nothing when it is certain. */
 const UNCERTAIN: Partial<Record<PlacedNote["how"], { label: string; title: string }>> = {
@@ -48,6 +73,7 @@ function Note({
   agentListening,
   sessionEnded,
   asked,
+  replies,
   onAsk,
   onGoTo,
   onEdit,
@@ -63,6 +89,8 @@ function Note({
   sessionEnded: boolean;
   /** Asked about in the conversation, and not answered yet. */
   asked: boolean;
+  /** The agent's answers to this note, oldest first (`repliesByNote`). */
+  replies: readonly NoteReply[];
   onAsk: ((n: PlacedNote) => void) | undefined;
   onGoTo: (n: PlacedNote) => void;
   onEdit: (id: string, body: string) => void;
@@ -122,7 +150,9 @@ function Note({
         )}
       </div>
       {draft === null ? (
-        <p className="mt-1 whitespace-pre-wrap text-ink">{note.body}</p>
+        <p data-slot="note-body" className="mt-1 whitespace-pre-wrap text-ink">
+          {note.body}
+        </p>
       ) : (
         <form
           className="mt-1 flex flex-col gap-1"
@@ -170,6 +200,22 @@ function Note({
             </Button>
           </div>
         </form>
+      )}
+      {/* THE AGENT'S ANSWERS SIT BESIDE THE NOTE, never in it: the note keeps
+          the words it was written in, and each reply is the agent's message
+          about it, shown here as well as in the conversation. */}
+      {replies.length > 0 && (
+        <ul
+          data-slot="note-replies"
+          className="mt-1 flex flex-col gap-1 border-edge border-l-2 pl-2"
+        >
+          {replies.map((r) => (
+            <li key={r.id} data-slot="note-reply" className="text-ink-dim">
+              <span className="text-[10px] text-ink-faint">Agent replied</span>
+              <p className="whitespace-pre-wrap">{r.text}</p>
+            </li>
+          ))}
+        </ul>
       )}
       {/* The message wait's badge, on the note it is about: a pulse while the
           note is with the agent, a static "may be stuck" once it has waited as
@@ -288,6 +334,7 @@ export function NotesPanel({
   agentListening = true,
   sessionEnded = false,
   asked = NONE_ASKED,
+  replies = NONE_REPLIED,
   onAsk,
   onOpenDoc,
   focusedId,
@@ -330,6 +377,8 @@ export function NotesPanel({
    * again.
    */
   asked?: ReadonlySet<string>;
+  /** The agent's answers, by note id (`repliesByNote`): each shown under its note. */
+  replies?: ReadonlyMap<string, readonly NoteReply[]>;
   /**
    * "Ask the agent", on a note that may be stuck: the host sends the ask
    * (`via: "ask"`, `about.noteId`). Absent, not offered, and resolving the note
@@ -435,6 +484,7 @@ export function NotesPanel({
                 agentListening={agentListening}
                 sessionEnded={sessionEnded}
                 asked={asked.has(n.id)}
+                replies={replies.get(n.id) ?? NO_REPLIES}
                 onAsk={onAsk}
                 onGoTo={onGoTo}
                 onEdit={onEdit}

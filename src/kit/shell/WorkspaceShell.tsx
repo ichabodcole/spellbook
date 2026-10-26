@@ -64,7 +64,7 @@ import { pathLabel } from "../chat/ChatMessageView.tsx";
 import { ChatSidebar } from "../chat/ChatSidebar.tsx";
 import { FloatingComposer } from "../chat/FloatingComposer.tsx";
 import { NewVersionToasts } from "../chat/NewVersionToasts.tsx";
-import { NotesPanel } from "../chat/NotesPanel.tsx";
+import { NotesPanel, repliesByNote } from "../chat/NotesPanel.tsx";
 import {
   askAboutNoteText,
   askedAbout,
@@ -1414,6 +1414,9 @@ function ShellBody({
         if (sent !== null) setAskPressed((p) => new Map(p).set(noteId, state.chat.length));
       }
     : undefined;
+  // The agent's answers to notes are its messages about them: read off the
+  // conversation, shown under each note.
+  const noteReplies = useMemo(() => repliesByNote(state.chat), [state.chat]);
   const noteBadges = badgesOn(notesWaiting, openDoc?.slug ?? null);
   const notesElsewhere = elsewhere(notesWaiting, openDoc?.slug ?? null).map((o) => ({
     ...o,
@@ -1540,6 +1543,7 @@ function ShellBody({
       agentListening={agentListening}
       sessionEnded={ended}
       asked={notesAsked}
+      replies={noteReplies}
       {...(askNote ? { onAsk: (n) => openDoc && askNote(openDoc.slug, n.id) } : {})}
       onOpenDoc={(doc) => send({ op: "open.doc", doc })}
       focusedId={focusedNote}

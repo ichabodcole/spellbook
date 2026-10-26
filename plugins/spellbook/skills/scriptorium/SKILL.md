@@ -55,7 +55,8 @@ interchangeable:** `say` is the conversation and it is what answers a question;
 `task` is the conversation plus a record that something is in flight, which is
 what makes a spinner honest; `note` is an annotation pinned to a passage in a
 document, for something worth marking where it happened rather than saying out
-loud. If you are replying, `say`. If you are disappearing for a while, `task`.
+loud. If you are replying, `say`; if you are answering one of their notes,
+`note-reply`. If you are disappearing for a while, `task`.
 
 ## Four rules the CLI will not teach you
 
@@ -92,7 +93,7 @@ Your work exists as versions until they accept it.
 
 **4 · Prose goes through a file.** `say --body-file <path>` or `--stdin` from a
 quoted heredoc, never as shell arguments — an unquoted heredoc eats backticks
-before the CLI sees them. Same for `task`, `version-new`, and
+before the CLI sees them. Same for `task`, `version-new`, `note-reply`, and
 `note --quote '<exact text>'`. `task`'s text becomes the task's title in their
 queue, so keep it to a line. `task-done` and `task-status` take their words as
 arguments only: keep them short, quoted, and free of backticks. An event's
@@ -216,13 +217,17 @@ Facts, not chatter. The ones worth acting on:
 - **`note.added`** — they annotated a passage, and **expect you to act on it**.
   A short note arrives whole — the passage (`quote`), what they wrote (`body`)
   and its `lines`; a long one says to read it with `notes --doc <slug>`. Answer
-  it or propose a version, then **resolve it** (`note-resolve <id>`): resolving
-  is what tells them it is dealt with, and the event's `hint` names the exact
-  command. If the passage is no longer in the active version, the event says
-  `passage: "gone"` instead of giving `lines`. Their rewrite of a note arrives
-  as a `system` event with `fact: "note.edited"` carrying what it now says, and
-  their reopen as `note.resolved` with `resolved: false`: both are owed an
-  answer in the same way. `fact: "note.removed"` means they deleted it.
+  it with **`note-reply <id> --body-file <path>`**, which shows your reply with
+  the note and leaves their words as they wrote them, or propose a version; then
+  **resolve it** (`note-resolve <id>`): resolving is what tells them it is dealt
+  with, and the event's `hint` names the exact command. **Never answer a note
+  with `note-edit`:** it rewrites only your own notes, and a note they wrote is
+  refused, naming `note-reply`. If the passage is no longer in the active
+  version, the event says `passage: "gone"` instead of giving `lines`. Their
+  rewrite of a note arrives as a `system` event with `fact: "note.edited"`
+  carrying what it now says, and their reopen as `note.resolved` with
+  `resolved: false`: both are owed an answer in the same way.
+  `fact: "note.removed"` means they deleted it.
 - **`version.created`, `activated`, `reverted`, `merged`** — what is on offer,
   or which version is active, changed. `activated` matters most: it moves the
   version rule 2 is about.
@@ -281,15 +286,15 @@ You are nudged **once per message**, never repeatedly. Use `working` when you
 genuinely need longer; use `say` when you have something to tell them.
 
 **A note of theirs shows the same thing** — a pulse on the note until you say
-something in the app, resolve it, or rewrite it (`note-edit`), then "may be
-stuck" after 30 seconds. `working` covers notes too. There is no nudge for a
-note. When one looks stuck, they have an **Ask the agent** button on it, and it
-arrives as a `message` with `via: "ask"` and the note's id in `about.noteId`.
-**`about.doc` there is the document they have OPEN, which may not be the
-note's:** the note's document is the `--doc` in the event's `hint`, which names
-the exact `notes` and `note-resolve` commands (or find the id with `notes`). The
-note then shows it is with you until you reply, resolve it or `note-edit` it. If
-they rewrite it, it is owed again.
+something in the app (a `note-reply` is the answer that sits with the note), or
+resolve it, then "may be stuck" after 30 seconds. `working` covers notes too.
+There is no nudge for a note. When one looks stuck, they have an **Ask the
+agent** button on it, and it arrives as a `message` with `via: "ask"` and the
+note's id in `about.noteId`. **`about.doc` there is the document they have OPEN,
+which may not be the note's:** the note's document is the `--doc` in the event's
+`hint`, which names the exact `notes`, `note-reply` and `note-resolve` commands
+(or find the id with `notes`). The note then shows it is with you until you
+reply or resolve it. If they rewrite it, it is owed again.
 
 ## The words that mean something specific
 

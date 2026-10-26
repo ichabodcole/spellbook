@@ -1447,7 +1447,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
         { name: "text", required: false, variadic: true },
       ],
       describe:
-        "rewrite what a note says; its passage stays (prose: --body-file or --stdin). Answers the note, as a reply does",
+        "rewrite one of your own notes; its passage stays (prose: --body-file or --stdin). A note the human wrote is refused: answer it with note-reply",
       run: async (pos, flags, session) => {
         const [id, ...text] = pos;
         printJson(
@@ -1455,6 +1455,27 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
             op: "note.edit",
             id: id as string,
             body: await readBody(text, flags, "note-edit"),
+            ...withDoc(flags),
+          }),
+        );
+      },
+    },
+    {
+      name: "note-reply",
+      flags: [...SESSION, "doc", "stdin", "body-file"],
+      positionals: [
+        { name: "id", required: true },
+        { name: "text", required: false, variadic: true },
+      ],
+      describe:
+        "answer a note: your reply shows with the note and its words stay as written (prose: --body-file or --stdin)",
+      run: async (pos, flags, session) => {
+        const [id, ...text] = pos;
+        printJson(
+          await postCmd(session, {
+            op: "note.reply",
+            id: id as string,
+            body: await readBody(text, flags, "note-reply"),
             ...withDoc(flags),
           }),
         );

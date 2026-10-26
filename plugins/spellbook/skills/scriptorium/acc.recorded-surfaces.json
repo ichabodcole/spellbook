@@ -178,6 +178,17 @@
       "recordedAt": "2026-10-20T21:53:56Z"
     },
     {
+      "path": ["note-reply"],
+      "argv": ["note-reply", "--acc-not-a-flag"],
+      "exitCode": 2,
+      "streams": "separated",
+      "stdout": "",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"note-reply: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--body-file\",\"--doc\",\"--session\",\"--stdin\"]},\"meta\":{\"command\":\"note-reply\"}}\n",
+      "completeness": "complete",
+      "recordedBy": "note-reply-cannot-overwrite implementer: the one new verb's sentinel rejection, captured from the launcher on a scratch home and added by hand beside the others",
+      "recordedAt": "2026-10-25T23:51:35Z"
+    },
+    {
       "path": ["note-resolve"],
       "argv": ["note-resolve", "--acc-not-a-flag"],
       "exitCode": 2,

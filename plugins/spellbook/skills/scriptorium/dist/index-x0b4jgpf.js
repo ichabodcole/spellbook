@@ -72877,6 +72877,20 @@ var import_react33 = __toESM(require_react(), 1);
 var jsx_runtime37 = __toESM(require_jsx_runtime(), 1);
 var NONE_WAITING = new Map;
 var NONE_ASKED = new Set;
+var NONE_REPLIED = new Map;
+var NO_REPLIES = [];
+function repliesByNote(chat) {
+  const out = new Map;
+  for (const m of chat) {
+    const noteId = m.about?.noteId;
+    if (m.from !== "agent" || typeof noteId !== "string" || !noteId)
+      continue;
+    const list2 = out.get(noteId) ?? [];
+    list2.push({ id: m.id, text: m.text, ts: m.ts });
+    out.set(noteId, list2);
+  }
+  return out;
+}
 var UNCERTAIN = {
   nearest: {
     label: "moved?",
@@ -72894,6 +72908,7 @@ function Note({
   agentListening,
   sessionEnded,
   asked,
+  replies,
   onAsk,
   onGoTo,
   onEdit,
@@ -72938,6 +72953,7 @@ function Note({
         ]
       }),
       draft === null ? /* @__PURE__ */ jsx_runtime37.jsx("p", {
+        "data-slot": "note-body",
         className: "mt-1 whitespace-pre-wrap text-ink",
         children: note.body
       }) : /* @__PURE__ */ jsx_runtime37.jsxs("form", {
@@ -72988,6 +73004,24 @@ function Note({
             ]
           })
         ]
+      }),
+      replies.length > 0 && /* @__PURE__ */ jsx_runtime37.jsx("ul", {
+        "data-slot": "note-replies",
+        className: "mt-1 flex flex-col gap-1 border-edge border-l-2 pl-2",
+        children: replies.map((r2) => /* @__PURE__ */ jsx_runtime37.jsxs("li", {
+          "data-slot": "note-reply",
+          className: "text-ink-dim",
+          children: [
+            /* @__PURE__ */ jsx_runtime37.jsx("span", {
+              className: "text-[10px] text-ink-faint",
+              children: "Agent replied"
+            }),
+            /* @__PURE__ */ jsx_runtime37.jsx("p", {
+              className: "whitespace-pre-wrap",
+              children: r2.text
+            })
+          ]
+        }, r2.id))
       }),
       waiting && /* @__PURE__ */ jsx_runtime37.jsxs("div", {
         className: "flex flex-wrap items-center gap-x-2",
@@ -73120,6 +73154,7 @@ function NotesPanel({
   agentListening = true,
   sessionEnded = false,
   asked = NONE_ASKED,
+  replies = NONE_REPLIED,
   onAsk,
   onOpenDoc,
   focusedId,
@@ -73201,6 +73236,7 @@ function NotesPanel({
               agentListening,
               sessionEnded,
               asked: asked.has(n.id),
+              replies: replies.get(n.id) ?? NO_REPLIES,
               onAsk,
               onGoTo,
               onEdit,
@@ -80917,6 +80953,7 @@ function ShellBody({
     if (sent !== null)
       setAskPressed((p) => new Map(p).set(noteId, state.chat.length));
   } : undefined;
+  const noteReplies = import_react52.useMemo(() => repliesByNote(state.chat), [state.chat]);
   const noteBadges = badgesOn(notesWaiting, openDoc?.slug ?? null);
   const notesElsewhere = elsewhere(notesWaiting, openDoc?.slug ?? null).map((o) => ({
     ...o,
@@ -81015,6 +81052,7 @@ function ShellBody({
     agentListening,
     sessionEnded: ended,
     asked: notesAsked,
+    replies: noteReplies,
     ...askNote ? { onAsk: (n) => openDoc && askNote(openDoc.slug, n.id) } : {},
     onOpenDoc: (doc2) => send({ op: "open.doc", doc: doc2 }),
     focusedId: focusedNote,

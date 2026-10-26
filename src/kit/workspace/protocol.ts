@@ -2127,8 +2127,17 @@ export type AgentCmd =
   /** The agent notes a quote: it has no offsets, and counting characters would be asking it to be wrong. */
   | { op: "note.add"; doc?: string; quote: string; body: string }
   | { op: "notes"; doc?: string; all?: boolean }
-  /** Rewrite what a note says; its passage stays. The agent's rewrite answers the note. */
+  /**
+   * Rewrite what one of the agent's own notes says; its passage stays. A note
+   * the human wrote, or rewrote last, is refused: the agent answers it with
+   * `note.reply`, and never rewrites the human's words.
+   */
   | { op: "note.edit"; doc?: string; id: string; body: string }
+  /**
+   * Answer a note: an agent message about it (`about.noteId`), shown with the
+   * note. The note's words are untouched.
+   */
+  | { op: "note.reply"; doc?: string; id: string; body: string }
   | { op: "note.resolve"; doc?: string; id: string; resolved: boolean }
   /** "Still working": silences the waiting nudge for a while, and nothing else. */
   | { op: "working"; seconds?: number }

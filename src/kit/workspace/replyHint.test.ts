@@ -93,8 +93,10 @@ describe("a human message on the tail", () => {
     expect((ev.about as { doc?: string }).doc).toBe("b");
     const hint = String(ev.hint);
     expect(hint).toStartWith(`about note ${note}:`);
-    expect(commands(hint).slice(0, 2)).toEqual([
+    expect(commands(hint).slice(0, 3)).toEqual([
       `notes --session ${d.sessionId} --doc a`,
+      // The answer that leaves the human's words alone (note-reply-cannot-overwrite).
+      `note-reply ${note} --session ${d.sessionId} --doc a "<answer>"`,
       `note-resolve ${note} --session ${d.sessionId} --doc a`,
     ]);
     expect(hint).toEndWith(replyHint(d.sessionId));
@@ -102,8 +104,9 @@ describe("a human message on the tail", () => {
     // A note no document holds names no document.
     s.send({ op: "say", text: "and that?", withSelection: false, about: { noteId: "n-gone" } });
     const gone = await t.waitFor((e) => e.type === "message" && e.text === "and that?");
-    expect(commands(String(gone.hint)).slice(0, 2)).toEqual([
+    expect(commands(String(gone.hint)).slice(0, 3)).toEqual([
       `notes --session ${d.sessionId}`,
+      `note-reply n-gone --session ${d.sessionId} "<answer>"`,
       `note-resolve n-gone --session ${d.sessionId}`,
     ]);
   });

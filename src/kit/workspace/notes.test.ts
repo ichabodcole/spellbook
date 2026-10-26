@@ -113,34 +113,75 @@ describe("the stored note", () => {
   });
 
   test("a rewrite stamps when and who, so a human's rewrite can be told from the agent's", () => {
-    const { note } = s.addNote({ doc: slug, by: "human", quote: "Release", body: "x" });
-    const human = s.editNote({ doc: slug, id: note.id, body: "y", by: "human" });
-    expect(human.note).toMatchObject({ body: "y", editedBy: "human" });
-    expect(new Date(String(human.note.editedAt)).toISOString()).toBe(String(human.note.editedAt));
-    const agent = s.editNote({ doc: slug, id: note.id, body: "z", by: "agent" });
-    expect(agent.note).toMatchObject({ body: "z", editedBy: "agent" });
+    const { note } = s.addNote({ doc: slug, by: "agent", quote: "Release", body: "x" });
+    const agent = s.editNote({ doc: slug, id: note.id, body: "y", by: "agent" });
+    expect(agent.note).toMatchObject({ body: "y", editedBy: "agent" });
+    expect(new Date(String(agent.note.editedAt)).toISOString()).toBe(String(agent.note.editedAt));
+    const human = s.editNote({ doc: slug, id: note.id, body: "z", by: "human" });
+    expect(human.note).toMatchObject({ body: "z", editedBy: "human" });
     // The passage is untouched: a rewrite changes what a note says, not what it is about.
-    expect(agent.note.quote).toBe("Release");
+    expect(human.note.quote).toBe("Release");
   });
 
-  test("the agent's rewrite keeps the words it replaced; the human's own rewrite lets them go", () => {
-    const { note } = s.addNote({ doc: slug, by: "human", quote: "Release", body: "mine" });
-    s.editNote({ doc: slug, id: note.id, body: "the agent's", by: "agent" });
-    expect(placed(note.id)).toMatchObject({ body: "the agent's", replacedBody: "mine" });
-    // A second rewrite by the agent still keeps the human's words, not its own first try.
-    s.editNote({ doc: slug, id: note.id, body: "the agent's again", by: "agent" });
-    expect(placed(note.id)?.replacedBody).toBe("mine");
-    // Putting them back is the human's rewrite: nothing is left to restore.
+  // note-reply-cannot-overwrite: an agent answering the human's note with a
+  // rewrite replaced their words. The rewrite is refused, naming the reply.
+  test("the agent may not rewrite a note in the human's words: refused, naming the reply, the words kept", () => {
+    const { note } = s.addNote({ doc: slug, by: "human", quote: "Release", body: "go 6.0.0?" });
+    const e = refusal(() =>
+      s.editNote({ doc: slug, id: note.id, body: "agreed: 6.0.0", by: "agent" }),
+    );
+    expect(e.status).toBe(409);
+    expect(e.choices).toEqual(["note-reply", "note-resolve"]);
+    expect(e.hint).toContain(`note-reply ${note.id} --doc ${slug}`);
+    expect(placed(note.id)).toMatchObject({ body: "go 6.0.0?" });
+    expect(placed(note.id)).not.toHaveProperty("editedAt");
+    expect(placed(note.id)).not.toHaveProperty("replacedBody");
+    // The agent's own note, once the human has rewritten it, is in the human's words too.
+    const own = s.addNote({ doc: slug, by: "agent", quote: "Open questions", body: "mine" }).note;
+    s.editNote({ doc: slug, id: own.id, body: "the human's now", by: "human" });
+    expect(
+      refusal(() => s.editNote({ doc: slug, id: own.id, body: "x", by: "agent" })).status,
+    ).toBe(409);
+    expect(placed(own.id)?.body).toBe("the human's now");
+  });
+
+  test("a reply to a note is the agent's message about it, and the note is untouched", () => {
+    const { note } = s.addNote({ doc: slug, by: "human", quote: "Release", body: "go 6.0.0?" });
+    const before = JSON.stringify(placed(note.id));
+    const r = s.replyToNote({ doc: slug, id: note.id, text: "  agreed: 6.0.0  " });
+    expect(r.message).toMatchObject({
+      from: "agent",
+      type: "message",
+      text: "agreed: 6.0.0",
+      about: { noteId: note.id },
+    });
+    expect(s.messages().at(-1)).toEqual(r.message);
+    expect(JSON.stringify(placed(note.id))).toBe(before);
+    // An unknown note and an empty reply are refused, so an answer never points at nothing.
+    const gone = refusal(() => s.replyToNote({ doc: slug, id: "nope", text: "x" }));
+    expect(gone.status).toBe(404);
+    expect(gone.choices).toEqual([note.id]);
+    expect(refusal(() => s.replyToNote({ doc: slug, id: note.id, text: " " })).status).toBe(400);
+  });
+
+  test("the agent's rewrite of its own note keeps the words it replaced; the human's rewrite lets them go", () => {
+    const { note } = s.addNote({ doc: slug, by: "agent", quote: "Release", body: "first" });
+    s.editNote({ doc: slug, id: note.id, body: "second", by: "agent" });
+    expect(placed(note.id)).toMatchObject({ body: "second", replacedBody: "first" });
+    // A second rewrite still keeps the first words, not the one between.
+    s.editNote({ doc: slug, id: note.id, body: "third", by: "agent" });
+    expect(placed(note.id)?.replacedBody).toBe("first");
+    // The human's rewrite lets them go.
     s.editNote({ doc: slug, id: note.id, body: "mine", by: "human" });
     expect(placed(note.id)).toMatchObject({ body: "mine", editedBy: "human" });
     expect(placed(note.id)).not.toHaveProperty("replacedBody");
   });
 
-  test("the agent rewriting a note back to the human's words leaves nothing to put back", () => {
-    const { note } = s.addNote({ doc: slug, by: "human", quote: "Release", body: "mine" });
-    s.editNote({ doc: slug, id: note.id, body: "the agent's", by: "agent" });
-    s.editNote({ doc: slug, id: note.id, body: "mine", by: "agent" });
-    expect(placed(note.id)).toMatchObject({ body: "mine", editedBy: "agent" });
+  test("the agent rewriting its note back to the words it replaced leaves nothing to put back", () => {
+    const { note } = s.addNote({ doc: slug, by: "agent", quote: "Release", body: "first" });
+    s.editNote({ doc: slug, id: note.id, body: "second", by: "agent" });
+    s.editNote({ doc: slug, id: note.id, body: "first", by: "agent" });
+    expect(placed(note.id)).toMatchObject({ body: "first", editedBy: "agent" });
     expect(placed(note.id)).not.toHaveProperty("replacedBody");
   });
 
@@ -173,7 +214,7 @@ describe("the stored note", () => {
   });
 
   test("who rewrote and who reopened survive a restore", () => {
-    const { note } = s.addNote({ doc: slug, by: "human", quote: "Release", body: "x" });
+    const { note } = s.addNote({ doc: slug, by: "agent", quote: "Release", body: "x" });
     s.editNote({ doc: slug, id: note.id, body: "y", by: "agent" });
     s.resolveNote({ doc: slug, id: note.id, resolved: true, by: "human" });
     s.resolveNote({ doc: slug, id: note.id, resolved: false, by: "agent" });

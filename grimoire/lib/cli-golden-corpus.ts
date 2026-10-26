@@ -507,6 +507,8 @@ export const SPECS: SpellSpec[] = [
       c("note", "hello", "--doc", "golden.md", "--quote", "exact text"),
       c("notes", "--doc", "golden.md", "--full"),
       c("note-edit", "n1", "hello", "--doc", "golden.md"),
+      c("note-reply", "n1", "hello", "--doc", "golden.md"),
+      stdin("hello", "note-reply", "n1", "--stdin"),
       c("note-resolve", "n1", "--reopen"),
       c("note-remove", "n1", "--doc", "golden.md"),
       c("diff", "v1", "--doc", "golden.md", "--context", "3", "--patch"),

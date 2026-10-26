@@ -197,10 +197,14 @@ describe("notes", () => {
     s.send({ op: "note.add", doc: "a", from: 5, to: 8, body: "cut this?" });
     const added = await agent.waitFor((e) => e.type === "note.added" && e.by === "human");
     const id = String(added.note);
-    // The agent's own: a note, a rewrite, a resolve and a reopen.
+    // The agent's own: a note, a rewrite of it, a reply, a resolve and a reopen.
     const own = await cmd(base, { op: "note.add", doc: "a", quote: "one", body: "mine" });
     expect(own.status).toBe(200);
-    expect((await cmd(base, { op: "note.edit", doc: "a", id, body: "cut" })).status).toBe(200);
+    const ownId = String(own.body.note);
+    expect(
+      (await cmd(base, { op: "note.edit", doc: "a", id: ownId, body: "mine, better" })).status,
+    ).toBe(200);
+    expect((await cmd(base, { op: "note.reply", doc: "a", id, body: "cut" })).status).toBe(200);
     expect((await cmd(base, { op: "note.resolve", doc: "a", id, resolved: true })).status).toBe(
       200,
     );

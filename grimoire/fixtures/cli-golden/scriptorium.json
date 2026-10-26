@@ -1,7 +1,7 @@
 {
   "spell": "scriptorium",
   "launcher": "scripts/cli.ts",
-  "verbCount": 56,
+  "verbCount": 57,
   "verbs": [
     "open",
     "add",
@@ -19,6 +19,7 @@
     "note",
     "notes",
     "note-edit",
+    "note-reply",
     "note-resolve",
     "task",
     "task-status",
@@ -191,7 +192,7 @@
       "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
     }
   ],
-  "invocationCount": 207,
+  "invocationCount": 211,
   "invocations": [
     {
       "argv": [],
@@ -217,6 +218,7 @@
         "note",
         "notes",
         "note-edit",
+        "note-reply",
         "note-resolve",
         "task",
         "task-status",
@@ -289,7 +291,9 @@
         "                                                note a passage of the active version (--quote 'exact text'; prose: --body-file or --stdin)",
         "  notes [--doc ..] [--full]                     the notes on a document, placed in the active version (--full includes resolved ones)",
         "  note-edit <id> [text...] [--doc ..] [--stdin] [--body-file ..]",
-        "                                                rewrite what a note says; its passage stays (prose: --body-file or --stdin). Answers the note, as a reply does",
+        "                                                rewrite one of your own notes; its passage stays (prose: --body-file or --stdin). A note the human wrote is refused: answer it with note-reply",
+        "  note-reply <id> [text...] [--doc ..] [--stdin] [--body-file ..]",
+        "                                                answer a note: your reply shows with the note and its words stay as written (prose: --body-file or --stdin)",
         "  note-resolve <id> [--doc ..] [--reopen]       mark a note dealt with (--reopen puts it back)",
         "  task [text...] [--parent ..] [--stdin] [--body-file ..]",
         "                                                say you have started something; prints the id to finish it with (--parent <id> when delegating for another task)",
@@ -390,7 +394,9 @@
         "                                                note a passage of the active version (--quote 'exact text'; prose: --body-file or --stdin)",
         "  notes [--doc ..] [--full]                     the notes on a document, placed in the active version (--full includes resolved ones)",
         "  note-edit <id> [text...] [--doc ..] [--stdin] [--body-file ..]",
-        "                                                rewrite what a note says; its passage stays (prose: --body-file or --stdin). Answers the note, as a reply does",
+        "                                                rewrite one of your own notes; its passage stays (prose: --body-file or --stdin). A note the human wrote is refused: answer it with note-reply",
+        "  note-reply <id> [text...] [--doc ..] [--stdin] [--body-file ..]",
+        "                                                answer a note: your reply shows with the note and its words stay as written (prose: --body-file or --stdin)",
         "  note-resolve <id> [--doc ..] [--reopen]       mark a note dealt with (--reopen puts it back)",
         "  task [text...] [--parent ..] [--stdin] [--body-file ..]",
         "                                                say you have started something; prints the id to finish it with (--parent <id> when delegating for another task)",
@@ -492,7 +498,9 @@
         "                                                note a passage of the active version (--quote 'exact text'; prose: --body-file or --stdin)",
         "  notes [--doc ..] [--full]                     the notes on a document, placed in the active version (--full includes resolved ones)",
         "  note-edit <id> [text...] [--doc ..] [--stdin] [--body-file ..]",
-        "                                                rewrite what a note says; its passage stays (prose: --body-file or --stdin). Answers the note, as a reply does",
+        "                                                rewrite one of your own notes; its passage stays (prose: --body-file or --stdin). A note the human wrote is refused: answer it with note-reply",
+        "  note-reply <id> [text...] [--doc ..] [--stdin] [--body-file ..]",
+        "                                                answer a note: your reply shows with the note and its words stay as written (prose: --body-file or --stdin)",
         "  note-resolve <id> [--doc ..] [--reopen]       mark a note dealt with (--reopen puts it back)",
         "  task [text...] [--parent ..] [--stdin] [--body-file ..]",
         "                                                say you have started something; prints the id to finish it with (--parent <id> when delegating for another task)",
@@ -1028,6 +1036,42 @@
           },
           {
             "path": ["note-edit"],
+            "args": [
+              {
+                "name": "--body-file",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--doc",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              },
+              {
+                "name": "text",
+                "required": false,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["note-reply"],
             "args": [
               {
                 "name": "--body-file",
@@ -1850,6 +1894,7 @@
         "note",
         "notes",
         "note-edit",
+        "note-reply",
         "note-resolve",
         "task",
         "task-status",
@@ -1916,6 +1961,7 @@
         "note",
         "notes",
         "note-edit",
+        "note-reply",
         "note-resolve",
         "task",
         "task-status",
@@ -2390,7 +2436,35 @@
       "text": [
         "usage: note-edit <id> [text...] [--doc ..] [--stdin] [--body-file ..]",
         "",
-        "rewrite what a note says; its passage stays (prose: --body-file or --stdin). Answers the note, as a reply does",
+        "rewrite one of your own notes; its passage stays (prose: --body-file or --stdin). A note the human wrote is refused: answer it with note-reply",
+        "",
+        "flags:",
+        "  --body-file <body-file>",
+        "  --doc <doc>",
+        "  --stdin",
+        "",
+        "also accepted:",
+        "  --session <session>      the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["note-reply", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--body-file", "--doc", "--session", "--stdin"]
+    },
+    {
+      "argv": ["note-reply", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: note-reply <id> [text...] [--doc ..] [--stdin] [--body-file ..]",
+        "",
+        "answer a note: your reply shows with the note and its words stay as written (prose: --body-file or --stdin)",
         "",
         "flags:",
         "  --body-file <body-file>",
@@ -3520,6 +3594,23 @@
     },
     {
       "argv": ["note-edit", "n1", "hello", "--doc", "golden.md"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["note-reply", "n1", "hello", "--doc", "golden.md"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["note-reply", "n1", "--stdin"],
+      "stdin": "hello",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",

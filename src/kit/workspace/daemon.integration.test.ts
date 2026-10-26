@@ -561,24 +561,57 @@ describe("a session, end to end through the launchers", () => {
     expect(again.map((n) => n.noteId)).toEqual([note.id]);
     expect(Date.parse(again[0]?.since ?? "")).toBeGreaterThanOrEqual(rewroteAfter);
 
-    // The agent rewrites it: that answers it, and the chat says so as a system line.
-    const r = await cli("note-edit", ...S(), note.id, "--doc", "a", "agreed: cut");
+    // The agent may not rewrite the human's words (note-reply-cannot-overwrite):
+    // refused in the house envelope, naming the reply, and the note is as it was.
+    const refused = await cli("note-edit", ...S(), note.id, "--doc", "a", "agreed: cut");
+    expect(refused.code).toBe(6);
+    expect(refused.out).toBe("");
+    const envelope = JSON.parse(refused.err) as {
+      ok: boolean;
+      error: { kind: string; choices?: string[]; hint?: string };
+    };
+    expect(envelope.ok).toBe(false);
+    expect(envelope.error.kind).toBe("conflict");
+    expect(envelope.error.choices).toEqual(["note-reply", "note-resolve"]);
+    expect(envelope.error.hint).toContain(`note-reply ${note.id} --doc a`);
+    expect((await state()).docs[0]?.notes.find((n) => n.id === note.id)).toMatchObject({
+      body: "and this, rewritten",
+      editedBy: "human",
+    });
+    expect(await owed()).toHaveLength(1);
+
+    // The reply answers it beside the note: the note keeps the human's words.
+    const r = await cli("note-reply", ...S(), note.id, "--doc", "a", "agreed: cut");
     expect(r.code).toBe(0);
-    expect(json(r)).toMatchObject({ doc: "a", note: note.id, body: "agreed: cut" });
+    const replied = json<{ id: string; doc: string; note: string }>(r);
+    expect(replied).toMatchObject({ doc: "a", note: note.id });
     expect(await owed()).toEqual([]);
     const st = await state(true);
-    expect(st.docs[0]?.notes.find((n) => n.id === note.id)).toMatchObject({
-      body: "agreed: cut",
-      editedBy: "agent",
+    const kept = st.docs[0]?.notes.find((n) => n.id === note.id);
+    expect(kept).toMatchObject({ body: "and this, rewritten", editedBy: "human" });
+    expect(kept).not.toHaveProperty("replacedBody");
+    expect(st.chat.at(-1)).toMatchObject({
+      id: replied.id,
+      from: "agent",
+      text: "agreed: cut",
+      about: { noteId: note.id },
     });
-    expect(st.chat.at(-1)).toMatchObject({ from: "system" });
-    // ...and keeps the human's words, for them to see and put back.
-    expect(st.docs[0]?.notes.find((n) => n.id === note.id)?.replacedBody).toBe(
-      "and this, rewritten",
+    // A reply to a note that is not there is refused with the notes there are.
+    const noNote = await cli("note-reply", ...S(), "n-nope", "--doc", "a", "x");
+    expect(noNote.code).not.toBe(0);
+    expect(JSON.parse(noNote.err).error.choices).toContain(note.id);
+
+    // The agent still rewrites its own note.
+    const own = json<{ note: string }>(
+      await cli("note", ...S(), "--doc", "a", "--quote", "line", "mine"),
     );
+    const ownEdit = await cli("note-edit", ...S(), own.note, "--doc", "a", "mine, better");
+    expect(ownEdit.code).toBe(0);
+    expect(json(ownEdit)).toMatchObject({ note: own.note, body: "mine, better" });
+    expect((await cli("note-resolve", ...S(), own.note, "--doc", "a")).code).toBe(0);
 
     // A Save with nothing changed is not a rewrite: still answered, and nothing sent.
-    surface.send({ op: "note.edit", doc: "a", id: note.id, body: "agreed: cut" });
+    surface.send({ op: "note.edit", doc: "a", id: note.id, body: "and this, rewritten" });
     surface.send({ op: "say", text: "marker three", withSelection: false });
     await waitTail((l) => l.type === "message" && l.text === "marker three");
     expect(await owed()).toEqual([]);

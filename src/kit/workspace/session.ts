@@ -2599,6 +2599,10 @@ export class WorkspaceSession {
    * A body that is the same is not a rewrite (`changed: false`): nothing is
    * stamped or stored, so a Save with nothing changed does not put the note in
    * front of the agent again.
+   *
+   * THE AGENT NEVER REWRITES THE HUMAN'S WORDS. A note the human wrote, or
+   * rewrote last, is refused to the agent, which answers it with a reply
+   * instead (`replyToNote`): the reply sits beside the note, its words untouched.
    */
   editNote(opts: { doc?: string; id: string; body: string; by: Author }): {
     slug: string;
@@ -2607,6 +2611,13 @@ export class WorkspaceSession {
   } {
     const d = this.docOrDie(opts.doc);
     const note = this.noteOrDie(d, opts.id);
+    if (opts.by === "agent" && (note.by === "human" || note.editedBy === "human"))
+      throw new SessionError(
+        `note ${note.id} on ${d.slug} holds the human's words, and the agent does not rewrite them: reply to it instead`,
+        409,
+        ["note-reply", "note-resolve"],
+        `run: note-reply ${note.id} --doc ${d.slug} <your answer> (the note keeps its words), or note-resolve ${note.id} --doc ${d.slug} when it is dealt with`,
+      );
     const body = opts.body.trim();
     if (!body) throw new SessionError("a note needs something written in it", 400);
     if (body === note.body) return { slug: d.slug, note, changed: false };
@@ -2619,6 +2630,25 @@ export class WorkspaceSession {
     note.editedBy = opts.by;
     this.persist();
     return { slug: d.slug, note, changed: true };
+  }
+
+  /**
+   * The agent's answer to a note: a message in the conversation about it
+   * (`about.noteId`), the shape the agent's `say` already stores when it names
+   * a note. The note is untouched; the surface shows the answer with it. A
+   * note that does not exist is refused, so an answer never points at nothing.
+   */
+  replyToNote(opts: { doc?: string; id: string; text: string }): {
+    slug: string;
+    note: Note;
+    message: Message;
+  } {
+    const d = this.docOrDie(opts.doc);
+    const note = this.noteOrDie(d, opts.id);
+    const text = opts.text.trim();
+    if (!text) throw new SessionError("a reply needs something written in it", 400);
+    const message = this.addMessage({ from: "agent", text, about: { noteId: note.id } });
+    return { slug: d.slug, note, message };
   }
 
   resolveNote(opts: { doc?: string; id: string; resolved: boolean; by: Author }): {

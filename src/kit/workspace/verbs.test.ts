@@ -145,6 +145,7 @@ test("the kit's verb roster is the resolution's, and an app adds its own to the 
     "note",
     "notes",
     "note-edit",
+    "note-reply",
     "note-resolve",
     "task",
     "task-status",
@@ -187,7 +188,9 @@ test("the kit's verb roster is the resolution's, and an app adds its own to the 
   // kit-image-import-settings admitted `image-settings`: the app's image
   // import settings, read, or set when the user asks. kit-per-note-waiting
   // (here kit-workspace-e65-daemon) admitted `note-edit`: the agent rewriting a note is one of the three acts
-  // that answer it. Removing a note stays the human's.
+  // that answer it. Removing a note stays the human's. note-reply-cannot-overwrite
+  // admitted `note-reply` and narrowed `note-edit` to the agent's own notes: the
+  // agent answers the human's note beside it, never in place of its words.
   for (const gone of [
     "find",
     "map",

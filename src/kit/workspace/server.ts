@@ -281,6 +281,7 @@ const AGENT_CMD_FIELDS: Record<string, CmdFields> = {
   "note.add": { str: ["quote", "body"], optStr: ["doc"] },
   notes: { optStr: ["doc"] },
   "note.edit": { str: ["id", "body"], optStr: ["doc"] },
+  "note.reply": { str: ["id"], text: ["body"], optStr: ["doc"] },
   "note.resolve": { str: ["id"], optStr: ["doc"], bool: ["resolved"] },
   working: { optNum: ["seconds"] },
   "task.create": { str: ["title"], optStr: ["detail", "parent"] },
@@ -3624,7 +3625,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
             ...(advice.length > 0 ? { warning: advice.join(" ") } : {}),
             ts: m.ts,
             hint: about?.noteId
-              ? `about note ${about.noteId}: \`notes --session ${sessionId}${noteDoc}\` has it whole, and \`note-resolve ${about.noteId} --session ${sessionId}${noteDoc}\` when it is dealt with. ${reply}`
+              ? `about note ${about.noteId}: \`notes --session ${sessionId}${noteDoc}\` has it whole, \`note-reply ${about.noteId} --session ${sessionId}${noteDoc} "<answer>"\` answers it beside the note (its words stay the human's), and \`note-resolve ${about.noteId} --session ${sessionId}${noteDoc}\` when it is dealt with. ${reply}`
               : reply,
           });
           broadcastState();
@@ -4300,9 +4301,17 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           const r = session.notesOf({ doc: cmd.doc, ...(cmd.all ? { all: true } : {}) });
           return { doc: r.slug, notes: r.notes };
         }
+        case "note.reply": {
+          // The agent's answer to a note: a message about it, shown with the
+          // note. Like any agent message it answers what is waiting.
+          const r = session.replyToNote({ doc: cmd.doc, id: cmd.id, text: cmd.body });
+          broadcastState();
+          return { id: r.message.id, doc: r.slug, note: r.note.id };
+        }
         case "note.edit": {
-          // The agent's rewrite answers the note (`notesWaiting`): an act on
-          // this note that the human sees on this note.
+          // Only the agent's own note: the session refuses one in the human's
+          // words, naming `note-reply`. A rewrite answers the note
+          // (`notesWaiting`): an act on this note, seen on this note.
           const r = session.editNote({ doc: cmd.doc, id: cmd.id, body: cmd.body, by: "agent" });
           if (!r.changed)
             return { doc: r.slug, note: r.note.id, body: r.note.body, unchanged: true };

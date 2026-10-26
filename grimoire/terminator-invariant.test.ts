@@ -872,18 +872,22 @@ describe("ward — a flag demoted by `--` is warned about, on every registry ado
       // `meta`, `meta-init`, `meta-set`, `hide`, `unhide`). Rows 109 -> 141, cases 761 -> 928 (direct
       // 310 -> 377, after-text 141 -> 174, =value 310 -> 377), quiet cases
       // 110 -> 142.
+      // +1 row in each of the two kit adopters (note-reply-cannot-overwrite):
+      // the kit's `note-reply <id> [text...]`. Rows 141 -> 143, cases 928 ->
+      // 952 (direct 377 -> 385, after-text 174 -> 182, =value 377 -> 385),
+      // quiet cases 142 -> 144.
       adopters: 10,
       // Every row with ANY positional (required, optional or variadic), not
       // only c1's 43 variadic + 6 one-optional rows: a demoted token can fill
       // any positional slot. Measured 2026-09-27 on 41065365.
-      rowsWithPositionals: 141,
+      rowsWithPositionals: 143,
       // Per (row, spelling, accepted flag), globals included: one direct and
       // one =value case, plus one after-text case wherever the row has room.
       // Measured 2026-09-27: 311 direct cases before the alias spelling joined.
       // 902 since the kit's `say` took `--via` (kit-port-via-refs): one more
       // case in each form.
-      cases: 928,
-      byForm: { direct: 377, "after-text": 174, "=value": 377 },
+      cases: 952,
+      byForm: { direct: 385, "after-text": 182, "=value": 385 },
       // mind-mapper `message` -> `read`: direct and =value. `read` has one
       // non-variadic positional, so no after-text case.
       viaAlias: 2,
@@ -891,7 +895,7 @@ describe("ward — a flag demoted by `--` is warned about, on every registry ado
       // `prune` alias rows with no positionals, so they have no case here.
       aliasRows: ["mind-mapper/backend/cli.ts:read<-message"],
       // One per (row, spelling).
-      quietCases: 142,
+      quietCases: 144,
       perAdopter: {
         "astrolabe/backend/cli.ts": 6,
         "bounty/backend/cli.ts": 7,
@@ -900,11 +904,11 @@ describe("ward — a flag demoted by `--` is warned about, on every registry ado
         "glamour/backend/cli.ts": 10,
         "grapevine/backend/cli.ts": 19,
         "imago/backend/cli.ts": 11,
-        "kit/workspace/fixtures/cli.ts": 24,
+        "kit/workspace/fixtures/cli.ts": 25,
         "magpie/backend/cli.ts": 6,
         "mind-mapper/backend/cli.ts": 26,
-        // Built with stub deps: 22 kit rows plus Scriptorium's own 10.
-        "scriptorium/backend/kit/cli.ts#scriptoriumKitCli": 32,
+        // Built with stub deps: 23 kit rows plus Scriptorium's own 10.
+        "scriptorium/backend/kit/cli.ts#scriptoriumKitCli": 33,
       },
     });
   });

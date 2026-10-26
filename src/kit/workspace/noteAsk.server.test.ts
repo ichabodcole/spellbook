@@ -225,7 +225,7 @@ describe("one ask at a time", () => {
     expect(s.frames.some((f) => f.op === "error" && f.requestId === "r3")).toBe(true);
   });
 
-  test("a resolve, an agent rewrite and a human rewrite each re-arm it", async () => {
+  test("a resolve, an agent reply and a human rewrite each re-arm it", async () => {
     const { s, t, base } = await start();
     await openA(s);
     const n = await humanNote(s, t, "stuck?");
@@ -245,9 +245,13 @@ describe("one ask at a time", () => {
     await t.waitFor((e) => e.type === "message" && e.text === "ask two");
     expect(sent()).toBe(2);
 
-    // The agent rewrites the note: answered, so a new ask goes.
+    // The agent replies to the note: answered, so a new ask goes. (A rewrite
+    // of the human's note is refused: note-reply-cannot-overwrite.)
     await Bun.sleep(3);
     expect((await cmd(base, { op: "note.edit", doc: "a", id: n, body: "cut it" })).status).toBe(
+      409,
+    );
+    expect((await cmd(base, { op: "note.reply", doc: "a", id: n, body: "cut it" })).status).toBe(
       200,
     );
     await Bun.sleep(3);
