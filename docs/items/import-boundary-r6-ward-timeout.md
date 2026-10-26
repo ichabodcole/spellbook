@@ -6,7 +6,7 @@ description:
   bun's 5 s default and time out whenever the machine is loaded, turning the
   gate red; the file always passes alone.
 status: stable
-lifecycle: active
+lifecycle: done
 id: 01a175d7-744b-77a0-83f0-40725bd2b0f1
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
