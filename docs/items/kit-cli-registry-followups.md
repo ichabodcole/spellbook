@@ -39,6 +39,17 @@ Verification and the finalize review left these for later:
       that has a default
 - [ ] The two hand-written root helps mention `help <verb>`
 
+## Story Studio's help layout (on offer, kit-parity message 60)
+
+Added at triage, 2026-10-26, from the dropped
+[kit-cli-help-one-line-per-verb](kit-cli-help-one-line-per-verb.md). In Story
+Studio's kit each verb carries a `summary` of at most 52 characters; the
+top-level help is one line per verb under group headings and fits 80 columns,
+while `help <verb>` keeps the full description, flags and examples, wrapped to
+the terminal. A test checks the real CLI at 80 columns. Their code:
+`packages/kit/src/cli/registry.ts` (item `kit-cli-help-wall-of-text`). Decide
+whether to port it when this item is shaped.
+
 ## Related Documents
 
 - [Kit foundation — 2026-10-13](../features/_archive/workspace-kit/sessions/2026-10-13-kit-foundation.md)

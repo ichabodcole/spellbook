@@ -5,11 +5,12 @@ description:
   One act that deletes every version of a document except the active one, for
   when a version is settled and the lineage isn't needed.
 status: draft
-lifecycle: triage
+lifecycle: backlog
 id: 01a1366d-7b8d-71f8-85c8-a14948b5bd8e
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
 tags: [scriptorium, versions]
+parent: feature/workspace-kit-follow-ups
 ---
 
 # Keep only the active version

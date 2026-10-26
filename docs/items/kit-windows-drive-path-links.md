@@ -6,7 +6,7 @@ description:
   `unsupported`, not as a path. Whether Windows paths are in scope is Cole's
   call.
 status: draft
-lifecycle: triage
+lifecycle: dropped
 id: 01a176c6-132b-74e5-ae04-a08a04f0fe19
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
@@ -28,6 +28,9 @@ re-check report the item records.
       each is looked up as an absolute path, or reported as a path outside the
       context. Or Cole rules Windows paths out of scope and this item is
       dropped.
+
+Dropped at triage, 2026-10-26: Spellbook has no Windows users today. Reopen if
+one appears.
 
 ## Related Documents
 

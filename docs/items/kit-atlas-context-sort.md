@@ -6,7 +6,7 @@ description:
   context sort, whose folder order depends on Story Studio's .order files, so it
   is ported at the next sync and judged against Scriptorium's model."
 status: draft
-lifecycle: triage
+lifecycle: backlog
 id: 01a16b4f-d3c8-77de-9ab9-72fc7aeb7477
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-23 }

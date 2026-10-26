@@ -8,7 +8,7 @@ description:
   fallback strips every page-only footnote number from seen, including a real
   digit in the text, and refuses an honest selection.
 status: draft
-lifecycle: triage
+lifecycle: ready
 id: 01a1765b-e6ee-71df-8c9f-ea3a46ca5ff2
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }

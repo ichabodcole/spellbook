@@ -7,12 +7,13 @@ description:
   with coarse timestamps, an edit in the same tick as the last read keeps all
   four and is not read.
 status: draft
-lifecycle: triage
+lifecycle: backlog
 id: 01a17217-8f1e-742b-a1fe-7cc57e118ff3
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 tags: [kit, testing]
 from: 01a17017-0595-77fb-8306-cf552a20d9f6
+parent: feature/workspace-kit-follow-ups
 ---
 
 # A same-size edit inside one clock tick is missed on a coarse-ctime kernel

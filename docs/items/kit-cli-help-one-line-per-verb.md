@@ -6,7 +6,7 @@ description:
   under group headings in the top-level help, leaving the full text to help
   <verb>; consider porting it.
 status: draft
-lifecycle: triage
+lifecycle: dropped
 id: 01a17a85-0d2d-729b-a19e-f9192fe43e63
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-26 }
@@ -29,3 +29,7 @@ Ours (`src/kit/cli/registry.ts`) has a `summary` only for the CLI as a whole.
 - [ ] Decide whether to port it. If so, every kit CLI's top-level help is one
       line per verb and fits 80 columns, a test checks it, and `help <verb>`
       still shows the full text.
+
+Dropped at triage, 2026-10-26: same file and concern as
+[kit-cli-registry-followups](kit-cli-registry-followups.md); the offer is
+recorded there.

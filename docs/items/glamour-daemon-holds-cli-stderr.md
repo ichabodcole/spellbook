@@ -6,7 +6,7 @@ description:
   the CLI's stderr to EOF (spawnSync with pipes, Python capture_output) blocks
   until the daemon exits.
 status: draft
-lifecycle: triage
+lifecycle: ready
 id: 01a177a1-fa57-736f-a5d5-cfd3936fc570
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-26 }
@@ -36,3 +36,8 @@ daemon that dies before its page loads. It is the same at `spellbook-v5.2.0`.
       spells do, or `"ignore"`.
 - [ ] A test spawns `open` with piped stderr and shows it returns while the
       daemon is still up.
+
+Fix together with
+[glamour-open-reports-a-dead-daemon](glamour-open-reports-a-dead-daemon.md)
+(triage, 2026-10-26): both are about the same spawn line, and that item's
+hypothesis is this stdio shape.

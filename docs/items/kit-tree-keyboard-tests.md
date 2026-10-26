@@ -6,7 +6,7 @@ description:
   library's expandOrDown handler, and nothing presses ArrowRight in a test;
   display()'s listed-entry fallback is untested too.
 status: draft
-lifecycle: triage
+lifecycle: ready
 id: 01a175f7-ef65-74c6-90a9-be3434c7f5eb
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-25 }

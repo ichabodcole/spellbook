@@ -5,7 +5,7 @@ description:
   "At 390 px the three panes are crushed: icons overlap and the file-picker
   button is clipped. The top bar now fits."
 status: draft
-lifecycle: triage
+lifecycle: backlog
 id: 01a176c6-1293-7688-b83b-691a1731ed19
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-25 }

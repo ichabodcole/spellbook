@@ -6,7 +6,7 @@ description:
   cap is never link-checked, so its broken link goes unreported, and adding a
   sub-folder as its own set doesn't help the parent."
 status: draft
-lifecycle: triage
+lifecycle: ready
 id: 01a176c6-15b7-746c-b1b0-d952e6999cbd
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }

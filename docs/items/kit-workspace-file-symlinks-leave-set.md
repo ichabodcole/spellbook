@@ -6,12 +6,13 @@ description:
   target is outside the set still shows as a document, and search, meta, graph
   and Save reach the outside file through it.
 status: draft
-lifecycle: triage
+lifecycle: backlog
 id: 01a175d7-739f-73e9-9cce-b1af05b79081
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 parent: feature/workspace-kit-follow-ups
 from: items/_archive/kit-workspace-symlinked-sets.md
+priority: high
 ---
 
 # A file symlink pointing outside a set shows its target as a document

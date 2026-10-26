@@ -6,12 +6,13 @@ description:
   up, offering Activate, after the agent activates or deletes that version from
   the CLI; versionSettled only judges the open document.
 status: draft
-lifecycle: triage
+lifecycle: ready
 id: 01a17778-5509-703c-b1bd-9d94eb93f8f3
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-26 }
 tags: [kit, chat]
 from: items/_archive/scriptorium-chat-and-toast-nits.md
+parent: feature/workspace-kit-follow-ups
 ---
 
 # A held version toast shown on another document goes stale

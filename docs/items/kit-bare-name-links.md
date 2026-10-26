@@ -6,7 +6,7 @@ description:
   case-sensitively, so it misses `real.md` even in the same set. Which sets it
   searches is a product call.
 status: draft
-lifecycle: triage
+lifecycle: backlog
 id: 01a176c6-13ca-72cb-b896-0601d5f93949
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-25 }

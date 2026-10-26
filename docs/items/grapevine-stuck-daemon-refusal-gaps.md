@@ -6,7 +6,7 @@ description:
   stop --hold leaves its hold active without saying so, and roll's hold release
   on the refusal path is untested.
 status: draft
-lifecycle: triage
+lifecycle: ready
 id: 01a17266-76ba-76e7-aa08-0432ad6ad8d3
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-25 }

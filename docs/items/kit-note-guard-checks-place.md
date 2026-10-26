@@ -6,12 +6,13 @@ description:
   but not where: the same words elsewhere, or an uncuttable run that contains
   them, still pass, and uncuttable runs are stored whole."
 status: draft
-lifecycle: triage
+lifecycle: backlog
 id: 01a1765b-e655-70f4-9178-f1607f1be78d
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 parent: feature/workspace-kit-follow-ups
 from: items/_archive/kit-lone-cr-line-endings.md
+blocked_by: [01a17a85-0c21-754e-aaf1-b0fb7779c958]
 ---
 
 # The note guard checks where a selection is, not only its text

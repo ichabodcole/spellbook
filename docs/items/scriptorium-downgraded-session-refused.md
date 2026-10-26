@@ -6,12 +6,14 @@ description:
   entries, and 6.0.0 then refuses the whole session (exit 6) instead of
   converting the mixed manifest.
 status: draft
-lifecycle: triage
+lifecycle: ready
 id: 01a177c2-9225-736c-8998-45fdfb660d6d
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-26 }
 tags: [scriptorium, kit]
 from: items/_archive/release-6-breaking-marker.md
+priority: high
+parent: feature/workspace-kit-follow-ups
 ---
 
 # A converted session that 5.2.0 wrote to is refused by 6.0.0

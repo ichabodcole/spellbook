@@ -6,7 +6,7 @@ description:
   cell timed out once in 20 parallel soak runs and never again in 30
   instrumented runs; find the cause from a trace and fix it.
 status: draft
-lifecycle: triage
+lifecycle: ready
 id: 01a171f4-4fe1-7001-a0f7-102607eead05
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }

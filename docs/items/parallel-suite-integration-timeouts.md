@@ -8,7 +8,7 @@ description:
   most full gates this cycle needed a judgement call; each failing file passes
   alone.
 status: draft
-lifecycle: triage
+lifecycle: backlog
 id: 01a17693-23fe-73cb-8d68-448ababeabff
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-25 }

@@ -6,7 +6,7 @@ description:
   within 500 ms, so start or restart --force spawns a second daemon beside a
   stopped (SIGSTOP) one.
 status: draft
-lifecycle: triage
+lifecycle: ready
 id: 01a176ad-1aaa-77b5-960e-775139c32393
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }

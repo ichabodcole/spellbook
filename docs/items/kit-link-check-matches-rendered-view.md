@@ -6,7 +6,7 @@ description:
   draw and miss some it does, so the broken-links sign and the agent's graph
   disagree with the page.
 status: draft
-lifecycle: triage
+lifecycle: backlog
 id: 01a176c6-11ee-740d-9dba-55fb8b0aa584
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-25 }

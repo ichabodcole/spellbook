@@ -7,13 +7,15 @@ description:
   convention resolves (and shows on the map) without Scriptorium knowing any one
   tool's config.
 status: stable
-lifecycle: triage
+lifecycle: backlog
 id: 01a16652-46da-730d-ad93-949798608954
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-22 }
 tags: [kit, scriptorium, links]
 parent: feature/workspace-kit-follow-ups
 from: cycle/2026-10-polish
+blocked_by:
+  [01a176c6-11ee-740d-9dba-55fb8b0aa584, 01a176c6-13ca-72cb-b896-0601d5f93949]
 ---
 
 # The agent can teach a session how its references resolve

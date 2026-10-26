@@ -6,7 +6,7 @@ description:
   and whether a provider interface would let someone plug in another image
   service (fal.ai or their own) instead.
 status: draft
-lifecycle: triage
+lifecycle: backlog
 id: 01a1794b-420b-773f-bf08-e462b7a8c707
 kind: research
 generated: { by: claude-opus-5-5, at: 2026-10-26 }

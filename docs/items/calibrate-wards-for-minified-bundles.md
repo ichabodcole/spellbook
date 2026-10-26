@@ -5,7 +5,7 @@ description:
   Minify the shipped bundles (register D7, lever 1) once the three instruments
   that read emitted artifacts as text are calibrated against a minified build.
 status: draft
-lifecycle: triage
+lifecycle: backlog
 id: 01a1777e-d8f4-7046-aff7-a73af24af96e
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-26 }

@@ -5,7 +5,7 @@ description:
   Search shows one row per match, so a line matching twice appears twice, and
   both rows have the same accessible name.
 status: draft
-lifecycle: triage
+lifecycle: backlog
 id: 01a176c6-166f-7177-9b97-cc92309353f9
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
