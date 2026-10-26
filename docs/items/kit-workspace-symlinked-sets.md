@@ -6,7 +6,7 @@ description:
   mirrored set, and symlink loops are walked until the 2000-entry cap, listing
   alias paths as separate documents. Inherited from Story Studio's tree.ts.
 status: stable
-lifecycle: active
+lifecycle: done
 id: 01a13c65-0307-737d-bd5b-d00816a2d5cf
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-14 }
@@ -34,7 +34,7 @@ Found by the finalize review of the
       those that stay inside the workspace. Say which.
 - [x] A loop is visited once.
 - [x] Tests cover an outward symlink and a loop.
-- [ ] Offered to Story Studio on `kit-parity`.
+- [x] Offered to Story Studio on `kit-parity` (message 56, 2026-10-25).
 
 ## Policy: a link to a folder is shown, never entered
 
