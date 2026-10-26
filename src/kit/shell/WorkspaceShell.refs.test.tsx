@@ -23,7 +23,7 @@ import {
 } from "../lib/testDom.ts";
 import { pngBytes } from "../lib/testImages.ts";
 import { fixtureDaemon } from "../workspace/fixtures/app";
-import { testWorkspace, writeUntilSeen } from "../workspace/fixtures/harness";
+import { testWorkspace } from "../workspace/fixtures/harness";
 import type { Message } from "../workspace/protocol";
 import type { WorkspaceDaemon } from "../workspace/server";
 import { seedDocs, tempRoot } from "../workspace/testing";
@@ -254,14 +254,11 @@ describe("the file tree's multi-select", () => {
     });
     await waitFor(() => treeRow("c2.md") !== null, "the rename");
     await waitFor(() => refChips().length === 0, "the ref gone");
-    // A new c.md where it was: never chosen. Written until the tree shows it: a
-    // write straight after the rename can land before the watch sees the folder
-    // again, and the parallel suite made that likely (kit-note-guard-lazy).
-    await writeUntilSeen(
-      "the new c.md",
-      () => writeFileSync(join(set, "c.md"), "# Another C\n"),
-      () => treeRow("c.md") !== null,
-    );
+    // A new c.md where it was: never chosen. Written once, and given time to show:
+    // the parallel suite timed this wait out at 2 s, but rewriting until seen would
+    // hide a real watch miss after a rename (kit-note-guard-lazy).
+    writeFileSync(join(set, "c.md"), "# Another C\n");
+    await waitFor(() => treeRow("c.md") !== null, "the new c.md", 10_000);
     expect(refChips()).toEqual([]);
     expect((await send("after the rename")).about).not.toHaveProperty("refs");
     await m.unmount();

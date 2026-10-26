@@ -111,10 +111,12 @@ describe("a session, end to end through the launchers", () => {
       if (tail === proc) tailReading = false;
     })();
   };
-  // ONE TIMEOUT MUST NOT TAKE THE REST WITH IT. Every test below reads the one
+  // A DEAD TAIL NO LONGER TAKES THE REST WITH IT. Every test below reads the one
   // tail; when a test runs out of time mid-call and the tail has gone, the next
   // test starts a new one rather than waiting on a tail that is not there
-  // (kit-note-guard-lazy: one slow test failed seven).
+  // (kit-note-guard-lazy: one slow test failed seven). It does not undo what a
+  // timed-out test left behind: forced, a timeout still failed one to three
+  // tests after it, down from six.
   beforeEach(() => {
     if (sessionId && !tailReading) startTail();
   });

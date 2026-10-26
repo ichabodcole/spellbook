@@ -362,3 +362,20 @@ The fix round touched four things.
   - `HeldSelection.seen`, and `heldAfter` compares it;
   - `NoteAtSelection`'s `At.seen`;
   - `DocumentPane`'s and `WorkspaceShell`'s `note.add` send it.
+
+## Loaded on first need (kit-note-guard-lazy, 2026-10-25)
+
+Statically importing `projection.ts` into `session.ts` made every daemon and CLI
+spawn load the markdown parser (239 modules instead of 208), which tipped the
+spawn-heavy "who rewrote or reopened a note…" test in `daemon.integration` past
+5 s and cascaded into six more failures under the parallel suite. The guard now
+loads on first need: `NOT_PLACED` lives in the import-free `notPlaced.ts`,
+`session.ts` holds the guard behind `loadNoteGuard()`, and the daemon's surface
+`note.add` awaits it when `seen` is present (commits `e9077fd2`, `4e278dda`,
+`1bb2b2cc`, `930c81ad`). The guard's decisions are unchanged: 147 cases through
+the shipped daemon matched the in-process answers.
+
+**Port-back:** `addNote` with `seen` before the guard is loaded throws a plain
+`Error`, not a `SessionError`. A host that calls `session.addNote({ seen })`
+directly, not through the daemon's `note.add`, must `await loadNoteGuard()`
+first, or the human sees an internal error.
