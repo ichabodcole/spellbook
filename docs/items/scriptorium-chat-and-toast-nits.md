@@ -7,7 +7,7 @@ description:
   hint, a bare tail that retries after an end, same-named documents, a double
   saved on ⌘S, phone width."
 status: stable
-lifecycle: ready
+lifecycle: active
 id: 01a0eab2-ed0c-7292-8381-bc4a228e93da
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-09-28 }
