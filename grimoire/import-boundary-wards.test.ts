@@ -166,7 +166,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { deployDirFor } from "../src/deployRoots.ts";
-import { type ImportKind, isRelative, scanSpecifiers } from "./lib/import-graph.ts";
+import { type ImportKind, type ImportRef, isRelative, scanSpecifiers } from "./lib/import-graph.ts";
 
 const REPO_ROOT =
   process.env.SPELLBOOK_REPO_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -191,6 +191,29 @@ function trackedSources(prefix: string): string[] {
     .trim()
     .split("\n")
     .filter((f) => /\.(ts|tsx)$/.test(f));
+}
+
+/**
+ * The specifiers in a repo-relative file, scanned ONCE per file per run.
+ *
+ * ⚠ WHY (2026-10-26): wards 1a and 1b share a population that now holds the
+ * emitted bundles — MEASURED at 55 files / 12.9 MB for 1b, of which one full
+ * scan costs ~380 ms on an idle machine and reading costs ~4 ms. 1b scanned it
+ * FOUR times (zero-guard, violation cell, and twice in the `bun`-exemption
+ * cell) and 1a three more, so under a loaded parallel gate two 1b cells crossed
+ * bun's 5 s default (7.1 s on CI run 40379180950). The population, the
+ * predicate and every failure message are unchanged; only the repeat scan is
+ * gone. Safe because nothing in this file writes under REPO_ROOT — the one cell
+ * that builds files does so in its own `mkdtemp` repo and scans none of them.
+ */
+const refsCache = new Map<string, ImportRef[]>();
+function refsOf(file: string): ImportRef[] {
+  let refs = refsCache.get(file);
+  if (!refs) {
+    refs = scanSpecifiers(readFileSync(join(REPO_ROOT, file), "utf8"));
+    refsCache.set(file, refs);
+  }
+  return refs;
 }
 
 /** Resolve a relative specifier against its importer, repo-relative, POSIX-ish. */
@@ -264,7 +287,7 @@ const keyOf = (e: EscapeIdentity): string => `${e.file}\t${e.spec}\t${e.resolved
 function relativeEscapes(files: string[], boundary: string, kinds: ImportKind[]): Escape[] {
   const out: Escape[] = [];
   for (const file of files) {
-    for (const ref of scanSpecifiers(readFileSync(join(REPO_ROOT, file), "utf8"))) {
+    for (const ref of refsOf(file)) {
       if (!kinds.includes(ref.kind) || !isRelative(ref.spec)) continue;
       const resolved = resolveFrom(file, ref.spec);
       if (resolved.startsWith(`${boundaryFor(file, boundary)}/`)) continue;
@@ -673,11 +696,7 @@ describe("R6 ward 1a — the published artifact resolves no relative path outsid
 
     // And the SCANNER ran over every spell, not merely the enumerator. This
     // replaces the `specifiers > 500` floor with the same membership shape.
-    const scanned = new Set(
-      files
-        .filter((f) => scanSpecifiers(readFileSync(join(REPO_ROOT, f), "utf8")).length > 0)
-        .map(spellOf),
-    );
+    const scanned = new Set(files.filter((f) => refsOf(f).length > 0).map(spellOf));
     expect(roster.filter((spell) => !scanned.has(spell))).toEqual([]);
   });
 
@@ -852,9 +871,7 @@ describe("R6 ward 1b — the shipped execution path carries no dependencies", ()
 
   test("the sweep actually ran (zero-guard)", () => {
     expect(files.length).toBeGreaterThan(20);
-    const bare = files.flatMap((f) =>
-      scanSpecifiers(readFileSync(join(REPO_ROOT, f), "utf8")).filter((r) => !isRelative(r.spec)),
-    );
+    const bare = files.flatMap((f) => refsOf(f).filter((r) => !isRelative(r.spec)));
     // A population with no bare specifiers at all would make the next cell pass
     // for the wrong reason. There are 113 today across 40 files, every one of them a builtin.
     expect(bare.length).toBeGreaterThan(50);
@@ -865,7 +882,7 @@ describe("R6 ward 1b — the shipped execution path carries no dependencies", ()
   function violationsUnder(isBuiltin: (spec: string, file: string) => boolean): string[] {
     const out: string[] = [];
     for (const file of files) {
-      for (const ref of scanSpecifiers(readFileSync(join(REPO_ROOT, file), "utf8"))) {
+      for (const ref of refsOf(file)) {
         // ⛔ 1b DOES NOT CONSULT `kind`, AND THAT IS THE FIX FOR R8.
         // It used to skip `dynamic`, which made its coverage depend on a
         // POSITION HEURISTIC — so every type position the heuristic missed
