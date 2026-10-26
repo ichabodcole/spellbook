@@ -189,9 +189,34 @@ item does not change the chat-and-toast nit.
   - **Branch:** a link icon with no expand, the menu as above, the drop dialog,
     "Open as its own set" drilled into `linkdir`, and the rename field in
     `linkdir` in both orders.
-  - **Not tested:** a row dragged within the tree onto a link's row. It takes
-    the same path in code as a file drop, but neither happy-dom nor the browser
-    drive covered it.
+  - A row dragged within the tree onto a link's row is now tested too (see the
+    polish round below).
+
+- **Polish round (the verifier's findings), on `impl/kit-link-row-polish`:**
+  - **Accessible name.** The tree library names a row by its label, so hidden
+    text never reached a screen reader. A link's row now carries its own
+    `aria-label`, "linkdir, a link to ~/…". Chromium's accessibility tree reads
+    it as `treeitem "linkdir, a link to ~/links-…/outside"`. A real folder keeps
+    the library's name.
+  - **The `~` form on the page.** The accessible name, the tooltip and the drop
+    dialog all show `tildify`'d text. `linkTo` stays absolute in the protocol,
+    for the agent. A target outside the home has no `~` form and reads absolute.
+  - **Rows dragged in the tree.** A row dragged onto a link's row sends no move.
+    The dialog shows instead, and a happy-dom test pins it.
+  - **The chat line.** `session.display()` now names a path in the innermost set
+    that holds it. With the holding set listed first, a document made in the
+    link's own set reads "You created linkdir/Untitled.md".
+  - **Keyboard.**
+    - ArrowRight on a link's row stays put. Every other row keeps the library's
+      ArrowRight: a shut folder opens, an open one steps in, a document steps
+      on.
+    - Enter does nothing on a link's row, as on any row that opens nothing. Its
+      menu is Shift+F10 or the context-menu key, as on every row.
+    - The override must be the library's whole `expandOrDown` entry, because a
+      hotkey given in the config replaces the library's entry rather than
+      merging with it.
+    - This is checked in the real browser only: happy-dom does not deliver the
+      tree's hotkeys.
 
 ### Known limits
 
@@ -245,3 +270,12 @@ item does not change the chat-and-toast nit.
     in `model.ts`, instead of the first set holding it.
 - **`model.ts` `moveTargets`:** skips a link's row, which also covers the
   create-location picker.
+- **Polish, `EntryTree.tsx`:**
+  - A link's row sets its own `aria-label` (name, "a link to", and the `~` form
+    of `linkTo`), because the library's label would otherwise be its whole
+    accessible name.
+  - The `hotkeys.expandOrDown` override is the library's own handler with a
+    link's row left out. A config hotkey replaces the library's entry, so a
+    partial override (only `isEnabled`) breaks ArrowRight on every row.
+- **Polish, `session.ts` `display()`:** names a path in the innermost mirrored
+  set that holds it, not the first one in context order.
