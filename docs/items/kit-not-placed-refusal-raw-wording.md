@@ -5,12 +5,13 @@ description:
   NOT_PLACED is the only refusal wording, so a note refused from the raw view
   says to select it in the raw view; the refusal should say which view it came
   from.
-status: draft
+status: stable
 lifecycle: ready
 id: 01a17a85-0ca7-745c-a568-292168ccbcf7
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-26 }
 parent: feature/workspace-kit-follow-ups
+cycle: 2026-10-bugs-after-6
 ---
 
 # A note refused in the raw view tells the human to use the raw view

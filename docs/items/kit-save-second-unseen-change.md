@@ -6,7 +6,7 @@ description:
   Once Save's unseen-change refusal raises the banner, a later Save counts as
   Keep mine; if the file changes outside again, unseen, that second change is
   overwritten without the human ever seeing it in the diff.
-status: draft
+status: stable
 lifecycle: ready
 id: 01a17585-b354-7751-9164-583e44a4659e
 kind: bug
@@ -14,6 +14,7 @@ generated: { by: claude-opus-5-5, at: 2026-10-25 }
 parent: feature/workspace-kit-follow-ups
 from: items/_archive/kit-save-overwrites-unseen-change.md
 priority: high
+cycle: 2026-10-bugs-after-6
 ---
 
 # A second missed outside change after the banner is overwritten without asking

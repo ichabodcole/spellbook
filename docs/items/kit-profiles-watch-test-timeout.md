@@ -5,13 +5,14 @@ description:
   profiles.integration's 'a profile file changed on disk pushes context.changed'
   cell timed out once in 20 parallel soak runs and never again in 30
   instrumented runs; find the cause from a trace and fix it.
-status: draft
+status: stable
 lifecycle: ready
 id: 01a171f4-4fe1-7001-a0f7-102607eead05
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 parent: feature/workspace-kit-follow-ups
 from: items/_archive/spellbook-parallel-tests.md
+cycle: 2026-10-bugs-after-6
 ---
 
 # A profile change on disk can time out its test in a parallel run

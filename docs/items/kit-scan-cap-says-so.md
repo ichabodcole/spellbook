@@ -5,13 +5,14 @@ description:
   "A set over the 2,000-file scan cap is cut short silently: a document past the
   cap is never link-checked, so its broken link goes unreported, and adding a
   sub-folder as its own set doesn't help the parent."
-status: draft
+status: stable
 lifecycle: ready
 id: 01a176c6-15b7-746c-b1b0-d952e6999cbd
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 parent: feature/workspace-kit-follow-ups
 from: items/_archive/scriptorium-chat-and-toast-nits.md
+cycle: 2026-10-bugs-after-6
 ---
 
 # A set cut short at the scan cap doesn't say so

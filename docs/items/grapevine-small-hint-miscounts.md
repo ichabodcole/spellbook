@@ -5,12 +5,13 @@ description:
   truncation_hint reports the full body length rather than what was cut, tail
   --last n counts mark and reopen frames tail never shows, and doctor's hint
   says list spawns a daemon when it doesn't.
-status: draft
+status: stable
 lifecycle: ready
 id: 01a176ad-1b41-742e-b500-e653179c0122
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 from: items/_archive/bounty-grapevine-skill-review.md
+cycle: 2026-10-bugs-after-6
 ---
 
 # Three grapevine hints count the wrong thing

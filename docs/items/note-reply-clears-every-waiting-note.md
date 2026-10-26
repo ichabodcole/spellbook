@@ -5,7 +5,7 @@ description:
   notesWaiting treats any agent message newer than a note as its answer, so
   note-reply to one note (or any say) stops every other note from showing as
   waiting, though nothing was said to them.
-status: draft
+status: stable
 lifecycle: ready
 id: 01a1759b-4cb1-72ff-b1fd-f47246421e50
 kind: bug
@@ -13,6 +13,7 @@ generated: { by: claude-opus-5-5, at: 2026-10-25 }
 parent: feature/workspace-kit-follow-ups
 from: items/_archive/note-reply-cannot-overwrite.md
 priority: high
+cycle: 2026-10-bugs-after-6
 ---
 
 # A reply to one note clears the waiting mark on every note

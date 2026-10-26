@@ -7,13 +7,14 @@ description:
   When the guard's walk runs out of budget on a long repetitive run, its
   fallback strips every page-only footnote number from seen, including a real
   digit in the text, and refuses an honest selection.
-status: draft
+status: stable
 lifecycle: ready
 id: 01a1765b-e6ee-71df-8c9f-ea3a46ca5ff2
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 parent: feature/workspace-kit-follow-ups
 from: items/_archive/kit-lone-cr-line-endings.md
+cycle: 2026-10-bugs-after-6
 ---
 
 # The note guard's fallback refuses an honest selection holding a real digit that matches a footnote number

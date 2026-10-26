@@ -4,13 +4,14 @@ title: An unreadable document is read as having no links
 description:
   "A document made unreadable (chmod 000) drops out of link-check silently: its
   outbound links vanish, and doctor and state say nothing."
-status: draft
+status: stable
 lifecycle: ready
 id: 01a176c6-150f-7587-825c-0209189be3bc
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 parent: feature/workspace-kit-follow-ups
 from: items/_archive/scriptorium-chat-and-toast-nits.md
+cycle: 2026-10-bugs-after-6
 ---
 
 # An unreadable document is read as having no links

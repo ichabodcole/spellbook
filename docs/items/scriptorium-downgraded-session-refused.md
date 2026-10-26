@@ -5,7 +5,7 @@ description:
   After 6.0.0 restores a 5.2.0 session, any write by 5.2.0 adds old-shape chat
   entries, and 6.0.0 then refuses the whole session (exit 6) instead of
   converting the mixed manifest.
-status: draft
+status: stable
 lifecycle: ready
 id: 01a177c2-9225-736c-8998-45fdfb660d6d
 kind: bug
@@ -14,6 +14,7 @@ tags: [scriptorium, kit]
 from: items/_archive/release-6-breaking-marker.md
 priority: high
 parent: feature/workspace-kit-follow-ups
+cycle: 2026-10-bugs-after-6
 ---
 
 # A converted session that 5.2.0 wrote to is refused by 6.0.0

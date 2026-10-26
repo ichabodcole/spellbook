@@ -5,12 +5,13 @@ description:
   Closing a keyed board deletes bounty-latest.json instead of pointing it back
   at a still-running board, so unpinned verbs exit 5; list reads titles from the
   discovery file and misses init --title.
-status: draft
+status: stable
 lifecycle: ready
 id: 01a176ad-1bd5-71a6-834c-2a18ecd6382e
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 from: items/_archive/bounty-grapevine-skill-review.md
+cycle: 2026-10-bugs-after-6
 ---
 
 # bounty's latest pointer and list title go stale

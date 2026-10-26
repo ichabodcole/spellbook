@@ -5,12 +5,13 @@ description:
   readDaemonPort deletes the port and pid files when the daemon doesn't answer
   within 500 ms, so start or restart --force spawns a second daemon beside a
   stopped (SIGSTOP) one.
-status: draft
+status: stable
 lifecycle: ready
 id: 01a176ad-1aaa-77b5-960e-775139c32393
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 from: items/_archive/bounty-grapevine-skill-review.md
+cycle: 2026-10-bugs-after-6
 ---
 
 # A paused grapevine daemon is taken for gone, and a second one starts

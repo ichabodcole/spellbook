@@ -5,7 +5,7 @@ description:
   A new-version toast raised after its hold while another document is open stays
   up, offering Activate, after the agent activates or deletes that version from
   the CLI; versionSettled only judges the open document.
-status: draft
+status: stable
 lifecycle: ready
 id: 01a17778-5509-703c-b1bd-9d94eb93f8f3
 kind: bug
@@ -13,6 +13,7 @@ generated: { by: claude-opus-5-5, at: 2026-10-26 }
 tags: [kit, chat]
 from: items/_archive/scriptorium-chat-and-toast-nits.md
 parent: feature/workspace-kit-follow-ups
+cycle: 2026-10-bugs-after-6
 ---
 
 # A held version toast shown on another document goes stale

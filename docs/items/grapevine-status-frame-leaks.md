@@ -9,6 +9,7 @@ lifecycle: backlog
 id: 01a036b9-c760-73c5-8808-1d10dba168e1
 kind: task
 generated: { by: unknown, at: 2026-08-24 }
+cycle: 2026-10-bugs-after-6
 ---
 
 # grapevine: status frames leak through `wait`, and two folding papercuts

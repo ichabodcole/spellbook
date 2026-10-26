@@ -5,12 +5,13 @@ description:
   After the stop race fix, doctor adds nothing for a stuck daemon, a refused
   stop --hold leaves its hold active without saying so, and roll's hold release
   on the refusal path is untested.
-status: draft
+status: stable
 lifecycle: ready
 id: 01a17266-76ba-76e7-aa08-0432ad6ad8d3
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 from: items/_archive/ci-red-on-linux.md
+cycle: 2026-10-bugs-after-6
 ---
 
 # Grapevine's refusal for a daemon that will not stop leaves three gaps

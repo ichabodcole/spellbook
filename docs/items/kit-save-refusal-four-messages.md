@@ -5,13 +5,14 @@ description:
   On a Save refused for an unseen outside change the human gets an error box,
   the banner, a toast and a chat line, naming the same choice three ways; a
   clean document's refusal reads as a failure though the kit protected the file.
-status: draft
+status: stable
 lifecycle: ready
 id: 01a17585-b3f1-7130-b253-563e85932519
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 parent: feature/workspace-kit-follow-ups
 from: items/_archive/kit-save-overwrites-unseen-change.md
+cycle: 2026-10-bugs-after-6
 ---
 
 # A missed-change Save refusal shows four messages in three vocabularies

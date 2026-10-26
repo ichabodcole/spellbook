@@ -4,13 +4,14 @@ title: A folder and a link to it become two sets
 description:
   "`open world wlink`, where `wlink` links to `world`, adds two sets with the
   same real folder, and `open world world` lists the entry twice."
-status: draft
+status: stable
 lifecycle: ready
 id: 01a176c6-1472-7678-bd93-11cc3cd3f7a0
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 parent: feature/workspace-kit-follow-ups
 from: items/_archive/scriptorium-chat-and-toast-nits.md
+cycle: 2026-10-bugs-after-6
 ---
 
 # A folder and a link to it become two sets
