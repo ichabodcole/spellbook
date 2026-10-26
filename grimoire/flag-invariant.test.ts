@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
+import { deployDirFor } from "../src/deployRoots.ts";
 import {
   argParsingEntryPoints,
   BACKEND_SRC_DIR,
@@ -8,7 +9,6 @@ import {
   onKitRegistry,
   readEntryPoint,
   recognizedFlags as recognizedSet,
-  SKILLS_DIR as SKILLS,
   spellsOf,
 } from "./lib/entry-points";
 import { must } from "./lib/must.ts";
@@ -237,12 +237,18 @@ describe("ward — every SKILL.md flag is recognized, and every recognized flag 
   // This entry says only what is true from the enumerator's side: the folder
   // owns caller-facing arg-parsing entry points and no contract wards them.
   const SPELLS_WITHOUT_SKILL_MD: Record<string, string> = {
-    "mind-mapper": "39 caller-facing flags unwarded; folder is undeclared (see #989) and shipped",
+    // ⚠ "and shipped" CLOSED 2026-10-25: the folder moved out of the plugin to
+    // `plugins/unreleased/skills/` until its app is finished. Remove this pin
+    // when it gets its SKILL.md (plugins/unreleased/README.md, the rejoin steps).
+    "mind-mapper":
+      "39 caller-facing flags unwarded; folder is undeclared (see #989), held out of the plugin in plugins/unreleased/",
   };
 
   test("every spell with no SKILL.md is PINNED, not silently skipped", () => {
     const fs = require("node:fs");
-    const missing = spells.filter((s) => !fs.existsSync(join(SKILLS, s, "SKILL.md"))).sort();
+    // `deployDirFor`, not `SKILLS`: a held-out spell's SKILL.md would sit under
+    // `plugins/unreleased/skills/`, and the shipped root alone cannot see it.
+    const missing = spells.filter((s) => !fs.existsSync(join(deployDirFor(s), "SKILL.md"))).sort();
     // Both directions. A spell ARRIVING here is new unwarded surface; a spell
     // LEAVING must be struck from the list, or the list rots into an excuse.
     expect({ missing, pinned: Object.keys(SPELLS_WITHOUT_SKILL_MD).sort() }).toEqual({
@@ -253,7 +259,7 @@ describe("ward — every SKILL.md flag is recognized, and every recognized flag 
 
   for (const spell of spells) {
     test(`${spell}`, () => {
-      const skillPath = join(SKILLS, spell, "SKILL.md");
+      const skillPath = join(deployDirFor(spell), "SKILL.md");
       const fs = require("node:fs");
       if (!fs.existsSync(skillPath)) {
         // Assert the pin rather than returning. This cell still passes for a

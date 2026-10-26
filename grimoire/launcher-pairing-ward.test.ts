@@ -73,11 +73,15 @@ import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { backendEntryNames, buildableSpells } from "../src/build.ts";
+import { deployDirFor, deployedSpells } from "../src/deployRoots.ts";
 import { classifyDist, distDirFor } from "./lib/dist-artifacts.ts";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+/** The SHIPPED skills folder — used only to mint the control's synthetic tree. */
 const skillsDirIn = (root: string) => join(root, "plugins", "spellbook", "skills");
-const scriptsDirIn = (root: string, spell: string) => join(skillsDirIn(root), spell, "scripts");
+/** A spell's launchers, under whichever deploy root holds it (`src/deployRoots.ts`):
+ *  a spell held out of the plugin in `plugins/unreleased/skills/` is still paired. */
+const scriptsDirIn = (root: string, spell: string) => join(deployDirFor(spell, root), "scripts");
 
 /**
  * `../dist/X.js` specifiers in one shipped script, as the bare names `X`.
@@ -155,15 +159,12 @@ function launcherImports(
 // answering the same question with a hand-kept list of two names.
 
 /** The roster, from the tree: a name is a spell iff its deployed skill folder
- *  exists. The SAME criterion `thoth`'s ownership rule already uses, and the
- *  reason `src/kit/` and `src/build.ts` are not spells. */
-const roster = (root: string): string[] =>
-  existsSync(skillsDirIn(root))
-    ? readdirSync(skillsDirIn(root), { withFileTypes: true })
-        .filter((e) => e.isDirectory())
-        .map((e) => e.name)
-        .sort()
-    : [];
+ *  exists, under EITHER deploy root (`src/deployRoots.ts`). The SAME criterion
+ *  `thoth`'s ownership rule already uses, and the reason `src/kit/` and
+ *  `src/build.ts` are not spells. ⚠ Both roots since 2026-10-25: reading the
+ *  shipped root alone dropped mind-mapper (held in `plugins/unreleased/`) and
+ *  stayed green — 9 spells became 8 and a planted unpaired launcher passed. */
+const roster = (root: string): string[] => deployedSpells(root);
 
 type Row = {
   spell: string;

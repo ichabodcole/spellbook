@@ -840,8 +840,13 @@ const onShippedExecutionPath = (file: string): boolean =>
  * exemption applies there.
  */
 describe("R6 ward 1b — the shipped execution path carries no dependencies", () => {
+  // ⚠ The holding root's launchers too (2026-10-25): a spell held out of the
+  // plugin in `plugins/unreleased/` rejoins by `git mv`, so it must already
+  // carry no dependencies. Without this row mind-mapper's launchers left the
+  // population and a planted bare import passed.
   const files = [
     ...trackedSources(PLUGIN_ROOT).filter(onShippedExecutionPath),
+    ...trackedSources(UNRELEASED_ROOT).filter(onShippedExecutionPath),
     ...emittedSources(EMITTED_ROOTS),
   ];
 
@@ -1444,7 +1449,11 @@ describe("the import scanner agrees with Bun's parser on every value import in t
     const transpiler = new Bun.Transpiler({ loader: "tsx" });
     const short: string[] = [];
     let audited = 0;
-    for (const file of [...trackedSources(PLUGIN_ROOT), ...trackedSources("src")]) {
+    for (const file of [
+      ...trackedSources(PLUGIN_ROOT),
+      ...trackedSources(UNRELEASED_ROOT),
+      ...trackedSources("src"),
+    ]) {
       const source = readFileSync(join(REPO_ROOT, file), "utf8");
       // Both sides are the VALUE-STATEMENT population and nothing else:
       // non-erased `static` refs here, `import-statement` there. Dynamic refs
@@ -1498,7 +1507,11 @@ describe("the import scanner agrees with Bun's parser on every value import in t
     const transpiler = new Bun.Transpiler({ loader: "tsx" });
     const disagreements: string[] = [];
     let files = 0;
-    for (const file of [...trackedSources(PLUGIN_ROOT), ...trackedSources("src")]) {
+    for (const file of [
+      ...trackedSources(PLUGIN_ROOT),
+      ...trackedSources(UNRELEASED_ROOT),
+      ...trackedSources("src"),
+    ]) {
       const source = readFileSync(join(REPO_ROOT, file), "utf8");
       const lines = source.split("\n");
       // `require()` is excluded: the parser does not report it at all, so it is
@@ -1572,7 +1585,11 @@ describe("the import scanner agrees with Bun's parser on every value import in t
       .trim()
       .split("\n")
       .filter((f) => /^src\/[^/]+\/backend\/.*\.ts$/.test(f) && !f.endsWith(".test.ts"));
-    for (const file of [...trackedSources(PLUGIN_ROOT), ...backendSrc]) {
+    for (const file of [
+      ...trackedSources(PLUGIN_ROOT),
+      ...trackedSources(UNRELEASED_ROOT),
+      ...backendSrc,
+    ]) {
       const source = readFileSync(join(REPO_ROOT, file), "utf8");
       const lines = source.split("\n");
       for (const ref of scanSpecifiers(source)) {

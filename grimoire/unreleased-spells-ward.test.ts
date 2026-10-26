@@ -38,6 +38,20 @@ export function findings(
   };
 }
 
+/**
+ * Marketplace sources an install would copy the holding root FROM: the root
+ * itself, anything inside it, or any ANCESTOR of it (`./plugins`, `.`), since
+ * a source folder is copied whole. Pure, for the same reason as `findings`.
+ */
+export function sourcesReachingHoldingRoot(sources: string[]): string[] {
+  const HOLD = "plugins/unreleased";
+  return sources.filter((raw) => {
+    const s = raw.replace(/^\.\//, "").replace(/\/+$/, "");
+    if (s === "" || s === ".") return true; // the repo root contains everything
+    return s === HOLD || s.startsWith(`${HOLD}/`) || HOLD.startsWith(`${s}/`);
+  });
+}
+
 const shipped = spellsIn(SHIPPED_ROOT);
 const unreleased = spellsIn(UNRELEASED_ROOT);
 
@@ -56,13 +70,11 @@ describe("unreleased spells ward", () => {
     ).toEqual({ inBothRoots: [], shippedWithoutSkill: [] });
   });
 
-  test("no marketplace entry installs from the holding root", () => {
+  test("no marketplace entry installs from the holding root, inside it, or above it", () => {
     const m = JSON.parse(readFileSync(join(REPO_ROOT, ".claude-plugin/marketplace.json"), "utf8"));
     const sources: string[] = (m.plugins ?? []).map((p: { source: unknown }) => String(p.source));
     expect(sources.length).toBeGreaterThan(0);
-    expect(sources.filter((s) => s.replace(/^\.\//, "").startsWith("plugins/unreleased"))).toEqual(
-      [],
-    );
+    expect(sourcesReachingHoldingRoot(sources)).toEqual([]);
     // And the holding root is not shaped like a plugin, so pointing a
     // marketplace at it by mistake would not produce an installable plugin.
     expect(existsSync(join(REPO_ROOT, "plugins/unreleased/.claude-plugin"))).toBe(false);
@@ -72,6 +84,28 @@ describe("unreleased spells ward", () => {
 describe("unreleased spells ward — calibration", () => {
   test("a copy in both roots is named", () => {
     expect(findings(["a", "mm"], ["mm"], () => true).inBothRoots).toEqual(["mm"]);
+  });
+
+  test("a marketplace source that is, holds, or sits above the holding root is named", () => {
+    expect(
+      sourcesReachingHoldingRoot([
+        "./plugins/spellbook",
+        "./plugins",
+        "./plugins/",
+        ".",
+        "./",
+        "./plugins/unreleased",
+        "./plugins/unreleased/skills",
+        "./plugins/unreleased-other",
+      ]),
+    ).toEqual([
+      "./plugins",
+      "./plugins/",
+      ".",
+      "./",
+      "./plugins/unreleased",
+      "./plugins/unreleased/skills",
+    ]);
   });
 
   test("a shipped spell with no SKILL.md is named", () => {
