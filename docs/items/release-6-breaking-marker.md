@@ -6,7 +6,7 @@ description:
   breaking, so one commit's BREAKING CHANGE footer names what Scriptorium
   dropped since 5.2.0, with a short upgrade note for adopters.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a17017-088e-75a6-bc1d-8231219812c0
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-24 }
@@ -28,7 +28,7 @@ This comes last in the cycle, so the note describes the final state.
 
 ## Definition of done
 
-- [ ] One commit on develop carries a `BREAKING CHANGE:` footer that names what
+- [x] One commit on develop carries a `BREAKING CHANGE:` footer that names what
       changed for adopters, so release-please proposes 6.0.0. Checked against
       release-please's own rules before Cole merges.
 - [x] A short upgrade note for adopters: what was removed, what replaces it, and
@@ -42,7 +42,8 @@ On `impl/breaking-marker`, one commit, `docs(release)!: the 6.0.0 upgrade note`,
 adds the upgrade note,
 [docs/releases/6.0.0-breaking-changes.md](../releases/6.0.0-breaking-changes.md),
 beside the 3.0.0 to 5.0.0 ones, and carries the `BREAKING CHANGE:` footer that
-points to it. The first box stays open until that commit is on develop.
+points to it. It reached develop as `3da9718f` on 2026-10-26, when develop
+fast-forwarded to `cycle/release-6`.
 
 **What changed, from the artifacts.** Every spell's `schema` was dumped from the
 5.2.0 build (a `git archive` of the tag, installed and built in its own scratch
