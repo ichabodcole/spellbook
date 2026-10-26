@@ -75,10 +75,11 @@ The verifier's fix round (F1, F3, F5) is in `a23c211d`:
     pointer to come back. It no longer waits a fresh 45 s.
   - A holder that is up gets the usual "already running at <url>", and
     `state --session` then works.
-  - A holder that does not answer is named, with its pid, its lock file and
-    `kill <pid>`, then `open --restore <id>`. No hint in that chain points to a
-    verb that finds the session by its pointer, so none leads back to the same
-    refusal.
+  - A holder that does not answer is named with its pid and its lock file.
+    `kill <pid>`, then `open --restore <id>`, is offered only when the pid is
+    confirmed to be this session's daemon (round 3, below). No hint in that
+    chain points to a verb that finds the session by its pointer, so none leads
+    back to the same refusal.
   - `open`'s "does it answer" check is now bounded at 3 s. A stopped process's
     port accepts the connection and then never replies, which hung the check for
     as long as the fetch would wait.
@@ -91,6 +92,33 @@ The verifier's fix round (F1, F3, F5) is in `a23c211d`:
 - **`MAX_REAP_DEPTH` stays 4.** It costs nothing, and each level needs a
   recoverer to crash at exactly that moment.
 
+Round 3 (R1–R3) is in `954925cd`:
+
+- **A stop verb only for a confirmed daemon (R1).** An agent acts on a hint as
+  written, so `kill <pid>` must never name the wrong process. Two changes make
+  sure of that:
+  - **The lock records its session.** A lock naming another session holds
+    nothing. A live session's folder copied with its lock therefore restores as
+    its own session, and the live daemon is never named.
+  - **`open` confirms the pid before it says `kill`.** All of these must hold:
+    - the lock still names that pid, and was taken for this session;
+    - `ps` shows the pid running this app's daemon entry;
+    - its command line carries no `--restore` for another session;
+    - it was running when the lock was written, so it is not a reused pid.
+
+    Anything unconfirmed names the pid and the lock file, says what could not be
+    confirmed (for example "`ps` cannot say what it is"), tells the agent not to
+    stop the process on this word, and gives `ps -p <pid>` to check.
+
+- **The pointer-repair wait is tested (R2).** The pointer test's holder is now
+  older than its start window, and the fixture's attention clock is slowed to 2
+  s. The 2.5 s wait for the repair is then the only thing that lets `open` find
+  the daemon. Removing the wait, or cutting it to 0.5 s, turns the test red.
+- **Only the session's own pointer is repaired (R3).** `publishPointer` takes
+  `{ latest: false }`, so a repair never makes an older session `latest` again.
+- **The test timings were not refreshed (R4).** The machine was heavily loaded
+  (load average 27 to 80 on 14 cores), so the refresh is left for the lead.
+
 Known limits:
 
 - **F2: a mixed-build race.** A CLI built before this change, racing one built
@@ -102,9 +130,13 @@ Known limits:
 - **The non-atomic publish (M13) is untested.** No test forces a reader to see a
   half-written lock: the hard link makes that impossible, and no test can hit
   the window.
-- **A restored pointer also rewrites `<app>.latest.json`,** because
-  `publishPointer` writes both files. The kit's verbs find the newest session
-  through `last-opened.json`, so they do not read `latest`.
+- **A lock forged by hand can still be confirmed.** A lock written by hand
+  naming this session, another new (never restored) session's daemon pid, and a
+  time after that daemon started would pass every check. Nothing the kit writes
+  produces one: a copied lock names its own session.
+- **No `kill` without `ps`.** Where `ps` cannot answer (Windows, a stripped
+  PATH), the stop verb is never offered. A stuck daemon is then named for a
+  person to judge.
 
 Tests:
 
@@ -112,14 +144,22 @@ Tests:
   - two restores at once give one daemon, over three rounds;
   - a daemon killed with SIGKILL leaves a lock that the next restore recovers;
   - a clean close removes the lock;
-  - a live daemon whose pointer was deleted is found and named by its URL, and
-    `state` reaches it;
+  - a live daemon whose pointer was deleted is found and named by its URL, past
+    its start window, through the repair wait alone, and `state` reaches it;
+    `latest` is not put back;
   - a stuck (SIGSTOP) holder that has held the lock past a start window is named
-    quickly, with a `kill` hint, and acting on that hint works;
+    quickly, with a confirmed `kill` hint, and acting on that hint works;
+  - a live session's folder copied with its lock restores, and the live daemon
+    is left alone;
+  - without `ps`, a lock naming an unrelated live process gives no `kill`;
+  - a lock naming another session's healthy daemon gives no `kill`, either
+    without `ps` or with a lock forged to name this session (its command line
+    names its own session);
   - a start refused for a corrupt manifest leaves no lock;
   - `--restore ..` is refused 400 before any lock is taken.
 - `src/kit/wire/daemonLock.test.ts`:
   - a reused pid, and a file that is not a lock;
+  - a lock naming another session holds nothing;
   - both windows of the recovery race, forced step by step;
   - a crashed reaper's guard, recovered and later tidied;
   - eight processes racing for one stale lock.
@@ -133,9 +173,13 @@ none. That is still check-then-act, and no lock is taken.
 ## Port-back notes
 
 - New `src/kit/wire/daemonLock.ts`, with no imports from outside the kit:
-  - `takeDaemonLock(dir)`, which also tidies orphan reap guards;
+  - `takeDaemonLock(dir, elapsed?, session?)`, which records the session and
+    also tidies orphan reap guards;
   - `releaseDaemonLock(lock)`;
-  - `readDaemonLock(dir)`, which only reads.
+  - `readDaemonLock(dir)`, `processCommand(pid)` and `startedBy`, which only
+    read.
+- `src/kit/wire/discovery.ts`: `publishPointer` takes `{ latest: false }`. This
+  rebuilt every spell's dist that bundles it, with no change in behaviour.
 - `server.ts`:
   - adds `SessionLockedError` (409, carrying `pid`);
   - `boot` checks the id, then locks before `WorkspaceSession.restore`, or right
@@ -143,16 +187,16 @@ none. That is still check-then-act, and no lock is taken.
   - the lock is released in `start`'s failure path and as the last step of
     teardown;
   - `runWorkspaceDaemon` adds `locked_by` to a refused handshake;
-  - the attention clock publishes the daemon's pointer again if it is gone
-    (`keepPointer`).
+  - the attention clock publishes the daemon's own pointer again if it is gone
+    (`keepPointer`), never `latest`.
 - `verbs.ts`:
   - when `open --restore` gets a handshake carrying `locked_by`, it waits for
     whatever remains of the holder's start window, measured from the lock's
     `at`, and at least 2.5 s;
   - if the holder answers in that time, it refuses as "already running at
     <url>";
-  - if not, it names the holder's pid and lock file, with `kill <pid>` as the
-    next act;
+  - if not, it names the holder's pid and lock file. It offers `kill <pid>` only
+    once `confirmHolder` has shown the pid to be this session's daemon;
   - `answers` (the "does it answer" check) is bounded at 3 s.
 - For Story Studio:
   - **Where the lock goes.** Its lock would sit in `projectsRoot/<id>`, which is
