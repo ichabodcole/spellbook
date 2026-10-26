@@ -6,9 +6,10 @@
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { XIcon } from "lucide-react";
 import type * as React from "react";
+import { useMemo } from "react";
 import { cn } from "../lib/cn";
 import { Button } from "./button";
-import { inertOutsideRef } from "./inertOutside";
+import { inertOutsideWith } from "./inertOutside";
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
@@ -44,12 +45,22 @@ function DialogContent({
   children,
   showCloseButton = true,
   size = "default",
+  ref,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean;
   // A wider popup, for a dialog with a field and its hint (scriptorium's new version).
   size?: "default" | "md";
 }) {
+  // Base UI's trap lets Tab out; the page behind is made inert instead, and a
+  // caller's own `ref` still gets the popup.
+  const popupRef = useMemo(
+    () =>
+      inertOutsideWith<HTMLDivElement>(
+        ref as Parameters<typeof inertOutsideWith<HTMLDivElement>>[0],
+      ),
+    [ref],
+  );
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -61,8 +72,7 @@ function DialogContent({
           className,
         )}
         {...props}
-        // Base UI's trap lets Tab out; the page behind is made inert instead.
-        ref={inertOutsideRef}
+        ref={popupRef}
       >
         {children}
         {showCloseButton && (

@@ -3,12 +3,61 @@
 // 1.6.0's guards let focus out: `ui.test.tsx` covers the kit's modals, and the
 // real-browser check is in the item doc).
 import "../lib/registerDom.ts";
-import { afterAll, beforeAll, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { installDom, removeDom } from "../lib/testDom.ts";
-import { inertOutside } from "./inertOutside.ts";
+import { inertOutside, inertOutsideWith } from "./inertOutside.ts";
 
 beforeAll(installDom);
 afterAll(removeDom);
+
+describe("two modals, one over the other, closing in either order", () => {
+  /** The page, modal A's portal, then modal B's opened over it. */
+  function nested() {
+    document.body.innerHTML = `
+      <div id="root"><button>Behind</button></div>
+      <div id="already" inert></div>
+      <div id="pa"><div id="a"><button>A</button></div></div>`;
+    const $ = (id: string) => document.getElementById(id) as HTMLElement;
+    const undoA = inertOutside($("a"));
+    const pb = document.createElement("div");
+    pb.id = "pb";
+    const b = document.createElement("div");
+    b.appendChild(document.createElement("button"));
+    pb.appendChild(b);
+    document.body.appendChild(pb);
+    const undoB = inertOutside(b);
+    expect([$("root").inert, $("pa").inert, $("pb").inert]).toEqual([true, true, false]);
+    return { $, undoA, undoB };
+  }
+
+  test("the first closes first: the page stays inert while the second is open", () => {
+    const { $, undoA, undoB } = nested();
+    undoA();
+    expect($("root").inert).toBe(true);
+    undoB();
+    expect([$("root").inert, $("pa").inert, $("already").inert]).toEqual([false, false, true]);
+  });
+
+  test("the second closes first: back to the first alone, then to the page", () => {
+    const { $, undoA, undoB } = nested();
+    undoB();
+    expect([$("root").inert, $("pa").inert]).toEqual([true, false]);
+    undoA();
+    expect([$("root").inert, $("already").inert]).toEqual([false, true]);
+  });
+});
+
+test("inertOutsideWith sets a caller's own ref as well, and unsets both", () => {
+  document.body.innerHTML = `<div id="root"></div><div id="p"><div id="pop"></div></div>`;
+  const pop = document.getElementById("pop") as HTMLElement;
+  const ref: { current: HTMLElement | null } = { current: null };
+  const cleanup = inertOutsideWith(ref)(pop);
+  expect(ref.current).toBe(pop);
+  expect((document.getElementById("root") as HTMLElement).inert).toBe(true);
+  cleanup?.();
+  expect(ref.current).toBeNull();
+  expect((document.getElementById("root") as HTMLElement).inert).toBe(false);
+});
 
 test("the page is inert, a guard sends focus round, and closing undoes only what it did", () => {
   document.body.innerHTML = `

@@ -123,6 +123,21 @@ describe("ui smoke renders", () => {
     await m.unmount();
   });
 
+  test("DialogContent hands a caller's own ref the popup, and still makes the page inert", async () => {
+    const ref: { current: HTMLDivElement | null } = { current: null };
+    const m = await mount(
+      <Dialog open>
+        <DialogContent ref={ref}>
+          <DialogTitle>Rename</DialogTitle>
+        </DialogContent>
+      </Dialog>,
+    );
+    await waitFor(() => !!slot(document.body, "dialog-content"), "the popup");
+    expect(ref.current).toBe(slot(document.body, "dialog-content") as HTMLDivElement);
+    expect([...document.body.children].some((c) => (c as HTMLElement).inert)).toBe(true);
+    await m.unmount();
+  });
+
   test("ConfirmDialog confirms and cancels", async () => {
     const seen: string[] = [];
     const m = await mount(

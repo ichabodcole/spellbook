@@ -36,8 +36,33 @@ function tabbables(popup: HTMLElement): HTMLElement[] {
 }
 
 /**
+ * Who holds each element inert. Modals nest (a confirm over a dialog) and may
+ * close in any order, so an element is held by a count of the modals that
+ * made it inert, and goes back to what it was before the first of them (`was`:
+ * inert already, for a reason of its own, or not) only when the last lets go.
+ */
+const holds = new WeakMap<HTMLElement, { count: number; was: boolean }>();
+
+function hold(el: HTMLElement): void {
+  const h = holds.get(el) ?? { count: 0, was: el.inert };
+  h.count += 1;
+  holds.set(el, h);
+  el.inert = true;
+}
+
+function release(el: HTMLElement): void {
+  const h = holds.get(el);
+  if (!h) return;
+  h.count -= 1;
+  if (h.count > 0) return;
+  holds.delete(el);
+  el.inert = h.was;
+}
+
+/**
  * Make every child of `<body>` but the one holding `popup` inert, and keep Tab
- * inside the popup; returns the undo, which touches only what this call did.
+ * inside the popup; returns the undo, which lets go only of what this call
+ * holds: safe whichever of two nested modals closes first.
  */
 export function inertOutside(popup: HTMLElement): () => void {
   const body = popup.ownerDocument.body;
@@ -47,8 +72,8 @@ export function inertOutside(popup: HTMLElement): () => void {
   const portal = holder;
   const made: HTMLElement[] = [];
   for (const child of Array.from(body.children)) {
-    if (child === portal || !(child instanceof HTMLElement) || child.inert) continue;
-    child.inert = true;
+    if (child === portal || !(child instanceof HTMLElement)) continue;
+    hold(child);
     made.push(child);
   }
   // Focus beside the popup, in its portal: round to the other end.
@@ -69,7 +94,7 @@ export function inertOutside(popup: HTMLElement): () => void {
     undone = true;
     observer?.disconnect();
     portal.removeEventListener("focusin", onFocusIn);
-    for (const child of made) child.inert = false;
+    for (const child of made) release(child);
   };
   // Closing starts before the popup goes (an exit animation): let the page
   // back in then, so focus can return to the control that opened it.
@@ -81,6 +106,34 @@ export function inertOutside(popup: HTMLElement): () => void {
     : null;
   observer?.observe(popup, { attributes: true, attributeFilter: ["data-closed"] });
   return undo;
+}
+
+/**
+ * A callback ref that keeps the page inert (`inertOutsideRef`) AND sets a
+ * caller's own `ref`, so wiring the one does not drop the other. Memoise it
+ * on `ref` (a new callback every render would re-run both each time).
+ */
+export function inertOutsideWith<T extends HTMLElement>(
+  ref: ((node: T | null) => unknown) | { current: T | null } | null | undefined,
+): (node: T | null) => (() => void) | undefined {
+  return (node) => {
+    if (!node) return undefined;
+    const undo = inertOutside(node);
+    let unset: () => void = () => {};
+    if (typeof ref === "function") {
+      const back = ref(node);
+      unset = typeof back === "function" ? (back as () => void) : () => ref(null);
+    } else if (ref) {
+      ref.current = node;
+      unset = () => {
+        ref.current = null;
+      };
+    }
+    return () => {
+      undo();
+      unset();
+    };
+  };
 }
 
 /**
