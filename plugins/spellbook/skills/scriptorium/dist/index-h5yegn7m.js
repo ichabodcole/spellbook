@@ -69313,6 +69313,9 @@ function gfmFromMarkdown() {
     gfmTaskListItemFromMarkdown()
   ];
 }
+// src/kit/document/notPlaced.ts
+var NOT_PLACED = "The rendered view could not place this passage exactly where you selected it. Select it in the raw view and add the note there.";
+
 // src/kit/document/projection.ts
 var TIGHT = new Set(["listItem", "tableCell", "tableRow"]);
 var BLOCKS = new Set([
@@ -69562,7 +69565,6 @@ function nextBreak(text4, from) {
 function bare(s) {
   return s.replace(/\s+/gu, "");
 }
-var NOT_PLACED = "The rendered view could not place this passage exactly where you selected it. Select it in the raw view and add the note there.";
 function showsSelection(text4, from, to, seen, projection, walkBudget = WALK_BUDGET) {
   const want = bare(seen);
   if (bare(text4.slice(from, to)) === want)
