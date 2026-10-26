@@ -26113,7 +26113,8 @@ function NoteAtSelection({
   onAddLink,
   edits,
   linkRefusal: linkRefusal2,
-  noteRefusal
+  noteRefusal,
+  noteRefusalLabel = "session ended"
 }) {
   const [writing, setWriting] = import_react10.useState(false);
   const [body, setBody] = import_react10.useState("");
@@ -26274,7 +26275,7 @@ function NoteAtSelection({
             (!passage || noteRefusal !== undefined) && /* @__PURE__ */ jsx_runtime6.jsx("span", {
               "data-slot": "why",
               className: "ml-auto text-[10px] text-ink-faint",
-              children: passage ? "session ended" : "select text first"
+              children: passage ? noteRefusalLabel : "select text first"
             })
           ]
         }),
@@ -69327,6 +69328,7 @@ function project(text4) {
     return p;
   return {
     plain: p.plain,
+    pageOnly: p.pageOnly,
     segments: p.segments.map((s) => ({
       ...s,
       srcFrom: s.srcFrom + bodyStart,
@@ -69416,7 +69418,10 @@ function projectBody(text4) {
         position: { start: { offset: piece.at }, end: { offset: piece.at + piece.value.length } }
       });
   };
+  let footnoteRefs = 0;
   const walk = (node2) => {
+    if (node2.type === "footnoteReference")
+      footnoteRefs++;
     if (BLOCKS.has(node2.type) && plain2 !== "" && pendingBoundary === null) {
       pendingBoundary = {
         sep: TIGHT.has(node2.type) ? `
@@ -69451,7 +69456,8 @@ function projectBody(text4) {
   };
   for (const child of tree.children ?? [])
     walk(child);
-  return { plain: plain2, segments };
+  const pageOnly = footnoteRefs === 0 ? [] : ["Footnotes", "↩", ...Array.from({ length: footnoteRefs }, (_, i2) => String(i2 + 1))];
+  return { plain: plain2, segments, pageOnly };
 }
 function segmentAt(p, at2) {
   for (const seg of p.segments)
@@ -69544,6 +69550,72 @@ function nextBreak(text4, from) {
   if (cr === -1 || nl !== -1 && nl <= cr + 1)
     return nl;
   return cr;
+}
+function bare(s) {
+  return s.replace(/\s+/gu, "");
+}
+var NOT_PLACED = "The rendered view could not place this passage exactly where you selected it. Select it in the raw view and add the note there.";
+function showsSelection(text4, from, to, seen) {
+  const want = bare(seen);
+  if (bare(text4.slice(from, to)) === want)
+    return true;
+  if (want === "")
+    return false;
+  const p = project(text4);
+  const runs = p.segments.filter((seg) => !(seg.srcTo <= from || seg.srcFrom >= to) && bare(p.plain.slice(seg.plainFrom, seg.plainTo)) !== "");
+  const first = runs[0];
+  const last2 = runs[runs.length - 1];
+  const r2 = toPlain(p, from, to);
+  if (!first || !last2 || !r2)
+    return matchesWithin(want, "", 0, 0, p.pageOnly);
+  const shown2 = bare(p.plain.slice(r2.from, r2.to));
+  const m = shown2.length;
+  const runLength = (seg) => bare(p.plain.slice(seg.plainFrom, seg.plainTo)).length;
+  let lead;
+  let trail2;
+  if (first === last2)
+    lead = trail2 = first.exact ? 0 : m;
+  else {
+    const edge = (seg, onSpace) => seg.exact ? 0 : Math.max(0, runLength(seg) - (onSpace ? 0 : 1));
+    lead = edge(first, /^\s/u.test(seen));
+    trail2 = edge(last2, /\s$/u.test(seen));
+  }
+  return matchesWithin(want, shown2, lead, trail2, p.pageOnly);
+}
+function matchesWithin(want, shown2, lead, trail2, extra) {
+  const m = shown2.length;
+  const n = want.length;
+  const at2 = Array.from({ length: n + 1 }, () => new Set);
+  const opens = [0];
+  for (const t2 of extra)
+    for (let k = 1;k < t2.length; k++)
+      if (want.startsWith(t2.slice(k)))
+        opens.push(t2.length - k);
+  for (const i2 of opens)
+    for (let j2 = 0;j2 <= Math.min(lead, m); j2++)
+      at2[i2]?.add(j2 * 2);
+  const closes = (i2) => i2 === n || extra.some((t2) => t2.length > n - i2 && t2.startsWith(want.slice(i2)));
+  for (let i2 = 0;i2 < n; i2++) {
+    const here = at2[i2];
+    if (here.size === 0)
+      continue;
+    const ends = extra.filter((t2) => t2 !== "" && want.startsWith(t2, i2)).map((t2) => i2 + t2.length);
+    for (const state of here) {
+      const j2 = state >> 1;
+      if (j2 < m && shown2[j2] === want[i2])
+        at2[i2 + 1]?.add((j2 + 1) * 2 + 1);
+      for (const e of ends)
+        at2[e]?.add(state);
+    }
+  }
+  for (let i2 = 0;i2 <= n; i2++) {
+    if (!closes(i2))
+      continue;
+    for (const state of at2[i2])
+      if ((state & 1 || m === 0) && m - (state >> 1) <= trail2)
+        return true;
+  }
+  return false;
 }
 
 // src/kit/document/place.ts
@@ -69673,10 +69745,10 @@ function anchorCache(measure2, width) {
 var SAFE_SCHEME = /^(https?:|mailto:)/i;
 var SCHEME_LIKE2 = /^[a-z][a-z0-9+.-]*:/i;
 function safeHref(raw) {
-  const bare = raw.replace(/&#(\d+);?/g, (_, d) => String.fromCharCode(Number(d))).replace(/&#x([0-9a-f]+);?/gi, (_, h) => String.fromCharCode(Number.parseInt(h, 16))).replace(/[\u0000-\u0020]/g, "");
-  if (linkScheme(bare) === undefined)
+  const bare2 = raw.replace(/&#(\d+);?/g, (_, d) => String.fromCharCode(Number(d))).replace(/&#x([0-9a-f]+);?/gi, (_, h) => String.fromCharCode(Number.parseInt(h, 16))).replace(/[\u0000-\u0020]/g, "");
+  if (linkScheme(bare2) === undefined)
     return raw;
-  return SAFE_SCHEME.test(bare) ? raw : null;
+  return SAFE_SCHEME.test(bare2) ? raw : null;
 }
 var DESTINATION = /\]\(\s*<?([^\s()<>]+)/dg;
 function encodeColonPaths(text4) {
@@ -69799,11 +69871,12 @@ function plainAt(a, container, offset4, dir) {
   if (container.nodeType === Node.TEXT_NODE) {
     node2 = container;
   } else {
-    const kids = container.childNodes;
-    const at2 = Math.min(offset4, kids.length - 1);
-    const from = kids[Math.max(0, at2)] ?? container;
-    const inside = textNodes(from);
-    node2 = (dir === "start" ? inside[0] : inside[inside.length - 1]) ?? null;
+    const point3 = document.createRange();
+    point3.setStart(container, offset4);
+    if (dir === "start")
+      node2 = a.nodes.find((n) => point3.comparePoint(n, 0) >= 0) ?? null;
+    else
+      node2 = a.nodes.findLast((n) => point3.comparePoint(n, n.data.length) <= 0) ?? null;
     within = dir === "start" ? 0 : node2?.data.length ?? 0;
   }
   if (!node2)
@@ -71082,7 +71155,13 @@ function DocumentPane({
   const onSelect = (s) => {
     if (!doc2)
       return;
-    w.reportSelection({ doc: doc2.slug, version: doc2.active, ...s });
+    const refusal = placeRefusal(s);
+    w.reportSelection({
+      doc: doc2.slug,
+      version: doc2.active,
+      ...s,
+      ...refusal ? { noteRefusal: refusal } : {}
+    });
   };
   const canLink = !!doc2 && !isJson && daemon.connection !== "ended" && showing !== "compare";
   const editorMounted = showing === "raw" || showing === "split";
@@ -71184,14 +71263,15 @@ function DocumentPane({
     setNoteAt(open);
     return true;
   };
-  const noteRefusal = daemon.connection === "ended" ? "The session has ended, so no note can be added." : undefined;
+  const placeRefusal = (s) => s.seen !== undefined && shown2 !== undefined && s.from < s.to && !showsSelection(shown2, s.from, s.to, s.seen) ? NOT_PLACED : undefined;
+  const noteRefusalAt = (at2) => daemon.connection === "ended" ? "The session has ended, so no note can be added." : placeRefusal(at2);
   const menuLinkRefusal = (at2) => {
     if (shown2 === undefined)
       return null;
     const selected = at2.from < at2.to ? shown2.slice(at2.from, at2.to) : "";
     return (selected ? linkTextProblem(selected) : null) ?? insideLinkProblem(shown2, at2.from, at2.to);
   };
-  const menuUsable = (at2) => at2.noteIds.length > 0 || at2.from < at2.to && noteRefusal === undefined || canLink && menuLinkRefusal(at2) === null || Object.keys(menuEdits(at2)).length > 0;
+  const menuUsable = (at2) => at2.noteIds.length > 0 || at2.from < at2.to && noteRefusalAt(at2) === undefined || canLink && menuLinkRefusal(at2) === null || Object.keys(menuEdits(at2)).length > 0;
   const announceClipboard = (act) => {
     const key = `${onMac() ? "⌘" : "Ctrl "}${act === "paste" ? "V" : act === "cut" ? "X" : "C"}`;
     w.announce(act === "paste" ? "Couldn't paste" : act === "cut" ? "Couldn't cut" : "Couldn't copy", act === "paste" ? `The browser did not let the page read the clipboard. ${key} pastes as usual.` : `The browser did not let the page write to the clipboard. ${key} still works.`);
@@ -72174,7 +72254,10 @@ function DocumentPane({
         onAddLink: canLink ? (at2) => askLinkAt({ from: at2.from, to: at2.to, x: at2.x, y: at2.y }) : undefined,
         edits: noteAt ? menuEdits(noteAt) : undefined,
         linkRefusal: noteAt ? menuLinkRefusal(noteAt) ?? undefined : undefined,
-        noteRefusal
+        ...noteAt && noteRefusalAt(noteAt) !== undefined ? {
+          noteRefusal: noteRefusalAt(noteAt),
+          noteRefusalLabel: daemon.connection === "ended" ? "session ended" : "use the raw view"
+        } : {}
       }),
       linking && canLink && /* @__PURE__ */ jsx_runtime32.jsx(LinkPicker, {
         at: linking,
@@ -73281,7 +73364,7 @@ function NotesPanel({
   const shown2 = showResolved ? notes : notes.filter((n) => !n.resolved || n.id === focusedId);
   const submit = (e) => {
     e.preventDefault();
-    if (!selection || !body.trim())
+    if (!selection || selection.refusal || !body.trim())
       return;
     onAdd(selection.from, selection.to, body);
     setBody("");
@@ -73370,6 +73453,12 @@ function NotesPanel({
             className: "mb-1 truncate font-mono text-[11px] text-ink-faint",
             children: selection ? oneLine(selection.text) : "No selection"
           }),
+          selection?.refusal && /* @__PURE__ */ jsx_runtime37.jsx("p", {
+            role: "alert",
+            "data-slot": "note-refusal",
+            className: "mb-1 text-[11px] text-ink-dim",
+            children: selection.refusal
+          }),
           /* @__PURE__ */ jsx_runtime37.jsx("textarea", {
             value: body,
             onChange: (e) => setBody(e.target.value),
@@ -73393,7 +73482,7 @@ function NotesPanel({
               /* @__PURE__ */ jsx_runtime37.jsxs(Button3, {
                 type: "submit",
                 size: "sm",
-                disabled: !selection || !body.trim(),
+                disabled: !selection || !!selection.refusal || !body.trim(),
                 className: "ml-auto h-6 px-2 text-xs",
                 children: [
                   /* @__PURE__ */ jsx_runtime37.jsx(MessageSquarePlus, {
@@ -81267,7 +81356,12 @@ function ShellBody({
     onLetGo: () => setPointedAt(null),
     showResolved: showResolvedNotes,
     onShowResolved: setShowResolvedNotes,
-    selection: heldHere ? { from: heldHere.from, to: heldHere.to, text: heldHere.text } : null,
+    selection: heldHere ? {
+      from: heldHere.from,
+      to: heldHere.to,
+      text: heldHere.text,
+      ...heldHere.noteRefusal ? { refusal: heldHere.noteRefusal } : {}
+    } : null,
     onAdd: (from, to, body) => {
       if (!openDoc)
         return;
@@ -82082,8 +82176,8 @@ function prefsStorage({
       write(key, mine.value);
   };
   return {
-    getItem: (bare) => {
-      const key = prefKey(bare);
+    getItem: (bare2) => {
+      const key = prefKey(bare2);
       const mine = own3.get(key);
       if (mine) {
         if (mine.sent && read()[key] === mine.value)
@@ -82093,8 +82187,8 @@ function prefsStorage({
       }
       return readAs(key, read()[key] ?? null);
     },
-    setItem: (bare, value) => {
-      const key = prefKey(bare);
+    setItem: (bare2, value) => {
+      const key = prefKey(bare2);
       const local = !PREF_KEY.test(key) || value.length > PREF_VALUE_MAX;
       own3.set(key, { value, sent: false, local });
       if (local)

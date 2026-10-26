@@ -34,7 +34,9 @@ Rare, but it silently attaches a note to the wrong text.
 
 - [x] Lone-`\r` files render, note and select correctly in rendered, raw and
       split. Or Scriptorium normalises or refuses them with a clear message.
-- [x] No note is ever stored over a range the human didn't select.
+- [ ] No note is ever stored over a range the human didn't select. (Met for a
+      range wider than, or other than, what was seen. Not met for a range
+      elsewhere that shows the same text: see "Known limits".)
 - [ ] Tested; offered on kit-parity. (Tested: see below. The offer is the
       lead's.)
 
@@ -58,26 +60,36 @@ normalised and not refused. Why:
 **The guard.** The rendered view went wrong because the page placed the
 selection wrongly. A page fix alone would leave the next such fault just as
 silent. So the page now sends what the human selected, as their view showed it
-(`seen`, on the surface `note.add`). The daemon refuses a range that does not
-hold it, with a 409 saying what to do: "Select the passage again and add the
-note, or select it in the raw view." The check is `showsSelection` in
-`projection.ts`. Spaces and line breaks are not compared. The range must show
-the seen text:
+(`seen`, on the surface `note.add`). The check is `showsSelection` in
+`projection.ts`, and it runs in two places:
 
-- as raw source (a raw-view selection);
-- or as rendered text (a rendered-view selection);
-- or as rendered text found in order inside what was seen. This covers text the
-  page draws that the projection never carries, such as a footnote's number;
-- or widened only by the rest of a run that is not exact at either edge. An
-  inline code span or a line with an escape resolves to the whole run, as it did
-  before.
+- **The page runs it first.** It runs as the selection is made and as the menu
+  opens. Over a selection it refuses:
+  - the menu's Add note is off, marked "use the raw view";
+  - the Notes panel says why and holds Add back;
+  - the panel keeps what was typed until the passage is selected where it can be
+    placed.
+- **The daemon runs it again** before it stores a note, and refuses with a 409.
+
+Both say the one act that works: "Select it in the raw view and add the note
+there." Selecting again in the rendered view would give the same range and the
+same refusal, so that act is not offered.
+
+Spaces and line breaks are not compared. A range passes when it shows `seen`:
+
+- **as raw source**: a raw-view selection;
+- **as rendered text**: a rendered-view selection, with two allowances that may
+  come together.
+  - **Text the page draws that the projection never carries** may sit inside
+    `seen`, cut at either end. That text is a footnote's number, its back-link,
+    and the "Footnotes" heading (`Projection.pageOnly`).
+  - **A run the projection cannot cut** may add the rest of itself at either
+    edge. That is an inline code span, or a line with an entity or an escape. It
+    may not add all of itself: a selection that starts or ends in such a run has
+    one of its characters, unless it starts or ends on a space.
 
 `seen` is optional on the wire, so an older page (Story Studio's today) still
 adds its notes, unchecked.
-
-**What the refusal costs.** The note's typed body goes with the refused attempt;
-the human types it again. Refusals should only happen when the page mis-places a
-selection, so this was left.
 
 ## Every place that assumes `\n` or `\r\n`
 
@@ -166,9 +178,70 @@ with this record after them.
 **Story Studio** (`e41a4592`) has the bug too:
 
 - `packages/kit/src/document/projection.ts` folds no `\r` at all;
-- its `lineAt` (`:368`) counts `\n` only;
+- its `lineAt` (`:365`) counts `\n` only;
 - `renderedRange.ts:101` swaps a crossed range round;
 - `workspace/anchors.ts:110` counts `\n` only.
+
+## Fix round (verifier: "With fixes")
+
+The fix round touched four things.
+
+- **Honest rendered selections were refused.** The verifier's fuzz drove the
+  page's own `resolveRange` in Chromium, and the guard refused 52/864 LF, 52/864
+  CRLF and 45/873 lone-CR placements. Two causes:
+  - **The page widened some ranges itself.** At an element boundary,
+    `renderedRange`'s `plainAt` read the child the offset names. For an end
+    point, that child is after the point. A drag that ended between two blocks
+    took the whole next cell, link or quote, and the guard was right to refuse
+    it. It now takes the text on the correct side of the point, which is a
+    narrower and correct range. Many points that crossed and gave no range now
+    place.
+  - **The rules could not combine.** A run the projection cannot cut and a
+    footnote number in one selection matched neither rule. `showsSelection` is
+    now one walk that allows both together, and the page's own text cut at
+    either end of `seen`. The walk is a set of positions in the rendered text
+    for each position in `seen`, so no choice is guessed.
+- **The fuzz after the change:** 0 refused of 2773 LF, 2773 CRLF, 2780 lone-CR
+  and 2625 mixed placements (`N` = 3000 per file, the verifier's `fuzz.ts`). All
+  three mouse cases are stored. The original whole-body case is still refused.
+- **A refusal no longer loses words.** The page checks before anything is typed.
+  Its advice is the raw view only. In Chromium, with the page made to misplace a
+  selection:
+  - the menu showed Add note disabled, "use the raw view";
+  - the Notes panel said why and held Add back;
+  - the words typed there stayed;
+  - after a double-click on the word in the raw view, Add stored them over that
+    word;
+  - no `note.add` was sent while the selection was refused.
+  - A refusal that only the daemon makes (its text and the page's differ) still
+    clears the panel; the toast says why.
+- **Cheap holes closed.** `seen` may hold only page-drawn text beyond the range.
+  "a" in another paragraph no longer passes for "Alpha", and "cat" no longer
+  passes for a long `seen`. An uncut run at an edge may no longer be wholly
+  unselected, so a whole paragraph no longer passes for "bold" between two
+  escaped runs.
+
+### Known limits
+
+The check judges text, not place. Closing these needs the page to send where the
+selection was, which is a follow-up.
+
+- **A run the projection cannot cut,** elsewhere, that holds the selected words
+  passes. For example, a whole other paragraph with an entity in it passes for
+  `seen: "alpha"`. In the right place this is the run's honest widening, and the
+  two cannot be told apart from text alone.
+- **The same words elsewhere pass,** as they always would for a quote.
+- **Only spaces differ:** "a b" passes for "ab".
+
+### Seen on base, not caused here
+
+- In a mixed-ending file whose frontmatter lines end in a lone `\r`, the
+  "frontmatter could not be read, shown as written" box runs those lines
+  together.
+- Triple-clicking a paragraph in the rendered view offered no Add note. The
+  `plainAt` fix in this round makes it work in the LF, CRLF and lone-CR files.
+  It still offers none in the verifier's mixed file, whose rendered view is
+  broken by the frontmatter case above.
 
 ## Port-back notes
 
@@ -189,6 +262,17 @@ with this record after them.
   - `server.ts` refuses a non-string `seen` with a 400.
   - `session.addNote` takes `seen` and refuses with a 409 when `showsSelection`
     fails.
+  - `Projection` gains `pageOnly`, the bare text the page draws that `plain`
+    does not carry (footnote numbers, back-links, the "Footnotes" heading).
+  - `NOT_PLACED` (`projection.ts`) is the one refusal message, shared by the
+    page and the daemon.
+  - `renderedRange.ts` `plainAt`: an element boundary resolves to the text on
+    its own side of the point (`Range.comparePoint`), not to the child the
+    offset names.
+  - The page checks first. `DocumentPane` puts `noteRefusal` on the
+    `HeldSelection` it reports, and on the menu (`NoteAtSelection` gains
+    `noteRefusalLabel`). The shell passes `refusal` to `NotesPanel`, whose Add
+    then waits while what was typed stays.
   - The daemon now imports `document/projection.ts`, which brings the markdown
     parser into its bundle (Scriptorium's `server.js` grew by about 257 KB).
 - **The page sends `seen`:**
