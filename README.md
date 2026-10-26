@@ -76,8 +76,8 @@ Spellbook is a Claude Code plugin marketplace. From inside Claude Code:
 ```
 
 That installs the `spellbook` plugin: the eight spells above and nothing else.
-Every spell needs **Bun 1.3.14 or later** on your PATH; Spellbook is tested on
-Bun 1.4.0. Three spells need more, and say so when it's missing:
+Every spell needs **Bun 1.4.0 or later** on your PATH. Three spells need more,
+and say so when it's missing:
 
 - `imago` and `glamour` generate images through a separate CLI, `media-forge`,
   which isn't published yet. Without it you can still work out an image or a
