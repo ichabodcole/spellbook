@@ -59938,6 +59938,18 @@ function markdownHighlighting(inline4 = []) {
   return [language2, syntaxHighlighting(markdownHighlightStyle(inline4))];
 }
 
+// src/kit/lib/lineBreaks.ts
+function lineAt(text4, offset4) {
+  const at2 = Math.max(0, Math.min(offset4, text4.length));
+  let line = 1;
+  for (let i2 = 0;i2 < at2; i2++) {
+    const c = text4.charCodeAt(i2);
+    if (c === 10 || c === 13 && text4.charCodeAt(i2 + 1) !== 10)
+      line++;
+  }
+  return line;
+}
+
 // src/kit/document/text.ts
 function applyChanges(text4, changes) {
   let out = text4;
@@ -59973,28 +59985,21 @@ function rangeThrough(r2, c) {
 function invertChange(c, a) {
   return { from: c.from, to: c.from + c.insert.length, insert: a.slice(c.from, c.to) };
 }
-function lineOf(text4, offset4) {
-  let line = 1;
-  const end = Math.max(0, Math.min(offset4, text4.length));
-  for (let i2 = 0;i2 < end; i2++)
-    if (text4.charCodeAt(i2) === 10)
-      line++;
-  return line;
-}
 function lineThrough(line, a, b, c) {
   if (!c)
     return line;
   let at2 = 0;
+  const br = /\r\n?|\n/g;
   for (let n = 1;n < line; n++) {
-    const i2 = a.indexOf(`
-`, at2);
-    if (i2 === -1)
+    br.lastIndex = at2;
+    const m = br.exec(a);
+    if (!m)
       break;
-    at2 = i2 + 1;
+    at2 = m.index + m[0].length;
   }
   const delta = c.insert.length - (c.to - c.from);
   const p = at2 < c.from ? at2 : at2 >= c.to ? at2 + delta : at2 - c.from <= c.to - at2 ? c.from : c.to + delta;
-  return lineOf(b, p);
+  return lineAt(b, p);
 }
 
 // src/kit/document/DocumentView.tsx
@@ -60359,7 +60364,8 @@ function DocumentView({
           to: daemonOffset(textRef.current, to),
           fromLine: update2.state.doc.lineAt(from).number,
           toLine: update2.state.doc.lineAt(to).number,
-          text: textWithEndings(update2.state, from, to)
+          text: textWithEndings(update2.state, from, to),
+          seen: update2.state.sliceDoc(from, to)
         });
       }),
       editorTheme,
@@ -60499,7 +60505,8 @@ function DocumentView({
           y: event.clientY,
           from: daemonOffset(textRef.current, from),
           to: daemonOffset(textRef.current, to),
-          noteIds
+          noteIds,
+          ...from < to ? { seen: v2.state.sliceDoc(from, to) } : {}
         }, { shiftKey: event.shiftKey });
         if (taken === false)
           return false;
@@ -61184,7 +61191,7 @@ function heldAfter(held, event) {
   const s = event.selection;
   if (s.from === s.to)
     return null;
-  if (held && held.doc === s.doc && held.version === s.version && held.from === s.from && held.to === s.to && held.text === s.text)
+  if (held && held.doc === s.doc && held.version === s.version && held.from === s.from && held.to === s.to && held.text === s.text && held.seen === s.seen)
     return held;
   return s;
 }
@@ -69354,10 +69361,7 @@ function projectBody(text4) {
   const emit = (raw, node2) => {
     if (raw === "")
       return;
-    const value = raw.includes(`\r
-`) ? raw.replaceAll(`\r
-`, `
-`) : raw;
+    const value = lf(raw);
     flushBoundary();
     const s = node2.position?.start.offset;
     const e = node2.position?.end.offset;
@@ -69373,10 +69377,7 @@ function projectBody(text4) {
     plain2 += value;
   };
   const emitText = (raw, node2) => {
-    const value = raw.includes(`\r
-`) ? raw.replaceAll(`\r
-`, `
-`) : raw;
+    const value = lf(raw);
     const s = node2.position?.start.offset;
     const e = node2.position?.end.offset;
     if (s === undefined || e === undefined || e - s === value.length || !value.includes(`
@@ -69399,8 +69400,7 @@ function projectBody(text4) {
         pieces.push({ value: line, at: at2 });
       cursor = at2 + line.length;
       if (i2 < lines.length - 1) {
-        const nl = text4.indexOf(`
-`, cursor);
+        const nl = nextBreak(text4, cursor);
         if (nl === -1 || nl >= e) {
           emit(value, node2);
           return;
@@ -69532,18 +69532,23 @@ function confirmed(plain2, end, cores, i2) {
     k++;
   return plain2.startsWith(next, k);
 }
-function lineAt(text4, offset4) {
-  const at2 = Math.max(0, Math.min(offset4, text4.length));
-  let line = 1;
-  for (let i2 = 0;i2 < at2; i2++)
-    if (text4.charCodeAt(i2) === 10)
-      line++;
-  return line;
+var lineAt2 = lineAt;
+function lf(raw) {
+  return raw.includes("\r") ? raw.replace(/\r\n?/g, `
+`) : raw;
+}
+function nextBreak(text4, from) {
+  const nl = text4.indexOf(`
+`, from);
+  const cr = text4.indexOf("\r", from);
+  if (cr === -1 || nl !== -1 && nl <= cr + 1)
+    return nl;
+  return cr;
 }
 
 // src/kit/document/place.ts
 function sourceLine(p, text4, plainAt) {
-  return lineAt(text4, toSource(p, plainAt, plainAt + 1).from);
+  return lineAt2(text4, toSource(p, plainAt, plainAt + 1).from);
 }
 function bracket2(anchors, line) {
   for (let i2 = 0;i2 < anchors.length - 1; i2++) {
@@ -69830,7 +69835,9 @@ function resolveRange(root2, p, range) {
   const hi = plainAt(a, range.endContainer, range.endOffset, "end");
   if (lo === null || hi === null)
     return null;
-  const { from, to } = toSource(p, Math.min(lo, hi), Math.max(lo, hi));
+  if (lo > hi)
+    return null;
+  const { from, to } = toSource(p, lo, hi);
   return from === to ? null : { from, to };
 }
 function paintRange(a, p, srcFrom, srcTo) {
@@ -70083,7 +70090,8 @@ function MarkdownView({
     if (!root2 || !sel || sel.rangeCount === 0 || sel.isCollapsed)
       return null;
     const range = inBody(sel.getRangeAt(0));
-    return range ? resolveRange(root2, projection, range) : null;
+    const r2 = range ? resolveRange(root2, projection, range) : null;
+    return r2 && range ? { ...r2, seen: range.toString() } : null;
   }, [projection, inBody]);
   const contextPress = import_react25.useRef(false);
   const pressedHere = import_react25.useRef(false);
@@ -70112,9 +70120,10 @@ function MarkdownView({
         onSelect({
           from: m.from,
           to: m.to,
-          fromLine: lineAt(now2, m.from),
-          toLine: lineAt(now2, m.to),
-          text: now2.slice(m.from, m.to)
+          fromLine: lineAt2(now2, m.from),
+          toLine: lineAt2(now2, m.to),
+          text: now2.slice(m.from, m.to),
+          seen: r2.seen
         });
       } else if (act === "clear" || act === "report" && r2) {
         lastRange.current = null;
@@ -70273,7 +70282,8 @@ function MarkdownView({
                 y: e.clientY,
                 from: where?.from ?? 0,
                 to: where?.to ?? 0,
-                noteIds
+                noteIds,
+                ...m && r2 ? { seen: r2.seen } : {}
               }, { shiftKey: e.shiftKey });
               if (taken !== false)
                 e.preventDefault();
@@ -71609,7 +71619,7 @@ function DocumentPane({
   import_react29.useEffect(() => {
     if (showing !== "rendered" || !revealHere || shown2 === undefined)
       return;
-    place.report("reveal", lineAt(shown2, revealHere.from));
+    place.report("reveal", lineAt2(shown2, revealHere.from));
     const mark2 = revealHere.heading ?? revealHere;
     setFlash2({ from: mark2.from, to: mark2.to, seq: ++flashSeq.current });
     revealApplied(revealHere.seq);
@@ -71650,11 +71660,11 @@ function DocumentPane({
     }
     const { from, to } = at2;
     if (showing === "compare") {
-      setCompareFocus({ seq: pointed.seq, line: lineAt(text4, from) - 1 });
+      setCompareFocus({ seq: pointed.seq, line: lineAt2(text4, from) - 1 });
       return;
     }
     if (showing === "rendered")
-      place.report("reveal", lineAt(text4, from));
+      place.report("reveal", lineAt2(text4, from));
     setFlash2({ from, to, seq: ++flashSeq.current, agent: true });
   }, [pointed, slug, active, text4, showing, onMode, announce, place]);
   const readerToggle = /* @__PURE__ */ jsx_runtime32.jsx("button", {
@@ -72144,7 +72154,15 @@ function DocumentPane({
         onAdd: (from, to, body) => {
           if (!doc2)
             return;
-          send({ op: "note.add", doc: doc2.slug, from, to, body });
+          const seen = noteAt && noteAt.from === from && noteAt.to === to ? noteAt.seen : undefined;
+          send({
+            op: "note.add",
+            doc: doc2.slug,
+            from,
+            to,
+            body,
+            ...seen !== undefined ? { seen } : {}
+          });
           w.dropSelection();
         },
         onShowNote: (id) => {
@@ -81253,7 +81271,15 @@ function ShellBody({
     onAdd: (from, to, body) => {
       if (!openDoc)
         return;
-      send({ op: "note.add", doc: openDoc.slug, from, to, body });
+      const seen = heldHere && heldHere.from === from && heldHere.to === to ? heldHere.seen : undefined;
+      send({
+        op: "note.add",
+        doc: openDoc.slug,
+        from,
+        to,
+        body,
+        ...seen !== undefined ? { seen } : {}
+      });
       dropSelection();
     },
     onGoTo: (n) => {
