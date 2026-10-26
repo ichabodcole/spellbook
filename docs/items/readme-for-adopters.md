@@ -6,7 +6,7 @@ description:
   count, the authoring rituals it says the plugin installs, the old spell layout
   and docs line; the root DEV_KICKOFF.md and index.ts stub are stale too."
 status: stable
-lifecycle: ready
+lifecycle: active
 id: 01a17017-06ad-7469-91c0-cde2c9ab864a
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-24 }
