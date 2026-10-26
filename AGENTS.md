@@ -74,6 +74,12 @@ that bite if unknown; for full Bun API docs read
   added, a document opened) uses `writeUntilSeen`
   (`src/kit/workspace/fixtures/harness.ts`): a macOS watch isn't live the moment
   it's armed, and a parallel run makes a write in that gap likely.
+- **Not every spell ships.** Everything under `plugins/spellbook/` reaches every
+  install (the marketplace copies the whole folder; there is no exclude list). A
+  spell whose app isn't finished deploys to `plugins/unreleased/skills/`
+  instead, and `src/deployRoots.ts` is the one place that says which root holds
+  a spell, so the build, `dist-check` and the wards follow it. To release one,
+  see `plugins/unreleased/README.md`.
 
 ## Branch Landing Policy
 

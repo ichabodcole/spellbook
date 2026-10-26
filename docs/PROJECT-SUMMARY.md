@@ -70,7 +70,8 @@ in `grimoire/house-style.md`.
 ## Project Structure
 
 ```
-plugins/spellbook/skills/   the seven declared spells + mind-mapper (WIP, undeclared)
+plugins/spellbook/skills/   the declared spells — everything here ships
+plugins/unreleased/skills/  spells held out of the plugin until finished (mind-mapper)
 grimoire/                   the craft: house-style, decay-ledger, trigger-registry,
                             fresh-agent/, scenarios/
 docs/                       manifesto, projects/, backlog/, fragments/, reports/

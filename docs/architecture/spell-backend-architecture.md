@@ -80,7 +80,10 @@ Not every spell has every piece. There are three shapes:
 Two exceptions sit outside the table. Bounty has a third caller-facing entry,
 `join`, which is a WebSocket _participant_ the agent spawns directly. And
 mind-mapper ships no `SKILL.md`: it is undeclared while it is in development, by
-Cole's ruling (`47238d7`), so the roster listings correctly omit it.
+Cole's ruling (`47238d7`), so the roster listings correctly omit it. Since
+2026-10-25 it doesn't ship at all: its deployed folder is
+`plugins/unreleased/skills/mind-mapper/`, outside the plugin, until its app is
+finished (`plugins/unreleased/README.md`).
 
 ### Why the two halves used to ship differently — and what is left of that
 
