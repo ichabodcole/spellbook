@@ -559,7 +559,10 @@ describe("the remove verbs, and info", () => {
     const n = json<{ note: string }>(await run("note", "--doc", c, "--quote", "Back", "a", "note"));
     const r = await run("note-remove", n.note, "--doc", c);
     expect(json(r)).toMatchObject({ ok: true, doc: "c", note: n.note });
-    expect((await state()).chat.at(-1)?.text).toBe("Agent removed a note on c: “Back”.");
+    // Named as the sidebar shows it (the set, then the path), not by its slug.
+    expect((await state()).chat.at(-1)?.text).toBe(
+      "Agent removed a note on set/part/c.md: “Back”.",
+    );
     const again = await run("note-remove", n.note, "--doc", c);
     expect(again.code).toBe(5);
   });
