@@ -147,3 +147,7 @@ on the runner's 4 cores (about 190 s in the 4-CPU container).
   window it leaves, one file per process so the order holds on every filesystem.
 - `src/kit/document/DocumentPane.contextMenu.test.tsx`: `items()` strips a
   multi-word "Ctrl …" hint. Test-only.
+
+**First green push (lead, 2026-10-26).** CI run `40371196093` on `c7fbf8c8`, the
+push that carried the fix to develop, is green: the full suite, 6446 tests
+across 487 files, 0 failures. The third box waits for one more green push.
