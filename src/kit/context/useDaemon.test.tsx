@@ -99,6 +99,49 @@ describe("useDaemon", () => {
     expect(made[0]?.readyState).toBeGreaterThanOrEqual(2);
   });
 
+  test("send, request and importImage stay the same functions across snapshots and a reconnect", async () => {
+    // The shell keys effects on these (a made document's open on `[done, send]`,
+    // compare mode's `diff` on `send`): a fresh one per snapshot re-runs them on
+    // every snapshot, and page and daemon volley `open` and `state` until unmount.
+    daemon = fixtureDaemon({ tmp: join(root, "tmp") });
+    await daemon.start();
+    const port = daemon.port;
+    const sessionId = daemon.sessionId;
+    const seen: Daemon[] = [];
+    const m = await mount(
+      <Probe
+        url={`${daemon.url}/ws`}
+        onDaemon={(d) => {
+          if (seen.at(-1) !== d) seen.push(d);
+        }}
+      />,
+    );
+    await waitFor(() => m.container.textContent === "kit-fixture:0", "the hello");
+    seen.at(-1)?.send({ op: "context.add", path: docs });
+    await waitFor(() => m.container.textContent === "kit-fixture:1", "the context change");
+    await daemon.stop();
+    await waitFor(
+      () => m.container.querySelector("p")?.getAttribute("data-connection") === "closed",
+      "closed",
+    );
+    daemon = fixtureDaemon({ tmp: join(root, "tmp"), port, restore: sessionId });
+    await daemon.start();
+    await waitFor(
+      () => m.container.querySelector("p")?.getAttribute("data-connection") === "open",
+      "open again",
+      5000,
+    );
+    // Several snapshots, across the hello, a change, the close and the reopen.
+    expect(seen.length).toBeGreaterThanOrEqual(4);
+    const first = seen[0] as Daemon;
+    for (const d of seen) {
+      expect(d.send).toBe(first.send);
+      expect(d.request).toBe(first.request);
+      expect(d.importImage).toBe(first.importImage);
+    }
+    await m.unmount();
+  });
+
   test("reconnects on its own when the daemon goes away and comes back", async () => {
     daemon = fixtureDaemon({ tmp: join(root, "tmp") });
     await daemon.start();
