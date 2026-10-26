@@ -38,7 +38,13 @@ beforeEach(() => {
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 
 /** A link's row: a folder, with nothing read under it. */
-const linkRow = (rel: string): ContextNode => ({ kind: "group", rel, children: [] });
+const linkRow = (rel: string, to: string): ContextNode => ({
+  kind: "group",
+  rel,
+  children: [],
+  link: true,
+  linkTo: to,
+});
 
 /** The set's real folder, as every case below must still read it. */
 const REAL: ContextNode = {
@@ -59,24 +65,27 @@ describe.each(scans)("a set's scan with %s", (_, scan) => {
   // Not `out`: that is a noise folder a scan skips by name, link or not.
   test("a link to a folder outside the set is not entered: its files are not the set's", () => {
     symlinkSync(outside, join(set, "away"));
-    expect(scan(set)).toEqual({ nodes: [linkRow("away"), REAL, TOP], truncated: false });
+    expect(scan(set)).toEqual({ nodes: [linkRow("away", outside), REAL, TOP], truncated: false });
   });
 
   test("a link to a folder inside the set is not entered: its files show once, where they are", () => {
     symlinkSync(join(set, "real"), join(set, "alias"));
-    expect(scan(set)).toEqual({ nodes: [linkRow("alias"), REAL, TOP], truncated: false });
+    expect(scan(set)).toEqual({
+      nodes: [linkRow("alias", join(set, "real")), REAL, TOP],
+      truncated: false,
+    });
   });
 
   test("a loop to itself (`self -> .`) is read once, not walked to the cap", () => {
     symlinkSync(".", join(set, "self"));
-    expect(scan(set)).toEqual({ nodes: [REAL, linkRow("self"), TOP], truncated: false });
+    expect(scan(set)).toEqual({ nodes: [REAL, linkRow("self", set), TOP], truncated: false });
   });
 
   test("a loop up (`up -> ..`) deeper in is read once, and the parent is not entered", () => {
     symlinkSync("..", join(set, "real", "up"));
     expect(scan(set)).toEqual({
       nodes: [
-        { ...REAL, children: [linkRow("real/up"), { kind: "doc", rel: "real/inner.md" }] },
+        { ...REAL, children: [linkRow("real/up", set), { kind: "doc", rel: "real/inner.md" }] },
         TOP,
       ],
       truncated: false,
@@ -87,7 +96,7 @@ describe.each(scans)("a set's scan with %s", (_, scan) => {
     const real = writeBundle(outside, "Real", { version: 1, type: "board", title: "Real" });
     symlinkSync(real, join(set, "Linked.boardbundle"));
     const { nodes } = scan(set);
-    expect(nodes).toEqual([linkRow("Linked.boardbundle"), REAL, TOP]);
+    expect(nodes).toEqual([linkRow("Linked.boardbundle", real), REAL, TOP]);
     expect(docPaths({ id: "c1", label: "set", root: set, membership: "mirrored", nodes })).toEqual([
       join(set, "real", "inner.md"),
       join(set, "top.md"),
@@ -102,9 +111,12 @@ describe.each(scans)("a set's scan with %s", (_, scan) => {
 
 test("a link's row counts toward the cap, as any folder does", () => {
   for (const name of ["a1", "a2", "a3"]) symlinkSync(outside, join(set, name));
-  expect(scanTree(set, 2)).toEqual({ nodes: [linkRow("a1"), linkRow("a2")], truncated: true });
+  expect(scanTree(set, 2)).toEqual({
+    nodes: [linkRow("a1", outside), linkRow("a2", outside)],
+    truncated: true,
+  });
   expect(scanTree(set, 6)).toEqual({
-    nodes: [linkRow("a1"), linkRow("a2"), linkRow("a3"), REAL, TOP],
+    nodes: [linkRow("a1", outside), linkRow("a2", outside), linkRow("a3", outside), REAL, TOP],
     truncated: false,
   });
 });
@@ -139,16 +151,16 @@ test("inside an expandable bundle, neither its member folders nor its own files 
             { kind: "file", rel: `${at}/audio/01-arrival/take.mp3`, size: 17 },
           ],
         },
-        linkRow(`${at}/audio/away`),
-        linkRow(`${at}/audio/self`),
+        linkRow(`${at}/audio/away`, outside),
+        linkRow(`${at}/audio/self`, join(shelf, "audio")),
       ],
     },
     {
       kind: "group",
       rel: `${at}/docs`,
       children: [
-        linkRow(`${at}/docs/away`),
-        linkRow(`${at}/docs/up`),
+        linkRow(`${at}/docs/away`, outside),
+        linkRow(`${at}/docs/up`, shelf),
         { kind: "doc", rel: `${at}/docs/01-arrival.md` },
         { kind: "doc", rel: `${at}/docs/02-the-keeper.md` },
       ],

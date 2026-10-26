@@ -456,7 +456,9 @@ function folderWalker(cap: number, later?: PendingBundle[], skip?: ScanSkip, gua
         // reads is a real one, read once. A link named like a bundle is no
         // bundle here: its `info.json` and main file are not the set's either.
         if (links.has(name)) {
-          groups.push({ kind: "group", rel, children: [] });
+          // Marked as the link it is, with where it leads, so a surface can
+          // say so and offer it as a set of its own.
+          groups.push({ kind: "group", rel, children: [], link: true, linkTo: realOf(abs) });
           continue;
         }
         // A bundle is one item: its node, never a group. Its insides are its

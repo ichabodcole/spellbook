@@ -55,7 +55,13 @@ const refusedAsLink = (fn: () => unknown, at = linkdir) => {
 
 test("the link's row is shown, and is no place to make a document, a folder or a bundle", () => {
   const s = session();
-  expect(s.context[0]?.nodes).toContainEqual({ kind: "group", rel: "linkdir", children: [] });
+  expect(s.context[0]?.nodes).toContainEqual({
+    kind: "group",
+    rel: "linkdir",
+    children: [],
+    link: true,
+    linkTo: outside,
+  });
   refusedAsLink(() => s.createDoc(linkdir, "created.md"));
   refusedAsLink(() => s.createDoc(linkdir));
   refusedAsLink(() => s.createFolder(linkdir, "newfold"));
@@ -177,6 +183,8 @@ describe.each([
       kind: "group",
       rel: "linkdir",
       children: [],
+      link: true,
+      linkTo: outside,
     });
   });
 
@@ -206,4 +214,17 @@ test("a shown folder gone from disk since the scan is said to be gone, and nothi
   expect(e.status).toBe(404);
   expect(e.message).toContain("is no longer on disk");
   expect(existsSync(join(set, "brief"))).toBe(false);
+});
+
+test("a set's root is matched first, but only a set's: a listed document's folder takes nothing", () => {
+  const loose = join(root, "loose");
+  mkdirSync(loose);
+  writeFileSync(join(loose, "solo.md"), "# Solo\n");
+  const s = WorkspaceSession.create(join(root, "sessions"), testApp, undefined, ws);
+  s.addContext(join(loose, "solo.md"));
+  expect(s.context[0]).toMatchObject({ root: loose, membership: "listed" });
+  const e = refusal(() => s.createDoc(loose, "x.md"));
+  expect(e.status).toBe(400);
+  expect(e.message).toContain("is not a folder in this session");
+  expect(existsSync(join(loose, "x.md"))).toBe(false);
 });

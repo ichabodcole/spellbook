@@ -77,7 +77,15 @@ export type ContextNode =
       truncated?: true;
       warnings?: BundleWarning[];
     }
-  | { kind: "group"; rel: string; children: ContextNode[] }
+  /**
+   * A folder. `link`: it is a symbolic link to a folder, shown and never
+   * entered (its `children` are always empty): nothing is made in, moved into
+   * or dropped on it, and the way to its files is to add it as a set of its
+   * own. `linkTo` is where it leads (its realpath, absolute). A surface that
+   * ignores both still works: it shows an empty folder the daemon refuses
+   * writes into.
+   */
+  | { kind: "group"; rel: string; children: ContextNode[]; link?: true; linkTo?: string }
   /**
    * A file inside an expandable bundle that is not a document of its own: the
    * type's main file and `info.json` (`convention`, drawn dimmed), and
