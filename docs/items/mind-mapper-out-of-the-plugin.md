@@ -79,6 +79,6 @@ copy of `./plugins/spellbook`.
   reads the version from a plugin manifest the holding root doesn't have. That's
   its own documented fallback, and it's accurate, so the golden fixture records
   it. Giving the holding root a manifest would have meant a fake plugin with a
-  version release-please doesn't bump.
+  version release-please doesn't bump. Cole agreed on 2026-10-25.
 - **roster-drift's mind-mapper pin is gone.** It asserts the shipped root only,
   and now no undeclared folder is left in the plugin.

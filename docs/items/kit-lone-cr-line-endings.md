@@ -6,7 +6,7 @@ description:
   no Add note, and a selection stores a note over the whole body without
   warning, on base and fix alike.
 status: stable
-lifecycle: active
+lifecycle: done
 id: 01a16682-ca6f-702a-abc7-6f9d9bcfb2a9
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-22 }
@@ -34,16 +34,17 @@ Rare, but it silently attaches a note to the wrong text.
 
 - [x] Lone-`\r` files render, note and select correctly in rendered, raw and
       split. Or Scriptorium normalises or refuses them with a clear message.
-- [ ] No note is ever stored over a range the human didn't select. Not met, for
-      two reasons given under "Known limits". (a) A run the projection cannot
-      cut is stored whole. That is text beyond the selection, and the larger gap
-      by volume: about 22% of random ranges in a rich document, the same as on
-      base. (b) The place is not checked: a range elsewhere that shows the
-      selected text passes. What the guard does stop is a range that shows more
-      or other text than was seen, beyond what (a) allows, such as the
-      crossed-ends case that stored the whole body.
-- [ ] Tested; offered on kit-parity. (Tested: see below. The offer is the
-      lead's.)
+- [ ] No note is ever stored over a range the human didn't select. Partly met,
+      accepted by Cole on 2026-10-25, with the rest filed as
+      `kit-note-guard-checks-place`. Not fully met, for two reasons given under
+      "Known limits". (a) A run the projection cannot cut is stored whole. That
+      is text beyond the selection, and the larger gap by volume: about 22% of
+      random ranges in a rich document, the same as on base. (b) The place is
+      not checked: a range elsewhere that shows the selected text passes. What
+      the guard does stop is a range that shows more or other text than was
+      seen, beyond what (a) allows, such as the crossed-ends case that stored
+      the whole body.
+- [x] Tested; offered on kit-parity (message 57, 2026-10-25).
 
 ## Decision: render lone-CR files, and guard the note at the daemon
 
