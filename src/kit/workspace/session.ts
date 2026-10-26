@@ -4176,12 +4176,16 @@ export class WorkspaceSession {
       refuseInBundle(abs, "that folder");
       return this.notOwnPlaceOrDie(abs);
     };
+    // A set's own root first, whatever the order of the context: a linked
+    // folder added as a set of its own (what a link row's refusal says to do)
+    // is also a link's row in the set that holds it, and must take things as
+    // the set it now is.
+    if (this.m.context.some((e) => e.membership === "mirrored" && abs === e.root)) return shown();
     for (const e of this.m.context) {
       // A listed entry is no place to put things, but for a folder inside an
       // expandable bundle listed on its own (a stage's `docs/`), which is
       // shown under its row as a set's folder is.
       if (e.membership !== "mirrored" && listedFile(e)?.kind !== "bundle") continue;
-      if (abs === e.root && e.membership === "mirrored") return shown();
       if (abs.startsWith(e.root + sep)) {
         const node = findNode(e.nodes, toPosix(relative(e.root, abs)));
         if (node?.kind === "group") return this.notThroughLinkOrDie(shown(), e);
@@ -4206,11 +4210,14 @@ export class WorkspaceSession {
    * the set. The way to work in it is to add it as a set of its own.
    */
   private notThroughLinkOrDie(abs: string, e: ContextEntry): string {
-    let link = true;
+    let link: boolean;
     try {
       link = lstatSync(abs).isSymbolicLink();
     } catch {
-      /* gone since the scan: refused as a link is */
+      throw new SessionError(
+        `${this.display(abs)} is no longer on disk: choose a folder that is, or look again once the list has caught up`,
+        404,
+      );
     }
     const real = realOr(abs);
     const root = rootReal(e);
@@ -4444,7 +4451,15 @@ export class WorkspaceSession {
   private adoptNew(abs: string): void {
     const set = this.coveringEntry(abs);
     const listed = set ? null : this.listedBundleHolding(abs);
-    if (set) this.rescan(set.id);
+    // Every set whose root holds it, not only the first: a linked folder added
+    // as a set of its own sits under the set holding its link, which shows it
+    // only as a link's row, and the thing made is shown by the other one.
+    if (set) {
+      for (const e of this.m.context) {
+        const holds = abs === e.root || abs.startsWith(e.root + sep);
+        if (e.membership === "mirrored" && holds) this.rescan(e.id);
+      }
+    }
     // Made in a member folder of a bundle listed on its own: its row is read
     // again. An entry of its own would be the bundle a second time.
     else if (listed) this.refreshListed(listed);

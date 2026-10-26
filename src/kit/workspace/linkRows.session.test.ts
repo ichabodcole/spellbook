@@ -3,11 +3,12 @@
 // a bundle, an import, a move or a drop there would land where the link
 // leads, outside the set, and vanish from it. Each refusal names the act that
 // answers it: adding the linked folder as a set of its own.
-import { afterEach, beforeEach, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { registerBundleType, unregisterBundleType } from "../lib/bundles.ts";
 import { pngBytes } from "../lib/testImages.ts";
+import type { ContextNode } from "./protocol";
 import { WorkspaceSession } from "./session";
 import { refusal, TEST_BUNDLE, tempRoot, testApp } from "./testing";
 
@@ -119,4 +120,90 @@ test("a set rooted at a link is still a place to make things", () => {
   s.addContext(via);
   expect(existsSync(s.createDoc(via, "made.md").path)).toBe(true);
   expect(existsSync(join(set, "real", "made.md"))).toBe(true);
+});
+
+/** Every rel in a tree, depth-first. */
+const rels = (nodes: readonly ContextNode[]): string[] =>
+  nodes.flatMap((n) => [n.rel, ...(n.kind === "group" ? rels(n.children) : [])]);
+
+/** The set rooted at the link. */
+const linkSet = (s: WorkspaceSession) => {
+  const e = s.context.find((c) => c.root === linkdir);
+  if (!e) throw new Error("no set at the link");
+  return e;
+};
+
+// What the refusal's hint says to do: add the linked folder as a set of its
+// own. Then it takes things at its top level and below, whichever set came first.
+describe.each([
+  ["the holding set first", () => [set, linkdir]],
+  ["the link's set first", () => [linkdir, set]],
+] as const)("the linked folder added as its own set, with %s", (_, order) => {
+  const both = () => {
+    mkdirSync(join(outside, "sub"));
+    // And a set elsewhere, which nothing made here touches.
+    const other = join(root, "other");
+    mkdirSync(other);
+    const s = WorkspaceSession.create(join(root, "sessions"), testApp, undefined, ws);
+    for (const p of [other, ...order()]) s.addContext(p);
+    return s;
+  };
+  /** The context is still those three sets: nothing made here became an entry of its own. */
+  const stillThree = (s: WorkspaceSession) =>
+    expect(s.context.map((e) => e.root)).toEqual([join(root, "other"), ...order()]);
+
+  test("its top level takes a document, a folder and an import", () => {
+    const s = both();
+    expect(s.createDoc(linkdir, "after-add.md").path).toBe(join(linkdir, "after-add.md"));
+    expect(s.createFolder(linkdir, "newfold").path).toBe(join(linkdir, "newfold"));
+    expect(s.importText("imp.md", "# Imp\n", linkdir).path).toBe(join(linkdir, "imp.md"));
+    expect(readdirSync(outside).sort()).toEqual([
+      "after-add.md",
+      "imp.md",
+      "newfold",
+      "sub",
+      "theirs.md",
+    ]);
+    stillThree(s);
+    // Shown at once by the link's own set, so it opens; still a bare row in the other.
+    expect(rels(linkSet(s).nodes).sort()).toEqual([
+      "after-add.md",
+      "imp.md",
+      "newfold",
+      "sub",
+      "theirs.md",
+    ]);
+    expect(s.context.find((e) => e.root === set)?.nodes).toContainEqual({
+      kind: "group",
+      rel: "linkdir",
+      children: [],
+    });
+  });
+
+  test("a folder in it takes a document, a folder and an import", () => {
+    const s = both();
+    const sub = join(linkdir, "sub");
+    expect(s.createDoc(sub, "a.md").path).toBe(join(sub, "a.md"));
+    expect(s.createFolder(sub, "f").path).toBe(join(sub, "f"));
+    expect(s.importText("i.md", "# I\n", sub).path).toBe(join(sub, "i.md"));
+    expect(readdirSync(join(outside, "sub")).sort()).toEqual(["a.md", "f", "i.md"]);
+    stillThree(s);
+    expect(rels(linkSet(s).nodes).sort()).toEqual([
+      "sub",
+      "sub/a.md",
+      "sub/f",
+      "sub/i.md",
+      "theirs.md",
+    ]);
+  });
+});
+
+test("a shown folder gone from disk since the scan is said to be gone, and nothing is made", () => {
+  mkdirSync(join(set, "brief"));
+  const s = session();
+  rmSync(join(set, "brief"), { recursive: true });
+  const e = refusal(() => s.createDoc(join(set, "brief"), "x.md"));
+  expect(e.status).toBe(404);
+  expect(e.message).toContain("is no longer on disk");
+  expect(existsSync(join(set, "brief"))).toBe(false);
 });
