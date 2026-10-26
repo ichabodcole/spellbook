@@ -6,7 +6,7 @@ description:
   shell's effects depend on it; nothing in the kit tests it, so a regression
   only shows as a Scriptorium test's open/state volley.
 status: stable
-lifecycle: ready
+lifecycle: active
 id: 01a1681a-6652-7029-a5ec-f1a5f47845f5
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-23 }

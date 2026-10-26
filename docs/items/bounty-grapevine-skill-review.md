@@ -5,7 +5,7 @@ status: stable
 description:
   Review bounty and grapevine skills for integration completeness and
   correctness
-lifecycle: ready
+lifecycle: active
 id: 019f4ac0-85d8-7803-82b4-b9dcecee4e52
 kind: task
 generated: { by: unknown, at: 2026-07-09 }
