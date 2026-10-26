@@ -11,11 +11,13 @@ description:
   actions live — and several agents can share one board. HOST trigger phrases —
   "open a task board", "spin up a bounty", "give me a board to track this", or
   obvious variants. JOIN trigger phrases — "join my bounty", "connect to the
-  bounty", "the board is at <URL or id>", or obvious variants. Also propose it
-  when the agent has produced 5+ discrete TODOs the user will want to
-  manipulate. Do NOT use for single tasks, narrative todos that aren't
-  trackable, a list the user only needs to read, or anything the user wants in
-  chat. Requires Bun on PATH.
+  bounty", "the board is at <URL or id>", or obvious variants. RESTORE trigger
+  phrases — "bring back the board I closed yesterday", "reopen my bounty", or
+  obvious variants. Also propose it when the agent has produced 5+ discrete
+  TODOs the user will want to manipulate. Do NOT use for single tasks, narrative
+  todos that aren't trackable, a list the user only needs to read, anything the
+  user wants in chat, GitHub project boards, or the repo's `docs/items` work
+  board (that is pdocs). Requires Bun on PATH.
 ---
 
 # Bounty Board
@@ -37,6 +39,13 @@ track this", or any obvious variant.
 
 **Join mode** — "join my bounty", "connect to the bounty", "the board is at
 <URL>", "the session id is <id>". Another terminal or agent opened the board.
+
+**Restore** — "bring back the board I closed yesterday", "reopen my bounty":
+`sessions` lists the saved boards, `open --restore <id>` brings one back (see
+Lifetime and durability).
+
+Not this spell: GitHub project boards, or the repo's `docs/items` work board
+(that is pdocs).
 
 **Propose, don't fire**, when you have 5+ discrete TODOs **and** the user will
 actually manipulate them (reorder, prioritise, mark done, add their own):
@@ -114,9 +123,11 @@ the latest board.
 - `open --pin` writes `.bounty-session` into the cwd, so every later verb run
   from that directory tree targets this board.
 - **`--session-key <key>` is a handle you choose.** It derives a stable,
-  project-scoped id (`k-<key>-<hash of the repo root>`): the same key in the
-  same repo (any subdirectory) is the same board, and in another repo a
-  different one. Every verb re-derives it, so nothing has to be stored.
+  project-scoped id (`k-<key>-<hash of the scope>`). The scope is the nearest
+  ancestor of the cwd holding `.git`, or the cwd itself when there is none: the
+  same key anywhere in one repo is the same board, in another repo a different
+  one — and outside a repo, each directory is its own scope. Every verb
+  re-derives it, so nothing has to be stored.
   - `open --session-key K` is **idempotent**: it attaches to K's live board, or
     respawns a dead one under the same id with its snapshot restored. Racing
     `open`s converge on one daemon. `--fresh` tears K's board down and starts
@@ -128,6 +139,10 @@ the latest board.
     dropping them, printing the live board's JSON on **stdout** with
     `restoreSkipped: {requested, reason}`. It is the one refusal that is not an
     error envelope, because the payload answers "then where is my board?".
+  - If `open` or `close` reports the board's daemon is **not answering** (exit
+    1, it names the pid), resume it with `kill -CONT <pid>` if it was stopped,
+    or kill it (its last snapshot is kept), then `open` again. The hint gives
+    both.
 
 ### Verbs
 
@@ -339,12 +354,18 @@ type Task = {
   what can be restored; `open --restore <id>` brings a board back under a new id
   (a keyed board keeps its key's id). A `--restore` naming no snapshot is
   refused, exit 5, and starts nothing.
+- **A new id leaves old pins pointing at nothing** (verbs answer exit 5). After
+  an unkeyed restore, re-pin with `open --restore <id> --pin`, pass
+  `--session <new id>`, or use `--session-key` from the start; and re-arm any
+  `--mine` tail on the new id.
 - **A task the restore can't keep** (a shape from another bounty version, a
   duplicate id) is dropped and named in `restoreDropped`; the rest of the board
   restores. `restoreFailed: {path, reason}` means the snapshot exists but can't
   be read: the board comes up empty and the snapshot is the damaged thing.
   `restoreSkipped` is different — the restore was never attempted (see the
   attach refusal) and your command line is what to fix.
+- **`snapshotBackupFailed`** is on every `open` reply, `null` normally. When it
+  isn't, a backup the restore needed could not be made: do what its `fix` says.
 
 **Backups are named on the act that made them.** Before the daemon writes a
 smaller board over a bigger snapshot, or over a file it didn't fully read, it
