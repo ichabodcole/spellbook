@@ -36,9 +36,29 @@ wrong for what 6.0.0 will ship:
 
 ## Definition of done
 
-- [ ] Every claim in the README checked against the tree and the shipped plugin,
+- [x] Every claim in the README checked against the tree and the shipped plugin,
       and corrected where it is wrong.
 - [ ] The root `DEV_KICKOFF.md` and `index.ts` removed or moved, with Cole's
       yes, after checking that nothing references them.
 - [ ] A fresh reader with no repo context, given only the README, can say what
       installing the plugin gives them.
+
+## Done and verified
+
+The README is rewritten for an adopter in one commit on
+`impl/readme-for-adopters`: what installing gives you (a table of the eight
+shipped spells, each with what it conjures and a phrase that casts it), then how
+to install it and what each spell needs, then where to read more. Contributor
+material is cut to a short layout and a pointer to `AGENTS.md`. What an install
+receives was checked with a simulated install on a scratch home: the eight spell
+folders and the skills README, with no `inscribe`, `ward` or `mind-mapper`. The
+spell table keeps its `Spell` and `Kind` columns, because
+`grimoire/roster-drift.test.ts` reads them; dropping a row turns it red.
+
+Two choices to know about. `media-forge`, which `imago` and `glamour` generate
+through, is a private repository and not on npm, so the README says it isn't
+published yet rather than linking it. And the second and third boxes stay open:
+removing the root `DEV_KICKOFF.md` and `index.ts` waits for Cole's yes (nothing
+needs either file; the one live mention is `"module": "index.ts"` in
+`package.json`, which goes with it), and the fresh-reader test wants a reader
+with no repo context, which the implementer is not.

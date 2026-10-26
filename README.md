@@ -3,12 +3,11 @@
 **Agent-conjured apps** — lightweight, standalone, purpose-built surfaces with
 an agent as the runtime underneath.
 
-A _spell_ is a small browser surface (HTML + TypeScript, served locally by
-[Bun](https://bun.sh)) that an agent drives. There's no database and no
-conventional backend: the agent is the orchestrator, the UI is a thin membrane
-you act on, and intents bubble up for the agent to interpret and answer. Each
-spell ships as a self-contained [Claude Code](https://claude.com/claude-code)
-skill — zip one folder and it runs anywhere `bun` is on PATH.
+A _spell_ is a small browser surface, served on localhost by
+[Bun](https://bun.sh), that an agent drives. There's no database and no cloud
+service: the agent is the orchestrator, the UI is a thin membrane you act on,
+and your gestures bubble up for the agent to interpret and answer. Spellbook
+ships its spells as one [Claude Code](https://claude.com/claude-code) plugin.
 
 > Why "spells"? The artifacts are, functionally, skills — and a skill is a
 > capability; a spell is a capability you _cast_. The surface isn't summoned
@@ -17,28 +16,30 @@ skill — zip one folder and it runs anywhere `bun` is on PATH.
 > [`docs/PROJECT_MANIFESTO.md`](docs/PROJECT_MANIFESTO.md) for the full
 > thinking.
 
-## The spells
+## What you get
 
-| Spell         | Kind        | What it conjures                                                      |
-| ------------- | ----------- | --------------------------------------------------------------------- |
-| `digestify`   | cantrip     | A one-shot reading/review surface with inline questions.              |
-| `grapevine`   | conjuration | A standing daemon for agent-to-agent channels.                        |
-| `bounty`      | conjuration | A live duplex Kanban board (human ↔ agent, real-time).                |
-| `magpie`      | conjuration | A surface to extract each asset from a composite image into PNGs.     |
-| `glamour`     | conjuration | A style studio — references in, re-castable style spec out.           |
-| `imago`       | conjuration | A canvas — create⟷annotate⟷edit images in a conversation.             |
-| `astrolabe`   | conjuration | A standing observatory — live state across every project in flight.   |
-| `scriptorium` | conjuration | A co-present markdown editor — the human edits, you propose versions. |
+Installing the plugin gives your agent eight spells. Each is a Claude Code
+skill: you don't run it by hand, you **cast** it by asking for it in
+conversation, and the agent opens the surface in your browser.
 
-**Cantrip** = cast-and-resolve: spawn → the user acts → submit → JSON on stdout
-→ exit. **Conjuration** = something with duration: a daemon or board you return
-to, holding its own state and identity. The structural tell — conjurations ship
-a `server.ts`/`daemon.ts`; cantrips don't.
+| Spell         | Kind        | What it conjures                                                      | Cast it with                                       |
+| ------------- | ----------- | --------------------------------------------------------------------- | -------------------------------------------------- |
+| `digestify`   | cantrip     | A one-shot reading/review surface with inline questions.              | "digestify this"                                   |
+| `grapevine`   | conjuration | A standing daemon for agent-to-agent channels.                        | "open a grapevine"                                 |
+| `bounty`      | conjuration | A live duplex Kanban board (human ↔ agent, real-time).                | "open a task board"                                |
+| `magpie`      | conjuration | A surface to extract each asset from a composite image into PNGs.     | "magpie this", "pull the icons out of this"        |
+| `glamour`     | conjuration | A style studio — references in, re-castable style spec out.           | "help me define a visual style"                    |
+| `imago`       | conjuration | A canvas — create⟷annotate⟷edit images in a conversation.             | "make me an image of…"                             |
+| `astrolabe`   | conjuration | A standing observatory — live state across every project in flight.   | "open the observatory", "show me what's in flight" |
+| `scriptorium` | conjuration | A co-present markdown editor — the human edits, you propose versions. | "open scriptorium on these notes"                  |
 
-You don't run these by hand. You **cast** them in conversation — the spell's
-name is its trigger. "Open a task board" reaches for `bounty`; "make me an
-image" reaches for `imago`; "digestify this" reaches for `digestify`. Each
-spell's `SKILL.md` documents the phrasings that summon it.
+**Cantrip** = cast-and-resolve: the surface opens, you act, you submit once, and
+the agent gets your answers back as JSON. **Conjuration** = something with
+duration: a daemon or board you return to, holding its own state.
+
+The phrasings above are examples, not passwords. Each spell's `SKILL.md`
+describes when it fires and when it shouldn't; you can also call one directly as
+`/spellbook:<spell>` (for example `/spellbook:bounty`).
 
 ## Install
 
@@ -49,75 +50,58 @@ Spellbook is a Claude Code plugin marketplace. From inside Claude Code:
 /plugin install spellbook@spellbook-marketplace
 ```
 
-That installs the `spellbook` plugin (all seven spells) plus the authoring
-rituals. Each spell needs **`bun`** on your PATH; a couple lean on extra CLIs
-they'll tell you about (e.g. `imago`/`glamour` generate through `media-forge`).
+That installs the `spellbook` plugin: the eight spells above and nothing else.
+Every spell needs **`bun`** on your PATH (grapevine wants 1.3.13 or later).
+Three need more, and say so when it's missing:
 
-## How a spell works
+- `imago` and `glamour` generate images through a separate CLI, `media-forge`,
+  which isn't published yet. Without it you can still work out an image or a
+  style with the agent, but it can't generate one.
+- `magpie` needs an `OPENROUTER_API_KEY` to find the pieces of an image, and
+  Python 3.11+ with `Pillow` and `rembg` to cut them out.
 
-```
-<spell>/
-  SKILL.md          # triggers, invocation, the agent-facing contract
-  scripts/
-    cli.ts          # the agent's entry point
-    server.ts       # conjurations only — the standing daemon
-    *.test.ts       # bun test: pure-function + subprocess integration
-  surface/ | assets/  # the browser surface (self-contained; CDN or Bun-bundled)
-  references/        # deeper docs the SKILL points at, loaded on demand
-```
+The surfaces are localhost only, with no auth.
 
-The agent talks to a conjuration through its thin `cli.ts` over a persistent
-daemon — `open` to spawn it, `state` to read it back, `tail` to react to user
-actions live. The daemon holds canonical state and broadcasts to the surface;
-the surface sends the user's gestures back as messages. Auth and external API
-access live at the MCP layer, which keeps the client thin.
+## Read more
 
-More on spell structure:
-[`plugins/spellbook/skills/README.md`](plugins/spellbook/skills/README.md).
+- **A spell's contract** — its `SKILL.md`, in
+  [`plugins/spellbook/skills/<spell>/`](plugins/spellbook/skills/): triggers,
+  commands, output shape and exit codes.
+- **How a spell is built** —
+  [`plugins/spellbook/skills/README.md`](plugins/spellbook/skills/README.md). In
+  short: the agent talks to a conjuration through a thin `cli.ts` over a local
+  daemon that holds the state and broadcasts it to the surface, and the surface
+  sends your gestures back. What ships is a committed, built `dist/`, so there
+  is no build step on your side.
+- **Why it's built this way** —
+  [`docs/PROJECT_MANIFESTO.md`](docs/PROJECT_MANIFESTO.md).
 
-## The grimoire — how spells are grown and pruned
+## Working on Spellbook
 
-Spells aren't written once, they're grown through use. The craft lives in
-[`grimoire/`](grimoire/):
-
-- **`house-style.md`** — the authoring conventions, each as an imperative plus
-  its own boundary checks.
-- **`fresh-agent/`** — cold-agent usability tests. Send an agent in with only a
-  spell's name and intent; harvest the friction and the _questions_ (each one a
-  curse-of-knowledge gap located precisely).
-- **`scenarios/`** — captured judgment. When a judgment call has to be made,
-  record the reasoning behind it, not just the fix — so it generalizes.
-- **`decay-ledger.md`** — rules decay by default and stay vivid only when a
-  fresh-agent finding or scenario keeps walking them. Survival requires
-  reinforcement, so nobody has to make the frightening delete.
-- **`trigger-registry.md`** — the reserved spell names (a name is a command, so
-  collisions are bugs).
-- **`outcome-contract.md`** — how a CLI says _"I did it, but not the way you'd
-  assume"_ and _"you asked and it did not happen"_. The cross-tool spelling
-  shared with anthill
-  ([`#82`](https://github.com/ichabodcole/spellbook/issues/82)), plus the three
-  boundaries the rule cannot state in one line.
-
-The governing rule under all of it: **architect for the reader's context, not
-your own.**
-
-## Repo layout
+Contributors start at [`AGENTS.md`](AGENTS.md). The short version:
 
 ```
-plugins/spellbook/skills/   the spells (+ the inscribe/ward authoring rituals)
-grimoire/                   the craft: house-style, fresh-agent, scenarios, decay
-docs/                       manifesto, projects, backlog, sessions
-.claude-plugin/             marketplace manifest
-scaffold/                   the starting point for a new spell
+src/<spell>/                 where each spell is authored (backend + surface)
+src/kit/                     code shared across spells
+plugins/spellbook/skills/    what ships: SKILL.md, launchers, built dist/
+plugins/unreleased/skills/   spells that build and test here but don't ship yet
+grimoire/                    the craft: house style, fresh-agent tests, wards
+docs/                        manifesto, architecture, playbooks, features, items, cycles
+.claude/skills/              repo-only skills, including the inscribe and ward rituals
+.claude-plugin/              marketplace manifest
 ```
 
-## Adding a spell
+To add a spell, open Claude Code in this repo and cast **`inscribe`**, the
+authoring ritual that grows a spell from idea to hardening. Before merging, run
+**`ward`**, the consistency checklist for the synced listings. Both live in
+`.claude/skills/`, so they work here and don't ship with the plugin.
 
-Don't hand-roll one. Cast **`inscribe`** — the authoring ritual that grows a
-spell from idea → prototype → coalescence → hardening. It names the spell,
-checks the trigger registry, clones the scaffold, points you at the house style,
-and runs the fresh-agent loop. Before merging, run **`ward`** — the consistency
-checklist that catches drift across the synced listings.
+Spells aren't written once; they're grown through use. The craft that grows them
+lives in [`grimoire/`](grimoire/): the house style, cold-agent usability tests,
+captured judgment calls, the reserved spell names, and the
+[outcome contract](grimoire/outcome-contract.md) for how a CLI reports what
+happened. The governing rule under all of it: **architect for the reader's
+context, not your own.**
 
 ---
 
