@@ -353,7 +353,9 @@ export type HandoffLine = {
   /** Whose launcher runs `command`. */
   spell: string;
   events: number;
-  cursor: number;
+  /** The bookmark. Left off a `tail.closed` or `tail.lost` that read nothing:
+   *  those lines re-arm nothing, and `-1` would only be noise. */
+  cursor?: number;
   /** `tail.closed` only: who ended the session, when the spell says (S1). */
   by?: string;
   /** `monitor`: arm Monitor (timeout_ms 1800000) with the launcher + `command`.
@@ -382,13 +384,16 @@ const COME_BACK = (why: string, lead = "To bring it back") =>
  */
 export function handoff(s: HandoffInput, cmd: HandoffCommands): HandoffLine | null {
   const base = { spell: s.spell, events: s.events, cursor: s.cursor };
+  // A line that stops names no re-arm, so a bookmark from before anything was
+  // read (`-1`) tells the agent nothing: it is left off.
+  const stopBase = s.cursor >= 0 ? base : { spell: s.spell, events: s.events };
   switch (s.end) {
     case "stopped":
       return null;
     case "closed":
       return {
         type: "tail.closed",
-        ...base,
+        ...stopBase,
         ...(s.by ? { by: s.by } : {}),
         next: "stop",
         command: cmd.comeBack(),
@@ -403,7 +408,7 @@ export function handoff(s: HandoffInput, cmd: HandoffCommands): HandoffLine | nu
     case "lost":
       return {
         type: "tail.lost",
-        ...base,
+        ...stopBase,
         next: "stop",
         command: cmd.comeBack(),
         hint: COME_BACK("lost the daemon (it crashed or was killed); nothing is listening."),

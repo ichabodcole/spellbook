@@ -119,6 +119,23 @@ describe("handoff — which line, given how the tail ended (pure)", () => {
     });
   });
 
+  test("a closed or lost line that read nothing carries no `cursor: -1`", () => {
+    for (const end of ["closed", "lost"] as const) {
+      const line = handoff(
+        { spell: "demo", end, mode: "once", events: 0, cursor: -1, presence: false },
+        CMD,
+      );
+      expect(line?.next).toBe("stop");
+      expect(line !== null && "cursor" in line).toBe(false);
+    }
+    // A closed line that did read keeps its real bookmark.
+    const read = handoff(
+      { spell: "demo", end: "closed", mode: "once", events: 0, cursor: 0, presence: false },
+      CMD,
+    );
+    expect(read?.cursor).toBe(0);
+  });
+
   test("closed BY THE HUMAN → stop, says so, and offers the way back only if they ask", () => {
     const line = handoff(
       {
