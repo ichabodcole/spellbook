@@ -151,3 +151,10 @@ on the runner's 4 cores (about 190 s in the 4-CPU container).
 **First green push (lead, 2026-10-26).** CI run `40371196093` on `c7fbf8c8`, the
 push that carried the fix to develop, is green: the full suite, 6446 tests
 across 487 files, 0 failures. The third box waits for one more green push.
+
+**Second push red, then green (lead, 2026-10-26).** Run `40379180950` on
+`cfe94178` failed on one test, the R6 ward 1b load timeout, not this item's
+cause; it was fixed under
+[import-boundary-r6-ward-timeout](import-boundary-r6-ward-timeout.md). Run
+`40386264178` on `7fe61c01`, the push carrying that fix, is green: 6446 tests, 0
+failures. The count restarts there; the third box waits for the next push.
