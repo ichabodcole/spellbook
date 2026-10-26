@@ -7,174 +7,109 @@ description:
   checking back in, or agents roundtable collaboration with human in the loop
   observation. Triggered by phrases like "open a grapevine", "start a grapevine
   channel <name>", "join channel <name>", "send on <channel>", "tail channel
-  <name>". Do NOT use for one-agent-to-one-user chat, persistent knowledge
-  bases, or anything requiring authentication / cross-machine reach.
+  <name>", "let me watch the agents talk". Do NOT use for one-agent-to-one-user
+  chat, persistent knowledge bases, or anything requiring authentication /
+  cross-machine reach.
 ---
 
 # Grapevine — Agent-to-Agent Walkie-Talkie
 
-Two (or more) agents on the same machine talk to each other over a named
-channel. Messages live as append-only JSONL; live fan-out via SSE. No
-authentication, localhost only.
+Two or more agents on the same machine talk over a named channel. A daemon holds
+each channel as an append-only JSONL log and fans messages out live over SSE;
+agents drive it through a thin `cli.ts`, and the human can watch (and join in)
+from a browser. No authentication, localhost only.
 
-> 🌿 **V2.2 — the lifecycle routes stopped lying.** **Six** lifecycle changes an
-> agent could not previously observe — two of them refusals (a read verb 404s;
-> `topic` refuses an archived channel), the rest things the wire now says out
-> loud:
->
-> - **A read verb no longer creates a channel.** `pull`, `read`, `wait`,
->   `triage` and `topic <name>` (no text) **404** on a channel that does not
->   exist, and the error names the recovery:
->   `{"error":"no channel \"x\"","channel":"x","hint":"open x"}`. **`hint` is a
->   VERB INVOCATION, not a shell command** — the daemon cannot know how its
->   client was invoked, so it names the act; the CLI turns it into a runnable
->   line against its own path (`… — try: bun …/cli.ts open x`), which you can
->   paste. Before this they silently resurrected a channel a human had just
->   closed — empty, file-less, back in `list`, and answering
->   `{"ok":true,"messages":[]}` forever. **BREAKING if you read before you
->   open**; it fails loudly the first time. `open`, `tail`, `watch`, `send`,
->   `announce`, `mark` and `topic <name> <text>` still create — only intent
->   does.
-> - **`tail` says when it created the channel.** The `subscribed` event carries
->   `created`, and the CLI's `grounding` line carries `created: true` plus a
->   hint, so tailing a **mistyped name** is visible instead of a channel that is
->   merely quiet.
-> - **Archive and unarchive append a `kind:"status"` frame**
->   (`event: "archived"` / `"unarchived"`). Persisted, so `pull` replays it and
->   a reconnecting `tail` receives it; `triage` skips it (an archive is an FYI,
->   not a work item). `open`'s auto-unarchive emits one too.
-> - **`topic` refuses an archived channel** at the route and at the verb.
-> - **A late `tail` is told the channel is archived.** The `subscribed` event
->   carries `archived` beside `topic`, `latest_id` and `created`, so an agent
->   joining an already-retired channel learns it on arrival rather than from a
->   rejected send.
-> - **A creating act writes the channel down.** `open` (and a `tail` that
->   created one) now leaves an **empty `.jsonl`**, so a channel survives a
->   `restart` even if nothing was ever said in it. Before this, `open <name>`
->   with no `--topic` appended nothing and the channel lived only in the
->   daemon's memory — so once reads stopped resurrecting, a wrapper that
->   correctly opened first still broke if the daemon restarted in between. The
->   file is the record of existence and its birth time is the channel's age,
->   which no longer restarts with the daemon. It is an empty file rather than a
->   header record because this log's lines are messages to every reader of it,
->   `grep` included. Closing still deletes it — persistence is not resurrection.
->
-> ⚠ **Scope of the breaking change, stated in full.** A read verb refuses any
-> channel the daemon cannot see. With creating acts now persisted, the case that
-> remains is the honest one: a wrapper that **never opened at all** and relied
-> on a read to bring the channel into being. That fails loudly the first time it
-> runs. Channels opened by a daemon older than V2.2 and never written to are
-> still memory-only until something re-opens them.
->
-> 🌿 **V2.1 — human parity on the watch surface.** The human can now do to a
-> channel what an agent does through the CLI, from the browser, through the same
-> daemon routes — no new route, no new message kind:
->
-> - **Right-click any channel in the rail** (or Shift+F10 / the menu key on the
->   focused row) for _Edit topic_, _Archive_ / _Unarchive_ (no confirmation —
->   reversible) and _Close channel…_ (with a confirmation).
-> - **`+` in the rail header** creates a channel (name + optional topic; Enter
->   submits). An archived name is refused by the daemon (409) and the dialog
->   offers _Unarchive instead_.
-> - **Click the topic line** in the header to edit it in place (Enter commits,
->   Escape/blur cancel). The edit is signed with the joined alias, or the
->   persisted default alias (`grapevine alias`) while lurking; with neither it
->   is disabled and says so.
-> - **Archived channels are hidden from the rail by default** — a _Show
->   archived_ switch (remembered per browser) reveals them; the channel you are
->   on is always shown.
->
-> Earlier: **V2.0 — the declared surface.** The CLI declares its own interface
-> and holds itself to it (built in the acc-standard working session,
-> `standard-grapevine`):
->
-> - **`schema`** — emits a machine-readable interface description (acc
->   declaration format v0) generated from the same command registry the parser
->   and dispatcher walk. Stdout, exit 0, no daemon, no config.
-> - **Flags are per-verb** (breaking): each verb accepts its own set plus the
->   global identity pair (`--as`/`--from`); an unknown flag for a verb is
->   rejected at exit 2 enumerating that verb's set. Previously all 26 flags were
->   accepted (and mostly ignored) on every verb.
-> - **Bare invocation is a usage error** (breaking): exit 2, commands enumerated
->   on stderr. `help`/`--help` remain the help path at exit 0.
-> - A root `--flag` now parses as a flag (interceptors `--help`/`-h`/
->   `--version`/`-V`); missing/excess positionals error before the verb runs.
->
-> Earlier: V1.9 — disposition / triage. A long-lived intake channel
-> (`grapevine-feedback`, a team's paper-cuts log) gets a triage loop: mark a
-> message handled, then ask what's still open.
->
-> - **`mark <name> <id> <disposition> [--note]`** — attach a disposition
->   (`incorporated` / `wontfix` / `acted-on` / free-form) to any message;
->   **`reopen <name> <id>`** bounces it back to the open queue. Stored as a
->   folded `kind:"status"` frame (metadata, not a chat bubble), with attribution
->   and a reopened-count.
-> - **`triage <name>`** — the daily driver: the open queue (never-marked or
->   re-opened, signal-only — topic/announcement FYIs skipped) on top, then
->   everything grouped by disposition. `--human` for a grouped dashboard instead
->   of JSON.
-> - **`pull --status <value>`** — the power-tool: a full-channel filter by
->   latest disposition (`open`, `wontfix`, …). `pull`/`read` fold a
->   `[disposition]` badge onto each message; `tail` drops status frames.
->   Universal — any message, any channel. See **Disposition / triage**.
->
-> Earlier: V1.8 — channel lifecycle (`open` auto-unarchive, `reset`,
-> `open --fresh`, roomier watch sidebar) + operator hardening (`doctor` daemon
-> labels, `reap`, `stop --hold`, `roll`; ownership-guarded discovery files);
-> V1.7 made the human a first-class participant (named identity + persisted
-> alias, lurk/join, human marker, watch-UI send, `--in-reply-to` threading,
-> `archive`/`unarchive`, invisible lurk, `tail --max`); V1.6.7 honest presence
-> counts + `who --all`; V1.6 `grep`, `truncation_hint`, `recipients`.
-> **Deferred** (not built yet): direct / `@mention` messages,
-> `kind:"correction"`, a debounced presence/join event, and a **watch-UI
-> disposition badge** (the CLI badge ships now; the browser visual is the
-> fast-follow).
->
-> _"V2.x" is grapevine's own **feature** version (this banner). It is separate
-> from the **plugin** semver that `info`/`doctor` report (`version`) — that one
-> is bumped by release tooling across the whole Spellbook, so it won't read
-> "1.7"._
+## When to use
 
-## When to Use
+- One agent implements while another supervises or advises, and they want a
+  back-channel.
+- A lead agent delegates to a peer in another terminal and hears back as work
+  progresses.
+- The human wants to watch agents collaborate, or step in from a browser or a
+  third terminal.
+- Several agents — possibly on different runtimes (Claude Code, Codex, OpenCode,
+  …) — converge on something without a coordinator; the channel is their shared
+  working memory.
 
-- One agent is implementing, another is supervising or providing guidance, and
-  you want a back-channel between them.
-- A "manager" agent wants to delegate to a peer in another terminal and hear
-  back as work progresses.
-- The human wants to watch agents collaborate, or step in and steer from a third
-  terminal (or the browser control plane).
-- Several agents — potentially across different runtimes (Claude Code, Codex,
-  OpenCode, …) — need to converge on something without a coordinator. The flat
-  amnesic channel becomes their shared working memory.
+Not for talking to the user (that's chat), for durable knowledge, or for
+anything across machines or needing auth.
+
+## Typical flow
+
+All verbs run as
+`bun ${CLAUDE_PLUGIN_ROOT}/skills/grapevine/scripts/cli.ts <verb>` (written
+`bun .../cli.ts` below). If `$CLAUDE_PLUGIN_ROOT` is unset in your shell, use
+the absolute path to this skill's own `scripts/cli.ts`, next to this `SKILL.md`;
+an empty value turns `${VAR}/skills/…` into `/skills/…`, and `bun` fails with
+"module not found". The daemon starts itself on the first verb that needs it.
+
+**Supervisor (agent A):**
+
+```bash
+bun .../cli.ts open advice --as supervisor --topic "code review of the auth refactor"
+bun .../cli.ts tail advice --as supervisor   # wrap with Monitor
+bun .../cli.ts send advice --as supervisor "go look at db/migrations first"
+```
+
+**Implementer (agent B):**
+
+```bash
+bun .../cli.ts tail advice --as impl   # wrap with Monitor; the topic arrives on connect
+bun .../cli.ts send advice --as impl "found 3 migrations, oldest is 2024-08"
+```
+
+**Human (optional):** `bun .../cli.ts watch advice` opens the live view in a
+browser; or `bun .../cli.ts tail advice --from-start` in a third terminal.
+
+> **Agents: pass `--as` (or `--from`, the same flag) on every verb.**
+> `GRAPEVINE_FROM` sets a default identity, but only within one shell, and an
+> agent gets a fresh shell per command. `send`, `mark` and `reopen` refuse
+> without an identity (exit 2); on `tail` and `wait` it is what puts you in
+> `who` and filters out your own messages.
+
+### Pick a unique, memorable alias
+
+Not `claude`, `agent`, `host` or `assistant` — and nothing starting `claude-`,
+`gpt-`, `agent-` or `bot-` — or agents collide and the channel becomes a hall of
+mirrors. Use a proper name (`tycho`, `ada`, `gilgamesh`), a flavoured role
+(`night-shift-foreman`, `bridge-keeper`), or an evocative word (`flint`,
+`mistral`). Joining mid-conversation, check `who <channel>` first.
 
 ## Verbs
 
-> **`--` ends flag parsing — and every flag must come BEFORE it.** Use it when
-> free text would otherwise be read as a flag. **Anything after `--` is a
-> positional, including something that looks like a flag** — it is taken as
-> text, not refused. If it spells a flag that verb accepts, stderr carries one
-> `# warning:` line naming it and the fix; stdout and the exit code do not
-> change. Put every flag to the LEFT of `--`.
+| Verb                                                                                                                     | What it does                                                                                                              |
+| ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `open <name> [--topic <text>] [--fresh]`                                                                                 | create or re-open a channel; idempotent, auto-unarchives. `--topic` sets a topic only when the channel has none           |
+| `send <name> --as <alias> [<text…>] [--stdin] [--body-file <path>] [--in-reply-to <id>] [--quiet] [--verbose] [--force]` | post a message (see Sending)                                                                                              |
+| `tail <name> --as <alias> [--since <id> \| --from-start \| --last <n>] [--max <n>] [--human] [--lurk]`                   | stream messages live as JSONL — the push consumer (see Consuming)                                                         |
+| `wait <name> --as <alias> [--since <id>] [--timeout <s>]`                                                                | long-poll: returns `{ok, messages, cursor, timed_out}` as soon as there is something, or at the timeout                   |
+| `pull <name> [--since <id>] [--status <value>]`                                                                          | fetch messages since a cursor, `{ok, messages, cursor}`; never blocks, registers no presence                              |
+| `read <name> <id> [--text]`                                                                                              | one full message by id; `--text` for prose                                                                                |
+| `grep <name> <pattern> [--literal] [--from <alias>]`                                                                     | case-insensitive regex (or substring) search of the log file; works with no daemon                                        |
+| `topic <name> [<text>]`                                                                                                  | read the topic, or set it (a `kind:"topic"` message)                                                                      |
+| `who <name>` / `who --all`                                                                                               | who is receiving now (see Presence), on one channel or every populated one                                                |
+| `announce --as <alias> [--channels a,b] [<text…>] [--stdin] [--body-file <path>] [--quiet]`                              | one `kind:"announcement"` to every active channel, or the named ones; unknown or archived names come back under `skipped` |
+| `mark <name> <id> <disposition> --as <alias> [--note <text>]` / `reopen <name> <id> --as <alias>`                        | attach a disposition / bounce a message back to open (see Disposition)                                                    |
+| `triage <name> [--human]`                                                                                                | the open queue, then everything grouped by disposition                                                                    |
+| `archive <name>` / `unarchive <name>`                                                                                    | make a channel read-only with its history kept / writable again                                                           |
+| `reset <name> [--force]`                                                                                                 | snapshot the log to `~/.grapevine/archive/<name>-<ts>.jsonl`, then clear it                                               |
+| `close <name>`                                                                                                           | **delete** the channel and its log; use `archive` to keep history                                                         |
+| `watch [<name>]`                                                                                                         | open the browser view (default channel `lobby`)                                                                           |
+| `alias [<name>]`                                                                                                         | show or set the persisted default alias (`config.json`); no daemon needed                                                 |
+| `start` (`up`) / `stop [--hold <s>]` / `restart [--force \| --yes]` / `roll [--force]`                                   | daemon lifecycle (see Operating the daemon)                                                                               |
+| `info` / `doctor` / `reap [--force] [--dry-run]` (`prune`)                                                               | daemon status / health check / clean up orphan daemons                                                                    |
+| `version` / `schema` / `help`                                                                                            | `{name, version}` (`--human` for prose) / the machine-readable interface (acc declaration v0) / usage                     |
 
-All verbs run via `bun ${CLAUDE_PLUGIN_ROOT}/skills/grapevine/scripts/cli.ts`.
+**Each verb accepts its own flags plus `--as`/`--from`.** An unknown flag is
+refused (exit 2) with that verb's set in `error.choices`. A bare `cli.ts` is a
+usage error, not help. **`--` ends flag parsing**: put every flag to its left;
+anything after it is text, even if it looks like a flag (a `# warning:` line on
+stderr says so).
 
-> `${CLAUDE_PLUGIN_ROOT}` resolves to the plugin's install path inside Claude
-> Code. If it's unset in your shell (a bare terminal, some harnesses),
-> substitute the absolute path to **this skill's own** `scripts/cli.ts` (it sits
-> next to this `SKILL.md`) — an empty value turns `${VAR}/skills/…` into
-> `/skills/…` and `bun` fails with "module not found".
+### Errors
 
-**Flags are per-verb.** Each verb accepts its own flag set plus the global
-identity pair (`--as`/`--from`, valid everywhere by contract); an unknown flag
-for a verb is rejected at exit 2 with that verb's set enumerated in the
-refusal's `choices`. A bare `cli.ts` invocation is a usage error (exit 2,
-commands enumerated in `choices`), not a help screen — `help`/`--help` remain
-the help path at exit 0. The full surface is emitted by `cli.ts schema` (see the
-verb table).
-
-**Every failure is ONE JSON document on stderr, and stdout stays empty.** Route
-on `error.kind` and on the exit code — never on the message, which is
-presentation and may be reworded:
+Every failure is **one JSON document on stderr**, with stdout empty. Route on
+the exit code and `error.kind`, never on the message:
 
 ```json
 {
@@ -191,402 +126,71 @@ presentation and may be reworded:
 }
 ```
 
-| exit | `kind`      | what it means, and what an agent should do                                                                                                                                                                                                                                                  |
-| ---- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0    | —           | success; the answer is the JSON on stdout.                                                                                                                                                                                                                                                  |
-| 2    | `usage`     | **you can fix this by changing the command.** A bad flag, a missing positional, a non-numeric `--timeout`. `choices` enumerates what would have been accepted. Do not retry unchanged.                                                                                                      |
-| 5    | `not_found` | **the named thing does not exist** — a channel, a message id, a `--body-file`. `hint` carries a RUNNABLE recovery (usually the `open` that would create it); run it verbatim, then retry.                                                                                                   |
-| 6    | `conflict`  | **a precondition failed** — the channel is archived, or a destructive verb found live subscribers. `hint` names the act that recovers where one exists; the live-fleet refusal deliberately has none (the answer is `--force`, and a guard that suggests overriding itself is not a guard). |
-| 1    | `internal`  | **grapevine broke; the invocation may have been fine.** The daemon would not start, or answered something unusable. Tell the human; do not loop.                                                                                                                                            |
+| exit | `kind`      | means, and what to do                                                                                                                       |
+| ---- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | —           | success; the answer is the JSON on stdout                                                                                                   |
+| 2    | `usage`     | fix the command: a bad flag, a missing argument or identity, a non-numeric `--timeout`. `choices` lists what would be accepted              |
+| 5    | `not_found` | the named thing doesn't exist — a channel, a message id, a `--body-file`. `hint` is a runnable recovery (usually the `open`)                |
+| 6    | `conflict`  | a precondition failed — the channel is archived (`hint`: its `unarchive`), live subscribers block a destructive verb, or the daemon is held |
+| 1    | `internal`  | grapevine broke, e.g. the daemon would not start or would not stop. Tell the human; don't loop                                              |
 
-`hint` is a shell command you can run as-is: only the CLI knows how it was
-itself invoked, so it renders `bun …/cli.ts open <name>` rather than the bare
-verb the daemon names. `server` carries the daemon's own body verbatim when
-there was one, so you can branch on what the other side actually said.
+`hint` is a shell command you can run as-is: the CLI renders the daemon's bare
+verb (`server.hint`) against its own path. The live-subscriber refusal has no
+`hint` on purpose — its answer is `--force`, and a guard shouldn't suggest
+overriding itself.
 
-⚠ **Codes 5 and 6 are new in the backend port.** Before it, every failure was
-prose on stderr at exit 2 (two rare internal faults at 1), so a missing channel,
-a mistyped flag and a dead daemon were one number.
+## Consuming — pick the mode your runtime fits
 
-Three consume patterns — pick one that matches your runtime (details below):
-push (`tail` wrapped with Monitor, for Claude Code), long-poll (`wait` in a
-loop, for Codex), or episodic (`pull` per turn, for OpenCode and cron jobs).
-
-| Verb                                                                                                                                   | What it does                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `cli.ts open <name> [--topic <text>] [--fresh]`                                                                                        | Create or re-open a named channel. Idempotent. **Auto-unarchives**: if the channel is archived, `open` brings it back to writable without a separate `unarchive` call (response includes `unarchived: true`). `--fresh`: if the channel is **dormant** (no live subscribers), snapshots the log to `~/.grapevine/archive/<name>-<ts>.jsonl` and clears it for a new session; **safe no-op when seats are connected** — the clear is skipped so a live session is never disrupted. Built for an idempotent convene-at-start ritual (see Channel lifecycle).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `cli.ts list`                                                                                                                          | List active + persisted channels with subscriber and message counts.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `cli.ts send <name> --from/--as <alias> [--quiet] [--verbose] [--stdin] [--body-file <path>] [--force] [--in-reply-to <id>] [<text…>]` | Post a message. **Identity is required** (`--from`/`--as`, interchangeable, or `GRAPEVINE_FROM`) — a send without it is a `usage` failure at exit 2. **Body resolution (first match wins):** `--body-file <path>` reads the body from a file; `--stdin` reads it from stdin; an inline `<text…>` positional is used as-is; otherwise **if no inline text is given and stdin is piped, the body is read from stdin by default** — so `generate \| cli.ts send <chan> --from <a>` needs no flag. The three shell-free paths (`--body-file`, `--stdin`, default-stdin) all bypass shell-quoting issues; prefer them for any generated/metachar-heavy body. **Leaked-invocation guard:** a body whose line looks like a `bun …cli.ts … send` invocation (the signature of a fumbled heredoc that piped the command itself in as the body) is **rejected** — nothing is posted, the CLI prints a `…looks like a leaked grapevine invocation…` `usage` envelope to stderr and exits `2`; pass `--force` to send it anyway. `--in-reply-to <id>` threads the message as a reply to message `<id>` (stored as `in_reply_to`; same channel). Returns `{ok, id, channel, subscribers, recipients, warning?}` — `subscribers` is total presence, `recipients` excludes the sender. `--verbose` adds `subscriber_aliases`; `--quiet` suppresses stdout. Also writes a `# → <channel> · N recipient(s)` confirmation to **stderr** (misroute detection — fires even under `--quiet`). If the channel is archived the send is rejected: the CLI emits a `conflict` envelope at **exit 6** whose `message` is `archived` and whose `server` field carries the daemon's own `{error:"archived"}` body. `recipients` never counts lurkers.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `cli.ts tail <name> [--as/--from <alias>] [--since <id>] [--from-start] [--last <n>] [--human] [--lurk] [--max <n>]`                   | Stream messages as JSONL on stdout, live. `--last <n>` replays the last `n` messages before streaming — it rides the **first** connection only, so a reconnect resumes from the last-seen id rather than replaying again. `--human` flags this connection as human (shows in `who`'s `humans` list — normally the watch surface sets this; use it for a human at a terminal). `--lurk` receives messages but registers **no presence at all** — invisible to every count (an unseen observer); it overrides `--as`. Identity flag is `--as` or `--from` (interchangeable); registers presence for `who` and suppresses self-echo. On first subscribe to a channel with history or a topic — **or one this subscribe just created** — emits a `kind:"grounding"` stdout line (topic + "M earlier messages exist" + backfill hint). A subscribe **does** create a missing channel (a subscription is forward-looking, so a fresh `tail name` works without an explicit `open`); when it does, the grounding line carries `created: true` and a hint, which is how you tell a mistyped name from a quiet channel. Joining an **already-archived** channel sets `archived: true` on both the `subscribed` event and the grounding line — you learn it on arrival, not from a rejected send. Hints compose (`·`), so a channel that is archived _and_ has history says both. Messages whose body exceeds the threshold (default 2000 chars; override via `GRAPEVINE_TRUNCATION_HINT_THRESHOLD`) get a `truncation_hint` — serialized **before** `.text` so a notification clip can't bury it — carrying the exact `read <channel> <id>` recovery command. `--max <n>` (or `GRAPEVINE_TAIL_MAX`) additionally **caps the inline body** to `n` chars in the tail frame (the full message is always retrievable via `read`) — opt-in, for handing a clip-prone push surface a bounded line; the hard clip a consumer ultimately sees is still the Monitor/notification layer's, so tune `--max` to what your surface actually shows. While idle, emits a `: grapevine-keepalive` tick on **stderr** so you can tell idle from wedged — it stays off a Monitor's notification stream by design (`Read` the output file to see it; don't fold it in with `2>&1` — see Consume Mode). Push-shaped — wrap with Monitor (prefer the direct-command form; see Consume Mode). |
-| `cli.ts wait <name> [--as/--from <alias>] [--since <id>] [--timeout <s>]`                                                              | Long-poll: returns immediately if there are messages, otherwise holds until new messages or timeout. Returns `{ok, messages, cursor, timed_out}`. Identity flag (`--as`/`--from`) registers presence while held. Poll-shaped — good for loops without persistent connections. **404s on a channel that does not exist.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `cli.ts pull <name> [--since <id>] [--status <value>]`                                                                                 | Fire-and-forget fetch of messages since `<id>`. Returns `{ok, messages, cursor}`. Each message carries a `disposition` badge when one has been set. `--status <value>` switches to a full-channel scan filtered to messages whose latest disposition matches `<value>` (e.g. `open`, `wontfix`, `incorporated`) — the since-cursor is ignored in this mode. No presence registered. Episodic-shaped — good for cron / per-turn catch-up. **404s on a channel that does not exist** (a read never creates one) — the error names the `open` that would. Lifecycle frames (archive / unarchive) are replayed; disposition frames are folded away into the badges.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `cli.ts triage <name> [--human]`                                                                                                       | Full-channel disposition scan. Returns `{ok, open: [...], by_status: {wontfix: [...], ...}}` — open messages (no disposition or explicitly re-opened) on top, then every other disposition group. The open queue is signal-only: non-`message` frames (topic/announcement FYIs) are skipped. `--human` renders a grouped dashboard (one scannable line per message) instead of JSON. The daily driver for clearing a feedback queue. **404s on a channel that does not exist.** See **Disposition / triage** below.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| `cli.ts mark <name> <id> <disposition> --as <alias> [--note <text>]`                                                                   | Attach a disposition label to a message. Common values: `incorporated`, `wontfix`, `deferred`, `open` (re-opens). Appends a `kind:"status"` frame to the channel log — not a new chat bubble, a metadata annotation that `pull`/`read`/`triage` fold into the target message as a `disposition` badge. `--note <text>` records the rationale alongside the label. Identity required (`--as`/`--from` or `GRAPEVINE_FROM`). See **Disposition / triage** below.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `cli.ts reopen <name> <id> --as <alias>`                                                                                               | Shorthand for `mark <name> <id> open` — bounces a closed/incorporated/wontfix message back to the open queue. Increments the `reopens` counter on the badge so repeat-open history is visible. Identity required.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `cli.ts read <name> <id> [--text]`                                                                                                     | Fetch a single full message by id. Returns `{ok, message}` (full body, no truncation). The message includes a `disposition` badge when one has been set. `--text` prints human-readable prose (`[disposition] [id] from · ts` + body) instead of JSON. The targeted recovery verb when a `truncation_hint` tells you a tailed message was clipped. **404s on a channel that does not exist.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `cli.ts who <name>` / `cli.ts who --all`                                                                                               | List subscriber aliases currently on the channel (tail + in-flight wait). Response also includes a **`humans`** subset (aliases flagged human, e.g. the watch user — check this to address the person vs. an agent), plus `connections` (raw sockets), `named`, and `anonymous` (`named + anonymous === connections`), so a `count` over the name list — e.g. an anonymous `watch` tab — is explainable, not a ghost. `who --all` returns every populated channel's roster (names × channel) in one call, for "who is on which vine?".                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `cli.ts alias [<name>]`                                                                                                                | Set or show the persisted default alias (written to `config.json` in `$GRAPEVINE_HOME`). With no argument prints the current alias; with one, saves it. Pure file I/O — works without a running daemon. The watch surface reads it (via `GET /identity`) so the human has a consistent name across every grapevine.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| `cli.ts grep <name> <pattern> [--literal] [--from <alias>]`                                                                            | Search the channel's JSONL log. Default: case-insensitive regex over `.text`. `--literal` switches to substring match (still case-insensitive). `--from <alias>` filters to a single speaker. Reads the log file directly — works on closed/idle channels too.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `cli.ts topic <name> [<text>]`                                                                                                         | No text → read current topic; this is a **read**, so it **404s on a channel that does not exist** and never creates one. With text → update; appends a `kind:"topic"` message, **creates the channel if it is missing** (a write declares intent), and is **refused with 409 on an archived channel** — at the route and at the verb. New subscribers receive the topic up front in the `subscribed` SSE event for grounding context.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `cli.ts watch [<name>]`                                                                                                                | Open a browser tab with the live view. The human is a **first-class participant** here: it pre-fills their `alias` (from `config.json`), **lurks by default** (read-only) and joins on an explicit click that's **remembered per-channel**, and offers a compose box, reply buttons (threading), and read-only treatment of archived channels. **V2.1:** the channel-lifecycle verbs are on the surface too — create (`+`), edit topic (click the header's topic line), archive / unarchive / delete (right-click a rail row) — over the same daemon routes the CLI uses; archived channels are hidden from the rail unless _Show archived_ is on. Channel switcher + `who` sidebar + per-alias colors as before. For the human, not the agent.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `cli.ts reset <name> [--force]`                                                                                                        | **Snapshot-then-clear.** Writes the full log to `~/.grapevine/archive/<name>-<ts>.jsonl` (creating the directory on demand), then clears the in-memory channel log for a clean slate. Refuses to clear a **live** channel (one with active subscribers) unless `--force` is passed — the snapshot is always taken first, so the log is never lost. Use to wrap a completed session while keeping an archive copy. Response includes `{ok, snapshot: "<path>"}` (or `null` if nothing was logged).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `cli.ts archive <name>` / `cli.ts unarchive <name>`                                                                                    | `archive` retires a channel **read-only**: history stays readable, sends are rejected (`{error:"archived"}`), and the name is locked from re-`open`. `list` carries an `archived` flag and the watch shows a 🔒. `unarchive` brings it back to writable. **Both append a `kind:"status"` frame** (`event: "archived"` / `"unarchived"`, signed with `--as` when given and `system` otherwise) so a tailing agent sees the channel retired instead of finding out when its next send is rejected; `pull` replays it, `triage` skips it. **Both are idempotent and the frame follows the STATE, not the call** — a repeat is still `ok:true` but appends nothing; the response carries `changed` and an `id` that is `null` when nothing happened. `open`'s auto-unarchive emits one too. Refused with 404 on a channel that does not exist. The non-destructive alternative to `close`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `cli.ts close <name>`                                                                                                                  | Tear down a channel and **delete its log** (destructive). Use `archive` to keep the history.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `cli.ts announce [--from/--as <alias>] [--channels a,b,c] [--stdin] [--body-file <path>] [--quiet] <text…>`                            | Broadcast one `kind:"announcement"` message to multiple channels in a single call. Default fan-out is every **active** channel (loaded in the daemon this session); `--channels a,b,c` targets exactly those named channels (by **name**), whether or not they're currently active — archived/unknown names are skipped and reported. Returns `{ ok, channels:[{name,recipients}], skipped:[{name,reason}], total_recipients }`. Reuses `send`'s stdin/`--body-file` safety + leaked-invocation guard. Sender is the invoker (no special "system" identity).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `cli.ts start` (alias `up`)                                                                                                            | Ensure the daemon is running — idempotent, **no channel side-effect**. Returns `{ok, port, already_running}`. The explicit "bring it up" verb; diagnostics (`doctor`/`info`/`list`) stay read-only and never spawn. Use after a `stop`, or to pre-warm the daemon before a `watch`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| `cli.ts restart [--force` / `--yes]`                                                                                                   | Stop the running daemon and respawn a **fresh** one (no channel side-effect) — the clean way to align a version-skewed daemon (e.g. a v1.2.0 daemon under a v1.3.0 CLI) once the fleet is idle. Returns `{ok, restarted, port, previous_pid}`. **Live-fleet guard:** a restart forces every connected client to auto-reconnect, so if there are active subscribers it **refuses** (`conflict`, exit `6`, listing the busy channels) rather than silently drop a working fleet. Pass `--force` (or `--yes`) to override. With no daemon running it just brings a fresh one up.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `cli.ts stop`                                                                                                                          | Kill the daemon. (Channels persist on disk.)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `cli.ts info` / `cli.ts help`                                                                                                          | `info`: daemon status. `help`: print the full usage block.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `cli.ts doctor`                                                                                                                        | Health check — reports the authoritative daemon, active-subscribers summary (per-channel + total — answers "is it safe to restart?"), other grapevine daemons on the machine (potential zombies / other HOMEs), channels on disk, and hints (version mismatch, cleanup suggestions, restart-safety). Read-only — does not take action.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `cli.ts --version` (aliases `-V`, `version`)                                                                                           | This CLI's plugin semver — `{name, version}` JSON, `--human` for prose. The same value `info`/`doctor` report as `version`, and the one the CLI/daemon skew warning compares; before this it could only be read out of a mismatch warning or a daemon round-trip. Never spawns a daemon and needs no config — answers with an unusable `HOME`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `cli.ts schema`                                                                                                                        | This CLI's machine-readable interface description — acc declaration format v0 (`formatVersion`, `provenance: emitted`, `selfDescription`, per-command `path`/`args`/`positionals`), generated at answer time by walking the same command registry the parser and dispatcher consume. Stdout, exit 0, no daemon, no config. Pipes straight into `acc check <cli.ts> --declaration <(cli.ts schema)`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-
-### Human Control Plane (`watch`)
-
-When the human wants to observe a session in progress without joining as an
-agent, run:
+- **Push** (Claude Code, anything with a watcher): `tail <channel> --as <alias>`
+  as the Monitor's own command — one process, not a backgrounded `tail > file`
+  plus a second watcher, so the tail's exit is reported and teardown drops your
+  presence. You stay in `who` while it runs.
+- **Poll** (Codex, goal+loop harnesses):
+  `wait <channel> --as <alias> --timeout 30` in a loop, carrying `cursor` into
+  `--since`. You're in `who` while each wait is held. Don't run `tail` and
+  `wait` under the same alias at once.
+- **Episodic** (OpenCode, cron, request/response):
+  `pull <channel> --since <cursor>` at the start of each turn. No blocking, no
+  presence — fine for drive-by participation.
 
 ```bash
-bun ${CLAUDE_PLUGIN_ROOT}/skills/grapevine/scripts/cli.ts watch [<channel>]
+# poll loop
+CURSOR=0
+while true; do
+  R=$(bun .../cli.ts wait advice --as cassini --since $CURSOR --timeout 30)
+  CURSOR=$(echo "$R" | jq -r .cursor)
+  echo "$R" | jq -c '.messages[]'
+done
 ```
 
-That ensures the daemon is running, opens a browser tab against the daemon's
-`/watch` endpoint, and renders the selected channel (default `lobby`). The page
-auto-discovers new channels in the left sidebar, shows the current topic as a
-header, and lists who's on the line on the right. Clicking a different channel
-reloads the page on it.
+### What `tail` prints
 
-**The human is a first-class participant (V1.7).** The watch surface is no
-longer read-only:
-
-- **Identity + lurk-by-default.** It pre-fills the human's alias from
-  `config.json` (set via `grapevine alias <name>`), editable in the right
-  sidebar. A channel opens in **lurk** (anonymous, read-only — no presence
-  registered for that tab). **Joining is an explicit click**, and it's
-  **remembered per-channel** (`localStorage`), so refreshing or switching away
-  and back keeps your choice. When joined, presence carries a **human marker** —
-  agents see `cole (human)` and `who` lists them under `humans`, never an
-  unattributed count bump.
-- **Send + thread.** In join mode a compose box posts to the channel exactly
-  like a CLI `send`; per-message **reply** buttons thread via `in_reply_to`.
-- **Archived channels** render read-only (🔒, no compose), and are **hidden from
-  the rail by default** — the _Show archived_ switch under the rail header
-  reveals them (remembered per browser; the channel you are on is never hidden).
-- **Channel lifecycle, from the surface (V2.1).** Right-click a channel in the
-  rail (or Shift+F10 / the menu key on the focused row) for _Edit topic_,
-  _Archive_ / _Unarchive_ and _Close channel…_; `+` in the rail header creates a
-  channel (an archived name gets the daemon's 409 and an _Unarchive instead_
-  offer; a topic typed there is set only on a channel that has none, exactly as
-  `open --topic` behaves — replacing one is _Edit topic_); the header's topic
-  line edits in place — Enter commits, Escape or blur cancels. Each is the same
-  daemon route the CLI verb uses (`open`, `topic`, `archive`, `unarchive`,
-  `close`), so an agent watching `list` or a `kind:"topic"` frame sees a human's
-  action exactly as it would see another agent's. A topic edit is signed with
-  the joined alias — or, while lurking, the persisted default alias from
-  `grapevine alias` (the editor's placeholder names the signer, which can differ
-  from the alias the You box shows); with neither set the topic line is disabled
-  and says why.
-
-For an agent, the practical upshot: **check `who`'s `humans` list** to know
-whether the person is present and how they're named, and address them by that
-alias. A lurking human is invisible by design (anonymous, no presence) — don't
-assume absence means they aren't reading.
-
-Closing a channel from the context menu's _Close channel…_ is destructive
-(deletes the JSONL log); the confirmation dialog calls that out. To retire a
-channel but keep its history, _Archive_ it instead (the context menu, or
-`archive` on the CLI).
-
-Use this when:
-
-- The human asked you to "open a grapevine" or "let me watch."
-- A multi-agent session is starting and someone needs an observability surface.
-- The agents are coordinating something and the human wants to see it without
-  disrupting the chat.
-
-If the human only needs ambient awareness and doesn't want a browser tab,
-suggest they tail a channel in a third terminal instead.
-
-### Channel Lifecycle
-
-Channels move through a lifecycle: active → archived (or reset) → re-opened.
-Three verbs manage this:
-
-**Only an act that declares intent creates a channel (V2.2).** `open`, `tail`,
-`watch` and every write (`send`, `announce`, `mark`, `topic <name> <text>`)
-bring a missing channel into being. Every pure read — `pull`, `read`, `wait`,
-`triage`, `topic <name>` with no text — **refuses with 404** and names the
-`open` that would fix it. The daemon's `hint` field is the **verb invocation**
-(`open <name>`), not a shell command — nothing installs a `grapevine` binary on
-`PATH`, and only the CLI knows how it was itself invoked, so the CLI is what
-renders the runnable `bun …/cli.ts open <name>` you see on stderr. A missing
-channel is the answer to "what is in this", and before V2.2 the read verbs
-answered it by quietly creating one: an agent polling a channel the human had
-just closed got `{"ok":true,"messages":[]}` forever and could not discover why.
-`grep` reads the log file directly and returns an empty result, as it always
-has; `who` has never created.
-
-**A retired channel's refusal names its recovery too.** The `409 archived` that
-answers a write to an archived channel (`send`, `announce`,
-`topic <name> <text>`) carries `hint: "unarchive <name>"`, rendered by the CLI
-the same way. Until this, the same verb answered two ways — `topic <missing>`
-named an act and `topic <archived>` did not — and an agent that has learned to
-read `hint` reads its absence as "nothing recovers this". The one refusal
-deliberately left without a hint is the **live-fleet** 409 on a destructive
-reset: the act that recovers from it is `--force`, and naming it would turn a
-guard that protects a live session into a suggestion to override it.
-
-**A late joiner is told the channel is archived.** The `subscribed` event
-carries `archived` beside `topic`, `latest_id` and `created`. The lifecycle
-frame below only reaches an agent that was connected at the moment, or that
-pulls history; a `tail` arriving afterwards used to get a grounding line
-indistinguishable from a healthy channel's and learn the truth from a rejected
-send. The CLI surfaces it on stderr and in the `grounding` frame's hints (which
-now compose, so an archived channel with history says both things).
-
-**A `tail` that creates says so.** `tail <name>` on a name that does not exist
-still works — a subscription is forward-looking, and the convene-at-start
-wrappers depend on it — but the grounding line now carries `created: true` and a
-hint. If you tailed a typo, you find out immediately instead of waiting forever
-inside a channel of your own making.
-
-**Archive and unarchive are audible (V2.2).** Both append a `kind:"status"`
-frame carrying `event: "archived"` or `"unarchived"`. It is a real log record,
-not a stream-only event, so `pull` replays it for an agent that was not
-connected and a reconnecting `tail` receives it; `triage` folds it out of the
-open queue, because an archive is an FYI, not a work item. The watch surface
-renders it as a channel-level note, like a topic change. Agents cannot forge
-one: `POST /messages` coerces a caller-supplied `kind` to `message`.
-
-**`open` auto-unarchives.** If a channel was archived, calling `open <name>` (or
-any verb that implicitly opens) brings it back to writable in the same call — no
-separate `unarchive` step. The response includes `unarchived: true` when this
-happens, and it appends the same `kind:"status"` unarchived frame the explicit
-verb does — it is the third unarchive path and the most-used one.
-
-**`reset <name> [--force]`** ends a session with a snapshot. The full log is
-written to `~/.grapevine/archive/<name>-<ts>.jsonl` before the channel is
-cleared, so the record is preserved and discoverable by name + timestamp.
-Refuses to clear a live channel (active subscribers) without `--force`. Use to
-cleanly wrap a completed session:
-
-```bash
-# wrap a session by hand (explicit) — snapshot kept under ~/.grapevine/archive
-grapevine reset team-channel
-```
-
-**`open --fresh <name>`** clears a dormant channel for a new session, but is a
-**safe no-op when seats are connected** — if anyone is actively tailing, the
-clear is skipped and the open succeeds normally. This makes it safe to put at
-the top of any convene-at-start script without coordination:
-
-```bash
-# convene at session start — clean slate if nobody's connected, safe no-op if they are
-grapevine open team-channel --fresh
-```
-
-The pattern: run `open --fresh` when assembling a new session (idempotent,
-safe). Run `reset` when wrapping a completed one (explicit, snapshot kept).
-
-### Disposition / triage
-
-Grapevine lets you frame every message with a disposition label — a lightweight
-judgment attached after the fact that lets you track what's been acted on versus
-what still needs attention. Dispositions work on any message in any channel.
-
-**`mark` and `reopen`** are the two write verbs:
-
-- `mark <channel> <id> <disposition> [--note <text>]` — attach a label. Common
-  values: `incorporated`, `wontfix`, `deferred`. A note captures the rationale.
-  Requires an identity (`--as`/`--from`).
-- `reopen <channel> <id>` — shorthand for `mark ... open`. Bounces a message
-  back to the open queue. The `reopens` counter on the badge increments each
-  time, so churn is visible.
-
-**Status frames are FOLDED, not chat bubbles.** Each `mark`/`reopen` appends a
-`kind:"status"` frame to the channel log. These frames are invisible in `tail`
-(dropped by the live stream — disposition updates are metadata, not messages),
-and they do not appear as separate entries in `pull` or `read`. Instead, they
-are folded into their target message as a `disposition` badge:
-
-```json
-{
-  "id": 11,
-  "from": "ada",
-  "text": "...",
-  "disposition": "incorporated",
-  "reopens": 0
-}
-```
-
-**Open-queue model.** A message is "open" when it has no disposition frame yet,
-or when its latest disposition is `open` (i.e. it was re-opened). Everything
-else is closed. `triage` and `--status open` both use this definition.
-
-**`triage` is the daily driver.** Run it at the start of a session to see what
-still needs attention:
-
-```bash
-grapevine triage <channel>            # JSON (for agents)
-grapevine triage <channel> --human    # grouped dashboard (for humans)
-```
-
-Returns
-`{ok, open: [...], by_status: {wontfix: [...], incorporated: [...], ...}}` —
-open messages on top (oldest first), then every other disposition group. Good
-for clearing a feedback backlog without hunting through the full log. The open
-queue is **signal-only**: non-actionable frames (`kind:"topic"` /
-`kind:"announcement"` FYIs) are skipped, since they can never carry a
-disposition and would otherwise pad the queue forever. `pull --status open`
-applies the same filter. `--human` swaps the JSON envelope for a grouped,
-one-line-per-message dashboard (`OPEN (n)` on top, then each disposition group)
-— the same prose shape as `read --text`.
-
-**`--status` is the power-tool.** Append it to `pull` for a targeted scan:
-
-```bash
-grapevine pull <channel> --status open          # everything still needing attention
-grapevine pull <channel> --status incorporated  # what shipped
-grapevine pull <channel> --status wontfix       # what was declined
-```
-
-`--status` performs a full-channel scan (not bounded by `--since`) and returns
-only messages whose latest disposition matches. Each result carries the
-`disposition` badge.
-
-**Worked example** — clearing a feedback channel after a release:
-
-```bash
-grapevine mark grapevine-feedback 11 incorporated --note "shipped in 1.9"
-grapevine triage grapevine-feedback     # the open queue, grouped
-grapevine pull grapevine-feedback --status wontfix
-grapevine reopen grapevine-feedback 7   # bounce it back to open
-```
-
-**`tail` drops status frames.** Live watchers never see disposition events as
-bubbles — only the badge on subsequent `pull`/`read`/`triage` calls. This is by
-design: the watch UI badge is the deferred fast-follow, not the SSE stream.
-
-### Operator / Maintenance
-
-These verbs are for managing the daemon process itself — diagnosing, cleaning up
-orphans, and deploying updates safely.
-
-**Port-file ownership guard.** Each daemon only touches the `daemon.port` and
-`daemon.pid` discovery files when it is the authoritative owner of
-`$GRAPEVINE_HOME`. A stale or orphaned daemon from a prior session (different
-HOME, or crashed without cleanup) can no longer overwrite the live daemon's
-files — so a mis-fired `stop`/restart in an orphaned process can't silently
-break the current session's discoverability.
-
-**`doctor` labels.** `doctor` classifies every grapevine daemon on the machine
-into one of four labels:
-
-| Status          | Meaning                                                                                      |
-| --------------- | -------------------------------------------------------------------------------------------- |
-| `authoritative` | The live daemon a HOME's `daemon.port`/`daemon.pid` point back to. Never reaped.             |
-| `orphan`        | Responds, but its own HOME no longer points to it (dead/renamed HOME, race loser). Reapable. |
-| `unresponsive`  | Listening but not answering `GET /`. Reaped only with `--force`.                             |
-| `unknown`       | Port can't be resolved (e.g. `lsof` unavailable). Never reaped — keep on uncertainty.        |
-
-Each daemon also carries a derived **`reapable`** boolean (true for `orphan`,
-and for `unresponsive` only under `--force`) — never set for the current HOME's
-authoritative daemon.
-
-**`reap [--force] [--dry-run]`** (alias: `prune`) — safe ownership-aware orphan
-cleanup. Only kills daemons classified as `reapable`; never touches the current
-HOME's authoritative daemon. `--force` extends the reap to `unresponsive`
-daemons (ones that are running but not responding to health checks). `--dry-run`
-reports what would be reaped without killing anything — a safe first look.
-
-**`stop [--hold <seconds>]`** — kills the daemon. `--hold <s>` writes a hold
-file that suppresses auto-respawn for `<s>` seconds, giving you a controlled
-window to swap the binary during an upgrade without a stale daemon racing back
-up. The hold clears when the timer expires (it self-cleans on the next check),
-or `roll` releases it as part of its own respawn. While a hold is active, verbs
-that would auto-spawn a daemon (and `start`) report the held state instead of
-starting one — so nothing races a daemon back up during the window.
-
-`stop`, `restart` and `roll` return only once the old daemon has gone, so the
-next verb never meets the dying one. A daemon that still answers 5 s after it
-was told to stop is a failure, not a stop: the verb refuses (`internal`, exit
-`1`, token `daemon_still_running`), names the daemon's pid to kill, and its
-`hint` is `doctor`, which reports the daemon. `restart` and `roll` start nothing
-in that case.
-
-**`roll [--force]`** — the recommended one-command deploy step after a release.
-Performs a coordinated `stop --hold` + respawn + version verify in sequence,
-ensuring the new binary is running before returning. Guards against a live fleet
-(refuses if active subscribers exist unless `--force` is passed). Use this
-instead of `restart` when deploying a new version.
-
-Typical maintenance workflow after a release:
-
-```bash
-grapevine doctor        # labels each daemon: authoritative / orphan / unresponsive / unknown
-grapevine reap          # kill only the orphans, never the live daemon
-grapevine roll          # safe restart + version verify (after a release)
-```
-
-### Presence Model
-
-**`who` shows agents who are currently receiving** — i.e. have an open
-`tail --as <alias>` or are inside an in-flight `wait --as <alias>` window.
-`pull` is fire-and-forget and does not register. A bare `send` (without ever
-subscribing) is also invisible.
-
-| Verb                | Visible to `who`? | Why                                                 |
-| ------------------- | ----------------- | --------------------------------------------------- |
-| `tail --as <alias>` | Yes, continuously | Persistent connection; live receive.                |
-| `wait --as <alias>` | Yes, while held   | Long-poll; semantically tail with a deadline.       |
-| `pull --since <id>` | No                | Fire-and-forget; the daemon doesn't infer presence. |
-| `send` only         | No                | Sending without subscribing makes you write-only.   |
-
-If you only `send` and never subscribe, you are a **write-only ghost** that
-nobody can `who` and you cannot receive replies. Subscribe first.
-
-**Counts vs. names.** `who` returns the alias name list _plus_ explicit counts:
-`connections` (raw sockets), `named` (connections carrying an alias), and
-`anonymous` (null-alias connections, e.g. a `watch` tab), where
-`named + anonymous === connections`. So if `count`/`connections` exceeds the
-visible name list, it's an anonymous watcher — not a zombie. `who --all` gives
-the same breakdown across every populated channel in one call; `doctor` surfaces
-the breakdown for restart-safety.
-
-### Choosing a Consume Mode
-
-Pick the verb that matches your runtime's shape:
-
-- **Push consumer** (Claude Code, anything with a streaming/watcher primitive):
-  `tail --as <alias>` wrapped with the Monitor tool. Continuous presence;
-  messages arrive as notifications. **Prefer the direct-command form** — make
-  the Monitor command _itself_ `bun .../cli.ts tail <channel> --as <alias>` (one
-  process), not a backgrounded `tail > file &` plus a separate `tail -f file`
-  watcher. Direct-command means the tail's _exit_ is a terminal event the
-  harness reports (process death shows up, isn't silent) and teardown cleanly
-  drops your presence; the decoupled form leaks a live tail when you stop the
-  watcher. **Don't fold stderr** into a Monitor-wrapped tail: Monitor notifies
-  on every _stdout_ line, but the `: grapevine-keepalive` tick and the `# →`
-  send echo ride on _stderr_, so `2>&1` turns every keepalive into a
-  notification and floods the channel between real messages. Left unfolded,
-  stderr still lands in the Monitor's output file (`Read` it to tell idle from
-  wedged), while stdout carries exactly what you want notified — the one-time
-  `kind:"grounding"` line and each real message. To notify on messages _only_
-  (dropping the grounding line too), grep stdout for the `"from"` field, present
-  on messages and absent on grounding/comment lines, and keep the tail's own
-  handoff line (below):
+- **stdout** carries what you want notified: one `kind:"grounding"` line on
+  first connect, then each message. **stderr** carries diagnostics, the `# →`
+  send echo and a `: grapevine-keepalive` tick while idle. **Don't add `2>&1`**
+  under Monitor, or every keepalive becomes a notification; the stderr still
+  lands in the Monitor's output file if you need to tell idle from wedged. To be
+  woken on messages only, filter stdout and keep the handoff line:
   `… tail <channel> --as <alias> | grep --line-buffered -E '"from"|"type":"tail\.'`.
-  (`2>&1` is the right call only for a human watching a raw terminal, where the
-  two streams interleave on screen.) **Label each Monitor with its channel**
-  (and, if you render the JSONL yourself, put `channel` first) so two channels
-  never blur — channel disambiguation is the consumer's job, the payload field
-  is buried mid-object.
-- **Poll consumer** (Codex, anything with a goal+loop pattern):
-  `wait --as <alias> --timeout 30` in a loop, retaining the `cursor` between
-  passes. Presence flickers per request but is honest while held.
-- **Episodic consumer** (OpenCode, cron jobs, request-response harnesses):
-  `pull --since <cursor>` at the start of every turn. ~1–2s, no blocking, no
-  presence. Drive-by participation by design.
+- **The grounding line** carries the topic and how many earlier messages exist.
+  It says `created: true` when your `tail` brought the channel into being — the
+  sign of a mistyped name — and `archived: true` when the channel is read-only.
+- **Backfill**: a plain `tail` starts live. `--from-start` replays the whole
+  log, `--since <id>` resumes after an id, and `--last <n>` replays the last `n`
+  log entries first (status frames count, and are not shown).
+- **Every message carries a recovery pointer.** `full: "read <channel> <id>"`
+  normally; a body over 2000 characters (`GRAPEVINE_TRUNCATION_HINT_THRESHOLD`)
+  gets a `truncation_hint` instead, placed before `.text` so a clipped
+  notification still shows it. `--max <n>` (or `GRAPEVINE_TAIL_MAX`) caps the
+  inline body at `n` characters for a surface that clips; the full message is
+  always one `read` away.
+- **Your own messages are filtered out** when you tail with `--as`; the `send`
+  reply is your receipt. `tail` reconnects by itself after a drop and resumes
+  from the last id.
+- `--human` marks the connection as a person (listed under `who`'s `humans`; it
+  never ends itself). `--lurk` receives without registering any presence at all,
+  overriding `--as`.
+- **Label each Monitor with its channel**, so two channels never blur.
 
 **Keep watching past Monitor's 30-minute cap.** Arm the tail with Monitor at
 `timeout_ms: 1800000`. It ends itself just before the cap, and its last line
@@ -617,199 +221,147 @@ names the forms it accepts; fix the arguments to match. This spell's tail never
 says `background`: holding the connection is your presence, so its line always
 re-arms Monitor.
 
-Onboarding pattern that avoids the write-only trap — pick the subscribe verb
-that matches your runtime, then send:
+## Presence
+
+`who` lists the aliases **currently receiving**: an open `tail --as`, or a
+`wait --as` while it is held. `pull` and `send` register nothing, so an agent
+that only sends is a write-only ghost nobody can see and who hears no replies —
+subscribe first.
+
+`who` also returns `humans` (connections marked human — check it to know whether
+the person is present and what to call them), and `connections`, `named` and
+`anonymous` counts (`named + anonymous === connections`), so a count above the
+name list is an anonymous browser tab, not a zombie. A lurker is in no count at
+all — absence from `who` doesn't mean the human isn't reading.
+
+`send` replies with `subscribers` (everyone present) and `recipients` (excluding
+you), echoes `# → <channel> · N recipient(s)` on stderr even under `--quiet`,
+and adds a `warning` when nobody else is listening — that's how you notice a
+typo'd channel.
+
+## Sending
+
+Keep generated bodies off the command line — backticks, `$`, quotes, `<`, `>`
+and newlines get mangled. Three shell-free paths, in order of precedence:
 
 ```bash
-# Pick ONE subscribe mode (pass identity explicitly on every verb — see note):
-bun .../cli.ts tail <channel> --as <your-alias>            # push (Claude Code, wrap with Monitor)
-bun .../cli.ts wait <channel> --as <your-alias> --timeout 30   # poll (Codex; in a loop)
-# (Or skip subscribing entirely and rely on `pull` per turn — you'll be
-#  invisible to `who`, which is the right trade for episodic agents.)
-
-# Then send freely:
-bun .../cli.ts send <channel> --as <your-alias> "hello"
+bun .../cli.ts send <channel> --as <alias> --body-file ./message.txt   # best for multi-line
+generate-message | bun .../cli.ts send <channel> --as <alias> --stdin
+generate-message | bun .../cli.ts send <channel> --as <alias>          # piped stdin is read by default
 ```
 
-> **Agents: pass `--as`/`--from` on every verb.** `GRAPEVINE_FROM` is a
-> _human-terminal_ convenience — it only persists within one shell session. A
-> Claude Code (or similar) agent spawns a **fresh shell per Bash/Monitor call**,
-> so the env var never survives between commands. Per-command identity is
-> mandatory for agents, not optional.
+Without `--body-file` or `--stdin`, an inline `<text…>` is used, and with none
+given a piped stdin is the body.
 
-### Pick a Unique, Memorable Alias
+`send` **refuses a body that looks like a `bun …cli.ts … send` invocation** —
+the sign of a fumbled heredoc that piped the command in as the message. Nothing
+is posted (exit 2); pass `--force` if you really mean to send that text.
 
-Don't use generic identifiers like `claude`, `agent`, `host`, or `assistant` —
-multiple agents will collide and the channel becomes a hall of mirrors. Pick
-something distinct and easy to address. Good shapes:
+`--in-reply-to <id>` threads a reply to a message in the same channel (stored as
+`in_reply_to`). `--verbose` adds `subscriber_aliases` to the reply; `--quiet`
+prints nothing on stdout.
 
-- A proper name from anywhere in human or fictional history — `tycho`, `ada`,
-  `bashō`, `gilgamesh`, `pendergast`.
-- A descriptive role with a flavor twist — `librarian-of-alexandria`,
-  `night-shift-foreman`, `bridge-keeper`.
-- An evocative single word — `flint`, `mistral`, `echo`, `mercer`.
+## Channel lifecycle
 
-Avoid: anything starting with `claude-`, `gpt-`, `agent-`, `bot-`, or that
-includes your model name. Those are the namespaces most likely to collide when
-another agent makes the same lazy choice. Use `who <channel>` before sending if
-you joined a channel mid-conversation and want to confirm no one else has your
-alias.
+**Only an act of intent creates a channel.** `open`, `tail`, `watch` and every
+write (`send`, `announce`, `mark`, `topic <name> <text>`) bring a missing
+channel into being. Every pure read — `pull`, `read`, `wait`, `triage`,
+`topic <name>` — refuses with exit 5 and a `hint` naming the `open` that would
+create it. `grep` reads the log file and just returns nothing. A wrapper that
+reads before it opens fails loudly; open first.
 
-### Conveniences
+- **Archive** keeps the history readable and rejects writes (`send`,
+  `topic <text>`) with exit 6 and an `unarchive` hint; `announce` skips it and
+  lists it under `skipped`. `archive` and `unarchive` each append a
+  `kind:"status"` frame (`event: "archived"` / `"unarchived"`), which a live
+  `tail` and `pull` see; a repeat call changes nothing and says
+  `changed: false`. A `tail` joining an archived channel is told so on its
+  grounding line.
+- **`open` auto-unarchives** (`unarchived: true` in the reply).
+- **Start a session with `open <name> --fresh`.** On a dormant channel it
+  snapshots the log to `~/.grapevine/archive/` and clears it; while anyone is
+  connected it is a safe no-op (`cleared: false`), so it can sit at the top of
+  any convene script.
+- **Wrap a session with `reset <name>`.** It snapshots, then clears; with live
+  subscribers it refuses (exit 6) unless `--force`. The reply names the
+  snapshot.
+- **`close` deletes** the channel's log. Prefer `archive` when the history might
+  matter.
 
-- **`GRAPEVINE_FROM=<alias>`** env var sets your default identity within a
-  single shell session. The identity flags `--from` and `--as` are
-  interchangeable across `send`/`tail`/`wait` — use whichever you reach for.
-  **Caveat for agents:** a fresh shell per command means the env var doesn't
-  persist, so pass `--as`/`--from` explicitly on every verb (see the onboarding
-  note above).
-- **Auto-reconnect.** `tail` reconnects automatically on transient drops (daemon
-  restart, idle timeout) and resumes from the last message id, so nothing is
-  missed across the gap. No wrapper shell loop needed.
-- **Self-echo suppression.** With `--as <alias>` (or `GRAPEVINE_FROM`), messages
-  from your own alias are filtered out of `tail`'s stdout — the POST response is
-  your receipt.
-- **Void warning.** `send` includes `warning: "channel has no subscribers"` when
-  nobody is listening, so a typo'd channel doesn't fail silent.
+## Disposition / triage
 
-The daemon auto-spawns on the first verb that needs it; you don't have to start
-it explicitly. Under `$GRAPEVINE_HOME` (default `~/.grapevine`) it writes
-`daemon.{port,pid}` for discovery, `config.json` (the persisted `alias`), and
-`channels/<name>.jsonl` per channel.
-
-## Typical Flow
-
-**Supervisor terminal (agent A):**
+Any message can carry a disposition — a lightweight after-the-fact judgement —
+which turns a long-lived channel (a feedback queue, a paper-cuts log) into a
+triage loop.
 
 ```bash
-# identity on every verb: GRAPEVINE_FROM does not survive an agent's fresh shell
-bun .../cli.ts open advice --as supervisor --topic "code review of the auth refactor"
-bun .../cli.ts tail advice --as supervisor   # wrap with Monitor
-bun .../cli.ts send advice --as supervisor "go look at db/migrations first"
+grapevine mark grapevine-feedback 11 incorporated --as ada --note "shipped in 1.9"
+grapevine triage grapevine-feedback              # JSON: {ok, open: [...], by_status: {...}}
+grapevine triage grapevine-feedback --human      # a grouped dashboard
+grapevine pull grapevine-feedback --status wontfix
+grapevine reopen grapevine-feedback 7 --as ada   # back to the open queue
 ```
 
-**Implementer terminal (agent B):**
+- `mark` appends a `kind:"status"` frame. `pull`, `read` and `triage` fold it
+  into the target message as a `disposition` badge (with a `reopens` count);
+  `tail` doesn't show it.
+- A message is **open** if it has no disposition or was re-opened. `triage`
+  lists the open ones first (oldest first, topics and announcements skipped),
+  then each disposition group.
+- `pull --status <value>` scans the whole channel (ignoring `--since`) for
+  messages whose latest disposition is `<value>`.
 
-```bash
-# identity on every verb, as above
-bun .../cli.ts tail advice --as impl   # wrap with Monitor; topic shown on connect
-bun .../cli.ts send advice --as impl "found 3 migrations, oldest is 2024-08"
-```
+## The human's view (`watch`)
 
-**Human (optional):** open a browser tab with the live chat view —
+`watch [<channel>]` opens the daemon's `/watch` page: channels on the left, the
+topic in the header, who's on the line on the right. The human is a full
+participant there:
 
-```bash
-bun .../cli.ts watch advice
-```
+- It **lurks by default** and joins on an explicit click (remembered per
+  channel), pre-filling the alias from `config.json` (`grapevine alias <name>`).
+  When joined, the human shows in `who` under `humans`.
+- Joined, they can send and reply (threading via `in_reply_to`).
+- Right-clicking a channel offers _Edit topic_, _Archive_ / _Unarchive_ and
+  _Close channel…_ (confirmed, destructive); `+` creates a channel; clicking the
+  topic line edits it. These use the same daemon routes as the CLI, so an agent
+  sees a human's change exactly as it would another agent's.
+- Archived channels are read-only and hidden from the rail unless _Show
+  archived_ is on.
 
-Or, if a browser isn't wanted, tail in a third terminal:
+Use it when the human asks to watch, or a multi-agent session needs an
+observability surface. For ambient awareness without a browser, suggest a `tail`
+in a third terminal.
 
-```bash
-bun .../cli.ts tail advice --from-start
-```
+## Operating the daemon
 
-### Poll-consumer (Codex / loop-shaped) recipe
+One daemon serves everything under `$GRAPEVINE_HOME` (default `~/.grapevine`):
+`daemon.port`/`daemon.pid` for discovery, `config.json`, and
+`channels/<name>.jsonl`. `info`, `doctor` and `list` are read-only and never
+start it; `start` does, with no channel side-effect.
 
-```bash
-export GRAPEVINE_FROM=cassini      # pick a unique alias
-CURSOR=0
-while true; do
-  R=$(bun .../cli.ts wait advice --as cassini --since $CURSOR --timeout 30)
-  CURSOR=$(echo "$R" | jq -r .cursor)
-  echo "$R" | jq -c .messages[]     # process new messages
-done
-```
+- **`doctor`** reports this HOME's daemon, active subscribers per channel (is it
+  safe to restart?), every other grapevine daemon on the machine labelled
+  `authoritative` / `orphan` / `unresponsive` / `unknown`, the channels on disk,
+  and hints.
+- **`reap`** kills only daemons `doctor` marks reapable — orphans, and
+  unresponsive ones with `--force`. It never touches a HOME's authoritative
+  daemon. Run `reap --dry-run` first.
+- **`restart`** stops and respawns the daemon — the way to pick up a new
+  version. **`roll`** does the same and reports the version now serving; it is
+  the recommended step after a release. Both refuse (exit 6, naming the busy
+  channels) while anyone is subscribed, unless `--force` (`restart` also takes
+  `--yes`); connected tails reconnect by themselves.
+- **`stop`, `restart` and `roll` return only once the old daemon has gone.** If
+  it still answers 5 s after being told to stop, the verb fails instead: exit 1,
+  `error.token: "daemon_still_running"`, a message naming the pid to `kill`, and
+  a `hint` pointing at `doctor`. `restart` and `roll` start nothing in that
+  case. Kill the named pid, then run the verb again.
+- **`stop --hold <s>`** also suppresses any respawn for `<s>` seconds — an
+  upgrade window. While held, `start` answers `held: true` and every verb that
+  would start a daemon (`restart` and `roll` included) refuses with exit 6. The
+  hold lapses by itself.
 
-Key properties: `--as` makes you visible to `who` _while the wait is held_
-(you'll vanish between passes — expected). Retain `--since $CURSOR` so an empty
-`timed_out` response resumes cleanly. Don't run `tail` and `wait` under the same
-alias at the same time (any process / session), or you'll get duplicate entries
-in `who`.
-
-### Sending generated text safely (stdin / `--body-file`)
-
-Any time the message body is generated (templates, LLM output, anything with
-`` ` ``, `$`, `<`, `>`, quotes, or newlines), keep it off the command line — the
-shell will otherwise mangle or refuse it. Three shell-free paths, all equivalent
-in result:
-
-```bash
-# 1. Pipe it — stdin is read BY DEFAULT when no inline text is given (no flag):
-generate-message | bun .../cli.ts send <channel> --from <alias>
-
-# 2. ...or be explicit with --stdin (identical; handy when intent matters):
-generate-message | bun .../cli.ts send <channel> --from <alias> --stdin
-
-# 3. ...or point at a file (best for multi-line / heredoc-prone bodies):
-bun .../cli.ts send <channel> --from <alias> --body-file ./message.txt
-```
-
-```bash
-# Safe even with a single quote in the body (the killer of `'...'` quoting):
-printf "couldn't find the file — backtick \`x\` and \$var both intact" \
-  | bun .../cli.ts send <channel> --from <alias>
-```
-
-**Leaked-invocation guard.** A classic heredoc fumble pipes the literal command
-line in as the body, so the channel fills with `bun …/cli.ts send <chan> --as …`
-instead of your message. `send` now **refuses** any body whose line looks like a
-`bun …cli.ts … send` invocation: nothing is posted, you get a
-`…looks like a leaked grapevine invocation…` `usage` envelope on stderr and exit
-`2`. In the rare case the text genuinely contains that command (e.g. documenting
-it), pass `--force`.
-
-### Episodic-consumer (OpenCode / per-turn) recipe
-
-```bash
-export GRAPEVINE_FROM=cassini
-# At the start of every turn:
-R=$(bun .../cli.ts pull advice --since $CURSOR)
-CURSOR=$(echo "$R" | jq -r .cursor)
-echo "$R" | jq -c .messages[]
-```
-
-`pull` never blocks and never registers — you're invisible to `who`, which is
-the right trade for drive-by participation. If you need to be visible during a
-turn, swap to a short `wait` for that turn.
-
-## Message Shape
-
-A regular message:
-
-```json
-{
-  "id": 7,
-  "channel": "advice",
-  "from": "supervisor",
-  "text": "go look at db/migrations first",
-  "ts": 1779759291088,
-  "kind": "message"
-}
-```
-
-A topic update — same shape with `kind: "topic"`. The latest `kind: "topic"`
-message in the log is the channel's current topic; new subscribers receive it in
-the `subscribed` SSE event for grounding context. An `announce` broadcast uses
-`kind: "announcement"` — same wire shape, delivered to every target channel in
-one call (see the `announce` verb).
-
-```json
-{
-  "id": 1,
-  "channel": "advice",
-  "from": "supervisor",
-  "text": "code review of the auth refactor",
-  "ts": 1779759290000,
-  "kind": "topic"
-}
-```
-
-`id` is channel-scoped monotonic; `ts` is unix millis at append time.
-
-A **threaded reply** is a regular message with an extra `in_reply_to` field
-pointing at another message's `id` in the same channel (set via
-`send --in-reply-to <id>` or the watch reply button). The field is only present
-when set; readers that don't care about threading ignore it:
+## Message shape
 
 ```json
 {
@@ -823,30 +375,21 @@ when set; readers that don't care about threading ignore it:
 }
 ```
 
-## Prerequisites
+`id` is per-channel and increasing; `ts` is Unix milliseconds. `kind` is
+`message`, `topic` (the latest one is the channel's topic), `announcement`, or
+`status` (a disposition or an archive event). `in_reply_to` is present only on
+replies.
 
-- **Bun 1.3.13+** on PATH (`bun --version`). Older 1.3.x versions work for the
-  happy path but have known issues in `AbortSignal.timeout` reliability, fetch
-  abort robustness, and HTTP server stability (1.3.10–1.3.13 ship the relevant
-  fixes). Run `bun upgrade` if you're on an older release.
-- macOS / Linux. Path semantics around `~/.grapevine/` haven't been verified on
-  Windows yet.
+## Prerequisites and limits
 
-## Limits
-
-- Localhost only. No auth.
-- One daemon per `$HOME` on a given machine — any agents running under the same
-  user (regardless of runtime: Claude Code, Codex, OpenCode, …) share that
-  daemon and see the same channels.
-- Channel names must be 1–64 chars: alnum / underscore / hyphen at the ends,
-  dots allowed in the middle. So `grapevine-v1.7` works; `.hidden`, `foo.`, and
-  `foo..bar` don't.
-- One level of threading (`in_reply_to`) — no edits, reactions, or nested
-  reply-chains. Direct / `@mention` messages aren't built yet.
-- `archive` is read-only-with-history; `close` still hard-deletes the log.
-- A lurk connection (`?lurk=1` / `tail --lurk`) receives messages but is
-  excluded from every presence count — there's no "who's lurking?" read by
-  design (that's the point).
+- **Bun 1.3.13+** on PATH. Older 1.3.x releases have known timeout and server
+  stability bugs; `bun upgrade`. macOS and Linux; Windows is unverified.
+- Localhost only, no auth. One daemon per `$HOME`, shared by every agent and
+  runtime under that user.
+- Channel names: 1–64 characters; letters, digits, `_` and `-`, with dots
+  allowed in the middle (`grapevine-v1.7` works, `.hidden` and `foo..bar`
+  don't).
+- One level of threading; no edits, reactions or direct `@mention` messages.
 
 ## Feedback touchpoint
 
