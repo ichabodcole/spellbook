@@ -332,6 +332,24 @@ export function dirOf(path: string): string {
 export type MoveTarget = { label: string; path: string; kind: "workspace" | "set" | "folder" };
 
 /**
+ * The set that holds `path` most closely: of the sets whose root is above it,
+ * the one with the longest root. A set inside another (a linked folder opened
+ * as a set of its own, under the set that shows only its link) wins over the
+ * outer one, whatever the order of the context.
+ */
+export function innermostSet(
+  entries: readonly ContextEntry[],
+  path: string,
+): ContextEntry | undefined {
+  let best: ContextEntry | undefined;
+  for (const e of entries) {
+    if (e.membership !== "mirrored" || !path.startsWith(`${e.root}/`)) continue;
+    if (!best || e.root.length > best.root.length) best = e;
+  }
+  return best;
+}
+
+/**
  * Every place `item` can be moved to, the same list wherever it is asked from:
  * the workspace first, then each set followed by its folders in tree order.
  * Left out: where the item already is, and for a folder itself and anything
@@ -376,7 +394,9 @@ export function moveTargets(
         };
         members(n.contents);
       }
-      if (n.kind !== "group") continue;
+      // A link's row is no place to move or make things: what goes there lands
+      // where it leads, outside the set.
+      if (n.kind !== "group" || n.link) continue;
       offer({ label: `${at}/${n.rel}`, path: joinPath(e.root, n.rel), kind: "folder" });
       folders(e, n.children, at);
     }

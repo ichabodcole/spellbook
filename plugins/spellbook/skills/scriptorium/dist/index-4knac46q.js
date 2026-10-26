@@ -12215,8 +12215,20 @@ var __iconNode37 = [
   ["circle", { cx: "17", cy: "17", r: "3", key: "18b49y" }]
 ];
 var FolderSearch = createLucideIcon("folder-search", __iconNode37);
-// node_modules/lucide-react/dist/esm/icons/folder-tree.mjs
+// node_modules/lucide-react/dist/esm/icons/folder-symlink.mjs
 var __iconNode38 = [
+  [
+    "path",
+    {
+      d: "M2 9.35V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H20a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h7",
+      key: "y8kt7d"
+    }
+  ],
+  ["path", { d: "m8 16 3-3-3-3", key: "rlqrt1" }]
+];
+var FolderSymlink = createLucideIcon("folder-symlink", __iconNode38);
+// node_modules/lucide-react/dist/esm/icons/folder-tree.mjs
+var __iconNode39 = [
   [
     "path",
     {
@@ -12234,9 +12246,9 @@ var __iconNode38 = [
   ["path", { d: "M3 5a2 2 0 0 0 2 2h3", key: "f2jnh7" }],
   ["path", { d: "M3 3v13a2 2 0 0 0 2 2h3", key: "k8epm1" }]
 ];
-var FolderTree = createLucideIcon("folder-tree", __iconNode38);
+var FolderTree = createLucideIcon("folder-tree", __iconNode39);
 // node_modules/lucide-react/dist/esm/icons/folder.mjs
-var __iconNode39 = [
+var __iconNode40 = [
   [
     "path",
     {
@@ -12245,83 +12257,91 @@ var __iconNode39 = [
     }
   ]
 ];
-var Folder = createLucideIcon("folder", __iconNode39);
+var Folder = createLucideIcon("folder", __iconNode40);
 // node_modules/lucide-react/dist/esm/icons/git-branch.mjs
-var __iconNode40 = [
+var __iconNode41 = [
   ["path", { d: "M15 6a9 9 0 0 0-9 9V3", key: "1cii5b" }],
   ["circle", { cx: "18", cy: "6", r: "3", key: "1h7g24" }],
   ["circle", { cx: "6", cy: "18", r: "3", key: "fqmcym" }]
 ];
-var GitBranch = createLucideIcon("git-branch", __iconNode40);
+var GitBranch = createLucideIcon("git-branch", __iconNode41);
 // node_modules/lucide-react/dist/esm/icons/git-compare.mjs
-var __iconNode41 = [
+var __iconNode42 = [
   ["circle", { cx: "18", cy: "18", r: "3", key: "1xkwt0" }],
   ["circle", { cx: "6", cy: "6", r: "3", key: "1lh9wr" }],
   ["path", { d: "M13 6h3a2 2 0 0 1 2 2v7", key: "1yeb86" }],
   ["path", { d: "M11 18H8a2 2 0 0 1-2-2V9", key: "19pyzm" }]
 ];
-var GitCompare = createLucideIcon("git-compare", __iconNode41);
+var GitCompare = createLucideIcon("git-compare", __iconNode42);
 // node_modules/lucide-react/dist/esm/icons/glasses.mjs
-var __iconNode42 = [
+var __iconNode43 = [
   ["circle", { cx: "6", cy: "15", r: "4", key: "vux9w4" }],
   ["circle", { cx: "18", cy: "15", r: "4", key: "18o8ve" }],
   ["path", { d: "M14 15a2 2 0 0 0-2-2 2 2 0 0 0-2 2", key: "1ag4bs" }],
   ["path", { d: "M2.5 13 5 7c.7-1.3 1.4-2 3-2", key: "1hm1gs" }],
   ["path", { d: "M21.5 13 19 7c-.7-1.3-1.5-2-3-2", key: "1r31ai" }]
 ];
-var Glasses = createLucideIcon("glasses", __iconNode42);
+var Glasses = createLucideIcon("glasses", __iconNode43);
 // node_modules/lucide-react/dist/esm/icons/globe.mjs
-var __iconNode43 = [
+var __iconNode44 = [
   ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
   ["path", { d: "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20", key: "13o1zl" }],
   ["path", { d: "M2 12h20", key: "9i4pu4" }]
 ];
-var Globe = createLucideIcon("globe", __iconNode43);
+var Globe = createLucideIcon("globe", __iconNode44);
 // node_modules/lucide-react/dist/esm/icons/hash.mjs
-var __iconNode44 = [
+var __iconNode45 = [
   ["line", { x1: "4", x2: "20", y1: "9", y2: "9", key: "4lhtct" }],
   ["line", { x1: "4", x2: "20", y1: "15", y2: "15", key: "vyu0kd" }],
   ["line", { x1: "10", x2: "8", y1: "3", y2: "21", key: "1ggp8o" }],
   ["line", { x1: "16", x2: "14", y1: "3", y2: "21", key: "weycgp" }]
 ];
-var Hash = createLucideIcon("hash", __iconNode44);
+var Hash = createLucideIcon("hash", __iconNode45);
 // node_modules/lucide-react/dist/esm/icons/image.mjs
-var __iconNode45 = [
+var __iconNode46 = [
   ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", ry: "2", key: "1m3agn" }],
   ["circle", { cx: "9", cy: "9", r: "2", key: "af1f0g" }],
   ["path", { d: "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21", key: "1xmnt7" }]
 ];
-var Image = createLucideIcon("image", __iconNode45);
+var Image = createLucideIcon("image", __iconNode46);
 // node_modules/lucide-react/dist/esm/icons/info.mjs
-var __iconNode46 = [
+var __iconNode47 = [
   ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
   ["path", { d: "M12 16v-4", key: "1dtifu" }],
   ["path", { d: "M12 8h.01", key: "e9boi3" }]
 ];
-var Info = createLucideIcon("info", __iconNode46);
+var Info = createLucideIcon("info", __iconNode47);
+// node_modules/lucide-react/dist/esm/icons/library.mjs
+var __iconNode48 = [
+  ["path", { d: "m16 6 4 14", key: "ji33uf" }],
+  ["path", { d: "M12 6v14", key: "1n7gus" }],
+  ["path", { d: "M8 8v12", key: "1gg7y9" }],
+  ["path", { d: "M4 4v16", key: "6qkkli" }]
+];
+var Library = createLucideIcon("library", __iconNode48);
 // node_modules/lucide-react/dist/esm/icons/link-2-off.mjs
-var __iconNode47 = [
+var __iconNode49 = [
   ["path", { d: "M9 17H7A5 5 0 0 1 7 7", key: "10o201" }],
   ["path", { d: "M15 7h2a5 5 0 0 1 4 8", key: "1d3206" }],
   ["line", { x1: "8", x2: "12", y1: "12", y2: "12", key: "rvw6j4" }],
   ["line", { x1: "2", x2: "22", y1: "2", y2: "22", key: "a6p6uj" }]
 ];
-var Link2Off = createLucideIcon("link-2-off", __iconNode47);
+var Link2Off = createLucideIcon("link-2-off", __iconNode49);
 // node_modules/lucide-react/dist/esm/icons/link-2.mjs
-var __iconNode48 = [
+var __iconNode50 = [
   ["path", { d: "M9 17H7A5 5 0 0 1 7 7h2", key: "8i5ue5" }],
   ["path", { d: "M15 7h2a5 5 0 1 1 0 10h-2", key: "1b9ql8" }],
   ["line", { x1: "8", x2: "16", y1: "12", y2: "12", key: "1jonct" }]
 ];
-var Link2 = createLucideIcon("link-2", __iconNode48);
+var Link2 = createLucideIcon("link-2", __iconNode50);
 // node_modules/lucide-react/dist/esm/icons/link.mjs
-var __iconNode49 = [
+var __iconNode51 = [
   ["path", { d: "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71", key: "1cjeqo" }],
   ["path", { d: "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71", key: "19qd67" }]
 ];
-var Link = createLucideIcon("link", __iconNode49);
+var Link = createLucideIcon("link", __iconNode51);
 // node_modules/lucide-react/dist/esm/icons/list-ordered.mjs
-var __iconNode50 = [
+var __iconNode52 = [
   ["path", { d: "M11 5h10", key: "1cz7ny" }],
   ["path", { d: "M11 12h10", key: "1438ji" }],
   ["path", { d: "M11 19h10", key: "11t30w" }],
@@ -12329,18 +12349,18 @@ var __iconNode50 = [
   ["path", { d: "M4 9h2", key: "r1h2o0" }],
   ["path", { d: "M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02", key: "xtkcd5" }]
 ];
-var ListOrdered = createLucideIcon("list-ordered", __iconNode50);
+var ListOrdered = createLucideIcon("list-ordered", __iconNode52);
 // node_modules/lucide-react/dist/esm/icons/list-tree.mjs
-var __iconNode51 = [
+var __iconNode53 = [
   ["path", { d: "M8 5h13", key: "1pao27" }],
   ["path", { d: "M13 12h8", key: "h98zly" }],
   ["path", { d: "M13 19h8", key: "c3s6r1" }],
   ["path", { d: "M3 10a2 2 0 0 0 2 2h3", key: "1npucw" }],
   ["path", { d: "M3 5v12a2 2 0 0 0 2 2h3", key: "x1gjn2" }]
 ];
-var ListTree = createLucideIcon("list-tree", __iconNode51);
+var ListTree = createLucideIcon("list-tree", __iconNode53);
 // node_modules/lucide-react/dist/esm/icons/loader.mjs
-var __iconNode52 = [
+var __iconNode54 = [
   ["path", { d: "M12 2v4", key: "3427ic" }],
   ["path", { d: "m16.2 7.8 2.9-2.9", key: "r700ao" }],
   ["path", { d: "M18 12h4", key: "wj9ykh" }],
@@ -12350,9 +12370,9 @@ var __iconNode52 = [
   ["path", { d: "M2 12h4", key: "j09sii" }],
   ["path", { d: "m4.9 4.9 2.9 2.9", key: "giyufr" }]
 ];
-var Loader = createLucideIcon("loader", __iconNode52);
+var Loader = createLucideIcon("loader", __iconNode54);
 // node_modules/lucide-react/dist/esm/icons/message-square-plus.mjs
-var __iconNode53 = [
+var __iconNode55 = [
   [
     "path",
     {
@@ -12363,9 +12383,9 @@ var __iconNode53 = [
   ["path", { d: "M12 8v6", key: "1ib9pf" }],
   ["path", { d: "M9 11h6", key: "1fldmi" }]
 ];
-var MessageSquarePlus = createLucideIcon("message-square-plus", __iconNode53);
+var MessageSquarePlus = createLucideIcon("message-square-plus", __iconNode55);
 // node_modules/lucide-react/dist/esm/icons/message-square-text.mjs
-var __iconNode54 = [
+var __iconNode56 = [
   [
     "path",
     {
@@ -12377,9 +12397,9 @@ var __iconNode54 = [
   ["path", { d: "M7 15h6", key: "d9of3u" }],
   ["path", { d: "M7 7h8", key: "af5zfr" }]
 ];
-var MessageSquareText = createLucideIcon("message-square-text", __iconNode54);
+var MessageSquareText = createLucideIcon("message-square-text", __iconNode56);
 // node_modules/lucide-react/dist/esm/icons/message-square.mjs
-var __iconNode55 = [
+var __iconNode57 = [
   [
     "path",
     {
@@ -12388,9 +12408,9 @@ var __iconNode55 = [
     }
   ]
 ];
-var MessageSquare = createLucideIcon("message-square", __iconNode55);
+var MessageSquare = createLucideIcon("message-square", __iconNode57);
 // node_modules/lucide-react/dist/esm/icons/messages-square.mjs
-var __iconNode56 = [
+var __iconNode58 = [
   [
     "path",
     {
@@ -12406,9 +12426,9 @@ var __iconNode56 = [
     }
   ]
 ];
-var MessagesSquare = createLucideIcon("messages-square", __iconNode56);
+var MessagesSquare = createLucideIcon("messages-square", __iconNode58);
 // node_modules/lucide-react/dist/esm/icons/moon.mjs
-var __iconNode57 = [
+var __iconNode59 = [
   [
     "path",
     {
@@ -12417,18 +12437,18 @@ var __iconNode57 = [
     }
   ]
 ];
-var Moon = createLucideIcon("moon", __iconNode57);
+var Moon = createLucideIcon("moon", __iconNode59);
 // node_modules/lucide-react/dist/esm/icons/network.mjs
-var __iconNode58 = [
+var __iconNode60 = [
   ["rect", { x: "16", y: "16", width: "6", height: "6", rx: "1", key: "4q2zg0" }],
   ["rect", { x: "2", y: "16", width: "6", height: "6", rx: "1", key: "8cvhb9" }],
   ["rect", { x: "9", y: "2", width: "6", height: "6", rx: "1", key: "1egb70" }],
   ["path", { d: "M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3", key: "1jsf9p" }],
   ["path", { d: "M12 12V8", key: "2874zd" }]
 ];
-var Network = createLucideIcon("network", __iconNode58);
+var Network = createLucideIcon("network", __iconNode60);
 // node_modules/lucide-react/dist/esm/icons/package.mjs
-var __iconNode59 = [
+var __iconNode61 = [
   [
     "path",
     {
@@ -12440,23 +12460,23 @@ var __iconNode59 = [
   ["polyline", { points: "3.29 7 12 12 20.71 7", key: "ousv84" }],
   ["path", { d: "m7.5 4.27 9 5.15", key: "1c824w" }]
 ];
-var Package = createLucideIcon("package", __iconNode59);
+var Package = createLucideIcon("package", __iconNode61);
 // node_modules/lucide-react/dist/esm/icons/panel-right-close.mjs
-var __iconNode60 = [
+var __iconNode62 = [
   ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
   ["path", { d: "M15 3v18", key: "14nvp0" }],
   ["path", { d: "m8 9 3 3-3 3", key: "12hl5m" }]
 ];
-var PanelRightClose = createLucideIcon("panel-right-close", __iconNode60);
+var PanelRightClose = createLucideIcon("panel-right-close", __iconNode62);
 // node_modules/lucide-react/dist/esm/icons/panel-right-open.mjs
-var __iconNode61 = [
+var __iconNode63 = [
   ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
   ["path", { d: "M15 3v18", key: "14nvp0" }],
   ["path", { d: "m10 15-3-3 3-3", key: "1pgupc" }]
 ];
-var PanelRightOpen = createLucideIcon("panel-right-open", __iconNode61);
+var PanelRightOpen = createLucideIcon("panel-right-open", __iconNode63);
 // node_modules/lucide-react/dist/esm/icons/pencil.mjs
-var __iconNode62 = [
+var __iconNode64 = [
   [
     "path",
     {
@@ -12466,27 +12486,27 @@ var __iconNode62 = [
   ],
   ["path", { d: "m15 5 4 4", key: "1mk7zo" }]
 ];
-var Pencil = createLucideIcon("pencil", __iconNode62);
+var Pencil = createLucideIcon("pencil", __iconNode64);
 // node_modules/lucide-react/dist/esm/icons/plus.mjs
-var __iconNode63 = [
+var __iconNode65 = [
   ["path", { d: "M5 12h14", key: "1ays0h" }],
   ["path", { d: "M12 5v14", key: "s699le" }]
 ];
-var Plus = createLucideIcon("plus", __iconNode63);
+var Plus = createLucideIcon("plus", __iconNode65);
 // node_modules/lucide-react/dist/esm/icons/power.mjs
-var __iconNode64 = [
+var __iconNode66 = [
   ["path", { d: "M12 2v10", key: "mnfbl" }],
   ["path", { d: "M18.4 6.6a9 9 0 1 1-12.77.04", key: "obofu9" }]
 ];
-var Power = createLucideIcon("power", __iconNode64);
+var Power = createLucideIcon("power", __iconNode66);
 // node_modules/lucide-react/dist/esm/icons/redo-2.mjs
-var __iconNode65 = [
+var __iconNode67 = [
   ["path", { d: "m15 14 5-5-5-5", key: "12vg1m" }],
   ["path", { d: "M20 9H9.5A5.5 5.5 0 0 0 4 14.5A5.5 5.5 0 0 0 9.5 20H13", key: "6uklza" }]
 ];
-var Redo2 = createLucideIcon("redo-2", __iconNode65);
+var Redo2 = createLucideIcon("redo-2", __iconNode67);
 // node_modules/lucide-react/dist/esm/icons/save.mjs
-var __iconNode66 = [
+var __iconNode68 = [
   [
     "path",
     {
@@ -12497,24 +12517,24 @@ var __iconNode66 = [
   ["path", { d: "M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7", key: "1ydtos" }],
   ["path", { d: "M7 3v4a1 1 0 0 0 1 1h7", key: "t51u73" }]
 ];
-var Save = createLucideIcon("save", __iconNode66);
+var Save = createLucideIcon("save", __iconNode68);
 // node_modules/lucide-react/dist/esm/icons/scissors.mjs
-var __iconNode67 = [
+var __iconNode69 = [
   ["circle", { cx: "6", cy: "6", r: "3", key: "1lh9wr" }],
   ["path", { d: "M8.12 8.12 12 12", key: "1alkpv" }],
   ["path", { d: "M20 4 8.12 15.88", key: "xgtan2" }],
   ["circle", { cx: "6", cy: "18", r: "3", key: "fqmcym" }],
   ["path", { d: "M14.8 14.8 20 20", key: "ptml3r" }]
 ];
-var Scissors = createLucideIcon("scissors", __iconNode67);
+var Scissors = createLucideIcon("scissors", __iconNode69);
 // node_modules/lucide-react/dist/esm/icons/search.mjs
-var __iconNode68 = [
+var __iconNode70 = [
   ["path", { d: "m21 21-4.34-4.34", key: "14j7rj" }],
   ["circle", { cx: "11", cy: "11", r: "8", key: "4ej97u" }]
 ];
-var Search = createLucideIcon("search", __iconNode68);
+var Search = createLucideIcon("search", __iconNode70);
 // node_modules/lucide-react/dist/esm/icons/settings.mjs
-var __iconNode69 = [
+var __iconNode71 = [
   [
     "path",
     {
@@ -12524,9 +12544,9 @@ var __iconNode69 = [
   ],
   ["circle", { cx: "12", cy: "12", r: "3", key: "1v7zrd" }]
 ];
-var Settings = createLucideIcon("settings", __iconNode69);
+var Settings = createLucideIcon("settings", __iconNode71);
 // node_modules/lucide-react/dist/esm/icons/sun.mjs
-var __iconNode70 = [
+var __iconNode72 = [
   ["circle", { cx: "12", cy: "12", r: "4", key: "4exip2" }],
   ["path", { d: "M12 2v2", key: "tus03m" }],
   ["path", { d: "M12 20v2", key: "1lh1kg" }],
@@ -12537,63 +12557,63 @@ var __iconNode70 = [
   ["path", { d: "m6.34 17.66-1.41 1.41", key: "1m8zz5" }],
   ["path", { d: "m19.07 4.93-1.41 1.41", key: "1shlcs" }]
 ];
-var Sun = createLucideIcon("sun", __iconNode70);
+var Sun = createLucideIcon("sun", __iconNode72);
 // node_modules/lucide-react/dist/esm/icons/text-quote.mjs
-var __iconNode71 = [
+var __iconNode73 = [
   ["path", { d: "M17 5H3", key: "1cn7zz" }],
   ["path", { d: "M21 12H8", key: "scolzb" }],
   ["path", { d: "M21 19H8", key: "13qgcb" }],
   ["path", { d: "M3 12v7", key: "1ri8j3" }]
 ];
-var TextQuote = createLucideIcon("text-quote", __iconNode71);
+var TextQuote = createLucideIcon("text-quote", __iconNode73);
 // node_modules/lucide-react/dist/esm/icons/trash-2.mjs
-var __iconNode72 = [
+var __iconNode74 = [
   ["path", { d: "M10 11v6", key: "nco0om" }],
   ["path", { d: "M14 11v6", key: "outv1u" }],
   ["path", { d: "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6", key: "miytrc" }],
   ["path", { d: "M3 6h18", key: "d0wm0j" }],
   ["path", { d: "M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2", key: "e791ji" }]
 ];
-var Trash2 = createLucideIcon("trash-2", __iconNode72);
+var Trash2 = createLucideIcon("trash-2", __iconNode74);
 // node_modules/lucide-react/dist/esm/icons/undo-2.mjs
-var __iconNode73 = [
+var __iconNode75 = [
   ["path", { d: "M9 14 4 9l5-5", key: "102s5s" }],
   ["path", { d: "M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11", key: "f3b9sd" }]
 ];
-var Undo2 = createLucideIcon("undo-2", __iconNode73);
+var Undo2 = createLucideIcon("undo-2", __iconNode75);
 // node_modules/lucide-react/dist/esm/icons/undo-dot.mjs
-var __iconNode74 = [
+var __iconNode76 = [
   ["path", { d: "M21 17a9 9 0 0 0-15-6.7L3 13", key: "8mp6z9" }],
   ["path", { d: "M3 7v6h6", key: "1v2h90" }],
   ["circle", { cx: "12", cy: "17", r: "1", key: "1ixnty" }]
 ];
-var UndoDot = createLucideIcon("undo-dot", __iconNode74);
+var UndoDot = createLucideIcon("undo-dot", __iconNode76);
 // node_modules/lucide-react/dist/esm/icons/upload.mjs
-var __iconNode75 = [
+var __iconNode77 = [
   ["path", { d: "M12 3v12", key: "1x0j5s" }],
   ["path", { d: "m17 8-5-5-5 5", key: "7q97r8" }],
   ["path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", key: "ih7n3h" }]
 ];
-var Upload = createLucideIcon("upload", __iconNode75);
+var Upload = createLucideIcon("upload", __iconNode77);
 // node_modules/lucide-react/dist/esm/icons/user-check.mjs
-var __iconNode76 = [
+var __iconNode78 = [
   ["path", { d: "m16 11 2 2 4-4", key: "9rsbq5" }],
   ["path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", key: "1yyitq" }],
   ["circle", { cx: "9", cy: "7", r: "4", key: "nufk8" }]
 ];
-var UserCheck = createLucideIcon("user-check", __iconNode76);
+var UserCheck = createLucideIcon("user-check", __iconNode78);
 // node_modules/lucide-react/dist/esm/icons/user.mjs
-var __iconNode77 = [
+var __iconNode79 = [
   ["path", { d: "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2", key: "975kel" }],
   ["circle", { cx: "12", cy: "7", r: "4", key: "17ys0d" }]
 ];
-var User = createLucideIcon("user", __iconNode77);
+var User = createLucideIcon("user", __iconNode79);
 // node_modules/lucide-react/dist/esm/icons/x.mjs
-var __iconNode78 = [
+var __iconNode80 = [
   ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
   ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
 ];
-var X = createLucideIcon("x", __iconNode78);
+var X = createLucideIcon("x", __iconNode80);
 // src/scriptorium/surface/Frame.tsx
 var import_react56 = __toESM(require_react(), 1);
 
@@ -23505,6 +23525,16 @@ function dirOf(path) {
   const i = path.lastIndexOf("/");
   return i <= 0 ? "/" : path.slice(0, i);
 }
+function innermostSet(entries, path) {
+  let best;
+  for (const e of entries) {
+    if (e.membership !== "mirrored" || !path.startsWith(`${e.root}/`))
+      continue;
+    if (!best || e.root.length > best.root.length)
+      best = e;
+  }
+  return best;
+}
 function moveTargets(entries, item, workspace = null) {
   const here = item === null ? null : dirOf(item);
   const out = [];
@@ -23537,7 +23567,7 @@ function moveTargets(entries, item, workspace = null) {
         };
         members(n.contents);
       }
-      if (n.kind !== "group")
+      if (n.kind !== "group" || n.link)
         continue;
       offer({ label: `${at}/${n.rel}`, path: joinPath(e.root, n.rel), kind: "folder" });
       folders(e, n.children, at);
@@ -75599,7 +75629,10 @@ function EntryTree({
   onFocused,
   selected = NO_ROWS,
   onSelect,
-  onAddRef
+  onAddRef,
+  onOpenAsSet,
+  onLinkDrop,
+  userHome = null
 }) {
   const index5 = import_react40.useMemo(() => indexTree(entry.nodes), [entry.nodes]);
   const shownRel = activeRel === null ? null : activeRaw && index5.byId.get(activeRel)?.kind === "file" ? activeRel : index5.imageOf.get(activeRel) ?? index5.bundleOf.get(activeRel) ?? activeRel;
@@ -75647,9 +75680,14 @@ function EntryTree({
       const into = target.item.getId();
       if (isOwnTarget(entry.root, target.item.getItemData()))
         return false;
+      if (isLinkNode(target.item.getItemData()) && !onLinkDrop)
+        return false;
       return !items2.some((i2) => into === i2.getId() || into.startsWith(`${i2.getId()}/`));
     },
     onDrop: (items2, target) => {
+      const on = target.item.getItemData();
+      if (isLinkNode(on))
+        return onLinkDrop?.(pathOf(target.item.getId()), on.linkTo);
       const into = dirFor(target.item.getId());
       for (const i2 of items2) {
         const path2 = pathOf(i2.getId());
@@ -75666,12 +75704,15 @@ function EntryTree({
       })))
     }),
     canDragForeignDragObjectOver: (dt) => carriesFiles(dt),
-    canDropForeignDragObject: (dt, target) => carriesFiles(dt) && !isOwnTarget(entry.root, target.item.getItemData()),
+    canDropForeignDragObject: (dt, target) => carriesFiles(dt) && !isOwnTarget(entry.root, target.item.getItemData()) && (!isLinkNode(target.item.getItemData()) || onLinkDrop !== undefined),
     onDropForeignDragObject: (dt, target) => {
       foreignHandled.current = true;
       setTimeout(() => {
         foreignHandled.current = false;
       }, 0);
+      const on = target.item.getItemData();
+      if (isLinkNode(on))
+        return onLinkDrop?.(pathOf(target.item.getId()), on.linkTo);
       onImportFiles(dt, dirFor(target.item.getId()));
     },
     openOnDropDelay: 600,
@@ -75805,7 +75846,8 @@ function EntryTree({
   const menuSidecar = menuFor?.kind === "image" ? index5.sidecars.get(menuFor.rel) : undefined;
   const menuPlace = menuFor ? bundlePlace(menuPath) : null;
   const menuActs = menuPlace === null || menuPlace === "member";
-  const menuMakes = !menuFor || menuFor.kind === "group" && menuPlace !== "own";
+  const menuLink = menuFor !== null && isLinkNode(menuFor);
+  const menuMakes = !menuFor || menuFor.kind === "group" && menuPlace !== "own" && !menuLink;
   const menuOpens = menuFor !== null && menuFor.kind !== "group" && (menuFor.kind !== "file" || isBundleMain(menuPath));
   const menuExpands = menuFor?.kind === "bundle" && menuFor.contents !== undefined;
   const menuItem = menuFor ? tree.getItemInstance(menuFor.rel) : undefined;
@@ -75839,6 +75881,7 @@ function EntryTree({
               onOpenDoc,
               onMenu: setMenuFor,
               onMenuKey,
+              userHome,
               plainClick,
               unreported,
               thumb: thumbFor && item.getItemData().kind === "image" ? thumbFor(pathOf(item.getId())) : undefined
@@ -75876,6 +75919,13 @@ function EntryTree({
             sidecar: menuSidecar,
             onEdit: (rel) => onOpenDoc(rel),
             onAsk: onAskDescribe ? () => onAskDescribe(menuPath) : undefined
+          }),
+          menuLink && onOpenAsSet && /* @__PURE__ */ jsx_runtime40.jsxs(ContextMenuItem, {
+            onClick: () => onOpenAsSet(menuPath),
+            children: [
+              /* @__PURE__ */ jsx_runtime40.jsx(Library, {}),
+              "Open as its own set"
+            ]
           }),
           menuMakes && /* @__PURE__ */ jsx_runtime40.jsxs(jsx_runtime40.Fragment, {
             children: [
@@ -76035,13 +76085,16 @@ function Row2({
   onMenuKey,
   thumb,
   plainClick,
-  unreported
+  unreported,
+  userHome
 }) {
   if (stale)
     return null;
   const node2 = item.getItemData();
   const level = item.getItemMeta().level;
   const isGroup = node2.kind === "group";
+  const link = isLinkNode(node2);
+  const linkTitle = link ? node2.linkTo ? `A link to ${tildify(node2.linkTo, userHome)}: right-click to open it as its own set` : "A link to a folder: right-click to open it as its own set" : undefined;
   const expandable = node2.kind === "bundle" && node2.contents !== undefined;
   const isFile = node2.kind === "file";
   const opens = !isGroup && (!isFile || isBundleMain(path2));
@@ -76051,7 +76104,19 @@ function Row2({
   const tone = item.isDragTarget() ? "bg-brand/15 text-ink ring-1 ring-brand/50 ring-inset" : isActive ? "bg-selected/15 font-medium text-ink" : refSelected ? "bg-[color:var(--color-ref-row,color-mix(in_oklab,var(--color-brand)_10%,transparent))] shadow-[inset_2px_0_0_var(--color-ref-row-bar,transparent)] text-ink" : item.isSelected() ? "bg-surface-raised text-ink" : cn(item.isFocused() && "bg-surface-raised/60", node2.kind === "file" && node2.convention ? "text-ink-faint" : "text-ink-dim");
   const rowClass = cn("flex h-7 w-full min-w-0 items-center gap-1.5 rounded-sm pr-2 text-left text-sm outline-none", "hover:bg-surface-raised hover:text-ink", "focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset", tone);
   const toggle = () => item.isExpanded() ? item.collapse() : item.expand();
-  const icon = isGroup ? /* @__PURE__ */ jsx_runtime40.jsxs(jsx_runtime40.Fragment, {
+  const icon = link ? /* @__PURE__ */ jsx_runtime40.jsxs(jsx_runtime40.Fragment, {
+    children: [
+      /* @__PURE__ */ jsx_runtime40.jsx("span", {
+        "aria-hidden": true,
+        className: "size-3.5 shrink-0"
+      }),
+      /* @__PURE__ */ jsx_runtime40.jsx(FolderSymlink, {
+        "aria-hidden": true,
+        "data-slot": "link-icon",
+        className: "size-4 shrink-0 text-ink-faint"
+      })
+    ]
+  }) : isGroup ? /* @__PURE__ */ jsx_runtime40.jsxs(jsx_runtime40.Fragment, {
     children: [
       /* @__PURE__ */ jsx_runtime40.jsx(ChevronRight, {
         "aria-hidden": true,
@@ -76151,6 +76216,8 @@ function Row2({
     "data-active": isActive || undefined,
     "data-selected": refSelected || undefined,
     "data-kind": node2.kind,
+    "data-link": link || undefined,
+    title: linkTitle,
     "data-convention": node2.kind === "file" && node2.convention || undefined,
     className: rowClass,
     children: [
@@ -76158,6 +76225,13 @@ function Row2({
       /* @__PURE__ */ jsx_runtime40.jsx("span", {
         className: "truncate",
         children: item.getItemName()
+      }),
+      link && /* @__PURE__ */ jsx_runtime40.jsxs("span", {
+        className: "sr-only",
+        children: [
+          ", a link",
+          node2.linkTo ? ` to ${node2.linkTo}` : ""
+        ]
       }),
       described && /* @__PURE__ */ jsx_runtime40.jsx(DescribedMark, {}),
       node2.kind === "bundle" && node2.warnings && node2.warnings.length > 0 && /* @__PURE__ */ jsx_runtime40.jsx(WarningsMark, {
@@ -76241,7 +76315,10 @@ function isOwnTarget(root2, node2) {
   return bundlePlace(folder) === "own" || bundleTypeOf(folder) !== null;
 }
 function isFolderNode(node2) {
-  return node2.kind === "group" || node2.kind === "bundle" && node2.contents !== undefined;
+  return node2.kind === "group" && !node2.link || node2.kind === "bundle" && node2.contents !== undefined;
+}
+function isLinkNode(node2) {
+  return node2.kind === "group" && node2.link === true;
 }
 var PEEK_DELAY_MS = 450;
 function ImagePeek({ src }) {
@@ -76582,7 +76659,7 @@ function ContextSidebar({
     if (!created)
       return;
     const all2 = entriesRef.current;
-    const inSet = all2.find((e) => e.membership === "mirrored" && created.path.startsWith(`${e.root}/`));
+    const inSet = innermostSet(all2, created.path);
     if (all2.some((e) => entryPath(e) === created.path))
       setDrilled(null);
     else if (inSet)
@@ -76590,6 +76667,20 @@ function ContextSidebar({
     setRenamePath(created.path);
   }, [created]);
   const renameStarted = import_react42.useCallback(() => setRenamePath(null), []);
+  const [openSetAt, setOpenSetAt] = import_react42.useState(null);
+  const openAsSet = import_react42.useCallback((path2) => {
+    setOpenSetAt(path2);
+    onAddPath(path2);
+  }, [onAddPath]);
+  import_react42.useEffect(() => {
+    if (!openSetAt)
+      return;
+    const set2 = entries.find((e) => e.membership === "mirrored" && e.root === openSetAt);
+    if (!set2)
+      return;
+    setDrilled(set2.id);
+    setOpenSetAt(null);
+  }, [openSetAt, entries]);
   const lastActive = import_react42.useRef(activeDoc ? `${activeDoc.entryId}/${activeDoc.rel}` : null);
   import_react42.useEffect(() => {
     const key = activeDoc ? `${activeDoc.entryId}/${activeDoc.rel}` : null;
@@ -76788,6 +76879,15 @@ function ContextSidebar({
       onTrash(pre.path);
   }, [trashPreview, onTrash, confirm]);
   const onDelete = trashPreview && onTrash ? askDelete : undefined;
+  const linkDrop = import_react42.useCallback(async (path2, linkTo) => {
+    const ok3 = await confirm({
+      title: "Nothing is dropped into a linked folder",
+      message: `${baseName(path2)} is a link${linkTo ? ` to ${tildify(linkTo, userHome)}` : ""}. What is dropped there would land outside this set. Open it as its own set, then drop there.`,
+      confirmLabel: "Open as its own set"
+    });
+    if (ok3)
+      openAsSet(path2);
+  }, [confirm, openAsSet, userHome]);
   const shown2 = localNotice ?? notice ?? null;
   const dismiss = () => {
     if (localNotice)
@@ -76823,7 +76923,9 @@ function ContextSidebar({
         onAskDescribe,
         selected,
         onSelect,
-        onAddRef
+        onAddRef,
+        onOpenAsSet: openAsSet,
+        onLinkDrop: linkDrop
       }) : /* @__PURE__ */ jsx_runtime42.jsx(ListView, {
         entries,
         activeDoc,
@@ -77480,7 +77582,9 @@ function SetView({
   onFocused,
   selected,
   onSelect,
-  onAddRef
+  onAddRef,
+  onOpenAsSet,
+  onLinkDrop
 }) {
   const [backDrop, setBackDrop] = import_react42.useState(false);
   const spring = import_react42.useRef(null);
@@ -77601,7 +77705,10 @@ function SetView({
           onAskDescribe,
           selected,
           onSelect,
-          onAddRef
+          onAddRef,
+          onOpenAsSet,
+          onLinkDrop,
+          userHome
         }, entry.id)
       })
     ]

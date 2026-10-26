@@ -87,6 +87,7 @@ import {
   docPathOf,
   entryPath,
   foldListedSidecars,
+  innermostSet,
   joinPath,
   moveTargets,
   nodeLabel,
@@ -332,14 +333,32 @@ export function ContextSidebar({
   useEffect(() => {
     if (!created) return;
     const all = entriesRef.current;
-    const inSet = all.find(
-      (e) => e.membership === "mirrored" && created.path.startsWith(`${e.root}/`),
-    );
+    // The innermost set that holds it: a linked folder opened as a set of its
+    // own sits under the set holding its link, which shows it only as a link.
+    const inSet = innermostSet(all, created.path);
     if (all.some((e) => entryPath(e) === created.path)) setDrilled(null);
     else if (inSet) setDrilled(inSet.id);
     setRenamePath(created.path);
   }, [created]);
   const renameStarted = useCallback(() => setRenamePath(null), []);
+
+  // "Open as its own set" on a link's row: added as a set, and drilled into
+  // once the daemon's state shows it.
+  const [openSetAt, setOpenSetAt] = useState<string | null>(null);
+  const openAsSet = useCallback(
+    (path: string) => {
+      setOpenSetAt(path);
+      onAddPath(path);
+    },
+    [onAddPath],
+  );
+  useEffect(() => {
+    if (!openSetAt) return;
+    const set = entries.find((e) => e.membership === "mirrored" && e.root === openSetAt);
+    if (!set) return;
+    setDrilled(set.id);
+    setOpenSetAt(null);
+  }, [openSetAt, entries]);
 
   // The open document changed (a followed link, a search result, the agent)
   // while the list is showing: drill into the set that holds it, so its tree can
@@ -616,6 +635,20 @@ export function ContextSidebar({
   );
   const onDelete = trashPreview && onTrash ? askDelete : undefined;
 
+  // Something dropped on a link's row: nothing goes into a link (it would land
+  // where the link leads, outside the set). Said, with the way that works.
+  const linkDrop = useCallback(
+    async (path: string, linkTo: string | undefined) => {
+      const ok = await confirm({
+        title: "Nothing is dropped into a linked folder",
+        message: `${baseName(path)} is a link${linkTo ? ` to ${tildify(linkTo, userHome)}` : ""}. What is dropped there would land outside this set. Open it as its own set, then drop there.`,
+        confirmLabel: "Open as its own set",
+      });
+      if (ok) openAsSet(path);
+    },
+    [confirm, openAsSet, userHome],
+  );
+
   const shown = localNotice ?? notice ?? null;
   const dismiss = () => {
     if (localNotice) setLocalNotice(null);
@@ -651,6 +684,8 @@ export function ContextSidebar({
           selected={selected}
           onSelect={onSelect}
           onAddRef={onAddRef}
+          onOpenAsSet={openAsSet}
+          onLinkDrop={linkDrop}
         />
       ) : (
         <ListView
@@ -1364,10 +1399,14 @@ function SetView({
   selected,
   onSelect,
   onAddRef,
+  onOpenAsSet,
+  onLinkDrop,
 }: {
   selected?: readonly string[];
   onSelect?: ContextSidebarProps["onSelect"];
   onAddRef?: ContextSidebarProps["onAddRef"];
+  onOpenAsSet?: (path: string) => void;
+  onLinkDrop?: (path: string, linkTo: string | undefined) => void;
   entry: ContextEntry;
   activeRel: string | null;
   activeRaw: boolean;
@@ -1513,6 +1552,9 @@ function SetView({
           selected={selected}
           onSelect={onSelect}
           onAddRef={onAddRef}
+          onOpenAsSet={onOpenAsSet}
+          onLinkDrop={onLinkDrop}
+          userHome={userHome}
         />
       </div>
     </div>

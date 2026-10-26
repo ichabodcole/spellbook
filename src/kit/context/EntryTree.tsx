@@ -29,7 +29,9 @@ import {
   FolderIcon,
   FolderOpenIcon,
   FolderPlusIcon,
+  FolderSymlinkIcon,
   ImageIcon,
+  LibraryIcon,
   MessageSquareTextIcon,
   PackageIcon,
   PencilIcon,
@@ -76,6 +78,7 @@ import {
   nodeLabel,
   ROOT_ID,
   type TreeIndex,
+  tildify,
 } from "./model.ts";
 import { encodeRowDrag, ROW_DRAG_MIME, rowKindOf } from "./rowDrag.ts";
 
@@ -159,7 +162,24 @@ export function EntryTree({
   selected = NO_ROWS,
   onSelect,
   onAddRef,
+  onOpenAsSet,
+  onLinkDrop,
+  userHome = null,
 }: {
+  /**
+   * "Open as its own set" on a link's row (a folder link, shown and never
+   * entered): adds the folder at that path as a set of its own. Absent, not
+   * offered.
+   */
+  onOpenAsSet?: (path: string) => void;
+  /**
+   * Something dropped on a link's row: nothing goes into a link, so the drop
+   * lands nowhere and this is told instead, to say so and offer the link as a
+   * set of its own. Absent, a link's row takes no drop.
+   */
+  onLinkDrop?: (path: string, linkTo: string | undefined) => void;
+  /** For `~` in a link's "a link to …"; null shows the path absolute. */
+  userHome?: string | null;
   /**
    * The rows the human chose in the file tree (Cmd, Ctrl or Shift with a
    * click, or the keyboard's forms), by absolute path, across every set: the
@@ -303,10 +323,15 @@ export function EntryTree({
       // Never into a bundle's own files or folders (`audio/`): the daemon
       // would refuse it, so it does not light up as a place to drop.
       if (isOwnTarget(entry.root, target.item.getItemData())) return false;
+      // A link's row takes nothing; with `onLinkDrop` it lights up, and its
+      // drop is answered there rather than sent.
+      if (isLinkNode(target.item.getItemData()) && !onLinkDrop) return false;
       // Not into itself, and not into anything under itself.
       return !items.some((i) => into === i.getId() || into.startsWith(`${i.getId()}/`));
     },
     onDrop: (items, target) => {
+      const on = target.item.getItemData();
+      if (isLinkNode(on)) return onLinkDrop?.(pathOf(target.item.getId()), on.linkTo);
       const into = dirFor(target.item.getId());
       for (const i of items) {
         const path = pathOf(i.getId());
@@ -331,7 +356,9 @@ export function EntryTree({
     // Files from Finder: a copy into the folder they land on (a document row's own folder).
     canDragForeignDragObjectOver: (dt) => carriesFiles(dt),
     canDropForeignDragObject: (dt, target) =>
-      carriesFiles(dt) && !isOwnTarget(entry.root, target.item.getItemData()),
+      carriesFiles(dt) &&
+      !isOwnTarget(entry.root, target.item.getItemData()) &&
+      (!isLinkNode(target.item.getItemData()) || onLinkDrop !== undefined),
     onDropForeignDragObject: (dt, target) => {
       foreignHandled.current = true;
       // A row's own drop stops the event before the background sees it, so the
@@ -339,6 +366,8 @@ export function EntryTree({
       setTimeout(() => {
         foreignHandled.current = false;
       }, 0);
+      const on = target.item.getItemData();
+      if (isLinkNode(on)) return onLinkDrop?.(pathOf(target.item.getId()), on.linkTo);
       onImportFiles(dt, dirFor(target.item.getId()));
     },
     openOnDropDelay: 600,
@@ -486,7 +515,9 @@ export function EntryTree({
   // on; the member folder takes new documents; the rest is the type's own.
   const menuPlace = menuFor ? bundlePlace(menuPath) : null;
   const menuActs = menuPlace === null || menuPlace === "member";
-  const menuMakes = !menuFor || (menuFor.kind === "group" && menuPlace !== "own");
+  // A link's row makes nothing: what is made there would land where it leads.
+  const menuLink = menuFor !== null && isLinkNode(menuFor);
+  const menuMakes = !menuFor || (menuFor.kind === "group" && menuPlace !== "own" && !menuLink);
   const menuOpens =
     menuFor !== null &&
     menuFor.kind !== "group" &&
@@ -541,6 +572,7 @@ export function EntryTree({
                 onOpenDoc={onOpenDoc}
                 onMenu={setMenuFor}
                 onMenuKey={onMenuKey}
+                userHome={userHome}
                 plainClick={plainClick}
                 unreported={unreported}
                 thumb={
@@ -586,6 +618,12 @@ export function EntryTree({
             onEdit={(rel) => onOpenDoc(rel)}
             onAsk={onAskDescribe ? () => onAskDescribe(menuPath) : undefined}
           />
+        )}
+        {menuLink && onOpenAsSet && (
+          <ContextMenuItem onClick={() => onOpenAsSet(menuPath)}>
+            <LibraryIcon />
+            Open as its own set
+          </ContextMenuItem>
         )}
         {menuMakes && (
           <>
@@ -733,7 +771,9 @@ function Row({
   thumb,
   plainClick,
   unreported,
+  userHome,
 }: {
+  userHome: string | null;
   /**
    * Set while the library selects for an act that is no choice (a drag's
    * start, a plain click that opens nothing): what it selects is not reported.
@@ -760,6 +800,13 @@ function Row({
   const node = item.getItemData();
   const level = item.getItemMeta().level;
   const isGroup = node.kind === "group";
+  // A folder link: a row of its own look, never opened or shut.
+  const link = isLinkNode(node);
+  const linkTitle = link
+    ? node.linkTo
+      ? `A link to ${tildify(node.linkTo, userHome)}: right-click to open it as its own set`
+      : "A link to a folder: right-click to open it as its own set"
+    : undefined;
   // A bundle whose type expands: its row opens it, its chevron shows what is inside.
   const expandable = node.kind === "bundle" && node.contents !== undefined;
   // One of a bundle's own files: only its main file opens (raw), from here.
@@ -796,7 +843,16 @@ function Row({
     tone,
   );
   const toggle = () => (item.isExpanded() ? item.collapse() : item.expand());
-  const icon = isGroup ? (
+  const icon = link ? (
+    <>
+      <span aria-hidden className="size-3.5 shrink-0" />
+      <FolderSymlinkIcon
+        aria-hidden
+        data-slot="link-icon"
+        className="size-4 shrink-0 text-ink-faint"
+      />
+    </>
+  ) : isGroup ? (
     <>
       <ChevronRightIcon
         aria-hidden
@@ -919,11 +975,14 @@ function Row({
       data-active={isActive || undefined}
       data-selected={refSelected || undefined}
       data-kind={node.kind}
+      data-link={link || undefined}
+      title={linkTitle}
       data-convention={(node.kind === "file" && node.convention) || undefined}
       className={rowClass}
     >
       {icon}
       <span className="truncate">{item.getItemName()}</span>
+      {link && <span className="sr-only">, a link{node.linkTo ? ` to ${node.linkTo}` : ""}</span>}
       {described && <DescribedMark />}
       {node.kind === "bundle" && node.warnings && node.warnings.length > 0 && (
         <WarningsMark warnings={node.warnings} />
@@ -1022,9 +1081,21 @@ export function isOwnTarget(root: string, node: ContextNode): boolean {
   return bundlePlace(folder) === "own" || bundleTypeOf(folder) !== null;
 }
 
-/** Whether a node opens and shuts in the tree: a group, or a bundle whose type expands. */
+/**
+ * Whether a node opens and shuts in the tree: a group (not a link's, which is
+ * never entered), or a bundle whose type expands.
+ */
 function isFolderNode(node: ContextNode): boolean {
-  return node.kind === "group" || (node.kind === "bundle" && node.contents !== undefined);
+  return (
+    (node.kind === "group" && !node.link) || (node.kind === "bundle" && node.contents !== undefined)
+  );
+}
+
+/** A folder link's row (`link` on a group): shown, never entered, takes nothing. */
+export function isLinkNode(
+  node: ContextNode,
+): node is Extract<ContextNode, { kind: "group" }> & { link: true } {
+  return node.kind === "group" && node.link === true;
 }
 
 /** How long a pointer rests on an image's row before its thumbnail shows. */
