@@ -148,7 +148,7 @@ cycle:**
 
 Approved by Cole at triage, 2026-10-24.
 
-- [ ] Each bullet re-checked against the kit Scriptorium, then marked fixed
+- [x] Each bullet re-checked against the kit Scriptorium, then marked fixed
       (with a commit), fixed in this cycle, or moved to its own item. None is
       left unchecked.
 
@@ -177,8 +177,117 @@ by a slug), 18 (`"cursor": -1`), 19 (link refusal toasts never close; Cole:
 close on Escape or when another document opens, no timer), 35 (frontmatter
 summary keyed on mtime only).
 
+**Fixed in this cycle, 2026-10-25** (on `impl/chat-toast-nits-fixes`, from
+`cycle/release-6` at bd5018fe):
+
+- **3, two toasts announced:** fixed in `6566ee18`. A new-version toast is held
+  400 ms and dropped if its version becomes active meanwhile, so `version-new`
+  then `activate` announces "Now editing" alone.
+- **4, Tab leaves modals:** fixed in `6da778d2`. The kit's modals make the rest
+  of the page `inert` and send focus that lands on a focus guard round to the
+  popup's other end.
+- **5, `--doc` refusal:** fixed in `3fc868f5`. A filename (or set-relative path)
+  of a context document that is not open gets a `hint` with its absolute path; a
+  verb that takes a path (`version-new`, `show`, `backlinks`, `profile`,
+  `graph --focus`) also has it in `choices`. SKILL says so.
+- **7, disabled buttons:** fixed in `d02c67f1`. Compare and Split stay focusable
+  with `aria-disabled` and their reason as their description. Show diff's name
+  starts "Show diff:". #12's leftover is folded in: End session (and Settings)
+  say why they are off while the daemon is not answering.
+- **9, Compare's default target:** fixed in `8e271cd6`. With the active version
+  the same as its file, Compare opens against the newest other version. Against
+  the file and the same, it says "v1 matches the file on disk." With no other
+  version, it says that and that there is nothing else to compare.
+- **13, close's `choices`:** fixed in `34ffd2be`. It is `[id]`, the stopped
+  session the hint names.
+- **15, same-named documents:** fixed in `2fd1ee96` (and `a0e55083` for
+  Scriptorium's own note-remove line). Human chat and system lines name a
+  document as the sidebar does (`other/beta.md`); events keep the slug.
+- **18, `"cursor": -1`:** fixed in `30a32fc7`. A `tail.closed` or `tail.lost`
+  that read nothing leaves `cursor` off.
+- **19, link refusal toasts:** fixed in `b101136e`. A link refusal closes on
+  Escape or when another document opens, with no timer.
+- **35, the frontmatter summary cache:** fixed in `2361070c`. `docMeta` and
+  `noFrontmatter` key on inode, size, mtime and ctime.
+- **17's leftover** (optional): fixed in `34ffd2be`. An EACCES `--body-file` is
+  `usage` (exit 2), as ENOENT is.
+
 **Own items (12 bullets, 8 items):** 24, 25, 26, 29 and 30 →
 `kit-link-check-matches-rendered-view`; 6 → `scriptorium-phone-width`; 22 →
 `kit-windows-drive-path-links`; 27 → `kit-bare-name-links`; 28 →
 `kit-folder-and-link-one-set`; 33 → `kit-unreadable-document-reported`; 34 →
 `kit-scan-cap-says-so`; 20 → `kit-search-line-once`.
+
+## Done and verified
+
+The ten "fix in this cycle" bullets and 17's optional leftover are fixed in
+`30a32fc7`, `34ffd2be`, `2361070c`, `3fc868f5`, `2fd1ee96`, `b101136e`,
+`6566ee18`, `d02c67f1`, `8e271cd6`, `6da778d2` and `a0e55083`, with the rebuilt
+dist in `0a8b2a07`. With the 13 already fixed and the 12 moved to eight items of
+their own, all 35 bullets are accounted for. Each fix has a test, each test was
+seen to fail with its fix reverted, and the gate passed. The surface fixes (3,
+4, 5, 7, 9, 15, 19) were checked in a real headless Chromium against the built
+base (bd5018fe) and this branch, with real keyboard and mouse input.
+
+Deliberate choices:
+
+- **3:** the hold is 400 ms (`NEW_VERSION_HOLD_MS`). A version nobody activates
+  is announced 400 ms later than before.
+- **4:** the fix is in the kit (`ui/inertOutside.ts`) rather than Base UI.
+  Inside a real browser, Base UI 1.6.0's own guards took focus but did not send
+  it back; in happy-dom they do, so `inertOutside.test.ts` tests the module on
+  plain DOM. It also covers the kit's Move to and location dialogs, which share
+  the defect. The spells' own copies of the dialog recipe (bounty, grapevine,
+  mind-mapper) are not kit and are unchanged.
+- **7:** Settings sits beside End session in the same component and was disabled
+  with no reason too, so it got the same reason.
+- **9:** the header still says "identical" when the two sides match. That word
+  does not call the file a version; the body sentence says what matched.
+- **15:** the disk-change lines ("… changed on disk") now use the same short
+  name instead of the absolute path.
+- **19:** only the sidebar notice that Scriptorium owns changes. The kit's toast
+  path for an app that does not own the notice, and the stand-in toast while the
+  context column is collapsed, still time out as every refusal toast does. The
+  daemon's other refusals are unchanged.
+- **#17's leftover:** any ENOENT or EACCES that reaches the CLI's top level is
+  `usage`. The comment says these are the caller's files.
+
+## Port-back notes
+
+These are for Story Studio's agent. Each one is generic and names no app.
+
+- **`wire/tailHandoff.ts`:** a stop line (`tail.closed` or `tail.lost`) leaves
+  out `cursor` when it is below 0. `HandoffLine.cursor` is now optional.
+- **`workspace/verbs.ts`:**
+  - `noSession`: when the session is saved but stopped, `choices` is `[id]`.
+  - `run`: EACCES maps to usage, as ENOENT does.
+- **`workspace/session.ts`:**
+  - `docOrDie(slug, { takesPath })` adds a `hint` naming the context paths that
+    an unopened filename or set-relative path matches (`unopenedNamed`). With
+    `takesPath`, those paths are also in `choices`.
+  - `newVersion`, `doc(slug, { takesPath })` (used by `show`) and `linkSubject`
+    pass `takesPath`.
+- **`workspace/server.ts`:** `docName(slug)` is `session.display(original)`.
+  Every human chat and system line uses it, and the `original.*` lines use
+  `display`. Event fields keep slugs.
+- **`context/daemonClient.ts`:** a state frame that opens a different document
+  clears a refusal titled `LINK_REFUSED`.
+- **`shell/WorkspaceShell.tsx`:**
+  - Escape clears a link refusal, unless something else already handled the key
+    (`defaultPrevented`).
+  - `ColumnButton` takes `disabledReason`, used by End session and Settings
+    (`NOT_CONNECTED_REASON`).
+- **`ui/disabledReason.tsx` (new):** a button that is off keeps focus, with
+  `aria-disabled` and an `aria-describedby` note. The document pane's view
+  buttons use it.
+- **`chat/NewVersionToasts.tsx`:**
+  - `holdMs` (default `NEW_VERSION_HOLD_MS`, 400): a version that becomes active
+    during the hold is never announced.
+  - The Show diff `ariaLabel` starts with "Show diff:".
+- **`document/CompareView.tsx`:**
+  - `defaultSide(doc)` picks the side a comparison opens against. The pane uses
+    it on the Compare button and when the document changes.
+  - Against the file, two matching sides say `matchesFile(active)`.
+    `NothingToCompare` takes `active` and then shows `nothingButTheFile`.
+- **`ui/inertOutside.ts` (new):** wired as `ref` on the popups of
+  `DialogContent`, `ConfirmDialog`, `MoveToDialog` and `AskLocation`.
