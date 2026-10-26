@@ -151,3 +151,34 @@ Approved by Cole at triage, 2026-10-24.
 - [ ] Each bullet re-checked against the kit Scriptorium, then marked fixed
       (with a commit), fixed in this cycle, or moved to its own item. None is
       left unchecked.
+
+## Re-check, 2026-10-25
+
+Every bullet was re-checked on `cycle/release-6` (78303c66) against the kit
+Scriptorium, in a real browser for UI bullets and through the CLI and daemon for
+wire bullets. Bullets are numbered in the order above. Cole approved the split
+on 2026-10-25.
+
+**Already fixed (13):** 1 (chat link to nowhere: an alert now), 2 (footnote
+ids), 8 ("Session ended": an Ended pill and dialog), 10 (crash: `not_found` with
+an `open --restore` hint), 11 (search on a killed daemon), 12 (killed daemon's
+End session title), 14 (bare `tail` after a human end: stops after 45 s), 16
+(one ⌘S, one save; `e1e42d50`), 17 (`--body-file` in an unreadable folder: now
+says EACCES, still labelled `internal`), 21 (`backlinks` entries carry line and
+raw), 23 (links in HTML blocks), 31 (pdocs keys listed as unresolved, not
+counted; their resolution is `scriptorium-link-rules`), 32 (absolute paths in
+links).
+
+**Fix in this cycle (10):** 3 (two toasts announced), 4 (Tab leaves modals), 5
+(`--doc` refusal names no path), 7 (disabled Compare's reason is mouse-only;
+Show diff's name), 9 (Compare against the file says "identical"), 13 (close's
+`choices` offers an unrelated live session), 15 (same-named documents told apart
+by a slug), 18 (`"cursor": -1`), 19 (link refusal toasts never close; Cole:
+close on Escape or when another document opens, no timer), 35 (frontmatter
+summary keyed on mtime only).
+
+**Own items (12 bullets, 8 items):** 24, 25, 26, 29 and 30 →
+`kit-link-check-matches-rendered-view`; 6 → `scriptorium-phone-width`; 22 →
+`kit-windows-drive-path-links`; 27 → `kit-bare-name-links`; 28 →
+`kit-folder-and-link-one-set`; 33 → `kit-unreadable-document-reported`; 34 →
+`kit-scan-cap-says-so`; 20 → `kit-search-line-once`.
