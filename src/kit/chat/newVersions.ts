@@ -88,6 +88,19 @@ export function withdrawn(target: VersionTarget, open: DocView | null): boolean 
   return !open.versions.some((v) => v.n === target.n);
 }
 
+/**
+ * Whether the version itself stopped being news: it became the active one, or
+ * was deleted. Judged only while its document is the open one (`open` is all
+ * the toast sees); another document open says nothing about it. What a held
+ * announcement, or one raised after its document was left, is dropped for:
+ * NOT a switch of document, which would lose it (the watch has seen it).
+ */
+export function versionSettled(target: VersionTarget, open: DocView | null): boolean {
+  if (!open || open.slug !== target.doc) return false;
+  if (open.active === target.n) return true;
+  return !open.versions.some((v) => v.n === target.n);
+}
+
 /** What a toast button asks for. The app's shell performs it. */
 export type VersionAct = { activate: VersionTarget } | { showDiff: VersionTarget };
 

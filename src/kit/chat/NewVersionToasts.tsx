@@ -17,8 +17,11 @@
 // ONE ANNOUNCEMENT, NOT TWO. The agent's `version-new` then `activate` are two
 // acts a moment apart: raised at once, this toast was replaced by "Now editing"
 // about 40 ms later, and a screen reader read both. So a new version is held for
-// `holdMs` before its toast is raised, and dropped if it stops being true in the
-// meantime (it became the active one, which "Now editing" says).
+// `holdMs` before its toast is raised, and dropped if that version itself
+// became the active one in the meantime ("Now editing" says it). A switch to
+// another document does not drop it: it is raised when its hold is over, from
+// the document as last seen, with Activate only (Show diff acts on the open
+// document), and stays until its version is settled (`versionSettled`).
 import { useEffect, useRef } from "react";
 import type { ToastAction } from "../ui/toast-store.ts";
 import type { DocView } from "../workspace/protocol";
@@ -29,6 +32,7 @@ import {
   type VersionAct,
   type VersionTarget,
   versionName,
+  versionSettled,
   withdrawn,
 } from "./newVersions.ts";
 
@@ -60,9 +64,14 @@ export function NewVersionToasts({
   // way back; a reload starts a new one, and stays quiet.
   const watch = useRef(createVersionWatch());
   // The toasts this raised, so each can withdraw once it stops being true.
-  const raised = useRef<{ id: number; target: VersionTarget }[]>([]);
-  // The versions held before their toast is raised, each with its timer.
-  const held = useRef<{ timer: ReturnType<typeof setTimeout>; target: VersionTarget }[]>([]);
+  // `elsewhere`: raised while another document was open, so it is not
+  // withdrawn for that (see the header).
+  const raised = useRef<{ id: number; target: VersionTarget; elsewhere: boolean }[]>([]);
+  // The versions held before their toast is raised, each with its timer and
+  // its document as last seen open.
+  const held = useRef<
+    { timer: ReturnType<typeof setTimeout>; target: VersionTarget; seen: DocView }[]
+  >([]);
   // The open document as last rendered: what a held version is checked against
   // when it comes due.
   const current = useRef(doc);
@@ -86,12 +95,13 @@ export function NewVersionToasts({
   const canDiff = onShowDiff !== undefined;
   useEffect(() => {
     raised.current = raised.current.filter((r) => {
-      if (!withdrawn(r.target, doc)) return true;
+      if (!(r.elsewhere ? versionSettled(r.target, doc) : withdrawn(r.target, doc))) return true;
       dismiss(r.id);
       return false;
     });
     held.current = held.current.filter((h) => {
-      if (!withdrawn(h.target, doc)) return true;
+      if (doc && doc.slug === h.target.doc) h.seen = doc;
+      if (!versionSettled(h.target, doc)) return true;
       clearTimeout(h.timer);
       return false;
     });
@@ -106,17 +116,18 @@ export function NewVersionToasts({
       }
     };
     /**
-     * Raise `target`'s toast from the open document as it reads now. A held
-     * target that stopped being true was dropped above, on the render that
-     * made it so.
+     * Raise `target`'s toast: from the open document as it reads now, or, when
+     * another one is open, from its document as last seen. A held target whose
+     * version settled was dropped above, on the render that showed it.
      */
-    const raise = (target: VersionTarget) => {
+    const raise = (target: VersionTarget, seen: DocView) => {
       const open = current.current;
-      if (!open) return;
-      const version = open.versions.find((v) => v.n === target.n);
+      const elsewhere = !open || open.slug !== target.doc;
+      const from = elsewhere ? seen : open;
+      const version = from.versions.find((v) => v.n === target.n);
       if (!version) return;
-      const name = versionName(open, target.n);
-      const { title, description } = newVersionToast(open, version);
+      const name = versionName(from, target.n);
+      const { title, description } = newVersionToast(from, version);
       const actions: ToastAction[] = [
         {
           label: "Activate",
@@ -124,26 +135,30 @@ export function NewVersionToasts({
           onAct: () => apply(newVersionActs("activate", target)),
         },
       ];
-      if (canDiff)
+      if (canDiff && !elsewhere)
         actions.push({
           label: "Show diff",
-          ariaLabel: `Show diff: compare v${open.active} with ${name}, without activating it`,
+          ariaLabel: `Show diff: compare v${from.active} with ${name}, without activating it`,
           onAct: () => apply(newVersionActs("diff", target)),
         });
       const id = announce(title, description, actions);
-      raised.current.push({ id, target });
+      raised.current.push({ id, target, elsewhere });
     };
     for (const version of fresh) {
       const target = { doc: doc.slug, n: version.n };
       if (holdMs <= 0) {
-        raise(target);
+        raise(target, doc);
         continue;
       }
-      const timer = setTimeout(() => {
-        held.current = held.current.filter((h) => h.timer !== timer);
-        raise(target);
-      }, holdMs);
-      held.current.push({ timer, target });
+      const entry = {
+        timer: setTimeout(() => {
+          held.current = held.current.filter((h) => h !== entry);
+          raise(target, entry.seen);
+        }, holdMs),
+        target,
+        seen: doc,
+      };
+      held.current.push(entry);
     }
   }, [doc, announce, dismiss, canDiff, holdMs]);
 

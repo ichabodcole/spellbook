@@ -1047,6 +1047,30 @@ describe("NewVersionToasts", () => {
     await m.unmount();
   });
 
+  test("held: a switch to another document does not lose it; it is raised after its hold", async () => {
+    const store = createToastStore();
+    const at = (d: DocView) => (
+      <Host d={d} store={store} onActivate={() => {}} onShowDiff={() => {}} holdMs={80} />
+    );
+    const other = doc([version(1)], 1, "other");
+    const m = await mount(at(doc([version(1)], 1)));
+    await m.render(at(doc([version(1), version(2)], 1)));
+    // The human opens another document before the hold is over.
+    await m.render(at(other));
+    await settle(() => new Promise<void>((r) => setTimeout(r, 200)));
+    const [toast] = store.snapshot();
+    expect(toast?.title).toBe("New version: v2");
+    // Another document is open: Show diff would act on it, so only Activate.
+    expect(toast?.actions?.map((a) => a.label)).toEqual(["Activate"]);
+    // Still up as the human moves on, until the version itself is settled.
+    await m.render(at(doc([version(1)], 1, "third")));
+    expect(store.snapshot()).toHaveLength(1);
+    await m.render(at(doc([version(1), version(2)], 2)));
+    expect(store.snapshot()).toHaveLength(0);
+    store.dispose();
+    await m.unmount();
+  });
+
   test("by default a new version is held, not raised in the render that brought it", async () => {
     const store = createToastStore();
     const at = (d: DocView) => (
