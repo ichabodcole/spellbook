@@ -157,6 +157,7 @@ import {
   contentHash,
   type FileEvent,
   GoneError,
+  loadNoteGuard,
   newSessionId,
   SessionError,
   sideName,
@@ -3696,6 +3697,8 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
               "note.add: seen must be the selected text: nothing was applied",
               400,
             );
+          // Loaded on the first note that needs it, not at start (`loadNoteGuard`).
+          if (msg.seen !== undefined) await loadNoteGuard();
           const r = session.addNote({
             doc: msg.doc,
             body: msg.body,

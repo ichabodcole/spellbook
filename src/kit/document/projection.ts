@@ -413,13 +413,8 @@ function bare(s: string): string {
   return s.replace(/\s+/gu, "");
 }
 
-/**
- * Why a note cannot be added over a selection `showsSelection` refuses, with the
- * one act that answers it. Selecting again in the rendered view gives the same
- * range and the same refusal, so it is not offered; the raw view places exactly.
- */
-export const NOT_PLACED =
-  "The rendered view could not place this passage exactly where you selected it. Select it in the raw view and add the note there.";
+// The refusal's words live apart, so the daemon can say them without loading this.
+export { NOT_PLACED } from "./notPlaced.ts";
 
 /**
  * Does source range `from`..`to` hold what the human selected, `seen`, as the

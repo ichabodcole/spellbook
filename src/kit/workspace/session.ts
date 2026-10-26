@@ -45,7 +45,7 @@ import {
 } from "node:fs";
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { parseDocument } from "yaml";
-import { NOT_PLACED, showsSelection } from "../document/projection.ts";
+import { NOT_PLACED } from "../document/notPlaced.ts";
 import {
   BUNDLE_INFO,
   type BundleReference,
@@ -856,6 +856,31 @@ const movedPairs = (
         [sidecar, sidecarTo],
       ]
     : [[from, to]];
+
+/**
+ * The note guard (`showsSelection`), loaded the first time a note arrives with
+ * what the human selected. ⛔ NEVER A STATIC IMPORT: it pulls in the markdown
+ * parser, and every daemon and CLI start loads this file; 31 more modules made
+ * each spawn about 10% slower, and a test of 21 spawns ran out of time.
+ */
+let noteGuard: typeof import("../document/projection.ts").showsSelection | null = null;
+/** Load the note guard; `addNote` with `seen` needs it. Cheap once loaded. */
+export async function loadNoteGuard(): Promise<void> {
+  noteGuard ??= (await import("../document/projection.ts")).showsSelection;
+}
+
+/**
+ * The loaded guard. ⛔ Not loaded is a caller's mistake (`loadNoteGuard` first),
+ * and it is said, never taken as a pass: an unchecked note is the bug the guard
+ * is for.
+ */
+function guardLoaded(): NonNullable<typeof noteGuard> {
+  if (!noteGuard)
+    throw new Error(
+      "addNote: a note with `seen` needs the note guard: await loadNoteGuard() first",
+    );
+  return noteGuard;
+}
 
 export class WorkspaceSession {
   readonly dir: string;
@@ -2528,7 +2553,7 @@ export class WorkspaceSession {
       // the rendered view could not place), the range can cover far more than
       // was chosen, and a note stored there is wrong without anyone seeing it.
       // Refused, with the act that answers it.
-      if (opts.seen !== undefined && !showsSelection(text, from, to, opts.seen))
+      if (opts.seen !== undefined && !guardLoaded()(text, from, to, opts.seen))
         throw new SessionError(
           `The note on ${JSON.stringify(quoteLabel(opts.seen, 40))} was not added. ${NOT_PLACED}`,
           409,

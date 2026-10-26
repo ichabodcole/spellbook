@@ -2,10 +2,10 @@
 // edited under them. The anchor is the quote plus a little of what surrounded
 // it, never an offset, so the tests that matter are the ones where the document
 // has changed.
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeAll, beforeEach, describe, expect, test } from "bun:test";
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { WorkspaceSession } from "./session";
+import { loadNoteGuard, type WorkspaceSession } from "./session";
 import { inContext as inContextIn, refusal, seedDocs, tempRoot } from "./testing";
 
 let root: string;
@@ -370,6 +370,8 @@ describe("re-anchoring after an edit", () => {
 // selected into a note over the whole body. The page now sends what was
 // selected (`seen`), and the daemon refuses a range that does not hold it.
 describe("a note is never stored over text the human did not select", () => {
+  // The guard is loaded on first need, never at start (`loadNoteGuard`).
+  beforeAll(loadNoteGuard);
   const CR = "# Lone\r\rFirst line alpha\rsecond line beta.\r\rLast **bold** line.\r";
   let cr: string;
   beforeEach(() => {
