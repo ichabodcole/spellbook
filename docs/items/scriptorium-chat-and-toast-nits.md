@@ -7,7 +7,7 @@ description:
   hint, a bare tail that retries after an end, same-named documents, a double
   saved on ⌘S, phone width."
 status: stable
-lifecycle: active
+lifecycle: done
 id: 01a0eab2-ed0c-7292-8381-bc4a228e93da
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-09-28 }
@@ -151,6 +151,7 @@ Approved by Cole at triage, 2026-10-24.
 - [x] Each bullet re-checked against the kit Scriptorium, then marked fixed
       (with a commit), fixed in this cycle, or moved to its own item. None is
       left unchecked.
+- [x] Offered on kit-parity (message 58, 2026-10-26).
 
 ## Re-check, 2026-10-25
 
@@ -268,6 +269,14 @@ Deliberate choices:
 - **5:** a set-relative path also matches at the session (`unopenedNamed`), but
   the CLI makes any `--doc` with a `/` absolute (`docArg`), so from the CLI only
   a bare filename reaches that hint.
+
+Landed on `cycle/release-6` (`25e904c2`). The gate there had 5 failures in
+`hide.integration.test.ts` (5 s timeouts under parallel load); the file passes
+alone, 11 of 11. Left after round two, filed as
+`scriptorium-held-toast-goes-stale`: a held toast raised while another document
+is open stays up if the agent activates or deletes that version from the CLI.
+Also a behaviour change to know: Compare now picks its side each time it opens,
+so a side the human chose is not remembered across closing Compare.
 
 ## Port-back notes
 
