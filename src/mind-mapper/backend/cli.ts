@@ -136,7 +136,9 @@ import {
 import { TAIL_IDLE_MS, TAIL_RETRY_MAX_MS, TAIL_RETRY_MS } from "./heartbeat.ts";
 
 // ⛔ EVERY PATH BELOW IS COMPUTED FROM THE ARTIFACT'S ADDRESS, WHICH IS
-// `plugins/spellbook/skills/mind-mapper/dist/cli.js` — NOT FROM THIS SOURCE
+// `plugins/unreleased/skills/mind-mapper/dist/cli.js` (held out of the plugin
+// until the app is finished; `plugins/spellbook/skills/` once it ships — the
+// same depth, so nothing below changes) — NOT FROM THIS SOURCE
 // FILE. That is what makes the `import.meta.main` block's absence at the bottom
 // of this file a requirement rather than a tidy: run from
 // `src/mind-mapper/backend/` these resolve into `src/mind-mapper/`, which has no
@@ -1998,7 +2000,7 @@ async function main(argv: string[]): Promise<number> {
 
 /**
  * The CLI's one entry, called by the launcher at
- * `plugins/spellbook/skills/mind-mapper/scripts/cli.ts`.
+ * `plugins/unreleased/skills/mind-mapper/scripts/cli.ts`.
  *
  * ⛔ THERE IS NO `import.meta.main` BLOCK, AND THAT IS THE POINT.
  * `dist/cli.js` is IMPORTED by the launcher, never executed as the process

@@ -93,7 +93,9 @@ import {
 } from "./zones.ts";
 
 // ⛔ COMPUTED FROM THE ARTIFACT'S ADDRESS, WHICH IS
-// `plugins/spellbook/skills/mind-mapper/dist/server.js` — not from this source
+// `plugins/unreleased/skills/mind-mapper/dist/server.js` (held out of the
+// plugin until the app is finished; `plugins/spellbook/skills/` once it ships —
+// the same depth, so nothing below changes) — not from this source
 // file. `dist/` sits at the same depth under the skill root as the `scripts/` it
 // replaced, so the climb is unchanged by the port; that is a COINCIDENCE OF
 // DEPTH and `grimoire/spawn-path-ward.test.ts` is what asserts it rather than
@@ -1849,7 +1851,7 @@ async function main(argv: string[]): Promise<number> {
 
 /**
  * The daemon's one entry, called by the launcher at
- * `plugins/spellbook/skills/mind-mapper/scripts/server.ts`.
+ * `plugins/unreleased/skills/mind-mapper/scripts/server.ts`.
  *
  * ⛔ THERE IS NO `import.meta.main` BLOCK, AND THAT IS THE POINT.
  * `dist/server.js` is IMPORTED by the launcher, never executed as the process
