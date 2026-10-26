@@ -712,10 +712,20 @@ export function createDaemonClient(options: DaemonOptions = {}): DaemonClient {
           }
         // What was loaded belongs to the session it came from: a different one
         // (the daemon restarted into a new session) must not show the old texts.
+        // A link that did not open is said until the human dismisses it
+        // (Escape, or its close button) or another document opens: the open
+        // is the next thing they did, so the refusal is spent. No timer.
+        const spent =
+          view.lastError !== null &&
+          view.lastErrorTitle === LINK_REFUSED &&
+          next.openDoc !== null &&
+          next.openDoc !== (view.state?.openDoc ?? null)
+            ? { lastError: null, lastErrorTitle: null }
+            : {};
         if (view.state && view.state.sessionId !== next.sessionId) {
           seenRev.clear();
-          set({ state: next, texts: new Map(), diff: null });
-        } else set({ state: next });
+          set({ state: next, texts: new Map(), diff: null, ...spent });
+        } else set({ state: next, ...spent });
         break;
       }
       case "closed":

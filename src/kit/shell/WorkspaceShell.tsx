@@ -79,7 +79,12 @@ import { badgeFor, WaitingDot } from "../chat/WaitingBadge.tsx";
 import type { AskLocation } from "../context/AskLocation.tsx";
 import { ContextSidebar } from "../context/ContextSidebar.tsx";
 import { CentreDockContext } from "../context/centreDock.tsx";
-import { type Daemon, fileAlreadyAt, SESSION_ENDED } from "../context/daemonClient.ts";
+import {
+  type Daemon,
+  fileAlreadyAt,
+  LINK_REFUSED,
+  SESSION_ENDED,
+} from "../context/daemonClient.ts";
 import { HistoryArrows } from "../context/HistoryArrows.tsx";
 import type { MenuActions } from "../context/menuActions.ts";
 import {
@@ -1141,6 +1146,18 @@ function ShellBody({
     } else toasts.announce(lastErrorTitle ?? "The workspace refused that", lastError);
     clearError();
   }, [lastError, lastErrorSeq, lastErrorTitle, clearError, toasts, noticeOwned, letOwnedToastGo]);
+  // A link that did not open closes on Escape (or when another document
+  // opens: `daemonClient`), never on a timer. Escape a dialog or menu took
+  // first (`defaultPrevented`) is theirs.
+  const linkRefused = lastError !== null && lastErrorTitle === LINK_REFUSED;
+  useEffect(() => {
+    if (!linkRefused) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !e.defaultPrevented) clearError();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [linkRefused, clearError]);
   // The stand-in goes once the notice is in sight (the column reopened) or the
   // refusal is let go: a refusal is never shown twice at once.
   useEffect(() => {

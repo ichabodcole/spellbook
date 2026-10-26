@@ -367,6 +367,33 @@ describe("the refusal rule's edges", () => {
     await m.unmount();
   });
 
+  test("a link refusal has no timer: it closes on Escape, or when another document opens", async () => {
+    daemon.session.addContext(join(docs, "set"));
+    const m = await mount(<Host ownNotice />);
+    await shellUp();
+    // Escape lets it go.
+    await refuseLink();
+    await waitFor(() => !!alertIn(contextPane()), "the notice");
+    await settle(() => {
+      document.dispatchEvent(
+        new window.KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }),
+      );
+    });
+    await waitFor(() => seen?.lastError === null, "Escape to clear it");
+    await waitFor(() => !alertIn(contextPane()), "the notice to go");
+    // Opening another document lets it go too.
+    await refuseLink();
+    await waitFor(() => !!alertIn(contextPane()), "the notice again");
+    await openDoc(join(docs, "set", "a.md"));
+    await waitFor(() => seen?.lastError === null, "the open to clear it");
+    // An ordinary refusal is not a link's: an open does not take it away.
+    await refuse();
+    await waitFor(() => !!seen?.lastError, "the daemon's own refusal");
+    await openDoc(join(docs, "set", "part", "b.md"));
+    expect(seen?.lastError).toBeTruthy();
+    await m.unmount();
+  });
+
   /** With the column seeded collapsed: an owned refusal raised and toasted, and its text. */
   async function toastedWhileCollapsed(): Promise<string> {
     await waitFor(() => !!q('[data-column-control="context-reopen"]'), "the collapsed column");
