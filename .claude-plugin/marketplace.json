@@ -5,7 +5,7 @@
     "email": "alienlobsterbuffet.dev@gmail.com"
   },
   "metadata": {
-    "description": "The Spellbook \u2014 agent-conjured apps. Lightweight, standalone, purpose-built surfaces with an agent as the runtime underneath.",
+    "description": "The Spellbook: agent-conjured apps. Small, purpose-built browser apps that an AI agent runs for you, served on your own machine by Bun.",
     "version": "1.0.0"
   },
   "plugins": [
