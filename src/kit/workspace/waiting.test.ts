@@ -119,13 +119,15 @@ describe("noteEventFacts: what `note.added` tells the agent", () => {
   const n = { id: "n1", quote: "the old mill", body: "is this still standing?" };
   const lines = { from: 3, to: 3 };
 
-  test("a short note travels whole (quote, body and lines) and names resolving as the close", () => {
+  test("a short note travels whole (quote, body and lines), names the reply first and resolving as the close", () => {
     const got = noteEventFacts("maren", n, lines, "s1");
     expect(got).toEqual({
       lines: { from: 3, to: 3 },
       quote: "the old mill",
       body: "is this still standing?",
-      hint: "act on it, then `note-resolve n1 --session s1 --doc maren` when it is dealt with",
+      // note-reply-cannot-overwrite: the event that first meets the note names
+      // the answer that keeps the human's words.
+      hint: 'answer it with `note-reply n1 --session s1 --doc maren "<answer>"` (the note keeps their words) or act on it, then `note-resolve n1 --session s1 --doc maren` when it is dealt with',
     });
   });
 
@@ -143,7 +145,7 @@ describe("noteEventFacts: what `note.added` tells the agent", () => {
     const got = noteEventFacts("maren", { id: "n1", quote, body }, lines, "s1");
     expect(got).toEqual({
       lines: { from: 3, to: 3 },
-      hint: "too long to carry; read it with `notes --session s1 --doc maren`, act on it, then `note-resolve n1 --session s1 --doc maren`",
+      hint: 'too long to carry; read it with `notes --session s1 --doc maren`, answer it with `note-reply n1 --session s1 --doc maren "<answer>"` (the note keeps their words) or act on it, then `note-resolve n1 --session s1 --doc maren`',
     });
   });
 
@@ -161,7 +163,7 @@ describe("noteEventFacts: what `note.added` tells the agent", () => {
       quote: "the old mill",
       body: "is this still standing?",
       passage: "gone",
-      hint: "its passage is no longer in the active version; see `notes --session s1 --doc maren`, then act on it and `note-resolve n1 --session s1 --doc maren` when it is dealt with",
+      hint: 'its passage is no longer in the active version; see `notes --session s1 --doc maren`, then answer it with `note-reply n1 --session s1 --doc maren "<answer>"` (the note keeps their words) or act on it, and `note-resolve n1 --session s1 --doc maren` when it is dealt with',
     });
   });
 
@@ -182,7 +184,7 @@ describe("noteEventFacts: what `note.added` tells the agent", () => {
     const long = { id: "n1", quote: "q".repeat(2000), body: "b" };
     expect(noteEventFacts("maren", long, null, "s1")).toEqual({
       passage: "gone",
-      hint: "too long to carry, and its passage is no longer in the active version; read it with `notes --session s1 --doc maren`, act on it, then `note-resolve n1 --session s1 --doc maren`",
+      hint: 'too long to carry, and its passage is no longer in the active version; read it with `notes --session s1 --doc maren`, answer it with `note-reply n1 --session s1 --doc maren "<answer>"` (the note keeps their words) or act on it, then `note-resolve n1 --session s1 --doc maren`',
     });
   });
 });

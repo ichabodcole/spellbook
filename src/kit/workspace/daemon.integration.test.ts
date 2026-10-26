@@ -493,6 +493,12 @@ describe("a session, end to end through the launchers", () => {
     expect(String(added.hint)).toContain(
       `note-resolve ${added.note} --session ${sessionId} --doc a`,
     );
+    // The answer that keeps the human's words is named where the agent first
+    // meets the note (note-reply-cannot-overwrite).
+    expect(String(added.hint)).toContain(
+      `note-reply ${added.note} --session ${sessionId} --doc a "<answer>"`,
+    );
+    expect(String(added.hint)).not.toContain("note-edit");
     const notes = json<{ notes: { id: string }[] }>(await cli("notes", "--doc", "a"));
     expect(notes.notes.map((n) => n.id)).toEqual([String(added.note)]);
     expect((await cli("note-resolve", String(added.note), "--doc", "a")).code).toBe(0);
@@ -537,6 +543,9 @@ describe("a session, end to end through the launchers", () => {
       (l) => l.type === "note.resolved" && l.note === second.note && l.resolved === false,
     );
     expect(reopened).toMatchObject({ body: "and this", lines: { from: 4, to: 4 } });
+    expect(String(reopened.hint)).toContain(
+      `note-reply ${second.note} --session ${sessionId} --doc a "<answer>"`,
+    );
     const again = await owed();
     expect(again.map((n) => n.noteId)).toEqual([String(second.note)]);
     expect(Date.parse(again[0]?.since ?? "")).toBeGreaterThanOrEqual(reopenedAfter);
@@ -557,6 +566,9 @@ describe("a session, end to end through the launchers", () => {
       (l) => l.type === "system" && l.fact === "note.edited" && l.by === "human",
     );
     expect(edited).toMatchObject({ note: note.id, body: "and this, rewritten", quote: "line" });
+    expect(String(edited.hint)).toContain(
+      `note-reply ${note.id} --session ${sessionId} --doc a "<answer>"`,
+    );
     const again = await owed();
     expect(again.map((n) => n.noteId)).toEqual([note.id]);
     expect(Date.parse(again[0]?.since ?? "")).toBeGreaterThanOrEqual(rewroteAfter);

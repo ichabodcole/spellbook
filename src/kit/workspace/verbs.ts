@@ -1447,7 +1447,7 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
         { name: "text", required: false, variadic: true },
       ],
       describe:
-        "rewrite one of your own notes; its passage stays (prose: --body-file or --stdin). A note the human wrote is refused: answer it with note-reply",
+        "rewrite one of your own notes; its passage stays (prose: --body-file or --stdin). A note the human wrote, or rewrote last, is refused: answer it with note-reply",
       run: async (pos, flags, session) => {
         const [id, ...text] = pos;
         printJson(

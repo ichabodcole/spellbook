@@ -128,6 +128,7 @@ import {
   Toasts,
   useToastStore,
 } from "../ui/index.ts";
+import { quoteLabel } from "../workspace/anchors.ts";
 import type {
   Backlinks as BacklinksData,
   DocView,
@@ -1417,6 +1418,26 @@ function ShellBody({
   // The agent's answers to notes are its messages about them: read off the
   // conversation, shown under each note.
   const noteReplies = useMemo(() => repliesByNote(state.chat), [state.chat]);
+  // A message about a note names the note on its chip: its document and a short
+  // quote, so replies to three notes read apart.
+  const noteName = (noteId: string): string | undefined => {
+    for (const d of state.docs) {
+      const n = d.notes.find((x) => x.id === noteId);
+      if (n) return `note on ${docName(d.slug)}: "${quoteLabel(n.quote, 40)}"`;
+    }
+    return undefined;
+  };
+  // A link in the conversation, or in a reply under a note: resolved by the
+  // daemon, as the document pane's links are. It was not written beside the
+  // open document, so `from: "chat"` lets its `./` and `../` fall back to the
+  // context's root.
+  const followChatLink = (target: string) =>
+    send({
+      op: "link.open",
+      target,
+      from: "chat",
+      ...(openDoc ? { doc: openDoc.slug } : {}),
+    });
   const noteBadges = badgesOn(notesWaiting, openDoc?.slug ?? null);
   const notesElsewhere = elsewhere(notesWaiting, openDoc?.slug ?? null).map((o) => ({
     ...o,
@@ -1521,17 +1542,8 @@ function ShellBody({
       composer={collapsed.chat ? null : <ChatComposer {...composerProps} />}
       docName={docName}
       pathName={pathName}
-      onFollowLink={(target) =>
-        // Resolved by the daemon, as the document pane's links are. A chat link
-        // was not written beside the open document, so `from: "chat"` lets its
-        // `./` and `../` fall back to the context's root.
-        send({
-          op: "link.open",
-          target,
-          from: "chat",
-          ...(openDoc ? { doc: openDoc.slug } : {}),
-        })
-      }
+      noteName={noteName}
+      onFollowLink={followChatLink}
       {...(messageActions ? { messageActions } : {})}
     />
   );
@@ -1544,6 +1556,7 @@ function ShellBody({
       sessionEnded={ended}
       asked={notesAsked}
       replies={noteReplies}
+      onFollowLink={followChatLink}
       {...(askNote ? { onAsk: (n) => openDoc && askNote(openDoc.slug, n.id) } : {})}
       onOpenDoc={(doc) => send({ op: "open.doc", doc })}
       focusedId={focusedNote}

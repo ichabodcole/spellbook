@@ -72247,7 +72247,7 @@ function appPartLabels(about, label) {
   }
   return out;
 }
-function aboutLabel(about, docName, pathName = pathLabel, partLabel) {
+function aboutLabel(about, docName, pathName = pathLabel, partLabel, noteName) {
   if (!isPlainObject(about))
     return null;
   const parts = [];
@@ -72258,8 +72258,8 @@ function aboutLabel(about, docName, pathName = pathLabel, partLabel) {
   const lines = linesLabel(about);
   if (lines)
     parts.push(lines);
-  if (about.noteId)
-    parts.push("a note");
+  if (typeof about.noteId === "string" && about.noteId)
+    parts.push(noteName?.(about.noteId) ?? "a note");
   const docs = Array.isArray(about.docs) ? about.docs.filter((p) => typeof p === "string") : [];
   if (docs.length)
     parts.push(pointedLabel(docs.map((p) => pathName(p))));
@@ -72279,11 +72279,12 @@ function ChatMessageView({
   docName = (slug) => slug,
   pathName = pathLabel,
   aboutPart,
+  noteName,
   onFollowLink,
   actions
 }) {
   const plain2 = m.from === "system" || m.type === "info";
-  const chip = m.about ? aboutLabel(m.about, docName, pathName, aboutPart) : null;
+  const chip = m.about ? aboutLabel(m.about, docName, pathName, aboutPart, noteName) : null;
   return /* @__PURE__ */ jsx_runtime33.jsxs("div", {
     "data-from": m.from,
     "data-type": m.type,
@@ -72591,6 +72592,7 @@ function ChatSidebar(props) {
     docName,
     pathName,
     aboutPart,
+    noteName,
     onFollowLink,
     messageActions
   } = props;
@@ -72624,6 +72626,7 @@ function ChatSidebar(props) {
           docName,
           pathName,
           aboutPart,
+          noteName,
           onFollowLink,
           actions: messageActions?.(m)
         }, m.id))
@@ -72901,6 +72904,68 @@ var UNCERTAIN = {
     title: "The text this note was made on is no longer in this version."
   }
 };
+var REPLY_CLAMP_CHARS = 280;
+var REPLY_CLAMP_LINES = 6;
+var replyIsLong = (text4) => text4.length > REPLY_CLAMP_CHARS || text4.split(`
+`).length > REPLY_CLAMP_LINES;
+function NoteReplies({
+  replies,
+  onFollowLink
+}) {
+  if (replies.length === 0)
+    return null;
+  return /* @__PURE__ */ jsx_runtime37.jsx("ul", {
+    "data-slot": "note-replies",
+    "aria-label": "Replies",
+    className: "mt-1.5 flex flex-col gap-1",
+    children: replies.map((r2) => /* @__PURE__ */ jsx_runtime37.jsx(NoteReplyItem, {
+      reply: r2,
+      onFollowLink
+    }, r2.id))
+  });
+}
+function NoteReplyItem({
+  reply,
+  onFollowLink
+}) {
+  const long = replyIsLong(reply.text);
+  const [open, setOpen] = import_react33.useState(false);
+  const clamped = long && !open;
+  return /* @__PURE__ */ jsx_runtime37.jsxs("li", {
+    "data-slot": "note-reply",
+    className: "rounded-sm bg-surface-raised px-1.5 py-1 text-ink",
+    children: [
+      /* @__PURE__ */ jsx_runtime37.jsxs("span", {
+        "data-slot": "note-reply-by",
+        className: "flex items-center gap-1 text-[10px] font-medium text-ink-faint",
+        children: [
+          /* @__PURE__ */ jsx_runtime37.jsx(CornerDownRight, {
+            "aria-hidden": true,
+            className: "size-3"
+          }),
+          "Agent replied"
+        ]
+      }),
+      /* @__PURE__ */ jsx_runtime37.jsx("div", {
+        "data-clamped": clamped || undefined,
+        className: cn(clamped && "max-h-24 overflow-hidden [mask-image:linear-gradient(to_bottom,black_60%,transparent)]"),
+        children: /* @__PURE__ */ jsx_runtime37.jsx(ChatMarkdown, {
+          id: `${reply.id}-note`,
+          text: reply.text,
+          onFollowLink
+        })
+      }),
+      long && /* @__PURE__ */ jsx_runtime37.jsx("button", {
+        type: "button",
+        "data-action": "note-reply-more",
+        "aria-expanded": open,
+        onClick: () => setOpen((v) => !v),
+        className: "mt-0.5 rounded-sm text-[11px] text-ink-dim underline-offset-2 hover:text-ink hover:underline",
+        children: open ? "less" : "more"
+      })
+    ]
+  });
+}
 function Note({
   note,
   focused,
@@ -72909,6 +72974,7 @@ function Note({
   sessionEnded,
   asked,
   replies,
+  onFollowLink,
   onAsk,
   onGoTo,
   onEdit,
@@ -73001,47 +73067,6 @@ function Note({
                 className: "h-5 px-1.5 text-[11px]",
                 children: "Save"
               })
-            ]
-          })
-        ]
-      }),
-      replies.length > 0 && /* @__PURE__ */ jsx_runtime37.jsx("ul", {
-        "data-slot": "note-replies",
-        className: "mt-1 flex flex-col gap-1 border-edge border-l-2 pl-2",
-        children: replies.map((r2) => /* @__PURE__ */ jsx_runtime37.jsxs("li", {
-          "data-slot": "note-reply",
-          className: "text-ink-dim",
-          children: [
-            /* @__PURE__ */ jsx_runtime37.jsx("span", {
-              className: "text-[10px] text-ink-faint",
-              children: "Agent replied"
-            }),
-            /* @__PURE__ */ jsx_runtime37.jsx("p", {
-              className: "whitespace-pre-wrap",
-              children: r2.text
-            })
-          ]
-        }, r2.id))
-      }),
-      waiting && /* @__PURE__ */ jsx_runtime37.jsxs("div", {
-        className: "flex flex-wrap items-center gap-x-2",
-        children: [
-          /* @__PURE__ */ jsx_runtime37.jsx(WaitingBadge, {
-            of: asked ? "asked" : "note",
-            badge: shownBadge ?? "working"
-          }),
-          onAsk && !asked && shownBadge === "stalled" && /* @__PURE__ */ jsx_runtime37.jsxs("button", {
-            type: "button",
-            "data-action": "note-ask",
-            onClick: () => onAsk(note),
-            title: "Send this note to the agent as a message in the conversation",
-            className: "mt-1 flex items-center gap-1 rounded-sm text-[11px] text-ink-dim underline-offset-2 hover:text-ink hover:underline",
-            children: [
-              /* @__PURE__ */ jsx_runtime37.jsx(MessageCircleQuestionMark, {
-                "aria-hidden": true,
-                className: "size-3"
-              }),
-              "Ask the agent"
             ]
           })
         ]
@@ -73143,6 +73168,33 @@ function Note({
             ]
           })
         ]
+      }),
+      waiting && /* @__PURE__ */ jsx_runtime37.jsxs("div", {
+        className: "flex flex-wrap items-center gap-x-2",
+        children: [
+          /* @__PURE__ */ jsx_runtime37.jsx(WaitingBadge, {
+            of: asked ? "asked" : "note",
+            badge: shownBadge ?? "working"
+          }),
+          onAsk && !asked && shownBadge === "stalled" && /* @__PURE__ */ jsx_runtime37.jsxs("button", {
+            type: "button",
+            "data-action": "note-ask",
+            onClick: () => onAsk(note),
+            title: "Send this note to the agent as a message in the conversation",
+            className: "mt-1 flex items-center gap-1 rounded-sm text-[11px] text-ink-dim underline-offset-2 hover:text-ink hover:underline",
+            children: [
+              /* @__PURE__ */ jsx_runtime37.jsx(MessageCircleQuestionMark, {
+                "aria-hidden": true,
+                className: "size-3"
+              }),
+              "Ask the agent"
+            ]
+          })
+        ]
+      }),
+      /* @__PURE__ */ jsx_runtime37.jsx(NoteReplies, {
+        replies,
+        onFollowLink
       })
     ]
   });
@@ -73155,6 +73207,7 @@ function NotesPanel({
   sessionEnded = false,
   asked = NONE_ASKED,
   replies = NONE_REPLIED,
+  onFollowLink,
   onAsk,
   onOpenDoc,
   focusedId,
@@ -73237,6 +73290,7 @@ function NotesPanel({
               sessionEnded,
               asked: asked.has(n.id),
               replies: replies.get(n.id) ?? NO_REPLIES,
+              onFollowLink,
               onAsk,
               onGoTo,
               onEdit,
@@ -77767,6 +77821,12 @@ var THEME_PREPAINT = `(() => {
   document.documentElement.dataset.theme = t;
 })();`;
 
+// src/kit/workspace/anchors.ts
+function quoteLabel(quote, max2 = 60) {
+  const flat = quote.replace(/\s+/gu, " ").trim();
+  return flat.length <= max2 ? flat : `${flat.slice(0, max2 - 1).trimEnd()}…`;
+}
+
 // src/kit/shell/columns.ts
 var SIDES = COLUMN_SIDES;
 var DEFAULT_SIZE = { context: 22, chat: 28 };
@@ -80954,6 +81014,20 @@ function ShellBody({
       setAskPressed((p) => new Map(p).set(noteId, state.chat.length));
   } : undefined;
   const noteReplies = import_react52.useMemo(() => repliesByNote(state.chat), [state.chat]);
+  const noteName = (noteId) => {
+    for (const d of state.docs) {
+      const n = d.notes.find((x) => x.id === noteId);
+      if (n)
+        return `note on ${docName(d.slug)}: "${quoteLabel(n.quote, 40)}"`;
+    }
+    return;
+  };
+  const followChatLink = (target) => send({
+    op: "link.open",
+    target,
+    from: "chat",
+    ...openDoc ? { doc: openDoc.slug } : {}
+  });
   const noteBadges = badgesOn(notesWaiting, openDoc?.slug ?? null);
   const notesElsewhere = elsewhere(notesWaiting, openDoc?.slug ?? null).map((o) => ({
     ...o,
@@ -81037,12 +81111,8 @@ function ShellBody({
     }),
     docName,
     pathName,
-    onFollowLink: (target) => send({
-      op: "link.open",
-      target,
-      from: "chat",
-      ...openDoc ? { doc: openDoc.slug } : {}
-    }),
+    noteName,
+    onFollowLink: followChatLink,
     ...messageActions ? { messageActions } : {}
   });
   const notesPanel_ = /* @__PURE__ */ jsx_runtime52.jsx(NotesPanel, {
@@ -81053,6 +81123,7 @@ function ShellBody({
     sessionEnded: ended,
     asked: notesAsked,
     replies: noteReplies,
+    onFollowLink: followChatLink,
     ...askNote ? { onAsk: (n) => openDoc && askNote(openDoc.slug, n.id) } : {},
     onOpenDoc: (doc2) => send({ op: "open.doc", doc: doc2 }),
     focusedId: focusedNote,

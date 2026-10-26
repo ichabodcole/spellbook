@@ -12,6 +12,7 @@
 // list, marked, still readable, still deletable.
 import {
   CheckIcon,
+  CornerDownRightIcon,
   MessageCircleQuestionIcon,
   MessageSquarePlusIcon,
   PencilIcon,
@@ -23,6 +24,7 @@ import { cn } from "../lib/cn.ts";
 import { oneLine } from "../lib/oneLine.ts";
 import { Button } from "../ui/button.tsx";
 import type { Message, NoteWaiting, PlacedNote, Waiting } from "../workspace/protocol";
+import { ChatMarkdown } from "./ChatMessageView.tsx";
 import { badgeFor, WaitingBadge, WaitingDot } from "./WaitingBadge.tsx";
 
 const NONE_WAITING: ReadonlyMap<string, NoteWaiting> = new Map();
@@ -66,6 +68,81 @@ const UNCERTAIN: Partial<Record<PlacedNote["how"], { label: string; title: strin
   },
 };
 
+/** A reply longer than this, or than six lines, is clamped until asked for. */
+const REPLY_CLAMP_CHARS = 280;
+const REPLY_CLAMP_LINES = 6;
+
+/** Whether a reply is long enough to clamp. */
+export const replyIsLong = (text: string): boolean =>
+  text.length > REPLY_CLAMP_CHARS || text.split("\n").length > REPLY_CLAMP_LINES;
+
+/**
+ * The agent's replies under a note: each said to be the agent's, rendered as
+ * the conversation renders it (the same markdown sink), a long one clamped
+ * behind "more".
+ */
+function NoteReplies({
+  replies,
+  onFollowLink,
+}: {
+  replies: readonly NoteReply[];
+  onFollowLink: ((target: string) => void) | undefined;
+}) {
+  if (replies.length === 0) return null;
+  return (
+    <ul data-slot="note-replies" aria-label="Replies" className="mt-1.5 flex flex-col gap-1">
+      {replies.map((r) => (
+        <NoteReplyItem key={r.id} reply={r} onFollowLink={onFollowLink} />
+      ))}
+    </ul>
+  );
+}
+
+function NoteReplyItem({
+  reply,
+  onFollowLink,
+}: {
+  reply: NoteReply;
+  onFollowLink: ((target: string) => void) | undefined;
+}) {
+  const long = replyIsLong(reply.text);
+  const [open, setOpen] = useState(false);
+  const clamped = long && !open;
+  return (
+    <li data-slot="note-reply" className="rounded-sm bg-surface-raised px-1.5 py-1 text-ink">
+      <span
+        data-slot="note-reply-by"
+        className="flex items-center gap-1 text-[10px] font-medium text-ink-faint"
+      >
+        <CornerDownRightIcon aria-hidden className="size-3" />
+        Agent replied
+      </span>
+      <div
+        data-clamped={clamped || undefined}
+        className={cn(
+          clamped &&
+            "max-h-24 overflow-hidden [mask-image:linear-gradient(to_bottom,black_60%,transparent)]",
+        )}
+      >
+        {/* Its own id prefix: the same message renders in the conversation too,
+            and a footnote id must not be minted twice on one page. */}
+        <ChatMarkdown id={`${reply.id}-note`} text={reply.text} onFollowLink={onFollowLink} />
+      </div>
+      {long && (
+        <button
+          type="button"
+          data-action="note-reply-more"
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+          className="mt-0.5 rounded-sm text-[11px] text-ink-dim underline-offset-2 hover:text-ink hover:underline"
+        >
+          {open ? "less" : "more"}
+        </button>
+      )}
+    </li>
+  );
+}
+
 function Note({
   note,
   focused,
@@ -74,6 +151,7 @@ function Note({
   sessionEnded,
   asked,
   replies,
+  onFollowLink,
   onAsk,
   onGoTo,
   onEdit,
@@ -91,6 +169,8 @@ function Note({
   asked: boolean;
   /** The agent's answers to this note, oldest first (`repliesByNote`). */
   replies: readonly NoteReply[];
+  /** A link in a reply: the host resolves it, as the conversation's. */
+  onFollowLink: ((target: string) => void) | undefined;
   onAsk: ((n: PlacedNote) => void) | undefined;
   onGoTo: (n: PlacedNote) => void;
   onEdit: (id: string, body: string) => void;
@@ -201,46 +281,6 @@ function Note({
           </div>
         </form>
       )}
-      {/* THE AGENT'S ANSWERS SIT BESIDE THE NOTE, never in it: the note keeps
-          the words it was written in, and each reply is the agent's message
-          about it, shown here as well as in the conversation. */}
-      {replies.length > 0 && (
-        <ul
-          data-slot="note-replies"
-          className="mt-1 flex flex-col gap-1 border-edge border-l-2 pl-2"
-        >
-          {replies.map((r) => (
-            <li key={r.id} data-slot="note-reply" className="text-ink-dim">
-              <span className="text-[10px] text-ink-faint">Agent replied</span>
-              <p className="whitespace-pre-wrap">{r.text}</p>
-            </li>
-          ))}
-        </ul>
-      )}
-      {/* The message wait's badge, on the note it is about: a pulse while the
-          note is with the agent, a static "may be stuck" once it has waited as
-          long as a message would. Resolving (the check below) is the human's
-          own way out. */}
-      {waiting && (
-        <div className="flex flex-wrap items-center gap-x-2">
-          <WaitingBadge of={asked ? "asked" : "note"} badge={shownBadge ?? "working"} />
-          {/* "May be stuck" carries its act: ask the agent in the conversation,
-              where the answer lands. Once asked, not offered again: the note
-              then waits on that message and says so. */}
-          {onAsk && !asked && shownBadge === "stalled" && (
-            <button
-              type="button"
-              data-action="note-ask"
-              onClick={() => onAsk(note)}
-              title="Send this note to the agent as a message in the conversation"
-              className="mt-1 flex items-center gap-1 rounded-sm text-[11px] text-ink-dim underline-offset-2 hover:text-ink hover:underline"
-            >
-              <MessageCircleQuestionIcon aria-hidden className="size-3" />
-              Ask the agent
-            </button>
-          )}
-        </div>
-      )}
       {/* What the agent's rewrite replaced, on asking: the human's words are
           never lost to it, and putting them back is one act (the human's own
           rewrite, so it asks the agent again). */}
@@ -323,6 +363,35 @@ function Note({
           </button>
         </span>
       </div>
+      {/* The message wait's badge, on the note it is about: a pulse while the
+          note is with the agent, a static "may be stuck" once it has waited as
+          long as a message would. Resolving (the check below) is the human's
+          own way out. */}
+      {waiting && (
+        <div className="flex flex-wrap items-center gap-x-2">
+          <WaitingBadge of={asked ? "asked" : "note"} badge={shownBadge ?? "working"} />
+          {/* "May be stuck" carries its act: ask the agent in the conversation,
+              where the answer lands. Once asked, not offered again: the note
+              then waits on that message and says so. */}
+          {onAsk && !asked && shownBadge === "stalled" && (
+            <button
+              type="button"
+              data-action="note-ask"
+              onClick={() => onAsk(note)}
+              title="Send this note to the agent as a message in the conversation"
+              className="mt-1 flex items-center gap-1 rounded-sm text-[11px] text-ink-dim underline-offset-2 hover:text-ink hover:underline"
+            >
+              <MessageCircleQuestionIcon aria-hidden className="size-3" />
+              Ask the agent
+            </button>
+          )}
+        </div>
+      )}
+      {/* THE AGENT'S ANSWERS SIT BESIDE THE NOTE, never in it, and below the
+          note's own footer, so "You" never reads as the replies' author: the
+          note keeps the words it was written in, and each reply is the agent's
+          message about it, shown here as well as in the conversation. */}
+      <NoteReplies replies={replies} onFollowLink={onFollowLink} />
     </div>
   );
 }
@@ -335,6 +404,7 @@ export function NotesPanel({
   sessionEnded = false,
   asked = NONE_ASKED,
   replies = NONE_REPLIED,
+  onFollowLink,
   onAsk,
   onOpenDoc,
   focusedId,
@@ -379,6 +449,8 @@ export function NotesPanel({
   asked?: ReadonlySet<string>;
   /** The agent's answers, by note id (`repliesByNote`): each shown under its note. */
   replies?: ReadonlyMap<string, readonly NoteReply[]>;
+  /** A link in a reply was clicked: resolved as the conversation's links are. */
+  onFollowLink?: (target: string) => void;
   /**
    * "Ask the agent", on a note that may be stuck: the host sends the ask
    * (`via: "ask"`, `about.noteId`). Absent, not offered, and resolving the note
@@ -485,6 +557,7 @@ export function NotesPanel({
                 sessionEnded={sessionEnded}
                 asked={asked.has(n.id)}
                 replies={replies.get(n.id) ?? NO_REPLIES}
+                onFollowLink={onFollowLink}
                 onAsk={onAsk}
                 onGoTo={onGoTo}
                 onEdit={onEdit}

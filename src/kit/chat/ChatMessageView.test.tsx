@@ -139,6 +139,13 @@ describe("what a message was about", () => {
     expect(linesLabel({})).toBeNull();
     expect(aboutLabel({ doc: "a", version: 2 }, name)).toBe("a · v2");
     expect(aboutLabel({ doc: "a", noteId: "n1" }, name)).toBe("a · a note");
+    // A host that knows its notes names the one a message is about; one it does
+    // not know reads as "a note" (note-reply-cannot-overwrite).
+    const noteName = (id: string) => (id === "n1" ? 'note on plan: "the old mill"' : undefined);
+    expect(aboutLabel({ noteId: "n1" }, name, undefined, undefined, noteName)).toBe(
+      'note on plan: "the old mill"',
+    );
+    expect(aboutLabel({ noteId: "n2" }, name, undefined, undefined, noteName)).toBe("a note");
     expect(aboutLabel({}, name)).toBeNull();
   });
   test("an old message's pointed documents read as they did, though no new one carries them", () => {

@@ -281,6 +281,10 @@ export function noteEventFacts(
 } {
   const close = `note-resolve ${note.id} --session ${session} --doc ${slug}`;
   const read = `notes --session ${session} --doc ${slug}`;
+  // The answer that leaves the human's words alone (note-reply-cannot-overwrite):
+  // named first, where the agent first meets the note, so it never reaches for
+  // a rewrite to answer it.
+  const reply = `\`note-reply ${note.id} --session ${session} --doc ${slug} "<answer>"\` (the note keeps their words)`;
   // A note whose passage is no longer in the active version has no lines, and
   // must say so: otherwise "act on it" sends the agent looking for text that is
   // not there.
@@ -293,12 +297,12 @@ export function noteEventFacts(
       quote: note.quote,
       body: note.body,
       hint: lines
-        ? `act on it, then \`${close}\` when it is dealt with`
-        : `its passage is no longer in the active version; see \`${read}\`, then act on it and \`${close}\` when it is dealt with`,
+        ? `answer it with ${reply} or act on it, then \`${close}\` when it is dealt with`
+        : `its passage is no longer in the active version; see \`${read}\`, then answer it with ${reply} or act on it, and \`${close}\` when it is dealt with`,
     };
   return {
     ...place,
-    hint: `too long to carry${lines ? "" : ", and its passage is no longer in the active version"}; read it with \`${read}\`, act on it, then \`${close}\``,
+    hint: `too long to carry${lines ? "" : ", and its passage is no longer in the active version"}; read it with \`${read}\`, answer it with ${reply} or act on it, then \`${close}\``,
   };
 }
 

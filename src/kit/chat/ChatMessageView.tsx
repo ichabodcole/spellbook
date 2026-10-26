@@ -91,6 +91,11 @@ export function aboutLabel(
   docName: (slug: string) => string,
   pathName: (path: string) => string = pathLabel,
   partLabel?: AboutPartLabel,
+  /**
+   * A note's name, from its id (`note on plan: "the old mill"`), so replies to
+   * three notes read apart. Absent, or no answer for this id: "a note".
+   */
+  noteName?: (noteId: string) => string | undefined,
 ): string | null {
   if (!isPlainObject(about)) return null;
   const parts: string[] = [];
@@ -98,7 +103,8 @@ export function aboutLabel(
   if (about.doc && about.version !== undefined) parts.push(`v${about.version}`);
   const lines = linesLabel(about);
   if (lines) parts.push(lines);
-  if (about.noteId) parts.push("a note");
+  if (typeof about.noteId === "string" && about.noteId)
+    parts.push(noteName?.(about.noteId) ?? "a note");
   // An old message's pointed documents (no longer written), as it always read.
   const docs = Array.isArray(about.docs)
     ? about.docs.filter((p): p is string => typeof p === "string")
@@ -125,6 +131,7 @@ export function ChatMessageView({
   docName = (slug) => slug,
   pathName = pathLabel,
   aboutPart,
+  noteName,
   onFollowLink,
   actions,
 }: {
@@ -137,13 +144,15 @@ export function ChatMessageView({
   pathName?: (path: string) => string;
   /** The app's words for its own `about` parts. Default: none shown. */
   aboutPart?: AboutPartLabel;
+  /** A note's name, from its id, for the chip (`aboutLabel`). Default: "a note". */
+  noteName?: (noteId: string) => string | undefined;
   /** An internal link: the daemon resolves it. */
   onFollowLink?: (target: string) => void;
   /** The app's own actions for this message (`ChatSidebar`'s `messageActions`), under it. */
   actions?: ReactNode;
 }) {
   const plain = m.from === "system" || m.type === "info";
-  const chip = m.about ? aboutLabel(m.about, docName, pathName, aboutPart) : null;
+  const chip = m.about ? aboutLabel(m.about, docName, pathName, aboutPart, noteName) : null;
   return (
     <div
       data-from={m.from}
@@ -207,8 +216,12 @@ export function ChatMessageView({
   );
 }
 
-/** A message body, rendered in the kit's prose style. */
-function ChatMarkdown({
+/**
+ * A message body, rendered in the kit's prose style. Also what the notes panel
+ * renders an agent's reply with, so the kit keeps this one HTML sink for
+ * conversation text.
+ */
+export function ChatMarkdown({
   id,
   text,
   onFollowLink,

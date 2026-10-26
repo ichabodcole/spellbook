@@ -2,7 +2,8 @@
 // the human leaves shows the message wait's pulse, then its static "may be
 // stuck", on the note, on the Notes tab, in the note menu and on the floating
 // composer. It clears on exactly three things: the note resolved, an agent
-// message after it, the agent rewriting it. Nothing else clears it.
+// message after it (a reply to the note is one), the agent rewriting its own
+// note. Nothing else clears it. The agent's replies show under the note.
 
 import "../lib/registerDom.ts";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from "bun:test";
@@ -527,6 +528,26 @@ describe("a rewrite shows on the note", () => {
     await m.unmount();
   });
 
+  test("what a rewrite replaced stays with the note's words, above any reply", async () => {
+    const { m, slug } = await openSolo();
+    const id = await agentNote(slug, "first words");
+    await post({ op: "note.edit", doc: slug, id, body: "second words" });
+    await post({ op: "note.reply", doc: slug, id, body: "and a reply" });
+    await waitFor(
+      () => !!noteRow("second words")?.querySelector('[data-slot="note-reply"]'),
+      "the reply",
+    );
+    const row = noteRow("second words") as HTMLElement;
+    await click(row.querySelector('[data-action="note-show-replaced"]'));
+    const replaced = row.querySelector('[data-slot="note-replaced"]') as Node;
+    const body = row.querySelector('[data-slot="note-body"]') as Node;
+    const list = row.querySelector('[data-slot="note-replies"]') as Node;
+    // DOCUMENT_POSITION_FOLLOWING (4): body, then what it replaced, then the replies.
+    expect(body.compareDocumentPosition(replaced) & 4).toBe(4);
+    expect(replaced.compareDocumentPosition(list) & 4).toBe(4);
+    await m.unmount();
+  });
+
   test("a note never rewritten says nothing; the human's own rewrite says edited", async () => {
     const { m, slug } = await openSolo();
     await humanNote(slug, "untouched");
@@ -544,6 +565,100 @@ describe("a rewrite shows on the note", () => {
       "edited",
     );
     expect(noteRow("touched")?.querySelector('[data-action="note-show-replaced"]')).toBeNull();
+    await m.unmount();
+  });
+});
+
+// note-reply-cannot-overwrite: what the replies under a note look like.
+describe("the agent's replies under a note", () => {
+  const replies = (body: string) =>
+    qa('[data-slot="note-reply"]').filter((r) => noteRow(body)?.contains(r) ?? false);
+
+  test("every reply shows, each live as it arrives, with no reload", async () => {
+    const { m, slug } = await openSolo();
+    const id = await humanNote(slug, "two answers");
+    // Answered first, so the replies below change nothing the waiting tick
+    // would broadcast: each must reach the page on its own.
+    await post({ op: "say", text: "Looking." });
+    await waitFor(() => markOn("two answers") === null, "answered");
+    await post({ op: "note.reply", doc: slug, id, body: "first answer" });
+    await waitFor(() => replies("two answers").length === 1, "the first reply, live");
+    await post({ op: "note.reply", doc: slug, id, body: "second answer" });
+    await waitFor(() => replies("two answers").length === 2, "the second reply, live");
+    expect(replies("two answers").map((r) => r.querySelector(".md-prose")?.textContent)).toEqual([
+      "first answer",
+      "second answer",
+    ]);
+    await m.unmount();
+  });
+
+  test("the note's own footer sits with the note, above the replies, and each reply says it is the agent's", async () => {
+    const { m, slug } = await openSolo();
+    const id = await humanNote(slug, "whose words");
+    await post({ op: "note.reply", doc: slug, id, body: "mine, the agent's" });
+    await waitFor(() => replies("whose words").length === 1, "the reply");
+    const row = noteRow("whose words") as HTMLElement;
+    const by = [...row.querySelectorAll("span")].find((x) => x.textContent === "You") ?? null;
+    const list = row.querySelector('[data-slot="note-replies"]');
+    expect(by).not.toBeNull();
+    // DOCUMENT_POSITION_FOLLOWING: the replies come after the note's "You".
+    expect((by as Node).compareDocumentPosition(list as Node) & 4).toBe(4);
+    expect(
+      replies("whose words")[0]?.querySelector('[data-slot="note-reply-by"]')?.textContent,
+    ).toBe("Agent replied");
+    await m.unmount();
+  });
+
+  test("a reply renders as the conversation does: markdown, safely", async () => {
+    const { m, slug } = await openSolo();
+    const id = await humanNote(slug, "render me");
+    await post({
+      op: "note.reply",
+      doc: slug,
+      id,
+      body: "**Agreed**: use `6.0.0`.\n\n- one\n- two\n\n<img src=x onerror=alert(1)>",
+    });
+    await waitFor(() => replies("render me").length === 1, "the reply");
+    const r = replies("render me")[0] as HTMLElement;
+    expect(r.querySelector("strong")?.textContent).toBe("Agreed");
+    expect(r.querySelector("code")?.textContent).toBe("6.0.0");
+    expect(r.querySelectorAll("li")).toHaveLength(2);
+    // Raw HTML is text, never an element.
+    expect(r.querySelector("img")).toBeNull();
+    expect(r.textContent).not.toContain("**");
+    await m.unmount();
+  });
+
+  test("a long reply is clamped behind more, and more opens it", async () => {
+    const { m, slug } = await openSolo();
+    const id = await humanNote(slug, "long one");
+    await post({ op: "note.reply", doc: slug, id, body: "word ".repeat(100).trim() });
+    await post({ op: "note.reply", doc: slug, id, body: "short" });
+    await waitFor(() => replies("long one").length === 2, "the replies");
+    const [long, short] = replies("long one") as [HTMLElement, HTMLElement];
+    expect(long.querySelector("[data-clamped]")).not.toBeNull();
+    const more = long.querySelector('[data-action="note-reply-more"]') as HTMLElement;
+    expect(more.textContent).toBe("more");
+    expect(short.querySelector("[data-clamped]")).toBeNull();
+    expect(short.querySelector('[data-action="note-reply-more"]')).toBeNull();
+    await click(more);
+    await waitFor(() => long.querySelector("[data-clamped]") === null, "opened");
+    expect(more.getAttribute("aria-expanded")).toBe("true");
+    expect(more.textContent).toBe("less");
+    await m.unmount();
+  });
+
+  test("the conversation's chip names the note a reply is about: its document and a short quote", async () => {
+    const { m, slug } = await openSolo();
+    const id = await humanNote(slug, "chip me");
+    await post({ op: "note.reply", doc: slug, id, body: "about that one" });
+    await click(tab(/Chat/));
+    await waitFor(
+      () => (chatPane().textContent ?? "").includes("about that one"),
+      "the reply in the conversation",
+    );
+    const chips = qa('[data-pane="chat"] [data-slot="about-chip"]').map((c) => c.textContent);
+    expect(chips).toContain('note on solo.md: "Solo"');
     await m.unmount();
   });
 });

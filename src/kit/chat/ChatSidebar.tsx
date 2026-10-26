@@ -32,6 +32,8 @@ type ChatSidebarBase = {
    * chip shows the kit's parts only.
    */
   aboutPart?: AboutPartLabel;
+  /** A note's name, from its id, for a message's chip: which note it is about. */
+  noteName?: (noteId: string) => string | undefined;
   onFollowLink?: (target: string) => void;
   /**
    * An app's own actions under a message (a button, a link), or nothing. The
@@ -77,6 +79,7 @@ export function ChatSidebar(props: ChatSidebarProps) {
     docName,
     pathName,
     aboutPart,
+    noteName,
     onFollowLink,
     messageActions,
   } = props;
@@ -122,6 +125,7 @@ export function ChatSidebar(props: ChatSidebarProps) {
               docName={docName}
               pathName={pathName}
               aboutPart={aboutPart}
+              noteName={noteName}
               onFollowLink={onFollowLink}
               actions={messageActions?.(m)}
             />
