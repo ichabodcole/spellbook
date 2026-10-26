@@ -77,6 +77,9 @@ describe("the session: Save asks the disk, not the watcher", () => {
     const e = refusal(() => s.save(slug));
     expect(e).toBeInstanceOf(UnseenChangeError);
     expect((e as UnseenChangeError).event).toMatchObject({ kind: "original.reloaded" });
+    // No banner rises for a clean document, so the refusal must not send the human to one.
+    expect(e.message).toContain("its text was loaded");
+    expect(e.message).not.toContain("banner");
     expect(readFileSync(solo(), "utf8")).toBe("# Solo, changed elsewhere\n");
     expect(s.readVersion(slug, 1).text).toBe("# Solo, changed elsewhere\n");
     expect(s.doc(slug).dirty).toBe(false);
