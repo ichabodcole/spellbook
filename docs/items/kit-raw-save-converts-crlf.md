@@ -6,7 +6,7 @@ description:
   LF endings throughout, because CodeMirror's doc joins lines with \n; a
   rendered-only edit keeps CRLF.
 status: stable
-lifecycle: active
+lifecycle: done
 id: 01a16682-c980-74c1-9c75-f2092e214ed9
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-22 }
@@ -39,7 +39,7 @@ is a surprise in a git diff. It may also orphan notes whose quote holds `\r\n`.
       decided.
 - [x] Notes whose quote spans a line break still match after the save.
 - [x] Tested on CRLF, mixed and LF files, and checked in a real browser.
-- [ ] Offered on kit-parity.
+- [x] Offered on kit-parity (message 53, 2026-10-25).
 
 ## Decision: a mixed file keeps each line's own ending
 
