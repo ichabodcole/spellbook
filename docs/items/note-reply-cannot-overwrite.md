@@ -61,6 +61,25 @@ the note's text unchanged, in the conversation too, and still there after a
 reload. Story Studio has the same bug:
 `packages/kit/src/workspace/verbs.ts:1454` at `accf9b03`.
 
+Fix round, after the verifier's "with fixes":
+
+- The `note.added` hint now names `note-reply` first, and so do the human's
+  rewrite and reopen events, which share it (`noteEventFacts`).
+- Two new tests: two replies both show, and a reply arrives live when no wait
+  changes.
+- In the Notes panel:
+  - the note's own "what it replaced" box and its footer sit with the note,
+    above the replies;
+  - each reply says "Agent replied" and renders through the chat's markdown sink
+    (`ChatMarkdown`, now exported, still the kit's one conversation sink);
+  - a long reply is clamped behind "more".
+- The chat chip names the note a message is about: `note on <doc>: "<quote>"`.
+- `note-edit`'s help says it refuses a note the human wrote or rewrote last.
+
+All of it was checked in a real browser, with screenshots. Left for its own
+item, as the coordinator ruled: a reply to one note clears the wait on every
+note.
+
 ## Port-back notes
 
 - `session.editNote`: refuses `by: "agent"` when `note.by === "human"` or
@@ -76,3 +95,13 @@ reload. Story Studio has the same bug:
 - `NotesPanel`: `replies` prop, `repliesByNote` and `NoteReply` exported,
   `data-slot="note-body"`/`note-replies`/`note-reply`. `WorkspaceShell` passes
   `repliesByNote(state.chat)`.
+- `noteEventFacts` (`waiting.ts`): every hint names
+  `note-reply <id> --session <s> --doc <slug> "<answer>"` before `note-resolve`.
+- `NotesPanel` layout: body, then what a rewrite replaced, then the footer and
+  wait badge, then the replies. Each reply is rendered by `ChatMarkdown`
+  (exported from `ChatMessageView.tsx`), and one over 280 characters or six
+  lines is clamped (`replyIsLong`). The panel takes an `onFollowLink` prop.
+- `aboutLabel` takes an optional fifth `noteName(noteId)`; `ChatSidebar` and
+  `ChatMessageView` take a `noteName` prop. `WorkspaceShell` supplies
+  `note on <doc>: "<quoteLabel(quote, 40)>"` and shares one `followChatLink`
+  between the chat and the panel.
