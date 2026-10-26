@@ -46,6 +46,15 @@ measured 20 s timeout in `kit-note-guard-lazy`; the rest were not.
 - [ ] A timeout in a spawn-heavy test doesn't cascade into the tests after it.
 - [ ] Five full gates in a row at a load average near 15 pass with no timeout.
 
+## Seen since filing
+
+- 2026-10-26: `src/scriptorium/backend/kit/hide.integration.test.ts` timed out
+  in three gate runs in a row on `cycle/release-6` (the nits landing, the
+  shrink-dist implementer's run, and the shrink-dist landing). Also seen in the
+  implementer's run: `nohome`, `security` (kit) and bounty's
+  `tail-handoff.integration.test.ts`. Each passes alone. It is now the most
+  regular of the timeouts.
+
 ## Related Documents
 
 - [Run the test suite in parallel, as Story Studio does](./spellbook-parallel-tests.md)
