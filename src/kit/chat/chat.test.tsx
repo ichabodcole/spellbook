@@ -1091,6 +1091,8 @@ describe("NewVersionToasts", () => {
     expect(toast?.title).toBe("New version: v2");
     expect(toast?.description).toContain("the agent");
     expect(toast?.actions?.map((a) => a.label)).toEqual(["Activate", "Show diff"]);
+    // Each button's accessible name starts with what it shows (WCAG 2.5.3).
+    for (const a of toast?.actions ?? []) expect(a.ariaLabel?.startsWith(a.label)).toBe(true);
     toast?.actions?.[0]?.onAct();
     toast?.actions?.[1]?.onAct();
     expect(acts).toEqual(["activate note 2", "diff note 2"]);

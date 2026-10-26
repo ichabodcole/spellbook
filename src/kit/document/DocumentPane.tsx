@@ -34,10 +34,12 @@ import {
 } from "lucide-react";
 import {
   createElement,
+  Fragment,
   type ReactNode,
   type Ref,
   useCallback,
   useEffect,
+  useId,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -63,6 +65,8 @@ import { safeStorage } from "../lib/storage.ts";
 import {
   Button,
   contentStats,
+  DisabledReason,
+  disabledReasonProps,
   Empty,
   EmptyDescription,
   EmptyHeader,
@@ -433,6 +437,8 @@ export function DocumentPane({
   const w = useWorkspace();
   const { daemon, openDoc: doc } = w;
   const { send, writeText, flushText } = daemon;
+  /** The prefix of the view buttons' reason notes (`disabledReason.tsx`). */
+  const modeIds = useId();
   /** Where the view mode and line numbers are kept: the app's store, else the browser's. */
   const kept = w.storage ?? safeStorage;
 
@@ -1865,44 +1871,49 @@ export function DocumentPane({
                   const ended = m === "compare" && daemon.connection === "ended";
                   // One version that matches its file: nothing to compare.
                   const noCompare = m === "compare" && nothingToCompare(doc);
+                  const why = noRoom
+                    ? SPLIT_TOO_NARROW
+                    : ended
+                      ? "The session has ended, so there is nothing to compare"
+                      : noCompare
+                        ? NOTHING_TO_COMPARE
+                        : null;
+                  // Off, it stays in the tab order with its reason as its
+                  // description (`disabledReason.tsx`), not mouse-only.
+                  const whyId = `${modeIds}-${m}-why`;
                   return (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => {
-                        if (appActive) appView?.onActive(false);
-                        setMode(m);
-                      }}
-                      disabled={noRoom || ended || noCompare}
-                      aria-pressed={!appActive && showing === m}
-                      aria-label={label}
-                      title={
-                        noRoom
-                          ? SPLIT_TOO_NARROW
-                          : ended
-                            ? "The session has ended, so there is nothing to compare"
-                            : noCompare
-                              ? NOTHING_TO_COMPARE
-                              : label
-                      }
-                      className={cn(
-                        "flex size-6 items-center justify-center rounded-sm text-ink-faint outline-none",
-                        "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60",
-                        "disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-ink-faint",
-                        !appActive && showing === m && "bg-bg text-ink shadow-sm",
-                      )}
-                    >
-                      {ownView?.icon ? (
-                        <span
-                          aria-hidden
-                          className="flex size-3.5 items-center justify-center [&>svg]:size-3.5"
-                        >
-                          {ownView.icon}
-                        </span>
-                      ) : (
-                        <Icon aria-hidden className="size-3.5" />
-                      )}
-                    </button>
+                    <Fragment key={m}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (why) return;
+                          if (appActive) appView?.onActive(false);
+                          setMode(m);
+                        }}
+                        {...disabledReasonProps(why, whyId)}
+                        aria-pressed={!appActive && showing === m}
+                        aria-label={label}
+                        title={why ?? label}
+                        className={cn(
+                          "flex size-6 items-center justify-center rounded-sm text-ink-faint outline-none",
+                          "hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60",
+                          "aria-disabled:cursor-not-allowed aria-disabled:opacity-40 aria-disabled:hover:text-ink-faint",
+                          !appActive && showing === m && "bg-bg text-ink shadow-sm",
+                        )}
+                      >
+                        {ownView?.icon ? (
+                          <span
+                            aria-hidden
+                            className="flex size-3.5 items-center justify-center [&>svg]:size-3.5"
+                          >
+                            {ownView.icon}
+                          </span>
+                        ) : (
+                          <Icon aria-hidden className="size-3.5" />
+                        )}
+                      </button>
+                      <DisabledReason reason={why} id={whyId} />
+                    </Fragment>
                   );
                 })}
                 {appViewButton}

@@ -24,7 +24,7 @@ import { fixtureDaemon } from "../workspace/fixtures/app";
 import type { PublicState } from "../workspace/protocol";
 import type { WorkspaceDaemon } from "../workspace/server";
 import { seedDocs, tempRoot } from "../workspace/testing";
-import { WorkspaceShell } from "./WorkspaceShell.tsx";
+import { NOT_CONNECTED_REASON, WorkspaceShell } from "./WorkspaceShell.tsx";
 
 beforeAll(installDom);
 afterEach(cleanup);
@@ -313,6 +313,25 @@ describe("End session", () => {
     const confirm = dialogButton("End session") as HTMLButtonElement | null;
     expect(confirm?.disabled).toBe(true);
     expect(dialog()?.getAttribute("data-phase")).toBe("confirm");
+    await m.unmount();
+  });
+
+  test("with the daemon gone, End session in the top bar stays focusable and says why", async () => {
+    const m = await mount(<Host />);
+    await waitFor(() => client?.connection === "open", "connected");
+    expect(control()?.getAttribute("aria-disabled")).toBeNull();
+    await daemon.stop();
+    await waitFor(() => client?.connection === "closed", "the socket gone");
+    const end = control() as HTMLButtonElement;
+    await waitFor(() => end.getAttribute("aria-disabled") === "true", "End session off");
+    expect(end.disabled).toBe(false);
+    expect(document.getElementById(end.getAttribute("aria-describedby") ?? "")?.textContent).toBe(
+      NOT_CONNECTED_REASON,
+    );
+    expect(end.title).toBe(NOT_CONNECTED_REASON);
+    // Pressed anyway, it asks nothing.
+    await click(end);
+    expect(dialog()).toBeNull();
     await m.unmount();
   });
 

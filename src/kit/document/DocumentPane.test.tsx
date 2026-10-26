@@ -195,6 +195,16 @@ const cmd = async (body: Record<string, unknown>) => {
   return (await res.json()) as Record<string, unknown>;
 };
 const q = (sel: string) => document.querySelector(sel);
+/**
+ * A view button that cannot act: still in the tab order (not `disabled`), off
+ * by `aria-disabled`, with its reason as its description.
+ */
+const off = (b: HTMLButtonElement) => {
+  expect(b.disabled).toBe(false);
+  return b.getAttribute("aria-disabled") === "true";
+};
+const described = (b: Element) =>
+  document.getElementById(b.getAttribute("aria-describedby") ?? "")?.textContent ?? "";
 const button = (text: string) =>
   [...document.querySelectorAll("button")].find((b) => (b.textContent ?? "").includes(text)) ??
   null;
@@ -680,9 +690,16 @@ describe("split, raw and rendered side by side", () => {
     try {
       await openStory(undefined, undefined, { splitView: true });
       const split = q(SPLIT) as HTMLButtonElement;
-      expect(split.disabled).toBe(true);
+      expect(off(split)).toBe(true);
       expect(split.title).toContain("too narrow");
       expect(split.title).toContain("720 px");
+      // The reason reaches a keyboard and a screen reader too, not the tooltip alone.
+      expect(described(split)).toContain("720 px");
+      split.focus();
+      expect(document.activeElement).toBe(split);
+      // Pressed anyway, it does nothing.
+      await click(split);
+      expect(q('button[aria-label="Raw text"]')?.getAttribute("aria-pressed")).toBe("true");
       expect(q(".md-prose")).toBeNull();
       expect(q('button[aria-label="Raw text"]')?.getAttribute("aria-pressed")).toBe("true");
       // The choice is kept, so a wider pane brings split back.
@@ -1082,14 +1099,18 @@ describe("reader mode, rendered with both columns out of the way", () => {
     test("one version that matches its file disables Compare, with the reason", async () => {
       await openStory();
       expect(doc()?.versions.length).toBe(1);
-      expect(compareButton().disabled).toBe(true);
+      expect(off(compareButton())).toBe(true);
       expect(compareButton().title).toBe(NOTHING_TO_COMPARE);
+      expect(described(compareButton())).toBe(NOTHING_TO_COMPARE);
+      await click(compareButton());
+      expect(document.body.textContent).not.toContain("compared with");
+      expect(compareButton().getAttribute("aria-pressed")).toBe("false");
     });
 
     test("one version with unsaved edits can still be compared with the file", async () => {
       await openStory();
       await edit();
-      expect(compareButton().disabled).toBe(false);
+      expect(off(compareButton())).toBe(false);
       expect(compareButton().title).toBe("Compare with another version");
       await click(compareButton());
       await waitFor(
@@ -1110,15 +1131,15 @@ describe("reader mode, rendered with both columns out of the way", () => {
         () => daemon.session.doc("story").outsideChanged,
       );
       await waitFor(() => doc()?.outsideChanged === true, "the outside change");
-      expect(compareButton().disabled).toBe(false);
+      expect(off(compareButton())).toBe(false);
     });
 
     test("a second version enables Compare again", async () => {
       await openStory();
-      expect(compareButton().disabled).toBe(true);
+      expect(off(compareButton())).toBe(true);
       await cmd({ op: "version.new", doc: "story", label: "other" });
       await waitFor(() => doc()?.versions.length === 2, "v2 made");
-      expect(compareButton().disabled).toBe(false);
+      expect(off(compareButton())).toBe(false);
     });
 
     test("a saved compare mode shows the message, not an empty comparison", async () => {

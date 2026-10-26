@@ -7,6 +7,7 @@ export * from "./combobox.tsx";
 export * from "./context-menu.tsx";
 export * from "./Dot.tsx";
 export * from "./dialog.tsx";
+export * from "./disabledReason.tsx";
 export * from "./dropdown-menu.tsx";
 export * from "./empty.tsx";
 export * from "./input.tsx";

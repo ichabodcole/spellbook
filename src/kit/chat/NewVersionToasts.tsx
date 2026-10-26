@@ -127,7 +127,7 @@ export function NewVersionToasts({
       if (canDiff)
         actions.push({
           label: "Show diff",
-          ariaLabel: `Compare v${open.active} with ${name}, without activating it`,
+          ariaLabel: `Show diff: compare v${open.active} with ${name}, without activating it`,
           onAct: () => apply(newVersionActs("diff", target)),
         });
       const id = announce(title, description, actions);

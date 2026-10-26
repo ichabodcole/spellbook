@@ -125,9 +125,11 @@ describe("the pane after the session ends", () => {
     editor.current?.insertAtCaret("[PAUSE:MICRO]");
     expect(view()?.state.doc.toString()).toBe("First line.\n");
     // Comparing is asked of the daemon, which has gone.
+    const compare = q('button[aria-label="Compare with another version"]') as HTMLButtonElement;
+    expect(compare.getAttribute("aria-disabled")).toBe("true");
     expect(
-      (q('button[aria-label="Compare with another version"]') as HTMLButtonElement).disabled,
-    ).toBe(true);
+      document.getElementById(compare.getAttribute("aria-describedby") ?? "")?.textContent,
+    ).toBe("The session has ended, so there is nothing to compare");
     await m.unmount();
   });
 });

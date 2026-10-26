@@ -53,6 +53,7 @@ import {
   type ReactNode,
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -120,7 +121,9 @@ import { guardedLayoutStorage } from "../lib/layoutStorage.ts";
 import { askDescribeText } from "../lib/sidecar.ts";
 import { applyTheme, readAppliedTheme, type Theme } from "../theme/mode.ts";
 import {
+  DisabledReason,
   Dot,
+  disabledReasonProps,
   Empty,
   EmptyDescription,
   EmptyHeader,
@@ -322,34 +325,53 @@ function ColumnButton({
   onClick,
   control,
   disabled,
+  disabledReason,
   className,
   children,
 }: {
   label: string;
   onClick: () => void;
   disabled?: boolean;
+  /**
+   * Why it is off, when `disabled`: it then stays focusable, with this as its
+   * description and tooltip (`disabledReason.tsx`), rather than leaving the
+   * tab order with nothing said.
+   */
+  disabledReason?: string;
   /** Names the control so focus can be handed to it when its twin goes away. */
   control?: string;
   className?: string;
   children: ReactNode;
 }) {
+  const whyId = useId();
+  const why = disabled ? disabledReason : undefined;
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      data-column-control={control}
-      aria-label={label}
-      title={label}
-      className={cn(
-        "flex size-6 shrink-0 items-center justify-center rounded-sm text-ink-faint outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60 disabled:opacity-40 [&_svg]:size-3.5",
-        className,
-      )}
-    >
-      {children}
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={() => {
+          if (!why) onClick();
+        }}
+        disabled={disabled && !why}
+        {...disabledReasonProps(why, whyId)}
+        data-column-control={control}
+        aria-label={label}
+        title={why ?? label}
+        className={cn(
+          "flex size-6 shrink-0 items-center justify-center rounded-sm text-ink-faint outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60 disabled:opacity-40 aria-disabled:opacity-40 aria-disabled:cursor-not-allowed [&_svg]:size-3.5",
+          className,
+        )}
+      >
+        {children}
+      </button>
+      <DisabledReason reason={why} id={whyId} />
+    </>
   );
 }
+
+/** Why End session and Settings are off while the daemon is not answering. */
+export const NOT_CONNECTED_REASON =
+  "Not connected to the workspace daemon: this waits until it answers again";
 
 /**
  * A collapsed column's rail: the reopen button alone, on a row as tall as the pane
@@ -1831,6 +1853,7 @@ function ShellBody({
                 control="end-session"
                 onClick={() => setEndPhase("confirm")}
                 disabled={daemon.connection !== "open"}
+                disabledReason={NOT_CONNECTED_REASON}
                 className={fade}
               >
                 <PowerIcon aria-hidden />
@@ -1841,6 +1864,7 @@ function ShellBody({
               control="settings"
               onClick={() => setSettingsOpen(true)}
               disabled={daemon.connection !== "open"}
+              disabledReason={NOT_CONNECTED_REASON}
               className={fade}
             >
               <SettingsIcon aria-hidden />
