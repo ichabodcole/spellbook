@@ -87,6 +87,7 @@ export function NoteAtSelection({
   edits,
   linkRefusal,
   noteRefusal,
+  noteRefusalLabel = "session ended",
 }: {
   at: At | null;
   /** The selected text, shown so the note is never written about the wrong passage. */
@@ -115,6 +116,8 @@ export function NoteAtSelection({
   linkRefusal?: string;
   /** Why no note can be added even over a passage (the session has ended). */
   noteRefusal?: string;
+  /** `noteRefusal` in a word or two, beside the act. Default "session ended". */
+  noteRefusalLabel?: string;
 }) {
   // Two steps on purpose: the MENU is where other acts on a passage will go
   // (ask the agent, copy the quote), so it does not fold into the composer.
@@ -279,7 +282,7 @@ export function NoteAtSelection({
             Add note
             {(!passage || noteRefusal !== undefined) && (
               <span data-slot="why" className="ml-auto text-[10px] text-ink-faint">
-                {passage ? "session ended" : "select text first"}
+                {passage ? noteRefusalLabel : "select text first"}
               </span>
             )}
           </button>

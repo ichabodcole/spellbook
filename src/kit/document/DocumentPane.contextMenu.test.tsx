@@ -12,6 +12,7 @@ import { EditorView } from "@codemirror/view";
 import { useMemo, useState } from "react";
 import { NATIVE_MENU_HINT } from "../chat/NoteAtSelection.tsx";
 import type { Daemon } from "../context/daemonClient.ts";
+import type { HeldSelection } from "../context/selection.ts";
 import { useDaemon } from "../context/useDaemon.ts";
 import { type Workspace, WorkspaceContext } from "../context/workspace.ts";
 import {
@@ -51,6 +52,8 @@ let set: string;
 let daemon: WorkspaceDaemon;
 let client: Daemon | null = null;
 let announced: string[];
+/** What the pane reported as the selection, for the shell to hold. */
+let reported: HeldSelection[];
 let startMode: ViewMode = "split";
 /** What the page's clipboard holds, and whether it lets the page read it. */
 let clipboard: { text: string; readable: boolean; writable: boolean };
@@ -78,6 +81,7 @@ beforeEach(async () => {
   localStorage.clear();
   client = null;
   announced = [];
+  reported = [];
   startMode = "split";
   clipboard = { text: "", readable: true, writable: true };
   Object.defineProperty(navigator, "clipboard", {
@@ -121,7 +125,9 @@ function Host() {
     state,
     openDoc: state.docs.find((doc) => doc.slug === state.openDoc) ?? null,
     selection: null,
-    reportSelection: () => {},
+    reportSelection: (s) => {
+      reported.push(s);
+    },
     dropSelection: () => {},
     clearSeq: 0,
     reveal: null,
@@ -650,6 +656,36 @@ describe("in a CRLF file, the menu's offsets stay in the daemon's count", () => 
     expect(F.slice(n?.from ?? 0, n?.to ?? 0)).toBe("alpha\rsecond");
     // As the raw view showed it: the editor's own line break.
     expect(asked.at(-1)?.seen).toBe("alpha\nsecond");
+    await m.unmount();
+  });
+
+  test("a rendered selection the pane cannot place says so before a word is typed, and points to the raw view (kit-lone-cr-line-endings)", async () => {
+    // happy-dom keeps a lone \r in the rendered text where a browser reads \n, so
+    // the paragraph's run does not align: the page misplaces the selection, as
+    // the bug's page did. Its range stops at the heading; what was seen goes on.
+    startMode = "rendered";
+    const m = await start("f.md");
+    const prose = q(".md-prose") as HTMLElement;
+    const nodes: Text[] = [];
+    const walker = document.createTreeWalker(prose, 4);
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) nodes.push(n as Text);
+    const heading = nodes.find((n) => n.data === "F") as Text;
+    const para = nodes.find((n) => n.data.includes("alpha")) as Text;
+    await settle(() => {
+      const r = document.createRange();
+      r.setStart(heading, 0);
+      r.setEnd(para, para.data.indexOf("alpha") + 5);
+      window.getSelection()?.removeAllRanges();
+      window.getSelection()?.addRange(r);
+      document.dispatchEvent(new window.Event("selectionchange"));
+    });
+    const held = reported.at(-1);
+    expect(held?.noteRefusal).toContain("Select it in the raw view");
+    expect(await rightClick(prose)).toBe(true);
+    expect(item("Add note")?.disabled).toBe(true);
+    expect(items()).toContain("Add noteuse the raw view");
+    expect(item("Add note")?.title).toContain("Select it in the raw view");
+    window.getSelection()?.removeAllRanges();
     await m.unmount();
   });
 

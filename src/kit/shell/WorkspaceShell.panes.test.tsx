@@ -426,7 +426,7 @@ describe("notes", () => {
     await waitFor(
       () =>
         (ws?.toasts.snapshot() ?? []).some((t) =>
-          (t.description ?? "").includes("Select the passage again"),
+          (t.description ?? "").includes("Select it in the raw view"),
         ),
       "the refusal",
     );
@@ -436,6 +436,32 @@ describe("notes", () => {
     await waitFor(() => qa('[data-slot="note"]').length === 1, "the note");
     const stored = (await state()).docs.find((d) => d.slug === slug)?.notes;
     expect(stored?.map((n) => n.body)).toEqual(["taken"]);
+    await m.unmount();
+  });
+
+  test("a selection the pane could not place says why, holds Add back, and keeps what was typed (kit-lone-cr-line-endings)", async () => {
+    const { m, slug } = await openSolo();
+    const refusal = "The rendered view could not place this passage. Select it in the raw view.";
+    await settle(() => ws?.reportSelection({ ...SELECTION(slug), noteRefusal: refusal }));
+    await click(tab("Notes"));
+    await waitFor(() => !!q('[data-slot="note-refusal"]'), "the reason");
+    expect(q('[data-slot="note-refusal"]')?.textContent).toBe(refusal);
+    const field = () =>
+      chatPane().querySelector('textarea[aria-label="New note"]') as HTMLTextAreaElement;
+    await typeInto(field(), "kept words");
+    const add = () =>
+      qa('[data-pane="chat"] button').find((b) => b.textContent?.includes("Add note")) as
+        | HTMLButtonElement
+        | undefined;
+    expect(add()?.disabled).toBe(true);
+    // Selected again where it can be placed: the words are still there, and go.
+    await settle(() => ws?.reportSelection({ ...SELECTION(slug), seen: "Solo" }));
+    await waitFor(() => !q('[data-slot="note-refusal"]'), "the reason gone");
+    expect(field().value).toBe("kept words");
+    await click(add() ?? null);
+    await waitFor(() => qa('[data-slot="note"]').length === 1, "the note");
+    const stored = (await state()).docs.find((d) => d.slug === slug)?.notes;
+    expect(stored?.map((n) => n.body)).toEqual(["kept words"]);
     await m.unmount();
   });
 

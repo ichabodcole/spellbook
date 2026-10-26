@@ -158,7 +158,7 @@ import {
 } from "./pane.ts";
 import { createPlace } from "./place.ts";
 import { profileFor } from "./profileHeader.ts";
-import { lineAt } from "./projection.ts";
+import { lineAt, NOT_PLACED, showsSelection } from "./projection.ts";
 import { isReader, readerAct, readerStaysLoud } from "./reader.ts";
 import type { InlineWidget } from "./rendered.ts";
 import { applyChanges, minimalChange, type TextChange } from "./text.ts";
@@ -786,7 +786,13 @@ export function DocumentPane({
   const onClose = () => doc && send({ op: "doc.close", doc: doc.slug });
   const onSelect = (s: SelectionReport) => {
     if (!doc) return;
-    w.reportSelection({ doc: doc.slug, version: doc.active, ...s });
+    const refusal = placeRefusal(s);
+    w.reportSelection({
+      doc: doc.slug,
+      version: doc.active,
+      ...s,
+      ...(refusal ? { noteRefusal: refusal } : {}),
+    });
   };
 
   // ── writing a link ──────────────────────────────────────────────────────
@@ -932,9 +938,23 @@ export function DocumentPane({
       setNoteAt(open);
       return true;
     };
+  /**
+   * Why a note over this selection would be refused: the daemon's own check
+   * (`showsSelection`), asked here first so the human hears it before typing a
+   * word, and so nothing they type is lost to it.
+   */
+  const placeRefusal = (s: { from: number; to: number; seen?: string }): string | undefined =>
+    s.seen !== undefined &&
+    shown !== undefined &&
+    s.from < s.to &&
+    !showsSelection(shown, s.from, s.to, s.seen)
+      ? NOT_PLACED
+      : undefined;
   /** Why Add note is off over a passage, when it is. */
-  const noteRefusal =
-    daemon.connection === "ended" ? "The session has ended, so no note can be added." : undefined;
+  const noteRefusalAt = (at: { from: number; to: number; seen?: string }): string | undefined =>
+    daemon.connection === "ended"
+      ? "The session has ended, so no note can be added."
+      : placeRefusal(at);
   /** Why the link act is off, when an existing link is in the way. */
   // The menu's offsets are in the daemon's count from either view (a CRLF
   // counted twice), so they are read against the text in that count: `shown`.
@@ -948,7 +968,7 @@ export function DocumentPane({
   /** Whether the menu at `at` would hold one act that can be taken. */
   const menuUsable = (at: At & { via: "raw" | "rendered" }): boolean =>
     at.noteIds.length > 0 ||
-    (at.from < at.to && noteRefusal === undefined) ||
+    (at.from < at.to && noteRefusalAt(at) === undefined) ||
     (canLink && menuLinkRefusal(at) === null) ||
     Object.keys(menuEdits(at)).length > 0;
   const announceClipboard = (act: "copy" | "cut" | "paste") => {
@@ -2294,7 +2314,13 @@ export function DocumentPane({
         }
         edits={noteAt ? menuEdits(noteAt) : undefined}
         linkRefusal={noteAt ? (menuLinkRefusal(noteAt) ?? undefined) : undefined}
-        noteRefusal={noteRefusal}
+        {...(noteAt && noteRefusalAt(noteAt) !== undefined
+          ? {
+              noteRefusal: noteRefusalAt(noteAt),
+              noteRefusalLabel:
+                daemon.connection === "ended" ? "session ended" : "use the raw view",
+            }
+          : {})}
       />
       {linking && canLink && (
         <LinkPicker

@@ -267,7 +267,7 @@ describe("the projection skips the block", () => {
   });
 
   test("a block and nothing else projects to nothing", () => {
-    expect(project(FM)).toEqual({ plain: "", segments: [] });
+    expect(project(FM)).toEqual({ plain: "", segments: [], pageOnly: [] });
   });
 });
 

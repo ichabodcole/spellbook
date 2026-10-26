@@ -613,4 +613,69 @@ describe("showsSelection", () => {
     const [f, t] = range("alpha");
     expect(showsSelection(T, f, t, "  ")).toBe(false);
   });
+
+  // The verifier's mouse drags (fix round): a run the projection cannot cut AND
+  // a footnote number the page draws, in one selection. Each range is the one
+  // the page sent for it.
+  test("an uncut run and the page's footnote number together pass", () => {
+    const CODEFN = "# T\n\nCall `doThing()` then see note[^1] now.\n\n[^1]: Foot.\n";
+    const code = CODEFN.indexOf("`doThing()`");
+    const now = CODEFN.indexOf(" now") + 1;
+    // "Thing" to after "now", and to before it.
+    expect(showsSelection(CODEFN, code, now + 3, "Thing() then see note1 now")).toBe(true);
+    expect(showsSelection(CODEFN, code, now, "Thing() then see note1 ")).toBe(true);
+    const AMPFN = "# T\n\nTom &amp; Jerry met here[^1] and left.\n\n[^1]: Foot.\n";
+    const para = AMPFN.indexOf("Tom");
+    const and = AMPFN.indexOf(" and left") + 4;
+    // "Jerry" to "and": the line holds an entity, so its run is stored whole.
+    expect(showsSelection(AMPFN, para, and, "Jerry met here1 and")).toBe(true);
+  });
+
+  test("the page's own text may be cut at either end of what was seen", () => {
+    const N = "Final words.\n\n[^1]: The first footnote.\n\nA claim[^1] stands.\n";
+    const at = N.indexOf("Final");
+    // A drag from a paragraph into the "Footnotes" heading the page draws.
+    expect(showsSelection(N, at, at + "Final words.".length, "Final words.\nFootno")).toBe(true);
+    const def = N.indexOf("The first");
+    expect(showsSelection(N, def, def + 9, "tes\n\nThe first")).toBe(true);
+    // A range over a space beside a footnote's number shows nothing but the page's own.
+    const sp = N.indexOf("] ") + 1;
+    expect(showsSelection(N, sp, sp + 1, "1 ")).toBe(true);
+  });
+
+  test("what was seen may not hold text the range does not, beyond the page's own", () => {
+    const T1 = "Alpha beta gamma.\n\nThe zeta paragraph mentions a cat.\n";
+    const a = T1.indexOf("a cat");
+    // The letters of "a" are in "Alpha": a range elsewhere is not what was seen.
+    expect(showsSelection(T1, a, a + 1, "Alpha")).toBe(false);
+    const cat = T1.indexOf("cat");
+    expect(showsSelection(T1, cat, cat + 3, "Alpha beta gamma. cat")).toBe(false);
+  });
+
+  test("an uncut run at an edge may add the rest of itself, not all of itself", () => {
+    const E = "Start \\*esc\\* left words **bold** right \\*esc\\* end.\n";
+    // Two runs nobody selected around "bold": the whole paragraph is refused.
+    expect(showsSelection(E, 0, E.length - 1, "bold")).toBe(false);
+    // Begun and ended inside them, it passes.
+    expect(showsSelection(E, 0, E.length - 1, "words bold right")).toBe(true);
+    // Begun on the space at the end of a run, that run may be wholly unselected.
+    const C = "Some words `code` more.\n";
+    const code = C.indexOf("`code`");
+    expect(showsSelection(C, 0, code + 6, "Some words")).toBe(false);
+    expect(showsSelection(C, 0, code + 6, "Some words co")).toBe(true);
+    // An exact run adds nothing: " more" was not selected.
+    const more = C.indexOf(" more") + 5;
+    expect(showsSelection(C, code, more, "code")).toBe(false);
+  });
+
+  test("every kind of space and line break is set aside: tabs, a lone CR, a no-break space", () => {
+    const CR = "# T\r\rfirst alpha\rsecond line\r";
+    const at = CR.indexOf("alpha");
+    expect(showsSelection(CR, at, at + 12, "alpha\nsecond")).toBe(true);
+    const TB = "| a | b |\n| - | - |\n| a1 | b1 |\n";
+    const a1 = TB.indexOf("a1");
+    expect(showsSelection(TB, a1, TB.indexOf("b1") + 2, "a1\tb1")).toBe(true);
+    const NB = "one two\n";
+    expect(showsSelection(NB, 0, 7, "one two")).toBe(true);
+  });
 });

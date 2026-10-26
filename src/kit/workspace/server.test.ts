@@ -646,7 +646,7 @@ describe("notes", () => {
     // The wide note of the lone-CR bug: "one" selected, the whole text sent.
     s.send({ op: "note.add", doc: "a", from: 0, to: 8, body: "cut this?", seen: "one" });
     const err = await s.waitFor((m) => m.op === "error");
-    expect(err.op === "error" && err.message).toContain("Select the passage again");
+    expect(err.op === "error" && err.message).toContain("Select it in the raw view");
     // A `seen` that is not text is refused before anything is looked at.
     s.send({ op: "note.add", doc: "a", from: 5, to: 8, body: "x", seen: 5 } as never);
     const bad = await s.waitFor((m) => m.op === "error" && m.message.includes("seen must be"));

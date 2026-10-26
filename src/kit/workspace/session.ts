@@ -45,7 +45,7 @@ import {
 } from "node:fs";
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { parseDocument } from "yaml";
-import { showsSelection } from "../document/projection.ts";
+import { NOT_PLACED, showsSelection } from "../document/projection.ts";
 import {
   BUNDLE_INFO,
   type BundleReference,
@@ -2530,7 +2530,7 @@ export class WorkspaceSession {
       // Refused, with the act that answers it.
       if (opts.seen !== undefined && !showsSelection(text, from, to, opts.seen))
         throw new SessionError(
-          `The note was not added: the passage it would cover is not the text you selected (${JSON.stringify(quoteLabel(opts.seen, 40))}). Select the passage again and add the note, or select it in the raw view.`,
+          `The note on ${JSON.stringify(quoteLabel(opts.seen, 40))} was not added. ${NOT_PLACED}`,
           409,
         );
       anchor = anchorOf(text, from, to);

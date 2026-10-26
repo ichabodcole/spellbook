@@ -44,6 +44,12 @@ export type HeldSelection = {
   text: string;
   /** What the human selected, as their view showed it (`SelectionReport.seen`). */
   seen?: string;
+  /**
+   * Why no note can be made on this selection, when none can: the pane checks
+   * the range against `seen` as the daemon will, so the refusal is said before
+   * anything is typed (`NOT_PLACED`).
+   */
+  noteRefusal?: string;
 };
 
 export type SelectionEvent =

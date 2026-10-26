@@ -1563,7 +1563,16 @@ function ShellBody({
       onLetGo={() => setPointedAt(null)}
       showResolved={showResolvedNotes}
       onShowResolved={setShowResolvedNotes}
-      selection={heldHere ? { from: heldHere.from, to: heldHere.to, text: heldHere.text } : null}
+      selection={
+        heldHere
+          ? {
+              from: heldHere.from,
+              to: heldHere.to,
+              text: heldHere.text,
+              ...(heldHere.noteRefusal ? { refusal: heldHere.noteRefusal } : {}),
+            }
+          : null
+      }
       onAdd={(from, to, body) => {
         if (!openDoc) return;
         // What was selected, for the daemon to hold the range to.

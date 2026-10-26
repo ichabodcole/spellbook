@@ -47,6 +47,12 @@ export type Projection = {
   plain: string;
   /** In `plain` order, non-overlapping. */
   segments: ProjSegment[];
+  /**
+   * Text the page draws that `plain` does not carry, as bare runs (no spaces): a
+   * footnote reference's number, its back-link and the "Footnotes" heading. A
+   * selection on the page may hold them; `showsSelection` lets it.
+   */
+  pageOnly: string[];
 };
 
 /**
@@ -89,6 +95,7 @@ export function project(text: string): Projection {
   if (bodyStart === 0) return p;
   return {
     plain: p.plain,
+    pageOnly: p.pageOnly,
     segments: p.segments.map((s) => ({
       ...s,
       srcFrom: s.srcFrom + bodyStart,
@@ -200,7 +207,9 @@ function projectBody(text: string): Projection {
       });
   };
 
+  let footnoteRefs = 0;
   const walk = (node: Node) => {
+    if (node.type === "footnoteReference") footnoteRefs++;
     // The outermost boundary wins, so a boundary is only set when none is pending:
     // a list item holds a paragraph, and the inner node must not turn a tight list
     // into a loose one.
@@ -233,7 +242,13 @@ function projectBody(text: string): Projection {
   };
 
   for (const child of tree.children ?? []) walk(child);
-  return { plain, segments };
+  // GFM numbers each reference (1, 2, ...), and a repeated one's back-link carries
+  // its count; the section the definitions move to has a heading and back-links.
+  const pageOnly =
+    footnoteRefs === 0
+      ? []
+      : ["Footnotes", "\u21a9", ...Array.from({ length: footnoteRefs }, (_, i) => String(i + 1))];
+  return { plain, segments, pageOnly };
 }
 
 /** The segment a `plain` offset falls in, or null when there is none. */
@@ -398,59 +413,115 @@ function bare(s: string): string {
   return s.replace(/\s+/gu, "");
 }
 
-/** Is every character of `small` in `big`, in order? */
-function inOrderWithin(small: string, big: string): boolean {
-  let j = 0;
-  for (let i = 0; i < big.length && j < small.length; i++) if (big[i] === small[j]) j++;
-  return j === small.length;
-}
+/**
+ * Why a note cannot be added over a selection `showsSelection` refuses, with the
+ * one act that answers it. Selecting again in the rendered view gives the same
+ * range and the same refusal, so it is not offered; the raw view places exactly.
+ */
+export const NOT_PLACED =
+  "The rendered view could not place this passage exactly where you selected it. Select it in the raw view and add the note there.";
 
 /**
  * Does source range `from`..`to` hold what the human selected, `seen`, as the
  * view they selected in showed it? The daemon asks before it stores a note over
  * a range, so a range the page placed wrongly is refused rather than stored over
  * text nobody chose (kit-lone-cr-line-endings: "alpha" became a note over the
- * whole body).
+ * whole body). The page asks the same question first, so a refusal is said
+ * before anything is typed.
  *
  * Spaces and line breaks are not compared: the browser and the projection write
- * the gap between blocks differently. These readings pass:
+ * the gap between blocks differently. A range passes when it shows `seen`:
  *
- * - **the source itself**: a selection in the raw editor;
- * - **the rendered text** of the range: a selection in the rendered view;
- * - **text the page draws that the projection never carries** (a footnote's
- *   number): the range's rendered text is found, in order, inside what was seen;
- * - **a run the projection cannot cut**: a selection inside a run that is not
- *   exact (an inline code span, a line with an escape) is stored as the whole
- *   run, so the rest of that run may sit beside what was seen, and no more.
+ * - **as source**: a selection in the raw editor;
+ * - **as rendered text**: a selection in the rendered view. Two allowances, which
+ *   may come together:
+ *   - **text the page draws and the projection does not carry** (a footnote's
+ *     number, its back-link, the "Footnotes" heading) may sit inside `seen`;
+ *   - **a run the projection cannot cut** (an inline code span, a line with an
+ *     entity or an escape) at either edge is stored whole, so the rest of that
+ *     run may sit beside what was seen. Not the whole run: a selection that
+ *     starts in a run has at least one of its characters, unless it starts on
+ *     a space (and then `seen` starts with one).
  *
- * So the range never shows text beyond what was selected, save the rest of a run
- * the projection cannot cut.
+ * ⚠ IT JUDGES TEXT, NOT PLACE. A range elsewhere that shows the same text passes:
+ * the same words in another paragraph, or a run that cannot be cut and holds the
+ * selected words anywhere in it. What it refuses is a range that shows MORE or
+ * OTHER text than was selected, which is how a misplaced selection looks.
  */
 export function showsSelection(text: string, from: number, to: number, seen: string): boolean {
   const want = bare(seen);
   if (bare(text.slice(from, to)) === want) return true;
   if (want === "") return false;
   const p = project(text);
+  // The runs the range covers, in order; separators and blank runs carry nothing.
+  const runs = p.segments.filter(
+    (seg) =>
+      !(seg.srcTo <= from || seg.srcFrom >= to) &&
+      bare(p.plain.slice(seg.plainFrom, seg.plainTo)) !== "",
+  );
+  const first = runs[0];
+  const last = runs[runs.length - 1];
   const r = toPlain(p, from, to);
-  if (!r) return false;
+  // A range that shows nothing (a space beside a footnote's number) holds no
+  // text nobody chose: it passes when all that was seen is the page's own.
+  if (!first || !last || !r) return matchesWithin(want, "", 0, 0, p.pageOnly);
   const shown = bare(p.plain.slice(r.from, r.to));
-  if (shown === "") return false;
-  if (inOrderWithin(shown, want)) return true;
-  // The runs at either edge: a run that is not exact may add the rest of itself.
-  let first: ProjSegment | null = null;
-  let last: ProjSegment | null = null;
-  for (const seg of p.segments) {
-    if (seg.srcTo <= from || seg.srcFrom >= to || seg.plainTo === seg.plainFrom) continue;
-    first ??= seg;
-    last = seg;
+  const m = shown.length;
+  const runLength = (seg: ProjSegment) => bare(p.plain.slice(seg.plainFrom, seg.plainTo)).length;
+  // How much of the shown text may lie before and after what was selected.
+  let lead: number;
+  let trail: number;
+  if (first === last) lead = trail = first.exact ? 0 : m;
+  else {
+    const edge = (seg: ProjSegment, onSpace: boolean) =>
+      seg.exact ? 0 : Math.max(0, runLength(seg) - (onSpace ? 0 : 1));
+    lead = edge(first, /^\s/u.test(seen));
+    trail = edge(last, /\s$/u.test(seen));
   }
-  if (!first || !last) return false;
-  if (first === last) return !first.exact && shown.includes(want);
-  const slack = (seg: ProjSegment) =>
-    seg.exact ? 0 : bare(p.plain.slice(seg.plainFrom, seg.plainTo)).length;
-  const before = slack(first);
-  const after = slack(last);
-  for (let i = shown.indexOf(want); i !== -1 && i <= before; i = shown.indexOf(want, i + 1))
-    if (shown.length - i - want.length <= after) return true;
+  return matchesWithin(want, shown, lead, trail, p.pageOnly);
+}
+
+/**
+ * Is `want` the text `shown[a, m - b)` for some `a <= lead` and `b <= trail`,
+ * with any of `extra` (bare text the page draws on its own) inserted, and with
+ * at least one character of `shown` in it? Walked as the set of positions in
+ * `shown` reachable at each position in `want`, so no choice has to be guessed.
+ */
+function matchesWithin(
+  want: string,
+  shown: string,
+  lead: number,
+  trail: number,
+  extra: readonly string[],
+): boolean {
+  const m = shown.length;
+  const n = want.length;
+  // A state is a position in `shown`, times two, plus one once a character of it matched.
+  const at: Set<number>[] = Array.from({ length: n + 1 }, () => new Set<number>());
+  // A selection may begin inside text the page draws on its own, so `want` may
+  // open with the end of one ("tes" of "Footnotes"), and close with the start of one.
+  const opens = [0];
+  for (const t of extra)
+    for (let k = 1; k < t.length; k++) if (want.startsWith(t.slice(k))) opens.push(t.length - k);
+  for (const i of opens) for (let j = 0; j <= Math.min(lead, m); j++) at[i]?.add(j * 2);
+  const closes = (i: number) =>
+    i === n || extra.some((t) => t.length > n - i && t.startsWith(want.slice(i)));
+  for (let i = 0; i < n; i++) {
+    const here = at[i] as Set<number>;
+    if (here.size === 0) continue;
+    const ends = extra.filter((t) => t !== "" && want.startsWith(t, i)).map((t) => i + t.length);
+    for (const state of here) {
+      const j = state >> 1;
+      if (j < m && shown[j] === want[i]) at[i + 1]?.add((j + 1) * 2 + 1);
+      for (const e of ends) at[e]?.add(state);
+    }
+  }
+  // Done where the rest of `want` is nothing, or the start of the page's own text;
+  // with something of `shown` matched, or nothing of it there to match.
+  for (let i = 0; i <= n; i++) {
+    if (!closes(i)) continue;
+    for (const state of at[i] as Set<number>)
+      if ((state & 1 || m === 0) && m - (state >> 1) <= trail) return true;
+  }
   return false;
 }

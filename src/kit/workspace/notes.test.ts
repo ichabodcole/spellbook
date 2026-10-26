@@ -391,7 +391,7 @@ describe("a note is never stored over text the human did not select", () => {
     );
     expect(r.status).toBe(409);
     expect(r.message).toContain('"alpha"');
-    expect(r.message).toContain("Select the passage again");
+    expect(r.message).toContain("Select it in the raw view");
     expect(s.notesOf({ doc: cr, all: true }).notes).toHaveLength(0);
   });
 

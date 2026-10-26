@@ -54,11 +54,15 @@ function plainAt(a: Aligned, container: Node, offset: number, dir: "start" | "en
   if (container.nodeType === Node.TEXT_NODE) {
     node = container as Text;
   } else {
-    const kids = container.childNodes;
-    const at = Math.min(offset, kids.length - 1);
-    const from = kids[Math.max(0, at)] ?? container;
-    const inside = textNodes(from);
-    node = (dir === "start" ? inside[0] : inside[inside.length - 1]) ?? null;
+    // The text on the right side of the point: the first that begins at or after
+    // it for a start, the last that ends at or before it for an end. ⛔ Not the
+    // child the offset names: an end at offset k is BEFORE child k, so taking
+    // child k's text put a cell, a link or a quote the selection stopped short of
+    // into the note (kit-lone-cr-line-endings, the fuzz).
+    const point = document.createRange();
+    point.setStart(container, offset);
+    if (dir === "start") node = a.nodes.find((n) => point.comparePoint(n, 0) >= 0) ?? null;
+    else node = a.nodes.findLast((n) => point.comparePoint(n, n.data.length) <= 0) ?? null;
     within = dir === "start" ? 0 : (node?.data.length ?? 0);
   }
   if (!node) return null;

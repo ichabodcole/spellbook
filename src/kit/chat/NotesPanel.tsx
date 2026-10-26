@@ -469,8 +469,12 @@ export function NotesPanel({
    */
   showResolved?: boolean;
   onShowResolved?: (show: boolean) => void;
-  /** The editor's current selection, or null: what a new note would be about. */
-  selection: { from: number; to: number; text: string } | null;
+  /**
+   * The editor's current selection, or null: what a new note would be about.
+   * `refusal` says why no note can be made on it: Add waits, and what was typed
+   * stays, for a selection that can be noted.
+   */
+  selection: { from: number; to: number; text: string; refusal?: string } | null;
   /**
    * Why no note can be added here at all (a host with no document view to
    * select in): shown in place of the form. Absent, the form is shown, and
@@ -498,7 +502,7 @@ export function NotesPanel({
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selection || !body.trim()) return;
+    if (!selection || selection.refusal || !body.trim()) return;
     onAdd(selection.from, selection.to, body);
     setBody("");
   };
@@ -590,6 +594,11 @@ export function NotesPanel({
           <p className="mb-1 truncate font-mono text-[11px] text-ink-faint">
             {selection ? oneLine(selection.text) : "No selection"}
           </p>
+          {selection?.refusal && (
+            <p role="alert" data-slot="note-refusal" className="mb-1 text-[11px] text-ink-dim">
+              {selection.refusal}
+            </p>
+          )}
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
@@ -613,7 +622,7 @@ export function NotesPanel({
             <Button
               type="submit"
               size="sm"
-              disabled={!selection || !body.trim()}
+              disabled={!selection || !!selection.refusal || !body.trim()}
               className="ml-auto h-6 px-2 text-xs"
             >
               <MessageSquarePlusIcon aria-hidden className="size-3" />

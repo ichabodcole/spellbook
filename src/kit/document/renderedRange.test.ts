@@ -54,6 +54,24 @@ describe("resolveRange", () => {
     root.remove();
   });
 
+  test("an end on an element stops before the child it names, and a start begins at it", () => {
+    // The fuzz's widest honest-looking ranges: a drag that ended between two
+    // blocks took the whole of the next one (a table cell, a link, a quote).
+    const text = "Intro words\n\nNext block\n\nLast\n";
+    const root = body(["Intro words", "Next block", "Last"]);
+    const range = document.createRange();
+    range.setStart(root.children[0]?.firstChild as Text, "Intro ".length);
+    range.setEnd(root, 1);
+    const r = resolveRange(root, project(text), range);
+    expect(r && text.slice(r.from, r.to)).toBe("words");
+    const later = document.createRange();
+    later.setStart(root, 1);
+    later.setEnd(root.children[1]?.firstChild as Text, 4);
+    const s = resolveRange(root, project(text), later);
+    expect(s && text.slice(s.from, s.to)).toBe("Next");
+    root.remove();
+  });
+
   test("a selection from placed text into a run with no place stops where the placed text ends", () => {
     const text = "Intro words\n\nNot what the page shows\n\nEnd\n";
     const root = body(["Intro words", "unplaced run", "End"]);
