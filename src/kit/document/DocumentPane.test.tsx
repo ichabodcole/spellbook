@@ -37,7 +37,7 @@ import { fixtureDaemon } from "../workspace/fixtures/app";
 import { testWorkspace, writeUntilSeen } from "../workspace/fixtures/harness";
 import type { WorkspaceDaemon } from "../workspace/server";
 import { tempRoot } from "../workspace/testing";
-import { NOTHING_TO_COMPARE } from "./CompareView.tsx";
+import { NOTHING_TO_COMPARE, nothingButTheFile } from "./CompareView.tsx";
 import { DocumentPane, type DocumentPaneSlots } from "./DocumentPane.tsx";
 import type { EditorHandle } from "./DocumentView.tsx";
 import type { ViewMode } from "./pane.ts";
@@ -1142,6 +1142,21 @@ describe("reader mode, rendered with both columns out of the way", () => {
       expect(off(compareButton())).toBe(false);
     });
 
+    test("the active version is the file: Compare opens against the newest other version", async () => {
+      await openStory();
+      await cmd({ op: "version.new", doc: "story", label: "other" });
+      await cmd({ op: "version.new", doc: "story", label: "third", body: "Third.\n" });
+      await waitFor(() => doc()?.versions.length === 3, "v2 and v3 made");
+      expect(doc()?.dirty).toBe(false);
+      await click(compareButton());
+      const pressed = () =>
+        [...document.querySelectorAll('[aria-label="Compare against"] button')].find(
+          (b) => b.getAttribute("aria-pressed") === "true",
+        )?.textContent;
+      await waitFor(() => pressed() === "v3", "the comparison against v3");
+      expect(document.body.textContent).not.toContain("identical");
+    });
+
     test("a saved compare mode shows the message, not an empty comparison", async () => {
       await mount(<Host pane={{ mode: "compare" }} />);
       await waitFor(
@@ -1153,10 +1168,12 @@ describe("reader mode, rendered with both columns out of the way", () => {
         client?.send({ op: "open", path: story });
       });
       await waitFor(
-        () => document.body.textContent?.includes(NOTHING_TO_COMPARE) === true,
+        () => document.body.textContent?.includes(nothingButTheFile(1)) === true,
         "the message",
       );
-      expect(q('[role="status"]')?.textContent).toContain(NOTHING_TO_COMPARE);
+      expect(q('[role="status"]')?.textContent).toBe(
+        "v1 matches the file on disk. There is no other version to compare it with.",
+      );
       expect(document.body.textContent).not.toContain("identical");
     });
   });

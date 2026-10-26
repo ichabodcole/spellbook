@@ -101,6 +101,7 @@ import { Backlinks, type LinkedFromAction } from "./Backlinks.tsx";
 import {
   type CompareFocus,
   CompareView,
+  defaultSide,
   FLASH_MS,
   NOTHING_TO_COMPARE,
   NothingToCompare,
@@ -686,7 +687,7 @@ export function DocumentPane({
       setOwnMode(m);
       onMode?.(m);
     }
-    setAgainst("original");
+    setAgainst(doc ? defaultSide(doc) : "original");
     setNoteAt(null);
     setLinking(null);
     setCompareFocus(null);
@@ -1888,6 +1889,10 @@ export function DocumentPane({
                         onClick={() => {
                           if (why) return;
                           if (appActive) appView?.onActive(false);
+                          // Opened by the human, a comparison starts on the side
+                          // with something to show (`defaultSide`).
+                          if (m === "compare" && showing !== "compare")
+                            chooseSide(defaultSide(doc));
                           setMode(m);
                         }}
                         {...disabledReasonProps(why, whyId)}
@@ -2094,7 +2099,7 @@ export function DocumentPane({
         // A compare mode saved earlier, or kept across a save that left one clean
         // version, lands here with nothing to show.
         nothingToCompare(doc) ? (
-          <NothingToCompare />
+          <NothingToCompare active={doc.active} />
         ) : daemon.diff && daemon.diff.doc === doc.slug ? (
           <ViewBoundary resetKey={`compare:${doc.slug}`}>
             <CompareView

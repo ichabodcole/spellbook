@@ -68,18 +68,41 @@ export function nothingToCompare(doc: Pick<DocView, "versions" | "dirty" | "outs
   return doc.versions.length < 2 && !doc.dirty && !doc.outsideChanged;
 }
 
+/**
+ * The side a comparison opens against. The file on disk, unless the active
+ * version IS the file (no unsaved edits, the file there): compared with it,
+ * the view could only say they match, so it opens against the newest other
+ * version instead. With no other version it stays the file, and the view says
+ * the version matches it.
+ */
+export function defaultSide(
+  doc: Pick<DocView, "versions" | "active" | "dirty" | "missing">,
+): DiffSide {
+  if (doc.dirty || doc.missing) return "original";
+  const others = doc.versions.map((v) => v.n).filter((n) => n !== doc.active);
+  return others.length > 0 ? Math.max(...others) : "original";
+}
+
+/** What the compare view says when the active version and the file on disk are the same. */
+export const matchesFile = (active: number) => `v${active} matches the file on disk.`;
+
 /** Where the compare view would be, when there is nothing to put in it. */
-export function NothingToCompare() {
+export function NothingToCompare({ active }: { active?: number }) {
   return (
     <div
       role="status"
       className="flex flex-1 items-center justify-center gap-2 text-sm text-ink-faint"
     >
       <GitCompareIcon aria-hidden className="size-4" />
-      {NOTHING_TO_COMPARE}.
+      {/* With the version known, said as what it is: it and the file match. */}
+      {active === undefined ? `${NOTHING_TO_COMPARE}.` : nothingButTheFile(active)}
     </div>
   );
 }
+
+/** The compare view of the one version, when it matches its file. */
+export const nothingButTheFile = (active: number) =>
+  `${matchesFile(active)} There is no other version to compare it with.`;
 
 /** One rendered row: the same line on both sides, or one side of a change. */
 export type Row =
@@ -482,7 +505,7 @@ export function CompareView({
 
   // One version, the same as its file: say there is nothing to compare, never
   // "identical", which implies a comparison that did not happen.
-  if (diff.same && sides.length < 2) return <NothingToCompare />;
+  if (diff.same && sides.length < 2) return <NothingToCompare active={active} />;
 
   const flashing = (i: number) => !!flash && i >= flash.start && i < flash.end;
 
@@ -549,7 +572,8 @@ export function CompareView({
       {diff.same ? (
         <div className="flex flex-1 items-center justify-center gap-2 text-sm text-ink-faint">
           <CheckIcon aria-hidden className="size-4" />
-          These two versions are identical.
+          {/* The file is not a version: said as itself. */}
+          {against === "original" ? matchesFile(active) : "These two versions are identical."}
         </div>
       ) : (
         <div className="flex min-h-0 flex-1">

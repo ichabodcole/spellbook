@@ -192,3 +192,24 @@ describe("a focus request", () => {
     expect(flashed()).toEqual([45]);
   });
 });
+
+describe("two sides that are the same", () => {
+  const same = (against: DiffPayload["against"]): DiffPayload => ({
+    doc: "story",
+    active: 1,
+    against,
+    diff: { lines: [{ op: "same", a: 0, b: 0, text: "x" }], hunks: [], same: true, coarse: false },
+  });
+  const body = () => document.body.textContent ?? "";
+
+  test("against the file: the version matches the file, which is not called a version", async () => {
+    await mount(<View p={same("original")} />);
+    expect(body()).toContain("v1 matches the file on disk.");
+    expect(body()).not.toContain("These two versions are identical");
+  });
+
+  test("against another version: the two versions are identical", async () => {
+    await mount(<View p={same(2)} />);
+    expect(body()).toContain("These two versions are identical.");
+  });
+});
