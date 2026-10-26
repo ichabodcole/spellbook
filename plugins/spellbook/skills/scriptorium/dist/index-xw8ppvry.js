@@ -69563,7 +69563,7 @@ function bare(s) {
   return s.replace(/\s+/gu, "");
 }
 var NOT_PLACED = "The rendered view could not place this passage exactly where you selected it. Select it in the raw view and add the note there.";
-function showsSelection(text4, from, to, seen, projection) {
+function showsSelection(text4, from, to, seen, projection, walkBudget = WALK_BUDGET) {
   const want = bare(seen);
   if (bare(text4.slice(from, to)) === want)
     return true;
@@ -69575,7 +69575,7 @@ function showsSelection(text4, from, to, seen, projection) {
   const last2 = runs[runs.length - 1];
   const r2 = toPlain(p, from, to);
   if (!first || !last2 || !r2)
-    return matchesWithin(want, "", 0, 0, p.pageOnly);
+    return matchesWithin(want, "", 0, 0, p.pageOnly, { budget: walkBudget, fallback: false });
   const shown2 = bare(p.plain.slice(r2.from, r2.to));
   const m = shown2.length;
   const runLength = (seg) => bare(p.plain.slice(seg.plainFrom, seg.plainTo)).length;
@@ -69588,16 +69588,24 @@ function showsSelection(text4, from, to, seen, projection) {
     lead = edge(first, /^\s/u.test(seen));
     trail2 = edge(last2, /\s$/u.test(seen));
   }
-  return matchesWithin(want, shown2, lead, trail2, p.pageOnly);
+  const seenChars = new Set(want);
+  const middleOutside = runs.slice(1, -1).some((seg) => [...bare(p.plain.slice(seg.plainFrom, seg.plainTo))].some((c) => !seenChars.has(c)));
+  return matchesWithin(want, shown2, lead, trail2, p.pageOnly, {
+    budget: walkBudget,
+    fallback: first === last2 || !middleOutside
+  });
 }
 var lastProjected = null;
+var checkProjections = { made: 0 };
 function projectedOnce(text4) {
-  if (lastProjected?.text !== text4)
+  if (lastProjected?.text !== text4) {
     lastProjected = { text: text4, p: project(text4) };
+    checkProjections.made++;
+  }
   return lastProjected.p;
 }
-var WALK_BUDGET = 400000;
-function matchesWithin(want, shown2, lead, trail2, extra) {
+var WALK_BUDGET = 150000;
+function matchesWithin(want, shown2, lead, trail2, extra, limits) {
   const m = shown2.length;
   const n = want.length;
   const fresh = new Array(n + 1).fill(false);
@@ -69630,8 +69638,8 @@ function matchesWithin(want, shown2, lead, trail2, extra) {
         at2[e]?.add(j2);
     }
     work += here.size;
-    if (work > WALK_BUDGET)
-      return foundWhole(want, shown2, lead, trail2, extra);
+    if (work > limits.budget)
+      return limits.fallback && foundWhole(want, shown2, lead, trail2, extra);
   }
   for (let i2 = 0;i2 <= n; i2++) {
     if (!closes(i2))
@@ -69649,7 +69657,34 @@ function foundWhole(want, shown2, lead, trail2, extra) {
   for (const t2 of extra)
     if (t2 !== "")
       stripped = stripped.split(t2).join("");
-  return [want, stripped].some((w) => w !== "" && shown2.includes(w) && shown2.length - w.length <= lead + trail2);
+  return [want, stripped].some((w) => {
+    if (w === "")
+      return false;
+    const from = Math.max(0, shown2.length - w.length - trail2);
+    if (from > lead)
+      return false;
+    const at2 = firstIndex(shown2, w, from);
+    return at2 !== -1 && at2 <= lead;
+  });
+}
+function firstIndex(hay, needle, from) {
+  const fail = new Int32Array(needle.length);
+  for (let i2 = 1, k = 0;i2 < needle.length; i2++) {
+    while (k > 0 && needle[i2] !== needle[k])
+      k = fail[k - 1];
+    if (needle[i2] === needle[k])
+      k++;
+    fail[i2] = k;
+  }
+  for (let i2 = from, k = 0;i2 < hay.length; i2++) {
+    while (k > 0 && hay[i2] !== needle[k])
+      k = fail[k - 1];
+    if (hay[i2] === needle[k])
+      k++;
+    if (k === needle.length)
+      return i2 - needle.length + 1;
+  }
+  return -1;
 }
 
 // src/kit/document/place.ts

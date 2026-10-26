@@ -241,9 +241,11 @@ The fix round touched four things.
     widening, and the two cannot be told apart from text alone.
   - **The same words elsewhere pass,** as they always would for a quote.
   - **Only spaces differ:** "a b" passes for "ab".
-- **Repetitive text** inside an uncut run (more than about 400,000 steps of the
-  walk) is settled the cheap way: what was seen is found whole in the run, and
-  the run is wider only by what its edges allow.
+- **Repetitive text** inside an uncut run (more than 150,000 steps of the walk)
+  is settled the cheap way. What was seen must be found whole, starting within
+  the leading edge's allowance and leaving at most the trailing edge's after it.
+  With the page's own text, it is taken out all at once or not at all, so the
+  fallback is stricter than the walk there.
 
 ### Seen on base, not caused here
 
@@ -289,8 +291,19 @@ The fix round touched four things.
   - A disabled item's title cannot be hovered, and Tab skips it.
   - The full reason is now menu text under Add note (`data-slot="why-full"`),
     and the item points to it with `aria-describedby`.
+  - Opening the menu from the keyboard (Shift+F10) could not be tested headless.
+    Once the menu is open, the reason is visible text however it was opened.
 - **The fuzz still holds:** 0 refused of 2773 LF, 2773 CRLF, 2780 lone-CR and
   2625 mixed placements.
+- **Round 4 (verifier: "With fixes, one small fix").** The fallback accepted
+  wrong passages that the walk refuses:
+  - **Shape A:** an uncut run of dashes, then text nobody selected.
+  - **Shape B:** two code blocks with an unselected paragraph between them.
+
+  It now keeps to each edge's allowance, and to the middle-run rule. With the
+  fallback forced, the verifier's `fallback.ts` refuses every wrong shape at
+  300, 3,000 and 30,000, and still accepts the honest one. About 360 ms of the
+  30,000-dash case is the one projection of that text, not the check.
 
 ## Port-back notes
 
@@ -328,10 +341,21 @@ The fix round touched four things.
     then waits while what was typed stays.
   - `showsSelection` without a projection keeps the last text's projection (the
     daemon's path).
-  - The walk stops past a work budget, and falls back to finding what was seen
-    whole.
+  - The walk stops past a work budget (150,000 steps; `showsSelection`'s
+    optional sixth argument sets it, so a test can force the fallback). The
+    fallback then accepts only when two things hold:
+    - **what was seen is found whole,** with the page's own text taken out of it
+      or not, at a place that starts within the leading edge's allowance and
+      leaves at most the trailing edge's allowance after it;
+    - **the range is one run, or no run between its edges holds a character that
+      was not seen.**
+
+    The search is linear (Knuth, Morris, Pratt), because `indexOf` was quadratic
+    on repetitive text.
+
   - The daemon now imports `document/projection.ts`, which brings the markdown
     parser into its bundle (Scriptorium's `server.js` grew by about 257 KB).
+
 - **The page sends `seen`:**
   - `SelectionReport.seen` and `ContextMenuRequest`'s `at.seen` (raw: the
     editor's slice; rendered: the DOM range's text);
