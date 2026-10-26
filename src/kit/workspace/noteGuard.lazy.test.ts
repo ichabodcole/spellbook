@@ -45,13 +45,12 @@ test("starting the workspace loads no markdown parser; the first checked note lo
 test("a note with `seen` before the guard is loaded is an error, never an unchecked note", async () => {
   const r = await inFreshProcess(`
     const t = await import(${JSON.stringify(join(HERE, "testing.ts"))});
-    const { writeFileSync } = await import("node:fs");
-    const { join } = await import("node:path");
+    // No module imports in this text: the repo's import scanner reads strings too.
     const root = t.tempRoot("guard-unloaded");
     const docs = t.seedDocs(root);
-    writeFileSync(join(docs, "a.md"), "# A\\n\\nalpha beta\\n");
-    const s = t.inContext(join(root, "sessions"), docs);
-    const slug = s.openPath(join(docs, "a.md")).slug;
+    await Bun.write(docs + "/a.md", "# A\\n\\nalpha beta\\n");
+    const s = t.inContext(root + "/sessions", docs);
+    const slug = s.openPath(docs + "/a.md").slug;
     let message = "";
     try {
       s.addNote({ doc: slug, by: "human", range: { from: 0, to: 12 }, seen: "alpha", body: "x" });
