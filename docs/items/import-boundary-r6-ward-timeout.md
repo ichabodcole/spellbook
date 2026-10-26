@@ -5,12 +5,14 @@ description:
   Two R6 ward 1b cases in grimoire/import-boundary-wards.test.ts run close to
   bun's 5 s default and time out whenever the machine is loaded, turning the
   gate red; the file always passes alone.
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: active
 id: 01a175d7-744b-77a0-83f0-40725bd2b0f1
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 from: cycles/2026-10-release-6.md
+cycle: 2026-10-release-6
+priority: high
 ---
 
 # import-boundary-wards' R6 1b tests time out under load
