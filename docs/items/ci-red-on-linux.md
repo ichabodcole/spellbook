@@ -6,7 +6,7 @@ description:
   menus and dialogs never appear (15 failures, then 169 on 2026-10-24) while the
   suite passes locally; the release PR runs the same CI.
 status: stable
-lifecycle: ready
+lifecycle: done
 id: 01a17017-0595-77fb-8306-cf552a20d9f6
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-24 }
@@ -37,7 +37,7 @@ PR to `main` runs this same CI, so the release can't go out until it is green.
 - [x] The failure reproduced on Linux (a container, or a CI debug run), and its
       cause named from evidence, not inferred.
 - [x] The cause fixed: no skips, no retries, no Linux-only timeouts.
-- [ ] CI green on develop on two pushes in a row, with the full suite.
+- [x] CI green on develop on two pushes in a row, with the full suite.
 - [x] If the cause is in the DOM harness, `kit-dom-harness-gaps` updated to say
       what this item closed.
 
@@ -164,3 +164,7 @@ failures. The count restarts there; the third box waits for the next push.
 s), the same load class as the R6 ward. Cole chose to raise the suite's default
 to 15 s (`426a68ed`). Run `40392926588` on `da286fae` is green: 6446 tests, 0
 failures. One more green push closes the third box.
+
+**Closed (lead, 2026-10-26).** Run `40395281419` on `0a195412` is green: 6446
+tests, 0 failures. With `40392926588` on `da286fae`, that is two green pushes in
+a row on the full suite.
