@@ -1,6 +1,6 @@
 {
   "name": "spellbook",
-  "version": "5.2.0",
+  "version": "6.0.0",
   "description": "Agent-conjured apps: small, purpose-built browser apps that an AI agent runs for you, served on your own machine by Bun.",
   "author": {
     "name": "Cole Reed"
