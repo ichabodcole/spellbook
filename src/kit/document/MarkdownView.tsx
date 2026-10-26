@@ -55,7 +55,7 @@ import { frontmatterKeyAt, readFrontmatter } from "./frontmatter.ts";
 import { highlightRegistry, makeHighlight } from "./highlight.ts";
 import type { AskProfileFix } from "./ProfileChip.tsx";
 import { type Anchor, anchorCache, lineAtTop, type Place, topForLine } from "./place.ts";
-import { lineAt, project } from "./projection.ts";
+import { lineAt, NOT_PLACED, project, showsSelection } from "./projection.ts";
 import { type InlineWidget, renderDocument } from "./rendered.ts";
 import { align, lineAnchors, paintRange, resolveRange } from "./renderedRange.ts";
 import { invertChange, lineThrough, minimalChange, rangeThrough } from "./text.ts";
@@ -246,6 +246,18 @@ export function MarkdownView({
   const htmlProp = useMemo(() => ({ __html: html }), [html]);
   // The same text, as the reader sees it, carrying where each part came from.
   const projection = useMemo(() => project(text), [text]);
+  /**
+   * Why no note can be made on a resolved selection, when none can: the daemon's
+   * check (`showsSelection`), asked once per selection with the projection held
+   * here. ⛔ NEVER WITHOUT IT: projecting the document again costs close to a
+   * second at 200 KB, and this runs on a selection and on a right-click.
+   */
+  const drawn = useRef({ text, projection });
+  drawn.current = { text, projection };
+  const refusalOf = useCallback((r: { from: number; to: number; seen: string }) => {
+    const d = drawn.current;
+    return showsSelection(d.text, r.from, r.to, r.seen, d.projection) ? undefined : NOT_PLACED;
+  }, []);
   const body = useRef<HTMLDivElement>(null);
   /** The frontmatter header's box: where a reveal in the frontmatter is marked. */
   const headerBox = useRef<HTMLDivElement>(null);
@@ -282,7 +294,12 @@ export function MarkdownView({
    * collapses it. It is only trusted when the pointer is INSIDE the remembered
    * range, so a right-click elsewhere never offers a note on the previous passage.
    */
-  const lastRange = useRef<{ from: number; to: number; seen: string } | null>(null);
+  const lastRange = useRef<{
+    from: number;
+    to: number;
+    seen: string;
+    noteRefusal?: string;
+  } | null>(null);
 
   // Keeping your place.
   const scroller = useRef<HTMLDivElement>(null);
@@ -438,7 +455,8 @@ export function MarkdownView({
       // fall in what changed since is cleared, never sent with the wrong lines.
       const m = act === "report" && r ? reportable.current(r) : null;
       if (act === "report" && r && m) {
-        lastRange.current = r;
+        const noteRefusal = refusalOf(r);
+        lastRange.current = { ...r, ...(noteRefusal ? { noteRefusal } : {}) };
         const now = currentText.current;
         onSelect({
           from: m.from,
@@ -447,6 +465,7 @@ export function MarkdownView({
           toLine: lineAt(now, m.to),
           text: now.slice(m.from, m.to),
           seen: r.seen,
+          ...(noteRefusal ? { noteRefusal } : {}),
         });
       } else if (act === "clear" || (act === "report" && r)) {
         lastRange.current = null;
@@ -472,7 +491,7 @@ export function MarkdownView({
       document.removeEventListener("keydown", keyed, true);
       document.removeEventListener("pointerdown", pressed, true);
     };
-  }, [onSelect, selectedRange, inBody]);
+  }, [onSelect, selectedRange, inBody, refusalOf]);
 
   // A clear clears the highlight too: dropping the chip is clearing the selection, so
   // the browser's own must not stay painted over a passage nothing is holding.
@@ -624,8 +643,9 @@ export function MarkdownView({
             // The live selection if the click spared it, else the remembered one, but
             // only when the pointer is inside it.
             const remembered = lastRange.current;
+            const live = selectedRange();
             const r =
-              selectedRange() ??
+              live ??
               (remembered && point !== null && point >= remembered.from && point <= remembered.to
                 ? remembered
                 : null);
@@ -645,6 +665,10 @@ export function MarkdownView({
             const m = r ? reportable.current(r) : null;
             const caret = point === null ? null : reportable.current({ from: point, to: point });
             const where = m ?? caret;
+            // Worked out once: for the live selection now, for the remembered one
+            // when it was reported.
+            const noteRefusal =
+              m && r ? (live ? refusalOf(live) : remembered?.noteRefusal) : undefined;
             // Off the text altogether, and on no note: nothing to place an act at.
             if (!where && noteIds.length === 0) return;
             const taken = onContextMenu(
@@ -655,6 +679,7 @@ export function MarkdownView({
                 to: where?.to ?? 0,
                 noteIds,
                 ...(m && r ? { seen: r.seen } : {}),
+                ...(noteRefusal ? { noteRefusal } : {}),
               },
               { shiftKey: e.shiftKey },
             );

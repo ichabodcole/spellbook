@@ -454,6 +454,18 @@ describe("notes", () => {
         | HTMLButtonElement
         | undefined;
     expect(add()?.disabled).toBe(true);
+    // Nor does Cmd-Enter in the field add it.
+    await settle(() => {
+      field().dispatchEvent(
+        new window.KeyboardEvent("keydown", {
+          key: "Enter",
+          metaKey: true,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+    });
+    expect(field().value).toBe("kept words");
     // Selected again where it can be placed: the words are still there, and go.
     await settle(() => ws?.reportSelection({ ...SELECTION(slug), seen: "Solo" }));
     await waitFor(() => !q('[data-slot="note-refusal"]'), "the reason gone");

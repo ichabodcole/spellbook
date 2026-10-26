@@ -448,11 +448,17 @@ export const NOT_PLACED =
  * selected words anywhere in it. What it refuses is a range that shows MORE or
  * OTHER text than was selected, which is how a misplaced selection looks.
  */
-export function showsSelection(text: string, from: number, to: number, seen: string): boolean {
+export function showsSelection(
+  text: string,
+  from: number,
+  to: number,
+  seen: string,
+  projection?: Projection,
+): boolean {
   const want = bare(seen);
   if (bare(text.slice(from, to)) === want) return true;
   if (want === "") return false;
-  const p = project(text);
+  const p = projection ?? projectedOnce(text);
   // The runs the range covers, in order; separators and blank runs carry nothing.
   const runs = p.segments.filter(
     (seg) =>
@@ -482,6 +488,26 @@ export function showsSelection(text: string, from: number, to: number, seen: str
 }
 
 /**
+ * `project(text)`, kept for the last text asked about. ⚠ PROJECTING IS LINEAR BUT
+ * NOT CHEAP (close to a second for 200 KB), and the daemon checks every note
+ * against the same text until the next edit, so it projects that text once. The
+ * page passes the projection it already holds and never comes here.
+ */
+let lastProjected: { text: string; p: Projection } | null = null;
+function projectedOnce(text: string): Projection {
+  if (lastProjected?.text !== text) lastProjected = { text, p: project(text) };
+  return lastProjected.p;
+}
+
+/**
+ * How much the walk may do before it stops. Ordinary text keeps few positions
+ * alive and stays far under it; text that repeats itself (a fenced block of
+ * `-----` lines) keeps every start alive, and following them all is quadratic:
+ * 3 s for a 20 KB block.
+ */
+const WALK_BUDGET = 400_000;
+
+/**
  * Is `want` the text `shown[a, m - b)` for some `a <= lead` and `b <= trail`,
  * with any of `extra` (bare text the page draws on its own) inserted, and with
  * at least one character of `shown` in it? Walked as the set of positions in
@@ -496,32 +522,63 @@ function matchesWithin(
 ): boolean {
   const m = shown.length;
   const n = want.length;
-  // A state is a position in `shown`, times two, plus one once a character of it matched.
+  // Positions in `want` reached with nothing of `shown` matched yet: one flag
+  // each, since every start up to `lead` is still open there.
+  const fresh: boolean[] = new Array(n + 1).fill(false);
+  // Positions in `shown` reached, once something of it matched, per position in `want`.
   const at: Set<number>[] = Array.from({ length: n + 1 }, () => new Set<number>());
   // A selection may begin inside text the page draws on its own, so `want` may
   // open with the end of one ("tes" of "Footnotes"), and close with the start of one.
-  const opens = [0];
+  fresh[0] = true;
   for (const t of extra)
-    for (let k = 1; k < t.length; k++) if (want.startsWith(t.slice(k))) opens.push(t.length - k);
-  for (const i of opens) for (let j = 0; j <= Math.min(lead, m); j++) at[i]?.add(j * 2);
+    for (let k = 1; k < t.length; k++) if (want.startsWith(t.slice(k))) fresh[t.length - k] = true;
   const closes = (i: number) =>
     i === n || extra.some((t) => t.length > n - i && t.startsWith(want.slice(i)));
+  const firstAt = Math.min(lead, m - 1);
+  let work = 0;
   for (let i = 0; i < n; i++) {
     const here = at[i] as Set<number>;
-    if (here.size === 0) continue;
+    if (!fresh[i] && here.size === 0) continue;
     const ends = extra.filter((t) => t !== "" && want.startsWith(t, i)).map((t) => i + t.length);
-    for (const state of here) {
-      const j = state >> 1;
-      if (j < m && shown[j] === want[i]) at[i + 1]?.add((j + 1) * 2 + 1);
-      for (const e of ends) at[e]?.add(state);
+    if (fresh[i]) {
+      for (const e of ends) fresh[e] = true;
+      for (let j = 0; j <= firstAt; j++) if (shown[j] === want[i]) at[i + 1]?.add(j + 1);
+      work += firstAt + 1;
     }
+    for (const j of here) {
+      if (j < m && shown[j] === want[i]) at[i + 1]?.add(j + 1);
+      for (const e of ends) at[e]?.add(j);
+    }
+    work += here.size;
+    // ⛔ BOUNDED. This much work means text that repeats itself, where the live
+    // positions are as good as each other; settled the cheap way instead.
+    if (work > WALK_BUDGET) return foundWhole(want, shown, lead, trail, extra);
   }
   // Done where the rest of `want` is nothing, or the start of the page's own text;
   // with something of `shown` matched, or nothing of it there to match.
   for (let i = 0; i <= n; i++) {
     if (!closes(i)) continue;
-    for (const state of at[i] as Set<number>)
-      if ((state & 1 || m === 0) && m - (state >> 1) <= trail) return true;
+    if (fresh[i] && m === 0) return true;
+    for (const j of at[i] as Set<number>) if (m - j <= trail) return true;
   }
   return false;
+}
+
+/**
+ * The walk's cheap stand-in, for text that repeats itself: `want`, with the
+ * page's own text taken out of it or not, found whole in `shown`, which is
+ * wider only by what the edges allow.
+ */
+function foundWhole(
+  want: string,
+  shown: string,
+  lead: number,
+  trail: number,
+  extra: readonly string[],
+): boolean {
+  let stripped = want;
+  for (const t of extra) if (t !== "") stripped = stripped.split(t).join("");
+  return [want, stripped].some(
+    (w) => w !== "" && shown.includes(w) && shown.length - w.length <= lead + trail,
+  );
 }

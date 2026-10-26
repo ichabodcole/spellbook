@@ -41,6 +41,8 @@ export type At = {
   noteIds: string[];
   /** What the human selected, as their view showed it: sent with a note, for the daemon to check. */
   seen?: string;
+  /** Why no note can be made on the selection, when none can. */
+  noteRefusal?: string;
 };
 
 /**
@@ -88,6 +90,7 @@ export function NoteAtSelection({
   linkRefusal,
   noteRefusal,
   noteRefusalLabel = "session ended",
+  noteRefusalShown = false,
 }: {
   at: At | null;
   /** The selected text, shown so the note is never written about the wrong passage. */
@@ -118,6 +121,11 @@ export function NoteAtSelection({
   noteRefusal?: string;
   /** `noteRefusal` in a word or two, beside the act. Default "session ended". */
   noteRefusalLabel?: string;
+  /**
+   * Show `noteRefusal` in full as menu text. A disabled item's title cannot be
+   * hovered or reached by Tab, and a reason that says what to do must be read.
+   */
+  noteRefusalShown?: boolean;
 }) {
   // Two steps on purpose: the MENU is where other acts on a passage will go
   // (ask the agent, copy the quote), so it does not fold into the composer.
@@ -275,6 +283,9 @@ export function NoteAtSelection({
             type="button"
             disabled={!passage || noteRefusal !== undefined}
             title={!passage ? "A note is about a passage: select some text first" : noteRefusal}
+            {...(passage && noteRefusalShown && noteRefusal !== undefined
+              ? { "aria-describedby": "note-refusal-why" }
+              : {})}
             onClick={() => setWriting(true)}
             className={cn(ITEM, "disabled:pointer-events-none disabled:text-ink-faint")}
           >
@@ -286,6 +297,15 @@ export function NoteAtSelection({
               </span>
             )}
           </button>
+          {passage && noteRefusalShown && noteRefusal !== undefined && (
+            <p
+              id="note-refusal-why"
+              data-slot="why-full"
+              className="px-2 pb-1.5 text-[11px] leading-snug text-ink-dim"
+            >
+              {noteRefusal}
+            </p>
+          )}
           {onAddLink && (
             <button
               type="button"

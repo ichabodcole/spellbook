@@ -370,6 +370,8 @@ export type ContextMenuRequest = (
     noteIds: string[];
     /** The selected text as the view shows it, when something is selected: see `SelectionReport.seen`. */
     seen?: string;
+    /** Why no note can be made on the selection, when none can: see `SelectionReport.noteRefusal`. */
+    noteRefusal?: string;
   },
   how: { shiftKey: boolean },
 ) => boolean | undefined;
@@ -430,6 +432,12 @@ export type SelectionReport = {
    * hold it. The raw view's is its own slice; the rendered view's is the page's.
    */
   seen?: string;
+  /**
+   * Why no note can be made on this selection, when none can. The rendered view
+   * says it, from the projection it already holds; the raw view's range is its
+   * own selection and never needs it.
+   */
+  noteRefusal?: string;
 };
 
 export function DocumentView({

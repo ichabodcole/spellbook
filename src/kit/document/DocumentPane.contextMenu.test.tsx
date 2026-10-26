@@ -685,6 +685,8 @@ describe("in a CRLF file, the menu's offsets stay in the daemon's count", () => 
     expect(item("Add note")?.disabled).toBe(true);
     expect(items()).toContain("Add noteuse the raw view");
     expect(item("Add note")?.title).toContain("Select it in the raw view");
+    // A disabled item's title is never shown: the reason is menu text as well.
+    expect(q('[data-slot="why-full"]')?.textContent).toContain("Select it in the raw view");
     window.getSelection()?.removeAllRanges();
     await m.unmount();
   });

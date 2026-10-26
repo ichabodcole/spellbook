@@ -678,4 +678,44 @@ describe("showsSelection", () => {
     const NB = "one two\n";
     expect(showsSelection(NB, 0, 7, "one two")).toBe(true);
   });
+
+  test("an uncut run at the start may be wholly unselected only when what was seen starts on a space", () => {
+    const C = "`code` more words.\n";
+    const to = C.indexOf(" words");
+    // Begun on the space after the span: the span is in the range, none of it seen.
+    expect(showsSelection(C, 0, to, " more")).toBe(true);
+    // Begun on "more" itself, the span is text nobody selected.
+    expect(showsSelection(C, 0, to, "more")).toBe(false);
+  });
+
+  test("the page's own text alone does not pass for a range that shows something", () => {
+    const N = "A `code` claim[^1].\n\n[^1]: Foot.\n";
+    const code = N.indexOf("`code`");
+    // Only the footnote's number was seen: the code span shows text, and none of it was.
+    expect(showsSelection(N, code, code + 6, "1")).toBe(false);
+  });
+
+  test("a projection passed in is the one used: the page's own, never made again", () => {
+    const A = "One **alpha** here.\n";
+    const B = "One **betaa** here.\n";
+    const at = A.indexOf("**alpha**");
+    // The range's rendered text, read from B's projection, says "betaa".
+    expect(showsSelection(A, at, at + 9, "betaa", project(B))).toBe(true);
+    expect(showsSelection(A, at, at + 9, "alpha", project(B))).toBe(false);
+    expect(showsSelection(A, at, at + 9, "alpha")).toBe(true);
+  });
+
+  test("repetitive text inside an uncut run is settled in bounded time", () => {
+    // kit-lone-cr-line-endings, round 3: every start stayed alive in a fenced
+    // block of dashes, and 20 KB took 3.4 s.
+    const lines = Array.from({ length: 2000 }, () => "---------").join("\n");
+    const F = `# T\n\n\`\`\`\n${lines}\n\`\`\`\n`;
+    const from = F.indexOf("---");
+    const to = F.lastIndexOf("---") + 3;
+    const seen = lines.slice(0, 9000);
+    const t0 = performance.now();
+    expect(showsSelection(F, from, to, seen)).toBe(true);
+    expect(showsSelection(F, from, to, `${seen}x`)).toBe(false);
+    expect(performance.now() - t0).toBeLessThan(1000);
+  });
 });
