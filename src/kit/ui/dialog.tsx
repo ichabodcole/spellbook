@@ -8,6 +8,7 @@ import { XIcon } from "lucide-react";
 import type * as React from "react";
 import { cn } from "../lib/cn";
 import { Button } from "./button";
+import { inertOutsideRef } from "./inertOutside";
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
@@ -60,6 +61,8 @@ function DialogContent({
           className,
         )}
         {...props}
+        // Base UI's trap lets Tab out; the page behind is made inert instead.
+        ref={inertOutsideRef}
       >
         {children}
         {showCloseButton && (

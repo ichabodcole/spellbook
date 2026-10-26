@@ -147,6 +147,69 @@ describe("ui smoke renders", () => {
     await m.unmount();
   });
 
+  test("a modal keeps the page behind inert and Tab inside, and lets the page back on close", async () => {
+    let close: () => void = () => {};
+    function Host({ kind }: { kind: "confirm" | "dialog" }) {
+      const [open, setOpen] = useState(true);
+      close = () => setOpen(false);
+      return (
+        <>
+          <button type="button">Behind</button>
+          {kind === "confirm" ? (
+            <ConfirmDialog
+              open={open}
+              onOpenChange={setOpen}
+              title="Sure?"
+              confirmLabel="Yes"
+              onConfirm={() => {}}
+            />
+          ) : (
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogContent>
+                <DialogTitle>Rename</DialogTitle>
+              </DialogContent>
+            </Dialog>
+          )}
+        </>
+      );
+    }
+    for (const [kind, slotName] of [
+      ["confirm", "confirm-dialog"],
+      ["dialog", "dialog-content"],
+    ] as const) {
+      const m = await mount(<Host kind={kind} />);
+      await waitFor(() => !!slot(document.body, slotName), `the ${kind} popup`);
+      const popup = slot(document.body, slotName) as HTMLElement;
+      const behind = [...document.body.querySelectorAll("button")].find(
+        (b) => b.textContent === "Behind",
+      ) as HTMLElement;
+      const holderOf = (el: Element) => {
+        let at: Element | null = el;
+        while (at && at.parentElement !== document.body) at = at.parentElement;
+        return at as HTMLElement;
+      };
+      // Everything but the popup's own portal is inert.
+      expect(holderOf(behind).inert).toBe(true);
+      expect(holderOf(popup).inert).toBe(false);
+      // Focus landing beside the popup (a focus guard) goes round to its other end.
+      const stops = [...popup.querySelectorAll("button")];
+      const guards = [...holderOf(popup).querySelectorAll<HTMLElement>("[tabindex='0']")].filter(
+        (g) => !popup.contains(g),
+      );
+      expect(guards.length).toBeGreaterThan(0);
+      const after = guards.find((g) => popup.compareDocumentPosition(g) & 4) as HTMLElement;
+      await settle(() => after.focus());
+      expect(document.activeElement).toBe(stops[0] as HTMLElement);
+      const before = guards.find((g) => popup.compareDocumentPosition(g) & 2) as HTMLElement;
+      await settle(() => before.focus());
+      expect(document.activeElement).toBe(stops.at(-1) as HTMLElement);
+      // Closed, the page is back.
+      await settle(() => close());
+      await waitFor(() => !holderOf(behind).inert, "the page back");
+      await m.unmount();
+    }
+  });
+
   test("useConfirm answers a promise", async () => {
     let ask: (() => Promise<boolean>) | undefined;
     function Host() {

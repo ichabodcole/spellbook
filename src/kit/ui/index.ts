@@ -10,6 +10,7 @@ export * from "./dialog.tsx";
 export * from "./disabledReason.tsx";
 export * from "./dropdown-menu.tsx";
 export * from "./empty.tsx";
+export * from "./inertOutside.ts";
 export * from "./input.tsx";
 export * from "./popover.tsx";
 export * from "./quiet.ts";

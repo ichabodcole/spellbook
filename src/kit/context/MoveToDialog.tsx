@@ -6,6 +6,7 @@ import { Dialog } from "@base-ui/react/dialog";
 import { FolderIcon, FolderTreeIcon, HomeIcon } from "lucide-react";
 import { type KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { cn } from "../lib/cn.ts";
+import { inertOutsideRef } from "../ui/inertOutside.ts";
 import { baseName, filterMoveTargets, type MoveTarget, shortPath } from "./model.ts";
 
 export function MoveToDialog({
@@ -67,6 +68,8 @@ export function MoveToDialog({
       <Dialog.Portal>
         <Dialog.Backdrop className="fixed inset-0 isolate z-50 bg-black/30 duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
         <Dialog.Popup
+          // Base UI's trap lets Tab out; the page behind is made inert instead.
+          ref={inertOutsideRef}
           data-slot="move-to-dialog"
           className="fixed top-1/2 left-1/2 z-50 flex max-h-[70vh] w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 flex-col gap-2 rounded-xl border border-edge bg-surface p-3 text-ink shadow-lg duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
         >

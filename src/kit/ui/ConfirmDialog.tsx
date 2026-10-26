@@ -1,6 +1,7 @@
 import { AlertDialog } from "@base-ui/react/alert-dialog";
 import { type ReactNode, useCallback, useRef, useState } from "react";
 import { cn } from "../lib/cn";
+import { inertOutsideRef } from "./inertOutside";
 
 /**
  * ConfirmDialog — "are you sure?", the one dialog every project rebuilds.
@@ -80,6 +81,8 @@ export function ConfirmDialog({
       <AlertDialog.Portal>
         <AlertDialog.Backdrop className="fixed inset-0 isolate z-50 bg-black/30 duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
         <AlertDialog.Popup
+          // Base UI's trap lets Tab out; the page behind is made inert instead.
+          ref={inertOutsideRef}
           data-slot="confirm-dialog"
           className="fixed top-1/2 left-1/2 z-50 grid w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 gap-3 rounded-xl border border-edge bg-surface p-4 text-ink shadow-lg duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
         >
