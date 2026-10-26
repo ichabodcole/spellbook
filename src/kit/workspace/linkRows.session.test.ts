@@ -188,6 +188,13 @@ describe.each([
     });
   });
 
+  test("a chat line names what was made in the link's own set, not the holding one", () => {
+    const s = both();
+    expect(s.display(join(linkdir, "Untitled.md"))).toBe("linkdir/Untitled.md");
+    expect(s.display(linkdir)).toBe("linkdir");
+    expect(s.display(join(set, "real", "inner.md"))).toBe("world/real/inner.md");
+  });
+
   test("a folder in it takes a document, a folder and an import", () => {
     const s = both();
     const sub = join(linkdir, "sub");

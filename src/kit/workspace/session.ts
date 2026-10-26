@@ -4141,12 +4141,19 @@ export class WorkspaceSession {
    * document's file name, `workspace/...` in the workspace, else `~/...`.
    */
   display(abs: string): string {
+    // In the innermost set that holds it: a linked folder opened as a set of
+    // its own sits under the set holding its link, and is named as itself.
+    let set: ContextEntry | undefined;
     for (const e of this.m.context) {
-      if (e.membership === "mirrored") {
-        if (abs === e.root) return e.label;
-        if (abs.startsWith(e.root + sep)) return `${e.label}/${toPosix(relative(e.root, abs))}`;
-      } else if (e.nodes.some((n) => join(e.root, n.rel) === abs)) return e.label;
+      if (e.membership !== "mirrored") continue;
+      if (abs !== e.root && !abs.startsWith(e.root + sep)) continue;
+      if (!set || e.root.length > set.root.length) set = e;
     }
+    if (set)
+      return abs === set.root ? set.label : `${set.label}/${toPosix(relative(set.root, abs))}`;
+    for (const e of this.m.context)
+      if (e.membership !== "mirrored" && e.nodes.some((n) => join(e.root, n.rel) === abs))
+        return e.label;
     if (abs.startsWith(this.dir + sep)) return toPosix(relative(this.dir, abs));
     if (this.hasHome && abs.startsWith(this.workspace + sep))
       return `workspace/${toPosix(relative(this.workspace, abs))}`;

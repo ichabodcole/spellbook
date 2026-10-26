@@ -134,6 +134,60 @@ describe("a link's row", () => {
     await m.unmount();
   });
 
+  test("its accessible name says it is a link, and where it leads, in the ~ form", async () => {
+    const { props } = harness();
+    const m = await mountSidebar(<ContextSidebar {...props} />);
+    await drillIn();
+    expect(treeRow("linkdir")?.getAttribute("aria-label")).toBe("linkdir, a link to ~/outside");
+    // A real folder keeps the library's own name.
+    expect(treeRow("real")?.getAttribute("aria-label")).toBe("real");
+    await m.unmount();
+  });
+
+  test("a row dragged onto it in the tree is not moved: the dialog offers it as its own set", async () => {
+    const withDoc: ContextEntry = {
+      ...world,
+      nodes: [...world.nodes, { kind: "doc", rel: "a.md" }],
+    };
+    const { props, structure, added } = harness({ entries: [withDoc] });
+    const moves: [string, string][] = [];
+    const m = await mountSidebar(
+      <ContextSidebar
+        {...props}
+        onStructure={(op) => {
+          if (op.op === "move") moves.push([op.path, op.into]);
+          structure.push(op);
+        }}
+      />,
+    );
+    await drillIn();
+    const store: Record<string, string> = {};
+    const dt = {
+      types: [] as string[],
+      setData: (f: string, d: string) => {
+        store[f] = d;
+        dt.types.push(f);
+      },
+      getData: (f: string) => store[f] ?? "",
+      setDragImage: () => {},
+      dropEffect: "move",
+      effectAllowed: "all",
+      files: [],
+      items: [],
+    };
+    await dragEvent("dragstart", treeRow("a.md") as Element, dt);
+    await dragEvent("dragover", treeRow("linkdir") as Element, dt);
+    await dragEvent("drop", treeRow("linkdir") as Element, dt);
+    await waitFor(() => dialog() !== null, "the dialog");
+    expect(dialog()?.textContent).toContain("linkdir is a link to ~/outside");
+    await settle(() => {});
+    expect(moves).toEqual([]);
+    expect(structure).toEqual([]);
+    await click(buttonWith("Open as its own set", dialog() as ParentNode));
+    expect(added).toEqual(["/w/world/linkdir"]);
+    await m.unmount();
+  });
+
   test("its menu makes nothing, keeps what acts on the link, and opens it as its own set", async () => {
     const { props, added } = harness();
     const m = await mountSidebar(<ContextSidebar {...props} />);

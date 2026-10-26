@@ -75669,6 +75669,22 @@ function EntryTree({
     initialState: { expandedItems: shownRel ? ancestorsOf(shownRel) : [] },
     getItemName: (item) => item.getId() === ROOT_ID ? entry.label : nodeLabel(item.getItemData()),
     isItemFolder: (item) => isFolderNode(item.getItemData()),
+    hotkeys: {
+      expandOrDown: {
+        hotkey: "ArrowRight",
+        canRepeat: true,
+        handler: (_e2, t2) => {
+          const focused = t2.getFocusedItem();
+          if (isLinkNode(focused.getItemData()))
+            return;
+          if (focused.isExpanded() || !focused.isFolder()) {
+            t2.focusNextItem();
+            t2.updateDomFocus();
+          } else
+            focused.expand();
+        }
+      }
+    },
     dataLoader: {
       getItem: (id) => id === ROOT_ID ? ROOT_NODE : indexRef.current.byId.get(id) ?? staleNode(id),
       getChildren: (id) => indexRef.current.children.get(id) ?? []
@@ -76094,7 +76110,9 @@ function Row2({
   const level = item.getItemMeta().level;
   const isGroup = node2.kind === "group";
   const link = isLinkNode(node2);
-  const linkTitle = link ? node2.linkTo ? `A link to ${tildify(node2.linkTo, userHome)}: right-click to open it as its own set` : "A link to a folder: right-click to open it as its own set" : undefined;
+  const linkTo = link && node2.linkTo ? tildify(node2.linkTo, userHome) : null;
+  const linkTitle = link ? `A link to ${linkTo ?? "a folder"}: right-click to open it as its own set` : undefined;
+  const linkName = link ? `${item.getItemName()}, a link${linkTo ? ` to ${linkTo}` : ""}` : undefined;
   const expandable = node2.kind === "bundle" && node2.contents !== undefined;
   const isFile = node2.kind === "file";
   const opens = !isGroup && (!isFile || isBundleMain(path2));
@@ -76218,6 +76236,7 @@ function Row2({
     "data-kind": node2.kind,
     "data-link": link || undefined,
     title: linkTitle,
+    ...linkName ? { "aria-label": linkName } : {},
     "data-convention": node2.kind === "file" && node2.convention || undefined,
     className: rowClass,
     children: [
@@ -76225,13 +76244,6 @@ function Row2({
       /* @__PURE__ */ jsx_runtime40.jsx("span", {
         className: "truncate",
         children: item.getItemName()
-      }),
-      link && /* @__PURE__ */ jsx_runtime40.jsxs("span", {
-        className: "sr-only",
-        children: [
-          ", a link",
-          node2.linkTo ? ` to ${node2.linkTo}` : ""
-        ]
       }),
       described && /* @__PURE__ */ jsx_runtime40.jsx(DescribedMark, {}),
       node2.kind === "bundle" && node2.warnings && node2.warnings.length > 0 && /* @__PURE__ */ jsx_runtime40.jsx(WarningsMark, {

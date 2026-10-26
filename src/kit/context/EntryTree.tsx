@@ -305,6 +305,25 @@ export function EntryTree({
     // A group opens and shuts, and so does a bundle whose type expands (its
     // row's chevron, ArrowRight and ArrowLeft, "Show contents").
     isItemFolder: (item) => isFolderNode(item.getItemData()),
+    // ArrowRight on a link's row stays put: it is a folder that never opens,
+    // not a row to step past. Enter does nothing there, as on any row that
+    // opens nothing; its menu is Shift+F10 or the context-menu key, as on any row.
+    // A hotkey given here REPLACES the library's whole entry (not merged), so
+    // it is the library's own `expandOrDown`, with the link's row left out.
+    hotkeys: {
+      expandOrDown: {
+        hotkey: "ArrowRight",
+        canRepeat: true,
+        handler: (_e, t) => {
+          const focused = t.getFocusedItem();
+          if (isLinkNode(focused.getItemData())) return;
+          if (focused.isExpanded() || !focused.isFolder()) {
+            t.focusNextItem();
+            t.updateDomFocus();
+          } else focused.expand();
+        },
+      },
+    },
     dataLoader: {
       getItem: (id) =>
         id === ROOT_ID ? ROOT_NODE : (indexRef.current.byId.get(id) ?? staleNode(id)),
@@ -802,10 +821,13 @@ function Row({
   const isGroup = node.kind === "group";
   // A folder link: a row of its own look, never opened or shut.
   const link = isLinkNode(node);
+  const linkTo = link && node.linkTo ? tildify(node.linkTo, userHome) : null;
   const linkTitle = link
-    ? node.linkTo
-      ? `A link to ${tildify(node.linkTo, userHome)}: right-click to open it as its own set`
-      : "A link to a folder: right-click to open it as its own set"
+    ? `A link to ${linkTo ?? "a folder"}: right-click to open it as its own set`
+    : undefined;
+  // Its accessible name says so: the library names a row by its label alone.
+  const linkName = link
+    ? `${item.getItemName()}, a link${linkTo ? ` to ${linkTo}` : ""}`
     : undefined;
   // A bundle whose type expands: its row opens it, its chevron shows what is inside.
   const expandable = node.kind === "bundle" && node.contents !== undefined;
@@ -977,12 +999,12 @@ function Row({
       data-kind={node.kind}
       data-link={link || undefined}
       title={linkTitle}
+      {...(linkName ? { "aria-label": linkName } : {})}
       data-convention={(node.kind === "file" && node.convention) || undefined}
       className={rowClass}
     >
       {icon}
       <span className="truncate">{item.getItemName()}</span>
-      {link && <span className="sr-only">, a link{node.linkTo ? ` to ${node.linkTo}` : ""}</span>}
       {described && <DescribedMark />}
       {node.kind === "bundle" && node.warnings && node.warnings.length > 0 && (
         <WarningsMark warnings={node.warnings} />
