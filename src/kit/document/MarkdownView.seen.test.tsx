@@ -8,6 +8,7 @@ import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
 import { cleanup, installDom, mount, removeDom, settle } from "../lib/testDom.ts";
 import type { SelectionReport } from "./DocumentView.tsx";
 import { MarkdownView } from "./MarkdownView.tsx";
+import { checkProjections } from "./projection.ts";
 
 beforeAll(() => installDom());
 afterEach(async () => {
@@ -52,6 +53,9 @@ test("a selection and a right-click over it carry what the page showed", async (
     />,
   );
   const body = m.container.querySelector(".md-prose") as Element;
+  // ⛔ The check uses the projection the view holds: projecting again cost close
+  // to a second per selection on a 200 KB document.
+  const made = checkProjections.made;
   await selectAcross(body, "bold", "words");
   const last = reports.at(-1);
   // The source holds the markup; what was seen does not.
@@ -61,5 +65,6 @@ test("a selection and a right-click over it carry what the page showed", async (
     body.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
   });
   expect(menus.at(-1)?.seen).toBe("bold words");
+  expect(checkProjections.made).toBe(made);
   await m.unmount();
 });

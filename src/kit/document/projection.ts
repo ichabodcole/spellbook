@@ -454,6 +454,8 @@ export function showsSelection(
   to: number,
   seen: string,
   projection?: Projection,
+  /** How much the walk may do; a test sets it low to make the fallback answer. */
+  walkBudget = WALK_BUDGET,
 ): boolean {
   const want = bare(seen);
   if (bare(text.slice(from, to)) === want) return true;
@@ -470,7 +472,8 @@ export function showsSelection(
   const r = toPlain(p, from, to);
   // A range that shows nothing (a space beside a footnote's number) holds no
   // text nobody chose: it passes when all that was seen is the page's own.
-  if (!first || !last || !r) return matchesWithin(want, "", 0, 0, p.pageOnly);
+  if (!first || !last || !r)
+    return matchesWithin(want, "", 0, 0, p.pageOnly, { budget: walkBudget, fallback: false });
   const shown = bare(p.plain.slice(r.from, r.to));
   const m = shown.length;
   const runLength = (seg: ProjSegment) => bare(p.plain.slice(seg.plainFrom, seg.plainTo)).length;
@@ -484,7 +487,21 @@ export function showsSelection(
     lead = edge(first, /^\s/u.test(seen));
     trail = edge(last, /\s$/u.test(seen));
   }
-  return matchesWithin(want, shown, lead, trail, p.pageOnly);
+  // The fallback cannot see the runs between the edges: it may answer only when
+  // there are none, or when none holds a character `seen` does not. (Today its
+  // edge rule already implies this: a place that ends inside the last run spans
+  // the middle, so `seen` holds the middle's characters. Kept so a looser
+  // fallback cannot take whole unselected runs.)
+  const seenChars = new Set(want);
+  const middleOutside = runs
+    .slice(1, -1)
+    .some((seg) =>
+      [...bare(p.plain.slice(seg.plainFrom, seg.plainTo))].some((c) => !seenChars.has(c)),
+    );
+  return matchesWithin(want, shown, lead, trail, p.pageOnly, {
+    budget: walkBudget,
+    fallback: first === last || !middleOutside,
+  });
 }
 
 /**
@@ -494,8 +511,13 @@ export function showsSelection(
  * page passes the projection it already holds and never comes here.
  */
 let lastProjected: { text: string; p: Projection } | null = null;
+/** How many times `showsSelection` has had to project: a test holds the page to none. */
+export const checkProjections = { made: 0 };
 function projectedOnce(text: string): Projection {
-  if (lastProjected?.text !== text) lastProjected = { text, p: project(text) };
+  if (lastProjected?.text !== text) {
+    lastProjected = { text, p: project(text) };
+    checkProjections.made++;
+  }
   return lastProjected.p;
 }
 
@@ -505,7 +527,7 @@ function projectedOnce(text: string): Projection {
  * `-----` lines) keeps every start alive, and following them all is quadratic:
  * 3 s for a 20 KB block.
  */
-const WALK_BUDGET = 400_000;
+const WALK_BUDGET = 150_000;
 
 /**
  * Is `want` the text `shown[a, m - b)` for some `a <= lead` and `b <= trail`,
@@ -519,6 +541,7 @@ function matchesWithin(
   lead: number,
   trail: number,
   extra: readonly string[],
+  limits: { budget: number; fallback: boolean },
 ): boolean {
   const m = shown.length;
   const n = want.length;
@@ -552,7 +575,7 @@ function matchesWithin(
     work += here.size;
     // ⛔ BOUNDED. This much work means text that repeats itself, where the live
     // positions are as good as each other; settled the cheap way instead.
-    if (work > WALK_BUDGET) return foundWhole(want, shown, lead, trail, extra);
+    if (work > limits.budget) return limits.fallback && foundWhole(want, shown, lead, trail, extra);
   }
   // Done where the rest of `want` is nothing, or the start of the page's own text;
   // with something of `shown` matched, or nothing of it there to match.
@@ -566,8 +589,11 @@ function matchesWithin(
 
 /**
  * The walk's cheap stand-in, for text that repeats itself: `want`, with the
- * page's own text taken out of it or not, found whole in `shown`, which is
- * wider only by what the edges allow.
+ * page's own text taken out of it or not, found whole in `shown` at a place
+ * that starts within `lead` and leaves at most `trail` after it. The earliest
+ * place that leaves at most `trail` is the one to try: a later one only starts
+ * later. ⚠ It cannot see what lies between the edges, so the caller allows it
+ * only for one run, or for middle runs made of characters `seen` holds.
  */
 function foundWhole(
   want: string,
@@ -578,7 +604,31 @@ function foundWhole(
 ): boolean {
   let stripped = want;
   for (const t of extra) if (t !== "") stripped = stripped.split(t).join("");
-  return [want, stripped].some(
-    (w) => w !== "" && shown.includes(w) && shown.length - w.length <= lead + trail,
-  );
+  return [want, stripped].some((w) => {
+    if (w === "") return false;
+    const from = Math.max(0, shown.length - w.length - trail);
+    if (from > lead) return false;
+    const at = firstIndex(shown, w, from);
+    return at !== -1 && at <= lead;
+  });
+}
+
+/**
+ * `hay.indexOf(needle, from)` in time linear in both (Knuth, Morris, Pratt).
+ * ⚠ Not `indexOf`: on text that repeats itself with a mismatch near the end,
+ * it compared the whole needle at each place, 360 ms for 30,000 dashes.
+ */
+function firstIndex(hay: string, needle: string, from: number): number {
+  const fail = new Int32Array(needle.length);
+  for (let i = 1, k = 0; i < needle.length; i++) {
+    while (k > 0 && needle[i] !== needle[k]) k = fail[k - 1] as number;
+    if (needle[i] === needle[k]) k++;
+    fail[i] = k;
+  }
+  for (let i = from, k = 0; i < hay.length; i++) {
+    while (k > 0 && hay[i] !== needle[k]) k = fail[k - 1] as number;
+    if (hay[i] === needle[k]) k++;
+    if (k === needle.length) return i - needle.length + 1;
+  }
+  return -1;
 }

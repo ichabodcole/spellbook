@@ -718,4 +718,48 @@ describe("showsSelection", () => {
     expect(showsSelection(F, from, to, `${seen}x`)).toBe(false);
     expect(performance.now() - t0).toBeLessThan(1000);
   });
+
+  // Round 4: the walk's fallback (`foundWhole`), forced with a budget of nothing.
+  // It must refuse what the walk refuses: text beyond the edges' allowance, on
+  // either side, and whole runs nobody selected between two uncut edges.
+  test("forced, the fallback keeps the edges' allowance and refuses unselected runs between", () => {
+    const forced = (t: string, from: number, to: number, seen: string) =>
+      showsSelection(t, from, to, seen, undefined, 0);
+    for (const n of [300, 3000]) {
+      // Shape A: an uncut run of dashes, then exact text nobody selected.
+      const A = `&amp; ${"-".repeat(n)} **bold** tail words here.\n`;
+      const seen = "-".repeat(Math.floor(n * 0.7));
+      expect(forced(A, 0, A.indexOf(" here."), seen)).toBe(false);
+      expect(forced(A, 0, A.indexOf(" **bold**"), seen)).toBe(true);
+      // The same, the unselected text before the run.
+      const L = `Lead words here **bold** &amp; ${"=".repeat(n)}\n`;
+      expect(forced(L, 0, L.length - 1, "=".repeat(Math.floor(n * 0.7)))).toBe(false);
+      // Shape B: two uncut blocks and a paragraph nobody selected between them.
+      const blk = `\`\`\`\n${"ab".repeat(n)}\n\`\`\`\n`;
+      const B = `${blk}\nMiddle paragraph nobody selected at all.\n\n${blk}`;
+      expect(forced(B, 0, B.length - 1, "ab".repeat(n))).toBe(false);
+      // Two runs and nothing between: an uncut run, then exact text nobody
+      // selected. The fallback must keep to the trailing edge's allowance...
+      const T2 = `&amp; ${"-".repeat(n)} **tail**\n`;
+      expect(forced(T2, 0, T2.length - 1, seen)).toBe(false);
+      // ...and to the leading edge's: exact text, then an uncut run.
+      const L2 = `**Lead** &amp; ${"=".repeat(n)}\n`;
+      expect(forced(L2, 0, L2.length - 1, "=".repeat(Math.floor(n * 0.7)))).toBe(false);
+      // Across both blocks, nothing between them unselected, it passes.
+      const C = `${blk}\n${blk}`;
+      expect(forced(C, 0, C.length - 1, `b${"ab".repeat(n - 1)}${"ab".repeat(n - 1)}a`)).toBe(true);
+    }
+  });
+
+  test("ordinary text is answered by the walk, not the fallback", () => {
+    // A real "1" and a footnote's "1" side by side: the walk tells them apart,
+    // the fallback (all of the page's text taken out, or none) cannot.
+    // Enough text for the walk to be past a small budget: an entity makes the
+    // run uncut, so every start in it is open.
+    const V = "Version 1 &amp; a little more is said here[^1].\n\n[^1]: Foot.\n";
+    const to = V.indexOf("[^1]");
+    const seen = "Version 1 & a little more is said here1";
+    expect(showsSelection(V, 0, to, seen)).toBe(true);
+    expect(showsSelection(V, 0, to, seen, undefined, 0)).toBe(false);
+  });
 });
