@@ -46,6 +46,7 @@ import {
 } from "../lib/docFormat.ts";
 import { homeDir } from "../lib/home.ts";
 import { printJson } from "../lib/printJson";
+import { DAEMON_LOCK, readDaemonLock } from "../wire/daemonLock";
 import { startDaemon } from "../wire/detach";
 import {
   type DiscoveryOptions,
@@ -521,6 +522,12 @@ const DASH_HINT = "for free text containing dashes, put it after a bare --";
 /** How long `open` waits for its daemon by default, and so how long a bare tail waits on an ended newest session. */
 export const DEFAULT_START_TIMEOUT_MS = 45_000;
 
+/** How long `open` waits at least for a running daemon to put back a pointer that went: it checks every second. */
+const POINTER_HEAL_MS = 2500;
+
+/** How long `open` gives a running daemon to answer `/state` before it counts as not answering. */
+const ANSWER_MS = 3000;
+
 export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
   const app = opts.app.name;
   const endedGraceMs = opts.tailEndedGraceMs ?? DEFAULT_START_TIMEOUT_MS;
@@ -770,8 +777,13 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
   // ── the verbs ───────────────────────────────────────────────────────────
 
   /** Whether the daemon a pointer names answers. */
+  /**
+   * Whether the daemon a pointer names answers, within a bound: a stuck
+   * process's port still accepts the connection and then never replies, and
+   * an unbounded wait on it hung `open` for as long as the fetch would wait.
+   */
   const answers = (p: SessionPointer): Promise<boolean> =>
-    api(p.port, "GET", "/state").then(
+    fetch(`http://127.0.0.1:${p.port}/state`, { signal: AbortSignal.timeout(ANSWER_MS) }).then(
       (r) => r.status === 200,
       () => false,
     );
@@ -787,25 +799,40 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
    * session's lock (two restores at once, both past the check above). The
    * loser gets the same refusal a restore of a running session gets, naming
    * the winner's URL, whatever the timing: an agent reads one outcome for one
-   * state. The winner may not be listening yet, so this waits for it (as long
-   * as `open` waits for its own) and says plainly if it never came up.
+   * state.
+   *
+   * The holder is found through its pointer. One still starting has none yet,
+   * so this waits out what is left of the holder's own start window, counted
+   * from when it took the lock (the lock's `at`), never a fresh one: a daemon
+   * that has held the session for an hour is not starting. One that is up but
+   * whose pointer went (the OS cleaned the temp folder) puts it back within a
+   * second, so that much is always waited. A holder found neither way does not
+   * answer: the refusal names its pid and lock and how to stop it. It never
+   * offers a verb that finds the session by its pointer, which would fail and
+   * send the agent back here.
    */
   async function refuseLockedRestore(id: string, pid: number, waitMs: number): Promise<never> {
-    const deadline = Date.now() + waitMs;
+    const dir = join(opts.sessionsRoot(), id);
+    const rec = readDaemonLock(dir);
+    const since = rec !== null && rec.pid === pid ? rec.at : Date.now();
+    const deadline = Math.max(since + waitMs, Date.now() + POINTER_HEAL_MS);
     while (Date.now() < deadline && pidAlive(pid)) {
       const p = readSession(id);
       if (p && p.pid === pid && (await answers(p))) alreadyRunning(id, p.url);
       await Bun.sleep(100);
     }
+    if (!pidAlive(pid))
+      return die(
+        `session ${id} was held by another daemon (pid ${pid}), which stopped before it answered`,
+        "conflict",
+        { hint: `bring it back: open --restore ${id}` },
+      );
+    const held = Math.round((Date.now() - since) / 1000);
     return die(
-      pidAlive(pid)
-        ? `session ${id} is being started by another daemon (pid ${pid}), which has not come up after ${Math.round(waitMs / 1000)}s`
-        : `session ${id} was being started by another daemon (pid ${pid}), which stopped before it came up`,
+      `session ${id} is held by another daemon (pid ${pid}, for ${held}s), which does not answer: no pointer to it can be found (lock: ${join(dir, DAEMON_LOCK)})`,
       "conflict",
       {
-        hint: pidAlive(pid)
-          ? `wait for it: state --session ${id}`
-          : `bring it back: open --restore ${id}`,
+        hint: `if that daemon is stuck, stop it with \`kill ${pid}\`, then \`open --restore ${id}\` (its lock is then recovered)`,
       },
     );
   }

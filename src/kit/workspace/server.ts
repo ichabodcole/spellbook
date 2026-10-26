@@ -54,6 +54,7 @@ import { decodePath, splitTarget } from "../lib/linkTarget.ts";
 import { IMAGE_SOURCES } from "../lib/sidecar.ts";
 import { type DaemonLock, releaseDaemonLock, takeDaemonLock } from "../wire/daemonLock.ts";
 import {
+  pointerPath,
   publishPointer,
   recordLastOpened,
   removePointer,
@@ -152,6 +153,7 @@ import { type Screen, selectionOnScreen } from "./selection";
 import {
   type AppDeclaration,
   checkApp,
+  checkSessionId,
   contentHash,
   type FileEvent,
   GoneError,
@@ -1003,8 +1005,10 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
 
     // A saved session is locked before it is read. A new one's folder is made
     // by `create`, under an id minted here that nobody else can name yet, and
-    // locked straight after. No folder: `restore` refuses it (404).
-    if (opts.restore && existsSync(dir)) lockOrRefuse();
+    // locked straight after. No folder: `restore` refuses it (404). The id is
+    // checked first: `--restore ..` must not lock the sessions root's parent.
+    if (opts.restore && existsSync(join(opts.sessionsRoot, checkSessionId(opts.restore))))
+      lockOrRefuse();
     const session = opts.restore
       ? WorkspaceSession.restore(opts.sessionsRoot, app, opts.restore, {
           ...(opts.appHome !== undefined ? { appHome: opts.appHome } : {}),
@@ -4965,21 +4969,34 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       server.stop(true);
     };
     // --- discovery -------------------------------------------------------------------
-    try {
-      publishPointer(
-        app.name,
-        {
-          url: `http://127.0.0.1:${boundPort}`,
-          port: boundPort,
-          session_id: sessionId,
-          dir: session.dir,
-          pid: process.pid,
-        },
-        { tmp: opts.tmp },
-      );
-    } catch {
-      /* discovery is best-effort */
-    }
+    const publishOwnPointer = () => {
+      try {
+        publishPointer(
+          app.name,
+          {
+            url: `http://127.0.0.1:${boundPort}`,
+            port: boundPort,
+            session_id: sessionId,
+            dir: session.dir,
+            pid: process.pid,
+          },
+          { tmp: opts.tmp },
+        );
+      } catch {
+        /* discovery is best-effort */
+      }
+    };
+    publishOwnPointer();
+    /**
+     * The pointer put back when it is gone while the daemon runs (the OS
+     * cleaning the temp folder under a long session, or a hand): without it a
+     * live daemon is unreachable, and the session's lock refuses every restore
+     * that would replace it. Checked on the attention clock below.
+     */
+    const ownPointer = pointerPath(app.name, sessionId, { tmp: opts.tmp });
+    const keepPointer = () => {
+      if (!existsSync(ownPointer)) publishOwnPointer();
+    };
     // The newest session, for every CLI verb with no --session: this one,
     // started new or restored. It outlives this daemon, unlike the pointer.
     try {
@@ -5092,6 +5109,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
      */
     let lastWaiting: string | null = null;
     const attentionTimer = setInterval(() => {
+      keepPointer();
       const now = Date.now();
       const w = waitingOn(session.messages(), now, {
         acknowledgedUntil,

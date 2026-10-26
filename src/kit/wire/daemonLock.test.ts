@@ -18,6 +18,7 @@ import {
   DAEMON_LOCK,
   lockHeld,
   parseEtime,
+  readDaemonLock,
   releaseDaemonLock,
   takeDaemonLock,
 } from "./daemonLock.ts";
@@ -177,6 +178,28 @@ describe("stale recovery's own race, step by step", () => {
     expect(r.ok).toBe(true);
     if (r.ok) releaseDaemonLock(r.lock);
     expect(readdirSync(dir)).toEqual([]);
+  });
+});
+
+describe("tidying after a take", () => {
+  test("a crashed reaper's orphan guard is removed by the next take; a live starter's is left", async () => {
+    const dir = freshDir();
+    const orphan = `${DAEMON_LOCK}.reap-${"12".repeat(12)}`;
+    const live = `${DAEMON_LOCK}.reap-${"34".repeat(12)}`;
+    const dead = { pid: await deadPid(), nonce: "56".repeat(12), at: Date.now() - 5000 };
+    writeFileSync(join(dir, orphan), `${JSON.stringify(dead)}\n`);
+    writeFileSync(
+      join(dir, live),
+      `${JSON.stringify({ pid: process.ppid, nonce: "78".repeat(12), at: Date.now() })}\n`,
+    );
+    const r = takeDaemonLock(dir, () => 10);
+    expect(r.ok).toBe(true);
+    expect(readdirSync(dir).sort()).toEqual([DAEMON_LOCK, live].sort());
+    if (r.ok) {
+      expect(readDaemonLock(dir)?.nonce).toBe(r.lock.record.nonce);
+      releaseDaemonLock(r.lock);
+    }
+    expect(readDaemonLock(dir)).toBeNull();
   });
 });
 

@@ -38,7 +38,7 @@
  */
 
 import { randomBytes } from "node:crypto";
-import { linkSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { linkSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 /** The lock's file name inside a session's folder. */
@@ -215,6 +215,7 @@ export function takeDaemonLock(dir: string, elapsed: Elapsed = elapsedSeconds): 
     const record = newRecord();
     if (createWhole(path, record)) {
       heldHere.add(record.nonce);
+      tidyGuards(dir, elapsed);
       return { ok: true, lock: { path, record } };
     }
     const seen = readRecord(path);
@@ -243,6 +244,43 @@ export function takeDaemonLock(dir: string, elapsed: Elapsed = elapsedSeconds): 
   // Every round found the name taken again: someone holds it now.
   const now = readRecord(path);
   return { ok: false, holder: typeof now === "object" ? now : (last ?? newRecord()), path };
+}
+
+/**
+ * Reap guards left by starters that died mid-recovery, removed by whoever next
+ * takes the lock. Every guard is keyed on a lock that is gone now (the lock is
+ * ours), so none can be acted on again; only those whose writer is gone are
+ * removed, so a live starter's guard is left for it to remove itself. A temp
+ * file a crashed starter left is not touched: a live one's is in use until its
+ * link, and nothing tells the two apart.
+ */
+function tidyGuards(dir: string, elapsed: Elapsed): void {
+  let names: string[];
+  try {
+    names = readdirSync(dir);
+  } catch {
+    return;
+  }
+  for (const name of names) {
+    if (!name.startsWith(`${DAEMON_LOCK}.reap-`) || name.endsWith(".tmp")) continue;
+    const r = readRecord(join(dir, name));
+    if (typeof r === "object" && lockHeld(r, elapsed)) continue;
+    try {
+      unlinkSync(join(dir, name));
+    } catch {
+      /* gone */
+    }
+  }
+}
+
+/**
+ * The lock record in a session folder, or null when there is none or it is not
+ * one. Read-only: what `open` reads to tell a daemon still starting from one
+ * that has held the session a while.
+ */
+export function readDaemonLock(dir: string): LockRecord | null {
+  const r = readRecord(join(dir, DAEMON_LOCK));
+  return typeof r === "object" ? r : null;
 }
 
 /** Release a lock this process took: removed only while it still carries our nonce. */
