@@ -56,12 +56,22 @@ Why not "follow only links that stay inside":
   needed.
 
 Why the row stays rather than the link being left out: the link itself can still
-be renamed, moved or put in the Trash from the tree. Its old guards still refuse
-what they refused: dropping into a link that leads out, Trash through it,
-duplicating it. Leaving it out silently made a linked folder vanish, and broke
-the "the link itself may go" Trash path. The row reads as an empty folder.
-Telling the two apart needs a protocol mark, which is a follow-up and not part
-of this item.
+be renamed, moved or put in the Trash from the tree.
+
+**Nothing goes into a link's row.** `destinationOrDie` in `session.ts` refuses
+any folder of a set's tree that is a link, or that really is somewhere else
+because a folder above it was swapped for a link since the scan. The same check
+covers every route that takes a destination: a new document, folder or bundle,
+`addFolder`, an import, a move or move plan, a drop or `fs.same`, and an image
+drop. A move _out of_ a link row is already refused, because the files under it
+are not shown. The refusal is a 400 in the house envelope. Its hint names the
+act that answers it: `add <the link's path>`, which adds the linked folder as a
+set of its own. Before this guard, `new-doc`, `new-folder`, `import --into` and
+`move` into a link row all wrote where the link led, and the file then vanished
+from the set. The Trash and duplicate guards still refuse as before. Leaving it
+out silently made a linked folder vanish, and broke the "the link itself may go"
+Trash path. The row reads as an empty folder. Telling the two apart needs a
+protocol mark, which is a follow-up and not part of this item.
 
 A link named like a bundle (`Linked.boardbundle`) is a link's row too, not a
 bundle read through it: its `info.json` and main file are not the set's either.
@@ -73,11 +83,14 @@ item does not change the chat-and-toast nit.
 ## Done and verified
 
 - **Commits:** `2f4b5ae7` holds the fix, its tests, the adapted tests and the
-  rebuilt Scriptorium `dist`. This record follows it.
-- **The fix:** `folderWalker` in `src/kit/workspace/tree.ts` checks `lstat` for
-  each folder it is about to enter. A link becomes a childless `group` row and
-  is not walked. This covers set, member and bundle-own modes, because all three
-  walk through this one function.
+  rebuilt Scriptorium `dist`. `9828cffb` is this record. The fix round (the
+  verifier's "With fixes") follows them: the destination guard, the cap test,
+  and dirent link detection.
+- **The fix:** `folderWalker` in `src/kit/workspace/tree.ts` reads each folder
+  with `withFileTypes` and knows from the entries which names are links. A link
+  to a folder becomes a childless `group` row, counted toward the cap like any
+  folder, and is not walked. This covers set, member and bundle-own modes,
+  because all three walk through this one function.
 - **Tests:** `tree.symlinks.test.ts` covers, with and without a scan guard:
   - an outward link;
   - an inward link;
@@ -87,8 +100,18 @@ item does not change the chat-and-toast nit.
   - a file link;
   - a set rooted at a link;
   - outward links and loops inside an expandable bundle's member folder and its
-    own files.
-- **Changed existing tests:** four tests assumed linked folders were read.
+    own files;
+  - a link row counting toward the cap.
+
+  `linkRows.session.test.ts` covers the destination guard: new document, folder
+  and bundle, `addFolder`, import, image drop, `fs.same`'s folder, move and move
+  plan into the row, a move out of it, an inward link, a folder swapped for a
+  link (and one under it), the link itself still moving, and a set rooted at a
+  link still taking new documents. The CLI verbs the verifier ran (`new-doc`,
+  `new-folder`, `import --into`, `move`) were driven against a real daemon: each
+  exits 2 with the hint, and nothing is written outside.
+
+- **Changed existing tests:** five tests assumed linked folders were read.
   - Two now reach their deeper guard by the swap route: a shown folder is
     replaced by a link before a rescan. These are `trash.guards` "leads outside"
     and `bundles` "a bundle that is a link is not duplicated".
@@ -97,13 +120,27 @@ item does not change the chat-and-toast nit.
     exercised.
   - `ownPlaces` "the add ~ case" expects `elsewhere` as a link row with nothing
     under it.
+  - `src/scriptorium/backend/kit/diskGuard.integration.test.ts` "retargeted into
+    another session": the image's link chain is now a second set rooted at a
+    link (`open set linked-pics`). Its write-guard assertions are unchanged.
+- **Fail-open, no longer reachable:** the first round's `isLink` helper
+  (`lstat`, with a `catch` meant to fail closed) is gone. Link detection now
+  comes from the directory entries already read, so there is no second call that
+  could fail. A folder swapped for a link between the read and the walk is
+  entered once. The next level's read sees any link inside it as a link, so that
+  race cannot loop.
 
 ## Port-back notes
 
-- `tree.ts` `folderWalker`: before entering a folder, `isLink(abs)`
-  (`lstatSync(...).isSymbolicLink()`, fail-closed). A link becomes
-  `{ kind: "group", rel, children: [] }` and is counted once, with no walk and
+- `tree.ts` `folderWalker`: every folder is read with
+  `readdirSync(dir, { withFileTypes: true })`, which was only done with a guard
+  before. A name whose entry `isSymbolicLink()` and whose `stat` is a directory
+  becomes `{ kind: "group", rel, children: [] }`, counted once, with no walk and
   no bundle read. Story Studio has the same bug: at `7aaa0692`,
   `packages/kit/src/workspace/tree.ts` around line 497 `statSync`s each entry
   and walks into any directory, link or not. Its `"tree"` mode is our `"set"`.
-- `isLink`: a new private helper in `tree.ts`.
+- `session.ts` `destinationOrDie` -> new `notThroughLinkOrDie(abs, entry)`: a
+  tree folder that is a link, or whose realpath is outside the entry's real
+  root, is refused with a 400 and the hint `add <path>`. Story Studio's
+  `destinationOrDie` has no such check either. Without it, the tree fix alone
+  turns a linked folder into an empty row you can still write through.
