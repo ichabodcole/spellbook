@@ -5,7 +5,7 @@ status: stable
 description:
   Review bounty and grapevine skills for integration completeness and
   correctness
-lifecycle: active
+lifecycle: done
 id: 019f4ac0-85d8-7803-82b4-b9dcecee4e52
 kind: task
 generated: { by: unknown, at: 2026-07-09 }
@@ -37,7 +37,7 @@ the docs likely have accreted layers worth consolidating.
       the CLI `help`, over-explains edge cases, or reads as changelog rather
       than how-to. Keep the trigger phrases, the mental model, and the "when to
       use / when not to." Prefer one clear path over enumerating every knob.
-- [ ] **Trigger accuracy** — the `description` frontmatter still fires on the
+- [x] **Trigger accuracy** — the `description` frontmatter still fires on the
       right phrases and doesn't over/under-trigger.
 - [x] **Consistency** — house-style alignment between the two (they share the
       daemon+cli pattern); run the `ward` checklist if conventions changed.
@@ -75,3 +75,11 @@ were fixed here.
 - `plugins/spellbook/skills/grapevine/SKILL.md`
 - Related ritual: the planned periodic spell grooming sweep (spell health /
   modernization) — this is a targeted instance for the two highest-use spells.
+
+## Trigger check (lead, 2026-10-25)
+
+The verifier wrote 12 phrases per spell, 6 that should fire and 6 that should
+not. Grapevine covered 6 of 12 (missing disposition and daemon operation) and
+bounty 8 of 12 (missing restore; GitHub project boards and the `docs/items`
+board not excluded). The fix round (`d75edd72`, `44ff5e61`) added the missing
+phrases and exclusions. Not measured against a live router.
