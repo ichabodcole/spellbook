@@ -61,14 +61,17 @@ that bite if unknown; for full Bun API docs read
   `.tsx`/`.jsx`/`.js` directly and Bun bundles them; `<link>` to CSS/Tailwind
   bundles too. Full React/CSS/Tailwind support, no separate bundler.
 - **The test step runs files in parallel.** `bun run test` (the gate's last
-  step, and CI's) is `bun test --parallel --timings=test-timings.json`: one
-  worker per core, each file isolated, slowest files first by the checked-in
-  `test-timings.json`. It takes about a minute on a 14-core Mac, against about
-  ten serially. Run `bun run test:timings` after adding, splitting or much
-  slowing a test file, and commit the result; a stale file only changes the
-  order files start in, but one that doesn't parse fails the gate, so on a merge
-  conflict rerun it rather than merging by hand. Tests within a file still run
-  one at a time. How to keep it fast:
+  step, and CI's) is
+  `bun test --parallel --timeout=15000 --timings=test-timings.json`: one worker
+  per core, each file isolated, slowest files first by the checked-in
+  `test-timings.json`. A test with no timeout of its own gets 15 s, not bun's 5
+  s, because CI's runner is about 9x slower than a dev Mac; a bare `bun test`
+  still uses 5 s. It takes about a minute on a 14-core Mac, against about ten
+  serially. Run `bun run test:timings` after adding, splitting or much slowing a
+  test file, and commit the result; a stale file only changes the order files
+  start in, but one that doesn't parse fails the gate, so on a merge conflict
+  rerun it rather than merging by hand. Tests within a file still run one at a
+  time. How to keep it fast:
   [the test-speed playbook](./docs/playbooks/test-speed-playbook.md).
 - **A test that writes on disk straight after a watch is armed** (a folder
   added, a document opened) uses `writeUntilSeen`
