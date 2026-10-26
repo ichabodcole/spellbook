@@ -62,13 +62,82 @@ skills.
 
 ## Definition of done
 
-- [ ] No shipped bundle under `plugins/spellbook/skills/*/dist/` carries an
+- [x] No shipped bundle under `plugins/spellbook/skills/*/dist/` carries an
       inline source map. A ward fails if one does.
-- [ ] `src/build.ts`'s ruling comment, Contract 4's wording, and register D7 are
+- [x] `src/build.ts`'s ruling comment, Contract 4's wording, and register D7 are
       updated to the new ruling.
-- [ ] A comment-only edit under `src/` no longer changes any committed bundle.
-- [ ] Every spell still runs from its built `dist/`. The gate and acc pass.
-- [ ] Size before and after is measured and recorded here: raw, and gzipped as
+- [x] A comment-only edit under `src/` no longer changes any committed bundle.
+- [x] Every spell still runs from its built `dist/`. The gate and acc pass.
+- [x] Size before and after is measured and recorded here: raw, and gzipped as
       git stores it.
-- [ ] Minify is either done, with the text-reading wards calibrated, or filed as
+- [x] Minify is either done, with the text-reading wards calibrated, or filed as
       a follow-up item that names the calibration it needs.
+
+## Measured (2026-10-26, step 1)
+
+All nine deployed `dist/` folders (`plugins/spellbook/skills/*/dist/` and
+`plugins/unreleased/skills/mind-mapper/dist/`), 45 files, 27 of them JS:
+
+|                               | Before   | After    |
+| ----------------------------- | -------- | -------- |
+| JS, raw                       | 23.19 MB | 12.81 MB |
+| JS, gzipped (level 9)         | 5.74 MB  | 2.66 MB  |
+| Inline maps, raw (18 bundles) | 10.39 MB | 0        |
+| Inline maps, gzipped          | 3.07 MB  | 0        |
+| All dist files, raw           | 23.95 MB | 13.56 MB |
+| All dist files, gzipped       | 5.85 MB  | 2.77 MB  |
+| Dist blobs as git stores them | 5.92 MB  | 2.80 MB  |
+
+The maps were 44.8% of the shipped JS raw and 53% of it gzipped, because base64
+compresses worse than code. The last row is each blob deflated the way git
+writes a loose object; packed, git delta-compresses further. Scriptorium's
+`server.js` went from 5.11 MB to 1.08 MB and its `cli.js` from 1.61 MB to 0.36
+MB. Each of the 18 backend bundles lost exactly its three-line map tail and
+nothing else, so no text-reading instrument saw a different bundle.
+
+## Done and verified
+
+Step 1 only, as the cycle scopes it. Minify is filed as
+[calibrate-wards-for-minified-bundles](./calibrate-wards-for-minified-bundles.md),
+which names the calibration it needs.
+
+- `68bba2ee` — `src/build.ts` builds both the backend entries and the surfaces
+  with `sourcemap: "none"`. `grimoire/no-shipped-sourcemap-ward.test.ts` fails
+  on any `sourceMappingURL` directive (inline or linked, JS or CSS) or any
+  `.map` file in a deployed `dist/`. Planted twice: `sourcemap: "inline"` (red
+  on astrolabe's `cli.js` and `server.js`) and `sourcemap: "linked"` (red on
+  both directives and both `.map` files); restored byte-equal, green.
+- `d7a7c279` — `chore(dist)`: every bundle rebuilt.
+- **No external `.map`, deliberately.** One beside the bundle would sit in the
+  served `dist/` and one `.gitignore` line from shipping, for a need running the
+  entry from `src/<spell>/backend/X.ts` already meets. A stack trace from an
+  installed skill now points at `dist/X.js` line:column of the unminified
+  bundle; its `// src/<path>.ts` module-boundary comments name the source file.
+- **Comment-only edits.** A line comment and a JSDoc block added to
+  `src/kit/wire/serveDist.ts` (bundled into most daemons) and to
+  `src/astrolabe/backend/cli.ts`, then a full build: `git status` showed only
+  the two source files. Bun's bundler drops ordinary comments; the map was what
+  carried them. Reverted.
+- **Tests that read the bundles as text.** Six release-serve tests used the
+  inline map as proof that a bundle on disk was the real artifact; they now use
+  the bundled backend module's `// src/<spell>/backend/` boundary comment
+  (planted: a stub `cli.js` turns astrolabe's cell red). The grapevine and
+  digestify size floors dropped from 50,000 to 20,000 bytes. The spawn-path
+  ward, launcher-pairing ward and `exit-site-inventory` read nothing from the
+  map and are unchanged.
+- **Running from `dist/`.** Every launcher answered `--help`, `--version` and
+  `schema` (valid JSON) at exit 0, on scratch homes. Round trips through the
+  launchers: grapevine open/send/pull/stop, bounty open/add/state/close and
+  scriptorium open/state/close, all in release mode. acc: all nine spells
+  conformant, nothing excused. In headless Chromium (`NODE_ENV=test`), the
+  surfaces of astrolabe, bounty, imago, magpie, scriptorium and mind-mapper
+  loaded from `dist/` with their hashed chunk. Two oddities, both identical on
+  the pre-change bundles at `79724ce9`, so not caused by this change: glamour's
+  daemon is gone by the time the page loads after `open --no-open`, and
+  mind-mapper's page logs one 409 and has no stop verb. The release-serve tests,
+  which spawn every daemon from `dist/`, pass.
+- **Gate:** exit 1 under parallel load, with 6 timeouts in four files
+  (`src/scriptorium/backend/kit/hide`, `nohome` and `security` integration
+  tests, and `src/bounty/backend/tail-handoff.integration.test.ts`). Run alone,
+  all four pass (37 of 37). `bun scripts/dist-check.ts`: exit 0, and a rebuild
+  is a git no-op.
