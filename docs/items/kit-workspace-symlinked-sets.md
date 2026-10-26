@@ -58,8 +58,30 @@ Why not "follow only links that stay inside":
 Why the row stays rather than the link being left out: the link itself can still
 be renamed, moved or put in the Trash from the tree. Leaving it out silently
 made a linked folder vanish, and broke the "the link itself may go" Trash path.
-The row reads as an empty folder. Telling the two apart needs a protocol mark,
-which is a follow-up and not part of this item.
+
+**The row says it is a link (Cole's ruling, 2026-10-25).** The tree node carries
+`link: true` and `linkTo`, the realpath it leads to. Both are optional, so a kit
+app that ignores them still works: it shows an empty folder that the daemon
+refuses writes into.
+
+- **Look:** the sidebar draws the row with a folder-link icon and no chevron. It
+  never opens or shuts, and it has a tooltip: "A link to `<target>`: right-click
+  to open it as its own set".
+- **Menu:** New document, New folder and the bundle items are gone. Rename, Move
+  to…, Reveal, the app's items (Scriptorium's Hide) and Move to Trash stay,
+  because they act on the link itself. **Open as its own set** is new: it adds
+  the path, as `add <path>` does, and drills into the new set once the daemon's
+  state shows it.
+- **Drops:** a drop on the row (files, or rows dragged in the tree) is not sent.
+  A dialog says the folder is a link and where it leads, and offers "Open as its
+  own set".
+- **Move to… and the create-location picker:** these no longer offer a link's
+  row.
+- **A new document in a set inside another:** when the linked folder is open as
+  its own set, a new document there drills into the innermost set that holds the
+  path (`innermostSet`). The sidebar used to pick the first set in context
+  order, which jumped to the parent set with no rename field when that set was
+  listed first.
 
 **Nothing goes into a link's row.** `destinationOrDie` in `session.ts` refuses
 any folder of a set's tree that is a link, or that really is somewhere else
@@ -143,6 +165,34 @@ item does not change the chat-and-toast nit.
   a `catch` meant to fail closed) is gone. Link detection now comes from the
   directory entries already read, so there is no second call that could fail.
 
+- **The link row's look (the UI round):** the commits are on
+  `impl/kit-workspace-symlinked-sets-ui` (see the report).
+  `ContextSidebar.links.test.tsx` covers:
+  - the mark, the tooltip and no expand;
+  - the menu: no New document or New folder, what is kept, and "Open as its own
+    set" followed by the drill into the new set;
+  - a real folder's menu unchanged;
+  - a file drop answered by the dialog, with nothing imported;
+  - Move to… not offering the link;
+  - `innermostSet` and rename mode in the inner set, in both set orders.
+
+  `linkRows.session.test.ts` adds a listed document's folder being refused as a
+  destination, which pins the `membership === "mirrored"` filter on the
+  root-first check.
+
+  **Real browser** (Playwright Chromium on scratch homes, base `20b84ce7`
+  against the branch):
+  - **Base:** the link row expands like an empty folder; its menu offers New
+    document and New folder; a drop ends in the red refusal; there is no "Open
+    as its own set"; and with the parent set first, "New document in this set"
+    drills to `world` with no rename field.
+  - **Branch:** a link icon with no expand, the menu as above, the drop dialog,
+    "Open as its own set" drilled into `linkdir`, and the rename field in
+    `linkdir` in both orders.
+  - **Not tested:** a row dragged within the tree onto a link's row. It takes
+    the same path in code as a file drop, but neither happy-dom nor the browser
+    drive covered it.
+
 ### Known limits
 
 - **The swap race:** this is slightly wider than with the first round's `lstat`.
@@ -174,3 +224,24 @@ item does not change the chat-and-toast nit.
   refuses a folder gone from disk with a 404 ("is no longer on disk").
 - `session.ts` `adoptNew`: re-reads every mirrored entry whose root holds the
   new path, not only the first (`coveringEntry`).
+- **Protocol:** `ContextNode`'s `group` gains `link?: true` and
+  `linkTo?: string` (the realpath). `tree.ts` sets both on a link's row. Both
+  are optional, so a surface that ignores them shows an empty folder.
+- **`EntryTree.tsx`:**
+  - `isLinkNode(node)` is new.
+  - A link's row is not a folder for the tree (`isFolderNode`), so it has no
+    chevron and no expand. It draws a `FolderSymlinkIcon`, `data-link`, and a
+    `title` naming where it leads.
+  - Its menu leaves out New document, New folder and the bundle items, and adds
+    "Open as its own set" (new prop `onOpenAsSet`).
+  - A drop on it, files or rows, calls the new prop `onLinkDrop(path, linkTo)`
+    and is never sent. Without that prop, the row takes no drop.
+  - `userHome` is a new prop, for the tooltip's `~`.
+- **`ContextSidebar.tsx`:**
+  - `openAsSet` adds the path and drills into the set once it appears.
+  - `linkDrop` is a confirm dialog whose confirm button is "Open as its own
+    set".
+  - A created path drills into `innermostSet(entries, path)`, a new pure helper
+    in `model.ts`, instead of the first set holding it.
+- **`model.ts` `moveTargets`:** skips a link's row, which also covers the
+  create-location picker.
