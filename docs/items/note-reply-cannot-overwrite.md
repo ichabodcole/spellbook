@@ -6,7 +6,7 @@ description:
   and its help line says it answers the note as a reply does; replies must sit
   beside the note, and an agent must not rewrite a human's text.
 status: stable
-lifecycle: active
+lifecycle: done
 id: 01a17017-1a17-750a-95c5-bc307f6d078c
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-24 }
@@ -35,8 +35,9 @@ not change what the human wrote.
 - [x] `note-edit` refuses a note the human wrote, naming the reply verb; it
       still edits the agent's own notes.
 - [x] The CLI help and the Scriptorium SKILL say which verb answers a note.
-- [ ] Tested on the wire and checked in a real browser; offered on kit-parity.
-      (Tested and checked: see below. The kit-parity offer is the lead's.)
+- [x] Tested on the wire and checked in a real browser; offered on kit-parity
+      (message 54, 2026-10-25). (Tested and checked: see below. The kit-parity
+      offer is the lead's.)
 
 ## Done and verified
 
