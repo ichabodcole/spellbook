@@ -6,7 +6,7 @@
 //
 // One session per describe block, torn down in afterAll: every daemon this file
 // starts, it stops.
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, beforeEach, describe, expect, test } from "bun:test";
 import {
   existsSync,
   mkdirSync,
@@ -87,6 +87,12 @@ describe("a session, end to end through the launchers", () => {
     port = hs.port;
     sessionId = hs.session_id;
     await surface.connect(port);
+    startTail();
+  }, 60_000);
+
+  /** The agent's tail, read into `tailOut` for as long as it runs. */
+  let tailReading = false;
+  const startTail = () => {
     const proc = Bun.spawn(["bun", CLI, "tail"], {
       stdout: "pipe",
       stderr: "pipe",
@@ -94,6 +100,7 @@ describe("a session, end to end through the launchers", () => {
       env,
     });
     tail = proc;
+    tailReading = true;
     void (async () => {
       const reader = (proc.stdout as ReadableStream<Uint8Array>).getReader();
       for (;;) {
@@ -101,8 +108,16 @@ describe("a session, end to end through the launchers", () => {
         if (done) break;
         tailOut += new TextDecoder().decode(value);
       }
+      if (tail === proc) tailReading = false;
     })();
-  }, 60_000);
+  };
+  // ONE TIMEOUT MUST NOT TAKE THE REST WITH IT. Every test below reads the one
+  // tail; when a test runs out of time mid-call and the tail has gone, the next
+  // test starts a new one rather than waiting on a tail that is not there
+  // (kit-note-guard-lazy: one slow test failed seven).
+  beforeEach(() => {
+    if (sessionId && !tailReading) startTail();
+  });
 
   afterAll(async () => {
     surface.close();
@@ -553,6 +568,9 @@ describe("a session, end to end through the launchers", () => {
     expect(await owed()).toEqual([]);
   });
 
+  // About 21 CLI spawns in a row: measured at 1.0 s alone, 1.1 s in the parallel
+  // suite and 3.0 s with 84 CPU burners beside it (kit-note-guard-lazy), so the
+  // default 5 s was a coin toss under load. 20 s is over six times the worst.
   test("who rewrote or reopened a note is recorded, and decides whether it is owed", async () => {
     const note = (await state()).docs[0]?.notes.find((n) => n.body === "and this");
     if (!note) throw new Error("the previous test's note is missing");
@@ -644,7 +662,7 @@ describe("a session, end to end through the launchers", () => {
     expect(missing.err).toContain("n-nope");
     // Put away, so later tests start with nothing owed.
     expect((await cli("note-resolve", ...S(), note.id, "--doc", "a")).code).toBe(0);
-  });
+  }, 20_000);
 
   test("version-new by a fake agent: the agent edits that file and the surface receives the text", async () => {
     const r = await cli("version-new", "--label", "tighter");
