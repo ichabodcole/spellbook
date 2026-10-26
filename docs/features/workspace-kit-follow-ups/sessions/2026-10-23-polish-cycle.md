@@ -15,8 +15,8 @@ generated: { by: claude-opus-5-5, at: 2026-10-23 }
 ## Context
 
 [The polish cycle](../../../cycles/_archive/2026-10-polish.md) cleared the small
-items left after [the cutover](../../../cycles/2026-10-cutover.md), so the next
-release ships without them. Cole approved 16 items, added
+items left after [the cutover](../../../cycles/_archive/2026-10-cutover.md), so
+the next release ships without them. Cole approved 16 items, added
 `kit-drop-keep-where-it-is`, and later pulled in three flaky-test items. The
 lead orchestrated; each item went to an implementer in its own worktree, then to
 a verifier who had no stake in it, and then onto `cycle/polish` by cherry-pick

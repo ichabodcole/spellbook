@@ -10,7 +10,7 @@ id: 01a176c6-1472-7678-bd93-11cc3cd3f7a0
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 parent: feature/workspace-kit-follow-ups
-from: items/scriptorium-chat-and-toast-nits.md
+from: items/_archive/scriptorium-chat-and-toast-nits.md
 ---
 
 # A folder and a link to it become two sets
@@ -31,4 +31,4 @@ re-check report the item records.
 
 ## Related Documents
 
-- [Scriptorium: small chat and toast leftovers](./scriptorium-chat-and-toast-nits.md)
+- [Scriptorium: small chat and toast leftovers](./_archive/scriptorium-chat-and-toast-nits.md)

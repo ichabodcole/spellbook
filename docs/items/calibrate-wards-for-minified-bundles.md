@@ -10,17 +10,17 @@ id: 01a1777e-d8f4-7046-aff7-a73af24af96e
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-26 }
 tags: [build, dist]
-from: items/shrink-shipped-dist.md
+from: items/_archive/shrink-shipped-dist.md
 ---
 
 # Calibrate the text-reading wards against a minified bundle, then minify
 
-Step 2 of [shrink-shipped-dist](./shrink-shipped-dist.md). Step 1 removed the
-inline source maps (shipped JS 23.19 → 12.81 MB raw, 5.74 → 2.66 MB gzipped).
-Minify is register D7's lever 1 and stays deferred behind D7's precondition: the
-instruments that read emitted bundles as text have never seen renamed
-identifiers or stripped comments, so switching `minify` on in `src/build.ts`
-first could leave them green and blind.
+Step 2 of [shrink-shipped-dist](./_archive/shrink-shipped-dist.md). Step 1
+removed the inline source maps (shipped JS 23.19 → 12.81 MB raw, 5.74 → 2.66 MB
+gzipped). Minify is register D7's lever 1 and stays deferred behind D7's
+precondition: the instruments that read emitted bundles as text have never seen
+renamed identifiers or stripped comments, so switching `minify` on in
+`src/build.ts` first could leave them green and blind.
 
 The calibration it needs, per D7 and the shrink-shipped-dist item:
 
@@ -55,4 +55,4 @@ kit and step 1.
 
 ## Related Documents
 
-- [Ship smaller bundles: no inline source maps, then minify](./shrink-shipped-dist.md)
+- [Ship smaller bundles: no inline source maps, then minify](./_archive/shrink-shipped-dist.md)

@@ -45,8 +45,8 @@ round** (not filed; #55 is the last round):
 ## Note from the cutover (2026-10-22)
 
 The ward half is done by
-[acc-census-flag-staleness](acc-census-flag-staleness.md): the house ward passes
-each spell's emitted schema as `--declaration` and fails on any finding, and
-nothing was stale, so no re-record was needed. What is left here is the upstream
-request (warn when a batch's build sha is not an ancestor of HEAD) and the four
-acc harness friction notes.
+[acc-census-flag-staleness](_archive/acc-census-flag-staleness.md): the house
+ward passes each spell's emitted schema as `--declaration` and fails on any
+finding, and nothing was stale, so no re-record was needed. What is left here is
+the upstream request (warn when a batch's build sha is not an ancestor of HEAD)
+and the four acc harness friction notes.

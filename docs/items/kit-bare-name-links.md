@@ -11,7 +11,7 @@ id: 01a176c6-13ca-72cb-b896-0601d5f93949
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 parent: feature/workspace-kit-follow-ups
-from: items/scriptorium-chat-and-toast-nits.md
+from: items/_archive/scriptorium-chat-and-toast-nits.md
 ---
 
 # A bare-name link finds its document by name
@@ -33,4 +33,4 @@ own-set rule. Evidence is in the re-check report the item records.
 
 ## Related Documents
 
-- [Scriptorium: small chat and toast leftovers](./scriptorium-chat-and-toast-nits.md)
+- [Scriptorium: small chat and toast leftovers](./_archive/scriptorium-chat-and-toast-nits.md)

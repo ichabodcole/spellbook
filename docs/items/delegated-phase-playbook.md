@@ -21,7 +21,8 @@ stopping daemons by `--session` and never `pkill`, a no-stake reviewer who
 plants violations and lists every command, fix rounds going back to the same
 implementer, and a data-loss fix pinned by a test that fails on revert. Story
 Studio wrote it down as `docs/playbooks/delegated-phase-playbook.md`. The
-[workspace kit](../features/workspace-kit/feature.md) ports run this way.
+[workspace kit](../features/_archive/workspace-kit/feature.md) ports run this
+way.
 
 ## Definition of done
 

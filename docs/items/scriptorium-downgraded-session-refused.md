@@ -11,7 +11,7 @@ id: 01a177c2-9225-736c-8998-45fdfb660d6d
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-26 }
 tags: [scriptorium, kit]
-from: items/release-6-breaking-marker.md
+from: items/_archive/release-6-breaking-marker.md
 ---
 
 # A converted session that 5.2.0 wrote to is refused by 6.0.0

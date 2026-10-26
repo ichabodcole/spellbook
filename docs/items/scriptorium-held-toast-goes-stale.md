@@ -11,7 +11,7 @@ id: 01a17778-5509-703c-b1bd-9d94eb93f8f3
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-26 }
 tags: [kit, chat]
-from: items/scriptorium-chat-and-toast-nits.md
+from: items/_archive/scriptorium-chat-and-toast-nits.md
 ---
 
 # A held version toast shown on another document goes stale

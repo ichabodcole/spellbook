@@ -82,6 +82,6 @@ So:
 Canon home is `grimoire/house-style.md` (thoth's lane) once the shape is settled
 — it is a house-wide convention, not a bounty feature. Related:
 [`2026-08-06-bounty-session-key-hijack-and-identity`](./bounty-session-key-hijack-and-identity.md)
-and the [CLI-contract investigation](spell-cli-contract/write-up.md), which is
-deciding what an envelope owes its caller — **this is the same question asked
-about the _next_ call rather than the current one.**
+and the [CLI-contract investigation](_archive/spell-cli-contract/write-up.md),
+which is deciding what an envelope owes its caller — **this is the same question
+asked about the _next_ call rather than the current one.**

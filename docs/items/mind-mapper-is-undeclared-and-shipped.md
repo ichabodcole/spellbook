@@ -16,8 +16,8 @@ generated: { by: unknown, at: 2026-08-10 }
 > **The "shipped" half is closed (2026-10-25).** Cole ruled on 2026-10-24 that
 > mind-mapper stays out of the plugin until its app is finished, and its
 > deployed folder moved to `plugins/unreleased/skills/mind-mapper/`:
-> [item/mind-mapper-out-of-the-plugin](mind-mapper-out-of-the-plugin.md). The
-> "undeclared" half stands as ruled below.
+> [item/mind-mapper-out-of-the-plugin](_archive/mind-mapper-out-of-the-plugin.md).
+> The "undeclared" half stands as ruled below.
 
 > ## ✅ RULED BY COLE, 2026-08-10: THE UNDECLARED STATE IS INTENTIONAL AND CORRECT
 >

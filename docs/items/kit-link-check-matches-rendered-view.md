@@ -11,7 +11,7 @@ id: 01a176c6-11ee-740d-9dba-55fb8b0aa584
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 parent: feature/workspace-kit-follow-ups
-from: items/scriptorium-chat-and-toast-nits.md
+from: items/_archive/scriptorium-chat-and-toast-nits.md
 ---
 
 # The link check counts what the rendered view draws
@@ -38,4 +38,4 @@ drops them. Evidence is in the re-check report the item records.
 
 ## Related Documents
 
-- [Scriptorium: small chat and toast leftovers](./scriptorium-chat-and-toast-nits.md)
+- [Scriptorium: small chat and toast leftovers](./_archive/scriptorium-chat-and-toast-nits.md)

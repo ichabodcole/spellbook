@@ -3,7 +3,7 @@
 Spells that build, run and test here but **do not ship**. Today that is
 `mind-mapper`: Cole ruled on 2026-10-24 that it stays out of the plugin until
 its app experience is finished
-([the item](../../docs/items/mind-mapper-out-of-the-plugin.md)).
+([the item](../../docs/items/_archive/mind-mapper-out-of-the-plugin.md)).
 
 ## Why a separate folder
 

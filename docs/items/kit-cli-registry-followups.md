@@ -12,7 +12,7 @@ kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-13 }
 tags: [kit, cli]
 parent: feature/workspace-kit-follow-ups
-from: features/workspace-kit/sessions/2026-10-13-kit-foundation.md
+from: features/_archive/workspace-kit/sessions/2026-10-13-kit-foundation.md
 ---
 
 # Per-verb help follow-ups in the kit's CLI registry
@@ -41,4 +41,4 @@ Verification and the finalize review left these for later:
 
 ## Related Documents
 
-- [Kit foundation — 2026-10-13](../features/workspace-kit/sessions/2026-10-13-kit-foundation.md)
+- [Kit foundation — 2026-10-13](../features/_archive/workspace-kit/sessions/2026-10-13-kit-foundation.md)

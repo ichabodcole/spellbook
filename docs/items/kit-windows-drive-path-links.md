@@ -11,7 +11,7 @@ id: 01a176c6-132b-74e5-ae04-a08a04f0fe19
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 parent: feature/workspace-kit-follow-ups
-from: items/scriptorium-chat-and-toast-nits.md
+from: items/_archive/scriptorium-chat-and-toast-nits.md
 ---
 
 # A Windows drive path in a link reads as a URL scheme
@@ -31,4 +31,4 @@ re-check report the item records.
 
 ## Related Documents
 
-- [Scriptorium: small chat and toast leftovers](./scriptorium-chat-and-toast-nits.md)
+- [Scriptorium: small chat and toast leftovers](./_archive/scriptorium-chat-and-toast-nits.md)

@@ -34,5 +34,5 @@ generic workspace kit.
 - [x] Each taken candidate is filed as an item (or a GitHub issue, if it is one
       of Story Studio's own), and the E67 overlap has a ruling. _The candidates
       taken with B are carried by
-      [Workspace Kit](../../../features/workspace-kit/feature.md); the practices
-      are their own items; E67 is superseded by E71._
+      [Workspace Kit](../../../features/_archive/workspace-kit/feature.md); the
+      practices are their own items; E67 is superseded by E71._

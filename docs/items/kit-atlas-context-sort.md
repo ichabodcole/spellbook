@@ -11,7 +11,7 @@ id: 01a16b4f-d3c8-77de-9ab9-72fc7aeb7477
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-23 }
 parent: feature/workspace-kit-follow-ups
-from: items/kit-atlas-comparison-follow-ups.md
+from: items/_archive/kit-atlas-comparison-follow-ups.md
 ---
 
 # Port Atlas's context sort at the next Story Studio sync

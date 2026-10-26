@@ -13,15 +13,15 @@ id: 01a1765b-e6ee-71df-8c9f-ea3a46ca5ff2
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 parent: feature/workspace-kit-follow-ups
-from: items/kit-lone-cr-line-endings.md
+from: items/_archive/kit-lone-cr-line-endings.md
 ---
 
 # The note guard's fallback refuses an honest selection holding a real digit that matches a footnote number
 
 Found by the last verifier of
-[kit-lone-cr-line-endings](./kit-lone-cr-line-endings.md) (2026-10-25). When
-`showsSelection`'s walk runs past its work budget on a long repetitive run, it
-falls back to `foundWhole`. That tries `seen` as given (which still holds a
+[kit-lone-cr-line-endings](./_archive/kit-lone-cr-line-endings.md) (2026-10-25).
+When `showsSelection`'s walk runs past its work budget on a long repetitive run,
+it falls back to `foundWhole`. That tries `seen` as given (which still holds a
 page-only footnote number) or with every page-only token removed, which also
 removes a real digit equal to a footnote number.
 
@@ -41,4 +41,4 @@ to use the raw view; nothing wrong is stored.
 
 ## Related Documents
 
-- [A file with lone CR line endings breaks the rendered view](./kit-lone-cr-line-endings.md)
+- [A file with lone CR line endings breaks the rendered view](./_archive/kit-lone-cr-line-endings.md)

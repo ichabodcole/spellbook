@@ -116,7 +116,7 @@ state, `dangling` gains `unsupported`, doctor gains `links.unsupported`,
 `dist/server.js` grows from 792 KB to 1.81 MB (micromark).
 
 **Carried over:** the pre-existing defects the verifiers found, appended to
-[scriptorium-chat-and-toast-nits](../../items/scriptorium-chat-and-toast-nits.md)
+[scriptorium-chat-and-toast-nits](../../items/_archive/scriptorium-chat-and-toast-nits.md)
 (backlog). Among them: HTML-block links, reference-style links, absolute
 filesystem paths, pdocs `feature/<slug>` keys, and `metaCache` keyed on mtime
 only.

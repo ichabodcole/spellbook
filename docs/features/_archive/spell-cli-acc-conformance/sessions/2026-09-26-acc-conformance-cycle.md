@@ -70,7 +70,7 @@ for his review.
 - ⭐ File the [upstream acc report](../acc-upstream-feedback.md) (#23).
 - [bounty JSON in lockstep with anthill](../../../../items/bounty-json-output-in-lockstep-with-anthill.md)
   and
-  [required flags in the registry](../../../../items/registry-required-flags.md)
+  [required flags in the registry](../../../../items/_archive/registry-required-flags.md)
   are in `triage`.
 - Spell-hardening next (Cole's ruling, #5): its fix queue is unchanged by this
   cycle except `c1`'s root-level half.

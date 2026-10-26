@@ -12,13 +12,13 @@ lifecycle: triage
 id: 01a17693-23fe-73cb-8d68-448ababeabff
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
-from: cycles/2026-10-release-6.md
+from: cycles/_archive/2026-10-release-6.md
 ---
 
 # Integration tests time out at bun's 5 s default under a loaded parallel suite
 
 Seen through the release-6 cycle (2026-10-25). Since
-[spellbook-parallel-tests](./spellbook-parallel-tests.md) the gate runs
+[spellbook-parallel-tests](./_archive/spellbook-parallel-tests.md) the gate runs
 `bun test --parallel`, about 55–100 s. Most full gates on `cycle/release-6`
 failed on one to six tests, every time a timeout at bun's 5 s default in a file
 that passes alone:
@@ -26,7 +26,7 @@ that passes alone:
 - `src/bounty/backend/tail-handoff.integration.test.ts` (a hook timeout with
   "killed 1 dangling process", in nearly every gate);
 - `grimoire/import-boundary-wards.test.ts` R6 1b (filed on its own as
-  [import-boundary-r6-ward-timeout](./import-boundary-r6-ward-timeout.md));
+  [import-boundary-r6-ward-timeout](./_archive/import-boundary-r6-ward-timeout.md));
 - `grimoire/kit-adoption-ward.test.ts`, `serve-hostname-ward`,
   `spell-css-scope-ward`, `grimoire/cli-golden.test.ts`;
 - `src/scriptorium/backend/kit/nohome.integration.test.ts` and
@@ -57,8 +57,8 @@ measured 20 s timeout in `kit-note-guard-lazy`; the rest were not.
 
 ## Related Documents
 
-- [Run the test suite in parallel, as Story Studio does](./spellbook-parallel-tests.md)
-- [Release ready: Spellbook 6.0.0](../cycles/2026-10-release-6.md)
+- [Run the test suite in parallel, as Story Studio does](./_archive/spellbook-parallel-tests.md)
+- [Release ready: Spellbook 6.0.0](../cycles/_archive/2026-10-release-6.md)
 
 **Default raised to 15 s (lead, 2026-10-26).** Two CI runs in a row failed on a
 tree-scanning ward at bun's 5 s default (`40379180950`: R6 ward 1b, 7.1 s;

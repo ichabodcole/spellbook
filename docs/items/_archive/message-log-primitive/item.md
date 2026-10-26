@@ -17,8 +17,9 @@ The question this research asked, and where it got to. The answer is in
 [the write-up](./write-up.md).
 
 **Closed 2026-10-13 (Cole): folded into
-[Workspace Kit](../../../features/workspace-kit/feature.md).** Story Studio's
-protocol settles the naming. The live content (channels, facets, collapse, and
-writing the paradigm into house style) becomes Workspace Kit evolutions, and the
-kit itself replaces the "extract when a third spell needs it" path. See the
-[prior-direction write-up](../../workspace-kit-prior-direction/write-up.md).
+[Workspace Kit](../../../features/_archive/workspace-kit/feature.md).** Story
+Studio's protocol settles the naming. The live content (channels, facets,
+collapse, and writing the paradigm into house style) becomes Workspace Kit
+evolutions, and the kit itself replaces the "extract when a third spell needs
+it" path. See the
+[prior-direction write-up](../workspace-kit-prior-direction/write-up.md).

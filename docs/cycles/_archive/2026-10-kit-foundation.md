@@ -22,27 +22,27 @@ closed: 2026-10-13
 
 ## Why now
 
-Cole approved [Workspace Kit](../../features/workspace-kit/feature.md) on
-2026-10-13: Spellbook's kit and Scriptorium re-base on Story Studio's kit. The
-foundation comes first because every spell can use it and the workspace stack is
-built on it. Scriptorium adopts it in this cycle, so the stack starts next cycle
-on a foundation that has already been used.
+Cole approved [Workspace Kit](../../features/_archive/workspace-kit/feature.md)
+on 2026-10-13: Spellbook's kit and Scriptorium re-base on Story Studio's kit.
+The foundation comes first because every spell can use it and the workspace
+stack is built on it. Scriptorium adopts it in this cycle, so the stack starts
+next cycle on a foundation that has already been used.
 
 ## Scope
 
 The feature's First Cycle, one item per step. The Atlas comparison moved to
 after the shell port (Cole, 2026-10-13):
 
-- **[item/kit-port-lib-wire](../../items/kit-port-lib-wire.md)** — `lib` and
-  `wire`, merged with Spellbook's ahead-of-kit fixes.
-- **[item/kit-port-theme-ui](../../items/kit-port-theme-ui.md)** — the
+- **[item/kit-port-lib-wire](../../items/_archive/kit-port-lib-wire.md)** —
+  `lib` and `wire`, merged with Spellbook's ahead-of-kit fixes.
+- **[item/kit-port-theme-ui](../../items/_archive/kit-port-theme-ui.md)** — the
   primitives, the theme and the happy-dom harness.
-- **[item/kit-primitives-rule](../../items/kit-primitives-rule.md)** — the
-  house-style rule moves into the kit, with the opt-out.
-- **[item/scriptorium-surface-on-kit-ui](../../items/scriptorium-surface-on-kit-ui.md)**
+- **[item/kit-primitives-rule](../../items/_archive/kit-primitives-rule.md)** —
+  the house-style rule moves into the kit, with the opt-out.
+- **[item/scriptorium-surface-on-kit-ui](../../items/_archive/scriptorium-surface-on-kit-ui.md)**
   — Scriptorium's surface on `src/kit/ui`.
-- **[item/kit-per-verb-cli-help](../../items/kit-per-verb-cli-help.md)** —
-  per-verb help, with an acc re-run.
+- **[item/kit-per-verb-cli-help](../../items/_archive/kit-per-verb-cli-help.md)**
+  — per-verb help, with an acc re-run.
 
 Out of scope, deliberately: the workspace stack (`workspace`, `chat`, `context`,
 `document`, `shell`), which is next cycle, and with it E71, the evolutions, the
@@ -98,8 +98,8 @@ Seven follow-ups are filed, none of them blocking:
 - `scriptorium-cn-semantics`
 
 The next cycle is the workspace stack. It gets the evolutions listed in
-[Workspace Kit](../../features/workspace-kit/feature.md), and Story Studio's
-links port-back may already be there when it starts.
+[Workspace Kit](../../features/_archive/workspace-kit/feature.md), and Story
+Studio's links port-back may already be there when it starts.
 
 ## Sessions
 

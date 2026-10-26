@@ -15,10 +15,10 @@ generated: { by: claude-opus-5-5, at: 2026-10-22 }
 
 ## Overview
 
-[Workspace Kit](../workspace-kit/feature.md) closed on 2026-10-22, when the
-cutover deleted the shipped Scriptorium and left the kit Scriptorium as the only
-one. Its goal was met. But the six cycles that got there, and Cole's trial of
-the flipped build, surfaced work the stack itself didn't need. That work is
+[Workspace Kit](../_archive/workspace-kit/feature.md) closed on 2026-10-22, when
+the cutover deleted the shipped Scriptorium and left the kit Scriptorium as the
+only one. Its goal was met. But the six cycles that got there, and Cole's trial
+of the flipped build, surfaced work the stack itself didn't need. That work is
 fixes, gaps and ideas in the kit and in Scriptorium. This feature is its home,
 so the finished feature can stay a closed record.
 
@@ -66,5 +66,5 @@ which is watched, not ported.
 
 **Related Documents:**
 
-- [Workspace Kit](../workspace-kit/feature.md)
-- [The cutover cycle](../../cycles/2026-10-cutover.md)
+- [Workspace Kit](../_archive/workspace-kit/feature.md)
+- [The cutover cycle](../../cycles/_archive/2026-10-cutover.md)

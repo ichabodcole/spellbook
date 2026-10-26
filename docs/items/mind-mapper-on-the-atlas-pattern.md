@@ -19,8 +19,9 @@ Cole (2026-10-13), on hearing that mind-mapper would take only the kit
 foundation: mind-mapper may be redesigned to follow Atlas's pattern, with a file
 tree and local files bundled with a JSON canvas instead of per-project SQLite,
 which fits a local-first app better. If it does, it becomes a second app on the
-[workspace kit](../features/workspace-kit/feature.md)'s workspace stack, and the
-JSON Canvas boards the Story Studio write-up skipped come back into scope.
+[workspace kit](../features/_archive/workspace-kit/feature.md)'s workspace
+stack, and the JSON Canvas boards the Story Studio write-up skipped come back
+into scope.
 
 The decision this feeds: whether the workspace stack has two consumers, and
 whether canvas boards are ported with it.

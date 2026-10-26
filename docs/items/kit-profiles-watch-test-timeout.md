@@ -11,13 +11,13 @@ id: 01a171f4-4fe1-7001-a0f7-102607eead05
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 parent: feature/workspace-kit-follow-ups
-from: items/spellbook-parallel-tests.md
+from: items/_archive/spellbook-parallel-tests.md
 ---
 
 # A profile change on disk can time out its test in a parallel run
 
 Found 2026-10-24 by the parallel-tests soaks
-([spellbook-parallel-tests](spellbook-parallel-tests.md)).
+([spellbook-parallel-tests](_archive/spellbook-parallel-tests.md)).
 `src/kit/workspace/profiles.integration.test.ts`'s cell "a profile file changed
 on disk pushes context.changed, and the next ask sees it" hit its 5 s test
 timeout once in 20 full parallel runs. It never failed again: not in 30 full

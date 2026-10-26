@@ -220,7 +220,7 @@ copy-paste divergence with the correct fix already sitting in the tree, unable
 to reach the sites that need it.
 
 **(e) The CLI-contract investigation reached this conclusion independently.**
-[`2026-08-06-spell-cli-contract-investigation.md`](../../spell-cli-contract/write-up.md)
+[`2026-08-06-spell-cli-contract-investigation.md`](../spell-cli-contract/write-up.md)
 found `applied` meaning "benign no-op, continue" in bounty and "`die()`, exit 1"
 in astrolabe (_"Same field, same payload, opposite consequence"_); `ok` meaning
 two different things; `skipped` meaning three different things inside one spell;
@@ -759,7 +759,7 @@ for (const [l, n] of [...counts]
 - [`spell-surface-pipeline` proposal](../../../features/_archive/spell-surface-pipeline/feature.md)
   and [plan](../../../features/_archive/spell-surface-pipeline/plan.md) — the
   standard this ratchets, and the record that it already validated
-- [Spell CLI contract investigation](../../spell-cli-contract/write-up.md) —
+- [Spell CLI contract investigation](../spell-cli-contract/write-up.md) —
   reached the same conclusion from the convention side
 - [The typecheck gate is a project, not a flag](../../typecheck-gate-is-a-project-not-a-flag.md)
 - [CLI: a FAILED read and a legitimate EMPTY result are the same output](../../cli-empty-vs-failed-read.md)

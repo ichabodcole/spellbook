@@ -11,14 +11,14 @@ id: 01a1765b-e655-70f4-9178-f1607f1be78d
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 parent: feature/workspace-kit-follow-ups
-from: items/kit-lone-cr-line-endings.md
+from: items/_archive/kit-lone-cr-line-endings.md
 ---
 
 # The note guard checks where a selection is, not only its text
 
-From [kit-lone-cr-line-endings](./kit-lone-cr-line-endings.md) (2026-10-25).
-That item added a daemon guard: `note.add` carries `seen`, what the human
-selected as the page showed it, and `showsSelection` in
+From [kit-lone-cr-line-endings](./_archive/kit-lone-cr-line-endings.md)
+(2026-10-25). That item added a daemon guard: `note.add` carries `seen`, what
+the human selected as the page showed it, and `showsSelection` in
 `src/kit/document/projection.ts` refuses a range that doesn't show it. It
 stopped the whole-body note the item was about, and its verifiers found no
 honest selection it refuses. Two gaps remain, recorded there as the reason its
@@ -52,4 +52,4 @@ counter.
 
 ## Related Documents
 
-- [A file with lone CR line endings breaks the rendered view](./kit-lone-cr-line-endings.md)
+- [A file with lone CR line endings breaks the rendered view](./_archive/kit-lone-cr-line-endings.md)

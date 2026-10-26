@@ -551,7 +551,7 @@ verified by restoring the `process.exit`).
 2026-08-06.** It was briefly recommended here on the grounds that it lands in
 the same function P0 rewrites, so touching those lines twice is waste. **That
 was right about the cost and wrong about the risk:**
-[the contract investigation](../../../../../items/spell-cli-contract/write-up.md)
+[the contract investigation](../../../../../items/_archive/spell-cli-contract/write-up.md)
 found the envelope's shape is known-incomplete (nine omitted members), so
 folding it in blocks a data-corruption fix on an open investigation. **Fix the
 drain only. Accept touching the exit path twice.**
@@ -1681,7 +1681,7 @@ so they are not re-derived, and so a lane does not quietly widen to catch one.
 | 4   | **A performed `--restore` is as unannounced as a skipped one** (see P0b's field note). Raises whether `restoreSkipped` needs a positive twin — **do not mint a name; take it to the contract investigation.**                                                                                                                   | prospero                                 |
 
 Items 1–4 belong beside **#85–#88** with the
-[CLI-contract investigation](../../../../../items/spell-cli-contract/write-up.md).
+[CLI-contract investigation](../../../../../items/_archive/spell-cli-contract/write-up.md).
 
 ### Added by the BUILD round (2026-08-06, later the same day)
 

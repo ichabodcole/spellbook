@@ -18,7 +18,7 @@ from: cycle/2026-10-polish
 # The document's context menu can't be reached or driven by keyboard
 
 Found by the verifier of
-[kit-context-menu-without-selection](kit-context-menu-without-selection.md)
+[kit-context-menu-without-selection](_archive/kit-context-menu-without-selection.md)
 (2026-10-23). It happens on base too:
 
 - Once open, the menu has no `role=menu` and takes no arrow keys.

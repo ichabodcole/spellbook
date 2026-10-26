@@ -155,7 +155,7 @@ in a skeleton is a hypothesis until the owning seat confirms it. Specifically:
 ## What is deliberately NOT in this project
 
 - **#85–#88** — the other envelope defects. Filed, verified, independent. The
-  [CLI-contract investigation](../../../../items/spell-cli-contract/write-up.md)
+  [CLI-contract investigation](../../../../items/_archive/spell-cli-contract/write-up.md)
   decides what right looks like; fixing them first means fixing them twice.
 - **#82** — the cross-tool naming convention. **On hold.** Its two-shape table
   is known-incomplete (nine omitted situations). Do **not** mint new field names

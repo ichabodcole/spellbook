@@ -139,7 +139,7 @@ which also ingests markdown/context files.
 
 - Operator precursor: `fragments/project-roadmap-surface.md` (Spellbook project)
 - Companion fragment:
-  [`2026-08-05-wiki-reading-spell.md`](./wiki-reading-spell.md)
+  [`2026-08-05-wiki-reading-spell.md`](./_archive/wiki-reading-spell.md)
 - Boundary to check: `docs/projects/cross-project-observatory/proposal.md`
   (astrolabe)
 - The immediate use case: `docs/backlog/` and its `README.md`

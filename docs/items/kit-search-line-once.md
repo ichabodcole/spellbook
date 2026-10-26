@@ -10,7 +10,7 @@ id: 01a176c6-166f-7177-9b97-cc92309353f9
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 parent: feature/workspace-kit-follow-ups
-from: items/scriptorium-chat-and-toast-nits.md
+from: items/_archive/scriptorium-chat-and-toast-nits.md
 ---
 
 # Search lists a line twice when it matches twice
@@ -30,4 +30,4 @@ records.
 
 ## Related Documents
 
-- [Scriptorium: small chat and toast leftovers](./scriptorium-chat-and-toast-nits.md)
+- [Scriptorium: small chat and toast leftovers](./_archive/scriptorium-chat-and-toast-nits.md)

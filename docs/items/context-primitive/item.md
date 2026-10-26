@@ -22,4 +22,4 @@ agent's cheap map. Story Studio is now a contributor (profiles,
 `_relations.json`, OKF in `pdocs`), and the OKF check is half done. Whether it
 becomes a feature, or stays research until a second repo pulls on it, is still
 open. See the
-[prior-direction write-up](../workspace-kit-prior-direction/write-up.md).
+[prior-direction write-up](../_archive/workspace-kit-prior-direction/write-up.md).

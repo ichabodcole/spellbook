@@ -10,7 +10,7 @@ id: 01a177a1-fae8-7251-96c4-8af6ef52a40e
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-26 }
 tags: [mind-mapper, cli]
-from: items/shrink-shipped-dist.md
+from: items/_archive/shrink-shipped-dist.md
 ---
 
 # mind-mapper open with an unknown project leaves a daemon running

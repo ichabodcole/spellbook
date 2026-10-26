@@ -17,9 +17,9 @@ parent: feature/workspace-kit-follow-ups
 
 # One link holding many images is still quadratic
 
-Part of [Workspace Kit](../features/workspace-kit/feature.md). Found by Story
-Studio's review of the links speed fix (`15d6e2b6`, their `0772d65`), reported
-on `kit-parity` (message 33).
+Part of [Workspace Kit](../features/_archive/workspace-kit/feature.md). Found by
+Story Studio's review of the links speed fix (`15d6e2b6`, their `0772d65`),
+reported on `kit-parity` (message 33).
 
 `"[" + "![a](b)".repeat(k) + "](c)"`, one outer link holding many images, puts
 every link in one overlapping run. Each `near()` call then copies and sorts the

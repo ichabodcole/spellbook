@@ -22,7 +22,7 @@ Cole, 2026-10-22, in the polish cycle's review. Projects write references in
 their own conventions: project-docs' `feature/<slug>`, `item/<slug>` and
 `cycle/<file>`, and others elsewhere. Scriptorium shouldn't read any one tool's
 config to understand them
-([scriptorium-broken-links-sign-noise](scriptorium-broken-links-sign-noise.md),
+([scriptorium-broken-links-sign-noise](_archive/scriptorium-broken-links-sign-noise.md),
 ruling 3 of the polish cycle). The agent can, though. It reads the project and
 learns its convention as any agent does.
 

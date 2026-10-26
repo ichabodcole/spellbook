@@ -11,7 +11,7 @@ lifecycle: triage
 id: 01a176ad-1a0d-7549-8367-6ceb7b8419f5
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
-from: items/bounty-grapevine-skill-review.md
+from: items/_archive/bounty-grapevine-skill-review.md
 ---
 
 # A grapevine hold can't be ended early, and tails it stops leave no handoff
@@ -42,4 +42,4 @@ Related:
 
 ## Related Documents
 
-- [Review bounty + grapevine SKILL.md for accuracy and usefulness](./bounty-grapevine-skill-review.md)
+- [Review bounty + grapevine SKILL.md for accuracy and usefulness](./_archive/bounty-grapevine-skill-review.md)

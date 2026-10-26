@@ -25,9 +25,9 @@ closed: 2026-10-17
 The [workspace daemon](./2026-10-workspace-daemon.md) cycle landed on
 2026-10-14. A flagged Scriptorium now runs on the kit's daemon, but without the
 wiki layer it can't do what the shipped one does. The
-[port-shape write-up](../../items/workspace-stack-port-shape/write-up.md) puts
-the wiki layer and the session migration here, between the daemon and the panes,
-because both are daemon work and the panes (cycle 3) will need them.
+[port-shape write-up](../../items/_archive/workspace-stack-port-shape/write-up.md)
+puts the wiki layer and the session migration here, between the daemon and the
+panes, because both are daemon work and the panes (cycle 3) will need them.
 
 Story Studio has nothing in flight on these slots (kit-parity message 42), so we
 build each one here and offer it back.
@@ -38,23 +38,24 @@ Run `kit-port-via-refs` first, so every later item builds on the current wire.
 The four slot items can then run in parallel. The verbs item follows the slots
 it uses.
 
-- **[item/kit-port-via-refs](../../items/kit-port-via-refs.md)**: the workspace
-  half of Story Studio's `bbc54fd` and `4e6d4d4`; the one-ask guard keys on
-  `via: "ask"`.
-- **[item/kit-link-edges-slot](../../items/kit-link-edges-slot.md)**:
+- **[item/kit-port-via-refs](../../items/_archive/kit-port-via-refs.md)**: the
+  workspace half of Story Studio's `bbc54fd` and `4e6d4d4`; the one-ask guard
+  keys on `via: "ask"`.
+- **[item/kit-link-edges-slot](../../items/_archive/kit-link-edges-slot.md)**:
   app-supplied edges with a kind, and a wiki-form resolver; Scriptorium's
   frontmatter references on them.
-- **[item/kit-tree-scan-filter](../../items/kit-tree-scan-filter.md)**: an app
-  filter on the tree scan; Scriptorium's `hide` and `unhide`.
-- **[item/kit-set-promotion](../../items/kit-set-promotion.md)**: promote an
-  entry and keep its id; Scriptorium's `make-set` and folder creation.
-- **[item/scriptorium-no-default-workspace](../../items/scriptorium-no-default-workspace.md)**:
+- **[item/kit-tree-scan-filter](../../items/_archive/kit-tree-scan-filter.md)**:
+  an app filter on the tree scan; Scriptorium's `hide` and `unhide`.
+- **[item/kit-set-promotion](../../items/_archive/kit-set-promotion.md)**:
+  promote an entry and keep its id; Scriptorium's `make-set` and folder
+  creation.
+- **[item/scriptorium-no-default-workspace](../../items/_archive/scriptorium-no-default-workspace.md)**:
   the kit lets an app declare no home workspace, and nothing writes a new file
   to a place the caller didn't name.
-- **[item/kit-manifest-migrate-hook](../../items/kit-manifest-migrate-hook.md)**:
+- **[item/kit-manifest-migrate-hook](../../items/_archive/kit-manifest-migrate-hook.md)**:
   a whole-manifest migrate before restore; Scriptorium's converter, dry-run on
   copies of real sessions.
-- **[item/scriptorium-kit-wiki-verbs](../../items/scriptorium-kit-wiki-verbs.md)**:
+- **[item/scriptorium-kit-wiki-verbs](../../items/_archive/scriptorium-kit-wiki-verbs.md)**:
   `meta`, `find`, `info`, `forget`, trust tiers, the move plan as a daemon
   command, and the remove verbs.
 
@@ -71,7 +72,7 @@ Out of scope, deliberately:
 - **Undo for setting the workspace.** With no default workspace, the kit path
   doesn't need it.
 - **The shipped Scriptorium.** It stays as it is until the cutover, including
-  [scriptorium-mixed-link-line-quadratic](../../items/scriptorium-mixed-link-line-quadratic.md),
+  [scriptorium-mixed-link-line-quadratic](../../items/_archive/scriptorium-mixed-link-line-quadratic.md),
   which the cutover closes.
 
 ## Outcome

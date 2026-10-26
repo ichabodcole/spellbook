@@ -23,27 +23,27 @@ closed: 2026-10-14
 
 The [kit foundation](./2026-10-kit-foundation.md) landed on 2026-10-13. The
 workspace stack comes next. The
-[port-shape write-up](../../items/workspace-stack-port-shape/write-up.md) splits
-it into five cycles, daemon first, on a second Scriptorium built on the kit
-behind `SCRIPTORIUM_KIT`. Cole ruled the base (`027d7a3`, without Story Studio's
-workspace model) and the four open questions on 2026-10-13 and 2026-10-14.
-There's no release until the whole stack is done, so the shipped Scriptorium is
-untouched until the cutover cycle.
+[port-shape write-up](../../items/_archive/workspace-stack-port-shape/write-up.md)
+splits it into five cycles, daemon first, on a second Scriptorium built on the
+kit behind `SCRIPTORIUM_KIT`. Cole ruled the base (`027d7a3`, without Story
+Studio's workspace model) and the four open questions on 2026-10-13 and
+2026-10-14. There's no release until the whole stack is done, so the shipped
+Scriptorium is untouched until the cutover cycle.
 
 ## Scope
 
 Run `kit-port-workspace` first, then the next three in parallel, then the
 flagged Scriptorium:
 
-- **[item/kit-port-workspace](../../items/kit-port-workspace.md)**: the
+- **[item/kit-port-workspace](../../items/_archive/kit-port-workspace.md)**: the
   workspace daemon in `src/kit/workspace`.
-- **[item/kit-workspace-manifest-guard](../../items/kit-workspace-manifest-guard.md)**:
+- **[item/kit-workspace-manifest-guard](../../items/_archive/kit-workspace-manifest-guard.md)**:
   the kit refuses a manifest that isn't its own.
-- **[item/kit-links-differential](../../items/kit-links-differential.md)**: one
-  link extractor, held to Scriptorium's tests.
-- **[item/kit-workspace-e65-daemon](../../items/kit-workspace-e65-daemon.md)**:
+- **[item/kit-links-differential](../../items/_archive/kit-links-differential.md)**:
+  one link extractor, held to Scriptorium's tests.
+- **[item/kit-workspace-e65-daemon](../../items/_archive/kit-workspace-e65-daemon.md)**:
   E65's daemon half in the kit.
-- **[item/scriptorium-on-kit-daemon](../../items/scriptorium-on-kit-daemon.md)**:
+- **[item/scriptorium-on-kit-daemon](../../items/_archive/scriptorium-on-kit-daemon.md)**:
   the flagged Scriptorium daemon and CLI.
 
 Out of scope, deliberately:
@@ -88,4 +88,4 @@ to triage; see the session.
 ## Sessions
 
 - cycle/workspace-daemon (landed 2026-10-14):
-  [Workspace daemon — 2026-10-14](../../features/workspace-kit/sessions/2026-10-14-workspace-daemon.md)
+  [Workspace daemon — 2026-10-14](../../features/_archive/workspace-kit/sessions/2026-10-14-workspace-daemon.md)

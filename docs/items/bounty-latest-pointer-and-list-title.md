@@ -10,7 +10,7 @@ lifecycle: triage
 id: 01a176ad-1bd5-71a6-834c-2a18ecd6382e
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
-from: items/bounty-grapevine-skill-review.md
+from: items/_archive/bounty-grapevine-skill-review.md
 ---
 
 # bounty's latest pointer and list title go stale
@@ -34,4 +34,4 @@ Found by the SKILL review and confirmed by its verifier (2026-10-25):
 
 ## Related Documents
 
-- [Review bounty + grapevine SKILL.md for accuracy and usefulness](./bounty-grapevine-skill-review.md)
+- [Review bounty + grapevine SKILL.md for accuracy and usefulness](./_archive/bounty-grapevine-skill-review.md)

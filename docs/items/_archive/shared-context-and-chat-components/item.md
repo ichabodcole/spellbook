@@ -22,7 +22,7 @@ The question this research asked, and where it got to. The answer is in
 open questions are now answered (tasks and notes generalise) or owned elsewhere
 (image sets, by that feature's phase 3; StoryLoom's model, already surveyed).
 See the
-[prior-direction write-up](../../workspace-kit-prior-direction/write-up.md).
+[prior-direction write-up](../workspace-kit-prior-direction/write-up.md).
 
 **2026-09-28 requirement for the chat component (Cole):** messages render as
 markdown, rendered-only by default, with no raw toggle until real use asks for

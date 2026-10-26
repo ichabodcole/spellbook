@@ -254,7 +254,7 @@ in the same pass than to schedule separately:
   grapevine rename/edit/presence/facilitation-timer, imago items.
 - **#85, #86, #87, #88 — the other envelope defects found by the 2026-08-06
   audit.** Each is "this spell's envelope is wrong," and
-  [the CLI-contract investigation](../../../items/spell-cli-contract/write-up.md)
+  [the CLI-contract investigation](../../../items/_archive/spell-cli-contract/write-up.md)
   decides what right looks like. **Fixing them before it concludes means fixing
   them twice.** They are filed, verified, and independent — they do not block
   this release and this release does not block them.
@@ -741,7 +741,7 @@ Every one was found by using the shipped spells on ourselves.
 | 9   | **`mind-mapper` ships as inert payload** — 58 tracked files, no `SKILL.md`, absent from the trigger registry, yet inside the shipped subtree. Pre-release or drift? |
 
 **Items 1, 2, 4 and 6 belong beside #85–#88 with the
-[CLI-contract investigation](../../../items/spell-cli-contract/write-up.md).**
+[CLI-contract investigation](../../../items/_archive/spell-cli-contract/write-up.md).**
 **Item 5's harm statement belongs in #81.** **⚠ #64 is NOT on this list and must
 not be closed by item 6.**
 

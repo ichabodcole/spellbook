@@ -10,15 +10,15 @@ lifecycle: triage
 id: 01a17266-76ba-76e7-aa08-0432ad6ad8d3
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
-from: items/ci-red-on-linux.md
+from: items/_archive/ci-red-on-linux.md
 ---
 
 # Grapevine's refusal for a daemon that will not stop leaves three gaps
 
 Found 2026-10-25 by the no-stake verifier of
-[ci-red-on-linux](ci-red-on-linux.md). `stop`, `restart` and `roll` now wait for
-the daemon to go, and refuse with `daemon_still_running` (exit 1) when it
-doesn't within 5 s. Three gaps remain, each low:
+[ci-red-on-linux](_archive/ci-red-on-linux.md). `stop`, `restart` and `roll` now
+wait for the daemon to go, and refuse with `daemon_still_running` (exit 1) when
+it doesn't within 5 s. Three gaps remain, each low:
 
 - **`doctor` is a weak pointer.** The refusal's hint is `try: … doctor`, but
   doctor reports the stuck daemon as authoritative and `ok`, and its hints are

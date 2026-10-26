@@ -64,5 +64,6 @@ The reason this matters beyond glamour: it is the same family as the
 [session-key hijack](./bounty-session-key-hijack-and-identity.md) and
 `bounty add`'s ignored `applied` (#83) — **an envelope that describes a world
 that is not there.** The
-[CLI-contract investigation](spell-cli-contract/write-up.md) is where "what does
-a success envelope actually promise" gets settled; this is another datum for it.
+[CLI-contract investigation](_archive/spell-cli-contract/write-up.md) is where
+"what does a success envelope actually promise" gets settled; this is another
+datum for it.

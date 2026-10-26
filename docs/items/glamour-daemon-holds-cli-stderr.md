@@ -11,7 +11,7 @@ id: 01a177a1-fa57-736f-a5d5-cfd3936fc570
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-26 }
 tags: [glamour, cli]
-from: items/shrink-shipped-dist.md
+from: items/_archive/shrink-shipped-dist.md
 ---
 
 # glamour's daemon holds the CLI's stderr open

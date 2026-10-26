@@ -11,13 +11,13 @@ id: 01a17585-b3f1-7130-b253-563e85932519
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
 parent: feature/workspace-kit-follow-ups
-from: items/kit-save-overwrites-unseen-change.md
+from: items/_archive/kit-save-overwrites-unseen-change.md
 ---
 
 # A missed-change Save refusal shows four messages in three vocabularies
 
 Found by the verifier of
-[kit-save-overwrites-unseen-change](./kit-save-overwrites-unseen-change.md)
+[kit-save-overwrites-unseen-change](./_archive/kit-save-overwrites-unseen-change.md)
 (2026-10-25). Screenshots: `shot-brq-1.png` and `shot-brq-2diff.png` in that
 session's scratch.
 
@@ -44,4 +44,4 @@ when the kit protected the file.
 
 ## Related Documents
 
-- [Save can overwrite an outside change the file watch never reported](./kit-save-overwrites-unseen-change.md)
+- [Save can overwrite an outside change the file watch never reported](./_archive/kit-save-overwrites-unseen-change.md)

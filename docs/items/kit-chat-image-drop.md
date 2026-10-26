@@ -23,7 +23,7 @@ Cole, 2026-10-22. He wanted to send a screenshot to the agent through
 Scriptorium's chat, a one-off reference, and couldn't: the composer takes no
 drop. Adding it to the context list works, but it makes a one-off image a
 document of the session, and the drop dialog then asks where it should go
-([kit-drop-keep-where-it-is](kit-drop-keep-where-it-is.md)).
+([kit-drop-keep-where-it-is](_archive/kit-drop-keep-where-it-is.md)).
 
 **What it needs:** dropping or pasting an image on the composer attaches it to
 the message, shown as a chip the human can remove before sending. The daemon

@@ -38,7 +38,7 @@ Either (pick one, don't do both):
       wasn't the question that was answered.
 
 Fold whichever lands into the `SKILL.md` accuracy pass tracked in
-[`2026-07-09-bounty-grapevine-skill-review.md`](./bounty-grapevine-skill-review.md).
+[`2026-07-09-bounty-grapevine-skill-review.md`](./_archive/bounty-grapevine-skill-review.md).
 
 ## References
 

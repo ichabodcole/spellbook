@@ -48,7 +48,7 @@ Out of scope, deliberately:
 - **Scriptorium's wire nits** (2026-10-17): the kit path replaces the shipped
   Scriptorium at the cutover. Its missing-body-file code is already `not_found`
   there, and the wire part of
-  [item/scriptorium-chat-and-toast-nits](../items/scriptorium-chat-and-toast-nits.md)
+  [item/scriptorium-chat-and-toast-nits](../items/_archive/scriptorium-chat-and-toast-nits.md)
   is re-checked against the kit path before the cutover instead.
 - **The two gate-only fixes** (2026-10-17):
   [item/error-sites-never-regex-overreaches](../items/error-sites-never-regex-overreaches.md)

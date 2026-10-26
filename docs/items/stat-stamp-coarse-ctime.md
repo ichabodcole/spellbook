@@ -17,15 +17,16 @@ from: 01a17017-0595-77fb-8306-cf552a20d9f6
 
 # A same-size edit inside one clock tick is missed on a coarse-ctime kernel
 
-Found 2026-10-25 while reproducing [ci-red-on-linux](./ci-red-on-linux.md) in a
-Linux container (Docker Desktop, kernel 6.12.67-linuxkit, overlayfs). The kit
-caches a parsed file under a stamp of `ino:size:mtimeMs:ctimeMs`
-(`src/kit/workspace/relations.ts`, `profiles.ts`, and two readers in
-`session.ts`). The ctime is there so an edit that keeps the size and puts the
-mtime back is still read. That holds only while the kernel's ctime is finer than
-the gap between two writes. On that kernel it moves in 1 ms steps (five appends
-in a row stamped `.682619`, `.684619`, `.684619`, `.684619`, `.685619`), so an
-edit in the same millisecond as the last read keeps the whole stamp.
+Found 2026-10-25 while reproducing
+[ci-red-on-linux](./_archive/ci-red-on-linux.md) in a Linux container (Docker
+Desktop, kernel 6.12.67-linuxkit, overlayfs). The kit caches a parsed file under
+a stamp of `ino:size:mtimeMs:ctimeMs` (`src/kit/workspace/relations.ts`,
+`profiles.ts`, and two readers in `session.ts`). The ctime is there so an edit
+that keeps the size and puts the mtime back is still read. That holds only while
+the kernel's ctime is finer than the gap between two writes. On that kernel it
+moves in 1 ms steps (five appends in a row stamped `.682619`, `.684619`,
+`.684619`, `.684619`, `.685619`), so an edit in the same millisecond as the last
+read keeps the whole stamp.
 
 Two cells failed there in every full run (six runs), and two more of the same
 kind in some runs:
@@ -69,4 +70,4 @@ is as new as the read itself; read the file again next time.
 
 ## Related Documents
 
-- [CI is red on develop: happy-dom component tests fail on Linux](./ci-red-on-linux.md)
+- [CI is red on develop: happy-dom component tests fail on Linux](./_archive/ci-red-on-linux.md)

@@ -14,17 +14,17 @@ generated: { by: claude-opus-5-5, at: 2026-09-25 }
 # Context and Chat Kit
 
 > **Continues, narrowed** (Cole, 2026-10-13, on the
-> [prior-direction write-up](../../items/workspace-kit-prior-direction/write-up.md)).
-> [Workspace Kit](../workspace-kit/feature.md) ports Story Studio's kit, and
-> with it most of this feature:
+> [prior-direction write-up](../../items/_archive/workspace-kit-prior-direction/write-up.md)).
+> [Workspace Kit](../_archive/workspace-kit/feature.md) ports Story Studio's
+> kit, and with it most of this feature:
 >
 > - **Phase 1 stays, rewritten on top of the ported `MessageAbout`.**
 >   Scriptorium's adopter case becomes the ported `about`. The contract adds the
 >   quote anchor to the range union (finding 2), and the drop intake starts from
 >   Story Studio's `splitDropped` (finding 12). Roles and "one subject, plus
 >   refs" are settled by
->   [Message via and refs](../../items/message-via-and-refs.md), shared with
->   Story Studio.
+>   [Message via and refs](../../items/_archive/message-via-and-refs.md), shared
+>   with Story Studio.
 > - **Phase 2 is superseded by the ported chat.** Channels, facets, collapse and
 >   the chip changes move to Workspace Kit as evolutions.
 > - **Phase 3 is superseded only for the disk host.** The backend-agnostic list
@@ -343,7 +343,7 @@ a spell can be _hosted_ somewhere and have a _local_ agent connect to its
 session in real time. That is a question of deployment and session transport,
 separate from this kit. It **consumes** the phase 2 chat seam, and phase 2
 should keep it in view as a second host. Tracked in
-[Hosted spells with a local agent](../../items/hosted-spells/write-up.md).
+[Hosted spells with a local agent](../../items/_archive/hosted-spells/write-up.md).
 
 ## Success Criteria
 
