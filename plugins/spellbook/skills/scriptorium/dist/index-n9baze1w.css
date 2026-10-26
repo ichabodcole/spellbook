@@ -3043,6 +3043,20 @@
     padding-right: calc(var(--spacing) * 1.5);
   }
 
+  .aria-disabled\:cursor-not-allowed[aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+  .aria-disabled\:opacity-40[aria-disabled="true"] {
+    opacity: .4;
+  }
+
+  @media (hover: hover) {
+    .aria-disabled\:hover\:text-ink-faint[aria-disabled="true"]:hover {
+      color: var(--color-ink-faint);
+    }
+  }
+
   .aria-expanded\:bg-muted[aria-expanded="true"] {
     background-color: var(--color-muted);
   }
