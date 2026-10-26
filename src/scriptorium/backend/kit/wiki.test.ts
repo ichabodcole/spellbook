@@ -2,12 +2,12 @@
 // 500 documents, said when it is hit, and a document two entries show counted
 // once. The verbs over it are in `wiki.integration.test.ts`.
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { WorkspaceSession } from "../../../kit/workspace/session";
 import { tempRoot, testApp } from "../../../kit/workspace/testing";
 import { META_SCAN_CAP } from "./frontmatter";
-import { docMeta } from "./wiki";
+import { docMeta, noFrontmatter } from "./wiki";
 
 let root: string;
 let world: string;
@@ -58,5 +58,46 @@ describe("docMeta: the shipped cap", () => {
     const m = docMeta(s);
     expect(Object.keys(m.docMeta)).toHaveLength(META_SCAN_CAP);
     expect("docMetaTruncated" in m).toBe(false);
+  });
+});
+
+/**
+ * Rewrite `abs` with `text` (the same size) and put its mtime back: only the
+ * inode's ctime says it changed. The cache must not answer from before.
+ */
+function rewriteKeepingMtime(abs: string, text: string): void {
+  const before = statSync(abs);
+  expect(before.mtimeMs).toBe(PINNED * 1000);
+  expect(Buffer.byteLength(text)).toBe(before.size);
+  writeFileSync(abs, text);
+  pin(abs);
+}
+
+/** A whole-second mtime, so putting it back is exact. */
+const PINNED = 1_700_000_000;
+const pin = (abs: string) => utimesSync(abs, PINNED, PINNED);
+
+describe("the summary caches key on the file's whole stamp, not its mtime", () => {
+  test("docMeta: a same-size rewrite with the mtime put back is read again", () => {
+    const abs = join(world, "m.md");
+    note(abs);
+    pin(abs);
+    const s = session();
+    expect(docMeta(s).docMeta[abs]?.type).toBe("note");
+    rewriteKeepingMtime(abs, "---\ntype: idea\n---\n# A note\n");
+    expect(docMeta(s).docMeta[abs]?.type).toBe("idea");
+  });
+
+  test("noFrontmatter: a same-size rewrite that drops the block, mtime put back, is seen", () => {
+    const abs = join(world, "m.md");
+    writeFileSync(abs, "---\na: b\n---\nhi\n");
+    const s = session();
+    const { slug } = s.openPath(abs);
+    const active = s.activePath(slug);
+    if (!active) throw new Error("no active version");
+    pin(active);
+    expect(noFrontmatter(s).noFrontmatter).toEqual([]);
+    rewriteKeepingMtime(active, "-- \na: b\n---\nhi\n");
+    expect(noFrontmatter(s).noFrontmatter).toEqual([slug]);
   });
 });

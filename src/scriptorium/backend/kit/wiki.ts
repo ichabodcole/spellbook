@@ -82,13 +82,21 @@ function shownOrDie(s: WorkspaceSession, rawPath: string): string {
 
 // ── docMeta: the agent's per-document frontmatter, in appState ─────────────
 
-type MetaCache = Map<string, { mtimeMs: number; summary: DocSummary | null }>;
+/** What a cached read of `abs` is keyed on: the kit's link caches' stamp. */
+function fileStamp(abs: string): string {
+  const st = statSync(abs);
+  return `${st.ino}:${st.size}:${st.mtimeMs}:${st.ctimeMs}`;
+}
+
+type MetaCache = Map<string, { stamp: string; summary: DocSummary | null }>;
 const caches = new WeakMap<WorkspaceSession, MetaCache>();
 
 /**
  * Frontmatter for every document in the context, by path: the shipped
  * snapshot's `docMeta` (S/backend/session.ts `contextMeta`), with each
- * document's trust tier and `stale`. Cached by path and mtime, read head
+ * document's trust tier and `stale`. Cached by path and the file's stamp
+ * (inode, size, mtime and ctime, as the kit's link caches key theirs: a
+ * rewrite that puts the mtime back still moves the ctime), read head
  * first, capped at the shipped 500; hitting the cap is said
  * (`docMetaTruncated`), not left to look like documents without any.
  */
@@ -111,18 +119,18 @@ export function docMeta(s: WorkspaceSession): {
       break;
     }
     seen.add(abs);
-    let mtimeMs: number;
+    let stamp: string;
     try {
-      mtimeMs = statSync(abs).mtimeMs;
+      stamp = fileStamp(abs);
     } catch {
       continue;
     }
     const hit = cache.get(abs);
     let summary: DocSummary | null;
-    if (hit && hit.mtimeMs === mtimeMs) summary = hit.summary;
+    if (hit && hit.stamp === stamp) summary = hit.summary;
     else {
       summary = summarize(readMeta(readHead(abs)));
-      cache.set(abs, { mtimeMs, summary });
+      cache.set(abs, { stamp, summary });
     }
     if (summary) map[abs] = summary;
   }
@@ -142,7 +150,7 @@ const blockCaches = new WeakMap<WorkspaceSession, Map<string, { stamp: string; n
  * In appState, so every surface of the session reads the same answer: one tab
  * that adds a block takes the offer away from the others, as the shipped
  * snapshot's `doc.meta` does. An edit reaches it with the edit's broadcast.
- * Cached by the version's path, mtime and size.
+ * Cached by the version's path and stamp (inode, size, mtime and ctime).
  */
 export function noFrontmatter(s: WorkspaceSession): { noFrontmatter: string[] } {
   let cache = blockCaches.get(s);
@@ -158,8 +166,7 @@ export function noFrontmatter(s: WorkspaceSession): { noFrontmatter: string[] } 
     seen.add(path);
     let stamp: string;
     try {
-      const st = statSync(path);
-      stamp = `${st.mtimeMs}:${st.size}`;
+      stamp = fileStamp(path);
     } catch {
       continue;
     }
