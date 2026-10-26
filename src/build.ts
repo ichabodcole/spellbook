@@ -177,7 +177,9 @@ function buildableSpells(): string[] {
  * sourcemap:"inline" knowing it embedded the complete original TypeScript -
  * 10.39 MB of the 23.19 MB of shipped JS (44.8%) was map, measured at the
  * change. Contract 4's "source-free by construction" is back to meaning no
- * source bytes in the subtree, not only no source FILES.
+ * BUNDLE carries source bytes, as well as no surface or backend source FILES.
+ * (Not "no TypeScript in the subtree": astrolabe's `scripts/state.ts` and its
+ * two tests ship as source by D10/D96, and every launcher is a `.ts` file.)
  *
  * No external `.map` is written either, gitignored or not. A `.map` beside the
  * bundle would sit in the served `dist/`, in the dist-check roster's disk walk
@@ -189,9 +191,14 @@ function buildableSpells(): string[] {
  * came from - readable, and one search away from the repo line.
  * `grimoire/no-shipped-sourcemap-ward.test.ts` fails if a map comes back.
  *
- * A side effect worth knowing: the map was the only thing that carried source
- * COMMENTS into the bundle (Bun's bundler drops ordinary comments), so a
- * comment-only edit under `src/` no longer dirties a committed bundle.
+ * A side effect worth knowing: the map was what carried source COMMENTS into
+ * the bundle. Bun's bundler drops ordinary comments, so a comment-only edit
+ * under `src/` no longer dirties a committed bundle - EXCEPT a legal comment
+ * (a block opening with an exclamation mark, or one carrying `@license` or
+ * `@preserve`), which Bun always keeps and has no option to drop (bun-types
+ * lists esbuild's `legalComments` as "Not supported", Bun 1.4.0). Measured: a
+ * planted one in `src/bounty/backend/server.ts` reached `dist/server.js`. The
+ * ones shipping today are third-party licence headers (DOMPurify, dagre).
  *
  * ⚠ CORRECTED 2026-09-08 (Phase 1b, D6). This block read "CLIs ONLY. A server
  * does bundle, but drags the entire surface graph into the backend artifact;

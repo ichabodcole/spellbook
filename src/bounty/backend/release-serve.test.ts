@@ -290,7 +290,7 @@ test("SPELLBOOK_SURFACE_MODE=dev OVERRIDES dist/ presence — dev genuinely need
 // CREATED IT. Phase 1b moved the implementation INTO the served directory, and
 // `serveFromDist`'s permission was `existsSync` — so every backend bundle in
 // `dist/` answered at 200, `text/javascript`, byte-identical to the committed
-// artifact, and each carries an INLINE SOURCEMAP, so the response embeds the
+// artifact, and each then carried an INLINE SOURCEMAP, so the response embedded the
 // complete original TypeScript. Closed in `src/kit/wire/serveDist.ts` by
 // deriving the served set from what the built `index.html` LINKS.
 //

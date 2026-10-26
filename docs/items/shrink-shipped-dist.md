@@ -67,6 +67,8 @@ skills.
 - [x] `src/build.ts`'s ruling comment, Contract 4's wording, and register D7 are
       updated to the new ruling.
 - [x] A comment-only edit under `src/` no longer changes any committed bundle.
+      (Except a legal `/*! … */` comment, which Bun keeps and cannot drop; see
+      below.)
 - [x] Every spell still runs from its built `dist/`. The gate and acc pass.
 - [x] Size before and after is measured and recorded here: raw, and gzipped as
       git stores it.
@@ -106,7 +108,11 @@ which names the calibration it needs.
   on any `sourceMappingURL` directive (inline or linked, JS or CSS) or any
   `.map` file in a deployed `dist/`. Planted twice: `sourcemap: "inline"` (red
   on astrolabe's `cli.js` and `server.js`) and `sourcemap: "linked"` (red on
-  both directives and both `.map` files); restored byte-equal, green.
+  both directives and both `.map` files); restored byte-equal, green. After
+  review, its population is every `plugins/*/skills/*/dist/` on disk rather than
+  the build's roster (which it asserts is a subset): a planted
+  `plugins/unreleased/skills/vxsfake/dist/cli.js` with an inline map, green
+  under the roster, now fails it.
 - `d7a7c279` — `chore(dist)`: every bundle rebuilt.
 - **No external `.map`, deliberately.** One beside the bundle would sit in the
   served `dist/` and one `.gitignore` line from shipping, for a need running the
@@ -117,7 +123,13 @@ which names the calibration it needs.
   `src/kit/wire/serveDist.ts` (bundled into most daemons) and to
   `src/astrolabe/backend/cli.ts`, then a full build: `git status` showed only
   the two source files. Bun's bundler drops ordinary comments; the map was what
-  carried them. Reverted.
+  carried them. Reverted. **The exception is a legal comment** (`/*! … */`,
+  `@license`, `@preserve`): a planted `/*!` comment in
+  `src/bounty/backend/server.ts` reached `dist/server.js`, beside an ordinary
+  one that did not. Bun 1.4.0 has no option to drop them (bun-types lists
+  esbuild's `legalComments` as "Not supported"), so the rule carries that
+  exception everywhere it is stated. The legal comments shipping today are
+  third-party licence headers (DOMPurify in digestify, dagre in mind-mapper).
 - **Tests that read the bundles as text.** Six release-serve tests used the
   inline map as proof that a bundle on disk was the real artifact; they now use
   the bundled backend module's `// src/<spell>/backend/` boundary comment

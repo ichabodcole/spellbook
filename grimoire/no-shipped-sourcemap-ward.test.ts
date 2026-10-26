@@ -19,11 +19,22 @@
 //   2. a `.map` file in `dist/` at all — written beside the bundle, it is one
 //      `.gitignore` line from shipping and already inside the served directory.
 //
-// The population is the build's own roster (`buildableSpells()`), read off the
-// DISK, because the gate builds before it tests: a map the build just emitted is
-// on disk before anyone stages it.
+// The population is EVERY `plugins/*/skills/*/dist/` on the DISK, not the
+// build's roster: a dist/ the roster does not know (a spell whose source moved,
+// a hand-copied artifact, a new plugin) still ships if it is tracked, so it is
+// still this ward's subject. The roster is asserted to be a subset of the walk.
+// The disk rather than the index because the gate builds before it tests: a map
+// the build just emitted is on disk before anyone stages it.
 import { describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { buildableSpells } from "../src/build.ts";
@@ -41,6 +52,23 @@ function walk(dir: string, out: string[]): string[] {
     else out.push(p);
   }
   return out;
+}
+
+/** Every `plugins/<plugin>/skills/<skill>/dist` directory that exists on disk,
+ *  absolute and sorted. */
+export function deployedDists(root: string = REPO_ROOT): string[] {
+  const out: string[] = [];
+  const plugins = join(root, "plugins");
+  for (const plugin of readdirSync(plugins, { withFileTypes: true })) {
+    if (!plugin.isDirectory()) continue;
+    const skills = join(plugins, plugin.name, "skills");
+    if (!existsSync(skills)) continue;
+    for (const skill of readdirSync(skills, { withFileTypes: true })) {
+      const dist = join(skills, skill.name, "dist");
+      if (skill.isDirectory() && existsSync(dist)) out.push(dist);
+    }
+  }
+  return out.sort();
 }
 
 /** Every source-map finding under one `dist/`, as `<path>: <why>` lines. */
@@ -87,22 +115,25 @@ describe("no shipped source map", () => {
   });
 
   test("no deployed dist/ carries a source map, inline or linked", () => {
-    const spells = buildableSpells();
-    // ZERO-GUARD ON THE POPULATION: an empty roster, or a roster whose dists
-    // hold nothing, would pass every assertion below over nothing.
-    expect(spells.length).toBeGreaterThan(0);
+    const dists = deployedDists();
+    // ZERO-GUARD ON THE POPULATION: no dist/ found, or dists that hold nothing,
+    // would pass every assertion below over nothing.
+    expect(dists.length).toBeGreaterThan(0);
+    // The roster is a SUBSET of the disk walk, never the population: a spell
+    // the build knows must not be missing from what this ward reads.
+    const walked = new Set(dists);
+    expect(buildableSpells().filter((s) => !walked.has(distDirFor(s)))).toEqual([]);
     let examined = 0;
     const all: string[] = [];
     const rows: string[] = [];
-    for (const spell of spells) {
-      const dist = distDirFor(spell);
+    for (const dist of dists) {
       const { files, findings } = sourceMapFindings(dist);
       examined += files;
-      rows.push(`${spell} ${files} file(s) ${findings.length} map(s)`);
+      rows.push(`${relative(REPO_ROOT, dist)} ${files} file(s) ${findings.length} map(s)`);
       all.push(...findings.map((f) => relative(REPO_ROOT, f)));
     }
     console.log(`no-shipped-sourcemap: ${rows.join(" · ")}`);
-    expect(examined).toBeGreaterThan(spells.length);
+    expect(examined).toBeGreaterThan(dists.length);
     expect(all).toEqual([]);
   });
 });

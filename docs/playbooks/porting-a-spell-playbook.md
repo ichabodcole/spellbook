@@ -2599,8 +2599,9 @@ only if' is not a discriminator", in miniature. `tsc --noEmit` across the
 adopters is a cheap **leading indicator** for (a) and is blind to (b).
 
 > ⚠ **HISTORY SINCE 2026-10-26 (`shrink-shipped-dist`).** No bundle carries a
-> source map now, so a comment-only edit under `src/` re-emits nothing. The
-> paragraph below records what the inline maps did while they shipped.
+> source map now, so a comment-only edit under `src/` re-emits nothing, except a
+> legal comment (`/*! … */`, `@license`, `@preserve`), which Bun always keeps.
+> The paragraph below records what the inline maps did while they shipped.
 
 ⛔ **DRIVEN, AND BY ACCIDENT, WHICH IS THE STRONGEST FORM OF THE POINT.** This
 pre-work's own repairs to `tailEvents.ts` and `eventLog.ts` are **COMMENTS
@@ -3333,14 +3334,14 @@ belongs in its own commit, filed rather than smuggled.
   ⭐ **bounty is a THIRD case and it is the one that surprises: a kit change
   that alters NO behaviour still dirties every consumer.** (⚠ History since
   2026-10-26: with no source map in any bundle, a comment-only change no longer
-  dirties anything; a code change still does.) Its chapter 2 modified one kit
-  module by ONE PARAGRAPH OF COMMENT, and the blast radius was SIX artifacts
-  across FIVE spells — `dist/server.js` for astrolabe, glamour, imago and magpie
-  as well as its own two — because the emitted bundle carries an inlined
-  `sourcesContent`, and prose is source. Executable bytes unchanged; `git diff`
-  shows one line, the sourcemap. Contract 18 verifies by reproduction, so they
-  all belong in the chapter. **Report the blast radius either way, from
-  `git status`, and say which case you were in.**
+  dirties anything, except a legal `/*! … */` comment; a code change still
+  does.) Its chapter 2 modified one kit module by ONE PARAGRAPH OF COMMENT, and
+  the blast radius was SIX artifacts across FIVE spells — `dist/server.js` for
+  astrolabe, glamour, imago and magpie as well as its own two — because the
+  emitted bundle carries an inlined `sourcesContent`, and prose is source.
+  Executable bytes unchanged; `git diff` shows one line, the sourcemap. Contract
+  18 verifies by reproduction, so they all belong in the chapter. **Report the
+  blast radius either way, from `git status`, and say which case you were in.**
 
 - **`bun run gate` is not sufficient after a `src/kit/` change.** Run
   `bun scripts/dist-check.ts` and read `git status` for **stylesheet** churn in

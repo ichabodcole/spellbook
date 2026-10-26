@@ -175,7 +175,7 @@ test("the backend still works in release mode — fresh store 409s needs-project
 // bundles beside it. MEASURED at the end of chapter 1, through the real
 // launcher, before the whitelist: `GET /cli.js` -> 200, `text/javascript`,
 // 208,579 bytes and `GET /server.js` -> 200, 549,791 bytes, both byte-identical
-// to the committed artifacts — and each carries an INLINE SOURCEMAP, so the
+// to the committed artifacts — and each then carried an INLINE SOURCEMAP, so the
 // response embedded the complete original TypeScript of a 23-module backend.
 // Closed in `src/kit/wire/serveDist.ts` by deriving the served set from what
 // the built `index.html` transitively LINKS.

@@ -65,7 +65,8 @@ branch that adds it. If you already switched, run it by path or via
 > `chore(dist)` when behaviour is unchanged) before landing. _Bit the
 > project-docs v3 migration landing, 2026-09-26, when inline source maps made
 > even a comment-only edit dirty 17 bundles; since 2026-10-26 no bundle carries
-> a map, so a comment-only edit no longer does._
+> a map, so a comment-only edit no longer does, except a legal comment
+> (`/*! … */`, `@license`, `@preserve`), which Bun always keeps._
 
 > **⚠ Run the gate UNPIPED.** finalize-branch's format/lint/types/test gate
 > still applies, and `bun test | tail` reports the **exit code of `tail`** —
