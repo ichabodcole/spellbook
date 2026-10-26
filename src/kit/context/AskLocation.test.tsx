@@ -277,6 +277,17 @@ describe("with nothing selected, the list asks where", () => {
     await click(byLabel("New document…"));
     await waitFor(() => dialogEl() !== null, "the dialog");
     expect(dialogEl()?.textContent).toContain("Where should the new document go?");
+    // A modal: the page behind it is inert while it is open (`inertOutside`).
+    const holderOf = (el: Element) => {
+      let at: Element | null = el;
+      while (at && at.parentElement !== document.body) at = at.parentElement;
+      return at as HTMLElement;
+    };
+    const behind = [...document.body.children].filter(
+      (c) => c !== holderOf(dialogEl() as HTMLElement),
+    ) as HTMLElement[];
+    expect(behind.length).toBeGreaterThan(0);
+    expect(behind.every((c) => c.inert)).toBe(true);
     expect(places()).toEqual(["drafts", "drafts/part", "world"]);
     // The first time, nothing is chosen for them: Enter does nothing.
     expect(chosen()).toEqual([]);

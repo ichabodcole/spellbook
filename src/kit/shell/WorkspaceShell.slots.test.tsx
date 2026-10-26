@@ -163,6 +163,8 @@ async function moveTo(row: string, into: string) {
   await waitFor(() => menuItem("Move to") !== null, "the menu");
   await click(menuItem("Move to"));
   await waitFor(() => option(into) !== null, `the Move to dialog offering ${into}`);
+  // A modal: while it is open, the shell behind it is inert (`inertOutside`).
+  expect((q('[data-pane="context"]')?.closest("body > *") as HTMLElement | null)?.inert).toBe(true);
   await click(option(into));
 }
 /** A refusal from the daemon itself: a folder that is not there cannot be added. */
@@ -374,6 +376,18 @@ describe("the refusal rule's edges", () => {
     // Escape lets it go.
     await refuseLink();
     await waitFor(() => !!alertIn(contextPane()), "the notice");
+    // An Escape something else already took (a dialog, a menu) is not the notice's.
+    await settle(() => {
+      const taken = new window.KeyboardEvent("keydown", {
+        key: "Escape",
+        bubbles: true,
+        cancelable: true,
+      });
+      taken.preventDefault();
+      document.dispatchEvent(taken);
+    });
+    await pause(60);
+    expect(seen?.lastError).toBeTruthy();
     await settle(() => {
       document.dispatchEvent(
         new window.KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }),
