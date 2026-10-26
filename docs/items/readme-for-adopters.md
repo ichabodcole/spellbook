@@ -6,7 +6,7 @@ description:
   count, the authoring rituals it says the plugin installs, the old spell layout
   and docs line; the root DEV_KICKOFF.md and index.ts stub are stale too."
 status: stable
-lifecycle: active
+lifecycle: done
 id: 01a17017-06ad-7469-91c0-cde2c9ab864a
 kind: chore
 generated: { by: claude-opus-5-5, at: 2026-10-24 }
@@ -38,7 +38,7 @@ wrong for what 6.0.0 will ship:
 
 - [x] Every claim in the README checked against the tree and the shipped plugin,
       and corrected where it is wrong.
-- [ ] The root `DEV_KICKOFF.md` and `index.ts` removed or moved, with Cole's
+- [x] The root `DEV_KICKOFF.md` and `index.ts` removed or moved, with Cole's
       yes, after checking that nothing references them.
 - [x] A fresh reader with no repo context, given only the README, can say what
       installing the plugin gives them.
@@ -79,3 +79,8 @@ drives, Bun 1.3.14+, the extra needs of imago, glamour and magpie, and digestify
 as a first try). Its remaining confusions were spell names it didn't know and
 two wordings the lead fixed (`52b4c98d`); per the land skill's limit of one
 re-read, there was no third.
+
+**Closing (lead, 2026-10-26).** Cole said yes to removing the root files: the
+root `DEV_KICKOFF.md`, `index.ts` and the `"module": "index.ts"` line in
+`package.json` are gone. He also raised the Bun minimum to 1.4.0, so the README
+now gives that one figure, and the 6.0.0 upgrade note says so.
