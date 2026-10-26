@@ -40,7 +40,7 @@ wrong for what 6.0.0 will ship:
       and corrected where it is wrong.
 - [ ] The root `DEV_KICKOFF.md` and `index.ts` removed or moved, with Cole's
       yes, after checking that nothing references them.
-- [ ] A fresh reader with no repo context, given only the README, can say what
+- [x] A fresh reader with no repo context, given only the README, can say what
       installing the plugin gives them.
 
 ## Done and verified
@@ -70,3 +70,12 @@ spell, names a first spell to try, and gives one Bun minimum: 1.3.14, which
 glamour's image code needs. A new paragraph says when each spell stops and where
 its state lives. Its figures come from the SKILLs and the servers' defaults
 (1800 s; bounty 7200 s; no idle close for grapevine or astrolabe by default).
+
+**Fresh readers (lead, 2026-10-25).** Two cold readers were each given only the
+README file and forbidden to look anything up. The first could say what
+installing gives you, and tripped on eight points the fix round (`b1dcee22`)
+answered. The second summarised it correctly (eight local browser apps the agent
+drives, Bun 1.3.14+, the extra needs of imago, glamour and magpie, and digestify
+as a first try). Its remaining confusions were spell names it didn't know and
+two wordings the lead fixed (`52b4c98d`); per the land skill's limit of one
+re-read, there was no third.
