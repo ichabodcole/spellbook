@@ -11,6 +11,7 @@
 // by the pid its own pointer names.
 import { afterAll, describe, expect, test } from "bun:test";
 import {
+  chmodSync,
   cpSync,
   existsSync,
   mkdirSync,
@@ -335,6 +336,80 @@ describe("a lock that names a process that is not this session's daemon", () => 
     expect((await cli("close", "--session", b)).code).toBe(0);
     await waitForExit(bLive);
   }, 90_000);
+
+  // One test per guard of `confirmHolder`: each case passes every other guard,
+  // so only the one under test keeps the stop verb off.
+
+  test("the daemon-entry guard: a lock for this session naming a live process that is no daemon gives no kill", async () => {
+    const id = await savedSession();
+    const other = Bun.spawn(["sleep", "120"], { env });
+    try {
+      // Running before the lock was written, so not a reused pid: held, with ps.
+      await Bun.sleep(1500);
+      plant(id, { pid: other.pid, at: Date.now(), session: id });
+      const r = await cli("open", "--no-open", "--restore", id, "--start-timeout", "5");
+      noKill(r, other.pid, id);
+      expect(envelope(r).hint).toContain("it is not running");
+      rmSync(lockFile(id));
+    } finally {
+      other.kill();
+      await other.exited;
+    }
+  }, 60_000);
+
+  test("the session guard: a lock that names no session gives no kill, even naming a live daemon of this app", async () => {
+    const a = await savedSession();
+    // A new session's daemon: its command line names no session.
+    const rb = await cli("open", "--no-open");
+    const b = (JSON.parse(rb.out) as { session_id: string }).session_id;
+    const bPid = pointerPid(pointerFile(b)) as number;
+    started.add(bPid);
+    await Bun.sleep(1500);
+    plant(a, { pid: bPid, at: Date.now() });
+    const r = await cli("open", "--no-open", "--restore", a, "--start-timeout", "5");
+    noKill(r, bPid, a);
+    expect(envelope(r).hint).toContain("the lock does not say which session it was taken for");
+    expect(alive(bPid)).toBe(true);
+    rmSync(lockFile(a));
+    expect((await cli("close", "--session", b)).code).toBe(0);
+    await waitForExit(bPid);
+  }, 60_000);
+
+  test("the start-time guard: a process of this app's daemon entry started after the lock gives no kill", async () => {
+    const id = await savedSession();
+    // `ps` that answers the CLI and not the daemon: the daemon then trusts the
+    // live pid and refuses, and only the CLI's own start-time check is left.
+    const shim = join(root, "psshim");
+    mkdirSync(shim, { recursive: true });
+    writeFileSync(
+      join(shim, "ps"),
+      `#!/bin/sh\ncase "$(/bin/ps -ww -o command= -p $PPID)" in *fixtures/server.ts*) exit 1;; esac\nexec /bin/ps "$@"\n`,
+    );
+    chmodSync(join(shim, "ps"), 0o755);
+    // Its command line carries the daemon entry; it is not a daemon.
+    const entry = join(dirname(CLI), "server.ts");
+    const fake = Bun.spawn([process.execPath, "-e", "setInterval(() => {}, 1e6)", entry], { env });
+    try {
+      await Bun.sleep(500);
+      // Written an hour before the process started: its pid was reused.
+      plant(id, { pid: fake.pid, at: Date.now() - 3_600_000, session: id });
+      const r = await cliEnv(
+        { ...env, PATH: `${shim}:${process.env.PATH}` },
+        "open",
+        "--no-open",
+        "--restore",
+        id,
+        "--start-timeout",
+        "5",
+      );
+      noKill(r, fake.pid, id);
+      expect(envelope(r).hint).toContain("it started after the lock was taken");
+      rmSync(lockFile(id));
+    } finally {
+      fake.kill();
+      await fake.exited;
+    }
+  }, 60_000);
 });
 
 describe("a start that fails", () => {

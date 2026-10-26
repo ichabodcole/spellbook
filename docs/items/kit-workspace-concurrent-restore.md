@@ -131,9 +131,10 @@ Known limits:
   half-written lock: the hard link makes that impossible, and no test can hit
   the window.
 - **A lock forged by hand can still be confirmed.** A lock written by hand
-  naming this session, another new (never restored) session's daemon pid, and a
-  time after that daemon started would pass every check. Nothing the kit writes
-  produces one: a copied lock names its own session.
+  naming this session and a time after the named process started would pass
+  every check if the pid is another new (never restored) session's daemon, or
+  any process whose command line contains the daemon entry. Nothing the kit
+  writes produces such a lock: a copied lock names its own session.
 - **No `kill` without `ps`.** Where `ps` cannot answer (Windows, a stripped
   PATH), the stop verb is never offered. A stuck daemon is then named for a
   person to judge.
@@ -155,6 +156,11 @@ Tests:
   - a lock naming another session's healthy daemon gives no `kill`, either
     without `ps` or with a lock forged to name this session (its command line
     names its own session);
+  - one test per guard of `confirmHolder` (session, daemon entry, start time),
+    each passing every other guard, so only that guard keeps `kill` off: a lock
+    naming no session, a live non-daemon process (`sleep`), and a process with
+    the daemon entry on its command line that started after the lock. The last
+    uses a `ps` shim that answers the CLI and not the daemon;
   - a start refused for a corrupt manifest leaves no lock;
   - `--restore ..` is refused 400 before any lock is taken.
 - `src/kit/wire/daemonLock.test.ts`:
