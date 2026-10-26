@@ -280,6 +280,22 @@ export function parseSide(token: string, what: string): DiffSide {
  * (the daemon's cwd is not the caller's). Anything else (a slug, a unique file
  * name) goes as typed.
  */
+/**
+ * Whether a file-system error is about a path the caller wrote on the command
+ * line: its `path` is one of the arguments (or a `--flag=value`'s value), as
+ * written or made absolute against the cwd.
+ */
+export function callerNamed(argv: readonly string[], e: unknown): boolean {
+  const path = e && typeof e === "object" && "path" in e ? (e as { path: unknown }).path : null;
+  if (typeof path !== "string" || path === "") return false;
+  for (const arg of argv) {
+    const value = arg.startsWith("--") && arg.includes("=") ? arg.slice(arg.indexOf("=") + 1) : arg;
+    if (value === "" || value.startsWith("--")) continue;
+    if (value === path || resolve(value) === resolve(path)) return true;
+  }
+  return false;
+}
+
 export function docArg(token: string): string {
   if (token.includes("/") || existsSync(resolve(token))) return resolve(token);
   return token;
@@ -2001,8 +2017,10 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
   });
 
   // `dispatch`, not the registry's `main`: the kit does not triage a
-  // non-CliError; this does. A named file that is not there or cannot be read
-  // (--body-file: ENOENT, EACCES) is the caller's; everything else is ours.
+  // non-CliError; this does. A file the CALLER named (--body-file, or any other
+  // path argument) that is not there or cannot be read (ENOENT, EACCES) is the
+  // caller's: usage. The same errors on a path of ours (the session home, its
+  // logs) are ours: internal, since no change to the command line fixes them.
   async function run(argv: string[]): Promise<number> {
     try {
       return await cli.dispatch(argv);
@@ -2012,7 +2030,8 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
       const code =
         e && typeof e === "object" && "code" in e ? String((e as { code: unknown }).code) : "";
       const msg = e instanceof Error ? e.message : String(e);
-      if (code === "ENOENT" || code === "EACCES") return reportCliError(new UsageError(msg)) ?? 2;
+      if ((code === "ENOENT" || code === "EACCES") && callerNamed(argv, e))
+        return reportCliError(new UsageError(msg)) ?? 2;
       return reportCliError(new CliError("internal", msg)) ?? 1;
     }
   }

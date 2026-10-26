@@ -24,6 +24,7 @@ import { homeDir } from "../lib/home.ts";
 import { cli } from "./fixtures/cli";
 import { DOC_EXTENSIONS } from "./tree";
 import {
+  callerNamed,
   DEFAULT_START_TIMEOUT_MS,
   defaultWorkspace,
   docArg,
@@ -338,6 +339,31 @@ test("a --body-file that is missing or unreadable is the caller's: usage (exit 2
   } finally {
     chmodSync(locked, 0o600);
   }
+});
+
+test("an unreadable session home is ours, not the caller's: internal (exit 1), not usage", () => {
+  const home = mkdtempSync(join(tmpdir(), "workspace-locked-home-"));
+  const docsDir = mkdtempSync(join(tmpdir(), "workspace-locked-docs-"));
+  writeFileSync(join(docsDir, "a.md"), "# A\n");
+  chmodSync(home, 0o000);
+  try {
+    const r = run(["open", "--no-open", docsDir], EMPTY_TMP, home);
+    expect(r.code).toBe(1);
+    const doc = JSON.parse(r.stderr) as Envelope;
+    expect(doc.error.kind).toBe("internal");
+    expect(doc.error.message).toContain("EACCES");
+  } finally {
+    chmodSync(home, 0o700);
+  }
+});
+
+test("callerNamed: a file-system error is the caller's only for a path it wrote", () => {
+  const err = (path: string) => Object.assign(new Error("x"), { code: "EACCES", path });
+  expect(callerNamed(["say", "--body-file", "rel/b.md"], err("rel/b.md"))).toBe(true);
+  expect(callerNamed(["say", "--body-file", "rel/b.md"], err(resolve("rel/b.md")))).toBe(true);
+  expect(callerNamed(["say", "--body-file=/x/b.md"], err("/x/b.md"))).toBe(true);
+  expect(callerNamed(["say", "--body-file", "/x/b.md"], err("/home/.s/logs"))).toBe(false);
+  expect(callerNamed(["state"], new Error("no path"))).toBe(false);
 });
 
 test("restoring an unknown session names the saved sessions as choices: empty, and said", () => {
