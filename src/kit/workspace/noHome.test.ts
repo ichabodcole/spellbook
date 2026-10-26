@@ -1,0 +1,364 @@
+// An app with no home workspace (`AppDeclaration.homeWorkspace: false`): nothing
+// writes a new file or folder to a place the caller did not name, a create that
+// names none is refused with the way to name one, and the same acts on an app
+// with a home workspace (the kit's default) are unchanged.
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
+import { join } from "node:path";
+import { pngBytes } from "../lib/testImages.ts";
+import { DEFAULT_LOCATION_HINT, hasHomeWorkspace } from "./noHome";
+import { type AppDeclaration, WorkspaceSession } from "./session";
+import { refusal, seedDocs, tempRoot, testApp } from "./testing";
+import { createWorkspaceCli, openingFolder } from "./verbs";
+
+const HINT = "name a folder inside a set, or `add-folder <path>`";
+const noHomeApp: AppDeclaration = { ...testApp, homeWorkspace: false, locationHint: HINT };
+
+let root: string;
+let sessions: string;
+let docs: string;
+let set: string;
+/** The folder `open` ran in: what a home app would write into unasked. */
+let opened: string;
+
+beforeEach(() => {
+  root = tempRoot("workspace-no-home");
+  sessions = join(root, "sessions");
+  docs = seedDocs(root);
+  set = join(docs, "set");
+  opened = join(root, "opened");
+  mkdirSync(opened);
+});
+
+afterEach(() => rmSync(root, { recursive: true, force: true }));
+
+/** A no-home session over the set, created as `open` would with a cwd. */
+function noHome(): WorkspaceSession {
+  const s = WorkspaceSession.create(sessions, noHomeApp, undefined, opened);
+  s.addContext(set);
+  return s;
+}
+
+const manifest = (s: WorkspaceSession) =>
+  JSON.parse(readFileSync(join(s.dir, "manifest.json"), "utf8")) as Record<string, unknown>;
+
+/** Nothing new anywhere a caller did not name: the opening folder and the session's `imported/`. */
+function nothingUnasked(s: WorkspaceSession): void {
+  expect(readdirSync(opened)).toEqual([]);
+  expect(existsSync(join(s.dir, "imported"))).toBe(false);
+}
+
+describe("the declaration", () => {
+  test("absent or true is a home workspace; only false is none", () => {
+    expect(hasHomeWorkspace(testApp)).toBe(true);
+    expect(hasHomeWorkspace({ ...testApp, homeWorkspace: true })).toBe(true);
+    expect(hasHomeWorkspace(noHomeApp)).toBe(false);
+  });
+
+  test("a new session keeps no workspace, even when one is passed", () => {
+    const s = noHome();
+    expect(s.hasHome).toBe(false);
+    expect("workspace" in manifest(s)).toBe(false);
+    // The same call on a home app keeps it: unchanged.
+    const h = WorkspaceSession.create(sessions, testApp, undefined, opened);
+    expect(h.hasHome).toBe(true);
+    expect(manifest(h).workspace).toBe(opened);
+  });
+
+  test("a restore drops a workspace the manifest still holds, and defaults none", () => {
+    const s = noHome();
+    const id = s.id;
+    const path = join(s.dir, "manifest.json");
+    const m = manifest(s);
+    writeFileSync(path, JSON.stringify({ ...m, workspace: opened }));
+    const back = WorkspaceSession.restore(sessions, noHomeApp, id);
+    expect(back.restoreReport.workspaceDefaulted).toBeUndefined();
+    expect("workspace" in manifest(back)).toBe(false);
+    // A manifest with none at all: still none, and nothing said about it.
+    const again = WorkspaceSession.restore(sessions, noHomeApp, id);
+    expect(again.restoreReport.workspaceDefaulted).toBeUndefined();
+    expect("workspace" in manifest(again)).toBe(false);
+  });
+});
+
+describe("a create that names no place is refused, with the way to name one", () => {
+  test("a dropped document with no folder (`import` with no dir)", () => {
+    const s = noHome();
+    const e = refusal(() => s.importText("dropped.md", "# Dropped\n"));
+    expect(e.status).toBe(400);
+    expect(e.message).toContain("no location was named");
+    expect(e.hint).toBe(HINT);
+    nothingUnasked(s);
+  });
+
+  test("a dropped image with no folder", () => {
+    const s = noHome();
+    const e = refusal(() => s.importImage("pic.png", pngBytes(4, 4), { onTaken: "ask" }));
+    expect(e.status).toBe(400);
+    expect(e.hint).toBe(HINT);
+    nothingUnasked(s);
+  });
+
+  test("a document, folder or bundle in a folder that is not the session's (the opening folder too)", () => {
+    const s = noHome();
+    for (const dir of [opened, join(s.dir, "imported"), root]) {
+      for (const act of [
+        () => s.createDoc(dir, "new.md"),
+        () => s.createFolder(dir, "New"),
+        () => s.importText("dropped.md", "x", dir),
+      ]) {
+        const e = refusal(act);
+        expect(e.status).toBe(400);
+        expect(e.message).toContain("is not a folder in this session");
+        expect(e.hint).toBe(HINT);
+      }
+    }
+    nothingUnasked(s);
+    expect(existsSync(join(root, "new.md"))).toBe(false);
+  });
+
+  test("a move into a folder that is not the session's", () => {
+    const s = noHome();
+    const e = refusal(() => s.move(join(set, "a.md"), opened));
+    expect(e.status).toBe(400);
+    expect(e.hint).toBe(HINT);
+    expect(existsSync(join(set, "a.md"))).toBe(true);
+    nothingUnasked(s);
+  });
+
+  test("setting a workspace is refused: there is none to set", () => {
+    const s = noHome();
+    const e = refusal(() => s.setWorkspace(opened));
+    expect(e.status).toBe(400);
+    expect(e.message).toContain("no workspace folder to set");
+    expect(e.hint).toBe(HINT);
+    expect("workspace" in manifest(s)).toBe(false);
+  });
+
+  test("an app that gives no words of its own gets the kit's", () => {
+    const s = WorkspaceSession.create(sessions, { ...testApp, homeWorkspace: false });
+    expect(refusal(() => s.importText("x.md", "x")).hint).toBe(DEFAULT_LOCATION_HINT);
+  });
+});
+
+describe("a create that names its place goes there", () => {
+  test("a document, a folder and a drop inside a set", () => {
+    const s = noHome();
+    expect(s.createDoc(join(set, "part"), "new.md").path).toBe(join(set, "part", "new.md"));
+    const f = s.createFolder(set, "Drafts");
+    expect(f.path).toBe(join(set, "Drafts"));
+    // A folder inside the set, not a set of its own.
+    expect(s.context.some((e) => e.root === f.path)).toBe(false);
+    expect(s.importText("dropped.md", "# D\n", set).path).toBe(join(set, "dropped.md"));
+    expect(s.importImage("pic.png", pngBytes(4, 4), { dir: set, onTaken: "ask" }).path).toBe(
+      join(set, "pic.png"),
+    );
+    nothingUnasked(s);
+  });
+
+  test("a new folder anywhere whose parent exists, named in full, becomes a set", () => {
+    const s = noHome();
+    const r = s.addFolder(join(root, "elsewhere"));
+    expect(r.set).toBe(true);
+    expect(s.createDoc(join(root, "elsewhere"), "first.md").path).toBe(
+      join(root, "elsewhere", "first.md"),
+    );
+    nothingUnasked(s);
+  });
+
+  test("a set that holds the folder the session opened in is no overlap: there is no workspace", () => {
+    const outer = join(root, "outer");
+    const inner = join(outer, "inner");
+    mkdirSync(inner, { recursive: true });
+    const s = WorkspaceSession.create(sessions, noHomeApp, undefined, inner);
+    expect(s.addContext(outer).added).toBe(true);
+    expect(s.workspaceOverlap()).toBeNull();
+    // A home app refuses the same: unchanged.
+    const h = WorkspaceSession.create(sessions, testApp, undefined, inner);
+    expect(refusal(() => h.addContext(outer)).status).toBe(409);
+  });
+});
+
+// `workspace.overlap` names `workspace <dir>` as its fix. An app with no home
+// workspace has no such verb, and no workspace to overlap a set, so the
+// finding never fires there: its act would be one the app does not have.
+describe("doctor names no `workspace` act on an app with none", () => {
+  const noOverlap = (s: WorkspaceSession) => {
+    expect(s.workspaceOverlap()).toBeNull();
+    expect(s.overlapToSay()).toBeNull();
+    const all = s.checkup();
+    expect(all.some((f) => f.kind === "workspace.overlap")).toBe(false);
+    expect(all.some((f) => f.fix.includes("`workspace"))).toBe(false);
+  };
+
+  test("a session saved with a workspace inside a set (an older manifest)", () => {
+    const s = noHome();
+    const file = join(s.dir, "manifest.json");
+    writeFileSync(file, JSON.stringify({ ...manifest(s), workspace: join(set, "part") }));
+    noOverlap(WorkspaceSession.restore(sessions, noHomeApp, s.id));
+    // The same manifest on a home app overlaps, and names the verb it has: unchanged.
+    const h = WorkspaceSession.create(sessions, testApp);
+    h.addContext(set);
+    const hf = join(h.dir, "manifest.json");
+    writeFileSync(hf, JSON.stringify({ ...manifest(h), workspace: join(set, "part") }));
+    const back = WorkspaceSession.restore(sessions, testApp, h.id);
+    expect(back.checkup().find((f) => f.kind === "workspace.overlap")?.fix).toContain(
+      "`workspace <dir>`",
+    );
+  });
+});
+
+describe("a home app is unchanged", () => {
+  test("a drop and a create with no folder land in the workspace", () => {
+    const h = WorkspaceSession.create(sessions, testApp, undefined, opened);
+    expect(h.importText("dropped.md", "x").path).toBe(join(opened, "dropped.md"));
+    expect(h.createDoc(opened, "new.md").path).toBe(join(opened, "new.md"));
+    const nothing = WorkspaceSession.create(sessions, testApp);
+    expect(nothing.importText("dropped.md", "x").path).toBe(
+      join(nothing.dir, "imported", "dropped.md"),
+    );
+  });
+});
+
+describe("the CLI of an app with no home workspace", () => {
+  const cli = (app: { name: string; homeWorkspace?: boolean }) =>
+    createWorkspaceCli({
+      app,
+      daemon: { command: "bun", args: [] },
+      sessionsRoot: () => sessions,
+      version: () => ({}),
+    });
+
+  test("has no `workspace` verb, and `import` takes --into", () => {
+    const home = cli({ name: "kit-test" });
+    const none = cli({ name: "kit-test", homeWorkspace: false });
+    const names = (c: ReturnType<typeof cli>) => c.rows.map((r) => r.name);
+    expect(names(home)).toContain("workspace");
+    expect(names(none)).not.toContain("workspace");
+    const accepted = (c: ReturnType<typeof cli>, verb: string) => [
+      ...(c.rows.find((r) => r.name === verb)?.accepted ?? []),
+    ];
+    expect(accepted(home, "import")).not.toContain("into");
+    expect(accepted(none, "import")).toContain("into");
+  });
+
+  test("`import` with no --into is refused before anything is read or sent", async () => {
+    const none = cli({ name: "kit-test", homeWorkspace: false });
+    const file = join(root, "in.md");
+    writeFileSync(file, "# In\n");
+    const errs: string[] = [];
+    const write = process.stderr.write.bind(process.stderr);
+    process.stderr.write = ((chunk: string) => {
+      errs.push(String(chunk));
+      return true;
+    }) as typeof process.stderr.write;
+    let code: number;
+    try {
+      code = await none.run(["import", file]);
+    } finally {
+      process.stderr.write = write;
+    }
+    expect(code).toBe(2);
+    const env = JSON.parse(errs.join("")) as { error: { message: string; hint: string } };
+    expect(env.error.message).toContain("--into <folder>");
+    expect(env.error.hint).toBe(DEFAULT_LOCATION_HINT);
+  });
+});
+
+describe("the folder `open` ran in, for an app with no home workspace", () => {
+  test("an ordinary folder is added", () => {
+    expect(openingFolder(opened, sessions)).toEqual({ path: opened });
+  });
+
+  test("not the home folder, one above it, the top of the disk, or the sessions' own", () => {
+    const home = process.env.HOME as string;
+    expect("skipped" in openingFolder(home, sessions)).toBe(true);
+    expect("skipped" in openingFolder(join(home, ".."), sessions)).toBe(true);
+    expect("skipped" in openingFolder("/", sessions)).toBe(true);
+    mkdirSync(join(sessions, "abc"), { recursive: true });
+    expect("skipped" in openingFolder(join(sessions, "abc"), sessions)).toBe(true);
+  });
+
+  test("by where it really is: a link to the home folder is the home folder", () => {
+    const link = join(root, "home-link");
+    symlinkSync(process.env.HOME as string, link);
+    expect("skipped" in openingFolder(link, sessions)).toBe(true);
+  });
+
+  test("not a folder that holds the sessions, nor the app's home or a folder in it", () => {
+    // As Scriptorium lays it out: `<home>/kit/sessions`, and the shipped `<home>/sessions`.
+    const appHome = join(root, "app-home");
+    const kitSessions = join(appHome, "kit", "sessions");
+    const shipped = join(appHome, "sessions");
+    mkdirSync(kitSessions, { recursive: true });
+    mkdirSync(shipped, { recursive: true });
+    for (const cwd of [appHome, join(appHome, "kit"), kitSessions, shipped]) {
+      const r = openingFolder(cwd, kitSessions, appHome);
+      expect("skipped" in r, cwd).toBe(true);
+    }
+    // Holding the sessions is enough, with no app home given.
+    expect("skipped" in openingFolder(join(appHome, "kit"), kitSessions)).toBe(true);
+    expect("skipped" in openingFolder(appHome, kitSessions)).toBe(true);
+    // Compared by where each really is: a link to the app's home is its home.
+    const link = join(root, "app-link");
+    symlinkSync(appHome, link);
+    expect("skipped" in openingFolder(link, kitSessions, appHome)).toBe(true);
+    expect("skipped" in openingFolder(join(link, "sessions"), kitSessions, appHome)).toBe(true);
+    // A folder beside them is an ordinary folder.
+    expect(openingFolder(opened, kitSessions, appHome)).toEqual({ path: opened });
+  });
+});
+
+describe("a restore keeps the files of a workspace the app no longer has", () => {
+  /** A session saved before the app declared no home workspace, with `folder` its workspace, restored with none. */
+  function savedWith(folder: string): WorkspaceSession {
+    const s = noHome();
+    writeFileSync(
+      join(s.dir, "manifest.json"),
+      JSON.stringify({ ...manifest(s), workspace: folder }),
+    );
+    return WorkspaceSession.restore(sessions, noHomeApp, s.id);
+  }
+  const roots = (s: WorkspaceSession) =>
+    s.context.filter((e) => e.membership === "mirrored").map((e) => e.root);
+
+  test("a folder that holds files becomes a set, said once in the report", () => {
+    writeFileSync(join(opened, "kept.md"), "# Kept\n");
+    const back = savedWith(opened);
+    expect(back.restoreReport.workspaceAdded).toBe(opened);
+    expect(roots(back)).toContain(opened);
+    expect("workspace" in manifest(back)).toBe(false);
+    // Written: the next restore finds it a set already, and says nothing.
+    const again = WorkspaceSession.restore(sessions, noHomeApp, back.id);
+    expect(again.restoreReport.workspaceAdded).toBeUndefined();
+    expect(roots(again).filter((r) => r === opened)).toHaveLength(1);
+    // And a create there goes where it is pointed.
+    expect(again.createDoc(opened, "new.md").path).toBe(join(opened, "new.md"));
+  });
+
+  test("not an empty folder, a gone one, one a set shows, or the session's own imported/", () => {
+    // Empty (dot files do not count).
+    writeFileSync(join(opened, ".DS_Store"), "");
+    expect(savedWith(opened).restoreReport.workspaceAdded).toBeUndefined();
+    // Gone.
+    expect(savedWith(join(root, "gone")).restoreReport.workspaceAdded).toBeUndefined();
+    // A set, or a folder inside one, already.
+    expect(savedWith(set).restoreReport.workspaceAdded).toBeUndefined();
+    expect(savedWith(join(set, "part")).restoreReport.workspaceAdded).toBeUndefined();
+    // The session's own imported/, holding files (the kit's old default).
+    const own = WorkspaceSession.create(sessions, testApp);
+    mkdirSync(join(own.dir, "imported"));
+    writeFileSync(join(own.dir, "imported", "d.md"), "# D\n");
+    const ownBack = WorkspaceSession.restore(sessions, noHomeApp, own.id);
+    expect(ownBack.restoreReport.workspaceAdded).toBeUndefined();
+    expect(ownBack.context).toHaveLength(0);
+  });
+});

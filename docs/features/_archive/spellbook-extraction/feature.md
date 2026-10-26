@@ -120,7 +120,7 @@ destination. HiveMind may become a second channel later, but it's not depended
 on. Also: a **thematic rebrand** — unifying the spells under one cute-occult
 aesthetic (rename candidates + shared mascot style), ideally pre-release while
 renames are cheap (see
-[fragment](../../../items/spellbook-aesthetic-and-rebrand.md)).
+[fragment](../../../items/_archive/spellbook-aesthetic-and-rebrand.md)).
 
 ## Technical Approach
 

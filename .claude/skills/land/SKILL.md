@@ -58,12 +58,15 @@ branch that adds it. If you already switched, run it by path or via
 `git show <branch>:scripts/land-check.ts`.
 
 > **⚠ Re-run `git status --porcelain` AFTER the gate, not only before it.**
-> `bun run gate` runs `build`, which rewrites the tracked `dist/` bundles — and
-> their inline sourcemaps embed source text, so even a **comment-only** edit
-> under `src/` leaves 17 dirty bundles. A clean status taken before the gate
+> `bun run gate` runs `build`, which rewrites the tracked `dist/` bundles from
+> whatever is under `src/`, so a source change that was never rebuilt shows up
+> as dirty bundles only after the gate. A clean status taken before the gate
 > says nothing about the tree you are about to merge. Commit the rebuild (a
 > `chore(dist)` when behaviour is unchanged) before landing. _Bit the
-> project-docs v3 migration landing, 2026-09-26._
+> project-docs v3 migration landing, 2026-09-26, when inline source maps made
+> even a comment-only edit dirty 17 bundles; since 2026-10-26 no bundle carries
+> a map, so a comment-only edit no longer does, except a legal comment
+> (`/*! … */`, `@license`, `@preserve`), which Bun always keeps._
 
 > **⚠ Run the gate UNPIPED.** finalize-branch's format/lint/types/test gate
 > still applies, and `bun test | tail` reports the **exit code of `tail`** —

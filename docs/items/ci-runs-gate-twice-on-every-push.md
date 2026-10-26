@@ -92,5 +92,6 @@ The redundant trigger is the `push` one.
 - Rulesets are not in the tree. Confirm the required context with
   `gh api repos/ichabodcole/spellbook/rulesets/22059514` rather than trusting
   this file — see
-  [the closed backlog item](./the-pr-check-must-be-marked-required.md) for what
-  happened the last time a doc asserted GitHub configuration from memory.
+  [the closed backlog item](./_archive/the-pr-check-must-be-marked-required.md)
+  for what happened the last time a doc asserted GitHub configuration from
+  memory.

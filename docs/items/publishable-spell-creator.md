@@ -2,7 +2,7 @@
 type: item
 title: Publishing the ability to create spells (a shippable spell-creator)
 status: stable
-lifecycle: triage
+lifecycle: backlog
 id: 019e75ac-e288-7dc9-9bd0-2c6389f1d214
 kind: task
 description:

@@ -5,11 +5,10 @@ description:
   The registry cannot mark a flag required, so help and the acc declaration show
   required flags (astrolabe add --path, magpie element-add --bbox) as optional.
 status: draft
-lifecycle: triage # triage | backlog | ready | active | review | done | dropped
+lifecycle: dropped
 id: 01a0e0b7-568d-762a-a272-c2359c28d804
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-09-26 }
-parent: feature/spell-cli-acc-conformance
 ---
 
 # Mark required flags in the kit CLI registry
@@ -29,3 +28,6 @@ required flags either (filed upstream, feedback item 14).
       recorded against the upstream feedback.
 - [ ] astrolabe `add --path` and magpie `element-add --bbox` use it, with their
       golden diffs named in the commit.
+
+Dropped at triage, 2026-10-24: the registry has `requiredFlags` now, and what is
+left is in `kit-cli-registry-followups`' definition of done.

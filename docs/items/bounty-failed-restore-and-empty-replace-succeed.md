@@ -5,17 +5,16 @@ description:
   open --restore of a corrupt snapshot or a directory starts an empty board at
   exit 0; init --replace with every entry invalid empties the board at exit 0.
 status: draft
-lifecycle: triage
+lifecycle: backlog
 id: 01a0e711-eecd-77c1-9022-7389c7dfeeed
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-09-28 }
-parent: feature/spell-hardening
 ---
 
 # A failed restore and a replace that seeds nothing both exit 0
 
 Found by the no-stake verifier of
-[cycle/2026-09-one-act-one-answer](../cycles/2026-09-one-act-one-answer.md),
+[cycle/2026-09-one-act-one-answer](../cycles/_archive/2026-09-one-act-one-answer.md),
 2026-09-28, on `a7c041d3`, under a scratch `HOME`; filed, not chased. Its
 scripts were `t1.sh`–`t9.sh` in that session's scratchpad (not kept).
 

@@ -326,7 +326,7 @@
       "stream": "stdout",
       "json": {
         "name": "mind-mapper",
-        "version": "<VERSION>"
+        "version": "unknown"
       }
     },
     {
@@ -336,7 +336,7 @@
       "stream": "stdout",
       "json": {
         "name": "mind-mapper",
-        "version": "<VERSION>"
+        "version": "unknown"
       }
     },
     {
@@ -346,7 +346,7 @@
       "stream": "stdout",
       "json": {
         "name": "mind-mapper",
-        "version": "<VERSION>"
+        "version": "unknown"
       }
     },
     {
@@ -1381,7 +1381,13 @@
           {
             "path": ["help"],
             "args": [],
-            "positionals": []
+            "positionals": [
+              {
+                "name": "verb",
+                "required": false,
+                "variadic": true
+              }
+            ]
           }
         ]
       }
@@ -1499,12 +1505,19 @@
     },
     {
       "argv": ["open", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--no-open", "--port", "--project"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: open [--no-open] [--port ..] [--project ..]",
+        "",
+        "spawn (or find) the daemon, print its url",
+        "",
+        "flags:",
+        "  --no-open",
+        "  --port <port>",
+        "  --project <project>"
+      ]
     },
     {
       "argv": ["state", "--acc-bogus-flag"],
@@ -1517,12 +1530,19 @@
     },
     {
       "argv": ["state", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--batch", "--project", "--skeleton"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: state [--skeleton] [--batch ..] [--project ..]",
+        "",
+        "the project snapshot",
+        "",
+        "flags:",
+        "  --batch <batch>",
+        "  --project <project>",
+        "  --skeleton"
+      ]
     },
     {
       "argv": ["changes", "--acc-bogus-flag"],
@@ -1535,12 +1555,18 @@
     },
     {
       "argv": ["changes", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--project", "--since"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: changes [--since ..] [--project ..]",
+        "",
+        "bounded delta, additions only",
+        "",
+        "flags:",
+        "  --project <project>",
+        "  --since <since>"
+      ]
     },
     {
       "argv": ["tail", "--acc-bogus-flag"],
@@ -1553,12 +1579,20 @@
     },
     {
       "argv": ["tail", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--inbound", "--once", "--project", "--since"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: tail [--since ..] [--inbound] [--once] [--project ..]",
+        "",
+        "SSE events as JSONL",
+        "",
+        "flags:",
+        "  --inbound",
+        "  --once",
+        "  --project <project>",
+        "  --since <since>"
+      ]
     },
     {
       "argv": ["projects", "--acc-bogus-flag"],
@@ -1571,12 +1605,17 @@
     },
     {
       "argv": ["projects", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--create"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: projects [--create ..]",
+        "",
+        "list projects / create one",
+        "",
+        "flags:",
+        "  --create <create>"
+      ]
     },
     {
       "argv": ["ingest", "--acc-bogus-flag"],
@@ -1589,12 +1628,20 @@
     },
     {
       "argv": ["ingest", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--file", "--project", "--stdin", "--title"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: ingest [--title ..] [--file ..] [--stdin] [--project ..]",
+        "",
+        "add a doc",
+        "",
+        "flags:",
+        "  --file <file>",
+        "  --project <project>",
+        "  --stdin",
+        "  --title <title>"
+      ]
     },
     {
       "argv": ["propose-node", "--acc-bogus-flag"],
@@ -1607,12 +1654,19 @@
     },
     {
       "argv": ["propose-node", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--project", "--stdin", "--zone"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: propose-node [--stdin] [--zone ..] [--project ..]",
+        "",
+        "stage a node proposal",
+        "",
+        "flags:",
+        "  --project <project>",
+        "  --stdin",
+        "  --zone <zone>"
+      ]
     },
     {
       "argv": ["propose-edge", "--acc-bogus-flag"],
@@ -1625,12 +1679,19 @@
     },
     {
       "argv": ["propose-edge", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--project", "--stdin", "--zone"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: propose-edge [--stdin] [--zone ..] [--project ..]",
+        "",
+        "stage an edge proposal",
+        "",
+        "flags:",
+        "  --project <project>",
+        "  --stdin",
+        "  --zone <zone>"
+      ]
     },
     {
       "argv": ["propose-batch", "--acc-bogus-flag"],
@@ -1643,12 +1704,18 @@
     },
     {
       "argv": ["propose-batch", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--project", "--stdin"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: propose-batch [--stdin] [--project ..]",
+        "",
+        "stage a set in one txn",
+        "",
+        "flags:",
+        "  --project <project>",
+        "  --stdin"
+      ]
     },
     {
       "argv": ["ratify-batch", "--acc-bogus-flag"],
@@ -1661,12 +1728,18 @@
     },
     {
       "argv": ["ratify-batch", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--project", "--stdin"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: ratify-batch [--stdin] [--project ..]",
+        "",
+        "ratify a set in one txn",
+        "",
+        "flags:",
+        "  --project <project>",
+        "  --stdin"
+      ]
     },
     {
       "argv": ["delete-batch", "--acc-bogus-flag"],
@@ -1679,12 +1752,18 @@
     },
     {
       "argv": ["delete-batch", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--project", "--stdin"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: delete-batch [--stdin] [--project ..]",
+        "",
+        "delete a proposal set in one txn",
+        "",
+        "flags:",
+        "  --project <project>",
+        "  --stdin"
+      ]
     },
     {
       "argv": ["node", "--acc-bogus-flag"],
@@ -1715,12 +1794,17 @@
     },
     {
       "argv": ["read", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--project"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: read <messageId> [--project ..]",
+        "",
+        "one full message row",
+        "",
+        "flags:",
+        "  --project <project>"
+      ]
     },
     {
       "argv": ["message", "--acc-bogus-flag"],
@@ -1733,12 +1817,17 @@
     },
     {
       "argv": ["message", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--project"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: read <messageId> [--project ..]",
+        "",
+        "one full message row",
+        "",
+        "flags:",
+        "  --project <project>"
+      ]
     },
     {
       "argv": ["zone", "--acc-bogus-flag"],
@@ -1769,12 +1858,17 @@
     },
     {
       "argv": ["promote", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--project"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: promote <proposalId> [--project ..]",
+        "",
+        "move a zoned proposal to the main queue",
+        "",
+        "flags:",
+        "  --project <project>"
+      ]
     },
     {
       "argv": ["proposal", "--acc-bogus-flag"],
@@ -1805,12 +1899,17 @@
     },
     {
       "argv": ["doc", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--project"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: doc <docId> [--project ..]",
+        "",
+        "the doc envelope",
+        "",
+        "flags:",
+        "  --project <project>"
+      ]
     },
     {
       "argv": ["mark", "--acc-bogus-flag"],
@@ -1823,12 +1922,20 @@
     },
     {
       "argv": ["mark", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--author", "--note", "--project", "--status"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: mark <docId> [--status ..] [--note ..] [--author ..] [--project ..]",
+        "",
+        "append a doc status mark",
+        "",
+        "flags:",
+        "  --author <author>",
+        "  --note <note>",
+        "  --project <project>",
+        "  --status <status>"
+      ]
     },
     {
       "argv": ["search", "--acc-bogus-flag"],
@@ -1841,12 +1948,17 @@
     },
     {
       "argv": ["search", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--project"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: search <query...> [--project ..]",
+        "",
+        "FTS over nodes, docs, messages",
+        "",
+        "flags:",
+        "  --project <project>"
+      ]
     },
     {
       "argv": ["neighbors", "--acc-bogus-flag"],
@@ -1859,12 +1971,18 @@
     },
     {
       "argv": ["neighbors", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--depth", "--project"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: neighbors <nodeId> [--depth ..] [--project ..]",
+        "",
+        "local hood + edge reasons",
+        "",
+        "flags:",
+        "  --depth <depth>",
+        "  --project <project>"
+      ]
     },
     {
       "argv": ["ratify", "--acc-bogus-flag"],
@@ -1877,12 +1995,22 @@
     },
     {
       "argv": ["ratify", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--anchor", "--doc", "--doc-edit", "--project", "--ruling", "--span"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: ratify <proposalId> [--ruling ..] [--doc-edit ..] [--doc ..] [--span ..] [--anchor ..] [--project ..]",
+        "",
+        "rule on a proposal",
+        "",
+        "flags:",
+        "  --anchor <anchor>",
+        "  --doc <doc>",
+        "  --doc-edit <doc-edit>",
+        "  --project <project>",
+        "  --ruling <ruling>",
+        "  --span <span>"
+      ]
     },
     {
       "argv": ["lens", "--acc-bogus-flag"],
@@ -1913,12 +2041,17 @@
     },
     {
       "argv": ["look-here", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--project"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: look-here <nodeId> [--project ..]",
+        "",
+        "fire-once attention nudge",
+        "",
+        "flags:",
+        "  --project <project>"
+      ]
     },
     {
       "argv": ["actions", "--acc-bogus-flag"],
@@ -1931,12 +2064,20 @@
     },
     {
       "argv": ["actions", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--clear", "--project", "--set", "--stdin"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: actions <targetId> [--set ..] [--stdin] [--clear] [--project ..]",
+        "",
+        "action slots on a node/pending proposal",
+        "",
+        "flags:",
+        "  --clear",
+        "  --project <project>",
+        "  --set <set>",
+        "  --stdin"
+      ]
     },
     {
       "argv": ["tags", "--acc-bogus-flag"],
@@ -1949,12 +2090,20 @@
     },
     {
       "argv": ["tags", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--clear", "--project", "--set", "--stdin"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: tags <targetId> [--set ..] [--stdin] [--clear] [--project ..]",
+        "",
+        "freeform tags on a node/pending proposal",
+        "",
+        "flags:",
+        "  --clear",
+        "  --project <project>",
+        "  --set <set>",
+        "  --stdin"
+      ]
     },
     {
       "argv": ["job", "--acc-bogus-flag"],
@@ -1985,12 +2134,18 @@
     },
     {
       "argv": ["activity", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--message", "--project"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: activity <state> [--message ..] [--project ..]",
+        "",
+        "the casting-loop liveness signal (received|thinking|idle)",
+        "",
+        "flags:",
+        "  --message <message>",
+        "  --project <project>"
+      ]
     },
     {
       "argv": ["send", "--acc-bogus-flag"],
@@ -2003,12 +2158,23 @@
     },
     {
       "argv": ["send", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--body-file", "--force", "--ground", "--kind", "--project", "--role", "--stdin"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: send [text...] [--role ..] [--kind ..] [--ground ..] [--body-file ..] [--stdin] [--force] [--project ..]",
+        "",
+        "post a message",
+        "",
+        "flags:",
+        "  --body-file <body-file>",
+        "  --force",
+        "  --ground <ground>",
+        "  --kind <kind>",
+        "  --project <project>",
+        "  --role <role>",
+        "  --stdin"
+      ]
     },
     {
       "argv": ["version", "--acc-bogus-flag"],
@@ -2021,12 +2187,10 @@
     },
     {
       "argv": ["version", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": []
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: version", "", "this CLI's {name, version} as JSON (alias: --version, -V)"]
     },
     {
       "argv": ["schema", "--acc-bogus-flag"],
@@ -2039,12 +2203,10 @@
     },
     {
       "argv": ["schema", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": []
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: schema", "", "this CLI's machine-readable interface (acc declaration v0)"]
     },
     {
       "argv": ["help", "--acc-bogus-flag"],
@@ -2057,12 +2219,14 @@
     },
     {
       "argv": ["help", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": []
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: help [verb...]",
+        "",
+        "show this message (alias: --help, -h); `help <verb>` shows one verb: its usage, each flag, and examples"
+      ]
     },
     {
       "argv": ["state"],

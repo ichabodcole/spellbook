@@ -1,2 +1,9 @@
 [install]
 linker = "hoisted"
+
+[test]
+# scratchHome.ts: every test process gets a scratch HOME, so no test writes
+# into the real home folder (src/kit/lib/scratchHome.ts).
+# domGuard.ts: a component test that throws while it loads leaves its DOM
+# registered; this removes it before the next test (src/kit/lib/domGuard.ts).
+preload = ["./src/kit/lib/scratchHome.ts", "./src/kit/lib/domGuard.ts"]

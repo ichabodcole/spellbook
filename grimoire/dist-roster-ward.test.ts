@@ -170,11 +170,15 @@ describe("dist roster ward", () => {
       // into the non-fatal "expected mid-edit" list. After: exit 1, named.
       writeFileSync(join(dist, "join.js"), "// a THIRD entry, never staged\n");
       writeFileSync(join(dist, "index-newhash.js"), "// a rebuilt surface chunk\n");
+      // A further surface's folder (`dist/<sub>/`): its files are listed, not the folder.
+      mkdirSync(join(dist, "sub"), { recursive: true });
+      writeFileSync(join(dist, "sub", "index-subhash.js"), "// a further surface's chunk\n");
 
       expect(untrackedDistFiles("probe", root)).toEqual([
         "plugins/spellbook/skills/probe/dist/cli.js",
         "plugins/spellbook/skills/probe/dist/index-newhash.js",
         "plugins/spellbook/skills/probe/dist/join.js",
+        "plugins/spellbook/skills/probe/dist/sub/index-subhash.js",
       ]);
       // ⭐ AND THE FATAL CLAUSE DISCRIMINATES. Only what the surface cannot
       // reach is fatal; the hashed chunk `index.html` links IS reachable and

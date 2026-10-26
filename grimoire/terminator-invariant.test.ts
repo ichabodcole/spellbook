@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
+import ts from "typescript";
 import {
   type Cli,
   type CommandSpec,
@@ -137,23 +138,230 @@ function srcSources(dir = BACKEND_SRC_DIR): string[] {
   return out;
 }
 
-/** Does this source value-import the registry module, under any local name? */
-function importsRegistry(abs: string, src: string): boolean {
+/** Does this source value-import `target` (an absolute path without its extension), under any local name? */
+function importsModule(abs: string, src: string, target: string): boolean {
   for (const m of src.matchAll(IMPORT_SPEC)) {
     const spec = m[2] as string;
     if (m[1] !== undefined || !spec.startsWith(".")) continue;
-    if (resolve(dirname(abs), spec).replace(/\.[cm]?[jt]sx?$/, "") === REGISTRY) return true;
+    if (resolve(dirname(abs), spec).replace(/\.[cm]?[jt]sx?$/, "") === target) return true;
   }
   return false;
 }
 
+/** Does this source value-import the registry module, under any local name? */
+const importsRegistry = (abs: string, src: string): boolean => importsModule(abs, src, REGISTRY);
+
 /** Every source that hands a table to the kit registry: found by its import. */
-const adopterFiles = srcSources()
+const registryImporters = srcSources()
   .filter((rel) => {
     const abs = join(BACKEND_SRC_DIR, rel);
     return importsRegistry(abs, readFileSync(abs, "utf8"));
   })
   .sort();
+
+/**
+ * ── A FACTORY IS READ THROUGH WHAT IT BUILDS (added 2026-10-14) ─────────────
+ * The kit's workspace CLI (`src/kit/workspace/verbs.ts`) imports the registry
+ * but exports no `Cli`: it exports `createWorkspaceCli`, and each caller builds
+ * its own. Such a file is read through its FOLLOWERS, each driven here as an
+ * adopter in its place.
+ *
+ * A follower is a source that EXPORTS THE RESULT OF CALLING something it
+ * imported from the factory (`export const cli = createWorkspaceCli(…)`, read
+ * from the syntax tree by `builtExports`). Importing the factory is not enough:
+ * a barrel that re-exports it builds nothing, and a file that imports it and
+ * re-exports some other `Cli` would otherwise pass for one (the verification's
+ * orphan.ts + follower.ts plant). A follower must then export exactly one
+ * `Cli`, and that `Cli` must be the value of one of those built exports; any
+ * follower that fails is a RED cell, even when another follower passes.
+ *
+ * A file that imports the registry, exports no `Cli` and has no follower stays
+ * RED, as before: the instrument still could not read it. Today the one
+ * follower is the kit's own fixture CLI (`src/kit/workspace/fixtures/cli.ts`);
+ * a spell built on the factory joins by the same call. A follower that exports
+ * a BUILDER instead (Scriptorium's) is driven through `BUILDER_ARGS`, below.
+ */
+function followersOf(factory: string): { file: string; built: string[]; builders: string[] }[] {
+  const target = join(BACKEND_SRC_DIR, factory).replace(/\.[cm]?[jt]sx?$/, "");
+  const out: { file: string; built: string[]; builders: string[] }[] = [];
+  for (const rel of srcSources().sort()) {
+    if (rel === factory) continue;
+    const abs = join(BACKEND_SRC_DIR, rel);
+    const src = readFileSync(abs, "utf8");
+    if (!importsModule(abs, src, target)) continue;
+    const fromFactory = (spec: string) =>
+      spec.startsWith(".")
+        ? resolve(dirname(abs), spec).replace(/\.[cm]?[jt]sx?$/, "") === target
+        : false;
+    const built = builtExports(src, fromFactory);
+    const builders = builderExports(src, fromFactory);
+    if (built.length > 0 || builders.length > 0) out.push({ file: rel, built, builders });
+  }
+  return out;
+}
+
+/**
+ * ── A BUILDER IS DRIVEN WITH STUB DEPS (added 2026-10-22) ───────────────────
+ * Scriptorium's CLI is not a built export: `src/scriptorium/backend/kit/cli.ts`
+ * exports `scriptoriumKitCli(deps)`, a function that RETURNS the factory's
+ * call, because its caller computes the daemon's path (in the bundle). The
+ * deletion's verifier found every one of Scriptorium's own rows (`hide`,
+ * `unhide`, `meta-set`, …) unswept: a planted extra positional on `unhide`
+ * survived. Such a function is a BUILDER: it is called once here with the stub
+ * arguments `BUILDER_ARGS` names for it, and the `Cli` it returns is driven as
+ * an adopter of its own (`<file>#<name>`).
+ *
+ * A builder with no entry in `BUILDER_ARGS`, or whose call throws or returns
+ * no `Cli`, is a RED cell: the instrument could not read it. The stubs only
+ * have to let the table be BUILT. No row's `run` is reached: the sweep
+ * dispatches a rebuild of the published table.
+ */
+const BUILDER_ARGS: Readonly<Record<string, readonly unknown[]>> = {
+  "scriptorium/backend/kit/cli.ts#scriptoriumKitCli": [
+    {
+      serverScript: "/ward/stub/scripts/server.ts",
+      daemonCwd: () => "/ward/stub",
+      version: () => ({ name: "scriptorium", version: "0.0.0" }),
+    },
+  ],
+};
+
+/**
+ * The names of a module's exported functions that RETURN a call to something
+ * it imported from a module `fromFactory` accepts: `export function f(…) { …
+ * return make(…) }`, and `export const f = (…) => make(…)` (concise or block
+ * body). Only a `return` at the top of the function's own body counts, read
+ * from the syntax tree. A function that uses the result (`make(…).run(argv)`)
+ * returns nothing an adopter could be read from.
+ */
+function builderExports(src: string, fromFactory: (spec: string) => boolean): string[] {
+  const sf = ts.createSourceFile("m.tsx", src, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const fns = new Set<string>();
+  for (const s of sf.statements) {
+    if (!ts.isImportDeclaration(s) || !ts.isStringLiteral(s.moduleSpecifier)) continue;
+    const clause = s.importClause;
+    if (!clause || clause.isTypeOnly || !fromFactory(s.moduleSpecifier.text)) continue;
+    if (clause.name) fns.add(clause.name.text);
+    const nb = clause.namedBindings;
+    if (nb && ts.isNamedImports(nb))
+      for (const el of nb.elements) if (!el.isTypeOnly) fns.add(el.name.text);
+  }
+  const isFactoryCall = (e: ts.Expression | undefined): boolean => {
+    while (e && (ts.isAwaitExpression(e) || ts.isParenthesizedExpression(e))) e = e.expression;
+    return (
+      !!e && ts.isCallExpression(e) && ts.isIdentifier(e.expression) && fns.has(e.expression.text)
+    );
+  };
+  const returnsFactory = (body: ts.ConciseBody | undefined): boolean => {
+    if (!body) return false;
+    if (!ts.isBlock(body)) return isFactoryCall(body);
+    return body.statements.some((st) => ts.isReturnStatement(st) && isFactoryCall(st.expression));
+  };
+  const exported = (s: ts.Statement) =>
+    ts.canHaveModifiers(s) &&
+    (ts.getModifiers(s) ?? []).some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
+  const out = new Set<string>();
+  for (const s of sf.statements) {
+    if (!exported(s)) continue;
+    if (ts.isFunctionDeclaration(s) && s.name && returnsFactory(s.body)) out.add(s.name.text);
+    if (ts.isVariableStatement(s))
+      for (const d of s.declarationList.declarations) {
+        const init = d.initializer;
+        if (
+          ts.isIdentifier(d.name) &&
+          init &&
+          (ts.isArrowFunction(init) || ts.isFunctionExpression(init)) &&
+          returnsFactory(init.body)
+        )
+          out.add(d.name.text);
+      }
+  }
+  return [...out].sort();
+}
+
+/** A builder's `Cli`, built with its stub arguments, or null (red). */
+function builderCli(mod: Record<string, unknown>, key: string, name: string): Cli | null {
+  const args = BUILDER_ARGS[key];
+  const fn = mod[name];
+  if (args === undefined || typeof fn !== "function") return null;
+  try {
+    const cli: unknown = fn(...args);
+    return isCli(cli) ? cli : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The names a module exports whose value is a call to something it imported
+ * from a module `fromFactory` accepts: `export const x = f(…)`,
+ * `const x = f(…); export { x as y }`, and `export default f(…)` (as
+ * `default`). `f` may be a named or default import, or a member of a namespace
+ * import (`ns.f(…)`). Read from the syntax tree; anything else builds nothing.
+ */
+function builtExports(src: string, fromFactory: (spec: string) => boolean): string[] {
+  const sf = ts.createSourceFile("m.tsx", src, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const fns = new Set<string>();
+  const namespaces = new Set<string>();
+  for (const s of sf.statements) {
+    if (!ts.isImportDeclaration(s) || !ts.isStringLiteral(s.moduleSpecifier)) continue;
+    const clause = s.importClause;
+    if (!clause || clause.isTypeOnly || !fromFactory(s.moduleSpecifier.text)) continue;
+    if (clause.name) fns.add(clause.name.text);
+    const nb = clause.namedBindings;
+    if (nb && ts.isNamespaceImport(nb)) namespaces.add(nb.name.text);
+    if (nb && ts.isNamedImports(nb))
+      for (const el of nb.elements) if (!el.isTypeOnly) fns.add(el.name.text);
+  }
+  const callsFactory = (e: ts.Expression | undefined): boolean => {
+    while (e && (ts.isAwaitExpression(e) || ts.isParenthesizedExpression(e))) e = e.expression;
+    if (!e || !ts.isCallExpression(e)) return false;
+    const c = e.expression;
+    if (ts.isIdentifier(c)) return fns.has(c.text);
+    return (
+      ts.isPropertyAccessExpression(c) &&
+      ts.isIdentifier(c.expression) &&
+      namespaces.has(c.expression.text)
+    );
+  };
+  const exported = (s: ts.Statement) =>
+    ts.canHaveModifiers(s) &&
+    (ts.getModifiers(s) ?? []).some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
+  const built = new Set<string>();
+  /** Local names bound to a factory call, for `export { x }`. */
+  const local = new Set<string>();
+  for (const s of sf.statements) {
+    if (ts.isVariableStatement(s))
+      for (const d of s.declarationList.declarations)
+        if (ts.isIdentifier(d.name) && callsFactory(d.initializer)) {
+          local.add(d.name.text);
+          if (exported(s)) built.add(d.name.text);
+        }
+    if (ts.isExportAssignment(s) && !s.isExportEquals && callsFactory(s.expression))
+      built.add("default");
+  }
+  for (const s of sf.statements)
+    if (
+      ts.isExportDeclaration(s) &&
+      !s.moduleSpecifier &&
+      s.exportClause &&
+      ts.isNamedExports(s.exportClause)
+    )
+      for (const el of s.exportClause.elements)
+        if (local.has((el.propertyName ?? el.name).text)) built.add(el.name.text);
+  return [...built].sort();
+}
+
+/**
+ * A follower's `Cli`, or null (red): it must export exactly one `Cli`, and that
+ * `Cli` must be the value of one of its built exports.
+ */
+function builtCli(mod: Record<string, unknown>, built: readonly string[]): Cli | null {
+  const clis = Object.values(mod).filter(isCli);
+  if (clis.length !== 1) return null;
+  const cli = clis[0] as Cli;
+  return built.some((name) => mod[name] === cli) ? cli : null;
+}
 
 const isCli = (v: unknown): v is Cli =>
   typeof v === "object" &&
@@ -208,11 +416,30 @@ const importEffects: string[] = [];
   (process as unknown as { exit: unknown }).exit = () => {
     importEffects.push(`${importing}: process.exit`);
   };
+  const moduleOf = async (file: string): Promise<Record<string, unknown>> => {
+    importing = file;
+    return (await import(join(BACKEND_SRC_DIR, file))) as Record<string, unknown>;
+  };
   try {
-    for (const file of adopterFiles) {
-      importing = file;
-      const mod = (await import(join(BACKEND_SRC_DIR, file))) as Record<string, unknown>;
-      const clis = Object.values(mod).filter(isCli);
+    for (const file of registryImporters) {
+      const clis = Object.values(await moduleOf(file)).filter(isCli);
+      if (clis.length === 0) {
+        // A factory: read through its followers (see `followersOf`). Every
+        // follower is a cell of its own; one that fails is red, never dropped
+        // because another follower passed.
+        const followers = followersOf(file);
+        if (followers.length > 0) {
+          for (const { file: f, built, builders } of followers) {
+            const mod = await moduleOf(f);
+            if (built.length > 0) adopters.push({ file: f, cli: builtCli(mod, built) });
+            for (const name of builders) {
+              const key = `${f}#${name}`;
+              adopters.push({ file: key, cli: builderCli(mod, key, name) });
+            }
+          }
+          continue;
+        }
+      }
       adopters.push({ file, cli: clis.length === 1 ? (clis[0] as Cli) : null });
     }
   } finally {
@@ -222,6 +449,8 @@ const importEffects: string[] = [];
     process.exit = savedExit;
   }
 }
+/** The files whose `Cli` this ward drives: each registry importer, or a factory's followers. */
+const adopterFiles = adopters.map((a) => a.file).sort();
 
 const STUB_EXIT = 7;
 const FILLER = "ward-filler";
@@ -437,9 +666,114 @@ describe("ward — a flag demoted by `--` is warned about, on every registry ado
     expect(importEffects).toEqual([]);
   });
 
-  test("every file that imports the registry exports exactly one Cli (null is red, not 0)", () => {
+  test("every file that imports the registry exports exactly one Cli, or is a factory read through its followers (null is red, not 0)", () => {
     const unreadable = adopters.filter((a) => a.cli === null).map((a) => a.file);
     expect(unreadable).toEqual([]);
+  });
+
+  test("CALIBRATION: a follower is what CALLS the factory into an export, and its Cli must be that export", () => {
+    const fromF = (spec: string) => spec === "./f";
+    // Built: a named, default or namespace import called into an export.
+    expect(
+      builtExports('import { make } from "./f";\nexport const cli = make({});', fromF),
+    ).toEqual(["cli"]);
+    expect(builtExports('import make from "./f";\nexport default make();', fromF)).toEqual([
+      "default",
+    ]);
+    expect(
+      builtExports('import * as f from "./f";\nconst c = f.make();\nexport { c as cli };', fromF),
+    ).toEqual(["cli"]);
+    // Not built: importing, re-exporting, a type import, or a call kept private.
+    expect(
+      builtExports(
+        'import { make } from "./f";\nmake;\nexport { cli } from "../bounty/backend/cli";',
+        fromF,
+      ),
+    ).toEqual([]);
+    expect(builtExports('export { make } from "./f";', fromF)).toEqual([]);
+    expect(
+      builtExports('import type { make } from "./f";\nexport const cli = make();', fromF),
+    ).toEqual([]);
+    expect(builtExports('import { make } from "./f";\nconst c = make();', fromF)).toEqual([]);
+    expect(builtExports('import { make } from "./g";\nexport const cli = make();', fromF)).toEqual(
+      [],
+    );
+
+    const fake = (): Cli =>
+      ({ dispatch: async () => 0, rows: [], declaration: () => ({}) }) as unknown as Cli;
+    const a = fake();
+    const b = fake();
+    expect(builtCli({ cli: a }, ["cli"])).toBe(a);
+    // An unrelated Cli beside a built non-Cli: red.
+    expect(builtCli({ cli: a, built: {} }, ["built"])).toBeNull();
+    // Two Clis: red, even when one of them is the built one.
+    expect(builtCli({ cli: a, other: b }, ["cli"])).toBeNull();
+    // None: red.
+    expect(builtCli({ built: {} }, ["built"])).toBeNull();
+  });
+
+  test("CALIBRATION: a builder is an exported function that RETURNS the factory's call, and one without stub deps is red", () => {
+    const fromF = (spec: string) => spec === "./f";
+    // Builders: a function declaration or an arrow, block or concise body.
+    expect(
+      builderExports(
+        'import { make } from "./f";\nexport function build(d) { const x = 1; return make({ x, d }); }',
+        fromF,
+      ),
+    ).toEqual(["build"]);
+    expect(
+      builderExports('import { make } from "./f";\nexport const b = (d) => make(d);', fromF),
+    ).toEqual(["b"]);
+    // Not builders: using the result, a private function, a call to something
+    // else, a type import, or a nested return.
+    expect(
+      builderExports(
+        'import { make } from "./f";\nexport async function run(a, d) { return await make(d).run(a); }',
+        fromF,
+      ),
+    ).toEqual([]);
+    expect(
+      builderExports('import { make } from "./f";\nfunction b() { return make(); }', fromF),
+    ).toEqual([]);
+    expect(
+      builderExports('import { make } from "./g";\nexport function b() { return make(); }', fromF),
+    ).toEqual([]);
+    expect(
+      builderExports(
+        'import type { make } from "./f";\nexport function b() { return make(); }',
+        fromF,
+      ),
+    ).toEqual([]);
+    expect(
+      builderExports(
+        'import { make } from "./f";\nexport function b() { return () => make(); }',
+        fromF,
+      ),
+    ).toEqual([]);
+
+    // The real one is found, and is driven.
+    expect(adopterFiles).toContain("scriptorium/backend/kit/cli.ts#scriptoriumKitCli");
+    // No stub deps, a throw, or a non-Cli: red.
+    const fake = { dispatch: async () => 0, rows: [], declaration: () => ({}) };
+    expect(builderCli({ b: () => fake }, "nowhere.ts#b", "b")).toBeNull();
+    expect(
+      builderCli(
+        {
+          scriptoriumKitCli: () => {
+            throw new Error("x");
+          },
+        },
+        "scriptorium/backend/kit/cli.ts#scriptoriumKitCli",
+        "scriptoriumKitCli",
+      ),
+    ).toBeNull();
+    expect(
+      builderCli(
+        { scriptoriumKitCli: () => ({}) },
+        "scriptorium/backend/kit/cli.ts#scriptoriumKitCli",
+        "scriptoriumKitCli",
+      ),
+    ).toBeNull();
   });
 
   test("the rebuilt table IS the adopter's table (declarations equal)", () => {
@@ -516,16 +850,44 @@ describe("ward — a flag demoted by `--` is warned about, on every registry ado
         ]),
       ),
     }).toEqual({
-      adopters: 9,
+      // 10 since 2026-10-14: the kit workspace CLI joined, read through its
+      // fixture (see `followersOf`), with 23 rows that take positionals (24
+      // since `note-edit`, kit-workspace-e65-daemon).
+      // 10 -> 9 at the cutover (scriptorium-delete-shipped): the shipped
+      // Scriptorium's `defineCli` table (`scriptorium/backend/cli.ts`, 29 rows
+      // with positionals) was deleted, and that file now only hands the
+      // command line to the kit. Scriptorium's CLI is built by the kit's
+      // factory, which this ward reads through the fixture follower; its own
+      // builder (`scriptoriumKitCli(deps)` in `backend/kit/cli.ts`) exports a
+      // function, not a built `Cli`, so it is not a follower (`followersOf`).
+      // Every count below fell by the deleted table's share: rows 138 -> 109,
+      // cases 902 -> 761 (direct 367 -> 310, after-text 168 -> 141, =value
+      // 367 -> 310), quiet cases 139 -> 110.
+      // 9 -> 10 (scriptorium-ward-blind-spots-after-deletion): builders are
+      // now driven with stub deps (`BUILDER_ARGS`), so `scriptoriumKitCli`
+      // joined with 32 rows that take positionals: 22 of the kit's (the
+      // fixture's 24 less `workspace`, which an app with no home workspace
+      // does not get, and the fixture's own `demo`) plus Scriptorium's own 10
+      // (`add-folder`, `make-set`, `move-plan`, `note-remove`, `task-remove`,
+      // `meta`, `meta-init`, `meta-set`, `hide`, `unhide`). Rows 109 -> 141, cases 761 -> 928 (direct
+      // 310 -> 377, after-text 141 -> 174, =value 310 -> 377), quiet cases
+      // 110 -> 142.
+      // +1 row in each of the two kit adopters (note-reply-cannot-overwrite):
+      // the kit's `note-reply <id> [text...]`. Rows 141 -> 143, cases 928 ->
+      // 952 (direct 377 -> 385, after-text 174 -> 182, =value 377 -> 385),
+      // quiet cases 142 -> 144.
+      adopters: 10,
       // Every row with ANY positional (required, optional or variadic), not
       // only c1's 43 variadic + 6 one-optional rows: a demoted token can fill
       // any positional slot. Measured 2026-09-27 on 41065365.
-      rowsWithPositionals: 114,
+      rowsWithPositionals: 143,
       // Per (row, spelling, accepted flag), globals included: one direct and
       // one =value case, plus one after-text case wherever the row has room.
       // Measured 2026-09-27: 311 direct cases before the alias spelling joined.
-      cases: 761,
-      byForm: { direct: 312, "after-text": 137, "=value": 312 },
+      // 902 since the kit's `say` took `--via` (kit-port-via-refs): one more
+      // case in each form.
+      cases: 952,
+      byForm: { direct: 385, "after-text": 182, "=value": 385 },
       // mind-mapper `message` -> `read`: direct and =value. `read` has one
       // non-variadic positional, so no after-text case.
       viaAlias: 2,
@@ -533,7 +895,7 @@ describe("ward — a flag demoted by `--` is warned about, on every registry ado
       // `prune` alias rows with no positionals, so they have no case here.
       aliasRows: ["mind-mapper/backend/cli.ts:read<-message"],
       // One per (row, spelling).
-      quietCases: 115,
+      quietCases: 144,
       perAdopter: {
         "astrolabe/backend/cli.ts": 6,
         "bounty/backend/cli.ts": 7,
@@ -542,9 +904,11 @@ describe("ward — a flag demoted by `--` is warned about, on every registry ado
         "glamour/backend/cli.ts": 10,
         "grapevine/backend/cli.ts": 19,
         "imago/backend/cli.ts": 11,
+        "kit/workspace/fixtures/cli.ts": 25,
         "magpie/backend/cli.ts": 6,
         "mind-mapper/backend/cli.ts": 26,
-        "scriptorium/backend/cli.ts": 29,
+        // Built with stub deps: 23 kit rows plus Scriptorium's own 10.
+        "scriptorium/backend/kit/cli.ts#scriptoriumKitCli": 33,
       },
     });
   });

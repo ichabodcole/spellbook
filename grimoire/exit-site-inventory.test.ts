@@ -48,14 +48,8 @@
 // a broken cwd/glob fails loudly instead of passing vacuously.
 
 import { describe, expect, test } from "bun:test";
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-import { backendSources, readEntryPoint } from "./lib/entry-points";
-
-const REPO_ROOT =
-  process.env.SPELLBOOK_REPO_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const SKILLS = join(REPO_ROOT, "plugins", "spellbook", "skills");
+import { readFileSync } from "node:fs";
+import { backendSources, deployedSources, readEntryPoint } from "./lib/entry-points";
 
 /* ⚠ `const PH = `${"$"}{payload}`` STOOD HERE AND IS GONE WITH ITS LAST READER.
  * It existed so a pinned text could quote a real source line containing a
@@ -280,23 +274,13 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   },
 ];
 
-/** Walk for non-test .ts — by BEHAVIOUR (recursive), never a fixed depth or a
- *  per-spell layout guess. ⚠ THIS DOCSTRING USED TO READ "Five spells keep code
- *  in scripts/, three in tests/" — a layout census that expired at mind-mapper's
- *  port, the last of the eight. EVERY spell's backend now lives under
- *  `src/<spell>/backend/` and `scripts/` holds launchers only, so the recursion
- *  is what keeps this walk right rather than what keeps it general;
- *  a hand-written glob is a silent filter (house-style, the 63-vs-37 scar). */
-function walk(dir: string, out: string[] = []): string[] {
-  for (const e of readdirSync(dir)) {
-    const p = join(dir, e);
-    if (statSync(p).isDirectory()) {
-      if (e === "node_modules" || e === "dist") continue;
-      walk(p, out);
-    } else if (e.endsWith(".ts") && !e.endsWith(".test.ts")) out.push(p);
-  }
-  return out;
-}
+/* The deployed-folder walk is `deployedSources` in `./lib/entry-points` — by
+ * BEHAVIOUR (recursive), never a fixed depth or a per-spell layout guess, and
+ * across BOTH deploy roots. It replaced this file's own `walk` of the shipped
+ * root when mind-mapper moved to `plugins/unreleased/skills/`: a walk of one
+ * root would have dropped its launcher's E-terminal site and reddened the map
+ * for a move, not a change. A hand-written glob is a silent filter
+ * (house-style, the 63-vs-37 scar). */
 
 function isCommentLine(line: string): boolean {
   const t = line.trim();
@@ -323,10 +307,9 @@ function isCommentLine(line: string): boolean {
 function enumerate(): Array<{ file: string; text: string }> {
   const found: Array<{ file: string; text: string }> = [];
   const sources: Array<{ rel: string; text: string }> = [
-    ...walk(SKILLS).map((abs) => ({
-      rel: abs.slice(SKILLS.length + 1),
-      text: readFileSync(abs, "utf8"),
-    })),
+    // Both deploy roots (`src/deployRoots.ts`): mind-mapper's launchers sit
+    // under `plugins/unreleased/skills/` while it is held out of the plugin.
+    ...deployedSources().map(({ rel, abs }) => ({ rel, text: readFileSync(abs, "utf8") })),
     ...backendSources().map((rel) => ({ rel, text: readEntryPoint(rel) })),
   ];
   for (const { rel, text } of sources) {
@@ -343,7 +326,7 @@ const key = (s: { file: string; text: string }) => `${s.file}\t${s.text}`;
 
 describe("P0f — the exit-site inventory is pinned", () => {
   test("the sweep actually ran (zero-guard: a dead sweep and a clean sweep look identical)", () => {
-    const files = [...walk(SKILLS), ...backendSources()];
+    const files = [...deployedSources(), ...backendSources()];
     expect(files.length).toBeGreaterThan(20);
     // The second root contributed — a zero here means Slice 2's relocated CLIs
     // left the inventory and nothing said so.

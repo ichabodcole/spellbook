@@ -13,6 +13,27 @@ generated: { by: claude-opus-5-5, at: 2026-09-25 }
 
 # Context and Chat Kit
 
+> **Continues, narrowed** (Cole, 2026-10-13, on the
+> [prior-direction write-up](../../items/workspace-kit-prior-direction/write-up.md)).
+> [Workspace Kit](../workspace-kit/feature.md) ports Story Studio's kit, and
+> with it most of this feature:
+>
+> - **Phase 1 stays, rewritten on top of the ported `MessageAbout`.**
+>   Scriptorium's adopter case becomes the ported `about`. The contract adds the
+>   quote anchor to the range union (finding 2), and the drop intake starts from
+>   Story Studio's `splitDropped` (finding 12). Roles and "one subject, plus
+>   refs" are settled by
+>   [Message via and refs](../../items/message-via-and-refs.md), shared with
+>   Story Studio.
+> - **Phase 2 is superseded by the ported chat.** Channels, facets, collapse and
+>   the chip changes move to Workspace Kit as evolutions.
+> - **Phase 3 is superseded only for the disk host.** The backend-agnostic list
+>   stays here as a gated phase.
+> - The out-of-scope lines ruling out shadcn primitives in `kit/ui` and
+>   extracting Scriptorium's sidebar no longer hold: Workspace Kit does both.
+> - The "no spell shows its refs as chips" line below was wrong when written:
+>   Story Studio's ported chat shows them.
+
 ## Overview
 
 Almost every spell has a context area and a chat bar, and each spell built its
@@ -344,12 +365,12 @@ should keep it in view as a second host. Tracked in
 
 **Related Documents:**
 
-- [Investigation: Shared context and chat components for spell surfaces](../../items/shared-context-and-chat-components/write-up.md):
+- [Investigation: Shared context and chat components for spell surfaces](../../items/_archive/shared-context-and-chat-components/write-up.md):
   the census, cold read, visual survey and StoryLoom survey behind this proposal
-- [Shared code and the build boundary](../../items/shared-code-and-the-build-boundary/write-up.md):
+- [Shared code and the build boundary](../../items/_archive/shared-code-and-the-build-boundary/write-up.md):
   how shared code ships
-- [Spell surface pipeline](../spell-surface-pipeline/): the bundler every
-  surface ships through
+- [Spell surface pipeline](../_archive/spell-surface-pipeline/): the bundler
+  every surface ships through
 - [Imago unified context library (backlog)](../../items/imago-unified-context-library.md):
   possibly absorbed by phase 3
 - StoryLoom:

@@ -21,8 +21,8 @@ another project is outward-facing and is Cole's call**
 > on a channel that is never re-read and gitignored. `prospero.md` already
 > records _"six anthill feedback drafts composed and UNFILED, awaiting Cole"_
 > from a previous sprint — **so the drafts survive and the observation does not,
-> which is [the unclosed unit](./the-unclosed-unit.md).** Deduped per seat, one
-> issue per mechanism rather than one per seat who hit it.
+> which is [the unclosed unit](./_archive/the-unclosed-unit.md).** Deduped per
+> seat, one issue per mechanism rather than one per seat who hit it.
 
 ## 1. ⭐ `--as-of` is the only mechanism that never needed anyone to remember it
 

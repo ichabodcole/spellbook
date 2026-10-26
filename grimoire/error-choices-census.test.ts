@@ -95,6 +95,7 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { deployedPath } from "../src/deployRoots.ts";
 import { blankComments, type RaiseSite, raiseSitesBySpell } from "./lib/error-sites.ts";
 
 const REPO_ROOT = join(import.meta.dir, "..");
@@ -181,8 +182,11 @@ const EXPECTED: Record<
   // census does not walk. The rejections still carry `choices`: arm 2 drives
   // them through each spell's process, and the registry's own tests pin them.
   // glamour 27/9 -> 20/3, grapevine 59/5 -> 52/1: that move.
+  // grapevine 52 -> 53 (2026-10-25, item ci-red-on-linux): stop, restart and
+  // roll refuse a daemon that still answers 5 s after it was told to stop
+  // (`daemon_still_running`). No closed set there, so no `choices`.
   glamour: { sites: 20, choices: 3, verbRoster: true, flagMap: true },
-  grapevine: { sites: 52, choices: 1, verbRoster: true, flagMap: true },
+  grapevine: { sites: 53, choices: 1, verbRoster: true, flagMap: true },
   // imago 25/3 -> 14/2 (2026-09-26): the move onto the kit registry, as
   // glamour's — its parse, unknown-verb and per-verb arity raises left for the
   // kit. The enumerated `context <kind>` and `--link` rejections stay here.
@@ -232,7 +236,23 @@ const EXPECTED: Record<
   // 29/4 -> 30/4 (round three's second verify pass): and a `--body-file` it
   // may not read (chmod 000) as usage, for every verb — it was an internal raw
   // EACCES. No `choices`, for the same reason.
-  scriptorium: { sites: 30, choices: 4, verbRoster: true, flagMap: true },
+  // 30/4 -> 31/4 (kit-manifest-migrate-hook): the kit path's CLI refuses the
+  // conversion dry run's flag (removed at the flip) on the real home,
+  // or with no SCRIPTORIUM_HOME, as usage. No `choices`: the way out is a
+  // scratch home, named in the hint.
+  // 31/4 -> 33/4 (scriptorium-kit-wiki-verbs): the kit path's `find --since`
+  // refuses a non-date and `meta-set` a pair that is not key=value, both as
+  // usage, as the shipped verbs do. No `choices`: neither is a closed set.
+  // 33/4 -> 2/0 (scriptorium-delete-shipped, the cutover): the shipped CLI
+  // (`backend/cli.ts`'s 31 sites and all 4 of its `choices`) was deleted, and
+  // that file now only hands off to the kit's workspace CLI. The 2 left are
+  // the kit path's own (`backend/kit/`: `find --since` and `meta-set`, above).
+  // Every other refusal Scriptorium's CLI makes is the kit's (its registry and
+  // `src/kit/workspace/verbs.ts`), which this census does not walk; arm 2
+  // drives Scriptorium's root and flag rejections through its process, and the
+  // kit's own tests pin the rest. Not lost: the CLI's output is unchanged (the
+  // CLI golden and the acc census replay are green with no re-capture).
+  scriptorium: { sites: 2, choices: 0, verbRoster: true, flagMap: true },
 };
 
 /**
@@ -274,7 +294,7 @@ const UNKNOWN_FLAG_ARGS: Record<string, string[]> = {
 };
 
 function run(spell: string, args: string[]): { code: number; stderr: string; stdout: string } {
-  const launcher = join(REPO_ROOT, "plugins", "spellbook", "skills", LAUNCHER[spell] as string);
+  const launcher = deployedPath(LAUNCHER[spell] as string, REPO_ROOT);
   const p = Bun.spawnSync(["bun", launcher, ...args], {
     stdout: "pipe",
     stderr: "pipe",

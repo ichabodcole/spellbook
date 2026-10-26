@@ -1,11 +1,33 @@
+/* Scriptorium's page sheet: Tailwind, the kit's base (L0 tokens), this
+   page's palette and theme, then the kit's document rules (src/kit/theme/
+   document.css: the rendered view, notes, find and flash marks, embeds and
+   relation chips, and the scan of src/kit/document's utilities) and the kit's
+   shell (src/kit/theme/shell.css: the scan of src/kit/shell's markup, and the
+   themed scrollbars).
+
+   ⛔ ONE SHEET, FOLDED AT THE CUTOVER (scriptorium-delete-shipped). The page's
+   palette lived in a `theme.css` beside this file while the shipped
+   Scriptorium's sheet still sat here, and this file only imported it. They
+   are one file now, and the base.css import is in THIS file on purpose:
+   grimoire/kit-styling-ward.test.ts reads `surface/styles.css` directly,
+   comment-stripped and without following @import, to decide that the spell
+   consumes the kit's styling.
+
+   ⚠ THE LAST TWO @imports SIT AT THE END, AFTER THE PAGE'S OWN RULES, ON
+   PURPOSE: where both style `.md-prose`, the kit's document rules come later
+   and win, and a property only this sheet sets still applies. Tailwind
+   inlines an @import wherever it stands; the fold was measured to emit the
+   same stylesheet, byte for byte but its one path comment, as the two-file
+   form it replaced. Do not hoist them. */
 @import "tailwindcss" source(none);
 /* L0 shared tokens (src/kit/theme/base.css, Contract 21), imported BEFORE this
    surface's own @theme so every token below overrides the kit default. */
 @import "../../kit/theme/base.css";
 /* `source(none)` is load-bearing: automatic detection roots at the process cwd
    (the repo root under `bun run build`). This bare-directory @source is the
-   surface's ONLY content source — index.html and ui/ included. The kit sheet
-   brings its own. grimoire/spell-css-scope-ward.test.ts runs each claim red. */
+   page's own content source, `surface/` and nothing above it. The kit's
+   sheets bring their own (base.css: src/kit/ui, chat, context, theme and
+   wire; document.css: src/kit/document; shell.css: src/kit/shell). */
 @source "./";
 
 /* L2 — scriptorium's palette: a warm paper-and-ink manuscript room. Semantic
@@ -46,9 +68,9 @@
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
   --font-manuscript: "Iowan Old Style", Palatino, Georgia, serif;
 
-  /* L1 — the shadcn names the installed recipes (resizable, empty, button)
-     consume, each a var() onto a token above so the light block below is the
-     only palette switch. Add a name when a newly added component reads one. */
+  /* L1 — the shadcn names the kit's recipes (src/kit/ui) consume, each a var()
+     onto a token above, so the light block below is the only palette switch.
+     These come after base.css's own, so primary and ring stay the rubric. */
   --color-background: var(--color-bg);
   --color-foreground: var(--color-ink);
   --color-primary: var(--color-rubric);
@@ -63,6 +85,26 @@
   --color-border: var(--color-edge);
   --color-input: var(--color-edge);
   --color-ring: var(--color-rubric);
+  /* ⛔ THE KIT'S BRAND IS VIOLET, AND NOTHING HERE IS (item
+     scriptorium-violet-brand-off-theme). The kit paints links, drop targets,
+     the "agent listening" dot, backlink hovers, buttons, the spinner, the
+     caret and the drop cursor straight from `--color-brand`, so this page
+     maps it onto the rubric, as the shipped Scriptorium drew all of those
+     (the brand uses where rubric reads wrongly take the hooks below). No new colour: the light block below maps
+     it again, because base.css's own light block is unlayered and would put
+     the violet back. */
+  --color-brand: var(--color-rubric);
+  --color-on-brand: var(--color-on-rubric);
+  /* A rendered link is in the text's own ink, marked by a rubric underline
+     (Cole's pick from mockups, 2026-10-22: the most manuscript-like, the least
+     loud). The kit's document.css reads these two hooks; a hover thickens the
+     underline (`.md-prose a:hover`, below). */
+  --color-link: var(--color-ink);
+  --color-link-underline: var(--color-rubric);
+  /* The kit's pointed hue (find's current match, the agent's flash) is
+     fuchsia; here it is the find matches' amber, mapped again in the light
+     block. The hooks below say how much louder. */
+  --color-pointed: var(--color-attention);
   /* Menus and popovers (context-menu) — without these the popup rendered with
      NO background, transparent over the page (Cole, 2026-09-11). */
   --color-popover: var(--color-surface-raised);
@@ -88,25 +130,64 @@
   --color-added: #4e7040;
   --color-removed: #a8432a;
   --color-selected: #3f5f8f;
+  /* Again here, after base.css's light block, which sets the kit's violet
+     (and its fuchsia, for `pointed`). */
+  --color-brand: var(--color-rubric);
+  --color-on-brand: var(--color-on-rubric);
+  --color-pointed: var(--color-attention);
 }
 
-/* Two recipes reach past the utility layer with a raw var() (the secondary
-   button's color-mix hover); alias them so the hover is not dropped. */
+/* ⛔ WHERE THE RUBRIC READS WRONGLY, THE KIT'S OPTIONAL HOOKS TAKE COLE'S PICKS
+   (polish cycle, ruling 7: theme-colours.html, 2026-10-23). The kit reads each
+   hook with a fallback to the brand (or the pointed hue), so these lines are
+   Scriptorium's alone. No new colour: every value is a token above, and since
+   each resolves on <html> (where the theme attribute is), the light block's
+   tokens carry it into light.
+   · The `stable` chip in the added green: rubric beside the red of
+     `deprecated` read as a third warning.
+   · Cmd-clicked rows (they go with the next message) in a lighter selection
+     blue with a thin left bar: chosen, but not the open row, and never the
+     accent (E40).
+   · The compare view's change marks in neutral ink: in light the rubric IS the
+     removed colour, so every change looked like a deletion. The text says
+     what kind of change; the mark only says where.
+   · Find's current match is the other matches turned up (amber, with an ink
+     underline), and the agent's flash an amber wash with a left bar (an
+     underline in a highlight, which takes no box-shadow).
+   · The human's chat bubble neutral: the page's surface with an edge.
+   ⚠ ONE color-mix() PER RULE, AND NOT IN @theme. Tailwind (4.3) rewrites a
+   color-mix() on a theme colour into the dark palette's literal plus an
+   @supports copy that keeps the var(), and it keeps that copy for only the
+   FIRST such declaration in a rule (measured, in @theme and in a plain rule
+   alike): the rest shipped as the dark literal, in light too. So each mix
+   below has a rule of its own; theme.test.ts pins it in the shipped sheet. */
 :root {
-  --foreground: var(--color-ink);
-  --secondary: var(--color-surface-raised);
+  --color-status-stable: var(--color-added);
+  --color-change-tick-hover: var(--color-ink-dim);
+  --color-find-current-mark: var(--color-ink);
+  --color-flash-mark: var(--color-attention);
+  --color-human-bubble: var(--color-surface);
+  --color-human-bubble-edge: var(--color-edge);
+}
+:root {
+  --color-status-stable-tint: color-mix(in srgb, var(--color-added) 15%, transparent);
+}
+:root {
+  --color-ref-row: color-mix(in srgb, var(--color-selected) 7%, transparent);
+}
+:root {
+  --color-ref-row-bar: color-mix(in srgb, var(--color-selected) 70%, transparent);
+}
+:root {
+  --color-change-tick: color-mix(in srgb, var(--color-ink-dim) 70%, transparent);
+}
+:root {
+  --color-find-current: color-mix(in srgb, var(--color-attention) 55%, transparent);
 }
 
 /* The recipes' `dark:` arms follow the THEME ATTRIBUTE, not the OS — so a
-   viewer who picked light on a dark OS gets the light arms. */
+   viewer who picked light on a dark OS gets the light arms, the kit's too. */
 @custom-variant dark (&:is([data-theme="dark"] *));
-
-@layer base {
-  button:not(:disabled),
-  [role="button"]:not(:disabled) {
-    cursor: pointer;
-  }
-}
 
 /* ─── The rendered document (E29) ─────────────────────────────────────────────
    `.md-prose` styles micromark's output, which is plain semantic HTML with no
@@ -206,9 +287,14 @@
     accent-color: var(--color-rubric);
   }
   .md-prose a {
-    color: var(--color-rubric);
+    color: var(--color-link);
     text-decoration: underline;
+    text-decoration-color: var(--color-link-underline);
     text-underline-offset: 2px;
+  }
+  /* The kit's link rule says nothing about hover, so this one stands. */
+  .md-prose a:hover {
+    text-decoration-thickness: 2px;
   }
   /* A link whose target the renderer refused: the words stay, the link does not. */
   .md-prose a[data-blocked-link] {
@@ -360,6 +446,22 @@
   }
 }
 
+/* ─── The wordmark ────────────────────────────────────────────────────────────
+   The shell's title is the kit's (`data-slot="app-title"`, its text the app's
+   declared title); how it looks is the spell's identity, so it is set here in
+   the theme, and the kit carries no app's wordmark. Scriptorium's is the
+   shipped one: lowercase, in the manuscript serif.
+
+   ⚠ UNLAYERED ON PURPOSE. The kit's utilities on the title (`text-sm`,
+   `font-medium`) sit in Tailwind's utilities layer, and only a rule outside
+   every layer outranks a layer. */
+[data-slot="app-title"] {
+  font-family: var(--font-manuscript);
+  font-size: 1rem;
+  font-weight: 400;
+  text-transform: lowercase;
+}
+
 /* ─── Scrollbars, in the spell's own colours ──────────────────────────────────
    Cole asked for shadcn's look rather than the OS bar. Done in CSS, NOT with
    `ScrollArea`, for one reason that decides it: `ScrollArea` replaces a native
@@ -401,3 +503,5 @@
     }
   }
 }
+@import "../../kit/theme/document.css";
+@import "../../kit/theme/shell.css";

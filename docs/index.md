@@ -82,6 +82,10 @@ Repeatable procedures for work that recurs. — see
 - [Running a Multi-Cycle Feature — Playbook](./playbooks/running-a-multi-cycle-feature-playbook.md)
   — Running a feature that spans more than one cycle: opening each cycle,
   closing it with an honest Outcome, and keeping closed records trustworthy.
+- [Speeding up a slow test suite](./playbooks/test-speed-playbook.md) — Making a
+  slow test gate fast without losing what it catches: measure, run the files in
+  parallel and fix each parallel-only failure at its cause, remove waits, then
+  cut tests that do not earn their time.
 
 ## Lessons learned
 

@@ -1,5 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { CliError, errorEnvelope, reportCliError, setCurrentCommand } from "./errors.ts";
+import {
+  CliError,
+  EXIT_CANCELLED,
+  EXIT_IDLE_TIMEOUT,
+  errorEnvelope,
+  reportCliError,
+  setCurrentCommand,
+} from "./errors.ts";
 
 // ⚠ THIS FILE ARRIVED IN PHASE 2, WITH THE `server` FIELD, AND ITS ABSENCE
 // UNTIL THEN IS ITSELF WORTH NAMING: `errors.ts` is the module that decides what
@@ -54,6 +61,30 @@ describe("the failure envelope", () => {
     expect(Object.keys(doc.error)).toEqual(["kind", "exit_code", "retryable", "message"]);
   });
 
+  test("`token` names the cause after the message, and only when given", () => {
+    // A stable machine name an agent can branch on (`no_session`) without
+    // matching prose. It sits before `hint` and never moves `server` off the end.
+    const doc = JSON.parse(
+      errorEnvelope("conflict", "no live session", {
+        token: "no_session",
+        hint: "start one",
+        server: { ok: false },
+      }),
+    ) as { error: Record<string, unknown> };
+    expect(doc.error.token).toBe("no_session");
+    expect(Object.keys(doc.error)).toEqual([
+      "kind",
+      "exit_code",
+      "retryable",
+      "message",
+      "token",
+      "hint",
+      "server",
+    ]);
+    const bare = JSON.parse(errorEnvelope("usage", "x")) as { error: Record<string, unknown> };
+    expect("token" in bare.error).toBe(false);
+  });
+
   test("`reportCliError` carries `server` through and returns the taxonomy code", () => {
     const out: string[] = [];
     const code = reportCliError(
@@ -70,5 +101,12 @@ describe("the failure envelope", () => {
     const out: string[] = [];
     expect(reportCliError(new TypeError("boom"), { write: (c: string) => out.push(c) })).toBeNull();
     expect(out).toEqual([]);
+  });
+});
+
+describe("the exit-code table", () => {
+  test("session endings sit outside the taxonomy", () => {
+    expect(EXIT_IDLE_TIMEOUT).toBe(124);
+    expect(EXIT_CANCELLED).toBe(130);
   });
 });

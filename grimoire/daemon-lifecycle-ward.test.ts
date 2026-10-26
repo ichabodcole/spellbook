@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { Glob } from "bun";
+import { DEPLOY_ROOTS, deployedPath } from "../src/deployRoots.ts";
 import { must } from "./lib/must.ts";
 
 // enforces: drive-conjuration-through-daemon
@@ -24,7 +25,7 @@ import { must } from "./lib/must.ts";
 // ⛔ THE COST IS NOT THE DUPLICATED LINES. IT IS THAT A FIX COSTS SIX EDITS AND
 //    RELIABLY GETS ONE TO FOUR OF THEM.
 //
-// Measured, 2026-09-08 (docs/items/backend-duplication-recon/write-up.md):
+// Measured, 2026-09-08 (docs/items/_archive/backend-duplication-recon/write-up.md):
 // four spells had hit the missing-idleTimeout wall and fixed it, three had not.
 // Two more defects were roster-wide until 2026-09-07, when a branch scoped to a
 // flaky glamour test fixed glamour's copy alone — turning two shared defects
@@ -112,10 +113,15 @@ import { must } from "./lib/must.ts";
 // six connection-holding daemons, and the population it asserts over is pinned
 // per clause rather than counted as a file total.
 
-const SKILLS = join(import.meta.dir, "..", "plugins", "spellbook", "skills");
+/** `<spell>/...` paths matching `pattern` across BOTH deploy roots
+ *  (`src/deployRoots.ts`) — an unreleased spell's launchers are still in the
+ *  population, so holding a spell out of the plugin cannot shrink this ward. */
+function scanDeployed(pattern: string): string[] {
+  return DEPLOY_ROOTS.flatMap((root) => [...new Glob(pattern).scanSync(root)]).sort();
+}
 
 function read(rel: string): string {
-  return readFileSync(join(SKILLS, rel), "utf8");
+  return readFileSync(deployedPath(rel), "utf8");
 }
 
 /** ⛔ EVERY TEXT-SCAN CLAUSE READS THIS, NOT THE RAW FILE — AND THE FILE YOU ARE
@@ -168,7 +174,7 @@ type Backend = { spell: string; file: string; code: string };
  *  exactly this reason, one function away. */
 function daemons(): Backend[] {
   const out: Backend[] = [];
-  for (const rel of new Glob("*/scripts/*.ts").scanSync(SKILLS)) {
+  for (const rel of scanDeployed("*/scripts/*.ts")) {
     if (rel.endsWith(".test.ts")) continue;
     // ⚠ THE MEMBERSHIP TEST READS THE STRIPPED COPY TOO, so a `Bun.serve(` that
     // only appears in a comment cannot enrol a non-daemon. Measured: the
@@ -197,6 +203,20 @@ function daemons(): Backend[] {
       code,
     });
   }
+  // ⚠ PLUS THE KIT'S WORKSPACE DAEMON, under the name `kit-workspace`: it is
+  // outside every `<spell>/backend/`, and since the cutover
+  // (scriptorium-delete-shipped) it is the only daemon Scriptorium runs. The
+  // shipped `src/scriptorium/backend/server.ts` that called `Bun.serve` was
+  // deleted, and that file now only hands off to the kit. Left out, the
+  // population would lose a per-session daemon that holds sockets and writes
+  // a pointer, and clause 1 (the one whose last violation was a real bug)
+  // would stop looking at Scriptorium's daemon.
+  const kitDaemon = join(srcRoot, "kit", "workspace", "server.ts");
+  out.push({
+    spell: "kit-workspace",
+    file: "src/kit/workspace/server.ts",
+    code: stripComments(readFileSync(kitDaemon, "utf8")),
+  });
   return out.sort((a, b) => a.file.localeCompare(b.file));
 }
 
@@ -205,7 +225,7 @@ function daemons(): Backend[] {
  *  the mistake seams Contract 19 is named for. */
 function clis(): Backend[] {
   const out: Backend[] = [];
-  for (const rel of new Glob("*/scripts/cli.ts").scanSync(SKILLS)) {
+  for (const rel of scanDeployed("*/scripts/cli.ts")) {
     out.push({
       spell: must(rel.split("/")[0], `no leading path segment in "${rel}"`),
       file: `skills/${rel}`,
@@ -309,6 +329,11 @@ describe("daemon lifecycle ward", () => {
       // +1 daemon and +2 CLI files: scriptorium (2026-09-11), the first spell
       // SCAFFOLDED onto the build — a per-session daemon, so it joins all three
       // clause lists below.
+      // ⚠ RE-PINNED AT THE CUTOVER (scriptorium-delete-shipped): `scriptorium`
+      // leaves the daemon lists and `kit-workspace` (the kit's workspace
+      // daemon, which Scriptorium now runs) takes its place, so the count stays
+      // 9. The CLI count stays 16: `backend/cli.ts` and `scripts/cli.ts` remain
+      // as Scriptorium's entry and launcher.
       daemons: 9,
       clis: 16,
       // clause 1 — the SSE/socket holders. digestify and mind-mapper are out.
@@ -318,8 +343,8 @@ describe("daemon lifecycle ward", () => {
         "glamour",
         "grapevine",
         "imago",
+        "kit-workspace",
         "magpie",
-        "scriptorium",
       ],
       // clause 2 — every pointer writer. All seven go through the kit today,
       // which is why the clause's OFFENDER list is empty (C9); the subjects are
@@ -331,13 +356,16 @@ describe("daemon lifecycle ward", () => {
         "glamour",
         "grapevine",
         "imago",
+        "kit-workspace",
         "magpie",
         "mind-mapper",
-        "scriptorium",
       ],
-      // clause 3 — the CLIs that still carry their own reader (scriptorium's is
-      // glamour's ENOENT-only shape, written at genesis).
-      readSession: ["bounty", "glamour", "imago", "magpie", "scriptorium"],
+      // clause 3 — the CLIs that still carry their own reader.
+      // ⚠ `scriptorium` LEFT AT THE CUTOVER (scriptorium-delete-shipped): its
+      // reader (glamour's ENOENT-only shape, written at genesis) was the
+      // shipped CLI's, deleted; the kit CLI finds its session through the
+      // kit's `readPointer`.
+      readSession: ["bounty", "glamour", "imago", "magpie"],
     });
   });
 

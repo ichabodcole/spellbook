@@ -18,7 +18,9 @@ through CLI verbs. The human sees the board; you see the same board through
 verbs. Your selection steers them (`lens`, `look-here`); theirs steers you
 (selection chips arrive on conversation messages).
 
-All verbs: `bun plugins/spellbook/skills/mind-mapper/scripts/cli.ts <verb>`.
+All verbs: `bun plugins/unreleased/skills/mind-mapper/scripts/cli.ts <verb>`
+(held out of the plugin until the app is finished; it moves to
+`plugins/spellbook/skills/mind-mapper/` when released).
 
 ## Cast
 

@@ -48,12 +48,16 @@ meaning to summon anything, is a bug.
 > **⚠ `mind-mapper` is RESERVED AND NOT RELEASED — and it is absent from the
 > other listings ON PURPOSE. Do not "fix" that.**
 >
-> It has **no `SKILL.md`**, so nothing can invoke it; its 59 tracked files ship
-> with the plugin only because the marketplace clones the whole
-> `plugins/spellbook` subtree. It is a first-class citizen **mechanically** —
-> `src/build.ts` builds it, `scripts/dist-check.ts` counts it in the buildable
-> roster, and its `dist/` is committed — while being deliberately invisible
-> **editorially**.
+> It has **no `SKILL.md`**, so nothing can invoke it. ⚠ **Since 2026-10-25 it no
+> longer ships at all**: its deployed folder moved out of the plugin to
+> `plugins/unreleased/skills/mind-mapper/` (Cole, 2026-10-24: "Keep it out,
+> there is still work to do on finishing the app's experience" —
+> [`plugins/unreleased/README.md`](../plugins/unreleased/README.md)). Before
+> that, its files shipped with the plugin because the marketplace clones the
+> whole `plugins/spellbook` subtree. It is a first-class citizen
+> **mechanically** — `src/build.ts` builds it, `scripts/dist-check.ts` counts it
+> in the buildable roster, and its `dist/` is committed — while being
+> deliberately invisible **editorially**.
 >
 > **So the `ward` skill's drift check will not match on this name**, and that is
 > expected rather than drift. This row exists to say so: a check that is
@@ -62,10 +66,11 @@ meaning to summon anything, is a bug.
 > `mind-mapper` to `marketplace.json`'s tags or to either README would advertise
 > a spell a user cannot cast.
 >
-> **Release it by giving it a `SKILL.md` and running the `inscribe` wards** — at
-> which point the status here becomes `shipped` and the other listings genuinely
-> do need it. _(Recorded 2026-09-01, at Cole's ruling: "it is intended for now,
-> as mind-mapper is still undergoing a bit of testing.")_
+> **Release it by giving it a `SKILL.md`, moving it back into the plugin (the
+> steps are in `plugins/unreleased/README.md`) and running the `inscribe`
+> wards** — at which point the status here becomes `shipped` and the other
+> listings genuinely do need it. _(Recorded 2026-09-01, at Cole's ruling: "it is
+> intended for now, as mind-mapper is still undergoing a bit of testing.")_
 
 > **`scriptorium` was in that state and no longer is** (2026-09-14): its
 > `SKILL.md` ships, so it is unpinned from both `roster-drift` and

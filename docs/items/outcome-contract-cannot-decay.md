@@ -76,5 +76,5 @@ coverage question rather than a canon-content question.
 
 **Filed because it existed nowhere but a comms message**, and a finding that
 lives only on a wire nobody re-reads is
-[the unclosed unit](./the-unclosed-unit.md) — which this session produced as a
-finding three separate times. </content>
+[the unclosed unit](./_archive/the-unclosed-unit.md) — which this session
+produced as a finding three separate times. </content>

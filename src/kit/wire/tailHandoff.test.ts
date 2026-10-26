@@ -3,7 +3,7 @@
 // a terminal frame, and the wrapper that runs the window and `--once`.
 //
 // Unit cells over a scripted fake server. The same properties on a REAL daemon
-// through a real CLI are `src/scriptorium/backend/tail-handoff.integration.test.ts`.
+// through a real CLI are `../workspace/tail-handoff{,.closed,.restart}.integration.test.ts`.
 // No cell waits minutes: the window is injected in milliseconds.
 import { afterEach, describe, expect, test } from "bun:test";
 import { type Sink, tailEvents } from "./tailEvents";
@@ -117,6 +117,23 @@ describe("handoff — which line, given how the tail ended (pure)", () => {
       command: "open --restore s1",
       hint: "the session closed; there is nothing left to watch. To bring it back, run bun <this skill's directory>/scripts/cli.ts <command>; then arm the tail again with no --since, on the session id it prints where there is one (a restarted daemon starts a new event log, so the old bookmark does not apply)",
     });
+  });
+
+  test("a closed or lost line that read nothing carries no `cursor: -1`", () => {
+    for (const end of ["closed", "lost"] as const) {
+      const line = handoff(
+        { spell: "demo", end, mode: "once", events: 0, cursor: -1, presence: false },
+        CMD,
+      );
+      expect(line?.next).toBe("stop");
+      expect(line !== null && "cursor" in line).toBe(false);
+    }
+    // A closed line that did read keeps its real bookmark.
+    const read = handoff(
+      { spell: "demo", end: "closed", mode: "once", events: 0, cursor: 0, presence: false },
+      CMD,
+    );
+    expect(read?.cursor).toBe(0);
   });
 
   test("closed BY THE HUMAN → stop, says so, and offers the way back only if they ask", () => {

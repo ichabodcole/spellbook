@@ -305,18 +305,148 @@ import { join } from "node:path";
 // an `@source not "../cli"` line and the note that has to sit with it: the kit
 // CLI registry's prose was being scanned for class candidates, and one of its
 // words became a utility in three spells' shipped stylesheets.
+//
+// ⛔ RE-DECLARED 2026-10-13 — 29/2,444 -> 29/2,521, from the object's own sum.
+// MEMBERSHIP DID NOT MOVE; one entry grew:
+//     +77  src/kit/theme/base.css   125 -> 202
+// the kit-foundation port of Story Studio's theme: the L0 tokens the
+// primitives need (each derived from Spellbook's palette), the L1 shadcn
+// aliases, the light block for them, the animation import and the
+// pointer-cursor rule. Every L0 token's value, in both modes, is pinned by
+// src/kit/theme/theme.test.ts, which the gate does run; the L1 aliases are
+// checked only for their var() shape, and the rest of the file is read by
+// nothing.
+//
+// ⛔ RE-DECLARED 2026-10-13 — 29/2,521 -> 29/2,507, from the object's own sum.
+// MEMBERSHIP DID NOT MOVE; one entry shrank:
+//     -14  src/scriptorium/surface/styles.css   403 -> 389
+// Scriptorium's surface moved onto src/kit/ui, and the two blocks base.css
+// now provides (the raw --foreground/--secondary aliases and the pointer
+// cursor rule) were deleted from the spell's sheet.
+//
+// ⛔ RE-DECLARED 2026-10-14 — 29/2,507 -> 29/2,523, from the object's own sum.
+// MEMBERSHIP DID NOT MOVE; one entry grew:
+//     +16  src/kit/theme/base.css   202 -> 218
+// three more `@source not` lines and their notes, from the workspace port:
+// src/kit/workspace/ and src/kit/lib/ (daemon code and pure helpers, whose
+// prose was becoming utilities) and every test file under src/kit/ (whose
+// example class strings were still shipping). Measured by diffing every
+// spell's rebuilt stylesheet against the committed one: rules only removed.
+//
+// ⛔ RE-DECLARED 2026-10-14 — 29/2,523 -> 29/2,550, from the object's own sum.
+// MEMBERSHIP DID NOT MOVE; nine entries grew by 3 each:
+//     +3  src/<spell>/bunfig.toml, for all nine spells
+// a `[test]` section with the root's preloads (the scratch HOME and the DOM
+// guard). `bun test` reads only the bunfig in its cwd, so a spell's tests run
+// from its own folder used the real home. No comment rides with them: the
+// reason lives in grimoire/kit-scratch-home-ward.test.ts, which the gate runs
+// and which reds on a bunfig without the preload.
+//
+// ⛔ RE-DECLARED 2026-10-18 — 30/2,592 -> 31/2,866, from the object's own sum.
+// MEMBERSHIP GREW BY ONE, and one entry grew:
+//     +270  src/kit/theme/document.css   (new)
+//     +4    src/kit/theme/base.css       218 -> 222
+// the document-pane port (kit-port-document): Story Studio's rendered-markdown,
+// note, find and flash rules, in a sheet of their own because the shipped
+// Scriptorium imports base.css and writes its own prose rules under the same
+// class. base.css grew only by the note that says where they went.
+// src/kit/theme/theme.test.ts, which the gate runs, holds that the new sheet
+// styles every highlight name the panes paint and that base.css carries none
+// of it; the rest of the file is read by nothing.
+//
+// ⛔ RE-DECLARED 2026-10-18, SAME ITEM — 31/2,866 -> 31/2,902, from the
+// object's own sum. MEMBERSHIP DID NOT MOVE; two entries grew:
+//     +29  src/kit/theme/base.css       222 -> 251
+//     +7   src/kit/theme/document.css   270 -> 277
+// base.css now scans the kit's shared markup modules by name, and leaves the
+// document pane and document.css out; document.css scans the pane itself.
+// Scanned from base.css, the pane's utilities had grown every themed spell's
+// stylesheet by about a tenth. With this, every spell's rebuilt stylesheet is
+// byte-identical to the cycle base's. theme.test.ts holds the scan split.
+//
+// ⛔ RE-DECLARED 2026-10-18 — 31/2,902 -> 32/2,916, from the object's own sum.
+// MEMBERSHIP GREW BY ONE:
+//     +14  src/scriptorium/surface/kit/styles.css   (new)
+// the document-centre item (scriptorium-kit-document-centre): the interim
+// frame's own sheet, two @imports (the shipped sheet, then the kit's
+// document.css) and the comment saying why. The frame had linked the shipped
+// sheet directly; adding document.css to it would have changed the shipped
+// Scriptorium. The rules it pulls in are held where they live (theme.test.ts);
+// the frame's tests and the browser check are what read this file's effect.
+// Thrown away with the frame at the shell cycle.
+//
+// ⛔ RE-DECLARED 2026-10-19 — 32/2,916 -> 33/2,975, from the object's own sum.
+// MEMBERSHIP GREW BY ONE, and one entry grew:
+//     +53  src/kit/theme/shell.css   (new)
+//     +6   src/kit/theme/base.css    251 -> 257
+// the shell port (kit-port-shell): the shell's own sheet, which scans
+// src/kit/shell and carries Story Studio's scrollbar rules. Scanned from
+// base.css, the shell's utilities grew every themed spell's stylesheet, so it
+// has a sheet of its own, as the document pane does. base.css grew by its
+// `@source not` for the new sheet and the note on where the scrollbars went.
+// theme.test.ts holds the scan split; every spell's rebuilt stylesheet is
+// byte-identical to the cycle base's.
+//
+// ⛔ RE-DECLARED 2026-10-19 — 34/3,374 -> 34/3,379, from the object's own sum.
+// MEMBERSHIP DID NOT MOVE; two entries grew:
+//     +3  src/scriptorium/surface/kit/styles.css   15 -> 18
+//     +2  src/scriptorium/surface/kit/index.html   41 -> 43
+// the flagged Scriptorium on the shell (scriptorium-kit-shell): the kit page's
+// sheet imports shell.css after document.css, and its pre-paint theme script
+// reads the kit's THEME_STORAGE_KEY (which `applyTheme` writes) in place of a
+// key nothing wrote any more. Frame.test.tsx holds the pre-paint key; the
+// browser check and devFrame.integration.test.ts read the sheet's effect.
+//
+// ⛔ RE-DECLARED 2026-10-22 — 34/3,379 -> 31/2,946, from the object's own sum.
+// MEMBERSHIP SHRANK BY THREE; the cutover (scriptorium-delete-shipped):
+//     -41   src/scriptorium/surface/index.html      (the shipped page, deleted)
+//     -392  src/scriptorium/surface/styles.css      (the shipped sheet, deleted)
+//     -43   src/scriptorium/surface/kit/index.html  (moved: +43 at surface/index.html)
+//     -18   src/scriptorium/surface/kit/styles.css  } folded into one sheet,
+//     -395  src/scriptorium/surface/kit/theme.css   } +413 at surface/styles.css
+// The kit page moved up into surface/ and its two sheets became one, so
+// kit-styling-ward (which reads `surface/styles.css` without following
+// @import) still sees the kit base imported. The fold kept the cascade order;
+// the built stylesheet is byte-identical to the two-file form's but for its
+// path comment. styles.css grew by its 18-line header (395 -> 413), which
+// says why the last two @imports sit at the end. Nothing new became blind:
+// the page's tests and the browser check read the sheet's effect, as before.
+//
+//     +5    src/kit/theme/document.css   (277 -> 282)
+// kit-reveal-frontmatter-and-selection: the flash's tint moved out of its
+// keyframe into a custom property (the build dropped a keyframe holding a
+// color-mix), with a comment saying why. theme.test.ts now refuses a
+// color-mix in any keyframe, so the five lines are read by a test.
+//
+// ⛔ RE-DECLARED 2026-10-22 — 31/2,951 -> 31/2,958, from the object's own sum.
+// MEMBERSHIP DID NOT MOVE; one entry grew:
+//     +7   src/kit/theme/document.css   282 -> 289
+// kit-atlas-comparison-follow-ups, D4: the rendered document's h1 a step above
+// its h2s (`.md-prose.md-document h1`), with the comment saying why.
+// theme.test.ts holds the step against the shared heading rule; the browser
+// check measured it (16.8 -> 19.6 px, the h2s 15.4 px as before).
+//
+// ⛔ RE-DECLARED 2026-10-22 — 31/2,958 -> 31/2,974, from the object's own sum.
+// MEMBERSHIP DID NOT MOVE; one entry grew:
+//     +16  src/scriptorium/surface/styles.css   413 -> 429
+// kit-atlas-comparison-follow-ups, H1: Scriptorium's wordmark on the kit's
+// title slot, with the comment saying why it sits outside every layer.
+// src/scriptorium/wordmark.test.ts holds the rule and that it is unlayered;
+// the browser check read its effect (the manuscript serif, lowercase).
 const DECLARED_BLIND: Record<string, number> = {
   "src/digestify/surface/styles.css": 515,
   "src/digestify/surface/index.html": 26,
-  "src/digestify/bunfig.toml": 2,
+  "src/digestify/bunfig.toml": 5,
   "src/bounty/surface/styles.css": 158,
   "src/bounty/surface/index.html": 32,
-  "src/bounty/bunfig.toml": 2,
+  "src/bounty/bunfig.toml": 5,
   "src/mind-mapper/surface/styles.css": 238,
   "src/magpie/surface/styles.css": 186,
   "src/imago/surface/styles.css": 167,
   "plugins/spellbook/skills/magpie/scripts/remove.py": 145,
-  "src/kit/theme/base.css": 125,
+  "src/kit/theme/base.css": 257,
+  "src/kit/theme/document.css": 315,
+  "src/kit/theme/shell.css": 53,
   "src/astrolabe/surface/styles.css": 104,
   "src/astrolabe/surface/index.html": 35,
   "src/mind-mapper/surface/index.html": 52,
@@ -326,12 +456,12 @@ const DECLARED_BLIND: Record<string, number> = {
   "src/glamour/surface/styles.css": 25,
   "src/grapevine/surface/styles.css": 110,
   "src/grapevine/surface/index.html": 24,
-  "src/grapevine/bunfig.toml": 2,
-  "src/mind-mapper/bunfig.toml": 4,
-  "src/astrolabe/bunfig.toml": 2,
-  "src/glamour/bunfig.toml": 2,
-  "src/imago/bunfig.toml": 2,
-  "src/magpie/bunfig.toml": 2,
+  "src/grapevine/bunfig.toml": 5,
+  "src/mind-mapper/bunfig.toml": 7,
+  "src/astrolabe/bunfig.toml": 5,
+  "src/glamour/bunfig.toml": 5,
+  "src/imago/bunfig.toml": 5,
+  "src/magpie/bunfig.toml": 5,
   // scriptorium (2026-09-11), the first spell SCAFFOLDED onto the build —
   // membership 26 -> 29, three hand-authored non-gated files, +126 lines:
   // the dev-serve bunfig, the surface entry (its pre-paint theme script) and
@@ -342,9 +472,14 @@ const DECLARED_BLIND: Record<string, number> = {
   // for micromark's classless output, which no utility can express.
   // 212 -> 254 (E30): scrollbars in the spell's colours, which are pseudo-element
   // rules and so unreachable from a utility as well.
-  "src/scriptorium/bunfig.toml": 2,
-  "src/scriptorium/surface/index.html": 40,
-  "src/scriptorium/surface/styles.css": 403,
+  "src/scriptorium/bunfig.toml": 5,
+  // The page (the kit page since the cutover, moved up from surface/kit/):
+  // its pre-paint theme script and favicon.
+  "src/scriptorium/surface/index.html": 43,
+  // The page's one sheet since the cutover: the kit page's palette and theme
+  // (a copy of the shipped sheet, scriptorium-kit-keepers) with the kit's
+  // document.css and shell.css imported at its end.
+  "src/scriptorium/surface/styles.css": 507,
 };
 
 type BlindReport = {

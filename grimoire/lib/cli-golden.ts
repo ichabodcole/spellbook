@@ -9,6 +9,7 @@
 // machine-global pointer in the temp dir (see terminator-invariant).
 import { existsSync, mkdirSync, readdirSync, realpathSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { deployDirFor } from "../../src/deployRoots.ts";
 
 export type Case = {
   argv: string[];
@@ -137,7 +138,7 @@ export async function runCase(spec: SpellSpec, c: Case, ctx: RunCtx): Promise<Re
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, "daemon.port"), `${ctx.stubPort}\n`);
   }
-  const launcher = join(ctx.repo, "plugins/spellbook/skills", spec.spell, spec.launcher);
+  const launcher = join(deployDirFor(spec.spell, ctx.repo), spec.launcher);
   // Bun strips a bare `--` placed right after the script path, so a record
   // whose argv starts with `--` would reach the CLI without it (decision #18).
   // The added `--` is the one Bun consumes; the CLI gets exactly `c.argv`.

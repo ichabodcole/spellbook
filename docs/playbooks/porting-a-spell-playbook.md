@@ -126,7 +126,7 @@ then neither is wrong.
 - **The spell's daemon starts offline.** `bun --no-install scripts/server.ts`
   must not die on a missing package. If it does, that is a live defect and it
   blocks the port's only real proof — see
-  [imago's case](../items/imago-daemon-cannot-start-offline.md).
+  [imago's case](../items/_archive/imago-daemon-cannot-start-offline.md).
 - **A measured pre-move baseline**, captured as _error lines_, not counts, and
   **name the tsconfig** — the root `-p .` and a spell's own (only some spells
   carry one; glamour's is `plugins/spellbook/skills/glamour/tsconfig.json`) are
@@ -2598,6 +2598,11 @@ discriminator dissolves — D77's "a one-way implication written as an 'if and
 only if' is not a discriminator", in miniature. `tsc --noEmit` across the
 adopters is a cheap **leading indicator** for (a) and is blind to (b).
 
+> ⚠ **HISTORY SINCE 2026-10-26 (`shrink-shipped-dist`).** No bundle carries a
+> source map now, so a comment-only edit under `src/` re-emits nothing, except a
+> legal comment (`/*! … */`, `@license`, `@preserve`), which Bun always keeps.
+> The paragraph below records what the inline maps did while they shipped.
+
 ⛔ **DRIVEN, AND BY ACCIDENT, WHICH IS THE STRONGEST FORM OF THE POINT.** This
 pre-work's own repairs to `tailEvents.ts` and `eventLog.ts` are **COMMENTS
 ONLY** — zero executable bytes, zero signature change, zero behaviour.
@@ -3327,14 +3332,16 @@ belongs in its own commit, filed rather than smuggled.
   separates "the sourcemap moved" from "code moved" in one command.
 
   ⭐ **bounty is a THIRD case and it is the one that surprises: a kit change
-  that alters NO behaviour still dirties every consumer.** Its chapter 2
-  modified one kit module by ONE PARAGRAPH OF COMMENT, and the blast radius was
-  SIX artifacts across FIVE spells — `dist/server.js` for astrolabe, glamour,
-  imago and magpie as well as its own two — because the emitted bundle carries
-  an inlined `sourcesContent`, and prose is source. Executable bytes unchanged;
-  `git diff` shows one line, the sourcemap. Contract 18 verifies by
-  reproduction, so they all belong in the chapter. **Report the blast radius
-  either way, from `git status`, and say which case you were in.**
+  that alters NO behaviour still dirties every consumer.** (⚠ History since
+  2026-10-26: with no source map in any bundle, a comment-only change no longer
+  dirties anything, except a legal `/*! … */` comment; a code change still
+  does.) Its chapter 2 modified one kit module by ONE PARAGRAPH OF COMMENT, and
+  the blast radius was SIX artifacts across FIVE spells — `dist/server.js` for
+  astrolabe, glamour, imago and magpie as well as its own two — because the
+  emitted bundle carries an inlined `sourcesContent`, and prose is source.
+  Executable bytes unchanged; `git diff` shows one line, the sourcemap. Contract
+  18 verifies by reproduction, so they all belong in the chapter. **Report the
+  blast radius either way, from `git status`, and say which case you were in.**
 
 - **`bun run gate` is not sufficient after a `src/kit/` change.** Run
   `bun scripts/dist-check.ts` and read `git status` for **stylesheet** churn in
@@ -3674,10 +3681,11 @@ primitives, a tested `state/` module and a 74-line stylesheet; the daemon serves
 the built `dist/` at `/watch`. A brief-driven implementing agent and a separate
 verify agent; the verifier found one severe regression the author's `fill()`
 drive could not see, and drove five of seven "not driven" rows. Full method in
-[the rewrite journal](../features/grapevine-conversion/rewrite-journal.md) and
-[the verify journal](../features/grapevine-conversion/verify-journal.md);
+[the rewrite journal](../features/_archive/grapevine-conversion/rewrite-journal.md)
+and
+[the verify journal](../features/_archive/grapevine-conversion/verify-journal.md);
 inventory at
-[behaviour-inventory.md](../features/grapevine-conversion/behaviour-inventory.md).
+[behaviour-inventory.md](../features/_archive/grapevine-conversion/behaviour-inventory.md).
 
 ### Example 6: grapevine — Phase S, the registry, as its own branch
 
@@ -3687,10 +3695,10 @@ spell made a Bun workspace member so the CLI would run at all. Same two-agent
 shape; the verifier found two visible differences the author's twelve-row table
 omitted, two call sites breaking the branch's own new house-style rule, and put
 a number on the dead stylesheet that turned into a ruling. Full method in
-[the shadcn journal](../items/grapevine-shadcn/shadcn-journal.md) and
-[its verify journal](../items/grapevine-shadcn/verify-journal.md); the options
-not taken for where the config lives are in
-[the decision log](../items/grapevine-shadcn/decision-log.md).
+[the shadcn journal](../items/_archive/grapevine-shadcn/shadcn-journal.md) and
+[its verify journal](../items/_archive/grapevine-shadcn/verify-journal.md); the
+options not taken for where the config lives are in
+[the decision log](../items/_archive/grapevine-shadcn/decision-log.md).
 
 ### Example 8: bounty — three entries, and a guarantee that did not reach
 
@@ -3745,11 +3753,11 @@ one whose daemon has no spawner** — so it is the run that exercised the kit's 
 mode override (documented since the kit was written, never used until now) and
 the run that found where Contract 5 lands when nothing spawns the daemon. Full
 record in
-[the rewrite journal](../items/digestify-conversion/rewrite-journal.md);
+[the rewrite journal](../items/_archive/digestify-conversion/rewrite-journal.md);
 inventory at
-[behaviour-inventory.md](../items/digestify-conversion/behaviour-inventory.md) —
-138 rows, 128 driven in a browser, five `not:` — and the options not taken in
-[the decision log](../items/digestify-conversion/decision-log.md).
+[behaviour-inventory.md](../items/_archive/digestify-conversion/behaviour-inventory.md)
+— 138 rows, 128 driven in a browser, five `not:` — and the options not taken in
+[the decision log](../items/_archive/digestify-conversion/decision-log.md).
 
 ### Example 10: mind-mapper — the last port, and the one where the kit was the SOURCE
 
@@ -4013,7 +4021,7 @@ port **taught**, not what it confirmed.
   fatal handler will eat the dev import's error; an `url()` in the sheet is a
   build input; and a test file under `surface/` changes the shipped stylesheet.
   Full record in
-  [the rewrite journal](../items/bounty-conversion/rewrite-journal.md).
+  [the rewrite journal](../items/_archive/bounty-conversion/rewrite-journal.md).
 - **2026-09-07** — **digestify, the third rewrite, and the LAST — the population
   is closed.** Taught, mostly by being the first subject with no reactive shell:
   R2 and R3 have a second shape for an imperative page (sort the INVENTORY, not

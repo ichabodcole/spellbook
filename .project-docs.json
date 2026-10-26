@@ -8,7 +8,7 @@
       "lessons-learned": "lesson"
     },
     "adopting": false,
-    "exclude": ["docs/items/scriptorium/SKILL.draft.md"],
+    "exclude": ["docs/items/_archive/scriptorium/SKILL.draft.md"],
     "durable": [
       "architecture",
       "specifications",

@@ -5,7 +5,7 @@
 //
 // ⭐ MOVED INTO `bun test` ON 2026-09-27 (sprint 06 phase 2), from
 // `scripts/instruments/canon-ledger-ward.ts`, where it ran under nothing: not the
-// suite, not the gate, not CI (docs/items/canon-ledger-ward-runs-under-nothing.md).
+// suite, not the gate, not CI (docs/items/_archive/canon-ledger-ward-runs-under-nothing.md).
 // It had been kept out on purpose — a `.test.ts` is collected the moment it
 // exists, so an in-progress ward reds a peer's gate — but "run it by hand" had no
 // owner and no occasion, and it passed over a real defect once while unrun.

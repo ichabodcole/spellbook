@@ -4,7 +4,7 @@ title:
   "A structured-capture spell — brain dump → mapped artifact (digestify's
   inverse)"
 status: stable
-lifecycle: triage
+lifecycle: dropped
 id: 019ee69b-c608-7fa5-b8d3-a6c2653c67c1
 kind: task
 description:
@@ -122,3 +122,6 @@ design and option exploration). Graduate to its own project
   familiar/liaison thread the multi-agent split instantiates.
 - `docs/projects/glamour-v2/proposal.md` — the queued work this sits behind.
 - `grimoire/trigger-registry.md` — where the name gets reserved at coalescence.
+
+Dropped at triage, 2026-10-24: merged into the mind-mapper concept, as its own
+banner says.

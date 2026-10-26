@@ -165,7 +165,8 @@ import { builtinModules } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { type ImportKind, isRelative, scanSpecifiers } from "./lib/import-graph.ts";
+import { deployDirFor } from "../src/deployRoots.ts";
+import { type ImportKind, type ImportRef, isRelative, scanSpecifiers } from "./lib/import-graph.ts";
 
 const REPO_ROOT =
   process.env.SPELLBOOK_REPO_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -173,12 +174,46 @@ const REPO_ROOT =
 /** The artifact boundary — what the Claude marketplace actually copies. */
 const PLUGIN_ROOT = "plugins/spellbook";
 
+/** The holding root for a spell kept OUT of the plugin until it is finished
+ *  (`src/deployRoots.ts`; mind-mapper today). Nothing installs it, but it is
+ *  judged by the same rule, against ITS OWN root, so the day it rejoins the
+ *  plugin with a `git mv` it already satisfies this ward. Same depth as
+ *  `PLUGIN_ROOT`, so every specifier resolves to the same place from both. */
+const UNRELEASED_ROOT = "plugins/unreleased";
+
+/** The boundary a file is judged against: its own plugin-shaped root. */
+const boundaryFor = (file: string, boundary: string): string =>
+  file.startsWith(`${UNRELEASED_ROOT}/`) ? UNRELEASED_ROOT : boundary;
+
 /** Repo-relative tracked `.ts`/`.tsx` under a prefix. "Shipped" means TRACKED. */
 function trackedSources(prefix: string): string[] {
   return execFileSync("git", ["-C", REPO_ROOT, "ls-files", prefix], { encoding: "utf8" })
     .trim()
     .split("\n")
     .filter((f) => /\.(ts|tsx)$/.test(f));
+}
+
+/**
+ * The specifiers in a repo-relative file, scanned ONCE per file per run.
+ *
+ * ⚠ WHY (2026-10-26): wards 1a and 1b share a population that now holds the
+ * emitted bundles — MEASURED at 55 files / 12.9 MB for 1b, of which one full
+ * scan costs ~380 ms on an idle machine and reading costs ~4 ms. 1b scanned it
+ * FOUR times (zero-guard, violation cell, and twice in the `bun`-exemption
+ * cell) and 1a three more, so under a loaded parallel gate two 1b cells crossed
+ * bun's 5 s default (7.1 s on CI run 40379180950). The population, the
+ * predicate and every failure message are unchanged; only the repeat scan is
+ * gone. Safe because nothing in this file writes under REPO_ROOT — the one cell
+ * that builds files does so in its own `mkdtemp` repo and scans none of them.
+ */
+const refsCache = new Map<string, ImportRef[]>();
+function refsOf(file: string): ImportRef[] {
+  let refs = refsCache.get(file);
+  if (!refs) {
+    refs = scanSpecifiers(readFileSync(join(REPO_ROOT, file), "utf8"));
+    refsCache.set(file, refs);
+  }
+  return refs;
 }
 
 /** Resolve a relative specifier against its importer, repo-relative, POSIX-ish. */
@@ -252,10 +287,10 @@ const keyOf = (e: EscapeIdentity): string => `${e.file}\t${e.spec}\t${e.resolved
 function relativeEscapes(files: string[], boundary: string, kinds: ImportKind[]): Escape[] {
   const out: Escape[] = [];
   for (const file of files) {
-    for (const ref of scanSpecifiers(readFileSync(join(REPO_ROOT, file), "utf8"))) {
+    for (const ref of refsOf(file)) {
       if (!kinds.includes(ref.kind) || !isRelative(ref.spec)) continue;
       const resolved = resolveFrom(file, ref.spec);
-      if (resolved.startsWith(`${boundary}/`)) continue;
+      if (resolved.startsWith(`${boundaryFor(file, boundary)}/`)) continue;
       out.push({ file, spec: ref.spec, line: ref.line, resolved });
     }
   }
@@ -283,7 +318,10 @@ const DECLARED_EMITTED_ROOTS: string[] = [
   // hand-kept hazard above stops being latent in: there is no ninth spell to
   // forget. The cell "EVERY SPELL THAT EMITS A BACKEND IS DECLARED HERE" reds
   // the moment `src/mind-mapper/backend/server.ts` exists and this row does not.
-  "plugins/spellbook/skills/mind-mapper/dist",
+  // ⚠ MOVED 2026-10-25 to `plugins/unreleased/` (Cole: mind-mapper stays out of
+  // the shipped plugin until its app is finished). Still declared, still
+  // judged; moves back with the spell.
+  "plugins/unreleased/skills/mind-mapper/dist",
   // ⚠ AND THEN A NINTH, which the paragraph above said could not exist: it
   // was true of PORTS, whose population closed with mind-mapper. scriptorium
   // (2026-09-11) is the first spell SCAFFOLDED onto the build, and the cell
@@ -548,18 +586,29 @@ const PINNED_DYNAMIC_ESCAPES: EscapeIdentity[] = [
   // resolved at build time. Left at `scripts/server.ts` this row would have been
   // DELETED as "no longer present" (`trackedSources` is `.ts`/`.tsx` only) and
   // the ward would have gone green because it stopped looking — Contract 19.
-  {
-    file: "plugins/spellbook/skills/mind-mapper/dist/server.js",
-    spec: "../../../../../src/mind-mapper/surface/index.html",
-    resolved: "src/mind-mapper/surface/index.html",
-  },
+  // (mind-mapper's row is LAST, below scriptorium's: the list is in file
+  // order, and its artifact moved to `plugins/unreleased/` on 2026-10-25.)
   // scriptorium (2026-09-11) — the ninth, and the first written at genesis:
   // the daemon's dev-mode surface import, glamour's specifier with the spell
   // renamed, executed only on the dev branch and inert in release.
+  // ⚠ KEPT AT THE CUTOVER (scriptorium-delete-shipped), WITH A NEW WRITER: the
+  // shipped daemon that wrote it was deleted, and the kit daemon's page
+  // (`frameSurface` in `src/scriptorium/backend/kit/server.ts`) adopted the
+  // same literal in place of its computed `FRAME_DEV_ENTRY`, so the same
+  // specifier lands in `dist/server.js` and is resolved here as before.
   {
     file: "plugins/spellbook/skills/scriptorium/dist/server.js",
     spec: "../../../../../src/scriptorium/surface/index.html",
     resolved: "src/scriptorium/surface/index.html",
+  },
+  // ⚠ mind-mapper — moved to `plugins/unreleased/` (2026-10-25: held out of the
+  // plugin until its app is finished), which is why it now sorts last. The spec
+  // did NOT change: the holding root has the plugin's depth, by design. Judged
+  // against its own root (`boundaryFor`), so it rejoins already conformant.
+  {
+    file: "plugins/unreleased/skills/mind-mapper/dist/server.js",
+    spec: "../../../../../src/mind-mapper/surface/index.html",
+    resolved: "src/mind-mapper/surface/index.html",
   },
 ];
 
@@ -573,7 +622,11 @@ describe("R6 ward 1a — the published artifact resolves no relative path outsid
   // as "no longer present" and this ward would have stopped watching the exact
   // line the phase's brief calls the trap. The escape did not go away — it
   // moved into the artifact, which is where it always mattered.
-  const files = [...trackedSources(PLUGIN_ROOT), ...emittedSources(EMITTED_ROOTS)];
+  const files = [
+    ...trackedSources(PLUGIN_ROOT),
+    ...trackedSources(UNRELEASED_ROOT),
+    ...emittedSources(EMITTED_ROOTS),
+  ];
 
   test("the sweep actually ran (zero-guard: a dead walk and a clean walk look identical)", () => {
     // ⛔ THIS GUARD NO LONGER COUNTS ANYTHING, AND THAT IS THE POINT.
@@ -618,9 +671,11 @@ describe("R6 ward 1a — the published artifact resolves no relative path outsid
     // would be a second denominator free to drift from the first.
     const roster = [
       ...new Set(
-        execFileSync("git", ["-C", REPO_ROOT, "ls-files", "plugins/spellbook/skills"], {
-          encoding: "utf8",
-        })
+        execFileSync(
+          "git",
+          ["-C", REPO_ROOT, "ls-files", "plugins/spellbook/skills", "plugins/unreleased/skills"],
+          { encoding: "utf8" },
+        )
           .trim()
           .split("\n")
           .filter((f) => /\/scripts\/[^/]+\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f))
@@ -641,11 +696,7 @@ describe("R6 ward 1a — the published artifact resolves no relative path outsid
 
     // And the SCANNER ran over every spell, not merely the enumerator. This
     // replaces the `specifiers > 500` floor with the same membership shape.
-    const scanned = new Set(
-      files
-        .filter((f) => scanSpecifiers(readFileSync(join(REPO_ROOT, f), "utf8")).length > 0)
-        .map(spellOf),
-    );
+    const scanned = new Set(files.filter((f) => refsOf(f).length > 0).map(spellOf));
     expect(roster.filter((spell) => !scanned.has(spell))).toEqual([]);
   });
 
@@ -808,16 +859,19 @@ const onShippedExecutionPath = (file: string): boolean =>
  * exemption applies there.
  */
 describe("R6 ward 1b — the shipped execution path carries no dependencies", () => {
+  // ⚠ The holding root's launchers too (2026-10-25): a spell held out of the
+  // plugin in `plugins/unreleased/` rejoins by `git mv`, so it must already
+  // carry no dependencies. Without this row mind-mapper's launchers left the
+  // population and a planted bare import passed.
   const files = [
     ...trackedSources(PLUGIN_ROOT).filter(onShippedExecutionPath),
+    ...trackedSources(UNRELEASED_ROOT).filter(onShippedExecutionPath),
     ...emittedSources(EMITTED_ROOTS),
   ];
 
   test("the sweep actually ran (zero-guard)", () => {
     expect(files.length).toBeGreaterThan(20);
-    const bare = files.flatMap((f) =>
-      scanSpecifiers(readFileSync(join(REPO_ROOT, f), "utf8")).filter((r) => !isRelative(r.spec)),
-    );
+    const bare = files.flatMap((f) => refsOf(f).filter((r) => !isRelative(r.spec)));
     // A population with no bare specifiers at all would make the next cell pass
     // for the wrong reason. There are 113 today across 40 files, every one of them a builtin.
     expect(bare.length).toBeGreaterThan(50);
@@ -828,7 +882,7 @@ describe("R6 ward 1b — the shipped execution path carries no dependencies", ()
   function violationsUnder(isBuiltin: (spec: string, file: string) => boolean): string[] {
     const out: string[] = [];
     for (const file of files) {
-      for (const ref of scanSpecifiers(readFileSync(join(REPO_ROOT, file), "utf8"))) {
+      for (const ref of refsOf(file)) {
         // ⛔ 1b DOES NOT CONSULT `kind`, AND THAT IS THE FIX FOR R8.
         // It used to skip `dynamic`, which made its coverage depend on a
         // POSITION HEURISTIC — so every type position the heuristic missed
@@ -907,7 +961,7 @@ describe("R6 ward 1b — the shipped execution path carries no dependencies", ()
           (existsSync(join(REPO_ROOT, "src", e.name, "backend", "cli.ts")) ||
             existsSync(join(REPO_ROOT, "src", e.name, "backend", "server.ts"))),
       )
-      .map((e) => `plugins/spellbook/skills/${e.name}/dist`)
+      .map((e) => `${relative(REPO_ROOT, deployDirFor(e.name, REPO_ROOT))}/dist`)
       .sort();
     expect(emitters.length).toBeGreaterThan(0); // zero-guard: an empty walk is not a pass
     const undeclared = emitters.filter((r) => !DECLARED_EMITTED_ROOTS.includes(r));
@@ -1297,9 +1351,11 @@ describe("R6 ward 2 — the kit is a leaf (the one-way street)", () => {
 /** A directory name is a SPELL iff it has a deployed skill folder. Derived. */
 function spellNames(): Set<string> {
   const names = new Set<string>();
-  for (const f of execFileSync("git", ["-C", REPO_ROOT, "ls-files", "plugins/spellbook/skills"], {
-    encoding: "utf8",
-  })
+  for (const f of execFileSync(
+    "git",
+    ["-C", REPO_ROOT, "ls-files", "plugins/spellbook/skills", "plugins/unreleased/skills"],
+    { encoding: "utf8" },
+  )
     .trim()
     .split("\n")) {
     const name = f.split("/")[3];
@@ -1314,7 +1370,13 @@ function spellNames(): Set<string> {
 function ownerSpell(path: string, spells: Set<string>): string | null {
   const seg = path.split("/");
   if (seg[0] === "src" && seg[1] && spells.has(seg[1])) return seg[1];
-  if (path.startsWith("plugins/spellbook/skills/") && seg[3] && spells.has(seg[3])) return seg[3];
+  if (
+    (path.startsWith("plugins/spellbook/skills/") ||
+      path.startsWith("plugins/unreleased/skills/")) &&
+    seg[3] &&
+    spells.has(seg[3])
+  )
+    return seg[3];
   return null;
 }
 
@@ -1404,7 +1466,11 @@ describe("the import scanner agrees with Bun's parser on every value import in t
     const transpiler = new Bun.Transpiler({ loader: "tsx" });
     const short: string[] = [];
     let audited = 0;
-    for (const file of [...trackedSources(PLUGIN_ROOT), ...trackedSources("src")]) {
+    for (const file of [
+      ...trackedSources(PLUGIN_ROOT),
+      ...trackedSources(UNRELEASED_ROOT),
+      ...trackedSources("src"),
+    ]) {
       const source = readFileSync(join(REPO_ROOT, file), "utf8");
       // Both sides are the VALUE-STATEMENT population and nothing else:
       // non-erased `static` refs here, `import-statement` there. Dynamic refs
@@ -1458,7 +1524,11 @@ describe("the import scanner agrees with Bun's parser on every value import in t
     const transpiler = new Bun.Transpiler({ loader: "tsx" });
     const disagreements: string[] = [];
     let files = 0;
-    for (const file of [...trackedSources(PLUGIN_ROOT), ...trackedSources("src")]) {
+    for (const file of [
+      ...trackedSources(PLUGIN_ROOT),
+      ...trackedSources(UNRELEASED_ROOT),
+      ...trackedSources("src"),
+    ]) {
       const source = readFileSync(join(REPO_ROOT, file), "utf8");
       const lines = source.split("\n");
       // `require()` is excluded: the parser does not report it at all, so it is
@@ -1532,7 +1602,11 @@ describe("the import scanner agrees with Bun's parser on every value import in t
       .trim()
       .split("\n")
       .filter((f) => /^src\/[^/]+\/backend\/.*\.ts$/.test(f) && !f.endsWith(".test.ts"));
-    for (const file of [...trackedSources(PLUGIN_ROOT), ...backendSrc]) {
+    for (const file of [
+      ...trackedSources(PLUGIN_ROOT),
+      ...trackedSources(UNRELEASED_ROOT),
+      ...backendSrc,
+    ]) {
       const source = readFileSync(join(REPO_ROOT, file), "utf8");
       const lines = source.split("\n");
       for (const ref of scanSpecifiers(source)) {
@@ -1603,6 +1677,10 @@ describe("the import scanner agrees with Bun's parser on every value import in t
         erased: true,
       },
       { file: "src/magpie/backend/server.ts", spec: "./reduce", erased: false },
+      // ⚠ THREE scriptorium ROWS REMOVED AT THE CUTOVER (scriptorium-delete-
+      // shipped): the shipped `frontmatter.ts`, `links.ts` and `protocol.ts`
+      // re-exported what the kit path kept (`./kit/frontmatter`,
+      // `./kit/fieldRefs`) until the cutover, and were deleted with it.
     ]);
   });
 
@@ -1626,7 +1704,7 @@ describe("the import scanner agrees with Bun's parser on every value import in t
     // cell is about. The file that used to hold it is now a launcher with no
     // imports of its own; had the pin been left at the old address it would have
     // read `undefined` and been indistinguishable from "the escape vanished".
-    expect(at("src/glamour/backend/server.ts", 142)).toBe("type"); // was 77, then 146, then 141; each move was an edit ABOVE the escape, never to it (2026-09-07: the pointer write became atomic and its `node:fs` import wrapped; 2026-09-14: the shared origin guard added one import line). ⚠ A LINE NUMBER IS THE WRONG PIN and this cell has now paid for it FOUR times — it reds on any edit above the line and says only `undefined`, which reads as "the escape vanished". Re-pin when that happens; the finding would be a CHANGE OF KIND.
+    expect(at("src/glamour/backend/server.ts", 143)).toBe("type"); // was 77, then 146, then 141, then 142; each move was an edit ABOVE the escape, never to it (2026-09-07: the pointer write became atomic and its `node:fs` import wrapped; 2026-09-14: the shared origin guard added one import line; 2026-10-13: the kit's exit-code constants added one more). ⚠ A LINE NUMBER IS THE WRONG PIN and this cell has now paid for it FIVE times — it reds on any edit above the line and says only `undefined`, which reads as "the escape vanished". Re-pin when that happens; the finding would be a CHANGE OF KIND.
     expect(at("src/mind-mapper/backend/propose.test.ts", 463)).toBe("type"); // ⚠ RE-ADDRESSED in backend convergence Phase 7 — the suite moved with its subject and the line number did NOT change, because the port edited nothing above it. Same warning as the row above: a line number is the wrong pin, and this is the fourth time this cell has paid for it.
 
     // And a synthetic RELATIVE type query must still be an ESCAPE, not an

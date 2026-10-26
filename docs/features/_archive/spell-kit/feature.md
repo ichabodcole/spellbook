@@ -233,12 +233,12 @@ that prove four capabilities beat four hundred lines that prove one.
 - [Design resolution](./design-resolution.md) — R1 (the seam), R3 (theming), RB
   (the emission trade). **The rulings live there; this document is the shape.**
 - [Gap analysis](./gap-analysis.md) — the seven blocking findings, kept verbatim
-- [Shared code and the build boundary](../../../items/shared-code-and-the-build-boundary/write-up.md)
+- [Shared code and the build boundary](../../../items/_archive/shared-code-and-the-build-boundary/write-up.md)
   ·
-  [Cross-harness spell distribution](../../../items/cross-harness-spell-distribution/write-up.md)
-- [`spell-surface-pipeline`](../../spell-surface-pipeline/feature.md) — the
-  standard this ratchets; its [plan](../../spell-surface-pipeline/plan.md)
-  records what actually shipped
+  [Cross-harness spell distribution](../../../items/_archive/cross-harness-spell-distribution/write-up.md)
+- [`spell-surface-pipeline`](../spell-surface-pipeline/feature.md) — the
+  standard this ratchets; its [plan](../spell-surface-pipeline/plan.md) records
+  what actually shipped
 - `.anthill/dev/seams.md` — Contracts 1, 2, 4. **Prefer these over the pipeline
   plan.**
 

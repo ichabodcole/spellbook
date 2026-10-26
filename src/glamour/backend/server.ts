@@ -10,6 +10,7 @@ import {
   type GlamourState,
 } from "../../../plugins/spellbook/skills/glamour/shared/types";
 import { unlinkIfMatches, writeFileAtomic } from "../../kit/wire/discovery.ts";
+import { EXIT_IDLE_TIMEOUT } from "../../kit/wire/errors.ts";
 import { createEventLog } from "../../kit/wire/eventLog.ts";
 import { drainAndStop, startHousekeeping } from "../../kit/wire/housekeeping.ts";
 import { refuseForeignOrigin } from "../../kit/wire/origin.ts";
@@ -446,7 +447,7 @@ export async function startDaemon(opts: StartOpts) {
       // attaches its `Origin` and the CLI sends none. `src/kit/wire/origin.ts`
       // carries the reasoning and the demonstrated payload.
       {
-        const refused = refuseForeignOrigin(req, srv.port);
+        const refused = refuseForeignOrigin(req, srv.port, srv.hostname);
         if (refused) return refused;
       }
       const url = new URL(req.url);
@@ -585,7 +586,7 @@ export async function startDaemon(opts: StartOpts) {
     idleMs: () => performance.now() - lastActivity,
     touch,
     timeoutMs: timeoutS * 1000,
-    onIdleClose: () => resolveDone({ code: 124, reason: "timeout" }),
+    onIdleClose: () => resolveDone({ code: EXIT_IDLE_TIMEOUT, reason: "timeout" }),
     snapshot: {
       dirty: () => snapDirty,
       clear: () => {

@@ -764,8 +764,8 @@ Six prohibitions, each of which was a shipped defect in at least one spell.
 
 **`scripts/` holds no scaffold script, and this document does not write one.**
 The ruling and its reasoning are recorded in
-[the decision log](../items/scaffolding-a-spell/decision-log.md) (**S3**). In
-short: **not yet, and the condition is the first real spell.**
+[the decision log](../items/_archive/scaffolding-a-spell/decision-log.md)
+(**S3**). In short: **not yet, and the condition is the first real spell.**
 
 `scaffold/README.md` has held the reserved home since 2026-06-11 with the method
 already stated — _"derive this from the spells, not pre-write it"_ — and it is

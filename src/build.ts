@@ -9,7 +9,9 @@
 //
 // It bundles `src/<spell>/surface/` into a flat, hashed, dependency-free
 // `dist/` at the DEPLOYED spell folder
-// (plugins/spellbook/skills/<spell>/dist/), so the published plugin can serve a
+// (plugins/spellbook/skills/<spell>/dist/, or plugins/unreleased/skills/<spell>/
+// for a spell held out of the plugin — `src/deployRoots.ts` decides which), so
+// the published plugin can serve a
 // working board with no surface/ source, no bunfig.toml, and no node_modules
 // present (Contract 4's "source-free by construction").
 //
@@ -45,10 +47,9 @@
 import { existsSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import tailwind from "bun-plugin-tailwind";
+import { deployDirFor } from "./deployRoots.ts";
 
 const SRC_DIR = import.meta.dir;
-const REPO_ROOT = join(SRC_DIR, "..");
-const DEPLOY_ROOT = join(REPO_ROOT, "plugins", "spellbook", "skills");
 
 /** The one specifier a daemon build leaves unresolved. Named once so the flag,
  *  the source comment and any future consumer cannot drift apart. */
@@ -58,8 +59,8 @@ const entryFor = (spell: string) => join(SRC_DIR, spell, "surface", "index.html"
 const backendDirFor = (spell: string) => join(SRC_DIR, spell, "backend");
 const backendEntryFor = (spell: string, name: string) => join(backendDirFor(spell), `${name}.ts`);
 const launcherFor = (spell: string, name: string) =>
-  join(DEPLOY_ROOT, spell, "scripts", `${name}.ts`);
-const outDirFor = (spell: string) => join(DEPLOY_ROOT, spell, "dist");
+  join(deployDirFor(spell), "scripts", `${name}.ts`);
+const outDirFor = (spell: string) => join(deployDirFor(spell), "dist");
 
 /** Does this spell have SURFACE SOURCE — `src/<spell>/surface/index.html`?
  *
@@ -170,10 +171,34 @@ function buildableSpells(): string[] {
  * 18), while a bundle at scripts/cli.js is green and BLIND (three behavioural
  * wards stop seeing the CLI, and a shrunk population is not a red cell).
  *
- * sourcemap:"inline" IS A RULING (Cole), made knowing it embeds the complete
- * original TypeScript - astrolabe 13,733 bytes of source becomes roughly
- * 60,000 emitted. Contract 4's "source-free by construction" was redefined in
- * the same ruling to mean no source FILES.
+ * ⛔ NO SOURCE MAP SHIPS, INLINE OR LINKED (Cole, 2026-10-14: "the source is in
+ * the repo, so it doesn't need to ship inside the skills"; item
+ * shrink-shipped-dist). This REVERSES the 2026-08-31 ruling that set
+ * sourcemap:"inline" knowing it embedded the complete original TypeScript -
+ * 10.39 MB of the 23.19 MB of shipped JS (44.8%) was map, measured at the
+ * change. Contract 4's "source-free by construction" is back to meaning no
+ * BUNDLE carries source bytes, as well as no surface or backend source FILES.
+ * (Not "no TypeScript in the subtree": astrolabe's `scripts/state.ts` and its
+ * two tests ship as source by D10/D96, and every launcher is a `.ts` file.)
+ *
+ * No external `.map` is written either, gitignored or not. A `.map` beside the
+ * bundle would sit in the served `dist/`, in the dist-check roster's disk walk
+ * and one `.gitignore` line away from shipping, to serve a debugging need the
+ * source already serves: run the entry from `src/<spell>/backend/X.ts` and Bun
+ * reports TypeScript lines natively. What a stack trace from an INSTALLED skill
+ * points at now is `dist/X.js` line:column of an UNMINIFIED bundle, whose
+ * `// src/<path>.ts` module-boundary comments name the source file each region
+ * came from - readable, and one search away from the repo line.
+ * `grimoire/no-shipped-sourcemap-ward.test.ts` fails if a map comes back.
+ *
+ * A side effect worth knowing: the map was what carried source COMMENTS into
+ * the bundle. Bun's bundler drops ordinary comments, so a comment-only edit
+ * under `src/` no longer dirties a committed bundle - EXCEPT a legal comment
+ * (a block opening with an exclamation mark, or one carrying `@license` or
+ * `@preserve`), which Bun always keeps and has no option to drop (bun-types
+ * lists esbuild's `legalComments` as "Not supported", Bun 1.4.0). Measured: a
+ * planted one in `src/bounty/backend/server.ts` reached `dist/server.js`. The
+ * ones shipping today are third-party licence headers (DOMPurify, dagre).
  *
  * ⚠ CORRECTED 2026-09-08 (Phase 1b, D6). This block read "CLIs ONLY. A server
  * does bundle, but drags the entire surface graph into the backend artifact;
@@ -218,8 +243,21 @@ async function buildBackendEntry(spell: string, name: string): Promise<number> {
     entrypoints: [backendEntryFor(spell, name)],
     outdir,
     target: "bun",
-    sourcemap: "inline",
+    sourcemap: "none",
     external: [SURFACE_HTML_EXTERNAL],
+    // ⛔ PIN NODE_ENV, OR A DEPENDENCY RESOLVES TO ITS DEVELOPMENT BUILD AND THE
+    // DAEMON RUNS SLOW. Unset, Bun.build resolves the `development` export
+    // condition, and micromark (scriptorium's link extraction, every package of
+    // it and of micromark-extension-gfm) ships a `dev/` build there: assertions
+    // on every token plus the `debug` package. Measured on a 550-file copy of
+    // docs/: extraction took 3.3 s with the dev build and 1.9 s without, about
+    // 1.4 s on every graph, dangling and doctor. `bun run` of the SOURCE already
+    // resolves the production entry, so tests never saw it. No backend reads
+    // NODE_ENV and no other daemon pulls a dev-conditioned dependency, so every
+    // other backend artifact is byte-identical with this in (checked when it
+    // went in, round three of the links cycle). `define` only, as the
+    // surface's pin above it is, and for the same reason: no minify.
+    define: { "process.env.NODE_ENV": '"production"' },
     // An entry naming of [name].[ext] off an `X.ts` entry emits exactly `X.js`,
     // which is the literal path the launcher at `scripts/X.ts` imports - so
     // this naming is load-bearing, not a free choice.
@@ -253,6 +291,9 @@ async function buildSurface(spell: string): Promise<number> {
     entrypoints: [entry],
     outdir,
     plugins: [tailwind],
+    // Spelled out though it is Bun's default: no map ships from either build
+    // (see the ruling above `buildBackendEntry`).
+    sourcemap: "none",
     // ⛔ PIN NODE_ENV, OR REACT RESOLVES TO ITS DEVELOPMENT BUILD AND THE
     // SURFACE CRASHES ON A TIMER. Unset, React's export conditions pick the
     // development entry, which carries the Performance Track instrumentation:

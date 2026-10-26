@@ -22,10 +22,16 @@
 //   5. PINNED DEBT: this ward is GREEN while a known-undeclared spell exists. The
 //      pinned set is printed on every run (see PINNED) — a cell that pins
 //      violations and reports a bare green is an instrument reporting a green it
-//      did not earn.
+//      did not earn. (Empty since 2026-10-25: see PINNED.)
+//   6. THE SHIPPED ROOT ONLY, for "every folder is listed". A spell held out of
+//      the plugin under `plugins/unreleased/skills/` (`src/deployRoots.ts`) is
+//      not a roster member and is not asserted; the reverse direction ("every
+//      listed name has a folder") accepts a folder under EITHER root, because
+//      the trigger registry reserves an unreleased spell's name on purpose.
 import { describe, expect, test } from "bun:test";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { deployedSpells, spellsIn } from "../src/deployRoots.ts";
 
 // ⛔ PINNED — spell folders deliberately excluded from the assertions below, and
 // PRINTED on every run. The `pin is still required` cell fails when a pinned
@@ -54,9 +60,15 @@ import { dirname, join } from "node:path";
 //
 // Left OPEN by that ruling, and NOT this ward's business: whether the built
 // artifact belongs in the published package while the spell is WIP.
-const PINNED: Record<string, string> = {
-  "mind-mapper": "WIP by Cole's ruling (47238d7) — correctly undeclared, nothing to repair",
-};
+//
+// ⛔ CLOSED 2026-10-25, AND THE PIN WENT WITH IT. Cole ruled the open question:
+// mind-mapper stays OUT of the shipped plugin until its app is finished
+// (docs/items/mind-mapper-out-of-the-plugin.md). Its deployed folder moved to
+// `plugins/unreleased/skills/`, which this ward's roster does not read, so there
+// is no undeclared folder in the shipped root left to pin. With the set empty,
+// every shipped folder is asserted — moving an undeclared spell back into the
+// plugin now reds this ward instead of riding a pin.
+const PINNED: Record<string, string> = {};
 
 function repoRoot(): string {
   // Anchored on the INVOCATION root, not this file's path: the ward's subject is
@@ -73,11 +85,9 @@ function repoRoot(): string {
 
 const REPO = repoRoot();
 
+/** The SHIPPED roster: spell folders in the plugin an install receives. */
 function folderRoster(): string[] {
-  return readdirSync(join(REPO, "plugins/spellbook/skills"), { withFileTypes: true })
-    .filter((d) => d.isDirectory())
-    .map((d) => d.name)
-    .sort();
+  return spellsIn(join(REPO, "plugins/spellbook/skills"));
 }
 
 /** First-column code-spans of the table whose header contains every `headerCells`
@@ -177,7 +187,9 @@ describe("roster drift ward", () => {
 
     if (listing.both) {
       test(`${listing.name} — every listed name has a folder`, () => {
-        const folders = new Set(folderRoster());
+        // Either root: a reserved name for a spell held out of the plugin still
+        // has a folder, just not a shipped one (blind spot 6).
+        const folders = new Set(deployedSpells(REPO));
         const orphaned = listing.entries().filter((s) => !folders.has(s));
         expect({ listing: listing.name, orphaned }).toEqual({
           listing: listing.name,

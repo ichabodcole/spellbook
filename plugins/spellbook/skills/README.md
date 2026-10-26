@@ -35,6 +35,11 @@ is a fact about the spell's LIFECYCLE, and the only place it is recorded is the
 table above and the spell's own `SKILL.md`. (`scaffold/README.md` carries the
 same correction, for the same reason.)
 
+A spell that isn't finished doesn't live here: everything in this folder ships
+to every install. Unfinished spells build, run and test from
+[`plugins/unreleased/skills/`](../../unreleased/README.md) (`mind-mapper` today)
+until they're released.
+
 ## Anatomy of a spell
 
 ```

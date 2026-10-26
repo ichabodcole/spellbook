@@ -13,7 +13,7 @@ five rulings · **Mode:** brief, not a plan.
 
 Read [the proposal](./feature.md) and [the decision log](./decision-log.md)
 first. The evidence is three investigations dated 2026-09-08; the
-[tail convergence design](../../../items/tail-reader-convergence/write-up.md)
+[tail convergence design](../../../items/_archive/tail-reader-convergence/write-up.md)
 carries the signature you are implementing and you must read it in full.
 
 ---

@@ -165,12 +165,13 @@ describe("the SCRUB — asserted against the enumeration, which is the un-skippa
   // not guarding the case it was written for. So this asserts the DEFENCE covers
   // the enumerated population, rather than asserting the world is clean.
   test("hermeticEnv scrubs EVERY env-typed binding the CUT reads", () => {
-    // Source-scanned, not called: hermeticEnv is local to server.test.ts. The
+    // Source-scanned, not called: hermeticEnv is local to the bounty suite's
+    // harness (fixtures/serverSuite.ts, shared by server*.test.ts). The
     // sprint-01 lineage — a test that reads a file's own source beats a mutation
     // test of the mechanism you already thought of, because the gap is always in
     // the sites that never call it.
     const src = readFileSync(
-      join(import.meta.dir, "..", "src/bounty/backend/server.test.ts"),
+      join(import.meta.dir, "..", "src/bounty/backend/fixtures/serverSuite.ts"),
       "utf8",
     );
     const body = src.slice(src.indexOf("function hermeticEnv"));

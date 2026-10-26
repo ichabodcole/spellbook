@@ -311,10 +311,10 @@ files**:
 **Neither reading is the ward the project needs.** As measured it is green on
 arrival and **structurally blind to the one escape that actually breaks a
 deps-free destination** — `sharp`, which stops the shipped imago daemon booting
-at all ([filed](../../../items/imago-daemon-cannot-start-offline.md)). As stated
-it is red on arrival with **95** violations, against correct code — the exact
-failure this ruling already anticipated on the dynamic axis and then reproduced
-on the static one.
+at all ([filed](../../../items/_archive/imago-daemon-cannot-start-offline.md)).
+As stated it is red on arrival with **95** violations, against correct code —
+the exact failure this ruling already anticipated on the dynamic axis and then
+reproduced on the static one.
 
 ### Ruled at 1b, 2026-08-31 — the straddler is no longer a straddler
 
@@ -574,11 +574,11 @@ implementer's call.
 ## R7 — astrolabe is dropped as the reference spell
 
 **Resolved 2026-08-30 (Cole).** Closes the last outstanding item in
-[`spell-surface-pipeline`'s plan](../../spell-surface-pipeline/plan.md), which
-had stood since v2.2.0. **imago is the reference spell.** The ruling is recorded
-in the pipeline plan itself, where the question was asked — that plan's
-remaining work is now zero, since spell-kit carries both Seam C and the
-second-spell validation.
+[`spell-surface-pipeline`'s plan](../spell-surface-pipeline/plan.md), which had
+stood since v2.2.0. **imago is the reference spell.** The ruling is recorded in
+the pipeline plan itself, where the question was asked — that plan's remaining
+work is now zero, since spell-kit carries both Seam C and the second-spell
+validation.
 
 ### Optional, and recommended: port astrolabe anyway — first
 

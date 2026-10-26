@@ -42,9 +42,9 @@ import { existsSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import { isBackendArtifact as classifyBackendArtifact } from "../grimoire/lib/dist-artifacts.ts";
 import { backendEntryNames, buildableSpells } from "../src/build.ts";
+import { deployDirFor } from "../src/deployRoots.ts";
 
 const REPO_ROOT = join(import.meta.dir, "..");
-const DEPLOY_ROOT = join(REPO_ROOT, "plugins", "spellbook", "skills");
 
 /** The deployed `dist/` for a spell, repo-relative (a git pathspec).
  *
@@ -53,7 +53,7 @@ const DEPLOY_ROOT = join(REPO_ROOT, "plugins", "spellbook", "skills");
  * that the way a shell would, it matched nothing, and the check reported GREEN on
  * a dirty tree. Build one literal pathspec per spell from the roster instead. */
 export function distRoot(spell: string): string {
-  return relative(REPO_ROOT, join(DEPLOY_ROOT, spell, "dist"));
+  return relative(REPO_ROOT, join(deployDirFor(spell), "dist"));
 }
 
 type Git = { code: number; out: string; err: string };
@@ -109,7 +109,7 @@ export function trackedFiles(pathspecs: string[], root: string = REPO_ROOT): str
  * leak in the tree, 5 pass / 0 fail. Hence `root`: the ward's control mints a
  * git repo with a known leak and asserts this function NAMES it. */
 export function trackedBuildInputs(spell: string, root: string = REPO_ROOT): string[] {
-  const base = relative(root, join(root, "plugins", "spellbook", "skills", spell));
+  const base = relative(root, deployDirFor(spell, root));
   return trackedFiles([`${base}/surface`, `${base}/bunfig.toml`], root);
 }
 
@@ -125,8 +125,14 @@ export function trackedBuildInputs(spell: string, root: string = REPO_ROOT): str
 export function diskDistFiles(spell: string, root: string = REPO_ROOT): string[] {
   const dir = join(root, distRoot(spell));
   if (!existsSync(dir)) return [];
-  return readdirSync(dir)
-    .map((f) => `${distRoot(spell)}/${f}`)
+  // ⚠ RECURSIVE, AND FILES ONLY. Written when a further surface built into
+  // `dist/<sub>/` (scriptorium's kit-path frame, until the cutover): a flat
+  // read listed the folder itself as one untracked "file" and never saw the
+  // files inside it. The build emits no sub-folder now; the recursive read
+  // stays, because a stray folder in `dist/` is still one to look inside.
+  return readdirSync(dir, { recursive: true, withFileTypes: true })
+    .filter((e) => e.isFile())
+    .map((e) => `${distRoot(spell)}/${relative(dir, join(e.parentPath, e.name))}`)
     .sort();
 }
 
@@ -212,6 +218,9 @@ export function untrackedDistFiles(spell: string, root: string = REPO_ROOT): str
 // a second parameter, and which would have been a SILENT wrong answer had the
 // parameter been anything `join` tolerates. Every call site below wraps it.
 export const isBackendArtifact = (repoRelative: string, root: string = REPO_ROOT): boolean => {
+  // A file in a folder under `dist/` belongs to a further surface: the build
+  // emits every backend entry FLAT (`dist/<name>.js`, the launcher's import).
+  if (/\/dist\/[^/]+\//.test(repoRelative)) return false;
   const verdict = classifyBackendArtifact(join(root, repoRelative), root);
   if (verdict === null) {
     throw new Error(

@@ -296,7 +296,8 @@ test("GET /review.js does NOT serve the backend bundle — dist/ holds the imple
   // really is the backend (its own module marker, not a guess at a byte count).
   expect(existsSync(artifact)).toBe(true);
   expect(source).toContain("cannot start in dev mode");
-  expect(source.length).toBeGreaterThan(50_000);
+  // 20_000, not the 50_000 it was: no inline source map since shrink-shipped-dist.
+  expect(source.length).toBeGreaterThan(20_000);
 
   const res = await fetch(`${url}/review.js`);
   expect(res.status).toBe(404);

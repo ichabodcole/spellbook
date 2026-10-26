@@ -6,17 +6,16 @@ description:
   not --declaration, so a batch that disagrees with the CLI's own schema passes;
   bounty's was two flags stale for a cycle.
 status: draft
-lifecycle: triage
+lifecycle: backlog
 id: 01a0e71f-2ec2-7145-b25d-cdf9369b4759
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-09-28 }
-parent: feature/spell-cli-acc-conformance
 ---
 
 # The acc ward cannot see a stale recorded-surfaces batch
 
 Found 2026-09-28 while re-recording bounty's batch in
-[cycle/2026-09-one-act-one-answer](../cycles/2026-09-one-act-one-answer.md).
+[cycle/2026-09-one-act-one-answer](../cycles/_archive/2026-09-one-act-one-answer.md).
 
 The ward in `grimoire/acc-conformance.test.ts` passes `--recorded-surfaces` to
 `acc check`, but not `--declaration`, so it only checks that the batch was read.
@@ -42,3 +41,12 @@ round** (not filed; #55 is the last round):
 - The generated capture script hard-codes absolute paths to the target, so it
   can't be committed or shared.
 - The output is still not formatter-stable (confirms #55 item 10).
+
+## Note from the cutover (2026-10-22)
+
+The ward half is done by
+[acc-census-flag-staleness](acc-census-flag-staleness.md): the house ward passes
+each spell's emitted schema as `--declaration` and fails on any finding, and
+nothing was stale, so no re-record was needed. What is left here is the upstream
+request (warn when a batch's build sha is not an ancestor of HEAD) and the four
+acc harness friction notes.

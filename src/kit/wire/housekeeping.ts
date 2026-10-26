@@ -79,6 +79,41 @@ export function shouldIdleClose(
   return idleMs >= timeoutMs;
 }
 
+/**
+ * A count of seconds from a command line (`--timeout`, `--start-timeout`):
+ * a plain non-negative decimal, `0` included, fractions allowed.
+ *
+ * ⛔ Refused rather than coerced. `Number("abc")` is `NaN`, which compares
+ * false against every threshold, so a daemon given `--timeout abc` never idle-
+ * closed, and `Math.max(5000, NaN)` is `NaN`. Empty, signs, exponents, hex and
+ * `Infinity` are refused too: `0` is the one way to say "stands until closed"
+ * (`shouldIdleClose`), so `Infinity` and a negative would be second spellings
+ * of it.
+ *
+ * No upper bound here: the idle sweep compares on an interval, so any finite
+ * count works. A count that becomes ONE `setTimeout` delay has a ceiling, which
+ * is `TIMER_MAX_S`.
+ */
+export function readSeconds(
+  token: string,
+): { ok: true; seconds: number } | { ok: false; message: string } {
+  const t = token.trim();
+  // `isFinite` too: four hundred digits match, and are still `Infinity`.
+  if (!/^\d+(\.\d+)?$/.test(t) || !Number.isFinite(Number(t)))
+    return {
+      ok: false,
+      message: `"${token}" is not a number of seconds: write one such as 90 or 0.5 (0 or more, no sign or exponent)`,
+    };
+  return { ok: true, seconds: Number(t) };
+}
+
+/**
+ * The longest single `setTimeout` delay, in whole seconds. Past 2^31 - 1 ms the
+ * runtime sets the delay to 1 ms (a `TimeoutOverflowWarning`), so a longer wait
+ * fires at once: `open --start-timeout 9999999` failed as `internal`.
+ */
+export const TIMER_MAX_S = Math.floor((2 ** 31 - 1) / 1000);
+
 export interface HousekeepingOptions {
   /** ⛔ REQUIRED. See `shouldIdleClose` — this is what closes L1. */
   subscriberCount: () => number;
@@ -137,12 +172,12 @@ export function startHousekeeping(opts: HousekeepingOptions): () => void {
 
 export interface DrainOptions {
   /** The bound server. Typed structurally so the kit stays free of `bun`. */
-  server: { stop(closeActiveConnections?: boolean): unknown };
+  server: { stop(closeActiveConnections?: boolean): unknown; pendingRequests?: number };
   /** Live SSE tails; every registered closer is invoked. */
   clients?: SseClients;
   /** Live WebSockets. */
   sockets?: Iterable<{ close(): void }>;
-  /** How long queued frames get to flush before anything is closed. */
+  /** How long queued frames get to flush before anything is closed, when anyone is connected. */
   graceMs?: number;
   /** How long the graceful stop gets before teardown proceeds regardless. */
   stopMs?: number;
@@ -156,6 +191,10 @@ export interface DrainOptions {
  * client never sees — the queue goes with the socket. The 150 ms is what turns
  * "the daemon told you why it died" from a hope into an observation, and every
  * one of the eight daemons converged on that number independently.
+ * It is skipped only when nobody could be waiting on a frame: no tail, no
+ * socket and no request still being answered (a `stop` command's own reply).
+ * Bun's server reports the last as `pendingRequests`; a structural stand-in
+ * without it counts as none.
  *
  * ⛔ **AND THE STOP IS RACED, BECAUSE A SLOW SOCKET MUST NOT BE ABLE TO HANG
  * TEARDOWN.** `server.stop(true)` awaits its connections; one wedged peer is
@@ -209,7 +248,11 @@ export async function drainAndStop(opts: DrainOptions): Promise<void> {
   const graceMs = opts.graceMs ?? 150;
   const stopMs = opts.stopMs ?? 200;
 
-  await new Promise((r) => setTimeout(r, graceMs));
+  const listeners =
+    (opts.clients?.size ?? 0) +
+    [...(opts.sockets ?? [])].length +
+    (opts.server.pendingRequests ?? 0);
+  if (listeners > 0) await new Promise((r) => setTimeout(r, graceMs));
 
   if (opts.clients) {
     for (const client of [...opts.clients]) client.close();
@@ -224,8 +267,16 @@ export async function drainAndStop(opts: DrainOptions): Promise<void> {
     }
   }
 
-  await Promise.race([
-    Promise.resolve(opts.server.stop(true)),
-    new Promise((r) => setTimeout(r, stopMs)),
-  ]);
+  let raceTimer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      Promise.resolve(opts.server.stop(true)),
+      new Promise((r) => {
+        raceTimer = setTimeout(r, stopMs);
+      }),
+    ]);
+  } finally {
+    // Left running it would keep a spawned daemon's process alive `stopMs` after `stop`.
+    clearTimeout(raceTimer);
+  }
 }

@@ -57,7 +57,7 @@ sides**, and it is why they should be fixed together rather than in sequence.
 
 A new section, checked **before** the "nothing ships" one, so the false-yes
 cannot be reached. Draft in
-[the spike](releasing-a-non-stale-build/write-up.md#the-ward-skill-has-a-routing-bug-that-staleness-makes-invisible),
+[the spike](_archive/releasing-a-non-stale-build/write-up.md#the-ward-skill-has-a-routing-bug-that-staleness-makes-invisible),
 covering: build first, stage the `dist/` with the source edit in the same
 commit, the `.gitignore` un-ignore trap for a newly relocated spell, and the
 ruling that this is a `feat(`/`fix(` rather than a `chore(`.

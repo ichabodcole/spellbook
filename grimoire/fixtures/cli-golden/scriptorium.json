@@ -1,50 +1,62 @@
 {
   "spell": "scriptorium",
   "launcher": "scripts/cli.ts",
-  "verbCount": 45,
+  "verbCount": 57,
   "verbs": [
     "open",
     "add",
+    "import",
     "state",
     "tail",
-    "version-new",
     "say",
-    "version-delete",
-    "task",
-    "task-status",
-    "task-done",
-    "task-remove",
-    "tasks-clear",
     "working",
+    "version-new",
+    "activate",
+    "diff",
+    "merge",
+    "show",
+    "version-delete",
     "note",
     "notes",
     "note-edit",
+    "note-reply",
     "note-resolve",
-    "note-remove",
-    "diff",
-    "merge",
-    "activate",
+    "task",
+    "task-status",
+    "task-done",
+    "task-cancel",
     "new-doc",
     "new-folder",
-    "move",
     "rename",
-    "hide",
-    "unhide",
+    "move",
+    "relink",
+    "describe-image",
+    "image-settings",
+    "search",
+    "backlinks",
+    "link-check",
+    "graph",
+    "profiles",
+    "profile",
+    "profile-check",
+    "relations",
+    "reveal",
+    "doctor",
+    "close",
     "make-set",
-    "import",
-    "workspace",
+    "add-folder",
     "meta",
     "find",
-    "search",
-    "doctor",
-    "forget",
-    "dangling",
-    "graph",
-    "backlinks",
     "meta-init",
     "meta-set",
+    "forget",
+    "move-plan",
+    "note-remove",
+    "task-remove",
+    "tasks-clear",
     "info",
-    "close",
+    "hide",
+    "unhide",
     "version",
     "schema",
     "help"
@@ -55,27 +67,132 @@
   },
   "excludedInvocations": [
     {
+      "argv": ["open"],
+      "doc": "SKILL.md:20",
+      "reason": "starts a daemon (and may open a browser)"
+    },
+    {
+      "argv": ["task"],
+      "doc": "SKILL.md:50",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["say"],
+      "doc": "SKILL.md:54",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["note"],
+      "doc": "SKILL.md:56",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["move"],
+      "doc": "SKILL.md:64",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["rename"],
+      "doc": "SKILL.md:65",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["make-set"],
+      "doc": "SKILL.md:65",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["task-done"],
+      "doc": "SKILL.md:97",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["task-status"],
+      "doc": "SKILL.md:97",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
       "argv": ["open", "golden.md", "golden.md"],
-      "doc": "SKILL.md:85",
+      "doc": "SKILL.md:113",
       "reason": "starts a daemon (and may open a browser)"
     },
     {
       "argv": ["tail"],
-      "doc": "SKILL.md:86",
+      "doc": "SKILL.md:114",
       "reason": "a long-running stream (tail); never ends on its own within the run"
     },
     {
       "argv": ["tail", "--since", "12"],
-      "doc": "SKILL.md:95",
+      "doc": "SKILL.md:125",
       "reason": "a long-running stream (tail); never ends on its own within the run"
     },
     {
-      "argv": ["task-status", "item1"],
-      "doc": "SKILL.md:259",
-      "reason": "prose, not an invocation: the line says task-status takes a positional (its status is required too)"
+      "argv": ["note-resolve"],
+      "doc": "SKILL.md:153",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["tail", "--all"],
+      "doc": "SKILL.md:153",
+      "reason": "a long-running stream (tail); never ends on its own within the run"
+    },
+    {
+      "argv": ["tail", "--once"],
+      "doc": "SKILL.md:155",
+      "reason": "a long-running stream (tail); never ends on its own within the run"
+    },
+    {
+      "argv": ["version"],
+      "doc": "SKILL.md:165",
+      "reason": "prose, not an invocation: the line names the version field a message about carries"
+    },
+    {
+      "argv": ["import"],
+      "doc": "SKILL.md:237",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["reveal"],
+      "doc": "SKILL.md:237",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["open", "--restore", "item1"],
+      "doc": "SKILL.md:261",
+      "reason": "starts a daemon (and may open a browser)"
+    },
+    {
+      "argv": ["note-edit"],
+      "doc": "SKILL.md:285",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["add"],
+      "doc": "SKILL.md:305",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["hide"],
+      "doc": "SKILL.md:306",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["diff", "--context"],
+      "doc": "SKILL.md:309",
+      "reason": "prose, not an invocation: the line says --context is a diff flag meaning lines of surrounding text (it takes a count)"
+    },
+    {
+      "argv": ["add-folder"],
+      "doc": "SKILL.md:318",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
+    },
+    {
+      "argv": ["move-plan"],
+      "doc": "SKILL.md:344",
+      "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
     }
   ],
-  "invocationCount": 164,
+  "invocationCount": 211,
   "invocations": [
     {
       "argv": [],
@@ -87,46 +204,58 @@
       "choices": [
         "open",
         "add",
+        "import",
         "state",
         "tail",
-        "version-new",
         "say",
-        "version-delete",
-        "task",
-        "task-status",
-        "task-done",
-        "task-remove",
-        "tasks-clear",
         "working",
+        "version-new",
+        "activate",
+        "diff",
+        "merge",
+        "show",
+        "version-delete",
         "note",
         "notes",
         "note-edit",
+        "note-reply",
         "note-resolve",
-        "note-remove",
-        "diff",
-        "merge",
-        "activate",
+        "task",
+        "task-status",
+        "task-done",
+        "task-cancel",
         "new-doc",
         "new-folder",
-        "move",
         "rename",
-        "hide",
-        "unhide",
+        "move",
+        "relink",
+        "describe-image",
+        "image-settings",
+        "search",
+        "backlinks",
+        "link-check",
+        "graph",
+        "profiles",
+        "profile",
+        "profile-check",
+        "relations",
+        "reveal",
+        "doctor",
+        "close",
         "make-set",
-        "import",
-        "workspace",
+        "add-folder",
         "meta",
         "find",
-        "search",
-        "doctor",
-        "forget",
-        "dangling",
-        "graph",
-        "backlinks",
         "meta-init",
         "meta-set",
+        "forget",
+        "move-plan",
+        "note-remove",
+        "task-remove",
+        "tasks-clear",
         "info",
-        "close",
+        "hide",
+        "unhide",
         "version",
         "schema",
         "help"
@@ -141,66 +270,98 @@
         "scriptorium — a co-present markdown editor: the human edits, you write new versions.",
         "",
         "  open [path...] [--no-open] [--restore ..] [--timeout ..] [--start-timeout ..]",
-        "                                                spawn a session (opens the browser), adding paths; prints {url, port, session_id}. --timeout <seconds> sets the idle close (default 1800); --timeout 0 stands until closed",
-        "  add <path...>                                 add files or folders to the context list",
-        "  state [--full]                                the session: context, docs + versions (with paths), active, dirty, selection",
-        "  tail [--since ..] [--once]                    the human's messages (with selection + active path) as JSON lines — wrap with Monitor; its last line names the next act",
-        "  version-new [--doc ..] [--from ..] [--label ..] [--stdin] [--body-file ..]",
-        "                                                propose a new version holding your text (--body-file <path> or --stdin); without one, copies a version (default: the active one) and prints its path to edit",
-        "  say [text...] [--stdin] [--body-file ..]      post a chat message from the agent (prose: --body-file <path> or --stdin)",
-        "  version-delete <vN> [--doc ..]                remove a version and its file (never the active one — activate another first)",
-        "  task [text...] [--stdin] [--body-file ..]     say you have started something; prints the id to finish it with",
-        "  task-status <id> <status...>                  say what step a task is on (for work worth watching)",
-        "  task-done <id> [outcome...]                   mark a task finished, optionally saying what came of it",
-        "  task-remove <id>                              forget a task entirely — for one started by mistake",
-        "  tasks-clear                                   forget every finished task; outstanding ones are left alone",
-        "  working [--for ..]                            say you are still on it — silences the waiting nudge, keeps the human's pulse",
-        "  note [text...] [--doc ..] [--quote ..] [--stdin] [--body-file ..]",
-        "                                                note a passage of the active version (--quote 'exact text'; prose: --body-file or --stdin)",
-        "  notes [--doc ..] [--full]                     the notes on a document, placed in the active version (--full includes resolved)",
-        "  note-edit <id> [text...] [--doc ..] [--stdin] [--body-file ..]",
-        "                                                rewrite what a note says (its passage is unchanged)",
-        "  note-resolve <id> [--doc ..] [--reopen]       mark a note dealt with (--reopen puts it back)",
-        "  note-remove <id> [--doc ..]                   delete a note",
+        "                                                start a session (opens the browser), adding paths; with none, the current folder is added as a set; prints {url, port, session_id, entries}. --restore <id> brings a saved one back; --timeout <seconds> sets the idle close (default 1800); --timeout 0 stands until closed",
+        "  add <path...>                                 add files or folders to the context list (a document, an image, or a folder shown as a set)",
+        "  import <file> [--into ..]                     copy a document into --into <folder> (a set, or a folder in one) and show the copy (what dropping a file does); --into is required",
+        "  state [--full]                                the session: context, docs and versions (with paths), tasks, selection, waiting",
+        "  tail [--since ..] [--once] [--all]            the session's events (the human's messages with their selection, new tasks, notes) as JSON lines: wrap with Monitor; its last line names the next act. Events that ask nothing of you (the human opening a document) stay off it; --all includes them",
+        "  say [text...] [--stdin] [--body-file ..] [--via ..]",
+        "                                                post a chat message from the agent (prose: --body-file <path> or --stdin). --via <gesture> says what it came through (default \"chat\", the kit's only one; an app adds its own): a value the app does not list is stored as sent, and the advisory is printed to stderr",
+        "  working [--for ..]                            say you are still on it: silences the waiting nudge, keeps the human's pulse",
+        "  version-new [--doc ..] [--from ..] [--label ..] [--body-file ..] [--stdin]",
+        "                                                make a new version from another (--from vN, default: the active one) and print its path; its text is --body-file <path> or --stdin when given, else a copy to edit (text piped in without --stdin is refused, never dropped)",
+        "  activate <vN> [--doc ..]                      make a version the active one (the one the human edits and Save writes); only when the human asks",
         "  diff <against> [--doc ..] [--context ..] [--patch]",
         "                                                compare the active version with another (vN or 'saved' for the file on disk); --patch for plain unified text",
         "  merge <against> [--doc ..] [--hunks ..]       take changes from another version into the active one (--hunks 1,3; default: all of them)",
-        "  activate <vN> [--doc ..]                      make a version the active one (the one the human edits and Save writes)",
-        "  new-doc <path>                                create an empty document (its folder must be a set, a folder in one, or the workspace)",
-        "  new-folder <path>                             create a folder — inside a set, or in the workspace as a new set",
-        "  move <path> <into>                            move a document or folder into another folder (a real move on disk)",
-        "  rename <path> <name>                          rename a document or folder in place",
-        "  hide <path>                                   remove a document, folder or set from Scriptorium — the files stay on disk",
-        "  unhide <entry>                                bring back everything hidden in a set (its entry id, from state)",
-        "  make-set <path>                               turn a single document into a set: a folder named for it, the document moved in",
-        "  import <file> [--into ..]                     copy a document in (default: into the workspace) and show the copy",
-        "  workspace [dir]                               print the workspace (where drops and new top-level documents land), or set it",
-        "  meta [path]                                   a document's frontmatter as the daemon read it (no path: every context document)",
+        "  show [--doc ..] [--hunk ..] [--against ..] [--quote ..] [--heading ..]",
+        "                                                scroll the human's view to a change (--hunk <id> from diff, --against vN or saved, default saved), a passage of the active version (--quote 'exact text'), or a heading (--heading 'its text', as a link's #anchor names it: the text, a GitHub slug, or Parent#Child for a repeated one); opens the document for them and says so in the chat",
+        "  version-delete <vN> [--doc ..]                remove a version and its file (never the active one: activate another first)",
+        "  note [text...] [--doc ..] [--quote ..] [--stdin] [--body-file ..]",
+        "                                                note a passage of the active version (--quote 'exact text'; prose: --body-file or --stdin)",
+        "  notes [--doc ..] [--full]                     the notes on a document, placed in the active version (--full includes resolved ones)",
+        "  note-edit <id> [text...] [--doc ..] [--stdin] [--body-file ..]",
+        "                                                rewrite one of your own notes; its passage stays (prose: --body-file or --stdin). A note the human wrote, or rewrote last, is refused: answer it with note-reply",
+        "  note-reply <id> [text...] [--doc ..] [--stdin] [--body-file ..]",
+        "                                                answer a note: your reply shows with the note and its words stay as written (prose: --body-file or --stdin)",
+        "  note-resolve <id> [--doc ..] [--reopen]       mark a note dealt with (--reopen puts it back)",
+        "  task [text...] [--parent ..] [--stdin] [--body-file ..]",
+        "                                                say you have started something; prints the id to finish it with (--parent <id> when delegating for another task)",
+        "  task-status <id> <status...>                  say what step a task is on (picks up a human's open task; for work worth watching)",
+        "  task-done <id> [outcome...] [--failed]        mark a task finished, optionally saying what came of it (--failed marks it failed, and the words say why)",
+        "  task-cancel <id>                              cancel a task you started or one the human asked for",
+        "  new-doc <path>                                create an empty document at <path> (its folder must be a set or a folder in one)",
+        "  new-folder <path>                             create a folder at <path> inside a set or a folder in one",
+        "  rename <path> <name> [--update-links]         rename a document or folder in place; prints `broken`, the links the rename broke (each document, line, the link as written and as it would be written) (wiki links it broke under `wiki`, never rewritten), which `relink` updates, or with --update-links updates them in the same act and prints them as `links`",
+        "  move <path> <into> [--update-links]           move a document or folder into another folder (a real move on disk); prints `broken`, the links the move broke (wiki links it broke under `wiki`, never rewritten), which `relink` updates, or with --update-links updates them in the same act and prints them as `links`",
+        "  relink                                        update the links the last rename, move or set made from a document broke (its `broken`), each rewritten from its own document with its label, ?rel= and #anchor kept, as part of that act: one undo puts back both. Refused once anything else has changed the context's shape. A document open with unsaved edits keeps them, unsaved",
+        "  describe-image <image> [--source ..] [--label ..]",
+        "                                                start an image's description: writes its sidecar <image>.md beside it (type: image, --source user|web and that origin's fields, default user) and prints a new version's path to write the description into",
+        "  image-settings [--format ..] [--quality ..] [--max-side ..]",
+        "                                                the app's image import settings, the same for every session: how an image the user drops or pastes in is written. With no flags, prints them; --format keep|webp, --quality 1-100 (WebP, and a JPEG made smaller), --max-side <px>|none (the longest side, never enlarged) set the ones given. The user's preference: change it only when they ask; the change is said in their chat",
+        "  search <query...> [--limit ..]                search the context: fuzzy on document names, exact in text, reading each document's ACTIVE version (grep sees only the saved file); --limit n caps the results",
+        "  backlinks [--doc ..] [--edge ..]              what links to a document or an image (--doc: a path, or the open one): each link's source, line, target as written and relations, read from each source's ACTIVE version; a bare link has rel [], an embed (![alt](x.png)) has embed: true; bundles lists apart the bundles it is on (an app's boards: name, noun, and each card's id, line, path as written and subpath), which are not canon; edges lists apart the app's own edges that land on it, when it adds any (edge: its kind, raw: the target as written, key: what carries it), counted in edgeCount, not count; --edge a,b keeps those edge kinds only (link: the body links)",
+        "  link-check [--edge ..]                        check the session's links, in sections: dangling (file, line, the link as written, where it looked), proposed (links broken in a version you proposed, made by the agent and never active, as a move's relink rewrites only the active version: the document, doc (its slug), version, line in that version, the link as written, where it looked, suggest (where the target went, when a move or rename explains the break) and act (the fix, one per version: every broken link of vN fixed in ONE new version, version-new --from vN with vN's --label, then the old proposal deleted, version-delete vN); a link the active version has broken too is in dangling alone; counted as problems), unsupported (a scheme nothing here opens, like op:), duplicates (shared file names, each with a suggested rename, never applied), unusedImages (images in an images/ folder that no link or embed reaches, as an undone paste leaves them; never deleted), symmetry (hints: a relation the world's _relations.json declares symmetric, written one way only, the document linked to not linking back; never a problem), headings (links whose document opens but whose #anchor names no heading in it, a link that is only #heading read against its own document, each with the anchor decoded, the target and the nearest remaining heading, often the heading reworded; counted as problems), and ambiguousHeadings (hints: a bare #anchor naming a repeated heading, which lands on the first; write Parent#Child to name one); references (a bundle's references whose file is gone, an app's board cards: the bundle, the card's id, line, path as written, where it looked, and a sentence saying so; counted as problems); edges (the app's own edges that nothing answers and that are written as a path, with an extension or a leading /, ./ or ../, when it adds any: the edge's kind, the target as written, the key that carries it, where it looked, and its line, from and to when found; counted as problems); unresolved (beside edges: the app's edges that nothing answers and that are not written as a path, such as feature/some-slug, a reference in a convention this tool does not know; the same fields; listed, not counted); leaving (only when the app turns it on: the answer then has a leaving section, absent otherwise; links and edges that land on a file the session does not hold (a link to any of the session's own documents never leaves, whichever set it is in): the source, line, the link as written, edge for an app edge, the target, targetShown and targetSet, the label of the set whose folder holds the target; not a problem); every entry carries set, the id of the set its source is in (the innermost, when sets nest), and sets lists those sets in the context's order with their label and total (what the human's sign counts of the set: unresolved and leaving are not in it), what the human's list groups by; noun, when present, is the app's word for a set; unusedImages, symmetry, ambiguousHeadings, unresolved and leaving are kept out of count, which counts link problems only (leaving is never counted anywhere, but is still yours to read: offer to add the files it lands on); --edge a,b keeps those edge kinds only (link: the body links' sections); reports, exits 0",
+        "  graph [--focus ..] [--hops ..] [--rel ..] [--untyped] [--kind ..] [--kindless] [--within ..] [--limit ..] [--bundles] [--edge ..]",
+        "                                                the session's documents and the typed links between them: nodes (path, title, kind, the kind's label, canon, links in and out) and edges (from, to, rel, count; rel [] is an untyped link), read from each document's ACTIVE version. --focus <doc> centres on one, --hops n (0-3, default 1) says how far; --kind a,b keeps documents of those kinds (the matched profile's kind, else the frontmatter type) and drops the rest BEFORE the hop search, so a focus reaches only through those kinds, and documents with no kind go too unless --kindless; --rel a,b keeps links with those relations (--untyped keeps untyped ones too) and keeps every document, though a focus then reaches only along the kept links; --within <folder> keeps one folder; --limit n keeps the n best connected (at most 500). relations and untyped count the links in view before --rel, kinds the documents before --kind; total.links counts links, total.edges folded pairs; warnings says what in the filter matched nothing. --bundles adds the bundles whose type reads references (an app's boards) as nodes of their own kind, not canon (bundle: { noun }), with an edge marked reference: true to each file their cards point at. An app that adds edges of its own has them in edges too, marked edge: <kind> (frontmatter), with edgeKinds counting links per kind (link: the body links); --edge a,b keeps those kinds only",
+        "  profiles                                      the world's document profiles (_meta/profiles/<kind>.json, the nearest folder's file winning per kind): each kind with its label and canon (false for a kind the world marks not canon), the file it came from and how many documents match it (and how many of those have warnings), the frontmatter types no profile defines, how many documents have no type, and broken profile files with why",
+        "  profile [--doc ..]                            how one document (--doc: a path, or the open one) matched a profile: its type, kind and canon, the profile's label and the file it came from, its warnings (each with a fix in words), and the fields the profile expects with each one's rule and description; when nothing matched, why; read from its ACTIVE version",
+        "  profile-check                                 every profile warning in the session (file, field, rule, what is wrong and a fix in words), read from each document's ACTIVE version, and every broken profile file with why; a warning never blocks a save; reports, exits 0",
+        "  relations                                     the world's relation vocabulary (_meta/profiles/_relations.json, the nearest file winning per relation) and how the links use it: files (each vocabulary file, broken ones with why and the line and column), declared (each relation with its label, means, symmetric, inverse, color, the file and how many links use it there), undeclared (relations links use where a vocabulary is in force but does not declare them), used (every relation in use, by count); a broken file defines nothing until fixed",
+        "  reveal <path>                                 show a path in the file manager; only the session folder and what the context shows, anything else is not_found",
+        "  doctor                                        what is worth looking at in this session, each finding saying what to do",
+        "  close                                         shut the session down (the manifest stays, for open --restore)",
+        "  make-set <path>                               turn a document listed on its own into a set: a folder named for it beside it, the document moved in, the same entry; prints `broken`, the links the move broke (wiki links under `wiki`, never rewritten), which `relink` updates as part of the act",
+        "  add-folder <path>                             create an empty folder at <path>, anywhere on disk whose parent exists: a new set in the context, or a folder inside the set that shows that place",
+        "  meta [path]                                   a document's frontmatter as the daemon read it (no path: every context document), with its trust tier and stale",
         "  find [--type ..] [--status ..] [--lifecycle ..] [--tag ..] [--since ..]",
         "                                                documents by frontmatter — filters AND, all optional; an empty result is an answer (count)",
-        "  search <query...> [--limit ..]                search the context: fuzzy on names, exact in text — searches the ACTIVE version of open documents, which grep cannot see",
-        "  doctor                                        what is worth looking at in this session — each finding names the verb that fixes it",
-        "  forget [--doc ..]                             forget a document whose file of record is gone (refused while the file exists — use hide to take one out of the context)",
-        "  dangling [--entry ..]                         links in a set that nothing answers — file, line, and the target as written",
-        "  graph [--entry ..]                            a set's map as JSON — nodes, edges (body links and frontmatter kept apart), dangling",
-        "  backlinks <path>                              what cites a document — `related` (frontmatter) and `links` (body), kept apart",
         "  meta-init <path> [--type ..] [--by ..]        add a frontmatter block to a document that has none (type guessed from its neighbours)",
         "  meta-set <path> <key=value...>                set frontmatter keys — one line edit each, everything else untouched",
+        "  forget [--doc ..]                             forget a document whose file of record is gone (refused while the file exists — use hide to take one out of the context)",
+        "  move-plan <path> <into>                       what move <path> <into> would do, without doing it: what moves (docs), whether it leaves its git working tree (leavesRepo), and links, the links it would break, each with the rewrite move --update-links would offer; refuses what move refuses; writes nothing",
+        "  note-remove <id> [--doc ..]                   delete a note",
+        "  task-remove <id>                              forget a finished task entirely — for one started by mistake, cancel it first (task-cancel)",
+        "  tasks-clear                                   forget every finished task; outstanding ones are left alone",
         "  info                                          print the resolved session pointer",
-        "  close                                         shut the session down (the manifest stays, for open --restore)",
+        "  hide <path>                                   remove a document, folder or set from Scriptorium — the files stay on disk",
+        "  unhide <entry>                                bring back everything hidden in a set (its entry id, from state)",
         "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
         "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
-        "  help                                          show this message (alias: --help, -h)",
+        "  help [verb...]                                show this message (alias: --help, -h); `help <verb>` shows one verb: its usage, each flag, and examples",
         "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
         "",
         "  Add --session <id> to any verb that talks to a session (default: most recent).",
         "  Each verb accepts only the flags on its row.",
         "",
-        "  Output: JSON on stdout, one document per answer — except tail (one JSON line",
-        "  per event) and help (prose). Failures: one JSON envelope on stderr, exit",
-        "  2 = usage, 1 = internal, 5 = not found, 6 = conflict. tail waits for a",
-        "  session rather than failing, and ends 0 when its session closes. tail",
-        "  ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0."
+        "  Output: JSON on stdout, one document per answer, except tail (one JSON line",
+        "  per event) and help (prose). tail's stderr also carries `: scriptorium-keepalive`",
+        "  lines while the stream is quiet, and `# ` status lines while it waits: not",
+        "  JSON, so a reader of both streams skips any line starting with `:` or `#`.",
+        "  Failures: one JSON envelope on stderr, exit 2 = usage, 1 = internal, 5 = not",
+        "  found, 6 = conflict. tail waits for a session rather than failing, and ends 0",
+        "  when its session closes; with no --session, it follows the newest session,",
+        "  and if the human or the idle timeout ended it and no new one comes up within",
+        "  open's default start timeout (45 s), it ends 0 with tail.closed saying who",
+        "  ended it; ended by the agent, it ends at once. tail",
+        "  ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0.",
+        "",
+        "  Sessions live under $SCRIPTORIUM_HOME/sessions. A session the earlier",
+        "  Scriptorium saved is converted the first time it is restored; its old",
+        "  manifest is kept beside it as manifest.pre-migrate.json. The surface",
+        "  is the kit's workspace shell: the sets, the open document (raw, rendered or",
+        "  split, with versions and compare), and chat, notes and tasks, where the human",
+        "  reads and edits while you work through these verbs."
       ]
     },
     {
@@ -212,71 +373,103 @@
         "scriptorium — a co-present markdown editor: the human edits, you write new versions.",
         "",
         "  open [path...] [--no-open] [--restore ..] [--timeout ..] [--start-timeout ..]",
-        "                                                spawn a session (opens the browser), adding paths; prints {url, port, session_id}. --timeout <seconds> sets the idle close (default 1800); --timeout 0 stands until closed",
-        "  add <path...>                                 add files or folders to the context list",
-        "  state [--full]                                the session: context, docs + versions (with paths), active, dirty, selection",
-        "  tail [--since ..] [--once]                    the human's messages (with selection + active path) as JSON lines — wrap with Monitor; its last line names the next act",
-        "  version-new [--doc ..] [--from ..] [--label ..] [--stdin] [--body-file ..]",
-        "                                                propose a new version holding your text (--body-file <path> or --stdin); without one, copies a version (default: the active one) and prints its path to edit",
-        "  say [text...] [--stdin] [--body-file ..]      post a chat message from the agent (prose: --body-file <path> or --stdin)",
-        "  version-delete <vN> [--doc ..]                remove a version and its file (never the active one — activate another first)",
-        "  task [text...] [--stdin] [--body-file ..]     say you have started something; prints the id to finish it with",
-        "  task-status <id> <status...>                  say what step a task is on (for work worth watching)",
-        "  task-done <id> [outcome...]                   mark a task finished, optionally saying what came of it",
-        "  task-remove <id>                              forget a task entirely — for one started by mistake",
-        "  tasks-clear                                   forget every finished task; outstanding ones are left alone",
-        "  working [--for ..]                            say you are still on it — silences the waiting nudge, keeps the human's pulse",
-        "  note [text...] [--doc ..] [--quote ..] [--stdin] [--body-file ..]",
-        "                                                note a passage of the active version (--quote 'exact text'; prose: --body-file or --stdin)",
-        "  notes [--doc ..] [--full]                     the notes on a document, placed in the active version (--full includes resolved)",
-        "  note-edit <id> [text...] [--doc ..] [--stdin] [--body-file ..]",
-        "                                                rewrite what a note says (its passage is unchanged)",
-        "  note-resolve <id> [--doc ..] [--reopen]       mark a note dealt with (--reopen puts it back)",
-        "  note-remove <id> [--doc ..]                   delete a note",
+        "                                                start a session (opens the browser), adding paths; with none, the current folder is added as a set; prints {url, port, session_id, entries}. --restore <id> brings a saved one back; --timeout <seconds> sets the idle close (default 1800); --timeout 0 stands until closed",
+        "  add <path...>                                 add files or folders to the context list (a document, an image, or a folder shown as a set)",
+        "  import <file> [--into ..]                     copy a document into --into <folder> (a set, or a folder in one) and show the copy (what dropping a file does); --into is required",
+        "  state [--full]                                the session: context, docs and versions (with paths), tasks, selection, waiting",
+        "  tail [--since ..] [--once] [--all]            the session's events (the human's messages with their selection, new tasks, notes) as JSON lines: wrap with Monitor; its last line names the next act. Events that ask nothing of you (the human opening a document) stay off it; --all includes them",
+        "  say [text...] [--stdin] [--body-file ..] [--via ..]",
+        "                                                post a chat message from the agent (prose: --body-file <path> or --stdin). --via <gesture> says what it came through (default \"chat\", the kit's only one; an app adds its own): a value the app does not list is stored as sent, and the advisory is printed to stderr",
+        "  working [--for ..]                            say you are still on it: silences the waiting nudge, keeps the human's pulse",
+        "  version-new [--doc ..] [--from ..] [--label ..] [--body-file ..] [--stdin]",
+        "                                                make a new version from another (--from vN, default: the active one) and print its path; its text is --body-file <path> or --stdin when given, else a copy to edit (text piped in without --stdin is refused, never dropped)",
+        "  activate <vN> [--doc ..]                      make a version the active one (the one the human edits and Save writes); only when the human asks",
         "  diff <against> [--doc ..] [--context ..] [--patch]",
         "                                                compare the active version with another (vN or 'saved' for the file on disk); --patch for plain unified text",
         "  merge <against> [--doc ..] [--hunks ..]       take changes from another version into the active one (--hunks 1,3; default: all of them)",
-        "  activate <vN> [--doc ..]                      make a version the active one (the one the human edits and Save writes)",
-        "  new-doc <path>                                create an empty document (its folder must be a set, a folder in one, or the workspace)",
-        "  new-folder <path>                             create a folder — inside a set, or in the workspace as a new set",
-        "  move <path> <into>                            move a document or folder into another folder (a real move on disk)",
-        "  rename <path> <name>                          rename a document or folder in place",
-        "  hide <path>                                   remove a document, folder or set from Scriptorium — the files stay on disk",
-        "  unhide <entry>                                bring back everything hidden in a set (its entry id, from state)",
-        "  make-set <path>                               turn a single document into a set: a folder named for it, the document moved in",
-        "  import <file> [--into ..]                     copy a document in (default: into the workspace) and show the copy",
-        "  workspace [dir]                               print the workspace (where drops and new top-level documents land), or set it",
-        "  meta [path]                                   a document's frontmatter as the daemon read it (no path: every context document)",
+        "  show [--doc ..] [--hunk ..] [--against ..] [--quote ..] [--heading ..]",
+        "                                                scroll the human's view to a change (--hunk <id> from diff, --against vN or saved, default saved), a passage of the active version (--quote 'exact text'), or a heading (--heading 'its text', as a link's #anchor names it: the text, a GitHub slug, or Parent#Child for a repeated one); opens the document for them and says so in the chat",
+        "  version-delete <vN> [--doc ..]                remove a version and its file (never the active one: activate another first)",
+        "  note [text...] [--doc ..] [--quote ..] [--stdin] [--body-file ..]",
+        "                                                note a passage of the active version (--quote 'exact text'; prose: --body-file or --stdin)",
+        "  notes [--doc ..] [--full]                     the notes on a document, placed in the active version (--full includes resolved ones)",
+        "  note-edit <id> [text...] [--doc ..] [--stdin] [--body-file ..]",
+        "                                                rewrite one of your own notes; its passage stays (prose: --body-file or --stdin). A note the human wrote, or rewrote last, is refused: answer it with note-reply",
+        "  note-reply <id> [text...] [--doc ..] [--stdin] [--body-file ..]",
+        "                                                answer a note: your reply shows with the note and its words stay as written (prose: --body-file or --stdin)",
+        "  note-resolve <id> [--doc ..] [--reopen]       mark a note dealt with (--reopen puts it back)",
+        "  task [text...] [--parent ..] [--stdin] [--body-file ..]",
+        "                                                say you have started something; prints the id to finish it with (--parent <id> when delegating for another task)",
+        "  task-status <id> <status...>                  say what step a task is on (picks up a human's open task; for work worth watching)",
+        "  task-done <id> [outcome...] [--failed]        mark a task finished, optionally saying what came of it (--failed marks it failed, and the words say why)",
+        "  task-cancel <id>                              cancel a task you started or one the human asked for",
+        "  new-doc <path>                                create an empty document at <path> (its folder must be a set or a folder in one)",
+        "  new-folder <path>                             create a folder at <path> inside a set or a folder in one",
+        "  rename <path> <name> [--update-links]         rename a document or folder in place; prints `broken`, the links the rename broke (each document, line, the link as written and as it would be written) (wiki links it broke under `wiki`, never rewritten), which `relink` updates, or with --update-links updates them in the same act and prints them as `links`",
+        "  move <path> <into> [--update-links]           move a document or folder into another folder (a real move on disk); prints `broken`, the links the move broke (wiki links it broke under `wiki`, never rewritten), which `relink` updates, or with --update-links updates them in the same act and prints them as `links`",
+        "  relink                                        update the links the last rename, move or set made from a document broke (its `broken`), each rewritten from its own document with its label, ?rel= and #anchor kept, as part of that act: one undo puts back both. Refused once anything else has changed the context's shape. A document open with unsaved edits keeps them, unsaved",
+        "  describe-image <image> [--source ..] [--label ..]",
+        "                                                start an image's description: writes its sidecar <image>.md beside it (type: image, --source user|web and that origin's fields, default user) and prints a new version's path to write the description into",
+        "  image-settings [--format ..] [--quality ..] [--max-side ..]",
+        "                                                the app's image import settings, the same for every session: how an image the user drops or pastes in is written. With no flags, prints them; --format keep|webp, --quality 1-100 (WebP, and a JPEG made smaller), --max-side <px>|none (the longest side, never enlarged) set the ones given. The user's preference: change it only when they ask; the change is said in their chat",
+        "  search <query...> [--limit ..]                search the context: fuzzy on document names, exact in text, reading each document's ACTIVE version (grep sees only the saved file); --limit n caps the results",
+        "  backlinks [--doc ..] [--edge ..]              what links to a document or an image (--doc: a path, or the open one): each link's source, line, target as written and relations, read from each source's ACTIVE version; a bare link has rel [], an embed (![alt](x.png)) has embed: true; bundles lists apart the bundles it is on (an app's boards: name, noun, and each card's id, line, path as written and subpath), which are not canon; edges lists apart the app's own edges that land on it, when it adds any (edge: its kind, raw: the target as written, key: what carries it), counted in edgeCount, not count; --edge a,b keeps those edge kinds only (link: the body links)",
+        "  link-check [--edge ..]                        check the session's links, in sections: dangling (file, line, the link as written, where it looked), proposed (links broken in a version you proposed, made by the agent and never active, as a move's relink rewrites only the active version: the document, doc (its slug), version, line in that version, the link as written, where it looked, suggest (where the target went, when a move or rename explains the break) and act (the fix, one per version: every broken link of vN fixed in ONE new version, version-new --from vN with vN's --label, then the old proposal deleted, version-delete vN); a link the active version has broken too is in dangling alone; counted as problems), unsupported (a scheme nothing here opens, like op:), duplicates (shared file names, each with a suggested rename, never applied), unusedImages (images in an images/ folder that no link or embed reaches, as an undone paste leaves them; never deleted), symmetry (hints: a relation the world's _relations.json declares symmetric, written one way only, the document linked to not linking back; never a problem), headings (links whose document opens but whose #anchor names no heading in it, a link that is only #heading read against its own document, each with the anchor decoded, the target and the nearest remaining heading, often the heading reworded; counted as problems), and ambiguousHeadings (hints: a bare #anchor naming a repeated heading, which lands on the first; write Parent#Child to name one); references (a bundle's references whose file is gone, an app's board cards: the bundle, the card's id, line, path as written, where it looked, and a sentence saying so; counted as problems); edges (the app's own edges that nothing answers and that are written as a path, with an extension or a leading /, ./ or ../, when it adds any: the edge's kind, the target as written, the key that carries it, where it looked, and its line, from and to when found; counted as problems); unresolved (beside edges: the app's edges that nothing answers and that are not written as a path, such as feature/some-slug, a reference in a convention this tool does not know; the same fields; listed, not counted); leaving (only when the app turns it on: the answer then has a leaving section, absent otherwise; links and edges that land on a file the session does not hold (a link to any of the session's own documents never leaves, whichever set it is in): the source, line, the link as written, edge for an app edge, the target, targetShown and targetSet, the label of the set whose folder holds the target; not a problem); every entry carries set, the id of the set its source is in (the innermost, when sets nest), and sets lists those sets in the context's order with their label and total (what the human's sign counts of the set: unresolved and leaving are not in it), what the human's list groups by; noun, when present, is the app's word for a set; unusedImages, symmetry, ambiguousHeadings, unresolved and leaving are kept out of count, which counts link problems only (leaving is never counted anywhere, but is still yours to read: offer to add the files it lands on); --edge a,b keeps those edge kinds only (link: the body links' sections); reports, exits 0",
+        "  graph [--focus ..] [--hops ..] [--rel ..] [--untyped] [--kind ..] [--kindless] [--within ..] [--limit ..] [--bundles] [--edge ..]",
+        "                                                the session's documents and the typed links between them: nodes (path, title, kind, the kind's label, canon, links in and out) and edges (from, to, rel, count; rel [] is an untyped link), read from each document's ACTIVE version. --focus <doc> centres on one, --hops n (0-3, default 1) says how far; --kind a,b keeps documents of those kinds (the matched profile's kind, else the frontmatter type) and drops the rest BEFORE the hop search, so a focus reaches only through those kinds, and documents with no kind go too unless --kindless; --rel a,b keeps links with those relations (--untyped keeps untyped ones too) and keeps every document, though a focus then reaches only along the kept links; --within <folder> keeps one folder; --limit n keeps the n best connected (at most 500). relations and untyped count the links in view before --rel, kinds the documents before --kind; total.links counts links, total.edges folded pairs; warnings says what in the filter matched nothing. --bundles adds the bundles whose type reads references (an app's boards) as nodes of their own kind, not canon (bundle: { noun }), with an edge marked reference: true to each file their cards point at. An app that adds edges of its own has them in edges too, marked edge: <kind> (frontmatter), with edgeKinds counting links per kind (link: the body links); --edge a,b keeps those kinds only",
+        "  profiles                                      the world's document profiles (_meta/profiles/<kind>.json, the nearest folder's file winning per kind): each kind with its label and canon (false for a kind the world marks not canon), the file it came from and how many documents match it (and how many of those have warnings), the frontmatter types no profile defines, how many documents have no type, and broken profile files with why",
+        "  profile [--doc ..]                            how one document (--doc: a path, or the open one) matched a profile: its type, kind and canon, the profile's label and the file it came from, its warnings (each with a fix in words), and the fields the profile expects with each one's rule and description; when nothing matched, why; read from its ACTIVE version",
+        "  profile-check                                 every profile warning in the session (file, field, rule, what is wrong and a fix in words), read from each document's ACTIVE version, and every broken profile file with why; a warning never blocks a save; reports, exits 0",
+        "  relations                                     the world's relation vocabulary (_meta/profiles/_relations.json, the nearest file winning per relation) and how the links use it: files (each vocabulary file, broken ones with why and the line and column), declared (each relation with its label, means, symmetric, inverse, color, the file and how many links use it there), undeclared (relations links use where a vocabulary is in force but does not declare them), used (every relation in use, by count); a broken file defines nothing until fixed",
+        "  reveal <path>                                 show a path in the file manager; only the session folder and what the context shows, anything else is not_found",
+        "  doctor                                        what is worth looking at in this session, each finding saying what to do",
+        "  close                                         shut the session down (the manifest stays, for open --restore)",
+        "  make-set <path>                               turn a document listed on its own into a set: a folder named for it beside it, the document moved in, the same entry; prints `broken`, the links the move broke (wiki links under `wiki`, never rewritten), which `relink` updates as part of the act",
+        "  add-folder <path>                             create an empty folder at <path>, anywhere on disk whose parent exists: a new set in the context, or a folder inside the set that shows that place",
+        "  meta [path]                                   a document's frontmatter as the daemon read it (no path: every context document), with its trust tier and stale",
         "  find [--type ..] [--status ..] [--lifecycle ..] [--tag ..] [--since ..]",
         "                                                documents by frontmatter — filters AND, all optional; an empty result is an answer (count)",
-        "  search <query...> [--limit ..]                search the context: fuzzy on names, exact in text — searches the ACTIVE version of open documents, which grep cannot see",
-        "  doctor                                        what is worth looking at in this session — each finding names the verb that fixes it",
-        "  forget [--doc ..]                             forget a document whose file of record is gone (refused while the file exists — use hide to take one out of the context)",
-        "  dangling [--entry ..]                         links in a set that nothing answers — file, line, and the target as written",
-        "  graph [--entry ..]                            a set's map as JSON — nodes, edges (body links and frontmatter kept apart), dangling",
-        "  backlinks <path>                              what cites a document — `related` (frontmatter) and `links` (body), kept apart",
         "  meta-init <path> [--type ..] [--by ..]        add a frontmatter block to a document that has none (type guessed from its neighbours)",
         "  meta-set <path> <key=value...>                set frontmatter keys — one line edit each, everything else untouched",
+        "  forget [--doc ..]                             forget a document whose file of record is gone (refused while the file exists — use hide to take one out of the context)",
+        "  move-plan <path> <into>                       what move <path> <into> would do, without doing it: what moves (docs), whether it leaves its git working tree (leavesRepo), and links, the links it would break, each with the rewrite move --update-links would offer; refuses what move refuses; writes nothing",
+        "  note-remove <id> [--doc ..]                   delete a note",
+        "  task-remove <id>                              forget a finished task entirely — for one started by mistake, cancel it first (task-cancel)",
+        "  tasks-clear                                   forget every finished task; outstanding ones are left alone",
         "  info                                          print the resolved session pointer",
-        "  close                                         shut the session down (the manifest stays, for open --restore)",
+        "  hide <path>                                   remove a document, folder or set from Scriptorium — the files stay on disk",
+        "  unhide <entry>                                bring back everything hidden in a set (its entry id, from state)",
         "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
         "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
-        "  help                                          show this message (alias: --help, -h)",
+        "  help [verb...]                                show this message (alias: --help, -h); `help <verb>` shows one verb: its usage, each flag, and examples",
         "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
         "",
         "  Add --session <id> to any verb that talks to a session (default: most recent).",
         "  Each verb accepts only the flags on its row.",
         "",
-        "  Output: JSON on stdout, one document per answer — except tail (one JSON line",
-        "  per event) and help (prose). Failures: one JSON envelope on stderr, exit",
-        "  2 = usage, 1 = internal, 5 = not found, 6 = conflict. tail waits for a",
-        "  session rather than failing, and ends 0 when its session closes. tail",
-        "  ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0."
+        "  Output: JSON on stdout, one document per answer, except tail (one JSON line",
+        "  per event) and help (prose). tail's stderr also carries `: scriptorium-keepalive`",
+        "  lines while the stream is quiet, and `# ` status lines while it waits: not",
+        "  JSON, so a reader of both streams skips any line starting with `:` or `#`.",
+        "  Failures: one JSON envelope on stderr, exit 2 = usage, 1 = internal, 5 = not",
+        "  found, 6 = conflict. tail waits for a session rather than failing, and ends 0",
+        "  when its session closes; with no --session, it follows the newest session,",
+        "  and if the human or the idle timeout ended it and no new one comes up within",
+        "  open's default start timeout (45 s), it ends 0 with tail.closed saying who",
+        "  ended it; ended by the agent, it ends at once. tail",
+        "  ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0.",
+        "",
+        "  Sessions live under $SCRIPTORIUM_HOME/sessions. A session the earlier",
+        "  Scriptorium saved is converted the first time it is restored; its old",
+        "  manifest is kept beside it as manifest.pre-migrate.json. The surface",
+        "  is the kit's workspace shell: the sets, the open document (raw, rendered or",
+        "  split, with versions and compare), and chat, notes and tasks, where the human",
+        "  reads and edits while you work through these verbs."
       ]
     },
     {
       "argv": ["help"],
-      "doc": "SKILL.md:251",
+      "doc": "SKILL.md:22",
       "exit": 0,
       "verdict": "accepted",
       "stream": "stdout",
@@ -284,66 +477,98 @@
         "scriptorium — a co-present markdown editor: the human edits, you write new versions.",
         "",
         "  open [path...] [--no-open] [--restore ..] [--timeout ..] [--start-timeout ..]",
-        "                                                spawn a session (opens the browser), adding paths; prints {url, port, session_id}. --timeout <seconds> sets the idle close (default 1800); --timeout 0 stands until closed",
-        "  add <path...>                                 add files or folders to the context list",
-        "  state [--full]                                the session: context, docs + versions (with paths), active, dirty, selection",
-        "  tail [--since ..] [--once]                    the human's messages (with selection + active path) as JSON lines — wrap with Monitor; its last line names the next act",
-        "  version-new [--doc ..] [--from ..] [--label ..] [--stdin] [--body-file ..]",
-        "                                                propose a new version holding your text (--body-file <path> or --stdin); without one, copies a version (default: the active one) and prints its path to edit",
-        "  say [text...] [--stdin] [--body-file ..]      post a chat message from the agent (prose: --body-file <path> or --stdin)",
-        "  version-delete <vN> [--doc ..]                remove a version and its file (never the active one — activate another first)",
-        "  task [text...] [--stdin] [--body-file ..]     say you have started something; prints the id to finish it with",
-        "  task-status <id> <status...>                  say what step a task is on (for work worth watching)",
-        "  task-done <id> [outcome...]                   mark a task finished, optionally saying what came of it",
-        "  task-remove <id>                              forget a task entirely — for one started by mistake",
-        "  tasks-clear                                   forget every finished task; outstanding ones are left alone",
-        "  working [--for ..]                            say you are still on it — silences the waiting nudge, keeps the human's pulse",
-        "  note [text...] [--doc ..] [--quote ..] [--stdin] [--body-file ..]",
-        "                                                note a passage of the active version (--quote 'exact text'; prose: --body-file or --stdin)",
-        "  notes [--doc ..] [--full]                     the notes on a document, placed in the active version (--full includes resolved)",
-        "  note-edit <id> [text...] [--doc ..] [--stdin] [--body-file ..]",
-        "                                                rewrite what a note says (its passage is unchanged)",
-        "  note-resolve <id> [--doc ..] [--reopen]       mark a note dealt with (--reopen puts it back)",
-        "  note-remove <id> [--doc ..]                   delete a note",
+        "                                                start a session (opens the browser), adding paths; with none, the current folder is added as a set; prints {url, port, session_id, entries}. --restore <id> brings a saved one back; --timeout <seconds> sets the idle close (default 1800); --timeout 0 stands until closed",
+        "  add <path...>                                 add files or folders to the context list (a document, an image, or a folder shown as a set)",
+        "  import <file> [--into ..]                     copy a document into --into <folder> (a set, or a folder in one) and show the copy (what dropping a file does); --into is required",
+        "  state [--full]                                the session: context, docs and versions (with paths), tasks, selection, waiting",
+        "  tail [--since ..] [--once] [--all]            the session's events (the human's messages with their selection, new tasks, notes) as JSON lines: wrap with Monitor; its last line names the next act. Events that ask nothing of you (the human opening a document) stay off it; --all includes them",
+        "  say [text...] [--stdin] [--body-file ..] [--via ..]",
+        "                                                post a chat message from the agent (prose: --body-file <path> or --stdin). --via <gesture> says what it came through (default \"chat\", the kit's only one; an app adds its own): a value the app does not list is stored as sent, and the advisory is printed to stderr",
+        "  working [--for ..]                            say you are still on it: silences the waiting nudge, keeps the human's pulse",
+        "  version-new [--doc ..] [--from ..] [--label ..] [--body-file ..] [--stdin]",
+        "                                                make a new version from another (--from vN, default: the active one) and print its path; its text is --body-file <path> or --stdin when given, else a copy to edit (text piped in without --stdin is refused, never dropped)",
+        "  activate <vN> [--doc ..]                      make a version the active one (the one the human edits and Save writes); only when the human asks",
         "  diff <against> [--doc ..] [--context ..] [--patch]",
         "                                                compare the active version with another (vN or 'saved' for the file on disk); --patch for plain unified text",
         "  merge <against> [--doc ..] [--hunks ..]       take changes from another version into the active one (--hunks 1,3; default: all of them)",
-        "  activate <vN> [--doc ..]                      make a version the active one (the one the human edits and Save writes)",
-        "  new-doc <path>                                create an empty document (its folder must be a set, a folder in one, or the workspace)",
-        "  new-folder <path>                             create a folder — inside a set, or in the workspace as a new set",
-        "  move <path> <into>                            move a document or folder into another folder (a real move on disk)",
-        "  rename <path> <name>                          rename a document or folder in place",
-        "  hide <path>                                   remove a document, folder or set from Scriptorium — the files stay on disk",
-        "  unhide <entry>                                bring back everything hidden in a set (its entry id, from state)",
-        "  make-set <path>                               turn a single document into a set: a folder named for it, the document moved in",
-        "  import <file> [--into ..]                     copy a document in (default: into the workspace) and show the copy",
-        "  workspace [dir]                               print the workspace (where drops and new top-level documents land), or set it",
-        "  meta [path]                                   a document's frontmatter as the daemon read it (no path: every context document)",
+        "  show [--doc ..] [--hunk ..] [--against ..] [--quote ..] [--heading ..]",
+        "                                                scroll the human's view to a change (--hunk <id> from diff, --against vN or saved, default saved), a passage of the active version (--quote 'exact text'), or a heading (--heading 'its text', as a link's #anchor names it: the text, a GitHub slug, or Parent#Child for a repeated one); opens the document for them and says so in the chat",
+        "  version-delete <vN> [--doc ..]                remove a version and its file (never the active one: activate another first)",
+        "  note [text...] [--doc ..] [--quote ..] [--stdin] [--body-file ..]",
+        "                                                note a passage of the active version (--quote 'exact text'; prose: --body-file or --stdin)",
+        "  notes [--doc ..] [--full]                     the notes on a document, placed in the active version (--full includes resolved ones)",
+        "  note-edit <id> [text...] [--doc ..] [--stdin] [--body-file ..]",
+        "                                                rewrite one of your own notes; its passage stays (prose: --body-file or --stdin). A note the human wrote, or rewrote last, is refused: answer it with note-reply",
+        "  note-reply <id> [text...] [--doc ..] [--stdin] [--body-file ..]",
+        "                                                answer a note: your reply shows with the note and its words stay as written (prose: --body-file or --stdin)",
+        "  note-resolve <id> [--doc ..] [--reopen]       mark a note dealt with (--reopen puts it back)",
+        "  task [text...] [--parent ..] [--stdin] [--body-file ..]",
+        "                                                say you have started something; prints the id to finish it with (--parent <id> when delegating for another task)",
+        "  task-status <id> <status...>                  say what step a task is on (picks up a human's open task; for work worth watching)",
+        "  task-done <id> [outcome...] [--failed]        mark a task finished, optionally saying what came of it (--failed marks it failed, and the words say why)",
+        "  task-cancel <id>                              cancel a task you started or one the human asked for",
+        "  new-doc <path>                                create an empty document at <path> (its folder must be a set or a folder in one)",
+        "  new-folder <path>                             create a folder at <path> inside a set or a folder in one",
+        "  rename <path> <name> [--update-links]         rename a document or folder in place; prints `broken`, the links the rename broke (each document, line, the link as written and as it would be written) (wiki links it broke under `wiki`, never rewritten), which `relink` updates, or with --update-links updates them in the same act and prints them as `links`",
+        "  move <path> <into> [--update-links]           move a document or folder into another folder (a real move on disk); prints `broken`, the links the move broke (wiki links it broke under `wiki`, never rewritten), which `relink` updates, or with --update-links updates them in the same act and prints them as `links`",
+        "  relink                                        update the links the last rename, move or set made from a document broke (its `broken`), each rewritten from its own document with its label, ?rel= and #anchor kept, as part of that act: one undo puts back both. Refused once anything else has changed the context's shape. A document open with unsaved edits keeps them, unsaved",
+        "  describe-image <image> [--source ..] [--label ..]",
+        "                                                start an image's description: writes its sidecar <image>.md beside it (type: image, --source user|web and that origin's fields, default user) and prints a new version's path to write the description into",
+        "  image-settings [--format ..] [--quality ..] [--max-side ..]",
+        "                                                the app's image import settings, the same for every session: how an image the user drops or pastes in is written. With no flags, prints them; --format keep|webp, --quality 1-100 (WebP, and a JPEG made smaller), --max-side <px>|none (the longest side, never enlarged) set the ones given. The user's preference: change it only when they ask; the change is said in their chat",
+        "  search <query...> [--limit ..]                search the context: fuzzy on document names, exact in text, reading each document's ACTIVE version (grep sees only the saved file); --limit n caps the results",
+        "  backlinks [--doc ..] [--edge ..]              what links to a document or an image (--doc: a path, or the open one): each link's source, line, target as written and relations, read from each source's ACTIVE version; a bare link has rel [], an embed (![alt](x.png)) has embed: true; bundles lists apart the bundles it is on (an app's boards: name, noun, and each card's id, line, path as written and subpath), which are not canon; edges lists apart the app's own edges that land on it, when it adds any (edge: its kind, raw: the target as written, key: what carries it), counted in edgeCount, not count; --edge a,b keeps those edge kinds only (link: the body links)",
+        "  link-check [--edge ..]                        check the session's links, in sections: dangling (file, line, the link as written, where it looked), proposed (links broken in a version you proposed, made by the agent and never active, as a move's relink rewrites only the active version: the document, doc (its slug), version, line in that version, the link as written, where it looked, suggest (where the target went, when a move or rename explains the break) and act (the fix, one per version: every broken link of vN fixed in ONE new version, version-new --from vN with vN's --label, then the old proposal deleted, version-delete vN); a link the active version has broken too is in dangling alone; counted as problems), unsupported (a scheme nothing here opens, like op:), duplicates (shared file names, each with a suggested rename, never applied), unusedImages (images in an images/ folder that no link or embed reaches, as an undone paste leaves them; never deleted), symmetry (hints: a relation the world's _relations.json declares symmetric, written one way only, the document linked to not linking back; never a problem), headings (links whose document opens but whose #anchor names no heading in it, a link that is only #heading read against its own document, each with the anchor decoded, the target and the nearest remaining heading, often the heading reworded; counted as problems), and ambiguousHeadings (hints: a bare #anchor naming a repeated heading, which lands on the first; write Parent#Child to name one); references (a bundle's references whose file is gone, an app's board cards: the bundle, the card's id, line, path as written, where it looked, and a sentence saying so; counted as problems); edges (the app's own edges that nothing answers and that are written as a path, with an extension or a leading /, ./ or ../, when it adds any: the edge's kind, the target as written, the key that carries it, where it looked, and its line, from and to when found; counted as problems); unresolved (beside edges: the app's edges that nothing answers and that are not written as a path, such as feature/some-slug, a reference in a convention this tool does not know; the same fields; listed, not counted); leaving (only when the app turns it on: the answer then has a leaving section, absent otherwise; links and edges that land on a file the session does not hold (a link to any of the session's own documents never leaves, whichever set it is in): the source, line, the link as written, edge for an app edge, the target, targetShown and targetSet, the label of the set whose folder holds the target; not a problem); every entry carries set, the id of the set its source is in (the innermost, when sets nest), and sets lists those sets in the context's order with their label and total (what the human's sign counts of the set: unresolved and leaving are not in it), what the human's list groups by; noun, when present, is the app's word for a set; unusedImages, symmetry, ambiguousHeadings, unresolved and leaving are kept out of count, which counts link problems only (leaving is never counted anywhere, but is still yours to read: offer to add the files it lands on); --edge a,b keeps those edge kinds only (link: the body links' sections); reports, exits 0",
+        "  graph [--focus ..] [--hops ..] [--rel ..] [--untyped] [--kind ..] [--kindless] [--within ..] [--limit ..] [--bundles] [--edge ..]",
+        "                                                the session's documents and the typed links between them: nodes (path, title, kind, the kind's label, canon, links in and out) and edges (from, to, rel, count; rel [] is an untyped link), read from each document's ACTIVE version. --focus <doc> centres on one, --hops n (0-3, default 1) says how far; --kind a,b keeps documents of those kinds (the matched profile's kind, else the frontmatter type) and drops the rest BEFORE the hop search, so a focus reaches only through those kinds, and documents with no kind go too unless --kindless; --rel a,b keeps links with those relations (--untyped keeps untyped ones too) and keeps every document, though a focus then reaches only along the kept links; --within <folder> keeps one folder; --limit n keeps the n best connected (at most 500). relations and untyped count the links in view before --rel, kinds the documents before --kind; total.links counts links, total.edges folded pairs; warnings says what in the filter matched nothing. --bundles adds the bundles whose type reads references (an app's boards) as nodes of their own kind, not canon (bundle: { noun }), with an edge marked reference: true to each file their cards point at. An app that adds edges of its own has them in edges too, marked edge: <kind> (frontmatter), with edgeKinds counting links per kind (link: the body links); --edge a,b keeps those kinds only",
+        "  profiles                                      the world's document profiles (_meta/profiles/<kind>.json, the nearest folder's file winning per kind): each kind with its label and canon (false for a kind the world marks not canon), the file it came from and how many documents match it (and how many of those have warnings), the frontmatter types no profile defines, how many documents have no type, and broken profile files with why",
+        "  profile [--doc ..]                            how one document (--doc: a path, or the open one) matched a profile: its type, kind and canon, the profile's label and the file it came from, its warnings (each with a fix in words), and the fields the profile expects with each one's rule and description; when nothing matched, why; read from its ACTIVE version",
+        "  profile-check                                 every profile warning in the session (file, field, rule, what is wrong and a fix in words), read from each document's ACTIVE version, and every broken profile file with why; a warning never blocks a save; reports, exits 0",
+        "  relations                                     the world's relation vocabulary (_meta/profiles/_relations.json, the nearest file winning per relation) and how the links use it: files (each vocabulary file, broken ones with why and the line and column), declared (each relation with its label, means, symmetric, inverse, color, the file and how many links use it there), undeclared (relations links use where a vocabulary is in force but does not declare them), used (every relation in use, by count); a broken file defines nothing until fixed",
+        "  reveal <path>                                 show a path in the file manager; only the session folder and what the context shows, anything else is not_found",
+        "  doctor                                        what is worth looking at in this session, each finding saying what to do",
+        "  close                                         shut the session down (the manifest stays, for open --restore)",
+        "  make-set <path>                               turn a document listed on its own into a set: a folder named for it beside it, the document moved in, the same entry; prints `broken`, the links the move broke (wiki links under `wiki`, never rewritten), which `relink` updates as part of the act",
+        "  add-folder <path>                             create an empty folder at <path>, anywhere on disk whose parent exists: a new set in the context, or a folder inside the set that shows that place",
+        "  meta [path]                                   a document's frontmatter as the daemon read it (no path: every context document), with its trust tier and stale",
         "  find [--type ..] [--status ..] [--lifecycle ..] [--tag ..] [--since ..]",
         "                                                documents by frontmatter — filters AND, all optional; an empty result is an answer (count)",
-        "  search <query...> [--limit ..]                search the context: fuzzy on names, exact in text — searches the ACTIVE version of open documents, which grep cannot see",
-        "  doctor                                        what is worth looking at in this session — each finding names the verb that fixes it",
-        "  forget [--doc ..]                             forget a document whose file of record is gone (refused while the file exists — use hide to take one out of the context)",
-        "  dangling [--entry ..]                         links in a set that nothing answers — file, line, and the target as written",
-        "  graph [--entry ..]                            a set's map as JSON — nodes, edges (body links and frontmatter kept apart), dangling",
-        "  backlinks <path>                              what cites a document — `related` (frontmatter) and `links` (body), kept apart",
         "  meta-init <path> [--type ..] [--by ..]        add a frontmatter block to a document that has none (type guessed from its neighbours)",
         "  meta-set <path> <key=value...>                set frontmatter keys — one line edit each, everything else untouched",
+        "  forget [--doc ..]                             forget a document whose file of record is gone (refused while the file exists — use hide to take one out of the context)",
+        "  move-plan <path> <into>                       what move <path> <into> would do, without doing it: what moves (docs), whether it leaves its git working tree (leavesRepo), and links, the links it would break, each with the rewrite move --update-links would offer; refuses what move refuses; writes nothing",
+        "  note-remove <id> [--doc ..]                   delete a note",
+        "  task-remove <id>                              forget a finished task entirely — for one started by mistake, cancel it first (task-cancel)",
+        "  tasks-clear                                   forget every finished task; outstanding ones are left alone",
         "  info                                          print the resolved session pointer",
-        "  close                                         shut the session down (the manifest stays, for open --restore)",
+        "  hide <path>                                   remove a document, folder or set from Scriptorium — the files stay on disk",
+        "  unhide <entry>                                bring back everything hidden in a set (its entry id, from state)",
         "  version                                       this CLI's {name, version} as JSON (alias: --version, -V)",
         "  schema                                        this CLI's machine-readable interface (acc declaration v0)",
-        "  help                                          show this message (alias: --help, -h)",
+        "  help [verb...]                                show this message (alias: --help, -h); `help <verb>` shows one verb: its usage, each flag, and examples",
         "  --help | -h | --version | -V  root tokens: help, or {name, version} as JSON",
         "",
         "  Add --session <id> to any verb that talks to a session (default: most recent).",
         "  Each verb accepts only the flags on its row.",
         "",
-        "  Output: JSON on stdout, one document per answer — except tail (one JSON line",
-        "  per event) and help (prose). Failures: one JSON envelope on stderr, exit",
-        "  2 = usage, 1 = internal, 5 = not found, 6 = conflict. tail waits for a",
-        "  session rather than failing, and ends 0 when its session closes. tail",
-        "  ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0."
+        "  Output: JSON on stdout, one document per answer, except tail (one JSON line",
+        "  per event) and help (prose). tail's stderr also carries `: scriptorium-keepalive`",
+        "  lines while the stream is quiet, and `# ` status lines while it waits: not",
+        "  JSON, so a reader of both streams skips any line starting with `:` or `#`.",
+        "  Failures: one JSON envelope on stderr, exit 2 = usage, 1 = internal, 5 = not",
+        "  found, 6 = conflict. tail waits for a session rather than failing, and ends 0",
+        "  when its session closes; with no --session, it follows the newest session,",
+        "  and if the human or the idle timeout ended it and no new one comes up within",
+        "  open's default start timeout (45 s), it ends 0 with tail.closed saying who",
+        "  ended it; ended by the agent, it ends at once. tail",
+        "  ends itself before Monitor's 30-minute cap with a line naming the next act; a human watching a terminal keeps it open with SPELLBOOK_TAIL_WINDOW_MS=0.",
+        "",
+        "  Sessions live under $SCRIPTORIUM_HOME/sessions. A session the earlier",
+        "  Scriptorium saved is converted the first time it is restored; its old",
+        "  manifest is kept beside it as manifest.pre-migrate.json. The surface",
+        "  is the kit's workspace shell: the sets, the open document (raw, rendered or",
+        "  split, with versions and compare), and chat, notes and tasks, where the human",
+        "  reads and edits while you work through these verbs."
       ]
     },
     {
@@ -378,7 +603,7 @@
     },
     {
       "argv": ["schema"],
-      "doc": "SKILL.md:251",
+      "doc": "SKILL.md:391",
       "exit": 0,
       "verdict": "accepted",
       "stream": "stdout",
@@ -470,6 +695,27 @@
             ]
           },
           {
+            "path": ["import"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--into",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "file",
+                "required": true
+              }
+            ]
+          },
+          {
             "path": ["state"],
             "args": [
               {
@@ -489,6 +735,11 @@
             "path": ["tail"],
             "args": [
               {
+                "name": "--all",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
                 "name": "--once",
                 "type": "boolean",
                 "status": "valid"
@@ -500,6 +751,54 @@
               },
               {
                 "name": "--since",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["say"],
+            "args": [
+              {
+                "name": "--body-file",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--via",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "text",
+                "required": false,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["working"],
+            "args": [
+              {
+                "name": "--for",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
                 "type": "string",
                 "status": "valid"
               }
@@ -543,10 +842,10 @@
             "positionals": []
           },
           {
-            "path": ["say"],
+            "path": ["activate"],
             "args": [
               {
-                "name": "--body-file",
+                "name": "--doc",
                 "type": "string",
                 "status": "valid"
               },
@@ -554,20 +853,107 @@
                 "name": "--session",
                 "type": "string",
                 "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "vN",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["diff"],
+            "args": [
+              {
+                "name": "--context",
+                "type": "string",
+                "status": "valid"
               },
               {
-                "name": "--stdin",
+                "name": "--doc",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--patch",
                 "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
                 "status": "valid"
               }
             ],
             "positionals": [
               {
-                "name": "text",
-                "required": false,
-                "variadic": true
+                "name": "against",
+                "required": true
               }
             ]
+          },
+          {
+            "path": ["merge"],
+            "args": [
+              {
+                "name": "--doc",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--hunks",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "against",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["show"],
+            "args": [
+              {
+                "name": "--against",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--doc",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--hunk",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--quote",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--heading",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
           },
           {
             "path": ["version-delete"],
@@ -589,118 +975,6 @@
                 "required": true
               }
             ]
-          },
-          {
-            "path": ["task"],
-            "args": [
-              {
-                "name": "--body-file",
-                "type": "string",
-                "status": "valid"
-              },
-              {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              },
-              {
-                "name": "--stdin",
-                "type": "boolean",
-                "status": "valid"
-              }
-            ],
-            "positionals": [
-              {
-                "name": "text",
-                "required": false,
-                "variadic": true
-              }
-            ]
-          },
-          {
-            "path": ["task-status"],
-            "args": [
-              {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              }
-            ],
-            "positionals": [
-              {
-                "name": "id",
-                "required": true
-              },
-              {
-                "name": "status",
-                "required": true,
-                "variadic": true
-              }
-            ]
-          },
-          {
-            "path": ["task-done"],
-            "args": [
-              {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              }
-            ],
-            "positionals": [
-              {
-                "name": "id",
-                "required": true
-              },
-              {
-                "name": "outcome",
-                "required": false,
-                "variadic": true
-              }
-            ]
-          },
-          {
-            "path": ["task-remove"],
-            "args": [
-              {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              }
-            ],
-            "positionals": [
-              {
-                "name": "id",
-                "required": true
-              }
-            ]
-          },
-          {
-            "path": ["tasks-clear"],
-            "args": [
-              {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              }
-            ],
-            "positionals": []
-          },
-          {
-            "path": ["working"],
-            "args": [
-              {
-                "name": "--for",
-                "type": "string",
-                "status": "valid"
-              },
-              {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              }
-            ],
-            "positionals": []
           },
           {
             "path": ["note"],
@@ -797,6 +1071,42 @@
             ]
           },
           {
+            "path": ["note-reply"],
+            "args": [
+              {
+                "name": "--body-file",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--doc",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              },
+              {
+                "name": "text",
+                "required": false,
+                "variadic": true
+              }
+            ]
+          },
+          {
             "path": ["note-resolve"],
             "args": [
               {
@@ -823,11 +1133,64 @@
             ]
           },
           {
-            "path": ["note-remove"],
+            "path": ["task"],
             "args": [
               {
-                "name": "--doc",
+                "name": "--body-file",
                 "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--parent",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "text",
+                "required": false,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["task-status"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              },
+              {
+                "name": "status",
+                "required": true,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["task-done"],
+            "args": [
+              {
+                "name": "--failed",
+                "type": "boolean",
                 "status": "valid"
               },
               {
@@ -840,27 +1203,17 @@
               {
                 "name": "id",
                 "required": true
+              },
+              {
+                "name": "outcome",
+                "required": false,
+                "variadic": true
               }
             ]
           },
           {
-            "path": ["diff"],
+            "path": ["task-cancel"],
             "args": [
-              {
-                "name": "--context",
-                "type": "string",
-                "status": "valid"
-              },
-              {
-                "name": "--doc",
-                "type": "string",
-                "status": "valid"
-              },
-              {
-                "name": "--patch",
-                "type": "boolean",
-                "status": "valid"
-              },
               {
                 "name": "--session",
                 "type": "string",
@@ -869,54 +1222,7 @@
             ],
             "positionals": [
               {
-                "name": "against",
-                "required": true
-              }
-            ]
-          },
-          {
-            "path": ["merge"],
-            "args": [
-              {
-                "name": "--doc",
-                "type": "string",
-                "status": "valid"
-              },
-              {
-                "name": "--hunks",
-                "type": "string",
-                "status": "valid"
-              },
-              {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              }
-            ],
-            "positionals": [
-              {
-                "name": "against",
-                "required": true
-              }
-            ]
-          },
-          {
-            "path": ["activate"],
-            "args": [
-              {
-                "name": "--doc",
-                "type": "string",
-                "status": "valid"
-              },
-              {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              }
-            ],
-            "positionals": [
-              {
-                "name": "vN",
+                "name": "id",
                 "required": true
               }
             ]
@@ -954,7 +1260,474 @@
             ]
           },
           {
+            "path": ["rename"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--update-links",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "path",
+                "required": true
+              },
+              {
+                "name": "name",
+                "required": true
+              }
+            ]
+          },
+          {
             "path": ["move"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--update-links",
+                "type": "boolean",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "path",
+                "required": true
+              },
+              {
+                "name": "into",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["relink"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["describe-image"],
+            "args": [
+              {
+                "name": "--label",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--source",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "image",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["image-settings"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--format",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--quality",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--max-side",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["search"],
+            "args": [
+              {
+                "name": "--limit",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "query",
+                "required": true,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["backlinks"],
+            "args": [
+              {
+                "name": "--doc",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--edge",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["link-check"],
+            "args": [
+              {
+                "name": "--edge",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["graph"],
+            "args": [
+              {
+                "name": "--edge",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--focus",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--hops",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--kind",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--limit",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--rel",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--untyped",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--kindless",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--bundles",
+                "type": "boolean",
+                "status": "valid"
+              },
+              {
+                "name": "--within",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["profiles"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["profile"],
+            "args": [
+              {
+                "name": "--doc",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["profile-check"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["relations"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["reveal"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "path",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["doctor"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["close"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["make-set"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "path",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["add-folder"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "path",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["meta"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "path",
+                "required": false
+              }
+            ]
+          },
+          {
+            "path": ["find"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--since",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--type",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--status",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--lifecycle",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--tag",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["meta-init"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--type",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--by",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "path",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["meta-set"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "path",
+                "required": true
+              },
+              {
+                "name": "key=value",
+                "required": true,
+                "variadic": true
+              }
+            ]
+          },
+          {
+            "path": ["forget"],
+            "args": [
+              {
+                "name": "--doc",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["move-plan"],
             "args": [
               {
                 "name": "--session",
@@ -974,7 +1747,28 @@
             ]
           },
           {
-            "path": ["rename"],
+            "path": ["note-remove"],
+            "args": [
+              {
+                "name": "--doc",
+                "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": [
+              {
+                "name": "id",
+                "required": true
+              }
+            ]
+          },
+          {
+            "path": ["task-remove"],
             "args": [
               {
                 "name": "--session",
@@ -984,14 +1778,32 @@
             ],
             "positionals": [
               {
-                "name": "path",
-                "required": true
-              },
-              {
-                "name": "name",
+                "name": "id",
                 "required": true
               }
             ]
+          },
+          {
+            "path": ["tasks-clear"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
+          },
+          {
+            "path": ["info"],
+            "args": [
+              {
+                "name": "--session",
+                "type": "string",
+                "status": "valid"
+              }
+            ],
+            "positionals": []
           },
           {
             "path": ["hide"],
@@ -1026,277 +1838,6 @@
             ]
           },
           {
-            "path": ["make-set"],
-            "args": [
-              {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              }
-            ],
-            "positionals": [
-              {
-                "name": "path",
-                "required": true
-              }
-            ]
-          },
-          {
-            "path": ["import"],
-            "args": [
-              {
-                "name": "--into",
-                "type": "string",
-                "status": "valid"
-              },
-              {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              }
-            ],
-            "positionals": [
-              {
-                "name": "file",
-                "required": true
-              }
-            ]
-          },
-          {
-            "path": ["workspace"],
-            "args": [
-              {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              }
-            ],
-            "positionals": [
-              {
-                "name": "dir",
-                "required": false
-              }
-            ]
-          },
-          {
-            "path": ["meta"],
-            "args": [
-              {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              }
-            ],
-            "positionals": [
-              {
-                "name": "path",
-                "required": false
-              }
-            ]
-          },
-          {
-            "path": ["find"],
-            "args": [
-              {
-                "name": "--lifecycle",
-                "type": "string",
-                "status": "valid"
-              },
-              {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              },
-              {
-                "name": "--since",
-                "type": "string",
-                "status": "valid"
-              },
-              {
-                "name": "--status",
-                "type": "string",
-                "status": "valid"
-              },
-              {
-                "name": "--tag",
-                "type": "string",
-                "status": "valid"
-              },
-              {
-                "name": "--type",
-                "type": "string",
-                "status": "valid"
-              }
-            ],
-            "positionals": []
-          },
-          {
-            "path": ["search"],
-            "args": [
-              {
-                "name": "--limit",
-                "type": "string",
-                "status": "valid"
-              },
-              {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              }
-            ],
-            "positionals": [
-              {
-                "name": "query",
-                "required": true,
-                "variadic": true
-              }
-            ]
-          },
-          {
-            "path": ["doctor"],
-            "args": [
-              {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              }
-            ],
-            "positionals": []
-          },
-          {
-            "path": ["forget"],
-            "args": [
-              {
-                "name": "--doc",
-                "type": "string",
-                "status": "valid"
-              },
-              {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              }
-            ],
-            "positionals": []
-          },
-          {
-            "path": ["dangling"],
-            "args": [
-              {
-                "name": "--entry",
-                "type": "string",
-                "status": "valid"
-              },
-              {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              }
-            ],
-            "positionals": []
-          },
-          {
-            "path": ["graph"],
-            "args": [
-              {
-                "name": "--entry",
-                "type": "string",
-                "status": "valid"
-              },
-              {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              }
-            ],
-            "positionals": []
-          },
-          {
-            "path": ["backlinks"],
-            "args": [
-              {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              }
-            ],
-            "positionals": [
-              {
-                "name": "path",
-                "required": true
-              }
-            ]
-          },
-          {
-            "path": ["meta-init"],
-            "args": [
-              {
-                "name": "--by",
-                "type": "string",
-                "status": "valid"
-              },
-              {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              },
-              {
-                "name": "--type",
-                "type": "string",
-                "status": "valid"
-              }
-            ],
-            "positionals": [
-              {
-                "name": "path",
-                "required": true
-              }
-            ]
-          },
-          {
-            "path": ["meta-set"],
-            "args": [
-              {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              }
-            ],
-            "positionals": [
-              {
-                "name": "path",
-                "required": true
-              },
-              {
-                "name": "key=value",
-                "required": true,
-                "variadic": true
-              }
-            ]
-          },
-          {
-            "path": ["info"],
-            "args": [
-              {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              }
-            ],
-            "positionals": []
-          },
-          {
-            "path": ["close"],
-            "args": [
-              {
-                "name": "--session",
-                "type": "string",
-                "status": "valid"
-              }
-            ],
-            "positionals": []
-          },
-          {
             "path": ["version"],
             "args": [],
             "positionals": []
@@ -1309,7 +1850,13 @@
           {
             "path": ["help"],
             "args": [],
-            "positionals": []
+            "positionals": [
+              {
+                "name": "verb",
+                "required": false,
+                "variadic": true
+              }
+            ]
           }
         ]
       }
@@ -1333,46 +1880,58 @@
       "choices": [
         "open",
         "add",
+        "import",
         "state",
         "tail",
-        "version-new",
         "say",
-        "version-delete",
-        "task",
-        "task-status",
-        "task-done",
-        "task-remove",
-        "tasks-clear",
         "working",
+        "version-new",
+        "activate",
+        "diff",
+        "merge",
+        "show",
+        "version-delete",
         "note",
         "notes",
         "note-edit",
+        "note-reply",
         "note-resolve",
-        "note-remove",
-        "diff",
-        "merge",
-        "activate",
+        "task",
+        "task-status",
+        "task-done",
+        "task-cancel",
         "new-doc",
         "new-folder",
-        "move",
         "rename",
-        "hide",
-        "unhide",
+        "move",
+        "relink",
+        "describe-image",
+        "image-settings",
+        "search",
+        "backlinks",
+        "link-check",
+        "graph",
+        "profiles",
+        "profile",
+        "profile-check",
+        "relations",
+        "reveal",
+        "doctor",
+        "close",
         "make-set",
-        "import",
-        "workspace",
+        "add-folder",
         "meta",
         "find",
-        "search",
-        "doctor",
-        "forget",
-        "dangling",
-        "graph",
-        "backlinks",
         "meta-init",
         "meta-set",
+        "forget",
+        "move-plan",
+        "note-remove",
+        "task-remove",
+        "tasks-clear",
         "info",
-        "close",
+        "hide",
+        "unhide",
         "version",
         "schema",
         "help"
@@ -1388,46 +1947,58 @@
       "choices": [
         "open",
         "add",
+        "import",
         "state",
         "tail",
-        "version-new",
         "say",
-        "version-delete",
-        "task",
-        "task-status",
-        "task-done",
-        "task-remove",
-        "tasks-clear",
         "working",
+        "version-new",
+        "activate",
+        "diff",
+        "merge",
+        "show",
+        "version-delete",
         "note",
         "notes",
         "note-edit",
+        "note-reply",
         "note-resolve",
-        "note-remove",
-        "diff",
-        "merge",
-        "activate",
+        "task",
+        "task-status",
+        "task-done",
+        "task-cancel",
         "new-doc",
         "new-folder",
-        "move",
         "rename",
-        "hide",
-        "unhide",
+        "move",
+        "relink",
+        "describe-image",
+        "image-settings",
+        "search",
+        "backlinks",
+        "link-check",
+        "graph",
+        "profiles",
+        "profile",
+        "profile-check",
+        "relations",
+        "reveal",
+        "doctor",
+        "close",
         "make-set",
-        "import",
-        "workspace",
+        "add-folder",
         "meta",
         "find",
-        "search",
-        "doctor",
-        "forget",
-        "dangling",
-        "graph",
-        "backlinks",
         "meta-init",
         "meta-set",
+        "forget",
+        "move-plan",
+        "note-remove",
+        "task-remove",
+        "tasks-clear",
         "info",
-        "close",
+        "hide",
+        "unhide",
         "version",
         "schema",
         "help"
@@ -1453,12 +2024,20 @@
     },
     {
       "argv": ["open", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--no-open", "--restore", "--start-timeout", "--timeout"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: open [path...] [--no-open] [--restore ..] [--timeout ..] [--start-timeout ..]",
+        "",
+        "start a session (opens the browser), adding paths; with none, the current folder is added as a set; prints {url, port, session_id, entries}. --restore <id> brings a saved one back; --timeout <seconds> sets the idle close (default 1800); --timeout 0 stands until closed",
+        "",
+        "flags:",
+        "  --no-open",
+        "  --restore <restore>",
+        "  --start-timeout <start-timeout>",
+        "  --timeout <timeout>"
+      ]
     },
     {
       "argv": ["add", "--acc-bogus-flag"],
@@ -1471,480 +2050,17 @@
     },
     {
       "argv": ["add", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["state", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--full", "--session"]
-    },
-    {
-      "argv": ["state", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--full", "--session"]
-    },
-    {
-      "argv": ["tail", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--once", "--session", "--since"]
-    },
-    {
-      "argv": ["tail", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--once", "--session", "--since"]
-    },
-    {
-      "argv": ["version-new", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--body-file", "--doc", "--from", "--label", "--session", "--stdin"]
-    },
-    {
-      "argv": ["version-new", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--body-file", "--doc", "--from", "--label", "--session", "--stdin"]
-    },
-    {
-      "argv": ["say", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--body-file", "--session", "--stdin"]
-    },
-    {
-      "argv": ["say", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--body-file", "--session", "--stdin"]
-    },
-    {
-      "argv": ["version-delete", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--doc", "--session"]
-    },
-    {
-      "argv": ["version-delete", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--doc", "--session"]
-    },
-    {
-      "argv": ["task", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--body-file", "--session", "--stdin"]
-    },
-    {
-      "argv": ["task", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--body-file", "--session", "--stdin"]
-    },
-    {
-      "argv": ["task-status", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["task-status", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["task-done", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["task-done", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["task-remove", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["task-remove", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["tasks-clear", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["tasks-clear", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["working", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--for", "--session"]
-    },
-    {
-      "argv": ["working", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--for", "--session"]
-    },
-    {
-      "argv": ["note", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--body-file", "--doc", "--quote", "--session", "--stdin"]
-    },
-    {
-      "argv": ["note", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--body-file", "--doc", "--quote", "--session", "--stdin"]
-    },
-    {
-      "argv": ["notes", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--doc", "--full", "--session"]
-    },
-    {
-      "argv": ["notes", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--doc", "--full", "--session"]
-    },
-    {
-      "argv": ["note-edit", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--body-file", "--doc", "--session", "--stdin"]
-    },
-    {
-      "argv": ["note-edit", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--body-file", "--doc", "--session", "--stdin"]
-    },
-    {
-      "argv": ["note-resolve", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--doc", "--reopen", "--session"]
-    },
-    {
-      "argv": ["note-resolve", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--doc", "--reopen", "--session"]
-    },
-    {
-      "argv": ["note-remove", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--doc", "--session"]
-    },
-    {
-      "argv": ["note-remove", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--doc", "--session"]
-    },
-    {
-      "argv": ["diff", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--context", "--doc", "--patch", "--session"]
-    },
-    {
-      "argv": ["diff", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--context", "--doc", "--patch", "--session"]
-    },
-    {
-      "argv": ["merge", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--doc", "--hunks", "--session"]
-    },
-    {
-      "argv": ["merge", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--doc", "--hunks", "--session"]
-    },
-    {
-      "argv": ["activate", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--doc", "--session"]
-    },
-    {
-      "argv": ["activate", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--doc", "--session"]
-    },
-    {
-      "argv": ["new-doc", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["new-doc", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["new-folder", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["new-folder", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["move", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["move", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["rename", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["rename", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["hide", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["hide", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["unhide", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["unhide", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["make-set", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["make-set", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: add <path...>",
+        "",
+        "add files or folders to the context list (a document, an image, or a folder shown as a set)",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
     },
     {
       "argv": ["import", "--acc-bogus-flag"],
@@ -1957,15 +2073,465 @@
     },
     {
       "argv": ["import", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: import <file> [--into ..]",
+        "",
+        "copy a document into --into <folder> (a set, or a folder in one) and show the copy (what dropping a file does); --into is required",
+        "",
+        "flags:",
+        "  --into <into>",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["state", "--acc-bogus-flag"],
       "exit": 2,
       "verdict": "rejected",
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--into", "--session"]
+      "choices": ["--full", "--session"]
     },
     {
-      "argv": ["workspace", "--acc-bogus-flag"],
+      "argv": ["state", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: state [--full]",
+        "",
+        "the session: context, docs and versions (with paths), tasks, selection, waiting",
+        "",
+        "flags:",
+        "  --full",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["tail", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--all", "--once", "--session", "--since"]
+    },
+    {
+      "argv": ["tail", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: tail [--since ..] [--once] [--all]",
+        "",
+        "the session's events (the human's messages with their selection, new tasks, notes) as JSON lines: wrap with Monitor; its last line names the next act. Events that ask nothing of you (the human opening a document) stay off it; --all includes them",
+        "",
+        "flags:",
+        "  --all",
+        "  --once",
+        "  --since <since>",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["say", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--body-file", "--session", "--stdin", "--via"]
+    },
+    {
+      "argv": ["say", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: say [text...] [--stdin] [--body-file ..] [--via ..]",
+        "",
+        "post a chat message from the agent (prose: --body-file <path> or --stdin). --via <gesture> says what it came through (default \"chat\", the kit's only one; an app adds its own): a value the app does not list is stored as sent, and the advisory is printed to stderr",
+        "",
+        "flags:",
+        "  --body-file <body-file>",
+        "  --stdin",
+        "  --via <via>",
+        "",
+        "also accepted:",
+        "  --session <session>      the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["working", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--for", "--session"]
+    },
+    {
+      "argv": ["working", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: working [--for ..]",
+        "",
+        "say you are still on it: silences the waiting nudge, keeps the human's pulse",
+        "",
+        "flags:",
+        "  --for <for>",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["version-new", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--body-file", "--doc", "--from", "--label", "--session", "--stdin"]
+    },
+    {
+      "argv": ["version-new", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: version-new [--doc ..] [--from ..] [--label ..] [--body-file ..] [--stdin]",
+        "",
+        "make a new version from another (--from vN, default: the active one) and print its path; its text is --body-file <path> or --stdin when given, else a copy to edit (text piped in without --stdin is refused, never dropped)",
+        "",
+        "flags:",
+        "  --body-file <body-file>",
+        "  --doc <doc>",
+        "  --from <from>",
+        "  --label <label>",
+        "  --stdin",
+        "",
+        "also accepted:",
+        "  --session <session>      the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["activate", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--doc", "--session"]
+    },
+    {
+      "argv": ["activate", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: activate <vN> [--doc ..]",
+        "",
+        "make a version the active one (the one the human edits and Save writes); only when the human asks",
+        "",
+        "flags:",
+        "  --doc <doc>",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["diff", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--context", "--doc", "--patch", "--session"]
+    },
+    {
+      "argv": ["diff", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: diff <against> [--doc ..] [--context ..] [--patch]",
+        "",
+        "compare the active version with another (vN or 'saved' for the file on disk); --patch for plain unified text",
+        "",
+        "flags:",
+        "  --context <context>",
+        "  --doc <doc>",
+        "  --patch",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["merge", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--doc", "--hunks", "--session"]
+    },
+    {
+      "argv": ["merge", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: merge <against> [--doc ..] [--hunks ..]",
+        "",
+        "take changes from another version into the active one (--hunks 1,3; default: all of them)",
+        "",
+        "flags:",
+        "  --doc <doc>",
+        "  --hunks <hunks>",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["show", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--against", "--doc", "--heading", "--hunk", "--quote", "--session"]
+    },
+    {
+      "argv": ["show", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: show [--doc ..] [--hunk ..] [--against ..] [--quote ..] [--heading ..]",
+        "",
+        "scroll the human's view to a change (--hunk <id> from diff, --against vN or saved, default saved), a passage of the active version (--quote 'exact text'), or a heading (--heading 'its text', as a link's #anchor names it: the text, a GitHub slug, or Parent#Child for a repeated one); opens the document for them and says so in the chat",
+        "",
+        "flags:",
+        "  --against <against>",
+        "  --doc <doc>",
+        "  --hunk <hunk>",
+        "  --quote <quote>",
+        "  --heading <heading>",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["version-delete", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--doc", "--session"]
+    },
+    {
+      "argv": ["version-delete", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: version-delete <vN> [--doc ..]",
+        "",
+        "remove a version and its file (never the active one: activate another first)",
+        "",
+        "flags:",
+        "  --doc <doc>",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["note", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--body-file", "--doc", "--quote", "--session", "--stdin"]
+    },
+    {
+      "argv": ["note", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: note [text...] [--doc ..] [--quote ..] [--stdin] [--body-file ..]",
+        "",
+        "note a passage of the active version (--quote 'exact text'; prose: --body-file or --stdin)",
+        "",
+        "flags:",
+        "  --body-file <body-file>",
+        "  --doc <doc>",
+        "  --quote <quote>",
+        "  --stdin",
+        "",
+        "also accepted:",
+        "  --session <session>      the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["notes", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--doc", "--full", "--session"]
+    },
+    {
+      "argv": ["notes", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: notes [--doc ..] [--full]",
+        "",
+        "the notes on a document, placed in the active version (--full includes resolved ones)",
+        "",
+        "flags:",
+        "  --doc <doc>",
+        "  --full",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["note-edit", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--body-file", "--doc", "--session", "--stdin"]
+    },
+    {
+      "argv": ["note-edit", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: note-edit <id> [text...] [--doc ..] [--stdin] [--body-file ..]",
+        "",
+        "rewrite one of your own notes; its passage stays (prose: --body-file or --stdin). A note the human wrote, or rewrote last, is refused: answer it with note-reply",
+        "",
+        "flags:",
+        "  --body-file <body-file>",
+        "  --doc <doc>",
+        "  --stdin",
+        "",
+        "also accepted:",
+        "  --session <session>      the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["note-reply", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--body-file", "--doc", "--session", "--stdin"]
+    },
+    {
+      "argv": ["note-reply", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: note-reply <id> [text...] [--doc ..] [--stdin] [--body-file ..]",
+        "",
+        "answer a note: your reply shows with the note and its words stay as written (prose: --body-file or --stdin)",
+        "",
+        "flags:",
+        "  --body-file <body-file>",
+        "  --doc <doc>",
+        "  --stdin",
+        "",
+        "also accepted:",
+        "  --session <session>      the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["note-resolve", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--doc", "--reopen", "--session"]
+    },
+    {
+      "argv": ["note-resolve", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: note-resolve <id> [--doc ..] [--reopen]",
+        "",
+        "mark a note dealt with (--reopen puts it back)",
+        "",
+        "flags:",
+        "  --doc <doc>",
+        "  --reopen",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["task", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--body-file", "--parent", "--session", "--stdin"]
+    },
+    {
+      "argv": ["task", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: task [text...] [--parent ..] [--stdin] [--body-file ..]",
+        "",
+        "say you have started something; prints the id to finish it with (--parent <id> when delegating for another task)",
+        "",
+        "flags:",
+        "  --body-file <body-file>",
+        "  --parent <parent>",
+        "  --stdin",
+        "",
+        "also accepted:",
+        "  --session <session>      the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["task-status", "--acc-bogus-flag"],
       "exit": 2,
       "verdict": "rejected",
       "stream": "stderr",
@@ -1974,7 +2540,47 @@
       "choices": ["--session"]
     },
     {
-      "argv": ["workspace", "--help"],
+      "argv": ["task-status", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: task-status <id> <status...>",
+        "",
+        "say what step a task is on (picks up a human's open task; for work worth watching)",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["task-done", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--failed", "--session"]
+    },
+    {
+      "argv": ["task-done", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: task-done <id> [outcome...] [--failed]",
+        "",
+        "mark a task finished, optionally saying what came of it (--failed marks it failed, and the words say why)",
+        "",
+        "flags:",
+        "  --failed",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["task-cancel", "--acc-bogus-flag"],
       "exit": 2,
       "verdict": "rejected",
       "stream": "stderr",
@@ -1983,7 +2589,21 @@
       "choices": ["--session"]
     },
     {
-      "argv": ["meta", "--acc-bogus-flag"],
+      "argv": ["task-cancel", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: task-cancel <id>",
+        "",
+        "cancel a task you started or one the human asked for",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["new-doc", "--acc-bogus-flag"],
       "exit": 2,
       "verdict": "rejected",
       "stream": "stderr",
@@ -1992,7 +2612,21 @@
       "choices": ["--session"]
     },
     {
-      "argv": ["meta", "--help"],
+      "argv": ["new-doc", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: new-doc <path>",
+        "",
+        "create an empty document at <path> (its folder must be a set or a folder in one)",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["new-folder", "--acc-bogus-flag"],
       "exit": 2,
       "verdict": "rejected",
       "stream": "stderr",
@@ -2001,22 +2635,148 @@
       "choices": ["--session"]
     },
     {
-      "argv": ["find", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--lifecycle", "--session", "--since", "--status", "--tag", "--type"]
+      "argv": ["new-folder", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: new-folder <path>",
+        "",
+        "create a folder at <path> inside a set or a folder in one",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
     },
     {
-      "argv": ["find", "--help"],
+      "argv": ["rename", "--acc-bogus-flag"],
       "exit": 2,
       "verdict": "rejected",
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--lifecycle", "--session", "--since", "--status", "--tag", "--type"]
+      "choices": ["--session", "--update-links"]
+    },
+    {
+      "argv": ["rename", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: rename <path> <name> [--update-links]",
+        "",
+        "rename a document or folder in place; prints `broken`, the links the rename broke (each document, line, the link as written and as it would be written) (wiki links it broke under `wiki`, never rewritten), which `relink` updates, or with --update-links updates them in the same act and prints them as `links`",
+        "",
+        "flags:",
+        "  --update-links",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["move", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session", "--update-links"]
+    },
+    {
+      "argv": ["move", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: move <path> <into> [--update-links]",
+        "",
+        "move a document or folder into another folder (a real move on disk); prints `broken`, the links the move broke (wiki links it broke under `wiki`, never rewritten), which `relink` updates, or with --update-links updates them in the same act and prints them as `links`",
+        "",
+        "flags:",
+        "  --update-links",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["relink", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["relink", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: relink",
+        "",
+        "update the links the last rename, move or set made from a document broke (its `broken`), each rewritten from its own document with its label, ?rel= and #anchor kept, as part of that act: one undo puts back both. Refused once anything else has changed the context's shape. A document open with unsaved edits keeps them, unsaved",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["describe-image", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--label", "--session", "--source"]
+    },
+    {
+      "argv": ["describe-image", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: describe-image <image> [--source ..] [--label ..]",
+        "",
+        "start an image's description: writes its sidecar <image>.md beside it (type: image, --source user|web and that origin's fields, default user) and prints a new version's path to write the description into",
+        "",
+        "flags:",
+        "  --label <label>",
+        "  --source <source>",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["image-settings", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--format", "--max-side", "--quality", "--session"]
+    },
+    {
+      "argv": ["image-settings", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: image-settings [--format ..] [--quality ..] [--max-side ..]",
+        "",
+        "the app's image import settings, the same for every session: how an image the user drops or pastes in is written. With no flags, prints them; --format keep|webp, --quality 1-100 (WebP, and a JPEG made smaller), --max-side <px>|none (the longest side, never enlarged) set the ones given. The user's preference: change it only when they ask; the change is said in their chat",
+        "",
+        "flags:",
+        "  --format <format>",
+        "  --quality <quality>",
+        "  --max-side <max-side>",
+        "",
+        "also accepted:",
+        "  --session <session>    the session to talk to (default: the most recent)"
+      ]
     },
     {
       "argv": ["search", "--acc-bogus-flag"],
@@ -2029,12 +2789,238 @@
     },
     {
       "argv": ["search", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: search <query...> [--limit ..]",
+        "",
+        "search the context: fuzzy on document names, exact in text, reading each document's ACTIVE version (grep sees only the saved file); --limit n caps the results",
+        "",
+        "flags:",
+        "  --limit <limit>",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["backlinks", "--acc-bogus-flag"],
       "exit": 2,
       "verdict": "rejected",
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--limit", "--session"]
+      "choices": ["--doc", "--edge", "--session"]
+    },
+    {
+      "argv": ["backlinks", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: backlinks [--doc ..] [--edge ..]",
+        "",
+        "what links to a document or an image (--doc: a path, or the open one): each link's source, line, target as written and relations, read from each source's ACTIVE version; a bare link has rel [], an embed (![alt](x.png)) has embed: true; bundles lists apart the bundles it is on (an app's boards: name, noun, and each card's id, line, path as written and subpath), which are not canon; edges lists apart the app's own edges that land on it, when it adds any (edge: its kind, raw: the target as written, key: what carries it), counted in edgeCount, not count; --edge a,b keeps those edge kinds only (link: the body links)",
+        "",
+        "flags:",
+        "  --doc <doc>",
+        "  --edge <edge>",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["link-check", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--edge", "--session"]
+    },
+    {
+      "argv": ["link-check", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: link-check [--edge ..]",
+        "",
+        "check the session's links, in sections: dangling (file, line, the link as written, where it looked), proposed (links broken in a version you proposed, made by the agent and never active, as a move's relink rewrites only the active version: the document, doc (its slug), version, line in that version, the link as written, where it looked, suggest (where the target went, when a move or rename explains the break) and act (the fix, one per version: every broken link of vN fixed in ONE new version, version-new --from vN with vN's --label, then the old proposal deleted, version-delete vN); a link the active version has broken too is in dangling alone; counted as problems), unsupported (a scheme nothing here opens, like op:), duplicates (shared file names, each with a suggested rename, never applied), unusedImages (images in an images/ folder that no link or embed reaches, as an undone paste leaves them; never deleted), symmetry (hints: a relation the world's _relations.json declares symmetric, written one way only, the document linked to not linking back; never a problem), headings (links whose document opens but whose #anchor names no heading in it, a link that is only #heading read against its own document, each with the anchor decoded, the target and the nearest remaining heading, often the heading reworded; counted as problems), and ambiguousHeadings (hints: a bare #anchor naming a repeated heading, which lands on the first; write Parent#Child to name one); references (a bundle's references whose file is gone, an app's board cards: the bundle, the card's id, line, path as written, where it looked, and a sentence saying so; counted as problems); edges (the app's own edges that nothing answers and that are written as a path, with an extension or a leading /, ./ or ../, when it adds any: the edge's kind, the target as written, the key that carries it, where it looked, and its line, from and to when found; counted as problems); unresolved (beside edges: the app's edges that nothing answers and that are not written as a path, such as feature/some-slug, a reference in a convention this tool does not know; the same fields; listed, not counted); leaving (only when the app turns it on: the answer then has a leaving section, absent otherwise; links and edges that land on a file the session does not hold (a link to any of the session's own documents never leaves, whichever set it is in): the source, line, the link as written, edge for an app edge, the target, targetShown and targetSet, the label of the set whose folder holds the target; not a problem); every entry carries set, the id of the set its source is in (the innermost, when sets nest), and sets lists those sets in the context's order with their label and total (what the human's sign counts of the set: unresolved and leaving are not in it), what the human's list groups by; noun, when present, is the app's word for a set; unusedImages, symmetry, ambiguousHeadings, unresolved and leaving are kept out of count, which counts link problems only (leaving is never counted anywhere, but is still yours to read: offer to add the files it lands on); --edge a,b keeps those edge kinds only (link: the body links' sections); reports, exits 0",
+        "",
+        "flags:",
+        "  --edge <edge>",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["graph", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": [
+        "--bundles",
+        "--edge",
+        "--focus",
+        "--hops",
+        "--kind",
+        "--kindless",
+        "--limit",
+        "--rel",
+        "--session",
+        "--untyped",
+        "--within"
+      ]
+    },
+    {
+      "argv": ["graph", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: graph [--focus ..] [--hops ..] [--rel ..] [--untyped] [--kind ..] [--kindless] [--within ..] [--limit ..] [--bundles] [--edge ..]",
+        "",
+        "the session's documents and the typed links between them: nodes (path, title, kind, the kind's label, canon, links in and out) and edges (from, to, rel, count; rel [] is an untyped link), read from each document's ACTIVE version. --focus <doc> centres on one, --hops n (0-3, default 1) says how far; --kind a,b keeps documents of those kinds (the matched profile's kind, else the frontmatter type) and drops the rest BEFORE the hop search, so a focus reaches only through those kinds, and documents with no kind go too unless --kindless; --rel a,b keeps links with those relations (--untyped keeps untyped ones too) and keeps every document, though a focus then reaches only along the kept links; --within <folder> keeps one folder; --limit n keeps the n best connected (at most 500). relations and untyped count the links in view before --rel, kinds the documents before --kind; total.links counts links, total.edges folded pairs; warnings says what in the filter matched nothing. --bundles adds the bundles whose type reads references (an app's boards) as nodes of their own kind, not canon (bundle: { noun }), with an edge marked reference: true to each file their cards point at. An app that adds edges of its own has them in edges too, marked edge: <kind> (frontmatter), with edgeKinds counting links per kind (link: the body links); --edge a,b keeps those kinds only",
+        "",
+        "flags:",
+        "  --edge <edge>",
+        "  --focus <focus>",
+        "  --hops <hops>",
+        "  --kind <kind>",
+        "  --limit <limit>",
+        "  --rel <rel>",
+        "  --untyped",
+        "  --kindless",
+        "  --bundles",
+        "  --within <within>",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["profiles", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["profiles", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: profiles",
+        "",
+        "the world's document profiles (_meta/profiles/<kind>.json, the nearest folder's file winning per kind): each kind with its label and canon (false for a kind the world marks not canon), the file it came from and how many documents match it (and how many of those have warnings), the frontmatter types no profile defines, how many documents have no type, and broken profile files with why",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["profile", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--doc", "--session"]
+    },
+    {
+      "argv": ["profile", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: profile [--doc ..]",
+        "",
+        "how one document (--doc: a path, or the open one) matched a profile: its type, kind and canon, the profile's label and the file it came from, its warnings (each with a fix in words), and the fields the profile expects with each one's rule and description; when nothing matched, why; read from its ACTIVE version",
+        "",
+        "flags:",
+        "  --doc <doc>",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["profile-check", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["profile-check", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: profile-check",
+        "",
+        "every profile warning in the session (file, field, rule, what is wrong and a fix in words), read from each document's ACTIVE version, and every broken profile file with why; a warning never blocks a save; reports, exits 0",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["relations", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["relations", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: relations",
+        "",
+        "the world's relation vocabulary (_meta/profiles/_relations.json, the nearest file winning per relation) and how the links use it: files (each vocabulary file, broken ones with why and the line and column), declared (each relation with its label, means, symmetric, inverse, color, the file and how many links use it there), undeclared (relations links use where a vocabulary is in force but does not declare them), used (every relation in use, by count); a broken file defines nothing until fixed",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["reveal", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["reveal", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: reveal <path>",
+        "",
+        "show a path in the file manager; only the session folder and what the context shows, anything else is not_found",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
     },
     {
       "argv": ["doctor", "--acc-bogus-flag"],
@@ -2047,138 +3033,17 @@
     },
     {
       "argv": ["doctor", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["forget", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--doc", "--session"]
-    },
-    {
-      "argv": ["forget", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--doc", "--session"]
-    },
-    {
-      "argv": ["dangling", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--entry", "--session"]
-    },
-    {
-      "argv": ["dangling", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--entry", "--session"]
-    },
-    {
-      "argv": ["graph", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--entry", "--session"]
-    },
-    {
-      "argv": ["graph", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--entry", "--session"]
-    },
-    {
-      "argv": ["backlinks", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["backlinks", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["meta-init", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--by", "--session", "--type"]
-    },
-    {
-      "argv": ["meta-init", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--by", "--session", "--type"]
-    },
-    {
-      "argv": ["meta-set", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["meta-set", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["info", "--acc-bogus-flag"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
-    },
-    {
-      "argv": ["info", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": ["--session"]
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: doctor",
+        "",
+        "what is worth looking at in this session, each finding saying what to do",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
     },
     {
       "argv": ["close", "--acc-bogus-flag"],
@@ -2191,12 +3056,356 @@
     },
     {
       "argv": ["close", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: close",
+        "",
+        "shut the session down (the manifest stays, for open --restore)",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["make-set", "--acc-bogus-flag"],
       "exit": 2,
       "verdict": "rejected",
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
       "choices": ["--session"]
+    },
+    {
+      "argv": ["make-set", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: make-set <path>",
+        "",
+        "turn a document listed on its own into a set: a folder named for it beside it, the document moved in, the same entry; prints `broken`, the links the move broke (wiki links under `wiki`, never rewritten), which `relink` updates as part of the act",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["add-folder", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["add-folder", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: add-folder <path>",
+        "",
+        "create an empty folder at <path>, anywhere on disk whose parent exists: a new set in the context, or a folder inside the set that shows that place",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["meta", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["meta", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: meta [path]",
+        "",
+        "a document's frontmatter as the daemon read it (no path: every context document), with its trust tier and stale",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["find", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--lifecycle", "--session", "--since", "--status", "--tag", "--type"]
+    },
+    {
+      "argv": ["find", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: find [--type ..] [--status ..] [--lifecycle ..] [--tag ..] [--since ..]",
+        "",
+        "documents by frontmatter — filters AND, all optional; an empty result is an answer (count)",
+        "",
+        "flags:",
+        "  --since <since>",
+        "  --type <type>",
+        "  --status <status>",
+        "  --lifecycle <lifecycle>",
+        "  --tag <tag>",
+        "",
+        "also accepted:",
+        "  --session <session>      the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["meta-init", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--by", "--session", "--type"]
+    },
+    {
+      "argv": ["meta-init", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: meta-init <path> [--type ..] [--by ..]",
+        "",
+        "add a frontmatter block to a document that has none (type guessed from its neighbours)",
+        "",
+        "flags:",
+        "  --type <type>",
+        "  --by <by>",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["meta-set", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["meta-set", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: meta-set <path> <key=value...>",
+        "",
+        "set frontmatter keys — one line edit each, everything else untouched",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["forget", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--doc", "--session"]
+    },
+    {
+      "argv": ["forget", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: forget [--doc ..]",
+        "",
+        "forget a document whose file of record is gone (refused while the file exists — use hide to take one out of the context)",
+        "",
+        "flags:",
+        "  --doc <doc>",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["move-plan", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["move-plan", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: move-plan <path> <into>",
+        "",
+        "what move <path> <into> would do, without doing it: what moves (docs), whether it leaves its git working tree (leavesRepo), and links, the links it would break, each with the rewrite move --update-links would offer; refuses what move refuses; writes nothing",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["note-remove", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--doc", "--session"]
+    },
+    {
+      "argv": ["note-remove", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: note-remove <id> [--doc ..]",
+        "",
+        "delete a note",
+        "",
+        "flags:",
+        "  --doc <doc>",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["task-remove", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["task-remove", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: task-remove <id>",
+        "",
+        "forget a finished task entirely — for one started by mistake, cancel it first (task-cancel)",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["tasks-clear", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["tasks-clear", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: tasks-clear",
+        "",
+        "forget every finished task; outstanding ones are left alone",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["info", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["info", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: info",
+        "",
+        "print the resolved session pointer",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["hide", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["hide", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: hide <path>",
+        "",
+        "remove a document, folder or set from Scriptorium — the files stay on disk",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
+    },
+    {
+      "argv": ["unhide", "--acc-bogus-flag"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage",
+      "choices": ["--session"]
+    },
+    {
+      "argv": ["unhide", "--help"],
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: unhide <entry>",
+        "",
+        "bring back everything hidden in a set (its entry id, from state)",
+        "",
+        "also accepted:",
+        "  --session <session>  the session to talk to (default: the most recent)"
+      ]
     },
     {
       "argv": ["version", "--acc-bogus-flag"],
@@ -2209,12 +3418,10 @@
     },
     {
       "argv": ["version", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": []
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: version", "", "this CLI's {name, version} as JSON (alias: --version, -V)"]
     },
     {
       "argv": ["schema", "--acc-bogus-flag"],
@@ -2227,12 +3434,10 @@
     },
     {
       "argv": ["schema", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": []
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": ["usage: schema", "", "this CLI's machine-readable interface (acc declaration v0)"]
     },
     {
       "argv": ["help", "--acc-bogus-flag"],
@@ -2245,12 +3450,14 @@
     },
     {
       "argv": ["help", "--help"],
-      "exit": 2,
-      "verdict": "rejected",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "usage",
-      "choices": []
+      "exit": 0,
+      "verdict": "accepted",
+      "stream": "stdout",
+      "text": [
+        "usage: help [verb...]",
+        "",
+        "show this message (alias: --help, -h); `help <verb>` shows one verb: its usage, each flag, and examples"
+      ]
     },
     {
       "argv": ["add", "golden.md", "docs"],
@@ -2262,6 +3469,7 @@
     },
     {
       "argv": ["state"],
+      "doc": "SKILL.md:69",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -2286,6 +3494,7 @@
     },
     {
       "argv": ["say", "hello"],
+      "doc": "SKILL.md:99",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -2303,7 +3512,7 @@
     },
     {
       "argv": ["say", "--body-file", "golden.md"],
-      "doc": "SKILL.md:127",
+      "doc": "SKILL.md:93",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -2385,6 +3594,23 @@
     },
     {
       "argv": ["note-edit", "n1", "hello", "--doc", "golden.md"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["note-reply", "n1", "hello", "--doc", "golden.md"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["note-reply", "n1", "--stdin"],
+      "stdin": "hello",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -2504,8 +3730,33 @@
       "kind": "not_found"
     },
     {
-      "argv": ["workspace"],
-      "doc": "SKILL.md:215",
+      "argv": ["add-folder", "docs"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["move-plan", "a.md", "docs"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["relink"],
+      "doc": "SKILL.md:65",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["reveal", "golden.md"],
+      "doc": "SKILL.md:365",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -2574,7 +3825,7 @@
     },
     {
       "argv": ["doctor"],
-      "doc": "SKILL.md:174",
+      "doc": "SKILL.md:243",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -2590,7 +3841,7 @@
       "kind": "not_found"
     },
     {
-      "argv": ["dangling", "--entry", "e1"],
+      "argv": ["link-check", "--edge", "link"],
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -2598,7 +3849,7 @@
       "kind": "not_found"
     },
     {
-      "argv": ["graph", "--entry", "e1"],
+      "argv": ["graph", "--focus", "golden.md", "--hops", "2"],
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -2607,6 +3858,70 @@
     },
     {
       "argv": ["backlinks", "golden.md"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["show", "--doc", "golden.md", "--against", "v1"],
+      "exit": 2,
+      "verdict": "rejected",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "usage"
+    },
+    {
+      "argv": ["task-cancel", "t1"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["describe-image", "golden.png", "--label", "l"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["image-settings", "--format", "webp", "--quality", "80"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["profiles"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["profile", "--doc", "golden.md"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["profile-check"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["relations"],
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -2639,6 +3954,7 @@
     },
     {
       "argv": ["close"],
+      "doc": "SKILL.md:254",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -2690,8 +4006,26 @@
       "kind": "not_found"
     },
     {
+      "argv": ["version-new", "--body-file", "golden.md", "--label", "hello"],
+      "doc": "SKILL.md:71",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["version-new"],
+      "doc": "SKILL.md:81",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
       "argv": ["note", "--quote", "hello", "--body-file", "golden.md"],
-      "doc": "SKILL.md:77",
+      "doc": "SKILL.md:96",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -2699,8 +4033,8 @@
       "kind": "not_found"
     },
     {
-      "argv": ["version-new", "--doc", "golden.md", "--label", "golden"],
-      "doc": "SKILL.md:125",
+      "argv": ["notes"],
+      "doc": "SKILL.md:159",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -2708,26 +4042,8 @@
       "kind": "not_found"
     },
     {
-      "argv": ["version-new", "--doc", "golden.md"],
-      "doc": "SKILL.md:141",
-      "exit": 5,
-      "verdict": "accepted",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "not_found"
-    },
-    {
-      "argv": ["notes", "--doc", "golden.md"],
-      "doc": "SKILL.md:166",
-      "exit": 5,
-      "verdict": "accepted",
-      "stream": "stderr",
-      "ok": false,
-      "kind": "not_found"
-    },
-    {
-      "argv": ["note-resolve", "item1"],
-      "doc": "SKILL.md:168",
+      "argv": ["version-new", "--doc", "golden.md", "--body-file", "golden.md", "--label", "hello"],
+      "doc": "SKILL.md:190",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -2736,7 +4052,7 @@
     },
     {
       "argv": ["working"],
-      "doc": "SKILL.md:189",
+      "doc": "SKILL.md:214",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -2745,7 +4061,7 @@
     },
     {
       "argv": ["working", "--for", "5"],
-      "doc": "SKILL.md:189",
+      "doc": "SKILL.md:214",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -2753,8 +4069,98 @@
       "kind": "not_found"
     },
     {
-      "argv": ["workspace", "golden.md"],
-      "doc": "SKILL.md:216",
+      "argv": ["notes", "--doc", "golden.md"],
+      "doc": "SKILL.md:218",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["note-resolve", "item1"],
+      "doc": "SKILL.md:219",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["graph"],
+      "doc": "SKILL.md:306",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["backlinks"],
+      "doc": "SKILL.md:307",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["new-doc", "golden.md"],
+      "doc": "SKILL.md:312",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["new-folder", "golden.md"],
+      "doc": "SKILL.md:312",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["import", "golden.md", "--into", "golden.md"],
+      "doc": "SKILL.md:313",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["add-folder", "golden.md"],
+      "doc": "SKILL.md:316",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["make-set", "golden.md"],
+      "doc": "SKILL.md:317",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["add", "golden.md"],
+      "doc": "SKILL.md:318",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["link-check"],
+      "doc": "SKILL.md:348",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -2763,7 +4169,7 @@
     },
     {
       "argv": ["search", "hello"],
-      "doc": "SKILL.md:239",
+      "doc": "SKILL.md:370",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",
@@ -2771,8 +4177,8 @@
       "kind": "not_found"
     },
     {
-      "argv": ["find", "--status", "hello"],
-      "doc": "SKILL.md:259",
+      "argv": ["find"],
+      "doc": "SKILL.md:400",
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",

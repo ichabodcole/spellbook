@@ -294,16 +294,23 @@ design.
    `docs/projects/` (implementation lives there; the pattern stays here), and
    decide the kit's packaging home.
 
+**Outcome (sweep, 2026-10-17).** Step 6 was taken: dream-flute holds the pilot
+as its own feature (`docs/features/agent-co-presence-spike/` in that repo),
+which takes its transport shape from this write-up. The story-loom variant and
+the packaging question moved to [hosted-spells](../hosted-spells/write-up.md),
+which answered them with the wocky-talky repo. Steps 1–5 continue in those two
+places, not here.
+
 ---
 
 **Related Documents:**
 
 - [Project manifesto](../../PROJECT_MANIFESTO.md) — co-presence,
   agent-as-runtime
-- [Spell Surface Pipeline proposal](../../features/spell-surface-pipeline/feature.md)
+- [Spell Surface Pipeline proposal](../../features/_archive/spell-surface-pipeline/feature.md)
   — the adjacent "spells grow real builds" thread
-- [Astryx investigation](../astryx-component-library-evaluation/write-up.md) —
-  precedent for cross-project investigations living in this repo
+- [Astryx investigation](../_archive/astryx-component-library-evaluation/write-up.md)
+  — precedent for cross-project investigations living in this repo
 - dream-flute grounding:
   `/Users/colereed/Projects/dreamwood/dream-flute/AGENTS.md` (frozen JSON
   contract: `apps/studio/app/lib/project.ts`)

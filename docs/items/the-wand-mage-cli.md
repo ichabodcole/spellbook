@@ -2,7 +2,7 @@
 type: item
 title: "The Wand — a mage-facing CLI/TUI over the spells"
 status: stable
-lifecycle: triage
+lifecycle: backlog
 id: 019e75ac-e28a-72e4-a97f-d75531bf573d
 kind: task
 description:

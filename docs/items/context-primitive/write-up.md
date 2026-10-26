@@ -11,7 +11,7 @@ generated: { by: unknown, at: 2026-08-05 }
 # Investigation: Context as a First-Class Primitive Across Spells
 
 > **Companion to
-> [the communication-log primitive investigation](../message-log-primitive/write-up.md).**
+> [the communication-log primitive investigation](../_archive/message-log-primitive/write-up.md).**
 > Cole frames these as two halves of one thing: **ingestion** (this doc — bring
 > context in, navigate it) and **communication** (the log of what was said about
 > it). They meet at `ground` — the message field holding ids into the context

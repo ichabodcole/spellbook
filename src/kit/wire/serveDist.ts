@@ -7,7 +7,7 @@
  * assertion, and what makes this module safe to bundle into any spell's artifact.
  *
  * Extracted 2026-09-08 (Phase 1b chapter 2) from the eight `Bun.serve` backends
- * censused in `docs/items/daemon-spine-census/write-up.md`, which
+ * censused in `docs/items/_archive/daemon-spine-census/write-up.md`, which
  * measured `resolveMode` as byte-identical in all eight (the only md5 difference
  * being the `export` keyword), the content-type map as differing in exactly
  * one cell, and the file half of `serveDist` as identical in five.
@@ -182,8 +182,10 @@ function refsIn(text: string, re: RegExp): string[] {
  *   GET /server.js  200  276,415 B  text/javascript      to the committed
  *   GET /join.js    200   47,348 B  text/javascript      artifacts
  *
- * and those bundles are built with the sourcemap EMBEDDED, so each one carries
- * the complete original TypeScript. Five spells — astrolabe, bounty, glamour, imago, magpie
+ * and those bundles were then built with the sourcemap EMBEDDED, so each one
+ * carried the complete original TypeScript. (No bundle carries a map since
+ * shrink-shipped-dist, but each is still the spell's whole backend
+ * implementation, so the whitelist stands.) Five spells — astrolabe, bounty, glamour, imago, magpie
  * — eleven artifacts, all reachable by any browser that can reach the daemon.
  * Digestify hit the identical defect one branch earlier and answered it locally;
  * this is that answer re-homed to the one place all five callers already share.

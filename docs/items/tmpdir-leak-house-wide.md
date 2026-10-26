@@ -15,7 +15,7 @@ Found by `cassandra`, `thoth` and `daedalus` during sprint 03's ratify round,
 while chasing something else entirely — and **parked by the seat who opened the
 thread**, because it is a defect in a different product than the one the sprint
 is fixing. See
-[sprint 03 decisions A10](../features/spell-hardening/sprints/03-what-close-takes-with-it/decisions.md).
+[sprint 03 decisions A10](../features/_archive/spell-hardening/sprints/03-what-close-takes-with-it/decisions.md).
 
 **Nothing here is a hypothesis.** Every figure was measured, and the three that
 were _wrong_ when first published are recorded that way in §Method, because how

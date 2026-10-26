@@ -1,0 +1,53 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   src/kit/theme/shell.css — the kit's shell: the scan of its markup, and its
+   scrollbars. The scrollbar rules are Story Studio's `base.css` lines 397–428
+   at 7832083, verbatim from their own comment on.
+
+   WHY A SHEET OF ITS OWN, NOT base.css. Every spell that themes itself on the
+   kit imports base.css. Scanned there, the shell's utilities (and its image
+   viewer's) joined every one of those spells' stylesheets, none of which draw
+   the shell (measured 2026-10-19: bounty, digestify, grapevine, imago,
+   mind-mapper and Scriptorium all changed). The scrollbar rules would restyle
+   every scroller in each of them. So a page that adopts the shell imports this
+   sheet after base.css (`SHELL_CSS_SPECIFIER` in ./index.ts), as a page with
+   the document pane imports document.css.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* The shell's markup, scanned here and only here: base.css leaves src/kit/shell/
+   out, so a spell without the shell gains none of its utilities. Resolved
+   relative to this file. Its tests stay out, as they do for the rest of the kit. */
+@source "../shell";
+@source not "../shell/**/*.test.*";
+
+/* Scrollbars in the theme's own colours, for every scroller on the surface.
+   One mechanism, not two: Chromium honours the standard properties and then
+   ignores the pseudo-elements, so the standard ones sit behind an @supports
+   only Firefox takes. */
+@layer base {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--color-ink-faint) 45%, transparent);
+    border-radius: 9999px;
+    /* The border is the inset: a thumb that fills 10px looks like a gutter. */
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in srgb, var(--color-ink-faint) 75%, transparent);
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  @supports not selector(::-webkit-scrollbar) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: color-mix(in srgb, var(--color-ink-faint) 45%, transparent) transparent;
+    }
+  }
+}

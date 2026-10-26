@@ -151,6 +151,7 @@ test("BYTE-IDENTICAL ON THE WIRE — both SHIPPED CLIs, driven as processes, emi
   for (const spell of SPELLS) {
     const cli = join(REPO_ROOT, "plugins", "spellbook", "skills", spell, "scripts", "cli.ts");
     const proc = Bun.spawn([process.execPath, "run", cli, "--version"], {
+      env: process.env,
       stdout: "pipe",
       stderr: "pipe",
       // An explicit stdin so a stdin-defaulting verb can never inherit the test
@@ -182,4 +183,21 @@ test("the WIRE CONTRACT the emitter exists to hold: one document, one trailing n
   expect(out.endsWith("\n")).toBe(true);
   expect(out.slice(0, -1)).not.toContain("\n");
   expect(JSON.parse(out)).toEqual(payload);
+});
+
+test("a real child process writes exactly one document to stdout", async () => {
+  const proc = Bun.spawn(
+    [
+      process.execPath,
+      "-e",
+      `import { printJson } from ${JSON.stringify(`${import.meta.dir}/printJson.ts`)}; printJson({ ok: true, big: "x".repeat(300000) });`,
+    ],
+    { env: process.env, stdout: "pipe", stderr: "pipe", stdin: new Response("").body },
+  );
+  const out = await new Response(proc.stdout).text();
+  await proc.exited;
+  expect(out.endsWith("\n")).toBe(true);
+  expect(out.slice(0, -1)).not.toContain("\n");
+  expect(out).toBe(`${JSON.stringify(JSON.parse(out))}\n`);
+  expect(out.length).toBeGreaterThan(300000);
 });

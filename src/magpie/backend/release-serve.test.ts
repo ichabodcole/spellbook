@@ -172,26 +172,31 @@ test("a nested static path 404s rather than escaping dist/ — and the file is r
 // CREATED IT. Phase 1b moved the implementation INTO the served directory, and
 // `serveFromDist`'s permission was `existsSync` — so every backend bundle in
 // `dist/` answered at 200, `text/javascript`, byte-identical to the committed
-// artifact, and each carries an INLINE SOURCEMAP, so the response embeds the
+// artifact, and each then carried an INLINE SOURCEMAP, so the response embedded the
 // complete original TypeScript. Closed in `src/kit/wire/serveDist.ts` by
 // deriving the served set from what the built `index.html` LINKS.
 //
 // CALIBRATED BOTH WAYS: the artifact must be ON DISK in the served tree and
 // still refused, or the cell passes over an empty subject; and the surface cells
 // above prove the whitelist did not simply refuse everything.
+// ⚠ SINCE shrink-shipped-dist (2026-10-26) NO BUNDLE CARRIES A SOURCE MAP, so a
+// leak no longer hands out the TypeScript verbatim — but the bundle is still the
+// whole backend implementation, so the refusal stands. The subject marker moved
+// with it: the map was the old proof "this is the real artifact"; the bundler's
+// module-boundary comment for a backend module (`// src/<spell>/backend/…`) is
+// the new one.
+const BUNDLED_BACKEND_MODULE = /^\/\/ src\/[^\n]*\/backend\//m;
 test("⛔ the backend bundles in dist/ are REFUSED — and they are really there", async () => {
   const present = readdirSync(join(skillRoot, "dist")).filter((f) => BACKEND_ARTIFACTS.includes(f));
   expect(present.sort()).toEqual([...BACKEND_ARTIFACTS].sort());
   for (const name of present) {
     const onDisk = readFileSync(join(skillRoot, "dist", name), "utf8");
-    expect(`${name}:${onDisk.includes("sourceMappingURL=data:application/json;base64,")}`).toBe(
-      `${name}:true`,
-    );
+    expect(`${name}:${BUNDLED_BACKEND_MODULE.test(onDisk)}`).toBe(`${name}:true`);
     const res = await fetch(`${url}/${name}`);
     expect(`${name}:${res.status}`).toBe(`${name}:404`);
     const body = await res.text();
     expect(body.length).toBeLessThan(1_000);
-    expect(body).not.toContain("sourceMappingURL");
+    expect(BUNDLED_BACKEND_MODULE.test(body)).toBe(false);
   }
 });
 

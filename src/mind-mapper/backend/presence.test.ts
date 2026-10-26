@@ -165,7 +165,9 @@ test("/state carries presence {agents}; an SSE tail counts, a browser WS does no
 test("an abruptly-destroyed SSE socket is detected (req.signal abort → teardown funnel → decrement)", async () => {
   const socket: Socket = connect(port, "127.0.0.1");
   await new Promise<void>((resolve) => socket.on("connect", () => resolve()));
-  socket.write("GET /events HTTP/1.1\r\nHost: 127.0.0.1\r\nAccept: text/event-stream\r\n\r\n");
+  socket.write(
+    `GET /events HTTP/1.1\r\nHost: 127.0.0.1:${port}\r\nAccept: text/event-stream\r\n\r\n`,
+  );
   await new Promise<void>((resolve) => socket.once("data", () => resolve()));
   expect(await until(async () => (await agents()) === 1, 2000)).toBe(true);
 

@@ -40,6 +40,7 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { deployDirFor, deployedSpells } from "../src/deployRoots.ts";
 
 /** Anchored on the INVOCATION root, as the sibling wards are, so an out-of-tree
  *  draft and the landed file are byte-identical. */
@@ -53,23 +54,31 @@ function repoRoot(): string {
 }
 
 const REPO = repoRoot();
-const SKILLS = join(REPO, "plugins/spellbook/skills");
 
 // Identifiers present in React's development build and absent from production.
 // `logComponentRender`/`logComponentEffect` are the Performance Track writers —
 // the actual leak. The track label is the string they measure under.
 const DEV_MARKERS = ["logComponentRender", "logComponentEffect", "Components ⚛"];
 
-/** Every shipped surface bundle: `<spell>/dist/index-<hash>.js`. */
+/**
+ * Every shipped surface bundle: `<spell>/dist/index-<hash>.js`.
+ *
+ * ⚠ FLAT AGAIN SINCE THE CUTOVER (scriptorium-delete-shipped). From the shell
+ * cycle until then this also read a further surface's
+ * `<spell>/dist/<sub>/index-<hash>.js` (`src/build.ts`'s `subSurfaceNames`,
+ * whose one member was scriptorium's kit-path frame in `dist/kit/`). The kit
+ * page moved to the dist root and the build no longer emits a sub-surface, so
+ * the scan reads the root only, as it did before.
+ */
 function surfaceBundles(): { spell: string; path: string }[] {
   const out: { spell: string; path: string }[] = [];
-  for (const d of readdirSync(SKILLS, { withFileTypes: true })) {
-    if (!d.isDirectory()) continue;
-    const dist = join(SKILLS, d.name, "dist");
+  // Both deploy roots (`src/deployRoots.ts`): an unreleased spell's bundle is
+  // still a bundle that must not carry dev markers.
+  for (const spell of deployedSpells(REPO)) {
+    const dist = join(deployDirFor(spell, REPO), "dist");
     if (!existsSync(dist)) continue;
-    for (const f of readdirSync(dist)) {
-      if (/^index-[a-z0-9]+\.js$/.test(f)) out.push({ spell: d.name, path: join(dist, f) });
-    }
+    for (const f of readdirSync(dist))
+      if (/^index-[a-z0-9]+\.js$/.test(f)) out.push({ spell, path: join(dist, f) });
   }
   return out.sort((a, b) => a.spell.localeCompare(b.spell));
 }

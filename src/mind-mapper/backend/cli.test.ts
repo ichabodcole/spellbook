@@ -525,7 +525,9 @@ test("activity posts a casting-loop state; a bad state exits 2 with usage", asyn
 });
 
 test("an unrecognized flag exits 2 with a usage envelope, not a stack-trace crash", async () => {
-  const { code, stdout, stderr } = await runCli("ingest", "--help");
+  // This used `--help` until the kit's per-verb help made `ingest --help` an
+  // answer (the next test); any flag mind-mapper does not know still refuses.
+  const { code, stdout, stderr } = await runCli("ingest", "--not-a-flag");
   expect(code).toBe(2);
   expect(stdout).toBe("");
   const envelope = JSON.parse(stderr) as {
@@ -536,9 +538,16 @@ test("an unrecognized flag exits 2 with a usage envelope, not a stack-trace cras
   expect(envelope.ok).toBe(false);
   expect(envelope.error.kind).toBe("usage");
   expect(envelope.error.exit_code).toBe(2);
-  expect(envelope.error.message).toContain("--help");
+  expect(envelope.error.message).toContain("--not-a-flag");
   expect(envelope.meta.command).toBe("ingest");
   expect(stderr).not.toContain("    at ");
+});
+
+test("`ingest --help` prints ingest's help at exit 0, and runs nothing", async () => {
+  const { code, stdout, stderr } = await runCli("ingest", "--help");
+  expect(code).toBe(0);
+  expect(stderr).toBe("");
+  expect(stdout).toStartWith("usage: ingest");
 });
 
 // Round 5 (CLI1) — propose-batch mints nodes and resolves local edge refs in
@@ -864,7 +873,7 @@ test(
   "open --port N binds the daemon to N (forwarded through ensureDaemon)",
   async () => {
     // Grab a free port by opening an ephemeral server, reading its port, closing.
-    const probe = Bun.serve({ port: 0, fetch: () => new Response("ok") });
+    const probe = Bun.serve({ port: 0, hostname: "127.0.0.1", fetch: () => new Response("ok") });
     const wanted = probe.port; // Bun.serve().port is number | undefined — narrow once
     probe.stop(true);
     if (wanted === undefined) throw new Error("probe server did not report a port");

@@ -1,18 +1,6967 @@
 // @bun
+var __commonJS = (cb, mod) => () => (mod || cb((mod = { exports: {} }).exports, mod), mod.exports);
+var __require = import.meta.require;
+
+// node_modules/yaml/dist/nodes/identity.js
+var require_identity = __commonJS(function(exports) {
+  var ALIAS = Symbol.for("yaml.alias");
+  var DOC = Symbol.for("yaml.document");
+  var MAP = Symbol.for("yaml.map");
+  var PAIR = Symbol.for("yaml.pair");
+  var SCALAR = Symbol.for("yaml.scalar");
+  var SEQ = Symbol.for("yaml.seq");
+  var NODE_TYPE = Symbol.for("yaml.node.type");
+  var isAlias = (node) => !!node && typeof node === "object" && node[NODE_TYPE] === ALIAS;
+  var isDocument = (node) => !!node && typeof node === "object" && node[NODE_TYPE] === DOC;
+  var isMap = (node) => !!node && typeof node === "object" && node[NODE_TYPE] === MAP;
+  var isPair = (node) => !!node && typeof node === "object" && node[NODE_TYPE] === PAIR;
+  var isScalar = (node) => !!node && typeof node === "object" && node[NODE_TYPE] === SCALAR;
+  var isSeq = (node) => !!node && typeof node === "object" && node[NODE_TYPE] === SEQ;
+  function isCollection(node) {
+    if (node && typeof node === "object")
+      switch (node[NODE_TYPE]) {
+        case MAP:
+        case SEQ:
+          return true;
+      }
+    return false;
+  }
+  function isNode(node) {
+    if (node && typeof node === "object")
+      switch (node[NODE_TYPE]) {
+        case ALIAS:
+        case MAP:
+        case SCALAR:
+        case SEQ:
+          return true;
+      }
+    return false;
+  }
+  var hasAnchor = (node) => (isScalar(node) || isCollection(node)) && !!node.anchor;
+  exports.ALIAS = ALIAS;
+  exports.DOC = DOC;
+  exports.MAP = MAP;
+  exports.NODE_TYPE = NODE_TYPE;
+  exports.PAIR = PAIR;
+  exports.SCALAR = SCALAR;
+  exports.SEQ = SEQ;
+  exports.hasAnchor = hasAnchor;
+  exports.isAlias = isAlias;
+  exports.isCollection = isCollection;
+  exports.isDocument = isDocument;
+  exports.isMap = isMap;
+  exports.isNode = isNode;
+  exports.isPair = isPair;
+  exports.isScalar = isScalar;
+  exports.isSeq = isSeq;
+});
+
+// node_modules/yaml/dist/visit.js
+var require_visit = __commonJS(function(exports) {
+  var identity = require_identity();
+  var BREAK = Symbol("break visit");
+  var SKIP = Symbol("skip children");
+  var REMOVE = Symbol("remove node");
+  function visit(node, visitor) {
+    const visitor_ = initVisitor(visitor);
+    if (identity.isDocument(node)) {
+      const cd = visit_(null, node.contents, visitor_, Object.freeze([node]));
+      if (cd === REMOVE)
+        node.contents = null;
+    } else
+      visit_(null, node, visitor_, Object.freeze([]));
+  }
+  visit.BREAK = BREAK;
+  visit.SKIP = SKIP;
+  visit.REMOVE = REMOVE;
+  function visit_(key, node, visitor, path) {
+    const ctrl = callVisitor(key, node, visitor, path);
+    if (identity.isNode(ctrl) || identity.isPair(ctrl)) {
+      replaceNode(key, path, ctrl);
+      return visit_(key, ctrl, visitor, path);
+    }
+    if (typeof ctrl !== "symbol") {
+      if (identity.isCollection(node)) {
+        path = Object.freeze(path.concat(node));
+        for (let i = 0;i < node.items.length; ++i) {
+          const ci = visit_(i, node.items[i], visitor, path);
+          if (typeof ci === "number")
+            i = ci - 1;
+          else if (ci === BREAK)
+            return BREAK;
+          else if (ci === REMOVE) {
+            node.items.splice(i, 1);
+            i -= 1;
+          }
+        }
+      } else if (identity.isPair(node)) {
+        path = Object.freeze(path.concat(node));
+        const ck = visit_("key", node.key, visitor, path);
+        if (ck === BREAK)
+          return BREAK;
+        else if (ck === REMOVE)
+          node.key = null;
+        const cv = visit_("value", node.value, visitor, path);
+        if (cv === BREAK)
+          return BREAK;
+        else if (cv === REMOVE)
+          node.value = null;
+      }
+    }
+    return ctrl;
+  }
+  async function visitAsync(node, visitor) {
+    const visitor_ = initVisitor(visitor);
+    if (identity.isDocument(node)) {
+      const cd = await visitAsync_(null, node.contents, visitor_, Object.freeze([node]));
+      if (cd === REMOVE)
+        node.contents = null;
+    } else
+      await visitAsync_(null, node, visitor_, Object.freeze([]));
+  }
+  visitAsync.BREAK = BREAK;
+  visitAsync.SKIP = SKIP;
+  visitAsync.REMOVE = REMOVE;
+  async function visitAsync_(key, node, visitor, path) {
+    const ctrl = await callVisitor(key, node, visitor, path);
+    if (identity.isNode(ctrl) || identity.isPair(ctrl)) {
+      replaceNode(key, path, ctrl);
+      return visitAsync_(key, ctrl, visitor, path);
+    }
+    if (typeof ctrl !== "symbol") {
+      if (identity.isCollection(node)) {
+        path = Object.freeze(path.concat(node));
+        for (let i = 0;i < node.items.length; ++i) {
+          const ci = await visitAsync_(i, node.items[i], visitor, path);
+          if (typeof ci === "number")
+            i = ci - 1;
+          else if (ci === BREAK)
+            return BREAK;
+          else if (ci === REMOVE) {
+            node.items.splice(i, 1);
+            i -= 1;
+          }
+        }
+      } else if (identity.isPair(node)) {
+        path = Object.freeze(path.concat(node));
+        const ck = await visitAsync_("key", node.key, visitor, path);
+        if (ck === BREAK)
+          return BREAK;
+        else if (ck === REMOVE)
+          node.key = null;
+        const cv = await visitAsync_("value", node.value, visitor, path);
+        if (cv === BREAK)
+          return BREAK;
+        else if (cv === REMOVE)
+          node.value = null;
+      }
+    }
+    return ctrl;
+  }
+  function initVisitor(visitor) {
+    if (typeof visitor === "object" && (visitor.Collection || visitor.Node || visitor.Value)) {
+      return Object.assign({
+        Alias: visitor.Node,
+        Map: visitor.Node,
+        Scalar: visitor.Node,
+        Seq: visitor.Node
+      }, visitor.Value && {
+        Map: visitor.Value,
+        Scalar: visitor.Value,
+        Seq: visitor.Value
+      }, visitor.Collection && {
+        Map: visitor.Collection,
+        Seq: visitor.Collection
+      }, visitor);
+    }
+    return visitor;
+  }
+  function callVisitor(key, node, visitor, path) {
+    if (typeof visitor === "function")
+      return visitor(key, node, path);
+    if (identity.isMap(node))
+      return visitor.Map?.(key, node, path);
+    if (identity.isSeq(node))
+      return visitor.Seq?.(key, node, path);
+    if (identity.isPair(node))
+      return visitor.Pair?.(key, node, path);
+    if (identity.isScalar(node))
+      return visitor.Scalar?.(key, node, path);
+    if (identity.isAlias(node))
+      return visitor.Alias?.(key, node, path);
+    return;
+  }
+  function replaceNode(key, path, node) {
+    const parent = path[path.length - 1];
+    if (identity.isCollection(parent)) {
+      parent.items[key] = node;
+    } else if (identity.isPair(parent)) {
+      if (key === "key")
+        parent.key = node;
+      else
+        parent.value = node;
+    } else if (identity.isDocument(parent)) {
+      parent.contents = node;
+    } else {
+      const pt = identity.isAlias(parent) ? "alias" : "scalar";
+      throw new Error(`Cannot replace node with ${pt} parent`);
+    }
+  }
+  exports.visit = visit;
+  exports.visitAsync = visitAsync;
+});
+
+// node_modules/yaml/dist/doc/directives.js
+var require_directives = __commonJS(function(exports) {
+  var identity = require_identity();
+  var visit = require_visit();
+  var escapeChars = {
+    "!": "%21",
+    ",": "%2C",
+    "[": "%5B",
+    "]": "%5D",
+    "{": "%7B",
+    "}": "%7D"
+  };
+  var escapeTagName = (tn) => tn.replace(/[!,[\]{}]/g, (ch) => escapeChars[ch]);
+
+  class Directives {
+    constructor(yaml, tags) {
+      this.docStart = null;
+      this.docEnd = false;
+      this.yaml = Object.assign({}, Directives.defaultYaml, yaml);
+      this.tags = Object.assign({}, Directives.defaultTags, tags);
+    }
+    clone() {
+      const copy = new Directives(this.yaml, this.tags);
+      copy.docStart = this.docStart;
+      return copy;
+    }
+    atDocument() {
+      const res = new Directives(this.yaml, this.tags);
+      switch (this.yaml.version) {
+        case "1.1":
+          this.atNextDocument = true;
+          break;
+        case "1.2":
+          this.atNextDocument = false;
+          this.yaml = {
+            explicit: Directives.defaultYaml.explicit,
+            version: "1.2"
+          };
+          this.tags = Object.assign({}, Directives.defaultTags);
+          break;
+      }
+      return res;
+    }
+    add(line, onError) {
+      if (this.atNextDocument) {
+        this.yaml = { explicit: Directives.defaultYaml.explicit, version: "1.1" };
+        this.tags = Object.assign({}, Directives.defaultTags);
+        this.atNextDocument = false;
+      }
+      const parts = line.trim().split(/[ \t]+/);
+      const name = parts.shift();
+      switch (name) {
+        case "%TAG": {
+          if (parts.length !== 2) {
+            onError(0, "%TAG directive should contain exactly two parts");
+            if (parts.length < 2)
+              return false;
+          }
+          const [handle, prefix] = parts;
+          this.tags[handle] = prefix;
+          return true;
+        }
+        case "%YAML": {
+          this.yaml.explicit = true;
+          if (parts.length !== 1) {
+            onError(0, "%YAML directive should contain exactly one part");
+            return false;
+          }
+          const [version] = parts;
+          if (version === "1.1" || version === "1.2") {
+            this.yaml.version = version;
+            return true;
+          } else {
+            const isValid = /^\d+\.\d+$/.test(version);
+            onError(6, `Unsupported YAML version ${version}`, isValid);
+            return false;
+          }
+        }
+        default:
+          onError(0, `Unknown directive ${name}`, true);
+          return false;
+      }
+    }
+    tagName(source, onError) {
+      if (source === "!")
+        return "!";
+      if (source[0] !== "!") {
+        onError(`Not a valid tag: ${source}`);
+        return null;
+      }
+      if (source[1] === "<") {
+        const verbatim = source.slice(2, -1);
+        if (verbatim === "!" || verbatim === "!!") {
+          onError(`Verbatim tags aren't resolved, so ${source} is invalid.`);
+          return null;
+        }
+        if (source[source.length - 1] !== ">")
+          onError("Verbatim tags must end with a >");
+        return verbatim;
+      }
+      const [, handle, suffix] = source.match(/^(.*!)([^!]*)$/s);
+      if (!suffix)
+        onError(`The ${source} tag has no suffix`);
+      const prefix = this.tags[handle];
+      if (prefix) {
+        try {
+          return prefix + decodeURIComponent(suffix);
+        } catch (error) {
+          onError(String(error));
+          return null;
+        }
+      }
+      if (handle === "!")
+        return source;
+      onError(`Could not resolve tag: ${source}`);
+      return null;
+    }
+    tagString(tag) {
+      for (const [handle, prefix] of Object.entries(this.tags)) {
+        if (tag.startsWith(prefix))
+          return handle + escapeTagName(tag.substring(prefix.length));
+      }
+      return tag[0] === "!" ? tag : `!<${tag}>`;
+    }
+    toString(doc) {
+      const lines = this.yaml.explicit ? [`%YAML ${this.yaml.version || "1.2"}`] : [];
+      const tagEntries = Object.entries(this.tags);
+      let tagNames;
+      if (doc && tagEntries.length > 0 && identity.isNode(doc.contents)) {
+        const tags = {};
+        visit.visit(doc.contents, (_key, node) => {
+          if (identity.isNode(node) && node.tag)
+            tags[node.tag] = true;
+        });
+        tagNames = Object.keys(tags);
+      } else
+        tagNames = [];
+      for (const [handle, prefix] of tagEntries) {
+        if (handle === "!!" && prefix === "tag:yaml.org,2002:")
+          continue;
+        if (!doc || tagNames.some((tn) => tn.startsWith(prefix)))
+          lines.push(`%TAG ${handle} ${prefix}`);
+      }
+      return lines.join(`
+`);
+    }
+  }
+  Directives.defaultYaml = { explicit: false, version: "1.2" };
+  Directives.defaultTags = { "!!": "tag:yaml.org,2002:" };
+  exports.Directives = Directives;
+});
+
+// node_modules/yaml/dist/doc/anchors.js
+var require_anchors = __commonJS(function(exports) {
+  var identity = require_identity();
+  var visit = require_visit();
+  function anchorIsValid(anchor) {
+    if (/[\x00-\x19\s,[\]{}]/.test(anchor)) {
+      const sa = JSON.stringify(anchor);
+      const msg = `Anchor must not contain whitespace or control characters: ${sa}`;
+      throw new Error(msg);
+    }
+    return true;
+  }
+  function anchorNames(root) {
+    const anchors = new Set;
+    visit.visit(root, {
+      Value(_key, node) {
+        if (node.anchor)
+          anchors.add(node.anchor);
+      }
+    });
+    return anchors;
+  }
+  function findNewAnchor(prefix, exclude) {
+    for (let i = 1;; ++i) {
+      const name = `${prefix}${i}`;
+      if (!exclude.has(name))
+        return name;
+    }
+  }
+  function createNodeAnchors(doc, prefix) {
+    const aliasObjects = [];
+    const sourceObjects = new Map;
+    let prevAnchors = null;
+    return {
+      onAnchor: (source) => {
+        aliasObjects.push(source);
+        prevAnchors ?? (prevAnchors = anchorNames(doc));
+        const anchor = findNewAnchor(prefix, prevAnchors);
+        prevAnchors.add(anchor);
+        return anchor;
+      },
+      setAnchors: () => {
+        for (const source of aliasObjects) {
+          const ref = sourceObjects.get(source);
+          if (typeof ref === "object" && ref.anchor && (identity.isScalar(ref.node) || identity.isCollection(ref.node))) {
+            ref.node.anchor = ref.anchor;
+          } else {
+            const error = new Error("Failed to resolve repeated object (this should not happen)");
+            error.source = source;
+            throw error;
+          }
+        }
+      },
+      sourceObjects
+    };
+  }
+  exports.anchorIsValid = anchorIsValid;
+  exports.anchorNames = anchorNames;
+  exports.createNodeAnchors = createNodeAnchors;
+  exports.findNewAnchor = findNewAnchor;
+});
+
+// node_modules/yaml/dist/doc/applyReviver.js
+var require_applyReviver = __commonJS(function(exports) {
+  function applyReviver(reviver, obj, key, val) {
+    if (val && typeof val === "object") {
+      if (Array.isArray(val)) {
+        for (let i = 0, len = val.length;i < len; ++i) {
+          const v0 = val[i];
+          const v1 = applyReviver(reviver, val, String(i), v0);
+          if (v1 === undefined)
+            delete val[i];
+          else if (v1 !== v0)
+            val[i] = v1;
+        }
+      } else if (val instanceof Map) {
+        for (const k of Array.from(val.keys())) {
+          const v0 = val.get(k);
+          const v1 = applyReviver(reviver, val, k, v0);
+          if (v1 === undefined)
+            val.delete(k);
+          else if (v1 !== v0)
+            val.set(k, v1);
+        }
+      } else if (val instanceof Set) {
+        for (const v0 of Array.from(val)) {
+          const v1 = applyReviver(reviver, val, v0, v0);
+          if (v1 === undefined)
+            val.delete(v0);
+          else if (v1 !== v0) {
+            val.delete(v0);
+            val.add(v1);
+          }
+        }
+      } else {
+        for (const [k, v0] of Object.entries(val)) {
+          const v1 = applyReviver(reviver, val, k, v0);
+          if (v1 === undefined)
+            delete val[k];
+          else if (v1 !== v0)
+            val[k] = v1;
+        }
+      }
+    }
+    return reviver.call(obj, key, val);
+  }
+  exports.applyReviver = applyReviver;
+});
+
+// node_modules/yaml/dist/nodes/toJS.js
+var require_toJS = __commonJS(function(exports) {
+  var identity = require_identity();
+  function toJS(value, arg, ctx) {
+    if (Array.isArray(value))
+      return value.map((v, i) => toJS(v, String(i), ctx));
+    if (value && typeof value.toJSON === "function") {
+      if (!ctx || !identity.hasAnchor(value))
+        return value.toJSON(arg, ctx);
+      const data = { aliasCount: 0, count: 1, res: undefined };
+      ctx.anchors.set(value, data);
+      ctx.onCreate = (res2) => {
+        data.res = res2;
+        delete ctx.onCreate;
+      };
+      const res = value.toJSON(arg, ctx);
+      if (ctx.onCreate)
+        ctx.onCreate(res);
+      return res;
+    }
+    if (typeof value === "bigint" && !ctx?.keep)
+      return Number(value);
+    return value;
+  }
+  exports.toJS = toJS;
+});
+
+// node_modules/yaml/dist/nodes/Node.js
+var require_Node = __commonJS(function(exports) {
+  var applyReviver = require_applyReviver();
+  var identity = require_identity();
+  var toJS = require_toJS();
+
+  class NodeBase {
+    constructor(type) {
+      Object.defineProperty(this, identity.NODE_TYPE, { value: type });
+    }
+    clone() {
+      const copy = Object.create(Object.getPrototypeOf(this), Object.getOwnPropertyDescriptors(this));
+      if (this.range)
+        copy.range = this.range.slice();
+      return copy;
+    }
+    toJS(doc, { mapAsMap, maxAliasCount, onAnchor, reviver } = {}) {
+      if (!identity.isDocument(doc))
+        throw new TypeError("A document argument is required");
+      const ctx = {
+        anchors: new Map,
+        doc,
+        keep: true,
+        mapAsMap: mapAsMap === true,
+        mapKeyWarned: false,
+        maxAliasCount: typeof maxAliasCount === "number" ? maxAliasCount : 100
+      };
+      const res = toJS.toJS(this, "", ctx);
+      if (typeof onAnchor === "function")
+        for (const { count, res: res2 } of ctx.anchors.values())
+          onAnchor(res2, count);
+      return typeof reviver === "function" ? applyReviver.applyReviver(reviver, { "": res }, "", res) : res;
+    }
+  }
+  exports.NodeBase = NodeBase;
+});
+
+// node_modules/yaml/dist/nodes/Alias.js
+var require_Alias = __commonJS(function(exports) {
+  var anchors = require_anchors();
+  var visit = require_visit();
+  var identity = require_identity();
+  var Node = require_Node();
+  var toJS = require_toJS();
+
+  class Alias extends Node.NodeBase {
+    constructor(source) {
+      super(identity.ALIAS);
+      this.source = source;
+      Object.defineProperty(this, "tag", {
+        set() {
+          throw new Error("Alias nodes cannot have tags");
+        }
+      });
+    }
+    resolve(doc, ctx) {
+      if (ctx?.maxAliasCount === 0)
+        throw new ReferenceError("Alias resolution is disabled");
+      let nodes;
+      if (ctx?.aliasResolveCache) {
+        nodes = ctx.aliasResolveCache;
+      } else {
+        nodes = [];
+        visit.visit(doc, {
+          Node: (_key, node) => {
+            if (identity.isAlias(node) || identity.hasAnchor(node))
+              nodes.push(node);
+          }
+        });
+        if (ctx)
+          ctx.aliasResolveCache = nodes;
+      }
+      let found = undefined;
+      for (const node of nodes) {
+        if (node === this)
+          break;
+        if (node.anchor === this.source)
+          found = node;
+      }
+      return found;
+    }
+    toJSON(_arg, ctx) {
+      if (!ctx)
+        return { source: this.source };
+      const { anchors: anchors2, doc, maxAliasCount } = ctx;
+      const source = this.resolve(doc, ctx);
+      if (!source) {
+        const msg = `Unresolved alias (the anchor must be set before the alias): ${this.source}`;
+        throw new ReferenceError(msg);
+      }
+      let data = anchors2.get(source);
+      if (!data) {
+        toJS.toJS(source, null, ctx);
+        data = anchors2.get(source);
+      }
+      if (data?.res === undefined) {
+        const msg = "This should not happen: Alias anchor was not resolved?";
+        throw new ReferenceError(msg);
+      }
+      if (maxAliasCount >= 0) {
+        data.count += 1;
+        if (data.aliasCount === 0)
+          data.aliasCount = getAliasCount(doc, source, anchors2);
+        if (data.count * data.aliasCount > maxAliasCount) {
+          const msg = "Excessive alias count indicates a resource exhaustion attack";
+          throw new ReferenceError(msg);
+        }
+      }
+      return data.res;
+    }
+    toString(ctx, _onComment, _onChompKeep) {
+      const src = `*${this.source}`;
+      if (ctx) {
+        anchors.anchorIsValid(this.source);
+        if (ctx.options.verifyAliasOrder && !ctx.anchors.has(this.source)) {
+          const msg = `Unresolved alias (the anchor must be set before the alias): ${this.source}`;
+          throw new Error(msg);
+        }
+        if (ctx.implicitKey)
+          return `${src} `;
+      }
+      return src;
+    }
+  }
+  function getAliasCount(doc, node, anchors2) {
+    if (identity.isAlias(node)) {
+      const source = node.resolve(doc);
+      const anchor = anchors2 && source && anchors2.get(source);
+      return anchor ? anchor.count * anchor.aliasCount : 0;
+    } else if (identity.isCollection(node)) {
+      let count = 0;
+      for (const item of node.items) {
+        const c = getAliasCount(doc, item, anchors2);
+        if (c > count)
+          count = c;
+      }
+      return count;
+    } else if (identity.isPair(node)) {
+      const kc = getAliasCount(doc, node.key, anchors2);
+      const vc = getAliasCount(doc, node.value, anchors2);
+      return Math.max(kc, vc);
+    }
+    return 1;
+  }
+  exports.Alias = Alias;
+});
+
+// node_modules/yaml/dist/nodes/Scalar.js
+var require_Scalar = __commonJS(function(exports) {
+  var identity = require_identity();
+  var Node = require_Node();
+  var toJS = require_toJS();
+  var isScalarValue = (value) => !value || typeof value !== "function" && typeof value !== "object";
+
+  class Scalar extends Node.NodeBase {
+    constructor(value) {
+      super(identity.SCALAR);
+      this.value = value;
+    }
+    toJSON(arg, ctx) {
+      return ctx?.keep ? this.value : toJS.toJS(this.value, arg, ctx);
+    }
+    toString() {
+      return String(this.value);
+    }
+  }
+  Scalar.BLOCK_FOLDED = "BLOCK_FOLDED";
+  Scalar.BLOCK_LITERAL = "BLOCK_LITERAL";
+  Scalar.PLAIN = "PLAIN";
+  Scalar.QUOTE_DOUBLE = "QUOTE_DOUBLE";
+  Scalar.QUOTE_SINGLE = "QUOTE_SINGLE";
+  exports.Scalar = Scalar;
+  exports.isScalarValue = isScalarValue;
+});
+
+// node_modules/yaml/dist/doc/createNode.js
+var require_createNode = __commonJS(function(exports) {
+  var Alias = require_Alias();
+  var identity = require_identity();
+  var Scalar = require_Scalar();
+  var defaultTagPrefix = "tag:yaml.org,2002:";
+  function findTagObject(value, tagName, tags) {
+    if (tagName) {
+      const match = tags.filter((t) => t.tag === tagName);
+      const tagObj = match.find((t) => !t.format) ?? match[0];
+      if (!tagObj)
+        throw new Error(`Tag ${tagName} not found`);
+      return tagObj;
+    }
+    return tags.find((t) => t.identify?.(value) && !t.format);
+  }
+  function createNode(value, tagName, ctx) {
+    if (identity.isDocument(value))
+      value = value.contents;
+    if (identity.isNode(value))
+      return value;
+    if (identity.isPair(value)) {
+      const map = ctx.schema[identity.MAP].createNode?.(ctx.schema, null, ctx);
+      map.items.push(value);
+      return map;
+    }
+    if (value instanceof String || value instanceof Number || value instanceof Boolean || typeof BigInt !== "undefined" && value instanceof BigInt) {
+      value = value.valueOf();
+    }
+    const { aliasDuplicateObjects, onAnchor, onTagObj, schema, sourceObjects } = ctx;
+    let ref = undefined;
+    if (aliasDuplicateObjects && value && typeof value === "object") {
+      ref = sourceObjects.get(value);
+      if (ref) {
+        ref.anchor ?? (ref.anchor = onAnchor(value));
+        return new Alias.Alias(ref.anchor);
+      } else {
+        ref = { anchor: null, node: null };
+        sourceObjects.set(value, ref);
+      }
+    }
+    if (tagName?.startsWith("!!"))
+      tagName = defaultTagPrefix + tagName.slice(2);
+    let tagObj = findTagObject(value, tagName, schema.tags);
+    if (!tagObj) {
+      if (value && typeof value.toJSON === "function") {
+        value = value.toJSON();
+      }
+      if (!value || typeof value !== "object") {
+        const node2 = new Scalar.Scalar(value);
+        if (ref)
+          ref.node = node2;
+        return node2;
+      }
+      tagObj = value instanceof Map ? schema[identity.MAP] : (Symbol.iterator in Object(value)) ? schema[identity.SEQ] : schema[identity.MAP];
+    }
+    if (onTagObj) {
+      onTagObj(tagObj);
+      delete ctx.onTagObj;
+    }
+    const node = tagObj?.createNode ? tagObj.createNode(ctx.schema, value, ctx) : typeof tagObj?.nodeClass?.from === "function" ? tagObj.nodeClass.from(ctx.schema, value, ctx) : new Scalar.Scalar(value);
+    if (tagName)
+      node.tag = tagName;
+    else if (!tagObj.default)
+      node.tag = tagObj.tag;
+    if (ref)
+      ref.node = node;
+    return node;
+  }
+  exports.createNode = createNode;
+});
+
+// node_modules/yaml/dist/nodes/Collection.js
+var require_Collection = __commonJS(function(exports) {
+  var createNode = require_createNode();
+  var identity = require_identity();
+  var Node = require_Node();
+  function collectionFromPath(schema, path, value) {
+    let v = value;
+    for (let i = path.length - 1;i >= 0; --i) {
+      const k = path[i];
+      if (typeof k === "number" && Number.isInteger(k) && k >= 0) {
+        const a = [];
+        a[k] = v;
+        v = a;
+      } else {
+        v = new Map([[k, v]]);
+      }
+    }
+    return createNode.createNode(v, undefined, {
+      aliasDuplicateObjects: false,
+      keepUndefined: false,
+      onAnchor: () => {
+        throw new Error("This should not happen, please report a bug.");
+      },
+      schema,
+      sourceObjects: new Map
+    });
+  }
+  var isEmptyPath = (path) => path == null || typeof path === "object" && !!path[Symbol.iterator]().next().done;
+
+  class Collection extends Node.NodeBase {
+    constructor(type, schema) {
+      super(type);
+      Object.defineProperty(this, "schema", {
+        value: schema,
+        configurable: true,
+        enumerable: false,
+        writable: true
+      });
+    }
+    clone(schema) {
+      const copy = Object.create(Object.getPrototypeOf(this), Object.getOwnPropertyDescriptors(this));
+      if (schema)
+        copy.schema = schema;
+      copy.items = copy.items.map((it) => identity.isNode(it) || identity.isPair(it) ? it.clone(schema) : it);
+      if (this.range)
+        copy.range = this.range.slice();
+      return copy;
+    }
+    addIn(path, value) {
+      if (isEmptyPath(path))
+        this.add(value);
+      else {
+        const [key, ...rest] = path;
+        const node = this.get(key, true);
+        if (identity.isCollection(node))
+          node.addIn(rest, value);
+        else if (node === undefined && this.schema)
+          this.set(key, collectionFromPath(this.schema, rest, value));
+        else
+          throw new Error(`Expected YAML collection at ${key}. Remaining path: ${rest}`);
+      }
+    }
+    deleteIn(path) {
+      const [key, ...rest] = path;
+      if (rest.length === 0)
+        return this.delete(key);
+      const node = this.get(key, true);
+      if (identity.isCollection(node))
+        return node.deleteIn(rest);
+      else
+        throw new Error(`Expected YAML collection at ${key}. Remaining path: ${rest}`);
+    }
+    getIn(path, keepScalar) {
+      const [key, ...rest] = path;
+      const node = this.get(key, true);
+      if (rest.length === 0)
+        return !keepScalar && identity.isScalar(node) ? node.value : node;
+      else
+        return identity.isCollection(node) ? node.getIn(rest, keepScalar) : undefined;
+    }
+    hasAllNullValues(allowScalar) {
+      return this.items.every((node) => {
+        if (!identity.isPair(node))
+          return false;
+        const n = node.value;
+        return n == null || allowScalar && identity.isScalar(n) && n.value == null && !n.commentBefore && !n.comment && !n.tag;
+      });
+    }
+    hasIn(path) {
+      const [key, ...rest] = path;
+      if (rest.length === 0)
+        return this.has(key);
+      const node = this.get(key, true);
+      return identity.isCollection(node) ? node.hasIn(rest) : false;
+    }
+    setIn(path, value) {
+      const [key, ...rest] = path;
+      if (rest.length === 0) {
+        this.set(key, value);
+      } else {
+        const node = this.get(key, true);
+        if (identity.isCollection(node))
+          node.setIn(rest, value);
+        else if (node === undefined && this.schema)
+          this.set(key, collectionFromPath(this.schema, rest, value));
+        else
+          throw new Error(`Expected YAML collection at ${key}. Remaining path: ${rest}`);
+      }
+    }
+  }
+  exports.Collection = Collection;
+  exports.collectionFromPath = collectionFromPath;
+  exports.isEmptyPath = isEmptyPath;
+});
+
+// node_modules/yaml/dist/stringify/stringifyComment.js
+var require_stringifyComment = __commonJS(function(exports) {
+  var stringifyComment = (str) => str.replace(/^(?!$)(?: $)?/gm, "#");
+  function indentComment(comment, indent) {
+    if (/^\n+$/.test(comment))
+      return comment.substring(1);
+    return indent ? comment.replace(/^(?! *$)/gm, indent) : comment;
+  }
+  var lineComment = (str, indent, comment) => str.endsWith(`
+`) ? indentComment(comment, indent) : comment.includes(`
+`) ? `
+` + indentComment(comment, indent) : (str.endsWith(" ") ? "" : " ") + comment;
+  exports.indentComment = indentComment;
+  exports.lineComment = lineComment;
+  exports.stringifyComment = stringifyComment;
+});
+
+// node_modules/yaml/dist/stringify/foldFlowLines.js
+var require_foldFlowLines = __commonJS(function(exports) {
+  var FOLD_FLOW = "flow";
+  var FOLD_BLOCK = "block";
+  var FOLD_QUOTED = "quoted";
+  function foldFlowLines(text, indent, mode = "flow", { indentAtStart, lineWidth = 80, minContentWidth = 20, onFold, onOverflow } = {}) {
+    if (!lineWidth || lineWidth < 0)
+      return text;
+    if (lineWidth < minContentWidth)
+      minContentWidth = 0;
+    const endStep = Math.max(1 + minContentWidth, 1 + lineWidth - indent.length);
+    if (text.length <= endStep)
+      return text;
+    const folds = [];
+    const escapedFolds = {};
+    let end = lineWidth - indent.length;
+    if (typeof indentAtStart === "number") {
+      if (indentAtStart > lineWidth - Math.max(2, minContentWidth))
+        folds.push(0);
+      else
+        end = lineWidth - indentAtStart;
+    }
+    let split = undefined;
+    let prev = undefined;
+    let overflow = false;
+    let i = -1;
+    let escStart = -1;
+    let escEnd = -1;
+    if (mode === FOLD_BLOCK) {
+      i = consumeMoreIndentedLines(text, i, indent.length);
+      if (i !== -1)
+        end = i + endStep;
+    }
+    for (let ch;ch = text[i += 1]; ) {
+      if (mode === FOLD_QUOTED && ch === "\\") {
+        escStart = i;
+        switch (text[i + 1]) {
+          case "x":
+            i += 3;
+            break;
+          case "u":
+            i += 5;
+            break;
+          case "U":
+            i += 9;
+            break;
+          default:
+            i += 1;
+        }
+        escEnd = i;
+      }
+      if (ch === `
+`) {
+        if (mode === FOLD_BLOCK)
+          i = consumeMoreIndentedLines(text, i, indent.length);
+        end = i + indent.length + endStep;
+        split = undefined;
+      } else {
+        if (ch === " " && prev && prev !== " " && prev !== `
+` && prev !== "\t") {
+          const next = text[i + 1];
+          if (next && next !== " " && next !== `
+` && next !== "\t")
+            split = i;
+        }
+        if (i >= end) {
+          if (split) {
+            folds.push(split);
+            end = split + endStep;
+            split = undefined;
+          } else if (mode === FOLD_QUOTED) {
+            while (prev === " " || prev === "\t") {
+              prev = ch;
+              ch = text[i += 1];
+              overflow = true;
+            }
+            const j = i > escEnd + 1 ? i - 2 : escStart - 1;
+            if (escapedFolds[j])
+              return text;
+            folds.push(j);
+            escapedFolds[j] = true;
+            end = j + endStep;
+            split = undefined;
+          } else {
+            overflow = true;
+          }
+        }
+      }
+      prev = ch;
+    }
+    if (overflow && onOverflow)
+      onOverflow();
+    if (folds.length === 0)
+      return text;
+    if (onFold)
+      onFold();
+    let res = text.slice(0, folds[0]);
+    for (let i2 = 0;i2 < folds.length; ++i2) {
+      const fold = folds[i2];
+      const end2 = folds[i2 + 1] || text.length;
+      if (fold === 0)
+        res = `
+${indent}${text.slice(0, end2)}`;
+      else {
+        if (mode === FOLD_QUOTED && escapedFolds[fold])
+          res += `${text[fold]}\\`;
+        res += `
+${indent}${text.slice(fold + 1, end2)}`;
+      }
+    }
+    return res;
+  }
+  function consumeMoreIndentedLines(text, i, indent) {
+    let end = i;
+    let start = i + 1;
+    let ch = text[start];
+    while (ch === " " || ch === "\t") {
+      if (i < start + indent) {
+        ch = text[++i];
+      } else {
+        do {
+          ch = text[++i];
+        } while (ch && ch !== `
+`);
+        end = i;
+        start = i + 1;
+        ch = text[start];
+      }
+    }
+    return end;
+  }
+  exports.FOLD_BLOCK = FOLD_BLOCK;
+  exports.FOLD_FLOW = FOLD_FLOW;
+  exports.FOLD_QUOTED = FOLD_QUOTED;
+  exports.foldFlowLines = foldFlowLines;
+});
+
+// node_modules/yaml/dist/stringify/stringifyString.js
+var require_stringifyString = __commonJS(function(exports) {
+  var Scalar = require_Scalar();
+  var foldFlowLines = require_foldFlowLines();
+  var getFoldOptions = (ctx, isBlock) => ({
+    indentAtStart: isBlock ? ctx.indent.length : ctx.indentAtStart,
+    lineWidth: ctx.options.lineWidth,
+    minContentWidth: ctx.options.minContentWidth
+  });
+  var containsDocumentMarker = (str) => /^(%|---|\.\.\.)/m.test(str);
+  function lineLengthOverLimit(str, lineWidth, indentLength) {
+    if (!lineWidth || lineWidth < 0)
+      return false;
+    const limit = lineWidth - indentLength;
+    const strLen = str.length;
+    if (strLen <= limit)
+      return false;
+    for (let i = 0, start = 0;i < strLen; ++i) {
+      if (str[i] === `
+`) {
+        if (i - start > limit)
+          return true;
+        start = i + 1;
+        if (strLen - start <= limit)
+          return false;
+      }
+    }
+    return true;
+  }
+  function doubleQuotedString(value, ctx) {
+    const json = JSON.stringify(value);
+    if (ctx.options.doubleQuotedAsJSON)
+      return json;
+    const { implicitKey } = ctx;
+    const minMultiLineLength = ctx.options.doubleQuotedMinMultiLineLength;
+    const indent = ctx.indent || (containsDocumentMarker(value) ? "  " : "");
+    let str = "";
+    let start = 0;
+    for (let i = 0, ch = json[i];ch; ch = json[++i]) {
+      if (ch === " " && json[i + 1] === "\\" && json[i + 2] === "n") {
+        str += json.slice(start, i) + "\\ ";
+        i += 1;
+        start = i;
+        ch = "\\";
+      }
+      if (ch === "\\")
+        switch (json[i + 1]) {
+          case "u":
+            {
+              str += json.slice(start, i);
+              const code = json.substr(i + 2, 4);
+              switch (code) {
+                case "0000":
+                  str += "\\0";
+                  break;
+                case "0007":
+                  str += "\\a";
+                  break;
+                case "000b":
+                  str += "\\v";
+                  break;
+                case "001b":
+                  str += "\\e";
+                  break;
+                case "0085":
+                  str += "\\N";
+                  break;
+                case "00a0":
+                  str += "\\_";
+                  break;
+                case "2028":
+                  str += "\\L";
+                  break;
+                case "2029":
+                  str += "\\P";
+                  break;
+                default:
+                  if (code.substr(0, 2) === "00")
+                    str += "\\x" + code.substr(2);
+                  else
+                    str += json.substr(i, 6);
+              }
+              i += 5;
+              start = i + 1;
+            }
+            break;
+          case "n":
+            if (implicitKey || json[i + 2] === '"' || json.length < minMultiLineLength) {
+              i += 1;
+            } else {
+              str += json.slice(start, i) + `
+
+`;
+              while (json[i + 2] === "\\" && json[i + 3] === "n" && json[i + 4] !== '"') {
+                str += `
+`;
+                i += 2;
+              }
+              str += indent;
+              if (json[i + 2] === " ")
+                str += "\\";
+              i += 1;
+              start = i + 1;
+            }
+            break;
+          default:
+            i += 1;
+        }
+    }
+    str = start ? str + json.slice(start) : json;
+    return implicitKey ? str : foldFlowLines.foldFlowLines(str, indent, foldFlowLines.FOLD_QUOTED, getFoldOptions(ctx, false));
+  }
+  function singleQuotedString(value, ctx) {
+    if (ctx.options.singleQuote === false || ctx.implicitKey && value.includes(`
+`) || /[ \t]\n|\n[ \t]/.test(value))
+      return doubleQuotedString(value, ctx);
+    const indent = ctx.indent || (containsDocumentMarker(value) ? "  " : "");
+    const res = "'" + value.replace(/'/g, "''").replace(/\n+/g, `$&
+${indent}`) + "'";
+    return ctx.implicitKey ? res : foldFlowLines.foldFlowLines(res, indent, foldFlowLines.FOLD_FLOW, getFoldOptions(ctx, false));
+  }
+  function quotedString(value, ctx) {
+    const { singleQuote } = ctx.options;
+    let qs;
+    if (singleQuote === false)
+      qs = doubleQuotedString;
+    else {
+      const hasDouble = value.includes('"');
+      const hasSingle = value.includes("'");
+      if (hasDouble && !hasSingle)
+        qs = singleQuotedString;
+      else if (hasSingle && !hasDouble)
+        qs = doubleQuotedString;
+      else
+        qs = singleQuote ? singleQuotedString : doubleQuotedString;
+    }
+    return qs(value, ctx);
+  }
+  var blockEndNewlines;
+  try {
+    blockEndNewlines = new RegExp(`(^|(?<!
+))
++(?!
+|$)`, "g");
+  } catch {
+    blockEndNewlines = /\n+(?!\n|$)/g;
+  }
+  function blockString({ comment, type, value }, ctx, onComment, onChompKeep) {
+    const { blockQuote, commentString, lineWidth } = ctx.options;
+    if (!blockQuote || /\n[\t ]+$/.test(value)) {
+      return quotedString(value, ctx);
+    }
+    const indent = ctx.indent || (ctx.forceBlockIndent || containsDocumentMarker(value) ? "  " : "");
+    const literal = blockQuote === "literal" ? true : blockQuote === "folded" || type === Scalar.Scalar.BLOCK_FOLDED ? false : type === Scalar.Scalar.BLOCK_LITERAL ? true : !lineLengthOverLimit(value, lineWidth, indent.length);
+    if (!value)
+      return literal ? `|
+` : `>
+`;
+    let chomp;
+    let endStart;
+    for (endStart = value.length;endStart > 0; --endStart) {
+      const ch = value[endStart - 1];
+      if (ch !== `
+` && ch !== "\t" && ch !== " ")
+        break;
+    }
+    let end = value.substring(endStart);
+    const endNlPos = end.indexOf(`
+`);
+    if (endNlPos === -1) {
+      chomp = "-";
+    } else if (value === end || endNlPos !== end.length - 1) {
+      chomp = "+";
+      if (onChompKeep)
+        onChompKeep();
+    } else {
+      chomp = "";
+    }
+    if (end) {
+      value = value.slice(0, -end.length);
+      if (end[end.length - 1] === `
+`)
+        end = end.slice(0, -1);
+      end = end.replace(blockEndNewlines, `$&${indent}`);
+    }
+    let startWithSpace = false;
+    let startEnd;
+    let startNlPos = -1;
+    for (startEnd = 0;startEnd < value.length; ++startEnd) {
+      const ch = value[startEnd];
+      if (ch === " ")
+        startWithSpace = true;
+      else if (ch === `
+`)
+        startNlPos = startEnd;
+      else
+        break;
+    }
+    let start = value.substring(0, startNlPos < startEnd ? startNlPos + 1 : startEnd);
+    if (start) {
+      value = value.substring(start.length);
+      start = start.replace(/\n+/g, `$&${indent}`);
+    }
+    const indentSize = indent ? "2" : "1";
+    let header = (startWithSpace ? indentSize : "") + chomp;
+    if (comment) {
+      header += " " + commentString(comment.replace(/ ?[\r\n]+/g, " "));
+      if (onComment)
+        onComment();
+    }
+    if (!literal) {
+      const foldedValue = value.replace(/\n+/g, `
+$&`).replace(/(?:^|\n)([\t ].*)(?:([\n\t ]*)\n(?![\n\t ]))?/g, "$1$2").replace(/\n+/g, `$&${indent}`);
+      let literalFallback = false;
+      const foldOptions = getFoldOptions(ctx, true);
+      if (blockQuote !== "folded" && type !== Scalar.Scalar.BLOCK_FOLDED) {
+        foldOptions.onOverflow = () => {
+          literalFallback = true;
+        };
+      }
+      const body = foldFlowLines.foldFlowLines(`${start}${foldedValue}${end}`, indent, foldFlowLines.FOLD_BLOCK, foldOptions);
+      if (!literalFallback)
+        return `>${header}
+${indent}${body}`;
+    }
+    value = value.replace(/\n+/g, `$&${indent}`);
+    return `|${header}
+${indent}${start}${value}${end}`;
+  }
+  function plainString(item, ctx, onComment, onChompKeep) {
+    const { type, value } = item;
+    const { actualString, implicitKey, indent, indentStep, inFlow } = ctx;
+    if (implicitKey && value.includes(`
+`) || inFlow && /[[\]{},]/.test(value)) {
+      return quotedString(value, ctx);
+    }
+    if (/^[\n\t ,[\]{}#&*!|>'"%@`]|^[?-]$|^[?-][ \t]|[\n:][ \t]|[ \t]\n|[\n\t ]#|[\n\t :]$/.test(value)) {
+      return implicitKey || inFlow || !value.includes(`
+`) ? quotedString(value, ctx) : blockString(item, ctx, onComment, onChompKeep);
+    }
+    if (!implicitKey && !inFlow && type !== Scalar.Scalar.PLAIN && value.includes(`
+`)) {
+      return blockString(item, ctx, onComment, onChompKeep);
+    }
+    if (containsDocumentMarker(value)) {
+      if (indent === "") {
+        ctx.forceBlockIndent = true;
+        return blockString(item, ctx, onComment, onChompKeep);
+      } else if (implicitKey && indent === indentStep) {
+        return quotedString(value, ctx);
+      }
+    }
+    const str = value.replace(/\n+/g, `$&
+${indent}`);
+    if (actualString) {
+      const test = (tag) => tag.default && tag.tag !== "tag:yaml.org,2002:str" && tag.test?.test(str);
+      const { compat, tags } = ctx.doc.schema;
+      if (tags.some(test) || compat?.some(test))
+        return quotedString(value, ctx);
+    }
+    return implicitKey ? str : foldFlowLines.foldFlowLines(str, indent, foldFlowLines.FOLD_FLOW, getFoldOptions(ctx, false));
+  }
+  function stringifyString(item, ctx, onComment, onChompKeep) {
+    const { implicitKey, inFlow } = ctx;
+    const ss = typeof item.value === "string" ? item : Object.assign({}, item, { value: String(item.value) });
+    let { type } = item;
+    if (type !== Scalar.Scalar.QUOTE_DOUBLE) {
+      if (/[\x00-\x08\x0b-\x1f\x7f-\x9f\u{D800}-\u{DFFF}]/u.test(ss.value))
+        type = Scalar.Scalar.QUOTE_DOUBLE;
+    }
+    const _stringify = (_type) => {
+      switch (_type) {
+        case Scalar.Scalar.BLOCK_FOLDED:
+        case Scalar.Scalar.BLOCK_LITERAL:
+          return implicitKey || inFlow ? quotedString(ss.value, ctx) : blockString(ss, ctx, onComment, onChompKeep);
+        case Scalar.Scalar.QUOTE_DOUBLE:
+          return doubleQuotedString(ss.value, ctx);
+        case Scalar.Scalar.QUOTE_SINGLE:
+          return singleQuotedString(ss.value, ctx);
+        case Scalar.Scalar.PLAIN:
+          return plainString(ss, ctx, onComment, onChompKeep);
+        default:
+          return null;
+      }
+    };
+    let res = _stringify(type);
+    if (res === null) {
+      const { defaultKeyType, defaultStringType } = ctx.options;
+      const t = implicitKey && defaultKeyType || defaultStringType;
+      res = _stringify(t);
+      if (res === null)
+        throw new Error(`Unsupported default string type ${t}`);
+    }
+    return res;
+  }
+  exports.stringifyString = stringifyString;
+});
+
+// node_modules/yaml/dist/stringify/stringify.js
+var require_stringify = __commonJS(function(exports) {
+  var anchors = require_anchors();
+  var identity = require_identity();
+  var stringifyComment = require_stringifyComment();
+  var stringifyString = require_stringifyString();
+  function createStringifyContext(doc, options) {
+    const opt = Object.assign({
+      blockQuote: true,
+      commentString: stringifyComment.stringifyComment,
+      defaultKeyType: null,
+      defaultStringType: "PLAIN",
+      directives: null,
+      doubleQuotedAsJSON: false,
+      doubleQuotedMinMultiLineLength: 40,
+      falseStr: "false",
+      flowCollectionPadding: true,
+      indentSeq: true,
+      lineWidth: 80,
+      minContentWidth: 20,
+      nullStr: "null",
+      simpleKeys: false,
+      singleQuote: null,
+      trailingComma: false,
+      trueStr: "true",
+      verifyAliasOrder: true
+    }, doc.schema.toStringOptions, options);
+    let inFlow;
+    switch (opt.collectionStyle) {
+      case "block":
+        inFlow = false;
+        break;
+      case "flow":
+        inFlow = true;
+        break;
+      default:
+        inFlow = null;
+    }
+    return {
+      anchors: new Set,
+      doc,
+      flowCollectionPadding: opt.flowCollectionPadding ? " " : "",
+      indent: "",
+      indentStep: typeof opt.indent === "number" ? " ".repeat(opt.indent) : "  ",
+      inFlow,
+      options: opt
+    };
+  }
+  function getTagObject(tags, item) {
+    if (item.tag) {
+      const match = tags.filter((t) => t.tag === item.tag);
+      if (match.length > 0)
+        return match.find((t) => t.format === item.format) ?? match[0];
+    }
+    let tagObj = undefined;
+    let obj;
+    if (identity.isScalar(item)) {
+      obj = item.value;
+      let match = tags.filter((t) => t.identify?.(obj));
+      if (match.length > 1) {
+        const testMatch = match.filter((t) => t.test);
+        if (testMatch.length > 0)
+          match = testMatch;
+      }
+      tagObj = match.find((t) => t.format === item.format) ?? match.find((t) => !t.format);
+    } else {
+      obj = item;
+      tagObj = tags.find((t) => t.nodeClass && obj instanceof t.nodeClass);
+    }
+    if (!tagObj) {
+      const name = obj?.constructor?.name ?? (obj === null ? "null" : typeof obj);
+      throw new Error(`Tag not resolved for ${name} value`);
+    }
+    return tagObj;
+  }
+  function stringifyProps(node, tagObj, { anchors: anchors$1, doc }) {
+    if (!doc.directives)
+      return "";
+    const props = [];
+    const anchor = (identity.isScalar(node) || identity.isCollection(node)) && node.anchor;
+    if (anchor && anchors.anchorIsValid(anchor)) {
+      anchors$1.add(anchor);
+      props.push(`&${anchor}`);
+    }
+    const tag = node.tag ?? (tagObj.default ? null : tagObj.tag);
+    if (tag)
+      props.push(doc.directives.tagString(tag));
+    return props.join(" ");
+  }
+  function stringify(item, ctx, onComment, onChompKeep) {
+    if (identity.isPair(item))
+      return item.toString(ctx, onComment, onChompKeep);
+    if (identity.isAlias(item)) {
+      if (ctx.doc.directives)
+        return item.toString(ctx);
+      if (ctx.resolvedAliases?.has(item)) {
+        throw new TypeError(`Cannot stringify circular structure without alias nodes`);
+      } else {
+        if (ctx.resolvedAliases)
+          ctx.resolvedAliases.add(item);
+        else
+          ctx.resolvedAliases = new Set([item]);
+        item = item.resolve(ctx.doc);
+      }
+    }
+    let tagObj = undefined;
+    const node = identity.isNode(item) ? item : ctx.doc.createNode(item, { onTagObj: (o) => tagObj = o });
+    tagObj ?? (tagObj = getTagObject(ctx.doc.schema.tags, node));
+    const props = stringifyProps(node, tagObj, ctx);
+    if (props.length > 0)
+      ctx.indentAtStart = (ctx.indentAtStart ?? 0) + props.length + 1;
+    const str = typeof tagObj.stringify === "function" ? tagObj.stringify(node, ctx, onComment, onChompKeep) : identity.isScalar(node) ? stringifyString.stringifyString(node, ctx, onComment, onChompKeep) : node.toString(ctx, onComment, onChompKeep);
+    if (!props)
+      return str;
+    return identity.isScalar(node) || str[0] === "{" || str[0] === "[" ? `${props} ${str}` : `${props}
+${ctx.indent}${str}`;
+  }
+  exports.createStringifyContext = createStringifyContext;
+  exports.stringify = stringify;
+});
+
+// node_modules/yaml/dist/stringify/stringifyPair.js
+var require_stringifyPair = __commonJS(function(exports) {
+  var identity = require_identity();
+  var Scalar = require_Scalar();
+  var stringify = require_stringify();
+  var stringifyComment = require_stringifyComment();
+  function stringifyPair({ key, value }, ctx, onComment, onChompKeep) {
+    const { allNullValues, doc, indent, indentStep, options: { commentString, indentSeq, simpleKeys } } = ctx;
+    let keyComment = identity.isNode(key) && key.comment || null;
+    if (simpleKeys) {
+      if (keyComment) {
+        throw new Error("With simple keys, key nodes cannot have comments");
+      }
+      if (identity.isCollection(key) || !identity.isNode(key) && typeof key === "object") {
+        const msg = "With simple keys, collection cannot be used as a key value";
+        throw new Error(msg);
+      }
+    }
+    let explicitKey = !simpleKeys && (!key || keyComment && value == null && !ctx.inFlow || identity.isCollection(key) || (identity.isScalar(key) ? key.type === Scalar.Scalar.BLOCK_FOLDED || key.type === Scalar.Scalar.BLOCK_LITERAL : typeof key === "object"));
+    ctx = Object.assign({}, ctx, {
+      allNullValues: false,
+      implicitKey: !explicitKey && (simpleKeys || !allNullValues),
+      indent: indent + indentStep
+    });
+    let keyCommentDone = false;
+    let chompKeep = false;
+    let str = stringify.stringify(key, ctx, () => keyCommentDone = true, () => chompKeep = true);
+    if (!explicitKey && !ctx.inFlow && str.length > 1024) {
+      if (simpleKeys)
+        throw new Error("With simple keys, single line scalar must not span more than 1024 characters");
+      explicitKey = true;
+    }
+    if (ctx.inFlow) {
+      if (allNullValues || value == null) {
+        if (keyCommentDone && onComment)
+          onComment();
+        return str === "" ? "?" : explicitKey ? `? ${str}` : str;
+      }
+    } else if (allNullValues && !simpleKeys || value == null && explicitKey) {
+      str = `? ${str}`;
+      if (keyComment && !keyCommentDone) {
+        str += stringifyComment.lineComment(str, ctx.indent, commentString(keyComment));
+      } else if (chompKeep && onChompKeep)
+        onChompKeep();
+      return str;
+    }
+    if (keyCommentDone)
+      keyComment = null;
+    if (explicitKey) {
+      if (keyComment)
+        str += stringifyComment.lineComment(str, ctx.indent, commentString(keyComment));
+      str = `? ${str}
+${indent}:`;
+    } else {
+      str = `${str}:`;
+      if (keyComment)
+        str += stringifyComment.lineComment(str, ctx.indent, commentString(keyComment));
+    }
+    let vsb, vcb, valueComment;
+    if (identity.isNode(value)) {
+      vsb = !!value.spaceBefore;
+      vcb = value.commentBefore;
+      valueComment = value.comment;
+    } else {
+      vsb = false;
+      vcb = null;
+      valueComment = null;
+      if (value && typeof value === "object")
+        value = doc.createNode(value);
+    }
+    ctx.implicitKey = false;
+    if (!explicitKey && !keyComment && identity.isScalar(value))
+      ctx.indentAtStart = str.length + 1;
+    chompKeep = false;
+    if (!indentSeq && indentStep.length >= 2 && !ctx.inFlow && !explicitKey && identity.isSeq(value) && !value.flow && !value.tag && !value.anchor) {
+      ctx.indent = ctx.indent.substring(2);
+    }
+    let valueCommentDone = false;
+    const valueStr = stringify.stringify(value, ctx, () => valueCommentDone = true, () => chompKeep = true);
+    let ws = " ";
+    if (keyComment || vsb || vcb) {
+      ws = vsb ? `
+` : "";
+      if (vcb) {
+        const cs = commentString(vcb);
+        ws += `
+${stringifyComment.indentComment(cs, ctx.indent)}`;
+      }
+      if (valueStr === "" && !ctx.inFlow) {
+        if (ws === `
+` && valueComment)
+          ws = `
+
+`;
+      } else {
+        ws += `
+${ctx.indent}`;
+      }
+    } else if (!explicitKey && identity.isCollection(value)) {
+      const vs0 = valueStr[0];
+      const nl0 = valueStr.indexOf(`
+`);
+      const hasNewline = nl0 !== -1;
+      const flow = ctx.inFlow ?? value.flow ?? value.items.length === 0;
+      if (hasNewline || !flow) {
+        let hasPropsLine = false;
+        if (hasNewline && (vs0 === "&" || vs0 === "!")) {
+          let sp0 = valueStr.indexOf(" ");
+          if (vs0 === "&" && sp0 !== -1 && sp0 < nl0 && valueStr[sp0 + 1] === "!") {
+            sp0 = valueStr.indexOf(" ", sp0 + 1);
+          }
+          if (sp0 === -1 || nl0 < sp0)
+            hasPropsLine = true;
+        }
+        if (!hasPropsLine)
+          ws = `
+${ctx.indent}`;
+      }
+    } else if (valueStr === "" || valueStr[0] === `
+`) {
+      ws = "";
+    }
+    str += ws + valueStr;
+    if (ctx.inFlow) {
+      if (valueCommentDone && onComment)
+        onComment();
+    } else if (valueComment && !valueCommentDone) {
+      str += stringifyComment.lineComment(str, ctx.indent, commentString(valueComment));
+    } else if (chompKeep && onChompKeep) {
+      onChompKeep();
+    }
+    return str;
+  }
+  exports.stringifyPair = stringifyPair;
+});
+
+// node_modules/yaml/dist/log.js
+var require_log = __commonJS(function(exports) {
+  var node_process = __require("process");
+  function debug(logLevel, ...messages) {
+    if (logLevel === "debug")
+      console.log(...messages);
+  }
+  function warn(logLevel, warning) {
+    if (logLevel === "debug" || logLevel === "warn") {
+      if (typeof node_process.emitWarning === "function")
+        node_process.emitWarning(warning);
+      else
+        console.warn(warning);
+    }
+  }
+  exports.debug = debug;
+  exports.warn = warn;
+});
+
+// node_modules/yaml/dist/schema/yaml-1.1/merge.js
+var require_merge = __commonJS(function(exports) {
+  var identity = require_identity();
+  var Scalar = require_Scalar();
+  var MERGE_KEY = "<<";
+  var merge = {
+    identify: (value) => value === MERGE_KEY || typeof value === "symbol" && value.description === MERGE_KEY,
+    default: "key",
+    tag: "tag:yaml.org,2002:merge",
+    test: /^<<$/,
+    resolve: () => Object.assign(new Scalar.Scalar(Symbol(MERGE_KEY)), {
+      addToJSMap: addMergeToJSMap
+    }),
+    stringify: () => MERGE_KEY
+  };
+  var isMergeKey = (ctx, key) => (merge.identify(key) || identity.isScalar(key) && (!key.type || key.type === Scalar.Scalar.PLAIN) && merge.identify(key.value)) && ctx?.doc.schema.tags.some((tag) => tag.tag === merge.tag && tag.default);
+  function addMergeToJSMap(ctx, map, value) {
+    const source = resolveAliasValue(ctx, value);
+    if (identity.isSeq(source))
+      for (const it of source.items)
+        mergeValue(ctx, map, it);
+    else if (Array.isArray(source))
+      for (const it of source)
+        mergeValue(ctx, map, it);
+    else
+      mergeValue(ctx, map, source);
+  }
+  function mergeValue(ctx, map, value) {
+    const source = resolveAliasValue(ctx, value);
+    if (!identity.isMap(source))
+      throw new Error("Merge sources must be maps or map aliases");
+    const srcMap = source.toJSON(null, ctx, Map);
+    for (const [key, value2] of srcMap) {
+      if (map instanceof Map) {
+        if (!map.has(key))
+          map.set(key, value2);
+      } else if (map instanceof Set) {
+        map.add(key);
+      } else if (!Object.prototype.hasOwnProperty.call(map, key)) {
+        Object.defineProperty(map, key, {
+          value: value2,
+          writable: true,
+          enumerable: true,
+          configurable: true
+        });
+      }
+    }
+    return map;
+  }
+  function resolveAliasValue(ctx, value) {
+    return ctx && identity.isAlias(value) ? value.resolve(ctx.doc, ctx) : value;
+  }
+  exports.addMergeToJSMap = addMergeToJSMap;
+  exports.isMergeKey = isMergeKey;
+  exports.merge = merge;
+});
+
+// node_modules/yaml/dist/nodes/addPairToJSMap.js
+var require_addPairToJSMap = __commonJS(function(exports) {
+  var log = require_log();
+  var merge = require_merge();
+  var stringify = require_stringify();
+  var identity = require_identity();
+  var toJS = require_toJS();
+  function addPairToJSMap(ctx, map, { key, value }) {
+    if (identity.isNode(key) && key.addToJSMap)
+      key.addToJSMap(ctx, map, value);
+    else if (merge.isMergeKey(ctx, key))
+      merge.addMergeToJSMap(ctx, map, value);
+    else {
+      const jsKey = toJS.toJS(key, "", ctx);
+      if (map instanceof Map) {
+        map.set(jsKey, toJS.toJS(value, jsKey, ctx));
+      } else if (map instanceof Set) {
+        map.add(jsKey);
+      } else {
+        const stringKey = stringifyKey(key, jsKey, ctx);
+        const jsValue = toJS.toJS(value, stringKey, ctx);
+        if (stringKey in map)
+          Object.defineProperty(map, stringKey, {
+            value: jsValue,
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
+        else
+          map[stringKey] = jsValue;
+      }
+    }
+    return map;
+  }
+  function stringifyKey(key, jsKey, ctx) {
+    if (jsKey === null)
+      return "";
+    if (typeof jsKey !== "object")
+      return String(jsKey);
+    if (identity.isNode(key) && ctx?.doc) {
+      const strCtx = stringify.createStringifyContext(ctx.doc, {});
+      strCtx.anchors = new Set;
+      for (const node of ctx.anchors.keys())
+        strCtx.anchors.add(node.anchor);
+      strCtx.inFlow = true;
+      strCtx.inStringifyKey = true;
+      const strKey = key.toString(strCtx);
+      if (!ctx.mapKeyWarned) {
+        let jsonStr = JSON.stringify(strKey);
+        if (jsonStr.length > 40)
+          jsonStr = jsonStr.substring(0, 36) + '..."';
+        log.warn(ctx.doc.options.logLevel, `Keys with collection values will be stringified due to JS Object restrictions: ${jsonStr}. Set mapAsMap: true to use object keys.`);
+        ctx.mapKeyWarned = true;
+      }
+      return strKey;
+    }
+    return JSON.stringify(jsKey);
+  }
+  exports.addPairToJSMap = addPairToJSMap;
+});
+
+// node_modules/yaml/dist/nodes/Pair.js
+var require_Pair = __commonJS(function(exports) {
+  var createNode = require_createNode();
+  var stringifyPair = require_stringifyPair();
+  var addPairToJSMap = require_addPairToJSMap();
+  var identity = require_identity();
+  function createPair(key, value, ctx) {
+    const k = createNode.createNode(key, undefined, ctx);
+    const v = createNode.createNode(value, undefined, ctx);
+    return new Pair(k, v);
+  }
+
+  class Pair {
+    constructor(key, value = null) {
+      Object.defineProperty(this, identity.NODE_TYPE, { value: identity.PAIR });
+      this.key = key;
+      this.value = value;
+    }
+    clone(schema) {
+      let { key, value } = this;
+      if (identity.isNode(key))
+        key = key.clone(schema);
+      if (identity.isNode(value))
+        value = value.clone(schema);
+      return new Pair(key, value);
+    }
+    toJSON(_, ctx) {
+      const pair = ctx?.mapAsMap ? new Map : {};
+      return addPairToJSMap.addPairToJSMap(ctx, pair, this);
+    }
+    toString(ctx, onComment, onChompKeep) {
+      return ctx?.doc ? stringifyPair.stringifyPair(this, ctx, onComment, onChompKeep) : JSON.stringify(this);
+    }
+  }
+  exports.Pair = Pair;
+  exports.createPair = createPair;
+});
+
+// node_modules/yaml/dist/stringify/stringifyCollection.js
+var require_stringifyCollection = __commonJS(function(exports) {
+  var identity = require_identity();
+  var stringify = require_stringify();
+  var stringifyComment = require_stringifyComment();
+  function stringifyCollection(collection, ctx, options) {
+    const flow = ctx.inFlow ?? collection.flow;
+    const stringify2 = flow ? stringifyFlowCollection : stringifyBlockCollection;
+    return stringify2(collection, ctx, options);
+  }
+  function stringifyBlockCollection({ comment, items }, ctx, { blockItemPrefix, flowChars, itemIndent, onChompKeep, onComment }) {
+    const { indent, options: { commentString } } = ctx;
+    const itemCtx = Object.assign({}, ctx, { indent: itemIndent, type: null });
+    let chompKeep = false;
+    const lines = [];
+    for (let i = 0;i < items.length; ++i) {
+      const item = items[i];
+      let comment2 = null;
+      if (identity.isNode(item)) {
+        if (!chompKeep && item.spaceBefore)
+          lines.push("");
+        addCommentBefore(ctx, lines, item.commentBefore, chompKeep);
+        if (item.comment)
+          comment2 = item.comment;
+      } else if (identity.isPair(item)) {
+        const ik = identity.isNode(item.key) ? item.key : null;
+        if (ik) {
+          if (!chompKeep && ik.spaceBefore)
+            lines.push("");
+          addCommentBefore(ctx, lines, ik.commentBefore, chompKeep);
+        }
+      }
+      chompKeep = false;
+      let str2 = stringify.stringify(item, itemCtx, () => comment2 = null, () => chompKeep = true);
+      if (comment2)
+        str2 += stringifyComment.lineComment(str2, itemIndent, commentString(comment2));
+      if (chompKeep && comment2)
+        chompKeep = false;
+      lines.push(blockItemPrefix + str2);
+    }
+    let str;
+    if (lines.length === 0) {
+      str = flowChars.start + flowChars.end;
+    } else {
+      str = lines[0];
+      for (let i = 1;i < lines.length; ++i) {
+        const line = lines[i];
+        str += line ? `
+${indent}${line}` : `
+`;
+      }
+    }
+    if (comment) {
+      str += `
+` + stringifyComment.indentComment(commentString(comment), indent);
+      if (onComment)
+        onComment();
+    } else if (chompKeep && onChompKeep)
+      onChompKeep();
+    return str;
+  }
+  function stringifyFlowCollection({ items }, ctx, { flowChars, itemIndent }) {
+    const { indent, indentStep, flowCollectionPadding: fcPadding, options: { commentString } } = ctx;
+    itemIndent += indentStep;
+    const itemCtx = Object.assign({}, ctx, {
+      indent: itemIndent,
+      inFlow: true,
+      type: null
+    });
+    let reqNewline = false;
+    let linesAtValue = 0;
+    const lines = [];
+    for (let i = 0;i < items.length; ++i) {
+      const item = items[i];
+      let comment = null;
+      if (identity.isNode(item)) {
+        if (item.spaceBefore)
+          lines.push("");
+        addCommentBefore(ctx, lines, item.commentBefore, false);
+        if (item.comment)
+          comment = item.comment;
+      } else if (identity.isPair(item)) {
+        const ik = identity.isNode(item.key) ? item.key : null;
+        if (ik) {
+          if (ik.spaceBefore)
+            lines.push("");
+          addCommentBefore(ctx, lines, ik.commentBefore, false);
+          if (ik.comment)
+            reqNewline = true;
+        }
+        const iv = identity.isNode(item.value) ? item.value : null;
+        if (iv) {
+          if (iv.comment)
+            comment = iv.comment;
+          if (iv.commentBefore)
+            reqNewline = true;
+        } else if (item.value == null && ik?.comment) {
+          comment = ik.comment;
+        }
+      }
+      if (comment)
+        reqNewline = true;
+      let str = stringify.stringify(item, itemCtx, () => comment = null);
+      reqNewline || (reqNewline = lines.length > linesAtValue || str.includes(`
+`));
+      if (i < items.length - 1) {
+        str += ",";
+      } else if (ctx.options.trailingComma) {
+        if (ctx.options.lineWidth > 0) {
+          reqNewline || (reqNewline = lines.reduce((sum, line) => sum + line.length + 2, 2) + (str.length + 2) > ctx.options.lineWidth);
+        }
+        if (reqNewline) {
+          str += ",";
+        }
+      }
+      if (comment)
+        str += stringifyComment.lineComment(str, itemIndent, commentString(comment));
+      lines.push(str);
+      linesAtValue = lines.length;
+    }
+    const { start, end } = flowChars;
+    if (lines.length === 0) {
+      return start + end;
+    } else {
+      if (!reqNewline) {
+        const len = lines.reduce((sum, line) => sum + line.length + 2, 2);
+        reqNewline = ctx.options.lineWidth > 0 && len > ctx.options.lineWidth;
+      }
+      if (reqNewline) {
+        let str = start;
+        for (const line of lines)
+          str += line ? `
+${indentStep}${indent}${line}` : `
+`;
+        return `${str}
+${indent}${end}`;
+      } else {
+        return `${start}${fcPadding}${lines.join(" ")}${fcPadding}${end}`;
+      }
+    }
+  }
+  function addCommentBefore({ indent, options: { commentString } }, lines, comment, chompKeep) {
+    if (comment && chompKeep)
+      comment = comment.replace(/^\n+/, "");
+    if (comment) {
+      const ic = stringifyComment.indentComment(commentString(comment), indent);
+      lines.push(ic.trimStart());
+    }
+  }
+  exports.stringifyCollection = stringifyCollection;
+});
+
+// node_modules/yaml/dist/nodes/YAMLMap.js
+var require_YAMLMap = __commonJS(function(exports) {
+  var stringifyCollection = require_stringifyCollection();
+  var addPairToJSMap = require_addPairToJSMap();
+  var Collection = require_Collection();
+  var identity = require_identity();
+  var Pair = require_Pair();
+  var Scalar = require_Scalar();
+  function findPair(items, key) {
+    const k = identity.isScalar(key) ? key.value : key;
+    for (const it of items) {
+      if (identity.isPair(it)) {
+        if (it.key === key || it.key === k)
+          return it;
+        if (identity.isScalar(it.key) && it.key.value === k)
+          return it;
+      }
+    }
+    return;
+  }
+
+  class YAMLMap extends Collection.Collection {
+    static get tagName() {
+      return "tag:yaml.org,2002:map";
+    }
+    constructor(schema) {
+      super(identity.MAP, schema);
+      this.items = [];
+    }
+    static from(schema, obj, ctx) {
+      const { keepUndefined, replacer } = ctx;
+      const map = new this(schema);
+      const add = (key, value) => {
+        if (typeof replacer === "function")
+          value = replacer.call(obj, key, value);
+        else if (Array.isArray(replacer) && !replacer.includes(key))
+          return;
+        if (value !== undefined || keepUndefined)
+          map.items.push(Pair.createPair(key, value, ctx));
+      };
+      if (obj instanceof Map) {
+        for (const [key, value] of obj)
+          add(key, value);
+      } else if (obj && typeof obj === "object") {
+        for (const key of Object.keys(obj))
+          add(key, obj[key]);
+      }
+      if (typeof schema.sortMapEntries === "function") {
+        map.items.sort(schema.sortMapEntries);
+      }
+      return map;
+    }
+    add(pair, overwrite) {
+      let _pair;
+      if (identity.isPair(pair))
+        _pair = pair;
+      else if (!pair || typeof pair !== "object" || !("key" in pair)) {
+        _pair = new Pair.Pair(pair, pair?.value);
+      } else
+        _pair = new Pair.Pair(pair.key, pair.value);
+      const prev = findPair(this.items, _pair.key);
+      const sortEntries = this.schema?.sortMapEntries;
+      if (prev) {
+        if (!overwrite)
+          throw new Error(`Key ${_pair.key} already set`);
+        if (identity.isScalar(prev.value) && Scalar.isScalarValue(_pair.value))
+          prev.value.value = _pair.value;
+        else
+          prev.value = _pair.value;
+      } else if (sortEntries) {
+        const i = this.items.findIndex((item) => sortEntries(_pair, item) < 0);
+        if (i === -1)
+          this.items.push(_pair);
+        else
+          this.items.splice(i, 0, _pair);
+      } else {
+        this.items.push(_pair);
+      }
+    }
+    delete(key) {
+      const it = findPair(this.items, key);
+      if (!it)
+        return false;
+      const del = this.items.splice(this.items.indexOf(it), 1);
+      return del.length > 0;
+    }
+    get(key, keepScalar) {
+      const it = findPair(this.items, key);
+      const node = it?.value;
+      return (!keepScalar && identity.isScalar(node) ? node.value : node) ?? undefined;
+    }
+    has(key) {
+      return !!findPair(this.items, key);
+    }
+    set(key, value) {
+      this.add(new Pair.Pair(key, value), true);
+    }
+    toJSON(_, ctx, Type) {
+      const map = Type ? new Type : ctx?.mapAsMap ? new Map : {};
+      if (ctx?.onCreate)
+        ctx.onCreate(map);
+      for (const item of this.items)
+        addPairToJSMap.addPairToJSMap(ctx, map, item);
+      return map;
+    }
+    toString(ctx, onComment, onChompKeep) {
+      if (!ctx)
+        return JSON.stringify(this);
+      for (const item of this.items) {
+        if (!identity.isPair(item))
+          throw new Error(`Map items must all be pairs; found ${JSON.stringify(item)} instead`);
+      }
+      if (!ctx.allNullValues && this.hasAllNullValues(false))
+        ctx = Object.assign({}, ctx, { allNullValues: true });
+      return stringifyCollection.stringifyCollection(this, ctx, {
+        blockItemPrefix: "",
+        flowChars: { start: "{", end: "}" },
+        itemIndent: ctx.indent || "",
+        onChompKeep,
+        onComment
+      });
+    }
+  }
+  exports.YAMLMap = YAMLMap;
+  exports.findPair = findPair;
+});
+
+// node_modules/yaml/dist/schema/common/map.js
+var require_map = __commonJS(function(exports) {
+  var identity = require_identity();
+  var YAMLMap = require_YAMLMap();
+  var map = {
+    collection: "map",
+    default: true,
+    nodeClass: YAMLMap.YAMLMap,
+    tag: "tag:yaml.org,2002:map",
+    resolve(map2, onError) {
+      if (!identity.isMap(map2))
+        onError("Expected a mapping for this tag");
+      return map2;
+    },
+    createNode: (schema, obj, ctx) => YAMLMap.YAMLMap.from(schema, obj, ctx)
+  };
+  exports.map = map;
+});
+
+// node_modules/yaml/dist/nodes/YAMLSeq.js
+var require_YAMLSeq = __commonJS(function(exports) {
+  var createNode = require_createNode();
+  var stringifyCollection = require_stringifyCollection();
+  var Collection = require_Collection();
+  var identity = require_identity();
+  var Scalar = require_Scalar();
+  var toJS = require_toJS();
+
+  class YAMLSeq extends Collection.Collection {
+    static get tagName() {
+      return "tag:yaml.org,2002:seq";
+    }
+    constructor(schema) {
+      super(identity.SEQ, schema);
+      this.items = [];
+    }
+    add(value) {
+      this.items.push(value);
+    }
+    delete(key) {
+      const idx = asItemIndex(key);
+      if (typeof idx !== "number")
+        return false;
+      const del = this.items.splice(idx, 1);
+      return del.length > 0;
+    }
+    get(key, keepScalar) {
+      const idx = asItemIndex(key);
+      if (typeof idx !== "number")
+        return;
+      const it = this.items[idx];
+      return !keepScalar && identity.isScalar(it) ? it.value : it;
+    }
+    has(key) {
+      const idx = asItemIndex(key);
+      return typeof idx === "number" && idx < this.items.length;
+    }
+    set(key, value) {
+      const idx = asItemIndex(key);
+      if (typeof idx !== "number")
+        throw new Error(`Expected a valid index, not ${key}.`);
+      const prev = this.items[idx];
+      if (identity.isScalar(prev) && Scalar.isScalarValue(value))
+        prev.value = value;
+      else
+        this.items[idx] = value;
+    }
+    toJSON(_, ctx) {
+      const seq = [];
+      if (ctx?.onCreate)
+        ctx.onCreate(seq);
+      let i = 0;
+      for (const item of this.items)
+        seq.push(toJS.toJS(item, String(i++), ctx));
+      return seq;
+    }
+    toString(ctx, onComment, onChompKeep) {
+      if (!ctx)
+        return JSON.stringify(this);
+      return stringifyCollection.stringifyCollection(this, ctx, {
+        blockItemPrefix: "- ",
+        flowChars: { start: "[", end: "]" },
+        itemIndent: (ctx.indent || "") + "  ",
+        onChompKeep,
+        onComment
+      });
+    }
+    static from(schema, obj, ctx) {
+      const { replacer } = ctx;
+      const seq = new this(schema);
+      if (obj && Symbol.iterator in Object(obj)) {
+        let i = 0;
+        for (let it of obj) {
+          if (typeof replacer === "function") {
+            const key = obj instanceof Set ? it : String(i++);
+            it = replacer.call(obj, key, it);
+          }
+          seq.items.push(createNode.createNode(it, undefined, ctx));
+        }
+      }
+      return seq;
+    }
+  }
+  function asItemIndex(key) {
+    let idx = identity.isScalar(key) ? key.value : key;
+    if (idx && typeof idx === "string")
+      idx = Number(idx);
+    return typeof idx === "number" && Number.isInteger(idx) && idx >= 0 ? idx : null;
+  }
+  exports.YAMLSeq = YAMLSeq;
+});
+
+// node_modules/yaml/dist/schema/common/seq.js
+var require_seq = __commonJS(function(exports) {
+  var identity = require_identity();
+  var YAMLSeq = require_YAMLSeq();
+  var seq = {
+    collection: "seq",
+    default: true,
+    nodeClass: YAMLSeq.YAMLSeq,
+    tag: "tag:yaml.org,2002:seq",
+    resolve(seq2, onError) {
+      if (!identity.isSeq(seq2))
+        onError("Expected a sequence for this tag");
+      return seq2;
+    },
+    createNode: (schema, obj, ctx) => YAMLSeq.YAMLSeq.from(schema, obj, ctx)
+  };
+  exports.seq = seq;
+});
+
+// node_modules/yaml/dist/schema/common/string.js
+var require_string = __commonJS(function(exports) {
+  var stringifyString = require_stringifyString();
+  var string = {
+    identify: (value) => typeof value === "string",
+    default: true,
+    tag: "tag:yaml.org,2002:str",
+    resolve: (str) => str,
+    stringify(item, ctx, onComment, onChompKeep) {
+      ctx = Object.assign({ actualString: true }, ctx);
+      return stringifyString.stringifyString(item, ctx, onComment, onChompKeep);
+    }
+  };
+  exports.string = string;
+});
+
+// node_modules/yaml/dist/schema/common/null.js
+var require_null = __commonJS(function(exports) {
+  var Scalar = require_Scalar();
+  var nullTag = {
+    identify: (value) => value == null,
+    createNode: () => new Scalar.Scalar(null),
+    default: true,
+    tag: "tag:yaml.org,2002:null",
+    test: /^(?:~|[Nn]ull|NULL)?$/,
+    resolve: () => new Scalar.Scalar(null),
+    stringify: ({ source }, ctx) => typeof source === "string" && nullTag.test.test(source) ? source : ctx.options.nullStr
+  };
+  exports.nullTag = nullTag;
+});
+
+// node_modules/yaml/dist/schema/core/bool.js
+var require_bool = __commonJS(function(exports) {
+  var Scalar = require_Scalar();
+  var boolTag = {
+    identify: (value) => typeof value === "boolean",
+    default: true,
+    tag: "tag:yaml.org,2002:bool",
+    test: /^(?:[Tt]rue|TRUE|[Ff]alse|FALSE)$/,
+    resolve: (str) => new Scalar.Scalar(str[0] === "t" || str[0] === "T"),
+    stringify({ source, value }, ctx) {
+      if (source && boolTag.test.test(source)) {
+        const sv = source[0] === "t" || source[0] === "T";
+        if (value === sv)
+          return source;
+      }
+      return value ? ctx.options.trueStr : ctx.options.falseStr;
+    }
+  };
+  exports.boolTag = boolTag;
+});
+
+// node_modules/yaml/dist/stringify/stringifyNumber.js
+var require_stringifyNumber = __commonJS(function(exports) {
+  function stringifyNumber({ format, minFractionDigits, tag, value }) {
+    if (typeof value === "bigint")
+      return String(value);
+    const num = typeof value === "number" ? value : Number(value);
+    if (!isFinite(num))
+      return isNaN(num) ? ".nan" : num < 0 ? "-.inf" : ".inf";
+    let n = Object.is(value, -0) ? "-0" : JSON.stringify(value);
+    if (!format && minFractionDigits && (!tag || tag === "tag:yaml.org,2002:float") && /^-?\d/.test(n) && !n.includes("e")) {
+      let i = n.indexOf(".");
+      if (i < 0) {
+        i = n.length;
+        n += ".";
+      }
+      let d = minFractionDigits - (n.length - i - 1);
+      while (d-- > 0)
+        n += "0";
+    }
+    return n;
+  }
+  exports.stringifyNumber = stringifyNumber;
+});
+
+// node_modules/yaml/dist/schema/core/float.js
+var require_float = __commonJS(function(exports) {
+  var Scalar = require_Scalar();
+  var stringifyNumber = require_stringifyNumber();
+  var floatNaN = {
+    identify: (value) => typeof value === "number",
+    default: true,
+    tag: "tag:yaml.org,2002:float",
+    test: /^(?:[-+]?\.(?:inf|Inf|INF)|\.nan|\.NaN|\.NAN)$/,
+    resolve: (str) => str.slice(-3).toLowerCase() === "nan" ? NaN : str[0] === "-" ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY,
+    stringify: stringifyNumber.stringifyNumber
+  };
+  var floatExp = {
+    identify: (value) => typeof value === "number",
+    default: true,
+    tag: "tag:yaml.org,2002:float",
+    format: "EXP",
+    test: /^[-+]?(?:\.[0-9]+|[0-9]+(?:\.[0-9]*)?)[eE][-+]?[0-9]+$/,
+    resolve: (str) => parseFloat(str),
+    stringify(node) {
+      const num = Number(node.value);
+      return isFinite(num) ? num.toExponential() : stringifyNumber.stringifyNumber(node);
+    }
+  };
+  var float = {
+    identify: (value) => typeof value === "number",
+    default: true,
+    tag: "tag:yaml.org,2002:float",
+    test: /^[-+]?(?:\.[0-9]+|[0-9]+\.[0-9]*)$/,
+    resolve(str) {
+      const node = new Scalar.Scalar(parseFloat(str));
+      const dot = str.indexOf(".");
+      if (dot !== -1 && str[str.length - 1] === "0")
+        node.minFractionDigits = str.length - dot - 1;
+      return node;
+    },
+    stringify: stringifyNumber.stringifyNumber
+  };
+  exports.float = float;
+  exports.floatExp = floatExp;
+  exports.floatNaN = floatNaN;
+});
+
+// node_modules/yaml/dist/schema/core/int.js
+var require_int = __commonJS(function(exports) {
+  var stringifyNumber = require_stringifyNumber();
+  var intIdentify = (value) => typeof value === "bigint" || Number.isInteger(value);
+  var intResolve = (str, offset, radix, { intAsBigInt }) => intAsBigInt ? BigInt(str) : parseInt(str.substring(offset), radix);
+  function intStringify(node, radix, prefix) {
+    const { value } = node;
+    if (intIdentify(value) && value >= 0)
+      return prefix + value.toString(radix);
+    return stringifyNumber.stringifyNumber(node);
+  }
+  var intOct = {
+    identify: (value) => intIdentify(value) && value >= 0,
+    default: true,
+    tag: "tag:yaml.org,2002:int",
+    format: "OCT",
+    test: /^0o[0-7]+$/,
+    resolve: (str, _onError, opt) => intResolve(str, 2, 8, opt),
+    stringify: (node) => intStringify(node, 8, "0o")
+  };
+  var int = {
+    identify: intIdentify,
+    default: true,
+    tag: "tag:yaml.org,2002:int",
+    test: /^[-+]?[0-9]+$/,
+    resolve: (str, _onError, opt) => intResolve(str, 0, 10, opt),
+    stringify: stringifyNumber.stringifyNumber
+  };
+  var intHex = {
+    identify: (value) => intIdentify(value) && value >= 0,
+    default: true,
+    tag: "tag:yaml.org,2002:int",
+    format: "HEX",
+    test: /^0x[0-9a-fA-F]+$/,
+    resolve: (str, _onError, opt) => intResolve(str, 2, 16, opt),
+    stringify: (node) => intStringify(node, 16, "0x")
+  };
+  exports.int = int;
+  exports.intHex = intHex;
+  exports.intOct = intOct;
+});
+
+// node_modules/yaml/dist/schema/core/schema.js
+var require_schema = __commonJS(function(exports) {
+  var map = require_map();
+  var _null = require_null();
+  var seq = require_seq();
+  var string = require_string();
+  var bool = require_bool();
+  var float = require_float();
+  var int = require_int();
+  var schema = [
+    map.map,
+    seq.seq,
+    string.string,
+    _null.nullTag,
+    bool.boolTag,
+    int.intOct,
+    int.int,
+    int.intHex,
+    float.floatNaN,
+    float.floatExp,
+    float.float
+  ];
+  exports.schema = schema;
+});
+
+// node_modules/yaml/dist/schema/json/schema.js
+var require_schema2 = __commonJS(function(exports) {
+  var Scalar = require_Scalar();
+  var map = require_map();
+  var seq = require_seq();
+  function intIdentify(value) {
+    return typeof value === "bigint" || Number.isInteger(value);
+  }
+  var stringifyJSON = ({ value }) => JSON.stringify(value);
+  var jsonScalars = [
+    {
+      identify: (value) => typeof value === "string",
+      default: true,
+      tag: "tag:yaml.org,2002:str",
+      resolve: (str) => str,
+      stringify: stringifyJSON
+    },
+    {
+      identify: (value) => value == null,
+      createNode: () => new Scalar.Scalar(null),
+      default: true,
+      tag: "tag:yaml.org,2002:null",
+      test: /^null$/,
+      resolve: () => null,
+      stringify: stringifyJSON
+    },
+    {
+      identify: (value) => typeof value === "boolean",
+      default: true,
+      tag: "tag:yaml.org,2002:bool",
+      test: /^true$|^false$/,
+      resolve: (str) => str === "true",
+      stringify: stringifyJSON
+    },
+    {
+      identify: intIdentify,
+      default: true,
+      tag: "tag:yaml.org,2002:int",
+      test: /^-?(?:0|[1-9][0-9]*)$/,
+      resolve: (str, _onError, { intAsBigInt }) => intAsBigInt ? BigInt(str) : parseInt(str, 10),
+      stringify: ({ value }) => intIdentify(value) ? value.toString() : JSON.stringify(value)
+    },
+    {
+      identify: (value) => typeof value === "number",
+      default: true,
+      tag: "tag:yaml.org,2002:float",
+      test: /^-?(?:0|[1-9][0-9]*)(?:\.[0-9]*)?(?:[eE][-+]?[0-9]+)?$/,
+      resolve: (str) => parseFloat(str),
+      stringify: stringifyJSON
+    }
+  ];
+  var jsonError = {
+    default: true,
+    tag: "",
+    test: /^/,
+    resolve(str, onError) {
+      onError(`Unresolved plain scalar ${JSON.stringify(str)}`);
+      return str;
+    }
+  };
+  var schema = [map.map, seq.seq].concat(jsonScalars, jsonError);
+  exports.schema = schema;
+});
+
+// node_modules/yaml/dist/schema/yaml-1.1/binary.js
+var require_binary = __commonJS(function(exports) {
+  var node_buffer = __require("buffer");
+  var Scalar = require_Scalar();
+  var stringifyString = require_stringifyString();
+  var binary = {
+    identify: (value) => value instanceof Uint8Array,
+    default: false,
+    tag: "tag:yaml.org,2002:binary",
+    resolve(src, onError) {
+      if (typeof node_buffer.Buffer === "function") {
+        return node_buffer.Buffer.from(src, "base64");
+      } else if (typeof atob === "function") {
+        const str = atob(src.replace(/[\n\r]/g, ""));
+        const buffer = new Uint8Array(str.length);
+        for (let i = 0;i < str.length; ++i)
+          buffer[i] = str.charCodeAt(i);
+        return buffer;
+      } else {
+        onError("This environment does not support reading binary tags; either Buffer or atob is required");
+        return src;
+      }
+    },
+    stringify({ comment, type, value }, ctx, onComment, onChompKeep) {
+      if (!value)
+        return "";
+      const buf = value;
+      let str;
+      if (typeof node_buffer.Buffer === "function") {
+        str = buf instanceof node_buffer.Buffer ? buf.toString("base64") : node_buffer.Buffer.from(buf.buffer).toString("base64");
+      } else if (typeof btoa === "function") {
+        let s = "";
+        for (let i = 0;i < buf.length; ++i)
+          s += String.fromCharCode(buf[i]);
+        str = btoa(s);
+      } else {
+        throw new Error("This environment does not support writing binary tags; either Buffer or btoa is required");
+      }
+      type ?? (type = Scalar.Scalar.BLOCK_LITERAL);
+      if (type !== Scalar.Scalar.QUOTE_DOUBLE) {
+        const lineWidth = Math.max(ctx.options.lineWidth - ctx.indent.length, ctx.options.minContentWidth);
+        const n = Math.ceil(str.length / lineWidth);
+        const lines = new Array(n);
+        for (let i = 0, o = 0;i < n; ++i, o += lineWidth) {
+          lines[i] = str.substr(o, lineWidth);
+        }
+        str = lines.join(type === Scalar.Scalar.BLOCK_LITERAL ? `
+` : " ");
+      }
+      return stringifyString.stringifyString({ comment, type, value: str }, ctx, onComment, onChompKeep);
+    }
+  };
+  exports.binary = binary;
+});
+
+// node_modules/yaml/dist/schema/yaml-1.1/pairs.js
+var require_pairs = __commonJS(function(exports) {
+  var identity = require_identity();
+  var Pair = require_Pair();
+  var Scalar = require_Scalar();
+  var YAMLSeq = require_YAMLSeq();
+  function resolvePairs(seq, onError) {
+    if (identity.isSeq(seq)) {
+      for (let i = 0;i < seq.items.length; ++i) {
+        let item = seq.items[i];
+        if (identity.isPair(item))
+          continue;
+        else if (identity.isMap(item)) {
+          if (item.items.length > 1)
+            onError("Each pair must have its own sequence indicator");
+          const pair = item.items[0] || new Pair.Pair(new Scalar.Scalar(null));
+          if (item.commentBefore)
+            pair.key.commentBefore = pair.key.commentBefore ? `${item.commentBefore}
+${pair.key.commentBefore}` : item.commentBefore;
+          if (item.comment) {
+            const cn = pair.value ?? pair.key;
+            cn.comment = cn.comment ? `${item.comment}
+${cn.comment}` : item.comment;
+          }
+          item = pair;
+        }
+        seq.items[i] = identity.isPair(item) ? item : new Pair.Pair(item);
+      }
+    } else
+      onError("Expected a sequence for this tag");
+    return seq;
+  }
+  function createPairs(schema, iterable, ctx) {
+    const { replacer } = ctx;
+    const pairs2 = new YAMLSeq.YAMLSeq(schema);
+    pairs2.tag = "tag:yaml.org,2002:pairs";
+    let i = 0;
+    if (iterable && Symbol.iterator in Object(iterable))
+      for (let it of iterable) {
+        if (typeof replacer === "function")
+          it = replacer.call(iterable, String(i++), it);
+        let key, value;
+        if (Array.isArray(it)) {
+          if (it.length === 2) {
+            key = it[0];
+            value = it[1];
+          } else
+            throw new TypeError(`Expected [key, value] tuple: ${it}`);
+        } else if (it && it instanceof Object) {
+          const keys = Object.keys(it);
+          if (keys.length === 1) {
+            key = keys[0];
+            value = it[key];
+          } else {
+            throw new TypeError(`Expected tuple with one key, not ${keys.length} keys`);
+          }
+        } else {
+          key = it;
+        }
+        pairs2.items.push(Pair.createPair(key, value, ctx));
+      }
+    return pairs2;
+  }
+  var pairs = {
+    collection: "seq",
+    default: false,
+    tag: "tag:yaml.org,2002:pairs",
+    resolve: resolvePairs,
+    createNode: createPairs
+  };
+  exports.createPairs = createPairs;
+  exports.pairs = pairs;
+  exports.resolvePairs = resolvePairs;
+});
+
+// node_modules/yaml/dist/schema/yaml-1.1/omap.js
+var require_omap = __commonJS(function(exports) {
+  var identity = require_identity();
+  var toJS = require_toJS();
+  var YAMLMap = require_YAMLMap();
+  var YAMLSeq = require_YAMLSeq();
+  var pairs = require_pairs();
+
+  class YAMLOMap extends YAMLSeq.YAMLSeq {
+    constructor() {
+      super();
+      this.add = YAMLMap.YAMLMap.prototype.add.bind(this);
+      this.delete = YAMLMap.YAMLMap.prototype.delete.bind(this);
+      this.get = YAMLMap.YAMLMap.prototype.get.bind(this);
+      this.has = YAMLMap.YAMLMap.prototype.has.bind(this);
+      this.set = YAMLMap.YAMLMap.prototype.set.bind(this);
+      this.tag = YAMLOMap.tag;
+    }
+    toJSON(_, ctx) {
+      if (!ctx)
+        return super.toJSON(_);
+      const map = new Map;
+      if (ctx?.onCreate)
+        ctx.onCreate(map);
+      for (const pair of this.items) {
+        let key, value;
+        if (identity.isPair(pair)) {
+          key = toJS.toJS(pair.key, "", ctx);
+          value = toJS.toJS(pair.value, key, ctx);
+        } else {
+          key = toJS.toJS(pair, "", ctx);
+        }
+        if (map.has(key))
+          throw new Error("Ordered maps must not include duplicate keys");
+        map.set(key, value);
+      }
+      return map;
+    }
+    static from(schema, iterable, ctx) {
+      const pairs$1 = pairs.createPairs(schema, iterable, ctx);
+      const omap2 = new this;
+      omap2.items = pairs$1.items;
+      return omap2;
+    }
+  }
+  YAMLOMap.tag = "tag:yaml.org,2002:omap";
+  var omap = {
+    collection: "seq",
+    identify: (value) => value instanceof Map,
+    nodeClass: YAMLOMap,
+    default: false,
+    tag: "tag:yaml.org,2002:omap",
+    resolve(seq, onError) {
+      const pairs$1 = pairs.resolvePairs(seq, onError);
+      const seenKeys = [];
+      for (const { key } of pairs$1.items) {
+        if (identity.isScalar(key)) {
+          if (seenKeys.includes(key.value)) {
+            onError(`Ordered maps must not include duplicate keys: ${key.value}`);
+          } else {
+            seenKeys.push(key.value);
+          }
+        }
+      }
+      return Object.assign(new YAMLOMap, pairs$1);
+    },
+    createNode: (schema, iterable, ctx) => YAMLOMap.from(schema, iterable, ctx)
+  };
+  exports.YAMLOMap = YAMLOMap;
+  exports.omap = omap;
+});
+
+// node_modules/yaml/dist/schema/yaml-1.1/bool.js
+var require_bool2 = __commonJS(function(exports) {
+  var Scalar = require_Scalar();
+  function boolStringify({ value, source }, ctx) {
+    const boolObj = value ? trueTag : falseTag;
+    if (source && boolObj.test.test(source))
+      return source;
+    return value ? ctx.options.trueStr : ctx.options.falseStr;
+  }
+  var trueTag = {
+    identify: (value) => value === true,
+    default: true,
+    tag: "tag:yaml.org,2002:bool",
+    test: /^(?:Y|y|[Yy]es|YES|[Tt]rue|TRUE|[Oo]n|ON)$/,
+    resolve: () => new Scalar.Scalar(true),
+    stringify: boolStringify
+  };
+  var falseTag = {
+    identify: (value) => value === false,
+    default: true,
+    tag: "tag:yaml.org,2002:bool",
+    test: /^(?:N|n|[Nn]o|NO|[Ff]alse|FALSE|[Oo]ff|OFF)$/,
+    resolve: () => new Scalar.Scalar(false),
+    stringify: boolStringify
+  };
+  exports.falseTag = falseTag;
+  exports.trueTag = trueTag;
+});
+
+// node_modules/yaml/dist/schema/yaml-1.1/float.js
+var require_float2 = __commonJS(function(exports) {
+  var Scalar = require_Scalar();
+  var stringifyNumber = require_stringifyNumber();
+  var floatNaN = {
+    identify: (value) => typeof value === "number",
+    default: true,
+    tag: "tag:yaml.org,2002:float",
+    test: /^(?:[-+]?\.(?:inf|Inf|INF)|\.nan|\.NaN|\.NAN)$/,
+    resolve: (str) => str.slice(-3).toLowerCase() === "nan" ? NaN : str[0] === "-" ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY,
+    stringify: stringifyNumber.stringifyNumber
+  };
+  var floatExp = {
+    identify: (value) => typeof value === "number",
+    default: true,
+    tag: "tag:yaml.org,2002:float",
+    format: "EXP",
+    test: /^[-+]?(?:[0-9][0-9_]*)?(?:\.[0-9_]*)?[eE][-+]?[0-9]+$/,
+    resolve: (str) => parseFloat(str.replace(/_/g, "")),
+    stringify(node) {
+      const num = Number(node.value);
+      return isFinite(num) ? num.toExponential() : stringifyNumber.stringifyNumber(node);
+    }
+  };
+  var float = {
+    identify: (value) => typeof value === "number",
+    default: true,
+    tag: "tag:yaml.org,2002:float",
+    test: /^[-+]?(?:[0-9][0-9_]*)?\.[0-9_]*$/,
+    resolve(str) {
+      const node = new Scalar.Scalar(parseFloat(str.replace(/_/g, "")));
+      const dot = str.indexOf(".");
+      if (dot !== -1) {
+        const f = str.substring(dot + 1).replace(/_/g, "");
+        if (f[f.length - 1] === "0")
+          node.minFractionDigits = f.length;
+      }
+      return node;
+    },
+    stringify: stringifyNumber.stringifyNumber
+  };
+  exports.float = float;
+  exports.floatExp = floatExp;
+  exports.floatNaN = floatNaN;
+});
+
+// node_modules/yaml/dist/schema/yaml-1.1/int.js
+var require_int2 = __commonJS(function(exports) {
+  var stringifyNumber = require_stringifyNumber();
+  var intIdentify = (value) => typeof value === "bigint" || Number.isInteger(value);
+  function intResolve(str, offset, radix, { intAsBigInt }) {
+    const sign = str[0];
+    if (sign === "-" || sign === "+")
+      offset += 1;
+    str = str.substring(offset).replace(/_/g, "");
+    if (intAsBigInt) {
+      switch (radix) {
+        case 2:
+          str = `0b${str}`;
+          break;
+        case 8:
+          str = `0o${str}`;
+          break;
+        case 16:
+          str = `0x${str}`;
+          break;
+      }
+      const n2 = BigInt(str);
+      return sign === "-" ? BigInt(-1) * n2 : n2;
+    }
+    const n = parseInt(str, radix);
+    return sign === "-" ? -1 * n : n;
+  }
+  function intStringify(node, radix, prefix) {
+    const { value } = node;
+    if (intIdentify(value)) {
+      const str = value.toString(radix);
+      return value < 0 ? "-" + prefix + str.substr(1) : prefix + str;
+    }
+    return stringifyNumber.stringifyNumber(node);
+  }
+  var intBin = {
+    identify: intIdentify,
+    default: true,
+    tag: "tag:yaml.org,2002:int",
+    format: "BIN",
+    test: /^[-+]?0b[0-1_]+$/,
+    resolve: (str, _onError, opt) => intResolve(str, 2, 2, opt),
+    stringify: (node) => intStringify(node, 2, "0b")
+  };
+  var intOct = {
+    identify: intIdentify,
+    default: true,
+    tag: "tag:yaml.org,2002:int",
+    format: "OCT",
+    test: /^[-+]?0[0-7_]+$/,
+    resolve: (str, _onError, opt) => intResolve(str, 1, 8, opt),
+    stringify: (node) => intStringify(node, 8, "0")
+  };
+  var int = {
+    identify: intIdentify,
+    default: true,
+    tag: "tag:yaml.org,2002:int",
+    test: /^[-+]?[0-9][0-9_]*$/,
+    resolve: (str, _onError, opt) => intResolve(str, 0, 10, opt),
+    stringify: stringifyNumber.stringifyNumber
+  };
+  var intHex = {
+    identify: intIdentify,
+    default: true,
+    tag: "tag:yaml.org,2002:int",
+    format: "HEX",
+    test: /^[-+]?0x[0-9a-fA-F_]+$/,
+    resolve: (str, _onError, opt) => intResolve(str, 2, 16, opt),
+    stringify: (node) => intStringify(node, 16, "0x")
+  };
+  exports.int = int;
+  exports.intBin = intBin;
+  exports.intHex = intHex;
+  exports.intOct = intOct;
+});
+
+// node_modules/yaml/dist/schema/yaml-1.1/set.js
+var require_set = __commonJS(function(exports) {
+  var identity = require_identity();
+  var Pair = require_Pair();
+  var YAMLMap = require_YAMLMap();
+
+  class YAMLSet extends YAMLMap.YAMLMap {
+    constructor(schema) {
+      super(schema);
+      this.tag = YAMLSet.tag;
+    }
+    add(key) {
+      let pair;
+      if (identity.isPair(key))
+        pair = key;
+      else if (key && typeof key === "object" && "key" in key && "value" in key && key.value === null)
+        pair = new Pair.Pair(key.key, null);
+      else
+        pair = new Pair.Pair(key, null);
+      const prev = YAMLMap.findPair(this.items, pair.key);
+      if (!prev)
+        this.items.push(pair);
+    }
+    get(key, keepPair) {
+      const pair = YAMLMap.findPair(this.items, key);
+      return !keepPair && identity.isPair(pair) ? identity.isScalar(pair.key) ? pair.key.value : pair.key : pair;
+    }
+    set(key, value) {
+      if (typeof value !== "boolean")
+        throw new Error(`Expected boolean value for set(key, value) in a YAML set, not ${typeof value}`);
+      const prev = YAMLMap.findPair(this.items, key);
+      if (prev && !value) {
+        this.items.splice(this.items.indexOf(prev), 1);
+      } else if (!prev && value) {
+        this.items.push(new Pair.Pair(key));
+      }
+    }
+    toJSON(_, ctx) {
+      return super.toJSON(_, ctx, Set);
+    }
+    toString(ctx, onComment, onChompKeep) {
+      if (!ctx)
+        return JSON.stringify(this);
+      if (this.hasAllNullValues(true))
+        return super.toString(Object.assign({}, ctx, { allNullValues: true }), onComment, onChompKeep);
+      else
+        throw new Error("Set items must all have null values");
+    }
+    static from(schema, iterable, ctx) {
+      const { replacer } = ctx;
+      const set2 = new this(schema);
+      if (iterable && Symbol.iterator in Object(iterable))
+        for (let value of iterable) {
+          if (typeof replacer === "function")
+            value = replacer.call(iterable, value, value);
+          set2.items.push(Pair.createPair(value, null, ctx));
+        }
+      return set2;
+    }
+  }
+  YAMLSet.tag = "tag:yaml.org,2002:set";
+  var set = {
+    collection: "map",
+    identify: (value) => value instanceof Set,
+    nodeClass: YAMLSet,
+    default: false,
+    tag: "tag:yaml.org,2002:set",
+    createNode: (schema, iterable, ctx) => YAMLSet.from(schema, iterable, ctx),
+    resolve(map, onError) {
+      if (identity.isMap(map)) {
+        if (map.hasAllNullValues(true))
+          return Object.assign(new YAMLSet, map);
+        else
+          onError("Set items must all have null values");
+      } else
+        onError("Expected a mapping for this tag");
+      return map;
+    }
+  };
+  exports.YAMLSet = YAMLSet;
+  exports.set = set;
+});
+
+// node_modules/yaml/dist/schema/yaml-1.1/timestamp.js
+var require_timestamp = __commonJS(function(exports) {
+  var stringifyNumber = require_stringifyNumber();
+  function parseSexagesimal(str, asBigInt) {
+    const sign = str[0];
+    const parts = sign === "-" || sign === "+" ? str.substring(1) : str;
+    const num = (n) => asBigInt ? BigInt(n) : Number(n);
+    const res = parts.replace(/_/g, "").split(":").reduce((res2, p) => res2 * num(60) + num(p), num(0));
+    return sign === "-" ? num(-1) * res : res;
+  }
+  function stringifySexagesimal(node) {
+    let { value } = node;
+    let num = (n) => n;
+    if (typeof value === "bigint")
+      num = (n) => BigInt(n);
+    else if (isNaN(value) || !isFinite(value))
+      return stringifyNumber.stringifyNumber(node);
+    let sign = "";
+    if (value < 0) {
+      sign = "-";
+      value *= num(-1);
+    }
+    const _60 = num(60);
+    const parts = [value % _60];
+    if (value < 60) {
+      parts.unshift(0);
+    } else {
+      value = (value - parts[0]) / _60;
+      parts.unshift(value % _60);
+      if (value >= 60) {
+        value = (value - parts[0]) / _60;
+        parts.unshift(value);
+      }
+    }
+    return sign + parts.map((n) => String(n).padStart(2, "0")).join(":").replace(/000000\d*$/, "");
+  }
+  var intTime = {
+    identify: (value) => typeof value === "bigint" || Number.isInteger(value),
+    default: true,
+    tag: "tag:yaml.org,2002:int",
+    format: "TIME",
+    test: /^[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+$/,
+    resolve: (str, _onError, { intAsBigInt }) => parseSexagesimal(str, intAsBigInt),
+    stringify: stringifySexagesimal
+  };
+  var floatTime = {
+    identify: (value) => typeof value === "number",
+    default: true,
+    tag: "tag:yaml.org,2002:float",
+    format: "TIME",
+    test: /^[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\.[0-9_]*$/,
+    resolve: (str) => parseSexagesimal(str, false),
+    stringify: stringifySexagesimal
+  };
+  var timestamp = {
+    identify: (value) => value instanceof Date,
+    default: true,
+    tag: "tag:yaml.org,2002:timestamp",
+    test: RegExp("^([0-9]{4})-([0-9]{1,2})-([0-9]{1,2})" + "(?:" + "(?:t|T|[ \\t]+)" + "([0-9]{1,2}):([0-9]{1,2}):([0-9]{1,2}(\\.[0-9]+)?)" + "(?:[ \\t]*(Z|[-+][012]?[0-9](?::[0-9]{2})?))?" + ")?$"),
+    resolve(str) {
+      const match = str.match(timestamp.test);
+      if (!match)
+        throw new Error("!!timestamp expects a date, starting with yyyy-mm-dd");
+      const [, year, month, day, hour, minute, second] = match.map(Number);
+      const millisec = match[7] ? Number((match[7] + "00").substr(1, 3)) : 0;
+      let date = Date.UTC(year, month - 1, day, hour || 0, minute || 0, second || 0, millisec);
+      const tz = match[8];
+      if (tz && tz !== "Z") {
+        let d = parseSexagesimal(tz, false);
+        if (Math.abs(d) < 30)
+          d *= 60;
+        date -= 60000 * d;
+      }
+      return new Date(date);
+    },
+    stringify: ({ value }) => value?.toISOString().replace(/(T00:00:00)?\.000Z$/, "") ?? ""
+  };
+  exports.floatTime = floatTime;
+  exports.intTime = intTime;
+  exports.timestamp = timestamp;
+});
+
+// node_modules/yaml/dist/schema/yaml-1.1/schema.js
+var require_schema3 = __commonJS(function(exports) {
+  var map = require_map();
+  var _null = require_null();
+  var seq = require_seq();
+  var string = require_string();
+  var binary = require_binary();
+  var bool = require_bool2();
+  var float = require_float2();
+  var int = require_int2();
+  var merge = require_merge();
+  var omap = require_omap();
+  var pairs = require_pairs();
+  var set = require_set();
+  var timestamp = require_timestamp();
+  var schema = [
+    map.map,
+    seq.seq,
+    string.string,
+    _null.nullTag,
+    bool.trueTag,
+    bool.falseTag,
+    int.intBin,
+    int.intOct,
+    int.int,
+    int.intHex,
+    float.floatNaN,
+    float.floatExp,
+    float.float,
+    binary.binary,
+    merge.merge,
+    omap.omap,
+    pairs.pairs,
+    set.set,
+    timestamp.intTime,
+    timestamp.floatTime,
+    timestamp.timestamp
+  ];
+  exports.schema = schema;
+});
+
+// node_modules/yaml/dist/schema/tags.js
+var require_tags = __commonJS(function(exports) {
+  var map = require_map();
+  var _null = require_null();
+  var seq = require_seq();
+  var string = require_string();
+  var bool = require_bool();
+  var float = require_float();
+  var int = require_int();
+  var schema = require_schema();
+  var schema$1 = require_schema2();
+  var binary = require_binary();
+  var merge = require_merge();
+  var omap = require_omap();
+  var pairs = require_pairs();
+  var schema$2 = require_schema3();
+  var set = require_set();
+  var timestamp = require_timestamp();
+  var schemas = new Map([
+    ["core", schema.schema],
+    ["failsafe", [map.map, seq.seq, string.string]],
+    ["json", schema$1.schema],
+    ["yaml11", schema$2.schema],
+    ["yaml-1.1", schema$2.schema]
+  ]);
+  var tagsByName = {
+    binary: binary.binary,
+    bool: bool.boolTag,
+    float: float.float,
+    floatExp: float.floatExp,
+    floatNaN: float.floatNaN,
+    floatTime: timestamp.floatTime,
+    int: int.int,
+    intHex: int.intHex,
+    intOct: int.intOct,
+    intTime: timestamp.intTime,
+    map: map.map,
+    merge: merge.merge,
+    null: _null.nullTag,
+    omap: omap.omap,
+    pairs: pairs.pairs,
+    seq: seq.seq,
+    set: set.set,
+    timestamp: timestamp.timestamp
+  };
+  var coreKnownTags = {
+    "tag:yaml.org,2002:binary": binary.binary,
+    "tag:yaml.org,2002:merge": merge.merge,
+    "tag:yaml.org,2002:omap": omap.omap,
+    "tag:yaml.org,2002:pairs": pairs.pairs,
+    "tag:yaml.org,2002:set": set.set,
+    "tag:yaml.org,2002:timestamp": timestamp.timestamp
+  };
+  function getTags(customTags, schemaName, addMergeTag) {
+    const schemaTags = schemas.get(schemaName);
+    if (schemaTags && !customTags) {
+      return addMergeTag && !schemaTags.includes(merge.merge) ? schemaTags.concat(merge.merge) : schemaTags.slice();
+    }
+    let tags = schemaTags;
+    if (!tags) {
+      if (Array.isArray(customTags))
+        tags = [];
+      else {
+        const keys = Array.from(schemas.keys()).filter((key) => key !== "yaml11").map((key) => JSON.stringify(key)).join(", ");
+        throw new Error(`Unknown schema "${schemaName}"; use one of ${keys} or define customTags array`);
+      }
+    }
+    if (Array.isArray(customTags)) {
+      for (const tag of customTags)
+        tags = tags.concat(tag);
+    } else if (typeof customTags === "function") {
+      tags = customTags(tags.slice());
+    }
+    if (addMergeTag)
+      tags = tags.concat(merge.merge);
+    return tags.reduce((tags2, tag) => {
+      const tagObj = typeof tag === "string" ? tagsByName[tag] : tag;
+      if (!tagObj) {
+        const tagName = JSON.stringify(tag);
+        const keys = Object.keys(tagsByName).map((key) => JSON.stringify(key)).join(", ");
+        throw new Error(`Unknown custom tag ${tagName}; use one of ${keys}`);
+      }
+      if (!tags2.includes(tagObj))
+        tags2.push(tagObj);
+      return tags2;
+    }, []);
+  }
+  exports.coreKnownTags = coreKnownTags;
+  exports.getTags = getTags;
+});
+
+// node_modules/yaml/dist/schema/Schema.js
+var require_Schema = __commonJS(function(exports) {
+  var identity = require_identity();
+  var map = require_map();
+  var seq = require_seq();
+  var string = require_string();
+  var tags = require_tags();
+  var sortMapEntriesByKey = (a, b) => a.key < b.key ? -1 : a.key > b.key ? 1 : 0;
+
+  class Schema {
+    constructor({ compat, customTags, merge, resolveKnownTags, schema, sortMapEntries, toStringDefaults }) {
+      this.compat = Array.isArray(compat) ? tags.getTags(compat, "compat") : compat ? tags.getTags(null, compat) : null;
+      this.name = typeof schema === "string" && schema || "core";
+      this.knownTags = resolveKnownTags ? tags.coreKnownTags : {};
+      this.tags = tags.getTags(customTags, this.name, merge);
+      this.toStringOptions = toStringDefaults ?? null;
+      Object.defineProperty(this, identity.MAP, { value: map.map });
+      Object.defineProperty(this, identity.SCALAR, { value: string.string });
+      Object.defineProperty(this, identity.SEQ, { value: seq.seq });
+      this.sortMapEntries = typeof sortMapEntries === "function" ? sortMapEntries : sortMapEntries === true ? sortMapEntriesByKey : null;
+    }
+    clone() {
+      const copy = Object.create(Schema.prototype, Object.getOwnPropertyDescriptors(this));
+      copy.tags = this.tags.slice();
+      return copy;
+    }
+  }
+  exports.Schema = Schema;
+});
+
+// node_modules/yaml/dist/stringify/stringifyDocument.js
+var require_stringifyDocument = __commonJS(function(exports) {
+  var identity = require_identity();
+  var stringify = require_stringify();
+  var stringifyComment = require_stringifyComment();
+  function stringifyDocument(doc, options) {
+    const lines = [];
+    let hasDirectives = options.directives === true;
+    if (options.directives !== false && doc.directives) {
+      const dir = doc.directives.toString(doc);
+      if (dir) {
+        lines.push(dir);
+        hasDirectives = true;
+      } else if (doc.directives.docStart)
+        hasDirectives = true;
+    }
+    if (hasDirectives)
+      lines.push("---");
+    const ctx = stringify.createStringifyContext(doc, options);
+    const { commentString } = ctx.options;
+    if (doc.commentBefore) {
+      if (lines.length !== 1)
+        lines.unshift("");
+      const cs = commentString(doc.commentBefore);
+      lines.unshift(stringifyComment.indentComment(cs, ""));
+    }
+    let chompKeep = false;
+    let contentComment = null;
+    if (doc.contents) {
+      if (identity.isNode(doc.contents)) {
+        if (doc.contents.spaceBefore && hasDirectives)
+          lines.push("");
+        if (doc.contents.commentBefore) {
+          const cs = commentString(doc.contents.commentBefore);
+          lines.push(stringifyComment.indentComment(cs, ""));
+        }
+        ctx.forceBlockIndent = !!doc.comment;
+        contentComment = doc.contents.comment;
+      }
+      const onChompKeep = contentComment ? undefined : () => chompKeep = true;
+      let body = stringify.stringify(doc.contents, ctx, () => contentComment = null, onChompKeep);
+      if (contentComment)
+        body += stringifyComment.lineComment(body, "", commentString(contentComment));
+      if ((body[0] === "|" || body[0] === ">") && lines[lines.length - 1] === "---") {
+        lines[lines.length - 1] = `--- ${body}`;
+      } else
+        lines.push(body);
+    } else {
+      lines.push(stringify.stringify(doc.contents, ctx));
+    }
+    if (doc.directives?.docEnd) {
+      if (doc.comment) {
+        const cs = commentString(doc.comment);
+        if (cs.includes(`
+`)) {
+          lines.push("...");
+          lines.push(stringifyComment.indentComment(cs, ""));
+        } else {
+          lines.push(`... ${cs}`);
+        }
+      } else {
+        lines.push("...");
+      }
+    } else {
+      let dc = doc.comment;
+      if (dc && chompKeep)
+        dc = dc.replace(/^\n+/, "");
+      if (dc) {
+        if ((!chompKeep || contentComment) && lines[lines.length - 1] !== "")
+          lines.push("");
+        lines.push(stringifyComment.indentComment(commentString(dc), ""));
+      }
+    }
+    return lines.join(`
+`) + `
+`;
+  }
+  exports.stringifyDocument = stringifyDocument;
+});
+
+// node_modules/yaml/dist/doc/Document.js
+var require_Document = __commonJS(function(exports) {
+  var Alias = require_Alias();
+  var Collection = require_Collection();
+  var identity = require_identity();
+  var Pair = require_Pair();
+  var toJS = require_toJS();
+  var Schema = require_Schema();
+  var stringifyDocument = require_stringifyDocument();
+  var anchors = require_anchors();
+  var applyReviver = require_applyReviver();
+  var createNode = require_createNode();
+  var directives = require_directives();
+
+  class Document {
+    constructor(value, replacer, options) {
+      this.commentBefore = null;
+      this.comment = null;
+      this.errors = [];
+      this.warnings = [];
+      Object.defineProperty(this, identity.NODE_TYPE, { value: identity.DOC });
+      let _replacer = null;
+      if (typeof replacer === "function" || Array.isArray(replacer)) {
+        _replacer = replacer;
+      } else if (options === undefined && replacer) {
+        options = replacer;
+        replacer = undefined;
+      }
+      const opt = Object.assign({
+        intAsBigInt: false,
+        keepSourceTokens: false,
+        logLevel: "warn",
+        prettyErrors: true,
+        strict: true,
+        stringKeys: false,
+        uniqueKeys: true,
+        version: "1.2"
+      }, options);
+      this.options = opt;
+      let { version } = opt;
+      if (options?._directives) {
+        this.directives = options._directives.atDocument();
+        if (this.directives.yaml.explicit)
+          version = this.directives.yaml.version;
+      } else
+        this.directives = new directives.Directives({ version });
+      this.setSchema(version, options);
+      this.contents = value === undefined ? null : this.createNode(value, _replacer, options);
+    }
+    clone() {
+      const copy = Object.create(Document.prototype, {
+        [identity.NODE_TYPE]: { value: identity.DOC }
+      });
+      copy.commentBefore = this.commentBefore;
+      copy.comment = this.comment;
+      copy.errors = this.errors.slice();
+      copy.warnings = this.warnings.slice();
+      copy.options = Object.assign({}, this.options);
+      if (this.directives)
+        copy.directives = this.directives.clone();
+      copy.schema = this.schema.clone();
+      copy.contents = identity.isNode(this.contents) ? this.contents.clone(copy.schema) : this.contents;
+      if (this.range)
+        copy.range = this.range.slice();
+      return copy;
+    }
+    add(value) {
+      if (assertCollection(this.contents))
+        this.contents.add(value);
+    }
+    addIn(path, value) {
+      if (assertCollection(this.contents))
+        this.contents.addIn(path, value);
+    }
+    createAlias(node, name) {
+      if (!node.anchor) {
+        const prev = anchors.anchorNames(this);
+        node.anchor = !name || prev.has(name) ? anchors.findNewAnchor(name || "a", prev) : name;
+      }
+      return new Alias.Alias(node.anchor);
+    }
+    createNode(value, replacer, options) {
+      let _replacer = undefined;
+      if (typeof replacer === "function") {
+        value = replacer.call({ "": value }, "", value);
+        _replacer = replacer;
+      } else if (Array.isArray(replacer)) {
+        const keyToStr = (v) => typeof v === "number" || v instanceof String || v instanceof Number;
+        const asStr = replacer.filter(keyToStr).map(String);
+        if (asStr.length > 0)
+          replacer = replacer.concat(asStr);
+        _replacer = replacer;
+      } else if (options === undefined && replacer) {
+        options = replacer;
+        replacer = undefined;
+      }
+      const { aliasDuplicateObjects, anchorPrefix, flow, keepUndefined, onTagObj, tag } = options ?? {};
+      const { onAnchor, setAnchors, sourceObjects } = anchors.createNodeAnchors(this, anchorPrefix || "a");
+      const ctx = {
+        aliasDuplicateObjects: aliasDuplicateObjects ?? true,
+        keepUndefined: keepUndefined ?? false,
+        onAnchor,
+        onTagObj,
+        replacer: _replacer,
+        schema: this.schema,
+        sourceObjects
+      };
+      const node = createNode.createNode(value, tag, ctx);
+      if (flow && identity.isCollection(node))
+        node.flow = true;
+      setAnchors();
+      return node;
+    }
+    createPair(key, value, options = {}) {
+      const k = this.createNode(key, null, options);
+      const v = this.createNode(value, null, options);
+      return new Pair.Pair(k, v);
+    }
+    delete(key) {
+      return assertCollection(this.contents) ? this.contents.delete(key) : false;
+    }
+    deleteIn(path) {
+      if (Collection.isEmptyPath(path)) {
+        if (this.contents == null)
+          return false;
+        this.contents = null;
+        return true;
+      }
+      return assertCollection(this.contents) ? this.contents.deleteIn(path) : false;
+    }
+    get(key, keepScalar) {
+      return identity.isCollection(this.contents) ? this.contents.get(key, keepScalar) : undefined;
+    }
+    getIn(path, keepScalar) {
+      if (Collection.isEmptyPath(path))
+        return !keepScalar && identity.isScalar(this.contents) ? this.contents.value : this.contents;
+      return identity.isCollection(this.contents) ? this.contents.getIn(path, keepScalar) : undefined;
+    }
+    has(key) {
+      return identity.isCollection(this.contents) ? this.contents.has(key) : false;
+    }
+    hasIn(path) {
+      if (Collection.isEmptyPath(path))
+        return this.contents !== undefined;
+      return identity.isCollection(this.contents) ? this.contents.hasIn(path) : false;
+    }
+    set(key, value) {
+      if (this.contents == null) {
+        this.contents = Collection.collectionFromPath(this.schema, [key], value);
+      } else if (assertCollection(this.contents)) {
+        this.contents.set(key, value);
+      }
+    }
+    setIn(path, value) {
+      if (Collection.isEmptyPath(path)) {
+        this.contents = value;
+      } else if (this.contents == null) {
+        this.contents = Collection.collectionFromPath(this.schema, Array.from(path), value);
+      } else if (assertCollection(this.contents)) {
+        this.contents.setIn(path, value);
+      }
+    }
+    setSchema(version, options = {}) {
+      if (typeof version === "number")
+        version = String(version);
+      let opt;
+      switch (version) {
+        case "1.1":
+          if (this.directives)
+            this.directives.yaml.version = "1.1";
+          else
+            this.directives = new directives.Directives({ version: "1.1" });
+          opt = { resolveKnownTags: false, schema: "yaml-1.1" };
+          break;
+        case "1.2":
+        case "next":
+          if (this.directives)
+            this.directives.yaml.version = version;
+          else
+            this.directives = new directives.Directives({ version });
+          opt = { resolveKnownTags: true, schema: "core" };
+          break;
+        case null:
+          if (this.directives)
+            delete this.directives;
+          opt = null;
+          break;
+        default: {
+          const sv = JSON.stringify(version);
+          throw new Error(`Expected '1.1', '1.2' or null as first argument, but found: ${sv}`);
+        }
+      }
+      if (options.schema instanceof Object)
+        this.schema = options.schema;
+      else if (opt)
+        this.schema = new Schema.Schema(Object.assign(opt, options));
+      else
+        throw new Error(`With a null YAML version, the { schema: Schema } option is required`);
+    }
+    toJS({ json, jsonArg, mapAsMap, maxAliasCount, onAnchor, reviver } = {}) {
+      const ctx = {
+        anchors: new Map,
+        doc: this,
+        keep: !json,
+        mapAsMap: mapAsMap === true,
+        mapKeyWarned: false,
+        maxAliasCount: typeof maxAliasCount === "number" ? maxAliasCount : 100
+      };
+      const res = toJS.toJS(this.contents, jsonArg ?? "", ctx);
+      if (typeof onAnchor === "function")
+        for (const { count, res: res2 } of ctx.anchors.values())
+          onAnchor(res2, count);
+      return typeof reviver === "function" ? applyReviver.applyReviver(reviver, { "": res }, "", res) : res;
+    }
+    toJSON(jsonArg, onAnchor) {
+      return this.toJS({ json: true, jsonArg, mapAsMap: false, onAnchor });
+    }
+    toString(options = {}) {
+      if (this.errors.length > 0)
+        throw new Error("Document with errors cannot be stringified");
+      if ("indent" in options && (!Number.isInteger(options.indent) || Number(options.indent) <= 0)) {
+        const s = JSON.stringify(options.indent);
+        throw new Error(`"indent" option must be a positive integer, not ${s}`);
+      }
+      return stringifyDocument.stringifyDocument(this, options);
+    }
+  }
+  function assertCollection(contents) {
+    if (identity.isCollection(contents))
+      return true;
+    throw new Error("Expected a YAML collection as document contents");
+  }
+  exports.Document = Document;
+});
+
+// node_modules/yaml/dist/errors.js
+var require_errors = __commonJS(function(exports) {
+  class YAMLError extends Error {
+    constructor(name, pos, code, message) {
+      super();
+      this.name = name;
+      this.code = code;
+      this.message = message;
+      this.pos = pos;
+    }
+  }
+
+  class YAMLParseError extends YAMLError {
+    constructor(pos, code, message) {
+      super("YAMLParseError", pos, code, message);
+    }
+  }
+
+  class YAMLWarning extends YAMLError {
+    constructor(pos, code, message) {
+      super("YAMLWarning", pos, code, message);
+    }
+  }
+  var prettifyError = (src, lc) => (error) => {
+    if (error.pos[0] === -1)
+      return;
+    error.linePos = error.pos.map((pos) => lc.linePos(pos));
+    const { line, col } = error.linePos[0];
+    error.message += ` at line ${line}, column ${col}`;
+    let ci = col - 1;
+    let lineStr = src.substring(lc.lineStarts[line - 1], lc.lineStarts[line]).replace(/[\n\r]+$/, "");
+    if (ci >= 60 && lineStr.length > 80) {
+      const trimStart = Math.min(ci - 39, lineStr.length - 79);
+      lineStr = "\u2026" + lineStr.substring(trimStart);
+      ci -= trimStart - 1;
+    }
+    if (lineStr.length > 80)
+      lineStr = lineStr.substring(0, 79) + "\u2026";
+    if (line > 1 && /^ *$/.test(lineStr.substring(0, ci))) {
+      let prev = src.substring(lc.lineStarts[line - 2], lc.lineStarts[line - 1]);
+      if (prev.length > 80)
+        prev = prev.substring(0, 79) + `\u2026
+`;
+      lineStr = prev + lineStr;
+    }
+    if (/[^ ]/.test(lineStr)) {
+      let count = 1;
+      const end = error.linePos[1];
+      if (end?.line === line && end.col > col) {
+        count = Math.max(1, Math.min(end.col - col, 80 - ci));
+      }
+      const pointer = " ".repeat(ci) + "^".repeat(count);
+      error.message += `:
+
+${lineStr}
+${pointer}
+`;
+    }
+  };
+  exports.YAMLError = YAMLError;
+  exports.YAMLParseError = YAMLParseError;
+  exports.YAMLWarning = YAMLWarning;
+  exports.prettifyError = prettifyError;
+});
+
+// node_modules/yaml/dist/compose/resolve-props.js
+var require_resolve_props = __commonJS(function(exports) {
+  function resolveProps(tokens, { flow, indicator, next, offset, onError, parentIndent, startOnNewline }) {
+    let spaceBefore = false;
+    let atNewline = startOnNewline;
+    let hasSpace = startOnNewline;
+    let comment = "";
+    let commentSep = "";
+    let hasNewline = false;
+    let reqSpace = false;
+    let tab = null;
+    let anchor = null;
+    let tag = null;
+    let newlineAfterProp = null;
+    let comma = null;
+    let found = null;
+    let start = null;
+    for (const token of tokens) {
+      if (reqSpace) {
+        if (token.type !== "space" && token.type !== "newline" && token.type !== "comma")
+          onError(token.offset, "MISSING_CHAR", "Tags and anchors must be separated from the next token by white space");
+        reqSpace = false;
+      }
+      if (tab) {
+        if (atNewline && token.type !== "comment" && token.type !== "newline") {
+          onError(tab, "TAB_AS_INDENT", "Tabs are not allowed as indentation");
+        }
+        tab = null;
+      }
+      switch (token.type) {
+        case "space":
+          if (!flow && (indicator !== "doc-start" || next?.type !== "flow-collection") && token.source.includes("\t")) {
+            tab = token;
+          }
+          hasSpace = true;
+          break;
+        case "comment": {
+          if (!hasSpace)
+            onError(token, "MISSING_CHAR", "Comments must be separated from other tokens by white space characters");
+          const cb = token.source.substring(1) || " ";
+          if (!comment)
+            comment = cb;
+          else
+            comment += commentSep + cb;
+          commentSep = "";
+          atNewline = false;
+          break;
+        }
+        case "newline":
+          if (atNewline) {
+            if (comment)
+              comment += token.source;
+            else if (!found || indicator !== "seq-item-ind")
+              spaceBefore = true;
+          } else
+            commentSep += token.source;
+          atNewline = true;
+          hasNewline = true;
+          if (anchor || tag)
+            newlineAfterProp = token;
+          hasSpace = true;
+          break;
+        case "anchor":
+          if (anchor)
+            onError(token, "MULTIPLE_ANCHORS", "A node can have at most one anchor");
+          if (token.source.endsWith(":"))
+            onError(token.offset + token.source.length - 1, "BAD_ALIAS", "Anchor ending in : is ambiguous", true);
+          anchor = token;
+          start ?? (start = token.offset);
+          atNewline = false;
+          hasSpace = false;
+          reqSpace = true;
+          break;
+        case "tag": {
+          if (tag)
+            onError(token, "MULTIPLE_TAGS", "A node can have at most one tag");
+          tag = token;
+          start ?? (start = token.offset);
+          atNewline = false;
+          hasSpace = false;
+          reqSpace = true;
+          break;
+        }
+        case indicator:
+          if (anchor || tag)
+            onError(token, "BAD_PROP_ORDER", `Anchors and tags must be after the ${token.source} indicator`);
+          if (found)
+            onError(token, "UNEXPECTED_TOKEN", `Unexpected ${token.source} in ${flow ?? "collection"}`);
+          found = token;
+          atNewline = indicator === "seq-item-ind" || indicator === "explicit-key-ind";
+          hasSpace = false;
+          break;
+        case "comma":
+          if (flow) {
+            if (comma)
+              onError(token, "UNEXPECTED_TOKEN", `Unexpected , in ${flow}`);
+            comma = token;
+            atNewline = false;
+            hasSpace = false;
+            break;
+          }
+        default:
+          onError(token, "UNEXPECTED_TOKEN", `Unexpected ${token.type} token`);
+          atNewline = false;
+          hasSpace = false;
+      }
+    }
+    const last = tokens[tokens.length - 1];
+    const end = last ? last.offset + last.source.length : offset;
+    if (reqSpace && next && next.type !== "space" && next.type !== "newline" && next.type !== "comma" && (next.type !== "scalar" || next.source !== "")) {
+      onError(next.offset, "MISSING_CHAR", "Tags and anchors must be separated from the next token by white space");
+    }
+    if (tab && (atNewline && tab.indent <= parentIndent || next?.type === "block-map" || next?.type === "block-seq"))
+      onError(tab, "TAB_AS_INDENT", "Tabs are not allowed as indentation");
+    return {
+      comma,
+      found,
+      spaceBefore,
+      comment,
+      hasNewline,
+      anchor,
+      tag,
+      newlineAfterProp,
+      end,
+      start: start ?? end
+    };
+  }
+  exports.resolveProps = resolveProps;
+});
+
+// node_modules/yaml/dist/compose/util-contains-newline.js
+var require_util_contains_newline = __commonJS(function(exports) {
+  function containsNewline(key) {
+    if (!key)
+      return null;
+    switch (key.type) {
+      case "alias":
+      case "scalar":
+      case "double-quoted-scalar":
+      case "single-quoted-scalar":
+        if (key.source.includes(`
+`))
+          return true;
+        if (key.end) {
+          for (const st of key.end)
+            if (st.type === "newline")
+              return true;
+        }
+        return false;
+      case "flow-collection":
+        for (const it of key.items) {
+          for (const st of it.start)
+            if (st.type === "newline")
+              return true;
+          if (it.sep) {
+            for (const st of it.sep)
+              if (st.type === "newline")
+                return true;
+          }
+          if (containsNewline(it.key) || containsNewline(it.value))
+            return true;
+        }
+        return false;
+      default:
+        return true;
+    }
+  }
+  exports.containsNewline = containsNewline;
+});
+
+// node_modules/yaml/dist/compose/util-flow-indent-check.js
+var require_util_flow_indent_check = __commonJS(function(exports) {
+  var utilContainsNewline = require_util_contains_newline();
+  function flowIndentCheck(indent, fc, onError) {
+    if (fc?.type === "flow-collection") {
+      const end = fc.end[0];
+      if (end.indent === indent && (end.source === "]" || end.source === "}") && utilContainsNewline.containsNewline(fc)) {
+        const msg = "Flow end indicator should be more indented than parent";
+        onError(end, "BAD_INDENT", msg, true);
+      }
+    }
+  }
+  exports.flowIndentCheck = flowIndentCheck;
+});
+
+// node_modules/yaml/dist/compose/util-map-includes.js
+var require_util_map_includes = __commonJS(function(exports) {
+  var identity = require_identity();
+  function mapIncludes(ctx, items, search) {
+    const { uniqueKeys } = ctx.options;
+    if (uniqueKeys === false)
+      return false;
+    const isEqual = typeof uniqueKeys === "function" ? uniqueKeys : (a, b) => a === b || identity.isScalar(a) && identity.isScalar(b) && a.value === b.value;
+    return items.some((pair) => isEqual(pair.key, search));
+  }
+  exports.mapIncludes = mapIncludes;
+});
+
+// node_modules/yaml/dist/compose/resolve-block-map.js
+var require_resolve_block_map = __commonJS(function(exports) {
+  var Pair = require_Pair();
+  var YAMLMap = require_YAMLMap();
+  var resolveProps = require_resolve_props();
+  var utilContainsNewline = require_util_contains_newline();
+  var utilFlowIndentCheck = require_util_flow_indent_check();
+  var utilMapIncludes = require_util_map_includes();
+  var startColMsg = "All mapping items must start at the same column";
+  function resolveBlockMap({ composeNode, composeEmptyNode }, ctx, bm, onError, tag) {
+    const NodeClass = tag?.nodeClass ?? YAMLMap.YAMLMap;
+    const map = new NodeClass(ctx.schema);
+    if (ctx.atRoot)
+      ctx.atRoot = false;
+    let offset = bm.offset;
+    let commentEnd = null;
+    for (const collItem of bm.items) {
+      const { start, key, sep: sep2, value } = collItem;
+      const keyProps = resolveProps.resolveProps(start, {
+        indicator: "explicit-key-ind",
+        next: key ?? sep2?.[0],
+        offset,
+        onError,
+        parentIndent: bm.indent,
+        startOnNewline: true
+      });
+      const implicitKey = !keyProps.found;
+      if (implicitKey) {
+        if (key) {
+          if (key.type === "block-seq")
+            onError(offset, "BLOCK_AS_IMPLICIT_KEY", "A block sequence may not be used as an implicit map key");
+          else if ("indent" in key && key.indent !== bm.indent)
+            onError(offset, "BAD_INDENT", startColMsg);
+        }
+        if (!keyProps.anchor && !keyProps.tag && !sep2) {
+          commentEnd = keyProps.end;
+          if (keyProps.comment) {
+            if (map.comment)
+              map.comment += `
+` + keyProps.comment;
+            else
+              map.comment = keyProps.comment;
+          }
+          continue;
+        }
+        if (keyProps.newlineAfterProp || utilContainsNewline.containsNewline(key)) {
+          onError(key ?? start[start.length - 1], "MULTILINE_IMPLICIT_KEY", "Implicit keys need to be on a single line");
+        }
+      } else if (keyProps.found?.indent !== bm.indent) {
+        onError(offset, "BAD_INDENT", startColMsg);
+      }
+      ctx.atKey = true;
+      const keyStart = keyProps.end;
+      const keyNode = key ? composeNode(ctx, key, keyProps, onError) : composeEmptyNode(ctx, keyStart, start, null, keyProps, onError);
+      if (ctx.schema.compat)
+        utilFlowIndentCheck.flowIndentCheck(bm.indent, key, onError);
+      ctx.atKey = false;
+      if (utilMapIncludes.mapIncludes(ctx, map.items, keyNode))
+        onError(keyStart, "DUPLICATE_KEY", "Map keys must be unique");
+      const valueProps = resolveProps.resolveProps(sep2 ?? [], {
+        indicator: "map-value-ind",
+        next: value,
+        offset: keyNode.range[2],
+        onError,
+        parentIndent: bm.indent,
+        startOnNewline: !key || key.type === "block-scalar"
+      });
+      offset = valueProps.end;
+      if (valueProps.found) {
+        if (implicitKey) {
+          if (value?.type === "block-map" && !valueProps.hasNewline)
+            onError(offset, "BLOCK_AS_IMPLICIT_KEY", "Nested mappings are not allowed in compact mappings");
+          if (ctx.options.strict && keyProps.start < valueProps.found.offset - 1024)
+            onError(keyNode.range, "KEY_OVER_1024_CHARS", "The : indicator must be at most 1024 chars after the start of an implicit block mapping key");
+        }
+        const valueNode = value ? composeNode(ctx, value, valueProps, onError) : composeEmptyNode(ctx, offset, sep2, null, valueProps, onError);
+        if (ctx.schema.compat)
+          utilFlowIndentCheck.flowIndentCheck(bm.indent, value, onError);
+        offset = valueNode.range[2];
+        const pair = new Pair.Pair(keyNode, valueNode);
+        if (ctx.options.keepSourceTokens)
+          pair.srcToken = collItem;
+        map.items.push(pair);
+      } else {
+        if (implicitKey)
+          onError(keyNode.range, "MISSING_CHAR", "Implicit map keys need to be followed by map values");
+        if (valueProps.comment) {
+          if (keyNode.comment)
+            keyNode.comment += `
+` + valueProps.comment;
+          else
+            keyNode.comment = valueProps.comment;
+        }
+        const pair = new Pair.Pair(keyNode);
+        if (ctx.options.keepSourceTokens)
+          pair.srcToken = collItem;
+        map.items.push(pair);
+      }
+    }
+    if (commentEnd && commentEnd < offset)
+      onError(commentEnd, "IMPOSSIBLE", "Map comment with trailing content");
+    map.range = [bm.offset, offset, commentEnd ?? offset];
+    return map;
+  }
+  exports.resolveBlockMap = resolveBlockMap;
+});
+
+// node_modules/yaml/dist/compose/resolve-block-seq.js
+var require_resolve_block_seq = __commonJS(function(exports) {
+  var YAMLSeq = require_YAMLSeq();
+  var resolveProps = require_resolve_props();
+  var utilFlowIndentCheck = require_util_flow_indent_check();
+  function resolveBlockSeq({ composeNode, composeEmptyNode }, ctx, bs, onError, tag) {
+    const NodeClass = tag?.nodeClass ?? YAMLSeq.YAMLSeq;
+    const seq = new NodeClass(ctx.schema);
+    if (ctx.atRoot)
+      ctx.atRoot = false;
+    if (ctx.atKey)
+      ctx.atKey = false;
+    let offset = bs.offset;
+    let commentEnd = null;
+    for (const { start, value } of bs.items) {
+      const props = resolveProps.resolveProps(start, {
+        indicator: "seq-item-ind",
+        next: value,
+        offset,
+        onError,
+        parentIndent: bs.indent,
+        startOnNewline: true
+      });
+      if (!props.found) {
+        if (props.anchor || props.tag || value) {
+          if (value?.type === "block-seq")
+            onError(props.end, "BAD_INDENT", "All sequence items must start at the same column");
+          else
+            onError(offset, "MISSING_CHAR", "Sequence item without - indicator");
+        } else {
+          commentEnd = props.end;
+          if (props.comment)
+            seq.comment = props.comment;
+          continue;
+        }
+      }
+      const node = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, start, null, props, onError);
+      if (ctx.schema.compat)
+        utilFlowIndentCheck.flowIndentCheck(bs.indent, value, onError);
+      offset = node.range[2];
+      seq.items.push(node);
+    }
+    seq.range = [bs.offset, offset, commentEnd ?? offset];
+    return seq;
+  }
+  exports.resolveBlockSeq = resolveBlockSeq;
+});
+
+// node_modules/yaml/dist/compose/resolve-end.js
+var require_resolve_end = __commonJS(function(exports) {
+  function resolveEnd(end, offset, reqSpace, onError) {
+    let comment = "";
+    if (end) {
+      let hasSpace = false;
+      let sep2 = "";
+      for (const token of end) {
+        const { source, type } = token;
+        switch (type) {
+          case "space":
+            hasSpace = true;
+            break;
+          case "comment": {
+            if (reqSpace && !hasSpace)
+              onError(token, "MISSING_CHAR", "Comments must be separated from other tokens by white space characters");
+            const cb = source.substring(1) || " ";
+            if (!comment)
+              comment = cb;
+            else
+              comment += sep2 + cb;
+            sep2 = "";
+            break;
+          }
+          case "newline":
+            if (comment)
+              sep2 += source;
+            hasSpace = true;
+            break;
+          default:
+            onError(token, "UNEXPECTED_TOKEN", `Unexpected ${type} at node end`);
+        }
+        offset += source.length;
+      }
+    }
+    return { comment, offset };
+  }
+  exports.resolveEnd = resolveEnd;
+});
+
+// node_modules/yaml/dist/compose/resolve-flow-collection.js
+var require_resolve_flow_collection = __commonJS(function(exports) {
+  var identity = require_identity();
+  var Pair = require_Pair();
+  var YAMLMap = require_YAMLMap();
+  var YAMLSeq = require_YAMLSeq();
+  var resolveEnd = require_resolve_end();
+  var resolveProps = require_resolve_props();
+  var utilContainsNewline = require_util_contains_newline();
+  var utilMapIncludes = require_util_map_includes();
+  var blockMsg = "Block collections are not allowed within flow collections";
+  var isBlock = (token) => token && (token.type === "block-map" || token.type === "block-seq");
+  function resolveFlowCollection({ composeNode, composeEmptyNode }, ctx, fc, onError, tag) {
+    const isMap = fc.start.source === "{";
+    const fcName = isMap ? "flow map" : "flow sequence";
+    const NodeClass = tag?.nodeClass ?? (isMap ? YAMLMap.YAMLMap : YAMLSeq.YAMLSeq);
+    const coll = new NodeClass(ctx.schema);
+    coll.flow = true;
+    const atRoot = ctx.atRoot;
+    if (atRoot)
+      ctx.atRoot = false;
+    if (ctx.atKey)
+      ctx.atKey = false;
+    let offset = fc.offset + fc.start.source.length;
+    for (let i = 0;i < fc.items.length; ++i) {
+      const collItem = fc.items[i];
+      const { start, key, sep: sep2, value } = collItem;
+      const props = resolveProps.resolveProps(start, {
+        flow: fcName,
+        indicator: "explicit-key-ind",
+        next: key ?? sep2?.[0],
+        offset,
+        onError,
+        parentIndent: fc.indent,
+        startOnNewline: false
+      });
+      if (!props.found) {
+        if (!props.anchor && !props.tag && !sep2 && !value) {
+          if (i === 0 && props.comma)
+            onError(props.comma, "UNEXPECTED_TOKEN", `Unexpected , in ${fcName}`);
+          else if (i < fc.items.length - 1)
+            onError(props.start, "UNEXPECTED_TOKEN", `Unexpected empty item in ${fcName}`);
+          if (props.comment) {
+            if (coll.comment)
+              coll.comment += `
+` + props.comment;
+            else
+              coll.comment = props.comment;
+          }
+          offset = props.end;
+          continue;
+        }
+        if (!isMap && ctx.options.strict && utilContainsNewline.containsNewline(key))
+          onError(key, "MULTILINE_IMPLICIT_KEY", "Implicit keys of flow sequence pairs need to be on a single line");
+      }
+      if (i === 0) {
+        if (props.comma)
+          onError(props.comma, "UNEXPECTED_TOKEN", `Unexpected , in ${fcName}`);
+      } else {
+        if (!props.comma)
+          onError(props.start, "MISSING_CHAR", `Missing , between ${fcName} items`);
+        if (props.comment) {
+          let prevItemComment = "";
+          loop:
+            for (const st of start) {
+              switch (st.type) {
+                case "comma":
+                case "space":
+                  break;
+                case "comment":
+                  prevItemComment = st.source.substring(1);
+                  break loop;
+                default:
+                  break loop;
+              }
+            }
+          if (prevItemComment) {
+            let prev = coll.items[coll.items.length - 1];
+            if (identity.isPair(prev))
+              prev = prev.value ?? prev.key;
+            if (prev.comment)
+              prev.comment += `
+` + prevItemComment;
+            else
+              prev.comment = prevItemComment;
+            props.comment = props.comment.substring(prevItemComment.length + 1);
+          }
+        }
+      }
+      if (!isMap && !sep2 && !props.found) {
+        const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep2, null, props, onError);
+        coll.items.push(valueNode);
+        offset = valueNode.range[2];
+        if (isBlock(value))
+          onError(valueNode.range, "BLOCK_IN_FLOW", blockMsg);
+      } else {
+        ctx.atKey = true;
+        const keyStart = props.end;
+        const keyNode = key ? composeNode(ctx, key, props, onError) : composeEmptyNode(ctx, keyStart, start, null, props, onError);
+        if (isBlock(key))
+          onError(keyNode.range, "BLOCK_IN_FLOW", blockMsg);
+        ctx.atKey = false;
+        const valueProps = resolveProps.resolveProps(sep2 ?? [], {
+          flow: fcName,
+          indicator: "map-value-ind",
+          next: value,
+          offset: keyNode.range[2],
+          onError,
+          parentIndent: fc.indent,
+          startOnNewline: false
+        });
+        if (valueProps.found) {
+          if (!isMap && !props.found && ctx.options.strict) {
+            if (sep2)
+              for (const st of sep2) {
+                if (st === valueProps.found)
+                  break;
+                if (st.type === "newline") {
+                  onError(st, "MULTILINE_IMPLICIT_KEY", "Implicit keys of flow sequence pairs need to be on a single line");
+                  break;
+                }
+              }
+            if (props.start < valueProps.found.offset - 1024)
+              onError(valueProps.found, "KEY_OVER_1024_CHARS", "The : indicator must be at most 1024 chars after the start of an implicit flow sequence key");
+          }
+        } else if (value) {
+          if ("source" in value && value.source?.[0] === ":")
+            onError(value, "MISSING_CHAR", `Missing space after : in ${fcName}`);
+          else
+            onError(valueProps.start, "MISSING_CHAR", `Missing , or : between ${fcName} items`);
+        }
+        const valueNode = value ? composeNode(ctx, value, valueProps, onError) : valueProps.found ? composeEmptyNode(ctx, valueProps.end, sep2, null, valueProps, onError) : null;
+        if (valueNode) {
+          if (isBlock(value))
+            onError(valueNode.range, "BLOCK_IN_FLOW", blockMsg);
+        } else if (valueProps.comment) {
+          if (keyNode.comment)
+            keyNode.comment += `
+` + valueProps.comment;
+          else
+            keyNode.comment = valueProps.comment;
+        }
+        const pair = new Pair.Pair(keyNode, valueNode);
+        if (ctx.options.keepSourceTokens)
+          pair.srcToken = collItem;
+        if (isMap) {
+          const map = coll;
+          if (utilMapIncludes.mapIncludes(ctx, map.items, keyNode))
+            onError(keyStart, "DUPLICATE_KEY", "Map keys must be unique");
+          map.items.push(pair);
+        } else {
+          const map = new YAMLMap.YAMLMap(ctx.schema);
+          map.flow = true;
+          map.items.push(pair);
+          const endRange = (valueNode ?? keyNode).range;
+          map.range = [keyNode.range[0], endRange[1], endRange[2]];
+          coll.items.push(map);
+        }
+        offset = valueNode ? valueNode.range[2] : valueProps.end;
+      }
+    }
+    const expectedEnd = isMap ? "}" : "]";
+    const [ce, ...ee] = fc.end;
+    let cePos = offset;
+    if (ce?.source === expectedEnd)
+      cePos = ce.offset + ce.source.length;
+    else {
+      const name = fcName[0].toUpperCase() + fcName.substring(1);
+      const msg = atRoot ? `${name} must end with a ${expectedEnd}` : `${name} in block collection must be sufficiently indented and end with a ${expectedEnd}`;
+      onError(offset, atRoot ? "MISSING_CHAR" : "BAD_INDENT", msg);
+      if (ce && ce.source.length !== 1)
+        ee.unshift(ce);
+    }
+    if (ee.length > 0) {
+      const end = resolveEnd.resolveEnd(ee, cePos, ctx.options.strict, onError);
+      if (end.comment) {
+        if (coll.comment)
+          coll.comment += `
+` + end.comment;
+        else
+          coll.comment = end.comment;
+      }
+      coll.range = [fc.offset, cePos, end.offset];
+    } else {
+      coll.range = [fc.offset, cePos, cePos];
+    }
+    return coll;
+  }
+  exports.resolveFlowCollection = resolveFlowCollection;
+});
+
+// node_modules/yaml/dist/compose/compose-collection.js
+var require_compose_collection = __commonJS(function(exports) {
+  var identity = require_identity();
+  var Scalar = require_Scalar();
+  var YAMLMap = require_YAMLMap();
+  var YAMLSeq = require_YAMLSeq();
+  var resolveBlockMap = require_resolve_block_map();
+  var resolveBlockSeq = require_resolve_block_seq();
+  var resolveFlowCollection = require_resolve_flow_collection();
+  function resolveCollection(CN, ctx, token, onError, tagName, tag) {
+    const coll = token.type === "block-map" ? resolveBlockMap.resolveBlockMap(CN, ctx, token, onError, tag) : token.type === "block-seq" ? resolveBlockSeq.resolveBlockSeq(CN, ctx, token, onError, tag) : resolveFlowCollection.resolveFlowCollection(CN, ctx, token, onError, tag);
+    const Coll = coll.constructor;
+    if (tagName === "!" || tagName === Coll.tagName) {
+      coll.tag = Coll.tagName;
+      return coll;
+    }
+    if (tagName)
+      coll.tag = tagName;
+    return coll;
+  }
+  function composeCollection(CN, ctx, token, props, onError) {
+    const tagToken = props.tag;
+    const tagName = !tagToken ? null : ctx.directives.tagName(tagToken.source, (msg) => onError(tagToken, "TAG_RESOLVE_FAILED", msg));
+    if (token.type === "block-seq") {
+      const { anchor, newlineAfterProp: nl } = props;
+      const lastProp = anchor && tagToken ? anchor.offset > tagToken.offset ? anchor : tagToken : anchor ?? tagToken;
+      if (lastProp && (!nl || nl.offset < lastProp.offset)) {
+        const message = "Missing newline after block sequence props";
+        onError(lastProp, "MISSING_CHAR", message);
+      }
+    }
+    const expType = token.type === "block-map" ? "map" : token.type === "block-seq" ? "seq" : token.start.source === "{" ? "map" : "seq";
+    if (!tagToken || !tagName || tagName === "!" || tagName === YAMLMap.YAMLMap.tagName && expType === "map" || tagName === YAMLSeq.YAMLSeq.tagName && expType === "seq") {
+      return resolveCollection(CN, ctx, token, onError, tagName);
+    }
+    let tag = ctx.schema.tags.find((t) => t.tag === tagName && t.collection === expType);
+    if (!tag) {
+      const kt = ctx.schema.knownTags[tagName];
+      if (kt?.collection === expType) {
+        ctx.schema.tags.push(Object.assign({}, kt, { default: false }));
+        tag = kt;
+      } else {
+        if (kt) {
+          onError(tagToken, "BAD_COLLECTION_TYPE", `${kt.tag} used for ${expType} collection, but expects ${kt.collection ?? "scalar"}`, true);
+        } else {
+          onError(tagToken, "TAG_RESOLVE_FAILED", `Unresolved tag: ${tagName}`, true);
+        }
+        return resolveCollection(CN, ctx, token, onError, tagName);
+      }
+    }
+    const coll = resolveCollection(CN, ctx, token, onError, tagName, tag);
+    const res = tag.resolve?.(coll, (msg) => onError(tagToken, "TAG_RESOLVE_FAILED", msg), ctx.options) ?? coll;
+    const node = identity.isNode(res) ? res : new Scalar.Scalar(res);
+    node.range = coll.range;
+    node.tag = tagName;
+    if (tag?.format)
+      node.format = tag.format;
+    return node;
+  }
+  exports.composeCollection = composeCollection;
+});
+
+// node_modules/yaml/dist/compose/resolve-block-scalar.js
+var require_resolve_block_scalar = __commonJS(function(exports) {
+  var Scalar = require_Scalar();
+  function resolveBlockScalar(ctx, scalar, onError) {
+    const start = scalar.offset;
+    const header = parseBlockScalarHeader(scalar, ctx.options.strict, onError);
+    if (!header)
+      return { value: "", type: null, comment: "", range: [start, start, start] };
+    const type = header.mode === ">" ? Scalar.Scalar.BLOCK_FOLDED : Scalar.Scalar.BLOCK_LITERAL;
+    const lines = scalar.source ? splitLines(scalar.source) : [];
+    let chompStart = lines.length;
+    for (let i = lines.length - 1;i >= 0; --i) {
+      const content = lines[i][1];
+      if (content === "" || content === "\r")
+        chompStart = i;
+      else
+        break;
+    }
+    if (chompStart === 0) {
+      const value2 = header.chomp === "+" && lines.length > 0 ? `
+`.repeat(Math.max(1, lines.length - 1)) : "";
+      let end2 = start + header.length;
+      if (scalar.source)
+        end2 += scalar.source.length;
+      return { value: value2, type, comment: header.comment, range: [start, end2, end2] };
+    }
+    let trimIndent = scalar.indent + header.indent;
+    let offset = scalar.offset + header.length;
+    let contentStart = 0;
+    for (let i = 0;i < chompStart; ++i) {
+      const [indent, content] = lines[i];
+      if (content === "" || content === "\r") {
+        if (header.indent === 0 && indent.length > trimIndent)
+          trimIndent = indent.length;
+      } else {
+        if (indent.length < trimIndent) {
+          const message = "Block scalars with more-indented leading empty lines must use an explicit indentation indicator";
+          onError(offset + indent.length, "MISSING_CHAR", message);
+        }
+        if (header.indent === 0)
+          trimIndent = indent.length;
+        contentStart = i;
+        if (trimIndent === 0 && !ctx.atRoot) {
+          const message = "Block scalar values in collections must be indented";
+          onError(offset, "BAD_INDENT", message);
+        }
+        break;
+      }
+      offset += indent.length + content.length + 1;
+    }
+    for (let i = lines.length - 1;i >= chompStart; --i) {
+      if (lines[i][0].length > trimIndent)
+        chompStart = i + 1;
+    }
+    let value = "";
+    let sep2 = "";
+    let prevMoreIndented = false;
+    for (let i = 0;i < contentStart; ++i)
+      value += lines[i][0].slice(trimIndent) + `
+`;
+    for (let i = contentStart;i < chompStart; ++i) {
+      let [indent, content] = lines[i];
+      offset += indent.length + content.length + 1;
+      const crlf = content[content.length - 1] === "\r";
+      if (crlf)
+        content = content.slice(0, -1);
+      if (content && indent.length < trimIndent) {
+        const src = header.indent ? "explicit indentation indicator" : "first line";
+        const message = `Block scalar lines must not be less indented than their ${src}`;
+        onError(offset - content.length - (crlf ? 2 : 1), "BAD_INDENT", message);
+        indent = "";
+      }
+      if (type === Scalar.Scalar.BLOCK_LITERAL) {
+        value += sep2 + indent.slice(trimIndent) + content;
+        sep2 = `
+`;
+      } else if (indent.length > trimIndent || content[0] === "\t") {
+        if (sep2 === " ")
+          sep2 = `
+`;
+        else if (!prevMoreIndented && sep2 === `
+`)
+          sep2 = `
+
+`;
+        value += sep2 + indent.slice(trimIndent) + content;
+        sep2 = `
+`;
+        prevMoreIndented = true;
+      } else if (content === "") {
+        if (sep2 === `
+`)
+          value += `
+`;
+        else
+          sep2 = `
+`;
+      } else {
+        value += sep2 + content;
+        sep2 = " ";
+        prevMoreIndented = false;
+      }
+    }
+    switch (header.chomp) {
+      case "-":
+        break;
+      case "+":
+        for (let i = chompStart;i < lines.length; ++i)
+          value += `
+` + lines[i][0].slice(trimIndent);
+        if (value[value.length - 1] !== `
+`)
+          value += `
+`;
+        break;
+      default:
+        value += `
+`;
+    }
+    const end = start + header.length + scalar.source.length;
+    return { value, type, comment: header.comment, range: [start, end, end] };
+  }
+  function parseBlockScalarHeader({ offset, props }, strict, onError) {
+    if (props[0].type !== "block-scalar-header") {
+      onError(props[0], "IMPOSSIBLE", "Block scalar header not found");
+      return null;
+    }
+    const { source } = props[0];
+    const mode = source[0];
+    let indent = 0;
+    let chomp = "";
+    let error = -1;
+    for (let i = 1;i < source.length; ++i) {
+      const ch = source[i];
+      if (!chomp && (ch === "-" || ch === "+"))
+        chomp = ch;
+      else {
+        const n = Number(ch);
+        if (!indent && n)
+          indent = n;
+        else if (error === -1)
+          error = offset + i;
+      }
+    }
+    if (error !== -1)
+      onError(error, "UNEXPECTED_TOKEN", `Block scalar header includes extra characters: ${source}`);
+    let hasSpace = false;
+    let comment = "";
+    let length = source.length;
+    for (let i = 1;i < props.length; ++i) {
+      const token = props[i];
+      switch (token.type) {
+        case "space":
+          hasSpace = true;
+        case "newline":
+          length += token.source.length;
+          break;
+        case "comment":
+          if (strict && !hasSpace) {
+            const message = "Comments must be separated from other tokens by white space characters";
+            onError(token, "MISSING_CHAR", message);
+          }
+          length += token.source.length;
+          comment = token.source.substring(1);
+          break;
+        case "error":
+          onError(token, "UNEXPECTED_TOKEN", token.message);
+          length += token.source.length;
+          break;
+        default: {
+          const message = `Unexpected token in block scalar header: ${token.type}`;
+          onError(token, "UNEXPECTED_TOKEN", message);
+          const ts = token.source;
+          if (ts && typeof ts === "string")
+            length += ts.length;
+        }
+      }
+    }
+    return { mode, indent, chomp, comment, length };
+  }
+  function splitLines(source) {
+    const split = source.split(/\n( *)/);
+    const first = split[0];
+    const m = first.match(/^( *)/);
+    const line0 = m?.[1] ? [m[1], first.slice(m[1].length)] : ["", first];
+    const lines = [line0];
+    for (let i = 1;i < split.length; i += 2)
+      lines.push([split[i], split[i + 1]]);
+    return lines;
+  }
+  exports.resolveBlockScalar = resolveBlockScalar;
+});
+
+// node_modules/yaml/dist/compose/resolve-flow-scalar.js
+var require_resolve_flow_scalar = __commonJS(function(exports) {
+  var Scalar = require_Scalar();
+  var resolveEnd = require_resolve_end();
+  function resolveFlowScalar(scalar, strict, onError) {
+    const { offset, type, source, end } = scalar;
+    let _type;
+    let value;
+    const _onError = (rel, code, msg) => onError(offset + rel, code, msg);
+    switch (type) {
+      case "scalar":
+        _type = Scalar.Scalar.PLAIN;
+        value = plainValue(source, _onError);
+        break;
+      case "single-quoted-scalar":
+        _type = Scalar.Scalar.QUOTE_SINGLE;
+        value = singleQuotedValue(source, _onError);
+        break;
+      case "double-quoted-scalar":
+        _type = Scalar.Scalar.QUOTE_DOUBLE;
+        value = doubleQuotedValue(source, _onError);
+        break;
+      default:
+        onError(scalar, "UNEXPECTED_TOKEN", `Expected a flow scalar value, but found: ${type}`);
+        return {
+          value: "",
+          type: null,
+          comment: "",
+          range: [offset, offset + source.length, offset + source.length]
+        };
+    }
+    const valueEnd = offset + source.length;
+    const re = resolveEnd.resolveEnd(end, valueEnd, strict, onError);
+    return {
+      value,
+      type: _type,
+      comment: re.comment,
+      range: [offset, valueEnd, re.offset]
+    };
+  }
+  function plainValue(source, onError) {
+    let badChar = "";
+    switch (source[0]) {
+      case "\t":
+        badChar = "a tab character";
+        break;
+      case ",":
+        badChar = "flow indicator character ,";
+        break;
+      case "%":
+        badChar = "directive indicator character %";
+        break;
+      case "|":
+      case ">": {
+        badChar = `block scalar indicator ${source[0]}`;
+        break;
+      }
+      case "@":
+      case "`": {
+        badChar = `reserved character ${source[0]}`;
+        break;
+      }
+    }
+    if (badChar)
+      onError(0, "BAD_SCALAR_START", `Plain value cannot start with ${badChar}`);
+    return foldLines(source);
+  }
+  function singleQuotedValue(source, onError) {
+    if (source[source.length - 1] !== "'" || source.length === 1)
+      onError(source.length, "MISSING_CHAR", "Missing closing 'quote");
+    return foldLines(source.slice(1, -1)).replace(/''/g, "'");
+  }
+  function foldLines(source) {
+    let first, line;
+    try {
+      first = new RegExp(`(.*?)(?<![ 	])[ 	]*\r?
+`, "sy");
+      line = new RegExp(`[ 	]*(.*?)(?:(?<![ 	])[ 	]*)?\r?
+`, "sy");
+    } catch {
+      first = /(.*?)[ \t]*\r?\n/sy;
+      line = /[ \t]*(.*?)[ \t]*\r?\n/sy;
+    }
+    let match = first.exec(source);
+    if (!match)
+      return source;
+    let res = match[1];
+    let sep2 = " ";
+    let pos = first.lastIndex;
+    line.lastIndex = pos;
+    while (match = line.exec(source)) {
+      if (match[1] === "") {
+        if (sep2 === `
+`)
+          res += sep2;
+        else
+          sep2 = `
+`;
+      } else {
+        res += sep2 + match[1];
+        sep2 = " ";
+      }
+      pos = line.lastIndex;
+    }
+    const last = /[ \t]*(.*)/sy;
+    last.lastIndex = pos;
+    match = last.exec(source);
+    return res + sep2 + (match?.[1] ?? "");
+  }
+  function doubleQuotedValue(source, onError) {
+    let res = "";
+    for (let i = 1;i < source.length - 1; ++i) {
+      const ch = source[i];
+      if (ch === "\r" && source[i + 1] === `
+`)
+        continue;
+      if (ch === `
+`) {
+        const { fold, offset } = foldNewline(source, i);
+        res += fold;
+        i = offset;
+      } else if (ch === "\\") {
+        let next = source[++i];
+        const cc = escapeCodes[next];
+        if (cc)
+          res += cc;
+        else if (next === `
+`) {
+          next = source[i + 1];
+          while (next === " " || next === "\t")
+            next = source[++i + 1];
+        } else if (next === "\r" && source[i + 1] === `
+`) {
+          next = source[++i + 1];
+          while (next === " " || next === "\t")
+            next = source[++i + 1];
+        } else if (next === "x" || next === "u" || next === "U") {
+          const length = next === "x" ? 2 : next === "u" ? 4 : 8;
+          res += parseCharCode(source, i + 1, length, onError);
+          i += length;
+        } else {
+          const raw = source.substr(i - 1, 2);
+          onError(i - 1, "BAD_DQ_ESCAPE", `Invalid escape sequence ${raw}`);
+          res += raw;
+        }
+      } else if (ch === " " || ch === "\t") {
+        const wsStart = i;
+        let next = source[i + 1];
+        while (next === " " || next === "\t")
+          next = source[++i + 1];
+        if (next !== `
+` && !(next === "\r" && source[i + 2] === `
+`))
+          res += i > wsStart ? source.slice(wsStart, i + 1) : ch;
+      } else {
+        res += ch;
+      }
+    }
+    if (source[source.length - 1] !== '"' || source.length === 1)
+      onError(source.length, "MISSING_CHAR", 'Missing closing "quote');
+    return res;
+  }
+  function foldNewline(source, offset) {
+    let fold = "";
+    let ch = source[offset + 1];
+    while (ch === " " || ch === "\t" || ch === `
+` || ch === "\r") {
+      if (ch === "\r" && source[offset + 2] !== `
+`)
+        break;
+      if (ch === `
+`)
+        fold += `
+`;
+      offset += 1;
+      ch = source[offset + 1];
+    }
+    if (!fold)
+      fold = " ";
+    return { fold, offset };
+  }
+  var escapeCodes = {
+    "0": "\x00",
+    a: "\x07",
+    b: "\b",
+    e: "\x1B",
+    f: "\f",
+    n: `
+`,
+    r: "\r",
+    t: "\t",
+    v: "\v",
+    N: "\x85",
+    _: "\xA0",
+    L: "\u2028",
+    P: "\u2029",
+    " ": " ",
+    '"': '"',
+    "/": "/",
+    "\\": "\\",
+    "\t": "\t"
+  };
+  function parseCharCode(source, offset, length, onError) {
+    const cc = source.substr(offset, length);
+    const ok = cc.length === length && /^[0-9a-fA-F]+$/.test(cc);
+    const code = ok ? parseInt(cc, 16) : NaN;
+    try {
+      return String.fromCodePoint(code);
+    } catch {
+      const raw = source.substr(offset - 2, length + 2);
+      onError(offset - 2, "BAD_DQ_ESCAPE", `Invalid escape sequence ${raw}`);
+      return raw;
+    }
+  }
+  exports.resolveFlowScalar = resolveFlowScalar;
+});
+
+// node_modules/yaml/dist/compose/compose-scalar.js
+var require_compose_scalar = __commonJS(function(exports) {
+  var identity = require_identity();
+  var Scalar = require_Scalar();
+  var resolveBlockScalar = require_resolve_block_scalar();
+  var resolveFlowScalar = require_resolve_flow_scalar();
+  function composeScalar(ctx, token, tagToken, onError) {
+    const { value, type, comment, range } = token.type === "block-scalar" ? resolveBlockScalar.resolveBlockScalar(ctx, token, onError) : resolveFlowScalar.resolveFlowScalar(token, ctx.options.strict, onError);
+    const tagName = tagToken ? ctx.directives.tagName(tagToken.source, (msg) => onError(tagToken, "TAG_RESOLVE_FAILED", msg)) : null;
+    let tag;
+    if (ctx.options.stringKeys && ctx.atKey) {
+      tag = ctx.schema[identity.SCALAR];
+    } else if (tagName)
+      tag = findScalarTagByName(ctx.schema, value, tagName, tagToken, onError);
+    else if (token.type === "scalar")
+      tag = findScalarTagByTest(ctx, value, token, onError);
+    else
+      tag = ctx.schema[identity.SCALAR];
+    let scalar;
+    try {
+      const res = tag.resolve(value, (msg) => onError(tagToken ?? token, "TAG_RESOLVE_FAILED", msg), ctx.options);
+      scalar = identity.isScalar(res) ? res : new Scalar.Scalar(res);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      onError(tagToken ?? token, "TAG_RESOLVE_FAILED", msg);
+      scalar = new Scalar.Scalar(value);
+    }
+    scalar.range = range;
+    scalar.source = value;
+    if (type)
+      scalar.type = type;
+    if (tagName)
+      scalar.tag = tagName;
+    if (tag.format)
+      scalar.format = tag.format;
+    if (comment)
+      scalar.comment = comment;
+    return scalar;
+  }
+  function findScalarTagByName(schema, value, tagName, tagToken, onError) {
+    if (tagName === "!")
+      return schema[identity.SCALAR];
+    const matchWithTest = [];
+    for (const tag of schema.tags) {
+      if (!tag.collection && tag.tag === tagName) {
+        if (tag.default && tag.test)
+          matchWithTest.push(tag);
+        else
+          return tag;
+      }
+    }
+    for (const tag of matchWithTest)
+      if (tag.test?.test(value))
+        return tag;
+    const kt = schema.knownTags[tagName];
+    if (kt && !kt.collection) {
+      schema.tags.push(Object.assign({}, kt, { default: false, test: undefined }));
+      return kt;
+    }
+    onError(tagToken, "TAG_RESOLVE_FAILED", `Unresolved tag: ${tagName}`, tagName !== "tag:yaml.org,2002:str");
+    return schema[identity.SCALAR];
+  }
+  function findScalarTagByTest({ atKey, directives, schema }, value, token, onError) {
+    const tag = schema.tags.find((tag2) => (tag2.default === true || atKey && tag2.default === "key") && tag2.test?.test(value)) || schema[identity.SCALAR];
+    if (schema.compat) {
+      const compat = schema.compat.find((tag2) => tag2.default && tag2.test?.test(value)) ?? schema[identity.SCALAR];
+      if (tag.tag !== compat.tag) {
+        const ts = directives.tagString(tag.tag);
+        const cs = directives.tagString(compat.tag);
+        const msg = `Value may be parsed as either ${ts} or ${cs}`;
+        onError(token, "TAG_RESOLVE_FAILED", msg, true);
+      }
+    }
+    return tag;
+  }
+  exports.composeScalar = composeScalar;
+});
+
+// node_modules/yaml/dist/compose/util-empty-scalar-position.js
+var require_util_empty_scalar_position = __commonJS(function(exports) {
+  function emptyScalarPosition(offset, before, pos) {
+    if (before) {
+      pos ?? (pos = before.length);
+      for (let i = pos - 1;i >= 0; --i) {
+        let st = before[i];
+        switch (st.type) {
+          case "space":
+          case "comment":
+          case "newline":
+            offset -= st.source.length;
+            continue;
+        }
+        st = before[++i];
+        while (st?.type === "space") {
+          offset += st.source.length;
+          st = before[++i];
+        }
+        break;
+      }
+    }
+    return offset;
+  }
+  exports.emptyScalarPosition = emptyScalarPosition;
+});
+
+// node_modules/yaml/dist/compose/compose-node.js
+var require_compose_node = __commonJS(function(exports) {
+  var Alias = require_Alias();
+  var identity = require_identity();
+  var composeCollection = require_compose_collection();
+  var composeScalar = require_compose_scalar();
+  var resolveEnd = require_resolve_end();
+  var utilEmptyScalarPosition = require_util_empty_scalar_position();
+  var CN = { composeNode, composeEmptyNode };
+  function composeNode(ctx, token, props, onError) {
+    const atKey = ctx.atKey;
+    const { spaceBefore, comment, anchor, tag } = props;
+    let node;
+    let isSrcToken = true;
+    switch (token.type) {
+      case "alias":
+        node = composeAlias(ctx, token, onError);
+        if (anchor || tag)
+          onError(token, "ALIAS_PROPS", "An alias node must not specify any properties");
+        break;
+      case "scalar":
+      case "single-quoted-scalar":
+      case "double-quoted-scalar":
+      case "block-scalar":
+        node = composeScalar.composeScalar(ctx, token, tag, onError);
+        if (anchor)
+          node.anchor = anchor.source.substring(1);
+        break;
+      case "block-map":
+      case "block-seq":
+      case "flow-collection":
+        try {
+          node = composeCollection.composeCollection(CN, ctx, token, props, onError);
+          if (anchor)
+            node.anchor = anchor.source.substring(1);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          onError(token, "RESOURCE_EXHAUSTION", message);
+        }
+        break;
+      default: {
+        const message = token.type === "error" ? token.message : `Unsupported token (type: ${token.type})`;
+        onError(token, "UNEXPECTED_TOKEN", message);
+        isSrcToken = false;
+      }
+    }
+    node ?? (node = composeEmptyNode(ctx, token.offset, undefined, null, props, onError));
+    if (anchor && node.anchor === "")
+      onError(anchor, "BAD_ALIAS", "Anchor cannot be an empty string");
+    if (atKey && ctx.options.stringKeys && (!identity.isScalar(node) || typeof node.value !== "string" || node.tag && node.tag !== "tag:yaml.org,2002:str")) {
+      const msg = "With stringKeys, all keys must be strings";
+      onError(tag ?? token, "NON_STRING_KEY", msg);
+    }
+    if (spaceBefore)
+      node.spaceBefore = true;
+    if (comment) {
+      if (token.type === "scalar" && token.source === "")
+        node.comment = comment;
+      else
+        node.commentBefore = comment;
+    }
+    if (ctx.options.keepSourceTokens && isSrcToken)
+      node.srcToken = token;
+    return node;
+  }
+  function composeEmptyNode(ctx, offset, before, pos, { spaceBefore, comment, anchor, tag, end }, onError) {
+    const token = {
+      type: "scalar",
+      offset: utilEmptyScalarPosition.emptyScalarPosition(offset, before, pos),
+      indent: -1,
+      source: ""
+    };
+    const node = composeScalar.composeScalar(ctx, token, tag, onError);
+    if (anchor) {
+      node.anchor = anchor.source.substring(1);
+      if (node.anchor === "")
+        onError(anchor, "BAD_ALIAS", "Anchor cannot be an empty string");
+    }
+    if (spaceBefore)
+      node.spaceBefore = true;
+    if (comment) {
+      node.comment = comment;
+      node.range[2] = end;
+    }
+    return node;
+  }
+  function composeAlias({ options }, { offset, source, end }, onError) {
+    const alias = new Alias.Alias(source.substring(1));
+    if (alias.source === "")
+      onError(offset, "BAD_ALIAS", "Alias cannot be an empty string");
+    if (alias.source.endsWith(":"))
+      onError(offset + source.length - 1, "BAD_ALIAS", "Alias ending in : is ambiguous", true);
+    const valueEnd = offset + source.length;
+    const re = resolveEnd.resolveEnd(end, valueEnd, options.strict, onError);
+    alias.range = [offset, valueEnd, re.offset];
+    if (re.comment)
+      alias.comment = re.comment;
+    return alias;
+  }
+  exports.composeEmptyNode = composeEmptyNode;
+  exports.composeNode = composeNode;
+});
+
+// node_modules/yaml/dist/compose/compose-doc.js
+var require_compose_doc = __commonJS(function(exports) {
+  var Document = require_Document();
+  var composeNode = require_compose_node();
+  var resolveEnd = require_resolve_end();
+  var resolveProps = require_resolve_props();
+  function composeDoc(options, directives, { offset, start, value, end }, onError) {
+    const opts = Object.assign({ _directives: directives }, options);
+    const doc = new Document.Document(undefined, opts);
+    const ctx = {
+      atKey: false,
+      atRoot: true,
+      directives: doc.directives,
+      options: doc.options,
+      schema: doc.schema
+    };
+    const props = resolveProps.resolveProps(start, {
+      indicator: "doc-start",
+      next: value ?? end?.[0],
+      offset,
+      onError,
+      parentIndent: 0,
+      startOnNewline: true
+    });
+    if (props.found) {
+      doc.directives.docStart = true;
+      if (value && (value.type === "block-map" || value.type === "block-seq") && !props.hasNewline)
+        onError(props.end, "MISSING_CHAR", "Block collection cannot start on same line with directives-end marker");
+    }
+    doc.contents = value ? composeNode.composeNode(ctx, value, props, onError) : composeNode.composeEmptyNode(ctx, props.end, start, null, props, onError);
+    const contentEnd = doc.contents.range[2];
+    const re = resolveEnd.resolveEnd(end, contentEnd, false, onError);
+    if (re.comment)
+      doc.comment = re.comment;
+    doc.range = [offset, contentEnd, re.offset];
+    return doc;
+  }
+  exports.composeDoc = composeDoc;
+});
+
+// node_modules/yaml/dist/compose/composer.js
+var require_composer = __commonJS(function(exports) {
+  var node_process = __require("process");
+  var directives = require_directives();
+  var Document = require_Document();
+  var errors = require_errors();
+  var identity = require_identity();
+  var composeDoc = require_compose_doc();
+  var resolveEnd = require_resolve_end();
+  function getErrorPos(src) {
+    if (typeof src === "number")
+      return [src, src + 1];
+    if (Array.isArray(src))
+      return src.length === 2 ? src : [src[0], src[1]];
+    const { offset, source } = src;
+    return [offset, offset + (typeof source === "string" ? source.length : 1)];
+  }
+  function parsePrelude(prelude) {
+    let comment = "";
+    let atComment = false;
+    let afterEmptyLine = false;
+    for (let i = 0;i < prelude.length; ++i) {
+      const source = prelude[i];
+      switch (source[0]) {
+        case "#":
+          comment += (comment === "" ? "" : afterEmptyLine ? `
+
+` : `
+`) + (source.substring(1) || " ");
+          atComment = true;
+          afterEmptyLine = false;
+          break;
+        case "%":
+          if (prelude[i + 1]?.[0] !== "#")
+            i += 1;
+          atComment = false;
+          break;
+        default:
+          if (!atComment)
+            afterEmptyLine = true;
+          atComment = false;
+      }
+    }
+    return { comment, afterEmptyLine };
+  }
+
+  class Composer {
+    constructor(options = {}) {
+      this.doc = null;
+      this.atDirectives = false;
+      this.prelude = [];
+      this.errors = [];
+      this.warnings = [];
+      this.onError = (source, code, message, warning) => {
+        const pos = getErrorPos(source);
+        if (warning)
+          this.warnings.push(new errors.YAMLWarning(pos, code, message));
+        else
+          this.errors.push(new errors.YAMLParseError(pos, code, message));
+      };
+      this.directives = new directives.Directives({ version: options.version || "1.2" });
+      this.options = options;
+    }
+    decorate(doc, afterDoc) {
+      const { comment, afterEmptyLine } = parsePrelude(this.prelude);
+      if (comment) {
+        const dc = doc.contents;
+        if (afterDoc) {
+          doc.comment = doc.comment ? `${doc.comment}
+${comment}` : comment;
+        } else if (afterEmptyLine || doc.directives.docStart || !dc) {
+          doc.commentBefore = comment;
+        } else if (identity.isCollection(dc) && !dc.flow && dc.items.length > 0) {
+          let it = dc.items[0];
+          if (identity.isPair(it))
+            it = it.key;
+          const cb = it.commentBefore;
+          it.commentBefore = cb ? `${comment}
+${cb}` : comment;
+        } else {
+          const cb = dc.commentBefore;
+          dc.commentBefore = cb ? `${comment}
+${cb}` : comment;
+        }
+      }
+      if (afterDoc) {
+        for (let i = 0;i < this.errors.length; ++i)
+          doc.errors.push(this.errors[i]);
+        for (let i = 0;i < this.warnings.length; ++i)
+          doc.warnings.push(this.warnings[i]);
+      } else {
+        doc.errors = this.errors;
+        doc.warnings = this.warnings;
+      }
+      this.prelude = [];
+      this.errors = [];
+      this.warnings = [];
+    }
+    streamInfo() {
+      return {
+        comment: parsePrelude(this.prelude).comment,
+        directives: this.directives,
+        errors: this.errors,
+        warnings: this.warnings
+      };
+    }
+    *compose(tokens, forceDoc = false, endOffset = -1) {
+      for (const token of tokens)
+        yield* this.next(token);
+      yield* this.end(forceDoc, endOffset);
+    }
+    *next(token) {
+      if (node_process.env.LOG_STREAM)
+        console.dir(token, { depth: null });
+      switch (token.type) {
+        case "directive":
+          this.directives.add(token.source, (offset, message, warning) => {
+            const pos = getErrorPos(token);
+            pos[0] += offset;
+            this.onError(pos, "BAD_DIRECTIVE", message, warning);
+          });
+          this.prelude.push(token.source);
+          this.atDirectives = true;
+          break;
+        case "document": {
+          const doc = composeDoc.composeDoc(this.options, this.directives, token, this.onError);
+          if (this.atDirectives && !doc.directives.docStart)
+            this.onError(token, "MISSING_CHAR", "Missing directives-end/doc-start indicator line");
+          this.decorate(doc, false);
+          if (this.doc)
+            yield this.doc;
+          this.doc = doc;
+          this.atDirectives = false;
+          break;
+        }
+        case "byte-order-mark":
+        case "space":
+          break;
+        case "comment":
+        case "newline":
+          this.prelude.push(token.source);
+          break;
+        case "error": {
+          const msg = token.source ? `${token.message}: ${JSON.stringify(token.source)}` : token.message;
+          const error = new errors.YAMLParseError(getErrorPos(token), "UNEXPECTED_TOKEN", msg);
+          if (this.atDirectives || !this.doc)
+            this.errors.push(error);
+          else
+            this.doc.errors.push(error);
+          break;
+        }
+        case "doc-end": {
+          if (!this.doc) {
+            const msg = "Unexpected doc-end without preceding document";
+            this.errors.push(new errors.YAMLParseError(getErrorPos(token), "UNEXPECTED_TOKEN", msg));
+            break;
+          }
+          this.doc.directives.docEnd = true;
+          const end = resolveEnd.resolveEnd(token.end, token.offset + token.source.length, this.doc.options.strict, this.onError);
+          this.decorate(this.doc, true);
+          if (end.comment) {
+            const dc = this.doc.comment;
+            this.doc.comment = dc ? `${dc}
+${end.comment}` : end.comment;
+          }
+          this.doc.range[2] = end.offset;
+          break;
+        }
+        default:
+          this.errors.push(new errors.YAMLParseError(getErrorPos(token), "UNEXPECTED_TOKEN", `Unsupported token ${token.type}`));
+      }
+    }
+    *end(forceDoc = false, endOffset = -1) {
+      if (this.doc) {
+        this.decorate(this.doc, true);
+        yield this.doc;
+        this.doc = null;
+      } else if (forceDoc) {
+        const opts = Object.assign({ _directives: this.directives }, this.options);
+        const doc = new Document.Document(undefined, opts);
+        if (this.atDirectives)
+          this.onError(endOffset, "MISSING_CHAR", "Missing directives-end indicator line");
+        doc.range = [0, endOffset, endOffset];
+        this.decorate(doc, false);
+        yield doc;
+      }
+    }
+  }
+  exports.Composer = Composer;
+});
+
+// node_modules/yaml/dist/parse/cst-scalar.js
+var require_cst_scalar = __commonJS(function(exports) {
+  var resolveBlockScalar = require_resolve_block_scalar();
+  var resolveFlowScalar = require_resolve_flow_scalar();
+  var errors = require_errors();
+  var stringifyString = require_stringifyString();
+  function resolveAsScalar(token, strict = true, onError) {
+    if (token) {
+      const _onError = (pos, code, message) => {
+        const offset = typeof pos === "number" ? pos : Array.isArray(pos) ? pos[0] : pos.offset;
+        if (onError)
+          onError(offset, code, message);
+        else
+          throw new errors.YAMLParseError([offset, offset + 1], code, message);
+      };
+      switch (token.type) {
+        case "scalar":
+        case "single-quoted-scalar":
+        case "double-quoted-scalar":
+          return resolveFlowScalar.resolveFlowScalar(token, strict, _onError);
+        case "block-scalar":
+          return resolveBlockScalar.resolveBlockScalar({ options: { strict } }, token, _onError);
+      }
+    }
+    return null;
+  }
+  function createScalarToken(value, context) {
+    const { implicitKey = false, indent, inFlow = false, offset = -1, type = "PLAIN" } = context;
+    const source = stringifyString.stringifyString({ type, value }, {
+      implicitKey,
+      indent: indent > 0 ? " ".repeat(indent) : "",
+      inFlow,
+      options: { blockQuote: true, lineWidth: -1 }
+    });
+    const end = context.end ?? [
+      { type: "newline", offset: -1, indent, source: `
+` }
+    ];
+    switch (source[0]) {
+      case "|":
+      case ">": {
+        const he = source.indexOf(`
+`);
+        const head = source.substring(0, he);
+        const body = source.substring(he + 1) + `
+`;
+        const props = [
+          { type: "block-scalar-header", offset, indent, source: head }
+        ];
+        if (!addEndtoBlockProps(props, end))
+          props.push({ type: "newline", offset: -1, indent, source: `
+` });
+        return { type: "block-scalar", offset, indent, props, source: body };
+      }
+      case '"':
+        return { type: "double-quoted-scalar", offset, indent, source, end };
+      case "'":
+        return { type: "single-quoted-scalar", offset, indent, source, end };
+      default:
+        return { type: "scalar", offset, indent, source, end };
+    }
+  }
+  function setScalarValue(token, value, context = {}) {
+    let { afterKey = false, implicitKey = false, inFlow = false, type } = context;
+    let indent = "indent" in token ? token.indent : null;
+    if (afterKey && typeof indent === "number")
+      indent += 2;
+    if (!type)
+      switch (token.type) {
+        case "single-quoted-scalar":
+          type = "QUOTE_SINGLE";
+          break;
+        case "double-quoted-scalar":
+          type = "QUOTE_DOUBLE";
+          break;
+        case "block-scalar": {
+          const header = token.props[0];
+          if (header.type !== "block-scalar-header")
+            throw new Error("Invalid block scalar header");
+          type = header.source[0] === ">" ? "BLOCK_FOLDED" : "BLOCK_LITERAL";
+          break;
+        }
+        default:
+          type = "PLAIN";
+      }
+    const source = stringifyString.stringifyString({ type, value }, {
+      implicitKey: implicitKey || indent === null,
+      indent: indent !== null && indent > 0 ? " ".repeat(indent) : "",
+      inFlow,
+      options: { blockQuote: true, lineWidth: -1 }
+    });
+    switch (source[0]) {
+      case "|":
+      case ">":
+        setBlockScalarValue(token, source);
+        break;
+      case '"':
+        setFlowScalarValue(token, source, "double-quoted-scalar");
+        break;
+      case "'":
+        setFlowScalarValue(token, source, "single-quoted-scalar");
+        break;
+      default:
+        setFlowScalarValue(token, source, "scalar");
+    }
+  }
+  function setBlockScalarValue(token, source) {
+    const he = source.indexOf(`
+`);
+    const head = source.substring(0, he);
+    const body = source.substring(he + 1) + `
+`;
+    if (token.type === "block-scalar") {
+      const header = token.props[0];
+      if (header.type !== "block-scalar-header")
+        throw new Error("Invalid block scalar header");
+      header.source = head;
+      token.source = body;
+    } else {
+      const { offset } = token;
+      const indent = "indent" in token ? token.indent : -1;
+      const props = [
+        { type: "block-scalar-header", offset, indent, source: head }
+      ];
+      if (!addEndtoBlockProps(props, "end" in token ? token.end : undefined))
+        props.push({ type: "newline", offset: -1, indent, source: `
+` });
+      for (const key of Object.keys(token))
+        if (key !== "type" && key !== "offset")
+          delete token[key];
+      Object.assign(token, { type: "block-scalar", indent, props, source: body });
+    }
+  }
+  function addEndtoBlockProps(props, end) {
+    if (end)
+      for (const st of end)
+        switch (st.type) {
+          case "space":
+          case "comment":
+            props.push(st);
+            break;
+          case "newline":
+            props.push(st);
+            return true;
+        }
+    return false;
+  }
+  function setFlowScalarValue(token, source, type) {
+    switch (token.type) {
+      case "scalar":
+      case "double-quoted-scalar":
+      case "single-quoted-scalar":
+        token.type = type;
+        token.source = source;
+        break;
+      case "block-scalar": {
+        const end = token.props.slice(1);
+        let oa = source.length;
+        if (token.props[0].type === "block-scalar-header")
+          oa -= token.props[0].source.length;
+        for (const tok of end)
+          tok.offset += oa;
+        delete token.props;
+        Object.assign(token, { type, source, end });
+        break;
+      }
+      case "block-map":
+      case "block-seq": {
+        const offset = token.offset + source.length;
+        const nl = { type: "newline", offset, indent: token.indent, source: `
+` };
+        delete token.items;
+        Object.assign(token, { type, source, end: [nl] });
+        break;
+      }
+      default: {
+        const indent = "indent" in token ? token.indent : -1;
+        const end = "end" in token && Array.isArray(token.end) ? token.end.filter((st) => st.type === "space" || st.type === "comment" || st.type === "newline") : [];
+        for (const key of Object.keys(token))
+          if (key !== "type" && key !== "offset")
+            delete token[key];
+        Object.assign(token, { type, indent, source, end });
+      }
+    }
+  }
+  exports.createScalarToken = createScalarToken;
+  exports.resolveAsScalar = resolveAsScalar;
+  exports.setScalarValue = setScalarValue;
+});
+
+// node_modules/yaml/dist/parse/cst-stringify.js
+var require_cst_stringify = __commonJS(function(exports) {
+  var stringify = (cst) => ("type" in cst) ? stringifyToken(cst) : stringifyItem(cst);
+  function stringifyToken(token) {
+    switch (token.type) {
+      case "block-scalar": {
+        let res = "";
+        for (const tok of token.props)
+          res += stringifyToken(tok);
+        return res + token.source;
+      }
+      case "block-map":
+      case "block-seq": {
+        let res = "";
+        for (const item of token.items)
+          res += stringifyItem(item);
+        return res;
+      }
+      case "flow-collection": {
+        let res = token.start.source;
+        for (const item of token.items)
+          res += stringifyItem(item);
+        for (const st of token.end)
+          res += st.source;
+        return res;
+      }
+      case "document": {
+        let res = stringifyItem(token);
+        if (token.end)
+          for (const st of token.end)
+            res += st.source;
+        return res;
+      }
+      default: {
+        let res = token.source;
+        if ("end" in token && token.end)
+          for (const st of token.end)
+            res += st.source;
+        return res;
+      }
+    }
+  }
+  function stringifyItem({ start, key, sep: sep2, value }) {
+    let res = "";
+    for (const st of start)
+      res += st.source;
+    if (key)
+      res += stringifyToken(key);
+    if (sep2)
+      for (const st of sep2)
+        res += st.source;
+    if (value)
+      res += stringifyToken(value);
+    return res;
+  }
+  exports.stringify = stringify;
+});
+
+// node_modules/yaml/dist/parse/cst-visit.js
+var require_cst_visit = __commonJS(function(exports) {
+  var BREAK = Symbol("break visit");
+  var SKIP = Symbol("skip children");
+  var REMOVE = Symbol("remove item");
+  function visit(cst, visitor) {
+    if ("type" in cst && cst.type === "document")
+      cst = { start: cst.start, value: cst.value };
+    _visit(Object.freeze([]), cst, visitor);
+  }
+  visit.BREAK = BREAK;
+  visit.SKIP = SKIP;
+  visit.REMOVE = REMOVE;
+  visit.itemAtPath = (cst, path) => {
+    let item = cst;
+    for (const [field, index] of path) {
+      const tok = item?.[field];
+      if (tok && "items" in tok) {
+        item = tok.items[index];
+      } else
+        return;
+    }
+    return item;
+  };
+  visit.parentCollection = (cst, path) => {
+    const parent = visit.itemAtPath(cst, path.slice(0, -1));
+    const field = path[path.length - 1][0];
+    const coll = parent?.[field];
+    if (coll && "items" in coll)
+      return coll;
+    throw new Error("Parent collection not found");
+  };
+  function _visit(path, item, visitor) {
+    let ctrl = visitor(item, path);
+    if (typeof ctrl === "symbol")
+      return ctrl;
+    for (const field of ["key", "value"]) {
+      const token = item[field];
+      if (token && "items" in token) {
+        for (let i = 0;i < token.items.length; ++i) {
+          const ci = _visit(Object.freeze(path.concat([[field, i]])), token.items[i], visitor);
+          if (typeof ci === "number")
+            i = ci - 1;
+          else if (ci === BREAK)
+            return BREAK;
+          else if (ci === REMOVE) {
+            token.items.splice(i, 1);
+            i -= 1;
+          }
+        }
+        if (typeof ctrl === "function" && field === "key")
+          ctrl = ctrl(item, path);
+      }
+    }
+    return typeof ctrl === "function" ? ctrl(item, path) : ctrl;
+  }
+  exports.visit = visit;
+});
+
+// node_modules/yaml/dist/parse/cst.js
+var require_cst = __commonJS(function(exports) {
+  var cstScalar = require_cst_scalar();
+  var cstStringify = require_cst_stringify();
+  var cstVisit = require_cst_visit();
+  var BOM = "\uFEFF";
+  var DOCUMENT = "\x02";
+  var FLOW_END = "\x18";
+  var SCALAR = "\x1F";
+  var isCollection = (token) => !!token && ("items" in token);
+  var isScalar = (token) => !!token && (token.type === "scalar" || token.type === "single-quoted-scalar" || token.type === "double-quoted-scalar" || token.type === "block-scalar");
+  function prettyToken(token) {
+    switch (token) {
+      case BOM:
+        return "<BOM>";
+      case DOCUMENT:
+        return "<DOC>";
+      case FLOW_END:
+        return "<FLOW_END>";
+      case SCALAR:
+        return "<SCALAR>";
+      default:
+        return JSON.stringify(token);
+    }
+  }
+  function tokenType(source) {
+    switch (source) {
+      case BOM:
+        return "byte-order-mark";
+      case DOCUMENT:
+        return "doc-mode";
+      case FLOW_END:
+        return "flow-error-end";
+      case SCALAR:
+        return "scalar";
+      case "---":
+        return "doc-start";
+      case "...":
+        return "doc-end";
+      case "":
+      case `
+`:
+      case `\r
+`:
+        return "newline";
+      case "-":
+        return "seq-item-ind";
+      case "?":
+        return "explicit-key-ind";
+      case ":":
+        return "map-value-ind";
+      case "{":
+        return "flow-map-start";
+      case "}":
+        return "flow-map-end";
+      case "[":
+        return "flow-seq-start";
+      case "]":
+        return "flow-seq-end";
+      case ",":
+        return "comma";
+    }
+    switch (source[0]) {
+      case " ":
+      case "\t":
+        return "space";
+      case "#":
+        return "comment";
+      case "%":
+        return "directive-line";
+      case "*":
+        return "alias";
+      case "&":
+        return "anchor";
+      case "!":
+        return "tag";
+      case "'":
+        return "single-quoted-scalar";
+      case '"':
+        return "double-quoted-scalar";
+      case "|":
+      case ">":
+        return "block-scalar-header";
+    }
+    return null;
+  }
+  exports.createScalarToken = cstScalar.createScalarToken;
+  exports.resolveAsScalar = cstScalar.resolveAsScalar;
+  exports.setScalarValue = cstScalar.setScalarValue;
+  exports.stringify = cstStringify.stringify;
+  exports.visit = cstVisit.visit;
+  exports.BOM = BOM;
+  exports.DOCUMENT = DOCUMENT;
+  exports.FLOW_END = FLOW_END;
+  exports.SCALAR = SCALAR;
+  exports.isCollection = isCollection;
+  exports.isScalar = isScalar;
+  exports.prettyToken = prettyToken;
+  exports.tokenType = tokenType;
+});
+
+// node_modules/yaml/dist/parse/lexer.js
+var require_lexer = __commonJS(function(exports) {
+  var cst = require_cst();
+  function isEmpty(ch) {
+    switch (ch) {
+      case undefined:
+      case " ":
+      case `
+`:
+      case "\r":
+      case "\t":
+        return true;
+      default:
+        return false;
+    }
+  }
+  var hexDigits = new Set("0123456789ABCDEFabcdef");
+  var tagChars = new Set("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-#;/?:@&=+$_.!~*'()");
+  var flowIndicatorChars = new Set(",[]{}");
+  var invalidAnchorChars = new Set(` ,[]{}
+\r	`);
+  var isNotAnchorChar = (ch) => !ch || invalidAnchorChars.has(ch);
+
+  class Lexer {
+    constructor() {
+      this.atEnd = false;
+      this.blockScalarIndent = -1;
+      this.blockScalarKeep = false;
+      this.buffer = "";
+      this.flowKey = false;
+      this.flowLevel = 0;
+      this.indentNext = 0;
+      this.indentValue = 0;
+      this.lineEndPos = null;
+      this.next = null;
+      this.pos = 0;
+    }
+    *lex(source, incomplete = false) {
+      if (source) {
+        if (typeof source !== "string")
+          throw TypeError("source is not a string");
+        this.buffer = this.buffer ? this.buffer + source : source;
+        this.lineEndPos = null;
+      }
+      this.atEnd = !incomplete;
+      let next = this.next ?? "stream";
+      while (next && (incomplete || this.hasChars(1)))
+        next = yield* this.parseNext(next);
+    }
+    atLineEnd() {
+      let i = this.pos;
+      let ch = this.buffer[i];
+      while (ch === " " || ch === "\t")
+        ch = this.buffer[++i];
+      if (!ch || ch === "#" || ch === `
+`)
+        return true;
+      if (ch === "\r")
+        return this.buffer[i + 1] === `
+`;
+      return false;
+    }
+    charAt(n) {
+      return this.buffer[this.pos + n];
+    }
+    continueScalar(offset) {
+      let ch = this.buffer[offset];
+      if (this.indentNext > 0) {
+        let indent = 0;
+        while (ch === " ")
+          ch = this.buffer[++indent + offset];
+        if (ch === "\r") {
+          const next = this.buffer[indent + offset + 1];
+          if (next === `
+` || !next && !this.atEnd)
+            return offset + indent + 1;
+        }
+        return ch === `
+` || indent >= this.indentNext || !ch && !this.atEnd ? offset + indent : -1;
+      }
+      if (ch === "-" || ch === ".") {
+        const dt = this.buffer.substr(offset, 3);
+        if ((dt === "---" || dt === "...") && isEmpty(this.buffer[offset + 3]))
+          return -1;
+      }
+      return offset;
+    }
+    getLine() {
+      let end = this.lineEndPos;
+      if (typeof end !== "number" || end !== -1 && end < this.pos) {
+        end = this.buffer.indexOf(`
+`, this.pos);
+        this.lineEndPos = end;
+      }
+      if (end === -1)
+        return this.atEnd ? this.buffer.substring(this.pos) : null;
+      if (this.buffer[end - 1] === "\r")
+        end -= 1;
+      return this.buffer.substring(this.pos, end);
+    }
+    hasChars(n) {
+      return this.pos + n <= this.buffer.length;
+    }
+    setNext(state) {
+      this.buffer = this.buffer.substring(this.pos);
+      this.pos = 0;
+      this.lineEndPos = null;
+      this.next = state;
+      return null;
+    }
+    peek(n) {
+      return this.buffer.substr(this.pos, n);
+    }
+    *parseNext(next) {
+      switch (next) {
+        case "stream":
+          return yield* this.parseStream();
+        case "line-start":
+          return yield* this.parseLineStart();
+        case "block-start":
+          return yield* this.parseBlockStart();
+        case "doc":
+          return yield* this.parseDocument();
+        case "flow":
+          return yield* this.parseFlowCollection();
+        case "quoted-scalar":
+          return yield* this.parseQuotedScalar();
+        case "block-scalar":
+          return yield* this.parseBlockScalar();
+        case "plain-scalar":
+          return yield* this.parsePlainScalar();
+      }
+    }
+    *parseStream() {
+      let line = this.getLine();
+      if (line === null)
+        return this.setNext("stream");
+      if (line[0] === cst.BOM) {
+        yield* this.pushCount(1);
+        line = line.substring(1);
+      }
+      if (line[0] === "%") {
+        let dirEnd = line.length;
+        let cs = line.indexOf("#");
+        while (cs !== -1) {
+          const ch = line[cs - 1];
+          if (ch === " " || ch === "\t") {
+            dirEnd = cs - 1;
+            break;
+          } else {
+            cs = line.indexOf("#", cs + 1);
+          }
+        }
+        while (true) {
+          const ch = line[dirEnd - 1];
+          if (ch === " " || ch === "\t")
+            dirEnd -= 1;
+          else
+            break;
+        }
+        const n = (yield* this.pushCount(dirEnd)) + (yield* this.pushSpaces(true));
+        yield* this.pushCount(line.length - n);
+        this.pushNewline();
+        return "stream";
+      }
+      if (this.atLineEnd()) {
+        const sp = yield* this.pushSpaces(true);
+        yield* this.pushCount(line.length - sp);
+        yield* this.pushNewline();
+        return "stream";
+      }
+      yield cst.DOCUMENT;
+      return yield* this.parseLineStart();
+    }
+    *parseLineStart() {
+      const ch = this.charAt(0);
+      if (!ch && !this.atEnd)
+        return this.setNext("line-start");
+      if (ch === "-" || ch === ".") {
+        if (!this.atEnd && !this.hasChars(4))
+          return this.setNext("line-start");
+        const s = this.peek(3);
+        if ((s === "---" || s === "...") && isEmpty(this.charAt(3))) {
+          yield* this.pushCount(3);
+          this.indentValue = 0;
+          this.indentNext = 0;
+          return s === "---" ? "doc" : "stream";
+        }
+      }
+      this.indentValue = yield* this.pushSpaces(false);
+      if (this.indentNext > this.indentValue && !isEmpty(this.charAt(1)))
+        this.indentNext = this.indentValue;
+      return yield* this.parseBlockStart();
+    }
+    *parseBlockStart() {
+      const [ch0, ch1] = this.peek(2);
+      if (!ch1 && !this.atEnd)
+        return this.setNext("block-start");
+      if ((ch0 === "-" || ch0 === "?" || ch0 === ":") && isEmpty(ch1)) {
+        const n = (yield* this.pushCount(1)) + (yield* this.pushSpaces(true));
+        this.indentNext = this.indentValue + 1;
+        this.indentValue += n;
+        return "block-start";
+      }
+      return "doc";
+    }
+    *parseDocument() {
+      yield* this.pushSpaces(true);
+      const line = this.getLine();
+      if (line === null)
+        return this.setNext("doc");
+      let n = yield* this.pushIndicators();
+      switch (line[n]) {
+        case "#":
+          yield* this.pushCount(line.length - n);
+        case undefined:
+          yield* this.pushNewline();
+          return yield* this.parseLineStart();
+        case "{":
+        case "[":
+          yield* this.pushCount(1);
+          this.flowKey = false;
+          this.flowLevel = 1;
+          return "flow";
+        case "}":
+        case "]":
+          yield* this.pushCount(1);
+          return "doc";
+        case "*":
+          yield* this.pushUntil(isNotAnchorChar);
+          return "doc";
+        case '"':
+        case "'":
+          return yield* this.parseQuotedScalar();
+        case "|":
+        case ">":
+          n += yield* this.parseBlockScalarHeader();
+          n += yield* this.pushSpaces(true);
+          yield* this.pushCount(line.length - n);
+          yield* this.pushNewline();
+          return yield* this.parseBlockScalar();
+        default:
+          return yield* this.parsePlainScalar();
+      }
+    }
+    *parseFlowCollection() {
+      let nl, sp;
+      let indent = -1;
+      do {
+        nl = yield* this.pushNewline();
+        if (nl > 0) {
+          sp = yield* this.pushSpaces(false);
+          this.indentValue = indent = sp;
+        } else {
+          sp = 0;
+        }
+        sp += yield* this.pushSpaces(true);
+      } while (nl + sp > 0);
+      const line = this.getLine();
+      if (line === null)
+        return this.setNext("flow");
+      if (indent !== -1 && indent < this.indentNext && line[0] !== "#" || indent === 0 && (line.startsWith("---") || line.startsWith("...")) && isEmpty(line[3])) {
+        const atFlowEndMarker = indent === this.indentNext - 1 && this.flowLevel === 1 && (line[0] === "]" || line[0] === "}");
+        if (!atFlowEndMarker) {
+          this.flowLevel = 0;
+          yield cst.FLOW_END;
+          return yield* this.parseLineStart();
+        }
+      }
+      let n = 0;
+      while (line[n] === ",") {
+        n += yield* this.pushCount(1);
+        n += yield* this.pushSpaces(true);
+        this.flowKey = false;
+      }
+      n += yield* this.pushIndicators();
+      switch (line[n]) {
+        case undefined:
+          return "flow";
+        case "#":
+          yield* this.pushCount(line.length - n);
+          return "flow";
+        case "{":
+        case "[":
+          yield* this.pushCount(1);
+          this.flowKey = false;
+          this.flowLevel += 1;
+          return "flow";
+        case "}":
+        case "]":
+          yield* this.pushCount(1);
+          this.flowKey = true;
+          this.flowLevel -= 1;
+          return this.flowLevel ? "flow" : "doc";
+        case "*":
+          yield* this.pushUntil(isNotAnchorChar);
+          return "flow";
+        case '"':
+        case "'":
+          this.flowKey = true;
+          return yield* this.parseQuotedScalar();
+        case ":": {
+          const next = this.charAt(1);
+          if (this.flowKey || isEmpty(next) || next === ",") {
+            this.flowKey = false;
+            yield* this.pushCount(1);
+            yield* this.pushSpaces(true);
+            return "flow";
+          }
+        }
+        default:
+          this.flowKey = false;
+          return yield* this.parsePlainScalar();
+      }
+    }
+    *parseQuotedScalar() {
+      const quote = this.charAt(0);
+      let end = this.buffer.indexOf(quote, this.pos + 1);
+      if (quote === "'") {
+        while (end !== -1 && this.buffer[end + 1] === "'")
+          end = this.buffer.indexOf("'", end + 2);
+      } else {
+        while (end !== -1) {
+          let n = 0;
+          while (this.buffer[end - 1 - n] === "\\")
+            n += 1;
+          if (n % 2 === 0)
+            break;
+          end = this.buffer.indexOf('"', end + 1);
+        }
+      }
+      const qb = this.buffer.substring(0, end);
+      let nl = qb.indexOf(`
+`, this.pos);
+      if (nl !== -1) {
+        while (nl !== -1) {
+          const cs = this.continueScalar(nl + 1);
+          if (cs === -1)
+            break;
+          nl = qb.indexOf(`
+`, cs);
+        }
+        if (nl !== -1) {
+          end = nl - (qb[nl - 1] === "\r" ? 2 : 1);
+        }
+      }
+      if (end === -1) {
+        if (!this.atEnd)
+          return this.setNext("quoted-scalar");
+        end = this.buffer.length;
+      }
+      yield* this.pushToIndex(end + 1, false);
+      return this.flowLevel ? "flow" : "doc";
+    }
+    *parseBlockScalarHeader() {
+      this.blockScalarIndent = -1;
+      this.blockScalarKeep = false;
+      let i = this.pos;
+      while (true) {
+        const ch = this.buffer[++i];
+        if (ch === "+")
+          this.blockScalarKeep = true;
+        else if (ch > "0" && ch <= "9")
+          this.blockScalarIndent = Number(ch) - 1;
+        else if (ch !== "-")
+          break;
+      }
+      return yield* this.pushUntil((ch) => isEmpty(ch) || ch === "#");
+    }
+    *parseBlockScalar() {
+      let nl = this.pos - 1;
+      let indent = 0;
+      let ch;
+      loop:
+        for (let i2 = this.pos;ch = this.buffer[i2]; ++i2) {
+          switch (ch) {
+            case " ":
+              indent += 1;
+              break;
+            case `
+`:
+              nl = i2;
+              indent = 0;
+              break;
+            case "\r": {
+              const next = this.buffer[i2 + 1];
+              if (!next && !this.atEnd)
+                return this.setNext("block-scalar");
+              if (next === `
+`)
+                break;
+            }
+            default:
+              break loop;
+          }
+        }
+      if (!ch && !this.atEnd)
+        return this.setNext("block-scalar");
+      if (indent >= this.indentNext) {
+        if (this.blockScalarIndent === -1)
+          this.indentNext = indent;
+        else {
+          this.indentNext = this.blockScalarIndent + (this.indentNext === 0 ? 1 : this.indentNext);
+        }
+        do {
+          const cs = this.continueScalar(nl + 1);
+          if (cs === -1)
+            break;
+          nl = this.buffer.indexOf(`
+`, cs);
+        } while (nl !== -1);
+        if (nl === -1) {
+          if (!this.atEnd)
+            return this.setNext("block-scalar");
+          nl = this.buffer.length;
+        }
+      }
+      let i = nl + 1;
+      ch = this.buffer[i];
+      while (ch === " ")
+        ch = this.buffer[++i];
+      if (ch === "\t") {
+        while (ch === "\t" || ch === " " || ch === "\r" || ch === `
+`)
+          ch = this.buffer[++i];
+        nl = i - 1;
+      } else if (!this.blockScalarKeep) {
+        do {
+          let i2 = nl - 1;
+          let ch2 = this.buffer[i2];
+          if (ch2 === "\r")
+            ch2 = this.buffer[--i2];
+          const lastChar = i2;
+          while (ch2 === " ")
+            ch2 = this.buffer[--i2];
+          if (ch2 === `
+` && i2 >= this.pos && i2 + 1 + indent > lastChar)
+            nl = i2;
+          else
+            break;
+        } while (true);
+      }
+      yield cst.SCALAR;
+      yield* this.pushToIndex(nl + 1, true);
+      return yield* this.parseLineStart();
+    }
+    *parsePlainScalar() {
+      const inFlow = this.flowLevel > 0;
+      let end = this.pos - 1;
+      let i = this.pos - 1;
+      let ch;
+      while (ch = this.buffer[++i]) {
+        if (ch === ":") {
+          const next = this.buffer[i + 1];
+          if (isEmpty(next) || inFlow && flowIndicatorChars.has(next))
+            break;
+          end = i;
+        } else if (isEmpty(ch)) {
+          let next = this.buffer[i + 1];
+          if (ch === "\r") {
+            if (next === `
+`) {
+              i += 1;
+              ch = `
+`;
+              next = this.buffer[i + 1];
+            } else
+              end = i;
+          }
+          if (next === "#" || inFlow && flowIndicatorChars.has(next))
+            break;
+          if (ch === `
+`) {
+            const cs = this.continueScalar(i + 1);
+            if (cs === -1)
+              break;
+            i = Math.max(i, cs - 2);
+          }
+        } else {
+          if (inFlow && flowIndicatorChars.has(ch))
+            break;
+          end = i;
+        }
+      }
+      if (!ch && !this.atEnd)
+        return this.setNext("plain-scalar");
+      yield cst.SCALAR;
+      yield* this.pushToIndex(end + 1, true);
+      return inFlow ? "flow" : "doc";
+    }
+    *pushCount(n) {
+      if (n > 0) {
+        yield this.buffer.substr(this.pos, n);
+        this.pos += n;
+        return n;
+      }
+      return 0;
+    }
+    *pushToIndex(i, allowEmpty) {
+      const s = this.buffer.slice(this.pos, i);
+      if (s) {
+        yield s;
+        this.pos += s.length;
+        return s.length;
+      } else if (allowEmpty)
+        yield "";
+      return 0;
+    }
+    *pushIndicators() {
+      let n = 0;
+      loop:
+        while (true) {
+          switch (this.charAt(0)) {
+            case "!":
+              n += yield* this.pushTag();
+              n += yield* this.pushSpaces(true);
+              continue loop;
+            case "&":
+              n += yield* this.pushUntil(isNotAnchorChar);
+              n += yield* this.pushSpaces(true);
+              continue loop;
+            case "-":
+            case "?":
+            case ":": {
+              const inFlow = this.flowLevel > 0;
+              const ch1 = this.charAt(1);
+              if (isEmpty(ch1) || inFlow && flowIndicatorChars.has(ch1)) {
+                if (!inFlow)
+                  this.indentNext = this.indentValue + 1;
+                else if (this.flowKey)
+                  this.flowKey = false;
+                n += yield* this.pushCount(1);
+                n += yield* this.pushSpaces(true);
+                continue loop;
+              }
+            }
+          }
+          break loop;
+        }
+      return n;
+    }
+    *pushTag() {
+      if (this.charAt(1) === "<") {
+        let i = this.pos + 2;
+        let ch = this.buffer[i];
+        while (!isEmpty(ch) && ch !== ">")
+          ch = this.buffer[++i];
+        return yield* this.pushToIndex(ch === ">" ? i + 1 : i, false);
+      } else {
+        let i = this.pos + 1;
+        let ch = this.buffer[i];
+        while (ch) {
+          if (tagChars.has(ch))
+            ch = this.buffer[++i];
+          else if (ch === "%" && hexDigits.has(this.buffer[i + 1]) && hexDigits.has(this.buffer[i + 2])) {
+            ch = this.buffer[i += 3];
+          } else
+            break;
+        }
+        return yield* this.pushToIndex(i, false);
+      }
+    }
+    *pushNewline() {
+      const ch = this.buffer[this.pos];
+      if (ch === `
+`)
+        return yield* this.pushCount(1);
+      else if (ch === "\r" && this.charAt(1) === `
+`)
+        return yield* this.pushCount(2);
+      else
+        return 0;
+    }
+    *pushSpaces(allowTabs) {
+      let i = this.pos - 1;
+      let ch;
+      do {
+        ch = this.buffer[++i];
+      } while (ch === " " || allowTabs && ch === "\t");
+      const n = i - this.pos;
+      if (n > 0) {
+        yield this.buffer.substr(this.pos, n);
+        this.pos = i;
+      }
+      return n;
+    }
+    *pushUntil(test) {
+      let i = this.pos;
+      let ch = this.buffer[i];
+      while (!test(ch))
+        ch = this.buffer[++i];
+      return yield* this.pushToIndex(i, false);
+    }
+  }
+  exports.Lexer = Lexer;
+});
+
+// node_modules/yaml/dist/parse/line-counter.js
+var require_line_counter = __commonJS(function(exports) {
+  class LineCounter {
+    constructor() {
+      this.lineStarts = [];
+      this.addNewLine = (offset) => this.lineStarts.push(offset);
+      this.linePos = (offset) => {
+        let low = 0;
+        let high = this.lineStarts.length;
+        while (low < high) {
+          const mid = low + high >> 1;
+          if (this.lineStarts[mid] < offset)
+            low = mid + 1;
+          else
+            high = mid;
+        }
+        if (this.lineStarts[low] === offset)
+          return { line: low + 1, col: 1 };
+        if (low === 0)
+          return { line: 0, col: offset };
+        const start = this.lineStarts[low - 1];
+        return { line: low, col: offset - start + 1 };
+      };
+    }
+  }
+  exports.LineCounter = LineCounter;
+});
+
+// node_modules/yaml/dist/parse/parser.js
+var require_parser = __commonJS(function(exports) {
+  var node_process = __require("process");
+  var cst = require_cst();
+  var lexer = require_lexer();
+  function includesToken(list, type) {
+    for (let i = 0;i < list.length; ++i)
+      if (list[i].type === type)
+        return true;
+    return false;
+  }
+  function findNonEmptyIndex(list) {
+    for (let i = 0;i < list.length; ++i) {
+      switch (list[i].type) {
+        case "space":
+        case "comment":
+        case "newline":
+          break;
+        default:
+          return i;
+      }
+    }
+    return -1;
+  }
+  function isFlowToken(token) {
+    switch (token?.type) {
+      case "alias":
+      case "scalar":
+      case "single-quoted-scalar":
+      case "double-quoted-scalar":
+      case "flow-collection":
+        return true;
+      default:
+        return false;
+    }
+  }
+  function getPrevProps(parent) {
+    switch (parent.type) {
+      case "document":
+        return parent.start;
+      case "block-map": {
+        const it = parent.items[parent.items.length - 1];
+        return it.sep ?? it.start;
+      }
+      case "block-seq":
+        return parent.items[parent.items.length - 1].start;
+      default:
+        return [];
+    }
+  }
+  function getFirstKeyStartProps(prev) {
+    if (prev.length === 0)
+      return [];
+    let i = prev.length;
+    loop:
+      while (--i >= 0) {
+        switch (prev[i].type) {
+          case "doc-start":
+          case "explicit-key-ind":
+          case "map-value-ind":
+          case "seq-item-ind":
+          case "newline":
+            break loop;
+        }
+      }
+    while (prev[++i]?.type === "space") {}
+    return prev.splice(i, prev.length);
+  }
+  function arrayPushArray(target, source) {
+    if (source.length < 1e5)
+      Array.prototype.push.apply(target, source);
+    else
+      for (let i = 0;i < source.length; ++i)
+        target.push(source[i]);
+  }
+  function fixFlowSeqItems(fc) {
+    if (fc.start.type === "flow-seq-start") {
+      for (const it of fc.items) {
+        if (it.sep && !it.value && !includesToken(it.start, "explicit-key-ind") && !includesToken(it.sep, "map-value-ind")) {
+          if (it.key)
+            it.value = it.key;
+          delete it.key;
+          if (isFlowToken(it.value)) {
+            if (it.value.end)
+              arrayPushArray(it.value.end, it.sep);
+            else
+              it.value.end = it.sep;
+          } else
+            arrayPushArray(it.start, it.sep);
+          delete it.sep;
+        }
+      }
+    }
+  }
+
+  class Parser {
+    constructor(onNewLine) {
+      this.atNewLine = true;
+      this.atScalar = false;
+      this.indent = 0;
+      this.offset = 0;
+      this.onKeyLine = false;
+      this.stack = [];
+      this.source = "";
+      this.type = "";
+      this.lexer = new lexer.Lexer;
+      this.onNewLine = onNewLine;
+    }
+    *parse(source, incomplete = false) {
+      if (this.onNewLine && this.offset === 0)
+        this.onNewLine(0);
+      for (const lexeme of this.lexer.lex(source, incomplete))
+        yield* this.next(lexeme);
+      if (!incomplete)
+        yield* this.end();
+    }
+    *next(source) {
+      this.source = source;
+      if (node_process.env.LOG_TOKENS)
+        console.log("|", cst.prettyToken(source));
+      if (this.atScalar) {
+        this.atScalar = false;
+        yield* this.step();
+        this.offset += source.length;
+        return;
+      }
+      const type = cst.tokenType(source);
+      if (!type) {
+        const message = `Not a YAML token: ${source}`;
+        yield* this.pop({ type: "error", offset: this.offset, message, source });
+        this.offset += source.length;
+      } else if (type === "scalar") {
+        this.atNewLine = false;
+        this.atScalar = true;
+        this.type = "scalar";
+      } else {
+        this.type = type;
+        yield* this.step();
+        switch (type) {
+          case "newline":
+            this.atNewLine = true;
+            this.indent = 0;
+            if (this.onNewLine)
+              this.onNewLine(this.offset + source.length);
+            break;
+          case "space":
+            if (this.atNewLine && source[0] === " ")
+              this.indent += source.length;
+            break;
+          case "explicit-key-ind":
+          case "map-value-ind":
+          case "seq-item-ind":
+            if (this.atNewLine)
+              this.indent += source.length;
+            break;
+          case "doc-mode":
+          case "flow-error-end":
+            return;
+          default:
+            this.atNewLine = false;
+        }
+        this.offset += source.length;
+      }
+    }
+    *end() {
+      while (this.stack.length > 0)
+        yield* this.pop();
+    }
+    get sourceToken() {
+      const st = {
+        type: this.type,
+        offset: this.offset,
+        indent: this.indent,
+        source: this.source
+      };
+      return st;
+    }
+    *step() {
+      const top = this.peek(1);
+      if (this.type === "doc-end" && top?.type !== "doc-end") {
+        while (this.stack.length > 0)
+          yield* this.pop();
+        this.stack.push({
+          type: "doc-end",
+          offset: this.offset,
+          source: this.source
+        });
+        return;
+      }
+      if (!top)
+        return yield* this.stream();
+      switch (top.type) {
+        case "document":
+          return yield* this.document(top);
+        case "alias":
+        case "scalar":
+        case "single-quoted-scalar":
+        case "double-quoted-scalar":
+          return yield* this.scalar(top);
+        case "block-scalar":
+          return yield* this.blockScalar(top);
+        case "block-map":
+          return yield* this.blockMap(top);
+        case "block-seq":
+          return yield* this.blockSequence(top);
+        case "flow-collection":
+          return yield* this.flowCollection(top);
+        case "doc-end":
+          return yield* this.documentEnd(top);
+      }
+      yield* this.pop();
+    }
+    peek(n) {
+      return this.stack[this.stack.length - n];
+    }
+    *pop(error) {
+      const token = error ?? this.stack.pop();
+      if (!token) {
+        const message = "Tried to pop an empty stack";
+        yield { type: "error", offset: this.offset, source: "", message };
+      } else if (this.stack.length === 0) {
+        yield token;
+      } else {
+        const top = this.peek(1);
+        if (token.type === "block-scalar") {
+          token.indent = "indent" in top ? top.indent : 0;
+        } else if (token.type === "flow-collection" && top.type === "document") {
+          token.indent = 0;
+        }
+        if (token.type === "flow-collection")
+          fixFlowSeqItems(token);
+        switch (top.type) {
+          case "document":
+            top.value = token;
+            break;
+          case "block-scalar":
+            top.props.push(token);
+            break;
+          case "block-map": {
+            const it = top.items[top.items.length - 1];
+            if (it.value) {
+              top.items.push({ start: [], key: token, sep: [] });
+              this.onKeyLine = true;
+              return;
+            } else if (it.sep) {
+              it.value = token;
+            } else {
+              Object.assign(it, { key: token, sep: [] });
+              this.onKeyLine = !it.explicitKey;
+              return;
+            }
+            break;
+          }
+          case "block-seq": {
+            const it = top.items[top.items.length - 1];
+            if (it.value)
+              top.items.push({ start: [], value: token });
+            else
+              it.value = token;
+            break;
+          }
+          case "flow-collection": {
+            const it = top.items[top.items.length - 1];
+            if (!it || it.value)
+              top.items.push({ start: [], key: token, sep: [] });
+            else if (it.sep)
+              it.value = token;
+            else
+              Object.assign(it, { key: token, sep: [] });
+            return;
+          }
+          default:
+            yield* this.pop();
+            yield* this.pop(token);
+        }
+        if ((top.type === "document" || top.type === "block-map" || top.type === "block-seq") && (token.type === "block-map" || token.type === "block-seq")) {
+          const last = token.items[token.items.length - 1];
+          if (last && !last.sep && !last.value && last.start.length > 0 && findNonEmptyIndex(last.start) === -1 && (token.indent === 0 || last.start.every((st) => st.type !== "comment" || st.indent < token.indent))) {
+            if (top.type === "document")
+              top.end = last.start;
+            else
+              top.items.push({ start: last.start });
+            token.items.splice(-1, 1);
+          }
+        }
+      }
+    }
+    *stream() {
+      switch (this.type) {
+        case "directive-line":
+          yield { type: "directive", offset: this.offset, source: this.source };
+          return;
+        case "byte-order-mark":
+        case "space":
+        case "comment":
+        case "newline":
+          yield this.sourceToken;
+          return;
+        case "doc-mode":
+        case "doc-start": {
+          const doc = {
+            type: "document",
+            offset: this.offset,
+            start: []
+          };
+          if (this.type === "doc-start")
+            doc.start.push(this.sourceToken);
+          this.stack.push(doc);
+          return;
+        }
+      }
+      yield {
+        type: "error",
+        offset: this.offset,
+        message: `Unexpected ${this.type} token in YAML stream`,
+        source: this.source
+      };
+    }
+    *document(doc) {
+      if (doc.value)
+        return yield* this.lineEnd(doc);
+      switch (this.type) {
+        case "doc-start": {
+          if (findNonEmptyIndex(doc.start) !== -1) {
+            yield* this.pop();
+            yield* this.step();
+          } else
+            doc.start.push(this.sourceToken);
+          return;
+        }
+        case "anchor":
+        case "tag":
+        case "space":
+        case "comment":
+        case "newline":
+          doc.start.push(this.sourceToken);
+          return;
+      }
+      const bv = this.startBlockValue(doc);
+      if (bv)
+        this.stack.push(bv);
+      else {
+        yield {
+          type: "error",
+          offset: this.offset,
+          message: `Unexpected ${this.type} token in YAML document`,
+          source: this.source
+        };
+      }
+    }
+    *scalar(scalar) {
+      if (this.type === "map-value-ind") {
+        const prev = getPrevProps(this.peek(2));
+        const start = getFirstKeyStartProps(prev);
+        let sep2;
+        if (scalar.end) {
+          sep2 = scalar.end;
+          sep2.push(this.sourceToken);
+          delete scalar.end;
+        } else
+          sep2 = [this.sourceToken];
+        const map = {
+          type: "block-map",
+          offset: scalar.offset,
+          indent: scalar.indent,
+          items: [{ start, key: scalar, sep: sep2 }]
+        };
+        this.onKeyLine = true;
+        this.stack[this.stack.length - 1] = map;
+      } else
+        yield* this.lineEnd(scalar);
+    }
+    *blockScalar(scalar) {
+      switch (this.type) {
+        case "space":
+        case "comment":
+        case "newline":
+          scalar.props.push(this.sourceToken);
+          return;
+        case "scalar":
+          scalar.source = this.source;
+          this.atNewLine = true;
+          this.indent = 0;
+          if (this.onNewLine) {
+            let nl = this.source.indexOf(`
+`) + 1;
+            while (nl !== 0) {
+              this.onNewLine(this.offset + nl);
+              nl = this.source.indexOf(`
+`, nl) + 1;
+            }
+          }
+          yield* this.pop();
+          break;
+        default:
+          yield* this.pop();
+          yield* this.step();
+      }
+    }
+    *blockMap(map) {
+      const it = map.items[map.items.length - 1];
+      switch (this.type) {
+        case "newline":
+          this.onKeyLine = false;
+          if (it.value) {
+            const end = "end" in it.value ? it.value.end : undefined;
+            const last = Array.isArray(end) ? end[end.length - 1] : undefined;
+            if (last?.type === "comment")
+              end?.push(this.sourceToken);
+            else
+              map.items.push({ start: [this.sourceToken] });
+          } else if (it.sep) {
+            it.sep.push(this.sourceToken);
+          } else {
+            it.start.push(this.sourceToken);
+          }
+          return;
+        case "space":
+        case "comment":
+          if (it.value) {
+            map.items.push({ start: [this.sourceToken] });
+          } else if (it.sep) {
+            it.sep.push(this.sourceToken);
+          } else {
+            if (this.atIndentedComment(it.start, map.indent)) {
+              const prev = map.items[map.items.length - 2];
+              const end = prev?.value?.end;
+              if (Array.isArray(end)) {
+                arrayPushArray(end, it.start);
+                end.push(this.sourceToken);
+                map.items.pop();
+                return;
+              }
+            }
+            it.start.push(this.sourceToken);
+          }
+          return;
+      }
+      if (this.indent >= map.indent) {
+        const atMapIndent = !this.onKeyLine && this.indent === map.indent;
+        const atNextItem = atMapIndent && (it.sep || it.explicitKey) && this.type !== "seq-item-ind";
+        let start = [];
+        if (atNextItem && it.sep && !it.value) {
+          const nl = [];
+          for (let i = 0;i < it.sep.length; ++i) {
+            const st = it.sep[i];
+            switch (st.type) {
+              case "newline":
+                nl.push(i);
+                break;
+              case "space":
+                break;
+              case "comment":
+                if (st.indent > map.indent)
+                  nl.length = 0;
+                break;
+              default:
+                nl.length = 0;
+            }
+          }
+          if (nl.length >= 2)
+            start = it.sep.splice(nl[1]);
+        }
+        switch (this.type) {
+          case "anchor":
+          case "tag":
+            if (atNextItem || it.value) {
+              start.push(this.sourceToken);
+              map.items.push({ start });
+              this.onKeyLine = true;
+            } else if (it.sep) {
+              it.sep.push(this.sourceToken);
+            } else {
+              it.start.push(this.sourceToken);
+            }
+            return;
+          case "explicit-key-ind":
+            if (!it.sep && !it.explicitKey) {
+              it.start.push(this.sourceToken);
+              it.explicitKey = true;
+            } else if (atNextItem || it.value) {
+              start.push(this.sourceToken);
+              map.items.push({ start, explicitKey: true });
+            } else {
+              this.stack.push({
+                type: "block-map",
+                offset: this.offset,
+                indent: this.indent,
+                items: [{ start: [this.sourceToken], explicitKey: true }]
+              });
+            }
+            this.onKeyLine = true;
+            return;
+          case "map-value-ind":
+            if (it.explicitKey) {
+              if (!it.sep) {
+                if (includesToken(it.start, "newline")) {
+                  Object.assign(it, { key: null, sep: [this.sourceToken] });
+                } else {
+                  const start2 = getFirstKeyStartProps(it.start);
+                  this.stack.push({
+                    type: "block-map",
+                    offset: this.offset,
+                    indent: this.indent,
+                    items: [{ start: start2, key: null, sep: [this.sourceToken] }]
+                  });
+                }
+              } else if (it.value) {
+                map.items.push({ start: [], key: null, sep: [this.sourceToken] });
+              } else if (includesToken(it.sep, "map-value-ind")) {
+                this.stack.push({
+                  type: "block-map",
+                  offset: this.offset,
+                  indent: this.indent,
+                  items: [{ start, key: null, sep: [this.sourceToken] }]
+                });
+              } else if (isFlowToken(it.key) && !includesToken(it.sep, "newline")) {
+                const start2 = getFirstKeyStartProps(it.start);
+                const key = it.key;
+                const sep2 = it.sep;
+                sep2.push(this.sourceToken);
+                delete it.key;
+                delete it.sep;
+                this.stack.push({
+                  type: "block-map",
+                  offset: this.offset,
+                  indent: this.indent,
+                  items: [{ start: start2, key, sep: sep2 }]
+                });
+              } else if (start.length > 0) {
+                it.sep = it.sep.concat(start, this.sourceToken);
+              } else {
+                it.sep.push(this.sourceToken);
+              }
+            } else {
+              if (!it.sep) {
+                Object.assign(it, { key: null, sep: [this.sourceToken] });
+              } else if (it.value || atNextItem) {
+                map.items.push({ start, key: null, sep: [this.sourceToken] });
+              } else if (includesToken(it.sep, "map-value-ind")) {
+                this.stack.push({
+                  type: "block-map",
+                  offset: this.offset,
+                  indent: this.indent,
+                  items: [{ start: [], key: null, sep: [this.sourceToken] }]
+                });
+              } else {
+                it.sep.push(this.sourceToken);
+              }
+            }
+            this.onKeyLine = true;
+            return;
+          case "alias":
+          case "scalar":
+          case "single-quoted-scalar":
+          case "double-quoted-scalar": {
+            const fs = this.flowScalar(this.type);
+            if (atNextItem || it.value) {
+              map.items.push({ start, key: fs, sep: [] });
+              this.onKeyLine = true;
+            } else if (it.sep) {
+              this.stack.push(fs);
+            } else {
+              Object.assign(it, { key: fs, sep: [] });
+              this.onKeyLine = true;
+            }
+            return;
+          }
+          default: {
+            const bv = this.startBlockValue(map);
+            if (bv) {
+              if (bv.type === "block-seq") {
+                if (!it.explicitKey && it.sep && !includesToken(it.sep, "newline")) {
+                  yield* this.pop({
+                    type: "error",
+                    offset: this.offset,
+                    message: "Unexpected block-seq-ind on same line with key",
+                    source: this.source
+                  });
+                  return;
+                }
+              } else if (atMapIndent) {
+                map.items.push({ start });
+              }
+              this.stack.push(bv);
+              return;
+            }
+          }
+        }
+      }
+      yield* this.pop();
+      yield* this.step();
+    }
+    *blockSequence(seq) {
+      const it = seq.items[seq.items.length - 1];
+      switch (this.type) {
+        case "newline":
+          if (it.value) {
+            const end = "end" in it.value ? it.value.end : undefined;
+            const last = Array.isArray(end) ? end[end.length - 1] : undefined;
+            if (last?.type === "comment")
+              end?.push(this.sourceToken);
+            else
+              seq.items.push({ start: [this.sourceToken] });
+          } else
+            it.start.push(this.sourceToken);
+          return;
+        case "space":
+        case "comment":
+          if (it.value)
+            seq.items.push({ start: [this.sourceToken] });
+          else {
+            if (this.atIndentedComment(it.start, seq.indent)) {
+              const prev = seq.items[seq.items.length - 2];
+              const end = prev?.value?.end;
+              if (Array.isArray(end)) {
+                arrayPushArray(end, it.start);
+                end.push(this.sourceToken);
+                seq.items.pop();
+                return;
+              }
+            }
+            it.start.push(this.sourceToken);
+          }
+          return;
+        case "anchor":
+        case "tag":
+          if (it.value || this.indent <= seq.indent)
+            break;
+          it.start.push(this.sourceToken);
+          return;
+        case "seq-item-ind":
+          if (this.indent !== seq.indent)
+            break;
+          if (it.value || includesToken(it.start, "seq-item-ind"))
+            seq.items.push({ start: [this.sourceToken] });
+          else
+            it.start.push(this.sourceToken);
+          return;
+      }
+      if (this.indent > seq.indent) {
+        const bv = this.startBlockValue(seq);
+        if (bv) {
+          this.stack.push(bv);
+          return;
+        }
+      }
+      yield* this.pop();
+      yield* this.step();
+    }
+    *flowCollection(fc) {
+      const it = fc.items[fc.items.length - 1];
+      if (this.type === "flow-error-end") {
+        let top;
+        do {
+          yield* this.pop();
+          top = this.peek(1);
+        } while (top?.type === "flow-collection");
+      } else if (fc.end.length === 0) {
+        switch (this.type) {
+          case "comma":
+          case "explicit-key-ind":
+            if (!it || it.sep)
+              fc.items.push({ start: [this.sourceToken] });
+            else
+              it.start.push(this.sourceToken);
+            return;
+          case "map-value-ind":
+            if (!it || it.value)
+              fc.items.push({ start: [], key: null, sep: [this.sourceToken] });
+            else if (it.sep)
+              it.sep.push(this.sourceToken);
+            else
+              Object.assign(it, { key: null, sep: [this.sourceToken] });
+            return;
+          case "space":
+          case "comment":
+          case "newline":
+          case "anchor":
+          case "tag":
+            if (!it || it.value)
+              fc.items.push({ start: [this.sourceToken] });
+            else if (it.sep)
+              it.sep.push(this.sourceToken);
+            else
+              it.start.push(this.sourceToken);
+            return;
+          case "alias":
+          case "scalar":
+          case "single-quoted-scalar":
+          case "double-quoted-scalar": {
+            const fs = this.flowScalar(this.type);
+            if (!it || it.value)
+              fc.items.push({ start: [], key: fs, sep: [] });
+            else if (it.sep)
+              this.stack.push(fs);
+            else
+              Object.assign(it, { key: fs, sep: [] });
+            return;
+          }
+          case "flow-map-end":
+          case "flow-seq-end":
+            fc.end.push(this.sourceToken);
+            return;
+        }
+        const bv = this.startBlockValue(fc);
+        if (bv)
+          this.stack.push(bv);
+        else {
+          yield* this.pop();
+          yield* this.step();
+        }
+      } else {
+        const parent = this.peek(2);
+        if (parent.type === "block-map" && (this.type === "map-value-ind" && parent.indent === fc.indent || this.type === "newline" && !parent.items[parent.items.length - 1].sep)) {
+          yield* this.pop();
+          yield* this.step();
+        } else if (this.type === "map-value-ind" && parent.type !== "flow-collection") {
+          const prev = getPrevProps(parent);
+          const start = getFirstKeyStartProps(prev);
+          fixFlowSeqItems(fc);
+          const sep2 = fc.end.splice(1, fc.end.length);
+          sep2.push(this.sourceToken);
+          const map = {
+            type: "block-map",
+            offset: fc.offset,
+            indent: fc.indent,
+            items: [{ start, key: fc, sep: sep2 }]
+          };
+          this.onKeyLine = true;
+          this.stack[this.stack.length - 1] = map;
+        } else {
+          yield* this.lineEnd(fc);
+        }
+      }
+    }
+    flowScalar(type) {
+      if (this.onNewLine) {
+        let nl = this.source.indexOf(`
+`) + 1;
+        while (nl !== 0) {
+          this.onNewLine(this.offset + nl);
+          nl = this.source.indexOf(`
+`, nl) + 1;
+        }
+      }
+      return {
+        type,
+        offset: this.offset,
+        indent: this.indent,
+        source: this.source
+      };
+    }
+    startBlockValue(parent) {
+      switch (this.type) {
+        case "alias":
+        case "scalar":
+        case "single-quoted-scalar":
+        case "double-quoted-scalar":
+          return this.flowScalar(this.type);
+        case "block-scalar-header":
+          return {
+            type: "block-scalar",
+            offset: this.offset,
+            indent: this.indent,
+            props: [this.sourceToken],
+            source: ""
+          };
+        case "flow-map-start":
+        case "flow-seq-start":
+          return {
+            type: "flow-collection",
+            offset: this.offset,
+            indent: this.indent,
+            start: this.sourceToken,
+            items: [],
+            end: []
+          };
+        case "seq-item-ind":
+          return {
+            type: "block-seq",
+            offset: this.offset,
+            indent: this.indent,
+            items: [{ start: [this.sourceToken] }]
+          };
+        case "explicit-key-ind": {
+          this.onKeyLine = true;
+          const prev = getPrevProps(parent);
+          const start = getFirstKeyStartProps(prev);
+          start.push(this.sourceToken);
+          return {
+            type: "block-map",
+            offset: this.offset,
+            indent: this.indent,
+            items: [{ start, explicitKey: true }]
+          };
+        }
+        case "map-value-ind": {
+          this.onKeyLine = true;
+          const prev = getPrevProps(parent);
+          const start = getFirstKeyStartProps(prev);
+          return {
+            type: "block-map",
+            offset: this.offset,
+            indent: this.indent,
+            items: [{ start, key: null, sep: [this.sourceToken] }]
+          };
+        }
+      }
+      return null;
+    }
+    atIndentedComment(start, indent) {
+      if (this.type !== "comment")
+        return false;
+      if (this.indent <= indent)
+        return false;
+      return start.every((st) => st.type === "newline" || st.type === "space");
+    }
+    *documentEnd(docEnd) {
+      if (this.type !== "doc-mode") {
+        if (docEnd.end)
+          docEnd.end.push(this.sourceToken);
+        else
+          docEnd.end = [this.sourceToken];
+        if (this.type === "newline")
+          yield* this.pop();
+      }
+    }
+    *lineEnd(token) {
+      switch (this.type) {
+        case "comma":
+        case "doc-start":
+        case "doc-end":
+        case "flow-seq-end":
+        case "flow-map-end":
+        case "map-value-ind":
+          yield* this.pop();
+          yield* this.step();
+          break;
+        case "newline":
+          this.onKeyLine = false;
+        case "space":
+        case "comment":
+        default:
+          if (token.end)
+            token.end.push(this.sourceToken);
+          else
+            token.end = [this.sourceToken];
+          if (this.type === "newline")
+            yield* this.pop();
+      }
+    }
+  }
+  exports.Parser = Parser;
+});
+
+// node_modules/yaml/dist/public-api.js
+var require_public_api = __commonJS(function(exports) {
+  var composer = require_composer();
+  var Document = require_Document();
+  var errors = require_errors();
+  var log = require_log();
+  var identity = require_identity();
+  var lineCounter = require_line_counter();
+  var parser = require_parser();
+  function parseOptions(options) {
+    const prettyErrors = options.prettyErrors !== false;
+    const lineCounter$1 = options.lineCounter || prettyErrors && new lineCounter.LineCounter || null;
+    return { lineCounter: lineCounter$1, prettyErrors };
+  }
+  function parseAllDocuments(source, options = {}) {
+    const { lineCounter: lineCounter2, prettyErrors } = parseOptions(options);
+    const parser$1 = new parser.Parser(lineCounter2?.addNewLine);
+    const composer$1 = new composer.Composer(options);
+    const docs = Array.from(composer$1.compose(parser$1.parse(source)));
+    if (prettyErrors && lineCounter2)
+      for (const doc of docs) {
+        doc.errors.forEach(errors.prettifyError(source, lineCounter2));
+        doc.warnings.forEach(errors.prettifyError(source, lineCounter2));
+      }
+    if (docs.length > 0)
+      return docs;
+    return Object.assign([], { empty: true }, composer$1.streamInfo());
+  }
+  function parseDocument(source, options = {}) {
+    const { lineCounter: lineCounter2, prettyErrors } = parseOptions(options);
+    const parser$1 = new parser.Parser(lineCounter2?.addNewLine);
+    const composer$1 = new composer.Composer(options);
+    let doc = null;
+    for (const _doc of composer$1.compose(parser$1.parse(source), true, source.length)) {
+      if (!doc)
+        doc = _doc;
+      else if (doc.options.logLevel !== "silent") {
+        doc.errors.push(new errors.YAMLParseError(_doc.range.slice(0, 2), "MULTIPLE_DOCS", "Source contains multiple documents; please use YAML.parseAllDocuments()"));
+        break;
+      }
+    }
+    if (prettyErrors && lineCounter2) {
+      doc.errors.forEach(errors.prettifyError(source, lineCounter2));
+      doc.warnings.forEach(errors.prettifyError(source, lineCounter2));
+    }
+    return doc;
+  }
+  function parse2(src, reviver, options) {
+    let _reviver = undefined;
+    if (typeof reviver === "function") {
+      _reviver = reviver;
+    } else if (options === undefined && reviver && typeof reviver === "object") {
+      options = reviver;
+    }
+    const doc = parseDocument(src, options);
+    if (!doc)
+      return null;
+    doc.warnings.forEach((warning) => log.warn(doc.options.logLevel, warning));
+    if (doc.errors.length > 0) {
+      if (doc.options.logLevel !== "silent")
+        throw doc.errors[0];
+      else
+        doc.errors = [];
+    }
+    return doc.toJS(Object.assign({ reviver: _reviver }, options));
+  }
+  function stringify(value, replacer, options) {
+    let _replacer = null;
+    if (typeof replacer === "function" || Array.isArray(replacer)) {
+      _replacer = replacer;
+    } else if (options === undefined && replacer) {
+      options = replacer;
+    }
+    if (typeof options === "string")
+      options = options.length;
+    if (typeof options === "number") {
+      const indent = Math.round(options);
+      options = indent < 1 ? undefined : indent > 8 ? { indent: 8 } : { indent };
+    }
+    if (value === undefined) {
+      const { keepUndefined } = options ?? replacer ?? {};
+      if (!keepUndefined)
+        return;
+    }
+    if (identity.isDocument(value) && !_replacer)
+      return value.toString(options);
+    return new Document.Document(value, _replacer, options).toString(options);
+  }
+  exports.parse = parse2;
+  exports.parseAllDocuments = parseAllDocuments;
+  exports.parseDocument = parseDocument;
+  exports.stringify = stringify;
+});
+
 // src/scriptorium/backend/cli.ts
-import { spawn } from "child_process";
+import { existsSync as existsSync3, readFileSync as readFileSync5 } from "fs";
+import { dirname as dirname4, join as join6 } from "path";
+
+// src/scriptorium/backend/kit/cli.ts
+import { resolve as resolve5 } from "path";
+
+// src/kit/workspace/verbs.ts
+import { spawn as spawn2 } from "child_process";
 import {
-  closeSync,
-  existsSync,
-  mkdirSync,
-  openSync,
-  readdirSync,
-  readFileSync,
-  statSync,
-  unlinkSync
+  existsSync as existsSync2,
+  mkdirSync as mkdirSync2,
+  readdirSync as readdirSync3,
+  readFileSync as readFileSync4,
+  realpathSync as realpathSync2,
+  statSync as statSync2,
+  unlinkSync as unlinkSync3
 } from "fs";
-import { homedir, tmpdir } from "os";
-import { basename, dirname, join, resolve } from "path";
+import { basename as basename2, dirname as dirname3, join as join4, resolve as resolve2, sep as sep2 } from "path";
 
 // src/kit/cli/registry.ts
 import { parseArgs } from "util";
@@ -42,6 +6991,7 @@ function errorEnvelope(kind, message, extra) {
       exit_code: EXIT_FOR[kind],
       retryable: false,
       message,
+      ...extra?.token ? { token: extra.token } : {},
       ...extra?.hint ? { hint: extra.hint } : {},
       ...extra?.choices ? { choices: extra.choices } : {},
       ...extra?.server !== undefined ? { server: extra.server } : {}
@@ -118,6 +7068,10 @@ function defineCli(spec) {
         throw new Error(`defineCli(${cliName}): row "${c.name}" names flag "${f}", not in options`);
       }
     }
+    for (const f of c.requiredFlags ?? []) {
+      if (!c.flags.includes(f))
+        throw new Error(`defineCli(${cliName}): row "${c.name}" requires flag "${f}", not one of its own`);
+    }
     return {
       name: c.name,
       aliases: [...c.aliases ?? []],
@@ -128,6 +7082,9 @@ function defineCli(spec) {
       auto,
       rejectHint: c.rejectHint,
       allowPositionals: c.allowPositionals ?? true,
+      flagHelp: { ...c.flagHelp ?? {} },
+      examples: [...c.examples ?? []],
+      required: new Set(c.requiredFlags ?? []),
       check: c.check,
       run: c.run
     };
@@ -157,10 +7114,10 @@ function defineCli(spec) {
     {
       name: "help",
       flags: [],
-      positionals: [],
-      describe: "show this message (alias: --help, -h)",
-      run: () => {
-        const text = cli.renderHelp();
+      positionals: [{ name: "verb", required: false, variadic: true }],
+      describe: "show this message (alias: --help, -h); `help <verb>` shows one verb: its usage, each flag, and examples",
+      run: (inv) => {
+        const text = inv.pos.length > 0 ? cli.renderVerbHelp(inv.pos.join(" ")) : cli.renderHelp();
         process.stdout.write(text.endsWith(`
 `) ? text : `${text}
 `);
@@ -215,11 +7172,14 @@ function defineCli(spec) {
     const inner = p.variadic ? `${p.name}...` : p.name;
     return p.required ? `<${inner}>` : `[${inner}]`;
   };
-  const renderFlag = (k) => spec.options[k]?.type === "boolean" ? `[--${k}]` : `[--${k} ..]`;
+  const renderFlag = (k, required = false) => {
+    const flag = spec.options[k]?.type === "boolean" ? `--${k}` : `--${k} ..`;
+    return required ? flag : `[${flag}]`;
+  };
   const usageLine = (r) => [
     label(r),
     ...r.positionals.map(renderPositional),
-    ...r.flags.filter((k) => !hides.has(k)).map(renderFlag)
+    ...r.flags.filter((k) => !hides.has(k)).map((k) => renderFlag(k, r.required.has(k)))
   ].join(" ");
   const expects = (r) => `expects: ${usageLine(r)}`;
   const renderHelp = () => {
@@ -239,6 +7199,57 @@ ${body}
 ${tokens}${spec.helpFooter ? `
 
 ${spec.helpFooter}` : ""}`;
+  };
+  const renderRowHelp = (r) => {
+    const line = (k) => {
+      const value = spec.options[k]?.type === "boolean" ? `--${k}` : `--${k} <${k}>`;
+      return [value, r.flagHelp[k] ?? ""];
+    };
+    const isGlobal = (k) => !r.flags.includes(k) || globals.includes(k);
+    const own = r.accepted.filter((k) => !isGlobal(k) && !hides.has(k)).map(line);
+    const global = r.accepted.filter(isGlobal).map(line);
+    const hidden = r.accepted.filter((k) => !isGlobal(k) && hides.has(k)).map(line);
+    const width = Math.min(Math.max(0, ...[...own, ...global, ...hidden].map(([f]) => f.length)), 28);
+    const render = (flags) => flags.map(([f, d]) => d === "" ? `  ${f}` : f.length <= width ? `  ${f.padEnd(width)}  ${d}` : `  ${f}
+  ${"".padEnd(width)}  ${d}`);
+    return [
+      `usage: ${usageLine(r)}`,
+      ...r.describe !== "" ? ["", r.describe] : [],
+      ...own.length > 0 ? ["", "flags:", ...render(own)] : [],
+      ...global.length > 0 ? ["", "global flags:", ...render(global)] : [],
+      ...hidden.length > 0 ? ["", "also accepted:", ...render(hidden)] : [],
+      ...r.examples.length > 0 ? ["", "examples:", ...r.examples.map((e) => `  ${e}`)] : []
+    ].join(`
+`);
+  };
+  const renderVerbHelp = (path) => {
+    const r = byToken.get(path);
+    if (r === undefined)
+      return die(`help: no verb "${path}"`, "usage", {
+        choices: paths,
+        hint: "help with no verb lists them all"
+      });
+    return renderRowHelp(r);
+  };
+  const helpOptions = known.has("help") ? undefined : {
+    ...parseOptions,
+    help: shortToKey.has("h") ? { type: "boolean" } : { type: "boolean", short: "h" }
+  };
+  const asksForHelp = (row, args) => {
+    if (helpOptions === undefined)
+      return false;
+    try {
+      const { tokens } = parseArgs({
+        args: [...args],
+        options: helpOptions,
+        strict: true,
+        allowPositionals: row.allowPositionals,
+        tokens: true
+      });
+      return tokens.some((t) => t.kind === "option" && t.name === "help");
+    } catch {
+      return false;
+    }
   };
   const declaration = () => {
     const arg = (k) => ({
@@ -370,6 +7381,11 @@ ${spec.helpFooter}` : ""}`;
   const runRow = async (row, token, args) => {
     setCurrentCommand(row.name === "" ? null : row.name);
     const name = label(row);
+    if (asksForHelp(row, args)) {
+      process.stdout.write(`${renderRowHelp(row)}
+`);
+      return 0;
+    }
     const accepted = new Set(row.accepted);
     const choices = row.name === "" ? rootChoices : flagsFor(row.name);
     const flagHint = () => [row.rejectHint, choices.length === 0 ? `${name} takes no flags` : undefined].filter((s) => s !== undefined).join("; ") || undefined;
@@ -412,6 +7428,9 @@ ${spec.helpFooter}` : ""}`;
         flags[k] = Array.isArray(d) ? [...d] : d;
       }
     }
+    for (const k of row.required)
+      if (flags[k] === undefined)
+        die(`${name}: missing required --${k}`, "usage", { hint: expects(row) });
     const inv = { path: row.name, token, pos: positionals, flags };
     const refused = row.check?.(inv);
     if (refused !== undefined)
@@ -499,6 +7518,7 @@ ${spec.helpFooter}` : ""}`;
     dispatch,
     declaration,
     renderHelp,
+    renderVerbHelp,
     usageOf: (path) => {
       const r = rowFor(path);
       return r === undefined ? "" : usageLine(r);
@@ -510,6 +7530,429 @@ ${spec.helpFooter}` : ""}`;
     rows: rows.map(view)
   });
   return cli;
+}
+
+// src/kit/lib/bundles.ts
+var registry = new Map;
+
+// src/kit/lib/docFormat.ts
+var DOC_EXTENSIONS = [".md", ".markdown", ".txt", ".json"];
+var appKinds = new Map;
+function registerDocExtension(extension, format = "markdown") {
+  const ext = extension.toLowerCase();
+  if (!/^\.[a-z0-9]+$/.test(ext))
+    throw new Error(`a document extension is a dot and letters or digits: ${extension}`);
+  if (DOC_EXTENSIONS.includes(ext) || isImageName(`x${ext}`))
+    throw new Error(`${ext} already has its meaning in the kit`);
+  appKinds.set(ext, format);
+}
+function docExtensions() {
+  return [...DOC_EXTENSIONS, ...appKinds.keys()];
+}
+function isDocName(name) {
+  const lower = name.toLowerCase();
+  return docExtensions().some((ext) => lower.endsWith(ext));
+}
+var IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif"];
+function isImageName(name) {
+  const lower = name.toLowerCase();
+  return IMAGE_EXTENSIONS.some((ext) => lower.endsWith(ext));
+}
+function isHeicName(name) {
+  return /\.(?:heic|heif)$/i.test(name);
+}
+function isSvgName(name) {
+  return /\.svgz?$/i.test(name);
+}
+var SVG_REFUSED = "SVG is not brought in: an SVG can carry script, which would run inside the app. Export it as PNG or WebP instead.";
+var IMAGE_HEAD_BYTES = 64 * 1024;
+
+// src/kit/lib/home.ts
+import { homedir, userInfo } from "os";
+var SCRATCH_HOME = /\/spellbook-test\/run-\d+-[^/]+\/home$/;
+function underTest(env = process.env) {
+  return env.NODE_ENV === "test" || SCRATCH_HOME.test(env.HOME ?? "");
+}
+function homeDir() {
+  const home = process.env.HOME || homedir();
+  if (underTest() && !SCRATCH_HOME.test(home))
+    throw new Error(`refusing the real home folder (${home}) in a test run: no scratch HOME was preloaded. ` + "Run `bun test` from the repo root or a spell's folder, whose bunfig.toml preloads " + "src/kit/lib/scratchHome.ts, or pass --preload <repo>/src/kit/lib/scratchHome.ts.");
+  return home;
+}
+
+// src/kit/wire/daemonLock.ts
+import { linkSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from "fs";
+import { join } from "path";
+var DAEMON_LOCK = "daemon.lock";
+var SESSION_ID = /^[A-Za-z0-9_-][A-Za-z0-9_.-]*$/;
+var heldHere = new Set;
+var START_SLACK_MS = 1500;
+function readRecord(path) {
+  let raw;
+  try {
+    raw = readFileSync(path, "utf8");
+  } catch (e) {
+    return e.code === "ENOENT" ? "absent" : "unreadable";
+  }
+  try {
+    const r = JSON.parse(raw);
+    if (Number.isInteger(r.pid) && r.pid > 0 && typeof r.nonce === "string" && /^[a-f0-9]{8,64}$/.test(r.nonce) && typeof r.at === "number" && (r.session === undefined || typeof r.session === "string" && SESSION_ID.test(r.session)))
+      return {
+        pid: r.pid,
+        nonce: r.nonce,
+        at: r.at,
+        ...r.session !== undefined ? { session: r.session } : {}
+      };
+  } catch {}
+  return "unreadable";
+}
+function parseEtime(s) {
+  const m = /^\s*(?:(\d+)-)?(?:(\d+):)?(\d+):(\d+)\s*$/.exec(s);
+  if (!m)
+    return null;
+  const [, d, h, mi, se] = m;
+  return ((Number(d ?? 0) * 24 + Number(h ?? 0)) * 60 + Number(mi)) * 60 + Number(se);
+}
+var elapsedSeconds = (pid) => {
+  try {
+    const ps = Bun.spawnSync(["ps", "-o", "etime=", "-p", String(pid)], {
+      stdout: "pipe",
+      stderr: "ignore",
+      timeout: 2000
+    });
+    return parseEtime(ps.stdout.toString());
+  } catch {
+    return null;
+  }
+};
+var startedBy = (elapsedS, at, now = Date.now()) => now - elapsedS * 1000 <= at + START_SLACK_MS;
+function processCommand(pid) {
+  try {
+    const ps = Bun.spawnSync(["ps", "-ww", "-o", "command=", "-p", String(pid)], {
+      stdout: "pipe",
+      stderr: "ignore",
+      timeout: 2000
+    });
+    const out = ps.stdout.toString().trim();
+    return ps.exitCode === 0 && out !== "" ? out : null;
+  } catch {
+    return null;
+  }
+}
+function readDaemonLock(dir) {
+  const r = readRecord(join(dir, DAEMON_LOCK));
+  return typeof r === "object" ? r : null;
+}
+
+// src/kit/wire/detach.ts
+import { spawn } from "child_process";
+import { closeSync, mkdirSync, openSync, readFileSync as readFileSync2 } from "fs";
+import { dirname } from "path";
+function tailOf(path, lines = 12) {
+  try {
+    return readFileSync2(path, "utf8").split(`
+`).slice(-lines).join(`
+`).trim();
+  } catch {
+    return "";
+  }
+}
+function signal(pid, sig) {
+  try {
+    process.kill(-pid, sig);
+    return true;
+  } catch {
+    try {
+      process.kill(pid, sig);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+async function killGroup(pid, graceMs) {
+  if (!signal(pid, "SIGTERM"))
+    return;
+  const end = Date.now() + graceMs;
+  while (Date.now() < end) {
+    if (!signal(pid, 0))
+      return;
+    await new Promise((r) => setTimeout(r, 25));
+  }
+  signal(pid, "SIGKILL");
+}
+async function startDaemon(opts, deps = {}) {
+  mkdirSync(dirname(opts.logFile), { recursive: true });
+  const logFd = openSync(opts.logFile, "a");
+  let child;
+  try {
+    child = (deps.spawn ?? spawn)(opts.command, [...opts.args], {
+      cwd: opts.cwd,
+      env: opts.env ?? process.env,
+      detached: true,
+      stdio: ["ignore", "pipe", logFd]
+    });
+  } finally {
+    closeSync(logFd);
+  }
+  child.unref();
+  const timeoutMs = opts.startTimeoutMs ?? 45000;
+  const graceMs = opts.killGraceMs ?? 2000;
+  return await new Promise((resolve, reject) => {
+    let buf = "";
+    let settled = false;
+    const settle = (fn) => {
+      if (settled)
+        return;
+      settled = true;
+      clearTimeout(timer);
+      child.stdout?.removeAllListeners("data");
+      child.stdout?.destroy();
+      fn();
+    };
+    const fail = (message, kill) => settle(() => {
+      const pid = child.pid;
+      const killed = kill && pid !== undefined ? killGroup(pid, graceMs) : Promise.resolve();
+      killed.then(() => {
+        const log = tailOf(opts.logFile);
+        reject(new Error(log ? `${message}
+${log}` : message));
+      });
+    });
+    const timer = setTimeout(() => fail(`daemon start timeout (${timeoutMs / 1000}s)`, true), timeoutMs);
+    child.on("error", (e) => fail(`cannot start the daemon: ${e.message}`, false));
+    child.on("exit", (code) => fail(`the daemon exited before it was ready (code ${code})`, false));
+    child.stdout?.on("data", (chunk) => {
+      buf += chunk.toString();
+      const nl = buf.indexOf(`
+`);
+      if (nl < 0)
+        return;
+      const line = buf.slice(0, nl);
+      let ready;
+      try {
+        const parsed = JSON.parse(line);
+        if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+          throw new Error("not an object");
+        }
+        ready = parsed;
+      } catch {
+        fail(`the daemon's first line was not a JSON object: ${line.slice(0, 200)}`, true);
+        return;
+      }
+      const pid = child.pid;
+      if (pid === undefined)
+        fail("the daemon said ready but has no pid", false);
+      else
+        settle(() => resolve({ pid, ready }));
+    });
+  });
+}
+
+// src/kit/wire/discovery.ts
+import {
+  existsSync,
+  lstatSync,
+  readdirSync as readdirSync2,
+  readFileSync as readFileSync3,
+  renameSync,
+  rmSync,
+  statSync,
+  unlinkSync as unlinkSync2,
+  writeFileSync as writeFileSync2
+} from "fs";
+import { tmpdir } from "os";
+import { join as join2 } from "path";
+var SPELL_NAME = /^[a-z][a-z0-9-]*$/;
+function pointerPath(spell, id, opts = {}) {
+  if (!SPELL_NAME.test(spell))
+    throw new Error(`invalid spell name for discovery: ${spell}`);
+  if (id !== undefined && (!/^[A-Za-z0-9_.-]+$/.test(id) || id.toLowerCase() === "latest")) {
+    throw new Error(`invalid session id for discovery: ${id}`);
+  }
+  return join2(opts.tmp ?? tmpdir(), `${spell}.${id ?? "latest"}.json`);
+}
+var LAST_OPENED = "last-opened.json";
+var SESSION_ID2 = /^[A-Za-z0-9_-][A-Za-z0-9_.-]*$/;
+function readLastOpened(dir) {
+  const path = join2(dir, LAST_OPENED);
+  try {
+    const st = lstatSync(path);
+    if (!st.isFile())
+      return { kind: "untrusted", why: "it is not a plain file" };
+    if (!ownedByMe(path))
+      return { kind: "untrusted", why: "it is another user's" };
+  } catch (e) {
+    if (e.code === "ENOENT")
+      return { kind: "none" };
+    return { kind: "untrusted", why: "it cannot be read" };
+  }
+  try {
+    const id = JSON.parse(readFileSync3(path, "utf8"))?.session_id;
+    if (typeof id === "string" && SESSION_ID2.test(id))
+      return { kind: "ok", id };
+    return { kind: "untrusted", why: "it names no session" };
+  } catch {
+    return { kind: "untrusted", why: "it is not valid JSON" };
+  }
+}
+function readPointer(spell, id, opts = {}) {
+  const path = pointerPath(spell, id, opts);
+  let raw;
+  try {
+    raw = readFileSync3(path, "utf8");
+  } catch (e) {
+    if (e.code === "ENOENT")
+      return id === undefined ? newestLivePointer(spell, opts) : null;
+    throw new Error(`cannot read the ${spell} pointer: ${path}`);
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error(`the ${spell} pointer is not valid JSON: ${path}`);
+  }
+  if (id === undefined) {
+    if (isPointer(parsed) && ownedByMe(path))
+      return parsed;
+    if (!isPointerShape(parsed))
+      throw new Error(`the ${spell} pointer has the wrong shape: ${path}`);
+    return newestLivePointer(spell, opts);
+  }
+  if (!isPointer(parsed))
+    throw new Error(`the ${spell} pointer has the wrong shape: ${path}`);
+  if (parsed.session_id !== id)
+    throw new Error(`the ${spell} pointer for ${id} names another session: ${path}`);
+  if (!ownedByMe(path))
+    throw new Error(`the ${spell} pointer is another user's: ${path}`);
+  return parsed;
+}
+function pidAlive(pid) {
+  if (!Number.isInteger(pid) || pid <= 0)
+    return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (e) {
+    return e.code === "EPERM";
+  }
+}
+function ownedByMe(path) {
+  const uid = process.getuid?.();
+  if (uid === undefined)
+    return true;
+  try {
+    return statSync(path).uid === uid;
+  } catch {
+    return false;
+  }
+}
+function newestLivePointer(spell, opts) {
+  const dir = opts.tmp ?? tmpdir();
+  let names;
+  try {
+    names = readdirSync2(dir);
+  } catch {
+    return null;
+  }
+  let best = null;
+  for (const name of names) {
+    if (!name.startsWith(`${spell}.`) || !name.endsWith(".json"))
+      continue;
+    if (name === `${spell}.latest.json`)
+      continue;
+    const path = join2(dir, name);
+    try {
+      const parsed = JSON.parse(readFileSync3(path, "utf8"));
+      if (!isPointer(parsed) || name !== `${spell}.${parsed.session_id}.json`)
+        continue;
+      if (!ownedByMe(path) || !pidAlive(parsed.pid))
+        continue;
+      const at = statSync(path).mtimeMs;
+      if (!best || at > best.at)
+        best = { pointer: parsed, at };
+    } catch {}
+  }
+  return best?.pointer ?? null;
+}
+function isPointerShape(v) {
+  if (typeof v !== "object" || v === null)
+    return false;
+  const p = v;
+  return typeof p.url === "string" && typeof p.port === "number" && typeof p.session_id === "string" && typeof p.dir === "string" && typeof p.pid === "number";
+}
+function isPointer(v) {
+  return isPointerShape(v) && Number.isInteger(v.pid) && v.pid > 0;
+}
+
+// src/kit/wire/housekeeping.ts
+function readSeconds(token) {
+  const t = token.trim();
+  if (!/^\d+(\.\d+)?$/.test(t) || !Number.isFinite(Number(t)))
+    return {
+      ok: false,
+      message: `"${token}" is not a number of seconds: write one such as 90 or 0.5 (0 or more, no sign or exponent)`
+    };
+  return { ok: true, seconds: Number(t) };
+}
+var TIMER_MAX_S = Math.floor((2 ** 31 - 1) / 1000);
+
+// src/kit/wire/stdinPeek.ts
+import { fstatSync } from "fs";
+var STDIN_PEEK_MS = 100;
+var POLLIN = 1;
+var MSG_PEEK = 2;
+var MSG_DONTWAIT = process.platform === "darwin" ? 128 : 64;
+var libc;
+async function loadLibc() {
+  if (libc !== undefined)
+    return libc;
+  try {
+    const { dlopen, FFIType, ptr } = await import("bun:ffi");
+    const name = process.platform === "darwin" ? "libc.dylib" : "libc.so.6";
+    const { symbols } = dlopen(name, {
+      poll: {
+        args: [FFIType.ptr, process.platform === "darwin" ? FFIType.u32 : FFIType.u64, FFIType.i32],
+        returns: FFIType.i32
+      },
+      recv: { args: [FFIType.i32, FFIType.ptr, FFIType.u64, FFIType.i32], returns: FFIType.i64 }
+    });
+    const one = new Uint8Array(1);
+    libc = {
+      poll: (fds, nfds, timeoutMs) => symbols.poll(ptr(fds), nfds, timeoutMs),
+      recvPeek: (fd) => Number(symbols.recv(fd, ptr(one), 1, MSG_PEEK | MSG_DONTWAIT))
+    };
+  } catch {
+    libc = null;
+  }
+  return libc;
+}
+async function stdinWaiting(graceMs = STDIN_PEEK_MS) {
+  try {
+    const st = fstatSync(0);
+    if (st.isFile())
+      return st.size > 0 ? "text" : "none";
+    const fifo = st.isFIFO();
+    if (!fifo && !st.isSocket())
+      return "none";
+    const c = await loadLibc();
+    if (!c)
+      return process.platform === "darwin" && st.size > 0 ? "text" : "none";
+    const pfd = new Int16Array(4);
+    pfd[2] = POLLIN;
+    const ready = c.poll(pfd, 1, graceMs);
+    if (ready === 0)
+      return "silent";
+    if (ready < 0)
+      return "none";
+    if (process.platform === "darwin")
+      return fstatSync(0).size > 0 ? "text" : "none";
+    if (!fifo)
+      return c.recvPeek(0) > 0 ? "text" : "none";
+    return ((pfd[3] ?? 0) & POLLIN) !== 0 ? "text" : "none";
+  } catch {
+    return "none";
+  }
 }
 
 // src/kit/wire/tailEvents.ts
@@ -800,13 +8243,14 @@ var RUN_WITH_LAUNCHER = "bun <this skill's directory>/scripts/cli.ts <command>";
 var COME_BACK = (why, lead = "To bring it back") => `${why} ${lead}, run ${RUN_WITH_LAUNCHER}; then arm the tail again with no --since, on the session id it prints where there is one (a restarted daemon starts a new event log, so the old bookmark does not apply)`;
 function handoff(s, cmd) {
   const base = { spell: s.spell, events: s.events, cursor: s.cursor };
+  const stopBase = s.cursor >= 0 ? base : { spell: s.spell, events: s.events };
   switch (s.end) {
     case "stopped":
       return null;
     case "closed":
       return {
         type: "tail.closed",
-        ...base,
+        ...stopBase,
         ...s.by ? { by: s.by } : {},
         next: "stop",
         command: cmd.comeBack(),
@@ -815,7 +8259,7 @@ function handoff(s, cmd) {
     case "lost":
       return {
         type: "tail.lost",
-        ...base,
+        ...stopBase,
         next: "stop",
         command: cmd.comeBack(),
         hint: COME_BACK("lost the daemon (it crashed or was killed); nothing is listening.")
@@ -998,19 +8442,339 @@ function tailIdleMs(beatMs) {
   return beatMs * MISSED_BEATS;
 }
 
-// src/scriptorium/backend/heartbeat.ts
+// src/kit/workspace/heartbeat.ts
 var SSE_HEARTBEAT_MS = DEFAULT_HEARTBEAT_MS;
 var TAIL_IDLE_MS = tailIdleMs(SSE_HEARTBEAT_MS);
+var AGENT_TAIL_PARAM = "agent";
+var AGENT_ONCE_PARAM = "once";
+var AGENT_ALL_PARAM = "all";
+var NOT_PRESENCE_HEADER = "x-spellbook-not-presence";
 
-// src/scriptorium/backend/tree.ts
-var DOC_EXTENSIONS = [".md", ".markdown", ".mdx", ".txt"];
-function isDocName(name) {
-  const lower = name.toLowerCase();
-  return DOC_EXTENSIONS.some((ext) => lower.endsWith(ext));
+// src/kit/workspace/noHome.ts
+import { lstatSync as lstatSync2, readlinkSync, realpathSync } from "fs";
+import { basename, dirname as dirname2, isAbsolute, join as join3, parse, relative, resolve, sep } from "path";
+var hasHomeWorkspace = (app) => app.homeWorkspace !== false;
+var DEFAULT_LOCATION_HINT = "name a folder inside a set (`state` lists the sets), or add a folder that exists with `add <folder>`";
+var locationHint = (app) => app.locationHint ?? DEFAULT_LOCATION_HINT;
+var MAKES_IN_DIR = new Set(["doc.create", "folder.create", "bundle.create"]);
+var realOr = (p) => {
+  try {
+    return realpathSync(p);
+  } catch {
+    return p;
+  }
+};
+function notAddedWhole(path, sessionsRoot, appHome) {
+  const at = realOr(path);
+  const home = realOr(homeDir());
+  if (at === home)
+    return `${path} is your home folder, which is not added whole`;
+  if (at === dirname2(at) || home.startsWith(at + sep))
+    return `${path} holds your home folder, which is not added whole`;
+  const sessions = realOr(sessionsRoot);
+  if (at === sessions || at.startsWith(sessions + sep))
+    return `${path} is among the sessions' own folders`;
+  if (sessions.startsWith(at + sep))
+    return `${path} holds the sessions' own folders`;
+  if (appHome !== undefined) {
+    const own = realOr(appHome);
+    if (at === own || at.startsWith(own + sep))
+      return `${path} is in the app's own folder (${appHome}), where its sessions live`;
+  }
+  return null;
 }
-var SKIP_DIRS = new Set(["node_modules", ".git", "dist", "out", "coverage"]);
 
-// src/scriptorium/backend/cli.ts
+// node_modules/yaml/dist/index.js
+var composer = require_composer();
+var Document = require_Document();
+var Schema = require_Schema();
+var errors = require_errors();
+var Alias = require_Alias();
+var identity = require_identity();
+var Pair = require_Pair();
+var Scalar = require_Scalar();
+var YAMLMap = require_YAMLMap();
+var YAMLSeq = require_YAMLSeq();
+var cst = require_cst();
+var lexer = require_lexer();
+var lineCounter = require_line_counter();
+var parser = require_parser();
+var publicApi = require_public_api();
+var visit = require_visit();
+var $Composer = composer.Composer;
+var $Document = Document.Document;
+var $Schema = Schema.Schema;
+var $YAMLError = errors.YAMLError;
+var $YAMLParseError = errors.YAMLParseError;
+var $YAMLWarning = errors.YAMLWarning;
+var $Alias = Alias.Alias;
+var $isAlias = identity.isAlias;
+var $isCollection = identity.isCollection;
+var $isDocument = identity.isDocument;
+var $isMap = identity.isMap;
+var $isNode = identity.isNode;
+var $isPair = identity.isPair;
+var $isScalar = identity.isScalar;
+var $isSeq = identity.isSeq;
+var $Pair = Pair.Pair;
+var $Scalar = Scalar.Scalar;
+var $YAMLMap = YAMLMap.YAMLMap;
+var $YAMLSeq = YAMLSeq.YAMLSeq;
+var $Lexer = lexer.Lexer;
+var $LineCounter = lineCounter.LineCounter;
+var $Parser = parser.Parser;
+var $parse = publicApi.parse;
+var $parseAllDocuments = publicApi.parseAllDocuments;
+var $parseDocument = publicApi.parseDocument;
+var $stringify = publicApi.stringify;
+var $visit = visit.visit;
+var $visitAsync = visit.visitAsync;
+
+// src/kit/lib/sidecar.ts
+var SIDECAR_NAME = new RegExp(`(?:${IMAGE_EXTENSIONS.map((e) => e.replace(".", "\\.")).join("|")})\\.md$`, "i");
+
+// src/kit/workspace/tree.ts
+var SIDECAR_HEAD_BYTES = 8 * 1024;
+var BUNDLE_INFO_MAX_BYTES = 64 * 1024;
+var SKIP_DIRS = new Set(["node_modules", ".git", "dist", "out", "coverage"]);
+var SAME_FILE_MAX_BYTES = 2 ** 30;
+
+// src/kit/workspace/verbs.ts
+var KIT_OPTIONS = {
+  against: { type: "string" },
+  all: { type: "boolean" },
+  "body-file": { type: "string" },
+  context: { type: "string" },
+  doc: { type: "string" },
+  edge: { type: "string" },
+  failed: { type: "boolean" },
+  focus: { type: "string" },
+  for: { type: "string" },
+  from: { type: "string" },
+  full: { type: "boolean" },
+  hunk: { type: "string" },
+  hunks: { type: "string" },
+  hops: { type: "string" },
+  kind: { type: "string" },
+  label: { type: "string" },
+  limit: { type: "string" },
+  "no-open": { type: "boolean" },
+  once: { type: "boolean" },
+  parent: { type: "string" },
+  patch: { type: "boolean" },
+  quote: { type: "string" },
+  heading: { type: "string" },
+  rel: { type: "string" },
+  reopen: { type: "boolean" },
+  restore: { type: "string" },
+  session: { type: "string" },
+  since: { type: "string" },
+  source: { type: "string" },
+  "start-timeout": { type: "string" },
+  stdin: { type: "boolean" },
+  timeout: { type: "string" },
+  untyped: { type: "boolean" },
+  "update-links": { type: "boolean" },
+  via: { type: "string" },
+  kindless: { type: "boolean" },
+  bundles: { type: "boolean" },
+  within: { type: "string" },
+  format: { type: "string" },
+  quality: { type: "string" },
+  "max-side": { type: "string" }
+};
+var NO_HOME_OPTIONS = {
+  into: { type: "string" }
+};
+
+class UsageError extends CliError {
+  constructor(message, extra) {
+    super("usage", message, extra);
+  }
+}
+var STDIN_SILENT = "open but silent: not read (pass --stdin to wait for text)";
+async function versionBody(flags) {
+  const verb = "version-new";
+  const file = typeof flags["body-file"] === "string" ? flags["body-file"] : undefined;
+  if (file !== undefined && flags.stdin === true)
+    die(`${verb} takes its text from one place: --body-file or --stdin`, "usage", {
+      choices: ["--body-file", "--stdin"]
+    });
+  let text;
+  if (flags.stdin === true)
+    text = await new Response(Bun.stdin.stream()).text();
+  else {
+    const look = await stdinWaiting();
+    const waiting = look === "text";
+    if (file !== undefined) {
+      if (waiting)
+        die(`${verb}: text was piped in and --body-file names another: give one`, "usage", {
+          hint: "drop the pipe, or pass --stdin instead of --body-file to use the piped text"
+        });
+      try {
+        text = readFileSync4(file, "utf8");
+      } catch (e) {
+        const code = e && typeof e === "object" && "code" in e ? String(e.code) : "unreadable";
+        return die(`${verb}: --body-file ${file} cannot be read (${code})`, "not_found");
+      }
+    } else if (waiting)
+      return die(`${verb}: text was piped in, and nothing was made`, "usage", {
+        hint: "text was piped in; pass --stdin to use it as the version's body, or --body-file",
+        choices: ["--stdin", "--body-file"]
+      });
+    else
+      return look === "silent" ? { silent: true } : {};
+  }
+  if (!text.trim())
+    die(`${verb}: the text is empty`, "usage", {
+      hint: "to copy a version, give no text (no --body-file or --stdin)"
+    });
+  return { body: text };
+}
+function parseTailSince(token) {
+  const r = readSince(token, { epoch: true });
+  if (!r.ok)
+    die(r.message, "usage");
+  return r.epoch ? { since: r.since, epoch: r.epoch } : { since: r.since };
+}
+function parseVersion(token, what) {
+  const m = /^v?(\d+)$/.exec(token.trim());
+  if (!m || Number(m[1]) < 1)
+    die(`${what}: "${token}" is not a version: write v1, v2, ...`, "usage", {
+      hint: "run: state (each doc lists its versions)"
+    });
+  return Number(m[1]);
+}
+function parseCount(token, what) {
+  const t = token.trim();
+  if (!/^\d+$/.test(t))
+    die(`${what}: "${token}" is not a whole number`, "usage");
+  return Number(t);
+}
+function flagSeconds(v, flag, hint, max) {
+  if (v === undefined)
+    return;
+  if (typeof v !== "string")
+    die(`open ${flag}: give it once, as a number of seconds`, "usage", { hint });
+  const r = readSeconds(v);
+  if (!r.ok)
+    die(`open ${flag}: ${r.message}`, "usage", { hint });
+  if (max !== undefined && r.seconds > max)
+    die(`open ${flag}: ${r.seconds} seconds is longer than the longest wait (${max})`, "usage", {
+      hint
+    });
+  return r.seconds;
+}
+function edgeList(v, verb) {
+  if (v === undefined)
+    return;
+  if (typeof v !== "string")
+    die(`${verb} --edge: name at least one edge kind`, "usage");
+  const names = v.split(",").map((s) => s.trim()).filter((s) => s !== "");
+  if (names.length === 0)
+    die(`${verb} --edge: name at least one edge kind`, "usage");
+  return names;
+}
+function parseSide(token, what) {
+  const t = token.trim().toLowerCase();
+  if (t === "original" || t === "file" || t === "saved")
+    return "original";
+  return parseVersion(token, what);
+}
+function callerNamed(argv, e) {
+  const path = e && typeof e === "object" && "path" in e ? e.path : null;
+  if (typeof path !== "string" || path === "")
+    return false;
+  for (const arg of argv) {
+    const value = arg.startsWith("--") && arg.includes("=") ? arg.slice(arg.indexOf("=") + 1) : arg;
+    if (value === "" || value.startsWith("--"))
+      continue;
+    if (value === path || resolve2(value) === resolve2(path))
+      return true;
+  }
+  return false;
+}
+function docArg(token) {
+  if (token.includes("/") || existsSync2(resolve2(token)))
+    return resolve2(token);
+  return token;
+}
+function pathArg(token, verb) {
+  if (token === "~" || token.startsWith("~/")) {
+    const meant = token === "~" ? homeDir() : join4(homeDir(), token.slice(2));
+    const here = existsSync2(resolve2(token)) ? `; for the ${resolve2(token)} here, write ./${token}` : "";
+    die(`${verb}: "${token}" arrived with its ~ unexpanded (quoted, or from a script): nothing was done`, "usage", {
+      hint: `write the full path (${meant}), or leave the ~ unquoted for the shell to expand${here}`
+    });
+  }
+  return resolve2(token);
+}
+function contextPaths(pos, verb = "add") {
+  const paths = pos.map((p) => pathArg(p, verb));
+  for (const p of paths) {
+    let st;
+    try {
+      st = statSync2(p);
+    } catch {
+      die(`no such file or folder: ${p}`, "not_found");
+    }
+    if (!st.isDirectory() && isSvgName(p))
+      die(`${SVG_REFUSED} (${p})`, "usage");
+    if (!st.isDirectory() && isHeicName(p))
+      die(`a HEIC photo is not shown as it is: drop it on the context list, which converts it to JPEG, or export it as JPEG first: ${p}`, "usage");
+    if (!st.isDirectory() && !isDocName(p) && !isImageName(p))
+      die(`not a document or image the workspace opens: ${p}`, "usage", {
+        hint: "add a folder, or a file with one of these extensions",
+        choices: [...docExtensions(), ...IMAGE_EXTENSIONS]
+      });
+  }
+  return paths;
+}
+function defaultWorkspace(paths, cwd) {
+  const real = (p) => {
+    try {
+      return realpathSync2(p);
+    } catch {
+      return p;
+    }
+  };
+  const folders = paths.filter((p) => statSync2(p).isDirectory()).map(real);
+  const only = paths.length === 1 ? folders[0] : undefined;
+  let ws = only !== undefined ? only : real(cwd);
+  let stepped = false;
+  for (;; ) {
+    const holder = folders.find((f) => ws === f || ws.startsWith(f + sep2));
+    if (holder === undefined)
+      break;
+    if (dirname3(holder) === holder)
+      return;
+    ws = dirname3(holder);
+    stepped = true;
+  }
+  const home = real(homeDir());
+  if (stepped && (ws === home || home.startsWith(ws + sep2) || ws === dirname3(ws)))
+    return;
+  return ws;
+}
+function openingFolder(cwd, sessionsRoot, appHome) {
+  const why = notAddedWhole(cwd, sessionsRoot, appHome);
+  return why === null ? { path: cwd } : { skipped: why };
+}
+var LOG_KEEP = 10;
+function pruneLogs(logDir) {
+  let names = [];
+  try {
+    names = readdirSync3(logDir).filter((n) => /^daemon-\d+-\d+\.log$/.test(n));
+  } catch {
+    return;
+  }
+  const byAge = names.sort((a, b) => Number(a.split("-")[1]) - Number(b.split("-")[1]));
+  for (const n of byAge.slice(0, Math.max(0, byAge.length - (LOG_KEEP - 1)))) {
+    try {
+      unlinkSync3(join4(logDir, n));
+    } catch {}
+  }
+}
 function daemonRefused(what, status, data) {
   const kind = status === 400 ? "usage" : status === 404 ? "not_found" : status === 409 ? "conflict" : "internal";
   const body = data ?? {};
@@ -1022,1057 +8786,1378 @@ function daemonRefused(what, status, data) {
     ...data !== null && data !== undefined ? { server: data } : {}
   });
 }
-var SCRIPT_DIR = dirname(Bun.fileURLToPath(import.meta.url));
-var SKILL_ROOT = join(SCRIPT_DIR, "..");
-var DIST_DIR = join(SKILL_ROOT, "dist");
-var SERVER_SCRIPT = join(SCRIPT_DIR, "..", "scripts", "server.ts");
-var SURFACE_CWD = join(SCRIPT_DIR, "..", "..", "..", "..", "..", "src", "scriptorium");
+var DASH_HINT = "for free text containing dashes, put it after a bare --";
+var DEFAULT_START_TIMEOUT_MS = 45000;
+var POINTER_HEAL_MS = 2500;
+var ANSWER_MS = 3000;
+function createWorkspaceCli(opts) {
+  const app = opts.app.name;
+  const endedGraceMs = opts.tailEndedGraceMs ?? DEFAULT_START_TIMEOUT_MS;
+  const noHome = !hasHomeWorkspace(opts.app);
+  const options = {
+    ...KIT_OPTIONS,
+    ...noHome ? NO_HOME_OPTIONS : {},
+    ...opts.options ?? {}
+  };
+  function restorable() {
+    const dir = opts.sessionsRoot();
+    try {
+      return readdirSync3(dir, { withFileTypes: true }).filter((e) => e.isDirectory() && existsSync2(join4(dir, e.name, "manifest.json"))).map((e) => ({ id: e.name, at: statSync2(join4(dir, e.name, "manifest.json")).mtimeMs })).sort((a, b) => b.at - a.at).map((e) => e.id);
+    } catch {
+      return [];
+    }
+  }
+  function endedBy(id) {
+    try {
+      const m = JSON.parse(readFileSync4(join4(opts.sessionsRoot(), id, "manifest.json"), "utf8"));
+      return typeof m.ended?.by === "string" ? m.ended.by : undefined;
+    } catch {
+      return;
+    }
+  }
+  function newestSession() {
+    const r = readLastOpened(dirname3(opts.sessionsRoot()));
+    if (r.kind === "none")
+      return restorable()[0];
+    const why = r.kind === "untrusted" ? r.why : existsSync2(join4(opts.sessionsRoot(), r.id, "manifest.json")) ? null : `it names session ${r.id}, which is no longer saved here`;
+    if (why === null && r.kind === "ok")
+      return r.id;
+    const ids = restorable();
+    return die(`the newest ${app} session is unknown: the record of the last one started (${join4(dirname3(opts.sessionsRoot()), LAST_OPENED)}) cannot be trusted: ${why}`, "not_found", {
+      hint: ids.length === 0 ? "no session is saved here: run `open <path>`" : "name one with --session (the saved sessions are the choices); opening or restoring a session records it again",
+      choices: ids.slice(0, 10)
+    });
+  }
+  function readSession(session) {
+    if (session !== undefined && !/^[A-Za-z0-9_-][A-Za-z0-9_.-]*$/.test(session))
+      die(`"${session}" is not a session id`, "usage", {
+        hint: "a session id is the session_id that `open` printed"
+      });
+    const id = session ?? newestSession();
+    if (id === undefined)
+      return null;
+    try {
+      return readPointer(app, id, opts.discovery);
+    } catch (e) {
+      return die(e instanceof Error ? e.message : String(e), "internal");
+    }
+  }
+  function noSession(session) {
+    const ids = restorable();
+    const id = session ?? newestSession();
+    if (id === undefined)
+      return {
+        message: `no running ${app} session`,
+        extra: { hint: "no session has been opened yet: run `open <path>`" }
+      };
+    if (!ids.includes(id))
+      return {
+        message: `no ${app} session ${id} is saved here (${opts.sessionsRoot()})`,
+        extra: {
+          hint: ids.length === 0 ? "no session has been saved here yet: run `open <path>`" : "pass --session one of the saved sessions, or drop it for the most recent",
+          choices: ids.slice(0, 10)
+        }
+      };
+    if (endedBy(id) === "human")
+      return {
+        message: `the human ended session ${id}`,
+        extra: {
+          hint: `the human ended this session on purpose; do not reopen it unless they ask. If they ask: \`open --restore ${id}\``
+        }
+      };
+    return {
+      message: `no running ${app} session ${id}`,
+      extra: {
+        hint: `no daemon is running for session ${id}, but its work is on disk: bring it back with \`open --restore ${id}\``,
+        choices: [id]
+      }
+    };
+  }
+  function requireSession(session) {
+    const found = readSession(session);
+    const s = found !== null && pidAlive(found.pid) ? found : null;
+    if (!s) {
+      const { message, extra } = noSession(session);
+      die(message, "not_found", extra);
+    }
+    return s;
+  }
+  async function api(port, method, path, body, extraHeaders = {}) {
+    const res = await fetch(`http://127.0.0.1:${port}${path}`, {
+      method,
+      headers: body !== undefined ? { "content-type": "application/json", ...extraHeaders } : extraHeaders,
+      body: body !== undefined ? JSON.stringify(body) : undefined
+    });
+    let data = null;
+    try {
+      data = await res.json();
+    } catch {}
+    return { status: res.status, data };
+  }
+  async function postCmd(session, msg, o = {}) {
+    const s = requireSession(session);
+    let status;
+    let data;
+    try {
+      ({ status, data } = await api(s.port, "POST", "/cmd", msg, o.presence === false ? { [NOT_PRESENCE_HEADER]: "1" } : {}));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      const code = err && typeof err === "object" && "code" in err ? String(err.code) : "";
+      if (msg.op === "close" && (code === "ECONNRESET" || message.includes("ECONNRESET")))
+        return { ok: true };
+      throw err;
+    }
+    if (status !== 200)
+      daemonRefused(msg.op, status, data);
+    return data;
+  }
+  async function readBody(pos, flags, verb) {
+    const sources = [
+      pos.length > 0,
+      flags.stdin === true,
+      typeof flags["body-file"] === "string"
+    ].filter(Boolean).length;
+    if (sources !== 1)
+      die(sources === 0 ? `${verb} needs text` : `${verb} takes its text from exactly one place: arguments, --stdin or --body-file`, "usage", {
+        hint: "give the text as arguments, or prose through --body-file <path> / --stdin (never an unquoted heredoc)",
+        choices: ["--stdin", "--body-file"]
+      });
+    let text;
+    if (flags.stdin === true)
+      text = await new Response(Bun.stdin.stream()).text();
+    else if (typeof flags["body-file"] === "string")
+      text = readFileSync4(flags["body-file"], "utf8");
+    else
+      text = pos.join(" ");
+    if (!text.trim())
+      die(`${verb}: the text is empty`, "usage");
+    return text.trim();
+  }
+  const answers = (p) => fetch(`http://127.0.0.1:${p.port}/state`, { signal: AbortSignal.timeout(ANSWER_MS) }).then((r) => r.status === 200, () => false);
+  function alreadyRunning(id, url) {
+    return die(`session ${id} is already running at ${url}`, "conflict", {
+      hint: `use it: state --session ${id}`
+    });
+  }
+  async function refuseLockedRestore(id, pid, waitMs) {
+    const dir = join4(opts.sessionsRoot(), id);
+    const rec = readDaemonLock(dir);
+    const since = rec !== null && rec.pid === pid ? rec.at : Date.now();
+    const deadline = Math.max(since + waitMs, Date.now() + POINTER_HEAL_MS);
+    while (Date.now() < deadline && pidAlive(pid)) {
+      const p = readSession(id);
+      if (p && p.pid === pid && await answers(p))
+        alreadyRunning(id, p.url);
+      await Bun.sleep(100);
+    }
+    if (!pidAlive(pid))
+      return die(`session ${id} was held by another daemon (pid ${pid}), which stopped before it answered`, "conflict", { hint: `bring it back: open --restore ${id}` });
+    const held = Math.round((Date.now() - since) / 1000);
+    const lockPath = join4(dir, DAEMON_LOCK);
+    const confirmed = confirmHolder(id, pid, rec);
+    if (confirmed === true)
+      return die(`session ${id} is held by another daemon (pid ${pid}, for ${held}s), which does not answer (lock: ${lockPath})`, "conflict", {
+        hint: `if that daemon is stuck, stop it with \`kill ${pid}\`, then \`open --restore ${id}\` (its lock is then recovered)`
+      });
+    return die(`session ${id} is locked by pid ${pid}, which does not answer as its daemon (lock: ${lockPath})`, "conflict", {
+      hint: `pid ${pid} could not be confirmed as this session's ${app} daemon (${confirmed}), so do not stop it on this word: check it with \`ps -p ${pid} -o command=\`. If it is not this session's daemon, the lock is stale: remove ${lockPath}, then \`open --restore ${id}\``
+    });
+  }
+  function confirmHolder(id, pid, rec) {
+    if (rec === null || rec.pid !== pid)
+      return "the lock no longer names it";
+    if (rec.session !== id)
+      return rec.session === undefined ? "the lock does not say which session it was taken for" : `the lock was taken for session ${rec.session}`;
+    const cmd = processCommand(pid);
+    if (cmd === null)
+      return "`ps` cannot say what it is";
+    const entry = opts.daemon.args.at(-1);
+    if (entry !== undefined && !cmd.includes(entry))
+      return `it is not running ${entry}`;
+    const restoring = /(?:^|\s)--restore\s+(\S+)/.exec(cmd)?.[1];
+    if (restoring !== undefined && restoring !== id)
+      return `it is the daemon of session ${restoring}`;
+    const e = elapsedSeconds(pid);
+    if (e === null)
+      return "`ps` cannot say when it started";
+    if (!startedBy(e, rec.at))
+      return "it started after the lock was taken, so its pid was reused";
+    return true;
+  }
+  async function cmdOpen(pos, flags) {
+    const timeoutS = flagSeconds(flags.timeout, "--timeout", "seconds idle before the session closes (default 1800); 0 stands until closed");
+    const startTimeoutS = flagSeconds(flags["start-timeout"], "--start-timeout", `seconds to wait for the daemon to start (at least 5, at most ${TIMER_MAX_S})`, TIMER_MAX_S);
+    const root = opts.sessionsRoot();
+    const opening = noHome && pos.length === 0 && typeof flags.restore !== "string" ? openingFolder(process.cwd(), root, opts.appHome?.()) : null;
+    const paths = opening && "path" in opening ? [opening.path] : contextPaths(pos, "open");
+    if (typeof flags.restore === "string") {
+      const id = flags.restore;
+      if (!/^[A-Za-z0-9_-][A-Za-z0-9_.-]*$/.test(id))
+        die(`"${id}" is not a session id`, "usage", {
+          hint: "a session id is the session_id that `open` printed"
+        });
+      if (!existsSync2(join4(root, id, "manifest.json"))) {
+        const saved = restorable();
+        die(`no saved session "${id}" under ${root}`, "not_found", {
+          choices: saved.sort(),
+          ...saved.length === 0 ? { hint: "no saved sessions yet" } : {}
+        });
+      }
+      const live = readSession(id);
+      if (live && await answers(live))
+        alreadyRunning(id, live.url);
+    }
+    const daemonArgs = [...opts.daemon.args];
+    if (timeoutS !== undefined)
+      daemonArgs.push("--timeout", String(flags.timeout).trim());
+    if (typeof flags.restore === "string")
+      daemonArgs.push("--restore", flags.restore);
+    else if (!noHome) {
+      const ws = defaultWorkspace(paths, process.cwd());
+      if (ws !== undefined)
+        daemonArgs.push("--workspace", ws);
+    }
+    if (opts.daemon.cwd !== undefined && !existsSync2(opts.daemon.cwd))
+      die(`${app} cannot start its daemon: the working directory it needs is missing: ${opts.daemon.cwd}`, "internal");
+    const logDir = join4(dirname3(root), "logs");
+    mkdirSync2(logDir, { recursive: true });
+    pruneLogs(logDir);
+    const logFile = join4(logDir, `daemon-${Date.now()}-${process.pid}.log`);
+    daemonArgs.push("--log", logFile);
+    const startTimeoutMs = startTimeoutS !== undefined ? Math.max(5000, Math.round(startTimeoutS * 1000)) : DEFAULT_START_TIMEOUT_MS;
+    let hs;
+    try {
+      ({ ready: hs } = await startDaemon({
+        command: opts.daemon.command,
+        args: daemonArgs,
+        ...opts.daemon.cwd ? { cwd: opts.daemon.cwd } : {},
+        env: opts.daemon.env ?? process.env,
+        logFile,
+        startTimeoutMs
+      }));
+    } catch (err) {
+      die(`${app} daemon failed to start: ${err instanceof Error ? err.message : String(err)}`, "internal", { hint: `daemon log: ${logFile}` });
+    }
+    if (hs.ok === false && typeof hs.locked_by === "number" && typeof flags.restore === "string")
+      await refuseLockedRestore(flags.restore, hs.locked_by, startTimeoutMs);
+    if (hs.ok === false)
+      daemonRefused("open", hs.status ?? 500, hs);
+    let entries = [];
+    if (paths.length > 0) {
+      const r = await postCmd(hs.session_id, { op: "context.add", paths }, { presence: false });
+      entries = r.entries ?? [];
+    }
+    printJson({
+      ...hs,
+      ...paths.length > 0 ? { entries } : {},
+      ...opening && "skipped" in opening ? {
+        entries: [],
+        note: `nothing was added: ${opening.skipped}. Add a folder with \`add <folder>\``
+      } : {}
+    });
+    if (!flags["no-open"]) {
+      const opener = process.platform === "darwin" ? "open" : process.platform === "win32" ? "start" : "xdg-open";
+      spawn2(opener, [hs.url], { detached: true, stdio: "ignore" }).unref();
+    }
+  }
+  async function cmdState(session, full) {
+    const s = requireSession(session);
+    const { status, data } = await api(s.port, "GET", `/state${full ? "?full=1" : ""}`);
+    if (status !== 200)
+      daemonRefused("state", status, data);
+    printJson(data);
+  }
+  async function cmdWorkspace(dir, session) {
+    if (dir === undefined) {
+      const s = requireSession(session);
+      const { status, data } = await api(s.port, "GET", "/state");
+      if (status !== 200)
+        daemonRefused("workspace", status, data);
+      printJson({ workspace: data.workspace });
+      return;
+    }
+    const abs = resolve2(dir);
+    let st;
+    try {
+      st = statSync2(abs);
+    } catch {
+      die(`no such folder: ${abs}`, "not_found");
+    }
+    if (!st.isDirectory())
+      die(`the workspace must be a folder: ${abs}`, "usage");
+    printJson(await postCmd(session, { op: "workspace.set", path: abs }));
+  }
+  async function cmdImport(file, session, into) {
+    if (noHome && into === undefined)
+      die(`import: name the folder the copy goes in with --into <folder>: ${app} has no default folder`, "usage", { hint: locationHint(opts.app) });
+    const abs = resolve2(file);
+    let st;
+    try {
+      st = statSync2(abs);
+    } catch {
+      die(`no such file: ${abs}`, "not_found");
+    }
+    if (st.isDirectory())
+      die(`${abs} is a folder: a folder cannot be imported`, "usage", {
+        hint: "add it with `add <folder>` instead"
+      });
+    if (!st.isFile() || !isDocName(abs))
+      die(`not a document the workspace opens: ${abs}`, "usage", { choices: docExtensions() });
+    printJson(await postCmd(session, {
+      op: "import",
+      name: basename2(abs),
+      text: readFileSync4(abs, "utf8"),
+      ...into !== undefined ? { dir: resolve2(into) } : {}
+    }));
+  }
+  let disconnected = false;
+  async function cmdTail(session, since, o) {
+    let boundId = session;
+    const reArm = session !== undefined || o.sinceGiven;
+    let endedSeen;
+    let grounded = o.sinceGiven;
+    const pin = () => [
+      ...boundId !== undefined ? ["--session", boundId] : [],
+      ...o.all ? ["--all"] : []
+    ];
+    return await tailWithHandoff({
+      resolve: () => {
+        const s = readSession(boundId);
+        if (!s)
+          return null;
+        if (!boundId)
+          boundId = s.session_id;
+        if (!grounded) {
+          grounded = true;
+          process.stdout.write(`${JSON.stringify({ type: "grounding", spell: app, session_id: s.session_id, port: s.port })}
+`);
+        }
+        return `http://127.0.0.1:${s.port}`;
+      },
+      onUnresolved: ({ everResolved }) => {
+        if (everResolved || reArm)
+          return "stop";
+        const newest = newestSession();
+        const by = newest !== undefined ? endedBy(newest) : undefined;
+        if (newest !== undefined && by === "agent") {
+          boundId = newest;
+          return "stop";
+        }
+        if (newest !== undefined && by !== undefined) {
+          const now = Date.now();
+          if (endedSeen?.id !== newest) {
+            endedSeen = { id: newest, at: now };
+            process.stderr.write(`# session ${newest} was ended (by ${by}); waiting ${Math.round(endedGraceMs / 1000)}s for a new one before stopping...
+`);
+          }
+          if (now - endedSeen.at >= endedGraceMs) {
+            boundId = newest;
+            return "stop";
+          }
+          return "retry";
+        }
+        endedSeen = undefined;
+        process.stderr.write(`# no session yet, retrying...
+`);
+        return "retry";
+      },
+      path: "/events",
+      since,
+      query: (cursor) => ({
+        since: String(cursor),
+        [AGENT_TAIL_PARAM]: "1",
+        ...o.once ? { [AGENT_ONCE_PARAM]: "1" } : {},
+        ...o.all ? { [AGENT_ALL_PARAM]: "1" } : {}
+      }),
+      ...o.epoch ? { sinceEpoch: o.epoch } : {},
+      cursorOf: (ev) => typeof ev.id === "number" ? ev.id : undefined,
+      epochOf: (ev) => typeof ev.epoch === "string" ? ev.epoch : undefined,
+      onEpochChange: (epoch) => JSON.stringify({ type: "epoch.changed", epoch }),
+      terminal: (ev) => ev.type === "closed",
+      idleMs: TAIL_IDLE_MS,
+      onComment: () => {
+        if (!disconnected)
+          return `: ${app}-keepalive`;
+        disconnected = false;
+        return JSON.stringify({ type: "tail.reconnected" });
+      },
+      onDisconnect: ({ cause, status }) => {
+        if (disconnected)
+          return null;
+        disconnected = true;
+        return JSON.stringify({
+          type: "tail.disconnected",
+          cause,
+          ...status !== undefined ? { status } : {},
+          note: "retrying; the session may have closed or crashed"
+        });
+      }
+    }, {
+      spell: app,
+      mode: o.once ? "once" : "watch",
+      presence: false,
+      closedBy: (ev) => typeof ev.by === "string" ? ev.by : undefined,
+      goneBy: () => boundId !== undefined ? endedBy(boundId) : undefined,
+      commands: {
+        tail: ({ since: at, once, epoch }) => tailCommand(["tail", ...pin()], at, once, epoch),
+        comeBack: () => commandLine(["open", "--restore", boundId ?? "<id>", "--no-open"])
+      }
+    });
+  }
+  const helpers = {
+    app,
+    SESSION: ["session"],
+    sessionOf: (inv) => typeof inv.flags.session === "string" ? inv.flags.session : undefined,
+    postCmd,
+    requireSession,
+    readBody,
+    docArg,
+    pathArg,
+    printJson
+  };
+  const on = (h) => (inv) => {
+    const flags = inv.flags;
+    return h(inv.pos, flags, typeof flags.session === "string" ? flags.session : undefined);
+  };
+  const SESSION = ["session"];
+  const withDoc = (flags) => typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {};
+  const ROWS = [
+    {
+      name: "open",
+      flags: ["no-open", "restore", "timeout", "start-timeout"],
+      positionals: [{ name: "path", required: false, variadic: true }],
+      describe: noHome ? "start a session (opens the browser), adding paths; with none, the current folder is added as a set; prints {url, port, session_id, entries}. --restore <id> brings a saved one back; --timeout <seconds> sets the idle close (default 1800); --timeout 0 stands until closed" : "start a session (opens the browser), adding paths; prints {url, port, session_id, workspace}; the workspace is the folder holding the one folder given, else the current folder, never a set's folder. --restore <id> brings a saved one back; --timeout <seconds> sets the idle close (default 1800); --timeout 0 stands until closed",
+      run: (pos, flags) => cmdOpen(pos, flags)
+    },
+    {
+      name: "add",
+      flags: SESSION,
+      positionals: [{ name: "path", required: true, variadic: true }],
+      describe: "add files or folders to the context list (a document, an image, or a folder shown as a set)",
+      run: async (pos, _flags, session) => {
+        printJson(await postCmd(session, { op: "context.add", paths: contextPaths(pos, "add") }));
+      }
+    },
+    noHome ? {
+      name: "import",
+      flags: [...SESSION, "into"],
+      positionals: [{ name: "file", required: true }],
+      describe: "copy a document into --into <folder> (a set, or a folder in one) and show the copy (what dropping a file does); --into is required",
+      run: (pos, flags, session) => cmdImport(pos[0], session, typeof flags.into === "string" ? flags.into : undefined)
+    } : {
+      name: "import",
+      flags: SESSION,
+      positionals: [{ name: "file", required: true }],
+      describe: "copy a document into the workspace folder and show the copy (what dropping a file does)",
+      run: (pos, _flags, session) => cmdImport(pos[0], session)
+    },
+    ...noHome ? [] : [
+      {
+        name: "workspace",
+        flags: SESSION,
+        positionals: [{ name: "dir", required: false }],
+        describe: "print the workspace (where drops and new top-level documents land), or set it to a folder",
+        run: (pos, _flags, session) => cmdWorkspace(pos[0], session)
+      }
+    ],
+    {
+      name: "state",
+      flags: [...SESSION, "full"],
+      positionals: [],
+      describe: "the session: context, docs and versions (with paths), tasks, selection, waiting",
+      run: (_pos, flags, session) => cmdState(session, flags.full === true)
+    },
+    {
+      name: "tail",
+      flags: [...SESSION, "since", "once", "all"],
+      positionals: [],
+      describe: "the session's events (the human's messages with their selection, new tasks, notes) as JSON lines: wrap with Monitor; its last line names the next act. Events that ask nothing of you (the human opening a document) stay off it; --all includes them",
+      run: (_pos, flags, session) => {
+        const b = typeof flags.since === "string" ? parseTailSince(flags.since) : { since: -1 };
+        return cmdTail(session, b.since, {
+          once: flags.once === true,
+          all: flags.all === true,
+          sinceGiven: typeof flags.since === "string",
+          ...b.epoch ? { epoch: b.epoch } : {}
+        });
+      }
+    },
+    {
+      name: "say",
+      flags: [...SESSION, "stdin", "body-file", "via"],
+      positionals: [{ name: "text", required: false, variadic: true }],
+      describe: `post a chat message from the agent (prose: --body-file <path> or --stdin). --via <gesture> says what it came through (default "chat", the kit's only one; an app adds its own): a value the app does not list is stored as sent, and the advisory is printed to stderr`,
+      run: async (pos, flags, session) => {
+        const text = await readBody(pos, flags, "say");
+        const via = typeof flags.via === "string" ? flags.via : undefined;
+        const r = await postCmd(session, { op: "say", text, ...via ? { via } : {} });
+        if (typeof r.warning === "string")
+          process.stderr.write(`${r.warning}
+`);
+        printJson(r);
+      }
+    },
+    {
+      name: "working",
+      flags: [...SESSION, "for"],
+      positionals: [],
+      describe: "say you are still on it: silences the waiting nudge, keeps the human's pulse",
+      run: async (_pos, flags, session) => {
+        const seconds = typeof flags.for === "string" ? parseCount(flags.for, "working --for") : undefined;
+        printJson(await postCmd(session, { op: "working", ...seconds !== undefined ? { seconds } : {} }));
+      }
+    },
+    {
+      name: "version-new",
+      flags: [...SESSION, "doc", "from", "label", "body-file", "stdin"],
+      positionals: [],
+      describe: "make a new version from another (--from vN, default: the active one) and print its path; its text is --body-file <path> or --stdin when given, else a copy to edit (text piped in without --stdin is refused, never dropped)",
+      run: async (_pos, flags, session) => {
+        const from = typeof flags.from === "string" ? parseVersion(flags.from, "--from") : undefined;
+        const { body, silent } = await versionBody(flags);
+        const r = await postCmd(session, {
+          op: "version.new",
+          ...withDoc(flags),
+          ...from !== undefined ? { from } : {},
+          ...typeof flags.label === "string" ? { label: flags.label } : {},
+          ...body !== undefined ? { body } : {}
+        });
+        printJson(silent ? { ...r, stdin: STDIN_SILENT } : r);
+      }
+    },
+    {
+      name: "activate",
+      flags: [...SESSION, "doc"],
+      positionals: [{ name: "vN", required: true }],
+      describe: "make a version the active one (the one the human edits and Save writes); only when the human asks",
+      run: async (pos, flags, session) => {
+        printJson(await postCmd(session, {
+          op: "activate",
+          version: parseVersion(pos[0] ?? "", "activate"),
+          ...withDoc(flags)
+        }));
+      }
+    },
+    {
+      name: "diff",
+      flags: [...SESSION, "doc", "context", "patch"],
+      positionals: [{ name: "against", required: true }],
+      describe: "compare the active version with another (vN or 'saved' for the file on disk); --patch for plain unified text",
+      run: async (pos, flags, session) => {
+        const r = await postCmd(session, {
+          op: "diff",
+          against: parseSide(pos[0] ?? "", "diff"),
+          ...withDoc(flags),
+          ...typeof flags.context === "string" ? { context: parseCount(flags.context, "--context") } : {}
+        });
+        if (flags.patch)
+          process.stdout.write(String(r.unified ?? ""));
+        else
+          printJson(r);
+      }
+    },
+    {
+      name: "merge",
+      flags: [...SESSION, "doc", "hunks"],
+      positionals: [{ name: "against", required: true }],
+      describe: "take changes from another version into the active one (--hunks 1,3; default: all of them)",
+      run: async (pos, flags, session) => {
+        const against = parseSide(pos[0] ?? "", "merge");
+        const listed = typeof flags.hunks === "string" ? flags.hunks.split(",").map((h) => parseCount(h, "--hunks")) : null;
+        const hunks = listed ?? (await postCmd(session, { op: "diff", against, ...withDoc(flags) })).hunks?.map((h) => h.id) ?? [];
+        printJson(await postCmd(session, { op: "merge", against, hunks, ...withDoc(flags) }));
+      }
+    },
+    {
+      name: "show",
+      flags: [...SESSION, "doc", "hunk", "against", "quote", "heading"],
+      positionals: [],
+      describe: "scroll the human's view to a change (--hunk <id> from diff, --against vN or saved, default saved), a passage of the active version (--quote 'exact text'), or a heading (--heading 'its text', as a link's #anchor names it: the text, a GitHub slug, or Parent#Child for a repeated one); opens the document for them and says so in the chat",
+      run: async (_pos, flags, session) => {
+        const hunk = typeof flags.hunk === "string" ? parseCount(flags.hunk, "--hunk") : undefined;
+        const quote = typeof flags.quote === "string" ? flags.quote : undefined;
+        const heading = typeof flags.heading === "string" ? flags.heading : undefined;
+        const named = [
+          hunk !== undefined,
+          quote !== undefined && quote.trim() !== "",
+          heading !== undefined && heading.trim() !== ""
+        ].filter(Boolean).length;
+        if (named !== 1)
+          die("show: name one of --hunk <id> (a change), --quote '<exact text>' (a passage) or --heading '<heading>' (a heading)", "usage", {
+            hint: "run: diff <vN|saved> (each hunk has an id)"
+          });
+        if (typeof flags.against === "string" && hunk === undefined)
+          die("show: --against goes with --hunk: a quote is found in the active version", "usage");
+        printJson(await postCmd(session, {
+          op: "show",
+          ...withDoc(flags),
+          ...hunk !== undefined ? {
+            hunk,
+            against: typeof flags.against === "string" ? parseSide(flags.against, "--against") : "original"
+          } : heading !== undefined ? { heading } : { quote }
+        }));
+      }
+    },
+    {
+      name: "version-delete",
+      flags: [...SESSION, "doc"],
+      positionals: [{ name: "vN", required: true }],
+      describe: "remove a version and its file (never the active one: activate another first)",
+      run: async (pos, flags, session) => {
+        printJson(await postCmd(session, {
+          op: "version.delete",
+          version: parseVersion(pos[0] ?? "", "version-delete"),
+          ...withDoc(flags)
+        }));
+      }
+    },
+    {
+      name: "note",
+      flags: [...SESSION, "doc", "quote", "stdin", "body-file"],
+      positionals: [{ name: "text", required: false, variadic: true }],
+      describe: "note a passage of the active version (--quote 'exact text'; prose: --body-file or --stdin)",
+      run: async (pos, flags, session) => {
+        if (typeof flags.quote !== "string" || flags.quote.trim() === "")
+          die("note: --quote is required: the exact text the note is about", "usage", {
+            hint: "run: state (the active version's path is listed; quote from that file)"
+          });
+        printJson(await postCmd(session, {
+          op: "note.add",
+          quote: flags.quote,
+          body: await readBody(pos, flags, "note"),
+          ...withDoc(flags)
+        }));
+      }
+    },
+    {
+      name: "notes",
+      flags: [...SESSION, "doc", "full"],
+      positionals: [],
+      describe: "the notes on a document, placed in the active version (--full includes resolved ones)",
+      run: async (_pos, flags, session) => {
+        printJson(await postCmd(session, {
+          op: "notes",
+          ...flags.full ? { all: true } : {},
+          ...withDoc(flags)
+        }));
+      }
+    },
+    {
+      name: "note-edit",
+      flags: [...SESSION, "doc", "stdin", "body-file"],
+      positionals: [
+        { name: "id", required: true },
+        { name: "text", required: false, variadic: true }
+      ],
+      describe: "rewrite one of your own notes; its passage stays (prose: --body-file or --stdin). A note the human wrote, or rewrote last, is refused: answer it with note-reply",
+      run: async (pos, flags, session) => {
+        const [id, ...text] = pos;
+        printJson(await postCmd(session, {
+          op: "note.edit",
+          id,
+          body: await readBody(text, flags, "note-edit"),
+          ...withDoc(flags)
+        }));
+      }
+    },
+    {
+      name: "note-reply",
+      flags: [...SESSION, "doc", "stdin", "body-file"],
+      positionals: [
+        { name: "id", required: true },
+        { name: "text", required: false, variadic: true }
+      ],
+      describe: "answer a note: your reply shows with the note and its words stay as written (prose: --body-file or --stdin)",
+      run: async (pos, flags, session) => {
+        const [id, ...text] = pos;
+        printJson(await postCmd(session, {
+          op: "note.reply",
+          id,
+          body: await readBody(text, flags, "note-reply"),
+          ...withDoc(flags)
+        }));
+      }
+    },
+    {
+      name: "note-resolve",
+      flags: [...SESSION, "doc", "reopen"],
+      positionals: [{ name: "id", required: true }],
+      describe: "mark a note dealt with (--reopen puts it back)",
+      run: async (pos, flags, session) => {
+        printJson(await postCmd(session, {
+          op: "note.resolve",
+          id: pos[0],
+          resolved: !flags.reopen,
+          ...withDoc(flags)
+        }));
+      }
+    },
+    {
+      name: "task",
+      flags: [...SESSION, "parent", "stdin", "body-file"],
+      positionals: [{ name: "text", required: false, variadic: true }],
+      describe: "say you have started something; prints the id to finish it with (--parent <id> when delegating for another task)",
+      run: async (pos, flags, session) => {
+        printJson(await postCmd(session, {
+          op: "task.create",
+          title: await readBody(pos, flags, "task"),
+          ...typeof flags.parent === "string" ? { parent: flags.parent } : {}
+        }));
+      }
+    },
+    {
+      name: "task-status",
+      flags: SESSION,
+      positionals: [
+        { name: "id", required: true },
+        { name: "status", required: true, variadic: true }
+      ],
+      describe: "say what step a task is on (picks up a human's open task; for work worth watching)",
+      run: async (pos, _flags, session) => {
+        printJson(await postCmd(session, {
+          op: "task.status",
+          id: pos[0],
+          detail: pos.slice(1).join(" ")
+        }));
+      }
+    },
+    {
+      name: "task-done",
+      flags: [...SESSION, "failed"],
+      positionals: [
+        { name: "id", required: true },
+        { name: "outcome", required: false, variadic: true }
+      ],
+      describe: "mark a task finished, optionally saying what came of it (--failed marks it failed, and the words say why)",
+      run: async (pos, flags, session) => {
+        const outcome = pos.slice(1).join(" ").trim();
+        printJson(await postCmd(session, {
+          op: "task.done",
+          id: pos[0],
+          ...outcome ? { outcome } : {},
+          ...flags.failed ? { failed: true } : {}
+        }));
+      }
+    },
+    {
+      name: "task-cancel",
+      flags: SESSION,
+      positionals: [{ name: "id", required: true }],
+      describe: "cancel a task you started or one the human asked for",
+      run: async (pos, _flags, session) => {
+        printJson(await postCmd(session, { op: "task.cancel", id: pos[0] }));
+      }
+    },
+    {
+      name: "new-doc",
+      flags: SESSION,
+      positionals: [{ name: "path", required: true }],
+      describe: noHome ? "create an empty document at <path> (its folder must be a set or a folder in one)" : "create an empty document (its folder must be a set, a folder in one, or the workspace)",
+      run: async (pos, _flags, session) => {
+        const abs = pathArg(pos[0], "new-doc");
+        printJson(await postCmd(session, { op: "doc.create", dir: dirname3(abs), name: basename2(abs) }));
+      }
+    },
+    {
+      name: "new-folder",
+      flags: SESSION,
+      positionals: [{ name: "path", required: true }],
+      describe: noHome ? "create a folder at <path> inside a set or a folder in one" : "create a folder inside a set, or in the workspace as a new set",
+      run: async (pos, _flags, session) => {
+        const abs = pathArg(pos[0], "new-folder");
+        printJson(await postCmd(session, { op: "folder.create", dir: dirname3(abs), name: basename2(abs) }));
+      }
+    },
+    {
+      name: "rename",
+      flags: [...SESSION, "update-links"],
+      positionals: [
+        { name: "path", required: true },
+        { name: "name", required: true }
+      ],
+      describe: "rename a document or folder in place; prints `broken`, the links the rename broke (each document, line, the link as written and as it would be written) (wiki links it broke under `wiki`, never rewritten), which `relink` updates, or with --update-links updates them in the same act and prints them as `links`",
+      run: async (pos, flags, session) => {
+        printJson(await postCmd(session, {
+          op: "rename",
+          path: resolve2(pos[0]),
+          name: pos[1],
+          ...flags["update-links"] === true ? { updateLinks: true } : {}
+        }));
+      }
+    },
+    {
+      name: "move",
+      flags: [...SESSION, "update-links"],
+      positionals: [
+        { name: "path", required: true },
+        { name: "into", required: true }
+      ],
+      describe: "move a document or folder into another folder (a real move on disk); prints `broken`, the links the move broke (wiki links it broke under `wiki`, never rewritten), which `relink` updates, or with --update-links updates them in the same act and prints them as `links`",
+      run: async (pos, flags, session) => {
+        printJson(await postCmd(session, {
+          op: "move",
+          path: resolve2(pos[0]),
+          into: resolve2(pos[1]),
+          ...flags["update-links"] === true ? { updateLinks: true } : {}
+        }));
+      }
+    },
+    {
+      name: "relink",
+      flags: SESSION,
+      positionals: [],
+      describe: "update the links the last rename, move or set made from a document broke (its `broken`), each rewritten from its own document with its label, ?rel= and #anchor kept, as part of that act: one undo puts back both. Refused once anything else has changed the context's shape. A document open with unsaved edits keeps them, unsaved",
+      run: async (_pos, _flags, session) => {
+        printJson(await postCmd(session, { op: "relink" }));
+      }
+    },
+    {
+      name: "describe-image",
+      flags: [...SESSION, "source", "label"],
+      positionals: [{ name: "image", required: true }],
+      describe: "start an image's description: writes its sidecar <image>.md beside it (type: image, --source user|web and that origin's fields, default user) and prints a new version's path to write the description into",
+      run: async (pos, flags, session) => {
+        printJson(await postCmd(session, {
+          op: "image.describe",
+          image: resolve2(pos[0]),
+          ...typeof flags.source === "string" ? { source: flags.source } : {},
+          ...typeof flags.label === "string" ? { label: flags.label } : {}
+        }));
+      }
+    },
+    {
+      name: "image-settings",
+      flags: [...SESSION, "format", "quality", "max-side"],
+      positionals: [],
+      describe: "the app's image import settings, the same for every session: how an image the user drops or pastes in is written. With no flags, prints them; --format keep|webp, --quality 1-100 (WebP, and a JPEG made smaller), --max-side <px>|none (the longest side, never enlarged) set the ones given. The user's preference: change it only when they ask; the change is said in their chat",
+      run: async (_pos, flags, session) => {
+        printJson(await postCmd(session, {
+          op: "image.settings",
+          ...typeof flags.format === "string" ? { format: flags.format } : {},
+          ...typeof flags.quality === "string" ? { quality: flags.quality } : {},
+          ...typeof flags["max-side"] === "string" ? { maxSide: flags["max-side"] } : {}
+        }));
+      }
+    },
+    {
+      name: "search",
+      flags: [...SESSION, "limit"],
+      positionals: [{ name: "query", required: true, variadic: true }],
+      describe: "search the context: fuzzy on document names, exact in text, reading each document's ACTIVE version (grep sees only the saved file); --limit n caps the results",
+      run: async (pos, flags, session) => {
+        const query = pos.join(" ").trim();
+        if (query === "")
+          die("search: the query is empty", "usage");
+        const limit = typeof flags.limit === "string" ? parseCount(flags.limit, "search --limit") : undefined;
+        if (limit === 0)
+          die("search: --limit must be at least 1", "usage");
+        printJson(await postCmd(session, {
+          op: "search",
+          query,
+          ...limit !== undefined ? { limit } : {}
+        }));
+      }
+    },
+    {
+      name: "backlinks",
+      flags: [...SESSION, "doc", "edge"],
+      positionals: [],
+      describe: "what links to a document or an image (--doc: a path, or the open one): each link's source, line, target as written and relations, read from each source's ACTIVE version; a bare link has rel [], an embed (![alt](x.png)) has embed: true; bundles lists apart the bundles it is on (an app's boards: name, noun, and each card's id, line, path as written and subpath), which are not canon; edges lists apart the app's own edges that land on it, when it adds any (edge: its kind, raw: the target as written, key: what carries it), counted in edgeCount, not count; --edge a,b keeps those edge kinds only (link: the body links)",
+      run: async (_pos, flags, session) => {
+        const edge = edgeList(flags.edge, "backlinks");
+        printJson(await postCmd(session, { op: "backlinks", ...withDoc(flags), ...edge ? { edge } : {} }));
+      }
+    },
+    {
+      name: "link-check",
+      flags: [...SESSION, "edge"],
+      positionals: [],
+      describe: "check the session's links, in sections: dangling (file, line, the link as written, where it looked), proposed (links broken in a version you proposed, made by the agent and never active, as a move's relink rewrites only the active version: the document, doc (its slug), version, line in that version, the link as written, where it looked, suggest (where the target went, when a move or rename explains the break) and act (the fix, one per version: every broken link of vN fixed in ONE new version, version-new --from vN with vN's --label, then the old proposal deleted, version-delete vN); a link the active version has broken too is in dangling alone; counted as problems), unsupported (a scheme nothing here opens, like op:), duplicates (shared file names, each with a suggested rename, never applied), unusedImages (images in an images/ folder that no link or embed reaches, as an undone paste leaves them; never deleted), symmetry (hints: a relation the world's _relations.json declares symmetric, written one way only, the document linked to not linking back; never a problem), headings (links whose document opens but whose #anchor names no heading in it, a link that is only #heading read against its own document, each with the anchor decoded, the target and the nearest remaining heading, often the heading reworded; counted as problems), and ambiguousHeadings (hints: a bare #anchor naming a repeated heading, which lands on the first; write Parent#Child to name one); references (a bundle's references whose file is gone, an app's board cards: the bundle, the card's id, line, path as written, where it looked, and a sentence saying so; counted as problems); edges (the app's own edges that nothing answers and that are written as a path, with an extension or a leading /, ./ or ../, when it adds any: the edge's kind, the target as written, the key that carries it, where it looked, and its line, from and to when found; counted as problems); unresolved (beside edges: the app's edges that nothing answers and that are not written as a path, such as feature/some-slug, a reference in a convention this tool does not know; the same fields; listed, not counted); leaving (only when the app turns it on: the answer then has a leaving section, absent otherwise; links and edges that land on a file the session does not hold (a link to any of the session's own documents never leaves, whichever set it is in): the source, line, the link as written, edge for an app edge, the target, targetShown and targetSet, the label of the set whose folder holds the target; not a problem); every entry carries set, the id of the set its source is in (the innermost, when sets nest), and sets lists those sets in the context's order with their label and total (what the human's sign counts of the set: unresolved and leaving are not in it), what the human's list groups by; noun, when present, is the app's word for a set; unusedImages, symmetry, ambiguousHeadings, unresolved and leaving are kept out of count, which counts link problems only (leaving is never counted anywhere, but is still yours to read: offer to add the files it lands on); --edge a,b keeps those edge kinds only (link: the body links' sections); reports, exits 0",
+      run: async (_pos, flags, session) => {
+        const edge = edgeList(flags.edge, "link-check");
+        printJson(await postCmd(session, { op: "link.check", ...edge ? { edge } : {} }));
+      }
+    },
+    {
+      name: "graph",
+      flags: [
+        ...SESSION,
+        "focus",
+        "hops",
+        "rel",
+        "untyped",
+        "kind",
+        "kindless",
+        "within",
+        "limit",
+        "bundles",
+        "edge"
+      ],
+      positionals: [],
+      describe: "the session's documents and the typed links between them: nodes (path, title, kind, the kind's label, canon, links in and out) and edges (from, to, rel, count; rel [] is an untyped link), read from each document's ACTIVE version. --focus <doc> centres on one, --hops n (0-3, default 1) says how far; --kind a,b keeps documents of those kinds (the matched profile's kind, else the frontmatter type) and drops the rest BEFORE the hop search, so a focus reaches only through those kinds, and documents with no kind go too unless --kindless; --rel a,b keeps links with those relations (--untyped keeps untyped ones too) and keeps every document, though a focus then reaches only along the kept links; --within <folder> keeps one folder; --limit n keeps the n best connected (at most 500). relations and untyped count the links in view before --rel, kinds the documents before --kind; total.links counts links, total.edges folded pairs; warnings says what in the filter matched nothing. --bundles adds the bundles whose type reads references (an app's boards) as nodes of their own kind, not canon (bundle: { noun }), with an edge marked reference: true to each file their cards point at. An app that adds edges of its own has them in edges too, marked edge: <kind> (frontmatter), with edgeKinds counting links per kind (link: the body links); --edge a,b keeps those kinds only",
+      run: async (_pos, flags, session) => {
+        const list = (v, what) => {
+          if (typeof v !== "string")
+            return;
+          const names = v.split(",").map((s) => s.trim()).filter((s) => s !== "");
+          if (names.length === 0)
+            die(`graph ${what}: name at least one`, "usage");
+          return names;
+        };
+        const rel = list(flags.rel, "--rel")?.map((r) => r.toLowerCase());
+        const kind = list(flags.kind, "--kind");
+        const edge = edgeList(flags.edge, "graph");
+        const hops = typeof flags.hops === "string" ? parseCount(flags.hops, "graph --hops") : undefined;
+        if (hops !== undefined && hops > 3)
+          die("graph --hops: at most 3", "usage");
+        const limit = typeof flags.limit === "string" ? parseCount(flags.limit, "graph --limit") : undefined;
+        if (limit === 0)
+          die("graph --limit: must be at least 1", "usage");
+        printJson(await postCmd(session, {
+          op: "graph",
+          ...typeof flags.focus === "string" ? { focus: docArg(flags.focus) } : {},
+          ...hops !== undefined ? { hops } : {},
+          ...rel ? { rel } : {},
+          ...flags.untyped === true ? { untyped: true } : {},
+          ...kind ? { kind } : {},
+          ...flags.kindless === true ? { kindless: true } : {},
+          ...typeof flags.within === "string" ? { within: resolve2(flags.within) } : {},
+          ...limit !== undefined ? { limit } : {},
+          ...flags.bundles === true ? { bundles: true } : {},
+          ...edge ? { edge } : {}
+        }));
+      }
+    },
+    {
+      name: "profiles",
+      flags: SESSION,
+      positionals: [],
+      describe: "the world's document profiles (_meta/profiles/<kind>.json, the nearest folder's file winning per kind): each kind with its label and canon (false for a kind the world marks not canon), the file it came from and how many documents match it (and how many of those have warnings), the frontmatter types no profile defines, how many documents have no type, and broken profile files with why",
+      run: async (_pos, _flags, session) => {
+        printJson(await postCmd(session, { op: "profiles" }));
+      }
+    },
+    {
+      name: "profile",
+      flags: [...SESSION, "doc"],
+      positionals: [],
+      describe: "how one document (--doc: a path, or the open one) matched a profile: its type, kind and canon, the profile's label and the file it came from, its warnings (each with a fix in words), and the fields the profile expects with each one's rule and description; when nothing matched, why; read from its ACTIVE version",
+      run: async (_pos, flags, session) => {
+        printJson(await postCmd(session, { op: "profile", ...withDoc(flags) }));
+      }
+    },
+    {
+      name: "profile-check",
+      flags: SESSION,
+      positionals: [],
+      describe: "every profile warning in the session (file, field, rule, what is wrong and a fix in words), read from each document's ACTIVE version, and every broken profile file with why; a warning never blocks a save; reports, exits 0",
+      run: async (_pos, _flags, session) => {
+        printJson(await postCmd(session, { op: "profile.check" }));
+      }
+    },
+    {
+      name: "relations",
+      flags: SESSION,
+      positionals: [],
+      describe: "the world's relation vocabulary (_meta/profiles/_relations.json, the nearest file winning per relation) and how the links use it: files (each vocabulary file, broken ones with why and the line and column), declared (each relation with its label, means, symmetric, inverse, color, the file and how many links use it there), undeclared (relations links use where a vocabulary is in force but does not declare them), used (every relation in use, by count); a broken file defines nothing until fixed",
+      run: async (_pos, _flags, session) => {
+        printJson(await postCmd(session, { op: "relations" }));
+      }
+    },
+    {
+      name: "reveal",
+      flags: SESSION,
+      positionals: [{ name: "path", required: true }],
+      describe: "show a path in the file manager; only the session folder and what the context shows, anything else is not_found",
+      run: async (pos, _flags, session) => {
+        printJson(await postCmd(session, { op: "reveal", path: resolve2(pos[0]) }));
+      }
+    },
+    {
+      name: "doctor",
+      flags: SESSION,
+      positionals: [],
+      describe: "what is worth looking at in this session, each finding saying what to do",
+      run: async (_pos, _flags, session) => {
+        printJson(await postCmd(session, { op: "doctor" }));
+      }
+    },
+    {
+      name: "close",
+      flags: SESSION,
+      positionals: [],
+      describe: "shut the session down (the manifest stays, for open --restore)",
+      run: async (_pos, _flags, session) => {
+        await postCmd(session, { op: "close" });
+        printJson({ ok: true, sent: "close" });
+      }
+    }
+  ];
+  const SESSION_HELP = { session: "the session to talk to (default: the most recent)" };
+  const kitCommands = ROWS.map((r) => ({
+    ...r,
+    run: on(r.run),
+    rejectHint: DASH_HINT,
+    flagHelp: SESSION_HELP
+  }));
+  const appCommands = (opts.commands?.(helpers) ?? []).map((c) => ({
+    ...c,
+    flagHelp: { ...SESSION_HELP, ...c.flagHelp },
+    rejectHint: c.rejectHint ?? DASH_HINT
+  }));
+  const cli = defineCli({
+    name: app,
+    ...opts.summary ? { summary: opts.summary } : {},
+    options,
+    commands: [...kitCommands, ...appCommands],
+    grammar: "flags-anywhere",
+    verbPositional: "verb",
+    usageHides: ["session"],
+    version: opts.version,
+    helpFooter: `  Add --session <id> to any verb that talks to a session (default: most recent).
+  Each verb accepts only the flags on its row.
+
+  Output: JSON on stdout, one document per answer, except tail (one JSON line
+  per event) and help (prose). tail's stderr also carries \`: ${app}-keepalive\`
+  lines while the stream is quiet, and \`# \` status lines while it waits: not
+  JSON, so a reader of both streams skips any line starting with \`:\` or \`#\`.
+  Failures: one JSON envelope on stderr, exit 2 = usage, 1 = internal, 5 = not
+  found, 6 = conflict. tail waits for a session rather than failing, and ends 0
+  when its session closes; with no --session, it follows the newest session,
+  and if the human or the idle timeout ended it and no new one comes up within
+  open's default start timeout (${DEFAULT_START_TIMEOUT_MS / 1000} s), it ends 0 with tail.closed saying who
+  ended it; ended by the agent, it ends at once. tail
+  ${WINDOW_HELP}.${opts.helpFooter ? `
+
+${opts.helpFooter}` : ""}`
+  });
+  async function run(argv) {
+    try {
+      return await cli.dispatch(argv);
+    } catch (e) {
+      const reported = reportCliError(e);
+      if (reported !== null)
+        return reported;
+      const code = e && typeof e === "object" && "code" in e ? String(e.code) : "";
+      const msg = e instanceof Error ? e.message : String(e);
+      if ((code === "ENOENT" || code === "EACCES") && callerNamed(argv, e))
+        return reportCliError(new UsageError(msg)) ?? 2;
+      return reportCliError(new CliError("internal", msg)) ?? 1;
+    }
+  }
+  return Object.assign(cli, { run, tailEndedGraceMs: endedGraceMs });
+}
+
+// src/scriptorium/backend/kit/app.ts
+import { join as join5, resolve as resolve3 } from "path";
+function hiddenLists(slot) {
+  const h = slot.hidden;
+  if (h === null || typeof h !== "object" || Array.isArray(h))
+    return {};
+  const out = {};
+  for (const [id, rels] of Object.entries(h))
+    if (Array.isArray(rels))
+      out[id] = rels.filter((r) => typeof r === "string");
+  return out;
+}
+function scriptoriumHome(env = process.env) {
+  return resolve3(env.SCRIPTORIUM_HOME ?? join5(homeDir(), ".scriptorium"));
+}
+function sessionsRoot(env = process.env) {
+  return join5(scriptoriumHome(env), "sessions");
+}
+var scriptoriumApp = {
+  name: "scriptorium",
+  title: "Scriptorium",
+  slot: { version: 2, migrate: (prev) => ({ ...prev, hidden: hiddenLists(prev) }) },
+  scan: ({ entryId, slot }) => {
+    const rels = hiddenLists(slot)[entryId];
+    if (!rels?.length)
+      return;
+    const skip = new Set(rels);
+    return { skip: (rel) => skip.has(rel) };
+  },
+  homeWorkspace: false,
+  locationHint: "name a place inside a set (`state` lists them), such as the folder of the document under discussion: `new-doc <folder>/<name>.md`, `new-folder <folder>/<name>`, `import <file> --into <folder>`. To make a new place: `add-folder <path>` (anywhere, as a new set), `make-set <doc>`, or `add <folder>` for one that exists"
+};
+
+// src/scriptorium/backend/kit/commands.ts
+function scriptoriumKitCommands(h) {
+  return [
+    {
+      name: "make-set",
+      flags: [...h.SESSION],
+      positionals: [{ name: "path", required: true }],
+      describe: "turn a document listed on its own into a set: a folder named for it beside it, the document moved in, the same entry; prints `broken`, the links the move broke (wiki links under `wiki`, never rewritten), which `relink` updates as part of the act",
+      run: async (inv) => {
+        h.printJson(await h.postCmd(h.sessionOf(inv), {
+          op: "set.make",
+          path: h.pathArg(inv.pos[0], "make-set")
+        }));
+      }
+    },
+    {
+      name: "add-folder",
+      flags: [...h.SESSION],
+      positionals: [{ name: "path", required: true }],
+      describe: "create an empty folder at <path>, anywhere on disk whose parent exists: a new set in the context, or a folder inside the set that shows that place",
+      run: async (inv) => {
+        h.printJson(await h.postCmd(h.sessionOf(inv), {
+          op: "folder.add",
+          path: h.pathArg(inv.pos[0], "add-folder")
+        }));
+      }
+    }
+  ];
+}
+
+// src/scriptorium/backend/kit/docKinds.ts
+var SCRIPTORIUM_DOC_EXTENSIONS = [".mdx"];
+for (const ext of SCRIPTORIUM_DOC_EXTENSIONS)
+  registerDocExtension(ext);
+
+// src/scriptorium/backend/kit/wikiCommands.ts
+import { resolve as resolve4 } from "path";
+var WIKI_OPTIONS = {
+  type: { type: "string" },
+  status: { type: "string" },
+  lifecycle: { type: "string" },
+  tag: { type: "string" },
+  by: { type: "string" }
+};
+function sinceDate(token) {
+  const t = token.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(t) || Number.isNaN(Date.parse(t)))
+    throw new CliError("usage", `find --since: "${token}" is not a date \u2014 write it as YYYY-MM-DD`);
+  return t;
+}
+function scriptoriumWikiCommands(h) {
+  const { SESSION, postCmd, printJson: printJson2, sessionOf, docArg: docArg2 } = h;
+  return [
+    {
+      name: "meta",
+      flags: [...SESSION],
+      positionals: [{ name: "path", required: false }],
+      describe: "a document's frontmatter as the daemon read it (no path: every context document), with its trust tier and stale",
+      run: async (inv) => {
+        printJson2(await postCmd(sessionOf(inv), {
+          op: "scriptorium.meta",
+          ...inv.pos[0] !== undefined ? { path: resolve4(inv.pos[0]) } : {}
+        }));
+      }
+    },
+    {
+      name: "find",
+      flags: [...SESSION, "type", "status", "lifecycle", "tag", "since"],
+      positionals: [],
+      describe: "documents by frontmatter \u2014 filters AND, all optional; an empty result is an answer (count)",
+      run: async (inv) => {
+        const filter = {};
+        for (const k of ["type", "status", "lifecycle", "tag"]) {
+          const v = inv.flags[k];
+          if (typeof v === "string")
+            filter[k] = v;
+        }
+        if (typeof inv.flags.since === "string")
+          filter.since = sinceDate(inv.flags.since);
+        printJson2(await postCmd(sessionOf(inv), { op: "scriptorium.find", filter }));
+      }
+    },
+    {
+      name: "meta-init",
+      flags: [...SESSION, "type", "by"],
+      positionals: [{ name: "path", required: true }],
+      describe: "add a frontmatter block to a document that has none (type guessed from its neighbours)",
+      run: async (inv) => {
+        printJson2(await postCmd(sessionOf(inv), {
+          op: "scriptorium.meta.init",
+          path: resolve4(inv.pos[0]),
+          ...typeof inv.flags.type === "string" ? { metaType: inv.flags.type } : {},
+          ...typeof inv.flags.by === "string" ? { by: inv.flags.by } : {}
+        }));
+      }
+    },
+    {
+      name: "meta-set",
+      flags: [...SESSION],
+      positionals: [
+        { name: "path", required: true },
+        { name: "key=value", required: true, variadic: true }
+      ],
+      describe: "set frontmatter keys \u2014 one line edit each, everything else untouched",
+      run: async (inv) => {
+        const fields = {};
+        for (const pair of inv.pos.slice(1)) {
+          const eq = pair.indexOf("=");
+          if (eq <= 0)
+            throw new CliError("usage", `"${pair}" is not key=value`, {
+              hint: "meta-set <path> status=stable lifecycle=live"
+            });
+          fields[pair.slice(0, eq)] = pair.slice(eq + 1);
+        }
+        printJson2(await postCmd(sessionOf(inv), {
+          op: "scriptorium.meta.set",
+          path: resolve4(inv.pos[0]),
+          fields
+        }));
+      }
+    },
+    {
+      name: "forget",
+      flags: [...SESSION, "doc"],
+      positionals: [],
+      describe: "forget a document whose file of record is gone (refused while the file exists \u2014 use hide to take one out of the context)",
+      run: async (inv) => {
+        printJson2(await postCmd(sessionOf(inv), {
+          op: "scriptorium.forget",
+          ...typeof inv.flags.doc === "string" ? { doc: docArg2(inv.flags.doc) } : {}
+        }));
+      }
+    },
+    {
+      name: "move-plan",
+      flags: [...SESSION],
+      positionals: [
+        { name: "path", required: true },
+        { name: "into", required: true }
+      ],
+      describe: "what move <path> <into> would do, without doing it: what moves (docs), whether it leaves its git working tree (leavesRepo), and links, the links it would break, each with the rewrite move --update-links would offer; refuses what move refuses; writes nothing",
+      run: async (inv) => {
+        printJson2(await postCmd(sessionOf(inv), {
+          op: "scriptorium.move.plan",
+          path: resolve4(inv.pos[0]),
+          into: resolve4(inv.pos[1])
+        }));
+      }
+    },
+    {
+      name: "note-remove",
+      flags: [...SESSION, "doc"],
+      positionals: [{ name: "id", required: true }],
+      describe: "delete a note",
+      run: async (inv) => {
+        printJson2(await postCmd(sessionOf(inv), {
+          op: "scriptorium.note.remove",
+          id: inv.pos[0],
+          ...typeof inv.flags.doc === "string" ? { doc: docArg2(inv.flags.doc) } : {}
+        }));
+      }
+    },
+    {
+      name: "task-remove",
+      flags: [...SESSION],
+      positionals: [{ name: "id", required: true }],
+      describe: "forget a finished task entirely \u2014 for one started by mistake, cancel it first (task-cancel)",
+      run: async (inv) => {
+        printJson2(await postCmd(sessionOf(inv), {
+          op: "scriptorium.task.remove",
+          id: inv.pos[0]
+        }));
+      }
+    },
+    {
+      name: "tasks-clear",
+      flags: [...SESSION],
+      positionals: [],
+      describe: "forget every finished task; outstanding ones are left alone",
+      run: async (inv) => {
+        printJson2(await postCmd(sessionOf(inv), { op: "scriptorium.tasks.clear" }));
+      }
+    },
+    {
+      name: "info",
+      flags: [...SESSION],
+      positionals: [],
+      describe: "print the resolved session pointer",
+      run: (inv) => {
+        printJson2(h.requireSession(sessionOf(inv)));
+      }
+    }
+  ];
+}
+
+// src/scriptorium/backend/kit/cli.ts
+function scriptoriumKitCli(deps) {
+  return createWorkspaceCli({
+    app: scriptoriumApp,
+    summary: "a co-present markdown editor: the human edits, you write new versions.",
+    daemon: {
+      command: "bun",
+      args: ["run", deps.serverScript],
+      cwd: deps.daemonCwd(),
+      env: { ...process.env }
+    },
+    sessionsRoot: () => sessionsRoot(),
+    appHome: () => scriptoriumHome(),
+    version: deps.version,
+    options: WIKI_OPTIONS,
+    commands: (h) => [
+      ...scriptoriumKitCommands(h),
+      ...scriptoriumWikiCommands(h),
+      {
+        name: "hide",
+        flags: [...h.SESSION],
+        positionals: [{ name: "path", required: true }],
+        describe: "remove a document, folder or set from Scriptorium \u2014 the files stay on disk",
+        run: async (inv) => {
+          h.printJson(await h.postCmd(h.sessionOf(inv), {
+            op: "scriptorium.hide",
+            path: resolve5(inv.pos[0])
+          }));
+        }
+      },
+      {
+        name: "unhide",
+        flags: [...h.SESSION],
+        positionals: [{ name: "entry", required: true }],
+        describe: "bring back everything hidden in a set (its entry id, from state)",
+        run: async (inv) => {
+          h.printJson(await h.postCmd(h.sessionOf(inv), { op: "scriptorium.unhide", entry: inv.pos[0] }));
+        }
+      }
+    ],
+    helpFooter: `  Sessions live under $SCRIPTORIUM_HOME/sessions. A session the earlier
+  Scriptorium saved is converted the first time it is restored; its old
+  manifest is kept beside it as manifest.pre-migrate.json. The surface
+  is the kit's workspace shell: the sets, the open document (raw, rendered or
+  split, with versions and compare), and chat, notes and tasks, where the human
+  reads and edits while you work through these verbs.`
+  });
+}
+async function runKitCli(argv, deps) {
+  return await scriptoriumKitCli(deps).run(argv);
+}
+
+// src/scriptorium/backend/cli.ts
+var SCRIPT_DIR = dirname4(Bun.fileURLToPath(import.meta.url));
+var SKILL_ROOT = join6(SCRIPT_DIR, "..");
+var DIST_DIR = join6(SKILL_ROOT, "dist");
+var SERVER_SCRIPT = join6(SCRIPT_DIR, "..", "scripts", "server.ts");
+var SURFACE_CWD = join6(SCRIPT_DIR, "..", "..", "..", "..", "..", "src", "scriptorium");
 function daemonCwd() {
   if (process.env.SPELLBOOK_SURFACE_MODE === "release")
     return SKILL_ROOT;
   if (process.env.SPELLBOOK_SURFACE_MODE === "dev")
     return SURFACE_CWD;
-  return existsSync(join(DIST_DIR, "index.html")) ? SKILL_ROOT : SURFACE_CWD;
-}
-function scriptoriumHome() {
-  return resolve(process.env.SCRIPTORIUM_HOME ?? join(homedir(), ".scriptorium"));
-}
-function restorable() {
-  const dir = join(scriptoriumHome(), "sessions");
-  try {
-    return readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory() && existsSync(join(dir, e.name, "manifest.json"))).map((e) => ({ id: e.name, at: statSync(join(dir, e.name, "manifest.json")).mtimeMs })).sort((a, b) => b.at - a.at).map((e) => e.id);
-  } catch {
-    return [];
-  }
-}
-function endedBy(id) {
-  try {
-    const m = JSON.parse(readFileSync(join(scriptoriumHome(), "sessions", id, "manifest.json"), "utf8"));
-    return typeof m.ended?.by === "string" ? m.ended.by : undefined;
-  } catch {
-    return;
-  }
-}
-function noSession(session) {
-  const ids = restorable();
-  const id = session ?? ids[0];
-  if (id === undefined)
-    return {
-      message: "no running scriptorium session",
-      extra: { hint: "no session has been opened in this home yet \u2014 run: cli.ts open <path>" }
-    };
-  if (!ids.includes(id))
-    return {
-      message: `no scriptorium session ${id} in this home`,
-      extra: {
-        hint: ids.length === 0 ? "no saved sessions in this home \u2014 run: cli.ts open <path>" : "pass --session one of the saved sessions, or drop it for the most recent",
-        choices: ids.slice(0, 10)
-      }
-    };
-  if (endedBy(id) === "human")
-    return {
-      message: `the human ended session ${id}`,
-      extra: {
-        hint: `the human ended this session on purpose; do not reopen it unless they ask. If they ask: cli.ts open --restore ${id}`
-      }
-    };
-  return {
-    message: `no running scriptorium session ${id}`,
-    extra: {
-      hint: `no daemon is running for session ${id}, but its work is on disk \u2014 bring it back with: cli.ts open --restore ${id}`,
-      choices: ids.slice(0, 10)
-    }
-  };
-}
-function sessionFilePath(session) {
-  return join(tmpdir(), session ? `scriptorium-${session}.json` : "scriptorium-latest.json");
-}
-function readSession(session) {
-  const path = sessionFilePath(session);
-  let raw;
-  try {
-    raw = readFileSync(path, "utf8");
-  } catch (e) {
-    const code = e.code;
-    if (code === "ENOENT")
-      return null;
-    die(`cannot read the session pointer (${code ?? "unknown error"}): ${path}`, "internal");
-  }
-  try {
-    return JSON.parse(raw);
-  } catch {
-    die(`the session pointer is not valid JSON: ${path}`, "internal");
-  }
-}
-function requireSession(session) {
-  const s = readSession(session);
-  if (!s) {
-    const { message, extra } = noSession(session);
-    die(message, "not_found", extra);
-  }
-  return s;
-}
-async function api(port, method, path, body) {
-  const res = await fetch(`http://127.0.0.1:${port}${path}`, {
-    method,
-    headers: body !== undefined ? { "content-type": "application/json" } : undefined,
-    body: body !== undefined ? JSON.stringify(body) : undefined
-  });
-  let data = null;
-  try {
-    data = await res.json();
-  } catch {}
-  return { status: res.status, data };
-}
-async function postCmd(session, msg) {
-  const s = requireSession(session);
-  let status;
-  let data;
-  try {
-    ({ status, data } = await api(s.port, "POST", "/cmd", msg));
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    const code = err && typeof err === "object" && "code" in err ? String(err.code) : "";
-    if (msg.type === "close" && (code === "ECONNRESET" || message.includes("ECONNRESET")))
-      return { ok: true };
-    throw err;
-  }
-  if (status !== 200)
-    daemonRefused(String(msg.type), status, data);
-  return data;
-}
-var CLI_OPTIONS = {
-  "body-file": { type: "string" },
-  by: { type: "string" },
-  context: { type: "string" },
-  doc: { type: "string" },
-  entry: { type: "string" },
-  for: { type: "string" },
-  from: { type: "string" },
-  full: { type: "boolean" },
-  quote: { type: "string" },
-  reopen: { type: "boolean" },
-  hunks: { type: "string" },
-  into: { type: "string" },
-  lifecycle: { type: "string" },
-  limit: { type: "string" },
-  label: { type: "string" },
-  "no-open": { type: "boolean" },
-  once: { type: "boolean" },
-  patch: { type: "boolean" },
-  restore: { type: "string" },
-  session: { type: "string" },
-  since: { type: "string" },
-  "start-timeout": { type: "string" },
-  status: { type: "string" },
-  stdin: { type: "boolean" },
-  tag: { type: "string" },
-  timeout: { type: "string" },
-  type: { type: "string" }
-};
-
-class UsageError extends CliError {
-  constructor(message, extra) {
-    super("usage", message, extra);
-  }
-}
-function parseTailSince(token) {
-  const r = readSince(token, { epoch: true });
-  if (!r.ok)
-    die(r.message, "usage");
-  return r.epoch ? { since: r.since, epoch: r.epoch } : { since: r.since };
-}
-function parseSinceDate(token) {
-  const t = token.trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(t) || Number.isNaN(Date.parse(t)))
-    die(`find --since: "${token}" is not a date \u2014 write it as YYYY-MM-DD`, "usage");
-  return t;
-}
-function parseVersion(token, what) {
-  const m = /^v?(\d+)$/.exec(token.trim());
-  if (!m || Number(m[1]) < 1)
-    die(`${what}: "${token}" is not a version \u2014 write v1, v2, \u2026`, "usage", {
-      hint: "run: cli.ts state (each doc lists its versions)"
-    });
-  return Number(m[1]);
-}
-function parseCount(token, what) {
-  const t = token.trim();
-  if (!/^\d+$/.test(t))
-    die(`${what}: "${token}" is not a whole number`, "usage");
-  return Number(t);
-}
-function parseSide(token, what) {
-  const t = token.trim().toLowerCase();
-  if (t === "original" || t === "file" || t === "saved")
-    return "original";
-  return parseVersion(token, what);
-}
-function contextPaths(pos) {
-  const paths = pos.map((p) => resolve(p));
-  for (const p of paths) {
-    let st;
-    try {
-      st = statSync(p);
-    } catch {
-      die(`no such file or folder: ${p}`, "not_found");
-    }
-    if (!st.isDirectory() && !isDocName(p))
-      die(`not a document scriptorium opens: ${p}`, "usage", {
-        hint: "add a folder, or a file with one of these extensions",
-        choices: [...DOC_EXTENSIONS]
-      });
-  }
-  return paths;
-}
-function docArg(token) {
-  if (token.includes("/") || existsSync(resolve(token)))
-    return resolve(token);
-  return token;
-}
-var LOG_KEEP = 10;
-function pruneLogs(logDir) {
-  let names = [];
-  try {
-    names = readdirSync(logDir).filter((n) => /^daemon-\d+-\d+\.log$/.test(n));
-  } catch {
-    return;
-  }
-  const byAge = names.sort((a, b) => Number(a.split("-")[1]) - Number(b.split("-")[1]));
-  for (const n of byAge.slice(0, Math.max(0, byAge.length - (LOG_KEEP - 1)))) {
-    try {
-      unlinkSync(join(logDir, n));
-    } catch {}
-  }
-}
-async function cmdOpen(pos, flags) {
-  const paths = contextPaths(pos);
-  if (typeof flags.restore === "string") {
-    const home = scriptoriumHome();
-    const manifest = join(home, "sessions", flags.restore, "manifest.json");
-    if (!existsSync(manifest)) {
-      let saved = [];
-      try {
-        saved = (await Array.fromAsync(new Bun.Glob("*/manifest.json").scan(join(home, "sessions")))).map((p) => p.split("/")[0]);
-      } catch {}
-      die(`no saved session "${flags.restore}" under ${home}`, "not_found", {
-        choices: saved.sort(),
-        ...saved.length === 0 ? { hint: "no saved sessions in this home" } : {}
-      });
-    }
-    const live = readSession(flags.restore);
-    if (live) {
-      const alive = await api(live.port, "GET", "/state").then((r) => r.status === 200, () => false);
-      if (alive)
-        die(`session ${flags.restore} is already running at ${live.url}`, "conflict", {
-          hint: `use it: cli.ts state --session ${flags.restore}`
-        });
-    }
-  }
-  const daemonArgs = ["run", SERVER_SCRIPT];
-  if (typeof flags.timeout === "string")
-    daemonArgs.push("--timeout", flags.timeout);
-  if (typeof flags.restore === "string")
-    daemonArgs.push("--restore", flags.restore);
-  else
-    daemonArgs.push("--workspace", process.cwd());
-  const cwd = daemonCwd();
-  if (!existsSync(cwd))
-    die(`scriptorium cannot start its daemon: the working directory it needs is missing \u2014 ${cwd}`, "internal", {
-      hint: "dev mode was resolved (no dist/index.html and no SPELLBOOK_SURFACE_MODE=release), which needs src/scriptorium/ \u2014 reinstall the spell or build it"
-    });
-  const logDir = join(scriptoriumHome(), "logs");
-  mkdirSync(logDir, { recursive: true });
-  pruneLogs(logDir);
-  const logPath = join(logDir, `daemon-${Date.now()}-${process.pid}.log`);
-  daemonArgs.push("--log", logPath);
-  const logFd = openSync(logPath, "a");
-  const child = spawn("bun", daemonArgs, {
-    cwd,
-    detached: true,
-    stdio: ["ignore", "pipe", logFd],
-    env: process.env
-  });
-  closeSync(logFd);
-  child.unref();
-  const startTimeoutMs = typeof flags["start-timeout"] === "string" ? Math.max(5000, Number.parseInt(flags["start-timeout"], 10) * 1000) : 45000;
-  const line = await new Promise((res, rej) => {
-    let buf = "";
-    const timer = setTimeout(() => rej(new Error(`daemon start timeout (${startTimeoutMs / 1000}s) \u2014 pass --start-timeout <seconds>`)), startTimeoutMs);
-    child.stdout?.on("data", (chunk) => {
-      buf += chunk.toString();
-      const nl = buf.indexOf(`
-`);
-      if (nl >= 0) {
-        clearTimeout(timer);
-        res(buf.slice(0, nl).trim());
-      }
-    });
-    child.on("error", (err) => {
-      clearTimeout(timer);
-      rej(err);
-    });
-    child.on("exit", (code) => {
-      clearTimeout(timer);
-      rej(new Error(`daemon exited with code ${code} before its handshake`));
-    });
-  }).catch((err) => {
-    let tail = "";
-    try {
-      tail = readFileSync(logPath, "utf8").trim().slice(-800);
-    } catch {}
-    die(`scriptorium daemon failed to start: ${err instanceof Error ? err.message : String(err)}`, "internal", { hint: tail ? `daemon log (${logPath}): ${tail}` : `daemon log: ${logPath}` });
-  });
-  const out = child.stdout;
-  if (!out || !("unref" in out) || typeof out.unref !== "function")
-    throw new Error("scriptorium: the daemon's stdout pipe has no unref(); `open` would never exit");
-  out.unref();
-  let hs;
-  try {
-    hs = JSON.parse(line);
-  } catch {
-    die(`unexpected output from daemon: ${line}`, "internal");
-  }
-  if (hs.ok === false)
-    daemonRefused("open", hs.status ?? 500, hs);
-  let entries = [];
-  if (paths.length > 0) {
-    const r = await postCmd(hs.session_id, { type: "context.add", paths });
-    entries = r.entries ?? [];
-  }
-  printJson({ ...hs, ...paths.length > 0 ? { entries } : {} });
-  if (!flags["no-open"]) {
-    const opener = process.platform === "darwin" ? "open" : process.platform === "win32" ? "start" : "xdg-open";
-    spawn(opener, [hs.url], { detached: true, stdio: "ignore" }).unref();
-  }
-}
-async function cmdAdd(pos, session) {
-  const paths = contextPaths(pos);
-  printJson(await postCmd(session, { type: "context.add", paths }));
-}
-async function cmdState(session, full) {
-  const s = requireSession(session);
-  const { status, data } = await api(s.port, "GET", `/state${full ? "?full=1" : ""}`);
-  if (status !== 200)
-    daemonRefused("state", status, data);
-  printJson(data);
-}
-async function readProse(verb, pos, flags, o = {}) {
-  const sources = [
-    pos.length > 0,
-    flags.stdin === true,
-    typeof flags["body-file"] === "string"
-  ].filter(Boolean).length;
-  if (sources === 0 && o.optional)
-    return;
-  if (sources !== 1)
-    die(sources === 0 ? `${verb} needs a message` : o.optional ? `${verb} takes its body from one place: --stdin or --body-file, not both` : `${verb} takes its message from exactly one place: arguments, --stdin or --body-file`, "usage", {
-      hint: o.optional ? "give the text through --body-file <path> or --stdin (never an unquoted heredoc)" : "give the text as arguments, or prose through --body-file <path> / --stdin (never an unquoted heredoc)",
-      choices: ["--stdin", "--body-file"]
-    });
-  let text;
-  if (flags.stdin === true)
-    text = await new Response(Bun.stdin.stream()).text();
-  else if (typeof flags["body-file"] === "string") {
-    const path = flags["body-file"];
-    if (!existsSync(path))
-      die(`${verb}: --body-file not found: ${path}`, o.missingFile ?? "usage");
-    if (statSync(path).isDirectory())
-      die(`${verb}: --body-file is a directory, not a file: ${path}`, "usage", {
-        hint: "pass the path of the file that holds the text"
-      });
-    try {
-      text = readFileSync(path, "utf8");
-    } catch {
-      die(`${verb}: --body-file cannot be read: ${path}`, "usage", {
-        hint: "check that the file's permissions let you read it, or pass another file"
-      });
-    }
-  } else
-    text = pos.join(" ");
-  if (!text.trim())
-    die(o.optional ? `${verb}: the body is empty` : `${verb}: the message is empty`, "usage", o.optional ? { hint: `drop --body-file/--stdin to copy the source version instead` } : {});
-  return text;
-}
-async function readSayBody(pos, flags, verb) {
-  return (await readProse(verb, pos, flags) ?? "").trim();
-}
-var disconnected = false;
-async function cmdTail(session, since, o) {
-  let boundId = session;
-  const reArm = session !== undefined || o.sinceGiven;
-  let grounded = o.sinceGiven;
-  const pin = () => boundId !== undefined ? ["--session", boundId] : [];
-  return await tailWithHandoff({
-    resolve: () => {
-      const s = readSession(boundId);
-      if (!s)
-        return null;
-      if (!boundId)
-        boundId = s.session_id;
-      if (!grounded) {
-        grounded = true;
-        process.stdout.write(`${JSON.stringify({ type: "grounding", session_id: s.session_id, port: s.port })}
-`);
-      }
-      return `http://127.0.0.1:${s.port}`;
-    },
-    onUnresolved: ({ everResolved }) => {
-      if (everResolved || reArm)
-        return "stop";
-      process.stderr.write(`# no session yet, retrying\u2026
-`);
-      return "retry";
-    },
-    path: "/events",
-    since,
-    ...o.epoch ? { sinceEpoch: o.epoch } : {},
-    cursorOf: (ev) => typeof ev.id === "number" ? ev.id : undefined,
-    epochOf: (ev) => typeof ev.epoch === "string" ? ev.epoch : undefined,
-    onEpochChange: (epoch) => JSON.stringify({ type: "epoch.changed", epoch }),
-    terminal: (ev) => ev.type === "closed",
-    idleMs: TAIL_IDLE_MS,
-    onComment: () => {
-      if (!disconnected)
-        return ": scriptorium-keepalive";
-      disconnected = false;
-      return JSON.stringify({ type: "tail.reconnected" });
-    },
-    onDisconnect: ({ cause, status }) => {
-      if (disconnected)
-        return null;
-      disconnected = true;
-      return JSON.stringify({
-        type: "tail.disconnected",
-        cause,
-        ...status !== undefined ? { status } : {},
-        note: "retrying; the session may have closed or crashed"
-      });
-    }
-  }, {
-    spell: "scriptorium",
-    mode: o.once ? "once" : "watch",
-    presence: false,
-    closedBy: (ev) => typeof ev.by === "string" ? ev.by : undefined,
-    goneBy: () => boundId !== undefined ? endedBy(boundId) : undefined,
-    commands: {
-      tail: ({ since: at, once, epoch }) => tailCommand(["tail", ...pin()], at, once, epoch),
-      comeBack: () => commandLine(["open", "--restore", boundId ?? "<id>", "--no-open"])
-    }
-  });
+  return existsSync3(join6(DIST_DIR, "index.html")) ? SKILL_ROOT : SURFACE_CWD;
 }
 function versionInfo() {
   try {
-    const raw = readFileSync(join(SKILL_ROOT, "..", "..", ".claude-plugin", "plugin.json"), "utf8");
+    const raw = readFileSync5(join6(SKILL_ROOT, "..", "..", ".claude-plugin", "plugin.json"), "utf8");
     const pkg = JSON.parse(raw);
     if (typeof pkg.version === "string")
       return { name: "scriptorium", version: pkg.version };
   } catch {}
   return { name: "scriptorium", version: "unknown" };
 }
-async function structureCmd(session, op) {
-  printJson(await postCmd(session, op));
-}
-async function cmdImport(file, into, session) {
-  const abs = resolve(file);
-  let st;
-  try {
-    st = statSync(abs);
-  } catch {
-    die(`no such file: ${abs}`, "not_found");
-  }
-  if (!st.isFile() || !isDocName(abs))
-    die(`not a document scriptorium opens: ${abs}`, "usage", { choices: [...DOC_EXTENSIONS] });
-  await structureCmd(session, {
-    type: "import",
-    name: abs.split("/").pop(),
-    text: readFileSync(abs, "utf8"),
-    ...into !== undefined ? { into: resolve(into) } : {}
+async function run() {
+  return await runKitCli(process.argv.slice(2), {
+    serverScript: SERVER_SCRIPT,
+    daemonCwd,
+    version: versionInfo
   });
 }
-async function cmdWorkspace(dir, session) {
-  if (dir !== undefined)
-    return structureCmd(session, { type: "workspace.set", path: resolve(dir) });
-  const s = requireSession(session);
-  const { status, data } = await api(s.port, "GET", "/state");
-  if (status !== 200)
-    daemonRefused("workspace", status, data);
-  printJson({ workspace: data.workspace });
-}
-var on = (h) => (inv) => {
-  const flags = inv.flags;
-  return h(inv.pos, flags, typeof flags.session === "string" ? flags.session : undefined);
-};
-var DASH_HINT = "for free text containing dashes, put it after a bare --";
-var SESSION = ["session"];
-var ROWS = [
-  {
-    name: "open",
-    flags: ["no-open", "restore", "timeout", "start-timeout"],
-    positionals: [{ name: "path", required: false, variadic: true }],
-    describe: "spawn a session (opens the browser), adding paths; prints {url, port, session_id}. --timeout <seconds> sets the idle close (default 1800); --timeout 0 stands until closed",
-    run: (pos, flags) => cmdOpen(pos, flags)
-  },
-  {
-    name: "add",
-    flags: SESSION,
-    positionals: [{ name: "path", required: true, variadic: true }],
-    describe: "add files or folders to the context list",
-    run: (pos, _flags, session) => cmdAdd(pos, session)
-  },
-  {
-    name: "state",
-    flags: [...SESSION, "full"],
-    positionals: [],
-    describe: "the session: context, docs + versions (with paths), active, dirty, selection",
-    run: (_pos, flags, session) => cmdState(session, flags.full === true)
-  },
-  {
-    name: "tail",
-    flags: [...SESSION, "since", "once"],
-    positionals: [],
-    describe: "the human's messages (with selection + active path) as JSON lines \u2014 wrap with Monitor; its last line names the next act",
-    run: (_pos, flags, session) => {
-      const b = typeof flags.since === "string" ? parseTailSince(flags.since) : { since: -1 };
-      return cmdTail(session, b.since, {
-        once: flags.once === true,
-        sinceGiven: typeof flags.since === "string",
-        ...b.epoch ? { epoch: b.epoch } : {}
-      });
-    }
-  },
-  {
-    name: "version-new",
-    flags: [...SESSION, "doc", "from", "label", "stdin", "body-file"],
-    positionals: [],
-    describe: "propose a new version holding your text (--body-file <path> or --stdin); without one, copies a version (default: the active one) and prints its path to edit",
-    run: async (_pos, flags, session) => {
-      const from = typeof flags.from === "string" ? parseVersion(flags.from, "--from") : undefined;
-      const text = await readProse("version-new", [], flags, {
-        optional: true,
-        missingFile: "not_found"
-      });
-      printJson(await postCmd(session, {
-        type: "version.new",
-        ...typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {},
-        ...from !== undefined ? { from } : {},
-        ...typeof flags.label === "string" ? { label: flags.label } : {},
-        ...text !== undefined ? { text } : {}
-      }));
-    }
-  },
-  {
-    name: "say",
-    flags: [...SESSION, "stdin", "body-file"],
-    positionals: [{ name: "text", required: false, variadic: true }],
-    describe: "post a chat message from the agent (prose: --body-file <path> or --stdin)",
-    run: async (pos, flags, session) => {
-      printJson(await postCmd(session, { type: "say", text: await readSayBody(pos, flags, "say") }));
-    }
-  },
-  {
-    name: "version-delete",
-    flags: [...SESSION, "doc"],
-    positionals: [{ name: "vN", required: true }],
-    describe: "remove a version and its file (never the active one \u2014 activate another first)",
-    run: async (pos, flags, session) => {
-      printJson(await postCmd(session, {
-        type: "version.delete",
-        version: parseVersion(pos[0] ?? "", "version-delete"),
-        ...typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}
-      }));
-    }
-  },
-  {
-    name: "task",
-    flags: [...SESSION, "stdin", "body-file"],
-    positionals: [{ name: "text", required: false, variadic: true }],
-    describe: "say you have started something; prints the id to finish it with",
-    run: async (pos, flags, session) => {
-      printJson(await postCmd(session, { type: "task.start", text: await readSayBody(pos, flags, "task") }));
-    }
-  },
-  {
-    name: "task-status",
-    flags: SESSION,
-    positionals: [
-      { name: "id", required: true },
-      { name: "status", required: true, variadic: true }
-    ],
-    describe: "say what step a task is on (for work worth watching)",
-    run: async (pos, _flags, session) => {
-      printJson(await postCmd(session, {
-        type: "task.status",
-        id: pos[0],
-        status: pos.slice(1).join(" ")
-      }));
-    }
-  },
-  {
-    name: "task-done",
-    flags: SESSION,
-    positionals: [
-      { name: "id", required: true },
-      { name: "outcome", required: false, variadic: true }
-    ],
-    describe: "mark a task finished, optionally saying what came of it",
-    run: async (pos, _flags, session) => {
-      const outcome = pos.slice(1).join(" ").trim();
-      printJson(await postCmd(session, {
-        type: "task.done",
-        id: pos[0],
-        ...outcome ? { outcome } : {}
-      }));
-    }
-  },
-  {
-    name: "task-remove",
-    flags: SESSION,
-    positionals: [{ name: "id", required: true }],
-    describe: "forget a task entirely \u2014 for one started by mistake",
-    run: async (pos, _flags, session) => {
-      printJson(await postCmd(session, { type: "task.remove", id: pos[0] }));
-    }
-  },
-  {
-    name: "tasks-clear",
-    flags: SESSION,
-    positionals: [],
-    describe: "forget every finished task; outstanding ones are left alone",
-    run: async (_pos, _flags, session) => {
-      printJson(await postCmd(session, { type: "tasks.clear" }));
-    }
-  },
-  {
-    name: "working",
-    flags: [...SESSION, "for"],
-    positionals: [],
-    describe: "say you are still on it \u2014 silences the waiting nudge, keeps the human's pulse",
-    run: async (_pos, flags, session) => {
-      const seconds = typeof flags.for === "string" ? parseCount(flags.for, "working --for") : undefined;
-      printJson(await postCmd(session, {
-        type: "working",
-        ...seconds !== undefined ? { seconds } : {}
-      }));
-    }
-  },
-  {
-    name: "note",
-    flags: [...SESSION, "doc", "quote", "stdin", "body-file"],
-    positionals: [{ name: "text", required: false, variadic: true }],
-    describe: "note a passage of the active version (--quote 'exact text'; prose: --body-file or --stdin)",
-    run: async (pos, flags, session) => {
-      if (typeof flags.quote !== "string" || flags.quote.trim() === "")
-        die("note: --quote is required \u2014 the exact text the note is about", "usage", {
-          hint: "run: cli.ts state --full (the active version's text is on disk; quote from it)"
-        });
-      printJson(await postCmd(session, {
-        type: "note.add",
-        quote: flags.quote,
-        body: await readSayBody(pos, flags, "note"),
-        ...typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}
-      }));
-    }
-  },
-  {
-    name: "notes",
-    flags: [...SESSION, "doc", "full"],
-    positionals: [],
-    describe: "the notes on a document, placed in the active version (--full includes resolved)",
-    run: async (_pos, flags, session) => {
-      printJson(await postCmd(session, {
-        type: "notes",
-        ...flags.full ? { all: true } : {},
-        ...typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}
-      }));
-    }
-  },
-  {
-    name: "note-edit",
-    flags: [...SESSION, "doc", "stdin", "body-file"],
-    positionals: [
-      { name: "id", required: true },
-      { name: "text", required: false, variadic: true }
-    ],
-    describe: "rewrite what a note says (its passage is unchanged)",
-    run: async (pos, flags, session) => {
-      printJson(await postCmd(session, {
-        type: "note.edit",
-        id: pos[0],
-        body: await readSayBody(pos.slice(1), flags, "note-edit"),
-        ...typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}
-      }));
-    }
-  },
-  {
-    name: "note-resolve",
-    flags: [...SESSION, "doc", "reopen"],
-    positionals: [{ name: "id", required: true }],
-    describe: "mark a note dealt with (--reopen puts it back)",
-    run: async (pos, flags, session) => {
-      printJson(await postCmd(session, {
-        type: "note.resolve",
-        id: pos[0],
-        resolved: !flags.reopen,
-        ...typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}
-      }));
-    }
-  },
-  {
-    name: "note-remove",
-    flags: [...SESSION, "doc"],
-    positionals: [{ name: "id", required: true }],
-    describe: "delete a note",
-    run: async (pos, flags, session) => {
-      printJson(await postCmd(session, {
-        type: "note.remove",
-        id: pos[0],
-        ...typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}
-      }));
-    }
-  },
-  {
-    name: "diff",
-    flags: [...SESSION, "doc", "context", "patch"],
-    positionals: [{ name: "against", required: true }],
-    describe: "compare the active version with another (vN or 'saved' for the file on disk); --patch for plain unified text",
-    run: async (pos, flags, session) => {
-      const r = await postCmd(session, {
-        type: "diff",
-        against: parseSide(pos[0] ?? "", "diff"),
-        ...typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {},
-        ...typeof flags.context === "string" ? { context: parseCount(flags.context, "--context") } : {}
-      });
-      if (flags.patch)
-        process.stdout.write(String(r.unified ?? ""));
-      else
-        printJson(r);
-    }
-  },
-  {
-    name: "merge",
-    flags: [...SESSION, "doc", "hunks"],
-    positionals: [{ name: "against", required: true }],
-    describe: "take changes from another version into the active one (--hunks 1,3; default: all of them)",
-    run: async (pos, flags, session) => {
-      const against = parseSide(pos[0] ?? "", "merge");
-      const listed = typeof flags.hunks === "string" ? flags.hunks.split(",").map((h) => parseCount(h, "--hunks")) : null;
-      const hunks = listed ?? (await postCmd(session, {
-        type: "diff",
-        against,
-        ...typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}
-      })).hunks?.map((h) => h.id) ?? [];
-      printJson(await postCmd(session, {
-        type: "merge",
-        against,
-        hunks,
-        ...typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}
-      }));
-    }
-  },
-  {
-    name: "activate",
-    flags: [...SESSION, "doc"],
-    positionals: [{ name: "vN", required: true }],
-    describe: "make a version the active one (the one the human edits and Save writes)",
-    run: async (pos, flags, session) => {
-      printJson(await postCmd(session, {
-        type: "activate",
-        version: parseVersion(pos[0] ?? "", "activate"),
-        ...typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}
-      }));
-    }
-  },
-  {
-    name: "new-doc",
-    flags: SESSION,
-    positionals: [{ name: "path", required: true }],
-    describe: "create an empty document (its folder must be a set, a folder in one, or the workspace)",
-    run: (pos, _flags, session) => {
-      const abs = resolve(pos[0]);
-      return structureCmd(session, { type: "doc.create", dir: dirname(abs), name: basename(abs) });
-    }
-  },
-  {
-    name: "new-folder",
-    flags: SESSION,
-    positionals: [{ name: "path", required: true }],
-    describe: "create a folder \u2014 inside a set, or in the workspace as a new set",
-    run: (pos, _flags, session) => {
-      const abs = resolve(pos[0]);
-      return structureCmd(session, {
-        type: "folder.create",
-        dir: dirname(abs),
-        name: basename(abs)
-      });
-    }
-  },
-  {
-    name: "move",
-    flags: SESSION,
-    positionals: [
-      { name: "path", required: true },
-      { name: "into", required: true }
-    ],
-    describe: "move a document or folder into another folder (a real move on disk)",
-    run: (pos, _flags, session) => structureCmd(session, {
-      type: "move",
-      path: resolve(pos[0]),
-      into: resolve(pos[1])
-    })
-  },
-  {
-    name: "rename",
-    flags: SESSION,
-    positionals: [
-      { name: "path", required: true },
-      { name: "name", required: true }
-    ],
-    describe: "rename a document or folder in place",
-    run: (pos, _flags, session) => structureCmd(session, { type: "rename", path: resolve(pos[0]), name: pos[1] })
-  },
-  {
-    name: "hide",
-    flags: SESSION,
-    positionals: [{ name: "path", required: true }],
-    describe: "remove a document, folder or set from Scriptorium \u2014 the files stay on disk",
-    run: (pos, _flags, session) => structureCmd(session, { type: "hide", path: resolve(pos[0]) })
-  },
-  {
-    name: "unhide",
-    flags: SESSION,
-    positionals: [{ name: "entry", required: true }],
-    describe: "bring back everything hidden in a set (its entry id, from state)",
-    run: (pos, _flags, session) => structureCmd(session, { type: "unhide", entry: pos[0] })
-  },
-  {
-    name: "make-set",
-    flags: SESSION,
-    positionals: [{ name: "path", required: true }],
-    describe: "turn a single document into a set: a folder named for it, the document moved in",
-    run: (pos, _flags, session) => structureCmd(session, { type: "set.make", path: resolve(pos[0]) })
-  },
-  {
-    name: "import",
-    flags: [...SESSION, "into"],
-    positionals: [{ name: "file", required: true }],
-    describe: "copy a document in (default: into the workspace) and show the copy",
-    run: (pos, flags, session) => cmdImport(pos[0], typeof flags.into === "string" ? flags.into : undefined, session)
-  },
-  {
-    name: "workspace",
-    flags: SESSION,
-    positionals: [{ name: "dir", required: false }],
-    describe: "print the workspace (where drops and new top-level documents land), or set it",
-    run: (pos, _flags, session) => cmdWorkspace(pos[0], session)
-  },
-  {
-    name: "meta",
-    flags: SESSION,
-    positionals: [{ name: "path", required: false }],
-    describe: "a document's frontmatter as the daemon read it (no path: every context document)",
-    run: async (pos, _flags, session) => {
-      printJson(await postCmd(session, {
-        type: "meta",
-        ...pos[0] !== undefined ? { path: resolve(pos[0]) } : {}
-      }));
-    }
-  },
-  {
-    name: "find",
-    flags: [...SESSION, "type", "status", "lifecycle", "tag", "since"],
-    positionals: [],
-    describe: "documents by frontmatter \u2014 filters AND, all optional; an empty result is an answer (count)",
-    run: async (_pos, flags, session) => {
-      const filter = {};
-      for (const k of ["type", "status", "lifecycle", "tag"])
-        if (typeof flags[k] === "string")
-          filter[k] = flags[k];
-      if (typeof flags.since === "string")
-        filter.since = parseSinceDate(flags.since);
-      printJson(await postCmd(session, { type: "find", filter }));
-    }
-  },
-  {
-    name: "search",
-    flags: [...SESSION, "limit"],
-    positionals: [{ name: "query", required: true, variadic: true }],
-    describe: "search the context: fuzzy on names, exact in text \u2014 searches the ACTIVE version of open documents, which grep cannot see",
-    run: async (pos, flags, session) => {
-      const limit = typeof flags.limit === "string" ? parseCount(flags.limit, "search --limit") : undefined;
-      printJson(await postCmd(session, {
-        type: "search",
-        query: pos.join(" "),
-        ...limit !== undefined ? { limit } : {}
-      }));
-    }
-  },
-  {
-    name: "doctor",
-    flags: SESSION,
-    positionals: [],
-    describe: "what is worth looking at in this session \u2014 each finding names the verb that fixes it",
-    run: async (_pos, _flags, session) => {
-      printJson(await postCmd(session, { type: "doctor" }));
-    }
-  },
-  {
-    name: "forget",
-    flags: [...SESSION, "doc"],
-    positionals: [],
-    describe: "forget a document whose file of record is gone (refused while the file exists \u2014 use hide to take one out of the context)",
-    run: async (_pos, flags, session) => {
-      printJson(await postCmd(session, {
-        type: "forget",
-        ...typeof flags.doc === "string" ? { doc: docArg(flags.doc) } : {}
-      }));
-    }
-  },
-  {
-    name: "dangling",
-    flags: [...SESSION, "entry"],
-    positionals: [],
-    describe: "links in a set that nothing answers \u2014 file, line, and the target as written",
-    run: async (_pos, flags, session) => {
-      printJson(await postCmd(session, {
-        type: "dangling",
-        ...typeof flags.entry === "string" ? { entry: flags.entry } : {}
-      }));
-    }
-  },
-  {
-    name: "graph",
-    flags: [...SESSION, "entry"],
-    positionals: [],
-    describe: "a set's map as JSON \u2014 nodes, edges (body links and frontmatter kept apart), dangling",
-    run: async (_pos, flags, session) => {
-      printJson(await postCmd(session, {
-        type: "graph",
-        ...typeof flags.entry === "string" ? { entry: flags.entry } : {}
-      }));
-    }
-  },
-  {
-    name: "backlinks",
-    flags: SESSION,
-    positionals: [{ name: "path", required: true }],
-    describe: "what cites a document \u2014 `related` (frontmatter) and `links` (body), kept apart",
-    run: async (pos, _flags, session) => {
-      printJson(await postCmd(session, { type: "backlinks", path: resolve(pos[0]) }));
-    }
-  },
-  {
-    name: "meta-init",
-    flags: [...SESSION, "type", "by"],
-    positionals: [{ name: "path", required: true }],
-    describe: "add a frontmatter block to a document that has none (type guessed from its neighbours)",
-    run: async (pos, flags, session) => {
-      printJson(await postCmd(session, {
-        type: "meta.init",
-        path: resolve(pos[0]),
-        ...typeof flags.type === "string" ? { metaType: flags.type } : {},
-        ...typeof flags.by === "string" ? { by: flags.by } : {}
-      }));
-    }
-  },
-  {
-    name: "meta-set",
-    flags: SESSION,
-    positionals: [
-      { name: "path", required: true },
-      { name: "key=value", required: true, variadic: true }
-    ],
-    describe: "set frontmatter keys \u2014 one line edit each, everything else untouched",
-    run: async (pos, _flags, session) => {
-      const fields = {};
-      for (const pair of pos.slice(1)) {
-        const eq = pair.indexOf("=");
-        if (eq <= 0)
-          die(`"${pair}" is not key=value`, "usage", {
-            hint: "meta-set <path> status=stable lifecycle=live"
-          });
-        fields[pair.slice(0, eq)] = pair.slice(eq + 1);
-      }
-      printJson(await postCmd(session, { type: "meta.set", path: resolve(pos[0]), fields }));
-    }
-  },
-  {
-    name: "info",
-    flags: SESSION,
-    positionals: [],
-    describe: "print the resolved session pointer",
-    run: (_pos, _flags, session) => {
-      printJson(requireSession(session));
-    }
-  },
-  {
-    name: "close",
-    flags: SESSION,
-    positionals: [],
-    describe: "shut the session down (the manifest stays, for open --restore)",
-    run: async (_pos, _flags, session) => {
-      await postCmd(session, { type: "close" });
-      printJson({ ok: true, sent: "close" });
-    }
-  }
-];
-var cli = defineCli({
-  name: "scriptorium",
-  summary: "a co-present markdown editor: the human edits, you write new versions.",
-  options: CLI_OPTIONS,
-  commands: ROWS.map((r) => ({ ...r, run: on(r.run), rejectHint: DASH_HINT })),
-  grammar: "flags-anywhere",
-  verbPositional: "verb",
-  usageHides: ["session"],
-  version: versionInfo,
-  helpFooter: `  Add --session <id> to any verb that talks to a session (default: most recent).
-  Each verb accepts only the flags on its row.
-
-  Output: JSON on stdout, one document per answer \u2014 except tail (one JSON line
-  per event) and help (prose). Failures: one JSON envelope on stderr, exit
-  2 = usage, 1 = internal, 5 = not found, 6 = conflict. tail waits for a
-  session rather than failing, and ends 0 when its session closes. tail
-  ${WINDOW_HELP}.`
-});
-var VERBS = cli.verbs;
-var VERB_SPEC = Object.fromEntries(cli.rows.map((r) => [r.name, r.accepted]));
-var flagsFor = (verb) => cli.flagsFor(verb);
-var RECOGNIZED_FLAGS = cli.recognizedFlags;
-async function main(argv) {
-  try {
-    return await cli.dispatch(argv);
-  } catch (e) {
-    const reported = reportCliError(e);
-    if (reported !== null)
-      return reported;
-    const code = e && typeof e === "object" && "code" in e ? String(e.code) : "";
-    const msg = e instanceof Error ? e.message : String(e);
-    if (code === "ENOENT")
-      return reportCliError(new UsageError(msg)) ?? 2;
-    return reportCliError(new CliError("internal", msg)) ?? 1;
-  }
-}
-async function run() {
-  return await main(process.argv.slice(2));
-}
 export {
-  CLI_OPTIONS,
-  RECOGNIZED_FLAGS,
-  UsageError,
-  VERBS,
-  VERB_SPEC,
-  cli,
   daemonCwd,
-  docArg,
-  flagsFor,
-  main,
-  parseCount,
-  parseSide,
-  parseSinceDate,
-  parseTailSince,
-  parseVersion,
   run
 };
-
-//# debugId=B3D0BC051659796264756E2164756E21
-//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsiLi4vLi4vLi4vLi4vLi4vc3JjL3NjcmlwdG9yaXVtL2JhY2tlbmQvY2xpLnRzIiwgIi4uLy4uLy4uLy4uLy4uL3NyYy9raXQvY2xpL3JlZ2lzdHJ5LnRzIiwgIi4uLy4uLy4uLy4uLy4uL3NyYy9raXQvbGliL3ByaW50SnNvbi50cyIsICIuLi8uLi8uLi8uLi8uLi9zcmMva2l0L3dpcmUvZXJyb3JzLnRzIiwgIi4uLy4uLy4uLy4uLy4uL3NyYy9raXQvd2lyZS90YWlsRXZlbnRzLnRzIiwgIi4uLy4uLy4uLy4uLy4uL3NyYy9raXQvd2lyZS90YWlsSGFuZG9mZi50cyIsICIuLi8uLi8uLi8uLi8uLi9zcmMva2l0L3dpcmUvaGVhcnRiZWF0LnRzIiwgIi4uLy4uLy4uLy4uLy4uL3NyYy9zY3JpcHRvcml1bS9iYWNrZW5kL2hlYXJ0YmVhdC50cyIsICIuLi8uLi8uLi8uLi8uLi9zcmMvc2NyaXB0b3JpdW0vYmFja2VuZC90cmVlLnRzIl0sCiAgInNvdXJjZXNDb250ZW50IjogWwogICAgIi8qKlxuICogc2NyaXB0b3JpdW0gQ0xJIOKAlCB0aGUgYWdlbnQncyBoYWxmLiBBIHRoaW4gY2xpZW50IG9mIHRoZSBwZXItc2Vzc2lvbiBkYWVtb25cbiAqIChgc2VydmVyLnRzYCk6IGBvcGVuYCBzcGF3bnMgb25lLCBldmVyeSBvdGhlciB2ZXJiIGZpbmRzIGl0IHRocm91Z2ggdGhlXG4gKiBzZXNzaW9uIHBvaW50ZXIgaW4gdG1wZGlyIChFMTMpIGFuZCBzcGVha3MgSFRUUC4gYHRhaWxgIHN0cmVhbXMgdGhlIGh1bWFuJ3NcbiAqIG1lc3NhZ2VzIGFzIEpTT04gbGluZXMgZm9yIE1vbml0b3IgdG8gd3JhcC5cbiAqXG4gKiDilIDilIAgVEhFIEVJR0hUIFFVRVNUSU9OUyAoc2NhZmZvbGRpbmcgcGxheWJvb2sgTjEpLCBBTlNXRVJFRCBBUyBERVNJR04g4pSA4pSA4pSA4pSA4pSA4pSAXG4gKlxuICogMS4gQXJpdGhtZXRpYzogTk9ORSBjYXJyaWVkIGJleW9uZCB3aGF0IGlzIHRydWUgYXQgdGhlIGVtaXR0ZWQgYWRkcmVzcy5cbiAqICAgIEZyb20gYGRpc3QvY2xpLmpzYCwgYC4uYCBpcyB0aGUgc2tpbGwgZm9sZGVyLCBzbyB0aGUgZGFlbW9uIGxhdW5jaGVyIGlzXG4gKiAgICBgLi4vc2NyaXB0cy9zZXJ2ZXIudHNgICh1cCBhbmQgYmFjayBkb3duIOKAlCBuZXZlciBhIGZsYXQgc2libGluZyksIGFuZCB0aGVcbiAqICAgIGRldiBjd2QgaXMgYHNyYy9zY3JpcHRvcml1bS9gIGZpdmUgbGV2ZWxzIHVwIChDb250cmFjdCA1KSwgdXNlZCBvbmx5IHdoZW5cbiAqICAgIGRldiBtb2RlIGlzIHJlc29sdmVkLlxuICogMi4gU2VydmVzOiBuby5cbiAqIDMuIFNlY29uZCBoYWxmOiBZRVMg4oCUIHNoYXJlcyBgLi9oZWFydGJlYXQudHNgIHdpdGggdGhlIGRhZW1vbiAodGhlIHRhaWxcbiAqICAgIHdhdGNoZG9nIGlzIGRlcml2ZWQgZnJvbSB0aGUgZGFlbW9uJ3MgaGVhcnRiZWF0LCBuZXZlciBjb3BpZWQpLlxuICogNC4gTGlmZWN5Y2xlOiBzaW5nbGUtc2hvdCBwZXIgdmVyYjsgYHRhaWxgIGlzIGxvbmctcnVubmluZyBhbmQgcmV0dXJucyBpdHNcbiAqICAgIG93biBleGl0IGNvZGUuXG4gKiA1LiBgbWFpbigpYCByZXR1cm5zIHdoaWxlIHRoZSBwcm9jZXNzIG11c3QgbGl2ZT8gTk8g4oaSIE5BVFVSQUwtUkVUVVJOXG4gKiAgICBsYXVuY2hlciAoYHByb2Nlc3MuZXhpdENvZGUgPSBhd2FpdCBydW4oKWApOiBzdGRvdXQgaXMgYSBwaXBlIHRoZSBhZ2VudFxuICogICAgcGFyc2VzLCBhbmQgYW4gZXhwbGljaXQgZXhpdCB0cnVuY2F0ZXMgaXQgYXQgNjQgS2lCLiBgb3BlbmAgcmVsZWFzZXMgdGhlXG4gKiAgICBkYWVtb24ncyBzdGRvdXQgcGlwZSBzbyB0aGUgbmF0dXJhbCByZXR1cm4gaXMgbm90IGhlbGQgb3BlbiBieSBpdC5cbiAqIDYuIEV2ZW50IGlkcyBhY3Jvc3MgcmVzdGFydDogdGhlIGRhZW1vbidzIGFyZSBwZXItYm9vdCBhbmQgZXBvY2gtc3RhbXBlZDtcbiAqICAgIHRoaXMgc2lkZSByZXNldHMgaXRzIGN1cnNvciBvbiBhbiBlcG9jaCBjaGFuZ2UgYW5kIHNheXMgc28gaW4gb25lIGxpbmUuXG4gKiA3LiBBIGtpdCBzdWJqZWN0IGluIGEgZGlmZmVyZW50IHNoYXBlPyBOby5cbiAqIDguIEEga2l0IG1vZHVsZSBuYW1lcyB0aGlzIHNwZWxsIGFzIGl0cyBzb3VyY2U/IFN0cnVjdHVyYWxseSBuby5cbiAqXG4gKiDilIDilIAgRVJST1IgQ09OVFJBQ1QgKGFjYyBMMCwgYHNyYy9raXQvd2lyZS9lcnJvcnMudHNgKSDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIBcbiAqXG4gKiBFdmVyeSBmYWlsdXJlIGlzIE9ORSBKU09OIGVudmVsb3BlIG9uIHN0ZGVyciwgc3Rkb3V0IGVtcHR5IOKAlFxuICogICB7b2s6ZmFsc2UsIGVycm9yOntraW5kLCBleGl0X2NvZGUsIHJldHJ5YWJsZSwgbWVzc2FnZSwgaGludD8sIGNob2ljZXM/LCBzZXJ2ZXI/fSwgbWV0YTp7Y29tbWFuZH19XG4gKiAgIHVzYWdlIOKGkiAyIMK3IGludGVybmFsIOKGkiAxIMK3IG5vdF9mb3VuZCDihpIgNSDCtyBjb25mbGljdCDihpIgNlxuICogQSBkYWVtb24gcmVmdXNhbCBtYXBzIG9mZiBpdHMgSFRUUCBzdGF0dXMgKDQwMCB1c2FnZSwgNDA0IG5vdF9mb3VuZCwgNDA5XG4gKiBjb25mbGljdCwgZWxzZSBpbnRlcm5hbCk7IHRoZSBkYWVtb24ncyBib2R5IHJpZGVzIHZlcmJhdGltIHVuZGVyXG4gKiBgZXJyb3Iuc2VydmVyYCwgYW5kIHdoZW4gdGhlIGRhZW1vbiBuYW1lZCB0aGUgdmFsaWQgc2V0IChhIGRvYyBzbHVnLCBhXG4gKiB2ZXJzaW9uKSB0aGF0IHNldCBpcyBBTFNPIGxpZnRlZCBpbnRvIGBjaG9pY2VzYCDigJQgQTE6IHRoZSBzZXQgaXMgaW4gaGFuZCBhdFxuICogdGhlIHJhaXNlLCBiZWNhdXNlIHRoZSBkYWVtb24gaGFuZGVkIGl0IG92ZXIuXG4gKlxuICog4puUIFRoZSBraXQgY2FycmllcyB0aGUgRU5WRUxPUEUsIG5vdCB0aGUgQ0xBU1NJRklFUjogYHJlcG9ydENsaUVycm9yYFxuICogcmV0dXJucyBudWxsIGZvciBhIG5vbi1DbGlFcnJvciwgYW5kIGBtYWluYCBiZWxvdyB0cmlhZ2VzIEVOT0VOVCAoYSBuYW1lZFxuICogZmlsZSB0aGUgY2FsbGVyIGdhdmUpIGludG8gdXNhZ2UgYW5kIGV2ZXJ5dGhpbmcgZWxzZSBpbnRvIGludGVybmFsLlxuICpcbiAqIEQ4IHJlYWNoYWJpbGl0eSwgYXVkaXRlZCBieSBjYWxsIGdyYXBoOiBldmVyeSBgZGllYCBoZXJlIGlzIHJlYWNoZWQgZnJvbSBhXG4gKiB2ZXJiIGhhbmRsZXIgKHRoZSBraXQgcmVnaXN0cnkgZGlzcGF0Y2hlcyksIG5vbmUgZnJvbSBpbnNpZGUgYSBzd2FsbG93aW5nIGBjYXRjaGAuIFRoZVxuICogc3dhbGxvd2luZyBjYXRjaGVzIChgYXBpYCdzIG5vbi1KU09OIGJvZHksIGB2ZXJzaW9uSW5mb2AsIGBwb3N0Q21kYCdzIGNsb3NlXG4gKiBFQ09OTlJFU0VUKSBjb250YWluIG5vIGRpZS1yZWFjaGFibGUgY2FsbC5cbiAqL1xuXG5pbXBvcnQgeyBzcGF3biB9IGZyb20gXCJub2RlOmNoaWxkX3Byb2Nlc3NcIjtcbmltcG9ydCB7XG4gIGNsb3NlU3luYyxcbiAgZXhpc3RzU3luYyxcbiAgbWtkaXJTeW5jLFxuICBvcGVuU3luYyxcbiAgcmVhZGRpclN5bmMsXG4gIHJlYWRGaWxlU3luYyxcbiAgc3RhdFN5bmMsXG4gIHVubGlua1N5bmMsXG59IGZyb20gXCJub2RlOmZzXCI7XG5pbXBvcnQgeyBob21lZGlyLCB0bXBkaXIgfSBmcm9tIFwibm9kZTpvc1wiO1xuaW1wb3J0IHsgYmFzZW5hbWUsIGRpcm5hbWUsIGpvaW4sIHJlc29sdmUgfSBmcm9tIFwibm9kZTpwYXRoXCI7XG5pbXBvcnQgeyB0eXBlIENvbW1hbmRTcGVjLCBkZWZpbmVDbGksIHR5cGUgSW52b2NhdGlvbiB9IGZyb20gXCIuLi8uLi9raXQvY2xpL3JlZ2lzdHJ5XCI7XG5pbXBvcnQgeyBwcmludEpzb24gfSBmcm9tIFwiLi4vLi4va2l0L2xpYi9wcmludEpzb25cIjtcbmltcG9ydCB7IENsaUVycm9yLCBkaWUsIHR5cGUgRXJyRXh0cmEsIHR5cGUgRXJyS2luZCwgcmVwb3J0Q2xpRXJyb3IgfSBmcm9tIFwiLi4vLi4va2l0L3dpcmUvZXJyb3JzXCI7XG5pbXBvcnQge1xuICBjb21tYW5kTGluZSxcbiAgcmVhZFNpbmNlLFxuICB0YWlsQ29tbWFuZCxcbiAgdGFpbFdpdGhIYW5kb2ZmLFxuICBXSU5ET1dfSEVMUCxcbn0gZnJvbSBcIi4uLy4uL2tpdC93aXJlL3RhaWxIYW5kb2ZmXCI7XG5pbXBvcnQgeyBUQUlMX0lETEVfTVMgfSBmcm9tIFwiLi9oZWFydGJlYXRcIjtcbmltcG9ydCB7IERPQ19FWFRFTlNJT05TLCBpc0RvY05hbWUgfSBmcm9tIFwiLi90cmVlXCI7XG5cbi8vIOKaoCBERUNMQVJFRCBGSVJTVCwgQUJPVkUgRVZFUlkgT1RIRVIgRlVOQ1RJT04sIE9OIFBVUlBPU0UuIFRoZSBgY2hvaWNlc2Bcbi8vIGNlbnN1cydzIHJhaXNlciBydWxlIChhKSAoYGdyaW1vaXJlL2xpYi9lcnJvci1zaXRlcy50c2ApIG1hdGNoZXNcbi8vIGBmdW5jdGlvbiBOQU1FKGAgbGF6aWx5IHVwIHRvIHRoZSBuZXh0IGApOiBuZXZlcmAgd2l0aGluIDYwMCBjaGFyYWN0ZXJzLCBzb1xuLy8gQU5ZIGZ1bmN0aW9uIGRlY2xhcmVkIHNob3J0bHkgYWJvdmUgdGhpcyBvbmUg4oCUIGBhcGlgLCB0aGVuIGByZXF1aXJlU2Vzc2lvbmAg4oCUXG4vLyB3YXMgcmVhZCBhcyBhIHJhaXNlciBhbmQgaXRzIGNhbGxzIGNvdW50ZWQgYXMgcmFpc2Ugc2l0ZXMgKGZvdW5kIDIwMjYtMDktMTEsXG4vLyByZXBvcnRlZCBpbiB0aGUgc2xpY2UtQSBqb3VybmFsIGFzIGFuIGluc3RydW1lbnQgZGVmZWN0LCBub3QgZml4ZWQgaGVyZSkuXG5mdW5jdGlvbiBkYWVtb25SZWZ1c2VkKHdoYXQ6IHN0cmluZywgc3RhdHVzOiBudW1iZXIsIGRhdGE6IHVua25vd24pOiBuZXZlciB7XG4gIGNvbnN0IGtpbmQ6IEVycktpbmQgPVxuICAgIHN0YXR1cyA9PT0gNDAwXG4gICAgICA/IFwidXNhZ2VcIlxuICAgICAgOiBzdGF0dXMgPT09IDQwNFxuICAgICAgICA/IFwibm90X2ZvdW5kXCJcbiAgICAgICAgOiBzdGF0dXMgPT09IDQwOVxuICAgICAgICAgID8gXCJjb25mbGljdFwiXG4gICAgICAgICAgOiBcImludGVybmFsXCI7XG4gIGNvbnN0IGJvZHkgPSAoZGF0YSA/PyB7fSkgYXMgeyBlcnJvcj86IHVua25vd247IGNob2ljZXM/OiB1bmtub3duOyBoaW50PzogdW5rbm93biB9O1xuICBjb25zdCBjaG9pY2VzID0gQXJyYXkuaXNBcnJheShib2R5LmNob2ljZXMpID8gYm9keS5jaG9pY2VzLm1hcChTdHJpbmcpIDogdW5kZWZpbmVkO1xuICAvLyDimqAgVGhlIGRhZW1vbidzIG93biBoaW50LCBmb3J3YXJkZWQuIEEgcmVmdXNhbCB0aGF0IGtub3dzIHdoYXQgdG8gZG8gbmV4dFxuICAvLyB1c2VkIHRvIGRyb3AgdGhhdCBrbm93bGVkZ2Ugb24gdGhlIGZsb29yIGF0IHRoaXMgbGluZS5cbiAgY29uc3QgaGludCA9IHR5cGVvZiBib2R5LmhpbnQgPT09IFwic3RyaW5nXCIgPyBib2R5LmhpbnQgOiB1bmRlZmluZWQ7XG4gIGRpZSh0eXBlb2YgYm9keS5lcnJvciA9PT0gXCJzdHJpbmdcIiA/IGJvZHkuZXJyb3IgOiBgJHt3aGF0fSBmYWlsZWQgKEhUVFAgJHtzdGF0dXN9KWAsIGtpbmQsIHtcbiAgICAuLi4oaGludCA/IHsgaGludCB9IDoge30pLFxuICAgIC4uLihjaG9pY2VzID8geyBjaG9pY2VzIH0gOiB7fSksXG4gICAgLi4uKGRhdGEgIT09IG51bGwgJiYgZGF0YSAhPT0gdW5kZWZpbmVkID8geyBzZXJ2ZXI6IGRhdGEgfSA6IHt9KSxcbiAgfSk7XG59XG5cbmNvbnN0IFNDUklQVF9ESVIgPSBkaXJuYW1lKEJ1bi5maWxlVVJMVG9QYXRoKGltcG9ydC5tZXRhLnVybCkpO1xuY29uc3QgU0tJTExfUk9PVCA9IGpvaW4oU0NSSVBUX0RJUiwgXCIuLlwiKTtcbmNvbnN0IERJU1RfRElSID0gam9pbihTS0lMTF9ST09ULCBcImRpc3RcIik7XG5jb25zdCBTRVJWRVJfU0NSSVBUID0gam9pbihTQ1JJUFRfRElSLCBcIi4uXCIsIFwic2NyaXB0c1wiLCBcInNlcnZlci50c1wiKTtcbmNvbnN0IFNVUkZBQ0VfQ1dEID0gam9pbihTQ1JJUFRfRElSLCBcIi4uXCIsIFwiLi5cIiwgXCIuLlwiLCBcIi4uXCIsIFwiLi5cIiwgXCJzcmNcIiwgXCJzY3JpcHRvcml1bVwiKTtcblxuLyoqIENvbnRyYWN0IDU6IGEgZGV2IGRhZW1vbiBtdXN0IHJ1biB3aXRoIGN3ZCBhdCBgc3JjL3NjcmlwdG9yaXVtL2AgKGJ1bmZpZy50b21sKS4gKi9cbmV4cG9ydCBmdW5jdGlvbiBkYWVtb25Dd2QoKTogc3RyaW5nIHtcbiAgaWYgKHByb2Nlc3MuZW52LlNQRUxMQk9PS19TVVJGQUNFX01PREUgPT09IFwicmVsZWFzZVwiKSByZXR1cm4gU0tJTExfUk9PVDtcbiAgaWYgKHByb2Nlc3MuZW52LlNQRUxMQk9PS19TVVJGQUNFX01PREUgPT09IFwiZGV2XCIpIHJldHVybiBTVVJGQUNFX0NXRDtcbiAgcmV0dXJuIGV4aXN0c1N5bmMoam9pbihESVNUX0RJUiwgXCJpbmRleC5odG1sXCIpKSA/IFNLSUxMX1JPT1QgOiBTVVJGQUNFX0NXRDtcbn1cblxuLyoqIGAkU0NSSVBUT1JJVU1fSE9NRWAsIGRlZmF1bHQgYH4vLnNjcmlwdG9yaXVtYCDigJQgdGhlIHNhbWUgcnVsZSBhcyB0aGUgZGFlbW9uJ3MuICovXG5mdW5jdGlvbiBzY3JpcHRvcml1bUhvbWUoKTogc3RyaW5nIHtcbiAgcmV0dXJuIHJlc29sdmUocHJvY2Vzcy5lbnYuU0NSSVBUT1JJVU1fSE9NRSA/PyBqb2luKGhvbWVkaXIoKSwgXCIuc2NyaXB0b3JpdW1cIikpO1xufVxuXG50eXBlIFNlc3Npb25Qb2ludGVyID0geyB1cmw6IHN0cmluZzsgcG9ydDogbnVtYmVyOyBzZXNzaW9uX2lkOiBzdHJpbmc7IGhvbWU6IHN0cmluZzsgZGlyOiBzdHJpbmcgfTtcblxuLyoqXG4gKiBTZXNzaW9ucyB3aG9zZSB3b3JrIGlzIHN0aWxsIG9uIGRpc2ssIG5ld2VzdCBmaXJzdCAoRTU2KS5cbiAqXG4gKiDim5QgQSBERUFEIFNFU1NJT04gSVMgTk9UIEEgTE9TVCBPTkUsIGFuZCB0aGUgQ0xJIHVzZWQgdG8gaW1wbHkgb3RoZXJ3aXNlLiBUaGVcbiAqIG1hbmlmZXN0IGFuZCBldmVyeSB2ZXJzaW9uIGZpbGUgbGl2ZSB1bmRlciB0aGUgaG9tZSwgc28gYSBkYWVtb24gdGhhdCBoYXNcbiAqIGV4aXRlZCDigJQgdGhlIDMwLW1pbnV0ZSBpZGxlIHRpbWVvdXQsIGEgY3Jhc2gsIGEgcmVib290IOKAlCBjb3N0cyB0aGUgVVJMIGFuZFxuICogbm90aGluZyBlbHNlLiBDb2xlIGhpdCBleGFjdGx5IHRoaXMgKFwidGhhdCBsaW5rIGRvZXNuJ3Qgc2VlbSB0byBiZSBsaXZlXG4gKiBhbnltb3JlXCIpIGFuZCB0aGUgb25seSB0aGluZyB0aGUgdG9vbGluZyBzYWlkIHdhcyBcIm5vIHJ1bm5pbmcgc2NyaXB0b3JpdW1cbiAqIHNlc3Npb25cIiwgd2hpY2ggcmVhZHMgbGlrZSB0aGUgd29yayBpcyBnb25lLlxuICovXG5mdW5jdGlvbiByZXN0b3JhYmxlKCk6IHN0cmluZ1tdIHtcbiAgY29uc3QgZGlyID0gam9pbihzY3JpcHRvcml1bUhvbWUoKSwgXCJzZXNzaW9uc1wiKTtcbiAgdHJ5IHtcbiAgICByZXR1cm4gcmVhZGRpclN5bmMoZGlyLCB7IHdpdGhGaWxlVHlwZXM6IHRydWUgfSlcbiAgICAgIC5maWx0ZXIoKGUpID0+IGUuaXNEaXJlY3RvcnkoKSAmJiBleGlzdHNTeW5jKGpvaW4oZGlyLCBlLm5hbWUsIFwibWFuaWZlc3QuanNvblwiKSkpXG4gICAgICAubWFwKChlKSA9PiAoeyBpZDogZS5uYW1lLCBhdDogc3RhdFN5bmMoam9pbihkaXIsIGUubmFtZSwgXCJtYW5pZmVzdC5qc29uXCIpKS5tdGltZU1zIH0pKVxuICAgICAgLnNvcnQoKGEsIGIpID0+IGIuYXQgLSBhLmF0KVxuICAgICAgLm1hcCgoZSkgPT4gZS5pZCk7XG4gIH0gY2F0Y2gge1xuICAgIHJldHVybiBbXTtcbiAgfVxufVxuXG4vKiogV2hvIGVuZGVkIGEgc2F2ZWQgc2Vzc2lvbiwgcmVhZCBmcm9tIGl0cyBtYW5pZmVzdCAod2hpY2ggb3V0bGl2ZXMgdGhlIGRhZW1vbikuICovXG5mdW5jdGlvbiBlbmRlZEJ5KGlkOiBzdHJpbmcpOiBzdHJpbmcgfCB1bmRlZmluZWQge1xuICB0cnkge1xuICAgIGNvbnN0IG0gPSBKU09OLnBhcnNlKFxuICAgICAgcmVhZEZpbGVTeW5jKGpvaW4oc2NyaXB0b3JpdW1Ib21lKCksIFwic2Vzc2lvbnNcIiwgaWQsIFwibWFuaWZlc3QuanNvblwiKSwgXCJ1dGY4XCIpLFxuICAgICkgYXMgeyBlbmRlZD86IHsgYnk/OiB1bmtub3duIH0gfTtcbiAgICByZXR1cm4gdHlwZW9mIG0uZW5kZWQ/LmJ5ID09PSBcInN0cmluZ1wiID8gbS5lbmRlZC5ieSA6IHVuZGVmaW5lZDtcbiAgfSBjYXRjaCB7XG4gICAgcmV0dXJuIHVuZGVmaW5lZDtcbiAgfVxufVxuXG4vKipcbiAqIFdoYXQgdG8gc2F5IHdoZW4gbm8gZGFlbW9uIGFuc3dlcnMg4oCUIGFib3V0IHRoZSBzZXNzaW9uIEFTS0VEIGFib3V0XG4gKiAoYC0tc2Vzc2lvbmApLCBvciB0aGUgbmV3ZXN0IHNhdmVkIG9uZSB3aGVuIG5vbmUgd2FzIG5hbWVkLlxuICpcbiAqIOKblCBBIE5BTUVEIFNFU1NJT04gSVMgVEhFIE9ORSBUSEUgSElOVCBOQU1FUy4gVGhpcyB1c2VkIHRvIG9mZmVyIHRoZSBuZXdlc3RcbiAqIHNhdmVkIHNlc3Npb24gd2hhdGV2ZXIgd2FzIGFza2VkLCBzbyBgc2F5IC0tc2Vzc2lvbiA3ODZiY2IwOWAgYWZ0ZXIgdGhlXG4gKiBodW1hbiBlbmRlZCBpdCBzYWlkIFwiYnJpbmcgaXQgYmFjayB3aXRoOiBvcGVuIC0tcmVzdG9yZSBiM2Y0MjlkM1wiIOKAlCBhbm90aGVyXG4gKiBzZXNzaW9uLCBsaXZlIGF0IHRoZSB0aW1lICh2ZXJpZmllciwgMjAyNi0xMC0wMSkuXG4gKlxuICog4puUIEEgSFVNQU4gRU5EIElTIFJPVVRFRCBPTiBUSEUgTUFOSUZFU1QnUyBgZW5kZWQuYnlgLCBOT1QgT04gUFJPU0U6IHRoZVxuICogaHVtYW4gZW5kZWQgaXQgb24gcHVycG9zZSwgc28gdGhlIHJlZnVzYWwgc2F5cyBzbyBhbmQgZG9lcyBub3Qgb2ZmZXIgdGhlXG4gKiByZW9wZW4gYXMgdGhlIG5leHQgYWN0IChgY2hvaWNlc2Agd291bGQgaW52aXRlIGl0IHRvbywgc28gdGhlcmUgYXJlIG5vbmUpLlxuICovXG5mdW5jdGlvbiBub1Nlc3Npb24oc2Vzc2lvbj86IHN0cmluZyk6IHsgbWVzc2FnZTogc3RyaW5nOyBleHRyYTogRXJyRXh0cmEgfSB7XG4gIGNvbnN0IGlkcyA9IHJlc3RvcmFibGUoKTtcbiAgY29uc3QgaWQgPSBzZXNzaW9uID8/IGlkc1swXTtcbiAgaWYgKGlkID09PSB1bmRlZmluZWQpXG4gICAgcmV0dXJuIHtcbiAgICAgIG1lc3NhZ2U6IFwibm8gcnVubmluZyBzY3JpcHRvcml1bSBzZXNzaW9uXCIsXG4gICAgICBleHRyYTogeyBoaW50OiBcIm5vIHNlc3Npb24gaGFzIGJlZW4gb3BlbmVkIGluIHRoaXMgaG9tZSB5ZXQg4oCUIHJ1bjogY2xpLnRzIG9wZW4gPHBhdGg+XCIgfSxcbiAgICB9O1xuICBpZiAoIWlkcy5pbmNsdWRlcyhpZCkpXG4gICAgcmV0dXJuIHtcbiAgICAgIG1lc3NhZ2U6IGBubyBzY3JpcHRvcml1bSBzZXNzaW9uICR7aWR9IGluIHRoaXMgaG9tZWAsXG4gICAgICBleHRyYToge1xuICAgICAgICBoaW50OlxuICAgICAgICAgIGlkcy5sZW5ndGggPT09IDBcbiAgICAgICAgICAgID8gXCJubyBzYXZlZCBzZXNzaW9ucyBpbiB0aGlzIGhvbWUg4oCUIHJ1bjogY2xpLnRzIG9wZW4gPHBhdGg+XCJcbiAgICAgICAgICAgIDogXCJwYXNzIC0tc2Vzc2lvbiBvbmUgb2YgdGhlIHNhdmVkIHNlc3Npb25zLCBvciBkcm9wIGl0IGZvciB0aGUgbW9zdCByZWNlbnRcIixcbiAgICAgICAgY2hvaWNlczogaWRzLnNsaWNlKDAsIDEwKSxcbiAgICAgIH0sXG4gICAgfTtcbiAgaWYgKGVuZGVkQnkoaWQpID09PSBcImh1bWFuXCIpXG4gICAgcmV0dXJuIHtcbiAgICAgIG1lc3NhZ2U6IGB0aGUgaHVtYW4gZW5kZWQgc2Vzc2lvbiAke2lkfWAsXG4gICAgICBleHRyYToge1xuICAgICAgICBoaW50OiBgdGhlIGh1bWFuIGVuZGVkIHRoaXMgc2Vzc2lvbiBvbiBwdXJwb3NlOyBkbyBub3QgcmVvcGVuIGl0IHVubGVzcyB0aGV5IGFzay4gSWYgdGhleSBhc2s6IGNsaS50cyBvcGVuIC0tcmVzdG9yZSAke2lkfWAsXG4gICAgICB9LFxuICAgIH07XG4gIHJldHVybiB7XG4gICAgbWVzc2FnZTogYG5vIHJ1bm5pbmcgc2NyaXB0b3JpdW0gc2Vzc2lvbiAke2lkfWAsXG4gICAgZXh0cmE6IHtcbiAgICAgIC8vIOKaoCBUaGUgQ09NTUFORCwgd2l0aCB0aGUgaWQgYWxyZWFkeSBpbiBpdC4gQSBoaW50IHRoYXQgc2F5cyBcInlvdSBjYW5cbiAgICAgIC8vIHJlc3RvcmUgYSBzZXNzaW9uXCIgbGVhdmVzIHRoZSByZWFkZXIgdG8gZmluZCB0aGUgaWQgYW5kIGd1ZXNzIHRoZSBmbGFnLlxuICAgICAgaGludDogYG5vIGRhZW1vbiBpcyBydW5uaW5nIGZvciBzZXNzaW9uICR7aWR9LCBidXQgaXRzIHdvcmsgaXMgb24gZGlzayDigJQgYnJpbmcgaXQgYmFjayB3aXRoOiBjbGkudHMgb3BlbiAtLXJlc3RvcmUgJHtpZH1gLFxuICAgICAgY2hvaWNlczogaWRzLnNsaWNlKDAsIDEwKSxcbiAgICB9LFxuICB9O1xufVxuXG5mdW5jdGlvbiBzZXNzaW9uRmlsZVBhdGgoc2Vzc2lvbj86IHN0cmluZyk6IHN0cmluZyB7XG4gIHJldHVybiBqb2luKHRtcGRpcigpLCBzZXNzaW9uID8gYHNjcmlwdG9yaXVtLSR7c2Vzc2lvbn0uanNvbmAgOiBcInNjcmlwdG9yaXVtLWxhdGVzdC5qc29uXCIpO1xufVxuXG4vKiogTlVMTCBNRUFOUyBcIk5PIFNFU1NJT05cIiwgQU5EIE5PVEhJTkcgRUxTRSDigJQgRU5PRU5UIGlzIHRoZSBvbmx5IGFic2VuY2UuICovXG5mdW5jdGlvbiByZWFkU2Vzc2lvbihzZXNzaW9uPzogc3RyaW5nKTogU2Vzc2lvblBvaW50ZXIgfCBudWxsIHtcbiAgY29uc3QgcGF0aCA9IHNlc3Npb25GaWxlUGF0aChzZXNzaW9uKTtcbiAgbGV0IHJhdzogc3RyaW5nO1xuICB0cnkge1xuICAgIHJhdyA9IHJlYWRGaWxlU3luYyhwYXRoLCBcInV0ZjhcIik7XG4gIH0gY2F0Y2ggKGUpIHtcbiAgICBjb25zdCBjb2RlID0gKGUgYXMgTm9kZUpTLkVycm5vRXhjZXB0aW9uKS5jb2RlO1xuICAgIGlmIChjb2RlID09PSBcIkVOT0VOVFwiKSByZXR1cm4gbnVsbDtcbiAgICBkaWUoYGNhbm5vdCByZWFkIHRoZSBzZXNzaW9uIHBvaW50ZXIgKCR7Y29kZSA/PyBcInVua25vd24gZXJyb3JcIn0pOiAke3BhdGh9YCwgXCJpbnRlcm5hbFwiKTtcbiAgfVxuICB0cnkge1xuICAgIHJldHVybiBKU09OLnBhcnNlKHJhdykgYXMgU2Vzc2lvblBvaW50ZXI7XG4gIH0gY2F0Y2gge1xuICAgIGRpZShgdGhlIHNlc3Npb24gcG9pbnRlciBpcyBub3QgdmFsaWQgSlNPTjogJHtwYXRofWAsIFwiaW50ZXJuYWxcIik7XG4gIH1cbn1cblxuZnVuY3Rpb24gcmVxdWlyZVNlc3Npb24oc2Vzc2lvbj86IHN0cmluZyk6IFNlc3Npb25Qb2ludGVyIHtcbiAgY29uc3QgcyA9IHJlYWRTZXNzaW9uKHNlc3Npb24pO1xuICBpZiAoIXMpIHtcbiAgICBjb25zdCB7IG1lc3NhZ2UsIGV4dHJhIH0gPSBub1Nlc3Npb24oc2Vzc2lvbik7XG4gICAgZGllKG1lc3NhZ2UsIFwibm90X2ZvdW5kXCIsIGV4dHJhKTtcbiAgfVxuICByZXR1cm4gcztcbn1cblxuYXN5bmMgZnVuY3Rpb24gYXBpKFxuICBwb3J0OiBudW1iZXIsXG4gIG1ldGhvZDogc3RyaW5nLFxuICBwYXRoOiBzdHJpbmcsXG4gIGJvZHk/OiB1bmtub3duLFxuKTogUHJvbWlzZTx7IHN0YXR1czogbnVtYmVyOyBkYXRhOiB1bmtub3duIH0+IHtcbiAgY29uc3QgcmVzID0gYXdhaXQgZmV0Y2goYGh0dHA6Ly8xMjcuMC4wLjE6JHtwb3J0fSR7cGF0aH1gLCB7XG4gICAgbWV0aG9kLFxuICAgIGhlYWRlcnM6IGJvZHkgIT09IHVuZGVmaW5lZCA/IHsgXCJjb250ZW50LXR5cGVcIjogXCJhcHBsaWNhdGlvbi9qc29uXCIgfSA6IHVuZGVmaW5lZCxcbiAgICBib2R5OiBib2R5ICE9PSB1bmRlZmluZWQgPyBKU09OLnN0cmluZ2lmeShib2R5KSA6IHVuZGVmaW5lZCxcbiAgfSk7XG4gIGxldCBkYXRhOiB1bmtub3duID0gbnVsbDtcbiAgdHJ5IHtcbiAgICBkYXRhID0gYXdhaXQgcmVzLmpzb24oKTtcbiAgfSBjYXRjaCB7XG4gICAgLyogbm9uLUpTT04gYm9keSAqL1xuICB9XG4gIHJldHVybiB7IHN0YXR1czogcmVzLnN0YXR1cywgZGF0YSB9O1xufVxuXG5hc3luYyBmdW5jdGlvbiBwb3N0Q21kKHNlc3Npb246IHN0cmluZyB8IHVuZGVmaW5lZCwgbXNnOiBSZWNvcmQ8c3RyaW5nLCB1bmtub3duPikge1xuICBjb25zdCBzID0gcmVxdWlyZVNlc3Npb24oc2Vzc2lvbik7XG4gIGxldCBzdGF0dXM6IG51bWJlcjtcbiAgbGV0IGRhdGE6IHVua25vd247XG4gIHRyeSB7XG4gICAgKHsgc3RhdHVzLCBkYXRhIH0gPSBhd2FpdCBhcGkocy5wb3J0LCBcIlBPU1RcIiwgXCIvY21kXCIsIG1zZykpO1xuICB9IGNhdGNoIChlcnIpIHtcbiAgICAvLyBgY2xvc2VgIHN0b3BzIHRoZSBzZXJ2ZXI7IGEgUkVTRVQgaXMgaXRzIHN1Y2Nlc3MuIEEgcmVmdXNlZCBjb25uZWN0aW9uXG4gICAgLy8gKGEgc3RhbGUgcG9pbnRlcikgaXMgYSB0cmFuc3BvcnQgZmFpbHVyZSBsaWtlIGFueSBvdGhlci5cbiAgICBjb25zdCBtZXNzYWdlID0gZXJyIGluc3RhbmNlb2YgRXJyb3IgPyBlcnIubWVzc2FnZSA6IFN0cmluZyhlcnIpO1xuICAgIGNvbnN0IGNvZGUgPSBlcnIgJiYgdHlwZW9mIGVyciA9PT0gXCJvYmplY3RcIiAmJiBcImNvZGVcIiBpbiBlcnIgPyBTdHJpbmcoZXJyLmNvZGUpIDogXCJcIjtcbiAgICBpZiAobXNnLnR5cGUgPT09IFwiY2xvc2VcIiAmJiAoY29kZSA9PT0gXCJFQ09OTlJFU0VUXCIgfHwgbWVzc2FnZS5pbmNsdWRlcyhcIkVDT05OUkVTRVRcIikpKVxuICAgICAgcmV0dXJuIHsgb2s6IHRydWUgfTtcbiAgICB0aHJvdyBlcnI7XG4gIH1cbiAgaWYgKHN0YXR1cyAhPT0gMjAwKSBkYWVtb25SZWZ1c2VkKFN0cmluZyhtc2cudHlwZSksIHN0YXR1cywgZGF0YSk7XG4gIHJldHVybiBkYXRhIGFzIFJlY29yZDxzdHJpbmcsIHVua25vd24+O1xufVxuXG4vLyDilIDilIAgdGhlIGZsYWcgcmVnaXN0cnkg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSAXG4vL1xuLy8gVGhlIG9wdGlvbnMgdGFibGUgdGhlIGtpdCdzIHBhcnNlciByZWFkcyAoYHNyYy9raXQvY2xpL3JlZ2lzdHJ5LnRzYCwgdGhyb3VnaFxuLy8gYGRlZmluZUNsaWAgYmVsb3cpLiBFeHBvcnRlZCBzbyBhIHRlc3QgY2FuIGJ1aWxkIHRoZSBzYW1lIHBhcnNlIHRoZSBDTEkgZG9lcy5cblxuZXhwb3J0IGNvbnN0IENMSV9PUFRJT05TID0ge1xuICBcImJvZHktZmlsZVwiOiB7IHR5cGU6IFwic3RyaW5nXCIgfSxcbiAgYnk6IHsgdHlwZTogXCJzdHJpbmdcIiB9LFxuICBjb250ZXh0OiB7IHR5cGU6IFwic3RyaW5nXCIgfSxcbiAgZG9jOiB7IHR5cGU6IFwic3RyaW5nXCIgfSxcbiAgZW50cnk6IHsgdHlwZTogXCJzdHJpbmdcIiB9LFxuICBmb3I6IHsgdHlwZTogXCJzdHJpbmdcIiB9LFxuICBmcm9tOiB7IHR5cGU6IFwic3RyaW5nXCIgfSxcbiAgZnVsbDogeyB0eXBlOiBcImJvb2xlYW5cIiB9LFxuICBxdW90ZTogeyB0eXBlOiBcInN0cmluZ1wiIH0sXG4gIHJlb3BlbjogeyB0eXBlOiBcImJvb2xlYW5cIiB9LFxuICBodW5rczogeyB0eXBlOiBcInN0cmluZ1wiIH0sXG4gIGludG86IHsgdHlwZTogXCJzdHJpbmdcIiB9LFxuICBsaWZlY3ljbGU6IHsgdHlwZTogXCJzdHJpbmdcIiB9LFxuICBsaW1pdDogeyB0eXBlOiBcInN0cmluZ1wiIH0sXG4gIGxhYmVsOiB7IHR5cGU6IFwic3RyaW5nXCIgfSxcbiAgXCJuby1vcGVuXCI6IHsgdHlwZTogXCJib29sZWFuXCIgfSxcbiAgb25jZTogeyB0eXBlOiBcImJvb2xlYW5cIiB9LFxuICBwYXRjaDogeyB0eXBlOiBcImJvb2xlYW5cIiB9LFxuICByZXN0b3JlOiB7IHR5cGU6IFwic3RyaW5nXCIgfSxcbiAgc2Vzc2lvbjogeyB0eXBlOiBcInN0cmluZ1wiIH0sXG4gIHNpbmNlOiB7IHR5cGU6IFwic3RyaW5nXCIgfSxcbiAgXCJzdGFydC10aW1lb3V0XCI6IHsgdHlwZTogXCJzdHJpbmdcIiB9LFxuICBzdGF0dXM6IHsgdHlwZTogXCJzdHJpbmdcIiB9LFxuICBzdGRpbjogeyB0eXBlOiBcImJvb2xlYW5cIiB9LFxuICB0YWc6IHsgdHlwZTogXCJzdHJpbmdcIiB9LFxuICB0aW1lb3V0OiB7IHR5cGU6IFwic3RyaW5nXCIgfSxcbiAgdHlwZTogeyB0eXBlOiBcInN0cmluZ1wiIH0sXG59IGFzIGNvbnN0O1xuXG5leHBvcnQgY2xhc3MgVXNhZ2VFcnJvciBleHRlbmRzIENsaUVycm9yIHtcbiAgY29uc3RydWN0b3IobWVzc2FnZTogc3RyaW5nLCBleHRyYT86IHsgaGludD86IHN0cmluZzsgY2hvaWNlcz86IHN0cmluZ1tdIH0pIHtcbiAgICBzdXBlcihcInVzYWdlXCIsIG1lc3NhZ2UsIGV4dHJhKTtcbiAgfVxufVxuXG4vKipcbiAqIGB0YWlsIC0tc2luY2VgIGlzIGEgQk9PS01BUks6IGFuIGV2ZW50IGlkICgtMSBmb3IgXCJldmVyeXRoaW5nXCIpLCBvcHRpb25hbGx5XG4gKiB3aXRoIHRoZSBlcG9jaCBvZiB0aGUgbG9nIGl0IGNhbWUgZnJvbSAoYDEyQDxlcG9jaD5gLCBhcyB0aGUgdGFpbCdzIG93biBoYW5kb2ZmIGxpbmUgcHJpbnRzIGl0IOKAlFxuICogYGtpdC93aXJlL3RhaWxIYW5kb2ZmLnRzYCwgRDIpLiBUaGUgZXBvY2ggaXMgd2hhdCBsZXRzIHRoZSB0YWlsIG5vdGljZSBhXG4gKiByZXN0YXJ0ZWQgZGFlbW9uIHdob3NlIG5ldyBsb2cgaXMgYWxyZWFkeSBwYXN0IHRoZSBpZC4gVmVyaWZ5LXBhc3MgZml4IDlcbiAqIHN0aWxsIGhvbGRzOiBgLS1zaW5jZSBhYmNgIHVzZWQgdG8gcGFyc2UgdG8gTmFOLCB3aGljaCB0aGUgbG9nIHJlYWRzIGFzIFwiZnJvbVxuICogdGhlIHN0YXJ0XCIsIHNvIGEgdHlwbyByZXBsYXllZCB0aGUgd2hvbGUgYnVmZmVyIGF0IGV4aXQgMCDigJQgaXQgaXMgcmVmdXNlZC5cbiAqL1xuZXhwb3J0IGZ1bmN0aW9uIHBhcnNlVGFpbFNpbmNlKHRva2VuOiBzdHJpbmcpOiB7IHNpbmNlOiBudW1iZXI7IGVwb2NoPzogc3RyaW5nIH0ge1xuICBjb25zdCByID0gcmVhZFNpbmNlKHRva2VuLCB7IGVwb2NoOiB0cnVlIH0pO1xuICBpZiAoIXIub2spIGRpZShyLm1lc3NhZ2UsIFwidXNhZ2VcIik7XG4gIHJldHVybiByLmVwb2NoID8geyBzaW5jZTogci5zaW5jZSwgZXBvY2g6IHIuZXBvY2ggfSA6IHsgc2luY2U6IHIuc2luY2UgfTtcbn1cblxuLyoqXG4gKiBgZmluZCAtLXNpbmNlYCBpcyBhIERBVEUsIHdoZXJlIGB0YWlsIC0tc2luY2VgIGlzIGFuIGV2ZW50IGlkIOKAlCB0aGUgZmxhZyBpc1xuICogc2hhcmVkLCB0aGUgbWVhbmluZyBpcyB0aGUgdmVyYidzLCBhbmQgcGRvY3Mgc3BlbGxzIHRoaXMgb25lIGAtLXNpbmNlYCB0b28uXG4gKiBBIHR5cG8gbXVzdCBub3Qgc2lsZW50bHkgd2lkZW4gdGhlIHNlYXJjaCwgc28gYSBub24tZGF0ZSBpcyBhIHVzYWdlIGVycm9yLlxuICovXG5leHBvcnQgZnVuY3Rpb24gcGFyc2VTaW5jZURhdGUodG9rZW46IHN0cmluZyk6IHN0cmluZyB7XG4gIGNvbnN0IHQgPSB0b2tlbi50cmltKCk7XG4gIGlmICghL15cXGR7NH0tXFxkezJ9LVxcZHsyfSQvLnRlc3QodCkgfHwgTnVtYmVyLmlzTmFOKERhdGUucGFyc2UodCkpKVxuICAgIGRpZShgZmluZCAtLXNpbmNlOiBcIiR7dG9rZW59XCIgaXMgbm90IGEgZGF0ZSDigJQgd3JpdGUgaXQgYXMgWVlZWS1NTS1ERGAsIFwidXNhZ2VcIik7XG4gIHJldHVybiB0O1xufVxuXG4vKiogYHYyYCBvciBgMmAg4oaSIDIuIEEgdmVyc2lvbiBudW1iZXIgaXMgYW4gb3BlbiBzZXQsIHNvIHRoZSByZWplY3Rpb24gY2FycmllcyBhIGhpbnQsIG5vdCBjaG9pY2VzLiAqL1xuZXhwb3J0IGZ1bmN0aW9uIHBhcnNlVmVyc2lvbih0b2tlbjogc3RyaW5nLCB3aGF0OiBzdHJpbmcpOiBudW1iZXIge1xuICBjb25zdCBtID0gL152PyhcXGQrKSQvLmV4ZWModG9rZW4udHJpbSgpKTtcbiAgaWYgKCFtIHx8IE51bWJlcihtWzFdKSA8IDEpXG4gICAgZGllKGAke3doYXR9OiBcIiR7dG9rZW59XCIgaXMgbm90IGEgdmVyc2lvbiDigJQgd3JpdGUgdjEsIHYyLCDigKZgLCBcInVzYWdlXCIsIHtcbiAgICAgIGhpbnQ6IFwicnVuOiBjbGkudHMgc3RhdGUgKGVhY2ggZG9jIGxpc3RzIGl0cyB2ZXJzaW9ucylcIixcbiAgICB9KTtcbiAgcmV0dXJuIE51bWJlcihtWzFdKTtcbn1cblxuLyoqIEEgbm9uLW5lZ2F0aXZlIHdob2xlIG51bWJlciBmcm9tIGEgZmxhZywgcmVmdXNlZCByYXRoZXIgdGhhbiBjb2VyY2VkLiAqL1xuZXhwb3J0IGZ1bmN0aW9uIHBhcnNlQ291bnQodG9rZW46IHN0cmluZywgd2hhdDogc3RyaW5nKTogbnVtYmVyIHtcbiAgY29uc3QgdCA9IHRva2VuLnRyaW0oKTtcbiAgaWYgKCEvXlxcZCskLy50ZXN0KHQpKSBkaWUoYCR7d2hhdH06IFwiJHt0b2tlbn1cIiBpcyBub3QgYSB3aG9sZSBudW1iZXJgLCBcInVzYWdlXCIpO1xuICByZXR1cm4gTnVtYmVyKHQpO1xufVxuXG4vKipcbiAqIEEgY29tcGFyaXNvbiBzaWRlOiBhIHZlcnNpb24sIG9yIHRoZSBmaWxlIG9mIHJlY29yZC4gYG9yaWdpbmFsYCBpcyBzcGVsbGVkXG4gKiBvdXQgcmF0aGVyIHRoYW4gb2ZmZXJlZCBhcyBgdjBgIOKAlCBhIHplcm90aCB2ZXJzaW9uIHdvdWxkIHJlYWQgbGlrZSB0aGVcbiAqIGVhcmxpZXN0IG9uZSwgYW5kIHRoZSBvcmlnaW5hbCBpcyBub3QgcGFydCBvZiB0aGUgdmVyc2lvbiBsaW5lIGF0IGFsbC5cbiAqL1xuZXhwb3J0IGZ1bmN0aW9uIHBhcnNlU2lkZSh0b2tlbjogc3RyaW5nLCB3aGF0OiBzdHJpbmcpOiBudW1iZXIgfCBcIm9yaWdpbmFsXCIge1xuICBjb25zdCB0ID0gdG9rZW4udHJpbSgpLnRvTG93ZXJDYXNlKCk7XG4gIC8vIGBzYXZlZGAgaXMgdGhlIHdvcmQgdGhlIFNVUkZBQ0UgdXNlcyBmb3IgdGhpcyBzaWRlIChFNDMpOyBgb3JpZ2luYWxgIGFuZFxuICAvLyBgZmlsZWAga2VlcCB3b3JraW5nIGJlY2F1c2UgdGhleSBhcmUgd2hhdCBlYXJsaWVyIHNlc3Npb25zIGFuZCBub3RlcyBzYXkuXG4gIGlmICh0ID09PSBcIm9yaWdpbmFsXCIgfHwgdCA9PT0gXCJmaWxlXCIgfHwgdCA9PT0gXCJzYXZlZFwiKSByZXR1cm4gXCJvcmlnaW5hbFwiO1xuICByZXR1cm4gcGFyc2VWZXJzaW9uKHRva2VuLCB3aGF0KTtcbn1cblxuLy8g4pSA4pSAIHZlcmJzIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgFxuXG4vKipcbiAqIOKblCBWRVJJRlktUEFTUyBGSVggNTogZXZlcnkgcGF0aCBpcyBjaGVja2VkIEhFUkUsIGJlZm9yZSBhbnkgZGFlbW9uIGV4aXN0cy5cbiAqIGBvcGVuIGRvYy5tZCBwaWMucG5nYCB1c2VkIHRvIHNwYXduIGEgc2Vzc2lvbiwgdGhlbiBmYWlsIG9uIHRoZSBzZWNvbmQgcGF0aFxuICogaW5zaWRlIGl0IOKAlCBsZWF2aW5nIGEgcnVubmluZyBkYWVtb24gYW5kIGEgbGl2ZSBwb2ludGVyIGJlaGluZCBhIGZhaWxlZFxuICogY29tbWFuZC4gQSBmb2xkZXIgb3IgYSBkb2N1bWVudCBpcyBhY2NlcHRlZDsgYSBtaXNzaW5nIHBhdGggaXMgbm90X2ZvdW5kLCBhXG4gKiBub24tZG9jdW1lbnQgZmlsZSBpcyB1c2FnZSB3aXRoIHRoZSBhY2NlcHRlZCBleHRlbnNpb25zIGFzIGBjaG9pY2VzYC5cbiAqL1xuZnVuY3Rpb24gY29udGV4dFBhdGhzKHBvczogc3RyaW5nW10pOiBzdHJpbmdbXSB7XG4gIGNvbnN0IHBhdGhzID0gcG9zLm1hcCgocCkgPT4gcmVzb2x2ZShwKSk7XG4gIGZvciAoY29uc3QgcCBvZiBwYXRocykge1xuICAgIGxldCBzdDogUmV0dXJuVHlwZTx0eXBlb2Ygc3RhdFN5bmM+O1xuICAgIHRyeSB7XG4gICAgICBzdCA9IHN0YXRTeW5jKHApO1xuICAgIH0gY2F0Y2gge1xuICAgICAgZGllKGBubyBzdWNoIGZpbGUgb3IgZm9sZGVyOiAke3B9YCwgXCJub3RfZm91bmRcIik7XG4gICAgfVxuICAgIGlmICghc3QuaXNEaXJlY3RvcnkoKSAmJiAhaXNEb2NOYW1lKHApKVxuICAgICAgZGllKGBub3QgYSBkb2N1bWVudCBzY3JpcHRvcml1bSBvcGVuczogJHtwfWAsIFwidXNhZ2VcIiwge1xuICAgICAgICBoaW50OiBcImFkZCBhIGZvbGRlciwgb3IgYSBmaWxlIHdpdGggb25lIG9mIHRoZXNlIGV4dGVuc2lvbnNcIixcbiAgICAgICAgY2hvaWNlczogWy4uLkRPQ19FWFRFTlNJT05TXSxcbiAgICAgIH0pO1xuICB9XG4gIHJldHVybiBwYXRocztcbn1cblxuLyoqXG4gKiBgLS1kb2NgIGFzIHRoZSBDTEkncyBjYWxsZXIgbWVhbnQgaXQgKHZlcmlmeS1wYXNzIGZpeCA4KTogYSB0b2tlbiB3aXRoIGEgcGF0aFxuICogc2VwYXJhdG9yLCBvciBvbmUgbmFtaW5nIGEgZmlsZSBpbiBUSElTIHByb2Nlc3MncyBjd2QsIGlzIHJlc29sdmVkIGhlcmUgdG8gYW5cbiAqIGFic29sdXRlIHBhdGgg4oCUIHRoZSBkYWVtb24ncyBjd2QgaXMgbm90IHRoZSBjYWxsZXIncy4gQW55dGhpbmcgZWxzZSAoYSBzbHVnLFxuICogYSB1bmlxdWUgZmlsZSBuYW1lKSBnb2VzIGFzIHR5cGVkLlxuICovXG5leHBvcnQgZnVuY3Rpb24gZG9jQXJnKHRva2VuOiBzdHJpbmcpOiBzdHJpbmcge1xuICBpZiAodG9rZW4uaW5jbHVkZXMoXCIvXCIpIHx8IGV4aXN0c1N5bmMocmVzb2x2ZSh0b2tlbikpKSByZXR1cm4gcmVzb2x2ZSh0b2tlbik7XG4gIHJldHVybiB0b2tlbjtcbn1cblxuLyoqIEtlZXAgdGhlIG5ld2VzdCBgTE9HX0tFRVAgLSAxYCBkYWVtb24gbG9ncywgc28gdGhlIG9uZSBhYm91dCB0byBiZSB3cml0dGVuIG1ha2VzIGBMT0dfS0VFUGAuICovXG5jb25zdCBMT0dfS0VFUCA9IDEwO1xuZnVuY3Rpb24gcHJ1bmVMb2dzKGxvZ0Rpcjogc3RyaW5nKTogdm9pZCB7XG4gIGxldCBuYW1lczogc3RyaW5nW10gPSBbXTtcbiAgdHJ5IHtcbiAgICBuYW1lcyA9IHJlYWRkaXJTeW5jKGxvZ0RpcikuZmlsdGVyKChuKSA9PiAvXmRhZW1vbi1cXGQrLVxcZCtcXC5sb2ckLy50ZXN0KG4pKTtcbiAgfSBjYXRjaCB7XG4gICAgcmV0dXJuO1xuICB9XG4gIGNvbnN0IGJ5QWdlID0gbmFtZXMuc29ydCgoYSwgYikgPT4gTnVtYmVyKGEuc3BsaXQoXCItXCIpWzFdKSAtIE51bWJlcihiLnNwbGl0KFwiLVwiKVsxXSkpO1xuICBmb3IgKGNvbnN0IG4gb2YgYnlBZ2Uuc2xpY2UoMCwgTWF0aC5tYXgoMCwgYnlBZ2UubGVuZ3RoIC0gKExPR19LRUVQIC0gMSkpKSkge1xuICAgIHRyeSB7XG4gICAgICB1bmxpbmtTeW5jKGpvaW4obG9nRGlyLCBuKSk7XG4gICAgfSBjYXRjaCB7XG4gICAgICAvKiBhbHJlYWR5IGdvbmUgKi9cbiAgICB9XG4gIH1cbn1cblxuYXN5bmMgZnVuY3Rpb24gY21kT3Blbihwb3M6IHN0cmluZ1tdLCBmbGFnczogUmVjb3JkPHN0cmluZywgc3RyaW5nIHwgYm9vbGVhbj4pIHtcbiAgY29uc3QgcGF0aHMgPSBjb250ZXh0UGF0aHMocG9zKTtcblxuICBpZiAodHlwZW9mIGZsYWdzLnJlc3RvcmUgPT09IFwic3RyaW5nXCIpIHtcbiAgICBjb25zdCBob21lID0gc2NyaXB0b3JpdW1Ib21lKCk7XG4gICAgY29uc3QgbWFuaWZlc3QgPSBqb2luKGhvbWUsIFwic2Vzc2lvbnNcIiwgZmxhZ3MucmVzdG9yZSwgXCJtYW5pZmVzdC5qc29uXCIpO1xuICAgIGlmICghZXhpc3RzU3luYyhtYW5pZmVzdCkpIHtcbiAgICAgIGxldCBzYXZlZDogc3RyaW5nW10gPSBbXTtcbiAgICAgIHRyeSB7XG4gICAgICAgIHNhdmVkID0gKFxuICAgICAgICAgIGF3YWl0IEFycmF5LmZyb21Bc3luYyhuZXcgQnVuLkdsb2IoXCIqL21hbmlmZXN0Lmpzb25cIikuc2Nhbihqb2luKGhvbWUsIFwic2Vzc2lvbnNcIikpKVxuICAgICAgICApLm1hcCgocCkgPT4gcC5zcGxpdChcIi9cIilbMF0gYXMgc3RyaW5nKTtcbiAgICAgIH0gY2F0Y2gge1xuICAgICAgICAvKiBubyBzZXNzaW9ucyBmb2xkZXI6IHRoZSBzZXQgaXMgZW1wdHksIGFuZCBzYXlzIHNvICovXG4gICAgICB9XG4gICAgICBkaWUoYG5vIHNhdmVkIHNlc3Npb24gXCIke2ZsYWdzLnJlc3RvcmV9XCIgdW5kZXIgJHtob21lfWAsIFwibm90X2ZvdW5kXCIsIHtcbiAgICAgICAgY2hvaWNlczogc2F2ZWQuc29ydCgpLFxuICAgICAgICAuLi4oc2F2ZWQubGVuZ3RoID09PSAwID8geyBoaW50OiBcIm5vIHNhdmVkIHNlc3Npb25zIGluIHRoaXMgaG9tZVwiIH0gOiB7fSksXG4gICAgICB9KTtcbiAgICB9XG4gICAgY29uc3QgbGl2ZSA9IHJlYWRTZXNzaW9uKGZsYWdzLnJlc3RvcmUpO1xuICAgIGlmIChsaXZlKSB7XG4gICAgICBjb25zdCBhbGl2ZSA9IGF3YWl0IGFwaShsaXZlLnBvcnQsIFwiR0VUXCIsIFwiL3N0YXRlXCIpLnRoZW4oXG4gICAgICAgIChyKSA9PiByLnN0YXR1cyA9PT0gMjAwLFxuICAgICAgICAoKSA9PiBmYWxzZSxcbiAgICAgICk7XG4gICAgICBpZiAoYWxpdmUpXG4gICAgICAgIGRpZShgc2Vzc2lvbiAke2ZsYWdzLnJlc3RvcmV9IGlzIGFscmVhZHkgcnVubmluZyBhdCAke2xpdmUudXJsfWAsIFwiY29uZmxpY3RcIiwge1xuICAgICAgICAgIGhpbnQ6IGB1c2UgaXQ6IGNsaS50cyBzdGF0ZSAtLXNlc3Npb24gJHtmbGFncy5yZXN0b3JlfWAsXG4gICAgICAgIH0pO1xuICAgIH1cbiAgfVxuXG4gIGNvbnN0IGRhZW1vbkFyZ3MgPSBbXCJydW5cIiwgU0VSVkVSX1NDUklQVF07XG4gIGlmICh0eXBlb2YgZmxhZ3MudGltZW91dCA9PT0gXCJzdHJpbmdcIikgZGFlbW9uQXJncy5wdXNoKFwiLS10aW1lb3V0XCIsIGZsYWdzLnRpbWVvdXQpO1xuICBpZiAodHlwZW9mIGZsYWdzLnJlc3RvcmUgPT09IFwic3RyaW5nXCIpIGRhZW1vbkFyZ3MucHVzaChcIi0tcmVzdG9yZVwiLCBmbGFncy5yZXN0b3JlKTtcbiAgLy8gRTIzOiBhIG5ldyBzZXNzaW9uJ3Mgd29ya3NwYWNlIGlzIHdoZXJlIGBvcGVuYCByYW4uIEEgcmVzdG9yZWQgb25lIGtlZXBzIGl0cyBvd24uXG4gIGVsc2UgZGFlbW9uQXJncy5wdXNoKFwiLS13b3Jrc3BhY2VcIiwgcHJvY2Vzcy5jd2QoKSk7XG5cbiAgY29uc3QgY3dkID0gZGFlbW9uQ3dkKCk7XG4gIGlmICghZXhpc3RzU3luYyhjd2QpKVxuICAgIGRpZShcbiAgICAgIGBzY3JpcHRvcml1bSBjYW5ub3Qgc3RhcnQgaXRzIGRhZW1vbjogdGhlIHdvcmtpbmcgZGlyZWN0b3J5IGl0IG5lZWRzIGlzIG1pc3Npbmcg4oCUICR7Y3dkfWAsXG4gICAgICBcImludGVybmFsXCIsXG4gICAgICB7XG4gICAgICAgIGhpbnQ6IFwiZGV2IG1vZGUgd2FzIHJlc29sdmVkIChubyBkaXN0L2luZGV4Lmh0bWwgYW5kIG5vIFNQRUxMQk9PS19TVVJGQUNFX01PREU9cmVsZWFzZSksIHdoaWNoIG5lZWRzIHNyYy9zY3JpcHRvcml1bS8g4oCUIHJlaW5zdGFsbCB0aGUgc3BlbGwgb3IgYnVpbGQgaXRcIixcbiAgICAgIH0sXG4gICAgKTtcbiAgLy8gVGhlIGRhZW1vbidzIHN0ZGVyciBnb2VzIHRvIGEgTE9HIEZJTEUsIG5vdCB0byB0aGlzIENMSSdzIHN0ZGVyci4gQW5cbiAgLy8gaW5oZXJpdGVkIHN0ZGVyciBvdXRsaXZlcyB0aGUgQ0xJIGluc2lkZSB0aGUgZGV0YWNoZWQgZGFlbW9uLCBzbyBhbnkgY2FsbGVyXG4gIC8vIHRoYXQgcmVhZHMgYG9wZW5gJ3Mgc3RkZXJyIHRvIEVPRiAoYSB0ZXN0IGhhcm5lc3MsIGEgdG9vbCBydW5uZXIpIHdhaXRzIGZvclxuICAvLyB0aGUgd2hvbGUgc2Vzc2lvbiDigJQgbWVhc3VyZWQ6IHRoZSBpbnRlZ3JhdGlvbiBjZWxsIGh1bmcgYXQgaXRzIDYwIHMgdGltZW91dC5cbiAgLy8gQSBmaWxlIGhvbGRzIG5vIHBpcGUsIGFuZCBhIHN0YXJ0IGZhaWx1cmUgYmVsb3cgcXVvdGVzIGl0cyB0YWlsLlxuICBjb25zdCBsb2dEaXIgPSBqb2luKHNjcmlwdG9yaXVtSG9tZSgpLCBcImxvZ3NcIik7XG4gIG1rZGlyU3luYyhsb2dEaXIsIHsgcmVjdXJzaXZlOiB0cnVlIH0pO1xuICAvLyBWZXJpZnktcGFzcyBmaXggNjogdGhlIGxvZ3MgdXNlZCB0byBwaWxlIHVwLCBvbmUgcGVyIGBvcGVuYCwgZm9yZXZlci5cbiAgcHJ1bmVMb2dzKGxvZ0Rpcik7XG4gIGNvbnN0IGxvZ1BhdGggPSBqb2luKGxvZ0RpciwgYGRhZW1vbi0ke0RhdGUubm93KCl9LSR7cHJvY2Vzcy5waWR9LmxvZ2ApO1xuICBkYWVtb25BcmdzLnB1c2goXCItLWxvZ1wiLCBsb2dQYXRoKTtcbiAgY29uc3QgbG9nRmQgPSBvcGVuU3luYyhsb2dQYXRoLCBcImFcIik7XG4gIGNvbnN0IGNoaWxkID0gc3Bhd24oXCJidW5cIiwgZGFlbW9uQXJncywge1xuICAgIGN3ZCxcbiAgICBkZXRhY2hlZDogdHJ1ZSxcbiAgICBzdGRpbzogW1wiaWdub3JlXCIsIFwicGlwZVwiLCBsb2dGZF0sXG4gICAgZW52OiBwcm9jZXNzLmVudixcbiAgfSk7XG4gIGNsb3NlU3luYyhsb2dGZCk7XG4gIGNoaWxkLnVucmVmKCk7XG5cbiAgY29uc3Qgc3RhcnRUaW1lb3V0TXMgPVxuICAgIHR5cGVvZiBmbGFnc1tcInN0YXJ0LXRpbWVvdXRcIl0gPT09IFwic3RyaW5nXCJcbiAgICAgID8gTWF0aC5tYXgoNTAwMCwgTnVtYmVyLnBhcnNlSW50KGZsYWdzW1wic3RhcnQtdGltZW91dFwiXSwgMTApICogMTAwMClcbiAgICAgIDogNDUwMDA7XG4gIGNvbnN0IGxpbmUgPSBhd2FpdCBuZXcgUHJvbWlzZTxzdHJpbmc+KChyZXMsIHJlaikgPT4ge1xuICAgIGxldCBidWYgPSBcIlwiO1xuICAgIGNvbnN0IHRpbWVyID0gc2V0VGltZW91dChcbiAgICAgICgpID0+XG4gICAgICAgIHJlaihcbiAgICAgICAgICBuZXcgRXJyb3IoXG4gICAgICAgICAgICBgZGFlbW9uIHN0YXJ0IHRpbWVvdXQgKCR7c3RhcnRUaW1lb3V0TXMgLyAxMDAwfXMpIOKAlCBwYXNzIC0tc3RhcnQtdGltZW91dCA8c2Vjb25kcz5gLFxuICAgICAgICAgICksXG4gICAgICAgICksXG4gICAgICBzdGFydFRpbWVvdXRNcyxcbiAgICApO1xuICAgIGNoaWxkLnN0ZG91dD8ub24oXCJkYXRhXCIsIChjaHVuazogQnVmZmVyKSA9PiB7XG4gICAgICBidWYgKz0gY2h1bmsudG9TdHJpbmcoKTtcbiAgICAgIGNvbnN0IG5sID0gYnVmLmluZGV4T2YoXCJcXG5cIik7XG4gICAgICBpZiAobmwgPj0gMCkge1xuICAgICAgICBjbGVhclRpbWVvdXQodGltZXIpO1xuICAgICAgICByZXMoYnVmLnNsaWNlKDAsIG5sKS50cmltKCkpO1xuICAgICAgfVxuICAgIH0pO1xuICAgIGNoaWxkLm9uKFwiZXJyb3JcIiwgKGVycikgPT4ge1xuICAgICAgY2xlYXJUaW1lb3V0KHRpbWVyKTtcbiAgICAgIHJlaihlcnIpO1xuICAgIH0pO1xuICAgIGNoaWxkLm9uKFwiZXhpdFwiLCAoY29kZSkgPT4ge1xuICAgICAgY2xlYXJUaW1lb3V0KHRpbWVyKTtcbiAgICAgIHJlaihuZXcgRXJyb3IoYGRhZW1vbiBleGl0ZWQgd2l0aCBjb2RlICR7Y29kZX0gYmVmb3JlIGl0cyBoYW5kc2hha2VgKSk7XG4gICAgfSk7XG4gIH0pLmNhdGNoKChlcnI6IHVua25vd24pID0+IHtcbiAgICBsZXQgdGFpbCA9IFwiXCI7XG4gICAgdHJ5IHtcbiAgICAgIHRhaWwgPSByZWFkRmlsZVN5bmMobG9nUGF0aCwgXCJ1dGY4XCIpLnRyaW0oKS5zbGljZSgtODAwKTtcbiAgICB9IGNhdGNoIHtcbiAgICAgIC8qIG5vIGxvZyB3cml0dGVuICovXG4gICAgfVxuICAgIGRpZShcbiAgICAgIGBzY3JpcHRvcml1bSBkYWVtb24gZmFpbGVkIHRvIHN0YXJ0OiAke2VyciBpbnN0YW5jZW9mIEVycm9yID8gZXJyLm1lc3NhZ2UgOiBTdHJpbmcoZXJyKX1gLFxuICAgICAgXCJpbnRlcm5hbFwiLFxuICAgICAgeyBoaW50OiB0YWlsID8gYGRhZW1vbiBsb2cgKCR7bG9nUGF0aH0pOiAke3RhaWx9YCA6IGBkYWVtb24gbG9nOiAke2xvZ1BhdGh9YCB9LFxuICAgICk7XG4gIH0pO1xuXG4gIC8vIFJlbGVhc2UgdGhlIGRhZW1vbidzIHN0ZG91dCBwaXBlLCBvciB0aGlzIENMSSdzIG5hdHVyYWwgcmV0dXJuIHdhaXRzIG9uIGFcbiAgLy8gc3RyZWFtIHRoYXQgbmV2ZXIgY2xvc2VzIChnbGFtb3VyIG1lYXN1cmVkIDkxIHMg4oaSIDEgcykuIENoZWNrZWQgZm9yIHRoZVxuICAvLyBNRVRIT0Q6IHVuZGVyIEJ1biB0aGlzIHBpcGUgaXMgYSBwbGFpbiBSZWFkYWJsZSB0aGF0IG5vbmV0aGVsZXNzIGhhcyB1bnJlZi5cbiAgY29uc3Qgb3V0ID0gY2hpbGQuc3Rkb3V0O1xuICBpZiAoIW91dCB8fCAhKFwidW5yZWZcIiBpbiBvdXQpIHx8IHR5cGVvZiBvdXQudW5yZWYgIT09IFwiZnVuY3Rpb25cIilcbiAgICB0aHJvdyBuZXcgRXJyb3IoXG4gICAgICBcInNjcmlwdG9yaXVtOiB0aGUgZGFlbW9uJ3Mgc3Rkb3V0IHBpcGUgaGFzIG5vIHVucmVmKCk7IGBvcGVuYCB3b3VsZCBuZXZlciBleGl0XCIsXG4gICAgKTtcbiAgb3V0LnVucmVmKCk7XG5cbiAgbGV0IGhzOiB7XG4gICAgdXJsOiBzdHJpbmc7XG4gICAgcG9ydDogbnVtYmVyO1xuICAgIHNlc3Npb25faWQ6IHN0cmluZztcbiAgICBvaz86IGJvb2xlYW47XG4gICAgc3RhdHVzPzogbnVtYmVyO1xuICAgIGVycm9yPzogc3RyaW5nO1xuICB9O1xuICB0cnkge1xuICAgIGhzID0gSlNPTi5wYXJzZShsaW5lKTtcbiAgfSBjYXRjaCB7XG4gICAgZGllKGB1bmV4cGVjdGVkIG91dHB1dCBmcm9tIGRhZW1vbjogJHtsaW5lfWAsIFwiaW50ZXJuYWxcIik7XG4gIH1cbiAgaWYgKGhzLm9rID09PSBmYWxzZSkgZGFlbW9uUmVmdXNlZChcIm9wZW5cIiwgaHMuc3RhdHVzID8/IDUwMCwgaHMpO1xuXG4gIGxldCBlbnRyaWVzOiB1bmtub3duW10gPSBbXTtcbiAgaWYgKHBhdGhzLmxlbmd0aCA+IDApIHtcbiAgICBjb25zdCByID0gYXdhaXQgcG9zdENtZChocy5zZXNzaW9uX2lkLCB7IHR5cGU6IFwiY29udGV4dC5hZGRcIiwgcGF0aHMgfSk7XG4gICAgZW50cmllcyA9IChyLmVudHJpZXMgYXMgdW5rbm93bltdKSA/PyBbXTtcbiAgfVxuICBwcmludEpzb24oeyAuLi5ocywgLi4uKHBhdGhzLmxlbmd0aCA+IDAgPyB7IGVudHJpZXMgfSA6IHt9KSB9KTtcblxuICBpZiAoIWZsYWdzW1wibm8tb3BlblwiXSkge1xuICAgIGNvbnN0IG9wZW5lciA9XG4gICAgICBwcm9jZXNzLnBsYXRmb3JtID09PSBcImRhcndpblwiID8gXCJvcGVuXCIgOiBwcm9jZXNzLnBsYXRmb3JtID09PSBcIndpbjMyXCIgPyBcInN0YXJ0XCIgOiBcInhkZy1vcGVuXCI7XG4gICAgc3Bhd24ob3BlbmVyLCBbaHMudXJsXSwgeyBkZXRhY2hlZDogdHJ1ZSwgc3RkaW86IFwiaWdub3JlXCIgfSkudW5yZWYoKTtcbiAgfVxufVxuXG5hc3luYyBmdW5jdGlvbiBjbWRBZGQocG9zOiBzdHJpbmdbXSwgc2Vzc2lvbjogc3RyaW5nIHwgdW5kZWZpbmVkKSB7XG4gIGNvbnN0IHBhdGhzID0gY29udGV4dFBhdGhzKHBvcyk7XG4gIHByaW50SnNvbihhd2FpdCBwb3N0Q21kKHNlc3Npb24sIHsgdHlwZTogXCJjb250ZXh0LmFkZFwiLCBwYXRocyB9KSk7XG59XG5cbmFzeW5jIGZ1bmN0aW9uIGNtZFN0YXRlKHNlc3Npb246IHN0cmluZyB8IHVuZGVmaW5lZCwgZnVsbDogYm9vbGVhbikge1xuICBjb25zdCBzID0gcmVxdWlyZVNlc3Npb24oc2Vzc2lvbik7XG4gIGNvbnN0IHsgc3RhdHVzLCBkYXRhIH0gPSBhd2FpdCBhcGkocy5wb3J0LCBcIkdFVFwiLCBgL3N0YXRlJHtmdWxsID8gXCI/ZnVsbD0xXCIgOiBcIlwifWApO1xuICBpZiAoc3RhdHVzICE9PSAyMDApIGRhZW1vblJlZnVzZWQoXCJzdGF0ZVwiLCBzdGF0dXMsIGRhdGEpO1xuICBwcmludEpzb24oZGF0YSk7XG59XG5cbi8qKlxuICogVGhlIE9ORSBwcm9zZSByZWFkZXI6IGFyZ3VtZW50cywgYC0tc3RkaW5gIG9yIGAtLWJvZHktZmlsZWAsIGV4YWN0bHkgb25lIG9mXG4gKiB0aGVtLiBgc2F5YC9gdGFza2AvYG5vdGVgIG5lZWQgYSBtZXNzYWdlIGFuZCB0cmltIGl0OyBgdmVyc2lvbi1uZXdgICgjMTE3KVxuICogbWF5IGhhdmUgbm9uZSAodGhlbiBpdCBjb3BpZXMpIGFuZCBrZWVwcyBpdHMgYm9keSBieXRlIGZvciBieXRlLCBiZWNhdXNlIGFcbiAqIHZlcnNpb24ncyB0ZXh0IGlzIGEgZG9jdW1lbnQsIG5vdCBhIGNoYXQgbGluZS5cbiAqXG4gKiBBIGJvZHkgZmlsZSB0aGF0IGlzIG5vdCB0aGVyZSBpcyBgdXNhZ2VgICgyKSBieSBkZWZhdWx0IOKAlCB3aGF0IGBzYXlgL2B0YXNrYC9cbiAqIGBub3RlYC9gbm90ZS1lZGl0YCBoYXZlIGFsd2F5cyBhbnN3ZXJlZCDigJQgYW5kIGBub3RfZm91bmRgICg1KSB3aGVyZSB0aGVcbiAqIGNhbGxlciBhc2tzIChgdmVyc2lvbi1uZXdgLCBuZXcgaW4gIzExNykuIOKaoCBBbGlnbmluZyB0aGUgb2xkZXIgdmVyYnMgb24gNSBpc1xuICogYSBjYWxsZXItdmlzaWJsZSBleGl0LWNvZGUgY2hhbmdlLCBoZWxkIGZvciBhIHJlbGVhc2UgdGhhdCBjYW4gY2FycnkgYVxuICogYnJlYWtpbmctY2hhbmdlcyBub3RlOyBjbGktY29udHJhY3QgcGlucyB0aGVpciAyIHVudGlsIHRoZW4uXG4gKi9cbmFzeW5jIGZ1bmN0aW9uIHJlYWRQcm9zZShcbiAgdmVyYjogc3RyaW5nLFxuICBwb3M6IHN0cmluZ1tdLFxuICBmbGFnczogUmVjb3JkPHN0cmluZywgc3RyaW5nIHwgYm9vbGVhbj4sXG4gIG86IHsgb3B0aW9uYWw/OiBib29sZWFuOyBtaXNzaW5nRmlsZT86IFwidXNhZ2VcIiB8IFwibm90X2ZvdW5kXCIgfSA9IHt9LFxuKTogUHJvbWlzZTxzdHJpbmcgfCB1bmRlZmluZWQ+IHtcbiAgY29uc3Qgc291cmNlcyA9IFtcbiAgICBwb3MubGVuZ3RoID4gMCxcbiAgICBmbGFncy5zdGRpbiA9PT0gdHJ1ZSxcbiAgICB0eXBlb2YgZmxhZ3NbXCJib2R5LWZpbGVcIl0gPT09IFwic3RyaW5nXCIsXG4gIF0uZmlsdGVyKEJvb2xlYW4pLmxlbmd0aDtcbiAgaWYgKHNvdXJjZXMgPT09IDAgJiYgby5vcHRpb25hbCkgcmV0dXJuIHVuZGVmaW5lZDtcbiAgaWYgKHNvdXJjZXMgIT09IDEpXG4gICAgZGllKFxuICAgICAgc291cmNlcyA9PT0gMFxuICAgICAgICA/IGAke3ZlcmJ9IG5lZWRzIGEgbWVzc2FnZWBcbiAgICAgICAgOiBvLm9wdGlvbmFsXG4gICAgICAgICAgPyBgJHt2ZXJifSB0YWtlcyBpdHMgYm9keSBmcm9tIG9uZSBwbGFjZTogLS1zdGRpbiBvciAtLWJvZHktZmlsZSwgbm90IGJvdGhgXG4gICAgICAgICAgOiBgJHt2ZXJifSB0YWtlcyBpdHMgbWVzc2FnZSBmcm9tIGV4YWN0bHkgb25lIHBsYWNlOiBhcmd1bWVudHMsIC0tc3RkaW4gb3IgLS1ib2R5LWZpbGVgLFxuICAgICAgXCJ1c2FnZVwiLFxuICAgICAge1xuICAgICAgICBoaW50OiBvLm9wdGlvbmFsXG4gICAgICAgICAgPyBcImdpdmUgdGhlIHRleHQgdGhyb3VnaCAtLWJvZHktZmlsZSA8cGF0aD4gb3IgLS1zdGRpbiAobmV2ZXIgYW4gdW5xdW90ZWQgaGVyZWRvYylcIlxuICAgICAgICAgIDogXCJnaXZlIHRoZSB0ZXh0IGFzIGFyZ3VtZW50cywgb3IgcHJvc2UgdGhyb3VnaCAtLWJvZHktZmlsZSA8cGF0aD4gLyAtLXN0ZGluIChuZXZlciBhbiB1bnF1b3RlZCBoZXJlZG9jKVwiLFxuICAgICAgICBjaG9pY2VzOiBbXCItLXN0ZGluXCIsIFwiLS1ib2R5LWZpbGVcIl0sXG4gICAgICB9LFxuICAgICk7XG4gIGxldCB0ZXh0OiBzdHJpbmc7XG4gIGlmIChmbGFncy5zdGRpbiA9PT0gdHJ1ZSkgdGV4dCA9IGF3YWl0IG5ldyBSZXNwb25zZShCdW4uc3RkaW4uc3RyZWFtKCkpLnRleHQoKTtcbiAgZWxzZSBpZiAodHlwZW9mIGZsYWdzW1wiYm9keS1maWxlXCJdID09PSBcInN0cmluZ1wiKSB7XG4gICAgY29uc3QgcGF0aCA9IGZsYWdzW1wiYm9keS1maWxlXCJdO1xuICAgIGlmICghZXhpc3RzU3luYyhwYXRoKSkgZGllKGAke3ZlcmJ9OiAtLWJvZHktZmlsZSBub3QgZm91bmQ6ICR7cGF0aH1gLCBvLm1pc3NpbmdGaWxlID8/IFwidXNhZ2VcIik7XG4gICAgLy8gQSBkaXJlY3RvcnkgaXMgdGhlIGNhbGxlcidzIG1pc3Rha2UsIHRoZSBzYW1lIGZvciBldmVyeSB2ZXJiIOKAlCBpdCB1c2VkXG4gICAgLy8gdG8gcmVhY2ggcmVhZEZpbGVTeW5jIGFuZCBjb21lIG91dCBhcyBhbiBpbnRlcm5hbCBFSVNESVIgKGV4aXQgMSkuXG4gICAgaWYgKHN0YXRTeW5jKHBhdGgpLmlzRGlyZWN0b3J5KCkpXG4gICAgICBkaWUoYCR7dmVyYn06IC0tYm9keS1maWxlIGlzIGEgZGlyZWN0b3J5LCBub3QgYSBmaWxlOiAke3BhdGh9YCwgXCJ1c2FnZVwiLCB7XG4gICAgICAgIGhpbnQ6IFwicGFzcyB0aGUgcGF0aCBvZiB0aGUgZmlsZSB0aGF0IGhvbGRzIHRoZSB0ZXh0XCIsXG4gICAgICB9KTtcbiAgICAvLyBTbyBpcyBhIGZpbGUgdGhpcyBwcm9jZXNzIG1heSBub3QgcmVhZCAoY2htb2QgMDAwKTogaXQgdXNlZCB0byBjb21lIG91dFxuICAgIC8vIGFzIGFuIGludGVybmFsIHJhdyBFQUNDRVMgKGV4aXQgMSkuIEl0IGlzIHRoZXJlIGFuZCBpcyBhIGZpbGUsIHNvIGFueVxuICAgIC8vIGZhaWx1cmUgdG8gcmVhZCBpdCBpcyBcImNhbm5vdCBiZSByZWFkXCIg4oCUIHRoZSBjYWxsZXIncyB0byBmaXguXG4gICAgdHJ5IHtcbiAgICAgIHRleHQgPSByZWFkRmlsZVN5bmMocGF0aCwgXCJ1dGY4XCIpO1xuICAgIH0gY2F0Y2gge1xuICAgICAgZGllKGAke3ZlcmJ9OiAtLWJvZHktZmlsZSBjYW5ub3QgYmUgcmVhZDogJHtwYXRofWAsIFwidXNhZ2VcIiwge1xuICAgICAgICBoaW50OiBcImNoZWNrIHRoYXQgdGhlIGZpbGUncyBwZXJtaXNzaW9ucyBsZXQgeW91IHJlYWQgaXQsIG9yIHBhc3MgYW5vdGhlciBmaWxlXCIsXG4gICAgICB9KTtcbiAgICB9XG4gIH0gZWxzZSB0ZXh0ID0gcG9zLmpvaW4oXCIgXCIpO1xuICBpZiAoIXRleHQudHJpbSgpKVxuICAgIGRpZShcbiAgICAgIG8ub3B0aW9uYWwgPyBgJHt2ZXJifTogdGhlIGJvZHkgaXMgZW1wdHlgIDogYCR7dmVyYn06IHRoZSBtZXNzYWdlIGlzIGVtcHR5YCxcbiAgICAgIFwidXNhZ2VcIixcbiAgICAgIG8ub3B0aW9uYWwgPyB7IGhpbnQ6IGBkcm9wIC0tYm9keS1maWxlLy0tc3RkaW4gdG8gY29weSB0aGUgc291cmNlIHZlcnNpb24gaW5zdGVhZGAgfSA6IHt9LFxuICAgICk7XG4gIHJldHVybiB0ZXh0O1xufVxuXG5hc3luYyBmdW5jdGlvbiByZWFkU2F5Qm9keShcbiAgcG9zOiBzdHJpbmdbXSxcbiAgZmxhZ3M6IFJlY29yZDxzdHJpbmcsIHN0cmluZyB8IGJvb2xlYW4+LFxuICB2ZXJiOiBzdHJpbmcsXG4pOiBQcm9taXNlPHN0cmluZz4ge1xuICByZXR1cm4gKChhd2FpdCByZWFkUHJvc2UodmVyYiwgcG9zLCBmbGFncykpID8/IFwiXCIpLnRyaW0oKTtcbn1cblxuLyoqXG4gKiBXaGV0aGVyIHRoZSB0YWlsIGhhcyBhbHJlYWR5IHJlcG9ydGVkIHRoYXQgaXQgbG9zdCB0aGUgZGFlbW9uIChFNTUpLiBNb2R1bGVcbiAqIHNjb3BlIGJlY2F1c2UgYSB0YWlsIGlzIG9uZSBwcm9jZXNzIGRvaW5nIG9uZSB0aGluZywgYW5kIHRoZSB0d28gaG9va3MgdGhhdFxuICogcmVhZCBpdCBhcmUgaGFuZGVkIHRvIGEgY2xpZW50IHRoYXQgb3ducyBpdHMgb3duIGxvb3AuXG4gKi9cbmxldCBkaXNjb25uZWN0ZWQgPSBmYWxzZTtcblxuLyoqXG4gKiBUaGUgd2F0Y2guIEVuZHMgaXRzZWxmIGJlZm9yZSBNb25pdG9yJ3MgY2FwIHdpdGggb25lIGxpbmUgbmFtaW5nIHRoZSBuZXh0XG4gKiBhY3QgKGBzcmMva2l0L3dpcmUvdGFpbEhhbmRvZmYudHNgKTogcmUtYXJtIE1vbml0b3IsIGdvIHRvIGEgYmFja2dyb3VuZFxuICogYC0tb25jZWAsIG9yIGNvbWUgYmFjayBmcm9tIGEgY2xvc2VkIG9yIGxvc3Qgc2Vzc2lvbiB3aXRoIGBvcGVuIC0tcmVzdG9yZWAuXG4gKiBBIGAtLXNpbmNlYCByZS1hcm0gcHJpbnRzIG5vIGdyb3VuZGluZyBsaW5lOiB0aGUgYWdlbnQgYWxyZWFkeSBrbm93cyB0aGVcbiAqIHNlc3Npb24sIGFuZCB0aGUgbGluZSB3b3VsZCBjb3VudCBhcyBub2lzZSBpbiB0aGUgd2luZG93J3Mgd2FrZS5cbiAqL1xuYXN5bmMgZnVuY3Rpb24gY21kVGFpbChcbiAgc2Vzc2lvbjogc3RyaW5nIHwgdW5kZWZpbmVkLFxuICBzaW5jZTogbnVtYmVyLFxuICBvOiB7IG9uY2U6IGJvb2xlYW47IHNpbmNlR2l2ZW46IGJvb2xlYW47IGVwb2NoPzogc3RyaW5nIH0sXG4pOiBQcm9taXNlPG51bWJlcj4ge1xuICBsZXQgYm91bmRJZCA9IHNlc3Npb247XG4gIGNvbnN0IHJlQXJtID0gc2Vzc2lvbiAhPT0gdW5kZWZpbmVkIHx8IG8uc2luY2VHaXZlbjtcbiAgbGV0IGdyb3VuZGVkID0gby5zaW5jZUdpdmVuO1xuICBjb25zdCBwaW4gPSAoKSA9PiAoYm91bmRJZCAhPT0gdW5kZWZpbmVkID8gW1wiLS1zZXNzaW9uXCIsIGJvdW5kSWRdIDogW10pO1xuICByZXR1cm4gYXdhaXQgdGFpbFdpdGhIYW5kb2ZmPHsgaWQ/OiBudW1iZXI7IGVwb2NoPzogc3RyaW5nOyB0eXBlPzogc3RyaW5nOyBieT86IHN0cmluZyB9PihcbiAgICB7XG4gICAgICByZXNvbHZlOiAoKSA9PiB7XG4gICAgICAgIGNvbnN0IHMgPSByZWFkU2Vzc2lvbihib3VuZElkKTtcbiAgICAgICAgaWYgKCFzKSByZXR1cm4gbnVsbDtcbiAgICAgICAgaWYgKCFib3VuZElkKSBib3VuZElkID0gcy5zZXNzaW9uX2lkO1xuICAgICAgICBpZiAoIWdyb3VuZGVkKSB7XG4gICAgICAgICAgZ3JvdW5kZWQgPSB0cnVlO1xuICAgICAgICAgIHByb2Nlc3Muc3Rkb3V0LndyaXRlKFxuICAgICAgICAgICAgYCR7SlNPTi5zdHJpbmdpZnkoeyB0eXBlOiBcImdyb3VuZGluZ1wiLCBzZXNzaW9uX2lkOiBzLnNlc3Npb25faWQsIHBvcnQ6IHMucG9ydCB9KX1cXG5gLFxuICAgICAgICAgICk7XG4gICAgICAgIH1cbiAgICAgICAgcmV0dXJuIGBodHRwOi8vMTI3LjAuMC4xOiR7cy5wb3J0fWA7XG4gICAgICB9LFxuICAgICAgb25VbnJlc29sdmVkOiAoeyBldmVyUmVzb2x2ZWQgfSkgPT4ge1xuICAgICAgICAvLyBEMTogYSB0YWlsIGdpdmVuIC0tc2Vzc2lvbiBvciBhIGJvb2ttYXJrIGlzIHJlLWFybWluZyBhbiBFWElTVElOR1xuICAgICAgICAvLyBzZXNzaW9uLCBzbyBub3QgZmluZGluZyBpdCBtZWFucyBpdCBjbG9zZWQgKGluIHRoZSBnYXAsIHNheSkg4oCUIHRoZVxuICAgICAgICAvLyBoYW5kb2ZmIHNheXMgYHRhaWwuY2xvc2VkYCwgbmV2ZXIgYSBzaWxlbnQgcmV0cnktZm9yZXZlci5cbiAgICAgICAgaWYgKGV2ZXJSZXNvbHZlZCB8fCByZUFybSkgcmV0dXJuIFwic3RvcFwiO1xuICAgICAgICBwcm9jZXNzLnN0ZGVyci53cml0ZShcIiMgbm8gc2Vzc2lvbiB5ZXQsIHJldHJ5aW5n4oCmXFxuXCIpO1xuICAgICAgICByZXR1cm4gXCJyZXRyeVwiO1xuICAgICAgfSxcbiAgICAgIHBhdGg6IFwiL2V2ZW50c1wiLFxuICAgICAgc2luY2UsXG4gICAgICAuLi4oby5lcG9jaCA/IHsgc2luY2VFcG9jaDogby5lcG9jaCB9IDoge30pLFxuICAgICAgY3Vyc29yT2Y6IChldikgPT4gKHR5cGVvZiBldi5pZCA9PT0gXCJudW1iZXJcIiA/IGV2LmlkIDogdW5kZWZpbmVkKSxcbiAgICAgIGVwb2NoT2Y6IChldikgPT4gKHR5cGVvZiBldi5lcG9jaCA9PT0gXCJzdHJpbmdcIiA/IGV2LmVwb2NoIDogdW5kZWZpbmVkKSxcbiAgICAgIC8vIEEgZGlmZmVyZW50IGVwb2NoIG9uIHJlY29ubmVjdCA9IHRoZSBkYWVtb24gcmVzdGFydGVkOyBpZHMgYmVnYW4gYWdhaW4uXG4gICAgICBvbkVwb2NoQ2hhbmdlOiAoZXBvY2gpID0+IEpTT04uc3RyaW5naWZ5KHsgdHlwZTogXCJlcG9jaC5jaGFuZ2VkXCIsIGVwb2NoIH0pLFxuICAgICAgdGVybWluYWw6IChldikgPT4gZXYudHlwZSA9PT0gXCJjbG9zZWRcIixcbiAgICAgIGlkbGVNczogVEFJTF9JRExFX01TLFxuICAgICAgLy8g4puUIEEgS0VFUEFMSVZFIElTIFBST09GIE9GIExJRkUsIHNvIGl0IGlzIGFsc28gd2hhdCBjbGVhcnMgYSByZXBvcnRlZFxuICAgICAgLy8gZGlzY29ubmVjdGlvbi4gVGhlcmUgaXMgbm8gYG9uQ29ubmVjdGAgaG9vayBhbmQgdGhpcyBpcyB0aGUgaG9uZXN0XG4gICAgICAvLyBzdWJzdGl0dXRlOiB0aGUgZGFlbW9uIG9ubHkgc2VuZHMgY29tbWVudHMgZG93biBhIGxpdmUgc3RyZWFtLlxuICAgICAgb25Db21tZW50OiAoKSA9PiB7XG4gICAgICAgIGlmICghZGlzY29ubmVjdGVkKSByZXR1cm4gXCI6IHNjcmlwdG9yaXVtLWtlZXBhbGl2ZVwiO1xuICAgICAgICBkaXNjb25uZWN0ZWQgPSBmYWxzZTtcbiAgICAgICAgcmV0dXJuIEpTT04uc3RyaW5naWZ5KHsgdHlwZTogXCJ0YWlsLnJlY29ubmVjdGVkXCIgfSk7XG4gICAgICB9LFxuICAgICAgLy8g4puUIE9ORSBMSU5FIFBFUiBFUElTT0RFLCBOT1QgUEVSIEFUVEVNUFQuIFRoZSBjbGllbnQgcmVjb25uZWN0cyB3aXRoXG4gICAgICAvLyBiYWNrb2ZmIGZvcmV2ZXIsIHNvIGEgaG9vayB0aGF0IHNwb2tlIGV2ZXJ5IHRpbWUgd291bGQgZW1pdCBhIGxpbmUgZXZlcnlcbiAgICAgIC8vIGZldyBzZWNvbmRzIGZvciBhcyBsb25nIGFzIHRoZSBkYWVtb24gc3RheWVkIGRvd24g4oCUIHdoaWNoIGlzIGhvdyBhXG4gICAgICAvLyB3YXRjaGVyIGdldHMgbXV0ZWQsIGFuZCB0aGVuIG5vYm9keSBoZWFycyB0aGUgbmV4dCByZWFsIHRoaW5nLlxuICAgICAgLy9cbiAgICAgIC8vIOKaoCBXSFkgVEhJUyBFWElTVFMgQVQgQUxMOiB3aXRob3V0IGl0IGEgREVBRCBkYWVtb24gYW5kIGEgUVVJRVQgb25lIGFyZVxuICAgICAgLy8gdGhlIHNhbWUgdGhpbmcgZnJvbSBvdXQgaGVyZS4gQSBncmFjZWZ1bCBjbG9zZSBlbWl0cyBgY2xvc2VkYCBhbmQgZW5kc1xuICAgICAgLy8gdGhlIHRhaWw7IGEgY3Jhc2gsIGEga2lsbCAtOSBvciBhIHNsZWVwaW5nIGxhcHRvcCBlbWl0cyBub3RoaW5nLCB0aGVcbiAgICAgIC8vIGNsaWVudCByZXRyaWVzIGluIHNpbGVuY2UsIGFuZCB0aGUgYWJzZW5jZSBvZiBldmVudHMgaXMgbm90IGFuIGV2ZW50LiBBXG4gICAgICAvLyB3YXRjaGVyIHdhaXRpbmcgZm9yIHRoZSBodW1hbidzIG5leHQgbWVzc2FnZSB3b3VsZCB3YWl0IGZvcmV2ZXIgYW5kXG4gICAgICAvLyBuZXZlciBsZWFybiBpdCBoYWQgc3RvcHBlZCBsaXN0ZW5pbmcuIChGb3VuZCAyMDI2LTA5LTE0IHdoaWxlIGFuc3dlcmluZ1xuICAgICAgLy8gQ29sZSdzIHF1ZXN0aW9uIGFib3V0IHdoZXRoZXIgYSB0aW1lb3V0IHdvdWxkIG5vdGlmeSBtZS4gSXQgd291bGQgbm90LilcbiAgICAgIG9uRGlzY29ubmVjdDogKHsgY2F1c2UsIHN0YXR1cyB9KSA9PiB7XG4gICAgICAgIGlmIChkaXNjb25uZWN0ZWQpIHJldHVybiBudWxsO1xuICAgICAgICBkaXNjb25uZWN0ZWQgPSB0cnVlO1xuICAgICAgICByZXR1cm4gSlNPTi5zdHJpbmdpZnkoe1xuICAgICAgICAgIHR5cGU6IFwidGFpbC5kaXNjb25uZWN0ZWRcIixcbiAgICAgICAgICBjYXVzZSxcbiAgICAgICAgICAuLi4oc3RhdHVzICE9PSB1bmRlZmluZWQgPyB7IHN0YXR1cyB9IDoge30pLFxuICAgICAgICAgIG5vdGU6IFwicmV0cnlpbmc7IHRoZSBzZXNzaW9uIG1heSBoYXZlIGNsb3NlZCBvciBjcmFzaGVkXCIsXG4gICAgICAgIH0pO1xuICAgICAgfSxcbiAgICB9LFxuICAgIHtcbiAgICAgIHNwZWxsOiBcInNjcmlwdG9yaXVtXCIsXG4gICAgICBtb2RlOiBvLm9uY2UgPyBcIm9uY2VcIiA6IFwid2F0Y2hcIixcbiAgICAgIHByZXNlbmNlOiBmYWxzZSxcbiAgICAgIC8vIFRoZSBgY2xvc2VkYCBldmVudCBzYXlzIHdobyBlbmRlZCBpdDsgYHRhaWwuY2xvc2VkYCBjYXJyaWVzIGl0IGFzXG4gICAgICAvLyBgYnlgLCBhbmQgYSBodW1hbiBlbmQgdGVsbHMgdGhlIGFnZW50IHRvIHN0b3AgYW5kIG5vdCByZW9wZW4uXG4gICAgICBjbG9zZWRCeTogKGV2KSA9PiAodHlwZW9mIGV2LmJ5ID09PSBcInN0cmluZ1wiID8gZXYuYnkgOiB1bmRlZmluZWQpLFxuICAgICAgLy8gQSByZS1hcm0gYWZ0ZXIgdGhlIGVuZCBuZXZlciBzZWVzIGBjbG9zZWRgIChEMSk7IHRoZSBtYW5pZmVzdCdzXG4gICAgICAvLyBgZW5kZWQuYnlgIGlzIHRoZSBzYW1lIGZhY3QsIGFuZCBpdCBvdXRsaXZlcyB0aGUgZGFlbW9uLlxuICAgICAgZ29uZUJ5OiAoKSA9PiAoYm91bmRJZCAhPT0gdW5kZWZpbmVkID8gZW5kZWRCeShib3VuZElkKSA6IHVuZGVmaW5lZCksXG4gICAgICBjb21tYW5kczoge1xuICAgICAgICB0YWlsOiAoeyBzaW5jZTogYXQsIG9uY2UsIGVwb2NoIH0pID0+IHRhaWxDb21tYW5kKFtcInRhaWxcIiwgLi4ucGluKCldLCBhdCwgb25jZSwgZXBvY2gpLFxuICAgICAgICBjb21lQmFjazogKCkgPT4gY29tbWFuZExpbmUoW1wib3BlblwiLCBcIi0tcmVzdG9yZVwiLCBib3VuZElkID8/IFwiPGlkPlwiLCBcIi0tbm8tb3BlblwiXSksXG4gICAgICB9LFxuICAgIH0sXG4gICk7XG59XG5cbmZ1bmN0aW9uIHZlcnNpb25JbmZvKCk6IHsgbmFtZTogc3RyaW5nOyB2ZXJzaW9uOiBzdHJpbmcgfSB7XG4gIHRyeSB7XG4gICAgY29uc3QgcmF3ID0gcmVhZEZpbGVTeW5jKGpvaW4oU0tJTExfUk9PVCwgXCIuLlwiLCBcIi4uXCIsIFwiLmNsYXVkZS1wbHVnaW5cIiwgXCJwbHVnaW4uanNvblwiKSwgXCJ1dGY4XCIpO1xuICAgIGNvbnN0IHBrZyA9IEpTT04ucGFyc2UocmF3KSBhcyB7IHZlcnNpb24/OiB1bmtub3duIH07XG4gICAgaWYgKHR5cGVvZiBwa2cudmVyc2lvbiA9PT0gXCJzdHJpbmdcIikgcmV0dXJuIHsgbmFtZTogXCJzY3JpcHRvcml1bVwiLCB2ZXJzaW9uOiBwa2cudmVyc2lvbiB9O1xuICB9IGNhdGNoIHtcbiAgICAvKiBmYWxsIHRocm91Z2ggKi9cbiAgfVxuICByZXR1cm4geyBuYW1lOiBcInNjcmlwdG9yaXVtXCIsIHZlcnNpb246IFwidW5rbm93blwiIH07XG59XG5cbi8qKlxuICogRTI0J3MgdmVyYnM6IHRoZSBhZ2VudCdzIGhhbGYgb2YgdGhlIHN0cnVjdHVyZSBvcHMgdGhlIGh1bWFuIHJlYWNoZXMgYnkgbWVudXNcbiAqIGFuZCBkcmFnIGFuZCBkcm9wLiBFYWNoIHJlc29sdmVzIGl0cyBwYXRocyBhZ2FpbnN0IFRISVMgcHJvY2VzcydzIGN3ZCBhbmRcbiAqIHBvc3RzIG9uZSBvcDsgdGhlIGRhZW1vbiBkb2VzIHRoZSBjaGFuZ2UgYW5kIGFubm91bmNlcyBpdCBpbiB0aGUgY2hhdC5cbiAqL1xuYXN5bmMgZnVuY3Rpb24gc3RydWN0dXJlQ21kKHNlc3Npb246IHN0cmluZyB8IHVuZGVmaW5lZCwgb3A6IFJlY29yZDxzdHJpbmcsIHVua25vd24+KSB7XG4gIHByaW50SnNvbihhd2FpdCBwb3N0Q21kKHNlc3Npb24sIG9wKSk7XG59XG5cbi8qKiBgaW1wb3J0IDxmaWxlPmA6IHRoZSBmaWxlJ3MgVEVYVCBpcyBzZW50LCBzbyB0aGUgZGFlbW9uIHdyaXRlcyBhIGNvcHkgKEUyMykuICovXG5hc3luYyBmdW5jdGlvbiBjbWRJbXBvcnQoZmlsZTogc3RyaW5nLCBpbnRvOiBzdHJpbmcgfCB1bmRlZmluZWQsIHNlc3Npb246IHN0cmluZyB8IHVuZGVmaW5lZCkge1xuICBjb25zdCBhYnMgPSByZXNvbHZlKGZpbGUpO1xuICBsZXQgc3Q6IFJldHVyblR5cGU8dHlwZW9mIHN0YXRTeW5jPjtcbiAgdHJ5IHtcbiAgICBzdCA9IHN0YXRTeW5jKGFicyk7XG4gIH0gY2F0Y2gge1xuICAgIGRpZShgbm8gc3VjaCBmaWxlOiAke2Fic31gLCBcIm5vdF9mb3VuZFwiKTtcbiAgfVxuICBpZiAoIXN0LmlzRmlsZSgpIHx8ICFpc0RvY05hbWUoYWJzKSlcbiAgICBkaWUoYG5vdCBhIGRvY3VtZW50IHNjcmlwdG9yaXVtIG9wZW5zOiAke2Fic31gLCBcInVzYWdlXCIsIHsgY2hvaWNlczogWy4uLkRPQ19FWFRFTlNJT05TXSB9KTtcbiAgYXdhaXQgc3RydWN0dXJlQ21kKHNlc3Npb24sIHtcbiAgICB0eXBlOiBcImltcG9ydFwiLFxuICAgIG5hbWU6IGFicy5zcGxpdChcIi9cIikucG9wKCkgYXMgc3RyaW5nLFxuICAgIHRleHQ6IHJlYWRGaWxlU3luYyhhYnMsIFwidXRmOFwiKSxcbiAgICAuLi4oaW50byAhPT0gdW5kZWZpbmVkID8geyBpbnRvOiByZXNvbHZlKGludG8pIH0gOiB7fSksXG4gIH0pO1xufVxuXG4vKiogYHdvcmtzcGFjZWAgYWxvbmUgcHJpbnRzIGl0OyBgd29ya3NwYWNlIDxkaXI+YCBzZXRzIGl0LiAqL1xuYXN5bmMgZnVuY3Rpb24gY21kV29ya3NwYWNlKGRpcjogc3RyaW5nIHwgdW5kZWZpbmVkLCBzZXNzaW9uOiBzdHJpbmcgfCB1bmRlZmluZWQpIHtcbiAgaWYgKGRpciAhPT0gdW5kZWZpbmVkKVxuICAgIHJldHVybiBzdHJ1Y3R1cmVDbWQoc2Vzc2lvbiwgeyB0eXBlOiBcIndvcmtzcGFjZS5zZXRcIiwgcGF0aDogcmVzb2x2ZShkaXIpIH0pO1xuICBjb25zdCBzID0gcmVxdWlyZVNlc3Npb24oc2Vzc2lvbik7XG4gIGNvbnN0IHsgc3RhdHVzLCBkYXRhIH0gPSBhd2FpdCBhcGkocy5wb3J0LCBcIkdFVFwiLCBcIi9zdGF0ZVwiKTtcbiAgaWYgKHN0YXR1cyAhPT0gMjAwKSBkYWVtb25SZWZ1c2VkKFwid29ya3NwYWNlXCIsIHN0YXR1cywgZGF0YSk7XG4gIHByaW50SnNvbih7IHdvcmtzcGFjZTogKGRhdGEgYXMgeyB3b3Jrc3BhY2U/OiB1bmtub3duIH0pLndvcmtzcGFjZSB9KTtcbn1cblxuLy8g4pSA4pSAIFRIRSBDT01NQU5EIFRBQkxFIOKAlCBkaXNwYXRjaCwgaGVscCwgYHNjaGVtYWAgYW5kIGV2ZXJ5IGBjaG9pY2VzYCB3YWxrIGl0IOKUgOKUgFxuLy9cbi8vIFRocm91Z2ggdGhlIGhvdXNlJ3Mgb25lIHJlZ2lzdHJ5IChgc3JjL2tpdC9jbGkvcmVnaXN0cnkudHNgKS4gc2NyaXB0b3JpdW0nc1xuLy8gb3duIGRpc3BhdGNoZXIsIGhlbHAgcmVuZGVyZXIgYW5kIGRlY2xhcmF0aW9uIGVtaXR0ZXIg4oCUIGEgY29weSBvZiBnbGFtb3VyJ3Mg4oCUXG4vLyB3ZXJlIGRlbGV0ZWQgd2hlbiBpdCBtb3ZlZCBvbnRvIHRoZSBtb2R1bGUuIGBoZWxwYCwgYHZlcnNpb25gIGFuZCBgc2NoZW1hYFxuLy8gYXJlIHRoZSBtb2R1bGUncyByb3dzOiBkZWNsYXJlZCBhbmQgc3RyaWN0LCBzbyBgdmVyc2lvbiAtLWJvZ3VzYCBpcyByZWZ1c2VkXG4vLyAoaXQgZXhpdGVkIDAgd2hpbGUgYHZlcnNpb25gIHdhcyBhbnN3ZXJlZCBiZWZvcmUgdGhlIHRhYmxlKS5cblxudHlwZSBGbGFnID0ga2V5b2YgdHlwZW9mIENMSV9PUFRJT05TO1xudHlwZSBGbGFncyA9IFJlY29yZDxzdHJpbmcsIHN0cmluZyB8IGJvb2xlYW4+O1xuLyoqIEEgcm93IGFzIHNjcmlwdG9yaXVtIHdyaXRlcyBpdDogdGhlIGhhbmRsZXIgdGFrZXMgYChwb3MsIGZsYWdzLCBzZXNzaW9uKWAsXG4gKiAgYW5kIGBvbmAgYWRhcHRzIGl0IHRvIHRoZSBraXQncyBgcnVuKGludilgLiBBIG51bWJlciByZXR1cm5lZCBpcyB0aGUgZXhpdFxuICogIGNvZGUgKGB0YWlsYCk7IGFueXRoaW5nIGVsc2UgaXMgMC4gKi9cbnR5cGUgUm93ID0gT21pdDxDb21tYW5kU3BlYzxGbGFnPiwgXCJydW5cIiB8IFwicmVqZWN0SGludFwiPiAmIHtcbiAgcnVuOiAocG9zOiBzdHJpbmdbXSwgZmxhZ3M6IEZsYWdzLCBzZXNzaW9uOiBzdHJpbmcgfCB1bmRlZmluZWQpID0+IHVua25vd247XG59O1xuXG4vKiogc2NyaXB0b3JpdW0gZGVjbGFyZXMgbm8gYG11bHRpcGxlYCBmbGFnLCBzbyBldmVyeSB2YWx1ZSBpcyBhIHN0cmluZyBvciBhXG4gKiAgYm9vbGVhbiDigJQgdGhlIGBGbGFnc2AgdGhlIGhhbmRsZXJzIHRha2UuICovXG5jb25zdCBvbiA9XG4gIChoOiBSb3dbXCJydW5cIl0pID0+XG4gIChpbnY6IEludm9jYXRpb248RmxhZz4pOiB1bmtub3duID0+IHtcbiAgICBjb25zdCBmbGFncyA9IGludi5mbGFncyBhcyBGbGFncztcbiAgICByZXR1cm4gaChpbnYucG9zLCBmbGFncywgdHlwZW9mIGZsYWdzLnNlc3Npb24gPT09IFwic3RyaW5nXCIgPyBmbGFncy5zZXNzaW9uIDogdW5kZWZpbmVkKTtcbiAgfTtcblxuLyoqIEV2ZXJ5IGZsYWcgcmVqZWN0aW9uJ3MgaGludDogdGhlIG9uZSByZXBhaXIgZm9yIHByb3NlIGluIHdoaWNoIGEgd29yZFxuICogIGhhcHBlbnMgdG8gc3RhcnQgd2l0aCBgLS1gLiAqL1xuY29uc3QgREFTSF9ISU5UID0gXCJmb3IgZnJlZSB0ZXh0IGNvbnRhaW5pbmcgZGFzaGVzLCBwdXQgaXQgYWZ0ZXIgYSBiYXJlIC0tXCI7XG5cbmNvbnN0IFNFU1NJT04gPSBbXCJzZXNzaW9uXCJdIGFzIGNvbnN0IHNhdGlzZmllcyByZWFkb25seSBGbGFnW107XG5cbmNvbnN0IFJPV1M6IFJvd1tdID0gW1xuICB7XG4gICAgbmFtZTogXCJvcGVuXCIsXG4gICAgZmxhZ3M6IFtcIm5vLW9wZW5cIiwgXCJyZXN0b3JlXCIsIFwidGltZW91dFwiLCBcInN0YXJ0LXRpbWVvdXRcIl0sXG4gICAgcG9zaXRpb25hbHM6IFt7IG5hbWU6IFwicGF0aFwiLCByZXF1aXJlZDogZmFsc2UsIHZhcmlhZGljOiB0cnVlIH1dLFxuICAgIGRlc2NyaWJlOlxuICAgICAgXCJzcGF3biBhIHNlc3Npb24gKG9wZW5zIHRoZSBicm93c2VyKSwgYWRkaW5nIHBhdGhzOyBwcmludHMge3VybCwgcG9ydCwgc2Vzc2lvbl9pZH0uIC0tdGltZW91dCA8c2Vjb25kcz4gc2V0cyB0aGUgaWRsZSBjbG9zZSAoZGVmYXVsdCAxODAwKTsgLS10aW1lb3V0IDAgc3RhbmRzIHVudGlsIGNsb3NlZFwiLFxuICAgIHJ1bjogKHBvcywgZmxhZ3MpID0+IGNtZE9wZW4ocG9zLCBmbGFncyksXG4gIH0sXG4gIHtcbiAgICBuYW1lOiBcImFkZFwiLFxuICAgIGZsYWdzOiBTRVNTSU9OLFxuICAgIHBvc2l0aW9uYWxzOiBbeyBuYW1lOiBcInBhdGhcIiwgcmVxdWlyZWQ6IHRydWUsIHZhcmlhZGljOiB0cnVlIH1dLFxuICAgIGRlc2NyaWJlOiBcImFkZCBmaWxlcyBvciBmb2xkZXJzIHRvIHRoZSBjb250ZXh0IGxpc3RcIixcbiAgICBydW46IChwb3MsIF9mbGFncywgc2Vzc2lvbikgPT4gY21kQWRkKHBvcywgc2Vzc2lvbiksXG4gIH0sXG4gIHtcbiAgICBuYW1lOiBcInN0YXRlXCIsXG4gICAgZmxhZ3M6IFsuLi5TRVNTSU9OLCBcImZ1bGxcIl0sXG4gICAgcG9zaXRpb25hbHM6IFtdLFxuICAgIGRlc2NyaWJlOiBcInRoZSBzZXNzaW9uOiBjb250ZXh0LCBkb2NzICsgdmVyc2lvbnMgKHdpdGggcGF0aHMpLCBhY3RpdmUsIGRpcnR5LCBzZWxlY3Rpb25cIixcbiAgICBydW46IChfcG9zLCBmbGFncywgc2Vzc2lvbikgPT4gY21kU3RhdGUoc2Vzc2lvbiwgZmxhZ3MuZnVsbCA9PT0gdHJ1ZSksXG4gIH0sXG4gIHtcbiAgICBuYW1lOiBcInRhaWxcIixcbiAgICBmbGFnczogWy4uLlNFU1NJT04sIFwic2luY2VcIiwgXCJvbmNlXCJdLFxuICAgIHBvc2l0aW9uYWxzOiBbXSxcbiAgICBkZXNjcmliZTpcbiAgICAgIFwidGhlIGh1bWFuJ3MgbWVzc2FnZXMgKHdpdGggc2VsZWN0aW9uICsgYWN0aXZlIHBhdGgpIGFzIEpTT04gbGluZXMg4oCUIHdyYXAgd2l0aCBNb25pdG9yOyBpdHMgbGFzdCBsaW5lIG5hbWVzIHRoZSBuZXh0IGFjdFwiLFxuICAgIHJ1bjogKF9wb3MsIGZsYWdzLCBzZXNzaW9uKSA9PiB7XG4gICAgICBjb25zdCBiID0gdHlwZW9mIGZsYWdzLnNpbmNlID09PSBcInN0cmluZ1wiID8gcGFyc2VUYWlsU2luY2UoZmxhZ3Muc2luY2UpIDogeyBzaW5jZTogLTEgfTtcbiAgICAgIHJldHVybiBjbWRUYWlsKHNlc3Npb24sIGIuc2luY2UsIHtcbiAgICAgICAgb25jZTogZmxhZ3Mub25jZSA9PT0gdHJ1ZSxcbiAgICAgICAgc2luY2VHaXZlbjogdHlwZW9mIGZsYWdzLnNpbmNlID09PSBcInN0cmluZ1wiLFxuICAgICAgICAuLi4oYi5lcG9jaCA/IHsgZXBvY2g6IGIuZXBvY2ggfSA6IHt9KSxcbiAgICAgIH0pO1xuICAgIH0sXG4gIH0sXG4gIHtcbiAgICBuYW1lOiBcInZlcnNpb24tbmV3XCIsXG4gICAgZmxhZ3M6IFsuLi5TRVNTSU9OLCBcImRvY1wiLCBcImZyb21cIiwgXCJsYWJlbFwiLCBcInN0ZGluXCIsIFwiYm9keS1maWxlXCJdLFxuICAgIHBvc2l0aW9uYWxzOiBbXSxcbiAgICBkZXNjcmliZTpcbiAgICAgIFwicHJvcG9zZSBhIG5ldyB2ZXJzaW9uIGhvbGRpbmcgeW91ciB0ZXh0ICgtLWJvZHktZmlsZSA8cGF0aD4gb3IgLS1zdGRpbik7IHdpdGhvdXQgb25lLCBjb3BpZXMgYSB2ZXJzaW9uIChkZWZhdWx0OiB0aGUgYWN0aXZlIG9uZSkgYW5kIHByaW50cyBpdHMgcGF0aCB0byBlZGl0XCIsXG4gICAgcnVuOiBhc3luYyAoX3BvcywgZmxhZ3MsIHNlc3Npb24pID0+IHtcbiAgICAgIGNvbnN0IGZyb20gPSB0eXBlb2YgZmxhZ3MuZnJvbSA9PT0gXCJzdHJpbmdcIiA/IHBhcnNlVmVyc2lvbihmbGFncy5mcm9tLCBcIi0tZnJvbVwiKSA6IHVuZGVmaW5lZDtcbiAgICAgIGNvbnN0IHRleHQgPSBhd2FpdCByZWFkUHJvc2UoXCJ2ZXJzaW9uLW5ld1wiLCBbXSwgZmxhZ3MsIHtcbiAgICAgICAgb3B0aW9uYWw6IHRydWUsXG4gICAgICAgIG1pc3NpbmdGaWxlOiBcIm5vdF9mb3VuZFwiLFxuICAgICAgfSk7XG4gICAgICBwcmludEpzb24oXG4gICAgICAgIGF3YWl0IHBvc3RDbWQoc2Vzc2lvbiwge1xuICAgICAgICAgIHR5cGU6IFwidmVyc2lvbi5uZXdcIixcbiAgICAgICAgICAuLi4odHlwZW9mIGZsYWdzLmRvYyA9PT0gXCJzdHJpbmdcIiA/IHsgZG9jOiBkb2NBcmcoZmxhZ3MuZG9jKSB9IDoge30pLFxuICAgICAgICAgIC4uLihmcm9tICE9PSB1bmRlZmluZWQgPyB7IGZyb20gfSA6IHt9KSxcbiAgICAgICAgICAuLi4odHlwZW9mIGZsYWdzLmxhYmVsID09PSBcInN0cmluZ1wiID8geyBsYWJlbDogZmxhZ3MubGFiZWwgfSA6IHt9KSxcbiAgICAgICAgICAuLi4odGV4dCAhPT0gdW5kZWZpbmVkID8geyB0ZXh0IH0gOiB7fSksXG4gICAgICAgIH0pLFxuICAgICAgKTtcbiAgICB9LFxuICB9LFxuICB7XG4gICAgbmFtZTogXCJzYXlcIixcbiAgICBmbGFnczogWy4uLlNFU1NJT04sIFwic3RkaW5cIiwgXCJib2R5LWZpbGVcIl0sXG4gICAgcG9zaXRpb25hbHM6IFt7IG5hbWU6IFwidGV4dFwiLCByZXF1aXJlZDogZmFsc2UsIHZhcmlhZGljOiB0cnVlIH1dLFxuICAgIGRlc2NyaWJlOiBcInBvc3QgYSBjaGF0IG1lc3NhZ2UgZnJvbSB0aGUgYWdlbnQgKHByb3NlOiAtLWJvZHktZmlsZSA8cGF0aD4gb3IgLS1zdGRpbilcIixcbiAgICBydW46IGFzeW5jIChwb3MsIGZsYWdzLCBzZXNzaW9uKSA9PiB7XG4gICAgICBwcmludEpzb24oXG4gICAgICAgIGF3YWl0IHBvc3RDbWQoc2Vzc2lvbiwgeyB0eXBlOiBcInNheVwiLCB0ZXh0OiBhd2FpdCByZWFkU2F5Qm9keShwb3MsIGZsYWdzLCBcInNheVwiKSB9KSxcbiAgICAgICk7XG4gICAgfSxcbiAgfSxcbiAge1xuICAgIG5hbWU6IFwidmVyc2lvbi1kZWxldGVcIixcbiAgICBmbGFnczogWy4uLlNFU1NJT04sIFwiZG9jXCJdLFxuICAgIHBvc2l0aW9uYWxzOiBbeyBuYW1lOiBcInZOXCIsIHJlcXVpcmVkOiB0cnVlIH1dLFxuICAgIGRlc2NyaWJlOiBcInJlbW92ZSBhIHZlcnNpb24gYW5kIGl0cyBmaWxlIChuZXZlciB0aGUgYWN0aXZlIG9uZSDigJQgYWN0aXZhdGUgYW5vdGhlciBmaXJzdClcIixcbiAgICBydW46IGFzeW5jIChwb3MsIGZsYWdzLCBzZXNzaW9uKSA9PiB7XG4gICAgICBwcmludEpzb24oXG4gICAgICAgIGF3YWl0IHBvc3RDbWQoc2Vzc2lvbiwge1xuICAgICAgICAgIHR5cGU6IFwidmVyc2lvbi5kZWxldGVcIixcbiAgICAgICAgICB2ZXJzaW9uOiBwYXJzZVZlcnNpb24ocG9zWzBdID8/IFwiXCIsIFwidmVyc2lvbi1kZWxldGVcIiksXG4gICAgICAgICAgLi4uKHR5cGVvZiBmbGFncy5kb2MgPT09IFwic3RyaW5nXCIgPyB7IGRvYzogZG9jQXJnKGZsYWdzLmRvYykgfSA6IHt9KSxcbiAgICAgICAgfSksXG4gICAgICApO1xuICAgIH0sXG4gIH0sXG4gIHtcbiAgICBuYW1lOiBcInRhc2tcIixcbiAgICBmbGFnczogWy4uLlNFU1NJT04sIFwic3RkaW5cIiwgXCJib2R5LWZpbGVcIl0sXG4gICAgcG9zaXRpb25hbHM6IFt7IG5hbWU6IFwidGV4dFwiLCByZXF1aXJlZDogZmFsc2UsIHZhcmlhZGljOiB0cnVlIH1dLFxuICAgIGRlc2NyaWJlOiBcInNheSB5b3UgaGF2ZSBzdGFydGVkIHNvbWV0aGluZzsgcHJpbnRzIHRoZSBpZCB0byBmaW5pc2ggaXQgd2l0aFwiLFxuICAgIHJ1bjogYXN5bmMgKHBvcywgZmxhZ3MsIHNlc3Npb24pID0+IHtcbiAgICAgIHByaW50SnNvbihcbiAgICAgICAgYXdhaXQgcG9zdENtZChzZXNzaW9uLCB7IHR5cGU6IFwidGFzay5zdGFydFwiLCB0ZXh0OiBhd2FpdCByZWFkU2F5Qm9keShwb3MsIGZsYWdzLCBcInRhc2tcIikgfSksXG4gICAgICApO1xuICAgIH0sXG4gIH0sXG4gIHtcbiAgICBuYW1lOiBcInRhc2stc3RhdHVzXCIsXG4gICAgZmxhZ3M6IFNFU1NJT04sXG4gICAgcG9zaXRpb25hbHM6IFtcbiAgICAgIHsgbmFtZTogXCJpZFwiLCByZXF1aXJlZDogdHJ1ZSB9LFxuICAgICAgeyBuYW1lOiBcInN0YXR1c1wiLCByZXF1aXJlZDogdHJ1ZSwgdmFyaWFkaWM6IHRydWUgfSxcbiAgICBdLFxuICAgIGRlc2NyaWJlOiBcInNheSB3aGF0IHN0ZXAgYSB0YXNrIGlzIG9uIChmb3Igd29yayB3b3J0aCB3YXRjaGluZylcIixcbiAgICBydW46IGFzeW5jIChwb3MsIF9mbGFncywgc2Vzc2lvbikgPT4ge1xuICAgICAgcHJpbnRKc29uKFxuICAgICAgICBhd2FpdCBwb3N0Q21kKHNlc3Npb24sIHtcbiAgICAgICAgICB0eXBlOiBcInRhc2suc3RhdHVzXCIsXG4gICAgICAgICAgaWQ6IHBvc1swXSBhcyBzdHJpbmcsXG4gICAgICAgICAgc3RhdHVzOiBwb3Muc2xpY2UoMSkuam9pbihcIiBcIiksXG4gICAgICAgIH0pLFxuICAgICAgKTtcbiAgICB9LFxuICB9LFxuICB7XG4gICAgbmFtZTogXCJ0YXNrLWRvbmVcIixcbiAgICBmbGFnczogU0VTU0lPTixcbiAgICBwb3NpdGlvbmFsczogW1xuICAgICAgeyBuYW1lOiBcImlkXCIsIHJlcXVpcmVkOiB0cnVlIH0sXG4gICAgICB7IG5hbWU6IFwib3V0Y29tZVwiLCByZXF1aXJlZDogZmFsc2UsIHZhcmlhZGljOiB0cnVlIH0sXG4gICAgXSxcbiAgICBkZXNjcmliZTogXCJtYXJrIGEgdGFzayBmaW5pc2hlZCwgb3B0aW9uYWxseSBzYXlpbmcgd2hhdCBjYW1lIG9mIGl0XCIsXG4gICAgcnVuOiBhc3luYyAocG9zLCBfZmxhZ3MsIHNlc3Npb24pID0+IHtcbiAgICAgIGNvbnN0IG91dGNvbWUgPSBwb3Muc2xpY2UoMSkuam9pbihcIiBcIikudHJpbSgpO1xuICAgICAgcHJpbnRKc29uKFxuICAgICAgICBhd2FpdCBwb3N0Q21kKHNlc3Npb24sIHtcbiAgICAgICAgICB0eXBlOiBcInRhc2suZG9uZVwiLFxuICAgICAgICAgIGlkOiBwb3NbMF0gYXMgc3RyaW5nLFxuICAgICAgICAgIC4uLihvdXRjb21lID8geyBvdXRjb21lIH0gOiB7fSksXG4gICAgICAgIH0pLFxuICAgICAgKTtcbiAgICB9LFxuICB9LFxuICB7XG4gICAgbmFtZTogXCJ0YXNrLXJlbW92ZVwiLFxuICAgIGZsYWdzOiBTRVNTSU9OLFxuICAgIHBvc2l0aW9uYWxzOiBbeyBuYW1lOiBcImlkXCIsIHJlcXVpcmVkOiB0cnVlIH1dLFxuICAgIGRlc2NyaWJlOiBcImZvcmdldCBhIHRhc2sgZW50aXJlbHkg4oCUIGZvciBvbmUgc3RhcnRlZCBieSBtaXN0YWtlXCIsXG4gICAgcnVuOiBhc3luYyAocG9zLCBfZmxhZ3MsIHNlc3Npb24pID0+IHtcbiAgICAgIHByaW50SnNvbihhd2FpdCBwb3N0Q21kKHNlc3Npb24sIHsgdHlwZTogXCJ0YXNrLnJlbW92ZVwiLCBpZDogcG9zWzBdIGFzIHN0cmluZyB9KSk7XG4gICAgfSxcbiAgfSxcbiAge1xuICAgIG5hbWU6IFwidGFza3MtY2xlYXJcIixcbiAgICBmbGFnczogU0VTU0lPTixcbiAgICBwb3NpdGlvbmFsczogW10sXG4gICAgZGVzY3JpYmU6IFwiZm9yZ2V0IGV2ZXJ5IGZpbmlzaGVkIHRhc2s7IG91dHN0YW5kaW5nIG9uZXMgYXJlIGxlZnQgYWxvbmVcIixcbiAgICBydW46IGFzeW5jIChfcG9zLCBfZmxhZ3MsIHNlc3Npb24pID0+IHtcbiAgICAgIHByaW50SnNvbihhd2FpdCBwb3N0Q21kKHNlc3Npb24sIHsgdHlwZTogXCJ0YXNrcy5jbGVhclwiIH0pKTtcbiAgICB9LFxuICB9LFxuICB7XG4gICAgbmFtZTogXCJ3b3JraW5nXCIsXG4gICAgZmxhZ3M6IFsuLi5TRVNTSU9OLCBcImZvclwiXSxcbiAgICBwb3NpdGlvbmFsczogW10sXG4gICAgZGVzY3JpYmU6IFwic2F5IHlvdSBhcmUgc3RpbGwgb24gaXQg4oCUIHNpbGVuY2VzIHRoZSB3YWl0aW5nIG51ZGdlLCBrZWVwcyB0aGUgaHVtYW4ncyBwdWxzZVwiLFxuICAgIHJ1bjogYXN5bmMgKF9wb3MsIGZsYWdzLCBzZXNzaW9uKSA9PiB7XG4gICAgICBjb25zdCBzZWNvbmRzID1cbiAgICAgICAgdHlwZW9mIGZsYWdzLmZvciA9PT0gXCJzdHJpbmdcIiA/IHBhcnNlQ291bnQoZmxhZ3MuZm9yLCBcIndvcmtpbmcgLS1mb3JcIikgOiB1bmRlZmluZWQ7XG4gICAgICBwcmludEpzb24oXG4gICAgICAgIGF3YWl0IHBvc3RDbWQoc2Vzc2lvbiwge1xuICAgICAgICAgIHR5cGU6IFwid29ya2luZ1wiLFxuICAgICAgICAgIC4uLihzZWNvbmRzICE9PSB1bmRlZmluZWQgPyB7IHNlY29uZHMgfSA6IHt9KSxcbiAgICAgICAgfSksXG4gICAgICApO1xuICAgIH0sXG4gIH0sXG4gIHtcbiAgICBuYW1lOiBcIm5vdGVcIixcbiAgICBmbGFnczogWy4uLlNFU1NJT04sIFwiZG9jXCIsIFwicXVvdGVcIiwgXCJzdGRpblwiLCBcImJvZHktZmlsZVwiXSxcbiAgICBwb3NpdGlvbmFsczogW3sgbmFtZTogXCJ0ZXh0XCIsIHJlcXVpcmVkOiBmYWxzZSwgdmFyaWFkaWM6IHRydWUgfV0sXG4gICAgZGVzY3JpYmU6XG4gICAgICBcIm5vdGUgYSBwYXNzYWdlIG9mIHRoZSBhY3RpdmUgdmVyc2lvbiAoLS1xdW90ZSAnZXhhY3QgdGV4dCc7IHByb3NlOiAtLWJvZHktZmlsZSBvciAtLXN0ZGluKVwiLFxuICAgIHJ1bjogYXN5bmMgKHBvcywgZmxhZ3MsIHNlc3Npb24pID0+IHtcbiAgICAgIGlmICh0eXBlb2YgZmxhZ3MucXVvdGUgIT09IFwic3RyaW5nXCIgfHwgZmxhZ3MucXVvdGUudHJpbSgpID09PSBcIlwiKVxuICAgICAgICBkaWUoXCJub3RlOiAtLXF1b3RlIGlzIHJlcXVpcmVkIOKAlCB0aGUgZXhhY3QgdGV4dCB0aGUgbm90ZSBpcyBhYm91dFwiLCBcInVzYWdlXCIsIHtcbiAgICAgICAgICBoaW50OiBcInJ1bjogY2xpLnRzIHN0YXRlIC0tZnVsbCAodGhlIGFjdGl2ZSB2ZXJzaW9uJ3MgdGV4dCBpcyBvbiBkaXNrOyBxdW90ZSBmcm9tIGl0KVwiLFxuICAgICAgICB9KTtcbiAgICAgIHByaW50SnNvbihcbiAgICAgICAgYXdhaXQgcG9zdENtZChzZXNzaW9uLCB7XG4gICAgICAgICAgdHlwZTogXCJub3RlLmFkZFwiLFxuICAgICAgICAgIHF1b3RlOiBmbGFncy5xdW90ZSxcbiAgICAgICAgICBib2R5OiBhd2FpdCByZWFkU2F5Qm9keShwb3MsIGZsYWdzLCBcIm5vdGVcIiksXG4gICAgICAgICAgLi4uKHR5cGVvZiBmbGFncy5kb2MgPT09IFwic3RyaW5nXCIgPyB7IGRvYzogZG9jQXJnKGZsYWdzLmRvYykgfSA6IHt9KSxcbiAgICAgICAgfSksXG4gICAgICApO1xuICAgIH0sXG4gIH0sXG4gIHtcbiAgICBuYW1lOiBcIm5vdGVzXCIsXG4gICAgZmxhZ3M6IFsuLi5TRVNTSU9OLCBcImRvY1wiLCBcImZ1bGxcIl0sXG4gICAgcG9zaXRpb25hbHM6IFtdLFxuICAgIGRlc2NyaWJlOiBcInRoZSBub3RlcyBvbiBhIGRvY3VtZW50LCBwbGFjZWQgaW4gdGhlIGFjdGl2ZSB2ZXJzaW9uICgtLWZ1bGwgaW5jbHVkZXMgcmVzb2x2ZWQpXCIsXG4gICAgcnVuOiBhc3luYyAoX3BvcywgZmxhZ3MsIHNlc3Npb24pID0+IHtcbiAgICAgIHByaW50SnNvbihcbiAgICAgICAgYXdhaXQgcG9zdENtZChzZXNzaW9uLCB7XG4gICAgICAgICAgdHlwZTogXCJub3Rlc1wiLFxuICAgICAgICAgIC4uLihmbGFncy5mdWxsID8geyBhbGw6IHRydWUgfSA6IHt9KSxcbiAgICAgICAgICAuLi4odHlwZW9mIGZsYWdzLmRvYyA9PT0gXCJzdHJpbmdcIiA/IHsgZG9jOiBkb2NBcmcoZmxhZ3MuZG9jKSB9IDoge30pLFxuICAgICAgICB9KSxcbiAgICAgICk7XG4gICAgfSxcbiAgfSxcbiAge1xuICAgIG5hbWU6IFwibm90ZS1lZGl0XCIsXG4gICAgZmxhZ3M6IFsuLi5TRVNTSU9OLCBcImRvY1wiLCBcInN0ZGluXCIsIFwiYm9keS1maWxlXCJdLFxuICAgIHBvc2l0aW9uYWxzOiBbXG4gICAgICB7IG5hbWU6IFwiaWRcIiwgcmVxdWlyZWQ6IHRydWUgfSxcbiAgICAgIHsgbmFtZTogXCJ0ZXh0XCIsIHJlcXVpcmVkOiBmYWxzZSwgdmFyaWFkaWM6IHRydWUgfSxcbiAgICBdLFxuICAgIGRlc2NyaWJlOiBcInJld3JpdGUgd2hhdCBhIG5vdGUgc2F5cyAoaXRzIHBhc3NhZ2UgaXMgdW5jaGFuZ2VkKVwiLFxuICAgIHJ1bjogYXN5bmMgKHBvcywgZmxhZ3MsIHNlc3Npb24pID0+IHtcbiAgICAgIHByaW50SnNvbihcbiAgICAgICAgYXdhaXQgcG9zdENtZChzZXNzaW9uLCB7XG4gICAgICAgICAgdHlwZTogXCJub3RlLmVkaXRcIixcbiAgICAgICAgICBpZDogcG9zWzBdIGFzIHN0cmluZyxcbiAgICAgICAgICBib2R5OiBhd2FpdCByZWFkU2F5Qm9keShwb3Muc2xpY2UoMSksIGZsYWdzLCBcIm5vdGUtZWRpdFwiKSxcbiAgICAgICAgICAuLi4odHlwZW9mIGZsYWdzLmRvYyA9PT0gXCJzdHJpbmdcIiA/IHsgZG9jOiBkb2NBcmcoZmxhZ3MuZG9jKSB9IDoge30pLFxuICAgICAgICB9KSxcbiAgICAgICk7XG4gICAgfSxcbiAgfSxcbiAge1xuICAgIG5hbWU6IFwibm90ZS1yZXNvbHZlXCIsXG4gICAgZmxhZ3M6IFsuLi5TRVNTSU9OLCBcImRvY1wiLCBcInJlb3BlblwiXSxcbiAgICBwb3NpdGlvbmFsczogW3sgbmFtZTogXCJpZFwiLCByZXF1aXJlZDogdHJ1ZSB9XSxcbiAgICBkZXNjcmliZTogXCJtYXJrIGEgbm90ZSBkZWFsdCB3aXRoICgtLXJlb3BlbiBwdXRzIGl0IGJhY2spXCIsXG4gICAgcnVuOiBhc3luYyAocG9zLCBmbGFncywgc2Vzc2lvbikgPT4ge1xuICAgICAgcHJpbnRKc29uKFxuICAgICAgICBhd2FpdCBwb3N0Q21kKHNlc3Npb24sIHtcbiAgICAgICAgICB0eXBlOiBcIm5vdGUucmVzb2x2ZVwiLFxuICAgICAgICAgIGlkOiBwb3NbMF0gYXMgc3RyaW5nLFxuICAgICAgICAgIHJlc29sdmVkOiAhZmxhZ3MucmVvcGVuLFxuICAgICAgICAgIC4uLih0eXBlb2YgZmxhZ3MuZG9jID09PSBcInN0cmluZ1wiID8geyBkb2M6IGRvY0FyZyhmbGFncy5kb2MpIH0gOiB7fSksXG4gICAgICAgIH0pLFxuICAgICAgKTtcbiAgICB9LFxuICB9LFxuICB7XG4gICAgbmFtZTogXCJub3RlLXJlbW92ZVwiLFxuICAgIGZsYWdzOiBbLi4uU0VTU0lPTiwgXCJkb2NcIl0sXG4gICAgcG9zaXRpb25hbHM6IFt7IG5hbWU6IFwiaWRcIiwgcmVxdWlyZWQ6IHRydWUgfV0sXG4gICAgZGVzY3JpYmU6IFwiZGVsZXRlIGEgbm90ZVwiLFxuICAgIHJ1bjogYXN5bmMgKHBvcywgZmxhZ3MsIHNlc3Npb24pID0+IHtcbiAgICAgIHByaW50SnNvbihcbiAgICAgICAgYXdhaXQgcG9zdENtZChzZXNzaW9uLCB7XG4gICAgICAgICAgdHlwZTogXCJub3RlLnJlbW92ZVwiLFxuICAgICAgICAgIGlkOiBwb3NbMF0gYXMgc3RyaW5nLFxuICAgICAgICAgIC4uLih0eXBlb2YgZmxhZ3MuZG9jID09PSBcInN0cmluZ1wiID8geyBkb2M6IGRvY0FyZyhmbGFncy5kb2MpIH0gOiB7fSksXG4gICAgICAgIH0pLFxuICAgICAgKTtcbiAgICB9LFxuICB9LFxuICB7XG4gICAgbmFtZTogXCJkaWZmXCIsXG4gICAgZmxhZ3M6IFsuLi5TRVNTSU9OLCBcImRvY1wiLCBcImNvbnRleHRcIiwgXCJwYXRjaFwiXSxcbiAgICBwb3NpdGlvbmFsczogW3sgbmFtZTogXCJhZ2FpbnN0XCIsIHJlcXVpcmVkOiB0cnVlIH1dLFxuICAgIGRlc2NyaWJlOlxuICAgICAgXCJjb21wYXJlIHRoZSBhY3RpdmUgdmVyc2lvbiB3aXRoIGFub3RoZXIgKHZOIG9yICdzYXZlZCcgZm9yIHRoZSBmaWxlIG9uIGRpc2spOyAtLXBhdGNoIGZvciBwbGFpbiB1bmlmaWVkIHRleHRcIixcbiAgICBydW46IGFzeW5jIChwb3MsIGZsYWdzLCBzZXNzaW9uKSA9PiB7XG4gICAgICBjb25zdCByID0gKGF3YWl0IHBvc3RDbWQoc2Vzc2lvbiwge1xuICAgICAgICB0eXBlOiBcImRpZmZcIixcbiAgICAgICAgYWdhaW5zdDogcGFyc2VTaWRlKHBvc1swXSA/PyBcIlwiLCBcImRpZmZcIiksXG4gICAgICAgIC4uLih0eXBlb2YgZmxhZ3MuZG9jID09PSBcInN0cmluZ1wiID8geyBkb2M6IGRvY0FyZyhmbGFncy5kb2MpIH0gOiB7fSksXG4gICAgICAgIC4uLih0eXBlb2YgZmxhZ3MuY29udGV4dCA9PT0gXCJzdHJpbmdcIlxuICAgICAgICAgID8geyBjb250ZXh0OiBwYXJzZUNvdW50KGZsYWdzLmNvbnRleHQsIFwiLS1jb250ZXh0XCIpIH1cbiAgICAgICAgICA6IHt9KSxcbiAgICAgIH0pKSBhcyBSZWNvcmQ8c3RyaW5nLCB1bmtub3duPjtcbiAgICAgIGlmIChmbGFncy5wYXRjaCkgcHJvY2Vzcy5zdGRvdXQud3JpdGUoU3RyaW5nKHIudW5pZmllZCA/PyBcIlwiKSk7XG4gICAgICBlbHNlIHByaW50SnNvbihyKTtcbiAgICB9LFxuICB9LFxuICB7XG4gICAgbmFtZTogXCJtZXJnZVwiLFxuICAgIGZsYWdzOiBbLi4uU0VTU0lPTiwgXCJkb2NcIiwgXCJodW5rc1wiXSxcbiAgICBwb3NpdGlvbmFsczogW3sgbmFtZTogXCJhZ2FpbnN0XCIsIHJlcXVpcmVkOiB0cnVlIH1dLFxuICAgIGRlc2NyaWJlOlxuICAgICAgXCJ0YWtlIGNoYW5nZXMgZnJvbSBhbm90aGVyIHZlcnNpb24gaW50byB0aGUgYWN0aXZlIG9uZSAoLS1odW5rcyAxLDM7IGRlZmF1bHQ6IGFsbCBvZiB0aGVtKVwiLFxuICAgIHJ1bjogYXN5bmMgKHBvcywgZmxhZ3MsIHNlc3Npb24pID0+IHtcbiAgICAgIGNvbnN0IGFnYWluc3QgPSBwYXJzZVNpZGUocG9zWzBdID8/IFwiXCIsIFwibWVyZ2VcIik7XG4gICAgICAvLyDim5QgV2l0aG91dCAtLWh1bmtzIHRoaXMgdGFrZXMgRVZFUlkgaHVuaywgd2hpY2ggaXMgdGhlIHdob2xlLWRvY3VtZW50XG4gICAgICAvLyBtZXJnZS4gVGhlIGlkcyBjb21lIGZyb20gYGRpZmZgIGFuZCBhcmUgb25seSB2YWxpZCBhZ2FpbnN0IHRoZSB0ZXh0IGl0XG4gICAgICAvLyBzYXc6IHRoZSBkYWVtb24gcmUtZGlmZnMgYW5kIHJlZnVzZXMgaWRzIGl0IGNhbm5vdCBmaW5kIHJhdGhlciB0aGFuXG4gICAgICAvLyBhcHBseWluZyBhIG51bWJlciB0byBhIGRvY3VtZW50IHRoYXQgaGFzIG1vdmVkIHVuZGVybmVhdGggaXQuXG4gICAgICBjb25zdCBsaXN0ZWQgPVxuICAgICAgICB0eXBlb2YgZmxhZ3MuaHVua3MgPT09IFwic3RyaW5nXCJcbiAgICAgICAgICA/IGZsYWdzLmh1bmtzLnNwbGl0KFwiLFwiKS5tYXAoKGgpID0+IHBhcnNlQ291bnQoaCwgXCItLWh1bmtzXCIpKVxuICAgICAgICAgIDogbnVsbDtcbiAgICAgIGNvbnN0IGh1bmtzID1cbiAgICAgICAgbGlzdGVkID8/XG4gICAgICAgIChcbiAgICAgICAgICAoYXdhaXQgcG9zdENtZChzZXNzaW9uLCB7XG4gICAgICAgICAgICB0eXBlOiBcImRpZmZcIixcbiAgICAgICAgICAgIGFnYWluc3QsXG4gICAgICAgICAgICAuLi4odHlwZW9mIGZsYWdzLmRvYyA9PT0gXCJzdHJpbmdcIiA/IHsgZG9jOiBkb2NBcmcoZmxhZ3MuZG9jKSB9IDoge30pLFxuICAgICAgICAgIH0pKSBhcyB7IGh1bmtzPzogeyBpZDogbnVtYmVyIH1bXSB9XG4gICAgICAgICkuaHVua3M/Lm1hcCgoaCkgPT4gaC5pZCkgPz9cbiAgICAgICAgW107XG4gICAgICBwcmludEpzb24oXG4gICAgICAgIGF3YWl0IHBvc3RDbWQoc2Vzc2lvbiwge1xuICAgICAgICAgIHR5cGU6IFwibWVyZ2VcIixcbiAgICAgICAgICBhZ2FpbnN0LFxuICAgICAgICAgIGh1bmtzLFxuICAgICAgICAgIC4uLih0eXBlb2YgZmxhZ3MuZG9jID09PSBcInN0cmluZ1wiID8geyBkb2M6IGRvY0FyZyhmbGFncy5kb2MpIH0gOiB7fSksXG4gICAgICAgIH0pLFxuICAgICAgKTtcbiAgICB9LFxuICB9LFxuICB7XG4gICAgbmFtZTogXCJhY3RpdmF0ZVwiLFxuICAgIGZsYWdzOiBbLi4uU0VTU0lPTiwgXCJkb2NcIl0sXG4gICAgcG9zaXRpb25hbHM6IFt7IG5hbWU6IFwidk5cIiwgcmVxdWlyZWQ6IHRydWUgfV0sXG4gICAgZGVzY3JpYmU6IFwibWFrZSBhIHZlcnNpb24gdGhlIGFjdGl2ZSBvbmUgKHRoZSBvbmUgdGhlIGh1bWFuIGVkaXRzIGFuZCBTYXZlIHdyaXRlcylcIixcbiAgICBydW46IGFzeW5jIChwb3MsIGZsYWdzLCBzZXNzaW9uKSA9PiB7XG4gICAgICBwcmludEpzb24oXG4gICAgICAgIGF3YWl0IHBvc3RDbWQoc2Vzc2lvbiwge1xuICAgICAgICAgIHR5cGU6IFwiYWN0aXZhdGVcIixcbiAgICAgICAgICB2ZXJzaW9uOiBwYXJzZVZlcnNpb24ocG9zWzBdID8/IFwiXCIsIFwiYWN0aXZhdGVcIiksXG4gICAgICAgICAgLi4uKHR5cGVvZiBmbGFncy5kb2MgPT09IFwic3RyaW5nXCIgPyB7IGRvYzogZG9jQXJnKGZsYWdzLmRvYykgfSA6IHt9KSxcbiAgICAgICAgfSksXG4gICAgICApO1xuICAgIH0sXG4gIH0sXG4gIHtcbiAgICBuYW1lOiBcIm5ldy1kb2NcIixcbiAgICBmbGFnczogU0VTU0lPTixcbiAgICBwb3NpdGlvbmFsczogW3sgbmFtZTogXCJwYXRoXCIsIHJlcXVpcmVkOiB0cnVlIH1dLFxuICAgIGRlc2NyaWJlOlxuICAgICAgXCJjcmVhdGUgYW4gZW1wdHkgZG9jdW1lbnQgKGl0cyBmb2xkZXIgbXVzdCBiZSBhIHNldCwgYSBmb2xkZXIgaW4gb25lLCBvciB0aGUgd29ya3NwYWNlKVwiLFxuICAgIHJ1bjogKHBvcywgX2ZsYWdzLCBzZXNzaW9uKSA9PiB7XG4gICAgICBjb25zdCBhYnMgPSByZXNvbHZlKHBvc1swXSBhcyBzdHJpbmcpO1xuICAgICAgcmV0dXJuIHN0cnVjdHVyZUNtZChzZXNzaW9uLCB7IHR5cGU6IFwiZG9jLmNyZWF0ZVwiLCBkaXI6IGRpcm5hbWUoYWJzKSwgbmFtZTogYmFzZW5hbWUoYWJzKSB9KTtcbiAgICB9LFxuICB9LFxuICB7XG4gICAgbmFtZTogXCJuZXctZm9sZGVyXCIsXG4gICAgZmxhZ3M6IFNFU1NJT04sXG4gICAgcG9zaXRpb25hbHM6IFt7IG5hbWU6IFwicGF0aFwiLCByZXF1aXJlZDogdHJ1ZSB9XSxcbiAgICBkZXNjcmliZTogXCJjcmVhdGUgYSBmb2xkZXIg4oCUIGluc2lkZSBhIHNldCwgb3IgaW4gdGhlIHdvcmtzcGFjZSBhcyBhIG5ldyBzZXRcIixcbiAgICBydW46IChwb3MsIF9mbGFncywgc2Vzc2lvbikgPT4ge1xuICAgICAgY29uc3QgYWJzID0gcmVzb2x2ZShwb3NbMF0gYXMgc3RyaW5nKTtcbiAgICAgIHJldHVybiBzdHJ1Y3R1cmVDbWQoc2Vzc2lvbiwge1xuICAgICAgICB0eXBlOiBcImZvbGRlci5jcmVhdGVcIixcbiAgICAgICAgZGlyOiBkaXJuYW1lKGFicyksXG4gICAgICAgIG5hbWU6IGJhc2VuYW1lKGFicyksXG4gICAgICB9KTtcbiAgICB9LFxuICB9LFxuICB7XG4gICAgbmFtZTogXCJtb3ZlXCIsXG4gICAgZmxhZ3M6IFNFU1NJT04sXG4gICAgcG9zaXRpb25hbHM6IFtcbiAgICAgIHsgbmFtZTogXCJwYXRoXCIsIHJlcXVpcmVkOiB0cnVlIH0sXG4gICAgICB7IG5hbWU6IFwiaW50b1wiLCByZXF1aXJlZDogdHJ1ZSB9LFxuICAgIF0sXG4gICAgZGVzY3JpYmU6IFwibW92ZSBhIGRvY3VtZW50IG9yIGZvbGRlciBpbnRvIGFub3RoZXIgZm9sZGVyIChhIHJlYWwgbW92ZSBvbiBkaXNrKVwiLFxuICAgIHJ1bjogKHBvcywgX2ZsYWdzLCBzZXNzaW9uKSA9PlxuICAgICAgc3RydWN0dXJlQ21kKHNlc3Npb24sIHtcbiAgICAgICAgdHlwZTogXCJtb3ZlXCIsXG4gICAgICAgIHBhdGg6IHJlc29sdmUocG9zWzBdIGFzIHN0cmluZyksXG4gICAgICAgIGludG86IHJlc29sdmUocG9zWzFdIGFzIHN0cmluZyksXG4gICAgICB9KSxcbiAgfSxcbiAge1xuICAgIG5hbWU6IFwicmVuYW1lXCIsXG4gICAgZmxhZ3M6IFNFU1NJT04sXG4gICAgcG9zaXRpb25hbHM6IFtcbiAgICAgIHsgbmFtZTogXCJwYXRoXCIsIHJlcXVpcmVkOiB0cnVlIH0sXG4gICAgICB7IG5hbWU6IFwibmFtZVwiLCByZXF1aXJlZDogdHJ1ZSB9LFxuICAgIF0sXG4gICAgZGVzY3JpYmU6IFwicmVuYW1lIGEgZG9jdW1lbnQgb3IgZm9sZGVyIGluIHBsYWNlXCIsXG4gICAgcnVuOiAocG9zLCBfZmxhZ3MsIHNlc3Npb24pID0+XG4gICAgICBzdHJ1Y3R1cmVDbWQoc2Vzc2lvbiwgeyB0eXBlOiBcInJlbmFtZVwiLCBwYXRoOiByZXNvbHZlKHBvc1swXSBhcyBzdHJpbmcpLCBuYW1lOiBwb3NbMV0gfSksXG4gIH0sXG4gIHtcbiAgICBuYW1lOiBcImhpZGVcIixcbiAgICBmbGFnczogU0VTU0lPTixcbiAgICBwb3NpdGlvbmFsczogW3sgbmFtZTogXCJwYXRoXCIsIHJlcXVpcmVkOiB0cnVlIH1dLFxuICAgIGRlc2NyaWJlOiBcInJlbW92ZSBhIGRvY3VtZW50LCBmb2xkZXIgb3Igc2V0IGZyb20gU2NyaXB0b3JpdW0g4oCUIHRoZSBmaWxlcyBzdGF5IG9uIGRpc2tcIixcbiAgICBydW46IChwb3MsIF9mbGFncywgc2Vzc2lvbikgPT5cbiAgICAgIHN0cnVjdHVyZUNtZChzZXNzaW9uLCB7IHR5cGU6IFwiaGlkZVwiLCBwYXRoOiByZXNvbHZlKHBvc1swXSBhcyBzdHJpbmcpIH0pLFxuICB9LFxuICB7XG4gICAgbmFtZTogXCJ1bmhpZGVcIixcbiAgICBmbGFnczogU0VTU0lPTixcbiAgICBwb3NpdGlvbmFsczogW3sgbmFtZTogXCJlbnRyeVwiLCByZXF1aXJlZDogdHJ1ZSB9XSxcbiAgICBkZXNjcmliZTogXCJicmluZyBiYWNrIGV2ZXJ5dGhpbmcgaGlkZGVuIGluIGEgc2V0IChpdHMgZW50cnkgaWQsIGZyb20gc3RhdGUpXCIsXG4gICAgcnVuOiAocG9zLCBfZmxhZ3MsIHNlc3Npb24pID0+IHN0cnVjdHVyZUNtZChzZXNzaW9uLCB7IHR5cGU6IFwidW5oaWRlXCIsIGVudHJ5OiBwb3NbMF0gfSksXG4gIH0sXG4gIHtcbiAgICBuYW1lOiBcIm1ha2Utc2V0XCIsXG4gICAgZmxhZ3M6IFNFU1NJT04sXG4gICAgcG9zaXRpb25hbHM6IFt7IG5hbWU6IFwicGF0aFwiLCByZXF1aXJlZDogdHJ1ZSB9XSxcbiAgICBkZXNjcmliZTogXCJ0dXJuIGEgc2luZ2xlIGRvY3VtZW50IGludG8gYSBzZXQ6IGEgZm9sZGVyIG5hbWVkIGZvciBpdCwgdGhlIGRvY3VtZW50IG1vdmVkIGluXCIsXG4gICAgcnVuOiAocG9zLCBfZmxhZ3MsIHNlc3Npb24pID0+XG4gICAgICBzdHJ1Y3R1cmVDbWQoc2Vzc2lvbiwgeyB0eXBlOiBcInNldC5tYWtlXCIsIHBhdGg6IHJlc29sdmUocG9zWzBdIGFzIHN0cmluZykgfSksXG4gIH0sXG4gIHtcbiAgICBuYW1lOiBcImltcG9ydFwiLFxuICAgIGZsYWdzOiBbLi4uU0VTU0lPTiwgXCJpbnRvXCJdLFxuICAgIHBvc2l0aW9uYWxzOiBbeyBuYW1lOiBcImZpbGVcIiwgcmVxdWlyZWQ6IHRydWUgfV0sXG4gICAgZGVzY3JpYmU6IFwiY29weSBhIGRvY3VtZW50IGluIChkZWZhdWx0OiBpbnRvIHRoZSB3b3Jrc3BhY2UpIGFuZCBzaG93IHRoZSBjb3B5XCIsXG4gICAgcnVuOiAocG9zLCBmbGFncywgc2Vzc2lvbikgPT5cbiAgICAgIGNtZEltcG9ydChwb3NbMF0gYXMgc3RyaW5nLCB0eXBlb2YgZmxhZ3MuaW50byA9PT0gXCJzdHJpbmdcIiA/IGZsYWdzLmludG8gOiB1bmRlZmluZWQsIHNlc3Npb24pLFxuICB9LFxuICB7XG4gICAgbmFtZTogXCJ3b3Jrc3BhY2VcIixcbiAgICBmbGFnczogU0VTU0lPTixcbiAgICBwb3NpdGlvbmFsczogW3sgbmFtZTogXCJkaXJcIiwgcmVxdWlyZWQ6IGZhbHNlIH1dLFxuICAgIGRlc2NyaWJlOiBcInByaW50IHRoZSB3b3Jrc3BhY2UgKHdoZXJlIGRyb3BzIGFuZCBuZXcgdG9wLWxldmVsIGRvY3VtZW50cyBsYW5kKSwgb3Igc2V0IGl0XCIsXG4gICAgcnVuOiAocG9zLCBfZmxhZ3MsIHNlc3Npb24pID0+IGNtZFdvcmtzcGFjZShwb3NbMF0sIHNlc3Npb24pLFxuICB9LFxuICB7XG4gICAgbmFtZTogXCJtZXRhXCIsXG4gICAgZmxhZ3M6IFNFU1NJT04sXG4gICAgcG9zaXRpb25hbHM6IFt7IG5hbWU6IFwicGF0aFwiLCByZXF1aXJlZDogZmFsc2UgfV0sXG4gICAgZGVzY3JpYmU6IFwiYSBkb2N1bWVudCdzIGZyb250bWF0dGVyIGFzIHRoZSBkYWVtb24gcmVhZCBpdCAobm8gcGF0aDogZXZlcnkgY29udGV4dCBkb2N1bWVudClcIixcbiAgICBydW46IGFzeW5jIChwb3MsIF9mbGFncywgc2Vzc2lvbikgPT4ge1xuICAgICAgcHJpbnRKc29uKFxuICAgICAgICBhd2FpdCBwb3N0Q21kKHNlc3Npb24sIHtcbiAgICAgICAgICB0eXBlOiBcIm1ldGFcIixcbiAgICAgICAgICAuLi4ocG9zWzBdICE9PSB1bmRlZmluZWQgPyB7IHBhdGg6IHJlc29sdmUocG9zWzBdKSB9IDoge30pLFxuICAgICAgICB9KSxcbiAgICAgICk7XG4gICAgfSxcbiAgfSxcbiAge1xuICAgIG5hbWU6IFwiZmluZFwiLFxuICAgIGZsYWdzOiBbLi4uU0VTU0lPTiwgXCJ0eXBlXCIsIFwic3RhdHVzXCIsIFwibGlmZWN5Y2xlXCIsIFwidGFnXCIsIFwic2luY2VcIl0sXG4gICAgcG9zaXRpb25hbHM6IFtdLFxuICAgIGRlc2NyaWJlOlxuICAgICAgXCJkb2N1bWVudHMgYnkgZnJvbnRtYXR0ZXIg4oCUIGZpbHRlcnMgQU5ELCBhbGwgb3B0aW9uYWw7IGFuIGVtcHR5IHJlc3VsdCBpcyBhbiBhbnN3ZXIgKGNvdW50KVwiLFxuICAgIHJ1bjogYXN5bmMgKF9wb3MsIGZsYWdzLCBzZXNzaW9uKSA9PiB7XG4gICAgICBjb25zdCBmaWx0ZXI6IFJlY29yZDxzdHJpbmcsIHN0cmluZz4gPSB7fTtcbiAgICAgIGZvciAoY29uc3QgayBvZiBbXCJ0eXBlXCIsIFwic3RhdHVzXCIsIFwibGlmZWN5Y2xlXCIsIFwidGFnXCJdIGFzIGNvbnN0KVxuICAgICAgICBpZiAodHlwZW9mIGZsYWdzW2tdID09PSBcInN0cmluZ1wiKSBmaWx0ZXJba10gPSBmbGFnc1trXTtcbiAgICAgIGlmICh0eXBlb2YgZmxhZ3Muc2luY2UgPT09IFwic3RyaW5nXCIpIGZpbHRlci5zaW5jZSA9IHBhcnNlU2luY2VEYXRlKGZsYWdzLnNpbmNlKTtcbiAgICAgIHByaW50SnNvbihhd2FpdCBwb3N0Q21kKHNlc3Npb24sIHsgdHlwZTogXCJmaW5kXCIsIGZpbHRlciB9KSk7XG4gICAgfSxcbiAgfSxcbiAge1xuICAgIG5hbWU6IFwic2VhcmNoXCIsXG4gICAgZmxhZ3M6IFsuLi5TRVNTSU9OLCBcImxpbWl0XCJdLFxuICAgIHBvc2l0aW9uYWxzOiBbeyBuYW1lOiBcInF1ZXJ5XCIsIHJlcXVpcmVkOiB0cnVlLCB2YXJpYWRpYzogdHJ1ZSB9XSxcbiAgICBkZXNjcmliZTpcbiAgICAgIFwic2VhcmNoIHRoZSBjb250ZXh0OiBmdXp6eSBvbiBuYW1lcywgZXhhY3QgaW4gdGV4dCDigJQgc2VhcmNoZXMgdGhlIEFDVElWRSB2ZXJzaW9uIG9mIG9wZW4gZG9jdW1lbnRzLCB3aGljaCBncmVwIGNhbm5vdCBzZWVcIixcbiAgICBydW46IGFzeW5jIChwb3MsIGZsYWdzLCBzZXNzaW9uKSA9PiB7XG4gICAgICBjb25zdCBsaW1pdCA9XG4gICAgICAgIHR5cGVvZiBmbGFncy5saW1pdCA9PT0gXCJzdHJpbmdcIiA/IHBhcnNlQ291bnQoZmxhZ3MubGltaXQsIFwic2VhcmNoIC0tbGltaXRcIikgOiB1bmRlZmluZWQ7XG4gICAgICBwcmludEpzb24oXG4gICAgICAgIGF3YWl0IHBvc3RDbWQoc2Vzc2lvbiwge1xuICAgICAgICAgIHR5cGU6IFwic2VhcmNoXCIsXG4gICAgICAgICAgcXVlcnk6IHBvcy5qb2luKFwiIFwiKSxcbiAgICAgICAgICAuLi4obGltaXQgIT09IHVuZGVmaW5lZCA/IHsgbGltaXQgfSA6IHt9KSxcbiAgICAgICAgfSksXG4gICAgICApO1xuICAgIH0sXG4gIH0sXG4gIHtcbiAgICBuYW1lOiBcImRvY3RvclwiLFxuICAgIGZsYWdzOiBTRVNTSU9OLFxuICAgIHBvc2l0aW9uYWxzOiBbXSxcbiAgICBkZXNjcmliZTpcbiAgICAgIFwid2hhdCBpcyB3b3J0aCBsb29raW5nIGF0IGluIHRoaXMgc2Vzc2lvbiDigJQgZWFjaCBmaW5kaW5nIG5hbWVzIHRoZSB2ZXJiIHRoYXQgZml4ZXMgaXRcIixcbiAgICBydW46IGFzeW5jIChfcG9zLCBfZmxhZ3MsIHNlc3Npb24pID0+IHtcbiAgICAgIHByaW50SnNvbihhd2FpdCBwb3N0Q21kKHNlc3Npb24sIHsgdHlwZTogXCJkb2N0b3JcIiB9KSk7XG4gICAgfSxcbiAgfSxcbiAge1xuICAgIG5hbWU6IFwiZm9yZ2V0XCIsXG4gICAgZmxhZ3M6IFsuLi5TRVNTSU9OLCBcImRvY1wiXSxcbiAgICBwb3NpdGlvbmFsczogW10sXG4gICAgZGVzY3JpYmU6XG4gICAgICBcImZvcmdldCBhIGRvY3VtZW50IHdob3NlIGZpbGUgb2YgcmVjb3JkIGlzIGdvbmUgKHJlZnVzZWQgd2hpbGUgdGhlIGZpbGUgZXhpc3RzIOKAlCB1c2UgaGlkZSB0byB0YWtlIG9uZSBvdXQgb2YgdGhlIGNvbnRleHQpXCIsXG4gICAgcnVuOiBhc3luYyAoX3BvcywgZmxhZ3MsIHNlc3Npb24pID0+IHtcbiAgICAgIHByaW50SnNvbihcbiAgICAgICAgYXdhaXQgcG9zdENtZChzZXNzaW9uLCB7XG4gICAgICAgICAgdHlwZTogXCJmb3JnZXRcIixcbiAgICAgICAgICAuLi4odHlwZW9mIGZsYWdzLmRvYyA9PT0gXCJzdHJpbmdcIiA/IHsgZG9jOiBkb2NBcmcoZmxhZ3MuZG9jKSB9IDoge30pLFxuICAgICAgICB9KSxcbiAgICAgICk7XG4gICAgfSxcbiAgfSxcbiAge1xuICAgIG5hbWU6IFwiZGFuZ2xpbmdcIixcbiAgICBmbGFnczogWy4uLlNFU1NJT04sIFwiZW50cnlcIl0sXG4gICAgcG9zaXRpb25hbHM6IFtdLFxuICAgIGRlc2NyaWJlOiBcImxpbmtzIGluIGEgc2V0IHRoYXQgbm90aGluZyBhbnN3ZXJzIOKAlCBmaWxlLCBsaW5lLCBhbmQgdGhlIHRhcmdldCBhcyB3cml0dGVuXCIsXG4gICAgcnVuOiBhc3luYyAoX3BvcywgZmxhZ3MsIHNlc3Npb24pID0+IHtcbiAgICAgIHByaW50SnNvbihcbiAgICAgICAgYXdhaXQgcG9zdENtZChzZXNzaW9uLCB7XG4gICAgICAgICAgdHlwZTogXCJkYW5nbGluZ1wiLFxuICAgICAgICAgIC4uLih0eXBlb2YgZmxhZ3MuZW50cnkgPT09IFwic3RyaW5nXCIgPyB7IGVudHJ5OiBmbGFncy5lbnRyeSB9IDoge30pLFxuICAgICAgICB9KSxcbiAgICAgICk7XG4gICAgfSxcbiAgfSxcbiAge1xuICAgIG5hbWU6IFwiZ3JhcGhcIixcbiAgICBmbGFnczogWy4uLlNFU1NJT04sIFwiZW50cnlcIl0sXG4gICAgcG9zaXRpb25hbHM6IFtdLFxuICAgIGRlc2NyaWJlOlxuICAgICAgXCJhIHNldCdzIG1hcCBhcyBKU09OIOKAlCBub2RlcywgZWRnZXMgKGJvZHkgbGlua3MgYW5kIGZyb250bWF0dGVyIGtlcHQgYXBhcnQpLCBkYW5nbGluZ1wiLFxuICAgIHJ1bjogYXN5bmMgKF9wb3MsIGZsYWdzLCBzZXNzaW9uKSA9PiB7XG4gICAgICBwcmludEpzb24oXG4gICAgICAgIGF3YWl0IHBvc3RDbWQoc2Vzc2lvbiwge1xuICAgICAgICAgIHR5cGU6IFwiZ3JhcGhcIixcbiAgICAgICAgICAuLi4odHlwZW9mIGZsYWdzLmVudHJ5ID09PSBcInN0cmluZ1wiID8geyBlbnRyeTogZmxhZ3MuZW50cnkgfSA6IHt9KSxcbiAgICAgICAgfSksXG4gICAgICApO1xuICAgIH0sXG4gIH0sXG4gIHtcbiAgICBuYW1lOiBcImJhY2tsaW5rc1wiLFxuICAgIGZsYWdzOiBTRVNTSU9OLFxuICAgIHBvc2l0aW9uYWxzOiBbeyBuYW1lOiBcInBhdGhcIiwgcmVxdWlyZWQ6IHRydWUgfV0sXG4gICAgZGVzY3JpYmU6IFwid2hhdCBjaXRlcyBhIGRvY3VtZW50IOKAlCBgcmVsYXRlZGAgKGZyb250bWF0dGVyKSBhbmQgYGxpbmtzYCAoYm9keSksIGtlcHQgYXBhcnRcIixcbiAgICBydW46IGFzeW5jIChwb3MsIF9mbGFncywgc2Vzc2lvbikgPT4ge1xuICAgICAgcHJpbnRKc29uKGF3YWl0IHBvc3RDbWQoc2Vzc2lvbiwgeyB0eXBlOiBcImJhY2tsaW5rc1wiLCBwYXRoOiByZXNvbHZlKHBvc1swXSBhcyBzdHJpbmcpIH0pKTtcbiAgICB9LFxuICB9LFxuICB7XG4gICAgbmFtZTogXCJtZXRhLWluaXRcIixcbiAgICBmbGFnczogWy4uLlNFU1NJT04sIFwidHlwZVwiLCBcImJ5XCJdLFxuICAgIHBvc2l0aW9uYWxzOiBbeyBuYW1lOiBcInBhdGhcIiwgcmVxdWlyZWQ6IHRydWUgfV0sXG4gICAgZGVzY3JpYmU6XG4gICAgICBcImFkZCBhIGZyb250bWF0dGVyIGJsb2NrIHRvIGEgZG9jdW1lbnQgdGhhdCBoYXMgbm9uZSAodHlwZSBndWVzc2VkIGZyb20gaXRzIG5laWdoYm91cnMpXCIsXG4gICAgcnVuOiBhc3luYyAocG9zLCBmbGFncywgc2Vzc2lvbikgPT4ge1xuICAgICAgcHJpbnRKc29uKFxuICAgICAgICBhd2FpdCBwb3N0Q21kKHNlc3Npb24sIHtcbiAgICAgICAgICB0eXBlOiBcIm1ldGEuaW5pdFwiLFxuICAgICAgICAgIHBhdGg6IHJlc29sdmUocG9zWzBdIGFzIHN0cmluZyksXG4gICAgICAgICAgLi4uKHR5cGVvZiBmbGFncy50eXBlID09PSBcInN0cmluZ1wiID8geyBtZXRhVHlwZTogZmxhZ3MudHlwZSB9IDoge30pLFxuICAgICAgICAgIC4uLih0eXBlb2YgZmxhZ3MuYnkgPT09IFwic3RyaW5nXCIgPyB7IGJ5OiBmbGFncy5ieSB9IDoge30pLFxuICAgICAgICB9KSxcbiAgICAgICk7XG4gICAgfSxcbiAgfSxcbiAge1xuICAgIG5hbWU6IFwibWV0YS1zZXRcIixcbiAgICBmbGFnczogU0VTU0lPTixcbiAgICBwb3NpdGlvbmFsczogW1xuICAgICAgeyBuYW1lOiBcInBhdGhcIiwgcmVxdWlyZWQ6IHRydWUgfSxcbiAgICAgIHsgbmFtZTogXCJrZXk9dmFsdWVcIiwgcmVxdWlyZWQ6IHRydWUsIHZhcmlhZGljOiB0cnVlIH0sXG4gICAgXSxcbiAgICBkZXNjcmliZTogXCJzZXQgZnJvbnRtYXR0ZXIga2V5cyDigJQgb25lIGxpbmUgZWRpdCBlYWNoLCBldmVyeXRoaW5nIGVsc2UgdW50b3VjaGVkXCIsXG4gICAgcnVuOiBhc3luYyAocG9zLCBfZmxhZ3MsIHNlc3Npb24pID0+IHtcbiAgICAgIGNvbnN0IGZpZWxkczogUmVjb3JkPHN0cmluZywgc3RyaW5nPiA9IHt9O1xuICAgICAgZm9yIChjb25zdCBwYWlyIG9mIHBvcy5zbGljZSgxKSkge1xuICAgICAgICBjb25zdCBlcSA9IHBhaXIuaW5kZXhPZihcIj1cIik7XG4gICAgICAgIGlmIChlcSA8PSAwKVxuICAgICAgICAgIGRpZShgXCIke3BhaXJ9XCIgaXMgbm90IGtleT12YWx1ZWAsIFwidXNhZ2VcIiwge1xuICAgICAgICAgICAgaGludDogXCJtZXRhLXNldCA8cGF0aD4gc3RhdHVzPXN0YWJsZSBsaWZlY3ljbGU9bGl2ZVwiLFxuICAgICAgICAgIH0pO1xuICAgICAgICBmaWVsZHNbcGFpci5zbGljZSgwLCBlcSldID0gcGFpci5zbGljZShlcSArIDEpO1xuICAgICAgfVxuICAgICAgcHJpbnRKc29uKFxuICAgICAgICBhd2FpdCBwb3N0Q21kKHNlc3Npb24sIHsgdHlwZTogXCJtZXRhLnNldFwiLCBwYXRoOiByZXNvbHZlKHBvc1swXSBhcyBzdHJpbmcpLCBmaWVsZHMgfSksXG4gICAgICApO1xuICAgIH0sXG4gIH0sXG4gIHtcbiAgICBuYW1lOiBcImluZm9cIixcbiAgICBmbGFnczogU0VTU0lPTixcbiAgICBwb3NpdGlvbmFsczogW10sXG4gICAgZGVzY3JpYmU6IFwicHJpbnQgdGhlIHJlc29sdmVkIHNlc3Npb24gcG9pbnRlclwiLFxuICAgIHJ1bjogKF9wb3MsIF9mbGFncywgc2Vzc2lvbikgPT4ge1xuICAgICAgcHJpbnRKc29uKHJlcXVpcmVTZXNzaW9uKHNlc3Npb24pKTtcbiAgICB9LFxuICB9LFxuICB7XG4gICAgbmFtZTogXCJjbG9zZVwiLFxuICAgIGZsYWdzOiBTRVNTSU9OLFxuICAgIHBvc2l0aW9uYWxzOiBbXSxcbiAgICBkZXNjcmliZTogXCJzaHV0IHRoZSBzZXNzaW9uIGRvd24gKHRoZSBtYW5pZmVzdCBzdGF5cywgZm9yIG9wZW4gLS1yZXN0b3JlKVwiLFxuICAgIHJ1bjogYXN5bmMgKF9wb3MsIF9mbGFncywgc2Vzc2lvbikgPT4ge1xuICAgICAgYXdhaXQgcG9zdENtZChzZXNzaW9uLCB7IHR5cGU6IFwiY2xvc2VcIiB9KTtcbiAgICAgIHByaW50SnNvbih7IG9rOiB0cnVlLCBzZW50OiBcImNsb3NlXCIgfSk7XG4gICAgfSxcbiAgfSxcbl07XG5cbi8vIOKblCBCVUlMRElORyBUSEUgVEFCTEUgSEFTIE5PIFNJREUgRUZGRUNUUzogYGRlZmluZUNsaWAgb25seSB2YWxpZGF0ZXMgYW5kXG4vLyBpbmRleGVzLCBzbyBhIHdhcmQgb3IgYSB0ZXN0IGNhbiBpbXBvcnQgdGhpcyBtb2R1bGUgYW5kIHJlYWQgdGhlIHRhYmxlLlxuZXhwb3J0IGNvbnN0IGNsaSA9IGRlZmluZUNsaSh7XG4gIG5hbWU6IFwic2NyaXB0b3JpdW1cIixcbiAgc3VtbWFyeTogXCJhIGNvLXByZXNlbnQgbWFya2Rvd24gZWRpdG9yOiB0aGUgaHVtYW4gZWRpdHMsIHlvdSB3cml0ZSBuZXcgdmVyc2lvbnMuXCIsXG4gIG9wdGlvbnM6IENMSV9PUFRJT05TLFxuICBjb21tYW5kczogUk9XUy5tYXAoKHIpID0+ICh7IC4uLnIsIHJ1bjogb24oci5ydW4pLCByZWplY3RIaW50OiBEQVNIX0hJTlQgfSkpLFxuICAvLyBgc2NyaXB0b3JpdW0gLS1zZXNzaW9uIHggc3RhdGVgIHJ1bnMgYHN0YXRlYDsgYSBiYXJlIGAtLWAgbWFrZXMgdGhlIG5leHRcbiAgLy8gdG9rZW4gdGhlIHZlcmIgKGFjYyBBNikuXG4gIGdyYW1tYXI6IFwiZmxhZ3MtYW55d2hlcmVcIixcbiAgdmVyYlBvc2l0aW9uYWw6IFwidmVyYlwiLFxuICB1c2FnZUhpZGVzOiBbXCJzZXNzaW9uXCJdLFxuICB2ZXJzaW9uOiB2ZXJzaW9uSW5mbyxcbiAgaGVscEZvb3RlcjogYCAgQWRkIC0tc2Vzc2lvbiA8aWQ+IHRvIGFueSB2ZXJiIHRoYXQgdGFsa3MgdG8gYSBzZXNzaW9uIChkZWZhdWx0OiBtb3N0IHJlY2VudCkuXG4gIEVhY2ggdmVyYiBhY2NlcHRzIG9ubHkgdGhlIGZsYWdzIG9uIGl0cyByb3cuXG5cbiAgT3V0cHV0OiBKU09OIG9uIHN0ZG91dCwgb25lIGRvY3VtZW50IHBlciBhbnN3ZXIg4oCUIGV4Y2VwdCB0YWlsIChvbmUgSlNPTiBsaW5lXG4gIHBlciBldmVudCkgYW5kIGhlbHAgKHByb3NlKS4gRmFpbHVyZXM6IG9uZSBKU09OIGVudmVsb3BlIG9uIHN0ZGVyciwgZXhpdFxuICAyID0gdXNhZ2UsIDEgPSBpbnRlcm5hbCwgNSA9IG5vdCBmb3VuZCwgNiA9IGNvbmZsaWN0LiB0YWlsIHdhaXRzIGZvciBhXG4gIHNlc3Npb24gcmF0aGVyIHRoYW4gZmFpbGluZywgYW5kIGVuZHMgMCB3aGVuIGl0cyBzZXNzaW9uIGNsb3Nlcy4gdGFpbFxuICAke1dJTkRPV19IRUxQfS5gLFxufSk7XG5cbmV4cG9ydCBjb25zdCBWRVJCUzogcmVhZG9ubHkgc3RyaW5nW10gPSBjbGkudmVyYnM7XG5leHBvcnQgY29uc3QgVkVSQl9TUEVDOiBSZWNvcmQ8c3RyaW5nLCByZWFkb25seSBzdHJpbmdbXT4gPSBPYmplY3QuZnJvbUVudHJpZXMoXG4gIGNsaS5yb3dzLm1hcCgocikgPT4gW3IubmFtZSwgci5hY2NlcHRlZF0pLFxuKTtcbmV4cG9ydCBjb25zdCBmbGFnc0ZvciA9ICh2ZXJiOiBzdHJpbmcpOiBzdHJpbmdbXSA9PiBjbGkuZmxhZ3NGb3IodmVyYik7XG5leHBvcnQgY29uc3QgUkVDT0dOSVpFRF9GTEFHUzogcmVhZG9ubHkgc3RyaW5nW10gPSBjbGkucmVjb2duaXplZEZsYWdzO1xuXG4vLyBgZGlzcGF0Y2hgLCBub3QgdGhlIHJlZ2lzdHJ5J3MgYG1haW5gOiB0aGUga2l0IGRvZXMgbm90IHRyaWFnZSBhIG5vbi1DbGlFcnJvcjtcbi8vIHRoaXMgZG9lcy4gQSBuYW1lZCBmaWxlIHRoYXQgaXMgbm90IHRoZXJlICgtLWJvZHktZmlsZSkgaXMgdGhlIGNhbGxlcidzO1xuLy8gZXZlcnl0aGluZyBlbHNlIGlzIG91cnMuXG5hc3luYyBmdW5jdGlvbiBtYWluKGFyZ3Y6IHN0cmluZ1tdKTogUHJvbWlzZTxudW1iZXI+IHtcbiAgdHJ5IHtcbiAgICByZXR1cm4gYXdhaXQgY2xpLmRpc3BhdGNoKGFyZ3YpO1xuICB9IGNhdGNoIChlKSB7XG4gICAgY29uc3QgcmVwb3J0ZWQgPSByZXBvcnRDbGlFcnJvcihlKTtcbiAgICBpZiAocmVwb3J0ZWQgIT09IG51bGwpIHJldHVybiByZXBvcnRlZDtcbiAgICBjb25zdCBjb2RlID1cbiAgICAgIGUgJiYgdHlwZW9mIGUgPT09IFwib2JqZWN0XCIgJiYgXCJjb2RlXCIgaW4gZSA/IFN0cmluZygoZSBhcyB7IGNvZGU6IHVua25vd24gfSkuY29kZSkgOiBcIlwiO1xuICAgIGNvbnN0IG1zZyA9IGUgaW5zdGFuY2VvZiBFcnJvciA/IGUubWVzc2FnZSA6IFN0cmluZyhlKTtcbiAgICBpZiAoY29kZSA9PT0gXCJFTk9FTlRcIikgcmV0dXJuIHJlcG9ydENsaUVycm9yKG5ldyBVc2FnZUVycm9yKG1zZykpID8/IDI7XG4gICAgcmV0dXJuIHJlcG9ydENsaUVycm9yKG5ldyBDbGlFcnJvcihcImludGVybmFsXCIsIG1zZykpID8/IDE7XG4gIH1cbn1cblxuLyoqXG4gKiBUaGUgQ0xJJ3MgZW50cnksIGZvciB0aGUgTEFVTkNIRVIuIFJldHVybnMgdGhlIGNvZGUgcmF0aGVyIHRoYW4gZXhpdGluZ1xuICogKHN0ZG91dCBpcyBhIHBpcGU7IGFuIGV4cGxpY2l0IGV4aXQgdHJ1bmNhdGVzIGl0KSwgYW5kIHRha2VzIG5vIGFyZ3VtZW50c1xuICogKHRoZSBjb21tYW5kIGxpbmUgYmVsb25ncyB0byB0aGUgZmlsZSB0aGF0IHBhcnNlcyBpdCkuXG4gKi9cbmV4cG9ydCBhc3luYyBmdW5jdGlvbiBydW4oKTogUHJvbWlzZTxudW1iZXI+IHtcbiAgcmV0dXJuIGF3YWl0IG1haW4ocHJvY2Vzcy5hcmd2LnNsaWNlKDIpKTtcbn1cblxuZXhwb3J0IHsgbWFpbiB9O1xuIiwKICAgICIvKipcbiAqIFRoZSBob3VzZSdzIE9ORSBDTEkgcmVnaXN0cnk6IG9uZSB0YWJsZSBkcml2ZXMgdGhlIHBhcnNlciwgdGhlIGRpc3BhdGNoZXIsXG4gKiBoZWxwLCB0aGUgcmVqZWN0aW9ucycgYGNob2ljZXNgLCBgLS12ZXJzaW9uYCBhbmQgdGhlIGFjYyBkZWNsYXJhdGlvblxuICogKGBzY2hlbWFgLCBmb3JtYXQgdjApLlxuICpcbiAqIEdlbmVyYWxpc2VkIGZyb20gdGhlIHRocmVlIGhhbmQtYnVpbHQgcmVnaXN0cmllcyAoZ3JhcGV2aW5lLCBnbGFtb3VyLFxuICogc2NyaXB0b3JpdW0pIHBlciBgZG9jcy9pdGVtcy9zaGFyZWQtY2xpLXJlZ2lzdHJ5LWluLXRoZS1raXQvd3JpdGUtdXAubWRgLCBhc1xuICogYW1lbmRlZCBieSBpdHMgY29sZCByZWFkIChg4oCmL2FydGlmYWN0cy9jb2xkLXJlYWQubWRgKS4gV2hlcmUgdGhleSBkaXNhZ3JlZWQsXG4gKiB0aGUgY29sZCByZWFkIHdvbi5cbiAqXG4gKiDim5QgVEhFIEtJVCBJUyBBIExFQUYuIFRoaXMgbW9kdWxlIGltcG9ydHMgb25seSBgbm9kZTp1dGlsYCBhbmQgb3RoZXIga2l0XG4gKiBtb2R1bGVzIChgLi4vd2lyZS9lcnJvcnNgLCBgLi4vbGliL3ByaW50SnNvbmApLlxuICpcbiAqIOKblCBOTyBTSURFIEVGRkVDVFMgQVQgSU1QT1JULCBBTkQgTk9ORSBJTiBgZGVmaW5lQ2xpYC4gQnVpbGRpbmcgdGhlIHRhYmxlIG9ubHlcbiAqIHZhbGlkYXRlcyBhbmQgaW5kZXhlcyBpdDsgbm90aGluZyBpcyBwYXJzZWQsIHByaW50ZWQgb3IgcmVhZCB1bnRpbCBgbWFpbmAgb3JcbiAqIGBkaXNwYXRjaGAgaXMgY2FsbGVkLiBBIGdyaW1vaXJlIHdhcmQgY2FuIGltcG9ydCBhIHNwZWxsJ3MgdGFibGUgYW5kIHJlYWRcbiAqIGByZWNvZ25pemVkRmxhZ3NgLCBgZmxhZ3NGb3JgLCBgdmVyYnNgIGFuZCBgZGVjbGFyYXRpb24oKWAgd2l0aG91dCBydW5uaW5nIGl0LlxuICpcbiAqIOKUgOKUgCBUSEUgQ09OVFJBQ1QgQSBTUEVMTCBDQU5OT1QgQ0hBTkdFIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgFxuICpcbiAqIDEuIGAtLWhlbHBgL2AtaGAgYW5kIGAtLXZlcnNpb25gL2AtVmAgYXMgYGFyZ3ZbMF1gIHJ1biB0aGUgYGhlbHBgIG9yXG4gKiAgICBgdmVyc2lvbmAgcm93IGFuZCBQQVNTIFRIRSBSRU1BSU5JTkcgQVJHVU1FTlRTIE9OIHRvIGl0LCBzbyB0aGF0IHJvdydzIG93blxuICogICAgZmxhZyBjaGVjayBhcHBsaWVzOiBgLS12ZXJzaW9uIC0taHVtYW5gIHdvcmtzIHdoZXJlIGB2ZXJzaW9uYCBhY2NlcHRzXG4gKiAgICBgLS1odW1hbmAsIGFuZCBgLS12ZXJzaW9uIC0tanVua2AgaXMgZXhpdCAyIHdoZXJlIGl0IGRvZXMgbm90LlxuICogMi4gRW1wdHkgYXJndiBpcyBhIHVzYWdlIGVycm9yIChhY2MgQzIvRDI6IG9uZSBlbnZlbG9wZSBvbiBzdGRlcnIsIGV4aXQgMixcbiAqICAgIGBjaG9pY2VzYCA9IHRoZSB2ZXJicykg4oCUIHVubGVzcyB0aGUgQ0xJIGhhcyBhIHZlcmJsZXNzIGByb290YCByb3cgdGhhdFxuICogICAgYWNjZXB0cyBhbiBlbXB0eSBhcmd2IChubyByZXF1aXJlZCBwb3NpdGlvbmFsczsgZmxhZ3MgZGVmYXVsdGVkKS5cbiAqIDMuIFRoZSB2ZXJiIGlzIGZvdW5kIHBlciB0aGUgZ3JhbW1hcjpcbiAqICAgIC0gYHZlcmItZmlyc3RgIChkZWZhdWx0KTogYGFyZ3ZbMF1gLiBBIGRhc2gtbGVkIGBhcmd2WzBdYCB0aGF0IGlzIG5vdCBhblxuICogICAgICBpbnRlcmNlcHRvciBpcyBhbiB1bmtub3duIFJPT1QgZmxhZyAoYGNob2ljZXNgID0gdGhlIGludGVyY2VwdG9ycywgbG9uZ1xuICogICAgICBmaXJzdCkuIEZsYWdzIGJlZm9yZSB0aGUgdmVyYiBhcmUgcmVmdXNlZCwgaW5jbHVkaW5nIGdsb2JhbCBvbmVzLlxuICogICAgLSBgZmxhZ3MtYW55d2hlcmVgOiB0aGUgZmlyc3QgdG9rZW4gdGhhdCBpcyBuZWl0aGVyIGEgZmxhZyBub3IgYSBzdHJpbmdcbiAqICAgICAgZmxhZydzIHZhbHVlIChgZ2xhbW91ciAtLXNlc3Npb24geCBpbmZvYCBydW5zIGBpbmZvYCkuIFRoZVxuICogICAgICB1bmtub3duLXJvb3QtZmxhZyBydWxlIGRvZXMgTk9UIGFwcGx5OyBhbiBhcmd2IHdpdGggbm8gdmVyYiBpbiBpdCBpc1xuICogICAgICBwYXJzZWQgd2hvbGUsIHNvIGFuIHVua25vd24gZmxhZyB0aGVyZSBpcyByZWZ1c2VkIHdpdGggdGhlIHJvb3QncyBzZXQuXG4gKiAgICBJbiBib3RoLCBhIGJhcmUgYC0tYCBiZWZvcmUgdGhlIHZlcmIgbWFrZXMgdGhlIE5FWFQgdG9rZW4gdGhlIHZlcmJcbiAqICAgIGNhbmRpZGF0ZSBhbmQgZXZlcnl0aGluZyBhZnRlciBpdCBwb3NpdGlvbmFsIChhY2MgQTYpOiBgY2xpIC0tIC0teGAgaXNcbiAqICAgIGB1bmtub3duIGNvbW1hbmQgXCItLXhcImAsIG5ldmVyIGFuIG9wdGlvbi5cbiAqIDQuIE5lc3RpbmcgaXMgb25lIGxldmVsOiBhIHJvdyBuYW1lZCBgXCJub2RlIGVkaXRcImAuIFRoZSBzdWItdmVyYiBvZiBhIGdyb3VwXG4gKiAgICBpcyBmb3VuZCBieSB0aGUgZ3JvdXAncyBgc3ViVmVyYkF0YCAoc2VlIGBHcm91cFNwZWNgKS4gQSBncm91cCB3aXRoIG5vIHJvd1xuICogICAgb2YgaXRzIG93biByZWplY3RzIGEgbWlzc2luZyBvciB1bmtub3duIHN1Yi12ZXJiIHdpdGggaXRzIHN1Yi12ZXJicyBhc1xuICogICAgYGNob2ljZXNgOyBhIGdyb3VwIFdJVEggaXRzIG93biByb3cgKGBkb2MgPGlkPmApIHJ1bnMgdGhhdCByb3cgaW5zdGVhZC5cbiAqIDUuIFRoZSByb3cncyBhcmdzIGFyZSBwYXJzZWQgc3RyaWN0IGFnYWluc3QgdGhlIFdIT0xFIG9wdGlvbnMgdGFibGUgKHdpdGhcbiAqICAgIGBkZWZhdWx0YHMgc3RyaXBwZWQpLCBzbyBhIGZsYWcgdGhlIHNwZWxsIGtub3dzIGJ1dCB0aGlzIHJvdyBkb2VzIG5vdCB0YWtlXG4gKiAgICBpcyByZWZ1c2VkIGFzIE1JU1BMQUNFRCAoYC0teCBpcyBub3QgYWNjZXB0ZWQgYnkgXFxgdmVyYlxcYGApLCBhbmQgb25lIHRoZVxuICogICAgc3BlbGwgZG9lcyBub3Qga25vdyBhcyBVTktOT1dOLiBCb3RoIGNhcnJ5IGBjaG9pY2VzYCA9IHRoaXMgcm93J3MgYWNjZXB0ZWRcbiAqICAgIHNldCAoaXRzIG93biBmbGFncyBwbHVzIGBnbG9iYWxGbGFnc2A7IGEgdmVyYmxlc3Mgcm9vdCdzIGFkZHMgdGhlXG4gKiAgICBpbnRlcmNlcHRvcnMsIGFzIGl0cyBkZWNsYXJlZCByb3cgZG9lcykuIEFmdGVyIGEgYC0tYCBldmVyeXRoaW5nIGlzIGFcbiAqICAgIHBvc2l0aW9uYWwgKG5vZGUncyBwYXJzZXIgaG9ub3VycyBpdCkuIEEgcG9zdC1gLS1gIHRva2VuIHRoYXQgc3BlbGxzIGFcbiAqICAgIGZsYWcgdGhpcyByb3cgYWNjZXB0cyBpcyBzdGlsbCBhIHBvc2l0aW9uYWwsIGJ1dCBpdCBlYXJucyBvbmVcbiAqICAgIGAjIHdhcm5pbmc6YCBsaW5lIG9uIHN0ZGVyciBuYW1pbmcgdGhlIHJlY292ZXJ5IChgd2FybkRlbW90ZWRgKTsgc3Rkb3V0XG4gKiAgICBhbmQgdGhlIGV4aXQgY29kZSBhcmUgdW5jaGFuZ2VkLlxuICogNi4gRGVmYXVsdHMgYXJlIGFwcGxpZWQgQUZURVIgdGhlIHBlci1yb3cgY2hlY2ssIGFuZCBvbmx5IGZvciBmbGFncyB0aGUgcm93XG4gKiAgICBhY2NlcHRzIOKAlCBzbyBhIGRlZmF1bHRlZCBmbGFnIG5ldmVyIHRyaXBzIHRoZSBtaXNwbGFjZWQtZmxhZyBjaGVjaywgYW5kIGFcbiAqICAgIHJvdyBuZXZlciBzZWVzIGFub3RoZXIgcm93J3MgZGVmYXVsdC5cbiAqIDcuIEFyaXR5IGlzIGVuZm9yY2VkIGZyb20gYHBvc2l0aW9uYWxzYDsgdGhlIHJlamVjdGlvbiBuYW1lcyB0aGUgbWlzc2luZ1xuICogICAgYDxwb3NpdGlvbmFsPmAgb3IgdGhlIGV4dHJhIHRva2VuLiBBIHJvdydzIGBjaGVja2AgbWF5IHRoZW4gcmVmdXNlIGFcbiAqICAgIGNvbWJpbmF0aW9uIHRoZSBkZWNsYXJhdGlvbiBjYW5ub3QgZXhwcmVzcyAoZmxhZy1kZXBlbmRlbnQgYXJpdHkpLlxuICogOC4gVGhlIHJvdyBydW5zOyBhIG51bWJlciBpdCByZXR1cm5zIGlzIHRoZSBleGl0IGNvZGUsIGFueXRoaW5nIGVsc2UgaXMgMC5cbiAqXG4gKiBUaGUgbW9kdWxlIGFkZHMgYGhlbHBgLCBgdmVyc2lvbmAgYW5kIGBzY2hlbWFgIHJvd3MgdW5sZXNzIHRoZSBzcGVsbCBkZWZpbmVzXG4gKiBhIHJvdyBvZiB0aGF0IG5hbWUgKGdyYXBldmluZSdzIGB2ZXJzaW9uIC0taHVtYW5gKS4gVGhleSBhcmUgb3JkaW5hcnkgcm93czpcbiAqIGRlY2xhcmVkLCBzdHJpY3QsIGFuZCBnaXZlbiBgZ2xvYmFsRmxhZ3NgIGxpa2UgZXZlcnkgb3RoZXIgcm93LlxuICovXG5cbmltcG9ydCB7IHBhcnNlQXJncyB9IGZyb20gXCJub2RlOnV0aWxcIjtcbmltcG9ydCB7IHByaW50SnNvbiB9IGZyb20gXCIuLi9saWIvcHJpbnRKc29uXCI7XG5pbXBvcnQgeyBDbGlFcnJvciwgZGllLCByZXBvcnRDbGlFcnJvciwgc2V0Q3VycmVudENvbW1hbmQgfSBmcm9tIFwiLi4vd2lyZS9lcnJvcnNcIjtcblxuLy8g4pSA4pSAIHR5cGVzIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgFxuXG5leHBvcnQgdHlwZSBGbGFnVHlwZSA9IFwic3RyaW5nXCIgfCBcImJvb2xlYW5cIjtcblxuLyoqIE9uZSBgcGFyc2VBcmdzYCBvcHRpb24sIHBsdXMgdGhlIGBkZWZhdWx0YCBub2RlJ3MgcGFyc2VyIGFsc28gdGFrZXMuICovXG5leHBvcnQgdHlwZSBPcHRpb25TcGVjID0ge1xuICB0eXBlOiBGbGFnVHlwZTtcbiAgbXVsdGlwbGU/OiBib29sZWFuO1xuICBzaG9ydD86IHN0cmluZztcbiAgZGVmYXVsdD86IHN0cmluZyB8IGJvb2xlYW4gfCByZWFkb25seSBzdHJpbmdbXSB8IHJlYWRvbmx5IGJvb2xlYW5bXTtcbn07XG5cbmV4cG9ydCB0eXBlIE9wdGlvbnNUYWJsZSA9IFJlYWRvbmx5PFJlY29yZDxzdHJpbmcsIE9wdGlvblNwZWM+PjtcblxuZXhwb3J0IHR5cGUgUG9zaXRpb25hbFNwZWMgPSB7IG5hbWU6IHN0cmluZzsgcmVxdWlyZWQ6IGJvb2xlYW47IHZhcmlhZGljPzogYm9vbGVhbiB9O1xuXG5leHBvcnQgdHlwZSBGbGFnVmFsdWUgPSBzdHJpbmcgfCBib29sZWFuIHwgKHN0cmluZyB8IGJvb2xlYW4pW107XG5cbmV4cG9ydCB0eXBlIEludm9jYXRpb248RiBleHRlbmRzIHN0cmluZyA9IHN0cmluZz4gPSB7XG4gIC8qKiBUaGUgcmVzb2x2ZWQgcm93IG5hbWU6IGBcIm9wZW5cImAsIGBcIm5vZGUgZWRpdFwiYCwgb3IgYFwiXCJgIGZvciBhIHZlcmJsZXNzIHJvb3QuICovXG4gIHBhdGg6IHN0cmluZztcbiAgLyoqIFRoZSBzcGVsbGluZyB0aGUgY2FsbGVyIHVzZWQg4oCUIGFuIGFsaWFzLCB3aGVuIG9uZSB3YXMgdXNlZC4gKi9cbiAgdG9rZW46IHN0cmluZztcbiAgLyoqIFBvc2l0aW9uYWxzIGFmdGVyIHRoZSBwYXRoLiAqL1xuICBwb3M6IHN0cmluZ1tdO1xuICAvKiogRmxhZ3MgZ2l2ZW4sIHBsdXMgdGhlIGRlZmF1bHRzIG9mIHRoZSBmbGFncyB0aGlzIHJvdyBhY2NlcHRzLiAqL1xuICBmbGFnczogUGFydGlhbDxSZWNvcmQ8RiwgRmxhZ1ZhbHVlPj47XG59O1xuXG5leHBvcnQgdHlwZSBDb21tYW5kU3BlYzxGIGV4dGVuZHMgc3RyaW5nID0gc3RyaW5nPiA9IHtcbiAgLyoqIGBcIm9wZW5cImA7IG9uZSBzcGFjZSBtZWFucyBvbmUgbGV2ZWwgb2YgbmVzdGluZzogYFwibm9kZSBlZGl0XCJgLiAqL1xuICBuYW1lOiBzdHJpbmc7XG4gIC8qKiBFYWNoIGFsaWFzIGlzIGRpc3BhdGNoYWJsZSwgbGlzdGVkIGluIGB2ZXJic2AsIGFuZCBnZXRzIGl0cyBvd24gZGVjbGFyZWRcbiAgICogIHJvdy4gQW4gYWxpYXMgb2YgYSBuZXN0ZWQgcm93IG11c3Qgc2hhcmUgaXRzIGdyb3VwOiBgXCJub2RlIGNoYW5nZVwiYC4gKi9cbiAgYWxpYXNlcz86IHJlYWRvbmx5IHN0cmluZ1tdO1xuICAvKiogVGhpcyByb3cncyBvd24gZmxhZ3M7IGBnbG9iYWxGbGFnc2AgYXJlIGFkZGVkIHRvIHRoZW0uICovXG4gIGZsYWdzOiByZWFkb25seSBGW107XG4gIC8qKiBBcml0eSBpcyBlbmZvcmNlZCBmcm9tIHRoaXMsIGFuZCBpdCBpcyB3aGF0IGBzY2hlbWFgIHB1Ymxpc2hlcy4gKi9cbiAgcG9zaXRpb25hbHM6IHJlYWRvbmx5IFBvc2l0aW9uYWxTcGVjW107XG4gIC8qKiBPbmUgbGluZSBmb3IgdGhlIHJlbmRlcmVkIGhlbHAuICovXG4gIGRlc2NyaWJlOiBzdHJpbmc7XG4gIC8qKiBBZGRlZCBhcyB0aGUgYGhpbnRgIG9mIHRoaXMgcm93J3MgZmxhZyByZWplY3Rpb25zLiAqL1xuICByZWplY3RIaW50Pzogc3RyaW5nO1xuICAvKiogYGZhbHNlYCBoYW5kcyBub2RlJ3Mgb3duIFwiVW5leHBlY3RlZCBhcmd1bWVudFwiIHJlZnVzYWwgYW55IHBvc2l0aW9uYWwuICovXG4gIGFsbG93UG9zaXRpb25hbHM/OiBib29sZWFuO1xuICAvKipcbiAgICogRmxhZy1kZXBlbmRlbnQgYXJpdHkgKGltYWdvIGBoYW5kb2ZmIC0tY2xlYXJgLCBtaW5kLW1hcHBlciBgLS10b3wtLWNsZWFyYClcbiAgICogYW5kIGFueSBvdGhlciBjb21iaW5hdGlvbiBydWxlLiBSdW5zIGFmdGVyIHRoZSBhcml0eSBjaGVjazsgYSByZXR1cm5lZFxuICAgKiBzdHJpbmcgaXMgcmVmdXNlZCBhcyBhIHVzYWdlIGVycm9yIG5hbWluZyB0aGlzIHJvdy4g4pqgIFRoZSBkZWNsYXJhdGlvblxuICAgKiBjYW5ub3QgZXhwcmVzcyBzdWNoIGEgcnVsZTogYSBwb3NpdGlvbmFsIHRoYXQgYC0tY2xlYXJgIG1ha2VzIHVubmVjZXNzYXJ5XG4gICAqIGNhbiBvbmx5IGJlIGRlY2xhcmVkIGByZXF1aXJlZDogZmFsc2VgLCBhbmQgdGhpcyBob29rIGVuZm9yY2VzIHRoZSByZXN0LlxuICAgKi9cbiAgY2hlY2s/OiAoaW52OiBJbnZvY2F0aW9uPEY+KSA9PiBzdHJpbmcgfCB1bmRlZmluZWQ7XG4gIC8qKiBBIG51bWJlciBpcyB0aGUgZXhpdCBjb2RlOyBhbnl0aGluZyBlbHNlIG1lYW5zIDAuICovXG4gIHJ1bjogKGludjogSW52b2NhdGlvbjxGPikgPT4gdW5rbm93bjtcbn07XG5cbi8qKiBBIHZlcmJsZXNzIENMSSdzIG9uZSByb3cgKGRpZ2VzdGlmeSkuIGBwYXRoOiBbXWAgaW4gdGhlIGRlY2xhcmF0aW9uLiAqL1xuZXhwb3J0IHR5cGUgUm9vdFNwZWM8RiBleHRlbmRzIHN0cmluZyA9IHN0cmluZz4gPSBPbWl0PENvbW1hbmRTcGVjPEY+LCBcIm5hbWVcIiB8IFwiYWxpYXNlc1wiPjtcblxuLyoqXG4gKiBXaGVyZSBhIGdyb3VwJ3Mgc3ViLXZlcmIgaXMgZm91bmQuXG4gKiAtIGBhZGphY2VudGAgKGRlZmF1bHQpOiB0aGUgdG9rZW4gcmlnaHQgYWZ0ZXIgdGhlIGdyb3VwIChgbm9kZSBlZGl0IFhgKS5cbiAqIC0gYGZpcnN0LXBvc2l0aW9uYWxgOiB0aGUgZmlyc3QgdG9rZW4gYWZ0ZXIgdGhlIGdyb3VwIHRoYXQgaXMgbmVpdGhlciBhIGZsYWdcbiAqICAgbm9yIGEgc3RyaW5nIGZsYWcncyB2YWx1ZSwgc28gZmxhZ3MgbWF5IGNvbWUgZmlyc3Q6XG4gKiAgIGBkb2MgLS1wcm9qZWN0IFAgZGVsZXRlIEQxIC0tZm9yY2VgIHJlc29sdmVzIHRvIGBkb2MgZGVsZXRlYCAobWluZC1tYXBwZXIpLlxuICogICBUaGUgc2NhbiBzdG9wcyBhdCBhIGJhcmUgYC0tYCwgd2hpY2ggaXMgdGhlIGVzY2FwZSBoYXRjaCBmb3IgYSBwb3NpdGlvbmFsXG4gKiAgIGxpdGVyYWxseSBuYW1lZCBsaWtlIGEgc3ViLXZlcmI6IGBkb2MgLS0gZGVsZXRlYCByZWFkcyB0aGUgZG9jIFwiZGVsZXRlXCIuXG4gKi9cbmV4cG9ydCB0eXBlIEdyb3VwU3BlYyA9IHsgc3ViVmVyYkF0PzogXCJhZGphY2VudFwiIHwgXCJmaXJzdC1wb3NpdGlvbmFsXCIgfTtcblxuZXhwb3J0IHR5cGUgQ2xpU3BlYzxPIGV4dGVuZHMgT3B0aW9uc1RhYmxlPiA9IHtcbiAgLyoqIGBcImJvdW50eVwiYCwgdXNlZCBpbiBtZXNzYWdlcyBhbmQgdGhlIHJlbmRlcmVkIGhlbHAuICovXG4gIG5hbWU6IHN0cmluZztcbiAgLyoqIFRoZSByZW5kZXJlZCBoZWxwJ3MgZmlyc3QgbGluZTogYCR7bmFtZX0g4oCUICR7c3VtbWFyeX1gLiAqL1xuICBzdW1tYXJ5Pzogc3RyaW5nO1xuICAvKiogVGhlIGxpdGVyYWwgYENMSV9PUFRJT05TYCBvYmplY3QuICovXG4gIG9wdGlvbnM6IE87XG4gIGNvbW1hbmRzPzogcmVhZG9ubHkgQ29tbWFuZFNwZWM8a2V5b2YgTyAmIHN0cmluZz5bXTtcbiAgLyoqXG4gICAqIEEgdmVyYmxlc3MgQ0xJJ3Mgcm93LiBSZXNlcnZlZCB0b2tlbnMgYXMgYGFyZ3ZbMF1gIHN0aWxsIHNlbGVjdCB0aGVpciByb3dzXG4gICAqIChgaGVscGAsIGB2ZXJzaW9uYCwgYHNjaGVtYWAsIGFueSBgY29tbWFuZHNgLCBhbmQgdGhlIGludGVyY2VwdG9ycyk7IGV2ZXJ5XG4gICAqIG90aGVyIGFyZ3YsIHRoZSBlbXB0eSBvbmUgaW5jbHVkZWQsIGJlbG9uZ3MgdG8gdGhlIHJvb3QuIEEgcG9zaXRpb25hbCB0aGF0XG4gICAqIGhhcHBlbnMgdG8gc3BlbGwgYSByZXNlcnZlZCB0b2tlbiBnb2VzIGFmdGVyIGEgYmFyZSBgLS1gLlxuICAgKi9cbiAgcm9vdD86IFJvb3RTcGVjPGtleW9mIE8gJiBzdHJpbmc+O1xuICAvKiogQWNjZXB0ZWQgYnkgZXZlcnkgcm93LCBieSBjb250cmFjdCAoZ3JhcGV2aW5lJ3MgYC0tYXNgL2AtLWZyb21gKS4gKi9cbiAgZ2xvYmFsRmxhZ3M/OiByZWFkb25seSAoa2V5b2YgTyAmIHN0cmluZylbXTtcbiAgZ3JhbW1hcj86IFwidmVyYi1maXJzdFwiIHwgXCJmbGFncy1hbnl3aGVyZVwiO1xuICAvKiogUGVyLWdyb3VwIHN1Yi12ZXJiIHBsYWNlbWVudCwga2V5ZWQgYnkgdGhlIGdyb3VwIHRva2VuIChgXCJkb2NcImApLiAqL1xuICBncm91cHM/OiBSZWFkb25seTxSZWNvcmQ8c3RyaW5nLCBHcm91cFNwZWM+PjtcbiAgLyoqIFRoZSByb290IHJvdydzIHBvc2l0aW9uYWwgbmFtZSBpbiBgc2NoZW1hYCAoYFwiY29tbWFuZFwiYDsgZ2xhbW91cjogYFwidmVyYlwiYCkuICovXG4gIHZlcmJQb3NpdGlvbmFsPzogc3RyaW5nO1xuICAvKiogRmxhZ3MgbGVmdCBvZmYgZXZlcnkgdXNhZ2UgbGluZSAoZ2xhbW91cidzIHBlci12ZXJiIGBzZXNzaW9uYCkuICovXG4gIHVzYWdlSGlkZXM/OiByZWFkb25seSAoa2V5b2YgTyAmIHN0cmluZylbXTtcbiAgLyoqIFRoZSBgdmVyc2lvbmAgcm93J3MgcGF5bG9hZCwgYHtuYW1lLCB2ZXJzaW9ufWAuICovXG4gIHZlcnNpb246ICgpID0+IFJlY29yZDxzdHJpbmcsIHVua25vd24+IHwgUHJvbWlzZTxSZWNvcmQ8c3RyaW5nLCB1bmtub3duPj47XG4gIC8qKiBSZXBsYWNlcyB0aGUgcmVuZGVyZWQgaGVscCAoZ3JhcGV2aW5lKS4gKi9cbiAgaGVscD86ICgpID0+IHN0cmluZztcbiAgLyoqIEFwcGVuZGVkIGJlbG93IHRoZSByZW5kZXJlZCByb3dzLiAqL1xuICBoZWxwRm9vdGVyPzogc3RyaW5nO1xufTtcblxuZXhwb3J0IHR5cGUgRGVjbGFyZWRBcmcgPSB7IG5hbWU6IHN0cmluZzsgdHlwZTogRmxhZ1R5cGU7IHN0YXR1czogXCJ2YWxpZFwiIH07XG5leHBvcnQgdHlwZSBEZWNsYXJlZENvbW1hbmQgPSB7XG4gIHBhdGg6IHN0cmluZ1tdO1xuICBhcmdzOiBEZWNsYXJlZEFyZ1tdO1xuICBwb3NpdGlvbmFsczogUG9zaXRpb25hbFNwZWNbXTtcbn07XG5leHBvcnQgdHlwZSBEZWNsYXJhdGlvbiA9IHtcbiAgZm9ybWF0VmVyc2lvbjogXCIwXCI7XG4gIHByb3ZlbmFuY2U6IFwiZW1pdHRlZFwiO1xuICBzZWxmRGVzY3JpcHRpb246IHsgYXJnczogc3RyaW5nW10gfTtcbiAgY29tbWFuZHM6IERlY2xhcmVkQ29tbWFuZFtdO1xufTtcblxuLyoqIEEgcm93IGFzIHRoZSBtb2R1bGUgaG9sZHMgaXQsIGZvciB0ZXN0cyBhbmQgd2FyZHMuICovXG5leHBvcnQgdHlwZSBSb3dWaWV3ID0ge1xuICBuYW1lOiBzdHJpbmc7XG4gIGFsaWFzZXM6IHJlYWRvbmx5IHN0cmluZ1tdO1xuICAvKiogVGhlIHJvdydzIG93biBmbGFncywgYXMgZGVjbGFyZWQuICovXG4gIGZsYWdzOiByZWFkb25seSBzdHJpbmdbXTtcbiAgLyoqIE93biBmbGFncyBwbHVzIGBnbG9iYWxGbGFnc2AsIGluIG9wdGlvbnMtdGFibGUgb3JkZXIuICovXG4gIGFjY2VwdGVkOiByZWFkb25seSBzdHJpbmdbXTtcbiAgcG9zaXRpb25hbHM6IHJlYWRvbmx5IFBvc2l0aW9uYWxTcGVjW107XG4gIGRlc2NyaWJlOiBzdHJpbmc7XG4gIC8qKiBgdHJ1ZWAgZm9yIGEgYGhlbHBgL2B2ZXJzaW9uYC9gc2NoZW1hYCByb3cgdGhlIG1vZHVsZSBhZGRlZC4gKi9cbiAgYXV0bzogYm9vbGVhbjtcbn07XG5cbmV4cG9ydCB0eXBlIENsaSA9IHtcbiAgbmFtZTogc3RyaW5nO1xuICAvKiogRW52ZWxvcGUgb24gZmFpbHVyZSwgcmV0dXJucyB0aGUgZXhpdCBjb2RlLiBGb3IgdGhlIHNwZWxsJ3MgYHJ1bigpYC4gKi9cbiAgbWFpbihhcmd2OiBzdHJpbmdbXSk6IFByb21pc2U8bnVtYmVyPjtcbiAgLyoqIFRocm93cyBgQ2xpRXJyb3JgLCBmb3IgYSBzcGVsbCB3aG9zZSBtYWluIGRvZXMgaXRzIG93biB0cmlhZ2UuICovXG4gIGRpc3BhdGNoKGFyZ3Y6IHN0cmluZ1tdKTogUHJvbWlzZTxudW1iZXI+O1xuICBkZWNsYXJhdGlvbigpOiBEZWNsYXJhdGlvbjtcbiAgcmVuZGVySGVscCgpOiBzdHJpbmc7XG4gIC8qKiBBIHJvdydzIHVzYWdlIGxpbmUgKGBcImNsb3NlIDxpZD4gWy0tZm9yY2VdXCJgKTsgYFwiXCJgIGZvciBhbiB1bmtub3duIHBhdGguICovXG4gIHVzYWdlT2YocGF0aDogc3RyaW5nKTogc3RyaW5nO1xuICAvKiogRXZlcnkgZmlyc3QgdG9rZW4gdGhhdCBkaXNwYXRjaGVzOiB2ZXJicywgYWxpYXNlcyBhbmQgZ3JvdXAgdG9rZW5zLiAqL1xuICB2ZXJiczogcmVhZG9ubHkgc3RyaW5nW107XG4gIC8qKiBFdmVyeSBmdWxsIHBhdGggdGhhdCBkaXNwYXRjaGVzLCBhbGlhc2VzIGluY2x1ZGVkIChgXCJub2RlIGVkaXRcImApLiAqL1xuICBwYXRoczogcmVhZG9ubHkgc3RyaW5nW107XG4gIC8qKiBBIHJvdydzIGFjY2VwdGVkIHNldCBhcyBgLS14YCBzcGVsbGluZ3MsIHNvcnRlZC4gYFwiXCJgIGlzIHRoZSByb290LiAqL1xuICBmbGFnc0ZvcihwYXRoOiBzdHJpbmcpOiBzdHJpbmdbXTtcbiAgLyoqIEV2ZXJ5IGZsYWcgaW4gdGhlIG9wdGlvbnMgdGFibGUsIGFzIGAtLXhgLCBpbiB0YWJsZSBvcmRlci4gKi9cbiAgcmVjb2duaXplZEZsYWdzOiByZWFkb25seSBzdHJpbmdbXTtcbiAgcm93czogcmVhZG9ubHkgUm93Vmlld1tdO1xufTtcblxuLy8g4pSA4pSAIGludGVybmFscyDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIBcblxudHlwZSBSb3cgPSBSb3dWaWV3ICYge1xuICByZWplY3RIaW50Pzogc3RyaW5nO1xuICBhbGxvd1Bvc2l0aW9uYWxzOiBib29sZWFuO1xuICBjaGVjaz86IChpbnY6IEludm9jYXRpb24pID0+IHN0cmluZyB8IHVuZGVmaW5lZDtcbiAgcnVuOiAoaW52OiBJbnZvY2F0aW9uKSA9PiB1bmtub3duO1xufTtcblxuLyoqIFRoZSB0b2tlbnMgdGhlIHJvb3QgYW5zd2VycyBpdHNlbGYuIERlY2xhcmVkIGF0IGBwYXRoOiBbXWAuICovXG5jb25zdCBJTlRFUkNFUFRPUlMgPSBbXG4gIHsgbmFtZTogXCItLWhlbHBcIiwgcnVuczogXCJoZWxwXCIgfSxcbiAgeyBuYW1lOiBcIi1oXCIsIHJ1bnM6IFwiaGVscFwiIH0sXG4gIHsgbmFtZTogXCItLXZlcnNpb25cIiwgcnVuczogXCJ2ZXJzaW9uXCIgfSxcbiAgeyBuYW1lOiBcIi1WXCIsIHJ1bnM6IFwidmVyc2lvblwiIH0sXG5dIGFzIGNvbnN0O1xuXG4vKiogTG9uZyBmaXJzdDogYSBmbGFnLXNldCBleHRyYWN0b3IgcmVhZGluZyBsZWZ0IHRvIHJpZ2h0IHN0b3BzIGF0IHRoZSBmaXJzdFxuICogIHRva2VuIHRoYXQgaXMgbm90IGEgYC0tbG9uZ2AgZmxhZy4gKi9cbmNvbnN0IElOVEVSQ0VQVE9SX0NIT0lDRVMgPSBJTlRFUkNFUFRPUlMubWFwKChpKSA9PiBpLm5hbWUpLnNvcnQoXG4gIChhLCBiKSA9PiBOdW1iZXIoYi5zdGFydHNXaXRoKFwiLS1cIikpIC0gTnVtYmVyKGEuc3RhcnRzV2l0aChcIi0tXCIpKSxcbik7XG5cbmNvbnN0IGVyckNvZGUgPSAoZTogdW5rbm93bik6IHN0cmluZyA9PlxuICBlICYmIHR5cGVvZiBlID09PSBcIm9iamVjdFwiICYmIFwiY29kZVwiIGluIGUgPyBTdHJpbmcoKGUgYXMgeyBjb2RlOiB1bmtub3duIH0pLmNvZGUpIDogXCJcIjtcbmNvbnN0IGVyck1lc3NhZ2UgPSAoZTogdW5rbm93bik6IHN0cmluZyA9PiAoZSBpbnN0YW5jZW9mIEVycm9yID8gZS5tZXNzYWdlIDogU3RyaW5nKGUpKTtcblxuZXhwb3J0IGZ1bmN0aW9uIGRlZmluZUNsaTxjb25zdCBPIGV4dGVuZHMgT3B0aW9uc1RhYmxlPihzcGVjOiBDbGlTcGVjPE8+KTogQ2xpIHtcbiAgY29uc3QgY2xpTmFtZSA9IHNwZWMubmFtZTtcbiAgY29uc3Qgb3B0aW9uS2V5cyA9IE9iamVjdC5rZXlzKHNwZWMub3B0aW9ucyk7XG4gIGNvbnN0IGtub3duID0gbmV3IFNldChvcHRpb25LZXlzKTtcbiAgY29uc3QgZ3JhbW1hciA9IHNwZWMuZ3JhbW1hciA/PyBcInZlcmItZmlyc3RcIjtcbiAgY29uc3QgZ2xvYmFscyA9IFsuLi4oc3BlYy5nbG9iYWxGbGFncyA/PyBbXSldIGFzIHN0cmluZ1tdO1xuICBjb25zdCBoaWRlcyA9IG5ldyBTZXQ8c3RyaW5nPigoc3BlYy51c2FnZUhpZGVzID8/IFtdKSBhcyBzdHJpbmdbXSk7XG5cbiAgZm9yIChjb25zdCBnIG9mIGdsb2JhbHMpIHtcbiAgICBpZiAoIWtub3duLmhhcyhnKSlcbiAgICAgIHRocm93IG5ldyBFcnJvcihgZGVmaW5lQ2xpKCR7Y2xpTmFtZX0pOiBnbG9iYWwgZmxhZyBcIiR7Z31cIiBpcyBub3QgaW4gb3B0aW9uc2ApO1xuICB9XG4gIGlmICgoc3BlYy5jb21tYW5kcz8ubGVuZ3RoID8/IDApID09PSAwICYmIHNwZWMucm9vdCA9PT0gdW5kZWZpbmVkKSB7XG4gICAgdGhyb3cgbmV3IEVycm9yKGBkZWZpbmVDbGkoJHtjbGlOYW1lfSk6IGdpdmUgY29tbWFuZHMsIGEgcm9vdCwgb3IgYm90aGApO1xuICB9XG5cbiAgLy8gYHBhcnNlQXJnc2AgZ2V0cyB0aGUgdGFibGUgV0lUSE9VVCBkZWZhdWx0czogd2hpY2ggZmxhZ3MgdGhlIGNhbGxlciBnYXZlIGlzXG4gIC8vIHRoZSBxdWVzdGlvbiB0aGUgcGVyLXJvdyBjaGVjayBhc2tzLCBhbmQgYSBkZWZhdWx0IGlzIG5vdCBzb21ldGhpbmcgZ2l2ZW4uXG4gIGNvbnN0IHBhcnNlT3B0aW9ucyA9IE9iamVjdC5mcm9tRW50cmllcyhcbiAgICBvcHRpb25LZXlzLm1hcCgoaykgPT4ge1xuICAgICAgY29uc3QgeyBkZWZhdWx0OiBfZCwgLi4ucmVzdCB9ID0gc3BlYy5vcHRpb25zW2tdIGFzIE9wdGlvblNwZWM7XG4gICAgICByZXR1cm4gW2ssIHJlc3RdO1xuICAgIH0pLFxuICApIGFzIFJlY29yZDxzdHJpbmcsIHsgdHlwZTogRmxhZ1R5cGU7IG11bHRpcGxlPzogYm9vbGVhbjsgc2hvcnQ/OiBzdHJpbmcgfT47XG4gIGNvbnN0IHNob3J0VG9LZXkgPSBuZXcgTWFwPHN0cmluZywgc3RyaW5nPigpO1xuICBmb3IgKGNvbnN0IGsgb2Ygb3B0aW9uS2V5cykge1xuICAgIGNvbnN0IHMgPSBzcGVjLm9wdGlvbnNba10/LnNob3J0O1xuICAgIGlmIChzICE9PSB1bmRlZmluZWQpIHNob3J0VG9LZXkuc2V0KHMsIGspO1xuICB9XG5cbiAgY29uc3QgYWNjZXB0ZWRPZiA9IChvd246IHJlYWRvbmx5IHN0cmluZ1tdKTogc3RyaW5nW10gPT4ge1xuICAgIGNvbnN0IHNldCA9IG5ldyBTZXQoWy4uLmdsb2JhbHMsIC4uLm93bl0pO1xuICAgIHJldHVybiBvcHRpb25LZXlzLmZpbHRlcigoaykgPT4gc2V0LmhhcyhrKSk7XG4gIH07XG5cbiAgY29uc3QgdG9Sb3cgPSAoXG4gICAgYzogT21pdDxDb21tYW5kU3BlYywgXCJydW5cIj4gJiB7IHJ1bjogKGludjogSW52b2NhdGlvbikgPT4gdW5rbm93biB9LFxuICAgIGF1dG86IGJvb2xlYW4sXG4gICk6IFJvdyA9PiB7XG4gICAgZm9yIChjb25zdCBmIG9mIGMuZmxhZ3MpIHtcbiAgICAgIGlmICgha25vd24uaGFzKGYpKSB7XG4gICAgICAgIHRocm93IG5ldyBFcnJvcihgZGVmaW5lQ2xpKCR7Y2xpTmFtZX0pOiByb3cgXCIke2MubmFtZX1cIiBuYW1lcyBmbGFnIFwiJHtmfVwiLCBub3QgaW4gb3B0aW9uc2ApO1xuICAgICAgfVxuICAgIH1cbiAgICByZXR1cm4ge1xuICAgICAgbmFtZTogYy5uYW1lLFxuICAgICAgYWxpYXNlczogWy4uLihjLmFsaWFzZXMgPz8gW10pXSxcbiAgICAgIGZsYWdzOiBbLi4uYy5mbGFnc10sXG4gICAgICBhY2NlcHRlZDogYWNjZXB0ZWRPZihjLmZsYWdzKSxcbiAgICAgIHBvc2l0aW9uYWxzOiBjLnBvc2l0aW9uYWxzLm1hcCgocCkgPT4gKHsgLi4ucCB9KSksXG4gICAgICBkZXNjcmliZTogYy5kZXNjcmliZSxcbiAgICAgIGF1dG8sXG4gICAgICByZWplY3RIaW50OiBjLnJlamVjdEhpbnQsXG4gICAgICBhbGxvd1Bvc2l0aW9uYWxzOiBjLmFsbG93UG9zaXRpb25hbHMgPz8gdHJ1ZSxcbiAgICAgIGNoZWNrOiBjLmNoZWNrIGFzIFJvd1tcImNoZWNrXCJdLFxuICAgICAgcnVuOiBjLnJ1biBhcyBSb3dbXCJydW5cIl0sXG4gICAgfTtcbiAgfTtcblxuICBjb25zdCByb3dzOiBSb3dbXSA9IChzcGVjLmNvbW1hbmRzID8/IFtdKS5tYXAoKGMpID0+IHRvUm93KGMgYXMgQ29tbWFuZFNwZWMsIGZhbHNlKSk7XG5cbiAgLy8gVGhlIGF1dG8gcm93cy4gQWRkZWQgbGFzdCwgaW4gdGhpcyBvcmRlciwgdW5sZXNzIHRoZSBzcGVsbCBoYXMgaXRzIG93bi5cbiAgY29uc3QgY2xpID0ge30gYXMgQ2xpO1xuICBjb25zdCBhdXRvUm93czogQ29tbWFuZFNwZWNbXSA9IFtcbiAgICB7XG4gICAgICBuYW1lOiBcInZlcnNpb25cIixcbiAgICAgIGZsYWdzOiBbXSxcbiAgICAgIHBvc2l0aW9uYWxzOiBbXSxcbiAgICAgIGRlc2NyaWJlOiBcInRoaXMgQ0xJJ3Mge25hbWUsIHZlcnNpb259IGFzIEpTT04gKGFsaWFzOiAtLXZlcnNpb24sIC1WKVwiLFxuICAgICAgcnVuOiBhc3luYyAoKSA9PiB7XG4gICAgICAgIHByaW50SnNvbihhd2FpdCBzcGVjLnZlcnNpb24oKSk7XG4gICAgICB9LFxuICAgIH0sXG4gICAge1xuICAgICAgbmFtZTogXCJzY2hlbWFcIixcbiAgICAgIGZsYWdzOiBbXSxcbiAgICAgIHBvc2l0aW9uYWxzOiBbXSxcbiAgICAgIGRlc2NyaWJlOiBcInRoaXMgQ0xJJ3MgbWFjaGluZS1yZWFkYWJsZSBpbnRlcmZhY2UgKGFjYyBkZWNsYXJhdGlvbiB2MClcIixcbiAgICAgIHJ1bjogKCkgPT4ge1xuICAgICAgICBwcm9jZXNzLnN0ZG91dC53cml0ZShgJHtKU09OLnN0cmluZ2lmeShjbGkuZGVjbGFyYXRpb24oKSwgbnVsbCwgMil9XFxuYCk7XG4gICAgICB9LFxuICAgIH0sXG4gICAge1xuICAgICAgbmFtZTogXCJoZWxwXCIsXG4gICAgICBmbGFnczogW10sXG4gICAgICBwb3NpdGlvbmFsczogW10sXG4gICAgICBkZXNjcmliZTogXCJzaG93IHRoaXMgbWVzc2FnZSAoYWxpYXM6IC0taGVscCwgLWgpXCIsXG4gICAgICBydW46ICgpID0+IHtcbiAgICAgICAgY29uc3QgdGV4dCA9IGNsaS5yZW5kZXJIZWxwKCk7XG4gICAgICAgIHByb2Nlc3Muc3Rkb3V0LndyaXRlKHRleHQuZW5kc1dpdGgoXCJcXG5cIikgPyB0ZXh0IDogYCR7dGV4dH1cXG5gKTtcbiAgICAgIH0sXG4gICAgfSxcbiAgXTtcbiAgZm9yIChjb25zdCBhIG9mIGF1dG9Sb3dzKSB7XG4gICAgaWYgKCFyb3dzLnNvbWUoKHIpID0+IHIubmFtZSA9PT0gYS5uYW1lKSkgcm93cy5wdXNoKHRvUm93KGEsIHRydWUpKTtcbiAgfVxuXG4gIGNvbnN0IHJvb3RSb3c6IFJvdyB8IHVuZGVmaW5lZCA9XG4gICAgc3BlYy5yb290ID09PSB1bmRlZmluZWQgPyB1bmRlZmluZWQgOiB0b1Jvdyh7IC4uLihzcGVjLnJvb3QgYXMgUm9vdFNwZWMpLCBuYW1lOiBcIlwiIH0sIGZhbHNlKTtcblxuICAvLyBJbmRleCBldmVyeSBzcGVsbGluZywgYW5kIGNoZWNrIHRoZSB0YWJsZSBpcyB3ZWxsIGZvcm1lZC5cbiAgY29uc3QgYnlUb2tlbiA9IG5ldyBNYXA8c3RyaW5nLCBSb3c+KCk7XG4gIGZvciAoY29uc3QgciBvZiByb3dzKSB7XG4gICAgZm9yIChjb25zdCB0IG9mIFtyLm5hbWUsIC4uLnIuYWxpYXNlc10pIHtcbiAgICAgIGNvbnN0IHBhcnRzID0gdC5zcGxpdChcIiBcIik7XG4gICAgICBpZiAodC50cmltKCkgIT09IHQgfHwgcGFydHMubGVuZ3RoID4gMiB8fCBwYXJ0cy5zb21lKChwKSA9PiBwID09PSBcIlwiIHx8IHAuc3RhcnRzV2l0aChcIi1cIikpKSB7XG4gICAgICAgIHRocm93IG5ldyBFcnJvcihgZGVmaW5lQ2xpKCR7Y2xpTmFtZX0pOiBiYWQgY29tbWFuZCBuYW1lIFwiJHt0fVwiYCk7XG4gICAgICB9XG4gICAgICBpZiAodCAhPT0gci5uYW1lICYmIHBhcnRzLmxlbmd0aCAhPT0gci5uYW1lLnNwbGl0KFwiIFwiKS5sZW5ndGgpIHtcbiAgICAgICAgdGhyb3cgbmV3IEVycm9yKGBkZWZpbmVDbGkoJHtjbGlOYW1lfSk6IGFsaWFzIFwiJHt0fVwiIG11c3QgbmVzdCBsaWtlIFwiJHtyLm5hbWV9XCJgKTtcbiAgICAgIH1cbiAgICAgIGlmIChwYXJ0cy5sZW5ndGggPT09IDIgJiYgdCAhPT0gci5uYW1lICYmIHBhcnRzWzBdICE9PSByLm5hbWUuc3BsaXQoXCIgXCIpWzBdKSB7XG4gICAgICAgIHRocm93IG5ldyBFcnJvcihgZGVmaW5lQ2xpKCR7Y2xpTmFtZX0pOiBhbGlhcyBcIiR7dH1cIiBtdXN0IHNoYXJlIHRoZSBncm91cCBvZiBcIiR7ci5uYW1lfVwiYCk7XG4gICAgICB9XG4gICAgICBpZiAoYnlUb2tlbi5oYXModCkpIHRocm93IG5ldyBFcnJvcihgZGVmaW5lQ2xpKCR7Y2xpTmFtZX0pOiBcIiR7dH1cIiBpcyBkZWZpbmVkIHR3aWNlYCk7XG4gICAgICBieVRva2VuLnNldCh0LCByKTtcbiAgICB9XG4gIH1cbiAgY29uc3Qgc3Vic09mID0gbmV3IE1hcDxzdHJpbmcsIHN0cmluZ1tdPigpO1xuICBmb3IgKGNvbnN0IHQgb2YgYnlUb2tlbi5rZXlzKCkpIHtcbiAgICBjb25zdCBbZ3JvdXAsIHN1Yl0gPSB0LnNwbGl0KFwiIFwiKTtcbiAgICBpZiAoZ3JvdXAgIT09IHVuZGVmaW5lZCAmJiBzdWIgIT09IHVuZGVmaW5lZCkge1xuICAgICAgc3Vic09mLnNldChncm91cCwgWy4uLihzdWJzT2YuZ2V0KGdyb3VwKSA/PyBbXSksIHN1Yl0pO1xuICAgIH1cbiAgfVxuICBmb3IgKGNvbnN0IGcgb2YgT2JqZWN0LmtleXMoc3BlYy5ncm91cHMgPz8ge30pKSB7XG4gICAgaWYgKCFzdWJzT2YuaGFzKGcpKSB0aHJvdyBuZXcgRXJyb3IoYGRlZmluZUNsaSgke2NsaU5hbWV9KTogZ3JvdXAgXCIke2d9XCIgaGFzIG5vIHN1Yi12ZXJic2ApO1xuICB9XG5cbiAgY29uc3QgcGF0aHMgPSBbLi4uYnlUb2tlbi5rZXlzKCldO1xuICBjb25zdCB2ZXJicyA9IFsuLi5uZXcgU2V0KHBhdGhzLm1hcCgocCkgPT4gcC5zcGxpdChcIiBcIilbMF0gYXMgc3RyaW5nKSldO1xuXG4gIGNvbnN0IHJvd0ZvciA9IChwYXRoOiBzdHJpbmcpOiBSb3cgfCB1bmRlZmluZWQgPT4gKHBhdGggPT09IFwiXCIgPyByb290Um93IDogYnlUb2tlbi5nZXQocGF0aCkpO1xuICBjb25zdCBmbGFnc0ZvciA9IChwYXRoOiBzdHJpbmcpOiBzdHJpbmdbXSA9PlxuICAgIFsuLi4ocm93Rm9yKHBhdGgpPy5hY2NlcHRlZCA/PyBbXSldLm1hcCgoaykgPT4gYC0tJHtrfWApLnNvcnQoKTtcbiAgY29uc3QgbGFiZWwgPSAocjogUm93KTogc3RyaW5nID0+IHIubmFtZSB8fCBjbGlOYW1lO1xuXG4gIC8qKlxuICAgKiBBIHZlcmJsZXNzIHJvb3QncyByZWplY3Rpb24gYGNob2ljZXNgOiBpdHMgb3duIGZsYWdzIFBMVVMgdGhlIGludGVyY2VwdG9ycyxcbiAgICogYmVjYXVzZSB0aGUgZGVjbGFyYXRpb24gcHVibGlzaGVzIGJvdGggYXQgYHBhdGg6IFtdYCBhbmQgdGhlIHJvb3QgYW5zd2Vyc1xuICAgKiBib3RoICh0aGUgaW50ZXJjZXB0b3JzIGFzIGBhcmd2WzBdYCkuIExlYXZpbmcgdGhlIGludGVyY2VwdG9ycyBvdXQgbWFkZVxuICAgKiBvbmUgcHJvY2VzcyBzYXkgdHdvIHRoaW5ncyBhYm91dCBpdHMgcm9vdCDigJQgYWNjJ3MgY2Vuc3VzIHJlYWQgYC0taGVscGAsXG4gICAqIGAtaGAsIGAtLXZlcnNpb25gIGFuZCBgLVZgIGFzIGRlY2xhcmVkLW5vdC1hY2NlcHRlZC4gTG9uZyBzcGVsbGluZ3MgZmlyc3RcbiAgICogKHNvcnRlZCksIHRoZW4gdGhlIHNob3J0czogYSBmbGFnLXNldCBleHRyYWN0b3IgcmVhZGluZyBsZWZ0IHRvIHJpZ2h0XG4gICAqIHN0b3BzIGF0IHRoZSBmaXJzdCB0b2tlbiB0aGF0IGlzIG5vdCBhIGAtLWxvbmdgIGZsYWcuXG4gICAqL1xuICBjb25zdCByb290Q2hvaWNlczogc3RyaW5nW10gPSAoKCkgPT4ge1xuICAgIGNvbnN0IGFsbCA9IFsuLi5mbGFnc0ZvcihcIlwiKSwgLi4uSU5URVJDRVBUT1JfQ0hPSUNFU107XG4gICAgY29uc3QgbG9uZyA9IGFsbC5maWx0ZXIoKGYpID0+IGYuc3RhcnRzV2l0aChcIi0tXCIpKS5zb3J0KCk7XG4gICAgcmV0dXJuIFsuLi5sb25nLCAuLi5hbGwuZmlsdGVyKChmKSA9PiAhZi5zdGFydHNXaXRoKFwiLS1cIikpXTtcbiAgfSkoKTtcblxuICAvLyDilIDilIAgaGVscCDilIDilIBcblxuICBjb25zdCByZW5kZXJQb3NpdGlvbmFsID0gKHA6IFBvc2l0aW9uYWxTcGVjKTogc3RyaW5nID0+IHtcbiAgICBjb25zdCBpbm5lciA9IHAudmFyaWFkaWMgPyBgJHtwLm5hbWV9Li4uYCA6IHAubmFtZTtcbiAgICByZXR1cm4gcC5yZXF1aXJlZCA/IGA8JHtpbm5lcn0+YCA6IGBbJHtpbm5lcn1dYDtcbiAgfTtcbiAgY29uc3QgcmVuZGVyRmxhZyA9IChrOiBzdHJpbmcpOiBzdHJpbmcgPT5cbiAgICBzcGVjLm9wdGlvbnNba10/LnR5cGUgPT09IFwiYm9vbGVhblwiID8gYFstLSR7a31dYCA6IGBbLS0ke2t9IC4uXWA7XG4gIGNvbnN0IHVzYWdlTGluZSA9IChyOiBSb3cpOiBzdHJpbmcgPT5cbiAgICBbXG4gICAgICBsYWJlbChyKSxcbiAgICAgIC4uLnIucG9zaXRpb25hbHMubWFwKHJlbmRlclBvc2l0aW9uYWwpLFxuICAgICAgLi4uci5mbGFncy5maWx0ZXIoKGspID0+ICFoaWRlcy5oYXMoaykpLm1hcChyZW5kZXJGbGFnKSxcbiAgICBdLmpvaW4oXCIgXCIpO1xuICBjb25zdCBleHBlY3RzID0gKHI6IFJvdyk6IHN0cmluZyA9PiBgZXhwZWN0czogJHt1c2FnZUxpbmUocil9YDtcblxuICBjb25zdCByZW5kZXJIZWxwID0gKCk6IHN0cmluZyA9PiB7XG4gICAgaWYgKHNwZWMuaGVscCAhPT0gdW5kZWZpbmVkKSByZXR1cm4gc3BlYy5oZWxwKCk7XG4gICAgY29uc3QgbGlzdGVkID0gWy4uLihyb290Um93ID8gW3Jvb3RSb3ddIDogW10pLCAuLi5yb3dzXTtcbiAgICBjb25zdCBsaW5lcyA9IGxpc3RlZC5tYXAoKHIpID0+IFt1c2FnZUxpbmUociksIHIuZGVzY3JpYmVdIGFzIGNvbnN0KTtcbiAgICBjb25zdCB3aWR0aCA9IE1hdGgubWluKE1hdGgubWF4KC4uLmxpbmVzLm1hcCgoW3VdKSA9PiB1Lmxlbmd0aCkpLCA0NCk7XG4gICAgY29uc3QgYm9keSA9IGxpbmVzXG4gICAgICAubWFwKChbdSwgZF0pID0+XG4gICAgICAgIHUubGVuZ3RoIDw9IHdpZHRoID8gYCAgJHt1LnBhZEVuZCh3aWR0aCl9ICAke2R9YCA6IGAgICR7dX1cXG4gICR7XCJcIi5wYWRFbmQod2lkdGgpfSAgJHtkfWAsXG4gICAgICApXG4gICAgICAuam9pbihcIlxcblwiKTtcbiAgICBjb25zdCBoZWFkID0gc3BlYy5zdW1tYXJ5ID8gYCR7Y2xpTmFtZX0g4oCUICR7c3BlYy5zdW1tYXJ5fWAgOiBjbGlOYW1lO1xuICAgIGNvbnN0IHRva2VucyA9IGAgICR7SU5URVJDRVBUT1JTLm1hcCgoaSkgPT4gaS5uYW1lKS5qb2luKFwiIHwgXCIpfSAgcm9vdCB0b2tlbnM6IGhlbHAsIG9yIHtuYW1lLCB2ZXJzaW9ufSBhcyBKU09OYDtcbiAgICByZXR1cm4gYCR7aGVhZH1cXG5cXG4ke2JvZHl9XFxuJHt0b2tlbnN9JHtzcGVjLmhlbHBGb290ZXIgPyBgXFxuXFxuJHtzcGVjLmhlbHBGb290ZXJ9YCA6IFwiXCJ9YDtcbiAgfTtcblxuICAvLyDilIDilIAgdGhlIGRlY2xhcmF0aW9uIOKUgOKUgFxuXG4gIGNvbnN0IGRlY2xhcmF0aW9uID0gKCk6IERlY2xhcmF0aW9uID0+IHtcbiAgICBjb25zdCBhcmcgPSAoazogc3RyaW5nKTogRGVjbGFyZWRBcmcgPT4gKHtcbiAgICAgIG5hbWU6IGAtLSR7a31gLFxuICAgICAgdHlwZTogKHNwZWMub3B0aW9uc1trXSBhcyBPcHRpb25TcGVjKS50eXBlLFxuICAgICAgc3RhdHVzOiBcInZhbGlkXCIsXG4gICAgfSk7XG4gICAgY29uc3QgY29tbWFuZHM6IERlY2xhcmVkQ29tbWFuZFtdID0gW1xuICAgICAge1xuICAgICAgICBwYXRoOiBbXSxcbiAgICAgICAgYXJnczogW1xuICAgICAgICAgIC4uLklOVEVSQ0VQVE9SUy5tYXAoKGkpID0+ICh7XG4gICAgICAgICAgICBuYW1lOiBpLm5hbWUsXG4gICAgICAgICAgICB0eXBlOiBcImJvb2xlYW5cIiBhcyBjb25zdCxcbiAgICAgICAgICAgIHN0YXR1czogXCJ2YWxpZFwiIGFzIGNvbnN0LFxuICAgICAgICAgIH0pKSxcbiAgICAgICAgICAuLi4ocm9vdFJvdyA/IHJvb3RSb3cuYWNjZXB0ZWQubWFwKGFyZykgOiBbXSksXG4gICAgICAgIF0sXG4gICAgICAgIHBvc2l0aW9uYWxzOiByb290Um93XG4gICAgICAgICAgPyByb290Um93LnBvc2l0aW9uYWxzLm1hcCgocCkgPT4gKHsgLi4ucCB9KSlcbiAgICAgICAgICA6IFt7IG5hbWU6IHNwZWMudmVyYlBvc2l0aW9uYWwgPz8gXCJjb21tYW5kXCIsIHJlcXVpcmVkOiB0cnVlIH1dLFxuICAgICAgfSxcbiAgICBdO1xuICAgIGZvciAoY29uc3QgciBvZiByb3dzKSB7XG4gICAgICBmb3IgKGNvbnN0IHQgb2YgW3IubmFtZSwgLi4uci5hbGlhc2VzXSkge1xuICAgICAgICBjb21tYW5kcy5wdXNoKHtcbiAgICAgICAgICBwYXRoOiB0LnNwbGl0KFwiIFwiKSxcbiAgICAgICAgICBhcmdzOiByLmFjY2VwdGVkLm1hcChhcmcpLFxuICAgICAgICAgIHBvc2l0aW9uYWxzOiByLnBvc2l0aW9uYWxzLm1hcCgocCkgPT4gKHsgLi4ucCB9KSksXG4gICAgICAgIH0pO1xuICAgICAgfVxuICAgIH1cbiAgICBjb25zdCBzY2hlbWFSb3cgPSBieVRva2VuLmdldChcInNjaGVtYVwiKSBhcyBSb3c7XG4gICAgcmV0dXJuIHtcbiAgICAgIGZvcm1hdFZlcnNpb246IFwiMFwiLFxuICAgICAgcHJvdmVuYW5jZTogXCJlbWl0dGVkXCIsXG4gICAgICBzZWxmRGVzY3JpcHRpb246IHsgYXJnczogW3NjaGVtYVJvdy5uYW1lXSB9LFxuICAgICAgY29tbWFuZHMsXG4gICAgfTtcbiAgfTtcblxuICAvLyDilIDilIAgZGlzcGF0Y2gg4pSA4pSAXG5cbiAgLyoqXG4gICAqIFRoZSBpbmRleCBvZiB0aGUgZmlyc3QgdG9rZW4gdGhhdCBpcyBuZWl0aGVyIGEgZmxhZyBub3IgYSBzdHJpbmcgZmxhZydzXG4gICAqIHZhbHVlLCB3YWxraW5nIHRoZSB3YXkgdGhlIHBhcnNlciB3aWxsOiBgLS1rIHZgIGNvbnN1bWVzIGB2YCB3aGVuIGBrYCBpcyBhXG4gICAqIHN0cmluZyBmbGFnLCBgLS1rPXZgIGNvbnN1bWVzIG5vdGhpbmcsIGAtcyB2YCBsaWtld2lzZSBieSB0aGUgc2hvcnQncyB0eXBlLlxuICAgKiBBdCBhIGJhcmUgYC0tYDogYC0xYCB3aGVuIGBzdG9wQXRUZXJtaW5hdG9yYCwgZWxzZSB0aGUgaW5kZXggYWZ0ZXIgaXQuXG4gICAqL1xuICBjb25zdCBzY2FuUG9zaXRpb25hbCA9IChhcmdzOiBzdHJpbmdbXSwgc3RvcEF0VGVybWluYXRvcjogYm9vbGVhbik6IG51bWJlciA9PiB7XG4gICAgZm9yIChsZXQgaSA9IDA7IGkgPCBhcmdzLmxlbmd0aDsgaSsrKSB7XG4gICAgICBjb25zdCBhID0gYXJnc1tpXSBhcyBzdHJpbmc7XG4gICAgICBpZiAoYSA9PT0gXCItLVwiKSByZXR1cm4gc3RvcEF0VGVybWluYXRvciB8fCBpICsgMSA+PSBhcmdzLmxlbmd0aCA/IC0xIDogaSArIDE7XG4gICAgICBpZiAoYS5zdGFydHNXaXRoKFwiLS1cIikpIHtcbiAgICAgICAgaWYgKGEuaW5jbHVkZXMoXCI9XCIpKSBjb250aW51ZTtcbiAgICAgICAgaWYgKHNwZWMub3B0aW9uc1thLnNsaWNlKDIpXT8udHlwZSA9PT0gXCJzdHJpbmdcIikgaSsrO1xuICAgICAgICBjb250aW51ZTtcbiAgICAgIH1cbiAgICAgIGlmIChhLnN0YXJ0c1dpdGgoXCItXCIpICYmIGEubGVuZ3RoID4gMSkge1xuICAgICAgICBjb25zdCBrZXkgPSBhLmxlbmd0aCA9PT0gMiA/IHNob3J0VG9LZXkuZ2V0KGEuc2xpY2UoMSkpIDogdW5kZWZpbmVkO1xuICAgICAgICBpZiAoa2V5ICE9PSB1bmRlZmluZWQgJiYgc3BlYy5vcHRpb25zW2tleV0/LnR5cGUgPT09IFwic3RyaW5nXCIpIGkrKztcbiAgICAgICAgY29udGludWU7XG4gICAgICB9XG4gICAgICByZXR1cm4gaTtcbiAgICB9XG4gICAgcmV0dXJuIC0xO1xuICB9O1xuXG4gIGNvbnN0IHdpdGhvdXQgPSAoYXJnczogc3RyaW5nW10sIGk6IG51bWJlcik6IHN0cmluZ1tdID0+IFtcbiAgICAuLi5hcmdzLnNsaWNlKDAsIGkpLFxuICAgIC4uLmFyZ3Muc2xpY2UoaSArIDEpLFxuICBdO1xuXG4gIGNvbnN0IG5vQ29tbWFuZCA9ICgpOiBuZXZlciA9PlxuICAgIGRpZShcImV4cGVjdGVkIGEgY29tbWFuZFwiLCBcInVzYWdlXCIsIHtcbiAgICAgIGNob2ljZXM6IFsuLi52ZXJic10sXG4gICAgICBoaW50OiBgcnVuIFxcYCR7Y2xpTmFtZX0gaGVscFxcYCAob3IgLS1oZWxwKSBmb3IgdXNhZ2VgLFxuICAgIH0pO1xuXG4gIC8qKiBBIHZlcmIgY2FuZGlkYXRlIGFuZCB0aGUgYXJncyBhZnRlciBpdCwgdG8gYSByb3cgYW5kIHRoYXQgcm93J3MgYXJncy4gKi9cbiAgY29uc3QgcmVzb2x2ZSA9IChjYW5kOiBzdHJpbmcsIHJlc3Q6IHN0cmluZ1tdKTogeyByb3c6IFJvdzsgdG9rZW46IHN0cmluZzsgYXJnczogc3RyaW5nW10gfSA9PiB7XG4gICAgY29uc3Qgc3VicyA9IHN1YnNPZi5nZXQoY2FuZCk7XG4gICAgaWYgKHN1YnMgIT09IHVuZGVmaW5lZCkge1xuICAgICAgY29uc3QgYXQgPSBzcGVjLmdyb3Vwcz8uW2NhbmRdPy5zdWJWZXJiQXQgPz8gXCJhZGphY2VudFwiO1xuICAgICAgbGV0IGkgPSAtMTtcbiAgICAgIGlmIChhdCA9PT0gXCJhZGphY2VudFwiKSB7XG4gICAgICAgIGNvbnN0IG5leHQgPSByZXN0WzBdO1xuICAgICAgICBpID0gbmV4dCAhPT0gdW5kZWZpbmVkICYmICFuZXh0LnN0YXJ0c1dpdGgoXCItXCIpID8gMCA6IC0xO1xuICAgICAgfSBlbHNlIHtcbiAgICAgICAgaSA9IHNjYW5Qb3NpdGlvbmFsKHJlc3QsIHRydWUpO1xuICAgICAgfVxuICAgICAgY29uc3Qgc3ViID0gaSA+PSAwID8gKHJlc3RbaV0gYXMgc3RyaW5nKSA6IHVuZGVmaW5lZDtcbiAgICAgIGNvbnN0IGZ1bGwgPSBzdWIgPT09IHVuZGVmaW5lZCA/IHVuZGVmaW5lZCA6IGJ5VG9rZW4uZ2V0KGAke2NhbmR9ICR7c3VifWApO1xuICAgICAgaWYgKGZ1bGwgIT09IHVuZGVmaW5lZCAmJiBzdWIgIT09IHVuZGVmaW5lZCkge1xuICAgICAgICByZXR1cm4geyByb3c6IGZ1bGwsIHRva2VuOiBgJHtjYW5kfSAke3N1Yn1gLCBhcmdzOiB3aXRob3V0KHJlc3QsIGkpIH07XG4gICAgICB9XG4gICAgICBjb25zdCBvd24gPSBieVRva2VuLmdldChjYW5kKTtcbiAgICAgIGlmIChvd24gIT09IHVuZGVmaW5lZCkgcmV0dXJuIHsgcm93OiBvd24sIHRva2VuOiBjYW5kLCBhcmdzOiByZXN0IH07XG4gICAgICBjb25zdCBleHRyYSA9IHsgY2hvaWNlczogWy4uLnN1YnNdLCBoaW50OiBgcnVuIFxcYCR7Y2xpTmFtZX0gaGVscFxcYCBmb3IgdXNhZ2VgIH07XG4gICAgICBpZiAoc3ViID09PSB1bmRlZmluZWQpIGRpZShgJHtjYW5kfTogZXhwZWN0ZWQgYSBzdWItY29tbWFuZGAsIFwidXNhZ2VcIiwgZXh0cmEpO1xuICAgICAgZGllKGB1bmtub3duICR7Y2FuZH0gc3ViLWNvbW1hbmQ6IFwiJHtzdWJ9XCJgLCBcInVzYWdlXCIsIGV4dHJhKTtcbiAgICB9XG4gICAgY29uc3Qgcm93ID0gYnlUb2tlbi5nZXQoY2FuZCk7XG4gICAgaWYgKHJvdyA9PT0gdW5kZWZpbmVkKSB7XG4gICAgICBkaWUoYHVua25vd24gY29tbWFuZCBcIiR7Y2FuZH1cImAsIFwidXNhZ2VcIiwge1xuICAgICAgICBjaG9pY2VzOiBbLi4udmVyYnNdLFxuICAgICAgICBoaW50OiBgcnVuIFxcYCR7Y2xpTmFtZX0gaGVscFxcYCBmb3IgdXNhZ2VgLFxuICAgICAgfSk7XG4gICAgfVxuICAgIHJldHVybiB7IHJvdywgdG9rZW46IGNhbmQsIGFyZ3M6IHJlc3QgfTtcbiAgfTtcblxuICAvKipcbiAgICogQ29udHJhY3QgNSdzIGAtLWAgbWFkZSB0aGUgY2FsbGVyJ3MgZmxhZyBURVhUOyBzYXkgc28gKGMxLFxuICAgKiBgZG9jcy9pdGVtcy90ZXJtaW5hdG9yLWVhdHMtc2Vzc2lvbi1rZXkubWRgKS4gQSBwb3N0LWAtLWAgdG9rZW4gdGhhdCBzcGVsbHNcbiAgICogYSBmbGFnIHRoaXMgcm93IGFjY2VwdHMg4oCUIGAtLWtgLCBgLS1rPXZgLCBvciB0aGUgc2hvcnQgYC1zYCBvZiBhbiBhY2NlcHRlZFxuICAgKiBga2AsIGdsb2JhbHMgaW5jbHVkZWQg4oCUIGlzIG5hbWVkIGluIE9ORSBgIyB3YXJuaW5nOmAgbGluZSBvbiBzdGRlcnIsIHdpdGhcbiAgICogdGhlIG1vdmUgdGhhdCByZWNvdmVycyBpdC4gU3Rkb3V0IGFuZCB0aGUgZXhpdCBjb2RlIGRvIG5vdCBjaGFuZ2UsIGFuZCB0aGVcbiAgICogcm93IHN0aWxsIHJ1bnM6IHRleHQgY29udGFpbmluZyBhIGZsYWcgbmFtZSBpcyBsZWdpdGltYXRlLCB3aGljaCBpcyB3aGF0XG4gICAqIGAtLWAgaXMgZm9yLiBBIHRva2VuIHRoZSByb3cgZG9lcyBub3QgYWNjZXB0IGlzIGp1c3QgdGV4dCwgYW5kIHNheXMgbm90aGluZy5cbiAgICpcbiAgICog4pqgIENhbGxlZCBvbmx5IG9uY2UgZXZlcnkgcmVmdXNhbCBoYXMgcGFzc2VkLCBzbyBhIHJlZnVzZWQgaW52b2NhdGlvbidzXG4gICAqIHN0ZGVyciBpcyBzdGlsbCBleGFjdGx5IG9uZSBlbnZlbG9wZS4gVGhlIGAjIGAgcHJlZml4IGlzIHRoZSBob3VzZSdzXG4gICAqIHN1Y2Nlc3MtcGF0aCBzdGRlcnIgZm9ybSAoYCMgd2FybmluZzpgIGluIG1pbmQtbWFwcGVyLCBgIyBwaW5uZWQgYm9hcmRgLFxuICAgKiBgIyDihpIgY2hhbm5lbGApOiBhbiBlbnZlbG9wZSByZWFkZXIgbG9va3MgZm9yIGEgYHtgIGxpbmUgYW5kIHNraXBzIGl0LlxuICAgKi9cbiAgY29uc3Qgd2FybkRlbW90ZWQgPSAoXG4gICAgcm93OiBSb3csXG4gICAgYWNjZXB0ZWQ6IFJlYWRvbmx5U2V0PHN0cmluZz4sXG4gICAgdG9rZW5zOiBSZXR1cm5UeXBlPHR5cGVvZiBwYXJzZUFyZ3M+W1widG9rZW5zXCJdLFxuICApOiB2b2lkID0+IHtcbiAgICBjb25zdCBlbmQgPSB0b2tlbnM/LmZpbmRJbmRleCgodCkgPT4gdC5raW5kID09PSBcIm9wdGlvbi10ZXJtaW5hdG9yXCIpID8/IC0xO1xuICAgIGlmICh0b2tlbnMgPT09IHVuZGVmaW5lZCB8fCBlbmQgPCAwKSByZXR1cm47XG4gICAgY29uc3QgZGVtb3RlZDogc3RyaW5nW10gPSBbXTtcbiAgICBmb3IgKGNvbnN0IHQgb2YgdG9rZW5zLnNsaWNlKGVuZCArIDEpKSB7XG4gICAgICBpZiAodC5raW5kICE9PSBcInBvc2l0aW9uYWxcIikgY29udGludWU7XG4gICAgICBjb25zdCB2ID0gdC52YWx1ZTtcbiAgICAgIGxldCBrZXk6IHN0cmluZyB8IHVuZGVmaW5lZDtcbiAgICAgIGlmICh2LnN0YXJ0c1dpdGgoXCItLVwiKSkga2V5ID0gdi5zbGljZSgyKS5zcGxpdChcIj1cIilbMF07XG4gICAgICBlbHNlIGlmICh2Lmxlbmd0aCA9PT0gMiAmJiB2LnN0YXJ0c1dpdGgoXCItXCIpKSBrZXkgPSBzaG9ydFRvS2V5LmdldCh2LnNsaWNlKDEpKTtcbiAgICAgIGlmIChrZXkgIT09IHVuZGVmaW5lZCAmJiBrZXkgIT09IFwiXCIgJiYgYWNjZXB0ZWQuaGFzKGtleSkpIGRlbW90ZWQucHVzaCh2KTtcbiAgICB9XG4gICAgaWYgKGRlbW90ZWQubGVuZ3RoID09PSAwKSByZXR1cm47XG4gICAgY29uc3Qgd2hpY2ggPSBkZW1vdGVkLmpvaW4oXCIsIFwiKTtcbiAgICBjb25zdCBvbmUgPSBkZW1vdGVkLmxlbmd0aCA9PT0gMTtcbiAgICBjb25zdCBpdCA9IG9uZSA/IFwiaXRcIiA6IFwidGhlbVwiO1xuICAgIGNvbnN0IHdhcyA9IG9uZSA/IFwid2FzXCIgOiBcIndlcmVcIjtcbiAgICBjb25zdCBhc0ZsYWcgPSBvbmUgPyBcImFzIGEgZmxhZ1wiIDogXCJhcyBmbGFnc1wiO1xuICAgIHByb2Nlc3Muc3RkZXJyLndyaXRlKFxuICAgICAgYCMgd2FybmluZzogJHtjbGlOYW1lfSR7cm93Lm5hbWUgPT09IFwiXCIgPyBcIlwiIDogYCAke3Jvdy5uYW1lfWB9OiAke3doaWNofSBhZnRlciBcXGAtLVxcYCAke3dhc30gcmVhZCBhcyB0ZXh0LCBub3QgJHthc0ZsYWd9OyB0byB1c2UgJHtpdH0gJHthc0ZsYWd9LCBtb3ZlICR7aXR9IGJlZm9yZSBcXGAtLVxcYFxcbmAsXG4gICAgKTtcbiAgfTtcblxuICBjb25zdCBydW5Sb3cgPSBhc3luYyAocm93OiBSb3csIHRva2VuOiBzdHJpbmcsIGFyZ3M6IHN0cmluZ1tdKTogUHJvbWlzZTxudW1iZXI+ID0+IHtcbiAgICBzZXRDdXJyZW50Q29tbWFuZChyb3cubmFtZSA9PT0gXCJcIiA/IG51bGwgOiByb3cubmFtZSk7XG4gICAgY29uc3QgbmFtZSA9IGxhYmVsKHJvdyk7XG4gICAgY29uc3QgYWNjZXB0ZWQgPSBuZXcgU2V0KHJvdy5hY2NlcHRlZCk7XG4gICAgY29uc3QgY2hvaWNlcyA9IHJvdy5uYW1lID09PSBcIlwiID8gcm9vdENob2ljZXMgOiBmbGFnc0Zvcihyb3cubmFtZSk7XG4gICAgY29uc3QgZmxhZ0hpbnQgPSAoKTogc3RyaW5nIHwgdW5kZWZpbmVkID0+XG4gICAgICBbcm93LnJlamVjdEhpbnQsIGNob2ljZXMubGVuZ3RoID09PSAwID8gYCR7bmFtZX0gdGFrZXMgbm8gZmxhZ3NgIDogdW5kZWZpbmVkXVxuICAgICAgICAuZmlsdGVyKChzKTogcyBpcyBzdHJpbmcgPT4gcyAhPT0gdW5kZWZpbmVkKVxuICAgICAgICAuam9pbihcIjsgXCIpIHx8IHVuZGVmaW5lZDtcblxuICAgIGxldCB2YWx1ZXM6IFJlY29yZDxzdHJpbmcsIHVua25vd24+O1xuICAgIGxldCBwb3NpdGlvbmFsczogc3RyaW5nW107XG4gICAgbGV0IHRva2VuczogUmV0dXJuVHlwZTx0eXBlb2YgcGFyc2VBcmdzPltcInRva2Vuc1wiXTtcbiAgICB0cnkge1xuICAgICAgKHsgdmFsdWVzLCBwb3NpdGlvbmFscywgdG9rZW5zIH0gPSBwYXJzZUFyZ3Moe1xuICAgICAgICBhcmdzLFxuICAgICAgICBvcHRpb25zOiBwYXJzZU9wdGlvbnMsXG4gICAgICAgIHN0cmljdDogdHJ1ZSxcbiAgICAgICAgYWxsb3dQb3NpdGlvbmFsczogcm93LmFsbG93UG9zaXRpb25hbHMsXG4gICAgICAgIHRva2VuczogdHJ1ZSxcbiAgICAgIH0pKTtcbiAgICB9IGNhdGNoIChlKSB7XG4gICAgICBpZiAoZXJyQ29kZShlKSA9PT0gXCJFUlJfUEFSU0VfQVJHU19VTktOT1dOX09QVElPTlwiKSB7XG4gICAgICAgIGRpZShgJHtuYW1lfTogJHtlcnJNZXNzYWdlKGUpfWAsIFwidXNhZ2VcIiwgeyBjaG9pY2VzLCBoaW50OiBmbGFnSGludCgpIH0pO1xuICAgICAgfVxuICAgICAgLy8gQSBtaXNzaW5nIHZhbHVlIGlzIG5vdCBhIGNob2ljZSBmcm9tIGEgc2V0LCBzbyBubyBgY2hvaWNlc2AgaGVyZS5cbiAgICAgIGRpZShgJHtuYW1lfTogJHtlcnJNZXNzYWdlKGUpfWAsIFwidXNhZ2VcIiwgeyBoaW50OiByb3cucmVqZWN0SGludCA/PyBleHBlY3RzKHJvdykgfSk7XG4gICAgfVxuXG4gICAgLy8gU3RhZ2UgMjoga25vd24gdG8gdGhlIHNwZWxsLCBub3QgdGFrZW4gYnkgdGhpcyByb3cg4oCUIE1JU1BMQUNFRCwgbm90XG4gICAgLy8gdW5rbm93bi4gT25seSBmbGFncyB0aGUgY2FsbGVyIEdBVkUgYXJlIGhlcmU6IGRlZmF1bHRzIGFyZSBub3QgYXBwbGllZCB5ZXQuXG4gICAgY29uc3Qgc3RyYXkgPSBPYmplY3Qua2V5cyh2YWx1ZXMpLmZpbmQoKGspID0+ICFhY2NlcHRlZC5oYXMoaykpO1xuICAgIGlmIChzdHJheSAhPT0gdW5kZWZpbmVkKSB7XG4gICAgICBkaWUoXG4gICAgICAgIGAtLSR7c3RyYXl9IGlzIG5vdCBhY2NlcHRlZCBieSBcXGAke25hbWV9XFxgIChpdCBpcyBhIHJlY29nbml6ZWQgJHtjbGlOYW1lfSBmbGFnLCBqdXN0IG5vdCB0aGlzICR7cm93Lm5hbWUgPT09IFwiXCIgPyBcImNvbW1hbmRcIiA6IFwidmVyYlwifSdzKWAsXG4gICAgICAgIFwidXNhZ2VcIixcbiAgICAgICAgeyBjaG9pY2VzLCBoaW50OiBmbGFnSGludCgpIH0sXG4gICAgICApO1xuICAgIH1cblxuICAgIC8vIEFyaXR5LCBmcm9tIHRoZSBkZWNsYXJlZCBzaGFwZSwgbmFtaW5nIHRoZSBtaXNzaW5nIG9yIHRoZSBleHRyYSB0b2tlbi5cbiAgICBjb25zdCByZXF1aXJlZCA9IHJvdy5wb3NpdGlvbmFscy5maWx0ZXIoKHApID0+IHAucmVxdWlyZWQpLmxlbmd0aDtcbiAgICBjb25zdCB2YXJpYWRpYyA9IHJvdy5wb3NpdGlvbmFscy5zb21lKChwKSA9PiBwLnZhcmlhZGljKTtcbiAgICBpZiAocG9zaXRpb25hbHMubGVuZ3RoIDwgcmVxdWlyZWQpIHtcbiAgICAgIGNvbnN0IG1pc3NpbmcgPSByb3cucG9zaXRpb25hbHNbcG9zaXRpb25hbHMubGVuZ3RoXTtcbiAgICAgIGRpZShgJHtuYW1lfTogbWlzc2luZyByZXF1aXJlZCA8JHttaXNzaW5nPy5uYW1lID8/IFwiYXJndW1lbnRcIn0+YCwgXCJ1c2FnZVwiLCB7XG4gICAgICAgIGhpbnQ6IGV4cGVjdHMocm93KSxcbiAgICAgIH0pO1xuICAgIH1cbiAgICBpZiAoIXZhcmlhZGljICYmIHBvc2l0aW9uYWxzLmxlbmd0aCA+IHJvdy5wb3NpdGlvbmFscy5sZW5ndGgpIHtcbiAgICAgIGRpZShcbiAgICAgICAgYCR7bmFtZX06IHVuZXhwZWN0ZWQgYXJndW1lbnQgJHtKU09OLnN0cmluZ2lmeShwb3NpdGlvbmFsc1tyb3cucG9zaXRpb25hbHMubGVuZ3RoXSl9YCxcbiAgICAgICAgXCJ1c2FnZVwiLFxuICAgICAgICB7IGhpbnQ6IHJvdy5wb3NpdGlvbmFscy5sZW5ndGggPT09IDAgPyBgJHtuYW1lfSB0YWtlcyBubyBhcmd1bWVudHNgIDogZXhwZWN0cyhyb3cpIH0sXG4gICAgICApO1xuICAgIH1cblxuICAgIC8vIERlZmF1bHRzIGxhc3QsIGFuZCBvbmx5IHRoaXMgcm93J3MuXG4gICAgY29uc3QgZmxhZ3M6IFJlY29yZDxzdHJpbmcsIEZsYWdWYWx1ZT4gPSB7IC4uLih2YWx1ZXMgYXMgUmVjb3JkPHN0cmluZywgRmxhZ1ZhbHVlPikgfTtcbiAgICBmb3IgKGNvbnN0IGsgb2Ygcm93LmFjY2VwdGVkKSB7XG4gICAgICBjb25zdCBkID0gKHNwZWMub3B0aW9uc1trXSBhcyBPcHRpb25TcGVjKS5kZWZhdWx0O1xuICAgICAgaWYgKGZsYWdzW2tdID09PSB1bmRlZmluZWQgJiYgZCAhPT0gdW5kZWZpbmVkKSB7XG4gICAgICAgIGZsYWdzW2tdID0gKEFycmF5LmlzQXJyYXkoZCkgPyBbLi4uZF0gOiBkKSBhcyBGbGFnVmFsdWU7XG4gICAgICB9XG4gICAgfVxuXG4gICAgY29uc3QgaW52OiBJbnZvY2F0aW9uID0geyBwYXRoOiByb3cubmFtZSwgdG9rZW4sIHBvczogcG9zaXRpb25hbHMsIGZsYWdzIH07XG4gICAgY29uc3QgcmVmdXNlZCA9IHJvdy5jaGVjaz8uKGludik7XG4gICAgaWYgKHJlZnVzZWQgIT09IHVuZGVmaW5lZCkgZGllKGAke25hbWV9OiAke3JlZnVzZWR9YCwgXCJ1c2FnZVwiLCB7IGhpbnQ6IGV4cGVjdHMocm93KSB9KTtcblxuICAgIHdhcm5EZW1vdGVkKHJvdywgYWNjZXB0ZWQsIHRva2Vucyk7XG4gICAgY29uc3Qgb3V0ID0gYXdhaXQgcm93LnJ1bihpbnYpO1xuICAgIHJldHVybiB0eXBlb2Ygb3V0ID09PSBcIm51bWJlclwiID8gb3V0IDogMDtcbiAgfTtcblxuICBjb25zdCBkaXNwYXRjaCA9IGFzeW5jIChhcmd2OiBzdHJpbmdbXSk6IFByb21pc2U8bnVtYmVyPiA9PiB7XG4gICAgc2V0Q3VycmVudENvbW1hbmQoYXJndlswXSA/PyBudWxsKTtcbiAgICBjb25zdCBmaXJzdCA9IGFyZ3ZbMF07XG5cbiAgICAvLyAxLiBJbnRlcmNlcHRvcnMgcGFzcyB0aGUgcmVzdCBvZiB0aGUgYXJndiBvbiB0byB0aGVpciByb3cuXG4gICAgY29uc3QgaW50ZXJjZXB0b3IgPSBJTlRFUkNFUFRPUlMuZmluZCgoaSkgPT4gaS5uYW1lID09PSBmaXJzdCk7XG4gICAgaWYgKGludGVyY2VwdG9yICE9PSB1bmRlZmluZWQpIHtcbiAgICAgIHJldHVybiBydW5Sb3coYnlUb2tlbi5nZXQoaW50ZXJjZXB0b3IucnVucykgYXMgUm93LCBpbnRlcmNlcHRvci5ydW5zLCBhcmd2LnNsaWNlKDEpKTtcbiAgICB9XG5cbiAgICAvLyAyLiBBIHZlcmJsZXNzIHJvb3Qgb3ducyBldmVyeSBhcmd2IHRoYXQgZG9lcyBub3Qgc3RhcnQgd2l0aCBhIHJlc2VydmVkIHRva2VuLlxuICAgIGlmIChyb290Um93ICE9PSB1bmRlZmluZWQpIHtcbiAgICAgIGlmIChmaXJzdCAhPT0gdW5kZWZpbmVkICYmIChieVRva2VuLmhhcyhmaXJzdCkgfHwgc3Vic09mLmhhcyhmaXJzdCkpKSB7XG4gICAgICAgIGNvbnN0IHIgPSByZXNvbHZlKGZpcnN0LCBhcmd2LnNsaWNlKDEpKTtcbiAgICAgICAgcmV0dXJuIHJ1blJvdyhyLnJvdywgci50b2tlbiwgci5hcmdzKTtcbiAgICAgIH1cbiAgICAgIHJldHVybiBydW5Sb3cocm9vdFJvdywgXCJcIiwgYXJndik7XG4gICAgfVxuXG4gICAgLy8gMy4gQmFyZSBpbnZvY2F0aW9uIGlzIGEgdXNhZ2UgZXJyb3IgKGFjYyBDMi9EMikuXG4gICAgaWYgKGZpcnN0ID09PSB1bmRlZmluZWQpIHJldHVybiBub0NvbW1hbmQoKTtcblxuICAgIC8vIDQuIEZpbmQgdGhlIHZlcmIuXG4gICAgbGV0IGNhbmQ6IHN0cmluZztcbiAgICBsZXQgcmVzdDogc3RyaW5nW107XG4gICAgaWYgKGdyYW1tYXIgPT09IFwidmVyYi1maXJzdFwiKSB7XG4gICAgICBpZiAoZmlyc3QgPT09IFwiLS1cIikge1xuICAgICAgICBpZiAoYXJndlsxXSA9PT0gdW5kZWZpbmVkKSByZXR1cm4gbm9Db21tYW5kKCk7XG4gICAgICAgIGNhbmQgPSBhcmd2WzFdO1xuICAgICAgICByZXN0ID0gW1wiLS1cIiwgLi4uYXJndi5zbGljZSgyKV07XG4gICAgICB9IGVsc2UgaWYgKGZpcnN0LnN0YXJ0c1dpdGgoXCItXCIpKSB7XG4gICAgICAgIHJldHVybiBkaWUoYHVua25vd24gZmxhZyBhdCB0aGUgcm9vdDogJHtmaXJzdH1gLCBcInVzYWdlXCIsIHtcbiAgICAgICAgICBjaG9pY2VzOiBbLi4uSU5URVJDRVBUT1JfQ0hPSUNFU10sXG4gICAgICAgICAgaGludDogYGNvbW1hbmRzIChlYWNoIHRha2VzIGl0cyBvd24gZmxhZ3MpOiAke3ZlcmJzLmpvaW4oXCIgXCIpfWAsXG4gICAgICAgIH0pO1xuICAgICAgfSBlbHNlIHtcbiAgICAgICAgY2FuZCA9IGZpcnN0O1xuICAgICAgICByZXN0ID0gYXJndi5zbGljZSgxKTtcbiAgICAgIH1cbiAgICB9IGVsc2Uge1xuICAgICAgY29uc3QgaSA9IHNjYW5Qb3NpdGlvbmFsKGFyZ3YsIGZhbHNlKTtcbiAgICAgIGlmIChpIDwgMCkge1xuICAgICAgICAvLyBObyB2ZXJiIGFueXdoZXJlOiBhbiB1bmtub3duIGZsYWcgaXMgcmVmdXNlZCB3aXRoIHRoZSByb290J3Mgc2V0LFxuICAgICAgICAvLyBhbmQgYSBjbGVhbiBwYXJzZSBpcyBhIGJhcmUgaW52b2NhdGlvbi4gTmVpdGhlciByYW4gYSBjb21tYW5kLCBzb1xuICAgICAgICAvLyB0aGUgZW52ZWxvcGUncyBgbWV0YS5jb21tYW5kYCBpcyBudWxsLCBub3QgdGhlIGZpcnN0IGZsYWcnc1xuICAgICAgICAvLyBzcGVsbGluZyAoYGdsYW1vdXIgLS1ib2d1c2AgbmFtZXMgbm8gdmVyYikuXG4gICAgICAgIHNldEN1cnJlbnRDb21tYW5kKG51bGwpO1xuICAgICAgICB0cnkge1xuICAgICAgICAgIHBhcnNlQXJncyh7IGFyZ3M6IGFyZ3YsIG9wdGlvbnM6IHBhcnNlT3B0aW9ucywgc3RyaWN0OiB0cnVlLCBhbGxvd1Bvc2l0aW9uYWxzOiB0cnVlIH0pO1xuICAgICAgICB9IGNhdGNoIChlKSB7XG4gICAgICAgICAgZGllKGVyck1lc3NhZ2UoZSksIFwidXNhZ2VcIiwge1xuICAgICAgICAgICAgY2hvaWNlczogWy4uLklOVEVSQ0VQVE9SX0NIT0lDRVNdLFxuICAgICAgICAgICAgaGludDogYG5vIGNvbW1hbmQgZ2l2ZW4g4oCUIGNvbW1hbmRzOiAke3ZlcmJzLmpvaW4oXCIgXCIpfSAocnVuOiAke2NsaU5hbWV9IGhlbHApYCxcbiAgICAgICAgICB9KTtcbiAgICAgICAgfVxuICAgICAgICByZXR1cm4gbm9Db21tYW5kKCk7XG4gICAgICB9XG4gICAgICBjYW5kID0gYXJndltpXSBhcyBzdHJpbmc7XG4gICAgICAvLyBBIHZlcmIgZm91bmQgcmlnaHQgYWZ0ZXIgYSBgLS1gIGxlYXZlcyB0aGF0IGAtLWAgaW4gcGxhY2UsIHNvIHRoZVxuICAgICAgLy8gcmVzdCBvZiB0aGUgYXJndiBzdGF5cyBwb3NpdGlvbmFsLlxuICAgICAgcmVzdCA9IHdpdGhvdXQoYXJndiwgaSk7XG4gICAgfVxuICAgIHNldEN1cnJlbnRDb21tYW5kKGNhbmQpO1xuICAgIGNvbnN0IHIgPSByZXNvbHZlKGNhbmQsIHJlc3QpO1xuICAgIHJldHVybiBydW5Sb3coci5yb3csIHIudG9rZW4sIHIuYXJncyk7XG4gIH07XG5cbiAgY29uc3QgbWFpbiA9IGFzeW5jIChhcmd2OiBzdHJpbmdbXSk6IFByb21pc2U8bnVtYmVyPiA9PiB7XG4gICAgdHJ5IHtcbiAgICAgIHJldHVybiBhd2FpdCBkaXNwYXRjaChhcmd2KTtcbiAgICB9IGNhdGNoIChlKSB7XG4gICAgICBjb25zdCByZXBvcnRlZCA9IHJlcG9ydENsaUVycm9yKGUpO1xuICAgICAgaWYgKHJlcG9ydGVkICE9PSBudWxsKSByZXR1cm4gcmVwb3J0ZWQ7XG4gICAgICAvLyBUaGUgaG91c2UgY29udHJhY3QgaXMgSlNPTiBvbiBzdGRlcnIgZm9yIEVWRVJZIGZhaWx1cmUuIEEgc3BlbGwgdGhhdFxuICAgICAgLy8gdHJpYWdlcyBpdHMgb3duIChnbGFtb3VyJ3MgRU5PRU5UIOKGkiB1c2FnZSkgY2FsbHMgYGRpc3BhdGNoYCBpbnN0ZWFkLlxuICAgICAgcmV0dXJuIHJlcG9ydENsaUVycm9yKG5ldyBDbGlFcnJvcihcImludGVybmFsXCIsIGVyck1lc3NhZ2UoZSkpKSA/PyAxO1xuICAgIH1cbiAgfTtcblxuICBjb25zdCB2aWV3ID0gKHI6IFJvdyk6IFJvd1ZpZXcgPT4gKHtcbiAgICBuYW1lOiByLm5hbWUsXG4gICAgYWxpYXNlczogci5hbGlhc2VzLFxuICAgIGZsYWdzOiByLmZsYWdzLFxuICAgIGFjY2VwdGVkOiByLmFjY2VwdGVkLFxuICAgIHBvc2l0aW9uYWxzOiByLnBvc2l0aW9uYWxzLFxuICAgIGRlc2NyaWJlOiByLmRlc2NyaWJlLFxuICAgIGF1dG86IHIuYXV0byxcbiAgfSk7XG5cbiAgT2JqZWN0LmFzc2lnbihjbGksIHtcbiAgICBuYW1lOiBjbGlOYW1lLFxuICAgIG1haW4sXG4gICAgZGlzcGF0Y2gsXG4gICAgZGVjbGFyYXRpb24sXG4gICAgcmVuZGVySGVscCxcbiAgICB1c2FnZU9mOiAocGF0aDogc3RyaW5nKSA9PiB7XG4gICAgICBjb25zdCByID0gcm93Rm9yKHBhdGgpO1xuICAgICAgcmV0dXJuIHIgPT09IHVuZGVmaW5lZCA/IFwiXCIgOiB1c2FnZUxpbmUocik7XG4gICAgfSxcbiAgICB2ZXJicyxcbiAgICBwYXRocyxcbiAgICBmbGFnc0ZvcixcbiAgICByZWNvZ25pemVkRmxhZ3M6IG9wdGlvbktleXMubWFwKChrKSA9PiBgLS0ke2t9YCksXG4gICAgcm93czogcm93cy5tYXAodmlldyksXG4gIH0gc2F0aXNmaWVzIENsaSk7XG4gIHJldHVybiBjbGk7XG59XG4iLAogICAgIi8qKlxuICogVGhlIGhvdXNlJ3Mgb25lLWxpbmUgSlNPTiBlbWl0dGVyIOKAlCBPTkUgaW1wbGVtZW50YXRpb24sIGltcG9ydGVkIGJ5IGV2ZXJ5XG4gKiBzcGVsbCB0aGF0IHNwZWFrcyB0aGUgYWdlbnQgd2lyZS5cbiAqXG4gKiDim5QgVEhJUyBGSUxFIElTIGBzcmMva2l0L2AncyBGSVJTVCBJTkhBQklUQU5ULCBhbmQgdGhhdCBpcyBsb2FkLWJlYXJpbmcgYmV5b25kXG4gKiB0aGUgc2hhcmluZyBpdCBkb2VzLiBXYXJkIDIgKFwidGhlIGtpdCBpcyBhIGxlYWZcIikgaGFzIGJlZW4gZ3JlZW4gYnlcbiAqIENPTlNUUlVDVElPTiBzaW5jZSBQaGFzZSAwIOKAlCBpdCBoYWQgbm90aGluZyB0byB3YWxrLCBhbmQgc2FpZCBzbyBvbiBldmVyeVxuICogcnVuLiBUaGlzIG1vZHVsZSBpcyB0aGUgZmlyc3QgdGhpbmcgaXQgYWN0dWFsbHkgZ3VhcmRzLCB3aGljaCBpcyB3aHkgdGhlXG4gKiB3YXJkJ3MgemVyby1ndWFyZCBjZWxsIGRpc3Rpbmd1aXNoZXMgYW4gQUJTRU5UIGtpdCBmcm9tIGFuIEVNUFRZIG9uZS5cbiAqXG4gKiDim5QgVEhFIEtJVCBJUyBBIExFQUYuIE5vdGhpbmcgaGVyZSBtYXkgaW1wb3J0IG91dCBvZiBgc3JjL2tpdC9gIOKAlCBub3QgYSBzcGVsbCxcbiAqIG5vdCBhIHN1cmZhY2UsIG5vdCBhIGJhY2tlbmQuIFRoYXQgaXMgd2FyZCAyJ3MgYXNzZXJ0aW9uLCBub3QgYSBjb252ZW50aW9uLFxuICogYW5kIGl0IGlzIHdoYXQgbWFrZXMgdGhlIGtpdCBzYWZlIHRvIGJ1bmRsZSBpbnRvIGFueSBzcGVsbCdzIGFydGlmYWN0LlxuICpcbiAqIERlbGliZXJhdGVseSBkZXBlbmRlbmN5LWZyZWUgYW5kIGRlbGliZXJhdGVseSBkdWxsOiBpdCBpcyBidW5kbGVkIElOVE8gZWFjaFxuICogc3BlbGwncyBlbWl0dGVkIENMSSAoQ29udHJhY3QgNCdzIGJ1aWx0LWJhY2tlbmQgYW1lbmRtZW50KSwgc28gYW55dGhpbmcgaXRcbiAqIHJlYWNoZWQgZm9yIHdvdWxkIGJlY29tZSBhIGRlcGVuZGVuY3kgb2YgdHdvIHNoaXBwZWQgYXJ0aWZhY3RzIGF0IG9uY2UuXG4gKlxuICogVGhlIHdpcmUgY29udHJhY3QgaXQgZW5jb2RlczogZXhhY3RseSBvbmUgSlNPTiBkb2N1bWVudCwgb25lIHRyYWlsaW5nXG4gKiBuZXdsaW5lLCBub3RoaW5nIGVsc2Ugb24gc3Rkb3V0LiBBIGNhbGxlciByZWFkaW5nIG91ciBzdGRvdXQgd2l0aCBhXG4gKiBsaW5lLWRlbGltaXRlZCBwYXJzZXIgZGVwZW5kcyBvbiB0aGF0IG5ld2xpbmU7IGEgY2FsbGVyIHJlYWRpbmcgdG8gRU9GXG4gKiBkZXBlbmRzIG9uIHRoZXJlIGJlaW5nIG5vIHNlY29uZCBkb2N1bWVudC5cbiAqL1xuZXhwb3J0IGZ1bmN0aW9uIHByaW50SnNvbihkYXRhOiB1bmtub3duKTogdm9pZCB7XG4gIHByb2Nlc3Muc3Rkb3V0LndyaXRlKGAke0pTT04uc3RyaW5naWZ5KGRhdGEpfVxcbmApO1xufVxuIiwKICAgICIvKipcbiAqIFRoZSBob3VzZSdzIE9ORSBDTEkgZmFpbHVyZSBjb250cmFjdCDigJQgdGhlIHRheG9ub215LCB0aGUgZXhpdCBjb2RlcywgdGhlXG4gKiBlbnZlbG9wZSwgYW5kIHRoZSBgZGllYCB0aGF0IHJhaXNlcyBvbmUuXG4gKlxuICog4puUIFRIRSBLSVQgSVMgQSBMRUFGLiBOb3RoaW5nIGhlcmUgbWF5IGltcG9ydCBvdXQgb2YgYHNyYy9raXQvYCDigJQgd2FyZCAyJ3NcbiAqIGFzc2VydGlvbiwgbm90IGEgY29udmVudGlvbiwgYW5kIGl0IGlzIHdoYXQgbWFrZXMgdGhpcyBtb2R1bGUgc2FmZSB0byBidW5kbGVcbiAqIGludG8gYW55IHNwZWxsJ3MgYnVuZGxlIChzZWUgYC4uL2xpYi9wcmludEpzb24udHNgLCB0aGUga2l0J3MgZmlyc3RcbiAqIGluaGFiaXRhbnQsIGZvciB0aGUgZnVsbCBhY2NvdW50KS5cbiAqXG4gKiDilIDilIAgV0hZIFRISVMgSVMgQSBDT05UUkFDVCBBTkQgTk9UIEEgVVRJTElUWSDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIBcbiAqXG4gKiBga2luZGAgaXMgdGhlIGNvbnRyYWN0OyBgbWVzc2FnZWAgaXMgcHJlc2VudGF0aW9uLiBSZXdvcmRpbmcgYSBtZXNzYWdlIG11c3RcbiAqIG5ldmVyIGJyZWFrIGEgY2FsbGVyLCB3aGljaCBpdCBkb2VzIHRoZSBtb21lbnQgYW55b25lIG1hdGNoZXMgb24gcHJvc2UuIEFuXG4gKiBhZ2VudCByb3V0ZXMgb24gYGtpbmRgIGFuZCBvbiB0aGUgZXhpdCBjb2RlLCBzbyBjaGFuZ2luZyBlaXRoZXIgaXMgYSBjaGFuZ2VcbiAqIGFuIGFnZW50IE9CU0VSVkVTIGFuZCB0aGUgc3BlbGwgbmVlZHMgYW4gYWNjIHJlLWdyYWRlLiBUaGF0IGlzIHRoZSBjdXQgdGhpc1xuICogZGlyZWN0b3J5IGlzIG5hbWVkIGZvci5cbiAqXG4gKiDilIDilIAg4puUIGBkaWVgIFRIUk9XUy4gSVQgRE9FUyBOT1QgRVhJVCwgQU5EIFRIQVQgSVMgVEhFIFBPSU5UIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgFxuICpcbiAqIEJ1bidzIHN0ZG91dCBpcyBBU1lOQ0hST05PVVMgb24gYSBwaXBlIChzeW5jaHJvbm91cyBvbiBhIFRUWSBvciBmaWxlKSwgc29cbiAqIGBwcm9jZXNzLmV4aXQoKWAgZGlzY2FyZHMgd2hhdGV2ZXIgaGFzIG5vdCBkcmFpbmVkIOKAlCBtZWFzdXJlZCBhdCBleGFjdGx5XG4gKiA2NSw1MzYgYnl0ZXMsIGFuZCB0aGUgY2FsbGVyIGdldHMgd2VsbC1mb3JtZWQtbG9va2luZyBKU09OIHRoYXQgc3RvcHNcbiAqIG1pZC1zdHJpbmcuIFJlcHJvZHVjZWQsIHJlcGFpcmVkIGFuZCBnYXRlZCBpbiBib3VudHkgZmlyc3QgKFAwLCAjNzcvIzc4KS5cbiAqXG4gKiBUaGUgb2xkIHNoYXBlIHdyb3RlIG9uZSBzaG9ydCBlbnZlbG9wZSB0byBzdGRlcnIgYW5kIGV4aXRlZCBpbW1lZGlhdGVseSxcbiAqIHdoaWNoIGlzIHNhZmUgT05MWSB3aGlsZSB0aGUgcGF5bG9hZCBmaXRzIHRoZSA2NCBLaUIgcGlwZSBidWZmZXIg4oCUIHN0ZGVyclxuICogaXMgY3V0IHNob3J0IGV4YWN0bHkgbGlrZSBzdGRvdXQgKG1lYXN1cmVkKS4gSXQgYWxzbyBtZWFudCBldmVyeSBgZGllYCB3YXMgYVxuICogc2Vjb25kIHBsYWNlIHRoZSBwcm9jZXNzIGNvdWxkIGVuZCwgb3BhcXVlIHRvIHdoYXRldmVyIHRoZSB2ZXJiIGhhZFxuICogYWxyZWFkeSB3cml0dGVuIHRvIHN0ZG91dC5cbiAqXG4gKiBTbzogYGRpZWAgcmFpc2VzIGEgYENsaUVycm9yYCwgdGhlIHNwZWxsJ3MgYG1haW5gIGNhdGNoZXMgaXQgd2l0aFxuICogYHJlcG9ydENsaUVycm9yYCwgYW5kIHRoZSBwcm9jZXNzIGVuZHMgdGhlIG9uZSB3YXkgdGhlIGhvdXNlIHNhbmN0aW9ucyDigJRcbiAqIGBwcm9jZXNzLmV4aXRDb2RlYCBwbHVzIGEgbmF0dXJhbCByZXR1cm4uIGdsYW1vdXIgYW5kIG1pbmQtbWFwcGVyIHJlYWNoZWRcbiAqIHRoaXMgc2hhcGUgaW5kZXBlbmRlbnRseSBhdCB0aGVpciBhY2MgTDAgcGFzc2VzOyB0aGlzIG1vZHVsZSBpcyB3aGVyZSB0aGVcbiAqIHRocmVlIGNvcGllcyBzdG9wIGJlaW5nIHRocmVlLlxuICpcbiAqIOKaoCBBIGBkaWVgIFJFQUNIQUJMRSBmcm9tIGluc2lkZSBhIGB0cnlgIHdob3NlIGBjYXRjaGAgU1dBTExPV1MgaXMgbm93IGFcbiAqIHNpbGVudCBjb250aW51ZSByYXRoZXIgdGhhbiBhbiBleGl0LiDim5QgUkVBQ0hBQklMSVRZLCBOT1QgQ0FMTCBTSVRFUzogYVxuICogSEVMUEVSIHRoYXQgZGllcywgaW52b2tlZCBmcm9tIGluc2lkZSBhIHN3YWxsb3dpbmcgYGNhdGNoYCwgaGFzIGl0cyBgZGllYCBhdFxuICogYSBzaXRlIHRoYXQgcmVhZHMgYXMgcGVyZmVjdGx5IHNhZmUuIEFuIGFkb3B0aW5nIHNwZWxsIG11c3QgZm9sbG93IHRoZSBjYWxsXG4gKiBncmFwaCwgbm90IGdyZXAgZm9yIGBkaWUoYC4gQXVkaXRlZCB0aGF0IHdheSBvbiBhZG9wdGlvbiDigJQgMTUgc2l0ZXMgaW5cbiAqIGFzdHJvbGFiZSwgMjkgaW4gbWFncGllLCBwbHVzIHRoZSBoZWxwZXJzIHJlYWNoYWJsZSBmcm9tIHRoZW0g4oCUIGFuZCBldmVyeVxuICogcGF0aCBpcyBlaXRoZXIgb3V0c2lkZSBhIGB0cnlgIG9yIGluc2lkZSBhIGBjYXRjaGAsIGZyb20gd2hpY2ggdGhlIHRocm93XG4gKiBwcm9wYWdhdGVzLlxuICovXG5cbi8qKlxuICogVGhlIGZhaWx1cmUgdGF4b25vbXkuIEV4aXQgY29kZXMgZm9sbG93IHRoZSBhY2Mgc3RhbmRhcmQ6IGEgdXNhZ2UgZXJyb3IgaXNcbiAqIHRoZSBjYWxsZXIncyB0byBmaXggYnkgY2hhbmdpbmcgdGhlIGNvbW1hbmQsIGFuIGludGVybmFsIGZhdWx0IGlzIG5vdCwgYW5kXG4gKiBjb2xsYXBzaW5nIHRoZW0gaW50byBvbmUgbnVtYmVyIGxlYXZlcyBhbiBhZ2VudCB3aXRoIG5vdGhpbmcgdG8gcm91dGUgb24uXG4gKi9cbmV4cG9ydCB0eXBlIEVycktpbmQgPSBcInVzYWdlXCIgfCBcImludGVybmFsXCIgfCBcIm5vdF9mb3VuZFwiIHwgXCJjb25mbGljdFwiO1xuXG5leHBvcnQgY29uc3QgRVhJVF9GT1I6IFJlY29yZDxFcnJLaW5kLCBudW1iZXI+ID0ge1xuICB1c2FnZTogMiwgLy8gdGhlIGNhbGxlciBjYW4gZml4IHRoaXMgYnkgY2hhbmdpbmcgdGhlIGNvbW1hbmRcbiAgaW50ZXJuYWw6IDEsIC8vIHRoZSBzcGVsbCBicm9rZTsgdGhlIGludm9jYXRpb24gbWF5IGhhdmUgYmVlbiBmaW5lXG4gIG5vdF9mb3VuZDogNSwgLy8gdGhlIG5hbWVkIHRoaW5nIGRvZXMgbm90IGV4aXN0XG4gIGNvbmZsaWN0OiA2LCAvLyBhIHByZWNvbmRpdGlvbiBmYWlsZWRcbn07XG5cbi8qKlxuICogRXh0cmEgZmllbGRzIGEgZmFpbHVyZSBtYXkgY2FycnkuIGBoaW50YCBpcyBwcm9zZSBmb3IgYSBodW1hbiBvciBhbiBhZ2VudDtcbiAqIGBjaG9pY2VzYCBlbnVtZXJhdGVzIHdoYXQgV09VTEQgaGF2ZSBiZWVuIGFjY2VwdGVkLlxuICpcbiAqIOKaoCAqKmBzZXJ2ZXJgIEFSUklWRUQgSU4gUEhBU0UgMiwgQU5EIElUIElTIEEgRklORElORyBBQk9VVCBUSElTIE1PRFVMRS4qKiBUaGVcbiAqIGNvbnRyYWN0IHdhcyBleHRyYWN0ZWQgZnJvbSBhc3Ryb2xhYmUgYW5kIG1hZ3BpZSwgYW5kIEJPVEggb2YgdGhlbSBmcm9udCBhXG4gKiBkYWVtb24gYW5kIEJPVEggb2YgdGhlbSB0aHJvdyBhd2F5IHdoYXQgdGhlIGRhZW1vbiBzYWlkOiBtYWdwaWUnc1xuICogYGRpZShcInN0YXRlIGZhaWxlZCAoSFRUUCAke3N0YXR1c30pXCIsIFwiaW50ZXJuYWxcIilgIGtlZXBzIHRoZSBudW1iZXIgYW5kIGRyb3BzXG4gKiB0aGUgYm9keS4gZ2xhbW91ciBkb2VzIG5vdCDigJQgaXRzIHJlZnVzYWxzIGNhcnJ5IHRoZSBkYWVtb24ncyBvd24gSlNPTiB2ZXJiYXRpbVxuICogdW5kZXIgYGVycm9yLnNlcnZlcmAsIHNvIGEgY2FsbGVyIGNhbiBicmFuY2ggb24gdGhlIHVwc3RyZWFtJ3MgcmVhc29uIGluc3RlYWRcbiAqIG9mIG9uIHRoZSBDTEkncyBwcm9zZSBhYm91dCBpdCwgYW5kIGB0ZXN0cy9jbGktY29udHJhY3QudGVzdC50c2AgYXNzZXJ0cyBpdCBmb3JcbiAqIDQwMCwgNDA0IGFuZCA0MDkuIFNldmVuIG9mIHRoZSBlaWdodCBzcGVsbHMgcHV0IGEgQ0xJIGluIGZyb250IG9mIGEgZGFlbW9uLCBzb1xuICogdGhpcyBpcyB0aGUgZ2VuZXJhbCBzaGFwZSBhbmQgdGhlIHR3by1zcGVsbCBib3VuZGFyeSB3YXMgdGhlIG5hcnJvdyBvbmUuXG4gKlxuICog4puUIElUIElTIFRIRSBVUFNUUkVBTSdTIEJPRFksIFZFUkJBVElNLCBBTkQgTk9USElORyBFTFNFLiBOb3QgYSBwbGFjZSB0byBzdGFzaFxuICogYXJiaXRyYXJ5IGNvbnRleHQ6IHRoZSB3aG9sZSB2YWx1ZSBvZiB0aGUgZmllbGQgaXMgdGhhdCBhIGNhbGxlciBjYW4gdHJ1c3QgaXRcbiAqIGlzIHdoYXQgdGhlIG90aGVyIHNpZGUgYWN0dWFsbHkgc2FpZC5cbiAqL1xuZXhwb3J0IHR5cGUgRXJyRXh0cmEgPSB7IGhpbnQ/OiBzdHJpbmc7IGNob2ljZXM/OiBzdHJpbmdbXTsgc2VydmVyPzogdW5rbm93biB9O1xuXG4vKiogVGhlIHZlcmIgdW5kZXIgZXhlY3V0aW9uLCBzbyBhbiBlbnZlbG9wZSBjYW4gbmFtZSBpdC4gU2V0IG9uY2UgYnkgYG1haW5gLiAqL1xubGV0IGN1cnJlbnRDb21tYW5kOiBzdHJpbmcgfCBudWxsID0gbnVsbDtcblxuZXhwb3J0IGZ1bmN0aW9uIHNldEN1cnJlbnRDb21tYW5kKGNvbW1hbmQ6IHN0cmluZyB8IG51bGwpOiB2b2lkIHtcbiAgY3VycmVudENvbW1hbmQgPSBjb21tYW5kO1xufVxuXG5leHBvcnQgZnVuY3Rpb24gZ2V0Q3VycmVudENvbW1hbmQoKTogc3RyaW5nIHwgbnVsbCB7XG4gIHJldHVybiBjdXJyZW50Q29tbWFuZDtcbn1cblxuLyoqXG4gKiBPTkUgSlNPTiBkb2N1bWVudCBvbiBzdGRlcnIsIGFuZCBzdGRvdXQgc3RheXMgZW1wdHkg4oCUIHN0ZG91dCBjYXJyaWVzIGRhdGFcbiAqIGFuZCBhIGZhaWx1cmUgaGFzIG5vbmUuIEEgY2FsbGVyIHRoYXQgZ2V0cyBvbmUgSlNPTiBkb2N1bWVudCBmcm9tIGEgdmVyYiBhbmRcbiAqIHByb3NlIGZyb20gYSBmYWlsdXJlIGhhcyB0byBwYXJzZSB0d28gZm9ybWF0cyB0byB1c2Ugb25lIHRvb2wsIGFuZCB0aGVcbiAqIGZhaWx1cmUgaXMgdGhlIGNhc2Ugd2hlcmUgaXQgY2FuIGxlYXN0IGFmZm9yZCB0byBndWVzcy5cbiAqL1xuZXhwb3J0IGZ1bmN0aW9uIGVycm9yRW52ZWxvcGUoa2luZDogRXJyS2luZCwgbWVzc2FnZTogc3RyaW5nLCBleHRyYT86IEVyckV4dHJhKTogc3RyaW5nIHtcbiAgcmV0dXJuIGAke0pTT04uc3RyaW5naWZ5KHtcbiAgICBvazogZmFsc2UsXG4gICAgZXJyb3I6IHtcbiAgICAgIGtpbmQsXG4gICAgICBleGl0X2NvZGU6IEVYSVRfRk9SW2tpbmRdLFxuICAgICAgLy8gT25seSByYXRlIGxpbWl0cyBhcmUgd29ydGggcmV0cnlpbmcgdW5jaGFuZ2VkOyBub3RoaW5nIHRoZSBob3VzZSByYWlzZXMgaXMuXG4gICAgICByZXRyeWFibGU6IGZhbHNlLFxuICAgICAgbWVzc2FnZSxcbiAgICAgIC4uLihleHRyYT8uaGludCA/IHsgaGludDogZXh0cmEuaGludCB9IDoge30pLFxuICAgICAgLi4uKGV4dHJhPy5jaG9pY2VzID8geyBjaG9pY2VzOiBleHRyYS5jaG9pY2VzIH0gOiB7fSksXG4gICAgICAvLyBMYXN0LCBzbyBhIHNwZWxsIHRoYXQgYWxyZWFkeSBlbWl0dGVkIHRoaXMga2V5IGtlZXBzIGl0cyBieXRlIG9yZGVyLlxuICAgICAgLi4uKGV4dHJhPy5zZXJ2ZXIgIT09IHVuZGVmaW5lZCA/IHsgc2VydmVyOiBleHRyYS5zZXJ2ZXIgfSA6IHt9KSxcbiAgICB9LFxuICAgIG1ldGE6IHsgY29tbWFuZDogY3VycmVudENvbW1hbmQgfSxcbiAgfSl9XFxuYDtcbn1cblxuLyoqIEEgZmFpbHVyZSB3aXRoIGEgdGF4b25vbXkgYGtpbmRgLCByYWlzZWQgYnkgYGRpZWAgYW5kIGNhdWdodCBieSBgbWFpbmAuICovXG5leHBvcnQgY2xhc3MgQ2xpRXJyb3IgZXh0ZW5kcyBFcnJvciB7XG4gIHJlYWRvbmx5IGtpbmQ6IEVycktpbmQ7XG4gIHJlYWRvbmx5IGV4dHJhPzogRXJyRXh0cmE7XG5cbiAgY29uc3RydWN0b3Ioa2luZDogRXJyS2luZCwgbWVzc2FnZTogc3RyaW5nLCBleHRyYT86IEVyckV4dHJhKSB7XG4gICAgc3VwZXIobWVzc2FnZSk7XG4gICAgdGhpcy5uYW1lID0gXCJDbGlFcnJvclwiO1xuICAgIHRoaXMua2luZCA9IGtpbmQ7XG4gICAgdGhpcy5leHRyYSA9IGV4dHJhO1xuICB9XG5cbiAgZ2V0IGV4aXRDb2RlKCk6IG51bWJlciB7XG4gICAgcmV0dXJuIEVYSVRfRk9SW3RoaXMua2luZF07XG4gIH1cbn1cblxuLyoqIFJhaXNlIGEgdGF4b25vbXkgZmFpbHVyZS4gUmV0dXJucyBgbmV2ZXJgLCBzbyBkZWZpbml0ZS1hc3NpZ25tZW50IGFuYWx5c2lzXG4gKiAgc3RpbGwgbmFycm93cyBhZnRlciBpdCDigJQgdGhlIHByb3BlcnR5IHRoYXQgbGV0IHRoZSBvbGQgZXhpdGluZyBmb3JtIHNpdCBpblxuICogIGEgYGNhdGNoYCBhbmQgbGVhdmUgdGhlIHZhcmlhYmxlIGl0IGd1YXJkcyBhc3NpZ25lZC4gKi9cbmV4cG9ydCBmdW5jdGlvbiBkaWUobWVzc2FnZTogc3RyaW5nLCBraW5kOiBFcnJLaW5kID0gXCJ1c2FnZVwiLCBleHRyYT86IEVyckV4dHJhKTogbmV2ZXIge1xuICB0aHJvdyBuZXcgQ2xpRXJyb3Ioa2luZCwgbWVzc2FnZSwgZXh0cmEpO1xufVxuXG4vKipcbiAqIFJlcG9ydCBhIGNhdWdodCBlcnJvciBhcyB0aGUgaG91c2UgZW52ZWxvcGUgYW5kIGhhbmQgYmFjayBhbiBleGl0IGNvZGUsIG9yXG4gKiBgbnVsbGAgd2hlbiB0aGUgZXJyb3IgaXMgTk9UIGEgYENsaUVycm9yYCDigJQgd2hpY2ggdGhlIGNhbGxlciBtdXN0IHJldGhyb3cuXG4gKiBTd2FsbG93aW5nIGFuIHVua25vd24gdGhyb3cgaGVyZSB3b3VsZCByZXBvcnQgYW4gaW50ZXJuYWwgZmF1bHQgYXMgYSB0aWR5XG4gKiB0YXhvbm9teSBmYWlsdXJlIGFuZCBsb3NlIHRoZSBzdGFjayB0aGF0IHNheXMgd2hhdCBhY3R1YWxseSBicm9rZS5cbiAqL1xuZXhwb3J0IGZ1bmN0aW9uIHJlcG9ydENsaUVycm9yKFxuICBlOiB1bmtub3duLFxuICBlcnI6IHsgd3JpdGUoY2h1bms6IHN0cmluZyk6IHVua25vd24gfSA9IHByb2Nlc3Muc3RkZXJyLFxuKTogbnVtYmVyIHwgbnVsbCB7XG4gIGlmICghKGUgaW5zdGFuY2VvZiBDbGlFcnJvcikpIHJldHVybiBudWxsO1xuICBlcnIud3JpdGUoZXJyb3JFbnZlbG9wZShlLmtpbmQsIGUubWVzc2FnZSwgZS5leHRyYSkpO1xuICByZXR1cm4gZS5leGl0Q29kZTtcbn1cbiIsCiAgICAiLyoqXG4gKiBUaGUgaG91c2UncyBPTkUgU1NFIHRhaWwgY2xpZW50IOKAlCB0aGUgc3RhbmRpbmcsIHNlbGYtaGVhbGluZyByZWFkIGxvb3AgZXZlcnlcbiAqIHNwZWxsJ3MgYHRhaWxgL2Bqb2luYCB2ZXJiIHJ1bnMuXG4gKlxuICog4puUIFRIRSBLSVQgSVMgQSBMRUFGLiBOb3RoaW5nIGhlcmUgbWF5IGltcG9ydCBvdXQgb2YgYHNyYy9raXQvYCDigJQgd2FyZCAyJ3NcbiAqIGFzc2VydGlvbiwgYW5kIGl0IGlzIHdoYXQgbWFrZXMgdGhpcyBtb2R1bGUgc2FmZSB0byBidW5kbGUgaW50byBhbnkgc3BlbGwnc1xuICogYnVuZGxlLiBJdCByZWFjaGVzIGZvciBub3RoaW5nLCBub3QgZXZlbiB0aGUgc2libGluZyBlcnJvciBjb250cmFjdC5cbiAqXG4gKiBEZXNpZ25lZCBhZ2FpbnN0IGFsbCBzZXZlbiBvZiB0aGUgaG91c2UncyBoYW5kLXdyaXR0ZW4gdGFpbHMgKHRoZSBjb252ZXJnZW5jZVxuICogZGVzaWduLCBgZG9jcy9pdGVtcy90YWlsLXJlYWRlci1jb252ZXJnZW5jZS93cml0ZS11cC5tZGApIGFuZFxuICogYWRvcHRlZCBmaXJzdCBieSBhc3Ryb2xhYmUgYW5kIG1hZ3BpZS5cbiAqXG4gKiDilIDilIAgVEhFIFRXTyBERUNJU0lPTlMgVEhBVCBNQUtFIE9ORSBDTElFTlQgUE9TU0lCTEUg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSAXG4gKlxuICogKioxLiBcIldoZXJlIGlzIHRoZSBkYWVtb25cIiBpcyBhIENBTExCQUNLLCBub3QgYSBVUkwuKiogYHJlc29sdmVgIGlzIGNhbGxlZFxuICogYmVmb3JlIEVWRVJZIGNvbm5lY3QgYXR0ZW1wdCBhbmQgaXRzIGFuc3dlciBpcyBuZXZlciBjYXB0dXJlZC4gVGhhdCBzaW5nbGVcbiAqIGNoYW5nZSB1bmlmaWVzIGZvdXIgaW5jb21wYXRpYmxlIGRpc2NvdmVyeSBtb2RlbHMg4oCUIHNlc3Npb24tcG9pbnRlciByZS1yZWFkLFxuICogcGlkLWNoZWNrZWQgcG9ydCBmaWxlLCByZXNwYXduLWlmLWFic2VudCDigJQgYW5kIGl0IHJlcGFpcnMgYSBkZWZlY3QgYnlcbiAqIGNvbnN0cnVjdGlvbiByYXRoZXIgdGhhbiBieSBhbnlvbmUgZml4aW5nIGl0OiBhc3Ryb2xhYmUgcmVzb2x2ZWQgaXRzIGRhZW1vblxuICogYmFzZSBPTkNFIGFuZCByZWNvbm5lY3RlZCB0byB0aGF0IG9uZSBjYXB0dXJlZCBwb3J0IGZvcmV2ZXIsIHNvIGBqb2luYCDigJQgdGhlIHZlcmJcbiAqIGRlc2lnbmVkIHRvIHJ1biBmb3IgaG91cnMgY2FycnlpbmcgcHJlc2VuY2Ug4oCUIHNwdW4gc2lsZW50bHkgYWdhaW5zdCBhIGRlYWRcbiAqIHBvcnQgYWZ0ZXIgYW55IGRhZW1vbiByZXN0YXJ0LCBhbmQgYXN0cm9sYWJlIGJpbmRzIGFuIGVwaGVtZXJhbCBwb3J0LlxuICpcbiAqICoqMi4gVGhpcyBjbGllbnQgTkVWRVIgY2FsbHMgYHByb2Nlc3MuZXhpdGAuIEl0IFJFVFVSTlMgYW4gZXhpdCBjb2RlLioqIFNlZVxuICogdGhlIHNjYXIgYmVsb3c7IHRoYXQgaXMgdGhlIHdob2xlIG9mIGl0LlxuICpcbiAqIOKUgOKUgCDim5QgVEhFIFNDQVI6IFAwZiwgU0hBUEUgQiDigJQgUkUtSE9NRUQgSEVSRSwgV1JJVFRFTiBPTkNFIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgFxuICpcbiAqIEZpdmUgc3BlbGxzIGVhY2ggY2FycmllZCBhIGNvcHkgb2YgdGhpcyBwYXJhZ3JhcGgsIGJlY2F1c2UgZml2ZSBzaXRlcyBlYWNoXG4gKiBoYWQgdG8gcHJvdmUgTE9DQUxMWSB0aGF0IGVuZGluZyBhIHRhaWwgZG9lcyBub3QgY3V0IGl0cyBvd24gbGFzdCBsaW5lIHNob3J0LlxuICogSXQgZG9jdW1lbnRzIGEgMjMtbWludXRlIGhhbmcgdGhhdCBzaGlwcGVkLiBUaGUgcmVhc29uaW5nIG5vdyBsaXZlcyBpbiBvbmVcbiAqIHBsYWNlOyB0aGUgY29waWVzIGFyZSBnb25lLCBhbmQgdGhpcyBpcyB3aGF0IHRoZXkgc2FpZC5cbiAqXG4gKiBCdW4ncyBzdGRvdXQgaXMgQVNZTkNIUk9OT1VTIG9uIGEgcGlwZSAoc3luY2hyb25vdXMgb24gYSBUVFkgb3IgYSBmaWxlKS4gQW5cbiAqIGV4cGxpY2l0IGBwcm9jZXNzLmV4aXQoKWAgdGhlcmVmb3JlIGRpc2NhcmRzIHdoYXRldmVyIGhhcyBub3QgZHJhaW5lZCDigJRcbiAqIG1lYXN1cmVkIGF0IGV4YWN0bHkgNjUsNTM2IGJ5dGVzLCBvbmUgcGlwZSBidWZmZXIuIFRoZSBwYXlsb2FkIGlzIGNvbXBsZXRlXG4gKiBhbmQgb25seSB0aGUgd3JpdGUgaXMgbG9zdCwgc28gYSBjYWxsZXIgcmVjZWl2ZXMgd2VsbC1mb3JtZWQtTE9PS0lORyBKU09OXG4gKiB0aGF0IHN0b3BzIG1pZC1zdHJpbmcuIE1lYXN1cmVkLCBCdW4gMS4zLjE0LCAzMDBLQiB3cml0ZXM6XG4gKlxuICogICAgIHdyaXRlKGJpZywgY2IgLT4gZXhpdCkgICAgICAgICAgICAgICAgICAgIOKchSAzMDAwMDEgYnl0ZXMgYXJyaXZlXG4gKiAgICAgYXdhaXQgQnVuLndyaXRlKEJ1bi5zdGRvdXQsIGJpZykgICAgICAgICAg4pyFXG4gKiAgICAgbmF0dXJhbCByZXR1cm4sIHByb2Nlc3MuZXhpdENvZGUgICAgICAgICAg4pyFXG4gKiAgICAgd3JpdGUoYmlnKTsgd3JpdGUoXCJcIiwgY2IgLT4gZXhpdCkgICAgICAgICDinYwgNjU1MzZcbiAqICAgICA1eCB3cml0ZShiaWcpOyB3cml0ZShcIlwiLCBjYiAtPiBleGl0KSAgICAgIOKdjCBleGFjdGx5IDV4NjU1MzZcbiAqXG4gKiDim5QgVGhlIGxhc3QgdHdvIHJvd3MgYXJlIHdoeSBhIHRyYWlsaW5nIGB3cml0ZShcIlwiLCBjYilgIGlzIE5PVCBhIGJhcnJpZXI6IGFcbiAqIGRyYWluIGNhbGxiYWNrIGNvdmVycyBPTkxZIElUUyBPV04gV1JJVEUuIFRoYXQgaXMgZXhhY3RseSB0aGUgaGVscGVyIGFcbiAqIHdyaXRlLXRoZW4tZXhpdCBzaGFwZSBpbnZpdGVzLCBhbmQgaXQgbWVhc3VyZWQgYnl0ZS1mb3ItYnl0ZSBhcyBicm9rZW4gYXMgbm9cbiAqIGZpeCBhdCBhbGwuIERvIG5vdCByZWludHJvZHVjZSBpdC5cbiAqXG4gKiBUaGUgZml2ZSBjb3BpZXMgdGhlbiBlYWNoIGhhZCB0byBlc3RhYmxpc2ggYSBQRVItU0lURSBQUkVDT05ESVRJT04g4oCUIHdoZXRoZXJcbiAqIGEgYHJldHVybmAgZXNjYXBlcyB0aGUgdGhyZWUgbmVzdGVkIGxvb3BzIChvdXRlciByZWNvbm5lY3QsIGlubmVyIHJlYWQsIGZyYW1lXG4gKiBkcmFpbikgb3IgbWVyZWx5IGZhbGxzIHRocm91Z2ggaW50byBhbm90aGVyIHJldHJ5LiBUaGV5IGRpZCBub3QgYWdyZWU6IHR3b1xuICogbmVlZGVkIGFuIGV4cGxpY2l0IGByZXR1cm5gLCBvbmUgbmVlZGVkIGEgYHN0b3BwZWRgIGZsYWcgYXMgd2VsbCwgYW5kXG4gKiBhc3Ryb2xhYmUncyBzaXRlIGNvdWxkIGByZXR1cm5gIG9ubHkgYmVjYXVzZSBpdHMgY2FsbGVyIHJldHVybmVkIHN0cmFpZ2h0XG4gKiBhZnRlci4g4q2QICoqUkVUVVJOSU5HIEFOIEVYSVQgQ09ERSBSRVRJUkVTIFRIQVQgUVVFU1RJT04gRU5USVJFTFkuKiogVGhlcmUgaXNcbiAqIG9uZSBsb29wIG5vdzsgaXQgYnJlYWtzIHRvIG9uZSBwbGFjZTsgdGhlIGNhbGxlciBhc3NpZ25zIGBwcm9jZXNzLmV4aXRDb2RlYFxuICogYW5kIHJldHVybnMgbmF0dXJhbGx5LCBhbmQgdGhlIHJ1bnRpbWUgZHJhaW5zIHN0ZG91dCBiZWZvcmUgdGhlIHByb2Nlc3MgZW5kcy5cbiAqIE5vdGhpbmcgaGVyZSBuZWVkcyB0byBrbm93IHdoYXQgaXRzIGNhbGxlciBkb2VzIG5leHQuXG4gKlxuICogVGhhdCBhbHNvIHJlcGFpcnMgYSBkZWZlY3QgdGhlIGNvcGllcyBzaGFyZWQ6IHRoZSBkcmFpbiBmaXggd2FzIGFwcGxpZWQgdG9cbiAqIHRoZSB0ZXJtaW5hbCBmcmFtZSBidXQgTk9UIHRvIHRoZSBzaWduYWwgaGFuZGxlciB0d2VsdmUgbGluZXMgYWJvdmUgaXQsIHNvXG4gKiBDdHJsLUMgb24gYSB0YWlsIHBpcGVkIGludG8gYSByZWFkZXIgZGlzY2FyZGVkIHVuZHJhaW5lZCBzdGRvdXQuIFNhbWUgbG9vcCxcbiAqIHNhbWUgZXhpdCBwYXRoLCBvbmUgYW5zd2VyLlxuICpcbiAqIOKaoCBOT1QgcmUtaG9tZWQgSU5UTyBUSElTIE1PRFVMRSwgZGVsaWJlcmF0ZWx5OiBtaW5kLW1hcHBlcidzIG1lYXN1cmVkIEJ1blxuICogMS4zLjE0IGZpbmRpbmcgdGhhdCBgY29udHJvbGxlci5lbnF1ZXVlKClgIG9uIGFuIG9ycGhhbmVkIHN0cmVhbSBuZXZlciB0aHJvd3MuXG4gKiBJdCBpcyBhIERBRU1PTi1zaWRlIGZhY3QgYWJvdXQgZGVhZC1zb2NrZXQgZGV0ZWN0aW9uIGFuZCBiZWFycyBvblxuICogYHNzZVJlc3BvbnNlYCwgbm90IG9uIGFueSBjbGllbnQuXG4gKlxuICog4puUIEFORCBJVCBESUQgR0VUIEEgSE9NRSDigJQgU0FZIFNPLCBCRUNBVVNFIFRISVMgU0VOVEVOQ0UgVVNFRCBUTyBFTkQgXCJpdCBzdGF5c1xuICogd2hlcmUgaXQgd2FzIG1lYXN1cmVkXCIgQU5EIFRIQVQgSVMgRkFMU0UuIFJlYWQgYXQgcG9ydCB0aW1lIGl0IHBvaW50ZWQgYVxuICogcmVhZGVyIGF0IGBtaW5kLW1hcHBlci9zY3JpcHRzL3NlcnZlci50c2AsIGEgZmlsZSB3aG9zZSBsb2NhbCBgc3NlUmVzcG9uc2VgXG4gKiB0aGUgYmFja2VuZCBwb3J0IG1pZ2h0IHJlcGxhY2UsIHNvIHRoZSBtZWFzdXJlbWVudCBsb29rZWQgYXQgcmlzay4gSXQgd2FzXG4gKiBub3Q6IHRoZSBkYWVtb24gaGFsZiBsYW5kZWQgaW4gYC4vc3NlLnRzYCB0aGUgc2FtZSBkYXksIHVuZGVyIGl0cyBvd24gaGVhZGluZ1xuICogKFwiVEhFIFNDQVIsIFJFLUhPTUVEOiBgdHJ5IHsgZW5xdWV1ZSB9IGNhdGNoYCBET0VTIE5PVCBERVRFQ1QgQSBERUFEXG4gKiBDTElFTlRcIiksIHdpdGggdGhlIHRlYXJkb3duLWZ1bm5lbCBydWxpbmcgYW5kIHRoZSBzYW1lIGtub3duIGhvbGUuXG4gKlxuICog4pqgICoqQU5EIFRIRSBQT1JUIEhBUyBTSU5DRSBIQVBQRU5FRCwgV0hJQ0ggU0VUVExFUyBJVC4qKiBtaW5kLW1hcHBlcidzIGRhZW1vblxuICogaXMgbm93IGBzcmMvbWluZC1tYXBwZXIvYmFja2VuZC9zZXJ2ZXIudHNgIGFuZCBpdCBESUQgcmVwbGFjZSBpdHMgbG9jYWxcbiAqIGBzc2VSZXNwb25zZWAgd2l0aCBgLi9zc2UudHNgJ3MgKFBoYXNlIDcsIDIwMjYtMDktMDkpIOKAlCBzbyB0aGUgb25seSBjb3BpZXMgb2ZcbiAqIHRoYXQgbWVhc3VyZW1lbnQgYXJlIHRoZSBraXQncyBhbmQgdGhlIHR3byB0ZXN0IGZpbGVzIHRoYXQgUFJPVkUgaXQsXG4gKiBgc3JjL21pbmQtbWFwcGVyL2JhY2tlbmQvcHJlc2VuY2UudGVzdC50c2AgYW5kIGBzc2Uta2VlcGFsaXZlLnRlc3QudHNgLiBUaGVcbiAqIHJpc2sgdGhpcyBwYXJhZ3JhcGggZGVzY3JpYmVkIGlzIGNsb3NlZCwgaW4gdGhlIGRpcmVjdGlvbiBpdCBob3BlZCBmb3IuXG4gKlxuICogVGhlIGdlbmVyYWwgc2hhcGUsIHdvcnRoIHRoZSBmb3VyIGxpbmVzIChEODMpOiBhIHJlZnVzYWwgcmVjb3JkZWQgaW4gT05FXG4gKiBtb2R1bGUncyBoZWFkZXIgY2Fubm90IGJlIHJlYWQgZnJvbSB0aGUgbW9kdWxlIGl0IHBvaW50cyBBVC4gV2hlbiBhIHJlZnVzYWxcbiAqIG5hbWVzIGFub3RoZXIgbW9kdWxlIGFzIHRoZSByaWdodCBob21lLCBzYXkgd2hldGhlciBpdCBnb3QgdGhlcmUuXG4gKlxuICog4pSA4pSAIFRIRSBXSVJFIEZPUk1BVCwgQU5EIFRIRSBgXCJkYXRhOiBcImAgUVVFU1RJT04gUkVTT0xWRUQg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSAXG4gKlxuICogUGVyIFdIQVRXRyBIVE1MLCBcIkludGVycHJldGluZyBhbiBldmVudCBzdHJlYW1cIjogc3BsaXQgZWFjaCBsaW5lIGF0IHRoZSBGSVJTVFxuICogY29sb247IGlmIHRoZSB2YWx1ZSBiZWdpbnMgd2l0aCBFWEFDVExZIE9ORSBzcGFjZSwgcmVtb3ZlIHRoYXQgb25lIHNwYWNlO1xuICogYXBwZW5kIGVhY2ggZGF0YSB2YWx1ZSBwbHVzIGEgbmV3bGluZSwgdGhlbiBzdHJpcCB0aGUgZmluYWwgbmV3bGluZS5cbiAqXG4gKiBUaGUgaG91c2UncyBzZXZlbiB0YWlscyBzcGxpdCBpbnRvIHR3byBub24tY29uZm9ybWFudCBjYW1wcywgYW5kIG5laXRoZXIgaXNcbiAqIGN1cnJlbnRseSB3cm9uZyBpbiBwcm9kdWN0aW9uLCBiZWNhdXNlIGV2ZXJ5IGhvdXNlIGRhZW1vbiBlbWl0cyBvbmUgZGF0YSBsaW5lXG4gKiBwZXIgZnJhbWUgV0lUSCB0aGUgc3BhY2U6XG4gKlxuICogICDigKIgYHN0YXJ0c1dpdGgoXCJkYXRhOiBcIilgIOKAlCB0aGUgbW9yZSBkYW5nZXJvdXMgZXJyb3IuIEEgc3BlYy1sZWdhbFxuICogICAgIGBkYXRhOnsuLi59YCBtYXRjaGVzIG5vdGhpbmcsIHNvIHRoZSBmcmFtZSBpcyBzaWxlbnRseSBkcm9wcGVkIEFORCBUSEVcbiAqICAgICBDVVJTT1IgRE9FUyBOT1QgQURWQU5DRS4gSXQgYWxzbyBrZWVwcyBvbmx5IHRoZSBmaXJzdCBkYXRhIGxpbmUuXG4gKiAgIOKAoiBgLnNsaWNlKDUpLnRyaW0oKWAg4oCUIHRoZSBtb3JlIGZvcmdpdmluZyBlcnJvci4gSXQgYWNjZXB0cyBib3RoIGZvcm1zIGJ1dFxuICogICAgIHN0cmlwcyBBTEwgd2hpdGVzcGFjZSByYXRoZXIgdGhhbiBvbmUgbGVhZGluZyBzcGFjZSwgd2hpY2ggd291bGQgY29ycnVwdFxuICogICAgIGEgcGF5bG9hZCB3aXRoIG1lYW5pbmdmdWwgaW5kZW50YXRpb24uXG4gKlxuICogVGhpcyBjbGllbnQgZG9lcyBuZWl0aGVyLiBTcGVjLWNvcnJlY3QgaXMgc2ltdWx0YW5lb3VzbHkgYnl0ZS1jb21wYXRpYmxlIHdpdGhcbiAqIGFsbCBzZXZlbiBkYWVtb25zIOKAlCB0aGUgcmFyZSBjYXNlIHdoZXJlIHRoZSByaWdodCBhbnN3ZXIgY29zdHMgbm90aGluZy5cbiAqXG4gKiBgaWQ6YCAvIExhc3QtRXZlbnQtSUQgLyBgcmV0cnk6YCBhcmUgTk9UIGltcGxlbWVudGVkLCBhbmQgdGhhdCBpcyBhIHN0YXRlZFxuICogaG91c2UgY2hvaWNlIHJhdGhlciB0aGFuIGFuIG9taXNzaW9uOiByZXN1bWUgaXMgYSBxdWVyeS1wYXJhbSBjdXJzb3IsIHNvIHRoZVxuICogc2VydmVyJ3MgcmVwbGF5IHdpbmRvdyBhbmQgdGhlIGNsaWVudCdzIGBzaW5jZWAgYXJlIHRoZSBvbmUgbWVjaGFuaXNtLlxuICovXG5cbi8qKiBPbmUgcGFyc2VkIFNTRSBmcmFtZS4gYGV2ZW50YCBkZWZhdWx0cyB0byBcIm1lc3NhZ2VcIiBwZXIgdGhlIHNwZWMuICovXG5leHBvcnQgdHlwZSBTc2VGcmFtZSA9IHtcbiAgZXZlbnQ6IHN0cmluZztcbiAgLyoqIFRoZSBhY2N1bXVsYXRlZCBgZGF0YWAgdmFsdWU6IGZpZWxkcyBqb2luZWQgd2l0aCBcIlxcblwiLCBmaW5hbCBuZXdsaW5lIHN0cmlwcGVkLiAqL1xuICBkYXRhOiBzdHJpbmc7XG59O1xuXG4vKiogQSB3cml0YWJsZSBzaW5rLiBOYXJyb3cgb24gcHVycG9zZSDigJQgYHByb2Nlc3Muc3Rkb3V0YCBhbmQgYSB0ZXN0IGRvdWJsZVxuICogIGJvdGggc2F0aXNmeSBpdCwgYW5kIHRoZSBraXQgbWF5IG5vdCBuYW1lIGEgbm9kZSB0eXBlIGl0IGRvZXMgbm90IGltcG9ydC4gKi9cbmV4cG9ydCB0eXBlIFNpbmsgPSB7IHdyaXRlKGNodW5rOiBzdHJpbmcpOiB1bmtub3duIH07XG5cbmV4cG9ydCB0eXBlIFRhaWxPcHRpb25zPEV2PiA9IHtcbiAgLy8g4pSA4pSAIFdIRVJFIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgFxuICAvKipcbiAgICogVGhlIGRhZW1vbidzIGJhc2UgVVJMIChubyB0cmFpbGluZyBzbGFzaCksIG9yIGBudWxsYCB3aGVuIGl0IGNhbm5vdCBiZVxuICAgKiBmb3VuZCByaWdodCBub3cuIOKblCBDQUxMRUQgQkVGT1JFIEVWRVJZIENPTk5FQ1QgQVRURU1QVCBBTkQgTkVWRVIgQ0FQVFVSRURcbiAgICog4oCUIGEgdGFpbCBvdXRsaXZlcyB0aGUgZGFlbW9uIGl0IHN0YXJ0ZWQgYWdhaW5zdCwgYW5kIGEgY2FwdHVyZWQgYmFzZSBpc1xuICAgKiB0aGUgZGVmZWN0IHRoaXMgcGFyYW1ldGVyIGV4aXN0cyB0byBtYWtlIHVucmVhY2hhYmxlLiBJdCBtYXkgcmUtcmVhZCBhXG4gICAqIHBvaW50ZXIgZmlsZSwgcHJvYmUgbGl2ZW5lc3MsIG9yIHNwYXduOyBpdCBtYXkgdGhyb3csIGFuZCB0aGUgdGhyb3cgaXMgdGhlXG4gICAqIGNhbGxlcidzIHRvIGFuc3dlciAod2hpY2ggaXMgc3RyaWN0bHkgYmV0dGVyIHRoYW4gYSBgZGllYCByZWFjaGFibGUgZnJvbVxuICAgKiBpbnNpZGUgYSByZWNvbm5lY3QgbG9vcCkuXG4gICAqL1xuICByZXNvbHZlOiAoKSA9PiBzdHJpbmcgfCBudWxsIHwgUHJvbWlzZTxzdHJpbmcgfCBudWxsPjtcbiAgLyoqXG4gICAqIFdoYXQgdG8gZG8gd2hlbiBgcmVzb2x2ZWAgc2F5cyBcIm5vdCBmb3VuZFwiLiBEZWZhdWx0IGBcInJldHJ5XCJgIGZvcmV2ZXIuXG4gICAqIGBcInN0b3BcImAgZW5kcyB0aGUgdGFpbCBhdCBleGl0IGNvZGUgMCDigJQgdGhlIHNoYXBlIGEgc3BlbGwgd2FudHMgd2hlbiB0aGVcbiAgICogc2Vzc2lvbiBpdCBQSU5ORUQgaGFzIGdvbmUgYXdheSwgd2hpY2ggaXMgYSBjb21wbGV0ZWQgd2F0Y2ggYW5kIG5vdCBhXG4gICAqIGZhaWx1cmUuIFRoZSBmbGFncyBkaXN0aW5ndWlzaCBcIm5ldmVyIGZvdW5kIG9uZVwiIGZyb20gXCJoYWQgb25lLCBsb3N0IGl0XCIuXG4gICAqL1xuICBvblVucmVzb2x2ZWQ/OiAoczogeyBldmVyUmVzb2x2ZWQ6IGJvb2xlYW47IGV2ZXJDb25uZWN0ZWQ6IGJvb2xlYW4gfSkgPT4gXCJyZXRyeVwiIHwgXCJzdG9wXCI7XG5cbiAgLy8g4pSA4pSAIFdIQVQg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSAXG4gIC8qKiBQYXRoIG9uIHRoZSBkYWVtb24sIGUuZy4gYFwiL2V2ZW50c1wiYC4gSm9pbmVkIHRvIGByZXNvbHZlYCdzIGFuc3dlci4gKi9cbiAgcGF0aDogc3RyaW5nO1xuICAvKiogVGhlIHN0YXJ0aW5nIGN1cnNvci4gU2VudCBhcyBgc2luY2VgIHVubGVzcyBgcXVlcnlgIHNheXMgb3RoZXJ3aXNlLiAqL1xuICBzaW5jZTogbnVtYmVyO1xuICAvKiogUmVhZCB0aGUgY3Vyc29yIG9mZiBhbiBldmVudCAoYGV2LmlkYCwgYGV2LnNlcWAsIGBwYXlsb2FkLmlkYCwg4oCmKS4gKi9cbiAgY3Vyc29yT2Y/OiAoZXY6IEV2KSA9PiBudW1iZXIgfCB1bmRlZmluZWQ7XG4gIC8qKlxuICAgKiBgXCJtb25vdG9uaWNcImAgKGRlZmF1bHQpIHRha2VzIHRoZSBtYXgsIHNvIGEgcmVwbGF5ZWQgb3Igb3V0LW9mLW9yZGVyIGZyYW1lXG4gICAqIGNhbm5vdCByZWdyZXNzIHRoZSBjdXJzb3IgYW5kIG1ha2UgdGhlIG5leHQgcmVjb25uZWN0IHJlLXJlcXVlc3QgZXZlbnRzXG4gICAqIGFscmVhZHkgc2Vlbi4gYFwiYXNzaWduXCJgIHRha2VzIHRoZSB2YWx1ZSBhcyBnaXZlbiDigJQgYXZhaWxhYmxlIGJlY2F1c2Ugb25lXG4gICAqIHNwZWxsIGRvZXMgdGhhdCB0b2RheSBhbmQgbm9ib2R5IGhhcyBydWxlZCB3aGV0aGVyIGl0IHdhcyBpbnRlbmRlZC5cbiAgICovXG4gIGN1cnNvclBvbGljeT86IFwibW9ub3RvbmljXCIgfCBcImFzc2lnblwiO1xuICAvKiogUGVyLWF0dGVtcHQgcXVlcnkgcGFyYW1ldGVycy4gRGVmYXVsdCBgeyBzaW5jZTogU3RyaW5nKGN1cnNvcikgfWAuXG4gICAqICBgZmlyc3RDb25uZWN0YCBpcyB3aGF0IGxldHMgYSBgLS1sYXN0IE5gIHdpbmRvdyByaWRlIHRoZSBmaXJzdCBjb25uZWN0aW9uXG4gICAqICBvbmx5LCBuZXZlciByZS1iYWNrZmlsbGluZyBvbiBhIHJlY29ubmVjdC4gKi9cbiAgcXVlcnk/OiAoY3Vyc29yOiBudW1iZXIsIGZpcnN0Q29ubmVjdDogYm9vbGVhbikgPT4gUmVjb3JkPHN0cmluZywgc3RyaW5nPjtcblxuICAvLyDilIDilIAgRVBPQ0ggKG9wdC1pbjsgcmVxdWlyZXMgYSBkYWVtb24gdGhhdCBzdGFtcHMgb25lKSDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIBcbiAgLyoqIFJlYWQgdGhlIGRhZW1vbidzIGVwb2NoIG9mZiBhbiBldmVudC4gKi9cbiAgZXBvY2hPZj86IChldjogRXYpID0+IHN0cmluZyB8IHVuZGVmaW5lZDtcbiAgLyoqIEEgcmVjb25uZWN0IGxhbmRlZCBvbiBhIERJRkZFUkVOVCBlcG9jaDogdGhlIGRhZW1vbiByZXN0YXJ0ZWQsIHNvIHRoZVxuICAgKiAgY3Vyc29yIHJlc2V0cyB0byAwLiBSZXR1cm4gYSBsaW5lIHRvIGVtaXQgKGEgc3ludGhlc2l6ZWQgbm90aWNlLCBuZXZlciBhXG4gICAqICBidXMgZXZlbnQpIG9yIG51bGwuXG4gICAqXG4gICAqICDim5QgQU5EIFdIRU4gVEhFIE5FVyBMT0cgV0FTIEFMUkVBRFkgUEFTVCBUSEUgQk9PS01BUkssIFRIRSBDTElFTlRcbiAgICogIFJFQ09OTkVDVFMgRlJPTSBJVFMgU1RBUlQuIEEgZGFlbW9uIHRoYXQgYmVsaWV2ZXMgdGhlIGN1cnNvciBzZW5kcyBvbmx5XG4gICAqICB3aGF0IGxpZXMgYWJvdmUgaXQsIHNvIHRoZSBuZXcgbG9nJ3MgZWFybHkgZnJhbWVzIOKAlCBhIGh1bWFuIG1lc3NhZ2UgYXRcbiAgICogIG5ldyBpZCAyIHVuZGVyIGFuIG9sZCBib29rbWFyayBvZiA0IOKAlCB3ZXJlIHNraXBwZWQgc2lsZW50bHkuIEV2ZXJ5dGhpbmcgaW5cbiAgICogIGEgbmV3IGVwb2NoIGlzIG5ldyB0byB0aGlzIHJlYWRlciwgc28gdGhlIGF0dGVtcHQgaXMgZHJvcHBlZCBhbmQgcmUtbWFkZVxuICAgKiAgZnJvbSAwIGF0IG9uY2UgKG5vIGJhY2tvZmYpLiBBIGZyYW1lIEFUIG9yIGJlbG93IHRoZSBhc2tlZCBjdXJzb3IgbWVhbnNcbiAgICogIHRoZSBkYWVtb24gaXMgYWxyZWFkeSByZXBsYXlpbmcgd2hvbGUsIGFuZCBpcyBrZXB0LiAoUmV2aWV3ZXIncyBEMiBnYXAsXG4gICAqICBmZWF0L3RhaWwtcXVpZXQtaGFuZG9mZi4pICovXG4gIG9uRXBvY2hDaGFuZ2U/OiAobmV4dDogc3RyaW5nKSA9PiBzdHJpbmcgfCBudWxsO1xuICAvKiogVGhlIGVwb2NoIHRoZSBzdGFydGluZyBgc2luY2VgIGNhbWUgZnJvbSwgd2hlbiB0aGUgY2FsbGVyIGhhcyBvbmUgKGFcbiAgICogIGJvb2ttYXJrIHByaW50ZWQgYXMgYE5APGVwb2NoPmAsIGAuL3RhaWxIYW5kb2ZmLnRzYCkuIFRoZSBmaXJzdCBmcmFtZSBvZiBhXG4gICAqICBkaWZmZXJlbnQgZXBvY2ggaXMgdGhlbiBhbiBlcG9jaCBjaGFuZ2UgbGlrZSBhbnkgb3RoZXIg4oCUIHdoaWNoIGlzIHdoYXRcbiAgICogIHN0b3BzIGEgYm9va21hcmsgb3V0bGl2aW5nIGl0cyBsb2cgYWNyb3NzIHByb2Nlc3Nlcy4gKi9cbiAgc2luY2VFcG9jaD86IHN0cmluZztcbiAgLyoqXG4gICAqIFJlYWQgYSBmcmFtZSB3aG9zZSBpZCBpcyBBVCBPUiBCRUxPVyB0aGUgY3Vyc29yIHRoaXMgY29ubmVjdGlvbiBhc2tlZFxuICAgKiBmcm9tIGFzIFwidGhlIGxvZyByZXN0YXJ0ZWRcIiwgcmVzZXQgdGhlIGN1cnNvciB0byAwLCBhbmQgY2FsbFxuICAgKiBgb25FcG9jaENoYW5nZWAgKHdpdGggdGhlIGZyYW1lJ3MgZXBvY2gsIG9yIGBcInVua25vd25cImApLiBEZWZhdWx0IGZhbHNlLlxuICAgKlxuICAgKiDim5QgV0hZIElUIElTIEhPTkVTVDogdGhlIGtpdCdzIGV2ZW50IGxvZyBhbnN3ZXJzIGEgY3Vyc29yIGJleW9uZCBpdHMgb3duXG4gICAqIGJ5IHJlcGxheWluZyBXSE9MRSAoYC4vZXZlbnRMb2cudHNgLCBwb2ludCAzKSwgYW5kIG90aGVyd2lzZSBzZW5kcyBvbmx5XG4gICAqIGlkcyBhYm92ZSB0aGUgY3Vyc29yLiBTbyBhIGZyYW1lIGF0IG9yIGJlbG93IHRoZSBhc2tlZCBjdXJzb3IgZXhpc3RzIG9ubHlcbiAgICogd2hlbiB0aGUgZGFlbW9uIGp1ZGdlZCB0aGUgY3Vyc29yIGZvcmVpZ24g4oCUIGEgcmVzdGFydGVkIGRhZW1vbiwgd2hvc2UgaWRzXG4gICAqIGJlZ2FuIGFnYWluIGF0IDEuIFRoZSBlcG9jaCBjYXRjaGVzIHRoYXQgV0lUSElOIG9uZSBwcm9jZXNzOyB0aGlzIGNhdGNoZXNcbiAgICogaXQgQUNST1NTIHByb2Nlc3Nlcywgd2hlcmUgYSByZS1hcm1lZCB0YWlsIGNhcnJpZXMgYSBib29rbWFyayBmcm9tIGEgbG9nXG4gICAqIHRoYXQgbm8gbG9uZ2VyIGV4aXN0cyBhbmQsIHdpdGhvdXQgaXQsIGtlcHQgdGhhdCBib29rbWFyayBmb3JldmVyOiBldmVyeVxuICAgKiByZS1hcm0gcmVwbGF5ZWQgdGhlIHdob2xlIG5ldyBsb2csIGFuZCBhIGAtLW9uY2VgIHdva2UgYXQgb25jZSwgaW4gYSBsb29wXG4gICAqIChmb3VuZCBieSB0aGUgdmVyaWZpZXIgb24gZmVhdC90YWlsLXF1aWV0LWhhbmRvZmYsIGFmdGVyIGB0YWlsLmxvc3RgIOKGklxuICAgKiBgb3BlbiAtLXJlc3RvcmVgKS5cbiAgICpcbiAgICog4pqgIE9OTFkgRk9SIEEgREFFTU9OIE9OIFRIRSBLSVQnUyBFVkVOVCBMT0cuIEdyYXBldmluZSdzIGlkcyBhcmUgcmVjb3ZlcmVkXG4gICAqIGFjcm9zcyBhIHJlc3RhcnQgYW5kIGl0cyBgLS1sYXN0YCBxdWVyeSBvdmVycmlkZXMgYHNpbmNlYCwgc28gaXQgbGVhdmVzXG4gICAqIHRoaXMgb2ZmLiBBbmQgdGhlIGJsaW5kIHNwb3QgaXMgc3RhdGVkOiBhIGJvb2ttYXJrIHRoYXQgaGFwcGVucyB0byBiZSBhdFxuICAgKiBvciBiZWxvdyB0aGUgUkVTVEFSVEVEIGxvZydzIG93biBsZW5ndGggbG9va3MgdmFsaWQgdG8gdGhlIGRhZW1vbiwgd2hpY2hcbiAgICogdGhlbiBzZW5kcyBvbmx5IHdoYXQgbGllcyBhYm92ZSBpdC4gVGhlIGNvbWUtYmFjayBwYXRoIHRoZXJlZm9yZSBkcm9wc1xuICAgKiB0aGUgYm9va21hcmsgYWx0b2dldGhlciAoYC4vdGFpbEhhbmRvZmYudHNgLCBEMiksIHNvIHRoaXMgaXMgdGhlIG5ldCwgbm90XG4gICAqIHRoZSBydWxlLlxuICAgKi9cbiAgcmVzdGFydE9uUmVwbGF5PzogYm9vbGVhbjtcblxuICAvLyDilIDilIAgRklMVEVSIGFuZCBTSEFQRSDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIBcbiAgLyoqIFNjb3BlIOKIpyDCrHNlbGYtZWNoby4gQSByZWplY3RlZCBldmVudCBzdGlsbCBBRFZBTkNFUyBUSEUgQ1VSU09SLiAqL1xuICBhY2NlcHQ/OiAoZXY6IEV2LCBmcmFtZTogU3NlRnJhbWUpID0+IGJvb2xlYW47XG4gIC8qKiBUaGUgbGluZSB0byB3cml0ZSBmb3IgYW4gYWNjZXB0ZWQgZXZlbnQsIG9yIG51bGwgdG8gd3JpdGUgbm90aGluZy5cbiAgICogIERlZmF1bHQ6IHRoZSBmcmFtZSdzIGRhdGEgdmVyYmF0aW0uIFJlY2VpdmVzIHRoZSBmcmFtZSwgc28gYSBjbGllbnQgdGhhdFxuICAgKiAgYnJhbmNoZXMgb24gYSBuYW1lZCBub24tZGF0YSBmcmFtZSAoYGV2ZW50OiBzdWJzY3JpYmVkYCkgaXMgc2VydmVkIGhlcmVcbiAgICogIHJhdGhlciB0aGFuIG5lZWRpbmcgYSBoYXRjaCBvZiBpdHMgb3duLiAqL1xuICByZW5kZXI/OiAoZXY6IEV2LCBmcmFtZTogU3NlRnJhbWUpID0+IHN0cmluZyB8IG51bGw7XG4gIC8qKlxuICAgKiBBIGZyYW1lIHdob3NlIGRhdGEgd2lsbCBub3QgcGFyc2UuIERlZmF1bHQ6IHNraXAgaXQuIOKblCBUSEUgUkVUVVJORUQgTElORVxuICAgKiBHT0VTIFRPIGBlcnJgLCBOT1QgYG91dGAg4oCUIGl0IGlzIGEgZGlhZ25vc3RpYyBhYm91dCB0aGUgc3RyZWFtLCBhbmQgc3Rkb3V0XG4gICAqIGNhcnJpZXMgZGF0YS4gQSBzcGVsbCB0aGF0IGdlbnVpbmVseSB3YW50cyB0aGUgdW5wYXJzZWQgbGluZSBvbiBzdGRvdXRcbiAgICogKG9uZSBkb2VzKSB3cml0ZXMgaXQgZnJvbSBpbnNpZGUgdGhpcyBob29rIGFuZCByZXR1cm5zIG51bGwuXG4gICAqXG4gICAqIOKaoCBUaGUgY3Vyc29yIGNhbm5vdCBhZHZhbmNlIHBhc3QgYSBmcmFtZSBub2JvZHkgY2FuIHJlYWQsIHNvIGEgUEVSTUFORU5UTFlcbiAgICogbWFsZm9ybWVkIGZyYW1lIGlzIHJlLWRlbGl2ZXJlZCBvbiBldmVyeSByZWNvbm5lY3QgZm9yIHRoZSBkYWVtb24ncyBsaWZlLlxuICAgKi9cbiAgb25NYWxmb3JtZWQ/OiAoZnJhbWU6IFNzZUZyYW1lLCBlcnJvcjogdW5rbm93bikgPT4gc3RyaW5nIHwgbnVsbDtcblxuICAvLyDilIDilIAgRU5EIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgFxuICAvKiogVGhlIGZyYW1lIHRoYXQgZW5kcyB0aGUgd2F0Y2ggKGEgYGNsb3NlZGAgbGlmZWN5Y2xlIGV2ZW50KS4gT3B0aW9uYWwsIGFuZFxuICAgKiAgdGhhdCBpcyB0aGUgYWN0dWFsIHNoYXBlIG9mIHRoZSByb3N0ZXIgcmF0aGVyIHRoYW4gYSBoZWRnZTogc29tZSB0YWlscyBydW5cbiAgICogIGZvcmV2ZXIgYW5kIGhhdmUgbm8gdGVybWluYWwgZnJhbWUgYXQgYWxsLiBgYWNjZXB0ZWRgIGlzIGBhY2NlcHRgJ3NcbiAgICogIHZlcmRpY3Qgb24gdGhpcyBmcmFtZSwgd2hpY2ggaXMgd2hhdCBsZXRzIGB0YWlsIC0tb25jZWAgZW5kIG9uIHRoZSBmaXJzdFxuICAgKiAgZnJhbWUgaXQgYWN0dWFsbHkgREVMSVZFUlMgKGAuL3RhaWxIYW5kb2ZmLnRzYCkuXG4gICAqXG4gICAqICDim5QgQSBURVJNSU5BTCBGUkFNRSBDTE9TRVMgVEhFIENPTk5FQ1RJT04gYmVmb3JlIHRoZSBjbGllbnQgcmV0dXJucy4gSXRcbiAgICogIHVzZWQgdG8gcmV0dXJuIGZyb20gaW5zaWRlIHRoZSByZWFkIGxvb3Agd2l0aCB0aGUgU1NFIHN0cmVhbSBzdGlsbCBvcGVuLFxuICAgKiAgd2hpY2gga2VwdCB0aGUgcHJvY2VzcyBhbGl2ZSDigJQgdW5zZWVuIGZvciBgY2xvc2VkYCwgYmVjYXVzZSB0aGUgc2VydmVyXG4gICAqICBlbmRzIHRoYXQgc3RyZWFtIGl0c2VsZiwgYW5kIGZhdGFsIGZvciBgLS1vbmNlYCwgd2hvc2UgYmFja2dyb3VuZCB0YXNrXG4gICAqICB3b3VsZCBuZXZlciBleGl0IGFuZCBzbyBuZXZlciB3YWtlIHRoZSBhZ2VudC4gKEFkanVzdG1lbnQgMSBvZiB0aGVcbiAgICogIE1vbml0b3ItZXhwaXJ5IHNwaWtlOyBwaW5uZWQgaW4gYHRhaWxIYW5kb2ZmLnRlc3QudHNgLikgKi9cbiAgdGVybWluYWw/OiAoZXY6IEV2LCBmcmFtZTogU3NlRnJhbWUsIGFjY2VwdGVkOiBib29sZWFuKSA9PiBib29sZWFuO1xuICAvKiogRW1pdCB0aGUgdGVybWluYWwgZnJhbWUgZXZlbiB3aGVuIGBhY2NlcHRgIHJlamVjdGVkIGl0LiBEZWZhdWx0IGZhbHNlLiAqL1xuICB0ZXJtaW5hbEVtaXRzRmlsdGVyZWQ/OiBib29sZWFuO1xuXG4gIC8vIOKUgOKUgCBUUkFOU1BPUlQgSEVBTFRIIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgFxuICAvKipcbiAgICogVGhlIGlkbGUgd2F0Y2hkb2csIGluIG1zLiBEZWZhdWx0IDQ1XzAwMCDiiYggdGhyZWUgbWlzc2VkIDE1cyBoZWFydGJlYXRzLlxuICAgKiAwIGRpc2FibGVzIGl0LiBXaXRob3V0IG9uZSwgYGF3YWl0IHJlYWRlci5yZWFkKClgIHBhcmtzIEZPUkVWRVIgb24gYVxuICAgKiBoYWxmLW9wZW4gc29ja2V0IGFmdGVyIGxhcHRvcCBzbGVlcCwgYSBOQVQgcmViaW5kLCBvciBhIFNJR0tJTExlZCBkYWVtb24uXG4gICAqXG4gICAqIOKaoCBIb2xkIGl0IHdlbGwgYWJvdmUgdGhlIGRhZW1vbidzIGhlYXJ0YmVhdC4gV2hlcmUgaG9sZGluZyB0aGUgY29ubmVjdGlvblxuICAgKiBvcGVuIElTIHRoZSBwcmVzZW5jZSBzaWduYWwsIGV2ZXJ5IHdhdGNoZG9nIGZpcmUgZmxhcHMgYSBjYXJkIGluIGEgaHVtYW4nc1xuICAgKiB2aWV3IOKAlCB0aGF0IGlzIHRoZSBvbmUgcGxhY2UgdGhpcyBjb252ZXJnZW5jZSBzaG93cyB1cCBmb3IgYSBwZXJzb24uIEl0XG4gICAqIHN0aWxsIHdhbnRzIHRoZSB3YXRjaGRvZzogYSB3ZWRnZWQgaGFsZi1vcGVuIGNvbm5lY3Rpb24gc2hvd3MgYSBjYXJkIGFzXG4gICAqIHBlcm1hbmVudGx5IHByZXNlbnQsIHdoaWNoIGlzIHdvcnNlLlxuICAgKi9cbiAgaWRsZU1zPzogbnVtYmVyO1xuICAvKiogUmVjb25uZWN0IGJhY2tvZmYuIERlZmF1bHQgYHsgaW5pdGlhbE1zOiAyNTAsIG1heE1zOiA1MDAwIH1gOyBkb3VibGVzIG9uXG4gICAqICBldmVyeSBmYWlsZWQgYXR0ZW1wdCBhbmQgUkVTRVRTIG9uIGEgc3VjY2Vzc2Z1bCBvcGVuLiBBIGJyYW5jaCB0aGF0IHNsZWVwc1xuICAgKiAgd2l0aG91dCBncm93aW5nIHRoZSBkZWxheSBpcyBhIGNvbnN0YW50LWludGVydmFsIHJlY29ubmVjdCBzdG9ybSDigJQgdGhhdCBpcyBhXG4gICAqICBsaXZlIGRlZmVjdCBpbiBvbmUgc3BlbGwgdG9kYXksIGFuZCB0aGVyZSBpcyBvbmUgY29kZSBwYXRoIGhlcmUuICovXG4gIHJldHJ5PzogeyBpbml0aWFsTXM6IG51bWJlcjsgbWF4TXM6IG51bWJlciB9O1xuICAvKiogQSBub24tMnh4IHJlc3BvbnNlLiBEZWZhdWx0OiByZXRyeSB3aXRoIGJhY2tvZmYuIE1heSB0aHJvdyDigJQgYSByZWZ1c2VkXG4gICAqICBjb25uZWN0aW9uIChhbiB1bmtub3duIHByb2plY3QsIGEgc3RvcmUgdGhhdCBuZWVkcyBvbmUpIGlzIGEgdXNhZ2UgZXJyb3IsXG4gICAqICBub3QgYSB0cmFuc3BvcnQgYmxpcCwgYW5kIHJldHJ5aW5nIGl0IGZvcmV2ZXIganVzdCBzcGlucyBzaWxlbnRseS4gKi9cbiAgb25IdHRwRXJyb3I/OiAocmVzOiBSZXNwb25zZSkgPT4gXCJyZXRyeVwiIHwgUHJvbWlzZTxcInJldHJ5XCI+O1xuICAvKiogQSBgOmAgY29tbWVudCBsaW5lIChhIGtlZXBhbGl2ZSkuIFJldHVybiBhIGxpbmUgZm9yIGBlcnJgIOKAlCB0aGUgc2VudGluZWxcbiAgICogIHRoYXQgbGV0cyBhIGAyPiYxYCBjb25zdW1lciB0ZWxsIFwiaWRsZVwiIGZyb20gXCJ3ZWRnZWRcIiDigJQgb3IgbnVsbC5cbiAgICogIOKblCBDb21tZW50cyBGRUVEIFRIRSBXQVRDSERPRyBldmVuIHRob3VnaCBvbmx5IGRhdGEgZnJhbWVzIHN1cnZpdmUgdGhlXG4gICAqICBzZWxlY3Rpb24gYmVsb3cg4oCUIHRoYXQgaXMgaGFuZGxlZCBoZXJlLCBiZWZvcmUgdGhpcyBob29rIGlzIGNhbGxlZC4gKi9cbiAgb25Db21tZW50PzogKHRleHQ6IHN0cmluZykgPT4gc3RyaW5nIHwgbnVsbDtcbiAgLyoqXG4gICAqIE9uZSBjb25uZWN0aW9uIGF0dGVtcHQgZW5kZWQuIFJldHVybiBhIGxpbmUgZm9yIGBlcnJgLCBvciBudWxsLlxuICAgKlxuICAgKiDim5QgVEhJUyBJUyBBIERJQUdOT1NUSUNTIFNJTkssIE5PVCBBIEZJRlRIIEVTQ0FQRSBIQVRDSCDigJQgYW5kIHRoZVxuICAgKiBkaXN0aW5jdGlvbiBpcyBhIHJ1bGluZywgbm90IGEgcHJlZmVyZW5jZS4gVGhlIGhhdGNoZXMgdGhpcyBjbGllbnQgb2ZmZXJzXG4gICAqIChgYWNjZXB0YCwgYHJlbmRlcmAsIGBxdWVyeWAsIGByZXNvbHZlYCkgYXJlIEJFSEFWSU9VUkFMOiB0aGV5IGNoYW5nZSB3aGF0XG4gICAqIHRoZSBjbGllbnQgRE9FUy4gVGhpcyBvbmUgY2hhbmdlcyBvbmx5IHdoYXQgdGhlIENBTExFUiBSRVBPUlRTLCB3aGljaCBpc1xuICAgKiB3aGF0IGBlcnJgIHdhcyBpbiB0aGUgc2lnbmF0dXJlIGZvci4gVGhlIGRlc2lnbidzIHRyaXAtd2lyZSDigJQgXCJhIGZpZnRoXG4gICAqIGVzY2FwZSBoYXRjaCBtZWFucyBncmFwZXZpbmUga2VlcHMgaXRzIG93biBsb29wXCIg4oCUIGlzIG5vdCB0cmlwcGVkIGJ5IGl0LlxuICAgKlxuICAgKiBJdCBleGlzdHMgYmVjYXVzZSBhIHRhaWwgdGhhdCByZWNvbm5lY3RzIGluIHNpbGVuY2UgaXMgaW5kaXN0aW5ndWlzaGFibGVcbiAgICogZnJvbSBhIHRhaWwgdGhhdCBpcyB3b3JraW5nLCBhbmQgb25lIHNwZWxsIHdyaXRlcyBmb3VyIGRpc3RpbmN0IGxpbmVzIGhlcmUuXG4gICAqIGBjYXVzZWAgc2F5cyB3aGljaDsgYGVycm9yYCBhbmQgYHN0YXR1c2AgY2Fycnkgd2hhdCB0aGUgbGluZSBuZWVkcy5cbiAgICovXG4gIG9uRGlzY29ubmVjdD86IChpbmZvOiB7XG4gICAgY2F1c2U6IFwiY29ubmVjdC1mYWlsZWRcIiB8IFwiaHR0cFwiIHwgXCJuby1ib2R5XCIgfCBcInN0cmVhbS1lcnJvclwiIHwgXCJzdHJlYW0tZW5kXCI7XG4gICAgZXJyb3I/OiB1bmtub3duO1xuICAgIHN0YXR1cz86IG51bWJlcjtcbiAgfSkgPT4gc3RyaW5nIHwgbnVsbDtcblxuICAvLyDilIDilIAgUExVTUJJTkcg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSAXG4gIC8qKiBXaGVyZSBEQVRBIGdvZXMuIERlZmF1bHQgYHByb2Nlc3Muc3Rkb3V0YC4gKi9cbiAgb3V0PzogU2luaztcbiAgLyoqIFdoZXJlIERJQUdOT1NUSUNTIGdvIOKAlCBrZWVwYWxpdmUgc2VudGluZWxzLCBkaXNjb25uZWN0IG5vdGVzLCB1bnBhcnNlYWJsZVxuICAgKiAgZnJhbWVzLiBEZWZhdWx0IGBwcm9jZXNzLnN0ZGVycmAuIE5ldmVyIG1peGVkIHdpdGggYG91dGA6IGEgY2FsbGVyIHJlYWRpbmdcbiAgICogIG91ciBzdGRvdXQgd2l0aCBhIGxpbmUtZGVsaW1pdGVkIHBhcnNlciBtdXN0IG5ldmVyIG1lZXQgYSBub3RlLiAqL1xuICBlcnI/OiBTaW5rO1xuICAvKiogQ2FsbGVyLW93bmVkIGFib3J0LiBBYm9ydGluZyBlbmRzIHRoZSB0YWlsIGF0IGV4aXQgY29kZSAwLiAqL1xuICBzaWduYWw/OiBBYm9ydFNpZ25hbDtcbiAgLyoqXG4gICAqIEluc3RhbGwgU0lHSU5UL1NJR1RFUk0gaGFuZGxlcnMgdGhhdCBlbmQgdGhlIHRhaWwgY2xlYW5seSAoZGVmYXVsdCB0cnVlKS5cbiAgICog4puUIFRoZXkgZW5kIGl0IGJ5IFJFVFVSTklORywgbm90IGJ5IGV4aXRpbmcg4oCUIHNlZSB0aGUgUDBmIHNjYXI6IGEgc2lnbmFsXG4gICAqIGhhbmRsZXIgdGhhdCBjYWxscyBgcHJvY2Vzcy5leGl0YCBkaXNjYXJkcyB1bmRyYWluZWQgc3Rkb3V0LCB3aGljaCBpcyB0aGVcbiAgICogaGFsZiBvZiB0aGUgZml4IGZpdmUgc3BlbGxzIGRpZCBub3QgYXBwbHkuXG4gICAqL1xuICBzaWduYWxzPzogYm9vbGVhbjtcbiAgLyoqXG4gICAqIENhbGxlZCBvbmNlIGFzIHRoZSB0YWlsIGVuZHMsIHdpdGggdGhlIGZpbmFsIGN1cnNvciAodGhlIGJvb2ttYXJrIGEgcmUtYXJtXG4gICAqIHBhc3NlcyBhcyBgLS1zaW5jZWApIGFuZCB3aHkgaXQgZW5kZWQuIEEgUkVQT1JUIFNJTksgbGlrZSBgb25EaXNjb25uZWN0YCxcbiAgICogbm90IGEgYmVoYXZpb3VyYWwgaGF0Y2g6IGl0IGNoYW5nZXMgbm90aGluZyB0aGUgY2xpZW50IGRvZXMuIEl0IGV4aXN0c1xuICAgKiBmb3IgYC4vdGFpbEhhbmRvZmYudHNgLCB3aG9zZSBsYXN0IGxpbmUgbmFtZXMgdGhlIHJlLWFybSBhbmQgbXVzdCBjYXJyeVxuICAgKiB0aGUgY3Vyc29yIGV4YWN0bHkgYXMgdGhpcyBsb29wIGxlZnQgaXQsIGVwb2NoIHJlc2V0cyBpbmNsdWRlZC5cbiAgICovXG4gIG9uRW5kPzogKGVuZDoge1xuICAgIGN1cnNvcjogbnVtYmVyO1xuICAgIC8qKiBUaGUgZXBvY2ggb2YgdGhlIGxvZyB0aGUgY3Vyc29yIGJlbG9uZ3MgdG8sIHdoZW4gdGhlIGRhZW1vbiBzdGFtcHMgb25lLiAqL1xuICAgIGVwb2NoOiBzdHJpbmcgfCBudWxsO1xuICAgIHJlYXNvbjogXCJ0ZXJtaW5hbFwiIHwgXCJ1bnJlc29sdmVkXCIgfCBcInN0b3BwZWRcIjtcbiAgfSkgPT4gdm9pZDtcbn07XG5cbmNvbnN0IERFRkFVTFRfSURMRV9NUyA9IDQ1XzAwMDtcbmNvbnN0IERFRkFVTFRfUkVUUlkgPSB7IGluaXRpYWxNczogMjUwLCBtYXhNczogNTAwMCB9O1xuXG4vKipcbiAqIFBhcnNlIGEgY29tcGxldGUgU1NFIGZyYW1lIGJvZHkgKHRoZSB0ZXh0IGJldHdlZW4gYmxhbmsgbGluZXMpIHBlciB0aGUgc3BlYydzXG4gKiBcIkludGVycHJldGluZyBhbiBldmVudCBzdHJlYW1cIjogc3BsaXQgYXQgdGhlIEZJUlNUIGNvbG9uLCBzdHJpcCBBVCBNT1NUIE9ORVxuICogbGVhZGluZyBzcGFjZSBmcm9tIHRoZSB2YWx1ZSwgYWNjdW11bGF0ZSBgZGF0YWAgZmllbGRzIHdpdGggXCJcXG5cIi5cbiAqXG4gKiBSZXR1cm5zIG51bGwgZm9yIGEgY29tbWVudC1vbmx5IGZyYW1lOyBgY29tbWVudHNgIGNhcnJpZXMgdGhlaXIgdGV4dCBzbyB0aGVcbiAqIGNhbGxlciBjYW4gc3VyZmFjZSBhIGtlZXBhbGl2ZSBzZW50aW5lbC5cbiAqL1xuZXhwb3J0IGZ1bmN0aW9uIHBhcnNlU3NlRnJhbWUoYmxvY2s6IHN0cmluZyk6IHtcbiAgZnJhbWU6IFNzZUZyYW1lIHwgbnVsbDtcbiAgY29tbWVudHM6IHN0cmluZ1tdO1xufSB7XG4gIGNvbnN0IGNvbW1lbnRzOiBzdHJpbmdbXSA9IFtdO1xuICBjb25zdCBkYXRhTGluZXM6IHN0cmluZ1tdID0gW107XG4gIGxldCBldmVudCA9IFwibWVzc2FnZVwiO1xuICBsZXQgc2F3RGF0YSA9IGZhbHNlO1xuXG4gIGZvciAoY29uc3QgbGluZSBvZiBibG9jay5zcGxpdChcIlxcblwiKSkge1xuICAgIGlmIChsaW5lID09PSBcIlwiKSBjb250aW51ZTtcbiAgICBpZiAobGluZS5zdGFydHNXaXRoKFwiOlwiKSkge1xuICAgICAgY29tbWVudHMucHVzaChsaW5lLnNsaWNlKDEpKTtcbiAgICAgIGNvbnRpbnVlO1xuICAgIH1cbiAgICBjb25zdCBjb2xvbiA9IGxpbmUuaW5kZXhPZihcIjpcIik7XG4gICAgY29uc3QgZmllbGQgPSBjb2xvbiA9PT0gLTEgPyBsaW5lIDogbGluZS5zbGljZSgwLCBjb2xvbik7XG4gICAgbGV0IHZhbHVlID0gY29sb24gPT09IC0xID8gXCJcIiA6IGxpbmUuc2xpY2UoY29sb24gKyAxKTtcbiAgICBpZiAodmFsdWUuc3RhcnRzV2l0aChcIiBcIikpIHZhbHVlID0gdmFsdWUuc2xpY2UoMSk7XG4gICAgaWYgKGZpZWxkID09PSBcImRhdGFcIikge1xuICAgICAgZGF0YUxpbmVzLnB1c2godmFsdWUpO1xuICAgICAgc2F3RGF0YSA9IHRydWU7XG4gICAgfSBlbHNlIGlmIChmaWVsZCA9PT0gXCJldmVudFwiKSB7XG4gICAgICBldmVudCA9IHZhbHVlO1xuICAgIH1cbiAgICAvLyBgaWQ6YCBhbmQgYHJldHJ5OmAgYXJlIGRlbGliZXJhdGVseSBpZ25vcmVkIOKAlCBzZWUgdGhlIGhlYWRlci5cbiAgfVxuXG4gIGlmICghc2F3RGF0YSkgcmV0dXJuIHsgZnJhbWU6IG51bGwsIGNvbW1lbnRzIH07XG4gIHJldHVybiB7IGZyYW1lOiB7IGV2ZW50LCBkYXRhOiBkYXRhTGluZXMuam9pbihcIlxcblwiKSB9LCBjb21tZW50cyB9O1xufVxuXG4vKipcbiAqIFJ1biBhIHN0YW5kaW5nIFNTRSB0YWlsIHVudGlsIGl0IGVuZHMsIGFuZCByZXR1cm4gdGhlIHByb2Nlc3MgZXhpdCBjb2RlLlxuICpcbiAqIOKblCBJVCBORVZFUiBDQUxMUyBgcHJvY2Vzcy5leGl0YC4gVGhlIGNhbGxlciBkb2VzIGBwcm9jZXNzLmV4aXRDb2RlID0gYXdhaXRcbiAqIHRhaWxFdmVudHMoLi4uKWAgYW5kIHJldHVybnMgbmF0dXJhbGx5LiBTZWUgdGhlIFAwZiBzY2FyIGluIHRoaXMgZmlsZSdzXG4gKiBoZWFkZXIgZm9yIHdoeSB0aGF0IGlzIHRoZSB3aG9sZSBkZXNpZ24gYW5kIG5vdCBhIHN0eWxlIHByZWZlcmVuY2UuXG4gKi9cbmV4cG9ydCBhc3luYyBmdW5jdGlvbiB0YWlsRXZlbnRzPEV2PihvcHRzOiBUYWlsT3B0aW9uczxFdj4pOiBQcm9taXNlPG51bWJlcj4ge1xuICBjb25zdCBvdXQgPSBvcHRzLm91dCA/PyBwcm9jZXNzLnN0ZG91dDtcbiAgY29uc3QgZXJyID0gb3B0cy5lcnIgPz8gcHJvY2Vzcy5zdGRlcnI7XG4gIGNvbnN0IGlkbGVNcyA9IG9wdHMuaWRsZU1zID8/IERFRkFVTFRfSURMRV9NUztcbiAgY29uc3QgcmV0cnkgPSBvcHRzLnJldHJ5ID8/IERFRkFVTFRfUkVUUlk7XG4gIGNvbnN0IGN1cnNvclBvbGljeSA9IG9wdHMuY3Vyc29yUG9saWN5ID8/IFwibW9ub3RvbmljXCI7XG5cbiAgbGV0IGN1cnNvciA9IG9wdHMuc2luY2U7XG4gIGxldCBlcG9jaDogc3RyaW5nIHwgbnVsbCA9IG9wdHMuc2luY2VFcG9jaCA/PyBudWxsO1xuICBsZXQgZXZlclJlc29sdmVkID0gZmFsc2U7XG4gIGxldCBldmVyQ29ubmVjdGVkID0gZmFsc2U7XG4gIGxldCBmaXJzdENvbm5lY3QgPSB0cnVlO1xuICBsZXQgZGVsYXkgPSByZXRyeS5pbml0aWFsTXM7XG4gIGxldCBjb2RlID0gMDtcbiAgbGV0IGVuZGluZzogXCJ0ZXJtaW5hbFwiIHwgXCJ1bnJlc29sdmVkXCIgfCBcInN0b3BwZWRcIiA9IFwic3RvcHBlZFwiO1xuXG4gIC8vIE9uZSBzdG9wIHN3aXRjaCBmb3IgZXZlcnkgd2F5IHRoaXMgbG9vcCBjYW4gZW5kOiBhIHNpZ25hbCwgYSBjYWxsZXInc1xuICAvLyBhYm9ydCwgYSBkb3duc3RyZWFtIHJlYWRlciBjbG9zaW5nIG91ciBzdGRvdXQuIEVhY2ggc2V0cyBpdCwgYWJvcnRzIHRoZVxuICAvLyBpbi1mbGlnaHQgYXR0ZW1wdCBBTkQgV0FLRVMgVEhFIEJBQ0tPRkY7IHRoZSBsb29wIHRoZW4gZmFsbHMgb3V0IGFuZFxuICAvLyBSRVRVUk5TLlxuICAvL1xuICAvLyDim5QgV0FLSU5HIFRIRSBCQUNLT0ZGIElTIE5PVCBBIERFVEFJTCDigJQgSVQgSVMgVEhFIEN0cmwtQyBQQVRILiBJbnN0YWxsaW5nIGFcbiAgLy8gU0lHSU5UIGxpc3RlbmVyIFNVUFBSRVNTRVMgdGhlIHJ1bnRpbWUncyBkZWZhdWx0IHRlcm1pbmF0ZSwgc28gd2hhdGV2ZXJcbiAgLy8gdGhpcyBjbGllbnQgZG9lcyBvbiBhIHNpZ25hbCBpcyBub3cgdGhlIHdob2xlIG9mIHdoYXQgaGFwcGVucy4gQSBmaXJzdFxuICAvLyB2ZXJzaW9uIGFib3J0ZWQgdGhlIGF0dGVtcHQgYW5kIGxlZnQgdGhlIHJlY29ubmVjdCBzbGVlcGluZyBvbiBhIGJhcmVcbiAgLy8gdGltZXI6IEN0cmwtQyBkdXJpbmcgYmFja29mZiB0b29rIHVwIHRvIGByZXRyeS5tYXhNc2AgaW5zdGVhZCBvZiBlbmRpbmcgYXRcbiAgLy8gb25jZSwgbWVhc3VyZWQgYXQgMi44MHMgYWdhaW5zdCBhIGRlYWQgcG9ydCB3aGVyZSB0aGUgaGFuZC13cml0dGVuIGxvb3BcbiAgLy8gdG9vayAwLjEzcyDigJQgYW5kIGhhbW1lcmluZyBDdHJsLUMgZGlkIG5vdCBoZWxwLCBiZWNhdXNlIGV2ZXJ5IHJlcGVhdCBoaXRcbiAgLy8gdGhlIHNhbWUgc2xlZXBpbmcgdGltZXIuIEEgdGFpbCBzcGVuZHMgbW9zdCBvZiBhIGRlYWQgZGFlbW9uJ3MgbGlmZXRpbWVcbiAgLy8gaW5zaWRlIHRoaXMgc2xlZXAsIHNvIHRoYXQgaXMgdGhlIHN0YXRlIGEgaHVtYW4gaW50ZXJydXB0cy5cbiAgbGV0IHN0b3BwZWQgPSBmYWxzZTtcbiAgbGV0IGF0dGVtcHQ6IEFib3J0Q29udHJvbGxlciB8IG51bGwgPSBudWxsO1xuICBsZXQgd2FrZUJhY2tvZmY6ICgoKSA9PiB2b2lkKSB8IG51bGwgPSBudWxsO1xuICBjb25zdCBzdG9wID0gKGV4aXRDb2RlOiBudW1iZXIpID0+IHtcbiAgICBzdG9wcGVkID0gdHJ1ZTtcbiAgICBjb2RlID0gZXhpdENvZGU7XG4gICAgYXR0ZW1wdD8uYWJvcnQoKTtcbiAgICB3YWtlQmFja29mZj8uKCk7XG4gIH07XG5cbiAgLyoqIFNsZWVwLCBidXQgcmV0dXJuIEFUIE9OQ0UgaWYgdGhlIHRhaWwgaXMgc3RvcHBlZCBtZWFud2hpbGUuICovXG4gIGNvbnN0IGJhY2tvZmYgPSAobXM6IG51bWJlcik6IFByb21pc2U8dm9pZD4gPT5cbiAgICBuZXcgUHJvbWlzZTx2b2lkPigocmVzb2x2ZVNsZWVwKSA9PiB7XG4gICAgICBpZiAoc3RvcHBlZCkgcmV0dXJuIHJlc29sdmVTbGVlcCgpO1xuICAgICAgY29uc3QgZmluaXNoID0gKCkgPT4ge1xuICAgICAgICBjbGVhclRpbWVvdXQodGltZXIpO1xuICAgICAgICB3YWtlQmFja29mZiA9IG51bGw7XG4gICAgICAgIHJlc29sdmVTbGVlcCgpO1xuICAgICAgfTtcbiAgICAgIGNvbnN0IHRpbWVyID0gc2V0VGltZW91dChmaW5pc2gsIG1zKTtcbiAgICAgIHdha2VCYWNrb2ZmID0gZmluaXNoO1xuICAgIH0pO1xuXG4gIGNvbnN0IG9uU2lnbmFsID0gKCkgPT4gc3RvcCgwKTtcbiAgY29uc3QgdXNlU2lnbmFscyA9IG9wdHMuc2lnbmFscyAhPT0gZmFsc2U7XG4gIGlmICh1c2VTaWduYWxzKSB7XG4gICAgcHJvY2Vzcy5vbihcIlNJR0lOVFwiLCBvblNpZ25hbCk7XG4gICAgcHJvY2Vzcy5vbihcIlNJR1RFUk1cIiwgb25TaWduYWwpO1xuICB9XG5cbiAgLy8gQSBkb3duc3RyZWFtIGBoZWFkYC9yZWFkZXIgY2xvc2luZyBvdXIgc3Rkb3V0IGlzIGEgY29tcGxldGVkIHJlYWQsIG5vdCBhXG4gIC8vIGNyYXNoOiBlbmQgYXQgMCBpbnN0ZWFkIG9mIGR5aW5nIG9uIEVQSVBFLlxuICBjb25zdCBvbk91dEVycm9yID0gKGU6IHVua25vd24pID0+IHtcbiAgICBpZiAoKGUgYXMgTm9kZUpTLkVycm5vRXhjZXB0aW9uIHwgdW5kZWZpbmVkKT8uY29kZSA9PT0gXCJFUElQRVwiKSBzdG9wKDApO1xuICB9O1xuICBjb25zdCBvdXRFbWl0dGVyID0gb3V0IGFzIHVua25vd24gYXMge1xuICAgIG9uPzogKGV2OiBzdHJpbmcsIGZuOiAoZTogdW5rbm93bikgPT4gdm9pZCkgPT4gdm9pZDtcbiAgICBvZmY/OiAoZXY6IHN0cmluZywgZm46IChlOiB1bmtub3duKSA9PiB2b2lkKSA9PiB2b2lkO1xuICB9O1xuICBvdXRFbWl0dGVyLm9uPy4oXCJlcnJvclwiLCBvbk91dEVycm9yKTtcblxuICBjb25zdCBvbkNhbGxlckFib3J0ID0gKCkgPT4gc3RvcCgwKTtcbiAgb3B0cy5zaWduYWw/LmFkZEV2ZW50TGlzdGVuZXIoXCJhYm9ydFwiLCBvbkNhbGxlckFib3J0KTtcbiAgaWYgKG9wdHMuc2lnbmFsPy5hYm9ydGVkKSBzdG9wKDApO1xuXG4gIGNvbnN0IGVtaXQgPSAobGluZTogc3RyaW5nKSA9PiB7XG4gICAgb3V0LndyaXRlKGAke2xpbmV9XFxuYCk7XG4gIH07XG4gIC8qKiBFdmVyeSBkaWFnbm9zdGljIHRoZSBjbGllbnQgcHJvZHVjZXMgZ29lcyBoZXJlIGFuZCBOT1dIRVJFIGVsc2UsIHNvIGFcbiAgICogIGNhbGxlciBwYXJzaW5nIG91ciBzdGRvdXQgbmV2ZXIgbWVldHMgYSBub3RlIGFib3V0IG91ciBzdGRvdXQuICovXG4gIGNvbnN0IG5vdGUgPSAobGluZTogc3RyaW5nIHwgbnVsbCB8IHVuZGVmaW5lZCkgPT4ge1xuICAgIGlmIChsaW5lICE9PSBudWxsICYmIGxpbmUgIT09IHVuZGVmaW5lZCkgZXJyLndyaXRlKGAke2xpbmV9XFxuYCk7XG4gIH07XG5cbiAgdHJ5IHtcbiAgICB3aGlsZSAoIXN0b3BwZWQpIHtcbiAgICAgIC8vIOKaoCBERUxJQkVSQVRFTFkgVU5HVUFSREVELiBgcmVzb2x2ZWAgbWF5IHNwYXduLCBwcm9iZSwgb3IgcmFpc2UgYVxuICAgICAgLy8gdGF4b25vbXkgZmFpbHVyZSwgYW5kIHRoYXQgdGhyb3cgaXMgdGhlIENBTExFUidzIHRvIGFuc3dlciDigJQgd2hpY2ggaXNcbiAgICAgIC8vIHN0cmljdGx5IGJldHRlciB0aGFuIHRoZSBjb3BpZXMnIHNoYXBlLCB3aGVyZSBhIGBkaWVgIHdhcyByZWFjaGFibGVcbiAgICAgIC8vIGZyb20gaW5zaWRlIGEgcmVjb25uZWN0IGxvb3AgYW5kIGVuZGVkIHRoZSBwcm9jZXNzIGZyb20gdGhyZWUgZnJhbWVzXG4gICAgICAvLyBkb3duLlxuICAgICAgY29uc3QgYmFzZSA9IGF3YWl0IG9wdHMucmVzb2x2ZSgpO1xuICAgICAgLy8g4puUIEEgU1RPUCBUSEFUIExBTkRFRCBXSElMRSBgcmVzb2x2ZWAgV0FTIEFXQUlURUQgKHRoZSBoYW5kb2ZmJ3Mgd2luZG93LFxuICAgICAgLy8gYSBzaWduYWwpIGZvdW5kIG5vIGF0dGVtcHQgdG8gYWJvcnQuIFdpdGhvdXQgdGhpcyBjaGVjayB0aGUgbG9vcCB3ZW50XG4gICAgICAvLyBvbiB0byBmZXRjaCwgc2tpcHBlZCB0aGUgcmVhZCwgYW5kIHJldHVybmVkIHdpdGggdGhhdCBzdHJlYW0gc3RpbGxcbiAgICAgIC8vIG9wZW4g4oCUIHdoaWNoIGtlZXBzIGEgcHJvY2VzcyBhbGl2ZSBleGFjdGx5IGxpa2UgdGhlIHRlcm1pbmFsLWZyYW1lXG4gICAgICAvLyBoYW5nLiAoU3VzcGVjdGVkIGJ5IHRoZSByZXZpZXdlciwgcGlubmVkIGluIGB0YWlsSGFuZG9mZi50ZXN0LnRzYC4pXG4gICAgICBpZiAoc3RvcHBlZCkgYnJlYWs7XG4gICAgICBpZiAoYmFzZSA9PT0gbnVsbCkge1xuICAgICAgICBjb25zdCB2ZXJkaWN0ID0gb3B0cy5vblVucmVzb2x2ZWQ/Lih7IGV2ZXJSZXNvbHZlZCwgZXZlckNvbm5lY3RlZCB9KSA/PyBcInJldHJ5XCI7XG4gICAgICAgIGlmICh2ZXJkaWN0ID09PSBcInN0b3BcIikge1xuICAgICAgICAgIGVuZGluZyA9IFwidW5yZXNvbHZlZFwiO1xuICAgICAgICAgIHJldHVybiBjb2RlO1xuICAgICAgICB9XG4gICAgICAgIGF3YWl0IGJhY2tvZmYoZGVsYXkpO1xuICAgICAgICBkZWxheSA9IE1hdGgubWluKGRlbGF5ICogMiwgcmV0cnkubWF4TXMpO1xuICAgICAgICBjb250aW51ZTtcbiAgICAgIH1cbiAgICAgIGV2ZXJSZXNvbHZlZCA9IHRydWU7XG5cbiAgICAgIGNvbnN0IHBhcmFtcyA9IG9wdHMucXVlcnk/LihjdXJzb3IsIGZpcnN0Q29ubmVjdCkgPz8ge1xuICAgICAgICBzaW5jZTogU3RyaW5nKGN1cnNvciksXG4gICAgICB9O1xuICAgICAgLy8gV2hhdCB0aGlzIGNvbm5lY3Rpb24gYXNrZWQgZnJvbSwgZm9yIGByZXN0YXJ0T25SZXBsYXlgLlxuICAgICAgY29uc3QgYXNrZWRTaW5jZSA9IGN1cnNvcjtcbiAgICAgIGxldCByZXN0YXJ0Tm90ZWQgPSBmYWxzZTtcbiAgICAgIC8vIFNldCB3aGVuIGFuIGVwb2NoIGNoYW5nZSBmaW5kcyB0aGUgbmV3IGxvZyBwYXN0IHRoZSBib29rbWFyay5cbiAgICAgIGxldCBmcm9tVG9wID0gZmFsc2U7XG4gICAgICBjb25zdCBxcyA9IG5ldyBVUkxTZWFyY2hQYXJhbXMocGFyYW1zKS50b1N0cmluZygpO1xuICAgICAgY29uc3QgdXJsID0gYCR7YmFzZX0ke29wdHMucGF0aH0ke3FzID8gYD8ke3FzfWAgOiBcIlwifWA7XG5cbiAgICAgIGF0dGVtcHQgPSBuZXcgQWJvcnRDb250cm9sbGVyKCk7XG4gICAgICBjb25zdCBjb250cm9sbGVyID0gYXR0ZW1wdDtcbiAgICAgIGxldCB3YXRjaGRvZzogUmV0dXJuVHlwZTx0eXBlb2Ygc2V0VGltZW91dD4gfCBudWxsID0gbnVsbDtcbiAgICAgIGNvbnN0IHJlc2V0V2F0Y2hkb2cgPSAoKSA9PiB7XG4gICAgICAgIGlmIChpZGxlTXMgPD0gMCkgcmV0dXJuO1xuICAgICAgICBpZiAod2F0Y2hkb2cgIT09IG51bGwpIGNsZWFyVGltZW91dCh3YXRjaGRvZyk7XG4gICAgICAgIHdhdGNoZG9nID0gc2V0VGltZW91dCgoKSA9PiBjb250cm9sbGVyLmFib3J0KCksIGlkbGVNcyk7XG4gICAgICB9O1xuXG4gICAgICAvLyDim5QgVEhFIFRSWSBJUyBBUk9VTkQgVEhFIFRSQU5TUE9SVCBDQUxMUyBPTkxZIOKAlCBgZmV0Y2hgIGFuZFxuICAgICAgLy8gYHJlYWRlci5yZWFkKClgIOKAlCBhbmQgTkVWRVIgYXJvdW5kIHRoZSBjYWxsZXIncyBob29rcy4gQSBibGFua2V0XG4gICAgICAvLyB0cnkvY2F0Y2ggaGVyZSByZWFkcyBhIGhvb2sncyB0aHJvdyBhcyBhIGRyb3BwZWQgY29ubmVjdGlvbiBhbmRcbiAgICAgIC8vIHJlY29ubmVjdHMgZm9yZXZlcjogdGhlIHRhaWwgc3BpbnMgc2lsZW50bHkgb24gYW4gZXJyb3Igbm9ib2R5IGNhblxuICAgICAgLy8gc2VlLCB3aGljaCBpcyB0aGUgZXhhY3QgZmFpbHVyZSB0aGlzIGNsaWVudCBleGlzdHMgdG8gbWFrZVxuICAgICAgLy8gdW5yZWFjaGFibGUuIChDYXVnaHQgYnkgaXRzIG93biB0ZXN0OiBhIHJlZnVzYWwgaG9vayB0aGF0IHRocm93cyBodW5nXG4gICAgICAvLyB0aGUgc3VpdGUgdW50aWwgdGhlIGNhdGNoIHdhcyBuYXJyb3dlZC4pXG4gICAgICBsZXQgcmVzOiBSZXNwb25zZTtcbiAgICAgIHRyeSB7XG4gICAgICAgIHJlcyA9IGF3YWl0IGZldGNoKHVybCwgeyBzaWduYWw6IGNvbnRyb2xsZXIuc2lnbmFsIH0pO1xuICAgICAgfSBjYXRjaCAoZSkge1xuICAgICAgICBpZiAod2F0Y2hkb2cgIT09IG51bGwpIGNsZWFyVGltZW91dCh3YXRjaGRvZyk7XG4gICAgICAgIGF0dGVtcHQgPSBudWxsO1xuICAgICAgICBpZiAoc3RvcHBlZCkgYnJlYWs7XG4gICAgICAgIG5vdGUob3B0cy5vbkRpc2Nvbm5lY3Q/Lih7IGNhdXNlOiBcImNvbm5lY3QtZmFpbGVkXCIsIGVycm9yOiBlIH0pKTtcbiAgICAgICAgYXdhaXQgYmFja29mZihkZWxheSk7XG4gICAgICAgIGRlbGF5ID0gTWF0aC5taW4oZGVsYXkgKiAyLCByZXRyeS5tYXhNcyk7XG4gICAgICAgIGNvbnRpbnVlO1xuICAgICAgfVxuXG4gICAgICB0cnkge1xuICAgICAgICBpZiAoIXJlcy5vaykge1xuICAgICAgICAgIC8vIE1heSB0aHJvdyDigJQgYSB0eXBlZCByZWZ1c2FsIGlzIGEgdXNhZ2UgZXJyb3IsIG5vdCBhIGJsaXAuXG4gICAgICAgICAgYXdhaXQgb3B0cy5vbkh0dHBFcnJvcj8uKHJlcyk7XG4gICAgICAgICAgLy8g4puUIENBTkNFTCBUSEUgQk9EWSBCRUZPUkUgTE9PUElORy4gQW4gdW5yZWFkIHJlc3BvbnNlIGJvZHkgaG9sZHMgYVxuICAgICAgICAgIC8vIHN0cmVhbSBvcGVuLCBhbmQgdGhpcyBicmFuY2ggcnVucyBvbmNlIHBlciBmYWlsZWQgYXR0ZW1wdCBmb3IgYXNcbiAgICAgICAgICAvLyBsb25nIGFzIHRoZSBkYWVtb24gaXMgdW5oYXBweSDigJQgd2hpY2ggaXMgZXhhY3RseSB0aGUgbG9uZy1ydW5uaW5nXG4gICAgICAgICAgLy8gY2FzZS4gVGhlIGhvb2sgbWF5IGFscmVhZHkgaGF2ZSByZWFkIGl0OyBjYW5jZWwgaXMgYSBuby1vcCB0aGVuLlxuICAgICAgICAgIGF3YWl0IHJlcy5ib2R5Py5jYW5jZWwoKS5jYXRjaCgoKSA9PiB7fSk7XG4gICAgICAgICAgbm90ZShvcHRzLm9uRGlzY29ubmVjdD8uKHsgY2F1c2U6IFwiaHR0cFwiLCBzdGF0dXM6IHJlcy5zdGF0dXMgfSkpO1xuICAgICAgICAgIGF3YWl0IGJhY2tvZmYoZGVsYXkpO1xuICAgICAgICAgIGRlbGF5ID0gTWF0aC5taW4oZGVsYXkgKiAyLCByZXRyeS5tYXhNcyk7XG4gICAgICAgICAgY29udGludWU7XG4gICAgICAgIH1cbiAgICAgICAgaWYgKCFyZXMuYm9keSkge1xuICAgICAgICAgIC8vIOKblCBBIDIwMCBXSVRIIE5PIEJPRFkgTVVTVCBHUk9XIFRIRSBCQUNLT0ZGIGxpa2UgZXZlcnkgb3RoZXIgZmFpbGVkXG4gICAgICAgICAgLy8gYXR0ZW1wdC4gT25lIHNwZWxsIHNwbGl0IHRoaXMgZ3VhcmQgZnJvbSBpdHMgc2libGluZyBhbmQgdGhlIHNlY29uZFxuICAgICAgICAgIC8vIGhhbGYgbG9zdCB0aGUgZ3Jvd3RoIGxpbmUg4oCUIGEgcmVjb25uZWN0IHN0b3JtIGF0IGEgY29uc3RhbnQgMjUwbXMuXG4gICAgICAgICAgbm90ZShvcHRzLm9uRGlzY29ubmVjdD8uKHsgY2F1c2U6IFwibm8tYm9keVwiLCBzdGF0dXM6IHJlcy5zdGF0dXMgfSkpO1xuICAgICAgICAgIGF3YWl0IGJhY2tvZmYoZGVsYXkpO1xuICAgICAgICAgIGRlbGF5ID0gTWF0aC5taW4oZGVsYXkgKiAyLCByZXRyeS5tYXhNcyk7XG4gICAgICAgICAgY29udGludWU7XG4gICAgICAgIH1cblxuICAgICAgICBldmVyQ29ubmVjdGVkID0gdHJ1ZTtcbiAgICAgICAgZmlyc3RDb25uZWN0ID0gZmFsc2U7XG4gICAgICAgIHJlc2V0V2F0Y2hkb2coKTtcblxuICAgICAgICBjb25zdCByZWFkZXIgPSByZXMuYm9keS5nZXRSZWFkZXIoKTtcbiAgICAgICAgY29uc3QgZGVjb2RlciA9IG5ldyBUZXh0RGVjb2RlcigpO1xuICAgICAgICBsZXQgYnVmID0gXCJcIjtcblxuICAgICAgICB3aGlsZSAoIXN0b3BwZWQpIHtcbiAgICAgICAgICBsZXQgY2h1bms6IEF3YWl0ZWQ8UmV0dXJuVHlwZTx0eXBlb2YgcmVhZGVyLnJlYWQ+PjtcbiAgICAgICAgICB0cnkge1xuICAgICAgICAgICAgY2h1bmsgPSBhd2FpdCByZWFkZXIucmVhZCgpO1xuICAgICAgICAgIH0gY2F0Y2ggKGUpIHtcbiAgICAgICAgICAgIC8vIFdhdGNoZG9nIGFib3J0LCBjYWxsZXIgYWJvcnQsIG9yIGEgZHJvcHBlZCBjb25uZWN0aW9uLiBBbGwgdGhyZWVcbiAgICAgICAgICAgIC8vIG1lYW4gdGhlIHNhbWUgdGhpbmcgaGVyZTogdGhpcyBhdHRlbXB0IGlzIG92ZXIsIHJlY29ubmVjdCBiZWxvdy5cbiAgICAgICAgICAgIGlmICghc3RvcHBlZCkgbm90ZShvcHRzLm9uRGlzY29ubmVjdD8uKHsgY2F1c2U6IFwic3RyZWFtLWVycm9yXCIsIGVycm9yOiBlIH0pKTtcbiAgICAgICAgICAgIGJyZWFrO1xuICAgICAgICAgIH1cbiAgICAgICAgICBpZiAoY2h1bmsuZG9uZSkge1xuICAgICAgICAgICAgaWYgKCFzdG9wcGVkKSBub3RlKG9wdHMub25EaXNjb25uZWN0Py4oeyBjYXVzZTogXCJzdHJlYW0tZW5kXCIgfSkpO1xuICAgICAgICAgICAgYnJlYWs7XG4gICAgICAgICAgfVxuICAgICAgICAgIC8vIOKblCBUSEUgQkFDS09GRiBSRVNFVFMgT04gVEhFIEZJUlNUIEJZVEUsIE5PVCBPTiBBIFNVQ0NFU1NGVUwgT1BFTiDigJRcbiAgICAgICAgICAvLyBhbmQgdGhhdCBpcyBXSURFUiB0aGFuIHRoZSBkZWZlY3QgaXQgd2FzIHdyaXR0ZW4gZm9yLiBCNSBpc1xuICAgICAgICAgIC8vIHJlY29yZGVkIGFzIFwiYSAyMDAgd2l0aCBubyBib2R5IHNsZWVwcyB3aXRob3V0IGdyb3dpbmcgdGhlXG4gICAgICAgICAgLy8gYmFja29mZlwiOyByZXNldHRpbmcgYXQgdGhlIG9wZW4gaGFzIHRoZSBzYW1lIHNoYXBlIGZvciBBTllcbiAgICAgICAgICAvLyBjb25uZWN0aW9uIHRoYXQgaXMgYWNjZXB0ZWQgYW5kIHRoZW4geWllbGRzIG5vdGhpbmcsIHdoaWNoIGlzIHdoYXRcbiAgICAgICAgICAvLyBhIGRhZW1vbiBtaWQtcmVzdGFydCBkb2VzLiBEcml2ZW46IHJlc2V0LWF0LW9wZW4gZ2l2ZXMgYSBjb25zdGFudFxuICAgICAgICAgIC8vIDQxbXMgcmVjb25uZWN0IGFnYWluc3QgYSBzZXJ2ZXIgdGhhdCBhY2NlcHRzIGFuZCBjbG9zZXM7IHJlc2V0LWF0LVxuICAgICAgICAgIC8vIGZpcnN0LWJ5dGUgZ2l2ZXMgNDAsIDgwLCAxNjAuIEEgYnl0ZSBpcyB0aGUgb25seSBldmlkZW5jZSB0aGVcbiAgICAgICAgICAvLyBkYWVtb24gaXMgYWN0dWFsbHkgdGFsa2luZyB0byB1cy5cbiAgICAgICAgICBkZWxheSA9IHJldHJ5LmluaXRpYWxNcztcbiAgICAgICAgICAvLyDim5QgQkVGT1JFIEZSQU1FIFBBUlNJTkcuIEEga2VlcGFsaXZlIGNvbW1lbnQgY2FycmllcyBubyBkYXRhIGFuZCBpc1xuICAgICAgICAgIC8vIGRpc2NhcmRlZCB3aGVuIGRhdGEgZnJhbWVzIGFyZSBzZWxlY3RlZCBiZWxvdywgYnV0IGl0IGlzIHRoZSBwcm9vZiB0aGUgc29ja2V0IGlzXG4gICAgICAgICAgLy8gYWxpdmUg4oCUIGZlZWRpbmcgdGhlIHdhdGNoZG9nIG9ubHkgb24gREFUQSBhYm9ydHMgZXZlcnkgaGVhbHRoeSBidXRcbiAgICAgICAgICAvLyBxdWlldCBjb25uZWN0aW9uLlxuICAgICAgICAgIHJlc2V0V2F0Y2hkb2coKTtcbiAgICAgICAgICBidWYgKz0gZGVjb2Rlci5kZWNvZGUoY2h1bmsudmFsdWUsIHsgc3RyZWFtOiB0cnVlIH0pO1xuXG4gICAgICAgICAgZm9yIChsZXQgc2VwID0gYnVmLmluZGV4T2YoXCJcXG5cXG5cIik7IHNlcCA+PSAwOyBzZXAgPSBidWYuaW5kZXhPZihcIlxcblxcblwiKSkge1xuICAgICAgICAgICAgY29uc3QgYmxvY2sgPSBidWYuc2xpY2UoMCwgc2VwKTtcbiAgICAgICAgICAgIGJ1ZiA9IGJ1Zi5zbGljZShzZXAgKyAyKTtcbiAgICAgICAgICAgIGNvbnN0IHsgZnJhbWUsIGNvbW1lbnRzIH0gPSBwYXJzZVNzZUZyYW1lKGJsb2NrKTtcbiAgICAgICAgICAgIGZvciAoY29uc3QgdGV4dCBvZiBjb21tZW50cykgbm90ZShvcHRzLm9uQ29tbWVudD8uKHRleHQpKTtcbiAgICAgICAgICAgIGlmICghZnJhbWUpIGNvbnRpbnVlO1xuXG4gICAgICAgICAgICBsZXQgZXY6IEV2O1xuICAgICAgICAgICAgdHJ5IHtcbiAgICAgICAgICAgICAgZXYgPSBKU09OLnBhcnNlKGZyYW1lLmRhdGEpIGFzIEV2O1xuICAgICAgICAgICAgfSBjYXRjaCAoZSkge1xuICAgICAgICAgICAgICBub3RlKG9wdHMub25NYWxmb3JtZWQ/LihmcmFtZSwgZSkpO1xuICAgICAgICAgICAgICBjb250aW51ZTtcbiAgICAgICAgICAgIH1cblxuICAgICAgICAgICAgLy8g4puUIFRIRSBDVVJTT1IgQURWQU5DRVMgT04gRVZFUlkgRVZFTlQsIElOQ0xVRElORyBBIEZJTFRFUkVEIE9ORS5cbiAgICAgICAgICAgIC8vIEEgc2NvcGUgcHJlZGljYXRlIGlzIGFib3V0IHdoYXQgdGhlIENBTExFUiByZWFkcywgbmV2ZXIgYWJvdXQgd2hhdFxuICAgICAgICAgICAgLy8gdGhlIGRhZW1vbiBoYXMgZGVsaXZlcmVkOyBhZHZhbmNpbmcgb25seSBvbiBlbWl0dGVkIGV2ZW50cyBtYWtlc1xuICAgICAgICAgICAgLy8gZXZlcnkgcmVjb25uZWN0IHJlLXJlcXVlc3QgdGhlIGZpbHRlcmVkIG9uZXMgZm9yZXZlci5cbiAgICAgICAgICAgIGNvbnN0IG4gPSBvcHRzLmN1cnNvck9mPy4oZXYpO1xuXG4gICAgICAgICAgICBsZXQgZXBvY2hSZXNldCA9IGZhbHNlO1xuICAgICAgICAgICAgaWYgKG9wdHMuZXBvY2hPZikge1xuICAgICAgICAgICAgICBjb25zdCBuZXh0ID0gb3B0cy5lcG9jaE9mKGV2KTtcbiAgICAgICAgICAgICAgaWYgKHR5cGVvZiBuZXh0ID09PSBcInN0cmluZ1wiKSB7XG4gICAgICAgICAgICAgICAgaWYgKGVwb2NoICE9PSBudWxsICYmIG5leHQgIT09IGVwb2NoKSB7XG4gICAgICAgICAgICAgICAgICBjdXJzb3IgPSAwO1xuICAgICAgICAgICAgICAgICAgZXBvY2hSZXNldCA9IHRydWU7XG4gICAgICAgICAgICAgICAgICBjb25zdCBsaW5lID0gb3B0cy5vbkVwb2NoQ2hhbmdlPy4obmV4dCkgPz8gbnVsbDtcbiAgICAgICAgICAgICAgICAgIGlmIChsaW5lICE9PSBudWxsKSBlbWl0KGxpbmUpO1xuICAgICAgICAgICAgICAgICAgLy8gVGhlIG5ldyBsb2cgaXMgcGFzdCB0aGUgYm9va21hcms6IGl0cyBzdGFydCB3YXMgc2tpcHBlZC5cbiAgICAgICAgICAgICAgICAgIC8vIERyb3AgdGhpcyBhdHRlbXB0IGFuZCByZS1yZWFkIHRoZSBuZXcgbG9nIGZyb20gMC5cbiAgICAgICAgICAgICAgICAgIGlmIChhc2tlZFNpbmNlID4gMCAmJiB0eXBlb2YgbiA9PT0gXCJudW1iZXJcIiAmJiBuID4gYXNrZWRTaW5jZSkge1xuICAgICAgICAgICAgICAgICAgICBlcG9jaCA9IG5leHQ7XG4gICAgICAgICAgICAgICAgICAgIGZyb21Ub3AgPSB0cnVlO1xuICAgICAgICAgICAgICAgICAgICBicmVhaztcbiAgICAgICAgICAgICAgICAgIH1cbiAgICAgICAgICAgICAgICB9XG4gICAgICAgICAgICAgICAgZXBvY2ggPSBuZXh0O1xuICAgICAgICAgICAgICB9XG4gICAgICAgICAgICB9XG4gICAgICAgICAgICBpZiAoXG4gICAgICAgICAgICAgIG9wdHMucmVzdGFydE9uUmVwbGF5ID09PSB0cnVlICYmXG4gICAgICAgICAgICAgICFlcG9jaFJlc2V0ICYmXG4gICAgICAgICAgICAgICFyZXN0YXJ0Tm90ZWQgJiZcbiAgICAgICAgICAgICAgYXNrZWRTaW5jZSA+PSAwICYmXG4gICAgICAgICAgICAgIHR5cGVvZiBuID09PSBcIm51bWJlclwiICYmXG4gICAgICAgICAgICAgIG4gPD0gYXNrZWRTaW5jZVxuICAgICAgICAgICAgKSB7XG4gICAgICAgICAgICAgIC8vIFRoZSBkYWVtb24gcmVwbGF5ZWQgV0hPTEU6IGl0cyBsb2cgcmVzdGFydGVkIChzZWUgdGhlIG9wdGlvbikuXG4gICAgICAgICAgICAgIHJlc3RhcnROb3RlZCA9IHRydWU7XG4gICAgICAgICAgICAgIGN1cnNvciA9IDA7XG4gICAgICAgICAgICAgIGNvbnN0IGxpbmUgPSBvcHRzLm9uRXBvY2hDaGFuZ2U/LihvcHRzLmVwb2NoT2Y/LihldikgPz8gXCJ1bmtub3duXCIpID8/IG51bGw7XG4gICAgICAgICAgICAgIGlmIChsaW5lICE9PSBudWxsKSBlbWl0KGxpbmUpO1xuICAgICAgICAgICAgfVxuICAgICAgICAgICAgaWYgKHR5cGVvZiBuID09PSBcIm51bWJlclwiICYmIE51bWJlci5pc0Zpbml0ZShuKSkge1xuICAgICAgICAgICAgICBjdXJzb3IgPSBjdXJzb3JQb2xpY3kgPT09IFwiYXNzaWduXCIgPyBuIDogTWF0aC5tYXgoY3Vyc29yLCBuKTtcbiAgICAgICAgICAgIH1cblxuICAgICAgICAgICAgY29uc3QgYWNjZXB0ZWQgPSBvcHRzLmFjY2VwdD8uKGV2LCBmcmFtZSkgPz8gdHJ1ZTtcbiAgICAgICAgICAgIGNvbnN0IGlzVGVybWluYWwgPSBvcHRzLnRlcm1pbmFsPy4oZXYsIGZyYW1lLCBhY2NlcHRlZCkgPz8gZmFsc2U7XG5cbiAgICAgICAgICAgIGlmIChhY2NlcHRlZCB8fCAoaXNUZXJtaW5hbCAmJiBvcHRzLnRlcm1pbmFsRW1pdHNGaWx0ZXJlZCA9PT0gdHJ1ZSkpIHtcbiAgICAgICAgICAgICAgY29uc3QgbGluZSA9IG9wdHMucmVuZGVyID8gb3B0cy5yZW5kZXIoZXYsIGZyYW1lKSA6IGZyYW1lLmRhdGE7XG4gICAgICAgICAgICAgIGlmIChsaW5lICE9PSBudWxsKSBlbWl0KGxpbmUpO1xuICAgICAgICAgICAgfVxuICAgICAgICAgICAgaWYgKGlzVGVybWluYWwpIHtcbiAgICAgICAgICAgICAgLy8g4puUIENMT1NFIFRIRSBDT05ORUNUSU9OLiBTZWUgYHRlcm1pbmFsYCdzIGRvYzogd2l0aG91dCB0aGlzIHRoZVxuICAgICAgICAgICAgICAvLyBvcGVuIHN0cmVhbSBrZWVwcyB0aGUgcHJvY2VzcyBhbGl2ZSBhZnRlciB3ZSByZXR1cm4uXG4gICAgICAgICAgICAgIGNvbnRyb2xsZXIuYWJvcnQoKTtcbiAgICAgICAgICAgICAgZW5kaW5nID0gXCJ0ZXJtaW5hbFwiO1xuICAgICAgICAgICAgICByZXR1cm4gY29kZTtcbiAgICAgICAgICAgIH1cbiAgICAgICAgICB9XG4gICAgICAgICAgaWYgKGZyb21Ub3ApIHtcbiAgICAgICAgICAgIGNvbnRyb2xsZXIuYWJvcnQoKTtcbiAgICAgICAgICAgIGJyZWFrO1xuICAgICAgICAgIH1cbiAgICAgICAgfVxuICAgICAgfSBmaW5hbGx5IHtcbiAgICAgICAgaWYgKHdhdGNoZG9nICE9PSBudWxsKSBjbGVhclRpbWVvdXQod2F0Y2hkb2cpO1xuICAgICAgICBhdHRlbXB0ID0gbnVsbDtcbiAgICAgIH1cblxuICAgICAgaWYgKHN0b3BwZWQpIGJyZWFrO1xuICAgICAgaWYgKGZyb21Ub3ApIHtcbiAgICAgICAgLy8gUmUtcmVhZCB0aGUgbmV3IGxvZyBmcm9tIGl0cyBzdGFydCwgbm93OiBub3RoaW5nIGZhaWxlZC5cbiAgICAgICAgZGVsYXkgPSByZXRyeS5pbml0aWFsTXM7XG4gICAgICAgIGNvbnRpbnVlO1xuICAgICAgfVxuICAgICAgLy8g4puUIEFORCBUSEUgR1JPV1RIIExJTkUgQkVMT05HUyBIRVJFIFRPTy4gRXZlcnkgYGNvbnRpbnVlYCBhYm92ZSBncm93c1xuICAgICAgLy8gdGhlIGRlbGF5OyB0aGUgcGF0aCB0aGF0IGZhbGxzIHRocm91Z2gg4oCUIGEgY29ubmVjdGlvbiB0aGF0IE9QRU5FRCBhbmRcbiAgICAgIC8vIHRoZW4gZW5kZWQg4oCUIGRpZCBub3QsIGluIGFueSBvZiB0aGUgc2V2ZW4gaGFuZC13cml0dGVuIGxvb3BzLiBBZ2FpbnN0IGFcbiAgICAgIC8vIGRhZW1vbiB0aGF0IGFjY2VwdHMgYW5kIGltbWVkaWF0ZWx5IGNsb3NlcywgdGhhdCBpcyBhIHJlY29ubmVjdCBhdCBhXG4gICAgICAvLyBjb25zdGFudCAyNTBtcyBmb3IgYXMgbG9uZyBhcyBpdCBzdGF5cyBzaWNrLCB3aGljaCBpcyBCNSdzIHNoYXBlXG4gICAgICAvLyByZWFjaGVkIGJ5IGEgZGlmZmVyZW50IGRvb3IuIFRoZSByZXNldCBvbiB0aGUgZmlyc3QgYnl0ZSAoYWJvdmUpIGlzXG4gICAgICAvLyB3aGF0IGtlZXBzIHRoaXMgZnJvbSBzbG93aW5nIGEgaGVhbHRoeSB0YWlsIGRvd24uXG4gICAgICBhd2FpdCBiYWNrb2ZmKGRlbGF5KTtcbiAgICAgIGRlbGF5ID0gTWF0aC5taW4oZGVsYXkgKiAyLCByZXRyeS5tYXhNcyk7XG4gICAgfVxuICAgIHJldHVybiBjb2RlO1xuICB9IGZpbmFsbHkge1xuICAgIGlmICh1c2VTaWduYWxzKSB7XG4gICAgICBwcm9jZXNzLm9mZihcIlNJR0lOVFwiLCBvblNpZ25hbCk7XG4gICAgICBwcm9jZXNzLm9mZihcIlNJR1RFUk1cIiwgb25TaWduYWwpO1xuICAgIH1cbiAgICBvdXRFbWl0dGVyLm9mZj8uKFwiZXJyb3JcIiwgb25PdXRFcnJvcik7XG4gICAgb3B0cy5zaWduYWw/LnJlbW92ZUV2ZW50TGlzdGVuZXIoXCJhYm9ydFwiLCBvbkNhbGxlckFib3J0KTtcbiAgICBvcHRzLm9uRW5kPy4oeyBjdXJzb3IsIGVwb2NoLCByZWFzb246IGVuZGluZyB9KTtcbiAgfVxufVxuIiwKICAgICIvKipcbiAqIFRoZSB0YWlsJ3MgSEFORE9GRjogaG93IGEgc3BlbGwncyBgdGFpbGAgZW5kcyBpdHMgb3duIHdhdGNoIGp1c3QgYmVmb3JlIHRoZVxuICogaGFybmVzcydzIE1vbml0b3IgY2FwLCBhbmQgdGhlIG9uZSBzdGRvdXQgbGluZSB0aGF0IG5hbWVzIHRoZSBhZ2VudCdzIG5leHRcbiAqIGFjdCwgYm9va21hcmsgaW5jbHVkZWQuXG4gKlxuICog4puUIFRIRSBLSVQgSVMgQSBMRUFGLiBUaGlzIG1vZHVsZSBpbXBvcnRzIG9ubHkgaXRzIHNpYmxpbmcgYC4vdGFpbEV2ZW50c2AuXG4gKlxuICogQnVpbHQgb24gYGZlYXQvdGFpbC1xdWlldC1oYW5kb2ZmYCB0byBDb2xlJ3MgcnVsaW5nIG9mIDIwMjYtMDktMjMgKHRoZVxuICogXCJSdWxpbmdcIiBzZWN0aW9uIG9mXG4gKiBgZG9jcy9pdGVtcy9zY3JpcHRvcml1bS10YWlsLW1vbml0b3ItZXhwaXJ5LXdha2VzLXRoZS1hZ2VudC1mb3Itbm90aGluZy5tZGApXG4gKiBhbmQgdGhlIGZvdXIgYWRqdXN0bWVudHMgb2YgaXRzIGZlYXNpYmlsaXR5IHNwaWtlXG4gKiAoYGRvY3MvaXRlbXMvbW9uaXRvci1leHBpcnktYW5kLXRoZS10YWlsL3dyaXRlLXVwLm1kYCkuXG4gKlxuICog4pSA4pSAIFRIRSBQUk9CTEVNLCBPTkUgUEFSQUdSQVBIIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgFxuICpcbiAqIENsYXVkZSBDb2RlJ3MgTW9uaXRvciBraWxscyBldmVyeSB3YXRjaCBhdCAxLDgwMCwwMDAgbXMuIEV2ZXJ5IHNwZWxsIHRlbGxzXG4gKiB0aGUgYWdlbnQgdG8gd3JhcCBgdGFpbGAgaW4gTW9uaXRvciwgc28gYW4gaWRsZSBzZXNzaW9uIHdva2UgdGhlIGFnZW50IGV2ZXJ5XG4gKiAzMCBtaW51dGVzIHRvIHJlLWFybSwgYW5kIGEgYmFyZSByZS1hcm0gcmVwbGF5ZWQgdXAgdG8gdGhlIGxhc3QgMTAwMCBldmVudHMsXG4gKiBhbnN3ZXJlZCBodW1hbiBtZXNzYWdlcyBpbmNsdWRlZC4gVGhlIHJlcGxheSBpcyBhIGNvcnJlY3RuZXNzIGJ1ZzsgdGhlIGlkbGVcbiAqIHdha2VzIGFyZSBhIGNvc3QgQ29sZSBydWxlZCBhZ2FpbnN0LlxuICpcbiAqIOKUgOKUgCBUSEUgU0hBUEUg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSAXG4gKlxuICogVHdvIG1vZGVzLCBvbmUgbGluZSBhdCB0aGUgZW5kIG9mIGVhY2g6XG4gKlxuICogICDigKIgYHdhdGNoYCAodGhlIGRlZmF1bHQsIHJ1biB1bmRlciBNb25pdG9yKTogc3RyZWFtcyB1bnRpbCBpdHMgV0lORE9XIGVuZHMsXG4gKiAgICAgdGhlbiBwcmludHMgYHRhaWwud2luZG93YCAoaXQgc2F3IGV2ZW50cyDihpIgcmUtYXJtIE1vbml0b3IpIG9yXG4gKiAgICAgYHRhaWwucXVpZXRgIChpdCBzYXcgbm9uZSDihpIgcnVuIGB0YWlsIC0tb25jZWAgYXMgYSBiYWNrZ3JvdW5kIEJhc2hcbiAqICAgICB0YXNrKS4gQSBQUkVTRU5DRSBzcGVsbCAoYXN0cm9sYWJlLCBncmFwZXZpbmUpIGFsd2F5cyBnZXRzXG4gKiAgICAgYHRhaWwud2luZG93YDogYSBzdG9wLXN0YXJ0IHRhaWwgd291bGQgZmxpY2tlciB0aGUgcHJlc2VuY2UgaXRzXG4gKiAgICAgY29ubmVjdGlvbiBjYXJyaWVzLiBNaW5kLW1hcHBlciB3YXMgb25lIGFuZCBpcyBub3Qgc2luY2UgMjAyNi0wOS0yNFxuICogICAgIChzZWUgXCJNSU5ELU1BUFBFUiBKT0lOUyBUSEUgU0VTU0lPTiBTUEVMTFNcIiBiZWxvdykuXG4gKiAgIOKAoiBgb25jZWAgKHJ1biBhcyBhIGJhY2tncm91bmQgQmFzaCB0YXNrKTogc2xlZXBzIHVudGlsIHRoZSBmaXJzdCBsb2cgZXZlbnQsXG4gKiAgICAgcHJpbnRzIGl0LCBwcmludHMgYHRhaWwud29rZWAgKOKGkiBiYWNrIHRvIE1vbml0b3IpIGFuZCBFWElUUywgd2hpY2ggaXNcbiAqICAgICB3aGF0IHdha2VzIHRoZSBhZ2VudC5cbiAqXG4gKiBFaXRoZXIgbW9kZSBlbmRzIHdpdGggYHRhaWwuY2xvc2VkYCB3aGVuIHRoZSBzZXNzaW9uIGNsb3NlcyBhbmQgYHRhaWwubG9zdGBcbiAqIHdoZW4gdGhlIGRhZW1vbiBpcyBnb25lIChzZXNzaW9uIHNwZWxscyBhbmQgbWluZC1tYXBwZXIpLCBlYWNoIG5hbWluZyBob3cgdG9cbiAqIGNvbWUgYmFjayBpbnN0ZWFkIG9mIGEgcmUtYXJtLiBBIHNpZ25hbCBvciBhIGNhbGxlcidzIGFib3J0IHByaW50cyBub3RoaW5nLlxuICpcbiAqIEV2ZXJ5IHJlLWFybSBjYXJyaWVzIGAtLXNpbmNlIDxjdXJzb3I+YCwgc28gbm90aGluZyByZXBsYXlzOyB0aGUgZGFlbW9uJ3NcbiAqIGJ1ZmZlciBjb3ZlcnMgd2hhdGV2ZXIgbGFuZHMgYmV0d2VlbiBvbmUgd2F0Y2gncyBleGl0IGFuZCB0aGUgbmV4dCdzIGFybS5cbiAqXG4gKiDilIDilIAgREVDSVNJT04gTE9HIChmZWF0L3RhaWwtcXVpZXQtaGFuZG9mZiwgMjAyNi0wOS0yMykg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSAXG4gKlxuICogS2l0IGRlY2lzaW9ucyBsaXZlIGluIG1vZHVsZSBoZWFkZXJzICh0aGUgYXJjaGl0ZWN0dXJlIGRvYydzIMKnNCBydWxlOiBcImVhY2hcbiAqIG1vZHVsZSdzIGhlYWRlciBpcyB0aGUgYXV0aG9yaXRhdGl2ZSBhY2NvdW50XCIpLiBSdWxlZCBieSBDb2xlOiB0aGUgaHlicmlkLFxuICogdGhlIGFsd2F5cy1ib29rbWFyaywgcHJlc2VuY2Ugc3BlbGxzIGFsd2F5cyByZS1hcm0gTW9uaXRvciwgYm91bnR5J3MgZXhhbXBsZVxuICogZml4ZWQuIFRoZSBmb3VyIGFkanVzdG1lbnRzIHdlcmUgdGhlIHNwaWtlJ3MgcmVxdWlyZW1lbnRzLiBUaGUgcmVzdCBhcmUgdGhlXG4gKiBpbXBsZW1lbnRlcidzIHJ1bGluZ3MsIG1hcmtlZCDimpYgd2l0aCB0aGUgb3B0aW9ucyBub3QgdGFrZW4uXG4gKlxuICogQTEgwrcgQSBURVJNSU5BTCBGUkFNRSBDTE9TRVMgVEhFIENPTk5FQ1RJT04uIGB0YWlsRXZlbnRzYCBub3cgYWJvcnRzIHRoZVxuICogICAgICBpbi1mbGlnaHQgZmV0Y2ggYmVmb3JlIGl0IHJldHVybnMgb24gYSB0ZXJtaW5hbCBmcmFtZS4gQmVmb3JlLCBpdFxuICogICAgICByZXR1cm5lZCBmcm9tIGluc2lkZSB0aGUgcmVhZCBsb29wIGFuZCBsZWZ0IHRoZSBTU0Ugc3RyZWFtIG9wZW4sIHNvIHRoZVxuICogICAgICBwcm9jZXNzIHN0YXllZCBhbGl2ZTogdW5zZWVuIGZvciBgY2xvc2VkYCAodGhlIHNlcnZlciBlbmRzIHRoYXRcbiAqICAgICAgc3RyZWFtIGl0c2VsZikgYW5kIGZhdGFsIGZvciBgLS1vbmNlYCwgd2hvc2UgYmFja2dyb3VuZCB0YXNrIHdvdWxkXG4gKiAgICAgIG5ldmVyIGV4aXQgYW5kIHNvIG5ldmVyIHdha2UgdGhlIGFnZW50LCBzaWxlbnRseS4gUGlubmVkIGluXG4gKiAgICAgIGB0YWlsSGFuZG9mZi50ZXN0LnRzYCBhZ2FpbnN0IGEgc2VydmVyIHRoYXQga2VlcHMgdGhlIHN0cmVhbSBvcGVuLlxuICpcbiAqIEEyIMK3IFRIRSBORVhUIEFDVCBERVBFTkRTIE9OIFNUQVRFLiBgaGFuZG9mZigpYCBiZWxvdyBpcyB0aGUgcHVyZSBkZWNpc2lvbjpcbiAqICAgICAgcXVpZXQg4oaSIGJhY2tncm91bmQsIGFjdGl2ZSBvciBwcmVzZW5jZSDihpIgTW9uaXRvciwgd29rZSDihpIgTW9uaXRvcixcbiAqICAgICAgY2xvc2VkIOKGkiBjb21lIGJhY2ssIGxvc3Qg4oaSIGNvbWUgYmFjay4gQ29tZSBiYWNrIGlzIHRoZSBzcGVsbCdzIG93biB2ZXJiXG4gKiAgICAgIChgb3BlbiAtLXJlc3RvcmUgPGlkPmAgZm9yIHRoZSBzZXNzaW9uIHNwZWxscywgYG9wZW4gLS1uby1vcGVuYCBmb3JcbiAqICAgICAgbWluZC1tYXBwZXIgYW5kIGFzdHJvbGFiZSkuXG4gKiAgICAgIOKaliBUSEUgRElTQ09OTkVDVCBERUNJU0lPTjogZm9yIGEgc2Vzc2lvbiBzcGVsbCwgYSBMT1NUIGRhZW1vbiBlbmRzIHRoZVxuICogICAgICB0YWlsIGluIEJPVEggbW9kZXMgd2l0aCBhIHN0ZG91dCBgdGFpbC5sb3N0YCBsaW5lLiBNb25pdG9yIG5vdGlmaWVzIG9ubHlcbiAqICAgICAgb24gc3Rkb3V0LCBzbyB0aGUgb2xkIHN0ZGVyci1vbmx5IGB0YWlsLmRpc2Nvbm5lY3RlZGAgbGVmdCBhXG4gKiAgICAgIE1vbml0b3Itd3JhcHBlZCBhZ2VudCB1bmF3YXJlIG9mIGEgYGtpbGwgLTlgIChFNTUncyBwdXJwb3NlIHVubWV0KSwgYW5kXG4gKiAgICAgIGEgYC0tb25jZWAgb24gYSBkZWFkIGRhZW1vbiB3b3VsZCBoYXZlIHNsZXB0IGZvcmV2ZXIuIFwiTG9zdFwiIGlzXG4gKiAgICAgIGBMT1NUX0FGVEVSX1JFRlVTQUxTYCBjb25uZWN0aW9uIHJlZnVzYWxzIGluIGEgcm93LCBuZXZlciBhIGRyb3BwZWRcbiAqICAgICAgc3RyZWFtIGFsb25lOiBhIGxhcHRvcCB0aGF0IHNsZWVwcyBkcm9wcyB0aGUgc3RyZWFtLCByZWNvbm5lY3RzIG9uIHRoZVxuICogICAgICBmaXJzdCB0cnksIGFuZCBtdXN0IHN0YXkgc2lsZW50LlxuICogICAgICAgIE5vdCB0YWtlbjogKGEpIGtlZXAgcmV0cnlpbmcgYW5kIG9ubHkgTU9WRSB0aGUgZGlzY29ubmVjdCBsaW5lIHRvXG4gKiAgICAgICAgc3Rkb3V0IOKAlCBhIHNlc3Npb24gZGFlbW9uIGlzIG5ldmVyIHJlc3Bhd25lZCBieSBpdHMgdGFpbCwgc28gdGhlXG4gKiAgICAgICAgcmV0cmllcyBidXkgbm90aGluZyBhbmQgdGhlIGFnZW50IGlzIHdva2VuIHRvIGJlIHRvbGQgdG8gd2FpdDsgKGIpXG4gKiAgICAgICAgbGVhdmUgaXQgb24gc3RkZXJyIOKAlCB0aGUgZGVmZWN0LlxuICogICAgICDimpYgUHJlc2VuY2Ugc3BlbGxzIGtlZXAgcmV0cnlpbmcsIGFzIGJlZm9yZTogZ3JhcGV2aW5lJ3MgdGFpbCByZXNwYXduc1xuICogICAgICBpdHMgZGFlbW9uIGFuZCBhc3Ryb2xhYmUncyBgam9pbmAgd2FpdHMgZm9yIHRoZSBodW1hbiB0byByZW9wZW4gdGhlXG4gKiAgICAgIGJvYXJkLCBib3RoIGJ5IGRlc2lnbi4gVGhlaXIgZGlzY29ubmVjdCBub3RlcyBzdGF5IHdoZXJlIHRoZXkgd2VyZS5cbiAqXG4gKiBBMyDCtyBRVUlFVCBJUyBUSEUgVEFJTCdTIE9XTiBDT1VOVC4gYGV2ZW50c2AgY291bnRzIHRoZSBsb2cgZnJhbWVzIHRoaXNcbiAqICAgICAgcHJvY2VzcyB3cm90ZSB0byBzdGRvdXQuIFRoZSBncm91bmRpbmcgbGluZSwgYSBzcGVsbCdzIGBzdWJzY3JpYmVkYFxuICogICAgICBtYXJrZXIsIGBlcG9jaC5jaGFuZ2VkYCBhbmQgdGhlIGhhbmRvZmYgbGluZSBpdHNlbGYgYXJlIG5vdCBsb2cgZnJhbWVzXG4gKiAgICAgIGFuZCBhcmUgbm90IGNvdW50ZWQ6IGEgZnJhbWUgY291bnRzIG9ubHkgaWYgaXQgY2FycmllcyBhIGxvZyBpZCAoRDMpLFxuICogICAgICBhbmQgYGNvdW50c2AgbGV0cyBhIHNwZWxsIGV4Y2x1ZGUgYSBmcmFtZSB0aGF0IGRvZXMgKGdyYXBldmluZSdzXG4gKiAgICAgIGBzdWJzY3JpYmVkYCBtYXJrZXIsIHdoaWNoIHNlZWRzIHRoZSBib29rbWFyayBmcm9tIGBsYXRlc3RfaWRgKS4gQW55IGxvZyBmcmFtZSBjb3VudHMsIHRoZSBkYWVtb24ncyBgd2FpdGluZ2AgcmVtaW5kZXJcbiAqICAgICAgaW5jbHVkZWQsIHNvIFwicXVpZXRcIiBtZWFucyBub3RoaW5nIG9uIHRoZSBsb2cuXG4gKiAgICAgIOKaliBBIGZyYW1lIHRoZSB0YWlsJ3Mgb3duIGZpbHRlciByZWplY3RzIChib3VudHkncyBvd25lciBzY29wZSwgYVxuICogICAgICBzZWxmLWVjaG8pIGlzIE5PVCBjb3VudGVkIGFuZCBkb2VzIG5vdCBlbmQgYSBgLS1vbmNlYDogaXQgd2FzIG5ldmVyXG4gKiAgICAgIGRlbGl2ZXJlZCwgYW5kIHdha2luZyBvbiBpdCB3b3VsZCBiZSBhIHdha2Ugd2l0aCBub3RoaW5nIHRvIGFjdCBvbiDigJRcbiAqICAgICAgdGhlIGRlZmVjdCB0aGlzIG1vZHVsZSBleGlzdHMgdG8gcmVtb3ZlLiBUaGUgY3Vyc29yIHN0aWxsIGFkdmFuY2VzXG4gKiAgICAgIHBhc3QgaXQgKHRhaWxFdmVudHMnIHJ1bGUpLCBzbyBpdCBuZXZlciByZXBsYXlzIGVpdGhlci5cbiAqICAgICAgQSBgLS1zaW5jZWAgcmUtYXJtIHByaW50cyBubyBncm91bmRpbmcgbGluZTsgdGhhdCBoYWxmIGxpdmVzIGluIGVhY2hcbiAqICAgICAgc3BlbGwncyBgdGFpbGAsIHdoaWNoIGtub3dzIHdoZXRoZXIgYC0tc2luY2VgIHdhcyBnaXZlbi5cbiAqXG4gKiBBNCDCtyBUSEUgV0lORE9XLiBgREVGQVVMVF9XSU5ET1dfTVNgID0gdGhlIGNhcCBtaW51cyBgV0lORE9XX01BUkdJTl9NU2BcbiAqICAgICAgKDYwIHMpLCBzbyAxLDc0MCwwMDAgbXMuIFRoZSBtYXJnaW4gaGFzIHRvIGNvdmVyIHRoZSBnYXAgYmV0d2VlbiB0aGVcbiAqICAgICAgaGFybmVzcyBzdGFydGluZyBpdHMgY2xvY2sgYW5kIHRoaXMgcHJvY2VzcyBzdGFydGluZyBpdHMgb3duIChCdW5cbiAqICAgICAgc3RhcnQtdXAsIGEgc2Vzc2lvbiBsb29rdXAsIGEgZGFlbW9uIHNwYXduIG9uIHRoZSBzcGVsbHMgd2hvc2UgYHJlc29sdmVgXG4gKiAgICAgIHNwYXducyBvbmUg4oCUIGJvdW5kZWQgYnkgdGhlaXIgc3RhcnQgdGltZW91dHMsIHdoaWNoIGFyZSBzZWNvbmRzKSBwbHVzXG4gKiAgICAgIHRoZSBsYXN0IGxpbmUncyBmbHVzaCBhbmQgTW9uaXRvcidzIDIwMCBtcyBiYXRjaGluZy4gQSBtaW51dGUgY292ZXJzXG4gKiAgICAgIGFsbCBvZiB0aGF0IG1hbnkgdGltZXMgb3Zlci4gVGhlIHNwaWtlIG1lYXN1cmVkIGEgMTIgc1xuICogICAgICB3aW5kb3cgdW5kZXIgYSAyMCBzIGNhcCBlbmRpbmcgY2xlYW5seTsgbm90aGluZyBoZXJlIGRlcGVuZHMgb24gYVxuICogICAgICBtYXJnaW4gdGhhdCB0aWdodC4gSWYgdGhlIGNhcCB3aW5zIGFueXdheSwgdGhlIGFnZW50IGdldHMgTW9uaXRvcidzXG4gKiAgICAgIGJhcmUgZXhwaXJ5IG5vdGljZSBhbmQgcmUtYXJtcyBzaWxlbnRseSBmcm9tIHRoZSBsYXN0IGlkIGl0IHNhdyDigJQgdGhlXG4gKiAgICAgIHJ1bGluZydzIGZhbGxiYWNrLCBzdGF0ZWQgaW4gZXZlcnkgc2tpbGwuXG4gKiAgICAgIOKaliBUaGUgd2luZG93IGlzIGluamVjdGFibGUgZm9yIHRlc3RzIGFuZCB2ZXJpZmljYXRpb24gdGhyb3VnaFxuICogICAgICBgU1BFTExCT09LX1RBSUxfV0lORE9XX01TYCAoYSBjb3VudCBvZiBtczsgYDBgIHR1cm5zIHRoZSB3aW5kb3cgb2ZmLFxuICogICAgICBmb3IgYSBodW1hbiB3YXRjaGluZyBhIHRlcm1pbmFsKS4gQW4gZW52IHZhciBhbmQgbm90IGEgZmxhZzogaXQgaXNcbiAqICAgICAgbm90IGFuIGFnZW50J3MgYWN0LCBzbyBpdCBzdGF5cyBvdXQgb2YgZWlnaHQgdmVyYnMnIHNjaGVtYXMuXG4gKlxuICog4pSA4pSAIFRIRSBWRVJJRklFUidTIERFRkVDVFMsIEZJWEVEIE9OIFRIRSBTQU1FIEJSQU5DSCAoMjAyNi0wOS0yMykg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSAXG4gKlxuICogVGhlIG5vLXN0YWtlIHZlcmlmaWVyIHJhbiBldmVyeSBzcGVsbCdzIHJlYWwgdGFpbCBhbmQgZm91bmQgZm91ciB3YXlzIHRoZVxuICogbG9vcCBicm9rZS4gRWFjaCBoYXMgYSBjZWxsIGluIGB0YWlsSGFuZG9mZi50ZXN0LnRzYDsgRDEgYW5kIEQyIGFsc28gaGF2ZSBhXG4gKiByZWFsLWRhZW1vbiBjZWxsIGluIGBzcmMvc2NyaXB0b3JpdW0vYmFja2VuZC90YWlsLWhhbmRvZmYuaW50ZWdyYXRpb24udGVzdC50c2AuXG4gKlxuICogRDEgwrcgQSBSRS1BUk0gQVQgQSBTRVNTSU9OIFRIQVQgQ0xPU0VEIElOIFRIRSBHQVAgRU5EUyBgdGFpbC5jbG9zZWRgLiBUaGVcbiAqICAgICAgdHJpZ2dlciBpcyBvcmRpbmFyeTogdGhlIGh1bWFuIHByZXNzZXMgQ2xvc2Ugd2hpbGUgdGhlIGFnZW50IGhhbmRsZXNcbiAqICAgICAgYHRhaWwud29rZWAuIFRoZSBzZXNzaW9uIHNwZWxscyBzdG9wcGVkIG9ubHkgd2hlbiBUSElTIHByb2Nlc3MgaGFkXG4gKiAgICAgIG9uY2UgcmVhY2hlZCB0aGUgc2Vzc2lvbiwgc28gdGhlIHJlLWFybSByZXRyaWVkIFwibm8gc2Vzc2lvbiB5ZXRcIiBvblxuICogICAgICBzdGRlcnIgZm9yZXZlciDigJQgYW5kIGl0cyBgLS1vbmNlYCBuZXZlciBleGl0ZWQuIFJ1bGU6IGEgdGFpbCBnaXZlblxuICogICAgICBgLS1zZXNzaW9uYCBvciBhIGJvb2ttYXJrIGlzIHJlLWFybWluZyBhbiBFWElTVElORyBzZXNzaW9uLCBzbyBub3RcbiAqICAgICAgZmluZGluZyBpdCBtZWFucyBpdCBjbG9zZWQ7IHRoZSBzcGVsbCdzIGBvblVucmVzb2x2ZWRgIHNheXMgXCJzdG9wXCJcbiAqICAgICAgYW5kIHRoaXMgbW9kdWxlIHJlYWRzIEFOWSBzdG9wIGFzIGNsb3NlZC4gQSBiYXJlIGZpcnN0IGFybSBzdGlsbFxuICogICAgICB3YWl0cyBmb3IgYSBzZXNzaW9uIHRvIGFwcGVhci4g4pqgIFwiR2l2ZW5cIiBtZWFucyBPTiBUSEUgQ09NTUFORCBMSU5FXG4gKiAgICAgIChyZXZpZXcgQjEpOiBib3VudHkgYWxzbyByZXNvbHZlcyBhIHNlc3Npb24gZnJvbVxuICogICAgICBgJEJPVU5UWV9TRVNTSU9OX0tFWWAsIGAkQk9VTlRZX1NFU1NJT05gIG9yIGEgYC5ib3VudHktc2Vzc2lvbmAgZmlsZSxcbiAqICAgICAgd2hpY2ggZXZlcnkgYW50aGlsbCBzZWF0IGhhcywgYW5kIGEgc2VhdCdzIGZpcnN0IGFybSBtdXN0IHdhaXQuIEFcbiAqICAgICAga2V5ZWQgYm91bnR5IGJvYXJkIGNvbWVzIGJhY2sgYnkgaXRzIGtleSAoYG9wZW4gLS1zZXNzaW9uLWtleSBLYCk7XG4gKiAgICAgIHJlc3RvcmluZyBpdCBieSBpZCBzcGF3bnMgYW4gdW5rZXllZCBzdHJheS5cbiAqIEQyIMK3IEEgQk9PS01BUksgQ0FOTk9UIE9VVExJVkUgSVRTIExPRy4gQSByZXN0b3JlZCBkYWVtb24ncyBpZHMgYmVnaW4gYXQgMSxcbiAqICAgICAgYW5kIHRoZSBraXQncyBsb2cgYW5zd2VycyBhIGN1cnNvciBiZXlvbmQgaXRzIG93biBieSByZXBsYXlpbmcgd2hvbGU7XG4gKiAgICAgIHRoZSB0YWlsIGtlcHQgaXRzIGhpZ2hlciBjdXJzb3IsIHNvIGV2ZXJ5IHJlLWFybSByZXBsYXllZCB0aGUgbmV3IGxvZ1xuICogICAgICBhbmQgYSBgLS1vbmNlYCB3b2tlIGF0IG9uY2UsIGluIGEgbG9vcC4gVHdvIGhhbHZlczpcbiAqICAgICAgYW5kIGEgYC0tb25jZWAgd29rZSBhdCBvbmNlLCBpbiBhIGxvb3AuIFRocmVlIHBhcnRzOlxuICogICAgICAgIChhKSB0aGUgbmV0IOKAlCBgdGFpbEV2ZW50c2AnIGByZXN0YXJ0T25SZXBsYXlgLCBvbiBmb3IgZXZlcnkgc3BlbGwsXG4gKiAgICAgICAgICAgIHJlYWRzIGEgZnJhbWUgYXQgb3IgYmVsb3cgdGhlIGFza2VkIGN1cnNvciBhcyBhIHJlc3RhcnRlZCBsb2dcbiAqICAgICAgICAgICAgYW5kIHJlc2V0cyB0aGUgY3Vyc29yO1xuICogICAgICAgIChiKSB0aGUgcnVsZSDigJQgdGhlIGB0YWlsLmNsb3NlZGAvYHRhaWwubG9zdGAgaGludCwgYW5kIGV2ZXJ5IHNraWxsLFxuICogICAgICAgICAgICBzYXk6IHJ1biB0aGUgY29tbWFuZCB0aGUgbGluZSBuYW1lcywgdGhlbiB0YWlsIFdJVEggTk9cbiAqICAgICAgICAgICAgYC0tc2luY2VgIChhIHJlc3RvcmVkIGRhZW1vbiBzdGFydHMgYSBuZXcgbG9nOyBib3VudHkncyByZXN0b3JlXG4gKiAgICAgICAgICAgIGV2ZW4gbWludHMgYSBuZXcgaWQpO1xuICogICAgICAgIChjKSBUSEUgRVBPQ0ggSU4gVEhFIEJPT0tNQVJLIOKAlCDimpYgQSBSRVZFUlNBTC4gVGhlIGZpcnN0IHZlcnNpb24gb2ZcbiAqICAgICAgICAgICAgdGhpcyBlbnRyeSBsaXN0ZWQgXCJjYXJyeSB0aGUgZXBvY2ggaW4gdGhlIGJvb2ttYXJrXCIgYXMgbm90IHRha2VuXG4gKiAgICAgICAgICAgIChhIG5ldyBmbGFnIG9uIGVpZ2h0IHZlcmJzOyBhbiBlcG9jaCBzZWVuIG9ubHkgb25jZSBhIGZyYW1lXG4gKiAgICAgICAgICAgIGFycml2ZXMpLiBUaGUgcmV2aWV3ZXIgdGhlbiBzaG93ZWQgKGEpJ3MgYmxpbmQgc3BvdCBMSVZFOiBhbiBvbGRcbiAqICAgICAgICAgICAgYm9va21hcmsgYXQgb3IgYmVsb3cgdGhlIE5FVyBsb2cncyBsZW5ndGggbWFrZXMgdGhlIGRhZW1vbiBzZW5kXG4gKiAgICAgICAgICAgIG9ubHkgd2hhdCBsaWVzIGFib3ZlIGl0LCBzbyB0aGUgbmV3IGxvZydzIGVhcmx5IGZyYW1lcyDigJQgYSBodW1hblxuICogICAgICAgICAgICBtZXNzYWdlIGF0IG5ldyBpZCAyIHVuZGVyIGEgYm9va21hcmsgb2YgNCDigJQgd2VyZSBza2lwcGVkIHdpdGggbm9cbiAqICAgICAgICAgICAgbm90aWNlLiBUaHJlZSBwYXRocyByZWFjaCBpdDogY29taW5nIGJhY2sgd2l0aG91dCBmb2xsb3dpbmcgKGIpO1xuICogICAgICAgICAgICB0aGUgTW9uaXRvci1jYXAgZmFsbGJhY2sgKFwicmUtYXJtIGZyb20gdGhlIGxhc3QgaWQgeW91IHNhd1wiKVxuICogICAgICAgICAgICBhY3Jvc3MgYSByZXN0YXJ0OyBhbmQgYSB0YWlsIHRoYXQgcmVjb25uZWN0cyBpbi1wcm9jZXNzXG4gKiAgICAgICAgICAgIChhc3Ryb2xhYmUsIG9yIG1pbmQtbWFwcGVyIHdoZW4gaXRzIGRhZW1vbiBpcyBiYWNrIGJlZm9yZSB0aGVcbiAqICAgICAgICAgICAgbG9zdCBydWxlIGZpcmVzKSB3aG9zZSBmaXJzdCBmcmFtZSBhZnRlciBhIHJlc3RhcnQgaXMgYWxyZWFkeVxuICogICAgICAgICAgICBwYXN0IGl0cyBib29rbWFyay5cbiAqICAgICAgICAgICAgVGhlIGZpeCBuZWVkcyBubyBuZXcgZmxhZyBhbmQgbm8gd2lyZSBjaGFuZ2U6IHRoZSBib29rbWFyayBpc1xuICogICAgICAgICAgICBwcmludGVkIGAtLXNpbmNlIE5APGVwb2NoPmAgKGBwYXJzZUJvb2ttYXJrYCksIHRoZSBjbGllbnQgc3RhcnRzXG4gKiAgICAgICAgICAgIHdpdGggdGhhdCBlcG9jaCAoYHNpbmNlRXBvY2hgKSwgYW5kIGFuIGVwb2NoIGNoYW5nZSB3aG9zZSBmcmFtZVxuICogICAgICAgICAgICBpcyBwYXN0IHRoZSBhc2tlZCBjdXJzb3IgcmUtcmVhZHMgdGhlIG5ldyBsb2cgZnJvbSAwLiBUaGUgc2FtZVxuICogICAgICAgICAgICByZWNvbm5lY3QgY292ZXJzIHRoZSBpbi1wcm9jZXNzIHByZXNlbmNlIGNhc2UuXG4gKiAgICAgIOKaoCBTVEFURUQgTElNSVQ6IG9ubHkgZGFlbW9ucyB0aGF0IHN0YW1wIGFuIGVwb2NoIGdldCAoYykg4oCUXG4gKiAgICAgIHNjcmlwdG9yaXVtLCBhc3Ryb2xhYmUgYW5kIG1pbmQtbWFwcGVyLiBHbGFtb3VyLCBpbWFnbywgbWFncGllIGFuZFxuICogICAgICBib3VudHkgc3RhbXAgbm9uZSAoc2Vzc2lvbi1zY29wZWQgbG9ncywgcnVsZWQgc28gaW4gRDM5L0I4OyBib3VudHknc1xuICogICAgICBzZXJ2ZXIgaGVhZGVyIG5hbWVzIHRoaXMgcmVzaWR1ZSksIHNvIGZvciB0aGVtIHRoZSBnYXAgc3RheXMgb3BlbiBvblxuICogICAgICB0aGUgZmFsbGJhY2sgcGF0aCwgKGEpIGNvdmVycyB0aGUgd2hvbGUtcmVwbGF5IGNhc2UgYW5kIChiKSB0aGVcbiAqICAgICAgY29tZS1iYWNrIHBhdGguIENsb3NpbmcgaXQgdGhlcmUgaXMgYSBkYWVtb24gY2hhbmdlOiBhbiBlcG9jaCBvblxuICogICAgICBgY3JlYXRlRXZlbnRMb2dgLiBFdmVyeSBzcGVsbCBwcmludHMgdGhlIG5ldCdzIHJlc2V0IGFzXG4gKiAgICAgIGBlcG9jaC5jaGFuZ2VkYCAoYFwiZXBvY2hcIjogXCJ1bmtub3duXCJgIHdoZXJlIHRoZXJlIGlzIG5vbmUpLlxuICogRDMgwrcgT05MWSBBIEZSQU1FIFdJVEggQSBMT0cgSUQgQ09VTlRTLiBHbGFtb3VyJ3MgYW5kIGltYWdvJ3MgdGFiIHBpbmdzXG4gKiAgICAgIChgY29ubmVjdGVkYC9gZGlzY29ubmVjdGVkYCkgY2Fycnkgbm8gaWQ6IG5vdCBvbiB0aGUgbG9nLCBzbyBhIGxhcHRvcFxuICogICAgICBsaWQgbm8gbG9uZ2VyIHdha2VzIGEgYC0tb25jZWAsIGFuZCBpbWFnbydzIGdyZXAgbm8gbG9uZ2VyIHNob3dzIGFcbiAqICAgICAgYHRhaWwud29rZWAgd2l0aCBub3RoaW5nIGFib3ZlIGl0LlxuICogRDQgwrcgQSBIVU1BTidTIFdBVENIIEhBUyBOTyBXSU5ET1cuIGBncmFwZXZpbmUgdGFpbCAtLWh1bWFuYCBwYXNzZXNcbiAqICAgICAgYHdpbmRvd01zOiAwYDsgbm8gb3RoZXIgc3BlbGwgaGFzIGEgaHVtYW4gbW9kZS4gRXZlcnkgYHRhaWxgJ3MgaGVscFxuICogICAgICBjYXJyaWVzIGBXSU5ET1dfSEVMUGAsIHdoaWNoIG5hbWVzIGBTUEVMTEJPT0tfVEFJTF9XSU5ET1dfTVM9MGAuXG4gKiBBbHNvOiBldmVyeSBjb21lLWJhY2sgY29tbWFuZCBjYXJyaWVzIGAtLW5vLW9wZW5gLCBzbyBydW5uaW5nIGl0IG9wZW5zIG5vXG4gKiBicm93c2VyIHRhYi5cbiAqXG4gKiDimqAgS05PV04gRURHRSwgTk9UIEZJWEVEIChmb3VuZCBieSB0aGUgcmUtcmV2aWV3KTogYSBrZXllZCBib3VudHkgRklSU1QgYXJtXG4gKiAgIChhbiBhbnRoaWxsIHNlYXQpIHdob3NlIHdpbmRvdyBlbmRzIGJlZm9yZSBpdHMgYm9hcmQgZXZlciBvcGVucyBwcmludHMgYVxuICogICByZS1hcm0gcGlubmVkIHRvIHRoZSBkZXJpdmVkIGlkIHdpdGggYW4gZW1wdHkgYm9va21hcmtcbiAqICAgKGAtLXNlc3Npb24gay3igKYgLS1zaW5jZT0tMSAtLW9uY2VgKS4gVGhhdCByZS1hcm0gaXMgYSByZS1hcm0gYnkgRDEncyBydWxlLFxuICogICBzbyBpZiB0aGUgYm9hcmQgaXMgc3RpbGwgbm90IHVwIOKAlCB0aGUgbGVhZCBtb3JlIHRoYW4gb25lIHdpbmRvdyAoMjkgbWluKVxuICogICBsYXRlIOKAlCB0aGUgc2VhdCBkb2VzIG5vdCB3YWl0LiBNaW5vcjogdGhlIG5leHQgc3RlcCBpdCBuYW1lc1xuICogICAoYG9wZW4gLS1zZXNzaW9uLWtleSBLYCkgaXMgdGhlIHJpZ2h0IG9uZSBhbnl3YXkuIFNpbmNlICM5OCAoMjAyNi0wOS0yNylcbiAqICAgaXQgbm8gbG9uZ2VyIHNheXMgYHRhaWwuY2xvc2VkYCBhYm91dCBhIGJvYXJkIHRoYXQgbmV2ZXIgb3BlbmVkOiBhIG5hbWVkXG4gKiAgIGAtLXNlc3Npb25gIHdpdGggbm8gc25hcHNob3Qgb24gZGlzayBleGl0cyBgbm90X2ZvdW5kYCBhZnRlciBhIGdyYWNlLlxuICpcbiAqIOKUgOKUgCBUSEUgQ09NTUFORCBOQU1FUyBOTyBQQVRIIChDb2xlJ3MgcnVsaW5nLCAyMDI2LTA5LTI0KSDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIBcbiAqXG4gKiBUaGUgbGluZSdzIGBjb21tYW5kYCBpcyB0aGUgVkVSQiBBTkQgSVRTIEFSR1VNRU5UUyBPTkxZXG4gKiAoYHRhaWwgLS1zZXNzaW9uIFggLS1zaW5jZSBOQEUgLS1vbmNlYCksIHBsdXMgYHNwZWxsYCwgYW5kIHRoZSBhZ2VudCBydW5zIGl0XG4gKiB3aXRoIElUUyBPV04gbGF1bmNoZXIsIGBidW4gPHRoaXMgc2tpbGwncyBkaXJlY3Rvcnk+L3NjcmlwdHMvY2xpLnRzYC4gSXQgdXNlZFxuICogdG8gYmUgcnVubmFibGUgYXMgcHJpbnRlZCwgaGVhZGVkIGJ5IGBidW4gPGFyZ3ZbMV0+YCDigJQgYW5kIGZvciBhbiBpbnN0YWxsZWRcbiAqIHBsdWdpbiBgYXJndlsxXWAgaXMgaW5zaWRlIGEgVkVSU0lPTkVEIGNhY2hlIGRpcmVjdG9yeS4gQW4gdXBncmFkZSBtYXJrcyB0aGVcbiAqIG9sZCBkaXJlY3Rvcnkgb3JwaGFuZWQgYW5kIGRlbGV0ZXMgaXQgbGF0ZXIgKG1lYXN1cmVkIGluXG4gKiBgZG9jcy9pdGVtcy90YWlsLXJlYXJtLWNvbW1hbmQtbmFtZXMtYS12ZXJzaW9uZWQtcGx1Z2luLXBhdGgubWRgKSxcbiAqIHNvIGEgbGluZSBwcmludGVkIGJlZm9yZSBhbiB1cGdyYWRlIGZpcnN0IHJhbiBTVEFMRSBjb2RlIGFnYWluc3QgYSBuZXdlclxuICogZGFlbW9uLCB0aGVuIGZhaWxlZCB3aXRoIFwibW9kdWxlIG5vdCBmb3VuZFwiIG9uY2UgdGhlIGRpcmVjdG9yeSB3YXMgZ29uZS4gTm9cbiAqIHN0YWJsZSBwYXRoIGV4aXN0cyB0byBwcmludCBpbnN0ZWFkOiB0aGUgY2FjaGUsIGAkQ0xBVURFX1BMVUdJTl9ST09UYCBhbmQgdGhlXG4gKiBpbnN0YWxsIHJlY29yZCBhcmUgYWxsIHZlcnNpb25lZC5cbiAqICAgVGhlIHNraWxsJ3MgbGF1bmNoZXIgaXMgYWx3YXlzIHRoZSB2ZXJzaW9uIHRoZSBzZXNzaW9uIGxvYWRlZC4gQ29sZSdzXG4gKiByZWFzb25pbmc6IHRoZSB3b3JzdCBjYXNlIGlzIHRoYXQgdGhlIENMSSBjaGFuZ2VkIGFuZCB0aGUgYWdlbnQgZ2V0cyBhblxuICogZXJyb3Ig4oCUIGFuZCBpZiB0aGUgdG9vbHMgYXJlIGRlc2lnbmVkIHJpZ2h0LCB0aGF0IGVycm9yIHNheXMgd2hhdCB3ZW50XG4gKiB3cm9uZy4gU28gdGhlIHBhcnNlcnMgYXJlIHRoZSBvdGhlciBoYWxmIG9mIHRoaXMgcnVsaW5nOiBgcmVhZFNpbmNlYCByZWZ1c2VzXG4gKiBhbnkgYC0tc2luY2VgIGZvcm0gYSB0YWlsIGRvZXMgbm90IGFjY2VwdCB3aXRoIGEgdXNhZ2UgZXJyb3IgTkFNSU5HIHRoZVxuICogZm9ybXMgaXQgZG9lcywgdGhlIHNhbWUgd2F5IG9uIGFsbCBlaWdodCB0YWlscywgaW5zdGVhZCBvZiBtaXNwYXJzaW5nIGl0LlxuICogICBOb3QgdGFrZW46IHByaW50aW5nIHRoZSBwYXRoIEFORCB0aGUgYXJncyAob3B0aW9uIEEgb2YgdGhlIGl0ZW0g4oCUIHR3b1xuICogY29tbWFuZHMgd2hlcmUgb25lIGlzIHdyb25nIGFmdGVyIGFuIHVwZ3JhZGUpOyBhIGxhdW5jaGVyIHRoYXQgbm90aWNlcyBpdCBpc1xuICogb3JwaGFuZWQgYW5kIHJlLWV4ZWNzIGEgbmV3ZXIgc2libGluZyAoQiDigJQgaXQgbGVhbnMgb24gYSBDbGF1ZGUgQ29kZVxuICogaW50ZXJuYWwgbWFya2VyIGFuZCBkb2VzIG5vdGhpbmcgb25jZSB0aGUgZGlyZWN0b3J5IGlzIGRlbGV0ZWQpOyB2ZXJzaW9uXG4gKiBuZWdvdGlhdGlvbi5cbiAqXG4gKiDilIDilIAgTUlORC1NQVBQRVIgSk9JTlMgVEhFIFNFU1NJT04gU1BFTExTIChDb2xlJ3MgcnVsaW5nLCAyMDI2LTA5LTI0KSDilIDilIDilIDilIDilIDilIBcbiAqXG4gKiBCdWlsdCBvbiBgZmVhdC9taW5kLW1hcHBlci1xdWlldC1oYW5kb2ZmYC4gSXQgUkVWRVJTRVMgdGhlIGltcGxlbWVudGVyJ3NcbiAqIHJ1bGluZyBvZiBgZmVhdC90YWlsLXF1aWV0LWhhbmRvZmZgIHRoYXQgbWluZC1tYXBwZXIgaXMgYSBwcmVzZW5jZSBzcGVsbFxuICogKGl0cyBkYWVtb24gY291bnRzIGFuIG9wZW4gU1NFIHRhaWwgYXMgdGhlIGFnZW50IHByZXNlbnQsIHNvIHRoZSB3aW5kb3dcbiAqIGFsd2F5cyByZS1hcm1lZCBNb25pdG9yKS4gQ29sZSdzIHJlYXNvbmluZzogbWluZC1tYXBwZXIgc2Vzc2lvbnMgYXJlIHVzZWRcbiAqIGxpa2Ugc2NyaXB0b3JpdW0ncywgYnVyc3RzIG9mIGFjdGl2aXR5IHdpdGggYnJlYWtzLCBhbmQgaW4gYSBicmVhayB0aGUgYWdlbnRcbiAqIHNob3VsZCBub3QgYmUgd29rZW4gZXZlcnkgMzAgbWludXRlcy4gU28gbWluZC1tYXBwZXIgdGFrZXMgdGhlIHF1aWV0IGhhbmRvZmZcbiAqIHRvIGAtLW9uY2VgLCB0aGUgbG9zdCBjb21lLWJhY2sgKGBvcGVuIC0tbm8tb3BlbmApLCBhbmQga2VlcHMgaXRzXG4gKiBgLS1zaW5jZSBOQGVwb2NoYCBib29rbWFyay4gVGhyZWUgdGhpbmdzIGhhZCB0byBiZSBzZXR0bGVkIHRvIG1ha2UgdGhhdFxuICogaG9uZXN0LCBlYWNoIHBpbm5lZCBpbiBgc3JjL21pbmQtbWFwcGVyL2JhY2tlbmQve3RhaWwscHJlc2VuY2V9LnRlc3QudHNgXG4gKiBhbmQgbXV0YXRpb24tY29uZmlybWVkOlxuICpcbiAqIE0xIMK3IFBSRVNFTkNFIExJTkdFUlMgQUNST1NTIFRIRSBHQVBTICh0aGUgZGFlbW9uLCBgc2VydmVyLnRzYFxuICogICAgICBgYWRqdXN0QWdlbnRzYCkuIEEgb25lLXNob3QgaG9sZHMgYW4gU1NFIGNvbm5lY3Rpb24sIHNvIGl0IENPVU5UUyBhc1xuICogICAgICBwcmVzZW50LCB3aGljaCBpcyB0cnVlOiB0aGUgYWdlbnQgd2lsbCB3YWtlIG9uIHRoZSBuZXh0IGV2ZW50LiBUaGUgZ2Fwc1xuICogICAgICBhcmUgdGhlIHByb2JsZW06IHdpbmRvdyDihpIgcmUtYXJtLCBxdWlldCDihpIgYC0tb25jZWAsIGFuZCBhYm92ZSBhbGxcbiAqICAgICAgYHRhaWwud29rZWAg4oaSIHRoZSBhZ2VudCBoYW5kbGVzIHRoZSBldmVudCDihpIgTW9uaXRvciwgd2hpY2ggbGFzdHMgdGhlXG4gKiAgICAgIGFnZW50J3Mgd2hvbGUgdHVybi4gUmF3LCB0aGUgc3VyZmFjZSdzIGhlYWRlciBkb3QgKHRoZSBvbmx5IHRoaW5nXG4gKiAgICAgIHByZXNlbmNlIGRyaXZlcyB0aGVyZSwgYmVzaWRlcyB0aGUgZGFlbW9uJ3MgYXV0by1gcmVjZWl2ZWRgIGZsaXAgb24gYVxuICogICAgICBodW1hbiBtZXNzYWdlKSByZWFkIFwiY29ubmVjdGVkIOKAlCBubyBhZ2VudCBvbiB0aGlzIHByb2plY3RcIiB3aGlsZSB0aGVcbiAqICAgICAgYWdlbnQgd2FzIHdvcmtpbmcgdGhlIGJvYXJkLCBhbmQgYSBtZXNzYWdlIHNlbnQgdGhlbiBnb3Qgbm9cbiAqICAgICAgYHJlY2VpdmVkYC4gVGhlIGRhZW1vbiBoYXMgbm8gaWRsZSBjbG9zZSwgc28gbm90aGluZyBlbHNlIHJlYWN0cy4gTm93XG4gKiAgICAgIHRoZSBjb3VudCBIT0xEUyBmb3IgYE1JTkRfTUFQUEVSX1BSRVNFTkNFX0xJTkdFUl9NU2AgKDE1MCBzLCB0aGUgc3RhbGxcbiAqICAgICAgd2luZG93J3MgYmVhdCkgYWZ0ZXIgdGhlIGxhc3QgdGFpbCBjbG9zZXM6IGEgdGFpbCBvcGVuaW5nIGluc2lkZSBpdFxuICogICAgICBlbWl0cyBub3RoaW5nLCBhbiBhZ2VudC1vbmx5IHdyaXRlIChgL2FjdGl2aXR5YCwgYW4gYWdlbnQgYC9zZW5kYClcbiAqICAgICAgcmVzdGFydHMgaXQsIGFuZCBzaWxlbmNlIHBhc3QgaXQgZHJvcHMgdGhlIGNvdW50IHRvIDAuXG4gKiAgICAgIOKaliBOb3QgdGFrZW46IHJlLWFybWluZyBNb25pdG9yIEJFRk9SRSBoYW5kbGluZyBhIHdva2VuIGV2ZW50ICh0aGF0IGlzXG4gKiAgICAgIHRoZSBzaGFyZWQgcnVsZSwgd29yZC1mb3Itd29yZCBpbiBldmVyeSBzcGVsbCk7IHJlZnJlc2hpbmcgb24gZXZlcnlcbiAqICAgICAgYm9hcmQgd3JpdGUgKHRoZSBicm93c2VyIFBPU1RzIHRoZSBzYW1lIHJvdXRlcywgc28gdGhlIGh1bWFuJ3Mgb3duXG4gKiAgICAgIGNsaWNrcyB3b3VsZCBrZWVwIHRoZSBkb3QgbGl0KS4gQ29zdDogYW4gYWdlbnQgdGhhdCByZWFsbHkgbGVmdCByZWFkc1xuICogICAgICBcImhlcmVcIiBmb3IgdXAgdG8gMTUwIHMuXG4gKiBNMiDCtyBgcHJlc2VuY2UuY2hhbmdlZGAgSVMgTk9UIENPVU5URUQgKG1pbmQtbWFwcGVyJ3MgYGNvdW50c2ApLiBJdCBpcyBPTlxuICogICAgICBUSEUgTE9HLCB3aXRoIGFuIGlkLCBhbmQgYSB0YWlsJ3Mgb3duIGNvbm5lY3QgZW1pdHMgb25lIG9udG8gaXRzIG93blxuICogICAgICBzdHJlYW0sIHNvIGNvdW50ZWQgaXQgbWFkZSBldmVyeSB3aW5kb3cgXCJhY3RpdmVcIiBhbmQgd291bGQgd2FrZSBldmVyeVxuICogICAgICBgLS1vbmNlYCBvbiBpdHNlbGYuIFRoZSBsaW5nZXIgcmVtb3ZlcyBtb3N0IG9mIHRoYXQgY2h1cm47IGBjb3VudHNgXG4gKiAgICAgIHJlbW92ZXMgdGhlIHJlc3QgKGEgZmlyc3QgYXJtLCBhbm90aGVyIGFnZW50IGNvbWluZyBvciBnb2luZykuXG4gKiBNMyDCtyBBIERFQUQgREFFTU9OIElTIExPU1QsIE5PVCBVTlJFU09MVkVEIChtaW5kLW1hcHBlcidzIGByZXNvbHZlYCkuIEl0c1xuICogICAgICBkaXNjb3ZlcnkgcHJvYmVzIHRoZSBkYWVtb24ncyBwaWQsIHNvIGEga2lsbGVkIGRhZW1vbiBtYWRlIGByZXNvbHZlYFxuICogICAgICBhbnN3ZXIgbnVsbCBhbmQgYW4gdW5yZXNvbHZlZCB0YWlsIHJldHJpZXMgZm9yZXZlcjogYSBgLS1vbmNlYCB3b3VsZFxuICogICAgICBoYXZlIHNsZXB0IGZvciBnb29kIChEMSdzIGRlZmVjdCkuIFRoZSB0YWlsIGtlZXBzIHRoZSBsYXN0IFVSTCBpdFxuICogICAgICByZXNvbHZlZCwgc28gdGhlIGRlYWQgcG9ydCByZWZ1c2VzIGFuZCBgTE9TVF9BRlRFUl9SRUZVU0FMU2AgZW5kcyBpdFxuICogICAgICB3aXRoIGB0YWlsLmxvc3RgIOKGkiBgb3BlbiAtLW5vLW9wZW5gLCB0aGVuIGEgdGFpbCB3aXRoIG5vIGAtLXNpbmNlYC5cbiAqICAgICAgTWluZC1tYXBwZXIgaGFzIG5vIHNlc3Npb24gdG8gY2xvc2UsIHNvIGl0IG5ldmVyIHByaW50cyBgdGFpbC5jbG9zZWRgLlxuICogICAgICBNZWFzdXJlZCBvbiBhIHJlYWwgYGtpbGwgLTlgIHVuZGVyIGEgYC0tb25jZWA6IGB0YWlsLmxvc3RgIDcgcyBsYXRlcixcbiAqICAgICAgbm90IDAuNzUgcywgYmVjYXVzZSBtaW5kLW1hcHBlcidzIG93biBiYWNrb2ZmIHN0YXJ0cyBhdCAxIHMgKDEgKyAyICsgNCkuXG4gKiAgICAgIE0x4oCTTTMgd2VyZSBkcml2ZW4gb24gYSByZWFsIGRhZW1vbiB3aXRoIGEgNCBzIHdpbmRvdzogYWN0aXZlIOKGkiB3aW5kb3csXG4gKiAgICAgIHF1aWV0IOKGkiBgLS1vbmNlYCwgYSBodW1hbiBtZXNzYWdlIHdva2UgaXQsIGJhY2sgdG8gTW9uaXRvcjsgcHJlc2VuY2VcbiAqICAgICAgbmV2ZXIgZHJvcHBlZCBhY3Jvc3MgdGhlIGdhcHMuXG4gKlxuICog4pqWIGAtLW9uY2VgIEVORFMgT04gVEhFIEZJUlNUIEZSQU1FLCB3aXRoIG5vIGRyYWluLiBBIGJ1cnN0IGFycml2ZXMgc3BsaXQ6IHRoZVxuICogICBmaXJzdCBldmVudCBvbiB0aGUgb25lLXNob3QsIHRoZSByZXN0IG9uIHRoZSBNb25pdG9yIHJlLWFybSwgd2hpY2ggbG9zZXNcbiAqICAgbm90aGluZyBiZWNhdXNlIG9mIHRoZSBib29rbWFyay4gVGhlIHNwaWtlIG9mZmVyZWQgYSB+MjAwIG1zIGRyYWluIGFzIGFuXG4gKiAgIG9wdGlvbiwgbm90IGEgcmVxdWlyZW1lbnQ7IG5vdCB0YWtlbiwgYmVjYXVzZSBpdCBhZGRzIGEgdGltZXIgdG8gdGhlXG4gKiAgIGV4aXQgcGF0aCB3aG9zZSBmYWlsdXJlIHRoaXMgYnJhbmNoIGV4aXN0cyB0byBtYWtlIGltcG9zc2libGUuXG4gKiDimpYgVEhFIExJTkUnUyBgY29tbWFuZGAgSVMgQ09NUExFVEUgQlVUIEZPUiBUSEUgTEFVTkNIRVI6IHBpbm5lZCB0byB0aGVcbiAqICAgc2Vzc2lvbiB0aGlzIHRhaWwgd2FzIGJvdW5kIHRvLCB3aXRoIGl0cyBzY29wZSBmbGFncy4gVGhlIHNraWxscyBuYW1lIHRoZVxuICogICBydWxlIG9uY2UsIGxhdW5jaGVyIGZvcm0gaW5jbHVkZWQ7IHRoZSBsaW5lIGNhcnJpZXMgdGhlIHNwZWNpZmljcy5cbiAqXG4gKiBTMSDCtyBXSE8gQ0xPU0VEIElUIFJJREVTIFRIRSBMSU5FIChzY3JpcHRvcml1bSdzIEVuZCBzZXNzaW9uLCAyMDI2LTEwLTAxKS5cbiAqICAgICAgQSBzcGVsbCB3aG9zZSBgY2xvc2VkYCBmcmFtZSBzYXlzIHdobyBlbmRlZCB0aGUgc2Vzc2lvbiBwYXNzZXNcbiAqICAgICAgYGNsb3NlZEJ5YCwgYW5kIGB0YWlsLmNsb3NlZGAgY2FycmllcyBpdCBhcyBgYnlgLiBgYnk6IFwiaHVtYW5cImAgY2hhbmdlc1xuICogICAgICB0aGUgaGludDogdGhlIGh1bWFuIGVuZGVkIGl0IE9OIFBVUlBPU0UsIHNvIHRoZSBhZ2VudCBzdG9wcyBhbmQgZG9lcyBub3RcbiAqICAgICAgcmVvcGVuIHVubGVzcyBhc2tlZCDigJQgdGhlIHdheSBiYWNrIGlzIHN0aWxsIG5hbWVkLCBjb25kaXRpb25lZCBvbiB0aGF0LlxuICogICAgICBUaGUgYWdlbnQgcm91dGVzIG9uIGBieWAsIG5ldmVyIG9uIHRoZSBoaW50J3MgcHJvc2UuIEEgcmUtYXJtIGFmdGVyXG4gKiAgICAgIHRoZSBlbmQgc2VlcyBubyBjbG9zaW5nIGZyYW1lIChEMSdzIHBhdGgpLCBzbyB0aGUgc3BlbGwgYWxzbyBwYXNzZXNcbiAqICAgICAgYGdvbmVCeWAsIHJlYWQgZnJvbSB3aGVyZSB0aGUgZmFjdCBvdXRsaXZlcyB0aGUgZGFlbW9uOyB3aXRob3V0IGl0IHRoZVxuICogICAgICByZS1hcm1lZCBsaW5lIGRyb3BwZWQgYGJ5YCBhbmQgaW52aXRlZCB0aGUgcmVvcGVuICh2ZXJpZmllciwgMjAyNi0xMC0wMSkuXG4gKiAgICAgIOKaliBPcHRpb25zIG5vdCB0YWtlbjogYSBzcGVsbC1zaWRlIHJld3JpdGUgb2YgdGhlIHByaW50ZWQgbGluZSAoYSBzZWNvbmRcbiAqICAgICAgd3JpdGVyIG9mIHRoZSBzYW1lIGxpbmUpLCBvciBhIHNwZWxsLXN1cHBsaWVkIGhpbnQgKGVhY2ggc3BlbGwgd291bGRcbiAqICAgICAgd29yZCBcIm9uIHB1cnBvc2VcIiBpdHMgb3duIHdheSkuXG4gKi9cbmltcG9ydCB7IHR5cGUgU3NlRnJhbWUsIHR5cGUgVGFpbE9wdGlvbnMsIHRhaWxFdmVudHMgfSBmcm9tIFwiLi90YWlsRXZlbnRzXCI7XG5cbi8qKiBDbGF1ZGUgQ29kZSdzIE1vbml0b3IgY2FwLCBwZXIgdGhlIHRvb2wncyBzY2hlbWEgKFwiRGVhZGxpbmVzIGFib3ZlXG4gKiAgMTgwMDAwMG1zIGFyZSBjYXBwZWQgdG8gMTgwMDAwMG1zXCIpLiBBIGhhcm5lc3MgbnVtYmVyOiBpZiBpdCBjaGFuZ2VzLCB0aGlzXG4gKiAgY2hhbmdlcywgYW5kIHNvIGRvZXMgdGhlIHNraWxscycgYHRpbWVvdXRfbXNgLiAqL1xuZXhwb3J0IGNvbnN0IE1PTklUT1JfQ0FQX01TID0gMV84MDBfMDAwO1xuLyoqIFNlZSBBNCBpbiB0aGUgaGVhZGVyIGZvciB3aHkgYSBtaW51dGUuICovXG5leHBvcnQgY29uc3QgV0lORE9XX01BUkdJTl9NUyA9IDYwXzAwMDtcbmV4cG9ydCBjb25zdCBERUZBVUxUX1dJTkRPV19NUyA9IE1PTklUT1JfQ0FQX01TIC0gV0lORE9XX01BUkdJTl9NUztcbi8qKiBUaGUgaW5qZWN0aW9uIHBvaW50IGZvciB0ZXN0cyBhbmQgdmVyaWZpY2F0aW9uIChzZWUgQTQpLiAqL1xuZXhwb3J0IGNvbnN0IFdJTkRPV19FTlYgPSBcIlNQRUxMQk9PS19UQUlMX1dJTkRPV19NU1wiO1xuLyoqIFRoZSBvbmUgc2VudGVuY2UgZXZlcnkgYHRhaWxgJ3MgaGVscCBjYXJyaWVzLCBzbyBhIGh1bWFuIHdhdGNoaW5nIGluIGFcbiAqICB0ZXJtaW5hbCBmaW5kcyB0aGUgZXNjYXBlIGhhdGNoIHdoZXJlIHRoZXkgbG9vayAoRDQpLiBXb3JkZWQgb25jZSBoZXJlLiAqL1xuZXhwb3J0IGNvbnN0IFdJTkRPV19IRUxQID1cbiAgXCJlbmRzIGl0c2VsZiBiZWZvcmUgTW9uaXRvcidzIDMwLW1pbnV0ZSBjYXAgd2l0aCBhIGxpbmUgbmFtaW5nIHRoZSBuZXh0IGFjdDsgYSBodW1hbiB3YXRjaGluZyBhIHRlcm1pbmFsIGtlZXBzIGl0IG9wZW4gd2l0aCBTUEVMTEJPT0tfVEFJTF9XSU5ET1dfTVM9MFwiO1xuXG4vKiogQ29ubmVjdGlvbiByZWZ1c2FscyBpbiBhIHJvdyB0aGF0IG1ha2UgdGhlIGRhZW1vbiBcImxvc3RcIiAoc2VlIEEyKS4gVGhyZWVcbiAqICBzcGFuIGFib3V0IDAuNzUgcyB1bmRlciB0aGUga2l0J3MgZGVmYXVsdCBiYWNrb2ZmICgyNTAgKyA1MDAgbXMgYmV0d2VlblxuICogIHRoZW0pOiBhIGxpdmUgZGFlbW9uIG5ldmVyIHJlZnVzZXMgaXRzIG93biBwb3J0LCBhbmQgdGhlIHR3byBleHRyYSBhdHRlbXB0c1xuICogIG9ubHkgYnV5IHRvbGVyYW5jZSBmb3IgYSByZXN0YXJ0IHRoYXQgcmViaW5kcyB0aGUgc2FtZSBwb3J0LiAqL1xuZXhwb3J0IGNvbnN0IExPU1RfQUZURVJfUkVGVVNBTFMgPSAzO1xuXG4vKiogVGhlIHdpbmRvdyBsZW5ndGg6IHRoZSBlbnYgdmFsdWUgd2hlbiBpdCBpcyBhIG5vbi1uZWdhdGl2ZSBpbnRlZ2VyLCBlbHNlIHRoZVxuICogIGRlZmF1bHQuIGAwYCBtZWFucyBubyB3aW5kb3cuICovXG5leHBvcnQgZnVuY3Rpb24gcmVzb2x2ZVdpbmRvd01zKHJhdzogc3RyaW5nIHwgdW5kZWZpbmVkKTogbnVtYmVyIHtcbiAgaWYgKHJhdyA9PT0gdW5kZWZpbmVkIHx8IHJhdy50cmltKCkgPT09IFwiXCIpIHJldHVybiBERUZBVUxUX1dJTkRPV19NUztcbiAgY29uc3QgbiA9IE51bWJlcihyYXcpO1xuICByZXR1cm4gTnVtYmVyLmlzSW50ZWdlcihuKSAmJiBuID49IDAgPyBuIDogREVGQVVMVF9XSU5ET1dfTVM7XG59XG5cbmV4cG9ydCB0eXBlIFRhaWxNb2RlID0gXCJ3YXRjaFwiIHwgXCJvbmNlXCI7XG5cbi8qKiBIb3cgYSB0YWlsIGVuZGVkLiBgd2luZG93YCBpcyBvdXIgb3duIGRlYWRsaW5lLCBgZXZlbnRgIGlzIGEgYC0tb25jZWAnc1xuICogIGZpcnN0IGZyYW1lLCBgY2xvc2VkYCBpcyB0aGUgc2Vzc2lvbiBlbmRpbmcgKGEgYGNsb3NlZGAgZnJhbWUgb3IgdGhlIHBpbm5lZFxuICogIHNlc3Npb24ncyBwb2ludGVyIHZhbmlzaGluZyksIGBsb3N0YCBpcyB0aGUgZGFlbW9uIHJlZnVzaW5nIGNvbm5lY3Rpb25zLFxuICogIGFuZCBgc3RvcHBlZGAgaXMgYSBzaWduYWwsIGEgY2FsbGVyJ3MgYWJvcnQgb3IgYSBjbG9zZWQgc3Rkb3V0LiAqL1xuZXhwb3J0IHR5cGUgVGFpbEVuZCA9IFwid2luZG93XCIgfCBcImV2ZW50XCIgfCBcImNsb3NlZFwiIHwgXCJsb3N0XCIgfCBcInN0b3BwZWRcIjtcblxuZXhwb3J0IHR5cGUgSGFuZG9mZklucHV0ID0ge1xuICAvKiogVGhlIHNwZWxsIHdob3NlIHRhaWwgdGhpcyBpcywgc28gdGhlIGFnZW50IGtub3dzIHdob3NlIGxhdW5jaGVyIHJ1bnMgaXQuICovXG4gIHNwZWxsOiBzdHJpbmc7XG4gIGVuZDogVGFpbEVuZDtcbiAgLyoqIFdobyBlbmRlZCBhIGBjbG9zZWRgIHNlc3Npb24sIHdoZW4gaXRzIGNsb3NpbmcgZnJhbWUgc2FpZCAoUzEpLiAqL1xuICBieT86IHN0cmluZztcbiAgbW9kZTogVGFpbE1vZGU7XG4gIC8qKiBMb2cgZnJhbWVzIHRoaXMgcHJvY2VzcyB3cm90ZSB0byBzdGRvdXQgKEEzKS4gKi9cbiAgZXZlbnRzOiBudW1iZXI7XG4gIC8qKiBUaGUgYm9va21hcms6IHRoZSBoaWdoZXN0IGlkIHRoaXMgcHJvY2VzcyBoYXMgc2Vlbi4gKi9cbiAgY3Vyc29yOiBudW1iZXI7XG4gIC8qKiBUaGUgbG9nIHRoZSBib29rbWFyayBiZWxvbmdzIHRvLCB3aGVuIHRoZSBkYWVtb24gc3RhbXBzIGFuIGVwb2NoLiAqL1xuICBlcG9jaD86IHN0cmluZztcbiAgcHJlc2VuY2U6IGJvb2xlYW47XG59O1xuXG5leHBvcnQgdHlwZSBIYW5kb2ZmQ29tbWFuZHMgPSB7XG4gIC8qKiBUaGUgcmUtYXJtLCB3aXRoIHRoZSBib29rbWFyazsgYG9uY2VgIGFkZHMgYC0tb25jZWAuIGBlcG9jaGAgaXMgdGhlXG4gICAqICBsb2cgdGhlIGJvb2ttYXJrIGJlbG9uZ3MgdG8sIHdoZW4gdGhlIGRhZW1vbiBzdGFtcHMgb25lOiBhIHNwZWxsIHdob3NlXG4gICAqICBgLS1zaW5jZWAgcGFyc2VzIGBOQDxlcG9jaD5gIChgcGFyc2VCb29rbWFya2ApIHByaW50cyBpdC4gKi9cbiAgdGFpbDogKG86IHsgc2luY2U6IG51bWJlcjsgb25jZTogYm9vbGVhbjsgZXBvY2g/OiBzdHJpbmcgfSkgPT4gc3RyaW5nO1xuICAvKiogSG93IHRvIGNvbWUgYmFjayBmcm9tIGEgc2Vzc2lvbiB0aGF0IGlzIGdvbmUuICovXG4gIGNvbWVCYWNrOiAoKSA9PiBzdHJpbmc7XG59O1xuXG5leHBvcnQgdHlwZSBIYW5kb2ZmTGluZSA9IHtcbiAgdHlwZTogXCJ0YWlsLndpbmRvd1wiIHwgXCJ0YWlsLnF1aWV0XCIgfCBcInRhaWwud29rZVwiIHwgXCJ0YWlsLmNsb3NlZFwiIHwgXCJ0YWlsLmxvc3RcIjtcbiAgLyoqIFdob3NlIGxhdW5jaGVyIHJ1bnMgYGNvbW1hbmRgLiAqL1xuICBzcGVsbDogc3RyaW5nO1xuICBldmVudHM6IG51bWJlcjtcbiAgY3Vyc29yOiBudW1iZXI7XG4gIC8qKiBgdGFpbC5jbG9zZWRgIG9ubHk6IHdobyBlbmRlZCB0aGUgc2Vzc2lvbiwgd2hlbiB0aGUgc3BlbGwgc2F5cyAoUzEpLiAqL1xuICBieT86IHN0cmluZztcbiAgLyoqIGBtb25pdG9yYDogYXJtIE1vbml0b3IgKHRpbWVvdXRfbXMgMTgwMDAwMCkgd2l0aCB0aGUgbGF1bmNoZXIgKyBgY29tbWFuZGAuXG4gICAqICBgYmFja2dyb3VuZGA6IHJ1biB0aGUgbGF1bmNoZXIgKyBgY29tbWFuZGAgYXMgYSBiYWNrZ3JvdW5kIEJhc2ggdGFzay5cbiAgICogIGBzdG9wYDogbm90aGluZyB0byB3YXRjaDsgYGNvbW1hbmRgIGlzIGhvdyB0byBjb21lIGJhY2ssIGlmIHdhbnRlZC4gKi9cbiAgbmV4dDogXCJtb25pdG9yXCIgfCBcImJhY2tncm91bmRcIiB8IFwic3RvcFwiO1xuICAvKiogVGhlIHZlcmIgYW5kIGl0cyBhcmd1bWVudHMgT05MWSDigJQgbm8gbGF1bmNoZXIsIG5vIHBhdGguIFRoZSBhZ2VudCBydW5zXG4gICAqICBgYnVuIDx0aGlzIHNraWxsJ3MgZGlyZWN0b3J5Pi9zY3JpcHRzL2NsaS50cyA8Y29tbWFuZD5gLiAqL1xuICBjb21tYW5kOiBzdHJpbmc7XG4gIGhpbnQ6IHN0cmluZztcbn07XG5cbi8qKiBIb3cgdGhlIGFnZW50IHJ1bnMgYSBwcmludGVkIGBjb21tYW5kYDogd2l0aCBJVFMgT1dOIGxhdW5jaGVyLCBuZXZlciBhIHBhdGhcbiAqICB0aGlzIHByb2Nlc3MgbmFtZXMgKHRoZSBydWxpbmcgb24gdGhlIHZlcnNpb25lZCBwbHVnaW4gcGF0aCwgaW4gdGhlIGhlYWRlcikuICovXG5leHBvcnQgY29uc3QgUlVOX1dJVEhfTEFVTkNIRVIgPSBcImJ1biA8dGhpcyBza2lsbCdzIGRpcmVjdG9yeT4vc2NyaXB0cy9jbGkudHMgPGNvbW1hbmQ+XCI7XG5cbi8qKiBUaGUgY29tZS1iYWNrIGhpbnQsIHdpdGggaG93IHRvIFJFU1VNRSBhZnRlciBjb21pbmcgYmFjayAoRDIpOiBhIHJlc3RvcmVkXG4gKiAgZGFlbW9uIHN0YXJ0cyBhIG5ldyBsb2csIHNvIHRoZSBvbGQgYm9va21hcmsgbWVhbnMgbm90aGluZyB0aGVyZS4gKi9cbmNvbnN0IENPTUVfQkFDSyA9ICh3aHk6IHN0cmluZywgbGVhZCA9IFwiVG8gYnJpbmcgaXQgYmFja1wiKSA9PlxuICBgJHt3aHl9ICR7bGVhZH0sIHJ1biAke1JVTl9XSVRIX0xBVU5DSEVSfTsgdGhlbiBhcm0gdGhlIHRhaWwgYWdhaW4gd2l0aCBubyAtLXNpbmNlLCBvbiB0aGUgc2Vzc2lvbiBpZCBpdCBwcmludHMgd2hlcmUgdGhlcmUgaXMgb25lIChhIHJlc3RhcnRlZCBkYWVtb24gc3RhcnRzIGEgbmV3IGV2ZW50IGxvZywgc28gdGhlIG9sZCBib29rbWFyayBkb2VzIG5vdCBhcHBseSlgO1xuXG4vKipcbiAqIFRIRSBERUNJU0lPTjogZ2l2ZW4gaG93IHRoZSB0YWlsIGVuZGVkLCB3aGljaCBsaW5lIGl0IHByaW50cy4gUHVyZSwgc28gZXZlcnlcbiAqIHN0YXRlIGlzIGEgbGl0ZXJhbCBjZWxsIGluIGB0YWlsSGFuZG9mZi50ZXN0LnRzYC4gUmV0dXJucyBudWxsIGZvciBgc3RvcHBlZGA6XG4gKiBhIGh1bWFuJ3MgQ3RybC1DIG9yIGEgY2FsbGVyJ3MgYWJvcnQgaXMgbm90IGEgaGFuZG9mZi5cbiAqL1xuZXhwb3J0IGZ1bmN0aW9uIGhhbmRvZmYoczogSGFuZG9mZklucHV0LCBjbWQ6IEhhbmRvZmZDb21tYW5kcyk6IEhhbmRvZmZMaW5lIHwgbnVsbCB7XG4gIGNvbnN0IGJhc2UgPSB7IHNwZWxsOiBzLnNwZWxsLCBldmVudHM6IHMuZXZlbnRzLCBjdXJzb3I6IHMuY3Vyc29yIH07XG4gIHN3aXRjaCAocy5lbmQpIHtcbiAgICBjYXNlIFwic3RvcHBlZFwiOlxuICAgICAgcmV0dXJuIG51bGw7XG4gICAgY2FzZSBcImNsb3NlZFwiOlxuICAgICAgcmV0dXJuIHtcbiAgICAgICAgdHlwZTogXCJ0YWlsLmNsb3NlZFwiLFxuICAgICAgICAuLi5iYXNlLFxuICAgICAgICAuLi4ocy5ieSA/IHsgYnk6IHMuYnkgfSA6IHt9KSxcbiAgICAgICAgbmV4dDogXCJzdG9wXCIsXG4gICAgICAgIGNvbW1hbmQ6IGNtZC5jb21lQmFjaygpLFxuICAgICAgICBoaW50OlxuICAgICAgICAgIHMuYnkgPT09IFwiaHVtYW5cIlxuICAgICAgICAgICAgPyBDT01FX0JBQ0soXG4gICAgICAgICAgICAgICAgXCJ0aGUgaHVtYW4gZW5kZWQgdGhpcyBzZXNzaW9uIG9uIHB1cnBvc2U7IHN0b3Agd2F0Y2hpbmcsIGFuZCBkbyBub3QgcmVvcGVuIGl0IHVubGVzcyB0aGV5IGFzay5cIixcbiAgICAgICAgICAgICAgICBcIklmIHRoZXkgYXNrXCIsXG4gICAgICAgICAgICAgIClcbiAgICAgICAgICAgIDogQ09NRV9CQUNLKFwidGhlIHNlc3Npb24gY2xvc2VkOyB0aGVyZSBpcyBub3RoaW5nIGxlZnQgdG8gd2F0Y2guXCIpLFxuICAgICAgfTtcbiAgICBjYXNlIFwibG9zdFwiOlxuICAgICAgcmV0dXJuIHtcbiAgICAgICAgdHlwZTogXCJ0YWlsLmxvc3RcIixcbiAgICAgICAgLi4uYmFzZSxcbiAgICAgICAgbmV4dDogXCJzdG9wXCIsXG4gICAgICAgIGNvbW1hbmQ6IGNtZC5jb21lQmFjaygpLFxuICAgICAgICBoaW50OiBDT01FX0JBQ0soXCJsb3N0IHRoZSBkYWVtb24gKGl0IGNyYXNoZWQgb3Igd2FzIGtpbGxlZCk7IG5vdGhpbmcgaXMgbGlzdGVuaW5nLlwiKSxcbiAgICAgIH07XG4gICAgY2FzZSBcImV2ZW50XCI6XG4gICAgICByZXR1cm4ge1xuICAgICAgICB0eXBlOiBcInRhaWwud29rZVwiLFxuICAgICAgICAuLi5iYXNlLFxuICAgICAgICBuZXh0OiBcIm1vbml0b3JcIixcbiAgICAgICAgY29tbWFuZDogY21kLnRhaWwoeyBzaW5jZTogcy5jdXJzb3IsIG9uY2U6IGZhbHNlLCAuLi4ocy5lcG9jaCA/IHsgZXBvY2g6IHMuZXBvY2ggfSA6IHt9KSB9KSxcbiAgICAgICAgaGludDogYGhhbmRsZSB0aGUgZXZlbnQgYWJvdmUsIHRoZW4gYXJtIE1vbml0b3IgKHRpbWVvdXRfbXMgMTgwMDAwMCkgcnVubmluZyAke1JVTl9XSVRIX0xBVU5DSEVSfWAsXG4gICAgICB9O1xuICAgIGNhc2UgXCJ3aW5kb3dcIjpcbiAgICAgIGlmIChzLnByZXNlbmNlIHx8IHMuZXZlbnRzID4gMClcbiAgICAgICAgcmV0dXJuIHtcbiAgICAgICAgICB0eXBlOiBcInRhaWwud2luZG93XCIsXG4gICAgICAgICAgLi4uYmFzZSxcbiAgICAgICAgICBuZXh0OiBcIm1vbml0b3JcIixcbiAgICAgICAgICBjb21tYW5kOiBjbWQudGFpbCh7XG4gICAgICAgICAgICBzaW5jZTogcy5jdXJzb3IsXG4gICAgICAgICAgICBvbmNlOiBmYWxzZSxcbiAgICAgICAgICAgIC4uLihzLmVwb2NoID8geyBlcG9jaDogcy5lcG9jaCB9IDoge30pLFxuICAgICAgICAgIH0pLFxuICAgICAgICAgIGhpbnQ6IGB0aGUgd2luZG93IGVuZGVkIGJlZm9yZSBNb25pdG9yJ3MgY2FwOyBhcm0gTW9uaXRvciAodGltZW91dF9tcyAxODAwMDAwKSBydW5uaW5nICR7UlVOX1dJVEhfTEFVTkNIRVJ9YCxcbiAgICAgICAgfTtcbiAgICAgIHJldHVybiB7XG4gICAgICAgIHR5cGU6IFwidGFpbC5xdWlldFwiLFxuICAgICAgICAuLi5iYXNlLFxuICAgICAgICBuZXh0OiBcImJhY2tncm91bmRcIixcbiAgICAgICAgY29tbWFuZDogY21kLnRhaWwoeyBzaW5jZTogcy5jdXJzb3IsIG9uY2U6IHRydWUsIC4uLihzLmVwb2NoID8geyBlcG9jaDogcy5lcG9jaCB9IDoge30pIH0pLFxuICAgICAgICBoaW50OiBgbm90aGluZyBvbiB0aGUgbG9nIHRoaXMgd2luZG93OyBydW4gJHtSVU5fV0lUSF9MQVVOQ0hFUn0gYXMgYSBiYWNrZ3JvdW5kIEJhc2ggdGFzayAocnVuX2luX2JhY2tncm91bmQpIOKAlCBpdCBleGl0cyBvbiB0aGUgbmV4dCBldmVudGAsXG4gICAgICB9O1xuICB9XG59XG5cbi8qKiBQT1NJWCBzaW5nbGUtcXVvdGUgYW4gYXJndW1lbnQgd2hlbiBpdCBuZWVkcyBpdCwgc28gYSBwcmludGVkIGBjb21tYW5kYFxuICogIHJ1bnMgYXMgcHJpbnRlZCBhZnRlciB0aGUgYWdlbnQncyBvd24gbGF1bmNoZXIuICovXG5leHBvcnQgZnVuY3Rpb24gc2hlbGxRdW90ZShhcmc6IHN0cmluZyk6IHN0cmluZyB7XG4gIHJldHVybiAvXltBLVphLXowLTlfQCUrPTosLi8tXSskLy50ZXN0KGFyZykgPyBhcmcgOiBgJyR7YXJnLnJlcGxhY2VBbGwoXCInXCIsIGAnXFxcXCcnYCl9J2A7XG59XG5cbi8qKlxuICogUmVhZCBhIGAtLXNpbmNlYCB2YWx1ZTogYW4gZXZlbnQgaWQsIG9wdGlvbmFsbHkgY2FycnlpbmcgdGhlIGVwb2NoIG9mIHRoZVxuICogbG9nIGl0IGNhbWUgZnJvbSAoYDEyQDxlcG9jaD5gLCBEMikuIE51bGwgd2hlbiB0aGUgaWQgaXMgbm90IGFuIGludGVnZXIuXG4gKiBGb3IgdGhlIHNwZWxscyB3aG9zZSBkYWVtb24gc3RhbXBzIGFuIGVwb2NoOyB0aGUgcmVzdCB0YWtlIGEgcGxhaW4gaWQuXG4gKi9cbmV4cG9ydCBmdW5jdGlvbiBwYXJzZUJvb2ttYXJrKHRva2VuOiBzdHJpbmcpOiB7IHNpbmNlOiBudW1iZXI7IGVwb2NoPzogc3RyaW5nIH0gfCBudWxsIHtcbiAgY29uc3QgYXQgPSB0b2tlbi5pbmRleE9mKFwiQFwiKTtcbiAgY29uc3QgaWQgPSBhdCA9PT0gLTEgPyB0b2tlbiA6IHRva2VuLnNsaWNlKDAsIGF0KTtcbiAgY29uc3QgZXBvY2ggPSBhdCA9PT0gLTEgPyBcIlwiIDogdG9rZW4uc2xpY2UoYXQgKyAxKTtcbiAgaWYgKCEvXi0/XFxkKyQvLnRlc3QoaWQudHJpbSgpKSkgcmV0dXJuIG51bGw7XG4gIGlmIChhdCAhPT0gLTEgJiYgZXBvY2ggPT09IFwiXCIpIHJldHVybiBudWxsO1xuICByZXR1cm4geyBzaW5jZTogTnVtYmVyLnBhcnNlSW50KGlkLCAxMCksIC4uLihlcG9jaCA/IHsgZXBvY2ggfSA6IHt9KSB9O1xufVxuXG4vKipcbiAqIEV2ZXJ5IHRhaWwncyBgLS1zaW5jZWAsIHJlYWQgdGhlIHNhbWUgd2F5OiBhIGJvb2ttYXJrIHRoaXMgdGFpbCBhY2NlcHRzLCBvciBhXG4gKiByZWZ1c2FsIHRoYXQgTkFNRVMgdGhlIGFjY2VwdGVkIGZvcm1zLiDim5QgTkVWRVIgQSBTSUxFTlQgTUlTUEFSU0UuIFRoZSBmb3VyXG4gKiBuby1lcG9jaCBzcGVsbHMgdXNlZCBgcGFyc2VJbnRgLCB3aGljaCByZWFkIGFuIGVwb2NoIGJvb2ttYXJrIChgNEBlMWAsIGZyb21cbiAqIGEgaGFuZG9mZiBsaW5lIGFub3RoZXIgdmVyc2lvbiBvciBzcGVsbCBwcmludGVkKSBhcyBgNGAgYW5kIGRyb3BwZWQgdGhlXG4gKiByZXN0IHdpdGhvdXQgYSB3b3JkOyBtaW5kLW1hcHBlciByZWFkIGp1bmsgYXMgMCBhbmQgYXN0cm9sYWJlIGFzIC0xLCBib3RoIGFcbiAqIHdob2xlIHJlcGxheS4gQSBwcmludGVkIGNvbW1hbmQgb3V0bGl2ZXMgdGhlIENMSSB0aGF0IHByaW50ZWQgaXQgKHRoZVxuICogbGF1bmNoZXItZnJlZSBydWxpbmcsIGluIHRoZSBoZWFkZXIpLCBzbyB0aGUgcGFyc2VyIGlzIHdoZXJlIGFuIG9sZGVyIG9yXG4gKiBuZXdlciBmb3JtIG11c3Qgc2F5IHdoYXQgd2VudCB3cm9uZy5cbiAqXG4gKiBgZXBvY2hgOiB3aGV0aGVyIHRoaXMgc3BlbGwncyBsb2cgc3RhbXBzIG9uZSAoc2NyaXB0b3JpdW0sIGFzdHJvbGFiZSxcbiAqIG1pbmQtbWFwcGVyKS4gYG1pbmA6IHRoZSBzbWFsbGVzdCBpZCBhY2NlcHRlZCAoZ3JhcGV2aW5lIHRha2VzIG5vIC0xKS5cbiAqL1xuZXhwb3J0IGZ1bmN0aW9uIHJlYWRTaW5jZShcbiAgdG9rZW46IHN0cmluZyxcbiAgbzogeyBlcG9jaDogYm9vbGVhbjsgbWluPzogbnVtYmVyIH0sXG4pOiB7IG9rOiB0cnVlOyBzaW5jZTogbnVtYmVyOyBlcG9jaD86IHN0cmluZyB9IHwgeyBvazogZmFsc2U7IG1lc3NhZ2U6IHN0cmluZyB9IHtcbiAgY29uc3QgbWluID0gby5taW4gPz8gLTE7XG4gIGNvbnN0IGIgPSBwYXJzZUJvb2ttYXJrKHRva2VuKTtcbiAgaWYgKGIgIT09IG51bGwgJiYgYi5zaW5jZSA+PSBtaW4gJiYgKGIuZXBvY2ggPT09IHVuZGVmaW5lZCB8fCBvLmVwb2NoKSlcbiAgICByZXR1cm4geyBvazogdHJ1ZSwgc2luY2U6IGIuc2luY2UsIC4uLihiLmVwb2NoID8geyBlcG9jaDogYi5lcG9jaCB9IDoge30pIH07XG4gIGNvbnN0IGlkID1cbiAgICBtaW4gPCAwXG4gICAgICA/IFwiYW4gZXZlbnQgaWQgKGFuIGludGVnZXI7IC0tc2luY2U9LTEgZm9yIGV2ZXJ5dGhpbmcpXCJcbiAgICAgIDogYGFuIGV2ZW50IGlkIChhbiBpbnRlZ2VyLCAke21pbn0gb3IgbW9yZSlgO1xuICBjb25zdCBmb3JtcyA9IG8uZXBvY2ggPyBgJHtpZH0sIG9yIDxpZD5APGVwb2NoPiBhcyBhIGhhbmRvZmYgbGluZSBwcmludHMgaXRgIDogaWQ7XG4gIGNvbnN0IHdoeSA9XG4gICAgIW8uZXBvY2ggJiYgdG9rZW4uaW5jbHVkZXMoXCJAXCIpXG4gICAgICA/IGA7IHRoaXMgc3BlbGwncyBsb2cgc3RhbXBzIG5vIGVwb2NoLCBzbyBwYXNzIHRoZSBpZCB3aXRob3V0IHRoZSBcIkDigKZcIiBwYXJ0YFxuICAgICAgOiBcIlwiO1xuICByZXR1cm4ge1xuICAgIG9rOiBmYWxzZSxcbiAgICBtZXNzYWdlOiBgLS1zaW5jZTogXCIke3Rva2VufVwiIGlzIG5vdCBhIGJvb2ttYXJrIHRoaXMgdGFpbCBhY2NlcHRzIOKAlCBnaXZlICR7Zm9ybXN9JHt3aHl9YCxcbiAgfTtcbn1cblxuLyoqIEpvaW4gYW4gYXJndiBpbnRvIG9uZSBydW5uYWJsZSBjb21tYW5kIGxpbmUuICovXG5leHBvcnQgZnVuY3Rpb24gY29tbWFuZExpbmUoYXJndjogcmVhZG9ubHkgc3RyaW5nW10pOiBzdHJpbmcge1xuICByZXR1cm4gYXJndi5tYXAoc2hlbGxRdW90ZSkuam9pbihcIiBcIik7XG59XG5cbi8qKiBUaGUgcmUtYXJtIGZvciBhIHNwZWxsIHdob3NlIHRhaWwgaXMgYDxwcmVmaXjigKY+IC0tc2luY2UgTltAZXBvY2hdIFstLW9uY2VdYC5cbiAqICBQYXNzIGBlcG9jaGAgb25seSBmb3IgYSBzcGVsbCB3aG9zZSBgLS1zaW5jZWAgcGFyc2VzIGl0IChgcGFyc2VCb29rbWFya2ApLiAqL1xuZXhwb3J0IGZ1bmN0aW9uIHRhaWxDb21tYW5kKFxuICBwcmVmaXg6IHJlYWRvbmx5IHN0cmluZ1tdLFxuICBzaW5jZTogbnVtYmVyLFxuICBvbmNlOiBib29sZWFuLFxuICBlcG9jaD86IHN0cmluZyxcbik6IHN0cmluZyB7XG4gIC8vIOKaoCBBIG5lZ2F0aXZlIGJvb2ttYXJrIChub3RoaW5nIHNlZW4geWV0KSBpcyBzcGVsbGVkIGAtLXNpbmNlPS0xYDogdGhlXG4gIC8vIHBhcnNlcnMgcmVhZCBhIGJhcmUgYC0xYCBhZnRlciBhIGZsYWcgYXMgYW5vdGhlciBmbGFnIGFuZCByZWZ1c2UgaXQuXG4gIGNvbnN0IG1hcmsgPSBlcG9jaCA/IGAke3NpbmNlfUAke2Vwb2NofWAgOiBTdHJpbmcoc2luY2UpO1xuICBjb25zdCBhdCA9IHNpbmNlIDwgMCA/IFtgLS1zaW5jZT0ke21hcmt9YF0gOiBbXCItLXNpbmNlXCIsIG1hcmtdO1xuICByZXR1cm4gY29tbWFuZExpbmUoWy4uLnByZWZpeCwgLi4uYXQsIC4uLihvbmNlID8gW1wiLS1vbmNlXCJdIDogW10pXSk7XG59XG5cbmV4cG9ydCB0eXBlIEhhbmRvZmZPcHRpb25zPEV2PiA9IHtcbiAgLyoqIFRoZSBzcGVsbCdzIG5hbWUsIGNhcnJpZWQgb24gdGhlIGxpbmUgKHdob3NlIGxhdW5jaGVyIHJ1bnMgaXQpLiAqL1xuICBzcGVsbDogc3RyaW5nO1xuICBtb2RlOiBUYWlsTW9kZTtcbiAgLyoqIEEgcHJlc2VuY2Ugc3BlbGw6IGFsd2F5cyBgdGFpbC53aW5kb3dgIGF0IHRoZSB3aW5kb3cncyBlbmQsIG5ldmVyIGxvc3QuICovXG4gIHByZXNlbmNlOiBib29sZWFuO1xuICAvKiogRGVmYXVsdDogYHJlc29sdmVXaW5kb3dNcyhwcm9jZXNzLmVudltXSU5ET1dfRU5WXSlgLiBgMGAgPSBubyB3aW5kb3cuICovXG4gIHdpbmRvd01zPzogbnVtYmVyO1xuICAvKiogV2hldGhlciBhbiBlbWl0dGVkIGZyYW1lIGlzIGEgTE9HIGZyYW1lIChBMykuIERlZmF1bHQ6IGV2ZXJ5IG9uZS4gKi9cbiAgY291bnRzPzogKGV2OiBFdiwgZnJhbWU6IFNzZUZyYW1lKSA9PiBib29sZWFuO1xuICAvKiogV2hpY2ggdGVybWluYWwgZnJhbWUgbWVhbnMgdGhlIHNlc3Npb24gY2xvc2VkLiBEZWZhdWx0OiBldmVyeSB0ZXJtaW5hbC4gKi9cbiAgaXNDbG9zZWQ/OiAoZXY6IEV2KSA9PiBib29sZWFuO1xuICAvKiogV2hvIHRoZSBjbG9zaW5nIGZyYW1lIHNheXMgZW5kZWQgdGhlIHNlc3Npb24gKFMxKTsgY2FycmllZCBvbiBgdGFpbC5jbG9zZWRgLiAqL1xuICBjbG9zZWRCeT86IChldjogRXYpID0+IHN0cmluZyB8IHVuZGVmaW5lZDtcbiAgLyoqIFdobyBlbmRlZCBhIHNlc3Npb24gZm91bmQgR09ORSAoRDE6IHJlLWFybWVkIGFmdGVyIGl0IGNsb3NlZCwgc28gbm9cbiAgICogIGNsb3NpbmcgZnJhbWUgaXMgZXZlciBzZWVuKSwgcmVhZCBmcm9tIHdoZXJldmVyIHRoZSBzcGVsbCBrZWVwcyBpdCDigJQgYVxuICAgKiAgbWFuaWZlc3QgdGhhdCBvdXRsaXZlcyB0aGUgZGFlbW9uLiBDYXJyaWVkIG9uIGB0YWlsLmNsb3NlZGAgYXMgYGJ5YCwgc29cbiAgICogIHRoZSBsaW5lIHNheXMgd2hhdCB0aGUgbGl2ZSBwYXRoJ3MgYGNsb3NlZEJ5YCB3b3VsZCBoYXZlIChTMSkuICovXG4gIGdvbmVCeT86ICgpID0+IHN0cmluZyB8IHVuZGVmaW5lZDtcbiAgY29tbWFuZHM6IEhhbmRvZmZDb21tYW5kcztcbn07XG5cbi8qKlxuICogUnVuIGB0YWlsRXZlbnRzYCB3aXRoIHRoZSBoYW5kb2ZmOiB0aGUgd2luZG93LCBgLS1vbmNlYCwgdGhlIGxvc3QgcnVsZSwgYW5kXG4gKiB0aGUgZmluYWwgbGluZS4gUmV0dXJucyB0aGUgZXhpdCBjb2RlLCBsaWtlIGB0YWlsRXZlbnRzYCwgYW5kIG5ldmVyIGV4aXRzLlxuICovXG5leHBvcnQgYXN5bmMgZnVuY3Rpb24gdGFpbFdpdGhIYW5kb2ZmPEV2PihcbiAgdGFpbDogVGFpbE9wdGlvbnM8RXY+LFxuICBoOiBIYW5kb2ZmT3B0aW9uczxFdj4sXG4pOiBQcm9taXNlPG51bWJlcj4ge1xuICBjb25zdCBvdXQgPSB0YWlsLm91dCA/PyBwcm9jZXNzLnN0ZG91dDtcbiAgY29uc3Qgd2luZG93TXMgPSBoLndpbmRvd01zID8/IHJlc29sdmVXaW5kb3dNcyhwcm9jZXNzLmVudltXSU5ET1dfRU5WXSk7XG4gIGNvbnN0IGNvdW50cyA9IGguY291bnRzID8/ICgoKSA9PiB0cnVlKTtcbiAgY29uc3QgZW5kT25Mb3N0ID0gIWgucHJlc2VuY2U7XG5cbiAgY29uc3QgYWMgPSBuZXcgQWJvcnRDb250cm9sbGVyKCk7XG4gIGNvbnN0IG9uQ2FsbGVyQWJvcnQgPSAoKSA9PiBhYy5hYm9ydCgpO1xuICB0YWlsLnNpZ25hbD8uYWRkRXZlbnRMaXN0ZW5lcihcImFib3J0XCIsIG9uQ2FsbGVyQWJvcnQpO1xuICBpZiAodGFpbC5zaWduYWw/LmFib3J0ZWQpIGFjLmFib3J0KCk7XG5cbiAgbGV0IGV2ZW50cyA9IDA7XG4gIGxldCBjdXJzb3IgPSB0YWlsLnNpbmNlO1xuICBsZXQgZXBvY2g6IHN0cmluZyB8IHVuZGVmaW5lZCA9IHRhaWwuc2luY2VFcG9jaDtcbiAgbGV0IGZyYW1lSGFzSWQgPSBmYWxzZTtcbiAgLyoqIEEzICsgRDM6IGEgZnJhbWUgY291bnRzLCBhbmQgd2FrZXMgYSBgLS1vbmNlYCwgb25seSB3aGVuIGl0IGlzIE9OIFRIRVxuICAgKiAgTE9HIOKAlCBpdCBjYXJyaWVzIGEgbG9nIGlkIOKAlCBhbmQgdGhlIHNwZWxsJ3Mgb3duIGBjb3VudHNgIGFncmVlcy4gQSB0YWInc1xuICAgKiAgaWQtbGVzcyBgY29ubmVjdGVkYC9gZGlzY29ubmVjdGVkYCBwaW5nIGlzIG5vdCBvbiB0aGUgbG9nLiAqL1xuICBjb25zdCBpc0xvZ0ZyYW1lID0gKGV2OiBFdiwgZnJhbWU6IFNzZUZyYW1lKSA9PiBmcmFtZUhhc0lkICYmIGNvdW50cyhldiwgZnJhbWUpO1xuICBsZXQgZW5kOiBUYWlsRW5kIHwgbnVsbCA9IG51bGw7XG4gIGxldCBjbG9zZWRCeTogc3RyaW5nIHwgdW5kZWZpbmVkO1xuICBsZXQgcmVmdXNhbHMgPSAwO1xuXG4gIGNvbnN0IGZpbmlzaCA9IChlOiBUYWlsRW5kKSA9PiB7XG4gICAgaWYgKGVuZCA9PT0gbnVsbCkgZW5kID0gZTtcbiAgICBhYy5hYm9ydCgpO1xuICB9O1xuICBjb25zdCB0aW1lciA9XG4gICAgaC5tb2RlID09PSBcIndhdGNoXCIgJiYgd2luZG93TXMgPiAwID8gc2V0VGltZW91dCgoKSA9PiBmaW5pc2goXCJ3aW5kb3dcIiksIHdpbmRvd01zKSA6IG51bGw7XG5cbiAgdHJ5IHtcbiAgICBjb25zdCBjb2RlID0gYXdhaXQgdGFpbEV2ZW50czxFdj4oe1xuICAgICAgLi4udGFpbCxcbiAgICAgIHNpZ25hbDogYWMuc2lnbmFsLFxuICAgICAgLy8gRDIncyBuZXQuIE9uIGZvciBldmVyeSBzcGVsbDogYSBmcmFtZSBhdCBvciBiZWxvdyB0aGUgYXNrZWQgY3Vyc29yXG4gICAgICAvLyBtZWFucyBhIHdob2xlIHJlcGxheSBvbiB0aGUga2l0J3MgbG9nLCBhbmQgb24gZ3JhcGV2aW5lJ3MgZHVyYWJsZSBsb2dcbiAgICAgIC8vIGl0IGhhcHBlbnMgb25seSB3aGVuIGAtLWxhc3RgIHJlYWNoZXMgYmVsb3cgYC0tc2luY2VgLCB3aGVyZVxuICAgICAgLy8gcmUtcmVhZGluZyB0aGUgY3Vyc29yIGZyb20gdGhlIGZyYW1lcyBpcyB0aGUgbW9yZSBjb3JyZWN0IGFuc3dlci5cbiAgICAgIHJlc3RhcnRPblJlcGxheTogdHJ1ZSxcbiAgICAgIC8vIEQzOiByZW1lbWJlciB3aGV0aGVyIFRISVMgZnJhbWUgY2FycmllcyBhIGxvZyBpZC4gYHRhaWxFdmVudHNgIHJlYWRzXG4gICAgICAvLyB0aGUgY3Vyc29yIG9uY2UgcGVyIGZyYW1lLCBiZWZvcmUgYGFjY2VwdGAsIGB0ZXJtaW5hbGAgYW5kIGByZW5kZXJgLlxuICAgICAgY3Vyc29yT2Y6IChldikgPT4ge1xuICAgICAgICBjb25zdCBuID0gdGFpbC5jdXJzb3JPZj8uKGV2KTtcbiAgICAgICAgZnJhbWVIYXNJZCA9IHR5cGVvZiBuID09PSBcIm51bWJlclwiICYmIE51bWJlci5pc0Zpbml0ZShuKTtcbiAgICAgICAgcmV0dXJuIG47XG4gICAgICB9LFxuICAgICAgb25VbnJlc29sdmVkOiAocykgPT4ge1xuICAgICAgICBjb25zdCB2ZXJkaWN0ID0gdGFpbC5vblVucmVzb2x2ZWQ/LihzKSA/PyBcInJldHJ5XCI7XG4gICAgICAgIC8vIEQxOiBhIHRhaWwgdGhhdCBnaXZlcyB1cCBvbiBmaW5kaW5nIGl0cyBzZXNzaW9uIGlzIHdhdGNoaW5nIGFcbiAgICAgICAgLy8gc2Vzc2lvbiB0aGF0IGlzIGdvbmUg4oCUIHdoZXRoZXIgdGhpcyBwcm9jZXNzIGV2ZXIgcmVhY2hlZCBpdCAoaXRzXG4gICAgICAgIC8vIHBvaW50ZXIgdmFuaXNoZWQpIG9yIGl0IHdhcyByZS1hcm1lZCBhdCBvbmUgdGhhdCBjbG9zZWQgaW4gdGhlIGdhcC5cbiAgICAgICAgaWYgKHZlcmRpY3QgPT09IFwic3RvcFwiICYmIGVuZCA9PT0gbnVsbCkge1xuICAgICAgICAgIGVuZCA9IFwiY2xvc2VkXCI7XG4gICAgICAgICAgY2xvc2VkQnkgPSBoLmdvbmVCeT8uKCk7XG4gICAgICAgIH1cbiAgICAgICAgcmV0dXJuIHZlcmRpY3Q7XG4gICAgICB9LFxuICAgICAgcmVuZGVyOiAoZXYsIGZyYW1lKSA9PiB7XG4gICAgICAgIHJlZnVzYWxzID0gMDtcbiAgICAgICAgY29uc3QgbGluZSA9IHRhaWwucmVuZGVyID8gdGFpbC5yZW5kZXIoZXYsIGZyYW1lKSA6IGZyYW1lLmRhdGE7XG4gICAgICAgIGlmIChsaW5lICE9PSBudWxsICYmIGlzTG9nRnJhbWUoZXYsIGZyYW1lKSkgZXZlbnRzICs9IDE7XG4gICAgICAgIHJldHVybiBsaW5lO1xuICAgICAgfSxcbiAgICAgIHRlcm1pbmFsOiAoZXYsIGZyYW1lLCBhY2NlcHRlZCkgPT4ge1xuICAgICAgICBpZiAodGFpbC50ZXJtaW5hbD8uKGV2LCBmcmFtZSwgYWNjZXB0ZWQpKSB7XG4gICAgICAgICAgaWYgKGVuZCA9PT0gbnVsbCkge1xuICAgICAgICAgICAgZW5kID0gKGguaXNDbG9zZWQgPz8gKCgpID0+IHRydWUpKShldikgPyBcImNsb3NlZFwiIDogXCJldmVudFwiO1xuICAgICAgICAgICAgaWYgKGVuZCA9PT0gXCJjbG9zZWRcIikgY2xvc2VkQnkgPSBoLmNsb3NlZEJ5Py4oZXYpO1xuICAgICAgICAgIH1cbiAgICAgICAgICByZXR1cm4gdHJ1ZTtcbiAgICAgICAgfVxuICAgICAgICBpZiAoaC5tb2RlID09PSBcIm9uY2VcIiAmJiBhY2NlcHRlZCAmJiBpc0xvZ0ZyYW1lKGV2LCBmcmFtZSkpIHtcbiAgICAgICAgICBpZiAoZW5kID09PSBudWxsKSBlbmQgPSBcImV2ZW50XCI7XG4gICAgICAgICAgcmV0dXJuIHRydWU7XG4gICAgICAgIH1cbiAgICAgICAgcmV0dXJuIGZhbHNlO1xuICAgICAgfSxcbiAgICAgIG9uQ29tbWVudDogKHRleHQpID0+IHtcbiAgICAgICAgcmVmdXNhbHMgPSAwO1xuICAgICAgICByZXR1cm4gdGFpbC5vbkNvbW1lbnQ/Lih0ZXh0KSA/PyBudWxsO1xuICAgICAgfSxcbiAgICAgIG9uRGlzY29ubmVjdDogKGluZm8pID0+IHtcbiAgICAgICAgY29uc3QgbGluZSA9IHRhaWwub25EaXNjb25uZWN0Py4oaW5mbykgPz8gbnVsbDtcbiAgICAgICAgaWYgKGluZm8uY2F1c2UgPT09IFwiY29ubmVjdC1mYWlsZWRcIikge1xuICAgICAgICAgIHJlZnVzYWxzICs9IDE7XG4gICAgICAgICAgaWYgKGVuZE9uTG9zdCAmJiByZWZ1c2FscyA+PSBMT1NUX0FGVEVSX1JFRlVTQUxTKSBmaW5pc2goXCJsb3N0XCIpO1xuICAgICAgICB9IGVsc2Uge1xuICAgICAgICAgIC8vIFRoZSBkYWVtb24gYW5zd2VyZWQgKGEgc3RhdHVzLCBvciBhIHN0cmVhbSB0aGF0IG9wZW5lZCBhbmQgdGhlblxuICAgICAgICAgIC8vIGVuZGVkKTogaXQgaXMgYWxpdmUsIHNvIHRoZSByZWZ1c2FscyB3ZXJlIG5vdCBpbiBhIHJvdy5cbiAgICAgICAgICByZWZ1c2FscyA9IDA7XG4gICAgICAgIH1cbiAgICAgICAgcmV0dXJuIGxpbmU7XG4gICAgICB9LFxuICAgICAgb25FbmQ6IChzKSA9PiB7XG4gICAgICAgIGN1cnNvciA9IHMuY3Vyc29yO1xuICAgICAgICBlcG9jaCA9IHMuZXBvY2ggPz8gdW5kZWZpbmVkO1xuICAgICAgICB0YWlsLm9uRW5kPy4ocyk7XG4gICAgICB9LFxuICAgIH0pO1xuICAgIGNvbnN0IGxpbmUgPSBoYW5kb2ZmKFxuICAgICAge1xuICAgICAgICBlbmQ6IGVuZCA/PyBcInN0b3BwZWRcIixcbiAgICAgICAgLi4uKGNsb3NlZEJ5ID8geyBieTogY2xvc2VkQnkgfSA6IHt9KSxcbiAgICAgICAgbW9kZTogaC5tb2RlLFxuICAgICAgICBldmVudHMsXG4gICAgICAgIGN1cnNvcixcbiAgICAgICAgLi4uKGVwb2NoID8geyBlcG9jaCB9IDoge30pLFxuICAgICAgICBwcmVzZW5jZTogaC5wcmVzZW5jZSxcbiAgICAgICAgc3BlbGw6IGguc3BlbGwsXG4gICAgICB9LFxuICAgICAgaC5jb21tYW5kcyxcbiAgICApO1xuICAgIGlmIChsaW5lICE9PSBudWxsKSBvdXQud3JpdGUoYCR7SlNPTi5zdHJpbmdpZnkobGluZSl9XFxuYCk7XG4gICAgcmV0dXJuIGNvZGU7XG4gIH0gZmluYWxseSB7XG4gICAgaWYgKHRpbWVyICE9PSBudWxsKSBjbGVhclRpbWVvdXQodGltZXIpO1xuICAgIHRhaWwuc2lnbmFsPy5yZW1vdmVFdmVudExpc3RlbmVyKFwiYWJvcnRcIiwgb25DYWxsZXJBYm9ydCk7XG4gIH1cbn1cbiIsCiAgICAiLyoqXG4gKiBUaGUgaGVhcnRiZWF0IC8gaWRsZS10aW1lb3V0IC8gdGFpbC13YXRjaGRvZyB0cmlwbGUg4oCUIHRocmVlIG51bWJlcnMgdGhhdCBhcmVcbiAqIE9ORSBpbnZhcmlhbnQsIHdyaXR0ZW4gb25jZS5cbiAqXG4gKiDim5QgVEhFIEtJVCBJUyBBIExFQUYuIE5vdGhpbmcgaGVyZSBtYXkgaW1wb3J0IG91dCBvZiBgc3JjL2tpdC9gLlxuICpcbiAqIOKUgOKUgCBXSFkgVEhJUyBNT0RVTEUgRVhJU1RTIEFUIEFMTCDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIBcbiAqXG4gKiBUaGUgdGhyZWUgbnVtYmVycyBhcmUgY2hhaW5lZCwgYW5kIHRoZSBjaGFpbiBpcyB3aGF0IG5vYm9keSBjb3VsZCBzZWU6XG4gKlxuICogICAgIHNlcnZlciBpZGxlVGltZW91dCAgPiAgU1NFIGhlYXJ0YmVhdCAgwrcgIHRhaWwgd2F0Y2hkb2cgID4gIFNTRSBoZWFydGJlYXRcbiAqXG4gKiAtICoqYGlkbGVUaW1lb3V0YCA+IGhlYXJ0YmVhdCoqLCBvciBCdW4gY2xvc2VzIGEgaGVsZCBTU0UgY29ubmVjdGlvbiBiZWZvcmVcbiAqICAgdGhlIGtlZXBhbGl2ZSB0aGF0IHdhcyBzdXBwb3NlZCB0byBwcmVzZXJ2ZSBpdCBldmVyIGZpcmVzLiBNRUFTVVJFRDogQnVuJ3NcbiAqICAgZGVmYXVsdCByZXF1ZXN0IGBpZGxlVGltZW91dGAgaXMgMTAgcyBhbmQgYSBTRVJWRVItU0VOVCBoZWFydGJlYXQgZG9lcyBub3RcbiAqICAgcmVzZXQgaXQsIHNvIGEgMTUgcyBgOiBoYmAgYXJyaXZlcyBmaXZlIHNlY29uZHMgYWZ0ZXIgdGhlIHRoaW5nIGl0IHdhc1xuICogICBrZWVwaW5nIGFsaXZlIGlzIGdvbmUg4oCUIHdoaWNoIGlzIHdoeSByYWlzaW5nIHRoZSBoZWFydGJlYXQgUkFURSB3b3VsZCBub3RcbiAqICAgaGF2ZSBoZWxwZWQuIEZvdXIgc3BlbGxzIGhhZCBoaXQgdGhpcyBhbmQgcmVwYWlyZWQgaXQsIHRocmVlIGhhZCBub3QuXG4gKiAtICoqd2F0Y2hkb2cgPiBoZWFydGJlYXQqKiwgb3IgYSBoZWFsdGh5LWJ1dC1xdWlldCB0YWlsIGFib3J0cyBhbmQgcmVjb25uZWN0c1xuICogICBmb3JldmVyLiBNRUFTVVJFRCBvbiBhc3Ryb2xhYmU6IHdpdGggYSBoYXJkLWNvZGVkIDQ1IHMgd2F0Y2hkb2cgYW5kIGFuXG4gKiAgIGVudi10dW5lZCBoZWFydGJlYXQsIHJlY29ubmVjdHMgbGFuZGVkIGF0ICs0Ny40IHMsICs5Mi42IHMgYW5kICsxMzcuOSBzXG4gKiAgIGFnYWluc3QgYSBwZXJmZWN0bHkgaGVhbHRoeSBkYWVtb24uIEl0IHdhcyBoYXJtbGVzcyBvbmx5IGJlY2F1c2UgYSBUSElSRFxuICogICBjb25zdGFudCDigJQgYSBwcmVzZW5jZSBkZWJvdW5jZSB3aXRoIG5vIHJlbGF0aW9uc2hpcCB0byBlaXRoZXIg4oCUIGhhcHBlbmVkIHRvXG4gKiAgIGFic29yYiB0aGUgY2h1cm4uXG4gKlxuICog4puUICoqQU5EIFRIRSBTRUFNIElTIFRIRSBQT0lOVC4qKiBVbnRpbCBQaGFzZSAxYiB0aGUgd2F0Y2hkb2cgbGl2ZWQgaW4gZWFjaFxuICogc3BlbGwncyBDTEkgYW5kIHRoZSBoZWFydGJlYXQgaW4gZWFjaCBzcGVsbCdzIGRhZW1vbiwgYW5kIEJPVEggZmlsZXMgY2FycmllZCBhXG4gKiBjb21tZW50IHNheWluZyB0aGUgZXhwcmVzc2lvbnMgd2VyZSBoYW5kLW1pcnJvcmVkIGFjcm9zcyBhIGJvdW5kYXJ5IHRoZSBDTElcbiAqIGNvdWxkIG5vdCBjcm9zcyDigJQgaW1wb3J0aW5nIHRoZSBkYWVtb24gd291bGQgaGF2ZSBkcmFnZ2VkIHRoZSB3aG9sZSBzZXJ2ZXJcbiAqIGdyYXBoIGludG8gYGRpc3QvY2xpLmpzYC4gVGhpcyBtb2R1bGUgaXMgdGhlIGNyb3NzaW5nOiBpdCBob2xkcyBubyBzcGVsbCdzXG4gKiBudW1iZXJzLCBvbmx5IHRoZSBkZXJpdmF0aW9ucywgYW5kIGVhY2ggc3BlbGwncyBvd24gdGlueSBgaGVhcnRiZWF0LnRzYFxuICogYmVzaWRlIGl0cyBkYWVtb24gaG9sZHMgdGhlIHZhbHVlcyB0aGF0IEJPVEggaGFsdmVzIHRoZW4gaW1wb3J0LiBBIHZhbHVlIHRoYXRcbiAqIGNvdWxkIG5vdCBwcmV2aW91c2x5IGNyb3NzIHRoZSBzZWFtIG5vdyBjcm9zc2VzIGl0LlxuICovXG5cbi8qKiBCdW4ncyBtYXhpbXVtIGBpZGxlVGltZW91dGAsIGluIHNlY29uZHMuIGAwYCBpcyBub3QgXCJkaXNhYmxlZFwiIOKAlCBpdCBpcyB0aGVcbiAqICBkZWZhdWx0IOKAlCBzbyB0aGUgd2F5IHRvIGhvbGQgYSBjb25uZWN0aW9uIG9wZW4gaXMgdG8gYXNrIGZvciB0aGUgbWF4aW11bS4gKi9cbmV4cG9ydCBjb25zdCBNQVhfSURMRV9USU1FT1VUX1NFQyA9IDI1NTtcblxuLyoqIFRoZSBob3VzZSBkZWZhdWx0IGhlYXJ0YmVhdCwgaW4gbXMuIFNpeCBvZiB0aGUgZWlnaHQgZGFlbW9ucyB3cml0ZSAxNSBzLiAqL1xuZXhwb3J0IGNvbnN0IERFRkFVTFRfSEVBUlRCRUFUX01TID0gMTVfMDAwO1xuXG4vKiogSG93IG1hbnkgbWlzc2VkIGJlYXRzIHRoZSB0YWlsIHdhdGNoZG9nIHRvbGVyYXRlcyBiZWZvcmUgaXQgYWJvcnRzIGFuZFxuICogIHJlY29ubmVjdHMuIFRocmVlLCBldmVyeXdoZXJlLCBhbmQgaXQgaXMgYSBmbG9vciBub3QgYSB0YXN0ZTogaG9sZGluZyB0aGVcbiAqICBjb25uZWN0aW9uIG9wZW4gSVMgYSBgam9pbmAncyBwcmVzZW5jZSBzaWduYWwsIHNvIGV2ZXJ5IHdhdGNoZG9nIGZpcmUgZmxhcHMgYVxuICogIGNhcmQgaW4gYSBodW1hbidzIHZpZXcuIEl0IHN0aWxsIHdhbnRzIGEgd2F0Y2hkb2cg4oCUIGEgd2VkZ2VkIGhhbGYtb3BlbiBzb2NrZXRcbiAqICBzaG93cyBhIGNhcmQgYXMgcGVybWFuZW50bHkgcHJlc2VudCwgd2hpY2ggaXMgdGhlIHdvcnNlIGxpZS4gKi9cbmV4cG9ydCBjb25zdCBNSVNTRURfQkVBVFMgPSAzO1xuXG4vKipcbiAqIFRoZSBzbWFsbGVzdCBiZWF0IHRoaXMgbW9kdWxlIHdpbGwgaGFuZCBiYWNrLCBpbiBtcyDigJQgdGhlIEZMT09SIGhhbGYgb2YgdGhlXG4gKiBjbGFtcCB3aG9zZSBjZWlsaW5nIGlzIGBpZGxlVGltZW91dCAvIDJgLlxuICpcbiAqIOKblCBJVCBFWElTVFMgQkVDQVVTRSBgaW50T3JgIFBBUlNFUyBXSVRIIGBwYXJzZUludGAsIEFORCBgcGFyc2VJbnRgIElTIExFTklFTlRcbiAqIFdIRVJFIElUIE1BVFRFUlMgTU9TVC4gYGludE9yYCBmYWxscyBiYWNrIHNhZmVseSBvbiBldmVyeXRoaW5nIHRoYXQgTE9PS1NcbiAqIGhvc3RpbGUg4oCUIGBcIlwiYCwgYFwiMFwiYCwgYFwiLTFcImAsIGBcImFiY1wiYCwgYFwiTmFOXCJgLCBgXCJJbmZpbml0eVwiYCBhbGwgdGFrZSB0aGVcbiAqIGZhbGxiYWNrIOKAlCBhbmQgdGhlbiByZWFkcyBgXCIxZTlcImAsIHRoZSBtb3N0IHBsYXVzaWJsZSBzcGVsbGluZyBvZiBcIm1ha2UgaXRcbiAqIGh1Z2VcIiwgYXMgKioxKiouIE1FQVNVUkVEIGF0IGdyYXBldmluZSdzIFBoYXNlIDYgcmVwYWlyLCBiZWZvcmUgdGhpcyBmbG9vcjpcbiAqIGBHUkFQRVZJTkVfSEVBUlRCRUFUX01TPTFlOWAgcHV0IH41Mjgga2VlcGFsaXZlIGNvbW1lbnRzIGludG8gZXZlcnkgb3BlbiBTU0VcbiAqIGNsaWVudCBpbiA1MjggbXMuIGBcIjMuOVwiYCBnaXZlcyAzIG1zIGFuZCBgXCI1YWJjXCJgIGdpdmVzIDUgbXMgdGhlIHNhbWUgd2F5LlxuICogQSBrbm9iIHdob3NlIGZhc3Rlc3Qgc2V0dGluZyBpcyBzcGVsbGVkIGxpa2UgaXRzIHNsb3dlc3QgaXMgYSBmbG9vZC5cbiAqXG4gKiDimqAgKipUSEUgRkxPT1IgSVMgSEVSRSBBTkQgTk9UIElOIGBpbnRPcmAg4oCUIHRoYXQgaXMgdGhlIHJ1bGluZywgbm90IGFuXG4gKiBhY2NpZGVudCBvZiB3aGVyZSBpdCB3YXMgZWFzeSB0byB3cml0ZSoqIChENzYpLiBgaW50T3JgIGlzIHRoZSBnZW5lcmFsIHBhcnNlclxuICogYmVoaW5kIGV2ZXJ5IGVudiBrbm9iIGluIHRoZSBraXQ7IHRoZXJlIGlzIG5vIHNpbmdsZSByb3N0ZXItY29ycmVjdCBtaW5pbXVtXG4gKiBmb3IgXCJhIHBvc2l0aXZlIGludGVnZXJcIiwgYW5kIHRpZ2h0ZW5pbmcgaXRzIFBBUlNFIChyZWplY3RpbmcgYDFlOWAgb3V0cmlnaHQpXG4gKiB3b3VsZCBjaGFuZ2Ugd2hhdCBldmVyeSBvdGhlciBrbm9iIGFjY2VwdHMsIHNpbGVudGx5LCBmb3IgdmFsdWVzIG5vYm9keSBoYXNcbiAqIGF1ZGl0ZWQuIGBoZWFydGJlYXRNc2AgYWxyZWFkeSBvd25zIG9uZSBlbmQgb2YgdGhpcyBpbnZhcmlhbnQsIGFuZCA1MDAgd2FzXG4gKiBhbHJlYWR5IHdyaXR0ZW4gaW50byBpdCBhcyB0aGUgc21hbGxlc3QgY2VpbGluZyBpdCB3b3VsZCBjb21wdXRlLiBUaGUgZmxvb3JcbiAqIGJlbG9uZ3MgYmVzaWRlIHRoZSBjZWlsaW5nLCB3aGVyZSB0aGUgcXVhbnRpdHkgaXMga25vd24uXG4gKi9cbmV4cG9ydCBjb25zdCBNSU5fSEVBUlRCRUFUX01TID0gNTAwO1xuXG4vKiogUGFyc2UgYSBwb3NpdGl2ZSBpbnRlZ2VyIGZyb20gYW4gZW52IHZhbHVlLCBmYWxsaW5nIGJhY2sgb24gYW55dGhpbmcgdGhhdCBpc1xuICogIGFic2VudCwgZW1wdHksIG5vbi1udW1lcmljIG9yIG5vbi1wb3NpdGl2ZS4g4pqgIGBwYXJzZUludGAgc2VtYW50aWNzOiBgXCIxZTlcImBcbiAqICBpcyAxIGFuZCBgXCI1YWJjXCJgIGlzIDUuIEFueSBjYWxsZXIgd2l0aCBhIGtub3duIHNhZmUgbWluaW11bSBtdXN0IGNsYW1wIOKAlFxuICogIHNlZSBgTUlOX0hFQVJUQkVBVF9NU2AuICovXG5mdW5jdGlvbiBpbnRPcihyYXc6IHN0cmluZyB8IHVuZGVmaW5lZCwgZmFsbGJhY2s6IG51bWJlcik6IG51bWJlciB7XG4gIGNvbnN0IG4gPSBOdW1iZXIucGFyc2VJbnQocmF3ID8/IFwiXCIsIDEwKTtcbiAgcmV0dXJuIE51bWJlci5pc0Zpbml0ZShuKSAmJiBuID4gMCA/IG4gOiBmYWxsYmFjaztcbn1cblxuLyoqIFRoZSBzZXJ2ZXIncyBgaWRsZVRpbWVvdXRgLCBpbiBTRUNPTkRTLCBjbGFtcGVkIHRvIHdoYXQgQnVuIGFjY2VwdHMuICovXG5leHBvcnQgZnVuY3Rpb24gaWRsZVRpbWVvdXRTZWMocmF3Pzogc3RyaW5nIHwgdW5kZWZpbmVkLCBmYWxsYmFjayA9IE1BWF9JRExFX1RJTUVPVVRfU0VDKTogbnVtYmVyIHtcbiAgcmV0dXJuIE1hdGgubWF4KDEsIE1hdGgubWluKE1BWF9JRExFX1RJTUVPVVRfU0VDLCBpbnRPcihyYXcsIGZhbGxiYWNrKSkpO1xufVxuXG4vKipcbiAqIFRoZSBTU0UgaGVhcnRiZWF0LCBpbiBtcywgQ0xBTVBFRCBBVCBCT1RIIEVORFM6IG5ldmVyIGFib3ZlIGhhbGYgdGhlIGlkbGVcbiAqIHRpbWVvdXQsIG5ldmVyIGJlbG93IGBNSU5fSEVBUlRCRUFUX01TYC5cbiAqXG4gKiBUaGUgY2VpbGluZyBpcyBhc3Ryb2xhYmUncywgYW5kIHRoZSBjZW5zdXMgbmFtZWQgaXQgY29udmVyZ2VuY2UgdGFyZ2V0ICM0OlxuICogdGhlIG90aGVyIGRhZW1vbnMgaGFyZC1jb2RlIDE1IHMgYWdhaW5zdCAyNTUgcyBhbmQgd3JpdGUgdGhlIHJlbGF0aW9uc2hpcFxuICogb25seSBpbiBwcm9zZSwgd2hpY2ggaG9sZHMgYXQgdGhlIGRlZmF1bHQgYW5kIGF0IG5vIG90aGVyIHZhbHVlLiBFbmZvcmNpbmdcbiAqIGBoZWFydGJlYXQgPD0gaWRsZVRpbWVvdXQgLyAyYCBtYWtlcyB0aGUgaW52YXJpYW50IHRydWUgZm9yIEFOWSBjb25maWd1cmVkXG4gKiBwYWlyLCB3aGljaCBpcyBleGFjdGx5IHRoZSBpbnZhcmlhbnQgd2hvc2UgdmlvbGF0aW9uIGNhdXNlZCB0aGUgYnVnIGFib3ZlLlxuICpcbiAqIOKaoCBUaGUgZmxvb3IgY2Fubm90IGZpZ2h0IHRoZSBjZWlsaW5nOiB0aGUgY2VpbGluZyBleHByZXNzaW9uIGlzIGl0c2VsZlxuICogYE1hdGgubWF4KDUwMCwg4oCmKWAsIHNvIGl0IGlzIG5ldmVyIGJlbG93IGBNSU5fSEVBUlRCRUFUX01TYCBhbmQgdGhlIHR3b1xuICogY2xhbXBzIGNhbiBuZXZlciBjcm9zcy5cbiAqL1xuZXhwb3J0IGZ1bmN0aW9uIGhlYXJ0YmVhdE1zKFxuICByYXc6IHN0cmluZyB8IHVuZGVmaW5lZCxcbiAgaWRsZVNlYzogbnVtYmVyLFxuICBmYWxsYmFjayA9IERFRkFVTFRfSEVBUlRCRUFUX01TLFxuKTogbnVtYmVyIHtcbiAgY29uc3QgY2VpbGluZyA9IE1hdGgubWF4KE1JTl9IRUFSVEJFQVRfTVMsIE1hdGguZmxvb3IoKGlkbGVTZWMgKiAxMDAwKSAvIDIpKTtcbiAgcmV0dXJuIE1hdGgubWluKE1hdGgubWF4KGludE9yKHJhdywgZmFsbGJhY2spLCBNSU5fSEVBUlRCRUFUX01TKSwgY2VpbGluZyk7XG59XG5cbi8qKiBUaGUgdGFpbC1zaWRlIHdhdGNoZG9nIGZvciBhIGdpdmVuIGhlYXJ0YmVhdDogdGhyZWUgbWlzc2VkIGJlYXRzLiAqL1xuZXhwb3J0IGZ1bmN0aW9uIHRhaWxJZGxlTXMoYmVhdE1zOiBudW1iZXIpOiBudW1iZXIge1xuICByZXR1cm4gYmVhdE1zICogTUlTU0VEX0JFQVRTO1xufVxuIiwKICAgICIvKipcbiAqIHNjcmlwdG9yaXVtJ3MgY29ubmVjdGlvbi10aW1pbmcgY29uc3RhbnRzIOKAlCBUSEUgT05FIENPUFksIGltcG9ydGVkIGJ5IGJvdGhcbiAqIGhhbHZlcyAoYGNsaS50c2AncyB0YWlsIHdhdGNoZG9nLCBgc2VydmVyLnRzYCdzIFNTRSBoZWFydGJlYXQgYW5kIGlkbGVcbiAqIHRpbWVvdXQpLiBLaXQgdmVyZGljdCBgaGVhcnRiZWF0YDogU1VCSkVDVCDigJQgdGhlIHNlYW0gZXhpc3RzIGJlY2F1c2UgdGhlIENMSVxuICogYW5kIHRoZSBkYWVtb24gYXJlIHR3byBwcm9jZXNzZXMgdGhhdCBtdXN0IGFncmVlIG9uIG9uZSBpbnZhcmlhbnRcbiAqIChgaWRsZVRpbWVvdXQgPiBoZWFydGJlYXRgLCBgd2F0Y2hkb2cgPiBoZWFydGJlYXRgKSwgYW5kIG5laXRoZXIgbWF5IGltcG9ydFxuICogdGhlIG90aGVyLlxuICpcbiAqIOKaoCBLRUVQIElUIEEgTEVBRi1TSEFQRUQgRklMRS4gVGhlIG1vbWVudCB0aGlzIGltcG9ydHMgYW55dGhpbmcgb2YgdGhlXG4gKiBkYWVtb24ncywgYGRpc3QvY2xpLmpzYCBkcmFncyB0aGUgc2VydmVyIGdyYXBoIGFuZCB0aGUgc2VhbSBjbG9zZXMuXG4gKi9cblxuaW1wb3J0IHtcbiAgREVGQVVMVF9IRUFSVEJFQVRfTVMsXG4gIE1BWF9JRExFX1RJTUVPVVRfU0VDLFxuICB0YWlsSWRsZU1zLFxufSBmcm9tIFwiLi4vLi4va2l0L3dpcmUvaGVhcnRiZWF0LnRzXCI7XG5cbi8qKiBCdW4ncyBtYXhpbXVtOiBhIGhlbGQgU1NFIHRhaWwgbXVzdCBvdXRsaXZlIEJ1bidzIDEwIHMgZGVmYXVsdC4gKi9cbmV4cG9ydCBjb25zdCBJRExFX1RJTUVPVVRfU0VDID0gTUFYX0lETEVfVElNRU9VVF9TRUM7XG5cbi8qKiBUaGUgaG91c2UgZGVmYXVsdC4gKi9cbmV4cG9ydCBjb25zdCBTU0VfSEVBUlRCRUFUX01TID0gREVGQVVMVF9IRUFSVEJFQVRfTVM7XG5cbi8qKiBUaGUgdGFpbCB3YXRjaGRvZzogdGhyZWUgbWlzc2VkIGJlYXRzIG9mIFRISVMgZGFlbW9uJ3MgaGVhcnRiZWF0LCBkZXJpdmVkLiAqL1xuZXhwb3J0IGNvbnN0IFRBSUxfSURMRV9NUyA9IHRhaWxJZGxlTXMoU1NFX0hFQVJUQkVBVF9NUyk7XG4iLAogICAgIi8qKlxuICogQ29udGV4dCBlbnRyaWVzIG9uIGRpc2sg4oCUIGJ1aWxkaW5nIGFuIGVudHJ5IGZyb20gYSBwYXRoIChFMTUncyBvbmUgbW9kZWwpLFxuICogbWlycm9yaW5nIGEgZm9sZGVyIGludG8gYSBub2RlIHRyZWUsIGFuZCBsaXN0aW5nIGEgZGlyZWN0b3J5IGZvciB0aGVcbiAqIHN1cmZhY2UncyBwYXRoIGNvbXBsZXRpb24gKGBmcy5saXN0YCkuXG4gKlxuICogUHVyZSBvdmVyIHRoZSBmaWxlc3lzdGVtOiBubyBkYWVtb24gc3RhdGUsIHNvIHRoZSB1bml0IGNlbGxzIGRyaXZlIGl0IHdpdGggYVxuICogdGVtcCBkaXJlY3RvcnkgYW5kIG5vdGhpbmcgZWxzZS5cbiAqL1xuXG5pbXBvcnQgeyByZWFkZGlyU3luYywgc3RhdFN5bmMgfSBmcm9tIFwibm9kZTpmc1wiO1xuaW1wb3J0IHsgYmFzZW5hbWUsIGRpcm5hbWUsIGpvaW4sIHJlbGF0aXZlLCBzZXAgfSBmcm9tIFwibm9kZTpwYXRoXCI7XG5pbXBvcnQgdHlwZSB7IENvbnRleHRFbnRyeSwgQ29udGV4dE5vZGUsIEZzTGlzdEVudHJ5IH0gZnJvbSBcIi4vcHJvdG9jb2xcIjtcblxuLyoqIFdoYXQgc2NyaXB0b3JpdW0gb3BlbnMgYXMgYSBkb2N1bWVudC4gRXZlcnl0aGluZyBlbHNlIGlzIG5vdCBzaG93bi4gKi9cbmV4cG9ydCBjb25zdCBET0NfRVhURU5TSU9OUyA9IFtcIi5tZFwiLCBcIi5tYXJrZG93blwiLCBcIi5tZHhcIiwgXCIudHh0XCJdIGFzIGNvbnN0O1xuXG5leHBvcnQgZnVuY3Rpb24gaXNEb2NOYW1lKG5hbWU6IHN0cmluZyk6IGJvb2xlYW4ge1xuICBjb25zdCBsb3dlciA9IG5hbWUudG9Mb3dlckNhc2UoKTtcbiAgcmV0dXJuIERPQ19FWFRFTlNJT05TLnNvbWUoKGV4dCkgPT4gbG93ZXIuZW5kc1dpdGgoZXh0KSk7XG59XG5cbi8qKiBEaXJlY3RvcmllcyBhIG1pcnJvciBuZXZlciBkZXNjZW5kcyBpbnRvIOKAlCBub2lzZSwgbm90IGRvY3VtZW50cy4gKi9cbmNvbnN0IFNLSVBfRElSUyA9IG5ldyBTZXQoW1wibm9kZV9tb2R1bGVzXCIsIFwiLmdpdFwiLCBcImRpc3RcIiwgXCJvdXRcIiwgXCJjb3ZlcmFnZVwiXSk7XG5cbi8qKlxuICogVGhlIG1vc3Qgbm9kZXMgb25lIG1pcnJvcmVkIHNjYW4gd2lsbCBob2xkLiBBIGZvbGRlciBlbnRyeSBwb2ludGVkIGF0IGEgaHVnZVxuICogdHJlZSBtdXN0IG5vdCBzdGFsbCB0aGUgZGFlbW9uIG9yIGZsb29kIGV2ZXJ5IHN0YXRlIGJyb2FkY2FzdDsgaGl0dGluZyB0aGVcbiAqIGNhcCBzZXRzIGB0cnVuY2F0ZWRgIG9uIHRoZSBlbnRyeSBzbyB0aGUgc3VyZmFjZSBjYW4gU0FZIHRoZSBsaXN0IGlzIHNob3J0XG4gKiByYXRoZXIgdGhhbiByZW5kZXIgYSBzaG9ydCBsaXN0IGFzIGEgY29tcGxldGUgb25lLlxuICovXG5leHBvcnQgY29uc3QgTUlSUk9SX05PREVfQ0FQID0gMjAwMDtcblxuZXhwb3J0IGNvbnN0IHRvUG9zaXggPSAocDogc3RyaW5nKSA9PiBwLnNwbGl0KHNlcCkuam9pbihcIi9cIik7XG5cbi8qKlxuICogTWlycm9yIGByb290YCBpbnRvIGEgc29ydGVkIG5vZGUgdHJlZTogZ3JvdXBzIGZpcnN0LCB0aGVuIGRvY3MsIGJ5IG5hbWUuXG4gKiBgaGlkZGVuYCByZWxzIChFMjQncyBcIlJlbW92ZSBmcm9tIFNjcmlwdG9yaXVtXCIpIGFyZSBza2lwcGVkLCBhIGZvbGRlciB3aXRoXG4gKiBldmVyeXRoaW5nIHVuZGVyIGl0LlxuICovXG5leHBvcnQgZnVuY3Rpb24gc2NhblRyZWUoXG4gIHJvb3Q6IHN0cmluZyxcbiAgY2FwID0gTUlSUk9SX05PREVfQ0FQLFxuICBoaWRkZW46IHJlYWRvbmx5IHN0cmluZ1tdID0gW10sXG4pOiB7IG5vZGVzOiBDb250ZXh0Tm9kZVtdOyB0cnVuY2F0ZWQ6IGJvb2xlYW4gfSB7XG4gIGxldCBjb3VudCA9IDA7XG4gIGxldCB0cnVuY2F0ZWQgPSBmYWxzZTtcbiAgY29uc3Qgc2tpcCA9IG5ldyBTZXQoaGlkZGVuKTtcbiAgY29uc3Qgd2FsayA9IChkaXI6IHN0cmluZyk6IENvbnRleHROb2RlW10gPT4ge1xuICAgIGxldCBuYW1lczogc3RyaW5nW107XG4gICAgdHJ5IHtcbiAgICAgIG5hbWVzID0gcmVhZGRpclN5bmMoZGlyKTtcbiAgICB9IGNhdGNoIHtcbiAgICAgIHJldHVybiBbXTtcbiAgICB9XG4gICAgY29uc3QgZ3JvdXBzOiBDb250ZXh0Tm9kZVtdID0gW107XG4gICAgY29uc3QgZG9jczogQ29udGV4dE5vZGVbXSA9IFtdO1xuICAgIGZvciAoY29uc3QgbmFtZSBvZiBuYW1lcy5zb3J0KChhLCBiKSA9PiBhLmxvY2FsZUNvbXBhcmUoYikpKSB7XG4gICAgICBpZiAobmFtZS5zdGFydHNXaXRoKFwiLlwiKSkgY29udGludWU7XG4gICAgICBpZiAoY291bnQgPj0gY2FwKSB7XG4gICAgICAgIHRydW5jYXRlZCA9IHRydWU7XG4gICAgICAgIGJyZWFrO1xuICAgICAgfVxuICAgICAgY29uc3QgYWJzID0gam9pbihkaXIsIG5hbWUpO1xuICAgICAgbGV0IHN0OiBSZXR1cm5UeXBlPHR5cGVvZiBzdGF0U3luYz47XG4gICAgICB0cnkge1xuICAgICAgICBzdCA9IHN0YXRTeW5jKGFicyk7XG4gICAgICB9IGNhdGNoIHtcbiAgICAgICAgY29udGludWU7XG4gICAgICB9XG4gICAgICBjb25zdCByZWwgPSB0b1Bvc2l4KHJlbGF0aXZlKHJvb3QsIGFicykpO1xuICAgICAgaWYgKHNraXAuaGFzKHJlbCkpIGNvbnRpbnVlO1xuICAgICAgaWYgKHN0LmlzRGlyZWN0b3J5KCkpIHtcbiAgICAgICAgaWYgKFNLSVBfRElSUy5oYXMobmFtZSkpIGNvbnRpbnVlO1xuICAgICAgICBjb3VudCsrO1xuICAgICAgICBjb25zdCBjaGlsZHJlbiA9IHdhbGsoYWJzKTtcbiAgICAgICAgLy8gQSBmb2xkZXIgaG9sZGluZyBvbmx5IG5vbi1kb2N1bWVudHMgKGltYWdlcywgYXNzZXRzKSBpcyBub2lzZSBpbiBhXG4gICAgICAgIC8vIGRvY3MgbWlycm9yIGFuZCBpcyBsZWZ0IG91dC4gQSBUUlVMWSBFTVBUWSBmb2xkZXIgaXMga2VwdDogaXQgaXMgb25lXG4gICAgICAgIC8vIHNvbWVib2R5IGp1c3QgbWFkZSB0byBwdXQgZG9jdW1lbnRzIGluIChcIk5ldyBmb2xkZXJcIiwgRTI0KSwgYW5kXG4gICAgICAgIC8vIGxlYXZpbmcgaXQgb3V0IG1hZGUgaXQgdmFuaXNoIHRoZSBtb21lbnQgaXQgd2FzIGNyZWF0ZWQuXG4gICAgICAgIGlmIChjaGlsZHJlbi5sZW5ndGggPiAwIHx8IGlzRW1wdHlEaXIoYWJzKSkgZ3JvdXBzLnB1c2goeyBraW5kOiBcImdyb3VwXCIsIHJlbCwgY2hpbGRyZW4gfSk7XG4gICAgICB9IGVsc2UgaWYgKHN0LmlzRmlsZSgpICYmIGlzRG9jTmFtZShuYW1lKSkge1xuICAgICAgICBjb3VudCsrO1xuICAgICAgICBkb2NzLnB1c2goeyBraW5kOiBcImRvY1wiLCByZWwgfSk7XG4gICAgICB9XG4gICAgfVxuICAgIHJldHVybiBbLi4uZ3JvdXBzLCAuLi5kb2NzXTtcbiAgfTtcbiAgY29uc3Qgbm9kZXMgPSB3YWxrKHJvb3QpO1xuICByZXR1cm4geyBub2RlcywgdHJ1bmNhdGVkIH07XG59XG5cbi8qKiBOb3RoaW5nIGluIGl0IGJ1dCBkb3RmaWxlcyAoYSBgLkRTX1N0b3JlYCBkb2VzIG5vdCBtYWtlIGEgZm9sZGVyIGZ1bGwpLiAqL1xuZnVuY3Rpb24gaXNFbXB0eURpcihkaXI6IHN0cmluZyk6IGJvb2xlYW4ge1xuICB0cnkge1xuICAgIHJldHVybiByZWFkZGlyU3luYyhkaXIpLmV2ZXJ5KChuKSA9PiBuLnN0YXJ0c1dpdGgoXCIuXCIpKTtcbiAgfSBjYXRjaCB7XG4gICAgcmV0dXJuIGZhbHNlO1xuICB9XG59XG5cbi8qKiBUaGUgbm9kZSBhdCBgcmVsYCBpbiBhIHRyZWUsIG9yIHVuZGVmaW5lZC4gKi9cbmV4cG9ydCBmdW5jdGlvbiBmaW5kTm9kZShub2RlczogcmVhZG9ubHkgQ29udGV4dE5vZGVbXSwgcmVsOiBzdHJpbmcpOiBDb250ZXh0Tm9kZSB8IHVuZGVmaW5lZCB7XG4gIGZvciAoY29uc3QgbiBvZiBub2Rlcykge1xuICAgIGlmIChuLnJlbCA9PT0gcmVsKSByZXR1cm4gbjtcbiAgICBpZiAobi5raW5kID09PSBcImdyb3VwXCIgJiYgcmVsLnN0YXJ0c1dpdGgoYCR7bi5yZWx9L2ApKSByZXR1cm4gZmluZE5vZGUobi5jaGlsZHJlbiwgcmVsKTtcbiAgfVxuICByZXR1cm4gdW5kZWZpbmVkO1xufVxuXG5leHBvcnQgY2xhc3MgUGF0aEVycm9yIGV4dGVuZHMgRXJyb3Ige1xuICBjb25zdHJ1Y3RvcihcbiAgICBtZXNzYWdlOiBzdHJpbmcsXG4gICAgcmVhZG9ubHkgY29kZTogXCJtaXNzaW5nXCIgfCBcIm5vdC1hLWRvY1wiLFxuICApIHtcbiAgICBzdXBlcihtZXNzYWdlKTtcbiAgfVxufVxuXG4vKipcbiAqIEFuIGVudHJ5IGZvciBhbiBhYnNvbHV0ZSBwYXRoLiBBIGRpcmVjdG9yeSBpcyBgbWlycm9yZWRgOyBhIGRvY3VtZW50IGZpbGUgaXNcbiAqIGBsaXN0ZWRgLCByb290ZWQgYXQgaXRzIHBhcmVudCwgaG9sZGluZyBvbmx5IGl0c2VsZiAoRTE1KS5cbiAqL1xuZXhwb3J0IGZ1bmN0aW9uIGVudHJ5Rm9yUGF0aChhYnM6IHN0cmluZywgaWQ6IHN0cmluZyk6IENvbnRleHRFbnRyeSB7XG4gIGxldCBzdDogUmV0dXJuVHlwZTx0eXBlb2Ygc3RhdFN5bmM+O1xuICB0cnkge1xuICAgIHN0ID0gc3RhdFN5bmMoYWJzKTtcbiAgfSBjYXRjaCB7XG4gICAgdGhyb3cgbmV3IFBhdGhFcnJvcihgbm8gc3VjaCBmaWxlIG9yIGZvbGRlcjogJHthYnN9YCwgXCJtaXNzaW5nXCIpO1xuICB9XG4gIGlmIChzdC5pc0RpcmVjdG9yeSgpKSB7XG4gICAgY29uc3QgeyBub2RlcywgdHJ1bmNhdGVkIH0gPSBzY2FuVHJlZShhYnMpO1xuICAgIHJldHVybiB7XG4gICAgICBpZCxcbiAgICAgIGxhYmVsOiBiYXNlbmFtZShhYnMpIHx8IGFicyxcbiAgICAgIHJvb3Q6IGFicyxcbiAgICAgIG1lbWJlcnNoaXA6IFwibWlycm9yZWRcIixcbiAgICAgIG5vZGVzLFxuICAgICAgLi4uKHRydW5jYXRlZCA/IHsgdHJ1bmNhdGVkIH0gOiB7fSksXG4gICAgfTtcbiAgfVxuICBpZiAoIWlzRG9jTmFtZShhYnMpKSB7XG4gICAgdGhyb3cgbmV3IFBhdGhFcnJvcihcbiAgICAgIGBub3QgYSBkb2N1bWVudCBzY3JpcHRvcml1bSBvcGVucyAoJHtET0NfRVhURU5TSU9OUy5qb2luKFwiIFwiKX0pOiAke2Fic31gLFxuICAgICAgXCJub3QtYS1kb2NcIixcbiAgICApO1xuICB9XG4gIHJldHVybiB7XG4gICAgaWQsXG4gICAgbGFiZWw6IGJhc2VuYW1lKGFicyksXG4gICAgcm9vdDogZGlybmFtZShhYnMpLFxuICAgIG1lbWJlcnNoaXA6IFwibGlzdGVkXCIsXG4gICAgbm9kZXM6IFt7IGtpbmQ6IFwiZG9jXCIsIHJlbDogYmFzZW5hbWUoYWJzKSB9XSxcbiAgfTtcbn1cblxuLyoqIEV2ZXJ5IGRvYyBub2RlJ3MgYWJzb2x1dGUgcGF0aCwgZGVwdGgtZmlyc3QuICovXG5leHBvcnQgZnVuY3Rpb24gZG9jUGF0aHMoZW50cnk6IENvbnRleHRFbnRyeSk6IHN0cmluZ1tdIHtcbiAgY29uc3Qgb3V0OiBzdHJpbmdbXSA9IFtdO1xuICBjb25zdCB3YWxrID0gKG5vZGVzOiBDb250ZXh0Tm9kZVtdKSA9PiB7XG4gICAgZm9yIChjb25zdCBuIG9mIG5vZGVzKSB7XG4gICAgICBpZiAobi5raW5kID09PSBcImRvY1wiKSBvdXQucHVzaChqb2luKGVudHJ5LnJvb3QsIG4ucmVsKSk7XG4gICAgICBlbHNlIHdhbGsobi5jaGlsZHJlbik7XG4gICAgfVxuICB9O1xuICB3YWxrKGVudHJ5Lm5vZGVzKTtcbiAgcmV0dXJuIG91dDtcbn1cblxuLyoqIFdoaWNoIGVudHJ5IChpZiBhbnkpIGhvbGRzIGBhYnNgLCBhbmQgYXQgd2hhdCBgcmVsYC4gKi9cbmV4cG9ydCBmdW5jdGlvbiBsb2NhdGUoXG4gIGVudHJpZXM6IENvbnRleHRFbnRyeVtdLFxuICBhYnM6IHN0cmluZyxcbik6IHsgZW50cnlJZDogc3RyaW5nOyByZWw6IHN0cmluZyB9IHwgbnVsbCB7XG4gIGZvciAoY29uc3QgZSBvZiBlbnRyaWVzKSB7XG4gICAgaWYgKGRvY1BhdGhzKGUpLmluY2x1ZGVzKGFicykpIHJldHVybiB7IGVudHJ5SWQ6IGUuaWQsIHJlbDogdG9Qb3NpeChyZWxhdGl2ZShlLnJvb3QsIGFicykpIH07XG4gIH1cbiAgcmV0dXJuIG51bGw7XG59XG5cbi8qKlxuICogT25lIGRpcmVjdG9yeSwgZm9yIHRoZSBzdXJmYWNlJ3MgYWRkLWJ5LXBhdGggY29tcGxldGlvbjogc3ViZGlyZWN0b3JpZXMgYW5kXG4gKiBkb2N1bWVudHMgb25seSwgZGlyZWN0b3JpZXMgZmlyc3QuIGB+YCBpcyBleHBhbmRlZCBieSB0aGUgY2FsbGVyLlxuICovXG5leHBvcnQgZnVuY3Rpb24gbGlzdERpcihkaXI6IHN0cmluZyk6IEZzTGlzdEVudHJ5W10ge1xuICBjb25zdCBuYW1lcyA9IHJlYWRkaXJTeW5jKGRpcik7XG4gIGNvbnN0IG91dDogRnNMaXN0RW50cnlbXSA9IFtdO1xuICBmb3IgKGNvbnN0IG5hbWUgb2YgbmFtZXMpIHtcbiAgICBpZiAobmFtZS5zdGFydHNXaXRoKFwiLlwiKSkgY29udGludWU7XG4gICAgY29uc3QgYWJzID0gam9pbihkaXIsIG5hbWUpO1xuICAgIGxldCBpc0RpciA9IGZhbHNlO1xuICAgIHRyeSB7XG4gICAgICBpc0RpciA9IHN0YXRTeW5jKGFicykuaXNEaXJlY3RvcnkoKTtcbiAgICB9IGNhdGNoIHtcbiAgICAgIGNvbnRpbnVlO1xuICAgIH1cbiAgICBpZiAoaXNEaXIgfHwgaXNEb2NOYW1lKG5hbWUpKSBvdXQucHVzaCh7IG5hbWUsIHBhdGg6IGFicywgZGlyOiBpc0RpciB9KTtcbiAgfVxuICByZXR1cm4gb3V0LnNvcnQoKGEsIGIpID0+IChhLmRpciA9PT0gYi5kaXIgPyBhLm5hbWUubG9jYWxlQ29tcGFyZShiLm5hbWUpIDogYS5kaXIgPyAtMSA6IDEpKTtcbn1cbiIKICBdLAogICJtYXBwaW5ncyI6ICI7O0FBZ0RBO0FBQ0E7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFVQTtBQUNBOzs7QUNLQTs7O0FDMUNPLFNBQVMsU0FBUyxDQUFDLE1BQXFCO0FBQUEsRUFDN0MsUUFBUSxPQUFPLE1BQU0sR0FBRyxLQUFLLFVBQVUsSUFBSTtBQUFBLENBQUs7QUFBQTs7O0FDNkIzQyxJQUFNLFdBQW9DO0FBQUEsRUFDL0MsT0FBTztBQUFBLEVBQ1AsVUFBVTtBQUFBLEVBQ1YsV0FBVztBQUFBLEVBQ1gsVUFBVTtBQUNaO0FBdUJBLElBQUksaUJBQWdDO0FBRTdCLFNBQVMsaUJBQWlCLENBQUMsU0FBOEI7QUFBQSxFQUM5RCxpQkFBaUI7QUFBQTtBQWFaLFNBQVMsYUFBYSxDQUFDLE1BQWUsU0FBaUIsT0FBMEI7QUFBQSxFQUN0RixPQUFPLEdBQUcsS0FBSyxVQUFVO0FBQUEsSUFDdkIsSUFBSTtBQUFBLElBQ0osT0FBTztBQUFBLE1BQ0w7QUFBQSxNQUNBLFdBQVcsU0FBUztBQUFBLE1BRXBCLFdBQVc7QUFBQSxNQUNYO0FBQUEsU0FDSSxPQUFPLE9BQU8sRUFBRSxNQUFNLE1BQU0sS0FBSyxJQUFJLENBQUM7QUFBQSxTQUN0QyxPQUFPLFVBQVUsRUFBRSxTQUFTLE1BQU0sUUFBUSxJQUFJLENBQUM7QUFBQSxTQUUvQyxPQUFPLFdBQVcsWUFBWSxFQUFFLFFBQVEsTUFBTSxPQUFPLElBQUksQ0FBQztBQUFBLElBQ2hFO0FBQUEsSUFDQSxNQUFNLEVBQUUsU0FBUyxlQUFlO0FBQUEsRUFDbEMsQ0FBQztBQUFBO0FBQUE7QUFBQTtBQUlJLE1BQU0saUJBQWlCLE1BQU07QUFBQSxFQUN6QjtBQUFBLEVBQ0E7QUFBQSxFQUVULFdBQVcsQ0FBQyxNQUFlLFNBQWlCLE9BQWtCO0FBQUEsSUFDNUQsTUFBTSxPQUFPO0FBQUEsSUFDYixLQUFLLE9BQU87QUFBQSxJQUNaLEtBQUssT0FBTztBQUFBLElBQ1osS0FBSyxRQUFRO0FBQUE7QUFBQSxNQUdYLFFBQVEsR0FBVztBQUFBLElBQ3JCLE9BQU8sU0FBUyxLQUFLO0FBQUE7QUFFekI7QUFLTyxTQUFTLEdBQUcsQ0FBQyxTQUFpQixPQUFnQixTQUFTLE9BQXlCO0FBQUEsRUFDckYsTUFBTSxJQUFJLFNBQVMsTUFBTSxTQUFTLEtBQUs7QUFBQTtBQVNsQyxTQUFTLGNBQWMsQ0FDNUIsR0FDQSxNQUF5QyxRQUFRLFFBQ2xDO0FBQUEsRUFDZixJQUFJLEVBQUUsYUFBYTtBQUFBLElBQVcsT0FBTztBQUFBLEVBQ3JDLElBQUksTUFBTSxjQUFjLEVBQUUsTUFBTSxFQUFFLFNBQVMsRUFBRSxLQUFLLENBQUM7QUFBQSxFQUNuRCxPQUFPLEVBQUU7QUFBQTs7O0FGK0VYLElBQU0sZUFBZTtBQUFBLEVBQ25CLEVBQUUsTUFBTSxVQUFVLE1BQU0sT0FBTztBQUFBLEVBQy9CLEVBQUUsTUFBTSxNQUFNLE1BQU0sT0FBTztBQUFBLEVBQzNCLEVBQUUsTUFBTSxhQUFhLE1BQU0sVUFBVTtBQUFBLEVBQ3JDLEVBQUUsTUFBTSxNQUFNLE1BQU0sVUFBVTtBQUNoQztBQUlBLElBQU0sc0JBQXNCLGFBQWEsSUFBSSxDQUFDLE1BQU0sRUFBRSxJQUFJLEVBQUUsS0FDMUQsQ0FBQyxHQUFHLE1BQU0sT0FBTyxFQUFFLFdBQVcsSUFBSSxDQUFDLElBQUksT0FBTyxFQUFFLFdBQVcsSUFBSSxDQUFDLENBQ2xFO0FBRUEsSUFBTSxVQUFVLENBQUMsTUFDZixLQUFLLE9BQU8sTUFBTSxhQUFZLFVBQVUsS0FBSSxPQUFRLEVBQXdCLElBQUksSUFBSTtBQUN0RixJQUFNLGFBQWEsQ0FBQyxNQUF3QixhQUFhLFFBQVEsRUFBRSxVQUFVLE9BQU8sQ0FBQztBQUU5RSxTQUFTLFNBQXVDLENBQUMsTUFBdUI7QUFBQSxFQUM3RSxNQUFNLFVBQVUsS0FBSztBQUFBLEVBQ3JCLE1BQU0sYUFBYSxPQUFPLEtBQUssS0FBSyxPQUFPO0FBQUEsRUFDM0MsTUFBTSxRQUFRLElBQUksSUFBSSxVQUFVO0FBQUEsRUFDaEMsTUFBTSxVQUFVLEtBQUssV0FBVztBQUFBLEVBQ2hDLE1BQU0sVUFBVSxDQUFDLEdBQUksS0FBSyxlQUFlLENBQUMsQ0FBRTtBQUFBLEVBQzVDLE1BQU0sUUFBUSxJQUFJLElBQWEsS0FBSyxjQUFjLENBQUMsQ0FBYztBQUFBLEVBRWpFLFdBQVcsS0FBSyxTQUFTO0FBQUEsSUFDdkIsSUFBSSxDQUFDLE1BQU0sSUFBSSxDQUFDO0FBQUEsTUFDZCxNQUFNLElBQUksTUFBTSxhQUFhLDBCQUEwQixzQkFBc0I7QUFBQSxFQUNqRjtBQUFBLEVBQ0EsS0FBSyxLQUFLLFVBQVUsVUFBVSxPQUFPLEtBQUssS0FBSyxTQUFTLFdBQVc7QUFBQSxJQUNqRSxNQUFNLElBQUksTUFBTSxhQUFhLDBDQUEwQztBQUFBLEVBQ3pFO0FBQUEsRUFJQSxNQUFNLGVBQWUsT0FBTyxZQUMxQixXQUFXLElBQUksQ0FBQyxNQUFNO0FBQUEsSUFDcEIsUUFBUSxTQUFTLE9BQU8sU0FBUyxLQUFLLFFBQVE7QUFBQSxJQUM5QyxPQUFPLENBQUMsR0FBRyxJQUFJO0FBQUEsR0FDaEIsQ0FDSDtBQUFBLEVBQ0EsTUFBTSxhQUFhLElBQUk7QUFBQSxFQUN2QixXQUFXLEtBQUssWUFBWTtBQUFBLElBQzFCLE1BQU0sSUFBSSxLQUFLLFFBQVEsSUFBSTtBQUFBLElBQzNCLElBQUksTUFBTTtBQUFBLE1BQVcsV0FBVyxJQUFJLEdBQUcsQ0FBQztBQUFBLEVBQzFDO0FBQUEsRUFFQSxNQUFNLGFBQWEsQ0FBQyxRQUFxQztBQUFBLElBQ3ZELE1BQU0sTUFBTSxJQUFJLElBQUksQ0FBQyxHQUFHLFNBQVMsR0FBRyxHQUFHLENBQUM7QUFBQSxJQUN4QyxPQUFPLFdBQVcsT0FBTyxDQUFDLE1BQU0sSUFBSSxJQUFJLENBQUMsQ0FBQztBQUFBO0FBQUEsRUFHNUMsTUFBTSxRQUFRLENBQ1osR0FDQSxTQUNRO0FBQUEsSUFDUixXQUFXLEtBQUssRUFBRSxPQUFPO0FBQUEsTUFDdkIsSUFBSSxDQUFDLE1BQU0sSUFBSSxDQUFDLEdBQUc7QUFBQSxRQUNqQixNQUFNLElBQUksTUFBTSxhQUFhLGtCQUFrQixFQUFFLHFCQUFxQixvQkFBb0I7QUFBQSxNQUM1RjtBQUFBLElBQ0Y7QUFBQSxJQUNBLE9BQU87QUFBQSxNQUNMLE1BQU0sRUFBRTtBQUFBLE1BQ1IsU0FBUyxDQUFDLEdBQUksRUFBRSxXQUFXLENBQUMsQ0FBRTtBQUFBLE1BQzlCLE9BQU8sQ0FBQyxHQUFHLEVBQUUsS0FBSztBQUFBLE1BQ2xCLFVBQVUsV0FBVyxFQUFFLEtBQUs7QUFBQSxNQUM1QixhQUFhLEVBQUUsWUFBWSxJQUFJLENBQUMsT0FBTyxLQUFLLEVBQUUsRUFBRTtBQUFBLE1BQ2hELFVBQVUsRUFBRTtBQUFBLE1BQ1o7QUFBQSxNQUNBLFlBQVksRUFBRTtBQUFBLE1BQ2Qsa0JBQWtCLEVBQUUsb0JBQW9CO0FBQUEsTUFDeEMsT0FBTyxFQUFFO0FBQUEsTUFDVCxLQUFLLEVBQUU7QUFBQSxJQUNUO0FBQUE7QUFBQSxFQUdGLE1BQU0sUUFBZSxLQUFLLFlBQVksQ0FBQyxHQUFHLElBQUksQ0FBQyxNQUFNLE1BQU0sR0FBa0IsS0FBSyxDQUFDO0FBQUEsRUFHbkYsTUFBTSxNQUFNLENBQUM7QUFBQSxFQUNiLE1BQU0sV0FBMEI7QUFBQSxJQUM5QjtBQUFBLE1BQ0UsTUFBTTtBQUFBLE1BQ04sT0FBTyxDQUFDO0FBQUEsTUFDUixhQUFhLENBQUM7QUFBQSxNQUNkLFVBQVU7QUFBQSxNQUNWLEtBQUssWUFBWTtBQUFBLFFBQ2YsVUFBVSxNQUFNLEtBQUssUUFBUSxDQUFDO0FBQUE7QUFBQSxJQUVsQztBQUFBLElBQ0E7QUFBQSxNQUNFLE1BQU07QUFBQSxNQUNOLE9BQU8sQ0FBQztBQUFBLE1BQ1IsYUFBYSxDQUFDO0FBQUEsTUFDZCxVQUFVO0FBQUEsTUFDVixLQUFLLE1BQU07QUFBQSxRQUNULFFBQVEsT0FBTyxNQUFNLEdBQUcsS0FBSyxVQUFVLElBQUksWUFBWSxHQUFHLE1BQU0sQ0FBQztBQUFBLENBQUs7QUFBQTtBQUFBLElBRTFFO0FBQUEsSUFDQTtBQUFBLE1BQ0UsTUFBTTtBQUFBLE1BQ04sT0FBTyxDQUFDO0FBQUEsTUFDUixhQUFhLENBQUM7QUFBQSxNQUNkLFVBQVU7QUFBQSxNQUNWLEtBQUssTUFBTTtBQUFBLFFBQ1QsTUFBTSxPQUFPLElBQUksV0FBVztBQUFBLFFBQzVCLFFBQVEsT0FBTyxNQUFNLEtBQUssU0FBUztBQUFBLENBQUksSUFBSSxPQUFPLEdBQUc7QUFBQSxDQUFRO0FBQUE7QUFBQSxJQUVqRTtBQUFBLEVBQ0Y7QUFBQSxFQUNBLFdBQVcsS0FBSyxVQUFVO0FBQUEsSUFDeEIsSUFBSSxDQUFDLEtBQUssS0FBSyxDQUFDLE1BQU0sRUFBRSxTQUFTLEVBQUUsSUFBSTtBQUFBLE1BQUcsS0FBSyxLQUFLLE1BQU0sR0FBRyxJQUFJLENBQUM7QUFBQSxFQUNwRTtBQUFBLEVBRUEsTUFBTSxVQUNKLEtBQUssU0FBUyxZQUFZLFlBQVksTUFBTSxLQUFNLEtBQUssTUFBbUIsTUFBTSxHQUFHLEdBQUcsS0FBSztBQUFBLEVBRzdGLE1BQU0sVUFBVSxJQUFJO0FBQUEsRUFDcEIsV0FBVyxLQUFLLE1BQU07QUFBQSxJQUNwQixXQUFXLEtBQUssQ0FBQyxFQUFFLE1BQU0sR0FBRyxFQUFFLE9BQU8sR0FBRztBQUFBLE1BQ3RDLE1BQU0sUUFBUSxFQUFFLE1BQU0sR0FBRztBQUFBLE1BQ3pCLElBQUksRUFBRSxLQUFLLE1BQU0sS0FBSyxNQUFNLFNBQVMsS0FBSyxNQUFNLEtBQUssQ0FBQyxNQUFNLE1BQU0sTUFBTSxFQUFFLFdBQVcsR0FBRyxDQUFDLEdBQUc7QUFBQSxRQUMxRixNQUFNLElBQUksTUFBTSxhQUFhLCtCQUErQixJQUFJO0FBQUEsTUFDbEU7QUFBQSxNQUNBLElBQUksTUFBTSxFQUFFLFFBQVEsTUFBTSxXQUFXLEVBQUUsS0FBSyxNQUFNLEdBQUcsRUFBRSxRQUFRO0FBQUEsUUFDN0QsTUFBTSxJQUFJLE1BQU0sYUFBYSxvQkFBb0Isc0JBQXNCLEVBQUUsT0FBTztBQUFBLE1BQ2xGO0FBQUEsTUFDQSxJQUFJLE1BQU0sV0FBVyxLQUFLLE1BQU0sRUFBRSxRQUFRLE1BQU0sT0FBTyxFQUFFLEtBQUssTUFBTSxHQUFHLEVBQUUsSUFBSTtBQUFBLFFBQzNFLE1BQU0sSUFBSSxNQUFNLGFBQWEsb0JBQW9CLCtCQUErQixFQUFFLE9BQU87QUFBQSxNQUMzRjtBQUFBLE1BQ0EsSUFBSSxRQUFRLElBQUksQ0FBQztBQUFBLFFBQUcsTUFBTSxJQUFJLE1BQU0sYUFBYSxjQUFjLHFCQUFxQjtBQUFBLE1BQ3BGLFFBQVEsSUFBSSxHQUFHLENBQUM7QUFBQSxJQUNsQjtBQUFBLEVBQ0Y7QUFBQSxFQUNBLE1BQU0sU0FBUyxJQUFJO0FBQUEsRUFDbkIsV0FBVyxLQUFLLFFBQVEsS0FBSyxHQUFHO0FBQUEsSUFDOUIsT0FBTyxPQUFPLE9BQU8sRUFBRSxNQUFNLEdBQUc7QUFBQSxJQUNoQyxJQUFJLFVBQVUsYUFBYSxRQUFRLFdBQVc7QUFBQSxNQUM1QyxPQUFPLElBQUksT0FBTyxDQUFDLEdBQUksT0FBTyxJQUFJLEtBQUssS0FBSyxDQUFDLEdBQUksR0FBRyxDQUFDO0FBQUEsSUFDdkQ7QUFBQSxFQUNGO0FBQUEsRUFDQSxXQUFXLEtBQUssT0FBTyxLQUFLLEtBQUssVUFBVSxDQUFDLENBQUMsR0FBRztBQUFBLElBQzlDLElBQUksQ0FBQyxPQUFPLElBQUksQ0FBQztBQUFBLE1BQUcsTUFBTSxJQUFJLE1BQU0sYUFBYSxvQkFBb0IscUJBQXFCO0FBQUEsRUFDNUY7QUFBQSxFQUVBLE1BQU0sUUFBUSxDQUFDLEdBQUcsUUFBUSxLQUFLLENBQUM7QUFBQSxFQUNoQyxNQUFNLFFBQVEsQ0FBQyxHQUFHLElBQUksSUFBSSxNQUFNLElBQUksQ0FBQyxNQUFNLEVBQUUsTUFBTSxHQUFHLEVBQUUsRUFBWSxDQUFDLENBQUM7QUFBQSxFQUV0RSxNQUFNLFNBQVMsQ0FBQyxTQUFtQyxTQUFTLEtBQUssVUFBVSxRQUFRLElBQUksSUFBSTtBQUFBLEVBQzNGLE1BQU0sV0FBVyxDQUFDLFNBQ2hCLENBQUMsR0FBSSxPQUFPLElBQUksR0FBRyxZQUFZLENBQUMsQ0FBRSxFQUFFLElBQUksQ0FBQyxNQUFNLEtBQUssR0FBRyxFQUFFLEtBQUs7QUFBQSxFQUNoRSxNQUFNLFFBQVEsQ0FBQyxNQUFtQixFQUFFLFFBQVE7QUFBQSxFQVc1QyxNQUFNLGVBQXlCLE1BQU07QUFBQSxJQUNuQyxNQUFNLE1BQU0sQ0FBQyxHQUFHLFNBQVMsRUFBRSxHQUFHLEdBQUcsbUJBQW1CO0FBQUEsSUFDcEQsTUFBTSxPQUFPLElBQUksT0FBTyxDQUFDLE1BQU0sRUFBRSxXQUFXLElBQUksQ0FBQyxFQUFFLEtBQUs7QUFBQSxJQUN4RCxPQUFPLENBQUMsR0FBRyxNQUFNLEdBQUcsSUFBSSxPQUFPLENBQUMsTUFBTSxDQUFDLEVBQUUsV0FBVyxJQUFJLENBQUMsQ0FBQztBQUFBLEtBQ3pEO0FBQUEsRUFJSCxNQUFNLG1CQUFtQixDQUFDLE1BQThCO0FBQUEsSUFDdEQsTUFBTSxRQUFRLEVBQUUsV0FBVyxHQUFHLEVBQUUsWUFBWSxFQUFFO0FBQUEsSUFDOUMsT0FBTyxFQUFFLFdBQVcsSUFBSSxXQUFXLElBQUk7QUFBQTtBQUFBLEVBRXpDLE1BQU0sYUFBYSxDQUFDLE1BQ2xCLEtBQUssUUFBUSxJQUFJLFNBQVMsWUFBWSxNQUFNLE9BQU8sTUFBTTtBQUFBLEVBQzNELE1BQU0sWUFBWSxDQUFDLE1BQ2pCO0FBQUEsSUFDRSxNQUFNLENBQUM7QUFBQSxJQUNQLEdBQUcsRUFBRSxZQUFZLElBQUksZ0JBQWdCO0FBQUEsSUFDckMsR0FBRyxFQUFFLE1BQU0sT0FBTyxDQUFDLE1BQU0sQ0FBQyxNQUFNLElBQUksQ0FBQyxDQUFDLEVBQUUsSUFBSSxVQUFVO0FBQUEsRUFDeEQsRUFBRSxLQUFLLEdBQUc7QUFBQSxFQUNaLE1BQU0sVUFBVSxDQUFDLE1BQW1CLFlBQVksVUFBVSxDQUFDO0FBQUEsRUFFM0QsTUFBTSxhQUFhLE1BQWM7QUFBQSxJQUMvQixJQUFJLEtBQUssU0FBUztBQUFBLE1BQVcsT0FBTyxLQUFLLEtBQUs7QUFBQSxJQUM5QyxNQUFNLFNBQVMsQ0FBQyxHQUFJLFVBQVUsQ0FBQyxPQUFPLElBQUksQ0FBQyxHQUFJLEdBQUcsSUFBSTtBQUFBLElBQ3RELE1BQU0sUUFBUSxPQUFPLElBQUksQ0FBQyxNQUFNLENBQUMsVUFBVSxDQUFDLEdBQUcsRUFBRSxRQUFRLENBQVU7QUFBQSxJQUNuRSxNQUFNLFFBQVEsS0FBSyxJQUFJLEtBQUssSUFBSSxHQUFHLE1BQU0sSUFBSSxFQUFFLE9BQU8sRUFBRSxNQUFNLENBQUMsR0FBRyxFQUFFO0FBQUEsSUFDcEUsTUFBTSxPQUFPLE1BQ1YsSUFBSSxFQUFFLEdBQUcsT0FDUixFQUFFLFVBQVUsUUFBUSxLQUFLLEVBQUUsT0FBTyxLQUFLLE1BQU0sTUFBTSxLQUFLO0FBQUEsSUFBUSxHQUFHLE9BQU8sS0FBSyxNQUFNLEdBQ3ZGLEVBQ0MsS0FBSztBQUFBLENBQUk7QUFBQSxJQUNaLE1BQU0sT0FBTyxLQUFLLFVBQVUsR0FBRyxrQkFBYSxLQUFLLFlBQVk7QUFBQSxJQUM3RCxNQUFNLFNBQVMsS0FBSyxhQUFhLElBQUksQ0FBQyxNQUFNLEVBQUUsSUFBSSxFQUFFLEtBQUssS0FBSztBQUFBLElBQzlELE9BQU8sR0FBRztBQUFBO0FBQUEsRUFBVztBQUFBLEVBQVMsU0FBUyxLQUFLLGFBQWE7QUFBQTtBQUFBLEVBQU8sS0FBSyxlQUFlO0FBQUE7QUFBQSxFQUt0RixNQUFNLGNBQWMsTUFBbUI7QUFBQSxJQUNyQyxNQUFNLE1BQU0sQ0FBQyxPQUE0QjtBQUFBLE1BQ3ZDLE1BQU0sS0FBSztBQUFBLE1BQ1gsTUFBTyxLQUFLLFFBQVEsR0FBa0I7QUFBQSxNQUN0QyxRQUFRO0FBQUEsSUFDVjtBQUFBLElBQ0EsTUFBTSxXQUE4QjtBQUFBLE1BQ2xDO0FBQUEsUUFDRSxNQUFNLENBQUM7QUFBQSxRQUNQLE1BQU07QUFBQSxVQUNKLEdBQUcsYUFBYSxJQUFJLENBQUMsT0FBTztBQUFBLFlBQzFCLE1BQU0sRUFBRTtBQUFBLFlBQ1IsTUFBTTtBQUFBLFlBQ04sUUFBUTtBQUFBLFVBQ1YsRUFBRTtBQUFBLFVBQ0YsR0FBSSxVQUFVLFFBQVEsU0FBUyxJQUFJLEdBQUcsSUFBSSxDQUFDO0FBQUEsUUFDN0M7QUFBQSxRQUNBLGFBQWEsVUFDVCxRQUFRLFlBQVksSUFBSSxDQUFDLE9BQU8sS0FBSyxFQUFFLEVBQUUsSUFDekMsQ0FBQyxFQUFFLE1BQU0sS0FBSyxrQkFBa0IsV0FBVyxVQUFVLEtBQUssQ0FBQztBQUFBLE1BQ2pFO0FBQUEsSUFDRjtBQUFBLElBQ0EsV0FBVyxLQUFLLE1BQU07QUFBQSxNQUNwQixXQUFXLEtBQUssQ0FBQyxFQUFFLE1BQU0sR0FBRyxFQUFFLE9BQU8sR0FBRztBQUFBLFFBQ3RDLFNBQVMsS0FBSztBQUFBLFVBQ1osTUFBTSxFQUFFLE1BQU0sR0FBRztBQUFBLFVBQ2pCLE1BQU0sRUFBRSxTQUFTLElBQUksR0FBRztBQUFBLFVBQ3hCLGFBQWEsRUFBRSxZQUFZLElBQUksQ0FBQyxPQUFPLEtBQUssRUFBRSxFQUFFO0FBQUEsUUFDbEQsQ0FBQztBQUFBLE1BQ0g7QUFBQSxJQUNGO0FBQUEsSUFDQSxNQUFNLFlBQVksUUFBUSxJQUFJLFFBQVE7QUFBQSxJQUN0QyxPQUFPO0FBQUEsTUFDTCxlQUFlO0FBQUEsTUFDZixZQUFZO0FBQUEsTUFDWixpQkFBaUIsRUFBRSxNQUFNLENBQUMsVUFBVSxJQUFJLEVBQUU7QUFBQSxNQUMxQztBQUFBLElBQ0Y7QUFBQTtBQUFBLEVBV0YsTUFBTSxpQkFBaUIsQ0FBQyxNQUFnQixxQkFBc0M7QUFBQSxJQUM1RSxTQUFTLElBQUksRUFBRyxJQUFJLEtBQUssUUFBUSxLQUFLO0FBQUEsTUFDcEMsTUFBTSxJQUFJLEtBQUs7QUFBQSxNQUNmLElBQUksTUFBTTtBQUFBLFFBQU0sT0FBTyxvQkFBb0IsSUFBSSxLQUFLLEtBQUssU0FBUyxLQUFLLElBQUk7QUFBQSxNQUMzRSxJQUFJLEVBQUUsV0FBVyxJQUFJLEdBQUc7QUFBQSxRQUN0QixJQUFJLEVBQUUsU0FBUyxHQUFHO0FBQUEsVUFBRztBQUFBLFFBQ3JCLElBQUksS0FBSyxRQUFRLEVBQUUsTUFBTSxDQUFDLElBQUksU0FBUztBQUFBLFVBQVU7QUFBQSxRQUNqRDtBQUFBLE1BQ0Y7QUFBQSxNQUNBLElBQUksRUFBRSxXQUFXLEdBQUcsS0FBSyxFQUFFLFNBQVMsR0FBRztBQUFBLFFBQ3JDLE1BQU0sTUFBTSxFQUFFLFdBQVcsSUFBSSxXQUFXLElBQUksRUFBRSxNQUFNLENBQUMsQ0FBQyxJQUFJO0FBQUEsUUFDMUQsSUFBSSxRQUFRLGFBQWEsS0FBSyxRQUFRLE1BQU0sU0FBUztBQUFBLFVBQVU7QUFBQSxRQUMvRDtBQUFBLE1BQ0Y7QUFBQSxNQUNBLE9BQU87QUFBQSxJQUNUO0FBQUEsSUFDQSxPQUFPO0FBQUE7QUFBQSxFQUdULE1BQU0sVUFBVSxDQUFDLE1BQWdCLE1BQXdCO0FBQUEsSUFDdkQsR0FBRyxLQUFLLE1BQU0sR0FBRyxDQUFDO0FBQUEsSUFDbEIsR0FBRyxLQUFLLE1BQU0sSUFBSSxDQUFDO0FBQUEsRUFDckI7QUFBQSxFQUVBLE1BQU0sWUFBWSxNQUNoQixJQUFJLHNCQUFzQixTQUFTO0FBQUEsSUFDakMsU0FBUyxDQUFDLEdBQUcsS0FBSztBQUFBLElBQ2xCLE1BQU0sU0FBUztBQUFBLEVBQ2pCLENBQUM7QUFBQSxFQUdILE1BQU0sVUFBVSxDQUFDLE1BQWMsU0FBZ0U7QUFBQSxJQUM3RixNQUFNLE9BQU8sT0FBTyxJQUFJLElBQUk7QUFBQSxJQUM1QixJQUFJLFNBQVMsV0FBVztBQUFBLE1BQ3RCLE1BQU0sS0FBSyxLQUFLLFNBQVMsT0FBTyxhQUFhO0FBQUEsTUFDN0MsSUFBSSxJQUFJO0FBQUEsTUFDUixJQUFJLE9BQU8sWUFBWTtBQUFBLFFBQ3JCLE1BQU0sT0FBTyxLQUFLO0FBQUEsUUFDbEIsSUFBSSxTQUFTLGFBQWEsQ0FBQyxLQUFLLFdBQVcsR0FBRyxJQUFJLElBQUk7QUFBQSxNQUN4RCxFQUFPO0FBQUEsUUFDTCxJQUFJLGVBQWUsTUFBTSxJQUFJO0FBQUE7QUFBQSxNQUUvQixNQUFNLE1BQU0sS0FBSyxJQUFLLEtBQUssS0FBZ0I7QUFBQSxNQUMzQyxNQUFNLE9BQU8sUUFBUSxZQUFZLFlBQVksUUFBUSxJQUFJLEdBQUcsUUFBUSxLQUFLO0FBQUEsTUFDekUsSUFBSSxTQUFTLGFBQWEsUUFBUSxXQUFXO0FBQUEsUUFDM0MsT0FBTyxFQUFFLEtBQUssTUFBTSxPQUFPLEdBQUcsUUFBUSxPQUFPLE1BQU0sUUFBUSxNQUFNLENBQUMsRUFBRTtBQUFBLE1BQ3RFO0FBQUEsTUFDQSxNQUFNLE1BQU0sUUFBUSxJQUFJLElBQUk7QUFBQSxNQUM1QixJQUFJLFFBQVE7QUFBQSxRQUFXLE9BQU8sRUFBRSxLQUFLLEtBQUssT0FBTyxNQUFNLE1BQU0sS0FBSztBQUFBLE1BQ2xFLE1BQU0sUUFBUSxFQUFFLFNBQVMsQ0FBQyxHQUFHLElBQUksR0FBRyxNQUFNLFNBQVMsMkJBQTJCO0FBQUEsTUFDOUUsSUFBSSxRQUFRO0FBQUEsUUFBVyxJQUFJLEdBQUcsZ0NBQWdDLFNBQVMsS0FBSztBQUFBLE1BQzVFLElBQUksV0FBVyxzQkFBc0IsUUFBUSxTQUFTLEtBQUs7QUFBQSxJQUM3RDtBQUFBLElBQ0EsTUFBTSxNQUFNLFFBQVEsSUFBSSxJQUFJO0FBQUEsSUFDNUIsSUFBSSxRQUFRLFdBQVc7QUFBQSxNQUNyQixJQUFJLG9CQUFvQixTQUFTLFNBQVM7QUFBQSxRQUN4QyxTQUFTLENBQUMsR0FBRyxLQUFLO0FBQUEsUUFDbEIsTUFBTSxTQUFTO0FBQUEsTUFDakIsQ0FBQztBQUFBLElBQ0g7QUFBQSxJQUNBLE9BQU8sRUFBRSxLQUFLLE9BQU8sTUFBTSxNQUFNLEtBQUs7QUFBQTtBQUFBLEVBaUJ4QyxNQUFNLGNBQWMsQ0FDbEIsS0FDQSxVQUNBLFdBQ1M7QUFBQSxJQUNULE1BQU0sTUFBTSxRQUFRLFVBQVUsQ0FBQyxNQUFNLEVBQUUsU0FBUyxtQkFBbUIsS0FBSztBQUFBLElBQ3hFLElBQUksV0FBVyxhQUFhLE1BQU07QUFBQSxNQUFHO0FBQUEsSUFDckMsTUFBTSxVQUFvQixDQUFDO0FBQUEsSUFDM0IsV0FBVyxLQUFLLE9BQU8sTUFBTSxNQUFNLENBQUMsR0FBRztBQUFBLE1BQ3JDLElBQUksRUFBRSxTQUFTO0FBQUEsUUFBYztBQUFBLE1BQzdCLE1BQU0sSUFBSSxFQUFFO0FBQUEsTUFDWixJQUFJO0FBQUEsTUFDSixJQUFJLEVBQUUsV0FBVyxJQUFJO0FBQUEsUUFBRyxNQUFNLEVBQUUsTUFBTSxDQUFDLEVBQUUsTUFBTSxHQUFHLEVBQUU7QUFBQSxNQUMvQyxTQUFJLEVBQUUsV0FBVyxLQUFLLEVBQUUsV0FBVyxHQUFHO0FBQUEsUUFBRyxNQUFNLFdBQVcsSUFBSSxFQUFFLE1BQU0sQ0FBQyxDQUFDO0FBQUEsTUFDN0UsSUFBSSxRQUFRLGFBQWEsUUFBUSxNQUFNLFNBQVMsSUFBSSxHQUFHO0FBQUEsUUFBRyxRQUFRLEtBQUssQ0FBQztBQUFBLElBQzFFO0FBQUEsSUFDQSxJQUFJLFFBQVEsV0FBVztBQUFBLE1BQUc7QUFBQSxJQUMxQixNQUFNLFFBQVEsUUFBUSxLQUFLLElBQUk7QUFBQSxJQUMvQixNQUFNLE1BQU0sUUFBUSxXQUFXO0FBQUEsSUFDL0IsTUFBTSxLQUFLLE1BQU0sT0FBTztBQUFBLElBQ3hCLE1BQU0sTUFBTSxNQUFNLFFBQVE7QUFBQSxJQUMxQixNQUFNLFNBQVMsTUFBTSxjQUFjO0FBQUEsSUFDbkMsUUFBUSxPQUFPLE1BQ2IsY0FBYyxVQUFVLElBQUksU0FBUyxLQUFLLEtBQUssSUFBSSxJQUFJLFdBQVcsc0JBQXNCLHlCQUF5QixrQkFBa0IsTUFBTSxnQkFBZ0I7QUFBQSxDQUMzSjtBQUFBO0FBQUEsRUFHRixNQUFNLFNBQVMsT0FBTyxLQUFVLE9BQWUsU0FBb0M7QUFBQSxJQUNqRixrQkFBa0IsSUFBSSxTQUFTLEtBQUssT0FBTyxJQUFJLElBQUk7QUFBQSxJQUNuRCxNQUFNLE9BQU8sTUFBTSxHQUFHO0FBQUEsSUFDdEIsTUFBTSxXQUFXLElBQUksSUFBSSxJQUFJLFFBQVE7QUFBQSxJQUNyQyxNQUFNLFVBQVUsSUFBSSxTQUFTLEtBQUssY0FBYyxTQUFTLElBQUksSUFBSTtBQUFBLElBQ2pFLE1BQU0sV0FBVyxNQUNmLENBQUMsSUFBSSxZQUFZLFFBQVEsV0FBVyxJQUFJLEdBQUcsd0JBQXdCLFNBQVMsRUFDekUsT0FBTyxDQUFDLE1BQW1CLE1BQU0sU0FBUyxFQUMxQyxLQUFLLElBQUksS0FBSztBQUFBLElBRW5CLElBQUk7QUFBQSxJQUNKLElBQUk7QUFBQSxJQUNKLElBQUk7QUFBQSxJQUNKLElBQUk7QUFBQSxPQUNELEVBQUUsUUFBUSxhQUFhLE9BQU8sSUFBSSxVQUFVO0FBQUEsUUFDM0M7QUFBQSxRQUNBLFNBQVM7QUFBQSxRQUNULFFBQVE7QUFBQSxRQUNSLGtCQUFrQixJQUFJO0FBQUEsUUFDdEIsUUFBUTtBQUFBLE1BQ1YsQ0FBQztBQUFBLE1BQ0QsT0FBTyxHQUFHO0FBQUEsTUFDVixJQUFJLFFBQVEsQ0FBQyxNQUFNLGlDQUFpQztBQUFBLFFBQ2xELElBQUksR0FBRyxTQUFTLFdBQVcsQ0FBQyxLQUFLLFNBQVMsRUFBRSxTQUFTLE1BQU0sU0FBUyxFQUFFLENBQUM7QUFBQSxNQUN6RTtBQUFBLE1BRUEsSUFBSSxHQUFHLFNBQVMsV0FBVyxDQUFDLEtBQUssU0FBUyxFQUFFLE1BQU0sSUFBSSxjQUFjLFFBQVEsR0FBRyxFQUFFLENBQUM7QUFBQTtBQUFBLElBS3BGLE1BQU0sUUFBUSxPQUFPLEtBQUssTUFBTSxFQUFFLEtBQUssQ0FBQyxNQUFNLENBQUMsU0FBUyxJQUFJLENBQUMsQ0FBQztBQUFBLElBQzlELElBQUksVUFBVSxXQUFXO0FBQUEsTUFDdkIsSUFDRSxLQUFLLDhCQUE4Qiw4QkFBOEIsK0JBQStCLElBQUksU0FBUyxLQUFLLFlBQVksYUFDOUgsU0FDQSxFQUFFLFNBQVMsTUFBTSxTQUFTLEVBQUUsQ0FDOUI7QUFBQSxJQUNGO0FBQUEsSUFHQSxNQUFNLFdBQVcsSUFBSSxZQUFZLE9BQU8sQ0FBQyxNQUFNLEVBQUUsUUFBUSxFQUFFO0FBQUEsSUFDM0QsTUFBTSxXQUFXLElBQUksWUFBWSxLQUFLLENBQUMsTUFBTSxFQUFFLFFBQVE7QUFBQSxJQUN2RCxJQUFJLFlBQVksU0FBUyxVQUFVO0FBQUEsTUFDakMsTUFBTSxVQUFVLElBQUksWUFBWSxZQUFZO0FBQUEsTUFDNUMsSUFBSSxHQUFHLDJCQUEyQixTQUFTLFFBQVEsZUFBZSxTQUFTO0FBQUEsUUFDekUsTUFBTSxRQUFRLEdBQUc7QUFBQSxNQUNuQixDQUFDO0FBQUEsSUFDSDtBQUFBLElBQ0EsSUFBSSxDQUFDLFlBQVksWUFBWSxTQUFTLElBQUksWUFBWSxRQUFRO0FBQUEsTUFDNUQsSUFDRSxHQUFHLDZCQUE2QixLQUFLLFVBQVUsWUFBWSxJQUFJLFlBQVksT0FBTyxLQUNsRixTQUNBLEVBQUUsTUFBTSxJQUFJLFlBQVksV0FBVyxJQUFJLEdBQUcsNEJBQTRCLFFBQVEsR0FBRyxFQUFFLENBQ3JGO0FBQUEsSUFDRjtBQUFBLElBR0EsTUFBTSxRQUFtQyxLQUFNLE9BQXFDO0FBQUEsSUFDcEYsV0FBVyxLQUFLLElBQUksVUFBVTtBQUFBLE1BQzVCLE1BQU0sSUFBSyxLQUFLLFFBQVEsR0FBa0I7QUFBQSxNQUMxQyxJQUFJLE1BQU0sT0FBTyxhQUFhLE1BQU0sV0FBVztBQUFBLFFBQzdDLE1BQU0sS0FBTSxNQUFNLFFBQVEsQ0FBQyxJQUFJLENBQUMsR0FBRyxDQUFDLElBQUk7QUFBQSxNQUMxQztBQUFBLElBQ0Y7QUFBQSxJQUVBLE1BQU0sTUFBa0IsRUFBRSxNQUFNLElBQUksTUFBTSxPQUFPLEtBQUssYUFBYSxNQUFNO0FBQUEsSUFDekUsTUFBTSxVQUFVLElBQUksUUFBUSxHQUFHO0FBQUEsSUFDL0IsSUFBSSxZQUFZO0FBQUEsTUFBVyxJQUFJLEdBQUcsU0FBUyxXQUFXLFNBQVMsRUFBRSxNQUFNLFFBQVEsR0FBRyxFQUFFLENBQUM7QUFBQSxJQUVyRixZQUFZLEtBQUssVUFBVSxNQUFNO0FBQUEsSUFDakMsTUFBTSxNQUFNLE1BQU0sSUFBSSxJQUFJLEdBQUc7QUFBQSxJQUM3QixPQUFPLE9BQU8sUUFBUSxXQUFXLE1BQU07QUFBQTtBQUFBLEVBR3pDLE1BQU0sV0FBVyxPQUFPLFNBQW9DO0FBQUEsSUFDMUQsa0JBQWtCLEtBQUssTUFBTSxJQUFJO0FBQUEsSUFDakMsTUFBTSxRQUFRLEtBQUs7QUFBQSxJQUduQixNQUFNLGNBQWMsYUFBYSxLQUFLLENBQUMsTUFBTSxFQUFFLFNBQVMsS0FBSztBQUFBLElBQzdELElBQUksZ0JBQWdCLFdBQVc7QUFBQSxNQUM3QixPQUFPLE9BQU8sUUFBUSxJQUFJLFlBQVksSUFBSSxHQUFVLFlBQVksTUFBTSxLQUFLLE1BQU0sQ0FBQyxDQUFDO0FBQUEsSUFDckY7QUFBQSxJQUdBLElBQUksWUFBWSxXQUFXO0FBQUEsTUFDekIsSUFBSSxVQUFVLGNBQWMsUUFBUSxJQUFJLEtBQUssS0FBSyxPQUFPLElBQUksS0FBSyxJQUFJO0FBQUEsUUFDcEUsTUFBTSxLQUFJLFFBQVEsT0FBTyxLQUFLLE1BQU0sQ0FBQyxDQUFDO0FBQUEsUUFDdEMsT0FBTyxPQUFPLEdBQUUsS0FBSyxHQUFFLE9BQU8sR0FBRSxJQUFJO0FBQUEsTUFDdEM7QUFBQSxNQUNBLE9BQU8sT0FBTyxTQUFTLElBQUksSUFBSTtBQUFBLElBQ2pDO0FBQUEsSUFHQSxJQUFJLFVBQVU7QUFBQSxNQUFXLE9BQU8sVUFBVTtBQUFBLElBRzFDLElBQUk7QUFBQSxJQUNKLElBQUk7QUFBQSxJQUNKLElBQUksWUFBWSxjQUFjO0FBQUEsTUFDNUIsSUFBSSxVQUFVLE1BQU07QUFBQSxRQUNsQixJQUFJLEtBQUssT0FBTztBQUFBLFVBQVcsT0FBTyxVQUFVO0FBQUEsUUFDNUMsT0FBTyxLQUFLO0FBQUEsUUFDWixPQUFPLENBQUMsTUFBTSxHQUFHLEtBQUssTUFBTSxDQUFDLENBQUM7QUFBQSxNQUNoQyxFQUFPLFNBQUksTUFBTSxXQUFXLEdBQUcsR0FBRztBQUFBLFFBQ2hDLE9BQU8sSUFBSSw2QkFBNkIsU0FBUyxTQUFTO0FBQUEsVUFDeEQsU0FBUyxDQUFDLEdBQUcsbUJBQW1CO0FBQUEsVUFDaEMsTUFBTSx3Q0FBd0MsTUFBTSxLQUFLLEdBQUc7QUFBQSxRQUM5RCxDQUFDO0FBQUEsTUFDSCxFQUFPO0FBQUEsUUFDTCxPQUFPO0FBQUEsUUFDUCxPQUFPLEtBQUssTUFBTSxDQUFDO0FBQUE7QUFBQSxJQUV2QixFQUFPO0FBQUEsTUFDTCxNQUFNLElBQUksZUFBZSxNQUFNLEtBQUs7QUFBQSxNQUNwQyxJQUFJLElBQUksR0FBRztBQUFBLFFBS1Qsa0JBQWtCLElBQUk7QUFBQSxRQUN0QixJQUFJO0FBQUEsVUFDRixVQUFVLEVBQUUsTUFBTSxNQUFNLFNBQVMsY0FBYyxRQUFRLE1BQU0sa0JBQWtCLEtBQUssQ0FBQztBQUFBLFVBQ3JGLE9BQU8sR0FBRztBQUFBLFVBQ1YsSUFBSSxXQUFXLENBQUMsR0FBRyxTQUFTO0FBQUEsWUFDMUIsU0FBUyxDQUFDLEdBQUcsbUJBQW1CO0FBQUEsWUFDaEMsTUFBTSxxQ0FBZ0MsTUFBTSxLQUFLLEdBQUcsV0FBVztBQUFBLFVBQ2pFLENBQUM7QUFBQTtBQUFBLFFBRUgsT0FBTyxVQUFVO0FBQUEsTUFDbkI7QUFBQSxNQUNBLE9BQU8sS0FBSztBQUFBLE1BR1osT0FBTyxRQUFRLE1BQU0sQ0FBQztBQUFBO0FBQUEsSUFFeEIsa0JBQWtCLElBQUk7QUFBQSxJQUN0QixNQUFNLElBQUksUUFBUSxNQUFNLElBQUk7QUFBQSxJQUM1QixPQUFPLE9BQU8sRUFBRSxLQUFLLEVBQUUsT0FBTyxFQUFFLElBQUk7QUFBQTtBQUFBLEVBR3RDLE1BQU0sT0FBTyxPQUFPLFNBQW9DO0FBQUEsSUFDdEQsSUFBSTtBQUFBLE1BQ0YsT0FBTyxNQUFNLFNBQVMsSUFBSTtBQUFBLE1BQzFCLE9BQU8sR0FBRztBQUFBLE1BQ1YsTUFBTSxXQUFXLGVBQWUsQ0FBQztBQUFBLE1BQ2pDLElBQUksYUFBYTtBQUFBLFFBQU0sT0FBTztBQUFBLE1BRzlCLE9BQU8sZUFBZSxJQUFJLFNBQVMsWUFBWSxXQUFXLENBQUMsQ0FBQyxDQUFDLEtBQUs7QUFBQTtBQUFBO0FBQUEsRUFJdEUsTUFBTSxPQUFPLENBQUMsT0FBcUI7QUFBQSxJQUNqQyxNQUFNLEVBQUU7QUFBQSxJQUNSLFNBQVMsRUFBRTtBQUFBLElBQ1gsT0FBTyxFQUFFO0FBQUEsSUFDVCxVQUFVLEVBQUU7QUFBQSxJQUNaLGFBQWEsRUFBRTtBQUFBLElBQ2YsVUFBVSxFQUFFO0FBQUEsSUFDWixNQUFNLEVBQUU7QUFBQSxFQUNWO0FBQUEsRUFFQSxPQUFPLE9BQU8sS0FBSztBQUFBLElBQ2pCLE1BQU07QUFBQSxJQUNOO0FBQUEsSUFDQTtBQUFBLElBQ0E7QUFBQSxJQUNBO0FBQUEsSUFDQSxTQUFTLENBQUMsU0FBaUI7QUFBQSxNQUN6QixNQUFNLElBQUksT0FBTyxJQUFJO0FBQUEsTUFDckIsT0FBTyxNQUFNLFlBQVksS0FBSyxVQUFVLENBQUM7QUFBQTtBQUFBLElBRTNDO0FBQUEsSUFDQTtBQUFBLElBQ0E7QUFBQSxJQUNBLGlCQUFpQixXQUFXLElBQUksQ0FBQyxNQUFNLEtBQUssR0FBRztBQUFBLElBQy9DLE1BQU0sS0FBSyxJQUFJLElBQUk7QUFBQSxFQUNyQixDQUFlO0FBQUEsRUFDZixPQUFPO0FBQUE7OztBR3ZiVCxJQUFNLGtCQUFrQjtBQUN4QixJQUFNLGdCQUFnQixFQUFFLFdBQVcsS0FBSyxPQUFPLEtBQUs7QUFVN0MsU0FBUyxhQUFhLENBQUMsT0FHNUI7QUFBQSxFQUNBLE1BQU0sV0FBcUIsQ0FBQztBQUFBLEVBQzVCLE1BQU0sWUFBc0IsQ0FBQztBQUFBLEVBQzdCLElBQUksUUFBUTtBQUFBLEVBQ1osSUFBSSxVQUFVO0FBQUEsRUFFZCxXQUFXLFFBQVEsTUFBTSxNQUFNO0FBQUEsQ0FBSSxHQUFHO0FBQUEsSUFDcEMsSUFBSSxTQUFTO0FBQUEsTUFBSTtBQUFBLElBQ2pCLElBQUksS0FBSyxXQUFXLEdBQUcsR0FBRztBQUFBLE1BQ3hCLFNBQVMsS0FBSyxLQUFLLE1BQU0sQ0FBQyxDQUFDO0FBQUEsTUFDM0I7QUFBQSxJQUNGO0FBQUEsSUFDQSxNQUFNLFFBQVEsS0FBSyxRQUFRLEdBQUc7QUFBQSxJQUM5QixNQUFNLFFBQVEsVUFBVSxLQUFLLE9BQU8sS0FBSyxNQUFNLEdBQUcsS0FBSztBQUFBLElBQ3ZELElBQUksUUFBUSxVQUFVLEtBQUssS0FBSyxLQUFLLE1BQU0sUUFBUSxDQUFDO0FBQUEsSUFDcEQsSUFBSSxNQUFNLFdBQVcsR0FBRztBQUFBLE1BQUcsUUFBUSxNQUFNLE1BQU0sQ0FBQztBQUFBLElBQ2hELElBQUksVUFBVSxRQUFRO0FBQUEsTUFDcEIsVUFBVSxLQUFLLEtBQUs7QUFBQSxNQUNwQixVQUFVO0FBQUEsSUFDWixFQUFPLFNBQUksVUFBVSxTQUFTO0FBQUEsTUFDNUIsUUFBUTtBQUFBLElBQ1Y7QUFBQSxFQUVGO0FBQUEsRUFFQSxJQUFJLENBQUM7QUFBQSxJQUFTLE9BQU8sRUFBRSxPQUFPLE1BQU0sU0FBUztBQUFBLEVBQzdDLE9BQU8sRUFBRSxPQUFPLEVBQUUsT0FBTyxNQUFNLFVBQVUsS0FBSztBQUFBLENBQUksRUFBRSxHQUFHLFNBQVM7QUFBQTtBQVVsRSxlQUFzQixVQUFjLENBQUMsTUFBd0M7QUFBQSxFQUMzRSxNQUFNLE1BQU0sS0FBSyxPQUFPLFFBQVE7QUFBQSxFQUNoQyxNQUFNLE1BQU0sS0FBSyxPQUFPLFFBQVE7QUFBQSxFQUNoQyxNQUFNLFNBQVMsS0FBSyxVQUFVO0FBQUEsRUFDOUIsTUFBTSxRQUFRLEtBQUssU0FBUztBQUFBLEVBQzVCLE1BQU0sZUFBZSxLQUFLLGdCQUFnQjtBQUFBLEVBRTFDLElBQUksU0FBUyxLQUFLO0FBQUEsRUFDbEIsSUFBSSxRQUF1QixLQUFLLGNBQWM7QUFBQSxFQUM5QyxJQUFJLGVBQWU7QUFBQSxFQUNuQixJQUFJLGdCQUFnQjtBQUFBLEVBQ3BCLElBQUksZUFBZTtBQUFBLEVBQ25CLElBQUksUUFBUSxNQUFNO0FBQUEsRUFDbEIsSUFBSSxPQUFPO0FBQUEsRUFDWCxJQUFJLFNBQWdEO0FBQUEsRUFnQnBELElBQUksVUFBVTtBQUFBLEVBQ2QsSUFBSSxVQUFrQztBQUFBLEVBQ3RDLElBQUksY0FBbUM7QUFBQSxFQUN2QyxNQUFNLE9BQU8sQ0FBQyxhQUFxQjtBQUFBLElBQ2pDLFVBQVU7QUFBQSxJQUNWLE9BQU87QUFBQSxJQUNQLFNBQVMsTUFBTTtBQUFBLElBQ2YsY0FBYztBQUFBO0FBQUEsRUFJaEIsTUFBTSxVQUFVLENBQUMsT0FDZixJQUFJLFFBQWMsQ0FBQyxpQkFBaUI7QUFBQSxJQUNsQyxJQUFJO0FBQUEsTUFBUyxPQUFPLGFBQWE7QUFBQSxJQUNqQyxNQUFNLFNBQVMsTUFBTTtBQUFBLE1BQ25CLGFBQWEsS0FBSztBQUFBLE1BQ2xCLGNBQWM7QUFBQSxNQUNkLGFBQWE7QUFBQTtBQUFBLElBRWYsTUFBTSxRQUFRLFdBQVcsUUFBUSxFQUFFO0FBQUEsSUFDbkMsY0FBYztBQUFBLEdBQ2Y7QUFBQSxFQUVILE1BQU0sV0FBVyxNQUFNLEtBQUssQ0FBQztBQUFBLEVBQzdCLE1BQU0sYUFBYSxLQUFLLFlBQVk7QUFBQSxFQUNwQyxJQUFJLFlBQVk7QUFBQSxJQUNkLFFBQVEsR0FBRyxVQUFVLFFBQVE7QUFBQSxJQUM3QixRQUFRLEdBQUcsV0FBVyxRQUFRO0FBQUEsRUFDaEM7QUFBQSxFQUlBLE1BQU0sYUFBYSxDQUFDLE1BQWU7QUFBQSxJQUNqQyxJQUFLLEdBQXlDLFNBQVM7QUFBQSxNQUFTLEtBQUssQ0FBQztBQUFBO0FBQUEsRUFFeEUsTUFBTSxhQUFhO0FBQUEsRUFJbkIsV0FBVyxLQUFLLFNBQVMsVUFBVTtBQUFBLEVBRW5DLE1BQU0sZ0JBQWdCLE1BQU0sS0FBSyxDQUFDO0FBQUEsRUFDbEMsS0FBSyxRQUFRLGlCQUFpQixTQUFTLGFBQWE7QUFBQSxFQUNwRCxJQUFJLEtBQUssUUFBUTtBQUFBLElBQVMsS0FBSyxDQUFDO0FBQUEsRUFFaEMsTUFBTSxPQUFPLENBQUMsU0FBaUI7QUFBQSxJQUM3QixJQUFJLE1BQU0sR0FBRztBQUFBLENBQVE7QUFBQTtBQUFBLEVBSXZCLE1BQU0sT0FBTyxDQUFDLFNBQW9DO0FBQUEsSUFDaEQsSUFBSSxTQUFTLFFBQVEsU0FBUztBQUFBLE1BQVcsSUFBSSxNQUFNLEdBQUc7QUFBQSxDQUFRO0FBQUE7QUFBQSxFQUdoRSxJQUFJO0FBQUEsSUFDRixPQUFPLENBQUMsU0FBUztBQUFBLE1BTWYsTUFBTSxPQUFPLE1BQU0sS0FBSyxRQUFRO0FBQUEsTUFNaEMsSUFBSTtBQUFBLFFBQVM7QUFBQSxNQUNiLElBQUksU0FBUyxNQUFNO0FBQUEsUUFDakIsTUFBTSxVQUFVLEtBQUssZUFBZSxFQUFFLGNBQWMsY0FBYyxDQUFDLEtBQUs7QUFBQSxRQUN4RSxJQUFJLFlBQVksUUFBUTtBQUFBLFVBQ3RCLFNBQVM7QUFBQSxVQUNULE9BQU87QUFBQSxRQUNUO0FBQUEsUUFDQSxNQUFNLFFBQVEsS0FBSztBQUFBLFFBQ25CLFFBQVEsS0FBSyxJQUFJLFFBQVEsR0FBRyxNQUFNLEtBQUs7QUFBQSxRQUN2QztBQUFBLE1BQ0Y7QUFBQSxNQUNBLGVBQWU7QUFBQSxNQUVmLE1BQU0sU0FBUyxLQUFLLFFBQVEsUUFBUSxZQUFZLEtBQUs7QUFBQSxRQUNuRCxPQUFPLE9BQU8sTUFBTTtBQUFBLE1BQ3RCO0FBQUEsTUFFQSxNQUFNLGFBQWE7QUFBQSxNQUNuQixJQUFJLGVBQWU7QUFBQSxNQUVuQixJQUFJLFVBQVU7QUFBQSxNQUNkLE1BQU0sS0FBSyxJQUFJLGdCQUFnQixNQUFNLEVBQUUsU0FBUztBQUFBLE1BQ2hELE1BQU0sTUFBTSxHQUFHLE9BQU8sS0FBSyxPQUFPLEtBQUssSUFBSSxPQUFPO0FBQUEsTUFFbEQsVUFBVSxJQUFJO0FBQUEsTUFDZCxNQUFNLGFBQWE7QUFBQSxNQUNuQixJQUFJLFdBQWlEO0FBQUEsTUFDckQsTUFBTSxnQkFBZ0IsTUFBTTtBQUFBLFFBQzFCLElBQUksVUFBVTtBQUFBLFVBQUc7QUFBQSxRQUNqQixJQUFJLGFBQWE7QUFBQSxVQUFNLGFBQWEsUUFBUTtBQUFBLFFBQzVDLFdBQVcsV0FBVyxNQUFNLFdBQVcsTUFBTSxHQUFHLE1BQU07QUFBQTtBQUFBLE1BVXhELElBQUk7QUFBQSxNQUNKLElBQUk7QUFBQSxRQUNGLE1BQU0sTUFBTSxNQUFNLEtBQUssRUFBRSxRQUFRLFdBQVcsT0FBTyxDQUFDO0FBQUEsUUFDcEQsT0FBTyxHQUFHO0FBQUEsUUFDVixJQUFJLGFBQWE7QUFBQSxVQUFNLGFBQWEsUUFBUTtBQUFBLFFBQzVDLFVBQVU7QUFBQSxRQUNWLElBQUk7QUFBQSxVQUFTO0FBQUEsUUFDYixLQUFLLEtBQUssZUFBZSxFQUFFLE9BQU8sa0JBQWtCLE9BQU8sRUFBRSxDQUFDLENBQUM7QUFBQSxRQUMvRCxNQUFNLFFBQVEsS0FBSztBQUFBLFFBQ25CLFFBQVEsS0FBSyxJQUFJLFFBQVEsR0FBRyxNQUFNLEtBQUs7QUFBQSxRQUN2QztBQUFBO0FBQUEsTUFHRixJQUFJO0FBQUEsUUFDRixJQUFJLENBQUMsSUFBSSxJQUFJO0FBQUEsVUFFWCxNQUFNLEtBQUssY0FBYyxHQUFHO0FBQUEsVUFLNUIsTUFBTSxJQUFJLE1BQU0sT0FBTyxFQUFFLE1BQU0sTUFBTSxFQUFFO0FBQUEsVUFDdkMsS0FBSyxLQUFLLGVBQWUsRUFBRSxPQUFPLFFBQVEsUUFBUSxJQUFJLE9BQU8sQ0FBQyxDQUFDO0FBQUEsVUFDL0QsTUFBTSxRQUFRLEtBQUs7QUFBQSxVQUNuQixRQUFRLEtBQUssSUFBSSxRQUFRLEdBQUcsTUFBTSxLQUFLO0FBQUEsVUFDdkM7QUFBQSxRQUNGO0FBQUEsUUFDQSxJQUFJLENBQUMsSUFBSSxNQUFNO0FBQUEsVUFJYixLQUFLLEtBQUssZUFBZSxFQUFFLE9BQU8sV0FBVyxRQUFRLElBQUksT0FBTyxDQUFDLENBQUM7QUFBQSxVQUNsRSxNQUFNLFFBQVEsS0FBSztBQUFBLFVBQ25CLFFBQVEsS0FBSyxJQUFJLFFBQVEsR0FBRyxNQUFNLEtBQUs7QUFBQSxVQUN2QztBQUFBLFFBQ0Y7QUFBQSxRQUVBLGdCQUFnQjtBQUFBLFFBQ2hCLGVBQWU7QUFBQSxRQUNmLGNBQWM7QUFBQSxRQUVkLE1BQU0sU0FBUyxJQUFJLEtBQUssVUFBVTtBQUFBLFFBQ2xDLE1BQU0sVUFBVSxJQUFJO0FBQUEsUUFDcEIsSUFBSSxNQUFNO0FBQUEsUUFFVixPQUFPLENBQUMsU0FBUztBQUFBLFVBQ2YsSUFBSTtBQUFBLFVBQ0osSUFBSTtBQUFBLFlBQ0YsUUFBUSxNQUFNLE9BQU8sS0FBSztBQUFBLFlBQzFCLE9BQU8sR0FBRztBQUFBLFlBR1YsSUFBSSxDQUFDO0FBQUEsY0FBUyxLQUFLLEtBQUssZUFBZSxFQUFFLE9BQU8sZ0JBQWdCLE9BQU8sRUFBRSxDQUFDLENBQUM7QUFBQSxZQUMzRTtBQUFBO0FBQUEsVUFFRixJQUFJLE1BQU0sTUFBTTtBQUFBLFlBQ2QsSUFBSSxDQUFDO0FBQUEsY0FBUyxLQUFLLEtBQUssZUFBZSxFQUFFLE9BQU8sYUFBYSxDQUFDLENBQUM7QUFBQSxZQUMvRDtBQUFBLFVBQ0Y7QUFBQSxVQVVBLFFBQVEsTUFBTTtBQUFBLFVBS2QsY0FBYztBQUFBLFVBQ2QsT0FBTyxRQUFRLE9BQU8sTUFBTSxPQUFPLEVBQUUsUUFBUSxLQUFLLENBQUM7QUFBQSxVQUVuRCxTQUFTLE1BQU0sSUFBSSxRQUFRO0FBQUE7QUFBQSxDQUFNLEVBQUcsT0FBTyxHQUFHLE1BQU0sSUFBSSxRQUFRO0FBQUE7QUFBQSxDQUFNLEdBQUc7QUFBQSxZQUN2RSxNQUFNLFFBQVEsSUFBSSxNQUFNLEdBQUcsR0FBRztBQUFBLFlBQzlCLE1BQU0sSUFBSSxNQUFNLE1BQU0sQ0FBQztBQUFBLFlBQ3ZCLFFBQVEsT0FBTyxhQUFhLGNBQWMsS0FBSztBQUFBLFlBQy9DLFdBQVcsUUFBUTtBQUFBLGNBQVUsS0FBSyxLQUFLLFlBQVksSUFBSSxDQUFDO0FBQUEsWUFDeEQsSUFBSSxDQUFDO0FBQUEsY0FBTztBQUFBLFlBRVosSUFBSTtBQUFBLFlBQ0osSUFBSTtBQUFBLGNBQ0YsS0FBSyxLQUFLLE1BQU0sTUFBTSxJQUFJO0FBQUEsY0FDMUIsT0FBTyxHQUFHO0FBQUEsY0FDVixLQUFLLEtBQUssY0FBYyxPQUFPLENBQUMsQ0FBQztBQUFBLGNBQ2pDO0FBQUE7QUFBQSxZQU9GLE1BQU0sSUFBSSxLQUFLLFdBQVcsRUFBRTtBQUFBLFlBRTVCLElBQUksYUFBYTtBQUFBLFlBQ2pCLElBQUksS0FBSyxTQUFTO0FBQUEsY0FDaEIsTUFBTSxPQUFPLEtBQUssUUFBUSxFQUFFO0FBQUEsY0FDNUIsSUFBSSxPQUFPLFNBQVMsVUFBVTtBQUFBLGdCQUM1QixJQUFJLFVBQVUsUUFBUSxTQUFTLE9BQU87QUFBQSxrQkFDcEMsU0FBUztBQUFBLGtCQUNULGFBQWE7QUFBQSxrQkFDYixNQUFNLE9BQU8sS0FBSyxnQkFBZ0IsSUFBSSxLQUFLO0FBQUEsa0JBQzNDLElBQUksU0FBUztBQUFBLG9CQUFNLEtBQUssSUFBSTtBQUFBLGtCQUc1QixJQUFJLGFBQWEsS0FBSyxPQUFPLE1BQU0sWUFBWSxJQUFJLFlBQVk7QUFBQSxvQkFDN0QsUUFBUTtBQUFBLG9CQUNSLFVBQVU7QUFBQSxvQkFDVjtBQUFBLGtCQUNGO0FBQUEsZ0JBQ0Y7QUFBQSxnQkFDQSxRQUFRO0FBQUEsY0FDVjtBQUFBLFlBQ0Y7QUFBQSxZQUNBLElBQ0UsS0FBSyxvQkFBb0IsUUFDekIsQ0FBQyxjQUNELENBQUMsZ0JBQ0QsY0FBYyxLQUNkLE9BQU8sTUFBTSxZQUNiLEtBQUssWUFDTDtBQUFBLGNBRUEsZUFBZTtBQUFBLGNBQ2YsU0FBUztBQUFBLGNBQ1QsTUFBTSxPQUFPLEtBQUssZ0JBQWdCLEtBQUssVUFBVSxFQUFFLEtBQUssU0FBUyxLQUFLO0FBQUEsY0FDdEUsSUFBSSxTQUFTO0FBQUEsZ0JBQU0sS0FBSyxJQUFJO0FBQUEsWUFDOUI7QUFBQSxZQUNBLElBQUksT0FBTyxNQUFNLFlBQVksT0FBTyxTQUFTLENBQUMsR0FBRztBQUFBLGNBQy9DLFNBQVMsaUJBQWlCLFdBQVcsSUFBSSxLQUFLLElBQUksUUFBUSxDQUFDO0FBQUEsWUFDN0Q7QUFBQSxZQUVBLE1BQU0sV0FBVyxLQUFLLFNBQVMsSUFBSSxLQUFLLEtBQUs7QUFBQSxZQUM3QyxNQUFNLGFBQWEsS0FBSyxXQUFXLElBQUksT0FBTyxRQUFRLEtBQUs7QUFBQSxZQUUzRCxJQUFJLFlBQWEsY0FBYyxLQUFLLDBCQUEwQixNQUFPO0FBQUEsY0FDbkUsTUFBTSxPQUFPLEtBQUssU0FBUyxLQUFLLE9BQU8sSUFBSSxLQUFLLElBQUksTUFBTTtBQUFBLGNBQzFELElBQUksU0FBUztBQUFBLGdCQUFNLEtBQUssSUFBSTtBQUFBLFlBQzlCO0FBQUEsWUFDQSxJQUFJLFlBQVk7QUFBQSxjQUdkLFdBQVcsTUFBTTtBQUFBLGNBQ2pCLFNBQVM7QUFBQSxjQUNULE9BQU87QUFBQSxZQUNUO0FBQUEsVUFDRjtBQUFBLFVBQ0EsSUFBSSxTQUFTO0FBQUEsWUFDWCxXQUFXLE1BQU07QUFBQSxZQUNqQjtBQUFBLFVBQ0Y7QUFBQSxRQUNGO0FBQUEsZ0JBQ0E7QUFBQSxRQUNBLElBQUksYUFBYTtBQUFBLFVBQU0sYUFBYSxRQUFRO0FBQUEsUUFDNUMsVUFBVTtBQUFBO0FBQUEsTUFHWixJQUFJO0FBQUEsUUFBUztBQUFBLE1BQ2IsSUFBSSxTQUFTO0FBQUEsUUFFWCxRQUFRLE1BQU07QUFBQSxRQUNkO0FBQUEsTUFDRjtBQUFBLE1BUUEsTUFBTSxRQUFRLEtBQUs7QUFBQSxNQUNuQixRQUFRLEtBQUssSUFBSSxRQUFRLEdBQUcsTUFBTSxLQUFLO0FBQUEsSUFDekM7QUFBQSxJQUNBLE9BQU87QUFBQSxZQUNQO0FBQUEsSUFDQSxJQUFJLFlBQVk7QUFBQSxNQUNkLFFBQVEsSUFBSSxVQUFVLFFBQVE7QUFBQSxNQUM5QixRQUFRLElBQUksV0FBVyxRQUFRO0FBQUEsSUFDakM7QUFBQSxJQUNBLFdBQVcsTUFBTSxTQUFTLFVBQVU7QUFBQSxJQUNwQyxLQUFLLFFBQVEsb0JBQW9CLFNBQVMsYUFBYTtBQUFBLElBQ3ZELEtBQUssUUFBUSxFQUFFLFFBQVEsT0FBTyxRQUFRLE9BQU8sQ0FBQztBQUFBO0FBQUE7OztBQ3JaM0MsSUFBTSxpQkFBaUI7QUFFdkIsSUFBTSxtQkFBbUI7QUFDekIsSUFBTSxvQkFBb0IsaUJBQWlCO0FBRTNDLElBQU0sYUFBYTtBQUduQixJQUFNLGNBQ1g7QUFNSyxJQUFNLHNCQUFzQjtBQUk1QixTQUFTLGVBQWUsQ0FBQyxLQUFpQztBQUFBLEVBQy9ELElBQUksUUFBUSxhQUFhLElBQUksS0FBSyxNQUFNO0FBQUEsSUFBSSxPQUFPO0FBQUEsRUFDbkQsTUFBTSxJQUFJLE9BQU8sR0FBRztBQUFBLEVBQ3BCLE9BQU8sT0FBTyxVQUFVLENBQUMsS0FBSyxLQUFLLElBQUksSUFBSTtBQUFBO0FBd0R0QyxJQUFNLG9CQUFvQjtBQUlqQyxJQUFNLFlBQVksQ0FBQyxLQUFhLE9BQU8sdUJBQ3JDLEdBQUcsT0FBTyxhQUFhO0FBT2xCLFNBQVMsT0FBTyxDQUFDLEdBQWlCLEtBQTBDO0FBQUEsRUFDakYsTUFBTSxPQUFPLEVBQUUsT0FBTyxFQUFFLE9BQU8sUUFBUSxFQUFFLFFBQVEsUUFBUSxFQUFFLE9BQU87QUFBQSxFQUNsRSxRQUFRLEVBQUU7QUFBQSxTQUNIO0FBQUEsTUFDSCxPQUFPO0FBQUEsU0FDSjtBQUFBLE1BQ0gsT0FBTztBQUFBLFFBQ0wsTUFBTTtBQUFBLFdBQ0g7QUFBQSxXQUNDLEVBQUUsS0FBSyxFQUFFLElBQUksRUFBRSxHQUFHLElBQUksQ0FBQztBQUFBLFFBQzNCLE1BQU07QUFBQSxRQUNOLFNBQVMsSUFBSSxTQUFTO0FBQUEsUUFDdEIsTUFDRSxFQUFFLE9BQU8sVUFDTCxVQUNFLGlHQUNBLGFBQ0YsSUFDQSxVQUFVLHFEQUFxRDtBQUFBLE1BQ3ZFO0FBQUEsU0FDRztBQUFBLE1BQ0gsT0FBTztBQUFBLFFBQ0wsTUFBTTtBQUFBLFdBQ0g7QUFBQSxRQUNILE1BQU07QUFBQSxRQUNOLFNBQVMsSUFBSSxTQUFTO0FBQUEsUUFDdEIsTUFBTSxVQUFVLG1FQUFtRTtBQUFBLE1BQ3JGO0FBQUEsU0FDRztBQUFBLE1BQ0gsT0FBTztBQUFBLFFBQ0wsTUFBTTtBQUFBLFdBQ0g7QUFBQSxRQUNILE1BQU07QUFBQSxRQUNOLFNBQVMsSUFBSSxLQUFLLEVBQUUsT0FBTyxFQUFFLFFBQVEsTUFBTSxVQUFXLEVBQUUsUUFBUSxFQUFFLE9BQU8sRUFBRSxNQUFNLElBQUksQ0FBQyxFQUFHLENBQUM7QUFBQSxRQUMxRixNQUFNLHlFQUF5RTtBQUFBLE1BQ2pGO0FBQUEsU0FDRztBQUFBLE1BQ0gsSUFBSSxFQUFFLFlBQVksRUFBRSxTQUFTO0FBQUEsUUFDM0IsT0FBTztBQUFBLFVBQ0wsTUFBTTtBQUFBLGFBQ0g7QUFBQSxVQUNILE1BQU07QUFBQSxVQUNOLFNBQVMsSUFBSSxLQUFLO0FBQUEsWUFDaEIsT0FBTyxFQUFFO0FBQUEsWUFDVCxNQUFNO0FBQUEsZUFDRixFQUFFLFFBQVEsRUFBRSxPQUFPLEVBQUUsTUFBTSxJQUFJLENBQUM7QUFBQSxVQUN0QyxDQUFDO0FBQUEsVUFDRCxNQUFNLG1GQUFtRjtBQUFBLFFBQzNGO0FBQUEsTUFDRixPQUFPO0FBQUEsUUFDTCxNQUFNO0FBQUEsV0FDSDtBQUFBLFFBQ0gsTUFBTTtBQUFBLFFBQ04sU0FBUyxJQUFJLEtBQUssRUFBRSxPQUFPLEVBQUUsUUFBUSxNQUFNLFNBQVUsRUFBRSxRQUFRLEVBQUUsT0FBTyxFQUFFLE1BQU0sSUFBSSxDQUFDLEVBQUcsQ0FBQztBQUFBLFFBQ3pGLE1BQU0sdUNBQXVDO0FBQUEsTUFDL0M7QUFBQTtBQUFBO0FBTUMsU0FBUyxVQUFVLENBQUMsS0FBcUI7QUFBQSxFQUM5QyxPQUFPLDJCQUEyQixLQUFLLEdBQUcsSUFBSSxNQUFNLElBQUksSUFBSSxXQUFXLEtBQUssT0FBTztBQUFBO0FBUTlFLFNBQVMsYUFBYSxDQUFDLE9BQXlEO0FBQUEsRUFDckYsTUFBTSxLQUFLLE1BQU0sUUFBUSxHQUFHO0FBQUEsRUFDNUIsTUFBTSxLQUFLLE9BQU8sS0FBSyxRQUFRLE1BQU0sTUFBTSxHQUFHLEVBQUU7QUFBQSxFQUNoRCxNQUFNLFFBQVEsT0FBTyxLQUFLLEtBQUssTUFBTSxNQUFNLEtBQUssQ0FBQztBQUFBLEVBQ2pELElBQUksQ0FBQyxVQUFVLEtBQUssR0FBRyxLQUFLLENBQUM7QUFBQSxJQUFHLE9BQU87QUFBQSxFQUN2QyxJQUFJLE9BQU8sTUFBTSxVQUFVO0FBQUEsSUFBSSxPQUFPO0FBQUEsRUFDdEMsT0FBTyxFQUFFLE9BQU8sT0FBTyxTQUFTLElBQUksRUFBRSxNQUFPLFFBQVEsRUFBRSxNQUFNLElBQUksQ0FBQyxFQUFHO0FBQUE7QUFnQmhFLFNBQVMsU0FBUyxDQUN2QixPQUNBLEdBQzhFO0FBQUEsRUFDOUUsTUFBTSxNQUFNLEVBQUUsT0FBTztBQUFBLEVBQ3JCLE1BQU0sSUFBSSxjQUFjLEtBQUs7QUFBQSxFQUM3QixJQUFJLE1BQU0sUUFBUSxFQUFFLFNBQVMsUUFBUSxFQUFFLFVBQVUsYUFBYSxFQUFFO0FBQUEsSUFDOUQsT0FBTyxFQUFFLElBQUksTUFBTSxPQUFPLEVBQUUsVUFBVyxFQUFFLFFBQVEsRUFBRSxPQUFPLEVBQUUsTUFBTSxJQUFJLENBQUMsRUFBRztBQUFBLEVBQzVFLE1BQU0sS0FDSixNQUFNLElBQ0Ysd0RBQ0EsNEJBQTRCO0FBQUEsRUFDbEMsTUFBTSxRQUFRLEVBQUUsUUFBUSxHQUFHLG9EQUFvRDtBQUFBLEVBQy9FLE1BQU0sTUFDSixDQUFDLEVBQUUsU0FBUyxNQUFNLFNBQVMsR0FBRyxJQUMxQixrRkFDQTtBQUFBLEVBQ04sT0FBTztBQUFBLElBQ0wsSUFBSTtBQUFBLElBQ0osU0FBUyxhQUFhLDBEQUFxRCxRQUFRO0FBQUEsRUFDckY7QUFBQTtBQUlLLFNBQVMsV0FBVyxDQUFDLE1BQWlDO0FBQUEsRUFDM0QsT0FBTyxLQUFLLElBQUksVUFBVSxFQUFFLEtBQUssR0FBRztBQUFBO0FBSy9CLFNBQVMsV0FBVyxDQUN6QixRQUNBLE9BQ0EsTUFDQSxPQUNRO0FBQUEsRUFHUixNQUFNLE9BQU8sUUFBUSxHQUFHLFNBQVMsVUFBVSxPQUFPLEtBQUs7QUFBQSxFQUN2RCxNQUFNLEtBQUssUUFBUSxJQUFJLENBQUMsV0FBVyxNQUFNLElBQUksQ0FBQyxXQUFXLElBQUk7QUFBQSxFQUM3RCxPQUFPLFlBQVksQ0FBQyxHQUFHLFFBQVEsR0FBRyxJQUFJLEdBQUksT0FBTyxDQUFDLFFBQVEsSUFBSSxDQUFDLENBQUUsQ0FBQztBQUFBO0FBNkJwRSxlQUFzQixlQUFtQixDQUN2QyxNQUNBLEdBQ2lCO0FBQUEsRUFDakIsTUFBTSxNQUFNLEtBQUssT0FBTyxRQUFRO0FBQUEsRUFDaEMsTUFBTSxXQUFXLEVBQUUsWUFBWSxnQkFBZ0IsUUFBUSxJQUFJLFdBQVc7QUFBQSxFQUN0RSxNQUFNLFNBQVMsRUFBRSxXQUFXLE1BQU07QUFBQSxFQUNsQyxNQUFNLFlBQVksQ0FBQyxFQUFFO0FBQUEsRUFFckIsTUFBTSxLQUFLLElBQUk7QUFBQSxFQUNmLE1BQU0sZ0JBQWdCLE1BQU0sR0FBRyxNQUFNO0FBQUEsRUFDckMsS0FBSyxRQUFRLGlCQUFpQixTQUFTLGFBQWE7QUFBQSxFQUNwRCxJQUFJLEtBQUssUUFBUTtBQUFBLElBQVMsR0FBRyxNQUFNO0FBQUEsRUFFbkMsSUFBSSxTQUFTO0FBQUEsRUFDYixJQUFJLFNBQVMsS0FBSztBQUFBLEVBQ2xCLElBQUksUUFBNEIsS0FBSztBQUFBLEVBQ3JDLElBQUksYUFBYTtBQUFBLEVBSWpCLE1BQU0sYUFBYSxDQUFDLElBQVEsVUFBb0IsY0FBYyxPQUFPLElBQUksS0FBSztBQUFBLEVBQzlFLElBQUksTUFBc0I7QUFBQSxFQUMxQixJQUFJO0FBQUEsRUFDSixJQUFJLFdBQVc7QUFBQSxFQUVmLE1BQU0sU0FBUyxDQUFDLE1BQWU7QUFBQSxJQUM3QixJQUFJLFFBQVE7QUFBQSxNQUFNLE1BQU07QUFBQSxJQUN4QixHQUFHLE1BQU07QUFBQTtBQUFBLEVBRVgsTUFBTSxRQUNKLEVBQUUsU0FBUyxXQUFXLFdBQVcsSUFBSSxXQUFXLE1BQU0sT0FBTyxRQUFRLEdBQUcsUUFBUSxJQUFJO0FBQUEsRUFFdEYsSUFBSTtBQUFBLElBQ0YsTUFBTSxPQUFPLE1BQU0sV0FBZTtBQUFBLFNBQzdCO0FBQUEsTUFDSCxRQUFRLEdBQUc7QUFBQSxNQUtYLGlCQUFpQjtBQUFBLE1BR2pCLFVBQVUsQ0FBQyxPQUFPO0FBQUEsUUFDaEIsTUFBTSxJQUFJLEtBQUssV0FBVyxFQUFFO0FBQUEsUUFDNUIsYUFBYSxPQUFPLE1BQU0sWUFBWSxPQUFPLFNBQVMsQ0FBQztBQUFBLFFBQ3ZELE9BQU87QUFBQTtBQUFBLE1BRVQsY0FBYyxDQUFDLE1BQU07QUFBQSxRQUNuQixNQUFNLFVBQVUsS0FBSyxlQUFlLENBQUMsS0FBSztBQUFBLFFBSTFDLElBQUksWUFBWSxVQUFVLFFBQVEsTUFBTTtBQUFBLFVBQ3RDLE1BQU07QUFBQSxVQUNOLFdBQVcsRUFBRSxTQUFTO0FBQUEsUUFDeEI7QUFBQSxRQUNBLE9BQU87QUFBQTtBQUFBLE1BRVQsUUFBUSxDQUFDLElBQUksVUFBVTtBQUFBLFFBQ3JCLFdBQVc7QUFBQSxRQUNYLE1BQU0sUUFBTyxLQUFLLFNBQVMsS0FBSyxPQUFPLElBQUksS0FBSyxJQUFJLE1BQU07QUFBQSxRQUMxRCxJQUFJLFVBQVMsUUFBUSxXQUFXLElBQUksS0FBSztBQUFBLFVBQUcsVUFBVTtBQUFBLFFBQ3RELE9BQU87QUFBQTtBQUFBLE1BRVQsVUFBVSxDQUFDLElBQUksT0FBTyxhQUFhO0FBQUEsUUFDakMsSUFBSSxLQUFLLFdBQVcsSUFBSSxPQUFPLFFBQVEsR0FBRztBQUFBLFVBQ3hDLElBQUksUUFBUSxNQUFNO0FBQUEsWUFDaEIsT0FBTyxFQUFFLGFBQWEsTUFBTSxPQUFPLEVBQUUsSUFBSSxXQUFXO0FBQUEsWUFDcEQsSUFBSSxRQUFRO0FBQUEsY0FBVSxXQUFXLEVBQUUsV0FBVyxFQUFFO0FBQUEsVUFDbEQ7QUFBQSxVQUNBLE9BQU87QUFBQSxRQUNUO0FBQUEsUUFDQSxJQUFJLEVBQUUsU0FBUyxVQUFVLFlBQVksV0FBVyxJQUFJLEtBQUssR0FBRztBQUFBLFVBQzFELElBQUksUUFBUTtBQUFBLFlBQU0sTUFBTTtBQUFBLFVBQ3hCLE9BQU87QUFBQSxRQUNUO0FBQUEsUUFDQSxPQUFPO0FBQUE7QUFBQSxNQUVULFdBQVcsQ0FBQyxTQUFTO0FBQUEsUUFDbkIsV0FBVztBQUFBLFFBQ1gsT0FBTyxLQUFLLFlBQVksSUFBSSxLQUFLO0FBQUE7QUFBQSxNQUVuQyxjQUFjLENBQUMsU0FBUztBQUFBLFFBQ3RCLE1BQU0sUUFBTyxLQUFLLGVBQWUsSUFBSSxLQUFLO0FBQUEsUUFDMUMsSUFBSSxLQUFLLFVBQVUsa0JBQWtCO0FBQUEsVUFDbkMsWUFBWTtBQUFBLFVBQ1osSUFBSSxhQUFhLFlBQVk7QUFBQSxZQUFxQixPQUFPLE1BQU07QUFBQSxRQUNqRSxFQUFPO0FBQUEsVUFHTCxXQUFXO0FBQUE7QUFBQSxRQUViLE9BQU87QUFBQTtBQUFBLE1BRVQsT0FBTyxDQUFDLE1BQU07QUFBQSxRQUNaLFNBQVMsRUFBRTtBQUFBLFFBQ1gsUUFBUSxFQUFFLFNBQVM7QUFBQSxRQUNuQixLQUFLLFFBQVEsQ0FBQztBQUFBO0FBQUEsSUFFbEIsQ0FBQztBQUFBLElBQ0QsTUFBTSxPQUFPLFFBQ1g7QUFBQSxNQUNFLEtBQUssT0FBTztBQUFBLFNBQ1IsV0FBVyxFQUFFLElBQUksU0FBUyxJQUFJLENBQUM7QUFBQSxNQUNuQyxNQUFNLEVBQUU7QUFBQSxNQUNSO0FBQUEsTUFDQTtBQUFBLFNBQ0ksUUFBUSxFQUFFLE1BQU0sSUFBSSxDQUFDO0FBQUEsTUFDekIsVUFBVSxFQUFFO0FBQUEsTUFDWixPQUFPLEVBQUU7QUFBQSxJQUNYLEdBQ0EsRUFBRSxRQUNKO0FBQUEsSUFDQSxJQUFJLFNBQVM7QUFBQSxNQUFNLElBQUksTUFBTSxHQUFHLEtBQUssVUFBVSxJQUFJO0FBQUEsQ0FBSztBQUFBLElBQ3hELE9BQU87QUFBQSxZQUNQO0FBQUEsSUFDQSxJQUFJLFVBQVU7QUFBQSxNQUFNLGFBQWEsS0FBSztBQUFBLElBQ3RDLEtBQUssUUFBUSxvQkFBb0IsU0FBUyxhQUFhO0FBQUE7QUFBQTs7O0FDN21CcEQsSUFBTSx1QkFBdUI7QUFPN0IsSUFBTSxlQUFlO0FBZ0VyQixTQUFTLFVBQVUsQ0FBQyxRQUF3QjtBQUFBLEVBQ2pELE9BQU8sU0FBUztBQUFBOzs7QUMxRlgsSUFBTSxtQkFBbUI7QUFHekIsSUFBTSxlQUFlLFdBQVcsZ0JBQWdCOzs7QUNYaEQsSUFBTSxpQkFBaUIsQ0FBQyxPQUFPLGFBQWEsUUFBUSxNQUFNO0FBRTFELFNBQVMsU0FBUyxDQUFDLE1BQXVCO0FBQUEsRUFDL0MsTUFBTSxRQUFRLEtBQUssWUFBWTtBQUFBLEVBQy9CLE9BQU8sZUFBZSxLQUFLLENBQUMsUUFBUSxNQUFNLFNBQVMsR0FBRyxDQUFDO0FBQUE7QUFJekQsSUFBTSxZQUFZLElBQUksSUFBSSxDQUFDLGdCQUFnQixRQUFRLFFBQVEsT0FBTyxVQUFVLENBQUM7OztBUjBEN0UsU0FBUyxhQUFhLENBQUMsTUFBYyxRQUFnQixNQUFzQjtBQUFBLEVBQ3pFLE1BQU0sT0FDSixXQUFXLE1BQ1AsVUFDQSxXQUFXLE1BQ1QsY0FDQSxXQUFXLE1BQ1QsYUFDQTtBQUFBLEVBQ1YsTUFBTSxPQUFRLFFBQVEsQ0FBQztBQUFBLEVBQ3ZCLE1BQU0sVUFBVSxNQUFNLFFBQVEsS0FBSyxPQUFPLElBQUksS0FBSyxRQUFRLElBQUksTUFBTSxJQUFJO0FBQUEsRUFHekUsTUFBTSxPQUFPLE9BQU8sS0FBSyxTQUFTLFdBQVcsS0FBSyxPQUFPO0FBQUEsRUFDekQsSUFBSSxPQUFPLEtBQUssVUFBVSxXQUFXLEtBQUssUUFBUSxHQUFHLHFCQUFxQixXQUFXLE1BQU07QUFBQSxPQUNyRixPQUFPLEVBQUUsS0FBSyxJQUFJLENBQUM7QUFBQSxPQUNuQixVQUFVLEVBQUUsUUFBUSxJQUFJLENBQUM7QUFBQSxPQUN6QixTQUFTLFFBQVEsU0FBUyxZQUFZLEVBQUUsUUFBUSxLQUFLLElBQUksQ0FBQztBQUFBLEVBQ2hFLENBQUM7QUFBQTtBQUdILElBQU0sYUFBYSxRQUFRLElBQUksY0FBYyxZQUFZLEdBQUcsQ0FBQztBQUM3RCxJQUFNLGFBQWEsS0FBSyxZQUFZLElBQUk7QUFDeEMsSUFBTSxXQUFXLEtBQUssWUFBWSxNQUFNO0FBQ3hDLElBQU0sZ0JBQWdCLEtBQUssWUFBWSxNQUFNLFdBQVcsV0FBVztBQUNuRSxJQUFNLGNBQWMsS0FBSyxZQUFZLE1BQU0sTUFBTSxNQUFNLE1BQU0sTUFBTSxPQUFPLGFBQWE7QUFHaEYsU0FBUyxTQUFTLEdBQVc7QUFBQSxFQUNsQyxJQUFJLFFBQVEsSUFBSSwyQkFBMkI7QUFBQSxJQUFXLE9BQU87QUFBQSxFQUM3RCxJQUFJLFFBQVEsSUFBSSwyQkFBMkI7QUFBQSxJQUFPLE9BQU87QUFBQSxFQUN6RCxPQUFPLFdBQVcsS0FBSyxVQUFVLFlBQVksQ0FBQyxJQUFJLGFBQWE7QUFBQTtBQUlqRSxTQUFTLGVBQWUsR0FBVztBQUFBLEVBQ2pDLE9BQU8sUUFBUSxRQUFRLElBQUksb0JBQW9CLEtBQUssUUFBUSxHQUFHLGNBQWMsQ0FBQztBQUFBO0FBZWhGLFNBQVMsVUFBVSxHQUFhO0FBQUEsRUFDOUIsTUFBTSxNQUFNLEtBQUssZ0JBQWdCLEdBQUcsVUFBVTtBQUFBLEVBQzlDLElBQUk7QUFBQSxJQUNGLE9BQU8sWUFBWSxLQUFLLEVBQUUsZUFBZSxLQUFLLENBQUMsRUFDNUMsT0FBTyxDQUFDLE1BQU0sRUFBRSxZQUFZLEtBQUssV0FBVyxLQUFLLEtBQUssRUFBRSxNQUFNLGVBQWUsQ0FBQyxDQUFDLEVBQy9FLElBQUksQ0FBQyxPQUFPLEVBQUUsSUFBSSxFQUFFLE1BQU0sSUFBSSxTQUFTLEtBQUssS0FBSyxFQUFFLE1BQU0sZUFBZSxDQUFDLEVBQUUsUUFBUSxFQUFFLEVBQ3JGLEtBQUssQ0FBQyxHQUFHLE1BQU0sRUFBRSxLQUFLLEVBQUUsRUFBRSxFQUMxQixJQUFJLENBQUMsTUFBTSxFQUFFLEVBQUU7QUFBQSxJQUNsQixNQUFNO0FBQUEsSUFDTixPQUFPLENBQUM7QUFBQTtBQUFBO0FBS1osU0FBUyxPQUFPLENBQUMsSUFBZ0M7QUFBQSxFQUMvQyxJQUFJO0FBQUEsSUFDRixNQUFNLElBQUksS0FBSyxNQUNiLGFBQWEsS0FBSyxnQkFBZ0IsR0FBRyxZQUFZLElBQUksZUFBZSxHQUFHLE1BQU0sQ0FDL0U7QUFBQSxJQUNBLE9BQU8sT0FBTyxFQUFFLE9BQU8sT0FBTyxXQUFXLEVBQUUsTUFBTSxLQUFLO0FBQUEsSUFDdEQsTUFBTTtBQUFBLElBQ047QUFBQTtBQUFBO0FBaUJKLFNBQVMsU0FBUyxDQUFDLFNBQXdEO0FBQUEsRUFDekUsTUFBTSxNQUFNLFdBQVc7QUFBQSxFQUN2QixNQUFNLEtBQUssV0FBVyxJQUFJO0FBQUEsRUFDMUIsSUFBSSxPQUFPO0FBQUEsSUFDVCxPQUFPO0FBQUEsTUFDTCxTQUFTO0FBQUEsTUFDVCxPQUFPLEVBQUUsTUFBTSw2RUFBd0U7QUFBQSxJQUN6RjtBQUFBLEVBQ0YsSUFBSSxDQUFDLElBQUksU0FBUyxFQUFFO0FBQUEsSUFDbEIsT0FBTztBQUFBLE1BQ0wsU0FBUywwQkFBMEI7QUFBQSxNQUNuQyxPQUFPO0FBQUEsUUFDTCxNQUNFLElBQUksV0FBVyxJQUNYLGtFQUNBO0FBQUEsUUFDTixTQUFTLElBQUksTUFBTSxHQUFHLEVBQUU7QUFBQSxNQUMxQjtBQUFBLElBQ0Y7QUFBQSxFQUNGLElBQUksUUFBUSxFQUFFLE1BQU07QUFBQSxJQUNsQixPQUFPO0FBQUEsTUFDTCxTQUFTLDJCQUEyQjtBQUFBLE1BQ3BDLE9BQU87QUFBQSxRQUNMLE1BQU0saUhBQWlIO0FBQUEsTUFDekg7QUFBQSxJQUNGO0FBQUEsRUFDRixPQUFPO0FBQUEsSUFDTCxTQUFTLGtDQUFrQztBQUFBLElBQzNDLE9BQU87QUFBQSxNQUdMLE1BQU0sb0NBQW9DLGdGQUEyRTtBQUFBLE1BQ3JILFNBQVMsSUFBSSxNQUFNLEdBQUcsRUFBRTtBQUFBLElBQzFCO0FBQUEsRUFDRjtBQUFBO0FBR0YsU0FBUyxlQUFlLENBQUMsU0FBMEI7QUFBQSxFQUNqRCxPQUFPLEtBQUssT0FBTyxHQUFHLFVBQVUsZUFBZSxpQkFBaUIseUJBQXlCO0FBQUE7QUFJM0YsU0FBUyxXQUFXLENBQUMsU0FBeUM7QUFBQSxFQUM1RCxNQUFNLE9BQU8sZ0JBQWdCLE9BQU87QUFBQSxFQUNwQyxJQUFJO0FBQUEsRUFDSixJQUFJO0FBQUEsSUFDRixNQUFNLGFBQWEsTUFBTSxNQUFNO0FBQUEsSUFDL0IsT0FBTyxHQUFHO0FBQUEsSUFDVixNQUFNLE9BQVEsRUFBNEI7QUFBQSxJQUMxQyxJQUFJLFNBQVM7QUFBQSxNQUFVLE9BQU87QUFBQSxJQUM5QixJQUFJLG9DQUFvQyxRQUFRLHFCQUFxQixRQUFRLFVBQVU7QUFBQTtBQUFBLEVBRXpGLElBQUk7QUFBQSxJQUNGLE9BQU8sS0FBSyxNQUFNLEdBQUc7QUFBQSxJQUNyQixNQUFNO0FBQUEsSUFDTixJQUFJLDBDQUEwQyxRQUFRLFVBQVU7QUFBQTtBQUFBO0FBSXBFLFNBQVMsY0FBYyxDQUFDLFNBQWtDO0FBQUEsRUFDeEQsTUFBTSxJQUFJLFlBQVksT0FBTztBQUFBLEVBQzdCLElBQUksQ0FBQyxHQUFHO0FBQUEsSUFDTixRQUFRLFNBQVMsVUFBVSxVQUFVLE9BQU87QUFBQSxJQUM1QyxJQUFJLFNBQVMsYUFBYSxLQUFLO0FBQUEsRUFDakM7QUFBQSxFQUNBLE9BQU87QUFBQTtBQUdULGVBQWUsR0FBRyxDQUNoQixNQUNBLFFBQ0EsTUFDQSxNQUM0QztBQUFBLEVBQzVDLE1BQU0sTUFBTSxNQUFNLE1BQU0sb0JBQW9CLE9BQU8sUUFBUTtBQUFBLElBQ3pEO0FBQUEsSUFDQSxTQUFTLFNBQVMsWUFBWSxFQUFFLGdCQUFnQixtQkFBbUIsSUFBSTtBQUFBLElBQ3ZFLE1BQU0sU0FBUyxZQUFZLEtBQUssVUFBVSxJQUFJLElBQUk7QUFBQSxFQUNwRCxDQUFDO0FBQUEsRUFDRCxJQUFJLE9BQWdCO0FBQUEsRUFDcEIsSUFBSTtBQUFBLElBQ0YsT0FBTyxNQUFNLElBQUksS0FBSztBQUFBLElBQ3RCLE1BQU07QUFBQSxFQUdSLE9BQU8sRUFBRSxRQUFRLElBQUksUUFBUSxLQUFLO0FBQUE7QUFHcEMsZUFBZSxPQUFPLENBQUMsU0FBNkIsS0FBOEI7QUFBQSxFQUNoRixNQUFNLElBQUksZUFBZSxPQUFPO0FBQUEsRUFDaEMsSUFBSTtBQUFBLEVBQ0osSUFBSTtBQUFBLEVBQ0osSUFBSTtBQUFBLEtBQ0QsRUFBRSxRQUFRLEtBQUssSUFBSSxNQUFNLElBQUksRUFBRSxNQUFNLFFBQVEsUUFBUSxHQUFHO0FBQUEsSUFDekQsT0FBTyxLQUFLO0FBQUEsSUFHWixNQUFNLFVBQVUsZUFBZSxRQUFRLElBQUksVUFBVSxPQUFPLEdBQUc7QUFBQSxJQUMvRCxNQUFNLE9BQU8sT0FBTyxPQUFPLFFBQVEsWUFBWSxVQUFVLE1BQU0sT0FBTyxJQUFJLElBQUksSUFBSTtBQUFBLElBQ2xGLElBQUksSUFBSSxTQUFTLFlBQVksU0FBUyxnQkFBZ0IsUUFBUSxTQUFTLFlBQVk7QUFBQSxNQUNqRixPQUFPLEVBQUUsSUFBSSxLQUFLO0FBQUEsSUFDcEIsTUFBTTtBQUFBO0FBQUEsRUFFUixJQUFJLFdBQVc7QUFBQSxJQUFLLGNBQWMsT0FBTyxJQUFJLElBQUksR0FBRyxRQUFRLElBQUk7QUFBQSxFQUNoRSxPQUFPO0FBQUE7QUFRRixJQUFNLGNBQWM7QUFBQSxFQUN6QixhQUFhLEVBQUUsTUFBTSxTQUFTO0FBQUEsRUFDOUIsSUFBSSxFQUFFLE1BQU0sU0FBUztBQUFBLEVBQ3JCLFNBQVMsRUFBRSxNQUFNLFNBQVM7QUFBQSxFQUMxQixLQUFLLEVBQUUsTUFBTSxTQUFTO0FBQUEsRUFDdEIsT0FBTyxFQUFFLE1BQU0sU0FBUztBQUFBLEVBQ3hCLEtBQUssRUFBRSxNQUFNLFNBQVM7QUFBQSxFQUN0QixNQUFNLEVBQUUsTUFBTSxTQUFTO0FBQUEsRUFDdkIsTUFBTSxFQUFFLE1BQU0sVUFBVTtBQUFBLEVBQ3hCLE9BQU8sRUFBRSxNQUFNLFNBQVM7QUFBQSxFQUN4QixRQUFRLEVBQUUsTUFBTSxVQUFVO0FBQUEsRUFDMUIsT0FBTyxFQUFFLE1BQU0sU0FBUztBQUFBLEVBQ3hCLE1BQU0sRUFBRSxNQUFNLFNBQVM7QUFBQSxFQUN2QixXQUFXLEVBQUUsTUFBTSxTQUFTO0FBQUEsRUFDNUIsT0FBTyxFQUFFLE1BQU0sU0FBUztBQUFBLEVBQ3hCLE9BQU8sRUFBRSxNQUFNLFNBQVM7QUFBQSxFQUN4QixXQUFXLEVBQUUsTUFBTSxVQUFVO0FBQUEsRUFDN0IsTUFBTSxFQUFFLE1BQU0sVUFBVTtBQUFBLEVBQ3hCLE9BQU8sRUFBRSxNQUFNLFVBQVU7QUFBQSxFQUN6QixTQUFTLEVBQUUsTUFBTSxTQUFTO0FBQUEsRUFDMUIsU0FBUyxFQUFFLE1BQU0sU0FBUztBQUFBLEVBQzFCLE9BQU8sRUFBRSxNQUFNLFNBQVM7QUFBQSxFQUN4QixpQkFBaUIsRUFBRSxNQUFNLFNBQVM7QUFBQSxFQUNsQyxRQUFRLEVBQUUsTUFBTSxTQUFTO0FBQUEsRUFDekIsT0FBTyxFQUFFLE1BQU0sVUFBVTtBQUFBLEVBQ3pCLEtBQUssRUFBRSxNQUFNLFNBQVM7QUFBQSxFQUN0QixTQUFTLEVBQUUsTUFBTSxTQUFTO0FBQUEsRUFDMUIsTUFBTSxFQUFFLE1BQU0sU0FBUztBQUN6QjtBQUFBO0FBRU8sTUFBTSxtQkFBbUIsU0FBUztBQUFBLEVBQ3ZDLFdBQVcsQ0FBQyxTQUFpQixPQUErQztBQUFBLElBQzFFLE1BQU0sU0FBUyxTQUFTLEtBQUs7QUFBQTtBQUVqQztBQVVPLFNBQVMsY0FBYyxDQUFDLE9BQWtEO0FBQUEsRUFDL0UsTUFBTSxJQUFJLFVBQVUsT0FBTyxFQUFFLE9BQU8sS0FBSyxDQUFDO0FBQUEsRUFDMUMsSUFBSSxDQUFDLEVBQUU7QUFBQSxJQUFJLElBQUksRUFBRSxTQUFTLE9BQU87QUFBQSxFQUNqQyxPQUFPLEVBQUUsUUFBUSxFQUFFLE9BQU8sRUFBRSxPQUFPLE9BQU8sRUFBRSxNQUFNLElBQUksRUFBRSxPQUFPLEVBQUUsTUFBTTtBQUFBO0FBUWxFLFNBQVMsY0FBYyxDQUFDLE9BQXVCO0FBQUEsRUFDcEQsTUFBTSxJQUFJLE1BQU0sS0FBSztBQUFBLEVBQ3JCLElBQUksQ0FBQyxzQkFBc0IsS0FBSyxDQUFDLEtBQUssT0FBTyxNQUFNLEtBQUssTUFBTSxDQUFDLENBQUM7QUFBQSxJQUM5RCxJQUFJLGtCQUFrQixzREFBaUQsT0FBTztBQUFBLEVBQ2hGLE9BQU87QUFBQTtBQUlGLFNBQVMsWUFBWSxDQUFDLE9BQWUsTUFBc0I7QUFBQSxFQUNoRSxNQUFNLElBQUksWUFBWSxLQUFLLE1BQU0sS0FBSyxDQUFDO0FBQUEsRUFDdkMsSUFBSSxDQUFDLEtBQUssT0FBTyxFQUFFLEVBQUUsSUFBSTtBQUFBLElBQ3ZCLElBQUksR0FBRyxVQUFVLHVEQUE2QyxTQUFTO0FBQUEsTUFDckUsTUFBTTtBQUFBLElBQ1IsQ0FBQztBQUFBLEVBQ0gsT0FBTyxPQUFPLEVBQUUsRUFBRTtBQUFBO0FBSWIsU0FBUyxVQUFVLENBQUMsT0FBZSxNQUFzQjtBQUFBLEVBQzlELE1BQU0sSUFBSSxNQUFNLEtBQUs7QUFBQSxFQUNyQixJQUFJLENBQUMsUUFBUSxLQUFLLENBQUM7QUFBQSxJQUFHLElBQUksR0FBRyxVQUFVLGdDQUFnQyxPQUFPO0FBQUEsRUFDOUUsT0FBTyxPQUFPLENBQUM7QUFBQTtBQVFWLFNBQVMsU0FBUyxDQUFDLE9BQWUsTUFBbUM7QUFBQSxFQUMxRSxNQUFNLElBQUksTUFBTSxLQUFLLEVBQUUsWUFBWTtBQUFBLEVBR25DLElBQUksTUFBTSxjQUFjLE1BQU0sVUFBVSxNQUFNO0FBQUEsSUFBUyxPQUFPO0FBQUEsRUFDOUQsT0FBTyxhQUFhLE9BQU8sSUFBSTtBQUFBO0FBWWpDLFNBQVMsWUFBWSxDQUFDLEtBQXlCO0FBQUEsRUFDN0MsTUFBTSxRQUFRLElBQUksSUFBSSxDQUFDLE1BQU0sUUFBUSxDQUFDLENBQUM7QUFBQSxFQUN2QyxXQUFXLEtBQUssT0FBTztBQUFBLElBQ3JCLElBQUk7QUFBQSxJQUNKLElBQUk7QUFBQSxNQUNGLEtBQUssU0FBUyxDQUFDO0FBQUEsTUFDZixNQUFNO0FBQUEsTUFDTixJQUFJLDJCQUEyQixLQUFLLFdBQVc7QUFBQTtBQUFBLElBRWpELElBQUksQ0FBQyxHQUFHLFlBQVksS0FBSyxDQUFDLFVBQVUsQ0FBQztBQUFBLE1BQ25DLElBQUkscUNBQXFDLEtBQUssU0FBUztBQUFBLFFBQ3JELE1BQU07QUFBQSxRQUNOLFNBQVMsQ0FBQyxHQUFHLGNBQWM7QUFBQSxNQUM3QixDQUFDO0FBQUEsRUFDTDtBQUFBLEVBQ0EsT0FBTztBQUFBO0FBU0YsU0FBUyxNQUFNLENBQUMsT0FBdUI7QUFBQSxFQUM1QyxJQUFJLE1BQU0sU0FBUyxHQUFHLEtBQUssV0FBVyxRQUFRLEtBQUssQ0FBQztBQUFBLElBQUcsT0FBTyxRQUFRLEtBQUs7QUFBQSxFQUMzRSxPQUFPO0FBQUE7QUFJVCxJQUFNLFdBQVc7QUFDakIsU0FBUyxTQUFTLENBQUMsUUFBc0I7QUFBQSxFQUN2QyxJQUFJLFFBQWtCLENBQUM7QUFBQSxFQUN2QixJQUFJO0FBQUEsSUFDRixRQUFRLFlBQVksTUFBTSxFQUFFLE9BQU8sQ0FBQyxNQUFNLHdCQUF3QixLQUFLLENBQUMsQ0FBQztBQUFBLElBQ3pFLE1BQU07QUFBQSxJQUNOO0FBQUE7QUFBQSxFQUVGLE1BQU0sUUFBUSxNQUFNLEtBQUssQ0FBQyxHQUFHLE1BQU0sT0FBTyxFQUFFLE1BQU0sR0FBRyxFQUFFLEVBQUUsSUFBSSxPQUFPLEVBQUUsTUFBTSxHQUFHLEVBQUUsRUFBRSxDQUFDO0FBQUEsRUFDcEYsV0FBVyxLQUFLLE1BQU0sTUFBTSxHQUFHLEtBQUssSUFBSSxHQUFHLE1BQU0sVUFBVSxXQUFXLEVBQUUsQ0FBQyxHQUFHO0FBQUEsSUFDMUUsSUFBSTtBQUFBLE1BQ0YsV0FBVyxLQUFLLFFBQVEsQ0FBQyxDQUFDO0FBQUEsTUFDMUIsTUFBTTtBQUFBLEVBR1Y7QUFBQTtBQUdGLGVBQWUsT0FBTyxDQUFDLEtBQWUsT0FBeUM7QUFBQSxFQUM3RSxNQUFNLFFBQVEsYUFBYSxHQUFHO0FBQUEsRUFFOUIsSUFBSSxPQUFPLE1BQU0sWUFBWSxVQUFVO0FBQUEsSUFDckMsTUFBTSxPQUFPLGdCQUFnQjtBQUFBLElBQzdCLE1BQU0sV0FBVyxLQUFLLE1BQU0sWUFBWSxNQUFNLFNBQVMsZUFBZTtBQUFBLElBQ3RFLElBQUksQ0FBQyxXQUFXLFFBQVEsR0FBRztBQUFBLE1BQ3pCLElBQUksUUFBa0IsQ0FBQztBQUFBLE1BQ3ZCLElBQUk7QUFBQSxRQUNGLFNBQ0UsTUFBTSxNQUFNLFVBQVUsSUFBSSxJQUFJLEtBQUssaUJBQWlCLEVBQUUsS0FBSyxLQUFLLE1BQU0sVUFBVSxDQUFDLENBQUMsR0FDbEYsSUFBSSxDQUFDLE1BQU0sRUFBRSxNQUFNLEdBQUcsRUFBRSxFQUFZO0FBQUEsUUFDdEMsTUFBTTtBQUFBLE1BR1IsSUFBSSxxQkFBcUIsTUFBTSxrQkFBa0IsUUFBUSxhQUFhO0FBQUEsUUFDcEUsU0FBUyxNQUFNLEtBQUs7QUFBQSxXQUNoQixNQUFNLFdBQVcsSUFBSSxFQUFFLE1BQU0saUNBQWlDLElBQUksQ0FBQztBQUFBLE1BQ3pFLENBQUM7QUFBQSxJQUNIO0FBQUEsSUFDQSxNQUFNLE9BQU8sWUFBWSxNQUFNLE9BQU87QUFBQSxJQUN0QyxJQUFJLE1BQU07QUFBQSxNQUNSLE1BQU0sUUFBUSxNQUFNLElBQUksS0FBSyxNQUFNLE9BQU8sUUFBUSxFQUFFLEtBQ2xELENBQUMsTUFBTSxFQUFFLFdBQVcsS0FDcEIsTUFBTSxLQUNSO0FBQUEsTUFDQSxJQUFJO0FBQUEsUUFDRixJQUFJLFdBQVcsTUFBTSxpQ0FBaUMsS0FBSyxPQUFPLFlBQVk7QUFBQSxVQUM1RSxNQUFNLGtDQUFrQyxNQUFNO0FBQUEsUUFDaEQsQ0FBQztBQUFBLElBQ0w7QUFBQSxFQUNGO0FBQUEsRUFFQSxNQUFNLGFBQWEsQ0FBQyxPQUFPLGFBQWE7QUFBQSxFQUN4QyxJQUFJLE9BQU8sTUFBTSxZQUFZO0FBQUEsSUFBVSxXQUFXLEtBQUssYUFBYSxNQUFNLE9BQU87QUFBQSxFQUNqRixJQUFJLE9BQU8sTUFBTSxZQUFZO0FBQUEsSUFBVSxXQUFXLEtBQUssYUFBYSxNQUFNLE9BQU87QUFBQSxFQUU1RTtBQUFBLGVBQVcsS0FBSyxlQUFlLFFBQVEsSUFBSSxDQUFDO0FBQUEsRUFFakQsTUFBTSxNQUFNLFVBQVU7QUFBQSxFQUN0QixJQUFJLENBQUMsV0FBVyxHQUFHO0FBQUEsSUFDakIsSUFDRSx5RkFBb0YsT0FDcEYsWUFDQTtBQUFBLE1BQ0UsTUFBTTtBQUFBLElBQ1IsQ0FDRjtBQUFBLEVBTUYsTUFBTSxTQUFTLEtBQUssZ0JBQWdCLEdBQUcsTUFBTTtBQUFBLEVBQzdDLFVBQVUsUUFBUSxFQUFFLFdBQVcsS0FBSyxDQUFDO0FBQUEsRUFFckMsVUFBVSxNQUFNO0FBQUEsRUFDaEIsTUFBTSxVQUFVLEtBQUssUUFBUSxVQUFVLEtBQUssSUFBSSxLQUFLLFFBQVEsU0FBUztBQUFBLEVBQ3RFLFdBQVcsS0FBSyxTQUFTLE9BQU87QUFBQSxFQUNoQyxNQUFNLFFBQVEsU0FBUyxTQUFTLEdBQUc7QUFBQSxFQUNuQyxNQUFNLFFBQVEsTUFBTSxPQUFPLFlBQVk7QUFBQSxJQUNyQztBQUFBLElBQ0EsVUFBVTtBQUFBLElBQ1YsT0FBTyxDQUFDLFVBQVUsUUFBUSxLQUFLO0FBQUEsSUFDL0IsS0FBSyxRQUFRO0FBQUEsRUFDZixDQUFDO0FBQUEsRUFDRCxVQUFVLEtBQUs7QUFBQSxFQUNmLE1BQU0sTUFBTTtBQUFBLEVBRVosTUFBTSxpQkFDSixPQUFPLE1BQU0scUJBQXFCLFdBQzlCLEtBQUssSUFBSSxNQUFNLE9BQU8sU0FBUyxNQUFNLGtCQUFrQixFQUFFLElBQUksSUFBSSxJQUNqRTtBQUFBLEVBQ04sTUFBTSxPQUFPLE1BQU0sSUFBSSxRQUFnQixDQUFDLEtBQUssUUFBUTtBQUFBLElBQ25ELElBQUksTUFBTTtBQUFBLElBQ1YsTUFBTSxRQUFRLFdBQ1osTUFDRSxJQUNFLElBQUksTUFDRix5QkFBeUIsaUJBQWlCLDhDQUM1QyxDQUNGLEdBQ0YsY0FDRjtBQUFBLElBQ0EsTUFBTSxRQUFRLEdBQUcsUUFBUSxDQUFDLFVBQWtCO0FBQUEsTUFDMUMsT0FBTyxNQUFNLFNBQVM7QUFBQSxNQUN0QixNQUFNLEtBQUssSUFBSSxRQUFRO0FBQUEsQ0FBSTtBQUFBLE1BQzNCLElBQUksTUFBTSxHQUFHO0FBQUEsUUFDWCxhQUFhLEtBQUs7QUFBQSxRQUNsQixJQUFJLElBQUksTUFBTSxHQUFHLEVBQUUsRUFBRSxLQUFLLENBQUM7QUFBQSxNQUM3QjtBQUFBLEtBQ0Q7QUFBQSxJQUNELE1BQU0sR0FBRyxTQUFTLENBQUMsUUFBUTtBQUFBLE1BQ3pCLGFBQWEsS0FBSztBQUFBLE1BQ2xCLElBQUksR0FBRztBQUFBLEtBQ1I7QUFBQSxJQUNELE1BQU0sR0FBRyxRQUFRLENBQUMsU0FBUztBQUFBLE1BQ3pCLGFBQWEsS0FBSztBQUFBLE1BQ2xCLElBQUksSUFBSSxNQUFNLDJCQUEyQiwyQkFBMkIsQ0FBQztBQUFBLEtBQ3RFO0FBQUEsR0FDRixFQUFFLE1BQU0sQ0FBQyxRQUFpQjtBQUFBLElBQ3pCLElBQUksT0FBTztBQUFBLElBQ1gsSUFBSTtBQUFBLE1BQ0YsT0FBTyxhQUFhLFNBQVMsTUFBTSxFQUFFLEtBQUssRUFBRSxNQUFNLElBQUk7QUFBQSxNQUN0RCxNQUFNO0FBQUEsSUFHUixJQUNFLHVDQUF1QyxlQUFlLFFBQVEsSUFBSSxVQUFVLE9BQU8sR0FBRyxLQUN0RixZQUNBLEVBQUUsTUFBTSxPQUFPLGVBQWUsYUFBYSxTQUFTLGVBQWUsVUFBVSxDQUMvRTtBQUFBLEdBQ0Q7QUFBQSxFQUtELE1BQU0sTUFBTSxNQUFNO0FBQUEsRUFDbEIsSUFBSSxDQUFDLE9BQU8sRUFBRSxXQUFXLFFBQVEsT0FBTyxJQUFJLFVBQVU7QUFBQSxJQUNwRCxNQUFNLElBQUksTUFDUiwrRUFDRjtBQUFBLEVBQ0YsSUFBSSxNQUFNO0FBQUEsRUFFVixJQUFJO0FBQUEsRUFRSixJQUFJO0FBQUEsSUFDRixLQUFLLEtBQUssTUFBTSxJQUFJO0FBQUEsSUFDcEIsTUFBTTtBQUFBLElBQ04sSUFBSSxrQ0FBa0MsUUFBUSxVQUFVO0FBQUE7QUFBQSxFQUUxRCxJQUFJLEdBQUcsT0FBTztBQUFBLElBQU8sY0FBYyxRQUFRLEdBQUcsVUFBVSxLQUFLLEVBQUU7QUFBQSxFQUUvRCxJQUFJLFVBQXFCLENBQUM7QUFBQSxFQUMxQixJQUFJLE1BQU0sU0FBUyxHQUFHO0FBQUEsSUFDcEIsTUFBTSxJQUFJLE1BQU0sUUFBUSxHQUFHLFlBQVksRUFBRSxNQUFNLGVBQWUsTUFBTSxDQUFDO0FBQUEsSUFDckUsVUFBVyxFQUFFLFdBQXlCLENBQUM7QUFBQSxFQUN6QztBQUFBLEVBQ0EsVUFBVSxLQUFLLE9BQVEsTUFBTSxTQUFTLElBQUksRUFBRSxRQUFRLElBQUksQ0FBQyxFQUFHLENBQUM7QUFBQSxFQUU3RCxJQUFJLENBQUMsTUFBTSxZQUFZO0FBQUEsSUFDckIsTUFBTSxTQUNKLFFBQVEsYUFBYSxXQUFXLFNBQVMsUUFBUSxhQUFhLFVBQVUsVUFBVTtBQUFBLElBQ3BGLE1BQU0sUUFBUSxDQUFDLEdBQUcsR0FBRyxHQUFHLEVBQUUsVUFBVSxNQUFNLE9BQU8sU0FBUyxDQUFDLEVBQUUsTUFBTTtBQUFBLEVBQ3JFO0FBQUE7QUFHRixlQUFlLE1BQU0sQ0FBQyxLQUFlLFNBQTZCO0FBQUEsRUFDaEUsTUFBTSxRQUFRLGFBQWEsR0FBRztBQUFBLEVBQzlCLFVBQVUsTUFBTSxRQUFRLFNBQVMsRUFBRSxNQUFNLGVBQWUsTUFBTSxDQUFDLENBQUM7QUFBQTtBQUdsRSxlQUFlLFFBQVEsQ0FBQyxTQUE2QixNQUFlO0FBQUEsRUFDbEUsTUFBTSxJQUFJLGVBQWUsT0FBTztBQUFBLEVBQ2hDLFFBQVEsUUFBUSxTQUFTLE1BQU0sSUFBSSxFQUFFLE1BQU0sT0FBTyxTQUFTLE9BQU8sWUFBWSxJQUFJO0FBQUEsRUFDbEYsSUFBSSxXQUFXO0FBQUEsSUFBSyxjQUFjLFNBQVMsUUFBUSxJQUFJO0FBQUEsRUFDdkQsVUFBVSxJQUFJO0FBQUE7QUFlaEIsZUFBZSxTQUFTLENBQ3RCLE1BQ0EsS0FDQSxPQUNBLElBQWlFLENBQUMsR0FDckM7QUFBQSxFQUM3QixNQUFNLFVBQVU7QUFBQSxJQUNkLElBQUksU0FBUztBQUFBLElBQ2IsTUFBTSxVQUFVO0FBQUEsSUFDaEIsT0FBTyxNQUFNLGlCQUFpQjtBQUFBLEVBQ2hDLEVBQUUsT0FBTyxPQUFPLEVBQUU7QUFBQSxFQUNsQixJQUFJLFlBQVksS0FBSyxFQUFFO0FBQUEsSUFBVTtBQUFBLEVBQ2pDLElBQUksWUFBWTtBQUFBLElBQ2QsSUFDRSxZQUFZLElBQ1IsR0FBRyx5QkFDSCxFQUFFLFdBQ0EsR0FBRyx5RUFDSCxHQUFHLG9GQUNULFNBQ0E7QUFBQSxNQUNFLE1BQU0sRUFBRSxXQUNKLG9GQUNBO0FBQUEsTUFDSixTQUFTLENBQUMsV0FBVyxhQUFhO0FBQUEsSUFDcEMsQ0FDRjtBQUFBLEVBQ0YsSUFBSTtBQUFBLEVBQ0osSUFBSSxNQUFNLFVBQVU7QUFBQSxJQUFNLE9BQU8sTUFBTSxJQUFJLFNBQVMsSUFBSSxNQUFNLE9BQU8sQ0FBQyxFQUFFLEtBQUs7QUFBQSxFQUN4RSxTQUFJLE9BQU8sTUFBTSxpQkFBaUIsVUFBVTtBQUFBLElBQy9DLE1BQU0sT0FBTyxNQUFNO0FBQUEsSUFDbkIsSUFBSSxDQUFDLFdBQVcsSUFBSTtBQUFBLE1BQUcsSUFBSSxHQUFHLGdDQUFnQyxRQUFRLEVBQUUsZUFBZSxPQUFPO0FBQUEsSUFHOUYsSUFBSSxTQUFTLElBQUksRUFBRSxZQUFZO0FBQUEsTUFDN0IsSUFBSSxHQUFHLGlEQUFpRCxRQUFRLFNBQVM7QUFBQSxRQUN2RSxNQUFNO0FBQUEsTUFDUixDQUFDO0FBQUEsSUFJSCxJQUFJO0FBQUEsTUFDRixPQUFPLGFBQWEsTUFBTSxNQUFNO0FBQUEsTUFDaEMsTUFBTTtBQUFBLE1BQ04sSUFBSSxHQUFHLHFDQUFxQyxRQUFRLFNBQVM7QUFBQSxRQUMzRCxNQUFNO0FBQUEsTUFDUixDQUFDO0FBQUE7QUFBQSxFQUVMLEVBQU87QUFBQSxXQUFPLElBQUksS0FBSyxHQUFHO0FBQUEsRUFDMUIsSUFBSSxDQUFDLEtBQUssS0FBSztBQUFBLElBQ2IsSUFDRSxFQUFFLFdBQVcsR0FBRyw0QkFBNEIsR0FBRyw4QkFDL0MsU0FDQSxFQUFFLFdBQVcsRUFBRSxNQUFNLDhEQUE4RCxJQUFJLENBQUMsQ0FDMUY7QUFBQSxFQUNGLE9BQU87QUFBQTtBQUdULGVBQWUsV0FBVyxDQUN4QixLQUNBLE9BQ0EsTUFDaUI7QUFBQSxFQUNqQixRQUFTLE1BQU0sVUFBVSxNQUFNLEtBQUssS0FBSyxLQUFNLElBQUksS0FBSztBQUFBO0FBUTFELElBQUksZUFBZTtBQVNuQixlQUFlLE9BQU8sQ0FDcEIsU0FDQSxPQUNBLEdBQ2lCO0FBQUEsRUFDakIsSUFBSSxVQUFVO0FBQUEsRUFDZCxNQUFNLFFBQVEsWUFBWSxhQUFhLEVBQUU7QUFBQSxFQUN6QyxJQUFJLFdBQVcsRUFBRTtBQUFBLEVBQ2pCLE1BQU0sTUFBTSxNQUFPLFlBQVksWUFBWSxDQUFDLGFBQWEsT0FBTyxJQUFJLENBQUM7QUFBQSxFQUNyRSxPQUFPLE1BQU0sZ0JBQ1g7QUFBQSxJQUNFLFNBQVMsTUFBTTtBQUFBLE1BQ2IsTUFBTSxJQUFJLFlBQVksT0FBTztBQUFBLE1BQzdCLElBQUksQ0FBQztBQUFBLFFBQUcsT0FBTztBQUFBLE1BQ2YsSUFBSSxDQUFDO0FBQUEsUUFBUyxVQUFVLEVBQUU7QUFBQSxNQUMxQixJQUFJLENBQUMsVUFBVTtBQUFBLFFBQ2IsV0FBVztBQUFBLFFBQ1gsUUFBUSxPQUFPLE1BQ2IsR0FBRyxLQUFLLFVBQVUsRUFBRSxNQUFNLGFBQWEsWUFBWSxFQUFFLFlBQVksTUFBTSxFQUFFLEtBQUssQ0FBQztBQUFBLENBQ2pGO0FBQUEsTUFDRjtBQUFBLE1BQ0EsT0FBTyxvQkFBb0IsRUFBRTtBQUFBO0FBQUEsSUFFL0IsY0FBYyxHQUFHLG1CQUFtQjtBQUFBLE1BSWxDLElBQUksZ0JBQWdCO0FBQUEsUUFBTyxPQUFPO0FBQUEsTUFDbEMsUUFBUSxPQUFPLE1BQU07QUFBQSxDQUErQjtBQUFBLE1BQ3BELE9BQU87QUFBQTtBQUFBLElBRVQsTUFBTTtBQUFBLElBQ047QUFBQSxPQUNJLEVBQUUsUUFBUSxFQUFFLFlBQVksRUFBRSxNQUFNLElBQUksQ0FBQztBQUFBLElBQ3pDLFVBQVUsQ0FBQyxPQUFRLE9BQU8sR0FBRyxPQUFPLFdBQVcsR0FBRyxLQUFLO0FBQUEsSUFDdkQsU0FBUyxDQUFDLE9BQVEsT0FBTyxHQUFHLFVBQVUsV0FBVyxHQUFHLFFBQVE7QUFBQSxJQUU1RCxlQUFlLENBQUMsVUFBVSxLQUFLLFVBQVUsRUFBRSxNQUFNLGlCQUFpQixNQUFNLENBQUM7QUFBQSxJQUN6RSxVQUFVLENBQUMsT0FBTyxHQUFHLFNBQVM7QUFBQSxJQUM5QixRQUFRO0FBQUEsSUFJUixXQUFXLE1BQU07QUFBQSxNQUNmLElBQUksQ0FBQztBQUFBLFFBQWMsT0FBTztBQUFBLE1BQzFCLGVBQWU7QUFBQSxNQUNmLE9BQU8sS0FBSyxVQUFVLEVBQUUsTUFBTSxtQkFBbUIsQ0FBQztBQUFBO0FBQUEsSUFjcEQsY0FBYyxHQUFHLE9BQU8sYUFBYTtBQUFBLE1BQ25DLElBQUk7QUFBQSxRQUFjLE9BQU87QUFBQSxNQUN6QixlQUFlO0FBQUEsTUFDZixPQUFPLEtBQUssVUFBVTtBQUFBLFFBQ3BCLE1BQU07QUFBQSxRQUNOO0FBQUEsV0FDSSxXQUFXLFlBQVksRUFBRSxPQUFPLElBQUksQ0FBQztBQUFBLFFBQ3pDLE1BQU07QUFBQSxNQUNSLENBQUM7QUFBQTtBQUFBLEVBRUwsR0FDQTtBQUFBLElBQ0UsT0FBTztBQUFBLElBQ1AsTUFBTSxFQUFFLE9BQU8sU0FBUztBQUFBLElBQ3hCLFVBQVU7QUFBQSxJQUdWLFVBQVUsQ0FBQyxPQUFRLE9BQU8sR0FBRyxPQUFPLFdBQVcsR0FBRyxLQUFLO0FBQUEsSUFHdkQsUUFBUSxNQUFPLFlBQVksWUFBWSxRQUFRLE9BQU8sSUFBSTtBQUFBLElBQzFELFVBQVU7QUFBQSxNQUNSLE1BQU0sR0FBRyxPQUFPLElBQUksTUFBTSxZQUFZLFlBQVksQ0FBQyxRQUFRLEdBQUcsSUFBSSxDQUFDLEdBQUcsSUFBSSxNQUFNLEtBQUs7QUFBQSxNQUNyRixVQUFVLE1BQU0sWUFBWSxDQUFDLFFBQVEsYUFBYSxXQUFXLFFBQVEsV0FBVyxDQUFDO0FBQUEsSUFDbkY7QUFBQSxFQUNGLENBQ0Y7QUFBQTtBQUdGLFNBQVMsV0FBVyxHQUFzQztBQUFBLEVBQ3hELElBQUk7QUFBQSxJQUNGLE1BQU0sTUFBTSxhQUFhLEtBQUssWUFBWSxNQUFNLE1BQU0sa0JBQWtCLGFBQWEsR0FBRyxNQUFNO0FBQUEsSUFDOUYsTUFBTSxNQUFNLEtBQUssTUFBTSxHQUFHO0FBQUEsSUFDMUIsSUFBSSxPQUFPLElBQUksWUFBWTtBQUFBLE1BQVUsT0FBTyxFQUFFLE1BQU0sZUFBZSxTQUFTLElBQUksUUFBUTtBQUFBLElBQ3hGLE1BQU07QUFBQSxFQUdSLE9BQU8sRUFBRSxNQUFNLGVBQWUsU0FBUyxVQUFVO0FBQUE7QUFRbkQsZUFBZSxZQUFZLENBQUMsU0FBNkIsSUFBNkI7QUFBQSxFQUNwRixVQUFVLE1BQU0sUUFBUSxTQUFTLEVBQUUsQ0FBQztBQUFBO0FBSXRDLGVBQWUsU0FBUyxDQUFDLE1BQWMsTUFBMEIsU0FBNkI7QUFBQSxFQUM1RixNQUFNLE1BQU0sUUFBUSxJQUFJO0FBQUEsRUFDeEIsSUFBSTtBQUFBLEVBQ0osSUFBSTtBQUFBLElBQ0YsS0FBSyxTQUFTLEdBQUc7QUFBQSxJQUNqQixNQUFNO0FBQUEsSUFDTixJQUFJLGlCQUFpQixPQUFPLFdBQVc7QUFBQTtBQUFBLEVBRXpDLElBQUksQ0FBQyxHQUFHLE9BQU8sS0FBSyxDQUFDLFVBQVUsR0FBRztBQUFBLElBQ2hDLElBQUkscUNBQXFDLE9BQU8sU0FBUyxFQUFFLFNBQVMsQ0FBQyxHQUFHLGNBQWMsRUFBRSxDQUFDO0FBQUEsRUFDM0YsTUFBTSxhQUFhLFNBQVM7QUFBQSxJQUMxQixNQUFNO0FBQUEsSUFDTixNQUFNLElBQUksTUFBTSxHQUFHLEVBQUUsSUFBSTtBQUFBLElBQ3pCLE1BQU0sYUFBYSxLQUFLLE1BQU07QUFBQSxPQUMxQixTQUFTLFlBQVksRUFBRSxNQUFNLFFBQVEsSUFBSSxFQUFFLElBQUksQ0FBQztBQUFBLEVBQ3RELENBQUM7QUFBQTtBQUlILGVBQWUsWUFBWSxDQUFDLEtBQXlCLFNBQTZCO0FBQUEsRUFDaEYsSUFBSSxRQUFRO0FBQUEsSUFDVixPQUFPLGFBQWEsU0FBUyxFQUFFLE1BQU0saUJBQWlCLE1BQU0sUUFBUSxHQUFHLEVBQUUsQ0FBQztBQUFBLEVBQzVFLE1BQU0sSUFBSSxlQUFlLE9BQU87QUFBQSxFQUNoQyxRQUFRLFFBQVEsU0FBUyxNQUFNLElBQUksRUFBRSxNQUFNLE9BQU8sUUFBUTtBQUFBLEVBQzFELElBQUksV0FBVztBQUFBLElBQUssY0FBYyxhQUFhLFFBQVEsSUFBSTtBQUFBLEVBQzNELFVBQVUsRUFBRSxXQUFZLEtBQWlDLFVBQVUsQ0FBQztBQUFBO0FBc0J0RSxJQUFNLEtBQ0osQ0FBQyxNQUNELENBQUMsUUFBbUM7QUFBQSxFQUNsQyxNQUFNLFFBQVEsSUFBSTtBQUFBLEVBQ2xCLE9BQU8sRUFBRSxJQUFJLEtBQUssT0FBTyxPQUFPLE1BQU0sWUFBWSxXQUFXLE1BQU0sVUFBVSxTQUFTO0FBQUE7QUFLMUYsSUFBTSxZQUFZO0FBRWxCLElBQU0sVUFBVSxDQUFDLFNBQVM7QUFFMUIsSUFBTSxPQUFjO0FBQUEsRUFDbEI7QUFBQSxJQUNFLE1BQU07QUFBQSxJQUNOLE9BQU8sQ0FBQyxXQUFXLFdBQVcsV0FBVyxlQUFlO0FBQUEsSUFDeEQsYUFBYSxDQUFDLEVBQUUsTUFBTSxRQUFRLFVBQVUsT0FBTyxVQUFVLEtBQUssQ0FBQztBQUFBLElBQy9ELFVBQ0U7QUFBQSxJQUNGLEtBQUssQ0FBQyxLQUFLLFVBQVUsUUFBUSxLQUFLLEtBQUs7QUFBQSxFQUN6QztBQUFBLEVBQ0E7QUFBQSxJQUNFLE1BQU07QUFBQSxJQUNOLE9BQU87QUFBQSxJQUNQLGFBQWEsQ0FBQyxFQUFFLE1BQU0sUUFBUSxVQUFVLE1BQU0sVUFBVSxLQUFLLENBQUM7QUFBQSxJQUM5RCxVQUFVO0FBQUEsSUFDVixLQUFLLENBQUMsS0FBSyxRQUFRLFlBQVksT0FBTyxLQUFLLE9BQU87QUFBQSxFQUNwRDtBQUFBLEVBQ0E7QUFBQSxJQUNFLE1BQU07QUFBQSxJQUNOLE9BQU8sQ0FBQyxHQUFHLFNBQVMsTUFBTTtBQUFBLElBQzFCLGFBQWEsQ0FBQztBQUFBLElBQ2QsVUFBVTtBQUFBLElBQ1YsS0FBSyxDQUFDLE1BQU0sT0FBTyxZQUFZLFNBQVMsU0FBUyxNQUFNLFNBQVMsSUFBSTtBQUFBLEVBQ3RFO0FBQUEsRUFDQTtBQUFBLElBQ0UsTUFBTTtBQUFBLElBQ04sT0FBTyxDQUFDLEdBQUcsU0FBUyxTQUFTLE1BQU07QUFBQSxJQUNuQyxhQUFhLENBQUM7QUFBQSxJQUNkLFVBQ0U7QUFBQSxJQUNGLEtBQUssQ0FBQyxNQUFNLE9BQU8sWUFBWTtBQUFBLE1BQzdCLE1BQU0sSUFBSSxPQUFPLE1BQU0sVUFBVSxXQUFXLGVBQWUsTUFBTSxLQUFLLElBQUksRUFBRSxPQUFPLEdBQUc7QUFBQSxNQUN0RixPQUFPLFFBQVEsU0FBUyxFQUFFLE9BQU87QUFBQSxRQUMvQixNQUFNLE1BQU0sU0FBUztBQUFBLFFBQ3JCLFlBQVksT0FBTyxNQUFNLFVBQVU7QUFBQSxXQUMvQixFQUFFLFFBQVEsRUFBRSxPQUFPLEVBQUUsTUFBTSxJQUFJLENBQUM7QUFBQSxNQUN0QyxDQUFDO0FBQUE7QUFBQSxFQUVMO0FBQUEsRUFDQTtBQUFBLElBQ0UsTUFBTTtBQUFBLElBQ04sT0FBTyxDQUFDLEdBQUcsU0FBUyxPQUFPLFFBQVEsU0FBUyxTQUFTLFdBQVc7QUFBQSxJQUNoRSxhQUFhLENBQUM7QUFBQSxJQUNkLFVBQ0U7QUFBQSxJQUNGLEtBQUssT0FBTyxNQUFNLE9BQU8sWUFBWTtBQUFBLE1BQ25DLE1BQU0sT0FBTyxPQUFPLE1BQU0sU0FBUyxXQUFXLGFBQWEsTUFBTSxNQUFNLFFBQVEsSUFBSTtBQUFBLE1BQ25GLE1BQU0sT0FBTyxNQUFNLFVBQVUsZUFBZSxDQUFDLEdBQUcsT0FBTztBQUFBLFFBQ3JELFVBQVU7QUFBQSxRQUNWLGFBQWE7QUFBQSxNQUNmLENBQUM7QUFBQSxNQUNELFVBQ0UsTUFBTSxRQUFRLFNBQVM7QUFBQSxRQUNyQixNQUFNO0FBQUEsV0FDRixPQUFPLE1BQU0sUUFBUSxXQUFXLEVBQUUsS0FBSyxPQUFPLE1BQU0sR0FBRyxFQUFFLElBQUksQ0FBQztBQUFBLFdBQzlELFNBQVMsWUFBWSxFQUFFLEtBQUssSUFBSSxDQUFDO0FBQUEsV0FDakMsT0FBTyxNQUFNLFVBQVUsV0FBVyxFQUFFLE9BQU8sTUFBTSxNQUFNLElBQUksQ0FBQztBQUFBLFdBQzVELFNBQVMsWUFBWSxFQUFFLEtBQUssSUFBSSxDQUFDO0FBQUEsTUFDdkMsQ0FBQyxDQUNIO0FBQUE7QUFBQSxFQUVKO0FBQUEsRUFDQTtBQUFBLElBQ0UsTUFBTTtBQUFBLElBQ04sT0FBTyxDQUFDLEdBQUcsU0FBUyxTQUFTLFdBQVc7QUFBQSxJQUN4QyxhQUFhLENBQUMsRUFBRSxNQUFNLFFBQVEsVUFBVSxPQUFPLFVBQVUsS0FBSyxDQUFDO0FBQUEsSUFDL0QsVUFBVTtBQUFBLElBQ1YsS0FBSyxPQUFPLEtBQUssT0FBTyxZQUFZO0FBQUEsTUFDbEMsVUFDRSxNQUFNLFFBQVEsU0FBUyxFQUFFLE1BQU0sT0FBTyxNQUFNLE1BQU0sWUFBWSxLQUFLLE9BQU8sS0FBSyxFQUFFLENBQUMsQ0FDcEY7QUFBQTtBQUFBLEVBRUo7QUFBQSxFQUNBO0FBQUEsSUFDRSxNQUFNO0FBQUEsSUFDTixPQUFPLENBQUMsR0FBRyxTQUFTLEtBQUs7QUFBQSxJQUN6QixhQUFhLENBQUMsRUFBRSxNQUFNLE1BQU0sVUFBVSxLQUFLLENBQUM7QUFBQSxJQUM1QyxVQUFVO0FBQUEsSUFDVixLQUFLLE9BQU8sS0FBSyxPQUFPLFlBQVk7QUFBQSxNQUNsQyxVQUNFLE1BQU0sUUFBUSxTQUFTO0FBQUEsUUFDckIsTUFBTTtBQUFBLFFBQ04sU0FBUyxhQUFhLElBQUksTUFBTSxJQUFJLGdCQUFnQjtBQUFBLFdBQ2hELE9BQU8sTUFBTSxRQUFRLFdBQVcsRUFBRSxLQUFLLE9BQU8sTUFBTSxHQUFHLEVBQUUsSUFBSSxDQUFDO0FBQUEsTUFDcEUsQ0FBQyxDQUNIO0FBQUE7QUFBQSxFQUVKO0FBQUEsRUFDQTtBQUFBLElBQ0UsTUFBTTtBQUFBLElBQ04sT0FBTyxDQUFDLEdBQUcsU0FBUyxTQUFTLFdBQVc7QUFBQSxJQUN4QyxhQUFhLENBQUMsRUFBRSxNQUFNLFFBQVEsVUFBVSxPQUFPLFVBQVUsS0FBSyxDQUFDO0FBQUEsSUFDL0QsVUFBVTtBQUFBLElBQ1YsS0FBSyxPQUFPLEtBQUssT0FBTyxZQUFZO0FBQUEsTUFDbEMsVUFDRSxNQUFNLFFBQVEsU0FBUyxFQUFFLE1BQU0sY0FBYyxNQUFNLE1BQU0sWUFBWSxLQUFLLE9BQU8sTUFBTSxFQUFFLENBQUMsQ0FDNUY7QUFBQTtBQUFBLEVBRUo7QUFBQSxFQUNBO0FBQUEsSUFDRSxNQUFNO0FBQUEsSUFDTixPQUFPO0FBQUEsSUFDUCxhQUFhO0FBQUEsTUFDWCxFQUFFLE1BQU0sTUFBTSxVQUFVLEtBQUs7QUFBQSxNQUM3QixFQUFFLE1BQU0sVUFBVSxVQUFVLE1BQU0sVUFBVSxLQUFLO0FBQUEsSUFDbkQ7QUFBQSxJQUNBLFVBQVU7QUFBQSxJQUNWLEtBQUssT0FBTyxLQUFLLFFBQVEsWUFBWTtBQUFBLE1BQ25DLFVBQ0UsTUFBTSxRQUFRLFNBQVM7QUFBQSxRQUNyQixNQUFNO0FBQUEsUUFDTixJQUFJLElBQUk7QUFBQSxRQUNSLFFBQVEsSUFBSSxNQUFNLENBQUMsRUFBRSxLQUFLLEdBQUc7QUFBQSxNQUMvQixDQUFDLENBQ0g7QUFBQTtBQUFBLEVBRUo7QUFBQSxFQUNBO0FBQUEsSUFDRSxNQUFNO0FBQUEsSUFDTixPQUFPO0FBQUEsSUFDUCxhQUFhO0FBQUEsTUFDWCxFQUFFLE1BQU0sTUFBTSxVQUFVLEtBQUs7QUFBQSxNQUM3QixFQUFFLE1BQU0sV0FBVyxVQUFVLE9BQU8sVUFBVSxLQUFLO0FBQUEsSUFDckQ7QUFBQSxJQUNBLFVBQVU7QUFBQSxJQUNWLEtBQUssT0FBTyxLQUFLLFFBQVEsWUFBWTtBQUFBLE1BQ25DLE1BQU0sVUFBVSxJQUFJLE1BQU0sQ0FBQyxFQUFFLEtBQUssR0FBRyxFQUFFLEtBQUs7QUFBQSxNQUM1QyxVQUNFLE1BQU0sUUFBUSxTQUFTO0FBQUEsUUFDckIsTUFBTTtBQUFBLFFBQ04sSUFBSSxJQUFJO0FBQUEsV0FDSixVQUFVLEVBQUUsUUFBUSxJQUFJLENBQUM7QUFBQSxNQUMvQixDQUFDLENBQ0g7QUFBQTtBQUFBLEVBRUo7QUFBQSxFQUNBO0FBQUEsSUFDRSxNQUFNO0FBQUEsSUFDTixPQUFPO0FBQUEsSUFDUCxhQUFhLENBQUMsRUFBRSxNQUFNLE1BQU0sVUFBVSxLQUFLLENBQUM7QUFBQSxJQUM1QyxVQUFVO0FBQUEsSUFDVixLQUFLLE9BQU8sS0FBSyxRQUFRLFlBQVk7QUFBQSxNQUNuQyxVQUFVLE1BQU0sUUFBUSxTQUFTLEVBQUUsTUFBTSxlQUFlLElBQUksSUFBSSxHQUFhLENBQUMsQ0FBQztBQUFBO0FBQUEsRUFFbkY7QUFBQSxFQUNBO0FBQUEsSUFDRSxNQUFNO0FBQUEsSUFDTixPQUFPO0FBQUEsSUFDUCxhQUFhLENBQUM7QUFBQSxJQUNkLFVBQVU7QUFBQSxJQUNWLEtBQUssT0FBTyxNQUFNLFFBQVEsWUFBWTtBQUFBLE1BQ3BDLFVBQVUsTUFBTSxRQUFRLFNBQVMsRUFBRSxNQUFNLGNBQWMsQ0FBQyxDQUFDO0FBQUE7QUFBQSxFQUU3RDtBQUFBLEVBQ0E7QUFBQSxJQUNFLE1BQU07QUFBQSxJQUNOLE9BQU8sQ0FBQyxHQUFHLFNBQVMsS0FBSztBQUFBLElBQ3pCLGFBQWEsQ0FBQztBQUFBLElBQ2QsVUFBVTtBQUFBLElBQ1YsS0FBSyxPQUFPLE1BQU0sT0FBTyxZQUFZO0FBQUEsTUFDbkMsTUFBTSxVQUNKLE9BQU8sTUFBTSxRQUFRLFdBQVcsV0FBVyxNQUFNLEtBQUssZUFBZSxJQUFJO0FBQUEsTUFDM0UsVUFDRSxNQUFNLFFBQVEsU0FBUztBQUFBLFFBQ3JCLE1BQU07QUFBQSxXQUNGLFlBQVksWUFBWSxFQUFFLFFBQVEsSUFBSSxDQUFDO0FBQUEsTUFDN0MsQ0FBQyxDQUNIO0FBQUE7QUFBQSxFQUVKO0FBQUEsRUFDQTtBQUFBLElBQ0UsTUFBTTtBQUFBLElBQ04sT0FBTyxDQUFDLEdBQUcsU0FBUyxPQUFPLFNBQVMsU0FBUyxXQUFXO0FBQUEsSUFDeEQsYUFBYSxDQUFDLEVBQUUsTUFBTSxRQUFRLFVBQVUsT0FBTyxVQUFVLEtBQUssQ0FBQztBQUFBLElBQy9ELFVBQ0U7QUFBQSxJQUNGLEtBQUssT0FBTyxLQUFLLE9BQU8sWUFBWTtBQUFBLE1BQ2xDLElBQUksT0FBTyxNQUFNLFVBQVUsWUFBWSxNQUFNLE1BQU0sS0FBSyxNQUFNO0FBQUEsUUFDNUQsSUFBSSxxRUFBZ0UsU0FBUztBQUFBLFVBQzNFLE1BQU07QUFBQSxRQUNSLENBQUM7QUFBQSxNQUNILFVBQ0UsTUFBTSxRQUFRLFNBQVM7QUFBQSxRQUNyQixNQUFNO0FBQUEsUUFDTixPQUFPLE1BQU07QUFBQSxRQUNiLE1BQU0sTUFBTSxZQUFZLEtBQUssT0FBTyxNQUFNO0FBQUEsV0FDdEMsT0FBTyxNQUFNLFFBQVEsV0FBVyxFQUFFLEtBQUssT0FBTyxNQUFNLEdBQUcsRUFBRSxJQUFJLENBQUM7QUFBQSxNQUNwRSxDQUFDLENBQ0g7QUFBQTtBQUFBLEVBRUo7QUFBQSxFQUNBO0FBQUEsSUFDRSxNQUFNO0FBQUEsSUFDTixPQUFPLENBQUMsR0FBRyxTQUFTLE9BQU8sTUFBTTtBQUFBLElBQ2pDLGFBQWEsQ0FBQztBQUFBLElBQ2QsVUFBVTtBQUFBLElBQ1YsS0FBSyxPQUFPLE1BQU0sT0FBTyxZQUFZO0FBQUEsTUFDbkMsVUFDRSxNQUFNLFFBQVEsU0FBUztBQUFBLFFBQ3JCLE1BQU07QUFBQSxXQUNGLE1BQU0sT0FBTyxFQUFFLEtBQUssS0FBSyxJQUFJLENBQUM7QUFBQSxXQUM5QixPQUFPLE1BQU0sUUFBUSxXQUFXLEVBQUUsS0FBSyxPQUFPLE1BQU0sR0FBRyxFQUFFLElBQUksQ0FBQztBQUFBLE1BQ3BFLENBQUMsQ0FDSDtBQUFBO0FBQUEsRUFFSjtBQUFBLEVBQ0E7QUFBQSxJQUNFLE1BQU07QUFBQSxJQUNOLE9BQU8sQ0FBQyxHQUFHLFNBQVMsT0FBTyxTQUFTLFdBQVc7QUFBQSxJQUMvQyxhQUFhO0FBQUEsTUFDWCxFQUFFLE1BQU0sTUFBTSxVQUFVLEtBQUs7QUFBQSxNQUM3QixFQUFFLE1BQU0sUUFBUSxVQUFVLE9BQU8sVUFBVSxLQUFLO0FBQUEsSUFDbEQ7QUFBQSxJQUNBLFVBQVU7QUFBQSxJQUNWLEtBQUssT0FBTyxLQUFLLE9BQU8sWUFBWTtBQUFBLE1BQ2xDLFVBQ0UsTUFBTSxRQUFRLFNBQVM7QUFBQSxRQUNyQixNQUFNO0FBQUEsUUFDTixJQUFJLElBQUk7QUFBQSxRQUNSLE1BQU0sTUFBTSxZQUFZLElBQUksTUFBTSxDQUFDLEdBQUcsT0FBTyxXQUFXO0FBQUEsV0FDcEQsT0FBTyxNQUFNLFFBQVEsV0FBVyxFQUFFLEtBQUssT0FBTyxNQUFNLEdBQUcsRUFBRSxJQUFJLENBQUM7QUFBQSxNQUNwRSxDQUFDLENBQ0g7QUFBQTtBQUFBLEVBRUo7QUFBQSxFQUNBO0FBQUEsSUFDRSxNQUFNO0FBQUEsSUFDTixPQUFPLENBQUMsR0FBRyxTQUFTLE9BQU8sUUFBUTtBQUFBLElBQ25DLGFBQWEsQ0FBQyxFQUFFLE1BQU0sTUFBTSxVQUFVLEtBQUssQ0FBQztBQUFBLElBQzVDLFVBQVU7QUFBQSxJQUNWLEtBQUssT0FBTyxLQUFLLE9BQU8sWUFBWTtBQUFBLE1BQ2xDLFVBQ0UsTUFBTSxRQUFRLFNBQVM7QUFBQSxRQUNyQixNQUFNO0FBQUEsUUFDTixJQUFJLElBQUk7QUFBQSxRQUNSLFVBQVUsQ0FBQyxNQUFNO0FBQUEsV0FDYixPQUFPLE1BQU0sUUFBUSxXQUFXLEVBQUUsS0FBSyxPQUFPLE1BQU0sR0FBRyxFQUFFLElBQUksQ0FBQztBQUFBLE1BQ3BFLENBQUMsQ0FDSDtBQUFBO0FBQUEsRUFFSjtBQUFBLEVBQ0E7QUFBQSxJQUNFLE1BQU07QUFBQSxJQUNOLE9BQU8sQ0FBQyxHQUFHLFNBQVMsS0FBSztBQUFBLElBQ3pCLGFBQWEsQ0FBQyxFQUFFLE1BQU0sTUFBTSxVQUFVLEtBQUssQ0FBQztBQUFBLElBQzVDLFVBQVU7QUFBQSxJQUNWLEtBQUssT0FBTyxLQUFLLE9BQU8sWUFBWTtBQUFBLE1BQ2xDLFVBQ0UsTUFBTSxRQUFRLFNBQVM7QUFBQSxRQUNyQixNQUFNO0FBQUEsUUFDTixJQUFJLElBQUk7QUFBQSxXQUNKLE9BQU8sTUFBTSxRQUFRLFdBQVcsRUFBRSxLQUFLLE9BQU8sTUFBTSxHQUFHLEVBQUUsSUFBSSxDQUFDO0FBQUEsTUFDcEUsQ0FBQyxDQUNIO0FBQUE7QUFBQSxFQUVKO0FBQUEsRUFDQTtBQUFBLElBQ0UsTUFBTTtBQUFBLElBQ04sT0FBTyxDQUFDLEdBQUcsU0FBUyxPQUFPLFdBQVcsT0FBTztBQUFBLElBQzdDLGFBQWEsQ0FBQyxFQUFFLE1BQU0sV0FBVyxVQUFVLEtBQUssQ0FBQztBQUFBLElBQ2pELFVBQ0U7QUFBQSxJQUNGLEtBQUssT0FBTyxLQUFLLE9BQU8sWUFBWTtBQUFBLE1BQ2xDLE1BQU0sSUFBSyxNQUFNLFFBQVEsU0FBUztBQUFBLFFBQ2hDLE1BQU07QUFBQSxRQUNOLFNBQVMsVUFBVSxJQUFJLE1BQU0sSUFBSSxNQUFNO0FBQUEsV0FDbkMsT0FBTyxNQUFNLFFBQVEsV0FBVyxFQUFFLEtBQUssT0FBTyxNQUFNLEdBQUcsRUFBRSxJQUFJLENBQUM7QUFBQSxXQUM5RCxPQUFPLE1BQU0sWUFBWSxXQUN6QixFQUFFLFNBQVMsV0FBVyxNQUFNLFNBQVMsV0FBVyxFQUFFLElBQ2xELENBQUM7QUFBQSxNQUNQLENBQUM7QUFBQSxNQUNELElBQUksTUFBTTtBQUFBLFFBQU8sUUFBUSxPQUFPLE1BQU0sT0FBTyxFQUFFLFdBQVcsRUFBRSxDQUFDO0FBQUEsTUFDeEQ7QUFBQSxrQkFBVSxDQUFDO0FBQUE7QUFBQSxFQUVwQjtBQUFBLEVBQ0E7QUFBQSxJQUNFLE1BQU07QUFBQSxJQUNOLE9BQU8sQ0FBQyxHQUFHLFNBQVMsT0FBTyxPQUFPO0FBQUEsSUFDbEMsYUFBYSxDQUFDLEVBQUUsTUFBTSxXQUFXLFVBQVUsS0FBSyxDQUFDO0FBQUEsSUFDakQsVUFDRTtBQUFBLElBQ0YsS0FBSyxPQUFPLEtBQUssT0FBTyxZQUFZO0FBQUEsTUFDbEMsTUFBTSxVQUFVLFVBQVUsSUFBSSxNQUFNLElBQUksT0FBTztBQUFBLE1BSy9DLE1BQU0sU0FDSixPQUFPLE1BQU0sVUFBVSxXQUNuQixNQUFNLE1BQU0sTUFBTSxHQUFHLEVBQUUsSUFBSSxDQUFDLE1BQU0sV0FBVyxHQUFHLFNBQVMsQ0FBQyxJQUMxRDtBQUFBLE1BQ04sTUFBTSxRQUNKLFdBRUcsTUFBTSxRQUFRLFNBQVM7QUFBQSxRQUN0QixNQUFNO0FBQUEsUUFDTjtBQUFBLFdBQ0ksT0FBTyxNQUFNLFFBQVEsV0FBVyxFQUFFLEtBQUssT0FBTyxNQUFNLEdBQUcsRUFBRSxJQUFJLENBQUM7QUFBQSxNQUNwRSxDQUFDLEdBQ0QsT0FBTyxJQUFJLENBQUMsTUFBTSxFQUFFLEVBQUUsS0FDeEIsQ0FBQztBQUFBLE1BQ0gsVUFDRSxNQUFNLFFBQVEsU0FBUztBQUFBLFFBQ3JCLE1BQU07QUFBQSxRQUNOO0FBQUEsUUFDQTtBQUFBLFdBQ0ksT0FBTyxNQUFNLFFBQVEsV0FBVyxFQUFFLEtBQUssT0FBTyxNQUFNLEdBQUcsRUFBRSxJQUFJLENBQUM7QUFBQSxNQUNwRSxDQUFDLENBQ0g7QUFBQTtBQUFBLEVBRUo7QUFBQSxFQUNBO0FBQUEsSUFDRSxNQUFNO0FBQUEsSUFDTixPQUFPLENBQUMsR0FBRyxTQUFTLEtBQUs7QUFBQSxJQUN6QixhQUFhLENBQUMsRUFBRSxNQUFNLE1BQU0sVUFBVSxLQUFLLENBQUM7QUFBQSxJQUM1QyxVQUFVO0FBQUEsSUFDVixLQUFLLE9BQU8sS0FBSyxPQUFPLFlBQVk7QUFBQSxNQUNsQyxVQUNFLE1BQU0sUUFBUSxTQUFTO0FBQUEsUUFDckIsTUFBTTtBQUFBLFFBQ04sU0FBUyxhQUFhLElBQUksTUFBTSxJQUFJLFVBQVU7QUFBQSxXQUMxQyxPQUFPLE1BQU0sUUFBUSxXQUFXLEVBQUUsS0FBSyxPQUFPLE1BQU0sR0FBRyxFQUFFLElBQUksQ0FBQztBQUFBLE1BQ3BFLENBQUMsQ0FDSDtBQUFBO0FBQUEsRUFFSjtBQUFBLEVBQ0E7QUFBQSxJQUNFLE1BQU07QUFBQSxJQUNOLE9BQU87QUFBQSxJQUNQLGFBQWEsQ0FBQyxFQUFFLE1BQU0sUUFBUSxVQUFVLEtBQUssQ0FBQztBQUFBLElBQzlDLFVBQ0U7QUFBQSxJQUNGLEtBQUssQ0FBQyxLQUFLLFFBQVEsWUFBWTtBQUFBLE1BQzdCLE1BQU0sTUFBTSxRQUFRLElBQUksRUFBWTtBQUFBLE1BQ3BDLE9BQU8sYUFBYSxTQUFTLEVBQUUsTUFBTSxjQUFjLEtBQUssUUFBUSxHQUFHLEdBQUcsTUFBTSxTQUFTLEdBQUcsRUFBRSxDQUFDO0FBQUE7QUFBQSxFQUUvRjtBQUFBLEVBQ0E7QUFBQSxJQUNFLE1BQU07QUFBQSxJQUNOLE9BQU87QUFBQSxJQUNQLGFBQWEsQ0FBQyxFQUFFLE1BQU0sUUFBUSxVQUFVLEtBQUssQ0FBQztBQUFBLElBQzlDLFVBQVU7QUFBQSxJQUNWLEtBQUssQ0FBQyxLQUFLLFFBQVEsWUFBWTtBQUFBLE1BQzdCLE1BQU0sTUFBTSxRQUFRLElBQUksRUFBWTtBQUFBLE1BQ3BDLE9BQU8sYUFBYSxTQUFTO0FBQUEsUUFDM0IsTUFBTTtBQUFBLFFBQ04sS0FBSyxRQUFRLEdBQUc7QUFBQSxRQUNoQixNQUFNLFNBQVMsR0FBRztBQUFBLE1BQ3BCLENBQUM7QUFBQTtBQUFBLEVBRUw7QUFBQSxFQUNBO0FBQUEsSUFDRSxNQUFNO0FBQUEsSUFDTixPQUFPO0FBQUEsSUFDUCxhQUFhO0FBQUEsTUFDWCxFQUFFLE1BQU0sUUFBUSxVQUFVLEtBQUs7QUFBQSxNQUMvQixFQUFFLE1BQU0sUUFBUSxVQUFVLEtBQUs7QUFBQSxJQUNqQztBQUFBLElBQ0EsVUFBVTtBQUFBLElBQ1YsS0FBSyxDQUFDLEtBQUssUUFBUSxZQUNqQixhQUFhLFNBQVM7QUFBQSxNQUNwQixNQUFNO0FBQUEsTUFDTixNQUFNLFFBQVEsSUFBSSxFQUFZO0FBQUEsTUFDOUIsTUFBTSxRQUFRLElBQUksRUFBWTtBQUFBLElBQ2hDLENBQUM7QUFBQSxFQUNMO0FBQUEsRUFDQTtBQUFBLElBQ0UsTUFBTTtBQUFBLElBQ04sT0FBTztBQUFBLElBQ1AsYUFBYTtBQUFBLE1BQ1gsRUFBRSxNQUFNLFFBQVEsVUFBVSxLQUFLO0FBQUEsTUFDL0IsRUFBRSxNQUFNLFFBQVEsVUFBVSxLQUFLO0FBQUEsSUFDakM7QUFBQSxJQUNBLFVBQVU7QUFBQSxJQUNWLEtBQUssQ0FBQyxLQUFLLFFBQVEsWUFDakIsYUFBYSxTQUFTLEVBQUUsTUFBTSxVQUFVLE1BQU0sUUFBUSxJQUFJLEVBQVksR0FBRyxNQUFNLElBQUksR0FBRyxDQUFDO0FBQUEsRUFDM0Y7QUFBQSxFQUNBO0FBQUEsSUFDRSxNQUFNO0FBQUEsSUFDTixPQUFPO0FBQUEsSUFDUCxhQUFhLENBQUMsRUFBRSxNQUFNLFFBQVEsVUFBVSxLQUFLLENBQUM7QUFBQSxJQUM5QyxVQUFVO0FBQUEsSUFDVixLQUFLLENBQUMsS0FBSyxRQUFRLFlBQ2pCLGFBQWEsU0FBUyxFQUFFLE1BQU0sUUFBUSxNQUFNLFFBQVEsSUFBSSxFQUFZLEVBQUUsQ0FBQztBQUFBLEVBQzNFO0FBQUEsRUFDQTtBQUFBLElBQ0UsTUFBTTtBQUFBLElBQ04sT0FBTztBQUFBLElBQ1AsYUFBYSxDQUFDLEVBQUUsTUFBTSxTQUFTLFVBQVUsS0FBSyxDQUFDO0FBQUEsSUFDL0MsVUFBVTtBQUFBLElBQ1YsS0FBSyxDQUFDLEtBQUssUUFBUSxZQUFZLGFBQWEsU0FBUyxFQUFFLE1BQU0sVUFBVSxPQUFPLElBQUksR0FBRyxDQUFDO0FBQUEsRUFDeEY7QUFBQSxFQUNBO0FBQUEsSUFDRSxNQUFNO0FBQUEsSUFDTixPQUFPO0FBQUEsSUFDUCxhQUFhLENBQUMsRUFBRSxNQUFNLFFBQVEsVUFBVSxLQUFLLENBQUM7QUFBQSxJQUM5QyxVQUFVO0FBQUEsSUFDVixLQUFLLENBQUMsS0FBSyxRQUFRLFlBQ2pCLGFBQWEsU0FBUyxFQUFFLE1BQU0sWUFBWSxNQUFNLFFBQVEsSUFBSSxFQUFZLEVBQUUsQ0FBQztBQUFBLEVBQy9FO0FBQUEsRUFDQTtBQUFBLElBQ0UsTUFBTTtBQUFBLElBQ04sT0FBTyxDQUFDLEdBQUcsU0FBUyxNQUFNO0FBQUEsSUFDMUIsYUFBYSxDQUFDLEVBQUUsTUFBTSxRQUFRLFVBQVUsS0FBSyxDQUFDO0FBQUEsSUFDOUMsVUFBVTtBQUFBLElBQ1YsS0FBSyxDQUFDLEtBQUssT0FBTyxZQUNoQixVQUFVLElBQUksSUFBYyxPQUFPLE1BQU0sU0FBUyxXQUFXLE1BQU0sT0FBTyxXQUFXLE9BQU87QUFBQSxFQUNoRztBQUFBLEVBQ0E7QUFBQSxJQUNFLE1BQU07QUFBQSxJQUNOLE9BQU87QUFBQSxJQUNQLGFBQWEsQ0FBQyxFQUFFLE1BQU0sT0FBTyxVQUFVLE1BQU0sQ0FBQztBQUFBLElBQzlDLFVBQVU7QUFBQSxJQUNWLEtBQUssQ0FBQyxLQUFLLFFBQVEsWUFBWSxhQUFhLElBQUksSUFBSSxPQUFPO0FBQUEsRUFDN0Q7QUFBQSxFQUNBO0FBQUEsSUFDRSxNQUFNO0FBQUEsSUFDTixPQUFPO0FBQUEsSUFDUCxhQUFhLENBQUMsRUFBRSxNQUFNLFFBQVEsVUFBVSxNQUFNLENBQUM7QUFBQSxJQUMvQyxVQUFVO0FBQUEsSUFDVixLQUFLLE9BQU8sS0FBSyxRQUFRLFlBQVk7QUFBQSxNQUNuQyxVQUNFLE1BQU0sUUFBUSxTQUFTO0FBQUEsUUFDckIsTUFBTTtBQUFBLFdBQ0YsSUFBSSxPQUFPLFlBQVksRUFBRSxNQUFNLFFBQVEsSUFBSSxFQUFFLEVBQUUsSUFBSSxDQUFDO0FBQUEsTUFDMUQsQ0FBQyxDQUNIO0FBQUE7QUFBQSxFQUVKO0FBQUEsRUFDQTtBQUFBLElBQ0UsTUFBTTtBQUFBLElBQ04sT0FBTyxDQUFDLEdBQUcsU0FBUyxRQUFRLFVBQVUsYUFBYSxPQUFPLE9BQU87QUFBQSxJQUNqRSxhQUFhLENBQUM7QUFBQSxJQUNkLFVBQ0U7QUFBQSxJQUNGLEtBQUssT0FBTyxNQUFNLE9BQU8sWUFBWTtBQUFBLE1BQ25DLE1BQU0sU0FBaUMsQ0FBQztBQUFBLE1BQ3hDLFdBQVcsS0FBSyxDQUFDLFFBQVEsVUFBVSxhQUFhLEtBQUs7QUFBQSxRQUNuRCxJQUFJLE9BQU8sTUFBTSxPQUFPO0FBQUEsVUFBVSxPQUFPLEtBQUssTUFBTTtBQUFBLE1BQ3RELElBQUksT0FBTyxNQUFNLFVBQVU7QUFBQSxRQUFVLE9BQU8sUUFBUSxlQUFlLE1BQU0sS0FBSztBQUFBLE1BQzlFLFVBQVUsTUFBTSxRQUFRLFNBQVMsRUFBRSxNQUFNLFFBQVEsT0FBTyxDQUFDLENBQUM7QUFBQTtBQUFBLEVBRTlEO0FBQUEsRUFDQTtBQUFBLElBQ0UsTUFBTTtBQUFBLElBQ04sT0FBTyxDQUFDLEdBQUcsU0FBUyxPQUFPO0FBQUEsSUFDM0IsYUFBYSxDQUFDLEVBQUUsTUFBTSxTQUFTLFVBQVUsTUFBTSxVQUFVLEtBQUssQ0FBQztBQUFBLElBQy9ELFVBQ0U7QUFBQSxJQUNGLEtBQUssT0FBTyxLQUFLLE9BQU8sWUFBWTtBQUFBLE1BQ2xDLE1BQU0sUUFDSixPQUFPLE1BQU0sVUFBVSxXQUFXLFdBQVcsTUFBTSxPQUFPLGdCQUFnQixJQUFJO0FBQUEsTUFDaEYsVUFDRSxNQUFNLFFBQVEsU0FBUztBQUFBLFFBQ3JCLE1BQU07QUFBQSxRQUNOLE9BQU8sSUFBSSxLQUFLLEdBQUc7QUFBQSxXQUNmLFVBQVUsWUFBWSxFQUFFLE1BQU0sSUFBSSxDQUFDO0FBQUEsTUFDekMsQ0FBQyxDQUNIO0FBQUE7QUFBQSxFQUVKO0FBQUEsRUFDQTtBQUFBLElBQ0UsTUFBTTtBQUFBLElBQ04sT0FBTztBQUFBLElBQ1AsYUFBYSxDQUFDO0FBQUEsSUFDZCxVQUNFO0FBQUEsSUFDRixLQUFLLE9BQU8sTUFBTSxRQUFRLFlBQVk7QUFBQSxNQUNwQyxVQUFVLE1BQU0sUUFBUSxTQUFTLEVBQUUsTUFBTSxTQUFTLENBQUMsQ0FBQztBQUFBO0FBQUEsRUFFeEQ7QUFBQSxFQUNBO0FBQUEsSUFDRSxNQUFNO0FBQUEsSUFDTixPQUFPLENBQUMsR0FBRyxTQUFTLEtBQUs7QUFBQSxJQUN6QixhQUFhLENBQUM7QUFBQSxJQUNkLFVBQ0U7QUFBQSxJQUNGLEtBQUssT0FBTyxNQUFNLE9BQU8sWUFBWTtBQUFBLE1BQ25DLFVBQ0UsTUFBTSxRQUFRLFNBQVM7QUFBQSxRQUNyQixNQUFNO0FBQUEsV0FDRixPQUFPLE1BQU0sUUFBUSxXQUFXLEVBQUUsS0FBSyxPQUFPLE1BQU0sR0FBRyxFQUFFLElBQUksQ0FBQztBQUFBLE1BQ3BFLENBQUMsQ0FDSDtBQUFBO0FBQUEsRUFFSjtBQUFBLEVBQ0E7QUFBQSxJQUNFLE1BQU07QUFBQSxJQUNOLE9BQU8sQ0FBQyxHQUFHLFNBQVMsT0FBTztBQUFBLElBQzNCLGFBQWEsQ0FBQztBQUFBLElBQ2QsVUFBVTtBQUFBLElBQ1YsS0FBSyxPQUFPLE1BQU0sT0FBTyxZQUFZO0FBQUEsTUFDbkMsVUFDRSxNQUFNLFFBQVEsU0FBUztBQUFBLFFBQ3JCLE1BQU07QUFBQSxXQUNGLE9BQU8sTUFBTSxVQUFVLFdBQVcsRUFBRSxPQUFPLE1BQU0sTUFBTSxJQUFJLENBQUM7QUFBQSxNQUNsRSxDQUFDLENBQ0g7QUFBQTtBQUFBLEVBRUo7QUFBQSxFQUNBO0FBQUEsSUFDRSxNQUFNO0FBQUEsSUFDTixPQUFPLENBQUMsR0FBRyxTQUFTLE9BQU87QUFBQSxJQUMzQixhQUFhLENBQUM7QUFBQSxJQUNkLFVBQ0U7QUFBQSxJQUNGLEtBQUssT0FBTyxNQUFNLE9BQU8sWUFBWTtBQUFBLE1BQ25DLFVBQ0UsTUFBTSxRQUFRLFNBQVM7QUFBQSxRQUNyQixNQUFNO0FBQUEsV0FDRixPQUFPLE1BQU0sVUFBVSxXQUFXLEVBQUUsT0FBTyxNQUFNLE1BQU0sSUFBSSxDQUFDO0FBQUEsTUFDbEUsQ0FBQyxDQUNIO0FBQUE7QUFBQSxFQUVKO0FBQUEsRUFDQTtBQUFBLElBQ0UsTUFBTTtBQUFBLElBQ04sT0FBTztBQUFBLElBQ1AsYUFBYSxDQUFDLEVBQUUsTUFBTSxRQUFRLFVBQVUsS0FBSyxDQUFDO0FBQUEsSUFDOUMsVUFBVTtBQUFBLElBQ1YsS0FBSyxPQUFPLEtBQUssUUFBUSxZQUFZO0FBQUEsTUFDbkMsVUFBVSxNQUFNLFFBQVEsU0FBUyxFQUFFLE1BQU0sYUFBYSxNQUFNLFFBQVEsSUFBSSxFQUFZLEVBQUUsQ0FBQyxDQUFDO0FBQUE7QUFBQSxFQUU1RjtBQUFBLEVBQ0E7QUFBQSxJQUNFLE1BQU07QUFBQSxJQUNOLE9BQU8sQ0FBQyxHQUFHLFNBQVMsUUFBUSxJQUFJO0FBQUEsSUFDaEMsYUFBYSxDQUFDLEVBQUUsTUFBTSxRQUFRLFVBQVUsS0FBSyxDQUFDO0FBQUEsSUFDOUMsVUFDRTtBQUFBLElBQ0YsS0FBSyxPQUFPLEtBQUssT0FBTyxZQUFZO0FBQUEsTUFDbEMsVUFDRSxNQUFNLFFBQVEsU0FBUztBQUFBLFFBQ3JCLE1BQU07QUFBQSxRQUNOLE1BQU0sUUFBUSxJQUFJLEVBQVk7QUFBQSxXQUMxQixPQUFPLE1BQU0sU0FBUyxXQUFXLEVBQUUsVUFBVSxNQUFNLEtBQUssSUFBSSxDQUFDO0FBQUEsV0FDN0QsT0FBTyxNQUFNLE9BQU8sV0FBVyxFQUFFLElBQUksTUFBTSxHQUFHLElBQUksQ0FBQztBQUFBLE1BQ3pELENBQUMsQ0FDSDtBQUFBO0FBQUEsRUFFSjtBQUFBLEVBQ0E7QUFBQSxJQUNFLE1BQU07QUFBQSxJQUNOLE9BQU87QUFBQSxJQUNQLGFBQWE7QUFBQSxNQUNYLEVBQUUsTUFBTSxRQUFRLFVBQVUsS0FBSztBQUFBLE1BQy9CLEVBQUUsTUFBTSxhQUFhLFVBQVUsTUFBTSxVQUFVLEtBQUs7QUFBQSxJQUN0RDtBQUFBLElBQ0EsVUFBVTtBQUFBLElBQ1YsS0FBSyxPQUFPLEtBQUssUUFBUSxZQUFZO0FBQUEsTUFDbkMsTUFBTSxTQUFpQyxDQUFDO0FBQUEsTUFDeEMsV0FBVyxRQUFRLElBQUksTUFBTSxDQUFDLEdBQUc7QUFBQSxRQUMvQixNQUFNLEtBQUssS0FBSyxRQUFRLEdBQUc7QUFBQSxRQUMzQixJQUFJLE1BQU07QUFBQSxVQUNSLElBQUksSUFBSSwwQkFBMEIsU0FBUztBQUFBLFlBQ3pDLE1BQU07QUFBQSxVQUNSLENBQUM7QUFBQSxRQUNILE9BQU8sS0FBSyxNQUFNLEdBQUcsRUFBRSxLQUFLLEtBQUssTUFBTSxLQUFLLENBQUM7QUFBQSxNQUMvQztBQUFBLE1BQ0EsVUFDRSxNQUFNLFFBQVEsU0FBUyxFQUFFLE1BQU0sWUFBWSxNQUFNLFFBQVEsSUFBSSxFQUFZLEdBQUcsT0FBTyxDQUFDLENBQ3RGO0FBQUE7QUFBQSxFQUVKO0FBQUEsRUFDQTtBQUFBLElBQ0UsTUFBTTtBQUFBLElBQ04sT0FBTztBQUFBLElBQ1AsYUFBYSxDQUFDO0FBQUEsSUFDZCxVQUFVO0FBQUEsSUFDVixLQUFLLENBQUMsTUFBTSxRQUFRLFlBQVk7QUFBQSxNQUM5QixVQUFVLGVBQWUsT0FBTyxDQUFDO0FBQUE7QUFBQSxFQUVyQztBQUFBLEVBQ0E7QUFBQSxJQUNFLE1BQU07QUFBQSxJQUNOLE9BQU87QUFBQSxJQUNQLGFBQWEsQ0FBQztBQUFBLElBQ2QsVUFBVTtBQUFBLElBQ1YsS0FBSyxPQUFPLE1BQU0sUUFBUSxZQUFZO0FBQUEsTUFDcEMsTUFBTSxRQUFRLFNBQVMsRUFBRSxNQUFNLFFBQVEsQ0FBQztBQUFBLE1BQ3hDLFVBQVUsRUFBRSxJQUFJLE1BQU0sTUFBTSxRQUFRLENBQUM7QUFBQTtBQUFBLEVBRXpDO0FBQ0Y7QUFJTyxJQUFNLE1BQU0sVUFBVTtBQUFBLEVBQzNCLE1BQU07QUFBQSxFQUNOLFNBQVM7QUFBQSxFQUNULFNBQVM7QUFBQSxFQUNULFVBQVUsS0FBSyxJQUFJLENBQUMsT0FBTyxLQUFLLEdBQUcsS0FBSyxHQUFHLEVBQUUsR0FBRyxHQUFHLFlBQVksVUFBVSxFQUFFO0FBQUEsRUFHM0UsU0FBUztBQUFBLEVBQ1QsZ0JBQWdCO0FBQUEsRUFDaEIsWUFBWSxDQUFDLFNBQVM7QUFBQSxFQUN0QixTQUFTO0FBQUEsRUFDVCxZQUFZO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUEsSUFPVjtBQUNKLENBQUM7QUFFTSxJQUFNLFFBQTJCLElBQUk7QUFDckMsSUFBTSxZQUErQyxPQUFPLFlBQ2pFLElBQUksS0FBSyxJQUFJLENBQUMsTUFBTSxDQUFDLEVBQUUsTUFBTSxFQUFFLFFBQVEsQ0FBQyxDQUMxQztBQUNPLElBQU0sV0FBVyxDQUFDLFNBQTJCLElBQUksU0FBUyxJQUFJO0FBQzlELElBQU0sbUJBQXNDLElBQUk7QUFLdkQsZUFBZSxJQUFJLENBQUMsTUFBaUM7QUFBQSxFQUNuRCxJQUFJO0FBQUEsSUFDRixPQUFPLE1BQU0sSUFBSSxTQUFTLElBQUk7QUFBQSxJQUM5QixPQUFPLEdBQUc7QUFBQSxJQUNWLE1BQU0sV0FBVyxlQUFlLENBQUM7QUFBQSxJQUNqQyxJQUFJLGFBQWE7QUFBQSxNQUFNLE9BQU87QUFBQSxJQUM5QixNQUFNLE9BQ0osS0FBSyxPQUFPLE1BQU0sWUFBWSxVQUFVLElBQUksT0FBUSxFQUF3QixJQUFJLElBQUk7QUFBQSxJQUN0RixNQUFNLE1BQU0sYUFBYSxRQUFRLEVBQUUsVUFBVSxPQUFPLENBQUM7QUFBQSxJQUNyRCxJQUFJLFNBQVM7QUFBQSxNQUFVLE9BQU8sZUFBZSxJQUFJLFdBQVcsR0FBRyxDQUFDLEtBQUs7QUFBQSxJQUNyRSxPQUFPLGVBQWUsSUFBSSxTQUFTLFlBQVksR0FBRyxDQUFDLEtBQUs7QUFBQTtBQUFBO0FBUzVELGVBQXNCLEdBQUcsR0FBb0I7QUFBQSxFQUMzQyxPQUFPLE1BQU0sS0FBSyxRQUFRLEtBQUssTUFBTSxDQUFDLENBQUM7QUFBQTsiLAogICJkZWJ1Z0lkIjogIkIzRDBCQzA1MTY1OTc5NjI2NDc1NkUyMTY0NzU2RTIxIiwKICAibmFtZXMiOiBbXQp9

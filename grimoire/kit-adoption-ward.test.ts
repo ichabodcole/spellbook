@@ -215,6 +215,17 @@ function reachedKitModules(roots: string[], throughKit = true): Set<string> {
     if (file === undefined) continue;
     for (const ref of scanSpecifiers(readFileSync(file, "utf8"))) {
       if (ref.erased || !isRelative(ref.spec)) continue;
+      // ⚠ A DAEMON'S DEV PAGE IS SKIPPED, BY ITS ONE SHAPE: the literal
+      // `import("../../../../../src/<spell>/surface/index.html")` is written
+      // for the BUILT address (`dist/`), so from its source file it resolves
+      // nowhere, and the build leaves exactly this specifier external
+      // (`src/build.ts`'s `SURFACE_HTML_EXTERNAL`). It is a page, not a module
+      // the surface bundles, and `import-boundary-wards.test.ts` pins each one.
+      // Reached since the cutover (scriptorium-delete-shipped): Scriptorium's
+      // page tests import its daemon module (`backend/kit/server.ts`), whose
+      // dev page took the house's literal form then; before, it was a computed
+      // path this scanner never saw.
+      if (/^(\.\.\/)+src\/[^/]+\/surface\/index\.html$/.test(ref.spec)) continue;
       let target: string;
       try {
         target = Bun.resolveSync(ref.spec, dirname(file));

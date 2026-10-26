@@ -9,8 +9,10 @@
  *
  * ⛔ WHY IT EXISTS: THE SUITE AND ITS SUBJECT ARE NOW IN DIFFERENT TREES, AND NO
  * NUMBER OF `..` REACHES ACROSS. The 32 test files moved to
- * `src/mind-mapper/backend/`; the process a caller runs lives at
- * `plugins/spellbook/skills/mind-mapper/`. Playbook B6 says "re-derive every
+ * `src/mind-mapper/backend/`; the process a caller runs lives at the deployed
+ * folder — `plugins/unreleased/skills/mind-mapper/` while the spell is held out
+ * of the plugin, `plugins/spellbook/skills/mind-mapper/` once it ships
+ * (`src/deployRoots.ts` answers which). Playbook B6 says "re-derive every
  * path from an explicit SKILL ROOT, never by counting `..`" and then assumes you
  * still have one. This is it — and it is derived by walking up for a repo-root
  * MARKER, which is the house form and a scar rather than a taste: a sibling
@@ -40,6 +42,7 @@
 
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { deployDirFor } from "../../deployRoots.ts";
 
 /** Walk up for the repo-root marker. Loud and by name when it fails. */
 function repoRoot(from: string): string {
@@ -53,14 +56,9 @@ function repoRoot(from: string): string {
   throw new Error(`repo root marker (.anthill/config.json) not found above ${from}`);
 }
 
-/** The deployed skill folder — launchers, `dist/`, `acc.config.json`. */
-export const SKILL_ROOT = join(
-  repoRoot(import.meta.dir),
-  "plugins",
-  "spellbook",
-  "skills",
-  "mind-mapper",
-);
+/** The deployed skill folder — launchers, `dist/`, `acc.config.json` — under
+ *  whichever deploy root holds it, so releasing the spell needs no edit here. */
+export const SKILL_ROOT = deployDirFor("mind-mapper", repoRoot(import.meta.dir));
 
 /** `dist/`, the served directory — which now also holds the two bundles. */
 export const DIST_DIR = join(SKILL_ROOT, "dist");

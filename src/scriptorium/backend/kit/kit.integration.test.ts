@@ -1,0 +1,392 @@
+// Scriptorium on the kit, driven through its own LAUNCHERS with no variable
+// set: `scripts/cli.ts open` spawns `scripts/server.ts` (→ the BUILT
+// `dist/server.js`; build first), each of which hands off to `./cli.ts` and
+// `./server.ts`. (A session the earlier Scriptorium saved is converted through
+// the same launchers in `./migrate.integration.test.ts`.)
+// Everything runs under a temp SCRIPTORIUM_HOME and a temp TMPDIR, with the
+// preload's scratch HOME passed on in `env`, so no real session or pointer is
+// ever read or written.
+//
+// Every daemon this file starts, it stops, by its own session id.
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { FakeSurface, pointerPid, waitForExit } from "../../../kit/workspace/fixtures/harness";
+import type { PublicState } from "../../../kit/workspace/protocol";
+
+const KIT_DIR = dirname(fileURLToPath(import.meta.url));
+const SKILL_ROOT = join(
+  KIT_DIR,
+  "..",
+  "..",
+  "..",
+  "..",
+  "plugins",
+  "spellbook",
+  "skills",
+  "scriptorium",
+);
+const CLI = join(SKILL_ROOT, "scripts", "cli.ts");
+
+const root = realpathSync(mkdtempSync(join(tmpdir(), "scriptorium-kit-")));
+const home = join(root, "home");
+const base = {
+  ...process.env,
+  SCRIPTORIUM_HOME: home,
+  TMPDIR: `${join(root, "tmp")}/`,
+  // Pinned, not inherited: `bun test` sets NODE_ENV=test only when it is unset,
+  // and every under-test guard in the spawned CLI and daemon (the real Trash
+  // refused, the real home refused) reads it.
+  NODE_ENV: "test",
+};
+/** The default environment (no variable at all). */
+const kitEnv = base;
+mkdirSync(join(root, "tmp"), { recursive: true });
+const docs = join(root, "docs");
+mkdirSync(join(docs, "set", "part"), { recursive: true });
+writeFileSync(join(docs, "set", "a.md"), "# A\n\nline two\nline three\n");
+writeFileSync(join(docs, "set", "part", "b.md"), "# B\n");
+writeFileSync(join(docs, "solo.md"), "# Solo\n");
+
+type Run = { code: number; out: string; err: string };
+async function run(env: Record<string, string | undefined>, ...args: string[]): Promise<Run> {
+  const p = Bun.spawn(["bun", CLI, ...args], {
+    stdout: "pipe",
+    stderr: "pipe",
+    stdin: "ignore",
+    env,
+    cwd: root,
+  });
+  const [out, err, code] = await Promise.all([
+    new Response(p.stdout).text(),
+    new Response(p.stderr).text(),
+    p.exited,
+  ]);
+  return { code, out, err };
+}
+const cli = (...args: string[]) => run(kitEnv, ...args);
+const json = <T = Record<string, unknown>>(r: Run): T => {
+  if (r.out.trim() === "")
+    throw new Error(`the CLI printed nothing (exit ${r.code}); stderr: ${r.err || "(empty)"}`);
+  return JSON.parse(r.out) as T;
+};
+const envelope = (r: Run) =>
+  (JSON.parse(r.err) as { error: { kind: string; message: string; hint?: string } }).error;
+/** The kit names its pointers `<app>.<id>.json`; the shipped Scriptorium `scriptorium-<id>.json`. */
+const kitPointer = (id: string) => join(root, "tmp", `scriptorium.${id}.json`);
+const shippedPointer = (id: string) => join(root, "tmp", `scriptorium-${id}.json`);
+
+/** Close one session by its own id, and wait for the pid its pointer names to exit. */
+async function closeById(env: Record<string, string | undefined>, id: string, pointer: string) {
+  const pid = pointerPid(pointer);
+  if (pid === null) return;
+  await run(env, "close", "--session", id);
+  await waitForExit(pid);
+}
+
+afterAll(() => rmSync(root, { recursive: true, force: true }));
+
+describe("Scriptorium on the kit, end to end through its launchers, with no variable set", () => {
+  let port = 0;
+  let sessionId = "";
+  const surface = new FakeSurface();
+  let tail: ReturnType<typeof Bun.spawn> | null = null;
+  let tailOut = "";
+
+  beforeAll(async () => {
+    const r = await cli("open", "--no-open", join(docs, "set"), join(docs, "solo.md"));
+    expect(r.err).toBe("");
+    expect(r.code).toBe(0);
+    const hs = json<{ port: number; session_id: string }>(r);
+    port = hs.port;
+    sessionId = hs.session_id;
+    await surface.connect(port);
+    const proc = Bun.spawn(["bun", CLI, "tail", "--session", sessionId], {
+      stdout: "pipe",
+      stderr: "pipe",
+      stdin: "ignore",
+      env: kitEnv,
+      cwd: root,
+    });
+    tail = proc;
+    void (async () => {
+      const reader = (proc.stdout as ReadableStream<Uint8Array>).getReader();
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        tailOut += new TextDecoder().decode(value);
+      }
+    })();
+  }, 60_000);
+
+  afterAll(async () => {
+    surface.close();
+    await closeById(kitEnv, sessionId, kitPointer(sessionId));
+    tail?.kill();
+    await tail?.exited;
+  });
+
+  const tailLines = () =>
+    tailOut
+      .slice(0, tailOut.lastIndexOf("\n") + 1)
+      .split("\n")
+      .filter(Boolean)
+      .map((l) => JSON.parse(l) as Record<string, unknown>);
+  const waitTail = async (pred: (l: Record<string, unknown>) => boolean) => {
+    for (let i = 0; i < 400; i++) {
+      const hit = tailLines().find(pred);
+      if (hit) return hit;
+      await Bun.sleep(20);
+    }
+    throw new Error(`tail never printed the line; got ${tailOut}`);
+  };
+  const state = async () => json<PublicState>(await cli("state", "--session", sessionId));
+
+  test("open: the kit's daemon, named scriptorium, with its sessions under $SCRIPTORIUM_HOME/sessions", async () => {
+    const st = await state();
+    expect(st.app).toBe("scriptorium");
+    expect(st.context.map((e) => [e.label, e.membership])).toEqual([
+      ["set", "mirrored"],
+      ["solo.md", "listed"],
+    ]);
+    // The earlier Scriptorium's root, `sessions/`; no `kit/` folder any more.
+    const manifest = join(home, "sessions", sessionId, "manifest.json");
+    expect(existsSync(manifest)).toBe(true);
+    expect(JSON.parse(readFileSync(manifest, "utf8"))).toMatchObject({ appName: "scriptorium" });
+    expect(existsSync(join(home, "kit"))).toBe(false);
+    // The pointer is the kit's, never the shipped one's name.
+    expect(existsSync(kitPointer(sessionId))).toBe(true);
+    expect(existsSync(shippedPointer(sessionId))).toBe(false);
+    const grounding = await waitTail((l) => l.type === "grounding");
+    expect(grounding).toMatchObject({ spell: "scriptorium", session_id: sessionId });
+    await waitTail((l) => l.type === "ready");
+  });
+
+  test("the state names the launcher, so the ended dialog's restore command reaches this Scriptorium", async () => {
+    // The home the session lives under, and bun on the skill's CLI launcher;
+    // no variable, since the current Scriptorium is the default.
+    expect((await state()).launcher).toBe(`SCRIPTORIUM_HOME=${home} bun ${CLI}`);
+  });
+
+  test("the session's URL is the kit page, built, with the scroll-text favicon; only its own files are served", async () => {
+    const res = await fetch(`http://127.0.0.1:${port}/`);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toContain("text/html");
+    const html = await res.text();
+    expect(html).toContain("<title>scriptorium</title>");
+    // Lucide `scroll-text`, as the shipped surface's tab carries it.
+    expect(html).toContain('rel="icon"');
+    expect(html).toContain("M15%2012h-5");
+    const chunks = [...html.matchAll(/(?:src|href)="\.?\/?(index-[a-z0-9]+\.(?:js|css))"/g)].map(
+      (m) => m[1] as string,
+    );
+    expect(chunks.length).toBe(2);
+    for (const c of chunks) expect((await fetch(`http://127.0.0.1:${port}/${c}`)).status).toBe(200);
+    // The daemon's own bundle and the shipped surface's page sit one folder up: not served.
+    expect((await fetch(`http://127.0.0.1:${port}/server.js`)).status).toBe(404);
+    expect((await fetch(`http://127.0.0.1:${port}/kit/index.html`)).status).toBe(404);
+  });
+
+  test("add puts a folder on the context list", async () => {
+    const extra = join(docs, "extra");
+    mkdirSync(extra, { recursive: true });
+    writeFileSync(join(extra, "e.md"), "# E\n");
+    const r = await cli("add", "--session", sessionId, extra);
+    expect(r.code).toBe(0);
+    expect(json<{ entries: { label: string; added: boolean }[] }>(r).entries).toMatchObject([
+      { label: "extra", added: true },
+    ]);
+  });
+
+  test("say posts the agent's line to the chat", async () => {
+    const r = await cli("say", "--session", sessionId, "hello", "there");
+    expect(r.err).toBe("");
+    expect(r.code).toBe(0);
+    const chat = (await state()).chat;
+    expect(chat.at(-1)).toMatchObject({ from: "agent", text: "hello there" });
+  });
+
+  test("version-new opens the document and makes v2; note notes a passage of it", async () => {
+    const a = join(docs, "set", "a.md");
+    const v = await cli("version-new", "--session", sessionId, "--doc", a, "--label", "draft");
+    expect(v.err).toBe("");
+    expect(v.code).toBe(0);
+    const made = json<{ doc: string; version: number; path: string }>(v);
+    expect(made).toMatchObject({ doc: "a", version: 2 });
+    expect(made.path.startsWith(join(home, "sessions", sessionId))).toBe(true);
+    // The original is never written by a new version.
+    expect(readFileSync(a, "utf8")).toBe("# A\n\nline two\nline three\n");
+
+    const n = await cli(
+      "note",
+      "--session",
+      sessionId,
+      "--doc",
+      "a",
+      "--quote",
+      "line two",
+      "check",
+    );
+    expect(n.err).toBe("");
+    expect(n.code).toBe(0);
+    const st = await state();
+    const doc = st.docs.find((d) => d.slug === "a");
+    expect(doc?.versions.map((x) => x.n)).toEqual([1, 2]);
+    expect(doc?.notes.some((x) => x.quote === "line two" && x.body === "check")).toBe(true);
+  });
+
+  test("the tail's message carries about: the selection and the active path", async () => {
+    surface.send({ op: "open", path: join(docs, "set", "a.md") });
+    const st = await state();
+    const doc = st.docs.find((d) => d.slug === "a");
+    const active = doc?.versions.find((x) => x.n === doc.active);
+    const path = active?.path ?? "";
+    surface.send({
+      op: "select",
+      selection: {
+        doc: "a",
+        version: doc?.active ?? 2,
+        path,
+        fromLine: 3,
+        toLine: 4,
+        text: "line two\nline three",
+      },
+    });
+    surface.send({ op: "say", text: "tighten this", withSelection: true });
+    const line = await waitTail((l) => l.type === "message" && l.text === "tighten this");
+    expect(line.about).toMatchObject({
+      doc: "a",
+      version: doc?.active ?? 2,
+      path,
+      fromLine: 3,
+      toLine: 4,
+    });
+  });
+
+  test("the one-ask guard: an ask (via ask) about the human's note reaches the tail once, with its noteId", async () => {
+    // The human notes "line two" (offsets 5..13 of the active text).
+    surface.send({ op: "note.add", doc: "a", from: 5, to: 13, body: "stuck here?" });
+    const added = await waitTail((l) => l.type === "note.added" && l.body === "stuck here?");
+    const noteId = String(added.note);
+    const ask = (rid: string) => ({
+      op: "say",
+      text: "see my note",
+      withSelection: false,
+      via: "ask",
+      about: { noteId },
+      rid,
+    });
+    surface.send(ask("r1"));
+    surface.send(ask("r2"));
+    // A plain marker after both: once it is on the tail, both asks have landed.
+    surface.send({ op: "say", text: "marker", withSelection: false });
+    await waitTail((l) => l.type === "message" && l.text === "marker");
+    const asks = tailLines().filter((l) => l.type === "message" && l.text === "see my note");
+    expect(asks).toHaveLength(1);
+    expect(asks[0]?.about).toMatchObject({ noteId });
+    // The gesture rides the tail, so the agent can tell a pressed ask from a typed message.
+    expect(asks[0]?.via).toBe("ask");
+    // The second ask is refused to its sender alone, by its request id.
+    const refused = await surface.waitFor(
+      (f) => f.op === "error" && (f as { requestId?: unknown }).requestId === "r2",
+    );
+    expect(refused).toMatchObject({ op: "error" });
+  });
+
+  test("under test, the built daemon refuses the real Trash: a human delete leaves the file", async () => {
+    // The sentinel: a file of our own in the scratch docs, on the context list
+    // through `add`. Were the refusal compiled out, this would reach the real
+    // Trash, so the assertion is that it is refused and the file is still here.
+    const doomed = join(docs, "extra", "e.md");
+    expect(existsSync(doomed)).toBe(true);
+    // ⛔ CHECKED BEFORE THE OP IS SENT, AND THROWN, NOT EXPECTED: the daemon's
+    // guard holds only if it was spawned with NODE_ENV=test, and `bun test`
+    // keeps a NODE_ENV that was already set (`NODE_ENV=development bun test`).
+    // The session was opened, and so the daemon spawned, with `kitEnv`.
+    if (kitEnv.NODE_ENV !== "test")
+      throw new Error("the kit daemon was not spawned under test: refusing to send a delete");
+    surface.send({ op: "trash", path: doomed, rid: "t1" } as never);
+    const refused = await surface.waitFor(
+      (f) => f.op === "error" && (f as { requestId?: unknown }).requestId === "t1",
+    );
+    expect((refused as { message?: string }).message).toContain(
+      "the real Trash is not used under test",
+    );
+    expect(surface.frames.some((f) => f.op === "trash.done")).toBe(false);
+    expect(readFileSync(doomed, "utf8")).toBe("# E\n");
+  });
+
+  test("doctor answers with findings, each saying what to do", async () => {
+    const r = await cli("doctor", "--session", sessionId);
+    expect(r.err).toBe("");
+    expect(r.code).toBe(0);
+    expect(Array.isArray(json<{ findings: unknown[] }>(r).findings)).toBe(true);
+  });
+
+  test("make-set turns a document listed on its own into a set, the same entry; a second is refused", async () => {
+    const lone = join(docs, "lone.md");
+    writeFileSync(lone, "# Lone\n");
+    expect((await cli("add", "--session", sessionId, lone)).code).toBe(0);
+    const before = (await state()).context.find((e) => e.label === "lone.md");
+    expect(before?.membership).toBe("listed");
+    const m = await cli("make-set", "--session", sessionId, lone);
+    expect(m.err).toBe("");
+    expect(m.code).toBe(0);
+    const folder = join(docs, "lone");
+    expect(json(m)).toMatchObject({ folder, path: join(folder, "lone.md"), entry: before?.id });
+    expect(existsSync(lone)).toBe(false);
+    expect((await state()).context.find((e) => e.id === before?.id)).toMatchObject({
+      membership: "mirrored",
+      root: folder,
+    });
+    await waitTail((l) => l.type === "system" && l.fact === "set.make" && l.entry === before?.id);
+    const again = await cli("make-set", "--session", sessionId, join(folder, "lone.md"));
+    expect(again.code).not.toBe(0);
+    expect(envelope(again).message).toContain("make a folder there instead");
+  });
+
+  test("add-folder makes an empty folder where the caller names it, as a new set", async () => {
+    const where = join(root, "made-here");
+    const r = await cli("add-folder", "--session", sessionId, where);
+    expect(r.err).toBe("");
+    expect(r.code).toBe(0);
+    const made = json<{ path: string; entry: string; set: boolean }>(r);
+    expect(made).toMatchObject({ path: where, set: true });
+    expect((await state()).context.find((e) => e.id === made.entry)).toMatchObject({
+      membership: "mirrored",
+      root: where,
+    });
+    const nowhere = await cli("add-folder", "--session", sessionId, join(root, "no", "such"));
+    expect(nowhere.code).not.toBe(0);
+    expect(envelope(nowhere).message).toContain("is not a folder on disk");
+  });
+
+  test("--version names scriptorium, and no path", async () => {
+    const r = await cli("--version");
+    expect(r.code).toBe(0);
+    expect(json(r)).toMatchObject({ name: "scriptorium" });
+    expect(json(r)).not.toHaveProperty("path");
+  });
+
+  test("close ends the session: the tail closes, the daemon exits, the manifest stays", async () => {
+    const pid = pointerPid(kitPointer(sessionId));
+    if (pid === null) throw new Error("no pointer for the session");
+    const r = await cli("close", "--session", sessionId);
+    expect(r.code).toBe(0);
+    expect(json(r)).toMatchObject({ ok: true, sent: "close" });
+    await waitForExit(pid);
+    await waitTail((l) => l.type === "tail.closed");
+    expect(existsSync(kitPointer(sessionId))).toBe(false);
+    expect(existsSync(join(home, "sessions", sessionId, "manifest.json"))).toBe(true);
+  });
+});

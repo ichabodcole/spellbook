@@ -53,6 +53,25 @@ import { classifyDist, distDirFor, isBackendArtifact } from "./lib/dist-artifact
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PLUGIN_ROOT = join(REPO_ROOT, "plugins", "spellbook");
 
+/** The holding root for a spell kept out of the plugin until it is finished
+ *  (`src/deployRoots.ts`; mind-mapper since 2026-10-25). It has the plugin's
+ *  shape and depth, so a spell held there is judged against IT exactly as a
+ *  shipped spell is judged against `PLUGIN_ROOT` — and is already right the
+ *  day it moves back. */
+const UNRELEASED_ROOT = join(REPO_ROOT, "plugins", "unreleased");
+
+/** The plugin-shaped root the PINNING FILE lives in — so a pin from a shipped
+ *  artifact into the holding root is still an escape. */
+const pluginRootFor = (p: Pin): string =>
+  p.file.startsWith("plugins/unreleased/") ? UNRELEASED_ROOT : PLUGIN_ROOT;
+
+/** ⚠ THE ONE PIN AN UNRELEASED SPELL IS EXPECTED NOT TO RESOLVE: the plugin
+ *  manifest one level above `skills/`, which CLIs read for the version they
+ *  report. The holding root is not a plugin and has no manifest, so the CLI
+ *  degrades to `"version": "unknown"` — its own documented fallback, and true:
+ *  an unreleased spell is in no versioned release. Printed, never silent. */
+const UNRELEASED_MANIFEST = join(UNRELEASED_ROOT, ".claude-plugin", "plugin.json");
+
 // `distDirFor` — where a spell's build emits, the same expression `src/build.ts`
 // uses — comes from `lib/dist-artifacts.ts` along with the backend/surface
 // split. Its `root` parameter is what lets the calibration cells below drive
@@ -497,7 +516,7 @@ const pinnedPaths = (absFile: string): Pin[] => scanFile(absFile).pins;
  *  assert the opposite of Contract 4. Those pins are enumerated and PINNED by
  *  the cell below instead, so a new one is loud rather than silently exempt. */
 const isShippedFile = (p: Pin): boolean =>
-  p.resolved.startsWith(`${PLUGIN_ROOT}/`) &&
+  p.resolved.startsWith(`${pluginRootFor(p)}/`) &&
   /\.[a-z0-9]+$/i.test(p.resolved.split("/").pop() ?? "");
 
 const spells = buildableSpells().filter((s) => emittedJs(s).length > 0);
@@ -663,6 +682,12 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
           if (pin.kind !== "literal") continue;
           if (!isShippedFile(pin)) continue;
           const rel = relative(REPO_ROOT, pin.resolved);
+          if (pin.resolved === UNRELEASED_MANIFEST) {
+            inventory.push(
+              `${pin.file}:${pin.line}  ${pin.expr}  ->  ${rel}  (UNRELEASED: no manifest, version reports "unknown")`,
+            );
+            continue;
+          }
           inventory.push(`${pin.file}:${pin.line}  ${pin.expr}  ->  ${rel}`);
           if (!existsSync(pin.resolved) || !statSync(pin.resolved).isFile()) {
             missing.push(`${pin.file}:${pin.line} -> ${rel} (${pin.expr})`);
@@ -679,6 +704,51 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
     expect(missing).toEqual([]);
   });
 
+  /**
+   * ⛔ A DIRECTORY PIN INSIDE THE SKILL RESOLVES TOO. `isShippedFile` admits a
+   * pin only when its last segment has an extension, so a folder the daemon
+   * reads (Scriptorium's page folder, handed to the kit as `surface.distDir`)
+   * was outside the cell above: moved to a folder the build never writes, it
+   * stayed green here, and only a test that boots the built daemon could see
+   * it. This cell asserts every
+   * extensionless literal pin INTO A SKILL'S `dist/` names an existing
+   * directory: `dist/` is build output, so a folder pinned there is one the
+   * build must have written. Folders elsewhere in the skill may be made at
+   * run time (imago's `assets/`), so they are not asserted. A pin that names a
+   * folder holding a built page (`index.html`) is listed, so the frame's row is
+   * visible, not merely counted.
+   */
+  test("⛔ EVERY SHIPPED DIRECTORY PIN RESOLVES — a moved frame folder goes red here", () => {
+    const missing: string[] = [];
+    const pages: string[] = [];
+    for (const spell of spells) {
+      for (const file of emittedJs(spell)) {
+        for (const pin of pinnedPaths(file)) {
+          if (pin.kind !== "literal") continue;
+          if (!pin.resolved.startsWith(`${pluginRootFor(pin)}/`) || isShippedFile(pin)) continue;
+          if (!relative(pluginRootFor(pin), pin.resolved).split("/").includes("dist")) continue;
+          const rel = relative(REPO_ROOT, pin.resolved);
+          if (!existsSync(pin.resolved) || !statSync(pin.resolved).isDirectory())
+            missing.push(`${pin.file}:${pin.line} -> ${rel} (${pin.expr})`);
+          else if (existsSync(join(pin.resolved, "index.html")))
+            pages.push(`${pin.file} -> ${rel}`);
+        }
+      }
+    }
+    expect(missing).toEqual([]);
+    // Scriptorium's page folder is a PARAMETER to the kit's daemon
+    // (`surface.distDir`), so this pin is the only place the folder it serves
+    // is read: it must land on a built page.
+    // ⚠ RE-KEYED AT THE CUTOVER (scriptorium-delete-shipped): it was
+    // `dist/kit`, the kit path's own folder beside the shipped page. With the
+    // shipped page deleted the kit page builds at the dist root, and the pin
+    // is `DIST_DIR = join(HERE, "..", "dist")` in
+    // `src/scriptorium/backend/kit/server.ts`, the house's up-and-back-down.
+    expect(pages).toContain(
+      "plugins/spellbook/skills/scriptorium/dist/server.js -> plugins/spellbook/skills/scriptorium/dist",
+    );
+  });
+
   test("a pin that leaves the skill folder is ENUMERATED, not silently exempt", () => {
     // These cannot be asserted from this repo (see `isShippedFile`). Pinning the
     // SET is what stops the exemption growing quietly: a new escape fails here
@@ -688,7 +758,7 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
     for (const spell of spells) {
       for (const file of emittedJs(spell)) {
         for (const pin of pinnedPaths(file)) {
-          if (pin.resolved.startsWith(`${PLUGIN_ROOT}/`)) continue;
+          if (pin.resolved.startsWith(`${pluginRootFor(pin)}/`)) continue;
           escapes.add(`${pin.file} -> ${relative(REPO_ROOT, pin.resolved)}`);
         }
       }
@@ -753,15 +823,49 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
       // created the coverage row and moved the expression to an address where it
       // was false, in the same commit, which is why the port repaired the spawn
       // to up-and-back-down in the same breath.
-      "plugins/spellbook/skills/mind-mapper/dist/cli.js -> src/mind-mapper",
+      // ⚠ The row itself is LAST, below scriptorium's: mind-mapper moved to
+      // `plugins/unreleased/` on 2026-10-25 and the set compares sorted.
       // scriptorium's `SURFACE_CWD` — the first spell SCAFFOLDED after the
       // convergence rather than ported, and the escape arrives by design, not
       // archaeology: the dev daemon's cwd must be `src/scriptorium/` for its
       // bunfig (Contract 5), and the ward resolves the five-level climb from
       // the EMITTED `dist/cli.js` onto exactly that directory.
       "plugins/spellbook/skills/scriptorium/dist/cli.js -> src/scriptorium",
+      // ⚠ ROW REMOVED AT THE CUTOVER (scriptorium-delete-shipped):
+      // `scriptorium/dist/server.js -> src/scriptorium/surface/kit/index.html`,
+      // the kit path's dev page by a COMPUTED path (`FRAME_DEV_ENTRY`). The
+      // daemon now names its dev page by the house's LITERAL import, which the
+      // build leaves external and `import-boundary-wards.test.ts` pins (its
+      // scriptorium row), as every other daemon's is; a literal import is not a
+      // `join`, so it is not an escape here.
+      // mind-mapper — under `plugins/unreleased/` since 2026-10-25 (held out of
+      // the plugin until its app is finished). Same depth, so the same escape;
+      // its pins inside the holding root are judged against that root
+      // (`pluginRootFor`), so they are not escapes.
+      "plugins/unreleased/skills/mind-mapper/dist/cli.js -> src/mind-mapper",
     ]);
   });
+
+  /**
+   * ⛔ THE OPAQUE FAMILY CALLS, ENUMERATED — NOT ALLOWLISTED. A family call whose
+   * dist argument this ward cannot resolve is a finding (D42), and each one
+   * here was looked at and has to be re-declared if it moves. Matched on the
+   * file and the call's exact text, never a line number, so a rebuild that
+   * shifts lines keeps it and a change to the call itself reddens.
+   *
+   * None today.
+   *
+   * ⚠ EMPTIED AT THE CUTOVER (scriptorium-delete-shipped). Its one row was the
+   * kit workspace daemon's `serveFromDist(distDir, …)` call inside
+   * `scriptorium/dist/server.js`, opaque because `distDir` is the app's
+   * `surface.distDir` option. The cell below scans only the artifacts of
+   * spells whose backend SOURCE imports the family (`familyImportsOf`), and
+   * Scriptorium's did only through the shipped daemon, now deleted, so the
+   * row matched no site. The folder the call reads is still asserted: it is
+   * the directory pin `DIST_DIR = join(HERE, "..", "dist")` that the
+   * directory-pin cell above holds to a built page.
+   */
+  const OPAQUE_FAMILY_CALLS: readonly { file: string; call: string }[] = [];
 
   test("⛔ THE SHARED DIST FAMILY IS FOLLOWED TO ITS CALL SITE — the read behind a PARAMETER is a pin (C8)", () => {
     // ⛔ WHAT THIS CELL IS FOR. Until D98 this ward could not answer its own
@@ -854,7 +958,20 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
     expect(FAMILY.reads.length).toBeGreaterThan(0);
     expect(adopters.length).toBeGreaterThan(0);
 
-    expect(unresolved).toEqual([]);
+    // The enumerated opaque calls leave the finding list. Each row stands for
+    // EXACTLY ONE call site: a row found nowhere is stale, and a row matching
+    // two sites (the declared call copied somewhere else, outside its guard)
+    // has not been looked at twice, so both fail here.
+    const declared = (u: string) =>
+      OPAQUE_FAMILY_CALLS.find((o) => u.startsWith(`${o.file}:`) && u.endsWith(` ${o.call}`));
+    const miscounted = OPAQUE_FAMILY_CALLS.map((o) => ({
+      row: `${o.file}  ${o.call}`,
+      sites: unresolved.filter((u) => declared(u) === o),
+    }))
+      .filter((r) => r.sites.length !== 1)
+      .map((r) => `${r.row}  (matched ${r.sites.length} sites, declared for 1)`);
+    expect(unresolved.filter((u) => declared(u) === undefined)).toEqual([]);
+    expect(miscounted).toEqual([]);
     expect(blind).toEqual([]);
     expect(missing).toEqual([]);
   });

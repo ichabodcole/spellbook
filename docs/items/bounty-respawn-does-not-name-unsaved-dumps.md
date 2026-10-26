@@ -6,7 +6,7 @@ description:
   open comes up from the older snapshot without pointing at the dump that holds
   the newer tasks.
 status: draft
-lifecycle: triage
+lifecycle: backlog
 id: 01a0fdcd-fe1d-7058-bb1f-53a0174ddcfa
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-02 }
@@ -16,7 +16,7 @@ from: cycle/2026-10-a-restore-keeps-every-task
 # A respawn after a failed save does not name the unsaved dump
 
 Found by the second no-stake verifier of
-[cycle/2026-10-a-restore-keeps-every-task](../cycles/2026-10-a-restore-keeps-every-task.md),
+[cycle/2026-10-a-restore-keeps-every-task](../cycles/_archive/2026-10-a-restore-keeps-every-task.md),
 2026-10-02, on the shipped launcher under a scratch `HOME`. No task is lost:
 every one was in a named file. It predates that cycle; the cycle made it easier
 to reach (a failed `partial-restore` copy refuses writes the same way).

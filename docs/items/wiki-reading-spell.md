@@ -2,7 +2,7 @@
 type: item
 title: A Wiki-Reading Spell
 status: stable
-lifecycle: triage
+lifecycle: dropped
 id: 019fd36e-15f9-71cb-b7be-692b9c95b089
 kind: task
 description:
@@ -142,8 +142,11 @@ discovering it after both are half-built.
 - Companion fragment:
   [`2026-08-05-project-roadmap-surface.md`](./project-roadmap-surface.md)
 - Substrate precedent:
-  [`2026-06-30-mind-mapper-spell-concept.md`](./mind-mapper-spell-concept.md)
+  [`2026-06-30-mind-mapper-spell-concept.md`](./_archive/mind-mapper-spell-concept.md)
   and `docs/projects/mind-mapper/`
 - Landscape work still owed: the Operator implementation, Obsidian, and other
   markdown editors — Cole explicitly asked for this before settling the
   interface.
+
+Dropped at triage, 2026-10-24: the kit Scriptorium is this spell: folder sets, a
+tree, raw and rendered views, links and chat.

@@ -1,5 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { drainAndStop, shouldIdleClose, startHousekeeping } from "./housekeeping.ts";
+import {
+  drainAndStop,
+  readSeconds,
+  shouldIdleClose,
+  startHousekeeping,
+  TIMER_MAX_S,
+} from "./housekeeping.ts";
 import type { SseClients } from "./sse.ts";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -22,6 +28,50 @@ describe("shouldIdleClose", () => {
   test("the floor is inclusive and not crossed early", () => {
     expect(shouldIdleClose(0, 4_999, 5_000)).toBe(false);
     expect(shouldIdleClose(0, 5_000, 5_000)).toBe(true);
+  });
+});
+
+describe("readSeconds", () => {
+  test("a plain count of seconds reads, 0 (stands until closed) and fractions included", () => {
+    expect(readSeconds("0")).toEqual({ ok: true, seconds: 0 });
+    expect(readSeconds("1800")).toEqual({ ok: true, seconds: 1800 });
+    expect(readSeconds("0.6")).toEqual({ ok: true, seconds: 0.6 });
+    expect(readSeconds(" 30 ")).toEqual({ ok: true, seconds: 30 });
+  });
+
+  test("⛔ anything else is refused, never coerced to NaN (which never idle-closes)", () => {
+    const huge = "9".repeat(400); // matches the pattern, and is still Infinity
+    for (const t of [
+      "",
+      " ",
+      "abc",
+      "NaN",
+      "Infinity",
+      "-5",
+      "+5",
+      "1e3",
+      "0x10",
+      "5s",
+      ".5",
+      huge,
+    ]) {
+      const r = readSeconds(t);
+      expect(r.ok, t).toBe(false);
+      if (!r.ok) expect(r.message).toContain("is not a number of seconds");
+    }
+  });
+
+  test("the refusal names the valid form, which `.5` and `5.` are not", () => {
+    for (const t of [".5", "5."]) {
+      const r = readSeconds(t);
+      expect(r.ok, t).toBe(false);
+      if (!r.ok) expect(r.message).toContain("such as 90 or 0.5");
+    }
+  });
+
+  test("TIMER_MAX_S is the longest wait one setTimeout holds, in whole seconds", () => {
+    expect(TIMER_MAX_S * 1000).toBeLessThanOrEqual(2 ** 31 - 1);
+    expect((TIMER_MAX_S + 1) * 1000).toBeGreaterThan(2 ** 31 - 1);
   });
 });
 
@@ -119,6 +169,66 @@ describe("drainAndStop", () => {
       stopMs: 50,
     });
     expect(order).toEqual(["tail-a", "tail-b", "ws", "stop:true"]);
+  });
+
+  describe("the grace period", () => {
+    const stopOnly = { stop: () => {} };
+    const timed = async (opts: Parameters<typeof drainAndStop>[0]) => {
+      const t0 = performance.now();
+      await drainAndStop(opts);
+      return performance.now() - t0;
+    };
+    const tail = (): SseClients => new Set([{ close: () => {}, send: () => {} }]);
+
+    test("a connected tail gets the whole grace before it is closed", async () => {
+      let closedAt = Number.NaN;
+      const t0 = performance.now();
+      const clients: SseClients = new Set([
+        { close: () => (closedAt = performance.now() - t0), send: () => {} },
+      ]);
+      await drainAndStop({ server: stopOnly, clients, graceMs: 120, stopMs: 20 });
+      expect(closedAt).toBeGreaterThanOrEqual(110);
+    });
+
+    test("a connected socket, or a request still being answered, gets it too", async () => {
+      expect(
+        await timed({ server: stopOnly, sockets: [{ close: () => {} }], graceMs: 120, stopMs: 20 }),
+      ).toBeGreaterThanOrEqual(110);
+      expect(
+        await timed({ server: { ...stopOnly, pendingRequests: 1 }, graceMs: 120, stopMs: 20 }),
+      ).toBeGreaterThanOrEqual(110);
+    });
+
+    test("with nobody connected there is no wait at all", async () => {
+      expect(
+        await timed({ server: stopOnly, clients: new Set(), sockets: [], graceMs: 5_000 }),
+      ).toBeLessThan(1_000);
+      expect(
+        await timed({ server: { ...stopOnly, pendingRequests: 0 }, graceMs: 5_000 }),
+      ).toBeLessThan(1_000);
+    });
+
+    test("the stop race's timer is cleared once the stop wins", async () => {
+      const real = globalThis.setTimeout;
+      const live = new Set<unknown>();
+      const cleared = globalThis.clearTimeout;
+      globalThis.setTimeout = ((fn: () => void, ms?: number) => {
+        const t = real(fn, ms);
+        if (ms === 60_000) live.add(t); // the stop race's, not the grace's
+        return t;
+      }) as typeof setTimeout;
+      globalThis.clearTimeout = ((t: Parameters<typeof clearTimeout>[0]) => {
+        live.delete(t);
+        cleared(t);
+      }) as typeof clearTimeout;
+      try {
+        await drainAndStop({ server: stopOnly, clients: tail(), graceMs: 1, stopMs: 60_000 });
+        expect(live.size).toBe(0);
+      } finally {
+        globalThis.setTimeout = real;
+        globalThis.clearTimeout = cleared;
+      }
+    });
   });
 
   test("⛔ A HANGING `server.stop` DOES NOT HANG TEARDOWN", async () => {

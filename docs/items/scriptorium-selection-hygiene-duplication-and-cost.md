@@ -12,12 +12,21 @@ lifecycle: backlog
 id: 01a0ca78-3e29-71c9-bd9c-a8f6dc4602ef
 kind: task
 generated: { by: claude-opus-5, at: 2026-09-22 }
+parent: feature/workspace-kit-follow-ups
 ---
 
 # Scriptorium: the duplicated edge-detect, and a full re-walk on every selectionchange
 
 Both raised by the independent review of `fix/scriptorium-selection-context`
 (2026-09-22); neither is a defect today.
+
+**Re-aimed at the kit (Cole, 2026-10-19).** The document-pane cycle found both
+points still hold in the kit's document pane, which replaces the shipped surface
+at the cutover. The edge-detect is `const unpainted = useRef(clearSeq)` in
+`src/kit/document/MarkdownView.tsx` and `src/kit/document/DocumentView.tsx`, and
+the re-walk is `align()` in `src/kit/document/renderedRange.ts`, over
+`src/kit/document/projection.ts`. A change is kit work and is offered on
+kit-parity. The paths below are the shipped surface's, as they were found.
 
 ## 1. Two copies of the same edge-detect
 
@@ -45,8 +54,12 @@ look first. Measure before changing anything.
 
 ## References
 
-- `src/scriptorium/surface/state/renderedRange.ts` (`align`)
+- On the kit: `src/kit/document/renderedRange.ts` (`align`),
+  `src/kit/document/projection.ts`, `src/kit/document/MarkdownView.tsx`,
+  `src/kit/document/DocumentView.tsx`
+- As found, on the shipped surface:
+  `src/scriptorium/surface/state/renderedRange.ts` (`align`)
 - `src/scriptorium/surface/components/MarkdownView.tsx`,
   `src/scriptorium/surface/components/DocumentView.tsx`
 - Session:
-  [the chip and the lines it pointed at](scriptorium/sessions/2026-09-22-the-chip-and-the-lines-it-pointed-at.md)
+  [the chip and the lines it pointed at](_archive/scriptorium/sessions/2026-09-22-the-chip-and-the-lines-it-pointed-at.md)

@@ -86,4 +86,4 @@ re-arming Monitor.
 - `src/kit/wire/tailHandoff.ts` (the handoff line and its decision log)
 - `plugins/spellbook/skills/bounty/SKILL.md` ("Keep watching past Monitor's
   30-minute cap")
-- [The Monitor-expiry backlog item](./scriptorium-tail-monitor-expiry-wakes-the-agent-for-nothing.md)
+- [The Monitor-expiry backlog item](./_archive/scriptorium-tail-monitor-expiry-wakes-the-agent-for-nothing.md)

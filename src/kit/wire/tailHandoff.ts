@@ -7,9 +7,9 @@
  *
  * Built on `feat/tail-quiet-handoff` to Cole's ruling of 2026-09-23 (the
  * "Ruling" section of
- * `docs/items/scriptorium-tail-monitor-expiry-wakes-the-agent-for-nothing.md`)
+ * `docs/items/_archive/scriptorium-tail-monitor-expiry-wakes-the-agent-for-nothing.md`)
  * and the four adjustments of its feasibility spike
- * (`docs/items/monitor-expiry-and-the-tail/write-up.md`).
+ * (`docs/items/_archive/monitor-expiry-and-the-tail/write-up.md`).
  *
  * ── THE PROBLEM, ONE PARAGRAPH ──────────────────────────────────────────────
  *
@@ -112,8 +112,9 @@
  * ── THE VERIFIER'S DEFECTS, FIXED ON THE SAME BRANCH (2026-09-23) ──────────
  *
  * The no-stake verifier ran every spell's real tail and found four ways the
- * loop broke. Each has a cell in `tailHandoff.test.ts`; D1 and D2 also have a
- * real-daemon cell in `src/scriptorium/backend/tail-handoff.integration.test.ts`.
+ * loop broke. Each has a cell in `tailHandoff.test.ts`; D1 and D2 also have
+ * real-daemon cells, in `src/kit/workspace/tail-handoff.closed.integration.test.ts`
+ * (D1) and `tail-handoff.restart.integration.test.ts` (D2) beside it.
  *
  * D1 · A RE-ARM AT A SESSION THAT CLOSED IN THE GAP ENDS `tail.closed`. The
  *      trigger is ordinary: the human presses Close while the agent handles
@@ -195,7 +196,7 @@
  * to be runnable as printed, headed by `bun <argv[1]>` — and for an installed
  * plugin `argv[1]` is inside a VERSIONED cache directory. An upgrade marks the
  * old directory orphaned and deletes it later (measured in
- * `docs/items/tail-rearm-command-names-a-versioned-plugin-path.md`),
+ * `docs/items/_archive/tail-rearm-command-names-a-versioned-plugin-path.md`),
  * so a line printed before an upgrade first ran STALE code against a newer
  * daemon, then failed with "module not found" once the directory was gone. No
  * stable path exists to print instead: the cache, `$CLAUDE_PLUGIN_ROOT` and the
@@ -352,7 +353,9 @@ export type HandoffLine = {
   /** Whose launcher runs `command`. */
   spell: string;
   events: number;
-  cursor: number;
+  /** The bookmark. Left off a `tail.closed` or `tail.lost` that read nothing:
+   *  those lines re-arm nothing, and `-1` would only be noise. */
+  cursor?: number;
   /** `tail.closed` only: who ended the session, when the spell says (S1). */
   by?: string;
   /** `monitor`: arm Monitor (timeout_ms 1800000) with the launcher + `command`.
@@ -381,13 +384,16 @@ const COME_BACK = (why: string, lead = "To bring it back") =>
  */
 export function handoff(s: HandoffInput, cmd: HandoffCommands): HandoffLine | null {
   const base = { spell: s.spell, events: s.events, cursor: s.cursor };
+  // A line that stops names no re-arm, so a bookmark from before anything was
+  // read (`-1`) tells the agent nothing: it is left off.
+  const stopBase = s.cursor >= 0 ? base : { spell: s.spell, events: s.events };
   switch (s.end) {
     case "stopped":
       return null;
     case "closed":
       return {
         type: "tail.closed",
-        ...base,
+        ...stopBase,
         ...(s.by ? { by: s.by } : {}),
         next: "stop",
         command: cmd.comeBack(),
@@ -402,7 +408,7 @@ export function handoff(s: HandoffInput, cmd: HandoffCommands): HandoffLine | nu
     case "lost":
       return {
         type: "tail.lost",
-        ...base,
+        ...stopBase,
         next: "stop",
         command: cmd.comeBack(),
         hint: COME_BACK("lost the daemon (it crashed or was killed); nothing is listening."),

@@ -38,7 +38,7 @@ import { $ } from "bun";
 // EVERY FILTER, as data, so it can be PRINTED rather than lurking in a comment.
 // An unpublished filter makes a correct result unreproducible.
 const FILTERS_APPLIED = [
-  "BEHAVIOUR = changed paths under plugins/spellbook/skills/ or src/, excluding *.test.ts and *.md",
+  "BEHAVIOUR = changed paths under plugins/spellbook/skills/, plugins/unreleased/skills/ or src/, excluding *.test.ts and *.md",
   "  -> deliberately includes .html/.py/.json: circe's instance (fbfe1d3) was `.html` ONLY, and a .ts-only filter misses it entirely",
   "EVIDENCE  = any changed path matching *.test.ts, ANYWHERE",
   "  -> matched by BEHAVIOUR not by directory: 5 spells keep tests in scripts/, 3 in tests/ (house-style's own 63-vs-37 scar)",
@@ -46,7 +46,10 @@ const FILTERS_APPLIED = [
   "assertion delta = added-minus-removed lines containing `expect(` in *.test.ts diffs (a HINT, not the verdict)",
 ];
 
-const SOURCE_ROOTS = ["plugins/spellbook/skills/", "src/"];
+// The unreleased root (`src/deployRoots.ts`) is a deploy root like the shipped
+// one: a spell held out of the plugin still has launchers whose change is
+// behaviour.
+const SOURCE_ROOTS = ["plugins/spellbook/skills/", "plugins/unreleased/skills/", "src/"];
 const isTest = (p: string) => /\.test\.ts$/.test(p);
 const isExcluded = (p: string) =>
   p.startsWith("scripts/instruments/") || p.endsWith(".md") || p.startsWith(".anthill/");

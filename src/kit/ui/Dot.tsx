@@ -29,7 +29,7 @@ import { cn } from "../lib/cn";
  * theme-INDEPENDENT (`--color-edge` is #1e293b in mind-mapper and #2e2640 in
  * imago, in both palettes), because `edge` is the only shared token whose value
  * genuinely differs between the two spells — they happen to agree on tertiary
- * ink. But `box-sizing: border-box` means a 1px rim shrinks an 8px dot's
+ * ink. But sizing by the border box means a 1px rim shrinks an 8px dot's
  * apparent fill to 6px on two SHIPPED surfaces, and that is something a human
  * SEES. Measured side by side, and the difference shows. Restoring it is one
  * line here; the
@@ -38,8 +38,9 @@ import { cn } from "../lib/cn";
  *
  * ⛔ NO L1 SHADCN ALIAS. Nothing here may reach a utility built on a shadcn
  * alias token — a fill, ink or rim carrying `--color-accent`, `--color-popover`
- * or `--color-muted` &c — see the header of ../theme/base.css for why that
- * would put a 95-site rename on this phase's critical path. (This rule used to
+ * or `--color-muted` &c. imago gives two of those names its own meaning (its
+ * brand and its dim ink), so such a dot would paint differently there, and
+ * renaming imago's tokens out of the way is a 95-site change. (This rule used to
  * spell those three utilities out, and thereby SHIPPED all three to every
  * adopting spell: the muted fill was a real rule in imago's stylesheet that
  * imago's own source never asked for. The alias TOKEN names are safe to write —

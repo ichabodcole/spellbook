@@ -5,12 +5,11 @@ description:
   "Leftovers from #82: bounty update's noop, grapevine's already_running,
   restarted/rolled verb echoes, and reap's parallel arrays have not moved to
   outcome nouns."
-status: draft
-lifecycle: triage
+status: stable
+lifecycle: backlog
 id: 01a0e73e-84ae-7600-95c9-3bc26f0a1c0d
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-09-28 }
-parent: feature/spell-hardening
 cycle: 2026-09-reply-shape-leftovers
 ---
 

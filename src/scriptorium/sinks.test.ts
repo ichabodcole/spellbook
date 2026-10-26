@@ -1,189 +1,140 @@
-// ⛔ IS THE RENDERED VIEW STILL THE ONLY WAY HTML REACHES THE PAGE?
+// ⛔ DOES HTML REACH SCRIPTORIUM'S PAGE ONLY THROUGH THE KIT'S RENDERER?
 //
-// E29's rendered view has one `dangerouslySetInnerHTML`, and what makes it safe
-// is entirely upstream of it: micromark encodes raw HTML in the source, so every
-// tag came from the renderer, and `state/markdown.ts` refuses a link target that
-// is not http, https, mailto or relative. Feed that sink anything else — a
-// document's text, a chat message, a daemon field — and the page executes it at
-// a localhost origin that is also driving a daemon with filesystem verbs.
+// The page renders a document and a chat message as HTML, and what makes that
+// safe is entirely upstream of the sink: micromark encodes raw HTML in the
+// source, so every tag came from the renderer, and the renderer refuses a link
+// target that is not http, https, mailto or relative. Feed a sink anything
+// else (a document's text, a chat message, a daemon field) and the page
+// executes it at a localhost origin that is also driving a daemon with
+// filesystem verbs. Losing that would be SILENT: every document that is not an
+// attack renders identically either way.
 //
-// Losing it would be SILENT: every document that is not an attack renders
-// identically either way. So, digestify's shape (its `sinks.test.ts`, which this
-// follows): the sink set is DECLARED, and a second one has to be argued for
-// rather than merged quietly.
+// ⚠ RE-AIMED AT THE CUTOVER (scriptorium-delete-shipped). This file declared
+// the shipped surface's two sinks (its MarkdownView and ChatMessageView).
+// Those were deleted with it. The page now renders through the kit's document
+// pane and chat, whose two sinks the kit declares and holds
+// (`src/kit/chat/chat.test.tsx`, "the kit's HTML sinks are the chat body and
+// the rendered document"). What stays Scriptorium's is that its own surface
+// adds NO sink beside them, and that the renderer those sinks are fed by still
+// refuses raw HTML.
 //
 // It lives at src/scriptorium/, NOT inside surface/, because `@source "./"` in
-// styles.css scans the surface directory whole — a test file there contributes
-// its own strings to Tailwind's candidate set and changes the SHIPPED stylesheet.
+// styles.css scans the surface directory whole: a test file there contributes
+// its own strings to Tailwind's candidate set and changes the page's
+// stylesheet.
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const SURFACE = join(import.meta.dir, "surface");
+const RENDERER = join(import.meta.dir, "..", "kit", "lib", "markdown.ts");
 
-/** ⛔ COMMENTS STRIPPED, AND THE STRIP IS PART OF THE ASSERTION. This file's
- *  subject is described in prose in the very files it reads: the renderer's own
- *  header explains why `allowDangerousHtml` must never be set, and unstripped
- *  the cell below reads that sentence as the setting. Caught on the first run
- *  (digestify's ward documents the same trap, and this is a second sighting). */
+/** ⛔ COMMENTS STRIPPED, AND THE STRIP IS PART OF THE ASSERTION: the files read
+ *  here describe their subject in prose, and unstripped a sentence that names
+ *  the setting reads as the setting. */
 function code(text: string): string {
   return text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 }
 
-function walk(dir: string, out: string[] = []): string[] {
+/** Every source file of the page, tests included (a test can render too). */
+function surfaceFiles(dir: string = SURFACE, out: string[] = []): string[] {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
-    if (e.isDirectory()) walk(join(dir, e.name), out);
+    if (e.isDirectory()) surfaceFiles(join(dir, e.name), out);
     else if (/\.tsx?$/.test(e.name)) out.push(join(dir, e.name));
   }
   return out;
 }
 
-/**
- * Every HTML sink in the surface, in EITHER of the two shapes React allows.
- *
- * ⛔ IT USED TO SCAN ONLY `dangerouslySetInnerHTML={{ __html: x }}`, AND THAT
- * WENT BLIND. E51 had to hoist the prop into a memoised object
- * (`dangerouslySetInnerHTML={htmlProp}`) because React 19 compares the prop
- * OBJECT and rewrote the whole subtree on every render otherwise — and the
- * moment it did, this scanner matched nothing. Its zero-guard is what said so,
- * which is the guard working; but a ward that a legitimate refactor can silence
- * would also be silenced by an illegitimate one. So both shapes are scanned,
- * and every `__html:` in the surface is enumerated separately below — a sink
- * reached through one more level of indirection still has to write that key.
- */
-function sinks(): { file: string; expr: string }[] {
-  const found: { file: string; expr: string }[] = [];
-  for (const file of walk(SURFACE)) {
-    const src = code(readFileSync(file, "utf8"));
-    const rel = file.replace(`${SURFACE}/`, "");
-    // Inline: dangerouslySetInnerHTML={{ __html: <expr> }}
-    for (const m of src.matchAll(/dangerouslySetInnerHTML=\{\{\s*__html:\s*([^}]+?)\s*\}\}/g)) {
-      const expr = m[1];
-      if (expr !== undefined) found.push({ file: rel, expr });
-    }
-    // Hoisted: dangerouslySetInnerHTML={<identifier>}
-    for (const m of src.matchAll(/dangerouslySetInnerHTML=\{([A-Za-z_$][\w$]*)\}/g)) {
-      const expr = m[1];
-      if (expr !== undefined) found.push({ file: rel, expr });
-    }
-  }
-  return found;
-}
+/** An assignment of any kind (`=`, `+=`, `||=`, `??=`, `&&=`), never a comparison. */
+const WRITE = String.raw`\s*(?:\+|\|\||\?\?|&&)?=(?!=)`;
+/** A property written by name: `.p`, or `["p"]` / `['p']` / `` [`p`] ``. */
+const prop = (p: string) => String.raw`(?:\.${p}|\[\s*["'\x60]${p}["'\x60]\s*\])`;
 
-/** Every place in the surface that writes the `__html` key at all. */
-function htmlKeys(): { file: string; expr: string }[] {
-  const found: { file: string; expr: string }[] = [];
-  for (const file of walk(SURFACE)) {
-    // ⚠ `code()` FIRST. Without it this scanner matched a `__html: html` written
-    // inside a COMMENT — including one in this very file — and reported a second
-    // sink that does not exist.
-    for (const m of code(readFileSync(file, "utf8")).matchAll(/__html:\s*([^},]+?)\s*[},]/g)) {
-      const expr = m[1];
-      if (expr !== undefined) found.push({ file: file.replace(`${SURFACE}/`, ""), expr });
-    }
-  }
-  return found;
-}
+/** The DOM's own string-to-HTML routes, each matched on the comment-stripped code. */
+const RAW_SINKS: readonly (readonly [string, RegExp])[] = [
+  ["innerHTML write", new RegExp(prop("innerHTML") + WRITE)],
+  ["outerHTML write", new RegExp(prop("outerHTML") + WRITE)],
+  ["srcdoc write", new RegExp(`${prop("srcdoc")}${WRITE}|\\bsrcDoc\\s*=`)],
+  ["insertAdjacentHTML", /\binsertAdjacentHTML\b/],
+  ["document.write", /\bdocument\.write(?:ln)?\b/],
+  ["createContextualFragment", /\bcreateContextualFragment\b/],
+  ["setHTMLUnsafe / parseHTMLUnsafe", /\b(?:set|parse)HTMLUnsafe\b/],
+  // `Object.assign(el, { innerHTML: s })` writes the property with no `.innerHTML =`.
+  [
+    "Object.assign of an HTML property",
+    /\bObject\.assign\s*\([^;]*?\b(?:innerHTML|outerHTML|srcdoc)\b/,
+  ],
+];
 
-/** The complete, DECLARED set of HTML sinks this surface may have. */
-const ALLOWED = [
-  {
-    file: "components/MarkdownView.tsx",
-    expr: "htmlProp",
-    why: "the rendered view — `htmlProp` is `{ __html: html }` and `html` is `renderMarkdown(text)` and nothing else (E51 hoisted it; see the scanner's note)",
-  },
-  {
-    file: "components/ChatMessageView.tsx",
-    expr: "htmlProp",
-    why: "a chat message's body (item chat-renders-markdown) — the SAME renderer, `renderMarkdown(message.text)`, so the same refusals; a second sink, not a second path. Argued for rather than folded into MarkdownView because that component's sink carries E51's selection and E63's scroll machinery, which a chat line must not inherit",
-  },
-] as const;
-
-/** The complete, DECLARED set of `__html` writers. */
-const ALLOWED_KEYS = [
-  {
-    file: "components/MarkdownView.tsx",
-    expr: "html",
-    why: "the memoised prop object the one sink is fed from",
-  },
-  {
-    file: "components/ChatMessageView.tsx",
-    expr: "html",
-    why: "the chat body's memoised prop object, built the same way",
-  },
-] as const;
-
-describe("the surface's HTML sinks", () => {
-  test("there is exactly one, and it is the declared one", () => {
-    const found = sinks();
+describe("Scriptorium's page and its HTML sinks", () => {
+  test("its own surface writes no HTML sink and no `__html` key", () => {
+    const files = surfaceFiles();
     // A zero-guard: an empty scan and a clean surface look identical otherwise.
-    expect(found.length).toBeGreaterThan(0);
-    expect(found.map((s) => `${s.file} <- ${s.expr}`).sort()).toEqual(
-      ALLOWED.map((s) => `${s.file} <- ${s.expr}`).sort(),
-    );
+    expect(files.length).toBeGreaterThan(5);
+    const found: string[] = [];
+    for (const file of files) {
+      const src = code(readFileSync(file, "utf8"));
+      const rel = file.slice(SURFACE.length + 1);
+      if (/dangerouslySetInnerHTML/.test(src)) found.push(`${rel}: dangerouslySetInnerHTML`);
+      if (/__html\s*:/.test(src)) found.push(`${rel}: __html`);
+    }
+    expect(found).toEqual([]);
   });
 
-  test("nothing else in the surface writes an `__html` key", () => {
-    const found = htmlKeys();
-    expect(found.length).toBeGreaterThan(0);
-    expect(found.map((s) => `${s.file} <- ${s.expr}`).sort()).toEqual(
-      ALLOWED_KEYS.map((s) => `${s.file} <- ${s.expr}`).sort(),
-    );
+  test("…and no raw DOM route from a string to HTML: no RAW_SINKS route (innerHTML, outerHTML, srcdoc, insertAdjacentHTML, document.write, createContextualFragment, setHTMLUnsafe, Object.assign)", () => {
+    // The cell above sees React's sink only. A raw `el.innerHTML = text` in a
+    // ref callback or an effect is the same hole by another door, and it passed
+    // here until 2026-10-22 (scriptorium-ward-blind-spots-after-deletion).
+    // READING `innerHTML` (a test's `expect(el.innerHTML)`) is not a sink, so
+    // only a write is matched: `=`, `+=`, `||=`, `??=` or `&&=`, never `==`.
+    // ⚠ STILL UNSEEN: a computed key (`el["inner" + "HTML"]`, `el[k] = s`), a
+    // property written by a helper that takes its name as an argument
+    // (`Reflect.set`, `Object.defineProperty`), an `Object.assign` whose source
+    // object is built elsewhere, and any sink inside the kit's own modules,
+    // which the kit's sink cells hold.
+    const files = surfaceFiles();
+    expect(files.length).toBeGreaterThan(5);
+    const found: string[] = [];
+    for (const file of files) {
+      const src = code(readFileSync(file, "utf8"));
+      const rel = file.slice(SURFACE.length + 1);
+      for (const [name, re] of RAW_SINKS) if (re.test(src)) found.push(`${rel}: ${name}`);
+    }
+    expect(found).toEqual([]);
   });
 
-  /**
-   * ⛔ THE HOISTED FORM IS REQUIRED, NOT MERELY TOLERATED — do not "simplify"
-   * `dangerouslySetInnerHTML={htmlProp}` back to an inline `{{ __html: html }}`.
-   * React 19 compares the PROP OBJECT, so a fresh literal per render re-runs
-   * `setInnerHTML` on every commit and replaces the whole subtree even when the
-   * markup is identical. That wipes any live selection in the pane, which is
-   * E51's entire feature: MEASURED as 10 childList mutations for one drag, with
-   * a patched `innerHTML` setter naming React's own `commitUpdate` as the
-   * writer. The `ALLOWED` entry above declares `htmlProp` precisely so that
-   * reverting to the literal turns this file red.
-   */
-  test("the hoisted prop is the renderer's output, not something assembled beside it", () => {
-    const view = code(readFileSync(join(SURFACE, "components", "MarkdownView.tsx"), "utf8"));
-    // `htmlProp` must be `{ __html: html }` — the indirection E51 introduced is
-    // allowed to be exactly this and nothing cleverer.
-    expect(view).toMatch(/htmlProp[\s\S]{0,120}__html:\s*html\s*\}/);
+  test("CALIBRATION: the raw-sink patterns catch a write and not a read", () => {
+    const hits = (src: string) => RAW_SINKS.filter(([, re]) => re.test(src)).map(([n]) => n);
+    expect(hits("el.innerHTML = text;")).toEqual(["innerHTML write"]);
+    expect(hits("ref.current!.innerHTML += more")).toEqual(["innerHTML write"]);
+    expect(hits("node.outerHTML = s")).toEqual(["outerHTML write"]);
+    expect(hits('el.insertAdjacentHTML("beforeend", s)')).toEqual(["insertAdjacentHTML"]);
+    expect(hits("document.writeln(s)")).toEqual(["document.write"]);
+    expect(hits("range.createContextualFragment(s)")).toEqual(["createContextualFragment"]);
+    expect(hits('expect(map()?.innerHTML).not.toContain("x")')).toEqual([]);
+    expect(hits("if (el.innerHTML === prev) return;")).toEqual([]);
+    expect(hits("if (el.innerHTML == prev || el.innerHTML !== next) return;")).toEqual([]);
+    // Logical assignments, and the property by a string key.
+    for (const op of ["||=", "??=", "&&="])
+      expect(hits(`el.innerHTML ${op} s`)).toEqual(["innerHTML write"]);
+    expect(hits('el["innerHTML"] = s')).toEqual(["innerHTML write"]);
+    // The routes beyond innerHTML.
+    expect(hits("frame.srcdoc = s")).toEqual(["srcdoc write"]);
+    expect(hits("<iframe srcDoc={s} />")).toEqual(["srcdoc write"]);
+    expect(hits("el.setHTMLUnsafe(s)")).toEqual(["setHTMLUnsafe / parseHTMLUnsafe"]);
+    expect(hits("Document.parseHTMLUnsafe(s)")).toEqual(["setHTMLUnsafe / parseHTMLUnsafe"]);
+    expect(hits("Object.assign(el, { innerHTML: s })")).toEqual([
+      "Object.assign of an HTML property",
+    ]);
+    expect(hits("Object.assign(el, { innerHTML })")).toEqual(["Object.assign of an HTML property"]);
+    expect(hits("Object.assign(el.style, { width: w })")).toEqual([]);
   });
 
-  test("that sink is fed by renderMarkdown, in the same file, and by nothing else", () => {
-    const view = code(readFileSync(join(SURFACE, "components", "MarkdownView.tsx"), "utf8"));
-    // E32 changed the ARGUMENT (the frontmatter block is split off before
-    // rendering) and this cell red on it, which is the cell working: what is
-    // asserted is that the sink's input still comes THROUGH the renderer.
-    expect(view).toMatch(/renderMarkdown\(\s*splitFrontmatter\(text\)\.body\s*\)/);
-    // The failure this catches: someone "simplifying" to the raw document text.
-    expect(view).not.toContain("__html: text");
-  });
-
-  /**
-   * The chat's sink (item chat-renders-markdown). Chat text is written by the
-   * agent, which is exactly the input the renderer's refusals exist for — so
-   * what is asserted is that the message text reaches the sink THROUGH
-   * `renderMarkdown` and by no other road.
-   */
-  test("the chat body's sink is fed by renderMarkdown of the message, and nothing else", () => {
-    const chat = code(readFileSync(join(SURFACE, "components", "ChatMessageView.tsx"), "utf8"));
-    expect(chat).toMatch(/htmlProp[\s\S]{0,120}__html:\s*html\s*\}/);
-    // The message's footnotes are scoped by its id (`{ idPrefix: id }`) — an
-    // OPTION to the renderer, allowed here as an object literal and nothing
-    // else; what reaches the sink is still `text`, through `renderMarkdown`.
-    expect(chat).toMatch(
-      /html\s*=\s*useMemo\(\s*\(\)\s*=>\s*renderMarkdown\(\s*text\s*(?:,\s*\{[^}]*\}\s*)?\)/,
-    );
-    expect(chat).not.toContain("__html: text");
-    expect(chat).not.toContain("__html: message");
-  });
-
-  test("the renderer never turns on raw HTML, and checks every link target", () => {
-    const md = code(readFileSync(join(SURFACE, "state", "markdown.ts"), "utf8"));
+  test("the kit's renderer, which feeds the kit's sinks, never turns on raw HTML and checks every link target", () => {
+    const md = code(readFileSync(RENDERER, "utf8"));
     // micromark's ONE dangerous option, which would void the whole claim.
     expect(md).not.toContain("allowDangerousHtml");
-    // The href pass is the other half, and it is what the cells in
-    // state/markdown.test.ts exercise.
+    // The href pass is the other half; `src/kit/lib/markdown.test.ts` exercises it.
     expect(md).toContain("safeHref");
   });
 });

@@ -15,8 +15,8 @@ generated: { by: unknown, at: 2026-08-06 }
 > [#81](https://github.com/ichabodcole/spellbook/issues/81), which produced
 > [#82](https://github.com/ichabodcole/spellbook/issues/82) (a cross-tool naming
 > convention) and then outgrew it. The
-> [spell-hardening](../../features/spell-hardening/feature.md) project fixes the
-> instances; this asks what the rule is.
+> [spell-hardening](../../features/_archive/spell-hardening/feature.md) project
+> fixes the instances; this asks what the rule is.
 
 ---
 
@@ -259,7 +259,11 @@ a string prefix.
 
 ## Recommendation
 
-**Provisional — this investigation is not concluded.**
+**Concluded by what shipped (sweep, 2026-10-17).** The recommendation was built:
+the shared failure contract (`src/kit/wire/errors.ts`), the shared CLI registry
+(`src/kit/cli/registry.ts`), and acc as the conformance suite across all nine
+spells (`spell-cli-acc-conformance`, `spell-hardening`). The Next Steps left
+unticked below were overtaken by that work rather than answered here.
 
 - **Option 3 as the primary artifact**, with Option 2 for the two pieces where
   eight hand-rolled implementations already produced identical bugs (`parseArgs`
@@ -301,10 +305,10 @@ document is not.
 ## Next Steps
 
 - [ ] Resolve the nine categories in Finding 3 — the blocking unknown.
-- [ ] Decide the failure envelope's shape, taking mind-mapper's typed nouns as
+- [x] Decide the failure envelope's shape, taking mind-mapper's typed nouns as
       the starting point rather than a blank page.
 - [ ] Answer the two forward-compatibility questions in Finding 8.
-- [ ] Prototype the conformance suite against **two** spells (one well-behaved,
+- [x] Prototype the conformance suite against **two** spells (one well-behaved,
       one not) before proposing it for eight.
 - [ ] Re-run the exhaustive audit **after** `spell-hardening` lands, as the
       suite's first regression baseline.
@@ -330,8 +334,9 @@ document is not.
 
 **Related Documents:**
 
-- [spell-hardening proposal](../../features/spell-hardening/feature.md) and
-  [roadmap](../../features/spell-hardening/roadmap.md) — fixes the instances
+- [spell-hardening proposal](../../features/_archive/spell-hardening/feature.md)
+  and [roadmap](../../features/_archive/spell-hardening/roadmap.md) — fixes the
+  instances
 - Issues: [#82](https://github.com/ichabodcole/spellbook/issues/82) (the naming
   question that outgrew itself), #83–#88 (defects found by the audit),
   #77/#78/#80/#81 (the defect class)
