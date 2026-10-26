@@ -335,6 +335,29 @@ test("links written in the rendered view of a CRLF file replay onto their own wo
   await m.unmount();
 });
 
+test("a replayed step's break keeps the ending it was written with", async () => {
+  // The rendered view wrote an LF break into a CRLF file: the daemon's text
+  // holds that LF, and the next key typed in the raw view must write it so.
+  const a = CRLF.indexOf("gone]");
+  const step = { from: a, to: a + 4, insert: "GONE\nnow" };
+  const text = CRLF.slice(0, a) + step.insert + CRLF.slice(a + 4);
+  const w = writer();
+  const m = await mount(
+    <DocumentView
+      docKey="d"
+      text={text}
+      editable
+      replay={{ base: CRLF, changes: [step] }}
+      onChange={(r) => {
+        w.read = r;
+      }}
+    />,
+  );
+  editor().dispatch({ changes: { from: 0, insert: "X" }, userEvent: "input.type" });
+  expect(hex(w.written())).toBe(hex(`X${text}`));
+  await m.unmount();
+});
+
 test("a selection across a break quotes the file's ending", async () => {
   const seen: SelectionReport[] = [];
   const m = await mount(

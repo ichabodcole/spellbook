@@ -103,7 +103,19 @@ const endingsField = StateField.define<Endings>({
   update(value, tr) {
     for (const e of tr.effects) if (e.is(setEndings)) return e.value;
     if (!tr.docChanged || value.marks.size === 0) return value;
-    return { fallback: value.fallback, marks: value.marks.map(tr.changes) };
+    let marks = value.marks.map(tr.changes);
+    // A break replaced by text leaves its mark over that text (the mapping keeps
+    // a range whose ends land on either side of what was inserted); a break
+    // typed there later would take the old ending. Where the text changed, a
+    // mark stays only over a break.
+    tr.changes.iterChangedRanges((_fromA, _toA, fromB, toB) => {
+      marks = marks.update({
+        filterFrom: fromB,
+        filterTo: toB,
+        filter: (from, to) => tr.newDoc.sliceString(from, to) === "\n",
+      });
+    });
+    return { fallback: value.fallback, marks };
   },
 });
 
@@ -121,17 +133,37 @@ export function textWithEndings(state: EditorState, from = 0, to = state.doc.len
 function joinLines(doc: Text, { fallback, marks }: Endings, from: number, to: number): string {
   const out: string[] = [];
   const mark = marks.iter(from);
+  /** The ending of the break at `pos`; positions are asked in order. */
+  const endingAt = (pos: number): LineEnding => {
+    while (mark.value && mark.from < pos) mark.next();
+    return mark.value && mark.from === pos ? mark.value.ending : fallback;
+  };
+  // ⛔ A lone `\r` break straight before a `\n` break would read back as ONE
+  // `\r\n` break, and the file would lose a line. That `\r` is written as
+  // `\r\n`: it keeps the CR the line had, and it is two breaks whatever the
+  // default (which may itself be `\r`).
+  /** Where in `out` the last break went, while nothing but breaks has followed it. */
+  let lastBreak = -1;
+  const crBefore = (ending: LineEnding) => {
+    if (ending === "\n" && lastBreak >= 0 && out[lastBreak] === "\r") out[lastBreak] = "\r\n";
+  };
   let pos = from;
   const lines = doc.iterRange(from, to);
   while (!lines.next().done) {
     if (!lines.lineBreak) {
+      if (lines.value) lastBreak = -1;
       out.push(lines.value);
       pos += lines.value.length;
       continue;
     }
-    while (mark.value && mark.from < pos) mark.next();
-    out.push(mark.value && mark.from === pos ? mark.value.ending : fallback);
+    const ending = endingAt(pos);
+    crBefore(ending);
+    lastBreak = out.length;
+    out.push(ending);
     pos++;
   }
+  // A slice that ends on such a `\r` reads it as the whole document writes it,
+  // so a quote of it is found in the saved file.
+  if (to < doc.length && doc.sliceString(to, to + 1) === "\n") crBefore(endingAt(to));
   return out.join("");
 }

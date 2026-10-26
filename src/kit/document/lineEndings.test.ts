@@ -96,6 +96,53 @@ test("a deleted break takes its ending with it", () => {
   expect(hex(textWithEndings(s2))).toBe(hex("one\r\ntwo\nthree\r\nfour\r\nfiv\r\nix\nseven\r\n"));
 });
 
+test("a lone CR never lands straight before an LF, which would read back as one break", () => {
+  const cases: [string, (s: EditorState) => TransactionSpec, string][] = [
+    // `b` deleted: the CR and the LF meet.
+    [
+      "a\rb\nc\n",
+      (s) => ({ changes: { from: s.doc.line(2).from, to: s.doc.line(2).to } }),
+      "a\r\n\nc\n",
+    ],
+    // Enter at the start of `y`: an LF break straight after the CR.
+    [
+      "x\ry\nz\n",
+      (s) => ({ changes: { from: s.doc.line(2).from, insert: "\n" } }),
+      "x\r\n\ny\nz\n",
+    ],
+    // The default is CR itself, and a marked LF follows it.
+    [
+      "p\rq\nr\rs",
+      (s) => ({ changes: { from: s.doc.line(2).from, to: s.doc.line(2).to } }),
+      "p\r\n\nr\rs",
+    ],
+  ];
+  for (const [file, edit, want] of cases) {
+    const s = run(open(file), edit(open(file)));
+    const saved = textWithEndings(s);
+    expect(hex(saved)).toBe(hex(want));
+    // Read back, it is the editor's lines exactly: none lost.
+    expect(editorText(saved)).toBe(s.doc.toString());
+    // A slice ending on that `\r` quotes it as the whole writes it.
+    const cr = s.doc.line(1).to;
+    expect(textWithEndings(s, 0, cr + 1)).toBe(saved.slice(0, saved.indexOf("\r") + 2));
+  }
+});
+
+test("a break replaced by text leaves no ending behind for a break typed there later", () => {
+  // LF is the default (a tie, met first); the CRLF break is replaced by `k`,
+  // then `k` by a new break, which takes the default.
+  const s0 = open("d\ncbc\r\n");
+  const s1 = run(s0, { changes: { from: 5, to: 6, insert: "k" } });
+  expect(textWithEndings(s1)).toBe("d\ncbck");
+  const s2 = run(s1, { changes: { from: 5, to: 6, insert: "\n" } });
+  expect(hex(textWithEndings(s2))).toBe(hex("d\ncbc\n"));
+  // One break replaced by exactly one break keeps its own ending: the mark
+  // stays over a break.
+  const s3 = run(s0, { changes: { from: 5, to: 6, insert: "\n" } });
+  expect(hex(textWithEndings(s3))).toBe(hex("d\ncbc\r\n"));
+});
+
 test("an LF file stays LF, and the plain text is read without a walk", () => {
   const s0 = open(LF);
   const s = run(s0, { changes: { from: endOf(s0, 4), insert: "\nmore" } });

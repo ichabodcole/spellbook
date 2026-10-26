@@ -59618,7 +59618,16 @@ var endingsField = StateField.define({
         return e.value;
     if (!tr.docChanged || value.marks.size === 0)
       return value;
-    return { fallback: value.fallback, marks: value.marks.map(tr.changes) };
+    let marks2 = value.marks.map(tr.changes);
+    tr.changes.iterChangedRanges((_fromA, _toA, fromB, toB) => {
+      marks2 = marks2.update({
+        filterFrom: fromB,
+        filterTo: toB,
+        filter: (from, to) => tr.newDoc.sliceString(from, to) === `
+`
+      });
+    });
+    return { fallback: value.fallback, marks: marks2 };
   }
 });
 function textWithEndings(state, from = 0, to = state.doc.length) {
@@ -59631,19 +59640,37 @@ function textWithEndings(state, from = 0, to = state.doc.length) {
 function joinLines(doc2, { fallback, marks: marks2 }, from, to) {
   const out = [];
   const mark = marks2.iter(from);
+  const endingAt = (pos2) => {
+    while (mark.value && mark.from < pos2)
+      mark.next();
+    return mark.value && mark.from === pos2 ? mark.value.ending : fallback;
+  };
+  let lastBreak = -1;
+  const crBefore = (ending) => {
+    if (ending === `
+` && lastBreak >= 0 && out[lastBreak] === "\r")
+      out[lastBreak] = `\r
+`;
+  };
   let pos = from;
   const lines = doc2.iterRange(from, to);
   while (!lines.next().done) {
     if (!lines.lineBreak) {
+      if (lines.value)
+        lastBreak = -1;
       out.push(lines.value);
       pos += lines.value.length;
       continue;
     }
-    while (mark.value && mark.from < pos)
-      mark.next();
-    out.push(mark.value && mark.from === pos ? mark.value.ending : fallback);
+    const ending = endingAt(pos);
+    crBefore(ending);
+    lastBreak = out.length;
+    out.push(ending);
     pos++;
   }
+  if (to < doc2.length && doc2.sliceString(to, to + 1) === `
+`)
+    crBefore(endingAt(to));
   return out.join("");
 }
 
