@@ -56,7 +56,10 @@ Why not "follow only links that stay inside":
   needed.
 
 Why the row stays rather than the link being left out: the link itself can still
-be renamed, moved or put in the Trash from the tree.
+be renamed, moved or put in the Trash from the tree. Leaving it out silently
+made a linked folder vanish, and broke the "the link itself may go" Trash path.
+The row reads as an empty folder. Telling the two apart needs a protocol mark,
+which is a follow-up and not part of this item.
 
 **Nothing goes into a link's row.** `destinationOrDie` in `session.ts` refuses
 any folder of a set's tree that is a link, or that really is somewhere else
@@ -68,10 +71,16 @@ are not shown. The refusal is a 400 in the house envelope. Its hint names the
 act that answers it: `add <the link's path>`, which adds the linked folder as a
 set of its own. Before this guard, `new-doc`, `new-folder`, `import --into` and
 `move` into a link row all wrote where the link led, and the file then vanished
-from the set. The Trash and duplicate guards still refuse as before. Leaving it
-out silently made a linked folder vanish, and broke the "the link itself may go"
-Trash path. The row reads as an empty folder. Telling the two apart needs a
-protocol mark, which is a follow-up and not part of this item.
+from the set. The Trash and duplicate guards still refuse as before.
+
+**Following the hint works, whatever the order of the sets.** Once the linked
+folder is added as a set of its own, its path is both a link's row in the set
+holding the link and the root of the new set. `destinationOrDie` checks the
+sets' own roots before any tree folder. So a root always takes things, even when
+the holding set was added first, which is the order `add` gives. After something
+is made, `adoptNew` re-reads every set whose root holds it, not only the first.
+So the new file shows at once in the link's own set and opens. A folder shown in
+a tree but gone from disk since the scan is refused with a 404 that says so.
 
 A link named like a bundle (`Linked.boardbundle`) is a link's row too, not a
 bundle read through it: its `info.json` and main file are not the set's either.
@@ -111,6 +120,13 @@ item does not change the chat-and-toast nit.
   `new-folder`, `import --into`, `move`) were driven against a real daemon: each
   exits 2 with the hint, and nothing is written outside.
 
+  Following the hint is covered in both orders: the linked folder added as a set
+  after, or before, the set holding it, beside a third unrelated set. At its top
+  level and in a subfolder, `createDoc`, `createFolder` and `importText` all
+  land, show at once in the link's set, and make no new entry. The verifier's
+  order scenario (`new-doc` at the top level and in `sub/`, parent first and
+  link first) exits 0 in all four cases against a real daemon.
+
 - **Changed existing tests:** five tests assumed linked folders were read.
   - Two now reach their deeper guard by the swap route: a shown folder is
     replaced by a link before a rescan. These are `trash.guards` "leads outside"
@@ -123,12 +139,20 @@ item does not change the chat-and-toast nit.
   - `src/scriptorium/backend/kit/diskGuard.integration.test.ts` "retargeted into
     another session": the image's link chain is now a second set rooted at a
     link (`open set linked-pics`). Its write-guard assertions are unchanged.
-- **Fail-open, no longer reachable:** the first round's `isLink` helper
-  (`lstat`, with a `catch` meant to fail closed) is gone. Link detection now
-  comes from the directory entries already read, so there is no second call that
-  could fail. A folder swapped for a link between the read and the walk is
-  entered once. The next level's read sees any link inside it as a link, so that
-  race cannot loop.
+- **No fail-open in the walk:** the first round's `isLink` helper (`lstat`, with
+  a `catch` meant to fail closed) is gone. Link detection now comes from the
+  directory entries already read, so there is no second call that could fail.
+
+### Known limits
+
+- **The swap race:** this is slightly wider than with the first round's `lstat`.
+  A folder replaced by a link between the listing and the walk is walked one
+  level: its entries are listed through the link. It cannot loop, because the
+  next level's listing sees any link inside it as a link. Writes there are still
+  refused, by the realpath check in `notThroughLinkOrDie`.
+- **Filesystems that don't report the entry type:** on these, `readdir` gives no
+  entry type, so a link may not be recognised and is walked as a folder. APFS,
+  ext4 and other common local filesystems report it.
 
 ## Port-back notes
 
@@ -144,3 +168,9 @@ item does not change the chat-and-toast nit.
   root, is refused with a 400 and the hint `add <path>`. Story Studio's
   `destinationOrDie` has no such check either. Without it, the tree fix alone
   turns a linked folder into an empty row you can still write through.
+- `session.ts` `destinationOrDie`: a mirrored entry's own root is matched before
+  any tree folder of any entry, so the order of the context no longer decides
+  between a link row and a set rooted at the same path. `notThroughLinkOrDie`
+  refuses a folder gone from disk with a 404 ("is no longer on disk").
+- `session.ts` `adoptNew`: re-reads every mirrored entry whose root holds the
+  new path, not only the first (`coveringEntry`).
