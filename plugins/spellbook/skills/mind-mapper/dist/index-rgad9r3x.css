@@ -2077,6 +2077,10 @@
     padding-bottom: calc(var(--spacing) * 1);
   }
 
+  .pb-1\.5 {
+    padding-bottom: calc(var(--spacing) * 1.5);
+  }
+
   .pb-16 {
     padding-bottom: calc(var(--spacing) * 16);
   }

@@ -34,9 +34,14 @@ Rare, but it silently attaches a note to the wrong text.
 
 - [x] Lone-`\r` files render, note and select correctly in rendered, raw and
       split. Or Scriptorium normalises or refuses them with a clear message.
-- [ ] No note is ever stored over a range the human didn't select. (Met for a
-      range wider than, or other than, what was seen. Not met for a range
-      elsewhere that shows the same text: see "Known limits".)
+- [ ] No note is ever stored over a range the human didn't select. Not met, for
+      two reasons given under "Known limits". (a) A run the projection cannot
+      cut is stored whole. That is text beyond the selection, and the larger gap
+      by volume: about 22% of random ranges in a rich document, the same as on
+      base. (b) The place is not checked: a range elsewhere that shows the
+      selected text passes. What the guard does stop is a range that shows more
+      or other text than was seen, beyond what (a) allows, such as the
+      crossed-ends case that stored the whole body.
 - [ ] Tested; offered on kit-parity. (Tested: see below. The offer is the
       lead's.)
 
@@ -223,15 +228,22 @@ The fix round touched four things.
 
 ### Known limits
 
-The check judges text, not place. Closing these needs the page to send where the
-selection was, which is a follow-up.
-
-- **A run the projection cannot cut,** elsewhere, that holds the selected words
-  passes. For example, a whole other paragraph with an entity in it passes for
-  `seen: "alpha"`. In the right place this is the run's honest widening, and the
-  two cannot be told apart from text alone.
-- **The same words elsewhere pass,** as they always would for a quote.
-- **Only spaces differ:** "a b" passes for "ab".
+- **An uncut run is stored whole.** Selecting inside an inline code span, or
+  inside a line with an entity or an escape, stores the whole run, as base does.
+  That is text beyond the selection in about 22% of random ranges in a rich
+  document (the verifier's measure). Making the projection map entities and
+  escapes character by character would shrink it.
+- **The check judges text, not place.** Closing this needs the page to send
+  where the selection was, which is a follow-up:
+  - **A run the projection cannot cut,** elsewhere, that holds the selected
+    words passes. For example, a whole other paragraph with an entity in it
+    passes for `seen: "alpha"`. In the right place this is the run's honest
+    widening, and the two cannot be told apart from text alone.
+  - **The same words elsewhere pass,** as they always would for a quote.
+  - **Only spaces differ:** "a b" passes for "ab".
+- **Repetitive text** inside an uncut run (more than about 400,000 steps of the
+  walk) is settled the cheap way: what was seen is found whole in the run, and
+  the run is wider only by what its edges allow.
 
 ### Seen on base, not caused here
 
@@ -242,6 +254,43 @@ selection was, which is a follow-up.
   `plainAt` fix in this round makes it work in the LF, CRLF and lone-CR files.
   It still offers none in the verifier's mixed file, whose rendered view is
   broken by the frontmatter case above.
+
+## Fix round 2 (verifier: "With fixes", performance)
+
+- **The rendered view no longer stalls.**
+  - **The cause:** `showsSelection` projected the whole document on every call.
+    The page called it on every selection report, and up to three times each
+    time the menu drew.
+  - **The fix:** the rendered view now asks once per selection report and once
+    per right-click, passing the projection it already holds. The answer rides
+    on the report (`SelectionReport.noteRefusal`, and `noteRefusal` on the
+    right-click request), and the pane only reads it. The daemon keeps the
+    projection of the last text it checked, so the second and later notes
+    against the same text do not project again.
+- **Timings** (the verifier's `projtime.ts`; my `projtime-cached.ts` for the
+  page's call and the daemon's repeat):
+
+  | Text size | Before, each check | Page check now | Daemon, first note | Daemon, next notes |
+  | --------: | -----------------: | -------------: | -----------------: | -----------------: |
+  |     11 KB |              18 ms |         0.4 ms |              16 ms |               0 ms |
+  |     54 KB |              55 ms |         0.2 ms |              62 ms |             0.1 ms |
+  |    214 KB |             222 ms |         0.4 ms |             232 ms |             0.2 ms |
+
+  "Before" is the previous commit (`deec1091`), measured the same way.
+
+- **In Chromium** (`jank.ts`, 214 KB, a real drag and a right-click):
+  - base: 0 long tasks;
+  - previous commit: 16 long tasks, 4.3 s in all, the longest 713 ms;
+  - now: 0 long tasks.
+- **The walk is bounded.** In a fenced block of dashes the check now takes 10 ms
+  at 2 KB, 12 ms at 8 KB and 14 ms at 20 KB. Before, it took 36 ms, 718 ms and
+  5.2 s.
+- **The menu's reason can be read.**
+  - A disabled item's title cannot be hovered, and Tab skips it.
+  - The full reason is now menu text under Add note (`data-slot="why-full"`),
+    and the item points to it with `aria-describedby`.
+- **The fuzz still holds:** 0 refused of 2773 LF, 2773 CRLF, 2780 lone-CR and
+  2625 mixed placements.
 
 ## Port-back notes
 
@@ -269,10 +318,18 @@ selection was, which is a follow-up.
   - `renderedRange.ts` `plainAt`: an element boundary resolves to the text on
     its own side of the point (`Range.comparePoint`), not to the child the
     offset names.
-  - The page checks first. `DocumentPane` puts `noteRefusal` on the
-    `HeldSelection` it reports, and on the menu (`NoteAtSelection` gains
-    `noteRefusalLabel`). The shell passes `refusal` to `NotesPanel`, whose Add
+  - The page checks first, in `MarkdownView`, with its own projection
+    (`showsSelection`'s optional fifth argument). `noteRefusal` rides on:
+    - `SelectionReport`, and from there on the `HeldSelection` the pane reports;
+    - the right-click request.
+  - The pane reads it for the menu. `NoteAtSelection` gains `noteRefusalLabel`,
+    and `noteRefusalShown`, which shows the reason as menu text.
+  - The shell passes `refusal` to `NotesPanel`, whose Add (Cmd-Enter included)
     then waits while what was typed stays.
+  - `showsSelection` without a projection keeps the last text's projection (the
+    daemon's path).
+  - The walk stops past a work budget, and falls back to finding what was seen
+    whole.
   - The daemon now imports `document/projection.ts`, which brings the markdown
     parser into its bundle (Scriptorium's `server.js` grew by about 257 KB).
 - **The page sends `seen`:**

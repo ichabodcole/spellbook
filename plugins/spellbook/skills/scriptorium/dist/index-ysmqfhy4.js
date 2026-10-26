@@ -26114,7 +26114,8 @@ function NoteAtSelection({
   edits,
   linkRefusal: linkRefusal2,
   noteRefusal,
-  noteRefusalLabel = "session ended"
+  noteRefusalLabel = "session ended",
+  noteRefusalShown = false
 }) {
   const [writing, setWriting] = import_react10.useState(false);
   const [body, setBody] = import_react10.useState("");
@@ -26264,6 +26265,7 @@ function NoteAtSelection({
           type: "button",
           disabled: !passage || noteRefusal !== undefined,
           title: !passage ? "A note is about a passage: select some text first" : noteRefusal,
+          ...passage && noteRefusalShown && noteRefusal !== undefined ? { "aria-describedby": "note-refusal-why" } : {},
           onClick: () => setWriting(true),
           className: cn(ITEM, "disabled:pointer-events-none disabled:text-ink-faint"),
           children: [
@@ -26278,6 +26280,12 @@ function NoteAtSelection({
               children: passage ? noteRefusalLabel : "select text first"
             })
           ]
+        }),
+        passage && noteRefusalShown && noteRefusal !== undefined && /* @__PURE__ */ jsx_runtime6.jsx("p", {
+          id: "note-refusal-why",
+          "data-slot": "why-full",
+          className: "px-2 pb-1.5 text-[11px] leading-snug text-ink-dim",
+          children: noteRefusal
         }),
         onAddLink && /* @__PURE__ */ jsx_runtime6.jsxs("button", {
           type: "button",
@@ -69555,13 +69563,13 @@ function bare(s) {
   return s.replace(/\s+/gu, "");
 }
 var NOT_PLACED = "The rendered view could not place this passage exactly where you selected it. Select it in the raw view and add the note there.";
-function showsSelection(text4, from, to, seen) {
+function showsSelection(text4, from, to, seen, projection) {
   const want = bare(seen);
   if (bare(text4.slice(from, to)) === want)
     return true;
   if (want === "")
     return false;
-  const p = project(text4);
+  const p = projection ?? projectedOnce(text4);
   const runs = p.segments.filter((seg) => !(seg.srcTo <= from || seg.srcFrom >= to) && bare(p.plain.slice(seg.plainFrom, seg.plainTo)) !== "");
   const first = runs[0];
   const last2 = runs[runs.length - 1];
@@ -69582,40 +69590,66 @@ function showsSelection(text4, from, to, seen) {
   }
   return matchesWithin(want, shown2, lead, trail2, p.pageOnly);
 }
+var lastProjected = null;
+function projectedOnce(text4) {
+  if (lastProjected?.text !== text4)
+    lastProjected = { text: text4, p: project(text4) };
+  return lastProjected.p;
+}
+var WALK_BUDGET = 400000;
 function matchesWithin(want, shown2, lead, trail2, extra) {
   const m = shown2.length;
   const n = want.length;
+  const fresh = new Array(n + 1).fill(false);
   const at2 = Array.from({ length: n + 1 }, () => new Set);
-  const opens = [0];
+  fresh[0] = true;
   for (const t2 of extra)
     for (let k = 1;k < t2.length; k++)
       if (want.startsWith(t2.slice(k)))
-        opens.push(t2.length - k);
-  for (const i2 of opens)
-    for (let j2 = 0;j2 <= Math.min(lead, m); j2++)
-      at2[i2]?.add(j2 * 2);
+        fresh[t2.length - k] = true;
   const closes = (i2) => i2 === n || extra.some((t2) => t2.length > n - i2 && t2.startsWith(want.slice(i2)));
+  const firstAt = Math.min(lead, m - 1);
+  let work = 0;
   for (let i2 = 0;i2 < n; i2++) {
     const here = at2[i2];
-    if (here.size === 0)
+    if (!fresh[i2] && here.size === 0)
       continue;
     const ends = extra.filter((t2) => t2 !== "" && want.startsWith(t2, i2)).map((t2) => i2 + t2.length);
-    for (const state of here) {
-      const j2 = state >> 1;
-      if (j2 < m && shown2[j2] === want[i2])
-        at2[i2 + 1]?.add((j2 + 1) * 2 + 1);
+    if (fresh[i2]) {
       for (const e of ends)
-        at2[e]?.add(state);
+        fresh[e] = true;
+      for (let j2 = 0;j2 <= firstAt; j2++)
+        if (shown2[j2] === want[i2])
+          at2[i2 + 1]?.add(j2 + 1);
+      work += firstAt + 1;
     }
+    for (const j2 of here) {
+      if (j2 < m && shown2[j2] === want[i2])
+        at2[i2 + 1]?.add(j2 + 1);
+      for (const e of ends)
+        at2[e]?.add(j2);
+    }
+    work += here.size;
+    if (work > WALK_BUDGET)
+      return foundWhole(want, shown2, lead, trail2, extra);
   }
   for (let i2 = 0;i2 <= n; i2++) {
     if (!closes(i2))
       continue;
-    for (const state of at2[i2])
-      if ((state & 1 || m === 0) && m - (state >> 1) <= trail2)
+    if (fresh[i2] && m === 0)
+      return true;
+    for (const j2 of at2[i2])
+      if (m - j2 <= trail2)
         return true;
   }
   return false;
+}
+function foundWhole(want, shown2, lead, trail2, extra) {
+  let stripped = want;
+  for (const t2 of extra)
+    if (t2 !== "")
+      stripped = stripped.split(t2).join("");
+  return [want, stripped].some((w) => w !== "" && shown2.includes(w) && shown2.length - w.length <= lead + trail2);
 }
 
 // src/kit/document/place.ts
@@ -70062,6 +70096,12 @@ function MarkdownView({
   const html = import_react25.useMemo(() => renderDocument(text4, widgets), [text4, widgets]);
   const htmlProp = import_react25.useMemo(() => ({ __html: html }), [html]);
   const projection = import_react25.useMemo(() => project(text4), [text4]);
+  const drawn = import_react25.useRef({ text: text4, projection });
+  drawn.current = { text: text4, projection };
+  const refusalOf = import_react25.useCallback((r2) => {
+    const d = drawn.current;
+    return showsSelection(d.text, r2.from, r2.to, r2.seen, d.projection) ? undefined : NOT_PLACED;
+  }, []);
   const body = import_react25.useRef(null);
   const headerBox = import_react25.useRef(null);
   const [widgetSpans, setWidgetSpans] = import_react25.useState([]);
@@ -70188,7 +70228,8 @@ function MarkdownView({
       });
       const m = act === "report" && r2 ? reportable.current(r2) : null;
       if (act === "report" && r2 && m) {
-        lastRange.current = r2;
+        const noteRefusal = refusalOf(r2);
+        lastRange.current = { ...r2, ...noteRefusal ? { noteRefusal } : {} };
         const now2 = currentText.current;
         onSelect({
           from: m.from,
@@ -70196,7 +70237,8 @@ function MarkdownView({
           fromLine: lineAt2(now2, m.from),
           toLine: lineAt2(now2, m.to),
           text: now2.slice(m.from, m.to),
-          seen: r2.seen
+          seen: r2.seen,
+          ...noteRefusal ? { noteRefusal } : {}
         });
       } else if (act === "clear" || act === "report" && r2) {
         lastRange.current = null;
@@ -70218,7 +70260,7 @@ function MarkdownView({
       document.removeEventListener("keydown", keyed2, true);
       document.removeEventListener("pointerdown", pressed, true);
     };
-  }, [onSelect, selectedRange, inBody]);
+  }, [onSelect, selectedRange, inBody, refusalOf]);
   const unpainted = import_react25.useRef(clearSeq);
   import_react25.useEffect(() => {
     if (clearSeq === undefined || clearSeq === unpainted.current)
@@ -70343,11 +70385,13 @@ function MarkdownView({
               const root2 = body.current;
               const point3 = root2 ? pointOffset(root2, projection, e.clientX, e.clientY) : null;
               const remembered = lastRange.current;
-              const r2 = selectedRange() ?? (remembered && point3 !== null && point3 >= remembered.from && point3 <= remembered.to ? remembered : null);
+              const live = selectedRange();
+              const r2 = live ?? (remembered && point3 !== null && point3 >= remembered.from && point3 <= remembered.to ? remembered : null);
               const noteIds = point3 === null ? [] : (notes ?? []).filter((n) => n.from !== null && n.to !== null && point3 >= n.from && point3 <= n.to).map((n) => n.id);
               const m = r2 ? reportable.current(r2) : null;
               const caret = point3 === null ? null : reportable.current({ from: point3, to: point3 });
               const where = m ?? caret;
+              const noteRefusal = m && r2 ? live ? refusalOf(live) : remembered?.noteRefusal : undefined;
               if (!where && noteIds.length === 0)
                 return;
               const taken = onContextMenu({
@@ -70356,7 +70400,8 @@ function MarkdownView({
                 from: where?.from ?? 0,
                 to: where?.to ?? 0,
                 noteIds,
-                ...m && r2 ? { seen: r2.seen } : {}
+                ...m && r2 ? { seen: r2.seen } : {},
+                ...noteRefusal ? { noteRefusal } : {}
               }, { shiftKey: e.shiftKey });
               if (taken !== false)
                 e.preventDefault();
@@ -71155,13 +71200,7 @@ function DocumentPane({
   const onSelect = (s) => {
     if (!doc2)
       return;
-    const refusal = placeRefusal(s);
-    w.reportSelection({
-      doc: doc2.slug,
-      version: doc2.active,
-      ...s,
-      ...refusal ? { noteRefusal: refusal } : {}
-    });
+    w.reportSelection({ doc: doc2.slug, version: doc2.active, ...s });
   };
   const canLink = !!doc2 && !isJson && daemon.connection !== "ended" && showing !== "compare";
   const editorMounted = showing === "raw" || showing === "split";
@@ -71263,8 +71302,7 @@ function DocumentPane({
     setNoteAt(open);
     return true;
   };
-  const placeRefusal = (s) => s.seen !== undefined && shown2 !== undefined && s.from < s.to && !showsSelection(shown2, s.from, s.to, s.seen) ? NOT_PLACED : undefined;
-  const noteRefusalAt = (at2) => daemon.connection === "ended" ? "The session has ended, so no note can be added." : placeRefusal(at2);
+  const noteRefusalAt = (at2) => daemon.connection === "ended" ? "The session has ended, so no note can be added." : at2.noteRefusal;
   const menuLinkRefusal = (at2) => {
     if (shown2 === undefined)
       return null;
@@ -72256,7 +72294,8 @@ function DocumentPane({
         linkRefusal: noteAt ? menuLinkRefusal(noteAt) ?? undefined : undefined,
         ...noteAt && noteRefusalAt(noteAt) !== undefined ? {
           noteRefusal: noteRefusalAt(noteAt),
-          noteRefusalLabel: daemon.connection === "ended" ? "session ended" : "use the raw view"
+          noteRefusalLabel: daemon.connection === "ended" ? "session ended" : "use the raw view",
+          ...daemon.connection === "ended" ? {} : { noteRefusalShown: true }
         } : {}
       }),
       linking && canLink && /* @__PURE__ */ jsx_runtime32.jsx(LinkPicker, {
