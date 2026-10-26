@@ -21,7 +21,7 @@ import { FINISHED, isFinished } from "../workspace/session";
 import { WAITING_LABEL as DAEMON_LABEL } from "../workspace/waiting";
 import { type Attachable, ChatComposer, NO_AGENT_NOTICE } from "./ChatComposer.tsx";
 import { ChatSidebar } from "./ChatSidebar.tsx";
-import { NewVersionToasts } from "./NewVersionToasts.tsx";
+import { NEW_VERSION_HOLD_MS, NewVersionToasts } from "./NewVersionToasts.tsx";
 import { type At, NATIVE_MENU_HINT, NoteAtSelection, placeCard } from "./NoteAtSelection.tsx";
 import { NotesPanel } from "./NotesPanel.tsx";
 import { OutsideChangeToasts } from "./OutsideChangeToasts.tsx";
@@ -1002,12 +1002,14 @@ describe("NewVersionToasts", () => {
     store,
     onActivate,
     onShowDiff,
+    holdMs = 0,
   }: {
     d: DocView | null;
     connected?: boolean;
     store: ReturnType<typeof createToastStore>;
     onActivate: (doc: string, v: number) => void;
     onShowDiff?: (doc: string, v: number) => void;
+    holdMs?: number;
   }) {
     return (
       <NewVersionToasts
@@ -1017,9 +1019,53 @@ describe("NewVersionToasts", () => {
         dismiss={store.dismiss}
         onActivate={onActivate}
         onShowDiff={onShowDiff}
+        holdMs={holdMs}
       />
     );
   }
+
+  test("held: a version activated before its toast is due is never announced; one left alone is", async () => {
+    // version-new then activate, a moment apart: "Now editing" says it, alone.
+    const store = createToastStore();
+    const announced: string[] = [];
+    store.subscribe(() => {
+      for (const t of store.snapshot()) if (!announced.includes(t.title)) announced.push(t.title);
+    });
+    const at = (d: DocView) => <Host d={d} store={store} onActivate={() => {}} holdMs={80} />;
+    const m = await mount(at(doc([version(1)], 1)));
+    await m.render(at(doc([version(1), version(2)], 1)));
+    expect(store.snapshot()).toHaveLength(0);
+    await m.render(at(doc([version(1), version(2)], 2)));
+    await settle(() => new Promise<void>((r) => setTimeout(r, 200)));
+    expect(announced).toEqual([]);
+    // A version nobody activates is raised once its hold is over.
+    await m.render(at(doc([version(1), version(2), version(3)], 2)));
+    expect(store.snapshot()).toHaveLength(0);
+    await settle(() => new Promise<void>((r) => setTimeout(r, 200)));
+    expect(announced).toEqual(["New version: v3"]);
+    store.dispose();
+    await m.unmount();
+  });
+
+  test("by default a new version is held, not raised in the render that brought it", async () => {
+    const store = createToastStore();
+    const at = (d: DocView) => (
+      <NewVersionToasts
+        doc={d}
+        connected
+        announce={store.announce}
+        dismiss={store.dismiss}
+        onActivate={() => {}}
+      />
+    );
+    const m = await mount(at(doc([version(1)], 1)));
+    await m.render(at(doc([version(1), version(2)], 1)));
+    expect(store.snapshot()).toHaveLength(0);
+    await settle(() => new Promise<void>((r) => setTimeout(r, NEW_VERSION_HOLD_MS + 100)));
+    expect(store.snapshot().map((t) => t.title)).toEqual(["New version: v2"]);
+    store.dispose();
+    await m.unmount();
+  });
 
   test("announces a version the agent made, with Activate and Show diff, and says nothing on first sight", async () => {
     const store = createToastStore();
