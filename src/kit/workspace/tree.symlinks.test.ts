@@ -100,6 +100,15 @@ describe.each(scans)("a set's scan with %s", (_, scan) => {
   });
 });
 
+test("a link's row counts toward the cap, as any folder does", () => {
+  for (const name of ["a1", "a2", "a3"]) symlinkSync(outside, join(set, name));
+  expect(scanTree(set, 2)).toEqual({ nodes: [linkRow("a1"), linkRow("a2")], truncated: true });
+  expect(scanTree(set, 6)).toEqual({
+    nodes: [linkRow("a1"), linkRow("a2"), linkRow("a3"), REAL, TOP],
+    truncated: false,
+  });
+});
+
 test("a set rooted at a link is read through it: the link is the set, not inside it", () => {
   const via = join(root, "via");
   symlinkSync(set, via);

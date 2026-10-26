@@ -392,20 +392,18 @@ function folderWalker(cap: number, later?: PendingBundle[], skip?: ScanSkip, gua
     /** The mode of one entry of THIS folder; null leaves it out (not read, not counted). */
     modeOf?: (name: string, isDir: boolean) => FolderMode | null,
   ): ContextNode[] => {
-    let names: string[];
-    // With a guard: which names are links, and where this folder really is,
-    // so each entry is judged where the disk puts it, at one call a folder.
+    // Which names are links (a link to a folder is shown, never entered),
+    // read with the names at one call a folder; and, with a guard, where this
+    // folder really is, so each entry is judged where the disk puts it.
+    const names: string[] = [];
     const links = new Set<string>();
     let realDir = dir;
     try {
-      if (guard) {
-        realDir = realpathSync(dir);
-        names = [];
-        for (const d of readdirSync(dir, { withFileTypes: true })) {
-          names.push(d.name);
-          if (d.isSymbolicLink()) links.add(d.name);
-        }
-      } else names = readdirSync(dir);
+      if (guard) realDir = realpathSync(dir);
+      for (const d of readdirSync(dir, { withFileTypes: true })) {
+        names.push(d.name);
+        if (d.isSymbolicLink()) links.add(d.name);
+      }
     } catch {
       return [];
     }
@@ -457,7 +455,7 @@ function folderWalker(cap: number, later?: PendingBundle[], skip?: ScanSkip, gua
         // itself can be renamed, moved or put in the Trash; every folder a scan
         // reads is a real one, read once. A link named like a bundle is no
         // bundle here: its `info.json` and main file are not the set's either.
-        if (isLink(abs)) {
+        if (links.has(name)) {
           groups.push({ kind: "group", rel, children: [] });
           continue;
         }
@@ -545,18 +543,6 @@ export function scanTree(
   const nodes = walker.walk(root, "", "set");
   finishOwnContents(later, cap - walker.count());
   return { nodes, truncated: walker.truncated() };
-}
-
-/**
- * Whether `abs` is itself a symbolic link (not what it leads to). One that
- * cannot be asked (gone since its `stat`) counts as a link: not entered.
- */
-function isLink(abs: string): boolean {
-  try {
-    return lstatSync(abs).isSymbolicLink();
-  } catch {
-    return true;
-  }
 }
 
 /** Nothing in it but dotfiles (a `.DS_Store` does not make a folder full). */

@@ -4184,7 +4184,7 @@ export class WorkspaceSession {
       if (abs === e.root && e.membership === "mirrored") return shown();
       if (abs.startsWith(e.root + sep)) {
         const node = findNode(e.nodes, toPosix(relative(e.root, abs)));
-        if (node?.kind === "group") return shown();
+        if (node?.kind === "group") return this.notThroughLinkOrDie(shown(), e);
       }
     }
     if (this.isWorkspace(abs)) return this.workspaceOrDie();
@@ -4195,6 +4195,32 @@ export class WorkspaceSession {
     throw new SessionError(
       `${abs} is not a folder in this session: name a set, a folder inside one, or the workspace (${this.workspace})`,
       400,
+    );
+  }
+
+  /**
+   * A folder of a set's tree that is a link (a link's row: the scan shows it
+   * and never enters it), or that really is somewhere else (a folder above it
+   * swapped for a link since the scan), takes nothing: what is made, imported,
+   * moved or dropped there would land where the link leads and vanish from
+   * the set. The way to work in it is to add it as a set of its own.
+   */
+  private notThroughLinkOrDie(abs: string, e: ContextEntry): string {
+    let link = true;
+    try {
+      link = lstatSync(abs).isSymbolicLink();
+    } catch {
+      /* gone since the scan: refused as a link is */
+    }
+    const real = realOr(abs);
+    const root = rootReal(e);
+    const outside = real !== root && !real.startsWith(root + sep);
+    if (!link && !outside) return abs;
+    throw new SessionError(
+      `${this.display(abs)} ${link ? "is a link" : "is reached through a link"}${outside ? ` that leads outside ${e.label}` : ""} (to ${tilde(real)}): nothing is made in, moved into or dropped on a linked folder, or it would land there and vanish from the set`,
+      400,
+      undefined,
+      `to work in that folder, add it as a set of its own: add ${abs}`,
     );
   }
 
