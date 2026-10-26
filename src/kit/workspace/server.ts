@@ -3691,11 +3691,17 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
           activate(msg.doc, msg.version, "human");
           return;
         case "note.add": {
+          if (msg.seen !== undefined && typeof msg.seen !== "string")
+            throw new SessionError(
+              "note.add: seen must be the selected text: nothing was applied",
+              400,
+            );
           const r = session.addNote({
             doc: msg.doc,
             body: msg.body,
             by: "human",
             range: { from: msg.from, to: msg.to },
+            ...(msg.seen !== undefined ? { seen: msg.seen } : {}),
           });
           // The event carries the note itself when it is short, and names the
           // act that closes it: an agent should not have to go and ask what just

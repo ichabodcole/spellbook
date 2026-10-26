@@ -42,6 +42,8 @@ export type HeldSelection = {
   fromLine: number;
   toLine: number;
   text: string;
+  /** What the human selected, as their view showed it (`SelectionReport.seen`). */
+  seen?: string;
 };
 
 export type SelectionEvent =
@@ -79,7 +81,8 @@ export function heldAfter(held: HeldSelection | null, event: SelectionEvent): He
     held.version === s.version &&
     held.from === s.from &&
     held.to === s.to &&
-    held.text === s.text
+    held.text === s.text &&
+    held.seen === s.seen
   )
     return held;
   return s;

@@ -45,6 +45,15 @@ describe("heldAfter — what the surface (and so the daemon) holds", () => {
     expect(heldAfter(A, { type: "report", selection: { ...A } })).toBe(A);
   });
 
+  test("the same range read from a different selection keeps what was seen (kit-lone-cr-line-endings)", () => {
+    // The daemon holds a note's range to what was seen, so a stale `seen` would
+    // refuse the note the human now means, or pass one they do not.
+    const held = { ...A, seen: "alpha" };
+    const next = { ...A, seen: "beta" };
+    expect(heldAfter(held, { type: "report", selection: next })).toEqual(next);
+    expect(heldAfter(held, { type: "report", selection: { ...held } })).toBe(held);
+  });
+
   test("the chip's X drops the selection itself, not just the chip", () => {
     // `say` attaches what the DAEMON holds, so dropping has to clear the held
     // selection — which the daemon is told about — rather than hide the chip.

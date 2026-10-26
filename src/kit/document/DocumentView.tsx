@@ -362,7 +362,15 @@ export type EditorHandle = {
  * browser, whose own menu then opens.
  */
 export type ContextMenuRequest = (
-  at: { x: number; y: number; from: number; to: number; noteIds: string[] },
+  at: {
+    x: number;
+    y: number;
+    from: number;
+    to: number;
+    noteIds: string[];
+    /** The selected text as the view shows it, when something is selected: see `SelectionReport.seen`. */
+    seen?: string;
+  },
   how: { shiftKey: boolean },
 ) => boolean | undefined;
 
@@ -416,6 +424,12 @@ export type SelectionReport = {
   fromLine: number;
   toLine: number;
   text: string;
+  /**
+   * The text the human selected, as their view showed it: read from the view,
+   * not from `from`..`to`, so the daemon can refuse a note whose range does not
+   * hold it. The raw view's is its own slice; the rendered view's is the page's.
+   */
+  seen?: string;
 };
 
 export function DocumentView({
@@ -727,6 +741,7 @@ export function DocumentView({
           toLine: update.state.doc.lineAt(to).number,
           // As the file has it: a quote across a break keeps the file's ending.
           text: textWithEndings(update.state, from, to),
+          seen: update.state.sliceDoc(from, to),
         });
       }),
       editorTheme,
@@ -911,6 +926,7 @@ export function DocumentView({
               from: daemonOffset(textRef.current, from),
               to: daemonOffset(textRef.current, to),
               noteIds,
+              ...(from < to ? { seen: v.state.sliceDoc(from, to) } : {}),
             },
             { shiftKey: event.shiftKey },
           );

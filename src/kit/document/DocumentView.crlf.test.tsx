@@ -372,3 +372,70 @@ test("a selection across a break quotes the file's ending", async () => {
   expect(s && CRLF.slice(s.from, s.to)).toBe(want);
   await m.unmount();
 });
+
+// kit-lone-cr-line-endings: the raw view of a file with lone-CR endings, alone
+// or mixed with LF or CRLF. A lone `\r` is one character in the editor and in
+// the daemon's count alike, so notes, selections and right-clicks land on their
+// own words; and what was selected goes with them (`seen`), for the daemon to
+// hold a note's range to.
+const LONE: [string, string][] = [
+  ["lone CR", "# Lone\r\rFirst line alpha\rsecond line beta.\r"],
+  ["lone CR and LF", "# Lone\n\rFirst line alpha\rsecond line beta.\n"],
+  ["lone CR and CRLF", "# Lone\r\r\nFirst line alpha\rsecond line beta.\r\n"],
+];
+
+for (const [name, text] of LONE) {
+  const note = (want: string): PlacedNote => {
+    const from = text.indexOf(want);
+    return { ...placed("x"), quote: want, at: from, from, to: from + want.length };
+  };
+
+  test(`${name}: a placed note paints on its own words, across the lone CR too`, async () => {
+    const m = await mount(
+      <DocumentView docKey="d" text={text} editable notes={[note("alpha\rsecond")]} />,
+    );
+    const marks = [...document.querySelectorAll(".cm-note")].map((e) => e.textContent).join("|");
+    expect(marks).toBe("alpha|second");
+    await m.unmount();
+  });
+
+  test(`${name}: a selection reports its own source, its lines and what was seen`, async () => {
+    const seen: SelectionReport[] = [];
+    const m = await mount(
+      <DocumentView docKey="d" text={text} editable onSelect={(s) => seen.push(s)} />,
+    );
+    const v = editor();
+    const at = v.state.doc.toString().indexOf("alpha");
+    v.dispatch({ selection: { anchor: at, head: at + 5 } });
+    const s = seen.at(-1);
+    expect(s && text.slice(s.from, s.to)).toBe("alpha");
+    expect(s?.seen).toBe("alpha");
+    expect(s?.fromLine).toBe(3);
+    await m.unmount();
+  });
+
+  test(`${name}: a right-click over the selection says what was seen`, async () => {
+    const said: { from: number; to: number; seen?: string }[] = [];
+    const m = await mount(
+      <DocumentView
+        docKey="d"
+        text={text}
+        editable
+        onContextMenu={(a) => {
+          said.push(a);
+          return true;
+        }}
+      />,
+    );
+    const v = editor();
+    const at = v.state.doc.toString().indexOf("alpha");
+    v.dispatch({ selection: { anchor: at, head: at + 5 } });
+    v.contentDOM.dispatchEvent(
+      new window.MouseEvent("contextmenu", { bubbles: true, cancelable: true }),
+    );
+    const a = said.at(-1);
+    expect(a && text.slice(a.from, a.to)).toBe("alpha");
+    expect(a?.seen).toBe("alpha");
+    await m.unmount();
+  });
+}

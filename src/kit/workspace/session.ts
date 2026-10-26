@@ -45,6 +45,7 @@ import {
 } from "node:fs";
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { parseDocument } from "yaml";
+import { showsSelection } from "../document/projection.ts";
 import {
   BUNDLE_INFO,
   type BundleReference,
@@ -101,7 +102,7 @@ import {
   sidecarOf,
   sidecarSkeleton,
 } from "../lib/sidecar.ts";
-import { type Anchor, anchorOf, findAnchor, linesOf } from "./anchors";
+import { type Anchor, anchorOf, findAnchor, linesOf, quoteLabel } from "./anchors";
 import { applyHunks, diffText } from "./diff";
 import { type Disk, sessionDisk, worldDisk } from "./disk";
 import { type Finding, findings, type Overlap } from "./doctor";
@@ -2502,6 +2503,11 @@ export class WorkspaceSession {
     body: string;
     by: Author;
     range?: { from: number; to: number };
+    /**
+     * With `range`: the text the human selected, as their view showed it. When
+     * given, a range that does not hold it is refused (`showsSelection`).
+     */
+    seen?: string;
     quote?: string;
   }): { slug: string; note: Note; how: "selection" | "quote" } {
     const d = this.docOrDie(opts.doc);
@@ -2516,6 +2522,16 @@ export class WorkspaceSession {
         throw new SessionError(
           `${from}..${to} is not a range in v${d.active} of ${d.slug} (${text.length} characters)`,
           400,
+        );
+      // ⛔ NEVER A NOTE OVER TEXT THE HUMAN DID NOT SELECT. The page turns a
+      // selection into offsets; when that goes wrong (a file whose line endings
+      // the rendered view could not place), the range can cover far more than
+      // was chosen, and a note stored there is wrong without anyone seeing it.
+      // Refused, with the act that answers it.
+      if (opts.seen !== undefined && !showsSelection(text, from, to, opts.seen))
+        throw new SessionError(
+          `The note was not added: the passage it would cover is not the text you selected (${JSON.stringify(quoteLabel(opts.seen, 40))}). Select the passage again and add the note, or select it in the raw view.`,
+          409,
         );
       anchor = anchorOf(text, from, to);
     } else {

@@ -2270,7 +2270,16 @@ export function DocumentPane({
         onClose={() => setNoteAt(null)}
         onAdd={(from, to, body) => {
           if (!doc) return;
-          send({ op: "note.add", doc: doc.slug, from, to, body });
+          // What was selected, for the daemon to hold the range to.
+          const seen = noteAt && noteAt.from === from && noteAt.to === to ? noteAt.seen : undefined;
+          send({
+            op: "note.add",
+            doc: doc.slug,
+            from,
+            to,
+            body,
+            ...(seen !== undefined ? { seen } : {}),
+          });
           // A note consumes the passage it was written about.
           w.dropSelection();
         }}

@@ -1889,7 +1889,12 @@ export type ClientOp =
   /** `activate` separates branching (move into it) from snapshotting (stay). */
   | { op: "version.new"; doc: string; from?: number; label?: string; activate?: boolean }
   | { op: "version.delete"; doc: string; version: number }
-  | { op: "note.add"; doc: string; from: number; to: number; body: string }
+  /**
+   * `seen` is the text the human selected, as their view showed it: the daemon
+   * refuses a range that does not hold it, rather than store a note over text
+   * nobody chose. Optional, so an older page still adds its notes unchecked.
+   */
+  | { op: "note.add"; doc: string; from: number; to: number; body: string; seen?: string }
   | { op: "note.edit"; doc: string; id: string; body: string }
   | { op: "note.resolve"; doc: string; id: string; resolved: boolean }
   | { op: "note.remove"; doc: string; id: string }

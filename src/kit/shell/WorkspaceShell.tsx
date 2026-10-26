@@ -1566,7 +1566,17 @@ function ShellBody({
       selection={heldHere ? { from: heldHere.from, to: heldHere.to, text: heldHere.text } : null}
       onAdd={(from, to, body) => {
         if (!openDoc) return;
-        send({ op: "note.add", doc: openDoc.slug, from, to, body });
+        // What was selected, for the daemon to hold the range to.
+        const seen =
+          heldHere && heldHere.from === from && heldHere.to === to ? heldHere.seen : undefined;
+        send({
+          op: "note.add",
+          doc: openDoc.slug,
+          from,
+          to,
+          body,
+          ...(seen !== undefined ? { seen } : {}),
+        });
         // A note consumes the passage it was written about.
         dropSelection();
       }}

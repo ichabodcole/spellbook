@@ -392,3 +392,65 @@ function nextBreak(text: string, from: number): number {
   if (cr === -1 || (nl !== -1 && nl <= cr + 1)) return nl;
   return cr;
 }
+
+/** `s` with every space and line break taken out: what two readings of a passage share. */
+function bare(s: string): string {
+  return s.replace(/\s+/gu, "");
+}
+
+/** Is every character of `small` in `big`, in order? */
+function inOrderWithin(small: string, big: string): boolean {
+  let j = 0;
+  for (let i = 0; i < big.length && j < small.length; i++) if (big[i] === small[j]) j++;
+  return j === small.length;
+}
+
+/**
+ * Does source range `from`..`to` hold what the human selected, `seen`, as the
+ * view they selected in showed it? The daemon asks before it stores a note over
+ * a range, so a range the page placed wrongly is refused rather than stored over
+ * text nobody chose (kit-lone-cr-line-endings: "alpha" became a note over the
+ * whole body).
+ *
+ * Spaces and line breaks are not compared: the browser and the projection write
+ * the gap between blocks differently. These readings pass:
+ *
+ * - **the source itself**: a selection in the raw editor;
+ * - **the rendered text** of the range: a selection in the rendered view;
+ * - **text the page draws that the projection never carries** (a footnote's
+ *   number): the range's rendered text is found, in order, inside what was seen;
+ * - **a run the projection cannot cut**: a selection inside a run that is not
+ *   exact (an inline code span, a line with an escape) is stored as the whole
+ *   run, so the rest of that run may sit beside what was seen, and no more.
+ *
+ * So the range never shows text beyond what was selected, save the rest of a run
+ * the projection cannot cut.
+ */
+export function showsSelection(text: string, from: number, to: number, seen: string): boolean {
+  const want = bare(seen);
+  if (bare(text.slice(from, to)) === want) return true;
+  if (want === "") return false;
+  const p = project(text);
+  const r = toPlain(p, from, to);
+  if (!r) return false;
+  const shown = bare(p.plain.slice(r.from, r.to));
+  if (shown === "") return false;
+  if (inOrderWithin(shown, want)) return true;
+  // The runs at either edge: a run that is not exact may add the rest of itself.
+  let first: ProjSegment | null = null;
+  let last: ProjSegment | null = null;
+  for (const seg of p.segments) {
+    if (seg.srcTo <= from || seg.srcFrom >= to || seg.plainTo === seg.plainFrom) continue;
+    first ??= seg;
+    last = seg;
+  }
+  if (!first || !last) return false;
+  if (first === last) return !first.exact && shown.includes(want);
+  const slack = (seg: ProjSegment) =>
+    seg.exact ? 0 : bare(p.plain.slice(seg.plainFrom, seg.plainTo)).length;
+  const before = slack(first);
+  const after = slack(last);
+  for (let i = shown.indexOf(want); i !== -1 && i <= before; i = shown.indexOf(want, i + 1))
+    if (shown.length - i - want.length <= after) return true;
+  return false;
+}

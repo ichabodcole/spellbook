@@ -282,7 +282,7 @@ export function MarkdownView({
    * collapses it. It is only trusted when the pointer is INSIDE the remembered
    * range, so a right-click elsewhere never offers a note on the previous passage.
    */
-  const lastRange = useRef<{ from: number; to: number } | null>(null);
+  const lastRange = useRef<{ from: number; to: number; seen: string } | null>(null);
 
   // Keeping your place.
   const scroller = useRef<HTMLDivElement>(null);
@@ -381,13 +381,16 @@ export function MarkdownView({
   }, []);
 
   /** The current DOM selection as source offsets, or null. */
-  const selectedRange = useCallback((): { from: number; to: number } | null => {
+  const selectedRange = useCallback((): { from: number; to: number; seen: string } | null => {
     const root = body.current;
     const sel = window.getSelection();
     if (!root || !sel || sel.rangeCount === 0 || sel.isCollapsed) return null;
     // A selection that started outside this pane is not ours to report.
     const range = inBody(sel.getRangeAt(0));
-    return range ? resolveRange(root, projection, range) : null;
+    const r = range ? resolveRange(root, projection, range) : null;
+    // What the human selected, read off the page rather than off the range: the
+    // daemon refuses a note whose range does not hold it.
+    return r && range ? { ...r, seen: range.toString() } : null;
   }, [projection, inBody]);
 
   /**
@@ -443,6 +446,7 @@ export function MarkdownView({
           fromLine: lineAt(now, m.from),
           toLine: lineAt(now, m.to),
           text: now.slice(m.from, m.to),
+          seen: r.seen,
         });
       } else if (act === "clear" || (act === "report" && r)) {
         lastRange.current = null;
@@ -650,6 +654,7 @@ export function MarkdownView({
                 from: where?.from ?? 0,
                 to: where?.to ?? 0,
                 noteIds,
+                ...(m && r ? { seen: r.seen } : {}),
               },
               { shiftKey: e.shiftKey },
             );

@@ -406,6 +406,39 @@ describe("notes", () => {
     await m.unmount();
   });
 
+  test("the note carries what was selected, and the daemon refuses a range that does not hold it (kit-lone-cr-line-endings)", async () => {
+    const { m, slug } = await openSolo();
+    const addNote = async (body: string) => {
+      await click(tab("Notes"));
+      await typeInto(
+        chatPane().querySelector('textarea[aria-label="New note"]') as HTMLTextAreaElement,
+        body,
+      );
+      await click(
+        qa('[data-pane="chat"] button').find((b) => b.textContent?.includes("Add note")) ?? null,
+      );
+    };
+    // A page that placed the selection wrongly: the range says "Solo", the
+    // human selected something else.
+    await settle(() => ws?.reportSelection({ ...SELECTION(slug), seen: "something else" }));
+    await addNote("refused");
+    // Said to the human, with the act that answers it.
+    await waitFor(
+      () =>
+        (ws?.toasts.snapshot() ?? []).some((t) =>
+          (t.description ?? "").includes("Select the passage again"),
+        ),
+      "the refusal",
+    );
+    await settle(() => ws?.reportSelection({ ...SELECTION(slug), seen: "Solo" }));
+    await addNote("taken");
+    // Frames are answered in order: once the second is stored, the first was refused.
+    await waitFor(() => qa('[data-slot="note"]').length === 1, "the note");
+    const stored = (await state()).docs.find((d) => d.slug === slug)?.notes;
+    expect(stored?.map((n) => n.body)).toEqual(["taken"]);
+    await m.unmount();
+  });
+
   test("a note's quote asks the centre to show its range, once", async () => {
     const { m, slug } = await openSolo();
     await settle(() => ws?.reportSelection(SELECTION(slug)));

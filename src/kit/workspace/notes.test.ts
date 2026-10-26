@@ -365,3 +365,76 @@ describe("re-anchoring after an edit", () => {
     expect(s.noteLines(slug, note)).toBeNull();
   });
 });
+
+// kit-lone-cr-line-endings: the rendered view of a lone-CR file turned "alpha"
+// selected into a note over the whole body. The page now sends what was
+// selected (`seen`), and the daemon refuses a range that does not hold it.
+describe("a note is never stored over text the human did not select", () => {
+  const CR = "# Lone\r\rFirst line alpha\rsecond line beta.\r\rLast **bold** line.\r";
+  let cr: string;
+  beforeEach(() => {
+    writeFileSync(join(docs, "lone.md"), CR);
+    // A session made after the file is, so the file is in its context.
+    s = inContextIn(join(root, "sessions-lone"), docs);
+    cr = s.openPath(join(docs, "lone.md")).slug;
+  });
+
+  test("the wide range of the lone-CR bug is refused, names the act, and stores nothing", () => {
+    const r = refusal(() =>
+      s.addNote({
+        doc: cr,
+        by: "human",
+        range: { from: 9, to: CR.length },
+        seen: "alpha",
+        body: "x",
+      }),
+    );
+    expect(r.status).toBe(409);
+    expect(r.message).toContain('"alpha"');
+    expect(r.message).toContain("Select the passage again");
+    expect(s.notesOf({ doc: cr, all: true }).notes).toHaveLength(0);
+  });
+
+  test("a range somewhere else of the same length is refused too", () => {
+    const at = CR.indexOf("beta.");
+    expect(
+      refusal(() =>
+        s.addNote({
+          doc: cr,
+          by: "human",
+          range: { from: at, to: at + 5 },
+          seen: "alpha",
+          body: "x",
+        }),
+      ).status,
+    ).toBe(409);
+  });
+
+  test("the range that holds what was seen is stored, in the raw view's and the rendered view's words", () => {
+    const at = CR.indexOf("alpha");
+    const { note } = s.addNote({
+      doc: cr,
+      by: "human",
+      range: { from: at, to: at + 5 },
+      seen: "alpha",
+      body: "x",
+    });
+    expect(note.quote).toBe("alpha");
+    // Its lines are counted as the raw editor counts them: a lone `\r` ends one.
+    expect(s.noteLines(cr, note)).toEqual({ from: 3, to: 3 });
+    const bold = CR.indexOf("**bold** line");
+    const rendered = s.addNote({
+      doc: cr,
+      by: "human",
+      range: { from: bold, to: bold + "**bold** line".length },
+      seen: "bold line",
+      body: "y",
+    });
+    expect(rendered.note.quote).toBe("**bold** line");
+  });
+
+  test("without `seen` (an older page) a range is taken as before", () => {
+    const { note } = s.addNote({ doc: cr, by: "human", range: { from: 9, to: 20 }, body: "x" });
+    expect(note.quote).toBe(CR.slice(9, 20));
+  });
+});

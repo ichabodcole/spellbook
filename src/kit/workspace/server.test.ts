@@ -638,6 +638,26 @@ describe("agent presence", () => {
 });
 
 describe("notes", () => {
+  test("a human's note over a range that does not hold what was selected is refused, saying what to do (kit-lone-cr-line-endings)", async () => {
+    const { s, t } = await start();
+    s.send({ op: "context.add", path: docs });
+    s.send({ op: "open", path: inSet("a.md") });
+    await s.waitFor((m) => m.op === "version.text");
+    // The wide note of the lone-CR bug: "one" selected, the whole text sent.
+    s.send({ op: "note.add", doc: "a", from: 0, to: 8, body: "cut this?", seen: "one" });
+    const err = await s.waitFor((m) => m.op === "error");
+    expect(err.op === "error" && err.message).toContain("Select the passage again");
+    // A `seen` that is not text is refused before anything is looked at.
+    s.send({ op: "note.add", doc: "a", from: 5, to: 8, body: "x", seen: 5 } as never);
+    const bad = await s.waitFor((m) => m.op === "error" && m.message.includes("seen must be"));
+    expect(bad.op).toBe("error");
+    // The range that holds it is taken.
+    s.send({ op: "note.add", doc: "a", from: 5, to: 8, body: "cut this?", seen: "one" });
+    const added = await t.waitFor((e) => e.type === "note.added");
+    expect(added).toMatchObject({ quote: "one" });
+    expect(t.of("note.added")).toHaveLength(1);
+  });
+
   test("a human's note reaches the agent with its text and lines; resolving is announced", async () => {
     const { s, t, base, d } = await start();
     s.send({ op: "context.add", path: docs });

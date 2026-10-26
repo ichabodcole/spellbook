@@ -60,6 +60,8 @@ const C = "# C\n\nPlain [link to b](./part/b.md) after\n";
 /** A CRLF file: the daemon counts each `\r\n` as two, the editor as one. */
 const D = "# D\r\n\r\nfirst line\r\nsecond line here\r\n";
 const E = "# E\r\n\r\none\r\ntwo\r\nsee [a link](./a.md) end\r\n";
+/** A lone-CR file: old Mac endings, one character on both sides. */
+const F = "# F\r\rfirst line alpha\rsecond line here\r";
 
 beforeEach(async () => {
   root = tempRoot("pane-context-menu");
@@ -72,6 +74,7 @@ beforeEach(async () => {
   writeFileSync(join(set, "c.md"), C);
   writeFileSync(join(set, "d.md"), D);
   writeFileSync(join(set, "e.md"), E);
+  writeFileSync(join(set, "f.md"), F);
   localStorage.clear();
   client = null;
   announced = [];
@@ -622,6 +625,31 @@ describe("in a CRLF file, the menu's offsets stay in the daemon's count", () => 
     await waitFor(() => (notes()?.length ?? 0) > 0, "the note");
     const n = notes()?.[0];
     expect(D.slice(n?.from ?? 0, n?.to ?? 0)).toBe("line\r\nsecond");
+    await m.unmount();
+  });
+
+  test("Add note in a lone-CR file anchors on the selected words, and sends what was seen (kit-lone-cr-line-endings)", async () => {
+    // What reaches the daemon: the range, and what the human selected with it.
+    const asked: { range?: { from: number; to: number }; seen?: string }[] = [];
+    const addNote = daemon.session.addNote.bind(daemon.session);
+    daemon.session.addNote = (o) => {
+      asked.push(o);
+      return addNote(o);
+    };
+    startMode = "raw";
+    const m = await start("f.md");
+    // The editor holds the lone CR as a line break, as it does any.
+    await select("alpha\nsecond");
+    await rightClick(view().contentDOM);
+    await click(item("Add note"));
+    await typeInto(q("textarea") as HTMLTextAreaElement, "across the lone CR");
+    await click(item("Add note"));
+    const notes = () => client?.state?.docs.find((d) => d.slug === client?.state?.openDoc)?.notes;
+    await waitFor(() => (notes()?.length ?? 0) > 0, "the note");
+    const n = notes()?.[0];
+    expect(F.slice(n?.from ?? 0, n?.to ?? 0)).toBe("alpha\rsecond");
+    // As the raw view showed it: the editor's own line break.
+    expect(asked.at(-1)?.seen).toBe("alpha\nsecond");
     await m.unmount();
   });
 

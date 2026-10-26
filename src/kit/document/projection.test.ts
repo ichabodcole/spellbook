@@ -1,7 +1,15 @@
 // The rendered text of a document, and the round trip back to source.
 import { describe, expect, test } from "bun:test";
 import { renderMarkdown } from "../lib/markdown.ts";
-import { alignRuns, lineAt, project, runOffset, toPlain, toSource } from "./projection";
+import {
+  alignRuns,
+  lineAt,
+  project,
+  runOffset,
+  showsSelection,
+  toPlain,
+  toSource,
+} from "./projection";
 
 /**
  * The text nodes a browser would build from `renderMarkdown`'s output, in
@@ -534,5 +542,75 @@ describe("lineAt with every line ending", () => {
     expect([0, 2, 5, 7].map((i) => lineAt(t, i))).toEqual([1, 2, 3, 4]);
     // Between the `\r` and the `\n` of a CRLF is still the line it ends.
     expect(lineAt(t, 4)).toBe(2);
+  });
+});
+
+// kit-lone-cr-line-endings: the daemon's check that a note's range holds what
+// the human selected. "alpha" selected must never become a note over the body.
+describe("showsSelection", () => {
+  const T = "# Title\n\nSome **bold** words and `code here` too.\n\nOther alpha beta.\n";
+  const range = (s: string) => {
+    const from = T.indexOf(s);
+    return [from, from + s.length] as const;
+  };
+
+  test("the source itself passes: a selection in the raw view", () => {
+    const [f, t] = range("**bold** words");
+    expect(showsSelection(T, f, t, "**bold** words")).toBe(true);
+  });
+
+  test("the rendered text passes: a selection in the rendered view", () => {
+    const [f, t] = range("**bold** words");
+    expect(showsSelection(T, f, t, "bold words")).toBe(true);
+    // Across blocks, the page writes the gap its own way.
+    const from = T.indexOf("too.");
+    const to = T.indexOf("Other") + "Other".length;
+    expect(showsSelection(T, from, to, "too.\n\nOther")).toBe(true);
+    expect(showsSelection(T, from, to, "too. Other")).toBe(true);
+  });
+
+  test("a range wider than the selection is refused: the wide-note regression", () => {
+    // What the lone-CR page did: "alpha" selected, the whole body stored.
+    expect(showsSelection(T, 9, T.length, "alpha")).toBe(false);
+    const [f, t] = range("Other alpha beta.");
+    expect(showsSelection(T, f, t, "alpha")).toBe(false);
+  });
+
+  test("a range of the same size somewhere else is refused", () => {
+    const [f, t] = range("beta.");
+    expect(showsSelection(T, f, t, "alpha")).toBe(false);
+  });
+
+  test("inside a run the projection cannot cut, the rest of that run is allowed, and no more", () => {
+    // An inline code span resolves to the whole span.
+    const [f, t] = range("`code here`");
+    expect(showsSelection(T, f, t, "de he")).toBe(true);
+    expect(showsSelection(T, f, t, "alpha")).toBe(false);
+    // From inside the span to a word after it: the span's rest, then exact text.
+    const to = T.indexOf("too.") + 3;
+    expect(showsSelection(T, f, to, "here too")).toBe(true);
+    // ...but not past the word the selection ended on.
+    expect(showsSelection(T, f, T.length, "here too")).toBe(false);
+  });
+
+  test("text the page draws and the projection never carries may sit inside what was seen", () => {
+    const N = "A claim[^1] stands.\n\n[^1]: The source.\n";
+    const from = N.indexOf("claim");
+    const to = N.indexOf("stands") + "stands".length;
+    // The page shows the footnote's number inside the selection.
+    expect(showsSelection(N, from, to, "claim1 stands")).toBe(true);
+  });
+
+  test("a lone-CR file's selection passes on the right range and fails on the wide one", () => {
+    const CR = T.replaceAll("\n", "\r");
+    const from = CR.indexOf("alpha");
+    expect(showsSelection(CR, from, from + 5, "alpha")).toBe(true);
+    expect(showsSelection(CR, 9, CR.length, "alpha")).toBe(false);
+  });
+
+  test("nothing seen passes only over nothing but space", () => {
+    expect(showsSelection(T, 7, 9, "")).toBe(true);
+    const [f, t] = range("alpha");
+    expect(showsSelection(T, f, t, "  ")).toBe(false);
   });
 });

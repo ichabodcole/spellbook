@@ -33,7 +33,15 @@ import { linkShortcutLabel, onMac } from "../lib/platform.ts";
 import { Button } from "../ui/button.tsx";
 import { type BadgeKind, WaitingDot } from "./WaitingBadge.tsx";
 
-export type At = { x: number; y: number; from: number; to: number; noteIds: string[] };
+export type At = {
+  x: number;
+  y: number;
+  from: number;
+  to: number;
+  noteIds: string[];
+  /** What the human selected, as their view showed it: sent with a note, for the daemon to check. */
+  seen?: string;
+};
 
 /**
  * The basic edits, each offered only when given: the pane gives Cut and Copy
