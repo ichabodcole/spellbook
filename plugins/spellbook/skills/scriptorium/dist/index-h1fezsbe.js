@@ -12616,7 +12616,7 @@ var __iconNode80 = [
 ];
 var X = createLucideIcon("x", __iconNode80);
 // src/scriptorium/surface/Frame.tsx
-var import_react56 = __toESM(require_react(), 1);
+var import_react57 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/dialog/index.parts.mjs
 var exports_index_parts = {};
@@ -21691,6 +21691,23 @@ var FOLLOWING = 4;
 function tabbables(popup) {
   return Array.from(popup.querySelectorAll(TABBABLE)).filter((el) => el.tabIndex >= 0 && !el.disabled && !el.hidden && !el.closest("[inert]"));
 }
+var holds = new WeakMap;
+function hold(el) {
+  const h = holds.get(el) ?? { count: 0, was: el.inert };
+  h.count += 1;
+  holds.set(el, h);
+  el.inert = true;
+}
+function release(el) {
+  const h = holds.get(el);
+  if (!h)
+    return;
+  h.count -= 1;
+  if (h.count > 0)
+    return;
+  holds.delete(el);
+  el.inert = h.was;
+}
 function inertOutside(popup) {
   const body = popup.ownerDocument.body;
   let holder = popup;
@@ -21701,9 +21718,9 @@ function inertOutside(popup) {
   const portal = holder;
   const made = [];
   for (const child of Array.from(body.children)) {
-    if (child === portal || !(child instanceof HTMLElement) || child.inert)
+    if (child === portal || !(child instanceof HTMLElement))
       continue;
-    child.inert = true;
+    hold(child);
     made.push(child);
   }
   const onFocusIn = (e) => {
@@ -21727,7 +21744,7 @@ function inertOutside(popup) {
     observer?.disconnect();
     portal.removeEventListener("focusin", onFocusIn);
     for (const child of made)
-      child.inert = false;
+      release(child);
   };
   const View = popup.ownerDocument.defaultView;
   const observer = View?.MutationObserver ? new View.MutationObserver(() => {
@@ -21736,6 +21753,27 @@ function inertOutside(popup) {
   }) : null;
   observer?.observe(popup, { attributes: true, attributeFilter: ["data-closed"] });
   return undo;
+}
+function inertOutsideWith(ref) {
+  return (node) => {
+    if (!node)
+      return;
+    const undo = inertOutside(node);
+    let unset = () => {};
+    if (typeof ref === "function") {
+      const back = ref(node);
+      unset = typeof back === "function" ? back : () => ref(null);
+    } else if (ref) {
+      ref.current = node;
+      unset = () => {
+        ref.current = null;
+      };
+    }
+    return () => {
+      undo();
+      unset();
+    };
+  };
 }
 function inertOutsideRef(node) {
   if (!node)
@@ -24064,7 +24102,7 @@ function useAskLocation({
 }
 
 // src/kit/document/DocumentPane.tsx
-var import_react29 = __toESM(require_react(), 1);
+var import_react30 = __toESM(require_react(), 1);
 
 // node_modules/react-resizable-panels/dist/react-resizable-panels.js
 var import_jsx_runtime16 = __toESM(require_jsx_runtime(), 1);
@@ -37146,6 +37184,7 @@ function Dot({
   });
 }
 // src/kit/ui/dialog.tsx
+var import_react14 = __toESM(require_react(), 1);
 var jsx_runtime11 = __toESM(require_jsx_runtime(), 1);
 "use client";
 function Dialog({ ...props }) {
@@ -37172,8 +37211,10 @@ function DialogContent({
   children,
   showCloseButton = true,
   size: size4 = "default",
+  ref,
   ...props
 }) {
+  const popupRef = import_react14.useMemo(() => inertOutsideWith(ref), [ref]);
   return /* @__PURE__ */ jsx_runtime11.jsxs(DialogPortal3, {
     children: [
       /* @__PURE__ */ jsx_runtime11.jsx(DialogOverlay, {}),
@@ -37182,7 +37223,7 @@ function DialogContent({
         "data-size": size4,
         className: cn("fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-[size=md]:sm:max-w-md data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className),
         ...props,
-        ref: inertOutsideRef,
+        ref: popupRef,
         children: [
           children,
           showCloseButton && /* @__PURE__ */ jsx_runtime11.jsxs(exports_index_parts.Close, {
@@ -38407,7 +38448,7 @@ function ResizableHandle({
   });
 }
 // src/kit/ui/StatusStrip.tsx
-var import_react14 = __toESM(require_react(), 1);
+var import_react15 = __toESM(require_react(), 1);
 
 // src/kit/ui/separator.tsx
 var jsx_runtime17 = __toESM(require_jsx_runtime(), 1);
@@ -38429,7 +38470,7 @@ function StatusStrip({
   return /* @__PURE__ */ jsx_runtime18.jsx("div", {
     "data-slot": "status-strip",
     className: "@container flex min-w-0 items-center gap-2.5 overflow-hidden text-xs whitespace-nowrap text-ink-dim",
-    children: segments.map((s, i) => /* @__PURE__ */ jsx_runtime18.jsxs(import_react14.Fragment, {
+    children: segments.map((s, i) => /* @__PURE__ */ jsx_runtime18.jsxs(import_react15.Fragment, {
       children: [
         i > 0 && /* @__PURE__ */ jsx_runtime18.jsx(Separator2, {
           orientation: "vertical",
@@ -38472,7 +38513,7 @@ function relativeTime(ts, now2) {
   return new Date(ts).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 // src/kit/ui/toast.tsx
-var import_react15 = __toESM(require_react(), 1);
+var import_react16 = __toESM(require_react(), 1);
 
 // src/kit/ui/toast-store.ts
 var TOAST_MS = 6000;
@@ -38555,12 +38596,12 @@ function createToastStore(timers = realTimers) {
 // src/kit/ui/toast.tsx
 var jsx_runtime19 = __toESM(require_jsx_runtime(), 1);
 function useToastStore() {
-  const store = import_react15.useMemo(() => createToastStore(), []);
-  import_react15.useEffect(() => () => store.dispose(), [store]);
+  const store = import_react16.useMemo(() => createToastStore(), []);
+  import_react16.useEffect(() => () => store.dispose(), [store]);
   return store;
 }
 function useToastList(store) {
-  return import_react15.useSyncExternalStore(store.subscribe, store.snapshot, store.snapshot);
+  return import_react16.useSyncExternalStore(store.subscribe, store.snapshot, store.snapshot);
 }
 function Toasts({ store, className }) {
   const toasts = useToastList(store);
@@ -38578,8 +38619,8 @@ function Toasts({ store, className }) {
   });
 }
 function ToastCard({ toast: t, store }) {
-  const pointer2 = import_react15.useRef(false);
-  const focus = import_react15.useRef(false);
+  const pointer2 = import_react16.useRef(false);
+  const focus = import_react16.useRef(false);
   const update2 = () => store.hold(t.id, pointer2.current || focus.current);
   return /* @__PURE__ */ jsx_runtime19.jsxs("article", {
     "aria-label": t.title,
@@ -39467,7 +39508,7 @@ function TooltipProvider3({ delay = 0, ...props }) {
   });
 }
 // src/kit/document/ActiveVersionToast.tsx
-var import_react16 = __toESM(require_react(), 1);
+var import_react17 = __toESM(require_react(), 1);
 
 // src/kit/chat/newVersions.ts
 function versionName(doc, n) {
@@ -39507,6 +39548,13 @@ function withdrawn(target, open) {
     return true;
   return !open.versions.some((v) => v.n === target.n);
 }
+function versionSettled(target, open) {
+  if (!open || open.slug !== target.doc)
+    return false;
+  if (open.active === target.n)
+    return true;
+  return !open.versions.some((v) => v.n === target.n);
+}
 function newVersionActs(kind, target) {
   return kind === "activate" ? [{ activate: target }] : [{ showDiff: target }];
 }
@@ -39516,8 +39564,8 @@ function ActiveVersionToast({
   doc,
   announce
 }) {
-  const seen = import_react16.useRef(new Map);
-  import_react16.useEffect(() => {
+  const seen = import_react17.useRef(new Map);
+  import_react17.useEffect(() => {
     if (!doc)
       return;
     const was = seen.current.get(doc.slug);
@@ -39530,7 +39578,7 @@ function ActiveVersionToast({
 }
 
 // src/kit/document/Backlinks.tsx
-var import_react17 = __toESM(require_react(), 1);
+var import_react18 = __toESM(require_react(), 1);
 
 // src/kit/document/backlinks.ts
 function groupBacklinks(links) {
@@ -39605,7 +39653,7 @@ function folderOf2(shown2) {
   return slash === -1 ? "" : shown2.slice(0, slash + 1);
 }
 function Entry({ b, onOpen }) {
-  const snippetId = import_react17.useId();
+  const snippetId = import_react18.useId();
   const name = withoutDocExtension(b.name);
   return /* @__PURE__ */ jsx_runtime21.jsx("li", {
     children: /* @__PURE__ */ jsx_runtime21.jsxs("button", {
@@ -39673,7 +39721,7 @@ function EdgeEntry({
   onOpen,
   asOf
 }) {
-  const lineId = import_react17.useId();
+  const lineId = import_react18.useId();
   const name = withoutDocExtension(e.name);
   return /* @__PURE__ */ jsx_runtime21.jsx("li", {
     children: /* @__PURE__ */ jsx_runtime21.jsxs("button", {
@@ -39945,7 +39993,7 @@ function Backlinks({
 }
 
 // src/kit/document/CompareView.tsx
-var import_react19 = __toESM(require_react(), 1);
+var import_react20 = __toESM(require_react(), 1);
 
 // src/kit/document/compareNav.ts
 function hunkSpans(rows) {
@@ -40004,7 +40052,7 @@ function markPlace(span, total, measured, minPct = 0.6) {
 }
 
 // src/kit/document/FindBar.tsx
-var import_react18 = __toESM(require_react(), 1);
+var import_react19 = __toESM(require_react(), 1);
 
 // src/kit/document/find.ts
 function findMatches(segments, query, opts = {}) {
@@ -40174,32 +40222,32 @@ function useFind({
   watch,
   sides: sides2
 }) {
-  const [open, setOpen] = import_react18.useState(false);
-  const [query, setQuery] = import_react18.useState("");
-  const [matchCase, setMatchCase] = import_react18.useState(false);
-  const [side, setSide] = import_react18.useState("both");
-  const [index4, setIndex] = import_react18.useState(-1);
-  const [count, setCount] = import_react18.useState(0);
-  const input2 = import_react18.useRef(null);
-  const bar = import_react18.useRef(null);
-  const found = import_react18.useRef({ segs: [], matches: [] });
-  const returnTo = import_react18.useRef(null);
-  const reveal = import_react18.useRef(null);
-  const [redrawn, setRedrawn] = import_react18.useState(0);
-  const [focusAsk, setFocusAsk] = import_react18.useState(0);
-  const indexRef = import_react18.useRef(index4);
+  const [open, setOpen] = import_react19.useState(false);
+  const [query, setQuery] = import_react19.useState("");
+  const [matchCase, setMatchCase] = import_react19.useState(false);
+  const [side, setSide] = import_react19.useState("both");
+  const [index4, setIndex] = import_react19.useState(-1);
+  const [count, setCount] = import_react19.useState(0);
+  const input2 = import_react19.useRef(null);
+  const bar = import_react19.useRef(null);
+  const found = import_react19.useRef({ segs: [], matches: [] });
+  const returnTo = import_react19.useRef(null);
+  const reveal = import_react19.useRef(null);
+  const [redrawn, setRedrawn] = import_react19.useState(0);
+  const [focusAsk, setFocusAsk] = import_react19.useState(0);
+  const indexRef = import_react19.useRef(index4);
   indexRef.current = index4;
-  import_react18.useEffect(() => {
+  import_react19.useEffect(() => {
     if (side !== "both" && !(sides2 ?? []).some((s) => s.value === side))
       setSide("both");
   }, [side, sides2]);
-  const rangeAt = import_react18.useCallback((i) => {
+  const rangeAt = import_react19.useCallback((i) => {
     const { segs, matches } = found.current;
     const m = matches[i];
     return m ? rangeOf(segs, m) : null;
   }, []);
-  const painted = import_react18.useRef([0, 0]);
-  const paint = import_react18.useCallback((i, around = i) => {
+  const painted = import_react19.useRef([0, 0]);
+  const paint = import_react19.useCallback((i, around = i) => {
     const n = found.current.matches.length;
     const [from, to] = paintWindow(around, n);
     painted.current = [from, to];
@@ -40216,7 +40264,7 @@ function useFind({
     paintHighlight(FIND_CURRENT_HL, current ? [current] : []);
     return current;
   }, [rangeAt]);
-  import_react18.useLayoutEffect(() => {
+  import_react19.useLayoutEffect(() => {
     const r2 = root2.current;
     if (!open || !r2) {
       found.current = { segs: [], matches: [] };
@@ -40241,7 +40289,7 @@ function useFind({
     if (current && want)
       scrollToRange(r2, current);
   }, [open, query, matchCase, side, watch, redrawn, root2]);
-  import_react18.useEffect(() => {
+  import_react19.useEffect(() => {
     const r2 = root2.current;
     if (!open || !r2)
       return;
@@ -40265,8 +40313,8 @@ function useFind({
       r2.removeEventListener("scroll", onScroll);
     };
   }, [open, root2, rangeAt, paint]);
-  import_react18.useEffect(() => () => clearHighlight(FIND_MATCH_HL, FIND_CURRENT_HL), []);
-  import_react18.useEffect(() => {
+  import_react19.useEffect(() => () => clearHighlight(FIND_MATCH_HL, FIND_CURRENT_HL), []);
+  import_react19.useEffect(() => {
     const r2 = root2.current;
     if (!open || !r2 || typeof MutationObserver === "undefined")
       return;
@@ -40281,7 +40329,7 @@ function useFind({
       mo.disconnect();
     };
   }, [open, root2]);
-  const step = import_react18.useCallback((dir) => {
+  const step = import_react19.useCallback((dir) => {
     const n = found.current.matches.length;
     if (n === 0)
       return;
@@ -40292,7 +40340,7 @@ function useFind({
     if (current && root2.current)
       scrollToRange(root2.current, current);
   }, [paint, root2]);
-  const openBar = import_react18.useCallback(() => {
+  const openBar = import_react19.useCallback(() => {
     const active = document.activeElement;
     if (!bar.current?.contains(active))
       returnTo.current = active;
@@ -40312,13 +40360,13 @@ function useFind({
     setOpen(true);
     setFocusAsk((n) => n + 1);
   }, [root2, open]);
-  import_react18.useLayoutEffect(() => {
+  import_react19.useLayoutEffect(() => {
     if (focusAsk === 0)
       return;
     input2.current?.focus();
     input2.current?.select();
   }, [focusAsk]);
-  const close = import_react18.useCallback(() => {
+  const close = import_react19.useCallback(() => {
     setOpen(false);
     const back = returnTo.current;
     returnTo.current = null;
@@ -40327,7 +40375,7 @@ function useFind({
     else
       root2.current?.focus({ preventScroll: true });
   }, [root2]);
-  import_react18.useEffect(() => {
+  import_react19.useEffect(() => {
     const onKey = (e) => {
       if (e.defaultPrevented)
         return;
@@ -40504,13 +40552,8 @@ var NOTHING_TO_COMPARE = "Only one version — nothing to compare";
 function nothingToCompare(doc) {
   return doc.versions.length < 2 && !doc.dirty && !doc.outsideChanged;
 }
-function defaultSide(doc) {
-  if (doc.dirty || doc.missing)
-    return "original";
-  const others = doc.versions.map((v) => v.n).filter((n) => n !== doc.active);
-  return others.length > 0 ? Math.max(...others) : "original";
-}
 var matchesFile = (active) => `v${active} matches the file on disk.`;
+var everyVersionMatches = (active) => `v${active} matches the file on disk, and so does every other version.`;
 function NothingToCompare({ active }) {
   return /* @__PURE__ */ jsx_runtime23.jsxs("div", {
     role: "status",
@@ -40611,7 +40654,7 @@ function changesLabel(n) {
   return `${n} change${n === 1 ? "" : "s"}`;
 }
 function ChangePicker({ hunks, onPick }) {
-  const [open, setOpen] = import_react19.useState(false);
+  const [open, setOpen] = import_react20.useState(false);
   const trigger = cn("flex h-6 items-center gap-1 rounded-sm px-1.5 text-ink-dim outline-none", "hover:bg-surface-raised hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60");
   const only = hunks.length === 1 ? hunks[0] : undefined;
   if (only)
@@ -40724,14 +40767,14 @@ function CompareView({
   onFocused
 }) {
   const { diff, active, against } = payload;
-  const rows = import_react19.useMemo(() => rowsOf(diff.lines, diff.hunks.map((h) => h.id)), [diff]);
-  const spans = import_react19.useMemo(() => hunkSpans(rows), [rows]);
+  const rows = import_react20.useMemo(() => rowsOf(diff.lines, diff.hunks.map((h) => h.id)), [diff]);
+  const spans = import_react20.useMemo(() => hunkSpans(rows), [rows]);
   const sides2 = ["original", ...versions.map((v) => v.n).filter((n) => n !== active)];
-  const scroller = import_react19.useRef(null);
-  const grid = import_react19.useRef(null);
-  const [flash, setFlash] = import_react19.useState(null);
-  const flashSeq = import_react19.useRef(0);
-  import_react19.useEffect(() => {
+  const scroller = import_react20.useRef(null);
+  const grid = import_react20.useRef(null);
+  const [flash, setFlash] = import_react20.useState(null);
+  const flashSeq = import_react20.useRef(0);
+  import_react20.useEffect(() => {
     if (!flash)
       return;
     const t = setTimeout(() => setFlash(null), FLASH_MS);
@@ -40756,9 +40799,9 @@ function CompareView({
     return true;
   };
   const comparison = `${payload.doc}\x00${String(against)}`;
-  const landedOn = import_react19.useRef(null);
-  const focusedSeq = import_react19.useRef(0);
-  import_react19.useLayoutEffect(() => {
+  const landedOn = import_react20.useRef(null);
+  const focusedSeq = import_react20.useRef(0);
+  import_react20.useLayoutEffect(() => {
     if (focus && focus.seq !== focusedSeq.current) {
       if ("hunk" in focus) {
         if (focus.against !== undefined && focus.against !== against)
@@ -40784,8 +40827,8 @@ function CompareView({
     if (first)
       goToHunk(first.id, false);
   }, [comparison, rows, focus]);
-  const [measured, setMeasured] = import_react19.useState(null);
-  import_react19.useLayoutEffect(() => {
+  const [measured, setMeasured] = import_react20.useState(null);
+  import_react20.useLayoutEffect(() => {
     const g = grid.current;
     if (!g)
       return;
@@ -40806,8 +40849,8 @@ function CompareView({
     ro.observe(g);
     return () => ro.disconnect();
   }, [rows]);
-  const view = import_react19.useRef(null);
-  const findSides = import_react19.useMemo(() => [
+  const view = import_react20.useRef(null);
+  const findSides = import_react20.useMemo(() => [
     { value: "a", label: `v${active}`, title: `Only v${active}, the left side` },
     {
       value: "b",
@@ -40890,7 +40933,7 @@ function CompareView({
             "aria-hidden": true,
             className: "size-4"
           }),
-          against === "original" ? matchesFile(active) : "These two versions are identical."
+          payload.everyMatches ? everyVersionMatches(active) : against === "original" ? matchesFile(active) : "These two versions are identical."
         ]
       }) : /* @__PURE__ */ jsx_runtime23.jsxs("div", {
         className: "flex min-h-0 flex-1",
@@ -40907,7 +40950,7 @@ function CompareView({
                 const key = `${i}-${row.kind}`;
                 const lit = flashing(i);
                 if (row.kind === "same")
-                  return /* @__PURE__ */ jsx_runtime23.jsxs(import_react19.Fragment, {
+                  return /* @__PURE__ */ jsx_runtime23.jsxs(import_react20.Fragment, {
                     children: [
                       /* @__PURE__ */ jsx_runtime23.jsx(Cell, {
                         line: row.line,
@@ -40926,7 +40969,7 @@ function CompareView({
                       })
                     ]
                   }, key);
-                return /* @__PURE__ */ jsx_runtime23.jsxs(import_react19.Fragment, {
+                return /* @__PURE__ */ jsx_runtime23.jsxs(import_react20.Fragment, {
                   children: [
                     /* @__PURE__ */ jsx_runtime23.jsx(Cell, {
                       line: row.del,
@@ -57934,7 +57977,7 @@ var searchExtensions = [
 ];
 
 // src/kit/document/DocumentView.tsx
-var import_react20 = __toESM(require_react(), 1);
+var import_react21 = __toESM(require_react(), 1);
 
 // src/kit/lib/relationUse.ts
 function normaliseRelation(typed) {
@@ -60327,11 +60370,11 @@ function DocumentView({
   lineNumbers: lineNumbers2 = false,
   quiet: quiet3 = false
 }) {
-  const host = import_react20.useRef(null);
-  const view = import_react20.useRef(null);
-  const initial2 = import_react20.useRef(text4);
+  const host = import_react21.useRef(null);
+  const view = import_react21.useRef(null);
+  const initial2 = import_react21.useRef(text4);
   initial2.current = text4;
-  const handlers2 = import_react20.useRef({
+  const handlers2 = import_react21.useRef({
     onChange,
     onFlush,
     onSave,
@@ -60355,22 +60398,22 @@ function DocumentView({
     onRows,
     onReplayed
   };
-  const replayRef = import_react20.useRef(replay);
+  const replayRef = import_react21.useRef(replay);
   replayRef.current = replay;
-  const lastRemote = import_react20.useRef(text4);
-  const lastWritten = import_react20.useRef(null);
-  const notesRef = import_react20.useRef(notes);
+  const lastRemote = import_react21.useRef(text4);
+  const lastWritten = import_react21.useRef(null);
+  const notesRef = import_react21.useRef(notes);
   notesRef.current = notes;
-  const textRef = import_react20.useRef(text4);
+  const textRef = import_react21.useRef(text4);
   textRef.current = text4;
-  const focusedRef = import_react20.useRef(focusedNote);
+  const focusedRef = import_react21.useRef(focusedNote);
   focusedRef.current = focusedNote;
-  const additions = import_react20.useRef({ extensions, tokens });
+  const additions = import_react21.useRef({ extensions, tokens });
   additions.current = { extensions, tokens };
-  const gutter2 = import_react20.useRef({ numbers: new Compartment, quiet: new Compartment });
-  const gutterNow = import_react20.useRef({ lineNumbers: lineNumbers2, quiet: quiet3 });
+  const gutter2 = import_react21.useRef({ numbers: new Compartment, quiet: new Compartment });
+  const gutterNow = import_react21.useRef({ lineNumbers: lineNumbers2, quiet: quiet3 });
   gutterNow.current = { lineNumbers: lineNumbers2, quiet: quiet3 };
-  const trackers = import_react20.useRef(new Set);
+  const trackers = import_react21.useRef(new Set);
   const follow = (from, to, fromAssoc, toAssoc) => {
     const t2 = { from, to, fromAssoc, toAssoc, alive: true };
     trackers.current.add(t2);
@@ -60382,10 +60425,10 @@ function DocumentView({
     };
   };
   const track2 = (kind, from, to) => follow(from, to, kind === "complete" ? -1 : 1, kind === "wrap" ? -1 : 1);
-  const trackRef = import_react20.useRef(track2);
-  const followRef = import_react20.useRef(follow);
+  const trackRef = import_react21.useRef(track2);
+  const followRef = import_react21.useRef(follow);
   followRef.current = follow;
-  import_react20.useImperativeHandle(handle, () => ({
+  import_react21.useImperativeHandle(handle, () => ({
     focus: () => view.current?.focus(),
     insertAtCaret: (what) => {
       const v = view.current;
@@ -60426,7 +60469,7 @@ function DocumentView({
     },
     track: (kind, from, to) => trackRef.current(kind, from, to)
   }), []);
-  import_react20.useEffect(() => {
+  import_react21.useEffect(() => {
     if (!host.current)
       return;
     const extensions2 = [
@@ -60653,13 +60696,13 @@ function DocumentView({
       view.current = null;
     };
   }, [docKey, editable2, format]);
-  import_react20.useEffect(() => {
+  import_react21.useEffect(() => {
     view.current?.dispatch({ effects: gutter2.current.numbers.reconfigure(gutterFor(lineNumbers2)) });
   }, [lineNumbers2]);
-  import_react20.useEffect(() => {
+  import_react21.useEffect(() => {
     view.current?.dispatch({ effects: gutter2.current.quiet.reconfigure(quietFor(quiet3)) });
   }, [quiet3]);
-  import_react20.useEffect(() => {
+  import_react21.useEffect(() => {
     const v = view.current;
     if (!v || !place)
       return;
@@ -60685,13 +60728,13 @@ function DocumentView({
       leave();
     };
   }, [place, docKey, editable2]);
-  const revealed = import_react20.useRef(onRevealed);
+  const revealed = import_react21.useRef(onRevealed);
   revealed.current = onRevealed;
-  const headingMarkTimer = import_react20.useRef(undefined);
-  const unpainted = import_react20.useRef(clearSeq);
-  const clearNow = import_react20.useRef(clearSeq);
+  const headingMarkTimer = import_react21.useRef(undefined);
+  const unpainted = import_react21.useRef(clearSeq);
+  const clearNow = import_react21.useRef(clearSeq);
   clearNow.current = clearSeq;
-  import_react20.useEffect(() => {
+  import_react21.useEffect(() => {
     const v = view.current;
     if (!v || !reveal)
       return;
@@ -60716,9 +60759,9 @@ function DocumentView({
     clearTimeout(headingMarkTimer.current);
     headingMarkTimer.current = setTimeout(() => view.current?.dispatch({ effects: setFlash.of(null) }), FLASH_MARK_MS);
   }, [reveal]);
-  import_react20.useEffect(() => () => clearTimeout(headingMarkTimer.current), []);
+  import_react21.useEffect(() => () => clearTimeout(headingMarkTimer.current), []);
   const flashSeq = flash?.seq;
-  import_react20.useEffect(() => {
+  import_react21.useEffect(() => {
     const v = view.current;
     if (!v || !flash)
       return;
@@ -60733,7 +60776,7 @@ function DocumentView({
     const t2 = setTimeout(() => view.current?.dispatch({ effects: setFlash.of(null) }), FLASH_MARK_MS);
     return () => clearTimeout(t2);
   }, [flashSeq]);
-  import_react20.useEffect(() => {
+  import_react21.useEffect(() => {
     const v = view.current;
     if (!v || clearSeq === undefined || clearSeq === unpainted.current)
       return;
@@ -60745,13 +60788,13 @@ function DocumentView({
     if (sel && sel.rangeCount > 0 && v.dom.contains(sel.getRangeAt(0).commonAncestorContainer))
       sel.removeAllRanges();
   }, [clearSeq]);
-  import_react20.useEffect(() => {
+  import_react21.useEffect(() => {
     const at2 = (o) => editorOffset(textRef.current, o);
     view.current?.dispatch({
       effects: setPending.of(pendingNote ? { from: at2(pendingNote.from), to: at2(pendingNote.to) } : null)
     });
   }, [pendingNote]);
-  import_react20.useEffect(() => {
+  import_react21.useEffect(() => {
     view.current?.dispatch({
       effects: setNotes.of({
         notes: notesInEditor(textRef.current, notes ?? []),
@@ -60759,7 +60802,7 @@ function DocumentView({
       })
     });
   }, [notes, focusedNote]);
-  import_react20.useEffect(() => {
+  import_react21.useEffect(() => {
     const v = view.current;
     if (!v)
       return;
@@ -60794,7 +60837,7 @@ function DocumentView({
 }
 
 // src/kit/document/LinkPicker.tsx
-var import_react21 = __toESM(require_react(), 1);
+var import_react22 = __toESM(require_react(), 1);
 var jsx_runtime25 = __toESM(require_jsx_runtime(), 1);
 var CARD_W2 = 320;
 var SUGGESTIONS = 12;
@@ -60812,25 +60855,25 @@ function LinkPicker({
   onChoose,
   onClose
 }) {
-  const [query, setQuery] = import_react21.useState(initialQuery);
-  const queryRef = import_react21.useRef(query);
+  const [query, setQuery] = import_react22.useState(initialQuery);
+  const queryRef = import_react22.useRef(query);
   queryRef.current = query;
-  const [active, setActive] = import_react21.useState(0);
-  const [chosen, setChosen] = import_react21.useState([]);
-  const [relText, setRelText] = import_react21.useState("");
+  const [active, setActive] = import_react22.useState(0);
+  const [chosen, setChosen] = import_react22.useState([]);
+  const [relText, setRelText] = import_react22.useState("");
   const labelled = kind === "wrap" && quote === "";
-  const [label, setLabel] = import_react21.useState("");
-  const card = import_react21.useRef(null);
-  const field = import_react21.useRef(null);
-  const [pos, setPos] = import_react21.useState(null);
-  const listId = import_react21.useId();
-  const ranked = import_react21.useMemo(() => rankTargets(targets ?? [], query), [targets, query]);
-  const [step, setStep] = import_react21.useState(null);
-  const rankedHeadings = import_react21.useMemo(() => step?.headings ? rankHeadings(step.headings, query) : [], [step, query]);
-  import_react21.useEffect(() => setActive(0), [query]);
+  const [label, setLabel] = import_react22.useState("");
+  const card = import_react22.useRef(null);
+  const field = import_react22.useRef(null);
+  const [pos, setPos] = import_react22.useState(null);
+  const listId = import_react22.useId();
+  const ranked = import_react22.useMemo(() => rankTargets(targets ?? [], query), [targets, query]);
+  const [step, setStep] = import_react22.useState(null);
+  const rankedHeadings = import_react22.useMemo(() => step?.headings ? rankHeadings(step.headings, query) : [], [step, query]);
+  import_react22.useEffect(() => setActive(0), [query]);
   const loaded = targets !== null;
   const hasRelations = relations.length > 0;
-  import_react21.useLayoutEffect(() => {
+  import_react22.useLayoutEffect(() => {
     if (!card.current)
       return;
     setPos(placeCard(at2, card.current.offsetHeight, {
@@ -60838,12 +60881,12 @@ function LinkPicker({
       height: window.innerHeight
     }));
   }, [at2, loaded, hasRelations]);
-  import_react21.useEffect(() => {
+  import_react22.useEffect(() => {
     const f = field.current;
     f?.focus();
     f?.setSelectionRange(f.value.length, f.value.length);
   }, []);
-  import_react21.useEffect(() => {
+  import_react22.useEffect(() => {
     const onDown = (e) => {
       if (card.current && !card.current.contains(e.target))
         onClose(queryRef.current);
@@ -60851,7 +60894,7 @@ function LinkPicker({
     window.addEventListener("mousedown", onDown);
     return () => window.removeEventListener("mousedown", onDown);
   }, [onClose]);
-  import_react21.useEffect(() => {
+  import_react22.useEffect(() => {
     document.getElementById(`${listId}-${active}`)?.scrollIntoView?.({ block: "nearest" });
   }, [active, listId]);
   const addRelation = (typed) => {
@@ -60894,7 +60937,7 @@ function LinkPicker({
   const listShown = step ? step.headings !== null && rankedHeadings.length > 0 : !failure && targets !== null && ranked.length > 0;
   const rows = step ? rankedHeadings.length : ranked.length;
   const targetKind = step ? step.target.kind : listShown ? ranked[active]?.kind : undefined;
-  const ordered = import_react21.useMemo(() => rankRelations(relations, byKind, targetKind), [relations, byKind, targetKind]);
+  const ordered = import_react22.useMemo(() => rankRelations(relations, byKind, targetKind), [relations, byKind, targetKind]);
   const suggestions = suggestRelations(ordered, chosen, relText, SUGGESTIONS);
   const onCardKey = (e) => {
     if (e.key === "Tab") {
@@ -61272,7 +61315,7 @@ function RelationRow({
 }
 
 // src/kit/document/MarkdownView.tsx
-var import_react25 = __toESM(require_react(), 1);
+var import_react26 = __toESM(require_react(), 1);
 var import_react_dom4 = __toESM(require_react_dom(), 1);
 
 // src/kit/context/selection.ts
@@ -61323,7 +61366,7 @@ function revealAfter(reveal, event) {
 }
 
 // src/kit/document/coalesce.ts
-var import_react22 = __toESM(require_react(), 1);
+var import_react23 = __toESM(require_react(), 1);
 var COALESCE_LONG_MS = 50;
 var COALESCE_QUIET_MS = 300;
 function useCoalescedText(text4, key, {
@@ -61331,11 +61374,11 @@ function useCoalescedText(text4, key, {
   longMs = COALESCE_LONG_MS,
   quietMs = COALESCE_QUIET_MS
 } = {}) {
-  const held = import_react22.useRef(null);
-  const last2 = import_react22.useRef({ at: Number.NEGATIVE_INFINITY, cost: 0 });
-  const began = import_react22.useRef(null);
-  const arrived = import_react22.useRef({ text: text4, at: Number.NEGATIVE_INFINITY });
-  const [, wake] = import_react22.useReducer((n) => n + 1, 0);
+  const held = import_react23.useRef(null);
+  const last2 = import_react23.useRef({ at: Number.NEGATIVE_INFINITY, cost: 0 });
+  const began = import_react23.useRef(null);
+  const arrived = import_react23.useRef({ text: text4, at: Number.NEGATIVE_INFINITY });
+  const [, wake] = import_react23.useReducer((n) => n + 1, 0);
   const t2 = now2();
   if (arrived.current.text !== text4)
     arrived.current = { text: text4, at: t2 };
@@ -61352,14 +61395,14 @@ function useCoalescedText(text4, key, {
   }
   const shown2 = h.text;
   const behind = shown2 !== text4;
-  import_react22.useEffect(() => {
+  import_react23.useEffect(() => {
     if (began.current === null)
       return;
     const end = now2();
     last2.current = { at: end, cost: end - began.current };
     began.current = null;
   }, [shown2]);
-  import_react22.useEffect(() => {
+  import_react23.useEffect(() => {
     if (!behind)
       return;
     const at2 = now2();
@@ -61371,7 +61414,7 @@ function useCoalescedText(text4, key, {
 }
 
 // src/kit/document/embeds.tsx
-var import_react23 = __toESM(require_react(), 1);
+var import_react24 = __toESM(require_react(), 1);
 var jsx_runtime26 = __toESM(require_jsx_runtime(), 1);
 var EMBED_FAILED = "Could not be shown: this browser cannot read it, or the file is damaged.";
 function pendingEmbeds(root2) {
@@ -61401,11 +61444,11 @@ function Embed({
   onFollowLink
 }) {
   const alt = el.getAttribute("data-alt") ?? "";
-  const [failed, setFailed] = import_react23.useState(null);
+  const [failed, setFailed] = import_react24.useState(null);
   const shown2 = view?.state === "shown" ? view : null;
   const src = shown2 ? source.src(shown2) : null;
-  import_react23.useLayoutEffect(() => setFailed(null), [src]);
-  import_react23.useLayoutEffect(() => {
+  import_react24.useLayoutEffect(() => setFailed(null), [src]);
+  import_react24.useLayoutEffect(() => {
     if (!view)
       mark(el, "pending", alt, null);
     else if (view.state === "not-shown")
@@ -67639,7 +67682,7 @@ function generatedAt(fields) {
 }
 
 // src/kit/document/ProfileChip.tsx
-var import_react24 = __toESM(require_react(), 1);
+var import_react25 = __toESM(require_react(), 1);
 
 // src/kit/document/profileHeader.ts
 function profileFits(profile, fields) {
@@ -67730,8 +67773,8 @@ function ProfileChip({
   profile,
   onAsk
 }) {
-  const [open, setOpen] = import_react24.useState(false);
-  const [asked, setAsked] = import_react24.useState(new Set);
+  const [open, setOpen] = import_react25.useState(false);
+  const [asked, setAsked] = import_react25.useState(new Set);
   const ask = (text4) => {
     onAsk?.(text4, profile);
     setAsked((was) => new Set(was).add(text4));
@@ -70191,26 +70234,26 @@ function MarkdownView({
   onEmbedTargets
 }) {
   const text4 = useCoalescedText(textIn, textKey2);
-  const toShown = import_react25.useMemo(() => minimalChange(text4, textIn), [text4, textIn]);
-  const toDrawn = import_react25.useMemo(() => toShown ? invertChange(toShown, text4) : null, [toShown, text4]);
-  const notes = import_react25.useMemo(() => !toDrawn || !notesIn ? notesIn : notesIn.flatMap((n) => {
+  const toShown = import_react26.useMemo(() => minimalChange(text4, textIn), [text4, textIn]);
+  const toDrawn = import_react26.useMemo(() => toShown ? invertChange(toShown, text4) : null, [toShown, text4]);
+  const notes = import_react26.useMemo(() => !toDrawn || !notesIn ? notesIn : notesIn.flatMap((n) => {
     if (n.from === null || n.to === null)
       return [n];
     const m = rangeThrough({ from: n.from, to: n.to }, toDrawn);
     return m ? [{ ...n, ...m }] : [];
   }), [notesIn, toDrawn]);
-  const pendingNote = import_react25.useMemo(() => pendingIn && toDrawn ? rangeThrough(pendingIn, toDrawn) : pendingIn, [pendingIn, toDrawn]);
-  const flash = import_react25.useMemo(() => {
+  const pendingNote = import_react26.useMemo(() => pendingIn && toDrawn ? rangeThrough(pendingIn, toDrawn) : pendingIn, [pendingIn, toDrawn]);
+  const flash = import_react26.useMemo(() => {
     if (!flashIn || !toDrawn)
       return flashIn;
     const m = rangeThrough(flashIn, toDrawn);
     return m ? { ...m, seq: flashIn.seq } : null;
   }, [flashIn, toDrawn]);
-  const reportable = import_react25.useRef((r2) => r2);
+  const reportable = import_react26.useRef((r2) => r2);
   reportable.current = (r2) => rangeThrough(r2, toShown);
-  const currentText = import_react25.useRef(textIn);
+  const currentText = import_react26.useRef(textIn);
   currentText.current = textIn;
-  const placeLines = import_react25.useRef({
+  const placeLines = import_react26.useRef({
     toDrawn: (line) => line,
     toShown: (line) => line
   });
@@ -70218,20 +70261,20 @@ function MarkdownView({
     toDrawn: (line) => lineThrough(line, textIn, text4, toDrawn),
     toShown: (line) => lineThrough(line, text4, textIn, toShown)
   };
-  const frontmatter = import_react25.useMemo(() => readFrontmatter(text4), [text4]);
-  const html = import_react25.useMemo(() => renderDocument(text4, widgets), [text4, widgets]);
-  const htmlProp = import_react25.useMemo(() => ({ __html: html }), [html]);
-  const projection = import_react25.useMemo(() => project(text4), [text4]);
-  const drawn = import_react25.useRef({ text: text4, projection });
+  const frontmatter = import_react26.useMemo(() => readFrontmatter(text4), [text4]);
+  const html = import_react26.useMemo(() => renderDocument(text4, widgets), [text4, widgets]);
+  const htmlProp = import_react26.useMemo(() => ({ __html: html }), [html]);
+  const projection = import_react26.useMemo(() => project(text4), [text4]);
+  const drawn = import_react26.useRef({ text: text4, projection });
   drawn.current = { text: text4, projection };
-  const refusalOf = import_react25.useCallback((r2) => {
+  const refusalOf = import_react26.useCallback((r2) => {
     const d = drawn.current;
     return showsSelection(d.text, r2.from, r2.to, r2.seen, d.projection) ? undefined : NOT_PLACED;
   }, []);
-  const body = import_react25.useRef(null);
-  const headerBox = import_react25.useRef(null);
-  const [widgetSpans, setWidgetSpans] = import_react25.useState([]);
-  import_react25.useLayoutEffect(() => {
+  const body = import_react26.useRef(null);
+  const headerBox = import_react26.useRef(null);
+  const [widgetSpans, setWidgetSpans] = import_react26.useState([]);
+  import_react26.useLayoutEffect(() => {
     const found = [];
     for (const w of widgets) {
       for (const el of body.current?.getElementsByClassName(w.className) ?? []) {
@@ -70242,20 +70285,20 @@ function MarkdownView({
     }
     setWidgetSpans(found);
   }, [html]);
-  const [embedSpans2, setEmbedSpans] = import_react25.useState([]);
-  const onEmbedTargetsRef = import_react25.useRef(onEmbedTargets);
+  const [embedSpans2, setEmbedSpans] = import_react26.useState([]);
+  const onEmbedTargetsRef = import_react26.useRef(onEmbedTargets);
   onEmbedTargetsRef.current = onEmbedTargets;
-  import_react25.useLayoutEffect(() => {
+  import_react26.useLayoutEffect(() => {
     const found = body.current ? pendingEmbeds(body.current) : [];
     setEmbedSpans(found);
     onEmbedTargetsRef.current?.([...new Set(found.map((e) => e.target))]);
   }, [html]);
-  const lastRange = import_react25.useRef(null);
-  const scroller = import_react25.useRef(null);
-  const measureRef = import_react25.useRef(() => []);
-  const measureFrom = import_react25.useRef({ projection, text: text4 });
+  const lastRange = import_react26.useRef(null);
+  const scroller = import_react26.useRef(null);
+  const measureRef = import_react26.useRef(() => []);
+  const measureFrom = import_react26.useRef({ projection, text: text4 });
   measureFrom.current = { projection, text: text4 };
-  const anchors = import_react25.useRef(null);
+  const anchors = import_react26.useRef(null);
   if (!anchors.current)
     anchors.current = anchorCache(() => {
       const root2 = body.current;
@@ -70265,7 +70308,7 @@ function MarkdownView({
       return lineAnchors(root2, sc, measureFrom.current.projection, measureFrom.current.text);
     }, () => scroller.current?.clientWidth ?? 0);
   measureRef.current = () => body.current && scroller.current ? anchors.current?.get() ?? [] : [];
-  import_react25.useEffect(() => {
+  import_react26.useEffect(() => {
     anchors.current?.clear();
     const sc = scroller.current;
     if (!sc || typeof ResizeObserver === "undefined")
@@ -70278,7 +70321,7 @@ function MarkdownView({
       ro.observe(body.current);
     return () => ro.disconnect();
   }, [html, projection]);
-  import_react25.useEffect(() => {
+  import_react26.useEffect(() => {
     const sc = scroller.current;
     if (!sc || !place)
       return;
@@ -70295,7 +70338,7 @@ function MarkdownView({
       leave();
     };
   }, [place]);
-  const inBody = import_react25.useCallback((range) => {
+  const inBody = import_react26.useCallback((range) => {
     const root2 = body.current;
     const pane = scroller.current;
     if (!root2 || !pane)
@@ -70323,7 +70366,7 @@ function MarkdownView({
       r2.setEnd(last2, last2.data.length);
     return r2.collapsed ? null : r2;
   }, []);
-  const selectedRange = import_react25.useCallback(() => {
+  const selectedRange = import_react26.useCallback(() => {
     const root2 = body.current;
     const sel = window.getSelection();
     if (!root2 || !sel || sel.rangeCount === 0 || sel.isCollapsed)
@@ -70332,9 +70375,9 @@ function MarkdownView({
     const r2 = range ? resolveRange(root2, projection, range) : null;
     return r2 && range ? { ...r2, seen: range.toString() } : null;
   }, [projection, inBody]);
-  const contextPress = import_react25.useRef(false);
-  const pressedHere = import_react25.useRef(false);
-  import_react25.useEffect(() => {
+  const contextPress = import_react26.useRef(false);
+  const pressedHere = import_react26.useRef(false);
+  import_react26.useEffect(() => {
     if (!onSelect)
       return;
     const handler = () => {
@@ -70387,8 +70430,8 @@ function MarkdownView({
       document.removeEventListener("pointerdown", pressed, true);
     };
   }, [onSelect, selectedRange, inBody, refusalOf]);
-  const unpainted = import_react25.useRef(clearSeq);
-  import_react25.useEffect(() => {
+  const unpainted = import_react26.useRef(clearSeq);
+  import_react26.useEffect(() => {
     if (clearSeq === undefined || clearSeq === unpainted.current)
       return;
     unpainted.current = clearSeq;
@@ -70400,7 +70443,7 @@ function MarkdownView({
     if (root2.contains(sel.getRangeAt(0).commonAncestorContainer))
       sel.removeAllRanges();
   }, [clearSeq]);
-  import_react25.useEffect(() => {
+  import_react26.useEffect(() => {
     const reg = highlightRegistry();
     const root2 = body.current;
     if (!reg || !root2)
@@ -70432,7 +70475,7 @@ function MarkdownView({
     };
   }, [notes, projection, focusedNote, pendingNote, html]);
   const flashSeq = flash?.seq;
-  import_react25.useEffect(() => {
+  import_react26.useEffect(() => {
     const key = flash ? frontmatterKeyAt(text4, flash.from) : null;
     const box = headerBox.current?.querySelector('[data-slot="frontmatter-header"]');
     if (key !== null && box) {
@@ -70465,7 +70508,7 @@ function MarkdownView({
       reg.delete(FLASH_HL);
     };
   }, [flashSeq]);
-  const view = import_react25.useRef(null);
+  const view = import_react26.useRef(null);
   const { bar } = useFind({ root: scroller, scope: view, watch: html });
   return /* @__PURE__ */ jsx_runtime29.jsxs("div", {
     ref: view,
@@ -70552,7 +70595,7 @@ function MarkdownView({
 }
 
 // src/kit/document/NewVersionDialog.tsx
-var import_react26 = __toESM(require_react(), 1);
+var import_react27 = __toESM(require_react(), 1);
 var jsx_runtime30 = __toESM(require_jsx_runtime(), 1);
 function NewVersionDialog({
   open,
@@ -70563,9 +70606,9 @@ function NewVersionDialog({
   onCreate
 }) {
   const branching = intent === "branch";
-  const [label, setLabel] = import_react26.useState("");
-  const field = import_react26.useRef(null);
-  import_react26.useEffect(() => {
+  const [label, setLabel] = import_react27.useState("");
+  const field = import_react27.useRef(null);
+  import_react27.useEffect(() => {
     if (open)
       setLabel("");
   }, [open]);
@@ -70754,7 +70797,7 @@ function readerStaysLoud(part, doc2) {
 }
 
 // src/kit/document/VersionMenu.tsx
-var import_react27 = __toESM(require_react(), 1);
+var import_react28 = __toESM(require_react(), 1);
 var jsx_runtime31 = __toESM(require_jsx_runtime(), 1);
 function versionLabel(v) {
   const label = v.label?.trim();
@@ -70792,7 +70835,7 @@ function VersionMenu({
 }) {
   const rows = ordered(versions, active);
   const current = versions.find((v) => v.n === active);
-  const [open, setOpen] = import_react27.useState(false);
+  const [open, setOpen] = import_react28.useState(false);
   return /* @__PURE__ */ jsx_runtime31.jsxs(DropdownMenu, {
     open,
     onOpenChange: setOpen,
@@ -70833,7 +70876,7 @@ function VersionMenu({
           }),
           /* @__PURE__ */ jsx_runtime31.jsx("div", {
             className: "max-h-64 overflow-y-auto py-1",
-            children: rows.map((v, i2) => /* @__PURE__ */ jsx_runtime31.jsxs(import_react27.Fragment, {
+            children: rows.map((v, i2) => /* @__PURE__ */ jsx_runtime31.jsxs(import_react28.Fragment, {
               children: [
                 i2 > 0 && /* @__PURE__ */ jsx_runtime31.jsx(DropdownMenuSeparator, {}),
                 /* @__PURE__ */ jsx_runtime31.jsxs(DropdownMenuItem, {
@@ -70973,10 +71016,10 @@ function VersionMenu({
 }
 
 // src/kit/document/ViewBoundary.tsx
-var import_react28 = __toESM(require_react(), 1);
+var import_react29 = __toESM(require_react(), 1);
 var jsx_runtime32 = __toESM(require_jsx_runtime(), 1);
 
-class ViewBoundary extends import_react28.Component {
+class ViewBoundary extends import_react29.Component {
   state = { error: null };
   static getDerivedStateFromError(error) {
     return { error: error instanceof Error ? error : new Error(String(error)) };
@@ -71040,8 +71083,8 @@ var READER_LABEL = {
 var SPLIT_PANEL_IDS = [...SPLIT_PANES];
 var SPLIT_TOO_NARROW = `Raw and rendered side by side: the pane is too narrow (split needs ${SPLIT_MIN_PX} px)`;
 function usePaneWidth(ref) {
-  const [width, setWidth] = import_react29.useState(0);
-  import_react29.useLayoutEffect(() => {
+  const [width, setWidth] = import_react30.useState(0);
+  import_react30.useLayoutEffect(() => {
     const el = ref.current;
     if (!el)
       return;
@@ -71055,16 +71098,16 @@ function usePaneWidth(ref) {
   return width;
 }
 function useDebouncedStats(text4, ms = 300) {
-  const [stats2, setStats] = import_react29.useState(() => contentStats(text4 ?? ""));
-  import_react29.useEffect(() => {
+  const [stats2, setStats] = import_react30.useState(() => contentStats(text4 ?? ""));
+  import_react30.useEffect(() => {
     const t2 = setTimeout(() => setStats(contentStats(text4 ?? "")), ms);
     return () => clearTimeout(t2);
   }, [text4, ms]);
   return stats2;
 }
 function useNow(everyMs = 30000) {
-  const [now2, setNow] = import_react29.useState(() => Date.now());
-  import_react29.useEffect(() => {
+  const [now2, setNow] = import_react30.useState(() => Date.now());
+  import_react30.useEffect(() => {
     const t2 = setInterval(() => setNow(Date.now()), everyMs);
     return () => clearInterval(t2);
   }, [everyMs]);
@@ -71093,28 +71136,28 @@ function DocumentPane({
   const w = useWorkspace();
   const { daemon, openDoc: doc2 } = w;
   const { send, writeText, flushText } = daemon;
-  const modeIds = import_react29.useId();
+  const modeIds = import_react30.useId();
   const kept = w.storage ?? safeStorage;
-  const [ownMode, setOwnMode] = import_react29.useState(() => readViewMode(kept.getItem(viewModeKey), { split: splitView }));
+  const [ownMode, setOwnMode] = import_react30.useState(() => readViewMode(kept.getItem(viewModeKey), { split: splitView }));
   const mode = modeProp ?? ownMode;
-  const [numbered, setNumbered] = import_react29.useState(() => readLineNumbers(kept.getItem(lineNumbersKey)));
+  const [numbered, setNumbered] = import_react30.useState(() => readLineNumbers(kept.getItem(lineNumbersKey)));
   const toggleNumbered = () => {
     const next = !numbered;
     kept.setItem(lineNumbersKey, storedLineNumbers(next));
     setNumbered(next);
   };
-  const splitStorage = import_react29.useMemo(() => guardedLayoutStorage(kept, SPLIT_LAYOUT_ID, SPLIT_PANEL_IDS), [kept]);
+  const splitStorage = import_react30.useMemo(() => guardedLayoutStorage(kept, SPLIT_LAYOUT_ID, SPLIT_PANEL_IDS), [kept]);
   const splitLayout = an({
     id: SPLIT_LAYOUT_ID,
     panelIds: SPLIT_PANEL_IDS,
     storage: splitStorage
   });
   const keepSplit = splitLayout.onLayoutChanged;
-  const onSplitLayout = import_react29.useCallback((layout, meta2) => {
+  const onSplitLayout = import_react30.useCallback((layout, meta2) => {
     if (isSplitLayout(layout))
       keepSplit(layout, meta2);
   }, [keepSplit]);
-  const rootRef = import_react29.useRef(null);
+  const rootRef = import_react30.useRef(null);
   const width = usePaneWidth(rootRef);
   const splitRoom = splitFits(width);
   const isJson = !!doc2 && docFormat(doc2.original) === "json";
@@ -71123,17 +71166,17 @@ function DocumentPane({
   const formatView = bundle && bundle.inner === bundle.type.main && !raw ? formatViews?.[bundle.type.type] : undefined;
   const bundleRoot = formatView ? bundle?.root : undefined;
   const { onFrame } = daemon;
-  const prepareSave = import_react29.useRef(null);
-  import_react29.useEffect(() => {
+  const prepareSave = import_react30.useRef(null);
+  import_react30.useEffect(() => {
     prepareSave.current = null;
   }, [doc2?.slug]);
-  const beforeSave = import_react29.useCallback((prepare) => {
+  const beforeSave = import_react30.useCallback((prepare) => {
     prepareSave.current = prepare;
   }, []);
-  const [viewStatus, setViewStatus] = import_react29.useState(null);
+  const [viewStatus, setViewStatus] = import_react30.useState(null);
   const viewSlug = formatView ? doc2?.slug : undefined;
-  const setStatus = import_react29.useCallback((segments2) => setViewStatus(segments2 && viewSlug !== undefined ? { slug: viewSlug, segments: segments2 } : null), [viewSlug]);
-  const onBundleChange = import_react29.useCallback((listener) => onFrame((frame) => {
+  const setStatus = import_react30.useCallback((segments2) => setViewStatus(segments2 && viewSlug !== undefined ? { slug: viewSlug, segments: segments2 } : null), [viewSlug]);
+  const onBundleChange = import_react30.useCallback((listener) => onFrame((frame) => {
     if (frame.op !== "bundle.changed" || bundleRoot === undefined)
       return;
     const f = frame;
@@ -71142,8 +71185,8 @@ function DocumentPane({
   }), [onFrame, bundleRoot]);
   const shownMode = shownViewMode(mode, { split: splitView, width });
   const showing = isJson && shownMode !== "compare" ? "raw" : shownMode;
-  const setMode = (picked) => {
-    const m = isJson && picked === "raw" ? readViewMode(kept.getItem(viewModeKey), { split: splitView }) : picked;
+  const setMode = (picked2) => {
+    const m = isJson && picked2 === "raw" ? readViewMode(kept.getItem(viewModeKey), { split: splitView }) : picked2;
     if (m !== "compare" && !isJson)
       kept.setItem(viewModeKey, m);
     setOwnMode(m);
@@ -71160,34 +71203,36 @@ function DocumentPane({
     for (const side of act.expand)
       columns.expand(side);
   };
-  import_react29.useLayoutEffect(() => {
+  import_react30.useLayoutEffect(() => {
     setQuiet(reader);
   }, [reader, setQuiet]);
-  import_react29.useLayoutEffect(() => () => setQuiet(false), [setQuiet]);
+  import_react30.useLayoutEffect(() => () => setQuiet(false), [setQuiet]);
   const fade = reader ? QUIET_FADE : undefined;
-  const [against, setAgainst] = import_react29.useState("original");
-  const [compareFocus, setCompareFocus] = import_react29.useState(null);
+  const [against, setAgainst] = import_react30.useState("original");
+  const [pick2, setPick] = import_react30.useState(true);
+  const [compareFocus, setCompareFocus] = import_react30.useState(null);
   const chooseSide = (side) => {
     setCompareFocus(null);
+    setPick(false);
     setAgainst(side);
   };
-  const [naming, setNaming] = import_react29.useState(null);
-  const [noteAt, setNoteAt] = import_react29.useState(null);
-  const [linking, setLinking] = import_react29.useState(null);
-  const [linkTargets, setLinkTargets] = import_react29.useState(null);
-  const [linkFailure, setLinkFailure] = import_react29.useState(null);
-  const [jsonRefused, setJsonRefused] = import_react29.useState(null);
+  const [naming, setNaming] = import_react30.useState(null);
+  const [noteAt, setNoteAt] = import_react30.useState(null);
+  const [linking, setLinking] = import_react30.useState(null);
+  const [linkTargets, setLinkTargets] = import_react30.useState(null);
+  const [linkFailure, setLinkFailure] = import_react30.useState(null);
+  const [jsonRefused, setJsonRefused] = import_react30.useState(null);
   const { confirm, dialog: dialog2 } = useConfirm();
   const text4 = doc2 ? daemon.texts.get(textKey(doc2.slug, doc2.active)) : undefined;
-  const lastShown = import_react29.useRef(null);
+  const lastShown = import_react30.useRef(null);
   if (doc2 && text4 !== undefined)
     lastShown.current = { slug: doc2.slug, text: text4 };
   const shown2 = doc2 ? textToShow(doc2.slug, text4, lastShown.current) : undefined;
   const slug = doc2?.slug;
   const active = doc2?.active;
-  const jsonNow = import_react29.useMemo(() => isJson && shown2 !== undefined ? jsonProblem(shown2) : null, [isJson, shown2]);
-  const jsonChecked = import_react29.useRef(null);
-  import_react29.useEffect(() => {
+  const jsonNow = import_react30.useMemo(() => isJson && shown2 !== undefined ? jsonProblem(shown2) : null, [isJson, shown2]);
+  const jsonChecked = import_react30.useRef(null);
+  import_react30.useEffect(() => {
     if (slug === undefined || active === undefined)
       return;
     const key = `${slug}@${active}`;
@@ -71206,47 +71251,62 @@ function DocumentPane({
   }, [isJson, slug, active, text4]);
   const jsonMine = jsonRefused !== null && jsonRefused.slug === slug ? jsonRefused : null;
   const jsonShown = jsonMine ? shown2 === jsonMine.seen ? jsonMine.problem : jsonNow : null;
-  import_react29.useEffect(() => {
+  import_react30.useEffect(() => {
     if (jsonMine && shown2 !== undefined && shown2 !== jsonMine.seen && !jsonNow)
       setJsonRefused(null);
   }, [jsonMine, shown2, jsonNow]);
-  import_react29.useEffect(() => {
+  import_react30.useEffect(() => {
     if (slug !== undefined && active !== undefined && text4 === undefined)
       send({ op: "read", doc: slug, version: active });
   }, [slug, active, text4, send]);
-  const place = import_react29.useMemo(() => createPlace(), [slug]);
+  const place = import_react30.useMemo(() => createPlace(), [slug]);
   const hash = doc2?.hash;
-  const compareSlug = import_react29.useRef(slug);
-  import_react29.useEffect(() => {
+  const compareSlug = import_react30.useRef(slug);
+  const pickTaken = import_react30.useRef(false);
+  import_react30.useEffect(() => {
     if (compareSlug.current !== slug)
       return;
+    if (pickTaken.current) {
+      pickTaken.current = false;
+      return;
+    }
     if (mode === "compare" && slug !== undefined)
-      send({ op: "diff", doc: slug, against });
-  }, [mode, slug, active, hash, against, send]);
-  import_react29.useEffect(() => {
+      send({ op: "diff", doc: slug, against, ...pick2 ? { pick: true } : {} });
+  }, [mode, slug, active, hash, against, pick2, send]);
+  const picked = daemon.diff?.picked === true && daemon.diff.doc === slug ? daemon.diff : null;
+  import_react30.useEffect(() => {
+    if (!pick2 || !picked)
+      return;
+    pickTaken.current = true;
+    setPick(false);
+    setAgainst(picked.against);
+  }, [pick2, picked]);
+  import_react30.useEffect(() => {
     compareSlug.current = slug;
     if (mode === "compare") {
       const m = readViewMode(kept.getItem(viewModeKey), { split: splitView });
       setOwnMode(m);
       onMode?.(m);
     }
-    setAgainst(doc2 ? defaultSide(doc2) : "original");
+    setAgainst("original");
+    setPick(true);
     setNoteAt(null);
     setLinking(null);
     setCompareFocus(null);
   }, [slug]);
-  const lastShowDiff = import_react29.useRef(0);
-  import_react29.useEffect(() => {
+  const lastShowDiff = import_react30.useRef(0);
+  import_react30.useEffect(() => {
     if (!showDiff || showDiff.seq === lastShowDiff.current)
       return;
     lastShowDiff.current = showDiff.seq;
     if (showDiff.doc !== slug)
       return;
+    setPick(false);
     setAgainst(showDiff.version);
     setOwnMode("compare");
     onMode?.("compare");
   }, [showDiff, slug, onMode]);
-  const editorHandle = import_react29.useRef(null);
+  const editorHandle = import_react30.useRef(null);
   const setEditor = (h) => {
     editorHandle.current = h;
     if (typeof editor === "function")
@@ -71254,7 +71314,7 @@ function DocumentPane({
     else if (editor)
       editor.current = h;
   };
-  import_react29.useEffect(() => {
+  import_react30.useEffect(() => {
     const pane = rootRef.current?.closest('[data-pane="centre"]');
     if (!pane)
       return;
@@ -71306,11 +71366,11 @@ function DocumentPane({
       return;
     send({ op: "save", doc: doc2.slug, recreate: doc2.missing });
   };
-  const saveKey = import_react29.useRef(onSave);
+  const saveKey = import_react30.useRef(onSave);
   saveKey.current = onSave;
-  const dirtyNow = import_react29.useRef(false);
+  const dirtyNow = import_react30.useRef(false);
   dirtyNow.current = !!doc2?.dirty && daemon.connection !== "ended";
-  import_react29.useEffect(() => {
+  import_react30.useEffect(() => {
     const onKey = (e) => {
       if (e.key.toLowerCase() !== "s" || !(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey)
         return;
@@ -71331,9 +71391,9 @@ function DocumentPane({
   };
   const canLink = !!doc2 && !isJson && daemon.connection !== "ended" && showing !== "compare";
   const editorMounted = showing === "raw" || showing === "split";
-  const renderedTrackers = import_react29.useRef(new Set);
-  const shownBefore = import_react29.useRef(shown2);
-  import_react29.useEffect(() => {
+  const renderedTrackers = import_react30.useRef(new Set);
+  const shownBefore = import_react30.useRef(shown2);
+  import_react30.useEffect(() => {
     const prev = shownBefore.current;
     shownBefore.current = shown2;
     if (prev === undefined || shown2 === undefined)
@@ -71356,7 +71416,7 @@ function DocumentPane({
       }
     };
   };
-  const replay = import_react29.useRef(null);
+  const replay = import_react30.useRef(null);
   const linkPlaceProblem = (via, from, to) => {
     const t2 = via === "rendered" ? shown2 : editorHandle.current?.text();
     return t2 === undefined ? null : insideLinkProblem(t2, from, to);
@@ -71401,11 +71461,11 @@ function DocumentPane({
       track: trackRendered(at2.from, at2.to)
     }, "rendered");
   };
-  import_react29.useEffect(() => () => linking?.track.release(), [linking]);
-  const menuOpen = import_react29.useRef(false);
+  import_react30.useEffect(() => () => linking?.track.release(), [linking]);
+  const menuOpen = import_react30.useRef(false);
   menuOpen.current = noteAt !== null;
-  const nativeNext = import_react29.useRef(false);
-  import_react29.useEffect(() => {
+  const nativeNext = import_react30.useRef(false);
+  import_react30.useEffect(() => {
     const down = (e) => {
       nativeNext.current = menuOpen.current && (e.button === 2 || e.button === 0 && e.ctrlKey);
     };
@@ -71478,7 +71538,7 @@ function DocumentPane({
   };
   const { request } = daemon;
   const linkingOpen = linking !== null;
-  import_react29.useEffect(() => {
+  import_react30.useEffect(() => {
     if (!linkingOpen || slug === undefined)
       return;
     let current2 = true;
@@ -71495,12 +71555,12 @@ function DocumentPane({
       current2 = false;
     };
   }, [linkingOpen, slug, request]);
-  const [backlinks, setBacklinks] = import_react29.useState(null);
-  const lastBacklinks = import_react29.useRef("");
+  const [backlinks, setBacklinks] = import_react30.useState(null);
+  const lastBacklinks = import_react30.useRef("");
   const readingRendered = showing !== "raw";
   const live = daemon.connection === "open";
   const snapshot = w.state;
-  import_react29.useEffect(() => {
+  import_react30.useEffect(() => {
     if (slug === undefined || !readingRendered || !live)
       return;
     let current2 = true;
@@ -71525,17 +71585,17 @@ function DocumentPane({
       clearTimeout(t2);
     };
   }, [slug, readingRendered, live, request, snapshot]);
-  const [embedTargets, setEmbedTargets] = import_react29.useState([]);
+  const [embedTargets, setEmbedTargets] = import_react30.useState([]);
   const embedKey = embedTargets.join(`
 `);
-  const onEmbedTargets = import_react29.useCallback((targets) => {
+  const onEmbedTargets = import_react30.useCallback((targets) => {
     setEmbedTargets((was) => was.join(`
 `) === targets.join(`
 `) ? was : targets);
   }, []);
-  const [embedViews, setEmbedViews] = import_react29.useState(null);
-  const lastEmbeds = import_react29.useRef("");
-  import_react29.useEffect(() => {
+  const [embedViews, setEmbedViews] = import_react30.useState(null);
+  const lastEmbeds = import_react30.useRef("");
+  import_react30.useEffect(() => {
     if (slug === undefined || !readingRendered || !live || embedKey === "")
       return;
     let current2 = true;
@@ -71558,21 +71618,21 @@ function DocumentPane({
     };
   }, [slug, readingRendered, live, request, snapshot, embedKey]);
   const { imageUrl } = daemon;
-  const embeds = import_react29.useMemo(() => ({
+  const embeds = import_react30.useMemo(() => ({
     views: embedViews && embedViews.doc === slug ? embedViews.views : NO_EMBEDS,
     src: (v) => v.type === "image/gif" ? imageUrl(v.path, { stamp: v.stamp }) : imageUrl(v.path, { stamp: v.stamp, thumb: 1024 }),
     open: (path2) => send({ op: "open", path: path2 })
   }), [embedViews, slug, imageUrl, send]);
-  const [profile, setProfile] = import_react29.useState(null);
-  const lastProfile = import_react29.useRef("");
-  const [diskChanged, setDiskChanged] = import_react29.useState(0);
+  const [profile, setProfile] = import_react30.useState(null);
+  const lastProfile = import_react30.useRef("");
+  const [diskChanged, setDiskChanged] = import_react30.useState(0);
   const onDaemonFrame = daemon.onFrame;
-  import_react29.useEffect(() => onDaemonFrame((f) => {
+  import_react30.useEffect(() => onDaemonFrame((f) => {
     if (f.op === "context.changed")
       setDiskChanged((n) => n + 1);
   }), [onDaemonFrame]);
   const edits = daemon.texts;
-  import_react29.useEffect(() => {
+  import_react30.useEffect(() => {
     if (slug === undefined || isJson || !readingRendered || !live)
       return;
     let current2 = true;
@@ -71647,7 +71707,7 @@ function DocumentPane({
       send({ op: "open", path: b.source });
   };
   const linkVia = linking?.via;
-  import_react29.useEffect(() => {
+  import_react30.useEffect(() => {
     if (!canLink || linkVia === "editor" && !editorMounted || linkVia === "rendered" && editorMounted)
       setLinking(null);
   }, [canLink, linkVia, editorMounted]);
@@ -71694,8 +71754,8 @@ function DocumentPane({
     const r2 = replay.current;
     replay.current = r2 && r2.slug === doc2.slug && applyChanges(r2.base, r2.changes) === now3 ? { ...r2, changes: [...r2.changes, change] } : { slug: doc2.slug, base: now3, changes: [change] };
   };
-  const [taking, setTaking] = import_react29.useState(false);
-  const offerNow = import_react29.useRef({ doc: doc2, editorMounted, textOffer });
+  const [taking, setTaking] = import_react30.useState(false);
+  const offerNow = import_react30.useRef({ doc: doc2, editorMounted, textOffer });
   offerNow.current = { doc: doc2, editorMounted, textOffer };
   const takeOffer = (offer2) => {
     if (!doc2 || taking)
@@ -71851,7 +71911,7 @@ function DocumentPane({
   const pendingNote = noteAt && noteAt.from < noteAt.to ? noteAt : null;
   const { focusedNote, showResolvedNotes } = w;
   const docNotes = doc2?.notes;
-  const paintedNotes = import_react29.useMemo(() => showResolvedNotes || !docNotes ? docNotes : docNotes.filter((n) => !n.resolved || n.id === focusedNote), [docNotes, showResolvedNotes, focusedNote]);
+  const paintedNotes = import_react30.useMemo(() => showResolvedNotes || !docNotes ? docNotes : docNotes.filter((n) => !n.resolved || n.id === focusedNote), [docNotes, showResolvedNotes, focusedNote]);
   const revealHere = doc2 && w.reveal && w.reveal.doc === doc2.slug && w.reveal.version === doc2.active ? {
     from: w.reveal.from,
     to: w.reveal.to,
@@ -71859,9 +71919,9 @@ function DocumentPane({
     ...w.reveal.heading ? { heading: w.reveal.heading } : {}
   } : null;
   const { revealApplied } = w;
-  const [flash, setFlash2] = import_react29.useState(null);
-  const flashSeq = import_react29.useRef(0);
-  import_react29.useEffect(() => {
+  const [flash, setFlash2] = import_react30.useState(null);
+  const flashSeq = import_react30.useRef(0);
+  import_react30.useEffect(() => {
     if (showing !== "rendered" || !revealHere || shown2 === undefined)
       return;
     place.report("reveal", lineAt2(shown2, revealHere.from));
@@ -71869,26 +71929,27 @@ function DocumentPane({
     setFlash2({ from: mark2.from, to: mark2.to, seq: ++flashSeq.current });
     revealApplied(revealHere.seq);
   }, [showing, revealHere, shown2, place, revealApplied]);
-  import_react29.useEffect(() => {
+  import_react30.useEffect(() => {
     if (!flash)
       return;
     const t2 = setTimeout(() => setFlash2(null), FLASH_MS);
     return () => clearTimeout(t2);
   }, [flash]);
-  const [pointed, setPointed] = import_react29.useState(null);
-  const pointSeq = import_react29.useRef(0);
-  import_react29.useEffect(() => onFrame((frame) => {
+  const [pointed, setPointed] = import_react30.useState(null);
+  const pointSeq = import_react30.useRef(0);
+  import_react30.useEffect(() => onFrame((frame) => {
     if (frame.op !== "show")
       return;
     const { op: _op, ...target } = frame;
     setPointed({ ...target, seq: ++pointSeq.current });
   }), [onFrame]);
   const { announce } = w;
-  import_react29.useEffect(() => {
+  import_react30.useEffect(() => {
     if (!pointed || slug !== pointed.doc)
       return;
     if ("hunk" in pointed) {
       setPointed(null);
+      setPick(false);
       setAgainst(pointed.against);
       setOwnMode("compare");
       onMode?.("compare");
@@ -72070,7 +72131,7 @@ function DocumentPane({
                         const noCompare = m === "compare" && nothingToCompare(doc2);
                         const why = noRoom ? SPLIT_TOO_NARROW : ended ? "The session has ended, so there is nothing to compare" : noCompare ? NOTHING_TO_COMPARE : null;
                         const whyId = `${modeIds}-${m}-why`;
-                        return /* @__PURE__ */ jsx_runtime33.jsxs(import_react29.Fragment, {
+                        return /* @__PURE__ */ jsx_runtime33.jsxs(import_react30.Fragment, {
                           children: [
                             /* @__PURE__ */ jsx_runtime33.jsx("button", {
                               type: "button",
@@ -72079,8 +72140,10 @@ function DocumentPane({
                                   return;
                                 if (appActive)
                                   appView?.onActive(false);
-                                if (m === "compare" && showing !== "compare")
-                                  chooseSide(defaultSide(doc2));
+                                if (m === "compare" && showing !== "compare") {
+                                  setCompareFocus(null);
+                                  setPick(true);
+                                }
                                 setMode(m);
                               },
                               ...disabledReasonProps(why, whyId),
@@ -72281,7 +72344,7 @@ function DocumentPane({
           "data-slot": "format-view",
           "data-bundle": bundle.type.type,
           className: "flex min-h-0 flex-1 flex-col",
-          children: import_react29.createElement(formatView, {
+          children: import_react30.createElement(formatView, {
             key: doc2.slug,
             doc: doc2,
             bundle: bundle.root,
@@ -72479,11 +72542,11 @@ function DocumentPane({
 }
 
 // src/kit/shell/WorkspaceShell.tsx
-var import_react52 = __toESM(require_react(), 1);
+var import_react53 = __toESM(require_react(), 1);
 var import_react_dom6 = __toESM(require_react_dom(), 1);
 
 // src/kit/chat/ChatMessageView.tsx
-var import_react30 = __toESM(require_react(), 1);
+var import_react31 = __toESM(require_react(), 1);
 
 // src/kit/lib/oneLine.ts
 function oneLine(text4) {
@@ -72674,8 +72737,8 @@ function ChatMarkdown({
   text: text4,
   onFollowLink
 }) {
-  const html = import_react30.useMemo(() => renderMarkdown(text4, { idPrefix: id, embedReason: EMBED_IN_CHAT }), [text4, id]);
-  const htmlProp = import_react30.useMemo(() => ({ __html: html }), [html]);
+  const html = import_react31.useMemo(() => renderMarkdown(text4, { idPrefix: id, embedReason: EMBED_IN_CHAT }), [text4, id]);
+  const htmlProp = import_react31.useMemo(() => ({ __html: html }), [html]);
   return /* @__PURE__ */ jsx_runtime34.jsx("div", {
     className: "md-prose",
     onClick: (e) => onRenderedLinkClick(e, onFollowLink),
@@ -72894,7 +72957,7 @@ function ChatComposer({
 }
 
 // src/kit/chat/ChatSidebar.tsx
-var import_react31 = __toESM(require_react(), 1);
+var import_react32 = __toESM(require_react(), 1);
 var jsx_runtime36 = __toESM(require_jsx_runtime(), 1);
 function ChatSidebar(props) {
   const {
@@ -72909,11 +72972,11 @@ function ChatSidebar(props) {
     onFollowLink,
     messageActions
   } = props;
-  const [draft, setDraft] = import_react31.useState("");
-  const log3 = import_react31.useRef(null);
+  const [draft, setDraft] = import_react32.useState("");
+  const log3 = import_react32.useRef(null);
   const last2 = messages.at(-1)?.id;
-  const stuck = import_react31.useRef(true);
-  import_react31.useEffect(() => {
+  const stuck = import_react32.useRef(true);
+  import_react32.useEffect(() => {
     const el = log3.current;
     if (el && stuck.current)
       el.scrollTop = el.scrollHeight;
@@ -73127,7 +73190,7 @@ function FloatingComposer({
 }
 
 // src/kit/chat/NewVersionToasts.tsx
-var import_react32 = __toESM(require_react(), 1);
+var import_react33 = __toESM(require_react(), 1);
 var NEW_VERSION_HOLD_MS = 400;
 function NewVersionToasts({
   doc: doc2,
@@ -73138,32 +73201,34 @@ function NewVersionToasts({
   onShowDiff,
   holdMs = NEW_VERSION_HOLD_MS
 }) {
-  const watch = import_react32.useRef(createVersionWatch());
-  const raised = import_react32.useRef([]);
-  const held = import_react32.useRef([]);
-  const current = import_react32.useRef(doc2);
+  const watch = import_react33.useRef(createVersionWatch());
+  const raised = import_react33.useRef([]);
+  const held = import_react33.useRef([]);
+  const current = import_react33.useRef(doc2);
   current.current = doc2;
-  const wiring = import_react32.useRef({ onActivate, onShowDiff });
+  const wiring = import_react33.useRef({ onActivate, onShowDiff });
   wiring.current = { onActivate, onShowDiff };
-  import_react32.useEffect(() => {
+  import_react33.useEffect(() => {
     if (!connected)
       watch.current.disconnected();
   }, [connected]);
-  import_react32.useEffect(() => () => {
+  import_react33.useEffect(() => () => {
     for (const h of held.current)
       clearTimeout(h.timer);
     held.current = [];
   }, []);
   const canDiff = onShowDiff !== undefined;
-  import_react32.useEffect(() => {
+  import_react33.useEffect(() => {
     raised.current = raised.current.filter((r2) => {
-      if (!withdrawn(r2.target, doc2))
+      if (!(r2.elsewhere ? versionSettled(r2.target, doc2) : withdrawn(r2.target, doc2)))
         return true;
       dismiss(r2.id);
       return false;
     });
     held.current = held.current.filter((h) => {
-      if (!withdrawn(h.target, doc2))
+      if (doc2 && doc2.slug === h.target.doc)
+        h.seen = doc2;
+      if (!versionSettled(h.target, doc2))
         return true;
       clearTimeout(h.timer);
       return false;
@@ -73180,15 +73245,15 @@ function NewVersionToasts({
           w.onShowDiff?.(act.showDiff.doc, act.showDiff.n);
       }
     };
-    const raise = (target) => {
+    const raise = (target, seen) => {
       const open = current.current;
-      if (!open)
-        return;
-      const version3 = open.versions.find((v) => v.n === target.n);
+      const elsewhere = !open || open.slug !== target.doc;
+      const from = elsewhere ? seen : open;
+      const version3 = from.versions.find((v) => v.n === target.n);
       if (!version3)
         return;
-      const name2 = versionName(open, target.n);
-      const { title, description } = newVersionToast(open, version3);
+      const name2 = versionName(from, target.n);
+      const { title, description } = newVersionToast(from, version3);
       const actions = [
         {
           label: "Activate",
@@ -73196,33 +73261,37 @@ function NewVersionToasts({
           onAct: () => apply(newVersionActs("activate", target))
         }
       ];
-      if (canDiff)
+      if (canDiff && !elsewhere)
         actions.push({
           label: "Show diff",
-          ariaLabel: `Show diff: compare v${open.active} with ${name2}, without activating it`,
+          ariaLabel: `Show diff: compare v${from.active} with ${name2}, without activating it`,
           onAct: () => apply(newVersionActs("diff", target))
         });
       const id = announce(title, description, actions);
-      raised.current.push({ id, target });
+      raised.current.push({ id, target, elsewhere });
     };
     for (const version3 of fresh) {
       const target = { doc: doc2.slug, n: version3.n };
       if (holdMs <= 0) {
-        raise(target);
+        raise(target, doc2);
         continue;
       }
-      const timer = setTimeout(() => {
-        held.current = held.current.filter((h) => h.timer !== timer);
-        raise(target);
-      }, holdMs);
-      held.current.push({ timer, target });
+      const entry = {
+        timer: setTimeout(() => {
+          held.current = held.current.filter((h) => h !== entry);
+          raise(target, entry.seen);
+        }, holdMs),
+        target,
+        seen: doc2
+      };
+      held.current.push(entry);
     }
   }, [doc2, announce, dismiss, canDiff, holdMs]);
   return null;
 }
 
 // src/kit/chat/NotesPanel.tsx
-var import_react33 = __toESM(require_react(), 1);
+var import_react34 = __toESM(require_react(), 1);
 var jsx_runtime38 = __toESM(require_jsx_runtime(), 1);
 var NONE_WAITING = new Map;
 var NONE_ASKED = new Set;
@@ -73275,7 +73344,7 @@ function NoteReplyItem({
   onFollowLink
 }) {
   const long = replyIsLong(reply.text);
-  const [open, setOpen] = import_react33.useState(false);
+  const [open, setOpen] = import_react34.useState(false);
   const clamped = long && !open;
   return /* @__PURE__ */ jsx_runtime38.jsxs("li", {
     "data-slot": "note-reply",
@@ -73330,11 +73399,11 @@ function Note({
   const uncertain = UNCERTAIN[note.how];
   const shownBadge = waiting ? badgeFor(waiting, agentListening, sessionEnded) : null;
   const anchored = note.from !== null;
-  const [draft, setDraft] = import_react33.useState(null);
+  const [draft, setDraft] = import_react34.useState(null);
   const replaced = note.editedBy === "agent" ? note.replacedBody : undefined;
-  const [showReplaced, setShowReplaced] = import_react33.useState(false);
-  const row = import_react33.useRef(null);
-  import_react33.useEffect(() => {
+  const [showReplaced, setShowReplaced] = import_react34.useState(false);
+  const row = import_react34.useRef(null);
+  import_react34.useEffect(() => {
     if (focused)
       row.current?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
   }, [focused]);
@@ -73568,8 +73637,8 @@ function NotesPanel({
   onResolve,
   onRemove
 }) {
-  const [body, setBody] = import_react33.useState("");
-  const [ownShowResolved, setOwnShowResolved] = import_react33.useState(false);
+  const [body, setBody] = import_react34.useState("");
+  const [ownShowResolved, setOwnShowResolved] = import_react34.useState(false);
   const showResolved = showResolvedProp ?? ownShowResolved;
   const setShowResolved = (show) => {
     setOwnShowResolved(show);
@@ -73824,7 +73893,7 @@ function owedSummary(waiting, agentListening, ended = false) {
 var owedCount = (waiting) => `${waiting.length} ${waiting.length === 1 ? "note" : "notes"} owed an answer`;
 
 // src/kit/chat/OutsideChangeToasts.tsx
-var import_react34 = __toESM(require_react(), 1);
+var import_react35 = __toESM(require_react(), 1);
 
 // src/kit/chat/outsideChange.ts
 function outsideChangeToast(doc2) {
@@ -73857,11 +73926,11 @@ function OutsideChangeToasts({
   onReload,
   onShowDiff
 }) {
-  const watch = import_react34.useRef(createOutsideWatch());
-  const raised = import_react34.useRef(new Map);
-  const wiring = import_react34.useRef({ onReload, onShowDiff });
+  const watch = import_react35.useRef(createOutsideWatch());
+  const raised = import_react35.useRef(new Map);
+  const wiring = import_react35.useRef({ onReload, onShowDiff });
   wiring.current = { onReload, onShowDiff };
-  import_react34.useEffect(() => {
+  import_react35.useEffect(() => {
     if (!doc2)
       return;
     const news = watch.current.snapshot(doc2);
@@ -73910,7 +73979,7 @@ function OutsideChangeToasts({
 }
 
 // src/kit/chat/TasksPanel.tsx
-var import_react35 = __toESM(require_react(), 1);
+var import_react36 = __toESM(require_react(), 1);
 var jsx_runtime39 = __toESM(require_jsx_runtime(), 1);
 var FINISHED_STATUSES = ["done", "failed", "cancelled"];
 var isFinishedStatus = (s) => FINISHED_STATUSES.includes(s);
@@ -74099,7 +74168,7 @@ function TasksPanel({
   onClear,
   onCreate
 }) {
-  const [title, setTitle] = import_react35.useState("");
+  const [title, setTitle] = import_react36.useState("");
   const byId = new Map(tasks.map((t2) => [t2.id, t2]));
   const open = tasks.filter((t2) => !isFinishedStatus(t2.status));
   const done = tasks.filter((t2) => isFinishedStatus(t2.status));
@@ -74185,7 +74254,7 @@ function TasksPanel({
 }
 
 // src/kit/chat/TaskToasts.tsx
-var import_react36 = __toESM(require_react(), 1);
+var import_react37 = __toESM(require_react(), 1);
 var SHOW_TASKS_ACTION = {
   label: "Show tasks",
   ariaLabel: "Open the conversation column on the Tasks tab"
@@ -74196,13 +74265,13 @@ function TaskToasts({
   onShowTasks,
   startsInView = false
 }) {
-  const seen = import_react36.useRef(null);
-  const started = import_react36.useRef(null);
-  const showTasks = import_react36.useRef(onShowTasks);
+  const seen = import_react37.useRef(null);
+  const started = import_react37.useRef(null);
+  const showTasks = import_react37.useRef(onShowTasks);
   showTasks.current = onShowTasks;
-  const inView = import_react36.useRef(startsInView);
+  const inView = import_react37.useRef(startsInView);
   inView.current = startsInView;
-  import_react36.useEffect(() => {
+  import_react37.useEffect(() => {
     const finished = new Set(tasks.filter((t2) => t2.status === "done" || t2.status === "failed").map((t2) => t2.id));
     const cancelled = tasks.filter((t2) => t2.status === "cancelled").map((t2) => t2.id);
     const underway = tasks.filter((t2) => t2.status !== "open").map((t2) => t2.id);
@@ -74234,7 +74303,7 @@ function TaskToasts({
 }
 
 // src/kit/context/ContextSidebar.tsx
-var import_react42 = __toESM(require_react(), 1);
+var import_react43 = __toESM(require_react(), 1);
 
 // node_modules/@headless-tree/core/dist/index.mjs
 var __defProp2 = Object.defineProperty;
@@ -75788,12 +75857,12 @@ var __spreadValues2 = (a, b) => {
 var __spreadProps2 = (a, b) => __defProps2(a, __getOwnPropDescs2(b));
 
 // node_modules/@headless-tree/react/dist/index.mjs
-var import_react37 = __toESM(require_react(), 1);
 var import_react38 = __toESM(require_react(), 1);
+var import_react39 = __toESM(require_react(), 1);
 var useTree = (config) => {
-  const [tree] = import_react38.useState(() => ({ current: createTree(config) }));
-  const [state, setState] = import_react38.useState(() => tree.current.getState());
-  import_react38.useEffect(() => {
+  const [tree] = import_react39.useState(() => ({ current: createTree(config) }));
+  const [state, setState] = import_react39.useState(() => tree.current.getState());
+  import_react39.useEffect(() => {
     tree.current.setMounted(true);
     tree.current.rebuildTree();
     return () => {
@@ -75812,7 +75881,7 @@ var useTree = (config) => {
 };
 
 // src/kit/context/EntryTree.tsx
-var import_react40 = __toESM(require_react(), 1);
+var import_react41 = __toESM(require_react(), 1);
 var import_react_dom5 = __toESM(require_react_dom(), 1);
 
 // src/kit/context/menus.tsx
@@ -75956,9 +76025,9 @@ function EntryTree({
   onLinkDrop,
   userHome = null
 }) {
-  const index5 = import_react40.useMemo(() => indexTree(entry.nodes), [entry.nodes]);
+  const index5 = import_react41.useMemo(() => indexTree(entry.nodes), [entry.nodes]);
   const shownRel = activeRel === null ? null : activeRaw && index5.byId.get(activeRel)?.kind === "file" ? activeRel : index5.imageOf.get(activeRel) ?? index5.bundleOf.get(activeRel) ?? activeRel;
-  const indexRef = import_react40.useRef(index5);
+  const indexRef = import_react41.useRef(index5);
   indexRef.current = index5;
   const pathOf = (id) => id === ROOT_ID ? entry.root : joinPath(entry.root, id);
   const dirFor = (id) => {
@@ -75967,11 +76036,11 @@ function EntryTree({
     const node2 = indexRef.current.byId.get(id);
     return node2 ? dropDirOf(entry.root, node2) : dirOf(joinPath(entry.root, id));
   };
-  const foreignHandled = import_react40.useRef(false);
-  const selectedIds = import_react40.useMemo(() => selected.filter((p) => p.startsWith(`${entry.root}/`)).map((p) => p.slice(entry.root.length + 1)).filter((id) => index5.byId.has(id)), [selected, entry.root, index5]);
-  const plainClick = import_react40.useRef(false);
-  const unreported = import_react40.useRef(false);
-  const selectedRef = import_react40.useRef(selected);
+  const foreignHandled = import_react41.useRef(false);
+  const selectedIds = import_react41.useMemo(() => selected.filter((p) => p.startsWith(`${entry.root}/`)).map((p) => p.slice(entry.root.length + 1)).filter((id) => index5.byId.has(id)), [selected, entry.root, index5]);
+  const plainClick = import_react41.useRef(false);
+  const unreported = import_react41.useRef(false);
+  const selectedRef = import_react41.useRef(selected);
   selectedRef.current = selected;
   const tree = useTree({
     rootItemId: ROOT_ID,
@@ -76068,10 +76137,10 @@ function EntryTree({
       renamingFeature
     ]
   });
-  import_react40.useEffect(() => {
+  import_react41.useEffect(() => {
     tree.rebuildTree();
   }, [index5, tree]);
-  import_react40.useEffect(() => {
+  import_react41.useEffect(() => {
     if (!focusPath?.startsWith(`${entry.root}/`))
       return;
     const rel = focusPath.slice(entry.root.length + 1);
@@ -76083,7 +76152,7 @@ function EntryTree({
     tree.updateDomFocus();
     onFocused?.();
   }, [focusPath, index5, entry.root, tree, onFocused]);
-  import_react40.useEffect(() => {
+  import_react41.useEffect(() => {
     if (!renamePath?.startsWith(`${entry.root}/`))
       return;
     const rel = renamePath.slice(entry.root.length + 1);
@@ -76094,9 +76163,9 @@ function EntryTree({
     tree.getItemInstance(rel)?.startRenaming();
     onRenameStarted();
   }, [renamePath, index5, entry.root, tree, onRenameStarted]);
-  const revealed = import_react40.useRef(null);
-  const [scrollTo, setScrollTo] = import_react40.useState(null);
-  import_react40.useEffect(() => {
+  const revealed = import_react41.useRef(null);
+  const [scrollTo, setScrollTo] = import_react41.useState(null);
+  import_react41.useEffect(() => {
     if (shownRel === revealed.current)
       return;
     if (shownRel !== null && !index5.byId.has(shownRel))
@@ -76111,7 +76180,7 @@ function EntryTree({
     }
     setScrollTo(shownRel);
   }, [shownRel, index5, tree]);
-  import_react40.useEffect(() => {
+  import_react41.useEffect(() => {
     if (scrollTo === null)
       return;
     let timer;
@@ -76149,8 +76218,8 @@ function EntryTree({
       watcher?.disconnect();
     };
   }, [scrollTo, tree]);
-  const [menuFor, setMenuFor] = import_react40.useState(null);
-  const [bgDrop, setBgDrop] = import_react40.useState(false);
+  const [menuFor, setMenuFor] = import_react41.useState(null);
+  const [bgDrop, setBgDrop] = import_react41.useState(false);
   const renameItem = (rel) => tree.getItemInstance(rel)?.startRenaming();
   const onBgDragOver = (e) => {
     if (e.target.closest('[role="treeitem"]'))
@@ -76656,11 +76725,11 @@ function isLinkNode(node2) {
 }
 var PEEK_DELAY_MS = 450;
 function ImagePeek({ src }) {
-  const anchor = import_react40.useRef(null);
-  const [at2, setAt] = import_react40.useState(null);
-  const [failed, setFailed] = import_react40.useState(false);
-  import_react40.useEffect(() => setFailed(false), [src]);
-  import_react40.useEffect(() => {
+  const anchor = import_react41.useRef(null);
+  const [at2, setAt] = import_react41.useState(null);
+  const [failed, setFailed] = import_react41.useState(false);
+  import_react41.useEffect(() => setFailed(false), [src]);
+  import_react41.useEffect(() => {
     const row = anchor.current?.parentElement;
     if (!row)
       return;
@@ -76706,7 +76775,7 @@ function ImagePeek({ src }) {
 }
 
 // src/kit/context/MoveToDialog.tsx
-var import_react41 = __toESM(require_react(), 1);
+var import_react42 = __toESM(require_react(), 1);
 var jsx_runtime42 = __toESM(require_jsx_runtime(), 1);
 function MoveToDialog({
   path: path2,
@@ -76715,13 +76784,13 @@ function MoveToDialog({
   onMove,
   onClose
 }) {
-  const [query, setQuery] = import_react41.useState("");
-  const [at2, setAt] = import_react41.useState(-1);
-  const shown2 = import_react41.useMemo(() => filterMoveTargets(targets, query), [targets, query]);
-  const listId = import_react41.useId();
-  const listRef = import_react41.useRef(null);
-  import_react41.useEffect(() => setAt(query.trim() === "" ? -1 : 0), [query]);
-  import_react41.useEffect(() => {
+  const [query, setQuery] = import_react42.useState("");
+  const [at2, setAt] = import_react42.useState(-1);
+  const shown2 = import_react42.useMemo(() => filterMoveTargets(targets, query), [targets, query]);
+  const listId = import_react42.useId();
+  const listRef = import_react42.useRef(null);
+  import_react42.useEffect(() => setAt(query.trim() === "" ? -1 : 0), [query]);
+  import_react42.useEffect(() => {
     listRef.current?.querySelector(`[data-index="${at2}"]`)?.scrollIntoView?.({ block: "nearest" });
   }, [at2]);
   const choose = (t2) => {
@@ -76979,18 +77048,18 @@ function ContextSidebar({
   beforeMoveTimeoutMs,
   uncheckedMoveNote
 }) {
-  const badgeFor2 = import_react42.useMemo(() => rowMarker ? withRowMarker(appBadgeFor, rowMarker) : appBadgeFor, [appBadgeFor, rowMarker]);
-  const [drilled, setDrilled] = import_react42.useState(null);
+  const badgeFor2 = import_react43.useMemo(() => rowMarker ? withRowMarker(appBadgeFor, rowMarker) : appBadgeFor, [appBadgeFor, rowMarker]);
+  const [drilled, setDrilled] = import_react43.useState(null);
   const drilledEntry = drilled ? entries.find((e) => e.id === drilled) : undefined;
-  const [renamePath, setRenamePath] = import_react42.useState(null);
-  const [localNotice, setLocalNotice] = import_react42.useState(null);
-  import_react42.useEffect(() => {
+  const [renamePath, setRenamePath] = import_react43.useState(null);
+  const [localNotice, setLocalNotice] = import_react43.useState(null);
+  import_react43.useEffect(() => {
     if (drilled && !drilledEntry)
       setDrilled(null);
   }, [drilled, drilledEntry]);
-  const entriesRef = import_react42.useRef(entries);
+  const entriesRef = import_react43.useRef(entries);
   entriesRef.current = entries;
-  import_react42.useEffect(() => {
+  import_react43.useEffect(() => {
     if (!created)
       return;
     const all2 = entriesRef.current;
@@ -77001,13 +77070,13 @@ function ContextSidebar({
       setDrilled(inSet.id);
     setRenamePath(created.path);
   }, [created]);
-  const renameStarted = import_react42.useCallback(() => setRenamePath(null), []);
-  const [openSetAt, setOpenSetAt] = import_react42.useState(null);
-  const openAsSet = import_react42.useCallback((path2) => {
+  const renameStarted = import_react43.useCallback(() => setRenamePath(null), []);
+  const [openSetAt, setOpenSetAt] = import_react43.useState(null);
+  const openAsSet = import_react43.useCallback((path2) => {
     setOpenSetAt(path2);
     onAddPath(path2);
   }, [onAddPath]);
-  import_react42.useEffect(() => {
+  import_react43.useEffect(() => {
     if (!openSetAt)
       return;
     const set2 = entries.find((e) => e.membership === "mirrored" && e.root === openSetAt);
@@ -77016,8 +77085,8 @@ function ContextSidebar({
     setDrilled(set2.id);
     setOpenSetAt(null);
   }, [openSetAt, entries]);
-  const lastActive = import_react42.useRef(activeDoc ? `${activeDoc.entryId}/${activeDoc.rel}` : null);
-  import_react42.useEffect(() => {
+  const lastActive = import_react43.useRef(activeDoc ? `${activeDoc.entryId}/${activeDoc.rel}` : null);
+  import_react43.useEffect(() => {
     const key = activeDoc ? `${activeDoc.entryId}/${activeDoc.rel}` : null;
     if (key === lastActive.current)
       return;
@@ -77028,18 +77097,18 @@ function ContextSidebar({
     if (holder?.membership === "mirrored")
       setDrilled(holder.id);
   }, [activeDoc, drilled]);
-  const [moving, setMoving] = import_react42.useState(null);
-  const onAskMove = import_react42.useCallback((path2) => setMoving(path2), []);
-  const [focusPath, setFocusPath] = import_react42.useState(null);
-  const focused = import_react42.useCallback(() => setFocusPath(null), []);
-  const expectMove = import_react42.useRef(null);
-  import_react42.useEffect(() => {
+  const [moving, setMoving] = import_react43.useState(null);
+  const onAskMove = import_react43.useCallback((path2) => setMoving(path2), []);
+  const [focusPath, setFocusPath] = import_react43.useState(null);
+  const focused = import_react43.useCallback(() => setFocusPath(null), []);
+  const expectMove = import_react43.useRef(null);
+  import_react43.useEffect(() => {
     if (!moved || moved.path !== expectMove.current)
       return;
     expectMove.current = null;
     setFocusPath(moved.path);
   }, [moved]);
-  import_react42.useEffect(() => {
+  import_react43.useEffect(() => {
     if (!focusPath)
       return;
     if (entries.some((e) => entryPath(e) === focusPath))
@@ -77049,8 +77118,8 @@ function ContextSidebar({
       setDrilled(holder.id);
   }, [focusPath, entries]);
   const { confirm, dialog: dialog2 } = useConfirm();
-  const moves = import_react42.useRef(Promise.resolve());
-  const move = import_react42.useCallback((path2, into) => {
+  const moves = import_react43.useRef(Promise.resolve());
+  const move = import_react43.useCallback((path2, into) => {
     if (!beforeMove) {
       onStructure({ op: "move", path: path2, into });
       return true;
@@ -77066,7 +77135,7 @@ function ContextSidebar({
     moves.current = asked.catch(() => {});
     return asked;
   }, [onStructure, beforeMove, beforeMoveTimeoutMs, uncheckedMoveNote, confirm]);
-  const moveToWorkspace = import_react42.useCallback((rows) => {
+  const moveToWorkspace = import_react43.useCallback((rows) => {
     if (!workspace)
       return;
     for (const r2 of rows) {
@@ -77077,7 +77146,7 @@ function ContextSidebar({
         move(r2.path, workspace);
     }
   }, [workspace, move]);
-  const importOneImage = import_react42.useCallback(async (f, into) => {
+  const importOneImage = import_react43.useCallback(async (f, into) => {
     if (!importImage)
       return `${f.name}: this app does not take images.`;
     const dir = into ? { dir: into } : {};
@@ -77097,13 +77166,13 @@ function ContextSidebar({
       return r2.kept && r2.note ? `${f.name} was ${r2.note}.` : null;
     return `${f.name} was not brought in: ${r2.error}`;
   }, [importImage, confirm]);
-  const addWhereItLives = import_react42.useCallback((path2) => {
+  const addWhereItLives = import_react43.useCallback((path2) => {
     if (rowsShown(entriesRef.current, [path2]).length > 0)
       onSelect?.([path2]);
     else
       onAddPath(path2);
   }, [onAddPath, onSelect]);
-  const beforeCopy = import_react42.useCallback(async (f, into, image) => {
+  const beforeCopy = import_react43.useCallback(async (f, into, image) => {
     if (!fileAt)
       return "copy";
     const there = joinPath(into, f.name);
@@ -77137,7 +77206,7 @@ function ContextSidebar({
     });
     return copy ? "copy" : "skip";
   }, [fileAt, userHome, confirm, addWhereItLives]);
-  const importDropped = import_react42.useCallback(({ files, folders }, into) => {
+  const importDropped = import_react43.useCallback(({ files, folders }, into) => {
     const { docs, images, svg, skipped } = splitDropped(files);
     setLocalNotice(dropNotice(skipped, folders, svg));
     (async () => {
@@ -77160,9 +77229,9 @@ function ContextSidebar({
         setLocalNotice(refused.join(" "));
     })();
   }, [onStructure, importOneImage, beforeCopy]);
-  const importFiles = import_react42.useCallback((dt, into) => importDropped(droppedFiles(dt), into), [importDropped]);
+  const importFiles = import_react43.useCallback((dt, into) => importDropped(droppedFiles(dt), into), [importDropped]);
   const asks = !workspace && askLocation ? askLocation : undefined;
-  const askAndCreate = import_react42.useCallback(async (what, extension2, label) => {
+  const askAndCreate = import_react43.useCallback(async (what, extension2, label) => {
     if (!asks)
       return;
     const name2 = what === "bundle" ? label ?? "bundle" : what;
@@ -77176,7 +77245,7 @@ function ContextSidebar({
     else
       onStructure({ op: "bundle.create", dir, ...extension2 ? { extension: extension2 } : {} });
   }, [asks, onStructure]);
-  const importOnList = import_react42.useCallback((dt, into) => {
+  const importOnList = import_react43.useCallback((dt, into) => {
     if (into || !asks)
       return importFiles(dt, into);
     const dropped = droppedFiles(dt);
@@ -77192,7 +77261,7 @@ function ContextSidebar({
         importDropped(dropped, dir);
     });
   }, [asks, importFiles, importDropped, addWhereItLives]);
-  const askDelete = import_react42.useCallback(async (path2) => {
+  const askDelete = import_react43.useCallback(async (path2) => {
     if (!trashPreview || !onTrash)
       return;
     let pre;
@@ -77214,7 +77283,7 @@ function ContextSidebar({
       onTrash(pre.path);
   }, [trashPreview, onTrash, confirm]);
   const onDelete = trashPreview && onTrash ? askDelete : undefined;
-  const linkDrop = import_react42.useCallback(async (path2, linkTo) => {
+  const linkDrop = import_react43.useCallback(async (path2, linkTo) => {
     const ok3 = await confirm({
       title: "Nothing is dropped into a linked folder",
       message: `${baseName(path2)} is a link${linkTo ? ` to ${tildify(linkTo, userHome)}` : ""}. What is dropped there would land outside this set. Open it as its own set, then drop there.`,
@@ -77367,7 +77436,7 @@ function WorkspaceRow({
   onSetWorkspace,
   onStructure
 }) {
-  const [editing, setEditing] = import_react42.useState(false);
+  const [editing, setEditing] = import_react43.useState(false);
   return /* @__PURE__ */ jsx_runtime43.jsxs("div", {
     className: "shrink-0 border-b border-edge px-1.5 py-1",
     children: [
@@ -77432,7 +77501,7 @@ function RenameBox({
   whole = false,
   onDone
 }) {
-  const [value, setValue] = import_react42.useState(initial2);
+  const [value, setValue] = import_react43.useState(initial2);
   return /* @__PURE__ */ jsx_runtime43.jsx("input", {
     value,
     onChange: (e) => setValue(e.target.value),
@@ -77484,12 +77553,12 @@ function ListView({
   onFocused,
   onAskCreate
 }) {
-  const [menuFor, setMenuFor] = import_react42.useState(null);
+  const [menuFor, setMenuFor] = import_react43.useState(null);
   const { entries: rows, described } = foldListedSidecars(entries);
-  const [renaming, setRenaming] = import_react42.useState(null);
-  const [dropOn, setDropOn] = import_react42.useState(null);
-  const listRef = import_react42.useRef(null);
-  import_react42.useEffect(() => {
+  const [renaming, setRenaming] = import_react43.useState(null);
+  const [dropOn, setDropOn] = import_react43.useState(null);
+  const listRef = import_react43.useRef(null);
+  import_react43.useEffect(() => {
     if (!focusPath)
       return;
     const row = [...listRef.current?.querySelectorAll("[data-row-path]") ?? []].find((b) => b.dataset.rowPath === focusPath);
@@ -77498,7 +77567,7 @@ function ListView({
     row.focus();
     onFocused();
   }, [focusPath, entries, onFocused]);
-  import_react42.useEffect(() => {
+  import_react43.useEffect(() => {
     if (!renamePath)
       return;
     if (entries.some((e) => entryPath(e) === renamePath)) {
@@ -77921,14 +77990,14 @@ function SetView({
   onOpenAsSet,
   onLinkDrop
 }) {
-  const [backDrop, setBackDrop] = import_react42.useState(false);
-  const spring = import_react42.useRef(null);
+  const [backDrop, setBackDrop] = import_react43.useState(false);
+  const spring = import_react43.useRef(null);
   const unspring = () => {
     if (spring.current)
       clearTimeout(spring.current);
     spring.current = null;
   };
-  import_react42.useEffect(() => () => {
+  import_react43.useEffect(() => () => {
     if (spring.current)
       clearTimeout(spring.current);
   }, []);
@@ -78117,7 +78186,7 @@ function listed(names) {
 }
 
 // src/kit/context/RelinkBar.tsx
-var import_react43 = __toESM(require_react(), 1);
+var import_react44 = __toESM(require_react(), 1);
 var jsx_runtime45 = __toESM(require_jsx_runtime(), 1);
 var plural2 = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 function RelinkBar({
@@ -78126,8 +78195,8 @@ function RelinkBar({
   onLeave,
   focusAfter
 }) {
-  const [shown2, setShown] = import_react43.useState(false);
-  const bar = import_react43.useRef(null);
+  const [shown2, setShown] = import_react44.useState(false);
+  const bar = import_react44.useRef(null);
   const links2 = plural2(offer.count, "link");
   const answer = (act) => () => {
     const inside = bar.current?.contains(document.activeElement) ?? false;
@@ -78352,7 +78421,7 @@ function floatOnRail(collapsed, closed) {
 }
 
 // src/kit/shell/ImageDescription.tsx
-var import_react44 = __toESM(require_react(), 1);
+var import_react45 = __toESM(require_react(), 1);
 var jsx_runtime46 = __toESM(require_jsx_runtime(), 1);
 var ICON = { user: Upload, web: Globe };
 function paragraphs(body) {
@@ -78362,7 +78431,7 @@ function openPage(href) {
   window.open(href, "_blank", "noopener,noreferrer");
 }
 function OriginMark({ description }) {
-  const [open, setOpen] = import_react44.useState(false);
+  const [open, setOpen] = import_react45.useState(false);
   const source = description.source;
   const amber = description.licenceUnknown === true;
   const Icon2 = source ? ICON[source] : TriangleAlert;
@@ -78450,7 +78519,7 @@ function ImageDescriptionPanel({
   onEdit,
   onAsk
 }) {
-  const [asked, setAsked] = import_react44.useState(false);
+  const [asked, setAsked] = import_react45.useState(false);
   if (!description)
     return /* @__PURE__ */ jsx_runtime46.jsxs("aside", {
       "data-slot": "image-description",
@@ -78548,7 +78617,7 @@ function ImageDescriptionPanel({
 }
 
 // src/kit/shell/ImageLinkedFrom.tsx
-var import_react45 = __toESM(require_react(), 1);
+var import_react46 = __toESM(require_react(), 1);
 var jsx_runtime47 = __toESM(require_jsx_runtime(), 1);
 function folderOf3(shown2) {
   const slash = shown2.lastIndexOf("/");
@@ -78558,7 +78627,7 @@ function ImageLinkedFrom({
   data,
   onOpen
 }) {
-  const [open, setOpen] = import_react45.useState(false);
+  const [open, setOpen] = import_react46.useState(false);
   if (!data || data.count === 0)
     return null;
   const label = `Linked from ${data.count === 1 ? "1 place" : `${data.count} places`}`;
@@ -78639,7 +78708,7 @@ function ImageLinkedFrom({
 }
 
 // src/kit/shell/ImageViewer.tsx
-var import_react47 = __toESM(require_react(), 1);
+var import_react48 = __toESM(require_react(), 1);
 
 // src/kit/lib/viewport.ts
 var ZOOM_MIN = 0.2;
@@ -78701,10 +78770,10 @@ function wheelView(view, e, cx2, cy, limits = MAP_ZOOM) {
 }
 
 // src/kit/shell/usePaneSize.ts
-var import_react46 = __toESM(require_react(), 1);
+var import_react47 = __toESM(require_react(), 1);
 function usePaneSize(ref) {
-  const [size4, setSize] = import_react46.useState(FALLBACK_SIZE);
-  import_react46.useLayoutEffect(() => {
+  const [size4, setSize] = import_react47.useState(FALLBACK_SIZE);
+  import_react47.useLayoutEffect(() => {
     const el = ref.current;
     if (!el)
       return;
@@ -78747,22 +78816,22 @@ function ImageViewer({
   aside,
   className
 }) {
-  const pane = import_react47.useRef(null);
+  const pane = import_react48.useRef(null);
   const paneSize = usePaneSize(pane);
-  const [natural, setNatural] = import_react47.useState(null);
-  const [failed, setFailed] = import_react47.useState(false);
-  import_react47.useEffect(() => {
+  const [natural, setNatural] = import_react48.useState(null);
+  const [failed, setFailed] = import_react48.useState(false);
+  import_react48.useEffect(() => {
     setNatural(null);
     setFailed(false);
   }, [src]);
   const fit = () => natural ? fitView(paneSize, natural, { ceil: 1, floor: IMAGE_ZOOM.min, limits: IMAGE_ZOOM }) : { k: 1, x: 0, y: 0 };
-  const [view, setView] = import_react47.useState({ k: 1, x: 0, y: 0 });
-  const viewRef = import_react47.useRef(view);
+  const [view, setView] = import_react48.useState({ k: 1, x: 0, y: 0 });
+  const viewRef = import_react48.useRef(view);
   viewRef.current = view;
-  import_react47.useLayoutEffect(() => {
+  import_react48.useLayoutEffect(() => {
     setView(fit());
   }, [paneSize.w, paneSize.h, natural?.w, natural?.h]);
-  import_react47.useEffect(() => {
+  import_react48.useEffect(() => {
     const el = pane.current;
     if (!el)
       return;
@@ -78776,8 +78845,8 @@ function ImageViewer({
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
   }, []);
-  const pan = import_react47.useRef(null);
-  const [panning, setPanning] = import_react47.useState(false);
+  const pan = import_react48.useRef(null);
+  const [panning, setPanning] = import_react48.useState(false);
   const zoomBy = (factor) => setView((v) => zoomAt(v, factor, paneSize.w / 2, paneSize.h / 2, IMAGE_ZOOM));
   const actualAt = (cx2, cy) => setView((v) => zoomAt(v, 1 / v.k, cx2, cy, IMAGE_ZOOM));
   const onKeyDown = (e) => {
@@ -78975,7 +79044,7 @@ function ImageViewer({
 }
 
 // src/kit/shell/LinkCheck.tsx
-var import_react48 = __toESM(require_react(), 1);
+var import_react49 = __toESM(require_react(), 1);
 var jsx_runtime49 = __toESM(require_jsx_runtime(), 1);
 var LINK_CHECK_PAUSE_MS = 1200;
 var LINK_CHECK_FALLBACK_MS = 300000;
@@ -79607,22 +79676,22 @@ function LinkCheck({
   onOpen,
   className
 }) {
-  const [data, setData] = import_react48.useState(null);
-  const [open, setOpen] = import_react48.useState(false);
-  const last2 = import_react48.useRef("");
-  const [pushed, setPushed] = import_react48.useState(0);
-  import_react48.useEffect(() => onFrame((f) => {
+  const [data, setData] = import_react49.useState(null);
+  const [open, setOpen] = import_react49.useState(false);
+  const last2 = import_react49.useRef("");
+  const [pushed, setPushed] = import_react49.useState(0);
+  import_react49.useEffect(() => onFrame((f) => {
     if (f.op === "context.changed")
       setPushed((n) => n + 1);
   }), [onFrame]);
-  const [tick, setTick] = import_react48.useState(0);
-  import_react48.useEffect(() => {
+  const [tick, setTick] = import_react49.useState(0);
+  import_react49.useEffect(() => {
     if (!connected)
       return;
     const i2 = setInterval(() => setTick((n) => n + 1), LINK_CHECK_FALLBACK_MS);
     return () => clearInterval(i2);
   }, [connected]);
-  import_react48.useEffect(() => {
+  import_react49.useEffect(() => {
     if (!connected)
       return;
     let current = true;
@@ -79801,7 +79870,7 @@ function waitingOnAgent(waiting, notes, agentListening, ended = false) {
 var LOUDNESS = ["stalled", "unheard", "working", "ended"];
 
 // src/kit/shell/SearchBox.tsx
-var import_react49 = __toESM(require_react(), 1);
+var import_react50 = __toESM(require_react(), 1);
 var jsx_runtime50 = __toESM(require_jsx_runtime(), 1);
 var SEARCH_DEBOUNCE_MS = 140;
 var ASK_LIMIT = 30;
@@ -79836,18 +79905,18 @@ function SearchBox({
   onOpen,
   className
 }) {
-  const [query, setQuery] = import_react49.useState("");
-  const [open, setOpen] = import_react49.useState(false);
-  const [report, setReport] = import_react49.useState(null);
-  const [failure, setFailure] = import_react49.useState(null);
-  const [active, setActive] = import_react49.useState(0);
-  const [focusSeq, setFocusSeq] = import_react49.useState(0);
-  const box = import_react49.useRef(null);
-  const field = import_react49.useRef(null);
-  const listId = import_react49.useId();
+  const [query, setQuery] = import_react50.useState("");
+  const [open, setOpen] = import_react50.useState(false);
+  const [report, setReport] = import_react50.useState(null);
+  const [failure, setFailure] = import_react50.useState(null);
+  const [active, setActive] = import_react50.useState(0);
+  const [focusSeq, setFocusSeq] = import_react50.useState(0);
+  const box = import_react50.useRef(null);
+  const field = import_react50.useRef(null);
+  const listId = import_react50.useId();
   const mac3 = onMac();
   const q2 = query.trim();
-  import_react49.useEffect(() => {
+  import_react50.useEffect(() => {
     const onKey = (e) => {
       if (!isSearchShortcut(e))
         return;
@@ -79859,13 +79928,13 @@ function SearchBox({
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
   }, []);
-  import_react49.useEffect(() => {
+  import_react50.useEffect(() => {
     if (focusSeq === 0)
       return;
     field.current?.focus();
     field.current?.select();
   }, [focusSeq]);
-  import_react49.useEffect(() => {
+  import_react50.useEffect(() => {
     const onDown = (e) => {
       if (box.current && !box.current.contains(e.target))
         setOpen(false);
@@ -79873,7 +79942,7 @@ function SearchBox({
     window.addEventListener("mousedown", onDown);
     return () => window.removeEventListener("mousedown", onDown);
   }, []);
-  import_react49.useEffect(() => {
+  import_react50.useEffect(() => {
     if (q2 === "") {
       setReport(null);
       setFailure(null);
@@ -79903,7 +79972,7 @@ function SearchBox({
   const grouped = groupResults(fresh?.results ?? []);
   const results = grouped.ordered;
   const showing = open && q2 !== "";
-  const choose = import_react49.useCallback((r2) => {
+  const choose = import_react50.useCallback((r2) => {
     setOpen(false);
     field.current?.blur();
     onOpen(r2);
@@ -79929,7 +79998,7 @@ function SearchBox({
         choose(r2);
     }
   };
-  import_react49.useEffect(() => {
+  import_react50.useEffect(() => {
     if (!showing)
       return;
     document.getElementById(`${listId}-${active}`)?.scrollIntoView?.({ block: "nearest" });
@@ -80178,7 +80247,7 @@ function Highlighted({ text: text4, from, to }) {
 }
 
 // src/kit/shell/SessionEnd.tsx
-var import_react50 = __toESM(require_react(), 1);
+var import_react51 = __toESM(require_react(), 1);
 var jsx_runtime51 = __toESM(require_jsx_runtime(), 1);
 var FIT = "grid-cols-[minmax(0,1fr)]";
 var WRAP = "wrap-anywhere";
@@ -80214,7 +80283,7 @@ function CopyCommand({
   command: command2,
   codeRef
 }) {
-  const [state, setState] = import_react50.useState("idle");
+  const [state, setState] = import_react51.useState("idle");
   const selectIt = () => {
     const code3 = codeRef.current;
     const sel = typeof window !== "undefined" ? window.getSelection() : null;
@@ -80250,7 +80319,7 @@ function CopyCommand({
   });
 }
 function EndedDetails({ command: command2, by }) {
-  const codeRef = import_react50.useRef(null);
+  const codeRef = import_react51.useRef(null);
   return /* @__PURE__ */ jsx_runtime51.jsxs("div", {
     "data-slot": "session-ended-details",
     className: cn("grid gap-3", FIT),
@@ -80279,7 +80348,7 @@ function SessionEndDialog({
   warning,
   finalFocus
 }) {
-  const codeRef = import_react50.useRef(null);
+  const codeRef = import_react51.useRef(null);
   return /* @__PURE__ */ jsx_runtime51.jsx(Dialog, {
     open: phase !== null,
     onOpenChange,
@@ -80400,7 +80469,7 @@ function EndedChip({
 }
 
 // src/kit/shell/SettingsDialog.tsx
-var import_react51 = __toESM(require_react(), 1);
+var import_react52 = __toESM(require_react(), 1);
 
 // src/kit/lib/imageImport.ts
 var IMAGE_PREF_KEYS = {
@@ -80476,19 +80545,19 @@ function SettingsDialog({
   send,
   connected
 }) {
-  const [draft, setDraft] = import_react51.useState(() => draftOf(prefs));
-  const [touched, setTouched] = import_react51.useState(() => new Set);
+  const [draft, setDraft] = import_react52.useState(() => draftOf(prefs));
+  const [touched, setTouched] = import_react52.useState(() => new Set);
   const edit = (field, change) => {
     setTouched((t2) => t2.has(field) ? t2 : new Set([...t2, field]));
     setDraft((d) => ({ ...d, ...change }));
   };
-  import_react51.useEffect(() => {
+  import_react52.useEffect(() => {
     if (!open)
       return;
     setDraft(draftOf(prefs));
     setTouched(new Set);
   }, [open]);
-  import_react51.useEffect(() => {
+  import_react52.useEffect(() => {
     if (!open)
       return;
     const now2 = draftOf(prefs);
@@ -80499,7 +80568,7 @@ function SettingsDialog({
       maxSide: touched.has("maxSide") ? d.maxSide : now2.maxSide
     }));
   }, [prefs]);
-  const ids = { quality: import_react51.useId(), capped: import_react51.useId(), maxSide: import_react51.useId() };
+  const ids = { quality: import_react52.useId(), capped: import_react52.useId(), maxSide: import_react52.useId() };
   const qualityWhy = imagePrefRefusal(IMAGE_PREF_KEYS.quality, draft.quality.trim());
   const maxSideWhy = draft.capped ? imagePrefRefusal(IMAGE_PREF_KEYS.maxSide, draft.maxSide.trim() || "x") : null;
   const valid = qualityWhy === null && maxSideWhy === null;
@@ -80726,7 +80795,7 @@ function ColumnButton({
   className,
   children
 }) {
-  const whyId = import_react52.useId();
+  const whyId = import_react53.useId();
   const why2 = disabled2 ? disabledReason2 : undefined;
   return /* @__PURE__ */ jsx_runtime53.jsxs(jsx_runtime53.Fragment, {
     children: [
@@ -80849,55 +80918,55 @@ function ShellBody({
   const { send } = daemon;
   const toasts = useToastStore();
   const restoreCommand = `${state.launcher ? `${state.launcher} ` : ""}open --restore ${state.sessionId}`;
-  const [endPhase, setEndPhase] = import_react52.useState(null);
+  const [endPhase, setEndPhase] = import_react53.useState(null);
   const ended = daemon.connection === "ended";
-  const endedBefore = import_react52.useRef(ended);
-  import_react52.useEffect(() => {
+  const endedBefore = import_react53.useRef(ended);
+  import_react53.useEffect(() => {
     if (ended && !endedBefore.current)
       setEndPhase("ended");
     endedBefore.current = ended;
   }, [ended]);
-  const [endNotice, setEndNotice] = import_react52.useState(null);
-  import_react52.useEffect(() => {
+  const [endNotice, setEndNotice] = import_react53.useState(null);
+  import_react53.useEffect(() => {
     if (endPhase === "ending" && daemon.connection !== "open" && !ended) {
       setEndPhase("confirm");
       setEndNotice(UNREACHABLE);
     }
   }, [endPhase, daemon.connection, ended]);
-  const chipRef = import_react52.useRef(null);
-  const [settingsOpen, setSettingsOpen] = import_react52.useState(false);
-  const [theme2, setThemeState] = import_react52.useState(() => readAppliedTheme());
-  const setTheme = import_react52.useCallback((next) => {
+  const chipRef = import_react53.useRef(null);
+  const [settingsOpen, setSettingsOpen] = import_react53.useState(false);
+  const [theme2, setThemeState] = import_react53.useState(() => readAppliedTheme());
+  const setTheme = import_react53.useCallback((next) => {
     applyTheme(next);
     setThemeState(next);
     storageProp?.setItem(THEME_KEY, next);
   }, [storageProp]);
   const themeKept = keptTheme(storageProp?.getItem(THEME_KEY));
-  import_react52.useEffect(() => {
+  import_react53.useEffect(() => {
     if (themeKept && themeKept !== readAppliedTheme()) {
       applyTheme(themeKept);
       setThemeState(themeKept);
     }
   }, [themeKept]);
-  const storage = import_react52.useMemo(() => storageProp ?? localShellStorage(storageKey), [storageProp, storageKey]);
-  const layoutStorage = import_react52.useMemo(() => guardedLayoutStorage(storage, "panes", PANES), [storage]);
+  const storage = import_react53.useMemo(() => storageProp ?? localShellStorage(storageKey), [storageProp, storageKey]);
+  const layoutStorage = import_react53.useMemo(() => guardedLayoutStorage(storage, "panes", PANES), [storage]);
   const layout = an({ id: "panes", panelIds: [...PANES], storage: layoutStorage });
-  const [collapsed, setCollapsed] = import_react52.useState(() => collapsedSides(layout.defaultLayout));
-  const collapsedRef = import_react52.useRef(collapsed);
+  const [collapsed, setCollapsed] = import_react53.useState(() => collapsedSides(layout.defaultLayout));
+  const collapsedRef = import_react53.useRef(collapsed);
   collapsedRef.current = collapsed;
-  const reopening = import_react52.useRef(new Set);
-  const openSizesRef = import_react52.useRef(decodeOpenSizes(readKept(storage.getItem, OPEN_KEY) ?? undefined));
+  const reopening = import_react53.useRef(new Set);
+  const openSizesRef = import_react53.useRef(decodeOpenSizes(readKept(storage.getItem, OPEN_KEY) ?? undefined));
   const contextPanel = fn();
   const chatPanel = fn();
-  const panelFor = import_react52.useCallback((side) => (side === "context" ? contextPanel : chatPanel).current, [contextPanel, chatPanel]);
-  const collapse = import_react52.useCallback((side) => {
+  const panelFor = import_react53.useCallback((side) => (side === "context" ? contextPanel : chatPanel).current, [contextPanel, chatPanel]);
+  const collapse = import_react53.useCallback((side) => {
     const panel = panelFor(side);
     if (!panel || panel.isCollapsed())
       return false;
     panel.collapse();
     return true;
   }, [panelFor]);
-  const expand = import_react52.useCallback((side) => {
+  const expand = import_react53.useCallback((side) => {
     const panel = panelFor(side);
     if (!panel?.isCollapsed())
       return false;
@@ -80942,12 +81011,12 @@ function ShellBody({
     else
       collapse(side);
   };
-  const focusNext = import_react52.useRef(null);
-  const toggleFrom = import_react52.useCallback((side, act, then) => {
+  const focusNext = import_react53.useRef(null);
+  const toggleFrom = import_react53.useCallback((side, act, then) => {
     const acted = act === "collapse" ? collapse(side) : expand(side);
     focusNext.current = acted ? then ?? `[data-column-control="${side}-${act === "collapse" ? "reopen" : "collapse"}"]` : null;
   }, [collapse, expand]);
-  import_react52.useEffect(() => {
+  import_react53.useEffect(() => {
     const sel = focusNext.current;
     if (!sel)
       return;
@@ -80957,7 +81026,7 @@ function ShellBody({
     focusNext.current = null;
     el.focus();
   });
-  const onLayoutChanged = import_react52.useCallback((next, meta2) => {
+  const onLayoutChanged = import_react53.useCallback((next, meta2) => {
     layout.onLayoutChanged(next, meta2);
     const panels2 = { context: contextPanel.current, chat: chatPanel.current };
     const now2 = collapsedFrom(next, panels2);
@@ -80977,46 +81046,46 @@ function ShellBody({
       storage.setItem(OPEN_KEY, encodeOpenSizes(remembered));
     }
   }, [layout, storage, contextPanel, chatPanel]);
-  const columns = import_react52.useMemo(() => ({
+  const columns = import_react53.useMemo(() => ({
     collapsed: { context: collapsed.context, chat: collapsed.chat },
     collapse: (side) => void collapse(side),
     expand: (side) => void expand(side)
   }), [collapsed.context, collapsed.chat, collapse, expand]);
-  const [quietWanted, setQuiet] = import_react52.useState(false);
+  const [quietWanted, setQuiet] = import_react53.useState(false);
   const quiet3 = quietWanted && !state.openImage;
   const fade = quiet3 ? QUIET_FADE : undefined;
   const newestMessage = lastMessageId(state.chat);
-  const [seenMessage, setSeenMessage] = import_react52.useState(newestMessage);
-  import_react52.useEffect(() => {
+  const [seenMessage, setSeenMessage] = import_react53.useState(newestMessage);
+  import_react53.useEffect(() => {
     if (!collapsed.chat && seenMessage !== newestMessage)
       setSeenMessage(newestMessage);
   }, [collapsed.chat, newestMessage, seenMessage]);
   const chatUnseen = collapsed.chat && unseenFromAgent(state.chat, seenMessage);
-  const [draft, setDraft] = import_react52.useState("");
-  const [floatClosed, setFloatClosedState] = import_react52.useState(() => decodeFloatClosed(readKept(storage.getItem, FLOAT_KEY)));
-  const setFloatClosed = import_react52.useCallback((closed) => {
+  const [draft, setDraft] = import_react53.useState("");
+  const [floatClosed, setFloatClosedState] = import_react53.useState(() => decodeFloatClosed(readKept(storage.getItem, FLOAT_KEY)));
+  const setFloatClosed = import_react53.useCallback((closed) => {
     setFloatClosedState(closed);
     storage.setItem(FLOAT_KEY, encodeFloatClosed(closed));
   }, [storage]);
-  const chatWasCollapsed = import_react52.useRef(collapsed.chat);
-  import_react52.useEffect(() => {
+  const chatWasCollapsed = import_react53.useRef(collapsed.chat);
+  import_react53.useEffect(() => {
     if (chatWasCollapsed.current && !collapsed.chat && floatClosed)
       setFloatClosed(false);
     chatWasCollapsed.current = collapsed.chat;
   }, [collapsed.chat, floatClosed, setFloatClosed]);
   const floating = floatShown(collapsed, floatClosed);
-  const [dock, setDock] = import_react52.useState(null);
+  const [dock, setDock] = import_react53.useState(null);
   const floatIcon = floatOnRail(collapsed, floatClosed);
   const sessionLabel = `session ${state.sessionId}${daemon.connection === "ended" ? " (ended)" : ""}`;
-  const focusPane = import_react52.useCallback((pane) => {
+  const focusPane = import_react53.useCallback((pane) => {
     if (pane === "context" && collapsed.context)
       expand("context");
     if (pane === "chat" && collapsed.chat)
       expand("chat");
     requestAnimationFrame(() => document.querySelector(`[data-pane="${pane}"]`)?.focus());
   }, [collapsed.context, collapsed.chat, expand]);
-  const showChatTab = import_react52.useRef(() => {});
-  const focusComposer = import_react52.useCallback(() => {
+  const showChatTab = import_react53.useRef(() => {});
+  const focusComposer = import_react53.useCallback(() => {
     if (floating) {
       requestAnimationFrame(() => document.querySelector(FLOAT_INPUT)?.focus());
       return;
@@ -81026,8 +81095,8 @@ function ShellBody({
     showChatTab.current();
     requestAnimationFrame(() => requestAnimationFrame(() => document.querySelector('[data-pane="chat"] [data-slot="composer-input"]')?.focus()));
   }, [collapsed.chat, expand, floating]);
-  const rootRef = import_react52.useRef(null);
-  import_react52.useEffect(() => {
+  const rootRef = import_react53.useRef(null);
+  import_react53.useEffect(() => {
     const onKey = (e) => {
       const root2 = rootRef.current;
       if (!root2)
@@ -81043,7 +81112,7 @@ function ShellBody({
         if (e.key === "[" || e.key === "]") {
           e.preventDefault();
           const side = e.key === "[" ? "context" : "chat";
-          const holds = document.activeElement?.closest(collapsed[side] ? `[data-column-control="${side}-reopen"]${side === "chat" ? ", [data-slot=chat-unseen]" : ""}` : `[data-pane="${side}"]`);
+          const holds2 = document.activeElement?.closest(collapsed[side] ? `[data-column-control="${side}-reopen"]${side === "chat" ? ", [data-slot=chat-unseen]" : ""}` : `[data-pane="${side}"]`);
           const act = collapsed[side] ? "expand" : "collapse";
           const inFloat = side === "chat" && document.activeElement?.closest('[data-slot="floating-composer"]');
           const inColumnInput = side === "chat" && document.activeElement?.closest(COLUMN_INPUT);
@@ -81051,7 +81120,7 @@ function ShellBody({
             toggleFrom(side, act, COLUMN_INPUT);
           else if (inColumnInput && act === "collapse" && !floatClosed)
             toggleFrom(side, act, FLOAT_INPUT);
-          else if (holds)
+          else if (holds2)
             toggleFrom(side, act);
           else if (act === "expand")
             expand(side);
@@ -81072,23 +81141,23 @@ function ShellBody({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [collapsed, collapse, expand, focusPane, toggleFrom, floatClosed]);
-  const openDoc = import_react52.useMemo(() => state.docs.find((d) => d.slug === state.openDoc) ?? null, [state.docs, state.openDoc]);
+  const openDoc = import_react53.useMemo(() => state.docs.find((d) => d.slug === state.openDoc) ?? null, [state.docs, state.openDoc]);
   const openImage = state.openImage ?? null;
-  const [rawMain, setRawMain] = import_react52.useState(null);
+  const [rawMain, setRawMain] = import_react53.useState(null);
   const openOriginal = openDoc?.original ?? null;
-  const rawRef = import_react52.useRef(rawMain);
+  const rawRef = import_react53.useRef(rawMain);
   rawRef.current = rawMain;
-  import_react52.useEffect(() => {
+  import_react53.useEffect(() => {
     if (rawRef.current !== null && openOriginal !== rawRef.current)
       setRawMain(null);
   }, [openOriginal]);
-  const [selection, setSelection] = import_react52.useState(null);
-  const [clearSeq, setClearSeq] = import_react52.useState(0);
-  const [reveal, setReveal] = import_react52.useState(null);
-  const revealSeq = import_react52.useRef(0);
-  const selectionRef = import_react52.useRef(selection);
+  const [selection, setSelection] = import_react53.useState(null);
+  const [clearSeq, setClearSeq] = import_react53.useState(0);
+  const [reveal, setReveal] = import_react53.useState(null);
+  const revealSeq = import_react53.useRef(0);
+  const selectionRef = import_react53.useRef(selection);
   selectionRef.current = selection;
-  const onSelectionEvent = import_react52.useCallback((event) => {
+  const onSelectionEvent = import_react53.useCallback((event) => {
     const { held, clearPaint } = applySelectionEvent(selectionRef.current, event);
     selectionRef.current = held;
     setSelection(held);
@@ -81101,13 +81170,13 @@ function ShellBody({
   }, []);
   const shownDoc = openDoc?.slug ?? null;
   const shownVersion = openDoc?.active ?? null;
-  import_react52.useEffect(() => {
+  import_react53.useEffect(() => {
     onSelectionEvent({ type: "shown", doc: shownDoc, version: shownVersion });
   }, [shownDoc, shownVersion, onSelectionEvent]);
-  const [pointedAt, setPointedAt] = import_react52.useState(null);
+  const [pointedAt, setPointedAt] = import_react53.useState(null);
   const focusedNote = pointedAt && pointedAt.doc === shownDoc && pointedAt.version === shownVersion ? pointedAt.id : null;
   const pickedState = focusedNote === null ? undefined : openDoc?.notes.find((n) => n.id === focusedNote)?.resolved;
-  import_react52.useEffect(() => {
+  import_react53.useEffect(() => {
     if (!pointedAt || pickedState === undefined)
       return;
     if (pickedState && !pointedAt.resolved)
@@ -81115,11 +81184,11 @@ function ShellBody({
     else if (!pickedState && pointedAt.resolved)
       setPointedAt({ ...pointedAt, resolved: false });
   }, [pickedState, pointedAt]);
-  const [showResolvedNotes, setShowResolvedNotes] = import_react52.useState(false);
+  const [showResolvedNotes, setShowResolvedNotes] = import_react53.useState(false);
   const connected = daemon.connection === "open";
-  const docsRef = import_react52.useRef(state.docs);
+  const docsRef = import_react53.useRef(state.docs);
   docsRef.current = state.docs;
-  import_react52.useEffect(() => {
+  import_react53.useEffect(() => {
     if (!connected)
       return;
     if (!selection) {
@@ -81142,30 +81211,30 @@ function ShellBody({
       }
     });
   }, [selection, send, connected]);
-  const [pointedDocs, setPointedDocs] = import_react52.useState(null);
-  const reportSelection = import_react52.useCallback((s) => {
+  const [pointedDocs, setPointedDocs] = import_react53.useState(null);
+  const reportSelection = import_react53.useCallback((s) => {
     if (s.from !== s.to)
       setPointedDocs(null);
     onSelectionEvent({ type: "report", selection: s });
   }, [onSelectionEvent]);
-  const dropSelection = import_react52.useCallback(() => onSelectionEvent({ type: "drop" }), [onSelectionEvent]);
-  const pointDocs = import_react52.useCallback((p) => {
+  const dropSelection = import_react53.useCallback(() => onSelectionEvent({ type: "drop" }), [onSelectionEvent]);
+  const pointDocs = import_react53.useCallback((p) => {
     const next = p && (p.docs.length > 0 || p.label) ? p : null;
     if (next && selectionRef.current)
       onSelectionEvent({ type: "drop" });
     setPointedDocs(next);
   }, [onSelectionEvent]);
-  const [treeSelected, setTreeSelected] = import_react52.useState([]);
-  const [addedRefs, setAddedRefs] = import_react52.useState([]);
-  const addRef = import_react52.useCallback((ref) => setAddedRefs((rs) => rs.some((r2) => r2.path === ref.path) ? rs : [...rs, ref]), []);
-  const removeRef = import_react52.useCallback((path2) => setAddedRefs((rs) => rs.filter((r2) => r2.path !== path2)), []);
-  const clearRefs = import_react52.useCallback(() => setAddedRefs([]), []);
-  const requestReveal = import_react52.useCallback((target) => {
+  const [treeSelected, setTreeSelected] = import_react53.useState([]);
+  const [addedRefs, setAddedRefs] = import_react53.useState([]);
+  const addRef = import_react53.useCallback((ref) => setAddedRefs((rs) => rs.some((r2) => r2.path === ref.path) ? rs : [...rs, ref]), []);
+  const removeRef = import_react53.useCallback((path2) => setAddedRefs((rs) => rs.filter((r2) => r2.path !== path2)), []);
+  const clearRefs = import_react53.useCallback(() => setAddedRefs([]), []);
+  const requestReveal = import_react53.useCallback((target) => {
     setReveal({ ...target, seq: ++revealSeq.current });
   }, []);
-  const revealApplied = import_react52.useCallback((seq2) => setReveal((r2) => revealAfter(r2, { type: "applied", seq: seq2 })), []);
-  const [pendingShow, setPendingShow] = import_react52.useState(null);
-  const openAt = import_react52.useCallback((path2, at2) => {
+  const revealApplied = import_react53.useCallback((seq2) => setReveal((r2) => revealAfter(r2, { type: "applied", seq: seq2 })), []);
+  const [pendingShow, setPendingShow] = import_react53.useState(null);
+  const openAt = import_react53.useCallback((path2, at2) => {
     if (openDoc && openDoc.original === path2) {
       setPendingShow(null);
       if (at2)
@@ -81175,7 +81244,7 @@ function ShellBody({
     setPendingShow(at2 ? { path: path2, from: at2.from, to: at2.to, since: openDoc?.original ?? null } : null);
     send({ op: "open", path: path2 });
   }, [send, requestReveal, openDoc]);
-  const openResult = import_react52.useCallback((r2) => {
+  const openResult = import_react53.useCallback((r2) => {
     if (r2.image) {
       setPendingShow(null);
       send({ op: "open", path: r2.image });
@@ -81183,7 +81252,7 @@ function ShellBody({
     }
     openAt(r2.path, r2.kind === "text" && r2.from !== undefined && r2.to !== undefined ? { from: r2.from, to: r2.to } : undefined);
   }, [openAt, send]);
-  import_react52.useEffect(() => {
+  import_react53.useEffect(() => {
     if (!pendingShow)
       return;
     if (openDoc?.original !== pendingShow.path) {
@@ -81200,11 +81269,11 @@ function ShellBody({
       ...pendingShow.heading ? { heading: pendingShow.heading } : {}
     });
   }, [pendingShow, openDoc, requestReveal]);
-  const openDocRef = import_react52.useRef(openDoc);
+  const openDocRef = import_react53.useRef(openDoc);
   openDocRef.current = openDoc;
   const { onFrame: onDaemonFrame } = daemon;
   const { announce: announceToast } = toasts;
-  import_react52.useEffect(() => onDaemonFrame((frame) => {
+  import_react53.useEffect(() => onDaemonFrame((frame) => {
     if (frame.op !== "link.target")
       return;
     const f = frame;
@@ -81221,10 +81290,10 @@ function ShellBody({
       since: openDocRef.current?.original ?? null
     });
   }), [onDaemonFrame, announceToast]);
-  const [imageLinks, setImageLinks] = import_react52.useState(null);
+  const [imageLinks, setImageLinks] = import_react53.useState(null);
   const openImagePath = openImage?.path ?? null;
   const { request } = daemon;
-  import_react52.useEffect(() => {
+  import_react53.useEffect(() => {
     if (openImagePath === null) {
       setImageLinks(null);
       return;
@@ -81245,21 +81314,21 @@ function ShellBody({
     };
   }, [openImagePath, request, state]);
   const { lastError, lastErrorTitle, lastErrorSeq, clearError, done } = daemon;
-  const endedToastAt = import_react52.useRef(0);
-  import_react52.useEffect(() => {
+  const endedToastAt = import_react53.useRef(0);
+  import_react53.useEffect(() => {
     if (lastError)
       setPendingShow(null);
   }, [lastError]);
   const noticeOwned = notice !== undefined;
-  const ownedToast = import_react52.useRef(null);
+  const ownedToast = import_react53.useRef(null);
   const { dismiss: dismissToast } = toasts;
-  const letOwnedToastGo = import_react52.useCallback(() => {
+  const letOwnedToastGo = import_react53.useCallback(() => {
     if (ownedToast.current === null)
       return;
     dismissToast(ownedToast.current);
     ownedToast.current = null;
   }, [dismissToast]);
-  import_react52.useEffect(() => {
+  import_react53.useEffect(() => {
     if (!lastError)
       return;
     if (noticeOwned && lastError !== SESSION_ENDED) {
@@ -81278,7 +81347,7 @@ function ShellBody({
     clearError();
   }, [lastError, lastErrorSeq, lastErrorTitle, clearError, toasts, noticeOwned, letOwnedToastGo]);
   const linkRefused = lastError !== null && lastErrorTitle === LINK_REFUSED;
-  import_react52.useEffect(() => {
+  import_react53.useEffect(() => {
     if (!linkRefused)
       return;
     const onKey = (e) => {
@@ -81288,19 +81357,19 @@ function ShellBody({
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [linkRefused, clearError]);
-  import_react52.useEffect(() => {
+  import_react53.useEffect(() => {
     if (!lastError || !collapsed.context)
       letOwnedToastGo();
   }, [lastError, collapsed.context, letOwnedToastGo]);
-  const moved = import_react52.useMemo(() => done?.of === "move" ? { path: done.path, seq: done.seq } : null, [done]);
-  const created = import_react52.useMemo(() => done && (done.of === "doc.create" || done.of === "folder.create" || done.of === "bundle.create") ? { path: done.path, seq: done.seq } : null, [done]);
-  import_react52.useEffect(() => {
+  const moved = import_react53.useMemo(() => done?.of === "move" ? { path: done.path, seq: done.seq } : null, [done]);
+  const created = import_react53.useMemo(() => done && (done.of === "doc.create" || done.of === "folder.create" || done.of === "bundle.create") ? { path: done.path, seq: done.seq } : null, [done]);
+  import_react53.useEffect(() => {
     if (done?.stay === "rename")
       return;
     if (done?.of === "doc.create" || done?.of === "bundle.create")
       send({ op: "open", path: done.path });
   }, [done, send]);
-  const workspace = import_react52.useMemo(() => ({
+  const workspace = import_react53.useMemo(() => ({
     daemon,
     state,
     openDoc,
@@ -81368,7 +81437,7 @@ function ShellBody({
   } : null;
   const userHome = state.userHome || null;
   const contextEntries = state.context;
-  const askDescribe = import_react52.useCallback((path2) => {
+  const askDescribe = import_react53.useCallback((path2) => {
     const set2 = contextEntries.find((e) => e.membership === "mirrored" && path2.startsWith(`${e.root}/`));
     const shown2 = set2 ? `${set2.label}/${path2.slice(set2.root.length + 1)}` : tildify(path2, userHome);
     send({
@@ -81379,7 +81448,7 @@ function ShellBody({
       about: { path: path2 }
     });
   }, [send, userHome, contextEntries]);
-  import_react52.useEffect(() => {
+  import_react53.useEffect(() => {
     setTreeSelected((rows) => {
       if (rows.length === 0)
         return rows;
@@ -81453,12 +81522,12 @@ function ShellBody({
   const openNotes = notes.filter((n) => !n.resolved);
   const tasks = state.tasks;
   const outstanding = tasks.filter((t2) => !isFinishedStatus(t2.status));
-  const docName = import_react52.useCallback((slug) => state.docs.find((d) => d.slug === slug)?.name ?? slug, [state.docs]);
-  const pathName = import_react52.useCallback((path2) => bundleLabelAt(state.context, path2) ?? pathLabel(path2), [state.context]);
+  const docName = import_react53.useCallback((slug) => state.docs.find((d) => d.slug === slug)?.name ?? slug, [state.docs]);
+  const pathName = import_react53.useCallback((path2) => bundleLabelAt(state.context, path2) ?? pathLabel(path2), [state.context]);
   const heldHere = selection && openDoc && selection.doc === openDoc.slug && selection.version === openDoc.active ? selection : null;
   const agentListening = state.agentListening !== false;
   const owedNotes = state.notesWaiting ?? [];
-  const [askPressed, setAskPressed] = import_react52.useState(() => new Map);
+  const [askPressed, setAskPressed] = import_react53.useState(() => new Map);
   const notesAsked = askedAbout(owedNotes, state.docs, state.chat);
   if (daemon.connection === "open") {
     for (const [id, at2] of askPressed)
@@ -81482,7 +81551,7 @@ function ShellBody({
     if (sent !== null)
       setAskPressed((p) => new Map(p).set(noteId, state.chat.length));
   } : undefined;
-  const noteReplies = import_react52.useMemo(() => repliesByNote(state.chat), [state.chat]);
+  const noteReplies = import_react53.useMemo(() => repliesByNote(state.chat), [state.chat]);
   const noteName = (noteId) => {
     for (const d of state.docs) {
       const n = d.notes.find((x) => x.id === noteId);
@@ -81516,7 +81585,7 @@ function ShellBody({
   const pointedLabel2 = pointedDocs?.label ?? null;
   const dropPointed = () => pointDocs(null);
   const activePath = openDoc?.versions.find((v) => v.n === openDoc.active)?.path;
-  const treeRefs = import_react52.useMemo(() => rowRefs(state.context, treeSelected), [state.context, treeSelected]);
+  const treeRefs = import_react53.useMemo(() => rowRefs(state.context, treeSelected), [state.context, treeSelected]);
   const parts = messageParts({
     selection: attachable !== null && !pointedDocs,
     pointed: pointedDocs?.inAppPart ? [] : pointedDocs?.docs ?? [],
@@ -81692,7 +81761,7 @@ function ShellBody({
     ...panels
   ];
   const TAB_KEY = "tab";
-  const [panelId, setPanelIdState] = import_react52.useState(() => storage.getItem(TAB_KEY));
+  const [panelId, setPanelIdState] = import_react53.useState(() => storage.getItem(TAB_KEY));
   const setPanelId = (id) => {
     setPanelIdState(id);
     storage.setItem(TAB_KEY, id);
@@ -82488,10 +82557,10 @@ function scriptoriumTextOffer(daemon, noFrontmatter) {
 }
 
 // src/scriptorium/surface/useMapView.tsx
-var import_react55 = __toESM(require_react(), 1);
+var import_react56 = __toESM(require_react(), 1);
 
 // src/scriptorium/surface/MapView.tsx
-var import_react54 = __toESM(require_react(), 1);
+var import_react55 = __toESM(require_react(), 1);
 
 // node_modules/d3-force/src/center.js
 function center_default(x, y) {
@@ -83465,14 +83534,14 @@ function manyBody_default() {
   return force;
 }
 // src/scriptorium/surface/forceLayout.ts
-var import_react53 = __toESM(require_react(), 1);
+var import_react54 = __toESM(require_react(), 1);
 var bodyRadius = (linksIn) => 5 + Math.min(11, Math.sqrt(linksIn) * 2.4);
 function useForceLayout(nodes, edges, size4, enabled) {
-  const [positions, setPositions] = import_react53.useState(new Map);
-  const sim = import_react53.useRef(null);
-  const bodies = import_react53.useRef(new Map);
-  const [dragging, setDragging] = import_react53.useState(null);
-  import_react53.useEffect(() => {
+  const [positions, setPositions] = import_react54.useState(new Map);
+  const sim = import_react54.useRef(null);
+  const bodies = import_react54.useRef(new Map);
+  const [dragging, setDragging] = import_react54.useState(null);
+  import_react54.useEffect(() => {
     if (!enabled || nodes.length === 0) {
       sim.current?.stop();
       sim.current = null;
@@ -83495,7 +83564,7 @@ function useForceLayout(nodes, edges, size4, enabled) {
       simulation.stop();
     };
   }, [nodes, edges, size4.width, size4.height, enabled]);
-  const onDragStart = import_react53.useCallback((path2, at2) => {
+  const onDragStart = import_react54.useCallback((path2, at2) => {
     const body = bodies.current.get(path2);
     if (!body)
       return;
@@ -83504,7 +83573,7 @@ function useForceLayout(nodes, edges, size4, enabled) {
     body.fy = at2.y;
     sim.current?.alphaTarget(0.3).restart();
   }, []);
-  const onDragMove = import_react53.useCallback((at2) => {
+  const onDragMove = import_react54.useCallback((at2) => {
     if (!dragging)
       return;
     const body = bodies.current.get(dragging);
@@ -83513,7 +83582,7 @@ function useForceLayout(nodes, edges, size4, enabled) {
     body.fx = at2.x;
     body.fy = at2.y;
   }, [dragging]);
-  const onDragEnd = import_react53.useCallback(() => {
+  const onDragEnd = import_react54.useCallback(() => {
     if (!dragging)
       return;
     const body = bodies.current.get(dragging);
@@ -83589,10 +83658,10 @@ function MapView({
   onOpenDoc,
   onClose
 }) {
-  const root2 = import_react54.useRef(null);
-  const close = import_react54.useRef(onClose);
+  const root2 = import_react55.useRef(null);
+  const close = import_react55.useRef(onClose);
   close.current = onClose;
-  import_react54.useEffect(() => {
+  import_react55.useEffect(() => {
     const onKey = (e) => {
       if (e.key !== "Escape" || e.defaultPrevented)
         return;
@@ -83607,15 +83676,15 @@ function MapView({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
-  const [hover, setHover] = import_react54.useState(null);
-  const [alwaysEdges, setAlwaysEdges] = import_react54.useState(null);
-  const { placed, width, height, headings } = import_react54.useMemo(() => graph ? layout(graph.nodes) : { placed: [], width: 0, height: 0, headings: new Map }, [graph]);
-  const at2 = import_react54.useMemo(() => new Map(placed.map((p) => [p.path, p])), [placed]);
-  const drawn = import_react54.useMemo(() => (graph?.edges ?? []).filter((e) => at2.has(e.from) && at2.has(e.to)), [graph, at2]);
+  const [hover, setHover] = import_react55.useState(null);
+  const [alwaysEdges, setAlwaysEdges] = import_react55.useState(null);
+  const { placed, width, height, headings } = import_react55.useMemo(() => graph ? layout(graph.nodes) : { placed: [], width: 0, height: 0, headings: new Map }, [graph]);
+  const at2 = import_react55.useMemo(() => new Map(placed.map((p) => [p.path, p])), [placed]);
+  const drawn = import_react55.useMemo(() => (graph?.edges ?? []).filter((e) => at2.has(e.from) && at2.has(e.to)), [graph, at2]);
   const links2 = drawn.reduce((sum, e) => sum + e.count, 0);
   const dense = links2 > DENSE_EDGES;
   const showAll = alwaysEdges ?? !dense;
-  const connected = import_react54.useMemo(() => {
+  const connected = import_react55.useMemo(() => {
     if (!hover)
       return null;
     const set3 = new Set([hover]);
@@ -83629,7 +83698,7 @@ function MapView({
   }, [hover, drawn]);
   const lit = (path2) => connected === null || connected.has(path2);
   const forceSize = { width: 1500, height: 1000 };
-  const force = useForceLayout(import_react54.useMemo(() => (graph?.nodes ?? []).map((n) => ({ path: n.path, linksIn: n.linksIn })), [graph]), import_react54.useMemo(() => drawn.map((e) => ({ from: e.from, to: e.to })), [drawn]), forceSize, mode === "force");
+  const force = useForceLayout(import_react55.useMemo(() => (graph?.nodes ?? []).map((n) => ({ path: n.path, linksIn: n.linksIn })), [graph]), import_react55.useMemo(() => drawn.map((e) => ({ from: e.from, to: e.to })), [drawn]), forceSize, mode === "force");
   return /* @__PURE__ */ jsx_runtime55.jsxs("div", {
     ref: root2,
     "data-slot": "map",
@@ -83890,7 +83959,7 @@ function ForceCanvas({
   showAll,
   onOpen
 }) {
-  const svg = import_react54.useRef(null);
+  const svg = import_react55.useRef(null);
   const { positions, onDragStart, onDragMove, onDragEnd, dragging } = force;
   const at2 = (e) => {
     const box = svg.current?.getBoundingClientRect();
@@ -84038,12 +84107,12 @@ var MAP_VIEW = "scriptorium.map";
 var MAP_LABEL = "Show the map of this set";
 var messageOf = (e) => e instanceof Error ? e.message : String(e);
 function useMapView(daemon) {
-  const [showing, setShowing] = import_react55.useState(null);
-  const [active, setActive] = import_react55.useState(false);
-  const [mode, setMode] = import_react55.useState("columns");
+  const [showing, setShowing] = import_react56.useState(null);
+  const [active, setActive] = import_react56.useState(false);
+  const [mode, setMode] = import_react56.useState("columns");
   const { request, send, state } = daemon;
-  const asked = import_react55.useRef(0);
-  const fetch2 = import_react55.useCallback((entry2) => {
+  const asked = import_react56.useRef(0);
+  const fetch2 = import_react56.useCallback((entry2) => {
     const seq2 = ++asked.current;
     setShowing({ entryId: entry2.id, graph: null });
     const keep = (next) => {
@@ -84057,18 +84126,18 @@ function useMapView(daemon) {
   }, [request]);
   const entry = showing ? state?.context.find((e) => e.id === showing.entryId) : undefined;
   const gone = showing !== null && state !== null && entry === undefined;
-  import_react55.useEffect(() => {
+  import_react56.useEffect(() => {
     if (!gone)
       return;
     asked.current++;
     setShowing(null);
     setActive(false);
   }, [gone]);
-  const show = import_react55.useCallback((e) => {
+  const show = import_react56.useCallback((e) => {
     fetch2(e);
     setActive(true);
   }, [fetch2]);
-  const appView = import_react55.useMemo(() => {
+  const appView = import_react56.useMemo(() => {
     if (!showing || !entry)
       return;
     return {
@@ -84098,7 +84167,7 @@ function useMapView(daemon) {
       })
     };
   }, [showing, entry, active, mode, fetch2, send]);
-  const menuActions = import_react55.useCallback(({ kind, entry: entry2 }) => kind === "entry" && entry2 && !singleDoc(entry2) ? [
+  const menuActions = import_react56.useCallback(({ kind, entry: entry2 }) => kind === "entry" && entry2 && !singleDoc(entry2) ? [
     {
       id: MAP_VIEW,
       label: MAP_LABEL,
@@ -84208,18 +84277,18 @@ function scriptoriumEndWarning(state) {
 }
 function Frame({ daemon }) {
   const { state, send } = daemon;
-  const prefs = import_react56.useRef(state?.prefs ?? NO_PREFS);
+  const prefs = import_react57.useRef(state?.prefs ?? NO_PREFS);
   prefs.current = state?.prefs ?? NO_PREFS;
-  const connection = import_react56.useRef(daemon.connection);
+  const connection = import_react57.useRef(daemon.connection);
   connection.current = daemon.connection;
-  const sendRef = import_react56.useRef(send);
+  const sendRef = import_react57.useRef(send);
   sendRef.current = send;
-  const storage = import_react56.useMemo(() => prefsStorage({
+  const storage = import_react57.useMemo(() => prefsStorage({
     read: () => prefs.current,
     write: (key, value) => sendRef.current({ op: "prefs.set", key, value }),
     ended: () => connection.current === "ended"
   }), []);
-  import_react56.useEffect(() => {
+  import_react57.useEffect(() => {
     const flush = () => storage.flush();
     window.addEventListener("pagehide", flush);
     return () => {
@@ -84227,15 +84296,15 @@ function Frame({ daemon }) {
       flush();
     };
   }, [storage]);
-  const hints = import_react56.useRef(new Map);
-  import_react56.useEffect(() => daemon.onFrame((f) => {
+  const hints = import_react57.useRef(new Map);
+  import_react57.useEffect(() => daemon.onFrame((f) => {
     if (f.op === "error" && typeof f.hint === "string" && typeof f.message === "string")
       hints.current.set(f.message, f.hint);
   }), [daemon.onFrame]);
   const userHome = state?.userHome || null;
-  const beforeMove = import_react56.useMemo(() => scriptoriumBeforeMove(daemon, { userHome }), [daemon.request, userHome]);
+  const beforeMove = import_react57.useMemo(() => scriptoriumBeforeMove(daemon, { userHome }), [daemon.request, userHome]);
   const noBlock = noFrontmatterOf(state);
-  const textOffer = import_react56.useMemo(() => scriptoriumTextOffer(daemon, noBlock), [daemon.request, noBlock]);
+  const textOffer = import_react57.useMemo(() => scriptoriumTextOffer(daemon, noBlock), [daemon.request, noBlock]);
   const ask = useAskLocation({
     entries: state?.context ?? NO_ENTRIES,
     userHome,
@@ -84246,12 +84315,12 @@ function Frame({ daemon }) {
     hint: MAKE_ROOM
   });
   const docMeta = docMetaOf(state);
-  const rowMarker = import_react56.useMemo(() => scriptoriumRowMarker(docMeta), [docMeta]);
+  const rowMarker = import_react57.useMemo(() => scriptoriumRowMarker(docMeta), [docMeta]);
   const map2 = useMapView(daemon);
   const hidden = state ? hiddenOf(state) : null;
-  const menuActions = import_react56.useCallback((t2) => [...scriptoriumMenuActions(send, hidden ?? {})(t2), ...map2.menuActions(t2)], [send, hidden, map2.menuActions]);
-  const [showDiff, setShowDiff] = import_react56.useState(null);
-  const requestDiff = import_react56.useCallback((doc2, against) => setShowDiff((was) => ({ doc: doc2, version: against, seq: (was?.seq ?? 0) + 1 })), []);
+  const menuActions = import_react57.useCallback((t2) => [...scriptoriumMenuActions(send, hidden ?? {})(t2), ...map2.menuActions(t2)], [send, hidden, map2.menuActions]);
+  const [showDiff, setShowDiff] = import_react57.useState(null);
+  const requestDiff = import_react57.useCallback((doc2, against) => setShowDiff((was) => ({ doc: doc2, version: against, seq: (was?.seq ?? 0) + 1 })), []);
   const notice = daemon.lastError ? [daemon.lastError, hints.current.get(daemon.lastError)].filter(Boolean).join(". To go on: ") : null;
   return /* @__PURE__ */ jsx_runtime57.jsx(WorkspaceShell, {
     daemon,
