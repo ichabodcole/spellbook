@@ -4158,7 +4158,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       }
       const key = cmd.doc ?? session.openDocSlug;
       if (!key) throw new SessionError("no document is open: name one with --doc", 409);
-      const d = session.doc(slugOf(key));
+      const d = session.doc(slugOf(key), { takesPath: true });
 
       let target: ShowTarget;
       let said: string;

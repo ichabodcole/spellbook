@@ -1936,7 +1936,12 @@ export class WorkspaceSession {
     return join(this.docsDir, d.slug, `v${n}${d.ext}`);
   }
 
-  private docOrDie(slug?: string): Doc {
+  /**
+   * `takesPath`: the verb asking takes the absolute path of any document in
+   * the context, open or not (`version-new` and `show` open it; the link
+   * questions read it), so such a path is a choice too.
+   */
+  private docOrDie(slug?: string, opts: { takesPath?: boolean } = {}): Doc {
     const want = slug ?? this.m.openDoc ?? undefined;
     // A document's alias names it too (`--doc touchstones`), so it is a choice.
     const opened = this.m.docs.flatMap((d) => {
@@ -1956,8 +1961,42 @@ export class WorkspaceSession {
     if (want === undefined)
       throw new SessionError("no document is open: name one with --doc", 409, choices, hint);
     const d = this.findDoc(want);
-    if (!d) throw new SessionError(`no document "${want}" in this session`, 404, choices, hint);
+    if (!d) {
+      // A filename (or set-relative path) that names a document the context
+      // shows but nothing has opened: the refusal names where it is, since a
+      // filename only resolves once a document is open.
+      const unopened = isAbsolute(want) ? [] : this.unopenedNamed(want);
+      if (unopened.length > 0)
+        throw new SessionError(
+          `no document "${want}" in this session`,
+          404,
+          opts.takesPath ? [...unopened, ...choices.filter((c) => !unopened.includes(c))] : choices,
+          `${want} is in the context but not open, at ${unopened.join(" or ")}: ${
+            opts.takesPath
+              ? "pass that absolute path to --doc"
+              : "open it first (version-new --doc <that path> opens it), then name it here"
+          }`,
+        );
+      throw new SessionError(`no document "${want}" in this session`, 404, choices, hint);
+    }
     return d;
+  }
+
+  /**
+   * The documents the context shows, not held by the session, that a name
+   * given to `--doc` means: by filename, or by the path from its set's root.
+   * At most 20, in context order.
+   */
+  private unopenedNamed(name: string): string[] {
+    const held = new Set(this.m.docs.map((d) => d.original));
+    const out: string[] = [];
+    for (const e of this.m.context)
+      for (const p of docPaths(e)) {
+        if (held.has(p) || out.includes(p)) continue;
+        if (basename(p) === name || toPosix(relative(e.root, p)) === name) out.push(p);
+        if (out.length >= 20) return out;
+      }
+    return out;
   }
 
   /**
@@ -2323,7 +2362,7 @@ export class WorkspaceSession {
     slug: string;
     version: Version & { path: string };
   } {
-    const d = this.docOrDie(opts.doc);
+    const d = this.docOrDie(opts.doc, { takesPath: true });
     const from = opts.from ?? d.active;
     this.versionOrDie(d, from);
     const text = opts.body ?? readFileSync(this.versionPath(d, from), "utf8");
@@ -6105,8 +6144,9 @@ export class WorkspaceSession {
     };
   }
 
-  doc(slug: string): DocView {
-    return this.docView(this.docOrDie(slug));
+  /** `takesPath`: as `docOrDie`'s, for a verb that takes an absolute path (`show`). */
+  doc(slug: string, opts: { takesPath?: boolean } = {}): DocView {
+    return this.docView(this.docOrDie(slug, opts));
   }
 
   /**
@@ -7998,7 +8038,7 @@ export class WorkspaceSession {
       // the graph and the profile never do (they read text).
       if (opts.images && index.images.has(own)) return { doc: null, path: own };
     }
-    const d = this.docOrDie(key);
+    const d = this.docOrDie(key, { takesPath: true });
     return { doc: d.slug, path: this.canonical(d.original, index) };
   }
 

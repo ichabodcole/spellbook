@@ -199,7 +199,10 @@ edit, which is the racy two-step form.
 ALREADY open.** For anything else it must be an absolute path — a filename gets
 you `no document "keeper.md" in this session`. `state` lists what is open
 (`docs[].slug`, each with its `original` path) and what is merely in the
-context. The refusal's `choices` are the open documents' slugs.
+context. The refusal's `choices` are the open documents' slugs; when the
+filename names a context document that is not open, its `hint` gives that
+document's absolute path, and for a verb that takes a path (`version-new`,
+`show`, `backlinks`, `profile`, `graph --focus`) the path is in `choices` too.
 
 **The path `version-new` prints is never the active one when it is made** — but
 the human can activate it a moment later, which is why the one-step

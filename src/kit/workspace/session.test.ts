@@ -192,6 +192,34 @@ describe("documents and versions", () => {
     expect(noVersion.choices).toEqual(["v1"]);
   });
 
+  test("a filename naming a context document that is not open: the hint names its path; a verb that takes a path offers it", () => {
+    const s = inContext();
+    const { slug } = s.openPath(join(docs, "solo.md"));
+    const other = join(docs, "sibling.md");
+    // version-new takes (and opens) an absolute path from the context: a choice.
+    const opens = refusal(() => s.newVersion({ doc: "sibling.md", by: "agent" }));
+    expect(opens.status).toBe(404);
+    expect(opens.message).toBe('no document "sibling.md" in this session');
+    expect(opens.choices).toEqual([other, slug]);
+    expect(opens.hint).toContain(other);
+    expect(opens.hint).toContain("pass that absolute path to --doc");
+    // `show` goes through `doc(…, { takesPath: true })` the same way, and a
+    // link question (`backlinks`), which reads a path it does not open.
+    expect(refusal(() => s.doc("sibling.md", { takesPath: true })).choices).toEqual([other, slug]);
+    expect(refusal(() => s.backlinks("sibling.md")).choices).toEqual([other, slug]);
+    // A verb that needs the document open names the path, not as a choice.
+    const needsOpen = refusal(() => s.activate({ doc: "sibling.md", version: 1 }));
+    expect(needsOpen.choices).toEqual([slug]);
+    expect(needsOpen.hint).toContain(other);
+    expect(needsOpen.hint).toContain("open it first");
+    // The path from its set's root names it too.
+    expect(refusal(() => s.activate({ doc: "set/part/b.md", version: 1 })).hint).toContain(
+      join(docs, "set", "part", "b.md"),
+    );
+    // A name the context does not show keeps the plain refusal.
+    expect(refusal(() => s.activate({ doc: "missing.md", version: 1 })).hint).toBeUndefined();
+  });
+
   test("a doc is found by slug, by original path, or by a unique basename", () => {
     const s = inContext();
     const { slug } = s.openPath(join(docs, "set", "a.md"));

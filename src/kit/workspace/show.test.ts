@@ -157,6 +157,15 @@ describe("show", () => {
     expect(s.state.docs.some((d) => d.slug === "b")).toBe(false);
   });
 
+  test("a filename of a context document not open: the refusal offers its absolute path", async () => {
+    const { base } = await start();
+    const r = await cmd(base, { op: "show", doc: "solo.md", quote: "Solo" });
+    expect(r.status).toBe(404);
+    const solo = join(docs, "solo.md");
+    expect(r.body.choices).toEqual([solo, "a"]);
+    expect(String(r.body.hint)).toContain(solo);
+  });
+
   test("nobody watching is said in the answer", async () => {
     const { s, base } = await start();
     s.close();
