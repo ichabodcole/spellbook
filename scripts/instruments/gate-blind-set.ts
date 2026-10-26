@@ -186,6 +186,12 @@ import { join } from "node:path";
 // fixture names what it is replacing.
 const SKILLS_DIR = process.env.SKILLS_DIR ?? join("plugins", "spellbook", "skills");
 const SRC_DIR = process.env.SRC_DIR ?? "src";
+// ⚠ NOT `plugins/unreleased/skills/` (`src/deployRoots.ts`, mind-mapper since
+// 2026-10-25). Measured when it was created: it holds `scripts/*.ts`, `acc*.json`,
+// a generated `dist/` and a README — every file gated, generated or a doc, so
+// its blind set is empty by construction. Adding it here means a third root
+// with its own override and its own mutation arm in `gate-honesty.test.ts`;
+// do that the day a spell held there carries a file biome cannot read.
 const ROOTS = [SKILLS_DIR, SRC_DIR];
 
 const BINARY = /\.(webp|png|jpg|jpeg|gif|svg|ico)$/;

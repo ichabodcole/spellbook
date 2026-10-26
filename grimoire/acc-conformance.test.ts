@@ -69,17 +69,10 @@
 //      NAMES in `choices`: a flag the parser accepts without naming it is
 //      invisible to both the census and the diff.
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { deployDirFor, deployedSpells } from "../src/deployRoots.ts";
 
 function repoRoot(): string {
   // Same anchor as roster-drift: the invocation root, not this file's path.
@@ -92,7 +85,6 @@ function repoRoot(): string {
 }
 
 const REPO = repoRoot();
-const SKILLS = join(REPO, "plugins/spellbook/skills");
 
 // FLOOR, not an exact count: the roster held nine spells when this landed. A
 // walk that returns fewer lost spells (or found none) and must not pass; a new
@@ -115,17 +107,14 @@ const NO_VERB_LIST = new Set(["digestify"]);
 
 type Spell = { spell: string; dir: string; launcher: string | null };
 
-/** Enumerated from the skill folders, as roster-drift's folderRoster does. */
+/** Enumerated from the deployed folders under BOTH roots (`src/deployRoots.ts`):
+ *  an unreleased spell is held out of the plugin, not out of the standard. */
 function spellRoster(): Spell[] {
-  return readdirSync(SKILLS, { withFileTypes: true })
-    .filter((d) => d.isDirectory())
-    .map((d) => d.name)
-    .sort()
-    .map((spell) => {
-      const dir = join(SKILLS, spell);
-      const launcher = LAUNCHERS.find((l) => existsSync(join(dir, l))) ?? null;
-      return { spell, dir, launcher };
-    });
+  return deployedSpells(REPO).map((spell) => {
+    const dir = deployDirFor(spell, REPO);
+    const launcher = LAUNCHERS.find((l) => existsSync(join(dir, l))) ?? null;
+    return { spell, dir, launcher };
+  });
 }
 
 /** The version the repo pins: the `#v<semver>` tag on the git dependency. */

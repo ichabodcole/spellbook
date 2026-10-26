@@ -16,16 +16,9 @@
 import { afterAll, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
+import { deployDirFor } from "../src/deployRoots.ts";
 
-const SKILLS = join(
-  dirname(fileURLToPath(import.meta.url)),
-  "..",
-  "plugins",
-  "spellbook",
-  "skills",
-);
 const root = mkdtempSync(join(tmpdir(), "tail-since-refusal-"));
 // If a refusal regresses, the tail goes on to spawn a singleton daemon under the
 // temp home. Stop them so a red run leaves nothing behind.
@@ -34,7 +27,7 @@ afterAll(async () => {
     ["grapevine", "stop"],
     ["astrolabe", "close"],
   ] as const) {
-    const p = Bun.spawn(["bun", join(SKILLS, spell, "scripts", "cli.ts"), verb], {
+    const p = Bun.spawn(["bun", join(deployDirFor(spell), "scripts", "cli.ts"), verb], {
       stdout: "ignore",
       stderr: "ignore",
       env,
@@ -78,7 +71,7 @@ const CASES: Array<[string, string[], string]> = [
 
 for (const [spell, argv, says] of CASES) {
   test(`${spell}: a --since form it does not accept is a usage error naming the accepted forms`, async () => {
-    const p = Bun.spawn(["bun", join(SKILLS, spell, "scripts", "cli.ts"), ...argv], {
+    const p = Bun.spawn(["bun", join(deployDirFor(spell), "scripts", "cli.ts"), ...argv], {
       stdout: "pipe",
       stderr: "pipe",
       stdin: "ignore",

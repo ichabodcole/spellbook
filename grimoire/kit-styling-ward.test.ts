@@ -95,6 +95,7 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { deployDirFor } from "../src/deployRoots.ts";
 
 const REPO_ROOT = join(import.meta.dir, "..");
 const KIT_CSS = join(REPO_ROOT, "src", "kit", "theme", "base.css");
@@ -126,7 +127,7 @@ const KIT_ONLY_UTILITY = ["size", "2"].join("-");
 const DIVERGENT_TOKEN = "--color-edge";
 
 const shippedCss = async (spell: string): Promise<string> => {
-  const distDir = join(REPO_ROOT, "plugins", "spellbook", "skills", spell, "dist");
+  const distDir = join(deployDirFor(spell, REPO_ROOT), "dist");
   const files = readdirSync(distDir).filter((f) => f.endsWith(".css"));
   // Contract 18: zero files examined is NO VERDICT, never a pass. `.at(0)` +
   // an explicit guard rather than `[0]!` — the assertion has to hold at RUNTIME,

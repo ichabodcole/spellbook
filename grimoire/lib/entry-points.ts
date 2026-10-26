@@ -96,6 +96,7 @@
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { DEPLOY_ROOTS, deployedPath } from "../../src/deployRoots.ts";
 import { must } from "./must.ts";
 
 export const SKILLS_DIR = join(import.meta.dir, "..", "..", "plugins", "spellbook", "skills");
@@ -158,11 +159,27 @@ export function backendSources(): string[] {
   return out.sort();
 }
 
+/**
+ * Non-test `.ts` under every DEPLOYED spell folder, keyed `<spell>/...` and
+ * walked across BOTH deploy roots (`src/deployRoots.ts`): the shipped plugin's
+ * `plugins/spellbook/skills/` and `plugins/unreleased/skills/`. A spell held out
+ * of the plugin is still a spell every ward judges; a walk of the shipped root
+ * alone would drop it and stay green.
+ */
+export function deployedSources(): { rel: string; abs: string }[] {
+  const out: { rel: string; abs: string }[] = [];
+  for (const root of DEPLOY_ROOTS) {
+    if (!existsSync(root)) continue;
+    for (const abs of walkSpellSources(root)) out.push({ rel: abs.slice(root.length + 1), abs });
+  }
+  return out.sort((a, b) => a.rel.localeCompare(b.rel));
+}
+
 /** Every arg-parsing entry point in the roster, across BOTH roots. */
 export function argParsingEntryPoints(): string[] {
-  const shipped = walkSpellSources()
-    .filter((abs) => PARSES_ARGS.test(readFileSync(abs, "utf8")))
-    .map((abs) => abs.slice(SKILLS_DIR.length + 1));
+  const shipped = deployedSources()
+    .filter(({ abs }) => PARSES_ARGS.test(readFileSync(abs, "utf8")))
+    .map(({ rel }) => rel);
   const built = backendSources().filter((rel) => PARSES_ARGS.test(readEntryPoint(rel)));
   return [...shipped, ...built].sort();
 }
@@ -171,8 +188,12 @@ export function argParsingEntryPoints(): string[] {
  *  strategies can be asserted equal. Not for enumeration — use the walk. */
 export function globEntryPointsForComparison(): string[] {
   return [
-    ...[...new Bun.Glob("*/scripts/*.ts").scanSync({ cwd: SKILLS_DIR })].filter(
-      (p) => !p.endsWith(".test.ts"),
+    ...DEPLOY_ROOTS.flatMap((cwd) =>
+      existsSync(cwd)
+        ? [...new Bun.Glob("*/scripts/*.ts").scanSync({ cwd })].filter(
+            (p) => !p.endsWith(".test.ts"),
+          )
+        : [],
     ),
     // The second root's glob twin — without it the two strategies disagree by
     // exactly the files Slice 2 moved, and the comparison cell would report a
@@ -383,11 +404,12 @@ export const onKitRegistry = (entryPoints: string[]) =>
 export const readEntryPoint = (rel: string) =>
   readFileSync(
     // `<spell>/backend/...` and the kit's `kit/...` resolve against `src/`,
-    // everything else against the shipped skills tree. Keyed on the SECOND
-    // segment because the first is the spell name in both spell shapes.
+    // everything else against the spell's deployed folder, under whichever
+    // deploy root holds it. Keyed on the SECOND segment because the first is
+    // the spell name in both spell shapes.
     rel.split("/")[1] === "backend" || rel.startsWith("kit/")
       ? join(BACKEND_SRC_DIR, rel)
-      : join(SKILLS_DIR, rel),
+      : deployedPath(rel),
     "utf8",
   );
 

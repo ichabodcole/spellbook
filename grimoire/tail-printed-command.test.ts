@@ -13,16 +13,9 @@
 import { afterAll, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
+import { deployDirFor } from "../src/deployRoots.ts";
 
-const SKILLS = join(
-  dirname(fileURLToPath(import.meta.url)),
-  "..",
-  "plugins",
-  "spellbook",
-  "skills",
-);
 const root = mkdtempSync(join(tmpdir(), "tail-printed-command-"));
 const env = {
   ...process.env,
@@ -37,7 +30,7 @@ afterAll(async () => {
 });
 
 async function run(spell: string, args: string[], extra: Record<string, string> = {}) {
-  const p = Bun.spawn(["bun", join(SKILLS, spell, "scripts", "cli.ts"), ...args], {
+  const p = Bun.spawn(["bun", join(deployDirFor(spell), "scripts", "cli.ts"), ...args], {
     stdout: "pipe",
     stderr: "pipe",
     stdin: "ignore",

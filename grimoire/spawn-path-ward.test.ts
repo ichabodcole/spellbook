@@ -53,6 +53,25 @@ import { classifyDist, distDirFor, isBackendArtifact } from "./lib/dist-artifact
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PLUGIN_ROOT = join(REPO_ROOT, "plugins", "spellbook");
 
+/** The holding root for a spell kept out of the plugin until it is finished
+ *  (`src/deployRoots.ts`; mind-mapper since 2026-10-25). It has the plugin's
+ *  shape and depth, so a spell held there is judged against IT exactly as a
+ *  shipped spell is judged against `PLUGIN_ROOT` — and is already right the
+ *  day it moves back. */
+const UNRELEASED_ROOT = join(REPO_ROOT, "plugins", "unreleased");
+
+/** The plugin-shaped root the PINNING FILE lives in — so a pin from a shipped
+ *  artifact into the holding root is still an escape. */
+const pluginRootFor = (p: Pin): string =>
+  p.file.startsWith("plugins/unreleased/") ? UNRELEASED_ROOT : PLUGIN_ROOT;
+
+/** ⚠ THE ONE PIN AN UNRELEASED SPELL IS EXPECTED NOT TO RESOLVE: the plugin
+ *  manifest one level above `skills/`, which CLIs read for the version they
+ *  report. The holding root is not a plugin and has no manifest, so the CLI
+ *  degrades to `"version": "unknown"` — its own documented fallback, and true:
+ *  an unreleased spell is in no versioned release. Printed, never silent. */
+const UNRELEASED_MANIFEST = join(UNRELEASED_ROOT, ".claude-plugin", "plugin.json");
+
 // `distDirFor` — where a spell's build emits, the same expression `src/build.ts`
 // uses — comes from `lib/dist-artifacts.ts` along with the backend/surface
 // split. Its `root` parameter is what lets the calibration cells below drive
@@ -497,7 +516,7 @@ const pinnedPaths = (absFile: string): Pin[] => scanFile(absFile).pins;
  *  assert the opposite of Contract 4. Those pins are enumerated and PINNED by
  *  the cell below instead, so a new one is loud rather than silently exempt. */
 const isShippedFile = (p: Pin): boolean =>
-  p.resolved.startsWith(`${PLUGIN_ROOT}/`) &&
+  p.resolved.startsWith(`${pluginRootFor(p)}/`) &&
   /\.[a-z0-9]+$/i.test(p.resolved.split("/").pop() ?? "");
 
 const spells = buildableSpells().filter((s) => emittedJs(s).length > 0);
@@ -663,6 +682,12 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
           if (pin.kind !== "literal") continue;
           if (!isShippedFile(pin)) continue;
           const rel = relative(REPO_ROOT, pin.resolved);
+          if (pin.resolved === UNRELEASED_MANIFEST) {
+            inventory.push(
+              `${pin.file}:${pin.line}  ${pin.expr}  ->  ${rel}  (UNRELEASED: no manifest, version reports "unknown")`,
+            );
+            continue;
+          }
           inventory.push(`${pin.file}:${pin.line}  ${pin.expr}  ->  ${rel}`);
           if (!existsSync(pin.resolved) || !statSync(pin.resolved).isFile()) {
             missing.push(`${pin.file}:${pin.line} -> ${rel} (${pin.expr})`);
@@ -700,8 +725,8 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
       for (const file of emittedJs(spell)) {
         for (const pin of pinnedPaths(file)) {
           if (pin.kind !== "literal") continue;
-          if (!pin.resolved.startsWith(`${PLUGIN_ROOT}/`) || isShippedFile(pin)) continue;
-          if (!relative(PLUGIN_ROOT, pin.resolved).split("/").includes("dist")) continue;
+          if (!pin.resolved.startsWith(`${pluginRootFor(pin)}/`) || isShippedFile(pin)) continue;
+          if (!relative(pluginRootFor(pin), pin.resolved).split("/").includes("dist")) continue;
           const rel = relative(REPO_ROOT, pin.resolved);
           if (!existsSync(pin.resolved) || !statSync(pin.resolved).isDirectory())
             missing.push(`${pin.file}:${pin.line} -> ${rel} (${pin.expr})`);
@@ -733,7 +758,7 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
     for (const spell of spells) {
       for (const file of emittedJs(spell)) {
         for (const pin of pinnedPaths(file)) {
-          if (pin.resolved.startsWith(`${PLUGIN_ROOT}/`)) continue;
+          if (pin.resolved.startsWith(`${pluginRootFor(pin)}/`)) continue;
           escapes.add(`${pin.file} -> ${relative(REPO_ROOT, pin.resolved)}`);
         }
       }
@@ -798,7 +823,8 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
       // created the coverage row and moved the expression to an address where it
       // was false, in the same commit, which is why the port repaired the spawn
       // to up-and-back-down in the same breath.
-      "plugins/spellbook/skills/mind-mapper/dist/cli.js -> src/mind-mapper",
+      // ⚠ The row itself is LAST, below scriptorium's: mind-mapper moved to
+      // `plugins/unreleased/` on 2026-10-25 and the set compares sorted.
       // scriptorium's `SURFACE_CWD` — the first spell SCAFFOLDED after the
       // convergence rather than ported, and the escape arrives by design, not
       // archaeology: the dev daemon's cwd must be `src/scriptorium/` for its
@@ -812,6 +838,11 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
       // build leaves external and `import-boundary-wards.test.ts` pins (its
       // scriptorium row), as every other daemon's is; a literal import is not a
       // `join`, so it is not an escape here.
+      // mind-mapper — under `plugins/unreleased/` since 2026-10-25 (held out of
+      // the plugin until its app is finished). Same depth, so the same escape;
+      // its pins inside the holding root are judged against that root
+      // (`pluginRootFor`), so they are not escapes.
+      "plugins/unreleased/skills/mind-mapper/dist/cli.js -> src/mind-mapper",
     ]);
   });
 

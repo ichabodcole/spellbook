@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { Glob } from "bun";
+import { DEPLOY_ROOTS, deployedPath } from "../src/deployRoots.ts";
 import { must } from "./lib/must.ts";
 
 // enforces: drive-conjuration-through-daemon
@@ -112,10 +113,15 @@ import { must } from "./lib/must.ts";
 // six connection-holding daemons, and the population it asserts over is pinned
 // per clause rather than counted as a file total.
 
-const SKILLS = join(import.meta.dir, "..", "plugins", "spellbook", "skills");
+/** `<spell>/...` paths matching `pattern` across BOTH deploy roots
+ *  (`src/deployRoots.ts`) — an unreleased spell's launchers are still in the
+ *  population, so holding a spell out of the plugin cannot shrink this ward. */
+function scanDeployed(pattern: string): string[] {
+  return DEPLOY_ROOTS.flatMap((root) => [...new Glob(pattern).scanSync(root)]).sort();
+}
 
 function read(rel: string): string {
-  return readFileSync(join(SKILLS, rel), "utf8");
+  return readFileSync(deployedPath(rel), "utf8");
 }
 
 /** ⛔ EVERY TEXT-SCAN CLAUSE READS THIS, NOT THE RAW FILE — AND THE FILE YOU ARE
@@ -168,7 +174,7 @@ type Backend = { spell: string; file: string; code: string };
  *  exactly this reason, one function away. */
 function daemons(): Backend[] {
   const out: Backend[] = [];
-  for (const rel of new Glob("*/scripts/*.ts").scanSync(SKILLS)) {
+  for (const rel of scanDeployed("*/scripts/*.ts")) {
     if (rel.endsWith(".test.ts")) continue;
     // ⚠ THE MEMBERSHIP TEST READS THE STRIPPED COPY TOO, so a `Bun.serve(` that
     // only appears in a comment cannot enrol a non-daemon. Measured: the
@@ -219,7 +225,7 @@ function daemons(): Backend[] {
  *  the mistake seams Contract 19 is named for. */
 function clis(): Backend[] {
   const out: Backend[] = [];
-  for (const rel of new Glob("*/scripts/cli.ts").scanSync(SKILLS)) {
+  for (const rel of scanDeployed("*/scripts/cli.ts")) {
     out.push({
       spell: must(rel.split("/")[0], `no leading path segment in "${rel}"`),
       file: `skills/${rel}`,

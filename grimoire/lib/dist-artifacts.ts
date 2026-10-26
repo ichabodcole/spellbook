@@ -46,6 +46,7 @@
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
+import { deployDirFor } from "../../src/deployRoots.ts";
 
 export const REPO_ROOT = join(import.meta.dir, "..", "..");
 
@@ -53,7 +54,7 @@ export const REPO_ROOT = join(import.meta.dir, "..", "..");
  *  `root` parameter exists so a calibration cell can drive this against a
  *  throwaway tree it chose, rather than proving only that it can read this one. */
 export const distDirFor = (spell: string, root: string = REPO_ROOT): string =>
-  join(root, "plugins", "spellbook", "skills", spell, "dist");
+  join(deployDirFor(spell, root), "dist");
 
 /** `surface`/`backend` are basenames within `dist/`. `null` means NOT LOOKED
  *  AT — see the D42 note in the module header. */

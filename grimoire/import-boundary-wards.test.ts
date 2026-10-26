@@ -165,6 +165,7 @@ import { builtinModules } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { deployDirFor } from "../src/deployRoots.ts";
 import { type ImportKind, isRelative, scanSpecifiers } from "./lib/import-graph.ts";
 
 const REPO_ROOT =
@@ -172,6 +173,17 @@ const REPO_ROOT =
 
 /** The artifact boundary — what the Claude marketplace actually copies. */
 const PLUGIN_ROOT = "plugins/spellbook";
+
+/** The holding root for a spell kept OUT of the plugin until it is finished
+ *  (`src/deployRoots.ts`; mind-mapper today). Nothing installs it, but it is
+ *  judged by the same rule, against ITS OWN root, so the day it rejoins the
+ *  plugin with a `git mv` it already satisfies this ward. Same depth as
+ *  `PLUGIN_ROOT`, so every specifier resolves to the same place from both. */
+const UNRELEASED_ROOT = "plugins/unreleased";
+
+/** The boundary a file is judged against: its own plugin-shaped root. */
+const boundaryFor = (file: string, boundary: string): string =>
+  file.startsWith(`${UNRELEASED_ROOT}/`) ? UNRELEASED_ROOT : boundary;
 
 /** Repo-relative tracked `.ts`/`.tsx` under a prefix. "Shipped" means TRACKED. */
 function trackedSources(prefix: string): string[] {
@@ -255,7 +267,7 @@ function relativeEscapes(files: string[], boundary: string, kinds: ImportKind[])
     for (const ref of scanSpecifiers(readFileSync(join(REPO_ROOT, file), "utf8"))) {
       if (!kinds.includes(ref.kind) || !isRelative(ref.spec)) continue;
       const resolved = resolveFrom(file, ref.spec);
-      if (resolved.startsWith(`${boundary}/`)) continue;
+      if (resolved.startsWith(`${boundaryFor(file, boundary)}/`)) continue;
       out.push({ file, spec: ref.spec, line: ref.line, resolved });
     }
   }
@@ -283,7 +295,10 @@ const DECLARED_EMITTED_ROOTS: string[] = [
   // hand-kept hazard above stops being latent in: there is no ninth spell to
   // forget. The cell "EVERY SPELL THAT EMITS A BACKEND IS DECLARED HERE" reds
   // the moment `src/mind-mapper/backend/server.ts` exists and this row does not.
-  "plugins/spellbook/skills/mind-mapper/dist",
+  // ⚠ MOVED 2026-10-25 to `plugins/unreleased/` (Cole: mind-mapper stays out of
+  // the shipped plugin until its app is finished). Still declared, still
+  // judged; moves back with the spell.
+  "plugins/unreleased/skills/mind-mapper/dist",
   // ⚠ AND THEN A NINTH, which the paragraph above said could not exist: it
   // was true of PORTS, whose population closed with mind-mapper. scriptorium
   // (2026-09-11) is the first spell SCAFFOLDED onto the build, and the cell
@@ -548,11 +563,8 @@ const PINNED_DYNAMIC_ESCAPES: EscapeIdentity[] = [
   // resolved at build time. Left at `scripts/server.ts` this row would have been
   // DELETED as "no longer present" (`trackedSources` is `.ts`/`.tsx` only) and
   // the ward would have gone green because it stopped looking — Contract 19.
-  {
-    file: "plugins/spellbook/skills/mind-mapper/dist/server.js",
-    spec: "../../../../../src/mind-mapper/surface/index.html",
-    resolved: "src/mind-mapper/surface/index.html",
-  },
+  // (mind-mapper's row is LAST, below scriptorium's: the list is in file
+  // order, and its artifact moved to `plugins/unreleased/` on 2026-10-25.)
   // scriptorium (2026-09-11) — the ninth, and the first written at genesis:
   // the daemon's dev-mode surface import, glamour's specifier with the spell
   // renamed, executed only on the dev branch and inert in release.
@@ -566,6 +578,15 @@ const PINNED_DYNAMIC_ESCAPES: EscapeIdentity[] = [
     spec: "../../../../../src/scriptorium/surface/index.html",
     resolved: "src/scriptorium/surface/index.html",
   },
+  // ⚠ mind-mapper — moved to `plugins/unreleased/` (2026-10-25: held out of the
+  // plugin until its app is finished), which is why it now sorts last. The spec
+  // did NOT change: the holding root has the plugin's depth, by design. Judged
+  // against its own root (`boundaryFor`), so it rejoins already conformant.
+  {
+    file: "plugins/unreleased/skills/mind-mapper/dist/server.js",
+    spec: "../../../../../src/mind-mapper/surface/index.html",
+    resolved: "src/mind-mapper/surface/index.html",
+  },
 ];
 
 describe("R6 ward 1a — the published artifact resolves no relative path outside itself", () => {
@@ -578,7 +599,11 @@ describe("R6 ward 1a — the published artifact resolves no relative path outsid
   // as "no longer present" and this ward would have stopped watching the exact
   // line the phase's brief calls the trap. The escape did not go away — it
   // moved into the artifact, which is where it always mattered.
-  const files = [...trackedSources(PLUGIN_ROOT), ...emittedSources(EMITTED_ROOTS)];
+  const files = [
+    ...trackedSources(PLUGIN_ROOT),
+    ...trackedSources(UNRELEASED_ROOT),
+    ...emittedSources(EMITTED_ROOTS),
+  ];
 
   test("the sweep actually ran (zero-guard: a dead walk and a clean walk look identical)", () => {
     // ⛔ THIS GUARD NO LONGER COUNTS ANYTHING, AND THAT IS THE POINT.
@@ -623,9 +648,11 @@ describe("R6 ward 1a — the published artifact resolves no relative path outsid
     // would be a second denominator free to drift from the first.
     const roster = [
       ...new Set(
-        execFileSync("git", ["-C", REPO_ROOT, "ls-files", "plugins/spellbook/skills"], {
-          encoding: "utf8",
-        })
+        execFileSync(
+          "git",
+          ["-C", REPO_ROOT, "ls-files", "plugins/spellbook/skills", "plugins/unreleased/skills"],
+          { encoding: "utf8" },
+        )
           .trim()
           .split("\n")
           .filter((f) => /\/scripts\/[^/]+\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f))
@@ -912,7 +939,7 @@ describe("R6 ward 1b — the shipped execution path carries no dependencies", ()
           (existsSync(join(REPO_ROOT, "src", e.name, "backend", "cli.ts")) ||
             existsSync(join(REPO_ROOT, "src", e.name, "backend", "server.ts"))),
       )
-      .map((e) => `plugins/spellbook/skills/${e.name}/dist`)
+      .map((e) => `${relative(REPO_ROOT, deployDirFor(e.name, REPO_ROOT))}/dist`)
       .sort();
     expect(emitters.length).toBeGreaterThan(0); // zero-guard: an empty walk is not a pass
     const undeclared = emitters.filter((r) => !DECLARED_EMITTED_ROOTS.includes(r));
@@ -1302,9 +1329,11 @@ describe("R6 ward 2 — the kit is a leaf (the one-way street)", () => {
 /** A directory name is a SPELL iff it has a deployed skill folder. Derived. */
 function spellNames(): Set<string> {
   const names = new Set<string>();
-  for (const f of execFileSync("git", ["-C", REPO_ROOT, "ls-files", "plugins/spellbook/skills"], {
-    encoding: "utf8",
-  })
+  for (const f of execFileSync(
+    "git",
+    ["-C", REPO_ROOT, "ls-files", "plugins/spellbook/skills", "plugins/unreleased/skills"],
+    { encoding: "utf8" },
+  )
     .trim()
     .split("\n")) {
     const name = f.split("/")[3];
@@ -1319,7 +1348,13 @@ function spellNames(): Set<string> {
 function ownerSpell(path: string, spells: Set<string>): string | null {
   const seg = path.split("/");
   if (seg[0] === "src" && seg[1] && spells.has(seg[1])) return seg[1];
-  if (path.startsWith("plugins/spellbook/skills/") && seg[3] && spells.has(seg[3])) return seg[3];
+  if (
+    (path.startsWith("plugins/spellbook/skills/") ||
+      path.startsWith("plugins/unreleased/skills/")) &&
+    seg[3] &&
+    spells.has(seg[3])
+  )
+    return seg[3];
   return null;
 }
 

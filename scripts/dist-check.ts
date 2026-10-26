@@ -42,9 +42,9 @@ import { existsSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import { isBackendArtifact as classifyBackendArtifact } from "../grimoire/lib/dist-artifacts.ts";
 import { backendEntryNames, buildableSpells } from "../src/build.ts";
+import { deployDirFor } from "../src/deployRoots.ts";
 
 const REPO_ROOT = join(import.meta.dir, "..");
-const DEPLOY_ROOT = join(REPO_ROOT, "plugins", "spellbook", "skills");
 
 /** The deployed `dist/` for a spell, repo-relative (a git pathspec).
  *
@@ -53,7 +53,7 @@ const DEPLOY_ROOT = join(REPO_ROOT, "plugins", "spellbook", "skills");
  * that the way a shell would, it matched nothing, and the check reported GREEN on
  * a dirty tree. Build one literal pathspec per spell from the roster instead. */
 export function distRoot(spell: string): string {
-  return relative(REPO_ROOT, join(DEPLOY_ROOT, spell, "dist"));
+  return relative(REPO_ROOT, join(deployDirFor(spell), "dist"));
 }
 
 type Git = { code: number; out: string; err: string };
@@ -109,7 +109,7 @@ export function trackedFiles(pathspecs: string[], root: string = REPO_ROOT): str
  * leak in the tree, 5 pass / 0 fail. Hence `root`: the ward's control mints a
  * git repo with a known leak and asserts this function NAMES it. */
 export function trackedBuildInputs(spell: string, root: string = REPO_ROOT): string[] {
-  const base = relative(root, join(root, "plugins", "spellbook", "skills", spell));
+  const base = relative(root, deployDirFor(spell, root));
   return trackedFiles([`${base}/surface`, `${base}/bunfig.toml`], root);
 }
 

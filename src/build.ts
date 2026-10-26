@@ -9,7 +9,9 @@
 //
 // It bundles `src/<spell>/surface/` into a flat, hashed, dependency-free
 // `dist/` at the DEPLOYED spell folder
-// (plugins/spellbook/skills/<spell>/dist/), so the published plugin can serve a
+// (plugins/spellbook/skills/<spell>/dist/, or plugins/unreleased/skills/<spell>/
+// for a spell held out of the plugin — `src/deployRoots.ts` decides which), so
+// the published plugin can serve a
 // working board with no surface/ source, no bunfig.toml, and no node_modules
 // present (Contract 4's "source-free by construction").
 //
@@ -45,10 +47,9 @@
 import { existsSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import tailwind from "bun-plugin-tailwind";
+import { deployDirFor } from "./deployRoots.ts";
 
 const SRC_DIR = import.meta.dir;
-const REPO_ROOT = join(SRC_DIR, "..");
-const DEPLOY_ROOT = join(REPO_ROOT, "plugins", "spellbook", "skills");
 
 /** The one specifier a daemon build leaves unresolved. Named once so the flag,
  *  the source comment and any future consumer cannot drift apart. */
@@ -58,8 +59,8 @@ const entryFor = (spell: string) => join(SRC_DIR, spell, "surface", "index.html"
 const backendDirFor = (spell: string) => join(SRC_DIR, spell, "backend");
 const backendEntryFor = (spell: string, name: string) => join(backendDirFor(spell), `${name}.ts`);
 const launcherFor = (spell: string, name: string) =>
-  join(DEPLOY_ROOT, spell, "scripts", `${name}.ts`);
-const outDirFor = (spell: string) => join(DEPLOY_ROOT, spell, "dist");
+  join(deployDirFor(spell), "scripts", `${name}.ts`);
+const outDirFor = (spell: string) => join(deployDirFor(spell), "dist");
 
 /** Does this spell have SURFACE SOURCE — `src/<spell>/surface/index.html`?
  *

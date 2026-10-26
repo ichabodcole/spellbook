@@ -95,6 +95,7 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { deployedPath } from "../src/deployRoots.ts";
 import { blankComments, type RaiseSite, raiseSitesBySpell } from "./lib/error-sites.ts";
 
 const REPO_ROOT = join(import.meta.dir, "..");
@@ -293,7 +294,7 @@ const UNKNOWN_FLAG_ARGS: Record<string, string[]> = {
 };
 
 function run(spell: string, args: string[]): { code: number; stderr: string; stdout: string } {
-  const launcher = join(REPO_ROOT, "plugins", "spellbook", "skills", LAUNCHER[spell] as string);
+  const launcher = deployedPath(LAUNCHER[spell] as string, REPO_ROOT);
   const p = Bun.spawnSync(["bun", launcher, ...args], {
     stdout: "pipe",
     stderr: "pipe",

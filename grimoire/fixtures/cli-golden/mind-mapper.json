@@ -326,7 +326,7 @@
       "stream": "stdout",
       "json": {
         "name": "mind-mapper",
-        "version": "<VERSION>"
+        "version": "unknown"
       }
     },
     {
@@ -336,7 +336,7 @@
       "stream": "stdout",
       "json": {
         "name": "mind-mapper",
-        "version": "<VERSION>"
+        "version": "unknown"
       }
     },
     {
@@ -346,7 +346,7 @@
       "stream": "stdout",
       "json": {
         "name": "mind-mapper",
-        "version": "<VERSION>"
+        "version": "unknown"
       }
     },
     {
