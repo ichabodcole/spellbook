@@ -59,3 +59,11 @@ measured 20 s timeout in `kit-note-guard-lazy`; the rest were not.
 
 - [Run the test suite in parallel, as Story Studio does](./spellbook-parallel-tests.md)
 - [Release ready: Spellbook 6.0.0](../cycles/2026-10-release-6.md)
+
+**Default raised to 15 s (lead, 2026-10-26).** Two CI runs in a row failed on a
+tree-scanning ward at bun's 5 s default (`40379180950`: R6 ward 1b, 7.1 s;
+`40389281731`: kit-adoption TRANSITIVE, 6.6 s). Cole chose to raise the suite's
+default to 15 s (`426a68ed`, on the test script, since bun 1.4.0 ignores
+bunfig's `[test] timeout`) to unblock 6.0.0. This item still stands: make the
+slow tests cheaper, or give each a timeout sized from a measurement. The last
+three CI runs put about 50 tests at 2.5–7 s on the runner.
