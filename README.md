@@ -4,10 +4,11 @@
 runs for you.
 
 A _spell_ is one of those apps: it opens in your browser and is served on your
-own machine by [Bun](https://bun.sh). There's no database and no cloud service:
-the agent does the work, the page is where you see it and act on it, and what
-you do on the page goes back to the agent to answer. Spellbook ships its spells
-as one [Claude Code](https://claude.com/claude-code) plugin.
+own machine by [Bun](https://bun.sh). There's no database server and no cloud
+service (what a spell keeps is plain files on your machine): the agent does the
+work, the page is where you see it and act on it, and what you do on the page
+goes back to the agent to answer. Spellbook ships its spells as one
+[Claude Code](https://claude.com/claude-code) plugin.
 
 > Why "spells"? Functionally they are skills, and a skill is a capability; a
 > spell is a capability you _cast_. The page isn't generated fresh each time you
@@ -58,7 +59,8 @@ can be moved with an environment variable named after its spell, such as
   hours for bounty, 30 minutes for the rest), so closing the browser tab doesn't
   end them at once. On close each one saves a snapshot, in `~/.bounty`,
   `~/.imago`, `~/.glamour`, `~/.magpie` or `~/.scriptorium`, and the agent can
-  reopen it later. Scriptorium edits your real files where they are.
+  reopen it later. Scriptorium edits your real files where they are; its folder
+  holds only the session (versions, notes, chat).
 - `grapevine` and `astrolabe` have no idle timeout by default: they keep running
   until they're stopped (grapevine's `stop`, astrolabe's `close`). Grapevine's
   channels are in `~/.grapevine` and astrolabe's project list is in
