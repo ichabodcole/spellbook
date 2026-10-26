@@ -8,6 +8,7 @@ import "../lib/registerDom.ts";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from "bun:test";
 import { mkdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { useCallback } from "react";
 import type { Daemon } from "../context/daemonClient.ts";
 import { useDaemon } from "../context/useDaemon.ts";
 import { useWorkspace, type Workspace } from "../context/workspace.ts";
@@ -84,10 +85,14 @@ function Host() {
     maxDelayMs: 60,
   });
   client = d;
-  const daemonHere = {
-    ...d,
-    send: (op: Parameters<typeof d.send>[0]) => (failSay && op.op === "say" ? null : d.send(op)),
-  };
+  // The same `send` from one snapshot to the next, as `useDaemon` promises: the
+  // shell keys effects on it, and a fresh one per render re-runs them every render.
+  const { send } = d;
+  const sendHere = useCallback<Daemon["send"]>(
+    (op) => (failSay && op.op === "say" ? null : send(op)),
+    [send],
+  );
+  const daemonHere = { ...d, send: sendHere };
   return (
     <div style={{ width: 1200, height: 700 }}>
       <WorkspaceShell daemon={daemonHere} centre={<Centre />} />

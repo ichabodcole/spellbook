@@ -14,6 +14,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, test } from "bun:test
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { EditorView } from "@codemirror/view";
+import { useCallback, useRef } from "react";
 import type { Daemon } from "../../kit/context/daemonClient";
 import { useDaemon } from "../../kit/context/useDaemon";
 import {
@@ -95,15 +96,20 @@ function Host({ watch }: { watch?: (op: SentOp) => void }) {
     maxDelayMs: 60,
   });
   client = d;
-  const seen: Daemon = watch
-    ? {
-        ...d,
-        send: (op) => {
-          watch(op as SentOp);
-          return d.send(op);
-        },
-      }
-    : d;
+  // The same `send` from one snapshot to the next, as `useDaemon` promises (and
+  // as `Frame.test.tsx` gives it): the shell keys a made document's open and
+  // compare mode's `diff` on `send`, and a fresh one per render re-sends them.
+  const watching = useRef(watch);
+  watching.current = watch;
+  const { send } = d;
+  const watchedSend = useCallback<Daemon["send"]>(
+    (op) => {
+      watching.current?.(op as SentOp);
+      return send(op);
+    },
+    [send],
+  );
+  const seen: Daemon = watch ? { ...d, send: watchedSend } : d;
   return (
     <div style={{ width: 1400, height: 800 }}>
       <Frame daemon={seen} />
