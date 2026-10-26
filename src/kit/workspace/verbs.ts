@@ -46,7 +46,14 @@ import {
 } from "../lib/docFormat.ts";
 import { homeDir } from "../lib/home.ts";
 import { printJson } from "../lib/printJson";
-import { DAEMON_LOCK, readDaemonLock } from "../wire/daemonLock";
+import {
+  DAEMON_LOCK,
+  elapsedSeconds,
+  type LockRecord,
+  processCommand,
+  readDaemonLock,
+  startedBy,
+} from "../wire/daemonLock";
 import { startDaemon } from "../wire/detach";
 import {
   type DiscoveryOptions,
@@ -828,13 +835,50 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
         { hint: `bring it back: open --restore ${id}` },
       );
     const held = Math.round((Date.now() - since) / 1000);
+    const lockPath = join(dir, DAEMON_LOCK);
+    const confirmed = confirmHolder(id, pid, rec);
+    if (confirmed === true)
+      return die(
+        `session ${id} is held by another daemon (pid ${pid}, for ${held}s), which does not answer (lock: ${lockPath})`,
+        "conflict",
+        {
+          hint: `if that daemon is stuck, stop it with \`kill ${pid}\`, then \`open --restore ${id}\` (its lock is then recovered)`,
+        },
+      );
+    // ⛔ NEVER A STOP VERB ON A PID NOT SHOWN TO BE THIS SESSION'S DAEMON: an
+    // agent acts on a hint as written, and a lock can name a reused pid or
+    // another session's healthy daemon.
     return die(
-      `session ${id} is held by another daemon (pid ${pid}, for ${held}s), which does not answer: no pointer to it can be found (lock: ${join(dir, DAEMON_LOCK)})`,
+      `session ${id} is locked by pid ${pid}, which does not answer as its daemon (lock: ${lockPath})`,
       "conflict",
       {
-        hint: `if that daemon is stuck, stop it with \`kill ${pid}\`, then \`open --restore ${id}\` (its lock is then recovered)`,
+        hint: `pid ${pid} could not be confirmed as this session's ${app} daemon (${confirmed}), so do not stop it on this word: check it with \`ps -p ${pid} -o command=\`. If it is not this session's daemon, the lock is stale: remove ${lockPath}, then \`open --restore ${id}\``,
       },
     );
+  }
+
+  /**
+   * Whether `pid` is shown to be this app's daemon for session `id`: the lock
+   * names it and this session, its command line is this app's daemon, and it
+   * was running when the lock was written (not a reused pid). True, or why not.
+   */
+  function confirmHolder(id: string, pid: number, rec: LockRecord | null): true | string {
+    if (rec === null || rec.pid !== pid) return "the lock no longer names it";
+    if (rec.session !== id)
+      return rec.session === undefined
+        ? "the lock does not say which session it was taken for"
+        : `the lock was taken for session ${rec.session}`;
+    const cmd = processCommand(pid);
+    if (cmd === null) return "`ps` cannot say what it is";
+    const entry = opts.daemon.args.at(-1);
+    if (entry !== undefined && !cmd.includes(entry)) return `it is not running ${entry}`;
+    const restoring = /(?:^|\s)--restore\s+(\S+)/.exec(cmd)?.[1];
+    if (restoring !== undefined && restoring !== id)
+      return `it is the daemon of session ${restoring}`;
+    const e = elapsedSeconds(pid);
+    if (e === null) return "`ps` cannot say when it started";
+    if (!startedBy(e, rec.at)) return "it started after the lock was taken, so its pid was reused";
+    return true;
   }
 
   async function cmdOpen(pos: string[], flags: Flags): Promise<void> {

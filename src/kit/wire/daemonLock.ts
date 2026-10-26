@@ -10,7 +10,7 @@
  * lock is taken by the daemon itself, before it reads or writes the session or
  * binds a port, so the second one refuses whatever the CLI saw.
  *
- * The file is `<session>/daemon.lock`, JSON `{pid, nonce, at}`. It appears
+ * The file is `<session>/daemon.lock`, JSON `{pid, nonce, at, session}`. It appears
  * whole or not at all: written to a temp file opened exclusively, then
  * hard-linked to its name, which fails if the name exists. A link is the one
  * create-if-absent that also publishes content atomically, so a reader never
@@ -44,7 +44,14 @@ import { join } from "node:path";
 /** The lock's file name inside a session's folder. */
 export const DAEMON_LOCK = "daemon.lock";
 
-export type LockRecord = { pid: number; nonce: string; at: number };
+/**
+ * `session`: the session the lock was taken for. A session folder copied with
+ * its lock (a backup, a duplicate made by hand) carries a lock naming the
+ * session it was copied from, whose daemon is not this session's holder.
+ */
+export type LockRecord = { pid: number; nonce: string; at: number; session?: string };
+
+const SESSION_ID = /^[A-Za-z0-9_-][A-Za-z0-9_.-]*$/;
 
 export type DaemonLock = { readonly path: string; readonly record: LockRecord };
 
@@ -81,9 +88,15 @@ function readRecord(path: string): LockRecord | "absent" | "unreadable" {
       (r.pid as number) > 0 &&
       typeof r.nonce === "string" &&
       /^[a-f0-9]{8,64}$/.test(r.nonce) &&
-      typeof r.at === "number"
+      typeof r.at === "number" &&
+      (r.session === undefined || (typeof r.session === "string" && SESSION_ID.test(r.session)))
     )
-      return { pid: r.pid as number, nonce: r.nonce, at: r.at };
+      return {
+        pid: r.pid as number,
+        nonce: r.nonce,
+        at: r.at,
+        ...(r.session !== undefined ? { session: r.session } : {}),
+      };
   } catch {
     /* falls through */
   }
@@ -121,22 +134,51 @@ export const elapsedSeconds: Elapsed = (pid) => {
   }
 };
 
-/** Whether the record's writer still holds it: its pid alive, and that process the one that wrote it. */
+/**
+ * Whether the record's writer still holds it for `session` (when given): taken
+ * for this session, its pid alive, and that process the one that wrote it.
+ */
 export function lockHeld(
   r: LockRecord,
   elapsed: Elapsed = elapsedSeconds,
-  now: number = Date.now(),
+  session?: string,
 ): boolean {
+  // A lock copied in with the folder of another session holds nothing here.
+  if (session !== undefined && r.session !== undefined && r.session !== session) return false;
   if (r.pid === process.pid) return heldHere.has(r.nonce);
   if (!alive(r.pid)) return false;
   const e = elapsed(r.pid);
   // Unknown: a live pid is trusted. A reused pid's process started after the lock was written.
   if (e === null) return true;
-  return now - e * 1000 <= r.at + START_SLACK_MS;
+  return startedBy(e, r.at);
 }
 
-function newRecord(): LockRecord {
-  return { pid: process.pid, nonce: randomBytes(12).toString("hex"), at: Date.now() };
+/** Whether a process that has run `elapsedS` seconds was already running at `at`. */
+export const startedBy = (elapsedS: number, at: number, now: number = Date.now()): boolean =>
+  now - elapsedS * 1000 <= at + START_SLACK_MS;
+
+/** The process's command line, from `ps`, or null where `ps` cannot say. */
+export function processCommand(pid: number): string | null {
+  try {
+    const ps = Bun.spawnSync(["ps", "-ww", "-o", "command=", "-p", String(pid)], {
+      stdout: "pipe",
+      stderr: "ignore",
+      timeout: 2000,
+    });
+    const out = ps.stdout.toString().trim();
+    return ps.exitCode === 0 && out !== "" ? out : null;
+  } catch {
+    return null;
+  }
+}
+
+function newRecord(session?: string): LockRecord {
+  return {
+    pid: process.pid,
+    nonce: randomBytes(12).toString("hex"),
+    at: Date.now(),
+    ...(session !== undefined ? { session } : {}),
+  };
 }
 
 /** Create `path` holding `record`, whole, only if nothing is there. False when something is. */
@@ -206,13 +248,20 @@ function reap(
  * Take the session's daemon lock in `dir` (the session folder, which must
  * exist). Refused with the holder when a live daemon has it; a stale one is
  * recovered. A lock that is not this format names no live holder, so it is
- * stale too, and its reapers key their guard on its bytes.
+ * stale too, and its reapers key their guard on its bytes. `session` is
+ * recorded in the lock, and a lock naming another session is stale.
  */
-export function takeDaemonLock(dir: string, elapsed: Elapsed = elapsedSeconds): TakeLockResult {
+export function takeDaemonLock(
+  dir: string,
+  elapsed: Elapsed = elapsedSeconds,
+  session?: string,
+): TakeLockResult {
+  if (session !== undefined && !SESSION_ID.test(session))
+    throw new Error(`invalid session id: ${session}`);
   const path = join(dir, DAEMON_LOCK);
   let last: LockRecord | null = null;
   for (let round = 0; round < MAX_ROUNDS; round++) {
-    const record = newRecord();
+    const record = newRecord(session);
     if (createWhole(path, record)) {
       heldHere.add(record.nonce);
       tidyGuards(dir, elapsed);
@@ -237,7 +286,7 @@ export function takeDaemonLock(dir: string, elapsed: Elapsed = elapsedSeconds): 
       reap(path, Bun.hash(raw).toString(16), same, elapsed);
       continue;
     }
-    if (lockHeld(seen, elapsed)) return { ok: false, holder: seen, path };
+    if (lockHeld(seen, elapsed, session)) return { ok: false, holder: seen, path };
     last = seen;
     reap(path, seen.nonce, sameRecord(path, seen.nonce), elapsed);
   }

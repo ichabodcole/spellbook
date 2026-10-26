@@ -95,6 +95,10 @@ export function fixtureDaemonOptions(
     // A tail or a socket still open at teardown costs the full 150 ms grace
     // otherwise; loopback needs far less to flush a frame.
     drainGraceMs: 10,
+    // A launcher test that times the attention clock (a pointer put back) sets it.
+    ...(process.env.KIT_FIXTURE_ATTENTION_MS
+      ? { attentionMs: Number(process.env.KIT_FIXTURE_ATTENTION_MS) }
+      : {}),
     // No test reaches the real Trash, whatever NODE_ENV says: a test that
     // deletes passes its own (a move into a temp folder).
     trash: async () => {

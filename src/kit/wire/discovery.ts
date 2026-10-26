@@ -90,17 +90,22 @@ export function pointerPath(spell: string, id?: string, opts: DiscoveryOptions =
   return join(opts.tmp ?? tmpdir(), `${spell}.${id ?? "latest"}.json`);
 }
 
-/** Publish a session's pointer, and make it the spell's latest. */
+/**
+ * Publish a session's pointer, and make it the spell's latest. `latest: false`
+ * writes the session's own pointer only: a running daemon putting back a
+ * pointer that went must not make an older session the latest again.
+ */
 export function publishPointer(
   spell: string,
   pointer: SessionPointer,
   opts: DiscoveryOptions = {},
+  { latest: asLatest = true }: { latest?: boolean } = {},
 ): { session: string; latest: string } {
   const session = pointerPath(spell, pointer.session_id, opts);
   const latest = pointerPath(spell, undefined, opts);
   const text = JSON.stringify(pointer);
   writePointerFile(session, text);
-  writePointerFile(latest, text);
+  if (asLatest) writePointerFile(latest, text);
   return { session, latest };
 }
 

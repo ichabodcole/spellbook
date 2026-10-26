@@ -948,7 +948,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
    * once, which the CLI's check alone cannot stop) refuses here.
    */
   const lockOrRefuse = () => {
-    const r = takeDaemonLock(dir);
+    const r = takeDaemonLock(dir, undefined, sessionId);
     if (!r.ok) throw new SessionLockedError(sessionId, r.holder.pid, r.path);
     lock = r.lock;
   };
@@ -4969,7 +4969,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
       server.stop(true);
     };
     // --- discovery -------------------------------------------------------------------
-    const publishOwnPointer = () => {
+    const publishOwnPointer = (latest: boolean) => {
       try {
         publishPointer(
           app.name,
@@ -4981,21 +4981,23 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
             pid: process.pid,
           },
           { tmp: opts.tmp },
+          { latest },
         );
       } catch {
         /* discovery is best-effort */
       }
     };
-    publishOwnPointer();
+    publishOwnPointer(true);
     /**
      * The pointer put back when it is gone while the daemon runs (the OS
      * cleaning the temp folder under a long session, or a hand): without it a
      * live daemon is unreachable, and the session's lock refuses every restore
-     * that would replace it. Checked on the attention clock below.
+     * that would replace it. Checked on the attention clock below. Only its own
+     * pointer: `latest` may name a newer session by now.
      */
     const ownPointer = pointerPath(app.name, sessionId, { tmp: opts.tmp });
     const keepPointer = () => {
-      if (!existsSync(ownPointer)) publishOwnPointer();
+      if (!existsSync(ownPointer)) publishOwnPointer(false);
     };
     // The newest session, for every CLI verb with no --session: this one,
     // started new or restored. It outlives this daemon, unlike the pointer.

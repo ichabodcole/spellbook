@@ -181,6 +181,27 @@ describe("stale recovery's own race, step by step", () => {
   });
 });
 
+describe("the session a lock was taken for", () => {
+  test("is recorded; a lock naming another session holds nothing here, even with its holder alive", () => {
+    const dir = freshDir();
+    const a = takeDaemonLock(dir, () => 7200, "sess-a");
+    if (!a.ok) throw new Error("not taken");
+    expect(readDaemonLock(dir)?.session).toBe("sess-a");
+    // Held for its own session, by this live process.
+    expect(takeDaemonLock(dir, () => 7200, "sess-a").ok).toBe(false);
+    releaseDaemonLock(a.lock);
+    // The folder copied under another id: its lock names sess-a, held by our live parent.
+    writeFileSync(
+      join(dir, DAEMON_LOCK),
+      `${JSON.stringify({ pid: process.ppid, nonce: "9a".repeat(12), at: Date.now(), session: "sess-a" })}\n`,
+    );
+    expect(takeDaemonLock(dir, () => 7200, "sess-a").ok).toBe(false);
+    const b = takeDaemonLock(dir, () => 7200, "sess-b");
+    expect(b.ok).toBe(true);
+    if (b.ok) releaseDaemonLock(b.lock);
+  });
+});
+
 describe("tidying after a take", () => {
   test("a crashed reaper's orphan guard is removed by the next take; a live starter's is left", async () => {
     const dir = freshDir();
