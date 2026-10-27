@@ -72,22 +72,19 @@ Approved by Cole on 2026-10-26, from the triage of that day. In order:
 19. **[item/grapevine-status-frame-leaks](../items/grapevine-status-frame-leaks.md)**:
     holds the `--last n` miscount trimmed from 18.
 
-**5. Bounty and glamour, each with its partner:**
+**5. Glamour, with its partner:**
 
-20. **[item/bounty-latest-pointer-and-list-title](../items/bounty-latest-pointer-and-list-title.md)**
-    with
-    **[item/bounty-list-shows-stale-title](../items/bounty-list-shows-stale-title.md)**
-21. **[item/glamour-daemon-holds-cli-stderr](../items/glamour-daemon-holds-cli-stderr.md)**
+20. **[item/glamour-daemon-holds-cli-stderr](../items/glamour-daemon-holds-cli-stderr.md)**
     with
     **[item/glamour-open-reports-a-dead-daemon](../items/glamour-open-reports-a-dead-daemon.md)**
 
 **6. Test health:**
 
-22. **[item/kit-profiles-watch-test-timeout](../items/kit-profiles-watch-test-timeout.md)**
+21. **[item/kit-profiles-watch-test-timeout](../items/kit-profiles-watch-test-timeout.md)**
 
 **7. Research for the next cycle** (touches no code):
 
-23. **[item/kit-split-oversized-modules](../items/kit-split-oversized-modules.md)**:
+22. **[item/kit-split-oversized-modules](../items/kit-split-oversized-modules.md)**:
     a proposed split of `session.ts` (9,040 lines) and `server.ts` (5,357),
     agreed with Story Studio. The build opens the next cycle, before session
     identity and cleanup, which live in `session.ts`.
@@ -100,8 +97,10 @@ identity, session cleanup and chat image drop. The module split's build, which
 would collide with groups 1 and 3. Three bounty data-safety bugs
 (`bounty-failed-restore-and-empty-replace-succeed`,
 `bounty-snapshot-small-gaps`, `bounty-respawn-does-not-name-unsaved-dumps`),
-which Cole left for later. The reply-shape leftovers, wire work rather than
-bugs, whose planned cycle was abandoned the same day.
+which Cole left for later, and the two bounty bugs triage had put in group 5
+(`bounty-latest-pointer-and-list-title`, `bounty-list-shows-stale-title`). The
+reply-shape leftovers, wire work rather than bugs, whose planned cycle was
+abandoned the same day.
 
 ## Decision log
 
@@ -112,6 +111,7 @@ bugs, whose planned cycle was abandoned the same day.
 | 3   | 2026-10-26 | Cole: leave the three bounty data-safety bugs out.                                                                                                                 | Include them.                                        |
 | 4   | 2026-10-26 | Cole: his triage approval reviews the ready items' definitions of done (`status: stable`).                                                                         | Review each item when it starts.                     |
 | 5   | 2026-10-26 | Cole: a file symlink leaving its set is treated like a folder link (a link row; no search, meta or graph through it; Save refused). Can loosen to read-only later. | Hide it; show it read-only.                          |
+| 6   | 2026-10-26 | Cole: take the two bounty bugs out too; no bounty work this cycle.                                                                                                 | Keep them in group 5.                                |
 
 ## Outcome
 
