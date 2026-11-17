@@ -8,7 +8,7 @@ description:
   agent recreating them each time, and whether to adopt Story Studio's single
   project folder in place of _meta.
 status: stable
-lifecycle: ready
+lifecycle: active
 id: 01a1eadc-5c28-7746-9b8c-5bb7a428ab80
 kind: research
 generated: { by: claude-opus-5-5, at: 2026-11-17 }

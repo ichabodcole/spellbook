@@ -92,3 +92,5 @@ _Written at close._
 
 - docs/story-studio-document-ux-port (landed 2026-11-17)
 - chore/bun-1.4.4 (landed 2026-11-17)
+- docs/scriptorium-session-vocabularies (open)
+- docs/kit-split-oversized-modules (open)

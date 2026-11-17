@@ -6,7 +6,7 @@ description:
   seams, propose a split that keeps port-back with Story Studio workable, and
   list the other files worth splitting.
 status: stable
-lifecycle: backlog
+lifecycle: active
 id: 01a17a8e-259e-77a4-b704-af6c786e9732
 kind: research
 generated: { by: claude-opus-5-5, at: 2026-10-26 }
