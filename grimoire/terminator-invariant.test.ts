@@ -876,6 +876,10 @@ describe("ward — a flag demoted by `--` is warned about, on every registry ado
       // the kit's `note-reply <id> [text...]`. Rows 141 -> 143, cases 928 ->
       // 952 (direct 377 -> 385, after-text 174 -> 182, =value 377 -> 385),
       // quiet cases 142 -> 144.
+      // +2 flags on the kit's `task-done` in each of the two kit adopters
+      // (kit-task-done-takes-no-body-file: `--stdin`, `--body-file`): cases
+      // 952 -> 964 (direct 385 -> 389, after-text 182 -> 186, =value 385 ->
+      // 389); rows and quiet cases unchanged.
       adopters: 10,
       // Every row with ANY positional (required, optional or variadic), not
       // only c1's 43 variadic + 6 one-optional rows: a demoted token can fill
@@ -886,8 +890,8 @@ describe("ward — a flag demoted by `--` is warned about, on every registry ado
       // Measured 2026-09-27: 311 direct cases before the alias spelling joined.
       // 902 since the kit's `say` took `--via` (kit-port-via-refs): one more
       // case in each form.
-      cases: 952,
-      byForm: { direct: 385, "after-text": 182, "=value": 385 },
+      cases: 964,
+      byForm: { direct: 389, "after-text": 186, "=value": 389 },
       // mind-mapper `message` -> `read`: direct and =value. `read` has one
       // non-variadic positional, so no after-text case.
       viaAlias: 2,

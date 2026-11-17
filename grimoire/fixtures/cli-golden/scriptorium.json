@@ -192,7 +192,7 @@
       "reason": "prose, not an invocation: the line names the verb, whose positionals it gives elsewhere"
     }
   ],
-  "invocationCount": 211,
+  "invocationCount": 213,
   "invocations": [
     {
       "argv": [],
@@ -298,7 +298,8 @@
         "  task [text...] [--parent ..] [--stdin] [--body-file ..]",
         "                                                say you have started something; prints the id to finish it with (--parent <id> when delegating for another task)",
         "  task-status <id> <status...>                  say what step a task is on (picks up a human's open task; for work worth watching)",
-        "  task-done <id> [outcome...] [--failed]        mark a task finished, optionally saying what came of it (--failed marks it failed, and the words say why)",
+        "  task-done <id> [outcome...] [--failed] [--stdin] [--body-file ..]",
+        "                                                mark a task finished, optionally saying what came of it (prose: --body-file <path> or --stdin; --failed marks it failed, and the words say why)",
         "  task-cancel <id>                              cancel a task you started or one the human asked for",
         "  new-doc <path>                                create an empty document at <path> (its folder must be a set or a folder in one)",
         "  new-folder <path>                             create a folder at <path> inside a set or a folder in one",
@@ -401,7 +402,8 @@
         "  task [text...] [--parent ..] [--stdin] [--body-file ..]",
         "                                                say you have started something; prints the id to finish it with (--parent <id> when delegating for another task)",
         "  task-status <id> <status...>                  say what step a task is on (picks up a human's open task; for work worth watching)",
-        "  task-done <id> [outcome...] [--failed]        mark a task finished, optionally saying what came of it (--failed marks it failed, and the words say why)",
+        "  task-done <id> [outcome...] [--failed] [--stdin] [--body-file ..]",
+        "                                                mark a task finished, optionally saying what came of it (prose: --body-file <path> or --stdin; --failed marks it failed, and the words say why)",
         "  task-cancel <id>                              cancel a task you started or one the human asked for",
         "  new-doc <path>                                create an empty document at <path> (its folder must be a set or a folder in one)",
         "  new-folder <path>                             create a folder at <path> inside a set or a folder in one",
@@ -505,7 +507,8 @@
         "  task [text...] [--parent ..] [--stdin] [--body-file ..]",
         "                                                say you have started something; prints the id to finish it with (--parent <id> when delegating for another task)",
         "  task-status <id> <status...>                  say what step a task is on (picks up a human's open task; for work worth watching)",
-        "  task-done <id> [outcome...] [--failed]        mark a task finished, optionally saying what came of it (--failed marks it failed, and the words say why)",
+        "  task-done <id> [outcome...] [--failed] [--stdin] [--body-file ..]",
+        "                                                mark a task finished, optionally saying what came of it (prose: --body-file <path> or --stdin; --failed marks it failed, and the words say why)",
         "  task-cancel <id>                              cancel a task you started or one the human asked for",
         "  new-doc <path>                                create an empty document at <path> (its folder must be a set or a folder in one)",
         "  new-folder <path>                             create a folder at <path> inside a set or a folder in one",
@@ -1189,6 +1192,11 @@
             "path": ["task-done"],
             "args": [
               {
+                "name": "--body-file",
+                "type": "string",
+                "status": "valid"
+              },
+              {
                 "name": "--failed",
                 "type": "boolean",
                 "status": "valid"
@@ -1196,6 +1204,11 @@
               {
                 "name": "--session",
                 "type": "string",
+                "status": "valid"
+              },
+              {
+                "name": "--stdin",
+                "type": "boolean",
                 "status": "valid"
               }
             ],
@@ -2560,7 +2573,7 @@
       "stream": "stderr",
       "ok": false,
       "kind": "usage",
-      "choices": ["--failed", "--session"]
+      "choices": ["--body-file", "--failed", "--session", "--stdin"]
     },
     {
       "argv": ["task-done", "--help"],
@@ -2568,15 +2581,17 @@
       "verdict": "accepted",
       "stream": "stdout",
       "text": [
-        "usage: task-done <id> [outcome...] [--failed]",
+        "usage: task-done <id> [outcome...] [--failed] [--stdin] [--body-file ..]",
         "",
-        "mark a task finished, optionally saying what came of it (--failed marks it failed, and the words say why)",
+        "mark a task finished, optionally saying what came of it (prose: --body-file <path> or --stdin; --failed marks it failed, and the words say why)",
         "",
         "flags:",
+        "  --body-file <body-file>",
         "  --failed",
+        "  --stdin",
         "",
         "also accepted:",
-        "  --session <session>  the session to talk to (default: the most recent; a write is refused without it while several sessions are running)"
+        "  --session <session>      the session to talk to (default: the most recent; a write is refused without it while several sessions are running)"
       ]
     },
     {
@@ -3546,6 +3561,23 @@
     },
     {
       "argv": ["task-done", "t1", "shipped"],
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["task-done", "t1", "--stdin"],
+      "stdin": "shipped",
+      "exit": 5,
+      "verdict": "accepted",
+      "stream": "stderr",
+      "ok": false,
+      "kind": "not_found"
+    },
+    {
+      "argv": ["task-done", "t1", "--failed", "--body-file", "golden.md"],
       "exit": 5,
       "verdict": "accepted",
       "stream": "stderr",

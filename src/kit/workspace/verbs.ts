@@ -1770,15 +1770,21 @@ export function createWorkspaceCli(opts: WorkspaceCliOptions): WorkspaceCli {
     },
     {
       name: "task-done",
-      flags: [...SESSION, "failed"],
+      flags: [...SESSION, "failed", "stdin", "body-file"],
       positionals: [
         { name: "id", required: true },
         { name: "outcome", required: false, variadic: true },
       ],
       describe:
-        "mark a task finished, optionally saying what came of it (--failed marks it failed, and the words say why)",
+        "mark a task finished, optionally saying what came of it (prose: --body-file <path> or --stdin; --failed marks it failed, and the words say why)",
       run: async (pos, flags, session) => {
-        const outcome = pos.slice(1).join(" ").trim();
+        // The outcome is optional; when one is given, it comes from one place.
+        const words = pos.slice(1);
+        const given =
+          words.join("").trim() !== "" ||
+          flags.stdin === true ||
+          typeof flags["body-file"] === "string";
+        const outcome = given ? await readBody(words, flags, "task-done") : "";
         printJson(
           await postCmd(session, {
             op: "task.done",

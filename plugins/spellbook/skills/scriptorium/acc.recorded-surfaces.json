@@ -227,10 +227,10 @@
       "exitCode": 2,
       "streams": "separated",
       "stdout": "",
-      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"task-done: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--failed\",\"--session\"]},\"meta\":{\"command\":\"task-done\"}}\n",
+      "stderr": "{\"ok\":false,\"error\":{\"kind\":\"usage\",\"exit_code\":2,\"retryable\":false,\"message\":\"task-done: Unknown option '--acc-not-a-flag'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \\\"--acc-not-a-flag\\\"\",\"hint\":\"for free text containing dashes, put it after a bare --\",\"choices\":[\"--body-file\",\"--failed\",\"--session\",\"--stdin\"]},\"meta\":{\"command\":\"task-done\"}}\n",
       "completeness": "complete",
-      "recordedBy": "colereed via acc probe-plan harness, build 23dd202c-dirty, paths derived from the declaration",
-      "recordedAt": "2026-10-20T21:53:56Z"
+      "recordedBy": "kit-task-done-takes-no-body-file implementer: task-done's sentinel rejection re-captured from the launcher on a scratch home after it gained --stdin and --body-file, replaced by hand",
+      "recordedAt": "2026-11-17T00:00:00Z"
     },
     {
       "path": ["task-cancel"],

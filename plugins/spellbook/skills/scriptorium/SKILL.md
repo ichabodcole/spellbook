@@ -37,7 +37,8 @@ cross-checking a set — **hand the work to a subagent and stay at the board**:
 2. `task "<what you are doing>"` — it posts that message and records the work in
    one act, so the queue and the conversation cannot disagree.
 3. Dispatch a subagent with the actual job.
-4. `task-done <id> "<what came of it>"` when it lands.
+4. `task-done <id> "<what came of it>"` when it lands (a result of several
+   lines: `task-done <id> --body-file <path>`).
 
 The failure this avoids is subtle: an agent that both does the work and attends
 to the human does neither well, and the human is left watching a spinner with no
@@ -93,12 +94,14 @@ Your work exists as versions until they accept it.
 
 **4 · Prose goes through a file.** `say --body-file <path>` or `--stdin` from a
 quoted heredoc, never as shell arguments — an unquoted heredoc eats backticks
-before the CLI sees them. Same for `task`, `version-new`, `note-reply`, and
-`note --quote '<exact text>'`. `task`'s text becomes the task's title in their
-queue, so keep it to a line. `task-done` and `task-status` take their words as
-arguments only: keep them short, quoted, and free of backticks. An event's
-`hint` writes `say "<reply>"` as shorthand for the verb; the reply still goes
-through a file.
+before the CLI sees them. Same for `task`, `task-done`, `version-new`,
+`note-reply`, and `note --quote '<exact text>'`. `task`'s text becomes the
+task's title in their queue, so keep it to a line.
+`task-done <id> --body-file <path>` (or `--stdin`, with `--failed` too) carries
+an outcome of several lines; a short one can still be a quoted argument, but
+never both. `task-status` takes its words as arguments only: keep them short,
+quoted, and free of backticks. An event's `hint` writes `say "<reply>"` as
+shorthand for the verb; the reply still goes through a file.
 
 **Write `say` in markdown; it renders** in a narrow side panel: keep headings
 small and tables narrow. Web links open in a new tab. Write a link to a document
