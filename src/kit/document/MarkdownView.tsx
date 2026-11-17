@@ -93,14 +93,69 @@ function pointOffset(
     }
   }
   if (!range || !root.contains(range.startContainer)) return null;
-  // A caret is a POINT; `resolveRange` refuses an empty range, so widen it by one
-  // character and take the start of what comes back.
-  const probe = document.createRange();
-  probe.setStart(range.startContainer, range.startOffset);
   const node = range.startContainer;
-  const len = node.nodeType === Node.TEXT_NODE ? (node as Text).data.length : 0;
-  probe.setEnd(node, Math.min(range.startOffset + 1, len));
-  return resolveRange(root, projection, probe)?.from ?? null;
+  if (node.nodeType === Node.TEXT_NODE) {
+    const at = textOffset(root, projection, node as Text, range.startOffset);
+    if (at !== null) return at;
+  }
+  // Between blocks, or beside them (the browser's caret is in an element, or in
+  // the whitespace that separates two blocks): the nearest text position, the
+  // end of the text before it or, with none before, the start of the text after.
+  return nearestTextOffset(root, projection, node, range.startOffset);
+}
+
+/**
+ * The source offset of a caret at `offset` in text node `node`; null when the
+ * node is not text the projection knows (whitespace between blocks). A caret is
+ * a POINT, and `resolveRange` refuses an empty range, so the probe is one
+ * character wide: the one after the caret, taking its start, or, at the end of
+ * the node (a right-click past a line's last word), the one before it, taking
+ * its end.
+ */
+function textOffset(
+  root: HTMLElement,
+  projection: ReturnType<typeof project>,
+  node: Text,
+  offset: number,
+): number | null {
+  const len = node.data.length;
+  if (len === 0) return null;
+  const probe = document.createRange();
+  if (offset < len) {
+    probe.setStart(node, offset);
+    probe.setEnd(node, offset + 1);
+    return resolveRange(root, projection, probe)?.from ?? null;
+  }
+  probe.setStart(node, len - 1);
+  probe.setEnd(node, len);
+  return resolveRange(root, projection, probe)?.to ?? null;
+}
+
+/** The source offset of the text position nearest a caret at `offset` in `container`, outside any text. */
+function nearestTextOffset(
+  root: HTMLElement,
+  projection: ReturnType<typeof project>,
+  container: Node,
+  offset: number,
+): number | null {
+  const caret = document.createRange();
+  caret.setStart(container, offset);
+  caret.setEnd(container, offset);
+  let before: number | null = null;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  for (let n = walker.nextNode(); n !== null; n = walker.nextNode()) {
+    if (n === container) continue;
+    const t = n as Text;
+    // Before the caret: the last one wins, at its end. After it: the first, at its start.
+    if (caret.comparePoint(t, t.data.length) <= 0) {
+      before = textOffset(root, projection, t, t.data.length) ?? before;
+      continue;
+    }
+    if (before !== null) return before;
+    const after = textOffset(root, projection, t, 0);
+    if (after !== null) return after;
+  }
+  return before;
 }
 
 export function MarkdownView({

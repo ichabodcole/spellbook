@@ -425,10 +425,14 @@ function renderedWord(word: string): { node: Text; at: number } {
 /** The rendered view's point under the pointer: the start of `word` (happy-dom has no hit-testing). */
 function pointerAtRendered(word: string) {
   const { node, at } = renderedWord(word);
+  caretInRendered(node, at);
+}
+/** The rendered view's caret under the pointer, where the browser would put it: `offset` in `node`. */
+function caretInRendered(node: Node, offset: number) {
   (document as unknown as Record<string, unknown>).caretRangeFromPoint = () => {
     const r = document.createRange();
-    r.setStart(node, at);
-    r.setEnd(node, at);
+    r.setStart(node, offset);
+    r.setEnd(node, offset);
     return r;
   };
 }
@@ -535,6 +539,57 @@ describe("away from the selection", () => {
     }
     await m.unmount();
   });
+
+  // A right-click past a line's last word, or in the space beside a short
+  // line, puts the browser's caret at the END of a text node, or in an element
+  // between blocks: neither is a character to probe, and the point was lost.
+  for (const [where, caret] of [
+    [
+      "past the last word of a line",
+      () => {
+        const { node } = renderedWord("here");
+        caretInRendered(node, node.data.length);
+      },
+    ],
+    [
+      "between blocks, after the line",
+      () => {
+        const p = renderedWord("here").node.parentElement as HTMLElement;
+        const parent = p.parentElement as HTMLElement;
+        caretInRendered(parent, [...parent.childNodes].indexOf(p) + 1);
+      },
+    ],
+  ] as const) {
+    test(`rendered: ${where}, the menu is the caret's at the line's end`, async () => {
+      startMode = "rendered";
+      const m = await start();
+      try {
+        selectRendered("bakery");
+        caret();
+        expect(await rightClick(q(".md-prose"))).toBe(true);
+        expect(items()).toEqual(["Add noteselect text first", "Insert a link"]);
+        expect(window.getSelection()?.toString()).toBe("bakery");
+        await click(item("Insert a link"));
+        await waitFor(() => picker() !== null && options().length > 0, "the picker's documents");
+        await typeInto(labelField() as HTMLInputElement, "over there");
+        await typeInto(docField() as HTMLInputElement, "b");
+        await key(docField(), "Enter");
+        await waitFor(
+          () => (q(".md-prose")?.textContent ?? "").includes("over there"),
+          "the link written",
+        );
+        const slug = client?.state?.openDoc ?? "";
+        const d = daemon.session.doc(slug);
+        expect(daemon.session.readVersion(slug, d.active).text).toBe(
+          "# A\n\nsee the bakery here[over there](./part/b.md)\n",
+        );
+      } finally {
+        window.getSelection()?.removeAllRanges();
+        delete (document as unknown as Record<string, unknown>).caretRangeFromPoint;
+      }
+      await m.unmount();
+    });
+  }
 
   test("rendered: inside the selection, the menu is as before", async () => {
     startMode = "rendered";

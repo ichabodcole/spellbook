@@ -123,6 +123,65 @@ test("a selection made on the held text is reported in the newer one, with its l
   expect(menus.at(-1)).toMatchObject({ from: at, to: at + 5 });
 });
 
+test("the point under a right-click is measured on the held text and said in the newer one (#146)", async () => {
+  const menus: { from: number; to: number; point: number | null }[] = [];
+  const view = (text: string) => (
+    <MarkdownView
+      text={text}
+      textKey="doc@1"
+      onEmbedTargets={costly}
+      onContextMenu={(at) => {
+        menus.push(at);
+        return true;
+      }}
+    />
+  );
+  const m = await mount(view(OLD));
+  await m.render(view(NEW));
+  expect(body(m.container).textContent).not.toContain("Added a.");
+  await select(body(m.container), "Line 7: lorem ipsum.", "ipsum");
+  // happy-dom has no hit-testing: the browser's caret under the pointer is placed here.
+  const doc = document as unknown as Record<string, unknown>;
+  const rightClickAt = async (node: Node, offset: number) => {
+    doc.caretRangeFromPoint = () => {
+      const r = document.createRange();
+      r.setStart(node, offset);
+      r.setEnd(node, offset);
+      return r;
+    };
+    await settle(() => {
+      body(m.container).dispatchEvent(
+        new MouseEvent("contextmenu", { bubbles: true, cancelable: true }),
+      );
+    });
+  };
+  try {
+    const line8 = find(body(m.container), "Line 8: lorem ipsum.");
+    const selected = NEW.indexOf("ipsum", NEW.indexOf("Line 7:"));
+    // On a word of Line 8, away from the selection: its offset in the newer text.
+    await rightClickAt(line8.node, line8.at + "Line 8: lorem ".length);
+    const word = NEW.indexOf("ipsum", NEW.indexOf("Line 8:"));
+    expect(menus.at(-1)).toEqual({
+      x: 0,
+      y: 0,
+      from: selected,
+      to: selected + 5,
+      point: word,
+      noteIds: [],
+      seen: "ipsum",
+    } as (typeof menus)[number]);
+    // Not the same offset in the held text, which would be another place.
+    expect(OLD.indexOf("ipsum", OLD.indexOf("Line 8:"))).not.toBe(word);
+    // Past the line's last word: the end of Line 8, in the newer text.
+    await rightClickAt(line8.node, line8.node.data.length);
+    expect(menus.at(-1)?.point).toBe(
+      NEW.indexOf("Line 8: lorem ipsum.") + "Line 8: lorem ipsum.".length,
+    );
+  } finally {
+    delete doc.caretRangeFromPoint;
+  }
+});
+
 test("a selection inside what changed is cleared, never reported against the wrong text", async () => {
   const reports: SelectionReport[] = [];
   const view = (text: string) => (
