@@ -6,7 +6,7 @@ description:
   entries, and 6.0.0 then refuses the whole session (exit 6) instead of
   converting the mixed manifest.
 status: stable
-lifecycle: active
+lifecycle: done
 id: 01a177c2-9225-736c-8998-45fdfb660d6d
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-26 }
