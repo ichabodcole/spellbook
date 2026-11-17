@@ -6,7 +6,7 @@ description:
   second session opens, an agent's writes land in another project and return ok:
   true. A data-safety bug."
 status: stable
-lifecycle: active
+lifecycle: done
 id: 01a1eabe-efdc-746b-95b1-9e7900a7e0eb
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-11-17 }
@@ -43,7 +43,7 @@ with their sets, and a `hint` naming `--session`. Reads may stay lenient.
 Optional: `open` prints the session id prominently, and write replies name the
 `session` they went to.
 
-Related: [scriptorium-session-identity](scriptorium-session-identity.md).
+Related: [scriptorium-session-identity](../scriptorium-session-identity.md).
 
 ## Definition of done
 

@@ -95,7 +95,7 @@ Two things to decide while designing:
 
 **Benefits:** switching between sessions is faster. Fewer edits go to the wrong
 session. The session list that cleanup needs gets readable rows.
-[kit-unpinned-verbs-write-to-another-session](../../items/kit-unpinned-verbs-write-to-another-session.md)
+[kit-unpinned-verbs-write-to-another-session](../../items/kit-unpinned-verbs-write-to-another-session/item.md)
 (#137) refuses an ambiguous write by listing the live sessions, and a title in
 that list helps the agent choose.
 
