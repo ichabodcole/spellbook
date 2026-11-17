@@ -357,9 +357,11 @@ export type EditorHandle = {
  */
 /**
  * A right-click in the text: where, what is selected (the caret, `from === to`,
- * when nothing is), which notes are under the pointer, and whether Shift was
- * held. Every right-click asks; the answer `false` leaves the event to the
- * browser, whose own menu then opens.
+ * when nothing is), the text position under the pointer (`point`, null off the
+ * text: a right-click outside a selection need not move it, so the two can
+ * differ), which notes are under the pointer, and whether Shift was held.
+ * Every right-click asks; the answer `false` leaves the event to the browser,
+ * whose own menu then opens.
  */
 export type ContextMenuRequest = (
   at: {
@@ -367,6 +369,8 @@ export type ContextMenuRequest = (
     y: number;
     from: number;
     to: number;
+    /** The position under the pointer, in the same count as `from`/`to`; null off the text. */
+    point: number | null;
     noteIds: string[];
     /** The selected text as the view shows it, when something is selected: see `SelectionReport.seen`. */
     seen?: string;
@@ -933,6 +937,7 @@ export function DocumentView({
               y: event.clientY,
               from: daemonOffset(textRef.current, from),
               to: daemonOffset(textRef.current, to),
+              point: pos,
               noteIds,
               ...(from < to ? { seen: v.state.sliceDoc(from, to) } : {}),
             },

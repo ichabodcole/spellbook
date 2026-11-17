@@ -677,6 +677,7 @@ export function MarkdownView({
                 y: e.clientY,
                 from: where?.from ?? 0,
                 to: where?.to ?? 0,
+                point: caret?.from ?? null,
                 noteIds,
                 ...(m && r ? { seen: r.seen } : {}),
                 ...(noteRefusal ? { noteRefusal } : {}),
