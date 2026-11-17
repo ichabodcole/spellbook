@@ -33,7 +33,7 @@ Land it on one branch with the Activity tab, and with or after
 [kit-owed-notes-in-the-inbox](kit-owed-notes-in-the-inbox.md): our Notes dot
 covers owed notes in every document, and only the inbox replaces that cue.
 Blocked by both that item and
-[kit-split-oversized-modules](kit-split-oversized-modules.md).
+[kit-split-oversized-modules](kit-split-oversized-modules/item.md).
 
 ## Definition of done
 

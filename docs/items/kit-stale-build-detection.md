@@ -25,7 +25,7 @@ Spellbook has no single service, so this is per daemon: compare the build stamp
 the daemon started with against the one on disk, and say so on the page and in
 `tail`, with the act that restarts it.
 
-Blocked by [kit-split-oversized-modules](kit-split-oversized-modules.md).
+Blocked by [kit-split-oversized-modules](kit-split-oversized-modules/item.md).
 
 ## Definition of done
 

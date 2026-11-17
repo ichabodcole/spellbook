@@ -55,8 +55,8 @@ three calls.
   are still close (`ChatComposer` about 37 lines apart, `HistoryArrows` 21), but
   anything with a daemon, verb, shell or pane half is a rewrite by hand, not a
   cherry-pick, until
-  [kit-split-oversized-modules](../kit-split-oversized-modules.md) catches us
-  up.
+  [kit-split-oversized-modules](../kit-split-oversized-modules/item.md) catches
+  us up.
 
 ## Findings
 
@@ -244,4 +244,4 @@ Answered in Decided.
 
 - [Which of Story Studio's new document UX should Scriptorium take?](./item.md)
 - [What to take back from Story Studio](../_archive/story-studio-port-back/write-up.md)
-- [Split the kit's oversized modules](../kit-split-oversized-modules.md)
+- [Split the kit's oversized modules](../kit-split-oversized-modules/item.md)

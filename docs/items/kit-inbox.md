@@ -48,7 +48,7 @@ trimmed; the hook and popover need rework, because ours has no split `TopBar`
 (our top bar is inline in `WorkspaceShell.tsx`).
 
 Blocked by [kit-leave-an-agent-version](kit-leave-an-agent-version.md) and by
-[kit-split-oversized-modules](kit-split-oversized-modules.md).
+[kit-split-oversized-modules](kit-split-oversized-modules/item.md).
 
 ## Definition of done
 

@@ -43,7 +43,7 @@ Approved by Cole on 2026-11-17. In order:
    to adopt `@studio`. It takes in what item 1 finds.
 3. **[item/frontmatter-chip-editing](../items/frontmatter-chip-editing/item.md)**:
    after item 2, from which it takes its values.
-4. **[item/kit-split-oversized-modules](../items/kit-split-oversized-modules.md)**,
+4. **[item/kit-split-oversized-modules](../items/kit-split-oversized-modules/item.md)**,
    starting from Story Studio's refactoring cycle (closed 2026-11-08): how to
    split `session.ts` and the other large modules. Its call shapes every later
    kit change.

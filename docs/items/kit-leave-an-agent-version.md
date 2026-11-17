@@ -36,8 +36,8 @@ and
 decide the three together.
 
 The daemon half lands in `session.ts` and `server.ts`, so it is blocked by
-[kit-split-oversized-modules](kit-split-oversized-modules.md); the split's build
-items will replace that as the real blocker once they are filed.
+[kit-split-oversized-modules](kit-split-oversized-modules/item.md); the split's
+build items will replace that as the real blocker once they are filed.
 
 ## Definition of done
 

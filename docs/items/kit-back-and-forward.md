@@ -39,7 +39,7 @@ session's port dies with it, so links don't outlive the session.
 
 `navHistory.ts` and `navKeys.ts` port cleanly; the controller and the top bar
 need the kit split, so this is blocked by
-[kit-split-oversized-modules](kit-split-oversized-modules.md).
+[kit-split-oversized-modules](kit-split-oversized-modules/item.md).
 
 ## Definition of done
 
