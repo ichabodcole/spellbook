@@ -5,12 +5,13 @@ description:
   "`<cli> schema | true` closes stdout early; with no error listener Bun prints
   an EPIPE stack and exits 1. Image Farm's exitOnBrokenPipe exits 0 quietly."
 status: draft
-lifecycle: triage
+lifecycle: ready
 id: 01a1eabe-f743-74c8-beb8-146638bf1f67
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-11-17 }
 tags: [kit, cli]
 parent: feature/workspace-kit-follow-ups
+priority: medium
 ---
 
 # A closed stdout pipe crashes a kit CLI with an EPIPE stack

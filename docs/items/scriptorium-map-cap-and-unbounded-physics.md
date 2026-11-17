@@ -5,13 +5,14 @@ description:
   "GitHub #135: the map's draw cap kept documents in path order, and the physics
   layout lets unlinked documents drift off the canvas."
 status: draft
-lifecycle: triage
+lifecycle: ready
 id: 01a1eabe-eed5-748e-8244-51395d72fe05
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-11-17 }
 tags: [kit, scriptorium, map]
 parent: feature/workspace-kit-follow-ups
 source: "#135"
+priority: low
 ---
 
 # Scriptorium: the map's draw cap and unbounded physics

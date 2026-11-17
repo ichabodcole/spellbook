@@ -5,13 +5,14 @@ description:
   "GitHub #146: the document menu takes the editor's selection whatever the
   pointer's position, so Paste can replace text the user isn't looking at."
 status: draft
-lifecycle: triage
+lifecycle: ready
 id: 01a1eabe-f49f-74c5-b302-64b76d6b2854
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-11-17 }
 tags: [kit, scriptorium, editor]
 parent: feature/workspace-kit-follow-ups
 source: "#146"
+priority: high
 ---
 
 # A right-click away from a selection still acts on that selection

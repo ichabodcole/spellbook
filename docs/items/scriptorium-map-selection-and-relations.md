@@ -6,13 +6,14 @@ description:
   column has landed, while selection as chat context, relation colours, a
   neighbourhood view and an offered map have not."
 status: draft
-lifecycle: triage
+lifecycle: backlog
 id: 01a1eabe-ef5a-76cf-bdeb-adb8a943c22b
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-11-17 }
 tags: [kit, scriptorium, map, chat]
 parent: feature/workspace-kit-follow-ups
 source: "#136"
+priority: low
 ---
 
 # Scriptorium: the map shows relations, and its selection is chat context

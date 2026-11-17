@@ -6,12 +6,13 @@ description:
   frontmatter, headings, line numbers, code masking, diffs and link context;
   Story Studio moved them onto shared lineBreaks helpers.
 status: draft
-lifecycle: triage
+lifecycle: ready
 id: 01a1eabe-f634-704d-8baa-9fd7d70abc22
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-11-17 }
 tags: [kit, editor]
 parent: feature/workspace-kit-follow-ups
+priority: medium
 ---
 
 # Line counters outside the note path miss lone-CR breaks

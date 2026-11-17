@@ -6,13 +6,14 @@ description:
   a bundle's inner files are not tree rows, so an image copied into a bundle
   can't be described."
 status: draft
-lifecycle: triage
+lifecycle: backlog
 id: 01a1eabe-f7ca-7464-95bc-ab2e9f748e9d
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-11-17 }
 tags: [kit, images]
 parent: feature/workspace-kit-follow-ups
 source: "#150"
+priority: low
 ---
 
 # An image inside a bundle's assets/ gets no description

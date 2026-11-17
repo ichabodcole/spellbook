@@ -6,12 +6,14 @@ description:
   posted in another chat is missing under its note; Story Studio fixed it with a
   reply index across chats (f557c49b).
 status: draft
-lifecycle: triage
+lifecycle: backlog
 id: 01a1eabe-f5ad-71ae-9f0f-d41813f8cfd1
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-11-17 }
 tags: [kit, notes, chat]
 parent: feature/workspace-kit-follow-ups
+priority: medium
+blocked_by: [01a1759b-4cb1-72ff-b1fd-f47246421e50]
 ---
 
 # A note's replies from another chat vanish until that chat opens
