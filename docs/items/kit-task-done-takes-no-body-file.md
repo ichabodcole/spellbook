@@ -5,7 +5,7 @@ description:
   "GitHub #145: task-done takes its outcome only as positionals, so a multi-line
   result with backticks can't go through a file, as the SKILL asks of prose."
 status: stable
-lifecycle: ready
+lifecycle: active
 id: 01a1eabe-f419-7485-9225-8ff80903f526
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-11-17 }

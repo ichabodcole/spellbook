@@ -97,3 +97,4 @@ _Written at close._
 - fix/kit-unpinned-verbs-write-to-another-session (landed 2026-11-17)
 - fix/kit-right-click-away-from-selection (open)
 - fix/scriptorium-downgraded-session-refused (open)
+- fix/kit-cli-small-fixes (open)
