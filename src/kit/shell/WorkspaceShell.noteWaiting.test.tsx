@@ -2,7 +2,8 @@
 // the human leaves shows the message wait's pulse, then its static "may be
 // stuck", on the note, on the Notes tab, in the note menu and on the floating
 // composer. It clears on exactly three things: the note resolved, the agent's
-// message about it (a reply to the note, or a `say` naming it), the agent
+// message about it (a reply to the note, or a protocol `say` naming it; the
+// CLI's `say` has no flag for that), the agent
 // rewriting its own note. Nothing else clears it: not a reply to another note,
 // nor an agent message about nothing. The agent's replies show under the note.
 

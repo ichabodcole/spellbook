@@ -226,7 +226,10 @@ const note = (
   };
 };
 const inDoc = (...notes: NoteFact[]) => [{ slug: "maren", notes }];
-/** The agent's message about a note, at `ms`: a `note-reply`, or a `say` naming it. */
+/**
+ * The agent's message about a note, at `ms`: a `note-reply`, or a `say` naming
+ * it (the protocol's `say` takes `about`; the CLI's has no flag for it).
+ */
 const reply = (noteId: string, ms: number) => ({ ...msg("agent", ms), about: { noteId } });
 const owed = (noteId: string, since: number, badge: "working" | "stalled", doc = "maren") => ({
   doc,
@@ -327,7 +330,7 @@ describe("notesWaiting", () => {
     ]);
   });
 
-  test("a `say` whose `about` names a note answers that note, and only that one", () => {
+  test("a protocol `say` whose `about` names a note answers that note, and only that one", () => {
     const docs = inDoc(note("n1", 1000), note("n2", 2000));
     const said = { ...msg("agent", 3000), type: "message", about: { noteId: "n2" } };
     expect(notesWaiting(docs, [said], 5000)).toEqual([owed("n1", 1000, "working")]);
@@ -338,9 +341,11 @@ describe("notesWaiting", () => {
     expect(notesWaiting(inDoc(note("n1", 1000)), [asked], 5000)).toHaveLength(1);
   });
 
-  test("a reply before a later note answers the earlier one only", () => {
+  test("each note is timed against its own replies: a newer reply to another note does not answer it", () => {
+    // n2 was rewritten into being after its only reply; the newest agent message
+    // overall (to n1) is after n2, and still says nothing about it.
     const docs = inDoc(note("n1", 1000), note("n2", 4000));
-    expect(notesWaiting(docs, [reply("n1", 3000), reply("n2", 3500)], 5000)).toEqual([
+    expect(notesWaiting(docs, [reply("n2", 3500), reply("n1", 4500)], 5000)).toEqual([
       owed("n2", 4000, "working"),
     ]);
   });
@@ -385,6 +390,54 @@ describe("notesWaiting", () => {
     const broken = { ...reply("n1", 0), ts: "not a time" };
     expect(notesWaiting(docs, [reply("n1", 2000), broken], 5000)).toEqual([]);
     expect(notesWaiting(docs, [reply("n1", 500), broken], 5000)).toHaveLength(1);
+  });
+});
+
+describe("notesWaiting: an answered ask restarts the note's clock", () => {
+  // The reviewer's probe: a note at 0, stuck by 30 s, asked about at 40 s, and
+  // the ask answered by a plain `say` at 41 s.
+  const docs = inDoc(note("n1", 0));
+  const chat = [askAt("n1", 40_000), msg("agent", 41_000)];
+
+  test("a plain answer to the ask leaves the note waiting, as a pulse timed from the answer", () => {
+    expect(notesWaiting(docs, chat, 41_500)).toEqual([owed("n1", 41_000, "working")]);
+  });
+
+  test("and only reads stuck once the threshold passes from the answer with no reply about it", () => {
+    expect(notesWaiting(docs, chat, 70_999)[0]?.badge).toBe("working");
+    expect(notesWaiting(docs, chat, 71_000)).toEqual([owed("n1", 41_000, "stalled")]);
+  });
+
+  test("a reply about the note still clears it", () => {
+    expect(notesWaiting(docs, [...chat, reply("n1", 42_000)], 99_000)).toEqual([]);
+  });
+
+  test("an ask not yet answered keeps the note's own clock", () => {
+    expect(notesWaiting(docs, [askAt("n1", 40_000)], 41_500)).toEqual([owed("n1", 0, "stalled")]);
+  });
+
+  test("an answer in the ask's own millisecond has not read it", () => {
+    expect(notesWaiting(docs, [askAt("n1", 40_000), msg("agent", 40_000)], 41_500)).toEqual([
+      owed("n1", 0, "stalled"),
+    ]);
+  });
+
+  test("the first answer restarts it, not a later word", () => {
+    const more = [...chat, msg("agent", 60_000)];
+    expect(notesWaiting(docs, more, 71_000)[0]?.badge).toBe("stalled");
+  });
+
+  test("an ask about the note before the human rewrote it is about the old question", () => {
+    const rewritten = inDoc(note("n1", 0, { editedAt: 50_000, editedBy: "human" }));
+    expect(notesWaiting(rewritten, chat, 51_000)).toEqual([owed("n1", 50_000, "working")]);
+  });
+
+  test("an ask about another note restarts nothing here", () => {
+    const two = inDoc(note("n1", 0), note("n2", 0));
+    expect(notesWaiting(two, chat, 41_500)).toEqual([
+      owed("n2", 0, "stalled"),
+      owed("n1", 41_000, "working"),
+    ]);
   });
 });
 

@@ -301,8 +301,9 @@ they have an **Ask the agent** button on it, and it arrives as a `message` with
 document they have OPEN, which may not be the note's:** the note's document is
 the `--doc` in the event's `hint`, which names the exact `notes`, `note-reply`
 and `note-resolve` commands (or find the id with `notes`). The note then shows
-it is with you until you reply or resolve it. If they rewrite it, it is owed
-again.
+it is with you until you reply or resolve it. Answering an ask with a plain
+`say` answers the ask, but the note still waits for `note-reply` (its pulse
+restarts from your answer). If they rewrite it, it is owed again.
 
 ## The words that mean something specific
 

@@ -346,6 +346,38 @@ describe("a note that may be stuck offers Ask the agent", () => {
     await m.unmount();
   });
 
+  // The reviewer's case: a note asked about because it was stuck, the ask
+  // answered by a plain `say`. The ask is answered; the note still waits on a
+  // `note-reply`, but timed from the answer, so it is a pulse again, not stuck
+  // at once with the Ask offered straight back.
+  test("an ask answered by a plain say: the note keeps waiting, as a pulse, and Ask comes back only past the threshold", async () => {
+    const { m, slug } = await openSolo(true);
+    const id = await humanNote(slug, "asked, then talked past");
+    await waitFor(() => askOn("asked, then talked past") !== null, "the act", 4000);
+    await click(askOn("asked, then talked past"));
+    await waitFor(() => asksHeard().length === 1, "the ask");
+    await post({ op: "say", text: "On the conversation, not the note." });
+    // The snapshot that carries the answer: the note is still owed, timed from it.
+    await waitFor(
+      () => ws().state.chat.some((c) => c.text === "On the conversation, not the note."),
+      "the answer",
+    );
+    const said = ws().state.chat.find((c) => c.text === "On the conversation, not the note.");
+    const owed = ws().state.notesWaiting?.find((n) => n.noteId === id);
+    expect(owed).toMatchObject({ since: said?.ts, badge: "working" });
+    // Drawn as the note's own pulse, with nothing to press.
+    await waitFor(
+      () => markOn("asked, then talked past")?.getAttribute("data-waiting-of") === "note",
+      "the note's own mark",
+    );
+    expect(askOn("asked, then talked past")).toBeNull();
+    // Past the threshold from the answer, still with no reply: stuck, and Ask again.
+    await waitFor(() => askOn("asked, then talked past") !== null, "the act again", 4000);
+    expect(markOn("asked, then talked past")?.textContent).toBe(NOTE_WAITING_LABEL.stalled);
+    expect(asksHeard()).toHaveLength(1);
+    await m.unmount();
+  });
+
   test("an app's own words, through a function", async () => {
     const { m, slug } = await openSolo((note, doc) => `Still waiting on "${note.body}" (${doc})`);
     await humanNote(slug, "my words");
