@@ -253,20 +253,24 @@ function ownedByMe(path: string): boolean {
 }
 
 /**
- * The newest session pointer of `spell` whose daemon is still alive, or null. A pointer
- * that cannot be read or parsed, names a dead pid, is filed under another session's
- * name or belongs to another user is not a candidate: this is a fallback for a
- * missing or untrusted `latest`, so it never throws.
+ * Every session pointer of `spell` whose daemon is still alive, newest first (by
+ * the pointer file's mtime). A pointer that cannot be read or parsed, names a
+ * dead pid, is filed under another session's name or belongs to another user is
+ * not listed. The `latest` pointer is not a session's own and is never listed.
+ * Never throws.
+ *
+ * What a CLI counts to know whether a verb with no `--session` is ambiguous
+ * (several sessions live), and what a missing or untrusted `latest` falls back to.
  */
-function newestLivePointer(spell: string, opts: DiscoveryOptions): SessionPointer | null {
+export function livePointers(spell: string, opts: DiscoveryOptions = {}): SessionPointer[] {
   const dir = opts.tmp ?? tmpdir();
   let names: string[];
   try {
     names = readdirSync(dir);
   } catch {
-    return null;
+    return [];
   }
-  let best: { pointer: SessionPointer; at: number } | null = null;
+  const found: { pointer: SessionPointer; at: number }[] = [];
   for (const name of names) {
     if (!name.startsWith(`${spell}.`) || !name.endsWith(".json")) continue;
     if (name === `${spell}.latest.json`) continue;
@@ -275,13 +279,17 @@ function newestLivePointer(spell: string, opts: DiscoveryOptions): SessionPointe
       const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
       if (!isPointer(parsed) || name !== `${spell}.${parsed.session_id}.json`) continue;
       if (!ownedByMe(path) || !pidAlive(parsed.pid)) continue;
-      const at = statSync(path).mtimeMs;
-      if (!best || at > best.at) best = { pointer: parsed, at };
+      found.push({ pointer: parsed, at: statSync(path).mtimeMs });
     } catch {
       /* unreadable, gone, or not a pointer: not a candidate */
     }
   }
-  return best?.pointer ?? null;
+  return found.sort((a, b) => b.at - a.at).map((f) => f.pointer);
+}
+
+/** The newest live session pointer of `spell`, or null: the fallback for a missing or untrusted `latest`. */
+function newestLivePointer(spell: string, opts: DiscoveryOptions): SessionPointer | null {
+  return livePointers(spell, opts)[0] ?? null;
 }
 
 /** The pointer's fields, with any number as its pid. */
