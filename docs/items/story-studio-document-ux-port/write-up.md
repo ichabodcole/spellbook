@@ -6,13 +6,13 @@ description:
   should take, take later or skip, across document UX, the agent's side, CI,
   tests, the daemon and process.
 tags: [scriptorium, story-studio, ux, kit, ci]
-status: draft
+status: stable
 generated: { by: claude-opus-5-5, at: 2026-11-17 }
 ---
 
 # Story Studio document UX, since the last scan
 
-**Outcome:** Calls proposed, awaiting Cole's review.
+**Outcome:** Decided by Cole on 2026-11-17; follow-up items filed.
 
 ---
 
@@ -189,27 +189,48 @@ independently. So the next cycle opens with the split's build (G7 with it), then
 the inbox group (U1 to U4), then navigation (U5, U6).
 
 The small ones don't wait for the split: U7, G1, G2, G5, G6, G8, and the
-playbooks (G9 to G11). G3 is a safety hole and may belong in this cycle.
+playbooks (G9 to G11). G3 is a safety hole, but builds after the split.
 
-Pending Cole's calls.
+## Decided
+
+Cole, 2026-11-17, on the open questions:
+
+1. **The kit split comes first.** Better now than adding to the debt. The next
+   cycle opens with its build, before the UX ports.
+2. **The daemon's records leave chat.** Most of them are his own acts (switching
+   versions, saving), which he already knows about, and they bury the
+   conversation with the agent. The inbox will carry what he needs to know. The
+   timing was left to us: the Activity tab and icon tabs land on one branch,
+   since the Activity tab is the fourth tab that makes icons pay off. Icon tabs
+   become a take.
+3. **Autosave: yes, not necessarily now.** It goes with the Ask and Auto modes
+   and progressive consent, as one kit-wide research item. For Scriptorium the
+   settings are **global**, not layered per folder: a session is short, not a
+   project you live in. Whether the choices survive across sessions is for the
+   research; his guess is yes, or you'd re-decide them every session.
+4. **The page key: our lean.** It is filed high priority but builds after the
+   split, since it rewrites `server.ts` and the daemon client, which the split
+   moves.
+5. **Ask and Auto: take**, inside the research item in 3. Keep Story Studio's UX
+   where it makes sense for Scriptorium; the question is how to build it without
+   a project home or an always-running service.
+
+The take lists above were accepted as proposed.
 
 ## Next Steps
 
-1. Cole reviews the calls, and decides the five questions below.
-2. File each take as an item, `--from item/story-studio-document-ux-port`.
-3. Send the kit-parity list to Story Studio.
-4. Close this item.
+1. ~~Cole reviews the calls.~~ Done, see Decided.
+2. ~~File each take as an item.~~ Done: 17 items and the `scriptorium-inbox`
+   feature, all `--from` this item. Typecheck in the gate and the per-file
+   TMPDIR went into existing items (`typecheck-gate-is-a-project-not-a-flag`,
+   `tmpdir-leak-house-wide`); the 1,200-line limit into
+   `kit-split-oversized-modules`.
+3. ~~Send the kit-parity list to Story Studio.~~ Done, message 67.
+4. ~~Close this item.~~ Done.
 
 ## Open Questions
 
-For Cole:
-
-1. **Order:** the kit split before the UX ports, as recommended?
-2. **The Activity tab:** should the daemon's records leave chat? Now, or with
-   icon tabs? (The researchers split.)
-3. **Autosave** for Scriptorium: yes, no, or not yet?
-4. **The page key (G3):** into this cycle, as a safety fix?
-5. **Ask and Auto modes:** skip, or file kit-wide research?
+Answered in Decided.
 
 ---
 

@@ -68,6 +68,11 @@ one to one onto ours, but it should give us a taxonomy for decomposing, and a
 faster path: port a split rather than design one. Following their shape also
 answers the port-back constraint above.
 
+**A guard so it stays split (from the Story Studio port scan, 2026-11-17).**
+Story Studio set Biome's `noExcessiveLinesPerFile` to 1,200, with a per-file
+override frozen at each file's size that may only shrink (`360e67eb`). The build
+items should include it.
+
 ## Definition of done
 
 - [ ] The write-up reads Story Studio's split (its two write-ups, the D, W and P
