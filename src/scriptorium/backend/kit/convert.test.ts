@@ -574,3 +574,294 @@ describe("what the converter will not do", () => {
     }
   });
 });
+
+// The downgrade trap (`docs/items/scriptorium-downgraded-session-refused.md`):
+// 6.0.0 converts a session, the shipped writer (5.2.0) opens it again and
+// writes to it in its own shape, and 6.0.0 must read it back. The 5.2.0
+// entries below are the shapes 5.2.0 wrote onto a converted manifest when run
+// for this fix (`say`, `task`, `task-status`, `version-new`, `note`, `hide`,
+// `close`), with its kit entries left as they were.
+describe("a converted session the shipped writer wrote to again", () => {
+  const T5 = 1_794_950_506_526; // a millisecond time like 5.2.0's
+
+  /** The captured session, restored once by the kit (so converted), and its stored manifest. */
+  function convertedToday(id: string): Record<string, unknown> {
+    const from = join(import.meta.dir, "fixtures", "shipped-today");
+    const place = (rel: string) => {
+      for (const e of readdirSync(join(from, rel), { withFileTypes: true })) {
+        const r = join(rel, e.name);
+        if (e.isDirectory()) place(r);
+        else {
+          mkdirSync(dirname(join(sessions, id, r)), { recursive: true });
+          const text = readFileSync(join(from, r), "utf8").replaceAll("@ROOT@", root);
+          writeFileSync(
+            join(sessions, id, r),
+            r === "manifest.json" ? text.replace('"today"', JSON.stringify(id)) : text,
+          );
+        }
+      }
+    };
+    place("");
+    restore(id);
+    const m = stored(id);
+    expect(m.appName).toBe("scriptorium");
+    return m;
+  }
+
+  type M = Record<string, unknown> & {
+    chat: Record<string, unknown>[];
+    tasks: Record<string, unknown>[];
+    context: Record<string, unknown>[];
+    docs: (Record<string, unknown> & {
+      versions: Record<string, unknown>[];
+      notes: Record<string, unknown>[];
+    })[];
+  };
+
+  /** What 5.2.0 does to a converted manifest, as it wrote it. */
+  function writeAs520(id: string, m: M): void {
+    m.chat.push(
+      { id: "m-5a", who: "agent", text: "hello from five two", ts: T5 },
+      { id: "m-5b", who: "agent", text: "old task", ts: T5 + 15 },
+      {
+        id: "m-5c",
+        who: "system",
+        text: "Agent created v3 of solo from v1 — fromold.",
+        ts: T5 + 30,
+      },
+    );
+    m.tasks.push({
+      id: "t-5a",
+      text: "old task",
+      who: "agent",
+      createdAt: T5 + 15,
+      messageId: "m-5b",
+      status: "halfway",
+    });
+    // A kit task 5.2.0 finished: `doneAt` in ms, its `status` cleared.
+    const kitTask = m.tasks.find((t) => t.title === "read the set") as Record<string, unknown>;
+    delete kitTask.status;
+    kitTask.doneAt = T5 + 40;
+    kitTask.outcome = "read";
+    const solo = m.docs[0] as M["docs"][number];
+    solo.versions.push({ n: 3, author: "agent", from: 1, createdAt: T5 + 30, label: "fromold" });
+    writeFileSync(join(sessions, id, "docs", "solo", "v3.md"), "new text\n");
+    solo.nextVersion = 4;
+    solo.notes.push({
+      id: "n-5a",
+      version: 1,
+      quote: "Solo",
+      before: "# ",
+      after: "\n",
+      at: 2,
+      body: "an old note",
+      who: "agent",
+      createdAt: T5 + 44,
+      resolved: false,
+    });
+    // A kit note 5.2.0 edited.
+    const kitNote = solo.notes[0] as Record<string, unknown>;
+    kitNote.body = "edited in 5.2.0";
+    kitNote.editedAt = T5 + 50;
+    kitNote.editedBy = "agent";
+    // `hide` on the set: 5.2.0 never saw the kit's list in the app slot.
+    (m.context[0] as Record<string, unknown>).hidden = ["c.md"];
+    m.ended = { by: "agent", at: T5 + 60 };
+    writeFileSync(join(sessions, id, "manifest.json"), JSON.stringify(m, null, 2));
+  }
+
+  test("its entries are converted, the kit's are left as they were, and the next restore converts nothing", () => {
+    const before = convertedToday("back") as M;
+    const untouched = {
+      chat: structuredClone(before.chat),
+      tidy: structuredClone(before.tasks.find((t) => t.title === "tidy")),
+      v1v2: structuredClone(before.docs[0]?.versions),
+    };
+    const setId = String(before.context[0]?.id);
+    writeAs520("back", structuredClone(before));
+    const written = readFileSync(join(sessions, "back", "manifest.json"), "utf8");
+
+    const k = restore("back");
+    // 3 chat lines, 2 tasks, 1 version, 2 notes, 1 hidden list.
+    expect(k.restoreReport.manifestMigrated?.note).toContain(
+      "written to by the shipped Scriptorium after it was converted: 9 entries",
+    );
+    expect(readFileSync(join(sessions, "back", PRE_MIGRATE_FILE), "utf8")).toBe(written);
+
+    const said = k.messages().map((x) => [x.id, x.from, x.type, x.text, x.ts]);
+    expect(said).toContainEqual(["m-5a", "agent", "message", "hello from five two", iso(T5)]);
+    expect(said).toContainEqual([
+      "m-5c",
+      "system",
+      "info",
+      "Agent created v3 of solo from v1 — fromold.",
+      iso(T5 + 30),
+    ]);
+    const tasks = k.tasks();
+    expect(tasks.find((t) => t.id === "t-5a")).toMatchObject({
+      title: "old task",
+      by: "agent",
+      status: "running",
+      detail: "halfway",
+      createdAt: iso(T5 + 15),
+    });
+    expect(tasks.find((t) => t.title === "read the set")).toMatchObject({
+      status: "done",
+      outcome: "read",
+      updatedAt: iso(T5 + 40),
+    });
+    const v = k.doc("solo");
+    expect(v.versions.map((x) => [x.n, x.by, x.fromVersion, x.label])).toEqual([
+      [1, "human", undefined, undefined],
+      [2, "agent", 1, "longer"],
+      [3, "agent", 1, "fromold"],
+    ]);
+    expect(v.notes.map((n) => [n.body, n.by, n.editedAt, n.editedBy])).toEqual([
+      ["edited in 5.2.0", "human", iso(T5 + 50), "agent"],
+      ["an old note", "agent", undefined, undefined],
+    ]);
+
+    const m = stored("back") as M;
+    expect(JSON.stringify(m)).not.toContain('"who"');
+    expect(m.docs[0]?.nextVersion).toBe(4);
+    expect(m.app).toMatchObject({ hidden: { [setId]: ["a.md", "c.md"] } });
+    expect("hidden" in (m.context[0] as object)).toBe(false);
+    expect(m.ended).toBeUndefined();
+    // The kit's own entries, as they were.
+    expect(m.chat.slice(0, untouched.chat.length)).toEqual(untouched.chat);
+    expect(m.tasks.find((t) => t.title === "tidy")).toEqual(untouched.tidy);
+    expect(m.docs[0]?.versions.slice(0, 2)).toEqual(untouched.v1v2);
+
+    const again = readFileSync(join(sessions, "back", "manifest.json"), "utf8");
+    expect(restore("back").restoreReport.manifestMigrated).toBeUndefined();
+    expect(readFileSync(join(sessions, "back", PRE_MIGRATE_FILE), "utf8")).toBe(written);
+    expect(stored("back").chat).toEqual((JSON.parse(again) as M).chat);
+  });
+
+  test("a task 5.2.0 made reads its status word as a step, as the first conversion does", () => {
+    const m = convertedToday("steps") as M;
+    m.tasks.push(
+      { id: "t-5d", text: "said done", who: "agent", createdAt: T5, status: "done" },
+      { id: "t-5c", text: "said cancelled", who: "agent", createdAt: T5, status: "cancelled" },
+    );
+    writeFileSync(join(sessions, "steps", "manifest.json"), JSON.stringify(m));
+    const tasks = restore("steps").tasks();
+    expect(tasks.find((t) => t.id === "t-5d")).toMatchObject({
+      title: "said done",
+      status: "running",
+      detail: "done",
+    });
+    expect(tasks.find((t) => t.id === "t-5c")).toMatchObject({
+      status: "running",
+      detail: "cancelled",
+    });
+  });
+
+  test("an untouched converted manifest is not its business", () => {
+    const m = convertedToday("still");
+    const text = readFileSync(join(sessions, "still", "manifest.json"), "utf8");
+    const kept = readFileSync(join(sessions, "still", PRE_MIGRATE_FILE), "utf8");
+    expect(
+      convertShippedManifest(m, {
+        sessionId: "still",
+        dir: join(sessions, "still"),
+        sessionsRoot: sessions,
+      }),
+    ).toBeNull();
+    expect(restore("still").restoreReport.manifestMigrated).toBeUndefined();
+    expect(readFileSync(join(sessions, "still", PRE_MIGRATE_FILE), "utf8")).toBe(kept);
+    expect(stored("still").chat).toEqual((JSON.parse(text) as M).chat);
+  });
+
+  test("a workspace it saved: the home folder is not kept, a real folder is added, and the note says which", () => {
+    const cases: [string, string, string[]][] = [
+      [homeDir(), "The workspace it saved was not kept", []],
+      [join(docs, "set"), "The workspace it saved was not kept: its workspace folder", []],
+      [join(root, "ws2"), "is now an ordinary added folder", [`${WORKSPACE_ENTRY_ID}-2`]],
+    ];
+    mkdirSync(join(root, "ws2"), { recursive: true });
+    for (const [ws, said, added] of cases) {
+      rmSync(join(sessions, "ws"), { recursive: true, force: true });
+      const m = convertedToday("ws") as M;
+      const ids = m.context.map((e) => e.id);
+      expect(ids).toContain(WORKSPACE_ENTRY_ID);
+      m.workspace = ws;
+      m.chat.push({ id: "m-5a", who: "human", text: "hi", ts: T5 });
+      writeFileSync(join(sessions, "ws", "manifest.json"), JSON.stringify(m));
+      const s = restore("ws");
+      expect(s.restoreReport.manifestMigrated?.note, ws).toContain(said);
+      const after = stored("ws") as M;
+      expect("workspace" in after, ws).toBe(false);
+      expect(
+        after.context.map((e) => e.id),
+        ws,
+      ).toEqual([...ids, ...added]);
+    }
+    expect(homeDir()).not.toBe(root);
+  });
+
+  test("an entry it cannot read is refused with how to recover, and nothing is changed", () => {
+    const m = convertedToday("bad") as M;
+    m.chat.push({ id: "m-5a", who: "bot", text: "?", ts: T5 });
+    const path = join(sessions, "bad", "manifest.json");
+    writeFileSync(path, JSON.stringify(m));
+    const before = readFileSync(path, "utf8");
+    const listing = readdirSync(join(sessions, "bad")).sort();
+    const kept = readFileSync(join(sessions, "bad", PRE_MIGRATE_FILE), "utf8");
+    let e: unknown;
+    try {
+      restore("bad");
+    } catch (x) {
+      e = x;
+    }
+    expect(e).toBeInstanceOf(SessionError);
+    expect((e as SessionError).status).toBe(409);
+    const said = (e as SessionError).message;
+    expect(said).toContain("a converted session the shipped Scriptorium wrote to again, but");
+    expect(said).toContain("`chat[");
+    expect(said).toContain("To recover: fix or remove that entry in manifest.json");
+    expect(said).toContain(PRE_MIGRATE_FILE);
+    expect(readFileSync(path, "utf8")).toBe(before);
+    expect(readFileSync(join(sessions, "bad", PRE_MIGRATE_FILE), "utf8")).toBe(kept);
+    expect(readdirSync(join(sessions, "bad")).sort()).toEqual(listing);
+  });
+
+  test("a manifest another writer made, with chat by `who`, is still refused as not Scriptorium's", () => {
+    const kitShaped = {
+      createdAt: new Date(T5).toISOString(),
+      context: [],
+      docs: [],
+      openDoc: null,
+      chat: [{ id: "m", who: "agent", text: "hi", ts: T5 }],
+      tasks: [],
+      app: { version: 2 },
+    };
+    // Another app's, and one with no name: neither is converted, and the
+    // kit's guard refuses both as it always has.
+    const cases: [Record<string, unknown>, string][] = [
+      [{ ...kitShaped, appName: "other" }, "was not written by scriptorium"],
+      [kitShaped, "was not written by scriptorium"],
+    ];
+    for (const [m, why] of cases) {
+      expect(
+        convertShippedManifest(m, {
+          sessionId: "foreign",
+          dir: join(sessions, "foreign"),
+          sessionsRoot: sessions,
+        }),
+      ).toBeNull();
+      const path = plant("foreign", m);
+      const before = readFileSync(path, "utf8");
+      let e: unknown;
+      try {
+        restore("foreign");
+      } catch (x) {
+        e = x;
+      }
+      expect(e, why).toBeInstanceOf(SessionError);
+      expect((e as SessionError).message, why).toContain(why);
+      expect(readFileSync(path, "utf8"), why).toBe(before);
+      expect(readdirSync(join(sessions, "foreign")), why).not.toContain(PRE_MIGRATE_FILE);
+    }
+  });
+});

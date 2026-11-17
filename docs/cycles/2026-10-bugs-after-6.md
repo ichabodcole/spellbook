@@ -35,7 +35,7 @@ Approved by Cole on 2026-10-26, from the triage of that day. In order:
 
 **1. Bugs that can lose or corrupt an adopter's work:**
 
-1. **[item/scriptorium-downgraded-session-refused](../items/scriptorium-downgraded-session-refused.md)**:
+1. **[item/scriptorium-downgraded-session-refused](../items/scriptorium-downgraded-session-refused/item.md)**:
    6.0.0 restores a session 5.2.0 has written to, or refuses it with how to
    recover.
 2. **[item/kit-save-second-unseen-change](../items/kit-save-second-unseen-change.md)**:

@@ -33,9 +33,10 @@
 
 import { readdirSync, realpathSync, statSync } from "node:fs";
 import { basename, dirname, isAbsolute, join, sep } from "node:path";
-import type {
-  ManifestMigrateContext,
-  ManifestMigration,
+import {
+  type ManifestMigrateContext,
+  type ManifestMigration,
+  PRE_MIGRATE_FILE,
 } from "../../../kit/workspace/manifestMigrate";
 import { notAddedWhole } from "../../../kit/workspace/noHome";
 import { safeExt, safeSlug } from "../../../kit/workspace/safeNames";
@@ -328,11 +329,24 @@ export function convertShippedManifest(
   raw: Obj,
   at: ManifestMigrateContext,
 ): ManifestMigration | null {
-  if (!isShippedManifest(raw)) return null;
+  if (isShippedManifest(raw)) {
+    try {
+      return convert(raw, at);
+    } catch (e) {
+      if (isUnconvertible(e)) throw new Error(`a shipped Scriptorium manifest, but ${e.message}`);
+      throw e;
+    }
+  }
+  if (!isWrittenBackManifest(raw)) return null;
   try {
-    return convert(raw, at);
+    return convertWrittenBack(raw, at);
   } catch (e) {
-    if (isUnconvertible(e)) throw new Error(`a shipped Scriptorium manifest, but ${e.message}`);
+    if (isUnconvertible(e))
+      throw new Error(
+        `a converted session the shipped Scriptorium wrote to again, but ${e.message}. ` +
+          `To recover: fix or remove that entry in manifest.json and restore again, or put back ${PRE_MIGRATE_FILE} ` +
+          "(the session as it was before its last conversion: what was done since is lost)",
+      );
     throw e;
   }
 }
@@ -395,5 +409,228 @@ function convert(raw: Obj, at: ManifestMigrateContext): ManifestMigration {
   return {
     manifest,
     note: `This session was converted from the shipped Scriptorium.${where}`,
+  };
+}
+
+// ── a converted session the shipped writer wrote to again ─────────────────
+//
+// The shipped Scriptorium (5.2.0) opens a converted manifest without
+// complaint: it keeps the kit's entries and the fields it does not know, and
+// adds its own in its own shape. A chat line by `who`, a version by `author`,
+// a note by `who`, a task by `text`, all with millisecond times. A kit task it
+// moved on gets a step for its `status` and a millisecond `doneAt`; a kit note
+// it edited or reopened, a millisecond `editedAt` or `reopenedAt`; `hide`
+// writes an entry's `hidden`; teardown writes `ended.at` in milliseconds.
+// Each is converted here, entry by entry, with the readers the whole
+// conversion uses. An entry already in the kit's shape is left as it is.
+//
+// 5.2.0's `open --restore` stores no workspace (it reads `$HOME` as one when
+// the manifest has none); its `workspace set` does. A stored one is treated as
+// the whole conversion treats it: an added folder, or not added (never the
+// home folder), and the note says which.
+
+const KIT_TASK_STATUSES: readonly unknown[] = ["open", "running", "done", "failed", "cancelled"];
+const TASK_AUTHORS = ["human", "agent", "daemon"] as const;
+
+const isMs = (v: unknown): boolean => typeof v === "number";
+
+/** A time as the kit keeps it: an ISO string kept, milliseconds converted. */
+const kitTime = (v: unknown, at: string): string => (typeof v === "string" ? v : iso(v, at));
+
+const optKitTime = (v: unknown, at: string): string | undefined =>
+  v === undefined || v === null ? undefined : kitTime(v, at);
+
+const shippedVersion = (v: Obj): boolean => "author" in v || "from" in v || isMs(v.createdAt);
+
+const shippedNote = (n: Obj): boolean =>
+  "who" in n || isMs(n.createdAt) || isMs(n.editedAt) || isMs(n.reopenedAt) || isMs(n.resolvedAt);
+
+const shippedTask = (t: Obj): boolean =>
+  "text" in t ||
+  "who" in t ||
+  "doneAt" in t ||
+  isMs(t.createdAt) ||
+  !KIT_TASK_STATUSES.includes(t.status);
+
+const shippedMessage = (c: Obj): boolean => "who" in c || isMs(c.ts);
+
+const objs = (v: unknown): Obj[] => (Array.isArray(v) ? v.filter(isObj) : []);
+
+/**
+ * Whether a manifest is one the kit converted (Scriptorium's, in the kit's
+ * shape at the top) that the shipped writer then wrote to: some entry is in
+ * its shape. A manifest no Scriptorium wrote is not this; the kit's own guard
+ * refuses it as ever.
+ */
+export function isWrittenBackManifest(raw: Obj): boolean {
+  if (raw.appName !== "scriptorium" || !isObj(raw.app) || typeof raw.createdAt !== "string")
+    return false;
+  if (objs(raw.chat).some(shippedMessage)) return true;
+  if (objs(raw.tasks).some(shippedTask)) return true;
+  if (objs(raw.context).some((e) => "hidden" in e)) return true;
+  if (isObj(raw.ended) && isMs(raw.ended.at)) return true;
+  return objs(raw.docs).some(
+    (d) => objs(d.versions).some(shippedVersion) || objs(d.notes).some(shippedNote),
+  );
+}
+
+const author = (v: unknown, at: string) => (v === undefined ? undefined : oneOf(v, AUTHORS, at));
+
+function writtenBackVersion(v: Obj, at: string): Obj {
+  const { author: by, from, ...rest } = v;
+  return present({
+    ...rest,
+    n: num(v.n, `${at}.n`),
+    by: v.by !== undefined ? oneOf(v.by, AUTHORS, `${at}.by`) : oneOf(by, AUTHORS, `${at}.author`),
+    fromVersion:
+      typeof v.fromVersion === "number"
+        ? v.fromVersion
+        : typeof from === "number"
+          ? from
+          : undefined,
+    createdAt: kitTime(v.createdAt, `${at}.createdAt`),
+  });
+}
+
+function writtenBackNote(n: Obj, at: string): Obj {
+  const { who, ...rest } = n;
+  return present({
+    ...rest,
+    by: n.by !== undefined ? oneOf(n.by, AUTHORS, `${at}.by`) : oneOf(who, AUTHORS, `${at}.who`),
+    createdAt: kitTime(n.createdAt, `${at}.createdAt`),
+    editedAt: optKitTime(n.editedAt, `${at}.editedAt`),
+    editedBy: author(n.editedBy, `${at}.editedBy`),
+    reopenedAt: optKitTime(n.reopenedAt, `${at}.reopenedAt`),
+    reopenedBy: author(n.reopenedBy, `${at}.reopenedBy`),
+    resolvedAt: optKitTime(n.resolvedAt, `${at}.resolvedAt`),
+    resolved: n.resolved === true,
+  });
+}
+
+function writtenBackTask(t: Obj, at: string): Obj {
+  const { text, who, doneAt: done, ...rest } = t;
+  const createdAt = kitTime(t.createdAt, `${at}.createdAt`);
+  const doneAt = optKitTime(done, `${at}.doneAt`);
+  // The shipped `status` is the step being done (E50); the kit's is a state.
+  // A task 5.2.0 made (it has `text`) has only steps, whatever the word, as
+  // the first conversion reads them (`task`); a kit task it re-stepped with a
+  // kit state's word cannot be told apart, and keeps it.
+  const state =
+    !("text" in t) && KIT_TASK_STATUSES.includes(t.status) ? (t.status as string) : undefined;
+  const step =
+    state === undefined && typeof t.status === "string" && t.status !== "" ? t.status : undefined;
+  return present({
+    ...rest,
+    id: str(t.id, `${at}.id`),
+    title: typeof t.title === "string" ? t.title : str(text, `${at}.text`),
+    by:
+      t.by !== undefined ? oneOf(t.by, TASK_AUTHORS, `${at}.by`) : oneOf(who, AUTHORS, `${at}.who`),
+    status: doneAt ? "done" : step ? "running" : (state ?? "open"),
+    detail: doneAt ? undefined : (step ?? (typeof t.detail === "string" ? t.detail : undefined)),
+    createdAt,
+    updatedAt: doneAt ?? (typeof t.updatedAt === "string" ? t.updatedAt : createdAt),
+  });
+}
+
+function writtenBackDoc(d: Obj, at: string, sessionDir: string, count: () => void): Obj {
+  const versions = list(d.versions, `${at}.versions`);
+  const notes = list(d.notes, `${at}.notes`, true);
+  if (!versions.some(shippedVersion) && !notes.some(shippedNote)) return d;
+  const slug = str(d.slug, `${at}.slug`);
+  // ⛔ Never written through: both become part of a version file's path.
+  const badSlug = safeSlug(slug);
+  if (badSlug !== null)
+    throw unconvertible(`\`${at}.slug\` is ${JSON.stringify(slug)}: ${badSlug}`);
+  const ext = str(d.ext, `${at}.ext`);
+  const badExt = safeExt(ext);
+  if (badExt !== null) throw unconvertible(`\`${at}.ext\` is ${JSON.stringify(ext)}: ${badExt}`);
+  if (versions.length === 0)
+    throw unconvertible(`\`${at}.versions\` is empty: the document has no text`);
+  const vs = versions.map((v, j) => {
+    if (!shippedVersion(v)) return v;
+    count();
+    return writtenBackVersion(v, `${at}.versions[${j}]`);
+  });
+  return {
+    ...d,
+    versions: vs,
+    // ⛔ A version number is never handed out twice (E41): past every number
+    // either writer used, and every version file on disk.
+    nextVersion: Math.max(
+      typeof d.nextVersion === "number" ? d.nextVersion : 0,
+      ...vs.map((v, j) => num(v.n, `${at}.versions[${j}].n`) + 1),
+      highestOnDisk(join(sessionDir, "docs", slug)) + 1,
+    ),
+    notes: notes.map((n, j) => {
+      if (!shippedNote(n)) return n;
+      count();
+      return writtenBackNote(n, `${at}.notes[${j}]`);
+    }),
+    admitted: d.admitted === true,
+  };
+}
+
+function convertWrittenBack(raw: Obj, at: ManifestMigrateContext): ManifestMigration {
+  let entries = 0;
+  const count = () => {
+    entries++;
+  };
+  const app = raw.app as Obj;
+  const hidden: Record<string, string[]> = {};
+  if (isObj(app.hidden))
+    for (const [k, v] of Object.entries(app.hidden))
+      if (Array.isArray(v)) hidden[k] = v.filter((r): r is string => typeof r === "string");
+  let hiddenMoved = false;
+  const context = list(raw.context, "context").map((e, i) => {
+    if (!("hidden" in e)) return e;
+    const { hidden: h, ...rest } = e;
+    const id = str(e.id, `context[${i}].id`);
+    if (!Array.isArray(h) || h.some((r) => typeof r !== "string"))
+      throw unconvertible(`\`context[${i}].hidden\` is not a list of paths`);
+    // The shipped writer never saw the kit's lists (they are in the app slot),
+    // so what it hid joins them; it does not replace them.
+    if ((h as string[]).length > 0)
+      hidden[id] = [...new Set([...(hidden[id] ?? []), ...(h as string[])])];
+    hiddenMoved = true;
+    count();
+    return rest;
+  });
+  const out: Obj = {
+    ...raw,
+    context,
+    docs: list(raw.docs, "docs").map((d, i) => writtenBackDoc(d, `docs[${i}]`, at.dir, count)),
+    chat: list(raw.chat, "chat").map((c, i) => {
+      if (!shippedMessage(c)) return c;
+      count();
+      return message(c, `chat[${i}]`, at.dir);
+    }),
+    tasks: list(raw.tasks, "tasks", true).map((t, i) => {
+      if (!shippedTask(t)) return t;
+      count();
+      return writtenBackTask(t, `tasks[${i}]`);
+    }),
+  };
+  if (hiddenMoved) out.app = { ...app, hidden };
+  if (isObj(raw.ended) && isMs(raw.ended.at))
+    out.ended = { ...raw.ended, at: iso(raw.ended.at, "ended.at") };
+  let where = "";
+  if ("workspace" in raw) {
+    delete out.workspace;
+    const ws = workspaceEntry(raw.workspace, context, at);
+    if ("entry" in ws) {
+      // A free id: the first conversion may have added its own workspace entry.
+      const taken = new Set(context.map((e) => e.id));
+      let id = WORKSPACE_ENTRY_ID;
+      for (let n = 2; taken.has(id); n++) id = `${WORKSPACE_ENTRY_ID}-${n}`;
+      context.push({ ...ws.entry, id });
+      where = ` The workspace folder it saved, ${String(ws.entry.root)}, is now an ordinary added folder.`;
+    } else {
+      where = ` The workspace it saved was not kept: ${ws.skipped}.`;
+    }
+  }
+  const n = entries === 1 ? "1 entry" : `${entries} entries`;
+  return {
+    manifest: out,
+    note: `This session was written to by the shipped Scriptorium after it was converted: ${n} in its shape were converted.${where}`,
   };
 }

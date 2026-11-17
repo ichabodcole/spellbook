@@ -52,7 +52,7 @@ Approved by Cole on 2026-11-17. In order:
 
 5. **[item/kit-unpinned-verbs-write-to-another-session](../items/kit-unpinned-verbs-write-to-another-session/item.md)**
    (#137): with two live sessions, a write without `--session` is refused.
-6. **[item/scriptorium-downgraded-session-refused](../items/scriptorium-downgraded-session-refused.md)**:
+6. **[item/scriptorium-downgraded-session-refused](../items/scriptorium-downgraded-session-refused/item.md)**:
    6.0.0 restores a session 5.2.0 has written to, or refuses it and says how to
    recover.
 7. **[item/kit-save-second-unseen-change](../items/kit-save-second-unseen-change.md)**:
@@ -96,7 +96,7 @@ _Written at close._
 - docs/kit-split-oversized-modules (open)
 - fix/kit-unpinned-verbs-write-to-another-session (landed 2026-11-17)
 - fix/kit-right-click-away-from-selection (open)
-- fix/scriptorium-downgraded-session-refused (open)
+- fix/scriptorium-downgraded-session-refused (landed 2026-11-17)
 - fix/kit-cli-small-fixes (open)
 - fix/kit-save-second-unseen-change (open)
 - fix/note-reply-clears-every-waiting-note (open)
