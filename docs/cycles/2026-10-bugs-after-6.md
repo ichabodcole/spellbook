@@ -38,7 +38,7 @@ Approved by Cole on 2026-10-26, from the triage of that day. In order:
 1. **[item/scriptorium-downgraded-session-refused](../items/scriptorium-downgraded-session-refused/item.md)**:
    6.0.0 restores a session 5.2.0 has written to, or refuses it with how to
    recover.
-2. **[item/kit-save-second-unseen-change](../items/kit-save-second-unseen-change.md)**:
+2. **[item/kit-save-second-unseen-change](../items/kit-save-second-unseen-change/item.md)**:
    Save after the banner writes only over the change the banner was raised for.
 3. **[item/kit-save-refusal-four-messages](../items/kit-save-refusal-four-messages.md)**:
    one wording for that refusal across banner, toast and chat. After 2.

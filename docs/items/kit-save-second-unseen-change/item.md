@@ -7,7 +7,7 @@ description:
   Keep mine; if the file changes outside again, unseen, that second change is
   overwritten without the human ever seeing it in the diff.
 status: stable
-lifecycle: active
+lifecycle: done
 id: 01a17585-b354-7751-9164-583e44a4659e
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-10-25 }
@@ -20,7 +20,7 @@ cycle: 2026-11-research-and-safety
 # A second missed outside change after the banner is overwritten without asking
 
 Found by the verifier of
-[kit-save-overwrites-unseen-change](./_archive/kit-save-overwrites-unseen-change.md)
+[kit-save-overwrites-unseen-change](../_archive/kit-save-overwrites-unseen-change.md)
 (2026-10-25, probe P8). Save now refuses when the file changed outside and the
 watch missed it, and raises the "Changed on disk" banner. Once the banner is up,
 the next Save counts as the human's deliberate "Keep mine".
@@ -44,4 +44,4 @@ diff.
 
 ## Related Documents
 
-- [Save can overwrite an outside change the file watch never reported](./_archive/kit-save-overwrites-unseen-change.md)
+- [Save can overwrite an outside change the file watch never reported](../_archive/kit-save-overwrites-unseen-change.md)
