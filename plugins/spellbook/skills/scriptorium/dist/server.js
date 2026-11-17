@@ -19489,34 +19489,114 @@ class ImageError extends Error {
 }
 var codeOf = (e) => e && typeof e === "object" && ("code" in e) ? String(e.code) : undefined;
 function cutShort(bytes) {
-  const n = bytes.byteLength;
   const at = (i, ...want) => want.every((b, k) => bytes[i + k] === b);
-  const lastReal = (fill) => {
-    let i = n - 1;
-    while (i >= 0 && n - i <= 64 && fill.includes(bytes[i] ?? -1))
-      i--;
-    return i;
-  };
-  if (at(0, 137, 80, 78, 71)) {
-    for (let i = n - 8;i >= 8; i--)
-      if (at(i, 73, 69, 78, 68))
-        return false;
-    return true;
-  }
-  if (at(0, 255, 216)) {
-    const end = lastReal([0, 255, 10, 13, 32]);
-    for (let i = end - 1;i >= 2 && end - i < 32; i--)
-      if (at(i, 255, 217))
-        return false;
-    return true;
-  }
+  if (at(0, 137, 80, 78, 71, 13, 10, 26, 10))
+    return pngCutShort(bytes);
+  if (at(0, 255, 216))
+    return jpegCutShort(bytes);
   if (at(0, 71, 73, 70, 56))
-    return bytes[lastReal([0])] !== 59;
+    return gifCutShort(bytes);
   if (at(0, 82, 73, 70, 70) && at(8, 87, 69, 66, 80)) {
-    const riff = new DataView(bytes.buffer, bytes.byteOffset, n).getUint32(4, true);
-    return n < riff + 8;
+    const riff = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getUint32(4, true);
+    return bytes.byteLength < riff + 8;
   }
   return null;
+}
+function pngCutShort(b) {
+  const n = b.byteLength;
+  let i = 8;
+  for (;; ) {
+    if (i + 8 > n)
+      return true;
+    const len = b[i] << 24 | b[i + 1] << 16 | b[i + 2] << 8 | b[i + 3];
+    if (len < 0)
+      return null;
+    for (let k = 4;k < 8; k++) {
+      const c = b[i + k] | 32;
+      if (c < 97 || c > 122)
+        return null;
+    }
+    const next = i + 12 + len;
+    if (b[i + 4] === 73 && b[i + 5] === 69 && b[i + 6] === 78 && b[i + 7] === 68)
+      return next > n;
+    i = next;
+  }
+}
+function jpegCutShort(b) {
+  const n = b.byteLength;
+  let i = 2;
+  for (;; ) {
+    if (i >= n)
+      return true;
+    if (b[i] !== 255)
+      return null;
+    while (i < n && b[i] === 255)
+      i++;
+    if (i >= n)
+      return true;
+    const m = b[i];
+    i++;
+    if (m === 217)
+      return false;
+    if (m === 0)
+      return null;
+    if (m === 1 || m >= 208 && m <= 215)
+      continue;
+    if (i + 2 > n)
+      return true;
+    const len = b[i] << 8 | b[i + 1];
+    if (len < 2)
+      return null;
+    i += len;
+    if (i > n)
+      return true;
+    if (m !== 218)
+      continue;
+    for (;; ) {
+      const ff = b.indexOf(255, i);
+      if (ff < 0 || ff + 1 >= n)
+        return true;
+      const next = b[ff + 1];
+      if (next === 0 || next >= 208 && next <= 215)
+        i = ff + 2;
+      else if (next === 255)
+        i = ff + 1;
+      else {
+        i = ff;
+        break;
+      }
+    }
+  }
+}
+function gifCutShort(b) {
+  const n = b.byteLength;
+  if (n < 13)
+    return true;
+  const table = (flags) => flags & 128 ? 3 * (1 << (flags & 7) + 1) : 0;
+  let i = 13 + table(b[10]);
+  for (;; ) {
+    if (i >= n)
+      return true;
+    const block = b[i];
+    if (block === 59)
+      return false;
+    if (block === 33)
+      i += 2;
+    else if (block === 44) {
+      if (i + 10 > n)
+        return true;
+      i += 10 + table(b[i + 9]) + 1;
+    } else
+      return null;
+    for (;; ) {
+      if (i >= n)
+        return true;
+      const len = b[i];
+      i += 1 + len;
+      if (len === 0)
+        break;
+    }
+  }
 }
 async function imageDecodes(bytes) {
   try {
@@ -29168,7 +29248,7 @@ function createWorkspaceDaemon(opts) {
     };
     const decodesOrDie = async (raw, bytes) => {
       if (sniffImage(bytes.subarray(0, 32)) && !await imageDecodes(bytes))
-        throw new SessionError(`${raw} is cut short: it does not decode, and stops before its format's end: not brought in`, 400);
+        throw new SessionError(`${raw} is cut short: it stops before its format's end (cut short in transit): not brought in`, 400);
     };
     let lastImport = null;
     const incoming = async (raw, bytes) => {
