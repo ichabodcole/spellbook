@@ -30,7 +30,7 @@ Our counterpart: `repliesByNote` in `src/kit/chat/NotesPanel.tsx`, which
 reply index across chats, `noteReplies()`, which the panel reads whichever chat
 is open. In the same change, the waiting mark clears only on an agent message
 about that note (`about.noteId`); a plain `say` clears none. That is our
-[note-reply-clears-every-waiting-note](note-reply-clears-every-waiting-note.md),
+[note-reply-clears-every-waiting-note](note-reply-clears-every-waiting-note/item.md),
 in the same code, so port the two together.
 
 ## Definition of done
