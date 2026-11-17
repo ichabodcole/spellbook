@@ -2874,10 +2874,15 @@ export class WorkspaceSession {
     if (disk !== null && d.outsideChanged) {
       const h = contentHash(disk);
       if (h !== d.outsideHash && h !== d.originalHash && disk !== text) {
+        // "Again" only when a text was asked about: a manifest from before
+        // `outsideHash` has the flag up with no text recorded as shown.
+        const again = d.outsideHash !== undefined;
         d.outsideHash = h;
         this.persist();
         throw new UnseenChangeError(
-          `${d.name} changed on disk again since you were asked, so Save waits and wrote nothing: choose in the document's banner`,
+          again
+            ? `${d.name} changed on disk again since you were asked, so Save waits and wrote nothing: choose in the document's banner`
+            : `${d.name} changed on disk, so Save waits and wrote nothing: see the difference in the document's banner first`,
           { kind: "original.conflict", doc: d.slug, original: d.original },
           `"See the difference" shows the file's newer text against yours; "Keep mine" saves yours over it; "Take the file's" loads it`,
         );

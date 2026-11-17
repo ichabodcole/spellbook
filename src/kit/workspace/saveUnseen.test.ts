@@ -164,6 +164,30 @@ describe("the session: Save asks the disk, not the watcher", () => {
     expect(readFileSync(solo(), "utf8")).toBe("mine\n");
   });
 
+  test('an old manifest (flag up, no text recorded as shown) is asked once, without saying "again"', () => {
+    const s = inContext(sessions, docs);
+    const { slug } = s.openPath(solo());
+    s.edit(slug, 1, "mine\n");
+    writeFileSync(solo(), "theirs\n");
+    refusal(() => s.save(slug));
+    // The manifest as one written before `outsideHash` existed.
+    const mpath = join(s.dir, "manifest.json");
+    const m = JSON.parse(readFileSync(mpath, "utf8"));
+    for (const d of m.docs) delete d.outsideHash;
+    writeFileSync(mpath, JSON.stringify(m));
+    const r = WorkspaceSession.restore(sessions, testApp, s.id);
+    expect(r.doc(slug).outsideChanged).toBe(true);
+    expect(r.doc(slug).outsideHash).toBeUndefined();
+    const e = refusal(() => r.save(slug));
+    expect(e).toBeInstanceOf(UnseenChangeError);
+    expect(e.message).toContain("changed on disk");
+    expect(e.message).not.toContain("again");
+    expect(readFileSync(solo(), "utf8")).toBe("theirs\n");
+    // Now asked about that text, Keep mine writes.
+    r.save(slug);
+    expect(readFileSync(solo(), "utf8")).toBe("mine\n");
+  });
+
   test("a change made while the session was closed is asked about at restore: Keep mine writes on the first Save", () => {
     const s = inContext(sessions, docs);
     const { slug } = s.openPath(solo());
