@@ -66515,12 +66515,49 @@ function pointOffset(root, projection, x, y) {
   }
   if (!range || !root.contains(range.startContainer))
     return null;
-  const probe = document.createRange();
-  probe.setStart(range.startContainer, range.startOffset);
   const node = range.startContainer;
-  const len = node.nodeType === Node.TEXT_NODE ? node.data.length : 0;
-  probe.setEnd(node, Math.min(range.startOffset + 1, len));
-  return resolveRange(root, projection, probe)?.from ?? null;
+  if (node.nodeType === Node.TEXT_NODE) {
+    const at = textOffset(root, projection, node, range.startOffset);
+    if (at !== null)
+      return at;
+  }
+  return nearestTextOffset(root, projection, node, range.startOffset);
+}
+function textOffset(root, projection, node, offset) {
+  const len = node.data.length;
+  if (len === 0)
+    return null;
+  const probe = document.createRange();
+  if (offset < len) {
+    probe.setStart(node, offset);
+    probe.setEnd(node, offset + 1);
+    return resolveRange(root, projection, probe)?.from ?? null;
+  }
+  probe.setStart(node, len - 1);
+  probe.setEnd(node, len);
+  return resolveRange(root, projection, probe)?.to ?? null;
+}
+function nearestTextOffset(root, projection, container, offset) {
+  const caret = document.createRange();
+  caret.setStart(container, offset);
+  caret.setEnd(container, offset);
+  let before = null;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  for (let n = walker.nextNode();n !== null; n = walker.nextNode()) {
+    if (n === container)
+      continue;
+    const t = n;
+    if (caret.comparePoint(t, t.data.length) <= 0) {
+      before = textOffset(root, projection, t, t.data.length) ?? before;
+      continue;
+    }
+    if (before !== null)
+      return before;
+    const after = textOffset(root, projection, t, 0);
+    if (after !== null)
+      return after;
+  }
+  return before;
 }
 function MarkdownView({
   text: textIn,
