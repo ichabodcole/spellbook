@@ -1,6 +1,5 @@
 #!/usr/bin/env bun
 // @bun
-var __require = import.meta.require;
 
 // src/imago/backend/server.ts
 import { existsSync as existsSync3, mkdirSync, readFileSync as readFileSync3, rmSync as rmSync2, unlinkSync as unlinkSync2, writeFileSync as writeFileSync2 } from "fs";
@@ -669,9 +668,9 @@ async function main(argv) {
           return { ok: true, id: existing.id, outcome: "already-recorded" };
         return { ok: true, id: existing.id, outcome: "updated", changed, previous };
       }
-      const id2 = newId("ctx");
+      const id = newId("ctx");
       state.library.push({
-        id: id2,
+        id,
         kind: "style",
         name,
         content,
@@ -680,7 +679,7 @@ async function main(argv) {
         imagePath,
         captured: imageSrc ? true : undefined
       });
-      return { ok: true, id: id2, outcome: "created" };
+      return { ok: true, id, outcome: "created" };
     }
     const id = newId("ctx");
     state.library.push({
@@ -774,11 +773,11 @@ async function main(argv) {
     return null;
   }
   const labelOf = (i) => String.fromCharCode(97 + i);
-  const selectedRefIds = () => state.batches.flatMap((b) => b.variants).filter((v2) => v2.refSelected).map((v2) => v2.id);
+  const selectedRefIds = () => state.batches.flatMap((b) => b.variants).filter((v) => v.refSelected).map((v) => v.id);
   function importImageVariant(src, name) {
     const hash = contentHash(src);
     for (const b of state.batches) {
-      const ex = b.variants.find((v2) => v2.hash === hash);
+      const ex = b.variants.find((v) => v.hash === hash);
       if (ex) {
         if (name && !ex.name)
           ex.name = name;
@@ -943,11 +942,11 @@ async function main(argv) {
     }
     return true;
   }
-  const eventsResponse = (req, url2) => {
+  const eventsResponse = (req, url) => {
     touch();
     return sseResponse({
       log,
-      since: Number.parseInt(url2.searchParams.get("since") ?? "-1", 10),
+      since: Number.parseInt(url.searchParams.get("since") ?? "-1", 10),
       heartbeatMs: SSE_HEARTBEAT_MS,
       clients: sseClients,
       signal: req.signal,
@@ -1023,9 +1022,9 @@ async function main(argv) {
       if (typeof batchId !== "string" || typeof variantId !== "string")
         return;
       const batch = state.batches.find((b) => b.id === batchId);
-      if (!batch?.variants.some((v2) => v2.id === variantId))
+      if (!batch?.variants.some((v) => v.id === variantId))
         return;
-      batch.variants = batch.variants.filter((v2) => v2.id !== variantId);
+      batch.variants = batch.variants.filter((v) => v.id !== variantId);
       if (batch.variants.length === 0) {
         state.batches = state.batches.filter((b) => b.id !== batchId);
       }
@@ -1135,7 +1134,7 @@ async function main(argv) {
       const raw = msg;
       if (!vid || typeof raw.src !== "string")
         return;
-      const num = (v2, d) => typeof v2 === "number" && Number.isFinite(v2) ? v2 : d;
+      const num = (v, d) => typeof v === "number" && Number.isFinite(v) ? v : d;
       const w = num(raw.w, 0.4);
       const h = num(raw.h, 0.4);
       const x = num(raw.x, (1 - w) / 2);
@@ -1200,7 +1199,7 @@ async function main(argv) {
     } else if (t === "layer.reorder") {
       const vid = state.focus?.variantId;
       const layers = vid ? state.layersByVariant[vid] : undefined;
-      const idx = layers?.findIndex((l2) => l2.id === msg.id) ?? -1;
+      const idx = layers?.findIndex((l) => l.id === msg.id) ?? -1;
       if (!vid || !layers || idx < 0 || typeof msg.toIndex !== "number")
         return;
       const to = Math.max(0, Math.min(layers.length - 1, Math.trunc(msg.toIndex)));
@@ -1313,7 +1312,7 @@ async function main(argv) {
       if (!vid || !state.marksByVariant[vid])
         return;
       const sorted = [...state.marksByVariant[vid]].sort((a, b) => (a.zOrder ?? 0) - (b.zOrder ?? 0));
-      const idx = sorted.findIndex((m2) => m2.id === msg.id);
+      const idx = sorted.findIndex((m) => m.id === msg.id);
       if (idx < 0)
         return;
       pushHistory(vid);
@@ -1422,8 +1421,8 @@ async function main(argv) {
           if (refused)
             return refused;
         }
-        const url2 = new URL(req.url);
-        const path = url2.pathname;
+        const url = new URL(req.url);
+        const path = url.pathname;
         if (path === "/ws") {
           const upgraded = srv.upgrade(req);
           if (upgraded)
@@ -1432,14 +1431,14 @@ async function main(argv) {
         }
         if (req.method === "GET" && path === "/state") {
           touch();
-          const lean = url2.searchParams.get("lean") === "1";
+          const lean = url.searchParams.get("lean") === "1";
           const payload = lean ? leanState(state) : state;
           return new Response(JSON.stringify({ state: payload, cursor: log.cursor() }), {
             headers: { "Content-Type": "application/json" }
           });
         }
         if (req.method === "GET" && path === "/events") {
-          return eventsResponse(req, url2);
+          return eventsResponse(req, url);
         }
         if (req.method === "POST" && path === "/cmd") {
           return req.json().then(async (body) => {

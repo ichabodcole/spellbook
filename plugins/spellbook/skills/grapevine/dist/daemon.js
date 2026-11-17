@@ -1,6 +1,5 @@
 #!/usr/bin/env bun
 // @bun
-var __require = import.meta.require;
 
 // src/grapevine/backend/daemon.ts
 import {
@@ -646,32 +645,32 @@ async function handle(req, srv) {
     let targets;
     if (requested) {
       targets = [];
-      for (const name2 of requested) {
+      for (const name of requested) {
         let onDisk = false;
         try {
-          onDisk = existsSync3(channelPath(name2));
+          onDisk = existsSync3(channelPath(name));
         } catch {}
-        if (existsSync3(archivedPath(name2))) {
-          skipped.push({ name: name2, reason: "archived" });
-        } else if (channels.has(name2) || onDisk) {
-          targets.push(name2);
+        if (existsSync3(archivedPath(name))) {
+          skipped.push({ name, reason: "archived" });
+        } else if (channels.has(name) || onDisk) {
+          targets.push(name);
         } else {
-          skipped.push({ name: name2, reason: "unknown" });
+          skipped.push({ name, reason: "unknown" });
         }
       }
     } else {
-      targets = [...channels.keys()].filter((name2) => !channels.get(name2)?.archived);
+      targets = [...channels.keys()].filter((name) => !channels.get(name)?.archived);
     }
-    for (const name2 of targets) {
-      if (existsSync3(archivedPath(name2))) {
-        skipped.push({ name: name2, reason: "archived" });
+    for (const name of targets) {
+      if (existsSync3(archivedPath(name))) {
+        skipped.push({ name, reason: "archived" });
         continue;
       }
-      appendMessage(name2, body.from, body.text, "announcement");
-      const ch = channels.get(name2);
+      appendMessage(name, body.from, body.text, "announcement");
+      const ch = channels.get(name);
       const vis = ch ? visibleSubs(ch) : [];
       const recipients = vis.reduce((n, sub) => sub.alias !== body.from ? n + 1 : n, 0);
-      delivered.push({ name: name2, recipients });
+      delivered.push({ name, recipients });
     }
     const total_recipients = delivered.reduce((n, d) => n + d.recipients, 0);
     return json({ ok: true, channels: delivered, skipped, total_recipients });
@@ -791,7 +790,7 @@ async function handle(req, srv) {
         const ch = channels.get(name);
         const aliases = subscriberAliases(name);
         const vis = ch ? visibleSubs(ch) : [];
-        const recipients = vis.reduce((n, sub2) => sub2.alias !== body.from ? n + 1 : n, 0);
+        const recipients = vis.reduce((n, sub) => sub.alias !== body.from ? n + 1 : n, 0);
         return json({
           ...m,
           subscribers: vis.length,
@@ -807,7 +806,7 @@ async function handle(req, srv) {
       if (!body || typeof body.from !== "string" || typeof body.target !== "number" || typeof body.disposition !== "string") {
         return json({ error: "from, target, disposition required" }, { status: 400 });
       }
-      const exists = readBacklog(name, 0).some((m2) => m2.id === body.target && m2.kind !== "status");
+      const exists = readBacklog(name, 0).some((m) => m.id === body.target && m.kind !== "status");
       if (!exists) {
         return json({ error: `no message ${body.target} in ${name}` }, { status: 404 });
       }

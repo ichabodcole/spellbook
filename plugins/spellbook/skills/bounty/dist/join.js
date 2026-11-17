@@ -167,11 +167,11 @@ async function main(argv) {
   let resolveDone;
   let settled = false;
   const done = new Promise((res) => {
-    resolveDone = (v2) => {
+    resolveDone = (v) => {
       if (settled)
         return;
       settled = true;
-      res(v2);
+      res(v);
     };
   });
   let lastActivity = performance.now();

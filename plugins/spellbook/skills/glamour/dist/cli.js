@@ -492,8 +492,8 @@ ${spec.helpFooter}` : ""}`;
     }
     if (rootRow !== undefined) {
       if (first !== undefined && (byToken.has(first) || subsOf.has(first))) {
-        const r2 = resolve(first, argv.slice(1));
-        return runRow(r2.row, r2.token, r2.args);
+        const r = resolve(first, argv.slice(1));
+        return runRow(r.row, r.token, r.args);
       }
       return runRow(rootRow, "", argv);
     }
@@ -993,10 +993,10 @@ async function tailWithHandoff(tail, h) {
       },
       render: (ev, frame) => {
         refusals = 0;
-        const line2 = tail.render ? tail.render(ev, frame) : frame.data;
-        if (line2 !== null && isLogFrame(ev, frame))
+        const line = tail.render ? tail.render(ev, frame) : frame.data;
+        if (line !== null && isLogFrame(ev, frame))
           events += 1;
-        return line2;
+        return line;
       },
       terminal: (ev, frame, accepted) => {
         if (tail.terminal?.(ev, frame, accepted)) {
@@ -1019,7 +1019,7 @@ async function tailWithHandoff(tail, h) {
         return tail.onComment?.(text) ?? null;
       },
       onDisconnect: (info) => {
-        const line2 = tail.onDisconnect?.(info) ?? null;
+        const line = tail.onDisconnect?.(info) ?? null;
         if (info.cause === "connect-failed") {
           refusals += 1;
           if (endOnLost && refusals >= LOST_AFTER_REFUSALS)
@@ -1027,7 +1027,7 @@ async function tailWithHandoff(tail, h) {
         } else {
           refusals = 0;
         }
-        return line2;
+        return line;
       },
       onEnd: (s) => {
         cursor = s.cursor;

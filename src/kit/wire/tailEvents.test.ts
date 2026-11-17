@@ -476,15 +476,13 @@ describe("tailEvents", () => {
       hostname: "127.0.0.1",
       fetch: () => {
         at.push(Date.now());
-        // ⚠ MEASURED, AND IT CORRECTS THE DEFECT'S OWN DESCRIPTION. B5 is
-        // written up as "a 200 with no body sleeps without growing the
-        // backoff", and `!res.body` is the branch that reads like. But Bun's
-        // fetch hands the client an EMPTY-BUT-PRESENT body for both a
-        // null-body 200 AND a 204 — checked both — so `!res.body` is
-        // unreachable from a Bun client and survives only as a types-level
-        // guard. The LIVE path for an empty response is the read loop ending
-        // at once, i.e. `stream-end`. Same branch to get wrong, same fix, and
-        // this drives the one that actually runs.
+        // ⚠ WHICH BRANCH RUNS DEPENDS ON THE BUN. Up to 1.4.0, Bun's fetch
+        // handed the client an EMPTY-BUT-PRESENT body for a 204, so the empty
+        // response ended the read loop at once (`stream-end`). From 1.4.4 a
+        // 204's body is null, so the `!res.body` guard runs (`no-body`). Both
+        // are the B5 branch: an empty response must grow the backoff. The
+        // test asserts that property, and accepts either branch; the test
+        // after it drives `stream-end` on purpose, whatever the Bun.
         return new Response(null, { status: 204 });
       },
     });
@@ -507,7 +505,7 @@ describe("tailEvents", () => {
       out: collector(),
       err,
     });
-    expect(causes.every((c) => c === "stream-end")).toBe(true);
+    expect(causes.every((c) => c === "stream-end" || c === "no-body")).toBe(true);
     expect(at.length).toBeGreaterThanOrEqual(4);
     const gaps = at.slice(1).map((t, i) => t - (at[i] as number));
     // Each wait is at least (nearly) double the one before — the property, not
@@ -515,6 +513,50 @@ describe("tailEvents", () => {
     const last = gaps.at(-1) as number;
     const first = gaps[0] as number;
     expect(last).toBeGreaterThan(first * 2);
+  }, 15000);
+
+  test("a 200 whose body ends at once with no bytes grows the backoff too (stream-end)", async () => {
+    const at: number[] = [];
+    const server = Bun.serve({
+      port: 0,
+      hostname: "127.0.0.1",
+      fetch: () => {
+        at.push(Date.now());
+        // A body that is there, and closes before its first byte: the read
+        // loop's `done` arrives at once. No byte, so the backoff never resets.
+        return new Response(
+          new ReadableStream({
+            start(c) {
+              c.close();
+            },
+          }),
+          { headers: { "content-type": "text/event-stream" } },
+        );
+      },
+    });
+    cleanup.push(() => server.stop(true));
+    const ac = new AbortController();
+    const causes: string[] = [];
+    setTimeout(() => ac.abort(), 900);
+    await tailEvents({
+      resolve: () => `http://127.0.0.1:${server.port}`,
+      path: "/events",
+      since: 0,
+      retry: { initialMs: 40, maxMs: 5000 },
+      onDisconnect: ({ cause }) => {
+        causes.push(cause);
+        return null;
+      },
+      signal: ac.signal,
+      signals: false,
+      out: collector(),
+      err: collector(),
+    });
+    expect(causes.length).toBeGreaterThanOrEqual(3);
+    expect(causes.every((c) => c === "stream-end")).toBe(true);
+    expect(at.length).toBeGreaterThanOrEqual(4);
+    const gaps = at.slice(1).map((t, i) => t - (at[i] as number));
+    expect(gaps.at(-1) as number).toBeGreaterThan((gaps[0] as number) * 2);
   }, 15000);
 
   // ── the diagnostics sink ──────────────────────────────────────────────────

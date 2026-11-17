@@ -1,6 +1,5 @@
 #!/usr/bin/env bun
 // @bun
-var __require = import.meta.require;
 
 // src/digestify/backend/review.ts
 import { existsSync as existsSync2, readFileSync as readFileSync2 } from "fs";
@@ -494,8 +493,8 @@ ${spec.helpFooter}` : ""}`;
     }
     if (rootRow !== undefined) {
       if (first !== undefined && (byToken.has(first) || subsOf.has(first))) {
-        const r2 = resolve(first, argv.slice(1));
-        return runRow(r2.row, r2.token, r2.args);
+        const r = resolve(first, argv.slice(1));
+        return runRow(r.row, r.token, r.args);
       }
       return runRow(rootRow, "", argv);
     }

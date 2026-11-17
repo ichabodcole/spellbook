@@ -91,3 +91,4 @@ _Written at close._
 ## Sessions
 
 - docs/story-studio-document-ux-port (landed 2026-11-17)
+- chore/bun-1.4.4 (landed 2026-11-17)
