@@ -267,9 +267,10 @@ export function cutShort(bytes: Uint8Array): boolean | null {
 /**
  * Whether bytes that sniff as an image may be written as one. A truncated
  * upload keeps its header (so the sniff and even the size read pass) and
- * loses its pixels; a full decode, on Bun's worker threads, finds that. But
- * Bun cannot decode everything a browser shows (a CMYK JPEG), so a failed
- * decode refuses only when the format's end marker is missing as well. A
+ * loses its pixels. A file whose format's end marker is missing is refused,
+ * whether or not it decodes (Bun 1.4.4 decodes a JPEG cut short). A failed
+ * decode alone does not refuse: Bun cannot decode everything a browser shows
+ * (a CMYK JPEG). A
  * format this machine has no decoder for (an AVIF without AV1), one whose end
  * cannot be checked, and an image too large to decode all pass: the browser may
  * still read them.
@@ -277,7 +278,10 @@ export function cutShort(bytes: Uint8Array): boolean | null {
 export async function imageDecodes(bytes: Uint8Array): Promise<boolean> {
   try {
     await new Bun.Image(bytes, { maxPixels: IMAGE_MAX_PIXELS }).resize(1, 1).webp().bytes();
-    return true;
+    // A decode that succeeds is not proof of a whole file: from Bun 1.4.4 a
+    // JPEG cut short decodes, its missing rows filled in. So a missing end
+    // marker refuses even then.
+    return cutShort(bytes) !== true;
   } catch (e) {
     const code = codeOf(e);
     if (code === "ERR_IMAGE_FORMAT_UNSUPPORTED" || code === "ERR_IMAGE_TOO_MANY_PIXELS")

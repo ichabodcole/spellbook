@@ -80,6 +80,11 @@ export class FakeSurface {
       this.ws.onopen = () => resolve();
       this.ws.onerror = () => reject(new Error("websocket refused"));
     });
+    // The daemon sends its state as the socket opens. Bun 1.4.4 resolves
+    // `onopen` before that first frame is delivered (1.4.0 delivered it
+    // first), so a test reading `state` straight after connect found none.
+    // Connected means the first state is here.
+    await waitUntil("the first state frame", () => this.frames.find((f) => f.op === "state"), 5000);
   }
 
   send(msg: ClientOp | { op: string; [key: string]: unknown }): void {
