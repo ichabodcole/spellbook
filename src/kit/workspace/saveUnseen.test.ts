@@ -164,6 +164,22 @@ describe("the session: Save asks the disk, not the watcher", () => {
     expect(readFileSync(solo(), "utf8")).toBe("mine\n");
   });
 
+  test("a change made while the session was closed is asked about at restore: Keep mine writes on the first Save", () => {
+    const s = inContext(sessions, docs);
+    const { slug } = s.openPath(solo());
+    s.edit(slug, 1, "mine\n");
+    // The session is closed; the file changes; the session restores.
+    writeFileSync(solo(), "theirs, while closed\n");
+    const r = WorkspaceSession.restore(sessions, testApp, s.id);
+    // Raised at restore, about the text on disk then: that is the text shown.
+    expect(r.doc(slug).outsideChanged).toBe(true);
+    expect(r.doc(slug).outsideHash).toBeDefined();
+    // "Keep mine" over the text the human was shown writes at once.
+    r.save(slug);
+    expect(readFileSync(solo(), "utf8")).toBe("mine\n");
+    expect(r.doc(slug).outsideChanged).toBe(false);
+  });
+
   test("an outside change that is already the human's text is no conflict: Save goes ahead", () => {
     const s = inContext(sessions, docs);
     const { slug } = s.openPath(solo());
