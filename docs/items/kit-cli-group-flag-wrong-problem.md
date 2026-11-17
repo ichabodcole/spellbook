@@ -5,7 +5,7 @@ description:
   "`<cli> <group> --nope` is refused as 'expected a sub-command', never naming
   the flag; Image Farm's fix names it and hints to put the sub-command first."
 status: stable
-lifecycle: active
+lifecycle: done
 id: 01a1eabe-f6bc-7056-9707-821f7cca248b
 kind: bug
 generated: { by: claude-opus-5-5, at: 2026-11-17 }

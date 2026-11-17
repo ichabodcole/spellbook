@@ -864,6 +864,50 @@ describe("a session, end to end through the launchers", () => {
     // sequence, sized as the other launcher tests here are.
   }, 60_000);
 
+  test("task-done takes its outcome from --stdin or --body-file, never with words as well", async () => {
+    const piped = async (stdin: string, ...args: string[]) => {
+      const p = Bun.spawn(["bun", CLI, ...args], {
+        stdout: "pipe",
+        stderr: "pipe",
+        stdin: new TextEncoder().encode(stdin),
+        env,
+        cwd: root,
+      });
+      const [out, err, code] = await Promise.all([
+        new Response(p.stdout).text(),
+        new Response(p.stderr).text(),
+        p.exited,
+      ]);
+      return { code, out, err };
+    };
+    const outcome = "Rendered `intro` and `outro`.\n\n- two sections";
+    const a = json<{ task: string }>(await cli("task", "Render the sections"));
+    const fromStdin = await piped(`${outcome}\n`, "task-done", a.task, "--stdin");
+    expect([fromStdin.code, fromStdin.err]).toEqual([0, ""]);
+    await waitTail((l) => l.type === "task.done" && l.task === a.task && l.outcome === outcome);
+
+    const b = json<{ task: string }>(await cli("task", "Check the links"));
+    const file = join(root, "tmp", "task-done-outcome.md");
+    writeFileSync(file, "`intro.md` links to a missing file\n");
+    const fromFile = await cli("task-done", b.task, "--failed", "--body-file", file);
+    expect([fromFile.code, fromFile.err]).toEqual([0, ""]);
+    await waitTail(
+      (l) =>
+        l.type === "task.failed" &&
+        l.task === b.task &&
+        l.message === "`intro.md` links to a missing file",
+    );
+
+    const c = json<{ task: string }>(await cli("task", "Tidy up"));
+    for (const extra of [["--stdin"], ["--body-file", file]]) {
+      const both = await piped("piped\n", "task-done", c.task, "done", ...extra);
+      expect(both.code).toBe(2);
+      expect(JSON.parse(both.err).error.kind).toBe("usage");
+    }
+    // Refused before anything was posted: the task is still running.
+    expect((await state()).tasks.find((x) => x.id === c.task)?.status).toBe("running");
+  }, 30_000);
+
   test("an unknown doc is not_found with the docs in hand as choices", async () => {
     const r = await cli("version-new", "--doc", "nope");
     expect(r.code).toBe(5);

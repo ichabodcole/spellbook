@@ -27,7 +27,7 @@ sends it to the Trash, as for any new document.
 
 Small, and not blocked by the split. It edits `verbs.ts`, so it lands after
 [#137](kit-unpinned-verbs-write-to-another-session/item.md) and
-[#145](kit-task-done-takes-no-body-file.md) if those are still open.
+[#145](kit-task-done-takes-no-body-file/item.md) if those are still open.
 
 ## Definition of done
 

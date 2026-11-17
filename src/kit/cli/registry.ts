@@ -9,7 +9,7 @@
  * the cold read won.
  *
  * ⛔ THE KIT IS A LEAF. This module imports only `node:util` and other kit
- * modules (`../wire/errors`, `../lib/printJson`).
+ * modules (`../wire/errors`, `../lib/printJson`, `../lib/exitOnBrokenPipe`).
  *
  * ⛔ NO SIDE EFFECTS AT IMPORT, AND NONE IN `defineCli`. Building the table only
  * validates and indexes it; nothing is parsed, printed or read until `main` or
@@ -75,8 +75,12 @@
  */
 
 import { parseArgs } from "node:util";
+import { exitOnBrokenPipe } from "../lib/exitOnBrokenPipe";
 import { printJson } from "../lib/printJson";
 import { CliError, die, reportCliError, setCurrentCommand } from "../wire/errors";
+
+/** One stdout listener per process, however many times a test dispatches. */
+let pipeWatched = false;
 
 // ── types ─────────────────────────────────────────────────────────────────
 
@@ -657,7 +661,16 @@ export function defineCli<const O extends OptionsTable>(spec: CliSpec<O>): Cli {
       const own = byToken.get(cand);
       if (own !== undefined) return { row: own, token: cand, args: rest };
       const extra = { choices: [...subs], hint: `run \`${cliName} help\` for usage` };
-      if (sub === undefined) die(`${cand}: expected a sub-command`, "usage", extra);
+      if (sub === undefined) {
+        // A flag in the way is the refused token (acc A3), without its `=value`.
+        const flag = rest.find((a) => a.startsWith("-") && a !== "--" && a.length > 1);
+        if (flag === undefined) die(`${cand}: expected a sub-command`, "usage", extra);
+        const name = flag.split("=")[0] as string;
+        die(`${cand}: expected a sub-command before any flag, got ${name}`, "usage", {
+          choices: extra.choices,
+          hint: `put the sub-command first: ${cliName} ${cand} <sub-command> ${name}`,
+        });
+      }
       die(`unknown ${cand} sub-command: "${sub}"`, "usage", extra);
     }
     const row = byToken.get(cand);
@@ -800,6 +813,12 @@ export function defineCli<const O extends OptionsTable>(spec: CliSpec<O>): Cli {
   };
 
   const dispatch = async (argv: string[]): Promise<number> => {
+    // Every verb passes here, so one listener covers every stdout write: a
+    // reader that closed the pipe (`schema | head -1`) ends us at 0, quietly.
+    if (!pipeWatched) {
+      pipeWatched = true;
+      exitOnBrokenPipe();
+    }
     setCurrentCommand(argv[0] ?? null);
     const first = argv[0];
 

@@ -501,6 +501,8 @@ export const SPECS: SpellSpec[] = [
       c("task", "hello"),
       c("task-status", "t1", "step", "two"),
       c("task-done", "t1", "shipped"),
+      stdin("shipped", "task-done", "t1", "--stdin"),
+      c("task-done", "t1", "--failed", "--body-file", "golden.md"),
       c("task-remove", "t1"),
       c("tasks-clear"),
       c("working", "--for", "5m"),

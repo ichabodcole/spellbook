@@ -6966,6 +6966,16 @@ import { basename as basename2, dirname as dirname3, join as join4, resolve as r
 // src/kit/cli/registry.ts
 import { parseArgs } from "util";
 
+// src/kit/lib/exitOnBrokenPipe.ts
+function exitOnBrokenPipe(stream = process.stdout, exit = (code) => process.exit(code)) {
+  stream.on("error", (e) => {
+    if (e.code === "EPIPE")
+      exit(0);
+    else
+      throw e;
+  });
+}
+
 // src/kit/lib/printJson.ts
 function printJson(data) {
   process.stdout.write(`${JSON.stringify(data)}
@@ -7025,6 +7035,7 @@ function reportCliError(e, err = process.stderr) {
 }
 
 // src/kit/cli/registry.ts
+var pipeWatched = false;
 var INTERCEPTORS = [
   { name: "--help", runs: "help" },
   { name: "-h", runs: "help" },
@@ -7338,8 +7349,16 @@ ${spec.helpFooter}` : ""}`;
       if (own !== undefined)
         return { row: own, token: cand, args: rest };
       const extra = { choices: [...subs], hint: `run \`${cliName} help\` for usage` };
-      if (sub === undefined)
-        die(`${cand}: expected a sub-command`, "usage", extra);
+      if (sub === undefined) {
+        const flag = rest.find((a) => a.startsWith("-") && a !== "--" && a.length > 1);
+        if (flag === undefined)
+          die(`${cand}: expected a sub-command`, "usage", extra);
+        const name = flag.split("=")[0];
+        die(`${cand}: expected a sub-command before any flag, got ${name}`, "usage", {
+          choices: extra.choices,
+          hint: `put the sub-command first: ${cliName} ${cand} <sub-command> ${name}`
+        });
+      }
       die(`unknown ${cand} sub-command: "${sub}"`, "usage", extra);
     }
     const row = byToken.get(cand);
@@ -7440,6 +7459,10 @@ ${spec.helpFooter}` : ""}`;
     return typeof out === "number" ? out : 0;
   };
   const dispatch = async (argv) => {
+    if (!pipeWatched) {
+      pipeWatched = true;
+      exitOnBrokenPipe();
+    }
     setCurrentCommand(argv[0] ?? null);
     const first = argv[0];
     const interceptor = INTERCEPTORS.find((i) => i.name === first);
@@ -9570,14 +9593,16 @@ function createWorkspaceCli(opts) {
     },
     {
       name: "task-done",
-      flags: [...SESSION, "failed"],
+      flags: [...SESSION, "failed", "stdin", "body-file"],
       positionals: [
         { name: "id", required: true },
         { name: "outcome", required: false, variadic: true }
       ],
-      describe: "mark a task finished, optionally saying what came of it (--failed marks it failed, and the words say why)",
+      describe: "mark a task finished, optionally saying what came of it (prose: --body-file <path> or --stdin; --failed marks it failed, and the words say why)",
       run: async (pos, flags, session) => {
-        const outcome = pos.slice(1).join(" ").trim();
+        const words = pos.slice(1);
+        const given = words.join("").trim() !== "" || flags.stdin === true || typeof flags["body-file"] === "string";
+        const outcome = given ? await readBody(words, flags, "task-done") : "";
         printJson(await postCmd(session, {
           op: "task.done",
           id: pos[0],

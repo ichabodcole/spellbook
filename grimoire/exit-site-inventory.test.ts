@@ -17,7 +17,8 @@
 //   other way (`Bun.exit`, a helper that wraps it, a re-exported `die`) is
 //   invisible to it. `Bun.exit` was swept for at 9cff395: zero hits repo-wide.
 //
-//   ⛔ It reads NON-TEST `.ts` under the skills tree only. Exits inside
+//   ⛔ It reads NON-TEST `.ts` under the skills tree, the built backends
+//   (`src/<spell>/backend/`) and the kit (`src/kit/`) only. Exits inside
 //   `*.test.ts` are deliberately out of scope (a test may exit however it likes).
 //
 // UPDATING THE MAP AFTER AN INTENTIONAL CHANGE — the sanctioned route.
@@ -49,7 +50,14 @@
 
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
-import { backendSources, deployedSources, readEntryPoint } from "./lib/entry-points";
+import { join } from "node:path";
+import {
+  BACKEND_SRC_DIR,
+  backendSources,
+  deployedSources,
+  readEntryPoint,
+  walkSpellSources,
+} from "./lib/entry-points";
 
 /* ⚠ `const PH = `${"$"}{payload}`` STOOD HERE AND IS GONE WITH ITS LAST READER.
  * It existed so a pinned text could quote a real source line containing a
@@ -77,12 +85,13 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // `src/kit/wire/errors.ts`, which THROWS. astrolabe has zero live exit sites
   // left; magpie keeps exactly one (its module-level EPIPE guard, F-live).
   //
-  // ⛔ AND THAT MEANS THIS WARD NO LONGER SEES WHERE THOSE TWO SPELLS END. The
-  // shared client is under `src/kit/`, which this inventory does not walk, and
-  // it contains no `process.exit(` at all — by construction, which is the whole
-  // design. Nothing was hidden; there is nothing there to pin. When the other
-  // five tails adopt, the same eight-row deletion repeats, and the day the kit
-  // ever grows an exit is the day this walk must grow a third root.
+  // ⛔ THE SHARED CLIENT IS UNDER `src/kit/`, which this inventory did not walk
+  // while it held no `process.exit(` at all — by construction, which is the
+  // whole design. The day the kit grew an exit was the day this walk had to
+  // grow a third root, and that day came (kit-cli-epipe-stack, 2026-11-17):
+  // `src/kit/lib/exitOnBrokenPipe.ts`, the registry's EPIPE guard, is pinned
+  // below as F-live, the kit's twin of magpie's. The kit is now walked, so its
+  // next exit fails this ward and names itself.
   // ⭐ bounty's A-drain site is GONE, and it is the THIRD time this inventory has
   // recorded that sentence. It moved to `backend/cli.ts` in Phase 4 chapter 1
   // (three CLI rows and three daemon rows re-addressed, families and texts
@@ -272,7 +281,31 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
     text: 'if (e.code === "EPIPE") process.exit(0);',
     family: "F-live",
   },
+  // The kit's EPIPE guard (kit-cli-epipe-stack, ported from Image Farm): the
+  // registry's `dispatch` installs it once per process, so every kit CLI's verb
+  // that prints ends at 0 when its reader has closed stdout. Read as magpie's
+  // row above: an exit from a stdout `error` listener, with the write that
+  // failed upstream of it. Nothing can drain into a closed pipe, so the exit
+  // loses nothing; any other stdout error is rethrown, not exited on. The
+  // default `exit` parameter is the live site; tests pass their own.
+  {
+    file: "kit/lib/exitOnBrokenPipe.ts",
+    text: "exit: (code: number) => void = (code) => process.exit(code),",
+    family: "F-live",
+  },
 ];
+
+/**
+ * The THIRD root: non-test `.ts` under `src/kit/`, keyed `kit/...`. Every CLI
+ * that adopts the kit's registry or tail client ends through it, so an exit
+ * here is an exit in every adopter at once.
+ */
+function kitSources(): string[] {
+  const dir = join(BACKEND_SRC_DIR, "kit");
+  return walkSpellSources(dir)
+    .map((abs) => `kit/${abs.slice(dir.length + 1)}`)
+    .sort();
+}
 
 /* The deployed-folder walk is `deployedSources` in `./lib/entry-points` — by
  * BEHAVIOUR (recursive), never a fixed depth or a per-spell layout guess, and
@@ -288,7 +321,8 @@ function isCommentLine(line: string): boolean {
 }
 
 /**
- * The inventory's population, across BOTH roots.
+ * The inventory's population, across all THREE roots (the third, `src/kit/`,
+ * is `kitSources` above).
  *
  * ⛔ THE SECOND ROOT IS `src/<spell>/backend/`, AND IT IS NOT OPTIONAL. Slice 2
  * moved two spells' CLI SOURCE out of `<spell>/scripts/` and left a launcher at
@@ -311,6 +345,7 @@ function enumerate(): Array<{ file: string; text: string }> {
     // under `plugins/unreleased/skills/` while it is held out of the plugin.
     ...deployedSources().map(({ rel, abs }) => ({ rel, text: readFileSync(abs, "utf8") })),
     ...backendSources().map((rel) => ({ rel, text: readEntryPoint(rel) })),
+    ...kitSources().map((rel) => ({ rel, text: readFileSync(join(BACKEND_SRC_DIR, rel), "utf8") })),
   ];
   for (const { rel, text } of sources) {
     for (const line of text.split("\n")) {
@@ -331,6 +366,9 @@ describe("P0f — the exit-site inventory is pinned", () => {
     // The second root contributed — a zero here means Slice 2's relocated CLIs
     // left the inventory and nothing said so.
     expect(backendSources().length).toBeGreaterThan(0);
+    // The third root contributed — a zero here means the kit left the
+    // inventory, and its exits with it.
+    expect(kitSources().length).toBeGreaterThan(0);
     expect(enumerate().length).toBeGreaterThan(0);
   });
 
