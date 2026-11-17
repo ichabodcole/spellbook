@@ -94,3 +94,5 @@ _Written at close._
 - chore/bun-1.4.4 (landed 2026-11-17)
 - docs/scriptorium-session-vocabularies (open)
 - docs/kit-split-oversized-modules (open)
+- fix/kit-unpinned-verbs-write-to-another-session (open)
+- fix/kit-right-click-away-from-selection (open)
