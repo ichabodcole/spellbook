@@ -39,8 +39,8 @@ three calls.
 
 ## Current State
 
-- **Story Studio** lives at `~/Projects/dreamwood/story-studio`. It has made 966
-  commits since 2026-10-12: 638 docs, about 330 code.
+- **Story Studio** lives at `~/Projects/dreamwood/story-studio`. By 2026-11-17
+  it had made 966 commits since 2026-10-12: 638 docs, about 330 code.
 - **The last scan** was
   [What to take back from Story Studio](../_archive/story-studio-port-back/write-up.md).
   Anything it decided, this scan doesn't repeat.
@@ -74,17 +74,17 @@ echo are back-ports of ours.
 
 ### Document UX: take
 
-| #   | Candidate                                                                                                                                  | Evidence                                                   | Size         |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------- | ------------ |
-| U1  | **Leave an agent version** without taking it: it stays in history and leaves the inbox                                                     | `221163b6`; `version.leave`, a `left` mark                 | small–medium |
-| U2  | **The inbox**: a top-bar button and popover, "For you" and "With the agent"; each row opens its thing and carries its acts                 | `98e34890`, `3539a3e1`; kit `shell/inbox.ts` (pure)        | large        |
-| U3  | **One row per document's agent versions**; taking v5 settles v2–v4. Port the final rule: Story Studio got it wrong twice in review         | `523e4834`                                                 | small, in U2 |
-| U4  | **Owed notes go to the inbox**; the Notes panel speaks only for its own document. Removes our `notes-elsewhere` box; keep our rail mark    | `365f91ea`                                                 | small        |
-| U5  | **Back and Forward through what you opened**, with arrows and keys (⌃- / ⌃⇧- on a Mac); Back returns to your place in the document         | `27589601`, `352133db`, `33d7d81d`; `navHistory.ts` pure   | large        |
-| U6  | **Raw undo survives a trip to the rendered view and back**                                                                                 | `92e657ed` (`historyField`)                                | small–medium |
-| U7  | **new-doc holding the agent's text** (`--body-file`/`--stdin`), so there's no empty v1 to activate. Our `doc.create` op already takes text | `a5eeb703`                                                 | small        |
-| U8  | **Activity tab**: the daemon's records (made, moved, renamed, activated) leave chat for their own list; the agent's tail is unchanged      | `a5174d51`; `lib/messageSide.ts`, `chat/ActivityPanel.tsx` | medium       |
-| U9  | A quiet background `--once` tail, if ours turns out to be noisy (check first)                                                              | `74eae9ec`                                                 | small        |
+| #   | Candidate                                                                                                                                  | Evidence                                                    | Size         |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- | ------------ |
+| U1  | **Leave an agent version** without taking it: it stays in history and leaves the inbox                                                     | `221163b6`; `version.leave`, a `left` mark                  | small–medium |
+| U2  | **The inbox**: a top-bar button and popover, "For you" and "With the agent"; each row opens its thing and carries its acts                 | `98e34890`, `3539a3e1`; kit `shell/inbox.ts` (pure)         | large        |
+| U3  | **One row per document's agent versions**; taking v5 settles v2–v4. Port the final rule: Story Studio got it wrong twice in review         | `523e4834`                                                  | small, in U2 |
+| U4  | **Owed notes go to the inbox**; the Notes panel speaks only for its own document. Removes our `notes-elsewhere` box; keep our rail mark    | `365f91ea`                                                  | small        |
+| U5  | **Back and Forward through what you opened**, with arrows and keys (⌃- / ⌃⇧- on a Mac); Back returns to your place in the document         | `27589601` (history), `352133db` (arrows, keys), `33d7d81d` | large        |
+| U6  | **Raw undo survives a trip to the rendered view and back**                                                                                 | `92e657ed` (`historyField`)                                 | small–medium |
+| U7  | **new-doc holding the agent's text** (`--body-file`/`--stdin`), so there's no empty v1 to activate. Our `doc.create` op already takes text | `a5eeb703`                                                  | small        |
+| U8  | **Activity tab**: the daemon's records (made, moved, renamed, activated) leave chat for their own list; the agent's tail is unchanged      | `a5174d51`; `lib/messageSide.ts`, `chat/ActivityPanel.tsx`  | medium       |
+| U9  | A quiet background `--once` tail, if ours turns out to be noisy (check first)                                                              | `74eae9ec`                                                  | small        |
 
 Two more are already filed: the right-click away from the selection (#146, in
 this cycle) and the link inserted mid-word (#147).
@@ -99,6 +99,10 @@ asks and replies in other chats. U1 overlaps the backlog's
 `scriptorium-eager-or-lazy-versioning`; decide them together.
 
 ### Document UX: take later
+
+_These lists are the calls as proposed. Cole's decisions below override them:
+icon tabs became a take, and autosave and the Ask and Auto modes became one
+research item._
 
 - **Icon tabs** in the right column (`416160b2`, `80cfe342`). They don't depend
   on Story Studio's per-type columns, so the icons work on our column alone.
@@ -121,6 +125,8 @@ asks and replies in other chats. U1 overlaps the backlog's
   images wherever a document is drawn (`a65ec055`). Listed, not studied.
 
 ### Document UX: skip
+
+_The Ask and Auto entry below was overruled: see Decided, 3 and 5._
 
 - **Ask and Auto modes**, the ask dialog and the allow list (`5d3a0ec9`,
   `dd1ee44e`). Scriptorium's agent proposes and the human takes, which is Ask.
@@ -145,7 +151,7 @@ asks and replies in other chats. U1 overlaps the backlog's
 | G5  | **A per-test-file TMPDIR** in the test preload; Story Studio's shared temp folder had grown to 45,682 entries and slowed daemon boots              | `31adf7bb`                       | small        |
 | G6  | **A lint rule against `toBeNull` on DOM queries** (Bun's passes on a live element), with the kit's `expectNull`                                    | `460f8290`                       | small        |
 | G7  | **A 1,200-line file limit** in Biome, with frozen per-file overrides that can only shrink. Belongs to the kit split                                | `360e67eb`                       | small        |
-| G8  | **Two more root guards**: refuse the disk root and `$HOME` as a set                                                                                | `28376008`, `d24aca16`           | small        |
+| G8  | **Root guards**: refuse the disk root and `$HOME` as a set                                                                                         | `28376008`                       | small        |
 | G9  | **An implementing-a-branch playbook**: the gate lock, the load check, the missing-hook trap in a new worktree, pure-refactor rules                 | `implementing-a-branch-playbook` | small        |
 | G10 | **Running-a-cycle and release playbooks**: carried-forward lists, sorting lessons at close, checking research follow-ups are filed                 | Story Studio's playbooks         | small        |
 | G11 | The test-speed notes Story Studio wrote for other playbooks (lost watcher writes, `--rerun-each`)                                                  | `2026-10-test-speed`             | small        |

@@ -34,7 +34,9 @@ lists them newest first, up to 200, with who and when. What the agent receives
 `by` field yet, so the daemon half marks each line where it is said.
 
 This and [kit-icon-tabs](kit-icon-tabs.md) are meant to land on one branch: the
-Activity tab is the fourth tab that makes icons pay off. Blocked by
+Activity tab is the fourth tab that makes icons pay off. Icon tabs also wait on
+[kit-owed-notes-in-the-inbox](kit-owed-notes-in-the-inbox.md), so that branch
+comes after it. Blocked by
 [kit-split-oversized-modules](kit-split-oversized-modules.md).
 
 ## Definition of done

@@ -22,15 +22,19 @@ before pushing.
 Story Studio's `scripts/check-linux.sh` (`89abe47b`, `e8d578ee`) runs
 `git archive HEAD` into a pinned `oven/bun` container and runs the same steps as
 CI, with no Actions minutes; `CHECK_LINUX_HOST` runs it on another machine over
-SSH. It reproduced all 11 failures of one red run. Story Studio requires it for
-branches that touch saving, watching or paths.
+SSH. It reproduced all 11 failures of one red CI run (`18a62a45`, per
+`89abe47b`'s message). Story Studio requires it for branches that touch saving,
+watching or paths.
 
 ## Definition of done
 
 - [ ] `bun run check:linux` runs the gate's steps on a clean copy of HEAD in a
       Linux container pinned to CI's Bun version.
 - [ ] It exits with the gate's result, and says how to run it on another host.
-- [ ] The testing playbook says when to run it.
+- [ ] [The test-speed playbook](../playbooks/test-speed-playbook.md), or the
+      implementing-a-branch playbook if
+      [adopt-story-studio-playbooks](adopt-story-studio-playbooks.md) has
+      landed, says when to run it.
 
 ## Related Documents
 

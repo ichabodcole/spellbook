@@ -19,8 +19,8 @@ as a set, including `/` or the home folder. The daemon then scans and watches
 everything below it.
 
 Story Studio refuses the disk root, `$HOME` and its own studio home as a project
-(`28376008`, `d24aca16`). Spellbook already has the `O_NOFOLLOW` and realpath
-guards (`src/kit/workspace/disk.ts`); these two refusals are what's missing.
+(`28376008`). Spellbook already has the `O_NOFOLLOW` and realpath guards
+(`src/kit/workspace/disk.ts`); these two refusals are what's missing.
 
 ## Definition of done
 
