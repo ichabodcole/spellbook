@@ -96,3 +96,4 @@ _Written at close._
 - docs/kit-split-oversized-modules (open)
 - fix/kit-unpinned-verbs-write-to-another-session (open)
 - fix/kit-right-click-away-from-selection (open)
+- fix/scriptorium-downgraded-session-refused (open)
