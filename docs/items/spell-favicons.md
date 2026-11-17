@@ -11,6 +11,7 @@ id: 01a1460b-2e23-7442-a641-8240e69bc407
 kind: task
 generated: { by: claude-opus-5-5, at: 2026-10-16 }
 tags: [surface, spells]
+parent: feature/session-identity
 ---
 
 # Give every spell a recognisable favicon, Scriptorium first
@@ -37,6 +38,12 @@ the stroke in the brand colour and a `prefers-color-scheme: dark` rule for a
 lighter stroke in dark mode. It has no asset file, no build step and no request.
 
 **Cole's picks (2026-10-16):** Scriptorium gets Lucide `scroll-text`.
+
+**Scriptorium's favicon will take the session's colour** (Cole, 2026-11-17, the
+[session-identity](../features/session-identity/feature.md) feature). Its stroke
+is the session's colour rather than the brand colour, so tabs from different
+projects differ. Build the SVG so its stroke colour is a parameter. The other
+spells keep a fixed brand colour.
 
 **Scriptorium on the kit** gets its surface in a later Workspace Kit cycle. The
 kit could take the icon from the app's declaration, so every kit app gets one
