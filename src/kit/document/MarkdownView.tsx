@@ -138,24 +138,39 @@ function nearestTextOffset(
   container: Node,
   offset: number,
 ): number | null {
-  const caret = document.createRange();
-  caret.setStart(container, offset);
-  caret.setEnd(container, offset);
-  let before: number | null = null;
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  for (let n = walker.nextNode(); n !== null; n = walker.nextNode()) {
-    if (n === container) continue;
-    const t = n as Text;
-    // Before the caret: the last one wins, at its end. After it: the first, at its start.
-    if (caret.comparePoint(t, t.data.length) <= 0) {
-      before = textOffset(root, projection, t, t.data.length) ?? before;
-      continue;
-    }
-    if (before !== null) return before;
-    const after = textOffset(root, projection, t, 0);
-    if (after !== null) return after;
+  // The first node at or after the caret, in document order: the child it sits
+  // before, else whatever follows the container (null: the caret ends the page).
+  // A text container is itself the boundary; it is no candidate.
+  let stop: Node | null = container;
+  if (container.nodeType !== Node.TEXT_NODE) {
+    stop = container.childNodes[offset] ?? null;
+    for (let up: Node | null = container; !stop && up && up !== root; up = up.parentNode)
+      stop = up.nextSibling;
   }
-  return before;
+  // One walk splits the text nodes at the caret, by position in the tree alone
+  // (no range comparisons, each of which can cost a walk of its own), and only
+  // then the source: `textOffset` aligns the whole page, so it is asked of the
+  // nearest candidates alone, never of every node before the caret.
+  const before: Text[] = [];
+  const after: Text[] = [];
+  let past = false;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
+  for (let n = walker.nextNode(); n !== null; n = walker.nextNode()) {
+    if (n === stop) past = true;
+    if (n === container || n.nodeType !== Node.TEXT_NODE) continue;
+    (past ? after : before).push(n as Text);
+  }
+  // The last text before the caret that has a place, at its end; else the first after, at its start.
+  for (let i = before.length - 1; i >= 0; i--) {
+    const t = before[i] as Text;
+    const at = textOffset(root, projection, t, t.data.length);
+    if (at !== null) return at;
+  }
+  for (const t of after) {
+    const at = textOffset(root, projection, t, 0);
+    if (at !== null) return at;
+  }
+  return null;
 }
 
 export function MarkdownView({
