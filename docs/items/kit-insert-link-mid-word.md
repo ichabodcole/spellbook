@@ -36,7 +36,7 @@ Story Studio's change (branch `feat/editor-polish`, no commit named yet):
 Neither helper is on develop. The callers it names, `askLinkAt`, `chooseLink`
 and `chooseRendered`, are in `src/kit/document/DocumentPane.tsx`. Touches the
 same menu as
-[kit-right-click-away-from-selection](kit-right-click-away-from-selection.md).
+[kit-right-click-away-from-selection](kit-right-click-away-from-selection/item.md).
 
 ## Definition of done
 
