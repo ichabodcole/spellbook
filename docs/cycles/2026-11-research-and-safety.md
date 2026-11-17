@@ -59,7 +59,7 @@ Approved by Cole on 2026-11-17. In order:
    Save after the banner writes only over the change the banner was raised for.
 8. **[item/kit-right-click-away-from-selection](../items/kit-right-click-away-from-selection/item.md)**
    (#146): a right-click outside the selection acts at the click.
-9. **[item/note-reply-clears-every-waiting-note](../items/note-reply-clears-every-waiting-note.md)**:
+9. **[item/note-reply-clears-every-waiting-note](../items/note-reply-clears-every-waiting-note/item.md)**:
    a reply clears only the note it names. Story Studio's fix is in kit-parity
    message 62.
 
@@ -99,4 +99,4 @@ _Written at close._
 - fix/scriptorium-downgraded-session-refused (landed 2026-11-17)
 - fix/kit-cli-small-fixes (landed 2026-11-17)
 - fix/kit-save-second-unseen-change (landed 2026-11-17)
-- fix/note-reply-clears-every-waiting-note (open)
+- fix/note-reply-clears-every-waiting-note (landed 2026-11-17)

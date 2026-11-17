@@ -42,7 +42,7 @@ Approved by Cole on 2026-10-26, from the triage of that day. In order:
    Save after the banner writes only over the change the banner was raised for.
 3. **[item/kit-save-refusal-four-messages](../items/kit-save-refusal-four-messages.md)**:
    one wording for that refusal across banner, toast and chat. After 2.
-4. **[item/note-reply-clears-every-waiting-note](../items/note-reply-clears-every-waiting-note.md)**:
+4. **[item/note-reply-clears-every-waiting-note](../items/note-reply-clears-every-waiting-note/item.md)**:
    a reply clears only the note it names.
 5. **[item/kit-workspace-file-symlinks-leave-set](../items/kit-workspace-file-symlinks-leave-set.md)**:
    a linked file can't leak or write outside its set. Cole rules the policy

@@ -4408,7 +4408,7 @@ export function createWorkspaceDaemon(opts: WorkspaceDaemonOptions): WorkspaceDa
         }
         case "note.reply": {
           // The agent's answer to a note: a message about it, shown with the
-          // note. Like any agent message it answers what is waiting.
+          // note. It answers this note's wait and the chat's, no other note's.
           const r = session.replyToNote({ doc: cmd.doc, id: cmd.id, text: cmd.body });
           broadcastState();
           return { id: r.message.id, doc: r.slug, note: r.note.id };

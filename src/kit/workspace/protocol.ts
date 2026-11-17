@@ -458,7 +458,11 @@ export type Waiting = {
 export type NoteWaiting = {
   doc: string;
   noteId: string;
-  /** When the human last put the note in front of the agent: made, rewrote or reopened it. */
+  /**
+   * What the wait is timed from: when the human last put the note in front of
+   * the agent (made, rewrote or reopened it), or, once an ask about it was
+   * answered by any agent message, that answer.
+   */
   since: string;
   badge: Waiting["badge"];
   /** The agent's "still working" snooze holds: it covers notes as it covers messages. */

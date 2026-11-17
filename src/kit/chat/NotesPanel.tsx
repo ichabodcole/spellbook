@@ -38,7 +38,8 @@ export type NoteReply = Pick<Message, "id" | "text" | "ts">;
 /**
  * The agent's answers to notes, by note id, oldest first: each agent message in
  * the conversation whose `about.noteId` names the note. That message IS the
- * reply (`note-reply` stores it, and so does a `say` that names the note), so
+ * reply (`note-reply` stores it, and so does a protocol `say` that names the
+ * note; the CLI's `say` has no flag for that), so
  * the panel reads the conversation and stores nothing of its own.
  */
 export function repliesByNote(

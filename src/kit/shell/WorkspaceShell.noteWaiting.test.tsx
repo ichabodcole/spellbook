@@ -1,9 +1,11 @@
 // A note with the agent, over a REAL workspace daemon: a note
 // the human leaves shows the message wait's pulse, then its static "may be
 // stuck", on the note, on the Notes tab, in the note menu and on the floating
-// composer. It clears on exactly three things: the note resolved, an agent
-// message after it (a reply to the note is one), the agent rewriting its own
-// note. Nothing else clears it. The agent's replies show under the note.
+// composer. It clears on exactly three things: the note resolved, the agent's
+// message about it (a reply to the note, or a protocol `say` naming it; the
+// CLI's `say` has no flag for that), the agent
+// rewriting its own note. Nothing else clears it: not a reply to another note,
+// nor an agent message about nothing. The agent's replies show under the note.
 
 import "../lib/registerDom.ts";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from "bun:test";
@@ -345,10 +347,10 @@ describe("the floating composer says when a note is with the agent", () => {
     await m.unmount();
   });
 
-  test("a second note is counted outside the text, and the agent's answer clears the row", async () => {
+  test("a second note is counted outside the text, and the agent's answers clear the row", async () => {
     const { m, slug } = await openSolo();
-    await humanNote(slug, "first of two");
-    await humanNote(slug, "second of two");
+    const first = await humanNote(slug, "first of two");
+    const second = await humanNote(slug, "second of two");
     await click(q('[data-column-control="chat-collapse"]'));
     await waitFor(() => floatNote() !== null, "the float's note row");
     // The oldest is named, and the count sits outside the truncated text.
@@ -356,7 +358,14 @@ describe("the floating composer says when a note is with the agent", () => {
     expect(text?.textContent).toContain("first of two");
     expect(text?.textContent).not.toContain("+1 more");
     expect(floatNote()?.textContent).toContain("+1 more");
-    await post({ op: "say", text: "Both seen." });
+    // Each is answered by its own reply: the first leaves the second named.
+    await post({ op: "note.reply", doc: slug, id: first, body: "First seen." });
+    await waitFor(
+      () => (floatNote()?.textContent ?? "").includes("second of two"),
+      "the second named",
+    );
+    expect(floatNote()?.textContent).not.toContain("+1 more");
+    await post({ op: "note.reply", doc: slug, id: second, body: "Second seen." });
     await waitFor(() => floatNote() === null, "the row to go");
     await m.unmount();
   });
@@ -395,11 +404,11 @@ describe("the mark clears on exactly three things", () => {
     await m.unmount();
   });
 
-  test("an agent message after the note", async () => {
+  test("the agent saying something about the note", async () => {
     const { m, slug } = await openSolo();
-    await humanNote(slug, "answer me");
+    const id = await humanNote(slug, "answer me");
     await waitFor(() => markOn("answer me") !== null, "the mark");
-    await post({ op: "say", text: "Done." });
+    await post({ op: "say", text: "Done.", about: { noteId: id } });
     await waitFor(() => markOn("answer me") === null, "the mark to clear");
     // The note stays open: an answer is not "dealt with".
     expect(noteRow("answer me")?.hasAttribute("data-resolved")).toBe(false);
@@ -577,15 +586,18 @@ describe("the agent's replies under a note", () => {
   test("every reply shows, each live as it arrives, with no reload", async () => {
     const { m, slug } = await openSolo();
     const id = await humanNote(slug, "two answers");
-    // Answered first, so the replies below change nothing the waiting tick
-    // would broadcast: each must reach the page on its own.
-    await post({ op: "say", text: "Looking." });
+    // Answered first (only a message about the note answers it, so that is a
+    // reply under it too), so the replies after it change nothing the waiting
+    // tick would broadcast: each must reach the page on its own.
+    await post({ op: "note.reply", doc: slug, id, body: "Looking." });
     await waitFor(() => markOn("two answers") === null, "answered");
+    await waitFor(() => replies("two answers").length === 1, "the answer");
     await post({ op: "note.reply", doc: slug, id, body: "first answer" });
-    await waitFor(() => replies("two answers").length === 1, "the first reply, live");
+    await waitFor(() => replies("two answers").length === 2, "the first reply, live");
     await post({ op: "note.reply", doc: slug, id, body: "second answer" });
-    await waitFor(() => replies("two answers").length === 2, "the second reply, live");
+    await waitFor(() => replies("two answers").length === 3, "the second reply, live");
     expect(replies("two answers").map((r) => r.querySelector(".md-prose")?.textContent)).toEqual([
+      "Looking.",
       "first answer",
       "second answer",
     ]);
@@ -664,6 +676,31 @@ describe("the agent's replies under a note", () => {
 });
 
 describe("and on nothing else", () => {
+  test("not a reply to another note: each note keeps its own mark", async () => {
+    const { m, slug } = await openSolo();
+    await humanNote(slug, "first note");
+    const second = await humanNote(slug, "second note");
+    await waitFor(() => markOn("first note") !== null && markOn("second note") !== null, "marks");
+    await post({ op: "note.reply", doc: slug, id: second, body: "On the second." });
+    await waitFor(() => markOn("second note") === null, "the second answered");
+    expect(markOn("first note")).not.toBeNull();
+    expect(tabDot()).not.toBeNull();
+    expect((await state()).notesWaiting?.map((n) => n.noteId)).toHaveLength(1);
+    await m.unmount();
+  });
+
+  test("not an agent message about nothing: that answers the chat, not the note", async () => {
+    const { m, slug } = await openSolo();
+    await humanNote(slug, "still with the agent");
+    await waitFor(() => markOn("still with the agent") !== null, "the mark");
+    await post({ op: "say", text: "Back in a minute." });
+    // The snapshot that carries the message carries the marks too.
+    await waitFor(() => ws().state.chat.some((c) => c.text === "Back in a minute."), "the message");
+    expect(markOn("still with the agent")).not.toBeNull();
+    expect(tabDot()).not.toBeNull();
+    await m.unmount();
+  });
+
   test("not a human message", async () => {
     const { m, slug } = await openSolo();
     await humanNote(slug, "still owed");
@@ -682,8 +719,8 @@ describe("and on nothing else", () => {
 
   test("not the human rewriting it", async () => {
     const { m, slug } = await openSolo();
-    await humanNote(slug, "my words");
-    await post({ op: "say", text: "Seen." });
+    const id = await humanNote(slug, "my words");
+    await post({ op: "note.reply", doc: slug, id, body: "Seen." });
     await waitFor(() => markOn("my words") === null, "answered");
     // A human rewrite puts it in front of the agent again.
     await click(noteRow("my words")?.querySelector('[aria-label="Edit note"]') ?? null);

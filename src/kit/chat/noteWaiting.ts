@@ -42,10 +42,10 @@ function excerpt(text: string, max: number): string {
 /**
  * What "Ask the agent" says about a note that may be stuck: a message in the
  * human's own conversation, so it gets everything a message gets (its badge,
- * its one nudge), and the agent's answer to it answers the note too. An
- * excerpt, not the note: the message carries the note's id (`about.noteId`),
- * which is how the agent finds it whole; the words are for the human reading
- * the conversation back.
+ * its one nudge). Any agent answer settles the ask; only an answer about the
+ * note (`note-reply`) clears the note's own mark. An excerpt, not the note:
+ * the message carries the note's id (`about.noteId`), which is how the agent
+ * finds it whole; the words are for the human reading the conversation back.
  */
 export function askAboutNoteText(note: { quote: string; body: string }, docName: string): string {
   return `About my note on “${excerpt(note.quote, 60)}” in ${docName}: “${excerpt(note.body, 120)}”`;

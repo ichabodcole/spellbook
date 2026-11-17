@@ -226,6 +226,11 @@ const note = (
   };
 };
 const inDoc = (...notes: NoteFact[]) => [{ slug: "maren", notes }];
+/**
+ * The agent's message about a note, at `ms`: a `note-reply`, or a `say` naming
+ * it (the protocol's `say` takes `about`; the CLI's has no flag for it).
+ */
+const reply = (noteId: string, ms: number) => ({ ...msg("agent", ms), about: { noteId } });
 const owed = (noteId: string, since: number, badge: "working" | "stalled", doc = "maren") => ({
   doc,
   noteId,
@@ -249,16 +254,16 @@ describe("notesWaiting", () => {
     expect(notesWaiting(docs, [], 30_000)[0]?.badge).toBe("stalled");
   });
 
-  test("an agent message after the note answers it", () => {
-    expect(notesWaiting(inDoc(note("n1", 1000)), [msg("agent", 1001)], 999_999)).toEqual([]);
+  test("the agent's message about the note, after it, answers it", () => {
+    expect(notesWaiting(inDoc(note("n1", 1000)), [reply("n1", 1001)], 999_999)).toEqual([]);
   });
 
-  test("an agent message before the note does not", () => {
-    expect(notesWaiting(inDoc(note("n1", 1000)), [msg("agent", 999)], 1500)).toHaveLength(1);
+  test("one before the note does not", () => {
+    expect(notesWaiting(inDoc(note("n1", 1000)), [reply("n1", 999)], 1500)).toHaveLength(1);
   });
 
-  test("an agent message in the same millisecond does not: it cannot have seen the note", () => {
-    expect(notesWaiting(inDoc(note("n1", 1000)), [msg("agent", 1000)], 1500)).toHaveLength(1);
+  test("one in the same millisecond does not: it cannot have seen the note", () => {
+    expect(notesWaiting(inDoc(note("n1", 1000)), [reply("n1", 1000)], 1500)).toHaveLength(1);
   });
 
   test("a system line is not a reply: the agent resolving another note says nothing about this one", () => {
@@ -290,7 +295,7 @@ describe("notesWaiting", () => {
 
   test("the human rewriting it after an answer makes it owed again, from the rewrite", () => {
     const docs = inDoc(note("n1", 0, { editedAt: 20_000, editedBy: "human" }));
-    expect(notesWaiting(docs, [msg("agent", 10_000)], 25_000)).toEqual([
+    expect(notesWaiting(docs, [reply("n1", 10_000)], 25_000)).toEqual([
       owed("n1", 20_000, "working"),
     ]);
   });
@@ -307,18 +312,42 @@ describe("notesWaiting", () => {
 
   test("an edit with no author recorded is not evidence either way: the note counts from when it was made", () => {
     const docs = inDoc(note("n1", 1000, { editedAt: 50_000 }));
-    expect(notesWaiting(docs, [msg("agent", 2000)], 60_000)).toEqual([]);
+    expect(notesWaiting(docs, [reply("n1", 2000)], 60_000)).toEqual([]);
     expect(notesWaiting(docs, [], 31_000)).toEqual([owed("n1", 1000, "stalled")]);
   });
 
-  test("two notes, then one reply: both are answered, as a run of messages is by one reply", () => {
-    const docs = inDoc(note("n1", 1000), note("n2", 2000));
-    expect(notesWaiting(docs, [msg("agent", 3000)], 999_999)).toEqual([]);
+  test("two notes, then a reply to one: only that one is answered", () => {
+    const docs = inDoc(note("n1", 1000), note("n3", 2000));
+    expect(notesWaiting(docs, [reply("n3", 3000)], 5000)).toEqual([owed("n1", 1000, "working")]);
+    expect(notesWaiting(docs, [reply("n1", 3000), reply("n3", 3001)], 5000)).toEqual([]);
   });
 
-  test("but a note made after that reply is still owed", () => {
+  test("a plain `say`, about no note, answers none: the chat's wait is the chat's", () => {
+    const docs = inDoc(note("n1", 1000), note("n2", 2000));
+    expect(notesWaiting(docs, [msg("agent", 3000)], 5000)).toEqual([
+      owed("n1", 1000, "working"),
+      owed("n2", 2000, "working"),
+    ]);
+  });
+
+  test("a protocol `say` whose `about` names a note answers that note, and only that one", () => {
+    const docs = inDoc(note("n1", 1000), note("n2", 2000));
+    const said = { ...msg("agent", 3000), type: "message", about: { noteId: "n2" } };
+    expect(notesWaiting(docs, [said], 5000)).toEqual([owed("n1", 1000, "working")]);
+  });
+
+  test("a human message about the note is not an answer", () => {
+    const asked = { ...msg("human", 3000), about: { noteId: "n1" } };
+    expect(notesWaiting(inDoc(note("n1", 1000)), [asked], 5000)).toHaveLength(1);
+  });
+
+  test("each note is timed against its own replies: a newer reply to another note does not answer it", () => {
+    // n2 was rewritten into being after its only reply; the newest agent message
+    // overall (to n1) is after n2, and still says nothing about it.
     const docs = inDoc(note("n1", 1000), note("n2", 4000));
-    expect(notesWaiting(docs, [msg("agent", 3000)], 5000)).toEqual([owed("n2", 4000, "working")]);
+    expect(notesWaiting(docs, [reply("n2", 3500), reply("n1", 4500)], 5000)).toEqual([
+      owed("n2", 4000, "working"),
+    ]);
   });
 
   test("each note keeps its own clock: the first can be stuck while the second is fresh", () => {
@@ -356,11 +385,59 @@ describe("notesWaiting", () => {
     expect(notesWaiting(docs, [], 999_999)[0]?.badge).toBe("working");
   });
 
-  test("an agent message with an unparseable time is passed over for the newest one that parses", () => {
+  test("a reply with an unparseable time is passed over for the newest one that parses", () => {
     const docs = inDoc(note("n1", 1000));
-    const broken = { ...msg("agent", 0), ts: "not a time" };
-    expect(notesWaiting(docs, [msg("agent", 2000), broken], 5000)).toEqual([]);
-    expect(notesWaiting(docs, [msg("agent", 500), broken], 5000)).toHaveLength(1);
+    const broken = { ...reply("n1", 0), ts: "not a time" };
+    expect(notesWaiting(docs, [reply("n1", 2000), broken], 5000)).toEqual([]);
+    expect(notesWaiting(docs, [reply("n1", 500), broken], 5000)).toHaveLength(1);
+  });
+});
+
+describe("notesWaiting: an answered ask restarts the note's clock", () => {
+  // The reviewer's probe: a note at 0, stuck by 30 s, asked about at 40 s, and
+  // the ask answered by a plain `say` at 41 s.
+  const docs = inDoc(note("n1", 0));
+  const chat = [askAt("n1", 40_000), msg("agent", 41_000)];
+
+  test("a plain answer to the ask leaves the note waiting, as a pulse timed from the answer", () => {
+    expect(notesWaiting(docs, chat, 41_500)).toEqual([owed("n1", 41_000, "working")]);
+  });
+
+  test("and only reads stuck once the threshold passes from the answer with no reply about it", () => {
+    expect(notesWaiting(docs, chat, 70_999)[0]?.badge).toBe("working");
+    expect(notesWaiting(docs, chat, 71_000)).toEqual([owed("n1", 41_000, "stalled")]);
+  });
+
+  test("a reply about the note still clears it", () => {
+    expect(notesWaiting(docs, [...chat, reply("n1", 42_000)], 99_000)).toEqual([]);
+  });
+
+  test("an ask not yet answered keeps the note's own clock", () => {
+    expect(notesWaiting(docs, [askAt("n1", 40_000)], 41_500)).toEqual([owed("n1", 0, "stalled")]);
+  });
+
+  test("an answer in the ask's own millisecond has not read it", () => {
+    expect(notesWaiting(docs, [askAt("n1", 40_000), msg("agent", 40_000)], 41_500)).toEqual([
+      owed("n1", 0, "stalled"),
+    ]);
+  });
+
+  test("the first answer restarts it, not a later word", () => {
+    const more = [...chat, msg("agent", 60_000)];
+    expect(notesWaiting(docs, more, 71_000)[0]?.badge).toBe("stalled");
+  });
+
+  test("an ask about the note before the human rewrote it is about the old question", () => {
+    const rewritten = inDoc(note("n1", 0, { editedAt: 50_000, editedBy: "human" }));
+    expect(notesWaiting(rewritten, chat, 51_000)).toEqual([owed("n1", 50_000, "working")]);
+  });
+
+  test("an ask about another note restarts nothing here", () => {
+    const two = inDoc(note("n1", 0), note("n2", 0));
+    expect(notesWaiting(two, chat, 41_500)).toEqual([
+      owed("n2", 0, "stalled"),
+      owed("n1", 41_000, "working"),
+    ]);
   });
 });
 
@@ -372,7 +449,7 @@ describe("notesWaiting: reopening", () => {
 
   test("and one rule for the answered case: reopening an answered note asks again", () => {
     const docs = inDoc(note("n1", 0, { reopenedAt: 20_000, reopenedBy: "human" }));
-    expect(notesWaiting(docs, [msg("agent", 10_000)], 25_000)).toEqual([
+    expect(notesWaiting(docs, [reply("n1", 10_000)], 25_000)).toEqual([
       owed("n1", 20_000, "working"),
     ]);
   });
