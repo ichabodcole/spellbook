@@ -67619,6 +67619,7 @@ function DocumentPane({
   }, [slug, active, text, send]);
   const place = import_react30.useMemo(() => createPlace(), [slug]);
   const hash = doc?.hash;
+  const outsideHash = doc?.outsideHash;
   const compareSlug = import_react30.useRef(slug);
   const pickTaken = import_react30.useRef(false);
   import_react30.useEffect(() => {
@@ -67630,7 +67631,7 @@ function DocumentPane({
     }
     if (mode === "compare" && slug !== undefined)
       send({ op: "diff", doc: slug, against, ...pick ? { pick: true } : {} });
-  }, [mode, slug, active, hash, against, pick, send]);
+  }, [mode, slug, active, hash, outsideHash, against, pick, send]);
   const picked = daemon.diff?.picked === true && daemon.diff.doc === slug ? daemon.diff : null;
   import_react30.useEffect(() => {
     if (!pick || !picked)
@@ -70262,16 +70263,16 @@ function outsideChangeToast(doc) {
   };
 }
 function createOutsideWatch() {
-  const raised = new Set;
+  const raised = new Map;
   return {
     snapshot: (doc) => {
       if (!doc.outsideChanged) {
         raised.delete(doc.slug);
         return false;
       }
-      if (raised.has(doc.slug))
+      if (raised.has(doc.slug) && raised.get(doc.slug) === doc.outsideHash)
         return false;
-      raised.add(doc.slug);
+      raised.set(doc.slug, doc.outsideHash);
       return true;
     }
   };
@@ -70302,6 +70303,9 @@ function OutsideChangeToasts({
     }
     if (!news)
       return;
+    const older = raised.current.get(doc.slug);
+    if (older !== undefined)
+      dismiss(older);
     const { title, description } = outsideChangeToast(doc);
     const slug = doc.slug;
     const letGo = () => {

@@ -22785,6 +22785,8 @@ class WorkspaceSession {
       } else {
         delete d.missing;
         if (now !== d.originalHash) {
+          if (!d.outsideChanged)
+            d.outsideHash = now;
           d.outsideChanged = true;
           report.outside.push({ doc: d.slug, original: d.original, missing: false });
         }
@@ -23786,8 +23788,17 @@ ${o.root}` : undefined;
     }
     const text = readFileSync6(this.versionPath(d, d.active), "utf8");
     this.refuseInvalidJson(d, d.active, text, "saved");
-    if (fileThere && !d.outsideChanged) {
-      const disk = readFileSync6(d.original, "utf8");
+    const disk = fileThere ? readFileSync6(d.original, "utf8") : null;
+    if (disk !== null && d.outsideChanged) {
+      const h = contentHash(disk);
+      if (h !== d.outsideHash && h !== d.originalHash && disk !== text) {
+        const again = d.outsideHash !== undefined;
+        d.outsideHash = h;
+        this.persist();
+        throw new UnseenChangeError(again ? `${d.name} changed on disk again since you were asked, so Save waits and wrote nothing: choose in the document's banner` : `${d.name} changed on disk, so Save waits and wrote nothing: see the difference in the document's banner first`, { kind: "original.conflict", doc: d.slug, original: d.original }, `"See the difference" shows the file's newer text against yours; "Keep mine" saves yours over it; "Take the file's" loads it`);
+      }
+    }
+    if (disk !== null && !d.outsideChanged) {
       if (contentHash(disk) !== d.originalHash && disk !== text) {
         const event = this.onFileEvent(d.original);
         if (event?.kind === "original.reloaded")
@@ -23799,6 +23810,7 @@ ${o.root}` : undefined;
     this.writeOwned(d.original, text, this.world);
     d.originalHash = contentHash(text);
     d.outsideChanged = false;
+    delete d.outsideHash;
     const recreated = fileThere ? undefined : folderThere ? "file" : "folder";
     if (!fileThere) {
       delete d.missing;
@@ -24532,6 +24544,7 @@ ${o.root}` : undefined;
     }
     d.originalHash = contentHash(text);
     d.outsideChanged = false;
+    delete d.outsideHash;
     this.writeActive(d, text);
     this.persist();
     return { version: d.active, text };
@@ -24618,6 +24631,7 @@ ${o.root}` : undefined;
         this.relink();
         if (h !== d.originalHash) {
           d.outsideChanged = true;
+          d.outsideHash = h;
           this.persist();
           return { kind: "original.conflict", doc: d.slug, original: d.original };
         }
@@ -24639,9 +24653,10 @@ ${o.root}` : undefined;
           original: d.original
         };
       }
-      if (d.outsideChanged)
+      if (d.outsideChanged && h === d.outsideHash)
         return null;
       d.outsideChanged = true;
+      d.outsideHash = h;
       this.persist();
       return { kind: "original.conflict", doc: d.slug, original: d.original };
     }
@@ -25390,6 +25405,7 @@ ${o.root}` : undefined;
     this.edit(d.slug, d.active, text);
     d.originalHash = contentHash(text);
     d.outsideChanged = false;
+    delete d.outsideHash;
     return { doc: d.slug, version: d.active, text };
   }
   pinLinks(moved) {
@@ -25928,6 +25944,7 @@ ${o.root}` : undefined;
       hash,
       dirty: !d.missing && this.isDirty(d),
       outsideChanged: d.outsideChanged,
+      ...d.outsideChanged && d.outsideHash ? { outsideHash: d.outsideHash } : {},
       ...d.missing ? { missing: existsSync3(dirname7(d.original)) ? "file" : "folder" } : {},
       notes: this.placedNotes(d)
     };
