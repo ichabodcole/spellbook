@@ -672,6 +672,8 @@ export function DocumentPane({
   // Asked for whenever the document, its active version, its text or the chosen side
   // changes, so a merge refreshes what is left to take.
   const hash = doc?.hash;
+  // The file's text a banner asks about: a newer one is compared again.
+  const outsideHash = doc?.outsideHash;
   /**
    * The document the comparison's state (the mode and the side, `against`)
    * belongs to. On the render another document arrives, that state is still the
@@ -685,7 +687,7 @@ export function DocumentPane({
    * plain answer would drop what the picked one said, `everyMatches`).
    */
   const pickTaken = useRef(false);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the active version and the text hash are triggers, not inputs.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the active version, the text hash and the outside hash are triggers, not inputs.
   useEffect(() => {
     if (compareSlug.current !== slug) return;
     if (pickTaken.current) {
@@ -694,7 +696,7 @@ export function DocumentPane({
     }
     if (mode === "compare" && slug !== undefined)
       send({ op: "diff", doc: slug, against, ...(pick ? { pick: true } : {}) });
-  }, [mode, slug, active, hash, against, pick, send]);
+  }, [mode, slug, active, hash, outsideHash, against, pick, send]);
   // The daemon's pick, once it answers: from then on that side is asked for.
   const picked = daemon.diff?.picked === true && daemon.diff.doc === slug ? daemon.diff : null;
   useEffect(() => {

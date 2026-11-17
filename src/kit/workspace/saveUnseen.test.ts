@@ -12,8 +12,8 @@ import { join } from "node:path";
 import { fixtureDaemon } from "./fixtures/app";
 import { collectEvents, FakeSurface, waitUntil } from "./fixtures/harness";
 import type { WorkspaceDaemon } from "./server";
-import { UnseenChangeError, type WorkspaceSession } from "./session";
-import { inContext, refusal, seedDocs, tempRoot } from "./testing";
+import { UnseenChangeError, WorkspaceSession } from "./session";
+import { inContext, refusal, seedDocs, tempRoot, testApp } from "./testing";
 
 let root: string;
 let sessions: string;
@@ -86,6 +86,124 @@ describe("the session: Save asks the disk, not the watcher", () => {
     expect(s.doc(slug).outsideChanged).toBe(false);
   });
 
+  test('"Keep mine" writes only over the change that was asked about: a second unseen one is asked about again', () => {
+    const s = inContext(sessions, docs);
+    const { slug } = s.openPath(solo());
+    s.edit(slug, 1, "mine\n");
+    writeFileSync(solo(), "theirs, the first\n");
+    refusal(() => s.save(slug));
+    expect(s.doc(slug).outsideChanged).toBe(true);
+    const asked = s.doc(slug).outsideHash;
+    expect(asked).toBeDefined();
+
+    // A second outside change, which the watcher misses too.
+    writeFileSync(solo(), "theirs, the second\n");
+    const again = refusal(() => s.save(slug));
+    expect(again).toBeInstanceOf(UnseenChangeError);
+    expect(again.status).toBe(409);
+    expect(again.message).toContain("changed on disk again");
+    expect(again.hint).toContain("See the difference");
+    expect((again as UnseenChangeError).event).toMatchObject({
+      kind: "original.conflict",
+      doc: slug,
+    });
+    // The second change survives, still asked about, now as the newer text,
+    // and the comparison shows that newer text.
+    expect(readFileSync(solo(), "utf8")).toBe("theirs, the second\n");
+    expect(s.readVersion(slug, 1).text).toBe("mine\n");
+    expect(s.doc(slug).outsideChanged).toBe(true);
+    expect(s.doc(slug).outsideHash).toBeDefined();
+    expect(s.doc(slug).outsideHash).not.toBe(asked);
+    expect(JSON.stringify(s.compare({ doc: slug, against: "original" }))).toContain(
+      "theirs, the second",
+    );
+
+    // Asked about the second, "Keep mine" now writes.
+    s.save(slug);
+    expect(readFileSync(solo(), "utf8")).toBe("mine\n");
+    expect(s.doc(slug).outsideChanged).toBe(false);
+    expect(s.doc(slug).outsideHash).toBeUndefined();
+  });
+
+  test("a second outside change the watcher does deliver is asked about again, as the newer text", () => {
+    const s = inContext(sessions, docs);
+    const { slug } = s.openPath(solo());
+    s.edit(slug, 1, "mine\n");
+    writeFileSync(solo(), "theirs, the first\n");
+    expect(s.onFileEvents(solo())).toEqual([
+      expect.objectContaining({ kind: "original.conflict", doc: slug }),
+    ]);
+    const first = s.doc(slug).outsideHash;
+    expect(first).toBeDefined();
+    // The same text again is nothing new.
+    expect(s.onFileEvents(solo())).toEqual([]);
+    writeFileSync(solo(), "theirs, the second\n");
+    expect(s.onFileEvents(solo())).toEqual([
+      expect.objectContaining({ kind: "original.conflict", doc: slug }),
+    ]);
+    expect(s.doc(slug).outsideHash).not.toBe(first);
+    // Keep mine is now over the text that was asked about, and writes.
+    s.save(slug);
+    expect(readFileSync(solo(), "utf8")).toBe("mine\n");
+  });
+
+  test("the text asked about survives a restart: a newer one after it is still asked about", () => {
+    const s = inContext(sessions, docs);
+    const { slug } = s.openPath(solo());
+    s.edit(slug, 1, "mine\n");
+    writeFileSync(solo(), "theirs, the first\n");
+    refusal(() => s.save(slug));
+    const asked = s.doc(slug).outsideHash;
+    const r = WorkspaceSession.restore(sessions, testApp, s.id);
+    expect(r.doc(slug).outsideChanged).toBe(true);
+    expect(r.doc(slug).outsideHash).toBe(asked);
+    writeFileSync(solo(), "theirs, the second\n");
+    expect(refusal(() => r.save(slug))).toBeInstanceOf(UnseenChangeError);
+    expect(readFileSync(solo(), "utf8")).toBe("theirs, the second\n");
+    r.save(slug);
+    expect(readFileSync(solo(), "utf8")).toBe("mine\n");
+  });
+
+  test('an old manifest (flag up, no text recorded as shown) is asked once, without saying "again"', () => {
+    const s = inContext(sessions, docs);
+    const { slug } = s.openPath(solo());
+    s.edit(slug, 1, "mine\n");
+    writeFileSync(solo(), "theirs\n");
+    refusal(() => s.save(slug));
+    // The manifest as one written before `outsideHash` existed.
+    const mpath = join(s.dir, "manifest.json");
+    const m = JSON.parse(readFileSync(mpath, "utf8"));
+    for (const d of m.docs) delete d.outsideHash;
+    writeFileSync(mpath, JSON.stringify(m));
+    const r = WorkspaceSession.restore(sessions, testApp, s.id);
+    expect(r.doc(slug).outsideChanged).toBe(true);
+    expect(r.doc(slug).outsideHash).toBeUndefined();
+    const e = refusal(() => r.save(slug));
+    expect(e).toBeInstanceOf(UnseenChangeError);
+    expect(e.message).toContain("changed on disk");
+    expect(e.message).not.toContain("again");
+    expect(readFileSync(solo(), "utf8")).toBe("theirs\n");
+    // Now asked about that text, Keep mine writes.
+    r.save(slug);
+    expect(readFileSync(solo(), "utf8")).toBe("mine\n");
+  });
+
+  test("a change made while the session was closed is asked about at restore: Keep mine writes on the first Save", () => {
+    const s = inContext(sessions, docs);
+    const { slug } = s.openPath(solo());
+    s.edit(slug, 1, "mine\n");
+    // The session is closed; the file changes; the session restores.
+    writeFileSync(solo(), "theirs, while closed\n");
+    const r = WorkspaceSession.restore(sessions, testApp, s.id);
+    // Raised at restore, about the text on disk then: that is the text shown.
+    expect(r.doc(slug).outsideChanged).toBe(true);
+    expect(r.doc(slug).outsideHash).toBeDefined();
+    // "Keep mine" over the text the human was shown writes at once.
+    r.save(slug);
+    expect(readFileSync(solo(), "utf8")).toBe("mine\n");
+    expect(r.doc(slug).outsideChanged).toBe(false);
+  });
+
   test("an outside change that is already the human's text is no conflict: Save goes ahead", () => {
     const s = inContext(sessions, docs);
     const { slug } = s.openPath(solo());
@@ -150,7 +268,31 @@ describe("the daemon: the human's Save over an unseen change", () => {
     expect(asked).toMatchObject({ doc: "a" });
     expect(tail.events.some((e) => e.type === "saved")).toBe(false);
 
-    // "Keep mine": the deliberate overwrite.
+    // A second outside change, missed too: "Keep mine" does not write over it,
+    // and the human is asked again, about the newer text.
+    const firstAsked = s.state.docs.find((d) => d.slug === "a")?.outsideHash;
+    expect(firstAsked).toBeDefined();
+    const conflictsBefore = tail.events.filter(
+      (e) => e.type === "system" && e.fact === "original.conflict",
+    ).length;
+    writeFileSync(file, "# A\n\ntheirs again\n");
+    s.send({ op: "save", doc: "a", rid: 4 } as never);
+    const refusedAgain = await s.waitFor((m) => m.op === "error" && m.requestId === 4);
+    expect(refusedAgain.op === "error" && refusedAgain.message).toContain("changed on disk again");
+    await waitUntil(
+      "asked again",
+      () => s.state.docs.find((d) => d.slug === "a")?.outsideHash !== firstAsked,
+    );
+    await waitUntil(
+      "the agent told again",
+      () =>
+        (tail?.events.filter((e) => e.type === "system" && e.fact === "original.conflict").length ??
+          0) > conflictsBefore,
+    );
+    expect(readFileSync(file, "utf8")).toBe("# A\n\ntheirs again\n");
+    expect(tail.events.some((e) => e.type === "saved")).toBe(false);
+
+    // "Keep mine": the deliberate overwrite of what was asked about.
     s.send({ op: "save", doc: "a" });
     await tail.waitFor((e) => e.type === "saved");
     expect(readFileSync(file, "utf8")).toBe("# A\n\nmine\n");

@@ -1163,6 +1163,9 @@ export class WorkspaceSession {
       } else {
         delete d.missing;
         if (now !== d.originalHash) {
+          // Already asked before the restart: still about the text asked about
+          // then, so a newer one is asked about at Save, not kept over unseen.
+          if (!d.outsideChanged) d.outsideHash = now;
           d.outsideChanged = true;
           report.outside.push({ doc: d.slug, original: d.original, missing: false });
         }
@@ -2864,9 +2867,28 @@ export class WorkspaceSession {
     this.refuseInvalidJson(d, d.active, text, "saved");
     // The file's text is asked of the disk too, not of the watcher: a change it
     // never reported would be overwritten unseen. Once the flag is up the human
-    // has been asked, and Save is their "Keep mine", a deliberate overwrite.
-    if (fileThere && !d.outsideChanged) {
-      const disk = readFileSync(d.original, "utf8");
+    // has been asked, and Save is their "Keep mine", a deliberate overwrite of
+    // the text they were asked about (`outsideHash`) and of nothing newer: a
+    // second change the watcher also missed is asked about again.
+    const disk = fileThere ? readFileSync(d.original, "utf8") : null;
+    if (disk !== null && d.outsideChanged) {
+      const h = contentHash(disk);
+      if (h !== d.outsideHash && h !== d.originalHash && disk !== text) {
+        // "Again" only when a text was asked about: a manifest from before
+        // `outsideHash` has the flag up with no text recorded as shown.
+        const again = d.outsideHash !== undefined;
+        d.outsideHash = h;
+        this.persist();
+        throw new UnseenChangeError(
+          again
+            ? `${d.name} changed on disk again since you were asked, so Save waits and wrote nothing: choose in the document's banner`
+            : `${d.name} changed on disk, so Save waits and wrote nothing: see the difference in the document's banner first`,
+          { kind: "original.conflict", doc: d.slug, original: d.original },
+          `"See the difference" shows the file's newer text against yours; "Keep mine" saves yours over it; "Take the file's" loads it`,
+        );
+      }
+    }
+    if (disk !== null && !d.outsideChanged) {
       if (contentHash(disk) !== d.originalHash && disk !== text) {
         const event = this.onFileEvent(d.original);
         if (event?.kind === "original.reloaded")
@@ -2888,6 +2910,7 @@ export class WorkspaceSession {
     this.writeOwned(d.original, text, this.world);
     d.originalHash = contentHash(text);
     d.outsideChanged = false;
+    delete d.outsideHash;
     const recreated = fileThere ? undefined : folderThere ? "file" : "folder";
     if (!fileThere) {
       delete d.missing;
@@ -4057,6 +4080,7 @@ export class WorkspaceSession {
     }
     d.originalHash = contentHash(text);
     d.outsideChanged = false;
+    delete d.outsideHash;
     this.writeActive(d, text);
     this.persist();
     return { version: d.active, text };
@@ -4170,6 +4194,7 @@ export class WorkspaceSession {
         this.relink();
         if (h !== d.originalHash) {
           d.outsideChanged = true;
+          d.outsideHash = h;
           this.persist();
           return { kind: "original.conflict", doc: d.slug, original: d.original };
         }
@@ -4190,8 +4215,13 @@ export class WorkspaceSession {
           original: d.original,
         };
       }
-      if (d.outsideChanged) return null; // already asked
+      // Already asked. The same text: nothing new. A newer text is asked about
+      // again (the comparison, the toast, the chat line, the agent), so the
+      // human is never asked about one text and Keep mine writes over another;
+      // Save checks the same of a change the watcher missed (`outsideHash`).
+      if (d.outsideChanged && h === d.outsideHash) return null;
       d.outsideChanged = true;
+      d.outsideHash = h;
       this.persist();
       return { kind: "original.conflict", doc: d.slug, original: d.original };
     }
@@ -5343,6 +5373,7 @@ export class WorkspaceSession {
     this.edit(d.slug, d.active, text);
     d.originalHash = contentHash(text);
     d.outsideChanged = false;
+    delete d.outsideHash;
     return { doc: d.slug, version: d.active, text };
   }
 
@@ -6173,6 +6204,7 @@ export class WorkspaceSession {
       hash,
       dirty: !d.missing && this.isDirty(d),
       outsideChanged: d.outsideChanged,
+      ...(d.outsideChanged && d.outsideHash ? { outsideHash: d.outsideHash } : {}),
       ...(d.missing ? { missing: existsSync(dirname(d.original)) ? "file" : "folder" } : {}),
       notes: this.placedNotes(d),
     };

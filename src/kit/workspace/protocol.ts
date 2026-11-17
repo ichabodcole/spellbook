@@ -298,6 +298,13 @@ export type Doc = {
   admitted: boolean;
   outsideChanged: boolean;
   /**
+   * While `outsideChanged`: the hash of the file's text the human was asked
+   * about. "Keep mine" saves over that text only; a newer one, missed by the
+   * watcher too, is asked about again. Absent (a manifest from before it) reads
+   * as a text nobody was shown.
+   */
+  outsideHash?: string;
+  /**
    * The original is gone from disk: deleted or moved away outside the app, or
    * moved to the Trash from the sidebar. The record and its versions stay, so
    * the text is not lost; Save recreates the file only when asked to.
@@ -333,6 +340,12 @@ export type DocView = {
   dirty: boolean;
   /** The original changed on disk while the buffer was dirty (or while no daemon watched). */
   outsideChanged: boolean;
+  /**
+   * While `outsideChanged`: which text of the file is being asked about (`Doc`'s
+   * `outsideHash`). A new one is a newer outside change: the comparison is asked
+   * for again, and the human told again.
+   */
+  outsideHash?: string;
   /**
    * Absent while the original is on disk. `file`: the file is gone and its folder
    * is still there. `folder`: the folder went too. Save recreates the file only

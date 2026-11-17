@@ -55,7 +55,7 @@ Approved by Cole on 2026-11-17. In order:
 6. **[item/scriptorium-downgraded-session-refused](../items/scriptorium-downgraded-session-refused/item.md)**:
    6.0.0 restores a session 5.2.0 has written to, or refuses it and says how to
    recover.
-7. **[item/kit-save-second-unseen-change](../items/kit-save-second-unseen-change.md)**:
+7. **[item/kit-save-second-unseen-change](../items/kit-save-second-unseen-change/item.md)**:
    Save after the banner writes only over the change the banner was raised for.
 8. **[item/kit-right-click-away-from-selection](../items/kit-right-click-away-from-selection/item.md)**
    (#146): a right-click outside the selection acts at the click.
@@ -98,5 +98,5 @@ _Written at close._
 - fix/kit-right-click-away-from-selection (landed 2026-11-17)
 - fix/scriptorium-downgraded-session-refused (landed 2026-11-17)
 - fix/kit-cli-small-fixes (landed 2026-11-17)
-- fix/kit-save-second-unseen-change (open)
+- fix/kit-save-second-unseen-change (landed 2026-11-17)
 - fix/note-reply-clears-every-waiting-note (open)

@@ -1236,6 +1236,28 @@ describe("OutsideChangeToasts", () => {
     await m.unmount();
   });
 
+  test("a newer outside text while the flag stays up is news again, and replaces the older toast", async () => {
+    const store = createToastStore();
+    const m = await mount(
+      <Host d={changed({ dirty: true, outsideHash: "one" })} store={store} onReload={() => {}} />,
+    );
+    expect(store.snapshot()).toHaveLength(1);
+    // The same text again is nothing new.
+    await m.render(
+      <Host d={changed({ dirty: true, outsideHash: "one" })} store={store} onReload={() => {}} />,
+    );
+    expect(store.snapshot()).toHaveLength(1);
+    const first = store.snapshot()[0]?.id;
+    await m.render(
+      <Host d={changed({ dirty: true, outsideHash: "two" })} store={store} onReload={() => {}} />,
+    );
+    expect(store.snapshot()).toHaveLength(1);
+    expect(store.snapshot()[0]?.id).not.toBe(first);
+    expect(store.snapshot()[0]?.title).toBe("note.md changed on disk");
+    store.dispose();
+    await m.unmount();
+  });
+
   test("a flag up on first sight is news: the decision is still waiting", async () => {
     const store = createToastStore();
     const m = await mount(<Host d={changed()} store={store} onReload={() => {}} />);
